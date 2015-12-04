@@ -134,6 +134,12 @@ const char kAecDumpByAudioOptionFilename[] = "/sdcard/audio.aecdump";
 const char kAecDumpByAudioOptionFilename[] = "audio.aecdump";
 #endif
 
+// Constants from voice_engine_defines.h.
+const int kMinTelephoneEventCode = 0;           // RFC4733 (Section 2.3.1)
+const int kMaxTelephoneEventCode = 255;
+const int kMinTelephoneEventDuration = 100;
+const int kMaxTelephoneEventDuration = 60000;   // Actual limit is 2^16
+
 bool ValidateStreamParams(const StreamParams& sp) {
   if (sp.ssrcs.empty()) {
     LOG(LS_ERROR) << "No SSRCs in stream parameters: " << sp.ToString();
@@ -580,12 +586,6 @@ bool WebRtcVoiceEngine::InitInternal() {
   LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
   for (const AudioCodec& codec : codecs_) {
     LOG(LS_INFO) << ToString(codec);
-  }
-
-  // Disable the DTMF playout when a tone is sent.
-  // PlayDtmfTone will be used if local playout is needed.
-  if (voe_wrapper_->dtmf()->SetDtmfFeedbackStatus(false) == -1) {
-    LOG_RTCERR1(SetDtmfFeedbackStatus, false);
   }
 
   initialized_ = true;
@@ -1258,6 +1258,13 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_CHECK(stream_);
   }
 
+  bool SendTelephoneEvent(int payload_type, uint8_t event,
+                          uint32_t duration_ms) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(stream_);
+    return stream_->SendTelephoneEvent(payload_type, event, duration_ms);
+  }
+
   webrtc::AudioSendStream::Stats GetStats() const {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
@@ -1612,7 +1619,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   engine()->voe()->codec()->SetFECStatus(channel, false);
 
   // Scan through the list to figure out the codec to use for sending, along
-  // with the proper configuration for VAD and DTMF.
+  // with the proper configuration for VAD.
   bool found_send_codec = false;
   webrtc::CodecInst send_codec;
   memset(&send_codec, 0, sizeof(send_codec));
@@ -1741,7 +1748,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     SetSendBitrateInternal(send_bitrate_bps_);
   }
 
-  // Loop through the codecs list again to config the telephone-event/CN codec.
+  // Loop through the codecs list again to config the CN codec.
   for (const AudioCodec& codec : codecs) {
     // Ignore codecs we don't know about. The negotiation step should prevent
     // this, but double-check to be sure.
@@ -1751,15 +1758,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       continue;
     }
 
-    // Find the DTMF telephone event "codec" and tell VoiceEngine channels
-    // about it.
-    if (IsCodec(codec, kDtmfCodecName)) {
-      if (engine()->voe()->dtmf()->SetSendTelephoneEventPayloadType(
-              channel, codec.id) == -1) {
-        LOG_RTCERR2(SetSendTelephoneEventPayloadType, channel, codec.id);
-        return false;
-      }
-    } else if (IsCodec(codec, kCnCodecName)) {
+    if (IsCodec(codec, kCnCodecName)) {
       // Turn voice activity detection/comfort noise on if supported.
       // Set the wideband CN payload type appropriately.
       // (narrowband always uses the static payload type 13).
@@ -1814,12 +1813,16 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 bool WebRtcVoiceMediaChannel::SetSendCodecs(
     const std::vector<AudioCodec>& codecs) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  // TODO(solenberg): Validate input - that payload types don't overlap, are
+  //                  within range, filter out codecs we don't support,
+  //                  redundant codecs etc.
 
-  dtmf_allowed_ = false;
+  // Find the DTMF telephone event "codec" payload type.
+  dtmf_payload_type_ = rtc::Optional<int>();
   for (const AudioCodec& codec : codecs) {
-    // Find the DTMF telephone event "codec".
     if (IsCodec(codec, kDtmfCodecName)) {
-      dtmf_allowed_ = true;
+      dtmf_payload_type_ = rtc::Optional<int>(codec.id);
+      break;
     }
   }
 
@@ -2282,38 +2285,34 @@ bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
 }
 
 bool WebRtcVoiceMediaChannel::CanInsertDtmf() {
-  return dtmf_allowed_;
+  return dtmf_payload_type_ ? true : false;
 }
 
 bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc, int event,
                                          int duration) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  if (!dtmf_allowed_) {
+  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::InsertDtmf";
+  if (!dtmf_payload_type_) {
     return false;
   }
 
-  // Send the event.
-  int channel = -1;
-  if (ssrc == 0) {
-    if (send_streams_.size() > 0) {
-      channel = send_streams_.begin()->second->channel();
-    }
-  } else {
-    channel = GetSendChannelId(ssrc);
-  }
-  if (channel == -1) {
-    LOG(LS_WARNING) << "InsertDtmf - The specified ssrc "
-                    << ssrc << " is not in use.";
+  // Figure out which WebRtcAudioSendStream to send the event on.
+  auto it = ssrc != 0 ? send_streams_.find(ssrc) : send_streams_.begin();
+  if (it == send_streams_.end()) {
+    LOG(LS_WARNING) << "The specified ssrc " << ssrc << " is not in use.";
     return false;
   }
-  // Send DTMF using out-of-band DTMF. ("true", as 3rd arg)
-  if (engine()->voe()->dtmf()->SendTelephoneEvent(
-          channel, event, true, duration) == -1) {
-    LOG_RTCERR4(SendTelephoneEvent, channel, event, true, duration);
+  if (event < kMinTelephoneEventCode ||
+      event > kMaxTelephoneEventCode) {
+    LOG(LS_WARNING) << "DTMF event code " << event << " out of range.";
     return false;
   }
-
-  return true;
+  if (duration < kMinTelephoneEventDuration ||
+      duration > kMaxTelephoneEventDuration) {
+    LOG(LS_WARNING) << "DTMF event duration " << duration << " out of range.";
+    return false;
+  }
+  return it->second->SendTelephoneEvent(*dtmf_payload_type_, event, duration);
 }
 
 void WebRtcVoiceMediaChannel::OnPacketReceived(

@@ -2372,6 +2372,9 @@ int Channel::SendTelephoneEventOutband(unsigned char eventCode,
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SendTelephoneEventOutband(..., playDtmfEvent=%d)",
                playDtmfEvent);
+    if (!Sending()) {
+      return -1;
+    }
 
     _playOutbandDtmfEvent = playDtmfEvent;
 

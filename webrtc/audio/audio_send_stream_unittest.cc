@@ -40,6 +40,9 @@ const CallStatistics kCallStats = {
     1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
 const CodecInst kCodecInst = {-121, "codec_name_send", 48000, -231, -451, -671};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
+const int kTelephoneEventPayloadType = 123;
+const uint8_t kTelephoneEventCode = 45;
+const uint32_t kTelephoneEventDuration = 6789;
 
 struct ConfigHelper {
   ConfigHelper() : stream_config_(nullptr) {
@@ -78,6 +81,16 @@ struct ConfigHelper {
 
   AudioSendStream::Config& config() { return stream_config_; }
   rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
+
+  void SetupMockForSendTelephoneEvent() {
+    EXPECT_TRUE(channel_proxy_);
+    EXPECT_CALL(*channel_proxy_,
+        SetSendTelephoneEventPayloadType(kTelephoneEventPayloadType))
+            .WillOnce(Return(true));
+    EXPECT_CALL(*channel_proxy_,
+        SendTelephoneEventOutband(kTelephoneEventCode, kTelephoneEventDuration))
+            .WillOnce(Return(true));
+  }
 
   void SetupMockForGetStats() {
     using testing::DoAll;
@@ -140,6 +153,14 @@ TEST(AudioSendStreamTest, ConfigToString) {
 TEST(AudioSendStreamTest, ConstructDestruct) {
   ConfigHelper helper;
   internal::AudioSendStream send_stream(helper.config(), helper.audio_state());
+}
+
+TEST(AudioSendStreamTest, SendTelephoneEvent) {
+  ConfigHelper helper;
+  internal::AudioSendStream send_stream(helper.config(), helper.audio_state());
+  helper.SetupMockForSendTelephoneEvent();
+  EXPECT_TRUE(send_stream.SendTelephoneEvent(kTelephoneEventPayloadType,
+      kTelephoneEventCode, kTelephoneEventDuration));
 }
 
 TEST(AudioSendStreamTest, GetStats) {

@@ -37,6 +37,8 @@ class AudioSendStream final : public webrtc::AudioSendStream {
   bool DeliverRtcp(const uint8_t* packet, size_t length) override;
 
   // webrtc::AudioSendStream implementation.
+  bool SendTelephoneEvent(int payload_type, uint8_t event,
+                          uint32_t duration_ms) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
 
   const webrtc::AudioSendStream::Config& config() const;

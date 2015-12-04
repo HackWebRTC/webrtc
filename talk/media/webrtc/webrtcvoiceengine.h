@@ -265,7 +265,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool send_bitrate_setting_ = false;
   int send_bitrate_bps_ = 0;
   AudioOptions options_;
-  bool dtmf_allowed_ = false;
+  rtc::Optional<int> dtmf_payload_type_;
   bool desired_playout_ = false;
   bool nack_enabled_ = false;
   bool playout_ = false;

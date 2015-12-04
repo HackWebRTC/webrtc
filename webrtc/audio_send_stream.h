@@ -89,6 +89,9 @@ class AudioSendStream : public SendStream {
     int red_payload_type = -1;  // pt, or -1 to disable REDundant coding.
   };
 
+  // TODO(solenberg): Make payload_type a config property instead.
+  virtual bool SendTelephoneEvent(int payload_type, uint8_t event,
+                                  uint32_t duration_ms) = 0;
   virtual Stats GetStats() const = 0;
 };
 }  // namespace webrtc

@@ -64,7 +64,6 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
       : cricket::VoEWrapper(engine,  // processing
                             engine,  // base
                             engine,  // codec
-                            engine,  // dtmf
                             engine,  // hw
                             engine,  // network
                             engine,  // rtp
@@ -121,6 +120,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     engine_.Terminate();
   }
 
+  const cricket::FakeAudioSendStream& GetSendStream(uint32_t ssrc) {
+    const auto* send_stream = call_.GetAudioSendStream(ssrc);
+    EXPECT_TRUE(send_stream);
+    return *send_stream;
+  }
+
   const webrtc::AudioSendStream::Config& GetSendStreamConfig(uint32_t ssrc) {
     const auto* send_stream = call_.GetAudioSendStream(ssrc);
     EXPECT_TRUE(send_stream);
@@ -163,11 +168,15 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     // Check we fail if the ssrc is invalid.
     EXPECT_FALSE(channel_->InsertDtmf(-1, 1, 111));
 
-    // Test send
-    int channel_id = voe_.GetLastChannel();
-    EXPECT_FALSE(voe_.WasSendTelephoneEventCalled(channel_id, 2, 123));
+    // Test send.
+    cricket::FakeAudioSendStream::TelephoneEvent telephone_event =
+        GetSendStream(kSsrc1).GetLatestTelephoneEvent();
+    EXPECT_EQ(-1, telephone_event.payload_type);
     EXPECT_TRUE(channel_->InsertDtmf(ssrc, 2, 123));
-    EXPECT_TRUE(voe_.WasSendTelephoneEventCalled(channel_id, 2, 123));
+    telephone_event = GetSendStream(kSsrc1).GetLatestTelephoneEvent();
+    EXPECT_EQ(kTelephoneEventCodec.id, telephone_event.payload_type);
+    EXPECT_EQ(2, telephone_event.event_code);
+    EXPECT_EQ(123, telephone_event.duration_ms);
   }
 
   // Test that send bandwidth is set correctly.
@@ -766,7 +775,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_FALSE(voe_.GetRED(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(105, voe_.GetSendCNPayloadType(channel_num, true));
-  EXPECT_EQ(106, voe_.GetSendTelephoneEventPayloadType(channel_num));
+  EXPECT_FALSE(channel_->CanInsertDtmf());
 }
 
 // Test that VoE Channel doesn't call SetSendCodec again if same codec is tried
@@ -1607,7 +1616,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsDTMFOnTop) {
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_EQ(96, gcodec.pltype);
   EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_EQ(98, voe_.GetSendTelephoneEventPayloadType(channel_num));
+  EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 
 // Test that we can set send codecs even with CN codec as the first
@@ -1653,7 +1662,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCaller) {
   EXPECT_FALSE(voe_.GetRED(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(97, voe_.GetSendCNPayloadType(channel_num, true));
-  EXPECT_EQ(98, voe_.GetSendTelephoneEventPayloadType(channel_num));
+  EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 
 // Test that we set VAD and DTMF types correctly as callee.
@@ -1686,7 +1695,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   EXPECT_FALSE(voe_.GetRED(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(97, voe_.GetSendCNPayloadType(channel_num, true));
-  EXPECT_EQ(98, voe_.GetSendTelephoneEventPayloadType(channel_num));
+  EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 
 // Test that we only apply VAD if we have a CN codec that matches the
@@ -1750,7 +1759,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCaseInsensitive) {
   EXPECT_FALSE(voe_.GetRED(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(97, voe_.GetSendCNPayloadType(channel_num, true));
-  EXPECT_EQ(98, voe_.GetSendTelephoneEventPayloadType(channel_num));
+  EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 
 // Test that we set up RED correctly as caller.

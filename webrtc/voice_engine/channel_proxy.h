@@ -51,6 +51,9 @@ class ChannelProxy {
   virtual int32_t GetSpeechOutputLevelFullRange() const;
   virtual uint32_t GetDelayEstimate() const;
 
+  virtual bool SetSendTelephoneEventPayloadType(int payload_type);
+  virtual bool SendTelephoneEventOutband(uint8_t event, uint32_t duration_ms);
+
  private:
   Channel* channel() const;
 

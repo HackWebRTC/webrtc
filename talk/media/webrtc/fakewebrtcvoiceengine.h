@@ -145,20 +145,11 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
 
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
-      public webrtc::VoEBase, public webrtc::VoECodec, public webrtc::VoEDtmf,
+      public webrtc::VoEBase, public webrtc::VoECodec,
       public webrtc::VoEHardware,
       public webrtc::VoENetwork, public webrtc::VoERTP_RTCP,
       public webrtc::VoEVolumeControl {
  public:
-  struct DtmfInfo {
-    DtmfInfo()
-      : dtmf_event_code(-1),
-        dtmf_out_of_band(false),
-        dtmf_length_ms(-1) {}
-    int dtmf_event_code;
-    bool dtmf_out_of_band;
-    int dtmf_length_ms;
-  };
   struct Channel {
     explicit Channel()
         : external_transport(false),
@@ -173,7 +164,6 @@ class FakeWebRtcVoiceEngine
           nack(false),
           cn8_type(13),
           cn16_type(105),
-          dtmf_type(106),
           red_type(117),
           nack_max_packets(0),
           send_ssrc(0),
@@ -195,12 +185,10 @@ class FakeWebRtcVoiceEngine
     bool nack;
     int cn8_type;
     int cn16_type;
-    int dtmf_type;
     int red_type;
     int nack_max_packets;
     uint32_t send_ssrc;
     int associate_send_channel;
-    DtmfInfo dtmf_info;
     std::vector<webrtc::CodecInst> recv_codecs;
     webrtc::CodecInst send_codec;
     webrtc::PacketTime last_rtp_packet_time;
@@ -280,9 +268,6 @@ class FakeWebRtcVoiceEngine
     return (wideband) ?
         channels_[channel]->cn16_type :
         channels_[channel]->cn8_type;
-  }
-  int GetSendTelephoneEventPayloadType(int channel) {
-    return channels_[channel]->dtmf_type;
   }
   int GetSendREDPayloadType(int channel) {
     return channels_[channel]->red_type;
@@ -552,26 +537,6 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
 
-  // webrtc::VoEDtmf
-  WEBRTC_FUNC(SendTelephoneEvent, (int channel, int event_code,
-      bool out_of_band = true, int length_ms = 160, int attenuation_db = 10)) {
-    channels_[channel]->dtmf_info.dtmf_event_code = event_code;
-    channels_[channel]->dtmf_info.dtmf_out_of_band = out_of_band;
-    channels_[channel]->dtmf_info.dtmf_length_ms = length_ms;
-    return 0;
-  }
-  WEBRTC_FUNC(SetSendTelephoneEventPayloadType,
-      (int channel, unsigned char type)) {
-    channels_[channel]->dtmf_type = type;
-    return 0;
-  };
-  WEBRTC_STUB(GetSendTelephoneEventPayloadType,
-      (int channel, unsigned char& type));
-  WEBRTC_STUB(SetDtmfFeedbackStatus, (bool enable, bool directFeedback));
-  WEBRTC_STUB(GetDtmfFeedbackStatus, (bool& enabled, bool& directFeedback));
-  WEBRTC_STUB(PlayDtmfTone,
-      (int event_code, int length_ms = 200, int attenuation_db = 10));
-
   // webrtc::VoEHardware
   WEBRTC_FUNC(GetNumOfRecordingDevices, (int& num)) {
     return GetNumDevices(num);
@@ -831,15 +796,6 @@ class FakeWebRtcVoiceEngine
   void EnableStereoChannelSwapping(bool enable) {
     stereo_swapping_enabled_ = enable;
   }
-  bool WasSendTelephoneEventCalled(int channel, int event_code, int length_ms) {
-    return (channels_[channel]->dtmf_info.dtmf_event_code == event_code &&
-            channels_[channel]->dtmf_info.dtmf_out_of_band == true &&
-            channels_[channel]->dtmf_info.dtmf_length_ms == length_ms);
-  }
-  bool WasPlayDtmfToneCalled(int event_code, int length_ms) {
-    return (dtmf_info_.dtmf_event_code == event_code &&
-            dtmf_info_.dtmf_length_ms == length_ms);
-  }
   int GetNetEqCapacity() const {
     auto ch = channels_.find(last_channel_);
     ASSERT(ch != channels_.end());
@@ -910,7 +866,6 @@ class FakeWebRtcVoiceEngine
   int send_fail_channel_;
   int recording_sample_rate_;
   int playout_sample_rate_;
-  DtmfInfo dtmf_info_;
   FakeAudioProcessing audio_processing_;
 };
 

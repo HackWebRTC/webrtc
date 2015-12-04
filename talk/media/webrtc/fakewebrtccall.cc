@@ -39,14 +39,27 @@ FakeAudioSendStream::FakeAudioSendStream(
   RTC_DCHECK(config.voe_channel_id != -1);
 }
 
+const webrtc::AudioSendStream::Config&
+    FakeAudioSendStream::GetConfig() const {
+  return config_;
+}
+
 void FakeAudioSendStream::SetStats(
     const webrtc::AudioSendStream::Stats& stats) {
   stats_ = stats;
 }
 
-const webrtc::AudioSendStream::Config&
-    FakeAudioSendStream::GetConfig() const {
-  return config_;
+FakeAudioSendStream::TelephoneEvent
+    FakeAudioSendStream::GetLatestTelephoneEvent() const {
+  return latest_telephone_event_;
+}
+
+bool FakeAudioSendStream::SendTelephoneEvent(int payload_type, uint8_t event,
+                                             uint32_t duration_ms) {
+  latest_telephone_event_.payload_type = payload_type;
+  latest_telephone_event_.event_code = event;
+  latest_telephone_event_.duration_ms = duration_ms;
+  return true;
 }
 
 webrtc::AudioSendStream::Stats FakeAudioSendStream::GetStats() const {
