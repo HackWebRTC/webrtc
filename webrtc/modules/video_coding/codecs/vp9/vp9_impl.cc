@@ -306,6 +306,9 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (inst->codecSpecific.VP9.keyFrameInterval  > 0) {
     config_->kf_mode = VPX_KF_AUTO;
     config_->kf_max_dist = inst->codecSpecific.VP9.keyFrameInterval;
+    // Needs to be set (in svc mode) to get correct periodic key frame interval
+    // (will have no effect in non-svc).
+    config_->kf_min_dist = config_->kf_max_dist;
   } else {
     config_->kf_mode = VPX_KF_DISABLED;
   }
@@ -379,21 +382,22 @@ int VP9EncoderImpl::NumberOfThreads(int width,
 }
 
 int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
+  // Set QP-min/max per spatial and temporal layer.
+  int tot_num_layers = num_spatial_layers_ * num_temporal_layers_;
+  for (int i = 0; i < tot_num_layers; ++i) {
+    svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
+    svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
+  }
   config_->ss_number_layers = num_spatial_layers_;
-
   if (ExplicitlyConfiguredSpatialLayers()) {
     for (int i = 0; i < num_spatial_layers_; ++i) {
       const auto& layer = codec_.spatialLayers[i];
-      svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
-      svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
       svc_internal_.svc_params.scaling_factor_num[i] = layer.scaling_factor_num;
       svc_internal_.svc_params.scaling_factor_den[i] = layer.scaling_factor_den;
     }
   } else {
     int scaling_factor_num = 256;
     for (int i = num_spatial_layers_ - 1; i >= 0; --i) {
-      svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
-      svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
       // 1:2 scaling in each dimension.
       svc_internal_.svc_params.scaling_factor_num[i] = scaling_factor_num;
       svc_internal_.svc_params.scaling_factor_den[i] = 256;
@@ -544,7 +548,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   assert(codec_specific != NULL);
   codec_specific->codecType = kVideoCodecVP9;
   CodecSpecificInfoVP9 *vp9_info = &(codec_specific->codecSpecific.VP9);
-  // TODO(asapersson): Set correct values.
+  // TODO(asapersson): Set correct value.
   vp9_info->inter_pic_predicted =
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? false : true;
   vp9_info->flexible_mode = codec_.codecSpecific.VP9.flexibleMode;
