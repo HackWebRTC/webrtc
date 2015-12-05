@@ -216,7 +216,6 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnRoleConflict(TransportChannelImpl* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
   void OnConnectionRemoved(TransportChannelImpl* channel);
-  void Reconnect();
 
   Transport* transport_;  // The transport_ that created us.
   rtc::Thread* worker_thread_;  // Everything should occur on this thread.

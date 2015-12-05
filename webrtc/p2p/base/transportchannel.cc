@@ -51,7 +51,7 @@ void TransportChannel::set_dtls_state(DtlsTransportState state) {
   LOG_J(LS_VERBOSE, this) << "set_dtls_state from:" << dtls_state_ << " to "
                           << state;
   dtls_state_ = state;
-  SignalDtlsState(this, state);
+  SignalDtlsState(this);
 }
 
 bool TransportChannel::SetSrtpCryptoSuites(const std::vector<int>& ciphers) {
