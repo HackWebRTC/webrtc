@@ -79,8 +79,9 @@ class TransportChannel : public sigslot::has_slots<> {
   // Emitted when the TransportChannel's ability to send has changed.
   sigslot::signal1<TransportChannel*> SignalReadyToSend;
   sigslot::signal1<TransportChannel*> SignalReceivingState;
-  // Emitted when the DtlsTransportState has changed.
-  sigslot::signal1<TransportChannel*> SignalDtlsState;
+  // Emitted whenever DTLS-SRTP is setup which will require setting up a new
+  // SRTP context.
+  sigslot::signal2<TransportChannel*, DtlsTransportState> SignalDtlsState;
 
   // Attempts to send the given packet.  The return value is < 0 on failure.
   // TODO: Remove the default argument once channel code is updated.

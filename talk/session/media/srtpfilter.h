@@ -138,6 +138,8 @@ class SrtpFilter {
   // Update the silent threshold (in ms) for signaling errors.
   void set_signal_silent_time(uint32_t signal_silent_time_in_ms);
 
+  bool ResetParams();
+
   sigslot::repeater3<uint32_t, Mode, Error> SignalSrtpError;
 
  protected:
@@ -153,7 +155,6 @@ class SrtpFilter {
                        CryptoParams* selected_params);
   bool ApplyParams(const CryptoParams& send_params,
                    const CryptoParams& recv_params);
-  bool ResetParams();
   static bool ParseKeyParams(const std::string& params, uint8_t* key, int len);
 
  private:
