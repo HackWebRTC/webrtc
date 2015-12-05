@@ -213,6 +213,8 @@ class BaseChannel
                              int flags);
   void OnReadyToSend(TransportChannel* channel);
 
+  void OnDtlsState(TransportChannel* channel, DtlsTransportState state);
+
   bool PacketIsRtcp(const TransportChannel* channel, const char* data,
                     size_t len);
   bool SendPacket(bool rtcp,
@@ -235,6 +237,7 @@ class BaseChannel
   // Do the DTLS key expansion and impose it on the SRTP/SRTCP filters.
   // |rtcp_channel| indicates whether to set up the RTP or RTCP filter.
   bool SetupDtlsSrtp(bool rtcp_channel);
+  void MaybeSetupDtlsSrtp_w();
   // Set the DTLS-SRTP cipher policy on this channel as appropriate.
   bool SetDtlsSrtpCryptoSuites(TransportChannel* tc, bool rtcp);
 

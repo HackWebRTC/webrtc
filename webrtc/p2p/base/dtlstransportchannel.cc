@@ -199,6 +199,8 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
     size_t digest_len) {
   rtc::Buffer remote_fingerprint_value(digest, digest_len);
 
+  // Once we have the local certificate, the same remote fingerprint can be set
+  // multiple times.
   if (dtls_active_ && remote_fingerprint_value_ == remote_fingerprint_value &&
       !digest_alg.empty()) {
     // This may happen during renegotiation.
@@ -206,26 +208,34 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
     return true;
   }
 
-  // Allow SetRemoteFingerprint with a NULL digest even if SetLocalCertificate
-  // hasn't been called.
-  if (dtls_ || (!dtls_active_ && !digest_alg.empty())) {
-    LOG_J(LS_ERROR, this) << "Can't set DTLS remote settings in this state.";
-    return false;
-  }
-
+  // If the other side doesn't support DTLS, turn off |dtls_active_|.
   if (digest_alg.empty()) {
+    RTC_DCHECK(!digest_len);
     LOG_J(LS_INFO, this) << "Other side didn't support DTLS.";
     dtls_active_ = false;
     return true;
+  }
+
+  // Otherwise, we must have a local certificate before setting remote
+  // fingerprint.
+  if (!dtls_active_) {
+    LOG_J(LS_ERROR, this) << "Can't set DTLS remote settings in this state.";
+    return false;
   }
 
   // At this point we know we are doing DTLS
   remote_fingerprint_value_ = remote_fingerprint_value.Pass();
   remote_fingerprint_algorithm_ = digest_alg;
 
+  bool reconnect = dtls_;
+
   if (!SetupDtls()) {
     set_dtls_state(DTLS_TRANSPORT_FAILED);
     return false;
+  }
+
+  if (reconnect) {
+    Reconnect();
   }
 
   return true;
@@ -614,6 +624,14 @@ void DtlsTransportChannelWrapper::OnConnectionRemoved(
     TransportChannelImpl* channel) {
   ASSERT(channel == channel_);
   SignalConnectionRemoved(this);
+}
+
+void DtlsTransportChannelWrapper::Reconnect() {
+  set_dtls_state(DTLS_TRANSPORT_NEW);
+  set_writable(false);
+  if (channel_->writable()) {
+    OnWritableState(channel_);
+  }
 }
 
 }  // namespace cricket

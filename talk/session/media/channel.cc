@@ -249,6 +249,13 @@ bool BaseChannel::SetTransport_w(const std::string& transport_name) {
     return true;
   }
 
+  // When using DTLS-SRTP, we must reset the SrtpFilter every time the transport
+  // changes and wait until the DTLS handshake is complete to set the newly
+  // negotiated parameters.
+  if (ShouldSetupDtlsSrtp()) {
+    srtp_filter_.ResetParams();
+  }
+
   set_transport_channel(transport_controller_->CreateTransportChannel_w(
       transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP));
   if (!transport_channel()) {
@@ -318,6 +325,9 @@ void BaseChannel::set_rtcp_transport_channel(TransportChannel* new_tc) {
   rtcp_transport_channel_ = new_tc;
 
   if (new_tc) {
+    RTC_CHECK(!(ShouldSetupDtlsSrtp() && srtp_filter_.IsActive()))
+        << "Setting RTCP for DTLS/SRTP after SrtpFilter is active "
+        << "should never happen.";
     ConnectToTransportChannel(new_tc);
     for (const auto& pair : rtcp_socket_options_) {
       new_tc->SetOption(pair.first, pair.second);
@@ -336,6 +346,7 @@ void BaseChannel::ConnectToTransportChannel(TransportChannel* tc) {
   tc->SignalWritableState.connect(this, &BaseChannel::OnWritableState);
   tc->SignalReadPacket.connect(this, &BaseChannel::OnChannelRead);
   tc->SignalReadyToSend.connect(this, &BaseChannel::OnReadyToSend);
+  tc->SignalDtlsState.connect(this, &BaseChannel::OnDtlsState);
 }
 
 void BaseChannel::DisconnectFromTransportChannel(TransportChannel* tc) {
@@ -344,6 +355,7 @@ void BaseChannel::DisconnectFromTransportChannel(TransportChannel* tc) {
   tc->SignalWritableState.disconnect(this);
   tc->SignalReadPacket.disconnect(this);
   tc->SignalReadyToSend.disconnect(this);
+  tc->SignalDtlsState.disconnect(this);
 }
 
 bool BaseChannel::Enable(bool enable) {
@@ -416,10 +428,10 @@ bool BaseChannel::IsReadyToReceive() const {
 bool BaseChannel::IsReadyToSend() const {
   // Send outgoing data if we are enabled, have local and remote content,
   // and we have had some form of connectivity.
-  return enabled() &&
-         IsReceiveContentDirection(remote_content_direction_) &&
+  return enabled() && IsReceiveContentDirection(remote_content_direction_) &&
          IsSendContentDirection(local_content_direction_) &&
-         was_ever_writable();
+         was_ever_writable() &&
+         (srtp_filter_.IsActive() || !ShouldSetupDtlsSrtp());
 }
 
 bool BaseChannel::SendPacket(rtc::Buffer* packet,
@@ -472,6 +484,22 @@ void BaseChannel::OnChannelRead(TransportChannel* channel,
 void BaseChannel::OnReadyToSend(TransportChannel* channel) {
   ASSERT(channel == transport_channel_ || channel == rtcp_transport_channel_);
   SetReadyToSend(channel == rtcp_transport_channel_, true);
+}
+
+void BaseChannel::OnDtlsState(TransportChannel* channel,
+                              DtlsTransportState state) {
+  if (!ShouldSetupDtlsSrtp()) {
+    return;
+  }
+
+  // Reset the srtp filter if it's not the CONNECTED state. For the CONNECTED
+  // state, setting up DTLS-SRTP context is deferred to ChannelWritable_w to
+  // cover other scenarios like the whole channel is writable (not just this
+  // TransportChannel) or when TransportChannel is attached after DTLS is
+  // negotiated.
+  if (state != DTLS_TRANSPORT_CONNECTED) {
+    srtp_filter_.ResetParams();
+  }
 }
 
 void BaseChannel::SetReadyToSend(bool rtcp, bool ready) {
@@ -761,8 +789,9 @@ void BaseChannel::UpdateWritableState_w() {
 
 void BaseChannel::ChannelWritable_w() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (writable_)
+  if (writable_) {
     return;
+  }
 
   LOG(LS_INFO) << "Channel writable (" << content_name_ << ")"
                << (was_ever_writable_ ? "" : " for the first time");
@@ -778,22 +807,8 @@ void BaseChannel::ChannelWritable_w() {
     }
   }
 
-  // If we're doing DTLS-SRTP, now is the time.
-  if (!was_ever_writable_ && ShouldSetupDtlsSrtp()) {
-    if (!SetupDtlsSrtp(false)) {
-      SignalDtlsSetupFailure_w(false);
-      return;
-    }
-
-    if (rtcp_transport_channel_) {
-      if (!SetupDtlsSrtp(true)) {
-        SignalDtlsSetupFailure_w(true);
-        return;
-      }
-    }
-  }
-
   was_ever_writable_ = true;
+  MaybeSetupDtlsSrtp_w();
   writable_ = true;
   ChangeState();
 }
@@ -822,7 +837,8 @@ bool BaseChannel::SetDtlsSrtpCryptoSuites(TransportChannel* tc, bool rtcp) {
 }
 
 bool BaseChannel::ShouldSetupDtlsSrtp() const {
-  return true;
+  // Since DTLS is applied to all channels, checking RTP should be enough.
+  return transport_channel_ && transport_channel_->IsDtlsActive();
 }
 
 // This function returns true if either DTLS-SRTP is not in use
@@ -833,9 +849,7 @@ bool BaseChannel::SetupDtlsSrtp(bool rtcp_channel) {
   TransportChannel* channel =
       rtcp_channel ? rtcp_transport_channel_ : transport_channel_;
 
-  // No DTLS
-  if (!channel->IsDtlsActive())
-    return true;
+  RTC_DCHECK(channel->IsDtlsActive());
 
   int selected_crypto_suite;
 
@@ -913,6 +927,28 @@ bool BaseChannel::SetupDtlsSrtp(bool rtcp_channel) {
     dtls_keyed_ = true;
 
   return ret;
+}
+
+void BaseChannel::MaybeSetupDtlsSrtp_w() {
+  if (srtp_filter_.IsActive()) {
+    return;
+  }
+
+  if (!ShouldSetupDtlsSrtp()) {
+    return;
+  }
+
+  if (!SetupDtlsSrtp(false)) {
+    SignalDtlsSetupFailure_w(false);
+    return;
+  }
+
+  if (rtcp_transport_channel_) {
+    if (!SetupDtlsSrtp(true)) {
+      SignalDtlsSetupFailure_w(true);
+      return;
+    }
+  }
 }
 
 void BaseChannel::ChannelNotWritable_w() {
@@ -2263,7 +2299,7 @@ void DataChannel::GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const {
 }
 
 bool DataChannel::ShouldSetupDtlsSrtp() const {
-  return (data_channel_type_ == DCT_RTP);
+  return (data_channel_type_ == DCT_RTP) && BaseChannel::ShouldSetupDtlsSrtp();
 }
 
 void DataChannel::OnStreamClosedRemotely(uint32_t sid) {

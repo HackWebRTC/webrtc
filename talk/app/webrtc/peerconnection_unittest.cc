@@ -145,16 +145,29 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
                                  public SignalingMessageReceiver,
                                  public ObserverInterface {
  public:
-  static PeerConnectionTestClient* CreateClient(
+  static PeerConnectionTestClient* CreateClientWithDtlsIdentityStore(
       const std::string& id,
       const MediaConstraintsInterface* constraints,
-      const PeerConnectionFactory::Options* options) {
+      const PeerConnectionFactory::Options* options,
+      rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
     PeerConnectionTestClient* client(new PeerConnectionTestClient(id));
-    if (!client->Init(constraints, options)) {
+    if (!client->Init(constraints, options, dtls_identity_store.Pass())) {
       delete client;
       return nullptr;
     }
     return client;
+  }
+
+  static PeerConnectionTestClient* CreateClient(
+      const std::string& id,
+      const MediaConstraintsInterface* constraints,
+      const PeerConnectionFactory::Options* options) {
+    rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store(
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
+                                              : nullptr);
+
+    return CreateClientWithDtlsIdentityStore(id, constraints, options,
+                                             dtls_identity_store.Pass());
   }
 
   ~PeerConnectionTestClient() {
@@ -704,8 +717,10 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   explicit PeerConnectionTestClient(const std::string& id) : id_(id) {}
 
-  bool Init(const MediaConstraintsInterface* constraints,
-            const PeerConnectionFactory::Options* options) {
+  bool Init(
+      const MediaConstraintsInterface* constraints,
+      const PeerConnectionFactory::Options* options,
+      rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
     EXPECT_TRUE(!peer_connection_);
     EXPECT_TRUE(!peer_connection_factory_);
     allocator_factory_ = webrtc::FakePortAllocatorFactory::Create();
@@ -729,23 +744,21 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     if (options) {
       peer_connection_factory_->SetOptions(*options);
     }
-    peer_connection_ = CreatePeerConnection(allocator_factory_.get(),
-                                            constraints);
+    peer_connection_ = CreatePeerConnection(
+        allocator_factory_.get(), constraints, dtls_identity_store.Pass());
     return peer_connection_.get() != nullptr;
   }
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
       webrtc::PortAllocatorFactoryInterface* factory,
-      const MediaConstraintsInterface* constraints) {
+      const MediaConstraintsInterface* constraints,
+      rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
     // CreatePeerConnection with IceServers.
     webrtc::PeerConnectionInterface::IceServers ice_servers;
     webrtc::PeerConnectionInterface::IceServer ice_server;
     ice_server.uri = "stun:stun.l.google.com:19302";
     ice_servers.push_back(ice_server);
 
-    rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
-        rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
-                                              : nullptr);
     return peer_connection_factory_->CreatePeerConnection(
         ice_servers, constraints, factory, dtls_identity_store.Pass(), this);
   }
@@ -979,6 +992,11 @@ class MAYBE_JsepPeerConnectionP2PTestClient : public testing::Test {
                              nullptr);
   }
 
+  void SetSignalingReceivers() {
+    initiating_client_->set_signaling_message_receiver(receiving_client_.get());
+    receiving_client_->set_signaling_message_receiver(initiating_client_.get());
+  }
+
   bool CreateTestClients(MediaConstraintsInterface* init_constraints,
                          PeerConnectionFactory::Options* init_options,
                          MediaConstraintsInterface* recv_constraints,
@@ -990,8 +1008,7 @@ class MAYBE_JsepPeerConnectionP2PTestClient : public testing::Test {
     if (!initiating_client_ || !receiving_client_) {
       return false;
     }
-    initiating_client_->set_signaling_message_receiver(receiving_client_.get());
-    receiving_client_->set_signaling_message_receiver(initiating_client_.get());
+    SetSignalingReceivers();
     return true;
   }
 
@@ -1068,6 +1085,31 @@ class MAYBE_JsepPeerConnectionP2PTestClient : public testing::Test {
                      kMaxWaitForFramesMs);
   }
 
+  void SetupAndVerifyDtlsCall() {
+    MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+    FakeConstraints setup_constraints;
+    setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
+                                   true);
+    ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
+    LocalP2PTest();
+    VerifyRenderedSize(640, 480);
+  }
+
+  PeerConnectionTestClient* CreateDtlsClientWithAlternateKey() {
+    FakeConstraints setup_constraints;
+    setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
+                                   true);
+
+    rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store(
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
+                                              : nullptr);
+    dtls_identity_store->use_alternate_key();
+
+    // Make sure the new client is using a different certificate.
+    return PeerConnectionTestClient::CreateClientWithDtlsIdentityStore(
+        "New Peer: ", &setup_constraints, nullptr, dtls_identity_store.Pass());
+  }
+
   void SendRtpData(webrtc::DataChannelInterface* dc, const std::string& data) {
     // Messages may get lost on the unreliable DataChannel, so we send multiple
     // times to avoid test flakiness.
@@ -1081,8 +1123,27 @@ class MAYBE_JsepPeerConnectionP2PTestClient : public testing::Test {
   PeerConnectionTestClient* initializing_client() {
     return initiating_client_.get();
   }
+
+  // Set the |initiating_client_| to the |client| passed in and return the
+  // original |initiating_client_|.
+  PeerConnectionTestClient* set_initializing_client(
+      PeerConnectionTestClient* client) {
+    PeerConnectionTestClient* old = initiating_client_.release();
+    initiating_client_.reset(client);
+    return old;
+  }
+
   PeerConnectionTestClient* receiving_client() {
     return receiving_client_.get();
+  }
+
+  // Set the |receiving_client_| to the |client| passed in and return the
+  // original |receiving_client_|.
+  PeerConnectionTestClient* set_receiving_client(
+      PeerConnectionTestClient* client) {
+    PeerConnectionTestClient* old = receiving_client_.release();
+    receiving_client_.reset(client);
+    return old;
   }
 
  private:
@@ -1146,13 +1207,7 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTest1280By720) {
 // This test sets up a call between two endpoints that are configured to use
 // DTLS key agreement. As a result, DTLS is negotiated and used for transport.
 TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDtls) {
-  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
-  FakeConstraints setup_constraints;
-  setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
-                                 true);
-  ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
-  LocalP2PTest();
-  VerifyRenderedSize(640, 480);
+  SetupAndVerifyDtlsCall();
 }
 
 // This test sets up a audio call initially and then upgrades to audio/video,
@@ -1167,6 +1222,42 @@ TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
   LocalP2PTest();
   receiving_client()->SetReceiveAudioVideo(true, true);
   receiving_client()->Negotiate();
+}
+
+// This test sets up a call transfer to a new caller with a different DTLS
+// fingerprint.
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsTransferCallee) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+  SetupAndVerifyDtlsCall();
+
+  // Keeping the original peer around which will still send packets to the
+  // receiving client. These SRTP packets will be dropped.
+  rtc::scoped_ptr<PeerConnectionTestClient> original_peer(
+      set_initializing_client(CreateDtlsClientWithAlternateKey()));
+  original_peer->pc()->Close();
+
+  SetSignalingReceivers();
+  receiving_client()->SetExpectIceRestart(true);
+  LocalP2PTest();
+  VerifyRenderedSize(640, 480);
+}
+
+// This test sets up a call transfer to a new callee with a different DTLS
+// fingerprint.
+TEST_F(MAYBE_JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsTransferCaller) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+  SetupAndVerifyDtlsCall();
+
+  // Keeping the original peer around which will still send packets to the
+  // receiving client. These SRTP packets will be dropped.
+  rtc::scoped_ptr<PeerConnectionTestClient> original_peer(
+      set_receiving_client(CreateDtlsClientWithAlternateKey()));
+  original_peer->pc()->Close();
+
+  SetSignalingReceivers();
+  initializing_client()->IceRestart();
+  LocalP2PTest();
+  VerifyRenderedSize(640, 480);
 }
 
 // This test sets up a call between two endpoints that are configured to use
