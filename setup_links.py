@@ -85,6 +85,7 @@ if 'android' in target_os:
     'third_party/android_tools',
     'third_party/appurify-python',
     'third_party/ashmem',
+    'third_party/catapult',
     'third_party/icu',
     'third_party/ijar',
     'third_party/jsr-305',
@@ -97,6 +98,7 @@ if 'android' in target_os:
     'third_party/robolectric',
     'tools/android',
     'tools/grit',
+    'tools/telemetry',
   ]
 if 'ios' in target_os:
   DIRECTORIES.append('third_party/class-dump')
