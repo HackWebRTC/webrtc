@@ -18,250 +18,93 @@
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_INCLUDE_VIDEO_PROCESSING_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_INCLUDE_VIDEO_PROCESSING_H_
 
-#include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_processing/include/video_processing_defines.h"
 #include "webrtc/video_frame.h"
 
-/**
-   The module is largely intended to process video streams, except functionality
-   provided by static functions which operate independent of previous frames. It
-   is recommended, but not required that a unique instance be used for each
-   concurrently processed stream. Similarly, it is recommended to call Reset()
-   before switching to a new stream, but this is not absolutely required.
-
-   The module provides basic thread safety by permitting only a single function
-   to execute concurrently.
-*/
+// The module is largely intended to process video streams, except functionality
+// provided by static functions which operate independent of previous frames. It
+// is recommended, but not required that a unique instance be used for each
+// concurrently processed stream. Similarly, it is recommended to call Reset()
+// before switching to a new stream, but this is not absolutely required.
+//
+// The module provides basic thread safety by permitting only a single function
+// to execute concurrently.
 
 namespace webrtc {
 
-class VideoProcessingModule : public Module {
+class VideoProcessing {
  public:
-  /**
-     Structure to hold frame statistics. Populate it with GetFrameStats().
-  */
   struct FrameStats {
-      FrameStats() :
-          mean(0),
-          sum(0),
-          num_pixels(0),
-          subSamplWidth(0),
-          subSamplHeight(0) {
-    memset(hist, 0, sizeof(hist));
-  }
-
-  uint32_t hist[256];       // FRame histogram.
-  uint32_t mean;            // Frame Mean value.
-  uint32_t sum;             // Sum of frame.
-  uint32_t num_pixels;       // Number of pixels.
-  uint8_t  subSamplWidth;   // Subsampling rate of width in powers of 2.
-  uint8_t  subSamplHeight;  // Subsampling rate of height in powers of 2.
-};
-
-  /**
-     Specifies the warning types returned by BrightnessDetection().
-  */
-  enum BrightnessWarning {
-    kNoWarning,     // Frame has acceptable brightness.
-    kDarkWarning,   // Frame is too dark.
-    kBrightWarning  // Frame is too bright.
+    uint32_t hist[256];  // Frame histogram.
+    uint32_t mean;
+    uint32_t sum;
+    uint32_t num_pixels;
+    uint32_t sub_sampling_factor;  // Sub-sampling factor, in powers of 2.
   };
 
-  /*
-     Creates a VPM object.
+  enum BrightnessWarning {
+    kNoWarning,
+    kDarkWarning,
+    kBrightWarning
+  };
 
-     \param[in] id
-         Unique identifier of this object.
+  static VideoProcessing* Create();
+  virtual ~VideoProcessing() {}
 
-     \return Pointer to a VPM object.
-  */
-  static VideoProcessingModule* Create();
+  // Retrieves statistics for the input frame. This function must be used to
+  // prepare a FrameStats struct for use in certain VPM functions.
+  static void GetFrameStats(const VideoFrame& frame, FrameStats* stats);
 
-  /**
-     Destroys a VPM object.
-
-     \param[in] module
-         Pointer to the VPM object to destroy.
-  */
-  static void Destroy(VideoProcessingModule* module);
-
-  /**
-     Not supported.
-  */
-  int64_t TimeUntilNextProcess() override { return -1; }
-
-  /**
-     Not supported.
-  */
-  int32_t Process() override { return -1; }
-
-  /**
-     Resets all processing components to their initial states. This should be
-     called whenever a new video stream is started.
-  */
-  virtual void Reset() = 0;
-
-  /**
-     Retrieves statistics for the input frame. This function must be used to
-     prepare a FrameStats struct for use in certain VPM functions.
-
-     \param[out] stats
-         The frame statistics will be stored here on return.
-
-     \param[in]  frame
-         Reference to the video frame.
-
-     \return 0 on success, -1 on failure.
-  */
-  static int32_t GetFrameStats(FrameStats* stats, const VideoFrame& frame);
-
-  /**
-     Checks the validity of a FrameStats struct. Currently, valid implies only
-     that is had changed from its initialized state.
-
-     \param[in] stats
-         Frame statistics.
-
-     \return True on valid stats, false on invalid stats.
-  */
+  // Checks the validity of a FrameStats struct. Currently, valid implies only
+  // that is had changed from its initialized state.
   static bool ValidFrameStats(const FrameStats& stats);
 
-  /**
-     Returns a FrameStats struct to its intialized state.
-
-     \param[in,out] stats
-         Frame statistics.
-  */
   static void ClearFrameStats(FrameStats* stats);
 
-  /**
-     Increases/decreases the luminance value.
+  // Increases/decreases the luminance value. 'delta' can be in the range {}
+  static void Brighten(int delta, VideoFrame* frame);
 
-     \param[in,out] frame
-         Pointer to the video frame.
-
-    \param[in] delta
-         The amount to change the chrominance value of every single pixel.
-         Can be < 0 also.
-
-     \return 0 on success, -1 on failure.
-  */
-  static int32_t Brighten(VideoFrame* frame, int delta);
-
-  /**
-     Detects and removes camera flicker from a video stream. Every frame from
-     the stream must be passed in. A frame will only be altered if flicker has
-     been detected. Has a fixed-point implementation.
-
-     \param[in,out] frame
-         Pointer to the video frame.
-
-     \param[in,out] stats
-         Frame statistics provided by GetFrameStats(). On return the stats will
-         be reset to zero if the frame was altered. Call GetFrameStats() again
-         if the statistics for the altered frame are required.
-
-     \return 0 on success, -1 on failure.
-  */
+  // Detects and removes camera flicker from a video stream. Every frame from
+  // the stream must be passed in. A frame will only be altered if flicker has
+  // been detected. Has a fixed-point implementation.
+  // Frame statistics provided by GetFrameStats(). On return the stats will
+  // be reset to zero if the frame was altered. Call GetFrameStats() again
+  // if the statistics for the altered frame are required.
   virtual int32_t Deflickering(VideoFrame* frame, FrameStats* stats) = 0;
 
-  /**
-     Detects if a video frame is excessively bright or dark. Returns a
-     warning if this is the case. Multiple frames should be passed in before
-     expecting a warning. Has a floating-point implementation.
-
-     \param[in] frame
-         Pointer to the video frame.
-
-     \param[in] stats
-         Frame statistics provided by GetFrameStats().
-
-     \return A member of BrightnessWarning on success, -1 on error
-  */
+  // Detects if a video frame is excessively bright or dark. Returns a
+  // warning if this is the case. Multiple frames should be passed in before
+  // expecting a warning. Has a floating-point implementation.
   virtual int32_t BrightnessDetection(const VideoFrame& frame,
                                       const FrameStats& stats) = 0;
 
-  /**
-  The following functions refer to the pre-processor unit within VPM. The
-  pre-processor perfoms spatial/temporal decimation and content analysis on
-  the frames prior to encoding.
-  */
+  // The following functions refer to the pre-processor unit within VPM. The
+  // pre-processor perfoms spatial/temporal decimation and content analysis on
+  // the frames prior to encoding.
 
-  /**
-  Enable/disable temporal decimation
-
-  \param[in] enable when true, temporal decimation is enabled
-  */
+  // Enable/disable temporal decimation
   virtual void EnableTemporalDecimation(bool enable) = 0;
 
-  /**
- Set target resolution
-
- \param[in] width
- Target width
-
- \param[in] height
- Target height
-
-  \param[in] frame_rate
-  Target frame_rate
-
-  \return VPM_OK on success, a negative value on error (see error codes)
-
-  */
   virtual int32_t SetTargetResolution(uint32_t width,
                                       uint32_t height,
                                       uint32_t frame_rate) = 0;
 
-  virtual void SetTargetFramerate(int frame_rate) {}
+  virtual void SetTargetFramerate(int frame_rate) = 0;
 
-  /**
-  Get decimated(target) frame rate
-  */
-  virtual uint32_t Decimatedframe_rate() = 0;
+  virtual uint32_t GetDecimatedFrameRate() = 0;
+  virtual uint32_t GetDecimatedWidth() const = 0;
+  virtual uint32_t GetDecimatedHeight() const = 0;
 
-  /**
-  Get decimated(target) frame width
-  */
-  virtual uint32_t DecimatedWidth() const = 0;
+  // Set the spatial resampling settings of the VPM according to
+  // VideoFrameResampling.
+  virtual void SetInputFrameResampleMode(
+      VideoFrameResampling resampling_mode) = 0;
 
-  /**
-  Get decimated(target) frame height
-  */
-  virtual uint32_t DecimatedHeight() const = 0 ;
+  virtual void EnableDenosing(bool enable) = 0;
+  virtual const VideoFrame* PreprocessFrame(const VideoFrame& frame) = 0;
 
-  /**
-  Set the spatial resampling settings of the VPM: The resampler may either be
-  disabled or one of the following:
-  scaling to a close to target dimension followed by crop/pad
-
-  \param[in] resampling_mode
-  Set resampling mode (a member of VideoFrameResampling)
-  */
-  virtual void SetInputFrameResampleMode(VideoFrameResampling
-                                         resampling_mode) = 0;
-
-  /**
-  Get Processed (decimated) frame
-
-  \param[in] frame pointer to the video frame.
-  \param[in] processed_frame pointer (double) to the processed frame. If no
-             processing is required, processed_frame will be NULL.
-
-  \return VPM_OK on success, a negative value on error (see error codes)
-  */
-  virtual int32_t PreprocessFrame(const VideoFrame& frame,
-                                  VideoFrame** processed_frame) = 0;
-
-  /**
-  Return content metrics for the last processed frame
-  */
-  virtual VideoContentMetrics* ContentMetrics() const = 0 ;
-
-  /**
-  Enable content analysis
-  */
+  virtual VideoContentMetrics* GetContentMetrics() const = 0;
   virtual void EnableContentAnalysis(bool enable) = 0;
 };
 

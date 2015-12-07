@@ -8,22 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * frame_preprocessor.h
- */
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/content_analysis.h"
 #include "webrtc/modules/video_processing/spatial_resampler.h"
 #include "webrtc/modules/video_processing/video_decimator.h"
-#include "webrtc/modules/video_processing/video_denoiser.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
 
+class VideoDenoiser;
+
+// All pointers/members in this class are assumed to be protected by the class
+// owner.
 class VPMFramePreprocessor {
  public:
   VPMFramePreprocessor();
@@ -52,14 +53,14 @@ class VPMFramePreprocessor {
   int32_t updateIncomingFrameSize(uint32_t width, uint32_t height);
 
   // Set decimated values: frame rate/dimension.
-  uint32_t Decimatedframe_rate();
-  uint32_t DecimatedWidth() const;
-  uint32_t DecimatedHeight() const;
+  uint32_t GetDecimatedFrameRate();
+  uint32_t GetDecimatedWidth() const;
+  uint32_t GetDecimatedHeight() const;
 
   // Preprocess output:
-  int32_t PreprocessFrame(const VideoFrame& frame,
-                          VideoFrame** processed_frame);
-  VideoContentMetrics* ContentMetrics() const;
+  void EnableDenosing(bool enable);
+  const VideoFrame* PreprocessFrame(const VideoFrame& frame);
+  VideoContentMetrics* GetContentMetrics() const;
 
  private:
   // The content does not change so much every frame, so to reduce complexity
@@ -72,13 +73,11 @@ class VPMFramePreprocessor {
   VPMSpatialResampler* spatial_resampler_;
   VPMContentAnalysis* ca_;
   VPMVideoDecimator* vd_;
-  VideoDenoiser* denoiser_;
+  rtc::scoped_ptr<VideoDenoiser> denoiser_;
   bool enable_ca_;
-  bool enable_denoising_;
-  int frame_cnt_;
-
+  uint32_t frame_cnt_;
 };
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_

@@ -72,7 +72,7 @@ std::vector<uint32_t> AllocateStreamBitrates(
 
 class QMVideoSettingsCallback : public VCMQMSettingsCallback {
  public:
-  explicit QMVideoSettingsCallback(VideoProcessingModule* vpm);
+  explicit QMVideoSettingsCallback(VideoProcessing* vpm);
 
   ~QMVideoSettingsCallback();
 
@@ -85,7 +85,7 @@ class QMVideoSettingsCallback : public VCMQMSettingsCallback {
   void SetTargetFramerate(int frame_rate);
 
  private:
-  VideoProcessingModule* vpm_;
+  VideoProcessing* vp_;
 };
 
 class ViEBitrateObserver : public BitrateObserver {
@@ -111,8 +111,8 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        PacedSender* pacer,
                        BitrateAllocator* bitrate_allocator)
     : number_of_cores_(number_of_cores),
-      vpm_(VideoProcessingModule::Create()),
-      qm_callback_(new QMVideoSettingsCallback(vpm_.get())),
+      vp_(VideoProcessing::Create()),
+      qm_callback_(new QMVideoSettingsCallback(vp_.get())),
       vcm_(VideoCodingModule::Create(Clock::GetRealTimeClock(),
                                      this,
                                      qm_callback_.get())),
@@ -140,10 +140,10 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
 }
 
 bool ViEEncoder::Init() {
-  vpm_->EnableTemporalDecimation(true);
+  vp_->EnableTemporalDecimation(true);
 
   // Enable/disable content analysis: off by default for now.
-  vpm_->EnableContentAnalysis(false);
+  vp_->EnableContentAnalysis(false);
 
   if (vcm_->RegisterTransportCallback(this) != 0) {
     return false;
@@ -168,7 +168,6 @@ void ViEEncoder::StopThreadsAndRemoveSharedMembers() {
   if (bitrate_allocator_)
     bitrate_allocator_->RemoveBitrateObserver(bitrate_observer_.get());
   module_process_thread_->DeRegisterModule(vcm_.get());
-  module_process_thread_->DeRegisterModule(vpm_.get());
 }
 
 ViEEncoder::~ViEEncoder() {
@@ -211,8 +210,8 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
 int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   RTC_DCHECK(send_payload_router_ != NULL);
   // Setting target width and height for VPM.
-  if (vpm_->SetTargetResolution(video_codec.width, video_codec.height,
-                                video_codec.maxFramerate) != VPM_OK) {
+  if (vp_->SetTargetResolution(video_codec.width, video_codec.height,
+                               video_codec.maxFramerate) != VPM_OK) {
     return -1;
   }
 
@@ -358,16 +357,13 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
 
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
-  VideoFrame* decimated_frame = NULL;
+  const VideoFrame* frame_to_send = &video_frame;
   // TODO(wuchengli): support texture frames.
   if (video_frame.native_handle() == NULL) {
     // Pass frame via preprocessor.
-    const int ret = vpm_->PreprocessFrame(video_frame, &decimated_frame);
-    if (ret == 1) {
-      // Drop this frame.
-      return;
-    }
-    if (ret != VPM_OK) {
+    frame_to_send = vp_->PreprocessFrame(video_frame);
+    if (!frame_to_send) {
+      // Drop this frame, or there was an error processing it.
       return;
     }
   }
@@ -376,18 +372,10 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
   // make a deep copy of |video_frame|.
   VideoFrame copied_frame;
   if (pre_encode_callback_) {
-    // If the frame was not resampled or scaled => use copy of original.
-    if (decimated_frame == NULL) {
-      copied_frame.CopyFrame(video_frame);
-      decimated_frame = &copied_frame;
-    }
-    pre_encode_callback_->FrameCallback(decimated_frame);
+    copied_frame.CopyFrame(*frame_to_send);
+    pre_encode_callback_->FrameCallback(&copied_frame);
+    frame_to_send = &copied_frame;
   }
-
-  // If the frame was not resampled, scaled, or touched by FrameCallback => use
-  // original. The frame is const from here.
-  const VideoFrame* output_frame =
-      (decimated_frame != NULL) ? decimated_frame : &video_frame;
 
   if (codec_type == webrtc::kVideoCodecVP8) {
     webrtc::CodecSpecificInfo codec_specific_info;
@@ -406,11 +394,11 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
       has_received_rpsi_ = false;
     }
 
-    vcm_->AddVideoFrame(*output_frame, vpm_->ContentMetrics(),
+    vcm_->AddVideoFrame(*frame_to_send, vp_->GetContentMetrics(),
                         &codec_specific_info);
     return;
   }
-  vcm_->AddVideoFrame(*output_frame);
+  vcm_->AddVideoFrame(*frame_to_send);
 }
 
 int ViEEncoder::SendKeyFrame() {
@@ -448,10 +436,10 @@ void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
   if (target_delay_ms > 0) {
     // Disable external frame-droppers.
     vcm_->EnableFrameDropper(false);
-    vpm_->EnableTemporalDecimation(false);
+    vp_->EnableTemporalDecimation(false);
   } else {
     // Real-time mode - enable frame droppers.
-    vpm_->EnableTemporalDecimation(true);
+    vp_->EnableTemporalDecimation(true);
     vcm_->EnableFrameDropper(true);
   }
 }
@@ -619,8 +607,8 @@ void ViEEncoder::RegisterPostEncodeImageCallback(
   vcm_->RegisterPostEncodeImageCallback(post_encode_callback);
 }
 
-QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessingModule* vpm)
-    : vpm_(vpm) {
+QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessing* vpm)
+    : vp_(vpm) {
 }
 
 QMVideoSettingsCallback::~QMVideoSettingsCallback() {
@@ -630,11 +618,11 @@ int32_t QMVideoSettingsCallback::SetVideoQMSettings(
     const uint32_t frame_rate,
     const uint32_t width,
     const uint32_t height) {
-  return vpm_->SetTargetResolution(width, height, frame_rate);
+  return vp_->SetTargetResolution(width, height, frame_rate);
 }
 
 void QMVideoSettingsCallback::SetTargetFramerate(int frame_rate) {
-  vpm_->SetTargetFramerate(frame_rate);
+  vp_->SetTargetFramerate(frame_rate);
 }
 
 }  // namespace webrtc

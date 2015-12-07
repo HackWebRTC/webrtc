@@ -13,8 +13,6 @@ build_video_processing_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
 source_set("video_processing") {
   sources = [
-    "brighten.cc",
-    "brighten.h",
     "brightness_detection.cc",
     "brightness_detection.h",
     "content_analysis.cc",

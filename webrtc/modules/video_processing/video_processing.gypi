@@ -20,8 +20,6 @@
       'sources': [
         'include/video_processing.h',
         'include/video_processing_defines.h',
-        'brighten.cc',
-        'brighten.h',
         'brightness_detection.cc',
         'brightness_detection.h',
         'content_analysis.cc',

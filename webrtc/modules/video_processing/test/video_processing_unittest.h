@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_TEST_VIDEO_PROCESSING_UNITTEST_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_TEST_VIDEO_PROCESSING_UNITTEST_H_
 
+#include <string>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -18,9 +20,9 @@
 
 namespace webrtc {
 
-class VideoProcessingModuleTest : public ::testing::Test {
+class VideoProcessingTest : public ::testing::Test {
  protected:
-  VideoProcessingModuleTest();
+  VideoProcessingTest();
   virtual void SetUp();
   virtual void TearDown();
   static void SetUpTestCase() {
@@ -31,7 +33,7 @@ class VideoProcessingModuleTest : public ::testing::Test {
   static void TearDownTestCase() {
     Trace::ReturnTrace();
   }
-  VideoProcessingModule* vpm_;
+  VideoProcessing* vp_;
   FILE* source_file_;
   VideoFrame video_frame_;
   const int width_;

@@ -24,12 +24,11 @@ class VPMDeflickering {
   ~VPMDeflickering();
 
   void Reset();
-  int32_t ProcessFrame(VideoFrame* frame,
-                       VideoProcessingModule::FrameStats* stats);
+  int32_t ProcessFrame(VideoFrame* frame, VideoProcessing::FrameStats* stats);
 
  private:
   int32_t PreDetection(uint32_t timestamp,
-                       const VideoProcessingModule::FrameStats& stats);
+                       const VideoProcessing::FrameStats& stats);
 
   int32_t DetectFlicker();
 
@@ -53,4 +52,4 @@ class VPMDeflickering {
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_PROCESSING_DEFLICKERING_H_
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_DEFLICKERING_H_

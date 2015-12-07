@@ -92,7 +92,7 @@ bool VPMVideoDecimator::DropFrame() {
 }
 
 
-uint32_t VPMVideoDecimator::Decimatedframe_rate() {
+uint32_t VPMVideoDecimator::GetDecimatedFrameRate() {
 ProcessIncomingframe_rate(TickTime::MillisecondTimestamp());
   if (!enable_temporal_decimation_) {
     return static_cast<uint32_t>(incoming_frame_rate_ + 0.5f);

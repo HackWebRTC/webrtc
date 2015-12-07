@@ -152,7 +152,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   const uint32_t number_of_cores_;
 
-  const rtc::scoped_ptr<VideoProcessingModule> vpm_;
+  const rtc::scoped_ptr<VideoProcessing> vp_;
   const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
   const rtc::scoped_ptr<VideoCodingModule> vcm_;
   rtc::scoped_refptr<PayloadRouter> send_payload_router_;

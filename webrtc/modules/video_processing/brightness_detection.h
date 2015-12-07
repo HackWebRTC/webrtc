@@ -23,7 +23,7 @@ class VPMBrightnessDetection {
 
   void Reset();
   int32_t ProcessFrame(const VideoFrame& frame,
-                       const VideoProcessingModule::FrameStats& stats);
+                       const VideoProcessing::FrameStats& stats);
 
  private:
   uint32_t frame_cnt_bright_;
@@ -32,4 +32,4 @@ class VPMBrightnessDetection {
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_PROCESSING_BRIGHTNESS_DETECTION_H_
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_BRIGHTNESS_DETECTION_H_

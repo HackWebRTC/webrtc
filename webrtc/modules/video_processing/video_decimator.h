@@ -32,7 +32,7 @@ class VPMVideoDecimator {
   void UpdateIncomingframe_rate();
 
   // Get Decimated Frame Rate/Dimensions.
-  uint32_t Decimatedframe_rate();
+  uint32_t GetDecimatedFrameRate();
 
   // Get input frame rate.
   uint32_t Inputframe_rate();

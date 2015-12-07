@@ -10,30 +10,24 @@
 
 #include "webrtc/modules/video_processing/frame_preprocessor.h"
 
+#include "webrtc/modules/video_processing/video_denoiser.h"
+
 namespace webrtc {
 
 VPMFramePreprocessor::VPMFramePreprocessor()
     : content_metrics_(nullptr),
       resampled_frame_(),
       enable_ca_(false),
-      enable_denoising_(false),
       frame_cnt_(0) {
   spatial_resampler_ = new VPMSimpleSpatialResampler();
   ca_ = new VPMContentAnalysis(true);
   vd_ = new VPMVideoDecimator();
-  if (enable_denoising_) {
-    denoiser_ = new VideoDenoiser();
-  } else {
-    denoiser_ = nullptr;
-  }
 }
 
 VPMFramePreprocessor::~VPMFramePreprocessor() {
   Reset();
   delete ca_;
   delete vd_;
-  if (enable_denoising_)
-    delete denoiser_;
   delete spatial_resampler_;
 }
 
@@ -61,7 +55,7 @@ void  VPMFramePreprocessor::SetInputFrameResampleMode(
 
 int32_t VPMFramePreprocessor::SetTargetResolution(
     uint32_t width, uint32_t height, uint32_t frame_rate) {
-  if ( (width == 0) || (height == 0) || (frame_rate == 0)) {
+  if ((width == 0) || (height == 0) || (frame_rate == 0)) {
     return VPM_PARAMETER_ERROR;
   }
   int32_t ret_val = 0;
@@ -86,70 +80,62 @@ void VPMFramePreprocessor::UpdateIncomingframe_rate() {
   vd_->UpdateIncomingframe_rate();
 }
 
-uint32_t VPMFramePreprocessor::Decimatedframe_rate() {
-  return vd_->Decimatedframe_rate();
+uint32_t VPMFramePreprocessor::GetDecimatedFrameRate() {
+  return vd_->GetDecimatedFrameRate();
 }
 
 
-uint32_t VPMFramePreprocessor::DecimatedWidth() const {
+uint32_t VPMFramePreprocessor::GetDecimatedWidth() const {
   return spatial_resampler_->TargetWidth();
 }
 
 
-uint32_t VPMFramePreprocessor::DecimatedHeight() const {
+uint32_t VPMFramePreprocessor::GetDecimatedHeight() const {
   return spatial_resampler_->TargetHeight();
 }
 
-int32_t VPMFramePreprocessor::PreprocessFrame(const VideoFrame& frame,
-                                              VideoFrame** processed_frame) {
+void VPMFramePreprocessor::EnableDenosing(bool enable) {
+  denoiser_.reset(new VideoDenoiser());
+}
+
+const VideoFrame* VPMFramePreprocessor::PreprocessFrame(
+    const VideoFrame& frame) {
   if (frame.IsZeroSize()) {
-    return VPM_PARAMETER_ERROR;
+    return nullptr;
   }
 
   vd_->UpdateIncomingframe_rate();
-
   if (vd_->DropFrame()) {
-    return 1;  // drop 1 frame
+    return nullptr;
   }
 
-  // Resizing incoming frame if needed. Otherwise, remains nullptr.
-  // We are not allowed to resample the input frame (must make a copy of it).
-  *processed_frame = nullptr;
-  if (denoiser_ != nullptr) {
-    denoiser_->DenoiseFrame(frame, &denoised_frame_);
-    *processed_frame = &denoised_frame_;
+  const VideoFrame* current_frame = &frame;
+  if (denoiser_) {
+    denoiser_->DenoiseFrame(*current_frame, &denoised_frame_);
+    current_frame = &denoised_frame_;
   }
 
-  if (spatial_resampler_->ApplyResample(frame.width(), frame.height()))  {
-    int32_t ret;
-    if (enable_denoising_) {
-      ret = spatial_resampler_->ResampleFrame(denoised_frame_,
-                                              &resampled_frame_);
-    } else {
-      ret = spatial_resampler_->ResampleFrame(frame, &resampled_frame_);
+  if (spatial_resampler_->ApplyResample(current_frame->width(),
+                                        current_frame->height()))  {
+    if (spatial_resampler_->ResampleFrame(*current_frame, &resampled_frame_) !=
+        VPM_OK) {
+      return nullptr;
     }
-    if (ret != VPM_OK) return ret;
-    *processed_frame = &resampled_frame_;
+    current_frame = &resampled_frame_;
   }
 
   // Perform content analysis on the frame to be encoded.
-  if (enable_ca_) {
+  if (enable_ca_ && frame_cnt_ % kSkipFrameCA == 0) {
     // Compute new metrics every |kSkipFramesCA| frames, starting with
     // the first frame.
-    if (frame_cnt_ % kSkipFrameCA == 0) {
-      if (*processed_frame == nullptr)  {
-        content_metrics_ = ca_->ComputeContentMetrics(frame);
-      } else {
-        content_metrics_ = ca_->ComputeContentMetrics(**processed_frame);
-      }
-    }
+    content_metrics_ = ca_->ComputeContentMetrics(*current_frame);
   }
   ++frame_cnt_;
-  return VPM_OK;
+  return current_frame;
 }
 
-VideoContentMetrics* VPMFramePreprocessor::ContentMetrics() const {
+VideoContentMetrics* VPMFramePreprocessor::GetContentMetrics() const {
   return content_metrics_;
 }
 
-}  // namespace
+}  // namespace webrtc

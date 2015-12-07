@@ -13,7 +13,6 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
-#include "webrtc/modules/video_processing/brighten.h"
 #include "webrtc/modules/video_processing/brightness_detection.h"
 #include "webrtc/modules/video_processing/deflickering.h"
 #include "webrtc/modules/video_processing/frame_preprocessor.h"
@@ -21,47 +20,28 @@
 namespace webrtc {
 class CriticalSectionWrapper;
 
-class VideoProcessingModuleImpl : public VideoProcessingModule {
+class VideoProcessingImpl : public VideoProcessing {
  public:
-  VideoProcessingModuleImpl();
-  ~VideoProcessingModuleImpl() override;
+  VideoProcessingImpl();
+  ~VideoProcessingImpl() override;
 
-  void Reset() override;
-
+  // Implements VideoProcessing.
   int32_t Deflickering(VideoFrame* frame, FrameStats* stats) override;
-
   int32_t BrightnessDetection(const VideoFrame& frame,
                               const FrameStats& stats) override;
-
-  // Frame pre-processor functions
-
-  // Enable temporal decimation
   void EnableTemporalDecimation(bool enable) override;
-
   void SetInputFrameResampleMode(VideoFrameResampling resampling_mode) override;
-
-  // Enable content analysis
   void EnableContentAnalysis(bool enable) override;
-
-  // Set Target Resolution: frame rate and dimension
   int32_t SetTargetResolution(uint32_t width,
                               uint32_t height,
                               uint32_t frame_rate) override;
-
   void SetTargetFramerate(int frame_rate) override;
-
-  // Get decimated values: frame rate/dimension
-  uint32_t Decimatedframe_rate() override;
-  uint32_t DecimatedWidth() const override;
-  uint32_t DecimatedHeight() const override;
-
-  // Preprocess:
-  // Pre-process incoming frame: Sample when needed and compute content
-  // metrics when enabled.
-  // If no resampling takes place - processed_frame is set to NULL.
-  int32_t PreprocessFrame(const VideoFrame& frame,
-                          VideoFrame** processed_frame) override;
-  VideoContentMetrics* ContentMetrics() const override;
+  uint32_t GetDecimatedFrameRate() override;
+  uint32_t GetDecimatedWidth() const override;
+  uint32_t GetDecimatedHeight() const override;
+  void EnableDenosing(bool enable) override;
+  const VideoFrame* PreprocessFrame(const VideoFrame& frame) override;
+  VideoContentMetrics* GetContentMetrics() const override;
 
  private:
   mutable rtc::CriticalSection mutex_;
@@ -70,6 +50,6 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
   VPMFramePreprocessor frame_pre_processor_;
 };
 
-}  // namespace
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_PROCESSING_IMPL_H_

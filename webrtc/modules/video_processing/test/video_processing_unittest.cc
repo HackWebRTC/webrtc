@@ -10,9 +10,10 @@
 
 #include "webrtc/modules/video_processing/test/video_processing_unittest.h"
 
+#include <gflags/gflags.h>
+
 #include <string>
 
-#include <gflags/gflags.h>
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -30,8 +31,8 @@ DEFINE_bool(gen_files, false, "Output files for visual inspection.");
 static void PreprocessFrameAndVerify(const VideoFrame& source,
                                      int target_width,
                                      int target_height,
-                                     VideoProcessingModule* vpm,
-                                     VideoFrame** out_frame);
+                                     VideoProcessing* vpm,
+                                     const VideoFrame* out_frame);
 static void CropFrame(const uint8_t* source_data,
                       int source_width,
                       int source_height,
@@ -49,14 +50,14 @@ static void TestSize(const VideoFrame& source_frame,
                      int target_width,
                      int target_height,
                      double expected_psnr,
-                     VideoProcessingModule* vpm);
+                     VideoProcessing* vpm);
 static bool CompareFrames(const webrtc::VideoFrame& frame1,
                           const webrtc::VideoFrame& frame2);
 static void WriteProcessedFrameForVisualInspection(const VideoFrame& source,
                                                    const VideoFrame& processed);
 
-VideoProcessingModuleTest::VideoProcessingModuleTest()
-    : vpm_(NULL),
+VideoProcessingTest::VideoProcessingTest()
+    : vp_(NULL),
       source_file_(NULL),
       width_(352),
       half_width_((width_ + 1) / 2),
@@ -65,9 +66,9 @@ VideoProcessingModuleTest::VideoProcessingModuleTest()
       size_uv_(half_width_ * ((height_ + 1) / 2)),
       frame_length_(CalcBufferSize(kI420, width_, height_)) {}
 
-void VideoProcessingModuleTest::SetUp() {
-  vpm_ = VideoProcessingModule::Create();
-  ASSERT_TRUE(vpm_ != NULL);
+void VideoProcessingTest::SetUp() {
+  vp_ = VideoProcessing::Create();
+  ASSERT_TRUE(vp_ != NULL);
 
   ASSERT_EQ(0, video_frame_.CreateEmptyFrame(width_, height_, width_,
                                             half_width_, half_width_));
@@ -77,125 +78,126 @@ void VideoProcessingModuleTest::SetUp() {
   memset(video_frame_.buffer(kVPlane), 0, video_frame_.allocated_size(kVPlane));
   const std::string video_file =
       webrtc::test::ResourcePath("foreman_cif", "yuv");
-  source_file_  = fopen(video_file.c_str(),"rb");
+  source_file_ = fopen(video_file.c_str(),  "rb");
   ASSERT_TRUE(source_file_ != NULL) <<
       "Cannot read source file: " + video_file + "\n";
 }
 
-void VideoProcessingModuleTest::TearDown() {
+void VideoProcessingTest::TearDown() {
   if (source_file_ != NULL)  {
     ASSERT_EQ(0, fclose(source_file_));
   }
   source_file_ = NULL;
-
-  if (vpm_ != NULL)  {
-    VideoProcessingModule::Destroy(vpm_);
-  }
-  vpm_ = NULL;
+  delete vp_;
+  vp_ = NULL;
 }
 
-TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(HandleNullBuffer)) {
+TEST_F(VideoProcessingTest, DISABLED_ON_IOS(HandleNullBuffer)) {
   // TODO(mikhal/stefan): Do we need this one?
-  VideoProcessingModule::FrameStats stats;
+  VideoProcessing::FrameStats stats;
   // Video frame with unallocated buffer.
   VideoFrame videoFrame;
 
-  EXPECT_EQ(-3, vpm_->GetFrameStats(&stats, videoFrame));
+  vp_->GetFrameStats(videoFrame, &stats);
+  EXPECT_EQ(stats.num_pixels, 0u);
 
-  EXPECT_EQ(-1, vpm_->Deflickering(&videoFrame, &stats));
+  EXPECT_EQ(-1, vp_->Deflickering(&videoFrame, &stats));
 
-  EXPECT_EQ(-3, vpm_->BrightnessDetection(videoFrame, stats));
+  EXPECT_EQ(-3, vp_->BrightnessDetection(videoFrame, stats));
 }
 
-TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(HandleBadStats)) {
-  VideoProcessingModule::FrameStats stats;
+TEST_F(VideoProcessingTest, DISABLED_ON_IOS(HandleBadStats)) {
+  VideoProcessing::FrameStats stats;
+  vp_->ClearFrameStats(&stats);
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
                                  source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
 
-  EXPECT_EQ(-1, vpm_->Deflickering(&video_frame_, &stats));
+  EXPECT_EQ(-1, vp_->Deflickering(&video_frame_, &stats));
 
-  EXPECT_EQ(-3, vpm_->BrightnessDetection(video_frame_, stats));
+  EXPECT_EQ(-3, vp_->BrightnessDetection(video_frame_, stats));
 }
 
-TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(IdenticalResultsAfterReset)) {
+TEST_F(VideoProcessingTest, DISABLED_ON_IOS(IdenticalResultsAfterReset)) {
   VideoFrame video_frame2;
-  VideoProcessingModule::FrameStats stats;
+  VideoProcessing::FrameStats stats;
   // Only testing non-static functions here.
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
                                 source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
-  ASSERT_EQ(0, vpm_->GetFrameStats(&stats, video_frame_));
+  vp_->GetFrameStats(video_frame_, &stats);
+  EXPECT_GT(stats.num_pixels, 0u);
   ASSERT_EQ(0, video_frame2.CopyFrame(video_frame_));
-  ASSERT_EQ(0, vpm_->Deflickering(&video_frame_, &stats));
-  vpm_->Reset();
+  ASSERT_EQ(0, vp_->Deflickering(&video_frame_, &stats));
+
   // Retrieve frame stats again in case Deflickering() has zeroed them.
-  ASSERT_EQ(0, vpm_->GetFrameStats(&stats, video_frame2));
-  ASSERT_EQ(0, vpm_->Deflickering(&video_frame2, &stats));
+  vp_->GetFrameStats(video_frame2, &stats);
+  EXPECT_GT(stats.num_pixels, 0u);
+  ASSERT_EQ(0, vp_->Deflickering(&video_frame2, &stats));
   EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
 
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
                                  source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
-  ASSERT_EQ(0, vpm_->GetFrameStats(&stats, video_frame_));
+  vp_->GetFrameStats(video_frame_, &stats);
+  EXPECT_GT(stats.num_pixels, 0u);
   video_frame2.CopyFrame(video_frame_);
-  ASSERT_EQ(0, vpm_->BrightnessDetection(video_frame_, stats));
-  vpm_->Reset();
-  ASSERT_EQ(0, vpm_->BrightnessDetection(video_frame2, stats));
+  ASSERT_EQ(0, vp_->BrightnessDetection(video_frame_, stats));
+
+  ASSERT_EQ(0, vp_->BrightnessDetection(video_frame2, stats));
   EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
 }
 
-TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(FrameStats)) {
-  VideoProcessingModule::FrameStats stats;
+TEST_F(VideoProcessingTest, DISABLED_ON_IOS(FrameStats)) {
+  VideoProcessing::FrameStats stats;
+  vp_->ClearFrameStats(&stats);
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
                                  source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
 
-  EXPECT_FALSE(vpm_->ValidFrameStats(stats));
-  EXPECT_EQ(0, vpm_->GetFrameStats(&stats, video_frame_));
-  EXPECT_TRUE(vpm_->ValidFrameStats(stats));
+  EXPECT_FALSE(vp_->ValidFrameStats(stats));
+  vp_->GetFrameStats(video_frame_, &stats);
+  EXPECT_GT(stats.num_pixels, 0u);
+  EXPECT_TRUE(vp_->ValidFrameStats(stats));
 
   printf("\nFrameStats\n");
-  printf("mean: %u\nnum_pixels: %u\nsubSamplWidth: "
-         "%u\nsumSamplHeight: %u\nsum: %u\n\n",
+  printf("mean: %u\nnum_pixels: %u\nsubSamplFactor: %u\nsum: %u\n\n",
          static_cast<unsigned int>(stats.mean),
          static_cast<unsigned int>(stats.num_pixels),
-         static_cast<unsigned int>(stats.subSamplHeight),
-         static_cast<unsigned int>(stats.subSamplWidth),
+         static_cast<unsigned int>(stats.sub_sampling_factor),
          static_cast<unsigned int>(stats.sum));
 
-  vpm_->ClearFrameStats(&stats);
-  EXPECT_FALSE(vpm_->ValidFrameStats(stats));
+  vp_->ClearFrameStats(&stats);
+  EXPECT_FALSE(vp_->ValidFrameStats(stats));
 }
 
-TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(PreprocessorLogic)) {
+TEST_F(VideoProcessingTest, DISABLED_ON_IOS(PreprocessorLogic)) {
   // Disable temporal sampling (frame dropping).
-  vpm_->EnableTemporalDecimation(false);
+  vp_->EnableTemporalDecimation(false);
   int resolution = 100;
-  EXPECT_EQ(VPM_OK, vpm_->SetTargetResolution(resolution, resolution, 15));
-  EXPECT_EQ(VPM_OK, vpm_->SetTargetResolution(resolution, resolution, 30));
+  EXPECT_EQ(VPM_OK, vp_->SetTargetResolution(resolution, resolution, 15));
+  EXPECT_EQ(VPM_OK, vp_->SetTargetResolution(resolution, resolution, 30));
   // Disable spatial sampling.
-  vpm_->SetInputFrameResampleMode(kNoRescaling);
-  EXPECT_EQ(VPM_OK, vpm_->SetTargetResolution(resolution, resolution, 30));
+  vp_->SetInputFrameResampleMode(kNoRescaling);
+  EXPECT_EQ(VPM_OK, vp_->SetTargetResolution(resolution, resolution, 30));
   VideoFrame* out_frame = NULL;
   // Set rescaling => output frame != NULL.
-  vpm_->SetInputFrameResampleMode(kFastRescaling);
-  PreprocessFrameAndVerify(video_frame_, resolution, resolution, vpm_,
-                           &out_frame);
+  vp_->SetInputFrameResampleMode(kFastRescaling);
+  PreprocessFrameAndVerify(video_frame_, resolution, resolution, vp_,
+                           out_frame);
   // No rescaling=> output frame = NULL.
-  vpm_->SetInputFrameResampleMode(kNoRescaling);
-  EXPECT_EQ(VPM_OK, vpm_->PreprocessFrame(video_frame_, &out_frame));
-  EXPECT_TRUE(out_frame == NULL);
+  vp_->SetInputFrameResampleMode(kNoRescaling);
+  EXPECT_TRUE(vp_->PreprocessFrame(video_frame_) != nullptr);
 }
 
-TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Resampler)) {
+TEST_F(VideoProcessingTest, DISABLED_ON_IOS(Resampler)) {
   enum { NumRuns = 1 };
 
   int64_t min_runtime = 0;
@@ -206,9 +208,9 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Resampler)) {
       "Cannot read input file \n";
 
   // CA not needed here
-  vpm_->EnableContentAnalysis(false);
+  vp_->EnableContentAnalysis(false);
   // no temporal decimation
-  vpm_->EnableTemporalDecimation(false);
+  vp_->EnableTemporalDecimation(false);
 
   // Reading test frame
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
@@ -231,43 +233,43 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Resampler)) {
 
     // Test scaling to different sizes: source is of |width|/|height| = 352/288.
     // Pure scaling:
-    TestSize(video_frame_, video_frame_, width_ / 4, height_ / 4, 25.2, vpm_);
-    TestSize(video_frame_, video_frame_, width_ / 2, height_ / 2, 28.1, vpm_);
+    TestSize(video_frame_, video_frame_, width_ / 4, height_ / 4, 25.2, vp_);
+    TestSize(video_frame_, video_frame_, width_ / 2, height_ / 2, 28.1, vp_);
     // No resampling:
-    TestSize(video_frame_, video_frame_, width_, height_, -1, vpm_);
-    TestSize(video_frame_, video_frame_, 2 * width_, 2 * height_, 32.2, vpm_);
+    TestSize(video_frame_, video_frame_, width_, height_, -1, vp_);
+    TestSize(video_frame_, video_frame_, 2 * width_, 2 * height_, 32.2, vp_);
 
     // Scaling and cropping. The cropped source frame is the largest center
     // aligned region that can be used from the source while preserving aspect
     // ratio.
     CropFrame(video_buffer.get(), width_, height_, 0, 56, 352, 176,
               &cropped_source_frame);
-    TestSize(video_frame_, cropped_source_frame, 100, 50, 24.0, vpm_);
+    TestSize(video_frame_, cropped_source_frame, 100, 50, 24.0, vp_);
 
     CropFrame(video_buffer.get(), width_, height_, 0, 30, 352, 225,
               &cropped_source_frame);
-    TestSize(video_frame_, cropped_source_frame, 400, 256, 31.3, vpm_);
+    TestSize(video_frame_, cropped_source_frame, 400, 256, 31.3, vp_);
 
     CropFrame(video_buffer.get(), width_, height_, 68, 0, 216, 288,
               &cropped_source_frame);
-    TestSize(video_frame_, cropped_source_frame, 480, 640, 32.15, vpm_);
+    TestSize(video_frame_, cropped_source_frame, 480, 640, 32.15, vp_);
 
     CropFrame(video_buffer.get(), width_, height_, 0, 12, 352, 264,
               &cropped_source_frame);
-    TestSize(video_frame_, cropped_source_frame, 960, 720, 32.2, vpm_);
+    TestSize(video_frame_, cropped_source_frame, 960, 720, 32.2, vp_);
 
     CropFrame(video_buffer.get(), width_, height_, 0, 44, 352, 198,
               &cropped_source_frame);
-    TestSize(video_frame_, cropped_source_frame, 1280, 720, 32.15, vpm_);
+    TestSize(video_frame_, cropped_source_frame, 1280, 720, 32.15, vp_);
 
     // Upsampling to odd size.
     CropFrame(video_buffer.get(), width_, height_, 0, 26, 352, 233,
               &cropped_source_frame);
-    TestSize(video_frame_, cropped_source_frame, 501, 333, 32.05, vpm_);
+    TestSize(video_frame_, cropped_source_frame, 501, 333, 32.05, vp_);
     // Downsample to odd size.
     CropFrame(video_buffer.get(), width_, height_, 0, 34, 352, 219,
               &cropped_source_frame);
-    TestSize(video_frame_, cropped_source_frame, 281, 175, 29.3, vpm_);
+    TestSize(video_frame_, cropped_source_frame, 281, 175, 29.3, vp_);
 
     // Stop timer.
     const int64_t runtime = (TickTime::Now() - time_start).Microseconds();
@@ -286,23 +288,24 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Resampler)) {
 void PreprocessFrameAndVerify(const VideoFrame& source,
                               int target_width,
                               int target_height,
-                              VideoProcessingModule* vpm,
-                              VideoFrame** out_frame) {
+                              VideoProcessing* vpm,
+                              const VideoFrame* out_frame) {
   ASSERT_EQ(VPM_OK, vpm->SetTargetResolution(target_width, target_height, 30));
-  ASSERT_EQ(VPM_OK, vpm->PreprocessFrame(source, out_frame));
+  out_frame = vpm->PreprocessFrame(source);
+  EXPECT_TRUE(out_frame != nullptr);
 
-  // If no resizing is needed, expect NULL.
+  // If no resizing is needed, expect the original frame.
   if (target_width == source.width() && target_height == source.height()) {
-    EXPECT_EQ(NULL, *out_frame);
+    EXPECT_EQ(&source, out_frame);
     return;
   }
 
   // Verify the resampled frame.
-  EXPECT_TRUE(*out_frame != NULL);
-  EXPECT_EQ(source.render_time_ms(), (*out_frame)->render_time_ms());
-  EXPECT_EQ(source.timestamp(), (*out_frame)->timestamp());
-  EXPECT_EQ(target_width, (*out_frame)->width());
-  EXPECT_EQ(target_height, (*out_frame)->height());
+  EXPECT_TRUE(out_frame != NULL);
+  EXPECT_EQ(source.render_time_ms(), (out_frame)->render_time_ms());
+  EXPECT_EQ(source.timestamp(), (out_frame)->timestamp());
+  EXPECT_EQ(target_width, (out_frame)->width());
+  EXPECT_EQ(target_height, (out_frame)->height());
 }
 
 void CropFrame(const uint8_t* source_data,
@@ -326,12 +329,12 @@ void TestSize(const VideoFrame& source_frame,
               int target_width,
               int target_height,
               double expected_psnr,
-              VideoProcessingModule* vpm) {
+              VideoProcessing* vpm) {
   // Resample source_frame to out_frame.
   VideoFrame* out_frame = NULL;
   vpm->SetInputFrameResampleMode(kBox);
   PreprocessFrameAndVerify(source_frame, target_width, target_height, vpm,
-                           &out_frame);
+                           out_frame);
   if (out_frame == NULL)
     return;
   WriteProcessedFrameForVisualInspection(source_frame, *out_frame);
@@ -340,7 +343,7 @@ void TestSize(const VideoFrame& source_frame,
   VideoFrame resampled_source_frame;
   resampled_source_frame.CopyFrame(*out_frame);
   PreprocessFrameAndVerify(resampled_source_frame, cropped_source_frame.width(),
-                           cropped_source_frame.height(), vpm, &out_frame);
+                           cropped_source_frame.height(), vpm, out_frame);
   WriteProcessedFrameForVisualInspection(resampled_source_frame, *out_frame);
 
   // Compute PSNR against the cropped source frame and check expectation.

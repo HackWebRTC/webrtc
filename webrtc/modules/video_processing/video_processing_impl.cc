@@ -7,87 +7,70 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/base/logging.h"
+
 #include "webrtc/modules/video_processing/video_processing_impl.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 #include <assert.h>
+
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+
 
 namespace webrtc {
 
 namespace {
-void  SetSubSampling(VideoProcessingModule::FrameStats* stats,
-                     const int32_t width,
-                     const int32_t height) {
+
+int GetSubSamplingFactor(int width, int height) {
   if (width * height >= 640 * 480) {
-    stats->subSamplWidth = 3;
-    stats->subSamplHeight = 3;
+    return 3;
   } else if (width * height >= 352 * 288) {
-    stats->subSamplWidth = 2;
-    stats->subSamplHeight = 2;
+    return 2;
   } else if (width * height >= 176 * 144) {
-    stats->subSamplWidth = 1;
-    stats->subSamplHeight = 1;
+    return 1;
   } else {
-    stats->subSamplWidth = 0;
-    stats->subSamplHeight = 0;
+    return 0;
   }
 }
 }  // namespace
 
-VideoProcessingModule* VideoProcessingModule::Create() {
-  return new VideoProcessingModuleImpl();
+VideoProcessing* VideoProcessing::Create() {
+  return new VideoProcessingImpl();
 }
 
-void VideoProcessingModule::Destroy(VideoProcessingModule* module) {
-  if (module)
-    delete static_cast<VideoProcessingModuleImpl*>(module);
-}
+VideoProcessingImpl::VideoProcessingImpl() {}
+VideoProcessingImpl::~VideoProcessingImpl() {}
 
-VideoProcessingModuleImpl::VideoProcessingModuleImpl() {}
-VideoProcessingModuleImpl::~VideoProcessingModuleImpl() {}
-
-void VideoProcessingModuleImpl::Reset() {
-  rtc::CritScope mutex(&mutex_);
-  deflickering_.Reset();
-  brightness_detection_.Reset();
-  frame_pre_processor_.Reset();
-}
-
-int32_t VideoProcessingModule::GetFrameStats(FrameStats* stats,
-                                             const VideoFrame& frame) {
+void VideoProcessing::GetFrameStats(const VideoFrame& frame,
+                                    FrameStats* stats) {
+  ClearFrameStats(stats);  // The histogram needs to be zeroed out.
   if (frame.IsZeroSize()) {
-    LOG(LS_ERROR) << "Zero size frame.";
-    return VPM_PARAMETER_ERROR;
+    return;
   }
 
   int width = frame.width();
   int height = frame.height();
-
-  ClearFrameStats(stats);  // The histogram needs to be zeroed out.
-  SetSubSampling(stats, width, height);
+  stats->sub_sampling_factor = GetSubSamplingFactor(width, height);
 
   const uint8_t* buffer = frame.buffer(kYPlane);
   // Compute histogram and sum of frame
-  for (int i = 0; i < height; i += (1 << stats->subSamplHeight)) {
+  for (int i = 0; i < height; i += (1 << stats->sub_sampling_factor)) {
     int k = i * width;
-    for (int j = 0; j < width; j += (1 << stats->subSamplWidth)) {
+    for (int j = 0; j < width; j += (1 << stats->sub_sampling_factor)) {
       stats->hist[buffer[k + j]]++;
       stats->sum += buffer[k + j];
     }
   }
 
-  stats->num_pixels = (width * height) / ((1 << stats->subSamplWidth) *
-                     (1 << stats->subSamplHeight));
+  stats->num_pixels = (width * height) /
+      ((1 << stats->sub_sampling_factor) * (1 << stats->sub_sampling_factor));
   assert(stats->num_pixels > 0);
 
   // Compute mean value of frame
   stats->mean = stats->sum / stats->num_pixels;
-
-  return VPM_OK;
 }
 
-bool VideoProcessingModule::ValidFrameStats(const FrameStats& stats) {
+bool VideoProcessing::ValidFrameStats(const FrameStats& stats) {
   if (stats.num_pixels == 0) {
     LOG(LS_WARNING) << "Invalid frame stats.";
     return false;
@@ -95,26 +78,41 @@ bool VideoProcessingModule::ValidFrameStats(const FrameStats& stats) {
   return true;
 }
 
-void VideoProcessingModule::ClearFrameStats(FrameStats* stats) {
+void VideoProcessing::ClearFrameStats(FrameStats* stats) {
   stats->mean = 0;
   stats->sum = 0;
   stats->num_pixels = 0;
-  stats->subSamplWidth = 0;
-  stats->subSamplHeight = 0;
+  stats->sub_sampling_factor = 0;
   memset(stats->hist, 0, sizeof(stats->hist));
 }
 
-int32_t VideoProcessingModule::Brighten(VideoFrame* frame, int delta) {
-  return VideoProcessing::Brighten(frame, delta);
+void VideoProcessing::Brighten(int delta, VideoFrame* frame) {
+  RTC_DCHECK(!frame->IsZeroSize());
+  RTC_DCHECK(frame->width() > 0);
+  RTC_DCHECK(frame->height() > 0);
+
+  int num_pixels = frame->width() * frame->height();
+
+  int look_up[256];
+  for (int i = 0; i < 256; i++) {
+    int val = i + delta;
+    look_up[i] = ((((val < 0) ? 0 : val) > 255) ? 255 : val);
+  }
+
+  uint8_t* temp_ptr = frame->buffer(kYPlane);
+  for (int i = 0; i < num_pixels; i++) {
+    *temp_ptr = static_cast<uint8_t>(look_up[*temp_ptr]);
+    temp_ptr++;
+  }
 }
 
-int32_t VideoProcessingModuleImpl::Deflickering(VideoFrame* frame,
-                                                FrameStats* stats) {
+int32_t VideoProcessingImpl::Deflickering(VideoFrame* frame,
+                                          FrameStats* stats) {
   rtc::CritScope mutex(&mutex_);
   return deflickering_.ProcessFrame(frame, stats);
 }
 
-int32_t VideoProcessingModuleImpl::BrightnessDetection(
+int32_t VideoProcessingImpl::BrightnessDetection(
     const VideoFrame& frame,
     const FrameStats& stats) {
   rtc::CritScope mutex(&mutex_);
@@ -122,58 +120,62 @@ int32_t VideoProcessingModuleImpl::BrightnessDetection(
 }
 
 
-void VideoProcessingModuleImpl::EnableTemporalDecimation(bool enable) {
+void VideoProcessingImpl::EnableTemporalDecimation(bool enable) {
   rtc::CritScope mutex(&mutex_);
   frame_pre_processor_.EnableTemporalDecimation(enable);
 }
 
 
-void VideoProcessingModuleImpl::SetInputFrameResampleMode(VideoFrameResampling
-                                                          resampling_mode) {
+void VideoProcessingImpl::SetInputFrameResampleMode(VideoFrameResampling
+                                                    resampling_mode) {
   rtc::CritScope cs(&mutex_);
   frame_pre_processor_.SetInputFrameResampleMode(resampling_mode);
 }
 
-int32_t VideoProcessingModuleImpl::SetTargetResolution(uint32_t width,
-                                                       uint32_t height,
-                                                       uint32_t frame_rate) {
+int32_t VideoProcessingImpl::SetTargetResolution(uint32_t width,
+                                                 uint32_t height,
+                                                 uint32_t frame_rate) {
   rtc::CritScope cs(&mutex_);
   return frame_pre_processor_.SetTargetResolution(width, height, frame_rate);
 }
 
-void VideoProcessingModuleImpl::SetTargetFramerate(int frame_rate) {
+void VideoProcessingImpl::SetTargetFramerate(int frame_rate) {
   rtc::CritScope cs(&mutex_);
   frame_pre_processor_.SetTargetFramerate(frame_rate);
 }
 
-uint32_t VideoProcessingModuleImpl::Decimatedframe_rate() {
+uint32_t VideoProcessingImpl::GetDecimatedFrameRate() {
   rtc::CritScope cs(&mutex_);
-  return  frame_pre_processor_.Decimatedframe_rate();
+  return  frame_pre_processor_.GetDecimatedFrameRate();
 }
 
-uint32_t VideoProcessingModuleImpl::DecimatedWidth() const {
+uint32_t VideoProcessingImpl::GetDecimatedWidth() const {
   rtc::CritScope cs(&mutex_);
-  return frame_pre_processor_.DecimatedWidth();
+  return frame_pre_processor_.GetDecimatedWidth();
 }
 
-uint32_t VideoProcessingModuleImpl::DecimatedHeight() const {
+uint32_t VideoProcessingImpl::GetDecimatedHeight() const {
   rtc::CritScope cs(&mutex_);
-  return frame_pre_processor_.DecimatedHeight();
+  return frame_pre_processor_.GetDecimatedHeight();
 }
 
-int32_t VideoProcessingModuleImpl::PreprocessFrame(
-    const VideoFrame& frame,
-    VideoFrame** processed_frame) {
+void VideoProcessingImpl::EnableDenosing(bool enable) {
+  rtc::CritScope cs(&mutex_);
+  frame_pre_processor_.EnableDenosing(enable);
+}
+
+const VideoFrame* VideoProcessingImpl::PreprocessFrame(
+    const VideoFrame& frame) {
   rtc::CritScope mutex(&mutex_);
-  return frame_pre_processor_.PreprocessFrame(frame, processed_frame);
+  return frame_pre_processor_.PreprocessFrame(frame);
 }
 
-VideoContentMetrics* VideoProcessingModuleImpl::ContentMetrics() const {
+VideoContentMetrics* VideoProcessingImpl::GetContentMetrics() const {
   rtc::CritScope mutex(&mutex_);
-  return frame_pre_processor_.ContentMetrics();
+  return frame_pre_processor_.GetContentMetrics();
 }
 
-void VideoProcessingModuleImpl::EnableContentAnalysis(bool enable) {
+void VideoProcessingImpl::EnableContentAnalysis(bool enable) {
   rtc::CritScope mutex(&mutex_);
   frame_pre_processor_.EnableContentAnalysis(enable);
 }

@@ -41,7 +41,7 @@ enum { kLog2OfDownsamplingFactor = 3 };
 // Resolution reduced to avoid overflow when multiplying with the
 // (potentially) large number of pixels.
 const uint16_t VPMDeflickering::prob_uw16_[kNumProbs] = {102, 205, 410, 614,
-    819, 1024, 1229, 1434, 1638, 1843, 1946, 1987}; // <Q11>
+    819, 1024, 1229, 1434, 1638, 1843, 1946, 1987};  // <Q11>
 
 // To generate in Matlab:
 // >> numQuants = 14; maxOnlyLength = 5;
@@ -49,7 +49,7 @@ const uint16_t VPMDeflickering::prob_uw16_[kNumProbs] = {102, 205, 410, 614,
 //    [linspace(0.5, 1.0, numQuants - maxOnlyLength)]);
 // >> fprintf('%d, %d,\n ', weightUW16);
 const uint16_t VPMDeflickering::weight_uw16_[kNumQuants - kMaxOnlyLength] =
-    {16384, 18432, 20480, 22528, 24576, 26624, 28672, 30720, 32768}; // <Q15>
+    {16384, 18432, 20480, 22528, 24576, 26624, 28672, 30720, 32768};  // <Q15>
 
 VPMDeflickering::VPMDeflickering() {
   Reset();
@@ -82,7 +82,7 @@ void VPMDeflickering::Reset() {
 
 int32_t VPMDeflickering::ProcessFrame(
     VideoFrame* frame,
-    VideoProcessingModule::FrameStats* stats) {
+    VideoProcessing::FrameStats* stats) {
   assert(frame);
   uint32_t frame_memory;
   uint8_t quant_uw8[kNumQuants];
@@ -107,7 +107,7 @@ int32_t VPMDeflickering::ProcessFrame(
     return VPM_GENERAL_ERROR;
   }
 
-  if (!VideoProcessingModule::ValidFrameStats(*stats)) {
+  if (!VideoProcessing::ValidFrameStats(*stats)) {
     return VPM_GENERAL_ERROR;
   }
 
@@ -209,7 +209,7 @@ int32_t VPMDeflickering::ProcessFrame(
 
     if (tmp_uw16 > 0) {
       increment_uw16 = static_cast<uint16_t>(WebRtcSpl_DivU32U16(tmp_uw32,
-          tmp_uw16)); // <Q7>
+          tmp_uw16));  // <Q7>
     } else {
       // The value is irrelevant; the loop below will only iterate once.
       increment_uw16 = 0;
@@ -230,7 +230,7 @@ int32_t VPMDeflickering::ProcessFrame(
   }
 
   // Frame was altered, so reset stats.
-  VideoProcessingModule::ClearFrameStats(stats);
+  VideoProcessing::ClearFrameStats(stats);
 
   return VPM_OK;
 }
@@ -248,7 +248,7 @@ int32_t VPMDeflickering::ProcessFrame(
           -1: Error
 */
 int32_t VPMDeflickering::PreDetection(const uint32_t timestamp,
-  const VideoProcessingModule::FrameStats& stats) {
+  const VideoProcessing::FrameStats& stats) {
   int32_t mean_val;  // Mean value of frame (Q4)
   uint32_t frame_rate = 0;
   int32_t meanBufferLength;  // Temp variable.
@@ -371,7 +371,7 @@ int32_t VPMDeflickering::DetectFlicker() {
   int32_t freqAlias = freqEst;
   if (freqEst > kMinFrequencyToDetect) {
     uint8_t aliasState = 1;
-    while(freqState == 0) {
+    while (freqState == 0) {
       /* Increase frequency */
       freqAlias += (aliasState * frame_rate_);
       freqAlias += ((freqEst << 1) * (1 - (aliasState << 1)));

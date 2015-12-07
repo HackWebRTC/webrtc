@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/brightness_detection.h"
 
 #include <math.h>
+
+#include "webrtc/modules/video_processing/include/video_processing.h"
 
 namespace webrtc {
 
@@ -28,14 +29,14 @@ void VPMBrightnessDetection::Reset() {
 
 int32_t VPMBrightnessDetection::ProcessFrame(
     const VideoFrame& frame,
-    const VideoProcessingModule::FrameStats& stats) {
+    const VideoProcessing::FrameStats& stats) {
   if (frame.IsZeroSize()) {
     return VPM_PARAMETER_ERROR;
   }
   int width = frame.width();
   int height = frame.height();
 
-  if (!VideoProcessingModule::ValidFrameStats(stats)) {
+  if (!VideoProcessing::ValidFrameStats(stats)) {
     return VPM_PARAMETER_ERROR;
   }
 
@@ -62,9 +63,9 @@ int32_t VPMBrightnessDetection::ProcessFrame(
       // Standard deviation of Y
       const uint8_t* buffer = frame.buffer(kYPlane);
       float std_y = 0;
-      for (int h = 0; h < height; h += (1 << stats.subSamplHeight)) {
+      for (int h = 0; h < height; h += (1 << stats.sub_sampling_factor)) {
         int row = h*width;
-        for (int w = 0; w < width; w += (1 << stats.subSamplWidth)) {
+        for (int w = 0; w < width; w += (1 << stats.sub_sampling_factor)) {
           std_y += (buffer[w + row] - stats.mean) * (buffer[w + row] -
               stats.mean);
         }
@@ -122,11 +123,11 @@ int32_t VPMBrightnessDetection::ProcessFrame(
   }
 
   if (frame_cnt_dark_ > frame_cnt_alarm) {
-    return VideoProcessingModule::kDarkWarning;
+    return VideoProcessing::kDarkWarning;
   } else if (frame_cnt_bright_ > frame_cnt_alarm) {
-    return VideoProcessingModule::kBrightWarning;
+    return VideoProcessing::kBrightWarning;
   } else {
-    return VideoProcessingModule::kNoWarning;
+    return VideoProcessing::kNoWarning;
   }
 }
 

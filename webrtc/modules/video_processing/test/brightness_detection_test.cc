@@ -13,26 +13,24 @@
 #include "webrtc/modules/video_processing/test/video_processing_unittest.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
-using namespace webrtc;
+namespace webrtc {
 
-TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(BrightnessDetection))
-{
+TEST_F(VideoProcessingTest, DISABLED_ON_IOS(BrightnessDetection)) {
     uint32_t frameNum = 0;
     int32_t brightnessWarning = 0;
     uint32_t warningCount = 0;
     rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
     while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
-           frame_length_)
-    {
+           frame_length_) {
       EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_,
                                  height_, 0, kVideoRotation_0, &video_frame_));
         frameNum++;
-        VideoProcessingModule::FrameStats stats;
-        ASSERT_EQ(0, vpm_->GetFrameStats(&stats, video_frame_));
-        ASSERT_GE(brightnessWarning = vpm_->BrightnessDetection(video_frame_,
+        VideoProcessing::FrameStats stats;
+        vp_->GetFrameStats(video_frame_, &stats);
+        EXPECT_GT(stats.num_pixels, 0u);
+        ASSERT_GE(brightnessWarning = vp_->BrightnessDetection(video_frame_,
                                                                 stats), 0);
-        if (brightnessWarning != VideoProcessingModule::kNoWarning)
-        {
+        if (brightnessWarning != VideoProcessing::kNoWarning) {
             warningCount++;
         }
     }
@@ -49,31 +47,28 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(BrightnessDetection))
     warningCount = 0;
     while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
         frame_length_ &&
-        frameNum < 300)
-    {
+        frameNum < 300) {
       EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_,
                                  height_, 0, kVideoRotation_0, &video_frame_));
         frameNum++;
 
         uint8_t* frame = video_frame_.buffer(kYPlane);
         uint32_t yTmp = 0;
-        for (int yIdx = 0; yIdx < width_ * height_; yIdx++)
-        {
+        for (int yIdx = 0; yIdx < width_ * height_; yIdx++) {
             yTmp = frame[yIdx] << 1;
-            if (yTmp > 255)
-            {
+            if (yTmp > 255) {
                 yTmp = 255;
             }
             frame[yIdx] = static_cast<uint8_t>(yTmp);
         }
 
-        VideoProcessingModule::FrameStats stats;
-        ASSERT_EQ(0, vpm_->GetFrameStats(&stats, video_frame_));
-        ASSERT_GE(brightnessWarning = vpm_->BrightnessDetection(video_frame_,
+        VideoProcessing::FrameStats stats;
+        vp_->GetFrameStats(video_frame_, &stats);
+        EXPECT_GT(stats.num_pixels, 0u);
+        ASSERT_GE(brightnessWarning = vp_->BrightnessDetection(video_frame_,
                                                                 stats), 0);
-        EXPECT_NE(VideoProcessingModule::kDarkWarning, brightnessWarning);
-        if (brightnessWarning == VideoProcessingModule::kBrightWarning)
-        {
+        EXPECT_NE(VideoProcessing::kDarkWarning, brightnessWarning);
+        if (brightnessWarning == VideoProcessing::kBrightWarning) {
             warningCount++;
         }
     }
@@ -88,27 +83,25 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(BrightnessDetection))
     frameNum = 0;
     warningCount = 0;
     while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
-        frame_length_ && frameNum < 300)
-    {
+        frame_length_ && frameNum < 300) {
       EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_,
                                  height_, 0, kVideoRotation_0, &video_frame_));
         frameNum++;
 
         uint8_t* y_plane = video_frame_.buffer(kYPlane);
         int32_t yTmp = 0;
-        for (int yIdx = 0; yIdx < width_ * height_; yIdx++)
-        {
+        for (int yIdx = 0; yIdx < width_ * height_; yIdx++) {
             yTmp = y_plane[yIdx] >> 1;
             y_plane[yIdx] = static_cast<uint8_t>(yTmp);
         }
 
-        VideoProcessingModule::FrameStats stats;
-        ASSERT_EQ(0, vpm_->GetFrameStats(&stats, video_frame_));
-        ASSERT_GE(brightnessWarning = vpm_->BrightnessDetection(video_frame_,
+        VideoProcessing::FrameStats stats;
+        vp_->GetFrameStats(video_frame_, &stats);
+        EXPECT_GT(stats.num_pixels, 0u);
+        ASSERT_GE(brightnessWarning = vp_->BrightnessDetection(video_frame_,
                                                                 stats), 0);
-        EXPECT_NE(VideoProcessingModule::kBrightWarning, brightnessWarning);
-        if (brightnessWarning == VideoProcessingModule::kDarkWarning)
-        {
+        EXPECT_NE(VideoProcessing::kBrightWarning, brightnessWarning);
+        if (brightnessWarning == VideoProcessing::kDarkWarning) {
             warningCount++;
         }
     }
@@ -119,3 +112,4 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(BrightnessDetection))
     printf("Dark foreman: %.1f %%\n\n", warningProportion);
     EXPECT_GT(warningProportion, 90);
 }
+}  // namespace webrtc
