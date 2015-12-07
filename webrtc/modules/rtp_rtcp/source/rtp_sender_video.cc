@@ -104,7 +104,7 @@ void RTPSenderVideo::SendVideoPacket(uint8_t* data_buffer,
                                      StorageType storage) {
   if (_rtpSender.SendToNetwork(data_buffer, payload_length, rtp_header_length,
                                capture_time_ms, storage,
-                               RtpPacketSender::kNormalPriority) == 0) {
+                               RtpPacketSender::kLowPriority) == 0) {
     _videoBitrate.Update(payload_length + rtp_header_length);
     TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                          "Video::PacketNormal", "timestamp", capture_timestamp,
@@ -150,7 +150,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
   if (_rtpSender.SendToNetwork(
           red_packet->data(), red_packet->length() - rtp_header_length,
           rtp_header_length, capture_time_ms, media_packet_storage,
-          RtpPacketSender::kNormalPriority) == 0) {
+          RtpPacketSender::kLowPriority) == 0) {
     _videoBitrate.Update(red_packet->length());
     TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                          "Video::PacketRed", "timestamp", capture_timestamp,
@@ -162,7 +162,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
     if (_rtpSender.SendToNetwork(
             fec_packet->data(), fec_packet->length() - rtp_header_length,
             rtp_header_length, capture_time_ms, fec_storage,
-            RtpPacketSender::kNormalPriority) == 0) {
+            RtpPacketSender::kLowPriority) == 0) {
       _fecOverheadRate.Update(fec_packet->length());
       TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                            "Video::PacketFec", "timestamp", capture_timestamp,

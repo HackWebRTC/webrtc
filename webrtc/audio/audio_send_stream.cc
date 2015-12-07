@@ -17,6 +17,9 @@
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/call/congestion_controller.h"
+#include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -55,22 +58,31 @@ std::string AudioSendStream::Config::ToString() const {
 namespace internal {
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
-    const rtc::scoped_refptr<webrtc::AudioState>& audio_state)
+    const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+    CongestionController* congestion_controller)
     : config_(config), audio_state_(audio_state) {
   LOG(LS_INFO) << "AudioSendStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
+  RTC_DCHECK(congestion_controller);
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
+  channel_proxy_->SetCongestionControlObjects(
+      congestion_controller->pacer(),
+      congestion_controller->GetTransportFeedbackObserver(),
+      congestion_controller->packet_router());
   channel_proxy_->SetRTCPStatus(true);
   channel_proxy_->SetLocalSSRC(config.rtp.ssrc);
   channel_proxy_->SetRTCP_CNAME(config.rtp.c_name);
+
   for (const auto& extension : config.rtp.extensions) {
     if (extension.name == RtpExtension::kAbsSendTime) {
       channel_proxy_->SetSendAbsoluteSenderTimeStatus(true, extension.id);
     } else if (extension.name == RtpExtension::kAudioLevel) {
       channel_proxy_->SetSendAudioLevelIndicationStatus(true, extension.id);
+    } else if (extension.name == RtpExtension::kTransportSequenceNumber) {
+      channel_proxy_->EnableSendTransportSequenceNumber(extension.id);
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";
     }
@@ -80,6 +92,7 @@ AudioSendStream::AudioSendStream(
 AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
+  channel_proxy_->SetCongestionControlObjects(nullptr, nullptr, nullptr);
 }
 
 void AudioSendStream::Start() {

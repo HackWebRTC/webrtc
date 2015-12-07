@@ -106,6 +106,7 @@ source_set("voice_engine") {
     "../modules/audio_processing",
     "../modules/bitrate_controller",
     "../modules/media_file",
+    "../modules/pacing",
     "../modules/rtp_rtcp",
     "../modules/utility",
     "../system_wrappers",

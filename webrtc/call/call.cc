@@ -300,8 +300,8 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  AudioSendStream* send_stream =
-      new AudioSendStream(config, config_.audio_state);
+  AudioSendStream* send_stream = new AudioSendStream(
+      config, config_.audio_state, congestion_controller_.get());
   if (!network_enabled_)
     send_stream->SignalNetworkState(kNetworkDown);
   {

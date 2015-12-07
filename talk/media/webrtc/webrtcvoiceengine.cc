@@ -530,6 +530,7 @@ void WebRtcVoiceEngine::Construct() {
         kRtpTransportSequenceNumberHeaderExtensionDefaultId));
   }
   options_ = GetDefaultEngineOptions();
+  voe_config_.Set<webrtc::VoicePacing>(new webrtc::VoicePacing(true));
 }
 
 WebRtcVoiceEngine::~WebRtcVoiceEngine() {

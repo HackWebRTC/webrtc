@@ -358,10 +358,9 @@ int32_t PacedSender::Process() {
   CriticalSectionScoped cs(critsect_.get());
   int64_t elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
   time_last_update_us_ = now_us;
-  if (paused_)
-    return 0;
   int target_bitrate_kbps = max_bitrate_kbps_;
-  if (elapsed_time_ms > 0) {
+  // TODO(holmer): Remove the !paused_ check when issue 5307 has been fixed.
+  if (!paused_ && elapsed_time_ms > 0) {
     size_t queue_size_bytes = packets_->SizeInBytes();
     if (queue_size_bytes > 0) {
       // Assuming equal size packets and input/output rate, the average packet
@@ -389,7 +388,11 @@ int32_t PacedSender::Process() {
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
     const paced_sender::Packet& packet = packets_->BeginPop();
-    if (SendPacket(packet)) {
+
+    // TODO(holmer): Because of this bug issue 5307 we have to send audio
+    // packets even when the pacer is paused. Here we assume audio packets are
+    // always high priority and that they are the only high priority packets.
+    if ((!paused_ || packet.priority == kHighPriority) && SendPacket(packet)) {
       // Send succeeded, remove it from the queue.
       packets_->FinalizePop(packet);
       if (prober_->IsProbing())
@@ -401,7 +404,8 @@ int32_t PacedSender::Process() {
     }
   }
 
-  if (!packets_->Empty())
+  // TODO(holmer): Remove the paused_ check when issue 5307 has been fixed.
+  if (paused_ || !packets_->Empty())
     return 0;
 
   size_t padding_needed;

@@ -11,13 +11,13 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H_
 #define WEBRTC_VOICE_ENGINE_CHANNEL_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "webrtc/modules/audio_processing/rms_level.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -48,6 +48,7 @@ class AudioDeviceModule;
 class Config;
 class CriticalSectionWrapper;
 class FileWrapper;
+class PacketRouter;
 class ProcessThread;
 class ReceiveStatistics;
 class RemoteNtpTimeEstimator;
@@ -68,9 +69,12 @@ struct SenderInfo;
 namespace voe {
 
 class OutputMixer;
+class RtpPacketSenderProxy;
 class Statistics;
 class StatisticsProxy;
+class TransportFeedbackProxy;
 class TransmitMixer;
+class TransportSequenceNumberProxy;
 class VoERtcpObserver;
 
 // Helper class to simplify locking scheme for members that are accessed from
@@ -321,6 +325,13 @@ public:
     int SetReceiveAudioLevelIndicationStatus(bool enable, unsigned char id);
     int SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id);
     int SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id);
+    void EnableSendTransportSequenceNumber(int id);
+
+    void SetCongestionControlObjects(
+        RtpPacketSender* rtp_packet_sender,
+        TransportFeedbackObserver* transport_feedback_observer,
+        PacketRouter* packet_router);
+
     void SetRTCPStatus(bool enable);
     int GetRTCPStatus(bool& enabled);
     int SetRTCP_CNAME(const char cName[256]);
@@ -584,6 +595,12 @@ private:
     // An associated send channel.
     rtc::scoped_ptr<CriticalSectionWrapper> assoc_send_channel_lock_;
     ChannelOwner associate_send_channel_ GUARDED_BY(assoc_send_channel_lock_);
+
+    bool pacing_enabled_;
+    PacketRouter* packet_router_ = nullptr;
+    rtc::scoped_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
+    rtc::scoped_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
+    rtc::scoped_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
 };
 
 }  // namespace voe

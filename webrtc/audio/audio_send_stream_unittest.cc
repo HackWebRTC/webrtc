@@ -16,8 +16,12 @@
 #include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
+#include "webrtc/call/congestion_controller.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
+#include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
+#include "webrtc/video_engine/call_stats.h"
 
 namespace webrtc {
 namespace test {
@@ -31,6 +35,7 @@ const uint32_t kSsrc = 1234;
 const char* kCName = "foo_name";
 const int kAudioLevelId = 2;
 const int kAbsSendTimeId = 3;
+const int kTransportSequenceNumberId = 4;
 const int kEchoDelayMedian = 254;
 const int kEchoDelayStdDev = -3;
 const int kEchoReturnLoss = -65;
@@ -45,7 +50,12 @@ const uint8_t kTelephoneEventCode = 45;
 const uint32_t kTelephoneEventDuration = 6789;
 
 struct ConfigHelper {
-  ConfigHelper() : stream_config_(nullptr) {
+  ConfigHelper()
+      : stream_config_(nullptr),
+        process_thread_(ProcessThread::Create("AudioTestThread")),
+        congestion_controller_(process_thread_.get(),
+                               &call_stats_,
+                               &bitrate_observer_) {
     using testing::Invoke;
     using testing::StrEq;
 
@@ -68,6 +78,18 @@ struct ConfigHelper {
               SetSendAbsoluteSenderTimeStatus(true, kAbsSendTimeId)).Times(1);
           EXPECT_CALL(*channel_proxy_,
               SetSendAudioLevelIndicationStatus(true, kAudioLevelId)).Times(1);
+          EXPECT_CALL(*channel_proxy_, EnableSendTransportSequenceNumber(
+                                           kTransportSequenceNumberId))
+              .Times(1);
+          EXPECT_CALL(*channel_proxy_,
+                      SetCongestionControlObjects(
+                          congestion_controller_.pacer(),
+                          congestion_controller_.GetTransportFeedbackObserver(),
+                          congestion_controller_.packet_router()))
+              .Times(1);
+          EXPECT_CALL(*channel_proxy_,
+                      SetCongestionControlObjects(nullptr, nullptr, nullptr))
+              .Times(1);
           return channel_proxy_;
         }));
     stream_config_.voe_channel_id = kChannelId;
@@ -77,10 +99,15 @@ struct ConfigHelper {
         RtpExtension(RtpExtension::kAudioLevel, kAudioLevelId));
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
+    stream_config_.rtp.extensions.push_back(RtpExtension(
+        RtpExtension::kTransportSequenceNumber, kTransportSequenceNumberId));
   }
 
   AudioSendStream::Config& config() { return stream_config_; }
   rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
+  CongestionController* congestion_controller() {
+    return &congestion_controller_;
+  }
 
   void SetupMockForSendTelephoneEvent() {
     EXPECT_TRUE(channel_proxy_);
@@ -126,10 +153,21 @@ struct ConfigHelper {
   }
 
  private:
+  class NullBitrateObserver : public BitrateObserver {
+   public:
+    virtual void OnNetworkChanged(uint32_t bitrate_bps,
+                                  uint8_t fraction_loss,
+                                  int64_t rtt_ms) {}
+  };
+
   testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
+  CallStats call_stats_;
+  NullBitrateObserver bitrate_observer_;
+  rtc::scoped_ptr<ProcessThread> process_thread_;
+  CongestionController congestion_controller_;
 };
 }  // namespace
 
@@ -152,12 +190,14 @@ TEST(AudioSendStreamTest, ConfigToString) {
 
 TEST(AudioSendStreamTest, ConstructDestruct) {
   ConfigHelper helper;
-  internal::AudioSendStream send_stream(helper.config(), helper.audio_state());
+  internal::AudioSendStream send_stream(helper.config(), helper.audio_state(),
+                                        helper.congestion_controller());
 }
 
 TEST(AudioSendStreamTest, SendTelephoneEvent) {
   ConfigHelper helper;
-  internal::AudioSendStream send_stream(helper.config(), helper.audio_state());
+  internal::AudioSendStream send_stream(helper.config(), helper.audio_state(),
+                                        helper.congestion_controller());
   helper.SetupMockForSendTelephoneEvent();
   EXPECT_TRUE(send_stream.SendTelephoneEvent(kTelephoneEventPayloadType,
       kTelephoneEventCode, kTelephoneEventDuration));
@@ -165,7 +205,8 @@ TEST(AudioSendStreamTest, SendTelephoneEvent) {
 
 TEST(AudioSendStreamTest, GetStats) {
   ConfigHelper helper;
-  internal::AudioSendStream send_stream(helper.config(), helper.audio_state());
+  internal::AudioSendStream send_stream(helper.config(), helper.audio_state(),
+                                        helper.congestion_controller());
   helper.SetupMockForGetStats();
   AudioSendStream::Stats stats = send_stream.GetStats();
   EXPECT_EQ(kSsrc, stats.local_ssrc);
@@ -192,7 +233,8 @@ TEST(AudioSendStreamTest, GetStats) {
 
 TEST(AudioSendStreamTest, GetStatsTypingNoiseDetected) {
   ConfigHelper helper;
-  internal::AudioSendStream send_stream(helper.config(), helper.audio_state());
+  internal::AudioSendStream send_stream(helper.config(), helper.audio_state(),
+                                        helper.congestion_controller());
   helper.SetupMockForGetStats();
   EXPECT_FALSE(send_stream.GetStats().typing_noise_detected);
 

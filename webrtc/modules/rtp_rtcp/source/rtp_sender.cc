@@ -469,7 +469,8 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   std::map<int8_t, RtpUtility::Payload*>::iterator it =
       payload_type_map_.find(payload_type);
   if (it == payload_type_map_.end()) {
-    LOG(LS_WARNING) << "Payload type " << payload_type << " not registered.";
+    LOG(LS_WARNING) << "Payload type " << static_cast<int>(payload_type)
+                    << " not registered.";
     return -1;
   }
   SetSendPayloadType(payload_type);
@@ -512,7 +513,8 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
   }
   RtpVideoCodecTypes video_type = kRtpVideoGeneric;
   if (CheckPayloadType(payload_type, &video_type) != 0) {
-    LOG(LS_ERROR) << "Don't send data with unknown payload type.";
+    LOG(LS_ERROR) << "Don't send data with unknown payload type: "
+                  << static_cast<int>(payload_type) << ".";
     return -1;
   }
 
@@ -725,7 +727,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
     // TickTime.
     int64_t corrected_capture_tims_ms = capture_time_ms + clock_delta_ms_;
     paced_sender_->InsertPacket(
-        RtpPacketSender::kHighPriority, header.ssrc, header.sequenceNumber,
+        RtpPacketSender::kNormalPriority, header.ssrc, header.sequenceNumber,
         corrected_capture_tims_ms, length - header.headerLength, true);
 
     return length;
@@ -1003,7 +1005,7 @@ bool RTPSender::IsFecPacket(const uint8_t* buffer,
 }
 
 size_t RTPSender::TimeToSendPadding(size_t bytes) {
-  if (bytes == 0)
+  if (audio_configured_ || bytes == 0)
     return 0;
   {
     CriticalSectionScoped cs(send_critsect_.get());

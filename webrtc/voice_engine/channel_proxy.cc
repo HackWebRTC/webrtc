@@ -52,6 +52,11 @@ void ChannelProxy::SetSendAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK_EQ(0, error);
 }
 
+void ChannelProxy::EnableSendTransportSequenceNumber(int id) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->EnableSendTransportSequenceNumber(id);
+}
+
 void ChannelProxy::SetReceiveAbsoluteSenderTimeStatus(bool enable, int id) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   int error = channel()->SetReceiveAbsoluteSenderTimeStatus(enable, id);
@@ -62,6 +67,15 @@ void ChannelProxy::SetReceiveAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   int error = channel()->SetReceiveAudioLevelIndicationStatus(enable, id);
   RTC_DCHECK_EQ(0, error);
+}
+
+void ChannelProxy::SetCongestionControlObjects(
+    RtpPacketSender* rtp_packet_sender,
+    TransportFeedbackObserver* transport_feedback_observer,
+    PacketRouter* packet_router) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->SetCongestionControlObjects(
+      rtp_packet_sender, transport_feedback_observer, packet_router);
 }
 
 CallStatistics ChannelProxy::GetRTCPStatistics() const {
@@ -124,5 +138,6 @@ Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();
 }
+
 }  // namespace voe
 }  // namespace webrtc

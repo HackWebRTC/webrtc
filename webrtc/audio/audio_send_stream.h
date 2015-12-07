@@ -17,6 +17,7 @@
 #include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
+class CongestionController;
 class VoiceEngine;
 
 namespace voe {
@@ -27,7 +28,8 @@ namespace internal {
 class AudioSendStream final : public webrtc::AudioSendStream {
  public:
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
-                  const rtc::scoped_refptr<webrtc::AudioState>& audio_state);
+                  const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+                  CongestionController* congestion_controller);
   ~AudioSendStream() override;
 
   // webrtc::SendStream implementation.

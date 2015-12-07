@@ -18,6 +18,8 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
+#include "webrtc/common.h"
+#include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
@@ -189,6 +191,8 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
 
 void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   const char* kSyncGroup = "av_sync";
+  const uint32_t kAudioSendSsrc = 1234;
+  const uint32_t kAudioRecvSsrc = 5678;
   class AudioPacketReceiver : public PacketReceiver {
    public:
     AudioPacketReceiver(int channel, VoENetwork* voe_network)
@@ -228,37 +232,45 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   test::FakeAudioDevice fake_audio_device(Clock::GetRealTimeClock(),
                                           audio_filename);
   EXPECT_EQ(0, voe_base->Init(&fake_audio_device, nullptr));
-  int channel = voe_base->CreateChannel();
+  Config voe_config;
+  voe_config.Set<VoicePacing>(new VoicePacing(true));
+  int send_channel_id = voe_base->CreateChannel(voe_config);
+  int recv_channel_id = voe_base->CreateChannel();
 
   SyncRtcpObserver audio_observer;
 
-  AudioState::Config audio_state_config;
-  audio_state_config.voice_engine = voice_engine;
+  AudioState::Config send_audio_state_config;
+  send_audio_state_config.voice_engine = voice_engine;
+  Call::Config sender_config;
+  sender_config.audio_state = AudioState::Create(send_audio_state_config);
   Call::Config receiver_config;
-  receiver_config.audio_state = AudioState::Create(audio_state_config);
-  CreateCalls(Call::Config(), receiver_config);
+  receiver_config.audio_state = sender_config.audio_state;
+  CreateCalls(sender_config, receiver_config);
 
-  CodecInst isac = {103, "ISAC", 16000, 480, 1, 32000};
-  EXPECT_EQ(0, voe_codec->SetSendCodec(channel, isac));
-
-  AudioPacketReceiver voe_packet_receiver(channel, voe_network);
+  AudioPacketReceiver voe_send_packet_receiver(send_channel_id, voe_network);
+  AudioPacketReceiver voe_recv_packet_receiver(recv_channel_id, voe_network);
 
   FakeNetworkPipe::Config net_config;
   net_config.queue_delay_ms = 500;
   net_config.loss_percent = 5;
   test::PacketTransport audio_send_transport(
       nullptr, &audio_observer, test::PacketTransport::kSender, net_config);
-  audio_send_transport.SetReceiver(&voe_packet_receiver);
+  audio_send_transport.SetReceiver(&voe_recv_packet_receiver);
   test::PacketTransport audio_receive_transport(
       nullptr, &audio_observer, test::PacketTransport::kReceiver, net_config);
-  audio_receive_transport.SetReceiver(&voe_packet_receiver);
+  audio_receive_transport.SetReceiver(&voe_send_packet_receiver);
 
-  internal::TransportAdapter transport_adapter(&audio_send_transport);
-  transport_adapter.Enable();
-  EXPECT_EQ(0,
-            voe_network->RegisterExternalTransport(channel, transport_adapter));
+  internal::TransportAdapter send_transport_adapter(&audio_send_transport);
+  send_transport_adapter.Enable();
+  EXPECT_EQ(0, voe_network->RegisterExternalTransport(send_channel_id,
+                                                      send_transport_adapter));
 
-  VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock(), channel,
+  internal::TransportAdapter recv_transport_adapter(&audio_receive_transport);
+  recv_transport_adapter.Enable();
+  EXPECT_EQ(0, voe_network->RegisterExternalTransport(recv_channel_id,
+                                                      recv_transport_adapter));
+
+  VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock(), recv_channel_id,
                                     voe_sync, &audio_observer);
 
   test::PacketTransport sync_send_transport(sender_call_.get(), &observer,
@@ -275,6 +287,15 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   CreateSendConfig(1, &sync_send_transport);
   CreateMatchingReceiveConfigs(&sync_receive_transport);
 
+  AudioSendStream::Config audio_send_config(&audio_send_transport);
+  audio_send_config.voe_channel_id = send_channel_id;
+  audio_send_config.rtp.ssrc = kAudioSendSsrc;
+  AudioSendStream* audio_send_stream =
+      sender_call_->CreateAudioSendStream(audio_send_config);
+
+  CodecInst isac = {103, "ISAC", 16000, 480, 1, 32000};
+  EXPECT_EQ(0, voe_codec->SetSendCodec(send_channel_id, isac));
+
   send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   if (fec) {
     send_config_.rtp.fec.red_payload_type = kRedPayloadType;
@@ -286,20 +307,22 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   receive_configs_[0].renderer = &observer;
   receive_configs_[0].sync_group = kSyncGroup;
 
-  AudioReceiveStream::Config audio_config;
-  audio_config.voe_channel_id = channel;
-  audio_config.sync_group = kSyncGroup;
+  AudioReceiveStream::Config audio_recv_config;
+  audio_recv_config.rtp.remote_ssrc = kAudioSendSsrc;
+  audio_recv_config.rtp.local_ssrc = kAudioRecvSsrc;
+  audio_recv_config.voe_channel_id = recv_channel_id;
+  audio_recv_config.sync_group = kSyncGroup;
 
-  AudioReceiveStream* audio_receive_stream = nullptr;
+  AudioReceiveStream* audio_receive_stream;
 
   if (create_audio_first) {
     audio_receive_stream =
-        receiver_call_->CreateAudioReceiveStream(audio_config);
+        receiver_call_->CreateAudioReceiveStream(audio_recv_config);
     CreateStreams();
   } else {
     CreateStreams();
     audio_receive_stream =
-        receiver_call_->CreateAudioReceiveStream(audio_config);
+        receiver_call_->CreateAudioReceiveStream(audio_recv_config);
   }
 
   CreateFrameGeneratorCapturer();
@@ -307,16 +330,16 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   Start();
 
   fake_audio_device.Start();
-  EXPECT_EQ(0, voe_base->StartPlayout(channel));
-  EXPECT_EQ(0, voe_base->StartReceive(channel));
-  EXPECT_EQ(0, voe_base->StartSend(channel));
+  EXPECT_EQ(0, voe_base->StartPlayout(recv_channel_id));
+  EXPECT_EQ(0, voe_base->StartReceive(recv_channel_id));
+  EXPECT_EQ(0, voe_base->StartSend(send_channel_id));
 
   EXPECT_EQ(kEventSignaled, observer.Wait())
       << "Timed out while waiting for audio and video to be synchronized.";
 
-  EXPECT_EQ(0, voe_base->StopSend(channel));
-  EXPECT_EQ(0, voe_base->StopReceive(channel));
-  EXPECT_EQ(0, voe_base->StopPlayout(channel));
+  EXPECT_EQ(0, voe_base->StopSend(send_channel_id));
+  EXPECT_EQ(0, voe_base->StopReceive(recv_channel_id));
+  EXPECT_EQ(0, voe_base->StopPlayout(recv_channel_id));
   fake_audio_device.Stop();
 
   Stop();
@@ -325,15 +348,17 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   audio_send_transport.StopSending();
   audio_receive_transport.StopSending();
 
-  voe_base->DeleteChannel(channel);
+  DestroyStreams();
+
+  sender_call_->DestroyAudioSendStream(audio_send_stream);
+  receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
+
+  voe_base->DeleteChannel(send_channel_id);
+  voe_base->DeleteChannel(recv_channel_id);
   voe_base->Release();
   voe_codec->Release();
   voe_network->Release();
   voe_sync->Release();
-
-  DestroyStreams();
-
-  receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
 
   DestroyCalls();
 

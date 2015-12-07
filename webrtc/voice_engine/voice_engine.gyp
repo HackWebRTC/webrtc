@@ -23,6 +23,7 @@
         '<(webrtc_root)/modules/modules.gyp:audio_processing',
         '<(webrtc_root)/modules/modules.gyp:bitrate_controller',
         '<(webrtc_root)/modules/modules.gyp:media_file',
+        '<(webrtc_root)/modules/modules.gyp:paced_sender',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',

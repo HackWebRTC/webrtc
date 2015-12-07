@@ -138,6 +138,12 @@ struct NetEqFastAccelerate {
   bool enabled;
 };
 
+struct VoicePacing {
+  VoicePacing() : enabled(false) {}
+  explicit VoicePacing(bool value) : enabled(value) {}
+  bool enabled;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_CONFIG_H_

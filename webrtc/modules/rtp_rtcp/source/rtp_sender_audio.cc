@@ -16,6 +16,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -368,7 +369,8 @@ int32_t RTPSenderAudio::SendAudio(
                            _rtpSender->Timestamp(), "seqnum",
                            _rtpSender->SequenceNumber());
     return _rtpSender->SendToNetwork(dataBuffer, payloadSize, rtpHeaderLength,
-                                     -1, kAllowRetransmission,
+                                     TickTime::MillisecondTimestamp(),
+                                     kAllowRetransmission,
                                      RtpPacketSender::kHighPriority);
   }
 
@@ -476,9 +478,9 @@ RTPSenderAudio::SendTelephoneEventPacket(bool ended,
                              "Audio::SendTelephoneEvent", "timestamp",
                              dtmfTimeStamp, "seqnum",
                              _rtpSender->SequenceNumber());
-        retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12, -1,
-                                           kAllowRetransmission,
-                                           RtpPacketSender::kHighPriority);
+        retVal = _rtpSender->SendToNetwork(
+            dtmfbuffer, 4, 12, TickTime::MillisecondTimestamp(),
+            kAllowRetransmission, RtpPacketSender::kHighPriority);
         sendCount--;
 
     }while (sendCount > 0 && retVal == 0);

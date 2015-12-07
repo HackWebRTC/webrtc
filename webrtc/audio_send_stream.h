@@ -64,7 +64,7 @@ class AudioSendStream : public SendStream {
       // Sender SSRC.
       uint32_t ssrc = 0;
 
-      // RTP header extensions used for the received stream.
+      // RTP header extensions used for the sent stream.
       std::vector<RtpExtension> extensions;
 
       // RTCP CNAME, see RFC 3550.
