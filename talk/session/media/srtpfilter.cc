@@ -484,7 +484,7 @@ bool SrtpFilter::ParseKeyParams(const std::string& key_params,
 bool SrtpSession::inited_ = false;
 
 // This lock protects SrtpSession::inited_ and SrtpSession::sessions_.
-rtc::GlobalLockPod SrtpSession::lock_ = {{0}};
+rtc::GlobalLockPod SrtpSession::lock_;
 
 SrtpSession::SrtpSession()
     : session_(NULL),

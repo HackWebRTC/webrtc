@@ -21,7 +21,6 @@
 #endif  // defined(WEBRTC_WIN)
 
 namespace rtc {
-
 class AtomicOps {
  public:
 #if defined(WEBRTC_WIN)
@@ -81,50 +80,8 @@ class AtomicOps {
 #endif
 };
 
-// POD struct version of AtomicOps, prevents accidental non-atomic operator
-// usage (such as ++, -- or =). Functions are static, so that the AtomicInt::
-// prefix must be present in the code, clearly labeling the operations as
-// atomic.
-// Do not copy-initialize, since that performs non-atomic reads of value_. The
-// copy constructor needs to be present for brace initialization.
-struct AtomicInt {
-  AtomicInt() = delete;
-  // TODO(pbos): When MSVC allows brace initialization (or we move to
-  // std::atomic), remove copy constructor (or have it implicitly removed by
-  // std::atomic).
-  void operator=(const AtomicInt&) = delete;
 
-  // value_ is public to permit brace initialization. Should not be accessed
-  // directly.
-  volatile int value_;
 
-  // Atomically increments |i|, returns the resulting incremented value.
-  static int Increment(AtomicInt* i) {
-    return AtomicOps::Increment(&i->value_);
-  }
-
-  // Atomically decrements |i|, returns the resulting decremented value.
-  static int Decrement(AtomicInt* i) {
-    return AtomicOps::Decrement(&i->value_);
-  }
-
-  // Atomically loads |i|.
-  static int AcquireLoad(const AtomicInt* i) {
-    return AtomicOps::AcquireLoad(&i->value_);
-  }
-
-  // Atomically stores |value| in |i|.
-  static void ReleaseStore(AtomicInt* i, int value) {
-    AtomicOps::ReleaseStore(&i->value_, value);
-  }
-
-  // Attempts to compare-and-swaps |old_value| for |new_value| in |i| , returns
-  // |i|'s initial value. If equal to |old_value|, then the CAS succeeded,
-  // otherwise no operation is performed.
-  static int CompareAndSwap(AtomicInt* i, int old_value, int new_value) {
-    return AtomicOps::CompareAndSwap(&i->value_, old_value, new_value);
-  }
-};
 }
 
 #endif  // WEBRTC_BASE_ATOMICOPS_H_
