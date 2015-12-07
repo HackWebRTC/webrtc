@@ -444,7 +444,6 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
     }
 
     rtc::CriticalSection crit_;
-    rtc::scoped_ptr<RtpHeaderParser> rtp_parser_;
     std::set<uint16_t> dropped_packets_;
     std::set<uint16_t> retransmitted_packets_;
     uint64_t sent_rtp_packets_;
