@@ -6,3 +6,5 @@ VideoSendStreamTest.VP9FlexMode
 
 # Flaky under memcheck (WebRTC issue 5134)
 EndToEndTest.AssignsTransportSequenceNumbers
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=5312
+RtcEventLogTest.DropOldEvents
