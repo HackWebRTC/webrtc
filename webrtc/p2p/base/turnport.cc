@@ -612,6 +612,8 @@ void TurnPort::ResolveTurnAddress(const rtc::SocketAddress& address) {
   if (resolver_)
     return;
 
+  LOG_J(LS_INFO, this) << "Starting TURN host lookup for "
+                       << address.ToSensitiveString();
   resolver_ = socket_factory()->CreateAsyncResolver();
   resolver_->SignalDone.connect(this, &TurnPort::OnResolveResult);
   resolver_->Start(address);

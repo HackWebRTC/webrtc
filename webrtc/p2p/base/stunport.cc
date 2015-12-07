@@ -363,6 +363,8 @@ void UDPPort::ResolveStunAddress(const rtc::SocketAddress& stun_addr) {
     resolver_->SignalDone.connect(this, &UDPPort::OnResolveResult);
   }
 
+  LOG_J(LS_INFO, this) << "Starting STUN host lookup for "
+                       << stun_addr.ToSensitiveString();
   resolver_->Resolve(stun_addr);
 }
 
