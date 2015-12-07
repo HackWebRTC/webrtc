@@ -106,7 +106,7 @@ class LOCKABLE GlobalLockPod {
 
   void Unlock() UNLOCK_FUNCTION();
 
-  volatile int lock_acquired;
+  AtomicInt lock_acquired;
 };
 
 class GlobalLock : public GlobalLockPod {

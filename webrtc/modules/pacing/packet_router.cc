@@ -18,8 +18,7 @@
 
 namespace webrtc {
 
-PacketRouter::PacketRouter() : transport_seq_(0) {
-}
+PacketRouter::PacketRouter() : transport_seq_({0}) {}
 
 PacketRouter::~PacketRouter() {
   RTC_DCHECK(rtp_modules_.empty());
@@ -69,11 +68,11 @@ size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send) {
 }
 
 void PacketRouter::SetTransportWideSequenceNumber(uint16_t sequence_number) {
-  rtc::AtomicOps::ReleaseStore(&transport_seq_, sequence_number);
+  rtc::AtomicInt::ReleaseStore(&transport_seq_, sequence_number);
 }
 
 uint16_t PacketRouter::AllocateSequenceNumber() {
-  int prev_seq = rtc::AtomicOps::AcquireLoad(&transport_seq_);
+  int prev_seq = rtc::AtomicInt::AcquireLoad(&transport_seq_);
   int desired_prev_seq;
   int new_seq;
   do {
@@ -83,7 +82,7 @@ uint16_t PacketRouter::AllocateSequenceNumber() {
     // time the CAS operation was executed. Thus, if prev_seq is returned, the
     // operation was successful - otherwise we need to retry. Saving the
     // return value saves us a load on retry.
-    prev_seq = rtc::AtomicOps::CompareAndSwap(&transport_seq_, desired_prev_seq,
+    prev_seq = rtc::AtomicInt::CompareAndSwap(&transport_seq_, desired_prev_seq,
                                               new_seq);
   } while (prev_seq != desired_prev_seq);
 
