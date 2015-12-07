@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import cPickle
+import errno
 import gzip
 import multiprocessing
 import optparse
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import zlib
@@ -62,6 +64,10 @@ class Outputter(object):
 stdout_lock = threading.Lock()
 
 class FilterFormat:
+  if sys.stdout.isatty():
+    # stdout needs to be unbuffered since the output is interactive.
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
   out = Outputter(sys.stdout)
   total_tests = 0
   finished_tests = 0
@@ -80,7 +86,6 @@ class FilterFormat:
     if command == "TEST":
       (binary, test) = arg.split(' ', 1)
       self.tests[job_id] = (binary, test.strip())
-      self.outputs[job_id] = []
     elif command == "EXIT":
       (exit_code, time_ms) = [int(x) for x in arg.split(' ', 1)]
       self.finished_tests += 1
@@ -88,8 +93,9 @@ class FilterFormat:
       self.print_test_status(test, time_ms)
       if exit_code != 0:
         self.failures.append(self.tests[job_id])
-        for line in self.outputs[job_id]:
-          self.out.permanent_line(line)
+        with open(self.outputs[job_id]) as f:
+          for line in f.readlines():
+            self.out.permanent_line(line.rstrip())
         self.out.permanent_line(
           "[%d/%d] %s returned/aborted with exit code %d (%d ms)"
           % (self.finished_tests, self.total_tests, test, exit_code, time_ms))
@@ -97,17 +103,15 @@ class FilterFormat:
       self.total_tests = int(arg.split(' ', 1)[1])
       self.out.transient_line("[0/%d] Running tests..." % self.total_tests)
 
-  def add_stdout(self, job_id, output):
-    self.outputs[job_id].append(output)
+  def logfile(self, job_id, name):
+    self.outputs[job_id] = name
 
   def log(self, line):
     stdout_lock.acquire()
     (prefix, output) = line.split(' ', 1)
 
-    if prefix[-1] == ':':
-      self.handle_meta(int(prefix[:-1]), output)
-    else:
-      self.add_stdout(int(prefix[:-1]), output)
+    assert prefix[-1] == ':'
+    self.handle_meta(int(prefix[:-1]), output)
     stdout_lock.release()
 
   def end(self):
@@ -123,6 +127,10 @@ class RawFormat:
     sys.stdout.write(line + "\n")
     sys.stdout.flush()
     stdout_lock.release()
+  def logfile(self, job_id, name):
+    with open(self.outputs[job_id]) as f:
+      for line in f.readlines():
+        self.log(str(job_id) + '> ' + line.rstrip())
   def end(self):
     pass
 
@@ -184,6 +192,9 @@ for i in range(len(sys.argv)):
 parser = optparse.OptionParser(
     usage = 'usage: %prog [options] binary [binary ...] -- [additional args]')
 
+parser.add_option('-d', '--output_dir', type='string',
+                  default=os.path.join(tempfile.gettempdir(), "gtest-parallel"),
+                  help='output directory for test logs')
 parser.add_option('-r', '--repeat', type='int', default=1,
                   help='repeat tests')
 parser.add_option('-w', '--workers', type='int',
@@ -260,25 +271,33 @@ logger.log(str(-1) + ': TESTCNT ' + ' ' + str(len(tests)))
 
 exit_code = 0
 
+# Create directory for test log output.
+try:
+  os.makedirs(options.output_dir)
+except OSError as e:
+  # Ignore errors if this directory already exists.
+  if e.errno != errno.EEXIST or not os.path.isdir(options.output_dir):
+    raise e
+# Remove files from old test runs.
+for logfile in os.listdir(options.output_dir):
+  os.remove(os.path.join(options.output_dir, logfile))
+
 # Run the specified job. Return the elapsed time in milliseconds if
 # the job succeeds, or a very large number (larger than any reasonable
 # elapsed time) if the job fails. (This ensures that failing tests
 # will run first the next time.)
 def run_job((command, job_id, test)):
   begin = time.time()
-  sub = subprocess.Popen(command + ['--gtest_filter=' + test] +
-                           ['--gtest_color=' + options.gtest_color],
-                         stdout = subprocess.PIPE,
-                         stderr = subprocess.STDOUT)
 
-  while True:
-    line = sub.stdout.readline()
-    if line == '':
-      break
-    logger.log(str(job_id) + '> ' + line.rstrip())
+  with tempfile.NamedTemporaryFile(dir=options.output_dir, delete=False) as log:
+    sub = subprocess.Popen(command + ['--gtest_filter=' + test] +
+                             ['--gtest_color=' + options.gtest_color],
+                           stdout=log.file,
+                           stderr=log.file)
+    code = sub.wait()
+    runtime_ms = int(1000 * (time.time() - begin))
+    logger.logfile(job_id, log.name)
 
-  code = sub.wait()
-  runtime_ms = int(1000 * (time.time() - begin))
   logger.log("%s: EXIT %s %d" % (job_id, code, runtime_ms))
   if code == 0:
     return runtime_ms
