@@ -96,7 +96,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
   @SmallTest
   public void testRgbRendering() {
     // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
     eglBase.makeCurrent();
 
@@ -133,7 +133,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
   @SmallTest
   public void testYuvRendering() {
     // Create EGL base with a pixel buffer as display output.
-    EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
+    EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
     eglBase.makeCurrent();
 
@@ -229,7 +229,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
       public StubOesTextureProducer(
           EglBase.Context sharedContext, SurfaceTexture surfaceTexture, int width,
           int height) {
-        eglBase = EglBase.create(sharedContext, EglBase.ConfigType.PLAIN);
+        eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PLAIN);
         surfaceTexture.setDefaultBufferSize(width, height);
         eglBase.createSurface(surfaceTexture);
         assertEquals(eglBase.surfaceWidth(), width);
@@ -263,7 +263,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     }
 
     // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
 
     // Create resources for generating OES textures.

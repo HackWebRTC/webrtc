@@ -163,7 +163,7 @@ public class SurfaceViewRenderer extends SurfaceView
       renderThread = new HandlerThread(TAG);
       renderThread.start();
       drawer = new GlRectDrawer();
-      eglBase = EglBase.create(sharedContext, EglBase.ConfigType.PLAIN);
+      eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PLAIN);
       renderThreadHandler = new Handler(renderThread.getLooper());
     }
     tryCreateEglSurface();

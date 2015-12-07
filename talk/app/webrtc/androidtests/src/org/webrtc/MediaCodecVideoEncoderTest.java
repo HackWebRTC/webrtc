@@ -143,7 +143,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     final int height = 480;
     final long presentationTs = 2;
 
-    final EglBase eglOesBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglOesBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
     eglOesBase.createDummyPbufferSurface();
     eglOesBase.makeCurrent();
     int oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);

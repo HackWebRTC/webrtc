@@ -51,7 +51,6 @@ final class EglBase14 extends EglBase {
   private static final int EGL_RECORDABLE_ANDROID = 0x3142;
 
   private EGLContext eglContext;
-  private ConfigType configType;
   private EGLConfig eglConfig;
   private EGLDisplay eglDisplay;
   private EGLSurface eglSurface = EGL14.EGL_NO_SURFACE;
@@ -73,11 +72,10 @@ final class EglBase14 extends EglBase {
 
   // Create a new context with the specified config type, sharing data with sharedContext.
   // |sharedContext| may be null.
-  EglBase14(EglBase14.Context sharedContext, ConfigType configType) {
+  EglBase14(EglBase14.Context sharedContext, int[] configAttributes) {
     super(true /* dummy */);
-    this.configType = configType;
     eglDisplay = getEglDisplay();
-    eglConfig = getEglConfig(eglDisplay, configType);
+    eglConfig = getEglConfig(eglDisplay, configAttributes);
     eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
   }
 
@@ -99,9 +97,6 @@ final class EglBase14 extends EglBase {
       throw new IllegalStateException("Input must be either a Surface or SurfaceTexture");
     }
     checkIsNotReleased();
-    if (configType == ConfigType.PIXEL_BUFFER) {
-      Logging.w(TAG, "This EGL context is configured for PIXEL_BUFFER, but uses regular Surface");
-    }
     if (eglSurface != EGL14.EGL_NO_SURFACE) {
       throw new RuntimeException("Already has an EGLSurface");
     }
@@ -120,10 +115,6 @@ final class EglBase14 extends EglBase {
   @Override
   public void createPbufferSurface(int width, int height) {
     checkIsNotReleased();
-    if (configType != ConfigType.PIXEL_BUFFER) {
-      throw new RuntimeException(
-          "This EGL context is not configured to use a pixel buffer: " + configType);
-    }
     if (eglSurface != EGL14.EGL_NO_SURFACE) {
       throw new RuntimeException("Already has an EGLSurface");
     }
@@ -229,38 +220,12 @@ final class EglBase14 extends EglBase {
   }
 
   // Return an EGLConfig, or die trying.
-  private static EGLConfig getEglConfig(EGLDisplay eglDisplay, ConfigType configType) {
-    // Always RGB888, GLES2.
-    int[] configAttributes = {
-      EGL14.EGL_RED_SIZE, 8,
-      EGL14.EGL_GREEN_SIZE, 8,
-      EGL14.EGL_BLUE_SIZE, 8,
-      EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-      EGL14.EGL_NONE, 0,  // Allocate dummy fields for specific options.
-      EGL14.EGL_NONE
-    };
-
-    // Fill in dummy fields based on configType.
-    switch (configType) {
-      case PLAIN:
-        break;
-      case PIXEL_BUFFER:
-        configAttributes[configAttributes.length - 3] = EGL14.EGL_SURFACE_TYPE;
-        configAttributes[configAttributes.length - 2] = EGL14.EGL_PBUFFER_BIT;
-        break;
-      case RECORDABLE:
-        configAttributes[configAttributes.length - 3] = EGL_RECORDABLE_ANDROID;
-        configAttributes[configAttributes.length - 2] = 1;
-        break;
-      default:
-        throw new IllegalArgumentException();
-    }
-
+  private static EGLConfig getEglConfig(EGLDisplay eglDisplay, int[] configAttributes) {
     EGLConfig[] configs = new EGLConfig[1];
     int[] numConfigs = new int[1];
     if (!EGL14.eglChooseConfig(
         eglDisplay, configAttributes, 0, configs, 0, configs.length, numConfigs, 0)) {
-      throw new RuntimeException("Unable to find RGB888 " + configType + " EGL config");
+      throw new RuntimeException("Unable to find any matching EGL config");
     }
     return configs[0];
   }

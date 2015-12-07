@@ -112,7 +112,7 @@ class SurfaceTextureHelper {
     this.handler = handler;
     this.isOwningThread = isOwningThread;
 
-    eglBase = EglBase.create(sharedContext, EglBase.ConfigType.PIXEL_BUFFER);
+    eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PIXEL_BUFFER);
     eglBase.createDummyPbufferSurface();
     eglBase.makeCurrent();
 

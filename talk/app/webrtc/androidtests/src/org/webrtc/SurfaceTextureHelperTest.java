@@ -107,7 +107,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final int width = 16;
     final int height = 16;
     // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
     eglBase.createPbufferSurface(width, height);
     final GlRectDrawer drawer = new GlRectDrawer();
 
@@ -121,7 +121,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     // Create resources for stubbing an OES texture producer. |eglOesBase| has the SurfaceTexture in
     // |surfaceTextureHelper| as the target EGLSurface.
     final EglBase eglOesBase =
-        EglBase.create(eglBase.getEglBaseContext(), EglBase.ConfigType.PLAIN);
+        EglBase.create(eglBase.getEglBaseContext(), EglBase.CONFIG_PLAIN);
     eglOesBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
     assertEquals(eglOesBase.surfaceWidth(), width);
     assertEquals(eglOesBase.surfaceHeight(), height);
@@ -175,7 +175,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final int width = 16;
     final int height = 16;
     // Create EGL base with a pixel buffer as display output.
-    final EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PIXEL_BUFFER);
+    final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
     eglBase.createPbufferSurface(width, height);
 
     // Create SurfaceTextureHelper and listener.
@@ -188,7 +188,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     // Create resources for stubbing an OES texture producer. |eglOesBase| has the SurfaceTexture in
     // |surfaceTextureHelper| as the target EGLSurface.
     final EglBase eglOesBase =
-        EglBase.create(eglBase.getEglBaseContext(), EglBase.ConfigType.PLAIN);
+        EglBase.create(eglBase.getEglBaseContext(), EglBase.CONFIG_PLAIN);
     eglOesBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
     assertEquals(eglOesBase.surfaceWidth(), width);
     assertEquals(eglOesBase.surfaceHeight(), height);
@@ -244,7 +244,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.setListener(listener);
     // Create EglBase with the SurfaceTexture as target EGLSurface.
-    final EglBase eglBase = EglBase.create(null, EglBase.ConfigType.PLAIN);
+    final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
     eglBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
     eglBase.makeCurrent();
     // Assert no frame has been received yet.
@@ -299,7 +299,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
 
     // Create resources for stubbing an OES texture producer. |eglOesBase| has the
     // SurfaceTexture in |surfaceTextureHelper| as the target EGLSurface.
-    final EglBase eglOesBase = EglBase.create(null, EglBase.ConfigType.PLAIN);
+    final EglBase eglOesBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
     eglOesBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
     eglOesBase.makeCurrent();
     // Draw a frame onto the SurfaceTexture.
@@ -335,7 +335,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
 
     // Create resources for stubbing an OES texture producer. |eglOesBase| has the
     // SurfaceTexture in |surfaceTextureHelper| as the target EGLSurface.
-    final EglBase eglOesBase = EglBase.create(null, EglBase.ConfigType.PLAIN);
+    final EglBase eglOesBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
     eglOesBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
     eglOesBase.makeCurrent();
     // Draw a frame onto the SurfaceTexture.

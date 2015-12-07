@@ -34,7 +34,6 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 
 import org.webrtc.Logging;
-import org.webrtc.EglBase.ConfigType;
 import org.webrtc.EglBase.Context;
 
 import javax.microedition.khronos.egl.EGL10;
@@ -60,7 +59,6 @@ public class EglBase {
 
   private final EGL10 egl;
   private EGLContext eglContext;
-  private ConfigType configType;
   private EGLConfig eglConfig;
   private EGLDisplay eglDisplay;
   private EGLSurface eglSurface = EGL10.EGL_NO_SURFACE;
@@ -74,41 +72,53 @@ public class EglBase {
     }
   }
 
-  // EGLConfig constructor type. Influences eglChooseConfig arguments.
-  public static enum ConfigType {
-    // No special parameters.
-    PLAIN,
-    // Configures with EGL_SURFACE_TYPE = EGL_PBUFFER_BIT.
-    PIXEL_BUFFER,
-    // Configures with EGL_RECORDABLE_ANDROID = 1.
-    // Discourages EGL from using pixel formats that cannot efficiently be
-    // converted to something usable by the video encoder.
-    RECORDABLE
-  }
+  public static final int[] CONFIG_PLAIN = {
+    EGL10.EGL_RED_SIZE, 8,
+    EGL10.EGL_GREEN_SIZE, 8,
+    EGL10.EGL_BLUE_SIZE, 8,
+    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+    EGL10.EGL_NONE
+  };
+  public static final int[] CONFIG_PIXEL_BUFFER = {
+    EGL10.EGL_RED_SIZE, 8,
+    EGL10.EGL_GREEN_SIZE, 8,
+    EGL10.EGL_BLUE_SIZE, 8,
+    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+    EGL10.EGL_SURFACE_TYPE, EGL10.EGL_PBUFFER_BIT,
+    EGL10.EGL_NONE
+  };
+  public static final int[] CONFIG_RECORDABLE = {
+    EGL10.EGL_RED_SIZE, 8,
+    EGL10.EGL_GREEN_SIZE, 8,
+    EGL10.EGL_BLUE_SIZE, 8,
+    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+    EGL_RECORDABLE_ANDROID, 1,
+    EGL10.EGL_NONE
+  };
 
-  // Create a new context with the specified config type, sharing data with sharedContext.
+  // Create a new context with the specified config attributes, sharing data with sharedContext.
   // |sharedContext| can be null.
-  public static EglBase create(Context sharedContext, ConfigType configType) {
+  public static EglBase create(Context sharedContext, int[] configAttributes) {
     return (EglBase14.isEGL14Supported()
         && (sharedContext == null || sharedContext instanceof EglBase14.Context))
-            ? new EglBase14((EglBase14.Context) sharedContext, configType)
-            : new EglBase(sharedContext, configType);
+            ? new EglBase14((EglBase14.Context) sharedContext, configAttributes)
+            : new EglBase(sharedContext, configAttributes);
   }
 
   public static EglBase create() {
-    return create(null, ConfigType.PLAIN);
+    return create(null, CONFIG_PLAIN);
   }
 
   //Create root context without any EGLSurface or parent EGLContext. This can be used for branching
   // new contexts that share data.
   @Deprecated
   public EglBase() {
-    this((Context) null, ConfigType.PLAIN);
+    this((Context) null, CONFIG_PLAIN);
   }
 
   @Deprecated
-  public EglBase(EGLContext sharedContext, ConfigType configType) {
-    this(new Context(sharedContext), configType);
+  public EglBase(EGLContext sharedContext, int[] configAttributes) {
+    this(new Context(sharedContext), configAttributes);
     Logging.d(TAG, "EglBase created");
   }
 
@@ -118,11 +128,10 @@ public class EglBase {
   }
 
   // Create a new context with the specified config type, sharing data with sharedContext.
-  EglBase(Context sharedContext, ConfigType configType) {
+  EglBase(Context sharedContext, int[] configAttributes) {
     this.egl = (EGL10) EGLContext.getEGL();
-    this.configType = configType;
     eglDisplay = getEglDisplay();
-    eglConfig = getEglConfig(eglDisplay, configType);
+    eglConfig = getEglConfig(eglDisplay, configAttributes);
     eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
   }
 
@@ -211,9 +220,6 @@ public class EglBase {
       throw new IllegalStateException("Input must be either a SurfaceHolder or SurfaceTexture");
     }
     checkIsNotReleased();
-    if (configType == ConfigType.PIXEL_BUFFER) {
-      Logging.w(TAG, "This EGL context is configured for PIXEL_BUFFER, but uses regular Surface");
-    }
     if (eglSurface != EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("Already has an EGLSurface");
     }
@@ -231,10 +237,6 @@ public class EglBase {
 
   public void createPbufferSurface(int width, int height) {
     checkIsNotReleased();
-    if (configType != ConfigType.PIXEL_BUFFER) {
-      throw new RuntimeException(
-          "This EGL context is not configured to use a pixel buffer: " + configType);
-    }
     if (eglSurface != EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("Already has an EGLSurface");
     }
@@ -330,38 +332,12 @@ public class EglBase {
   }
 
   // Return an EGLConfig, or die trying.
-  private EGLConfig getEglConfig(EGLDisplay eglDisplay, ConfigType configType) {
-    // Always RGB888, GLES2.
-    int[] configAttributes = {
-      EGL10.EGL_RED_SIZE, 8,
-      EGL10.EGL_GREEN_SIZE, 8,
-      EGL10.EGL_BLUE_SIZE, 8,
-      EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-      EGL10.EGL_NONE, 0,  // Allocate dummy fields for specific options.
-      EGL10.EGL_NONE
-    };
-
-    // Fill in dummy fields based on configType.
-    switch (configType) {
-      case PLAIN:
-        break;
-      case PIXEL_BUFFER:
-        configAttributes[configAttributes.length - 3] = EGL10.EGL_SURFACE_TYPE;
-        configAttributes[configAttributes.length - 2] = EGL10.EGL_PBUFFER_BIT;
-        break;
-      case RECORDABLE:
-        configAttributes[configAttributes.length - 3] = EGL_RECORDABLE_ANDROID;
-        configAttributes[configAttributes.length - 2] = 1;
-        break;
-      default:
-        throw new IllegalArgumentException();
-    }
-
+  private EGLConfig getEglConfig(EGLDisplay eglDisplay, int[] configAttributes) {
     EGLConfig[] configs = new EGLConfig[1];
     int[] numConfigs = new int[1];
     if (!egl.eglChooseConfig(
         eglDisplay, configAttributes, configs, configs.length, numConfigs)) {
-      throw new RuntimeException("Unable to find RGB888 " + configType + " EGL config");
+      throw new RuntimeException("Unable to find any matching EGL config");
     }
     return configs[0];
   }
