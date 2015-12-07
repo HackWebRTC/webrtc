@@ -655,6 +655,7 @@ void Call::ConfigureSync(const std::string& sync_group) {
 PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
                                                  const uint8_t* packet,
                                                  size_t length) {
+  TRACE_EVENT0("webrtc", "Call::DeliverRtcp");
   // TODO(pbos): Figure out what channel needs it actually.
   //             Do NOT broadcast! Also make sure it's a valid packet.
   //             Return DELIVERY_UNKNOWN_SSRC if it can be determined that
@@ -688,6 +689,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                                                 const uint8_t* packet,
                                                 size_t length,
                                                 const PacketTime& packet_time) {
+  TRACE_EVENT0("webrtc", "Call::DeliverRtp");
   // Minimum RTP header size.
   if (length < 12)
     return DELIVERY_PACKET_ERROR;

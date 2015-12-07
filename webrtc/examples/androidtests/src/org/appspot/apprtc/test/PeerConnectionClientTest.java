@@ -249,7 +249,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private PeerConnectionParameters createParametersForAudioCall() {
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(
-            false, true, // videoCallEnabled, loopback.
+            false, true, false, // videoCallEnabled, loopback, tracing.
             0, 0, 0, 0, "", true, false, // video codec parameters.
             0, "OPUS", false, false); // audio codec parameters.
     return peerConnectionParameters;
@@ -259,7 +259,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       String videoCodec, boolean captureToTexture) {
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(
-            true, true, // videoCallEnabled, loopback.
+            true, true, false, // videoCallEnabled, loopback, tracing.
             0, 0, 0, 0, videoCodec, true, captureToTexture, // video codec parameters.
             0, "OPUS", false, false); // audio codec parameters.
     return peerConnectionParameters;

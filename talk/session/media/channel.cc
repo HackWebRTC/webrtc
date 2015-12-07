@@ -29,7 +29,6 @@
 
 #include "talk/media/base/constants.h"
 #include "talk/media/base/rtputils.h"
-#include "webrtc/p2p/base/transportchannel.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/buffer.h"
@@ -37,6 +36,8 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
+#include "webrtc/p2p/base/transportchannel.h"
 
 namespace cricket {
 
@@ -471,6 +472,7 @@ void BaseChannel::OnChannelRead(TransportChannel* channel,
                                 const char* data, size_t len,
                                 const rtc::PacketTime& packet_time,
                                 int flags) {
+  TRACE_EVENT0("webrtc", "BaseChannel::OnChannelRead");
   // OnChannelRead gets called from P2PSocket; now pass data to MediaEngine
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
@@ -1272,6 +1274,7 @@ void BaseChannel::MaybeCacheRtpAbsSendTimeHeaderExtension(
 }
 
 void BaseChannel::OnMessage(rtc::Message *pmsg) {
+  TRACE_EVENT0("webrtc", "BaseChannel::OnMessage");
   switch (pmsg->message_id) {
     case MSG_RTPPACKET:
     case MSG_RTCPPACKET: {

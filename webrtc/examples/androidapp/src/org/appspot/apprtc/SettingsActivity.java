@@ -40,6 +40,7 @@ public class SettingsActivity extends Activity
 
   private String keyPrefRoomServerUrl;
   private String keyPrefDisplayHud;
+  private String keyPrefTracing;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +63,7 @@ public class SettingsActivity extends Activity
 
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyPrefDisplayHud = getString(R.string.pref_displayhud_key);
+    keyPrefTracing = getString(R.string.pref_tracing_key);
 
     // Display the fragment as the main content.
     settingsFragment = new SettingsFragment();
@@ -97,6 +99,7 @@ public class SettingsActivity extends Activity
 
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
     updateSummaryB(sharedPreferences, keyPrefDisplayHud);
+    updateSummaryB(sharedPreferences, keyPrefTracing);
   }
 
   @Override
@@ -122,6 +125,7 @@ public class SettingsActivity extends Activity
         || key.equals(keyprefStartAudioBitrateValue)) {
       updateSummaryBitrate(sharedPreferences, key);
     } else if (key.equals(keyprefVideoCall)
+        || key.equals(keyPrefTracing)
         || key.equals(keyprefCaptureQualitySlider)
         || key.equals(keyprefHwCodec)
         || key.equals(keyprefCaptureToTexture)

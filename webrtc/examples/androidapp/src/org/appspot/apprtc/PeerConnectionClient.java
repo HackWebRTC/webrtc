@@ -128,6 +128,7 @@ public class PeerConnectionClient {
   public static class PeerConnectionParameters {
     public final boolean videoCallEnabled;
     public final boolean loopback;
+    public final boolean tracing;
     public final int videoWidth;
     public final int videoHeight;
     public final int videoFps;
@@ -141,13 +142,14 @@ public class PeerConnectionClient {
     public final boolean useOpenSLES;
 
     public PeerConnectionParameters(
-        boolean videoCallEnabled, boolean loopback,
+        boolean videoCallEnabled, boolean loopback, boolean tracing,
         int videoWidth, int videoHeight, int videoFps, int videoStartBitrate,
         String videoCodec, boolean videoCodecHwAcceleration, boolean captureToTexture,
         int audioStartBitrate, String audioCodec,
         boolean noAudioProcessing, boolean useOpenSLES) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
+      this.tracing = tracing;
       this.videoWidth = videoWidth;
       this.videoHeight = videoHeight;
       this.videoFps = videoFps;
@@ -285,6 +287,10 @@ public class PeerConnectionClient {
   }
 
   private void createPeerConnectionFactoryInternal(Context context) {
+      PeerConnectionFactory.initializeInternalTracer();
+      if (peerConnectionParameters.tracing) {
+          PeerConnectionFactory.startInternalTracingCapture("/mnt/sdcard/webrtc-trace.txt");
+      }
     Log.d(TAG, "Create peer connection factory. Use video: " +
         peerConnectionParameters.videoCallEnabled);
     isError = false;
@@ -502,6 +508,8 @@ public class PeerConnectionClient {
     options = null;
     Log.d(TAG, "Closing peer connection done.");
     events.onPeerConnectionClosed();
+    PeerConnectionFactory.stopInternalTracingCapture();
+    PeerConnectionFactory.shutdownInternalTracer();
   }
 
   public boolean isHDVideo() {

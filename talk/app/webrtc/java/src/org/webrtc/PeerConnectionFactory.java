@@ -73,6 +73,15 @@ public class PeerConnectionFactory {
   // Field trial initialization. Must be called before PeerConnectionFactory
   // is created.
   public static native void initializeFieldTrials(String fieldTrialsInitString);
+  // Internal tracing initialization. Must be called before PeerConnectionFactory is created to
+  // prevent racing with tracing code.
+  public static native void initializeInternalTracer();
+  // Internal tracing shutdown, called to prevent resource leaks. Must be called after
+  // PeerConnectionFactory is gone to prevent races with code performing tracing.
+  public static native void shutdownInternalTracer();
+  // Start/stop internal capturing of internal tracing.
+  public static native boolean startInternalTracingCapture(String tracing_filename);
+  public static native void stopInternalTracingCapture();
 
   public PeerConnectionFactory() {
     nativeFactory = nativeCreatePeerConnectionFactory();

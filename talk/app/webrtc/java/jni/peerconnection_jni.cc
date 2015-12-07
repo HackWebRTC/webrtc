@@ -74,10 +74,11 @@
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/event_tracer.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/logsinks.h"
-#include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/system_wrappers/include/field_trial_default.h"
@@ -1052,6 +1053,32 @@ JOW(void, PeerConnectionFactory_initializeFieldTrials)(
     LOG(LS_INFO) << "initializeFieldTrials: " << field_trials_init_string;
   }
   webrtc::field_trial::InitFieldTrialsFromString(field_trials_init_string);
+}
+
+JOW(void, PeerConnectionFactory_initializeInternalTracer)(JNIEnv* jni, jclass) {
+  rtc::tracing::SetupInternalTracer();
+}
+
+JOW(jboolean, PeerConnectionFactory_startInternalTracingCapture)(
+    JNIEnv* jni, jclass, jstring j_event_tracing_filename) {
+  if (!j_event_tracing_filename)
+    return false;
+
+  const char* init_string =
+      jni->GetStringUTFChars(j_event_tracing_filename, NULL);
+  LOG(LS_INFO) << "Starting internal tracing to: " << init_string;
+  bool ret = rtc::tracing::StartInternalCapture(init_string);
+  jni->ReleaseStringUTFChars(j_event_tracing_filename, init_string);
+  return ret;
+}
+
+JOW(void, PeerConnectionFactory_stopInternalTracingCapture)(
+    JNIEnv* jni, jclass) {
+  rtc::tracing::StopInternalCapture();
+}
+
+JOW(void, PeerConnectionFactory_shutdownInternalTracer)(JNIEnv* jni, jclass) {
+  rtc::tracing::ShutdownInternalTracer();
 }
 
 // Helper struct for working around the fact that CreatePeerConnectionFactory()

@@ -78,6 +78,7 @@ public class CallActivity extends Activity
       "org.appspot.apprtc.OPENSLES";
   public static final String EXTRA_DISPLAY_HUD =
       "org.appspot.apprtc.DISPLAY_HUD";
+  public static final String EXTRA_TRACING = "org.appspot.apprtc.TRACING";
   public static final String EXTRA_CMDLINE =
       "org.appspot.apprtc.CMDLINE";
   public static final String EXTRA_RUNTIME =
@@ -213,9 +214,11 @@ public class CallActivity extends Activity
       return;
     }
     boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
+    boolean tracing = intent.getBooleanExtra(EXTRA_TRACING, false);
     peerConnectionParameters = new PeerConnectionParameters(
         intent.getBooleanExtra(EXTRA_VIDEO_CALL, true),
         loopback,
+        tracing,
         intent.getIntExtra(EXTRA_VIDEO_WIDTH, 0),
         intent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0),
         intent.getIntExtra(EXTRA_VIDEO_FPS, 0),

@@ -69,6 +69,7 @@ public class ConnectActivity extends Activity {
   private String keyprefNoAudioProcessingPipeline;
   private String keyprefOpenSLES;
   private String keyprefDisplayHud;
+  private String keyprefTracing;
   private String keyprefRoomServerUrl;
   private String keyprefRoom;
   private String keyprefRoomList;
@@ -97,6 +98,7 @@ public class ConnectActivity extends Activity {
     keyprefNoAudioProcessingPipeline = getString(R.string.pref_noaudioprocessing_key);
     keyprefOpenSLES = getString(R.string.pref_opensles_key);
     keyprefDisplayHud = getString(R.string.pref_displayhud_key);
+    keyprefTracing = getString(R.string.pref_tracing_key);
     keyprefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyprefRoom = getString(R.string.pref_room_key);
     keyprefRoomList = getString(R.string.pref_room_list_key);
@@ -328,6 +330,9 @@ public class ConnectActivity extends Activity {
     boolean displayHud = sharedPref.getBoolean(keyprefDisplayHud,
         Boolean.valueOf(getString(R.string.pref_displayhud_default)));
 
+    boolean tracing = sharedPref.getBoolean(
+            keyprefTracing, Boolean.valueOf(getString(R.string.pref_tracing_default)));
+
     // Start AppRTCDemo activity.
     Log.d(TAG, "Connecting to room " + roomId + " at URL " + roomUrl);
     if (validateUrl(roomUrl)) {
@@ -352,6 +357,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_AUDIO_BITRATE, audioStartBitrate);
       intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);
       intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);
+      intent.putExtra(CallActivity.EXTRA_TRACING, tracing);
       intent.putExtra(CallActivity.EXTRA_CMDLINE, commandLineRun);
       intent.putExtra(CallActivity.EXTRA_RUNTIME, runTimeMs);
 
