@@ -67,11 +67,8 @@ struct CpuOveruseOptions {
 };
 
 struct CpuOveruseMetrics {
-  CpuOveruseMetrics()
-      : avg_encode_time_ms(-1),
-        encode_usage_percent(-1) {}
+  CpuOveruseMetrics() : encode_usage_percent(-1) {}
 
-  int avg_encode_time_ms;    // Average encode time in ms.
   int encode_usage_percent;  // Average encode time divided by the average time
                              // difference between incoming captured frames.
 };
@@ -111,7 +108,6 @@ class OveruseFrameDetector : public Module {
   int32_t Process() override;
 
  private:
-  class EncodeTimeAvg;
   class SendProcessingUsage;
   class FrameQueue;
 
@@ -162,12 +158,10 @@ class OveruseFrameDetector : public Module {
   bool in_quick_rampup_;
   int current_rampup_delay_ms_;
 
-  int64_t last_encode_sample_ms_;  // Only accessed by one thread.
   int64_t last_sample_time_ms_;    // Only accessed by one thread.
 
   // TODO(asapersson): Can these be regular members (avoid separate heap
   // allocs)?
-  const rtc::scoped_ptr<EncodeTimeAvg> encode_time_ GUARDED_BY(crit_);
   const rtc::scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
   const rtc::scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
 

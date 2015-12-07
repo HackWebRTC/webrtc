@@ -44,33 +44,6 @@ const float kMaxExp = 7.0f;
 
 }  // namespace
 
-// Class for calculating the average encode time.
-class OveruseFrameDetector::EncodeTimeAvg {
- public:
-  EncodeTimeAvg()
-      : kWeightFactor(0.5f),
-        kInitialAvgEncodeTimeMs(5.0f),
-        filtered_encode_time_ms_(new rtc::ExpFilter(kWeightFactor)) {
-    filtered_encode_time_ms_->Apply(1.0f, kInitialAvgEncodeTimeMs);
-  }
-  ~EncodeTimeAvg() {}
-
-  void AddSample(float encode_time_ms, int64_t diff_last_sample_ms) {
-    float exp =  diff_last_sample_ms / kSampleDiffMs;
-    exp = std::min(exp, kMaxExp);
-    filtered_encode_time_ms_->Apply(exp, encode_time_ms);
-  }
-
-  int Value() const {
-    return static_cast<int>(filtered_encode_time_ms_->filtered() + 0.5);
-  }
-
- private:
-  const float kWeightFactor;
-  const float kInitialAvgEncodeTimeMs;
-  rtc::scoped_ptr<rtc::ExpFilter> filtered_encode_time_ms_;
-};
-
 // Class for calculating the processing usage on the send-side (the average
 // processing time of a frame divided by the average time difference between
 // captured frames).
@@ -209,9 +182,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       last_rampup_time_(0),
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
-      last_encode_sample_ms_(0),
       last_sample_time_ms_(0),
-      encode_time_(new EncodeTimeAvg()),
       usage_(new SendProcessingUsage(options)),
       frame_queue_(new FrameQueue()) {
   RTC_DCHECK(metrics_observer != nullptr);
@@ -236,7 +207,6 @@ int OveruseFrameDetector::FramesInQueue() const {
 }
 
 void OveruseFrameDetector::UpdateCpuOveruseMetrics() {
-  metrics_.avg_encode_time_ms = encode_time_->Value();
   metrics_.encode_usage_percent = usage_->Value();
 
   metrics_observer_->CpuOveruseMetricsUpdated(metrics_);
@@ -291,31 +261,23 @@ void OveruseFrameDetector::FrameCaptured(int width,
 }
 
 void OveruseFrameDetector::FrameEncoded(int encode_time_ms) {
-  rtc::CritScope cs(&crit_);
-  int64_t now = clock_->TimeInMilliseconds();
-  if (last_encode_sample_ms_ != 0) {
-    int64_t diff_ms = now - last_encode_sample_ms_;
-    encode_time_->AddSample(encode_time_ms, diff_ms);
-  }
-  last_encode_sample_ms_ = now;
+  if (options_.enable_extended_processing_usage)
+    return;
 
-  if (!options_.enable_extended_processing_usage) {
-    AddProcessingTime(encode_time_ms);
-  }
-  UpdateCpuOveruseMetrics();
+  rtc::CritScope cs(&crit_);
+  AddProcessingTime(encode_time_ms);
 }
 
 void OveruseFrameDetector::FrameSent(int64_t capture_time_ms) {
-  rtc::CritScope cs(&crit_);
-  if (!options_.enable_extended_processing_usage) {
+  if (!options_.enable_extended_processing_usage)
     return;
-  }
+
+  rtc::CritScope cs(&crit_);
   int delay_ms = frame_queue_->End(capture_time_ms,
                                    clock_->TimeInMilliseconds());
   if (delay_ms > 0) {
     AddProcessingTime(delay_ms);
   }
-  UpdateCpuOveruseMetrics();
 }
 
 void OveruseFrameDetector::AddProcessingTime(int elapsed_ms) {
@@ -325,6 +287,7 @@ void OveruseFrameDetector::AddProcessingTime(int elapsed_ms) {
     usage_->AddSample(elapsed_ms, diff_ms);
   }
   last_sample_time_ms_ = now;
+  UpdateCpuOveruseMetrics();
 }
 
 int32_t OveruseFrameDetector::Process() {

@@ -288,6 +288,14 @@ TEST_F(SendStatisticsProxyTest, SendSideDelay) {
   ExpectEqual(expected_, stats);
 }
 
+TEST_F(SendStatisticsProxyTest, OnEncodedFrame) {
+  const int kEncodeTimeMs = 11;
+  statistics_proxy_->OnEncodedFrame(kEncodeTimeMs);
+
+  VideoSendStream::Stats stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(kEncodeTimeMs, stats.avg_encode_time_ms);
+}
+
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {
   uint32_t excluded_ssrc =
       std::max(

@@ -14,6 +14,7 @@
 #include <string>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/exp_filter.h"
 #include "webrtc/base/ratetracker.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -133,6 +134,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   VideoSendStream::Stats stats_ GUARDED_BY(crit_);
   uint32_t last_sent_frame_timestamp_ GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);
+  rtc::ExpFilter encode_time_ GUARDED_BY(crit_);
 
   // Contains stats used for UMA histograms. These stats will be reset if
   // content type changes between real-time video and screenshare, since these

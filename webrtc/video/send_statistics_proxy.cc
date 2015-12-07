@@ -15,13 +15,14 @@
 #include <map>
 
 #include "webrtc/base/checks.h"
-
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace {
+const float kEncodeTimeWeigthFactor = 0.5f;
+
 // Used by histograms. Values of entries should not be changed.
 enum HistogramCodecType {
   kVideoUnknown = 0,
@@ -72,6 +73,7 @@ SendStatisticsProxy::SendStatisticsProxy(
       config_(config),
       content_type_(content_type),
       last_sent_frame_timestamp_(0),
+      encode_time_(kEncodeTimeWeigthFactor),
       uma_container_(new UmaSamplesContainer(GetUmaPrefix(content_type_))) {
   UpdateCodecTypeHistogram(config_.encoder_settings.payload_name);
 }
@@ -168,8 +170,6 @@ void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
 void SendStatisticsProxy::CpuOveruseMetricsUpdated(
     const CpuOveruseMetrics& metrics) {
   rtc::CritScope lock(&crit_);
-  // TODO(asapersson): Change to use OnEncodedFrame() for avg_encode_time_ms.
-  stats_.avg_encode_time_ms = metrics.avg_encode_time_ms;
   stats_.encode_usage_percent = metrics.encode_usage_percent;
 }
 
@@ -308,6 +308,8 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
 void SendStatisticsProxy::OnEncodedFrame(int encode_time_ms) {
   rtc::CritScope lock(&crit_);
   uma_container_->encode_time_counter_.Add(encode_time_ms);
+  encode_time_.Apply(1.0f, encode_time_ms);
+  stats_.avg_encode_time_ms = round(encode_time_.filtered());
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(

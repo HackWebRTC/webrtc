@@ -103,8 +103,6 @@ class OveruseFrameDetectorTest : public ::testing::Test,
     overuse_detector_->Process();
   }
 
-  int AvgEncodeTimeMs() { return metrics_.avg_encode_time_ms; }
-
   int UsagePercent() { return metrics_.encode_usage_percent; }
 
   CpuOveruseOptions options_;
@@ -354,16 +352,6 @@ TEST_F(OveruseFrameDetectorTest, FrameDelay_NonMatchingSendFrameIgnored) {
   EXPECT_EQ(-1, overuse_detector_->LastProcessingTimeMs());
   overuse_detector_->FrameSent(33);
   EXPECT_EQ(kProcessingTimeMs, overuse_detector_->LastProcessingTimeMs());
-}
-
-TEST_F(OveruseFrameDetectorTest, EncodedFrame) {
-  const int kInitialAvgEncodeTimeInMs = 5;
-  EXPECT_EQ(kInitialAvgEncodeTimeInMs, AvgEncodeTimeMs());
-  for (int i = 0; i < 30; i++) {
-    clock_->AdvanceTimeMilliseconds(33);
-    overuse_detector_->FrameEncoded(2);
-  }
-  EXPECT_EQ(2, AvgEncodeTimeMs());
 }
 
 // enable_encode_usage_method = true;
