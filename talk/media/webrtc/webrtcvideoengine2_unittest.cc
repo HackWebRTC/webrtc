@@ -242,11 +242,11 @@ TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
 }
 
 TEST_F(WebRtcVideoEngine2Test, SupportsTimestampOffsetHeaderExtension) {
-  std::vector<RtpHeaderExtension> extensions = engine_.rtp_header_extensions();
-  ASSERT_FALSE(extensions.empty());
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    if (extensions[i].uri == kRtpTimestampOffsetHeaderExtension) {
-      EXPECT_EQ(kRtpTimestampOffsetHeaderExtensionDefaultId, extensions[i].id);
+  RtpCapabilities capabilities = engine_.GetCapabilities();
+  ASSERT_FALSE(capabilities.header_extensions.empty());
+  for (const RtpHeaderExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == kRtpTimestampOffsetHeaderExtension) {
+      EXPECT_EQ(kRtpTimestampOffsetHeaderExtensionDefaultId, extension.id);
       return;
     }
   }
@@ -254,12 +254,11 @@ TEST_F(WebRtcVideoEngine2Test, SupportsTimestampOffsetHeaderExtension) {
 }
 
 TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
-  std::vector<RtpHeaderExtension> extensions = engine_.rtp_header_extensions();
-  ASSERT_FALSE(extensions.empty());
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    if (extensions[i].uri == kRtpAbsoluteSenderTimeHeaderExtension) {
-      EXPECT_EQ(kRtpAbsoluteSenderTimeHeaderExtensionDefaultId,
-                extensions[i].id);
+  RtpCapabilities capabilities = engine_.GetCapabilities();
+  ASSERT_FALSE(capabilities.header_extensions.empty());
+  for (const RtpHeaderExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == kRtpAbsoluteSenderTimeHeaderExtension) {
+      EXPECT_EQ(kRtpAbsoluteSenderTimeHeaderExtensionDefaultId, extension.id);
       return;
     }
   }
@@ -274,12 +273,12 @@ class WebRtcVideoEngine2WithSendSideBweTest : public WebRtcVideoEngine2Test {
 
 TEST_F(WebRtcVideoEngine2WithSendSideBweTest,
        SupportsTransportSequenceNumberHeaderExtension) {
-  std::vector<RtpHeaderExtension> extensions = engine_.rtp_header_extensions();
-  ASSERT_FALSE(extensions.empty());
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    if (extensions[i].uri == kRtpTransportSequenceNumberHeaderExtension) {
+  RtpCapabilities capabilities = engine_.GetCapabilities();
+  ASSERT_FALSE(capabilities.header_extensions.empty());
+  for (const RtpHeaderExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == kRtpTransportSequenceNumberHeaderExtension) {
       EXPECT_EQ(kRtpTransportSequenceNumberHeaderExtensionDefaultId,
-                extensions[i].id);
+                extension.id);
       return;
     }
   }
@@ -287,11 +286,11 @@ TEST_F(WebRtcVideoEngine2WithSendSideBweTest,
 }
 
 TEST_F(WebRtcVideoEngine2Test, SupportsVideoRotationHeaderExtension) {
-  std::vector<RtpHeaderExtension> extensions = engine_.rtp_header_extensions();
-  ASSERT_FALSE(extensions.empty());
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    if (extensions[i].uri == kRtpVideoRotationHeaderExtension) {
-      EXPECT_EQ(kRtpVideoRotationHeaderExtensionDefaultId, extensions[i].id);
+  RtpCapabilities capabilities = engine_.GetCapabilities();
+  ASSERT_FALSE(capabilities.header_extensions.empty());
+  for (const RtpHeaderExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == kRtpVideoRotationHeaderExtension) {
+      EXPECT_EQ(kRtpVideoRotationHeaderExtensionDefaultId, extension.id);
       return;
     }
   }

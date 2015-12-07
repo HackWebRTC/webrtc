@@ -118,7 +118,7 @@ class WebRtcVideoEngine2 {
                                      const VideoOptions& options);
 
   const std::vector<VideoCodec>& codecs() const;
-  const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
+  RtpCapabilities GetCapabilities() const;
 
   // Set a WebRtcVideoDecoderFactory for external decoding. Video engine does
   // not take the ownership of |decoder_factory|. The caller needs to make sure
@@ -143,7 +143,6 @@ class WebRtcVideoEngine2 {
   std::vector<VideoCodec> GetSupportedCodecs() const;
 
   std::vector<VideoCodec> video_codecs_;
-  std::vector<RtpHeaderExtension> rtp_header_extensions_;
 
   bool initialized_;
 

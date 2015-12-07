@@ -156,7 +156,7 @@ void ChannelManager::GetSupportedAudioCodecs(
 
 void ChannelManager::GetSupportedAudioRtpHeaderExtensions(
     RtpHeaderExtensions* ext) const {
-  *ext = media_engine_->audio_rtp_header_extensions();
+  *ext = media_engine_->GetAudioCapabilities().header_extensions;
 }
 
 void ChannelManager::GetSupportedVideoCodecs(
@@ -175,7 +175,7 @@ void ChannelManager::GetSupportedVideoCodecs(
 
 void ChannelManager::GetSupportedVideoRtpHeaderExtensions(
     RtpHeaderExtensions* ext) const {
-  *ext = media_engine_->video_rtp_header_extensions();
+  *ext = media_engine_->GetVideoCapabilities().header_extensions;
 }
 
 void ChannelManager::GetSupportedDataCodecs(

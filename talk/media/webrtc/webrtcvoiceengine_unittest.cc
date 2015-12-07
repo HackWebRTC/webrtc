@@ -3109,17 +3109,17 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   }
 
   // Set up receive extensions.
-  const auto& e_exts = engine_.rtp_header_extensions();
+  cricket::RtpCapabilities capabilities = engine_.GetCapabilities();
   cricket::AudioRecvParameters recv_parameters;
-  recv_parameters.extensions = e_exts;
+  recv_parameters.extensions = capabilities.header_extensions;
   channel_->SetRecvParameters(recv_parameters);
   EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
   for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     const auto& s_exts = s->GetConfig().rtp.extensions;
-    EXPECT_EQ(e_exts.size(), s_exts.size());
-    for (const auto& e_ext : e_exts) {
+    EXPECT_EQ(capabilities.header_extensions.size(), s_exts.size());
+    for (const auto& e_ext : capabilities.header_extensions) {
       for (const auto& s_ext : s_exts) {
         if (e_ext.id == s_ext.id) {
           EXPECT_EQ(e_ext.uri, s_ext.name);

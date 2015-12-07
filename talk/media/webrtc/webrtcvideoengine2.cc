@@ -488,20 +488,6 @@ WebRtcVideoEngine2::WebRtcVideoEngine2()
       external_encoder_factory_(NULL) {
   LOG(LS_INFO) << "WebRtcVideoEngine2::WebRtcVideoEngine2()";
   video_codecs_ = GetSupportedCodecs();
-  rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpTimestampOffsetHeaderExtension,
-                         kRtpTimestampOffsetHeaderExtensionDefaultId));
-  rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
-                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
-  rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpVideoRotationHeaderExtension,
-                         kRtpVideoRotationHeaderExtensionDefaultId));
-  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
-    rtp_header_extensions_.push_back(RtpHeaderExtension(
-        kRtpTransportSequenceNumberHeaderExtension,
-        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
-  }
 }
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
@@ -549,9 +535,23 @@ const std::vector<VideoCodec>& WebRtcVideoEngine2::codecs() const {
   return video_codecs_;
 }
 
-const std::vector<RtpHeaderExtension>&
-WebRtcVideoEngine2::rtp_header_extensions() const {
-  return rtp_header_extensions_;
+RtpCapabilities WebRtcVideoEngine2::GetCapabilities() const {
+  RtpCapabilities capabilities;
+  capabilities.header_extensions.push_back(
+      RtpHeaderExtension(kRtpTimestampOffsetHeaderExtension,
+                         kRtpTimestampOffsetHeaderExtensionDefaultId));
+  capabilities.header_extensions.push_back(
+      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
+                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+  capabilities.header_extensions.push_back(
+      RtpHeaderExtension(kRtpVideoRotationHeaderExtension,
+                         kRtpVideoRotationHeaderExtensionDefaultId));
+  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
+    capabilities.header_extensions.push_back(RtpHeaderExtension(
+        kRtpTransportSequenceNumberHeaderExtension,
+        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
+  }
+  return capabilities;
 }
 
 void WebRtcVideoEngine2::SetExternalDecoderFactory(

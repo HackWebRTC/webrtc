@@ -694,12 +694,10 @@ class FakeBaseEngine {
         fail_create_channel_(false) {}
   void set_fail_create_channel(bool fail) { fail_create_channel_ = fail; }
 
-  const std::vector<RtpHeaderExtension>& rtp_header_extensions() const {
-    return rtp_header_extensions_;
-  }
+  RtpCapabilities GetCapabilities() const { return capabilities_; }
   void set_rtp_header_extensions(
       const std::vector<RtpHeaderExtension>& extensions) {
-    rtp_header_extensions_ = extensions;
+    capabilities_.header_extensions = extensions;
   }
 
  protected:
@@ -708,7 +706,7 @@ class FakeBaseEngine {
   // TODO(thaloun): Replace with explicit checks of before & after values.
   bool options_changed_;
   bool fail_create_channel_;
-  std::vector<RtpHeaderExtension> rtp_header_extensions_;
+  RtpCapabilities capabilities_;
 };
 
 class FakeVoiceEngine : public FakeBaseEngine {

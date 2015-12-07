@@ -57,6 +57,10 @@ namespace cricket {
 
 class VideoCapturer;
 
+struct RtpCapabilities {
+  std::vector<RtpHeaderExtension> header_extensions;
+};
+
 // MediaEngineInterface is an abstraction of a media engine which can be
 // subclassed to support different media componentry backends.
 // It supports voice and video operations in the same class to facilitate
@@ -108,11 +112,9 @@ class MediaEngineInterface {
   virtual int GetInputLevel() = 0;
 
   virtual const std::vector<AudioCodec>& audio_codecs() = 0;
-  virtual const std::vector<RtpHeaderExtension>&
-      audio_rtp_header_extensions() = 0;
+  virtual RtpCapabilities GetAudioCapabilities() = 0;
   virtual const std::vector<VideoCodec>& video_codecs() = 0;
-  virtual const std::vector<RtpHeaderExtension>&
-      video_rtp_header_extensions() = 0;
+  virtual RtpCapabilities GetVideoCapabilities() = 0;
 
   // Starts AEC dump using existing file.
   virtual bool StartAecDump(rtc::PlatformFile file) = 0;
@@ -202,14 +204,14 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual const std::vector<AudioCodec>& audio_codecs() {
     return voice_.codecs();
   }
-  virtual const std::vector<RtpHeaderExtension>& audio_rtp_header_extensions() {
-    return voice_.rtp_header_extensions();
+  virtual RtpCapabilities GetAudioCapabilities() {
+    return voice_.GetCapabilities();
   }
   virtual const std::vector<VideoCodec>& video_codecs() {
     return video_.codecs();
   }
-  virtual const std::vector<RtpHeaderExtension>& video_rtp_header_extensions() {
-    return video_.rtp_header_extensions();
+  virtual RtpCapabilities GetVideoCapabilities() {
+    return video_.GetCapabilities();
   }
 
   virtual bool StartAecDump(rtc::PlatformFile file) {

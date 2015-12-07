@@ -517,18 +517,6 @@ void WebRtcVoiceEngine::Construct() {
   // Load our audio codec list.
   codecs_ = WebRtcVoiceCodecs::SupportedCodecs();
 
-  // Load our RTP Header extensions.
-  rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpAudioLevelHeaderExtension,
-                         kRtpAudioLevelHeaderExtensionDefaultId));
-  rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
-                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
-  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
-    rtp_header_extensions_.push_back(RtpHeaderExtension(
-        kRtpTransportSequenceNumberHeaderExtension,
-        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
-  }
   options_ = GetDefaultEngineOptions();
   voe_config_.Set<webrtc::VoicePacing>(new webrtc::VoicePacing(true));
 }
@@ -1075,10 +1063,20 @@ const std::vector<AudioCodec>& WebRtcVoiceEngine::codecs() {
   return codecs_;
 }
 
-const std::vector<RtpHeaderExtension>&
-WebRtcVoiceEngine::rtp_header_extensions() const {
+RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
   RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
-  return rtp_header_extensions_;
+  RtpCapabilities capabilities;
+  capabilities.header_extensions.push_back(RtpHeaderExtension(
+      kRtpAudioLevelHeaderExtension, kRtpAudioLevelHeaderExtensionDefaultId));
+  capabilities.header_extensions.push_back(
+      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
+                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
+    capabilities.header_extensions.push_back(RtpHeaderExtension(
+        kRtpTransportSequenceNumberHeaderExtension,
+        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
+  }
+  return capabilities;
 }
 
 int WebRtcVoiceEngine::GetLastEngineError() {

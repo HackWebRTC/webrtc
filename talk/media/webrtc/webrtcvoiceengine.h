@@ -80,7 +80,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   int GetInputLevel();
 
   const std::vector<AudioCodec>& codecs();
-  const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
+  RtpCapabilities GetCapabilities() const;
 
   // For tracking WebRtc channels. Needed because we have to pause them
   // all when switching devices.
@@ -140,7 +140,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   webrtc::AudioDeviceModule* adm_ = nullptr;
   bool is_dumping_aec_ = false;
   std::vector<AudioCodec> codecs_;
-  std::vector<RtpHeaderExtension> rtp_header_extensions_;
   std::vector<WebRtcVoiceMediaChannel*> channels_;
   webrtc::AgcConfig default_agc_config_;
 
