@@ -106,6 +106,7 @@ enum {
   MSG_SET_SESSIONDESCRIPTION_FAILED,
   MSG_CREATE_SESSIONDESCRIPTION_FAILED,
   MSG_GETSTATS,
+  MSG_DELETE,
 };
 
 struct SetSessionDescriptionMsg : public rtc::MessageData {
@@ -595,6 +596,8 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
 
 PeerConnection::~PeerConnection() {
   RTC_DCHECK(signaling_thread()->IsCurrent());
+  // Finish any pending deletions.
+  signaling_thread()->Clear(this, MSG_DELETE, nullptr);
   // Need to detach RTP senders/receivers from WebRtcSession,
   // since it's about to be destroyed.
   for (const auto& sender : senders_) {
@@ -1313,6 +1316,10 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
       delete param;
       break;
     }
+    case MSG_DELETE: {
+      delete msg->pdata;
+      break;
+    }
     default:
       RTC_DCHECK(false && "Not implemented");
       break;
@@ -1900,6 +1907,11 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
       if (channel->id() >= 0) {
         sid_allocator_.ReleaseSid(channel->id());
       }
+      // Since this method is triggered by a signal from the DataChannel,
+      // we can't free it directly here; we need to free it asynchronously.
+      signaling_thread()->Post(
+          this, MSG_DELETE,
+          new rtc::TypedMessageData<rtc::scoped_refptr<DataChannel>>(channel));
       sctp_data_channels_.erase(it);
       return;
     }

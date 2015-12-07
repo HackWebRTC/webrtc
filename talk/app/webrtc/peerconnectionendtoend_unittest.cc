@@ -402,3 +402,30 @@ TEST_F(PeerConnectionEndToEndTest,
 
   CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
 }
+
+// This tests that if a data channel is closed remotely while not referenced
+// by the application (meaning only the PeerConnection contributes to its
+// reference count), no memory access violation will occur.
+// See: https://code.google.com/p/chromium/issues/detail?id=565048
+TEST_F(PeerConnectionEndToEndTest, CloseDataChannelRemotelyWhileNotReferenced) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+
+  CreatePcs();
+
+  webrtc::DataChannelInit init;
+  rtc::scoped_refptr<DataChannelInterface> caller_dc(
+      caller_->CreateDataChannel("data", init));
+
+  Negotiate();
+  WaitForConnection();
+
+  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
+  // This removes the reference to the remote data channel that we hold.
+  callee_signaled_data_channels_.clear();
+  caller_dc->Close();
+  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, caller_dc->state(), kMaxWait);
+
+  // Wait for a bit longer so the remote data channel will receive the
+  // close message and be destroyed.
+  rtc::Thread::Current()->ProcessMessages(100);
+}
