@@ -764,8 +764,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildReceiverReferenceTime(
   xr->From(ssrc_);
 
   rtcp::Rrtr rrtr;
-  rrtr.WithNtpSec(ctx.ntp_sec_);
-  rrtr.WithNtpFrac(ctx.ntp_frac_);
+  rrtr.WithNtp(NtpTime(ctx.ntp_sec_, ctx.ntp_frac_));
 
   xr->WithRrtr(&rrtr);
 

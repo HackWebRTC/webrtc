@@ -18,6 +18,7 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
@@ -30,7 +31,6 @@ static const int kReportBlockLength = 24;
 
 class Dlrr;
 class RawPacket;
-class Rrtr;
 class VoipMetric;
 
 // Class for building RTCP packets.
@@ -670,10 +670,7 @@ class Xr : public RtcpPacket {
     return kXrHeaderLength + RrtrLength() + DlrrLength() + VoipMetricLength();
   }
 
-  size_t RrtrLength() const {
-    const size_t kRrtrBlockLength = 12;
-    return kRrtrBlockLength * rrtr_blocks_.size();
-  }
+  size_t RrtrLength() const { return Rrtr::kLength * rrtr_blocks_.size(); }
 
   size_t DlrrLength() const;
 
@@ -683,44 +680,11 @@ class Xr : public RtcpPacket {
   }
 
   RTCPUtility::RTCPPacketXR xr_header_;
-  std::vector<RTCPUtility::RTCPPacketXRReceiverReferenceTimeItem> rrtr_blocks_;
+  std::vector<Rrtr> rrtr_blocks_;
   std::vector<DlrrBlock> dlrr_blocks_;
   std::vector<RTCPUtility::RTCPPacketXRVOIPMetricItem> voip_metric_blocks_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Xr);
-};
-
-// Receiver Reference Time Report Block (RFC 3611).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |     BT=4      |   reserved    |       block length = 2        |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |              NTP timestamp, most significant word             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |             NTP timestamp, least significant word             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Rrtr {
- public:
-  Rrtr() {
-    memset(&rrtr_block_, 0, sizeof(rrtr_block_));
-  }
-  ~Rrtr() {}
-
-  void WithNtpSec(uint32_t sec) {
-    rrtr_block_.NTPMostSignificant = sec;
-  }
-  void WithNtpFrac(uint32_t frac) {
-    rrtr_block_.NTPLeastSignificant = frac;
-  }
-
- private:
-  friend class Xr;
-  RTCPUtility::RTCPPacketXRReceiverReferenceTimeItem rrtr_block_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Rrtr);
 };
 
 // DLRR Report Block (RFC 3611).

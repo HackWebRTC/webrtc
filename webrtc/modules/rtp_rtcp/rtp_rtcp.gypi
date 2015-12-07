@@ -55,6 +55,8 @@
         'source/rtcp_packet/receiver_report.h',
         'source/rtcp_packet/report_block.cc',
         'source/rtcp_packet/report_block.h',
+        'source/rtcp_packet/rrtr.cc',
+        'source/rtcp_packet/rrtr.h',
         'source/rtcp_packet/transport_feedback.cc',
         'source/rtcp_packet/transport_feedback.h',
         'source/rtcp_receiver.cc',

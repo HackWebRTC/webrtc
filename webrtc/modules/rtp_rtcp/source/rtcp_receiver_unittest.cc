@@ -620,8 +620,7 @@ TEST_F(RtcpReceiverTest, XrVoipPacketNotToUsIgnored) {
 
 TEST_F(RtcpReceiverTest, InjectXrReceiverReferenceTimePacket) {
   rtcp::Rrtr rrtr;
-  rrtr.WithNtpSec(0x10203);
-  rrtr.WithNtpFrac(0x40506);
+  rrtr.WithNtp(NtpTime(0x10203, 0x40506));
   rtcp::Xr xr;
   xr.From(0x2345);
   xr.WithRrtr(&rrtr);
@@ -756,13 +755,12 @@ TEST_F(RtcpReceiverTest, LastReceivedXrReferenceTimeInfoInitiallyFalse) {
 
 TEST_F(RtcpReceiverTest, GetLastReceivedXrReferenceTimeInfo) {
   const uint32_t kSenderSsrc = 0x123456;
-  const uint32_t kNtpSec = 0x10203;
-  const uint32_t kNtpFrac = 0x40506;
-  const uint32_t kNtpMid = RTCPUtility::MidNtp(kNtpSec, kNtpFrac);
+  const NtpTime kNtp(0x10203, 0x40506);
+  const uint32_t kNtpMid =
+      RTCPUtility::MidNtp(kNtp.seconds(), kNtp.fractions());
 
   rtcp::Rrtr rrtr;
-  rrtr.WithNtpSec(kNtpSec);
-  rrtr.WithNtpFrac(kNtpFrac);
+  rrtr.WithNtp(kNtp);
   rtcp::Xr xr;
   xr.From(kSenderSsrc);
   xr.WithRrtr(&rrtr);

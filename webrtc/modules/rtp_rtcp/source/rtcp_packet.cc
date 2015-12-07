@@ -43,7 +43,6 @@ using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBR;
 using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBRItem;
 using webrtc::RTCPUtility::RTCPPacketSR;
 using webrtc::RTCPUtility::RTCPPacketXRDLRRReportBlockItem;
-using webrtc::RTCPUtility::RTCPPacketXRReceiverReferenceTimeItem;
 using webrtc::RTCPUtility::RTCPPacketXR;
 using webrtc::RTCPUtility::RTCPPacketXRVOIPMetricItem;
 
@@ -414,30 +413,6 @@ void CreateXrBlockHeader(uint8_t block_type,
   AssignUWord8(buffer, pos, block_type);
   AssignUWord8(buffer, pos, 0);
   AssignUWord16(buffer, pos, block_length);
-}
-
-// Receiver Reference Time Report Block (RFC 3611).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |     BT=4      |   reserved    |       block length = 2        |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |              NTP timestamp, most significant word             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |             NTP timestamp, least significant word             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateRrtr(const std::vector<RTCPPacketXRReceiverReferenceTimeItem>& rrtrs,
-                uint8_t* buffer,
-                size_t* pos) {
-  const uint16_t kBlockLength = 2;
-  for (std::vector<RTCPPacketXRReceiverReferenceTimeItem>::const_iterator it =
-       rrtrs.begin(); it != rrtrs.end(); ++it) {
-    CreateXrBlockHeader(kBtReceiverReferenceTime, kBlockLength, buffer, pos);
-    AssignUWord32(buffer, pos, (*it).NTPMostSignificant);
-    AssignUWord32(buffer, pos, (*it).NTPLeastSignificant);
-  }
 }
 
 // DLRR Report Block (RFC 3611).
@@ -910,19 +885,22 @@ bool Xr::Create(uint8_t* packet,
   }
   CreateHeader(0U, PT_XR, HeaderLength(), packet, index);
   CreateXrHeader(xr_header_, packet, index);
-  CreateRrtr(rrtr_blocks_, packet, index);
+  for (const Rrtr& block : rrtr_blocks_) {
+    block.Create(packet + *index);
+    *index += Rrtr::kLength;
+  }
   CreateDlrr(dlrr_blocks_, packet, index);
   CreateVoipMetric(voip_metric_blocks_, packet, index);
   return true;
 }
 
 bool Xr::WithRrtr(Rrtr* rrtr) {
-  assert(rrtr);
+  RTC_DCHECK(rrtr);
   if (rrtr_blocks_.size() >= kMaxNumberOfRrtrBlocks) {
     LOG(LS_WARNING) << "Max RRTR blocks reached.";
     return false;
   }
-  rrtr_blocks_.push_back(rrtr->rrtr_block_);
+  rrtr_blocks_.push_back(*rrtr);
   return true;
 }
 

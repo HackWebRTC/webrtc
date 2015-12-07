@@ -684,8 +684,7 @@ TEST(RtcpPacketTest, XrWithNoReportBlocks) {
 
 TEST(RtcpPacketTest, XrWithRrtr) {
   Rrtr rrtr;
-  rrtr.WithNtpSec(0x11111111);
-  rrtr.WithNtpFrac(0x22222222);
+  rrtr.WithNtp(NtpTime(0x11111111, 0x22222222));
   Xr xr;
   xr.From(kSenderSsrc);
   EXPECT_TRUE(xr.WithRrtr(&rrtr));
@@ -702,11 +701,9 @@ TEST(RtcpPacketTest, XrWithRrtr) {
 
 TEST(RtcpPacketTest, XrWithTwoRrtrBlocks) {
   Rrtr rrtr1;
-  rrtr1.WithNtpSec(0x11111111);
-  rrtr1.WithNtpFrac(0x22222222);
+  rrtr1.WithNtp(NtpTime(0x11111111, 0x22222222));
   Rrtr rrtr2;
-  rrtr2.WithNtpSec(0x33333333);
-  rrtr2.WithNtpFrac(0x44444444);
+  rrtr2.WithNtp(NtpTime(0x33333333, 0x44444444));
   Xr xr;
   xr.From(kSenderSsrc);
   EXPECT_TRUE(xr.WithRrtr(&rrtr1));
