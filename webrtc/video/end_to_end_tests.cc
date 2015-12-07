@@ -373,7 +373,6 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
    public:
     NackObserver()
         : EndToEndTest(kLongTimeoutMs),
-          rtp_parser_(RtpHeaderParser::Create()),
           sent_rtp_packets_(0),
           packets_left_to_drop_(0),
           nacks_left_(kNumberOfNacksToObserve) {}
@@ -382,7 +381,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
       RTPHeader header;
-      EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       // Never drop retransmitted packets.
       if (dropped_packets_.find(header.sequenceNumber) !=
