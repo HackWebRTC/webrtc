@@ -13,12 +13,14 @@
 #include <assert.h>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/trace_event.h"
 
 namespace webrtc {
 
 int AudioDecoder::Decode(const uint8_t* encoded, size_t encoded_len,
                          int sample_rate_hz, size_t max_decoded_bytes,
                          int16_t* decoded, SpeechType* speech_type) {
+  TRACE_EVENT0("webrtc", "AudioDecoder::Decode");
   int duration = PacketDuration(encoded, encoded_len);
   if (duration >= 0 &&
       duration * Channels() * sizeof(int16_t) > max_decoded_bytes) {
@@ -31,6 +33,7 @@ int AudioDecoder::Decode(const uint8_t* encoded, size_t encoded_len,
 int AudioDecoder::DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
                                   int sample_rate_hz, size_t max_decoded_bytes,
                                   int16_t* decoded, SpeechType* speech_type) {
+  TRACE_EVENT0("webrtc", "AudioDecoder::DecodeRedundant");
   int duration = PacketDurationRedundant(encoded, encoded_len);
   if (duration >= 0 &&
       duration * Channels() * sizeof(int16_t) > max_decoded_bytes) {
@@ -38,12 +41,6 @@ int AudioDecoder::DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
   }
   return DecodeRedundantInternal(encoded, encoded_len, sample_rate_hz, decoded,
                                  speech_type);
-}
-
-int AudioDecoder::DecodeInternal(const uint8_t* encoded, size_t encoded_len,
-                                 int sample_rate_hz, int16_t* decoded,
-                                 SpeechType* speech_type) {
-  return kNotImplemented;
 }
 
 int AudioDecoder::DecodeRedundantInternal(const uint8_t* encoded,

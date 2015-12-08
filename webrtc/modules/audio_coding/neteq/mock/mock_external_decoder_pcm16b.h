@@ -30,7 +30,6 @@ class ExternalPcm16B : public AudioDecoder {
   ExternalPcm16B() {}
   void Reset() override {}
 
- protected:
   int DecodeInternal(const uint8_t* encoded,
                      size_t encoded_len,
                      int sample_rate_hz,
@@ -52,8 +51,8 @@ class MockExternalPcm16B : public ExternalPcm16B {
  public:
   MockExternalPcm16B() {
     // By default, all calls are delegated to the real object.
-    ON_CALL(*this, Decode(_, _, _, _, _, _))
-        .WillByDefault(Invoke(&real_, &ExternalPcm16B::Decode));
+    ON_CALL(*this, DecodeInternal(_, _, _, _, _))
+        .WillByDefault(Invoke(&real_, &ExternalPcm16B::DecodeInternal));
     ON_CALL(*this, HasDecodePlc())
         .WillByDefault(Invoke(&real_, &ExternalPcm16B::HasDecodePlc));
     ON_CALL(*this, DecodePlc(_, _))
@@ -68,11 +67,10 @@ class MockExternalPcm16B : public ExternalPcm16B {
   virtual ~MockExternalPcm16B() { Die(); }
 
   MOCK_METHOD0(Die, void());
-  MOCK_METHOD6(Decode,
+  MOCK_METHOD5(DecodeInternal,
                int(const uint8_t* encoded,
                    size_t encoded_len,
                    int sample_rate_hz,
-                   size_t max_decoded_bytes,
                    int16_t* decoded,
                    SpeechType* speech_type));
   MOCK_CONST_METHOD0(HasDecodePlc,

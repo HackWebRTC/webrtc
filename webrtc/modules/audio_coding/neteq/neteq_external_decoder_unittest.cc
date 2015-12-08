@@ -98,8 +98,9 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
       next_arrival_time = GetArrivalTime(next_send_time);
     } while (Lost());  // If lost, immediately read the next packet.
 
-    EXPECT_CALL(*external_decoder_,
-                Decode(_, payload_size_bytes_, 1000 * samples_per_ms_, _, _, _))
+    EXPECT_CALL(
+        *external_decoder_,
+        DecodeInternal(_, payload_size_bytes_, 1000 * samples_per_ms_, _, _))
         .Times(NumExpectedDecodeCalls(num_loops));
 
     uint32_t time_now = 0;

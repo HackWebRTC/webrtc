@@ -976,7 +976,29 @@ TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(MAYBE_48kHzOutput)) {
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi,
        IF_ALL_CODECS(MAYBE_48kHzOutputExternalDecoder)) {
+  // Class intended to forward a call from a mock DecodeInternal to Decode on
+  // the real decoder's Decode. DecodeInternal for the real decoder isn't
+  // public.
+  class DecodeForwarder {
+   public:
+    DecodeForwarder(AudioDecoder* decoder) : decoder_(decoder) {}
+    int Decode(const uint8_t* encoded,
+               size_t encoded_len,
+               int sample_rate_hz,
+               int16_t* decoded,
+               AudioDecoder::SpeechType* speech_type) {
+      return decoder_->Decode(encoded, encoded_len, sample_rate_hz,
+                              decoder_->PacketDuration(encoded, encoded_len) *
+                                  decoder_->Channels() * sizeof(int16_t),
+                              decoded, speech_type);
+    }
+
+   private:
+    AudioDecoder* const decoder_;
+  };
+
   AudioDecoderPcmU decoder(1);
+  DecodeForwarder decode_forwarder(&decoder);
   MockAudioDecoder mock_decoder;
   // Set expectations on the mock decoder and also delegate the calls to the
   // real decoder.
@@ -986,9 +1008,9 @@ TEST_F(AcmReceiverBitExactnessOldApi,
   EXPECT_CALL(mock_decoder, Channels())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::Channels));
-  EXPECT_CALL(mock_decoder, Decode(_, _, _, _, _, _))
+  EXPECT_CALL(mock_decoder, DecodeInternal(_, _, _, _, _))
       .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::Decode));
+      .WillRepeatedly(Invoke(&decode_forwarder, &DecodeForwarder::Decode));
   EXPECT_CALL(mock_decoder, HasDecodePlc())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::HasDecodePlc));
