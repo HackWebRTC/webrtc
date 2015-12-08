@@ -17,8 +17,8 @@
 namespace webrtc {
 
 TEST_F(VideoProcessingTest, DISABLED_ON_IOS(ContentAnalysis)) {
-  VPMContentAnalysis    ca__c(false);
-  VPMContentAnalysis    ca__sse(true);
+  VPMContentAnalysis ca__c(false);
+  VPMContentAnalysis ca__sse(true);
   VideoContentMetrics* _cM_c;
   VideoContentMetrics* _cM_SSE;
 
@@ -26,12 +26,12 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(ContentAnalysis)) {
   ca__sse.Initialize(width_, height_);
 
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-  while (fread(video_buffer.get(), 1, frame_length_, source_file_)
-       == frame_length_) {
+  while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
+         frame_length_) {
     // Using ConvertToI420 to add stride to the image.
     EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                                0, kVideoRotation_0, &video_frame_));
-    _cM_c   = ca__c.ComputeContentMetrics(video_frame_);
+    _cM_c = ca__c.ComputeContentMetrics(video_frame_);
     _cM_SSE = ca__sse.ComputeContentMetrics(video_frame_);
 
     ASSERT_EQ(_cM_c->spatial_pred_err, _cM_SSE->spatial_pred_err);

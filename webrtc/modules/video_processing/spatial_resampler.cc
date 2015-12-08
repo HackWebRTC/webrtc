@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/video_processing/spatial_resampler.h"
 
-
 namespace webrtc {
 
 VPMSimpleSpatialResampler::VPMSimpleSpatialResampler()
@@ -21,12 +20,13 @@ VPMSimpleSpatialResampler::VPMSimpleSpatialResampler()
 
 VPMSimpleSpatialResampler::~VPMSimpleSpatialResampler() {}
 
-
 int32_t VPMSimpleSpatialResampler::SetTargetFrameSize(int32_t width,
                                                       int32_t height) {
-  if (resampling_mode_ == kNoRescaling) return VPM_OK;
+  if (resampling_mode_ == kNoRescaling)
+    return VPM_OK;
 
-  if (width < 1 || height < 1) return VPM_PARAMETER_ERROR;
+  if (width < 1 || height < 1)
+    return VPM_PARAMETER_ERROR;
 
   target_width_ = width;
   target_height_ = height;
@@ -48,11 +48,11 @@ void VPMSimpleSpatialResampler::Reset() {
 int32_t VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
                                                  VideoFrame* outFrame) {
   // Don't copy if frame remains as is.
-  if (resampling_mode_ == kNoRescaling)
-     return VPM_OK;
+  if (resampling_mode_ == kNoRescaling) {
+    return VPM_OK;
   // Check if re-sampling is needed
-  else if ((inFrame.width() == target_width_) &&
-    (inFrame.height() == target_height_))  {
+  } else if ((inFrame.width() == target_width_) &&
+             (inFrame.height() == target_height_)) {
     return VPM_OK;
   }
 
@@ -60,8 +60,8 @@ int32_t VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
   // TODO(mikhal/marpan): Should we allow for setting the filter mode in
   // _scale.Set() with |resampling_mode_|?
   int ret_val = 0;
-  ret_val = scaler_.Set(inFrame.width(), inFrame.height(),
-                       target_width_, target_height_, kI420, kI420, kScaleBox);
+  ret_val = scaler_.Set(inFrame.width(), inFrame.height(), target_width_,
+                        target_height_, kI420, kI420, kScaleBox);
   if (ret_val < 0)
     return ret_val;
 
@@ -86,10 +86,9 @@ int32_t VPMSimpleSpatialResampler::TargetWidth() {
   return target_width_;
 }
 
-bool VPMSimpleSpatialResampler::ApplyResample(int32_t width,
-                                              int32_t height) {
+bool VPMSimpleSpatialResampler::ApplyResample(int32_t width, int32_t height) {
   if ((width == target_width_ && height == target_height_) ||
-       resampling_mode_ == kNoRescaling)
+      resampling_mode_ == kNoRescaling)
     return false;
   else
     return true;

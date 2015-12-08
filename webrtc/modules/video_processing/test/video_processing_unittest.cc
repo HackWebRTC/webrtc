@@ -71,20 +71,20 @@ void VideoProcessingTest::SetUp() {
   ASSERT_TRUE(vp_ != NULL);
 
   ASSERT_EQ(0, video_frame_.CreateEmptyFrame(width_, height_, width_,
-                                            half_width_, half_width_));
+                                             half_width_, half_width_));
   // Clear video frame so DrMemory/Valgrind will allow reads of the buffer.
   memset(video_frame_.buffer(kYPlane), 0, video_frame_.allocated_size(kYPlane));
   memset(video_frame_.buffer(kUPlane), 0, video_frame_.allocated_size(kUPlane));
   memset(video_frame_.buffer(kVPlane), 0, video_frame_.allocated_size(kVPlane));
   const std::string video_file =
       webrtc::test::ResourcePath("foreman_cif", "yuv");
-  source_file_ = fopen(video_file.c_str(),  "rb");
-  ASSERT_TRUE(source_file_ != NULL) <<
-      "Cannot read source file: " + video_file + "\n";
+  source_file_ = fopen(video_file.c_str(), "rb");
+  ASSERT_TRUE(source_file_ != NULL)
+      << "Cannot read source file: " + video_file + "\n";
 }
 
 void VideoProcessingTest::TearDown() {
-  if (source_file_ != NULL)  {
+  if (source_file_ != NULL) {
     ASSERT_EQ(0, fclose(source_file_));
   }
   source_file_ = NULL;
@@ -110,8 +110,8 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(HandleBadStats)) {
   VideoProcessing::FrameStats stats;
   vp_->ClearFrameStats(&stats);
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-  ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
-                                 source_file_));
+  ASSERT_EQ(frame_length_,
+            fread(video_buffer.get(), 1, frame_length_, source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
 
@@ -125,8 +125,8 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(IdenticalResultsAfterReset)) {
   VideoProcessing::FrameStats stats;
   // Only testing non-static functions here.
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-  ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
-                                source_file_));
+  ASSERT_EQ(frame_length_,
+            fread(video_buffer.get(), 1, frame_length_, source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
   vp_->GetFrameStats(video_frame_, &stats);
@@ -140,8 +140,8 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(IdenticalResultsAfterReset)) {
   ASSERT_EQ(0, vp_->Deflickering(&video_frame2, &stats));
   EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
 
-  ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
-                                 source_file_));
+  ASSERT_EQ(frame_length_,
+            fread(video_buffer.get(), 1, frame_length_, source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
   vp_->GetFrameStats(video_frame_, &stats);
@@ -157,8 +157,8 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(FrameStats)) {
   VideoProcessing::FrameStats stats;
   vp_->ClearFrameStats(&stats);
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-  ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
-                                 source_file_));
+  ASSERT_EQ(frame_length_,
+            fread(video_buffer.get(), 1, frame_length_, source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
 
@@ -204,8 +204,7 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(Resampler)) {
   int64_t total_runtime = 0;
 
   rewind(source_file_);
-  ASSERT_TRUE(source_file_ != NULL) <<
-      "Cannot read input file \n";
+  ASSERT_TRUE(source_file_ != NULL) << "Cannot read input file \n";
 
   // CA not needed here
   vp_->EnableContentAnalysis(false);
@@ -214,8 +213,8 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(Resampler)) {
 
   // Reading test frame
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-  ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
-                                 source_file_));
+  ASSERT_EQ(frame_length_,
+            fread(video_buffer.get(), 1, frame_length_, source_file_));
   // Using ConvertToI420 to add stride to the image.
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                              0, kVideoRotation_0, &video_frame_));
@@ -281,8 +280,7 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(Resampler)) {
 
   printf("\nAverage run time = %d us / frame\n",
          static_cast<int>(total_runtime));
-  printf("Min run time = %d us / frame\n\n",
-         static_cast<int>(min_runtime));
+  printf("Min run time = %d us / frame\n\n", static_cast<int>(min_runtime));
 }
 
 void PreprocessFrameAndVerify(const VideoFrame& source,
@@ -349,15 +347,16 @@ void TestSize(const VideoFrame& source_frame,
   // Compute PSNR against the cropped source frame and check expectation.
   double psnr = I420PSNR(&cropped_source_frame, out_frame);
   EXPECT_GT(psnr, expected_psnr);
-  printf("PSNR: %f. PSNR is between source of size %d %d, and a modified "
-         "source which is scaled down/up to: %d %d, and back to source size \n",
-         psnr, source_frame.width(), source_frame.height(),
-         target_width, target_height);
+  printf(
+      "PSNR: %f. PSNR is between source of size %d %d, and a modified "
+      "source which is scaled down/up to: %d %d, and back to source size \n",
+      psnr, source_frame.width(), source_frame.height(), target_width,
+      target_height);
 }
 
 bool CompareFrames(const webrtc::VideoFrame& frame1,
                    const webrtc::VideoFrame& frame2) {
-  for (int plane = 0; plane < webrtc::kNumOfPlanes; plane ++) {
+  for (int plane = 0; plane < webrtc::kNumOfPlanes; plane++) {
     webrtc::PlaneType plane_type = static_cast<webrtc::PlaneType>(plane);
     int allocated_size1 = frame1.allocated_size(plane_type);
     int allocated_size2 = frame2.allocated_size(plane_type);

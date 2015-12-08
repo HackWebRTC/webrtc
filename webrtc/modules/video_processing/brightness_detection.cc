@@ -64,10 +64,10 @@ int32_t VPMBrightnessDetection::ProcessFrame(
       const uint8_t* buffer = frame.buffer(kYPlane);
       float std_y = 0;
       for (int h = 0; h < height; h += (1 << stats.sub_sampling_factor)) {
-        int row = h*width;
+        int row = h * width;
         for (int w = 0; w < width; w += (1 << stats.sub_sampling_factor)) {
-          std_y += (buffer[w + row] - stats.mean) * (buffer[w + row] -
-              stats.mean);
+          std_y +=
+              (buffer[w + row] - stats.mean) * (buffer[w + row] - stats.mean);
         }
       }
       std_y = sqrt(std_y / stats.num_pixels);
@@ -82,37 +82,39 @@ int32_t VPMBrightnessDetection::ProcessFrame(
       float posPerc95 = stats.num_pixels * 0.95f;
       for (uint32_t i = 0; i < 256; i++) {
         sum += stats.hist[i];
-        if (sum < pos_perc05) perc05 = i;     // 5th perc.
-        if (sum < pos_median) median_y = i;    // 50th perc.
+        if (sum < pos_perc05)
+          perc05 = i;  // 5th perc.
+        if (sum < pos_median)
+          median_y = i;  // 50th perc.
         if (sum < posPerc95)
-          perc95 = i;     // 95th perc.
+          perc95 = i;  // 95th perc.
         else
           break;
       }
 
-        // Check if image is too dark
-        if ((std_y < 55) && (perc05 < 50))  {
-          if (median_y < 60 || stats.mean < 80 ||  perc95 < 130 ||
-              prop_low > 0.20) {
-            frame_cnt_dark_++;
-          } else {
-            frame_cnt_dark_ = 0;
-          }
+      // Check if image is too dark
+      if ((std_y < 55) && (perc05 < 50)) {
+        if (median_y < 60 || stats.mean < 80 || perc95 < 130 ||
+            prop_low > 0.20) {
+          frame_cnt_dark_++;
         } else {
           frame_cnt_dark_ = 0;
         }
+      } else {
+        frame_cnt_dark_ = 0;
+      }
 
-        // Check if image is too bright
-        if ((std_y < 52) && (perc95 > 200) && (median_y > 160)) {
-          if (median_y > 185 || stats.mean > 185 || perc05 > 140 ||
-              prop_high > 0.25) {
-            frame_cnt_bright_++;
-          } else {
-            frame_cnt_bright_ = 0;
-          }
+      // Check if image is too bright
+      if ((std_y < 52) && (perc95 > 200) && (median_y > 160)) {
+        if (median_y > 185 || stats.mean > 185 || perc05 > 140 ||
+            prop_high > 0.25) {
+          frame_cnt_bright_++;
         } else {
           frame_cnt_bright_ = 0;
         }
+      } else {
+        frame_cnt_bright_ = 0;
+      }
     } else {
       frame_cnt_dark_ = 0;
       frame_cnt_bright_ = 0;

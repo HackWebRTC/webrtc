@@ -31,7 +31,7 @@ VPMFramePreprocessor::~VPMFramePreprocessor() {
   delete spatial_resampler_;
 }
 
-void  VPMFramePreprocessor::Reset() {
+void VPMFramePreprocessor::Reset() {
   ca_->Release();
   vd_->Reset();
   content_metrics_ = nullptr;
@@ -40,7 +40,7 @@ void  VPMFramePreprocessor::Reset() {
   frame_cnt_ = 0;
 }
 
-void  VPMFramePreprocessor::EnableTemporalDecimation(bool enable) {
+void VPMFramePreprocessor::EnableTemporalDecimation(bool enable) {
   vd_->EnableTemporalDecimation(enable);
 }
 
@@ -48,20 +48,22 @@ void VPMFramePreprocessor::EnableContentAnalysis(bool enable) {
   enable_ca_ = enable;
 }
 
-void  VPMFramePreprocessor::SetInputFrameResampleMode(
+void VPMFramePreprocessor::SetInputFrameResampleMode(
     VideoFrameResampling resampling_mode) {
   spatial_resampler_->SetInputFrameResampleMode(resampling_mode);
 }
 
-int32_t VPMFramePreprocessor::SetTargetResolution(
-    uint32_t width, uint32_t height, uint32_t frame_rate) {
+int32_t VPMFramePreprocessor::SetTargetResolution(uint32_t width,
+                                                  uint32_t height,
+                                                  uint32_t frame_rate) {
   if ((width == 0) || (height == 0) || (frame_rate == 0)) {
     return VPM_PARAMETER_ERROR;
   }
   int32_t ret_val = 0;
   ret_val = spatial_resampler_->SetTargetFrameSize(width, height);
 
-  if (ret_val < 0) return ret_val;
+  if (ret_val < 0)
+    return ret_val;
 
   vd_->SetTargetFramerate(frame_rate);
   return VPM_OK;
@@ -84,11 +86,9 @@ uint32_t VPMFramePreprocessor::GetDecimatedFrameRate() {
   return vd_->GetDecimatedFrameRate();
 }
 
-
 uint32_t VPMFramePreprocessor::GetDecimatedWidth() const {
   return spatial_resampler_->TargetWidth();
 }
-
 
 uint32_t VPMFramePreprocessor::GetDecimatedHeight() const {
   return spatial_resampler_->TargetHeight();
@@ -116,7 +116,7 @@ const VideoFrame* VPMFramePreprocessor::PreprocessFrame(
   }
 
   if (spatial_resampler_->ApplyResample(current_frame->width(),
-                                        current_frame->height()))  {
+                                        current_frame->height())) {
     if (spatial_resampler_->ResampleFrame(*current_frame, &resampled_frame_) !=
         VPM_OK) {
       return nullptr;

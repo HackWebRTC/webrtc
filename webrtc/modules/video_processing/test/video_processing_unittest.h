@@ -30,9 +30,7 @@ class VideoProcessingTest : public ::testing::Test {
     std::string trace_file = webrtc::test::OutputPath() + "VPMTrace.txt";
     ASSERT_EQ(0, Trace::SetTraceFile(trace_file.c_str()));
   }
-  static void TearDownTestCase() {
-    Trace::ReturnTrace();
-  }
+  static void TearDownTestCase() { Trace::ReturnTrace(); }
   VideoProcessing* vp_;
   FILE* source_file_;
   VideoFrame video_frame_;

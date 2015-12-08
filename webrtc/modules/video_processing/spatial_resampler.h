@@ -23,10 +23,10 @@ namespace webrtc {
 
 class VPMSpatialResampler {
  public:
-  virtual ~VPMSpatialResampler() {};
+  virtual ~VPMSpatialResampler() {}
   virtual int32_t SetTargetFrameSize(int32_t width, int32_t height) = 0;
-  virtual void SetInputFrameResampleMode(VideoFrameResampling
-                                         resampling_mode) = 0;
+  virtual void SetInputFrameResampleMode(
+      VideoFrameResampling resampling_mode) = 0;
   virtual void Reset() = 0;
   virtual int32_t ResampleFrame(const VideoFrame& inFrame,
                                 VideoFrame* outFrame) = 0;
@@ -49,11 +49,10 @@ class VPMSimpleSpatialResampler : public VPMSpatialResampler {
   virtual bool ApplyResample(int32_t width, int32_t height);
 
  private:
-
-  VideoFrameResampling        resampling_mode_;
-  int32_t                     target_width_;
-  int32_t                     target_height_;
-  Scaler                      scaler_;
+  VideoFrameResampling resampling_mode_;
+  int32_t target_width_;
+  int32_t target_height_;
+  Scaler scaler_;
 };
 
 }  // namespace webrtc

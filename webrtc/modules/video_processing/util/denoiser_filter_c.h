@@ -41,8 +41,6 @@ class DenoiserFilterC : public DenoiserFilter {
                              int increase_denoising) override;
 };
 
-
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_C_H_

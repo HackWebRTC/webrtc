@@ -23,12 +23,11 @@ const int kSumDiffThresholdHigh = 600;
 DenoiserFilter* DenoiserFilter::Create() {
   DenoiserFilter* filter = NULL;
 
-  // If we know the minimum architecture at compile time, avoid CPU detection.
+// If we know the minimum architecture at compile time, avoid CPU detection.
 #if defined(WEBRTC_ARCH_X86_FAMILY)
   // x86 CPU detection required.
   if (WebRtc_GetCPUInfo(kSSE2)) {
-    filter =
-        new DenoiserFilterSSE2();
+    filter = new DenoiserFilterSSE2();
   } else {
     filter = new DenoiserFilterC();
   }

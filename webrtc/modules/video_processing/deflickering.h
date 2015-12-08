@@ -38,13 +38,13 @@ class VPMDeflickering {
   enum { kNumQuants = kNumProbs + 2 };
   enum { kMaxOnlyLength = 5 };
 
-  uint32_t  mean_buffer_length_;
-  uint8_t   detection_state_;    // 0: No flickering
-                                // 1: Flickering detected
-                                // 2: In flickering
-  int32_t    mean_buffer_[kMeanBufferLength];
-  uint32_t   timestamp_buffer_[kMeanBufferLength];
-  uint32_t   frame_rate_;
+  uint32_t mean_buffer_length_;
+  uint8_t detection_state_;  // 0: No flickering
+                             // 1: Flickering detected
+                             // 2: In flickering
+  int32_t mean_buffer_[kMeanBufferLength];
+  uint32_t timestamp_buffer_[kMeanBufferLength];
+  uint32_t frame_rate_;
   static const uint16_t prob_uw16_[kNumProbs];
   static const uint16_t weight_uw16_[kNumQuants - kMaxOnlyLength];
   uint8_t quant_hist_uw8_[kFrameHistory_size][kNumQuants];

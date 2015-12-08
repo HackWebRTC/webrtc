@@ -23,7 +23,7 @@ VPMVideoDecimator::VPMVideoDecimator() {
 
 VPMVideoDecimator::~VPMVideoDecimator() {}
 
-void VPMVideoDecimator::Reset()  {
+void VPMVideoDecimator::Reset() {
   overshoot_modifier_ = 0;
   drop_count_ = 0;
   keep_count_ = 0;
@@ -43,14 +43,17 @@ void VPMVideoDecimator::SetTargetFramerate(int frame_rate) {
 }
 
 bool VPMVideoDecimator::DropFrame() {
-  if (!enable_temporal_decimation_) return false;
+  if (!enable_temporal_decimation_)
+    return false;
 
-  if (incoming_frame_rate_ <= 0) return false;
+  if (incoming_frame_rate_ <= 0)
+    return false;
 
   const uint32_t incomingframe_rate =
       static_cast<uint32_t>(incoming_frame_rate_ + 0.5f);
 
-  if (target_frame_rate_ == 0) return true;
+  if (target_frame_rate_ == 0)
+    return true;
 
   bool drop = false;
   if (incomingframe_rate > target_frame_rate_) {
@@ -61,44 +64,43 @@ bool VPMVideoDecimator::DropFrame() {
       overshoot_modifier_ = 0;
     }
 
-    if (overshoot && 2 * overshoot < (int32_t) incomingframe_rate) {
+    if (overshoot && 2 * overshoot < (int32_t)incomingframe_rate) {
       if (drop_count_) {  // Just got here so drop to be sure.
-          drop_count_ = 0;
-          return true;
+        drop_count_ = 0;
+        return true;
       }
       const uint32_t dropVar = incomingframe_rate / overshoot;
 
       if (keep_count_ >= dropVar) {
-          drop = true;
-          overshoot_modifier_ = -((int32_t) incomingframe_rate % overshoot) / 3;
-          keep_count_ = 1;
+        drop = true;
+        overshoot_modifier_ = -((int32_t)incomingframe_rate % overshoot) / 3;
+        keep_count_ = 1;
       } else {
-          keep_count_++;
+        keep_count_++;
       }
     } else {
       keep_count_ = 0;
       const uint32_t dropVar = overshoot / target_frame_rate_;
       if (drop_count_ < dropVar) {
-          drop = true;
-          drop_count_++;
+        drop = true;
+        drop_count_++;
       } else {
-          overshoot_modifier_ = overshoot % target_frame_rate_;
-          drop = false;
-          drop_count_ = 0;
+        overshoot_modifier_ = overshoot % target_frame_rate_;
+        drop = false;
+        drop_count_ = 0;
       }
     }
   }
   return drop;
 }
 
-
 uint32_t VPMVideoDecimator::GetDecimatedFrameRate() {
-ProcessIncomingframe_rate(TickTime::MillisecondTimestamp());
+  ProcessIncomingframe_rate(TickTime::MillisecondTimestamp());
   if (!enable_temporal_decimation_) {
     return static_cast<uint32_t>(incoming_frame_rate_ + 0.5f);
   }
   return VD_MIN(target_frame_rate_,
-      static_cast<uint32_t>(incoming_frame_rate_ + 0.5f));
+                static_cast<uint32_t>(incoming_frame_rate_ + 0.5f));
 }
 
 uint32_t VPMVideoDecimator::Inputframe_rate() {
@@ -113,7 +115,7 @@ void VPMVideoDecimator::UpdateIncomingframe_rate() {
   } else {
     // Shift.
     for (int i = kFrameCountHistory_size - 2; i >= 0; i--) {
-        incoming_frame_times_[i+1] = incoming_frame_times_[i];
+      incoming_frame_times_[i + 1] = incoming_frame_times_[i];
     }
   }
   incoming_frame_times_[0] = now;
@@ -133,7 +135,7 @@ void VPMVideoDecimator::ProcessIncomingframe_rate(int64_t now) {
     }
   }
   if (num > 1) {
-    int64_t diff = now - incoming_frame_times_[num-1];
+    int64_t diff = now - incoming_frame_times_[num - 1];
     incoming_frame_rate_ = 1.0;
     if (diff > 0) {
       incoming_frame_rate_ = nrOfFrames * 1000.0f / static_cast<float>(diff);

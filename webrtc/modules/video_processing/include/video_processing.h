@@ -8,13 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * video_processing.h
- * This header file contains the API required for the video
- * processing module class.
- */
-
-
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_INCLUDE_VIDEO_PROCESSING_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_INCLUDE_VIDEO_PROCESSING_H_
 
@@ -43,11 +36,7 @@ class VideoProcessing {
     uint32_t sub_sampling_factor;  // Sub-sampling factor, in powers of 2.
   };
 
-  enum BrightnessWarning {
-    kNoWarning,
-    kDarkWarning,
-    kBrightWarning
-  };
+  enum BrightnessWarning { kNoWarning, kDarkWarning, kBrightWarning };
 
   static VideoProcessing* Create();
   virtual ~VideoProcessing() {}

@@ -48,19 +48,13 @@ bool MbHasSkinColor(const uint8_t* y_src,
                     const int stride_v,
                     const int mb_row,
                     const int mb_col) {
-  const uint8_t* y =
-      y_src + ((mb_row << 4) + 8) * stride_y + (mb_col << 4) + 8;
-  const uint8_t* u =
-      u_src + ((mb_row << 3) + 4) * stride_u + (mb_col << 3) + 4;
-  const uint8_t* v =
-      v_src + ((mb_row << 3) + 4) * stride_v + (mb_col << 3) + 4;
+  const uint8_t* y = y_src + ((mb_row << 4) + 8) * stride_y + (mb_col << 4) + 8;
+  const uint8_t* u = u_src + ((mb_row << 3) + 4) * stride_u + (mb_col << 3) + 4;
+  const uint8_t* v = v_src + ((mb_row << 3) + 4) * stride_v + (mb_col << 3) + 4;
   // Use 2x2 average of center pixel to compute skin area.
-  uint8_t y_avg =
-      (*y + *(y + 1) + *(y + stride_y) + *(y + stride_y + 1)) >> 2;
-  uint8_t u_avg =
-      (*u + *(u + 1) + *(u + stride_u) + *(u + stride_u + 1)) >> 2;
-  uint8_t v_avg =
-      (*v + *(v + 1) + *(v + stride_v) + *(v + stride_v + 1)) >> 2;
+  uint8_t y_avg = (*y + *(y + 1) + *(y + stride_y) + *(y + stride_y + 1)) >> 2;
+  uint8_t u_avg = (*u + *(u + 1) + *(u + stride_u) + *(u + stride_u + 1)) >> 2;
+  uint8_t v_avg = (*v + *(v + 1) + *(v + stride_v) + *(v + stride_v + 1)) >> 2;
   // Ignore MB with too high or low brightness.
   if (y_avg < y_low || y_avg > y_high)
     return false;

@@ -22,8 +22,11 @@ class VideoDenoiser {
   void DenoiseFrame(const VideoFrame& frame, VideoFrame* denoised_frame);
 
  private:
-  void TrailingReduction(int mb_rows, int mb_cols, const uint8_t* y_src,
-                         int stride_y, uint8_t* y_dst);
+  void TrailingReduction(int mb_rows,
+                         int mb_cols,
+                         const uint8_t* y_src,
+                         int stride_y,
+                         uint8_t* y_dst);
   int width_;
   int height_;
   rtc::scoped_ptr<DenoiseMetrics[]> metrics_;

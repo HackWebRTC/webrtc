@@ -141,9 +141,8 @@ DenoiserDecision DenoiserFilterSSE2::MbDenoise(uint8_t* mc_running_avg_y,
                                                uint8_t motion_magnitude,
                                                int increase_denoising) {
   int shift_inc =
-      (increase_denoising && motion_magnitude <= kMotionMagnitudeThreshold)
-          ? 1
-          : 0;
+      (increase_denoising && motion_magnitude <= kMotionMagnitudeThreshold) ? 1
+                                                                            : 0;
   __m128i acc_diff = _mm_setzero_si128();
   const __m128i k_0 = _mm_setzero_si128();
   const __m128i k_4 = _mm_set1_epi8(4 + shift_inc);
@@ -239,15 +238,14 @@ DenoiserDecision DenoiserFilterSSE2::MbDenoise(uint8_t* mc_running_avg_y,
           // Calculate differences.
           const __m128i v_sig =
               _mm_loadu_si128(reinterpret_cast<const __m128i*>(&sig[0]));
-          const __m128i v_mc_running_avg_y = _mm_loadu_si128(
-              reinterpret_cast<__m128i*>(&mc_running_avg_y[0]));
+          const __m128i v_mc_running_avg_y =
+              _mm_loadu_si128(reinterpret_cast<__m128i*>(&mc_running_avg_y[0]));
           const __m128i pdiff = _mm_subs_epu8(v_mc_running_avg_y, v_sig);
           const __m128i ndiff = _mm_subs_epu8(v_sig, v_mc_running_avg_y);
           // Obtain the sign. FF if diff is negative.
           const __m128i diff_sign = _mm_cmpeq_epi8(pdiff, k_0);
           // Clamp absolute difference to delta to get the adjustment.
-          const __m128i adj = _mm_min_epu8(
-              _mm_or_si128(pdiff, ndiff), k_delta);
+          const __m128i adj = _mm_min_epu8(_mm_or_si128(pdiff, ndiff), k_delta);
           // Restore the sign and get positive and negative adjustments.
           __m128i padj, nadj;
           padj = _mm_andnot_si128(diff_sign, adj);

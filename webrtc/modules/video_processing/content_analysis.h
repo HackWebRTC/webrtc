@@ -72,14 +72,14 @@ class VPMContentAnalysis {
   int border_;
 
   // Content Metrics: Stores the local average of the metrics.
-  float motion_magnitude_;   // motion class
-  float spatial_pred_err_;   // spatial class
+  float motion_magnitude_;    // motion class
+  float spatial_pred_err_;    // spatial class
   float spatial_pred_err_h_;  // spatial class
   float spatial_pred_err_v_;  // spatial class
   bool first_frame_;
   bool ca_Init_;
 
-  VideoContentMetrics*   content_metrics_;
+  VideoContentMetrics* content_metrics_;
 };
 
 }  // namespace webrtc

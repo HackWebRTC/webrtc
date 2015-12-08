@@ -72,7 +72,7 @@ VideoContentMetrics* VPMContentAnalysis::ComputeContentMetrics(
   // Saving current frame as previous one: Y only.
   memcpy(prev_frame_, orig_frame_, width_ * height_);
 
-  first_frame_ =  false;
+  first_frame_ = false;
   ca_Init_ = true;
 
   return ContentMetrics();
@@ -85,7 +85,7 @@ int32_t VPMContentAnalysis::Release() {
   }
 
   if (prev_frame_ != NULL) {
-    delete [] prev_frame_;
+    delete[] prev_frame_;
     prev_frame_ = NULL;
   }
 
@@ -106,11 +106,11 @@ int32_t VPMContentAnalysis::Initialize(int width, int height) {
   skip_num_ = 1;
 
   // use skipNum = 2 for 4CIF, WHD
-  if ( (height_ >=  576) && (width_ >= 704) ) {
+  if ((height_ >= 576) && (width_ >= 704)) {
     skip_num_ = 2;
   }
   // use skipNum = 4 for FULLL_HD images
-  if ( (height_ >=  1080) && (width_ >= 1920) ) {
+  if ((height_ >= 1080) && (width_ >= 1920)) {
     skip_num_ = 4;
   }
 
@@ -119,7 +119,7 @@ int32_t VPMContentAnalysis::Initialize(int width, int height) {
   }
 
   if (prev_frame_ != NULL) {
-    delete [] prev_frame_;
+    delete[] prev_frame_;
   }
 
   // Spatial Metrics don't work on a border of 8. Minimum processing
@@ -135,11 +135,11 @@ int32_t VPMContentAnalysis::Initialize(int width, int height) {
   }
 
   prev_frame_ = new uint8_t[width_ * height_];  // Y only.
-  if (prev_frame_ == NULL) return VPM_MEMORY;
+  if (prev_frame_ == NULL)
+    return VPM_MEMORY;
 
   return VPM_OK;
 }
-
 
 // Compute motion metrics: magnitude over non-zero motion vectors,
 //  and size of zero cluster
@@ -163,36 +163,41 @@ int32_t VPMContentAnalysis::TemporalDiffMetric_C() {
   uint64_t pixelSqSum = 0;
 
   uint32_t num_pixels = 0;  // Counter for # of pixels.
-  const int width_end = ((width_ - 2*border_) & -16) + border_;
+  const int width_end = ((width_ - 2 * border_) & -16) + border_;
 
   for (int i = border_; i < sizei - border_; i += skip_num_) {
     for (int j = border_; j < width_end; j++) {
       num_pixels += 1;
-      int ssn =  i * sizej + j;
+      int ssn = i * sizej + j;
 
-      uint8_t currPixel  = orig_frame_[ssn];
-      uint8_t prevPixel  = prev_frame_[ssn];
+      uint8_t currPixel = orig_frame_[ssn];
+      uint8_t prevPixel = prev_frame_[ssn];
 
-      tempDiffSum += (uint32_t)abs((int16_t)(currPixel - prevPixel));
-      pixelSum += (uint32_t) currPixel;
-      pixelSqSum += (uint64_t) (currPixel * currPixel);
+      tempDiffSum +=
+          static_cast<uint32_t>(abs((int16_t)(currPixel - prevPixel)));
+      pixelSum += static_cast<uint32_t>(currPixel);
+      pixelSqSum += static_cast<uint64_t>(currPixel * currPixel);
     }
   }
 
   // Default.
   motion_magnitude_ = 0.0f;
 
-  if (tempDiffSum == 0) return VPM_OK;
+  if (tempDiffSum == 0)
+    return VPM_OK;
 
   // Normalize over all pixels.
-  float const tempDiffAvg = (float)tempDiffSum / (float)(num_pixels);
-  float const pixelSumAvg = (float)pixelSum / (float)(num_pixels);
-  float const pixelSqSumAvg = (float)pixelSqSum / (float)(num_pixels);
+  float const tempDiffAvg =
+      static_cast<float>(tempDiffSum) / static_cast<float>(num_pixels);
+  float const pixelSumAvg =
+      static_cast<float>(pixelSum) / static_cast<float>(num_pixels);
+  float const pixelSqSumAvg =
+      static_cast<float>(pixelSqSum) / static_cast<float>(num_pixels);
   float contrast = pixelSqSumAvg - (pixelSumAvg * pixelSumAvg);
 
   if (contrast > 0.0) {
     contrast = sqrt(contrast);
-    motion_magnitude_ = tempDiffAvg/contrast;
+    motion_magnitude_ = tempDiffAvg / contrast;
   }
   return VPM_OK;
 }
@@ -216,39 +221,40 @@ int32_t VPMContentAnalysis::ComputeSpatialMetrics_C() {
   uint32_t spatialErrHSum = 0;
 
   // make sure work section is a multiple of 16
-  const int width_end = ((sizej - 2*border_) & -16) + border_;
+  const int width_end = ((sizej - 2 * border_) & -16) + border_;
 
   for (int i = border_; i < sizei - border_; i += skip_num_) {
     for (int j = border_; j < width_end; j++) {
-      int ssn1=  i * sizej + j;
-      int ssn2 = (i + 1) * sizej + j; // bottom
-      int ssn3 = (i - 1) * sizej + j; // top
-      int ssn4 = i * sizej + j + 1;   // right
-      int ssn5 = i * sizej + j - 1;   // left
+      int ssn1 = i * sizej + j;
+      int ssn2 = (i + 1) * sizej + j;  // bottom
+      int ssn3 = (i - 1) * sizej + j;  // top
+      int ssn4 = i * sizej + j + 1;    // right
+      int ssn5 = i * sizej + j - 1;    // left
 
-      uint16_t refPixel1  = orig_frame_[ssn1] << 1;
-      uint16_t refPixel2  = orig_frame_[ssn1] << 2;
+      uint16_t refPixel1 = orig_frame_[ssn1] << 1;
+      uint16_t refPixel2 = orig_frame_[ssn1] << 2;
 
       uint8_t bottPixel = orig_frame_[ssn2];
       uint8_t topPixel = orig_frame_[ssn3];
       uint8_t rightPixel = orig_frame_[ssn4];
       uint8_t leftPixel = orig_frame_[ssn5];
 
-      spatialErrSum  += (uint32_t) abs((int16_t)(refPixel2
-          - (uint16_t)(bottPixel + topPixel + leftPixel + rightPixel)));
-      spatialErrVSum += (uint32_t) abs((int16_t)(refPixel1
-          - (uint16_t)(bottPixel + topPixel)));
-      spatialErrHSum += (uint32_t) abs((int16_t)(refPixel1
-          - (uint16_t)(leftPixel + rightPixel)));
+      spatialErrSum += static_cast<uint32_t>(abs(static_cast<int16_t>(
+          refPixel2 - static_cast<uint16_t>(bottPixel + topPixel + leftPixel +
+                                            rightPixel))));
+      spatialErrVSum += static_cast<uint32_t>(abs(static_cast<int16_t>(
+          refPixel1 - static_cast<uint16_t>(bottPixel + topPixel))));
+      spatialErrHSum += static_cast<uint32_t>(abs(static_cast<int16_t>(
+          refPixel1 - static_cast<uint16_t>(leftPixel + rightPixel))));
       pixelMSA += orig_frame_[ssn1];
     }
   }
 
   // Normalize over all pixels.
-  const float spatialErr = (float)(spatialErrSum >> 2);
-  const float spatialErrH = (float)(spatialErrHSum >> 1);
-  const float spatialErrV = (float)(spatialErrVSum >> 1);
-  const float norm = (float)pixelMSA;
+  const float spatialErr = static_cast<float>(spatialErrSum >> 2);
+  const float spatialErrH = static_cast<float>(spatialErrHSum >> 1);
+  const float spatialErrV = static_cast<float>(spatialErrVSum >> 1);
+  const float norm = static_cast<float>(pixelMSA);
 
   // 2X2:
   spatial_pred_err_ = spatialErr / norm;
@@ -260,7 +266,8 @@ int32_t VPMContentAnalysis::ComputeSpatialMetrics_C() {
 }
 
 VideoContentMetrics* VPMContentAnalysis::ContentMetrics() {
-  if (ca_Init_ == false) return NULL;
+  if (ca_Init_ == false)
+    return NULL;
 
   content_metrics_->spatial_pred_err = spatial_pred_err_;
   content_metrics_->spatial_pred_err_h = spatial_pred_err_h_;

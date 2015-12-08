@@ -40,16 +40,17 @@ enum { kLog2OfDownsamplingFactor = 3 };
 // >> fprintf('%d, ', probUW16)
 // Resolution reduced to avoid overflow when multiplying with the
 // (potentially) large number of pixels.
-const uint16_t VPMDeflickering::prob_uw16_[kNumProbs] = {102, 205, 410, 614,
-    819, 1024, 1229, 1434, 1638, 1843, 1946, 1987};  // <Q11>
+const uint16_t VPMDeflickering::prob_uw16_[kNumProbs] = {
+    102,  205,  410,  614,  819,  1024,
+    1229, 1434, 1638, 1843, 1946, 1987};  // <Q11>
 
 // To generate in Matlab:
 // >> numQuants = 14; maxOnlyLength = 5;
 // >> weightUW16 = round(2^15 *
 //    [linspace(0.5, 1.0, numQuants - maxOnlyLength)]);
 // >> fprintf('%d, %d,\n ', weightUW16);
-const uint16_t VPMDeflickering::weight_uw16_[kNumQuants - kMaxOnlyLength] =
-    {16384, 18432, 20480, 22528, 24576, 26624, 28672, 30720, 32768};  // <Q15>
+const uint16_t VPMDeflickering::weight_uw16_[kNumQuants - kMaxOnlyLength] = {
+    16384, 18432, 20480, 22528, 24576, 26624, 28672, 30720, 32768};  // <Q15>
 
 VPMDeflickering::VPMDeflickering() {
   Reset();
@@ -70,8 +71,8 @@ void VPMDeflickering::Reset() {
   quant_hist_uw8_[0][kNumQuants - 1] = 255;
   for (int32_t i = 0; i < kNumProbs; i++) {
     // Unsigned round. <Q0>
-    quant_hist_uw8_[0][i + 1] = static_cast<uint8_t>(
-        (prob_uw16_[i] * 255 + (1 << 10)) >> 11);
+    quant_hist_uw8_[0][i + 1] =
+        static_cast<uint8_t>((prob_uw16_[i] * 255 + (1 << 10)) >> 11);
   }
 
   for (int32_t i = 1; i < kFrameHistory_size; i++) {
@@ -80,9 +81,8 @@ void VPMDeflickering::Reset() {
   }
 }
 
-int32_t VPMDeflickering::ProcessFrame(
-    VideoFrame* frame,
-    VideoProcessing::FrameStats* stats) {
+int32_t VPMDeflickering::ProcessFrame(VideoFrame* frame,
+                                      VideoProcessing::FrameStats* stats) {
   assert(frame);
   uint32_t frame_memory;
   uint8_t quant_uw8[kNumQuants];
@@ -111,7 +111,8 @@ int32_t VPMDeflickering::ProcessFrame(
     return VPM_GENERAL_ERROR;
   }
 
-  if (PreDetection(frame->timestamp(), *stats) == -1) return VPM_GENERAL_ERROR;
+  if (PreDetection(frame->timestamp(), *stats) == -1)
+    return VPM_GENERAL_ERROR;
 
   // Flicker detection
   int32_t det_flicker = DetectFlicker();
@@ -124,13 +125,13 @@ int32_t VPMDeflickering::ProcessFrame(
   // Size of luminance component.
   const uint32_t y_size = height * width;
 
-  const uint32_t y_sub_size = width * (((height - 1) >>
-      kLog2OfDownsamplingFactor) + 1);
+  const uint32_t y_sub_size =
+      width * (((height - 1) >> kLog2OfDownsamplingFactor) + 1);
   uint8_t* y_sorted = new uint8_t[y_sub_size];
   uint32_t sort_row_idx = 0;
   for (int i = 0; i < height; i += kDownsamplingFactor) {
-    memcpy(y_sorted + sort_row_idx * width,
-        frame->buffer(kYPlane) + i * width, width);
+    memcpy(y_sorted + sort_row_idx * width, frame->buffer(kYPlane) + i * width,
+           width);
     sort_row_idx++;
   }
 
@@ -153,12 +154,12 @@ int32_t VPMDeflickering::ProcessFrame(
     quant_uw8[i + 1] = y_sorted[prob_idx_uw32];
   }
 
-  delete [] y_sorted;
+  delete[] y_sorted;
   y_sorted = NULL;
 
   // Shift history for new frame.
   memmove(quant_hist_uw8_[1], quant_hist_uw8_[0],
-      (kFrameHistory_size - 1) * kNumQuants * sizeof(uint8_t));
+          (kFrameHistory_size - 1) * kNumQuants * sizeof(uint8_t));
   // Store current frame in history.
   memcpy(quant_hist_uw8_[0], quant_uw8, kNumQuants * sizeof(uint8_t));
 
@@ -190,9 +191,10 @@ int32_t VPMDeflickering::ProcessFrame(
     // target = w * maxquant_uw8 + (1 - w) * minquant_uw8
     // Weights w = |weight_uw16_| are in Q15, hence the final output has to be
     // right shifted by 8 to end up in Q7.
-    target_quant_uw16[i] = static_cast<uint16_t>((
-        weight_uw16_[i] * maxquant_uw8[i] +
-        ((1 << 15) - weight_uw16_[i]) * minquant_uw8[i]) >> 8);  // <Q7>
+    target_quant_uw16[i] = static_cast<uint16_t>(
+        (weight_uw16_[i] * maxquant_uw8[i] +
+         ((1 << 15) - weight_uw16_[i]) * minquant_uw8[i]) >>
+        8);  // <Q7>
   }
 
   for (int32_t i = kNumQuants - kMaxOnlyLength; i < kNumQuants; i++) {
@@ -203,13 +205,14 @@ int32_t VPMDeflickering::ProcessFrame(
   uint16_t mapUW16;  // <Q7>
   for (int32_t i = 1; i < kNumQuants; i++) {
     // As quant and targetQuant are limited to UWord8, it's safe to use Q7 here.
-    tmp_uw32 = static_cast<uint32_t>(target_quant_uw16[i] -
-        target_quant_uw16[i - 1]);
+    tmp_uw32 =
+        static_cast<uint32_t>(target_quant_uw16[i] - target_quant_uw16[i - 1]);
     tmp_uw16 = static_cast<uint16_t>(quant_uw8[i] - quant_uw8[i - 1]);  // <Q0>
 
     if (tmp_uw16 > 0) {
-      increment_uw16 = static_cast<uint16_t>(WebRtcSpl_DivU32U16(tmp_uw32,
-          tmp_uw16));  // <Q7>
+      increment_uw16 =
+          static_cast<uint16_t>(WebRtcSpl_DivU32U16(tmp_uw32,
+                                                    tmp_uw16));  // <Q7>
     } else {
       // The value is irrelevant; the loop below will only iterate once.
       increment_uw16 = 0;
@@ -247,8 +250,9 @@ int32_t VPMDeflickering::ProcessFrame(
               zero.\n
           -1: Error
 */
-int32_t VPMDeflickering::PreDetection(const uint32_t timestamp,
-  const VideoProcessing::FrameStats& stats) {
+int32_t VPMDeflickering::PreDetection(
+    const uint32_t timestamp,
+    const VideoProcessing::FrameStats& stats) {
   int32_t mean_val;  // Mean value of frame (Q4)
   uint32_t frame_rate = 0;
   int32_t meanBufferLength;  // Temp variable.
@@ -257,16 +261,16 @@ int32_t VPMDeflickering::PreDetection(const uint32_t timestamp,
   // Update mean value buffer.
   // This should be done even though we might end up in an unreliable detection.
   memmove(mean_buffer_ + 1, mean_buffer_,
-      (kMeanBufferLength - 1) * sizeof(int32_t));
+          (kMeanBufferLength - 1) * sizeof(int32_t));
   mean_buffer_[0] = mean_val;
 
   // Update timestamp buffer.
   // This should be done even though we might end up in an unreliable detection.
-  memmove(timestamp_buffer_ + 1, timestamp_buffer_, (kMeanBufferLength - 1) *
-      sizeof(uint32_t));
+  memmove(timestamp_buffer_ + 1, timestamp_buffer_,
+          (kMeanBufferLength - 1) * sizeof(uint32_t));
   timestamp_buffer_[0] = timestamp;
 
-/* Compute current frame rate (Q4) */
+  /* Compute current frame rate (Q4) */
   if (timestamp_buffer_[kMeanBufferLength - 1] != 0) {
     frame_rate = ((90000 << 4) * (kMeanBufferLength - 1));
     frame_rate /=
@@ -315,22 +319,22 @@ int32_t VPMDeflickering::PreDetection(const uint32_t timestamp,
           -1: Error
 */
 int32_t VPMDeflickering::DetectFlicker() {
-  uint32_t  i;
-  int32_t  freqEst;       // (Q4) Frequency estimate to base detection upon
-  int32_t  ret_val = -1;
+  uint32_t i;
+  int32_t freqEst;  // (Q4) Frequency estimate to base detection upon
+  int32_t ret_val = -1;
 
   /* Sanity check for mean_buffer_length_ */
   if (mean_buffer_length_ < 2) {
     /* Not possible to estimate frequency */
-    return(2);
+    return 2;
   }
   // Count zero crossings with a dead zone to be robust against noise. If the
   // noise std is 2 pixel this corresponds to about 95% confidence interval.
   int32_t deadzone = (kZeroCrossingDeadzone << kmean_valueScaling);  // Q4
   int32_t meanOfBuffer = 0;  // Mean value of mean value buffer.
-  int32_t numZeros     = 0;  // Number of zeros that cross the dead-zone.
-  int32_t cntState     = 0;  // State variable for zero crossing regions.
-  int32_t cntStateOld  = 0;  // Previous state for zero crossing regions.
+  int32_t numZeros = 0;      // Number of zeros that cross the dead-zone.
+  int32_t cntState = 0;      // State variable for zero crossing regions.
+  int32_t cntStateOld = 0;   // Previous state for zero crossing regions.
 
   for (i = 0; i < mean_buffer_length_; i++) {
     meanOfBuffer += mean_buffer_[i];

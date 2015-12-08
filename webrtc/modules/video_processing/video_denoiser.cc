@@ -14,9 +14,7 @@
 namespace webrtc {
 
 VideoDenoiser::VideoDenoiser()
-    : width_(0),
-      height_(0),
-      filter_(DenoiserFilter::Create()) {}
+    : width_(0), height_(0), filter_(DenoiserFilter::Create()) {}
 
 void VideoDenoiser::TrailingReduction(int mb_rows,
                                       int mb_cols,
@@ -32,25 +30,26 @@ void VideoDenoiser::TrailingReduction(int mb_rows,
       // do NOT denoise for the block. Set different threshold for skin MB.
       // The change of denoising status will not propagate.
       if (metrics_[mb_index].is_skin) {
-      // The threshold is high (more strict) for non-skin MB where the trailing
-      // usually happen.
+        // The threshold is high (more strict) for non-skin MB where the
+        // trailing usually happen.
         if (metrics_[mb_index].denoise &&
-            metrics_[mb_index + 1].denoise +
-            metrics_[mb_index - 1].denoise +
-            metrics_[mb_index + mb_cols].denoise +
-            metrics_[mb_index - mb_cols].denoise <= 2) {
+            metrics_[mb_index + 1].denoise + metrics_[mb_index - 1].denoise +
+                    metrics_[mb_index + mb_cols].denoise +
+                    metrics_[mb_index - mb_cols].denoise <=
+                2) {
           metrics_[mb_index].denoise = 0;
           filter_->CopyMem16x16(mb_src, stride_y, mb_dst, stride_y);
         }
       } else if (metrics_[mb_index].denoise &&
                  metrics_[mb_index + 1].denoise +
-                 metrics_[mb_index - 1].denoise +
-                 metrics_[mb_index + mb_cols + 1].denoise +
-                 metrics_[mb_index + mb_cols - 1].denoise +
-                 metrics_[mb_index - mb_cols + 1].denoise +
-                 metrics_[mb_index - mb_cols - 1].denoise +
-                 metrics_[mb_index + mb_cols].denoise +
-                 metrics_[mb_index - mb_cols].denoise <= 7) {
+                         metrics_[mb_index - 1].denoise +
+                         metrics_[mb_index + mb_cols + 1].denoise +
+                         metrics_[mb_index + mb_cols - 1].denoise +
+                         metrics_[mb_index - mb_cols + 1].denoise +
+                         metrics_[mb_index - mb_cols - 1].denoise +
+                         metrics_[mb_index + mb_cols].denoise +
+                         metrics_[mb_index - mb_cols].denoise <=
+                     7) {
         filter_->CopyMem16x16(mb_src, stride_y, mb_dst, stride_y);
       }
     }
@@ -91,23 +90,20 @@ void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
   uint8_t y_tmp[16 * 16] = {0};
   for (int mb_row = 0; mb_row < mb_rows; ++mb_row) {
     for (int mb_col = 0; mb_col < mb_cols; ++mb_col) {
-      const uint8_t* mb_src =
-          y_src + (mb_row << 4) * stride_y + (mb_col << 4);
+      const uint8_t* mb_src = y_src + (mb_row << 4) * stride_y + (mb_col << 4);
       uint8_t* mb_dst = y_dst + (mb_row << 4) * stride_y + (mb_col << 4);
       int mb_index = mb_row * mb_cols + mb_col;
       // Denoise each MB at the very start and save the result to a temporary
       // buffer.
-      if (filter_->MbDenoise(
-              mb_dst, stride_y, y_tmp, 16, mb_src, stride_y, 0, 1) ==
-          FILTER_BLOCK) {
+      if (filter_->MbDenoise(mb_dst, stride_y, y_tmp, 16, mb_src, stride_y, 0,
+                             1) == FILTER_BLOCK) {
         uint32_t thr_var = 0;
         // Save var and sad to the buffer.
         metrics_[mb_index].var = filter_->Variance16x8(
             mb_dst, stride_y, y_tmp, 16, &metrics_[mb_index].sad);
         // Get skin map.
-        metrics_[mb_index].is_skin =
-            MbHasSkinColor(y_src, u_src, v_src, stride_y, stride_u, stride_v,
-                           mb_row, mb_col);
+        metrics_[mb_index].is_skin = MbHasSkinColor(
+            y_src, u_src, v_src, stride_y, stride_u, stride_v, mb_row, mb_col);
         // Variance threshold for skin/non-skin MB is different.
         // Skin MB use a small threshold to reduce blockiness.
         thr_var = metrics_[mb_index].is_skin ? 128 : 12 * 128;

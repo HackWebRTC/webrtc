@@ -40,8 +40,8 @@ class VPMVideoDecimator {
  private:
   void ProcessIncomingframe_rate(int64_t now);
 
-  enum { kFrameCountHistory_size = 90};
-  enum { kFrameHistoryWindowMs = 2000};
+  enum { kFrameCountHistory_size = 90 };
+  enum { kFrameHistoryWindowMs = 2000 };
 
   // Temporal decimation.
   int32_t overshoot_modifier_;

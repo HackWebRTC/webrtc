@@ -58,8 +58,8 @@ static void VarianceNeonW8(const uint8_t* a,
   }
 
   *sum = HorizontalAddS16x8(v_sum);
-  *sse = static_cast<uint32_t>(
-      HorizontalAddS32x4(vaddq_s32(v_sse_lo, v_sse_hi)));
+  *sse =
+      static_cast<uint32_t>(HorizontalAddS32x4(vaddq_s32(v_sse_lo, v_sse_hi)));
 }
 
 void DenoiserFilterNEON::CopyMem16x16(const uint8_t* src,
@@ -111,9 +111,8 @@ DenoiserDecision DenoiserFilterNEON::MbDenoise(uint8_t* mc_running_avg_y,
   // increasing the adjustment for each level, level1 adjustment is
   // increased, the deltas stay the same.
   int shift_inc =
-      (increase_denoising && motion_magnitude <= kMotionMagnitudeThreshold)
-          ? 1
-          : 0;
+      (increase_denoising && motion_magnitude <= kMotionMagnitudeThreshold) ? 1
+                                                                            : 0;
   const uint8x16_t v_level1_adjustment = vmovq_n_u8(
       (motion_magnitude <= kMotionMagnitudeThreshold) ? 4 + shift_inc : 3);
   const uint8x16_t v_delta_level_1_and_2 = vdupq_n_u8(1);

@@ -16,7 +16,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
-
 namespace webrtc {
 
 namespace {
@@ -62,8 +61,8 @@ void VideoProcessing::GetFrameStats(const VideoFrame& frame,
     }
   }
 
-  stats->num_pixels = (width * height) /
-      ((1 << stats->sub_sampling_factor) * (1 << stats->sub_sampling_factor));
+  stats->num_pixels = (width * height) / ((1 << stats->sub_sampling_factor) *
+                                          (1 << stats->sub_sampling_factor));
   assert(stats->num_pixels > 0);
 
   // Compute mean value of frame
@@ -112,22 +111,19 @@ int32_t VideoProcessingImpl::Deflickering(VideoFrame* frame,
   return deflickering_.ProcessFrame(frame, stats);
 }
 
-int32_t VideoProcessingImpl::BrightnessDetection(
-    const VideoFrame& frame,
-    const FrameStats& stats) {
+int32_t VideoProcessingImpl::BrightnessDetection(const VideoFrame& frame,
+                                                 const FrameStats& stats) {
   rtc::CritScope mutex(&mutex_);
   return brightness_detection_.ProcessFrame(frame, stats);
 }
-
 
 void VideoProcessingImpl::EnableTemporalDecimation(bool enable) {
   rtc::CritScope mutex(&mutex_);
   frame_pre_processor_.EnableTemporalDecimation(enable);
 }
 
-
-void VideoProcessingImpl::SetInputFrameResampleMode(VideoFrameResampling
-                                                    resampling_mode) {
+void VideoProcessingImpl::SetInputFrameResampleMode(
+    VideoFrameResampling resampling_mode) {
   rtc::CritScope cs(&mutex_);
   frame_pre_processor_.SetInputFrameResampleMode(resampling_mode);
 }
@@ -146,7 +142,7 @@ void VideoProcessingImpl::SetTargetFramerate(int frame_rate) {
 
 uint32_t VideoProcessingImpl::GetDecimatedFrameRate() {
   rtc::CritScope cs(&mutex_);
-  return  frame_pre_processor_.GetDecimatedFrameRate();
+  return frame_pre_processor_.GetDecimatedFrameRate();
 }
 
 uint32_t VideoProcessingImpl::GetDecimatedWidth() const {

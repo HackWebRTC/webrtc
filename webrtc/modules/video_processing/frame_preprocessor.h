@@ -41,7 +41,8 @@ class VPMFramePreprocessor {
   void EnableContentAnalysis(bool enable);
 
   // Set target resolution: frame rate and dimension.
-  int32_t SetTargetResolution(uint32_t width, uint32_t height,
+  int32_t SetTargetResolution(uint32_t width,
+                              uint32_t height,
                               uint32_t frame_rate);
 
   // Set target frame rate.
