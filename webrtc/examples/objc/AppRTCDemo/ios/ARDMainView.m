@@ -21,15 +21,8 @@ static CGFloat const kRoomTextFieldMargin = 8;
 static CGFloat const kCallControlMargin = 8;
 static CGFloat const kAppLabelHeight = 20;
 
-@class ARDRoomTextField;
-@protocol ARDRoomTextFieldDelegate <NSObject>
-- (void)roomTextField:(ARDRoomTextField *)roomTextField
-         didInputRoom:(NSString *)room;
-@end
-
 // Helper view that contains a text field and a clear button.
 @interface ARDRoomTextField : UIView <UITextFieldDelegate>
-@property(nonatomic, weak) id<ARDRoomTextFieldDelegate> delegate;
 @property(nonatomic, readonly) NSString *roomText;
 @end
 
@@ -38,14 +31,14 @@ static CGFloat const kAppLabelHeight = 20;
   UIButton *_clearButton;
 }
 
-@synthesize delegate = _delegate;
-
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
     _roomText = [[UITextField alloc] initWithFrame:CGRectZero];
     _roomText.borderStyle = UITextBorderStyleNone;
     _roomText.font = [UIFont fontWithName:@"Roboto" size:12];
     _roomText.placeholder = @"Room name";
+    _roomText.autocorrectionType = UITextAutocorrectionTypeNo;
+    _roomText.autocapitalizationType = UITextAutocapitalizationTypeNone;
     _roomText.delegate = self;
     [_roomText addTarget:self
                   action:@selector(textFieldDidChange:)
@@ -96,10 +89,6 @@ static CGFloat const kAppLabelHeight = 20;
 
 #pragma mark - UITextFieldDelegate
 
-- (void)textFieldDidEndEditing:(UITextField *)textField {
-  [_delegate roomTextField:self didInputRoom:textField.text];
-}
-
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
   // There is no other control that can take focus, so manually resign focus
   // when return (Join) is pressed to trigger |textFieldDidEndEditing|.
@@ -125,9 +114,6 @@ static CGFloat const kAppLabelHeight = 20;
 
 @end
 
-@interface ARDMainView () <ARDRoomTextFieldDelegate>
-@end
-
 @implementation ARDMainView {
   UILabel *_appLabel;
   ARDRoomTextField *_roomText;
@@ -151,7 +137,6 @@ static CGFloat const kAppLabelHeight = 20;
     [self addSubview:_appLabel];
 
     _roomText = [[ARDRoomTextField alloc] initWithFrame:CGRectZero];
-    _roomText.delegate = self;
     [self addSubview:_roomText];
 
     UIFont *controlFont = [UIFont fontWithName:@"Roboto" size:20];
@@ -258,16 +243,6 @@ static CGFloat const kAppLabelHeight = 20;
                                       startCallTop,
                                       _startCallButton.frame.size.width,
                                       _startCallButton.frame.size.height);
-}
-
-#pragma mark - ARDRoomTextFieldDelegate
-
-- (void)roomTextField:(ARDRoomTextField *)roomTextField
-         didInputRoom:(NSString *)room {
-  [_delegate mainView:self
-         didInputRoom:room
-           isLoopback:NO
-          isAudioOnly:_audioOnlySwitch.isOn];
 }
 
 #pragma mark - Private

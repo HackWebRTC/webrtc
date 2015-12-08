@@ -33,8 +33,12 @@
             'rtc_base',
           ],
           'sources': [
+            'objc/RTCCameraPreviewView.h',
+            'objc/RTCCameraPreviewView.m',
+            'objc/RTCDispatcher.h',
+            'objc/RTCDispatcher.m',
             'objc/RTCLogging.h',
-            'objc/RTCLogging.mm'
+            'objc/RTCLogging.mm',
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',

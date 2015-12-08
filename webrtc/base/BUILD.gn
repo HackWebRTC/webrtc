@@ -616,6 +616,10 @@ if (is_ios) {
     public_configs = [ "..:common_inherited_config" ]
 
     sources = [
+      "objc/RTCCameraPreviewView.h",
+      "objc/RTCCameraPreviewView.m",
+      "objc/RTCDispatcher.h",
+      "objc/RTCDispatcher.m",
       "objc/RTCLogging.h",
       "objc/RTCLogging.mm",
     ]

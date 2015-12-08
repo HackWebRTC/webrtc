@@ -368,6 +368,9 @@
                 'app/webrtc/objc/public/RTCEAGLVideoView.h',
                 'app/webrtc/objc/public/RTCAVFoundationVideoSource.h',
               ],
+              'dependencies': [
+                '<(webrtc_root)/base/base.gyp:rtc_base_objc',
+              ],
               'link_settings': {
                 'xcode_settings': {
                   'OTHER_LDFLAGS': [

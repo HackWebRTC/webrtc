@@ -25,7 +25,6 @@ static CGFloat const kStatusBarHeight = 20;
 @implementation ARDVideoCallView {
   UIButton *_cameraSwitchButton;
   UIButton *_hangupButton;
-  CGSize _localVideoSize;
   CGSize _remoteVideoSize;
   BOOL _useRearCamera;
 }
@@ -42,10 +41,7 @@ static CGFloat const kStatusBarHeight = 20;
     _remoteVideoView.delegate = self;
     [self addSubview:_remoteVideoView];
 
-    // TODO(tkchin): replace this with a view that renders layer from
-    // AVCaptureSession.
-    _localVideoView = [[RTCEAGLVideoView alloc] initWithFrame:CGRectZero];
-    _localVideoView.delegate = self;
+    _localVideoView = [[RTCCameraPreviewView alloc] initWithFrame:CGRectZero];
     [self addSubview:_localVideoView];
 
     _statsView = [[ARDStatsView alloc] initWithFrame:CGRectZero];
@@ -114,22 +110,15 @@ static CGFloat const kStatusBarHeight = 20;
     _remoteVideoView.frame = bounds;
   }
 
-  if (_localVideoSize.width && _localVideoSize.height > 0) {
-    // Aspect fit local video view into a square box.
-    CGRect localVideoFrame =
-        CGRectMake(0, 0, kLocalVideoViewSize, kLocalVideoViewSize);
-    localVideoFrame =
-        AVMakeRectWithAspectRatioInsideRect(_localVideoSize, localVideoFrame);
-
-    // Place the view in the bottom right.
-    localVideoFrame.origin.x = CGRectGetMaxX(bounds)
-        - localVideoFrame.size.width - kLocalVideoViewPadding;
-    localVideoFrame.origin.y = CGRectGetMaxY(bounds)
-        - localVideoFrame.size.height - kLocalVideoViewPadding;
-    _localVideoView.frame = localVideoFrame;
-  } else {
-    _localVideoView.frame = bounds;
-  }
+  // Aspect fit local video view into a square box.
+  CGRect localVideoFrame =
+      CGRectMake(0, 0, kLocalVideoViewSize, kLocalVideoViewSize);
+  // Place the view in the bottom right.
+  localVideoFrame.origin.x = CGRectGetMaxX(bounds)
+      - localVideoFrame.size.width - kLocalVideoViewPadding;
+  localVideoFrame.origin.y = CGRectGetMaxY(bounds)
+      - localVideoFrame.size.height - kLocalVideoViewPadding;
+  _localVideoView.frame = localVideoFrame;
 
   // Place stats at the top.
   CGSize statsSize = [_statsView sizeThatFits:bounds.size];
@@ -159,10 +148,7 @@ static CGFloat const kStatusBarHeight = 20;
 #pragma mark - RTCEAGLVideoViewDelegate
 
 - (void)videoView:(RTCEAGLVideoView*)videoView didChangeVideoSize:(CGSize)size {
-  if (videoView == _localVideoView) {
-    _localVideoSize = size;
-    _localVideoView.hidden = CGSizeEqualToSize(CGSizeZero, _localVideoSize);
-  } else if (videoView == _remoteVideoView) {
+ if (videoView == _remoteVideoView) {
     _remoteVideoSize = size;
   }
   [self setNeedsLayout];
