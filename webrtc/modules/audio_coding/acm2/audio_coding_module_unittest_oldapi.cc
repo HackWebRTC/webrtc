@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <vector>
 
@@ -906,6 +907,9 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 
     std::string checksum_string = checksum.Finish();
     EXPECT_EQ(checksum_ref, checksum_string);
+
+    // Delete the output file.
+    remove(output_file_name.c_str());
   }
 };
 
@@ -1136,6 +1140,9 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
 
     // Verify number of packets produced.
     EXPECT_EQ(expected_packets, packet_count_);
+
+    // Delete the output file.
+    remove(output_file_name.c_str());
   }
 
   // Returns a pointer to the next packet. Returns NULL if the source is
@@ -1725,6 +1732,9 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
 
     // This is where the actual test is executed.
     receive_test.Run();
+
+    // Delete output file.
+    remove(output_file_name.c_str());
   }
 
   // Inherited from test::PacketSource.
