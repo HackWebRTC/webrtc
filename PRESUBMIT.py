@@ -83,7 +83,7 @@ def _CheckNativeApiHeaderChanges(input_api, output_api):
           files.append(f)
 
   if files:
-    return [output_api.PresubmitPromptWarning(
+    return [output_api.PresubmitNotifyResult(
         'You seem to be changing native API header files. Please make sure '
         'you:\n'
         '  1. Make compatible changes that don\'t break existing clients.\n'
