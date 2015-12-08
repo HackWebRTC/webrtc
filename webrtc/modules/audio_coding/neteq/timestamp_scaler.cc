@@ -52,19 +52,11 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
       denominator_ = 1;
       break;
     }
-    case NetEqDecoder::kDecoderCNGswb48kHz: {
-      // Use timestamp scaling with factor 2/3 (32 kHz sample rate, but RTP
-      // timestamps run on 48 kHz).
-      // TODO(tlegrand): Remove scaling for kDecoderCNGswb48kHz once ACM has
-      // full 48 kHz support.
-      numerator_ = 2;
-      denominator_ = 3;
-      break;
-    }
     case NetEqDecoder::kDecoderAVT:
     case NetEqDecoder::kDecoderCNGnb:
     case NetEqDecoder::kDecoderCNGwb:
-    case NetEqDecoder::kDecoderCNGswb32kHz: {
+    case NetEqDecoder::kDecoderCNGswb32kHz:
+    case NetEqDecoder::kDecoderCNGswb48kHz: {
       // Do not change the timestamp scaling settings for DTMF or CNG.
       break;
     }
