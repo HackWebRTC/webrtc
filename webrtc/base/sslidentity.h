@@ -70,7 +70,8 @@ class SSLCertificate {
                              size_t size,
                              size_t* length) const = 0;
 
-  // Returns the time in seconds relative to epoch.
+  // Returns the time in seconds relative to epoch, 1970-01-01T00:00:00Z (UTC),
+  // or -1 if an expiration time could not be retrieved.
   virtual int64_t CertificateExpirationTime() const = 0;
 };
 

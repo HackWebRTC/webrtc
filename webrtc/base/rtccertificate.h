@@ -27,8 +27,11 @@ class RTCCertificate : public RefCountInterface {
   // Takes ownership of |identity|.
   static scoped_refptr<RTCCertificate> Create(scoped_ptr<SSLIdentity> identity);
 
-  uint64_t expires_timestamp_ns() const;
-  bool HasExpired() const;
+  // Returns the expiration time in ms relative to epoch, 1970-01-01T00:00:00Z.
+  uint64_t Expires() const;
+  // Checks if the certificate has expired, where |now| is expressed in ms
+  // relative to epoch, 1970-01-01T00:00:00Z.
+  bool HasExpired(uint64_t now) const;
   const SSLCertificate& ssl_certificate() const;
 
   // TODO(hbos): If possible, remove once RTCCertificate and its
