@@ -129,9 +129,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
   int num_maskBytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
   // Do some error checking on the media packets.
-  PacketList::const_iterator media_list_it = media_packet_list.begin();
-  while (media_list_it != media_packet_list.end()) {
-    Packet* media_packet = *media_list_it;
+  for (Packet* media_packet : media_packet_list) {
     assert(media_packet);
 
     if (media_packet->length < kRtpHeaderSize) {
@@ -146,7 +144,6 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
       LOG(LS_WARNING) << "Media packet " << media_packet->length << " bytes "
                       << "with overhead is larger than " << IP_PACKET_SIZE;
     }
-    media_list_it++;
   }
 
   int num_fec_packets =
@@ -167,29 +164,30 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
 
   // -- Generate packet masks --
   // Always allocate space for a large mask.
-  uint8_t* packet_mask = new uint8_t[num_fec_packets * kMaskSizeLBitSet];
-  memset(packet_mask, 0, num_fec_packets * num_maskBytes);
+  rtc::scoped_ptr<uint8_t[]> packet_mask(
+      new uint8_t[num_fec_packets * kMaskSizeLBitSet]);
+  memset(packet_mask.get(), 0, num_fec_packets * num_maskBytes);
   internal::GeneratePacketMasks(num_media_packets, num_fec_packets,
                                 num_important_packets, use_unequal_protection,
-                                mask_table, packet_mask);
+                                mask_table, packet_mask.get());
 
-  int num_maskBits = InsertZerosInBitMasks(media_packet_list, packet_mask,
-                                           num_maskBytes, num_fec_packets);
+  int num_mask_bits = InsertZerosInBitMasks(
+      media_packet_list, packet_mask.get(), num_maskBytes, num_fec_packets);
 
-  l_bit = (num_maskBits > 8 * kMaskSizeLBitClear);
+  l_bit = (num_mask_bits > 8 * kMaskSizeLBitClear);
 
-  if (num_maskBits < 0) {
-    delete[] packet_mask;
+  if (num_mask_bits < 0) {
     return -1;
   }
   if (l_bit) {
     num_maskBytes = kMaskSizeLBitSet;
   }
 
-  GenerateFecBitStrings(media_packet_list, packet_mask, num_fec_packets, l_bit);
-  GenerateFecUlpHeaders(media_packet_list, packet_mask, l_bit, num_fec_packets);
+  GenerateFecBitStrings(media_packet_list, packet_mask.get(), num_fec_packets,
+                        l_bit);
+  GenerateFecUlpHeaders(media_packet_list, packet_mask.get(), l_bit,
+                        num_fec_packets);
 
-  delete[] packet_mask;
   return 0;
 }
 

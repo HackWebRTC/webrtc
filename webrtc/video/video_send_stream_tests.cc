@@ -127,12 +127,11 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
 }
 
 TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
-  static const uint8_t kAbsSendTimeExtensionId = 13;
   class AbsoluteSendTimeObserver : public test::SendTest {
    public:
     AbsoluteSendTimeObserver() : SendTest(kDefaultTimeoutMs) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionAbsoluteSendTime, kAbsSendTimeExtensionId));
+          kRtpExtensionAbsoluteSendTime, test::kAbsSendTimeExtensionId));
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -152,8 +151,8 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kAbsSendTime, test::kAbsSendTimeExtensionId));
     }
 
     void PerformTest() override {
@@ -310,81 +309,123 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
   StatisticianMap stats_map_;
 };
 
-TEST_F(VideoSendStreamTest, SupportsFec) {
-  class FecObserver : public test::SendTest {
-   public:
-    FecObserver()
-        : SendTest(kDefaultTimeoutMs),
-          send_count_(0),
-          received_media_(false),
-          received_fec_(false) {
+class FecObserver : public test::SendTest {
+ public:
+  explicit FecObserver(bool header_extensions_enabled)
+      : SendTest(VideoSendStreamTest::kDefaultTimeoutMs),
+        send_count_(0),
+        received_media_(false),
+        received_fec_(false),
+        header_extensions_enabled_(header_extensions_enabled) {}
+
+ private:
+  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    RTPHeader header;
+    EXPECT_TRUE(parser_->Parse(packet, length, &header));
+
+    // Send lossy receive reports to trigger FEC enabling.
+    if (send_count_++ % 2 != 0) {
+      // Receive statistics reporting having lost 50% of the packets.
+      FakeReceiveStatistics lossy_receive_stats(
+          VideoSendStreamTest::kSendSsrcs[0], header.sequenceNumber,
+          send_count_ / 2, 127);
+      RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
+                             &lossy_receive_stats, nullptr,
+                             transport_adapter_.get());
+
+      rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
+      rtcp_sender.SetRemoteSSRC(VideoSendStreamTest::kSendSsrcs[0]);
+
+      RTCPSender::FeedbackState feedback_state;
+
+      EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
     }
 
-   private:
-    Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+    int encapsulated_payload_type = -1;
+    if (header.payloadType == VideoSendStreamTest::kRedPayloadType) {
+      encapsulated_payload_type = static_cast<int>(packet[header.headerLength]);
+      if (encapsulated_payload_type !=
+          VideoSendStreamTest::kFakeSendPayloadType)
+        EXPECT_EQ(VideoSendStreamTest::kUlpfecPayloadType,
+                  encapsulated_payload_type);
+    } else {
+      EXPECT_EQ(VideoSendStreamTest::kFakeSendPayloadType, header.payloadType);
+    }
 
-      // Send lossy receive reports to trigger FEC enabling.
-      if (send_count_++ % 2 != 0) {
-        // Receive statistics reporting having lost 50% of the packets.
-        FakeReceiveStatistics lossy_receive_stats(
-            kSendSsrcs[0], header.sequenceNumber, send_count_ / 2, 127);
-        RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
-                               &lossy_receive_stats, nullptr,
-                               transport_adapter_.get());
-
-        rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
-        rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
-
-        RTCPSender::FeedbackState feedback_state;
-
-        EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
-      }
-
-      int encapsulated_payload_type = -1;
-      if (header.payloadType == kRedPayloadType) {
-        encapsulated_payload_type =
-            static_cast<int>(packet[header.headerLength]);
-        if (encapsulated_payload_type != kFakeSendPayloadType)
-          EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
+    if (header_extensions_enabled_) {
+      EXPECT_TRUE(header.extension.hasAbsoluteSendTime);
+      uint32_t kHalf24BitsSpace = 0xFFFFFF / 2;
+      if (header.extension.absoluteSendTime <= kHalf24BitsSpace &&
+          prev_header_.extension.absoluteSendTime > kHalf24BitsSpace) {
+        // 24 bits wrap.
+        EXPECT_GT(prev_header_.extension.absoluteSendTime,
+                  header.extension.absoluteSendTime);
       } else {
-        EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
+        EXPECT_GE(header.extension.absoluteSendTime,
+                  prev_header_.extension.absoluteSendTime);
       }
+      EXPECT_TRUE(header.extension.hasTransportSequenceNumber);
+      uint16_t seq_num_diff = header.extension.transportSequenceNumber -
+                              prev_header_.extension.transportSequenceNumber;
+      EXPECT_EQ(1, seq_num_diff);
+    }
 
-      if (encapsulated_payload_type != -1) {
-        if (encapsulated_payload_type == kUlpfecPayloadType) {
-          received_fec_ = true;
-        } else {
-          received_media_ = true;
-        }
+    if (encapsulated_payload_type != -1) {
+      if (encapsulated_payload_type ==
+          VideoSendStreamTest::kUlpfecPayloadType) {
+        received_fec_ = true;
+      } else {
+        received_media_ = true;
       }
-
-      if (received_media_ && received_fec_)
-        observation_complete_->Set();
-
-      return SEND_PACKET;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
-      transport_adapter_.reset(
-          new internal::TransportAdapter(send_config->send_transport));
-      transport_adapter_->Enable();
-      send_config->rtp.fec.red_payload_type = kRedPayloadType;
-      send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
-    }
+    if (received_media_ && received_fec_ && send_count_ > 100)
+      observation_complete_->Set();
 
-    void PerformTest() override {
-      EXPECT_TRUE(Wait()) << "Timed out waiting for FEC and media packets.";
-    }
+    prev_header_ = header;
 
-    rtc::scoped_ptr<internal::TransportAdapter> transport_adapter_;
-    int send_count_;
-    bool received_media_;
-    bool received_fec_;
-  } test;
+    return SEND_PACKET;
+  }
+
+  void ModifyConfigs(VideoSendStream::Config* send_config,
+                     std::vector<VideoReceiveStream::Config>* receive_configs,
+                     VideoEncoderConfig* encoder_config) override {
+    transport_adapter_.reset(
+        new internal::TransportAdapter(send_config->send_transport));
+    transport_adapter_->Enable();
+    send_config->rtp.fec.red_payload_type =
+        VideoSendStreamTest::kRedPayloadType;
+    send_config->rtp.fec.ulpfec_payload_type =
+        VideoSendStreamTest::kUlpfecPayloadType;
+    if (header_extensions_enabled_) {
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kAbsSendTime, test::kAbsSendTimeExtensionId));
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumber,
+                       test::kTransportSequenceNumberExtensionId));
+    }
+  }
+
+  void PerformTest() override {
+    EXPECT_TRUE(Wait()) << "Timed out waiting for FEC and media packets.";
+  }
+
+  rtc::scoped_ptr<internal::TransportAdapter> transport_adapter_;
+  int send_count_;
+  bool received_media_;
+  bool received_fec_;
+  bool header_extensions_enabled_;
+  RTPHeader prev_header_;
+};
+
+TEST_F(VideoSendStreamTest, SupportsFecWithExtensions) {
+  FecObserver test(true);
+
+  RunBaseTest(&test, FakeNetworkPipe::Config());
+}
+
+TEST_F(VideoSendStreamTest, SupportsFecWithoutExtensions) {
+  FecObserver test(false);
 
   RunBaseTest(&test, FakeNetworkPipe::Config());
 }
