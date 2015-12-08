@@ -788,6 +788,7 @@ bool WebRtcVideoChannel2::ReceiveCodecsHaveChanged(
 }
 
 bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetSendParameters");
   LOG(LS_INFO) << "SetSendParameters: " << params.ToString();
   // TODO(pbos): Refactor this to only recreate the send streams once
   // instead of 4 times.
@@ -798,6 +799,7 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
 }
 
 bool WebRtcVideoChannel2::SetRecvParameters(const VideoRecvParameters& params) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRecvParameters");
   LOG(LS_INFO) << "SetRecvParameters: " << params.ToString();
   // TODO(pbos): Refactor this to only recreate the recv streams once
   // instead of twice.

@@ -387,6 +387,7 @@ bool BaseChannel::RemoveSendStream(uint32_t ssrc) {
 bool BaseChannel::SetLocalContent(const MediaContentDescription* content,
                                   ContentAction action,
                                   std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "BaseChannel::SetLocalContent");
   return InvokeOnWorker(Bind(&BaseChannel::SetLocalContent_w,
                              this, content, action, error_desc));
 }
@@ -394,6 +395,7 @@ bool BaseChannel::SetLocalContent(const MediaContentDescription* content,
 bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
                                    ContentAction action,
                                    std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "BaseChannel::SetRemoteContent");
   return InvokeOnWorker(Bind(&BaseChannel::SetRemoteContent_w,
                              this, content, action, error_desc));
 }
@@ -1462,6 +1464,7 @@ const ContentInfo* VoiceChannel::GetFirstContent(
 bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
                                      ContentAction action,
                                      std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "VoiceChannel::SetLocalContent_w");
   ASSERT(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting local voice description";
 
@@ -1506,6 +1509,7 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
 bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                       ContentAction action,
                                       std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "VoiceChannel::SetRemoteContent_w");
   ASSERT(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting remote voice description";
 
@@ -1745,6 +1749,7 @@ const ContentInfo* VideoChannel::GetFirstContent(
 bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
                                      ContentAction action,
                                      std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "VideoChannel::SetLocalContent_w");
   ASSERT(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting local video description";
 
@@ -1789,6 +1794,7 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                       ContentAction action,
                                       std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "VideoChannel::SetRemoteContent_w");
   ASSERT(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting remote video description";
 
@@ -2085,6 +2091,7 @@ bool DataChannel::SetDataChannelTypeFromContent(
 bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
                                     ContentAction action,
                                     std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "DataChannel::SetLocalContent_w");
   ASSERT(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting local data description";
 
@@ -2140,6 +2147,7 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
 bool DataChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                      ContentAction action,
                                      std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "DataChannel::SetRemoteContent_w");
   ASSERT(worker_thread() == rtc::Thread::Current());
 
   const DataContentDescription* data =
