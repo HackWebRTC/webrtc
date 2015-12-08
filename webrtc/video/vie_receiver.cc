@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video_engine/vie_receiver.h"
+#include "webrtc/video/vie_receiver.h"
 
 #include <vector>
 

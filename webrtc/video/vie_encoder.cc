@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video_engine/vie_encoder.h"
+#include "webrtc/video/vie_encoder.h"
 
 #include <assert.h>
 
@@ -32,8 +32,8 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/video/payload_router.h"
 #include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video_engine/payload_router.h"
 
 namespace webrtc {
 

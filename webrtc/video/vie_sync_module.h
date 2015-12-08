@@ -11,13 +11,13 @@
 // ViESyncModule is responsible for synchronization audio and video for a given
 // VoE and ViE channel couple.
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_SYNC_MODULE_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_SYNC_MODULE_H_
+#ifndef WEBRTC_VIDEO_VIE_SYNC_MODULE_H_
+#define WEBRTC_VIDEO_VIE_SYNC_MODULE_H_
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
-#include "webrtc/video_engine/stream_synchronization.h"
+#include "webrtc/video/stream_synchronization.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
@@ -59,4 +59,4 @@ class ViESyncModule : public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_SYNC_MODULE_H_
+#endif  // WEBRTC_VIDEO_VIE_SYNC_MODULE_H_

@@ -18,7 +18,6 @@ import sys
 CPPLINT_DIRS = [
   'webrtc/audio',
   'webrtc/call',
-  'webrtc/video_engine',
 ]
 
 # List of directories of "supported" native APIs. That means changes to headers

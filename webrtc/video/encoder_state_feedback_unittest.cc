@@ -10,7 +10,7 @@
 
 
 // This file includes unit tests for EncoderStateFeedback.
-#include "webrtc/video_engine/encoder_state_feedback.h"
+#include "webrtc/video/encoder_state_feedback.h"
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -22,8 +22,8 @@
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
-#include "webrtc/video_engine/payload_router.h"
-#include "webrtc/video_engine/vie_encoder.h"
+#include "webrtc/video/payload_router.h"
+#include "webrtc/video/vie_encoder.h"
 
 using ::testing::NiceMock;
 

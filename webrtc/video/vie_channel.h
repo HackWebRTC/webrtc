@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_H_
+#ifndef WEBRTC_VIDEO_VIE_CHANNEL_H_
+#define WEBRTC_VIDEO_VIE_CHANNEL_H_
 
 #include <list>
 #include <map>
@@ -25,8 +25,8 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/vie_receiver.h"
-#include "webrtc/video_engine/vie_sync_module.h"
+#include "webrtc/video/vie_receiver.h"
+#include "webrtc/video/vie_sync_module.h"
 
 namespace webrtc {
 
@@ -454,4 +454,4 @@ class ViEChannel : public VCMFrameTypeCallback,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_H_
+#endif  // WEBRTC_VIDEO_VIE_CHANNEL_H_

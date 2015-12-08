@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video_engine/encoder_state_feedback.h"
+#include "webrtc/video/encoder_state_feedback.h"
 
 #include <assert.h>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/video_engine/vie_encoder.h"
+#include "webrtc/video/vie_encoder.h"
 
 namespace webrtc {
 

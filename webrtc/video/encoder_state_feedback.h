@@ -11,8 +11,8 @@
 // TODO(mflodman) ViEEncoder has a time check to not send key frames too often,
 // move the logic to this class.
 
-#ifndef WEBRTC_VIDEO_ENGINE_ENCODER_STATE_FEEDBACK_H_
-#define WEBRTC_VIDEO_ENGINE_ENCODER_STATE_FEEDBACK_H_
+#ifndef WEBRTC_VIDEO_ENCODER_STATE_FEEDBACK_H_
+#define WEBRTC_VIDEO_ENCODER_STATE_FEEDBACK_H_
 
 #include <map>
 #include <vector>
@@ -68,4 +68,4 @@ class EncoderStateFeedback {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_ENCODER_STATE_FEEDBACK_H_
+#endif  // WEBRTC_VIDEO_ENCODER_STATE_FEEDBACK_H_

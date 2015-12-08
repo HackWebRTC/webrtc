@@ -13,7 +13,7 @@
 #include <algorithm>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/video_engine/stream_synchronization.h"
+#include "webrtc/video/stream_synchronization.h"
 
 namespace webrtc {
 

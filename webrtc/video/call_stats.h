@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_CALL_STATS_H_
-#define WEBRTC_VIDEO_ENGINE_CALL_STATS_H_
+#ifndef WEBRTC_VIDEO_CALL_STATS_H_
+#define WEBRTC_VIDEO_CALL_STATS_H_
 
 #include <list>
 
@@ -78,4 +78,4 @@ class CallStats : public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_CALL_STATS_H_
+#endif  // WEBRTC_VIDEO_CALL_STATS_H_
