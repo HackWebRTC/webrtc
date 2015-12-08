@@ -193,6 +193,8 @@ class AudioProcessingImpl : public AudioProcessing {
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeIntelligibility()
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void InitializeHighPassFilter()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   int InitializeLocked(const ProcessingConfig& config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
 

@@ -12,39 +12,31 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_HIGH_PASS_FILTER_IMPL_H_
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/audio_processing/processing_component.h"
 
 namespace webrtc {
 
 class AudioBuffer;
 
-class HighPassFilterImpl : public HighPassFilter,
-                           public ProcessingComponent {
+class HighPassFilterImpl : public HighPassFilter {
  public:
-  HighPassFilterImpl(const AudioProcessing* apm, rtc::CriticalSection* crit);
-  virtual ~HighPassFilterImpl();
+  explicit HighPassFilterImpl(rtc::CriticalSection* crit);
+  ~HighPassFilterImpl() override;
 
-  int ProcessCaptureAudio(AudioBuffer* audio);
+  // TODO(peah): Fold into ctor, once public API is removed.
+  void Initialize(int channels, int sample_rate_hz);
+  void ProcessCaptureAudio(AudioBuffer* audio);
 
   // HighPassFilter implementation.
+  int Enable(bool enable) override;
   bool is_enabled() const override;
 
  private:
-  // HighPassFilter implementation.
-  int Enable(bool enable) override;
-
-  // ProcessingComponent implementation.
-  void* CreateHandle() const override;
-  int InitializeHandle(void* handle) const override;
-  int ConfigureHandle(void* handle) const override;
-  void DestroyHandle(void* handle) const override;
-  int num_handles_required() const override;
-  int GetHandleError(void* handle) const override;
-
-  const AudioProcessing* apm_;
-
-  rtc::CriticalSection* const crit_;
+  class BiquadFilter;
+  rtc::CriticalSection* const crit_ = nullptr;
+  bool enabled_ GUARDED_BY(crit_) = false;
+  std::vector<rtc::scoped_ptr<BiquadFilter>> filters_ GUARDED_BY(crit_);
 };
 }  // namespace webrtc
 

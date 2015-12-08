@@ -81,7 +81,6 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
       : echo_cancellation(nullptr),
         echo_control_mobile(nullptr),
         gain_control(nullptr),
-        high_pass_filter(nullptr),
         level_estimator(nullptr),
         noise_suppression(nullptr),
         voice_detection(nullptr) {}
@@ -89,7 +88,7 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   EchoCancellationImpl* echo_cancellation;
   EchoControlMobileImpl* echo_control_mobile;
   GainControlImpl* gain_control;
-  HighPassFilterImpl* high_pass_filter;
+  rtc::scoped_ptr<HighPassFilterImpl> high_pass_filter;
   LevelEstimatorImpl* level_estimator;
   NoiseSuppressionImpl* noise_suppression;
   VoiceDetectionImpl* voice_detection;
@@ -243,8 +242,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
         new EchoControlMobileImpl(this, &crit_render_, &crit_capture_);
     public_submodules_->gain_control =
         new GainControlImpl(this, &crit_capture_, &crit_capture_);
-    public_submodules_->high_pass_filter =
-        new HighPassFilterImpl(this, &crit_capture_);
+    public_submodules_->high_pass_filter.reset(
+        new HighPassFilterImpl(&crit_capture_));
     public_submodules_->level_estimator =
         new LevelEstimatorImpl(this, &crit_capture_);
     public_submodules_->noise_suppression =
@@ -260,8 +259,6 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
         public_submodules_->echo_control_mobile);
     private_submodules_->component_list.push_back(
         public_submodules_->gain_control);
-    private_submodules_->component_list.push_back(
-        public_submodules_->high_pass_filter);
     private_submodules_->component_list.push_back(
         public_submodules_->level_estimator);
     private_submodules_->component_list.push_back(
@@ -405,6 +402,8 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializeBeamformer();
 
   InitializeIntelligibility();
+
+  InitializeHighPassFilter();
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->Open()) {
@@ -767,7 +766,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     ca->set_num_channels(1);
   }
 
-  RETURN_ON_ERR(public_submodules_->high_pass_filter->ProcessCaptureAudio(ca));
+  public_submodules_->high_pass_filter->ProcessCaptureAudio(ca);
   RETURN_ON_ERR(public_submodules_->gain_control->AnalyzeCaptureAudio(ca));
   RETURN_ON_ERR(public_submodules_->noise_suppression->AnalyzeCaptureAudio(ca));
   RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessCaptureAudio(ca));
@@ -1147,7 +1146,7 @@ GainControl* AudioProcessingImpl::gain_control() const {
 HighPassFilter* AudioProcessingImpl::high_pass_filter() const {
   // Adding a lock here has no effect as it allows any access to the submodule
   // from the returned pointer.
-  return public_submodules_->high_pass_filter;
+  return public_submodules_->high_pass_filter.get();
 }
 
 LevelEstimator* AudioProcessingImpl::level_estimator() const {
@@ -1178,6 +1177,9 @@ bool AudioProcessingImpl::is_data_processed() const {
     if (item->is_component_enabled()) {
       enabled_count++;
     }
+  }
+  if (public_submodules_->high_pass_filter->is_enabled()) {
+    enabled_count++;
   }
 
   // Data is unchanged if no components are enabled, or if only
@@ -1291,6 +1293,11 @@ void AudioProcessingImpl::InitializeIntelligibility() {
     public_submodules_->intelligibility_enhancer.reset(
         new IntelligibilityEnhancer(config));
   }
+}
+
+void AudioProcessingImpl::InitializeHighPassFilter() {
+  public_submodules_->high_pass_filter->Initialize(num_output_channels(),
+                                                   proc_sample_rate_hz());
 }
 
 void AudioProcessingImpl::MaybeUpdateHistograms() {
