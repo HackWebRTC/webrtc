@@ -88,7 +88,6 @@
           'ratetracker_unittest.cc',
           'referencecountedsingletonfactory_unittest.cc',
           'rollingaccumulator_unittest.cc',
-          'rtccertificate_unittests.cc',
           'scopedptrcollection_unittest.cc',
           'sha1digest_unittest.cc',
           'sharedexclusivelock_unittest.cc',

@@ -25,11 +25,9 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
   // SHA-1 is the default digest algorithm because it is available in all build
   // configurations used for unit testing.
   explicit FakeSSLCertificate(const std::string& data)
-      : data_(data), digest_algorithm_(DIGEST_SHA_1), expiration_time_(-1) {}
+      : data_(data), digest_algorithm_(DIGEST_SHA_1) {}
   explicit FakeSSLCertificate(const std::vector<std::string>& certs)
-      : data_(certs.front()),
-        digest_algorithm_(DIGEST_SHA_1),
-        expiration_time_(-1) {
+      : data_(certs.front()), digest_algorithm_(DIGEST_SHA_1) {
     std::vector<std::string>::const_iterator it;
     // Skip certs[0].
     for (it = certs.begin() + 1; it != certs.end(); ++it) {
@@ -47,12 +45,7 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
     VERIFY(SSLIdentity::PemToDer(kPemTypeCertificate, data_, &der_string));
     der_buffer->SetData(der_string.c_str(), der_string.size());
   }
-  int64_t CertificateExpirationTime() const override {
-    return expiration_time_;
-  }
-  void SetCertificateExpirationTime(int64_t expiration_time) {
-    expiration_time_ = expiration_time;
-  }
+  int64_t CertificateExpirationTime() const override { return -1; }
   void set_digest_algorithm(const std::string& algorithm) {
     digest_algorithm_ = algorithm;
   }
@@ -86,8 +79,6 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
   std::string data_;
   std::vector<FakeSSLCertificate> certs_;
   std::string digest_algorithm_;
-  // Expiration time in seconds relative to epoch, 1970-01-01T00:00:00Z (UTC).
-  int64_t expiration_time_;
 };
 
 class FakeSSLIdentity : public rtc::SSLIdentity {
