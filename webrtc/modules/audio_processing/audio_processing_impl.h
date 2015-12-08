@@ -39,18 +39,6 @@ class AudioConverter;
 template<typename T>
 class Beamformer;
 
-class EchoCancellationImpl;
-class EchoControlMobileImpl;
-class GainControlImpl;
-class GainControlForNewAgc;
-class HighPassFilterImpl;
-class LevelEstimatorImpl;
-class NoiseSuppressionImpl;
-class ProcessingComponent;
-class TransientSuppressor;
-class VoiceDetectionImpl;
-class IntelligibilityEnhancer;
-
 class AudioProcessingImpl : public AudioProcessing {
  public:
   // Methods forcing APM to run in a single-threaded manner.
@@ -194,6 +182,8 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializeIntelligibility()
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeHighPassFilter()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeNoiseSuppression()
       EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   int InitializeLocked(const ProcessingConfig& config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);

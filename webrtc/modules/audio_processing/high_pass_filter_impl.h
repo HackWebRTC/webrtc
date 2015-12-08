@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_HIGH_PASS_FILTER_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_HIGH_PASS_FILTER_IMPL_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -37,6 +38,7 @@ class HighPassFilterImpl : public HighPassFilter {
   rtc::CriticalSection* const crit_ = nullptr;
   bool enabled_ GUARDED_BY(crit_) = false;
   std::vector<rtc::scoped_ptr<BiquadFilter>> filters_ GUARDED_BY(crit_);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(HighPassFilterImpl);
 };
 }  // namespace webrtc
 
