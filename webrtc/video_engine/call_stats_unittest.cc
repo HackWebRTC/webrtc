@@ -14,7 +14,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
-#include "webrtc/video/call_stats.h"
+#include "webrtc/video_engine/call_stats.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;

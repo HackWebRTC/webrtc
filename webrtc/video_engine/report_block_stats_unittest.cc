@@ -10,7 +10,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/video/report_block_stats.h"
+#include "webrtc/video_engine/report_block_stats.h"
 
 namespace webrtc {
 

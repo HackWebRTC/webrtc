@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_GL_GL_RENDERER_H_
-#define WEBRTC_TEST_GL_GL_RENDERER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_GL_GL_RENDERER_H_
+#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_GL_GL_RENDERER_H_
 
 #ifdef WEBRTC_MAC
 #include <OpenGL/gl.h>
@@ -48,4 +48,4 @@ class GlRenderer : public VideoRenderer {
 }  // test
 }  // webrtc
 
-#endif  // WEBRTC_TEST_GL_GL_RENDERER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_GL_GL_RENDERER_H_

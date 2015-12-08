@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_LINUX_GLX_RENDERER_H_
-#define WEBRTC_TEST_LINUX_GLX_RENDERER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_LINUX_GLX_RENDERER_H_
+#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_LINUX_GLX_RENDERER_H_
 
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -45,4 +45,4 @@ class GlxRenderer : public GlRenderer {
 }  // test
 }  // webrtc
 
-#endif  // WEBRTC_TEST_LINUX_GLX_RENDERER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_LINUX_GLX_RENDERER_H_

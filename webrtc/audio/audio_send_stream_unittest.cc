@@ -21,7 +21,7 @@
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
-#include "webrtc/video/call_stats.h"
+#include "webrtc/video_engine/call_stats.h"
 
 namespace webrtc {
 namespace test {

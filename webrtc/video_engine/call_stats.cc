@@ -8,11 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/call_stats.h"
+#include "webrtc/video_engine/call_stats.h"
 
 #include <assert.h>
-
-#include <algorithm>
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"

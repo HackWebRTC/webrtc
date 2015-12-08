@@ -25,10 +25,10 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/video/call_stats.h"
-#include "webrtc/video/payload_router.h"
-#include "webrtc/video/vie_encoder.h"
-#include "webrtc/video/vie_remb.h"
+#include "webrtc/video_engine/call_stats.h"
+#include "webrtc/video_engine/payload_router.h"
+#include "webrtc/video_engine/vie_encoder.h"
+#include "webrtc/video_engine/vie_remb.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {

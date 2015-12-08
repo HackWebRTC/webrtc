@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/report_block_stats.h"
+#include "webrtc/video_engine/report_block_stats.h"
 
 namespace webrtc {
 

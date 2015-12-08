@@ -22,8 +22,8 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/video/overuse_frame_detector.h"
-#include "webrtc/video/vie_encoder.h"
+#include "webrtc/video_engine/overuse_frame_detector.h"
+#include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {

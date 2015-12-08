@@ -39,9 +39,9 @@
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/video/call_stats.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
+#include "webrtc/video_engine/call_stats.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 
 namespace webrtc {

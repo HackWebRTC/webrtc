@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/vie_channel.h"
+#include "webrtc/video_engine/vie_channel.h"
 
 #include <algorithm>
 #include <map>
@@ -31,10 +31,10 @@
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/video/call_stats.h"
-#include "webrtc/video/payload_router.h"
 #include "webrtc/video/receive_statistics_proxy.h"
-#include "webrtc/video/report_block_stats.h"
+#include "webrtc/video_engine/call_stats.h"
+#include "webrtc/video_engine/payload_router.h"
+#include "webrtc/video_engine/report_block_stats.h"
 
 namespace webrtc {
 

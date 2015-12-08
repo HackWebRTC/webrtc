@@ -32,8 +32,9 @@
     'java_files': {
       'filepath': '\.java$|\.xml$',
     },
-    'video': {
-      'filepath': 'webrtc/video/.*',
+    'video_engine': {
+      'filepath': 'webrtc/video_engine/.*|'\
+                  'webrtc/video/.*',
     },
     'voice_engine': {
       'filepath': 'webrtc/voice_engine/.*',
@@ -101,15 +102,14 @@
                      'bjornv@webrtc.org',
                      'minyue@webrtc.org',
                      'peah@webrtc.org'],
-    'video': ['andresp@webrtc.org',
-              'mflodman@webrtc.org',
-              'pbos@webrtc.org',
-              'perkj@webrtc.org',
-              'solenberg@webrtc.org',
-              'stefan@webrtc.org',
-              'video-team@agora.io',
-              'yujie.mao@webrtc.org',
-              'zhengzhonghou@agora.io'],
+    'video_engine': ['andresp@webrtc.org',
+                     'mflodman@webrtc.org',
+                     'perkj@webrtc.org',
+                     'solenberg@webrtc.org',
+                     'stefan@webrtc.org',
+                     'video-team@agora.io',
+                     'yujie.mao@webrtc.org',
+                     'zhengzhonghou@agora.io'],
     'voice_engine': ['andrew@webrtc.org',
                      'audio-team@agora.io',
                      'henrika@webrtc.org',

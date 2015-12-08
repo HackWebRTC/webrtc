@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_STREAM_SYNCHRONIZATION_H_
-#define WEBRTC_VIDEO_STREAM_SYNCHRONIZATION_H_
+#ifndef WEBRTC_VIDEO_ENGINE_STREAM_SYNCHRONIZATION_H_
+#define WEBRTC_VIDEO_ENGINE_STREAM_SYNCHRONIZATION_H_
 
 #include <list>
 
@@ -56,4 +56,4 @@ class StreamSynchronization {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_STREAM_SYNCHRONIZATION_H_
+#endif  // WEBRTC_VIDEO_ENGINE_STREAM_SYNCHRONIZATION_H_

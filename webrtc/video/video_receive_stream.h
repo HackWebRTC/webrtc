@@ -22,9 +22,9 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/receive_statistics_proxy.h"
-#include "webrtc/video/vie_channel.h"
-#include "webrtc/video/vie_encoder.h"
 #include "webrtc/video_encoder.h"
+#include "webrtc/video_engine/vie_channel.h"
+#include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {

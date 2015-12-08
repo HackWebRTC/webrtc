@@ -107,6 +107,9 @@ void ComputeScaleMaxPixels(int frame_width, int frame_height, int max_pixels,
   ASSERT(scaled_width != NULL);
   ASSERT(scaled_height != NULL);
   ASSERT(max_pixels > 0);
+  // For VP8 the values for max width and height can be found here
+  // webrtc/src/video_engine/vie_defines.h (kViEMaxCodecWidth and
+  // kViEMaxCodecHeight)
   const int kMaxWidth = 4096;
   const int kMaxHeight = 3072;
   int new_frame_width = frame_width;

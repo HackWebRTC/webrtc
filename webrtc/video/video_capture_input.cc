@@ -22,9 +22,9 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
-#include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video/vie_encoder.h"
+#include "webrtc/video_engine/overuse_frame_detector.h"
+#include "webrtc/video_engine/vie_encoder.h"
 
 namespace webrtc {
 

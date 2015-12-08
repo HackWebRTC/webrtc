@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_TEST_VCM_CAPTURER_H_
-#define WEBRTC_TEST_VCM_CAPTURER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_VCM_CAPTURER_H_
+#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_VCM_CAPTURER_H_
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
@@ -47,4 +47,4 @@ class VcmCapturer : public VideoCapturer, public VideoCaptureDataCallback {
 }  // test
 }  // webrtc
 
-#endif  // WEBRTC_TEST_VCM_CAPTURER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_VCM_CAPTURER_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIE_REMB_H_
-#define WEBRTC_VIDEO_VIE_REMB_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_REMB_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_REMB_H_
 
 #include <list>
 #include <utility>
@@ -75,4 +75,4 @@ class VieRemb : public RemoteBitrateObserver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIE_REMB_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_REMB_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIE_ENCODER_H_
-#define WEBRTC_VIDEO_VIE_ENCODER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
 
 #include <map>
 #include <vector>
@@ -192,4 +192,4 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIE_ENCODER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
