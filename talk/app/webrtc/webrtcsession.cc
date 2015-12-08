@@ -50,7 +50,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
-#include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/transportchannel.h"
@@ -791,7 +790,6 @@ void WebRtcSession::CreateAnswer(
 
 bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
                                         std::string* err_desc) {
-  TRACE_EVENT0("webrtc", "WebRtcSession::SetLocalDescription");
   ASSERT(signaling_thread()->IsCurrent());
 
   // Takes the ownership of |desc| regardless of the result.
@@ -846,7 +844,6 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
 
 bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
                                          std::string* err_desc) {
-  TRACE_EVENT0("webrtc", "WebRtcSession::SetRemoteDescription");
   ASSERT(signaling_thread()->IsCurrent());
 
   // Takes the ownership of |desc| regardless of the result.

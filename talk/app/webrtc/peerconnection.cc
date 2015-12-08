@@ -51,6 +51,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/p2p/client/basicportallocator.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
@@ -595,6 +596,7 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
       remote_streams_(StreamCollection::Create()) {}
 
 PeerConnection::~PeerConnection() {
+  TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
   RTC_DCHECK(signaling_thread()->IsCurrent());
   // Finish any pending deletions.
   signaling_thread()->Clear(this, MSG_DELETE, nullptr);
@@ -638,6 +640,7 @@ bool PeerConnection::Initialize(
     rtc::scoped_ptr<cricket::PortAllocator> allocator,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
+  TRACE_EVENT0("webrtc", "PeerConnection::Initialize");
   RTC_DCHECK(observer != nullptr);
   if (!observer) {
     return false;
@@ -728,6 +731,7 @@ PeerConnection::remote_streams() {
 }
 
 bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
+  TRACE_EVENT0("webrtc", "PeerConnection::AddStream");
   if (IsClosed()) {
     return false;
   }
@@ -788,6 +792,7 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
 // TODO(deadbeef): Don't destroy RtpSenders here; they should be kept around
 // indefinitely, when we have unified plan SDP.
 void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
+  TRACE_EVENT0("webrtc", "PeerConnection::RemoveStream");
   for (const auto& track : local_stream->GetAudioTracks()) {
     auto sender = FindSenderForTrack(track.get());
     if (sender == senders_.end()) {
@@ -819,6 +824,7 @@ void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
 
 rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
     AudioTrackInterface* track) {
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateDtmfSender");
   if (!track) {
     LOG(LS_ERROR) << "CreateDtmfSender - track is NULL.";
     return NULL;
@@ -839,6 +845,7 @@ rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
     const std::string& kind) {
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateSender");
   RtpSenderInterface* new_sender;
   if (kind == MediaStreamTrackInterface::kAudioKind) {
     new_sender = new AudioRtpSender(session_.get(), stats_.get());
@@ -874,6 +881,7 @@ PeerConnection::GetReceivers() const {
 bool PeerConnection::GetStats(StatsObserver* observer,
                               MediaStreamTrackInterface* track,
                               StatsOutputLevel level) {
+  TRACE_EVENT0("webrtc", "PeerConnection::GetStats");
   RTC_DCHECK(signaling_thread()->IsCurrent());
   if (!VERIFY(observer != NULL)) {
     LOG(LS_ERROR) << "GetStats - observer is NULL.";
@@ -908,6 +916,7 @@ rtc::scoped_refptr<DataChannelInterface>
 PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateDataChannel");
   bool first_datachannel = !HasDataChannels();
 
   rtc::scoped_ptr<InternalDataChannelInit> internal_config;
@@ -931,6 +940,7 @@ PeerConnection::CreateDataChannel(
 
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
                                  const MediaConstraintsInterface* constraints) {
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
   if (!VERIFY(observer != nullptr)) {
     LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
     return;
@@ -982,6 +992,7 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
 
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
                                  const RTCOfferAnswerOptions& options) {
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
   if (!VERIFY(observer != nullptr)) {
     LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
     return;
@@ -1001,6 +1012,7 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
 void PeerConnection::CreateAnswer(
     CreateSessionDescriptionObserver* observer,
     const MediaConstraintsInterface* constraints) {
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
   if (!VERIFY(observer != nullptr)) {
     LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
     return;
@@ -1020,6 +1032,7 @@ void PeerConnection::CreateAnswer(
 void PeerConnection::SetLocalDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc) {
+  TRACE_EVENT0("webrtc", "PeerConnection::SetLocalDescription");
   if (!VERIFY(observer != nullptr)) {
     LOG(LS_ERROR) << "SetLocalDescription - observer is NULL.";
     return;
@@ -1097,6 +1110,7 @@ void PeerConnection::SetLocalDescription(
 void PeerConnection::SetRemoteDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc) {
+  TRACE_EVENT0("webrtc", "PeerConnection::SetRemoteDescription");
   if (!VERIFY(observer != nullptr)) {
     LOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
     return;
@@ -1198,6 +1212,7 @@ void PeerConnection::SetRemoteDescription(
 }
 
 bool PeerConnection::SetConfiguration(const RTCConfiguration& config) {
+  TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
   if (port_allocator_) {
     std::vector<PortAllocatorFactoryInterface::StunConfiguration> stuns;
     std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turns;
@@ -1216,10 +1231,12 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& config) {
 
 bool PeerConnection::AddIceCandidate(
     const IceCandidateInterface* ice_candidate) {
+  TRACE_EVENT0("webrtc", "PeerConnection::AddIceCandidate");
   return session_->ProcessIceMessage(ice_candidate);
 }
 
 void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
+  TRACE_EVENT0("webrtc", "PeerConnection::RegisterUmaObserver");
   uma_observer_ = observer;
 
   if (session_) {
@@ -1249,6 +1266,7 @@ const SessionDescriptionInterface* PeerConnection::remote_description() const {
 }
 
 void PeerConnection::Close() {
+  TRACE_EVENT0("webrtc", "PeerConnection::Close");
   // Update stats here so that we have the most recent stats for tracks and
   // streams before the channels are closed.
   stats_->UpdateStats(kStatsOutputLevelStandard);

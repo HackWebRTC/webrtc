@@ -49,6 +49,7 @@
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/base/trace_event.h"
 
 namespace cricket {
 
@@ -288,6 +289,7 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
 }
 
 void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
+  TRACE_EVENT0("webrtc", "ChannelManager::DestroyVoiceChannel");
   if (voice_channel) {
     worker_thread_->Invoke<void>(
         Bind(&ChannelManager::DestroyVoiceChannel_w, this, voice_channel));
@@ -295,6 +297,7 @@ void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
 }
 
 void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel) {
+  TRACE_EVENT0("webrtc", "ChannelManager::DestroyVoiceChannel_w");
   // Destroy voice channel.
   ASSERT(initialized_);
   ASSERT(worker_thread_ == rtc::Thread::Current());
@@ -344,6 +347,7 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
 }
 
 void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
+  TRACE_EVENT0("webrtc", "ChannelManager::DestroyVideoChannel");
   if (video_channel) {
     worker_thread_->Invoke<void>(
         Bind(&ChannelManager::DestroyVideoChannel_w, this, video_channel));
@@ -351,6 +355,7 @@ void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
 }
 
 void ChannelManager::DestroyVideoChannel_w(VideoChannel* video_channel) {
+  TRACE_EVENT0("webrtc", "ChannelManager::DestroyVideoChannel_w");
   // Destroy video channel.
   ASSERT(initialized_);
   ASSERT(worker_thread_ == rtc::Thread::Current());
@@ -401,6 +406,7 @@ DataChannel* ChannelManager::CreateDataChannel_w(
 }
 
 void ChannelManager::DestroyDataChannel(DataChannel* data_channel) {
+  TRACE_EVENT0("webrtc", "ChannelManager::DestroyDataChannel");
   if (data_channel) {
     worker_thread_->Invoke<void>(
         Bind(&ChannelManager::DestroyDataChannel_w, this, data_channel));
@@ -408,6 +414,7 @@ void ChannelManager::DestroyDataChannel(DataChannel* data_channel) {
 }
 
 void ChannelManager::DestroyDataChannel_w(DataChannel* data_channel) {
+  TRACE_EVENT0("webrtc", "ChannelManager::DestroyDataChannel_w");
   // Destroy data channel.
   ASSERT(initialized_);
   DataChannels::iterator it = std::find(data_channels_.begin(),
