@@ -284,6 +284,10 @@ if (use_libfuzzer) {
   group("webrtc_fuzzers") {
     testonly = true
     deps = [
+      "test/fuzzers:audio_decoder_ilbc_fuzzer",
+      "test/fuzzers:audio_decoder_isac_fuzzer",
+      "test/fuzzers:audio_decoder_isacfix_fuzzer",
+      "test/fuzzers:audio_decoder_opus_fuzzer",
       "test/fuzzers:vp8_qp_parser_fuzzer",
       "test/fuzzers:vp9_depacketizer_fuzzer",
     ]

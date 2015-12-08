@@ -10,6 +10,7 @@ import("//build/config/features.gni")
 import("//testing/test.gni")
 
 static_library("webrtc_fuzzer_main") {
+  public_configs = [ "../..:common_inherited_config" ]
   sources = [
     "webrtc_fuzzer_main.cc",
   ]
@@ -49,4 +50,54 @@ test("vp8_qp_parser_fuzzer") {
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
+}
+
+source_set("audio_decoder_fuzzer") {
+  sources = [
+    "audio_decoder_fuzzer.cc",
+    "audio_decoder_fuzzer.h",
+  ]
+  deps = [
+    ":webrtc_fuzzer_main",
+  ]
+}
+
+test("audio_decoder_ilbc_fuzzer") {
+  sources = [
+    "audio_decoder_ilbc_fuzzer.cc",
+  ]
+  deps = [
+    ":audio_decoder_fuzzer",
+    "../../modules/audio_coding:ilbc",
+  ]
+}
+
+test("audio_decoder_isac_fuzzer") {
+  sources = [
+    "audio_decoder_isac_fuzzer.cc",
+  ]
+  deps = [
+    ":audio_decoder_fuzzer",
+    "../../modules/audio_coding:isac",
+  ]
+}
+
+test("audio_decoder_isacfix_fuzzer") {
+  sources = [
+    "audio_decoder_isacfix_fuzzer.cc",
+  ]
+  deps = [
+    ":audio_decoder_fuzzer",
+    "../../modules/audio_coding:isac_fix",
+  ]
+}
+
+test("audio_decoder_opus_fuzzer") {
+  sources = [
+    "audio_decoder_opus_fuzzer.cc",
+  ]
+  deps = [
+    ":audio_decoder_fuzzer",
+    "../../modules/audio_coding:webrtc_opus",
+  ]
 }
