@@ -281,7 +281,7 @@ void FileRotatingStream::RotateFiles() {
   // Rotates the files by deleting the file at |rotation_index_|, which is the
   // oldest file and then renaming the newer files to have an incremented index.
   // See header file comments for example.
-  RTC_DCHECK_LE(rotation_index_, file_names_.size());
+  RTC_DCHECK_LT(rotation_index_, file_names_.size());
   std::string file_to_delete = file_names_[rotation_index_];
   if (Filesystem::IsFile(file_to_delete)) {
     if (!Filesystem::DeleteFile(file_to_delete)) {

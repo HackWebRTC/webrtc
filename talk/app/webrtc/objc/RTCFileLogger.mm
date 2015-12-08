@@ -35,15 +35,17 @@
 
 NSString *const kDefaultLogDirName = @"webrtc_logs";
 NSUInteger const kDefaultMaxFileSize = 10 * 1024 * 1024; // 10MB.
+const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
 
 @implementation RTCFileLogger {
   BOOL _hasStarted;
   NSString *_dirPath;
   NSUInteger _maxFileSize;
-  rtc::scoped_ptr<rtc::CallSessionFileRotatingLogSink> _logSink;
+  rtc::scoped_ptr<rtc::FileRotatingLogSink> _logSink;
 }
 
 @synthesize severity = _severity;
+@synthesize rotationType = _rotationType;
 
 - (instancetype)init {
   NSArray *paths = NSSearchPathForDirectoriesInDomains(
@@ -57,6 +59,14 @@ NSUInteger const kDefaultMaxFileSize = 10 * 1024 * 1024; // 10MB.
 
 - (instancetype)initWithDirPath:(NSString *)dirPath
                     maxFileSize:(NSUInteger)maxFileSize {
+  return [self initWithDirPath:dirPath
+                   maxFileSize:maxFileSize
+                  rotationType:kRTCFileLoggerTypeCall];
+}
+
+- (instancetype)initWithDirPath:(NSString *)dirPath
+                    maxFileSize:(NSUInteger)maxFileSize
+                   rotationType:(RTCFileLoggerRotationType)rotationType {
   NSParameterAssert(dirPath.length);
   NSParameterAssert(maxFileSize);
   if (self = [super init]) {
@@ -91,8 +101,20 @@ NSUInteger const kDefaultMaxFileSize = 10 * 1024 * 1024; // 10MB.
   if (_hasStarted) {
     return;
   }
-  _logSink.reset(new rtc::CallSessionFileRotatingLogSink(_dirPath.UTF8String,
-                                                         _maxFileSize));
+  switch (_rotationType) {
+    case kRTCFileLoggerTypeApp:
+      _logSink.reset(
+          new rtc::FileRotatingLogSink(_dirPath.UTF8String,
+                                       kRTCFileLoggerRotatingLogPrefix,
+                                       _maxFileSize,
+                                       _maxFileSize / 10));
+      break;
+    case kRTCFileLoggerTypeCall:
+      _logSink.reset(
+          new rtc::CallSessionFileRotatingLogSink(_dirPath.UTF8String,
+                                                  _maxFileSize));
+      break;
+  }
   if (!_logSink->Init()) {
     LOG(LS_ERROR) << "Failed to open log files at path: "
                   << _dirPath.UTF8String;
@@ -120,8 +142,17 @@ NSUInteger const kDefaultMaxFileSize = 10 * 1024 * 1024; // 10MB.
     return nil;
   }
   NSMutableData* logData = [NSMutableData data];
-  rtc::scoped_ptr<rtc::CallSessionFileRotatingStream> stream(
-      new rtc::CallSessionFileRotatingStream(_dirPath.UTF8String));
+  rtc::scoped_ptr<rtc::FileRotatingStream> stream;
+  switch(_rotationType) {
+    case kRTCFileLoggerTypeApp:
+      stream.reset(
+          new rtc::FileRotatingStream(_dirPath.UTF8String,
+                                      kRTCFileLoggerRotatingLogPrefix));
+      break;
+    case kRTCFileLoggerTypeCall:
+      stream.reset(new rtc::CallSessionFileRotatingStream(_dirPath.UTF8String));
+      break;
+  }
   if (!stream->Open()) {
     return logData;
   }
