@@ -550,7 +550,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements
       parameters.setPreviewFpsRange(captureFormat.minFramerate, captureFormat.maxFramerate);
     }
     parameters.setPreviewSize(captureFormat.width, captureFormat.height);
-    parameters.setPreviewFormat(captureFormat.imageFormat);
+
+    if (!isCapturingToTexture) {
+      parameters.setPreviewFormat(captureFormat.imageFormat);
+    }
     // Picture size is for taking pictures and not for preview/video, but we need to set it anyway
     // as a workaround for an aspect ratio problem on Nexus 7.
     final android.hardware.Camera.Size pictureSize =
