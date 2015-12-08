@@ -46,15 +46,6 @@
 
 namespace cricket {
 
-static const char kFakeDefaultDeviceName[] = "Fake Default";
-static const int kFakeDefaultDeviceId = -1;
-static const char kFakeDeviceName[] = "Fake Device";
-#ifdef WIN32
-static const int kFakeDeviceId = 0;
-#else
-static const int kFakeDeviceId = 1;
-#endif
-
 static const int kOpusBandwidthNb = 4000;
 static const int kOpusBandwidthMb = 6000;
 static const int kOpusBandwidthWb = 8000;
@@ -538,18 +529,10 @@ class FakeWebRtcVoiceEngine
   }
 
   // webrtc::VoEHardware
-  WEBRTC_FUNC(GetNumOfRecordingDevices, (int& num)) {
-    return GetNumDevices(num);
-  }
-  WEBRTC_FUNC(GetNumOfPlayoutDevices, (int& num)) {
-    return GetNumDevices(num);
-  }
-  WEBRTC_FUNC(GetRecordingDeviceName, (int i, char* name, char* guid)) {
-    return GetDeviceName(i, name, guid);
-  }
-  WEBRTC_FUNC(GetPlayoutDeviceName, (int i, char* name, char* guid)) {
-    return GetDeviceName(i, name, guid);
-  }
+  WEBRTC_STUB(GetNumOfRecordingDevices, (int& num));
+  WEBRTC_STUB(GetNumOfPlayoutDevices, (int& num));
+  WEBRTC_STUB(GetRecordingDeviceName, (int i, char* name, char* guid));
+  WEBRTC_STUB(GetPlayoutDeviceName, (int i, char* name, char* guid));
   WEBRTC_STUB(SetRecordingDevice, (int, webrtc::StereoChannel));
   WEBRTC_STUB(SetPlayoutDevice, (int));
   WEBRTC_STUB(SetAudioDeviceLayer, (webrtc::AudioLayers));
@@ -808,41 +791,6 @@ class FakeWebRtcVoiceEngine
   }
 
  private:
-  int GetNumDevices(int& num) {
-#ifdef WIN32
-    num = 1;
-#else
-    // On non-Windows platforms VE adds a special entry for the default device,
-    // so if there is one physical device then there are two entries in the
-    // list.
-    num = 2;
-#endif
-    return 0;
-  }
-
-  int GetDeviceName(int i, char* name, char* guid) {
-    const char *s;
-#ifdef WIN32
-    if (0 == i) {
-      s = kFakeDeviceName;
-    } else {
-      return -1;
-    }
-#else
-    // See comment above.
-    if (0 == i) {
-      s = kFakeDefaultDeviceName;
-    } else if (1 == i) {
-      s = kFakeDeviceName;
-    } else {
-      return -1;
-    }
-#endif
-    strcpy(name, s);
-    guid[0] = '\0';
-    return 0;
-  }
-
   bool inited_;
   int last_channel_;
   std::map<int, Channel*> channels_;

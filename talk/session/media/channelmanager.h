@@ -177,11 +177,6 @@ class ChannelManager : public rtc::MessageHandler,
 
   sigslot::signal2<VideoCapturer*, CaptureState> SignalVideoCaptureStateChange;
 
- protected:
-  // Adds non-transient parameters which can only be changed through the
-  // options store.
-  bool SetAudioOptions(const AudioOptions& options);
-
  private:
   typedef std::vector<VoiceChannel*> VoiceChannels;
   typedef std::vector<VideoChannel*> VideoChannels;
@@ -213,8 +208,6 @@ class ChannelManager : public rtc::MessageHandler,
                                    bool rtcp,
                                    DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);
-  bool SetAudioOptions_w(const AudioOptions& options,
-                         const Device* in_dev, const Device* out_dev);
   void OnVideoCaptureStateChange(VideoCapturer* capturer,
                                  CaptureState result);
   void GetSupportedFormats_w(
@@ -234,7 +227,6 @@ class ChannelManager : public rtc::MessageHandler,
   VideoChannels video_channels_;
   DataChannels data_channels_;
 
-  AudioOptions audio_options_;
   int audio_output_volume_;
   VideoEncoderConfig default_video_encoder_config_;
   VideoRenderer* local_renderer_;

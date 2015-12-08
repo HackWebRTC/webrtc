@@ -553,7 +553,6 @@ class MediaChannel : public sigslot::has_slots<> {
 
 enum SendFlags {
   SEND_NOTHING,
-  SEND_RINGBACKTONE,
   SEND_MICROPHONE
 };
 

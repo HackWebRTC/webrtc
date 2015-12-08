@@ -722,14 +722,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const {
     return rtc::scoped_refptr<webrtc::AudioState>();
   }
-  AudioOptions GetOptions() const {
-    return options_;
-  }
-  bool SetOptions(const AudioOptions& options) {
-    options_ = options;
-    options_changed_ = true;
-    return true;
-  }
 
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                    const AudioOptions& options) {
@@ -751,21 +743,12 @@ class FakeVoiceEngine : public FakeBaseEngine {
   const std::vector<AudioCodec>& codecs() { return codecs_; }
   void SetCodecs(const std::vector<AudioCodec> codecs) { codecs_ = codecs; }
 
-  bool SetDevices(const Device* in_device, const Device* out_device) {
-    in_device_ = (in_device) ? in_device->name : "";
-    out_device_ = (out_device) ? out_device->name : "";
-    options_changed_ = true;
-    return true;
-  }
-
   bool GetOutputVolume(int* level) {
     *level = output_volume_;
     return true;
   }
-
   bool SetOutputVolume(int level) {
     output_volume_ = level;
-    options_changed_ = true;
     return true;
   }
 
@@ -783,9 +766,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
   std::vector<FakeVoiceMediaChannel*> channels_;
   std::vector<AudioCodec> codecs_;
   int output_volume_;
-  std::string in_device_;
-  std::string out_device_;
-  AudioOptions options_;
 
   friend class FakeMediaEngine;
 };
@@ -863,10 +843,7 @@ class FakeVideoEngine : public FakeBaseEngine {
 class FakeMediaEngine :
     public CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine> {
  public:
-  FakeMediaEngine() {
-    voice_ = FakeVoiceEngine();
-    video_ = FakeVideoEngine();
-  }
+  FakeMediaEngine() {}
   virtual ~FakeMediaEngine() {}
 
   void SetAudioCodecs(const std::vector<AudioCodec>& codecs) {
@@ -892,20 +869,16 @@ class FakeMediaEngine :
     return video_.GetChannel(index);
   }
 
-  AudioOptions audio_options() const { return voice_.options_; }
   int output_volume() const { return voice_.output_volume_; }
   const VideoEncoderConfig& default_video_encoder_config() const {
     return video_.default_encoder_config_;
   }
-  const std::string& audio_in_device() const { return voice_.in_device_; }
-  const std::string& audio_out_device() const { return voice_.out_device_; }
   bool capture() const { return video_.capture_; }
   bool options_changed() const {
-    return voice_.options_changed_ || video_.options_changed_;
+    return video_.options_changed_;
   }
   void clear_options_changed() {
     video_.options_changed_ = false;
-    voice_.options_changed_ = false;
   }
   void set_fail_create_channel(bool fail) {
     voice_.set_fail_create_channel(fail);

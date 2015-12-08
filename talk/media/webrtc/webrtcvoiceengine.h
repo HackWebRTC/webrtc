@@ -29,7 +29,6 @@
 #define TALK_MEDIA_WEBRTCVOICEENGINE_H_
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -72,9 +71,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                    const AudioOptions& options);
 
-  AudioOptions GetOptions() const { return options_; }
-  bool SetOptions(const AudioOptions& options);
-  bool SetDevices(const Device* in_device, const Device* out_device);
   bool GetOutputVolume(int* level);
   bool SetOutputVolume(int level);
   int GetInputLevel();
@@ -118,14 +114,10 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // ignored. This allows us to selectively turn on and off different options
   // easily at any time.
   bool ApplyOptions(const AudioOptions& options);
+  void SetDefaultDevices();
 
   // webrtc::TraceCallback:
   void Print(webrtc::TraceLevel level, const char* trace, int length) override;
-
-  // Given the device type, name, and id, find device id. Return true and
-  // set the output parameter rtc_id if successful.
-  bool FindWebRtcAudioDeviceId(
-      bool is_input, const std::string& dev_name, int dev_id, int* rtc_id);
 
   void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
@@ -138,16 +130,13 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   // The external audio device manager
   webrtc::AudioDeviceModule* adm_ = nullptr;
-  bool is_dumping_aec_ = false;
   std::vector<AudioCodec> codecs_;
   std::vector<WebRtcVoiceMediaChannel*> channels_;
-  webrtc::AgcConfig default_agc_config_;
-
   webrtc::Config voe_config_;
-
   bool initialized_ = false;
-  AudioOptions options_;
+  bool is_dumping_aec_ = false;
 
+  webrtc::AgcConfig default_agc_config_;
   // Cache received extended_filter_aec, delay_agnostic_aec and experimental_ns
   // values, and apply them in case they are missing in the audio options. We
   // need to do this because SetExtraOptions() will revert to defaults for

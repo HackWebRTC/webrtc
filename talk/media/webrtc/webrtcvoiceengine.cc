@@ -68,21 +68,12 @@ const int kDefaultTraceFilter = webrtc::kTraceNone | webrtc::kTraceTerseInfo |
 const int kElevatedTraceFilter = kDefaultTraceFilter | webrtc::kTraceStateInfo |
                                  webrtc::kTraceInfo;
 
-// For Linux/Mac, using the default device is done by specifying index 0 for
-// VoE 4.0 and not -1 (which was the case for VoE 3.5).
-//
 // On Windows Vista and newer, Microsoft introduced the concept of "Default
 // Communications Device". This means that there are two types of default
 // devices (old Wave Audio style default and Default Communications Device).
 //
 // On Windows systems which only support Wave Audio style default, uses either
 // -1 or 0 to select the default device.
-//
-// On Windows systems which support both "Default Communication Device" and
-// old Wave Audio style default, use -1 for Default Communications Device and
-// -2 for Wave Audio style default, which is what we want to use for clips.
-// It's not clear yet whether the -2 index is handled properly on other OSes.
-
 #ifdef WIN32
 const int kDefaultAudioDeviceId = -1;
 #else
@@ -273,28 +264,6 @@ void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
 
   voe_codec->channels = IsCodecFeatureEnabled(codec, kCodecParamStereo) ? 2 : 1;
   voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
-}
-
-// Gets the default set of options applied to the engine. Historically, these
-// were supplied as a combination of flags from the channel manager (ec, agc,
-// ns, and highpass) and the rest hardcoded in InitInternal.
-AudioOptions GetDefaultEngineOptions() {
-  AudioOptions options;
-  options.echo_cancellation = rtc::Optional<bool>(true);
-  options.auto_gain_control = rtc::Optional<bool>(true);
-  options.noise_suppression = rtc::Optional<bool>(true);
-  options.highpass_filter = rtc::Optional<bool>(true);
-  options.stereo_swapping = rtc::Optional<bool>(false);
-  options.audio_jitter_buffer_max_packets = rtc::Optional<int>(50);
-  options.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(false);
-  options.typing_detection = rtc::Optional<bool>(true);
-  options.adjust_agc_delta = rtc::Optional<int>(0);
-  options.experimental_agc = rtc::Optional<bool>(false);
-  options.extended_filter_aec = rtc::Optional<bool>(false);
-  options.delay_agnostic_aec = rtc::Optional<bool>(false);
-  options.experimental_ns = rtc::Optional<bool>(false);
-  options.aec_dump = rtc::Optional<bool>(false);
-  return options;
 }
 
 webrtc::AudioState::Config MakeAudioStateConfig(VoEWrapper* voe_wrapper) {
@@ -510,15 +479,13 @@ void WebRtcVoiceEngine::Construct() {
 
   signal_thread_checker_.DetachFromThread();
   std::memset(&default_agc_config_, 0, sizeof(default_agc_config_));
+  voe_config_.Set<webrtc::VoicePacing>(new webrtc::VoicePacing(true));
 
   webrtc::Trace::set_level_filter(kDefaultTraceFilter);
   webrtc::Trace::SetTraceCallback(this);
 
   // Load our audio codec list.
   codecs_ = WebRtcVoiceCodecs::SupportedCodecs();
-
-  options_ = GetDefaultEngineOptions();
-  voe_config_.Set<webrtc::VoicePacing>(new webrtc::VoicePacing(true));
 }
 
 WebRtcVoiceEngine::~WebRtcVoiceEngine() {
@@ -558,16 +525,9 @@ bool WebRtcVoiceEngine::InitInternal() {
   webrtc::Trace::set_level_filter(kDefaultTraceFilter);
 
   // Save the default AGC configuration settings. This must happen before
-  // calling SetOptions or the default will be overwritten.
+  // calling ApplyOptions or the default will be overwritten.
   if (voe_wrapper_->processing()->GetAgcConfig(default_agc_config_) == -1) {
     LOG_RTCERR0(GetAgcConfig);
-    return false;
-  }
-
-  // Set defaults for options, so that ApplyOptions applies them explicitly
-  // when we clear option (channel) overrides. External clients can still
-  // modify the defaults via SetOptions (on the media engine).
-  if (!SetOptions(GetDefaultEngineOptions())) {
     return false;
   }
 
@@ -576,6 +536,8 @@ bool WebRtcVoiceEngine::InitInternal() {
   for (const AudioCodec& codec : codecs_) {
     LOG(LS_INFO) << ToString(codec);
   }
+
+  SetDefaultDevices();
 
   initialized_ = true;
   return true;
@@ -603,21 +565,30 @@ VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(webrtc::Call* call,
   return new WebRtcVoiceMediaChannel(this, options, call);
 }
 
-bool WebRtcVoiceEngine::SetOptions(const AudioOptions& options) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  if (!ApplyOptions(options)) {
-    return false;
-  }
-  options_ = options;
-  return true;
-}
-
-// AudioOptions defaults are set in InitInternal (for options with corresponding
-// MediaEngineInterface flags) and in SetOptions(int) for flagless options.
 bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "ApplyOptions: " << options_in.ToString();
-  AudioOptions options = options_in;  // The options are modified below.
+
+  // Default engine options.
+  AudioOptions options;
+  options.echo_cancellation = rtc::Optional<bool>(true);
+  options.auto_gain_control = rtc::Optional<bool>(true);
+  options.noise_suppression = rtc::Optional<bool>(true);
+  options.highpass_filter = rtc::Optional<bool>(true);
+  options.stereo_swapping = rtc::Optional<bool>(false);
+  options.audio_jitter_buffer_max_packets = rtc::Optional<int>(50);
+  options.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(false);
+  options.typing_detection = rtc::Optional<bool>(true);
+  options.adjust_agc_delta = rtc::Optional<int>(0);
+  options.experimental_agc = rtc::Optional<bool>(false);
+  options.extended_filter_aec = rtc::Optional<bool>(false);
+  options.delay_agnostic_aec = rtc::Optional<bool>(false);
+  options.experimental_ns = rtc::Optional<bool>(false);
+  options.aec_dump = rtc::Optional<bool>(false);
+
+  // Apply any given options on top.
+  options.SetAll(options_in);
+
   // kEcConference is AEC with high suppression.
   webrtc::EcModes ec_mode = webrtc::kEcConference;
   webrtc::AecmModes aecm_mode = webrtc::kAecmSpeakerphone;
@@ -887,147 +858,34 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   return true;
 }
 
-// TODO(juberti): Refactor this so that the core logic can be used to set the
-// soundclip device. At that time, reinstate the soundclip pause/resume code.
-bool WebRtcVoiceEngine::SetDevices(const Device* in_device,
-                                   const Device* out_device) {
+void WebRtcVoiceEngine::SetDefaultDevices() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 #if !defined(IOS)
-  int in_id = in_device ? rtc::FromString<int>(in_device->id) :
-      kDefaultAudioDeviceId;
-  int out_id = out_device ? rtc::FromString<int>(out_device->id) :
-      kDefaultAudioDeviceId;
-  // The device manager uses -1 as the default device, which was the case for
-  // VoE 3.5. VoE 4.0, however, uses 0 as the default in Linux and Mac.
-#ifndef WIN32
-  if (-1 == in_id) {
-    in_id = kDefaultAudioDeviceId;
-  }
-  if (-1 == out_id) {
-    out_id = kDefaultAudioDeviceId;
-  }
-#endif
+  int in_id = kDefaultAudioDeviceId;
+  int out_id = kDefaultAudioDeviceId;
+  LOG(LS_INFO) << "Setting microphone to (id=" << in_id
+               << ") and speaker to (id=" << out_id << ")";
 
-  std::string in_name = (in_id != kDefaultAudioDeviceId) ?
-      in_device->name : "Default device";
-  std::string out_name = (out_id != kDefaultAudioDeviceId) ?
-      out_device->name : "Default device";
-  LOG(LS_INFO) << "Setting microphone to (id=" << in_id << ", name=" << in_name
-            << ") and speaker to (id=" << out_id << ", name=" << out_name
-            << ")";
-
-  // Must also pause all audio playback and capture.
   bool ret = true;
-  for (WebRtcVoiceMediaChannel* channel : channels_) {
-    if (!channel->PausePlayout()) {
-      LOG(LS_WARNING) << "Failed to pause playout";
-      ret = false;
-    }
-    if (!channel->PauseSend()) {
-      LOG(LS_WARNING) << "Failed to pause send";
-      ret = false;
-    }
-  }
-
-  // Find the recording device id in VoiceEngine and set recording device.
-  if (!FindWebRtcAudioDeviceId(true, in_name, in_id, &in_id)) {
+  if (voe_wrapper_->hw()->SetRecordingDevice(in_id) == -1) {
+    LOG_RTCERR1(SetRecordingDevice, in_id);
     ret = false;
   }
-  if (ret) {
-    if (voe_wrapper_->hw()->SetRecordingDevice(in_id) == -1) {
-      LOG_RTCERR2(SetRecordingDevice, in_name, in_id);
-      ret = false;
-    }
-    webrtc::AudioProcessing* ap = voe()->base()->audio_processing();
-    if (ap)
-      ap->Initialize();
+  webrtc::AudioProcessing* ap = voe()->base()->audio_processing();
+  if (ap) {
+    ap->Initialize();
   }
 
-  // Find the playout device id in VoiceEngine and set playout device.
-  if (!FindWebRtcAudioDeviceId(false, out_name, out_id, &out_id)) {
-    LOG(LS_WARNING) << "Failed to find VoiceEngine device id for " << out_name;
+  if (voe_wrapper_->hw()->SetPlayoutDevice(out_id) == -1) {
+    LOG_RTCERR1(SetPlayoutDevice, out_id);
     ret = false;
   }
-  if (ret) {
-    if (voe_wrapper_->hw()->SetPlayoutDevice(out_id) == -1) {
-      LOG_RTCERR2(SetPlayoutDevice, out_name, out_id);
-      ret = false;
-    }
-  }
-
-  // Resume all audio playback and capture.
-  for (WebRtcVoiceMediaChannel* channel : channels_) {
-    if (!channel->ResumePlayout()) {
-      LOG(LS_WARNING) << "Failed to resume playout";
-      ret = false;
-    }
-    if (!channel->ResumeSend()) {
-      LOG(LS_WARNING) << "Failed to resume send";
-      ret = false;
-    }
-  }
 
   if (ret) {
-    LOG(LS_INFO) << "Set microphone to (id=" << in_id <<" name=" << in_name
-                 << ") and speaker to (id="<< out_id << " name=" << out_name
-                 << ")";
+    LOG(LS_INFO) << "Set microphone to (id=" << in_id
+                 << ") and speaker to (id=" << out_id << ")";
   }
-
-  return ret;
-#else
-  return true;
 #endif  // !IOS
-}
-
-bool WebRtcVoiceEngine::FindWebRtcAudioDeviceId(
-  bool is_input, const std::string& dev_name, int dev_id, int* rtc_id) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  // In Linux, VoiceEngine uses the same device dev_id as the device manager.
-#if defined(LINUX) || defined(ANDROID)
-  *rtc_id = dev_id;
-  return true;
-#else
-  // In Windows and Mac, we need to find the VoiceEngine device id by name
-  // unless the input dev_id is the default device id.
-  if (kDefaultAudioDeviceId == dev_id) {
-    *rtc_id = dev_id;
-    return true;
-  }
-
-  // Get the number of VoiceEngine audio devices.
-  int count = 0;
-  if (is_input) {
-    if (-1 == voe_wrapper_->hw()->GetNumOfRecordingDevices(count)) {
-      LOG_RTCERR0(GetNumOfRecordingDevices);
-      return false;
-    }
-  } else {
-    if (-1 == voe_wrapper_->hw()->GetNumOfPlayoutDevices(count)) {
-      LOG_RTCERR0(GetNumOfPlayoutDevices);
-      return false;
-    }
-  }
-
-  for (int i = 0; i < count; ++i) {
-    char name[128];
-    char guid[128];
-    if (is_input) {
-      voe_wrapper_->hw()->GetRecordingDeviceName(i, name, guid);
-      LOG(LS_VERBOSE) << "VoiceEngine microphone " << i << ": " << name;
-    } else {
-      voe_wrapper_->hw()->GetPlayoutDeviceName(i, name, guid);
-      LOG(LS_VERBOSE) << "VoiceEngine speaker " << i << ": " << name;
-    }
-
-    std::string webrtc_name(name);
-    if (dev_name.compare(0, webrtc_name.size(), webrtc_name) == 0) {
-      *rtc_id = i;
-      return true;
-    }
-  }
-  LOG(LS_WARNING) << "VoiceEngine cannot find device: " << dev_name;
-  return false;
-#endif
 }
 
 bool WebRtcVoiceEngine::GetOutputVolume(int* level) {
@@ -1511,19 +1369,17 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
   // on top.  This means there is no way to "clear" options such that
   // they go back to the engine default.
   options_.SetAll(options);
-
-  if (send_ != SEND_NOTHING) {
-    if (!engine()->ApplyOptions(options_)) {
-      LOG(LS_WARNING) <<
-          "Failed to apply engine options during channel SetOptions.";
-      return false;
-    }
+  if (!engine()->ApplyOptions(options_)) {
+    LOG(LS_WARNING) <<
+        "Failed to apply engine options during channel SetOptions.";
+    return false;
   }
 
   if (dscp_option_changed) {
     rtc::DiffServCodePoint dscp = rtc::DSCP_DEFAULT;
-    if (options_.dscp.value_or(false))
+    if (options_.dscp.value_or(false)) {
       dscp = kAudioDscpValue;
+    }
     if (MediaChannel::SetDscp(dscp) != 0) {
       LOG(LS_WARNING) << "Failed to set DSCP settings for audio channel";
     }
@@ -1921,7 +1777,7 @@ bool WebRtcVoiceMediaChannel::ChangeSend(SendFlags send) {
     return true;
   }
 
-  // Apply channel specific options.
+  // Apply channel specific options when channel is enabled for sending.
   if (send == SEND_MICROPHONE) {
     engine()->ApplyOptions(options_);
   }
@@ -1931,13 +1787,6 @@ bool WebRtcVoiceMediaChannel::ChangeSend(SendFlags send) {
     if (!ChangeSend(ch.second->channel(), send)) {
       return false;
     }
-  }
-
-  // Clear up the options after stopping sending. Since we may previously have
-  // applied the channel specific options, now apply the original options stored
-  // in WebRtcVoiceEngine.
-  if (send == SEND_NOTHING) {
-    engine()->ApplyOptions(engine()->GetOptions());
   }
 
   send_ = send;
