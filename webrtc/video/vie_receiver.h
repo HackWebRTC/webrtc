@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
+#ifndef WEBRTC_VIDEO_VIE_RECEIVER_H_
+#define WEBRTC_VIDEO_VIE_RECEIVER_H_
 
 #include <list>
 #include <vector>
@@ -129,4 +129,4 @@ class ViEReceiver : public RtpData {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
+#endif  // WEBRTC_VIDEO_VIE_RECEIVER_H_

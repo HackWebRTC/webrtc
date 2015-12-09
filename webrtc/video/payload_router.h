@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_PAYLOAD_ROUTER_H_
-#define WEBRTC_VIDEO_ENGINE_PAYLOAD_ROUTER_H_
+#ifndef WEBRTC_VIDEO_PAYLOAD_ROUTER_H_
+#define WEBRTC_VIDEO_PAYLOAD_ROUTER_H_
 
 #include <list>
 #include <vector>
@@ -82,4 +82,4 @@ class PayloadRouter {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_PAYLOAD_ROUTER_H_
+#endif  // WEBRTC_VIDEO_PAYLOAD_ROUTER_H_

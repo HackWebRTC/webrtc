@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_OVERUSE_FRAME_DETECTOR_H_
-#define WEBRTC_VIDEO_ENGINE_OVERUSE_FRAME_DETECTOR_H_
+#ifndef WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
+#define WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
@@ -172,4 +172,4 @@ class OveruseFrameDetector : public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_OVERUSE_FRAME_DETECTOR_H_
+#endif  // WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_

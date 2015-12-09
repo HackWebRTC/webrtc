@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_CAPTURER_H_
-#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_CAPTURER_H_
+#ifndef WEBRTC_TEST_VIDEO_CAPTURER_H_
+#define WEBRTC_TEST_VIDEO_CAPTURER_H_
 
 #include <stddef.h>
 
@@ -39,4 +39,4 @@ class VideoCapturer {
 }  // test
 }  // webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_CAPTURER_H_
+#endif  // WEBRTC_TEST_VIDEO_CAPTURER_H_

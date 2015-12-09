@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_TRANSPORT_H_
-#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_TRANSPORT_H_
+#ifndef WEBRTC_TRANSPORT_H_
+#define WEBRTC_TRANSPORT_H_
 
 #include <stddef.h>
 
@@ -38,4 +38,4 @@ class Transport {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_TRANSPORT_H_
+#endif  // WEBRTC_TRANSPORT_H_

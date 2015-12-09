@@ -22,12 +22,12 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
+#include "webrtc/video/call_stats.h"
+#include "webrtc/video/encoder_state_feedback.h"
+#include "webrtc/video/payload_router.h"
 #include "webrtc/video/video_capture_input.h"
-#include "webrtc/video_engine/call_stats.h"
-#include "webrtc/video_engine/encoder_state_feedback.h"
-#include "webrtc/video_engine/payload_router.h"
-#include "webrtc/video_engine/vie_channel.h"
-#include "webrtc/video_engine/vie_encoder.h"
+#include "webrtc/video/vie_channel.h"
+#include "webrtc/video/vie_encoder.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_RENDERER_H_
-#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_RENDERER_H_
+#ifndef WEBRTC_VIDEO_RENDERER_H_
+#define WEBRTC_VIDEO_RENDERER_H_
 
 namespace webrtc {
 
@@ -35,4 +35,4 @@ class VideoRenderer {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_RENDERER_H_
+#endif  // WEBRTC_VIDEO_RENDERER_H_
