@@ -2,22 +2,6 @@
 # It acts as a place holder for future additions for WebRTC.
 # It must exist for the Python wrapper script to work properly.
 
-INVALID HEAP ARGUMENT
-name=https://code.google.com/p/webrtc/issues/detail?id=2321 (1)
-drmemorylib.dll!replace_operator_delete_array
-*!webrtc::scoped_array<short>::~scoped_array<short>
-*!webrtc::PushResampler::~PushResampler
-...
-*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
-
-INVALID HEAP ARGUMENT
-name=https://code.google.com/p/webrtc/issues/detail?id=2321 (2)
-drmemorylib.dll!replace_operator_delete_array
-*!webrtc::scoped_array<float>::~scoped_array<float>
-*!webrtc::PushSincResampler::~PushSincResampler
-...
-*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
-
 GDI USAGE ERROR
 name=https://code.google.com/p/webrtc/issues/detail?id=2323 (1)
 system call NtGdiDeleteObjectApp
