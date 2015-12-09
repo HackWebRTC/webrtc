@@ -11,7 +11,6 @@
 #include "webrtc/base/rtccertificate.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/timeutils.h"
 
 namespace rtc {
 
@@ -28,13 +27,16 @@ RTCCertificate::RTCCertificate(SSLIdentity* identity)
 RTCCertificate::~RTCCertificate() {
 }
 
-uint64_t RTCCertificate::expires_timestamp_ns() const {
-  // TODO(hbos): Update once SSLIdentity/SSLCertificate supports expires field.
-  return 0;
+uint64_t RTCCertificate::Expires() const {
+  int64_t expires = ssl_certificate().CertificateExpirationTime();
+  if (expires != -1)
+    return static_cast<uint64_t>(expires) * kNumMillisecsPerSec;
+  // If the expiration time could not be retrieved return an expired timestamp.
+  return 0;  // = 1970-01-01
 }
 
-bool RTCCertificate::HasExpired() const {
-  return expires_timestamp_ns() <= TimeNanos();
+bool RTCCertificate::HasExpired(uint64_t now) const {
+  return Expires() <= now;
 }
 
 const SSLCertificate& RTCCertificate::ssl_certificate() const {
