@@ -2418,6 +2418,42 @@ TEST_F(WebRtcVideoChannel2Test, TestSetDscpOptions) {
   channel_->SetInterface(NULL);
 }
 
+// This test verifies that the RTCP reduced size mode is properly applied to
+// send video streams.
+TEST_F(WebRtcVideoChannel2Test, TestSetSendRtcpReducedSize) {
+  // Create stream, expecting that default mode is "compound".
+  FakeVideoSendStream* stream1 = AddSendStream();
+  EXPECT_EQ(webrtc::RtcpMode::kCompound, stream1->GetConfig().rtp.rtcp_mode);
+
+  // Now enable reduced size mode.
+  send_parameters_.rtcp.reduced_size = true;
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  stream1 = fake_call_->GetVideoSendStreams()[0];
+  EXPECT_EQ(webrtc::RtcpMode::kReducedSize, stream1->GetConfig().rtp.rtcp_mode);
+
+  // Create a new stream and ensure it picks up the reduced size mode.
+  FakeVideoSendStream* stream2 = AddSendStream();
+  EXPECT_EQ(webrtc::RtcpMode::kReducedSize, stream2->GetConfig().rtp.rtcp_mode);
+}
+
+// This test verifies that the RTCP reduced size mode is properly applied to
+// receive video streams.
+TEST_F(WebRtcVideoChannel2Test, TestSetRecvRtcpReducedSize) {
+  // Create stream, expecting that default mode is "compound".
+  FakeVideoReceiveStream* stream1 = AddRecvStream();
+  EXPECT_EQ(webrtc::RtcpMode::kCompound, stream1->GetConfig().rtp.rtcp_mode);
+
+  // Now enable reduced size mode.
+  recv_parameters_.rtcp.reduced_size = true;
+  EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
+  stream1 = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_EQ(webrtc::RtcpMode::kReducedSize, stream1->GetConfig().rtp.rtcp_mode);
+
+  // Create a new stream and ensure it picks up the reduced size mode.
+  FakeVideoReceiveStream* stream2 = AddRecvStream();
+  EXPECT_EQ(webrtc::RtcpMode::kReducedSize, stream2->GetConfig().rtp.rtcp_mode);
+}
+
 TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
   EXPECT_EQ(webrtc::kNetworkUp, fake_call_->GetNetworkState());
 

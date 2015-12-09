@@ -792,10 +792,20 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   LOG(LS_INFO) << "SetSendParameters: " << params.ToString();
   // TODO(pbos): Refactor this to only recreate the send streams once
   // instead of 4 times.
-  return (SetSendCodecs(params.codecs) &&
-          SetSendRtpHeaderExtensions(params.extensions) &&
-          SetMaxSendBandwidth(params.max_bandwidth_bps) &&
-          SetOptions(params.options));
+  if (!SetSendCodecs(params.codecs) ||
+      !SetSendRtpHeaderExtensions(params.extensions) ||
+      !SetMaxSendBandwidth(params.max_bandwidth_bps) ||
+      !SetOptions(params.options)) {
+    return false;
+  }
+  if (send_params_.rtcp.reduced_size != params.rtcp.reduced_size) {
+    rtc::CritScope stream_lock(&stream_crit_);
+    for (auto& kv : send_streams_) {
+      kv.second->SetSendParameters(params);
+    }
+  }
+  send_params_ = params;
+  return true;
 }
 
 bool WebRtcVideoChannel2::SetRecvParameters(const VideoRecvParameters& params) {
@@ -803,8 +813,18 @@ bool WebRtcVideoChannel2::SetRecvParameters(const VideoRecvParameters& params) {
   LOG(LS_INFO) << "SetRecvParameters: " << params.ToString();
   // TODO(pbos): Refactor this to only recreate the recv streams once
   // instead of twice.
-  return (SetRecvCodecs(params.codecs) &&
-          SetRecvRtpHeaderExtensions(params.extensions));
+  if (!SetRecvCodecs(params.codecs) ||
+      !SetRecvRtpHeaderExtensions(params.extensions)) {
+    return false;
+  }
+  if (recv_params_.rtcp.reduced_size != params.rtcp.reduced_size) {
+    rtc::CritScope stream_lock(&stream_crit_);
+    for (auto& kv : receive_streams_) {
+      kv.second->SetRecvParameters(params);
+    }
+  }
+  recv_params_ = params;
+  return true;
 }
 
 std::string WebRtcVideoChannel2::CodecSettingsVectorToString(
@@ -1025,15 +1045,10 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   webrtc::VideoSendStream::Config config(this);
   config.overuse_callback = this;
 
-  WebRtcVideoSendStream* stream =
-      new WebRtcVideoSendStream(call_,
-                                sp,
-                                config,
-                                external_encoder_factory_,
-                                options_,
-                                bitrate_config_.max_bitrate_bps,
-                                send_codec_,
-                                send_rtp_extensions_);
+  WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
+      call_, sp, config, external_encoder_factory_, options_,
+      bitrate_config_.max_bitrate_bps, send_codec_, send_rtp_extensions_,
+      send_params_);
 
   uint32_t ssrc = sp.first_ssrc();
   RTC_DCHECK(ssrc != 0);
@@ -1175,6 +1190,9 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
   config->rtp.local_ssrc = rtcp_receiver_report_ssrc_;
 
   config->rtp.extensions = recv_rtp_extensions_;
+  config->rtp.rtcp_mode = recv_params_.rtcp.reduced_size
+                              ? webrtc::RtcpMode::kReducedSize
+                              : webrtc::RtcpMode::kCompound;
 
   // TODO(pbos): This protection is against setting the same local ssrc as
   // remote which is not permitted by the lower-level API. RTCP requires a
@@ -1661,7 +1679,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     const VideoOptions& options,
     int max_bitrate_bps,
     const rtc::Optional<VideoCodecSettings>& codec_settings,
-    const std::vector<webrtc::RtpExtension>& rtp_extensions)
+    const std::vector<webrtc::RtpExtension>& rtp_extensions,
+    // TODO(deadbeef): Don't duplicate information between send_params,
+    // rtp_extensions, options, etc.
+    const VideoSendParameters& send_params)
     : ssrcs_(sp.ssrcs),
       ssrc_groups_(sp.ssrc_groups),
       call_(call),
@@ -1682,6 +1703,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
                  &parameters_.config.rtp.rtx.ssrcs);
   parameters_.config.rtp.c_name = sp.cname;
   parameters_.config.rtp.extensions = rtp_extensions;
+  parameters_.config.rtp.rtcp_mode = send_params.rtcp.reduced_size
+                                         ? webrtc::RtcpMode::kReducedSize
+                                         : webrtc::RtcpMode::kCompound;
 
   if (codec_settings) {
     SetCodec(*codec_settings);
@@ -1994,6 +2018,18 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpExtensions(
   parameters_.config.rtp.extensions = rtp_extensions;
   if (stream_ != nullptr) {
     LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetRtpExtensions";
+    RecreateWebRtcStream();
+  }
+}
+
+void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
+    const VideoSendParameters& send_params) {
+  rtc::CritScope cs(&lock_);
+  parameters_.config.rtp.rtcp_mode = send_params.rtcp.reduced_size
+                                         ? webrtc::RtcpMode::kReducedSize
+                                         : webrtc::RtcpMode::kCompound;
+  if (stream_ != nullptr) {
+    LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetSendParameters";
     RecreateWebRtcStream();
   }
 }
@@ -2432,6 +2468,15 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRtpExtensions(
     const std::vector<webrtc::RtpExtension>& extensions) {
   config_.rtp.extensions = extensions;
   LOG(LS_INFO) << "RecreateWebRtcStream (recv) because of SetRtpExtensions";
+  RecreateWebRtcStream();
+}
+
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvParameters(
+    const VideoRecvParameters& recv_params) {
+  config_.rtp.rtcp_mode = recv_params.rtcp.reduced_size
+                              ? webrtc::RtcpMode::kReducedSize
+                              : webrtc::RtcpMode::kCompound;
+  LOG(LS_INFO) << "RecreateWebRtcStream (recv) because of SetRecvParameters";
   RecreateWebRtcStream();
 }
 

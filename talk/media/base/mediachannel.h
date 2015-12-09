@@ -927,6 +927,10 @@ struct DataMediaInfo {
   std::vector<DataReceiverInfo> receivers;
 };
 
+struct RtcpParameters {
+  bool reduced_size = false;
+};
+
 template <class Codec>
 struct RtpParameters {
   virtual std::string ToString() const {
@@ -941,6 +945,7 @@ struct RtpParameters {
   std::vector<Codec> codecs;
   std::vector<RtpHeaderExtension> extensions;
   // TODO(pthatcher): Add streams.
+  RtcpParameters rtcp;
 };
 
 template <class Codec, class Options>

@@ -167,17 +167,7 @@ struct MediaSessionOptions {
 // "content" (as used in XEP-0166) descriptions for voice and video.
 class MediaContentDescription : public ContentDescription {
  public:
-  MediaContentDescription()
-      : rtcp_mux_(false),
-        bandwidth_(kAutoBandwidth),
-        crypto_required_(CT_NONE),
-        rtp_header_extensions_set_(false),
-        multistream_(false),
-        conference_mode_(false),
-        partial_(false),
-        buffered_mode_latency_(kBufferedModeDisabled),
-        direction_(MD_SENDRECV) {
-  }
+  MediaContentDescription() {}
 
   virtual MediaType type() const = 0;
   virtual bool has_codecs() const = 0;
@@ -194,6 +184,11 @@ class MediaContentDescription : public ContentDescription {
 
   bool rtcp_mux() const { return rtcp_mux_; }
   void set_rtcp_mux(bool mux) { rtcp_mux_ = mux; }
+
+  bool rtcp_reduced_size() const { return rtcp_reduced_size_; }
+  void set_rtcp_reduced_size(bool reduced_size) {
+    rtcp_reduced_size_ = reduced_size;
+  }
 
   int bandwidth() const { return bandwidth_; }
   void set_bandwidth(int bandwidth) { bandwidth_ = bandwidth; }
@@ -291,19 +286,20 @@ class MediaContentDescription : public ContentDescription {
   int buffered_mode_latency() const { return buffered_mode_latency_; }
 
  protected:
-  bool rtcp_mux_;
-  int bandwidth_;
+  bool rtcp_mux_ = false;
+  bool rtcp_reduced_size_ = false;
+  int bandwidth_ = kAutoBandwidth;
   std::string protocol_;
   std::vector<CryptoParams> cryptos_;
-  CryptoType crypto_required_;
+  CryptoType crypto_required_ = CT_NONE;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
-  bool rtp_header_extensions_set_;
-  bool multistream_;
+  bool rtp_header_extensions_set_ = false;
+  bool multistream_ = false;
   StreamParamsVec streams_;
-  bool conference_mode_;
-  bool partial_;
-  int buffered_mode_latency_;
-  MediaContentDirection direction_;
+  bool conference_mode_ = false;
+  bool partial_ = false;
+  int buffered_mode_latency_ = kBufferedModeDisabled;
+  MediaContentDirection direction_ = MD_SENDRECV;
 };
 
 template <class C>

@@ -760,6 +760,11 @@ static bool CreateMediaContentOffer(
     offer->set_crypto_required(CT_SDES);
   }
   offer->set_rtcp_mux(options.rtcp_mux_enabled);
+  // TODO(deadbeef): Once we're sure this works correctly, enable it in
+  // CreateOffer.
+  // if (offer->type() == cricket::MEDIA_TYPE_VIDEO) {
+  //   offer->set_rtcp_reduced_size(true);
+  // }
   offer->set_multistream(options.is_muc);
   offer->set_rtp_header_extensions(rtp_extensions);
 
@@ -1038,6 +1043,11 @@ static bool CreateMediaContentAnswer(
   answer->set_rtp_header_extensions(negotiated_rtp_extensions);
 
   answer->set_rtcp_mux(options.rtcp_mux_enabled && offer->rtcp_mux());
+  // TODO(deadbeef): Once we're sure this works correctly, enable it in
+  // CreateAnswer.
+  // if (answer->type() == cricket::MEDIA_TYPE_VIDEO) {
+  //   answer->set_rtcp_reduced_size(offer->rtcp_reduced_size());
+  // }
 
   if (sdes_policy != SEC_DISABLED) {
     CryptoParams crypto;

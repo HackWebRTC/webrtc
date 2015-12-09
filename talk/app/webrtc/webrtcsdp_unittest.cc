@@ -153,6 +153,7 @@ static const char kSdpFullString[] =
     "a=mid:audio_content_name\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
+    "a=rtcp-rsize\r\n"
     "a=crypto:1 AES_CM_128_HMAC_SHA1_32 "
     "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
     "dummy_session_params\r\n"
@@ -220,6 +221,7 @@ static const char kSdpString[] =
     "a=mid:audio_content_name\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
+    "a=rtcp-rsize\r\n"
     "a=crypto:1 AES_CM_128_HMAC_SHA1_32 "
     "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
     "dummy_session_params\r\n"
@@ -704,6 +706,7 @@ class WebRtcSdpTest : public testing::Test {
   AudioContentDescription* CreateAudioContentDescription() {
     AudioContentDescription* audio = new AudioContentDescription();
     audio->set_rtcp_mux(true);
+    audio->set_rtcp_reduced_size(true);
     StreamParams audio_stream1;
     audio_stream1.id = kAudioTrackId1;
     audio_stream1.cname = kStream1Cname;
@@ -734,6 +737,9 @@ class WebRtcSdpTest : public testing::Test {
 
     // rtcp_mux
     EXPECT_EQ(cd1->rtcp_mux(), cd2->rtcp_mux());
+
+    // rtcp_reduced_size
+    EXPECT_EQ(cd1->rtcp_reduced_size(), cd2->rtcp_reduced_size());
 
     // cryptos
     EXPECT_EQ(cd1->cryptos().size(), cd2->cryptos().size());

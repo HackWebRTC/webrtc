@@ -249,13 +249,17 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         const VideoOptions& options,
         int max_bitrate_bps,
         const rtc::Optional<VideoCodecSettings>& codec_settings,
-        const std::vector<webrtc::RtpExtension>& rtp_extensions);
+        const std::vector<webrtc::RtpExtension>& rtp_extensions,
+        const VideoSendParameters& send_params);
     ~WebRtcVideoSendStream();
 
     void SetOptions(const VideoOptions& options);
     void SetCodec(const VideoCodecSettings& codec);
     void SetRtpExtensions(
         const std::vector<webrtc::RtpExtension>& rtp_extensions);
+    // TODO(deadbeef): Move logic from SetCodec/SetRtpExtensions/etc.
+    // into this method. Currently this method only sets the RTCP mode.
+    void SetSendParameters(const VideoSendParameters& send_params);
 
     void InputFrame(VideoCapturer* capturer, const VideoFrame* frame);
     bool SetCapturer(VideoCapturer* capturer);
@@ -405,6 +409,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
                                bool transport_cc_enabled);
     void SetRecvCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
     void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions);
+    // TODO(deadbeef): Move logic from SetRecvCodecs/SetRtpExtensions/etc.
+    // into this method. Currently this method only sets the RTCP mode.
+    void SetRecvParameters(const VideoRecvParameters& recv_params);
 
     void RenderFrame(const webrtc::VideoFrame& frame,
                      int time_to_render_ms) override;
@@ -525,6 +532,10 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
   webrtc::Call::Config::BitrateConfig bitrate_config_;
   VideoOptions options_;
+  // TODO(deadbeef): Don't duplicate information between
+  // send_params/recv_params, rtp_extensions, options, etc.
+  VideoSendParameters send_params_;
+  VideoRecvParameters recv_params_;
 };
 
 }  // namespace cricket

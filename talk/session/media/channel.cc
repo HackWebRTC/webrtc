@@ -152,6 +152,7 @@ void RtpParametersFromMediaDescription(
   if (desc->rtp_header_extensions_set()) {
     params->extensions = desc->rtp_header_extensions();
   }
+  params->rtcp.reduced_size = desc->rtcp_reduced_size();
 }
 
 template <class Codec, class Options>

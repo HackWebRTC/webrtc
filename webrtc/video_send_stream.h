@@ -100,6 +100,9 @@ class VideoSendStream : public SendStream {
 
       std::vector<uint32_t> ssrcs;
 
+      // See RtcpMode for description.
+      RtcpMode rtcp_mode = RtcpMode::kCompound;
+
       // Max RTP packet size delivered to send transport from VideoEngine.
       size_t max_packet_size = kDefaultMaxPacketSize;
 

@@ -122,6 +122,7 @@ static const char kLineTypeAttributes = 'a';
 static const char kAttributeGroup[] = "group";
 static const char kAttributeMid[] = "mid";
 static const char kAttributeRtcpMux[] = "rtcp-mux";
+static const char kAttributeRtcpReducedSize[] = "rtcp-rsize";
 static const char kAttributeSsrc[] = "ssrc";
 static const char kSsrcAttributeCname[] = "cname";
 static const char kAttributeExtmap[] = "extmap";
@@ -1400,6 +1401,13 @@ void BuildRtpContentAttributes(
     AddLine(os.str(), message);
   }
 
+  // RFC 5506
+  // a=rtcp-rsize
+  if (media_desc->rtcp_reduced_size()) {
+    InitAttrLine(kAttributeRtcpReducedSize, &os);
+    AddLine(os.str(), message);
+  }
+
   // RFC 4568
   // a=crypto:<tag> <crypto-suite> <key-params> [<session-params>]
   for (std::vector<CryptoParams>::const_iterator it =
@@ -2553,6 +2561,8 @@ bool ParseContent(const std::string& message,
       //
       if (HasAttribute(line, kAttributeRtcpMux)) {
         media_desc->set_rtcp_mux(true);
+      } else if (HasAttribute(line, kAttributeRtcpReducedSize)) {
+        media_desc->set_rtcp_reduced_size(true);
       } else if (HasAttribute(line, kAttributeSsrcGroup)) {
         if (!ParseSsrcGroupAttribute(line, &ssrc_groups, error)) {
           return false;
