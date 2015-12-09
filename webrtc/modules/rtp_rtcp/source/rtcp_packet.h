@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_RTCP_PACKET_H_
-#define WEBRTC_MODULES_RTP_RTCP_RTCP_PACKET_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 
 #include <map>
 #include <string>
@@ -819,4 +819,4 @@ class RawPacket {
 
 }  // namespace rtcp
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_RTCP_PACKET_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
