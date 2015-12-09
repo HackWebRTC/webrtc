@@ -43,7 +43,7 @@ rtc::AsyncSocket* CreateClientSocket(int family) {
 #endif
 }
 
-}
+}  // namespace
 
 PeerConnectionClient::PeerConnectionClient()
   : callback_(NULL),

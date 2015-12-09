@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PEERCONNECTION_SAMPLES_CLIENT_DEFAULTS_H_
-#define PEERCONNECTION_SAMPLES_CLIENT_DEFAULTS_H_
+#ifndef WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_DEFAULTS_H_
+#define WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_DEFAULTS_H_
 #pragma once
 
 #include <string>
@@ -27,4 +27,4 @@ std::string GetPeerConnectionString();
 std::string GetDefaultServerName();
 std::string GetPeerName();
 
-#endif  // PEERCONNECTION_SAMPLES_CLIENT_DEFAULTS_H_
+#endif  // WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_DEFAULTS_H_

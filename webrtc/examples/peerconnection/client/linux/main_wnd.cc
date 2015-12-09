@@ -116,7 +116,8 @@ gboolean Redraw(gpointer data) {
   wnd->OnRedraw();
   return false;
 }
-}  // end anonymous
+
+}  // namespace
 
 //
 // GtkMainWnd implementation.
@@ -174,7 +175,8 @@ void GtkMainWnd::StopLocalRenderer() {
   local_renderer_.reset();
 }
 
-void GtkMainWnd::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video) {
+void GtkMainWnd::StartRemoteRenderer(
+    webrtc::VideoTrackInterface* remote_video) {
   remote_renderer_.reset(new VideoRenderer(this, remote_video));
 }
 
@@ -488,7 +490,7 @@ void GtkMainWnd::VideoRenderer::RenderFrame(
           static_cast<int>(frame->GetHeight()));
 
   int size = width_ * height_ * 4;
-  // TODO: Convert directly to RGBA
+  // TODO(henrike): Convert directly to RGBA
   frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB,
                             image_.get(),
                             size,

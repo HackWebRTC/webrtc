@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TALK_EXAMPLES_PEERCONNECTION_SERVER_UTILS_H_
-#define TALK_EXAMPLES_PEERCONNECTION_SERVER_UTILS_H_
+#ifndef WEBRTC_EXAMPLES_PEERCONNECTION_SERVER_UTILS_H_
+#define WEBRTC_EXAMPLES_PEERCONNECTION_SERVER_UTILS_H_
 #pragma once
 
 #include <assert.h>
@@ -22,4 +22,4 @@
 std::string int2str(int i);
 std::string size_t2str(size_t i);
 
-#endif  // TALK_EXAMPLES_PEERCONNECTION_SERVER_UTILS_H_
+#endif  // WEBRTC_EXAMPLES_PEERCONNECTION_SERVER_UTILS_H_
