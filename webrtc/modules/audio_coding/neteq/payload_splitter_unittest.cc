@@ -310,10 +310,10 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   // easier to just register the payload types and let the actual implementation
   // do its job.
   DecoderDatabase decoder_database;
-  decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderCNGnb);
-  decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu);
-  decoder_database.RegisterPayload(2, NetEqDecoder::kDecoderAVT);
-  decoder_database.RegisterPayload(3, NetEqDecoder::kDecoderILBC);
+  decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderCNGnb, "cng-nb");
+  decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu, "pcmu");
+  decoder_database.RegisterPayload(2, NetEqDecoder::kDecoderAVT, "avt");
+  decoder_database.RegisterPayload(3, NetEqDecoder::kDecoderILBC, "ilbc");
 
   PayloadSplitter splitter;
   splitter.CheckRedPayloads(&packet_list, decoder_database);
@@ -745,8 +745,8 @@ TEST(FecPayloadSplitter, MixedPayload) {
   PacketList packet_list;
   DecoderDatabase decoder_database;
 
-  decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderOpus);
-  decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu);
+  decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderOpus, "opus");
+  decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu, "pcmu");
 
   Packet* packet = CreatePacket(0, 10, 0xFF, true);
   packet_list.push_back(packet);
@@ -802,7 +802,7 @@ TEST(FecPayloadSplitter, EmbedFecInRed) {
 
   const int kTimestampOffset = 20 * 48;  // 20 ms * 48 kHz.
   uint8_t payload_types[] = {0, 0};
-  decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderOpus);
+  decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderOpus, "opus");
   Packet* packet = CreateRedPayload(2, payload_types, kTimestampOffset, true);
   packet_list.push_back(packet);
 

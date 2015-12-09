@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_ACM2_AUDIO_CODING_MODULE_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_CODING_ACM2_AUDIO_CODING_MODULE_IMPL_H_
 
+#include <string>
 #include <vector>
 
 #include "webrtc/base/buffer.h"
@@ -123,7 +124,8 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   int RegisterExternalReceiveCodec(int rtp_payload_type,
                                    AudioDecoder* external_decoder,
                                    int sample_rate_hz,
-                                   int num_channels) override;
+                                   int num_channels,
+                                   const std::string& name) override;
 
   // Get current received codec.
   int ReceiveCodec(CodecInst* current_codec) const override;

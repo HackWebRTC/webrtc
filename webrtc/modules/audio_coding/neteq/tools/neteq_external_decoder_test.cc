@@ -29,8 +29,9 @@ NetEqExternalDecoderTest::NetEqExternalDecoderTest(NetEqDecoder codec,
 }
 
 void NetEqExternalDecoderTest::Init() {
-  ASSERT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
-                            decoder_, codec_, kPayloadType, sample_rate_hz_));
+  ASSERT_EQ(NetEq::kOK,
+            neteq_->RegisterExternalDecoder(decoder_, codec_, name_,
+                                            kPayloadType, sample_rate_hz_));
 }
 
 void NetEqExternalDecoderTest::InsertPacket(

@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVE_TEST_OLDAPI_H_
 #define WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVE_TEST_OLDAPI_H_
 
+#include <string>
+
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -48,7 +50,8 @@ class AcmReceiveTestOldApi {
   int RegisterExternalReceiveCodec(int rtp_payload_type,
                                    AudioDecoder* external_decoder,
                                    int sample_rate_hz,
-                                   int num_channels);
+                                   int num_channels,
+                                   const std::string& name);
 
   // Runs the test and returns true if successful.
   void Run();

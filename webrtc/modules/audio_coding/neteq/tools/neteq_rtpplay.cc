@@ -189,8 +189,9 @@ std::string CodecName(webrtc::NetEqDecoder codec) {
 
 void RegisterPayloadType(NetEq* neteq,
                          webrtc::NetEqDecoder codec,
+                         const std::string& name,
                          google::int32 flag) {
-  if (neteq->RegisterPayloadType(codec, static_cast<uint8_t>(flag))) {
+  if (neteq->RegisterPayloadType(codec, name, static_cast<uint8_t>(flag))) {
     std::cerr << "Cannot register payload type " << flag << " as "
               << CodecName(codec) << std::endl;
     exit(1);
@@ -200,30 +201,40 @@ void RegisterPayloadType(NetEq* neteq,
 // Registers all decoders in |neteq|.
 void RegisterPayloadTypes(NetEq* neteq) {
   assert(neteq);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCMu, FLAGS_pcmu);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCMa, FLAGS_pcma);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderILBC, FLAGS_ilbc);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderISAC, FLAGS_isac);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderISACswb,
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCMu, "pcmu",
+                      FLAGS_pcmu);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCMa, "pcma",
+                      FLAGS_pcma);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderILBC, "ilbc",
+                      FLAGS_ilbc);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderISAC, "isac",
+                      FLAGS_isac);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderISACswb, "isac-swb",
                       FLAGS_isac_swb);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderOpus, FLAGS_opus);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCM16B,
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderOpus, "opus",
+                      FLAGS_opus);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCM16B, "pcm16-nb",
                       FLAGS_pcm16b);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCM16Bwb,
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCM16Bwb, "pcm16-wb",
                       FLAGS_pcm16b_wb);
   RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCM16Bswb32kHz,
-                      FLAGS_pcm16b_swb32);
+                      "pcm16-swb32", FLAGS_pcm16b_swb32);
   RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderPCM16Bswb48kHz,
-                      FLAGS_pcm16b_swb48);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderG722, FLAGS_g722);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderAVT, FLAGS_avt);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderRED, FLAGS_red);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderCNGnb, FLAGS_cn_nb);
-  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderCNGwb, FLAGS_cn_wb);
+                      "pcm16-swb48", FLAGS_pcm16b_swb48);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderG722, "g722",
+                      FLAGS_g722);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderAVT, "avt",
+                      FLAGS_avt);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderRED, "red",
+                      FLAGS_red);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderCNGnb, "cng-nb",
+                      FLAGS_cn_nb);
+  RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderCNGwb, "cng-wb",
+                      FLAGS_cn_wb);
   RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderCNGswb32kHz,
-                      FLAGS_cn_swb32);
+                      "cng-swb32", FLAGS_cn_swb32);
   RegisterPayloadType(neteq, webrtc::NetEqDecoder::kDecoderCNGswb48kHz,
-                      FLAGS_cn_swb48);
+                      "cng-swb48", FLAGS_cn_swb48);
 }
 
 void PrintCodecMappingEntry(webrtc::NetEqDecoder codec, google::int32 flag) {

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_H_
 
+#include <string>
 #include <vector>
 
 #include "webrtc/base/optional.h"
@@ -471,10 +472,14 @@ class AudioCodingModule {
   //
   virtual int RegisterReceiveCodec(const CodecInst& receive_codec) = 0;
 
+  // Registers an external decoder. The name is only used to provide information
+  // back to the caller about the decoder. Hence, the name is arbitrary, and may
+  // be empty.
   virtual int RegisterExternalReceiveCodec(int rtp_payload_type,
                                            AudioDecoder* external_decoder,
                                            int sample_rate_hz,
-                                           int num_channels) = 0;
+                                           int num_channels,
+                                           const std::string& name) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t UnregisterReceiveCodec()

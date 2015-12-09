@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
 
 #include <map>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/array_view.h"
@@ -117,7 +118,8 @@ class AcmReceiver {
                uint8_t payload_type,
                int channels,
                int sample_rate_hz,
-               AudioDecoder* audio_decoder);
+               AudioDecoder* audio_decoder,
+               const std::string& name);
 
   //
   // Sets a minimum delay for packet buffer. The given delay is maintained,

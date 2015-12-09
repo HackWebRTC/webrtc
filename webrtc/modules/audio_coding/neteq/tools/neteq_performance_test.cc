@@ -34,6 +34,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   const int kSampRateHz = 32000;
   const webrtc::NetEqDecoder kDecoderType =
       webrtc::NetEqDecoder::kDecoderPCM16Bswb32kHz;
+  const std::string kDecoderName = "pcm16-swb32";
   const int kPayloadType = 95;
 
   // Initialize NetEq instance.
@@ -41,7 +42,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   config.sample_rate_hz = kSampRateHz;
   NetEq* neteq = NetEq::Create(config);
   // Register decoder in |neteq|.
-  if (neteq->RegisterPayloadType(kDecoderType, kPayloadType) != 0)
+  if (neteq->RegisterPayloadType(kDecoderType, kDecoderName, kPayloadType) != 0)
     return -1;
 
   // Set up AudioLoop object.

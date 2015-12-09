@@ -512,7 +512,7 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
     if (IsCodecRED(db[i]) || IsCodecCN(db[i])) {
       if (receiver_.AddCodec(static_cast<int>(i),
                              static_cast<uint8_t>(db[i].pltype), 1,
-                             db[i].plfreq, nullptr) < 0) {
+                             db[i].plfreq, nullptr, db[i].plname) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                      "Cannot register master codec.");
         return -1;
@@ -566,15 +566,16 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   // Get |decoder| associated with |codec|. |decoder| is NULL if |codec| does
   // not own its decoder.
   return receiver_.AddCodec(*codec_index, codec.pltype, codec.channels,
-                            codec.plfreq,
-                            codec_manager_.GetAudioDecoder(codec));
+                            codec.plfreq, codec_manager_.GetAudioDecoder(codec),
+                            codec.plname);
 }
 
 int AudioCodingModuleImpl::RegisterExternalReceiveCodec(
     int rtp_payload_type,
     AudioDecoder* external_decoder,
     int sample_rate_hz,
-    int num_channels) {
+    int num_channels,
+    const std::string& name) {
   CriticalSectionScoped lock(acm_crit_sect_.get());
   RTC_DCHECK(receiver_initialized_);
   if (num_channels > 2 || num_channels < 0) {
@@ -590,7 +591,7 @@ int AudioCodingModuleImpl::RegisterExternalReceiveCodec(
   }
 
   return receiver_.AddCodec(-1 /* external */, rtp_payload_type, num_channels,
-                            sample_rate_hz, external_decoder);
+                            sample_rate_hz, external_decoder, name);
 }
 
 // Get current received codec.

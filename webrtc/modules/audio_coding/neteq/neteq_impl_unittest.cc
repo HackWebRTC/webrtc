@@ -240,9 +240,10 @@ TEST_F(NetEqImplTest, RegisterPayloadType) {
   CreateInstance();
   uint8_t rtp_payload_type = 0;
   NetEqDecoder codec_type = NetEqDecoder::kDecoderPCMu;
+  const std::string kCodecName = "Robert\'); DROP TABLE Students;";
   EXPECT_CALL(*mock_decoder_database_,
-              RegisterPayload(rtp_payload_type, codec_type));
-  neteq_->RegisterPayloadType(codec_type, rtp_payload_type);
+              RegisterPayload(rtp_payload_type, codec_type, kCodecName));
+  neteq_->RegisterPayloadType(codec_type, kCodecName, rtp_payload_type);
 }
 
 TEST_F(NetEqImplTest, RemovePayloadType) {
@@ -383,7 +384,7 @@ TEST_F(NetEqImplTest, InsertPacketsUntilBufferIsFull) {
   rtp_header.header.ssrc = 0x87654321;
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterPayloadType(
-                            NetEqDecoder::kDecoderPCM16B, kPayloadType));
+                            NetEqDecoder::kDecoderPCM16B, "", kPayloadType));
 
   // Insert packets. The buffer should not flush.
   for (size_t i = 1; i <= config_.max_packets_in_buffer; ++i) {
@@ -455,7 +456,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &decoder_, NetEqDecoder::kDecoderPCM16B,
-                            kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType, kSampleRateHz));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
@@ -534,7 +535,7 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
                       Return(kPayloadLengthSamples)));
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType, kSampleRateHz));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
@@ -633,7 +634,7 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
 
   // Register the payload type.
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterPayloadType(
-                            NetEqDecoder::kDecoderPCM16B, kPayloadType));
+                            NetEqDecoder::kDecoderPCM16B, "", kPayloadType));
 
   // Insert 10 packets.
   for (size_t i = 0; i < 10; ++i) {
@@ -717,7 +718,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderOpus,
-                            kPayloadType, kSampleRateKhz * 1000));
+                            "dummy name", kPayloadType, kSampleRateKhz * 1000));
 
   // Insert one packet (decoder will return speech).
   EXPECT_EQ(NetEq::kOK,
@@ -854,7 +855,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &decoder_, NetEqDecoder::kDecoderPCM16B,
-                            kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType, kSampleRateHz));
 
   // Insert one packet.
   payload[0] = kFirstPayloadValue;  // This will make Decode() fail.
@@ -912,7 +913,7 @@ TEST_F(NetEqImplTest, FloodBufferAndGetNetworkStats) {
   rtp_header.header.ssrc = 0x87654321;
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterPayloadType(
-                            NetEqDecoder::kDecoderPCM16B, kPayloadType));
+                            NetEqDecoder::kDecoderPCM16B, "", kPayloadType));
 
   // Insert packets until the buffer flushes.
   for (size_t i = 0; i <= config_.max_packets_in_buffer; ++i) {
@@ -968,7 +969,7 @@ TEST_F(NetEqImplTest, DecodedPayloadTooShort) {
                 Return(kPayloadLengthSamples - 5)));
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType, kSampleRateHz));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
@@ -1063,7 +1064,7 @@ TEST_F(NetEqImplTest, DecodingError) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType, kSampleRateHz));
 
   // Insert packets.
   for (int i = 0; i < 6; ++i) {
@@ -1184,7 +1185,7 @@ TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType, kSampleRateHz));
 
   // Insert 2 packets. This will make netEq into codec internal CNG mode.
   for (int i = 0; i < 2; ++i) {

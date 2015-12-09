@@ -127,11 +127,10 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
       default:
         FAIL() << "We shouldn't get here.";
     }
+    ASSERT_EQ(NetEq::kOK, neteq_mono_->RegisterPayloadType(mono_decoder, "mono",
+                                                           kPayloadTypeMono));
     ASSERT_EQ(NetEq::kOK,
-              neteq_mono_->RegisterPayloadType(mono_decoder,
-                                               kPayloadTypeMono));
-    ASSERT_EQ(NetEq::kOK,
-              neteq_->RegisterPayloadType(multi_decoder,
+              neteq_->RegisterPayloadType(multi_decoder, "multi-channel",
                                           kPayloadTypeMulti));
   }
 

@@ -303,7 +303,8 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               uint8_t payload_type,
                               int channels,
                               int sample_rate_hz,
-                              AudioDecoder* audio_decoder) {
+                              AudioDecoder* audio_decoder,
+                              const std::string& name) {
   const auto neteq_decoder = [acm_codec_id, channels]() -> NetEqDecoder {
     if (acm_codec_id == -1)
       return NetEqDecoder::kDecoderArbitrary;  // External decoder.
@@ -342,10 +343,10 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
 
   int ret_val;
   if (!audio_decoder) {
-    ret_val = neteq_->RegisterPayloadType(neteq_decoder, payload_type);
+    ret_val = neteq_->RegisterPayloadType(neteq_decoder, name, payload_type);
   } else {
-    ret_val = neteq_->RegisterExternalDecoder(audio_decoder, neteq_decoder,
-                                              payload_type, sample_rate_hz);
+    ret_val = neteq_->RegisterExternalDecoder(
+        audio_decoder, neteq_decoder, name, payload_type, sample_rate_hz);
   }
   if (ret_val != NetEq::kOK) {
     LOG(LERROR) << "AcmReceiver::AddCodec " << acm_codec_id

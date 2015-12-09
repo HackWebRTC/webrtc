@@ -144,9 +144,10 @@ int AcmReceiveTestOldApi::RegisterExternalReceiveCodec(
     int rtp_payload_type,
     AudioDecoder* external_decoder,
     int sample_rate_hz,
-    int num_channels) {
+    int num_channels,
+    const std::string& name) {
   return acm_->RegisterExternalReceiveCodec(rtp_payload_type, external_decoder,
-                                            sample_rate_hz, num_channels);
+                                            sample_rate_hz, num_channels, name);
 }
 
 void AcmReceiveTestOldApi::Run() {

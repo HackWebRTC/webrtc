@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <utility>  // pair
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 
@@ -38,17 +39,17 @@ void DecoderDatabase::Reset() {
 }
 
 int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
-                                     NetEqDecoder codec_type) {
+                                     NetEqDecoder codec_type,
+                                     const std::string& name) {
   if (rtp_payload_type > 0x7F) {
     return kInvalidRtpPayloadType;
   }
   if (!CodecSupported(codec_type)) {
     return kCodecNotSupported;
   }
-  int fs_hz = CodecSampleRateHz(codec_type);
-  std::pair<DecoderMap::iterator, bool> ret;
-  DecoderInfo info(codec_type, fs_hz, NULL, false);
-  ret = decoders_.insert(std::make_pair(rtp_payload_type, info));
+  const int fs_hz = CodecSampleRateHz(codec_type);
+  DecoderInfo info(codec_type, name, fs_hz, NULL, false);
+  auto ret = decoders_.insert(std::make_pair(rtp_payload_type, info));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.
     return kDecoderExists;
@@ -58,6 +59,7 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
 
 int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
                                     NetEqDecoder codec_type,
+                                    const std::string& codec_name,
                                     int fs_hz,
                                     AudioDecoder* decoder) {
   if (rtp_payload_type > 0x7F) {
@@ -73,7 +75,7 @@ int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
     return kInvalidPointer;
   }
   std::pair<DecoderMap::iterator, bool> ret;
-  DecoderInfo info(codec_type, fs_hz, decoder, true);
+  DecoderInfo info(codec_type, codec_name, fs_hz, decoder, true);
   ret = decoders_.insert(std::make_pair(rtp_payload_type, info));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.

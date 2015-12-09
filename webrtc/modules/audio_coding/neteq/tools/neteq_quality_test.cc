@@ -292,7 +292,8 @@ bool GilbertElliotLoss::Lost() {
 }
 
 void NetEqQualityTest::SetUp() {
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(decoder_type_, kPayloadType));
+  ASSERT_EQ(0,
+            neteq_->RegisterPayloadType(decoder_type_, "noname", kPayloadType));
   rtp_generator_->set_drift_factor(drift_factor_);
 
   int units = block_duration_ms_ / kPacketLossTimeUnitMs;

@@ -172,12 +172,13 @@ int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
 }
 
 int NetEqImpl::RegisterPayloadType(NetEqDecoder codec,
+                                   const std::string& name,
                                    uint8_t rtp_payload_type) {
   CriticalSectionScoped lock(crit_sect_.get());
   LOG(LS_VERBOSE) << "RegisterPayloadType "
                   << static_cast<int>(rtp_payload_type) << " "
                   << static_cast<int>(codec);
-  int ret = decoder_database_->RegisterPayload(rtp_payload_type, codec);
+  int ret = decoder_database_->RegisterPayload(rtp_payload_type, codec, name);
   if (ret != DecoderDatabase::kOK) {
     switch (ret) {
       case DecoderDatabase::kInvalidRtpPayloadType:
@@ -199,6 +200,7 @@ int NetEqImpl::RegisterPayloadType(NetEqDecoder codec,
 
 int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
                                        NetEqDecoder codec,
+                                       const std::string& codec_name,
                                        uint8_t rtp_payload_type,
                                        int sample_rate_hz) {
   CriticalSectionScoped lock(crit_sect_.get());
@@ -210,8 +212,8 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
     assert(false);
     return kFail;
   }
-  int ret = decoder_database_->InsertExternal(rtp_payload_type, codec,
-                                              sample_rate_hz, decoder);
+  int ret = decoder_database_->InsertExternal(
+      rtp_payload_type, codec, codec_name, sample_rate_hz, decoder);
   if (ret != DecoderDatabase::kOK) {
     switch (ret) {
       case DecoderDatabase::kInvalidRtpPayloadType:

@@ -866,6 +866,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
     AudioDecoder* external_decoder;
     int sample_rate_hz;
     int num_channels;
+    std::string name;
   };
 
   void Run(int output_freq_hz,
@@ -901,7 +902,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
     for (const auto& ed : external_decoders) {
       ASSERT_EQ(0, test.RegisterExternalReceiveCodec(
                        ed.rtp_payload_type, ed.external_decoder,
-                       ed.sample_rate_hz, ed.num_channels));
+                       ed.sample_rate_hz, ed.num_channels, ed.name));
     }
     test.Run();
 
@@ -1026,6 +1027,7 @@ TEST_F(AcmReceiverBitExactnessOldApi,
   ed.external_decoder = &mock_decoder;
   ed.sample_rate_hz = 8000;
   ed.num_channels = 1;
+  ed.name = "MockPCMU";
   std::vector<ExternalDecoder> external_decoders;
   external_decoders.push_back(ed);
 
