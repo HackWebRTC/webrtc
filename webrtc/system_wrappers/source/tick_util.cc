@@ -14,9 +14,6 @@
 
 namespace webrtc {
 
-bool TickTime::use_fake_clock_ = false;
-int64_t TickTime::fake_ticks_ = 0;
-
 int64_t TickTime::MillisecondTimestamp() {
   return TicksToMilliseconds(TickTime::Now().Ticks());
 }
@@ -80,16 +77,6 @@ int64_t TickTime::TicksToMicroseconds(const int64_t ticks) {
 #else
   return ticks;
 #endif
-}
-
-void TickTime::UseFakeClock(int64_t start_millisecond) {
-  use_fake_clock_ = true;
-  fake_ticks_ = MillisecondsToTicks(start_millisecond);
-}
-
-void TickTime::AdvanceFakeClock(int64_t milliseconds) {
-  assert(use_fake_clock_);
-  fake_ticks_ += MillisecondsToTicks(milliseconds);
 }
 
 // Gets the native system tick count. The actual unit, resolution, and epoch

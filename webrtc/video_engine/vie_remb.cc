@@ -27,9 +27,10 @@ const int kRembSendIntervalMs = 200;
 // % threshold for if we should send a new REMB asap.
 const unsigned int kSendThresholdPercent = 97;
 
-VieRemb::VieRemb()
-    : list_crit_(CriticalSectionWrapper::CreateCriticalSection()),
-      last_remb_time_(TickTime::MillisecondTimestamp()),
+VieRemb::VieRemb(Clock* clock)
+    : clock_(clock),
+      list_crit_(CriticalSectionWrapper::CreateCriticalSection()),
+      last_remb_time_(clock_->TimeInMilliseconds()),
       last_send_bitrate_(0),
       bitrate_(0) {}
 
@@ -105,13 +106,13 @@ void VieRemb::OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
     if (new_remb_bitrate < kSendThresholdPercent * last_send_bitrate_ / 100) {
       // The new bitrate estimate is less than kSendThresholdPercent % of the
       // last report. Send a REMB asap.
-      last_remb_time_ = TickTime::MillisecondTimestamp() - kRembSendIntervalMs;
+      last_remb_time_ = clock_->TimeInMilliseconds() - kRembSendIntervalMs;
     }
   }
   bitrate_ = bitrate;
 
   // Calculate total receive bitrate estimate.
-  int64_t now = TickTime::MillisecondTimestamp();
+  int64_t now = clock_->TimeInMilliseconds();
 
   if (now - last_remb_time_ < kRembSendIntervalMs) {
     list_crit_->Leave();

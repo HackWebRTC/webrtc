@@ -21,6 +21,7 @@
 
 namespace webrtc {
 
+class Clock;
 class CriticalSectionWrapper;
 class NetworkPacket;
 class PacketReceiver;
@@ -33,26 +34,20 @@ class PacketReceiver;
 class FakeNetworkPipe {
  public:
   struct Config {
-    Config()
-        : queue_length_packets(0),
-          queue_delay_ms(0),
-          delay_standard_deviation_ms(0),
-          link_capacity_kbps(0),
-          loss_percent(0) {
-    }
+    Config() {}
     // Queue length in number of packets.
-    size_t queue_length_packets;
+    size_t queue_length_packets = 0;
     // Delay in addition to capacity induced delay.
-    int queue_delay_ms;
+    int queue_delay_ms = 0;
     // Standard deviation of the extra delay.
-    int delay_standard_deviation_ms;
+    int delay_standard_deviation_ms = 0;
     // Link capacity in kbps.
-    int link_capacity_kbps;
+    int link_capacity_kbps = 0;
     // Random packet loss.
-    int loss_percent;
+    int loss_percent = 0;
   };
 
-  explicit FakeNetworkPipe(const FakeNetworkPipe::Config& config);
+  FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
   ~FakeNetworkPipe();
 
   // Must not be called in parallel with SendPacket or Process.
@@ -76,6 +71,7 @@ class FakeNetworkPipe {
   size_t sent_packets() { return sent_packets_; }
 
  private:
+  Clock* const clock_;
   mutable rtc::CriticalSection lock_;
   PacketReceiver* packet_receiver_;
   std::queue<NetworkPacket*> capacity_link_;

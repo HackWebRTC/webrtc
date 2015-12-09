@@ -147,7 +147,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 CongestionController::CongestionController(ProcessThread* process_thread,
                                            CallStats* call_stats,
                                            BitrateObserver* bitrate_observer)
-    : remb_(new VieRemb()),
+    : remb_(new VieRemb(Clock::GetRealTimeClock())),
       packet_router_(new PacketRouter()),
       pacer_(new PacedSender(Clock::GetRealTimeClock(),
                              packet_router_.get(),

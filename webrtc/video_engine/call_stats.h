@@ -16,6 +16,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -28,7 +29,7 @@ class CallStats : public Module {
  public:
   friend class RtcpObserver;
 
-  CallStats();
+  explicit CallStats(Clock* clock);
   ~CallStats();
 
   // Implements Module, to use the process thread.
@@ -57,6 +58,7 @@ class CallStats : public Module {
   int64_t avg_rtt_ms() const;
 
  private:
+  Clock* const clock_;
   // Protecting all members.
   rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   // Observer receiving statistics updates.

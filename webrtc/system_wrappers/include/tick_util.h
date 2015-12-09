@@ -65,18 +65,8 @@ class TickTime {
   // Returns a TickInterval that is the difference in ticks beween rhs and lhs.
   friend TickInterval operator-(const TickTime& lhs, const TickTime& rhs);
 
-  // Call to engage the fake clock. This is useful for tests since relying on
-  // a real clock often makes the test flaky.
-  static void UseFakeClock(int64_t start_millisecond);
-
-  // Advance the fake clock. Must be called after UseFakeClock.
-  static void AdvanceFakeClock(int64_t milliseconds);
-
  private:
   static int64_t QueryOsForTicks();
-
-  static bool use_fake_clock_;
-  static int64_t fake_ticks_;
 
   int64_t ticks_;
 };
@@ -166,10 +156,7 @@ inline TickTime::TickTime(int64_t ticks)
 }
 
 inline TickTime TickTime::Now() {
-  if (use_fake_clock_)
-    return TickTime(fake_ticks_);
-  else
-    return TickTime(QueryOsForTicks());
+  return TickTime(QueryOsForTicks());
 }
 
 inline int64_t TickTime::Ticks() const {

@@ -27,7 +27,7 @@ DirectTransport::DirectTransport(const FakeNetworkPipe::Config& config,
       thread_(NetworkProcess, this, "NetworkProcess"),
       clock_(Clock::GetRealTimeClock()),
       shutting_down_(false),
-      fake_network_(config) {
+      fake_network_(clock_, config) {
   thread_.Start();
 }
 

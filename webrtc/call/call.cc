@@ -117,7 +117,7 @@ class Call : public webrtc::Call, public PacketReceiver,
   void UpdateSendHistograms() EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
   void UpdateReceiveHistograms();
 
-  const Clock* const clock_;
+  Clock* const clock_;
 
   const int num_cpu_cores_;
   const rtc::scoped_ptr<ProcessThread> module_process_thread_;
@@ -182,7 +182,7 @@ Call::Call(const Call::Config& config)
     : clock_(Clock::GetRealTimeClock()),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
-      call_stats_(new CallStats()),
+      call_stats_(new CallStats(clock_)),
       bitrate_allocator_(new BitrateAllocator()),
       config_(config),
       network_enabled_(true),

@@ -30,12 +30,15 @@ using ::testing::Return;
 namespace webrtc {
 
 class ViERembTest : public ::testing::Test {
+ public:
+  ViERembTest() : fake_clock_(12345) {}
+
  protected:
   virtual void SetUp() {
-    TickTime::UseFakeClock(12345);
     process_thread_.reset(new NiceMock<MockProcessThread>);
-    vie_remb_.reset(new VieRemb());
+    vie_remb_.reset(new VieRemb(&fake_clock_));
   }
+  SimulatedClock fake_clock_;
   rtc::scoped_ptr<MockProcessThread> process_thread_;
   rtc::scoped_ptr<VieRemb> vie_remb_;
 };
@@ -51,7 +54,7 @@ TEST_F(ViERembTest, OneModuleTestForSendingRemb) {
 
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
 
-  TickTime::AdvanceFakeClock(1000);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
   EXPECT_CALL(rtp, SetREMBData(bitrate_estimate, ssrcs))
       .Times(1);
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
@@ -76,7 +79,7 @@ TEST_F(ViERembTest, LowerEstimateToSendRemb) {
 
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
   // Call OnReceiveBitrateChanged twice to get a first estimate.
-  TickTime::AdvanceFakeClock(1000);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
   EXPECT_CALL(rtp, SetREMBData(bitrate_estimate, ssrcs))
         .Times(1);
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
@@ -105,7 +108,7 @@ TEST_F(ViERembTest, VerifyIncreasingAndDecreasing) {
   // Call OnReceiveBitrateChanged twice to get a first estimate.
   EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate[0], ssrcs))
         .Times(1);
-  TickTime::AdvanceFakeClock(1000);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate[0]);
 
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate[1] + 100);
@@ -133,7 +136,7 @@ TEST_F(ViERembTest, NoRembForIncreasedBitrate) {
 
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
   // Call OnReceiveBitrateChanged twice to get a first estimate.
-  TickTime::AdvanceFakeClock(1000);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
   EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate, ssrcs))
       .Times(1);
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
@@ -167,7 +170,7 @@ TEST_F(ViERembTest, ChangeSendRtpModule) {
 
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
   // Call OnReceiveBitrateChanged twice to get a first estimate.
-  TickTime::AdvanceFakeClock(1000);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
   EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate, ssrcs))
       .Times(1);
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
@@ -203,7 +206,7 @@ TEST_F(ViERembTest, OnlyOneRembForDoubleProcess) {
   vie_remb_->AddRembSender(&rtp);
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
   // Call OnReceiveBitrateChanged twice to get a first estimate.
-  TickTime::AdvanceFakeClock(1000);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
   EXPECT_CALL(rtp, SetREMBData(_, _))
         .Times(1);
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
@@ -235,7 +238,7 @@ TEST_F(ViERembTest, NoSendingRtpModule) {
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);
 
   // Call OnReceiveBitrateChanged twice to get a first estimate.
-  TickTime::AdvanceFakeClock(1000);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
   EXPECT_CALL(rtp, SetREMBData(_, _))
       .Times(1);
   vie_remb_->OnReceiveBitrateChanged(ssrcs, bitrate_estimate);

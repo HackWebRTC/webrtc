@@ -52,6 +52,7 @@ const uint32_t kTelephoneEventDuration = 6789;
 struct ConfigHelper {
   ConfigHelper()
       : stream_config_(nullptr),
+        call_stats_(Clock::GetRealTimeClock()),
         process_thread_(ProcessThread::Create("AudioTestThread")),
         congestion_controller_(process_thread_.get(),
                                &call_stats_,

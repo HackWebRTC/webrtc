@@ -28,7 +28,7 @@ class RtpRtcp;
 
 class VieRemb : public RemoteBitrateObserver {
  public:
-  VieRemb();
+  explicit VieRemb(Clock* clock);
   ~VieRemb();
 
   // Called to add a receive channel to include in the REMB packet.
@@ -57,6 +57,7 @@ class VieRemb : public RemoteBitrateObserver {
  private:
   typedef std::list<RtpRtcp*> RtpModules;
 
+  Clock* const clock_;
   rtc::scoped_ptr<CriticalSectionWrapper> list_crit_;
 
   // The last time a REMB was sent.

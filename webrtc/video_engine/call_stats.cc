@@ -89,26 +89,25 @@ class RtcpObserver : public RtcpRttStats {
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcpObserver);
 };
 
-CallStats::CallStats()
-    : crit_(CriticalSectionWrapper::CreateCriticalSection()),
+CallStats::CallStats(Clock* clock)
+    : clock_(clock),
+      crit_(CriticalSectionWrapper::CreateCriticalSection()),
       rtcp_rtt_stats_(new RtcpObserver(this)),
-      last_process_time_(TickTime::MillisecondTimestamp()),
+      last_process_time_(clock_->TimeInMilliseconds()),
       max_rtt_ms_(0),
-      avg_rtt_ms_(0) {
-}
+      avg_rtt_ms_(0) {}
 
 CallStats::~CallStats() {
   assert(observers_.empty());
 }
 
 int64_t CallStats::TimeUntilNextProcess() {
-  return last_process_time_ + kUpdateIntervalMs -
-      TickTime::MillisecondTimestamp();
+  return last_process_time_ + kUpdateIntervalMs - clock_->TimeInMilliseconds();
 }
 
 int32_t CallStats::Process() {
   CriticalSectionScoped cs(crit_.get());
-  int64_t now = TickTime::MillisecondTimestamp();
+  int64_t now = clock_->TimeInMilliseconds();
   if (now < last_process_time_ + kUpdateIntervalMs)
     return 0;
 
@@ -161,7 +160,7 @@ void CallStats::DeregisterStatsObserver(CallStatsObserver* observer) {
 
 void CallStats::OnRttUpdate(int64_t rtt) {
   CriticalSectionScoped cs(crit_.get());
-  reports_.push_back(RttTime(rtt, TickTime::MillisecondTimestamp()));
+  reports_.push_back(RttTime(rtt, clock_->TimeInMilliseconds()));
 }
 
 }  // namespace webrtc
