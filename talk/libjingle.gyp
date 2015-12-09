@@ -762,6 +762,8 @@
         'app/webrtc/proxy.h',
         'app/webrtc/remoteaudiosource.cc',
         'app/webrtc/remoteaudiosource.h',
+        'app/webrtc/remoteaudiotrack.cc',
+        'app/webrtc/remoteaudiotrack.h',
         'app/webrtc/remotevideocapturer.cc',
         'app/webrtc/remotevideocapturer.h',
         'app/webrtc/rtpreceiver.cc',
