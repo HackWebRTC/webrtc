@@ -489,7 +489,8 @@ static int PartitionDelaySSE2(const AecCore* aec) {
 static void SmoothedPSD(AecCore* aec,
                         float efw[2][PART_LEN1],
                         float dfw[2][PART_LEN1],
-                        float xfw[2][PART_LEN1]) {
+                        float xfw[2][PART_LEN1],
+                        int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
   const float* ptrGCoh = aec->extended_filter_enabled
       ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
@@ -608,15 +609,12 @@ static void SmoothedPSD(AecCore* aec,
     seSum += aec->se[i];
   }
 
-  // Divergent filter safeguard.
+  // Divergent filter safeguard update.
   aec->divergeState = (aec->divergeState ? 1.05f : 1.0f) * seSum > sdSum;
 
-  if (aec->divergeState)
-    memcpy(efw, dfw, sizeof(efw[0][0]) * 2 * PART_LEN1);
-
-  // Reset if error is significantly larger than nearend (13 dB).
-  if (!aec->extended_filter_enabled && seSum > (19.95f * sdSum))
-    memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
+  // Signal extreme filter divergence if the error is significantly larger
+  // than the nearend (13 dB).
+  *extreme_filter_divergence = (seSum > (19.95f * sdSum));
 }
 
 // Window time domain data to be used by the fft.
@@ -666,10 +664,11 @@ static void SubbandCoherenceSSE2(AecCore* aec,
                                  float xfw[2][PART_LEN1],
                                  float* fft,
                                  float* cohde,
-                                 float* cohxd) {
+                                 float* cohxd,
+                                 int* extreme_filter_divergence) {
   int i;
 
-  SmoothedPSD(aec, efw, dfw, xfw);
+  SmoothedPSD(aec, efw, dfw, xfw, extreme_filter_divergence);
 
   {
     const __m128 vec_1eminus10 =  _mm_set1_ps(1e-10f);

@@ -152,6 +152,10 @@ struct AecCore {
   // Runtime selection of number of filter partitions.
   int num_partitions;
 
+  // Flag that extreme filter divergence has been detected by the Echo
+  // Suppressor.
+  int extreme_filter_divergence;
+
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   // Sequence number of this AEC instance, so that different instances can
   // choose different dump file names.
@@ -209,7 +213,8 @@ typedef void (*WebRtcAecSubBandCoherence)(AecCore* aec,
                                           float xfw[2][PART_LEN1],
                                           float* fft,
                                           float* cohde,
-                                          float* cohxd);
+                                          float* cohxd,
+                                          int* extreme_filter_divergence);
 extern WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
 
 typedef int (*WebRtcAecPartitionDelay)(const AecCore* aec);

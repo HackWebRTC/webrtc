@@ -327,12 +327,13 @@ const float WebRtcAec_kMinFarendPSD = 15;
 //  - sde : cross-PSD of near-end and residual echo
 //  - sxd : cross-PSD of near-end and far-end
 //
-// In addition to updating the PSDs, also the filter diverge state is determined
-// upon actions are taken.
+// In addition to updating the PSDs, also the filter diverge state is
+// determined.
 static void SmoothedPSD(AecCore* aec,
                         float efw[2][PART_LEN1],
                         float dfw[2][PART_LEN1],
-                        float xfw[2][PART_LEN1]) {
+                        float xfw[2][PART_LEN1],
+                        int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
   const float* ptrGCoh = aec->extended_filter_enabled
       ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
@@ -373,15 +374,12 @@ static void SmoothedPSD(AecCore* aec,
     seSum += aec->se[i];
   }
 
-  // Divergent filter safeguard.
+  // Divergent filter safeguard update.
   aec->divergeState = (aec->divergeState ? 1.05f : 1.0f) * seSum > sdSum;
 
-  if (aec->divergeState)
-    memcpy(efw, dfw, sizeof(efw[0][0]) * 2 * PART_LEN1);
-
-  // Reset if error is significantly larger than nearend (13 dB).
-  if (!aec->extended_filter_enabled && seSum > (19.95f * sdSum))
-    memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
+  // Signal extreme filter divergence if the error is significantly larger
+  // than the nearend (13 dB).
+  *extreme_filter_divergence = (seSum > (19.95f * sdSum));
 }
 
 // Window time domain data to be used by the fft.
@@ -414,10 +412,11 @@ static void SubbandCoherence(AecCore* aec,
                              float xfw[2][PART_LEN1],
                              float* fft,
                              float* cohde,
-                             float* cohxd) {
+                             float* cohxd,
+                             int* extreme_filter_divergence) {
   int i;
 
-  SmoothedPSD(aec, efw, dfw, xfw);
+  SmoothedPSD(aec, efw, dfw, xfw, extreme_filter_divergence);
 
   // Subband coherence
   for (i = 0; i < PART_LEN1; i++) {
@@ -945,6 +944,14 @@ static void EchoSubtraction(
   int i;
   memset(s_fft, 0, sizeof(s_fft));
 
+  // Conditionally reset the echo subtraction filter if the filter has diverged
+  // significantly.
+  if (!aec->extended_filter_enabled &&
+      aec->extreme_filter_divergence) {
+    memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
+    aec->extreme_filter_divergence = 0;
+  }
+
   // Produce echo estimate s_fft.
   WebRtcAec_FilterFar(num_partitions,
                       x_fft_buf_block_pos,
@@ -1072,7 +1079,14 @@ static void EchoSuppression(AecCore* aec,
          aec->xfwBuf + aec->delayIdx * PART_LEN1,
          sizeof(xfw[0][0]) * 2 * PART_LEN1);
 
-  WebRtcAec_SubbandCoherence(aec, efw, dfw, xfw, fft, cohde, cohxd);
+  WebRtcAec_SubbandCoherence(aec, efw, dfw, xfw, fft, cohde, cohxd,
+                             &aec->extreme_filter_divergence);
+
+  // Select the microphone signal as output if the filter is deemed to have
+  // diverged.
+  if (aec->divergeState) {
+    memcpy(efw, dfw, sizeof(efw[0][0]) * 2 * PART_LEN1);
+  }
 
   hNlXdAvg = 0;
   for (i = minPrefBand; i < prefBandSize + minPrefBand; i++) {
@@ -1739,6 +1753,8 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
 
   aec->seed = 777;
   aec->delayEstCtr = 0;
+
+  aec->extreme_filter_divergence = 0;
 
   // Metrics disabled by default
   aec->metricsMode = 0;
