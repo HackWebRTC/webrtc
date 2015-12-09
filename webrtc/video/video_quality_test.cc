@@ -13,6 +13,7 @@
 #include <deque>
 #include <map>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -97,7 +98,6 @@ class VideoAnalyzer : public PacketReceiver,
       thread->Start();
       comparison_thread_pool_.push_back(thread);
     }
-
   }
 
   ~VideoAnalyzer() {
@@ -1017,14 +1017,16 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
       test::VideoRenderer::Create("Local Preview", params_.common.width,
                                   params_.common.height));
   size_t stream_id = params_.ss.selected_stream;
-  char title[32];
-  if (params_.ss.streams.size() == 1) {
-    sprintf(title, "Loopback Video");
-  } else {
-    sprintf(title, "Loopback Video - Stream #%" PRIuS, stream_id);
+  std::string title = "Loopback Video";
+  if (params_.ss.streams.size() > 1) {
+    std::ostringstream s;
+    s << stream_id;
+    title += " - Stream #" + s.str();
   }
+
   rtc::scoped_ptr<test::VideoRenderer> loopback_video(
-      test::VideoRenderer::Create(title, params_.ss.streams[stream_id].width,
+      test::VideoRenderer::Create(title.c_str(),
+                                  params_.ss.streams[stream_id].width,
                                   params_.ss.streams[stream_id].height));
 
   // TODO(ivica): Remove bitrate_config and use the default Call::Config(), to

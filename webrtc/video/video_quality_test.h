@@ -11,6 +11,7 @@
 #define WEBRTC_VIDEO_VIDEO_QUALITY_TEST_H_
 
 #include <string>
+#include <vector>
 
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/frame_generator.h"

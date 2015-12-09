@@ -322,9 +322,9 @@ Call::Config RampUpDownUpTester::GetReceiverCallConfig() {
 
 std::string RampUpDownUpTester::GetModifierString() const {
   std::string str("_");
-  char temp_str[5];
-  sprintf(temp_str, "%i", static_cast<int>(num_streams_));
-  str += std::string(temp_str);
+  std::ostringstream s;
+  s << num_streams_;
+  str += s.str();
   str += "stream";
   str += (num_streams_ > 1 ? "s" : "");
   str += "_";

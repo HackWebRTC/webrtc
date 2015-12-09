@@ -1122,7 +1122,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
     }
 
     void WaitOutputFrame() {
-      const unsigned long kWaitFrameTimeoutMs = 3000;
+      const uint32_t kWaitFrameTimeoutMs = 3000;
       EXPECT_EQ(kEventSignaled, output_frame_event_->Wait(kWaitFrameTimeoutMs))
           << "Timeout while waiting for output frames.";
     }
@@ -1423,7 +1423,6 @@ static const size_t kVideoCodecConfigObserverNumberOfTemporalLayers = 4;
 template <typename T>
 class VideoCodecConfigObserver : public test::SendTest,
                                  public test::FakeEncoder {
-
  public:
   VideoCodecConfigObserver(VideoCodecType video_codec_type,
                            const char* codec_name)

@@ -400,8 +400,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     RTC_DCHECK_GE(streams[i].max_bitrate_bps, streams[i].target_bitrate_bps);
     RTC_DCHECK_GE(streams[i].max_qp, 0);
 
-    sim_stream->width = static_cast<unsigned short>(streams[i].width);
-    sim_stream->height = static_cast<unsigned short>(streams[i].height);
+    sim_stream->width = static_cast<uint16_t>(streams[i].width);
+    sim_stream->height = static_cast<uint16_t>(streams[i].height);
     sim_stream->minBitrate = streams[i].min_bitrate_bps / 1000;
     sim_stream->targetBitrate = streams[i].target_bitrate_bps / 1000;
     sim_stream->maxBitrate = streams[i].max_bitrate_bps / 1000;
@@ -410,12 +410,12 @@ bool VideoSendStream::ReconfigureVideoEncoder(
         streams[i].temporal_layer_thresholds_bps.size() + 1);
 
     video_codec.width = std::max(video_codec.width,
-                                 static_cast<unsigned short>(streams[i].width));
+                                 static_cast<uint16_t>(streams[i].width));
     video_codec.height = std::max(
-        video_codec.height, static_cast<unsigned short>(streams[i].height));
+        video_codec.height, static_cast<uint16_t>(streams[i].height));
     video_codec.minBitrate =
-        std::min(video_codec.minBitrate,
-                 static_cast<unsigned int>(streams[i].min_bitrate_bps / 1000));
+        std::min(static_cast<uint16_t>(video_codec.minBitrate),
+                 static_cast<uint16_t>(streams[i].min_bitrate_bps / 1000));
     video_codec.maxBitrate += streams[i].max_bitrate_bps / 1000;
     video_codec.qpMax = std::max(video_codec.qpMax,
                                  static_cast<unsigned int>(streams[i].max_qp));
@@ -500,7 +500,7 @@ std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {
   std::map<uint32_t, RtpState> rtp_states;
   for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
     uint32_t ssrc = config_.rtp.ssrcs[i];
-    rtp_states[ssrc] = vie_channel_->GetRtpStateForSsrc( ssrc);
+    rtp_states[ssrc] = vie_channel_->GetRtpStateForSsrc(ssrc);
   }
 
   for (size_t i = 0; i < config_.rtp.rtx.ssrcs.size(); ++i) {

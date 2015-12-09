@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 
+#include <set>
 #include <string>
 
 #include "webrtc/base/checks.h"
@@ -111,7 +112,7 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
   memset(&codec, 0, sizeof(codec));
 
   codec.plType = decoder.payload_type;
-  strcpy(codec.plName, decoder.payload_name.c_str());
+  strncpy(codec.plName, decoder.payload_name.c_str(), sizeof(codec.plName));
   if (decoder.payload_name == "VP8") {
     codec.codecType = kVideoCodecVP8;
   } else if (decoder.payload_name == "VP9") {
@@ -228,7 +229,7 @@ VideoReceiveStream::VideoReceiveStream(
     VideoCodec codec;
     memset(&codec, 0, sizeof(codec));
     codec.codecType = kVideoCodecULPFEC;
-    strcpy(codec.plName, "ulpfec");
+    strncpy(codec.plName, "ulpfec", sizeof(codec.plName));
     codec.plType = config_.rtp.fec.ulpfec_payload_type;
     RTC_CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
@@ -236,7 +237,7 @@ VideoReceiveStream::VideoReceiveStream(
     VideoCodec codec;
     memset(&codec, 0, sizeof(codec));
     codec.codecType = kVideoCodecRED;
-    strcpy(codec.plName, "red");
+    strncpy(codec.plName, "red", sizeof(codec.plName));
     codec.plType = config_.rtp.fec.red_payload_type;
     RTC_CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
     if (config_.rtp.fec.red_rtx_payload_type != -1) {
