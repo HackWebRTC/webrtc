@@ -439,7 +439,8 @@ __inline static void _mm_add_ps_4x1(__m128 sum, float *dst) {
   sum = _mm_add_ps(sum, _mm_shuffle_ps(sum, sum, _MM_SHUFFLE(1, 1, 1, 1)));
   _mm_store_ss(dst, sum);
 }
-static int PartitionDelay(const AecCore* aec) {
+
+static int PartitionDelaySSE2(const AecCore* aec) {
   // Measures the energy in each filter partition and returns the partition with
   // highest energy.
   // TODO(bjornv): Spread computational cost by computing one partition per
@@ -619,7 +620,7 @@ static void SmoothedPSD(AecCore* aec,
 }
 
 // Window time domain data to be used by the fft.
-__inline static void WindowData(float* x_windowed, const float* x) {
+static void WindowDataSSE2(float* x_windowed, const float* x) {
   int i;
   for (i = 0; i < PART_LEN; i += 4) {
     const __m128 vec_Buf1 = _mm_loadu_ps(&x[i]);
@@ -639,8 +640,8 @@ __inline static void WindowData(float* x_windowed, const float* x) {
 }
 
 // Puts fft output data into a complex valued array.
-__inline static void StoreAsComplex(const float* data,
-                                    float data_complex[2][PART_LEN1]) {
+static void StoreAsComplexSSE2(const float* data,
+                               float data_complex[2][PART_LEN1]) {
   int i;
   for (i = 0; i < PART_LEN; i += 4) {
     const __m128 vec_fft0 = _mm_loadu_ps(&data[2 * i]);
@@ -661,30 +662,12 @@ __inline static void StoreAsComplex(const float* data,
 
 static void SubbandCoherenceSSE2(AecCore* aec,
                                  float efw[2][PART_LEN1],
+                                 float dfw[2][PART_LEN1],
                                  float xfw[2][PART_LEN1],
                                  float* fft,
                                  float* cohde,
                                  float* cohxd) {
-  float dfw[2][PART_LEN1];
   int i;
-
-  if (aec->delayEstCtr == 0)
-    aec->delayIdx = PartitionDelay(aec);
-
-  // Use delayed far.
-  memcpy(xfw,
-         aec->xfwBuf + aec->delayIdx * PART_LEN1,
-         sizeof(xfw[0][0]) * 2 * PART_LEN1);
-
-  // Windowed near fft
-  WindowData(fft, aec->dBuf);
-  aec_rdft_forward_128(fft);
-  StoreAsComplex(fft, dfw);
-
-  // Windowed error fft
-  WindowData(fft, aec->eBuf);
-  aec_rdft_forward_128(fft);
-  StoreAsComplex(fft, efw);
 
   SmoothedPSD(aec, efw, dfw, xfw);
 
@@ -740,4 +723,7 @@ void WebRtcAec_InitAec_SSE2(void) {
   WebRtcAec_FilterAdaptation = FilterAdaptationSSE2;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressSSE2;
   WebRtcAec_SubbandCoherence = SubbandCoherenceSSE2;
+  WebRtcAec_StoreAsComplex = StoreAsComplexSSE2;
+  WebRtcAec_PartitionDelay = PartitionDelaySSE2;
+  WebRtcAec_WindowData = WindowDataSSE2;
 }

@@ -205,10 +205,21 @@ extern WebRtcAecComfortNoise WebRtcAec_ComfortNoise;
 
 typedef void (*WebRtcAecSubBandCoherence)(AecCore* aec,
                                           float efw[2][PART_LEN1],
+                                          float dfw[2][PART_LEN1],
                                           float xfw[2][PART_LEN1],
                                           float* fft,
                                           float* cohde,
                                           float* cohxd);
 extern WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
+
+typedef int (*WebRtcAecPartitionDelay)(const AecCore* aec);
+extern WebRtcAecPartitionDelay WebRtcAec_PartitionDelay;
+
+typedef void (*WebRtcAecStoreAsComplex)(const float* data,
+                                        float data_complex[2][PART_LEN1]);
+extern WebRtcAecStoreAsComplex WebRtcAec_StoreAsComplex;
+
+typedef void (*WebRtcAecWindowData)(float* x_windowed, const float* x);
+extern WebRtcAecWindowData WebRtcAec_WindowData;
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_

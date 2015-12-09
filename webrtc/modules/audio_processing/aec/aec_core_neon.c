@@ -453,7 +453,7 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
   }
 }
 
-static int PartitionDelay(const AecCore* aec) {
+static int PartitionDelayNEON(const AecCore* aec) {
   // Measures the energy in each filter partition and returns the partition with
   // highest energy.
   // TODO(bjornv): Spread computational cost by computing one partition per
@@ -638,7 +638,7 @@ static void SmoothedPSD(AecCore* aec,
 }
 
 // Window time domain data to be used by the fft.
-__inline static void WindowData(float* x_windowed, const float* x) {
+static void WindowDataNEON(float* x_windowed, const float* x) {
   int i;
   for (i = 0; i < PART_LEN; i += 4) {
     const float32x4_t vec_Buf1 = vld1q_f32(&x[i]);
@@ -659,8 +659,8 @@ __inline static void WindowData(float* x_windowed, const float* x) {
 }
 
 // Puts fft output data into a complex valued array.
-__inline static void StoreAsComplex(const float* data,
-                                    float data_complex[2][PART_LEN1]) {
+static void StoreAsComplexNEON(const float* data,
+                               float data_complex[2][PART_LEN1]) {
   int i;
   for (i = 0; i < PART_LEN; i += 4) {
     const float32x4x2_t vec_data = vld2q_f32(&data[2 * i]);
@@ -676,30 +676,12 @@ __inline static void StoreAsComplex(const float* data,
 
 static void SubbandCoherenceNEON(AecCore* aec,
                                  float efw[2][PART_LEN1],
+                                 float dfw[2][PART_LEN1],
                                  float xfw[2][PART_LEN1],
                                  float* fft,
                                  float* cohde,
                                  float* cohxd) {
-  float dfw[2][PART_LEN1];
   int i;
-
-  if (aec->delayEstCtr == 0)
-    aec->delayIdx = PartitionDelay(aec);
-
-  // Use delayed far.
-  memcpy(xfw,
-         aec->xfwBuf + aec->delayIdx * PART_LEN1,
-         sizeof(xfw[0][0]) * 2 * PART_LEN1);
-
-  // Windowed near fft
-  WindowData(fft, aec->dBuf);
-  aec_rdft_forward_128(fft);
-  StoreAsComplex(fft, dfw);
-
-  // Windowed error fft
-  WindowData(fft, aec->eBuf);
-  aec_rdft_forward_128(fft);
-  StoreAsComplex(fft, efw);
 
   SmoothedPSD(aec, efw, dfw, xfw);
 
@@ -743,4 +725,7 @@ void WebRtcAec_InitAec_neon(void) {
   WebRtcAec_FilterAdaptation = FilterAdaptationNEON;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressNEON;
   WebRtcAec_SubbandCoherence = SubbandCoherenceNEON;
+  WebRtcAec_StoreAsComplex = StoreAsComplexNEON;
+  WebRtcAec_PartitionDelay = PartitionDelayNEON;
+  WebRtcAec_WindowData = WindowDataNEON;
 }

@@ -135,6 +135,9 @@ WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
 WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
 WebRtcAecComfortNoise WebRtcAec_ComfortNoise;
 WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
+WebRtcAecStoreAsComplex WebRtcAec_StoreAsComplex;
+WebRtcAecPartitionDelay WebRtcAec_PartitionDelay;
+WebRtcAecWindowData WebRtcAec_WindowData;
 
 __inline static float MulRe(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bRe - aIm * bIm;
@@ -407,30 +410,12 @@ __inline static void StoreAsComplex(const float* data,
 
 static void SubbandCoherence(AecCore* aec,
                              float efw[2][PART_LEN1],
+                             float dfw[2][PART_LEN1],
                              float xfw[2][PART_LEN1],
                              float* fft,
                              float* cohde,
                              float* cohxd) {
-  float dfw[2][PART_LEN1];
   int i;
-
-  if (aec->delayEstCtr == 0)
-    aec->delayIdx = PartitionDelay(aec);
-
-  // Use delayed far.
-  memcpy(xfw,
-         aec->xfwBuf + aec->delayIdx * PART_LEN1,
-         sizeof(xfw[0][0]) * 2 * PART_LEN1);
-
-  // Windowed near fft
-  WindowData(fft, aec->dBuf);
-  aec_rdft_forward_128(fft);
-  StoreAsComplex(fft, dfw);
-
-  // Windowed error fft
-  WindowData(fft, aec->eBuf);
-  aec_rdft_forward_128(fft);
-  StoreAsComplex(fft, efw);
 
   SmoothedPSD(aec, efw, dfw, xfw);
 
@@ -1011,9 +996,12 @@ static void EchoSubtraction(
 
 
 static void EchoSuppression(AecCore* aec,
+                            float* echo_subtractor_output,
                             float* output,
                             float* const* outputH) {
-  float efw[2][PART_LEN1], xfw[2][PART_LEN1];
+  float efw[2][PART_LEN1];
+  float xfw[2][PART_LEN1];
+  float dfw[2][PART_LEN1];
   complex_t comfortNoiseHband[PART_LEN1];
   float fft[PART_LEN2];
   float scale, dtmp;
@@ -1040,6 +1028,22 @@ static void EchoSuppression(AecCore* aec,
 
   float* xfw_ptr = NULL;
 
+  // Update eBuf with echo subtractor output.
+  memcpy(aec->eBuf + PART_LEN,
+         echo_subtractor_output,
+         sizeof(float) * PART_LEN);
+
+  // Analysis filter banks for the echo suppressor.
+  // Windowed near-end ffts.
+  WindowData(fft, aec->dBuf);
+  aec_rdft_forward_128(fft);
+  StoreAsComplex(fft, dfw);
+
+  // Windowed echo suppressor output ffts.
+  WindowData(fft, aec->eBuf);
+  aec_rdft_forward_128(fft);
+  StoreAsComplex(fft, efw);
+
   aec->delayEstCtr++;
   if (aec->delayEstCtr == delayEstInterval) {
     aec->delayEstCtr = 0;
@@ -1060,7 +1064,15 @@ static void EchoSuppression(AecCore* aec,
   // Buffer far.
   memcpy(aec->xfwBuf, xfw_ptr, sizeof(float) * 2 * PART_LEN1);
 
-  WebRtcAec_SubbandCoherence(aec, efw, xfw, fft, cohde, cohxd);
+  if (aec->delayEstCtr == 0)
+    aec->delayIdx = WebRtcAec_PartitionDelay(aec);
+
+  // Use delayed far.
+  memcpy(xfw,
+         aec->xfwBuf + aec->delayIdx * PART_LEN1,
+         sizeof(xfw[0][0]) * 2 * PART_LEN1);
+
+  WebRtcAec_SubbandCoherence(aec, efw, dfw, xfw, fft, cohde, cohxd);
 
   hNlXdAvg = 0;
   for (i = minPrefBand; i < prefBandSize + minPrefBand; i++) {
@@ -1399,10 +1411,7 @@ static void ProcessBlock(AecCore* aec) {
   RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, echo_subtractor_output, PART_LEN);
 
   // Perform echo suppression.
-  memcpy(aec->eBuf + PART_LEN,
-         echo_subtractor_output,
-         sizeof(float) * PART_LEN);
-  EchoSuppression(aec, output, outputH_ptr);
+  EchoSuppression(aec, echo_subtractor_output, output, outputH_ptr);
 
   if (aec->metricsMode == 1) {
     // Update power levels and echo metrics
@@ -1511,6 +1520,10 @@ AecCore* WebRtcAec_CreateAec() {
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppress;
   WebRtcAec_ComfortNoise = ComfortNoise;
   WebRtcAec_SubbandCoherence = SubbandCoherence;
+  WebRtcAec_StoreAsComplex = StoreAsComplex;
+  WebRtcAec_PartitionDelay = PartitionDelay;
+  WebRtcAec_WindowData = WindowData;
+
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
   if (WebRtc_GetCPUInfo(kSSE2)) {
