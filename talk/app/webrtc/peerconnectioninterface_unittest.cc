@@ -1994,6 +1994,28 @@ TEST_F(PeerConnectionInterfaceTest, SdpWithMsidDontCreatesDefaultStream) {
   EXPECT_EQ(0u, observer_.remote_streams()->count());
 }
 
+// This tests that when setting a new description, the old default tracks are
+// not destroyed and recreated.
+// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5250
+TEST_F(PeerConnectionInterfaceTest, DefaultTracksNotDestroyedAndRecreated) {
+  FakeConstraints constraints;
+  constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                           true);
+  CreatePeerConnection(&constraints);
+  CreateAndSetRemoteOffer(kSdpStringWithoutStreamsAudioOnly);
+
+  ASSERT_EQ(1u, observer_.remote_streams()->count());
+  MediaStreamInterface* remote_stream = observer_.remote_streams()->at(0);
+  ASSERT_EQ(1u, remote_stream->GetAudioTracks().size());
+
+  // Set the track to "disabled", then set a new description and ensure the
+  // track is still disabled, which ensures it hasn't been recreated.
+  remote_stream->GetAudioTracks()[0]->set_enabled(false);
+  CreateAndSetRemoteOffer(kSdpStringWithoutStreamsAudioOnly);
+  ASSERT_EQ(1u, remote_stream->GetAudioTracks().size());
+  EXPECT_FALSE(remote_stream->GetAudioTracks()[0]->enabled());
+}
+
 // This tests that a default MediaStream is not created if a remote session
 // description is updated to not have any MediaStreams.
 TEST_F(PeerConnectionInterfaceTest, VerifyDefaultStreamIsNotCreated) {

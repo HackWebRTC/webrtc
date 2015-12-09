@@ -1137,6 +1137,22 @@ void PeerConnection::SetRemoteDescription(
   }
 
   const cricket::SessionDescription* remote_desc = desc->description();
+  const cricket::ContentInfo* audio_content = GetFirstAudioContent(remote_desc);
+  const cricket::ContentInfo* video_content = GetFirstVideoContent(remote_desc);
+  const cricket::AudioContentDescription* audio_desc =
+      GetFirstAudioContentDescription(remote_desc);
+  const cricket::VideoContentDescription* video_desc =
+      GetFirstVideoContentDescription(remote_desc);
+  const cricket::DataContentDescription* data_desc =
+      GetFirstDataContentDescription(remote_desc);
+
+  // Check if the descriptions include streams, just in case the peer supports
+  // MSID, but doesn't indicate so with "a=msid-semantic".
+  if (remote_desc->msid_supported() ||
+      (audio_desc && !audio_desc->streams().empty()) ||
+      (video_desc && !video_desc->streams().empty())) {
+    remote_peer_supports_msid_ = true;
+  }
 
   // We wait to signal new streams until we finish processing the description,
   // since only at that point will new streams have all their tracks.
@@ -1144,49 +1160,39 @@ void PeerConnection::SetRemoteDescription(
 
   // Find all audio rtp streams and create corresponding remote AudioTracks
   // and MediaStreams.
-  const cricket::ContentInfo* audio_content = GetFirstAudioContent(remote_desc);
   if (audio_content) {
     if (audio_content->rejected) {
       RemoveTracks(cricket::MEDIA_TYPE_AUDIO);
     } else {
-      const cricket::AudioContentDescription* desc =
-          static_cast<const cricket::AudioContentDescription*>(
-              audio_content->description);
-      UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(),
+      bool default_audio_track_needed =
+          !remote_peer_supports_msid_ &&
+          MediaContentDirectionHasSend(audio_desc->direction());
+      UpdateRemoteStreamsList(GetActiveStreams(audio_desc),
+                              default_audio_track_needed, audio_desc->type(),
                               new_streams);
-      remote_info_.default_audio_track_needed =
-          !remote_desc->msid_supported() && desc->streams().empty() &&
-          MediaContentDirectionHasSend(desc->direction());
     }
   }
 
   // Find all video rtp streams and create corresponding remote VideoTracks
   // and MediaStreams.
-  const cricket::ContentInfo* video_content = GetFirstVideoContent(remote_desc);
   if (video_content) {
     if (video_content->rejected) {
       RemoveTracks(cricket::MEDIA_TYPE_VIDEO);
     } else {
-      const cricket::VideoContentDescription* desc =
-          static_cast<const cricket::VideoContentDescription*>(
-              video_content->description);
-      UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(),
+      bool default_video_track_needed =
+          !remote_peer_supports_msid_ &&
+          MediaContentDirectionHasSend(video_desc->direction());
+      UpdateRemoteStreamsList(GetActiveStreams(video_desc),
+                              default_video_track_needed, video_desc->type(),
                               new_streams);
-      remote_info_.default_video_track_needed =
-          !remote_desc->msid_supported() && desc->streams().empty() &&
-          MediaContentDirectionHasSend(desc->direction());
     }
   }
 
   // Update the DataChannels with the information from the remote peer.
-  const cricket::ContentInfo* data_content = GetFirstDataContent(remote_desc);
-  if (data_content) {
-    const cricket::DataContentDescription* desc =
-        static_cast<const cricket::DataContentDescription*>(
-            data_content->description);
-    if (rtc::starts_with(desc->protocol().data(),
+  if (data_desc) {
+    if (rtc::starts_with(data_desc->protocol().data(),
                          cricket::kMediaProtocolRtpPrefix)) {
-      UpdateRemoteRtpDataChannels(GetActiveStreams(desc));
+      UpdateRemoteRtpDataChannels(GetActiveStreams(data_desc));
     }
   }
 
@@ -1197,15 +1203,7 @@ void PeerConnection::SetRemoteDescription(
     observer_->OnAddStream(new_stream);
   }
 
-  // Find removed MediaStreams.
-  if (remote_info_.IsDefaultMediaStreamNeeded() &&
-      remote_streams_->find(kDefaultStreamLabel) != nullptr) {
-    // The default media stream already exists. No need to do anything.
-  } else {
-    UpdateEndedRemoteMediaStreams();
-    remote_info_.msid_supported |= remote_streams_->count() > 0;
-  }
-  MaybeCreateDefaultStream();
+  UpdateEndedRemoteMediaStreams();
 
   SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
@@ -1507,12 +1505,13 @@ bool PeerConnection::GetOptionsForAnswer(
 
 void PeerConnection::RemoveTracks(cricket::MediaType media_type) {
   UpdateLocalTracks(std::vector<cricket::StreamParams>(), media_type);
-  UpdateRemoteStreamsList(std::vector<cricket::StreamParams>(), media_type,
-                          nullptr);
+  UpdateRemoteStreamsList(std::vector<cricket::StreamParams>(), false,
+                          media_type, nullptr);
 }
 
 void PeerConnection::UpdateRemoteStreamsList(
     const cricket::StreamParamsVec& streams,
+    bool default_track_needed,
     cricket::MediaType media_type,
     StreamCollection* new_streams) {
   TrackInfos* current_tracks = GetRemoteTracks(media_type);
@@ -1524,11 +1523,14 @@ void PeerConnection::UpdateRemoteStreamsList(
     const TrackInfo& info = *track_it;
     const cricket::StreamParams* params =
         cricket::GetStreamBySsrc(streams, info.ssrc);
-    if (!params || params->id != info.track_id) {
+    bool track_exists = params && params->id == info.track_id;
+    // If this is a default track, and we still need it, don't remove it.
+    if ((info.stream_label == kDefaultStreamLabel && default_track_needed) ||
+        track_exists) {
+      ++track_it;
+    } else {
       OnRemoteTrackRemoved(info.stream_label, info.track_id, media_type);
       track_it = current_tracks->erase(track_it);
-    } else {
-      ++track_it;
     }
   }
 
@@ -1554,6 +1556,29 @@ void PeerConnection::UpdateRemoteStreamsList(
     if (!track_info) {
       current_tracks->push_back(TrackInfo(stream_label, track_id, ssrc));
       OnRemoteTrackSeen(stream_label, track_id, ssrc, media_type);
+    }
+  }
+
+  // Add default track if necessary.
+  if (default_track_needed) {
+    rtc::scoped_refptr<MediaStreamInterface> default_stream =
+        remote_streams_->find(kDefaultStreamLabel);
+    if (!default_stream) {
+      // Create the new default MediaStream.
+      default_stream =
+          remote_stream_factory_->CreateMediaStream(kDefaultStreamLabel);
+      remote_streams_->AddStream(default_stream);
+      new_streams->AddStream(default_stream);
+    }
+    std::string default_track_id = (media_type == cricket::MEDIA_TYPE_AUDIO)
+                                       ? kDefaultAudioTrackLabel
+                                       : kDefaultVideoTrackLabel;
+    const TrackInfo* default_track_info =
+        FindTrackInfo(*current_tracks, kDefaultStreamLabel, default_track_id);
+    if (!default_track_info) {
+      current_tracks->push_back(
+          TrackInfo(kDefaultStreamLabel, default_track_id, 0));
+      OnRemoteTrackSeen(kDefaultStreamLabel, default_track_id, 0, media_type);
     }
   }
 }
@@ -1615,41 +1640,6 @@ void PeerConnection::UpdateEndedRemoteMediaStreams() {
   for (const auto& stream : streams_to_remove) {
     remote_streams_->RemoveStream(stream);
     observer_->OnRemoveStream(stream);
-  }
-}
-
-void PeerConnection::MaybeCreateDefaultStream() {
-  if (!remote_info_.IsDefaultMediaStreamNeeded()) {
-    return;
-  }
-
-  bool default_created = false;
-
-  rtc::scoped_refptr<MediaStreamInterface> default_remote_stream =
-      remote_streams_->find(kDefaultStreamLabel);
-  if (default_remote_stream == nullptr) {
-    default_created = true;
-    default_remote_stream =
-        remote_stream_factory_->CreateMediaStream(kDefaultStreamLabel);
-    remote_streams_->AddStream(default_remote_stream);
-  }
-  if (remote_info_.default_audio_track_needed &&
-      default_remote_stream->GetAudioTracks().size() == 0) {
-    remote_audio_tracks_.push_back(
-        TrackInfo(kDefaultStreamLabel, kDefaultAudioTrackLabel, 0));
-    OnRemoteTrackSeen(kDefaultStreamLabel, kDefaultAudioTrackLabel, 0,
-                      cricket::MEDIA_TYPE_AUDIO);
-  }
-  if (remote_info_.default_video_track_needed &&
-      default_remote_stream->GetVideoTracks().size() == 0) {
-    remote_video_tracks_.push_back(
-        TrackInfo(kDefaultStreamLabel, kDefaultVideoTrackLabel, 0));
-    OnRemoteTrackSeen(kDefaultStreamLabel, kDefaultVideoTrackLabel, 0,
-                      cricket::MEDIA_TYPE_VIDEO);
-  }
-  if (default_created) {
-    stats_->AddStream(default_remote_stream);
-    observer_->OnAddStream(default_remote_stream);
   }
 }
 

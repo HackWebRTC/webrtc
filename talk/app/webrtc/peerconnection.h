@@ -161,31 +161,15 @@ class PeerConnection : public PeerConnectionInterface,
               const std::string track_id,
               uint32_t ssrc)
         : stream_label(stream_label), track_id(track_id), ssrc(ssrc) {}
+    bool operator==(const TrackInfo& other) {
+      return this->stream_label == other.stream_label &&
+             this->track_id == other.track_id && this->ssrc == other.ssrc;
+    }
     std::string stream_label;
     std::string track_id;
     uint32_t ssrc;
   };
   typedef std::vector<TrackInfo> TrackInfos;
-
-  struct RemotePeerInfo {
-    RemotePeerInfo()
-        : msid_supported(false),
-          default_audio_track_needed(false),
-          default_video_track_needed(false) {}
-    // True if it has been discovered that the remote peer support MSID.
-    bool msid_supported;
-    // The remote peer indicates in the session description that audio will be
-    // sent but no MSID is given.
-    bool default_audio_track_needed;
-    // The remote peer indicates in the session description that video will be
-    // sent but no MSID is given.
-    bool default_video_track_needed;
-
-    bool IsDefaultMediaStreamNeeded() {
-      return !msid_supported &&
-             (default_audio_track_needed || default_video_track_needed);
-    }
-  };
 
   // Implements MessageHandler.
   void OnMessage(rtc::Message* msg) override;
@@ -247,12 +231,15 @@ class PeerConnection : public PeerConnectionInterface,
   // Called when a media type is rejected (m-line set to port 0).
   void RemoveTracks(cricket::MediaType media_type);
 
-  // Makes sure a MediaStream Track is created for each StreamParam in
-  // |streams|. |media_type| is the type of the |streams| and can be either
-  // audio or video.
+  // Makes sure a MediaStreamTrack is created for each StreamParam in |streams|,
+  // and existing MediaStreamTracks are removed if there is no corresponding
+  // StreamParam. If |default_track_needed| is true, a default MediaStreamTrack
+  // is created if it doesn't exist; if false, it's removed if it exists.
+  // |media_type| is the type of the |streams| and can be either audio or video.
   // If a new MediaStream is created it is added to |new_streams|.
   void UpdateRemoteStreamsList(
       const std::vector<cricket::StreamParams>& streams,
+      bool default_track_needed,
       cricket::MediaType media_type,
       StreamCollection* new_streams);
 
@@ -275,8 +262,6 @@ class PeerConnection : public PeerConnectionInterface,
   // |remote_streams_| and notifies the observer that the MediaStreams no longer
   // exist.
   void UpdateEndedRemoteMediaStreams();
-
-  void MaybeCreateDefaultStream();
 
   // Set the MediaStreamTrackInterface::TrackState to |kEnded| on all remote
   // tracks of type |media_type|.
@@ -390,7 +375,7 @@ class PeerConnection : public PeerConnectionInterface,
   std::map<std::string, rtc::scoped_refptr<DataChannel>> rtp_data_channels_;
   std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_;
 
-  RemotePeerInfo remote_info_;
+  bool remote_peer_supports_msid_ = false;
   rtc::scoped_ptr<RemoteMediaStreamFactory> remote_stream_factory_;
 
   std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders_;
