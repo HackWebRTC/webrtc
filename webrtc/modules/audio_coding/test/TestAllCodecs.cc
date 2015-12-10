@@ -422,8 +422,12 @@ void TestAllCodecs::Run(TestPack* channel) {
   uint32_t timestamp_diff;
   channel->reset_payload_size();
   int error_count = 0;
-
   int counter = 0;
+  // Set test length to 500 ms (50 blocks of 10 ms each).
+  infile_a_.SetNum10MsBlocksToRead(50);
+  // Fast-forward 1 second (100 blocks) since the file starts with silence.
+  infile_a_.FastForward(100);
+
   while (!infile_a_.EndOfFile()) {
     // Add 10 msec to ACM.
     infile_a_.Read10MsData(audio_frame);

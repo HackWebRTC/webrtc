@@ -87,6 +87,11 @@ void TestVadDtx::Run(std::string in_filename, int frequency, int channels,
   PCMFile in_file;
   in_file.Open(in_filename, frequency, "rb");
   in_file.ReadStereo(channels > 1);
+  // Set test length to 1000 ms (100 blocks of 10 ms each).
+  in_file.SetNum10MsBlocksToRead(100);
+  // Fast-forward both files 500 ms (50 blocks). The first second of the file is
+  // silence, but we want to keep half of that to test silence periods.
+  in_file.FastForward(50);
 
   PCMFile out_file;
   if (append) {

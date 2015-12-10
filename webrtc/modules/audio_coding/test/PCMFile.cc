@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "PCMFile.h"
+#include "webrtc/modules/audio_coding/test/PCMFile.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -137,6 +137,9 @@ int32_t PCMFile::Read10MsData(AudioFrame& audio_frame) {
   audio_frame.num_channels_ = channels;
   audio_frame.timestamp_ = timestamp_;
   timestamp_ += samples_10ms_;
+  ++blocks_read_;
+  if (num_10ms_blocks_to_read_ && blocks_read_ >= *num_10ms_blocks_to_read_)
+    end_of_file_ = true;
   return samples_10ms_;
 }
 
@@ -182,11 +185,21 @@ void PCMFile::Write10MsData(int16_t* playout_buffer, size_t length_smpls) {
 void PCMFile::Close() {
   fclose(pcm_file_);
   pcm_file_ = NULL;
+  blocks_read_ = 0;
+}
+
+void PCMFile::FastForward(int num_10ms_blocks) {
+  const int channels = read_stereo_ ? 2 : 1;
+  long num_bytes_to_move =
+      num_10ms_blocks * sizeof(int16_t) * samples_10ms_ * channels;
+  int error = fseek(pcm_file_, num_bytes_to_move, SEEK_CUR);
+  RTC_DCHECK_EQ(error, 0);
 }
 
 void PCMFile::Rewind() {
   rewind(pcm_file_);
   end_of_file_ = false;
+  blocks_read_ = 0;
 }
 
 bool PCMFile::Rewinded() {
@@ -199,6 +212,10 @@ void PCMFile::SaveStereo(bool is_stereo) {
 
 void PCMFile::ReadStereo(bool is_stereo) {
   read_stereo_ = is_stereo;
+}
+
+void PCMFile::SetNum10MsBlocksToRead(int value) {
+  num_10ms_blocks_to_read_ = rtc::Optional<int>(value);
 }
 
 }  // namespace webrtc

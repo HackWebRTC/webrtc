@@ -453,6 +453,10 @@ int16_t TestRedFec::RegisterSendCodec(char side, const char* codecName,
 void TestRedFec::Run() {
   AudioFrame audioFrame;
   int32_t outFreqHzB = _outFileB.SamplingFrequency();
+  // Set test length to 500 ms (50 blocks of 10 ms each).
+  _inFileA.SetNum10MsBlocksToRead(50);
+  // Fast-forward 1 second (100 blocks) since the file starts with silence.
+  _inFileA.FastForward(100);
 
   while (!_inFileA.EndOfFile()) {
     EXPECT_GT(_inFileA.Read10MsData(audioFrame), 0);

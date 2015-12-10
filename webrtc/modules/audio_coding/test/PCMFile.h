@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -45,12 +46,21 @@ class PCMFile {
   bool EndOfFile() const {
     return end_of_file_;
   }
+  // Moves forward the specified number of 10 ms blocks. If a limit has been set
+  // with SetNum10MsBlocksToRead, fast-forwarding does not count towards this
+  // limit.
+  void FastForward(int num_10ms_blocks);
   void Rewind();
   static int16_t ChooseFile(std::string* file_name, int16_t max_len,
                             uint16_t* frequency_hz);
   bool Rewinded();
   void SaveStereo(bool is_stereo = true);
   void ReadStereo(bool is_stereo = true);
+  // If set, the reading will stop after the specified number of blocks have
+  // been read. When that has happened, EndOfFile() will return true. Calling
+  // Rewind() will reset the counter and start over.
+  void SetNum10MsBlocksToRead(int value);
+
  private:
   FILE* pcm_file_;
   uint16_t samples_10ms_;
@@ -61,6 +71,8 @@ class PCMFile {
   uint32_t timestamp_;
   bool read_stereo_;
   bool save_stereo_;
+  rtc::Optional<int> num_10ms_blocks_to_read_;
+  int blocks_read_ = 0;
 };
 
 }  // namespace webrtc

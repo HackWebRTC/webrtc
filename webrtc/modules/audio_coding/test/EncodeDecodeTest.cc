@@ -63,6 +63,10 @@ void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
   if (channels == 2) {
     _pcmFile.ReadStereo(true);
   }
+  // Set test length to 500 ms (50 blocks of 10 ms each).
+  _pcmFile.SetNum10MsBlocksToRead(50);
+  // Fast-forward 1 second (100 blocks) since the file starts with silence.
+  _pcmFile.FastForward(100);
 
   // Set the codec for the current test.
   if ((testMode == 0) || (testMode == 1)) {

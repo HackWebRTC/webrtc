@@ -735,6 +735,12 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
   int error_count = 0;
   int variable_bytes = 0;
   int variable_packets = 0;
+  // Set test length to 500 ms (50 blocks of 10 ms each).
+  in_file_mono_->SetNum10MsBlocksToRead(50);
+  in_file_stereo_->SetNum10MsBlocksToRead(50);
+  // Fast-forward 1 second (100 blocks) since the files start with silence.
+  in_file_stereo_->FastForward(100);
+  in_file_mono_->FastForward(100);
 
   while (1) {
     // Simulate packet loss by setting |packet_loss_| to "true" in
@@ -800,7 +806,7 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
   // such as Opus.
   if (variable_packets > 0) {
     variable_bytes /= variable_packets;
-    EXPECT_NEAR(variable_bytes, pack_size_bytes_, 3);
+    EXPECT_NEAR(variable_bytes, pack_size_bytes_, 18);
   }
 
   if (in_file_mono_->EndOfFile()) {

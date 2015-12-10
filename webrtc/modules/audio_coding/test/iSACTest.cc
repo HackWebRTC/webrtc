@@ -117,6 +117,10 @@ void ISACTest::Setup() {
   EXPECT_EQ(0, _acmA->RegisterSendCodec(_paramISAC32kHz));
 
   _inFileA.Open(file_name_swb_, 32000, "rb");
+  // Set test length to 500 ms (50 blocks of 10 ms each).
+  _inFileA.SetNum10MsBlocksToRead(50);
+  // Fast-forward 1 second (100 blocks) since the files start with silence.
+  _inFileA.FastForward(100);
   std::string fileNameA = webrtc::test::OutputPath() + "testisac_a.pcm";
   std::string fileNameB = webrtc::test::OutputPath() + "testisac_b.pcm";
   _outFileA.Open(fileNameA, 32000, "wb");

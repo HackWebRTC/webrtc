@@ -235,8 +235,12 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
                                         kOpusComplexity5));
 #endif
 
-  // Make sure the runtime is less than 60 seconds to pass Android test.
-  for (size_t audio_length = 0; audio_length < 10000; audio_length += 10) {
+  // Fast-forward 1 second (100 blocks) since the files start with silence.
+  in_file_stereo_.FastForward(100);
+  in_file_mono_.FastForward(100);
+
+  // Limit the runtime to 1000 blocks of 10 ms each.
+  for (size_t audio_length = 0; audio_length < 1000; audio_length += 10) {
     bool lost_packet = false;
 
     // Get 10 msec of audio.
