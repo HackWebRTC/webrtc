@@ -263,8 +263,8 @@ void ViEChannel::UpdateHistograms() {
       bool fec_enabled = false;
       uint8_t pltype_red;
       uint8_t pltype_fec;
-      rtp_rtcp_modules_[0]->GenericFECStatus(fec_enabled, pltype_red,
-                                             pltype_fec);
+      rtp_rtcp_modules_[0]->GenericFECStatus(&fec_enabled, &pltype_red,
+                                             &pltype_fec);
       if (fec_enabled) {
         RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FecBitrateSentInKbps",
                                    static_cast<int>(rtp_rtx.fec.TotalBytes() *
@@ -531,7 +531,7 @@ bool ViEChannel::IsSendingFecEnabled() {
   uint8_t pltype_fec = 0;
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    rtp_rtcp->GenericFECStatus(fec_enabled, pltype_red, pltype_fec);
+    rtp_rtcp->GenericFECStatus(&fec_enabled, &pltype_red, &pltype_fec);
     if (fec_enabled)
       return true;
   }

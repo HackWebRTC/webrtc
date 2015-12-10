@@ -218,8 +218,7 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(const uint8_t key, const uint16_t time_ms, const uint8_t level));
   MOCK_METHOD1(SetSendREDPayloadType,
       int32_t(const int8_t payloadType));
-  MOCK_CONST_METHOD1(SendREDPayloadType,
-      int32_t(int8_t& payloadType));
+  MOCK_CONST_METHOD1(SendREDPayloadType, int32_t(int8_t* payloadType));
   MOCK_METHOD2(SetRTPAudioLevelIndicationStatus,
       int32_t(const bool enable, const uint8_t ID));
   MOCK_CONST_METHOD2(GetRTPAudioLevelIndicationStatus,
@@ -233,9 +232,9 @@ class MockRtpRtcp : public RtpRtcp {
                     const uint8_t payload_type_red,
                     const uint8_t payload_type_fec));
   MOCK_METHOD3(GenericFECStatus,
-               void(bool& enable,
-                    uint8_t& payloadTypeRED,
-                    uint8_t& payloadTypeFEC));
+               void(bool* enable,
+                    uint8_t* payloadTypeRED,
+                    uint8_t* payloadTypeFEC));
   MOCK_METHOD2(SetFecParameters,
       int32_t(const FecProtectionParams* delta_params,
               const FecProtectionParams* key_params));

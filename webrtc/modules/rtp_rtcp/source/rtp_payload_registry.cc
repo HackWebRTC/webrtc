@@ -343,17 +343,16 @@ bool RTPPayloadRegistry::GetPayloadSpecifics(uint8_t payload_type,
 
 int RTPPayloadRegistry::GetPayloadTypeFrequency(
     uint8_t payload_type) const {
-  RtpUtility::Payload* payload;
-  if (!PayloadTypeToPayload(payload_type, payload)) {
+  const RtpUtility::Payload* payload = PayloadTypeToPayload(payload_type);
+  if (!payload) {
     return -1;
   }
   CriticalSectionScoped cs(crit_sect_.get());
   return rtp_payload_strategy_->GetPayloadTypeFrequency(*payload);
 }
 
-bool RTPPayloadRegistry::PayloadTypeToPayload(
-    const uint8_t payload_type,
-    RtpUtility::Payload*& payload) const {
+const RtpUtility::Payload* RTPPayloadRegistry::PayloadTypeToPayload(
+    uint8_t payload_type) const {
   CriticalSectionScoped cs(crit_sect_.get());
 
   RtpUtility::PayloadTypeMap::const_iterator it =
@@ -361,11 +360,10 @@ bool RTPPayloadRegistry::PayloadTypeToPayload(
 
   // Check that this is a registered payload type.
   if (it == payload_type_map_.end()) {
-    return false;
+    return nullptr;
   }
 
-  payload = it->second;
-  return true;
+  return it->second;
 }
 
 void RTPPayloadRegistry::SetIncomingPayloadType(const RTPHeader& header) {

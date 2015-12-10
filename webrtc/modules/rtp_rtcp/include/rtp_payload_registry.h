@@ -54,7 +54,7 @@ class RTPPayloadStrategy {
 class RTPPayloadRegistry {
  public:
   // The registry takes ownership of the strategy.
-  RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy);
+  explicit RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy);
   ~RTPPayloadRegistry();
 
   int32_t RegisterReceivePayload(
@@ -110,8 +110,16 @@ class RTPPayloadRegistry {
 
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
 
+  // DEPRECATED. Use PayloadTypeToPayload below that returns const Payload*
+  // instead of taking output parameter.
+  // TODO(danilchap): Remove this when all callers have been updated.
   bool PayloadTypeToPayload(const uint8_t payload_type,
-                            RtpUtility::Payload*& payload) const;
+                            RtpUtility::Payload*& payload) const {  // NOLINT
+    payload =
+        const_cast<RtpUtility::Payload*>(PayloadTypeToPayload(payload_type));
+    return payload != nullptr;
+  }
+  const RtpUtility::Payload* PayloadTypeToPayload(uint8_t payload_type) const;
 
   void ResetLastReceivedPayloadTypes() {
     CriticalSectionScoped cs(crit_sect_.get());
@@ -147,7 +155,7 @@ class RTPPayloadRegistry {
   int8_t last_received_media_payload_type() const {
     CriticalSectionScoped cs(crit_sect_.get());
     return last_received_media_payload_type_;
-  };
+  }
 
   bool use_rtx_payload_mapping_on_restore() const {
     CriticalSectionScoped cs(crit_sect_.get());

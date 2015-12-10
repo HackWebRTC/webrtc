@@ -260,7 +260,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   int32_t SetSendREDPayloadType(int8_t payload_type) override;
 
   // Get payload type for Redundant Audio Data RFC 2198.
-  int32_t SendREDPayloadType(int8_t& payload_type) const override;
+  int32_t SendREDPayloadType(int8_t* payload_type) const override;
 
   // Store the audio level in d_bov for header-extension-for-audio-level-
   // indication.
@@ -282,9 +282,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                            uint8_t payload_type_red,
                            uint8_t payload_type_fec) override;
 
-  void GenericFECStatus(bool& enable,
-                        uint8_t& payload_type_red,
-                        uint8_t& payload_type_fec) override;
+  void GenericFECStatus(bool* enable,
+                        uint8_t* payload_type_red,
+                        uint8_t* payload_type_fec) override;
 
   int32_t SetFecParameters(const FecProtectionParams* delta_params,
                            const FecProtectionParams* key_params) override;

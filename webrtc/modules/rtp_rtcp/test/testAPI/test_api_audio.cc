@@ -241,7 +241,7 @@ TEST_F(RtpRtcpAudioTest, RED) {
 
   EXPECT_EQ(0, module1->SetSendREDPayloadType(voice_codec.pltype));
   int8_t red = 0;
-  EXPECT_EQ(0, module1->SendREDPayloadType(red));
+  EXPECT_EQ(0, module1->SendREDPayloadType(&red));
   EXPECT_EQ(voice_codec.pltype, red);
   EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(
       voice_codec.plname,
@@ -278,7 +278,7 @@ TEST_F(RtpRtcpAudioTest, RED) {
                                          &fragmentation));
 
   EXPECT_EQ(0, module1->SetSendREDPayloadType(-1));
-  EXPECT_EQ(-1, module1->SendREDPayloadType(red));
+  EXPECT_EQ(-1, module1->SendREDPayloadType(&red));
 }
 
 TEST_F(RtpRtcpAudioTest, DTMF) {

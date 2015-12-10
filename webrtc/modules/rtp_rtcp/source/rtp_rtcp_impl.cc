@@ -800,9 +800,8 @@ int32_t ModuleRtpRtcpImpl::SetSendREDPayloadType(
 }
 
 // Get payload type for Redundant Audio Data RFC 2198.
-int32_t ModuleRtpRtcpImpl::SendREDPayloadType(
-    int8_t& payload_type) const {
-  return rtp_sender_.RED(&payload_type);
+int32_t ModuleRtpRtcpImpl::SendREDPayloadType(int8_t* payload_type) const {
+  return rtp_sender_.RED(payload_type);
 }
 
 void ModuleRtpRtcpImpl::SetTargetSendBitrate(uint32_t bitrate_bps) {
@@ -838,11 +837,10 @@ void ModuleRtpRtcpImpl::SetGenericFECStatus(
   rtp_sender_.SetGenericFECStatus(enable, payload_type_red, payload_type_fec);
 }
 
-void ModuleRtpRtcpImpl::GenericFECStatus(bool& enable,
-                                         uint8_t& payload_type_red,
-                                         uint8_t& payload_type_fec) {
-  rtp_sender_.GenericFECStatus(&enable, &payload_type_red,
-                                      &payload_type_fec);
+void ModuleRtpRtcpImpl::GenericFECStatus(bool* enable,
+                                         uint8_t* payload_type_red,
+                                         uint8_t* payload_type_fec) {
+  rtp_sender_.GenericFECStatus(enable, payload_type_red, payload_type_fec);
 }
 
 int32_t ModuleRtpRtcpImpl::SetFecParameters(

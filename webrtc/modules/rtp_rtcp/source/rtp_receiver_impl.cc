@@ -276,12 +276,11 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
         if (rtp_header.payloadType == last_received_payload_type) {
           re_initialize_decoder = true;
 
-          Payload* payload;
-          if (!rtp_payload_registry_->PayloadTypeToPayload(
-              rtp_header.payloadType, payload)) {
+          const Payload* payload = rtp_payload_registry_->PayloadTypeToPayload(
+              rtp_header.payloadType);
+          if (!payload) {
             return;
           }
-          assert(payload);
           payload_name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
           strncpy(payload_name, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
           if (payload->audio) {
@@ -365,12 +364,12 @@ int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
         return 0;
       }
 
-      Payload* payload;
-      if (!rtp_payload_registry_->PayloadTypeToPayload(payload_type, payload)) {
+      const Payload* payload =
+          rtp_payload_registry_->PayloadTypeToPayload(payload_type);
+      if (!payload) {
         // Not a registered payload type.
         return -1;
       }
-      assert(payload);
       payload_name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
       strncpy(payload_name, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
 

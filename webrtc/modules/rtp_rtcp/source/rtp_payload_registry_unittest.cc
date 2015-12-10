@@ -74,9 +74,9 @@ TEST_F(RtpPayloadRegistryTest, RegistersAndRemembersPayloadsUntilDeregistered) {
 
   EXPECT_TRUE(new_payload_created) << "A new payload WAS created.";
 
-  RtpUtility::Payload* retrieved_payload = NULL;
-  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type,
-                                                          retrieved_payload));
+  const RtpUtility::Payload* retrieved_payload =
+      rtp_payload_registry_->PayloadTypeToPayload(payload_type);
+  EXPECT_TRUE(retrieved_payload);
 
   // We should get back the exact pointer to the payload returned by the
   // payload strategy.
@@ -84,8 +84,7 @@ TEST_F(RtpPayloadRegistryTest, RegistersAndRemembersPayloadsUntilDeregistered) {
 
   // Now forget about it and verify it's gone.
   EXPECT_EQ(0, rtp_payload_registry_->DeRegisterReceivePayload(payload_type));
-  EXPECT_FALSE(rtp_payload_registry_->PayloadTypeToPayload(payload_type,
-                                                           retrieved_payload));
+  EXPECT_FALSE(rtp_payload_registry_->PayloadTypeToPayload(payload_type));
 }
 
 TEST_F(RtpPayloadRegistryTest, AudioRedWorkProperly) {
@@ -106,10 +105,9 @@ TEST_F(RtpPayloadRegistryTest, AudioRedWorkProperly) {
 
   EXPECT_EQ(kRedPayloadType, rtp_payload_registry_->red_payload_type());
 
-  RtpUtility::Payload* retrieved_payload = NULL;
-  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(kRedPayloadType,
-                                                          retrieved_payload));
-  ASSERT_TRUE(retrieved_payload);
+  const RtpUtility::Payload* retrieved_payload =
+      rtp_payload_registry_->PayloadTypeToPayload(kRedPayloadType);
+  EXPECT_TRUE(retrieved_payload);
   EXPECT_TRUE(retrieved_payload->audio);
   EXPECT_STRCASEEQ("red", retrieved_payload->name);
 
@@ -142,12 +140,13 @@ TEST_F(RtpPayloadRegistryTest,
       << "With a different payload type is fine though.";
 
   // Ensure both payloads are preserved.
-  RtpUtility::Payload* retrieved_payload = NULL;
-  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type,
-                                                          retrieved_payload));
+  const RtpUtility::Payload* retrieved_payload =
+      rtp_payload_registry_->PayloadTypeToPayload(payload_type);
+  EXPECT_TRUE(retrieved_payload);
   EXPECT_EQ(first_payload_on_heap, retrieved_payload);
-  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type - 1,
-                                                          retrieved_payload));
+  retrieved_payload =
+      rtp_payload_registry_->PayloadTypeToPayload(payload_type - 1);
+  EXPECT_TRUE(retrieved_payload);
   EXPECT_EQ(second_payload_on_heap, retrieved_payload);
 
   // Ok, update the rate for one of the codecs. If either the incoming rate or
@@ -181,13 +180,10 @@ TEST_F(RtpPayloadRegistryTest,
                    kTypicalPayloadName, payload_type - 1, kTypicalFrequency,
                    kTypicalChannels, kTypicalRate, &ignored));
 
-  RtpUtility::Payload* retrieved_payload = NULL;
-  EXPECT_FALSE(rtp_payload_registry_->PayloadTypeToPayload(payload_type,
-                                                           retrieved_payload))
+  EXPECT_FALSE(rtp_payload_registry_->PayloadTypeToPayload(payload_type))
       << "The first payload should be "
          "deregistered because the only thing that differs is payload type.";
-  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type - 1,
-                                                          retrieved_payload))
+  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type - 1))
       << "The second payload should still be registered though.";
 
   // Now ensure non-compatible codecs aren't removed.
@@ -198,11 +194,9 @@ TEST_F(RtpPayloadRegistryTest,
                    kTypicalPayloadName, payload_type + 1, kTypicalFrequency,
                    kTypicalChannels, kTypicalRate, &ignored));
 
-  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type - 1,
-                                                          retrieved_payload))
+  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type - 1))
       << "Not compatible; both payloads should be kept.";
-  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type + 1,
-                                                          retrieved_payload))
+  EXPECT_TRUE(rtp_payload_registry_->PayloadTypeToPayload(payload_type + 1))
       << "Not compatible; both payloads should be kept.";
 }
 

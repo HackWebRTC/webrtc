@@ -3269,9 +3269,8 @@ Channel::GetREDStatus(bool& enabled, int& redPayloadtype)
     enabled = audio_coding_->REDStatus();
     if (enabled)
     {
-        int8_t payloadType(0);
-        if (_rtpRtcpModule->SendREDPayloadType(payloadType) != 0)
-        {
+      int8_t payloadType = 0;
+      if (_rtpRtcpModule->SendREDPayloadType(&payloadType) != 0) {
             _engineStatisticsPtr->SetLastError(
                 VE_RTP_RTCP_MODULE_ERROR, kTraceError,
                 "GetREDStatus() failed to retrieve RED PT from RTP/RTCP "
