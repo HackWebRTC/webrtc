@@ -453,7 +453,7 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
-#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISAC)) && \
+#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
 #define IF_ALL_CODECS(x) x
 #else

@@ -914,7 +914,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
   }
 };
 
-#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISAC)) && \
+#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
 #define IF_ALL_CODECS(x) x
 #else
