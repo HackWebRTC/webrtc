@@ -265,4 +265,4 @@ size_t Vp8PartitionAggregator::CalcNumberOfFragments(
   return num_fragments;
 }
 
-}  // namespace
+}  // namespace webrtc

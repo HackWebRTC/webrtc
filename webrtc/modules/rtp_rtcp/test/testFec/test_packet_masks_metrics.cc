@@ -59,13 +59,6 @@ enum { kMaxNumberMediaPackets = 48 };
 // Maximum number of media packets allowed for each mask type.
 const uint16_t kMaxMediaPackets[] = {kMaxNumberMediaPackets, 12};
 
-// Maximum number of media packets allowed in this test. The burst mask types
-// are currently defined up to (k=12,m=12).
-const int kMaxMediaPacketsTest = 12;
-
-// Maximum number of FEC codes considered in this test.
-const int kNumberCodes = kMaxMediaPacketsTest * (kMaxMediaPacketsTest + 1) / 2;
-
 // Maximum gap size for characterizing the consecutiveness of the loss.
 const int kMaxGapSize = 2 * kMaxMediaPacketsTest;
 

@@ -487,6 +487,6 @@ class RTCPPacketIterator {
 
   RtcpCommonHeader _header;
 };
-}  // RTCPUtility
+}  // namespace RTCPUtility
 }  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_UTILITY_H_

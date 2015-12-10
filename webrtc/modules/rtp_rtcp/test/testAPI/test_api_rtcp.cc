@@ -20,7 +20,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_audio.h"
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
 
-using namespace webrtc;
+namespace webrtc {
+namespace {
 
 const uint64_t kTestPictureId = 12345678;
 const uint8_t kSliPictureId = 156;
@@ -266,3 +267,6 @@ TEST_F(RtpRtcpRtcpTest, RemoteRTCPStatRemote) {
   EXPECT_EQ(test_sequence_number, report_blocks[0].extendedHighSeqNum);
   EXPECT_EQ(0u, report_blocks[0].fractionLost);
 }
+
+}  // namespace
+}  // namespace webrtc

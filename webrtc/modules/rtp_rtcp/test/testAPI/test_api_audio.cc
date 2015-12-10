@@ -19,8 +19,8 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_audio.h"
 
-using namespace webrtc;
-
+namespace webrtc {
+namespace {
 #define test_rate 64000u
 
 class VerifyingAudioReceiver : public NullRtpData {
@@ -349,3 +349,6 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
     module1->Process();
   }
 }
+
+}  // namespace
+}  // namespace webrtc

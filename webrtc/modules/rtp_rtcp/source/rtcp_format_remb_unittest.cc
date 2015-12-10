@@ -21,9 +21,8 @@
 #include "webrtc/test/null_transport.h"
 #include "webrtc/typedefs.h"
 
+namespace webrtc {
 namespace {
-
-using namespace webrtc;
 
 class TestTransport : public Transport {
  public:
@@ -130,3 +129,4 @@ TEST_F(RtcpFormatRembTest, TestCompund) {
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpRemb));
 }
 }  // namespace
+}  // namespace webrtc

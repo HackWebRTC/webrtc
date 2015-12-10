@@ -51,17 +51,14 @@ namespace webrtc {
 // platform that doesn't use two's complement, implement conversion to/from
 // wire format.
 
-namespace {
-inline void AssertTwosComplement() {
-  // Assume the if any one signed integer type is two's complement, then all
-  // other will be too.
-  static_assert(
-      (-1 & 0x03) == 0x03,
-      "Only two's complement representation of signed integers supported.");
-}
+// Assume the if any one signed integer type is two's complement, then all
+// other will be too.
+static_assert(
+    (-1 & 0x03) == 0x03,
+    "Only two's complement representation of signed integers supported.");
+
 // Plain const char* won't work for static_assert, use #define instead.
 #define kSizeErrorMsg "Byte size must be less than or equal to data type size."
-}
 
 // Utility class for getting the unsigned equivalent of a signed type.
 template <typename T>

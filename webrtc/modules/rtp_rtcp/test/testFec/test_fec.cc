@@ -22,7 +22,6 @@
 #include <list>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/rtp_rtcp/source/fec_private_tables_bursty.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
 
@@ -32,7 +31,11 @@
 //#define VERBOSE_OUTPUT
 
 namespace webrtc {
+namespace fec_private_tables {
+extern const uint8_t** kPacketMaskBurstyTbl[12];
+}
 namespace test {
+using fec_private_tables::kPacketMaskBurstyTbl;
 
 void ReceivePackets(
     ForwardErrorCorrection::ReceivedPacketList* toDecodeList,
@@ -93,10 +96,6 @@ TEST(FecTest, FecTest) {
   // FEC mask types.
   const FecMaskType kMaskTypes[] = { kFecMaskRandom, kFecMaskBursty };
   const int kNumFecMaskTypes = sizeof(kMaskTypes) / sizeof(*kMaskTypes);
-
-  // TODO(pbos): Fix this. Hack to prevent a warning
-  // ('-Wunneeded-internal-declaration') from clang.
-  (void) kPacketMaskBurstyTbl;
 
   // Maximum number of media packets allowed for the mask type.
   const uint16_t kMaxMediaPackets[] = {kMaxNumberMediaPackets,

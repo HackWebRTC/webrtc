@@ -17,7 +17,8 @@
 
 #include "webrtc/typedefs.h"
 
-namespace {
+namespace webrtc {
+namespace fec_private_tables {
 
 const uint8_t kMaskRandom10_1[2] = {
   0xff, 0xc0
@@ -24518,5 +24519,6 @@ const uint8_t** kPacketMaskRandomTbl[48] = {
   kPacketMaskRandom48
 };
 
-}  // namespace
+}  // namespace fec_private_tables
+}  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_PRIVATE_TABLES_RANDOM_H_

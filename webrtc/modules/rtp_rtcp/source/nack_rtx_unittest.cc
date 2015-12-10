@@ -24,7 +24,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/transport.h"
 
-using namespace webrtc;
+namespace webrtc {
 
 const int kVideoNackListSize = 30;
 const uint32_t kTestSsrc = 3456;
@@ -338,3 +338,5 @@ TEST_F(RtpRtcpRtxNackTest, RtxNack) {
   EXPECT_EQ(kTestNumberOfRtxPackets, transport_.count_rtx_ssrc_);
   EXPECT_TRUE(ExpectedPacketsReceived());
 }
+
+}  // namespace webrtc

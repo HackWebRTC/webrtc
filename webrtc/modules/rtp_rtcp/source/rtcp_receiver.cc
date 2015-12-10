@@ -23,8 +23,13 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
 namespace webrtc {
-using namespace RTCPUtility;
-using namespace RTCPHelp;
+using RTCPHelp::RTCPPacketInformation;
+using RTCPHelp::RTCPReceiveInformation;
+using RTCPHelp::RTCPReportBlockInformation;
+using RTCPUtility::kBtVoipMetric;
+using RTCPUtility::RTCPCnameInformation;
+using RTCPUtility::RTCPPacketReportBlockItem;
+using RTCPUtility::RTCPPacketTypes;
 
 // The number of RTCP time intervals needed to trigger a timeout.
 const int kRrTimeoutIntervals = 3;

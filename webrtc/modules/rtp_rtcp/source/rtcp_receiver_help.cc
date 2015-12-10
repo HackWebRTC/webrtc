@@ -17,7 +17,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
-using namespace RTCPHelp;
+namespace RTCPHelp {
 
 RTCPPacketInformation::RTCPPacketInformation()
     : rtcpPacketTypeFlags(0),
@@ -190,4 +190,5 @@ void RTCPReceiveInformation::VerifyAndAllocateBoundingSet(
     const uint32_t minimumSize) {
   TmmbnBoundingSet.VerifyAndAllocateSet(minimumSize);
 }
+}  // namespace RTCPHelp
 }  // namespace webrtc

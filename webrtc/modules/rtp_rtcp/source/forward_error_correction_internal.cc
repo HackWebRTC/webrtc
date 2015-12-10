@@ -17,6 +17,8 @@
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_random.h"
 
 namespace {
+using webrtc::fec_private_tables::kPacketMaskBurstyTbl;
+using webrtc::fec_private_tables::kPacketMaskRandomTbl;
 
 // Allow for different modes of protection for packets in UEP case.
 enum ProtectionMode {

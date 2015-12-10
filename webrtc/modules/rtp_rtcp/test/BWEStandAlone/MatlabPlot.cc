@@ -24,7 +24,10 @@
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
-using namespace webrtc;
+using webrtc::CriticalSectionScoped;
+using webrtc::CriticalSectionWrapper;
+using webrtc::EventWrapper;
+using webrtc::TickTime;
 
 #ifdef MATLAB
 MatlabEngine eng;

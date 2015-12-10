@@ -41,8 +41,8 @@ void NackStats::ReportRequest(uint16_t sequence_number) {
 
 uint32_t MidNtp(uint32_t ntp_sec, uint32_t ntp_frac) {
   return (ntp_sec << 16) + (ntp_frac >> 16);
-}  // end RTCPUtility
 }
+}  // namespace RTCPUtility
 
 // RTCPParserV2 : currently read only
 RTCPUtility::RTCPParserV2::RTCPParserV2(const uint8_t* rtcpData,

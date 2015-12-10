@@ -132,6 +132,6 @@ class Vp8PartitionAggregator {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Vp8PartitionAggregator);
 };
-}  // namespace
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_VP8_PARTITION_AGGREGATOR_H_

@@ -54,6 +54,6 @@ class FrameGenerator {
   uint16_t seq_num_;
   uint32_t timestamp_;
 };
-}
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_

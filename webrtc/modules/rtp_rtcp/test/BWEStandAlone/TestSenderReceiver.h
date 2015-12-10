@@ -21,9 +21,6 @@ class TestLoadGenerator;
 namespace webrtc {
 class CriticalSectionWrapper;
 class EventWrapper;
-}
-
-using namespace webrtc;
 
 #define MAX_BITRATE_KBPS 50000
 
@@ -149,5 +146,5 @@ private:
     int64_t _lastTime;
 
 };
-
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_TEST_BWESTANDALONE_TESTSENDERRECEIVER_H_
