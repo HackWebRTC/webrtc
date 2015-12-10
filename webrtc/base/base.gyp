@@ -88,6 +88,8 @@
         'platform_thread.cc',
         'platform_thread.h',
         'platform_thread_types.h',
+        'random.cc',
+        'random.h',
         'ratetracker.cc',
         'ratetracker.h',
         'safe_conversions.h',

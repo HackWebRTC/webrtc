@@ -391,7 +391,7 @@ void JitterFilter::SetMaxJitter(int64_t max_jitter_ms) {
 }
 
 namespace {
-inline int64_t TruncatedNSigmaGaussian(test::Random* const random,
+inline int64_t TruncatedNSigmaGaussian(Random* const random,
                                        int64_t mean,
                                        int64_t std_dev) {
   int64_t gaussian_random = random->Gaussian(mean, std_dev);

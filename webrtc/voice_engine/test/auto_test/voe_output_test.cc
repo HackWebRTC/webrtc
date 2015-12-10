@@ -9,11 +9,11 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/random.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/channel_transport/channel_transport.h"
-#include "webrtc/test/random.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
 
@@ -27,7 +27,7 @@ const webrtc::CodecInst kCodecInst = {120, "opus", 48000, 960, 2, 64000};
 
 namespace voetest {
 
-using webrtc::test::Random;
+using webrtc::Random;
 using webrtc::test::VoiceChannelTransport;
 
 // This test allows a check on the output signal in an end-to-end call.

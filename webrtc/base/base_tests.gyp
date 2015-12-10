@@ -84,6 +84,7 @@
           'profiler_unittest.cc',
           'proxy_unittest.cc',
           'proxydetect_unittest.cc',
+          'random_unittest.cc',
           'ratelimiter_unittest.cc',
           'ratetracker_unittest.cc',
           'referencecountedsingletonfactory_unittest.cc',

@@ -17,6 +17,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/random.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/call.h"
@@ -24,7 +25,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/random.h"
 #include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -301,7 +301,7 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
                          uint32_t csrcs_count,
                          uint8_t* packet,
                          size_t packet_size,
-                         test::Random* prng) {
+                         Random* prng) {
   RTC_CHECK_GE(packet_size, 16 + 4 * csrcs_count + 4 * kNumExtensions);
   Clock* clock = Clock::GetRealTimeClock();
 
@@ -349,7 +349,7 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
   return header_size;
 }
 
-rtc::scoped_ptr<rtcp::RawPacket> GenerateRtcpPacket(test::Random* prng) {
+rtc::scoped_ptr<rtcp::RawPacket> GenerateRtcpPacket(Random* prng) {
   rtcp::ReportBlock report_block;
   report_block.To(prng->Rand<uint32_t>());  // Remote SSRC.
   report_block.WithFractionLost(prng->Rand(50));
@@ -366,7 +366,7 @@ rtc::scoped_ptr<rtcp::RawPacket> GenerateRtcpPacket(test::Random* prng) {
 
 void GenerateVideoReceiveConfig(uint32_t extensions_bitvector,
                                 VideoReceiveStream::Config* config,
-                                test::Random* prng) {
+                                Random* prng) {
   // Create a map from a payload type to an encoder name.
   VideoReceiveStream::Decoder decoder;
   decoder.payload_type = prng->Rand(0, 127);
@@ -395,7 +395,7 @@ void GenerateVideoReceiveConfig(uint32_t extensions_bitvector,
 
 void GenerateVideoSendConfig(uint32_t extensions_bitvector,
                              VideoSendStream::Config* config,
-                             test::Random* prng) {
+                             Random* prng) {
   // Create a map from a payload type to an encoder name.
   config->encoder_settings.payload_type = prng->Rand(0, 127);
   config->encoder_settings.payload_name = (prng->Rand<bool>() ? "VP8" : "H264");
@@ -434,7 +434,7 @@ void LogSessionAndReadBack(size_t rtp_count,
   VideoReceiveStream::Config receiver_config(nullptr);
   VideoSendStream::Config sender_config(nullptr);
 
-  test::Random prng(random_seed);
+  Random prng(random_seed);
 
   // Create rtp_count RTP packets containing random data.
   for (size_t i = 0; i < rtp_count; i++) {
@@ -591,7 +591,7 @@ TEST(RtcEventLogTest, LogSessionAndReadBack) {
                             1 + csrcs_count,  // Number of BWE loss events.
                             extensions,       // Bit vector choosing extensions.
                             csrcs_count,      // Number of contributing sources.
-                            extensions + csrcs_count);  // Random seed.
+                            extensions * 3 + csrcs_count + 1);  // Random seed.
     }
   }
 }
@@ -609,7 +609,7 @@ void DropOldEvents(uint32_t extensions_bitvector,
   VideoReceiveStream::Config receiver_config(nullptr);
   VideoSendStream::Config sender_config(nullptr);
 
-  test::Random prng(random_seed);
+  Random prng(random_seed);
 
   // Create two RTP packets containing random data.
   size_t packet_size = prng.Rand(1000, 1100);

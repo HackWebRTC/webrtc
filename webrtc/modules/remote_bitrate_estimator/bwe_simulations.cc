@@ -36,7 +36,7 @@ class BweSimulation : public BweTest,
     VerboseLogging(true);
   }
 
-  test::Random random_;
+  Random random_;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(BweSimulation);

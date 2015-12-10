@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "webrtc/base/common.h"
+#include "webrtc/base/random.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -31,7 +32,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/random.h"
 
 namespace webrtc {
 
@@ -265,7 +265,7 @@ class LossFilter : public PacketProcessor {
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
-  test::Random random_;
+  Random random_;
   float loss_fraction_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(LossFilter);
@@ -299,7 +299,7 @@ class JitterFilter : public PacketProcessor {
   int64_t MeanUs();
 
  private:
-  test::Random random_;
+  Random random_;
   int64_t stddev_jitter_us_;
   int64_t last_send_time_us_;
   bool reordering_;  // False by default.
@@ -318,7 +318,7 @@ class ReorderFilter : public PacketProcessor {
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
-  test::Random random_;
+  Random random_;
   float reorder_fraction_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ReorderFilter);

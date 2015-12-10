@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/random.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
@@ -21,7 +22,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
 #include "webrtc/test/field_trial.h"
-#include "webrtc/test/random.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
@@ -38,7 +38,7 @@ class OveruseDetectorTest : public ::testing::Test {
         overuse_detector_(),
         overuse_estimator_(new OveruseEstimator(options_)),
         inter_arrival_(new InterArrival(5 * 90, kRtpTimestampToMs, true)),
-        random_(1234) {}
+        random_(123456789) {}
 
  protected:
   void SetUp() override {
@@ -55,9 +55,10 @@ class OveruseDetectorTest : public ::testing::Test {
       }
       rtp_timestamp_ += mean_ms * 90;
       now_ms_ += mean_ms;
-      receive_time_ms_ =
-          std::max(receive_time_ms_,
-                   now_ms_ + random_.Gaussian(0, standard_deviation_ms));
+      receive_time_ms_ = std::max<int64_t>(
+          receive_time_ms_,
+          now_ms_ + static_cast<int64_t>(
+                        random_.Gaussian(0, standard_deviation_ms) + 0.5));
       if (kBwOverusing == overuse_detector_->State()) {
         if (last_overuse + 1 != i) {
           unique_overuse++;
@@ -77,9 +78,10 @@ class OveruseDetectorTest : public ::testing::Test {
       }
       rtp_timestamp_ += mean_ms * 90;
       now_ms_ += mean_ms + drift_per_frame_ms;
-      receive_time_ms_ =
-          std::max(receive_time_ms_,
-                   now_ms_ + random_.Gaussian(0, standard_deviation_ms));
+      receive_time_ms_ = std::max<int64_t>(
+          receive_time_ms_,
+          now_ms_ + static_cast<int64_t>(
+                        random_.Gaussian(0, standard_deviation_ms) + 0.5));
       if (kBwOverusing == overuse_detector_->State()) {
         return i + 1;
       }
@@ -114,7 +116,7 @@ class OveruseDetectorTest : public ::testing::Test {
   rtc::scoped_ptr<OveruseDetector> overuse_detector_;
   rtc::scoped_ptr<OveruseEstimator> overuse_estimator_;
   rtc::scoped_ptr<InterArrival> inter_arrival_;
-  test::Random random_;
+  Random random_;
 };
 
 TEST_F(OveruseDetectorTest, GaussianRandom) {
@@ -222,7 +224,7 @@ TEST_F(OveruseDetectorTest, DISABLED_OveruseWithHighVariance100Kbit10fps) {
     UpdateDetector(rtp_timestamp, now_ms_, packet_size);
     rtp_timestamp += frame_duration_ms * 90;
     if (i % 2) {
-      offset = rand() % 50;
+      offset = random_.Rand(0, 49);
       now_ms_ += frame_duration_ms - offset;
     } else {
       now_ms_ += frame_duration_ms + offset;
@@ -254,7 +256,7 @@ TEST_F(OveruseDetectorTest, DISABLED_OveruseWithLowVariance100Kbit10fps) {
     UpdateDetector(rtp_timestamp, now_ms_, packet_size);
     rtp_timestamp += frame_duration_ms * 90;
     if (i % 2) {
-      offset = rand() % 2;
+      offset = random_.Rand(0, 1);
       now_ms_ += frame_duration_ms - offset;
     } else {
       now_ms_ += frame_duration_ms + offset;
@@ -290,7 +292,7 @@ TEST_F(OveruseDetectorTest, OveruseWithLowVariance2000Kbit30fps) {
     UpdateDetector(rtp_timestamp, now_ms_, packet_size);
     rtp_timestamp += frame_duration_ms * 90;
     if (i % 2) {
-      offset = rand() % 2;
+      offset = random_.Rand(0, 1);
       now_ms_ += frame_duration_ms - offset;
     } else {
       now_ms_ += frame_duration_ms + offset;
@@ -323,10 +325,10 @@ TEST_F(OveruseDetectorTest,
   int sigma_ms = 3;
   int unique_overuse = Run100000Samples(packets_per_frame, packet_size,
                                         frame_duration_ms, sigma_ms);
-  EXPECT_EQ(13, unique_overuse);
+  EXPECT_EQ(1, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(14, frames_until_overuse);
+  EXPECT_EQ(13, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, LowGaussianVarianceFastDrift30Kbit3fps) {
@@ -337,7 +339,7 @@ TEST_F(OveruseDetectorTest, LowGaussianVarianceFastDrift30Kbit3fps) {
   int sigma_ms = 3;
   int unique_overuse = Run100000Samples(packets_per_frame, packet_size,
                                         frame_duration_ms, sigma_ms);
-  EXPECT_EQ(13, unique_overuse);
+  EXPECT_EQ(1, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
   EXPECT_EQ(4, frames_until_overuse);
@@ -351,10 +353,10 @@ TEST_F(OveruseDetectorTest, HighGaussianVariance30Kbit3fps) {
   int sigma_ms = 10;
   int unique_overuse = Run100000Samples(packets_per_frame, packet_size,
                                         frame_duration_ms, sigma_ms);
-  EXPECT_EQ(46, unique_overuse);
+  EXPECT_EQ(1, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(42, frames_until_overuse);
+  EXPECT_EQ(32, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift30Kbit3fps) {
@@ -365,7 +367,7 @@ TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift30Kbit3fps) {
   int sigma_ms = 10;
   int unique_overuse = Run100000Samples(packets_per_frame, packet_size,
                                         frame_duration_ms, sigma_ms);
-  EXPECT_EQ(46, unique_overuse);
+  EXPECT_EQ(1, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
   EXPECT_EQ(4, frames_until_overuse);
@@ -380,10 +382,10 @@ TEST_F(OveruseDetectorTest,
   int sigma_ms = 3;
   int unique_overuse = Run100000Samples(packets_per_frame, packet_size,
                                         frame_duration_ms, sigma_ms);
-  EXPECT_EQ(12, unique_overuse);
+  EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(12, frames_until_overuse);
+  EXPECT_EQ(13, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest,
@@ -395,10 +397,10 @@ TEST_F(OveruseDetectorTest,
   int sigma_ms = 10;
   int unique_overuse = Run100000Samples(packets_per_frame, packet_size,
                                         frame_duration_ms, sigma_ms);
-  EXPECT_EQ(16, unique_overuse);
+  EXPECT_EQ(1, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(37, frames_until_overuse);
+  EXPECT_EQ(32, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest,
@@ -410,10 +412,10 @@ TEST_F(OveruseDetectorTest,
   int sigma_ms = 3;
   int unique_overuse = Run100000Samples(packets_per_frame, packet_size,
                                         frame_duration_ms, sigma_ms);
-  EXPECT_EQ(12, unique_overuse);
+  EXPECT_EQ(1, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(12, frames_until_overuse);
+  EXPECT_EQ(13, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest,
@@ -425,10 +427,10 @@ TEST_F(OveruseDetectorTest,
   int sigma_ms = 10;
   int unique_overuse = Run100000Samples(packets_per_frame, packet_size,
                                         frame_duration_ms, sigma_ms);
-  EXPECT_EQ(12, unique_overuse);
+  EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(37, frames_until_overuse);
+  EXPECT_EQ(32, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest,
@@ -443,7 +445,7 @@ TEST_F(OveruseDetectorTest,
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(14, frames_until_overuse);
+  EXPECT_EQ(15, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, LowGaussianVarianceFastDrift300Kbit30fps) {
@@ -471,7 +473,7 @@ TEST_F(OveruseDetectorTest, HighGaussianVariance300Kbit30fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(49, frames_until_overuse);
+  EXPECT_EQ(41, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift300Kbit30fps) {
@@ -485,7 +487,7 @@ TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift300Kbit30fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(8, frames_until_overuse);
+  EXPECT_EQ(10, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest,
@@ -500,7 +502,7 @@ TEST_F(OveruseDetectorTest,
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(14, frames_until_overuse);
+  EXPECT_EQ(15, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, LowGaussianVarianceFastDrift1000Kbit30fps) {
@@ -528,7 +530,7 @@ TEST_F(OveruseDetectorTest, HighGaussianVariance1000Kbit30fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(49, frames_until_overuse);
+  EXPECT_EQ(41, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift1000Kbit30fps) {
@@ -542,7 +544,7 @@ TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift1000Kbit30fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(8, frames_until_overuse);
+  EXPECT_EQ(10, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest,
@@ -557,7 +559,7 @@ TEST_F(OveruseDetectorTest,
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(14, frames_until_overuse);
+  EXPECT_EQ(15, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, LowGaussianVarianceFastDrift2000Kbit30fps) {
@@ -585,7 +587,7 @@ TEST_F(OveruseDetectorTest, HighGaussianVariance2000Kbit30fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(49, frames_until_overuse);
+  EXPECT_EQ(41, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift2000Kbit30fps) {
@@ -599,7 +601,7 @@ TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift2000Kbit30fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(8, frames_until_overuse);
+  EXPECT_EQ(10, frames_until_overuse);
 }
 
 class OveruseDetectorExperimentTest : public OveruseDetectorTest {

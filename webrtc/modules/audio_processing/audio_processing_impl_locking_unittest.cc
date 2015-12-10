@@ -18,11 +18,11 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/random.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/test/random.h"
 
 namespace webrtc {
 
@@ -84,7 +84,7 @@ class RandomGenerator {
 
  private:
   rtc::CriticalSection crit_;
-  test::Random rand_gen_ GUARDED_BY(crit_);
+  Random rand_gen_ GUARDED_BY(crit_);
 };
 
 // Variables related to the audio data and formats.

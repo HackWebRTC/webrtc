@@ -13,7 +13,7 @@
 #include <limits>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/test/random.h"
+#include "webrtc/base/random.h"
 
 using webrtc::rtcp::ReportBlock;
 
@@ -42,7 +42,7 @@ TEST(RtcpPacketReportBlockTest, ParseChecksLength) {
 TEST(RtcpPacketReportBlockTest, ParseAnyData) {
   uint8_t buffer[kBufferLength];
   // Fill buffer with semi-random data.
-  test::Random generator(testing::FLAGS_gtest_random_seed);
+  Random generator(0x256F8A285EC829ull);
   for (size_t i = 0; i < kBufferLength; ++i)
     buffer[i] = static_cast<uint8_t>(generator.Rand(0, 0xff));
 

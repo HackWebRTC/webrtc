@@ -134,6 +134,8 @@ static_library("rtc_base_approved") {
     "platform_thread.cc",
     "platform_thread.h",
     "platform_thread_types.h",
+    "random.cc",
+    "random.h",
     "safe_conversions.h",
     "safe_conversions_impl.h",
     "scoped_ptr.h",
