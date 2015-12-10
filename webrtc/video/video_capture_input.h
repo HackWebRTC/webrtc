@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -33,7 +34,6 @@ class Config;
 class CpuOveruseMetricsObserver;
 class CpuOveruseObserver;
 class CriticalSectionWrapper;
-class EventWrapper;
 class OveruseFrameDetector;
 class ProcessThread;
 class RegistrableCpuOveruseMetricsObserver;
@@ -79,7 +79,7 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   VideoFrame incoming_frame_;
 
   rtc::PlatformThread encoder_thread_;
-  rtc::scoped_ptr<EventWrapper> capture_event_;
+  rtc::Event capture_event_;
 
   volatile int stop_;
 

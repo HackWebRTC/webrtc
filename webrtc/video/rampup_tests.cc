@@ -204,7 +204,7 @@ bool RampUpTester::PollStats() {
     }
     if (stats.send_bandwidth_bps >= expected_bitrate_bps_) {
       ramp_up_finished_ms_ = clock_->TimeInMilliseconds();
-      observation_complete_->Set();
+      observation_complete_.Set();
     }
   }
 
@@ -278,8 +278,7 @@ void RampUpTester::TriggerTestDone() {
 void RampUpTester::PerformTest() {
   test_start_ms_ = clock_->TimeInMilliseconds();
   poller_thread_.Start();
-  EXPECT_EQ(kEventSignaled, Wait())
-      << "Timed out while waiting for ramp-up to complete.";
+  EXPECT_TRUE(Wait()) << "Timed out while waiting for ramp-up to complete.";
   TriggerTestDone();
   poller_thread_.Stop();
 }
@@ -385,7 +384,7 @@ void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
                                   now - state_start_ms_,
                                   "ms",
                                   false);
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
       break;
     }

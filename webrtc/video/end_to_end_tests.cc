@@ -26,7 +26,6 @@
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/call_test.h"
@@ -48,7 +47,7 @@
 
 namespace webrtc {
 
-static const uint32_t kSilenceTimeoutMs = 2000;
+static const int kSilenceTimeoutMs = 2000;
 
 class EndToEndTest : public test::CallTest {
  public:
@@ -124,33 +123,33 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
 
   class Renderer : public VideoRenderer {
    public:
-    Renderer() : event_(EventWrapper::Create()) {}
+    Renderer() : event_(false, false) {}
 
     void RenderFrame(const VideoFrame& video_frame,
                      int /*time_to_render_ms*/) override {
-      event_->Set();
+      event_.Set();
     }
 
     bool IsTextureSupported() const override { return false; }
 
-    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+    bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
 
-    rtc::scoped_ptr<EventWrapper> event_;
+    rtc::Event event_;
   } renderer;
 
   class TestFrameCallback : public I420FrameCallback {
    public:
-    TestFrameCallback() : event_(EventWrapper::Create()) {}
+    TestFrameCallback() : event_(false, false) {}
 
-    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+    bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
 
    private:
     void FrameCallback(VideoFrame* frame) override {
       SleepMs(kDelayRenderCallbackMs);
-      event_->Set();
+      event_.Set();
     }
 
-    rtc::scoped_ptr<EventWrapper> event_;
+    rtc::Event event_;
   };
 
   CreateCalls(Call::Config(), Call::Config());
@@ -175,9 +174,9 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(kWidth, kHeight));
   send_stream_->Input()->IncomingCapturedFrame(*frame_generator->NextFrame());
-  EXPECT_EQ(kEventSignaled, pre_render_callback.Wait())
+  EXPECT_TRUE(pre_render_callback.Wait())
       << "Timed out while waiting for pre-render callback.";
-  EXPECT_EQ(kEventSignaled, renderer.Wait())
+  EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
   Stop();
@@ -191,17 +190,17 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
 TEST_F(EndToEndTest, TransmitsFirstFrame) {
   class Renderer : public VideoRenderer {
    public:
-    Renderer() : event_(EventWrapper::Create()) {}
+    Renderer() : event_(false, false) {}
 
     void RenderFrame(const VideoFrame& video_frame,
                      int /*time_to_render_ms*/) override {
-      event_->Set();
+      event_.Set();
     }
     bool IsTextureSupported() const override { return false; }
 
-    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+    bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
 
-    rtc::scoped_ptr<EventWrapper> event_;
+    rtc::Event event_;
   } renderer;
 
   CreateCalls(Call::Config(), Call::Config());
@@ -223,7 +222,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
           encoder_config_.streams[0].width, encoder_config_.streams[0].height));
   send_stream_->Input()->IncomingCapturedFrame(*frame_generator->NextFrame());
 
-  EXPECT_EQ(kEventSignaled, renderer.Wait())
+  EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
   Stop();
@@ -244,7 +243,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
           frame_counter_(0) {}
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for enough frames to be decoded.";
     }
 
@@ -271,7 +270,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
                      int time_to_render_ms) override {
       const int kRequiredFrames = 500;
       if (++frame_counter_ == kRequiredFrames)
-        observation_complete_->Set();
+        observation_complete_.Set();
     }
 
     bool IsTextureSupported() const override { return false; }
@@ -294,7 +293,7 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
           frame_counter_(0) {}
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for enough frames to be decoded.";
     }
 
@@ -323,7 +322,7 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
                      int time_to_render_ms) override {
       const int kRequiredFrames = 500;
       if (++frame_counter_ == kRequiredFrames)
-        observation_complete_->Set();
+        observation_complete_.Set();
     }
 
     bool IsTextureSupported() const override { return false; }
@@ -351,13 +350,13 @@ TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
       ssrc |= static_cast<uint32_t>(packet[6]) << 8;
       ssrc |= static_cast<uint32_t>(packet[7]) << 0;
       EXPECT_EQ(kReceiverLocalSsrc, ssrc);
-      observation_complete_->Set();
+      observation_complete_.Set();
 
       return SEND_PACKET;
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for a receiver RTCP packet to be sent.";
     }
   } test;
@@ -389,7 +388,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
         retransmitted_packets_.insert(header.sequenceNumber);
         if (nacks_left_ <= 0 &&
             retransmitted_packets_.size() == dropped_packets_.size()) {
-          observation_complete_->Set();
+          observation_complete_.Set();
         }
         return SEND_PACKET;
       }
@@ -438,7 +437,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out waiting for packets to be NACKed, retransmitted and "
              "rendered.";
     }
@@ -515,7 +514,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
       // Rendering frame with timestamp of packet that was dropped -> FEC
       // protection worked.
       if (protected_timestamps_.count(video_frame.timestamp()) != 0)
-        observation_complete_->Set();
+        observation_complete_.Set();
     }
 
     bool IsTextureSupported() const override { return false; }
@@ -542,7 +541,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out waiting for dropped frames frames to be rendered.";
     }
 
@@ -627,7 +626,7 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
             IsNewerSequenceNumber(nacks.back(), fec_sequence_number_)) {
           EXPECT_TRUE(std::find(
               nacks.begin(), nacks.end(), fec_sequence_number_) == nacks.end());
-          observation_complete_->Set();
+          observation_complete_.Set();
         }
       }
       return SEND_PACKET;
@@ -655,7 +654,7 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for FEC packets to be received.";
     }
 
@@ -737,7 +736,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
       rtc::CritScope lock(&crit_);
       if (frame->timestamp() == retransmitted_timestamp_) {
         EXPECT_TRUE(frame_retransmitted_);
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
     }
 
@@ -766,7 +765,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for retransmission to render.";
     }
 
@@ -810,30 +809,30 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
 
   class Renderer : public VideoRenderer {
    public:
-    Renderer() : event_(EventWrapper::Create()) {}
+    Renderer() : event_(false, false) {}
 
     void RenderFrame(const VideoFrame& video_frame,
                      int /*time_to_render_ms*/) override {
       EXPECT_EQ(0, *video_frame.buffer(kYPlane))
           << "Rendered frame should have zero luma which is applied by the "
              "pre-render callback.";
-      event_->Set();
+      event_.Set();
     }
 
     bool IsTextureSupported() const override { return false; }
 
-    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
-    rtc::scoped_ptr<EventWrapper> event_;
+    bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
+    rtc::Event event_;
   } renderer;
 
   class TestFrameCallback : public I420FrameCallback {
    public:
     TestFrameCallback(int expected_luma_byte, int next_luma_byte)
-        : event_(EventWrapper::Create()),
+        : event_(false, false),
           expected_luma_byte_(expected_luma_byte),
           next_luma_byte_(next_luma_byte) {}
 
-    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+    bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
 
    private:
     virtual void FrameCallback(VideoFrame* frame) {
@@ -851,10 +850,10 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
              next_luma_byte_,
              frame->allocated_size(kYPlane));
 
-      event_->Set();
+      event_.Set();
     }
 
-    rtc::scoped_ptr<EventWrapper> event_;
+    rtc::Event event_;
     int expected_luma_byte_;
     int next_luma_byte_;
   };
@@ -892,11 +891,11 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
       test::FrameGenerator::CreateChromaGenerator(kWidth / 2, kHeight / 2));
   send_stream_->Input()->IncomingCapturedFrame(*frame_generator->NextFrame());
 
-  EXPECT_EQ(kEventSignaled, pre_encode_callback.Wait())
+  EXPECT_TRUE(pre_encode_callback.Wait())
       << "Timed out while waiting for pre-encode callback.";
-  EXPECT_EQ(kEventSignaled, pre_render_callback.Wait())
+  EXPECT_TRUE(pre_render_callback.Wait())
       << "Timed out while waiting for pre-render callback.";
-  EXPECT_EQ(kEventSignaled, renderer.Wait())
+  EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
   Stop();
@@ -963,7 +962,7 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
       rtc::CritScope lock(&crit_);
       if (received_pli_ &&
           video_frame.timestamp() > highest_dropped_timestamp_) {
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
       if (!received_pli_)
         frames_to_drop_ = kPacketsToDrop;
@@ -980,9 +979,9 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait()) << "Timed out waiting for PLI to be "
-                                           "received and a frame to be "
-                                           "rendered afterwards.";
+      EXPECT_TRUE(Wait()) << "Timed out waiting for PLI to be "
+                             "received and a frame to be "
+                             "rendered afterwards.";
     }
 
     rtc::CriticalSection crit_;
@@ -1008,11 +1007,9 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   class PacketInputObserver : public PacketReceiver {
    public:
     explicit PacketInputObserver(PacketReceiver* receiver)
-        : receiver_(receiver), delivered_packet_(EventWrapper::Create()) {}
+        : receiver_(receiver), delivered_packet_(false, false) {}
 
-    EventTypeWrapper Wait() {
-      return delivered_packet_->Wait(kDefaultTimeoutMs);
-    }
+    bool Wait() { return delivered_packet_.Wait(kDefaultTimeoutMs); }
 
    private:
     DeliveryStatus DeliverPacket(MediaType media_type,
@@ -1026,13 +1023,13 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
         DeliveryStatus delivery_status =
             receiver_->DeliverPacket(media_type, packet, length, packet_time);
         EXPECT_EQ(DELIVERY_UNKNOWN_SSRC, delivery_status);
-        delivered_packet_->Set();
+        delivered_packet_.Set();
         return delivery_status;
       }
     }
 
     PacketReceiver* receiver_;
-    rtc::scoped_ptr<EventWrapper> delivered_packet_;
+    rtc::Event delivered_packet_;
   };
 
   CreateCalls(Call::Config(), Call::Config());
@@ -1054,7 +1051,7 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   receive_streams_.clear();
 
   // Wait() waits for a received packet.
-  EXPECT_EQ(kEventSignaled, input_observer.Wait());
+  EXPECT_TRUE(input_observer.Wait());
 
   Stop();
 
@@ -1103,16 +1100,16 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
           if (!has_report_block) {
             ADD_FAILURE() << "Received RTCP packet without receiver report for "
                              "RtcpMode::kCompound.";
-            observation_complete_->Set();
+            observation_complete_.Set();
           }
 
           if (sent_rtcp_ >= kNumCompoundRtcpPacketsToObserve)
-            observation_complete_->Set();
+            observation_complete_.Set();
 
           break;
         case RtcpMode::kReducedSize:
           if (!has_report_block)
-            observation_complete_->Set();
+            observation_complete_.Set();
           break;
         case RtcpMode::kOff:
           RTC_NOTREACHED();
@@ -1131,7 +1128,7 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << (rtcp_mode_ == RtcpMode::kCompound
                   ? "Timed out before observing enough compound packets."
                   : "Timed out before receiving a non-compound RTCP packet.");
@@ -1282,27 +1279,27 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
         : settings_(settings),
           ssrc_(ssrc),
           frame_generator_(frame_generator),
-          done_(EventWrapper::Create()) {}
+          done_(false, false) {}
 
     void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       EXPECT_EQ(settings_.width, video_frame.width());
       EXPECT_EQ(settings_.height, video_frame.height());
       (*frame_generator_)->Stop();
-      done_->Set();
+      done_.Set();
     }
 
     uint32_t Ssrc() { return ssrc_; }
 
     bool IsTextureSupported() const override { return false; }
 
-    EventTypeWrapper Wait() { return done_->Wait(kDefaultTimeoutMs); }
+    bool Wait() { return done_.Wait(kDefaultTimeoutMs); }
 
    private:
     const MultiStreamTest::CodecSettings& settings_;
     const uint32_t ssrc_;
     test::FrameGeneratorCapturer** const frame_generator_;
-    rtc::scoped_ptr<EventWrapper> done_;
+    rtc::Event done_;
   };
 
   class Tester : public MultiStreamTest {
@@ -1313,8 +1310,8 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
    protected:
     void Wait() override {
       for (const auto& observer : observers_) {
-        EXPECT_EQ(EventTypeWrapper::kEventSignaled, observer->Wait())
-            << "Time out waiting for from on ssrc " << observer->Ssrc();
+        EXPECT_TRUE(observer->Wait()) << "Time out waiting for from on ssrc "
+                                      << observer->Ssrc();
       }
     }
 
@@ -1350,7 +1347,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
                                const uint32_t& first_media_ssrc,
                                const std::map<uint32_t, uint32_t>& ssrc_map)
         : DirectTransport(sender_call),
-          done_(EventWrapper::Create()),
+          done_(false, false),
           parser_(RtpHeaderParser::Create()),
           first_media_ssrc_(first_media_ssrc),
           rtx_to_media_ssrcs_(ssrc_map),
@@ -1419,7 +1416,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
           }
 
           if (IsDone())
-            done_->Set();
+            done_.Set();
 
           if (drop_packet)
             return true;
@@ -1441,18 +1438,18 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
       return seqno_range == received_packed_ids_.size();
     }
 
-    EventTypeWrapper Wait() {
+    bool Wait() {
       {
         // Can't be sure until this point that rtx_to_media_ssrcs_ etc have
         // been initialized and are OK to read.
         rtc::CritScope cs(&lock_);
         started_ = true;
       }
-      return done_->Wait(kDefaultTimeoutMs);
+      return done_.Wait(kDefaultTimeoutMs);
     }
 
     rtc::CriticalSection lock_;
-    rtc::scoped_ptr<EventWrapper> done_;
+    rtc::Event done_;
     rtc::scoped_ptr<RtpHeaderParser> parser_;
     SequenceNumberUnwrapper unwrapper_;
     std::set<int64_t> received_packed_ids_;
@@ -1475,7 +1472,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
    protected:
     void Wait() override {
       RTC_DCHECK(observer_ != nullptr);
-      EXPECT_EQ(EventTypeWrapper::kEventSignaled, observer_->Wait());
+      EXPECT_TRUE(observer_->Wait());
     }
 
     void UpdateSendConfig(
@@ -1612,9 +1609,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   class EncodedFrameTestObserver : public EncodedFrameObserver {
    public:
     EncodedFrameTestObserver()
-        : length_(0),
-          frame_type_(kEmptyFrame),
-          called_(EventWrapper::Create()) {}
+        : length_(0), frame_type_(kEmptyFrame), called_(false, false) {}
     virtual ~EncodedFrameTestObserver() {}
 
     virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) {
@@ -1622,10 +1617,10 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
       length_ = encoded_frame.length_;
       buffer_.reset(new uint8_t[length_]);
       memcpy(buffer_.get(), encoded_frame.data_, length_);
-      called_->Set();
+      called_.Set();
     }
 
-    EventTypeWrapper Wait() { return called_->Wait(kDefaultTimeoutMs); }
+    bool Wait() { return called_.Wait(kDefaultTimeoutMs); }
 
     void ExpectEqualFrames(const EncodedFrameTestObserver& observer) {
       ASSERT_EQ(length_, observer.length_)
@@ -1640,7 +1635,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
     rtc::scoped_ptr<uint8_t[]> buffer_;
     size_t length_;
     FrameType frame_type_;
-    rtc::scoped_ptr<EventWrapper> called_;
+    rtc::Event called_;
   };
 
   EncodedFrameTestObserver post_encode_observer;
@@ -1666,10 +1661,10 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
           encoder_config_.streams[0].width, encoder_config_.streams[0].height));
   send_stream_->Input()->IncomingCapturedFrame(*frame_generator->NextFrame());
 
-  EXPECT_EQ(kEventSignaled, post_encode_observer.Wait())
+  EXPECT_TRUE(post_encode_observer.Wait())
       << "Timed out while waiting for send-side encoded-frame callback.";
 
-  EXPECT_EQ(kEventSignaled, pre_decode_observer.Wait())
+  EXPECT_TRUE(pre_decode_observer.Wait())
       << "Timed out while waiting for pre-decode encoded-frame callback.";
 
   post_encode_observer.ExpectEqualFrames(pre_decode_observer);
@@ -1709,13 +1704,13 @@ TEST_F(EndToEndTest, ReceiveStreamSendsRemb) {
         packet_type = parser.Iterate();
       }
       if (received_psfb && received_remb)
-        observation_complete_->Set();
+        observation_complete_.Set();
       return SEND_PACKET;
     }
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait()) << "Timed out while waiting for a "
-                                           "receiver RTCP REMB packet to be "
-                                           "sent.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for a "
+                             "receiver RTCP REMB packet to be "
+                             "sent.";
     }
   } test;
 
@@ -1738,7 +1733,7 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
         has_seen_pacer_delay_ = sender_stats.pacer_delay_ms > 0;
       if (sender_stats.send_bandwidth_bps > 0 &&
           receiver_stats.recv_bandwidth_bps > 0 && has_seen_pacer_delay_) {
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
       return SEND_PACKET;
     }
@@ -1749,8 +1744,8 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait()) << "Timed out while waiting for "
-                                           "non-zero bandwidth stats.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for "
+                             "non-zero bandwidth stats.";
     }
 
    private:
@@ -1820,7 +1815,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
       if (send_stream_nack_packets >= 1 && receive_stream_nack_packets >= 1) {
         // NACK packet sent on receive stream and received on sent stream.
         if (MinMetricRunTimePassed())
-          observation_complete_->Set();
+          observation_complete_.Set();
       }
     }
 
@@ -1849,8 +1844,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out waiting for packet to be NACKed.";
+      EXPECT_TRUE(Wait()) << "Timed out waiting for packet to be NACKed.";
     }
 
     rtc::CriticalSection crit_;
@@ -1892,7 +1886,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       if (MinMetricRunTimePassed())
-        observation_complete_->Set();
+        observation_complete_.Set();
 
       // GetStats calls GetSendChannelRtcpStatistics
       // (via VideoSendStream::GetRtt) which updates ReportBlockStats used by
@@ -1946,8 +1940,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out waiting for packet to be NACKed.";
+      EXPECT_TRUE(Wait()) << "Timed out waiting for packet to be NACKed.";
     }
 
     const bool use_rtx_;
@@ -2154,7 +2147,7 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
           EXPECT_EQ(0, sent_rtcp_rrtr_);
           EXPECT_EQ(0, sent_rtcp_dlrr_);
         }
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
       return SEND_PACKET;
     }
@@ -2168,7 +2161,7 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for RTCP SR/RR packets to be sent.";
     }
 
@@ -2209,19 +2202,19 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
           << "Received unknown SSRC: " << header.ssrc;
 
       if (!valid_ssrcs_[header.ssrc])
-        observation_complete_->Set();
+        observation_complete_.Set();
 
       if (!is_observed_[header.ssrc]) {
         is_observed_[header.ssrc] = true;
         --ssrcs_to_observe_;
         if (expect_single_ssrc_) {
           expect_single_ssrc_ = false;
-          observation_complete_->Set();
+          observation_complete_.Set();
         }
       }
 
       if (ssrcs_to_observe_ == 0)
-        observation_complete_->Set();
+        observation_complete_.Set();
 
       return SEND_PACKET;
     }
@@ -2252,15 +2245,14 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for "
-          << (send_single_ssrc_first_ ? "first SSRC." : "SSRCs.");
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for "
+                          << (send_single_ssrc_first_ ? "first SSRC."
+                                                      : "SSRCs.");
 
       if (send_single_ssrc_first_) {
         // Set full simulcast and continue with the rest of the SSRCs.
         send_stream_->ReconfigureVideoEncoder(encoder_config_all_streams_);
-        EXPECT_EQ(kEventSignaled, Wait())
-            << "Timed out while waiting on additional SSRCs.";
+        EXPECT_TRUE(Wait()) << "Timed out while waiting on additional SSRCs.";
       }
     }
 
@@ -2309,15 +2301,15 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
         return 0;
       rtc::CritScope lock(&crit_);
       bitrate_kbps_ = new_target_bitrate;
-      observation_complete_->Set();
+      observation_complete_.Set();
       return 0;
     }
 
     void PerformTest() override {
-      ASSERT_EQ(kEventSignaled, Wait())
+      ASSERT_TRUE(Wait())
           << "Timed out while waiting for encoder SetRates() call.";
       // Wait for GetStats to report a corresponding bitrate.
-      for (unsigned int i = 0; i < kDefaultTimeoutMs; ++i) {
+      for (int i = 0; i < kDefaultTimeoutMs; ++i) {
         VideoSendStream::Stats stats = send_stream_->GetStats();
         {
           rtc::CritScope lock(&crit_);
@@ -2350,26 +2342,26 @@ TEST_F(EndToEndTest, GetStats) {
         : EndToEndTest(kLongTimeoutMs),
           send_stream_(nullptr),
           expected_send_ssrcs_(),
-          check_stats_event_(EventWrapper::Create()) {}
+          check_stats_event_(false, false) {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      check_stats_event_->Set();
+      check_stats_event_.Set();
       return SEND_PACKET;
     }
 
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
-      check_stats_event_->Set();
+      check_stats_event_.Set();
       return SEND_PACKET;
     }
 
     Action OnReceiveRtp(const uint8_t* packet, size_t length) override {
-      check_stats_event_->Set();
+      check_stats_event_.Set();
       return SEND_PACKET;
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
-      check_stats_event_->Set();
+      check_stats_event_.Set();
       return SEND_PACKET;
     }
 
@@ -2559,7 +2551,7 @@ TEST_F(EndToEndTest, GetStats) {
 
         int64_t time_until_timout_ = stop_time - now;
         if (time_until_timout_ > 0)
-          check_stats_event_->Wait(time_until_timout_);
+          check_stats_event_.Wait(time_until_timout_);
         now = clock->TimeInMilliseconds();
       }
 
@@ -2593,7 +2585,7 @@ TEST_F(EndToEndTest, GetStats) {
     std::set<uint32_t> expected_send_ssrcs_;
     std::string expected_cname_;
 
-    rtc::scoped_ptr<EventWrapper> check_stats_event_;
+    rtc::Event check_stats_event_;
   } test;
 
   FakeNetworkPipe::Config network_config;
@@ -2629,7 +2621,7 @@ TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
       if (sent_rtp_ >= kNumRtpPacketsToSend) {
         VideoReceiveStream::Stats stats = receive_stream_->GetStats();
         if (kNumRtpPacketsToSend == stats.rtp_stats.transmitted.packets) {
-          observation_complete_->Set();
+          observation_complete_.Set();
         }
         return DROP_PACKET;
       }
@@ -2638,7 +2630,7 @@ TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while verifying number of received RTP packets.";
     }
 
@@ -2687,7 +2679,7 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
       if (!observed_redundant_retransmission_[header.ssrc]) {
         observed_redundant_retransmission_[header.ssrc] = true;
         if (--ssrcs_to_observe_ == 0)
-          observation_complete_->Set();
+          observation_complete_.Set();
       }
 
       return SEND_PACKET;
@@ -2716,7 +2708,7 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for redundant payloads on all SSRCs.";
     }
 
@@ -2805,7 +2797,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
       if (!ssrc_observed_[ssrc] && !only_padding) {
         ssrc_observed_[ssrc] = true;
         if (--ssrcs_to_observe_ == 0)
-          observation_complete_->Set();
+          observation_complete_.Set();
       }
 
       return SEND_PACKET;
@@ -2866,7 +2858,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
   CreateFrameGeneratorCapturer();
 
   Start();
-  EXPECT_EQ(kEventSignaled, observer.Wait())
+  EXPECT_TRUE(observer.Wait())
       << "Timed out waiting for all SSRCs to send packets.";
 
   // Test stream resetting more than once to make sure that the state doesn't
@@ -2883,25 +2875,23 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     frame_generator_capturer_->Start();
 
     observer.ResetExpectedSsrcs(1);
-    EXPECT_EQ(kEventSignaled, observer.Wait())
-        << "Timed out waiting for single RTP packet.";
+    EXPECT_TRUE(observer.Wait()) << "Timed out waiting for single RTP packet.";
 
     // Reconfigure back to use all streams.
     send_stream_->ReconfigureVideoEncoder(encoder_config_);
     observer.ResetExpectedSsrcs(kNumSsrcs);
-    EXPECT_EQ(kEventSignaled, observer.Wait())
+    EXPECT_TRUE(observer.Wait())
         << "Timed out waiting for all SSRCs to send packets.";
 
     // Reconfigure down to one stream.
     send_stream_->ReconfigureVideoEncoder(one_stream);
     observer.ResetExpectedSsrcs(1);
-    EXPECT_EQ(kEventSignaled, observer.Wait())
-        << "Timed out waiting for single RTP packet.";
+    EXPECT_TRUE(observer.Wait()) << "Timed out waiting for single RTP packet.";
 
     // Reconfigure back to use all streams.
     send_stream_->ReconfigureVideoEncoder(encoder_config_);
     observer.ResetExpectedSsrcs(kNumSsrcs);
-    EXPECT_EQ(kEventSignaled, observer.Wait())
+    EXPECT_TRUE(observer.Wait())
         << "Timed out waiting for all SSRCs to send packets.";
   }
 
@@ -2935,8 +2925,8 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     NetworkStateTest()
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
-          encoded_frames_(EventWrapper::Create()),
-          packet_event_(EventWrapper::Create()),
+          encoded_frames_(false, false),
+          packet_event_(false, false),
           sender_call_(nullptr),
           receiver_call_(nullptr),
           sender_state_(kNetworkUp),
@@ -2948,14 +2938,14 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&test_crit_);
       ++sender_rtp_;
-      packet_event_->Set();
+      packet_event_.Set();
       return SEND_PACKET;
     }
 
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&test_crit_);
       ++sender_rtcp_;
-      packet_event_->Set();
+      packet_event_.Set();
       return SEND_PACKET;
     }
 
@@ -2967,7 +2957,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&test_crit_);
       ++receiver_rtcp_;
-      packet_event_->Set();
+      packet_event_.Set();
       return SEND_PACKET;
     }
 
@@ -2983,7 +2973,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, encoded_frames_->Wait(kDefaultTimeoutMs))
+      EXPECT_TRUE(encoded_frames_.Wait(kDefaultTimeoutMs))
           << "No frames received by the encoder.";
       // Wait for packets from both sender/receiver.
       WaitForPacketsOrSilence(false, false);
@@ -3024,9 +3014,9 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
           EXPECT_LE(down_frames_, 1)
               << "Encoding more than one frame while network is down.";
           if (down_frames_ > 1)
-            encoded_frames_->Set();
+            encoded_frames_.Set();
         } else {
-          encoded_frames_->Set();
+          encoded_frames_.Set();
         }
       }
       return test::FakeEncoder::Encode(
@@ -3048,7 +3038,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       bool sender_done = false;
       bool receiver_done = false;
       while (!sender_done || !receiver_done) {
-        packet_event_->Wait(kSilenceTimeoutMs);
+        packet_event_.Wait(kSilenceTimeoutMs);
         int64_t time_now_ms = clock_->TimeInMilliseconds();
         rtc::CritScope lock(&test_crit_);
         if (sender_down) {
@@ -3081,8 +3071,8 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     }
 
     rtc::CriticalSection test_crit_;
-    const rtc::scoped_ptr<EventWrapper> encoded_frames_;
-    const rtc::scoped_ptr<EventWrapper> packet_event_;
+    rtc::Event encoded_frames_;
+    rtc::Event packet_event_;
     Call* sender_call_;
     Call* receiver_call_;
     NetworkState sender_state_ GUARDED_BY(test_crit_);

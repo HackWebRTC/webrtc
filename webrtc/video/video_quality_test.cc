@@ -19,6 +19,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
@@ -71,8 +72,8 @@ class VideoAnalyzer : public PacketReceiver,
         avg_psnr_threshold_(avg_psnr_threshold),
         avg_ssim_threshold_(avg_ssim_threshold),
         stats_polling_thread_(&PollStatsThread, this, "StatsPoller"),
-        comparison_available_event_(EventWrapper::Create()),
-        done_(EventWrapper::Create()) {
+        comparison_available_event_(false, false),
+        done_(false, false) {
     // Create thread pool for CPU-expensive PSNR/SSIM calculations.
 
     // Try to use about as many threads as cores, but leave kMinCoresLeft alone,
@@ -223,10 +224,8 @@ class VideoAnalyzer : public PacketReceiver,
     stats_polling_thread_.Start();
 
     int last_frames_processed = -1;
-    EventTypeWrapper eventType;
     int iteration = 0;
-    while ((eventType = done_->Wait(VideoQualityTest::kDefaultTimeoutMs)) !=
-           kEventSignaled) {
+    while (!done_.Wait(VideoQualityTest::kDefaultTimeoutMs)) {
       int frames_processed;
       {
         rtc::CritScope crit(&comparison_lock_);
@@ -255,7 +254,7 @@ class VideoAnalyzer : public PacketReceiver,
     // Signal stats polling thread if that is still waiting and stop it now,
     // since it uses the send_stream_ reference that might be reclaimed after
     // returning from this method.
-    done_->Set();
+    done_.Set();
     stats_polling_thread_.Stop();
   }
 
@@ -352,7 +351,7 @@ class VideoAnalyzer : public PacketReceiver,
     comparisons_.push_back(FrameComparison(reference_copy, render_copy, dropped,
                                            send_time_ms, recv_time_ms,
                                            render_time_ms, encoded_size));
-    comparison_available_event_->Set();
+    comparison_available_event_.Set();
   }
 
   static bool PollStatsThread(void* obj) {
@@ -360,15 +359,11 @@ class VideoAnalyzer : public PacketReceiver,
   }
 
   bool PollStats() {
-    switch (done_->Wait(kSendStatsPollingIntervalMs)) {
-      case kEventSignaled:
-      case kEventError:
-        done_->Set();  // Make sure main thread is also signaled.
-        return false;
-      case kEventTimeout:
-        break;
-      default:
-        RTC_NOTREACHED();
+    if (done_.Wait(kSendStatsPollingIntervalMs)) {
+      // Set event again to make sure main thread is also signaled, then we're
+      // done.
+      done_.Set();
+      return false;
     }
 
     VideoSendStream::Stats stats = send_stream_->GetStats();
@@ -397,9 +392,9 @@ class VideoAnalyzer : public PacketReceiver,
     if (!PopComparison(&comparison)) {
       // Wait until new comparison task is available, or test is done.
       // If done, wake up remaining threads waiting.
-      comparison_available_event_->Wait(1000);
+      comparison_available_event_.Wait(1000);
       if (AllFramesRecorded()) {
-        comparison_available_event_->Set();
+        comparison_available_event_.Set();
         return false;
       }
       return true;  // Try again.
@@ -411,8 +406,8 @@ class VideoAnalyzer : public PacketReceiver,
       PrintResults();
       if (graph_data_output_file_)
         PrintSamplesToFile();
-      done_->Set();
-      comparison_available_event_->Set();
+      done_.Set();
+      comparison_available_event_.Set();
       return false;
     }
 
@@ -603,9 +598,9 @@ class VideoAnalyzer : public PacketReceiver,
   rtc::CriticalSection comparison_lock_;
   std::vector<rtc::PlatformThread*> comparison_thread_pool_;
   rtc::PlatformThread stats_polling_thread_;
-  const rtc::scoped_ptr<EventWrapper> comparison_available_event_;
+  rtc::Event comparison_available_event_;
   std::deque<FrameComparison> comparisons_ GUARDED_BY(comparison_lock_);
-  const rtc::scoped_ptr<EventWrapper> done_;
+  rtc::Event done_;
 };
 
 VideoQualityTest::VideoQualityTest() : clock_(Clock::GetRealTimeClock()) {}

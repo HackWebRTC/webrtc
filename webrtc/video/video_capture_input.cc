@@ -20,7 +20,6 @@
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/send_statistics_proxy.h"
@@ -43,7 +42,7 @@ VideoCaptureInput::VideoCaptureInput(
       stats_proxy_(stats_proxy),
       incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       encoder_thread_(EncoderThreadFunction, this, "EncoderThread"),
-      capture_event_(EventWrapper::Create()),
+      capture_event_(false, false),
       stop_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(
@@ -64,7 +63,7 @@ VideoCaptureInput::~VideoCaptureInput() {
 
   // Stop the thread.
   rtc::AtomicOps::ReleaseStore(&stop_, 1);
-  capture_event_->Set();
+  capture_event_.Set();
   encoder_thread_.Stop();
 }
 
@@ -116,7 +115,7 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
 
-  capture_event_->Set();
+  capture_event_.Set();
 }
 
 bool VideoCaptureInput::EncoderThreadFunction(void* obj) {
@@ -126,7 +125,7 @@ bool VideoCaptureInput::EncoderThreadFunction(void* obj) {
 bool VideoCaptureInput::EncoderProcess() {
   static const int kThreadWaitTimeMs = 100;
   int64_t capture_time = -1;
-  if (capture_event_->Wait(kThreadWaitTimeMs) == kEventSignaled) {
+  if (capture_event_.Wait(kThreadWaitTimeMs)) {
     if (rtc::AtomicOps::AcquireLoad(&stop_))
       return false;
 

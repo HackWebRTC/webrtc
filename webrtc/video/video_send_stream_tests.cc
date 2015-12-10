@@ -15,6 +15,7 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -28,7 +29,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/call_test.h"
@@ -102,7 +102,7 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
       while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
         if (packet_type == RTCPUtility::RTCPPacketTypes::kSdesChunk) {
           EXPECT_EQ(parser.Packet().CName.CName, kCName);
-          observation_complete_->Set();
+          observation_complete_.Set();
         }
 
         packet_type = parser.Iterate();
@@ -118,8 +118,7 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for RTCP with CNAME.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for RTCP with CNAME.";
     }
   } test;
 
@@ -142,7 +141,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
       EXPECT_TRUE(header.extension.hasAbsoluteSendTime);
       EXPECT_EQ(header.extension.transmissionTimeOffset, 0);
       EXPECT_GT(header.extension.absoluteSendTime, 0u);
-      observation_complete_->Set();
+      observation_complete_.Set();
 
       return SEND_PACKET;
     }
@@ -156,8 +155,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for single RTP packet.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for single RTP packet.";
     }
   } test;
 
@@ -184,7 +182,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
       EXPECT_FALSE(header.extension.hasAbsoluteSendTime);
       EXPECT_GT(header.extension.transmissionTimeOffset, 0);
       EXPECT_EQ(header.extension.absoluteSendTime, 0u);
-      observation_complete_->Set();
+      observation_complete_.Set();
 
       return SEND_PACKET;
     }
@@ -199,8 +197,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for a single RTP packet.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for a single RTP packet.";
     }
 
     test::DelayedEncoder encoder_;
@@ -228,7 +225,7 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
       EXPECT_FALSE(header.extension.hasTransmissionTimeOffset);
       EXPECT_FALSE(header.extension.hasAbsoluteSendTime);
 
-      observation_complete_->Set();
+      observation_complete_.Set();
 
       return SEND_PACKET;
     }
@@ -243,8 +240,7 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for a single RTP packet.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for a single RTP packet.";
     }
 
     test::FakeEncoder encoder_;
@@ -380,7 +376,7 @@ class FecObserver : public test::SendTest {
     }
 
     if (received_media_ && received_fec_ && send_count_ > 100)
-      observation_complete_->Set();
+      observation_complete_.Set();
 
     prev_header_ = header;
 
@@ -480,7 +476,7 @@ void VideoSendStreamTest::TestNackRetransmission(
       if (sequence_number == nacked_sequence_number_) {
         EXPECT_EQ(retransmit_ssrc_, header.ssrc);
         EXPECT_EQ(retransmit_payload_type_, header.payloadType);
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
 
       return SEND_PACKET;
@@ -499,8 +495,7 @@ void VideoSendStreamTest::TestNackRetransmission(
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for NACK retransmission.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for NACK retransmission.";
     }
 
     rtc::scoped_ptr<internal::TransportAdapter> transport_adapter_;
@@ -616,7 +611,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
         accumulated_payload_ = 0;
         if (current_size_rtp_ == stop_size_) {
           // Done! (Don't increase size again, might arrive more @ stop_size).
-          observation_complete_->Set();
+          observation_complete_.Set();
         } else {
           // Increase next expected frame size. If testing with FEC, make sure
           // a FEC packet has been received for this frame size before
@@ -695,8 +690,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while observing incoming RTP packets.";
+      EXPECT_TRUE(Wait()) << "Timed out while observing incoming RTP packets.";
     }
 
     rtc::scoped_ptr<internal::TransportAdapter> transport_adapter_;
@@ -796,7 +790,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         VideoSendStream::Stats stats = stream_->GetStats();
         if (stats.suspended == false) {
           // Stats flipped to false. Test is complete.
-          observation_complete_->Set();
+          observation_complete_.Set();
         }
         SendRtcpFeedback(0);  // REMB is only sent if value is > 0.
       }
@@ -850,8 +844,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out during suspend-below-min-bitrate test.";
+      EXPECT_TRUE(Wait()) << "Timed out during suspend-below-min-bitrate test.";
     }
 
     enum TestState {
@@ -918,7 +911,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
       if (last_packet_time_ms_ > 0 &&
           clock_->TimeInMilliseconds() - last_packet_time_ms_ >
               kVideoMutedThresholdMs)
-        observation_complete_->Set();
+        observation_complete_.Set();
       // Receive statistics reporting having lost 50% of the packets.
       FakeReceiveStatistics receive_stats(kSendSsrcs[0], 1, 1, 0);
       RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), &receive_stats,
@@ -950,7 +943,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for RTP packets to stop being sent.";
     }
 
@@ -1010,7 +1003,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
           bitrate_capped_ = true;
         } else if (bitrate_capped_ &&
                    total_bitrate_bps < kRembRespectedBitrateBps) {
-          observation_complete_->Set();
+          observation_complete_.Set();
         }
       }
       // Packets don't have to be delivered since the test is the receiver.
@@ -1038,7 +1031,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timeout while waiting for low bitrate stats after REMB.";
     }
 
@@ -1114,16 +1107,16 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
 TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   class FrameObserver : public I420FrameCallback {
    public:
-    FrameObserver() : output_frame_event_(EventWrapper::Create()) {}
+    FrameObserver() : output_frame_event_(false, false) {}
 
     void FrameCallback(VideoFrame* video_frame) override {
       output_frames_.push_back(*video_frame);
-      output_frame_event_->Set();
+      output_frame_event_.Set();
     }
 
     void WaitOutputFrame() {
-      const uint32_t kWaitFrameTimeoutMs = 3000;
-      EXPECT_EQ(kEventSignaled, output_frame_event_->Wait(kWaitFrameTimeoutMs))
+      const int kWaitFrameTimeoutMs = 3000;
+      EXPECT_TRUE(output_frame_event_.Wait(kWaitFrameTimeoutMs))
           << "Timeout while waiting for output frames.";
     }
 
@@ -1136,7 +1129,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
     std::vector<VideoFrame> output_frames_;
 
     // Indicate an output frame has arrived.
-    rtc::scoped_ptr<EventWrapper> output_frame_event_;
+    rtc::Event output_frame_event_;
   };
 
   // Initialize send stream.
@@ -1284,7 +1277,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
                    const std::vector<FrameType>* frame_types) override {
       EXPECT_TRUE(IsReadyForEncode());
 
-      observation_complete_->Set();
+      observation_complete_.Set();
       return 0;
     }
 
@@ -1334,8 +1327,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for Encode.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for Encode.";
       EXPECT_EQ(0u, num_releases());
       stream_->ReconfigureVideoEncoder(encoder_config_);
       EXPECT_EQ(0u, num_releases());
@@ -1345,8 +1337,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
       EXPECT_TRUE(IsReadyForEncode());
       stream_->Start();
       // Sanity check, make sure we still encode frames with this encoder.
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for Encode.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for Encode.";
     }
 
     rtc::CriticalSection crit_;
@@ -1587,7 +1578,7 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
           if (parser.Packet().SR.SenderOctetCount > 0 &&
               parser.Packet().SR.SenderPacketCount == rtp_packets_sent_) {
             EXPECT_EQ(media_bytes_sent_, parser.Packet().SR.SenderOctetCount);
-            observation_complete_->Set();
+            observation_complete_.Set();
           }
         }
         packet_type = parser.Iterate();
@@ -1597,8 +1588,7 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for RTCP sender report.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for RTCP sender report.";
     }
 
     rtc::CriticalSection crit_;
@@ -1624,7 +1614,7 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
                        size_t max_payload_size) override {
       EXPECT_EQ(static_cast<unsigned int>(kScreencastTargetBitrateKbps),
                 config->targetBitrate);
-      observation_complete_->Set();
+      observation_complete_.Set();
       return test::FakeEncoder::InitEncode(
           config, number_of_cores, max_payload_size);
     }
@@ -1641,7 +1631,7 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for the encoder to be initialized.";
     }
   } test;
@@ -1677,7 +1667,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
                   codecSettings->startBitrate);
         EXPECT_EQ(static_cast<unsigned int>(kMaxBitrateKbps),
                   codecSettings->maxBitrate);
-        observation_complete_->Set();
+        observation_complete_.Set();
       } else if (num_initializations_ == 1) {
         EXPECT_EQ(static_cast<unsigned int>(kLowerMaxBitrateKbps),
                   codecSettings->maxBitrate);
@@ -1730,7 +1720,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       bitrate_config.start_bitrate_bps = kIncreasedStartBitrateKbps * 1000;
       bitrate_config.max_bitrate_bps = kIncreasedMaxBitrateKbps * 1000;
       call_->SetBitrateConfig(bitrate_config);
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting encoder to be configured.";
       encoder_config_.streams[0].min_bitrate_bps = 0;
       encoder_config_.streams[0].max_bitrate_bps = kLowerMaxBitrateKbps * 1000;
@@ -1793,7 +1783,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
           return -1;
       }
 
-      observation_complete_->Set();
+      observation_complete_.Set();
       return 0;
     }
     void ModifyConfigs(VideoSendStream::Config* send_config,
@@ -1806,7 +1796,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
     size_t GetNumStreams() const override { return kNumStreams; }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for the encoder to send one frame.";
       VideoSendStream::Stats stats = send_stream_->GetStats();
 
@@ -1868,8 +1858,8 @@ class Vp9HeaderObserver : public test::SendTest {
   }
 
   void PerformTest() override {
-    EXPECT_EQ(kEventSignaled, Wait())
-        << "Test timed out waiting for VP9 packet, num frames " << frames_sent_;
+    EXPECT_TRUE(Wait()) << "Test timed out waiting for VP9 packet, num frames "
+                        << frames_sent_;
   }
 
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -2180,7 +2170,7 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
                                         l_field_ ? num_temporal_layers_ : 0);
 
       if (frames_sent_ > kNumFramesToSend)
-        observation_complete_->Set();
+        observation_complete_.Set();
     }
     const uint8_t num_temporal_layers_;
     const uint8_t num_spatial_layers_;
@@ -2207,7 +2197,7 @@ TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
       EXPECT_EQ(kNoTl0PicIdx, vp9_header.tl0_pic_idx);
       if (vp9_header.inter_pic_predicted) {
         EXPECT_GT(vp9_header.num_ref_pics, 0u);
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
     }
   } test;

@@ -13,11 +13,11 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/scoped_vector.h"
 #include "webrtc/test/fake_texture_frame.h"
@@ -51,7 +51,7 @@ class VideoCaptureInputTest : public ::testing::Test {
   VideoCaptureInputTest()
       : mock_process_thread_(new NiceMock<MockProcessThread>),
         mock_frame_callback_(new NiceMock<MockVideoCaptureCallback>),
-        output_frame_event_(EventWrapper::Create()),
+        output_frame_event_(false, false),
         stats_proxy_(Clock::GetRealTimeClock(),
                      webrtc::VideoSendStream::Config(nullptr),
                      webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo) {}
@@ -82,11 +82,11 @@ class VideoCaptureInputTest : public ::testing::Test {
     if (frame.native_handle() == NULL)
       output_frame_ybuffers_.push_back(frame.buffer(kYPlane));
     output_frames_.push_back(new VideoFrame(frame));
-    output_frame_event_->Set();
+    output_frame_event_.Set();
   }
 
   void WaitOutputFrame() {
-    EXPECT_EQ(kEventSignaled, output_frame_event_->Wait(FRAME_TIMEOUT_MS));
+    EXPECT_TRUE(output_frame_event_.Wait(FRAME_TIMEOUT_MS));
   }
 
   rtc::scoped_ptr<MockProcessThread> mock_process_thread_;
@@ -99,7 +99,7 @@ class VideoCaptureInputTest : public ::testing::Test {
   ScopedVector<VideoFrame> input_frames_;
 
   // Indicate an output frame has arrived.
-  rtc::scoped_ptr<EventWrapper> output_frame_event_;
+  rtc::Event output_frame_event_;
 
   // Output delivered frames of VideoCaptureInput.
   ScopedVector<VideoFrame> output_frames_;
@@ -112,20 +112,19 @@ class VideoCaptureInputTest : public ::testing::Test {
 
 TEST_F(VideoCaptureInputTest, DoesNotRetainHandleNorCopyBuffer) {
   // Indicate an output frame has arrived.
-  rtc::scoped_ptr<EventWrapper> frame_destroyed_event(EventWrapper::Create());
+  rtc::Event frame_destroyed_event(false, false);
   class TestBuffer : public webrtc::I420Buffer {
    public:
-    explicit TestBuffer(EventWrapper* event)
-        : I420Buffer(5, 5), event_(event) {}
+    explicit TestBuffer(rtc::Event* event) : I420Buffer(5, 5), event_(event) {}
 
    private:
     friend class rtc::RefCountedObject<TestBuffer>;
     ~TestBuffer() override { event_->Set(); }
-    EventWrapper* event_;
+    rtc::Event* const event_;
   };
 
   VideoFrame frame(
-      new rtc::RefCountedObject<TestBuffer>(frame_destroyed_event.get()), 1, 1,
+      new rtc::RefCountedObject<TestBuffer>(&frame_destroyed_event), 1, 1,
       kVideoRotation_0);
 
   AddInputFrame(&frame);
@@ -135,7 +134,7 @@ TEST_F(VideoCaptureInputTest, DoesNotRetainHandleNorCopyBuffer) {
             frame.video_frame_buffer().get());
   output_frames_.clear();
   frame.Reset();
-  EXPECT_EQ(kEventSignaled, frame_destroyed_event->Wait(FRAME_TIMEOUT_MS));
+  EXPECT_TRUE(frame_destroyed_event.Wait(FRAME_TIMEOUT_MS));
 }
 
 TEST_F(VideoCaptureInputTest, TestNtpTimeStampSetIfRenderTimeSet) {
@@ -172,12 +171,12 @@ TEST_F(VideoCaptureInputTest, DropsFramesWithSameOrOldNtpTimestamp) {
 
   // Repeat frame with the same NTP timestamp should drop.
   AddInputFrame(input_frames_[0]);
-  EXPECT_EQ(kEventTimeout, output_frame_event_->Wait(FRAME_TIMEOUT_MS));
+  EXPECT_FALSE(output_frame_event_.Wait(FRAME_TIMEOUT_MS));
 
   // As should frames with a decreased NTP timestamp.
   input_frames_[0]->set_ntp_time_ms(input_frames_[0]->ntp_time_ms() - 1);
   AddInputFrame(input_frames_[0]);
-  EXPECT_EQ(kEventTimeout, output_frame_event_->Wait(FRAME_TIMEOUT_MS));
+  EXPECT_FALSE(output_frame_event_.Wait(FRAME_TIMEOUT_MS));
 
   // But delivering with an increased NTP timestamp should succeed.
   input_frames_[0]->set_ntp_time_ms(4711);

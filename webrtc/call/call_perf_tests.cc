@@ -174,7 +174,7 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
                                   false);
       }
       if (time_since_creation > kMinRunTimeMs)
-        observation_complete_->Set();
+        observation_complete_.Set();
     }
   }
 
@@ -334,7 +334,7 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   EXPECT_EQ(0, voe_base->StartReceive(recv_channel_id));
   EXPECT_EQ(0, voe_base->StartSend(send_channel_id));
 
-  EXPECT_EQ(kEventSignaled, observer.Wait())
+  EXPECT_TRUE(observer.Wait())
       << "Timed out while waiting for audio and video to be synchronized.";
 
   EXPECT_EQ(0, voe_base->StopSend(send_channel_id));
@@ -413,7 +413,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
       }
 
       if (time_since_creation > run_time_ms_) {
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
 
       FrameCaptureTimeList::iterator iter =
@@ -473,9 +473,9 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait()) << "Timed out while waiting for "
-                                           "estimated capture NTP time to be "
-                                           "within bounds.";
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for "
+                             "estimated capture NTP time to be "
+                             "within bounds.";
     }
 
     rtc::CriticalSection crit_;
@@ -528,7 +528,7 @@ void CallPerfTest::TestCpuOveruse(LoadObserver::Load tested_load,
 
     void OnLoadUpdate(Load load) override {
       if (load == tested_load_)
-        observation_complete_->Set();
+        observation_complete_.Set();
     }
 
     void ModifyConfigs(VideoSendStream::Config* send_config,
@@ -539,8 +539,7 @@ void CallPerfTest::TestCpuOveruse(LoadObserver::Load tested_load,
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out before receiving an overuse callback.";
+      EXPECT_TRUE(Wait()) << "Timed out before receiving an overuse callback.";
     }
 
     LoadObserver::Load tested_load_;
@@ -608,7 +607,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
           }
           if (num_bitrate_observations_in_range_ ==
               kNumBitrateObservationsInRange)
-            observation_complete_->Set();
+            observation_complete_.Set();
         }
       }
       return SEND_PACKET;
@@ -631,8 +630,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
     }
 
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timeout while waiting for send-bitrate stats.";
+      EXPECT_TRUE(Wait()) << "Timeout while waiting for send-bitrate stats.";
     }
 
     VideoSendStream* send_stream_;
@@ -660,7 +658,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
     BitrateObserver()
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
-          time_to_reconfigure_(webrtc::EventWrapper::Create()),
+          time_to_reconfigure_(false, false),
           encoder_inits_(0),
           last_set_bitrate_(0),
           send_stream_(nullptr) {}
@@ -679,7 +677,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
                     last_set_bitrate_,
                     kPermittedReconfiguredBitrateDiffKbps)
             << "Encoder reconfigured with bitrate too far away from last set.";
-        observation_complete_->Set();
+        observation_complete_.Set();
       }
       return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
@@ -689,7 +687,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
       last_set_bitrate_ = new_target_bitrate_kbps;
       if (encoder_inits_ == 1 &&
           new_target_bitrate_kbps > kReconfigureThresholdKbps) {
-        time_to_reconfigure_->Set();
+        time_to_reconfigure_.Set();
       }
       return FakeEncoder::SetRates(new_target_bitrate_kbps, framerate);
     }
@@ -718,18 +716,18 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
     }
 
     void PerformTest() override {
-      ASSERT_EQ(kEventSignaled, time_to_reconfigure_->Wait(kDefaultTimeoutMs))
+      ASSERT_TRUE(time_to_reconfigure_.Wait(kDefaultTimeoutMs))
           << "Timed out before receiving an initial high bitrate.";
       encoder_config_.streams[0].width *= 2;
       encoder_config_.streams[0].height *= 2;
       EXPECT_TRUE(send_stream_->ReconfigureVideoEncoder(encoder_config_));
-      EXPECT_EQ(kEventSignaled, Wait())
+      EXPECT_TRUE(Wait())
           << "Timed out while waiting for a couple of high bitrate estimates "
              "after reconfiguring the send stream.";
     }
 
    private:
-    rtc::scoped_ptr<webrtc::EventWrapper> time_to_reconfigure_;
+    rtc::Event time_to_reconfigure_;
     int encoder_inits_;
     uint32_t last_set_bitrate_;
     VideoSendStream* send_stream_;

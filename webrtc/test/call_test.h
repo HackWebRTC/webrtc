@@ -31,8 +31,8 @@ class CallTest : public ::testing::Test {
 
   static const size_t kNumSsrcs = 3;
 
-  static const unsigned int kDefaultTimeoutMs;
-  static const unsigned int kLongTimeoutMs;
+  static const int kDefaultTimeoutMs;
+  static const int kLongTimeoutMs;
   static const uint8_t kSendPayloadType;
   static const uint8_t kSendRtxPayloadType;
   static const uint8_t kFakeSendPayloadType;

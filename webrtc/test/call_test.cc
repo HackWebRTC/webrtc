@@ -173,8 +173,8 @@ void CallTest::DestroyStreams() {
   allocated_decoders_.clear();
 }
 
-const unsigned int CallTest::kDefaultTimeoutMs = 30 * 1000;
-const unsigned int CallTest::kLongTimeoutMs = 120 * 1000;
+const int CallTest::kDefaultTimeoutMs = 30 * 1000;
+const int CallTest::kLongTimeoutMs = 120 * 1000;
 const uint8_t CallTest::kSendPayloadType = 100;
 const uint8_t CallTest::kFakeSendPayloadType = 125;
 const uint8_t CallTest::kSendRtxPayloadType = 98;

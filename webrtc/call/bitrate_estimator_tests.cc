@@ -15,12 +15,12 @@
 
 #include "webrtc/audio_state.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
@@ -44,12 +44,12 @@ class LogObserver {
     callback_.PushExpectedLogLine(expected_log_line);
   }
 
-  EventTypeWrapper Wait() { return callback_.Wait(); }
+  bool Wait() { return callback_.Wait(); }
 
  private:
   class Callback : public rtc::LogSink {
    public:
-    Callback() : done_(EventWrapper::Create()) {}
+    Callback() : done_(false, false) {}
 
     void OnLogMessage(const std::string& message) override {
       rtc::CritScope lock(&crit_sect_);
@@ -72,15 +72,13 @@ class LogObserver {
       }
       if (expected_log_lines_.size() <= 0) {
         if (num_popped > 0) {
-          done_->Set();
+          done_.Set();
         }
         return;
       }
     }
 
-    EventTypeWrapper Wait() {
-      return done_->Wait(test::CallTest::kDefaultTimeoutMs);
-    }
+    bool Wait() { return done_.Wait(test::CallTest::kDefaultTimeoutMs); }
 
     void PushExpectedLogLine(const std::string& expected_log_line) {
       rtc::CritScope lock(&crit_sect_);
@@ -92,7 +90,7 @@ class LogObserver {
     rtc::CriticalSection crit_sect_;
     Strings received_log_lines_ GUARDED_BY(crit_sect_);
     Strings expected_log_lines_ GUARDED_BY(crit_sect_);
-    rtc::scoped_ptr<EventWrapper> done_;
+    rtc::Event done_;
   };
 
   Callback callback_;
@@ -271,7 +269,7 @@ TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefaultForVideo) {
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 }
 
 TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForAudio) {
@@ -282,7 +280,7 @@ TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForAudio) {
   receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
   receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, true));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 }
 
 TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForVideo) {
@@ -293,21 +291,21 @@ TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForVideo) {
   receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
   receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, false));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 }
 
 TEST_F(BitrateEstimatorTest, SwitchesToASTForAudio) {
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, true));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
   receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
   receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, true));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 }
 
 TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
@@ -316,14 +314,14 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 
   send_config_.rtp.extensions[0] =
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId);
   receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
   receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, false));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 }
 
 TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOFForVideo) {
@@ -332,14 +330,14 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOFForVideo) {
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 
   send_config_.rtp.extensions[0] =
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId);
   receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
   receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, false));
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 
   send_config_.rtp.extensions[0] =
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId);
@@ -349,6 +347,6 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOFForVideo) {
   streams_.push_back(new Stream(this, false));
   streams_[0]->StopSending();
   streams_[1]->StopSending();
-  EXPECT_EQ(kEventSignaled, receiver_log_.Wait());
+  EXPECT_TRUE(receiver_log_.Wait());
 }
 }  // namespace webrtc
