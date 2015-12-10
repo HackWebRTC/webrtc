@@ -1,7 +1,7 @@
 # Flakily fails or crashes on Dr Memory Full.
 # https://code.google.com/p/webrtc/issues/detail?id=3158
 DtmfSenderTest.*
-JsepPeerConnectionP2PTestClient.*
+P2PTestConductor.*
 PeerConnectionEndToEndTest.*
 PeerConnectionInterfaceTest.*
 # Issue 3453
