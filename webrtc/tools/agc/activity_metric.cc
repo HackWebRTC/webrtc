@@ -65,7 +65,7 @@ static void DitherSilence(AudioFrame* frame) {
     sum_squared += frame->data_[n] * frame->data_[n];
   if (sum_squared <= sum_squared_silence) {
     for (size_t n = 0; n < frame->samples_per_channel_; n++)
-      frame->data_[n] = (rand() & 0xF) - 8;
+      frame->data_[n] = (rand() & 0xF) - 8;  // NOLINT: ignore non-threadsafe.
   }
 }
 

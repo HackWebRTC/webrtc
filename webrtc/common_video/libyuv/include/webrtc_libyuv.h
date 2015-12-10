@@ -152,6 +152,7 @@ int ConvertNV12ToRGB565(const uint8_t* src_frame,
 double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame);
 // Compute SSIM for an I420 frame (all planes).
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
-}
+
+}  // namespace webrtc
 
 #endif  // WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_

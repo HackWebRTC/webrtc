@@ -65,4 +65,4 @@ class SoundInputStreamInterface {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_SOUND_SOUNDOUTPUTSTREAMINTERFACE_H_
+#endif  // WEBRTC_SOUND_SOUNDINPUTSTREAMINTERFACE_H_

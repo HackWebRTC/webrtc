@@ -58,7 +58,7 @@ VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
 
 int AlignInt(int value, int alignment) {
   assert(!((alignment - 1) & alignment));
-  return ((value + alignment - 1) & ~ (alignment - 1));
+  return ((value + alignment - 1) & ~(alignment - 1));
 }
 
 void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv) {
@@ -119,8 +119,8 @@ int PrintVideoFrame(const VideoFrame& frame, FILE* file) {
        }
        plane_buffer += frame.stride(plane_type);
     }
- }
- return 0;
+  }
+  return 0;
 }
 
 int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer) {
@@ -176,7 +176,7 @@ int ConvertRGB24ToARGB(const uint8_t* src_frame, uint8_t* dst_frame,
 }
 
 libyuv::RotationMode ConvertRotationMode(VideoRotation rotation) {
-  switch(rotation) {
+  switch (rotation) {
     case kVideoRotation_0:
       return libyuv::kRotate0;
     case kVideoRotation_90:
@@ -191,7 +191,7 @@ libyuv::RotationMode ConvertRotationMode(VideoRotation rotation) {
 }
 
 int ConvertVideoType(VideoType video_type) {
-  switch(video_type) {
+  switch (video_type) {
     case kUnknown:
       return libyuv::FOURCC_ANY;
     case  kI420:
@@ -243,7 +243,7 @@ int ConvertToI420(VideoType src_video_type,
   // Stride values should correspond to the destination values.
   if (rotation == kVideoRotation_90 || rotation == kVideoRotation_270) {
     dst_width = dst_frame->height();
-    dst_height =dst_frame->width();
+    dst_height = dst_frame->width();
   }
   return libyuv::ConvertToI420(src_frame, sample_size,
                                dst_frame->buffer(kYPlane),

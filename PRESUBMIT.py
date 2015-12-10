@@ -18,8 +18,11 @@ import sys
 CPPLINT_DIRS = [
   'webrtc/audio',
   'webrtc/call',
+  'webrtc/common_video',
   'webrtc/examples',
   'webrtc/modules/video_processing',
+  'webrtc/sound',
+  'webrtc/tools',
   'webrtc/video',
 ]
 

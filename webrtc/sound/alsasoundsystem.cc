@@ -11,6 +11,7 @@
 #include "webrtc/sound/alsasoundsystem.h"
 
 #include <algorithm>
+#include <string>
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
@@ -259,12 +260,12 @@ class AlsaInputStream :
   }
 
   bool GetVolume(int *volume) override {
-    // TODO: Implement this.
+    // TODO(henrika): Implement this.
     return false;
   }
 
   bool SetVolume(int volume) override {
-    // TODO: Implement this.
+    // TODO(henrika): Implement this.
     return false;
   }
 
@@ -390,12 +391,12 @@ class AlsaOutputStream : public SoundOutputStreamInterface,
   }
 
   bool GetVolume(int *volume) override {
-    // TODO: Implement this.
+    // TODO(henrika): Implement this.
     return false;
   }
 
   bool SetVolume(int volume) override {
-    // TODO: Implement this.
+    // TODO(henrika): Implement this.
     return false;
   }
 
@@ -569,7 +570,6 @@ bool AlsaSoundSystem::EnumerateDevices(
         strcmp(name, ignore_null) != 0 &&
         strcmp(name, ignore_pulse) != 0 &&
         !rtc::starts_with(name, ignore_prefix)) {
-
       // Yes, we do.
       char *desc = symbol_table_.snd_device_name_get_hint()(*list, "DESC");
       if (!desc) {
@@ -622,7 +622,6 @@ StreamInterface *AlsaSoundSystem::OpenDevice(
         int wait_timeout_ms,
         int flags,
         int freq)) {
-
   if (!IsInitialized()) {
     return NULL;
   }

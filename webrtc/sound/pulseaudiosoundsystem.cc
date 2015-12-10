@@ -13,6 +13,7 @@
 #ifdef HAVE_LIBPULSE
 
 #include <algorithm>
+#include <string>
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
@@ -216,17 +217,6 @@ class PulseAudioStream {
 class PulseAudioInputStream :
     public SoundInputStreamInterface,
     private rtc::Worker {
-
-  struct GetVolumeCallbackData {
-    PulseAudioInputStream *instance;
-    pa_cvolume *channel_volumes;
-  };
-
-  struct GetSourceChannelCountCallbackData {
-    PulseAudioInputStream *instance;
-    uint8_t *channels;
-  };
-
  public:
   PulseAudioInputStream(PulseAudioSoundSystem *pulse,
                         pa_stream *stream,
@@ -386,6 +376,16 @@ class PulseAudioInputStream :
   }
 
  private:
+  struct GetVolumeCallbackData {
+    PulseAudioInputStream* instance;
+    pa_cvolume* channel_volumes;
+  };
+
+  struct GetSourceChannelCountCallbackData {
+    PulseAudioInputStream* instance;
+    uint8_t* channels;
+  };
+
   void Lock() {
     stream_.Lock();
   }
@@ -580,12 +580,6 @@ class PulseAudioInputStream :
 class PulseAudioOutputStream :
     public SoundOutputStreamInterface,
     private rtc::Worker {
-
-  struct GetVolumeCallbackData {
-    PulseAudioOutputStream *instance;
-    pa_cvolume *channel_volumes;
-  };
-
  public:
   PulseAudioOutputStream(PulseAudioSoundSystem *pulse,
                          pa_stream *stream,
@@ -733,7 +727,7 @@ class PulseAudioOutputStream :
   }
 
 #if 0
-  // TODO: Versions 0.9.16 and later of Pulse have a new API for
+  // TODO(henrika): Versions 0.9.16 and later of Pulse have a new API for
   // zero-copy writes, but Hardy is not new enough to have that so we can't
   // rely on it. Perhaps auto-detect if it's present or not and use it if we
   // can?
@@ -777,6 +771,11 @@ class PulseAudioOutputStream :
 #endif
 
  private:
+  struct GetVolumeCallbackData {
+    PulseAudioOutputStream* instance;
+    pa_cvolume* channel_volumes;
+  };
+
   void Lock() {
     stream_.Lock();
   }
@@ -1165,7 +1164,7 @@ bool PulseAudioSoundSystem::ConnectToPulse(pa_context *context) {
 pa_context *PulseAudioSoundSystem::CreateNewConnection() {
   // Create connection context.
   std::string app_name;
-  // TODO: Pulse etiquette says this name should be localized. Do
+  // TODO(henrika): Pulse etiquette says this name should be localized. Do
   // we care?
   rtc::Filesystem::GetApplicationName(&app_name);
   pa_context *context = symbol_table_.pa_context_new()(

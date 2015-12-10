@@ -227,7 +227,7 @@ void RunAnalysis(const char* reference_file_name, const char* test_file_name,
                  ResultsContainer* results) {
   // Check if the reference_file_name ends with "y4m".
   bool y4m_mode = false;
-  if (std::string(reference_file_name).find("y4m") != std::string::npos){
+  if (std::string(reference_file_name).find("y4m") != std::string::npos) {
     y4m_mode = true;
   }
 

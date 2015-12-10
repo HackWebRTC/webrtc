@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video_frame.h"
-
 #include <math.h>
 #include <string.h>
 
@@ -17,6 +15,7 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/fake_texture_frame.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -174,7 +173,7 @@ TEST(TestVideoFrame, ShallowCopy) {
 
 TEST(TestVideoFrame, Reset) {
   VideoFrame frame;
-  ASSERT_TRUE(frame.CreateEmptyFrame(5, 5, 5, 5, 5) == 0);
+  ASSERT_EQ(frame.CreateEmptyFrame(5, 5, 5, 5, 5), 0);
   frame.set_ntp_time_ms(1);
   frame.set_timestamp(2);
   frame.set_render_time_ms(3);

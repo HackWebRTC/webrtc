@@ -114,7 +114,7 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
   EXPECT_EQ(half_height_, test_frame2.height());
 }
 
-//TODO (mikhal): Converge the test into one function that accepts the method.
+// TODO(mikhal): Converge the test into one function that accepts the method.
 TEST_F(TestScaler, DISABLED_ON_ANDROID(PointScaleTest)) {
   double avg_psnr;
   FILE* source_file2;
@@ -322,7 +322,7 @@ double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
   return avg_psnr;
 }
 
-// TODO (mikhal): Move part to a separate scale test.
+// TODO(mikhal): Move part to a separate scale test.
 void TestScaler::ScaleSequence(ScaleMethod method,
                    FILE* source_file, std::string out_name,
                    int src_width, int src_height,
