@@ -432,11 +432,11 @@ static void SubbandCoherence(AecCore* aec,
 static void GetHighbandGain(const float* lambda, float* nlpGainHband) {
   int i;
 
-  nlpGainHband[0] = (float)0.0;
+  *nlpGainHband = (float)0.0;
   for (i = freqAvgIc; i < PART_LEN1 - 1; i++) {
-    nlpGainHband[0] += lambda[i];
+    *nlpGainHband += lambda[i];
   }
-  nlpGainHband[0] /= (float)(PART_LEN1 - 1 - freqAvgIc);
+  *nlpGainHband /= (float)(PART_LEN1 - 1 - freqAvgIc);
 }
 
 static void ComfortNoise(AecCore* aec,
@@ -1056,11 +1056,6 @@ static void EchoSuppression(AecCore* aec,
     aec->delayEstCtr = 0;
   }
 
-  // initialize comfort noise for H band
-  memset(comfortNoiseHband, 0, sizeof(comfortNoiseHband));
-  nlpGainHband = (float)0.0;
-  dtmp = (float)0.0;
-
   // We should always have at least one element stored in |far_buf|.
   assert(WebRtc_available_read(aec->far_buf_windowed) > 0);
   // NLP
@@ -1181,6 +1176,7 @@ static void EchoSuppression(AecCore* aec,
   WebRtcAec_OverdriveAndSuppress(aec, hNl, hNlFb, efw);
 
   // Add comfort noise.
+  memset(comfortNoiseHband, 0, sizeof(comfortNoiseHband));
   WebRtcAec_ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
 
   // TODO(bjornv): Investigate how to take the windowing below into account if
