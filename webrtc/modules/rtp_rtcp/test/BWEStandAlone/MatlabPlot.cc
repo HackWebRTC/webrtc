@@ -17,7 +17,7 @@
 #include <sstream>
 
 #ifdef MATLAB
-#include "engine.h"
+#include "engine.h" // NOLINT(build/include)
 #endif
 
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"

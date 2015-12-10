@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_H264_BITSTREAM_PARSER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_H264_BITSTREAM_PARSER_H_
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 namespace rtc {
 class BitBuffer;

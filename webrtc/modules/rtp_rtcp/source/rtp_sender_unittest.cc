@@ -12,9 +12,11 @@
  * This file includes unit tests for the RTPSender.
  */
 
+#include <list>
+#include <vector>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
@@ -24,8 +26,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
-#include "webrtc/system_wrappers/include/stl_util.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/system_wrappers/include/stl_util.h"
 #include "webrtc/test/mock_transport.h"
 #include "webrtc/typedefs.h"
 

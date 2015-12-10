@@ -12,6 +12,8 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 
 #include <list>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"

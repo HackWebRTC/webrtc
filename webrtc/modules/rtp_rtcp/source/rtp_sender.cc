@@ -11,6 +11,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 
 #include <stdlib.h>  // srand
+#include <algorithm>
 #include <utility>
 
 #include "webrtc/base/checks.h"

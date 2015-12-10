@@ -9,10 +9,11 @@
  */
 
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
-#include "webrtc/test/null_transport.h"
 
 #include <algorithm>
 #include <vector>
+
+#include "webrtc/test/null_transport.h"
 
 using namespace webrtc;
 

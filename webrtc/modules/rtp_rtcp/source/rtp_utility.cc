@@ -17,7 +17,7 @@
 #if defined(_WIN32)
 // Order for these headers are important
 #include <winsock2.h>  // timeval
-#include <windows.h>  // FILETIME
+#include <windows.h>  // FILETIME NOLINT(build/include_alpha)
 #include <MMSystem.h>  // timeGetTime
 #elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
 #include <sys/time.h>  // gettimeofday

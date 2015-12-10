@@ -11,6 +11,10 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_
 #define WEBRTC_MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_
 
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "testing/gmock/include/gmock/gmock.h"
 
 #include "webrtc/modules/include/module.h"

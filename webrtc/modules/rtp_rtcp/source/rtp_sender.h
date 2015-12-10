@@ -10,10 +10,11 @@
 
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
-#include <assert.h>
-#include <math.h>
 
+#include <list>
 #include <map>
+#include <utility>
+#include <vector>
 
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"

@@ -16,6 +16,7 @@
 
 #include <algorithm>  // min
 #include <limits>     // max
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
