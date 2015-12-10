@@ -82,7 +82,7 @@ class RTPSenderVideo {
   int SelectiveRetransmissions() const;
   void SetSelectiveRetransmissions(uint8_t settings);
 
-private:
+ private:
   void SendVideoPacket(uint8_t* dataBuffer,
                        const size_t payloadLength,
                        const size_t rtpHeaderLength,

@@ -163,7 +163,7 @@ class RTPSender : public RTPSenderInterface {
   int32_t SetTransportSequenceNumber(uint16_t sequence_number);
 
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
-  virtual bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) override;
+  bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) override;
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
 
   size_t RtpHeaderExtensionTotalLength() const;
@@ -202,10 +202,10 @@ class RTPSender : public RTPSenderInterface {
                         bool is_voiced,
                         uint8_t dBov) const;
 
-  virtual bool UpdateVideoRotation(uint8_t* rtp_packet,
-                                   size_t rtp_packet_length,
-                                   const RTPHeader& rtp_header,
-                                   VideoRotation rotation) const override;
+  bool UpdateVideoRotation(uint8_t* rtp_packet,
+                           size_t rtp_packet_length,
+                           const RTPHeader& rtp_header,
+                           VideoRotation rotation) const override;
 
   bool TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms,
                         bool retransmission);

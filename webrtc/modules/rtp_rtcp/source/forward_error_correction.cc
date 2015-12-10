@@ -36,11 +36,11 @@ const uint8_t kUlpHeaderSizeLBitClear = (2 + kMaskSizeLBitClear);
 // Transport header size in bytes. Assume UDP/IPv4 as a reasonable minimum.
 const uint8_t kTransportOverhead = 28;
 
-enum {
-  kMaxFecPackets = ForwardErrorCorrection::kMaxMediaPackets
-};
+enum { kMaxFecPackets = ForwardErrorCorrection::kMaxMediaPackets };
 
-int32_t ForwardErrorCorrection::Packet::AddRef() { return ++ref_count_; }
+int32_t ForwardErrorCorrection::Packet::AddRef() {
+  return ++ref_count_;
+}
 
 int32_t ForwardErrorCorrection::Packet::Release() {
   int32_t ref_count;
@@ -72,7 +72,8 @@ class FecPacket : public ForwardErrorCorrection::SortablePacket {
 };
 
 bool ForwardErrorCorrection::SortablePacket::LessThan(
-    const SortablePacket* first, const SortablePacket* second) {
+    const SortablePacket* first,
+    const SortablePacket* second) {
   return IsNewerSequenceNumber(second->seq_num, first->seq_num);
 }
 
@@ -83,8 +84,7 @@ ForwardErrorCorrection::RecoveredPacket::RecoveredPacket() {}
 ForwardErrorCorrection::RecoveredPacket::~RecoveredPacket() {}
 
 ForwardErrorCorrection::ForwardErrorCorrection()
-    : generated_fec_packets_(kMaxMediaPackets),
-      fec_packet_received_(false) {}
+    : generated_fec_packets_(kMaxMediaPackets), fec_packet_received_(false) {}
 
 ForwardErrorCorrection::~ForwardErrorCorrection() {}
 
@@ -204,8 +204,10 @@ int ForwardErrorCorrection::GetNumberOfFecPackets(int num_media_packets,
 }
 
 void ForwardErrorCorrection::GenerateFecBitStrings(
-    const PacketList& media_packet_list, uint8_t* packet_mask,
-    int num_fec_packets, bool l_bit) {
+    const PacketList& media_packet_list,
+    uint8_t* packet_mask,
+    int num_fec_packets,
+    bool l_bit) {
   if (media_packet_list.empty()) {
     return;
   }
@@ -284,12 +286,15 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
       }
     }
     assert(generated_fec_packets_[i].length);
-    //Note: This shouldn't happen: means packet mask is wrong or poorly designed
+    // Note: This shouldn't happen: means packet mask is wrong or poorly
+    // designed
   }
 }
 
 int ForwardErrorCorrection::InsertZerosInBitMasks(
-    const PacketList& media_packets, uint8_t* packet_mask, int num_mask_bytes,
+    const PacketList& media_packets,
+    uint8_t* packet_mask,
+    int num_mask_bytes,
     int num_fec_packets) {
   uint8_t* new_mask = NULL;
   if (media_packets.size() <= 1) {
@@ -355,7 +360,8 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
   return new_bit_index;
 }
 
-void ForwardErrorCorrection::InsertZeroColumns(int num_zeros, uint8_t* new_mask,
+void ForwardErrorCorrection::InsertZeroColumns(int num_zeros,
+                                               uint8_t* new_mask,
                                                int new_mask_bytes,
                                                int num_fec_packets,
                                                int new_bit_index) {
@@ -366,9 +372,12 @@ void ForwardErrorCorrection::InsertZeroColumns(int num_zeros, uint8_t* new_mask,
   }
 }
 
-void ForwardErrorCorrection::CopyColumn(uint8_t* new_mask, int new_mask_bytes,
-                                        uint8_t* old_mask, int old_mask_bytes,
-                                        int num_fec_packets, int new_bit_index,
+void ForwardErrorCorrection::CopyColumn(uint8_t* new_mask,
+                                        int new_mask_bytes,
+                                        uint8_t* old_mask,
+                                        int old_mask_bytes,
+                                        int num_fec_packets,
+                                        int new_bit_index,
                                         int old_bit_index) {
   // Copy column from the old mask to the beginning of the new mask and shift it
   // out from the old mask.
@@ -384,7 +393,9 @@ void ForwardErrorCorrection::CopyColumn(uint8_t* new_mask, int new_mask_bytes,
 }
 
 void ForwardErrorCorrection::GenerateFecUlpHeaders(
-    const PacketList& media_packet_list, uint8_t* packet_mask, bool l_bit,
+    const PacketList& media_packet_list,
+    uint8_t* packet_mask,
+    bool l_bit,
     int num_fec_packets) {
   // -- Generate FEC and ULP headers --
   //
@@ -458,7 +469,7 @@ void ForwardErrorCorrection::ResetState(
     ProtectedPacketList::iterator protected_packet_list_it;
     protected_packet_list_it = fec_packet->protected_pkt_list.begin();
     while (protected_packet_list_it != fec_packet->protected_pkt_list.end()) {
-      delete* protected_packet_list_it;
+      delete *protected_packet_list_it;
       protected_packet_list_it =
           fec_packet->protected_pkt_list.erase(protected_packet_list_it);
     }
@@ -470,7 +481,8 @@ void ForwardErrorCorrection::ResetState(
 }
 
 void ForwardErrorCorrection::InsertMediaPacket(
-    ReceivedPacket* rx_packet, RecoveredPacketList* recovered_packet_list) {
+    ReceivedPacket* rx_packet,
+    RecoveredPacketList* recovered_packet_list) {
   RecoveredPacketList::iterator recovered_packet_list_it =
       recovered_packet_list->begin();
 
@@ -536,9 +548,9 @@ void ForwardErrorCorrection::InsertFECPacket(
 
   const uint16_t seq_num_base =
       ByteReader<uint16_t>::ReadBigEndian(&fec_packet->pkt->data[2]);
-  const uint16_t maskSizeBytes =
-      (fec_packet->pkt->data[0] & 0x40) ? kMaskSizeLBitSet
-                                        : kMaskSizeLBitClear;  // L bit set?
+  const uint16_t maskSizeBytes = (fec_packet->pkt->data[0] & 0x40)
+                                     ? kMaskSizeLBitSet
+                                     : kMaskSizeLBitClear;  // L bit set?
 
   for (uint16_t byte_idx = 0; byte_idx < maskSizeBytes; ++byte_idx) {
     uint8_t packet_mask = fec_packet->pkt->data[12 + byte_idx];
@@ -572,7 +584,8 @@ void ForwardErrorCorrection::InsertFECPacket(
 }
 
 void ForwardErrorCorrection::AssignRecoveredPackets(
-    FecPacket* fec_packet, const RecoveredPacketList* recovered_packets) {
+    FecPacket* fec_packet,
+    const RecoveredPacketList* recovered_packets) {
   // Search for missing packets which have arrived or have been recovered by
   // another FEC packet.
   ProtectedPacketList* not_recovered = &fec_packet->protected_pkt_list;
@@ -597,7 +610,6 @@ void ForwardErrorCorrection::AssignRecoveredPackets(
 void ForwardErrorCorrection::InsertPackets(
     ReceivedPacketList* received_packet_list,
     RecoveredPacketList* recovered_packet_list) {
-
   while (!received_packet_list->empty()) {
     ReceivedPacket* rx_packet = received_packet_list->front();
 
@@ -609,9 +621,9 @@ void ForwardErrorCorrection::InsertPackets(
     // old FEC packets based on timestamp information or better sequence number
     // thresholding (e.g., to distinguish between wrap-around and reordering).
     if (!fec_packet_list_.empty()) {
-      uint16_t seq_num_diff = abs(
-          static_cast<int>(rx_packet->seq_num) -
-          static_cast<int>(fec_packet_list_.front()->seq_num));
+      uint16_t seq_num_diff =
+          abs(static_cast<int>(rx_packet->seq_num) -
+              static_cast<int>(fec_packet_list_.front()->seq_num));
       if (seq_num_diff > 0x3fff) {
         DiscardFECPacket(fec_packet_list_.front());
         fec_packet_list_.pop_front();
@@ -635,9 +647,9 @@ void ForwardErrorCorrection::InsertPackets(
 bool ForwardErrorCorrection::InitRecovery(const FecPacket* fec_packet,
                                           RecoveredPacket* recovered) {
   // This is the first packet which we try to recover with.
-  const uint16_t ulp_header_size =
-      fec_packet->pkt->data[0] & 0x40 ? kUlpHeaderSizeLBitSet
-                                      : kUlpHeaderSizeLBitClear;  // L bit set?
+  const uint16_t ulp_header_size = fec_packet->pkt->data[0] & 0x40
+                                       ? kUlpHeaderSizeLBitSet
+                                       : kUlpHeaderSizeLBitClear;  // L bit set?
   if (fec_packet->pkt->length <
       static_cast<size_t>(kFecHeaderSize + ulp_header_size)) {
     LOG(LS_WARNING)

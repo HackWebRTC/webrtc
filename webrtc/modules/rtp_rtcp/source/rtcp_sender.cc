@@ -35,13 +35,11 @@ namespace webrtc {
 using RTCPUtility::RTCPCnameInformation;
 
 NACKStringBuilder::NACKStringBuilder()
-    : stream_(""), count_(0), prevNack_(0), consecutive_(false) {
-}
+    : stream_(""), count_(0), prevNack_(0), consecutive_(false) {}
 
 NACKStringBuilder::~NACKStringBuilder() {}
 
-void NACKStringBuilder::PushNACK(uint16_t nack)
-{
+void NACKStringBuilder::PushNACK(uint16_t nack) {
   if (count_ == 0) {
     stream_ << nack;
   } else if (nack == prevNack_ + 1) {
@@ -75,8 +73,7 @@ RTCPSender::FeedbackState::FeedbackState()
       last_rr_ntp_frac(0),
       remote_sr(0),
       has_last_xr_rr(false),
-      module(nullptr) {
-}
+      module(nullptr) {}
 
 class PacketContainer : public rtcp::Empty,
                         public rtcp::RtcpPacket::PacketReadyCallback {
@@ -197,8 +194,7 @@ RTCPSender::RTCPSender(
   builders_[kRtcpXrDlrrReportBlock] = &RTCPSender::BuildDlrr;
 }
 
-RTCPSender::~RTCPSender() {
-}
+RTCPSender::~RTCPSender() {}
 
 RtcpMode RTCPSender::Status() const {
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
@@ -344,63 +340,63 @@ int32_t RTCPSender::RemoveMixedCNAME(uint32_t SSRC) {
 }
 
 bool RTCPSender::TimeToSendRTCPReport(bool sendKeyframeBeforeRTP) const {
-/*
-    For audio we use a fix 5 sec interval
+  /*
+      For audio we use a fix 5 sec interval
 
-    For video we use 1 sec interval fo a BW smaller than 360 kbit/s,
-        technicaly we break the max 5% RTCP BW for video below 10 kbit/s but
-        that should be extremely rare
+      For video we use 1 sec interval fo a BW smaller than 360 kbit/s,
+          technicaly we break the max 5% RTCP BW for video below 10 kbit/s but
+          that should be extremely rare
 
 
-From RFC 3550
+  From RFC 3550
 
-    MAX RTCP BW is 5% if the session BW
-        A send report is approximately 65 bytes inc CNAME
-        A receiver report is approximately 28 bytes
+      MAX RTCP BW is 5% if the session BW
+          A send report is approximately 65 bytes inc CNAME
+          A receiver report is approximately 28 bytes
 
-    The RECOMMENDED value for the reduced minimum in seconds is 360
-      divided by the session bandwidth in kilobits/second.  This minimum
-      is smaller than 5 seconds for bandwidths greater than 72 kb/s.
+      The RECOMMENDED value for the reduced minimum in seconds is 360
+        divided by the session bandwidth in kilobits/second.  This minimum
+        is smaller than 5 seconds for bandwidths greater than 72 kb/s.
 
-    If the participant has not yet sent an RTCP packet (the variable
-      initial is true), the constant Tmin is set to 2.5 seconds, else it
-      is set to 5 seconds.
+      If the participant has not yet sent an RTCP packet (the variable
+        initial is true), the constant Tmin is set to 2.5 seconds, else it
+        is set to 5 seconds.
 
-    The interval between RTCP packets is varied randomly over the
-      range [0.5,1.5] times the calculated interval to avoid unintended
-      synchronization of all participants
+      The interval between RTCP packets is varied randomly over the
+        range [0.5,1.5] times the calculated interval to avoid unintended
+        synchronization of all participants
 
-    if we send
-    If the participant is a sender (we_sent true), the constant C is
-      set to the average RTCP packet size (avg_rtcp_size) divided by 25%
-      of the RTCP bandwidth (rtcp_bw), and the constant n is set to the
-      number of senders.
+      if we send
+      If the participant is a sender (we_sent true), the constant C is
+        set to the average RTCP packet size (avg_rtcp_size) divided by 25%
+        of the RTCP bandwidth (rtcp_bw), and the constant n is set to the
+        number of senders.
 
-    if we receive only
-      If we_sent is not true, the constant C is set
-      to the average RTCP packet size divided by 75% of the RTCP
-      bandwidth.  The constant n is set to the number of receivers
-      (members - senders).  If the number of senders is greater than
-      25%, senders and receivers are treated together.
+      if we receive only
+        If we_sent is not true, the constant C is set
+        to the average RTCP packet size divided by 75% of the RTCP
+        bandwidth.  The constant n is set to the number of receivers
+        (members - senders).  If the number of senders is greater than
+        25%, senders and receivers are treated together.
 
-    reconsideration NOT required for peer-to-peer
-      "timer reconsideration" is
-      employed.  This algorithm implements a simple back-off mechanism
-      which causes users to hold back RTCP packet transmission if the
-      group sizes are increasing.
+      reconsideration NOT required for peer-to-peer
+        "timer reconsideration" is
+        employed.  This algorithm implements a simple back-off mechanism
+        which causes users to hold back RTCP packet transmission if the
+        group sizes are increasing.
 
-      n = number of members
-      C = avg_size/(rtcpBW/4)
+        n = number of members
+        C = avg_size/(rtcpBW/4)
 
-   3. The deterministic calculated interval Td is set to max(Tmin, n*C).
+     3. The deterministic calculated interval Td is set to max(Tmin, n*C).
 
-   4. The calculated interval T is set to a number uniformly distributed
-      between 0.5 and 1.5 times the deterministic calculated interval.
+     4. The calculated interval T is set to a number uniformly distributed
+        between 0.5 and 1.5 times the deterministic calculated interval.
 
-   5. The resulting value of T is divided by e-3/2=1.21828 to compensate
-      for the fact that the timer reconsideration algorithm converges to
-      a value of the RTCP bandwidth below the intended average
-*/
+     5. The resulting value of T is divided by e-3/2=1.21828 to compensate
+        for the fact that the timer reconsideration algorithm converges to
+        a value of the RTCP bandwidth below the intended average
+  */
 
   int64_t now = clock_->TimeInMilliseconds();
 
@@ -964,8 +960,7 @@ bool RTCPSender::PrepareReportBlock(const FeedbackState& feedback_state,
     return false;
   report_block->fractionLost = stats.fraction_lost;
   report_block->cumulativeLost = stats.cumulative_lost;
-  report_block->extendedHighSeqNum =
-      stats.extended_max_sequence_number;
+  report_block->extendedHighSeqNum = stats.extended_max_sequence_number;
   report_block->jitter = stats.jitter;
   report_block->remoteSSRC = ssrc;
 
@@ -988,7 +983,7 @@ bool RTCPSender::PrepareReportBlock(const FeedbackState& feedback_state,
     receiveTime <<= 16;
     receiveTime += (feedback_state.last_rr_ntp_frac & 0xffff0000) >> 16;
 
-    delaySinceLastReceivedSR = now-receiveTime;
+    delaySinceLastReceivedSR = now - receiveTime;
   }
   report_block->delaySinceLastSR = delaySinceLastReceivedSR;
   report_block->lastSR = feedback_state.remote_sr;

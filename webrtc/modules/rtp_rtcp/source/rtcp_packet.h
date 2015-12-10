@@ -361,7 +361,6 @@ class Nack : public RtcpPacket {
   size_t BlockLength() const override;
 
  private:
-
   RTCPUtility::RTCPPacketRTPFBNACK nack_;
   std::vector<RTCPUtility::RTCPPacketRTPFBNACKItem> nack_fields_;
 

@@ -42,9 +42,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   // Is TelephoneEvent configured with payload type payload_type
   bool TelephoneEventPayloadType(const int8_t payload_type) const;
 
-  TelephoneEventHandler* GetTelephoneEventHandler() {
-    return this;
-  }
+  TelephoneEventHandler* GetTelephoneEventHandler() { return this; }
 
   // Returns true if CNG is configured with payload type payload_type. If so,
   // the frequency and cng_payload_type_has_changed are filled in.
@@ -96,13 +94,11 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   int Energy(uint8_t array_of_energy[kRtpCsrcSize]) const override;
 
  private:
-
-  int32_t ParseAudioCodecSpecific(
-      WebRtcRTPHeader* rtp_header,
-      const uint8_t* payload_data,
-      size_t payload_length,
-      const AudioPayload& audio_specific,
-      bool is_red);
+  int32_t ParseAudioCodecSpecific(WebRtcRTPHeader* rtp_header,
+                                  const uint8_t* payload_data,
+                                  size_t payload_length,
+                                  const AudioPayload& audio_specific,
+                                  bool is_red);
 
   uint32_t last_received_frequency_;
 
