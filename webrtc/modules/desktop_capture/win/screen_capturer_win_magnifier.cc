@@ -236,7 +236,7 @@ BOOL ScreenCapturerWinMagnifier::OnMagImageScalingCallback(
     RECT unclipped,
     RECT clipped,
     HRGN dirty) {
-  assert(tls_index_.Value() != TLS_OUT_OF_INDEXES);
+  assert(tls_index_.Value() != static_cast<int32_t>(TLS_OUT_OF_INDEXES));
 
   ScreenCapturerWinMagnifier* owner =
       reinterpret_cast<ScreenCapturerWinMagnifier*>(
@@ -369,7 +369,7 @@ bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
     }
   }
 
-  if (tls_index_.Value() == TLS_OUT_OF_INDEXES) {
+  if (tls_index_.Value() == static_cast<int32_t>(TLS_OUT_OF_INDEXES)) {
     // More than one threads may get here at the same time, but only one will
     // write to tls_index_ using CompareExchange.
     DWORD new_tls_index = TlsAlloc();
@@ -377,7 +377,7 @@ bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
       TlsFree(new_tls_index);
   }
 
-  assert(tls_index_.Value() != TLS_OUT_OF_INDEXES);
+  assert(tls_index_.Value() != static_cast<int32_t>(TLS_OUT_OF_INDEXES));
   TlsSetValue(tls_index_.Value(), this);
 
   magnifier_initialized_ = true;

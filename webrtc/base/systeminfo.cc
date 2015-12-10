@@ -110,7 +110,7 @@ int SystemInfo::GetCurCpus() {
   DWORD_PTR process_mask = 0;
   DWORD_PTR system_mask = 0;
   ::GetProcessAffinityMask(::GetCurrentProcess(), &process_mask, &system_mask);
-  for (int i = 0; i < sizeof(DWORD_PTR) * 8; ++i) {
+  for (size_t i = 0; i < sizeof(DWORD_PTR) * 8; ++i) {
     if (process_mask & 1)
       ++cur_cpus;
     process_mask >>= 1;
