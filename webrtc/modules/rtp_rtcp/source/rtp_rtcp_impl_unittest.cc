@@ -346,6 +346,27 @@ TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
   EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.impl_->rtt_ms());
 }
 
+TEST_F(RtpRtcpImplTest, NoSrBeforeMedia) {
+  // Ignore fake transport delays in this test.
+  sender_.transport_.SimulateNetworkDelay(0, &clock_);
+  receiver_.transport_.SimulateNetworkDelay(0, &clock_);
+
+  sender_.impl_->Process();
+  EXPECT_EQ(-1, sender_.RtcpSent().first_packet_time_ms);
+
+  // Verify no SR is sent before media has been sent, RR should still be sent
+  // from the receiving module though.
+  clock_.AdvanceTimeMilliseconds(2000);
+  int64_t current_time = clock_.TimeInMilliseconds();
+  sender_.impl_->Process();
+  receiver_.impl_->Process();
+  EXPECT_EQ(-1, sender_.RtcpSent().first_packet_time_ms);
+  EXPECT_EQ(receiver_.RtcpSent().first_packet_time_ms, current_time);
+
+  SendFrame(&sender_, kBaseLayerTid);
+  EXPECT_EQ(sender_.RtcpSent().first_packet_time_ms, current_time);
+}
+
 TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_Nack) {
   EXPECT_EQ(-1, receiver_.RtcpSent().first_packet_time_ms);
   EXPECT_EQ(-1, sender_.RtcpReceived().first_packet_time_ms);
@@ -522,5 +543,4 @@ TEST_F(RtpRtcpImplTest, UniqueNackRequests) {
   EXPECT_EQ(6U, sender_.RtcpReceived().unique_nack_requests);
   EXPECT_EQ(75, sender_.RtcpReceived().UniqueNackRequestsInPercent());
 }
-
 }  // namespace webrtc

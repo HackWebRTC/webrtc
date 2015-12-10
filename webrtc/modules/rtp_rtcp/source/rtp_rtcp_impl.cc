@@ -183,8 +183,13 @@ int32_t ModuleRtpRtcpImpl::Process() {
       set_rtt_ms(rtt_stats_->LastProcessedRtt());
   }
 
-  if (rtcp_sender_.TimeToSendRTCPReport())
-    rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
+  // For sending streams, make sure to not send a SR before media has been sent.
+  if (rtcp_sender_.TimeToSendRTCPReport()) {
+    RTCPSender::FeedbackState state = GetFeedbackState();
+    // Prevent sending streams to send SR before any media has been sent.
+    if (!rtcp_sender_.Sending() || state.packets_sent > 0)
+      rtcp_sender_.SendRTCP(state, kRtcpReport);
+  }
 
   if (UpdateRTCPReceiveInformationTimers()) {
     // A receiver has timed out
@@ -402,6 +407,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
     const RTPFragmentationHeader* fragmentation,
     const RTPVideoHeader* rtp_video_hdr) {
   rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms);
+  // Make sure an RTCP report isn't queued behind a key frame.
   if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
       rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
   }
