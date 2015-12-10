@@ -97,6 +97,14 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     }
   }
 
+  /** Assert that two integers are close, with difference at most
+   * {@code threshold}. */
+  public static void assertClose(int threshold, int expected, int actual) {
+    if (Math.abs(expected - actual) <= threshold)
+      return;
+    failNotEquals("Not close enough, threshold " + threshold, expected, actual);
+  }
+
   /**
    * Test normal use by receiving three uniform texture frames. Texture frames are returned as early
    * as possible. The texture pixel values are inspected by drawing the texture frame to a pixel
@@ -350,5 +358,82 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     surfaceTextureHelper.disconnect(handler);
 
     surfaceTextureHelper.returnTextureFrame();
+  }
+
+  @MediumTest
+  public static void testTexturetoYUV() throws InterruptedException {
+    final int width = 16;
+    final int height = 16;
+
+    final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
+
+    // Create SurfaceTextureHelper and listener.
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(eglBase.getEglBaseContext());
+    final MockTextureListener listener = new MockTextureListener();
+    surfaceTextureHelper.setListener(listener);
+    surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
+
+    // Create resources for stubbing an OES texture producer. |eglBase| has the SurfaceTexture in
+    // |surfaceTextureHelper| as the target EGLSurface.
+
+    eglBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
+    assertEquals(eglBase.surfaceWidth(), width);
+    assertEquals(eglBase.surfaceHeight(), height);
+
+    final int red[] = new int[] {79, 144, 185};
+    final int green[] = new int[] {66, 210, 162};
+    final int blue[] = new int[] {161, 117, 158};
+
+    final int ref_y[] = new int[] {81, 180, 168};
+    final int ref_u[] = new int[] {173, 93, 122};
+    final int ref_v[] = new int[] {127, 103, 140};
+
+    // Draw three frames.
+    for (int i = 0; i < 3; ++i) {
+      // Draw a constant color frame onto the SurfaceTexture.
+      eglBase.makeCurrent();
+      GLES20.glClearColor(red[i] / 255.0f, green[i] / 255.0f, blue[i] / 255.0f, 1.0f);
+      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+      // swapBuffers() will ultimately trigger onTextureFrameAvailable().
+      eglBase.swapBuffers();
+
+      // Wait for an OES texture to arrive.
+      listener.waitForNewFrame();
+
+      // Memory layout: Lines are 16 bytes. First 16 lines are
+      // the Y data. These are followed by 8 lines with 8 bytes of U
+      // data on the left and 8 bytes of V data on the right.
+      //
+      // Offset
+      //      0 YYYYYYYY YYYYYYYY
+      //     16 YYYYYYYY YYYYYYYY
+      //    ...
+      //    240 YYYYYYYY YYYYYYYY
+      //    256 UUUUUUUU VVVVVVVV
+      //    272 UUUUUUUU VVVVVVVV
+      //    ...
+      //    368 UUUUUUUU VVVVVVVV
+      //    384 buffer end
+      ByteBuffer buffer = ByteBuffer.allocateDirect(width * height * 3 / 2);
+      surfaceTextureHelper.textureToYUV(buffer, width, height, width,
+          listener.oesTextureId, listener.transformMatrix);
+
+      surfaceTextureHelper.returnTextureFrame();
+
+      // Allow off-by-one differences due to different rounding.
+      while (buffer.position() < width*height) {
+        assertClose(1, buffer.get() & 0xff, ref_y[i]);
+      }
+      while (buffer.hasRemaining()) {
+        if (buffer.position() % width < width/2)
+          assertClose(1, buffer.get() & 0xff, ref_u[i]);
+        else
+          assertClose(1, buffer.get() & 0xff, ref_v[i]);
+      }
+    }
+
+    surfaceTextureHelper.disconnect();
+    eglBase.release();
   }
 }

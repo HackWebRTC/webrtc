@@ -48,7 +48,9 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
  public:
   static int SetAndroidObjects(JNIEnv* jni, jobject appliction_context);
 
-  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
+  AndroidVideoCapturerJni(JNIEnv* jni,
+                          jobject j_video_capturer,
+                          jobject j_surface_texture_helper);
 
   void Start(int width, int height, int framerate,
              webrtc::AndroidVideoCapturer* capturer) override;
@@ -85,7 +87,8 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
       void (webrtc::AndroidVideoCapturer::*method)(Args...),
       typename Identity<Args>::type... args);
 
-  const ScopedGlobalRef<jobject> j_capturer_global_;
+  const ScopedGlobalRef<jobject> j_video_capturer_;
+  const ScopedGlobalRef<jobject> j_surface_texture_helper_;
   const ScopedGlobalRef<jclass> j_video_capturer_class_;
   const ScopedGlobalRef<jclass> j_observer_class_;
 

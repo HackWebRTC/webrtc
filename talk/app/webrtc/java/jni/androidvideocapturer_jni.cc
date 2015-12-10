@@ -47,9 +47,12 @@ int AndroidVideoCapturerJni::SetAndroidObjects(JNIEnv* jni,
   return 0;
 }
 
-AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
-                                                 jobject j_video_capturer)
-    : j_capturer_global_(jni, j_video_capturer),
+AndroidVideoCapturerJni::AndroidVideoCapturerJni(
+    JNIEnv* jni,
+    jobject j_video_capturer,
+    jobject j_surface_texture_helper)
+    : j_video_capturer_(jni, j_video_capturer),
+      j_surface_texture_helper_(jni, j_surface_texture_helper),
       j_video_capturer_class_(
           jni, FindClass(jni, "org/webrtc/VideoCapturerAndroid")),
       j_observer_class_(
@@ -64,7 +67,7 @@ AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
 AndroidVideoCapturerJni::~AndroidVideoCapturerJni() {
   LOG(LS_INFO) << "AndroidVideoCapturerJni dtor";
   jni()->CallVoidMethod(
-      *j_capturer_global_,
+      *j_video_capturer_,
       GetMethodID(jni(), *j_video_capturer_class_, "release", "()V"));
   CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.release()";
 }
@@ -90,7 +93,7 @@ void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
       jni(), *j_video_capturer_class_, "startCapture",
       "(IIILandroid/content/Context;"
       "Lorg/webrtc/VideoCapturerAndroid$CapturerObserver;)V");
-  jni()->CallVoidMethod(*j_capturer_global_,
+  jni()->CallVoidMethod(*j_video_capturer_,
                         m, width, height,
                         framerate,
                         application_context_,
@@ -109,7 +112,7 @@ void AndroidVideoCapturerJni::Stop() {
   }
   jmethodID m = GetMethodID(jni(), *j_video_capturer_class_,
                             "stopCapture", "()V");
-  jni()->CallVoidMethod(*j_capturer_global_, m);
+  jni()->CallVoidMethod(*j_video_capturer_, m);
   CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.stopCapture";
   LOG(LS_INFO) << "AndroidVideoCapturerJni stop done";
 }
@@ -130,7 +133,7 @@ void AndroidVideoCapturerJni::AsyncCapturerInvoke(
 void AndroidVideoCapturerJni::ReturnBuffer(int64_t time_stamp) {
   jmethodID m = GetMethodID(jni(), *j_video_capturer_class_,
                             "returnBuffer", "(J)V");
-  jni()->CallVoidMethod(*j_capturer_global_, m, time_stamp);
+  jni()->CallVoidMethod(*j_video_capturer_, m, time_stamp);
   CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.returnBuffer";
 }
 
@@ -139,7 +142,7 @@ std::string AndroidVideoCapturerJni::GetSupportedFormats() {
       GetMethodID(jni(), *j_video_capturer_class_,
                   "getSupportedFormatsAsJson", "()Ljava/lang/String;");
   jstring j_json_caps =
-      (jstring) jni()->CallObjectMethod(*j_capturer_global_, m);
+      (jstring) jni()->CallObjectMethod(*j_video_capturer_, m);
   CHECK_EXCEPTION(jni()) << "error during supportedFormatsAsJson";
   return JavaToStdString(jni(), j_json_caps);
 }
@@ -186,7 +189,7 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
                                              const NativeHandleImpl& handle) {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
       new rtc::RefCountedObject<AndroidTextureBuffer>(
-          width, height, handle,
+          width, height, handle, *j_surface_texture_helper_,
           rtc::Bind(&AndroidVideoCapturerJni::ReturnBuffer, this,
                     timestamp_ns)));
   AsyncCapturerInvoke("OnIncomingFrame",
@@ -248,9 +251,11 @@ JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnOutputFormatRequest)
 }
 
 JOW(jlong, VideoCapturerAndroid_nativeCreateVideoCapturer)
-    (JNIEnv* jni, jclass, jobject j_video_capturer) {
+    (JNIEnv* jni, jclass,
+     jobject j_video_capturer, jobject j_surface_texture_helper) {
   rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
-      new rtc::RefCountedObject<AndroidVideoCapturerJni>(jni, j_video_capturer);
+      new rtc::RefCountedObject<AndroidVideoCapturerJni>(
+          jni, j_video_capturer, j_surface_texture_helper);
   rtc::scoped_ptr<cricket::VideoCapturer> capturer(
       new webrtc::AndroidVideoCapturer(delegate));
   // Caller takes ownership of the cricket::VideoCapturer* pointer.

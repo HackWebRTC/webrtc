@@ -240,7 +240,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements
 
     final VideoCapturerAndroid capturer = new VideoCapturerAndroid(cameraId, eventsHandler,
         sharedEglContext);
-    capturer.setNativeCapturer(nativeCreateVideoCapturer(capturer));
+    capturer.setNativeCapturer(
+        nativeCreateVideoCapturer(capturer, capturer.surfaceHelper));
     return capturer;
   }
 
@@ -944,5 +945,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
         int width, int height, int framerate);
   }
 
-  private static native long nativeCreateVideoCapturer(VideoCapturerAndroid videoCapturer);
+  private static native long nativeCreateVideoCapturer(
+      VideoCapturerAndroid videoCapturer,
+      SurfaceTextureHelper surfaceHelper);
 }

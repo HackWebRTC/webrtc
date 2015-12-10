@@ -50,6 +50,7 @@ class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
   AndroidTextureBuffer(int width,
                        int height,
                        const NativeHandleImpl& native_handle,
+                       jobject surface_texture_helper,
                        const rtc::Callback0<void>& no_longer_used);
   ~AndroidTextureBuffer();
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
@@ -62,6 +63,12 @@ class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
 
  private:
   NativeHandleImpl native_handle_;
+  // Raw object pointer, relying on the caller, i.e.,
+  // AndroidVideoCapturerJni or the C++ SurfaceTextureHelper, to keep
+  // a global reference. TODO(nisse): Make this a reference to the C++
+  // SurfaceTextureHelper instead, but that requires some refactoring
+  // of AndroidVideoCapturerJni.
+  jobject surface_texture_helper_;
   rtc::Callback0<void> no_longer_used_cb_;
 };
 

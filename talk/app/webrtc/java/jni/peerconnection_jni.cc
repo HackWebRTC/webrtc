@@ -1934,6 +1934,7 @@ JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
 // Since we can't create platform specific java implementations in Java, we
 // defer the creation to C land.
 #if defined(ANDROID)
+  // TODO(nisse): This case is intended to be deleted.
   jclass j_video_capturer_class(
       FindClass(jni, "org/webrtc/VideoCapturerAndroid"));
   const int camera_id = jni->CallStaticIntMethod(
@@ -1948,8 +1949,13 @@ JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
       j_video_capturer_class,
       GetMethodID(jni, j_video_capturer_class, "<init>", "(I)V"), camera_id);
   CHECK_EXCEPTION(jni) << "error during creation of VideoCapturerAndroid";
+  jfieldID helper_fid = GetFieldID(jni, j_video_capturer_class, "surfaceHelper",
+                                   "Lorg/webrtc/SurfaceTextureHelper;");
+
   rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
-      new rtc::RefCountedObject<AndroidVideoCapturerJni>(jni, j_video_capturer);
+      new rtc::RefCountedObject<AndroidVideoCapturerJni>(
+          jni, j_video_capturer,
+          GetObjectField(jni, j_video_capturer, helper_fid));
   rtc::scoped_ptr<cricket::VideoCapturer> capturer(
       new webrtc::AndroidVideoCapturer(delegate));
 
