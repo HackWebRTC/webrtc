@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/receiver.h"
 #include "webrtc/modules/video_coding/test/stream_generator.h"
@@ -141,7 +142,8 @@ TEST_F(TestVCMReceiver, RenderBufferSize_NoKeyFrame) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
   int64_t next_render_time_ms = 0;
-  VCMEncodedFrame* frame = receiver_.FrameForDecoding(10, next_render_time_ms);
+  VCMEncodedFrame* frame =
+      receiver_.FrameForDecoding(10, next_render_time_ms, false);
   EXPECT_TRUE(frame == NULL);
   receiver_.ReleaseFrame(frame);
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
@@ -517,6 +519,62 @@ TEST_F(VCMReceiverTimingTest, FrameForDecoding) {
       receiver_.ReleaseFrame(frame);
       ++num_frames_return;
       EXPECT_GE(kMaxWaitTime, end_time - start_time);
+    } else {
+      EXPECT_EQ(kMaxWaitTime, end_time - start_time);
+    }
+  }
+}
+
+// Test whether VCMReceiver::FrameForDecoding handles parameter
+// |prefer_late_decoding| and |max_wait_time_ms| correctly:
+// 1. The function execution should never take more than |max_wait_time_ms|.
+// 2. If the function exit before now + |max_wait_time_ms|, a frame must be
+//    returned and the end time must be equal to the render timestamp - delay
+//    for decoding and rendering.
+TEST_F(VCMReceiverTimingTest, FrameForDecodingPreferLateDecoding) {
+  const size_t kNumFrames = 100;
+  const int kFramePeriod = 40;
+
+  int64_t arrive_timestamps[kNumFrames];
+  int64_t render_timestamps[kNumFrames];
+  int64_t next_render_time;
+
+  int render_delay_ms;
+  int max_decode_ms;
+  int dummy;
+  timing_.GetTimings(&dummy, &max_decode_ms, &dummy, &dummy, &dummy, &dummy,
+                     &render_delay_ms);
+
+  // Construct test samples.
+  // render_timestamps are the timestamps stored in the Frame;
+  // arrive_timestamps controls when the Frame packet got received.
+  for (size_t i = 0; i < kNumFrames; i++) {
+    // Preset frame rate to 25Hz.
+    // But we add a reasonable deviation to arrive_timestamps to mimic Internet
+    // fluctuation.
+    arrive_timestamps[i] =
+        (i + 1) * kFramePeriod + (i % 10) * ((i % 2) ? 1 : -1);
+    render_timestamps[i] = (i + 1) * kFramePeriod;
+  }
+
+  clock_.SetFrames(arrive_timestamps, render_timestamps, kNumFrames);
+
+  // Record how many frames we finally get out of the receiver.
+  size_t num_frames_return = 0;
+  const int64_t kMaxWaitTime = 30;
+  bool prefer_late_decoding = true;
+  while (num_frames_return < kNumFrames) {
+    int64_t start_time = clock_.TimeInMilliseconds();
+
+    VCMEncodedFrame* frame =
+        receiver_.FrameForDecoding(kMaxWaitTime, next_render_time,
+                                   prefer_late_decoding);
+    int64_t end_time = clock_.TimeInMilliseconds();
+    if (frame) {
+      EXPECT_EQ(frame->RenderTimeMs() - max_decode_ms - render_delay_ms,
+                end_time);
+      receiver_.ReleaseFrame(frame);
+      ++num_frames_return;
     } else {
       EXPECT_EQ(kMaxWaitTime, end_time - start_time);
     }

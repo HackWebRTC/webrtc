@@ -151,8 +151,7 @@ class VideoReceiver {
                                bool requireKeyFrame);
 
   void RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                               uint8_t payloadType,
-                               bool internalRenderTiming);
+                               uint8_t payloadType);
   int32_t RegisterReceiveCallback(VCMReceiveCallback* receiveCallback);
   int32_t RegisterReceiveStatisticsCallback(
       VCMReceiveStatisticsCallback* receiveStats);

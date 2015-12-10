@@ -85,12 +85,9 @@ VCMDecoderMapItem::VCMDecoderMapItem(VideoCodec* settings,
 
 VCMExtDecoderMapItem::VCMExtDecoderMapItem(
     VideoDecoder* external_decoder_instance,
-    uint8_t payload_type,
-    bool internal_render_timing)
+    uint8_t payload_type)
     : payload_type(payload_type),
-      external_decoder_instance(external_decoder_instance),
-      internal_render_timing(internal_render_timing) {
-}
+      external_decoder_instance(external_decoder_instance) {}
 
 VCMCodecDataBase::VCMCodecDataBase(
     VideoEncoderRateObserver* encoder_rate_observer,
@@ -419,13 +416,11 @@ bool VCMCodecDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
 
 // Add the external encoder object to the list of external decoders.
 // Won't be registered as a receive codec until RegisterReceiveCodec is called.
-void VCMCodecDataBase::RegisterExternalDecoder(
-    VideoDecoder* external_decoder,
-    uint8_t payload_type,
-    bool internal_render_timing) {
+void VCMCodecDataBase::RegisterExternalDecoder(VideoDecoder* external_decoder,
+                                               uint8_t payload_type) {
   // Check if payload value already exists, if so  - erase old and insert new.
-  VCMExtDecoderMapItem* ext_decoder = new VCMExtDecoderMapItem(
-      external_decoder, payload_type, internal_render_timing);
+  VCMExtDecoderMapItem* ext_decoder =
+      new VCMExtDecoderMapItem(external_decoder, payload_type);
   DeregisterExternalDecoder(payload_type);
   dec_external_map_[payload_type] = ext_decoder;
 }
@@ -524,12 +519,10 @@ void VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const {
   }
 }
 
-bool VCMCodecDataBase::SupportsRenderScheduling() const {
-  const VCMExtDecoderMapItem* ext_item = FindExternalDecoderItem(
-      receive_codec_.plType);
-  if (!ext_item)
+bool VCMCodecDataBase::PrefersLateDecoding() const {
+  if (!ptr_decoder_)
     return true;
-  return ext_item->internal_render_timing;
+  return ptr_decoder_->PrefersLateDecoding();
 }
 
 bool VCMCodecDataBase::MatchesCurrentResolution(int width, int height) const {

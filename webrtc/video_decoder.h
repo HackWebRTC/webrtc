@@ -73,6 +73,11 @@ class VideoDecoder {
 
   virtual int32_t Release() = 0;
   virtual int32_t Reset() = 0;
+
+  // Returns true if the decoder prefer to decode frames late.
+  // That is, it can not decode infinite number of frames before the decoded
+  // frame is consumed.
+  virtual bool PrefersLateDecoding() const { return true; }
 };
 
 // Class used to wrap external VideoDecoders to provide a fallback option on
@@ -97,6 +102,7 @@ class VideoDecoderSoftwareFallbackWrapper : public webrtc::VideoDecoder {
 
   int32_t Release() override;
   int32_t Reset() override;
+  bool PrefersLateDecoding() const override;
 
  private:
   bool InitFallbackDecoder();

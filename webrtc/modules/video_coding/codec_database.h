@@ -36,12 +36,10 @@ struct VCMDecoderMapItem {
 struct VCMExtDecoderMapItem {
  public:
   VCMExtDecoderMapItem(VideoDecoder* external_decoder_instance,
-                       uint8_t payload_type,
-                       bool internal_render_timing);
+                       uint8_t payload_type);
 
   uint8_t payload_type;
   VideoDecoder* external_decoder_instance;
-  bool internal_render_timing;
 };
 
 class VCMCodecDataBase {
@@ -90,12 +88,8 @@ class VCMCodecDataBase {
   bool DeregisterExternalDecoder(uint8_t payload_type);
 
   // Registers an external decoder object to the payload type |payload_type|.
-  // |internal_render_timing| is set to true if the |external_decoder| has
-  // built in rendering which is able to obey the render timestamps of the
-  // encoded frames.
   void RegisterExternalDecoder(VideoDecoder* external_decoder,
-                               uint8_t payload_type,
-                               bool internal_render_timing);
+                               uint8_t payload_type);
 
   bool DecoderRegistered() const;
 
@@ -124,10 +118,9 @@ class VCMCodecDataBase {
   // deep copies returned by CreateDecoderCopy().
   void ReleaseDecoder(VCMGenericDecoder* decoder) const;
 
-  // Returns true if the currently active decoder supports render scheduling,
-  // that is, it is able to render frames according to the render timestamp of
-  // the encoded frames.
-  bool SupportsRenderScheduling() const;
+  // Returns true if the currently active decoder prefer to decode frames late.
+  // That means that frames must be decoded near the render times stamp.
+  bool PrefersLateDecoding() const;
 
   bool MatchesCurrentResolution(int width, int height) const;
 

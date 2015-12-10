@@ -131,4 +131,10 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Reset() {
   return decoder_->Reset();
 }
 
+bool VideoDecoderSoftwareFallbackWrapper::PrefersLateDecoding() const {
+  if (fallback_decoder_)
+    return fallback_decoder_->PrefersLateDecoding();
+  return decoder_->PrefersLateDecoding();
+}
+
 }  // namespace webrtc

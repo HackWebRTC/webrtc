@@ -333,11 +333,9 @@ public:
     //      - externalDecoder        : The external decoder/renderer object.
     //      - payloadType            : The payload type which this decoder should be
     //                                 registered to.
-    //      - internalRenderTiming   : True if the internal renderer (if any) of the decoder
-    //                                 object can make sure to render at a given time in ms.
+    //
     virtual void RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                                         uint8_t payloadType,
-                                         bool internalRenderTiming) = 0;
+                                         uint8_t payloadType) = 0;
 
     // Register a receive callback. Will be called whenever there is a new frame ready
     // for rendering.

@@ -86,20 +86,16 @@ class ViEChannel : public VCMFrameTypeCallback,
   // type has changed and we should start a new RTP stream.
   int32_t SetSendCodec(const VideoCodec& video_codec, bool new_stream = true);
   int32_t SetReceiveCodec(const VideoCodec& video_codec);
-  // Registers an external decoder. |buffered_rendering| means that the decoder
-  // will render frames after decoding according to the render timestamp
-  // provided by the video coding module. |render_delay| indicates the time
-  // needed to decode and render a frame.
-  int32_t RegisterExternalDecoder(const uint8_t pl_type,
-                                  VideoDecoder* decoder,
-                                  bool buffered_rendering,
-                                  int32_t render_delay);
+  // Registers an external decoder.
+  void RegisterExternalDecoder(const uint8_t pl_type, VideoDecoder* decoder);
   int32_t ReceiveCodecStatistics(uint32_t* num_key_frames,
                                  uint32_t* num_delta_frames);
   uint32_t DiscardedPackets() const;
 
   // Returns the estimated delay in milliseconds.
   int ReceiveDelay() const;
+
+  void SetExpectedRenderDelay(int delay_ms);
 
   void SetRTCPMode(const RtcpMode rtcp_mode);
   void SetProtectionMode(bool enable_nack,

@@ -430,14 +430,10 @@ int32_t ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
   return 0;
 }
 
-
-int32_t ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
-                                            VideoDecoder* decoder,
-                                            bool buffered_rendering,
-                                            int32_t render_delay) {
+void ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
+                                         VideoDecoder* decoder) {
   RTC_DCHECK(!sender_);
-  vcm_->RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
-  return vcm_->SetRenderDelay(render_delay);
+  vcm_->RegisterExternalDecoder(decoder, pl_type);
 }
 
 int32_t ViEChannel::ReceiveCodecStatistics(uint32_t* num_key_frames,
@@ -454,6 +450,10 @@ uint32_t ViEChannel::DiscardedPackets() const {
 
 int ViEChannel::ReceiveDelay() const {
   return vcm_->Delay();
+}
+
+void ViEChannel::SetExpectedRenderDelay(int delay_ms) {
+  vcm_->SetRenderDelay(delay_ms);
 }
 
 void ViEChannel::SetRTCPMode(const RtcpMode rtcp_mode) {

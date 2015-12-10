@@ -89,6 +89,9 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   int32_t Release() override;
 
   int32_t Reset() override;
+
+  bool PrefersLateDecoding() const override { return true; }
+
   // rtc::MessageHandler implementation.
   void OnMessage(rtc::Message* msg) override;
 

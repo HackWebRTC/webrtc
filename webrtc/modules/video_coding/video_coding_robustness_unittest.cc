@@ -44,7 +44,7 @@ class VCMRobustnessTest : public ::testing::Test {
     ASSERT_EQ(0, vcm_->RegisterPacketRequestCallback(&request_callback_));
     ASSERT_EQ(VCM_OK, vcm_->Codec(kVideoCodecVP8, &video_codec_));
     ASSERT_EQ(VCM_OK, vcm_->RegisterReceiveCodec(&video_codec_, 1));
-    vcm_->RegisterExternalDecoder(&decoder_, video_codec_.plType, true);
+    vcm_->RegisterExternalDecoder(&decoder_, video_codec_.plType);
   }
 
   virtual void TearDown() {
@@ -204,7 +204,7 @@ TEST_F(VCMRobustnessTest, TestModeNoneWithErrors) {
   InsertPacket(0, 0, true, false, kVideoFrameKey);
   InsertPacket(0, 1, false, false, kVideoFrameKey);
   InsertPacket(0, 2, false, true, kVideoFrameKey);
-  EXPECT_EQ(VCM_OK, vcm_->Decode(0));  // Decode timestamp 0.
+  EXPECT_EQ(VCM_OK, vcm_->Decode(33));  // Decode timestamp 0.
   EXPECT_EQ(VCM_OK, vcm_->Process());  // Expect no NACK list.
 
   clock_->AdvanceTimeMilliseconds(33);
@@ -222,7 +222,7 @@ TEST_F(VCMRobustnessTest, TestModeNoneWithErrors) {
   EXPECT_EQ(VCM_OK, vcm_->Process());  // Expect no NACK list.
 
   clock_->AdvanceTimeMilliseconds(10);
-  EXPECT_EQ(VCM_OK, vcm_->Decode(0));  // Decode timestamp 6000 complete.
+  EXPECT_EQ(VCM_OK, vcm_->Decode(23));  // Decode timestamp 6000 complete.
   EXPECT_EQ(VCM_OK, vcm_->Process());  // Expect no NACK list.
 
   clock_->AdvanceTimeMilliseconds(23);
@@ -231,6 +231,6 @@ TEST_F(VCMRobustnessTest, TestModeNoneWithErrors) {
   InsertPacket(9000, 9, true, false, kVideoFrameDelta);
   InsertPacket(9000, 10, false, false, kVideoFrameDelta);
   InsertPacket(9000, 11, false, true, kVideoFrameDelta);
-  EXPECT_EQ(VCM_OK, vcm_->Decode(0));  // Decode timestamp 9000 complete.
+  EXPECT_EQ(VCM_OK, vcm_->Decode(33));  // Decode timestamp 9000 complete.
 }
 }  // namespace webrtc

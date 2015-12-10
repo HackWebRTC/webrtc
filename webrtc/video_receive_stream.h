@@ -43,15 +43,6 @@ class VideoReceiveStream : public ReceiveStream {
     // Name of the decoded payload (such as VP8). Maps back to the depacketizer
     // used to unpack incoming packets.
     std::string payload_name;
-
-    // 'true' if the decoder handles rendering as well.
-    bool is_renderer = false;
-
-    // The expected delay for decoding and rendering, i.e. the frame will be
-    // delivered this many milliseconds, if possible, earlier than the ideal
-    // render time.
-    // Note: Ignored if 'renderer' is false.
-    int expected_delay_ms = 0;
   };
 
   struct Stats {

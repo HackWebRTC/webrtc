@@ -47,7 +47,7 @@ class VCMReceiver {
                        uint16_t frame_height);
   VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
                                     int64_t& next_render_time_ms,
-                                    bool render_timing = true);
+                                    bool prefer_late_decoding);
   void ReleaseFrame(VCMEncodedFrame* frame);
   void ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate);
   uint32_t DiscardedPackets() const;

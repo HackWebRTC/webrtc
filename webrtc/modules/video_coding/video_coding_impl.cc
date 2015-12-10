@@ -197,10 +197,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   }
 
   void RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                               uint8_t payloadType,
-                               bool internalRenderTiming) override {
-    receiver_.RegisterExternalDecoder(externalDecoder, payloadType,
-                                      internalRenderTiming);
+                               uint8_t payloadType) override {
+    receiver_.RegisterExternalDecoder(externalDecoder, payloadType);
   }
 
   int32_t RegisterReceiveCallback(

@@ -34,7 +34,7 @@ class TestVideoReceiver : public ::testing::Test {
 
   virtual void SetUp() {
     receiver_.reset(new VideoReceiver(&clock_, &event_factory_));
-    receiver_->RegisterExternalDecoder(&decoder_, kUnusedPayloadType, true);
+    receiver_->RegisterExternalDecoder(&decoder_, kUnusedPayloadType);
     const size_t kMaxNackListSize = 250;
     const int kMaxPacketAgeToNack = 450;
     receiver_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);
@@ -55,7 +55,7 @@ class TestVideoReceiver : public ::testing::Test {
     }
     EXPECT_EQ(0, receiver_->Process());
     EXPECT_CALL(decoder_, Decode(_, _, _, _, _)).Times(0);
-    EXPECT_EQ(VCM_FRAME_NOT_READY, receiver_->Decode(0));
+    EXPECT_EQ(VCM_FRAME_NOT_READY, receiver_->Decode(100));
   }
 
   void InsertAndVerifyDecodableFrame(const uint8_t* payload,
@@ -67,7 +67,7 @@ class TestVideoReceiver : public ::testing::Test {
     EXPECT_CALL(packet_request_callback_, ResendPackets(_, _)).Times(0);
     EXPECT_EQ(0, receiver_->Process());
     EXPECT_CALL(decoder_, Decode(_, _, _, _, _)).Times(1);
-    EXPECT_EQ(0, receiver_->Decode(0));
+    EXPECT_EQ(0, receiver_->Decode(100));
   }
 
   SimulatedClock clock_;

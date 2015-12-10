@@ -235,11 +235,9 @@ int32_t VideoReceiver::RegisterDecoderTimingCallback(
   return VCM_OK;
 }
 
-// Register an externally defined decoder/render object.
-// Can be a decoder only or a decoder coupled with a renderer.
+// Register an externally defined decoder object.
 void VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                                               uint8_t payloadType,
-                                               bool internalRenderTiming) {
+                                            uint8_t payloadType) {
   CriticalSectionScoped cs(_receiveCritSect);
   if (externalDecoder == NULL) {
     // Make sure the VCM updates the decoder next time it decodes.
@@ -247,8 +245,7 @@ void VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
     RTC_CHECK(_codecDataBase.DeregisterExternalDecoder(payloadType));
     return;
   }
-  _codecDataBase.RegisterExternalDecoder(externalDecoder, payloadType,
-                                         internalRenderTiming);
+  _codecDataBase.RegisterExternalDecoder(externalDecoder, payloadType);
 }
 
 // Register a frame type request callback.
@@ -281,14 +278,14 @@ void VideoReceiver::TriggerDecoderShutdown() {
 // Should be called as often as possible to get the most out of the decoder.
 int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   int64_t nextRenderTimeMs;
-  bool supports_render_scheduling;
+  bool prefer_late_decoding = false;
   {
     CriticalSectionScoped cs(_receiveCritSect);
-    supports_render_scheduling = _codecDataBase.SupportsRenderScheduling();
+    prefer_late_decoding = _codecDataBase.PrefersLateDecoding();
   }
 
   VCMEncodedFrame* frame = _receiver.FrameForDecoding(
-      maxWaitTimeMs, nextRenderTimeMs, supports_render_scheduling);
+      maxWaitTimeMs, nextRenderTimeMs, prefer_late_decoding);
 
   if (frame == NULL) {
     return VCM_FRAME_NOT_READY;
@@ -369,13 +366,7 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
                           "type",
                           frame.FrameType());
   // Change decoder if payload type has changed
-  const bool renderTimingBefore = _codecDataBase.SupportsRenderScheduling();
   _decoder = _codecDataBase.GetDecoder(frame, &_decodedFrameCallback);
-  if (renderTimingBefore != _codecDataBase.SupportsRenderScheduling()) {
-    // Make sure we reset the decode time estimate since it will
-    // be zero for codecs without render timing.
-    _timing.ResetDecodeTime();
-  }
   if (_decoder == NULL) {
     return VCM_NO_CODEC_REGISTERED;
   }

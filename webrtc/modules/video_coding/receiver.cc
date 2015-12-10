@@ -96,7 +96,7 @@ void VCMReceiver::TriggerDecoderShutdown() {
 
 VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
                                                int64_t& next_render_time_ms,
-                                               bool render_timing) {
+                                               bool prefer_late_decoding) {
   const int64_t start_time_ms = clock_->TimeInMilliseconds();
   uint32_t frame_timestamp = 0;
   // Exhaust wait time to get a complete frame for decoding.
@@ -140,7 +140,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
     return NULL;
   }
 
-  if (!render_timing) {
+  if (prefer_late_decoding) {
     // Decode frame as close as possible to the render timestamp.
     const int32_t available_wait_time = max_wait_time_ms -
         static_cast<int32_t>(clock_->TimeInMilliseconds() - start_time_ms);

@@ -97,6 +97,7 @@ public:
     int32_t RegisterDecodeCompleteCallback(VCMDecodedFrameCallback* callback);
 
     bool External() const;
+    bool PrefersLateDecoding() const;
 
 private:
     VCMDecodedFrameCallback*    _callback;

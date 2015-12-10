@@ -198,4 +198,8 @@ bool VCMGenericDecoder::External() const {
   return _isExternal;
 }
 
+bool VCMGenericDecoder::PrefersLateDecoding() const {
+  return _decoder->PrefersLateDecoding();
+}
+
 }  // namespace

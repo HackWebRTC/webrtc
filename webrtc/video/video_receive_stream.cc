@@ -39,8 +39,6 @@ std::string VideoReceiveStream::Decoder::ToString() const {
   ss << "{decoder: " << (decoder != nullptr ? "(VideoDecoder)" : "nullptr");
   ss << ", payload_type: " << payload_type;
   ss << ", payload_name: " << payload_name;
-  ss << ", is_renderer: " << (is_renderer ? "yes" : "no");
-  ss << ", expected_delay_ms: " << expected_delay_ms;
   ss << '}';
 
   return ss.str();
@@ -269,11 +267,8 @@ VideoReceiveStream::VideoReceiveStream(
         << "Duplicate payload type (" << decoder.payload_type
         << ") for different decoders.";
     decoder_payload_types.insert(decoder.payload_type);
-    RTC_CHECK_EQ(0,
-                 vie_channel_->RegisterExternalDecoder(
-                     decoder.payload_type, decoder.decoder, decoder.is_renderer,
-                     decoder.is_renderer ? decoder.expected_delay_ms
-                                         : config.render_delay_ms));
+    vie_channel_->RegisterExternalDecoder(decoder.payload_type,
+                                          decoder.decoder);
 
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
 
@@ -283,6 +278,7 @@ VideoReceiveStream::VideoReceiveStream(
   incoming_video_stream_.reset(new IncomingVideoStream(
       0, config.renderer ? config.renderer->SmoothsRenderedFrames() : false));
   incoming_video_stream_->SetExpectedRenderDelay(config.render_delay_ms);
+  vie_channel_->SetExpectedRenderDelay(config.render_delay_ms);
   incoming_video_stream_->SetExternalCallback(this);
   vie_channel_->SetIncomingVideoStream(incoming_video_stream_.get());
 
