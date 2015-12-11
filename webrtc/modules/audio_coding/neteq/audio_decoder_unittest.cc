@@ -566,18 +566,14 @@ TEST_F(AudioDecoderIsacSwbTest, SetTargetBitrate) {
   TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 32000);
 }
 
-// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4198
-#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
-#define MAYBE_EncodeDecode DISABLED_EncodeDecode
-#else
-#define MAYBE_EncodeDecode EncodeDecode
-#endif
-TEST_F(AudioDecoderIsacFixTest, MAYBE_EncodeDecode) {
+TEST_F(AudioDecoderIsacFixTest, EncodeDecode) {
   int tolerance = 11034;
   double mse = 3.46e6;
   int delay = 54;  // Delay from input to output.
-#ifdef WEBRTC_ANDROID
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM)
   static const int kEncodedBytes = 685;
+#elif defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
+  static const int kEncodedBytes = 673;
 #else
   static const int kEncodedBytes = 671;
 #endif
