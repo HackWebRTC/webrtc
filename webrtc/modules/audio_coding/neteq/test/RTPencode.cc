@@ -25,7 +25,9 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"
+
 // needed for NetEqDecoder
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
@@ -35,6 +37,10 @@
 /************************/
 
 #include "PayloadTypes.h"
+
+namespace {
+const size_t kRtpDataSize = 8000;
+}
 
 /*********************/
 /* Misc. definitions */
@@ -193,6 +199,9 @@ void stereoInterleave(unsigned char* data, size_t dataLen, size_t stride);
 #if ((defined CODEC_SPEEX_8) || (defined CODEC_SPEEX_16))
 #include "SpeexInterface.h"
 #endif
+#ifdef CODEC_OPUS
+#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
+#endif
 
 /***********************************/
 /* Global codec instance variables */
@@ -264,6 +273,9 @@ SPEEX_encinst_t* SPEEX8enc_inst[2];
 #ifdef CODEC_SPEEX_16
 SPEEX_encinst_t* SPEEX16enc_inst[2];
 #endif
+#ifdef CODEC_OPUS
+OpusEncInst* opus_inst[2];
+#endif
 
 int main(int argc, char* argv[]) {
   size_t packet_size;
@@ -275,7 +287,7 @@ int main(int argc, char* argv[]) {
   int useRed = 0;
   size_t len, enc_len;
   int16_t org_data[4000];
-  unsigned char rtp_data[8000];
+  unsigned char rtp_data[kRtpDataSize];
   int16_t seqNo = 0xFFF;
   uint32_t ssrc = 1235412312;
   uint32_t timestamp = 0xAC1245;
@@ -286,12 +298,12 @@ int main(int argc, char* argv[]) {
   uint32_t red_TS[2] = {0};
   uint16_t red_len[2] = {0};
   size_t RTPheaderLen = 12;
-  uint8_t red_data[8000];
+  uint8_t red_data[kRtpDataSize];
 #ifdef INSERT_OLD_PACKETS
   uint16_t old_length, old_plen;
   size_t old_enc_len;
   int first_old_packet = 1;
-  unsigned char old_rtp_data[8000];
+  unsigned char old_rtp_data[kRtpDataSize];
   size_t packet_age = 0;
 #endif
 #ifdef INSERT_DTMF_PACKETS
@@ -429,6 +441,10 @@ int main(int argc, char* argv[]) {
     printf("             : red_isac     Redundancy RTP packet with 2*iSAC "
            "frames\n");
 #endif
+#endif  // CODEC_RED
+#ifdef CODEC_OPUS
+    printf("             : opus         Opus codec with FEC (48kHz, 32kbps, FEC"
+        " on and tuned for 5%% packet losses)\n");
 #endif
     printf("\n");
 
@@ -880,6 +896,10 @@ void NetEQTest_GetCodec_and_PT(char* name,
     *PT = NETEQ_CODEC_ISAC_PT; /* this will be the PT for the sub-headers */
     *fs = 16000;
     *useRed = 1;
+  } else if (!strcmp(name, "opus")) {
+    *codec = webrtc::NetEqDecoder::kDecoderOpus;
+    *PT = NETEQ_CODEC_OPUS_PT; /* this will be the PT for the sub-headers */
+    *fs = 48000;
   } else {
     printf("Error: Not a supported codec (%s)\n", name);
     exit(0);
@@ -1411,12 +1431,23 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
         }
         break;
 #endif
+#ifdef CODEC_OPUS
+      case webrtc::NetEqDecoder::kDecoderOpus:
+        ok = WebRtcOpus_EncoderCreate(&opus_inst[k], 1, 0);
+        if (ok != 0) {
+          printf("Error: Couldn't allocate memory for Opus encoding "
+                 "instance\n");
+          exit(0);
+        }
+        WebRtcOpus_EnableFec(opus_inst[k]);
+        WebRtcOpus_SetPacketLossRate(opus_inst[k], 5);
+        break;
+#endif
       default:
         printf("Error: unknown codec in call to NetEQTest_init_coders.\n");
         exit(0);
         break;
     }
-
     if (ok != 0) {
       return (ok);
     }
@@ -1541,6 +1572,11 @@ int NetEQTest_free_coders(webrtc::NetEqDecoder coder, size_t numChannels) {
 #ifdef CODEC_GSMFR
       case webrtc::NetEqDecoder::kDecoderGSMFR:
         WebRtcGSMFR_FreeEnc(GSMFRenc_inst[k]);
+        break;
+#endif
+#ifdef CODEC_OPUS
+      case webrtc::NetEqDecoder::kDecoderOpus:
+        WebRtcOpus_EncoderFree(opus_inst[k]);
         break;
 #endif
       default:
@@ -1686,6 +1722,11 @@ size_t NetEQTest_encode(webrtc::NetEqDecoder coder,
       }
       cdlen = static_cast<size_t>(res);
     }
+#endif
+#ifdef CODEC_OPUS
+    cdlen = WebRtcOpus_Encode(opus_inst[k], indata, frameLen, kRtpDataSize - 12,
+                              encoded);
+    RTC_CHECK_GT(cdlen, 0u);
 #endif
     indata += frameLen;
     encoded += cdlen;

@@ -56,6 +56,7 @@
         'isac',
         'neteq_test_tools',  # Test helpers
         'pcm16b',
+        'webrtc_opus',
       ],
       'defines': [
         'CODEC_ILBC',
@@ -72,6 +73,7 @@
         'CODEC_CNGCODEC32',
         'CODEC_ATEVENT_DECODE',
         'CODEC_RED',
+        'CODEC_OPUS',
       ],
       'include_dirs': [
         'include',
