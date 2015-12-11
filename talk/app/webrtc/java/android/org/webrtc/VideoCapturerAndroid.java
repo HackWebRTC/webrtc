@@ -762,13 +762,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements
       transformMatrix =
           RendererCommon.multiplyMatrices(transformMatrix, RendererCommon.horizontalFlipMatrix());
     }
-    transformMatrix = RendererCommon.rotateTextureMatrix(transformMatrix, rotation);
-
-    final int rotatedWidth = (rotation % 180 == 0) ? captureFormat.width : captureFormat.height;
-    final int rotatedHeight = (rotation % 180 == 0) ? captureFormat.height : captureFormat.width;
     cameraStatistics.addPendingFrame(timestampNs);
-    frameObserver.onTextureFrameCaptured(rotatedWidth, rotatedHeight, oesTextureId,
-        transformMatrix, timestampNs);
+
+    frameObserver.onTextureFrameCaptured(captureFormat.width, captureFormat.height, oesTextureId,
+        transformMatrix, rotation, timestampNs);
   }
 
   // Class used for allocating and bookkeeping video frames. All buffers are
@@ -894,7 +891,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     // Delivers a captured frame in a texture with id |oesTextureId|. Called on a Java thread
     // owned by VideoCapturerAndroid.
     abstract void onTextureFrameCaptured(
-        int width, int height, int oesTextureId, float[] transformMatrix, long timestamp);
+        int width, int height, int oesTextureId, float[] transformMatrix, int rotation,
+        long timestamp);
 
     // Requests an output format from the video capturer. Captured frames
     // by the camera will be scaled/or dropped by the video capturer.
@@ -925,9 +923,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements
 
     @Override
     public void onTextureFrameCaptured(
-        int width, int height, int oesTextureId, float[] transformMatrix, long timestamp) {
+        int width, int height, int oesTextureId, float[] transformMatrix, int rotation,
+        long timestamp) {
       nativeOnTextureFrameCaptured(nativeCapturer, width, height, oesTextureId, transformMatrix,
-          timestamp);
+          rotation, timestamp);
     }
 
     @Override
@@ -940,7 +939,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     private native void nativeOnByteBufferFrameCaptured(long nativeCapturer,
         byte[] data, int length, int width, int height, int rotation, long timeStamp);
     private native void nativeOnTextureFrameCaptured(long nativeCapturer, int width, int height,
-        int oesTextureId, float[] transformMatrix, long timestamp);
+        int oesTextureId, float[] transformMatrix, int rotation, long timestamp);
     private native void nativeOnOutputFormatRequest(long nativeCapturer,
         int width, int height, int framerate);
   }

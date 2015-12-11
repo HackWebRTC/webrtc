@@ -32,6 +32,7 @@
 #include <jni.h>
 
 #include "webrtc/common_video/include/video_frame_buffer.h"
+#include "webrtc/common_video/rotation.h"
 
 namespace webrtc_jni {
 
@@ -55,11 +56,10 @@ class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
   ~AndroidTextureBuffer();
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
 
-  rtc::scoped_refptr<AndroidTextureBuffer> CropAndScale(
-      int cropped_input_width,
-      int cropped_input_height,
+  rtc::scoped_refptr<AndroidTextureBuffer> ScaleAndRotate(
       int dst_widht,
-      int dst_height);
+      int dst_height,
+      webrtc::VideoRotation rotation);
 
  private:
   NativeHandleImpl native_handle_;

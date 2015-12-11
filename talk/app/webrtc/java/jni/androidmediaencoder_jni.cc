@@ -584,11 +584,10 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       if (frame.native_handle() != nullptr) {
         rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled_buffer(
             static_cast<AndroidTextureBuffer*>(
-                frame.video_frame_buffer().get())->CropAndScale(
-                    frame.width(),
-                    frame.height(),
+                frame.video_frame_buffer().get())->ScaleAndRotate(
                     scaled_resolution.width,
-                    scaled_resolution.height));
+                    scaled_resolution.height,
+                    webrtc::kVideoRotation_0));
         input_frame.set_video_frame_buffer(scaled_buffer);
       } else {
         input_frame = quality_scaler_.GetScaledFrame(frame);

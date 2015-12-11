@@ -132,7 +132,8 @@ public class VideoCapturerAndroidTestFixtures {
     }
     @Override
     public void onTextureFrameCaptured(
-        int width, int height, int oesTextureId, float[] transformMatrix, long timeStamp) {
+        int width, int height, int oesTextureId, float[] transformMatrix, int rotation,
+        long timeStamp) {
       synchronized (frameLock) {
         ++framesCaptured;
         frameWidth = width;

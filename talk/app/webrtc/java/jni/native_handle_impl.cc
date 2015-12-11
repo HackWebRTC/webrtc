@@ -33,8 +33,49 @@
 #include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/logging.h"
 
 using webrtc::NativeHandleBuffer;
+
+namespace {
+
+void RotateMatrix(float a[16], webrtc::VideoRotation rotation) {
+  // Texture coordinates are in the range 0 to 1. The transformation of the last
+  // row in each rotation matrix is needed for proper translation, e.g, to
+  // mirror x, we don't replace x by -x, but by 1-x.
+  switch (rotation) {
+    case webrtc::kVideoRotation_0:
+      break;
+    case webrtc::kVideoRotation_90: {
+      const float ROTATE_90[16] =
+          { a[4], a[5], a[6], a[7],
+            -a[0], -a[1], -a[2], -a[3],
+            a[8], a[9], a[10], a[11],
+            a[0] + a[12], a[1] + a[13], a[2] + a[14], a[3] + a[15]};
+      memcpy(a, ROTATE_90, sizeof(ROTATE_90));
+    } break;
+    case webrtc::kVideoRotation_180: {
+      const float ROTATE_180[16] =
+          { -a[0], -a[1], -a[2], -a[3],
+            -a[4], -a[5], -a[6], -a[7],
+            a[8], a[9], a[10], a[11],
+            a[0] + a[4] + a[12], a[1] +a[5] + a[13], a[2] + a[6] + a[14],
+            a[3] + a[11]+ a[15]};
+        memcpy(a, ROTATE_180, sizeof(ROTATE_180));
+      }
+      break;
+    case webrtc::kVideoRotation_270: {
+      const float ROTATE_270[16] =
+          { -a[4], -a[5], -a[6], -a[7],
+            a[0], a[1], a[2], a[3],
+            a[8], a[9], a[10], a[11],
+            a[4] + a[12], a[5] + a[13], a[6] + a[14], a[7] + a[15]};
+        memcpy(a, ROTATE_270, sizeof(ROTATE_270));
+    } break;
+  }
+}
+
+}  // anonymouse namespace
 
 namespace webrtc_jni {
 
@@ -120,22 +161,26 @@ AndroidTextureBuffer::NativeToI420Buffer() {
   return copy;
 }
 
-rtc::scoped_refptr<AndroidTextureBuffer> AndroidTextureBuffer::CropAndScale(
-    int cropped_input_width,
-    int cropped_input_height,
-    int dst_widht,
-    int dst_height) {
-  // TODO(perkj) Implement cropping.
-  RTC_CHECK_EQ(cropped_input_width, width_);
-  RTC_CHECK_EQ(cropped_input_height, height_);
+rtc::scoped_refptr<AndroidTextureBuffer>
+AndroidTextureBuffer::ScaleAndRotate(int dst_widht,
+                                     int dst_height,
+                                     webrtc::VideoRotation rotation) {
+  if (width() == dst_widht && height() == dst_height &&
+      rotation == webrtc::kVideoRotation_0) {
+    return this;
+  }
+  int rotated_width = (rotation % 180 == 0) ? dst_widht : dst_height;
+  int rotated_height = (rotation % 180 == 0) ? dst_height : dst_widht;
 
   // Here we use Bind magic to add a reference count to |this| until the newly
-  // created AndroidTextureBuffer is destructed. ScaledFrameNotInUse will be
-  // called that happens and when it finishes, the reference count to |this|
-  // will be decreased by one.
-  return new rtc::RefCountedObject<AndroidTextureBuffer>(
-      dst_widht, dst_height, native_handle_, surface_texture_helper_,
-      rtc::KeepRefUntilDone(this));
+  // created AndroidTextureBuffer is destructed
+  rtc::scoped_refptr<AndroidTextureBuffer> buffer(
+      new rtc::RefCountedObject<AndroidTextureBuffer>(
+          rotated_width, rotated_height, native_handle_,
+          surface_texture_helper_, rtc::KeepRefUntilDone(this)));
+
+  RotateMatrix(buffer->native_handle_.sampling_matrix, rotation);
+  return buffer;
 }
 
 }  // namespace webrtc_jni

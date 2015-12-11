@@ -62,7 +62,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
   void OnCapturerStarted(bool success);
   void OnMemoryBufferFrame(void* video_frame, int length, int width,
                            int height, int rotation, int64_t timestamp_ns);
-  void OnTextureFrame(int width, int height, int64_t timestamp_ns,
+  void OnTextureFrame(int width, int height, int rotation, int64_t timestamp_ns,
                       const NativeHandleImpl& handle);
   void OnOutputFormatRequest(int width, int height, int fps);
 

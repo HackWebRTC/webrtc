@@ -185,6 +185,7 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
 
 void AndroidVideoCapturerJni::OnTextureFrame(int width,
                                              int height,
+                                             int rotation,
                                              int64_t timestamp_ns,
                                              const NativeHandleImpl& handle) {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
@@ -194,7 +195,7 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
                     timestamp_ns)));
   AsyncCapturerInvoke("OnIncomingFrame",
                       &webrtc::AndroidVideoCapturer::OnIncomingFrame,
-                      buffer, 0, timestamp_ns);
+                      buffer, rotation, timestamp_ns);
 }
 
 void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,
@@ -228,9 +229,9 @@ JOW(void,
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnTextureFrameCaptured)
     (JNIEnv* jni, jclass, jlong j_capturer, jint j_width, jint j_height,
         jint j_oes_texture_id, jfloatArray j_transform_matrix,
-        jlong j_timestamp) {
+        jint j_rotation, jlong j_timestamp) {
    reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)
-         ->OnTextureFrame(j_width, j_height, j_timestamp,
+         ->OnTextureFrame(j_width, j_height, j_rotation, j_timestamp,
                           NativeHandleImpl(jni, j_oes_texture_id,
                                            j_transform_matrix));
 }
