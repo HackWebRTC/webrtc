@@ -121,7 +121,7 @@ class EventLogger final {
                 ", \"pid\": %d"
                 ", \"tid\": %d}\n",
                 has_logged_event ? "," : " ", e.name, e.category_enabled,
-                e.phase, e.timestamp, e.pid, e.tid);
+                e.phase, e.timestamp, static_cast<int>(e.pid), e.tid);
         has_logged_event = true;
       }
       if (shutting_down)
