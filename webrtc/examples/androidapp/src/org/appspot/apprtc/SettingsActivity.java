@@ -36,6 +36,7 @@ public class SettingsActivity extends Activity
   private String keyprefStartAudioBitrateValue;
   private String keyPrefAudioCodec;
   private String keyprefNoAudioProcessing;
+  private String keyprefAecDump;
   private String keyprefOpenSLES;
 
   private String keyPrefRoomServerUrl;
@@ -59,6 +60,7 @@ public class SettingsActivity extends Activity
     keyprefStartAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
     keyPrefAudioCodec = getString(R.string.pref_audiocodec_key);
     keyprefNoAudioProcessing = getString(R.string.pref_noaudioprocessing_key);
+    keyprefAecDump = getString(R.string.pref_aecdump_key);
     keyprefOpenSLES = getString(R.string.pref_opensles_key);
 
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
@@ -95,6 +97,7 @@ public class SettingsActivity extends Activity
     setAudioBitrateEnable(sharedPreferences);
     updateSummary(sharedPreferences, keyPrefAudioCodec);
     updateSummaryB(sharedPreferences, keyprefNoAudioProcessing);
+    updateSummaryB(sharedPreferences, keyprefAecDump);
     updateSummaryB(sharedPreferences, keyprefOpenSLES);
 
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
@@ -130,6 +133,7 @@ public class SettingsActivity extends Activity
         || key.equals(keyprefHwCodec)
         || key.equals(keyprefCaptureToTexture)
         || key.equals(keyprefNoAudioProcessing)
+        || key.equals(keyprefAecDump)
         || key.equals(keyprefOpenSLES)
         || key.equals(keyPrefDisplayHud)) {
       updateSummaryB(sharedPreferences, key);

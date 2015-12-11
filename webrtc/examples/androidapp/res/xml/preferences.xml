@@ -102,6 +102,12 @@
             android:defaultValue="@string/pref_noaudioprocessing_default" />
 
         <CheckBoxPreference
+            android:key="@string/pref_aecdump_key"
+            android:title="@string/pref_aecdump_title"
+            android:dialogTitle="@string/pref_aecdump_dlg"
+            android:defaultValue="@string/pref_aecdump_default" />
+
+        <CheckBoxPreference
             android:key="@string/pref_opensles_key"
             android:title="@string/pref_opensles_title"
             android:dialogTitle="@string/pref_opensles_dlg"

@@ -11,6 +11,7 @@
 package org.appspot.apprtc;
 
 import android.content.Context;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
@@ -37,6 +38,8 @@ import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.voiceengine.WebRtcAudioManager;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.Timer;
@@ -105,6 +108,7 @@ public class PeerConnectionClient {
   private MediaConstraints pcConstraints;
   private MediaConstraints videoConstraints;
   private MediaConstraints audioConstraints;
+  private ParcelFileDescriptor aecDumpFileDescriptor;
   private MediaConstraints sdpMediaConstraints;
   private PeerConnectionParameters peerConnectionParameters;
   // Queued remote ICE candidates are consumed only after both local and
@@ -139,6 +143,7 @@ public class PeerConnectionClient {
     public final int audioStartBitrate;
     public final String audioCodec;
     public final boolean noAudioProcessing;
+    public final boolean aecDump;
     public final boolean useOpenSLES;
 
     public PeerConnectionParameters(
@@ -146,7 +151,7 @@ public class PeerConnectionClient {
         int videoWidth, int videoHeight, int videoFps, int videoStartBitrate,
         String videoCodec, boolean videoCodecHwAcceleration, boolean captureToTexture,
         int audioStartBitrate, String audioCodec,
-        boolean noAudioProcessing, boolean useOpenSLES) {
+        boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.tracing = tracing;
@@ -160,6 +165,7 @@ public class PeerConnectionClient {
       this.audioStartBitrate = audioStartBitrate;
       this.audioCodec = audioCodec;
       this.noAudioProcessing = noAudioProcessing;
+      this.aecDump = aecDump;
       this.useOpenSLES = useOpenSLES;
     }
   }
@@ -485,10 +491,26 @@ public class PeerConnectionClient {
         factory.createAudioSource(audioConstraints)));
     peerConnection.addStream(mediaStream);
 
+    if (peerConnectionParameters.aecDump) {
+      try {
+        aecDumpFileDescriptor = ParcelFileDescriptor.open(
+            new File("/sdcard/Download/audio.aecdump"),
+                ParcelFileDescriptor.MODE_READ_WRITE |
+                ParcelFileDescriptor.MODE_CREATE |
+                ParcelFileDescriptor.MODE_TRUNCATE);
+        factory.startAecDump(aecDumpFileDescriptor.getFd());
+      } catch(IOException e) {
+        Log.e(TAG, "Can not open aecdump file", e);
+      }
+    }
+
     Log.d(TAG, "Peer connection created.");
   }
 
   private void closeInternal() {
+    if (factory != null && peerConnectionParameters.aecDump) {
+      factory.stopAecDump();
+    }
     Log.d(TAG, "Closing peer connection.");
     statsTimer.cancel();
     if (peerConnection != null) {

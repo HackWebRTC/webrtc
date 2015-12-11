@@ -67,6 +67,7 @@ public class ConnectActivity extends Activity {
   private String keyprefHwCodecAcceleration;
   private String keyprefCaptureToTexture;
   private String keyprefNoAudioProcessingPipeline;
+  private String keyprefAecDump;
   private String keyprefOpenSLES;
   private String keyprefDisplayHud;
   private String keyprefTracing;
@@ -96,6 +97,7 @@ public class ConnectActivity extends Activity {
     keyprefAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
     keyprefAudioCodec = getString(R.string.pref_audiocodec_key);
     keyprefNoAudioProcessingPipeline = getString(R.string.pref_noaudioprocessing_key);
+    keyprefAecDump = getString(R.string.pref_aecdump_key);
     keyprefOpenSLES = getString(R.string.pref_opensles_key);
     keyprefDisplayHud = getString(R.string.pref_displayhud_key);
     keyprefTracing = getString(R.string.pref_tracing_key);
@@ -266,6 +268,11 @@ public class ConnectActivity extends Activity {
         keyprefNoAudioProcessingPipeline,
         Boolean.valueOf(getString(R.string.pref_noaudioprocessing_default)));
 
+    // Check Disable Audio Processing flag.
+    boolean aecDump = sharedPref.getBoolean(
+        keyprefAecDump,
+        Boolean.valueOf(getString(R.string.pref_aecdump_default)));
+
     // Check OpenSL ES enabled flag.
     boolean useOpenSLES = sharedPref.getBoolean(
         keyprefOpenSLES,
@@ -353,6 +360,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, captureToTexture);
       intent.putExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED,
           noAudioProcessing);
+      intent.putExtra(CallActivity.EXTRA_AECDUMP_ENABLED, aecDump);
       intent.putExtra(CallActivity.EXTRA_OPENSLES_ENABLED, useOpenSLES);
       intent.putExtra(CallActivity.EXTRA_AUDIO_BITRATE, audioStartBitrate);
       intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);

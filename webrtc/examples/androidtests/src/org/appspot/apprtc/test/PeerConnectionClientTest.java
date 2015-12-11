@@ -251,7 +251,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
         new PeerConnectionParameters(
             false, true, false, // videoCallEnabled, loopback, tracing.
             0, 0, 0, 0, "", true, false, // video codec parameters.
-            0, "OPUS", false, false); // audio codec parameters.
+            0, "OPUS", false, false, false); // audio codec parameters.
     return peerConnectionParameters;
   }
 
@@ -261,7 +261,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
         new PeerConnectionParameters(
             true, true, false, // videoCallEnabled, loopback, tracing.
             0, 0, 0, 0, videoCodec, true, captureToTexture, // video codec parameters.
-            0, "OPUS", false, false); // audio codec parameters.
+            0, "OPUS", false, false, false); // audio codec parameters.
     return peerConnectionParameters;
   }
 
