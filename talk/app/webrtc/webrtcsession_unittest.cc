@@ -2806,10 +2806,9 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
   EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
 }
 
-// Test that if the remote description indicates the peer requested ICE restart
-// (via a new ufrag or pwd), the old ICE candidates are not copied,
-// and vice versa.
-TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionWithIceRestart) {
+// Test that if the remote offer indicates the peer requested ICE restart (via
+// a new ufrag or pwd), the old ICE candidates are not copied, and vice versa.
+TEST_F(WebRtcSessionTest, TestSetRemoteOfferWithIceRestart) {
   Init();
   scoped_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
 
@@ -2859,6 +2858,64 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionWithIceRestart) {
                          "abcdefghijklmnopqrstuvyz", &sdp);
   SessionDescriptionInterface* offer4 =
       CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  SetRemoteDescriptionWithoutError(offer4);
+  EXPECT_EQ(0, session_->remote_description()->candidates(0)->count());
+}
+
+// Test that if the remote answer indicates the peer requested ICE restart (via
+// a new ufrag or pwd), the old ICE candidates are not copied, and vice versa.
+TEST_F(WebRtcSessionTest, TestSetRemoteAnswerWithIceRestart) {
+  Init();
+  SessionDescriptionInterface* offer = CreateOffer();
+  SetLocalDescriptionWithoutError(offer);
+  scoped_ptr<SessionDescriptionInterface> answer(CreateRemoteAnswer(offer));
+
+  // Create the first answer.
+  std::string sdp;
+  ModifyIceUfragPwdLines(answer.get(), "0123456789012345",
+                         "abcdefghijklmnopqrstuvwx", &sdp);
+  SessionDescriptionInterface* answer1 =
+      CreateSessionDescription(JsepSessionDescription::kPrAnswer, sdp, NULL);
+  cricket::Candidate candidate1(1, "udp", rtc::SocketAddress("1.1.1.1", 5000),
+                                0, "", "", "relay", 0, "");
+  JsepIceCandidate ice_candidate1(kMediaContentName0, kMediaContentIndex0,
+                                  candidate1);
+  EXPECT_TRUE(answer1->AddCandidate(&ice_candidate1));
+  SetRemoteDescriptionWithoutError(answer1);
+  EXPECT_EQ(1, session_->remote_description()->candidates(0)->count());
+
+  // The second answer has the same ufrag and pwd but different address.
+  sdp.clear();
+  ModifyIceUfragPwdLines(answer.get(), "0123456789012345",
+                         "abcdefghijklmnopqrstuvwx", &sdp);
+  SessionDescriptionInterface* answer2 =
+      CreateSessionDescription(JsepSessionDescription::kPrAnswer, sdp, NULL);
+  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 6000));
+  JsepIceCandidate ice_candidate2(kMediaContentName0, kMediaContentIndex0,
+                                  candidate1);
+  EXPECT_TRUE(answer2->AddCandidate(&ice_candidate2));
+  SetRemoteDescriptionWithoutError(answer2);
+  EXPECT_EQ(2, session_->remote_description()->candidates(0)->count());
+
+  // The third answer has a different ufrag and different address.
+  sdp.clear();
+  ModifyIceUfragPwdLines(answer.get(), "0123456789012333",
+                         "abcdefghijklmnopqrstuvwx", &sdp);
+  SessionDescriptionInterface* answer3 =
+      CreateSessionDescription(JsepSessionDescription::kPrAnswer, sdp, NULL);
+  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 7000));
+  JsepIceCandidate ice_candidate3(kMediaContentName0, kMediaContentIndex0,
+                                  candidate1);
+  EXPECT_TRUE(answer3->AddCandidate(&ice_candidate3));
+  SetRemoteDescriptionWithoutError(answer3);
+  EXPECT_EQ(1, session_->remote_description()->candidates(0)->count());
+
+  // The fourth answer has no candidate but a different ufrag/pwd.
+  sdp.clear();
+  ModifyIceUfragPwdLines(answer.get(), "0123456789012444",
+                         "abcdefghijklmnopqrstuvyz", &sdp);
+  SessionDescriptionInterface* offer4 =
+      CreateSessionDescription(JsepSessionDescription::kPrAnswer, sdp, NULL);
   SetRemoteDescriptionWithoutError(offer4);
   EXPECT_EQ(0, session_->remote_description()->candidates(0)->count());
 }

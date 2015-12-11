@@ -492,9 +492,13 @@ class IceRestartAnswerLatch {
     }
   }
 
+  // This method has two purposes: 1. Return whether |new_desc| requests
+  // an ICE restart (i.e., new ufrag/pwd). 2. If it requests an ICE restart
+  // and it is an OFFER, remember this in |ice_restart_| so that the next
+  // Local Answer will be created with new ufrag and pwd.
   bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
                                 const SessionDescriptionInterface* new_desc) {
-    if (!old_desc || new_desc->type() != SessionDescriptionInterface::kOffer) {
+    if (!old_desc) {
       return false;
     }
     const SessionDescription* new_sd = new_desc->description();
@@ -520,7 +524,9 @@ class IceRestartAnswerLatch {
                                          new_transport_desc->ice_ufrag,
                                          new_transport_desc->ice_pwd)) {
         LOG(LS_INFO) << "Remote peer request ice restart.";
-        ice_restart_ = true;
+        if (new_desc->type() == SessionDescriptionInterface::kOffer) {
+          ice_restart_ = true;
+        }
         return true;
       }
     }
