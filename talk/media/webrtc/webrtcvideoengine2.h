@@ -112,8 +112,6 @@ class WebRtcVideoEngine2 {
   // Basic video engine implementation.
   void Init();
 
-  bool SetDefaultEncoderConfig(const VideoEncoderConfig& config);
-
   WebRtcVideoChannel2* CreateChannel(webrtc::Call* call,
                                      const VideoOptions& options);
 
@@ -133,9 +131,6 @@ class WebRtcVideoEngine2 {
   bool EnableTimedRender();
 
   bool FindCodec(const VideoCodec& in);
-  bool CanSendCodec(const VideoCodec& in,
-                    const VideoCodec& current,
-                    VideoCodec* out);
   // Check whether the supplied trace should be ignored.
   bool ShouldIgnoreTrace(const std::string& trace);
 

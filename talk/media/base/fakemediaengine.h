@@ -783,13 +783,6 @@ class FakeVideoEngine : public FakeBaseEngine {
     options_changed_ = true;
     return true;
   }
-  bool SetDefaultEncoderConfig(const VideoEncoderConfig& config) {
-    default_encoder_config_ = config;
-    return true;
-  }
-  const VideoEncoderConfig& default_encoder_config() const {
-    return default_encoder_config_;
-  }
 
   VideoMediaChannel* CreateChannel(webrtc::Call* call,
                                    const VideoOptions& options) {
@@ -832,7 +825,6 @@ class FakeVideoEngine : public FakeBaseEngine {
  private:
   std::vector<FakeVideoMediaChannel*> channels_;
   std::vector<VideoCodec> codecs_;
-  VideoEncoderConfig default_encoder_config_;
   std::string in_device_;
   bool capture_;
   VideoOptions options_;
@@ -870,9 +862,6 @@ class FakeMediaEngine :
   }
 
   int output_volume() const { return voice_.output_volume_; }
-  const VideoEncoderConfig& default_video_encoder_config() const {
-    return video_.default_encoder_config_;
-  }
   bool capture() const { return video_.capture_; }
   bool options_changed() const {
     return video_.options_changed_;

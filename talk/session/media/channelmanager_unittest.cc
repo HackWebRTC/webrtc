@@ -183,38 +183,6 @@ TEST_F(ChannelManagerTest, NoTransportChannelTest) {
   cm_->Terminate();
 }
 
-// Test that SetDefaultVideoCodec passes through the right values.
-TEST_F(ChannelManagerTest, SetDefaultVideoEncoderConfig) {
-  cricket::VideoCodec codec(96, "G264", 1280, 720, 60, 0);
-  cricket::VideoEncoderConfig config(codec, 1, 2);
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_TRUE(cm_->SetDefaultVideoEncoderConfig(config));
-  EXPECT_EQ(config, fme_->default_video_encoder_config());
-}
-
-struct GetCapturerFrameSize : public sigslot::has_slots<> {
-  void OnVideoFrame(VideoCapturer* capturer, const VideoFrame* frame) {
-    width = frame->GetWidth();
-    height = frame->GetHeight();
-  }
-  GetCapturerFrameSize(VideoCapturer* capturer) : width(0), height(0) {
-    capturer->SignalVideoFrame.connect(this,
-                                       &GetCapturerFrameSize::OnVideoFrame);
-    static_cast<FakeVideoCapturer*>(capturer)->CaptureFrame();
-  }
-  size_t width;
-  size_t height;
-};
-
-// Test that SetDefaultVideoCodec passes through the right values.
-TEST_F(ChannelManagerTest, SetDefaultVideoCodecBeforeInit) {
-  cricket::VideoCodec codec(96, "G264", 1280, 720, 60, 0);
-  cricket::VideoEncoderConfig config(codec, 1, 2);
-  EXPECT_TRUE(cm_->SetDefaultVideoEncoderConfig(config));
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_EQ(config, fme_->default_video_encoder_config());
-}
-
 TEST_F(ChannelManagerTest, GetSetOutputVolumeBeforeInit) {
   int level;
   // Before init, SetOutputVolume() remembers the volume but does not change the

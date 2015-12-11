@@ -344,18 +344,6 @@ std::vector<VideoCodec> DefaultVideoCodecList() {
   return codecs;
 }
 
-static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
-                                   const VideoCodec& requested_codec,
-                                   VideoCodec* matching_codec) {
-  for (size_t i = 0; i < codecs.size(); ++i) {
-    if (requested_codec.Matches(codecs[i])) {
-      *matching_codec = codecs[i];
-      return true;
-    }
-  }
-  return false;
-}
-
 std::vector<webrtc::VideoStream>
 WebRtcVideoChannel2::WebRtcVideoSendStream::CreateSimulcastVideoStreams(
     const VideoCodec& codec,
@@ -499,29 +487,6 @@ void WebRtcVideoEngine2::Init() {
   initialized_ = true;
 }
 
-bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
-    const VideoEncoderConfig& config) {
-  const VideoCodec& codec = config.max_codec;
-  bool supports_codec = false;
-  for (size_t i = 0; i < video_codecs_.size(); ++i) {
-    if (CodecNamesEq(video_codecs_[i].name, codec.name)) {
-      video_codecs_[i].width = codec.width;
-      video_codecs_[i].height = codec.height;
-      video_codecs_[i].framerate = codec.framerate;
-      supports_codec = true;
-      break;
-    }
-  }
-
-  if (!supports_codec) {
-    LOG(LS_ERROR) << "SetDefaultEncoderConfig, codec not supported: "
-                  << codec.ToString();
-    return false;
-  }
-
-  return true;
-}
-
 WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
     webrtc::Call* call,
     const VideoOptions& options) {
@@ -599,48 +564,6 @@ bool WebRtcVideoEngine2::FindCodec(const VideoCodec& in) {
     }
   }
   return false;
-}
-
-// Tells whether the |requested| codec can be transmitted or not. If it can be
-// transmitted |out| is set with the best settings supported. Aspect ratio will
-// be set as close to |current|'s as possible. If not set |requested|'s
-// dimensions will be used for aspect ratio matching.
-bool WebRtcVideoEngine2::CanSendCodec(const VideoCodec& requested,
-                                      const VideoCodec& current,
-                                      VideoCodec* out) {
-  RTC_DCHECK(out != NULL);
-
-  if (requested.width != requested.height &&
-      (requested.height == 0 || requested.width == 0)) {
-    // 0xn and nx0 are invalid resolutions.
-    return false;
-  }
-
-  VideoCodec matching_codec;
-  if (!FindFirstMatchingCodec(video_codecs_, requested, &matching_codec)) {
-    // Codec not supported.
-    return false;
-  }
-
-  out->id = requested.id;
-  out->name = requested.name;
-  out->preference = requested.preference;
-  out->params = requested.params;
-  out->framerate = std::min(requested.framerate, matching_codec.framerate);
-  out->params = requested.params;
-  out->feedback_params = requested.feedback_params;
-  out->width = requested.width;
-  out->height = requested.height;
-  if (requested.width == 0 && requested.height == 0) {
-    return true;
-  }
-
-  while (out->width > matching_codec.width) {
-    out->width /= 2;
-    out->height /= 2;
-  }
-
-  return out->width > 0 && out->height > 0;
 }
 
 // Ignore spammy trace messages, mostly from the stats API when we haven't

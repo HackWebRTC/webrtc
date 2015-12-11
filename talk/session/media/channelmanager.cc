@@ -212,11 +212,6 @@ bool ChannelManager::Init() {
                     << audio_output_volume_;
   }
 
-  // Now apply the default video codec that has been set earlier.
-  if (default_video_encoder_config_.max_codec.id != 0) {
-    SetDefaultVideoEncoderConfig(default_video_encoder_config_);
-  }
-
   return initialized_;
 }
 
@@ -447,19 +442,6 @@ bool ChannelManager::SetOutputVolume(int level) {
     audio_output_volume_ = level;
   }
 
-  return ret;
-}
-
-bool ChannelManager::SetDefaultVideoEncoderConfig(const VideoEncoderConfig& c) {
-  bool ret = true;
-  if (initialized_) {
-    ret = worker_thread_->Invoke<bool>(
-        Bind(&MediaEngineInterface::SetDefaultVideoEncoderConfig,
-             media_engine_.get(), c));
-  }
-  if (ret) {
-    default_video_encoder_config_ = c;
-  }
   return ret;
 }
 

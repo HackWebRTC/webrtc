@@ -129,7 +129,6 @@ class ChannelManager : public rtc::MessageHandler,
 
   bool GetOutputVolume(int* level);
   bool SetOutputVolume(int level);
-  bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config);
   // RTX will be enabled/disabled in engines that support it. The supporting
   // engines will start offering an RTX codec. Must be called before Init().
   bool SetVideoRtxEnabled(bool enable);
@@ -228,7 +227,6 @@ class ChannelManager : public rtc::MessageHandler,
   DataChannels data_channels_;
 
   int audio_output_volume_;
-  VideoEncoderConfig default_video_encoder_config_;
   VideoRenderer* local_renderer_;
   bool enable_rtx_;
 

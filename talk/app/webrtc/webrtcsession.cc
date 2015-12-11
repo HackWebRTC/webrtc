@@ -706,16 +706,6 @@ bool WebRtcSession::Initialize(
   audio_options_.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(
       rtc_configuration.audio_jitter_buffer_fast_accelerate);
 
-  const cricket::VideoCodec default_codec(
-      JsepSessionDescription::kDefaultVideoCodecId,
-      JsepSessionDescription::kDefaultVideoCodecName,
-      JsepSessionDescription::kMaxVideoCodecWidth,
-      JsepSessionDescription::kMaxVideoCodecHeight,
-      JsepSessionDescription::kDefaultVideoCodecFramerate,
-      JsepSessionDescription::kDefaultVideoCodecPreference);
-  channel_manager_->SetDefaultVideoEncoderConfig(
-      cricket::VideoEncoderConfig(default_codec));
-
   if (!dtls_enabled_) {
     // Construct with DTLS disabled.
     webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(

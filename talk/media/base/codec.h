@@ -209,50 +209,6 @@ struct DataCodec : public Codec {
   std::string ToString() const;
 };
 
-struct VideoEncoderConfig {
-  static const int kDefaultMaxThreads = -1;
-  static const int kDefaultCpuProfile = -1;
-
-  VideoEncoderConfig()
-      : max_codec(),
-        num_threads(kDefaultMaxThreads),
-        cpu_profile(kDefaultCpuProfile) {
-  }
-
-  VideoEncoderConfig(const VideoCodec& c)
-      : max_codec(c),
-        num_threads(kDefaultMaxThreads),
-        cpu_profile(kDefaultCpuProfile) {
-  }
-
-  VideoEncoderConfig(const VideoCodec& c, int t, int p)
-      : max_codec(c),
-        num_threads(t),
-        cpu_profile(p) {
-  }
-
-  VideoEncoderConfig& operator=(const VideoEncoderConfig& config) {
-    max_codec = config.max_codec;
-    num_threads = config.num_threads;
-    cpu_profile = config.cpu_profile;
-    return *this;
-  }
-
-  bool operator==(const VideoEncoderConfig& config) const {
-    return max_codec == config.max_codec &&
-           num_threads == config.num_threads &&
-           cpu_profile == config.cpu_profile;
-  }
-
-  bool operator!=(const VideoEncoderConfig& config) const {
-    return !(*this == config);
-  }
-
-  VideoCodec max_codec;
-  int num_threads;
-  int cpu_profile;
-};
-
 // Get the codec setting associated with |payload_type|. If there
 // is no codec associated with that payload type it returns false.
 template <class Codec>

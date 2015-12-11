@@ -33,7 +33,6 @@ using cricket::Codec;
 using cricket::DataCodec;
 using cricket::FeedbackParam;
 using cricket::VideoCodec;
-using cricket::VideoEncoderConfig;
 using cricket::kCodecParamAssociatedPayloadType;
 using cricket::kCodecParamMaxBitrate;
 using cricket::kCodecParamMinBitrate;
@@ -212,54 +211,6 @@ TEST_F(CodecTest, TestVideoCodecMatches) {
   EXPECT_TRUE(c1.Matches(VideoCodec(97, "v", 640, 400, 15, 0)));
   EXPECT_FALSE(c1.Matches(VideoCodec(96, "", 320, 200, 30, 0)));
   EXPECT_FALSE(c1.Matches(VideoCodec(95, "V", 640, 400, 15, 0)));
-}
-
-TEST_F(CodecTest, TestVideoEncoderConfigOperators) {
-  VideoEncoderConfig c1(VideoCodec(
-      96, "SVC", 320, 200, 30, 3), 1, 2);
-  VideoEncoderConfig c2(VideoCodec(
-      95, "SVC", 320, 200, 30, 3), 1, 2);
-  VideoEncoderConfig c3(VideoCodec(
-      96, "xxx", 320, 200, 30, 3), 1, 2);
-  VideoEncoderConfig c4(VideoCodec(
-      96, "SVC", 120, 200, 30, 3), 1, 2);
-  VideoEncoderConfig c5(VideoCodec(
-      96, "SVC", 320, 100, 30, 3), 1, 2);
-  VideoEncoderConfig c6(VideoCodec(
-      96, "SVC", 320, 200, 10, 3), 1, 2);
-  VideoEncoderConfig c7(VideoCodec(
-      96, "SVC", 320, 200, 30, 1), 1, 2);
-  VideoEncoderConfig c8(VideoCodec(
-      96, "SVC", 320, 200, 30, 3), 0, 2);
-  VideoEncoderConfig c9(VideoCodec(
-      96, "SVC", 320, 200, 30, 3), 1, 1);
-  EXPECT_TRUE(c1 != c2);
-  EXPECT_TRUE(c1 != c2);
-  EXPECT_TRUE(c1 != c3);
-  EXPECT_TRUE(c1 != c4);
-  EXPECT_TRUE(c1 != c5);
-  EXPECT_TRUE(c1 != c6);
-  EXPECT_TRUE(c1 != c7);
-  EXPECT_TRUE(c1 != c8);
-  EXPECT_TRUE(c1 != c9);
-
-  VideoEncoderConfig c10;
-  VideoEncoderConfig c11(VideoCodec(
-      0, "", 0, 0, 0, 0));
-  VideoEncoderConfig c12(VideoCodec(
-      0, "", 0, 0, 0, 0),
-      VideoEncoderConfig::kDefaultMaxThreads,
-      VideoEncoderConfig::kDefaultCpuProfile);
-  VideoEncoderConfig c13 = c1;
-  VideoEncoderConfig c14(VideoCodec(
-      0, "", 0, 0, 0, 0), 0, 0);
-
-  EXPECT_TRUE(c11 == c10);
-  EXPECT_TRUE(c12 == c10);
-  EXPECT_TRUE(c13 != c10);
-  EXPECT_TRUE(c13 == c1);
-  EXPECT_TRUE(c14 != c11);
-  EXPECT_TRUE(c14 != c12);
 }
 
 TEST_F(CodecTest, TestDataCodecMatches) {

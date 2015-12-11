@@ -207,26 +207,6 @@ TEST_F(WebRtcVideoEngine2Test, FindCodec) {
   EXPECT_TRUE(engine_.FindCodec(rtx));
 }
 
-TEST_F(WebRtcVideoEngine2Test, SetDefaultEncoderConfigPreservesFeedbackParams) {
-  cricket::VideoCodec max_settings(
-      engine_.codecs()[0].id, engine_.codecs()[0].name,
-      engine_.codecs()[0].width / 2, engine_.codecs()[0].height / 2, 30, 0);
-  // This codec shouldn't have NACK by default or the test is pointless.
-  EXPECT_FALSE(max_settings.HasFeedbackParam(
-      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty)));
-  // The engine should by default have it however.
-  EXPECT_TRUE(engine_.codecs()[0].HasFeedbackParam(
-      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty)));
-
-  // Set constrained max codec settings.
-  EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
-      cricket::VideoEncoderConfig(max_settings)));
-
-  // Verify that feedback parameters are retained.
-  EXPECT_TRUE(engine_.codecs()[0].HasFeedbackParam(
-      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty)));
-}
-
 TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
   std::vector<VideoCodec> engine_codecs = engine_.codecs();
   for (size_t i = 0; i < engine_codecs.size(); ++i) {
@@ -794,17 +774,6 @@ TEST_F(WebRtcVideoEngine2Test, RegisterExternalH264DecoderIfSupported) {
       channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
   ASSERT_EQ(1u, decoder_factory.decoders().size());
 }
-
-class WebRtcVideoEngine2BaseTest
-    : public VideoEngineTest<cricket::WebRtcVideoEngine2> {
- protected:
-  typedef VideoEngineTest<cricket::WebRtcVideoEngine2> Base;
-};
-
-#define WEBRTC_ENGINE_BASE_TEST(test) \
-  TEST_F(WebRtcVideoEngine2BaseTest, test) { Base::test##Body(); }
-
-WEBRTC_ENGINE_BASE_TEST(ConstrainNewCodec2);
 
 class WebRtcVideoChannel2BaseTest
     : public VideoMediaChannelTest<WebRtcVideoEngine2, WebRtcVideoChannel2> {

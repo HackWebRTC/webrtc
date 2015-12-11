@@ -88,11 +88,6 @@ class MediaEngineInterface {
       webrtc::Call* call,
       const VideoOptions& options) = 0;
 
-  // Sets the default (maximum) codec/resolution and encoder option to capture
-  // and encode video.
-  virtual bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config)
-      = 0;
-
   // Device configuration
   // Gets the current speaker volume, as a value between 0 and 255.
   virtual bool GetOutputVolume(int* level) = 0;
@@ -165,10 +160,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual VideoMediaChannel* CreateVideoChannel(webrtc::Call* call,
                                                 const VideoOptions& options) {
     return video_.CreateChannel(call, options);
-  }
-
-  virtual bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config) {
-    return video_.SetDefaultEncoderConfig(config);
   }
 
   virtual bool GetOutputVolume(int* level) {
