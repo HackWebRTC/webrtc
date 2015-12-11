@@ -133,10 +133,17 @@ class TurnPort : public Port {
                    const rtc::SocketAddress&,
                    const rtc::SocketAddress&> SignalResolvedServerAddress;
 
+  // All public methods/signals below are for testing only.
+  sigslot::signal2<TurnPort*, int> SignalTurnRefreshResult;
   sigslot::signal3<TurnPort*, const rtc::SocketAddress&, int>
       SignalCreatePermissionResult;
-  // For testing only.
   void FlushRequests() { request_manager_.Flush(); }
+  void set_credentials(RelayCredentials& credentials) {
+    credentials_ = credentials;
+  }
+  // Finds the turn entry with |address| and sets its channel id.
+  // Returns true if the entry is found.
+  bool SetEntryChannelId(const rtc::SocketAddress& address, int channel_id);
 
  protected:
   TurnPort(rtc::Thread* thread,
@@ -165,7 +172,7 @@ class TurnPort : public Port {
 
  private:
   enum {
-    MSG_ERROR = MSG_FIRST_AVAILABLE,
+    MSG_ALLOCATE_ERROR = MSG_FIRST_AVAILABLE,
     MSG_ALLOCATE_MISMATCH,
     MSG_TRY_ALTERNATE_SERVER
   };
@@ -186,6 +193,9 @@ class TurnPort : public Port {
     }
   }
 
+  // Shuts down the turn port, usually because of some fatal errors.
+  void Close();
+  void OnTurnRefreshError() { Close(); }
   bool SetAlternateServer(const rtc::SocketAddress& address);
   void ResolveTurnAddress(const rtc::SocketAddress& address);
   void OnResolveResult(rtc::AsyncResolverInterface* resolver);
@@ -227,6 +237,10 @@ class TurnPort : public Port {
   void ScheduleEntryDestruction(TurnEntry* entry);
   void CancelEntryDestruction(TurnEntry* entry);
   void OnConnectionDestroyed(Connection* conn);
+
+  // Destroys the connection with remote address |address|. Returns true if
+  // a connection is found and destroyed.
+  bool DestroyConnection(const rtc::SocketAddress& address);
 
   ProtocolAddress server_address_;
   RelayCredentials credentials_;

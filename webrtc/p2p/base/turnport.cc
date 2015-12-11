@@ -38,6 +38,8 @@ static const size_t TURN_CHANNEL_HEADER_SIZE = 4U;
 // STUN_ERROR_ALLOCATION_MISMATCH error per rfc5766.
 static const size_t MAX_ALLOCATE_MISMATCH_RETRIES = 2;
 
+static const int TURN_SUCCESS_RESULT_CODE = 0;
+
 inline bool IsTurnChannelData(uint16_t msg_type) {
   return ((msg_type & 0xC000) == 0x4000);  // MSB are 0b01
 }
@@ -137,6 +139,9 @@ class TurnEntry : public sigslot::has_slots<> {
   TurnPort* port() { return port_; }
 
   int channel_id() const { return channel_id_; }
+  // For testing only.
+  void set_channel_id(int channel_id) { channel_id_ = channel_id; }
+
   const rtc::SocketAddress& address() const { return ext_addr_; }
   BindState state() const { return state_; }
 
@@ -155,8 +160,10 @@ class TurnEntry : public sigslot::has_slots<> {
 
   void OnCreatePermissionSuccess();
   void OnCreatePermissionError(StunMessage* response, int code);
+  void OnCreatePermissionTimeout();
   void OnChannelBindSuccess();
   void OnChannelBindError(StunMessage* response, int code);
+  void OnChannelBindTimeout();
   // Signal sent when TurnEntry is destroyed.
   sigslot::signal1<TurnEntry*> SignalDestroyed;
 
@@ -464,6 +471,15 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
   return NULL;
 }
 
+bool TurnPort::DestroyConnection(const rtc::SocketAddress& address) {
+  Connection* conn = GetConnection(address);
+  if (conn != nullptr) {
+    conn->Destroy();
+    return true;
+  }
+  return false;
+}
+
 int TurnPort::SetOption(rtc::Socket::Option opt, int value) {
   if (!socket_) {
     // If socket is not created yet, these options will be applied during socket
@@ -698,34 +714,45 @@ void TurnPort::OnAllocateError() {
   // We will send SignalPortError asynchronously as this can be sent during
   // port initialization. This way it will not be blocking other port
   // creation.
-  thread()->Post(this, MSG_ERROR);
+  thread()->Post(this, MSG_ALLOCATE_ERROR);
+}
+
+void TurnPort::Close() {
+  // Stop the port from creating new connections.
+  state_ = STATE_DISCONNECTED;
+  // Delete all existing connections; stop sending data.
+  for (auto kv : connections()) {
+    kv.second->Destroy();
+  }
 }
 
 void TurnPort::OnMessage(rtc::Message* message) {
-  if (message->message_id == MSG_ERROR) {
-    SignalPortError(this);
-    return;
-  } else if (message->message_id == MSG_ALLOCATE_MISMATCH) {
-    OnAllocateMismatch();
-    return;
-  } else if (message->message_id == MSG_TRY_ALTERNATE_SERVER) {
-    if (server_address().proto == PROTO_UDP) {
-      // Send another allocate request to alternate server, with the received
-      // realm and nonce values.
-      SendRequest(new TurnAllocateRequest(this), 0);
-    } else {
-      // Since it's TCP, we have to delete the connected socket and reconnect
-      // with the alternate server. PrepareAddress will send stun binding once
-      // the new socket is connected.
-      ASSERT(server_address().proto == PROTO_TCP);
-      ASSERT(!SharedSocket());
-      delete socket_;
-      socket_ = NULL;
-      PrepareAddress();
-    }
-    return;
+  switch (message->message_id) {
+    case MSG_ALLOCATE_ERROR:
+      SignalPortError(this);
+      break;
+    case MSG_ALLOCATE_MISMATCH:
+      OnAllocateMismatch();
+      break;
+    case MSG_TRY_ALTERNATE_SERVER:
+      if (server_address().proto == PROTO_UDP) {
+        // Send another allocate request to alternate server, with the received
+        // realm and nonce values.
+        SendRequest(new TurnAllocateRequest(this), 0);
+      } else {
+        // Since it's TCP, we have to delete the connected socket and reconnect
+        // with the alternate server. PrepareAddress will send stun binding once
+        // the new socket is connected.
+        ASSERT(server_address().proto == PROTO_TCP);
+        ASSERT(!SharedSocket());
+        delete socket_;
+        socket_ = NULL;
+        PrepareAddress();
+      }
+      break;
+    default:
+      Port::OnMessage(message);
   }
-  Port::OnMessage(message);
 }
 
 void TurnPort::OnAllocateRequestTimeout() {
@@ -968,6 +995,16 @@ void TurnPort::CancelEntryDestruction(TurnEntry* entry) {
   entry->set_destruction_timestamp(0);
 }
 
+bool TurnPort::SetEntryChannelId(const rtc::SocketAddress& address,
+                                 int channel_id) {
+  TurnEntry* entry = FindEntry(address);
+  if (!entry) {
+    return false;
+  }
+  entry->set_channel_id(channel_id);
+  return true;
+}
+
 TurnAllocateRequest::TurnAllocateRequest(TurnPort* port)
     : StunRequest(new TurnMessage()),
       port_(port) {
@@ -1181,15 +1218,11 @@ void TurnRefreshRequest::OnResponse(StunMessage* response) {
 
   // Schedule a refresh based on the returned lifetime value.
   port_->ScheduleRefresh(lifetime_attr->value());
+  port_->SignalTurnRefreshResult(port_, TURN_SUCCESS_RESULT_CODE);
 }
 
 void TurnRefreshRequest::OnErrorResponse(StunMessage* response) {
   const StunErrorCodeAttribute* error_code = response->GetErrorCode();
-
-  LOG_J(LS_INFO, port_) << "Received TURN refresh error response"
-                        << ", id=" << rtc::hex_encode(id())
-                        << ", code=" << error_code->code()
-                        << ", rtt=" << Elapsed();
 
   if (error_code->code() == STUN_ERROR_STALE_NONCE) {
     if (port_->UpdateNonce(response)) {
@@ -1201,11 +1234,14 @@ void TurnRefreshRequest::OnErrorResponse(StunMessage* response) {
                              << ", id=" << rtc::hex_encode(id())
                              << ", code=" << error_code->code()
                              << ", rtt=" << Elapsed();
+    port_->OnTurnRefreshError();
+    port_->SignalTurnRefreshResult(port_, error_code->code());
   }
 }
 
 void TurnRefreshRequest::OnTimeout() {
   LOG_J(LS_WARNING, port_) << "TURN refresh timeout " << rtc::hex_encode(id());
+  port_->OnTurnRefreshError();
 }
 
 TurnCreatePermissionRequest::TurnCreatePermissionRequest(
@@ -1258,6 +1294,9 @@ void TurnCreatePermissionRequest::OnErrorResponse(StunMessage* response) {
 void TurnCreatePermissionRequest::OnTimeout() {
   LOG_J(LS_WARNING, port_) << "TURN create permission timeout "
                            << rtc::hex_encode(id());
+  if (entry_) {
+    entry_->OnCreatePermissionTimeout();
+  }
 }
 
 void TurnCreatePermissionRequest::OnEntryDestroyed(TurnEntry* entry) {
@@ -1325,6 +1364,9 @@ void TurnChannelBindRequest::OnErrorResponse(StunMessage* response) {
 void TurnChannelBindRequest::OnTimeout() {
   LOG_J(LS_WARNING, port_) << "TURN channel bind timeout "
                            << rtc::hex_encode(id());
+  if (entry_) {
+    entry_->OnChannelBindTimeout();
+  }
 }
 
 void TurnChannelBindRequest::OnEntryDestroyed(TurnEntry* entry) {
@@ -1385,8 +1427,8 @@ void TurnEntry::OnCreatePermissionSuccess() {
   LOG_J(LS_INFO, port_) << "Create permission for "
                         << ext_addr_.ToSensitiveString()
                         << " succeeded";
-  // For success result code will be 0.
-  port_->SignalCreatePermissionResult(port_, ext_addr_, 0);
+  port_->SignalCreatePermissionResult(port_, ext_addr_,
+                                      TURN_SUCCESS_RESULT_CODE);
 
   // If |state_| is STATE_BOUND, the permission will be refreshed
   // by ChannelBindRequest.
@@ -1406,6 +1448,7 @@ void TurnEntry::OnCreatePermissionError(StunMessage* response, int code) {
       SendCreatePermissionRequest(0);
     }
   } else {
+    port_->DestroyConnection(ext_addr_);
     // Send signal with error code.
     port_->SignalCreatePermissionResult(port_, ext_addr_, code);
     Connection* c = port_->GetConnection(ext_addr_);
@@ -1417,6 +1460,10 @@ void TurnEntry::OnCreatePermissionError(StunMessage* response, int code) {
   }
 }
 
+void TurnEntry::OnCreatePermissionTimeout() {
+  port_->DestroyConnection(ext_addr_);
+}
+
 void TurnEntry::OnChannelBindSuccess() {
   LOG_J(LS_INFO, port_) << "Channel bind for " << ext_addr_.ToSensitiveString()
                         << " succeeded";
@@ -1425,14 +1472,21 @@ void TurnEntry::OnChannelBindSuccess() {
 }
 
 void TurnEntry::OnChannelBindError(StunMessage* response, int code) {
-  // TODO(mallinath) - Implement handling of error response for channel
-  // bind request as per http://tools.ietf.org/html/rfc5766#section-11.3
+  // If the channel bind fails due to errors other than STATE_NONCE,
+  // we just destroy the connection and rely on ICE restart to re-establish
+  // the connection.
   if (code == STUN_ERROR_STALE_NONCE) {
     if (port_->UpdateNonce(response)) {
       // Send channel bind request with fresh nonce.
       SendChannelBindRequest(0);
     }
+  } else {
+    state_ = STATE_UNBOUND;
+    port_->DestroyConnection(ext_addr_);
   }
 }
-
+void TurnEntry::OnChannelBindTimeout() {
+  state_ = STATE_UNBOUND;
+  port_->DestroyConnection(ext_addr_);
+}
 }  // namespace cricket
