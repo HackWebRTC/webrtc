@@ -9,8 +9,10 @@
  */
 
 #include <list>
+#include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
@@ -53,6 +55,53 @@ class ProducerFecTest : public ::testing::Test {
   ProducerFec* producer_;
   FrameGenerator* generator_;
 };
+
+// Verifies bug found via fuzzing, where a gap in the packet sequence caused us
+// to move past the end of the current FEC packet mask byte without moving to
+// the next byte. That likely caused us to repeatedly read from the same byte,
+// and if that byte didn't protect packets we would generate empty FEC.
+TEST_F(ProducerFecTest, NoEmptyFecWithSeqNumGaps) {
+  struct Packet {
+    size_t header_size;
+    size_t payload_size;
+    uint16_t seq_num;
+    bool marker_bit;
+  };
+  std::vector<Packet> protected_packets;
+  protected_packets.push_back({15, 3, 41, 0});
+  protected_packets.push_back({14, 1, 43, 0});
+  protected_packets.push_back({19, 0, 48, 0});
+  protected_packets.push_back({19, 0, 50, 0});
+  protected_packets.push_back({14, 3, 51, 0});
+  protected_packets.push_back({13, 8, 52, 0});
+  protected_packets.push_back({19, 2, 53, 0});
+  protected_packets.push_back({12, 3, 54, 0});
+  protected_packets.push_back({21, 0, 55, 0});
+  protected_packets.push_back({13, 3, 57, 1});
+  FecProtectionParams params = {117, 0, 3, kFecMaskBursty};
+  producer_->SetFecParameters(&params, 0);
+  uint8_t packet[28] = {0};
+  for (Packet p : protected_packets) {
+    if (p.marker_bit) {
+      packet[1] |= 0x80;
+    } else {
+      packet[1] &= ~0x80;
+    }
+    ByteWriter<uint16_t>::WriteBigEndian(&packet[2], p.seq_num);
+    producer_->AddRtpPacketAndGenerateFec(packet, p.payload_size,
+                                          p.header_size);
+    uint16_t num_fec_packets = producer_->NumAvailableFecPackets();
+    std::vector<RedPacket*> fec_packets;
+    if (num_fec_packets > 0) {
+      fec_packets =
+          producer_->GetFecPackets(kRedPayloadType, 99, 100, p.header_size);
+      EXPECT_EQ(num_fec_packets, fec_packets.size());
+    }
+    for (RedPacket* fec_packet : fec_packets) {
+      delete fec_packet;
+    }
+  }
+}
 
 TEST_F(ProducerFecTest, OneFrameFec) {
   // The number of media packets (|kNumPackets|), number of frames (one for

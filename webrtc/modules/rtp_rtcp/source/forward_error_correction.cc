@@ -10,13 +10,13 @@
 
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
 #include <iterator>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -112,7 +112,6 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
                                             FecMaskType fec_mask_type,
                                             PacketList* fec_packet_list) {
   const uint16_t num_media_packets = media_packet_list.size();
-
   // Sanity check arguments.
   assert(num_media_packets > 0);
   assert(num_important_packets >= 0 &&
@@ -126,7 +125,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
   }
 
   bool l_bit = (num_media_packets > 8 * kMaskSizeLBitClear);
-  int num_maskBytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
+  int num_mask_bytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
   // Do some error checking on the media packets.
   for (Packet* media_packet : media_packet_list) {
@@ -166,21 +165,20 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
   // Always allocate space for a large mask.
   rtc::scoped_ptr<uint8_t[]> packet_mask(
       new uint8_t[num_fec_packets * kMaskSizeLBitSet]);
-  memset(packet_mask.get(), 0, num_fec_packets * num_maskBytes);
+  memset(packet_mask.get(), 0, num_fec_packets * num_mask_bytes);
   internal::GeneratePacketMasks(num_media_packets, num_fec_packets,
                                 num_important_packets, use_unequal_protection,
                                 mask_table, packet_mask.get());
 
   int num_mask_bits = InsertZerosInBitMasks(
-      media_packet_list, packet_mask.get(), num_maskBytes, num_fec_packets);
-
-  l_bit = (num_mask_bits > 8 * kMaskSizeLBitClear);
+      media_packet_list, packet_mask.get(), num_mask_bytes, num_fec_packets);
 
   if (num_mask_bits < 0) {
     return -1;
   }
+  l_bit = (num_mask_bits > 8 * kMaskSizeLBitClear);
   if (l_bit) {
-    num_maskBytes = kMaskSizeLBitSet;
+    num_mask_bytes = kMaskSizeLBitSet;
   }
 
   GenerateFecBitStrings(media_packet_list, packet_mask.get(), num_fec_packets,
@@ -212,7 +210,7 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
     return;
   }
   uint8_t media_payload_length[2];
-  const int num_maskBytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
+  const int num_mask_bytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
   const uint16_t ulp_header_size =
       l_bit ? kUlpHeaderSizeLBitSet : kUlpHeaderSizeLBitClear;
   const uint16_t fec_rtp_offset =
@@ -220,12 +218,13 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
 
   for (int i = 0; i < num_fec_packets; ++i) {
     PacketList::const_iterator media_list_it = media_packet_list.begin();
-    uint32_t pkt_mask_idx = i * num_maskBytes;
+    uint32_t pkt_mask_idx = i * num_mask_bytes;
     uint32_t media_pkt_idx = 0;
     uint16_t fec_packet_length = 0;
     uint16_t prev_seq_num = ParseSequenceNumber((*media_list_it)->data);
     while (media_list_it != media_packet_list.end()) {
-      // Each FEC packet has a multiple byte mask.
+      // Each FEC packet has a multiple byte mask. Determine if this media
+      // packet should be included in FEC packet i.
       if (packet_mask[pkt_mask_idx] & (1 << (7 - media_pkt_idx))) {
         Packet* media_packet = *media_list_it;
 
@@ -279,15 +278,11 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
         media_pkt_idx += static_cast<uint16_t>(seq_num - prev_seq_num);
         prev_seq_num = seq_num;
       }
-      if (media_pkt_idx == 8) {
-        // Switch to the next mask byte.
-        media_pkt_idx = 0;
-        pkt_mask_idx++;
-      }
+      pkt_mask_idx += media_pkt_idx / 8;
+      media_pkt_idx %= 8;
     }
-    assert(generated_fec_packets_[i].length);
-    // Note: This shouldn't happen: means packet mask is wrong or poorly
-    // designed
+    RTC_DCHECK_GT(generated_fec_packets_[i].length, 0u)
+        << "Packet mask is wrong or poorly designed.";
   }
 }
 
@@ -310,6 +305,9 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
     // required.
     return media_packets.size();
   }
+  // We can only protect 8 * kMaskSizeLBitSet packets.
+  if (total_missing_seq_nums + media_packets.size() > 8 * kMaskSizeLBitSet)
+    return -1;
   // Allocate the new mask.
   int new_mask_bytes = kMaskSizeLBitClear;
   if (media_packets.size() + total_missing_seq_nums > 8 * kMaskSizeLBitClear) {
@@ -421,7 +419,7 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
   PacketList::const_iterator media_list_it = media_packet_list.begin();
   Packet* media_packet = *media_list_it;
   assert(media_packet != NULL);
-  int num_maskBytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
+  int num_mask_bytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
   const uint16_t ulp_header_size =
       l_bit ? kUlpHeaderSizeLBitSet : kUlpHeaderSizeLBitClear;
 
@@ -446,8 +444,8 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
         generated_fec_packets_[i].length - kFecHeaderSize - ulp_header_size);
 
     // Copy the packet mask.
-    memcpy(&generated_fec_packets_[i].data[12], &packet_mask[i * num_maskBytes],
-           num_maskBytes);
+    memcpy(&generated_fec_packets_[i].data[12],
+           &packet_mask[i * num_mask_bytes], num_mask_bytes);
   }
 }
 

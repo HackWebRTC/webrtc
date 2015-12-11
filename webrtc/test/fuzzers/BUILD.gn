@@ -52,6 +52,22 @@ test("vp8_qp_parser_fuzzer") {
   }
 }
 
+test("producer_fec_fuzzer") {
+  sources = [
+    "producer_fec_fuzzer.cc",
+  ]
+  deps = [
+    ":webrtc_fuzzer_main",
+    "../../modules/rtp_rtcp/",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 source_set("audio_decoder_fuzzer") {
   sources = [
     "audio_decoder_fuzzer.cc",
