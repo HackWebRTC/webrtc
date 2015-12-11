@@ -119,9 +119,14 @@ class EventLogger final {
                 ", \"ph\": \"%c\""
                 ", \"ts\": %" PRIu64
                 ", \"pid\": %d"
-                ", \"tid\": %d}\n",
+#if defined(WEBRTC_WIN)
+                ", \"tid\": %lu"
+#else
+                ", \"tid\": %d"
+#endif  // defined(WEBRTC_WIN)
+                "}\n",
                 has_logged_event ? "," : " ", e.name, e.category_enabled,
-                e.phase, e.timestamp, e.pid, static_cast<int>(e.tid));
+                e.phase, e.timestamp, e.pid, e.tid);
         has_logged_event = true;
       }
       if (shutting_down)
