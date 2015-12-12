@@ -68,10 +68,11 @@
 // Annotate a function indicating the caller must examine the return value.
 // Use like:
 //   int foo() WARN_UNUSED_RESULT;
+// To explicitly ignore a result, see |ignore_result()| in <base/macros.h>.
 // TODO(ajm): Hack to avoid multiple definitions until the base/ of webrtc and
 // libjingle are merged.
 #if !defined(WARN_UNUSED_RESULT)
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else
 #define WARN_UNUSED_RESULT
