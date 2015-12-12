@@ -97,7 +97,7 @@ void RemoteAudioSource::Initialize(uint32_t ssrc,
   // we register for callbacks here and not on demand in AddSink.
   if (provider) {  // May be null in tests.
     provider->SetRawAudioSink(
-        ssrc, std::move(rtc::scoped_ptr<AudioSinkInterface>(new Sink(this))));
+        ssrc, rtc::scoped_ptr<AudioSinkInterface>(new Sink(this)));
   }
 }
 
