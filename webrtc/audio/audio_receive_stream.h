@@ -24,6 +24,7 @@ class ChannelProxy;
 }  // namespace voe
 
 namespace internal {
+
 class AudioReceiveStream final : public webrtc::AudioReceiveStream {
  public:
   AudioReceiveStream(RemoteBitrateEstimator* remote_bitrate_estimator,
@@ -42,6 +43,8 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
 
   // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
+
+  void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) override;
 
   const webrtc::AudioReceiveStream::Config& config() const;
 

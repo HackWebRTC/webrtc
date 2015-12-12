@@ -68,10 +68,10 @@ class AudioRtpReceiver : public ObserverInterface,
  private:
   void Reconfigure();
 
-  std::string id_;
-  rtc::scoped_refptr<AudioTrackInterface> track_;
-  uint32_t ssrc_;
-  AudioProviderInterface* provider_;
+  const std::string id_;
+  const rtc::scoped_refptr<AudioTrackInterface> track_;
+  const uint32_t ssrc_;
+  AudioProviderInterface* provider_;  // Set to null in Stop().
   bool cached_track_enabled_;
 };
 

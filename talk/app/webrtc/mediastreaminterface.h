@@ -167,6 +167,8 @@ class AudioSourceInterface : public MediaSourceInterface {
   // TODO(xians): Makes all the interface pure virtual after Chrome has their
   // implementations.
   // Sets the volume to the source. |volume| is in  the range of [0, 10].
+  // TODO(tommi): This method should be on the track and ideally volume should
+  // be applied in the track in a way that does not affect clones of the track.
   virtual void SetVolume(double volume) {}
 
   // Registers/unregisters observer to the audio source.

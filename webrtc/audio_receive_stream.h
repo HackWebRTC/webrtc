@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/config.h"
 #include "webrtc/stream.h"
 #include "webrtc/transport.h"
@@ -23,6 +24,7 @@
 namespace webrtc {
 
 class AudioDecoder;
+class AudioSinkInterface;
 
 // WORK IN PROGRESS
 // This class is under development and is not yet intended for for use outside
@@ -100,6 +102,16 @@ class AudioReceiveStream : public ReceiveStream {
   };
 
   virtual Stats GetStats() const = 0;
+
+  // Sets an audio sink that receives unmixed audio from the receive stream.
+  // Ownership of the sink is passed to the stream and can be used by the
+  // caller to do lifetime management (i.e. when the sink's dtor is called).
+  // Only one sink can be set and passing a null sink, clears an existing one.
+  // NOTE: Audio must still somehow be pulled through AudioTransport for audio
+  // to stream through this sink. In practice, this happens if mixed audio
+  // is being pulled+rendered and/or if audio is being pulled for the purposes
+  // of feeding to the AEC.
+  virtual void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) = 0;
 };
 }  // namespace webrtc
 

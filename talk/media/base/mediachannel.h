@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/audiorenderer.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
@@ -51,9 +52,12 @@ class RateLimiter;
 class Timing;
 }
 
+namespace webrtc {
+class AudioSinkInterface;
+}
+
 namespace cricket {
 
-class AudioRenderer;
 struct RtpHeader;
 class ScreencastId;
 struct VideoFormat;
@@ -1028,6 +1032,10 @@ class VoiceMediaChannel : public MediaChannel {
   virtual bool InsertDtmf(uint32_t ssrc, int event, int duration) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VoiceMediaInfo* info) = 0;
+
+  virtual void SetRawAudioSink(
+      uint32_t ssrc,
+      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) = 0;
 };
 
 struct VideoSendParameters : RtpSendParameters<VideoCodec, VideoOptions> {

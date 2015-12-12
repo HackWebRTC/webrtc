@@ -38,11 +38,11 @@
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/statstypes.h"
 #include "talk/media/base/mediachannel.h"
-#include "webrtc/p2p/base/transportcontroller.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/p2p/base/transportcontroller.h"
 
 namespace cricket {
 
@@ -250,6 +250,8 @@ class WebRtcSession : public AudioProviderInterface,
                     const cricket::AudioOptions& options,
                     cricket::AudioRenderer* renderer) override;
   void SetAudioPlayoutVolume(uint32_t ssrc, double volume) override;
+  void SetRawAudioSink(uint32_t ssrc,
+                       rtc::scoped_ptr<AudioSinkInterface> sink) override;
 
   // Implements VideoMediaProviderInterface.
   bool SetCaptureDevice(uint32_t ssrc, cricket::VideoCapturer* camera) override;

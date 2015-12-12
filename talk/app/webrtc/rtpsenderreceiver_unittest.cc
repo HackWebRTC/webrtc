@@ -26,10 +26,12 @@
  */
 
 #include <string>
+#include <utility>
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/remoteaudiosource.h"
+#include "talk/app/webrtc/remoteaudiotrack.h"
 #include "talk/app/webrtc/rtpreceiver.h"
 #include "talk/app/webrtc/rtpsender.h"
 #include "talk/app/webrtc/streamcollection.h"
@@ -57,7 +59,8 @@ namespace webrtc {
 // Helper class to test RtpSender/RtpReceiver.
 class MockAudioProvider : public AudioProviderInterface {
  public:
-  virtual ~MockAudioProvider() {}
+  ~MockAudioProvider() override {}
+
   MOCK_METHOD2(SetAudioPlayout,
                void(uint32_t ssrc,
                     bool enable));
@@ -67,6 +70,14 @@ class MockAudioProvider : public AudioProviderInterface {
                     const cricket::AudioOptions& options,
                     cricket::AudioRenderer* renderer));
   MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32_t ssrc, double volume));
+
+  void SetRawAudioSink(uint32_t,
+                       rtc::scoped_ptr<AudioSinkInterface> sink) override {
+    sink_ = std::move(sink);
+  }
+
+ private:
+  rtc::scoped_ptr<AudioSinkInterface> sink_;
 };
 
 // Helper class to test RtpSender/RtpReceiver.
@@ -151,8 +162,8 @@ class RtpSenderReceiverTest : public testing::Test {
   }
 
   void CreateAudioRtpReceiver() {
-    audio_track_ =
-        AudioTrack::Create(kAudioTrackId, RemoteAudioSource::Create().get());
+    audio_track_ = RemoteAudioTrack::Create(
+        kAudioTrackId, RemoteAudioSource::Create(kAudioSsrc, NULL));
     EXPECT_TRUE(stream_->AddTrack(audio_track_));
     EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
     audio_rtp_receiver_ = new AudioRtpReceiver(stream_->GetAudioTracks()[0],

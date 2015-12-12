@@ -11,6 +11,7 @@
 #include "webrtc/voice_engine/channel.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
@@ -560,6 +561,21 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
       }
     }
 
+    {
+      // Pass the audio buffers to an optional sink callback, before applying
+      // scaling/panning, as that applies to the mix operation.
+      // External recipients of the audio (e.g. via AudioTrack), will do their
+      // own mixing/dynamic processing.
+      CriticalSectionScoped cs(&_callbackCritSect);
+      if (audio_sink_) {
+        AudioSinkInterface::Data data(
+            &audioFrame->data_[0],
+            audioFrame->samples_per_channel_, audioFrame->sample_rate_hz_,
+            audioFrame->num_channels_, audioFrame->timestamp_);
+        audio_sink_->OnData(data);
+      }
+    }
+
     float output_gain = 1.0f;
     float left_pan =  1.0f;
     float right_pan =  1.0f;
@@ -608,13 +624,10 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
         const bool isStereo = (audioFrame->num_channels_ == 2);
         if (_outputExternalMediaCallbackPtr)
         {
-            _outputExternalMediaCallbackPtr->Process(
-                _channelId,
-                kPlaybackPerChannel,
-                (int16_t*)audioFrame->data_,
-                audioFrame->samples_per_channel_,
-                audioFrame->sample_rate_hz_,
-                isStereo);
+          _outputExternalMediaCallbackPtr->Process(
+              _channelId, kPlaybackPerChannel, (int16_t*)audioFrame->data_,
+              audioFrame->samples_per_channel_, audioFrame->sample_rate_hz_,
+              isStereo);
         }
     }
 
@@ -1170,6 +1183,11 @@ Channel::UpdateLocalTimeStamp()
 
     _timeStamp += static_cast<uint32_t>(_audioFrame.samples_per_channel_);
     return 0;
+}
+
+void Channel::SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) {
+  CriticalSectionScoped cs(&_callbackCritSect);
+  audio_sink_ = std::move(sink);
 }
 
 int32_t

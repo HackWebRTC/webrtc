@@ -39,6 +39,7 @@
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
 #include "talk/app/webrtc/remoteaudiosource.h"
+#include "talk/app/webrtc/remoteaudiotrack.h"
 #include "talk/app/webrtc/remotevideocapturer.h"
 #include "talk/app/webrtc/rtpreceiver.h"
 #include "talk/app/webrtc/rtpsender.h"
@@ -448,10 +449,12 @@ class RemoteMediaStreamFactory {
                                     MediaStream::Create(stream_label));
   }
 
-  AudioTrackInterface* AddAudioTrack(webrtc::MediaStreamInterface* stream,
+  AudioTrackInterface* AddAudioTrack(uint32_t ssrc,
+                                     AudioProviderInterface* provider,
+                                     webrtc::MediaStreamInterface* stream,
                                      const std::string& track_id) {
-    return AddTrack<AudioTrackInterface, AudioTrack, AudioTrackProxy>(
-        stream, track_id, RemoteAudioSource::Create().get());
+    return AddTrack<AudioTrackInterface, RemoteAudioTrack, AudioTrackProxy>(
+        stream, track_id, RemoteAudioSource::Create(ssrc, provider));
   }
 
   VideoTrackInterface* AddVideoTrack(webrtc::MediaStreamInterface* stream,
@@ -467,7 +470,7 @@ class RemoteMediaStreamFactory {
   template <typename TI, typename T, typename TP, typename S>
   TI* AddTrack(MediaStreamInterface* stream,
                const std::string& track_id,
-               S* source) {
+               const S& source) {
     rtc::scoped_refptr<TI> track(
         TP::Create(signaling_thread_, T::Create(track_id, source)));
     track->set_state(webrtc::MediaStreamTrackInterface::kLive);
@@ -1583,8 +1586,8 @@ void PeerConnection::OnRemoteTrackSeen(const std::string& stream_label,
   MediaStreamInterface* stream = remote_streams_->find(stream_label);
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-    AudioTrackInterface* audio_track =
-        remote_stream_factory_->AddAudioTrack(stream, track_id);
+    AudioTrackInterface* audio_track = remote_stream_factory_->AddAudioTrack(
+        ssrc, session_.get(), stream, track_id);
     CreateAudioReceiver(stream, audio_track, ssrc);
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     VideoTrackInterface* video_track =

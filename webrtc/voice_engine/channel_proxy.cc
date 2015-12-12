@@ -10,6 +10,9 @@
 
 #include "webrtc/voice_engine/channel_proxy.h"
 
+#include <utility>
+
+#include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/voice_engine/channel.h"
 
@@ -21,6 +24,8 @@ ChannelProxy::ChannelProxy(const ChannelOwner& channel_owner) :
     channel_owner_(channel_owner) {
   RTC_CHECK(channel_owner_.channel());
 }
+
+ChannelProxy::~ChannelProxy() {}
 
 void ChannelProxy::SetRTCPStatus(bool enable) {
   channel()->SetRTCPStatus(enable);
@@ -132,6 +137,11 @@ bool ChannelProxy::SendTelephoneEventOutband(uint8_t event,
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return
       channel()->SendTelephoneEventOutband(event, duration_ms, 10, false) == 0;
+}
+
+void ChannelProxy::SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->SetSink(std::move(sink));
 }
 
 Channel* ChannelProxy::channel() const {

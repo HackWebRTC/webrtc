@@ -29,36 +29,65 @@
 #define TALK_APP_WEBRTC_REMOTEAUDIOSOURCE_H_
 
 #include <list>
+#include <string>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/notifier.h"
+#include "talk/media/base/audiorenderer.h"
+#include "webrtc/audio/audio_sink.h"
+#include "webrtc/base/criticalsection.h"
+
+namespace rtc {
+struct Message;
+class Thread;
+}  // namespace rtc
 
 namespace webrtc {
 
-using webrtc::AudioSourceInterface;
+class AudioProviderInterface;
 
 // This class implements the audio source used by the remote audio track.
 class RemoteAudioSource : public Notifier<AudioSourceInterface> {
  public:
   // Creates an instance of RemoteAudioSource.
-  static rtc::scoped_refptr<RemoteAudioSource> Create();
-
- protected:
-  RemoteAudioSource();
-  virtual ~RemoteAudioSource();
-
- private:
-  typedef std::list<AudioObserver*> AudioObserverList;
+  static rtc::scoped_refptr<RemoteAudioSource> Create(
+      uint32_t ssrc,
+      AudioProviderInterface* provider);
 
   // MediaSourceInterface implementation.
   MediaSourceInterface::SourceState state() const override;
+
+  void AddSink(AudioTrackSinkInterface* sink);
+  void RemoveSink(AudioTrackSinkInterface* sink);
+
+ protected:
+  RemoteAudioSource();
+  ~RemoteAudioSource() override;
+
+  // Post construction initialize where we can do things like save a reference
+  // to ourselves (need to be fully constructed).
+  void Initialize(uint32_t ssrc, AudioProviderInterface* provider);
+
+ private:
+  typedef std::list<AudioObserver*> AudioObserverList;
 
   // AudioSourceInterface implementation.
   void SetVolume(double volume) override;
   void RegisterAudioObserver(AudioObserver* observer) override;
   void UnregisterAudioObserver(AudioObserver* observer) override;
 
+  class Sink;
+  void OnData(const AudioSinkInterface::Data& audio);
+  void OnAudioProviderGone();
+
+  class MessageHandler;
+  void OnMessage(rtc::Message* msg);
+
   AudioObserverList audio_observers_;
+  rtc::CriticalSection sink_lock_;
+  std::list<AudioTrackSinkInterface*> sinks_;
+  rtc::Thread* const main_thread_;
+  SourceState state_;
 };
 
 }  // namespace webrtc

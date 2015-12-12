@@ -29,6 +29,7 @@
 #define TALK_APP_WEBRTC_MEDIASTREAMPROVIDER_H_
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {
 
@@ -41,6 +42,8 @@ struct VideoOptions;
 }  // namespace cricket
 
 namespace webrtc {
+
+class AudioSinkInterface;
 
 // TODO(deadbeef): Change the key from an ssrc to a "sender_id" or
 // "receiver_id" string, which will be the MSID in the short term and MID in
@@ -66,6 +69,13 @@ class AudioProviderInterface {
   // Sets the audio playout volume of a remote audio track with |ssrc|.
   // |volume| is in the range of [0, 10].
   virtual void SetAudioPlayoutVolume(uint32_t ssrc, double volume) = 0;
+
+  // Allows for setting a direct audio sink for an incoming audio source.
+  // Only one audio sink is supported per ssrc and ownership of the sink is
+  // passed to the provider.
+  virtual void SetRawAudioSink(
+      uint32_t ssrc,
+      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) = 0;
 
  protected:
   virtual ~AudioProviderInterface() {}

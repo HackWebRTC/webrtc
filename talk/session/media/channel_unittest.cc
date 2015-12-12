@@ -34,7 +34,6 @@
 #include "talk/media/base/screencastid.h"
 #include "talk/media/base/testutils.h"
 #include "talk/session/media/channel.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
@@ -45,6 +44,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/window.h"
+#include "webrtc/p2p/base/faketransportcontroller.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(rtc::SSLStreamAdapter::feature())) {  \

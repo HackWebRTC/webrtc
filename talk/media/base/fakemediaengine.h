@@ -38,9 +38,10 @@
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/media/base/streamparams.h"
-#include "webrtc/p2p/base/sessiondescription.h"
+#include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/p2p/base/sessiondescription.h"
 
 namespace cricket {
 
@@ -346,6 +347,12 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
 
   virtual bool GetStats(VoiceMediaInfo* info) { return false; }
 
+  virtual void SetRawAudioSink(
+      uint32_t ssrc,
+      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
+    sink_ = std::move(sink);
+  }
+
  private:
   class VoiceChannelAudioSink : public AudioRenderer::Sink {
    public:
@@ -418,6 +425,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   int time_since_last_typing_;
   AudioOptions options_;
   std::map<uint32_t, VoiceChannelAudioSink*> local_renderers_;
+  rtc::scoped_ptr<webrtc::AudioSinkInterface> sink_;
 };
 
 // A helper function to compare the FakeVoiceMediaChannel::DtmfInfo.

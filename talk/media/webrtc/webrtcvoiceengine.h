@@ -196,6 +196,10 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   void OnReadyToSend(bool ready) override {}
   bool GetStats(VoiceMediaInfo* info) override;
 
+  void SetRawAudioSink(
+      uint32_t ssrc,
+      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) override;
+
   // implements Transport interface
   bool SendRtp(const uint8_t* data,
                size_t len,

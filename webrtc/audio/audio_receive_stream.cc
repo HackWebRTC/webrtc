@@ -11,7 +11,9 @@
 #include "webrtc/audio/audio_receive_stream.h"
 
 #include <string>
+#include <utility>
 
+#include "webrtc/audio/audio_sink.h"
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/checks.h"
@@ -199,6 +201,11 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.decoding_plc_cng = ds.decoded_plc_cng;
 
   return stats;
+}
+
+void AudioReceiveStream::SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel_proxy_->SetSink(std::move(sink));
 }
 
 const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {

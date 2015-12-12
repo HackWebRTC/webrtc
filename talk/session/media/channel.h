@@ -38,19 +38,24 @@
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/media/base/videocapturer.h"
-#include "webrtc/p2p/base/transportcontroller.h"
-#include "webrtc/p2p/client/socketmonitor.h"
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/bundlefilter.h"
 #include "talk/session/media/mediamonitor.h"
 #include "talk/session/media/mediasession.h"
 #include "talk/session/media/rtcpmuxfilter.h"
 #include "talk/session/media/srtpfilter.h"
+#include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/window.h"
+#include "webrtc/p2p/base/transportcontroller.h"
+#include "webrtc/p2p/client/socketmonitor.h"
+
+namespace webrtc {
+class AudioSinkInterface;
+}  // namespace webrtc
 
 namespace cricket {
 
@@ -367,6 +372,9 @@ class VoiceChannel : public BaseChannel {
   // event 0-9, *, #, A-D.
   bool InsertDtmf(uint32_t ssrc, int event_code, int duration);
   bool SetOutputVolume(uint32_t ssrc, double volume);
+  void SetRawAudioSink(uint32_t ssrc,
+                       rtc::scoped_ptr<webrtc::AudioSinkInterface> sink);
+
   // Get statistics about the current media session.
   bool GetStats(VoiceMediaInfo* stats);
 

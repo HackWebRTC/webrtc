@@ -44,6 +44,7 @@
 #include "talk/media/base/streamparams.h"
 #include "talk/media/webrtc/webrtcmediaengine.h"
 #include "talk/media/webrtc/webrtcvoe.h"
+#include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/byteorder.h"
@@ -1248,6 +1249,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     return config_.voe_channel_id;
   }
 
+  void SetRawAudioSink(rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    stream_->SetSink(std::move(sink));
+  }
+
  private:
   void RecreateAudioReceiveStream(bool use_combined_bwe,
       const std::vector<webrtc::RtpExtension>& extensions) {
@@ -2032,6 +2038,7 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   // Clean up and delete the receive stream+channel.
   LOG(LS_INFO) << "Removing audio receive stream " << ssrc
                << " with VoiceEngine channel #" << channel << ".";
+  it->second->SetRawAudioSink(nullptr);
   delete it->second;
   recv_streams_.erase(it);
   return DeleteVoEChannel(channel);
@@ -2406,6 +2413,19 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   }
 
   return true;
+}
+
+void WebRtcVoiceMediaChannel::SetRawAudioSink(
+    uint32_t ssrc,
+    rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::SetRawAudioSink";
+  const auto it = recv_streams_.find(ssrc);
+  if (it == recv_streams_.end()) {
+    LOG(LS_WARNING) << "SetRawAudioSink: no recv stream" << ssrc;
+    return;
+  }
+  it->second->SetRawAudioSink(std::move(sink));
 }
 
 int WebRtcVoiceMediaChannel::GetOutputLevel(int channel) {

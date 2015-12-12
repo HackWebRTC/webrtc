@@ -30,8 +30,9 @@
 #include <limits.h>
 
 #include <algorithm>
-#include <vector>
 #include <set>
+#include <utility>
+#include <vector>
 
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
@@ -44,6 +45,7 @@
 #include "talk/session/media/channel.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
+#include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
@@ -1316,6 +1318,15 @@ void WebRtcSession::SetAudioPlayoutVolume(uint32_t ssrc, double volume) {
   if (!voice_channel_->SetOutputVolume(ssrc, volume)) {
     ASSERT(false);
   }
+}
+
+void WebRtcSession::SetRawAudioSink(uint32_t ssrc,
+                                    rtc::scoped_ptr<AudioSinkInterface> sink) {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (!voice_channel_)
+    return;
+
+  voice_channel_->SetRawAudioSink(ssrc, std::move(sink));
 }
 
 bool WebRtcSession::SetCaptureDevice(uint32_t ssrc,

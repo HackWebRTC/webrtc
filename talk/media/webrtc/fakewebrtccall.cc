@@ -28,10 +28,12 @@
 #include "talk/media/webrtc/fakewebrtccall.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "talk/media/base/rtputils.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/audio/audio_sink.h"
 
 namespace cricket {
 FakeAudioSendStream::FakeAudioSendStream(
@@ -88,6 +90,11 @@ void FakeAudioReceiveStream::IncrementReceivedPackets() {
 
 webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
   return stats_;
+}
+
+void FakeAudioReceiveStream::SetSink(
+    rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
+  sink_ = std::move(sink);
 }
 
 FakeVideoSendStream::FakeVideoSendStream(
