@@ -240,7 +240,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     client.setPeerConnectionFactoryOptions(options);
     client.createPeerConnectionFactory(
         getInstrumentation().getContext(), peerConnectionParameters, this);
-    client.createPeerConnection(useTexures ? eglBase.getContext() : null,
+    client.createPeerConnection(useTexures ? eglBase.getEglBaseContext() : null,
         localRenderer, remoteRenderer, signalingParameters);
     client.createOffer();
     return client;
@@ -270,7 +270,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     signalingExecutor = new LooperExecutor();
     signalingExecutor.requestStart();
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      eglBase = new EglBase();
+      eglBase = EglBase.create();
     }
   }
 

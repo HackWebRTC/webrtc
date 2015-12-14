@@ -415,13 +415,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     eglContextReady = eglContextReadyCallback;
   }
 
-  @Deprecated
-  public static synchronized EGLContext getEGLContext() {
-    return eglContext;
-  }
-
   public static synchronized EglBase.Context getEglBaseContext() {
-    return new EglBase.Context(eglContext);
+    return new EglBase10.Context(eglContext);
   }
 
   /** Releases GLSurfaceView video renderer. */
