@@ -36,18 +36,6 @@
 //     type (basically, it just doesn't prepend the namespace).
 // LOG_F(sev) Like LOG(), but includes the name of the current function.
 
-// Additional helper macros added by WebRTC:
-// LOG_API is a shortcut for API call logging. Pass in the input parameters of
-// the method. For example:
-//   Foo(int bar, int baz) {
-//     LOG_API2(bar, baz);
-//   }
-//
-// LOG_FERR is a shortcut for logging a failed function call. For example:
-//   if (!Foo(bar)) {
-//     LOG_FERR1(LS_WARNING, Foo, bar);
-//   }
-
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_LOGGING_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_LOGGING_H_
 
@@ -136,23 +124,6 @@ class LogMessageVoidify {
 #else
 #define LOG_F(sev) LOG(sev) << __FUNCTION__ << ": "
 #endif
-
-#define LOG_API0() LOG_F(LS_VERBOSE)
-#define LOG_API1(v1) LOG_API0() << #v1 << "=" << v1
-#define LOG_API2(v1, v2) LOG_API1(v1) \
-    << ", " << #v2 << "=" << v2
-#define LOG_API3(v1, v2, v3) LOG_API2(v1, v2) \
-    << ", " << #v3 << "=" << v3
-
-#define LOG_FERR0(sev, func) LOG(sev) << #func << " failed"
-#define LOG_FERR1(sev, func, v1) LOG_FERR0(sev, func) \
-    << ": " << #v1 << "=" << v1
-#define LOG_FERR2(sev, func, v1, v2) LOG_FERR1(sev, func, v1) \
-    << ", " << #v2 << "=" << v2
-#define LOG_FERR3(sev, func, v1, v2, v3) LOG_FERR2(sev, func, v1, v2) \
-    << ", " << #v3 << "=" << v3
-#define LOG_FERR4(sev, func, v1, v2, v3, v4) LOG_FERR3(sev, func, v1, v2, v3) \
-    << ", " << #v4 << "=" << v4
 
 #endif  // LOG
 

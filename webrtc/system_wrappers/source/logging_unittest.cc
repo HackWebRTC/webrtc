@@ -72,18 +72,5 @@ TEST_F(LoggingTest, LogStream) {
   }
 }
 
-TEST_F(LoggingTest, LogFunctionError) {
-  {
-    CriticalSectionScoped cs(crit_.get());
-    int bar = 42;
-    int baz = 99;
-    level_ = kTraceError;
-    expected_log_ << "(logging_unittest.cc:" << __LINE__ + 2
-                  << "): Foo failed: bar=" << bar << ", baz=" << baz;
-    LOG_FERR2(LS_ERROR, Foo, bar, baz);
-    cv_->SleepCS(*crit_.get(), 2000);
-  }
-}
-
 }  // namespace
 }  // namespace webrtc
