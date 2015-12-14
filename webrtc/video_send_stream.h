@@ -69,6 +69,7 @@ class VideoSendStream : public SendStream {
     int target_media_bitrate_bps = 0;
     int media_bitrate_bps = 0;
     bool suspended = false;
+    bool bw_limited_resolution = false;
     std::map<uint32_t, StreamStats> substreams;
   };
 

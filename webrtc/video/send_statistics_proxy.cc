@@ -258,6 +258,10 @@ void SendStatisticsProxy::OnSendEncodedImage(
   uma_container_->key_frame_counter_.Add(encoded_image._frameType ==
                                          kVideoFrameKey);
 
+  stats_.bw_limited_resolution =
+      encoded_image.adapt_reason_.quality_resolution_downscales > 0 ||
+      encoded_image.adapt_reason_.bw_resolutions_disabled > 0;
+
   if (encoded_image.adapt_reason_.quality_resolution_downscales != -1) {
     bool downscaled =
         encoded_image.adapt_reason_.quality_resolution_downscales > 0;

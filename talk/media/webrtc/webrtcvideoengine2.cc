@@ -2117,6 +2117,14 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
       }
     }
   }
+
+  // Get bandwidth limitation info from stream_->GetStats().
+  // Input resolution (output from video_adapter) can be further scaled down or
+  // higher video layer(s) can be dropped due to bitrate constraints.
+  // Note, adapt_changes only include changes from the video_adapter.
+  if (stats.bw_limited_resolution)
+    info.adapt_reason |= CoordinatedVideoAdapter::ADAPTREASON_BANDWIDTH;
+
   info.ssrc_groups = ssrc_groups_;
   info.framerate_input = stats.input_frame_rate;
   info.framerate_sent = stats.encode_frame_rate;
