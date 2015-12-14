@@ -48,6 +48,7 @@ config("openssl_config") {
 
 config("ios_config") {
   libs = [
+    "AVFoundation.framework",
     "CFNetwork.framework",
 
     #"Foundation.framework",  # Already included in //build/config:default_libs.
@@ -618,6 +619,8 @@ if (is_ios) {
     public_configs = [ "..:common_inherited_config" ]
 
     sources = [
+      "objc/NSString+StdString.h",
+      "objc/NSString+StdString.mm",
       "objc/RTCCameraPreviewView.h",
       "objc/RTCCameraPreviewView.m",
       "objc/RTCDispatcher.h",

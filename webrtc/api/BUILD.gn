@@ -1,0 +1,27 @@
+# Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("../build/webrtc.gni")
+
+if (is_ios) {
+  source_set("rtc_api_objc") {
+    deps = [
+      "//webrtc/base:rtc_base_objc",
+    ]
+    cflags = [
+      "-fobjc-arc",
+      "-Wobjc-missing-property-synthesis",
+    ]
+    sources = [
+      "objc/RTCIceServer+Private.h",
+      "objc/RTCIceServer.h",
+      "objc/RTCIceServer.mm",
+      "objc/WebRTC-Prefix.pch",
+    ]
+  }
+}

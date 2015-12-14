@@ -33,12 +33,27 @@
             'rtc_base',
           ],
           'sources': [
-            'objc/RTCCameraPreviewView.h',
-            'objc/RTCCameraPreviewView.m',
+            'objc/NSString+StdString.h',
+            'objc/NSString+StdString.mm',
             'objc/RTCDispatcher.h',
             'objc/RTCDispatcher.m',
             'objc/RTCLogging.h',
             'objc/RTCLogging.mm',
+          ],
+          'conditions': [
+            ['OS=="ios"', {
+              'sources': [
+                'objc/RTCCameraPreviewView.h',
+                'objc/RTCCameraPreviewView.m',
+              ],
+              'all_dependent_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework AVFoundation',
+                  ],
+                },
+              },
+            }],
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
