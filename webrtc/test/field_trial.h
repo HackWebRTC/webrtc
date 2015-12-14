@@ -39,7 +39,8 @@ class ScopedFieldTrials {
   explicit ScopedFieldTrials(const std::string& config);
   ~ScopedFieldTrials();
  private:
-  const std::map<std::string, std::string> previous_field_trials_;
+  std::string current_field_trials_;
+  const char* previous_field_trials_;
 };
 
 }  // namespace test

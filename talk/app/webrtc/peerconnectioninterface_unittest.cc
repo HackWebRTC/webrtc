@@ -37,6 +37,9 @@
 #include "talk/app/webrtc/rtpreceiverinterface.h"
 #include "talk/app/webrtc/rtpsenderinterface.h"
 #include "talk/app/webrtc/streamcollection.h"
+#ifdef WEBRTC_ANDROID
+#include "talk/app/webrtc/test/androidtestinitializer.h"
+#endif
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/test/fakedtlsidentitystore.h"
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
@@ -515,6 +518,12 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 
 class PeerConnectionInterfaceTest : public testing::Test {
  protected:
+  PeerConnectionInterfaceTest() {
+#ifdef WEBRTC_ANDROID
+    webrtc::InitializeAndroidObjects();
+#endif
+  }
+
   virtual void SetUp() {
     pc_factory_ = webrtc::CreatePeerConnectionFactory(
         rtc::Thread::Current(), rtc::Thread::Current(), NULL, NULL,

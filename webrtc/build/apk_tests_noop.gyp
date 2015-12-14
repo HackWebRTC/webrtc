@@ -22,6 +22,10 @@
       'type': 'none',
     },
     {
+      'target_name': 'libjingle_peerconnection_unittest_apk',
+      'type': 'none',
+    },
+    {
       'target_name': 'modules_tests_apk',
       'type': 'none',
     },

@@ -58,5 +58,9 @@ void InitFieldTrialsFromString(const char* trials_string) {
   trials_init_string = trials_string;
 }
 
+const char* GetFieldTrialString() {
+  return trials_init_string;
+}
+
 }  // namespace field_trial
 }  // namespace webrtc

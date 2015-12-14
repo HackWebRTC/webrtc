@@ -27,6 +27,9 @@
 
 #include "talk/app/webrtc/test/peerconnectiontestwrapper.h"
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
+#ifdef WEBRTC_ANDROID
+#include "talk/app/webrtc/test/androidtestinitializer.h"
+#endif
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
@@ -114,6 +117,9 @@ class PeerConnectionEndToEndTest
                     "caller")),
         callee_(new rtc::RefCountedObject<PeerConnectionTestWrapper>(
                     "callee")) {
+#ifdef WEBRTC_ANDROID
+    webrtc::InitializeAndroidObjects();
+#endif
   }
 
   void CreatePcs() {
