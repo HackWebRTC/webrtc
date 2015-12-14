@@ -25,6 +25,10 @@ static const in6_addr kIPv6PublicAddr = {{{0x24, 0x01, 0xfa, 0x00,
                                            0x00, 0x04, 0x10, 0x00,
                                            0xbe, 0x30, 0x5b, 0xff,
                                            0xfe, 0xe5, 0x00, 0xc3}}};
+static const in6_addr kIPv6PublicAddr2 = {{{0x24, 0x01, 0x00, 0x00,
+                                            0x00, 0x00, 0x10, 0x00,
+                                            0xbe, 0x30, 0x5b, 0xff,
+                                            0xfe, 0xe5, 0x00, 0xc3}}};
 static const in6_addr kIPv4MappedAnyAddr = {{{0x00, 0x00, 0x00, 0x00,
                                               0x00, 0x00, 0x00, 0x00,
                                               0x00, 0x00, 0xff, 0xff,
@@ -52,7 +56,12 @@ static const std::string kIPv6TemporaryAddrString =
     "2620:0:1008:1201:2089:6dda:385e:80c0";
 static const std::string kIPv6PublicAddrString =
     "2401:fa00:4:1000:be30:5bff:fee5:c3";
-static const std::string kIPv6PublicAddrAnonymizedString = "2401:fa00:4::";
+static const std::string kIPv6PublicAddr2String =
+    "2401::1000:be30:5bff:fee5:c3";
+static const std::string kIPv6PublicAddrAnonymizedString =
+    "2401:fa00:4:x:x:x:x:x";
+static const std::string kIPv6PublicAddr2AnonymizedString =
+    "2401::x:x:x:x:x";
 static const std::string kIPv4MappedAnyAddrString = "::ffff:0:0";
 static const std::string kIPv4MappedRFC1918AddrString = "::ffff:c0a8:701";
 static const std::string kIPv4MappedLoopbackAddrString = "::ffff:7f00:1";
@@ -889,14 +898,18 @@ TEST(IPAddressTest, TestCategorizeIPv6) {
 TEST(IPAddressTest, TestToSensitiveString) {
   IPAddress addr_v4 = IPAddress(kIPv4PublicAddr);
   IPAddress addr_v6 = IPAddress(kIPv6PublicAddr);
+  IPAddress addr_v6_2 = IPAddress(kIPv6PublicAddr2);
   EXPECT_EQ(kIPv4PublicAddrString, addr_v4.ToString());
   EXPECT_EQ(kIPv6PublicAddrString, addr_v6.ToString());
+  EXPECT_EQ(kIPv6PublicAddr2String, addr_v6_2.ToString());
 #if defined(NDEBUG)
   EXPECT_EQ(kIPv4PublicAddrAnonymizedString, addr_v4.ToSensitiveString());
   EXPECT_EQ(kIPv6PublicAddrAnonymizedString, addr_v6.ToSensitiveString());
+  EXPECT_EQ(kIPv6PublicAddr2AnonymizedString, addr_v6_2.ToSensitiveString());
 #else
   EXPECT_EQ(kIPv4PublicAddrString, addr_v4.ToSensitiveString());
   EXPECT_EQ(kIPv6PublicAddrString, addr_v6.ToSensitiveString());
+  EXPECT_EQ(kIPv6PublicAddr2String, addr_v6_2.ToSensitiveString());
 #endif  // defined(NDEBUG)
 }
 

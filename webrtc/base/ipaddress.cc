@@ -27,6 +27,7 @@
 
 #include "webrtc/base/ipaddress.h"
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/win32.h"
@@ -157,9 +158,19 @@ std::string IPAddress::ToSensitiveString() const {
       return address;
     }
     case AF_INET6: {
-      // TODO(grunell): Return a string of format 1:2:3:x:x:x:x:x or such
-      // instead of zeroing out.
-      return TruncateIP(*this, 128 - 80).ToString();
+      // Remove the last 5 groups (80 bits).
+      std::string address = TruncateIP(*this, 128 - 80).ToString();
+
+      // If all three remaining groups are written out explicitly in the string,
+      // remove one of the two trailing colons before appending the stripped
+      // groups as "x"s. There should be max 4 colons (2 between the 3 groups +
+      // 2 trailing) in the truncated address string.
+      size_t number_of_colons = std::count(address.begin(), address.end(), ':');
+      RTC_CHECK_LE(number_of_colons, 4u);
+      if (number_of_colons > 3)
+        address.resize(address.length() - 1);
+
+      return address + "x:x:x:x:x";
     }
   }
   return std::string();

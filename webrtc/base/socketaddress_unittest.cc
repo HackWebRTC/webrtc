@@ -27,10 +27,11 @@ const in6_addr kMappedV4Addr = { { {0x00, 0x00, 0x00, 0x00,
                                     0x00, 0x00, 0xFF, 0xFF,
                                     0x01, 0x02, 0x03, 0x04} } };
 const std::string kTestV6AddrString = "2001:db8:1020:3040:5060:7080:90a0:b0c0";
-const std::string kTestV6AddrAnonymizedString = "2001:db8:1020::";
+const std::string kTestV6AddrAnonymizedString = "2001:db8:1020:x:x:x:x:x";
 const std::string kTestV6AddrFullString =
     "[2001:db8:1020:3040:5060:7080:90a0:b0c0]:5678";
-const std::string kTestV6AddrFullAnonymizedString = "[2001:db8:1020::]:5678";
+const std::string kTestV6AddrFullAnonymizedString =
+    "[2001:db8:1020:x:x:x:x:x]:5678";
 
 TEST(SocketAddressTest, TestDefaultCtor) {
   SocketAddress addr;
