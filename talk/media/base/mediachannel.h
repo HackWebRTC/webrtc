@@ -31,7 +31,6 @@
 #include <string>
 #include <vector>
 
-#include "talk/media/base/audiorenderer.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
@@ -58,11 +57,12 @@ class AudioSinkInterface;
 
 namespace cricket {
 
-struct RtpHeader;
+class AudioRenderer;
 class ScreencastId;
-struct VideoFormat;
 class VideoCapturer;
 class VideoRenderer;
+struct RtpHeader;
+struct VideoFormat;
 
 const int kMinRtpHeaderExtensionId = 1;
 const int kMaxRtpHeaderExtensionId = 255;
