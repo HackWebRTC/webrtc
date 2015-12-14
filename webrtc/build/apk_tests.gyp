@@ -61,23 +61,6 @@
       ],
     },
     {
-      'target_name': 'libjingle_peerconnection_unittest_apk',
-      'type': 'none',
-      'variables': {
-        'test_suite_name': 'libjingle_peerconnection_unittest',
-        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)libjingle_peerconnection_unittest<(SHARED_LIB_SUFFIX)',
-      },
-      'dependencies': [
-        '<(DEPTH)/talk/libjingle_tests.gyp:libjingle_peerconnection_unittest',
-        '<(DEPTH)/talk/libjingle.gyp:libjingle_peerconnection_java',
-      ],
-      'includes': [
-        # Use webrtc copy of apk_test.gypi to allow test executables starting
-        # with "lib". See http://crbug.com/543820 for more details.
-        '../build/apk_test.gypi',
-      ],
-    },
-    {
       'target_name': 'modules_tests_apk',
       'type': 'none',
       'variables': {

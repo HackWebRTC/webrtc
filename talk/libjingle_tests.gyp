@@ -176,7 +176,7 @@
     },  # target libjingle_p2p_unittest
     {
       'target_name': 'libjingle_peerconnection_unittest',
-      'type': '<(gtest_target_type)',
+      'type': 'executable',
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
@@ -207,6 +207,7 @@
         # 'app/webrtc/peerconnectionproxy_unittest.cc',
         'app/webrtc/remotevideocapturer_unittest.cc',
         'app/webrtc/rtpsenderreceiver_unittest.cc',
+        'app/webrtc/sctputils.cc',
         'app/webrtc/statscollector_unittest.cc',
         'app/webrtc/test/fakeaudiocapturemodule.cc',
         'app/webrtc/test/fakeaudiocapturemodule.h',
@@ -227,14 +228,17 @@
       ],
       'conditions': [
         ['OS=="android"', {
-          'sources': [
-            'app/webrtc/test/androidtestinitializer.cc',
-            'app/webrtc/test/androidtestinitializer.h',
-          ],
-          'dependencies': [
-            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
-            'libjingle.gyp:libjingle_peerconnection_jni',
-          ],
+          # We want gmock features that use tr1::tuple, but we currently
+          # don't support the variadic templates used by libstdc++'s
+          # implementation. gmock supports this scenario by providing its
+          # own implementation but we must opt in to it.
+          'defines': [
+            'GTEST_USE_OWN_TR1_TUPLE=1',
+            # GTEST_USE_OWN_TR1_TUPLE only works if GTEST_HAS_TR1_TUPLE is set.
+            # gmock r625 made it so that GTEST_HAS_TR1_TUPLE is set to 0
+            # automatically on android, so it has to be set explicitly here.
+            'GTEST_HAS_TR1_TUPLE=1',
+           ],
         }],
       ],
     },  # target libjingle_peerconnection_unittest
@@ -387,17 +391,6 @@
             }],
           ],
         },  # target apprtc_signaling_gunit_test
-      ],
-    }],
-    ['OS=="android"', {
-      'targets': [
-        {
-          'target_name': 'libjingle_peerconnection_unittest_apk_target',
-          'type': 'none',
-          'dependencies': [
-            '<(DEPTH)/webrtc/build/apk_tests.gyp:libjingle_peerconnection_unittest_apk',
-          ],
-        },
       ],
     }],
     ['test_isolation_mode != "noop"', {

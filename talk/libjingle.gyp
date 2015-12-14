@@ -43,8 +43,8 @@
     ['OS=="linux" or OS=="android"', {
       'targets': [
         {
-          'target_name': 'libjingle_peerconnection_jni',
-          'type': 'static_library',
+          'target_name': 'libjingle_peerconnection_so',
+          'type': 'shared_library',
           'dependencies': [
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             'libjingle_peerconnection',
@@ -61,55 +61,6 @@
           'include_dirs': [
             '<(libyuv_dir)/include',
           ],
-          'conditions': [
-            ['OS=="linux"', {
-              'include_dirs': [
-                '<(java_home)/include',
-                '<(java_home)/include/linux',
-              ],
-            }],
-           ['build_json==1', {
-              'dependencies': [
-                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-              ],
-              'export_dependent_settings': [
-                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-              ],
-            }],
-            ['OS=="android"', {
-              'sources': [
-                'app/webrtc/androidvideocapturer.cc',
-                'app/webrtc/androidvideocapturer.h',
-                'app/webrtc/java/jni/androidmediacodeccommon.h',
-                'app/webrtc/java/jni/androidmediadecoder_jni.cc',
-                'app/webrtc/java/jni/androidmediadecoder_jni.h',
-                'app/webrtc/java/jni/androidmediaencoder_jni.cc',
-                'app/webrtc/java/jni/androidmediaencoder_jni.h',
-                'app/webrtc/java/jni/androidnetworkmonitor_jni.cc',
-                'app/webrtc/java/jni/androidnetworkmonitor_jni.h',
-                'app/webrtc/java/jni/androidvideocapturer_jni.cc',
-                'app/webrtc/java/jni/androidvideocapturer_jni.h',
-                'app/webrtc/java/jni/surfacetexturehelper_jni.cc',
-                'app/webrtc/java/jni/surfacetexturehelper_jni.h',
-              ]
-            }],
-          ],
-        },
-        {
-          'target_name': 'libjingle_peerconnection_so',
-          'type': 'shared_library',
-          'dependencies': [
-            'libjingle_peerconnection',
-            'libjingle_peerconnection_jni',
-          ],
-          'sources': [
-           'app/webrtc/java/jni/jni_onload.cc',
-          ],
-          'variables': {
-            # This library uses native JNI exports; tell GYP so that the
-            # required symbols will be kept.
-            'use_native_jni_exports': 1,
-          },
           'conditions': [
             ['OS=="linux"', {
               'defines': [
@@ -129,6 +80,30 @@
                   },
                 }],
               ],
+            }],
+            ['OS=="android"', {
+              'sources': [
+                'app/webrtc/java/jni/androidvideocapturer_jni.cc',
+                'app/webrtc/java/jni/androidvideocapturer_jni.h',
+              ],
+              'variables': {
+                # This library uses native JNI exports; tell GYP so that the
+                # required symbols will be kept.
+                'use_native_jni_exports': 1,
+              },
+            }],
+            ['OS=="android" and build_with_chromium==0', {
+              'sources': [
+                'app/webrtc/java/jni/androidmediacodeccommon.h',
+                'app/webrtc/java/jni/androidmediadecoder_jni.cc',
+                'app/webrtc/java/jni/androidmediadecoder_jni.h',
+                'app/webrtc/java/jni/androidmediaencoder_jni.cc',
+                'app/webrtc/java/jni/androidmediaencoder_jni.h',
+                'app/webrtc/java/jni/androidnetworkmonitor_jni.cc',
+                'app/webrtc/java/jni/androidnetworkmonitor_jni.h',
+                'app/webrtc/java/jni/surfacetexturehelper_jni.cc',
+                'app/webrtc/java/jni/surfacetexturehelper_jni.h',
+              ]
             }],
           ],
         },
@@ -818,6 +793,14 @@
         'app/webrtc/webrtcsession.h',
         'app/webrtc/webrtcsessiondescriptionfactory.cc',
         'app/webrtc/webrtcsessiondescriptionfactory.h',
+      ],
+      'conditions': [
+        ['OS=="android" and build_with_chromium==0', {
+          'sources': [
+            'app/webrtc/androidvideocapturer.h',
+            'app/webrtc/androidvideocapturer.cc',
+           ],
+        }],
       ],
     },  # target libjingle_peerconnection
   ],

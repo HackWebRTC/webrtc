@@ -30,9 +30,6 @@
 #include <vector>
 
 #include "talk/app/webrtc/jsepsessiondescription.h"
-#ifdef WEBRTC_ANDROID
-#include "talk/app/webrtc/test/androidtestinitializer.h"
-#endif
 #include "talk/app/webrtc/webrtcsdp.h"
 #include "talk/media/base/constants.h"
 #include "webrtc/p2p/base/constants.h"
@@ -541,9 +538,6 @@ class WebRtcSdpTest : public testing::Test {
  public:
   WebRtcSdpTest()
      : jdesc_(kDummyString) {
-#ifdef WEBRTC_ANDROID
-    webrtc::InitializeAndroidObjects();
-#endif
     // AudioContentDescription
     audio_desc_ = CreateAudioContentDescription();
     AudioCodec opus(111, "opus", 48000, 0, 2, 3);

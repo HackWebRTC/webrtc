@@ -30,9 +30,6 @@
 #include "talk/app/webrtc/fakeportallocatorfactory.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/peerconnectionfactory.h"
-#ifdef WEBRTC_ANDROID
-#include "talk/app/webrtc/test/androidtestinitializer.h"
-#endif
 #include "talk/app/webrtc/test/fakedtlsidentitystore.h"
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
 #include "talk/app/webrtc/videosourceinterface.h"
@@ -106,9 +103,6 @@ class NullPeerConnectionObserver : public PeerConnectionObserver {
 
 class PeerConnectionFactoryTest : public testing::Test {
   void SetUp() {
-#ifdef WEBRTC_ANDROID
-    webrtc::InitializeAndroidObjects();
-#endif
     factory_ = webrtc::CreatePeerConnectionFactory(rtc::Thread::Current(),
                                                    rtc::Thread::Current(),
                                                    NULL,
@@ -156,10 +150,6 @@ class PeerConnectionFactoryTest : public testing::Test {
 // Verify creation of PeerConnection using internal ADM, video factory and
 // internal libjingle threads.
 TEST(PeerConnectionFactoryTestInternal, CreatePCUsingInternalModules) {
-#ifdef WEBRTC_ANDROID
-  webrtc::InitializeAndroidObjects();
-#endif
-
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory());
 

@@ -27,7 +27,6 @@ source_set("field_trial") {
   deps = [
     "..:webrtc_common",
     "../system_wrappers",
-    "../system_wrappers:field_trial_default",
   ]
 
   configs += [ "..:common_config" ]
