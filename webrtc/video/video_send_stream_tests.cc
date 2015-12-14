@@ -1904,9 +1904,6 @@ class Vp9HeaderObserver : public test::SendTest {
   }
 
   void VerifySpatialIdxWithinFrame(const RTPVideoHeaderVP9& vp9) const {
-    if (frames_sent_ == 0)
-      return;
-
     bool new_layer = vp9.spatial_idx != last_vp9_.spatial_idx;
     EXPECT_EQ(new_layer, vp9.beginning_of_frame);
     EXPECT_EQ(new_layer, last_vp9_.end_of_frame);
@@ -2160,6 +2157,8 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
                               vp9.beginning_of_frame && vp9.spatial_idx == 0;
       EXPECT_EQ(ss_data_expected, vp9.ss_data_available);
       EXPECT_EQ(vp9.spatial_idx > 0, vp9.inter_layer_predicted);  // D
+      EXPECT_EQ(!vp9.inter_pic_predicted,
+                frames_sent_ % kKeyFrameInterval == 0);
 
       if (IsNewPictureId(vp9)) {
         EXPECT_EQ(0, vp9.spatial_idx);
