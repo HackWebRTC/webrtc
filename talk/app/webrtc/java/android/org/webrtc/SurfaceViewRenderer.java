@@ -169,6 +169,13 @@ public class SurfaceViewRenderer extends SurfaceView
     tryCreateEglSurface();
   }
 
+  @Deprecated
+  // TODO(perkj): Remove when applications has been updated.
+  public void init(
+      EGLContext sharedContext, RendererCommon.RendererEvents rendererEvents) {
+    init(sharedContext != null ? new EglBase.Context(sharedContext) : null, rendererEvents);
+  }
+
   /**
    * Create and make an EGLSurface current if both init() and surfaceCreated() have been called.
    */

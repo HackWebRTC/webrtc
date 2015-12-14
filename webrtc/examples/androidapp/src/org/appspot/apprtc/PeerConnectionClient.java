@@ -47,6 +47,8 @@ import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.microedition.khronos.egl.EGLContext;
+
 /**
  * Peer connection client implementation.
  *
@@ -257,7 +259,7 @@ public class PeerConnectionClient {
   }
 
   public void createPeerConnection(
-      final EglBase.Context renderEGLContext,
+      final EGLContext renderEGLContext,
       final VideoRenderer.Callbacks localRender,
       final VideoRenderer.Callbacks remoteRender,
       final SignalingParameters signalingParameters) {
@@ -427,7 +429,7 @@ public class PeerConnectionClient {
     }
   }
 
-  private void createPeerConnectionInternal(EglBase.Context renderEGLContext) {
+  private void createPeerConnectionInternal(EGLContext renderEGLContext) {
     if (factory == null || isError) {
       Log.e(TAG, "Peerconnection factory is not created");
       return;
@@ -476,7 +478,7 @@ public class PeerConnectionClient {
       }
       Log.d(TAG, "Opening camera: " + cameraDeviceName);
       videoCapturer = VideoCapturerAndroid.create(cameraDeviceName, null,
-          peerConnectionParameters.captureToTexture ? renderEGLContext : null);
+          peerConnectionParameters.captureToTexture ? new EglBase.Context(renderEGLContext) : null);
       if (videoCapturer == null) {
         reportError("Failed to open camera");
         return;

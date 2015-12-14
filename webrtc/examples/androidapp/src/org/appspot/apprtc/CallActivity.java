@@ -181,9 +181,9 @@ public class CallActivity extends Activity
     remoteRender.setOnClickListener(listener);
 
     // Create video renderers.
-    rootEglBase = EglBase.create();
-    localRender.init(rootEglBase.getEglBaseContext(), null);
-    remoteRender.init(rootEglBase.getEglBaseContext(), null);
+    rootEglBase = new EglBase();
+    localRender.init(rootEglBase.getContext(), null);
+    remoteRender.init(rootEglBase.getContext(), null);
     localRender.setZOrderMediaOverlay(true);
     updateVideoView();
 
@@ -254,7 +254,6 @@ public class CallActivity extends Activity
     // For command line execution run connection for <runTimeMs> and exit.
     if (commandLineRun && runTimeMs > 0) {
       (new Handler()).postDelayed(new Runnable() {
-        @Override
         public void run() {
           disconnect();
         }
@@ -489,7 +488,7 @@ public class CallActivity extends Activity
 
     signalingParameters = params;
     logAndToast("Creating peer connection, delay=" + delta + "ms");
-    peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(),
+    peerConnectionClient.createPeerConnection(rootEglBase.getContext(),
         localRender, remoteRender, signalingParameters);
 
     if (signalingParameters.initiator) {
