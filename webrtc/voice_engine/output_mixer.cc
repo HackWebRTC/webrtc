@@ -550,7 +550,7 @@ OutputMixer::DoOperationsOnCombinedSignal(bool feed_data_to_apm)
 // ----------------------------------------------------------------------------
 
 void OutputMixer::APMProcessReverseStream() {
-  if (_audioProcessingModulePtr->ProcessReverseStream(&_audioFrame) == -1) {
+  if (_audioProcessingModulePtr->ProcessReverseStream(&_audioFrame) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
                  "AudioProcessingModule::ProcessReverseStream() => error");
   }
