@@ -539,7 +539,7 @@
           'include_dirs': [
             # TODO(jiayl): move this into the direct_dependent_settings of
             # usrsctp.gyp.
-            '<(DEPTH)/third_party/usrsctp',
+            '<(DEPTH)/third_party/usrsctp/usrsctplib',
           ],
           'dependencies': [
             '<(DEPTH)/third_party/usrsctp/usrsctp.gyp:usrsctplib',
