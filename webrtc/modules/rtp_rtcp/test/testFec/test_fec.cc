@@ -28,7 +28,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
-//#define VERBOSE_OUTPUT
+// #define VERBOSE_OUTPUT
 
 namespace webrtc {
 namespace fec_private_tables {
@@ -40,7 +40,9 @@ using fec_private_tables::kPacketMaskBurstyTbl;
 void ReceivePackets(
     ForwardErrorCorrection::ReceivedPacketList* toDecodeList,
     ForwardErrorCorrection::ReceivedPacketList* receivedPacketList,
-    uint32_t numPacketsToDecode, float reorderRate, float duplicateRate) {
+    uint32_t numPacketsToDecode,
+    float reorderRate,
+    float duplicateRate) {
   assert(toDecodeList->empty());
   assert(numPacketsToDecode <= receivedPacketList->size());
 
@@ -80,12 +82,8 @@ void ReceivePackets(
 
 TEST(FecTest, FecTest) {
   // TODO(marpan): Split this function into subroutines/helper functions.
-  enum {
-    kMaxNumberMediaPackets = 48
-  };
-  enum {
-    kMaxNumberFecPackets = 48
-  };
+  enum { kMaxNumberMediaPackets = 48 };
+  enum { kMaxNumberFecPackets = 48 };
 
   const uint32_t kNumMaskBytesL0 = 2;
   const uint32_t kNumMaskBytesL1 = 6;
@@ -94,11 +92,12 @@ TEST(FecTest, FecTest) {
   const bool kUseUnequalProtection = true;
 
   // FEC mask types.
-  const FecMaskType kMaskTypes[] = { kFecMaskRandom, kFecMaskBursty };
+  const FecMaskType kMaskTypes[] = {kFecMaskRandom, kFecMaskBursty};
   const int kNumFecMaskTypes = sizeof(kMaskTypes) / sizeof(*kMaskTypes);
 
   // Maximum number of media packets allowed for the mask type.
-  const uint16_t kMaxMediaPackets[] = {kMaxNumberMediaPackets,
+  const uint16_t kMaxMediaPackets[] = {
+      kMaxNumberMediaPackets,
       sizeof(kPacketMaskBurstyTbl) / sizeof(*kPacketMaskBurstyTbl)};
 
   ASSERT_EQ(12, kMaxMediaPackets[1]) << "Max media packets for bursty mode not "
@@ -114,7 +113,7 @@ TEST(FecTest, FecTest) {
 
   ForwardErrorCorrection::Packet* mediaPacket = NULL;
   // Running over only one loss rate to limit execution time.
-  const float lossRate[] = { 0.5f };
+  const float lossRate[] = {0.5f};
   const uint32_t lossRateSize = sizeof(lossRate) / sizeof(*lossRate);
   const float reorderRate = 0.1f;
   const float duplicateRate = 0.1f;
@@ -140,9 +139,7 @@ TEST(FecTest, FecTest) {
   // Loop over the mask types: random and bursty.
   for (int mask_type_idx = 0; mask_type_idx < kNumFecMaskTypes;
        ++mask_type_idx) {
-
     for (uint32_t lossRateIdx = 0; lossRateIdx < lossRateSize; ++lossRateIdx) {
-
       printf("Loss rate: %.2f, Mask type %d \n", lossRate[lossRateIdx],
              mask_type_idx);
 
@@ -158,14 +155,12 @@ TEST(FecTest, FecTest) {
         for (uint32_t numFecPackets = 1;
              numFecPackets <= numMediaPackets && numFecPackets <= packetMaskMax;
              numFecPackets++) {
-
           // Loop over numImpPackets: usually <= (0.3*numMediaPackets).
           // For this test we check up to ~ (numMediaPackets / 4).
           uint32_t maxNumImpPackets = numMediaPackets / 4 + 1;
           for (uint32_t numImpPackets = 0; numImpPackets <= maxNumImpPackets &&
-                                               numImpPackets <= packetMaskMax;
+                                           numImpPackets <= packetMaskMax;
                numImpPackets++) {
-
             uint8_t protectionFactor =
                 static_cast<uint8_t>(numFecPackets * 255 / numMediaPackets);
 
@@ -180,10 +175,11 @@ TEST(FecTest, FecTest) {
                                           mask_table, packetMask);
 
 #ifdef VERBOSE_OUTPUT
-            printf("%u media packets, %u FEC packets, %u numImpPackets, "
-                   "loss rate = %.2f \n",
-                   numMediaPackets, numFecPackets, numImpPackets,
-                   lossRate[lossRateIdx]);
+            printf(
+                "%u media packets, %u FEC packets, %u numImpPackets, "
+                "loss rate = %.2f \n",
+                numMediaPackets, numFecPackets, numImpPackets,
+                lossRate[lossRateIdx]);
             printf("Packet mask matrix \n");
 #endif
 
@@ -388,7 +384,8 @@ TEST(FecTest, FecTest) {
             while (!receivedPacketList.empty()) {
               uint32_t numPacketsToDecode = static_cast<uint32_t>(
                   (static_cast<float>(rand()) / RAND_MAX) *
-                      receivedPacketList.size() + 0.5);
+                      receivedPacketList.size() +
+                  0.5);
               if (numPacketsToDecode < 1) {
                 numPacketsToDecode = 1;
               }
@@ -397,7 +394,7 @@ TEST(FecTest, FecTest) {
 
               if (fecPacketReceived == false) {
                 ForwardErrorCorrection::ReceivedPacketList::iterator
-                toDecodeIt = toDecodeList.begin();
+                    toDecodeIt = toDecodeList.begin();
                 while (toDecodeIt != toDecodeList.end()) {
                   receivedPacket = *toDecodeIt;
                   if (receivedPacket->is_fec) {
@@ -417,11 +414,11 @@ TEST(FecTest, FecTest) {
               if (mediaLossMask[mediaPacketIdx] == 1) {
                 // Should have recovered this packet.
                 ForwardErrorCorrection::RecoveredPacketList::iterator
-                recoveredPacketListItem = recoveredPacketList.begin();
+                    recoveredPacketListItem = recoveredPacketList.begin();
 
-                ASSERT_FALSE(
-                    recoveredPacketListItem == recoveredPacketList.end())
-                  << "Insufficient number of recovered packets.";
+                ASSERT_FALSE(recoveredPacketListItem ==
+                             recoveredPacketList.end())
+                    << "Insufficient number of recovered packets.";
                 mediaPacket = *mediaPacketListItem;
                 ForwardErrorCorrection::RecoveredPacket* recoveredPacket =
                     *recoveredPacketListItem;
@@ -461,7 +458,7 @@ TEST(FecTest, FecTest) {
             // Delete received packets we didn't pass to DecodeFEC(), due to
             // early frame completion.
             ForwardErrorCorrection::ReceivedPacketList::iterator
-            receivedPacketIt = receivedPacketList.begin();
+                receivedPacketIt = receivedPacketList.begin();
             while (receivedPacketIt != receivedPacketList.end()) {
               receivedPacket = *receivedPacketIt;
               delete receivedPacket;
@@ -475,11 +472,11 @@ TEST(FecTest, FecTest) {
             }
             timeStamp += 90000 / 30;
           }  // loop over numImpPackets
-        }  // loop over FecPackets
-      }  // loop over numMediaPackets
+        }    // loop over FecPackets
+      }      // loop over numMediaPackets
       delete[] packetMask;
     }  // loop over loss rates
-  }  // loop over mask types
+  }    // loop over mask types
 
   // Have DecodeFEC free allocated memory.
   fec.ResetState(&recoveredPacketList);

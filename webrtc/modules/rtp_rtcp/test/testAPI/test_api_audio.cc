@@ -165,7 +165,7 @@ TEST_F(RtpRtcpAudioTest, Basic) {
   module1->SetStartTimestamp(test_timestamp);
 
   // Test detection at the end of a DTMF tone.
-  //EXPECT_EQ(0, module2->SetTelephoneEventForwardToDecoder(true));
+  // EXPECT_EQ(0, module2->SetTelephoneEventForwardToDecoder(true));
 
   EXPECT_EQ(0, module1->SetSendingStatus(true));
 
@@ -334,7 +334,7 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
 
   // Send RTP packets for 16 tones a 160 ms  100ms
   // pause between = 2560ms + 1600ms = 4160ms
-  for (;timeStamp <= 250 * 160; timeStamp += 160) {
+  for (; timeStamp <= 250 * 160; timeStamp += 160) {
     EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
                                            timeStamp, -1, test, 4));
     fake_clock.AdvanceTimeMilliseconds(20);
@@ -342,7 +342,7 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
   }
   EXPECT_EQ(0, module1->SendTelephoneEventOutband(32, 9000, 10));
 
-  for (;timeStamp <= 740 * 160; timeStamp += 160) {
+  for (; timeStamp <= 740 * 160; timeStamp += 160) {
     EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
                                            timeStamp, -1, test, 4));
     fake_clock.AdvanceTimeMilliseconds(20);

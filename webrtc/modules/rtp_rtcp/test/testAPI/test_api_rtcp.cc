@@ -30,30 +30,29 @@ class RtcpCallback : public RtcpIntraFrameObserver {
  public:
   void SetModule(RtpRtcp* module) {
     _rtpRtcpModule = module;
-  };
+  }
   virtual void OnRTCPPacketTimeout(const int32_t id) {
   }
   virtual void OnLipSyncUpdate(const int32_t id,
-                               const int32_t audioVideoOffset) {
-  };
-  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) {
-  };
+                               const int32_t audioVideoOffset) {}
+  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) {}
   virtual void OnReceivedSLI(uint32_t ssrc,
                              uint8_t pictureId) {
     EXPECT_EQ(kSliPictureId & 0x3f, pictureId);
-  };
+  }
   virtual void OnReceivedRPSI(uint32_t ssrc,
                               uint64_t pictureId) {
     EXPECT_EQ(kTestPictureId, pictureId);
-  };
-  virtual void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {};
+  }
+  virtual void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {}
+
  private:
   RtpRtcp* _rtpRtcpModule;
 };
 
 class TestRtpFeedback : public NullRtpFeedback {
  public:
-  TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
+  explicit TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
   virtual ~TestRtpFeedback() {}
 
   void OnIncomingSSRCChanged(const uint32_t ssrc) override {
