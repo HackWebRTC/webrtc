@@ -171,11 +171,6 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   }
 
   ~PeerConnectionTestClient() {
-    while (!fake_video_renderers_.empty()) {
-      RenderMap::iterator it = fake_video_renderers_.begin();
-      delete it->second;
-      fake_video_renderers_.erase(it);
-    }
   }
 
   void Negotiate() { Negotiate(true, true); }
@@ -229,8 +224,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const std::string id = media_stream->GetVideoTracks()[i]->id();
       ASSERT_TRUE(fake_video_renderers_.find(id) ==
                   fake_video_renderers_.end());
-      fake_video_renderers_[id] =
-          new webrtc::FakeVideoTrackRenderer(media_stream->GetVideoTracks()[i]);
+      fake_video_renderers_[id].reset(new webrtc::FakeVideoTrackRenderer(
+          media_stream->GetVideoTracks()[i]));
     }
   }
   void OnRemoveStream(MediaStreamInterface* media_stream) override {}
@@ -265,9 +260,9 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     for (auto it = fake_video_renderers_.begin();
          it != fake_video_renderers_.end();) {
       if (remote_streams->FindVideoTrack(it->first) == nullptr) {
-        auto to_delete = it++;
-        delete to_delete->second;
-        fake_video_renderers_.erase(to_delete);
+        auto to_remove = it++;
+        removed_fake_video_renderers_.push_back(std::move(to_remove->second));
+        fake_video_renderers_.erase(to_remove);
       } else {
         ++it;
       }
@@ -284,8 +279,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         if (fake_video_renderers_.find(id) != fake_video_renderers_.end()) {
           continue;
         }
-        fake_video_renderers_[id] = new webrtc::FakeVideoTrackRenderer(
-            remote_stream->GetVideoTracks()[track_index]);
+        fake_video_renderers_[id].reset(new webrtc::FakeVideoTrackRenderer(
+            remote_stream->GetVideoTracks()[track_index]));
       }
     }
   }
@@ -452,6 +447,10 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     return number_of_frames <= fake_audio_capture_module_->frames_received();
   }
 
+  int audio_frames_received() const {
+    return fake_audio_capture_module_->frames_received();
+  }
+
   bool VideoFramesReceivedCheck(int number_of_frames) {
     if (video_decoder_factory_enabled_) {
       const std::vector<FakeWebRtcVideoDecoder*>& decoders
@@ -460,9 +459,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         return number_of_frames <= 0;
       }
 
-      for (std::vector<FakeWebRtcVideoDecoder*>::const_iterator
-           it = decoders.begin(); it != decoders.end(); ++it) {
-        if (number_of_frames > (*it)->GetNumFramesReceived()) {
+      for (FakeWebRtcVideoDecoder* decoder : decoders) {
+        if (number_of_frames > decoder->GetNumFramesReceived()) {
           return false;
         }
       }
@@ -472,14 +470,32 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         return number_of_frames <= 0;
       }
 
-      for (RenderMap::const_iterator it = fake_video_renderers_.begin();
-           it != fake_video_renderers_.end(); ++it) {
-        if (number_of_frames > it->second->num_rendered_frames()) {
+      for (const auto& pair : fake_video_renderers_) {
+        if (number_of_frames > pair.second->num_rendered_frames()) {
           return false;
         }
       }
       return true;
     }
+  }
+
+  int video_frames_received() const {
+    int total = 0;
+    if (video_decoder_factory_enabled_) {
+      const std::vector<FakeWebRtcVideoDecoder*>& decoders =
+          fake_video_decoder_factory_->decoders();
+      for (const FakeWebRtcVideoDecoder* decoder : decoders) {
+        total += decoder->GetNumFramesReceived();
+      }
+    } else {
+      for (const auto& pair : fake_video_renderers_) {
+        total += pair.second->num_rendered_frames();
+      }
+      for (const auto& renderer : removed_fake_video_renderers_) {
+        total += renderer->num_rendered_frames();
+      }
+    }
+    return total;
   }
 
   // Verify the CreateDtmfSender interface
@@ -878,11 +894,14 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   std::map<int, IceUfragPwdPair> ice_ufrag_pwd_;
   bool expect_ice_restart_ = false;
 
-  // Needed to keep track of number of frames send.
+  // Needed to keep track of number of frames sent.
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
   // Needed to keep track of number of frames received.
-  typedef std::map<std::string, webrtc::FakeVideoTrackRenderer*> RenderMap;
-  RenderMap fake_video_renderers_;
+  std::map<std::string, rtc::scoped_ptr<webrtc::FakeVideoTrackRenderer>>
+      fake_video_renderers_;
+  // Needed to ensure frames aren't received for removed tracks.
+  std::vector<rtc::scoped_ptr<webrtc::FakeVideoTrackRenderer>>
+      removed_fake_video_renderers_;
   // Needed to keep track of number of frames received when external decoder
   // used.
   FakeWebRtcVideoDecoderFactory* fake_video_decoder_factory_ = nullptr;
@@ -942,13 +961,26 @@ class P2PTestConductor : public testing::Test {
   }
 
   void TestUpdateOfferWithRejectedContent() {
+    // Renegotiate, rejecting the video m-line.
     initiating_client_->Negotiate(true, false);
-    EXPECT_TRUE_WAIT(
-        FramesNotPending(kEndAudioFrameCount * 2, kEndVideoFrameCount),
-        kMaxWaitForFramesMs);
-    // There shouldn't be any more video frame after the new offer is
-    // negotiated.
-    EXPECT_FALSE(VideoFramesReceivedCheck(kEndVideoFrameCount + 1));
+    ASSERT_TRUE_WAIT(SessionActive(), kMaxWaitForActivationMs);
+
+    int pc1_audio_received = initiating_client_->audio_frames_received();
+    int pc1_video_received = initiating_client_->video_frames_received();
+    int pc2_audio_received = receiving_client_->audio_frames_received();
+    int pc2_video_received = receiving_client_->video_frames_received();
+
+    // Wait for some additional audio frames to be received.
+    EXPECT_TRUE_WAIT(initiating_client_->AudioFramesReceivedCheck(
+                         pc1_audio_received + kEndAudioFrameCount) &&
+                         receiving_client_->AudioFramesReceivedCheck(
+                             pc2_audio_received + kEndAudioFrameCount),
+                     kMaxWaitForFramesMs);
+
+    // During this time, we shouldn't have received any additional video frames
+    // for the rejected video tracks.
+    EXPECT_EQ(pc1_video_received, initiating_client_->video_frames_received());
+    EXPECT_EQ(pc2_video_received, receiving_client_->video_frames_received());
   }
 
   void VerifyRenderedSize(int width, int height) {
@@ -1292,8 +1324,7 @@ TEST_F(P2PTestConductor, LocalP2PTestAnswerNone) {
 // runs for a while (10 frames), the caller sends an update offer with video
 // being rejected. Once the re-negotiation is done, the video flow should stop
 // and the audio flow should continue.
-// Disabled due to b/14955157.
-TEST_F(P2PTestConductor, DISABLED_UpdateOfferWithRejectedContent) {
+TEST_F(P2PTestConductor, UpdateOfferWithRejectedContent) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
   TestUpdateOfferWithRejectedContent();
@@ -1301,8 +1332,7 @@ TEST_F(P2PTestConductor, DISABLED_UpdateOfferWithRejectedContent) {
 
 // This test sets up a Jsep call between two parties. The MSID is removed from
 // the SDP strings from the caller.
-// Disabled due to b/14955157.
-TEST_F(P2PTestConductor, DISABLED_LocalP2PTestWithoutMsid) {
+TEST_F(P2PTestConductor, LocalP2PTestWithoutMsid) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->RemoveMsidFromReceivedSdp(true);
   // TODO(perkj): Currently there is a bug that cause audio to stop playing if

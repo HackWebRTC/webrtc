@@ -230,8 +230,7 @@ TEST_F(PeerConnectionEndToEndTest, Call) {
 }
 #endif // if !defined(THREAD_SANITIZER) && !defined(WEBRTC_MAC)
 
-// Disabled per b/14899892
-TEST_F(PeerConnectionEndToEndTest, DISABLED_CallWithLegacySdp) {
+TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
   FakeConstraints pc_constraints;
   pc_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                               false);
