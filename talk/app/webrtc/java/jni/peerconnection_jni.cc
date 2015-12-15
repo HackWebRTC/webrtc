@@ -1365,40 +1365,12 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
   OwnedFactoryAndThreads* owned_factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
 
-  // TODO(perkj): In order to not break existing applications we need to
-  // check if |local_egl_context| or |remote_egl_context| is an
-  // EGL10 context. If so, create an EGLBase10.EGL10Context instead.
-  // Remove this once existing applications has been updated.
-  jobject local_eglbase_context = local_egl_context;
-  jobject remote_eglbase_context = remote_egl_context;
-
-  jclass j_egl10_context_class =
-      FindClass(jni, "javax/microedition/khronos/egl/EGLContext");
-  jclass j_eglbase_context_class =
-      FindClass(jni, "org/webrtc/EglBase$Context");
-
-  jmethodID j_eglbase_context_ctor = GetMethodID(
-      jni, j_eglbase_context_class,
-      "<init>", "(Ljavax/microedition/khronos/egl/EGLContext;)V");
-  if (local_egl_context != nullptr &&
-      jni->IsInstanceOf(local_egl_context, j_egl10_context_class)) {
-    local_eglbase_context = jni->NewObject(
-        j_eglbase_context_class, j_eglbase_context_ctor,
-        local_egl_context);
-  }
-  if (remote_egl_context != nullptr &&
-      jni->IsInstanceOf(remote_egl_context, j_egl10_context_class)) {
-    remote_eglbase_context = jni->NewObject(
-        j_eglbase_context_class, j_eglbase_context_ctor,
-        remote_egl_context);
-  }
-
   MediaCodecVideoEncoderFactory* encoder_factory =
       static_cast<MediaCodecVideoEncoderFactory*>
           (owned_factory->encoder_factory());
   if (encoder_factory) {
     LOG(LS_INFO) << "Set EGL context for HW encoding.";
-    encoder_factory->SetEGLContext(jni, local_eglbase_context);
+    encoder_factory->SetEGLContext(jni, local_egl_context);
   }
 
   MediaCodecVideoDecoderFactory* decoder_factory =
@@ -1406,7 +1378,7 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
           (owned_factory->decoder_factory());
   if (decoder_factory) {
     LOG(LS_INFO) << "Set EGL context for HW decoding.";
-    decoder_factory->SetEGLContext(jni, remote_eglbase_context);
+    decoder_factory->SetEGLContext(jni, remote_egl_context);
   }
 #endif
 }

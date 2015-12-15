@@ -47,9 +47,6 @@ final class EglBase14 extends EglBase {
   private static final String TAG = "EglBase14";
   private static final int EGL14_SDK_VERSION = android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
   private static final int CURRENT_SDK_VERSION = android.os.Build.VERSION.SDK_INT;
-  // Android-specific extension.
-  private static final int EGL_RECORDABLE_ANDROID = 0x3142;
-
   private EGLContext eglContext;
   private EGLConfig eglConfig;
   private EGLDisplay eglDisplay;
@@ -65,7 +62,6 @@ final class EglBase14 extends EglBase {
     private final android.opengl.EGLContext egl14Context;
 
     Context(android.opengl.EGLContext eglContext) {
-      super(null);
       this.egl14Context = eglContext;
     }
   }
@@ -73,7 +69,6 @@ final class EglBase14 extends EglBase {
   // Create a new context with the specified config type, sharing data with sharedContext.
   // |sharedContext| may be null.
   EglBase14(EglBase14.Context sharedContext, int[] configAttributes) {
-    super(true /* dummy */);
     eglDisplay = getEglDisplay();
     eglConfig = getEglConfig(eglDisplay, configAttributes);
     eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
