@@ -95,6 +95,9 @@ class UDPPort : public Port {
     OnReadPacket(socket, data, size, remote_addr, packet_time);
     return true;
   }
+  virtual bool SupportsProtocol(const std::string& protocol) const {
+    return protocol == UDP_PROTOCOL_NAME;
+  }
 
   void set_stun_keepalive_delay(int delay) {
     stun_keepalive_delay_ = delay;

@@ -55,6 +55,9 @@ class TCPPort : public Port {
   virtual int GetOption(rtc::Socket::Option opt, int* value);
   virtual int SetOption(rtc::Socket::Option opt, int value);
   virtual int GetError();
+  virtual bool SupportsProtocol(const std::string& protocol) const {
+    return protocol == TCP_PROTOCOL_NAME || protocol == SSLTCP_PROTOCOL_NAME;
+  }
 
  protected:
   TCPPort(rtc::Thread* thread,

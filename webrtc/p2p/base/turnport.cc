@@ -442,7 +442,7 @@ void TurnPort::OnAllocateMismatch() {
 Connection* TurnPort::CreateConnection(const Candidate& address,
                                        CandidateOrigin origin) {
   // TURN-UDP can only connect to UDP candidates.
-  if (address.protocol() != UDP_PROTOCOL_NAME) {
+  if (!SupportsProtocol(address.protocol())) {
     return NULL;
   }
 

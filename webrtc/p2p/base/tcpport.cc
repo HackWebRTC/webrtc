@@ -125,9 +125,7 @@ TCPPort::~TCPPort() {
 
 Connection* TCPPort::CreateConnection(const Candidate& address,
                                       CandidateOrigin origin) {
-  // We only support TCP protocols
-  if ((address.protocol() != TCP_PROTOCOL_NAME) &&
-      (address.protocol() != SSLTCP_PROTOCOL_NAME)) {
+  if (!SupportsProtocol(address.protocol())) {
     return NULL;
   }
 

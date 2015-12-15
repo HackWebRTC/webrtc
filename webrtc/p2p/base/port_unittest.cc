@@ -141,6 +141,10 @@ class TestPort : public Port {
                ICE_TYPE_PREFERENCE_HOST, 0, true);
   }
 
+  virtual bool SupportsProtocol(const std::string& protocol) const {
+    return true;
+  }
+
   // Exposed for testing candidate building.
   void AddCandidateAddress(const rtc::SocketAddress& addr) {
     AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", "", Type(),
@@ -2494,4 +2498,25 @@ TEST_F(PortTest, TestControlledToControllingNotDestroyed) {
   // After the connection is destroyed, the port should not be destroyed.
   rtc::Thread::Current()->ProcessMessages(kTimeout);
   EXPECT_FALSE(destroyed());
+}
+
+TEST_F(PortTest, TestSupportsProtocol) {
+  rtc::scoped_ptr<Port> udp_port(CreateUdpPort(kLocalAddr1));
+  EXPECT_TRUE(udp_port->SupportsProtocol(UDP_PROTOCOL_NAME));
+  EXPECT_FALSE(udp_port->SupportsProtocol(TCP_PROTOCOL_NAME));
+
+  rtc::scoped_ptr<Port> stun_port(
+      CreateStunPort(kLocalAddr1, nat_socket_factory1()));
+  EXPECT_TRUE(stun_port->SupportsProtocol(UDP_PROTOCOL_NAME));
+  EXPECT_FALSE(stun_port->SupportsProtocol(TCP_PROTOCOL_NAME));
+
+  rtc::scoped_ptr<Port> tcp_port(CreateTcpPort(kLocalAddr1));
+  EXPECT_TRUE(tcp_port->SupportsProtocol(TCP_PROTOCOL_NAME));
+  EXPECT_TRUE(tcp_port->SupportsProtocol(SSLTCP_PROTOCOL_NAME));
+  EXPECT_FALSE(tcp_port->SupportsProtocol(UDP_PROTOCOL_NAME));
+
+  rtc::scoped_ptr<Port> turn_port(
+      CreateTurnPort(kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP));
+  EXPECT_TRUE(turn_port->SupportsProtocol(UDP_PROTOCOL_NAME));
+  EXPECT_FALSE(turn_port->SupportsProtocol(TCP_PROTOCOL_NAME));
 }

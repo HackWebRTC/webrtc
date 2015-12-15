@@ -60,6 +60,10 @@ class RelayPort : public Port {
   virtual int SetOption(rtc::Socket::Option opt, int value);
   virtual int GetOption(rtc::Socket::Option opt, int* value);
   virtual int GetError();
+  virtual bool SupportsProtocol(const std::string& protocol) const {
+    // Relay port may create both TCP and UDP connections.
+    return true;
+  }
 
   const ProtocolAddress * ServerAddress(size_t index) const;
   bool IsReady() { return ready_; }

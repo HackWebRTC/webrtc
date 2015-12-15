@@ -738,6 +738,9 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
 bool P2PTransportChannel::CreateConnection(PortInterface* port,
                                            const Candidate& remote_candidate,
                                            PortInterface* origin_port) {
+  if (!port->SupportsProtocol(remote_candidate.protocol())) {
+    return false;
+  }
   // Look for an existing connection with this remote address.  If one is not
   // found, then we can create a new connection for this address.
   Connection* connection = port->GetConnection(remote_candidate.address());

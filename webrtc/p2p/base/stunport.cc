@@ -253,9 +253,10 @@ void UDPPort::MaybePrepareStunCandidate() {
 }
 
 Connection* UDPPort::CreateConnection(const Candidate& address,
-                                       CandidateOrigin origin) {
-  if (address.protocol() != "udp")
+                                      CandidateOrigin origin) {
+  if (!SupportsProtocol(address.protocol())) {
     return NULL;
+  }
 
   if (!IsCompatibleAddress(address.address())) {
     return NULL;
