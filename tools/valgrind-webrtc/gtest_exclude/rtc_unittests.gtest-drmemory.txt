@@ -5,3 +5,6 @@ PortAllocatorTest.*
 PortTest.*
 PseudoTcpTest.TestSendBothUseLargeWindowScale
 SharedExclusiveLockTest.TestSharedShared
+# Fails on Dr Memory Light.
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=5199
+ThreadTest.ThreeThreadsInvoke
