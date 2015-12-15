@@ -7,7 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("//build/config/features.gni")
-import("webrtc_fuzzer.gni")
+import("//testing/test.gni")
 
 static_library("webrtc_fuzzer_main") {
   public_configs = [ "../..:common_inherited_config" ]
@@ -21,31 +21,51 @@ static_library("webrtc_fuzzer_main") {
   ]
 }
 
-webrtc_fuzzer_test("vp9_depacketizer_fuzzer") {
+test("vp9_depacketizer_fuzzer") {
   sources = [
     "vp9_depacketizer_fuzzer.cc",
   ]
   deps = [
+    ":webrtc_fuzzer_main",
     "../../modules/rtp_rtcp",
   ]
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
 
-webrtc_fuzzer_test("vp8_qp_parser_fuzzer") {
+test("vp8_qp_parser_fuzzer") {
   sources = [
     "vp8_qp_parser_fuzzer.cc",
   ]
   deps = [
+    ":webrtc_fuzzer_main",
     "../../modules/video_coding/",
   ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
 
-webrtc_fuzzer_test("producer_fec_fuzzer") {
+test("producer_fec_fuzzer") {
   sources = [
     "producer_fec_fuzzer.cc",
   ]
   deps = [
+    ":webrtc_fuzzer_main",
     "../../modules/rtp_rtcp/",
   ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
 
 source_set("audio_decoder_fuzzer") {
@@ -53,9 +73,12 @@ source_set("audio_decoder_fuzzer") {
     "audio_decoder_fuzzer.cc",
     "audio_decoder_fuzzer.h",
   ]
+  deps = [
+    ":webrtc_fuzzer_main",
+  ]
 }
 
-webrtc_fuzzer_test("audio_decoder_ilbc_fuzzer") {
+test("audio_decoder_ilbc_fuzzer") {
   sources = [
     "audio_decoder_ilbc_fuzzer.cc",
   ]
@@ -65,7 +88,7 @@ webrtc_fuzzer_test("audio_decoder_ilbc_fuzzer") {
   ]
 }
 
-webrtc_fuzzer_test("audio_decoder_isac_fuzzer") {
+test("audio_decoder_isac_fuzzer") {
   sources = [
     "audio_decoder_isac_fuzzer.cc",
   ]
@@ -75,7 +98,7 @@ webrtc_fuzzer_test("audio_decoder_isac_fuzzer") {
   ]
 }
 
-webrtc_fuzzer_test("audio_decoder_isacfix_fuzzer") {
+test("audio_decoder_isacfix_fuzzer") {
   sources = [
     "audio_decoder_isacfix_fuzzer.cc",
   ]
@@ -85,7 +108,7 @@ webrtc_fuzzer_test("audio_decoder_isacfix_fuzzer") {
   ]
 }
 
-webrtc_fuzzer_test("audio_decoder_opus_fuzzer") {
+test("audio_decoder_opus_fuzzer") {
   sources = [
     "audio_decoder_opus_fuzzer.cc",
   ]
