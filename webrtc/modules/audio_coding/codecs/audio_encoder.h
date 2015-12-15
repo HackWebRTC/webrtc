@@ -125,7 +125,7 @@ class AudioEncoder {
   // Tells the encoder about the highest sample rate the decoder is expected to
   // use when decoding the bitstream. The encoder would typically use this
   // information to adjust the quality of the encoding. The default
-  // implementation just returns true.
+  // implementation does nothing.
   virtual void SetMaxPlaybackRate(int frequency_hz);
 
   // Tells the encoder what the projected packet loss rate is. The rate is in
