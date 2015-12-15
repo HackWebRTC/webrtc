@@ -149,7 +149,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
       // Wait for an OES texture to arrive and draw it onto the pixel buffer.
       listener.waitForNewFrame();
       eglBase.makeCurrent();
-      drawer.drawOes(listener.oesTextureId, listener.transformMatrix);
+      drawer.drawOes(listener.oesTextureId, listener.transformMatrix, 0, 0, width, height);
 
       surfaceTextureHelper.returnTextureFrame();
 
@@ -220,7 +220,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     // Draw the pending texture frame onto the pixel buffer.
     eglBase.makeCurrent();
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawOes(listener.oesTextureId, listener.transformMatrix);
+    drawer.drawOes(listener.oesTextureId, listener.transformMatrix, 0, 0, width, height);
     drawer.release();
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.

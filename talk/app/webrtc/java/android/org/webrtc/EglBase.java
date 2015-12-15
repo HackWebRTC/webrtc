@@ -57,6 +57,14 @@ public abstract class EglBase {
     EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
     EGL10.EGL_NONE
   };
+  public static final int[] CONFIG_RGBA = {
+    EGL10.EGL_RED_SIZE, 8,
+    EGL10.EGL_GREEN_SIZE, 8,
+    EGL10.EGL_BLUE_SIZE, 8,
+    EGL10.EGL_ALPHA_SIZE, 8,
+    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+    EGL10.EGL_NONE
+  };
   public static final int[] CONFIG_PIXEL_BUFFER = {
     EGL10.EGL_RED_SIZE, 8,
     EGL10.EGL_GREEN_SIZE, 8,

@@ -66,7 +66,8 @@ public class SurfaceViewRenderer extends SurfaceView
   // EGL and GL resources for drawing YUV/OES textures. After initilization, these are only accessed
   // from the render thread.
   private EglBase eglBase;
-  private GlRectDrawer drawer;
+  private final RendererCommon.YuvUploader yuvUploader = new RendererCommon.YuvUploader();
+  private RendererCommon.GlDrawer drawer;
   // Texture ids for YUV frames. Allocated on first arrival of a YUV frame.
   private int[] yuvTextures = null;
 
@@ -154,16 +155,27 @@ public class SurfaceViewRenderer extends SurfaceView
    */
   public void init(
       EglBase.Context sharedContext, RendererCommon.RendererEvents rendererEvents) {
+    init(sharedContext, rendererEvents, EglBase.CONFIG_PLAIN, new GlRectDrawer());
+  }
+
+  /**
+   * Initialize this class, sharing resources with |sharedContext|. The custom |drawer| will be used
+   * for drawing frames on the EGLSurface. This class is responsible for calling release() on
+   * |drawer|. It is allowed to call init() to reinitialize the renderer after a previous
+   * init()/release() cycle.
+   */
+  public void init(EglBase.Context sharedContext, RendererCommon.RendererEvents rendererEvents,
+      int[] configAttributes, RendererCommon.GlDrawer drawer) {
     synchronized (handlerLock) {
       if (renderThreadHandler != null) {
         throw new IllegalStateException(getResourceName() + "Already initialized");
       }
       Logging.d(TAG, getResourceName() + "Initializing.");
       this.rendererEvents = rendererEvents;
+      this.drawer = drawer;
       renderThread = new HandlerThread(TAG);
       renderThread.start();
-      drawer = new GlRectDrawer();
-      eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PLAIN);
+      eglBase = EglBase.create(sharedContext, configAttributes);
       renderThreadHandler = new Handler(renderThread.getLooper());
     }
     tryCreateEglSurface();
@@ -481,7 +493,6 @@ public class SurfaceViewRenderer extends SurfaceView
       texMatrix = RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);
     }
 
-    GLES20.glViewport(0, 0, surfaceSize.x, surfaceSize.y);
     // TODO(magjed): glClear() shouldn't be necessary since every pixel is covered anyway, but it's
     // a workaround for bug 5147. Performance will be slightly worse.
     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -493,11 +504,11 @@ public class SurfaceViewRenderer extends SurfaceView
           yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
         }
       }
-      drawer.uploadYuvData(
+      yuvUploader.uploadYuvData(
           yuvTextures, frame.width, frame.height, frame.yuvStrides, frame.yuvPlanes);
-      drawer.drawYuv(yuvTextures, texMatrix);
+      drawer.drawYuv(yuvTextures, texMatrix, 0, 0, surfaceSize.x, surfaceSize.y);
     } else {
-      drawer.drawOes(frame.textureId, texMatrix);
+      drawer.drawOes(frame.textureId, texMatrix, 0, 0, surfaceSize.x, surfaceSize.y);
     }
 
     eglBase.swapBuffers();

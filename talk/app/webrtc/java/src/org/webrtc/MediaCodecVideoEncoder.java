@@ -76,6 +76,8 @@ public class MediaCodecVideoEncoder {
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
   private EglBase eglBase;
+  private int width;
+  private int height;
   private Surface inputSurface;
   private GlRectDrawer drawer;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
@@ -273,6 +275,8 @@ public class MediaCodecVideoEncoder {
     Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
         ". @ " + kbps + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
 
+    this.width = width;
+    this.height = height;
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
     }
@@ -383,7 +387,7 @@ public class MediaCodecVideoEncoder {
       // TODO(perkj): glClear() shouldn't be necessary since every pixel is covered anyway,
       // but it's a workaround for bug webrtc:5147.
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-      drawer.drawOes(oesTextureId, transformationMatrix);
+      drawer.drawOes(oesTextureId, transformationMatrix, 0, 0, width, height);
       // TODO(perkj): Do we have to call EGLExt.eglPresentationTimeANDROID ?
       // If not, remove |presentationTimestampUs|.
       eglBase.swapBuffers();

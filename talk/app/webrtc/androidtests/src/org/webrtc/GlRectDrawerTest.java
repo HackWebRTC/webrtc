@@ -115,7 +115,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
 
     // Draw the RGB frame onto the pixel buffer.
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix());
+    drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix(), 0, 0, WIDTH, HEIGHT);
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer rgbaData = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
@@ -162,7 +162,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
 
     // Draw the YUV frame onto the pixel buffer.
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawYuv(yuvTextures, RendererCommon.identityMatrix());
+    drawer.drawYuv(yuvTextures, RendererCommon.identityMatrix(), 0, 0, WIDTH, HEIGHT);
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer data = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
@@ -250,7 +250,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH,
             HEIGHT, 0, GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, rgbPlane);
         // Draw the RGB data onto the SurfaceTexture.
-        drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix());
+        drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix(), 0, 0, WIDTH, HEIGHT);
         eglBase.swapBuffers();
       }
 
@@ -288,7 +288,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     // Draw the OES texture on the pixel buffer.
     eglBase.makeCurrent();
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawOes(listener.oesTextureId, listener.transformMatrix);
+    drawer.drawOes(listener.oesTextureId, listener.transformMatrix, 0, 0, WIDTH, HEIGHT);
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer rgbaData = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
