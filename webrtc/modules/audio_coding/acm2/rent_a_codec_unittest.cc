@@ -34,7 +34,8 @@ class RentACodecTestF : public ::testing::Test {
     ASSERT_TRUE(speech_encoder_);
     RentACodec::StackParameters param;
     param.use_cng = true;
-    encoder_ = rent_a_codec_.RentEncoderStack(speech_encoder_, &param);
+    param.speech_encoder = speech_encoder_;
+    encoder_ = rent_a_codec_.RentEncoderStack(&param);
   }
 
   void EncodeAndVerify(size_t expected_out_length,
@@ -110,7 +111,8 @@ TEST(RentACodecTest, ExternalEncoder) {
 
   RentACodec rac;
   RentACodec::StackParameters param;
-  EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&external_encoder, &param));
+  param.speech_encoder = &external_encoder;
+  EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&param));
   const int kPacketSizeSamples = kSampleRateHz / 100;
   int16_t audio[kPacketSizeSamples] = {0};
   uint8_t encoded[kPacketSizeSamples];
@@ -140,16 +142,17 @@ TEST(RentACodecTest, ExternalEncoder) {
   // Change to internal encoder.
   CodecInst codec_inst = kDefaultCodecInst;
   codec_inst.pacsize = kPacketSizeSamples;
-  AudioEncoder* enc = rac.RentEncoder(codec_inst);
-  ASSERT_TRUE(enc);
-  EXPECT_EQ(enc, rac.RentEncoderStack(enc, &param));
+  param.speech_encoder = rac.RentEncoder(codec_inst);
+  ASSERT_TRUE(param.speech_encoder);
+  EXPECT_EQ(param.speech_encoder, rac.RentEncoderStack(&param));
 
   // Don't expect any more calls to the external encoder.
   info = rac.GetEncoderStack()->Encode(1, audio, arraysize(encoded), encoded);
   external_encoder.Mark("B");
 
   // Change back to external encoder again.
-  EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&external_encoder, &param));
+  param.speech_encoder = &external_encoder;
+  EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&param));
   info = rac.GetEncoderStack()->Encode(2, audio, arraysize(encoded), encoded);
   EXPECT_EQ(2u, info.encoded_timestamp);
 }
@@ -173,13 +176,15 @@ void TestCngAndRedResetSpeechEncoder(bool use_cng, bool use_red) {
   }
 
   RentACodec::StackParameters param1, param2;
+  param1.speech_encoder = &speech_encoder;
+  param2.speech_encoder = &speech_encoder;
   param2.use_cng = use_cng;
   param2.use_red = use_red;
   speech_encoder.Mark("disabled");
   RentACodec rac;
-  rac.RentEncoderStack(&speech_encoder, &param1);
+  rac.RentEncoderStack(&param1);
   speech_encoder.Mark("enabled");
-  rac.RentEncoderStack(&speech_encoder, &param2);
+  rac.RentEncoderStack(&param2);
 }
 
 TEST(RentACodecTest, CngResetsSpeechEncoder) {
@@ -204,6 +209,14 @@ TEST(RentACodecTest, RentEncoderError) {
   RentACodec rent_a_codec;
   EXPECT_FALSE(rent_a_codec.RentEncoder(codec_inst));
 }
+
+#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST(RentACodecTest, RentEncoderStackWithoutSpeechEncoder) {
+  RentACodec::StackParameters sp;
+  EXPECT_EQ(nullptr, sp.speech_encoder);
+  EXPECT_DEATH(RentACodec().RentEncoderStack(&sp), "");
+}
+#endif
 
 }  // namespace acm2
 }  // namespace webrtc

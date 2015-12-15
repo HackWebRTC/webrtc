@@ -249,37 +249,36 @@ RentACodec::StackParameters::StackParameters() {
 
 RentACodec::StackParameters::~StackParameters() = default;
 
-AudioEncoder* RentACodec::RentEncoderStack(AudioEncoder* speech_encoder,
-                                           StackParameters* param) {
-  RTC_DCHECK(speech_encoder);
+AudioEncoder* RentACodec::RentEncoderStack(StackParameters* param) {
+  RTC_DCHECK(param->speech_encoder);
 
   if (param->use_codec_fec) {
     // Switch FEC on. On failure, remember that FEC is off.
-    if (!speech_encoder->SetFec(true))
+    if (!param->speech_encoder->SetFec(true))
       param->use_codec_fec = false;
   } else {
     // Switch FEC off. This shouldn't fail.
-    const bool success = speech_encoder->SetFec(false);
+    const bool success = param->speech_encoder->SetFec(false);
     RTC_DCHECK(success);
   }
 
-  auto pt = [&speech_encoder](const std::map<int, int>& m) {
-    auto it = m.find(speech_encoder->SampleRateHz());
+  auto pt = [&param](const std::map<int, int>& m) {
+    auto it = m.find(param->speech_encoder->SampleRateHz());
     return it == m.end() ? rtc::Optional<int>()
                          : rtc::Optional<int>(it->second);
   };
   auto cng_pt = pt(param->cng_payload_types);
   param->use_cng =
-      param->use_cng && cng_pt && speech_encoder->NumChannels() == 1;
+      param->use_cng && cng_pt && param->speech_encoder->NumChannels() == 1;
   auto red_pt = pt(param->red_payload_types);
   param->use_red = param->use_red && red_pt;
 
   if (param->use_cng || param->use_red) {
     // The RED and CNG encoders need to be in sync with the speech encoder, so
     // reset the latter to ensure its buffer is empty.
-    speech_encoder->Reset();
+    param->speech_encoder->Reset();
   }
-  encoder_stack_ = speech_encoder;
+  encoder_stack_ = param->speech_encoder;
   if (param->use_red) {
     red_encoder_ = CreateRedEncoder(encoder_stack_, *red_pt);
     if (red_encoder_)

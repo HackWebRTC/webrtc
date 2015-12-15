@@ -204,6 +204,7 @@ class RentACodec {
     StackParameters();
     ~StackParameters();
 
+    AudioEncoder* speech_encoder = nullptr;
     bool use_codec_fec = false;
     bool use_red = false;
     bool use_cng = false;
@@ -219,12 +220,10 @@ class RentACodec {
   // will be changed to match (things will be switched off). The returned
   // encoder is live until the next successful call to this function, or until
   // the Rent-A-Codec is destroyed.
-  AudioEncoder* RentEncoderStack(AudioEncoder* speech_encoder,
-                                 StackParameters* param);
+  AudioEncoder* RentEncoderStack(StackParameters* param);
 
-  // Get the last return values of RentEncoder and RentEncoderStack, or null if
-  // they haven't been called.
-  AudioEncoder* GetEncoder() const { return speech_encoder_.get(); }
+  // The last return value of RentEncoderStack, or null if it hasn't been
+  // called.
   AudioEncoder* GetEncoderStack() const { return encoder_stack_; }
 
   // Creates and returns an iSAC decoder, which will remain live until the

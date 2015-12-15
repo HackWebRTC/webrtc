@@ -165,7 +165,8 @@ int CodecManager::RegisterEncoder(const CodecInst& send_codec) {
     AudioEncoder* enc = rent_a_codec_.RentEncoder(send_codec);
     if (!enc)
       return -1;
-    rent_a_codec_.RentEncoderStack(enc, &codec_stack_params_);
+    codec_stack_params_.speech_encoder = enc;
+    rent_a_codec_.RentEncoderStack(&codec_stack_params_);
     RTC_DCHECK(CurrentEncoder());
   }
 
@@ -187,7 +188,8 @@ void CodecManager::RegisterEncoder(AudioEncoder* external_speech_encoder) {
   static const char kName[] = "external";
   memcpy(send_codec_inst_.plname, kName, sizeof(kName));
 
-  rent_a_codec_.RentEncoderStack(external_speech_encoder, &codec_stack_params_);
+  codec_stack_params_.speech_encoder = external_speech_encoder;
+  rent_a_codec_.RentEncoderStack(&codec_stack_params_);
 }
 
 rtc::Optional<CodecInst> CodecManager::GetCodecInst() const {
@@ -219,8 +221,7 @@ bool CodecManager::SetCopyRed(bool enable) {
   if (codec_stack_params_.use_red != enable) {
     codec_stack_params_.use_red = enable;
     if (CurrentEncoder())
-      rent_a_codec_.RentEncoderStack(rent_a_codec_.GetEncoder(),
-                                     &codec_stack_params_);
+      rent_a_codec_.RentEncoderStack(&codec_stack_params_);
   }
   return true;
 }
@@ -232,8 +233,10 @@ int CodecManager::SetVAD(bool enable, ACMVADMode mode) {
 
   // Check that the send codec is mono. We don't support VAD/DTX for stereo
   // sending.
-  auto* enc = rent_a_codec_.GetEncoder();
-  const bool stereo_send = enc ? (enc->NumChannels() != 1) : false;
+  const bool stereo_send =
+      codec_stack_params_.speech_encoder
+          ? (codec_stack_params_.speech_encoder->NumChannels() != 1)
+          : false;
   if (enable && stereo_send) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
                  "VAD/DTX not supported for stereo sending");
@@ -252,8 +255,8 @@ int CodecManager::SetVAD(bool enable, ACMVADMode mode) {
       codec_stack_params_.vad_mode != mode) {
     codec_stack_params_.use_cng = enable;
     codec_stack_params_.vad_mode = mode;
-    if (enc)
-      rent_a_codec_.RentEncoderStack(enc, &codec_stack_params_);
+    if (codec_stack_params_.speech_encoder)
+      rent_a_codec_.RentEncoderStack(&codec_stack_params_);
   }
   return 0;
 }
