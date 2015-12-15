@@ -53,7 +53,7 @@ class VerifyingRtxReceiver : public NullRtpData {
 
 class TestRtpFeedback : public NullRtpFeedback {
  public:
-  TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
+  explicit TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
   virtual ~TestRtpFeedback() {}
 
   void OnIncomingSSRCChanged(const uint32_t ssrc) override {

@@ -68,7 +68,7 @@ int32_t RTPSenderAudio::RegisterAudioPayload(
     const uint32_t frequency,
     const uint8_t channels,
     const uint32_t rate,
-    RtpUtility::Payload*& payload) {
+    RtpUtility::Payload** payload) {
   if (RtpUtility::StringCompare(payloadName, "cn", 2)) {
     CriticalSectionScoped cs(_sendAudioCritsect.get());
     //  we can have multiple CNG payload types
@@ -96,13 +96,13 @@ int32_t RTPSenderAudio::RegisterAudioPayload(
     return 0;
     // The default timestamp rate is 8000 Hz, but other rates may be defined.
   }
-  payload = new RtpUtility::Payload;
-  payload->typeSpecific.Audio.frequency = frequency;
-  payload->typeSpecific.Audio.channels = channels;
-  payload->typeSpecific.Audio.rate = rate;
-  payload->audio = true;
-  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = '\0';
-  strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+  *payload = new RtpUtility::Payload;
+  (*payload)->typeSpecific.Audio.frequency = frequency;
+  (*payload)->typeSpecific.Audio.channels = channels;
+  (*payload)->typeSpecific.Audio.rate = rate;
+  (*payload)->audio = true;
+  (*payload)->name[RTP_PAYLOAD_NAME_SIZE - 1] = '\0';
+  strncpy((*payload)->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
   return 0;
 }
 
@@ -384,13 +384,13 @@ int32_t RTPSenderAudio::SetRED(int8_t payloadType) {
 }
 
 // Get payload type for Redundant Audio Data RFC 2198
-int32_t RTPSenderAudio::RED(int8_t& payloadType) const {
+int32_t RTPSenderAudio::RED(int8_t* payloadType) const {
   CriticalSectionScoped cs(_sendAudioCritsect.get());
   if (_REDPayloadType == -1) {
     // not configured
     return -1;
   }
-  payloadType = _REDPayloadType;
+  *payloadType = _REDPayloadType;
   return 0;
 }
 

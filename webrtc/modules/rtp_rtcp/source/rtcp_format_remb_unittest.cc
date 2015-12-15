@@ -26,7 +26,8 @@ namespace {
 
 class TestTransport : public Transport {
  public:
-  TestTransport(RTCPReceiver* rtcp_receiver) : rtcp_receiver_(rtcp_receiver) {}
+  explicit TestTransport(RTCPReceiver* rtcp_receiver)
+      : rtcp_receiver_(rtcp_receiver) {}
 
   bool SendRtp(const uint8_t* /*data*/,
                size_t /*len*/,

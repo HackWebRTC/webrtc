@@ -25,7 +25,7 @@ class CriticalSectionWrapper;
 
 class FecReceiverImpl : public FecReceiver {
  public:
-  FecReceiverImpl(RtpData* callback);
+  explicit FecReceiverImpl(RtpData* callback);
   virtual ~FecReceiverImpl();
 
   int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,

@@ -746,7 +746,7 @@ bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
   return updateBoundingSet;
 }
 
-int32_t RTCPReceiver::BoundingSet(bool &tmmbrOwner, TMMBRSet* boundingSetRec) {
+int32_t RTCPReceiver::BoundingSet(bool* tmmbrOwner, TMMBRSet* boundingSetRec) {
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
   std::map<uint32_t, RTCPReceiveInformation*>::iterator receiveInfoIt =
@@ -766,7 +766,7 @@ int32_t RTCPReceiver::BoundingSet(bool &tmmbrOwner, TMMBRSet* boundingSetRec) {
         i++) {
       if(receiveInfo->TmmbnBoundingSet.Ssrc(i) == main_ssrc_) {
         // owner of bounding set
-        tmmbrOwner = true;
+        *tmmbrOwner = true;
       }
       boundingSetRec->SetEntry(i,
                                receiveInfo->TmmbnBoundingSet.Tmmbr(i),

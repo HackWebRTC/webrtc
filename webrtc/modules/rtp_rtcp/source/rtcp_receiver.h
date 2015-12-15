@@ -103,7 +103,7 @@ public:
 
     bool UpdateRTCPReceiveInformationTimers();
 
-    int32_t BoundingSet(bool &tmmbrOwner, TMMBRSet* boundingSetRec);
+    int32_t BoundingSet(bool* tmmbrOwner, TMMBRSet* boundingSetRec);
 
     int32_t UpdateTMMBR();
 

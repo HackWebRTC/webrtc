@@ -97,7 +97,7 @@ class SendTransport : public Transport,
 
 class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
  public:
-  RtpRtcpModule(SimulatedClock* clock)
+  explicit RtpRtcpModule(SimulatedClock* clock)
       : receive_statistics_(ReceiveStatistics::Create(clock)) {
     RtpRtcp::Configuration config;
     config.audio = false;

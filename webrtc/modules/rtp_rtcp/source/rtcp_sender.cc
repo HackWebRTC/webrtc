@@ -645,7 +645,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
   // will accuire criticalSectionRTCPReceiver_ is a potental deadlock but
   // since RTCPreceiver is not doing the reverse we should be fine
   int32_t lengthOfBoundingSet =
-      ctx.feedback_state_.module->BoundingSet(tmmbrOwner, candidateSet);
+      ctx.feedback_state_.module->BoundingSet(&tmmbrOwner, candidateSet);
 
   if (lengthOfBoundingSet > 0) {
     for (int32_t i = 0; i < lengthOfBoundingSet; i++) {
@@ -1077,7 +1077,7 @@ bool RTCPSender::AllVolatileFlagsConsumed() const {
 bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
   class Sender : public rtcp::RtcpPacket::PacketReadyCallback {
    public:
-    Sender(Transport* transport)
+    explicit Sender(Transport* transport)
         : transport_(transport), send_failure_(false) {}
 
     void OnPacketReady(uint8_t* data, size_t length) override {

@@ -28,7 +28,7 @@ const size_t kVideoRotationLength = 2;
 const size_t kTransportSequenceNumberLength = 3;
 
 struct HeaderExtension {
-  HeaderExtension(RTPExtensionType extension_type)
+  explicit HeaderExtension(RTPExtensionType extension_type)
       : type(extension_type), length(0), active(true) {
     Init();
   }

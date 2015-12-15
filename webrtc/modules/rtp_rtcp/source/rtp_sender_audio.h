@@ -31,7 +31,7 @@ class RTPSenderAudio : public DTMFqueue {
                                uint32_t frequency,
                                uint8_t channels,
                                uint32_t rate,
-                               RtpUtility::Payload*& payload);
+                               RtpUtility::Payload** payload);
 
   int32_t SendAudio(FrameType frameType,
                     int8_t payloadType,
@@ -58,7 +58,7 @@ class RTPSenderAudio : public DTMFqueue {
   int32_t SetRED(int8_t payloadType);
 
   // Get payload type for Redundant Audio Data RFC 2198
-  int32_t RED(int8_t& payloadType) const;
+  int32_t RED(int8_t* payloadType) const;
 
  protected:
   int32_t SendTelephoneEventPacket(

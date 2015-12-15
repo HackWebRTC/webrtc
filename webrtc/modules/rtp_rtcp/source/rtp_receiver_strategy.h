@@ -95,7 +95,7 @@ class RTPReceiverStrategy {
   // Note: Implementations may call the callback for other reasons than calls
   // to ParseRtpPacket, for instance if the implementation somehow recovers a
   // packet.
-  RTPReceiverStrategy(RtpData* data_callback);
+  explicit RTPReceiverStrategy(RtpData* data_callback);
 
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   PayloadUnion last_payload_;

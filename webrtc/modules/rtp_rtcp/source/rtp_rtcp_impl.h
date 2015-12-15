@@ -295,7 +295,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
 
-  virtual int32_t BoundingSet(bool& tmmbr_owner, TMMBRSet*& bounding_set_rec);
+  int32_t BoundingSet(bool* tmmbr_owner, TMMBRSet* bounding_set_rec);
 
   void BitrateSent(uint32_t* total_rate,
                    uint32_t* video_rate,

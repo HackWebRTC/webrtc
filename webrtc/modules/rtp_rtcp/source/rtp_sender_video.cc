@@ -190,13 +190,13 @@ void RTPSenderVideo::SetGenericFECStatus(const bool enable,
       kFecMaskRandom;
 }
 
-void RTPSenderVideo::GenericFECStatus(bool& enable,
-                                      uint8_t& payloadTypeRED,
-                                      uint8_t& payloadTypeFEC) const {
+void RTPSenderVideo::GenericFECStatus(bool* enable,
+                                      uint8_t* payloadTypeRED,
+                                      uint8_t* payloadTypeFEC) const {
   CriticalSectionScoped cs(crit_.get());
-  enable = fec_enabled_;
-  payloadTypeRED = red_payload_type_;
-  payloadTypeFEC = fec_payload_type_;
+  *enable = fec_enabled_;
+  *payloadTypeRED = red_payload_type_;
+  *payloadTypeFEC = fec_payload_type_;
 }
 
 size_t RTPSenderVideo::FECPacketOverhead() const {

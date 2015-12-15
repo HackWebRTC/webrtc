@@ -29,7 +29,7 @@ static const size_t kMaxHistoryCapacity = 9600;
 
 class RTPPacketHistory {
  public:
-  RTPPacketHistory(Clock* clock);
+  explicit RTPPacketHistory(Clock* clock);
   ~RTPPacketHistory();
 
   void SetStorePacketsStatus(bool enable, uint16_t number_to_store);

@@ -1281,9 +1281,9 @@ TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
   // For Telephone events, payload is not added to the registered payload list,
   // it will register only the payload used for audio stream.
   // Registering the payload again for audio stream with different payload name.
-  strcpy(payload_name, "payload_name");
+  const char kPayloadName[] = "payload_name";
   ASSERT_EQ(
-      0, rtp_sender_->RegisterPayload(payload_name, payload_type, 8000, 1, 0));
+      0, rtp_sender_->RegisterPayload(kPayloadName, payload_type, 8000, 1, 0));
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   // DTMF event key=9, duration=500 and attenuationdB=10
   rtp_sender_->SendTelephoneEvent(9, 500, 10);

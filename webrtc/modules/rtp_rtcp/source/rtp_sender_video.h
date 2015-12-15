@@ -67,9 +67,9 @@ class RTPSenderVideo {
                            const uint8_t payloadTypeRED,
                            const uint8_t payloadTypeFEC);
 
-  void GenericFECStatus(bool& enable,
-                        uint8_t& payloadTypeRED,
-                        uint8_t& payloadTypeFEC) const;
+  void GenericFECStatus(bool* enable,
+                        uint8_t* payloadTypeRED,
+                        uint8_t* payloadTypeFEC) const;
 
   void SetFecParameters(const FecProtectionParams* delta_params,
                         const FecProtectionParams* key_params);

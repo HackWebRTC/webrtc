@@ -956,8 +956,8 @@ bool ModuleRtpRtcpImpl::UpdateRTCPReceiveInformationTimers() {
 }
 
 // Called from RTCPsender.
-int32_t ModuleRtpRtcpImpl::BoundingSet(bool& tmmbr_owner,
-                                       TMMBRSet*& bounding_set) {
+int32_t ModuleRtpRtcpImpl::BoundingSet(bool* tmmbr_owner,
+                                       TMMBRSet* bounding_set) {
   return rtcp_receiver_.BoundingSet(tmmbr_owner, bounding_set);
 }
 

@@ -71,7 +71,7 @@ class RtpReceiverImpl : public RtpReceiver {
   void CheckCSRC(const WebRtcRTPHeader& rtp_header);
   int32_t CheckPayloadChanged(const RTPHeader& rtp_header,
                               const int8_t first_payload_byte,
-                              bool& is_red,
+                              bool* is_red,
                               PayloadUnion* payload);
 
   Clock* clock_;

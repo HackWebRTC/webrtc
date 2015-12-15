@@ -326,11 +326,11 @@ int32_t RTPSender::RegisterPayload(
     return -1;
   }
   int32_t ret_val = 0;
-  RtpUtility::Payload* payload = NULL;
+  RtpUtility::Payload* payload = nullptr;
   if (audio_configured_) {
     // TODO(mflodman): Change to CreateAudioPayload and make static.
     ret_val = audio_->RegisterAudioPayload(payload_name, payload_number,
-                                           frequency, channels, rate, payload);
+                                           frequency, channels, rate, &payload);
   } else {
     payload = video_->CreateVideoPayload(payload_name, payload_number, rate);
   }
@@ -455,7 +455,7 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   }
   if (audio_configured_) {
     int8_t red_pl_type = -1;
-    if (audio_->RED(red_pl_type) == 0) {
+    if (audio_->RED(&red_pl_type) == 0) {
       // We have configured RED.
       if (red_pl_type == payload_type) {
         // And it's a match...
@@ -1001,7 +1001,7 @@ bool RTPSender::IsFecPacket(const uint8_t* buffer,
   bool fec_enabled;
   uint8_t pt_red;
   uint8_t pt_fec;
-  video_->GenericFECStatus(fec_enabled, pt_red, pt_fec);
+  video_->GenericFECStatus(&fec_enabled, &pt_red, &pt_fec);
   return fec_enabled &&
       header.payloadType == pt_red &&
       buffer[header.headerLength] == pt_fec;
@@ -1778,7 +1778,7 @@ int32_t RTPSender::RED(int8_t *payload_type) const {
   if (!audio_configured_) {
     return -1;
   }
-  return audio_->RED(*payload_type);
+  return audio_->RED(payload_type);
 }
 
 RtpVideoCodecTypes RTPSender::VideoCodecType() const {
@@ -1804,7 +1804,7 @@ void RTPSender::GenericFECStatus(bool* enable,
                                     uint8_t* payload_type_red,
                                     uint8_t* payload_type_fec) const {
   RTC_DCHECK(!audio_configured_);
-  video_->GenericFECStatus(*enable, *payload_type_red, *payload_type_fec);
+  video_->GenericFECStatus(enable, payload_type_red, payload_type_fec);
 }
 
 int32_t RTPSender::SetFecParameters(
