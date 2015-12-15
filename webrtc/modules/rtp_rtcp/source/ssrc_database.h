@@ -11,8 +11,10 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_SSRC_DATABASE_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_SSRC_DATABASE_H_
 
-#include <map>
+#include <set>
 
+#include "webrtc/base/random.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/static_instance.h"
 #include "webrtc/typedefs.h"
 
@@ -25,8 +27,8 @@ class SSRCDatabase {
   static void ReturnSSRCDatabase();
 
   uint32_t CreateSSRC();
-  int32_t RegisterSSRC(const uint32_t ssrc);
-  int32_t ReturnSSRC(const uint32_t ssrc);
+  void RegisterSSRC(uint32_t ssrc);
+  void ReturnSSRC(uint32_t ssrc);
 
  protected:
   SSRCDatabase();
@@ -39,13 +41,10 @@ class SSRCDatabase {
   // template class.
   friend SSRCDatabase* GetStaticInstance<SSRCDatabase>(
       CountOperation count_operation);
-  static SSRCDatabase* StaticInstance(CountOperation count_operation);
 
-  uint32_t GenerateRandom();
-
-  std::map<uint32_t, uint32_t> _ssrcMap;
-
-  CriticalSectionWrapper* _critSect;
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  Random random_ GUARDED_BY(crit_);
+  std::set<uint32_t> ssrcs_ GUARDED_BY(crit_);
 };
 }  // namespace webrtc
 
