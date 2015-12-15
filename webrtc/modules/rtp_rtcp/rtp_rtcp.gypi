@@ -59,6 +59,8 @@
         'source/rtcp_packet/rrtr.h',
         'source/rtcp_packet/transport_feedback.cc',
         'source/rtcp_packet/transport_feedback.h',
+        'source/rtcp_packet/voip_metric.cc',
+        'source/rtcp_packet/voip_metric.h',
         'source/rtcp_receiver.cc',
         'source/rtcp_receiver.h',
         'source/rtcp_receiver_help.cc',

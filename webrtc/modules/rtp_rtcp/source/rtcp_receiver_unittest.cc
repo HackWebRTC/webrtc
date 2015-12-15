@@ -590,7 +590,9 @@ TEST_F(RtcpReceiverTest, InjectXrVoipPacket) {
   const uint8_t kLossRate = 123;
   rtcp::VoipMetric voip_metric;
   voip_metric.To(kSourceSsrc);
-  voip_metric.LossRate(kLossRate);
+  RTCPVoIPMetric metric;
+  metric.lossRate = kLossRate;
+  voip_metric.WithVoipMetric(metric);
   rtcp::Xr xr;
   xr.From(0x2345);
   xr.WithVoipMetric(&voip_metric);

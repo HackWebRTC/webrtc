@@ -20,6 +20,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/voip_metric.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/typedefs.h"
 
@@ -31,7 +32,6 @@ static const int kReportBlockLength = 24;
 
 class Dlrr;
 class RawPacket;
-class VoipMetric;
 
 // Class for building RTCP packets.
 //
@@ -674,14 +674,13 @@ class Xr : public RtcpPacket {
   size_t DlrrLength() const;
 
   size_t VoipMetricLength() const {
-    const size_t kVoipMetricBlockLength = 36;
-    return kVoipMetricBlockLength * voip_metric_blocks_.size();
+    return VoipMetric::kLength * voip_metric_blocks_.size();
   }
 
   RTCPUtility::RTCPPacketXR xr_header_;
   std::vector<Rrtr> rrtr_blocks_;
   std::vector<DlrrBlock> dlrr_blocks_;
-  std::vector<RTCPUtility::RTCPPacketXRVOIPMetricItem> voip_metric_blocks_;
+  std::vector<VoipMetric> voip_metric_blocks_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Xr);
 };
@@ -718,76 +717,6 @@ class Dlrr {
   std::vector<RTCPUtility::RTCPPacketXRDLRRReportBlockItem> dlrr_block_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Dlrr);
-};
-
-// VoIP Metrics Report Block (RFC 3611).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |     BT=7      |   reserved    |       block length = 8        |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                        SSRC of source                         |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |   loss rate   | discard rate  | burst density |  gap density  |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |       burst duration          |         gap duration          |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |     round trip delay          |       end system delay        |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  | signal level  |  noise level  |     RERL      |     Gmin      |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |   R factor    | ext. R factor |    MOS-LQ     |    MOS-CQ     |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |   RX config   |   reserved    |          JB nominal           |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |          JB maximum           |          JB abs max           |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class VoipMetric {
- public:
-  VoipMetric() {
-    memset(&metric_, 0, sizeof(metric_));
-  }
-  ~VoipMetric() {}
-
-  void To(uint32_t ssrc) { metric_.SSRC = ssrc; }
-  void LossRate(uint8_t loss_rate) { metric_.lossRate = loss_rate; }
-  void DiscardRate(uint8_t discard_rate) { metric_.discardRate = discard_rate; }
-  void BurstDensity(uint8_t burst_density) {
-    metric_.burstDensity = burst_density;
-  }
-  void GapDensity(uint8_t gap_density) { metric_.gapDensity = gap_density; }
-  void BurstDuration(uint16_t burst_duration) {
-    metric_.burstDuration = burst_duration;
-  }
-  void GapDuration(uint16_t gap_duration) {
-    metric_.gapDuration = gap_duration;
-  }
-  void RoundTripDelay(uint16_t round_trip_delay) {
-    metric_.roundTripDelay = round_trip_delay;
-  }
-  void EndSystemDelay(uint16_t end_system_delay) {
-    metric_.endSystemDelay = end_system_delay;
-  }
-  void SignalLevel(uint8_t signal_level) { metric_.signalLevel = signal_level; }
-  void NoiseLevel(uint8_t noise_level) { metric_.noiseLevel = noise_level; }
-  void Rerl(uint8_t rerl) { metric_.RERL = rerl; }
-  void Gmin(uint8_t gmin) { metric_.Gmin = gmin; }
-  void Rfactor(uint8_t rfactor) { metric_.Rfactor = rfactor; }
-  void ExtRfactor(uint8_t extrfactor) { metric_.extRfactor = extrfactor; }
-  void MosLq(uint8_t moslq) { metric_.MOSLQ = moslq; }
-  void MosCq(uint8_t moscq) { metric_.MOSCQ = moscq; }
-  void RxConfig(uint8_t rxconfig) { metric_.RXconfig = rxconfig; }
-  void JbNominal(uint16_t jbnominal) { metric_.JBnominal = jbnominal; }
-  void JbMax(uint16_t jbmax) { metric_.JBmax = jbmax; }
-  void JbAbsMax(uint16_t jbabsmax) { metric_.JBabsMax = jbabsmax; }
-
- private:
-  friend class Xr;
-  RTCPUtility::RTCPPacketXRVOIPMetricItem metric_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(VoipMetric);
 };
 
 // Class holding a RTCP packet.

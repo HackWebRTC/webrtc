@@ -46,7 +46,6 @@ using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBRItem;
 using webrtc::RTCPUtility::RTCPPacketSR;
 using webrtc::RTCPUtility::RTCPPacketXRDLRRReportBlockItem;
 using webrtc::RTCPUtility::RTCPPacketXR;
-using webrtc::RTCPUtility::RTCPPacketXRVOIPMetricItem;
 
 namespace webrtc {
 namespace rtcp {
@@ -452,62 +451,6 @@ void CreateDlrr(const std::vector<Xr::DlrrBlock>& dlrrs,
     }
   }
 }
-
-// VoIP Metrics Report Block (RFC 3611).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |     BT=7      |   reserved    |       block length = 8        |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                        SSRC of source                         |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |   loss rate   | discard rate  | burst density |  gap density  |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |       burst duration          |         gap duration          |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |     round trip delay          |       end system delay        |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  | signal level  |  noise level  |     RERL      |     Gmin      |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |   R factor    | ext. R factor |    MOS-LQ     |    MOS-CQ     |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |   RX config   |   reserved    |          JB nominal           |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |          JB maximum           |          JB abs max           |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateVoipMetric(const std::vector<RTCPPacketXRVOIPMetricItem>& metrics,
-                      uint8_t* buffer,
-                      size_t* pos) {
-  const uint16_t kBlockLength = 8;
-  for (std::vector<RTCPPacketXRVOIPMetricItem>::const_iterator it =
-       metrics.begin(); it != metrics.end(); ++it) {
-    CreateXrBlockHeader(kBtVoipMetric, kBlockLength, buffer, pos);
-    AssignUWord32(buffer, pos, (*it).SSRC);
-    AssignUWord8(buffer, pos, (*it).lossRate);
-    AssignUWord8(buffer, pos, (*it).discardRate);
-    AssignUWord8(buffer, pos, (*it).burstDensity);
-    AssignUWord8(buffer, pos, (*it).gapDensity);
-    AssignUWord16(buffer, pos, (*it).burstDuration);
-    AssignUWord16(buffer, pos, (*it).gapDuration);
-    AssignUWord16(buffer, pos, (*it).roundTripDelay);
-    AssignUWord16(buffer, pos, (*it).endSystemDelay);
-    AssignUWord8(buffer, pos, (*it).signalLevel);
-    AssignUWord8(buffer, pos, (*it).noiseLevel);
-    AssignUWord8(buffer, pos, (*it).RERL);
-    AssignUWord8(buffer, pos, (*it).Gmin);
-    AssignUWord8(buffer, pos, (*it).Rfactor);
-    AssignUWord8(buffer, pos, (*it).extRfactor);
-    AssignUWord8(buffer, pos, (*it).MOSLQ);
-    AssignUWord8(buffer, pos, (*it).MOSCQ);
-    AssignUWord8(buffer, pos, (*it).RXconfig);
-    AssignUWord8(buffer, pos, 0);
-    AssignUWord16(buffer, pos, (*it).JBnominal);
-    AssignUWord16(buffer, pos, (*it).JBmax);
-    AssignUWord16(buffer, pos, (*it).JBabsMax);
-  }
-}
 }  // namespace
 
 void RtcpPacket::Append(RtcpPacket* packet) {
@@ -892,7 +835,10 @@ bool Xr::Create(uint8_t* packet,
     *index += Rrtr::kLength;
   }
   CreateDlrr(dlrr_blocks_, packet, index);
-  CreateVoipMetric(voip_metric_blocks_, packet, index);
+  for (const VoipMetric& block : voip_metric_blocks_) {
+    block.Create(packet + *index);
+    *index += VoipMetric::kLength;
+  }
   return true;
 }
 
@@ -922,7 +868,7 @@ bool Xr::WithVoipMetric(VoipMetric* voip_metric) {
     LOG(LS_WARNING) << "Max Voip Metric blocks reached.";
     return false;
   }
-  voip_metric_blocks_.push_back(voip_metric->metric_);
+  voip_metric_blocks_.push_back(*voip_metric);
   return true;
 }
 

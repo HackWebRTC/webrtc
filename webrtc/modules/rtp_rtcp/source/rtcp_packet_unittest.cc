@@ -795,32 +795,33 @@ TEST(RtcpPacketTest, XrWithTwoDlrrBlocks) {
 }
 
 TEST(RtcpPacketTest, XrWithVoipMetric) {
-  VoipMetric metric;
-  metric.To(kRemoteSsrc);
-  metric.LossRate(1);
-  metric.DiscardRate(2);
-  metric.BurstDensity(3);
-  metric.GapDensity(4);
-  metric.BurstDuration(0x1111);
-  metric.GapDuration(0x2222);
-  metric.RoundTripDelay(0x3333);
-  metric.EndSystemDelay(0x4444);
-  metric.SignalLevel(5);
-  metric.NoiseLevel(6);
-  metric.Rerl(7);
-  metric.Gmin(8);
-  metric.Rfactor(9);
-  metric.ExtRfactor(10);
-  metric.MosLq(11);
-  metric.MosCq(12);
-  metric.RxConfig(13);
-  metric.JbNominal(0x5555);
-  metric.JbMax(0x6666);
-  metric.JbAbsMax(0x7777);
-
+  RTCPVoIPMetric metric;
+  metric.lossRate = 1;
+  metric.discardRate = 2;
+  metric.burstDensity = 3;
+  metric.gapDensity = 4;
+  metric.burstDuration = 0x1111;
+  metric.gapDuration = 0x2222;
+  metric.roundTripDelay = 0x3333;
+  metric.endSystemDelay = 0x4444;
+  metric.signalLevel = 5;
+  metric.noiseLevel = 6;
+  metric.RERL = 7;
+  metric.Gmin = 8;
+  metric.Rfactor = 9;
+  metric.extRfactor = 10;
+  metric.MOSLQ = 11;
+  metric.MOSCQ = 12;
+  metric.RXconfig = 13;
+  metric.JBnominal = 0x5555;
+  metric.JBmax = 0x6666;
+  metric.JBabsMax = 0x7777;
+  VoipMetric metric_block;
+  metric_block.To(kRemoteSsrc);
+  metric_block.WithVoipMetric(metric);
   Xr xr;
   xr.From(kSenderSsrc);
-  EXPECT_TRUE(xr.WithVoipMetric(&metric));
+  EXPECT_TRUE(xr.WithVoipMetric(&metric_block));
 
   rtc::scoped_ptr<RawPacket> packet(xr.Build());
   RtcpPacketParser parser;

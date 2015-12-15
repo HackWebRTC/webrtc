@@ -792,26 +792,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildVoIPMetric(
 
   rtcp::VoipMetric voip;
   voip.To(remote_ssrc_);
-  voip.LossRate(xr_voip_metric_.lossRate);
-  voip.DiscardRate(xr_voip_metric_.discardRate);
-  voip.BurstDensity(xr_voip_metric_.burstDensity);
-  voip.GapDensity(xr_voip_metric_.gapDensity);
-  voip.BurstDuration(xr_voip_metric_.burstDuration);
-  voip.GapDuration(xr_voip_metric_.gapDuration);
-  voip.RoundTripDelay(xr_voip_metric_.roundTripDelay);
-  voip.EndSystemDelay(xr_voip_metric_.endSystemDelay);
-  voip.SignalLevel(xr_voip_metric_.signalLevel);
-  voip.NoiseLevel(xr_voip_metric_.noiseLevel);
-  voip.Rerl(xr_voip_metric_.RERL);
-  voip.Gmin(xr_voip_metric_.Gmin);
-  voip.Rfactor(xr_voip_metric_.Rfactor);
-  voip.ExtRfactor(xr_voip_metric_.extRfactor);
-  voip.MosLq(xr_voip_metric_.MOSLQ);
-  voip.MosCq(xr_voip_metric_.MOSCQ);
-  voip.RxConfig(xr_voip_metric_.RXconfig);
-  voip.JbNominal(xr_voip_metric_.JBnominal);
-  voip.JbMax(xr_voip_metric_.JBmax);
-  voip.JbAbsMax(xr_voip_metric_.JBabsMax);
+  voip.WithVoipMetric(xr_voip_metric_);
 
   xr->WithVoipMetric(&voip);
 
