@@ -11,7 +11,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 
 #include <assert.h>  // assert
-#include <stdlib.h>  // rand
 #include <string.h>  // memcpy
 
 #include <algorithm>  // min
@@ -141,6 +140,7 @@ RTCPSender::RTCPSender(
     Transport* outgoing_transport)
     : audio_(audio),
       clock_(clock),
+      random_(clock_->TimeInMicroseconds()),
       method_(RtcpMode::kOff),
       transport_(outgoing_transport),
 
@@ -914,15 +914,9 @@ void RTCPSender::PrepareReport(const std::set<RTCPPacketType>& packetTypes,
       SetFlag(kRtcpXrDlrrReportBlock, true);
 
     // generate next time to send an RTCP report
-    // seeded from RTP constructor
-    int32_t random = rand() % 1000;
-    int32_t timeToNext = RTCP_INTERVAL_AUDIO_MS;
+    uint32_t minIntervalMs = RTCP_INTERVAL_AUDIO_MS;
 
-    if (audio_) {
-      timeToNext = (RTCP_INTERVAL_AUDIO_MS / 2) +
-                   (RTCP_INTERVAL_AUDIO_MS * random / 1000);
-    } else {
-      uint32_t minIntervalMs = RTCP_INTERVAL_AUDIO_MS;
+    if (!audio_) {
       if (sending_) {
         // Calculate bandwidth for video; 360 / send bandwidth in kbit/s.
         uint32_t send_bitrate_kbit = feedback_state.send_bitrate / 1000;
@@ -931,8 +925,11 @@ void RTCPSender::PrepareReport(const std::set<RTCPPacketType>& packetTypes,
       }
       if (minIntervalMs > RTCP_INTERVAL_VIDEO_MS)
         minIntervalMs = RTCP_INTERVAL_VIDEO_MS;
-      timeToNext = (minIntervalMs / 2) + (minIntervalMs * random / 1000);
     }
+    // The interval between RTCP packets is varied randomly over the
+    // range [1/2,3/2] times the calculated interval.
+    uint32_t timeToNext =
+        random_.Rand(minIntervalMs * 1 / 2, minIntervalMs * 3 / 2);
     next_time_to_send_rtcp_ = clock_->TimeInMilliseconds() + timeToNext;
 
     StatisticianMap statisticians =

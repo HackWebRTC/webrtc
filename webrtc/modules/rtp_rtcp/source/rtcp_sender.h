@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/random.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -202,6 +203,7 @@ class RTCPSender {
  private:
   const bool audio_;
   Clock* const clock_;
+  Random random_ GUARDED_BY(critical_section_rtcp_sender_);
   RtcpMode method_ GUARDED_BY(critical_section_rtcp_sender_);
 
   Transport* const transport_;

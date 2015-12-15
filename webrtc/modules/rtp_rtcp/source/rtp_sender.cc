@@ -34,6 +34,7 @@ static const uint32_t kAbsSendTimeFraction = 18;
 namespace {
 
 const size_t kRtpHeaderLength = 12;
+const uint16_t kMaxInitRtpSeqNumber = 32767;  // 2^15 -1.
 
 const char* FrameTypeToString(FrameType frame_type) {
   switch (frame_type) {
@@ -126,6 +127,7 @@ RTPSender::RTPSender(
       // TickTime.
       clock_delta_ms_(clock_->TimeInMilliseconds() -
                       TickTime::MillisecondTimestamp()),
+      random_(clock_->TimeInMicroseconds()),
       bitrates_(new BitrateAggregator(bitrate_callback)),
       total_bitrate_sent_(clock, bitrates_->total_bitrate_observer()),
       audio_configured_(audio),
@@ -183,8 +185,8 @@ RTPSender::RTPSender(
   ssrc_rtx_ = ssrc_db_.CreateSSRC();  // Can't be 0.
   bitrates_->set_ssrc(ssrc_);
   // Random start, 16 bits. Can't be 0.
-  sequence_number_rtx_ = static_cast<uint16_t>(rand() + 1) & 0x7FFF;
-  sequence_number_ = static_cast<uint16_t>(rand() + 1) & 0x7FFF;
+  sequence_number_rtx_ = random_.Rand(1, kMaxInitRtpSeqNumber);
+  sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
 }
 
 RTPSender::~RTPSender() {
@@ -1656,8 +1658,7 @@ void RTPSender::SetSendingStatus(bool enabled) {
     // Don't initialize seq number if SSRC passed externally.
     if (!sequence_number_forced_ && !ssrc_forced_) {
       // Generate a new sequence number.
-      sequence_number_ =
-          rand() / (RAND_MAX / MAX_INIT_RTP_SEQ_NUMBER);  // NOLINT
+      sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
     }
   }
 }
@@ -1719,8 +1720,7 @@ void RTPSender::SetSSRC(uint32_t ssrc) {
   ssrc_ = ssrc;
   bitrates_->set_ssrc(ssrc_);
   if (!sequence_number_forced_) {
-    sequence_number_ =
-        rand() / (RAND_MAX / MAX_INIT_RTP_SEQ_NUMBER);  // NOLINT
+    sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
   }
 }
 

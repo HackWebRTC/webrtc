@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/random.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -26,8 +27,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
 #include "webrtc/transport.h"
-
-#define MAX_INIT_RTP_SEQ_NUMBER 32767  // 2^15 -1.
 
 namespace webrtc {
 
@@ -387,6 +386,7 @@ class RTPSender : public RTPSenderInterface {
 
   Clock* clock_;
   int64_t clock_delta_ms_;
+  Random random_ GUARDED_BY(send_critsect_);
 
   rtc::scoped_ptr<BitrateAggregator> bitrates_;
   Bitrate total_bitrate_sent_;
