@@ -930,11 +930,6 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
   capabilities.header_extensions.push_back(
       RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
-  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
-    capabilities.header_extensions.push_back(RtpHeaderExtension(
-        kRtpTransportSequenceNumberHeaderExtension,
-        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
-  }
   return capabilities;
 }
 
