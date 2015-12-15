@@ -66,9 +66,12 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   static rtc::scoped_refptr<VideoSource> Create(
       cricket::ChannelManager* channel_manager,
       cricket::VideoCapturer* capturer,
-      const webrtc::MediaConstraintsInterface* constraints);
+      const webrtc::MediaConstraintsInterface* constraints,
+      bool remote);
 
-  virtual SourceState state() const { return state_; }
+  SourceState state() const override { return state_; }
+  bool remote() const override { return remote_; }
+
   virtual const cricket::VideoOptions* options() const { return &options_; }
   virtual cricket::VideoRenderer* FrameInput();
 
@@ -86,7 +89,8 @@ class VideoSource : public Notifier<VideoSourceInterface>,
 
  protected:
   VideoSource(cricket::ChannelManager* channel_manager,
-              cricket::VideoCapturer* capturer);
+              cricket::VideoCapturer* capturer,
+              bool remote);
   virtual ~VideoSource();
   void Initialize(const webrtc::MediaConstraintsInterface* constraints);
 
@@ -104,6 +108,7 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   cricket::VideoFormat format_;
   cricket::VideoOptions options_;
   SourceState state_;
+  const bool remote_;
 };
 
 }  // namespace webrtc

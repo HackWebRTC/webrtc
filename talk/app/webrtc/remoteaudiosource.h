@@ -56,9 +56,10 @@ class RemoteAudioSource : public Notifier<AudioSourceInterface> {
 
   // MediaSourceInterface implementation.
   MediaSourceInterface::SourceState state() const override;
+  bool remote() const override;
 
-  void AddSink(AudioTrackSinkInterface* sink);
-  void RemoveSink(AudioTrackSinkInterface* sink);
+  void AddSink(AudioTrackSinkInterface* sink) override;
+  void RemoveSink(AudioTrackSinkInterface* sink) override;
 
  protected:
   RemoteAudioSource();

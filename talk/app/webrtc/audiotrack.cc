@@ -27,27 +27,82 @@
 
 #include "talk/app/webrtc/audiotrack.h"
 
-#include <string>
+#include "webrtc/base/checks.h"
+
+using rtc::scoped_refptr;
 
 namespace webrtc {
 
 const char MediaStreamTrackInterface::kAudioKind[] = "audio";
 
+// static
+scoped_refptr<AudioTrack> AudioTrack::Create(
+    const std::string& id,
+    const scoped_refptr<AudioSourceInterface>& source) {
+  return new rtc::RefCountedObject<AudioTrack>(id, source);
+}
+
 AudioTrack::AudioTrack(const std::string& label,
-                       AudioSourceInterface* audio_source)
-    : MediaStreamTrack<AudioTrackInterface>(label),
-      audio_source_(audio_source) {
+                       const scoped_refptr<AudioSourceInterface>& source)
+    : MediaStreamTrack<AudioTrackInterface>(label), audio_source_(source) {
+  if (audio_source_) {
+    audio_source_->RegisterObserver(this);
+    OnChanged();
+  }
+}
+
+AudioTrack::~AudioTrack() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  set_state(MediaStreamTrackInterface::kEnded);
+  if (audio_source_)
+    audio_source_->UnregisterObserver(this);
 }
 
 std::string AudioTrack::kind() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return kAudioKind;
 }
 
-rtc::scoped_refptr<AudioTrack> AudioTrack::Create(
-    const std::string& id, AudioSourceInterface* source) {
-  rtc::RefCountedObject<AudioTrack>* track =
-      new rtc::RefCountedObject<AudioTrack>(id, source);
-  return track;
+AudioSourceInterface* AudioTrack::GetSource() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  return audio_source_.get();
+}
+
+void AudioTrack::AddSink(AudioTrackSinkInterface* sink) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (audio_source_)
+    audio_source_->AddSink(sink);
+}
+
+void AudioTrack::RemoveSink(AudioTrackSinkInterface* sink) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (audio_source_)
+    audio_source_->RemoveSink(sink);
+}
+
+void AudioTrack::OnChanged() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (state() == kFailed)
+    return;  // We can't recover from this state (do we ever set it?).
+
+  TrackState new_state = kInitializing;
+
+  // |audio_source_| must be non-null if we ever get here.
+  switch (audio_source_->state()) {
+    case MediaSourceInterface::kLive:
+    case MediaSourceInterface::kMuted:
+      new_state = kLive;
+      break;
+    case MediaSourceInterface::kEnded:
+      new_state = kEnded;
+      break;
+    case MediaSourceInterface::kInitializing:
+    default:
+      // use kInitializing.
+      break;
+  }
+
+  set_state(new_state);
 }
 
 }  // namespace webrtc

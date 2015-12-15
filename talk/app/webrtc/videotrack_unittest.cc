@@ -62,7 +62,7 @@ class VideoTrackTest : public testing::Test {
     video_track_ = VideoTrack::Create(
         kVideoTrackId,
         VideoSource::Create(channel_manager_.get(),
-                            new webrtc::RemoteVideoCapturer(), NULL));
+                            new webrtc::RemoteVideoCapturer(), NULL, true));
   }
 
  protected:

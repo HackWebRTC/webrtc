@@ -225,8 +225,8 @@ PeerConnectionFactory::CreateVideoSource(
     cricket::VideoCapturer* capturer,
     const MediaConstraintsInterface* constraints) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  rtc::scoped_refptr<VideoSource> source(
-      VideoSource::Create(channel_manager_.get(), capturer, constraints));
+  rtc::scoped_refptr<VideoSource> source(VideoSource::Create(
+      channel_manager_.get(), capturer, constraints, false));
   return VideoSourceProxy::Create(signaling_thread_, source);
 }
 
@@ -339,8 +339,7 @@ rtc::scoped_refptr<AudioTrackInterface>
 PeerConnectionFactory::CreateAudioTrack(const std::string& id,
                                         AudioSourceInterface* source) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  rtc::scoped_refptr<AudioTrackInterface> track(
-      AudioTrack::Create(id, source));
+  rtc::scoped_refptr<AudioTrackInterface> track(AudioTrack::Create(id, source));
   return AudioTrackProxy::Create(signaling_thread_, track);
 }
 

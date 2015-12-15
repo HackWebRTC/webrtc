@@ -48,9 +48,23 @@ namespace webrtc {
 // Helper class to test Observer.
 class MockObserver : public ObserverInterface {
  public:
-  MockObserver() {}
+  explicit MockObserver(NotifierInterface* notifier) : notifier_(notifier) {
+    notifier_->RegisterObserver(this);
+  }
+
+  ~MockObserver() { Unregister(); }
+
+  void Unregister() {
+    if (notifier_) {
+      notifier_->UnregisterObserver(this);
+      notifier_ = nullptr;
+    }
+  }
 
   MOCK_METHOD0(OnChanged, void());
+
+ private:
+  NotifierInterface* notifier_;
 };
 
 class MediaStreamTest: public testing::Test {
@@ -75,8 +89,7 @@ class MediaStreamTest: public testing::Test {
   }
 
   void ChangeTrack(MediaStreamTrackInterface* track) {
-    MockObserver observer;
-    track->RegisterObserver(&observer);
+    MockObserver observer(track);
 
     EXPECT_CALL(observer, OnChanged())
         .Times(Exactly(1));
@@ -127,8 +140,7 @@ TEST_F(MediaStreamTest, GetTrackInfo) {
 }
 
 TEST_F(MediaStreamTest, RemoveTrack) {
-  MockObserver observer;
-  stream_->RegisterObserver(&observer);
+  MockObserver observer(stream_);
 
   EXPECT_CALL(observer, OnChanged())
       .Times(Exactly(2));

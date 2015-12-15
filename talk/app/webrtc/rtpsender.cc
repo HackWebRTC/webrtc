@@ -184,7 +184,8 @@ void AudioRtpSender::Stop() {
 void AudioRtpSender::SetAudioSend() {
   RTC_DCHECK(!stopped_ && can_send_track());
   cricket::AudioOptions options;
-  if (track_->enabled() && track_->GetSource()) {
+  if (track_->enabled() && track_->GetSource() &&
+      !track_->GetSource()->remote()) {
     // TODO(xians): Remove this static_cast since we should be able to connect
     // a remote audio track to a peer connection.
     options = static_cast<LocalAudioSource*>(track_->GetSource())->options();

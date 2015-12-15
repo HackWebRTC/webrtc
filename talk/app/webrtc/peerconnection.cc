@@ -39,7 +39,6 @@
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
 #include "talk/app/webrtc/remoteaudiosource.h"
-#include "talk/app/webrtc/remoteaudiotrack.h"
 #include "talk/app/webrtc/remotevideocapturer.h"
 #include "talk/app/webrtc/rtpreceiver.h"
 #include "talk/app/webrtc/rtpsender.h"
@@ -454,7 +453,7 @@ class RemoteMediaStreamFactory {
                                      AudioProviderInterface* provider,
                                      webrtc::MediaStreamInterface* stream,
                                      const std::string& track_id) {
-    return AddTrack<AudioTrackInterface, RemoteAudioTrack, AudioTrackProxy>(
+    return AddTrack<AudioTrackInterface, AudioTrack, AudioTrackProxy>(
         stream, track_id, RemoteAudioSource::Create(ssrc, provider));
   }
 
@@ -463,7 +462,7 @@ class RemoteMediaStreamFactory {
     return AddTrack<VideoTrackInterface, VideoTrack, VideoTrackProxy>(
         stream, track_id,
         VideoSource::Create(channel_manager_, new RemoteVideoCapturer(),
-                            nullptr)
+                            nullptr, true)
             .get());
   }
 

@@ -38,6 +38,7 @@ namespace webrtc {
 // signaling thread.
 BEGIN_PROXY_MAP(VideoSource)
   PROXY_CONSTMETHOD0(SourceState, state)
+  PROXY_CONSTMETHOD0(bool, remote)
   PROXY_METHOD0(cricket::VideoCapturer*, GetVideoCapturer)
   PROXY_METHOD0(void, Stop)
   PROXY_METHOD0(void, Restart)

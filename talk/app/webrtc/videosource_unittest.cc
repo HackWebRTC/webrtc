@@ -144,9 +144,9 @@ class VideoSourceTest : public testing::Test {
   void CreateVideoSource(
       const webrtc::MediaConstraintsInterface* constraints) {
     // VideoSource take ownership of |capturer_|
-    source_ = VideoSource::Create(channel_manager_.get(),
-                                  capturer_cleanup_.release(),
-                                  constraints);
+    source_ =
+        VideoSource::Create(channel_manager_.get(), capturer_cleanup_.release(),
+                            constraints, false);
 
     ASSERT_TRUE(source_.get() != NULL);
     EXPECT_EQ(capturer_, source_->GetVideoCapturer());
@@ -210,8 +210,7 @@ TEST_F(VideoSourceTest, StopRestart) {
 // RemoteVideoCapturer and takes video frames from FrameInput.
 TEST_F(VideoSourceTest, StartStopRemote) {
   source_ = VideoSource::Create(channel_manager_.get(),
-                                new webrtc::RemoteVideoCapturer(),
-                                NULL);
+                                new webrtc::RemoteVideoCapturer(), NULL, true);
 
   ASSERT_TRUE(source_.get() != NULL);
   EXPECT_TRUE(NULL != source_->GetVideoCapturer());

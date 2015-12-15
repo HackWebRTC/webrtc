@@ -39,6 +39,7 @@ AudioRtpReceiver::AudioRtpReceiver(AudioTrackInterface* track,
       ssrc_(ssrc),
       provider_(provider),
       cached_track_enabled_(track->enabled()) {
+  RTC_DCHECK(track_->GetSource()->remote());
   track_->RegisterObserver(this);
   track_->GetSource()->RegisterAudioObserver(this);
   Reconfigure();
@@ -85,6 +86,7 @@ VideoRtpReceiver::VideoRtpReceiver(VideoTrackInterface* track,
                                    uint32_t ssrc,
                                    VideoProviderInterface* provider)
     : id_(track->id()), track_(track), ssrc_(ssrc), provider_(provider) {
+  RTC_DCHECK(track_->GetSource()->remote());
   provider_->SetVideoPlayout(ssrc_, true, track_->GetSource()->FrameInput());
 }
 

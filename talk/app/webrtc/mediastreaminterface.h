@@ -71,8 +71,6 @@ class NotifierInterface {
 
 // Base class for sources. A MediaStreamTrack have an underlying source that
 // provide media. A source can be shared with multiple tracks.
-// TODO(perkj): Implement sources for local and remote audio tracks and
-// remote video tracks.
 class MediaSourceInterface : public rtc::RefCountInterface,
                              public NotifierInterface {
  public:
@@ -84,6 +82,8 @@ class MediaSourceInterface : public rtc::RefCountInterface,
   };
 
   virtual SourceState state() const = 0;
+
+  virtual bool remote() const = 0;
 
  protected:
   virtual ~MediaSourceInterface() {}
@@ -152,6 +152,19 @@ class VideoTrackInterface : public MediaStreamTrackInterface {
   virtual ~VideoTrackInterface() {}
 };
 
+// Interface for receiving audio data from a AudioTrack.
+class AudioTrackSinkInterface {
+ public:
+  virtual void OnData(const void* audio_data,
+                      int bits_per_sample,
+                      int sample_rate,
+                      int number_of_channels,
+                      size_t number_of_frames) = 0;
+
+ protected:
+  virtual ~AudioTrackSinkInterface() {}
+};
+
 // AudioSourceInterface is a reference counted source used for AudioTracks.
 // The same source can be used in multiple AudioTracks.
 class AudioSourceInterface : public MediaSourceInterface {
@@ -174,18 +187,10 @@ class AudioSourceInterface : public MediaSourceInterface {
   // Registers/unregisters observer to the audio source.
   virtual void RegisterAudioObserver(AudioObserver* observer) {}
   virtual void UnregisterAudioObserver(AudioObserver* observer) {}
-};
 
-// Interface for receiving audio data from a AudioTrack.
-class AudioTrackSinkInterface {
- public:
-  virtual void OnData(const void* audio_data,
-                      int bits_per_sample,
-                      int sample_rate,
-                      int number_of_channels,
-                      size_t number_of_frames) = 0;
- protected:
-  virtual ~AudioTrackSinkInterface() {}
+  // TODO(tommi): Make pure virtual.
+  virtual void AddSink(AudioTrackSinkInterface* sink) {}
+  virtual void RemoveSink(AudioTrackSinkInterface* sink) {}
 };
 
 // Interface of the audio processor used by the audio track to collect

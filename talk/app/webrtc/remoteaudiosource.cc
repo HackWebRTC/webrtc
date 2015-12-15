@@ -106,6 +106,11 @@ MediaSourceInterface::SourceState RemoteAudioSource::state() const {
   return state_;
 }
 
+bool RemoteAudioSource::remote() const {
+  RTC_DCHECK(main_thread_->IsCurrent());
+  return true;
+}
+
 void RemoteAudioSource::SetVolume(double volume) {
   RTC_DCHECK(volume >= 0 && volume <= 10);
   for (auto* observer : audio_observers_)

@@ -48,16 +48,17 @@ class LocalAudioSource : public Notifier<AudioSourceInterface> {
       const PeerConnectionFactoryInterface::Options& options,
       const MediaConstraintsInterface* constraints);
 
-  virtual SourceState state() const { return source_state_; }
+  SourceState state() const override { return source_state_; }
+  bool remote() const override { return false; }
+
   virtual const cricket::AudioOptions& options() const { return options_; }
 
- protected:
-  LocalAudioSource()
-      : source_state_(kInitializing) {
-  }
+  void AddSink(AudioTrackSinkInterface* sink) override {}
+  void RemoveSink(AudioTrackSinkInterface* sink) override {}
 
-  ~LocalAudioSource() {
-  }
+ protected:
+  LocalAudioSource() : source_state_(kInitializing) {}
+  ~LocalAudioSource() override {}
 
  private:
   void Initialize(const PeerConnectionFactoryInterface::Options& options,

@@ -28,40 +28,47 @@
 #ifndef TALK_APP_WEBRTC_AUDIOTRACK_H_
 #define TALK_APP_WEBRTC_AUDIOTRACK_H_
 
+#include <string>
+
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/notifier.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/thread_checker.h"
 
 namespace webrtc {
 
-class AudioTrack : public MediaStreamTrack<AudioTrackInterface> {
+class AudioTrack : public MediaStreamTrack<AudioTrackInterface>,
+                   public ObserverInterface {
+ protected:
+  // Protected ctor to force use of factory method.
+  AudioTrack(const std::string& label,
+             const rtc::scoped_refptr<AudioSourceInterface>& source);
+  ~AudioTrack() override;
+
  public:
   static rtc::scoped_refptr<AudioTrack> Create(
-      const std::string& id, AudioSourceInterface* source);
+      const std::string& id,
+      const rtc::scoped_refptr<AudioSourceInterface>& source);
 
-  // AudioTrackInterface implementation.
-  AudioSourceInterface* GetSource() const override {
-    return audio_source_.get();
-  }
-  // TODO(xians): Implement these methods.
-  void AddSink(AudioTrackSinkInterface* sink) override {}
-  void RemoveSink(AudioTrackSinkInterface* sink) override {}
-  bool GetSignalLevel(int* level) override { return false; }
-  rtc::scoped_refptr<AudioProcessorInterface> GetAudioProcessor() override {
-    return NULL;
-  }
-  cricket::AudioRenderer* GetRenderer() override { return NULL; }
-
+ private:
   // MediaStreamTrack implementation.
   std::string kind() const override;
 
- protected:
-  AudioTrack(const std::string& label, AudioSourceInterface* audio_source);
+  // AudioTrackInterface implementation.
+  AudioSourceInterface* GetSource() const override;
+
+  void AddSink(AudioTrackSinkInterface* sink) override;
+  void RemoveSink(AudioTrackSinkInterface* sink) override;
+
+  // ObserverInterface implementation.
+  void OnChanged() override;
 
  private:
-  rtc::scoped_refptr<AudioSourceInterface> audio_source_;
+  const rtc::scoped_refptr<AudioSourceInterface> audio_source_;
+  rtc::ThreadChecker thread_checker_;
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioTrack);
 };
 
 }  // namespace webrtc

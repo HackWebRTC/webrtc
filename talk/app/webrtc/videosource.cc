@@ -331,21 +331,23 @@ namespace webrtc {
 rtc::scoped_refptr<VideoSource> VideoSource::Create(
     cricket::ChannelManager* channel_manager,
     cricket::VideoCapturer* capturer,
-    const webrtc::MediaConstraintsInterface* constraints) {
+    const webrtc::MediaConstraintsInterface* constraints,
+    bool remote) {
   ASSERT(channel_manager != NULL);
   ASSERT(capturer != NULL);
-  rtc::scoped_refptr<VideoSource> source(
-      new rtc::RefCountedObject<VideoSource>(channel_manager,
-                                                   capturer));
+  rtc::scoped_refptr<VideoSource> source(new rtc::RefCountedObject<VideoSource>(
+      channel_manager, capturer, remote));
   source->Initialize(constraints);
   return source;
 }
 
 VideoSource::VideoSource(cricket::ChannelManager* channel_manager,
-                         cricket::VideoCapturer* capturer)
+                         cricket::VideoCapturer* capturer,
+                         bool remote)
     : channel_manager_(channel_manager),
       video_capturer_(capturer),
-      state_(kInitializing) {
+      state_(kInitializing),
+      remote_(remote) {
   channel_manager_->SignalVideoCaptureStateChange.connect(
       this, &VideoSource::OnStateChange);
 }
