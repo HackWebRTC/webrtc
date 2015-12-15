@@ -374,6 +374,7 @@ class PeerConnection : public PeerConnectionInterface,
   // label -> DataChannel
   std::map<std::string, rtc::scoped_refptr<DataChannel>> rtp_data_channels_;
   std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_;
+  std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_to_free_;
 
   bool remote_peer_supports_msid_ = false;
   rtc::scoped_ptr<RemoteMediaStreamFactory> remote_stream_factory_;

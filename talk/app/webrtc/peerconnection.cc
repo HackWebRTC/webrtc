@@ -108,6 +108,7 @@ enum {
   MSG_SET_SESSIONDESCRIPTION_FAILED,
   MSG_CREATE_SESSIONDESCRIPTION_FAILED,
   MSG_GETSTATS,
+  MSG_FREE_DATACHANNELS,
 };
 
 struct SetSessionDescriptionMsg : public rtc::MessageData {
@@ -1332,6 +1333,10 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
       delete param;
       break;
     }
+    case MSG_FREE_DATACHANNELS: {
+      sctp_data_channels_to_free_.clear();
+      break;
+    }
     default:
       RTC_DCHECK(false && "Not implemented");
       break;
@@ -1905,13 +1910,18 @@ void PeerConnection::AllocateSctpSids(rtc::SSLRole role) {
 }
 
 void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   for (auto it = sctp_data_channels_.begin(); it != sctp_data_channels_.end();
        ++it) {
     if (it->get() == channel) {
       if (channel->id() >= 0) {
         sid_allocator_.ReleaseSid(channel->id());
       }
+      // Since this method is triggered by a signal from the DataChannel,
+      // we can't free it directly here; we need to free it asynchronously.
+      sctp_data_channels_to_free_.push_back(*it);
       sctp_data_channels_.erase(it);
+      signaling_thread()->Post(this, MSG_FREE_DATACHANNELS, nullptr);
       return;
     }
   }
