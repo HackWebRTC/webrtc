@@ -1615,10 +1615,9 @@ TEST_F(P2PTestConductor, LocalP2PTestSctpDataChannel) {
                  kMaxWaitMs);
 
   receiving_client()->data_channel()->Close();
-  // Send new offer and answer.
-  receiving_client()->Negotiate();
-  EXPECT_FALSE(initializing_client()->data_observer()->IsOpen());
-  EXPECT_FALSE(receiving_client()->data_observer()->IsOpen());
+  EXPECT_TRUE_WAIT(!initializing_client()->data_observer()->IsOpen(),
+                   kMaxWaitMs);
+  EXPECT_TRUE_WAIT(!receiving_client()->data_observer()->IsOpen(), kMaxWaitMs);
 }
 
 // This test sets up a call between two parties and creates a data channel.
