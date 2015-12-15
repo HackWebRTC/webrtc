@@ -71,8 +71,7 @@ bool InterArrival::ComputeDeltas(uint32_t timestamp,
     current_timestamp_group_.first_timestamp = timestamp;
     current_timestamp_group_.timestamp = timestamp;
     current_timestamp_group_.size = 0;
-  }
-  else {
+  } else {
     current_timestamp_group_.timestamp = LatestTimestamp(
         current_timestamp_group_.timestamp, timestamp);
   }

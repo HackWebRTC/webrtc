@@ -586,7 +586,7 @@ bool TraceBasedDeliveryFilter::Init(const std::string& filename) {
     return false;
   }
   int64_t first_timestamp = -1;
-  while(!feof(trace_file)) {
+  while (!feof(trace_file)) {
     const size_t kMaxLineLength = 100;
     char line[kMaxLineLength];
     if (fgets(line, kMaxLineLength, trace_file)) {
@@ -680,6 +680,7 @@ VideoSource::VideoSource(int flow_id,
       frame_period_ms_(1000.0 / fps),
       bits_per_second_(1000 * kbps),
       frame_size_bytes_(bits_per_second_ / 8 / fps),
+      random_(0x12345678),
       flow_id_(flow_id),
       next_frame_ms_(first_frame_offset_ms),
       next_frame_rand_ms_(0),
@@ -713,9 +714,7 @@ void VideoSource::RunFor(int64_t time_ms, Packets* in_out) {
     const int64_t kRandAmplitude = 2;
     // A variance picked uniformly from {-1, 0, 1} ms is added to the frame
     // timestamp.
-    next_frame_rand_ms_ =
-        kRandAmplitude * static_cast<float>(rand()) / RAND_MAX -
-        kRandAmplitude / 2;
+    next_frame_rand_ms_ = kRandAmplitude * (random_.Rand<float>() - 0.5);
 
     // Ensure frame will not have a negative timestamp.
     int64_t next_frame_ms =

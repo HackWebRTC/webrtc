@@ -17,7 +17,6 @@ namespace webrtc {
 class RemoteBitrateEstimatorSingleTest :
     public RemoteBitrateEstimatorTest {
  public:
-
   RemoteBitrateEstimatorSingleTest() {}
   virtual void SetUp() {
     bitrate_estimator_.reset(new RemoteBitrateEstimatorSingleStream(

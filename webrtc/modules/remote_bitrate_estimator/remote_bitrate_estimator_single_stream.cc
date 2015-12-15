@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 
+#include <utility>
+
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -28,19 +30,20 @@ enum { kTimestampGroupLengthMs = 5 };
 static const double kTimestampToMs = 1.0 / 90.0;
 
 struct RemoteBitrateEstimatorSingleStream::Detector {
-    explicit Detector(int64_t last_packet_time_ms,
-                      const OverUseDetectorOptions& options,
-                      bool enable_burst_grouping)
-        : last_packet_time_ms(last_packet_time_ms),
-          inter_arrival(90 * kTimestampGroupLengthMs, kTimestampToMs,
-                        enable_burst_grouping),
-          estimator(options),
-          detector(options) {}
-    int64_t last_packet_time_ms;
-    InterArrival inter_arrival;
-    OveruseEstimator estimator;
-    OveruseDetector detector;
-  };
+  explicit Detector(int64_t last_packet_time_ms,
+                    const OverUseDetectorOptions& options,
+                    bool enable_burst_grouping)
+      : last_packet_time_ms(last_packet_time_ms),
+        inter_arrival(90 * kTimestampGroupLengthMs,
+                      kTimestampToMs,
+                      enable_burst_grouping),
+        estimator(options),
+        detector(options) {}
+  int64_t last_packet_time_ms;
+  InterArrival inter_arrival;
+  OveruseEstimator estimator;
+  OveruseDetector detector;
+};
 
   RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
       RemoteBitrateObserver* observer,

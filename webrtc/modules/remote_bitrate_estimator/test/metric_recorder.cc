@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
 
-#include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
-
 #include <algorithm>
+
+#include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
 
 namespace webrtc {
 namespace testing {

@@ -74,7 +74,6 @@ TEST_P(BweSimulation, Verizon4gDownlinkTest) {
 }
 
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
-
   const int kFlowIds[] = {0, 1};
   const size_t kNumFlows = sizeof(kFlowIds) / sizeof(kFlowIds[0]);
 
@@ -106,7 +105,6 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
 }
 
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
-
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
@@ -243,7 +241,7 @@ TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
 }
 
 TEST_P(BweSimulation, SelfFairnessTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  Random prng(Clock::GetRealTimeClock()->TimeInMicroseconds());
   const int kAllFlowIds[] = {0, 1, 2, 3};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
   rtc::scoped_ptr<VideoSource> sources[kNumFlows];
@@ -252,7 +250,7 @@ TEST_P(BweSimulation, SelfFairnessTest) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.
     sources[i].reset(new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0,
-                                             i * (rand() % 40000)));
+                                             i * prng.Rand(39999)));
     senders[i].reset(new VideoSender(&uplink_, sources[i].get(), GetParam()));
   }
 

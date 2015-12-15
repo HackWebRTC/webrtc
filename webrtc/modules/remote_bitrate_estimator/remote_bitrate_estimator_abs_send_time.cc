@@ -12,6 +12,8 @@
 
 #include <math.h>
 
+#include <algorithm>
+
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"

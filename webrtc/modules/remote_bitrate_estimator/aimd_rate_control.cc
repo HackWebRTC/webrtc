@@ -88,8 +88,7 @@ uint32_t AimdRateControl::LatestEstimate() const {
 
 uint32_t AimdRateControl::UpdateBandwidthEstimate(int64_t now_ms) {
   current_bitrate_bps_ = ChangeBitrate(current_bitrate_bps_,
-                                       current_input_._incomingBitRate,
-                                       now_ms);
+                                       current_input_.incoming_bitrate, now_ms);
   if (now_ms - time_of_last_log_ > kLogIntervalMs) {
     time_of_last_log_ = now_ms;
   }
@@ -109,21 +108,21 @@ void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
     const int64_t kInitializationTimeMs = 5000;
     RTC_DCHECK_LE(kBitrateWindowMs, kInitializationTimeMs);
     if (time_first_incoming_estimate_ < 0) {
-      if (input->_incomingBitRate > 0) {
+      if (input->incoming_bitrate > 0) {
         time_first_incoming_estimate_ = now_ms;
       }
     } else if (now_ms - time_first_incoming_estimate_ > kInitializationTimeMs &&
-               input->_incomingBitRate > 0) {
-      current_bitrate_bps_ = input->_incomingBitRate;
+               input->incoming_bitrate > 0) {
+      current_bitrate_bps_ = input->incoming_bitrate;
       bitrate_is_initialized_ = true;
     }
   }
 
-  if (updated_ && current_input_._bwState == kBwOverusing) {
+  if (updated_ && current_input_.bw_state == kBwOverusing) {
     // Only update delay factor and incoming bit rate. We always want to react
     // on an over-use.
-    current_input_._noiseVar = input->_noiseVar;
-    current_input_._incomingBitRate = input->_incomingBitRate;
+    current_input_.noise_var = input->noise_var;
+    current_input_.incoming_bitrate = input->incoming_bitrate;
   } else {
     updated_ = true;
     current_input_ = *input;
@@ -145,7 +144,7 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
   // An over-use should always trigger us to reduce the bitrate, even though
   // we have not yet established our first estimate. By acting on the over-use,
   // we will end up with a valid estimate.
-  if (!bitrate_is_initialized_ && current_input_._bwState != kBwOverusing)
+  if (!bitrate_is_initialized_ && current_input_.bw_state != kBwOverusing)
     return current_bitrate_bps_;
   updated_ = false;
   ChangeState(current_input_, now_ms);
@@ -284,7 +283,7 @@ void AimdRateControl::UpdateMaxBitRateEstimate(float incoming_bitrate_kbps) {
 
 void AimdRateControl::ChangeState(const RateControlInput& input,
                                   int64_t now_ms) {
-  switch (current_input_._bwState) {
+  switch (current_input_.bw_state) {
     case kBwNormal:
       if (rate_control_state_ == kRcHold) {
         time_last_bitrate_change_ = now_ms;

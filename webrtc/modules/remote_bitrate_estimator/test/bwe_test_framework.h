@@ -17,8 +17,10 @@
 #include <algorithm>
 #include <list>
 #include <numeric>
+#include <set>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "webrtc/base/common.h"
@@ -44,7 +46,7 @@ class DelayCapHelper;
 
 class RateCounter {
  public:
-  RateCounter(int64_t window_size_ms)
+  explicit RateCounter(int64_t window_size_ms)
       : window_size_us_(1000 * window_size_ms),
         recently_received_packets_(0),
         recently_received_bytes_(0),
@@ -415,6 +417,7 @@ class VideoSource {
   uint32_t frame_size_bytes_;
 
  private:
+  Random random_;
   const int flow_id_;
   int64_t next_frame_ms_;
   int64_t next_frame_rand_ms_;

@@ -10,6 +10,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
 
 #include <algorithm>
+#include <limits>
 #include <utility>
 
 namespace webrtc {
@@ -383,11 +384,11 @@ void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper(
                                         2 * kFrameIntervalAbsSendTime);
     IncomingPacket(kDefaultSsrc, 1000, clock_.TimeInMilliseconds(), timestamp,
                    absolute_send_time, true);
-    IncomingPacket(
-        kDefaultSsrc, 1000, clock_.TimeInMilliseconds(),
-        timestamp - 90 * kFrameIntervalMs,
-        AddAbsSendTime(absolute_send_time, -int(kFrameIntervalAbsSendTime)),
-        true);
+    IncomingPacket(kDefaultSsrc, 1000, clock_.TimeInMilliseconds(),
+                   timestamp - 90 * kFrameIntervalMs,
+                   AddAbsSendTime(absolute_send_time,
+                                  -static_cast<int>(kFrameIntervalAbsSendTime)),
+                   true);
   }
   bitrate_estimator_->Process();
   EXPECT_TRUE(bitrate_observer_->updated());
@@ -520,8 +521,8 @@ void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper() {
   uint32_t timestamp = 0;
   // Initialize absolute_send_time (24 bits) so that it will definitely wrap
   // during the test.
-  uint32_t absolute_send_time =
-      AddAbsSendTime((1 << 24), -int(50 * kFrameIntervalAbsSendTime));
+  uint32_t absolute_send_time = AddAbsSendTime(
+      (1 << 24), -static_cast<int>(50 * kFrameIntervalAbsSendTime));
   // Initial set of frames to increase the bitrate. 6 seconds to have enough
   // time for the first estimate to be generated and for Process() to be called.
   for (int i = 0; i <= 6 * kFramerate; ++i) {
@@ -556,8 +557,10 @@ void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper() {
     // Increase time until next batch to simulate over-use.
     clock_.AdvanceTimeMilliseconds(10);
     timestamp += 90 * kFrameIntervalMs - kTimestampGroupLength;
-    absolute_send_time = AddAbsSendTime(absolute_send_time, AddAbsSendTime(
-        kFrameIntervalAbsSendTime, -int(kTimestampGroupLengthAbsSendTime)));
+    absolute_send_time = AddAbsSendTime(
+        absolute_send_time,
+        AddAbsSendTime(kFrameIntervalAbsSendTime,
+                       -static_cast<int>(kTimestampGroupLengthAbsSendTime)));
     bitrate_estimator_->Process();
   }
   EXPECT_TRUE(bitrate_observer_->updated());
