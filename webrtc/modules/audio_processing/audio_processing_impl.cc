@@ -150,14 +150,13 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
       : echo_cancellation(nullptr),
         echo_control_mobile(nullptr),
         gain_control(nullptr),
-        level_estimator(nullptr),
         voice_detection(nullptr) {}
   // Accessed externally of APM without any lock acquired.
   EchoCancellationImpl* echo_cancellation;
   EchoControlMobileImpl* echo_control_mobile;
   GainControlImpl* gain_control;
   rtc::scoped_ptr<HighPassFilterImpl> high_pass_filter;
-  LevelEstimatorImpl* level_estimator;
+  rtc::scoped_ptr<LevelEstimatorImpl> level_estimator;
   rtc::scoped_ptr<NoiseSuppressionImpl> noise_suppression;
   VoiceDetectionImpl* voice_detection;
   rtc::scoped_ptr<GainControlForNewAgc> gain_control_for_new_agc;
@@ -243,8 +242,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
         new GainControlImpl(this, &crit_capture_, &crit_capture_);
     public_submodules_->high_pass_filter.reset(
         new HighPassFilterImpl(&crit_capture_));
-    public_submodules_->level_estimator =
-        new LevelEstimatorImpl(this, &crit_capture_);
+    public_submodules_->level_estimator.reset(
+        new LevelEstimatorImpl(&crit_capture_));
     public_submodules_->noise_suppression.reset(
         new NoiseSuppressionImpl(&crit_capture_));
     public_submodules_->voice_detection =
@@ -258,8 +257,6 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
         public_submodules_->echo_control_mobile);
     private_submodules_->component_list.push_back(
         public_submodules_->gain_control);
-    private_submodules_->component_list.push_back(
-        public_submodules_->level_estimator);
     private_submodules_->component_list.push_back(
         public_submodules_->voice_detection);
   }
@@ -398,6 +395,7 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializeIntelligibility();
   InitializeHighPassFilter();
   InitializeNoiseSuppression();
+  InitializeLevelEstimator();
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->Open()) {
@@ -804,7 +802,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   }
 
   // The level estimator operates on the recombined data.
-  RETURN_ON_ERR(public_submodules_->level_estimator->ProcessStream(ca));
+  public_submodules_->level_estimator->ProcessStream(ca);
 
   capture_.was_stream_delay_set = false;
   return kNoError;
@@ -1146,7 +1144,7 @@ HighPassFilter* AudioProcessingImpl::high_pass_filter() const {
 LevelEstimator* AudioProcessingImpl::level_estimator() const {
   // Adding a lock here has no effect as it allows any access to the submodule
   // from the returned pointer.
-  return public_submodules_->level_estimator;
+  return public_submodules_->level_estimator.get();
 }
 
 NoiseSuppression* AudioProcessingImpl::noise_suppression() const {
@@ -1176,6 +1174,9 @@ bool AudioProcessingImpl::is_data_processed() const {
     enabled_count++;
   }
   if (public_submodules_->noise_suppression->is_enabled()) {
+    enabled_count++;
+  }
+  if (public_submodules_->level_estimator->is_enabled()) {
     enabled_count++;
   }
 
@@ -1300,6 +1301,10 @@ void AudioProcessingImpl::InitializeHighPassFilter() {
 void AudioProcessingImpl::InitializeNoiseSuppression() {
   public_submodules_->noise_suppression->Initialize(num_output_channels(),
                                                     proc_sample_rate_hz());
+}
+
+void AudioProcessingImpl::InitializeLevelEstimator() {
+  public_submodules_->level_estimator->Initialize();
 }
 
 void AudioProcessingImpl::MaybeUpdateHistograms() {
