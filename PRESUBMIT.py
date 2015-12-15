@@ -21,6 +21,7 @@ CPPLINT_DIRS = [
   'webrtc/common_video',
   'webrtc/examples',
   'webrtc/modules/remote_bitrate_estimator',
+  'webrtc/modules/rtp_rtcp',
   'webrtc/modules/video_processing',
   'webrtc/sound',
   'webrtc/tools',
