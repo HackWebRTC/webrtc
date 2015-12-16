@@ -359,7 +359,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     videoBuffers = new FramePool(cameraThread);
     isCapturingToTexture = (sharedContext != null);
     cameraStatistics =
-        new CameraStatistics(isCapturingToTexture ? 1 : videoBuffers.numCaptureBuffers);
+        new CameraStatistics(isCapturingToTexture ? 1 : FramePool.NUMBER_OF_CAPTURE_BUFFERS);
     surfaceHelper = SurfaceTextureHelper.create(sharedContext, cameraThreadHandler);
     if (isCapturingToTexture) {
       surfaceHelper.setListener(this);
@@ -535,7 +535,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
         range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
 
     // Check if we are already using this capture format, then we don't need to do anything.
-    if (captureFormat.equals(this.captureFormat)) {
+    if (captureFormat.isSameFormat(this.captureFormat)) {
       return;
     }
 
@@ -777,7 +777,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     // Arbitrary queue depth.  Higher number means more memory allocated & held,
     // lower number means more sensitivity to processing time in the client (and
     // potentially stalling the capturer if it runs out of buffers to write to).
-    public static final int numCaptureBuffers = 3;
+    public static final int NUMBER_OF_CAPTURE_BUFFERS = 3;
     // This container tracks the buffers added as camera callback buffers. It is needed for finding
     // the corresponding ByteBuffer given a byte[].
     private final Map<byte[], ByteBuffer> queuedBuffers = new IdentityHashMap<byte[], ByteBuffer>();
@@ -804,12 +804,12 @@ public class VideoCapturerAndroid extends VideoCapturer implements
       this.frameSize = frameSize;
 
       queuedBuffers.clear();
-      for (int i = 0; i < numCaptureBuffers; ++i) {
+      for (int i = 0; i < NUMBER_OF_CAPTURE_BUFFERS; ++i) {
         final ByteBuffer buffer = ByteBuffer.allocateDirect(frameSize);
         camera.addCallbackBuffer(buffer.array());
         queuedBuffers.put(buffer.array(), buffer);
       }
-      Logging.d(TAG, "queueCameraBuffers enqueued " + numCaptureBuffers
+      Logging.d(TAG, "queueCameraBuffers enqueued " + NUMBER_OF_CAPTURE_BUFFERS
           + " buffers of size " + frameSize + ".");
     }
 

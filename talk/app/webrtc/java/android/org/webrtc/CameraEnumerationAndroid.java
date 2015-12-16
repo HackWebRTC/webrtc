@@ -113,14 +113,12 @@ public class CameraEnumerationAndroid {
       return width + "x" + height + "@[" + minFramerate + ":" + maxFramerate + "]";
     }
 
-    @Override
-    public boolean equals(Object that) {
-      if (!(that instanceof CaptureFormat)) {
+    public boolean isSameFormat(final CaptureFormat that) {
+      if (that == null) {
         return false;
       }
-      final CaptureFormat c = (CaptureFormat) that;
-      return width == c.width && height == c.height && maxFramerate == c.maxFramerate
-          && minFramerate == c.minFramerate;
+      return width == that.width && height == that.height && maxFramerate == that.maxFramerate
+          && minFramerate == that.minFramerate;
     }
   }
 
@@ -203,8 +201,9 @@ public class CameraEnumerationAndroid {
     return Collections.min(listFpsRange,
         new ClosestComparator<int[]>() {
           @Override int diff(int[] range) {
+            final int maxFpsWeight = 10;
             return range[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX]
-                + 10 * abs(framerate
+                + maxFpsWeight * abs(framerate
                     - range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
           }
      });
