@@ -33,23 +33,86 @@
 #include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/typedefs.h"
 
+#ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
+#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+#include "external/webrtc/webrtc/modules/audio_coding/neteq/neteq_unittest.pb.h"
+#else
+#include "webrtc/audio_coding/neteq/neteq_unittest.pb.h"
+#endif
+#endif
+
 DEFINE_bool(gen_ref, false, "Generate reference files.");
 
-namespace webrtc {
+namespace {
 
-static bool IsAllZero(const int16_t* buf, size_t buf_length) {
+bool IsAllZero(const int16_t* buf, size_t buf_length) {
   bool all_zero = true;
   for (size_t n = 0; n < buf_length && all_zero; ++n)
     all_zero = buf[n] == 0;
   return all_zero;
 }
 
-static bool IsAllNonZero(const int16_t* buf, size_t buf_length) {
+bool IsAllNonZero(const int16_t* buf, size_t buf_length) {
   bool all_non_zero = true;
   for (size_t n = 0; n < buf_length && all_non_zero; ++n)
     all_non_zero = buf[n] != 0;
   return all_non_zero;
 }
+
+#ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
+void Convert(const webrtc::NetEqNetworkStatistics& stats_raw,
+             webrtc::neteq_unittest::NetEqNetworkStatistics* stats) {
+  stats->set_current_buffer_size_ms(stats_raw.current_buffer_size_ms);
+  stats->set_preferred_buffer_size_ms(stats_raw.preferred_buffer_size_ms);
+  stats->set_jitter_peaks_found(stats_raw.jitter_peaks_found);
+  stats->set_packet_loss_rate(stats_raw.packet_loss_rate);
+  stats->set_packet_discard_rate(stats_raw.packet_discard_rate);
+  stats->set_expand_rate(stats_raw.expand_rate);
+  stats->set_speech_expand_rate(stats_raw.speech_expand_rate);
+  stats->set_preemptive_rate(stats_raw.preemptive_rate);
+  stats->set_accelerate_rate(stats_raw.accelerate_rate);
+  stats->set_secondary_decoded_rate(stats_raw.secondary_decoded_rate);
+  stats->set_clockdrift_ppm(stats_raw.clockdrift_ppm);
+  stats->set_added_zero_samples(stats_raw.added_zero_samples);
+  stats->set_mean_waiting_time_ms(stats_raw.mean_waiting_time_ms);
+  stats->set_median_waiting_time_ms(stats_raw.median_waiting_time_ms);
+  stats->set_min_waiting_time_ms(stats_raw.min_waiting_time_ms);
+  stats->set_max_waiting_time_ms(stats_raw.max_waiting_time_ms);
+}
+
+void Convert(const webrtc::RtcpStatistics& stats_raw,
+             webrtc::neteq_unittest::RtcpStatistics* stats) {
+  stats->set_fraction_lost(stats_raw.fraction_lost);
+  stats->set_cumulative_lost(stats_raw.cumulative_lost);
+  stats->set_extended_max_sequence_number(
+      stats_raw.extended_max_sequence_number);
+  stats->set_jitter(stats_raw.jitter);
+}
+
+void WriteMessage(FILE* file, const std::string& message) {
+  int32_t size = message.length();
+  ASSERT_EQ(1u, fwrite(&size, sizeof(size), 1, file));
+  if (size <= 0)
+    return;
+  ASSERT_EQ(static_cast<size_t>(size),
+            fwrite(message.data(), sizeof(char), size, file));
+}
+
+void ReadMessage(FILE* file, std::string* message) {
+  int32_t size;
+  ASSERT_EQ(1u, fread(&size, sizeof(size), 1, file));
+  if (size <= 0)
+    return;
+  rtc::scoped_ptr<char[]> buffer(new char[size]);
+  ASSERT_EQ(static_cast<size_t>(size),
+            fread(buffer.get(), sizeof(char), size, file));
+  message->assign(buffer.get(), size);
+}
+#endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
+
+}  // namespace
+
+namespace webrtc {
 
 class RefFiles {
  public:
@@ -128,92 +191,84 @@ void RefFiles::ReadFromFileAndCompare(const T (&test_results)[n],
   }
 }
 
-void RefFiles::WriteToFile(const NetEqNetworkStatistics& stats) {
-  if (output_fp_) {
-    ASSERT_EQ(1u, fwrite(&stats, sizeof(NetEqNetworkStatistics), 1,
-                         output_fp_));
-  }
+void RefFiles::WriteToFile(const NetEqNetworkStatistics& stats_raw) {
+#ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
+  if (!output_fp_)
+    return;
+  neteq_unittest::NetEqNetworkStatistics stats;
+  Convert(stats_raw, &stats);
+
+  std::string stats_string;
+  ASSERT_TRUE(stats.SerializeToString(&stats_string));
+  WriteMessage(output_fp_, stats_string);
+#else
+  FAIL() << "Writing to reference file requires Proto Buffer.";
+#endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
 }
 
 void RefFiles::ReadFromFileAndCompare(
     const NetEqNetworkStatistics& stats) {
-  // TODO(minyue): Update resource/audio_coding/neteq_network_stats.dat and
-  // resource/audio_coding/neteq_network_stats_win32.dat.
-  struct NetEqNetworkStatisticsOld {
-    uint16_t current_buffer_size_ms;  // Current jitter buffer size in ms.
-    uint16_t preferred_buffer_size_ms;  // Target buffer size in ms.
-    uint16_t jitter_peaks_found;  // 1 if adding extra delay due to peaky
-                                  // jitter; 0 otherwise.
-    uint16_t packet_loss_rate;  // Loss rate (network + late) in Q14.
-    uint16_t packet_discard_rate;  // Late loss rate in Q14.
-    uint16_t expand_rate;  // Fraction (of original stream) of synthesized
-                           // audio inserted through expansion (in Q14).
-    uint16_t preemptive_rate;  // Fraction of data inserted through pre-emptive
-                               // expansion (in Q14).
-    uint16_t accelerate_rate;  // Fraction of data removed through acceleration
-                               // (in Q14).
-    int32_t clockdrift_ppm;  // Average clock-drift in parts-per-million
-                             // (positive or negative).
-    int added_zero_samples;  // Number of zero samples added in "off" mode.
-  };
-  if (input_fp_) {
-    // Read from ref file.
-    size_t stat_size = sizeof(NetEqNetworkStatisticsOld);
-    NetEqNetworkStatisticsOld ref_stats;
-    ASSERT_EQ(1u, fread(&ref_stats, stat_size, 1, input_fp_));
-    // Compare
-    ASSERT_EQ(stats.current_buffer_size_ms, ref_stats.current_buffer_size_ms);
-    ASSERT_EQ(stats.preferred_buffer_size_ms,
-              ref_stats.preferred_buffer_size_ms);
-    ASSERT_EQ(stats.jitter_peaks_found, ref_stats.jitter_peaks_found);
-    ASSERT_EQ(stats.packet_loss_rate, ref_stats.packet_loss_rate);
-    ASSERT_EQ(stats.packet_discard_rate, ref_stats.packet_discard_rate);
-    ASSERT_EQ(stats.expand_rate, ref_stats.expand_rate);
-    ASSERT_EQ(stats.preemptive_rate, ref_stats.preemptive_rate);
-    ASSERT_EQ(stats.accelerate_rate, ref_stats.accelerate_rate);
-    ASSERT_EQ(stats.clockdrift_ppm, ref_stats.clockdrift_ppm);
-    ASSERT_EQ(stats.added_zero_samples,
-              static_cast<size_t>(ref_stats.added_zero_samples));
-    ASSERT_EQ(stats.secondary_decoded_rate, 0);
-    ASSERT_LE(stats.speech_expand_rate, ref_stats.expand_rate);
-  }
+#ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
+  if (!input_fp_)
+    return;
+
+  std::string stats_string;
+  ReadMessage(input_fp_, &stats_string);
+  neteq_unittest::NetEqNetworkStatistics ref_stats;
+  ASSERT_TRUE(ref_stats.ParseFromString(stats_string));
+
+  // Compare
+  ASSERT_EQ(stats.current_buffer_size_ms, ref_stats.current_buffer_size_ms());
+  ASSERT_EQ(stats.preferred_buffer_size_ms,
+            ref_stats.preferred_buffer_size_ms());
+  ASSERT_EQ(stats.jitter_peaks_found, ref_stats.jitter_peaks_found());
+  ASSERT_EQ(stats.packet_loss_rate, ref_stats.packet_loss_rate());
+  ASSERT_EQ(stats.packet_discard_rate, ref_stats.packet_discard_rate());
+  ASSERT_EQ(stats.expand_rate, ref_stats.expand_rate());
+  ASSERT_EQ(stats.preemptive_rate, ref_stats.preemptive_rate());
+  ASSERT_EQ(stats.accelerate_rate, ref_stats.accelerate_rate());
+  ASSERT_EQ(stats.clockdrift_ppm, ref_stats.clockdrift_ppm());
+  ASSERT_EQ(stats.added_zero_samples, ref_stats.added_zero_samples());
+  ASSERT_EQ(stats.secondary_decoded_rate, 0);
+  ASSERT_LE(stats.speech_expand_rate, ref_stats.expand_rate());
+#else
+  FAIL() << "Reading from reference file requires Proto Buffer.";
+#endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
 }
 
-void RefFiles::WriteToFile(const RtcpStatistics& stats) {
-  if (output_fp_) {
-    ASSERT_EQ(1u, fwrite(&(stats.fraction_lost), sizeof(stats.fraction_lost), 1,
-                         output_fp_));
-    ASSERT_EQ(1u, fwrite(&(stats.cumulative_lost),
-                         sizeof(stats.cumulative_lost), 1, output_fp_));
-    ASSERT_EQ(1u, fwrite(&(stats.extended_max_sequence_number),
-                         sizeof(stats.extended_max_sequence_number), 1,
-                         output_fp_));
-    ASSERT_EQ(1u, fwrite(&(stats.jitter), sizeof(stats.jitter), 1,
-                         output_fp_));
-  }
+void RefFiles::WriteToFile(const RtcpStatistics& stats_raw) {
+#ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
+  if (!output_fp_)
+    return;
+  neteq_unittest::RtcpStatistics stats;
+  Convert(stats_raw, &stats);
+
+  std::string stats_string;
+  ASSERT_TRUE(stats.SerializeToString(&stats_string));
+  WriteMessage(output_fp_, stats_string);
+#else
+  FAIL() << "Writing to reference file requires Proto Buffer.";
+#endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
 }
 
-void RefFiles::ReadFromFileAndCompare(
-    const RtcpStatistics& stats) {
-  if (input_fp_) {
-    // Read from ref file.
-    RtcpStatistics ref_stats;
-    ASSERT_EQ(1u, fread(&(ref_stats.fraction_lost),
-                        sizeof(ref_stats.fraction_lost), 1, input_fp_));
-    ASSERT_EQ(1u, fread(&(ref_stats.cumulative_lost),
-                        sizeof(ref_stats.cumulative_lost), 1, input_fp_));
-    ASSERT_EQ(1u, fread(&(ref_stats.extended_max_sequence_number),
-                        sizeof(ref_stats.extended_max_sequence_number), 1,
-                        input_fp_));
-    ASSERT_EQ(1u, fread(&(ref_stats.jitter), sizeof(ref_stats.jitter), 1,
-                        input_fp_));
-    // Compare
-    ASSERT_EQ(ref_stats.fraction_lost, stats.fraction_lost);
-    ASSERT_EQ(ref_stats.cumulative_lost, stats.cumulative_lost);
-    ASSERT_EQ(ref_stats.extended_max_sequence_number,
-              stats.extended_max_sequence_number);
-    ASSERT_EQ(ref_stats.jitter, stats.jitter);
-  }
+void RefFiles::ReadFromFileAndCompare(const RtcpStatistics& stats) {
+#ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
+  if (!input_fp_)
+    return;
+  std::string stats_string;
+  ReadMessage(input_fp_, &stats_string);
+  neteq_unittest::RtcpStatistics ref_stats;
+  ASSERT_TRUE(ref_stats.ParseFromString(stats_string));
+
+  // Compare
+  ASSERT_EQ(stats.fraction_lost, ref_stats.fraction_lost());
+  ASSERT_EQ(stats.cumulative_lost, ref_stats.cumulative_lost());
+  ASSERT_EQ(stats.extended_max_sequence_number,
+            ref_stats.extended_max_sequence_number());
+  ASSERT_EQ(stats.jitter, ref_stats.jitter());
+#else
+  FAIL() << "Reading from reference file requires Proto Buffer.";
+#endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
 }
 
 class NetEqDecodingTest : public ::testing::Test {
@@ -234,10 +289,12 @@ class NetEqDecodingTest : public ::testing::Test {
   void LoadDecoders();
   void OpenInputFile(const std::string &rtp_file);
   void Process(size_t* out_len);
+
   void DecodeAndCompare(const std::string& rtp_file,
                         const std::string& ref_file,
                         const std::string& stat_ref_file,
                         const std::string& rtcp_ref_file);
+
   static void PopulateRtpInfo(int frame_index,
                               int timestamp,
                               WebRtcRTPHeader* rtp_info);
@@ -453,15 +510,15 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
-#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
+#if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID) &&             \
+     defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                     \
+    (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
-#define IF_ALL_CODECS(x) x
+#define MAYBE_TestBitExactness TestBitExactness
 #else
-#define IF_ALL_CODECS(x) DISABLED_##x
+#define MAYBE_TestBitExactness DISABLED_TestBitExactness
 #endif
-
-TEST_F(NetEqDecodingTest,
-       DISABLED_ON_IOS(DISABLED_ON_ANDROID(IF_ALL_CODECS(TestBitExactness)))) {
+TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
   const std::string input_rtp_file = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq_universal_new.rtp";
   // Note that neteq4_universal_ref.pcm and neteq4_universal_ref_win_32.pcm

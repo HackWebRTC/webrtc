@@ -398,10 +398,12 @@
                 ['enable_protobuf==1', {
                   'defines': [
                     'WEBRTC_AUDIOPROC_DEBUG_DUMP',
+                    'WEBRTC_NETEQ_UNITTEST_BITEXACT',
                   ],
                   'dependencies': [
                     'audioproc_protobuf_utils',
                     'audioproc_unittest_proto',
+                    'neteq_unittest_proto',
                   ],
                   'sources': [
                     'audio_processing/audio_processing_impl_locking_unittest.cc',
