@@ -541,6 +541,17 @@
                 'WEBRTC_EXTERNAL_JSON',
               ],
             }],
+            ['OS=="win" and clang==1', {
+              'msvs_settings': {
+                'VCCLCompilerTool': {
+                  'AdditionalOptions': [
+                    # Disable warnings failing when compiling with Clang on Windows.
+                    # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                    '-Wno-missing-braces',
+                  ],
+                },
+              },
+            }],
           ],
         }],
         ['OS == "android"', {

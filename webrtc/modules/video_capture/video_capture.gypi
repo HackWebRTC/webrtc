@@ -116,6 +116,23 @@
                 ],
               },
             }],  # win
+            ['OS=="win" and clang==1', {
+              'msvs_settings': {
+                'VCCLCompilerTool': {
+                  'AdditionalOptions': [
+                    # Disable warnings failing when compiling with Clang on Windows.
+                    # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                    '-Wno-comment',
+                    '-Wno-ignored-attributes',
+                    '-Wno-microsoft-extra-qualification',
+                    '-Wno-missing-braces',
+                    '-Wno-overloaded-virtual',
+                    '-Wno-reorder',
+                    '-Wno-writable-strings',
+                  ],
+                },
+              },
+            }],
             ['OS=="ios"', {
               'sources': [
                 'ios/device_info_ios.h',

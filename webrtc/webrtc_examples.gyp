@@ -103,6 +103,18 @@
                 },
               },
             }],  # OS=="win"
+            ['OS=="win" and clang==1', {
+              'msvs_settings': {
+                'VCCLCompilerTool': {
+                  'AdditionalOptions': [
+                    # Disable warnings failing when compiling with Clang on Windows.
+                    # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                    '-Wno-reorder',
+                    '-Wno-unused-function',
+                  ],
+                },
+              },
+            }], # OS=="win" and clang==1
             ['OS=="linux"', {
               'sources': [
                 'examples/peerconnection/client/linux/main.cc',

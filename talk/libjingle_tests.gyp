@@ -128,6 +128,17 @@
             },
           },
         }],
+        ['OS=="win" and clang==1', {
+          'msvs_settings': {
+            'VCCLCompilerTool': {
+              'AdditionalOptions': [
+                # Disable warnings failing when compiling with Clang on Windows.
+                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                '-Wno-unused-function',
+              ],
+            },
+          },
+        },],
         ['OS=="ios"', {
           'sources!': [
             'media/sctp/sctpdataengine_unittest.cc',
@@ -239,6 +250,17 @@
             # automatically on android, so it has to be set explicitly here.
             'GTEST_HAS_TR1_TUPLE=1',
            ],
+        }],
+        ['OS=="win" and clang==1', {
+          'msvs_settings': {
+            'VCCLCompilerTool': {
+              'AdditionalOptions': [
+                # Disable warnings failing when compiling with Clang on Windows.
+                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                '-Wno-unused-function',
+              ],
+            },
+          },
         }],
       ],
     },  # target libjingle_peerconnection_unittest

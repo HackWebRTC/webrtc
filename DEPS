@@ -24,7 +24,7 @@ deps = {
 deps_os = {
   'win': {
     'src/third_party/winsdk_samples/src':
-      Var('chromium_git') + '/external/webrtc/deps/third_party/winsdk_samples_v71@c0cbedd854cb610a53226d9817416c4ab9a7d1e9', # from svn revision 7951
+      Var('chromium_git') + '/external/webrtc/deps/third_party/winsdk_samples_v71@e71b549167a665d7424d6f1dadfbff4b4aad1589',
   },
 }
 

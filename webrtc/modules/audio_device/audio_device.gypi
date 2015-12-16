@@ -194,6 +194,27 @@
                 ],
               },
             }],
+            ['OS=="win" and clang==1', {
+              'msvs_settings': {
+                'VCCLCompilerTool': {
+                  'AdditionalOptions': [
+                    # Disable warnings failing when compiling with Clang on Windows.
+                    # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                    '-Wno-bool-conversion',
+                    '-Wno-delete-non-virtual-dtor',
+                    '-Wno-logical-op-parentheses',
+                    '-Wno-microsoft-extra-qualification',
+                    '-Wno-microsoft-goto',
+                    '-Wno-missing-braces',
+                    '-Wno-parentheses-equality',
+                    '-Wno-reorder',
+                    '-Wno-shift-overflow',
+                    '-Wno-tautological-compare',
+                    '-Wno-unused-private-field',
+                  ],
+                },
+              },
+            }],
           ], # conditions
         }], # include_internal_audio_device==1
       ], # conditions
@@ -205,8 +226,8 @@
       'targets': [
         {
           'target_name': 'audio_device_tests',
-         'type': 'executable',
-         'dependencies': [
+          'type': 'executable',
+          'dependencies': [
             'audio_device',
             'webrtc_utility',
             '<(webrtc_root)/test/test.gyp:test_support_main',

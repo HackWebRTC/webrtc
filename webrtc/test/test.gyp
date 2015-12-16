@@ -41,6 +41,22 @@
         'channel_transport/udp_transport_impl.cc',
         'channel_transport/udp_transport_impl.h',
       ],
+      'conditions': [
+        ['OS=="win" and clang==1', {
+          'msvs_settings': {
+            'VCCLCompilerTool': {
+              'AdditionalOptions': [
+                # Disable warnings failing when compiling with Clang on Windows.
+                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                '-Wno-parentheses-equality',
+                '-Wno-reorder',
+                '-Wno-tautological-constant-out-of-range-compare',
+                '-Wno-unused-private-field',
+              ],
+            },
+          },
+        }],
+      ],  # conditions.
     },
     {
       'target_name': 'frame_generator',
