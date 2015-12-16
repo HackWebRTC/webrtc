@@ -45,6 +45,8 @@
         'source/rtcp_packet/app.h',
         'source/rtcp_packet/bye.cc',
         'source/rtcp_packet/bye.h',
+        'source/rtcp_packet/dlrr.cc',
+        'source/rtcp_packet/dlrr.h',
         'source/rtcp_packet/extended_jitter_report.cc',
         'source/rtcp_packet/extended_jitter_report.h',
         'source/rtcp_packet/pli.cc',

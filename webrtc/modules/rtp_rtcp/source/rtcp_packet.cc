@@ -407,50 +407,6 @@ void CreateXrHeader(const RTCPPacketXR& header,
   AssignUWord32(buffer, pos, header.OriginatorSSRC);
 }
 
-void CreateXrBlockHeader(uint8_t block_type,
-                         uint16_t block_length,
-                         uint8_t* buffer,
-                         size_t* pos) {
-  AssignUWord8(buffer, pos, block_type);
-  AssignUWord8(buffer, pos, 0);
-  AssignUWord16(buffer, pos, block_length);
-}
-
-// DLRR Report Block (RFC 3611).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |     BT=5      |   reserved    |         block length          |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |                 SSRC_1 (SSRC of first receiver)               | sub-
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
-//  |                         last RR (LRR)                         |   1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                   delay since last RR (DLRR)                  |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |                 SSRC_2 (SSRC of second receiver)              | sub-
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
-//  :                               ...                             :   2
-
-void CreateDlrr(const std::vector<Xr::DlrrBlock>& dlrrs,
-                uint8_t* buffer,
-                size_t* pos) {
-  for (std::vector<Xr::DlrrBlock>::const_iterator it = dlrrs.begin();
-       it != dlrrs.end(); ++it) {
-    if ((*it).empty()) {
-      continue;
-    }
-    uint16_t block_length = 3 * (*it).size();
-    CreateXrBlockHeader(kBtDlrr, block_length, buffer, pos);
-    for (Xr::DlrrBlock::const_iterator it_block = (*it).begin();
-         it_block != (*it).end(); ++it_block) {
-      AssignUWord32(buffer, pos, (*it_block).SSRC);
-      AssignUWord32(buffer, pos, (*it_block).LastRR);
-      AssignUWord32(buffer, pos, (*it_block).DelayLastRR);
-    }
-  }
-}
 }  // namespace
 
 void RtcpPacket::Append(RtcpPacket* packet) {
@@ -834,7 +790,10 @@ bool Xr::Create(uint8_t* packet,
     block.Create(packet + *index);
     *index += Rrtr::kLength;
   }
-  CreateDlrr(dlrr_blocks_, packet, index);
+  for (const Dlrr& block : dlrr_blocks_) {
+    block.Create(packet + *index);
+    *index += block.BlockLength();
+  }
   for (const VoipMetric& block : voip_metric_blocks_) {
     block.Create(packet + *index);
     *index += VoipMetric::kLength;
@@ -853,12 +812,12 @@ bool Xr::WithRrtr(Rrtr* rrtr) {
 }
 
 bool Xr::WithDlrr(Dlrr* dlrr) {
-  assert(dlrr);
+  RTC_DCHECK(dlrr);
   if (dlrr_blocks_.size() >= kMaxNumberOfDlrrBlocks) {
     LOG(LS_WARNING) << "Max DLRR blocks reached.";
     return false;
   }
-  dlrr_blocks_.push_back(dlrr->dlrr_block_);
+  dlrr_blocks_.push_back(*dlrr);
   return true;
 }
 
@@ -873,31 +832,11 @@ bool Xr::WithVoipMetric(VoipMetric* voip_metric) {
 }
 
 size_t Xr::DlrrLength() const {
-  const size_t kBlockHeaderLen = 4;
-  const size_t kSubBlockLen = 12;
   size_t length = 0;
-  for (std::vector<DlrrBlock>::const_iterator it = dlrr_blocks_.begin();
-       it != dlrr_blocks_.end(); ++it) {
-    if (!(*it).empty()) {
-      length += kBlockHeaderLen + kSubBlockLen * (*it).size();
-    }
+  for (const Dlrr& block : dlrr_blocks_) {
+    length += block.BlockLength();
   }
   return length;
-}
-
-bool Dlrr::WithDlrrItem(uint32_t ssrc,
-                        uint32_t last_rr,
-                        uint32_t delay_last_rr) {
-  if (dlrr_block_.size() >= kMaxNumberOfDlrrItems) {
-    LOG(LS_WARNING) << "Max DLRR items reached.";
-    return false;
-  }
-  RTCPPacketXRDLRRReportBlockItem dlrr;
-  dlrr.SSRC = ssrc;
-  dlrr.LastRR = last_rr;
-  dlrr.DelayLastRR = delay_last_rr;
-  dlrr_block_.push_back(dlrr);
-  return true;
 }
 
 RawPacket::RawPacket(size_t buffer_length)

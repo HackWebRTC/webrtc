@@ -18,6 +18,7 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/voip_metric.h"
@@ -30,7 +31,6 @@ namespace rtcp {
 static const int kCommonFbFmtLength = 12;
 static const int kReportBlockLength = 24;
 
-class Dlrr;
 class RawPacket;
 
 // Class for building RTCP packets.
@@ -679,44 +679,10 @@ class Xr : public RtcpPacket {
 
   RTCPUtility::RTCPPacketXR xr_header_;
   std::vector<Rrtr> rrtr_blocks_;
-  std::vector<DlrrBlock> dlrr_blocks_;
+  std::vector<Dlrr> dlrr_blocks_;
   std::vector<VoipMetric> voip_metric_blocks_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Xr);
-};
-
-// DLRR Report Block (RFC 3611).
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |     BT=5      |   reserved    |         block length          |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |                 SSRC_1 (SSRC of first receiver)               | sub-
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
-//  |                         last RR (LRR)                         |   1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                   delay since last RR (DLRR)                  |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |                 SSRC_2 (SSRC of second receiver)              | sub-
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
-//  :                               ...                             :   2
-
-class Dlrr {
- public:
-  Dlrr() {}
-  ~Dlrr() {}
-
-  // Max 100 DLRR Items can be added per DLRR report block.
-  bool WithDlrrItem(uint32_t ssrc, uint32_t last_rr, uint32_t delay_last_rr);
-
- private:
-  friend class Xr;
-  static const int kMaxNumberOfDlrrItems = 100;
-
-  std::vector<RTCPUtility::RTCPPacketXRDLRRReportBlockItem> dlrr_block_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Dlrr);
 };
 
 // Class holding a RTCP packet.
