@@ -44,7 +44,6 @@ static const int countLen = 50;
 static const int kDelayMetricsAggregationWindow = 1250;  // 5 seconds at 16 kHz.
 
 // Quantities to control H band scaling for SWB input
-static const int flagHbandCn = 1;  // flag for adding comfort noise in H band
 static const float cnScaleHband =
     (float)0.4;  // scale for comfort noise in H band
 // Initial bin for averaging nlp gain in low band
@@ -483,7 +482,7 @@ static void ComfortNoise(AecCore* aec,
   noiseAvg = 0.0;
   tmpAvg = 0.0;
   num = 0;
-  if (aec->num_bands > 1 && flagHbandCn == 1) {
+  if (aec->num_bands > 1) {
 
     // average noise scale
     // average over second half of freq spectrum (i.e., 4->8khz)
@@ -814,15 +813,18 @@ static void UpdateDelayMetrics(AecCore* self) {
   return;
 }
 
-static void InverseFft(float freq_data[2][PART_LEN1],
-                       float time_data[PART_LEN2]) {
+static void ScaledInverseFft(float freq_data[2][PART_LEN1],
+                             float time_data[PART_LEN2],
+                             float scale,
+                             int conjugate) {
   int i;
-  const float scale = 1.0f / PART_LEN2;
-  time_data[0] = freq_data[0][0] * scale;
-  time_data[1] = freq_data[0][PART_LEN] * scale;
+  const float normalization = scale / ((float)PART_LEN2);
+  const float sign = (conjugate ? -1 : 1);
+  time_data[0] = freq_data[0][0] * normalization;
+  time_data[1] = freq_data[0][PART_LEN] * normalization;
   for (i = 1; i < PART_LEN; i++) {
-    time_data[2 * i] = freq_data[0][i] * scale;
-    time_data[2 * i + 1] = freq_data[1][i] * scale;
+    time_data[2 * i] = freq_data[0][i] * normalization;
+    time_data[2 * i + 1] = sign * freq_data[1][i] * normalization;
   }
   aec_rdft_inverse_128(time_data);
 }
@@ -963,11 +965,8 @@ static void EchoSubtraction(
                       s_fft);
 
   // Compute the time-domain echo estimate s.
-  InverseFft(s_fft, s_extended);
+  ScaledInverseFft(s_fft, s_extended, 2.0f, 0);
   s = &s_extended[PART_LEN];
-  for (i = 0; i < PART_LEN; ++i) {
-    s[i] *= 2.0f;
-  }
 
   // Compute the time-domain echo prediction error.
   for (i = 0; i < PART_LEN; ++i) {
@@ -1014,7 +1013,6 @@ static void EchoSuppression(AecCore* aec,
   float dfw[2][PART_LEN1];
   float comfortNoiseHband[2][PART_LEN1];
   float fft[PART_LEN2];
-  float scale, dtmp;
   float nlpGainHband;
   int i;
   size_t j;
@@ -1054,11 +1052,6 @@ static void EchoSuppression(AecCore* aec,
   aec_rdft_forward_128(fft);
   StoreAsComplex(fft, efw);
 
-  aec->delayEstCtr++;
-  if (aec->delayEstCtr == delayEstInterval) {
-    aec->delayEstCtr = 0;
-  }
-
   // We should always have at least one element stored in |far_buf|.
   assert(WebRtc_available_read(aec->far_buf_windowed) > 0);
   // NLP
@@ -1069,8 +1062,11 @@ static void EchoSuppression(AecCore* aec,
   // Buffer far.
   memcpy(aec->xfwBuf, xfw_ptr, sizeof(float) * 2 * PART_LEN1);
 
-  if (aec->delayEstCtr == 0)
+  aec->delayEstCtr++;
+  if (aec->delayEstCtr == delayEstInterval) {
+    aec->delayEstCtr = 0;
     aec->delayIdx = WebRtcAec_PartitionDelay(aec);
+  }
 
   // Use delayed far.
   memcpy(xfw,
@@ -1190,67 +1186,51 @@ static void EchoSuppression(AecCore* aec,
     // scaling only in UpdateMetrics().
     UpdateLevel(&aec->nlpoutlevel, efw);
   }
+
   // Inverse error fft.
-  fft[0] = efw[0][0];
-  fft[1] = efw[0][PART_LEN];
-  for (i = 1; i < PART_LEN; i++) {
-    fft[2 * i] = efw[0][i];
-    // Sign change required by Ooura fft.
-    fft[2 * i + 1] = -efw[1][i];
-  }
-  aec_rdft_inverse_128(fft);
+  ScaledInverseFft(efw, fft, 2.0f, 1);
 
   // Overlap and add to obtain output.
-  scale = 2.0f / PART_LEN2;
   for (i = 0; i < PART_LEN; i++) {
-    fft[i] *= scale;  // fft scaling
-    fft[i] = fft[i] * WebRtcAec_sqrtHanning[i] + aec->outBuf[i];
-
-    fft[PART_LEN + i] *= scale;  // fft scaling
-    aec->outBuf[i] = fft[PART_LEN + i] * WebRtcAec_sqrtHanning[PART_LEN - i];
+    output[i] = (fft[i] * WebRtcAec_sqrtHanning[i] +
+                 aec->outBuf[i] * WebRtcAec_sqrtHanning[PART_LEN - i]);
 
     // Saturate output to keep it in the allowed range.
     output[i] = WEBRTC_SPL_SAT(
-        WEBRTC_SPL_WORD16_MAX, fft[i], WEBRTC_SPL_WORD16_MIN);
+        WEBRTC_SPL_WORD16_MAX, output[i], WEBRTC_SPL_WORD16_MIN);
   }
+  memcpy(aec->outBuf, &fft[PART_LEN], PART_LEN * sizeof(aec->outBuf[0]));
 
   // For H band
   if (aec->num_bands > 1) {
-
     // H band gain
     // average nlp over low band: average over second half of freq spectrum
     // (4->8khz)
     GetHighbandGain(hNl, &nlpGainHband);
 
     // Inverse comfort_noise
-    if (flagHbandCn == 1) {
-      fft[0] = comfortNoiseHband[0][0];
-      fft[1] = comfortNoiseHband[0][PART_LEN];
-      for (i = 1; i < PART_LEN; i++) {
-        fft[2 * i] = comfortNoiseHband[0][i];
-        fft[2 * i + 1] = comfortNoiseHband[1][i];
-      }
-      aec_rdft_inverse_128(fft);
-      scale = 2.0f / PART_LEN2;
-    }
+    ScaledInverseFft(comfortNoiseHband, fft, 2.0f, 0);
 
     // compute gain factor
     for (j = 0; j < aec->num_bands - 1; ++j) {
       for (i = 0; i < PART_LEN; i++) {
-        dtmp = aec->dBufH[j][i];
-        dtmp = dtmp * nlpGainHband;  // for variable gain
-
-        // add some comfort noise where Hband is attenuated
-        if (flagHbandCn == 1 && j == 0) {
-          fft[i] *= scale;  // fft scaling
-          dtmp += cnScaleHband * fft[i];
-        }
-
-        // Saturate output to keep it in the allowed range.
-        outputH[j][i] = WEBRTC_SPL_SAT(
-            WEBRTC_SPL_WORD16_MAX, dtmp, WEBRTC_SPL_WORD16_MIN);
+        outputH[j][i] = aec->dBufH[j][i] * nlpGainHband;
       }
     }
+
+    // Add some comfort noise where Hband is attenuated.
+    for (i = 0; i < PART_LEN; i++) {
+      outputH[0][i] += cnScaleHband * fft[i];
+    }
+
+    // Saturate output to keep it in the allowed range.
+    for (j = 0; j < aec->num_bands - 1; ++j) {
+      for (i = 0; i < PART_LEN; i++) {
+        outputH[j][i] = WEBRTC_SPL_SAT(
+            WEBRTC_SPL_WORD16_MAX, outputH[j][i], WEBRTC_SPL_WORD16_MIN);
+      }
+    }
+
   }
 
   // Copy the current block to the old position.

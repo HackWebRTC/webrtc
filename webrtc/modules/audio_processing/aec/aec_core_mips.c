@@ -20,7 +20,6 @@
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 
-static const int flagHbandCn = 1; // flag for adding comfort noise in H band
 extern const float WebRtcAec_weightCurve[65];
 extern const float WebRtcAec_overDriveCurve[65];
 
@@ -274,7 +273,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
   noiseAvg = 0.0;
   tmpAvg = 0.0;
   num = 0;
-  if (aec->num_bands > 1 && flagHbandCn == 1) {
+  if (aec->num_bands > 1) {
     for (i = 0; i < PART_LEN; i++) {
       rand[i] = ((float)randW16[i]) / 32768;
     }
