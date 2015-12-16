@@ -279,6 +279,10 @@ class AudioProcessing {
   // ensures the options are applied immediately.
   virtual void SetExtraOptions(const Config& config) = 0;
 
+  // TODO(peah): Remove after voice engine no longer requires it to resample
+  // the reverse stream to the forward rate.
+  virtual int input_sample_rate_hz() const = 0;
+
   // TODO(ajm): Only intended for internal use. Make private and friend the
   // necessary classes?
   virtual int proc_sample_rate_hz() const = 0;

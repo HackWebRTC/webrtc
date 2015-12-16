@@ -501,6 +501,12 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
   }
 }
 
+int AudioProcessingImpl::input_sample_rate_hz() const {
+  // Accessed from outside APM, hence a lock is needed.
+  rtc::CritScope cs(&crit_capture_);
+  return formats_.api_format.input_stream().sample_rate_hz();
+}
+
 int AudioProcessingImpl::proc_sample_rate_hz() const {
   // Used as callback from submodules, hence locking is not allowed.
   return capture_nonlocked_.fwd_proc_format.sample_rate_hz();
