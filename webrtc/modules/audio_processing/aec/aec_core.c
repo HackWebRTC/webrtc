@@ -441,14 +441,14 @@ static void GetHighbandGain(const float* lambda, float* nlpGainHband) {
 
 static void ComfortNoise(AecCore* aec,
                          float efw[2][PART_LEN1],
-                         complex_t* comfortNoiseHband,
+                         float comfortNoiseHband[2][PART_LEN1],
                          const float* noisePow,
                          const float* lambda) {
   int i, num;
   float rand[PART_LEN];
   float noise, noiseAvg, tmp, tmpAvg;
   int16_t randW16[PART_LEN];
-  complex_t u[PART_LEN1];
+  float u[2][PART_LEN1];
 
   const float pi2 = 6.28318530717959f;
 
@@ -460,22 +460,22 @@ static void ComfortNoise(AecCore* aec,
 
   // Reject LF noise
   u[0][0] = 0;
-  u[0][1] = 0;
+  u[1][0] = 0;
   for (i = 1; i < PART_LEN1; i++) {
     tmp = pi2 * rand[i - 1];
 
     noise = sqrtf(noisePow[i]);
-    u[i][0] = noise * cosf(tmp);
-    u[i][1] = -noise * sinf(tmp);
+    u[0][i] = noise * cosf(tmp);
+    u[1][i] = -noise * sinf(tmp);
   }
-  u[PART_LEN][1] = 0;
+  u[1][PART_LEN] = 0;
 
   for (i = 0; i < PART_LEN1; i++) {
     // This is the proper weighting to match the background noise power
     tmp = sqrtf(WEBRTC_SPL_MAX(1 - lambda[i] * lambda[i], 0));
     // tmp = 1 - lambda[i];
-    efw[0][i] += tmp * u[i][0];
-    efw[1][i] += tmp * u[i][1];
+    efw[0][i] += tmp * u[0][i];
+    efw[1][i] += tmp * u[1][i];
   }
 
   // For H band comfort noise
@@ -508,21 +508,24 @@ static void ComfortNoise(AecCore* aec,
     // TODO: we should probably have a new random vector here.
     // Reject LF noise
     u[0][0] = 0;
-    u[0][1] = 0;
+    u[1][0] = 0;
     for (i = 1; i < PART_LEN1; i++) {
       tmp = pi2 * rand[i - 1];
 
       // Use average noise for H band
-      u[i][0] = noiseAvg * (float)cos(tmp);
-      u[i][1] = -noiseAvg * (float)sin(tmp);
+      u[0][i] = noiseAvg * (float)cos(tmp);
+      u[1][i] = -noiseAvg * (float)sin(tmp);
     }
-    u[PART_LEN][1] = 0;
+    u[1][PART_LEN] = 0;
 
     for (i = 0; i < PART_LEN1; i++) {
       // Use average NLP weight for H band
-      comfortNoiseHband[i][0] = tmpAvg * u[i][0];
-      comfortNoiseHband[i][1] = tmpAvg * u[i][1];
+      comfortNoiseHband[0][i] = tmpAvg * u[0][i];
+      comfortNoiseHband[1][i] = tmpAvg * u[1][i];
     }
+  } else {
+    memset(comfortNoiseHband, 0,
+           2 * PART_LEN1 * sizeof(comfortNoiseHband[0][0]));
   }
 }
 
@@ -1009,7 +1012,7 @@ static void EchoSuppression(AecCore* aec,
   float efw[2][PART_LEN1];
   float xfw[2][PART_LEN1];
   float dfw[2][PART_LEN1];
-  complex_t comfortNoiseHband[PART_LEN1];
+  float comfortNoiseHband[2][PART_LEN1];
   float fft[PART_LEN2];
   float scale, dtmp;
   float nlpGainHband;
@@ -1176,7 +1179,6 @@ static void EchoSuppression(AecCore* aec,
   WebRtcAec_OverdriveAndSuppress(aec, hNl, hNlFb, efw);
 
   // Add comfort noise.
-  memset(comfortNoiseHband, 0, sizeof(comfortNoiseHband));
   WebRtcAec_ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
 
   // TODO(bjornv): Investigate how to take the windowing below into account if
@@ -1223,10 +1225,10 @@ static void EchoSuppression(AecCore* aec,
     // Inverse comfort_noise
     if (flagHbandCn == 1) {
       fft[0] = comfortNoiseHband[0][0];
-      fft[1] = comfortNoiseHband[PART_LEN][0];
+      fft[1] = comfortNoiseHband[0][PART_LEN];
       for (i = 1; i < PART_LEN; i++) {
-        fft[2 * i] = comfortNoiseHband[i][0];
-        fft[2 * i + 1] = comfortNoiseHband[i][1];
+        fft[2 * i] = comfortNoiseHband[0][i];
+        fft[2 * i + 1] = comfortNoiseHband[1][i];
       }
       aec_rdft_inverse_128(fft);
       scale = 2.0f / PART_LEN2;

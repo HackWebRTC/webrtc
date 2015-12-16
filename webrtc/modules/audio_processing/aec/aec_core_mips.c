@@ -26,7 +26,7 @@ extern const float WebRtcAec_overDriveCurve[65];
 
 void WebRtcAec_ComfortNoise_mips(AecCore* aec,
                                  float efw[2][PART_LEN1],
-                                 complex_t* comfortNoiseHband,
+                                 float comfortNoiseHband[2][PART_LEN1],
                                  const float* noisePow,
                                  const float* lambda) {
   int i, num;
@@ -274,7 +274,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
   noiseAvg = 0.0;
   tmpAvg = 0.0;
   num = 0;
-  if ((aec->sampFreq == 32000 || aec->sampFreq == 48000) && flagHbandCn == 1) {
+  if (aec->num_bands > 1 && flagHbandCn == 1) {
     for (i = 0; i < PART_LEN; i++) {
       rand[i] = ((float)randW16[i]) / 32768;
     }
@@ -314,9 +314,12 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
 
     for (i = 0; i < PART_LEN1; i++) {
       // Use average NLP weight for H band
-      comfortNoiseHband[i][0] = tmpAvg * u[i][0];
-      comfortNoiseHband[i][1] = tmpAvg * u[i][1];
+      comfortNoiseHband[0][i] = tmpAvg * u[i][0];
+      comfortNoiseHband[1][i] = tmpAvg * u[i][1];
     }
+  } else {
+    memset(comfortNoiseHband, 0,
+           2 * PART_LEN1 * sizeof(comfortNoiseHband[0][0]));
   }
 }
 
