@@ -119,6 +119,7 @@ static_library("rtc_base_approved") {
     "constructormagic.h",
     "criticalsection.cc",
     "criticalsection.h",
+    "deprecation.h",
     "event.cc",
     "event.h",
     "event_tracer.cc",

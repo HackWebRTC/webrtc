@@ -85,6 +85,7 @@
         'constructormagic.h',
         'criticalsection.cc',
         'criticalsection.h',
+        'deprecation.h',
         'event.cc',
         'event.h',
         'event_tracer.cc',
