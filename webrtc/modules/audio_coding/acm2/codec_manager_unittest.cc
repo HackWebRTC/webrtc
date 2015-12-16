@@ -11,6 +11,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
+#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 
 namespace webrtc {
 namespace acm2 {
@@ -46,20 +47,26 @@ TEST(CodecManagerTest, ExternalEncoderFec) {
   }
 
   CodecManager cm;
-  EXPECT_FALSE(cm.codec_fec_enabled());
-  cm.RegisterEncoder(enc0.get());
-  EXPECT_FALSE(cm.codec_fec_enabled());
+  RentACodec rac;
+  EXPECT_FALSE(cm.GetStackParams()->use_codec_fec);
+  cm.GetStackParams()->speech_encoder = enc0.get();
+  EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
+  EXPECT_FALSE(cm.GetStackParams()->use_codec_fec);
   enc0->Mark("A");
-  EXPECT_EQ(0, cm.SetCodecFEC(true));
-  EXPECT_TRUE(cm.codec_fec_enabled());
-  cm.RegisterEncoder(enc1.get());
-  EXPECT_TRUE(cm.codec_fec_enabled());
+  EXPECT_EQ(true, cm.SetCodecFEC(true));
+  EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
+  EXPECT_TRUE(cm.GetStackParams()->use_codec_fec);
+  cm.GetStackParams()->speech_encoder = enc1.get();
+  EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
+  EXPECT_TRUE(cm.GetStackParams()->use_codec_fec);
 
-  EXPECT_EQ(0, cm.SetCodecFEC(false));
+  EXPECT_EQ(true, cm.SetCodecFEC(false));
+  EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
   enc0->Mark("B");
-  EXPECT_FALSE(cm.codec_fec_enabled());
-  cm.RegisterEncoder(enc0.get());
-  EXPECT_FALSE(cm.codec_fec_enabled());
+  EXPECT_FALSE(cm.GetStackParams()->use_codec_fec);
+  cm.GetStackParams()->speech_encoder = enc0.get();
+  EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
+  EXPECT_FALSE(cm.GetStackParams()->use_codec_fec);
 }
 
 }  // namespace acm2

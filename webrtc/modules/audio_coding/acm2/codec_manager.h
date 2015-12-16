@@ -33,45 +33,32 @@ class CodecManager final {
   CodecManager();
   ~CodecManager();
 
-  int RegisterEncoder(const CodecInst& send_codec);
+  // Parses the given specification. On success, returns true and updates the
+  // stored CodecInst and stack parameters; on error, returns false.
+  bool RegisterEncoder(const CodecInst& send_codec);
 
-  void RegisterEncoder(AudioEncoder* external_speech_encoder);
+  static CodecInst ForgeCodecInst(const AudioEncoder* external_speech_encoder);
 
-  rtc::Optional<CodecInst> GetCodecInst() const;
+  const CodecInst* GetCodecInst() const {
+    return send_codec_inst_ ? &*send_codec_inst_ : nullptr;
+  }
+  const RentACodec::StackParameters* GetStackParams() const {
+    return &codec_stack_params_;
+  }
+  RentACodec::StackParameters* GetStackParams() { return &codec_stack_params_; }
 
   bool SetCopyRed(bool enable);
 
-  int SetVAD(bool enable, ACMVADMode mode);
+  bool SetVAD(bool enable, ACMVADMode mode);
 
-  void VAD(bool* dtx_enabled, bool* vad_enabled, ACMVADMode* mode) const;
+  bool SetCodecFEC(bool enable_codec_fec);
 
-  int SetCodecFEC(bool enable_codec_fec);
-
-  // Returns a pointer to AudioDecoder of the given codec. For iSAC, encoding
-  // and decoding have to be performed on a shared codec instance. By calling
-  // this method, we get the codec instance that ACM owns.
-  // If |codec| does not share an instance between encoder and decoder, returns
-  // null.
-  AudioDecoder* GetAudioDecoder(const CodecInst& codec);
-
-  bool red_enabled() const { return codec_stack_params_.use_red; }
-
-  bool codec_fec_enabled() const { return codec_stack_params_.use_codec_fec; }
-
-  AudioEncoder* CurrentEncoder() { return rent_a_codec_.GetEncoderStack(); }
-  const AudioEncoder* CurrentEncoder() const {
-    return rent_a_codec_.GetEncoderStack();
-  }
-
-  bool CurrentEncoderIsOpus() const { return encoder_is_opus_; }
+  bool CurrentEncoderIsOpus() const;
 
  private:
   rtc::ThreadChecker thread_checker_;
-  CodecInst send_codec_inst_;
-  RentACodec rent_a_codec_;
+  rtc::Optional<CodecInst> send_codec_inst_;
   RentACodec::StackParameters codec_stack_params_;
-
-  bool encoder_is_opus_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(CodecManager);
 };
