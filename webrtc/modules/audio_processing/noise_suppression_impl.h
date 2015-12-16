@@ -27,8 +27,8 @@ class NoiseSuppressionImpl : public NoiseSuppression {
 
   // TODO(peah): Fold into ctor, once public API is removed.
   void Initialize(int channels, int sample_rate_hz);
-  int AnalyzeCaptureAudio(AudioBuffer* audio);
-  int ProcessCaptureAudio(AudioBuffer* audio);
+  void AnalyzeCaptureAudio(AudioBuffer* audio);
+  void ProcessCaptureAudio(AudioBuffer* audio);
 
   // NoiseSuppression implementation.
   int Enable(bool enable) override;
@@ -42,6 +42,8 @@ class NoiseSuppressionImpl : public NoiseSuppression {
   rtc::CriticalSection* const crit_;
   bool enabled_ GUARDED_BY(crit_) = false;
   Level level_ GUARDED_BY(crit_) = kModerate;
+  int channels_ GUARDED_BY(crit_) = 0;
+  int sample_rate_hz_ GUARDED_BY(crit_) = 0;
   std::vector<rtc::scoped_ptr<Suppressor>> suppressors_ GUARDED_BY(crit_);
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(NoiseSuppressionImpl);
 };

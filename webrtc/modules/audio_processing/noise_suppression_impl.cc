@@ -54,21 +54,26 @@ NoiseSuppressionImpl::~NoiseSuppressionImpl() {}
 
 void NoiseSuppressionImpl::Initialize(int channels, int sample_rate_hz) {
   RTC_DCHECK_LE(0, channels);
-  std::vector<rtc::scoped_ptr<Suppressor>> new_suppressors(channels);
-  for (int i = 0; i < channels; i++) {
-    new_suppressors[i].reset(new Suppressor(sample_rate_hz));
-  }
   rtc::CritScope cs(crit_);
+  channels_ = channels;
+  sample_rate_hz_ = sample_rate_hz;
+  std::vector<rtc::scoped_ptr<Suppressor>> new_suppressors;
+  if (enabled_) {
+    new_suppressors.resize(channels);
+    for (int i = 0; i < channels; i++) {
+      new_suppressors[i].reset(new Suppressor(sample_rate_hz));
+    }
+  }
   suppressors_.swap(new_suppressors);
   set_level(level_);
 }
 
-int NoiseSuppressionImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
+void NoiseSuppressionImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
   RTC_DCHECK(audio);
 #if defined(WEBRTC_NS_FLOAT)
   rtc::CritScope cs(crit_);
   if (!enabled_) {
-    return AudioProcessing::kNoError;
+    return;
   }
 
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
@@ -79,14 +84,13 @@ int NoiseSuppressionImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
                      audio->split_bands_const_f(i)[kBand0To8kHz]);
   }
 #endif
-  return AudioProcessing::kNoError;
 }
 
-int NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
+void NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   RTC_DCHECK(audio);
   rtc::CritScope cs(crit_);
   if (!enabled_) {
-    return AudioProcessing::kNoError;
+    return;
   }
 
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
@@ -105,12 +109,14 @@ int NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
                       audio->split_bands(i));
 #endif
   }
-  return AudioProcessing::kNoError;
 }
 
 int NoiseSuppressionImpl::Enable(bool enable) {
   rtc::CritScope cs(crit_);
-  enabled_ = enable;
+  if (enabled_ != enable) {
+    enabled_ = enable;
+    Initialize(channels_, sample_rate_hz_);
+  }
   return AudioProcessing::kNoError;
 }
 
@@ -120,7 +126,6 @@ bool NoiseSuppressionImpl::is_enabled() const {
 }
 
 int NoiseSuppressionImpl::set_level(Level level) {
-  rtc::CritScope cs(crit_);
   int policy = 1;
   switch (level) {
     case NoiseSuppression::kLow:
@@ -138,6 +143,7 @@ int NoiseSuppressionImpl::set_level(Level level) {
     default:
       RTC_NOTREACHED();
   }
+  rtc::CritScope cs(crit_);
   level_ = level;
   for (auto& suppressor : suppressors_) {
     int error = NS_SET_POLICY(suppressor->state(), policy);
