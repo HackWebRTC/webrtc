@@ -25,9 +25,41 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This file is currently stubbed so that Chromium's build files can be updated.
-
 #ifndef TALK_APP_WEBRTC_MEDIASTREAMOBSERVER_H_
 #define TALK_APP_WEBRTC_MEDIASTREAMOBSERVER_H_
+
+#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/sigslot.h"
+
+namespace webrtc {
+
+// Helper class which will listen for changes to a stream and emit the
+// corresponding signals.
+class MediaStreamObserver : public ObserverInterface {
+ public:
+  explicit MediaStreamObserver(MediaStreamInterface* stream);
+  ~MediaStreamObserver();
+
+  const MediaStreamInterface* stream() const { return stream_; }
+
+  void OnChanged() override;
+
+  sigslot::signal2<AudioTrackInterface*, MediaStreamInterface*>
+      SignalAudioTrackAdded;
+  sigslot::signal2<AudioTrackInterface*, MediaStreamInterface*>
+      SignalAudioTrackRemoved;
+  sigslot::signal2<VideoTrackInterface*, MediaStreamInterface*>
+      SignalVideoTrackAdded;
+  sigslot::signal2<VideoTrackInterface*, MediaStreamInterface*>
+      SignalVideoTrackRemoved;
+
+ private:
+  rtc::scoped_refptr<MediaStreamInterface> stream_;
+  AudioTrackVector cached_audio_tracks_;
+  VideoTrackVector cached_video_tracks_;
+};
+
+}  // namespace webrtc
 
 #endif  // TALK_APP_WEBRTC_MEDIASTREAMOBSERVER_H_

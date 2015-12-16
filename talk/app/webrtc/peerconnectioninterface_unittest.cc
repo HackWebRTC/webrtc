@@ -1156,6 +1156,48 @@ TEST_F(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
   EXPECT_NE(audio_ssrc, video_ssrc);
 }
 
+// Test that it's possible to call AddTrack on a MediaStream after adding
+// the stream to a PeerConnection.
+// TODO(deadbeef): Remove this test once this behavior is no longer supported.
+TEST_F(PeerConnectionInterfaceTest, AddTrackAfterAddStream) {
+  CreatePeerConnection();
+  // Create audio stream and add to PeerConnection.
+  AddVoiceStream(kStreamLabel1);
+  MediaStreamInterface* stream = pc_->local_streams()->at(0);
+
+  // Add video track to the audio-only stream.
+  scoped_refptr<VideoTrackInterface> video_track(
+      pc_factory_->CreateVideoTrack("video_label", nullptr));
+  stream->AddTrack(video_track.get());
+
+  scoped_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(offer.use(), nullptr));
+
+  const cricket::MediaContentDescription* video_desc =
+      cricket::GetFirstVideoContentDescription(offer->description());
+  EXPECT_TRUE(video_desc != nullptr);
+}
+
+// Test that it's possible to call RemoveTrack on a MediaStream after adding
+// the stream to a PeerConnection.
+// TODO(deadbeef): Remove this test once this behavior is no longer supported.
+TEST_F(PeerConnectionInterfaceTest, RemoveTrackAfterAddStream) {
+  CreatePeerConnection();
+  // Create audio/video stream and add to PeerConnection.
+  AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
+  MediaStreamInterface* stream = pc_->local_streams()->at(0);
+
+  // Remove the video track.
+  stream->RemoveTrack(stream->GetVideoTracks()[0]);
+
+  scoped_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(offer.use(), nullptr));
+
+  const cricket::MediaContentDescription* video_desc =
+      cricket::GetFirstVideoContentDescription(offer->description());
+  EXPECT_TRUE(video_desc == nullptr);
+}
+
 // Test that we can specify a certain track that we want statistics about.
 TEST_F(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
   InitiateCall();

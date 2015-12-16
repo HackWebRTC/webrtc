@@ -27,6 +27,7 @@
 
 #include "talk/app/webrtc/peerconnection.h"
 
+#include <algorithm>
 #include <vector>
 #include <cctype>  // for isdigit
 
@@ -36,6 +37,7 @@
 #include "talk/app/webrtc/jsepsessiondescription.h"
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/mediastream.h"
+#include "talk/app/webrtc/mediastreamobserver.h"
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
 #include "talk/app/webrtc/remoteaudiosource.h"
@@ -740,48 +742,22 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
   }
 
   local_streams_->AddStream(local_stream);
+  MediaStreamObserver* observer = new MediaStreamObserver(local_stream);
+  observer->SignalAudioTrackAdded.connect(this,
+                                          &PeerConnection::OnAudioTrackAdded);
+  observer->SignalAudioTrackRemoved.connect(
+      this, &PeerConnection::OnAudioTrackRemoved);
+  observer->SignalVideoTrackAdded.connect(this,
+                                          &PeerConnection::OnVideoTrackAdded);
+  observer->SignalVideoTrackRemoved.connect(
+      this, &PeerConnection::OnVideoTrackRemoved);
+  stream_observers_.push_back(rtc::scoped_ptr<MediaStreamObserver>(observer));
 
   for (const auto& track : local_stream->GetAudioTracks()) {
-    auto sender = FindSenderForTrack(track.get());
-    if (sender == senders_.end()) {
-      // Normal case; we've never seen this track before.
-      AudioRtpSender* new_sender = new AudioRtpSender(
-          track.get(), local_stream->label(), session_.get(), stats_.get());
-      senders_.push_back(new_sender);
-      // If the sender has already been configured in SDP, we call SetSsrc,
-      // which will connect the sender to the underlying transport. This can
-      // occur if a local session description that contains the ID of the sender
-      // is set before AddStream is called. It can also occur if the local
-      // session description is not changed and RemoveStream is called, and
-      // later AddStream is called again with the same stream.
-      const TrackInfo* track_info = FindTrackInfo(
-          local_audio_tracks_, local_stream->label(), track->id());
-      if (track_info) {
-        new_sender->SetSsrc(track_info->ssrc);
-      }
-    } else {
-      // We already have a sender for this track, so just change the stream_id
-      // so that it's correct in the next call to CreateOffer.
-      (*sender)->set_stream_id(local_stream->label());
-    }
+    OnAudioTrackAdded(track.get(), local_stream);
   }
   for (const auto& track : local_stream->GetVideoTracks()) {
-    auto sender = FindSenderForTrack(track.get());
-    if (sender == senders_.end()) {
-      // Normal case; we've never seen this track before.
-      VideoRtpSender* new_sender = new VideoRtpSender(
-          track.get(), local_stream->label(), session_.get());
-      senders_.push_back(new_sender);
-      const TrackInfo* track_info = FindTrackInfo(
-          local_video_tracks_, local_stream->label(), track->id());
-      if (track_info) {
-        new_sender->SetSsrc(track_info->ssrc);
-      }
-    } else {
-      // We already have a sender for this track, so just change the stream_id
-      // so that it's correct in the next call to CreateOffer.
-      (*sender)->set_stream_id(local_stream->label());
-    }
+    OnVideoTrackAdded(track.get(), local_stream);
   }
 
   stats_->AddStream(local_stream);
@@ -789,32 +765,24 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
   return true;
 }
 
-// TODO(deadbeef): Don't destroy RtpSenders here; they should be kept around
-// indefinitely, when we have unified plan SDP.
 void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
   TRACE_EVENT0("webrtc", "PeerConnection::RemoveStream");
   for (const auto& track : local_stream->GetAudioTracks()) {
-    auto sender = FindSenderForTrack(track.get());
-    if (sender == senders_.end()) {
-      LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
-                      << " doesn't exist.";
-      continue;
-    }
-    (*sender)->Stop();
-    senders_.erase(sender);
+    OnAudioTrackRemoved(track.get(), local_stream);
   }
   for (const auto& track : local_stream->GetVideoTracks()) {
-    auto sender = FindSenderForTrack(track.get());
-    if (sender == senders_.end()) {
-      LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
-                      << " doesn't exist.";
-      continue;
-    }
-    (*sender)->Stop();
-    senders_.erase(sender);
+    OnVideoTrackRemoved(track.get(), local_stream);
   }
 
   local_streams_->RemoveStream(local_stream);
+  stream_observers_.erase(
+      std::remove_if(
+          stream_observers_.begin(), stream_observers_.end(),
+          [local_stream](const rtc::scoped_ptr<MediaStreamObserver>& observer) {
+            return observer->stream()->label().compare(local_stream->label()) ==
+                   0;
+          }),
+      stream_observers_.end());
 
   if (IsClosed()) {
     return;
@@ -1430,6 +1398,80 @@ void PeerConnection::ChangeSignalingState(
   }
   observer_->OnSignalingChange(signaling_state_);
   observer_->OnStateChange(PeerConnectionObserver::kSignalingState);
+}
+
+void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,
+                                       MediaStreamInterface* stream) {
+  auto sender = FindSenderForTrack(track);
+  if (sender != senders_.end()) {
+    // We already have a sender for this track, so just change the stream_id
+    // so that it's correct in the next call to CreateOffer.
+    (*sender)->set_stream_id(stream->label());
+    return;
+  }
+
+  // Normal case; we've never seen this track before.
+  AudioRtpSender* new_sender =
+      new AudioRtpSender(track, stream->label(), session_.get(), stats_.get());
+  senders_.push_back(new_sender);
+  // If the sender has already been configured in SDP, we call SetSsrc,
+  // which will connect the sender to the underlying transport. This can
+  // occur if a local session description that contains the ID of the sender
+  // is set before AddStream is called. It can also occur if the local
+  // session description is not changed and RemoveStream is called, and
+  // later AddStream is called again with the same stream.
+  const TrackInfo* track_info =
+      FindTrackInfo(local_audio_tracks_, stream->label(), track->id());
+  if (track_info) {
+    new_sender->SetSsrc(track_info->ssrc);
+  }
+}
+
+// TODO(deadbeef): Don't destroy RtpSenders here; they should be kept around
+// indefinitely, when we have unified plan SDP.
+void PeerConnection::OnAudioTrackRemoved(AudioTrackInterface* track,
+                                         MediaStreamInterface* stream) {
+  auto sender = FindSenderForTrack(track);
+  if (sender == senders_.end()) {
+    LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
+                    << " doesn't exist.";
+    return;
+  }
+  (*sender)->Stop();
+  senders_.erase(sender);
+}
+
+void PeerConnection::OnVideoTrackAdded(VideoTrackInterface* track,
+                                       MediaStreamInterface* stream) {
+  auto sender = FindSenderForTrack(track);
+  if (sender != senders_.end()) {
+    // We already have a sender for this track, so just change the stream_id
+    // so that it's correct in the next call to CreateOffer.
+    (*sender)->set_stream_id(stream->label());
+    return;
+  }
+
+  // Normal case; we've never seen this track before.
+  VideoRtpSender* new_sender =
+      new VideoRtpSender(track, stream->label(), session_.get());
+  senders_.push_back(new_sender);
+  const TrackInfo* track_info =
+      FindTrackInfo(local_video_tracks_, stream->label(), track->id());
+  if (track_info) {
+    new_sender->SetSsrc(track_info->ssrc);
+  }
+}
+
+void PeerConnection::OnVideoTrackRemoved(VideoTrackInterface* track,
+                                         MediaStreamInterface* stream) {
+  auto sender = FindSenderForTrack(track);
+  if (sender == senders_.end()) {
+    LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
+                    << " doesn't exist.";
+    return;
+  }
+  (*sender)->Stop();
+  senders_.erase(sender);
 }
 
 void PeerConnection::PostSetSessionDescriptionFailure(

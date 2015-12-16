@@ -42,6 +42,7 @@
 
 namespace webrtc {
 
+class MediaStreamObserver;
 class RemoteMediaStreamFactory;
 
 typedef std::vector<PortAllocatorFactoryInterface::StunConfiguration>
@@ -200,6 +201,16 @@ class PeerConnection : public PeerConnectionInterface,
   // Signals from WebRtcSession.
   void OnSessionStateChange(WebRtcSession* session, WebRtcSession::State state);
   void ChangeSignalingState(SignalingState signaling_state);
+
+  // Signals from MediaStreamObserver.
+  void OnAudioTrackAdded(AudioTrackInterface* track,
+                         MediaStreamInterface* stream);
+  void OnAudioTrackRemoved(AudioTrackInterface* track,
+                           MediaStreamInterface* stream);
+  void OnVideoTrackAdded(VideoTrackInterface* track,
+                         MediaStreamInterface* stream);
+  void OnVideoTrackRemoved(VideoTrackInterface* track,
+                           MediaStreamInterface* stream);
 
   rtc::Thread* signaling_thread() const {
     return factory_->signaling_thread();
@@ -363,6 +374,8 @@ class PeerConnection : public PeerConnectionInterface,
   rtc::scoped_refptr<StreamCollection> local_streams_;
   // Streams created as a result of SetRemoteDescription.
   rtc::scoped_refptr<StreamCollection> remote_streams_;
+
+  std::vector<rtc::scoped_ptr<MediaStreamObserver>> stream_observers_;
 
   // These lists store track info seen in local/remote descriptions.
   TrackInfos remote_audio_tracks_;

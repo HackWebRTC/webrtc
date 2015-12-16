@@ -746,6 +746,8 @@
         'app/webrtc/mediastream.cc',
         'app/webrtc/mediastream.h',
         'app/webrtc/mediastreaminterface.h',
+        'app/webrtc/mediastreamobserver.cc',
+        'app/webrtc/mediastreamobserver.h',
         'app/webrtc/mediastreamprovider.h',
         'app/webrtc/mediastreamproxy.h',
         'app/webrtc/mediastreamtrack.h',
