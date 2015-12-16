@@ -149,8 +149,7 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   ApmPublicSubmodules()
       : echo_cancellation(nullptr),
         echo_control_mobile(nullptr),
-        gain_control(nullptr),
-        voice_detection(nullptr) {}
+        gain_control(nullptr) {}
   // Accessed externally of APM without any lock acquired.
   EchoCancellationImpl* echo_cancellation;
   EchoControlMobileImpl* echo_control_mobile;
@@ -158,7 +157,7 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   rtc::scoped_ptr<HighPassFilterImpl> high_pass_filter;
   rtc::scoped_ptr<LevelEstimatorImpl> level_estimator;
   rtc::scoped_ptr<NoiseSuppressionImpl> noise_suppression;
-  VoiceDetectionImpl* voice_detection;
+  rtc::scoped_ptr<VoiceDetectionImpl> voice_detection;
   rtc::scoped_ptr<GainControlForNewAgc> gain_control_for_new_agc;
 
   // Accessed internally from both render and capture.
@@ -246,8 +245,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
         new LevelEstimatorImpl(&crit_capture_));
     public_submodules_->noise_suppression.reset(
         new NoiseSuppressionImpl(&crit_capture_));
-    public_submodules_->voice_detection =
-        new VoiceDetectionImpl(this, &crit_capture_);
+    public_submodules_->voice_detection.reset(
+        new VoiceDetectionImpl(&crit_capture_));
     public_submodules_->gain_control_for_new_agc.reset(
         new GainControlForNewAgc(public_submodules_->gain_control));
 
@@ -257,8 +256,6 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
         public_submodules_->echo_control_mobile);
     private_submodules_->component_list.push_back(
         public_submodules_->gain_control);
-    private_submodules_->component_list.push_back(
-        public_submodules_->voice_detection);
   }
 
   SetExtraOptions(config);
@@ -396,6 +393,7 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializeHighPassFilter();
   InitializeNoiseSuppression();
   InitializeLevelEstimator();
+  InitializeVoiceDetection();
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->Open()) {
@@ -776,7 +774,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   public_submodules_->noise_suppression->ProcessCaptureAudio(ca);
   RETURN_ON_ERR(
       public_submodules_->echo_control_mobile->ProcessCaptureAudio(ca));
-  RETURN_ON_ERR(public_submodules_->voice_detection->ProcessCaptureAudio(ca));
+  public_submodules_->voice_detection->ProcessCaptureAudio(ca);
 
   if (constants_.use_new_agc &&
       public_submodules_->gain_control->is_enabled() &&
@@ -1162,7 +1160,7 @@ NoiseSuppression* AudioProcessingImpl::noise_suppression() const {
 VoiceDetection* AudioProcessingImpl::voice_detection() const {
   // Adding a lock here has no effect as it allows any access to the submodule
   // from the returned pointer.
-  return public_submodules_->voice_detection;
+  return public_submodules_->voice_detection.get();
 }
 
 bool AudioProcessingImpl::is_data_processed() const {
@@ -1183,6 +1181,9 @@ bool AudioProcessingImpl::is_data_processed() const {
     enabled_count++;
   }
   if (public_submodules_->level_estimator->is_enabled()) {
+    enabled_count++;
+  }
+  if (public_submodules_->voice_detection->is_enabled()) {
     enabled_count++;
   }
 
@@ -1311,6 +1312,10 @@ void AudioProcessingImpl::InitializeNoiseSuppression() {
 
 void AudioProcessingImpl::InitializeLevelEstimator() {
   public_submodules_->level_estimator->Initialize();
+}
+
+void AudioProcessingImpl::InitializeVoiceDetection() {
+  public_submodules_->voice_detection->Initialize(proc_split_sample_rate_hz());
 }
 
 void AudioProcessingImpl::MaybeUpdateHistograms() {
