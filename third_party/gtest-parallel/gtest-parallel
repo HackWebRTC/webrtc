@@ -18,12 +18,61 @@ import gzip
 import multiprocessing
 import optparse
 import os
+import signal
 import subprocess
 import sys
 import tempfile
+import thread
 import threading
 import time
 import zlib
+
+# An object that catches SIGINT sent to the Python process and notices
+# if processes passed to wait() die by SIGINT (we need to look for
+# both of those cases, because pressing Ctrl+C can result in either
+# the main process or one of the subprocesses getting the signal).
+#
+# Before a SIGINT is seen, wait(p) will simply call p.wait() and
+# return the result. Once a SIGINT has been seen (in the main process
+# or a subprocess, including the one the current call is waiting for),
+# wait(p) will call p.terminate() and raise ProcessWasInterrupted.
+class SigintHandler(object):
+  class ProcessWasInterrupted(Exception): pass
+  sigint_returncodes = {-signal.SIGINT,  # Unix
+                        -1073741510,     # Windows
+                        }
+  def __init__(self):
+    self.__lock = threading.Lock()
+    self.__processes = set()
+    self.__got_sigint = False
+    signal.signal(signal.SIGINT, self.__sigint_handler)
+  def __on_sigint(self):
+    self.__got_sigint = True
+    while self.__processes:
+      try:
+        self.__processes.pop().terminate()
+      except OSError:
+        pass
+  def __sigint_handler(self, signal_num, frame):
+    with self.__lock:
+      self.__on_sigint()
+  def got_sigint(self):
+    with self.__lock:
+      return self.__got_sigint
+  def wait(self, p):
+    with self.__lock:
+      if self.__got_sigint:
+        p.terminate()
+      self.__processes.add(p)
+    code = p.wait()
+    with self.__lock:
+      self.__processes.discard(p)
+      if code in self.sigint_returncodes:
+        self.__on_sigint()
+      if self.__got_sigint:
+        raise self.ProcessWasInterrupted
+    return code
+sigint_handler = SigintHandler()
 
 # Return the width of the terminal, or None if it couldn't be
 # determined (e.g. because we're not being run interactively).
@@ -301,7 +350,10 @@ def run_job((command, job_id, test)):
                              ['--gtest_color=' + options.gtest_color],
                            stdout=log.file,
                            stderr=log.file)
-    code = sub.wait()
+    try:
+      code = sigint_handler.wait(sub)
+    except sigint_handler.ProcessWasInterrupted:
+      thread.exit()
     runtime_ms = int(1000 * (time.time() - begin))
     logger.logfile(job_id, log.name)
 
@@ -344,4 +396,4 @@ if options.print_test_times:
               if times.get_test_time(test_binary, test) is not None)
   for (time_ms, test_binary, test) in ts:
     print "%8s %s" % ("%dms" % time_ms, test)
-sys.exit(exit_code)
+sys.exit(-signal.SIGINT if sigint_handler.got_sigint() else exit_code)
