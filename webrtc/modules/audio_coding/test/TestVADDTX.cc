@@ -234,10 +234,10 @@ void TestWebRtcVadDtx::SetVAD(bool enable_dtx, bool enable_vad,
 // Following is the implementation of TestOpusDtx.
 void TestOpusDtx::Perform() {
 #ifdef WEBRTC_CODEC_ISAC
-  // If we set other codec than Opus, DTX cannot be toggled.
+  // If we set other codec than Opus, DTX cannot be switched on.
   RegisterCodec(kIsacWb);
   EXPECT_EQ(-1, acm_send_->EnableOpusDtx());
-  EXPECT_EQ(-1, acm_send_->DisableOpusDtx());
+  EXPECT_EQ(0, acm_send_->DisableOpusDtx());
 #endif
 
 #ifdef WEBRTC_CODEC_OPUS

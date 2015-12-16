@@ -166,7 +166,9 @@ bool CodecManager::SetVAD(bool enable, ACMVADMode mode) {
     return false;
   }
 
-  if (CurrentEncoderIsOpus()) {
+  // TODO(kwiberg): This doesn't protect Opus when injected as an external
+  // encoder.
+  if (send_codec_inst_ && IsOpus(*send_codec_inst_)) {
     // VAD/DTX not supported, but don't fail.
     enable = false;
   }
@@ -185,10 +187,6 @@ bool CodecManager::SetCodecFEC(bool enable_codec_fec) {
 
   codec_stack_params_.use_codec_fec = enable_codec_fec;
   return true;
-}
-
-bool CodecManager::CurrentEncoderIsOpus() const {
-  return send_codec_inst_ ? IsOpus(*send_codec_inst_) : false;
 }
 
 }  // namespace acm2

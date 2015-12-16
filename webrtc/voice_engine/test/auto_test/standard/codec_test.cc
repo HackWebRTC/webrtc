@@ -153,17 +153,6 @@ TEST_F(CodecTest, OpusMaxPlaybackRateCanBeSet) {
   }
 }
 
-TEST_F(CodecTest, OpusMaxPlaybackRateCannotBeSetForNonOpus) {
-  for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
-    voe_codec_->GetCodec(i, codec_instance_);
-    if (!_stricmp("opus", codec_instance_.plname)) {
-      continue;
-    }
-    voe_codec_->SetSendCodec(channel_, codec_instance_);
-    EXPECT_EQ(-1, voe_codec_->SetOpusMaxPlaybackRate(channel_, 16000));
-  }
-}
-
 TEST_F(CodecTest, OpusDtxCanBeSetForOpus) {
   for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
     voe_codec_->GetCodec(i, codec_instance_);
@@ -183,7 +172,6 @@ TEST_F(CodecTest, OpusDtxCannotBeSetForNonOpus) {
       continue;
     }
     voe_codec_->SetSendCodec(channel_, codec_instance_);
-    EXPECT_EQ(-1, voe_codec_->SetOpusDtx(channel_, false));
     EXPECT_EQ(-1, voe_codec_->SetOpusDtx(channel_, true));
   }
 }

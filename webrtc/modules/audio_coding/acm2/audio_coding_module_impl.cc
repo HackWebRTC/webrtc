@@ -744,8 +744,6 @@ int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
   if (!HaveValidEncoder("SetOpusApplication")) {
     return -1;
   }
-  if (!codec_manager_.CurrentEncoderIsOpus())
-    return -1;
   AudioEncoder::Application app;
   switch (application) {
     case kVoip:
@@ -767,8 +765,6 @@ int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
   if (!HaveValidEncoder("SetOpusMaxPlaybackRate")) {
     return -1;
   }
-  if (!codec_manager_.CurrentEncoderIsOpus())
-    return -1;
   rent_a_codec_.GetEncoderStack()->SetMaxPlaybackRate(frequency_hz);
   return 0;
 }
@@ -778,8 +774,6 @@ int AudioCodingModuleImpl::EnableOpusDtx() {
   if (!HaveValidEncoder("EnableOpusDtx")) {
     return -1;
   }
-  if (!codec_manager_.CurrentEncoderIsOpus())
-    return -1;
   return rent_a_codec_.GetEncoderStack()->SetDtx(true) ? 0 : -1;
 }
 
@@ -788,8 +782,6 @@ int AudioCodingModuleImpl::DisableOpusDtx() {
   if (!HaveValidEncoder("DisableOpusDtx")) {
     return -1;
   }
-  if (!codec_manager_.CurrentEncoderIsOpus())
-    return -1;
   return rent_a_codec_.GetEncoderStack()->SetDtx(false) ? 0 : -1;
 }
 

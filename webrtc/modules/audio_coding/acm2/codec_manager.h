@@ -53,8 +53,6 @@ class CodecManager final {
 
   bool SetCodecFEC(bool enable_codec_fec);
 
-  bool CurrentEncoderIsOpus() const;
-
  private:
   rtc::ThreadChecker thread_checker_;
   rtc::Optional<CodecInst> send_codec_inst_;
