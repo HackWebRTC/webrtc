@@ -69,6 +69,9 @@ using cricket::CryptoParamsVec;
 using cricket::AudioContentDescription;
 using cricket::VideoContentDescription;
 using cricket::DataContentDescription;
+using cricket::GetFirstAudioContent;
+using cricket::GetFirstVideoContent;
+using cricket::GetFirstDataContent;
 using cricket::GetFirstAudioContentDescription;
 using cricket::GetFirstVideoContentDescription;
 using cricket::GetFirstDataContentDescription;
@@ -607,6 +610,7 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
 }
+
 // Create a RTP data offer, and ensure it matches what we expect.
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateRtpDataOffer) {
   MediaSessionOptions opts;
@@ -2312,4 +2316,31 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestVADEnableOption) {
   ASSERT_TRUE(answer.get() != NULL);
   audio_content = answer->GetContentByName("audio");
   EXPECT_TRUE(VerifyNoCNCodecs(audio_content));
+}
+
+// Test that the content name ("mid" in SDP) is unchanged when creating a
+// new offer.
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestContentNameNotChangedInSubsequentOffers) {
+  MediaSessionOptions opts;
+  opts.recv_audio = true;
+  opts.recv_video = true;
+  opts.data_channel_type = cricket::DCT_SCTP;
+  // Create offer and modify the default content names.
+  rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, nullptr));
+  for (ContentInfo& content : offer->contents()) {
+    content.name.append("_modified");
+  }
+
+  rtc::scoped_ptr<SessionDescription> updated_offer(
+      f1_.CreateOffer(opts, offer.get()));
+  const ContentInfo* audio_content = GetFirstAudioContent(updated_offer.get());
+  const ContentInfo* video_content = GetFirstVideoContent(updated_offer.get());
+  const ContentInfo* data_content = GetFirstDataContent(updated_offer.get());
+  ASSERT_TRUE(audio_content != nullptr);
+  ASSERT_TRUE(video_content != nullptr);
+  ASSERT_TRUE(data_content != nullptr);
+  EXPECT_EQ("audio_modified", audio_content->name);
+  EXPECT_EQ("video_modified", video_content->name);
+  EXPECT_EQ("data_modified", data_content->name);
 }

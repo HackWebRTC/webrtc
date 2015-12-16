@@ -1556,9 +1556,14 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
     const AudioCodecs& audio_codecs,
     StreamParamsVec* current_streams,
     SessionDescription* desc) const {
+  const ContentInfo* current_audio_content =
+      GetFirstAudioContent(current_description);
+  std::string content_name =
+      current_audio_content ? current_audio_content->name : CN_AUDIO;
+
   cricket::SecurePolicy sdes_policy =
-      IsDtlsActive(CN_AUDIO, current_description) ?
-          cricket::SEC_DISABLED : secure();
+      IsDtlsActive(content_name, current_description) ? cricket::SEC_DISABLED
+                                                      : secure();
 
   scoped_ptr<AudioContentDescription> audio(new AudioContentDescription());
   std::vector<std::string> crypto_suites;
@@ -1594,8 +1599,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
     }
   }
 
-  desc->AddContent(CN_AUDIO, NS_JINGLE_RTP, audio.release());
-  if (!AddTransportOffer(CN_AUDIO, options.transport_options,
+  desc->AddContent(content_name, NS_JINGLE_RTP, audio.release());
+  if (!AddTransportOffer(content_name, options.transport_options,
                          current_description, desc)) {
     return false;
   }
@@ -1610,9 +1615,14 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     const VideoCodecs& video_codecs,
     StreamParamsVec* current_streams,
     SessionDescription* desc) const {
+  const ContentInfo* current_video_content =
+      GetFirstVideoContent(current_description);
+  std::string content_name =
+      current_video_content ? current_video_content->name : CN_VIDEO;
+
   cricket::SecurePolicy sdes_policy =
-      IsDtlsActive(CN_VIDEO, current_description) ?
-          cricket::SEC_DISABLED : secure();
+      IsDtlsActive(content_name, current_description) ? cricket::SEC_DISABLED
+                                                      : secure();
 
   scoped_ptr<VideoContentDescription> video(new VideoContentDescription());
   std::vector<std::string> crypto_suites;
@@ -1649,8 +1659,8 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     }
   }
 
-  desc->AddContent(CN_VIDEO, NS_JINGLE_RTP, video.release());
-  if (!AddTransportOffer(CN_VIDEO, options.transport_options,
+  desc->AddContent(content_name, NS_JINGLE_RTP, video.release());
+  if (!AddTransportOffer(content_name, options.transport_options,
                          current_description, desc)) {
     return false;
   }
@@ -1671,9 +1681,14 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
 
   FilterDataCodecs(data_codecs, is_sctp);
 
+  const ContentInfo* current_data_content =
+      GetFirstDataContent(current_description);
+  std::string content_name =
+      current_data_content ? current_data_content->name : CN_DATA;
+
   cricket::SecurePolicy sdes_policy =
-      IsDtlsActive(CN_DATA, current_description) ?
-          cricket::SEC_DISABLED : secure();
+      IsDtlsActive(content_name, current_description) ? cricket::SEC_DISABLED
+                                                      : secure();
   std::vector<std::string> crypto_suites;
   if (is_sctp) {
     // SDES doesn't make sense for SCTP, so we disable it, and we only
@@ -1703,13 +1718,13 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
   }
 
   if (is_sctp) {
-    desc->AddContent(CN_DATA, NS_JINGLE_DRAFT_SCTP, data.release());
+    desc->AddContent(content_name, NS_JINGLE_DRAFT_SCTP, data.release());
   } else {
     data->set_bandwidth(options.data_bandwidth);
     SetMediaProtocol(secure_transport, data.get());
-    desc->AddContent(CN_DATA, NS_JINGLE_RTP, data.release());
+    desc->AddContent(content_name, NS_JINGLE_RTP, data.release());
   }
-  if (!AddTransportOffer(CN_DATA, options.transport_options,
+  if (!AddTransportOffer(content_name, options.transport_options,
                          current_description, desc)) {
     return false;
   }
