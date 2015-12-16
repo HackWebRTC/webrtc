@@ -389,10 +389,7 @@ int32_t PacedSender::Process() {
     // reinsert it if send fails.
     const paced_sender::Packet& packet = packets_->BeginPop();
 
-    // TODO(holmer): Because of this bug issue 5307 we have to send audio
-    // packets even when the pacer is paused. Here we assume audio packets are
-    // always high priority and that they are the only high priority packets.
-    if ((!paused_ || packet.priority == kHighPriority) && SendPacket(packet)) {
+    if (SendPacket(packet)) {
       // Send succeeded, remove it from the queue.
       packets_->FinalizePop(packet);
       if (prober_->IsProbing())
@@ -421,6 +418,11 @@ int32_t PacedSender::Process() {
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
+  // TODO(holmer): Because of this bug issue 5307 we have to send audio
+  // packets even when the pacer is paused. Here we assume audio packets are
+  // always high priority and that they are the only high priority packets.
+  if (paused_ && packet.priority != kHighPriority)
+    return false;
   critsect_->Leave();
   const bool success = callback_->TimeToSendPacket(packet.ssrc,
                                                    packet.sequence_number,
@@ -428,7 +430,9 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
                                                    packet.retransmission);
   critsect_->Enter();
 
-  if (success) {
+  // TODO(holmer): High priority packets should only be accounted for if we are
+  // allocating bandwidth for audio.
+  if (success && packet.priority != kHighPriority) {
     // Update media bytes sent.
     prober_->PacketSent(clock_->TimeInMilliseconds(), packet.bytes);
     media_budget_->UseBudget(packet.bytes);
