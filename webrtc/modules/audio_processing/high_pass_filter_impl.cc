@@ -26,6 +26,10 @@ class HighPassFilterImpl::BiquadFilter {
       ba_(sample_rate_hz == AudioProcessing::kSampleRate8kHz ?
           kFilterCoefficients8kHz : kFilterCoefficients)
   {
+    Reset();
+  }
+
+  void Reset() {
     std::memset(x_, 0, sizeof(x_));
     std::memset(y_, 0, sizeof(y_));
   }
@@ -115,6 +119,11 @@ void HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 
 int HighPassFilterImpl::Enable(bool enable) {
   rtc::CritScope cs(crit_);
+  if (!enabled_ && enable) {
+    for (auto& filter : filters_) {
+      filter->Reset();
+    }
+  }
   enabled_ = enable;
   return AudioProcessing::kNoError;
 }
