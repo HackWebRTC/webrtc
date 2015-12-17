@@ -104,10 +104,12 @@ class Outputter(object):
     else:
       self.__out_file.write("\r" + msg[:self.__width].ljust(self.__width))
       self.__previous_line_was_transient = True
-  def permanent_line(self, msg):
+  def flush_transient_output(self):
     if self.__previous_line_was_transient:
       self.__out_file.write("\n")
       self.__previous_line_was_transient = False
+  def permanent_line(self, msg):
+    self.flush_transient_output()
     self.__out_file.write(msg + "\n")
 
 stdout_lock = threading.Lock()
@@ -169,6 +171,7 @@ class FilterFormat:
                               % (len(self.failures), self.total_tests))
       for (binary, test) in self.failures:
         self.out.permanent_line(" " + binary + ": " + test)
+    self.out.flush_transient_output()
 
 class RawFormat:
   def log(self, line):
