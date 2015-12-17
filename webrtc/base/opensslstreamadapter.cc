@@ -365,7 +365,7 @@ std::string OpenSSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
 #else
   for (const SslCipherMapEntry* entry = kSslCipherMap; entry->rfc_name;
        ++entry) {
-    if (cipher_suite == entry->openssl_id) {
+    if (cipher_suite == static_cast<int>(entry->openssl_id)) {
       return entry->rfc_name;
     }
   }
