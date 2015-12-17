@@ -87,6 +87,7 @@
 #include <stdlib.h>
 
 #include <algorithm>  // For std::swap().
+#include <cstddef>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/template_util.h"
@@ -326,7 +327,7 @@ class scoped_ptr {
   scoped_ptr(element_type* p, const D& d) : impl_(p, d) {}
 
   // Constructor.  Allows construction from a nullptr.
-  scoped_ptr(decltype(nullptr)) : impl_(nullptr) {}
+  scoped_ptr(std::nullptr_t) : impl_(nullptr) {}
 
   // Constructor.  Allows construction from a scoped_ptr rvalue for a
   // convertible type and deleter.
@@ -363,7 +364,7 @@ class scoped_ptr {
 
   // operator=.  Allows assignment from a nullptr. Deletes the currently owned
   // object, if any.
-  scoped_ptr& operator=(decltype(nullptr)) {
+  scoped_ptr& operator=(std::nullptr_t) {
     reset();
     return *this;
   }
@@ -483,7 +484,7 @@ class scoped_ptr<T[], D> {
   explicit scoped_ptr(element_type* array) : impl_(array) {}
 
   // Constructor.  Allows construction from a nullptr.
-  scoped_ptr(decltype(nullptr)) : impl_(nullptr) {}
+  scoped_ptr(std::nullptr_t) : impl_(nullptr) {}
 
   // Constructor.  Allows construction from a scoped_ptr rvalue.
   scoped_ptr(scoped_ptr&& other) : impl_(&other.impl_) {}
@@ -496,7 +497,7 @@ class scoped_ptr<T[], D> {
 
   // operator=.  Allows assignment from a nullptr. Deletes the currently owned
   // array, if any.
-  scoped_ptr& operator=(decltype(nullptr)) {
+  scoped_ptr& operator=(std::nullptr_t) {
     reset();
     return *this;
   }
