@@ -47,14 +47,14 @@ using webrtc::VideoCaptureModule;
       SleepMs(5); \
       res = (ex); \
     } \
-  } while (0);\
+  } while (0)
 
 #define EXPECT_TRUE_WAIT(ex, timeout) \
   do { \
     bool res; \
     WAIT_(ex, timeout, res); \
     if (!res) EXPECT_TRUE(ex); \
-  } while (0);
+  } while (0)
 
 
 static const int kTimeOut = 5000;

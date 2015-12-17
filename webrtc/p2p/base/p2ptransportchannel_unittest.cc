@@ -1975,7 +1975,7 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
 
   conn1->ReceivedPing();
   conn1->OnReadPacket("ABC", 3, rtc::CreatePacketTime(0));
-  EXPECT_TRUE_WAIT(ch.best_connection() != nullptr, 1000)
+  EXPECT_TRUE_WAIT(ch.best_connection() != nullptr, 1000);
   EXPECT_TRUE_WAIT(ch.receiving(), 1000);
   EXPECT_TRUE_WAIT(!ch.receiving(), 1000);
 }

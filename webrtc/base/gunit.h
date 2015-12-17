@@ -35,7 +35,7 @@
       rtc::Thread::Current()->ProcessMessages(1);   \
       res = (ex);                                   \
     }                                               \
-  } while (0);
+  } while (0)
 
 // The typical EXPECT_XXXX and ASSERT_XXXXs, but done until true or a timeout.
 #define EXPECT_TRUE_WAIT(ex, timeout) \
@@ -43,28 +43,28 @@
     bool res; \
     WAIT_(ex, timeout, res); \
     if (!res) EXPECT_TRUE(ex); \
-  } while (0);
+  } while (0)
 
 #define EXPECT_EQ_WAIT(v1, v2, timeout) \
   do { \
     bool res; \
     WAIT_(v1 == v2, timeout, res); \
     if (!res) EXPECT_EQ(v1, v2); \
-  } while (0);
+  } while (0)
 
 #define ASSERT_TRUE_WAIT(ex, timeout) \
   do { \
     bool res; \
     WAIT_(ex, timeout, res); \
     if (!res) ASSERT_TRUE(ex); \
-  } while (0);
+  } while (0)
 
 #define ASSERT_EQ_WAIT(v1, v2, timeout) \
   do { \
     bool res; \
     WAIT_(v1 == v2, timeout, res); \
     if (!res) ASSERT_EQ(v1, v2); \
-  } while (0);
+  } while (0)
 
 // Version with a "soft" timeout and a margin. This logs if the timeout is
 // exceeded, but it only fails if the expression still isn't true after the
@@ -82,6 +82,6 @@
     if (!res) { \
       EXPECT_TRUE(ex); \
     } \
-  } while (0);
+  } while (0)
 
 #endif  // WEBRTC_BASE_GUNIT_H_
