@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <utility>
+
 #include "talk/app/webrtc/fakeportallocatorfactory.h"
 #include "talk/app/webrtc/test/fakedtlsidentitystore.h"
 #include "talk/app/webrtc/test/fakeperiodicvideocapturer.h"
@@ -97,7 +99,7 @@ bool PeerConnectionTestWrapper::CreatePc(
       new FakeDtlsIdentityStore() : nullptr);
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
       ice_servers, constraints, allocator_factory_.get(),
-      dtls_identity_store.Pass(), this);
+      std::move(dtls_identity_store), this);
 
   return peer_connection_.get() != NULL;
 }

@@ -38,8 +38,7 @@ ProcessThread::~ProcessThread() {}
 // static
 rtc::scoped_ptr<ProcessThread> ProcessThread::Create(
     const char* thread_name) {
-  return rtc::scoped_ptr<ProcessThread>(new ProcessThreadImpl(thread_name))
-      .Pass();
+  return rtc::scoped_ptr<ProcessThread>(new ProcessThreadImpl(thread_name));
 }
 
 ProcessThreadImpl::ProcessThreadImpl(const char* thread_name)

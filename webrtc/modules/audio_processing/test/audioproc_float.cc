@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
@@ -122,12 +123,12 @@ int main(int argc, char* argv[]) {
   if (FLAGS_dump.empty()) {
     auto in_file = rtc_make_scoped_ptr(new WavReader(FLAGS_i));
     std::cout << FLAGS_i << ": " << in_file->FormatAsString() << std::endl;
-    processor.reset(
-        new WavFileProcessor(ap.Pass(), in_file.Pass(), out_file.Pass()));
+    processor.reset(new WavFileProcessor(std::move(ap), std::move(in_file),
+                                         std::move(out_file)));
 
   } else {
     processor.reset(new AecDumpFileProcessor(
-        ap.Pass(), fopen(FLAGS_dump.c_str(), "rb"), out_file.Pass()));
+        std::move(ap), fopen(FLAGS_dump.c_str(), "rb"), std::move(out_file)));
   }
 
   int num_chunks = 0;

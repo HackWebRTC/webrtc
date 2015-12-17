@@ -69,6 +69,7 @@
 #define TALK_APP_WEBRTC_PEERCONNECTIONINTERFACE_H_
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "talk/app/webrtc/datachannelinterface.h"
@@ -604,7 +605,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
       PeerConnectionInterface::RTCConfiguration rtc_config;
       rtc_config.servers = servers;
       return CreatePeerConnection(rtc_config, constraints, allocator_factory,
-                                  dtls_identity_store.Pass(), observer);
+                                  std::move(dtls_identity_store), observer);
   }
 
   virtual rtc::scoped_refptr<MediaStreamInterface>

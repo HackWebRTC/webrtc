@@ -29,6 +29,7 @@
 #define TALK_APP_WEBRTC_PEERCONNECTIONFACTORYPROXY_H_
 
 #include <string>
+#include <utility>
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/proxy.h"
@@ -38,7 +39,7 @@ namespace webrtc {
 
 BEGIN_PROXY_MAP(PeerConnectionFactory)
   PROXY_METHOD1(void, SetOptions, const Options&)
-  // Can't use PROXY_METHOD5 because scoped_ptr must be Pass()ed.
+  // Can't use PROXY_METHOD5 because scoped_ptr must be moved.
   // TODO(tommi,hbos): Use of templates to support scoped_ptr?
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& a1,
@@ -84,7 +85,7 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
       DtlsIdentityStoreInterface* a4,
       PeerConnectionObserver* a5) {
     rtc::scoped_ptr<DtlsIdentityStoreInterface> ptr_a4(a4);
-    return c_->CreatePeerConnection(a1, a2, a3, ptr_a4.Pass(), a5);
+    return c_->CreatePeerConnection(a1, a2, a3, std::move(ptr_a4), a5);
   }
 
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_ot2(
@@ -95,7 +96,8 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
       PeerConnectionObserver* a5) {
     rtc::scoped_ptr<cricket::PortAllocator> ptr_a3(a3);
     rtc::scoped_ptr<DtlsIdentityStoreInterface> ptr_a4(a4);
-    return c_->CreatePeerConnection(a1, a2, ptr_a3.Pass(), ptr_a4.Pass(), a5);
+    return c_->CreatePeerConnection(a1, a2, std::move(ptr_a3),
+                                    std::move(ptr_a4), a5);
   }
 END_PROXY()
 

@@ -57,6 +57,7 @@
 #define JNIEXPORT __attribute__((visibility("default")))
 
 #include <limits>
+#include <utility>
 
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
 #include "talk/app/webrtc/java/jni/jni_helpers.h"
@@ -1631,7 +1632,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
         rtc::SSLIdentity::Generate(webrtc::kIdentityName, rtc::KT_ECDSA));
     if (ssl_identity.get()) {
       rtc_config.certificates.push_back(
-          rtc::RTCCertificate::Create(ssl_identity.Pass()));
+          rtc::RTCCertificate::Create(std::move(ssl_identity)));
       LOG(LS_INFO) << "ECDSA certificate created.";
     } else {
       // Failing to create certificate should not abort peer connection

@@ -175,17 +175,15 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     if (flags1 & DTLS) {
       // Confirmed to work with KT_RSA and KT_ECDSA.
-      transport_controller1_.SetLocalCertificate(rtc::RTCCertificate::Create(
-          rtc::scoped_ptr<rtc::SSLIdentity>(
-              rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT))
-              .Pass()));
+      transport_controller1_.SetLocalCertificate(
+          rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+              rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT))));
     }
     if (flags2 & DTLS) {
       // Confirmed to work with KT_RSA and KT_ECDSA.
-      transport_controller2_.SetLocalCertificate(rtc::RTCCertificate::Create(
-          rtc::scoped_ptr<rtc::SSLIdentity>(
-              rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT))
-              .Pass()));
+      transport_controller2_.SetLocalCertificate(
+          rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+              rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT))));
     }
 
     // Add stream information (SSRC) to the local content but not to the remote

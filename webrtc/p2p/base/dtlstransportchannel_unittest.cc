@@ -53,9 +53,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
         received_dtls_client_hello_(false),
         received_dtls_server_hello_(false) {}
   void CreateCertificate(rtc::KeyType key_type) {
-    certificate_ = rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(
-            rtc::SSLIdentity::Generate(name_, key_type)).Pass());
+    certificate_ =
+        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+            rtc::SSLIdentity::Generate(name_, key_type)));
   }
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate() {
     return certificate_;

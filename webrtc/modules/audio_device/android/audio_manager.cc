@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 
+#include <utility>
+
 #include <android/log.h>
 
 #include "webrtc/base/arraysize.h"
@@ -29,15 +31,16 @@ namespace webrtc {
 
 // AudioManager::JavaAudioManager implementation
 AudioManager::JavaAudioManager::JavaAudioManager(
-    NativeRegistration* native_reg, rtc::scoped_ptr<GlobalRef> audio_manager)
-    : audio_manager_(audio_manager.Pass()),
+    NativeRegistration* native_reg,
+    rtc::scoped_ptr<GlobalRef> audio_manager)
+    : audio_manager_(std::move(audio_manager)),
       init_(native_reg->GetMethodId("init", "()Z")),
       dispose_(native_reg->GetMethodId("dispose", "()V")),
       is_communication_mode_enabled_(
           native_reg->GetMethodId("isCommunicationModeEnabled", "()Z")),
       is_device_blacklisted_for_open_sles_usage_(
-          native_reg->GetMethodId(
-              "isDeviceBlacklistedForOpenSLESUsage", "()Z")) {
+          native_reg->GetMethodId("isDeviceBlacklistedForOpenSLESUsage",
+                                  "()Z")) {
   ALOGD("JavaAudioManager::ctor%s", GetThreadInfo().c_str());
 }
 

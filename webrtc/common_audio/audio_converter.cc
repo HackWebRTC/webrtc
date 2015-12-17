@@ -11,6 +11,7 @@
 #include "webrtc/common_audio/audio_converter.h"
 
 #include <cstring>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
@@ -105,7 +106,7 @@ class ResampleConverter : public AudioConverter {
 class CompositionConverter : public AudioConverter {
  public:
   CompositionConverter(ScopedVector<AudioConverter> converters)
-      : converters_(converters.Pass()) {
+      : converters_(std::move(converters)) {
     RTC_CHECK_GE(converters_.size(), 2u);
     // We need an intermediate buffer after every converter.
     for (auto it = converters_.begin(); it != converters_.end() - 1; ++it)
@@ -147,7 +148,7 @@ rtc::scoped_ptr<AudioConverter> AudioConverter::Create(int src_channels,
                                                 dst_channels, src_frames));
       converters.push_back(new ResampleConverter(dst_channels, src_frames,
                                                  dst_channels, dst_frames));
-      sp.reset(new CompositionConverter(converters.Pass()));
+      sp.reset(new CompositionConverter(std::move(converters)));
     } else {
       sp.reset(new DownmixConverter(src_channels, src_frames, dst_channels,
                                     dst_frames));
@@ -159,7 +160,7 @@ rtc::scoped_ptr<AudioConverter> AudioConverter::Create(int src_channels,
                                                  src_channels, dst_frames));
       converters.push_back(new UpmixConverter(src_channels, dst_frames,
                                               dst_channels, dst_frames));
-      sp.reset(new CompositionConverter(converters.Pass()));
+      sp.reset(new CompositionConverter(std::move(converters)));
     } else {
       sp.reset(new UpmixConverter(src_channels, src_frames, dst_channels,
                                   dst_frames));
@@ -172,7 +173,7 @@ rtc::scoped_ptr<AudioConverter> AudioConverter::Create(int src_channels,
                                dst_frames));
   }
 
-  return sp.Pass();
+  return sp;
 }
 
 // For CompositionConverter.

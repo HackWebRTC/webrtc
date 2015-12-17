@@ -27,6 +27,8 @@
 
 #include "talk/app/webrtc/dtlsidentitystore.h"
 
+#include <utility>
+
 #include "talk/app/webrtc/webrtcsessiondescriptionfactory.h"
 #include "webrtc/base/logging.h"
 
@@ -72,7 +74,7 @@ class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
     // Posting to |this| avoids touching |store_| on threads other than
     // |signaling_thread_| and thus avoids having to use locks.
     IdentityResultMessageData* msg = new IdentityResultMessageData(
-        new IdentityResult(key_type_, identity.Pass()));
+        new IdentityResult(key_type_, std::move(identity)));
     signaling_thread_->Post(this, MSG_GENERATE_IDENTITY_RESULT, msg);
   }
 
@@ -93,7 +95,7 @@ class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
               static_cast<IdentityResultMessageData*>(msg->pdata));
           if (store_) {
             store_->OnIdentityGenerated(pdata->data()->key_type_,
-                                        pdata->data()->identity_.Pass());
+                                        std::move(pdata->data()->identity_));
           }
         }
         break;
@@ -152,7 +154,7 @@ void DtlsIdentityStoreImpl::OnMessage(rtc::Message* msg) {
       rtc::scoped_ptr<IdentityResultMessageData> pdata(
           static_cast<IdentityResultMessageData*>(msg->pdata));
       OnIdentityGenerated(pdata->data()->key_type_,
-                          pdata->data()->identity_.Pass());
+                          std::move(pdata->data()->identity_));
       break;
     }
   }
@@ -178,9 +180,9 @@ void DtlsIdentityStoreImpl::GenerateIdentity(
       // Return identity async - post even though we are on |signaling_thread_|.
       LOG(LS_VERBOSE) << "Using a free DTLS identity.";
       ++request_info_[key_type].gen_in_progress_counts_;
-      IdentityResultMessageData* msg = new IdentityResultMessageData(
-          new IdentityResult(key_type,
-                             request_info_[key_type].free_identity_.Pass()));
+      IdentityResultMessageData* msg =
+          new IdentityResultMessageData(new IdentityResult(
+              key_type, std::move(request_info_[key_type].free_identity_)));
       signaling_thread_->Post(this, MSG_GENERATE_IDENTITY_RESULT, msg);
       return;
     }
@@ -228,7 +230,7 @@ void DtlsIdentityStoreImpl::OnIdentityGenerated(
     // Return the result to the observer.
     if (identity.get()) {
       LOG(LS_VERBOSE) << "A DTLS identity is returned to an observer.";
-      observer->OnSuccess(identity.Pass());
+      observer->OnSuccess(std::move(identity));
     } else {
       LOG(LS_WARNING) << "Failed to generate DTLS identity.";
       observer->OnFailure(0);

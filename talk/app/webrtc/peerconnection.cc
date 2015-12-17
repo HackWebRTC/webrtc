@@ -28,8 +28,9 @@
 #include "talk/app/webrtc/peerconnection.h"
 
 #include <algorithm>
-#include <vector>
 #include <cctype>  // for isdigit
+#include <utility>
+#include <vector>
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/dtmfsender.h"
@@ -632,8 +633,8 @@ bool PeerConnection::Initialize(
   }
   rtc::scoped_ptr<cricket::PortAllocator> allocator(
       allocator_factory->CreatePortAllocator(stun_config, turn_config));
-  return Initialize(configuration, constraints, allocator.Pass(),
-                    dtls_identity_store.Pass(), observer);
+  return Initialize(configuration, constraints, std::move(allocator),
+                    std::move(dtls_identity_store), observer);
 }
 
 bool PeerConnection::Initialize(
@@ -649,7 +650,7 @@ bool PeerConnection::Initialize(
   }
   observer_ = observer;
 
-  port_allocator_ = allocator.Pass();
+  port_allocator_ = std::move(allocator);
 
   std::vector<PortAllocatorFactoryInterface::StunConfiguration> stun_config;
   std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turn_config;
@@ -701,7 +702,7 @@ bool PeerConnection::Initialize(
 
   // Initialize the WebRtcSession. It creates transport channels etc.
   if (!session_->Initialize(factory_->options(), constraints,
-                            dtls_identity_store.Pass(), configuration)) {
+                            std::move(dtls_identity_store), configuration)) {
     return false;
   }
 

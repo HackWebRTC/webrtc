@@ -238,11 +238,9 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     f2_.set_video_codecs(MAKE_VECTOR(kVideoCodecs2));
     f2_.set_data_codecs(MAKE_VECTOR(kDataCodecs2));
     tdf1_.set_certificate(rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(
-            new rtc::FakeSSLIdentity("id1")).Pass()));
+        rtc::scoped_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id1"))));
     tdf2_.set_certificate(rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(
-            new rtc::FakeSSLIdentity("id2")).Pass()));
+        rtc::scoped_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id2"))));
   }
 
   // Create a video StreamParamsVec object with:

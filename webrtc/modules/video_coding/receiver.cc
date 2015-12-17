@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include <cstdlib>
+#include <utility>
 
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
@@ -40,9 +41,9 @@ VCMReceiver::VCMReceiver(VCMTiming* timing,
                          rtc::scoped_ptr<EventWrapper> jitter_buffer_event)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       clock_(clock),
-      jitter_buffer_(clock_, jitter_buffer_event.Pass()),
+      jitter_buffer_(clock_, std::move(jitter_buffer_event)),
       timing_(timing),
-      render_wait_event_(receiver_event.Pass()),
+      render_wait_event_(std::move(receiver_event)),
       max_video_delay_ms_(kMaxVideoDelayMs) {
   Reset();
 }

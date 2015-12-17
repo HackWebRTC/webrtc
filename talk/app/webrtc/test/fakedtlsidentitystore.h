@@ -29,6 +29,7 @@
 #define TALK_APP_WEBRTC_TEST_FAKEDTLSIDENTITYSERVICE_H_
 
 #include <string>
+#include <utility>
 
 #include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
@@ -141,7 +142,7 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
     rtc::scoped_ptr<rtc::SSLIdentity> identity(
         rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert));
 
-    return rtc::RTCCertificate::Create(identity.Pass());
+    return rtc::RTCCertificate::Create(std::move(identity));
   }
 
  private:

@@ -25,7 +25,7 @@ namespace {
 
 class RtcpPacketExtendedJitterReportTest : public ::testing::Test {
  protected:
-  void BuildPacket() { packet = ij.Build().Pass(); }
+  void BuildPacket() { packet = ij.Build(); }
   void ParsePacket() {
     RtcpCommonHeader header;
     EXPECT_TRUE(

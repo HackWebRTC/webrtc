@@ -27,6 +27,8 @@
 
 #include "talk/app/webrtc/peerconnectionfactory.h"
 
+#include <utility>
+
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/localaudiosource.h"
 #include "talk/app/webrtc/mediastream.h"
@@ -274,12 +276,8 @@ PeerConnectionFactory::CreatePeerConnection(
 
   rtc::scoped_refptr<PeerConnection> pc(
       new rtc::RefCountedObject<PeerConnection>(this));
-  if (!pc->Initialize(
-      configuration,
-      constraints,
-      chosen_allocator_factory,
-      dtls_identity_store.Pass(),
-      observer)) {
+  if (!pc->Initialize(configuration, constraints, chosen_allocator_factory,
+                      std::move(dtls_identity_store), observer)) {
     return NULL;
   }
   return PeerConnectionProxy::Create(signaling_thread(), pc);

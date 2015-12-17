@@ -12,6 +12,8 @@
 
 #include <assert.h>
 
+#include <utility>
+
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
@@ -37,7 +39,7 @@ Atomic32 ScreenCapturerWinMagnifier::tls_index_(TLS_OUT_OF_INDEXES);
 
 ScreenCapturerWinMagnifier::ScreenCapturerWinMagnifier(
     rtc::scoped_ptr<ScreenCapturer> fallback_capturer)
-    : fallback_capturer_(fallback_capturer.Pass()),
+    : fallback_capturer_(std::move(fallback_capturer)),
       fallback_capturer_started_(false),
       callback_(NULL),
       current_screen_id_(kFullDesktopScreenId),
@@ -53,8 +55,7 @@ ScreenCapturerWinMagnifier::ScreenCapturerWinMagnifier(
       host_window_(NULL),
       magnifier_window_(NULL),
       magnifier_initialized_(false),
-      magnifier_capture_succeeded_(true) {
-}
+      magnifier_capture_succeeded_(true) {}
 
 ScreenCapturerWinMagnifier::~ScreenCapturerWinMagnifier() {
   // DestroyWindow must be called before MagUninitialize. magnifier_window_ is

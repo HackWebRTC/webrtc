@@ -26,6 +26,7 @@
  */
 
 #include <string>
+#include <utility>
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/fakeportallocatorfactory.h"
@@ -562,10 +563,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
                        nullptr) && dtls) {
       dtls_identity_store.reset(new FakeDtlsIdentityStore());
     }
-    pc_ = pc_factory_->CreatePeerConnection(servers, constraints,
-                                            port_allocator_factory_.get(),
-                                            dtls_identity_store.Pass(),
-                                            &observer_);
+    pc_ = pc_factory_->CreatePeerConnection(
+        servers, constraints, port_allocator_factory_.get(),
+        std::move(dtls_identity_store), &observer_);
     ASSERT_TRUE(pc_.get() != NULL);
     observer_.SetPeerConnectionInterface(pc_.get());
     EXPECT_EQ(PeerConnectionInterface::kStable, observer_.state_);
@@ -582,7 +582,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     scoped_refptr<PeerConnectionInterface> pc;
     pc = pc_factory_->CreatePeerConnection(
         servers, nullptr, port_allocator_factory_.get(),
-        dtls_identity_store.Pass(), &observer_);
+        std::move(dtls_identity_store), &observer_);
     ASSERT_EQ(nullptr, pc);
   }
 

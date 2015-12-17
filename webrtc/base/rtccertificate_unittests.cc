@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <utility>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
@@ -76,7 +78,7 @@ class RTCCertificateTest : public testing::Test {
     params.key_params = KeyParams::ECDSA();
 
     scoped_ptr<SSLIdentity> identity(SSLIdentity::GenerateForTest(params));
-    return RTCCertificate::Create(identity.Pass());
+    return RTCCertificate::Create(std::move(identity));
   }
 };
 
@@ -86,7 +88,7 @@ TEST_F(RTCCertificateTest, NewCertificateNotExpired) {
   scoped_ptr<SSLIdentity> identity(
       SSLIdentity::Generate(kTestCertCommonName, KeyParams::ECDSA()));
   scoped_refptr<RTCCertificate> certificate =
-      RTCCertificate::Create(identity.Pass());
+      RTCCertificate::Create(std::move(identity));
 
   uint64_t now = NowSeconds();
   EXPECT_FALSE(HasExpiredSeconds(certificate, now));

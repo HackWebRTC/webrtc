@@ -268,15 +268,11 @@ TEST_F(TransportControllerTest, TestGetSslRole) {
 
 TEST_F(TransportControllerTest, TestSetAndGetLocalCertificate) {
   rtc::scoped_refptr<rtc::RTCCertificate> certificate1 =
-      rtc::RTCCertificate::Create(
-          rtc::scoped_ptr<rtc::SSLIdentity>(
-              rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT))
-              .Pass());
+      rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+          rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT)));
   rtc::scoped_refptr<rtc::RTCCertificate> certificate2 =
-      rtc::RTCCertificate::Create(
-          rtc::scoped_ptr<rtc::SSLIdentity>(
-              rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT))
-              .Pass());
+      rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+          rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT)));
   rtc::scoped_refptr<rtc::RTCCertificate> returned_certificate;
 
   FakeTransportChannel* channel1 = CreateChannel("audio", 1);

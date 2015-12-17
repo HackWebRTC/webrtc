@@ -30,6 +30,7 @@
 
 #include <queue>
 #include <string>
+#include <utility>
 
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
@@ -129,7 +130,7 @@ class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
   struct IdentityResult {
     IdentityResult(rtc::KeyType key_type,
                    rtc::scoped_ptr<rtc::SSLIdentity> identity)
-        : key_type_(key_type), identity_(identity.Pass()) {}
+        : key_type_(key_type), identity_(std::move(identity)) {}
 
     rtc::KeyType key_type_;
     rtc::scoped_ptr<rtc::SSLIdentity> identity_;

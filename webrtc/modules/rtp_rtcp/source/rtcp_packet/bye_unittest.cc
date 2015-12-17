@@ -30,7 +30,7 @@ const uint32_t kCsrc2 = 0x33343536;
 
 class RtcpPacketByeTest : public ::testing::Test {
  protected:
-  void BuildPacket() { packet = bye.Build().Pass(); }
+  void BuildPacket() { packet = bye.Build(); }
   void ParsePacket() {
     RtcpCommonHeader header;
     EXPECT_TRUE(

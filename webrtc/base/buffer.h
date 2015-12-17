@@ -104,7 +104,7 @@ class Buffer {
     assert(buf.IsConsistent());
     size_ = buf.size_;
     capacity_ = buf.capacity_;
-    data_ = buf.data_.Pass();
+    data_ = std::move(buf.data_);
     buf.OnMovedFrom();
     return *this;
   }
@@ -164,12 +164,12 @@ class Buffer {
       return;
     scoped_ptr<uint8_t[]> new_data(new uint8_t[capacity]);
     std::memcpy(new_data.get(), data_.get(), size_);
-    data_ = new_data.Pass();
+    data_ = std::move(new_data);
     capacity_ = capacity;
     assert(IsConsistent());
   }
 
-  // We can't call std::move(b), so call b.Pass() instead to do the same job.
+  // b.Pass() does the same thing as std::move(b).
   Buffer&& Pass() {
     assert(IsConsistent());
     return static_cast<Buffer&&>(*this);

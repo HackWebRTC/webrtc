@@ -724,7 +724,7 @@ bool WebRtcSession::Initialize(
       // Use the |dtls_identity_store| to generate a certificate.
       RTC_DCHECK(dtls_identity_store);
       webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-          signaling_thread(), channel_manager_, dtls_identity_store.Pass(),
+          signaling_thread(), channel_manager_, std::move(dtls_identity_store),
           this, id()));
     } else {
       // Use the already generated certificate.

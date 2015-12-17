@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <utility>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/include/module.h"
@@ -295,7 +297,7 @@ TEST(ProcessThreadImpl, PostTask) {
   rtc::scoped_ptr<EventWrapper> task_ran(EventWrapper::Create());
   rtc::scoped_ptr<RaiseEventTask> task(new RaiseEventTask(task_ran.get()));
   thread.Start();
-  thread.PostTask(task.Pass());
+  thread.PostTask(std::move(task));
   EXPECT_EQ(kEventSignaled, task_ran->Wait(100));
   thread.Stop();
 }

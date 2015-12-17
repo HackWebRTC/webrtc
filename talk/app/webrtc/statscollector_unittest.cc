@@ -696,8 +696,7 @@ class StatsCollectorTest : public testing::Test {
     // Fake certificate to report
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate(
         rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::FakeSSLIdentity>(
-                                        new rtc::FakeSSLIdentity(local_cert))
-                                        .Pass()));
+            new rtc::FakeSSLIdentity(local_cert))));
 
     // Configure MockWebRtcSession
     EXPECT_CALL(session_,

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <utility>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 
@@ -32,7 +34,7 @@ void RawFile::WriteSamples(const float* samples, size_t num_samples) {
 }
 
 ChannelBufferWavReader::ChannelBufferWavReader(rtc::scoped_ptr<WavReader> file)
-    : file_(file.Pass()) {}
+    : file_(std::move(file)) {}
 
 bool ChannelBufferWavReader::Read(ChannelBuffer<float>* buffer) {
   RTC_CHECK_EQ(file_->num_channels(), buffer->num_channels());
@@ -49,7 +51,7 @@ bool ChannelBufferWavReader::Read(ChannelBuffer<float>* buffer) {
 }
 
 ChannelBufferWavWriter::ChannelBufferWavWriter(rtc::scoped_ptr<WavWriter> file)
-    : file_(file.Pass()) {}
+    : file_(std::move(file)) {}
 
 void ChannelBufferWavWriter::Write(const ChannelBuffer<float>& buffer) {
   RTC_CHECK_EQ(file_->num_channels(), buffer.num_channels());

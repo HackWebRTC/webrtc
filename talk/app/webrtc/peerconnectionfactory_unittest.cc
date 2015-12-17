@@ -26,6 +26,7 @@
  */
 
 #include <string>
+#include <utility>
 
 #include "talk/app/webrtc/fakeportallocatorfactory.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
@@ -158,9 +159,8 @@ TEST(PeerConnectionFactoryTestInternal, CreatePCUsingInternalModules) {
 
   rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store(
       new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory->CreatePeerConnection(
-          servers, nullptr, nullptr, dtls_identity_store.Pass(), &observer));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory->CreatePeerConnection(
+      servers, nullptr, nullptr, std::move(dtls_identity_store), &observer));
 
   EXPECT_TRUE(pc.get() != nullptr);
 }
@@ -180,11 +180,9 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServers) {
   config.servers.push_back(ice_server);
   rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
       new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnection(config, nullptr,
-                                     allocator_factory_.get(),
-                                     dtls_identity_store.Pass(),
-                                     &observer_));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, allocator_factory_.get(), std::move(dtls_identity_store),
+      &observer_));
   EXPECT_TRUE(pc.get() != NULL);
   StunConfigurations stun_configs;
   webrtc::PortAllocatorFactoryInterface::StunConfiguration stun1(
@@ -213,11 +211,9 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServersUrls) {
   config.servers.push_back(ice_server);
   rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
       new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnection(config, nullptr,
-                                     allocator_factory_.get(),
-                                     dtls_identity_store.Pass(),
-                                     &observer_));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, allocator_factory_.get(), std::move(dtls_identity_store),
+      &observer_));
   EXPECT_TRUE(pc.get() != NULL);
   StunConfigurations stun_configs;
   webrtc::PortAllocatorFactoryInterface::StunConfiguration stun1(
@@ -251,11 +247,9 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServersOldSignature) {
   ice_servers.push_back(ice_server);
   rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
       new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnection(ice_servers, nullptr,
-                                     allocator_factory_.get(),
-                                     dtls_identity_store.Pass(),
-                                     &observer_));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      ice_servers, nullptr, allocator_factory_.get(),
+      std::move(dtls_identity_store), &observer_));
   EXPECT_TRUE(pc.get() != NULL);
   StunConfigurations stun_configs;
   webrtc::PortAllocatorFactoryInterface::StunConfiguration stun1(
@@ -283,11 +277,9 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingNoUsernameInUri) {
   config.servers.push_back(ice_server);
   rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
       new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnection(config, nullptr,
-                                     allocator_factory_.get(),
-                                     dtls_identity_store.Pass(),
-                                     &observer_));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, allocator_factory_.get(), std::move(dtls_identity_store),
+      &observer_));
   EXPECT_TRUE(pc.get() != NULL);
   TurnConfigurations turn_configs;
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn(
@@ -306,11 +298,9 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingTurnUrlWithTransportParam) {
   config.servers.push_back(ice_server);
   rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
       new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnection(config, nullptr,
-                                     allocator_factory_.get(),
-                                     dtls_identity_store.Pass(),
-                                     &observer_));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, allocator_factory_.get(), std::move(dtls_identity_store),
+      &observer_));
   EXPECT_TRUE(pc.get() != NULL);
   TurnConfigurations turn_configs;
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn(
@@ -333,11 +323,9 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
   config.servers.push_back(ice_server);
   rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
       new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnection(config, nullptr,
-                                     allocator_factory_.get(),
-                                     dtls_identity_store.Pass(),
-                                     &observer_));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, allocator_factory_.get(), std::move(dtls_identity_store),
+      &observer_));
   EXPECT_TRUE(pc.get() != NULL);
   TurnConfigurations turn_configs;
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn1(
@@ -370,11 +358,9 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
   config.servers.push_back(ice_server);
   rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
       new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnection(config, nullptr,
-                                     allocator_factory_.get(),
-                                     dtls_identity_store.Pass(),
-                                     &observer_));
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, allocator_factory_.get(), std::move(dtls_identity_store),
+      &observer_));
   EXPECT_TRUE(pc.get() != NULL);
   StunConfigurations stun_configs;
   webrtc::PortAllocatorFactoryInterface::StunConfiguration stun1(

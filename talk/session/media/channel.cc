@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <utility>
+
 #include "talk/session/media/channel.h"
 
 #include "talk/media/base/constants.h"
@@ -555,7 +557,7 @@ bool BaseChannel::SendPacket(bool rtcp,
     // Avoid a copy by transferring the ownership of the packet data.
     int message_id = (!rtcp) ? MSG_RTPPACKET : MSG_RTCPPACKET;
     PacketMessageData* data = new PacketMessageData;
-    data->packet = packet->Pass();
+    data->packet = std::move(*packet);
     data->options = options;
     worker_thread_->Post(this, message_id, data);
     return true;

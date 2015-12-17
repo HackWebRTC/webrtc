@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 
+#include <utility>
+
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
@@ -235,7 +237,7 @@ AudioEncoder* RentACodec::RentEncoder(const CodecInst& codec_inst) {
       CreateEncoder(codec_inst, &isac_bandwidth_info_);
   if (!enc)
     return nullptr;
-  speech_encoder_ = enc.Pass();
+  speech_encoder_ = std::move(enc);
   return speech_encoder_.get();
 }
 

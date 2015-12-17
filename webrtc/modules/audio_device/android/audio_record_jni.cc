@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 
+#include <utility>
+
 #include <android/log.h>
 
 #include "webrtc/base/arraysize.h"
@@ -28,18 +30,15 @@ namespace webrtc {
 
 // AudioRecordJni::JavaAudioRecord implementation.
 AudioRecordJni::JavaAudioRecord::JavaAudioRecord(
-    NativeRegistration* native_reg, rtc::scoped_ptr<GlobalRef> audio_record)
-    : audio_record_(audio_record.Pass()),
+    NativeRegistration* native_reg,
+    rtc::scoped_ptr<GlobalRef> audio_record)
+    : audio_record_(std::move(audio_record)),
       init_recording_(native_reg->GetMethodId("initRecording", "(II)I")),
       start_recording_(native_reg->GetMethodId("startRecording", "()Z")),
       stop_recording_(native_reg->GetMethodId("stopRecording", "()Z")),
-      enable_built_in_aec_(native_reg->GetMethodId(
-          "enableBuiltInAEC", "(Z)Z")),
-      enable_built_in_agc_(native_reg->GetMethodId(
-          "enableBuiltInAGC", "(Z)Z")),
-      enable_built_in_ns_(native_reg->GetMethodId(
-          "enableBuiltInNS", "(Z)Z")) {
-}
+      enable_built_in_aec_(native_reg->GetMethodId("enableBuiltInAEC", "(Z)Z")),
+      enable_built_in_agc_(native_reg->GetMethodId("enableBuiltInAGC", "(Z)Z")),
+      enable_built_in_ns_(native_reg->GetMethodId("enableBuiltInNS", "(Z)Z")) {}
 
 AudioRecordJni::JavaAudioRecord::~JavaAudioRecord() {}
 

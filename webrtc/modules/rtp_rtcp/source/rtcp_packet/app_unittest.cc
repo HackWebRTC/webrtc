@@ -29,7 +29,7 @@ const uint32_t kSenderSsrc = 0x12345678;
 
 class RtcpPacketAppTest : public ::testing::Test {
  protected:
-  void BuildPacket() { packet = app.Build().Pass(); }
+  void BuildPacket() { packet = app.Build(); }
   void ParsePacket() {
     RtcpCommonHeader header;
     EXPECT_TRUE(

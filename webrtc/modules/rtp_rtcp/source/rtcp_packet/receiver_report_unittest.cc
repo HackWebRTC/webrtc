@@ -39,7 +39,7 @@ const size_t kPacketLength = sizeof(kPacket);
 
 class RtcpPacketReceiverReportTest : public ::testing::Test {
  protected:
-  void BuildPacket() { packet = rr.Build().Pass(); }
+  void BuildPacket() { packet = rr.Build(); }
   void ParsePacket() {
     RtcpCommonHeader header;
     EXPECT_TRUE(

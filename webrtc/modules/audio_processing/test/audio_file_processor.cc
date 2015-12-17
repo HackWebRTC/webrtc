@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_processing/test/audio_file_processor.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
@@ -43,13 +44,13 @@ ChannelBuffer<float> GetChannelBuffer(const WavFile& file) {
 WavFileProcessor::WavFileProcessor(scoped_ptr<AudioProcessing> ap,
                                    scoped_ptr<WavReader> in_file,
                                    scoped_ptr<WavWriter> out_file)
-    : ap_(ap.Pass()),
+    : ap_(std::move(ap)),
       in_buf_(GetChannelBuffer(*in_file)),
       out_buf_(GetChannelBuffer(*out_file)),
       input_config_(GetStreamConfig(*in_file)),
       output_config_(GetStreamConfig(*out_file)),
-      buffer_reader_(in_file.Pass()),
-      buffer_writer_(out_file.Pass()) {}
+      buffer_reader_(std::move(in_file)),
+      buffer_writer_(std::move(out_file)) {}
 
 bool WavFileProcessor::ProcessChunk() {
   if (!buffer_reader_.Read(&in_buf_)) {
@@ -68,11 +69,11 @@ bool WavFileProcessor::ProcessChunk() {
 AecDumpFileProcessor::AecDumpFileProcessor(scoped_ptr<AudioProcessing> ap,
                                            FILE* dump_file,
                                            scoped_ptr<WavWriter> out_file)
-    : ap_(ap.Pass()),
+    : ap_(std::move(ap)),
       dump_file_(dump_file),
       out_buf_(GetChannelBuffer(*out_file)),
       output_config_(GetStreamConfig(*out_file)),
-      buffer_writer_(out_file.Pass()) {
+      buffer_writer_(std::move(out_file)) {
   RTC_CHECK(dump_file_) << "Could not open dump file for reading.";
 }
 

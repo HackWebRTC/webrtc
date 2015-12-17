@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <list>
 #include <map>
+#include <utility>
 #include <vector>
 
 #include "talk/app/webrtc/dtmfsender.h"
@@ -151,7 +152,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const PeerConnectionFactory::Options* options,
       rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
     PeerConnectionTestClient* client(new PeerConnectionTestClient(id));
-    if (!client->Init(constraints, options, dtls_identity_store.Pass())) {
+    if (!client->Init(constraints, options, std::move(dtls_identity_store))) {
       delete client;
       return nullptr;
     }
@@ -167,7 +168,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
                                               : nullptr);
 
     return CreateClientWithDtlsIdentityStore(id, constraints, options,
-                                             dtls_identity_store.Pass());
+                                             std::move(dtls_identity_store));
   }
 
   ~PeerConnectionTestClient() {
@@ -761,7 +762,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       peer_connection_factory_->SetOptions(*options);
     }
     peer_connection_ = CreatePeerConnection(
-        allocator_factory_.get(), constraints, dtls_identity_store.Pass());
+        allocator_factory_.get(), constraints, std::move(dtls_identity_store));
     return peer_connection_.get() != nullptr;
   }
 
@@ -776,7 +777,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     ice_servers.push_back(ice_server);
 
     return peer_connection_factory_->CreatePeerConnection(
-        ice_servers, constraints, factory, dtls_identity_store.Pass(), this);
+        ice_servers, constraints, factory, std::move(dtls_identity_store),
+        this);
   }
 
   void HandleIncomingOffer(const std::string& msg) {
@@ -1129,7 +1131,8 @@ class P2PTestConductor : public testing::Test {
 
     // Make sure the new client is using a different certificate.
     return PeerConnectionTestClient::CreateClientWithDtlsIdentityStore(
-        "New Peer: ", &setup_constraints, nullptr, dtls_identity_store.Pass());
+        "New Peer: ", &setup_constraints, nullptr,
+        std::move(dtls_identity_store));
   }
 
   void SendRtpData(webrtc::DataChannelInterface* dc, const std::string& data) {

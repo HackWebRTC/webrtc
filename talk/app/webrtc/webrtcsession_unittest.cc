@@ -25,6 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <utility>
 #include <vector>
 
 #include "talk/app/webrtc/audiotrack.h"
@@ -425,7 +426,7 @@ class WebRtcSessionTest
         observer_.ice_gathering_state_);
 
     EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
-                                     dtls_identity_store.Pass(),
+                                     std::move(dtls_identity_store),
                                      rtc_configuration));
     session_->set_metrics_observer(metrics_observer_);
   }
@@ -476,7 +477,7 @@ class WebRtcSessionTest
     } else {
       RTC_CHECK(false);
     }
-    Init(dtls_identity_store.Pass(), configuration);
+    Init(std::move(dtls_identity_store), configuration);
   }
 
   // Init with DTLS with a store that will fail to generate a certificate.
@@ -485,7 +486,7 @@ class WebRtcSessionTest
         new FakeDtlsIdentityStore());
     dtls_identity_store->set_should_fail(true);
     PeerConnectionInterface::RTCConfiguration configuration;
-    Init(dtls_identity_store.Pass(), configuration);
+    Init(std::move(dtls_identity_store), configuration);
   }
 
   void InitWithDtmfCodec() {
@@ -723,9 +724,9 @@ class WebRtcSessionTest
     std::string identity_name = "WebRTC" +
         rtc::ToString(rtc::CreateRandomId());
     // Confirmed to work with KT_RSA and KT_ECDSA.
-    tdesc_factory_->set_certificate(rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(rtc::SSLIdentity::Generate(
-            identity_name, rtc::KT_DEFAULT)).Pass()));
+    tdesc_factory_->set_certificate(
+        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+            rtc::SSLIdentity::Generate(identity_name, rtc::KT_DEFAULT))));
     tdesc_factory_->set_secure(cricket::SEC_REQUIRED);
   }
 
