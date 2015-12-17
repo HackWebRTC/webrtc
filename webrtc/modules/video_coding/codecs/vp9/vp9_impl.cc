@@ -36,12 +36,16 @@ namespace webrtc {
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
 int GetCpuSpeed(int width, int height) {
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
+  return 8;
+#else
   // For smaller resolutions, use lower speed setting (get some coding gain at
   // the cost of increased encoding complexity).
   if (width * height <= 352 * 288)
     return 5;
   else
     return 7;
+#endif
 }
 
 VP9Encoder* VP9Encoder::Create() {
