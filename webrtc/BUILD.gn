@@ -281,15 +281,12 @@ source_set("rtc_event_log") {
 }
 
 if (use_libfuzzer || use_drfuzz) {
-  group("webrtc_fuzzers") {
+  # This target is only here for gn to discover fuzzer build targets under
+  # webrtc/test/fuzzers/.
+  group("webrtc_fuzzers_dummy") {
     testonly = true
     deps = [
-      "test/fuzzers:audio_decoder_ilbc_fuzzer",
-      "test/fuzzers:audio_decoder_isac_fuzzer",
-      "test/fuzzers:audio_decoder_isacfix_fuzzer",
-      "test/fuzzers:audio_decoder_opus_fuzzer",
-      "test/fuzzers:vp8_qp_parser_fuzzer",
-      "test/fuzzers:vp9_depacketizer_fuzzer",
+      "test/fuzzers:webrtc_fuzzer_main",
     ]
   }
 }

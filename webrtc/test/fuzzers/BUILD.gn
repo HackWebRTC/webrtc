@@ -21,6 +21,24 @@ static_library("webrtc_fuzzer_main") {
   ]
 }
 
+webrtc_fuzzer_test("h264_depacketizer_fuzzer") {
+  sources = [
+    "h264_depacketizer_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp",
+  ]
+}
+
+webrtc_fuzzer_test("vp8_depacketizer_fuzzer") {
+  sources = [
+    "vp8_depacketizer_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp",
+  ]
+}
+
 webrtc_fuzzer_test("vp9_depacketizer_fuzzer") {
   sources = [
     "vp9_depacketizer_fuzzer.cc",
