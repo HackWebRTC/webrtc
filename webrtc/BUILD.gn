@@ -280,7 +280,7 @@ source_set("rtc_event_log") {
   }
 }
 
-if (use_libfuzzer) {
+if (use_libfuzzer || use_drfuzz) {
   group("webrtc_fuzzers") {
     testonly = true
     deps = [

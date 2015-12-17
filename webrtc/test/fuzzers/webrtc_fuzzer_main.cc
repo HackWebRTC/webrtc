@@ -8,11 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// This file is intended to provide a common interface for fuzzing functions, so
-// whether we're running fuzzing under libFuzzer or DrFuzz the webrtc functions
-// can remain the same.
-// TODO(pbos): Implement FuzzOneInput() for more than one platform (currently
-// libFuzzer).
+// This file is intended to provide a common interface for fuzzing functions.
+// It's intended to set sane defaults, such as removing logging for further
+// fuzzing efficiency.
 
 #include "webrtc/base/logging.h"
 
