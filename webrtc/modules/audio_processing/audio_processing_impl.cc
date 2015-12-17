@@ -15,6 +15,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/platform_file.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common_audio/audio_converter.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/include/audio_util.h"
@@ -547,6 +548,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
                                        int output_sample_rate_hz,
                                        ChannelLayout output_layout,
                                        float* const* dest) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_ChannelLayout");
   StreamConfig input_stream;
   StreamConfig output_stream;
   {
@@ -575,6 +577,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
                                        const StreamConfig& input_config,
                                        const StreamConfig& output_config,
                                        float* const* dest) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_StreamConfig");
   ProcessingConfig processing_config;
   {
     // Acquire the capture lock in order to safely call the function
@@ -637,6 +640,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
 }
 
 int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_AudioFrame");
   {
     // Acquire the capture lock in order to safely call the function
     // that retrieves the render side data. This function accesses apm
@@ -816,6 +820,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
                                               size_t samples_per_channel,
                                               int rev_sample_rate_hz,
                                               ChannelLayout layout) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::AnalyzeReverseStream_ChannelLayout");
   rtc::CritScope cs(&crit_render_);
   const StreamConfig reverse_config = {
       rev_sample_rate_hz, ChannelsFromLayout(layout), LayoutHasKeyboard(layout),
@@ -831,6 +836,7 @@ int AudioProcessingImpl::ProcessReverseStream(
     const StreamConfig& reverse_input_config,
     const StreamConfig& reverse_output_config,
     float* const* dest) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessReverseStream_StreamConfig");
   rtc::CritScope cs(&crit_render_);
   RETURN_ON_ERR(AnalyzeReverseStreamLocked(src, reverse_input_config,
                                            reverse_output_config));
@@ -890,6 +896,7 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
 }
 
 int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessReverseStream_AudioFrame");
   RETURN_ON_ERR(AnalyzeReverseStream(frame));
   rtc::CritScope cs(&crit_render_);
   if (is_rev_processed()) {
@@ -900,6 +907,7 @@ int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
 }
 
 int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::AnalyzeReverseStream_AudioFrame");
   rtc::CritScope cs(&crit_render_);
   if (frame == nullptr) {
     return kNullPointerError;
