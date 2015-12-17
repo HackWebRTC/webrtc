@@ -36,6 +36,18 @@ namespace cricket {
 
 extern const uint32_t WEAK_PING_DELAY;
 
+struct IceParameters {
+  std::string ufrag;
+  std::string pwd;
+  IceParameters(const std::string& ice_ufrag, const std::string& ice_pwd)
+      : ufrag(ice_ufrag), pwd(ice_pwd) {}
+
+  bool operator==(const IceParameters& other) {
+    return ufrag == other.ufrag && pwd == other.pwd;
+  }
+  bool operator!=(const IceParameters& other) { return !(*this == other); }
+};
+
 // Adds the port on which the candidate originated.
 class RemoteCandidate : public Candidate {
  public:
@@ -229,6 +241,20 @@ class P2PTransportChannel : public TransportChannelImpl,
   Connection* best_nominated_connection() const;
   bool IsBackupConnection(Connection* conn) const;
 
+  // Returns the latest remote ICE parameters or nullptr if there are no remote
+  // ICE parameters yet.
+  IceParameters* remote_ice() {
+    return remote_ice_parameters_.empty() ? nullptr
+                                          : &remote_ice_parameters_.back();
+  }
+  // Returns the index of the latest remote ICE parameters, or 0 if no remote
+  // ICE parameters have been received.
+  uint32_t remote_ice_generation() {
+    return remote_ice_parameters_.empty()
+               ? 0
+               : static_cast<uint32_t>(remote_ice_parameters_.size() - 1);
+  }
+
   P2PTransport* transport_;
   PortAllocator* allocator_;
   rtc::Thread* worker_thread_;
@@ -248,12 +274,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   OptionMap options_;
   std::string ice_ufrag_;
   std::string ice_pwd_;
-  std::string remote_ice_ufrag_;
-  std::string remote_ice_pwd_;
+  std::vector<IceParameters> remote_ice_parameters_;
   IceMode remote_ice_mode_;
   IceRole ice_role_;
   uint64_t tiebreaker_;
-  uint32_t remote_candidate_generation_;
   IceGatheringState gathering_state_;
 
   int check_receiving_delay_;

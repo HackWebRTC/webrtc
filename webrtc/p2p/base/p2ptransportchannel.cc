@@ -218,7 +218,6 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       remote_ice_mode_(ICEMODE_FULL),
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
-      remote_candidate_generation_(0),
       gathering_state_(kIceGatheringNew),
       check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
       receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50),
@@ -347,25 +346,18 @@ void P2PTransportChannel::SetIceCredentials(const std::string& ice_ufrag,
 void P2PTransportChannel::SetRemoteIceCredentials(const std::string& ice_ufrag,
                                                   const std::string& ice_pwd) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  bool ice_restart = false;
-  if (!remote_ice_ufrag_.empty() && !remote_ice_pwd_.empty()) {
-    ice_restart = (remote_ice_ufrag_ != ice_ufrag) ||
-                  (remote_ice_pwd_!= ice_pwd);
+  IceParameters* current_ice = remote_ice();
+  IceParameters new_ice(ice_ufrag, ice_pwd);
+  if (!current_ice || *current_ice != new_ice) {
+    // Keep the ICE credentials so that newer connections
+    // are prioritized over the older ones.
+    remote_ice_parameters_.push_back(new_ice);
   }
-
-  remote_ice_ufrag_ = ice_ufrag;
-  remote_ice_pwd_ = ice_pwd;
 
   // We need to update the credentials for any peer reflexive candidates.
   std::vector<Connection*>::iterator it = connections_.begin();
   for (; it != connections_.end(); ++it) {
     (*it)->MaybeSetRemoteIceCredentials(ice_ufrag, ice_pwd);
-  }
-
-  if (ice_restart) {
-    // We need to keep track of the remote ice restart so newer
-    // connections are prioritized over the older.
-    ++remote_candidate_generation_;
   }
 }
 
@@ -536,8 +528,11 @@ void P2PTransportChannel::OnUnknownAddress(
   // The STUN binding request may arrive after setRemoteDescription and before
   // adding remote candidate, so we need to set the password to the shared
   // password if the user name matches.
-  if (remote_password.empty() && remote_username == remote_ice_ufrag_) {
-    remote_password = remote_ice_pwd_;
+  if (remote_password.empty()) {
+    IceParameters* current_ice = remote_ice();
+    if (current_ice && remote_username == current_ice->ufrag) {
+      remote_password = current_ice->pwd;
+    }
   }
 
   Candidate remote_candidate;
@@ -655,19 +650,39 @@ void P2PTransportChannel::OnNominated(Connection* conn) {
 void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
-  uint32_t generation = candidate.generation();
-  // Network may not guarantee the order of the candidate delivery. If a
-  // remote candidate with an older generation arrives, drop it.
-  if (generation != 0 && generation < remote_candidate_generation_) {
-    LOG(LS_WARNING) << "Dropping a remote candidate because its generation "
-                    << generation
-                    << " is lower than the current remote generation "
-                    << remote_candidate_generation_;
+  uint32_t generation = GetRemoteCandidateGeneration(candidate);
+  // If a remote candidate with a previous generation arrives, drop it.
+  if (generation < remote_ice_generation()) {
+    LOG(LS_WARNING) << "Dropping a remote candidate because its ufrag "
+                    << candidate.username()
+                    << " indicates it was for a previous generation.";
     return;
   }
 
+  Candidate new_remote_candidate(candidate);
+  new_remote_candidate.set_generation(generation);
+  // ICE candidates don't need to have username and password set, but
+  // the code below this (specifically, ConnectionRequest::Prepare in
+  // port.cc) uses the remote candidates's username.  So, we set it
+  // here.
+  if (remote_ice()) {
+    if (candidate.username().empty()) {
+      new_remote_candidate.set_username(remote_ice()->ufrag);
+    }
+    if (new_remote_candidate.username() == remote_ice()->ufrag) {
+      if (candidate.password().empty()) {
+        new_remote_candidate.set_password(remote_ice()->pwd);
+      }
+    } else {
+      // The candidate belongs to the next generation. Its pwd will be set
+      // when the new remote ICE credentials arrive.
+      LOG(LS_WARNING) << "A remote candidate arrives with an unknown ufrag: "
+                      << candidate.username();
+    }
+  }
+
   // Create connections to this remote candidate.
-  CreateConnections(candidate, NULL);
+  CreateConnections(new_remote_candidate, NULL);
 
   // Resort the connections list, which may have new elements.
   SortConnections();
@@ -680,20 +695,6 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
                                             PortInterface* origin_port) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
-  Candidate new_remote_candidate(remote_candidate);
-  new_remote_candidate.set_generation(
-      GetRemoteCandidateGeneration(remote_candidate));
-  // ICE candidates don't need to have username and password set, but
-  // the code below this (specifically, ConnectionRequest::Prepare in
-  // port.cc) uses the remote candidates's username.  So, we set it
-  // here.
-  if (remote_candidate.username().empty()) {
-    new_remote_candidate.set_username(remote_ice_ufrag_);
-  }
-  if (remote_candidate.password().empty()) {
-    new_remote_candidate.set_password(remote_ice_pwd_);
-  }
-
   // If we've already seen the new remote candidate (in the current candidate
   // generation), then we shouldn't try creating connections for it.
   // We either already have a connection for it, or we previously created one
@@ -702,7 +703,7 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
   // immediately be re-pruned, churning the network for no purpose.
   // This only applies to candidates received over signaling (i.e. origin_port
   // is NULL).
-  if (!origin_port && IsDuplicateRemoteCandidate(new_remote_candidate)) {
+  if (!origin_port && IsDuplicateRemoteCandidate(remote_candidate)) {
     // return true to indicate success, without creating any new connections.
     return true;
   }
@@ -715,7 +716,7 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
   bool created = false;
   std::vector<PortInterface *>::reverse_iterator it;
   for (it = ports_.rbegin(); it != ports_.rend(); ++it) {
-    if (CreateConnection(*it, new_remote_candidate, origin_port)) {
+    if (CreateConnection(*it, remote_candidate, origin_port)) {
       if (*it == origin_port)
         created = true;
     }
@@ -723,12 +724,12 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
 
   if ((origin_port != NULL) &&
       std::find(ports_.begin(), ports_.end(), origin_port) == ports_.end()) {
-    if (CreateConnection(origin_port, new_remote_candidate, origin_port))
+    if (CreateConnection(origin_port, remote_candidate, origin_port))
       created = true;
   }
 
   // Remember this remote candidate so that we can add it to future ports.
-  RememberRemoteCandidate(new_remote_candidate, origin_port);
+  RememberRemoteCandidate(remote_candidate, origin_port);
 
   return created;
 }
@@ -789,9 +790,27 @@ uint32_t P2PTransportChannel::GetRemoteCandidateGeneration(
     const Candidate& candidate) {
   // We need to keep track of the remote ice restart so newer
   // connections are prioritized over the older.
-  ASSERT(candidate.generation() == 0 ||
-         candidate.generation() == remote_candidate_generation_);
-  return remote_candidate_generation_;
+  const auto& params = remote_ice_parameters_;
+  if (!candidate.username().empty()) {
+    // If remote side sets the ufrag, we use that to determine the candidate
+    // generation.
+    // Search backward as it is more likely to find it near the end.
+    auto it = std::find_if(params.rbegin(), params.rend(),
+                           [candidate](const IceParameters& param) {
+                             return param.ufrag == candidate.username();
+                           });
+    if (it == params.rend()) {
+      // If not found, assume it is the next (future) generation.
+      return static_cast<uint32_t>(remote_ice_parameters_.size());
+    }
+    return params.rend() - it - 1;
+  }
+  // If candidate generation is set, use that.
+  if (candidate.generation() > 0) {
+    return candidate.generation();
+  }
+  // Otherwise, assume the generation from remote ice parameters.
+  return remote_ice_generation();
 }
 
 // Check if remote candidate is already cached.

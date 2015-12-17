@@ -140,8 +140,8 @@ static const char kAttributeCandidate[] = "candidate";
 static const char kAttributeCandidateTyp[] = "typ";
 static const char kAttributeCandidateRaddr[] = "raddr";
 static const char kAttributeCandidateRport[] = "rport";
-static const char kAttributeCandidateUsername[] = "username";
-static const char kAttributeCandidatePassword[] = "password";
+static const char kAttributeCandidateUfrag[] = "ufrag";
+static const char kAttributeCandidatePwd[] = "pwd";
 static const char kAttributeCandidateGeneration[] = "generation";
 static const char kAttributeFingerprint[] = "fingerprint";
 static const char kAttributeSetup[] = "setup";
@@ -262,6 +262,7 @@ static void BuildRtpMap(const MediaContentDescription* media_desc,
                         const MediaType media_type,
                         std::string* message);
 static void BuildCandidate(const std::vector<Candidate>& candidates,
+                           bool include_ufrag,
                            std::string* message);
 static void BuildIceOptions(const std::vector<std::string>& transport_options,
                             std::string* message);
@@ -878,7 +879,7 @@ std::string SdpSerializeCandidate(
   std::string message;
   std::vector<cricket::Candidate> candidates;
   candidates.push_back(candidate.candidate());
-  BuildCandidate(candidates, &message);
+  BuildCandidate(candidates, true, &message);
   // From WebRTC draft section 4.8.1.1 candidate-attribute will be
   // just candidate:<candidate> not a=candidate:<blah>CRLF
   ASSERT(message.find("a=") == 0);
@@ -1072,10 +1073,9 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   }
 
   // Extension
-  // Empty string as the candidate username and password.
-  // Will be updated later with the ice-ufrag and ice-pwd.
-  // TODO: Remove the username/password extension, which is currently
-  // kept for backwards compatibility.
+  // Though non-standard, we support the ICE ufrag and pwd being signaled on
+  // the candidate to avoid issues with confusing which generation a candidate
+  // belongs to when trickling multiple generations at the same time.
   std::string username;
   std::string password;
   uint32_t generation = 0;
@@ -1086,9 +1086,9 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
       if (!GetValueFromString(first_line, fields[++i], &generation, error)) {
         return false;
       }
-    } else if (fields[i] == kAttributeCandidateUsername) {
+    } else if (fields[i] == kAttributeCandidateUfrag) {
       username = fields[++i];
-    } else if (fields[i] == kAttributeCandidatePassword) {
+    } else if (fields[i] == kAttributeCandidatePwd) {
       password = fields[++i];
     } else {
       // Skip the unknown extension.
@@ -1285,8 +1285,9 @@ void BuildMediaDescription(const ContentInfo* content_info,
     }
   }
 
-  // Build the a=candidate lines.
-  BuildCandidate(candidates, message);
+  // Build the a=candidate lines. We don't include ufrag and pwd in the
+  // candidates in the SDP to avoid redundancy.
+  BuildCandidate(candidates, false, message);
 
   // Use the transport_info to build the media level ice-ufrag and ice-pwd.
   if (transport_info) {
@@ -1717,6 +1718,7 @@ void BuildRtpMap(const MediaContentDescription* media_desc,
 }
 
 void BuildCandidate(const std::vector<Candidate>& candidates,
+                    bool include_ufrag,
                     std::string* message) {
   std::ostringstream os;
 
@@ -1766,6 +1768,9 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
 
     // Extensions
     os << kAttributeCandidateGeneration << " " << it->generation();
+    if (include_ufrag && !it->username().empty()) {
+      os << " " << kAttributeCandidateUfrag << " " << it->username();
+    }
 
     AddLine(os.str(), message);
   }
@@ -2677,7 +2682,8 @@ bool ParseContent(const std::string& message,
   // Update the candidates with the media level "ice-pwd" and "ice-ufrag".
   for (Candidates::iterator it = candidates_orig.begin();
        it != candidates_orig.end(); ++it) {
-    ASSERT((*it).username().empty());
+    ASSERT((*it).username().empty() ||
+           (*it).username() == transport->ice_ufrag);
     (*it).set_username(transport->ice_ufrag);
     ASSERT((*it).password().empty());
     (*it).set_password(transport->ice_pwd);

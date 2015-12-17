@@ -396,9 +396,9 @@ static const char kRawIPV6Candidate[] =
     "abcd::abcd::abcd::abcd::abcd::abcd::abcd::abcd 1234 typ host generation 2";
 
 // One candidate reference string.
-static const char kSdpOneCandidateOldFormat[] =
+static const char kSdpOneCandidateWithUfragPwd[] =
     "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host network_name"
-    " eth0 username user_rtp password password_rtp generation 2\r\n";
+    " eth0 ufrag user_rtp pwd password_rtp generation 2\r\n";
 
 // Session id and version
 static const char kSessionId[] = "18446744069414584320";
@@ -1727,6 +1727,13 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithExtmap) {
 TEST_F(WebRtcSdpTest, SerializeCandidates) {
   std::string message = webrtc::SdpSerializeCandidate(*jcandidate_);
   EXPECT_EQ(std::string(kRawCandidate), message);
+
+  Candidate candidate_with_ufrag(candidates_.front());
+  candidate_with_ufrag.set_username("ABC");
+  jcandidate_.reset(new JsepIceCandidate(std::string("audio_content_name"), 0,
+                                         candidate_with_ufrag));
+  message = webrtc::SdpSerializeCandidate(*jcandidate_);
+  EXPECT_EQ(std::string(kRawCandidate) + " ufrag ABC", message);
 }
 
 // TODO(mallinath) : Enable this test once WebRTCSdp capable of parsing
@@ -2323,9 +2330,10 @@ TEST_F(WebRtcSdpTest, DeserializeCandidateWithDifferentTransport) {
   EXPECT_TRUE(jcandidate.candidate().IsEquivalent(jcandidate_->candidate()));
 }
 
-TEST_F(WebRtcSdpTest, DeserializeCandidateOldFormat) {
+TEST_F(WebRtcSdpTest, DeserializeCandidateWithUfragPwd) {
   JsepIceCandidate jcandidate(kDummyMid, kDummyIndex);
-  EXPECT_TRUE(SdpDeserializeCandidate(kSdpOneCandidateOldFormat,&jcandidate));
+  EXPECT_TRUE(
+      SdpDeserializeCandidate(kSdpOneCandidateWithUfragPwd, &jcandidate));
   EXPECT_EQ(kDummyMid, jcandidate.sdp_mid());
   EXPECT_EQ(kDummyIndex, jcandidate.sdp_mline_index());
   Candidate ref_candidate = jcandidate_->candidate();

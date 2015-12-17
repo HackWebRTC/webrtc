@@ -1767,12 +1767,14 @@ class P2PTransportChannelPingTest : public testing::Test,
 
   cricket::Candidate CreateCandidate(const std::string& ip,
                                      int port,
-                                     int priority) {
+                                     int priority,
+                                     const std::string& ufrag = "") {
     cricket::Candidate c;
     c.set_address(rtc::SocketAddress(ip, port));
     c.set_component(1);
     c.set_protocol(cricket::UDP_PROTOCOL_NAME);
     c.set_priority(priority);
+    c.set_username(ufrag);
     return c;
   }
 
@@ -1854,6 +1856,51 @@ TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
   // "triggered check" and conn2 is pinged before conn1 because it has
   // a higher priority.
   EXPECT_EQ(conn2, ch.FindNextPingableConnection());
+}
+
+// Test adding remote candidates with different ufrags. If a remote candidate
+// is added with an old ufrag, it will be discarded. If it is added with a
+// ufrag that was not seen before, it will be used to create connections
+// although the ICE pwd in the remote candidate will be set when the ICE
+// credentials arrive. If a remote candidate is added with the current ICE
+// ufrag, its pwd and generation will be set properly.
+TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithVariousUfrags) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("add candidate", 1, nullptr, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+  ch.MaybeStartGathering();
+  // Add a candidate with a future ufrag.
+  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1, kIceUfrag[2]));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  const cricket::Candidate& candidate = conn1->remote_candidate();
+  EXPECT_EQ(kIceUfrag[2], candidate.username());
+  EXPECT_TRUE(candidate.password().empty());
+  EXPECT_TRUE(ch.FindNextPingableConnection() == nullptr);
+
+  // Set the remote credentials with the "future" ufrag.
+  // This should set the ICE pwd in the remote candidate of |conn1|, making
+  // it pingable.
+  ch.SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
+  EXPECT_EQ(kIceUfrag[2], candidate.username());
+  EXPECT_EQ(kIcePwd[2], candidate.password());
+  EXPECT_EQ(conn1, ch.FindNextPingableConnection());
+
+  // Add a candidate with an old ufrag. No connection will be created.
+  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 2, kIceUfrag[1]));
+  rtc::Thread::Current()->ProcessMessages(500);
+  EXPECT_TRUE(GetConnectionTo(&ch, "2.2.2.2", 2) == nullptr);
+
+  // Add a candidate with the current ufrag, its pwd and generation will be
+  // assigned, even if the generation is not set.
+  ch.AddRemoteCandidate(CreateCandidate("3.3.3.3", 3, 0, kIceUfrag[2]));
+  cricket::Connection* conn3 = nullptr;
+  ASSERT_TRUE_WAIT((conn3 = GetConnectionTo(&ch, "3.3.3.3", 3)) != nullptr,
+                   3000);
+  const cricket::Candidate& new_candidate = conn3->remote_candidate();
+  EXPECT_EQ(kIcePwd[2], new_candidate.password());
+  EXPECT_EQ(1U, new_candidate.generation());
 }
 
 TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
