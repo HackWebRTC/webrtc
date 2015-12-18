@@ -77,11 +77,6 @@
         'fix/source/structs.h',
       ],
       'conditions': [
-        ['OS!="win"', {
-          'defines': [
-            'WEBRTC_LINUX',
-          ],
-        }],
         ['target_arch=="arm" and arm_version>=7', {
           'sources': [
             'fix/source/lattice_armv7.S',
