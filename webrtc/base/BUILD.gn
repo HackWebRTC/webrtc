@@ -214,7 +214,6 @@ static_library("rtc_base") {
     "autodetectproxy.h",
     "base64.cc",
     "base64.h",
-    "basicdefs.h",
     "common.cc",
     "common.h",
     "crc32.cc",

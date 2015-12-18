@@ -181,7 +181,6 @@
         'bandwidthsmoother.h',
         'base64.cc',
         'base64.h',
-        'basicdefs.h',
         'bind.h',
         'callback.h',
         'common.cc',
