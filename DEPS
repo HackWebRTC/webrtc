@@ -102,6 +102,7 @@ hooks = [
                '--recursive',
                '--num_threads=10',
                '--no_auth',
+               '--quiet',
                '--bucket', 'chromium-webrtc-resources',
                'src/resources'],
   },
