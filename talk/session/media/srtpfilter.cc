@@ -450,6 +450,10 @@ bool SrtpFilter::ApplyParams(const CryptoParams& send_params,
 bool SrtpFilter::ResetParams() {
   offer_params_.clear();
   state_ = ST_INIT;
+  (void)send_session_.release();
+  (void)recv_session_.release();
+  (void)send_rtcp_session_.release();
+  (void)recv_rtcp_session_.release();
   LOG(LS_INFO) << "SRTP reset to init state";
   return true;
 }

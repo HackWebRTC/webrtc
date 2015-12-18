@@ -1267,6 +1267,26 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCallee) {
   VerifyRenderedSize(640, 480);
 }
 
+// This test sets up a non-bundle call and apply bundle during ICE restart. When
+// bundle is in effect in the restart, the channel can successfully reset its
+// DTLS-SRTP context.
+TEST_F(P2PTestConductor, LocalP2PTestDtlsBundleInIceRestart) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+  FakeConstraints setup_constraints;
+  setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
+                                 true);
+  ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
+  receiving_client()->RemoveBundleFromReceivedSdp(true);
+  LocalP2PTest();
+  VerifyRenderedSize(640, 480);
+
+  initializing_client()->IceRestart();
+  receiving_client()->SetExpectIceRestart(true);
+  receiving_client()->RemoveBundleFromReceivedSdp(false);
+  LocalP2PTest();
+  VerifyRenderedSize(640, 480);
+}
+
 // This test sets up a call transfer to a new callee with a different DTLS
 // fingerprint.
 TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCaller) {

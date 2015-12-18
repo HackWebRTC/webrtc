@@ -267,24 +267,39 @@ bool BaseChannel::SetTransport_w(const std::string& transport_name) {
   // changes and wait until the DTLS handshake is complete to set the newly
   // negotiated parameters.
   if (ShouldSetupDtlsSrtp()) {
+    // Set |writable_| to false such that UpdateWritableState_w can set up
+    // DTLS-SRTP when the writable_ becomes true again.
+    writable_ = false;
     srtp_filter_.ResetParams();
   }
 
-  set_transport_channel(transport_controller_->CreateTransportChannel_w(
-      transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  if (!transport_channel()) {
-    return false;
-  }
+  // TODO(guoweis): Remove this grossness when we remove non-muxed RTCP.
   if (rtcp_transport_enabled()) {
     LOG(LS_INFO) << "Create RTCP TransportChannel for " << content_name()
                  << " on " << transport_name << " transport ";
-    set_rtcp_transport_channel(transport_controller_->CreateTransportChannel_w(
-        transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP));
+    set_rtcp_transport_channel(
+        transport_controller_->CreateTransportChannel_w(
+            transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP),
+        false /* update_writablity */);
     if (!rtcp_transport_channel()) {
       return false;
     }
   }
 
+  // We're not updating the writablity during the transition state.
+  set_transport_channel(transport_controller_->CreateTransportChannel_w(
+      transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  if (!transport_channel()) {
+    return false;
+  }
+
+  // TODO(guoweis): Remove this grossness when we remove non-muxed RTCP.
+  if (rtcp_transport_enabled()) {
+    // We can only update the RTCP ready to send after set_transport_channel has
+    // handled channel writability.
+    SetReadyToSend(
+        true, rtcp_transport_channel() && rtcp_transport_channel()->writable());
+  }
   transport_name_ = transport_name;
   return true;
 }
@@ -320,7 +335,8 @@ void BaseChannel::set_transport_channel(TransportChannel* new_tc) {
   SetReadyToSend(false, new_tc && new_tc->writable());
 }
 
-void BaseChannel::set_rtcp_transport_channel(TransportChannel* new_tc) {
+void BaseChannel::set_rtcp_transport_channel(TransportChannel* new_tc,
+                                             bool update_writablity) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
   TransportChannel* old_tc = rtcp_transport_channel_;
@@ -348,10 +364,12 @@ void BaseChannel::set_rtcp_transport_channel(TransportChannel* new_tc) {
     }
   }
 
-  // Update aggregate writable/ready-to-send state between RTP and RTCP upon
-  // setting new channel
-  UpdateWritableState_w();
-  SetReadyToSend(true, new_tc && new_tc->writable());
+  if (update_writablity) {
+    // Update aggregate writable/ready-to-send state between RTP and RTCP upon
+    // setting new channel
+    UpdateWritableState_w();
+    SetReadyToSend(true, new_tc && new_tc->writable());
+  }
 }
 
 void BaseChannel::ConnectToTransportChannel(TransportChannel* tc) {
@@ -1072,7 +1090,7 @@ void BaseChannel::ActivateRtcpMux() {
 void BaseChannel::ActivateRtcpMux_w() {
   if (!rtcp_mux_filter_.IsActive()) {
     rtcp_mux_filter_.SetActive();
-    set_rtcp_transport_channel(nullptr);
+    set_rtcp_transport_channel(nullptr, true);
     rtcp_transport_enabled_ = false;
   }
 }
@@ -1095,7 +1113,7 @@ bool BaseChannel::SetRtcpMux_w(bool enable, ContentAction action,
         LOG(LS_INFO) << "Enabling rtcp-mux for " << content_name()
                      << " by destroying RTCP transport channel for "
                      << transport_name();
-        set_rtcp_transport_channel(nullptr);
+        set_rtcp_transport_channel(nullptr, true);
         rtcp_transport_enabled_ = false;
       }
       break;
