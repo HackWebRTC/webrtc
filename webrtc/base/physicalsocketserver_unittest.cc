@@ -22,8 +22,81 @@
 
 namespace rtc {
 
-class PhysicalSocketTest : public SocketTest {
+class PhysicalSocketTest;
+
+class FakeSocketDispatcher : public SocketDispatcher {
+ public:
+  explicit FakeSocketDispatcher(PhysicalSocketServer* ss)
+    : SocketDispatcher(ss) {
+  }
+
+ protected:
+  SOCKET DoAccept(SOCKET socket, sockaddr* addr, socklen_t* addrlen) override;
 };
+
+class FakePhysicalSocketServer : public PhysicalSocketServer {
+ public:
+  explicit FakePhysicalSocketServer(PhysicalSocketTest* test)
+    : test_(test) {
+  }
+
+  AsyncSocket* CreateAsyncSocket(int type) override {
+    SocketDispatcher* dispatcher = new FakeSocketDispatcher(this);
+    if (dispatcher->Create(type)) {
+      return dispatcher;
+    } else {
+      delete dispatcher;
+      return nullptr;
+    }
+  }
+
+  AsyncSocket* CreateAsyncSocket(int family, int type) override {
+    SocketDispatcher* dispatcher = new FakeSocketDispatcher(this);
+    if (dispatcher->Create(family, type)) {
+      return dispatcher;
+    } else {
+      delete dispatcher;
+      return nullptr;
+    }
+  }
+
+  PhysicalSocketTest* GetTest() const { return test_; }
+
+ private:
+  PhysicalSocketTest* test_;
+};
+
+class PhysicalSocketTest : public SocketTest {
+ public:
+  // Set flag to simluate failures when calling "::accept" on a AsyncSocket.
+  void SetFailAccept(bool fail) { fail_accept_ = fail; }
+  bool FailAccept() const { return fail_accept_; }
+
+ protected:
+  PhysicalSocketTest()
+    : server_(new FakePhysicalSocketServer(this)),
+      scope_(server_.get()),
+      fail_accept_(false) {
+  }
+
+  void ConnectInternalAcceptError(const IPAddress& loopback);
+
+  rtc::scoped_ptr<FakePhysicalSocketServer> server_;
+  SocketServerScope scope_;
+  bool fail_accept_;
+};
+
+SOCKET FakeSocketDispatcher::DoAccept(SOCKET socket,
+                                      sockaddr* addr,
+                                      socklen_t* addrlen) {
+  FakePhysicalSocketServer* ss =
+      static_cast<FakePhysicalSocketServer*>(socketserver());
+  if (ss->GetTest()->FailAccept()) {
+    return INVALID_SOCKET;
+  }
+
+  return SocketDispatcher::DoAccept(socket, addr, addrlen);
+}
 
 TEST_F(PhysicalSocketTest, TestConnectIPv4) {
   SocketTest::TestConnectIPv4();
@@ -49,6 +122,92 @@ TEST_F(PhysicalSocketTest, TestConnectWithDnsLookupIPv6) {
 
 TEST_F(PhysicalSocketTest, TestConnectFailIPv4) {
   SocketTest::TestConnectFailIPv4();
+}
+
+void PhysicalSocketTest::ConnectInternalAcceptError(const IPAddress& loopback) {
+  testing::StreamSink sink;
+  SocketAddress accept_addr;
+
+  // Create two clients.
+  scoped_ptr<AsyncSocket> client1(server_->CreateAsyncSocket(loopback.family(),
+                                                             SOCK_STREAM));
+  sink.Monitor(client1.get());
+  EXPECT_EQ(AsyncSocket::CS_CLOSED, client1->GetState());
+  EXPECT_PRED1(IsUnspecOrEmptyIP, client1->GetLocalAddress().ipaddr());
+
+  scoped_ptr<AsyncSocket> client2(server_->CreateAsyncSocket(loopback.family(),
+                                                             SOCK_STREAM));
+  sink.Monitor(client2.get());
+  EXPECT_EQ(AsyncSocket::CS_CLOSED, client2->GetState());
+  EXPECT_PRED1(IsUnspecOrEmptyIP, client2->GetLocalAddress().ipaddr());
+
+  // Create server and listen.
+  scoped_ptr<AsyncSocket> server(
+      server_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
+  sink.Monitor(server.get());
+  EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
+  EXPECT_EQ(0, server->Listen(5));
+  EXPECT_EQ(AsyncSocket::CS_CONNECTING, server->GetState());
+
+  // Ensure no pending server connections, since we haven't done anything yet.
+  EXPECT_FALSE(sink.Check(server.get(), testing::SSE_READ));
+  EXPECT_TRUE(nullptr == server->Accept(&accept_addr));
+  EXPECT_TRUE(accept_addr.IsNil());
+
+  // Attempt first connect to listening socket.
+  EXPECT_EQ(0, client1->Connect(server->GetLocalAddress()));
+  EXPECT_FALSE(client1->GetLocalAddress().IsNil());
+  EXPECT_NE(server->GetLocalAddress(), client1->GetLocalAddress());
+
+  // Client is connecting, outcome not yet determined.
+  EXPECT_EQ(AsyncSocket::CS_CONNECTING, client1->GetState());
+  EXPECT_FALSE(sink.Check(client1.get(), testing::SSE_OPEN));
+  EXPECT_FALSE(sink.Check(client1.get(), testing::SSE_CLOSE));
+
+  // Server has pending connection, try to accept it (will fail).
+  EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
+  // Simulate "::accept" returning an error.
+  SetFailAccept(true);
+  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  EXPECT_FALSE(accepted);
+  ASSERT_TRUE(accept_addr.IsNil());
+
+  // Ensure no more pending server connections.
+  EXPECT_FALSE(sink.Check(server.get(), testing::SSE_READ));
+  EXPECT_TRUE(nullptr == server->Accept(&accept_addr));
+  EXPECT_TRUE(accept_addr.IsNil());
+
+  // Attempt second connect to listening socket.
+  EXPECT_EQ(0, client2->Connect(server->GetLocalAddress()));
+  EXPECT_FALSE(client2->GetLocalAddress().IsNil());
+  EXPECT_NE(server->GetLocalAddress(), client2->GetLocalAddress());
+
+  // Client is connecting, outcome not yet determined.
+  EXPECT_EQ(AsyncSocket::CS_CONNECTING, client2->GetState());
+  EXPECT_FALSE(sink.Check(client2.get(), testing::SSE_OPEN));
+  EXPECT_FALSE(sink.Check(client2.get(), testing::SSE_CLOSE));
+
+  // Server has pending connection, try to accept it (will succeed).
+  EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
+  SetFailAccept(false);
+  scoped_ptr<AsyncSocket> accepted2(server->Accept(&accept_addr));
+  ASSERT_TRUE(accepted2);
+  EXPECT_FALSE(accept_addr.IsNil());
+  EXPECT_EQ(accepted2->GetRemoteAddress(), accept_addr);
+}
+
+TEST_F(PhysicalSocketTest, TestConnectAcceptErrorIPv4) {
+  ConnectInternalAcceptError(kIPv4Loopback);
+}
+
+// Crashes on Linux. See webrtc:4923.
+#if defined(WEBRTC_LINUX)
+#define MAYBE_TestConnectAcceptErrorIPv6 DISABLED_TestConnectAcceptErrorIPv6
+#else
+#define MAYBE_TestConnectAcceptErrorIPv6 TestConnectAcceptErrorIPv6
+#endif
+TEST_F(PhysicalSocketTest, MAYBE_TestConnectAcceptErrorIPv6) {
+  ConnectInternalAcceptError(kIPv6Loopback);
 }
 
 // Crashes on Linux. See webrtc:4923.
