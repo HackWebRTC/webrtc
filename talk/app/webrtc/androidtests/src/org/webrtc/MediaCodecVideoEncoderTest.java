@@ -61,7 +61,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
       Log.i(TAG, "hardware does not support VP8 encoding, skipping testEncoderUsingTextures");
       return;
     }
-    EglBase eglBase = EglBase.create();
+    EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
     assertTrue(encoder.initEncode(
         MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
@@ -81,7 +81,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
         MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
         null));
     encoder.release();
-    EglBase eglBase = EglBase.create();
+    EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
     assertTrue(encoder.initEncode(
         MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
         eglBase.getEglBaseContext()));
@@ -143,7 +143,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     final int height = 480;
     final long presentationTs = 2;
 
-    final EglBase eglOesBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
+    final EglBase14 eglOesBase = new EglBase14(null, EglBase.CONFIG_PIXEL_BUFFER);
     eglOesBase.createDummyPbufferSurface();
     eglOesBase.makeCurrent();
     int oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
@@ -171,6 +171,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     }
     assertTrue(info.index != -1);
     assertTrue(info.buffer.capacity() > 0);
+    assertEquals(presentationTs, info.presentationTimestampUs);
     encoder.releaseOutputBuffer(info.index);
 
     encoder.release();

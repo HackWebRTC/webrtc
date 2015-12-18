@@ -44,6 +44,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
 // This class is an implementation detail of the Java PeerConnection API.
@@ -75,7 +76,7 @@ public class MediaCodecVideoEncoder {
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
-  private EglBase eglBase;
+  private EglBase14 eglBase;
   private int width;
   private int height;
   private Surface inputSurface;
@@ -270,7 +271,7 @@ public class MediaCodecVideoEncoder {
   }
 
   boolean initEncode(VideoCodecType type, int width, int height, int kbps, int fps,
-      EglBase.Context sharedContext) {
+      EglBase14.Context sharedContext) {
     final boolean useSurface = sharedContext != null;
     Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
         ". @ " + kbps + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
@@ -325,7 +326,7 @@ public class MediaCodecVideoEncoder {
           format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
       if (useSurface) {
-        eglBase = EglBase.create(sharedContext, EglBase.CONFIG_RECORDABLE);
+        eglBase = new EglBase14(sharedContext, EglBase.CONFIG_RECORDABLE);
         // Create an input surface and keep a reference since we must release the surface when done.
         inputSurface = mediaCodec.createInputSurface();
         eglBase.createSurface(inputSurface);
@@ -388,9 +389,7 @@ public class MediaCodecVideoEncoder {
       // but it's a workaround for bug webrtc:5147.
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
       drawer.drawOes(oesTextureId, transformationMatrix, 0, 0, width, height);
-      // TODO(perkj): Do we have to call EGLExt.eglPresentationTimeANDROID ?
-      // If not, remove |presentationTimestampUs|.
-      eglBase.swapBuffers();
+      eglBase.swapBuffers(TimeUnit.MICROSECONDS.toNanos(presentationTimestampUs));
       return true;
     }
     catch (RuntimeException e) {

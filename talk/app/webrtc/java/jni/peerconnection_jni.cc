@@ -1366,10 +1366,14 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
   OwnedFactoryAndThreads* owned_factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
 
+  jclass j_eglbase14_context_class =
+      FindClass(jni, "org/webrtc/EglBase14$Context");
+
   MediaCodecVideoEncoderFactory* encoder_factory =
       static_cast<MediaCodecVideoEncoderFactory*>
           (owned_factory->encoder_factory());
-  if (encoder_factory) {
+  if (encoder_factory &&
+      jni->IsInstanceOf(local_egl_context, j_eglbase14_context_class)) {
     LOG(LS_INFO) << "Set EGL context for HW encoding.";
     encoder_factory->SetEGLContext(jni, local_egl_context);
   }
@@ -1377,7 +1381,8 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
   MediaCodecVideoDecoderFactory* decoder_factory =
       static_cast<MediaCodecVideoDecoderFactory*>
           (owned_factory->decoder_factory());
-  if (decoder_factory) {
+  if (decoder_factory &&
+      jni->IsInstanceOf(remote_egl_context, j_eglbase14_context_class)) {
     LOG(LS_INFO) << "Set EGL context for HW decoding.";
     decoder_factory->SetEGLContext(jni, remote_egl_context);
   }

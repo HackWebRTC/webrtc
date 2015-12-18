@@ -38,6 +38,7 @@ import javax.microedition.khronos.opengles.GL10;
 import android.annotation.SuppressLint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
@@ -58,7 +59,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   private static Runnable eglContextReady = null;
   private static final String TAG = "VideoRendererGui";
   private GLSurfaceView surface;
-  private static EGLContext eglContext = null;
+  private static EglBase.Context eglContext = null;
   // Indicates if SurfaceView.Renderer.onSurfaceCreated was called.
   // If true then for every newly created yuv image renderer createTexture()
   // should be called. The variable is accessed on multiple threads and
@@ -418,7 +419,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   }
 
   public static synchronized EglBase.Context getEglBaseContext() {
-    return new EglBase10.Context(eglContext);
+    return eglContext;
   }
 
   /** Releases GLSurfaceView video renderer. */
@@ -607,7 +608,12 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     Logging.d(TAG, "VideoRendererGui.onSurfaceCreated");
     // Store render EGL context.
     synchronized (VideoRendererGui.class) {
-      eglContext = ((EGL10) EGLContext.getEGL()).eglGetCurrentContext();
+      if (EglBase14.isEGL14Supported()) {
+        eglContext = new EglBase14.Context(EGL14.eglGetCurrentContext());
+      } else {
+        eglContext = new EglBase10.Context(((EGL10) EGLContext.getEGL()).eglGetCurrentContext());
+      }
+
       Logging.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
     }
 

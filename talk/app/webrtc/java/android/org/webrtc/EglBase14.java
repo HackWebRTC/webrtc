@@ -33,6 +33,7 @@ import android.opengl.EGL14;
 import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
+import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.view.Surface;
 
@@ -42,20 +43,22 @@ import org.webrtc.Logging;
  * Holds EGL state and utility methods for handling an EGL14 EGLContext, an EGLDisplay,
  * and an EGLSurface.
  */
-@TargetApi(17)
+@TargetApi(18)
 final class EglBase14 extends EglBase {
   private static final String TAG = "EglBase14";
-  private static final int EGL14_SDK_VERSION = android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
+  private static final int EGLExt_SDK_VERSION = android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
   private static final int CURRENT_SDK_VERSION = android.os.Build.VERSION.SDK_INT;
   private EGLContext eglContext;
   private EGLConfig eglConfig;
   private EGLDisplay eglDisplay;
   private EGLSurface eglSurface = EGL14.EGL_NO_SURFACE;
 
+  // EGL 1.4 is supported from API 17. But EGLExt that is used for setting presentation
+  // time stamp on a surface is supported from 18 so we require 18.
   public static boolean isEGL14Supported() {
     Logging.d(TAG, "SDK version: " + CURRENT_SDK_VERSION
-        + ". isEGL14Supported: " + (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION));
-    return (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION);
+        + ". isEGL14Supported: " + (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION));
+    return (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION);
   }
 
   public static class Context extends EglBase.Context {
@@ -198,6 +201,16 @@ final class EglBase14 extends EglBase {
     if (eglSurface == EGL14.EGL_NO_SURFACE) {
       throw new RuntimeException("No EGLSurface - can't swap buffers");
     }
+    EGL14.eglSwapBuffers(eglDisplay, eglSurface);
+  }
+
+  public void swapBuffers(long timeStampNs) {
+    checkIsNotReleased();
+    if (eglSurface == EGL14.EGL_NO_SURFACE) {
+      throw new RuntimeException("No EGLSurface - can't swap buffers");
+    }
+    // See https://android.googlesource.com/platform/frameworks/native/+/tools_r22.2/opengl/specs/EGL_ANDROID_presentation_time.txt
+    EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, timeStampNs);
     EGL14.eglSwapBuffers(eglDisplay, eglSurface);
   }
 
