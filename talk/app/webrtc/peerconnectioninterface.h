@@ -637,11 +637,9 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // Starts AEC dump using existing file. Takes ownership of |file| and passes
   // it on to VoiceEngine (via other objects) immediately, which will take
   // the ownerhip. If the operation fails, the file will be closed.
-  // A maximum file size in bytes can be specified. When the file size limit is
-  // reached, logging is stopped automatically. If max_size_bytes is set to a
-  // value <= 0, no limit will be used, and logging will continue until the
-  // StopAecDump function is called.
-  virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) = 0;
+  // TODO(grunell): Remove when Chromium has started to use AEC in each source.
+  // http://crbug.com/264611.
+  virtual bool StartAecDump(rtc::PlatformFile file) = 0;
 
   // Stops logging the AEC dump.
   virtual void StopAecDump() = 0;

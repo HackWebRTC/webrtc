@@ -232,10 +232,9 @@ PeerConnectionFactory::CreateVideoSource(
   return VideoSourceProxy::Create(signaling_thread_, source);
 }
 
-bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file,
-                                         int64_t max_size_bytes) {
+bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  return channel_manager_->StartAecDump(file, max_size_bytes);
+  return channel_manager_->StartAecDump(file);
 }
 
 void PeerConnectionFactory::StopAecDump() {

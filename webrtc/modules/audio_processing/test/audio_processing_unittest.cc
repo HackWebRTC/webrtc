@@ -388,8 +388,7 @@ class ApmTest : public ::testing::Test {
   int AnalyzeReverseStreamChooser(Format format);
   void ProcessDebugDump(const std::string& in_filename,
                         const std::string& out_filename,
-                        Format format,
-                        int max_size_bytes);
+                        Format format);
   void VerifyDebugDumpTest(Format format);
 
   const std::string output_path_;
@@ -1712,8 +1711,7 @@ TEST_F(ApmTest, SplittingFilter) {
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
 void ApmTest::ProcessDebugDump(const std::string& in_filename,
                                const std::string& out_filename,
-                               Format format,
-                               int max_size_bytes) {
+                               Format format) {
   FILE* in_file = fopen(in_filename.c_str(), "rb");
   ASSERT_TRUE(in_file != NULL);
   audioproc::Event event_msg;
@@ -1741,8 +1739,7 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
       if (first_init) {
         // StartDebugRecording() writes an additional init message. Don't start
         // recording until after the first init to avoid the extra message.
-        EXPECT_NOERR(
-            apm_->StartDebugRecording(out_filename.c_str(), max_size_bytes));
+        EXPECT_NOERR(apm_->StartDebugRecording(out_filename.c_str()));
         first_init = false;
       }
 
@@ -1815,54 +1812,34 @@ void ApmTest::VerifyDebugDumpTest(Format format) {
       test::OutputPath(), std::string("ref") + format_string + "_aecdump");
   const std::string out_filename = test::TempFilename(
       test::OutputPath(), std::string("out") + format_string + "_aecdump");
-  const std::string limited_filename = test::TempFilename(
-      test::OutputPath(), std::string("limited") + format_string + "_aecdump");
-  const size_t logging_limit_bytes = 100000;
-  // We expect at least this many bytes in the created logfile.
-  const size_t logging_expected_bytes = 95000;
   EnableAllComponents();
-  ProcessDebugDump(in_filename, ref_filename, format, -1);
-  ProcessDebugDump(ref_filename, out_filename, format, -1);
-  ProcessDebugDump(ref_filename, limited_filename, format, logging_limit_bytes);
+  ProcessDebugDump(in_filename, ref_filename, format);
+  ProcessDebugDump(ref_filename, out_filename, format);
 
   FILE* ref_file = fopen(ref_filename.c_str(), "rb");
   FILE* out_file = fopen(out_filename.c_str(), "rb");
-  FILE* limited_file = fopen(limited_filename.c_str(), "rb");
   ASSERT_TRUE(ref_file != NULL);
   ASSERT_TRUE(out_file != NULL);
-  ASSERT_TRUE(limited_file != NULL);
   rtc::scoped_ptr<uint8_t[]> ref_bytes;
   rtc::scoped_ptr<uint8_t[]> out_bytes;
-  rtc::scoped_ptr<uint8_t[]> limited_bytes;
 
   size_t ref_size = ReadMessageBytesFromFile(ref_file, &ref_bytes);
   size_t out_size = ReadMessageBytesFromFile(out_file, &out_bytes);
-  size_t limited_size = ReadMessageBytesFromFile(limited_file, &limited_bytes);
   size_t bytes_read = 0;
-  size_t bytes_read_limited = 0;
   while (ref_size > 0 && out_size > 0) {
     bytes_read += ref_size;
-    bytes_read_limited += limited_size;
     EXPECT_EQ(ref_size, out_size);
-    EXPECT_GE(ref_size, limited_size);
     EXPECT_EQ(0, memcmp(ref_bytes.get(), out_bytes.get(), ref_size));
-    EXPECT_EQ(0, memcmp(ref_bytes.get(), limited_bytes.get(), limited_size));
     ref_size = ReadMessageBytesFromFile(ref_file, &ref_bytes);
     out_size = ReadMessageBytesFromFile(out_file, &out_bytes);
-    limited_size = ReadMessageBytesFromFile(limited_file, &limited_bytes);
   }
   EXPECT_GT(bytes_read, 0u);
-  EXPECT_GT(bytes_read_limited, logging_expected_bytes);
-  EXPECT_LE(bytes_read_limited, logging_limit_bytes);
   EXPECT_NE(0, feof(ref_file));
   EXPECT_NE(0, feof(out_file));
-  EXPECT_NE(0, feof(limited_file));
   ASSERT_EQ(0, fclose(ref_file));
   ASSERT_EQ(0, fclose(out_file));
-  ASSERT_EQ(0, fclose(limited_file));
   remove(ref_filename.c_str());
   remove(out_filename.c_str());
-  remove(limited_filename.c_str());
 }
 
 TEST_F(ApmTest, VerifyDebugDumpInt) {
@@ -1879,13 +1856,13 @@ TEST_F(ApmTest, DebugDump) {
   const std::string filename =
       test::TempFilename(test::OutputPath(), "debug_aec");
   EXPECT_EQ(apm_->kNullPointerError,
-            apm_->StartDebugRecording(static_cast<const char*>(NULL), -1));
+            apm_->StartDebugRecording(static_cast<const char*>(NULL)));
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // Stopping without having started should be OK.
   EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
 
-  EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(filename.c_str(), -1));
+  EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(filename.c_str()));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(apm_->kNoError, apm_->AnalyzeReverseStream(revframe_));
   EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
@@ -1899,7 +1876,7 @@ TEST_F(ApmTest, DebugDump) {
   ASSERT_EQ(0, remove(filename.c_str()));
 #else
   EXPECT_EQ(apm_->kUnsupportedFunctionError,
-            apm_->StartDebugRecording(filename.c_str(), -1));
+            apm_->StartDebugRecording(filename.c_str()));
   EXPECT_EQ(apm_->kUnsupportedFunctionError, apm_->StopDebugRecording());
 
   // Verify the file has NOT been written.
@@ -1910,7 +1887,7 @@ TEST_F(ApmTest, DebugDump) {
 // TODO(andrew): expand test to verify output.
 TEST_F(ApmTest, DebugDumpFromFileHandle) {
   FILE* fid = NULL;
-  EXPECT_EQ(apm_->kNullPointerError, apm_->StartDebugRecording(fid, -1));
+  EXPECT_EQ(apm_->kNullPointerError, apm_->StartDebugRecording(fid));
   const std::string filename =
       test::TempFilename(test::OutputPath(), "debug_aec");
   fid = fopen(filename.c_str(), "w");
@@ -1920,7 +1897,7 @@ TEST_F(ApmTest, DebugDumpFromFileHandle) {
   // Stopping without having started should be OK.
   EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
 
-  EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(fid, -1));
+  EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(fid));
   EXPECT_EQ(apm_->kNoError, apm_->AnalyzeReverseStream(revframe_));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
@@ -1934,7 +1911,7 @@ TEST_F(ApmTest, DebugDumpFromFileHandle) {
   ASSERT_EQ(0, remove(filename.c_str()));
 #else
   EXPECT_EQ(apm_->kUnsupportedFunctionError,
-            apm_->StartDebugRecording(fid, -1));
+            apm_->StartDebugRecording(fid));
   EXPECT_EQ(apm_->kUnsupportedFunctionError, apm_->StopDebugRecording());
 
   ASSERT_EQ(0, fclose(fid));
