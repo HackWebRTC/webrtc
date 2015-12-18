@@ -71,7 +71,7 @@ public class CameraEnumerationAndroid {
     // other image formats then this needs to be updated and
     // VideoCapturerAndroid.getSupportedFormats need to return CaptureFormats of
     // all imageFormats.
-    public final int imageFormat = ImageFormat.YV12;
+    public final int imageFormat = ImageFormat.NV21;
 
     public CaptureFormat(int width, int height, int minFramerate,
         int maxFramerate) {
@@ -87,25 +87,15 @@ public class CameraEnumerationAndroid {
     }
 
     // Calculates the frame size of the specified image format. Currently only
-    // supporting ImageFormat.YV12. The YV12's stride is the closest rounded up
-    // multiple of 16 of the width and width and height are always even.
-    // Android guarantees this:
-    // http://developer.android.com/reference/android/hardware/Camera.Parameters.html#setPreviewFormat%28int%29
+    // supporting ImageFormat.NV21.
+    // The size is width * height * number of bytes per pixel.
+    // http://developer.android.com/reference/android/hardware/Camera.html#addCallbackBuffer(byte[])
     public static int frameSize(int width, int height, int imageFormat) {
-      if (imageFormat != ImageFormat.YV12) {
+      if (imageFormat != ImageFormat.NV21) {
         throw new UnsupportedOperationException("Don't know how to calculate "
-            + "the frame size of non-YV12 image formats.");
+            + "the frame size of non-NV21 image formats.");
       }
-      int yStride = roundUp(width, 16);
-      int uvStride = roundUp(yStride / 2, 16);
-      int ySize = yStride * height;
-      int uvSize = uvStride * height / 2;
-      return ySize + uvSize * 2;
-    }
-
-    // Rounds up |x| to the closest value that is a multiple of |alignment|.
-    private static int roundUp(int x, int alignment) {
-      return (int)ceil(x / (double)alignment) * alignment;
+      return (width * height * ImageFormat.getBitsPerPixel(imageFormat)) / 8;
     }
 
     @Override

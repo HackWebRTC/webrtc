@@ -317,7 +317,7 @@ class SurfaceTextureHelper {
   private OnTextureFrameAvailableListener listener;
   // The possible states of this class.
   private boolean hasPendingTexture = false;
-  private boolean isTextureInUse = false;
+  private volatile boolean isTextureInUse = false;
   private boolean isQuitting = false;
 
   private SurfaceTextureHelper(EglBase.Context sharedContext,
@@ -390,6 +390,10 @@ class SurfaceTextureHelper {
         }
       }
     });
+  }
+
+  public boolean isTextureInUse() {
+    return isTextureInUse;
   }
 
   /**

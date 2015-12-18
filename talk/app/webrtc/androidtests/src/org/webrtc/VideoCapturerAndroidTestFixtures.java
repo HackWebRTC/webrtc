@@ -119,11 +119,11 @@ public class VideoCapturerAndroidTestFixtures {
     }
 
     @Override
-    public void onByteBufferFrameCaptured(byte[] frame, int length, int width, int height,
-        int rotation, long timeStamp) {
+    public void onByteBufferFrameCaptured(byte[] frame, int width, int height, int rotation,
+        long timeStamp) {
       synchronized (frameLock) {
         ++framesCaptured;
-        frameSize = length;
+        frameSize = frame.length;
         frameWidth = width;
         frameHeight = height;
         timestamps.add(timeStamp);
@@ -311,8 +311,8 @@ public class VideoCapturerAndroidTestFixtures {
     assertTrue(observer.WaitForCapturerToStart());
     observer.WaitForNextCapturedFrame();
     capturer.stopCapture();
-    for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {
-      capturer.returnBuffer(timeStamp);
+    if (capturer.isCapturingToTexture()) {
+      capturer.surfaceHelper.returnTextureFrame();
     }
     capturer.dispose();
 
@@ -332,9 +332,10 @@ public class VideoCapturerAndroidTestFixtures {
     // Make sure camera is started and then stop it.
     assertTrue(observer.WaitForCapturerToStart());
     capturer.stopCapture();
-    for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {
-      capturer.returnBuffer(timeStamp);
+    if (capturer.isCapturingToTexture()) {
+      capturer.surfaceHelper.returnTextureFrame();
     }
+
     // We can't change |capturer| at this point, but we should not crash.
     capturer.switchCamera(null);
     capturer.onOutputFormatRequest(640, 480, 15);
@@ -393,11 +394,11 @@ public class VideoCapturerAndroidTestFixtures {
       if (capturer.isCapturingToTexture()) {
         assertEquals(0, observer.frameSize());
       } else {
-        assertEquals(format.frameSize(), observer.frameSize());
+        assertTrue(format.frameSize() <= observer.frameSize());
       }
       capturer.stopCapture();
-      for (long timestamp : observer.getCopyAndResetListOftimeStamps()) {
-        capturer.returnBuffer(timestamp);
+      if (capturer.isCapturingToTexture()) {
+        capturer.surfaceHelper.returnTextureFrame();
       }
     }
     capturer.dispose();
@@ -455,8 +456,8 @@ public class VideoCapturerAndroidTestFixtures {
     assertTrue(observer.WaitForCapturerToStart());
     observer.WaitForNextCapturedFrame();
     capturer.stopCapture();
-    for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {
-      capturer.returnBuffer(timeStamp);
+    if (capturer.isCapturingToTexture()) {
+      capturer.surfaceHelper.returnTextureFrame();
     }
     capturer.dispose();
     assertTrue(capturer.isReleased());
@@ -496,9 +497,8 @@ public class VideoCapturerAndroidTestFixtures {
     capturer.startCapture(format.width, format.height, format.maxFramerate,
         appContext, observer);
     observer.WaitForCapturerToStart();
-
-    for (Long timeStamp : listOftimestamps) {
-      capturer.returnBuffer(timeStamp);
+    if (capturer.isCapturingToTexture()) {
+      capturer.surfaceHelper.returnTextureFrame();
     }
 
     observer.WaitForNextCapturedFrame();
@@ -506,9 +506,10 @@ public class VideoCapturerAndroidTestFixtures {
 
     listOftimestamps = observer.getCopyAndResetListOftimeStamps();
     assertTrue(listOftimestamps.size() >= 1);
-    for (Long timeStamp : listOftimestamps) {
-      capturer.returnBuffer(timeStamp);
+    if (capturer.isCapturingToTexture()) {
+      capturer.surfaceHelper.returnTextureFrame();
     }
+
     capturer.dispose();
     assertTrue(capturer.isReleased());
   }
@@ -519,6 +520,7 @@ public class VideoCapturerAndroidTestFixtures {
     final VideoSource source = factory.createVideoSource(capturer, new MediaConstraints());
     final VideoTrack track = factory.createVideoTrack("dummy", source);
     final FakeAsyncRenderer renderer = new FakeAsyncRenderer();
+
     track.addRenderer(new VideoRenderer(renderer));
     // Wait for at least one frame that has not been returned.
     assertFalse(renderer.waitForPendingFrames().isEmpty());
@@ -529,9 +531,7 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-
-    // The pending frames should keep the JNI parts and |capturer| alive.
-    assertFalse(capturer.isReleased());
+    assertTrue(capturer.isReleased());
 
     // Return the frame(s), on a different thread out of spite.
     final List<I420Frame> pendingFrames = renderer.waitForPendingFrames();
@@ -545,13 +545,13 @@ public class VideoCapturerAndroidTestFixtures {
     });
     returnThread.start();
     returnThread.join();
-
-    // Check that frames have successfully returned. This will cause |capturer| to be released.
-    assertTrue(capturer.isReleased());
   }
 
-  static public void cameraFreezedEventOnBufferStarvation(VideoCapturerAndroid capturer,
+  static public void cameraFreezedEventOnBufferStarvationUsingTextures(
+      VideoCapturerAndroid capturer,
       CameraEvents events, Context appContext) throws InterruptedException {
+    assertTrue("Not capturing to textures.", capturer.isCapturingToTexture());
+
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
 
@@ -560,14 +560,16 @@ public class VideoCapturerAndroidTestFixtures {
         appContext, observer);
     // Make sure camera is started.
     assertTrue(observer.WaitForCapturerToStart());
-    // Since we don't call returnBuffer, we should get a starvation message.
+    // Since we don't return the buffer, we should get a starvation message if we are
+    // capturing to a texture.
     assertEquals("Camera failure. Client must return video buffers.",
         events.WaitForCameraFreezed());
 
     capturer.stopCapture();
-    for (long timeStamp : observer.getCopyAndResetListOftimeStamps()) {
-      capturer.returnBuffer(timeStamp);
+    if (capturer.isCapturingToTexture()) {
+      capturer.surfaceHelper.returnTextureFrame();
     }
+
     capturer.dispose();
     assertTrue(capturer.isReleased());
   }
