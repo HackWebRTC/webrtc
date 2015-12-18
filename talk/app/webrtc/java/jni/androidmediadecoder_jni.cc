@@ -95,6 +95,8 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   // rtc::MessageHandler implementation.
   void OnMessage(rtc::Message* msg) override;
 
+  const char* ImplementationName() const override;
+
  private:
   // CHECK-fail if not running on |codec_thread_|.
   void CheckOnCodecThread();
@@ -904,6 +906,10 @@ void MediaCodecVideoDecoderFactory::DestroyVideoDecoder(
     webrtc::VideoDecoder* decoder) {
   ALOGD << "Destroy video decoder.";
   delete decoder;
+}
+
+const char* MediaCodecVideoDecoder::ImplementationName() const {
+  return "MediaCodec";
 }
 
 }  // namespace webrtc_jni

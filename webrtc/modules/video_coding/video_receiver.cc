@@ -287,43 +287,37 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   VCMEncodedFrame* frame = _receiver.FrameForDecoding(
       maxWaitTimeMs, nextRenderTimeMs, prefer_late_decoding);
 
-  if (frame == NULL) {
+  if (!frame)
     return VCM_FRAME_NOT_READY;
-  } else {
-    CriticalSectionScoped cs(_receiveCritSect);
 
-    // If this frame was too late, we should adjust the delay accordingly
-    _timing.UpdateCurrentDelay(frame->RenderTimeMs(),
-                               clock_->TimeInMilliseconds());
+  CriticalSectionScoped cs(_receiveCritSect);
 
-    if (pre_decode_image_callback_) {
-      EncodedImage encoded_image(frame->EncodedImage());
-      int qp = -1;
-      if (qp_parser_.GetQp(*frame, &qp)) {
-        encoded_image.qp_ = qp;
-      }
-      pre_decode_image_callback_->Encoded(
-          encoded_image, frame->CodecSpecific(), NULL);
+  // If this frame was too late, we should adjust the delay accordingly
+  _timing.UpdateCurrentDelay(frame->RenderTimeMs(),
+                             clock_->TimeInMilliseconds());
+
+  if (pre_decode_image_callback_) {
+    EncodedImage encoded_image(frame->EncodedImage());
+    int qp = -1;
+    if (qp_parser_.GetQp(*frame, &qp)) {
+      encoded_image.qp_ = qp;
     }
+    pre_decode_image_callback_->Encoded(encoded_image, frame->CodecSpecific(),
+                                        NULL);
+  }
 
 #ifdef DEBUG_DECODER_BIT_STREAM
-    if (_bitStreamBeforeDecoder != NULL) {
-      // Write bit stream to file for debugging purposes
-      if (fwrite(
-              frame->Buffer(), 1, frame->Length(), _bitStreamBeforeDecoder) !=
-          frame->Length()) {
-        return -1;
-      }
-    }
-#endif
-    const int32_t ret = Decode(*frame);
-    _receiver.ReleaseFrame(frame);
-    frame = NULL;
-    if (ret != VCM_OK) {
-      return ret;
+  if (_bitStreamBeforeDecoder != NULL) {
+    // Write bit stream to file for debugging purposes
+    if (fwrite(frame->Buffer(), 1, frame->Length(), _bitStreamBeforeDecoder) !=
+        frame->Length()) {
+      return -1;
     }
   }
-  return VCM_OK;
+#endif
+  const int32_t ret = Decode(*frame);
+  _receiver.ReleaseFrame(frame);
+  return ret;
 }
 
 int32_t VideoReceiver::RequestSliceLossIndication(

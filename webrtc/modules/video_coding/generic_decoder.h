@@ -46,6 +46,7 @@ public:
     virtual int32_t ReceivedDecodedFrame(const uint64_t pictureId);
 
     uint64_t LastReceivedPictureID() const;
+    void OnDecoderImplementationName(const char* implementation_name);
 
     void Map(uint32_t timestamp, VCMFrameInformation* frameInfo);
     int32_t Pop(uint32_t timestamp);
@@ -54,9 +55,9 @@ private:
     // Protect |_receiveCallback| and |_timestampMap|.
     CriticalSectionWrapper* _critSect;
     Clock* _clock;
-    VCMReceiveCallback* _receiveCallback;  // Guarded by |_critSect|.
+    VCMReceiveCallback* _receiveCallback GUARDED_BY(_critSect);
     VCMTiming& _timing;
-    VCMTimestampMap _timestampMap;  // Guarded by |_critSect|.
+    VCMTimestampMap _timestampMap GUARDED_BY(_critSect);
     uint64_t _lastReceivedPictureID;
 };
 

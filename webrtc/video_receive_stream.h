@@ -51,6 +51,7 @@ class VideoReceiveStream : public ReceiveStream {
     int render_frame_rate = 0;
 
     // Decoder stats.
+    std::string decoder_implementation_name = "unknown";
     FrameCounts frame_counts;
     int decode_ms = 0;
     int max_decode_ms = 0;

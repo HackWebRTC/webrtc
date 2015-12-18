@@ -408,6 +408,8 @@ const char* StatsReport::Value::display_name() const {
       return "state";
     case kStatsValueNameDataChannelId:
       return "datachannelid";
+    case kStatsValueNameCodecImplementationName:
+      return "codecImplementationName";
 
     // 'goog' prefixed constants.
     case kStatsValueNameAccelerateRate:
@@ -592,9 +594,6 @@ const char* StatsReport::Value::display_name() const {
       return "googViewLimitedResolution";
     case kStatsValueNameWritable:
       return "googWritable";
-    default:
-      RTC_DCHECK(false);
-      break;
   }
 
   return nullptr;

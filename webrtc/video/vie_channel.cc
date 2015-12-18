@@ -983,6 +983,12 @@ void ViEChannel::OnIncomingPayloadType(int payload_type) {
     receive_stats_callback_->OnIncomingPayloadType(payload_type);
 }
 
+void ViEChannel::OnDecoderImplementationName(const char* implementation_name) {
+  CriticalSectionScoped cs(crit_.get());
+  if (receive_stats_callback_)
+    receive_stats_callback_->OnDecoderImplementationName(implementation_name);
+}
+
 void ViEChannel::OnReceiveRatesUpdated(uint32_t bit_rate, uint32_t frame_rate) {
   CriticalSectionScoped cs(crit_.get());
   if (receive_stats_callback_)

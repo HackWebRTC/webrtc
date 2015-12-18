@@ -434,6 +434,10 @@ void H264VideoToolboxEncoder::DestroyCompressionSession() {
   }
 }
 
+const char* H264VideoToolboxEncoder::ImplementationName() const {
+  return "VideoToolbox";
+}
+
 }  // namespace webrtc
 
 #endif  // defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)

@@ -112,6 +112,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
                    const EncodedImage& encoded_image,
                    const RTPFragmentationHeader& fragmentation_header,
                    const RTPVideoHeader* rtp_video_hdr) override;
+  void OnEncoderImplementationName(const char* implementation_name) override;
 
   // Implements VideoSendStatisticsCallback.
   int32_t SendStatistics(const uint32_t bit_rate,

@@ -2383,6 +2383,9 @@ TEST_F(EndToEndTest, GetStats) {
         receive_stats_filled_["IncomingRate"] |=
             stats.network_frame_rate != 0 || stats.total_bitrate_bps != 0;
 
+        send_stats_filled_["DecoderImplementationName"] |=
+            stats.decoder_implementation_name ==
+            test::FakeDecoder::kImplementationName;
         receive_stats_filled_["RenderDelayAsHighAsExpected"] |=
             stats.render_delay_ms >= kExpectedRenderDelayMs;
 
@@ -2437,6 +2440,10 @@ TEST_F(EndToEndTest, GetStats) {
 
       send_stats_filled_["CpuOveruseMetrics"] |=
           stats.avg_encode_time_ms != 0 || stats.encode_usage_percent != 0;
+
+      send_stats_filled_["EncoderImplementationName"] |=
+          stats.encoder_implementation_name ==
+          test::FakeEncoder::kImplementationName;
 
       for (std::map<uint32_t, VideoSendStream::StreamStats>::const_iterator it =
                stats.substreams.begin();

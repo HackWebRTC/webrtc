@@ -62,6 +62,8 @@ class VCMPacketizationCallback {
                            const RTPFragmentationHeader& fragmentationHeader,
                            const RTPVideoHeader* rtpVideoHdr) = 0;
 
+  virtual void OnEncoderImplementationName(const char* implementation_name) {}
+
  protected:
   virtual ~VCMPacketizationCallback() {
   }
@@ -77,6 +79,7 @@ class VCMReceiveCallback {
   }
   // Called when the current receive codec changes.
   virtual void OnIncomingPayloadType(int payload_type) {}
+  virtual void OnDecoderImplementationName(const char* implementation_name) {}
 
  protected:
   virtual ~VCMReceiveCallback() {

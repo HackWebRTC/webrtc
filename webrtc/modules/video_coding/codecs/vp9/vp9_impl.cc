@@ -809,6 +809,10 @@ int VP9EncoderImpl::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+const char* VP9EncoderImpl::ImplementationName() const {
+  return "libvpx";
+}
+
 VP9Decoder* VP9Decoder::Create() {
   return new VP9DecoderImpl();
 }
@@ -980,4 +984,9 @@ int VP9DecoderImpl::Release() {
   inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }
+
+const char* VP9DecoderImpl::ImplementationName() const {
+  return "libvpx";
+}
+
 }  // namespace webrtc

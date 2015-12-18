@@ -48,6 +48,8 @@ class H264VideoToolboxEncoder : public H264Encoder {
 
   int Release() override;
 
+  const char* ImplementationName() const override;
+
  private:
   int ResetCompressionSession();
   void ConfigureCompressionSession();

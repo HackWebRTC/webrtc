@@ -80,6 +80,11 @@ void ReceiveStatisticsProxy::OnIncomingPayloadType(int payload_type) {
   stats_.current_payload_type = payload_type;
 }
 
+void ReceiveStatisticsProxy::OnDecoderImplementationName(
+    const char* implementation_name) {
+  rtc::CritScope lock(&crit_);
+  stats_.decoder_implementation_name = implementation_name;
+}
 void ReceiveStatisticsProxy::OnIncomingRate(unsigned int framerate,
                                             unsigned int bitrate_bps) {
   rtc::CritScope lock(&crit_);

@@ -62,9 +62,11 @@ public:
     void SetInternalSource(bool internalSource) { _internalSource = internalSource; };
 
     void SetRotation(VideoRotation rotation) { _rotation = rotation; }
+    void SignalLastEncoderImplementationUsed(
+        const char* encoder_implementation_name);
 
 private:
-    VCMPacketizationCallback* _sendCallback;
+    VCMPacketizationCallback* send_callback_;
     media_optimization::MediaOptimization* _mediaOpt;
     uint8_t _payloadType;
     bool _internalSource;

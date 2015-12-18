@@ -301,6 +301,10 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+const char* VP8EncoderImpl::ImplementationName() const {
+  return "libvpx";
+}
+
 void VP8EncoderImpl::SetStreamState(bool send_stream,
                                             int stream_idx) {
   if (send_stream && !send_stream_[stream_idx]) {
@@ -1396,6 +1400,10 @@ int VP8DecoderImpl::Release() {
   buffer_pool_.Release();
   inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+const char* VP8DecoderImpl::ImplementationName() const {
+  return "libvpx";
 }
 
 int VP8DecoderImpl::CopyReference(VP8DecoderImpl* copy) {

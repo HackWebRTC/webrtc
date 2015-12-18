@@ -161,6 +161,12 @@ void SendStatisticsProxy::SetContentType(
   }
 }
 
+void SendStatisticsProxy::OnEncoderImplementationName(
+    const char* implementation_name) {
+  rtc::CritScope lock(&crit_);
+  stats_.encoder_implementation_name = implementation_name;
+}
+
 void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
   rtc::CritScope lock(&crit_);
   stats_.encode_frame_rate = framerate;

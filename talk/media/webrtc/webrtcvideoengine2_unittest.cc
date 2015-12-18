@@ -2445,6 +2445,18 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsSentCodecName) {
   EXPECT_EQ(kVp8Codec.name, info.senders[0].codec_name);
 }
 
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsEncoderImplementationName) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.encoder_implementation_name = "encoder_implementation_name";
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_EQ(stats.encoder_implementation_name,
+            info.senders[0].encoder_implementation_name);
+}
+
 TEST_F(WebRtcVideoChannel2Test, GetStatsReportsCpuOveruseMetrics) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;
@@ -2677,6 +2689,7 @@ TEST_F(WebRtcVideoChannel2Test,
 TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
   FakeVideoReceiveStream* stream = AddRecvStream();
   webrtc::VideoReceiveStream::Stats stats;
+  stats.decoder_implementation_name = "decoder_implementation_name";
   stats.decode_ms = 2;
   stats.max_decode_ms = 3;
   stats.current_delay_ms = 4;
@@ -2688,6 +2701,8 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
 
   cricket::VideoMediaInfo info;
   ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_EQ(stats.decoder_implementation_name,
+            info.receivers[0].decoder_implementation_name);
   EXPECT_EQ(stats.decode_ms, info.receivers[0].decode_ms);
   EXPECT_EQ(stats.max_decode_ms, info.receivers[0].max_decode_ms);
   EXPECT_EQ(stats.current_delay_ms, info.receivers[0].current_delay_ms);

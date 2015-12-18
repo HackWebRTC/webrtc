@@ -201,6 +201,8 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
 
 void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
   ExtractCommonReceiveProperties(info, report);
+  report->AddString(StatsReport::kStatsValueNameCodecImplementationName,
+                    info.decoder_implementation_name);
   report->AddInt64(StatsReport::kStatsValueNameBytesReceived,
                    info.bytes_rcvd);
   report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
@@ -233,6 +235,8 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
 void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
   ExtractCommonSendProperties(info, report);
 
+  report->AddString(StatsReport::kStatsValueNameCodecImplementationName,
+                    info.encoder_implementation_name);
   report->AddBoolean(StatsReport::kStatsValueNameBandwidthLimitedResolution,
                      (info.adapt_reason & 0x2) > 0);
   report->AddBoolean(StatsReport::kStatsValueNameCpuLimitedResolution,

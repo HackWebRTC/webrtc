@@ -266,6 +266,10 @@ void H264VideoToolboxDecoder::SetVideoFormat(
   }
 }
 
+const char* H264VideoToolboxDecoder::ImplementationName() const {
+  return "VideoToolbox";
+}
+
 }  // namespace webrtc
 
 #endif  // defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)

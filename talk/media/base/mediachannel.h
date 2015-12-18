@@ -783,6 +783,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   }
 
   std::vector<SsrcGroup> ssrc_groups;
+  std::string encoder_implementation_name;
   int packets_cached;
   int firs_rcvd;
   int plis_rcvd;
@@ -828,6 +829,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   }
 
   std::vector<SsrcGroup> ssrc_groups;
+  std::string decoder_implementation_name;
   int packets_concealed;
   int firs_sent;
   int plis_sent;

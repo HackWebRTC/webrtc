@@ -76,6 +76,9 @@ bool VideoDecoderSoftwareFallbackWrapper::InitFallbackDecoder() {
   }
   if (callback_ != nullptr)
     fallback_decoder_->RegisterDecodeCompleteCallback(callback_);
+  fallback_implementation_name_ =
+      std::string(fallback_decoder_->ImplementationName()) +
+      " (fallback from: " + decoder_->ImplementationName() + ")";
   return true;
 }
 
@@ -135,6 +138,12 @@ bool VideoDecoderSoftwareFallbackWrapper::PrefersLateDecoding() const {
   if (fallback_decoder_)
     return fallback_decoder_->PrefersLateDecoding();
   return decoder_->PrefersLateDecoding();
+}
+
+const char* VideoDecoderSoftwareFallbackWrapper::ImplementationName() const {
+  if (fallback_decoder_)
+    return fallback_implementation_name_.c_str();
+  return decoder_->ImplementationName();
 }
 
 }  // namespace webrtc

@@ -109,6 +109,11 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int GetTargetFramerate() override;
 
   bool SupportsNativeHandle() const override { return true; }
+  const char* ImplementationName() const override;
+
+ private:
+  // CHECK-fail if not running on |codec_thread_|.
+  void CheckOnCodecThread();
 
  private:
   // ResetCodecOnCodecThread() calls ReleaseOnCodecThread() and
@@ -1068,8 +1073,12 @@ int MediaCodecVideoEncoder::GetTargetFramerate() {
   return scale_ ? quality_scaler_.GetTargetFramerate() : -1;
 }
 
+const char* MediaCodecVideoEncoder::ImplementationName() const {
+  return "MediaCodec";
+}
+
 MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
-  : egl_context_ (nullptr) {
+    : egl_context_(nullptr) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   jclass j_encoder_class = FindClass(jni, "org/webrtc/MediaCodecVideoEncoder");

@@ -472,6 +472,12 @@ int32_t ViEEncoder::SendData(
              : -1;
 }
 
+void ViEEncoder::OnEncoderImplementationName(
+    const char* implementation_name) {
+  if (stats_proxy_)
+    stats_proxy_->OnEncoderImplementationName(implementation_name);
+}
+
 int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
                                    const uint32_t frame_rate) {
   if (stats_proxy_)

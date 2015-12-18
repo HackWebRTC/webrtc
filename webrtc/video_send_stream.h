@@ -62,6 +62,7 @@ class VideoSendStream : public SendStream {
   };
 
   struct Stats {
+    std::string encoder_implementation_name = "unknown";
     int input_frame_rate = 0;
     int encode_frame_rate = 0;
     int avg_encode_time_ms = 0;

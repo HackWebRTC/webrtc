@@ -45,6 +45,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void OnDecodedFrame();
   void OnRenderedFrame(int width, int height);
   void OnIncomingPayloadType(int payload_type);
+  void OnDecoderImplementationName(const char* implementation_name);
   void OnIncomingRate(unsigned int framerate, unsigned int bitrate_bps);
   void OnDecoderTiming(int decode_ms,
                        int max_decode_ms,

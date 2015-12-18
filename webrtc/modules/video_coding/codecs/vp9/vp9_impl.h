@@ -47,6 +47,8 @@ class VP9EncoderImpl : public VP9Encoder {
 
   void OnDroppedFrame() override {}
 
+  const char* ImplementationName() const override;
+
   struct LayerFrameRefSettings {
     int8_t upd_buf = -1;   // -1 - no update,    0..7 - update buffer 0..7
     int8_t ref_buf1 = -1;  // -1 - no reference, 0..7 - reference buffer 0..7
@@ -147,6 +149,8 @@ class VP9DecoderImpl : public VP9Decoder {
   int Release() override;
 
   int Reset() override;
+
+  const char* ImplementationName() const override;
 
  private:
   int ReturnFrame(const vpx_image_t* img, uint32_t timeStamp);

@@ -120,6 +120,7 @@ class StatsReport {
     kStatsValueNameAudioOutputLevel,
     kStatsValueNameBytesReceived,
     kStatsValueNameBytesSent,
+    kStatsValueNameCodecImplementationName,
     kStatsValueNameDataChannelId,
     kStatsValueNamePacketsLost,
     kStatsValueNamePacketsReceived,

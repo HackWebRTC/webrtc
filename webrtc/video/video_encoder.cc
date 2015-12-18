@@ -76,6 +76,9 @@ bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
   if (channel_parameters_set_)
     fallback_encoder_->SetChannelParameters(packet_loss_, rtt_);
 
+  fallback_implementation_name_ =
+      std::string(fallback_encoder_->ImplementationName()) +
+      " (fallback from: " + encoder_->ImplementationName() + ")";
   // Since we're switching to the fallback encoder, Release the real encoder. It
   // may be re-initialized via InitEncode later, and it will continue to get
   // Set calls for rates and channel parameters in the meantime.
@@ -180,6 +183,12 @@ bool VideoEncoderSoftwareFallbackWrapper::SupportsNativeHandle() const {
   if (fallback_encoder_)
     return fallback_encoder_->SupportsNativeHandle();
   return encoder_->SupportsNativeHandle();
+}
+
+const char* VideoEncoderSoftwareFallbackWrapper::ImplementationName() const {
+  if (fallback_encoder_)
+    return fallback_implementation_name_.c_str();
+  return encoder_->ImplementationName();
 }
 
 int VideoEncoderSoftwareFallbackWrapper::GetTargetFramerate() {

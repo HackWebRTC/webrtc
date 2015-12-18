@@ -58,6 +58,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // From VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
+  void OnEncoderImplementationName(const char* implementation_name);
   void OnOutgoingRate(uint32_t framerate, uint32_t bitrate);
   void OnSuspendChange(bool is_suspended);
   void OnInactiveSsrc(uint32_t ssrc);

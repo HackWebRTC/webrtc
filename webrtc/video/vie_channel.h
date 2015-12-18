@@ -230,6 +230,7 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   // Implements VCMReceiveCallback.
   void OnIncomingPayloadType(int payload_type) override;
+  void OnDecoderImplementationName(const char* implementation_name) override;
 
   // Implements VCMReceiveStatisticsCallback.
   void OnReceiveRatesUpdated(uint32_t bit_rate, uint32_t frame_rate) override;

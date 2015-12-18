@@ -19,15 +19,12 @@ namespace webrtc {
 
 VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming& timing,
                                                  Clock* clock)
-:
-_critSect(CriticalSectionWrapper::CreateCriticalSection()),
-_clock(clock),
-_receiveCallback(NULL),
-_timing(timing),
-_timestampMap(kDecoderFrameMemoryLength),
-_lastReceivedPictureID(0)
-{
-}
+    : _critSect(CriticalSectionWrapper::CreateCriticalSection()),
+      _clock(clock),
+      _receiveCallback(NULL),
+      _timing(timing),
+      _timestampMap(kDecoderFrameMemoryLength),
+      _lastReceivedPictureID(0) {}
 
 VCMDecodedFrameCallback::~VCMDecodedFrameCallback()
 {
@@ -115,6 +112,13 @@ uint64_t VCMDecodedFrameCallback::LastReceivedPictureID() const
     return _lastReceivedPictureID;
 }
 
+void VCMDecodedFrameCallback::OnDecoderImplementationName(
+    const char* implementation_name) {
+  CriticalSectionScoped cs(_critSect);
+  if (_receiveCallback)
+    _receiveCallback->OnDecoderImplementationName(implementation_name);
+}
+
 void VCMDecodedFrameCallback::Map(uint32_t timestamp,
                                   VCMFrameInformation* frameInfo) {
   CriticalSectionScoped cs(_critSect);
@@ -164,6 +168,7 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
                                    frame.FragmentationHeader(),
                                    frame.CodecSpecific(), frame.RenderTimeMs());
 
+    _callback->OnDecoderImplementationName(_decoder->ImplementationName());
     if (ret < WEBRTC_VIDEO_CODEC_OK)
     {
         LOG(LS_WARNING) << "Failed to decode frame with timestamp "

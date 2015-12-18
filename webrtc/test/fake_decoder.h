@@ -39,6 +39,10 @@ class FakeDecoder : public VideoDecoder {
   int32_t Release() override;
   int32_t Reset() override;
 
+  const char* ImplementationName() const override;
+
+  static const char* kImplementationName;
+
  private:
   VideoCodec config_;
   VideoFrame frame_;

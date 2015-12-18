@@ -132,6 +132,11 @@ int32_t FakeEncoder::SetRates(uint32_t new_target_bitrate, uint32_t framerate) {
   return 0;
 }
 
+const char* FakeEncoder::kImplementationName = "fake_encoder";
+const char* FakeEncoder::ImplementationName() const {
+  return kImplementationName;
+}
+
 FakeH264Encoder::FakeH264Encoder(Clock* clock)
     : FakeEncoder(clock), callback_(NULL), idr_counter_(0) {
   FakeEncoder::RegisterEncodeCompleteCallback(this);

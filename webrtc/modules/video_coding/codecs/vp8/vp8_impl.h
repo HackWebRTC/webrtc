@@ -58,6 +58,8 @@ class VP8EncoderImpl : public VP8Encoder {
 
   void OnDroppedFrame() override {}
 
+  const char* ImplementationName() const override;
+
  private:
   void SetupTemporalLayers(int num_streams, int num_temporal_layers,
                            const VideoCodec& codec);
@@ -134,6 +136,8 @@ class VP8DecoderImpl : public VP8Decoder {
   int RegisterDecodeCompleteCallback(DecodedImageCallback* callback) override;
   int Release() override;
   int Reset() override;
+
+  const char* ImplementationName() const override;
 
  private:
   // Copy reference image from this _decoder to the _decoder in copyTo. Set
