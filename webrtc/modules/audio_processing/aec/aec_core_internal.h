@@ -95,8 +95,8 @@ struct AecCore {
 
   int xfBufBlockPos;
 
-  RingBuffer* far_buf;
-  RingBuffer* far_buf_windowed;
+  RingBuffer* far_time_buf;
+
   int system_delay;  // Current system delay buffered in AEC.
 
   int mult;  // sampling frequency multiple
@@ -165,7 +165,6 @@ struct AecCore {
   // each time.
   int debug_dump_count;
 
-  RingBuffer* far_time_buf;
   rtc_WavWriter* farFile;
   rtc_WavWriter* nearFile;
   rtc_WavWriter* outFile;

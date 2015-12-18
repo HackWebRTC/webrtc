@@ -846,13 +846,6 @@ static void Fft(float time_data[PART_LEN2],
   }
 }
 
-static int MoveFarReadPtrWithoutSystemDelayUpdate(AecCore* self, int elements) {
-  WebRtc_MoveReadPtr(self->far_buf_windowed, elements);
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  WebRtc_MoveReadPtr(self->far_time_buf, elements);
-#endif
-  return WebRtc_MoveReadPtr(self->far_buf, elements);
-}
 
 static int SignalBasedDelayCorrection(AecCore* self) {
   int delay_correction = 0;
@@ -893,7 +886,7 @@ static int SignalBasedDelayCorrection(AecCore* self) {
     const int upper_bound = self->num_partitions * 3 / 4;
     const int do_correction = delay <= lower_bound || delay > upper_bound;
     if (do_correction == 1) {
-      int available_read = (int)WebRtc_available_read(self->far_buf);
+      int available_read = (int)WebRtc_available_read(self->far_time_buf);
       // With |shift_offset| we gradually rely on the delay estimates.  For
       // positive delays we reduce the correction by |shift_offset| to lower the
       // risk of pushing the AEC into a non causal state.  For negative delays
@@ -1005,6 +998,7 @@ static void EchoSubtraction(
 
 
 static void EchoSuppression(AecCore* aec,
+                            float farend[PART_LEN2],
                             float* echo_subtractor_output,
                             float* output,
                             float* const* outputH) {
@@ -1052,13 +1046,13 @@ static void EchoSuppression(AecCore* aec,
   aec_rdft_forward_128(fft);
   StoreAsComplex(fft, efw);
 
-  // We should always have at least one element stored in |far_buf|.
-  assert(WebRtc_available_read(aec->far_buf_windowed) > 0);
   // NLP
-  WebRtc_ReadBuffer(aec->far_buf_windowed, (void**)&xfw_ptr, &xfw[0][0], 1);
 
-  // TODO(bjornv): Investigate if we can reuse |far_buf_windowed| instead of
-  // |xfwBuf|.
+  // Convert far-end partition to the frequency domain with windowing.
+  WindowData(fft, farend);
+  Fft(fft, xfw);
+  xfw_ptr = &xfw[0][0];
+
   // Buffer far.
   memcpy(aec->xfwBuf, xfw_ptr, sizeof(float) * 2 * PART_LEN1);
 
@@ -1267,8 +1261,10 @@ static void ProcessBlock(AecCore* aec) {
   const float gInitNoise[2] = {0.999f, 0.001f};
 
   float nearend[PART_LEN];
-  float echo_subtractor_output[PART_LEN];
   float* nearend_ptr = NULL;
+  float farend[PART_LEN2];
+  float* farend_ptr = NULL;
+  float echo_subtractor_output[PART_LEN];
   float output[PART_LEN];
   float outputH[NUM_HIGH_BANDS_MAX][PART_LEN];
   float* outputH_ptr[NUM_HIGH_BANDS_MAX];
@@ -1289,21 +1285,24 @@ static void ProcessBlock(AecCore* aec) {
   WebRtc_ReadBuffer(aec->nearFrBuf, (void**)&nearend_ptr, nearend, PART_LEN);
   memcpy(aec->dBuf + PART_LEN, nearend_ptr, sizeof(nearend));
 
-  // ---------- Ooura fft ----------
+  // We should always have at least one element stored in |far_buf|.
+  assert(WebRtc_available_read(aec->far_time_buf) > 0);
+  WebRtc_ReadBuffer(aec->far_time_buf, (void**)&farend_ptr, farend, 1);
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   {
-    float farend[PART_LEN];
-    float* farend_ptr = NULL;
-    WebRtc_ReadBuffer(aec->far_time_buf, (void**)&farend_ptr, farend, 1);
-    RTC_AEC_DEBUG_WAV_WRITE(aec->farFile, farend_ptr, PART_LEN);
+    // TODO(minyue): |farend_ptr| starts from buffered samples. This will be
+    // modified when |aec->far_time_buf| is revised.
+    RTC_AEC_DEBUG_WAV_WRITE(aec->farFile, &farend_ptr[PART_LEN], PART_LEN);
+
     RTC_AEC_DEBUG_WAV_WRITE(aec->nearFile, nearend_ptr, PART_LEN);
   }
 #endif
 
-  // We should always have at least one element stored in |far_buf|.
-  assert(WebRtc_available_read(aec->far_buf) > 0);
-  WebRtc_ReadBuffer(aec->far_buf, (void**)&xf_ptr, &xf[0][0], 1);
+  // Convert far-end signal to the frequency domain.
+  memcpy(fft, farend_ptr, sizeof(float) * PART_LEN2);
+  Fft(fft, xf);
+  xf_ptr = &xf[0][0];
 
   // Near fft
   memcpy(fft, aec->dBuf, sizeof(float) * PART_LEN2);
@@ -1403,7 +1402,7 @@ static void ProcessBlock(AecCore* aec) {
   RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, echo_subtractor_output, PART_LEN);
 
   // Perform echo suppression.
-  EchoSuppression(aec, echo_subtractor_output, output, outputH_ptr);
+  EchoSuppression(aec, farend_ptr, echo_subtractor_output, output, outputH_ptr);
 
   if (aec->metricsMode == 1) {
     // Update power levels and echo metrics
@@ -1457,26 +1456,20 @@ AecCore* WebRtcAec_CreateAec() {
   }
 
   // Create far-end buffers.
-  aec->far_buf =
-      WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * 2 * PART_LEN1);
-  if (!aec->far_buf) {
-    WebRtcAec_FreeAec(aec);
-    return NULL;
-  }
-  aec->far_buf_windowed =
-      WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * 2 * PART_LEN1);
-  if (!aec->far_buf_windowed) {
-    WebRtcAec_FreeAec(aec);
-    return NULL;
-  }
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  aec->instance_index = webrtc_aec_instance_count;
+  // For bit exactness with legacy code, each element in |far_time_buf| is
+  // supposed to contain |PART_LEN2| samples with an overlap of |PART_LEN|
+  // samples from the last frame.
+  // TODO(minyue): reduce |far_time_buf| to non-overlapped |PART_LEN| samples.
   aec->far_time_buf =
-      WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * PART_LEN);
+      WebRtc_CreateBuffer(kBufSizePartitions, sizeof(float) * PART_LEN2);
   if (!aec->far_time_buf) {
     WebRtcAec_FreeAec(aec);
     return NULL;
   }
+
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+  aec->instance_index = webrtc_aec_instance_count;
+
   aec->farFile = aec->nearFile = aec->outFile = aec->outLinearFile = NULL;
   aec->debug_dump_count = 0;
 #endif
@@ -1554,11 +1547,8 @@ void WebRtcAec_FreeAec(AecCore* aec) {
     WebRtc_FreeBuffer(aec->outFrBufH[i]);
   }
 
-  WebRtc_FreeBuffer(aec->far_buf);
-  WebRtc_FreeBuffer(aec->far_buf_windowed);
-#ifdef WEBRTC_AEC_DEBUG_DUMP
   WebRtc_FreeBuffer(aec->far_time_buf);
-#endif
+
   RTC_AEC_DEBUG_WAV_CLOSE(aec->farFile);
   RTC_AEC_DEBUG_WAV_CLOSE(aec->nearFile);
   RTC_AEC_DEBUG_WAV_CLOSE(aec->outFile);
@@ -1594,10 +1584,9 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   }
 
   // Initialize far-end buffers.
-  WebRtc_InitBuffer(aec->far_buf);
-  WebRtc_InitBuffer(aec->far_buf_windowed);
-#ifdef WEBRTC_AEC_DEBUG_DUMP
   WebRtc_InitBuffer(aec->far_time_buf);
+
+#ifdef WEBRTC_AEC_DEBUG_DUMP
   {
     int process_rate = sampFreq > 16000 ? 16000 : sampFreq;
     RTC_AEC_DEBUG_WAV_REOPEN("aec_far", aec->instance_index,
@@ -1741,27 +1730,22 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   return 0;
 }
 
-void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend) {
-  float fft[PART_LEN2];
-  float xf[2][PART_LEN1];
 
+// For bit exactness with a legacy code, |farend| is supposed to contain
+// |PART_LEN2| samples with an overlap of |PART_LEN| samples from the last
+// frame.
+// TODO(minyue): reduce |farend| to non-overlapped |PART_LEN| samples.
+void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend) {
   // Check if the buffer is full, and in that case flush the oldest data.
-  if (WebRtc_available_write(aec->far_buf) < 1) {
+  if (WebRtc_available_write(aec->far_time_buf) < 1) {
     WebRtcAec_MoveFarReadPtr(aec, 1);
   }
-  // Convert far-end partition to the frequency domain without windowing.
-  memcpy(fft, farend, sizeof(float) * PART_LEN2);
-  Fft(fft, xf);
-  WebRtc_WriteBuffer(aec->far_buf, &xf[0][0], 1);
 
-  // Convert far-end partition to the frequency domain with windowing.
-  WindowData(fft, farend);
-  Fft(fft, xf);
-  WebRtc_WriteBuffer(aec->far_buf_windowed, &xf[0][0], 1);
+  WebRtc_WriteBuffer(aec->far_time_buf, farend, 1);
 }
 
 int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements) {
-  int elements_moved = MoveFarReadPtrWithoutSystemDelayUpdate(aec, elements);
+  int elements_moved = WebRtc_MoveReadPtr(aec->far_time_buf, elements);
   aec->system_delay -= elements_moved * PART_LEN;
   return elements_moved;
 }
@@ -1835,14 +1819,14 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
       // rounding, like -16.
       int move_elements = (aec->knownDelay - knownDelay - 32) / PART_LEN;
       int moved_elements =
-          MoveFarReadPtrWithoutSystemDelayUpdate(aec, move_elements);
+          WebRtc_MoveReadPtr(aec->far_time_buf, move_elements);
       aec->knownDelay -= moved_elements * PART_LEN;
     } else {
       // 2 b) Apply signal based delay correction.
       int move_elements = SignalBasedDelayCorrection(aec);
       int moved_elements =
-          MoveFarReadPtrWithoutSystemDelayUpdate(aec, move_elements);
-      int far_near_buffer_diff = WebRtc_available_read(aec->far_buf) -
+          WebRtc_MoveReadPtr(aec->far_time_buf, move_elements);
+      int far_near_buffer_diff = WebRtc_available_read(aec->far_time_buf) -
           WebRtc_available_read(aec->nearFrBuf) / PART_LEN;
       WebRtc_SoftResetDelayEstimator(aec->delay_estimator, moved_elements);
       WebRtc_SoftResetDelayEstimatorFarend(aec->delay_estimator_farend,
@@ -1920,10 +1904,6 @@ void WebRtcAec_GetEchoStats(AecCore* self,
   *erle = self->erle;
   *a_nlp = self->aNlp;
 }
-
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-void* WebRtcAec_far_time_buf(AecCore* self) { return self->far_time_buf; }
-#endif
 
 void WebRtcAec_SetConfigCore(AecCore* self,
                              int nlp_mode,
