@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "build/build_config.h"
+#include "webrtc/typedefs.h"
 #include "webrtc/modules/desktop_capture/differ_block_sse2.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 
@@ -38,7 +38,7 @@ bool BlockDifference(const uint8_t* image1,
   static bool (*diff_proc)(const uint8_t*, const uint8_t*, int) = NULL;
 
   if (!diff_proc) {
-#if defined(ARCH_CPU_ARM_FAMILY) || defined(ARCH_CPU_MIPS_FAMILY)
+#if defined(WEBRTC_ARCH_ARM_FAMILY) || defined(WEBRTC_ARCH_MIPS_FAMILY)
     // For ARM and MIPS processors, always use C version.
     // TODO(hclam): Implement a NEON version.
     diff_proc = &BlockDifference_C;
