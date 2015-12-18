@@ -93,7 +93,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       CreateAudioTrack(const std::string& id,
                        AudioSourceInterface* audio_source) override;
 
-  bool StartAecDump(rtc::PlatformFile file) override;
+  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) override;
   void StopAecDump() override;
   bool StartRtcEventLog(rtc::PlatformFile file) override;
   void StopRtcEventLog() override;

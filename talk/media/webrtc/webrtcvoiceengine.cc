@@ -1011,7 +1011,8 @@ bool WebRtcVoiceEngine::SetAudioDeviceModule(webrtc::AudioDeviceModule* adm) {
   return true;
 }
 
-bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file) {
+bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
+                                     int64_t max_size_bytes) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   FILE* aec_dump_file_stream = rtc::FdopenPlatformFileForWriting(file);
   if (!aec_dump_file_stream) {
@@ -1021,7 +1022,8 @@ bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file) {
     return false;
   }
   StopAecDump();
-  if (voe_wrapper_->processing()->StartDebugRecording(aec_dump_file_stream) !=
+  if (voe_wrapper_->base()->audio_processing()->StartDebugRecording(
+          aec_dump_file_stream, max_size_bytes) !=
       webrtc::AudioProcessing::kNoError) {
     LOG_RTCERR0(StartDebugRecording);
     fclose(aec_dump_file_stream);
@@ -1035,8 +1037,8 @@ void WebRtcVoiceEngine::StartAecDump(const std::string& filename) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (!is_dumping_aec_) {
     // Start dumping AEC when we are not dumping.
-    if (voe_wrapper_->processing()->StartDebugRecording(
-        filename.c_str()) != webrtc::AudioProcessing::kNoError) {
+    if (voe_wrapper_->base()->audio_processing()->StartDebugRecording(
+            filename.c_str(), -1) != webrtc::AudioProcessing::kNoError) {
       LOG_RTCERR1(StartDebugRecording, filename.c_str());
     } else {
       is_dumping_aec_ = true;
@@ -1048,7 +1050,7 @@ void WebRtcVoiceEngine::StopAecDump() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (is_dumping_aec_) {
     // Stop dumping AEC when we are dumping.
-    if (voe_wrapper_->processing()->StopDebugRecording() !=
+    if (voe_wrapper_->base()->audio_processing()->StopDebugRecording() !=
         webrtc::AudioProcessing::kNoError) {
       LOG_RTCERR0(StopDebugRecording);
     }

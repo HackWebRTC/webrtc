@@ -924,7 +924,7 @@ int VoEAudioProcessingImpl::StartDebugRecording(const char* fileNameUTF8) {
     return -1;
   }
 
-  return _shared->audio_processing()->StartDebugRecording(fileNameUTF8);
+  return _shared->audio_processing()->StartDebugRecording(fileNameUTF8, -1);
 }
 
 int VoEAudioProcessingImpl::StartDebugRecording(FILE* file_handle) {
@@ -935,7 +935,7 @@ int VoEAudioProcessingImpl::StartDebugRecording(FILE* file_handle) {
     return -1;
   }
 
-  return _shared->audio_processing()->StartDebugRecording(file_handle);
+  return _shared->audio_processing()->StartDebugRecording(file_handle, -1);
 }
 
 int VoEAudioProcessingImpl::StopDebugRecording() {

@@ -408,13 +408,17 @@ class AudioProcessing {
   // Starts recording debugging information to a file specified by |filename|,
   // a NULL-terminated string. If there is an ongoing recording, the old file
   // will be closed, and recording will continue in the newly specified file.
-  // An already existing file will be overwritten without warning.
+  // An already existing file will be overwritten without warning. A maximum
+  // file size (in bytes) for the log can be specified. The logging is stopped
+  // once the limit has been reached. If max_log_size_bytes is set to a value
+  // <= 0, no limit will be used.
   static const size_t kMaxFilenameSize = 1024;
-  virtual int StartDebugRecording(const char filename[kMaxFilenameSize]) = 0;
+  virtual int StartDebugRecording(const char filename[kMaxFilenameSize],
+                                  int64_t max_log_size_bytes) = 0;
 
   // Same as above but uses an existing file handle. Takes ownership
   // of |handle| and closes it at StopDebugRecording().
-  virtual int StartDebugRecording(FILE* handle) = 0;
+  virtual int StartDebugRecording(FILE* handle, int64_t max_log_size_bytes) = 0;
 
   // Same as above but uses an existing PlatformFile handle. Takes ownership
   // of |handle| and closes it at StopDebugRecording().

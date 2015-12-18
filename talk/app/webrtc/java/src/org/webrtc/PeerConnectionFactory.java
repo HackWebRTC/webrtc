@@ -143,8 +143,8 @@ public class PeerConnectionFactory {
   // Starts recording an AEC dump. Ownership of the file is transfered to the
   // native code. If an AEC dump is already in progress, it will be stopped and
   // a new one will start using the provided file.
-  public boolean startAecDump(int file_descriptor) {
-    return nativeStartAecDump(nativeFactory, file_descriptor);
+  public boolean startAecDump(int file_descriptor, int filesize_limit_bytes) {
+    return nativeStartAecDump(nativeFactory, file_descriptor, filesize_limit_bytes);
   }
 
   // Stops recording an AEC dump. If no AEC dump is currently being recorded,
@@ -250,7 +250,8 @@ public class PeerConnectionFactory {
   private static native long nativeCreateAudioTrack(
       long nativeFactory, String id, long nativeSource);
 
-  private static native boolean nativeStartAecDump(long nativeFactory, int file_descriptor);
+  private static native boolean nativeStartAecDump(
+      long nativeFactory, int file_descriptor, int filesize_limit_bytes);
 
   private static native void nativeStopAecDump(long nativeFactory);
 
