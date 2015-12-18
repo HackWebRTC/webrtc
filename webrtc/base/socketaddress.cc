@@ -307,39 +307,6 @@ size_t SocketAddress::ToSockAddrStorage(sockaddr_storage* addr) const {
   return ToSockAddrStorageHelper(addr, ip_, port_, scope_id_);
 }
 
-bool SocketAddress::StringToIP(const std::string& hostname, uint32_t* ip) {
-  in_addr addr;
-  if (rtc::inet_pton(AF_INET, hostname.c_str(), &addr) == 0)
-    return false;
-  *ip = NetworkToHost32(addr.s_addr);
-  return true;
-}
-
-bool SocketAddress::StringToIP(const std::string& hostname, IPAddress* ip) {
-  in_addr addr4;
-  if (rtc::inet_pton(AF_INET, hostname.c_str(), &addr4) > 0) {
-    if (ip) {
-      *ip = IPAddress(addr4);
-    }
-    return true;
-  }
-
-  in6_addr addr6;
-  if (rtc::inet_pton(AF_INET6, hostname.c_str(), &addr6) > 0) {
-    if (ip) {
-      *ip = IPAddress(addr6);
-    }
-    return true;
-  }
-  return false;
-}
-
-uint32_t SocketAddress::StringToIP(const std::string& hostname) {
-  uint32_t ip = 0;
-  StringToIP(hostname, &ip);
-  return ip;
-}
-
 bool SocketAddressFromSockAddrStorage(const sockaddr_storage& addr,
                                       SocketAddress* out) {
   if (!out) {

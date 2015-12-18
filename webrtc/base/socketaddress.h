@@ -176,16 +176,6 @@ class SocketAddress {
   size_t ToDualStackSockAddrStorage(sockaddr_storage* saddr) const;
   size_t ToSockAddrStorage(sockaddr_storage* saddr) const;
 
-  // Converts the IP address given in dotted form into compact form.
-  // Only dotted names (A.B.C.D) are  converted.
-  // Output integer is returned in host byte order.
-  // TODO: Deprecate, replace wth agnostic versions.
-  static bool StringToIP(const std::string& str, uint32_t* ip);
-  static uint32_t StringToIP(const std::string& str);
-
-  // Converts the IP address given in printable form into an IPAddress.
-  static bool StringToIP(const std::string& str, IPAddress* ip);
-
  private:
   std::string hostname_;
   IPAddress ip_;
