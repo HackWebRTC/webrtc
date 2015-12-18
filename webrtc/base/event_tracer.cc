@@ -257,7 +257,7 @@ void StopInternalCapture() {
 
 void ShutdownInternalTracer() {
   StopInternalCapture();
-  EventLogger* old_logger = rtc::AtomicOps::AtomicLoadPtr(&g_event_logger);
+  EventLogger* old_logger = rtc::AtomicOps::AcquireLoadPtr(&g_event_logger);
   RTC_DCHECK(old_logger);
   RTC_CHECK(rtc::AtomicOps::CompareAndSwapPtr(
                 &g_event_logger, old_logger,

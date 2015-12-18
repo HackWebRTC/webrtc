@@ -44,13 +44,13 @@ class AtomicOps {
   }
   // Pointer variants.
   template <typename T>
-  static T* AtomicLoadPtr(T* volatile* ptr) {
+  static T* AcquireLoadPtr(T* volatile* ptr) {
     return *ptr;
   }
   template <typename T>
   static T* CompareAndSwapPtr(T* volatile* ptr, T* old_value, T* new_value) {
     return static_cast<T*>(::InterlockedCompareExchangePointer(
-        reinterpret_cast<PVOID volatile*>(ptr), old_value, new_value));
+        reinterpret_cast<PVOID volatile*>(ptr), new_value, old_value));
   }
 #else
   static int Increment(volatile int* i) {
@@ -70,7 +70,7 @@ class AtomicOps {
   }
   // Pointer variants.
   template <typename T>
-  static T* AtomicLoadPtr(T* volatile* ptr) {
+  static T* AcquireLoadPtr(T* volatile* ptr) {
     return __atomic_load_n(ptr, __ATOMIC_ACQUIRE);
   }
   template <typename T>

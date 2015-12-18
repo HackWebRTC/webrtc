@@ -14,6 +14,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scopedptrcollection.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -218,6 +219,28 @@ TEST(AtomicOpsTest, Simple) {
   EXPECT_EQ(1, value);
   EXPECT_EQ(0, AtomicOps::Decrement(&value));
   EXPECT_EQ(0, value);
+}
+
+TEST(AtomicOpsTest, SimplePtr) {
+  class Foo {};
+  Foo* volatile foo = nullptr;
+  scoped_ptr<Foo> a(new Foo());
+  scoped_ptr<Foo> b(new Foo());
+  // Reading the initial value should work as expected.
+  EXPECT_TRUE(rtc::AtomicOps::AcquireLoadPtr(&foo) == nullptr);
+  // Setting using compare and swap should work.
+  EXPECT_TRUE(rtc::AtomicOps::CompareAndSwapPtr(
+                  &foo, static_cast<Foo*>(nullptr), a.get()) == nullptr);
+  EXPECT_TRUE(rtc::AtomicOps::AcquireLoadPtr(&foo) == a.get());
+  // Setting another value but with the wrong previous pointer should fail
+  // (remain a).
+  EXPECT_TRUE(rtc::AtomicOps::CompareAndSwapPtr(
+                  &foo, static_cast<Foo*>(nullptr), b.get()) == a.get());
+  EXPECT_TRUE(rtc::AtomicOps::AcquireLoadPtr(&foo) == a.get());
+  // Replacing a with b should work.
+  EXPECT_TRUE(rtc::AtomicOps::CompareAndSwapPtr(&foo, a.get(), b.get()) ==
+              a.get());
+  EXPECT_TRUE(rtc::AtomicOps::AcquireLoadPtr(&foo) == b.get());
 }
 
 TEST(AtomicOpsTest, Increment) {
