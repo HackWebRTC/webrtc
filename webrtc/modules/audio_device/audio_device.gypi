@@ -86,48 +86,26 @@
         }],
         ['include_internal_audio_device==1', {
           'sources': [
-            'android/audio_device_template.h',
-            'android/audio_manager.cc',
-            'android/audio_manager.h',
-            'android/audio_record_jni.cc',
-            'android/audio_record_jni.h',
-            'android/audio_track_jni.cc',
-            'android/audio_track_jni.h',
-            'android/build_info.cc',
-            'android/build_info.h',
-            'android/opensles_common.cc',
-            'android/opensles_common.h',
-            'android/opensles_player.cc',
-            'android/opensles_player.h',
             'audio_device_impl.cc',
             'audio_device_impl.h',
-            'ios/audio_device_ios.h',
-            'ios/audio_device_ios.mm',
-            'ios/audio_device_not_implemented_ios.mm',
-            'linux/alsasymboltable_linux.cc',
-            'linux/alsasymboltable_linux.h',
-            'linux/audio_device_alsa_linux.cc',
-            'linux/audio_device_alsa_linux.h',
-            'linux/audio_mixer_manager_alsa_linux.cc',
-            'linux/audio_mixer_manager_alsa_linux.h',
-            'linux/latebindingsymboltable_linux.cc',
-            'linux/latebindingsymboltable_linux.h',
-            'mac/audio_device_mac.cc',
-            'mac/audio_device_mac.h',
-            'mac/audio_mixer_manager_mac.cc',
-            'mac/audio_mixer_manager_mac.h',
-            'mac/portaudio/pa_memorybarrier.h',
-            'mac/portaudio/pa_ringbuffer.c',
-            'mac/portaudio/pa_ringbuffer.h',
-            'win/audio_device_core_win.cc',
-            'win/audio_device_core_win.h',
-            'win/audio_device_wave_win.cc',
-            'win/audio_device_wave_win.h',
-            'win/audio_mixer_manager_win.cc',
-            'win/audio_mixer_manager_win.h',
           ],
           'conditions': [
             ['OS=="android"', {
+              'sources': [
+                'android/audio_device_template.h',
+                'android/audio_manager.cc',
+                'android/audio_manager.h',
+                'android/audio_record_jni.cc',
+                'android/audio_record_jni.h',
+                'android/audio_track_jni.cc',
+                'android/audio_track_jni.h',
+                'android/build_info.cc',
+                'android/build_info.h',
+                'android/opensles_common.cc',
+                'android/opensles_common.h',
+                'android/opensles_player.cc',
+                'android/opensles_player.h',
+              ],
               'link_settings': {
                 'libraries': [
                   '-llog',
@@ -136,6 +114,16 @@
               },
             }],
             ['OS=="linux"', {
+              'sources': [
+                'linux/alsasymboltable_linux.cc',
+                'linux/alsasymboltable_linux.h',
+                'linux/audio_device_alsa_linux.cc',
+                'linux/audio_device_alsa_linux.h',
+                'linux/audio_mixer_manager_alsa_linux.cc',
+                'linux/audio_mixer_manager_alsa_linux.h',
+                'linux/latebindingsymboltable_linux.cc',
+                'linux/latebindingsymboltable_linux.h',
+              ],
               'defines': [
                 'LINUX_ALSA',
               ],
@@ -161,6 +149,15 @@
               ],
             }],
             ['OS=="mac"', {
+              'sources': [
+                'mac/audio_device_mac.cc',
+                'mac/audio_device_mac.h',
+                'mac/audio_mixer_manager_mac.cc',
+                'mac/audio_mixer_manager_mac.h',
+                'mac/portaudio/pa_memorybarrier.h',
+                'mac/portaudio/pa_ringbuffer.c',
+                'mac/portaudio/pa_ringbuffer.h',
+              ],
               'link_settings': {
                 'libraries': [
                   '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
@@ -169,6 +166,11 @@
               },
             }],
             ['OS=="ios"', {
+              'sources': [
+                'ios/audio_device_ios.h',
+                'ios/audio_device_ios.mm',
+                'ios/audio_device_not_implemented_ios.mm',
+              ],
               'xcode_settings': {
                 'CLANG_ENABLE_OBJC_ARC': 'YES',
               },
@@ -184,6 +186,14 @@
               },
             }],
             ['OS=="win"', {
+              'sources': [
+                'win/audio_device_core_win.cc',
+                'win/audio_device_core_win.h',
+                'win/audio_device_wave_win.cc',
+                'win/audio_device_wave_win.h',
+                'win/audio_mixer_manager_win.cc',
+                'win/audio_mixer_manager_win.h',
+              ],
               'link_settings': {
                 'libraries': [
                   # Required for the built-in WASAPI AEC.
