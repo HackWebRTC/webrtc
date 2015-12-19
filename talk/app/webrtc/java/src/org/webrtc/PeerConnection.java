@@ -224,8 +224,8 @@ public class PeerConnection {
     localStreams.remove(stream);
   }
 
-  public RtpSender createSender(String kind) {
-    RtpSender new_sender = nativeCreateSender(kind);
+  public RtpSender createSender(String kind, String stream_id) {
+    RtpSender new_sender = nativeCreateSender(kind, stream_id);
     if (new_sender != null) {
       senders.add(new_sender);
     }
@@ -297,7 +297,7 @@ public class PeerConnection {
   private native boolean nativeGetStats(
       StatsObserver observer, long nativeTrack);
 
-  private native RtpSender nativeCreateSender(String kind);
+  private native RtpSender nativeCreateSender(String kind, String stream_id);
 
   private native List<RtpSender> nativeGetSenders();
 

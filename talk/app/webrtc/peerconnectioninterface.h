@@ -338,8 +338,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
   // TODO(deadbeef): Make these pure virtual once all subclasses implement them.
   // |kind| must be "audio" or "video".
+  // |stream_id| is used to populate the msid attribute; if empty, one will
+  // be generated automatically.
   virtual rtc::scoped_refptr<RtpSenderInterface> CreateSender(
-      const std::string& kind) {
+      const std::string& kind,
+      const std::string& stream_id) {
     return rtc::scoped_refptr<RtpSenderInterface>();
   }
 

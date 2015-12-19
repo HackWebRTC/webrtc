@@ -103,7 +103,8 @@ class PeerConnection : public PeerConnectionInterface,
       AudioTrackInterface* track) override;
 
   rtc::scoped_refptr<RtpSenderInterface> CreateSender(
-      const std::string& kind) override;
+      const std::string& kind,
+      const std::string& stream_id) override;
 
   std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
       const override;

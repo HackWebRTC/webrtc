@@ -1198,6 +1198,22 @@ TEST_F(PeerConnectionInterfaceTest, RemoveTrackAfterAddStream) {
   EXPECT_TRUE(video_desc == nullptr);
 }
 
+// Test creating a sender with a stream ID, and ensure the ID is populated
+// in the offer.
+TEST_F(PeerConnectionInterfaceTest, CreateSenderWithStream) {
+  CreatePeerConnection();
+  pc_->CreateSender("video", kStreamLabel1);
+
+  scoped_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(offer.use(), nullptr));
+
+  const cricket::MediaContentDescription* video_desc =
+      cricket::GetFirstVideoContentDescription(offer->description());
+  ASSERT_TRUE(video_desc != nullptr);
+  ASSERT_EQ(1u, video_desc->streams().size());
+  EXPECT_EQ(kStreamLabel1, video_desc->streams()[0].sync_label);
+}
+
 // Test that we can specify a certain track that we want statistics about.
 TEST_F(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
   InitiateCall();

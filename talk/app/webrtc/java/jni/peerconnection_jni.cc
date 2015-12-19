@@ -1792,14 +1792,15 @@ JOW(void, PeerConnection_nativeRemoveLocalStream)(
 }
 
 JOW(jobject, PeerConnection_nativeCreateSender)(
-    JNIEnv* jni, jobject j_pc, jstring j_kind) {
+    JNIEnv* jni, jobject j_pc, jstring j_kind, jstring j_stream_id) {
   jclass j_rtp_sender_class = FindClass(jni, "org/webrtc/RtpSender");
   jmethodID j_rtp_sender_ctor =
       GetMethodID(jni, j_rtp_sender_class, "<init>", "(J)V");
 
   std::string kind = JavaToStdString(jni, j_kind);
+  std::string stream_id = JavaToStdString(jni, j_stream_id);
   rtc::scoped_refptr<RtpSenderInterface> sender =
-      ExtractNativePC(jni, j_pc)->CreateSender(kind);
+      ExtractNativePC(jni, j_pc)->CreateSender(kind, stream_id);
   if (!sender.get()) {
     return nullptr;
   }

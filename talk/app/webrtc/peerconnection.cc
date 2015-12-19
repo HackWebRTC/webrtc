@@ -813,7 +813,8 @@ rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
 }
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
-    const std::string& kind) {
+    const std::string& kind,
+    const std::string& stream_id) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateSender");
   RtpSenderInterface* new_sender;
   if (kind == MediaStreamTrackInterface::kAudioKind) {
@@ -823,6 +824,9 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
   } else {
     LOG(LS_ERROR) << "CreateSender called with invalid kind: " << kind;
     return rtc::scoped_refptr<RtpSenderInterface>();
+  }
+  if (!stream_id.empty()) {
+    new_sender->set_stream_id(stream_id);
   }
   senders_.push_back(new_sender);
   return RtpSenderProxy::Create(signaling_thread(), new_sender);

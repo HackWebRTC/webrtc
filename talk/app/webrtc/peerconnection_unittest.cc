@@ -1817,8 +1817,10 @@ TEST_F(P2PTestConductor, DISABLED_LocalP2PTestWithVideoDecoderFactory) {
 // received end-to-end.
 TEST_F(P2PTestConductor, EarlyWarmupTest) {
   ASSERT_TRUE(CreateTestClients());
-  auto audio_sender = initializing_client()->pc()->CreateSender("audio");
-  auto video_sender = initializing_client()->pc()->CreateSender("video");
+  auto audio_sender =
+      initializing_client()->pc()->CreateSender("audio", "stream_id");
+  auto video_sender =
+      initializing_client()->pc()->CreateSender("video", "stream_id");
   initializing_client()->Negotiate();
   // Wait for ICE connection to complete, without any tracks.
   // Note that the receiving client WILL (in HandleIncomingOffer) create
