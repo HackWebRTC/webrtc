@@ -1280,11 +1280,12 @@ JOW(jlong, PeerConnectionFactory_nativeCreateAudioTrack)(
 }
 
 JOW(jboolean, PeerConnectionFactory_nativeStartAecDump)(
-    JNIEnv* jni, jclass, jlong native_factory, jint file) {
+    JNIEnv* jni, jclass, jlong native_factory, jint file,
+    jint filesize_limit_bytes) {
 #if defined(ANDROID)
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  return factory->StartAecDump(file);
+  return factory->StartAecDump(file, filesize_limit_bytes);
 #else
   return false;
 #endif

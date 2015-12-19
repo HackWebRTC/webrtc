@@ -162,8 +162,10 @@ class ChannelManager : public rtc::MessageHandler,
 
   // The operations below occur on the main thread.
 
-  // Starts AEC dump using existing file.
-  bool StartAecDump(rtc::PlatformFile file);
+  // Starts AEC dump using existing file, with a specified maximum file size in
+  // bytes. When the limit is reached, logging will stop and the file will be
+  // closed. If max_size_bytes is set to <= 0, no limit will be used.
+  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes);
 
   // Stops recording AEC dump.
   void StopAecDump();

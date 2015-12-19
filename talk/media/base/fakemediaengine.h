@@ -762,7 +762,9 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
   int GetInputLevel() { return 0; }
 
-  bool StartAecDump(rtc::PlatformFile file) { return false; }
+  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) {
+    return false;
+  }
 
   void StopAecDump() {}
 

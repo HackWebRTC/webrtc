@@ -113,8 +113,9 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_VOID_STUB(set_stream_key_pressed, (bool key_pressed));
   WEBRTC_VOID_STUB(set_delay_offset_ms, (int offset));
   WEBRTC_STUB_CONST(delay_offset_ms, ());
-  WEBRTC_STUB(StartDebugRecording, (const char filename[kMaxFilenameSize]));
-  WEBRTC_STUB(StartDebugRecording, (FILE* handle));
+  WEBRTC_STUB(StartDebugRecording,
+              (const char filename[kMaxFilenameSize], int64_t max_size_bytes));
+  WEBRTC_STUB(StartDebugRecording, (FILE * handle, int64_t max_size_bytes));
   WEBRTC_STUB(StopDebugRecording, ());
   WEBRTC_VOID_STUB(UpdateHistogramsOnCallEnd, ());
   webrtc::EchoCancellation* echo_cancellation() const override { return NULL; }
