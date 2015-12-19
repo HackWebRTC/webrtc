@@ -632,7 +632,6 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     for (int i = 0; i < formats_.api_format.output_stream().num_channels(); ++i)
       msg->add_output_channel(dest[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                          &debug_dump_.num_bytes_left_for_log_,
                                           &crit_debug_, &debug_dump_.capture));
   }
 #endif
@@ -720,7 +719,6 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
         sizeof(int16_t) * frame->samples_per_channel_ * frame->num_channels_;
     msg->set_output_data(frame->data_, data_size);
     RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                          &debug_dump_.num_bytes_left_for_log_,
                                           &crit_debug_, &debug_dump_.capture));
   }
 #endif
@@ -888,7 +886,6 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
          i < formats_.api_format.reverse_input_stream().num_channels(); ++i)
       msg->add_channel(src[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                          &debug_dump_.num_bytes_left_for_log_,
                                           &crit_debug_, &debug_dump_.render));
   }
 #endif
@@ -957,7 +954,6 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
         sizeof(int16_t) * frame->samples_per_channel_ * frame->num_channels_;
     msg->set_data(frame->data_, data_size);
     RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                          &debug_dump_.num_bytes_left_for_log_,
                                           &crit_debug_, &debug_dump_.render));
   }
 #endif
@@ -1043,8 +1039,7 @@ int AudioProcessingImpl::delay_offset_ms() const {
 }
 
 int AudioProcessingImpl::StartDebugRecording(
-    const char filename[AudioProcessing::kMaxFilenameSize],
-    int64_t max_log_size_bytes) {
+    const char filename[AudioProcessing::kMaxFilenameSize]) {
   // Run in a single-threaded manner.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
@@ -1055,7 +1050,6 @@ int AudioProcessingImpl::StartDebugRecording(
   }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  debug_dump_.num_bytes_left_for_log_ = max_log_size_bytes;
   // Stop any ongoing recording.
   if (debug_dump_.debug_file->Open()) {
     if (debug_dump_.debug_file->CloseFile() == -1) {
@@ -1076,8 +1070,7 @@ int AudioProcessingImpl::StartDebugRecording(
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
-int AudioProcessingImpl::StartDebugRecording(FILE* handle,
-                                             int64_t max_log_size_bytes) {
+int AudioProcessingImpl::StartDebugRecording(FILE* handle) {
   // Run in a single-threaded manner.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
@@ -1087,8 +1080,6 @@ int AudioProcessingImpl::StartDebugRecording(FILE* handle,
   }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  debug_dump_.num_bytes_left_for_log_ = max_log_size_bytes;
-
   // Stop any ongoing recording.
   if (debug_dump_.debug_file->Open()) {
     if (debug_dump_.debug_file->CloseFile() == -1) {
@@ -1114,7 +1105,7 @@ int AudioProcessingImpl::StartDebugRecordingForPlatformFile(
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
   FILE* stream = rtc::FdopenPlatformFileForWriting(handle);
-  return StartDebugRecording(stream, -1);
+  return StartDebugRecording(stream);
 }
 
 int AudioProcessingImpl::StopDebugRecording() {
@@ -1409,7 +1400,6 @@ void AudioProcessingImpl::UpdateHistogramsOnCallEnd() {
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
 int AudioProcessingImpl::WriteMessageToDebugFile(
     FileWrapper* debug_file,
-    int64_t* filesize_limit_bytes,
     rtc::CriticalSection* crit_debug,
     ApmDebugDumpThreadState* debug_state) {
   int32_t size = debug_state->event_msg->ByteSize();
@@ -1427,19 +1417,7 @@ int AudioProcessingImpl::WriteMessageToDebugFile(
 
   {
     // Ensure atomic writes of the message.
-    rtc::CritScope cs_debug(crit_debug);
-
-    RTC_DCHECK(debug_file->Open());
-    // Update the byte counter.
-    if (*filesize_limit_bytes >= 0) {
-      *filesize_limit_bytes -=
-          (sizeof(int32_t) + debug_state->event_str.length());
-      if (*filesize_limit_bytes < 0) {
-        // Not enough bytes are left to write this message, so stop logging.
-        debug_file->CloseFile();
-        return kNoError;
-      }
-    }
+    rtc::CritScope cs_capture(crit_debug);
     // Write message preceded by its size.
     if (!debug_file->Write(&size, sizeof(int32_t))) {
       return kFileError;
@@ -1474,7 +1452,6 @@ int AudioProcessingImpl::WriteInitMessage() {
   // debug_dump_.capture.event_msg.
 
   RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                        &debug_dump_.num_bytes_left_for_log_,
                                         &crit_debug_, &debug_dump_.capture));
   return kNoError;
 }
@@ -1527,7 +1504,6 @@ int AudioProcessingImpl::WriteConfigMessage(bool forced) {
   debug_dump_.capture.event_msg->mutable_config()->CopyFrom(config);
 
   RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
-                                        &debug_dump_.num_bytes_left_for_log_,
                                         &crit_debug_, &debug_dump_.capture));
   return kNoError;
 }

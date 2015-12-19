@@ -72,7 +72,7 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
                 CreateVideoTrack, const std::string&,  VideoSourceInterface*)
   PROXY_METHOD2(rtc::scoped_refptr<AudioTrackInterface>,
                 CreateAudioTrack, const std::string&,  AudioSourceInterface*)
-  PROXY_METHOD2(bool, StartAecDump, rtc::PlatformFile, int64_t)
+  PROXY_METHOD1(bool, StartAecDump, rtc::PlatformFile)
   PROXY_METHOD0(void, StopAecDump)
   PROXY_METHOD1(bool, StartRtcEventLog, rtc::PlatformFile)
   PROXY_METHOD0(void, StopRtcEventLog)

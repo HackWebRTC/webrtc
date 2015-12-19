@@ -434,7 +434,7 @@ void void_main(int argc, char* argv[]) {
     } else if (strcmp(argv[i], "--debug_file") == 0) {
       i++;
       ASSERT_LT(i, argc) << "Specify filename after --debug_file";
-      ASSERT_EQ(apm->kNoError, apm->StartDebugRecording(argv[i], -1));
+      ASSERT_EQ(apm->kNoError, apm->StartDebugRecording(argv[i]));
     } else {
       FAIL() << "Unrecognized argument " << argv[i];
     }

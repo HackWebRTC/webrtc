@@ -181,7 +181,7 @@ void DebugDumpGenerator::SetOutputChannels(int channels) {
 }
 
 void DebugDumpGenerator::StartRecording() {
-  apm_->StartDebugRecording(dump_file_name_.c_str(), -1);
+  apm_->StartDebugRecording(dump_file_name_.c_str());
 }
 
 void DebugDumpGenerator::Process(size_t num_blocks) {

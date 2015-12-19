@@ -94,11 +94,8 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // Set the external ADM. This can only be called before Init.
   bool SetAudioDeviceModule(webrtc::AudioDeviceModule* adm);
 
-  // Starts AEC dump using an existing file. A maximum file size in bytes can be
-  // specified. When the maximum file size is reached, logging is stopped and
-  // the file is closed. If max_size_bytes is set to <= 0, no limit will be
-  // used.
-  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes);
+  // Starts AEC dump using existing file.
+  bool StartAecDump(rtc::PlatformFile file);
 
   // Stops AEC dump.
   void StopAecDump();

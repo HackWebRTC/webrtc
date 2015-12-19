@@ -102,10 +102,8 @@ class MediaEngineInterface {
   virtual const std::vector<VideoCodec>& video_codecs() = 0;
   virtual RtpCapabilities GetVideoCapabilities() = 0;
 
-  // Starts AEC dump using existing file, a maximum file size in bytes can be
-  // specified. Logging is stopped just before the size limit is exceeded.
-  // If max_size_bytes is set to a value <= 0, no limit will be used.
-  virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) = 0;
+  // Starts AEC dump using existing file.
+  virtual bool StartAecDump(rtc::PlatformFile file) = 0;
 
   // Stops recording AEC dump.
   virtual void StopAecDump() = 0;
@@ -187,8 +185,8 @@ class CompositeMediaEngine : public MediaEngineInterface {
     return video_.GetCapabilities();
   }
 
-  virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) {
-    return voice_.StartAecDump(file, max_size_bytes);
+  virtual bool StartAecDump(rtc::PlatformFile file) {
+    return voice_.StartAecDump(file);
   }
 
   virtual void StopAecDump() {

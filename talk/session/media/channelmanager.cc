@@ -550,11 +550,9 @@ void ChannelManager::OnMessage(rtc::Message* message) {
   }
 }
 
-bool ChannelManager::StartAecDump(rtc::PlatformFile file,
-                                  int64_t max_size_bytes) {
-  return worker_thread_->Invoke<bool>(Bind(&MediaEngineInterface::StartAecDump,
-                                           media_engine_.get(), file,
-                                           max_size_bytes));
+bool ChannelManager::StartAecDump(rtc::PlatformFile file) {
+  return worker_thread_->Invoke<bool>(
+      Bind(&MediaEngineInterface::StartAecDump, media_engine_.get(), file));
 }
 
 void ChannelManager::StopAecDump() {
