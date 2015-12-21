@@ -111,10 +111,9 @@ class NetworkManager : public DefaultLocalAddressProvider {
   // TODO(guoweis): remove this body when chromium implements this.
   virtual void GetAnyAddressNetworks(NetworkList* networks) {}
 
+  // Dumps the current list of networks in the network manager.
+  virtual void DumpNetworks() {}
   bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const override;
-
-  // Dumps a list of networks available to LS_INFO.
-  virtual void DumpNetworks(bool include_ignored) {}
 
   struct Stats {
     int ipv4_network_count;
@@ -195,8 +194,7 @@ class BasicNetworkManager : public NetworkManagerBase,
   void StartUpdating() override;
   void StopUpdating() override;
 
-  // Logs the available networks.
-  void DumpNetworks(bool include_ignored) override;
+  void DumpNetworks() override;
 
   // MessageHandler interface.
   void OnMessage(Message* msg) override;
@@ -359,6 +357,12 @@ class Network {
   int preference() const { return preference_; }
   void set_preference(int preference) { preference_ = preference; }
 
+  // When we enumerate networks and find a previously-seen network is missing,
+  // we do not remove it (because it may be used elsewhere). Instead, we mark
+  // it inactive, so that we can detect network changes properly.
+  bool active() const { return active_; }
+  void set_active(bool active) { active_ = active; }
+
   // Debugging description of this network
   std::string ToString() const;
 
@@ -374,6 +378,7 @@ class Network {
   bool ignored_;
   AdapterType type_;
   int preference_;
+  bool active_ = true;
 
   friend class NetworkManager;
 };

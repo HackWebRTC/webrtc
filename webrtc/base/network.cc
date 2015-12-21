@@ -242,20 +242,12 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
 void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
                                           bool* changed,
                                           NetworkManager::Stats* stats) {
+  *changed = false;
   // AddressList in this map will track IP addresses for all Networks
   // with the same key.
   std::map<std::string, AddressList> consolidated_address_list;
   NetworkList list(new_networks);
-
-  // Result of Network merge. Element in this list should have unique key.
-  NetworkList merged_list;
   std::sort(list.begin(), list.end(), CompareNetworks);
-
-  *changed = false;
-
-  if (networks_.size() != list.size())
-    *changed = true;
-
   // First, build a set of network-keys to the ipaddresses.
   for (Network* network : list) {
     bool might_add_to_merged_list = false;
@@ -287,6 +279,8 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
   }
 
   // Next, look for existing network objects to re-use.
+  // Result of Network merge. Element in this list should have unique key.
+  NetworkList merged_list;
   for (const auto& kv : consolidated_address_list) {
     const std::string& key = kv.first;
     Network* net = kv.second.net;
@@ -301,17 +295,36 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
       *changed = true;
     } else {
       // This network exists in the map already. Reset its IP addresses.
-      *changed = existing->second->SetIPs(kv.second.ips, *changed);
-      merged_list.push_back(existing->second);
-      if (existing->second != net) {
+      Network* existing_net = existing->second;
+      *changed = existing_net->SetIPs(kv.second.ips, *changed);
+      merged_list.push_back(existing_net);
+      // If the existing network was not active, networks have changed.
+      if (!existing_net->active()) {
+        *changed = true;
+      }
+      ASSERT(net->active());
+      if (existing_net != net) {
         delete net;
       }
     }
   }
-  networks_ = merged_list;
+  // It may still happen that the merged list is a subset of |networks_|.
+  // To detect this change, we compare their sizes.
+  if (merged_list.size() != networks_.size()) {
+    *changed = true;
+  }
 
-  // If the network lists changes, we resort it.
+  // If the network list changes, we re-assign |networks_| to the merged list
+  // and re-sort it.
   if (*changed) {
+    networks_ = merged_list;
+    // Reset the active states of all networks.
+    for (const auto& kv : networks_map_) {
+      kv.second->set_active(false);
+    }
+    for (Network* network : networks_) {
+      network->set_active(true);
+    }
     std::sort(networks_.begin(), networks_.end(), SortNetworks);
     // Now network interfaces are sorted, we should set the preference value
     // for each of the interfaces we are planning to use.
@@ -450,6 +463,7 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
       network->AddIP(ip);
       network->set_ignored(IsIgnoredNetwork(*network));
       if (include_ignored || !network->ignored()) {
+        current_networks[key] = network.get();
         networks->push_back(network.release());
       }
     } else {
@@ -604,6 +618,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
           bool ignored = IsIgnoredNetwork(*network);
           network->set_ignored(ignored);
           if (include_ignored || !network->ignored()) {
+            current_networks[key] = network.get();
             networks->push_back(network.release());
           }
         } else {
@@ -801,21 +816,14 @@ void BasicNetworkManager::UpdateNetworksContinually() {
   thread_->PostDelayed(kNetworksUpdateIntervalMs, this, kUpdateNetworksMessage);
 }
 
-void BasicNetworkManager::DumpNetworks(bool include_ignored) {
+void BasicNetworkManager::DumpNetworks() {
   NetworkList list;
-  CreateNetworks(include_ignored, &list);
+  GetNetworks(&list);
   LOG(LS_INFO) << "NetworkManager detected " << list.size() << " networks:";
   for (const Network* network : list) {
-    if (!network->ignored() || include_ignored) {
-      LOG(LS_INFO) << network->ToString() << ": "
-                   << network->description()
-                   << ((network->ignored()) ? ", Ignored" : "");
-    }
-  }
-  // Release the network list created previously.
-  // Do this in a seperated for loop for better readability.
-  for (Network* network : list) {
-    delete network;
+    LOG(LS_INFO) << network->ToString() << ": " << network->description()
+                 << ", active ? " << network->active()
+                 << ((network->ignored()) ? ", Ignored" : "");
   }
 }
 

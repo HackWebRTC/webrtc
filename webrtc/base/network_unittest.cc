@@ -91,6 +91,46 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
                                  NetworkManager::NetworkList* networks) {
     network_manager.ConvertIfAddrs(interfaces, include_ignored, networks);
   }
+
+  struct sockaddr_in6* CreateIpv6Addr(const std::string& ip_string,
+                                      uint32_t scope_id) {
+    struct sockaddr_in6* ipv6_addr = new struct sockaddr_in6;
+    memset(ipv6_addr, 0, sizeof(struct sockaddr_in6));
+    ipv6_addr->sin6_family = AF_INET6;
+    ipv6_addr->sin6_scope_id = scope_id;
+    IPAddress ip;
+    IPFromString(ip_string, &ip);
+    ipv6_addr->sin6_addr = ip.ipv6_address();
+    return ipv6_addr;
+  }
+
+  // Pointers created here need to be released via ReleaseIfAddrs.
+  struct ifaddrs* AddIpv6Address(struct ifaddrs* list,
+                                 char* if_name,
+                                 const std::string& ipv6_address,
+                                 const std::string& ipv6_netmask,
+                                 uint32_t scope_id) {
+    struct ifaddrs* if_addr = new struct ifaddrs;
+    memset(if_addr, 0, sizeof(struct ifaddrs));
+    if_addr->ifa_name = if_name;
+    if_addr->ifa_addr = reinterpret_cast<struct sockaddr*>(
+        CreateIpv6Addr(ipv6_address, scope_id));
+    if_addr->ifa_netmask =
+        reinterpret_cast<struct sockaddr*>(CreateIpv6Addr(ipv6_netmask, 0));
+    if_addr->ifa_next = list;
+    return if_addr;
+  }
+
+  void ReleaseIfAddrs(struct ifaddrs* list) {
+    struct ifaddrs* if_addr = list;
+    while (if_addr != nullptr) {
+      struct ifaddrs* next_addr = if_addr->ifa_next;
+      delete if_addr->ifa_addr;
+      delete if_addr->ifa_netmask;
+      delete if_addr;
+      if_addr = next_addr;
+    }
+  }
 #endif  // defined(WEBRTC_POSIX)
 
  protected:
@@ -590,10 +630,13 @@ TEST_F(NetworkTest, TestMultiplePublicNetworksOnOneInterfaceMerge) {
   }
 }
 
-// Test that DumpNetworks works.
-TEST_F(NetworkTest, TestDumpNetworks) {
+// Test that DumpNetworks does not crash.
+TEST_F(NetworkTest, TestCreateAndDumpNetworks) {
   BasicNetworkManager manager;
-  manager.DumpNetworks(true);
+  NetworkManager::NetworkList list = GetNetworks(manager, true);
+  bool changed;
+  MergeNetworkList(manager, list, &changed);
+  manager.DumpNetworks();
 }
 
 // Test that we can toggle IPv6 on and off.
@@ -700,6 +743,25 @@ TEST_F(NetworkTest, TestConvertIfAddrsNoAddress) {
   CallConvertIfAddrs(manager, &list, true, &result);
   EXPECT_TRUE(result.empty());
 }
+
+// Verify that if there are two addresses on one interface, only one network
+// is generated.
+TEST_F(NetworkTest, TestConvertIfAddrsMultiAddressesOnOneInterface) {
+  char if_name[20] = "rmnet0";
+  ifaddrs* list = nullptr;
+  list = AddIpv6Address(list, if_name, "1000:2000:3000:4000:0:0:0:1",
+                        "FFFF:FFFF:FFFF:FFFF::", 0);
+  list = AddIpv6Address(list, if_name, "1000:2000:3000:4000:0:0:0:2",
+                        "FFFF:FFFF:FFFF:FFFF::", 0);
+  NetworkManager::NetworkList result;
+  BasicNetworkManager manager;
+  CallConvertIfAddrs(manager, list, true, &result);
+  EXPECT_EQ(1U, result.size());
+  bool changed;
+  // This ensures we release the objects created in CallConvertIfAddrs.
+  MergeNetworkList(manager, result, &changed);
+  ReleaseIfAddrs(list);
+}
 #endif  // defined(WEBRTC_POSIX)
 
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
@@ -781,6 +843,49 @@ TEST_F(NetworkTest, TestMergeNetworkList) {
   EXPECT_EQ(list2[0]->GetIPs().size(), 2uL);
   EXPECT_EQ(list2[0]->GetIPs()[0], ip1);
   EXPECT_EQ(list2[0]->GetIPs()[1], ip2);
+}
+
+// Test that MergeNetworkList successfully detects the change if
+// a network becomes inactive and then active again.
+TEST_F(NetworkTest, TestMergeNetworkListWithInactiveNetworks) {
+  BasicNetworkManager manager;
+  Network network1("test_wifi", "Test Network Adapter 1",
+                   IPAddress(0x12345600U), 24);
+  Network network2("test_eth0", "Test Network Adapter 2",
+                   IPAddress(0x00010000U), 16);
+  network1.AddIP(IPAddress(0x12345678));
+  network2.AddIP(IPAddress(0x00010004));
+  NetworkManager::NetworkList list;
+  Network* net1 = new Network(network1);
+  list.push_back(net1);
+  bool changed;
+  MergeNetworkList(manager, list, &changed);
+  EXPECT_TRUE(changed);
+  list.clear();
+  manager.GetNetworks(&list);
+  ASSERT_EQ(1U, list.size());
+  EXPECT_EQ(net1, list[0]);
+
+  list.clear();
+  Network* net2 = new Network(network2);
+  list.push_back(net2);
+  MergeNetworkList(manager, list, &changed);
+  EXPECT_TRUE(changed);
+  list.clear();
+  manager.GetNetworks(&list);
+  ASSERT_EQ(1U, list.size());
+  EXPECT_EQ(net2, list[0]);
+
+  // Now network1 is inactive. Try to merge it again.
+  list.clear();
+  list.push_back(new Network(network1));
+  MergeNetworkList(manager, list, &changed);
+  EXPECT_TRUE(changed);
+  list.clear();
+  manager.GetNetworks(&list);
+  ASSERT_EQ(1U, list.size());
+  EXPECT_TRUE(list[0]->active());
+  EXPECT_EQ(net1, list[0]);
 }
 
 // Test that the filtering logic follows the defined ruleset in network.h.
