@@ -32,6 +32,12 @@
     'java_files': {
       'filepath': '\.java$|\.xml$',
     },
+    'audio': {
+      'filepath': 'webrtc/audio/.*',
+    },
+    'call': {
+      'filepath': 'webrtc/call/.*',
+    },
     'video': {
       'filepath': 'webrtc/video/.*',
     },
@@ -100,6 +106,12 @@
                      'bjornv@webrtc.org',
                      'minyue@webrtc.org',
                      'peah@webrtc.org'],
+    'audio': ['solenberg@webrtc.org',
+              'tina.legrand@webrtc.org'],
+    'call': ['mflodman@webrtc.org',
+             'pbos@webrtc.org',
+             'solenberg@webrtc.org',
+             'stefan@webrtc.org'],
     'video': ['andresp@webrtc.org',
               'mflodman@webrtc.org',
               'pbos@webrtc.org',
