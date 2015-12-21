@@ -794,36 +794,38 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
     RTC_NOTREACHED() << "Codec not supported!";
     return;
   }
-  send_config_.encoder_settings.encoder = encoder_.get();
-  send_config_.encoder_settings.payload_name = params_.common.codec;
-  send_config_.encoder_settings.payload_type = payload_type;
-  send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-  send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
+  video_send_config_.encoder_settings.encoder = encoder_.get();
+  video_send_config_.encoder_settings.payload_name = params_.common.codec;
+  video_send_config_.encoder_settings.payload_type = payload_type;
+  video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+  video_send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
   for (size_t i = 0; i < num_streams; ++i)
-    send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
+    video_send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
 
-  send_config_.rtp.extensions.clear();
+  video_send_config_.rtp.extensions.clear();
   if (params_.common.send_side_bwe) {
-    send_config_.rtp.extensions.push_back(
+    video_send_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTransportSequenceNumber,
                      test::kTransportSequenceNumberExtensionId));
   } else {
-    send_config_.rtp.extensions.push_back(RtpExtension(
+    video_send_config_.rtp.extensions.push_back(RtpExtension(
         RtpExtension::kAbsSendTime, test::kAbsSendTimeExtensionId));
   }
 
-  encoder_config_.min_transmit_bitrate_bps = params_.common.min_transmit_bps;
-  encoder_config_.streams = params_.ss.streams;
-  encoder_config_.spatial_layers = params_.ss.spatial_layers;
+  video_encoder_config_.min_transmit_bitrate_bps =
+      params_.common.min_transmit_bps;
+  video_encoder_config_.streams = params_.ss.streams;
+  video_encoder_config_.spatial_layers = params_.ss.spatial_layers;
 
   CreateMatchingReceiveConfigs(recv_transport);
 
   for (size_t i = 0; i < num_streams; ++i) {
-    receive_configs_[i].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-    receive_configs_[i].rtp.rtx[kSendRtxPayloadType].ssrc = kSendRtxSsrcs[i];
-    receive_configs_[i].rtp.rtx[kSendRtxPayloadType].payload_type =
+    video_receive_configs_[i].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+    video_receive_configs_[i].rtp.rtx[kSendRtxPayloadType].ssrc =
+        kSendRtxSsrcs[i];
+    video_receive_configs_[i].rtp.rtx[kSendRtxPayloadType].payload_type =
         kSendRtxPayloadType;
-    receive_configs_[i].rtp.transport_cc = params_.common.send_side_bwe;
+    video_receive_configs_[i].rtp.transport_cc = params_.common.send_side_bwe;
   }
 }
 
@@ -831,21 +833,21 @@ void VideoQualityTest::SetupScreenshare() {
   RTC_CHECK(params_.screenshare.enabled);
 
   // Fill out codec settings.
-  encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
+  video_encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
   if (params_.common.codec == "VP8") {
     codec_settings_.VP8 = VideoEncoder::GetDefaultVp8Settings();
     codec_settings_.VP8.denoisingOn = false;
     codec_settings_.VP8.frameDroppingOn = false;
     codec_settings_.VP8.numberOfTemporalLayers =
         static_cast<unsigned char>(params_.common.num_temporal_layers);
-    encoder_config_.encoder_specific_settings = &codec_settings_.VP8;
+    video_encoder_config_.encoder_specific_settings = &codec_settings_.VP8;
   } else if (params_.common.codec == "VP9") {
     codec_settings_.VP9 = VideoEncoder::GetDefaultVp9Settings();
     codec_settings_.VP9.denoisingOn = false;
     codec_settings_.VP9.frameDroppingOn = false;
     codec_settings_.VP9.numberOfTemporalLayers =
         static_cast<unsigned char>(params_.common.num_temporal_layers);
-    encoder_config_.encoder_specific_settings = &codec_settings_.VP9;
+    video_encoder_config_.encoder_specific_settings = &codec_settings_.VP9;
     codec_settings_.VP9.numberOfSpatialLayers =
         static_cast<unsigned char>(params_.ss.num_spatial_layers);
   }
@@ -969,23 +971,23 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   recv_transport.SetReceiver(sender_call_->Receiver());
 
   SetupCommon(&analyzer, &recv_transport);
-  send_config_.encoding_time_observer = &analyzer;
-  receive_configs_[params_.ss.selected_stream].renderer = &analyzer;
-  for (auto& config : receive_configs_)
+  video_send_config_.encoding_time_observer = &analyzer;
+  video_receive_configs_[params_.ss.selected_stream].renderer = &analyzer;
+  for (auto& config : video_receive_configs_)
     config.pre_decode_callback = &analyzer;
 
   if (params_.screenshare.enabled)
     SetupScreenshare();
 
   CreateStreams();
-  analyzer.input_ = send_stream_->Input();
-  analyzer.send_stream_ = send_stream_;
+  analyzer.input_ = video_send_stream_->Input();
+  analyzer.send_stream_ = video_send_stream_;
 
   CreateCapturer(&analyzer);
 
-  send_stream_->Start();
-  for (size_t i = 0; i < receive_streams_.size(); ++i)
-    receive_streams_[i]->Start();
+  video_send_stream_->Start();
+  for (VideoReceiveStream* receive_stream : video_receive_streams_)
+    receive_stream->Start();
   capturer_->Start();
 
   analyzer.Wait();
@@ -994,9 +996,9 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   recv_transport.StopSending();
 
   capturer_->Stop();
-  for (size_t i = 0; i < receive_streams_.size(); ++i)
-    receive_streams_[i]->Stop();
-  send_stream_->Stop();
+  for (VideoReceiveStream* receive_stream : video_receive_streams_)
+    receive_stream->Stop();
+  video_send_stream_->Stop();
 
   DestroyStreams();
 
@@ -1040,29 +1042,30 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
 
   SetupCommon(&transport, &transport);
 
-  send_config_.local_renderer = local_preview.get();
-  receive_configs_[stream_id].renderer = loopback_video.get();
+  video_send_config_.local_renderer = local_preview.get();
+  video_receive_configs_[stream_id].renderer = loopback_video.get();
 
   if (params_.screenshare.enabled)
     SetupScreenshare();
 
-  send_stream_ = call->CreateVideoSendStream(send_config_, encoder_config_);
+  video_send_stream_ =
+      call->CreateVideoSendStream(video_send_config_, video_encoder_config_);
   VideoReceiveStream* receive_stream =
-      call->CreateVideoReceiveStream(receive_configs_[stream_id]);
-  CreateCapturer(send_stream_->Input());
+      call->CreateVideoReceiveStream(video_receive_configs_[stream_id]);
+  CreateCapturer(video_send_stream_->Input());
 
   receive_stream->Start();
-  send_stream_->Start();
+  video_send_stream_->Start();
   capturer_->Start();
 
   test::PressEnterToContinue();
 
   capturer_->Stop();
-  send_stream_->Stop();
+  video_send_stream_->Stop();
   receive_stream->Stop();
 
   call->DestroyVideoReceiveStream(receive_stream);
-  call->DestroyVideoSendStream(send_stream_);
+  call->DestroyVideoSendStream(video_send_stream_);
 
   transport.StopSending();
 }

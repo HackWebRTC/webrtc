@@ -219,12 +219,12 @@
       'type': '<(gtest_target_type)',
       'sources': [
         'call/call_perf_tests.cc',
+        'call/rampup_tests.cc',
+        'call/rampup_tests.h',
         'modules/audio_coding/neteq/test/neteq_performance_unittest.cc',
         'modules/audio_processing/audio_processing_performance_unittest.cc',
         'modules/remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
         'video/full_stack.cc',
-        'video/rampup_tests.cc',
-        'video/rampup_tests.h',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',

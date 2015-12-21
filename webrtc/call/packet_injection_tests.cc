@@ -42,13 +42,13 @@ void PacketInjectionTest::InjectIncorrectPacket(CodecType codec_type,
   test::NullTransport null_transport;
   CreateSendConfig(1, &null_transport);
   CreateMatchingReceiveConfigs(&null_transport);
-  receive_configs_[0].decoders[0].payload_type = payload_type;
+  video_receive_configs_[0].decoders[0].payload_type = payload_type;
   switch (codec_type) {
     case CodecType::kVp8:
-      receive_configs_[0].decoders[0].payload_name = "VP8";
+      video_receive_configs_[0].decoders[0].payload_name = "VP8";
       break;
     case CodecType::kH264:
-      receive_configs_[0].decoders[0].payload_name = "H264";
+      video_receive_configs_[0].decoders[0].payload_name = "H264";
       break;
   }
   CreateStreams();

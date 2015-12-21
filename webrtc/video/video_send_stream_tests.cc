@@ -70,8 +70,8 @@ TEST_F(VideoSendStreamTest, CanStartStartedStream) {
   test::NullTransport transport;
   CreateSendConfig(1, &transport);
   CreateStreams();
-  send_stream_->Start();
-  send_stream_->Start();
+  video_send_stream_->Start();
+  video_send_stream_->Start();
   DestroyStreams();
 }
 
@@ -82,8 +82,8 @@ TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
   test::NullTransport transport;
   CreateSendConfig(1, &transport);
   CreateStreams();
-  send_stream_->Stop();
-  send_stream_->Stop();
+  video_send_stream_->Stop();
+  video_send_stream_->Stop();
   DestroyStreams();
 }
 
@@ -111,9 +111,10 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
       return SEND_PACKET;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->rtp.c_name = kCName;
     }
 
@@ -146,9 +147,10 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
       return SEND_PACKET;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kAbsSendTime, test::kAbsSendTimeExtensionId));
@@ -187,9 +189,10 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
       return SEND_PACKET;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = &encoder_;
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
@@ -230,9 +233,10 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
       return SEND_PACKET;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = &encoder_;
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
@@ -383,9 +387,10 @@ class FecObserver : public test::SendTest {
     return SEND_PACKET;
   }
 
-  void ModifyConfigs(VideoSendStream::Config* send_config,
-                     std::vector<VideoReceiveStream::Config>* receive_configs,
-                     VideoEncoderConfig* encoder_config) override {
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
     transport_adapter_.reset(
         new internal::TransportAdapter(send_config->send_transport));
     transport_adapter_->Enable();
@@ -482,9 +487,10 @@ void VideoSendStreamTest::TestNackRetransmission(
       return SEND_PACKET;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       transport_adapter_.reset(
           new internal::TransportAdapter(send_config->send_transport));
       transport_adapter_->Enable();
@@ -666,9 +672,10 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       return config;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       transport_adapter_.reset(
           new internal::TransportAdapter(send_config->send_transport));
       transport_adapter_->Enable();
@@ -820,15 +827,16 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       high_remb_bps_ = value;
     }
 
-    void OnStreamsCreated(
+    void OnVideoStreamsCreated(
         VideoSendStream* send_stream,
         const std::vector<VideoReceiveStream*>& receive_streams) override {
       stream_ = send_stream;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       transport_adapter_.reset(
           new internal::TransportAdapter(send_config->send_transport));
       transport_adapter_->Enable();
@@ -1010,7 +1018,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       return DROP_PACKET;
     }
 
-    void OnStreamsCreated(
+    void OnVideoStreamsCreated(
         VideoSendStream* send_stream,
         const std::vector<VideoReceiveStream*>& receive_streams) override {
       stream_ = send_stream;
@@ -1021,9 +1029,10 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       rtp_rtcp_->SetRTCPStatus(RtcpMode::kReducedSize);
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       feedback_transport_.reset(
           new internal::TransportAdapter(send_config->send_transport));
       feedback_transport_->Enable();
@@ -1080,20 +1089,20 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
 
   Call::Config::BitrateConfig bitrate_config;
   bitrate_config.start_bitrate_bps =
-      2 * encoder_config_.streams[0].max_bitrate_bps;
+      2 * video_encoder_config_.streams[0].max_bitrate_bps;
   sender_call_->SetBitrateConfig(bitrate_config);
 
   StartBitrateObserver encoder;
-  send_config_.encoder_settings.encoder = &encoder;
+  video_send_config_.encoder_settings.encoder = &encoder;
 
   CreateStreams();
 
-  EXPECT_EQ(encoder_config_.streams[0].max_bitrate_bps / 1000,
+  EXPECT_EQ(video_encoder_config_.streams[0].max_bitrate_bps / 1000,
             encoder.GetStartBitrateKbps());
 
-  encoder_config_.streams[0].max_bitrate_bps =
+  video_encoder_config_.streams[0].max_bitrate_bps =
       2 * bitrate_config.start_bitrate_bps;
-  send_stream_->ReconfigureVideoEncoder(encoder_config_);
+  video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_);
 
   // New bitrate should be reconfigured above the previous max. As there's no
   // network connection this shouldn't be flaky, as no bitrate should've been
@@ -1138,14 +1147,14 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   test::NullTransport transport;
   CreateSendConfig(1, &transport);
   FrameObserver observer;
-  send_config_.pre_encode_callback = &observer;
+  video_send_config_.pre_encode_callback = &observer;
   CreateStreams();
 
   // Prepare five input frames. Send ordinary VideoFrame and texture frames
   // alternatively.
   std::vector<VideoFrame> input_frames;
-  int width = static_cast<int>(encoder_config_.streams[0].width);
-  int height = static_cast<int>(encoder_config_.streams[0].height);
+  int width = static_cast<int>(video_encoder_config_.streams[0].width);
+  int height = static_cast<int>(video_encoder_config_.streams[0].height);
   test::FakeNativeHandle* handle1 = new test::FakeNativeHandle();
   test::FakeNativeHandle* handle2 = new test::FakeNativeHandle();
   test::FakeNativeHandle* handle3 = new test::FakeNativeHandle();
@@ -1158,17 +1167,17 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   input_frames.push_back(test::CreateFakeNativeHandleFrame(
       handle3, width, height, 5, 5, kVideoRotation_0));
 
-  send_stream_->Start();
+  video_send_stream_->Start();
   for (size_t i = 0; i < input_frames.size(); i++) {
-    send_stream_->Input()->IncomingCapturedFrame(input_frames[i]);
+    video_send_stream_->Input()->IncomingCapturedFrame(input_frames[i]);
     // Do not send the next frame too fast, so the frame dropper won't drop it.
     if (i < input_frames.size() - 1)
-      SleepMs(1000 / encoder_config_.streams[0].max_framerate);
+      SleepMs(1000 / video_encoder_config_.streams[0].max_framerate);
     // Wait until the output frame is received before sending the next input
     // frame. Or the previous input frame may be replaced without delivering.
     observer.WaitOutputFrame();
   }
-  send_stream_->Stop();
+  video_send_stream_->Stop();
 
   // Test if the input and output frames are the same. render_time_ms and
   // timestamp are not compared because capturer sets those values.
@@ -1310,7 +1319,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
       return 0;
     }
 
-    void OnStreamsCreated(
+    void OnVideoStreamsCreated(
         VideoSendStream* send_stream,
         const std::vector<VideoReceiveStream*>& receive_streams) override {
       // Encoder initialization should be done in stream construction before
@@ -1319,9 +1328,10 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
       stream_ = send_stream;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
       encoder_config_ = *encoder_config;
     }
@@ -1365,14 +1375,15 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
           num_initializations_(0) {}
 
    private:
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
       encoder_config_ = *encoder_config;
     }
 
-    void OnStreamsCreated(
+    void OnVideoStreamsCreated(
         VideoSendStream* send_stream,
         const std::vector<VideoReceiveStream*>& receive_streams) override {
       stream_ = send_stream;
@@ -1426,9 +1437,10 @@ class VideoCodecConfigObserver : public test::SendTest,
   }
 
  private:
-  void ModifyConfigs(VideoSendStream::Config* send_config,
-                     std::vector<VideoReceiveStream::Config>* receive_configs,
-                     VideoEncoderConfig* encoder_config) override {
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
     send_config->encoder_settings.encoder = this;
     send_config->encoder_settings.payload_name = codec_name_;
 
@@ -1441,7 +1453,7 @@ class VideoCodecConfigObserver : public test::SendTest,
     encoder_config_ = *encoder_config;
   }
 
-  void OnStreamsCreated(
+  void OnVideoStreamsCreated(
       VideoSendStream* send_stream,
       const std::vector<VideoReceiveStream*>& receive_streams) override {
     stream_ = send_stream;
@@ -1618,9 +1630,10 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
       return test::FakeEncoder::InitEncode(
           config, number_of_cores, max_payload_size);
     }
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
       EXPECT_EQ(1u, encoder_config->streams.size());
       EXPECT_TRUE(
@@ -1694,9 +1707,10 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       return config;
     }
 
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
       // Set bitrates lower/higher than min/max to make sure they are properly
       // capped.
@@ -1709,7 +1723,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       call_ = sender_call;
     }
 
-    void OnStreamsCreated(
+    void OnVideoStreamsCreated(
         VideoSendStream* send_stream,
         const std::vector<VideoReceiveStream*>& receive_streams) override {
       send_stream_ = send_stream;
@@ -1786,9 +1800,10 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
       observation_complete_.Set();
       return 0;
     }
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
       EXPECT_EQ(kNumStreams, encoder_config->streams.size());
     }
@@ -1812,7 +1827,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
       }
     }
 
-    void OnStreamsCreated(
+    void OnVideoStreamsCreated(
         VideoSendStream* send_stream,
         const std::vector<VideoReceiveStream*>& receive_streams) override {
       send_stream_ = send_stream;
@@ -1833,7 +1848,7 @@ class Vp9HeaderObserver : public test::SendTest {
         packets_sent_(0),
         frames_sent_(0) {}
 
-  virtual void ModifyConfigsHook(
+  virtual void ModifyVideoConfigsHook(
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) {}
@@ -1843,14 +1858,15 @@ class Vp9HeaderObserver : public test::SendTest {
  private:
   const int kVp9PayloadType = 105;
 
-  void ModifyConfigs(VideoSendStream::Config* send_config,
-                     std::vector<VideoReceiveStream::Config>* receive_configs,
-                     VideoEncoderConfig* encoder_config) override {
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
     encoder_config->encoder_specific_settings = &vp9_settings_;
     send_config->encoder_settings.encoder = vp9_encoder_.get();
     send_config->encoder_settings.payload_name = "VP9";
     send_config->encoder_settings.payload_type = kVp9PayloadType;
-    ModifyConfigsHook(send_config, receive_configs, encoder_config);
+    ModifyVideoConfigsHook(send_config, receive_configs, encoder_config);
     EXPECT_EQ(1u, encoder_config->streams.size());
     encoder_config->streams[0].temporal_layer_thresholds_bps.resize(
         vp9_settings_.numberOfTemporalLayers - 1);
@@ -2141,7 +2157,7 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
         : num_temporal_layers_(num_temporal_layers),
           num_spatial_layers_(num_spatial_layers),
           l_field_(num_temporal_layers > 1 || num_spatial_layers > 1) {}
-    void ModifyConfigsHook(
+    void ModifyVideoConfigsHook(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
@@ -2181,7 +2197,7 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
 
 TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
   class FlexibleMode : public Vp9HeaderObserver {
-    void ModifyConfigsHook(
+    void ModifyVideoConfigsHook(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
