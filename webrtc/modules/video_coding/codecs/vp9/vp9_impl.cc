@@ -54,7 +54,7 @@ VP9Encoder* VP9Encoder::Create() {
 
 void VP9EncoderImpl::EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
                                                       void* user_data) {
-  VP9EncoderImpl* enc = (VP9EncoderImpl*)(user_data);
+  VP9EncoderImpl* enc = static_cast<VP9EncoderImpl*>(user_data);
   enc->GetEncodedLayerFrame(pkt);
 }
 
@@ -88,7 +88,7 @@ VP9EncoderImpl::~VP9EncoderImpl() {
 
 int VP9EncoderImpl::Release() {
   if (encoded_image_._buffer != NULL) {
-    delete [] encoded_image_._buffer;
+    delete[] encoded_image_._buffer;
     encoded_image_._buffer = NULL;
   }
   if (encoder_ != NULL) {
@@ -267,10 +267,10 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     num_temporal_layers_ = 1;
 
   // Random start 16 bits is enough.
-  picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
+  picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;  // NOLINT
   // Allocate memory for encoded image
   if (encoded_image_._buffer != NULL) {
-    delete [] encoded_image_._buffer;
+    delete[] encoded_image_._buffer;
   }
   encoded_image_._size = CalcBufferSize(kI420, codec_.width, codec_.height);
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
@@ -278,8 +278,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   // Creating a wrapper to the image - setting image data to NULL. Actual
   // pointer will be set in encode. Setting align to 1, as it is meaningless
   // (actual memory is not allocated).
-  raw_ = vpx_img_wrap(NULL, VPX_IMG_FMT_I420, codec_.width, codec_.height,
-                      1, NULL);
+  raw_ = vpx_img_wrap(NULL, VPX_IMG_FMT_I420, codec_.width, codec_.height, 1,
+                      NULL);
   // Populate encoder configuration with default values.
   if (vpx_codec_enc_config_default(vpx_codec_vp9_cx(), config_, 0)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -294,8 +294,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->g_lag_in_frames = 0;  // 0- no frame lagging
   config_->g_threads = 1;
   // Rate control settings.
-  config_->rc_dropframe_thresh = inst->codecSpecific.VP9.frameDroppingOn ?
-      30 : 0;
+  config_->rc_dropframe_thresh =
+      inst->codecSpecific.VP9.frameDroppingOn ? 30 : 0;
   config_->rc_end_usage = VPX_CBR;
   config_->g_pass = VPX_RC_ONE_PASS;
   config_->rc_min_quantizer = 2;
@@ -307,7 +307,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_buf_sz = 1000;
   // Set the maximum target size of any key-frame.
   rc_max_intra_target_ = MaxIntraTarget(config_->rc_buf_optimal_sz);
-  if (inst->codecSpecific.VP9.keyFrameInterval  > 0) {
+  if (inst->codecSpecific.VP9.keyFrameInterval > 0) {
     config_->kf_mode = VPX_KF_AUTO;
     config_->kf_max_dist = inst->codecSpecific.VP9.keyFrameInterval;
     // Needs to be set (in svc mode) to get correct periodic key frame interval
@@ -316,12 +316,11 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   } else {
     config_->kf_mode = VPX_KF_DISABLED;
   }
-  config_->rc_resize_allowed = inst->codecSpecific.VP9.automaticResizeOn ?
-      1 : 0;
+  config_->rc_resize_allowed =
+      inst->codecSpecific.VP9.automaticResizeOn ? 1 : 0;
   // Determine number of threads based on the image size and #cores.
-  config_->g_threads = NumberOfThreads(config_->g_w,
-                                       config_->g_h,
-                                       number_of_cores);
+  config_->g_threads =
+      NumberOfThreads(config_->g_w, config_->g_h, number_of_cores);
 
   cpu_speed_ = GetCpuSpeed(config_->g_w, config_->g_h);
 
@@ -365,7 +364,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  tl0_pic_idx_ = static_cast<uint8_t>(rand());
+  tl0_pic_idx_ = static_cast<uint8_t>(rand());  // NOLINT
 
   return InitAndSetControlSettings(inst);
 }
@@ -432,8 +431,10 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   }
   // Register callback for getting each spatial layer.
   vpx_codec_priv_output_cx_pkt_cb_pair_t cbp = {
-      VP9EncoderImpl::EncoderOutputCodedPacketCallback, (void*)(this)};
-  vpx_codec_control(encoder_, VP9E_REGISTER_CX_CALLBACK, (void*)(&cbp));
+      VP9EncoderImpl::EncoderOutputCodedPacketCallback,
+      reinterpret_cast<void*>(this)};
+  vpx_codec_control(encoder_, VP9E_REGISTER_CX_CALLBACK,
+                    reinterpret_cast<void*>(&cbp));
 
   // Control function to set the number of column tiles in encoding a frame, in
   // log2 unit: e.g., 0 = 1 tile column, 1 = 2 tile columns, 2 = 4 tile columns.
@@ -468,7 +469,7 @@ uint32_t VP9EncoderImpl::MaxIntraTarget(uint32_t optimal_buffer_size) {
       optimal_buffer_size * scale_par * codec_.maxFramerate / 10;
   // Don't go below 3 times the per frame bandwidth.
   const uint32_t min_intra_size = 300;
-  return (target_pct < min_intra_size) ? min_intra_size: target_pct;
+  return (target_pct < min_intra_size) ? min_intra_size : target_pct;
 }
 
 int VP9EncoderImpl::Encode(const VideoFrame& input_image,
@@ -547,11 +548,11 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
 }
 
 void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
-                                       const vpx_codec_cx_pkt& pkt,
-                                       uint32_t timestamp) {
+                                           const vpx_codec_cx_pkt& pkt,
+                                           uint32_t timestamp) {
   assert(codec_specific != NULL);
   codec_specific->codecType = kVideoCodecVP9;
-  CodecSpecificInfoVP9 *vp9_info = &(codec_specific->codecSpecific.VP9);
+  CodecSpecificInfoVP9* vp9_info = &(codec_specific->codecSpecific.VP9);
   // TODO(asapersson): Set correct value.
   vp9_info->inter_pic_predicted =
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? false : true;
@@ -857,7 +858,7 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   if (decoder_ == NULL) {
     decoder_ = new vpx_codec_ctx_t;
   }
-  vpx_codec_dec_cfg_t  cfg;
+  vpx_codec_dec_cfg_t cfg;
   // Setting number of threads to a constant value (1)
   cfg.threads = 1;
   cfg.h = cfg.w = 0;  // set after decode
@@ -910,10 +911,8 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   }
   // During decode libvpx may get and release buffers from |frame_buffer_pool_|.
   // In practice libvpx keeps a few (~3-4) buffers alive at a time.
-  if (vpx_codec_decode(decoder_,
-                       buffer,
-                       static_cast<unsigned int>(input_image._length),
-                       0,
+  if (vpx_codec_decode(decoder_, buffer,
+                       static_cast<unsigned int>(input_image._length), 0,
                        VPX_DL_REALTIME)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -943,10 +942,10 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
   // using a WrappedI420Buffer.
   rtc::scoped_refptr<WrappedI420Buffer> img_wrapped_buffer(
       new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
-          img->d_w, img->d_h,
-          img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
-          img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
-          img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
+          img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
+          img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
+          img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
+          img->stride[VPX_PLANE_V],
           // WrappedI420Buffer's mechanism for allowing the release of its frame
           // buffer is through a callback function. This is where we should
           // release |img_buffer|.

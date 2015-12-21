@@ -243,17 +243,16 @@ class VideoProcessorImpl : public VideoProcessor {
 
   // Callback class required to implement according to the VideoDecoder API.
   class VideoProcessorDecodeCompleteCallback
-    : public webrtc::DecodedImageCallback {
+      : public webrtc::DecodedImageCallback {
    public:
-      explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
-      : video_processor_(vp) {
+    explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
+        : video_processor_(vp) {}
+    int32_t Decoded(webrtc::VideoFrame& image) override;
+    int32_t Decoded(webrtc::VideoFrame& image,
+                    int64_t decode_time_ms) override {
+      RTC_NOTREACHED();
+      return -1;
     }
-      int32_t Decoded(webrtc::VideoFrame& image) override;
-      int32_t Decoded(
-          webrtc::VideoFrame& image, int64_t decode_time_ms) override {
-        RTC_NOTREACHED();
-        return -1;
-      }
 
    private:
     VideoProcessorImpl* video_processor_;

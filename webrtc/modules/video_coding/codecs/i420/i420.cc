@@ -21,20 +21,19 @@ const size_t kI420HeaderSize = 4;
 
 namespace webrtc {
 
-I420Encoder::I420Encoder() : _inited(false), _encodedImage(),
-    _encodedCompleteCallback(NULL) {
-}
+I420Encoder::I420Encoder()
+    : _inited(false), _encodedImage(), _encodedCompleteCallback(NULL) {}
 
 I420Encoder::~I420Encoder() {
   _inited = false;
-  delete [] _encodedImage._buffer;
+  delete[] _encodedImage._buffer;
 }
 
 int I420Encoder::Release() {
   // Should allocate an encoded frame and then release it here, for that we
   // actually need an init flag.
   if (_encodedImage._buffer != NULL) {
-    delete [] _encodedImage._buffer;
+    delete[] _encodedImage._buffer;
     _encodedImage._buffer = NULL;
   }
   _inited = false;
@@ -53,7 +52,7 @@ int I420Encoder::InitEncode(const VideoCodec* codecSettings,
 
   // Allocating encoded memory.
   if (_encodedImage._buffer != NULL) {
-    delete [] _encodedImage._buffer;
+    delete[] _encodedImage._buffer;
     _encodedImage._buffer = NULL;
     _encodedImage._size = 0;
   }
@@ -101,18 +100,18 @@ int I420Encoder::Encode(const VideoFrame& inputImage,
       kI420HeaderSize;
   if (_encodedImage._size > req_length) {
     // Reallocate buffer.
-    delete [] _encodedImage._buffer;
+    delete[] _encodedImage._buffer;
 
     _encodedImage._buffer = new uint8_t[req_length];
     _encodedImage._size = req_length;
   }
 
-  uint8_t *buffer = _encodedImage._buffer;
+  uint8_t* buffer = _encodedImage._buffer;
 
   buffer = InsertHeader(buffer, width, height);
 
-  int ret_length = ExtractBuffer(inputImage, req_length - kI420HeaderSize,
-                                 buffer);
+  int ret_length =
+      ExtractBuffer(inputImage, req_length - kI420HeaderSize, buffer);
   if (ret_length < 0)
     return WEBRTC_VIDEO_CODEC_MEMORY;
   _encodedImage._length = ret_length + kI420HeaderSize;
@@ -121,7 +120,8 @@ int I420Encoder::Encode(const VideoFrame& inputImage,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-uint8_t* I420Encoder::InsertHeader(uint8_t *buffer, uint16_t width,
+uint8_t* I420Encoder::InsertHeader(uint8_t* buffer,
+                                   uint16_t width,
                                    uint16_t height) {
   *buffer++ = static_cast<uint8_t>(width >> 8);
   *buffer++ = static_cast<uint8_t>(width & 0xFF);
@@ -130,30 +130,29 @@ uint8_t* I420Encoder::InsertHeader(uint8_t *buffer, uint16_t width,
   return buffer;
 }
 
-int
-I420Encoder::RegisterEncodeCompleteCallback(EncodedImageCallback* callback) {
+int I420Encoder::RegisterEncodeCompleteCallback(
+    EncodedImageCallback* callback) {
   _encodedCompleteCallback = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-
-I420Decoder::I420Decoder() : _decodedImage(), _width(0), _height(0),
-    _inited(false), _decodeCompleteCallback(NULL) {
-}
+I420Decoder::I420Decoder()
+    : _decodedImage(),
+      _width(0),
+      _height(0),
+      _inited(false),
+      _decodeCompleteCallback(NULL) {}
 
 I420Decoder::~I420Decoder() {
   Release();
 }
 
-int
-I420Decoder::Reset() {
+int I420Decoder::Reset() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-
-int
-I420Decoder::InitDecode(const VideoCodec* codecSettings,
-                        int /*numberOfCores */) {
+int I420Decoder::InitDecode(const VideoCodec* codecSettings,
+                            int /*numberOfCores */) {
   if (codecSettings == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   } else if (codecSettings->width < 1 || codecSettings->height < 1) {
@@ -165,7 +164,8 @@ I420Decoder::InitDecode(const VideoCodec* codecSettings,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int I420Decoder::Decode(const EncodedImage& inputImage, bool /*missingFrames*/,
+int I420Decoder::Decode(const EncodedImage& inputImage,
+                        bool /*missingFrames*/,
                         const RTPFragmentationHeader* /*fragmentation*/,
                         const CodecSpecificInfo* /*codecSpecificInfo*/,
                         int64_t /*renderTimeMs*/) {
@@ -203,8 +203,8 @@ int I420Decoder::Decode(const EncodedImage& inputImage, bool /*missingFrames*/,
   }
   // Set decoded image parameters.
   int half_width = (_width + 1) / 2;
-  _decodedImage.CreateEmptyFrame(_width, _height,
-                                 _width, half_width, half_width);
+  _decodedImage.CreateEmptyFrame(_width, _height, _width, half_width,
+                                 half_width);
   // Converting from buffer to plane representation.
   int ret = ConvertToI420(kI420, buffer, 0, 0, _width, _height, 0,
                           kVideoRotation_0, &_decodedImage);
@@ -218,7 +218,8 @@ int I420Decoder::Decode(const EncodedImage& inputImage, bool /*missingFrames*/,
 }
 
 const uint8_t* I420Decoder::ExtractHeader(const uint8_t* buffer,
-                                          uint16_t* width, uint16_t* height) {
+                                          uint16_t* width,
+                                          uint16_t* height) {
   *width = static_cast<uint16_t>(*buffer++) << 8;
   *width |= *buffer++;
   *height = static_cast<uint16_t>(*buffer++) << 8;

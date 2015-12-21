@@ -99,11 +99,7 @@ struct FrameEncodeParams {
                     int32_t h,
                     int64_t rtms,
                     uint32_t ts)
-      : callback(cb),
-        width(w),
-        height(h),
-        render_time_ms(rtms),
-        timestamp(ts) {
+      : callback(cb), width(w), height(h), render_time_ms(rtms), timestamp(ts) {
     if (csi) {
       codec_specific_info = *csi;
     } else {
@@ -146,9 +142,8 @@ bool CopyVideoFrameToPixelBuffer(const webrtc::VideoFrame& frame,
   int ret = libyuv::I420ToNV12(
       frame.buffer(webrtc::kYPlane), frame.stride(webrtc::kYPlane),
       frame.buffer(webrtc::kUPlane), frame.stride(webrtc::kUPlane),
-      frame.buffer(webrtc::kVPlane), frame.stride(webrtc::kVPlane),
-      dst_y, dst_stride_y, dst_uv, dst_stride_uv,
-      frame.width(), frame.height());
+      frame.buffer(webrtc::kVPlane), frame.stride(webrtc::kVPlane), dst_y,
+      dst_stride_y, dst_uv, dst_stride_uv, frame.width(), frame.height());
   CVPixelBufferUnlockBaseAddress(pixel_buffer, 0);
   if (ret) {
     LOG(LS_ERROR) << "Error converting I420 VideoFrame to NV12 :" << ret;
@@ -188,10 +183,8 @@ void VTCompressionOutputCallback(void* encoder,
   // TODO(tkchin): Allocate buffers through a pool.
   rtc::scoped_ptr<rtc::Buffer> buffer(new rtc::Buffer());
   rtc::scoped_ptr<webrtc::RTPFragmentationHeader> header;
-  if (!H264CMSampleBufferToAnnexBBuffer(sample_buffer,
-                                        is_keyframe,
-                                        buffer.get(),
-                                        header.accept())) {
+  if (!H264CMSampleBufferToAnnexBBuffer(sample_buffer, is_keyframe,
+                                        buffer.get(), header.accept())) {
     return;
   }
   webrtc::EncodedImage frame(buffer->data(), buffer->size(), buffer->size());
@@ -215,8 +208,7 @@ void VTCompressionOutputCallback(void* encoder,
 namespace webrtc {
 
 H264VideoToolboxEncoder::H264VideoToolboxEncoder()
-    : callback_(nullptr), compression_session_(nullptr) {
-}
+    : callback_(nullptr), compression_session_(nullptr) {}
 
 H264VideoToolboxEncoder::~H264VideoToolboxEncoder() {
   DestroyCompressionSession();
@@ -289,8 +281,8 @@ int H264VideoToolboxEncoder::Encode(
       CMTimeMake(input_image.render_time_ms(), 1000);
   CFDictionaryRef frame_properties = nullptr;
   if (is_keyframe_required) {
-    CFTypeRef keys[] = { kVTEncodeFrameOptionKey_ForceKeyFrame };
-    CFTypeRef values[] = { kCFBooleanTrue };
+    CFTypeRef keys[] = {kVTEncodeFrameOptionKey_ForceKeyFrame};
+    CFTypeRef values[] = {kCFBooleanTrue};
     frame_properties = internal::CreateCFDictionary(keys, values, 1);
   }
   rtc::scoped_ptr<internal::FrameEncodeParams> encode_params;
@@ -359,11 +351,8 @@ int H264VideoToolboxEncoder::ResetCompressionSession() {
   int64_t nv12type = kCVPixelFormatType_420YpCbCr8BiPlanarFullRange;
   CFNumberRef pixel_format =
       CFNumberCreate(nullptr, kCFNumberLongType, &nv12type);
-  CFTypeRef values[attributes_size] = {
-    kCFBooleanTrue,
-    io_surface_value,
-    pixel_format
-  };
+  CFTypeRef values[attributes_size] = {kCFBooleanTrue, io_surface_value,
+                                       pixel_format};
   CFDictionaryRef source_attributes =
       internal::CreateCFDictionary(keys, values, attributes_size);
   if (io_surface_value) {
@@ -376,15 +365,11 @@ int H264VideoToolboxEncoder::ResetCompressionSession() {
   }
   OSStatus status = VTCompressionSessionCreate(
       nullptr,  // use default allocator
-      width_,
-      height_,
-      kCMVideoCodecType_H264,
+      width_, height_, kCMVideoCodecType_H264,
       nullptr,  // use default encoder
       source_attributes,
       nullptr,  // use default compressed data allocator
-      internal::VTCompressionOutputCallback,
-      this,
-      &compression_session_);
+      internal::VTCompressionOutputCallback, this, &compression_session_);
   if (source_attributes) {
     CFRelease(source_attributes);
     source_attributes = nullptr;

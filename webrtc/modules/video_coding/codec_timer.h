@@ -14,48 +14,44 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
 // MAX_HISTORY_SIZE * SHORT_FILTER_MS defines the window size in milliseconds
 #define MAX_HISTORY_SIZE 10
 #define SHORT_FILTER_MS 1000
 
-class VCMShortMaxSample
-{
-public:
-    VCMShortMaxSample() : shortMax(0), timeMs(-1) {};
+class VCMShortMaxSample {
+ public:
+  VCMShortMaxSample() : shortMax(0), timeMs(-1) {}
 
-    int32_t     shortMax;
-    int64_t     timeMs;
+  int32_t shortMax;
+  int64_t timeMs;
 };
 
-class VCMCodecTimer
-{
-public:
-    VCMCodecTimer();
+class VCMCodecTimer {
+ public:
+  VCMCodecTimer();
 
-    // Updates the max filtered decode time.
-    void MaxFilter(int32_t newDecodeTimeMs, int64_t nowMs);
+  // Updates the max filtered decode time.
+  void MaxFilter(int32_t newDecodeTimeMs, int64_t nowMs);
 
-    // Empty the list of timers.
-    void Reset();
+  // Empty the list of timers.
+  void Reset();
 
-    // Get the required decode time in ms.
-    int32_t RequiredDecodeTimeMs(FrameType frameType) const;
+  // Get the required decode time in ms.
+  int32_t RequiredDecodeTimeMs(FrameType frameType) const;
 
-private:
-    void UpdateMaxHistory(int32_t decodeTime, int64_t now);
-    void ProcessHistory(int64_t nowMs);
+ private:
+  void UpdateMaxHistory(int32_t decodeTime, int64_t now);
+  void ProcessHistory(int64_t nowMs);
 
-    int32_t                     _filteredMax;
-    // The number of samples ignored so far.
-    int32_t                     _ignoredSampleCount;
-    int32_t                     _shortMax;
-    VCMShortMaxSample           _history[MAX_HISTORY_SIZE];
-
+  int32_t _filteredMax;
+  // The number of samples ignored so far.
+  int32_t _ignoredSampleCount;
+  int32_t _shortMax;
+  VCMShortMaxSample _history[MAX_HISTORY_SIZE];
 };
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_

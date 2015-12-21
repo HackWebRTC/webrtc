@@ -154,11 +154,10 @@ bool H264CMSampleBufferToAnnexBBuffer(
   return true;
 }
 
-bool H264AnnexBBufferToCMSampleBuffer(
-    const uint8_t* annexb_buffer,
-    size_t annexb_buffer_size,
-    CMVideoFormatDescriptionRef video_format,
-    CMSampleBufferRef* out_sample_buffer) {
+bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
+                                      size_t annexb_buffer_size,
+                                      CMVideoFormatDescriptionRef video_format,
+                                      CMSampleBufferRef* out_sample_buffer) {
   RTC_DCHECK(annexb_buffer);
   RTC_DCHECK(out_sample_buffer);
   *out_sample_buffer = nullptr;

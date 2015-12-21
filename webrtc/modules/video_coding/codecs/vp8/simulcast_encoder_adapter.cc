@@ -215,9 +215,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
     }
 
     VideoEncoder* encoder = factory_->Create();
-    ret = encoder->InitEncode(&stream_codec,
-                              number_of_cores,
-                              max_payload_size);
+    ret = encoder->InitEncode(&stream_codec, number_of_cores, max_payload_size);
     if (ret < 0) {
       Release();
       return ret;
@@ -284,35 +282,25 @@ int SimulcastEncoderAdapter::Encode(
     // scale it to match what the encoder expects (below).
     if ((dst_width == src_width && dst_height == src_height) ||
         input_image.IsZeroSize()) {
-      streaminfos_[stream_idx].encoder->Encode(input_image,
-                                               codec_specific_info,
+      streaminfos_[stream_idx].encoder->Encode(input_image, codec_specific_info,
                                                &stream_frame_types);
     } else {
       VideoFrame dst_frame;
       // Making sure that destination frame is of sufficient size.
       // Aligning stride values based on width.
-      dst_frame.CreateEmptyFrame(dst_width, dst_height,
-                                 dst_width, (dst_width + 1) / 2,
-                                 (dst_width + 1) / 2);
-      libyuv::I420Scale(input_image.buffer(kYPlane),
-                        input_image.stride(kYPlane),
-                        input_image.buffer(kUPlane),
-                        input_image.stride(kUPlane),
-                        input_image.buffer(kVPlane),
-                        input_image.stride(kVPlane),
-                        src_width, src_height,
-                        dst_frame.buffer(kYPlane),
-                        dst_frame.stride(kYPlane),
-                        dst_frame.buffer(kUPlane),
-                        dst_frame.stride(kUPlane),
-                        dst_frame.buffer(kVPlane),
-                        dst_frame.stride(kVPlane),
-                        dst_width, dst_height,
-                        libyuv::kFilterBilinear);
+      dst_frame.CreateEmptyFrame(dst_width, dst_height, dst_width,
+                                 (dst_width + 1) / 2, (dst_width + 1) / 2);
+      libyuv::I420Scale(
+          input_image.buffer(kYPlane), input_image.stride(kYPlane),
+          input_image.buffer(kUPlane), input_image.stride(kUPlane),
+          input_image.buffer(kVPlane), input_image.stride(kVPlane), src_width,
+          src_height, dst_frame.buffer(kYPlane), dst_frame.stride(kYPlane),
+          dst_frame.buffer(kUPlane), dst_frame.stride(kUPlane),
+          dst_frame.buffer(kVPlane), dst_frame.stride(kVPlane), dst_width,
+          dst_height, libyuv::kFilterBilinear);
       dst_frame.set_timestamp(input_image.timestamp());
       dst_frame.set_render_time_ms(input_image.render_time_ms());
-      streaminfos_[stream_idx].encoder->Encode(dst_frame,
-                                               codec_specific_info,
+      streaminfos_[stream_idx].encoder->Encode(dst_frame, codec_specific_info,
                                                &stream_frame_types);
     }
   }
@@ -426,16 +414,17 @@ uint32_t SimulcastEncoderAdapter::GetStreamBitrate(
     // current stream's |targetBitrate|, otherwise it's capped by |maxBitrate|.
     if (stream_idx < codec_.numberOfSimulcastStreams - 1) {
       unsigned int max_rate = codec_.simulcastStream[stream_idx].maxBitrate;
-      if (new_bitrate_kbit >= SumStreamTargetBitrate(stream_idx + 1, codec_) +
-          codec_.simulcastStream[stream_idx + 1].minBitrate) {
+      if (new_bitrate_kbit >=
+          SumStreamTargetBitrate(stream_idx + 1, codec_) +
+              codec_.simulcastStream[stream_idx + 1].minBitrate) {
         max_rate = codec_.simulcastStream[stream_idx].targetBitrate;
       }
       return std::min(new_bitrate_kbit - sum_target_lower_streams, max_rate);
     } else {
-        // For the highest stream (highest resolution), the |targetBitRate| and
-        // |maxBitrate| are not used. Any excess bitrate (above the targets of
-        // all lower streams) is given to this (highest resolution) stream.
-        return new_bitrate_kbit - sum_target_lower_streams;
+      // For the highest stream (highest resolution), the |targetBitRate| and
+      // |maxBitrate| are not used. Any excess bitrate (above the targets of
+      // all lower streams) is given to this (highest resolution) stream.
+      return new_bitrate_kbit - sum_target_lower_streams;
     }
   } else {
     // Not enough bitrate for this stream.

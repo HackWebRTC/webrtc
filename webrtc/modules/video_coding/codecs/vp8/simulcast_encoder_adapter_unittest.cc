@@ -27,12 +27,10 @@ static VP8Encoder* CreateTestEncoderAdapter() {
 class TestSimulcastEncoderAdapter : public TestVp8Simulcast {
  public:
   TestSimulcastEncoderAdapter()
-     : TestVp8Simulcast(CreateTestEncoderAdapter(),
-                        VP8Decoder::Create()) {}
+      : TestVp8Simulcast(CreateTestEncoderAdapter(), VP8Decoder::Create()) {}
+
  protected:
-  virtual void SetUp() {
-    TestVp8Simulcast::SetUp();
-  }
+  virtual void SetUp() { TestVp8Simulcast::SetUp(); }
   virtual void TearDown() {
     TestVp8Simulcast::TearDown();
     VP8EncoderFactoryConfig::set_use_simulcast_adapter(false);
@@ -97,8 +95,7 @@ TEST_F(TestSimulcastEncoderAdapter, TestSpatioTemporalLayers321PatternEncoder) {
 
 // TODO(ronghuawu): Enable this test when SkipEncodingUnusedStreams option is
 // implemented for SimulcastEncoderAdapter.
-TEST_F(TestSimulcastEncoderAdapter,
-    DISABLED_TestSkipEncodingUnusedStreams) {
+TEST_F(TestSimulcastEncoderAdapter, DISABLED_TestSkipEncodingUnusedStreams) {
   TestVp8Simulcast::TestSkipEncodingUnusedStreams();
 }
 
@@ -127,23 +124,17 @@ class MockVideoEncoder : public VideoEncoder {
     return 0;
   }
 
-  int32_t Release() override {
-    return 0;
-  }
+  int32_t Release() override { return 0; }
 
   int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) override {
     return 0;
   }
 
-  MOCK_METHOD2(SetChannelParameters,
-      int32_t(uint32_t packetLoss, int64_t rtt));
+  MOCK_METHOD2(SetChannelParameters, int32_t(uint32_t packetLoss, int64_t rtt));
 
-  bool SupportsNativeHandle() const override {
-    return supports_native_handle_;
-  }
+  bool SupportsNativeHandle() const override { return supports_native_handle_; }
 
-  virtual ~MockVideoEncoder() {
-  }
+  virtual ~MockVideoEncoder() {}
 
   const VideoCodec& codec() const { return codec_; }
 
@@ -200,7 +191,8 @@ class TestSimulcastEncoderAdapterFakeHelper {
     EXPECT_TRUE(!factory_->encoders().empty());
     for (size_t i = 0; i < factory_->encoders().size(); ++i) {
       EXPECT_CALL(*factory_->encoders()[i],
-                  SetChannelParameters(packetLoss, rtt)).Times(1);
+                  SetChannelParameters(packetLoss, rtt))
+          .Times(1);
     }
   }
 
@@ -249,8 +241,7 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
 
   void SetupCodec() {
     TestVp8Simulcast::DefaultSettings(
-      &codec_,
-      static_cast<const int*>(kTestTemporalLayerProfile));
+        &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
     EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
     adapter_->RegisterEncodeCompleteCallback(this);
   }

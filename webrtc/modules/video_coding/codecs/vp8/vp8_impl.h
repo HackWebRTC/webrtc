@@ -61,7 +61,8 @@ class VP8EncoderImpl : public VP8Encoder {
   const char* ImplementationName() const override;
 
  private:
-  void SetupTemporalLayers(int num_streams, int num_temporal_layers,
+  void SetupTemporalLayers(int num_streams,
+                           int num_temporal_layers,
                            const VideoCodec& codec);
 
   // Set the cpu_speed setting for encoder based on resolution and/or platform.
@@ -128,10 +129,10 @@ class VP8DecoderImpl : public VP8Decoder {
   int InitDecode(const VideoCodec* inst, int number_of_cores) override;
 
   int Decode(const EncodedImage& input_image,
-                     bool missing_frames,
-                     const RTPFragmentationHeader* fragmentation,
-                     const CodecSpecificInfo* codec_specific_info,
-                     int64_t /*render_time_ms*/) override;
+             bool missing_frames,
+             const RTPFragmentationHeader* fragmentation,
+             const CodecSpecificInfo* codec_specific_info,
+             int64_t /*render_time_ms*/) override;
 
   int RegisterDecodeCompleteCallback(DecodedImageCallback* callback) override;
   int Release() override;
@@ -169,4 +170,3 @@ class VP8DecoderImpl : public VP8Decoder {
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_VP8_IMPL_H_
-

@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_NALU_H
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_NALU_H
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_NALU_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_NALU_H_
 
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 
@@ -39,11 +39,10 @@ bool H264CMSampleBufferToAnnexBBuffer(
 // If |is_keyframe| is true then |video_format| is ignored since the format will
 // be read from the buffer. Otherwise |video_format| must be provided.
 // Caller is responsible for releasing the created sample buffer.
-bool H264AnnexBBufferToCMSampleBuffer(
-    const uint8_t* annexb_buffer,
-    size_t annexb_buffer_size,
-    CMVideoFormatDescriptionRef video_format,
-    CMSampleBufferRef* out_sample_buffer);
+bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
+                                      size_t annexb_buffer_size,
+                                      CMVideoFormatDescriptionRef video_format,
+                                      CMSampleBufferRef* out_sample_buffer);
 
 // Helper class for reading NALUs from an RTP Annex B buffer.
 class AnnexBBufferReader final {
@@ -97,4 +96,4 @@ class AvccBufferWriter final {
 }  // namespace webrtc
 
 #endif  // defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
-#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_NALU_H
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_NALU_H_

@@ -11,6 +11,8 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
+
 #include "webrtc/base/checks.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
@@ -188,7 +190,7 @@ void ScreenshareLayers::FrameEncoded(unsigned int size,
 }
 
 void ScreenshareLayers::PopulateCodecSpecific(bool base_layer_sync,
-                                              CodecSpecificInfoVP8 *vp8_info,
+                                              CodecSpecificInfoVP8* vp8_info,
                                               uint32_t timestamp) {
   int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
   if (number_of_temporal_layers_ == 1) {

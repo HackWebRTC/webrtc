@@ -106,8 +106,7 @@ namespace webrtc {
 H264VideoToolboxDecoder::H264VideoToolboxDecoder()
     : callback_(nullptr),
       video_format_(nullptr),
-      decompression_session_(nullptr) {
-}
+      decompression_session_(nullptr) {}
 
 H264VideoToolboxDecoder::~H264VideoToolboxDecoder() {
   DestroyDecompressionSession();
@@ -129,8 +128,7 @@ int H264VideoToolboxDecoder::Decode(
 
   CMSampleBufferRef sample_buffer = nullptr;
   if (!H264AnnexBBufferToCMSampleBuffer(input_image._buffer,
-                                        input_image._length,
-                                        video_format_,
+                                        input_image._length, video_format_,
                                         &sample_buffer)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -206,11 +204,8 @@ int H264VideoToolboxDecoder::ResetDecompressionSession() {
   int64_t nv12type = kCVPixelFormatType_420YpCbCr8BiPlanarFullRange;
   CFNumberRef pixel_format =
       CFNumberCreate(nullptr, kCFNumberLongType, &nv12type);
-  CFTypeRef values[attributes_size] = {
-    kCFBooleanTrue,
-    io_surface_value,
-    pixel_format
-  };
+  CFTypeRef values[attributes_size] = {kCFBooleanTrue, io_surface_value,
+                                       pixel_format};
   CFDictionaryRef attributes =
       internal::CreateCFDictionary(keys, values, attributes_size);
   if (io_surface_value) {

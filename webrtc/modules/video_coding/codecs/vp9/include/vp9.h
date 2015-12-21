@@ -23,7 +23,6 @@ class VP9Encoder : public VideoEncoder {
   virtual ~VP9Encoder() {}
 };
 
-
 class VP9Decoder : public VideoDecoder {
  public:
   static VP9Decoder* Create();

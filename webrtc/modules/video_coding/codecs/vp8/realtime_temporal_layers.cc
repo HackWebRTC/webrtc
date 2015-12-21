@@ -23,7 +23,8 @@ namespace webrtc {
 namespace {
 enum {
   kTemporalUpdateLast = VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
-                        VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_REF_ARF,
+                        VP8_EFLAG_NO_REF_GF |
+                        VP8_EFLAG_NO_REF_ARF,
 
   kTemporalUpdateGolden =
       VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST,
@@ -37,13 +38,15 @@ enum {
       kTemporalUpdateAltref | VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_REF_GF,
 
   kTemporalUpdateNone = VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
-                        VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_ENTROPY,
+                        VP8_EFLAG_NO_UPD_LAST |
+                        VP8_EFLAG_NO_UPD_ENTROPY,
 
   kTemporalUpdateNoneNoRefAltref = kTemporalUpdateNone | VP8_EFLAG_NO_REF_ARF,
 
   kTemporalUpdateNoneNoRefGoldenRefAltRef =
       VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
-      VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_ENTROPY,
+      VP8_EFLAG_NO_UPD_LAST |
+      VP8_EFLAG_NO_UPD_ENTROPY,
 
   kTemporalUpdateGoldenWithoutDependencyRefAltRef =
       VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST,
@@ -133,12 +136,14 @@ class RealTimeTemporalLayers : public TemporalLayers {
         layer_ids_length_ = sizeof(layer_ids) / sizeof(*layer_ids);
 
         static const int encode_flags[] = {
-          kTemporalUpdateLastAndGoldenRefAltRef,
-          kTemporalUpdateGoldenWithoutDependencyRefAltRef,
-          kTemporalUpdateLastRefAltRef, kTemporalUpdateGoldenRefAltRef,
-          kTemporalUpdateLastRefAltRef, kTemporalUpdateGoldenRefAltRef,
-          kTemporalUpdateLastRefAltRef, kTemporalUpdateNone
-        };
+            kTemporalUpdateLastAndGoldenRefAltRef,
+            kTemporalUpdateGoldenWithoutDependencyRefAltRef,
+            kTemporalUpdateLastRefAltRef,
+            kTemporalUpdateGoldenRefAltRef,
+            kTemporalUpdateLastRefAltRef,
+            kTemporalUpdateGoldenRefAltRef,
+            kTemporalUpdateLastRefAltRef,
+            kTemporalUpdateNone};
         encode_flags_length_ = sizeof(encode_flags) / sizeof(*layer_ids);
         encode_flags_ = encode_flags;
 
@@ -153,12 +158,14 @@ class RealTimeTemporalLayers : public TemporalLayers {
         layer_ids_length_ = sizeof(layer_ids) / sizeof(*layer_ids);
 
         static const int encode_flags[] = {
-          kTemporalUpdateLastAndGoldenRefAltRef,
-          kTemporalUpdateNoneNoRefGoldenRefAltRef,
-          kTemporalUpdateGoldenWithoutDependencyRefAltRef, kTemporalUpdateNone,
-          kTemporalUpdateLastRefAltRef, kTemporalUpdateNone,
-          kTemporalUpdateGoldenRefAltRef, kTemporalUpdateNone
-        };
+            kTemporalUpdateLastAndGoldenRefAltRef,
+            kTemporalUpdateNoneNoRefGoldenRefAltRef,
+            kTemporalUpdateGoldenWithoutDependencyRefAltRef,
+            kTemporalUpdateNone,
+            kTemporalUpdateLastRefAltRef,
+            kTemporalUpdateNone,
+            kTemporalUpdateGoldenRefAltRef,
+            kTemporalUpdateNone};
         encode_flags_length_ = sizeof(encode_flags) / sizeof(*layer_ids);
         encode_flags_ = encode_flags;
 
@@ -172,8 +179,8 @@ class RealTimeTemporalLayers : public TemporalLayers {
         assert(false);
         return false;
     }
-    memcpy(
-        cfg->ts_layer_id, layer_ids_, sizeof(unsigned int) * layer_ids_length_);
+    memcpy(cfg->ts_layer_id, layer_ids_,
+           sizeof(unsigned int) * layer_ids_length_);
     return true;
   }
 

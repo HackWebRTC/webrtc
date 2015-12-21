@@ -13,18 +13,14 @@
 namespace webrtc {
 namespace testing {
 
-class TestVp8Impl
-    : public TestVp8Simulcast {
+class TestVp8Impl : public TestVp8Simulcast {
  public:
   TestVp8Impl()
-     : TestVp8Simulcast(VP8Encoder::Create(), VP8Decoder::Create()) {}
+      : TestVp8Simulcast(VP8Encoder::Create(), VP8Decoder::Create()) {}
+
  protected:
-  virtual void SetUp() {
-    TestVp8Simulcast::SetUp();
-  }
-  virtual void TearDown() {
-    TestVp8Simulcast::TearDown();
-  }
+  virtual void SetUp() { TestVp8Simulcast::SetUp(); }
+  virtual void TearDown() { TestVp8Simulcast::TearDown(); }
 };
 
 TEST_F(TestVp8Impl, TestKeyFrameRequestsOnAllStreams) {

@@ -21,16 +21,15 @@ class VP8Encoder : public VideoEncoder {
  public:
   static VP8Encoder* Create();
 
-  virtual ~VP8Encoder() {};
+  virtual ~VP8Encoder() {}
 };  // end of VP8Encoder class
-
 
 class VP8Decoder : public VideoDecoder {
  public:
   static VP8Decoder* Create();
 
-  virtual ~VP8Decoder() {};
+  virtual ~VP8Decoder() {}
 };  // end of VP8Decoder class
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_

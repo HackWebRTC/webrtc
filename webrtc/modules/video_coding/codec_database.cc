@@ -218,8 +218,9 @@ bool VCMCodecDataBase::SetSendCodec(const VideoCodec* send_codec,
   if (new_send_codec.maxBitrate == 0) {
     // max is one bit per pixel
     new_send_codec.maxBitrate = (static_cast<int>(send_codec->height) *
-        static_cast<int>(send_codec->width) *
-        static_cast<int>(send_codec->maxFramerate)) / 1000;
+                                 static_cast<int>(send_codec->width) *
+                                 static_cast<int>(send_codec->maxFramerate)) /
+                                1000;
     if (send_codec->startBitrate > new_send_codec.maxBitrate) {
       // But if the user tries to set a higher start bit rate we will
       // increase the max accordingly.
@@ -282,8 +283,8 @@ VideoCodecType VCMCodecDataBase::SendCodec() const {
   return send_codec_.codecType;
 }
 
-bool VCMCodecDataBase::DeregisterExternalEncoder(
-    uint8_t payload_type, bool* was_send_codec) {
+bool VCMCodecDataBase::DeregisterExternalEncoder(uint8_t payload_type,
+                                                 bool* was_send_codec) {
   assert(was_send_codec);
   *was_send_codec = false;
   if (encoder_payload_type_ != payload_type) {
@@ -301,10 +302,9 @@ bool VCMCodecDataBase::DeregisterExternalEncoder(
   return true;
 }
 
-void VCMCodecDataBase::RegisterExternalEncoder(
-    VideoEncoder* external_encoder,
-    uint8_t payload_type,
-    bool internal_source) {
+void VCMCodecDataBase::RegisterExternalEncoder(VideoEncoder* external_encoder,
+                                               uint8_t payload_type,
+                                               bool internal_source) {
   // Since only one encoder can be used at a given time, only one external
   // encoder can be registered/used.
   external_encoder_ = external_encoder;
@@ -372,8 +372,7 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
          ++i) {
       if (memcmp(&new_send_codec.simulcastStream[i],
                  &send_codec_.simulcastStream[i],
-                 sizeof(new_send_codec.simulcastStream[i])) !=
-          0) {
+                 sizeof(new_send_codec.simulcastStream[i])) != 0) {
         return true;
       }
     }
@@ -429,10 +428,9 @@ bool VCMCodecDataBase::DecoderRegistered() const {
   return !dec_map_.empty();
 }
 
-bool VCMCodecDataBase::RegisterReceiveCodec(
-    const VideoCodec* receive_codec,
-    int number_of_cores,
-    bool require_key_frame) {
+bool VCMCodecDataBase::RegisterReceiveCodec(const VideoCodec* receive_codec,
+                                            int number_of_cores,
+                                            bool require_key_frame) {
   if (number_of_cores < 0) {
     return false;
   }
@@ -442,14 +440,12 @@ bool VCMCodecDataBase::RegisterReceiveCodec(
     return false;
   }
   VideoCodec* new_receive_codec = new VideoCodec(*receive_codec);
-  dec_map_[receive_codec->plType] = new VCMDecoderMapItem(new_receive_codec,
-                                                          number_of_cores,
-                                                          require_key_frame);
+  dec_map_[receive_codec->plType] = new VCMDecoderMapItem(
+      new_receive_codec, number_of_cores, require_key_frame);
   return true;
 }
 
-bool VCMCodecDataBase::DeregisterReceiveCodec(
-    uint8_t payload_type) {
+bool VCMCodecDataBase::DeregisterReceiveCodec(uint8_t payload_type) {
   DecoderMap::iterator it = dec_map_.find(payload_type);
   if (it == dec_map_.end()) {
     return false;
@@ -497,9 +493,10 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
     return nullptr;
   }
   VCMReceiveCallback* callback = decoded_frame_callback->UserReceiveCallback();
-  if (callback) callback->OnIncomingPayloadType(receive_codec_.plType);
-  if (ptr_decoder_->RegisterDecodeCompleteCallback(decoded_frame_callback)
-      < 0) {
+  if (callback)
+    callback->OnIncomingPayloadType(receive_codec_.plType);
+  if (ptr_decoder_->RegisterDecodeCompleteCallback(decoded_frame_callback) <
+      0) {
     ReleaseDecoder(ptr_decoder_);
     ptr_decoder_ = nullptr;
     memset(&receive_codec_, 0, sizeof(VideoCodec));

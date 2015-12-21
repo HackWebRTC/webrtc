@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_ERROR_CODES_H_
-#define WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_ERROR_CODES_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_ERROR_CODES_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_ERROR_CODES_H_
 
-#pragma message("WARNING: video_coding/codecs/interface is DEPRECATED; use video_coding/include")
+#pragma message("WARNING: video_coding/codecs/interface is DEPRECATED; "
+    "use video_coding/include")
 
 // NOTE: in sync with video_coding_module_defines.h
 
@@ -31,4 +32,4 @@
 #define WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE -13
 #define WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT -14
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_ERROR_CODES_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_ERROR_CODES_H_
