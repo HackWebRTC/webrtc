@@ -41,9 +41,7 @@ using webrtc::test::FrameGenerator;
 namespace webrtc {
 namespace vcm {
 namespace {
-enum {
-  kMaxNumberOfTemporalLayers = 3
-};
+enum { kMaxNumberOfTemporalLayers = 3 };
 
 struct Vp8StreamInfo {
   float framerate_fps[kMaxNumberOfTemporalLayers];
@@ -87,7 +85,7 @@ class EmptyFrameGenerator : public FrameGenerator {
 
 class PacketizationCallback : public VCMPacketizationCallback {
  public:
-  PacketizationCallback(Clock* clock)
+  explicit PacketizationCallback(Clock* clock)
       : clock_(clock), start_time_ms_(clock_->TimeInMilliseconds()) {}
 
   virtual ~PacketizationCallback() {}
@@ -211,16 +209,12 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
     memset(&settings_, 0, sizeof(settings_));
     EXPECT_EQ(0, VideoCodingModule::Codec(kVideoCodecVP8, &settings_));
     settings_.numberOfSimulcastStreams = kNumberOfStreams;
-    ConfigureStream(kDefaultWidth / 4,
-                    kDefaultHeight / 4,
-                    100,
+    ConfigureStream(kDefaultWidth / 4, kDefaultHeight / 4, 100,
                     &settings_.simulcastStream[0]);
-    ConfigureStream(kDefaultWidth / 2,
-                    kDefaultHeight / 2,
-                    500,
+    ConfigureStream(kDefaultWidth / 2, kDefaultHeight / 2, 500,
                     &settings_.simulcastStream[1]);
-    ConfigureStream(
-        kDefaultWidth, kDefaultHeight, 1200, &settings_.simulcastStream[2]);
+    ConfigureStream(kDefaultWidth, kDefaultHeight, 1200,
+                    &settings_.simulcastStream[2]);
     settings_.plType = kUnusedPayloadType;  // Use the mocked encoder.
     generator_.reset(
         new EmptyFrameGenerator(settings_.width, settings_.height));
@@ -244,12 +238,11 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
     assert(stream < kNumberOfStreams);
     std::vector<FrameType> frame_types(kNumberOfStreams, kVideoFrameDelta);
     frame_types[stream] = kVideoFrameKey;
-    EXPECT_CALL(
-        encoder_,
-        Encode(_,
-               _,
-               Pointee(ElementsAreArray(&frame_types[0], frame_types.size()))))
-        .Times(1).WillRepeatedly(Return(0));
+    EXPECT_CALL(encoder_,
+                Encode(_, _, Pointee(ElementsAreArray(&frame_types[0],
+                                                      frame_types.size()))))
+        .Times(1)
+        .WillRepeatedly(Return(0));
   }
 
   static void ConfigureStream(int width,

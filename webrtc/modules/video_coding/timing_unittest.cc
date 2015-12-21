@@ -55,8 +55,9 @@ TEST(ReceiverTiming, Tests) {
   clock.AdvanceTimeMilliseconds(1000);
   timing.SetJitterDelay(jitterDelayMs);
   timing.UpdateCurrentDelay(timeStamp);
-  waitTime = timing.MaxWaitingTime(timing.RenderTimeMs(
-      timeStamp, clock.TimeInMilliseconds()), clock.TimeInMilliseconds());
+  waitTime = timing.MaxWaitingTime(
+      timing.RenderTimeMs(timeStamp, clock.TimeInMilliseconds()),
+      clock.TimeInMilliseconds());
   // Since we gradually increase the delay we only get 100 ms every second.
   EXPECT_EQ(jitterDelayMs - 10, waitTime);
 
@@ -85,11 +86,10 @@ TEST(ReceiverTiming, Tests) {
   for (int i = 0; i < 10; i++) {
     int64_t startTimeMs = clock.TimeInMilliseconds();
     clock.AdvanceTimeMilliseconds(10);
-    timing.StopDecodeTimer(timeStamp,
-                           clock.TimeInMilliseconds() - startTimeMs,
-                           clock.TimeInMilliseconds(),
-                           timing.RenderTimeMs(
-                               timeStamp, clock.TimeInMilliseconds()));
+    timing.StopDecodeTimer(
+        timeStamp, clock.TimeInMilliseconds() - startTimeMs,
+        clock.TimeInMilliseconds(),
+        timing.RenderTimeMs(timeStamp, clock.TimeInMilliseconds()));
     timeStamp += 90000 / 25;
     clock.AdvanceTimeMilliseconds(1000 / 25 - 10);
     timing.IncomingTimestamp(timeStamp, clock.TimeInMilliseconds());
@@ -107,7 +107,7 @@ TEST(ReceiverTiming, Tests) {
   uint32_t minTotalDelayMs = 200;
   timing.set_min_playout_delay(minTotalDelayMs);
   clock.AdvanceTimeMilliseconds(5000);
-  timeStamp += 5*90000;
+  timeStamp += 5 * 90000;
   timing.UpdateCurrentDelay(timeStamp);
   const int kRenderDelayMs = 10;
   timing.set_render_delay(kRenderDelayMs);
@@ -123,7 +123,7 @@ TEST(ReceiverTiming, Tests) {
   // Reset playout delay.
   timing.set_min_playout_delay(0);
   clock.AdvanceTimeMilliseconds(5000);
-  timeStamp += 5*90000;
+  timeStamp += 5 * 90000;
   timing.UpdateCurrentDelay(timeStamp);
 }
 
@@ -137,8 +137,8 @@ TEST(ReceiverTiming, WrapAround) {
     timing.IncomingTimestamp(timestamp, clock.TimeInMilliseconds());
     clock.AdvanceTimeMilliseconds(1000 / kFramerate);
     timestamp += 90000 / kFramerate;
-    int64_t render_time = timing.RenderTimeMs(0xFFFFFFFFu,
-                                              clock.TimeInMilliseconds());
+    int64_t render_time =
+        timing.RenderTimeMs(0xFFFFFFFFu, clock.TimeInMilliseconds());
     EXPECT_EQ(3 * 1000 / kFramerate, render_time);
     render_time = timing.RenderTimeMs(89u,  // One second later in 90 kHz.
                                       clock.TimeInMilliseconds());

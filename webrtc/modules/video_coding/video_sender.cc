@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_types.h"
 
 #include <algorithm>  // std::max
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
@@ -126,14 +126,10 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   _nextFrameTypes.resize(VCM_MAX(sendCodec->numberOfSimulcastStreams, 1),
                          kVideoFrameDelta);
 
-  _mediaOpt.SetEncodingData(sendCodec->codecType,
-                            sendCodec->maxBitrate * 1000,
-                            sendCodec->startBitrate * 1000,
-                            sendCodec->width,
-                            sendCodec->height,
-                            sendCodec->maxFramerate,
-                            numLayers,
-                            maxPayloadSize);
+  _mediaOpt.SetEncodingData(sendCodec->codecType, sendCodec->maxBitrate * 1000,
+                            sendCodec->startBitrate * 1000, sendCodec->width,
+                            sendCodec->height, sendCodec->maxFramerate,
+                            numLayers, maxPayloadSize);
   return VCM_OK;
 }
 
@@ -158,8 +154,8 @@ VideoCodecType VideoSender::SendCodecBlocking() const {
 // Register an external decoder object.
 // This can not be used together with external decoder callbacks.
 void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                                             uint8_t payloadType,
-                                             bool internalSource /*= false*/) {
+                                          uint8_t payloadType,
+                                          bool internalSource /*= false*/) {
   RTC_DCHECK(main_thread_.CalledOnValidThread());
 
   rtc::CritScope lock(&send_crit_);
@@ -174,8 +170,8 @@ void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
     }
     return;
   }
-  _codecDataBase.RegisterExternalEncoder(
-      externalEncoder, payloadType, internalSource);
+  _codecDataBase.RegisterExternalEncoder(externalEncoder, payloadType,
+                                         internalSource);
 }
 
 // Get encode bitrate

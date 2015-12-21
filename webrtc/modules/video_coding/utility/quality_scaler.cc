@@ -26,8 +26,7 @@ QualityScaler::QualityScaler()
       downscale_shift_(0),
       framerate_down_(false),
       min_width_(kDefaultMinDownscaleDimension),
-      min_height_(kDefaultMinDownscaleDimension) {
-}
+      min_height_(kDefaultMinDownscaleDimension) {}
 
 void QualityScaler::Init(int low_qp_threshold,
                          int high_qp_threshold,
@@ -91,7 +90,7 @@ void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
       AdjustScale(false);
     }
   } else if (average_qp_.GetAverage(num_samples_, &avg_qp) &&
-      avg_qp <= low_qp_threshold_) {
+             avg_qp <= low_qp_threshold_) {
     if (use_framerate_reduction_ && framerate_down_) {
       target_framerate_ = -1;
       framerate_down_ = false;
@@ -104,7 +103,7 @@ void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
   assert(downscale_shift_ >= 0);
   for (int shift = downscale_shift_;
        shift > 0 && (res_.width / 2 >= min_width_) &&
-           (res_.height / 2 >= min_height_);
+       (res_.height / 2 >= min_height_);
        --shift) {
     res_.width /= 2;
     res_.height /= 2;
@@ -124,13 +123,8 @@ const VideoFrame& QualityScaler::GetScaledFrame(const VideoFrame& frame) {
   if (res.width == frame.width())
     return frame;
 
-  scaler_.Set(frame.width(),
-              frame.height(),
-              res.width,
-              res.height,
-              kI420,
-              kI420,
-              kScaleBox);
+  scaler_.Set(frame.width(), frame.height(), res.width, res.height, kI420,
+              kI420, kScaleBox);
   if (scaler_.Scale(frame, &scaled_frame_) != 0)
     return frame;
 

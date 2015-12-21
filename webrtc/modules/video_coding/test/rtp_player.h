@@ -24,12 +24,12 @@ namespace rtpplayer {
 
 class PayloadCodecTuple {
  public:
-  PayloadCodecTuple(uint8_t payload_type, const std::string& codec_name,
+  PayloadCodecTuple(uint8_t payload_type,
+                    const std::string& codec_name,
                     VideoCodecType codec_type)
       : name_(codec_name),
         payload_type_(payload_type),
-        codec_type_(codec_type) {
-  }
+        codec_type_(codec_type) {}
 
   const std::string& name() const { return name_; }
   uint8_t payload_type() const { return payload_type_; }
@@ -87,11 +87,14 @@ class RtpPlayerInterface {
 };
 
 RtpPlayerInterface* Create(const std::string& inputFilename,
-    PayloadSinkFactoryInterface* payloadSinkFactory, Clock* clock,
-    const PayloadTypes& payload_types, float lossRate, int64_t rttMs,
-    bool reordering);
+                           PayloadSinkFactoryInterface* payloadSinkFactory,
+                           Clock* clock,
+                           const PayloadTypes& payload_types,
+                           float lossRate,
+                           int64_t rttMs,
+                           bool reordering);
 
 }  // namespace rtpplayer
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_TEST_RTP_PLAYER_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_TEST_RTP_PLAYER_H_

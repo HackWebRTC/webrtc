@@ -29,9 +29,11 @@ namespace rtpplayer {
 class VcmPayloadSinkFactory : public PayloadSinkFactoryInterface {
  public:
   VcmPayloadSinkFactory(const std::string& base_out_filename,
-                        Clock* clock, bool protection_enabled,
+                        Clock* clock,
+                        bool protection_enabled,
                         VCMVideoProtection protection_method,
-                        int64_t rtt_ms, uint32_t render_delay_ms,
+                        int64_t rtt_ms,
+                        uint32_t render_delay_ms,
                         uint32_t min_playout_delay_ms);
   virtual ~VcmPayloadSinkFactory();
 

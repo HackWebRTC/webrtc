@@ -11,6 +11,9 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_
 
+#include <stdio.h>
+#include <string>
+
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -19,12 +22,9 @@
 #include "webrtc/modules/video_coding/test/video_source.h"
 #include "webrtc/typedefs.h"
 
-#include <stdio.h>
-#include <string>
-
 class RtpDataCallback : public webrtc::NullRtpData {
  public:
-  RtpDataCallback(webrtc::VideoCodingModule* vcm) : vcm_(vcm) {}
+  explicit RtpDataCallback(webrtc::VideoCodingModule* vcm) : vcm_(vcm) {}
   virtual ~RtpDataCallback() {}
 
   int32_t OnReceivedPayloadData(
@@ -40,4 +40,4 @@ class RtpDataCallback : public webrtc::NullRtpData {
 
 int RtpPlay(const CmdArgs& args);
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_

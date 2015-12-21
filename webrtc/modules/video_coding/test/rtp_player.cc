@@ -26,9 +26,9 @@
 #include "webrtc/test/rtp_file_reader.h"
 
 #if 1
-# define DEBUG_LOG1(text, arg)
+#define DEBUG_LOG1(text, arg)
 #else
-# define DEBUG_LOG1(text, arg) (printf(text "\n", arg))
+#define DEBUG_LOG1(text, arg) (printf(text "\n", arg))
 #endif
 
 namespace webrtc {
@@ -41,7 +41,9 @@ enum {
 
 class RawRtpPacket {
  public:
-  RawRtpPacket(const uint8_t* data, size_t length, uint32_t ssrc,
+  RawRtpPacket(const uint8_t* data,
+               size_t length,
+               uint32_t ssrc,
                uint16_t seq_num)
       : data_(new uint8_t[length]),
         length_(length),
@@ -140,7 +142,7 @@ class LostPackets {
     CriticalSectionScoped cs(crit_sect_.get());
     int count = 0;
     for (ConstRtpPacketIterator it = packets_.begin(); it != packets_.end();
-        ++it) {
+         ++it) {
       if ((*it)->resend_time_ms() >= 0) {
         count++;
       }
@@ -164,7 +166,7 @@ class LostPackets {
     printf("Packets still lost: %zd\n", packets_.size());
     printf("Sequence numbers:\n");
     for (ConstRtpPacketIterator it = packets_.begin(); it != packets_.end();
-        ++it) {
+         ++it) {
       printf("%u, ", (*it)->seq_num());
     }
     printf("\n");
@@ -231,17 +233,14 @@ class SsrcHandlers {
         kDefaultTransmissionTimeOffsetExtensionId);
 
     for (PayloadTypesIterator it = payload_types_.begin();
-        it != payload_types_.end(); ++it) {
+         it != payload_types_.end(); ++it) {
       VideoCodec codec;
       memset(&codec, 0, sizeof(codec));
-      strncpy(codec.plName, it->name().c_str(), sizeof(codec.plName)-1);
+      strncpy(codec.plName, it->name().c_str(), sizeof(codec.plName) - 1);
       codec.plType = it->payload_type();
       codec.codecType = it->codec_type();
-      if (handler->rtp_module_->RegisterReceivePayload(codec.plName,
-                                                       codec.plType,
-                                                       90000,
-                                                       0,
-                                                       codec.maxBitrate) < 0) {
+      if (handler->rtp_module_->RegisterReceivePayload(
+              codec.plName, codec.plType, 90000, 0, codec.maxBitrate) < 0) {
         return -1;
       }
     }
@@ -267,7 +266,8 @@ class SsrcHandlers {
  private:
   class Handler : public RtpStreamInterface {
    public:
-    Handler(uint32_t ssrc, const PayloadTypes& payload_types,
+    Handler(uint32_t ssrc,
+            const PayloadTypes& payload_types,
             LostPackets* lost_packets)
         : rtp_header_parser_(RtpHeaderParser::Create()),
           rtp_payload_registry_(new RTPPayloadRegistry(
@@ -290,9 +290,7 @@ class SsrcHandlers {
     }
 
     virtual uint32_t ssrc() const { return ssrc_; }
-    virtual const PayloadTypes& payload_types() const {
-      return payload_types_;
-    }
+    virtual const PayloadTypes& payload_types() const { return payload_types_; }
 
     rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
     rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
@@ -351,8 +349,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
   virtual int NextPacket(int64_t time_now) {
     // Send any packets ready to be resent.
     for (RawRtpPacket* packet = lost_packets_.NextPacketToResend(time_now);
-         packet != NULL;
-         packet = lost_packets_.NextPacketToResend(time_now)) {
+         packet != NULL; packet = lost_packets_.NextPacketToResend(time_now)) {
       int ret = SendPacket(packet->data(), packet->length());
       if (ret > 0) {
         printf("Resend: %08x:%u\n", packet->ssrc(), packet->seq_num());
@@ -392,8 +389,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
       if (!packet_source_->NextPacket(&next_packet_)) {
         end_of_file_ = true;
         return 0;
-      }
-      else if (next_packet_.length == 0) {
+      } else if (next_packet_.length == 0) {
         return 0;
       }
     }
@@ -406,7 +402,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
 
   virtual uint32_t TimeUntilNextPacket() const {
     int64_t time_left = (next_rtp_time_ - first_packet_rtp_time_) -
-        (clock_->TimeInMilliseconds() - first_packet_time_ms_);
+                        (clock_->TimeInMilliseconds() - first_packet_time_ms_);
     if (time_left < 0) {
       return 0;
     }
@@ -438,7 +434,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
 
       if (no_loss_startup_ > 0) {
         no_loss_startup_--;
-      } else if ((rand() + 1.0)/(RAND_MAX + 1.0) < loss_rate_) {
+      } else if ((rand() + 1.0) / (RAND_MAX + 1.0) < loss_rate_) {  // NOLINT
         uint16_t seq_num = header.sequenceNumber;
         lost_packets_.AddPacket(new RawRtpPacket(data, length, ssrc, seq_num));
         DEBUG_LOG1("Dropped packet: %d!", header.header.sequenceNumber);
@@ -470,9 +466,12 @@ class RtpPlayerImpl : public RtpPlayerInterface {
 };
 
 RtpPlayerInterface* Create(const std::string& input_filename,
-    PayloadSinkFactoryInterface* payload_sink_factory, Clock* clock,
-    const PayloadTypes& payload_types, float loss_rate, int64_t rtt_ms,
-    bool reordering) {
+                           PayloadSinkFactoryInterface* payload_sink_factory,
+                           Clock* clock,
+                           const PayloadTypes& payload_types,
+                           float loss_rate,
+                           int64_t rtt_ms,
+                           bool reordering) {
   rtc::scoped_ptr<test::RtpFileReader> packet_source(
       test::RtpFileReader::Create(test::RtpFileReader::kRtpDump,
                                   input_filename));

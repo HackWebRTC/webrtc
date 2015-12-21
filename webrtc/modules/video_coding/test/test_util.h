@@ -33,11 +33,13 @@ class NullEvent : public webrtc::EventWrapper {
 
   virtual bool Reset() { return true; }
 
-  virtual webrtc::EventTypeWrapper Wait(unsigned long max_time) {
+  virtual webrtc::EventTypeWrapper Wait(unsigned long max_time) {  // NOLINT
     return webrtc::kEventTimeout;
   }
 
-  virtual bool StartTimer(bool periodic, unsigned long time) { return true; }
+  virtual bool StartTimer(bool periodic, unsigned long time) {  // NOLINT
+    return true;
+  }
 
   virtual bool StopTimer() { return true; }
 };
@@ -46,9 +48,7 @@ class NullEventFactory : public webrtc::EventFactory {
  public:
   virtual ~NullEventFactory() {}
 
-  virtual webrtc::EventWrapper* CreateEvent() {
-    return new NullEvent;
-  }
+  virtual webrtc::EventWrapper* CreateEvent() { return new NullEvent; }
 };
 
 class FileOutputFrameReceiver : public webrtc::VCMReceiveCallback {
@@ -57,7 +57,7 @@ class FileOutputFrameReceiver : public webrtc::VCMReceiveCallback {
   virtual ~FileOutputFrameReceiver();
 
   // VCMReceiveCallback
-  virtual int32_t FrameToRender(webrtc::VideoFrame& video_frame);
+  virtual int32_t FrameToRender(webrtc::VideoFrame& video_frame);  // NOLINT
 
  private:
   std::string out_filename_;

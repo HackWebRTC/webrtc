@@ -25,8 +25,7 @@ class VCMTiming {
  public:
   // The primary timing component should be passed
   // if this is the dual timing component.
-  VCMTiming(Clock* clock,
-            VCMTiming* master_timing = NULL);
+  explicit VCMTiming(Clock* clock, VCMTiming* master_timing = NULL);
   ~VCMTiming();
 
   // Resets the timing to the initial state.

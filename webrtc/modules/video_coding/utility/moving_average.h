@@ -16,7 +16,7 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-template<class T>
+template <class T>
 class MovingAverage {
  public:
   MovingAverage();
@@ -30,17 +30,17 @@ class MovingAverage {
   std::list<T> samples_;
 };
 
-template<class T>
-MovingAverage<T>::MovingAverage() : sum_(static_cast<T>(0)) {
-}
+template <class T>
+MovingAverage<T>::MovingAverage()
+    : sum_(static_cast<T>(0)) {}
 
-template<class T>
+template <class T>
 void MovingAverage<T>::AddSample(T sample) {
   samples_.push_back(sample);
   sum_ += sample;
 }
 
-template<class T>
+template <class T>
 bool MovingAverage<T>::GetAverage(size_t num_samples, T* avg) {
   if (num_samples > samples_.size())
     return false;
@@ -55,13 +55,13 @@ bool MovingAverage<T>::GetAverage(size_t num_samples, T* avg) {
   return true;
 }
 
-template<class T>
+template <class T>
 void MovingAverage<T>::Reset() {
   sum_ = static_cast<T>(0);
   samples_.clear();
 }
 
-template<class T>
+template <class T>
 int MovingAverage<T>::size() {
   return samples_.size();
 }

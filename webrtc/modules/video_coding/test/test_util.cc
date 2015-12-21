@@ -28,12 +28,12 @@ CmdArgs::CmdArgs()
       rtt(0),
       inputFile(webrtc::test::ProjectRootPath() + "/resources/foreman_cif.yuv"),
       outputFile(webrtc::test::OutputPath() +
-          "video_coding_test_output_352x288.yuv") {
-}
+                 "video_coding_test_output_352x288.yuv") {}
 
 namespace {
 
-void SplitFilename(const std::string& filename, std::string* basename,
+void SplitFilename(const std::string& filename,
+                   std::string* basename,
                    std::string* extension) {
   assert(basename);
   assert(extension);
@@ -41,7 +41,7 @@ void SplitFilename(const std::string& filename, std::string* basename,
   std::string::size_type idx;
   idx = filename.rfind('.');
 
-  if(idx != std::string::npos) {
+  if (idx != std::string::npos) {
     *basename = filename.substr(0, idx);
     *extension = filename.substr(idx + 1);
   } else {
@@ -50,21 +50,24 @@ void SplitFilename(const std::string& filename, std::string* basename,
   }
 }
 
-std::string AppendWidthHeightCount(const std::string& filename, int width,
-                                   int height, int count) {
+std::string AppendWidthHeightCount(const std::string& filename,
+                                   int width,
+                                   int height,
+                                   int count) {
   std::string basename;
   std::string extension;
   SplitFilename(filename, &basename, &extension);
   std::stringstream ss;
-  ss << basename << "_" << count << "." <<  width << "_" << height << "." <<
-      extension;
+  ss << basename << "_" << count << "." << width << "_" << height << "."
+     << extension;
   return ss.str();
 }
 
 }  // namespace
 
 FileOutputFrameReceiver::FileOutputFrameReceiver(
-    const std::string& base_out_filename, uint32_t ssrc)
+    const std::string& base_out_filename,
+    uint32_t ssrc)
     : out_filename_(),
       out_file_(NULL),
       timing_file_(NULL),
@@ -80,8 +83,8 @@ FileOutputFrameReceiver::FileOutputFrameReceiver(
     SplitFilename(base_out_filename, &basename, &extension);
   }
   std::stringstream ss;
-  ss << basename << "_" << std::hex << std::setw(8) << std::setfill('0') <<
-      ssrc << "." << extension;
+  ss << basename << "_" << std::hex << std::setw(8) << std::setfill('0') << ssrc
+     << "." << extension;
   out_filename_ = ss.str();
 }
 
@@ -113,8 +116,8 @@ int32_t FileOutputFrameReceiver::FrameToRender(
     printf("New size: %dx%d\n", video_frame.width(), video_frame.height());
     width_ = video_frame.width();
     height_ = video_frame.height();
-    std::string filename_with_width_height = AppendWidthHeightCount(
-        out_filename_, width_, height_, count_);
+    std::string filename_with_width_height =
+        AppendWidthHeightCount(out_filename_, width_, height_, count_);
     ++count_;
     out_file_ = fopen(filename_with_width_height.c_str(), "wb");
     if (out_file_ == NULL) {
@@ -122,7 +125,7 @@ int32_t FileOutputFrameReceiver::FrameToRender(
     }
   }
   fprintf(timing_file_, "%u, %u\n", video_frame.timestamp(),
-      webrtc::MaskWord64ToUWord32(video_frame.render_time_ms()));
+          webrtc::MaskWord64ToUWord32(video_frame.render_time_ms()));
   if (PrintVideoFrame(video_frame, out_file_) < 0) {
     return -1;
   }
@@ -130,7 +133,7 @@ int32_t FileOutputFrameReceiver::FrameToRender(
 }
 
 webrtc::RtpVideoCodecTypes ConvertCodecType(const char* plname) {
-  if (strncmp(plname,"VP8" , 3) == 0) {
+  if (strncmp(plname, "VP8", 3) == 0) {
     return webrtc::kRtpVideoVp8;
   } else {
     // Default value.

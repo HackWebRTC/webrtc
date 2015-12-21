@@ -22,8 +22,7 @@
 namespace webrtc {
 
 StreamGenerator::StreamGenerator(uint16_t start_seq_num, int64_t current_time)
-    : packets_(), sequence_number_(start_seq_num), start_time_(current_time) {
-}
+    : packets_(), sequence_number_(start_seq_num), start_time_(current_time) {}
 
 void StreamGenerator::Init(uint16_t start_seq_num, int64_t current_time) {
   packets_.clear();
@@ -41,8 +40,8 @@ void StreamGenerator::GenerateFrame(FrameType type,
     const int packet_size =
         (kFrameSize + num_media_packets / 2) / num_media_packets;
     bool marker_bit = (i == num_media_packets - 1);
-    packets_.push_back(GeneratePacket(
-        sequence_number_, timestamp, packet_size, (i == 0), marker_bit, type));
+    packets_.push_back(GeneratePacket(sequence_number_, timestamp, packet_size,
+                                      (i == 0), marker_bit, type));
     ++sequence_number_;
   }
   for (int i = 0; i < num_empty_packets; ++i) {
@@ -104,7 +103,9 @@ bool StreamGenerator::NextPacket(VCMPacket* packet) {
   return true;
 }
 
-void StreamGenerator::DropLastPacket() { packets_.pop_back(); }
+void StreamGenerator::DropLastPacket() {
+  packets_.pop_back();
+}
 
 uint16_t StreamGenerator::NextSequenceNumber() const {
   if (packets_.empty())
@@ -112,7 +113,9 @@ uint16_t StreamGenerator::NextSequenceNumber() const {
   return packets_.front().seqNum;
 }
 
-int StreamGenerator::PacketsRemaining() const { return packets_.size(); }
+int StreamGenerator::PacketsRemaining() const {
+  return packets_.size();
+}
 
 std::list<VCMPacket>::iterator StreamGenerator::GetPacketIterator(int index) {
   std::list<VCMPacket>::iterator it = packets_.begin();

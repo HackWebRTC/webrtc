@@ -48,9 +48,9 @@ int RtpPlay(const CmdArgs& args) {
     output_file = webrtc::test::OutputPath() + "RtpPlay_decoded.yuv";
 
   webrtc::SimulatedClock clock(0);
-  webrtc::rtpplayer::VcmPayloadSinkFactory factory(output_file, &clock,
-      kConfigProtectionEnabled, kConfigProtectionMethod, kConfigRttMs,
-      kConfigRenderDelayMs, kConfigMinPlayoutDelayMs);
+  webrtc::rtpplayer::VcmPayloadSinkFactory factory(
+      output_file, &clock, kConfigProtectionEnabled, kConfigProtectionMethod,
+      kConfigRttMs, kConfigRenderDelayMs, kConfigMinPlayoutDelayMs);
   rtc::scoped_ptr<webrtc::rtpplayer::RtpPlayerInterface> rtp_player(
       webrtc::rtpplayer::Create(args.inputFile, &factory, &clock, payload_types,
                                 kConfigLossRate, kConfigRttMs,
@@ -63,7 +63,7 @@ int RtpPlay(const CmdArgs& args) {
   while ((ret = rtp_player->NextPacket(clock.TimeInMilliseconds())) == 0) {
     ret = factory.DecodeAndProcessAll(true);
     if (ret < 0 || (kConfigMaxRuntimeMs > -1 &&
-        clock.TimeInMilliseconds() >= kConfigMaxRuntimeMs)) {
+                    clock.TimeInMilliseconds() >= kConfigMaxRuntimeMs)) {
       break;
     }
     clock.AdvanceTimeMilliseconds(1);

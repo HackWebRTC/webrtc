@@ -10,17 +10,17 @@
 
 #include "webrtc/modules/video_coding/timing.h"
 
+#include <algorithm>
+
 #include "webrtc/modules/video_coding/internal_defines.h"
 #include "webrtc/modules/video_coding/jitter_buffer_common.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
 
-
 namespace webrtc {
 
-VCMTiming::VCMTiming(Clock* clock,
-                     VCMTiming* master_timing)
+VCMTiming::VCMTiming(Clock* clock, VCMTiming* master_timing)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       clock_(clock),
       master_(false),
@@ -120,8 +120,8 @@ void VCMTiming::UpdateCurrentDelay(uint32_t frame_timestamp) {
     // Not initialized, set current delay to target.
     current_delay_ms_ = target_delay_ms;
   } else if (target_delay_ms != current_delay_ms_) {
-    int64_t delay_diff_ms = static_cast<int64_t>(target_delay_ms) -
-        current_delay_ms_;
+    int64_t delay_diff_ms =
+        static_cast<int64_t>(target_delay_ms) - current_delay_ms_;
     // Never change the delay with more than 100 ms every second. If we're
     // changing the delay in too large steps we will get noticeable freezes. By
     // limiting the change we can increase the delay in smaller steps, which
@@ -130,11 +130,13 @@ void VCMTiming::UpdateCurrentDelay(uint32_t frame_timestamp) {
     int64_t max_change_ms = 0;
     if (frame_timestamp < 0x0000ffff && prev_frame_timestamp_ > 0xffff0000) {
       // wrap
-      max_change_ms = kDelayMaxChangeMsPerS * (frame_timestamp +
-          (static_cast<int64_t>(1) << 32) - prev_frame_timestamp_) / 90000;
+      max_change_ms = kDelayMaxChangeMsPerS *
+                      (frame_timestamp + (static_cast<int64_t>(1) << 32) -
+                       prev_frame_timestamp_) /
+                      90000;
     } else {
       max_change_ms = kDelayMaxChangeMsPerS *
-          (frame_timestamp - prev_frame_timestamp_) / 90000;
+                      (frame_timestamp - prev_frame_timestamp_) / 90000;
     }
     if (max_change_ms <= 0) {
       // Any changes less than 1 ms are truncated and
@@ -155,7 +157,7 @@ void VCMTiming::UpdateCurrentDelay(int64_t render_time_ms,
   CriticalSectionScoped cs(crit_sect_);
   uint32_t target_delay_ms = TargetDelayInternal();
   int64_t delayed_ms = actual_decode_time_ms -
-      (render_time_ms - MaxDecodeTimeMs() - render_delay_ms_);
+                       (render_time_ms - MaxDecodeTimeMs() - render_delay_ms_);
   if (delayed_ms < 0) {
     return;
   }
@@ -193,8 +195,8 @@ void VCMTiming::IncomingTimestamp(uint32_t time_stamp, int64_t now_ms) {
   ts_extrapolator_->Update(now_ms, time_stamp);
 }
 
-int64_t VCMTiming::RenderTimeMs(uint32_t frame_timestamp, int64_t now_ms)
-    const {
+int64_t VCMTiming::RenderTimeMs(uint32_t frame_timestamp,
+                                int64_t now_ms) const {
   CriticalSectionScoped cs(crit_sect_);
   const int64_t render_time_ms = RenderTimeMsInternal(frame_timestamp, now_ms);
   return render_time_ms;
@@ -203,7 +205,7 @@ int64_t VCMTiming::RenderTimeMs(uint32_t frame_timestamp, int64_t now_ms)
 int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,
                                         int64_t now_ms) const {
   int64_t estimated_complete_time_ms =
-    ts_extrapolator_->ExtrapolateLocalTime(frame_timestamp);
+      ts_extrapolator_->ExtrapolateLocalTime(frame_timestamp);
   if (estimated_complete_time_ms == -1) {
     estimated_complete_time_ms = now_ms;
   }
@@ -214,19 +216,19 @@ int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,
 }
 
 // Must be called from inside a critical section.
-int32_t VCMTiming::MaxDecodeTimeMs(FrameType frame_type /*= kVideoFrameDelta*/)
-    const {
+int32_t VCMTiming::MaxDecodeTimeMs(
+    FrameType frame_type /*= kVideoFrameDelta*/) const {
   const int32_t decode_time_ms = codec_timer_.RequiredDecodeTimeMs(frame_type);
   assert(decode_time_ms >= 0);
   return decode_time_ms;
 }
 
-uint32_t VCMTiming::MaxWaitingTime(int64_t render_time_ms, int64_t now_ms)
-    const {
+uint32_t VCMTiming::MaxWaitingTime(int64_t render_time_ms,
+                                   int64_t now_ms) const {
   CriticalSectionScoped cs(crit_sect_);
 
-  const int64_t max_wait_time_ms = render_time_ms - now_ms -
-      MaxDecodeTimeMs() - render_delay_ms_;
+  const int64_t max_wait_time_ms =
+      render_time_ms - now_ms - MaxDecodeTimeMs() - render_delay_ms_;
 
   if (max_wait_time_ms < 0) {
     return 0;
@@ -234,8 +236,8 @@ uint32_t VCMTiming::MaxWaitingTime(int64_t render_time_ms, int64_t now_ms)
   return static_cast<uint32_t>(max_wait_time_ms);
 }
 
-bool VCMTiming::EnoughTimeToDecode(uint32_t available_processing_time_ms)
-    const {
+bool VCMTiming::EnoughTimeToDecode(
+    uint32_t available_processing_time_ms) const {
   CriticalSectionScoped cs(crit_sect_);
   int32_t max_decode_time_ms = MaxDecodeTimeMs();
   if (max_decode_time_ms < 0) {
@@ -248,7 +250,8 @@ bool VCMTiming::EnoughTimeToDecode(uint32_t available_processing_time_ms)
     max_decode_time_ms = 1;
   }
   return static_cast<int32_t>(available_processing_time_ms) -
-      max_decode_time_ms > 0;
+             max_decode_time_ms >
+         0;
 }
 
 uint32_t VCMTiming::TargetVideoDelay() const {
@@ -258,7 +261,7 @@ uint32_t VCMTiming::TargetVideoDelay() const {
 
 uint32_t VCMTiming::TargetDelayInternal() const {
   return std::max(min_playout_delay_ms_,
-      jitter_delay_ms_ + MaxDecodeTimeMs() + render_delay_ms_);
+                  jitter_delay_ms_ + MaxDecodeTimeMs() + render_delay_ms_);
 }
 
 void VCMTiming::GetTimings(int* decode_ms,

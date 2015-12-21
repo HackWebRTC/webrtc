@@ -47,9 +47,7 @@ class VCMRobustnessTest : public ::testing::Test {
     vcm_->RegisterExternalDecoder(&decoder_, video_codec_.plType);
   }
 
-  virtual void TearDown() {
-    VideoCodingModule::Destroy(vcm_);
-  }
+  virtual void TearDown() { VideoCodingModule::Destroy(vcm_); }
 
   void InsertPacket(uint32_t timestamp,
                     uint16_t seq_no,
@@ -87,19 +85,17 @@ TEST_F(VCMRobustnessTest, TestHardNack) {
       .With(Args<0, 1>(ElementsAre(6, 7)))
       .Times(1);
   for (int ts = 0; ts <= 6000; ts += 3000) {
-    EXPECT_CALL(decoder_, Decode(AllOf(Field(&EncodedImage::_timeStamp, ts),
-                                       Field(&EncodedImage::_length,
-                                             kPayloadLen * 3),
-                                       Field(&EncodedImage::_completeFrame,
-                                             true)),
-                                 false, _, _, _))
+    EXPECT_CALL(decoder_,
+                Decode(AllOf(Field(&EncodedImage::_timeStamp, ts),
+                             Field(&EncodedImage::_length, kPayloadLen * 3),
+                             Field(&EncodedImage::_completeFrame, true)),
+                       false, _, _, _))
         .Times(1)
         .InSequence(s);
   }
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
-      VideoCodingModule::kHardNack,
-      kNoErrors));
+                        VideoCodingModule::kHardNack, kNoErrors));
 
   InsertPacket(0, 0, true, false, kVideoFrameKey);
   InsertPacket(0, 1, false, false, kVideoFrameKey);
@@ -136,14 +132,11 @@ TEST_F(VCMRobustnessTest, TestHardNack) {
 }
 
 TEST_F(VCMRobustnessTest, TestHardNackNoneDecoded) {
-  EXPECT_CALL(request_callback_, ResendPackets(_, _))
-      .Times(0);
-  EXPECT_CALL(frame_type_callback_, RequestKeyFrame())
-        .Times(1);
+  EXPECT_CALL(request_callback_, ResendPackets(_, _)).Times(0);
+  EXPECT_CALL(frame_type_callback_, RequestKeyFrame()).Times(1);
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
-      VideoCodingModule::kHardNack,
-      kNoErrors));
+                        VideoCodingModule::kHardNack, kNoErrors));
 
   InsertPacket(3000, 3, true, false, kVideoFrameDelta);
   InsertPacket(3000, 4, false, false, kVideoFrameDelta);
@@ -166,46 +159,43 @@ TEST_F(VCMRobustnessTest, TestModeNoneWithErrors) {
       .With(Args<0, 1>(ElementsAre(4)))
       .Times(0);
 
-  EXPECT_CALL(decoder_, Copy())
-      .Times(0);
-  EXPECT_CALL(decoderCopy_, Copy())
-      .Times(0);
+  EXPECT_CALL(decoder_, Copy()).Times(0);
+  EXPECT_CALL(decoderCopy_, Copy()).Times(0);
 
   // Decode operations
-  EXPECT_CALL(decoder_, Decode(AllOf(Field(&EncodedImage::_timeStamp, 0),
-                                     Field(&EncodedImage::_completeFrame,
-                                           true)),
-                               false, _, _, _))
-        .Times(1)
-        .InSequence(s1);
-  EXPECT_CALL(decoder_, Decode(AllOf(Field(&EncodedImage::_timeStamp, 3000),
-                                     Field(&EncodedImage::_completeFrame,
-                                           false)),
-                               false, _, _, _))
-        .Times(1)
-        .InSequence(s1);
-  EXPECT_CALL(decoder_, Decode(AllOf(Field(&EncodedImage::_timeStamp, 6000),
-                                     Field(&EncodedImage::_completeFrame,
-                                           true)),
-                               false, _, _, _))
-        .Times(1)
-        .InSequence(s1);
-  EXPECT_CALL(decoder_, Decode(AllOf(Field(&EncodedImage::_timeStamp, 9000),
-                                     Field(&EncodedImage::_completeFrame,
-                                           true)),
-                               false, _, _, _))
-        .Times(1)
-        .InSequence(s1);
+  EXPECT_CALL(decoder_,
+              Decode(AllOf(Field(&EncodedImage::_timeStamp, 0),
+                           Field(&EncodedImage::_completeFrame, true)),
+                     false, _, _, _))
+      .Times(1)
+      .InSequence(s1);
+  EXPECT_CALL(decoder_,
+              Decode(AllOf(Field(&EncodedImage::_timeStamp, 3000),
+                           Field(&EncodedImage::_completeFrame, false)),
+                     false, _, _, _))
+      .Times(1)
+      .InSequence(s1);
+  EXPECT_CALL(decoder_,
+              Decode(AllOf(Field(&EncodedImage::_timeStamp, 6000),
+                           Field(&EncodedImage::_completeFrame, true)),
+                     false, _, _, _))
+      .Times(1)
+      .InSequence(s1);
+  EXPECT_CALL(decoder_,
+              Decode(AllOf(Field(&EncodedImage::_timeStamp, 9000),
+                           Field(&EncodedImage::_completeFrame, true)),
+                     false, _, _, _))
+      .Times(1)
+      .InSequence(s1);
 
-  ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
-      VideoCodingModule::kNone,
-      kWithErrors));
+  ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(VideoCodingModule::kNone,
+                                                    kWithErrors));
 
   InsertPacket(0, 0, true, false, kVideoFrameKey);
   InsertPacket(0, 1, false, false, kVideoFrameKey);
   InsertPacket(0, 2, false, true, kVideoFrameKey);
   EXPECT_EQ(VCM_OK, vcm_->Decode(33));  // Decode timestamp 0.
-  EXPECT_EQ(VCM_OK, vcm_->Process());  // Expect no NACK list.
+  EXPECT_EQ(VCM_OK, vcm_->Process());   // Expect no NACK list.
 
   clock_->AdvanceTimeMilliseconds(33);
   InsertPacket(3000, 3, true, false, kVideoFrameDelta);
@@ -223,7 +213,7 @@ TEST_F(VCMRobustnessTest, TestModeNoneWithErrors) {
 
   clock_->AdvanceTimeMilliseconds(10);
   EXPECT_EQ(VCM_OK, vcm_->Decode(23));  // Decode timestamp 6000 complete.
-  EXPECT_EQ(VCM_OK, vcm_->Process());  // Expect no NACK list.
+  EXPECT_EQ(VCM_OK, vcm_->Process());   // Expect no NACK list.
 
   clock_->AdvanceTimeMilliseconds(23);
   InsertPacket(3000, 4, false, false, kVideoFrameDelta);

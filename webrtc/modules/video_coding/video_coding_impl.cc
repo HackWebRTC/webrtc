@@ -8,33 +8,33 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/video_coding/video_coding_impl.h"
+
+#include <algorithm>
+
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/packet.h"
-#include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace vcm {
 
-int64_t
-VCMProcessTimer::Period() const {
-    return _periodMs;
+int64_t VCMProcessTimer::Period() const {
+  return _periodMs;
 }
 
-int64_t
-VCMProcessTimer::TimeUntilProcess() const {
-    const int64_t time_since_process = _clock->TimeInMilliseconds() - _latestMs;
-    const int64_t time_until_process = _periodMs - time_since_process;
-    return std::max<int64_t>(time_until_process, 0);
+int64_t VCMProcessTimer::TimeUntilProcess() const {
+  const int64_t time_since_process = _clock->TimeInMilliseconds() - _latestMs;
+  const int64_t time_until_process = _periodMs - time_since_process;
+  return std::max<int64_t>(time_until_process, 0);
 }
 
-void
-VCMProcessTimer::Processed() {
-    _latestMs = _clock->TimeInMilliseconds();
+void VCMProcessTimer::Processed() {
+  _latestMs = _clock->TimeInMilliseconds();
 }
 }  // namespace vcm
 
@@ -59,8 +59,8 @@ class EncodedImageCallbackWrapper : public EncodedImageCallback {
                           const RTPFragmentationHeader* fragmentation) {
     CriticalSectionScoped cs(cs_.get());
     if (callback_)
-      return callback_->Encoded(
-          encoded_image, codec_specific_info, fragmentation);
+      return callback_->Encoded(encoded_image, codec_specific_info,
+                                fragmentation);
     return 0;
   }
 
@@ -84,9 +84,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
         receiver_(clock, event_factory),
         own_event_factory_(owns_event_factory ? event_factory : NULL) {}
 
-  virtual ~VideoCodingModuleImpl() {
-    own_event_factory_.reset();
-  }
+  virtual ~VideoCodingModuleImpl() { own_event_factory_.reset(); }
 
   int64_t TimeUntilNextProcess() override {
     int64_t sender_time = sender_.TimeUntilNextProcess();
@@ -321,9 +319,8 @@ VideoCodingModule* VideoCodingModule::Create(
                                    encoder_rate_observer, qm_settings_callback);
 }
 
-VideoCodingModule* VideoCodingModule::Create(
-    Clock* clock,
-    EventFactory* event_factory) {
+VideoCodingModule* VideoCodingModule::Create(Clock* clock,
+                                             EventFactory* event_factory) {
   assert(clock);
   assert(event_factory);
   return new VideoCodingModuleImpl(clock, event_factory, false, nullptr,
