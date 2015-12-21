@@ -281,17 +281,18 @@ void VCMJitterBuffer::UpdateHistograms() {
     return;
   }
 
-  RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DiscardedPacketsInPercent",
-      num_discarded_packets_ * 100 / num_packets_);
-  RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DuplicatedPacketsInPercent",
-      num_duplicated_packets_ * 100 / num_packets_);
+  RTC_HISTOGRAM_PERCENTAGE_SPARSE("WebRTC.Video.DiscardedPacketsInPercent",
+                                  num_discarded_packets_ * 100 / num_packets_);
+  RTC_HISTOGRAM_PERCENTAGE_SPARSE("WebRTC.Video.DuplicatedPacketsInPercent",
+                                  num_duplicated_packets_ * 100 / num_packets_);
 
   int total_frames =
       receive_statistics_.key_frames + receive_statistics_.delta_frames;
   if (total_frames > 0) {
-    RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.CompleteFramesReceivedPerSecond",
+    RTC_HISTOGRAM_COUNTS_SPARSE_100(
+        "WebRTC.Video.CompleteFramesReceivedPerSecond",
         static_cast<int>((total_frames / elapsed_sec) + 0.5f));
-    RTC_HISTOGRAM_COUNTS_1000(
+    RTC_HISTOGRAM_COUNTS_SPARSE_1000(
         "WebRTC.Video.KeyFramesReceivedInPermille",
         static_cast<int>(
             (receive_statistics_.key_frames * 1000.0f / total_frames) + 0.5f));

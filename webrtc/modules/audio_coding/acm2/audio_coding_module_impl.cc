@@ -97,7 +97,7 @@ void AudioCodingModuleImpl::ChangeLogger::MaybeLog(int value) {
   if (value != last_value_ || first_time_) {
     first_time_ = false;
     last_value_ = value;
-    RTC_HISTOGRAM_COUNTS_100(histogram_name_, value);
+    RTC_HISTOGRAM_COUNTS_SPARSE_100(histogram_name_, value);
   }
 }
 

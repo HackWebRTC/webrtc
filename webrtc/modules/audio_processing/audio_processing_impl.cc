@@ -1346,8 +1346,9 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
         capture_nonlocked_.stream_delay_ms - capture_.last_stream_delay_ms;
     if (diff_stream_delay_ms > kMinDiffDelayMs &&
         capture_.last_stream_delay_ms != 0) {
-      RTC_HISTOGRAM_COUNTS("WebRTC.Audio.PlatformReportedStreamDelayJump",
-                           diff_stream_delay_ms, kMinDiffDelayMs, 1000, 100);
+      RTC_HISTOGRAM_COUNTS_SPARSE(
+          "WebRTC.Audio.PlatformReportedStreamDelayJump", diff_stream_delay_ms,
+          kMinDiffDelayMs, 1000, 100);
       if (capture_.stream_delay_jumps == -1) {
         capture_.stream_delay_jumps = 0;  // Activate counter if needed.
       }
@@ -1364,9 +1365,9 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
         aec_system_delay_ms - capture_.last_aec_system_delay_ms;
     if (diff_aec_system_delay_ms > kMinDiffDelayMs &&
         capture_.last_aec_system_delay_ms != 0) {
-      RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AecSystemDelayJump",
-                           diff_aec_system_delay_ms, kMinDiffDelayMs, 1000,
-                           100);
+      RTC_HISTOGRAM_COUNTS_SPARSE("WebRTC.Audio.AecSystemDelayJump",
+                                  diff_aec_system_delay_ms, kMinDiffDelayMs,
+                                  1000, 100);
       if (capture_.aec_system_delay_jumps == -1) {
         capture_.aec_system_delay_jumps = 0;  // Activate counter if needed.
       }
@@ -1382,7 +1383,7 @@ void AudioProcessingImpl::UpdateHistogramsOnCallEnd() {
   rtc::CritScope cs_capture(&crit_capture_);
 
   if (capture_.stream_delay_jumps > -1) {
-    RTC_HISTOGRAM_ENUMERATION(
+    RTC_HISTOGRAM_ENUMERATION_SPARSE(
         "WebRTC.Audio.NumOfPlatformReportedStreamDelayJumps",
         capture_.stream_delay_jumps, 51);
   }
@@ -1390,8 +1391,8 @@ void AudioProcessingImpl::UpdateHistogramsOnCallEnd() {
   capture_.last_stream_delay_ms = 0;
 
   if (capture_.aec_system_delay_jumps > -1) {
-    RTC_HISTOGRAM_ENUMERATION("WebRTC.Audio.NumOfAecSystemDelayJumps",
-                              capture_.aec_system_delay_jumps, 51);
+    RTC_HISTOGRAM_ENUMERATION_SPARSE("WebRTC.Audio.NumOfAecSystemDelayJumps",
+                                     capture_.aec_system_delay_jumps, 51);
   }
   capture_.aec_system_delay_jumps = -1;
   capture_.last_aec_system_delay_ms = 0;

@@ -57,7 +57,7 @@ HistogramCodecType PayloadNameToHistogramCodecType(
 }
 
 void UpdateCodecTypeHistogram(const std::string& payload_name) {
-  RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.Encoder.CodecType",
+  RTC_HISTOGRAM_ENUMERATION_SPARSE("WebRTC.Video.Encoder.CodecType",
       PayloadNameToHistogramCodecType(payload_name), kVideoMax);
 }
 }  // namespace
@@ -98,56 +98,63 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms() {
   int in_height = input_height_counter_.Avg(kMinRequiredSamples);
   int in_fps = round(input_frame_rate_tracker_.ComputeTotalRate());
   if (in_width != -1) {
-    RTC_HISTOGRAM_COUNTS_10000(uma_prefix_ + "InputWidthInPixels", in_width);
-    RTC_HISTOGRAM_COUNTS_10000(uma_prefix_ + "InputHeightInPixels", in_height);
-    RTC_HISTOGRAM_COUNTS_100(uma_prefix_ + "InputFramesPerSecond", in_fps);
+    RTC_HISTOGRAM_COUNTS_SPARSE_10000(uma_prefix_ + "InputWidthInPixels",
+                                      in_width);
+    RTC_HISTOGRAM_COUNTS_SPARSE_10000(uma_prefix_ + "InputHeightInPixels",
+                                      in_height);
+    RTC_HISTOGRAM_COUNTS_SPARSE_100(uma_prefix_ + "InputFramesPerSecond",
+                                    in_fps);
   }
   int sent_width = sent_width_counter_.Avg(kMinRequiredSamples);
   int sent_height = sent_height_counter_.Avg(kMinRequiredSamples);
   int sent_fps = round(sent_frame_rate_tracker_.ComputeTotalRate());
   if (sent_width != -1) {
-    RTC_HISTOGRAM_COUNTS_10000(uma_prefix_ + "SentWidthInPixels", sent_width);
-    RTC_HISTOGRAM_COUNTS_10000(uma_prefix_ + "SentHeightInPixels", sent_height);
-    RTC_HISTOGRAM_COUNTS_100(uma_prefix_ + "SentFramesPerSecond", sent_fps);
+    RTC_HISTOGRAM_COUNTS_SPARSE_10000(uma_prefix_ + "SentWidthInPixels",
+                                      sent_width);
+    RTC_HISTOGRAM_COUNTS_SPARSE_10000(uma_prefix_ + "SentHeightInPixels",
+                                      sent_height);
+    RTC_HISTOGRAM_COUNTS_SPARSE_100(uma_prefix_ + "SentFramesPerSecond",
+                                    sent_fps);
   }
   int encode_ms = encode_time_counter_.Avg(kMinRequiredSamples);
   if (encode_ms != -1)
-    RTC_HISTOGRAM_COUNTS_1000(uma_prefix_ + "EncodeTimeInMs", encode_ms);
+    RTC_HISTOGRAM_COUNTS_SPARSE_1000(uma_prefix_ + "EncodeTimeInMs", encode_ms);
 
   int key_frames_permille = key_frame_counter_.Permille(kMinRequiredSamples);
   if (key_frames_permille != -1) {
-    RTC_HISTOGRAM_COUNTS_1000(uma_prefix_ + "KeyFramesSentInPermille",
-                              key_frames_permille);
+    RTC_HISTOGRAM_COUNTS_SPARSE_1000(uma_prefix_ + "KeyFramesSentInPermille",
+                                     key_frames_permille);
   }
   int quality_limited =
       quality_limited_frame_counter_.Percent(kMinRequiredSamples);
   if (quality_limited != -1) {
-    RTC_HISTOGRAM_PERCENTAGE(uma_prefix_ + "QualityLimitedResolutionInPercent",
-                             quality_limited);
+    RTC_HISTOGRAM_PERCENTAGE_SPARSE(
+        uma_prefix_ + "QualityLimitedResolutionInPercent", quality_limited);
   }
   int downscales = quality_downscales_counter_.Avg(kMinRequiredSamples);
   if (downscales != -1) {
-    RTC_HISTOGRAM_ENUMERATION(
+    RTC_HISTOGRAM_ENUMERATION_SPARSE(
         uma_prefix_ + "QualityLimitedResolutionDownscales", downscales, 20);
   }
   int bw_limited = bw_limited_frame_counter_.Percent(kMinRequiredSamples);
   if (bw_limited != -1) {
-    RTC_HISTOGRAM_PERCENTAGE(
+    RTC_HISTOGRAM_PERCENTAGE_SPARSE(
         uma_prefix_ + "BandwidthLimitedResolutionInPercent", bw_limited);
   }
   int num_disabled = bw_resolutions_disabled_counter_.Avg(kMinRequiredSamples);
   if (num_disabled != -1) {
-    RTC_HISTOGRAM_ENUMERATION(
+    RTC_HISTOGRAM_ENUMERATION_SPARSE(
         uma_prefix_ + "BandwidthLimitedResolutionsDisabled", num_disabled, 10);
   }
   int delay_ms = delay_counter_.Avg(kMinRequiredSamples);
   if (delay_ms != -1)
-    RTC_HISTOGRAM_COUNTS_100000(uma_prefix_ + "SendSideDelayInMs", delay_ms);
+    RTC_HISTOGRAM_COUNTS_SPARSE_100000(uma_prefix_ + "SendSideDelayInMs",
+                                       delay_ms);
 
   int max_delay_ms = max_delay_counter_.Avg(kMinRequiredSamples);
   if (max_delay_ms != -1) {
-    RTC_HISTOGRAM_COUNTS_100000(uma_prefix_ + "SendSideDelayMaxInMs",
-                                max_delay_ms);
+    RTC_HISTOGRAM_COUNTS_SPARSE_100000(uma_prefix_ + "SendSideDelayMaxInMs",
+                                       max_delay_ms);
   }
 }
 
