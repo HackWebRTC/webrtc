@@ -1652,7 +1652,18 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
   RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
-TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
+// Disabled on LinuxAsan:
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5382
+#if defined(ADDRESS_SANITIZER) && defined(WEBRTC_LINUX)
+#define MAYBE_ReconfigureBitratesSetsEncoderBitratesCorrectly \
+  DISABLED_ReconfigureBitratesSetsEncoderBitratesCorrectly
+#else
+#define MAYBE_ReconfigureBitratesSetsEncoderBitratesCorrectly \
+  ReconfigureBitratesSetsEncoderBitratesCorrectly
+#endif
+
+TEST_F(VideoSendStreamTest,
+       MAYBE_ReconfigureBitratesSetsEncoderBitratesCorrectly) {
   // These are chosen to be "kind of odd" to not be accidentally checked against
   // default values.
   static const int kMinBitrateKbps = 137;
