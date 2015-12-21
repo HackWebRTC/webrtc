@@ -77,38 +77,6 @@ enum {
 };
 
 /*
- * Time routines.
- */
-
-uint32_t GetCurrentRTP(Clock* clock, uint32_t freq) {
-  const bool use_global_clock = (clock == NULL);
-  Clock* local_clock = clock;
-  if (use_global_clock) {
-    local_clock = Clock::GetRealTimeClock();
-  }
-  uint32_t secs = 0, frac = 0;
-  local_clock->CurrentNtp(secs, frac);
-  if (use_global_clock) {
-    delete local_clock;
-  }
-  return ConvertNTPTimeToRTP(secs, frac, freq);
-}
-
-uint32_t ConvertNTPTimeToRTP(uint32_t NTPsec, uint32_t NTPfrac, uint32_t freq) {
-  float ftemp = (float)NTPfrac / (float)NTP_FRAC;
-  uint32_t tmp = (uint32_t)(ftemp * freq);
-  return NTPsec * freq + tmp;
-}
-
-uint32_t ConvertNTPTimeToMS(uint32_t NTPsec, uint32_t NTPfrac) {
-  int freq = 1000;
-  float ftemp = (float)NTPfrac / (float)NTP_FRAC;
-  uint32_t tmp = (uint32_t)(ftemp * freq);
-  uint32_t MStime = NTPsec * freq + tmp;
-  return MStime;
-}
-
-/*
  * Misc utility routines
  */
 

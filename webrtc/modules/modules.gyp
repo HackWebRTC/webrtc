@@ -328,6 +328,7 @@
                 'rtp_rtcp/source/rtp_rtcp_impl_unittest.cc',
                 'rtp_rtcp/source/rtp_header_extension_unittest.cc',
                 'rtp_rtcp/source/rtp_sender_unittest.cc',
+                'rtp_rtcp/source/time_util_unittest.cc',
                 'rtp_rtcp/source/vp8_partition_aggregator_unittest.cc',
                 'rtp_rtcp/test/testAPI/test_api.cc',
                 'rtp_rtcp/test/testAPI/test_api.h',

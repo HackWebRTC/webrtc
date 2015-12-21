@@ -19,6 +19,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
@@ -52,9 +53,7 @@ class StreamStatisticianImpl : public StreamStatistician {
  private:
   bool InOrderPacketInternal(uint16_t sequence_number) const;
   RtcpStatistics CalculateRtcpStatistics();
-  void UpdateJitter(const RTPHeader& header,
-                    uint32_t receive_time_secs,
-                    uint32_t receive_time_frac);
+  void UpdateJitter(const RTPHeader& header, NtpTime receive_time);
   void UpdateCounters(const RTPHeader& rtp_header,
                       size_t packet_length,
                       bool retransmitted);
@@ -73,8 +72,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   uint32_t jitter_q4_transmission_time_offset_;
 
   int64_t last_receive_time_ms_;
-  uint32_t last_receive_time_secs_;
-  uint32_t last_receive_time_frac_;
+  NtpTime last_receive_time_ntp_;
   uint32_t last_received_timestamp_;
   int32_t last_received_transmission_time_offset_;
   uint16_t received_seq_first_;

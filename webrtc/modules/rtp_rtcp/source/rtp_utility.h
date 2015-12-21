@@ -46,15 +46,6 @@ namespace RtpUtility {
 
     typedef std::map<int8_t, Payload*> PayloadTypeMap;
 
-    // Return the current RTP timestamp from the NTP timestamp
-    // returned by the specified clock.
-    uint32_t GetCurrentRTP(Clock* clock, uint32_t freq);
-
-    // Return the current RTP absolute timestamp.
-    uint32_t ConvertNTPTimeToRTP(uint32_t NTPsec,
-                                 uint32_t NTPfrac,
-                                 uint32_t freq);
-
     uint32_t pow2(uint8_t exp);
 
     // Returns true if |newTimestamp| is older than |existingTimestamp|.

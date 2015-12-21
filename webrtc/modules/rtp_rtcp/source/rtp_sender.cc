@@ -21,6 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
+#include "webrtc/modules/rtp_rtcp/source/time_util.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
@@ -1643,7 +1644,7 @@ uint16_t RTPSender::UpdateTransportSequenceNumber(
 void RTPSender::SetSendingStatus(bool enabled) {
   if (enabled) {
     uint32_t frequency_hz = SendPayloadFrequency();
-    uint32_t RTPtime = RtpUtility::GetCurrentRTP(clock_, frequency_hz);
+    uint32_t RTPtime = CurrentRtp(*clock_, frequency_hz);
 
     // Will be ignored if it's already configured via API.
     SetStartTimestamp(RTPtime, false);
