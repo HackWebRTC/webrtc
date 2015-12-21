@@ -13,54 +13,55 @@
 
 #include "webrtc/typedefs.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-class VCMInterFrameDelay
-{
-public:
-    VCMInterFrameDelay(int64_t currentWallClock);
+class VCMInterFrameDelay {
+ public:
+  explicit VCMInterFrameDelay(int64_t currentWallClock);
 
-    // Resets the estimate. Zeros are given as parameters.
-    void Reset(int64_t currentWallClock);
+  // Resets the estimate. Zeros are given as parameters.
+  void Reset(int64_t currentWallClock);
 
-    // Calculates the delay of a frame with the given timestamp.
-    // This method is called when the frame is complete.
-    //
-    // Input:
-    //          - timestamp         : RTP timestamp of a received frame
-    //          - *delay            : Pointer to memory where the result should be stored
-    //          - currentWallClock  : The current time in milliseconds.
-    //                                Should be -1 for normal operation, only used for testing.
-    // Return value                 : true if OK, false when reordered timestamps
-    bool CalculateDelay(uint32_t timestamp,
-                        int64_t *delay,
-                        int64_t currentWallClock);
+  // Calculates the delay of a frame with the given timestamp.
+  // This method is called when the frame is complete.
+  //
+  // Input:
+  //          - timestamp         : RTP timestamp of a received frame
+  //          - *delay            : Pointer to memory where the result should be
+  //          stored
+  //          - currentWallClock  : The current time in milliseconds.
+  //                                Should be -1 for normal operation, only used
+  //                                for testing.
+  // Return value                 : true if OK, false when reordered timestamps
+  bool CalculateDelay(uint32_t timestamp,
+                      int64_t* delay,
+                      int64_t currentWallClock);
 
-    // Returns the current difference between incoming timestamps
-    //
-    // Return value                 : Wrap-around compensated difference between incoming
-    //                                timestamps.
-    uint32_t CurrentTimeStampDiffMs() const;
+  // Returns the current difference between incoming timestamps
+  //
+  // Return value                 : Wrap-around compensated difference between
+  // incoming
+  //                                timestamps.
+  uint32_t CurrentTimeStampDiffMs() const;
 
-private:
-    // Controls if the RTP timestamp counter has had a wrap around
-    // between the current and the previously received frame.
-    //
-    // Input:
-    //          - timestmap         : RTP timestamp of the current frame.
-    void CheckForWrapArounds(uint32_t timestamp);
+ private:
+  // Controls if the RTP timestamp counter has had a wrap around
+  // between the current and the previously received frame.
+  //
+  // Input:
+  //          - timestmap         : RTP timestamp of the current frame.
+  void CheckForWrapArounds(uint32_t timestamp);
 
-    int64_t         _zeroWallClock; // Local timestamp of the first video packet received
-    int32_t         _wrapArounds;   // Number of wrapArounds detected
-    // The previous timestamp passed to the delay estimate
-    uint32_t        _prevTimestamp;
-    // The previous wall clock timestamp used by the delay estimate
-    int64_t         _prevWallClock;
-    // Wrap-around compensated difference between incoming timestamps
-    int64_t         _dTS;
+  int64_t _zeroWallClock;  // Local timestamp of the first video packet received
+  int32_t _wrapArounds;    // Number of wrapArounds detected
+  // The previous timestamp passed to the delay estimate
+  uint32_t _prevTimestamp;
+  // The previous wall clock timestamp used by the delay estimate
+  int64_t _prevWallClock;
+  // Wrap-around compensated difference between incoming timestamps
+  int64_t _dTS;
 };
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_INTER_FRAME_DELAY_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_INTER_FRAME_DELAY_H_

@@ -8,12 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/video_coding/generic_encoder.h"
+
+#include <vector>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
-#include "webrtc/modules/video_coding/generic_encoder.h"
 #include "webrtc/modules/video_coding/media_optimization.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
@@ -28,8 +31,7 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
       rtp->codec = kRtpVideoVp8;
       rtp->codecHeader.VP8.InitRTPVideoHeaderVP8();
       rtp->codecHeader.VP8.pictureId = info->codecSpecific.VP8.pictureId;
-      rtp->codecHeader.VP8.nonReference =
-          info->codecSpecific.VP8.nonReference;
+      rtp->codecHeader.VP8.nonReference = info->codecSpecific.VP8.nonReference;
       rtp->codecHeader.VP8.temporalIdx = info->codecSpecific.VP8.temporalIdx;
       rtp->codecHeader.VP8.layerSync = info->codecSpecific.VP8.layerSync;
       rtp->codecHeader.VP8.tl0PicIdx = info->codecSpecific.VP8.tl0PicIdx;
@@ -89,7 +91,7 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
 }
 }  // namespace
 
-//#define DEBUG_ENCODER_BIT_STREAM
+// #define DEBUG_ENCODER_BIT_STREAM
 
 VCMGenericEncoder::VCMGenericEncoder(
     VideoEncoder* encoder,
@@ -195,10 +197,8 @@ EncoderParameters VCMGenericEncoder::GetEncoderParameters() const {
   return encoder_params_;
 }
 
-int32_t
-VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
-{
-    return encoder_->SetPeriodicKeyFrames(enable);
+int32_t VCMGenericEncoder::SetPeriodicKeyFrames(bool enable) {
+  return encoder_->SetPeriodicKeyFrames(enable);
 }
 
 int32_t VCMGenericEncoder::RequestFrame(
@@ -207,10 +207,8 @@ int32_t VCMGenericEncoder::RequestFrame(
   return encoder_->Encode(image, NULL, &frame_types);
 }
 
-bool
-VCMGenericEncoder::InternalSource() const
-{
-    return internal_source_;
+bool VCMGenericEncoder::InternalSource() const {
+  return internal_source_;
 }
 
 void VCMGenericEncoder::OnDroppedFrame() {
@@ -225,9 +223,9 @@ int VCMGenericEncoder::GetTargetFramerate() {
   return encoder_->GetTargetFramerate();
 }
 
- /***************************
-  * Callback Implementation
-  ***************************/
+/***************************
+ * Callback Implementation
+ ***************************/
 VCMEncodedFrameCallback::VCMEncodedFrameCallback(
     EncodedImageCallback* post_encode_callback)
     : send_callback_(),
@@ -242,22 +240,20 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
 #endif
 {
 #ifdef DEBUG_ENCODER_BIT_STREAM
-    _bitStreamAfterEncoder = fopen("encoderBitStream.bit", "wb");
+  _bitStreamAfterEncoder = fopen("encoderBitStream.bit", "wb");
 #endif
 }
 
-VCMEncodedFrameCallback::~VCMEncodedFrameCallback()
-{
+VCMEncodedFrameCallback::~VCMEncodedFrameCallback() {
 #ifdef DEBUG_ENCODER_BIT_STREAM
-    fclose(_bitStreamAfterEncoder);
+  fclose(_bitStreamAfterEncoder);
 #endif
 }
 
-int32_t
-VCMEncodedFrameCallback::SetTransportCallback(VCMPacketizationCallback* transport)
-{
-    send_callback_ = transport;
-    return VCM_OK;
+int32_t VCMEncodedFrameCallback::SetTransportCallback(
+    VCMPacketizationCallback* transport) {
+  send_callback_ = transport;
+  return VCM_OK;
 }
 
 int32_t VCMEncodedFrameCallback::Encoded(

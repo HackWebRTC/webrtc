@@ -53,11 +53,9 @@ void UpdateProtectionCallback(
   key_fec_params.fec_mask_type = kFecMaskRandom;
 
   // TODO(Marco): Pass FEC protection values per layer.
-  video_protection_callback->ProtectionRequest(&delta_fec_params,
-                                               &key_fec_params,
-                                               video_rate_bps,
-                                               nack_overhead_rate_bps,
-                                               fec_overhead_rate_bps);
+  video_protection_callback->ProtectionRequest(
+      &delta_fec_params, &key_fec_params, video_rate_bps,
+      nack_overhead_rate_bps, fec_overhead_rate_bps);
 }
 }  // namespace
 
@@ -115,8 +113,8 @@ MediaOptimization::~MediaOptimization(void) {
 
 void MediaOptimization::Reset() {
   CriticalSectionScoped lock(crit_sect_.get());
-  SetEncodingDataInternal(
-      kVideoCodecUnknown, 0, 0, 0, 0, 0, 0, max_payload_size_);
+  SetEncodingDataInternal(kVideoCodecUnknown, 0, 0, 0, 0, 0, 0,
+                          max_payload_size_);
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
   incoming_frame_rate_ = 0.0;
   frame_dropper_->Reset();
@@ -149,14 +147,8 @@ void MediaOptimization::SetEncodingData(VideoCodecType send_codec_type,
                                         int num_layers,
                                         int32_t mtu) {
   CriticalSectionScoped lock(crit_sect_.get());
-  SetEncodingDataInternal(send_codec_type,
-                          max_bit_rate,
-                          frame_rate,
-                          target_bitrate,
-                          width,
-                          height,
-                          num_layers,
-                          mtu);
+  SetEncodingDataInternal(send_codec_type, max_bit_rate, frame_rate,
+                          target_bitrate, width, height, num_layers, mtu);
 }
 
 void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
@@ -190,11 +182,8 @@ void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
   codec_height_ = height;
   num_layers_ = (num_layers <= 1) ? 1 : num_layers;  // Can also be zero.
   max_payload_size_ = mtu;
-  qm_resolution_->Initialize(target_bitrate_kbps,
-                             user_frame_rate_,
-                             codec_width_,
-                             codec_height_,
-                             num_layers_);
+  qm_resolution_->Initialize(target_bitrate_kbps, user_frame_rate_,
+                             codec_width_, codec_height_, num_layers_);
 }
 
 uint32_t MediaOptimization::SetTargetRates(
@@ -256,10 +245,8 @@ uint32_t MediaOptimization::SetTargetRates(
     // overhead data actually transmitted (including headers) the last
     // second.
     if (protection_callback) {
-      UpdateProtectionCallback(selected_method,
-                               &sent_video_rate_bps,
-                               &sent_nack_rate_bps,
-                               &sent_fec_rate_bps,
+      UpdateProtectionCallback(selected_method, &sent_video_rate_bps,
+                               &sent_nack_rate_bps, &sent_fec_rate_bps,
                                protection_callback);
     }
     uint32_t sent_total_rate_bps =
@@ -296,10 +283,8 @@ uint32_t MediaOptimization::SetTargetRates(
 
   if (enable_qm_ && qmsettings_callback) {
     // Update QM with rates.
-    qm_resolution_->UpdateRates(target_video_bitrate_kbps,
-                                sent_video_rate_kbps,
-                                incoming_frame_rate_,
-                                fraction_lost_);
+    qm_resolution_->UpdateRates(target_video_bitrate_kbps, sent_video_rate_kbps,
+                                incoming_frame_rate_, fraction_lost_);
     // Check for QM selection.
     bool select_qm = CheckStatusForQMchange();
     if (select_qm) {
@@ -514,8 +499,7 @@ void MediaOptimization::UpdateSentBitrate(int64_t now_ms) {
   }
   size_t framesize_sum = 0;
   for (FrameSampleList::iterator it = encoded_frame_samples_.begin();
-       it != encoded_frame_samples_.end();
-       ++it) {
+       it != encoded_frame_samples_.end(); ++it) {
     framesize_sum += it->size_bytes;
   }
   float denom = static_cast<float>(
@@ -565,7 +549,8 @@ bool MediaOptimization::QMUpdate(
   }
 
   LOG(LS_INFO) << "Media optimizer requests the video resolution to be changed "
-                  "to " << qm->codec_width << "x" << qm->codec_height << "@"
+                  "to "
+               << qm->codec_width << "x" << qm->codec_height << "@"
                << qm->frame_rate;
 
   // Update VPM with new target frame rate and frame size.
@@ -574,11 +559,11 @@ bool MediaOptimization::QMUpdate(
   // will vary/fluctuate, and since we don't want to change the state of the
   // VPM frame dropper, unless a temporal action was selected, we use the
   // quantity |qm->frame_rate| for updating.
-  video_qmsettings_callback->SetVideoQMSettings(
-      qm->frame_rate, codec_width_, codec_height_);
+  video_qmsettings_callback->SetVideoQMSettings(qm->frame_rate, codec_width_,
+                                                codec_height_);
   content_->UpdateFrameRate(qm->frame_rate);
-  qm_resolution_->UpdateCodecParameters(
-      qm->frame_rate, codec_width_, codec_height_);
+  qm_resolution_->UpdateCodecParameters(qm->frame_rate, codec_width_,
+                                        codec_height_);
   return true;
 }
 

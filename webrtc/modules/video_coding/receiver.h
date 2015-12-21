@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
 
+#include <vector>
+
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/timing.h"
@@ -25,9 +27,7 @@ class VCMEncodedFrame;
 
 class VCMReceiver {
  public:
-  VCMReceiver(VCMTiming* timing,
-              Clock* clock,
-              EventFactory* event_factory);
+  VCMReceiver(VCMTiming* timing, Clock* clock, EventFactory* event_factory);
 
   // Using this constructor, you can specify a different event factory for the
   // jitter buffer. Useful for unit tests when you want to simulate incoming
@@ -46,7 +46,7 @@ class VCMReceiver {
                        uint16_t frame_width,
                        uint16_t frame_height);
   VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
-                                    int64_t& next_render_time_ms,
+                                    int64_t* next_render_time_ms,
                                     bool prefer_late_decoding);
   void ReleaseFrame(VCMEncodedFrame* frame);
   void ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate);

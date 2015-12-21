@@ -30,8 +30,7 @@ struct VCMResolutionScale {
         spatial_height_fact(1.0f),
         temporal_fact(1.0f),
         change_resolution_spatial(false),
-        change_resolution_temporal(false) {
-  }
+        change_resolution_temporal(false) {}
   uint16_t codec_width;
   uint16_t codec_height;
   float frame_rate;
@@ -43,20 +42,20 @@ struct VCMResolutionScale {
 };
 
 enum ImageType {
-  kQCIF = 0,            // 176x144
-  kHCIF,                // 264x216 = half(~3/4x3/4) CIF.
-  kQVGA,                // 320x240 = quarter VGA.
-  kCIF,                 // 352x288
-  kHVGA,                // 480x360 = half(~3/4x3/4) VGA.
-  kVGA,                 // 640x480
-  kQFULLHD,             // 960x540 = quarter FULLHD, and half(~3/4x3/4) WHD.
-  kWHD,                 // 1280x720
-  kFULLHD,              // 1920x1080
+  kQCIF = 0,  // 176x144
+  kHCIF,      // 264x216 = half(~3/4x3/4) CIF.
+  kQVGA,      // 320x240 = quarter VGA.
+  kCIF,       // 352x288
+  kHVGA,      // 480x360 = half(~3/4x3/4) VGA.
+  kVGA,       // 640x480
+  kQFULLHD,   // 960x540 = quarter FULLHD, and half(~3/4x3/4) WHD.
+  kWHD,       // 1280x720
+  kFULLHD,    // 1920x1080
   kNumImageTypes
 };
 
-const uint32_t kSizeOfImageType[kNumImageTypes] =
-{ 25344, 57024, 76800, 101376, 172800, 307200, 518400, 921600, 2073600 };
+const uint32_t kSizeOfImageType[kNumImageTypes] = {
+    25344, 57024, 76800, 101376, 172800, 307200, 518400, 921600, 2073600};
 
 enum FrameRateLevelClass {
   kFrameRateLow,
@@ -65,17 +64,10 @@ enum FrameRateLevelClass {
   kFrameRateHigh
 };
 
-enum ContentLevelClass {
-  kLow,
-  kHigh,
-  kDefault
-};
+enum ContentLevelClass { kLow, kHigh, kDefault };
 
 struct VCMContFeature {
-  VCMContFeature()
-      : value(0.0f),
-        level(kDefault) {
-  }
+  VCMContFeature() : value(0.0f), level(kDefault) {}
   void Reset() {
     value = 0.0f;
     level = kDefault;
@@ -84,43 +76,34 @@ struct VCMContFeature {
   ContentLevelClass level;
 };
 
-enum UpDownAction {
-  kUpResolution,
-  kDownResolution
-};
+enum UpDownAction { kUpResolution, kDownResolution };
 
 enum SpatialAction {
   kNoChangeSpatial,
-  kOneHalfSpatialUniform,        // 3/4 x 3/4: 9/6 ~1/2 pixel reduction.
-  kOneQuarterSpatialUniform,     // 1/2 x 1/2: 1/4 pixel reduction.
+  kOneHalfSpatialUniform,     // 3/4 x 3/4: 9/6 ~1/2 pixel reduction.
+  kOneQuarterSpatialUniform,  // 1/2 x 1/2: 1/4 pixel reduction.
   kNumModesSpatial
 };
 
 enum TemporalAction {
   kNoChangeTemporal,
-  kTwoThirdsTemporal,     // 2/3 frame rate reduction
-  kOneHalfTemporal,       // 1/2 frame rate reduction
+  kTwoThirdsTemporal,  // 2/3 frame rate reduction
+  kOneHalfTemporal,    // 1/2 frame rate reduction
   kNumModesTemporal
 };
 
 struct ResolutionAction {
-  ResolutionAction()
-      : spatial(kNoChangeSpatial),
-        temporal(kNoChangeTemporal) {
-  }
+  ResolutionAction() : spatial(kNoChangeSpatial), temporal(kNoChangeTemporal) {}
   SpatialAction spatial;
   TemporalAction temporal;
 };
 
 // Down-sampling factors for spatial (width and height), and temporal.
-const float kFactorWidthSpatial[kNumModesSpatial] =
-    { 1.0f, 4.0f / 3.0f, 2.0f };
+const float kFactorWidthSpatial[kNumModesSpatial] = {1.0f, 4.0f / 3.0f, 2.0f};
 
-const float kFactorHeightSpatial[kNumModesSpatial] =
-    { 1.0f, 4.0f / 3.0f, 2.0f };
+const float kFactorHeightSpatial[kNumModesSpatial] = {1.0f, 4.0f / 3.0f, 2.0f};
 
-const float kFactorTemporal[kNumModesTemporal] =
-    { 1.0f, 1.5f, 2.0f };
+const float kFactorTemporal[kNumModesTemporal] = {1.0f, 1.5f, 2.0f};
 
 enum EncoderState {
   kStableEncoding,    // Low rate mis-match, stable buffer levels.
@@ -297,7 +280,7 @@ class VCMQmResolution : public VCMQmMethod {
   // Select the directional (1x2 or 2x1) spatial down-sampling action.
   void SelectSpatialDirectionMode(float transition_rate);
 
-  enum { kDownActionHistorySize = 10};
+  enum { kDownActionHistorySize = 10 };
 
   VCMResolutionScale* qm_;
   // Encoder rate control parameters.

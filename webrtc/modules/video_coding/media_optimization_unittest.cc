@@ -51,7 +51,6 @@ class TestMediaOptimization : public ::testing::Test {
   uint32_t next_timestamp_;
 };
 
-
 TEST_F(TestMediaOptimization, VerifyMuting) {
   // Enable video suspension with these limits.
   // Suspend the video when the rate is below 50 kbps and resume when it gets

@@ -18,14 +18,10 @@ namespace webrtc {
 struct VideoContentMetrics;
 
 // QM interval time (in ms)
-enum {
-  kQmMinIntervalMs = 10000
-};
+enum { kQmMinIntervalMs = 10000 };
 
 // Flag for NFD metric vs motion metric
-enum {
-  kNfdMetric = 1
-};
+enum { kNfdMetric = 1 };
 
 /**********************************/
 /* Content Metrics Processing     */
@@ -36,7 +32,7 @@ class VCMContentMetricsProcessing {
   ~VCMContentMetricsProcessing();
 
   // Update class with latest metrics.
-  int UpdateContentData(const VideoContentMetrics *contentMetrics);
+  int UpdateContentData(const VideoContentMetrics* contentMetrics);
 
   // Reset the short-term averaged content data.
   void ResetShortTermAvgData();
@@ -57,13 +53,13 @@ class VCMContentMetricsProcessing {
 
  private:
   // Compute working average.
-  int ProcessContent(const VideoContentMetrics *contentMetrics);
+  int ProcessContent(const VideoContentMetrics* contentMetrics);
 
   // Update the recursive averaged metrics: longer time average (~5/10 secs).
-  void UpdateRecursiveAvg(const VideoContentMetrics *contentMetrics);
+  void UpdateRecursiveAvg(const VideoContentMetrics* contentMetrics);
 
   // Update the uniform averaged metrics: shorter time average (~RTCP report).
-  void UpdateUniformAvg(const VideoContentMetrics *contentMetrics);
+  void UpdateUniformAvg(const VideoContentMetrics* contentMetrics);
 
   VideoContentMetrics* recursive_avg_;
   VideoContentMetrics* uniform_avg_;

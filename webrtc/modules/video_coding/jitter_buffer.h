@@ -30,10 +30,7 @@
 
 namespace webrtc {
 
-enum VCMNackMode {
-  kNack,
-  kNoNack
-};
+enum VCMNackMode { kNack, kNoNack };
 
 // forward declarations
 class Clock;
@@ -54,8 +51,7 @@ struct VCMJitterSample {
 
 class TimestampLessThan {
  public:
-  bool operator() (uint32_t timestamp1,
-                   uint32_t timestamp2) const {
+  bool operator()(uint32_t timestamp1, uint32_t timestamp2) const {
     return IsNewerTimestamp(timestamp2, timestamp1);
   }
 };
@@ -68,7 +64,7 @@ class FrameList
   VCMFrameBuffer* Front() const;
   VCMFrameBuffer* Back() const;
   int RecycleFramesUntilKeyFrame(FrameList::iterator* key_frame_it,
-      UnorderedFrameList* free_frames);
+                                 UnorderedFrameList* free_frames);
   void CleanUpOldOrEmptyFrames(VCMDecodingState* decoding_state,
                                UnorderedFrameList* free_frames);
   void Reset(UnorderedFrameList* free_frames);
@@ -141,8 +137,7 @@ class VCMJitterBuffer {
   int num_discarded_packets() const;
 
   // Statistics, Calculate frame and bit rates.
-  void IncomingRateStatistics(unsigned int* framerate,
-                              unsigned int* bitrate);
+  void IncomingRateStatistics(unsigned int* framerate, unsigned int* bitrate);
 
   // Checks if the packet sequence will be complete if the next frame would be
   // grabbed for decoding. That is, if a frame has been lost between the
@@ -177,8 +172,7 @@ class VCMJitterBuffer {
   // Inserts a packet into a frame returned from GetFrame().
   // If the return value is <= 0, |frame| is invalidated and the pointer must
   // be dropped after this function returns.
-  VCMFrameBufferEnum InsertPacket(const VCMPacket& packet,
-                                  bool* retransmitted);
+  VCMFrameBufferEnum InsertPacket(const VCMPacket& packet, bool* retransmitted);
 
   // Returns the estimated jitter in milliseconds.
   uint32_t EstimatedJitterMs();
@@ -192,7 +186,8 @@ class VCMJitterBuffer {
   // |low_rtt_nack_threshold_ms| is an RTT threshold in ms below which we expect
   // to rely on NACK only, and therefore are using larger buffers to have time
   // to wait for retransmissions.
-  void SetNackMode(VCMNackMode mode, int64_t low_rtt_nack_threshold_ms,
+  void SetNackMode(VCMNackMode mode,
+                   int64_t low_rtt_nack_threshold_ms,
                    int64_t high_rtt_nack_threshold_ms);
 
   void SetNackSettings(size_t max_nack_list_size,
@@ -209,7 +204,7 @@ class VCMJitterBuffer {
   // session. Changes will not influence frames already in the buffer.
   void SetDecodeErrorMode(VCMDecodeErrorMode error_mode);
   int64_t LastDecodedTimestamp() const;
-  VCMDecodeErrorMode decode_error_mode() const {return decode_error_mode_;}
+  VCMDecodeErrorMode decode_error_mode() const { return decode_error_mode_; }
 
   // Used to compute time of complete continuous frames. Returns the timestamps
   // corresponding to the start and end of the continuous complete buffer.
@@ -220,8 +215,8 @@ class VCMJitterBuffer {
  private:
   class SequenceNumberLessThan {
    public:
-    bool operator() (const uint16_t& sequence_number1,
-                     const uint16_t& sequence_number2) const {
+    bool operator()(const uint16_t& sequence_number1,
+                    const uint16_t& sequence_number2) const {
       return IsNewerSequenceNumber(sequence_number2, sequence_number1);
     }
   };

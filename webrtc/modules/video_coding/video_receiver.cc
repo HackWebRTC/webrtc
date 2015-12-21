@@ -31,7 +31,7 @@ VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
       _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _timing(clock_),
       _receiver(&_timing, clock_, event_factory),
-      _decodedFrameCallback(_timing, clock_),
+      _decodedFrameCallback(&_timing, clock_),
       _frameTypeCallback(NULL),
       _receiveStatsCallback(NULL),
       _decoderTimingCallback(NULL),
@@ -84,20 +84,12 @@ int32_t VideoReceiver::Process() {
       int jitter_buffer_ms;
       int min_playout_delay_ms;
       int render_delay_ms;
-      _timing.GetTimings(&decode_ms,
-                         &max_decode_ms,
-                         &current_delay_ms,
-                         &target_delay_ms,
-                         &jitter_buffer_ms,
-                         &min_playout_delay_ms,
-                         &render_delay_ms);
-      _decoderTimingCallback->OnDecoderTiming(decode_ms,
-                                              max_decode_ms,
-                                              current_delay_ms,
-                                              target_delay_ms,
-                                              jitter_buffer_ms,
-                                              min_playout_delay_ms,
-                                              render_delay_ms);
+      _timing.GetTimings(&decode_ms, &max_decode_ms, &current_delay_ms,
+                         &target_delay_ms, &jitter_buffer_ms,
+                         &min_playout_delay_ms, &render_delay_ms);
+      _decoderTimingCallback->OnDecoderTiming(
+          decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
+          jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
     }
 
     // Size of render buffer.
@@ -285,7 +277,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   }
 
   VCMEncodedFrame* frame = _receiver.FrameForDecoding(
-      maxWaitTimeMs, nextRenderTimeMs, prefer_late_decoding);
+      maxWaitTimeMs, &nextRenderTimeMs, prefer_late_decoding);
 
   if (!frame)
     return VCM_FRAME_NOT_READY;
@@ -353,12 +345,8 @@ int32_t VideoReceiver::RequestKeyFrame() {
 
 // Must be called from inside the receive side critical section.
 int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
-  TRACE_EVENT_ASYNC_STEP1("webrtc",
-                          "Video",
-                          frame.TimeStamp(),
-                          "Decode",
-                          "type",
-                          frame.FrameType());
+  TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", frame.TimeStamp(), "Decode",
+                          "type", frame.FrameType());
   // Change decoder if payload type has changed
   _decoder = _codecDataBase.GetDecoder(frame, &_decodedFrameCallback);
   if (_decoder == NULL) {
@@ -419,8 +407,8 @@ int32_t VideoReceiver::RegisterReceiveCodec(const VideoCodec* receiveCodec,
   if (receiveCodec == NULL) {
     return VCM_PARAMETER_ERROR;
   }
-  if (!_codecDataBase.RegisterReceiveCodec(
-          receiveCodec, numberOfCores, requireKeyFrame)) {
+  if (!_codecDataBase.RegisterReceiveCodec(receiveCodec, numberOfCores,
+                                           requireKeyFrame)) {
     return -1;
   }
   return 0;
@@ -446,9 +434,7 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
                                       size_t payloadLength,
                                       const WebRtcRTPHeader& rtpInfo) {
   if (rtpInfo.frameType == kVideoFrameKey) {
-    TRACE_EVENT1("webrtc",
-                 "VCM::PacketKeyFrame",
-                 "seqnum",
+    TRACE_EVENT1("webrtc", "VCM::PacketKeyFrame", "seqnum",
                  rtpInfo.header.sequenceNumber);
   }
   if (incomingPayload == NULL) {
@@ -487,7 +473,9 @@ int32_t VideoReceiver::SetRenderDelay(uint32_t timeMS) {
 }
 
 // Current video delay
-int32_t VideoReceiver::Delay() const { return _timing.TargetVideoDelay(); }
+int32_t VideoReceiver::Delay() const {
+  return _timing.TargetVideoDelay();
+}
 
 uint32_t VideoReceiver::DiscardedPackets() const {
   return _receiver.DiscardedPackets();
@@ -543,8 +531,8 @@ void VideoReceiver::SetNackSettings(size_t max_nack_list_size,
     CriticalSectionScoped process_cs(process_crit_sect_.get());
     max_nack_list_size_ = max_nack_list_size;
   }
-  _receiver.SetNackSettings(
-      max_nack_list_size, max_packet_age_to_nack, max_incomplete_time_ms);
+  _receiver.SetNackSettings(max_nack_list_size, max_packet_age_to_nack,
+                            max_incomplete_time_ms);
 }
 
 int VideoReceiver::SetMinReceiverDelay(int desired_delay_ms) {

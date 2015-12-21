@@ -38,15 +38,15 @@ int VCMContentMetricsProcessing::Reset() {
   recursive_avg_->Reset();
   uniform_avg_->Reset();
   frame_cnt_uniform_avg_ = 0;
-  avg_motion_level_  = 0.0f;
+  avg_motion_level_ = 0.0f;
   avg_spatial_level_ = 0.0f;
   return VCM_OK;
 }
 
 void VCMContentMetricsProcessing::UpdateFrameRate(uint32_t frameRate) {
   // Update factor for recursive averaging.
-  recursive_avg_factor_ = static_cast<float> (1000.0f) /
-      static_cast<float>(frameRate *  kQmMinIntervalMs);
+  recursive_avg_factor_ = static_cast<float>(1000.0f) /
+                          static_cast<float>(frameRate * kQmMinIntervalMs);
 }
 
 VideoContentMetrics* VCMContentMetricsProcessing::LongTermAvgData() {
@@ -58,10 +58,10 @@ VideoContentMetrics* VCMContentMetricsProcessing::ShortTermAvgData() {
     return NULL;
   }
   // Two metrics are used: motion and spatial level.
-  uniform_avg_->motion_magnitude = avg_motion_level_ /
-      static_cast<float>(frame_cnt_uniform_avg_);
-  uniform_avg_->spatial_pred_err = avg_spatial_level_ /
-      static_cast<float>(frame_cnt_uniform_avg_);
+  uniform_avg_->motion_magnitude =
+      avg_motion_level_ / static_cast<float>(frame_cnt_uniform_avg_);
+  uniform_avg_->spatial_pred_err =
+      avg_spatial_level_ / static_cast<float>(frame_cnt_uniform_avg_);
   return uniform_avg_;
 }
 
@@ -73,7 +73,7 @@ void VCMContentMetricsProcessing::ResetShortTermAvgData() {
 }
 
 int VCMContentMetricsProcessing::UpdateContentData(
-    const VideoContentMetrics *contentMetrics) {
+    const VideoContentMetrics* contentMetrics) {
   if (contentMetrics == NULL) {
     return VCM_OK;
   }
@@ -81,7 +81,7 @@ int VCMContentMetricsProcessing::UpdateContentData(
 }
 
 int VCMContentMetricsProcessing::ProcessContent(
-    const VideoContentMetrics *contentMetrics) {
+    const VideoContentMetrics* contentMetrics) {
   // Update the recursive averaged metrics: average is over longer window
   // of time: over QmMinIntervalMs ms.
   UpdateRecursiveAvg(contentMetrics);
@@ -92,34 +92,33 @@ int VCMContentMetricsProcessing::ProcessContent(
 }
 
 void VCMContentMetricsProcessing::UpdateUniformAvg(
-    const VideoContentMetrics *contentMetrics) {
+    const VideoContentMetrics* contentMetrics) {
   // Update frame counter.
   frame_cnt_uniform_avg_ += 1;
   // Update averaged metrics: motion and spatial level are used.
   avg_motion_level_ += contentMetrics->motion_magnitude;
-  avg_spatial_level_ +=  contentMetrics->spatial_pred_err;
+  avg_spatial_level_ += contentMetrics->spatial_pred_err;
   return;
 }
 
 void VCMContentMetricsProcessing::UpdateRecursiveAvg(
-    const VideoContentMetrics *contentMetrics) {
-
+    const VideoContentMetrics* contentMetrics) {
   // Spatial metrics: 2x2, 1x2(H), 2x1(V).
-  recursive_avg_->spatial_pred_err = (1 - recursive_avg_factor_) *
-      recursive_avg_->spatial_pred_err +
+  recursive_avg_->spatial_pred_err =
+      (1 - recursive_avg_factor_) * recursive_avg_->spatial_pred_err +
       recursive_avg_factor_ * contentMetrics->spatial_pred_err;
 
-  recursive_avg_->spatial_pred_err_h = (1 - recursive_avg_factor_) *
-      recursive_avg_->spatial_pred_err_h +
+  recursive_avg_->spatial_pred_err_h =
+      (1 - recursive_avg_factor_) * recursive_avg_->spatial_pred_err_h +
       recursive_avg_factor_ * contentMetrics->spatial_pred_err_h;
 
-  recursive_avg_->spatial_pred_err_v = (1 - recursive_avg_factor_) *
-      recursive_avg_->spatial_pred_err_v +
+  recursive_avg_->spatial_pred_err_v =
+      (1 - recursive_avg_factor_) * recursive_avg_->spatial_pred_err_v +
       recursive_avg_factor_ * contentMetrics->spatial_pred_err_v;
 
   // Motion metric: Derived from NFD (normalized frame difference).
-  recursive_avg_->motion_magnitude = (1 - recursive_avg_factor_) *
-      recursive_avg_->motion_magnitude +
+  recursive_avg_->motion_magnitude =
+      (1 - recursive_avg_factor_) * recursive_avg_->motion_magnitude +
       recursive_avg_factor_ * contentMetrics->motion_magnitude;
 }
-}  // namespace
+}  // namespace webrtc

@@ -64,13 +64,13 @@ class VCMDecodingState {
 
   // Keep state of last decoded frame.
   // TODO(mikhal/stefan): create designated classes to handle these types.
-  uint16_t    sequence_num_;
-  uint32_t    time_stamp_;
-  int         picture_id_;
-  int         temporal_id_;
-  int         tl0_pic_id_;
-  bool        full_sync_;  // Sync flag when temporal layers are used.
-  bool        in_initial_state_;
+  uint16_t sequence_num_;
+  uint32_t time_stamp_;
+  int picture_id_;
+  int temporal_id_;
+  int tl0_pic_id_;
+  bool full_sync_;  // Sync flag when temporal layers are used.
+  bool in_initial_state_;
 
   // Used to check references in flexible mode.
   bool frame_decoded_[kFrameDecodedLength];

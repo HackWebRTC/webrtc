@@ -11,10 +11,11 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
 
+#include <stdio.h>
+#include <vector>
+
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-
-#include <stdio.h>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -36,10 +37,10 @@ struct EncoderParameters {
 /*************************************/
 /* VCMEncodeFrameCallback class     */
 /***********************************/
-class VCMEncodedFrameCallback : public EncodedImageCallback
-{
-public:
-    VCMEncodedFrameCallback(EncodedImageCallback* post_encode_callback);
+class VCMEncodedFrameCallback : public EncodedImageCallback {
+ public:
+    explicit VCMEncodedFrameCallback(
+      EncodedImageCallback* post_encode_callback);
     virtual ~VCMEncodedFrameCallback();
 
     /*
@@ -56,16 +57,21 @@ public:
     /**
     * Set media Optimization
     */
-    void SetMediaOpt (media_optimization::MediaOptimization* mediaOpt);
+    void SetMediaOpt(media_optimization::MediaOptimization* mediaOpt);
 
-    void SetPayloadType(uint8_t payloadType) { _payloadType = payloadType; };
-    void SetInternalSource(bool internalSource) { _internalSource = internalSource; };
+    void SetPayloadType(uint8_t payloadType) {
+      _payloadType = payloadType;
+    }
+
+    void SetInternalSource(bool internalSource) {
+      _internalSource = internalSource;
+    }
 
     void SetRotation(VideoRotation rotation) { _rotation = rotation; }
     void SignalLastEncoderImplementationUsed(
         const char* encoder_implementation_name);
 
-private:
+ private:
     VCMPacketizationCallback* send_callback_;
     media_optimization::MediaOptimization* _mediaOpt;
     uint8_t _payloadType;
@@ -77,68 +83,67 @@ private:
 #ifdef DEBUG_ENCODER_BIT_STREAM
     FILE* _bitStreamAfterEncoder;
 #endif
-};// end of VCMEncodeFrameCallback class
-
+};  // end of VCMEncodeFrameCallback class
 
 /******************************/
 /* VCMGenericEncoder class    */
 /******************************/
-class VCMGenericEncoder
-{
-    friend class VCMCodecDataBase;
-public:
-    VCMGenericEncoder(VideoEncoder* encoder,
-                      VideoEncoderRateObserver* rate_observer,
-                      VCMEncodedFrameCallback* encoded_frame_callback,
-                      bool internalSource);
-    ~VCMGenericEncoder();
-    /**
-    * Free encoder memory
-    */
-    int32_t Release();
-    /**
-    * Initialize the encoder with the information from the VideoCodec
-    */
-    int32_t InitEncode(const VideoCodec* settings,
-                       int32_t numberOfCores,
-                       size_t maxPayloadSize);
-    /**
-    * Encode raw image
-    * inputFrame        : Frame containing raw image
-    * codecSpecificInfo : Specific codec data
-    * cameraFrameRate   : Request or information from the remote side
-    * frameType         : The requested frame type to encode
-    */
-    int32_t Encode(const VideoFrame& inputFrame,
-                   const CodecSpecificInfo* codecSpecificInfo,
-                   const std::vector<FrameType>& frameTypes);
+class VCMGenericEncoder {
+  friend class VCMCodecDataBase;
 
-    void SetEncoderParameters(const EncoderParameters& params);
-    EncoderParameters GetEncoderParameters() const;
+ public:
+  VCMGenericEncoder(VideoEncoder* encoder,
+                    VideoEncoderRateObserver* rate_observer,
+                    VCMEncodedFrameCallback* encoded_frame_callback,
+                    bool internalSource);
+  ~VCMGenericEncoder();
+  /**
+  * Free encoder memory
+  */
+  int32_t Release();
+  /**
+  * Initialize the encoder with the information from the VideoCodec
+  */
+  int32_t InitEncode(const VideoCodec* settings,
+                     int32_t numberOfCores,
+                     size_t maxPayloadSize);
+  /**
+  * Encode raw image
+  * inputFrame        : Frame containing raw image
+  * codecSpecificInfo : Specific codec data
+  * cameraFrameRate   : Request or information from the remote side
+  * frameType         : The requested frame type to encode
+  */
+  int32_t Encode(const VideoFrame& inputFrame,
+                 const CodecSpecificInfo* codecSpecificInfo,
+                 const std::vector<FrameType>& frameTypes);
 
-    int32_t SetPeriodicKeyFrames(bool enable);
+  void SetEncoderParameters(const EncoderParameters& params);
+  EncoderParameters GetEncoderParameters() const;
 
-    int32_t RequestFrame(const std::vector<FrameType>& frame_types);
+  int32_t SetPeriodicKeyFrames(bool enable);
 
-    bool InternalSource() const;
+  int32_t RequestFrame(const std::vector<FrameType>& frame_types);
 
-    void OnDroppedFrame();
+  bool InternalSource() const;
 
-    bool SupportsNativeHandle() const;
+  void OnDroppedFrame();
 
-    int GetTargetFramerate();
+  bool SupportsNativeHandle() const;
 
-private:
-    VideoEncoder* const encoder_;
-    VideoEncoderRateObserver* const rate_observer_;
-    VCMEncodedFrameCallback* const vcm_encoded_frame_callback_;
-    const bool internal_source_;
-    mutable rtc::CriticalSection params_lock_;
-    EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
-    VideoRotation rotation_;
-    bool is_screenshare_;
-}; // end of VCMGenericEncoder class
+  int GetTargetFramerate();
+
+ private:
+  VideoEncoder* const encoder_;
+  VideoEncoderRateObserver* const rate_observer_;
+  VCMEncodedFrameCallback* const vcm_encoded_frame_callback_;
+  const bool internal_source_;
+  mutable rtc::CriticalSection params_lock_;
+  EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
+  VideoRotation rotation_;
+  bool is_screenshare_;
+};  // end of VCMGenericEncoder class
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_

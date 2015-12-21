@@ -24,7 +24,7 @@ VCMEncodedFrame::VCMEncodedFrame()
       _fragmentation(),
       _rotation(kVideoRotation_0),
       _rotation_set(false) {
-    _codecSpecificInfo.codecType = kVideoCodecUnknown;
+  _codecSpecificInfo.codecType = kVideoCodecUnknown;
 }
 
 VCMEncodedFrame::VCMEncodedFrame(const webrtc::EncodedImage& rhs)
@@ -36,15 +36,14 @@ VCMEncodedFrame::VCMEncodedFrame(const webrtc::EncodedImage& rhs)
       _fragmentation(),
       _rotation(kVideoRotation_0),
       _rotation_set(false) {
-    _codecSpecificInfo.codecType = kVideoCodecUnknown;
-    _buffer = NULL;
-    _size = 0;
-    _length = 0;
-    if (rhs._buffer != NULL)
-    {
-        VerifyAndAllocate(rhs._length);
-        memcpy(_buffer, rhs._buffer, rhs._length);
-    }
+  _codecSpecificInfo.codecType = kVideoCodecUnknown;
+  _buffer = NULL;
+  _size = 0;
+  _length = 0;
+  if (rhs._buffer != NULL) {
+    VerifyAndAllocate(rhs._length);
+    memcpy(_buffer, rhs._buffer, rhs._length);
+  }
 }
 
 VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
@@ -60,49 +59,43 @@ VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
   _buffer = NULL;
   _size = 0;
   _length = 0;
-  if (rhs._buffer != NULL)
-  {
-      VerifyAndAllocate(rhs._length);
-      memcpy(_buffer, rhs._buffer, rhs._length);
-      _length = rhs._length;
+  if (rhs._buffer != NULL) {
+    VerifyAndAllocate(rhs._length);
+    memcpy(_buffer, rhs._buffer, rhs._length);
+    _length = rhs._length;
   }
   _fragmentation.CopyFrom(rhs._fragmentation);
 }
 
-VCMEncodedFrame::~VCMEncodedFrame()
-{
-    Free();
+VCMEncodedFrame::~VCMEncodedFrame() {
+  Free();
 }
 
-void VCMEncodedFrame::Free()
-{
-    Reset();
-    if (_buffer != NULL)
-    {
-        delete [] _buffer;
-        _buffer = NULL;
-    }
+void VCMEncodedFrame::Free() {
+  Reset();
+  if (_buffer != NULL) {
+    delete[] _buffer;
+    _buffer = NULL;
+  }
 }
 
-void VCMEncodedFrame::Reset()
-{
-    _renderTimeMs = -1;
-    _timeStamp = 0;
-    _payloadType = 0;
-    _frameType = kVideoFrameDelta;
-    _encodedWidth = 0;
-    _encodedHeight = 0;
-    _completeFrame = false;
-    _missingFrame = false;
-    _length = 0;
-    _codecSpecificInfo.codecType = kVideoCodecUnknown;
-    _codec = kVideoCodecUnknown;
-    _rotation = kVideoRotation_0;
-    _rotation_set = false;
+void VCMEncodedFrame::Reset() {
+  _renderTimeMs = -1;
+  _timeStamp = 0;
+  _payloadType = 0;
+  _frameType = kVideoFrameDelta;
+  _encodedWidth = 0;
+  _encodedHeight = 0;
+  _completeFrame = false;
+  _missingFrame = false;
+  _length = 0;
+  _codecSpecificInfo.codecType = kVideoCodecUnknown;
+  _codec = kVideoCodecUnknown;
+  _rotation = kVideoRotation_0;
+  _rotation_set = false;
 }
 
-void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header)
-{
+void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
   if (header) {
     switch (header->codec) {
       case kRtpVideoVp8: {
@@ -215,21 +208,18 @@ const RTPFragmentationHeader* VCMEncodedFrame::FragmentationHeader() const {
   return &_fragmentation;
 }
 
-void VCMEncodedFrame::VerifyAndAllocate(size_t minimumSize)
-{
-    if(minimumSize > _size)
-    {
-        // create buffer of sufficient size
-        uint8_t* newBuffer = new uint8_t[minimumSize];
-        if(_buffer)
-        {
-            // copy old data
-            memcpy(newBuffer, _buffer, _size);
-            delete [] _buffer;
-        }
-        _buffer = newBuffer;
-        _size = minimumSize;
+void VCMEncodedFrame::VerifyAndAllocate(size_t minimumSize) {
+  if (minimumSize > _size) {
+    // create buffer of sufficient size
+    uint8_t* newBuffer = new uint8_t[minimumSize];
+    if (_buffer) {
+      // copy old data
+      memcpy(newBuffer, _buffer, _size);
+      delete[] _buffer;
     }
+    _buffer = newBuffer;
+    _size = minimumSize;
+  }
 }
 
 }  // namespace webrtc

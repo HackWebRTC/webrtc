@@ -18,23 +18,23 @@
 namespace webrtc {
 
 // Error codes
-#define VCM_FRAME_NOT_READY      3
-#define VCM_REQUEST_SLI          2
-#define VCM_MISSING_CALLBACK     1
-#define VCM_OK                   0
-#define VCM_GENERAL_ERROR       -1
-#define VCM_LEVEL_EXCEEDED      -2
-#define VCM_MEMORY              -3
-#define VCM_PARAMETER_ERROR     -4
-#define VCM_UNKNOWN_PAYLOAD     -5
-#define VCM_CODEC_ERROR         -6
-#define VCM_UNINITIALIZED       -7
+#define VCM_FRAME_NOT_READY 3
+#define VCM_REQUEST_SLI 2
+#define VCM_MISSING_CALLBACK 1
+#define VCM_OK 0
+#define VCM_GENERAL_ERROR -1
+#define VCM_LEVEL_EXCEEDED -2
+#define VCM_MEMORY -3
+#define VCM_PARAMETER_ERROR -4
+#define VCM_UNKNOWN_PAYLOAD -5
+#define VCM_CODEC_ERROR -6
+#define VCM_UNINITIALIZED -7
 #define VCM_NO_CODEC_REGISTERED -8
 #define VCM_JITTER_BUFFER_ERROR -9
-#define VCM_OLD_PACKET_ERROR    -10
-#define VCM_NO_FRAME_DECODED    -11
-#define VCM_ERROR_REQUEST_SLI   -12
-#define VCM_NOT_IMPLEMENTED     -20
+#define VCM_OLD_PACKET_ERROR -10
+#define VCM_NO_FRAME_DECODED -11
+#define VCM_ERROR_REQUEST_SLI -12
+#define VCM_NOT_IMPLEMENTED -20
 
 enum { kDefaultStartBitrateKbps = 300 };
 
@@ -65,16 +65,15 @@ class VCMPacketizationCallback {
   virtual void OnEncoderImplementationName(const char* implementation_name) {}
 
  protected:
-  virtual ~VCMPacketizationCallback() {
-  }
+  virtual ~VCMPacketizationCallback() {}
 };
 
-// Callback class used for passing decoded frames which are ready to be rendered.
+// Callback class used for passing decoded frames which are ready to be
+// rendered.
 class VCMReceiveCallback {
  public:
-  virtual int32_t FrameToRender(VideoFrame& videoFrame) = 0;
-  virtual int32_t ReceivedDecodedReferenceFrame(
-      const uint64_t pictureId) {
+  virtual int32_t FrameToRender(VideoFrame& videoFrame) = 0;  // NOLINT
+  virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) {
     return -1;
   }
   // Called when the current receive codec changes.
@@ -82,23 +81,23 @@ class VCMReceiveCallback {
   virtual void OnDecoderImplementationName(const char* implementation_name) {}
 
  protected:
-  virtual ~VCMReceiveCallback() {
-  }
+  virtual ~VCMReceiveCallback() {}
 };
 
-// Callback class used for informing the user of the bit rate and frame rate produced by the
+// Callback class used for informing the user of the bit rate and frame rate
+// produced by the
 // encoder.
 class VCMSendStatisticsCallback {
  public:
   virtual int32_t SendStatistics(const uint32_t bitRate,
-                                       const uint32_t frameRate) = 0;
+                                 const uint32_t frameRate) = 0;
 
  protected:
-  virtual ~VCMSendStatisticsCallback() {
-  }
+  virtual ~VCMSendStatisticsCallback() {}
 };
 
-// Callback class used for informing the user of the incoming bit rate and frame rate.
+// Callback class used for informing the user of the incoming bit rate and frame
+// rate.
 class VCMReceiveStatisticsCallback {
  public:
   virtual void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) = 0;
@@ -106,8 +105,7 @@ class VCMReceiveStatisticsCallback {
   virtual void OnFrameCountsUpdated(const FrameCounts& frame_counts) = 0;
 
  protected:
-  virtual ~VCMReceiveStatisticsCallback() {
-  }
+  virtual ~VCMReceiveStatisticsCallback() {}
 };
 
 // Callback class used for informing the user of decode timing info.
@@ -136,8 +134,7 @@ class VCMProtectionCallback {
                                 uint32_t* sent_fec_rate_bps) = 0;
 
  protected:
-  virtual ~VCMProtectionCallback() {
-  }
+  virtual ~VCMProtectionCallback() {}
 };
 
 class VideoEncoderRateObserver {
@@ -146,31 +143,30 @@ class VideoEncoderRateObserver {
   virtual void OnSetRates(uint32_t bitrate_bps, int framerate) = 0;
 };
 
-// Callback class used for telling the user about what frame type needed to continue decoding.
+// Callback class used for telling the user about what frame type needed to
+// continue decoding.
 // Typically a key frame when the stream has been corrupted in some way.
 class VCMFrameTypeCallback {
  public:
   virtual int32_t RequestKeyFrame() = 0;
-  virtual int32_t SliceLossIndicationRequest(
-      const uint64_t pictureId) {
+  virtual int32_t SliceLossIndicationRequest(const uint64_t pictureId) {
     return -1;
   }
 
  protected:
-  virtual ~VCMFrameTypeCallback() {
-  }
+  virtual ~VCMFrameTypeCallback() {}
 };
 
-// Callback class used for telling the user about which packet sequence numbers are currently
+// Callback class used for telling the user about which packet sequence numbers
+// are currently
 // missing and need to be resent.
 class VCMPacketRequestCallback {
  public:
   virtual int32_t ResendPackets(const uint16_t* sequenceNumbers,
-                                      uint16_t length) = 0;
+                                uint16_t length) = 0;
 
  protected:
-  virtual ~VCMPacketRequestCallback() {
-  }
+  virtual ~VCMPacketRequestCallback() {}
 };
 
 // Callback used to inform the user of the the desired resolution
@@ -178,14 +174,13 @@ class VCMPacketRequestCallback {
 class VCMQMSettingsCallback {
  public:
   virtual int32_t SetVideoQMSettings(const uint32_t frameRate,
-                                           const uint32_t width,
-                                           const uint32_t height) = 0;
+                                     const uint32_t width,
+                                     const uint32_t height) = 0;
 
   virtual void SetTargetFramerate(int frame_rate) = 0;
 
  protected:
-  virtual ~VCMQMSettingsCallback() {
-  }
+  virtual ~VCMQMSettingsCallback() {}
 };
 
 // Callback class used for telling the user about the size (in time) of the
@@ -195,10 +190,9 @@ class VCMRenderBufferSizeCallback {
   virtual void RenderBufferSizeMs(int buffer_size_ms) = 0;
 
  protected:
-  virtual ~VCMRenderBufferSizeCallback() {
-  }
+  virtual ~VCMRenderBufferSizeCallback() {}
 };
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_

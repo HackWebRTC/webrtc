@@ -13,14 +13,12 @@
 
 #include "webrtc/typedefs.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
 #define MASK_32_BITS(x) (0xFFFFFFFF & (x))
 
-inline uint32_t MaskWord64ToUWord32(int64_t w64)
-{
-    return static_cast<uint32_t>(MASK_32_BITS(w64));
+inline uint32_t MaskWord64ToUWord32(int64_t w64) {
+  return static_cast<uint32_t>(MASK_32_BITS(w64));
 }
 
 #define VCM_MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -34,11 +32,10 @@ inline uint32_t MaskWord64ToUWord32(int64_t w64)
 
 #define VCM_NO_RECEIVER_ID 0
 
-inline int32_t VCMId(const int32_t vcmId, const int32_t receiverId = 0)
-{
-    return static_cast<int32_t>((vcmId << 16) + receiverId);
+inline int32_t VCMId(const int32_t vcmId, const int32_t receiverId = 0) {
+  return static_cast<int32_t>((vcmId << 16) + receiverId);
 }
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_INTERNAL_DEFINES_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_INTERNAL_DEFINES_H_

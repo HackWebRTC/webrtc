@@ -166,8 +166,8 @@ void VCMDecodingState::UpdateSyncState(const VCMFrameBuffer* frame) {
         full_sync_ = ContinuousPictureId(frame->PictureId());
       }
     } else {
-      full_sync_ = ContinuousSeqNum(static_cast<uint16_t>(
-          frame->GetLowSeqNum()));
+      full_sync_ =
+          ContinuousSeqNum(static_cast<uint16_t>(frame->GetLowSeqNum()));
     }
   }
 }
@@ -229,8 +229,7 @@ bool VCMDecodingState::ContinuousSeqNum(uint16_t seq_num) const {
   return seq_num == static_cast<uint16_t>(sequence_num_ + 1);
 }
 
-bool VCMDecodingState::ContinuousLayer(int temporal_id,
-                                       int tl0_pic_id) const {
+bool VCMDecodingState::ContinuousLayer(int temporal_id, int tl0_pic_id) const {
   // First, check if applicable.
   if (temporal_id == kNoTemporalIdx || tl0_pic_id == kNoTl0PicIdx)
     return false;

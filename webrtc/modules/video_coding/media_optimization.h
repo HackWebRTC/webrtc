@@ -85,15 +85,9 @@ class MediaOptimization {
   uint32_t SentBitRate();
 
  private:
-  enum {
-    kFrameCountHistorySize = 90
-  };
-  enum {
-    kFrameHistoryWinMs = 2000
-  };
-  enum {
-    kBitrateAverageWinMs = 1000
-  };
+  enum { kFrameCountHistorySize = 90 };
+  enum { kFrameHistoryWinMs = 2000 };
+  enum { kBitrateAverageWinMs = 1000 };
 
   struct EncodedFrameSample;
   typedef std::list<EncodedFrameSample> FrameSampleList;

@@ -14,6 +14,7 @@
 
 #include <cstdlib>
 #include <utility>
+#include <vector>
 
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
@@ -72,8 +73,8 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet,
   // Insert the packet into the jitter buffer. The packet can either be empty or
   // contain media at this point.
   bool retransmitted = false;
-  const VCMFrameBufferEnum ret = jitter_buffer_.InsertPacket(packet,
-                                                             &retransmitted);
+  const VCMFrameBufferEnum ret =
+      jitter_buffer_.InsertPacket(packet, &retransmitted);
   if (ret == kOldPacket) {
     return VCM_OK;
   } else if (ret == kFlushIndicator) {
@@ -96,13 +97,13 @@ void VCMReceiver::TriggerDecoderShutdown() {
 }
 
 VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
-                                               int64_t& next_render_time_ms,
+                                               int64_t* next_render_time_ms,
                                                bool prefer_late_decoding) {
   const int64_t start_time_ms = clock_->TimeInMilliseconds();
   uint32_t frame_timestamp = 0;
   // Exhaust wait time to get a complete frame for decoding.
-  bool found_frame = jitter_buffer_.NextCompleteTimestamp(
-      max_wait_time_ms, &frame_timestamp);
+  bool found_frame =
+      jitter_buffer_.NextCompleteTimestamp(max_wait_time_ms, &frame_timestamp);
 
   if (!found_frame)
     found_frame = jitter_buffer_.NextMaybeIncompleteTimestamp(&frame_timestamp);
@@ -114,14 +115,14 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
   timing_->SetJitterDelay(jitter_buffer_.EstimatedJitterMs());
   const int64_t now_ms = clock_->TimeInMilliseconds();
   timing_->UpdateCurrentDelay(frame_timestamp);
-  next_render_time_ms = timing_->RenderTimeMs(frame_timestamp, now_ms);
+  *next_render_time_ms = timing_->RenderTimeMs(frame_timestamp, now_ms);
   // Check render timing.
   bool timing_error = false;
   // Assume that render timing errors are due to changes in the video stream.
-  if (next_render_time_ms < 0) {
+  if (*next_render_time_ms < 0) {
     timing_error = true;
-  } else if (std::abs(next_render_time_ms - now_ms) > max_video_delay_ms_) {
-    int frame_delay = static_cast<int>(std::abs(next_render_time_ms - now_ms));
+  } else if (std::abs(*next_render_time_ms - now_ms) > max_video_delay_ms_) {
+    int frame_delay = static_cast<int>(std::abs(*next_render_time_ms - now_ms));
     LOG(LS_WARNING) << "A frame about to be decoded is out of the configured "
                     << "delay bounds (" << frame_delay << " > "
                     << max_video_delay_ms_
@@ -143,12 +144,13 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
 
   if (prefer_late_decoding) {
     // Decode frame as close as possible to the render timestamp.
-    const int32_t available_wait_time = max_wait_time_ms -
+    const int32_t available_wait_time =
+        max_wait_time_ms -
         static_cast<int32_t>(clock_->TimeInMilliseconds() - start_time_ms);
-    uint16_t new_max_wait_time = static_cast<uint16_t>(
-        VCM_MAX(available_wait_time, 0));
+    uint16_t new_max_wait_time =
+        static_cast<uint16_t>(VCM_MAX(available_wait_time, 0));
     uint32_t wait_time_ms = timing_->MaxWaitingTime(
-        next_render_time_ms, clock_->TimeInMilliseconds());
+        *next_render_time_ms, clock_->TimeInMilliseconds());
     if (new_max_wait_time < wait_time_ms) {
       // We're not allowed to wait until the frame is supposed to be rendered,
       // waiting as long as we're allowed to avoid busy looping, and then return
@@ -165,9 +167,9 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
   if (frame == NULL) {
     return NULL;
   }
-  frame->SetRenderTime(next_render_time_ms);
-  TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", frame->TimeStamp(),
-                          "SetRenderTS", "render_time", next_render_time_ms);
+  frame->SetRenderTime(*next_render_time_ms);
+  TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", frame->TimeStamp(), "SetRenderTS",
+                          "render_time", *next_render_time_ms);
   if (!frame->Complete()) {
     // Update stats for incomplete frames.
     bool retransmitted = false;
@@ -187,8 +189,7 @@ void VCMReceiver::ReleaseFrame(VCMEncodedFrame* frame) {
   jitter_buffer_.ReleaseFrame(frame);
 }
 
-void VCMReceiver::ReceiveStatistics(uint32_t* bitrate,
-                                    uint32_t* framerate) {
+void VCMReceiver::ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate) {
   assert(bitrate);
   assert(framerate);
   jitter_buffer_.IncomingRateStatistics(framerate, bitrate);
@@ -210,8 +211,7 @@ void VCMReceiver::SetNackMode(VCMNackMode nackMode,
 void VCMReceiver::SetNackSettings(size_t max_nack_list_size,
                                   int max_packet_age_to_nack,
                                   int max_incomplete_time_ms) {
-  jitter_buffer_.SetNackSettings(max_nack_list_size,
-                                 max_packet_age_to_nack,
+  jitter_buffer_.SetNackSettings(max_nack_list_size, max_packet_age_to_nack,
                                  max_incomplete_time_ms);
 }
 

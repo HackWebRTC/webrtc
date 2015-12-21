@@ -32,8 +32,7 @@ VCMSessionInfo::VCMSessionInfo()
       empty_seq_num_low_(-1),
       empty_seq_num_high_(-1),
       first_packet_seq_num_(-1),
-      last_packet_seq_num_(-1) {
-}
+      last_packet_seq_num_(-1) {}
 
 void VCMSessionInfo::UpdateDataPointers(const uint8_t* old_base_ptr,
                                         const uint8_t* new_base_ptr) {
@@ -88,8 +87,8 @@ bool VCMSessionInfo::LayerSync() const {
   if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp8) {
     return packets_.front().codecSpecificHeader.codecHeader.VP8.layerSync;
   } else if (packets_.front().codecSpecificHeader.codec == kRtpVideoVp9) {
-    return
-        packets_.front().codecSpecificHeader.codecHeader.VP9.temporal_up_switch;
+    return packets_.front()
+        .codecSpecificHeader.codecHeader.VP9.temporal_up_switch;
   } else {
     return false;
   }
@@ -193,9 +192,7 @@ size_t VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
     while (nalu_ptr < packet_buffer + packet.sizeBytes) {
       size_t length = BufferToUWord16(nalu_ptr);
       nalu_ptr += kLengthFieldLength;
-      frame_buffer_ptr += Insert(nalu_ptr,
-                                 length,
-                                 packet.insertStartCode,
+      frame_buffer_ptr += Insert(nalu_ptr, length, packet.insertStartCode,
                                  const_cast<uint8_t*>(frame_buffer_ptr));
       nalu_ptr += length;
     }
@@ -203,14 +200,12 @@ size_t VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
     return packet.sizeBytes;
   }
   ShiftSubsequentPackets(
-      packet_it,
-      packet.sizeBytes +
-          (packet.insertStartCode ? kH264StartCodeLengthBytes : 0));
+      packet_it, packet.sizeBytes +
+                     (packet.insertStartCode ? kH264StartCodeLengthBytes : 0));
 
-  packet.sizeBytes = Insert(packet_buffer,
-                            packet.sizeBytes,
-                            packet.insertStartCode,
-                            const_cast<uint8_t*>(packet.dataPtr));
+  packet.sizeBytes =
+      Insert(packet_buffer, packet.sizeBytes, packet.insertStartCode,
+             const_cast<uint8_t*>(packet.dataPtr));
   return packet.sizeBytes;
 }
 
@@ -223,8 +218,7 @@ size_t VCMSessionInfo::Insert(const uint8_t* buffer,
     memcpy(frame_buffer, startCode, kH264StartCodeLengthBytes);
   }
   memcpy(frame_buffer + (insert_start_code ? kH264StartCodeLengthBytes : 0),
-         buffer,
-         length);
+         buffer, length);
   length += (insert_start_code ? kH264StartCodeLengthBytes : 0);
 
   return length;
@@ -276,13 +270,12 @@ void VCMSessionInfo::UpdateDecodableSession(const FrameData& frame_data) {
   // thresholds.
   const float kLowPacketPercentageThreshold = 0.2f;
   const float kHighPacketPercentageThreshold = 0.8f;
-  if (frame_data.rtt_ms < kRttThreshold
-      || frame_type_ == kVideoFrameKey
-      || !HaveFirstPacket()
-      || (NumPackets() <= kHighPacketPercentageThreshold
-                          * frame_data.rolling_average_packets_per_frame
-          && NumPackets() > kLowPacketPercentageThreshold
-                            * frame_data.rolling_average_packets_per_frame))
+  if (frame_data.rtt_ms < kRttThreshold || frame_type_ == kVideoFrameKey ||
+      !HaveFirstPacket() ||
+      (NumPackets() <= kHighPacketPercentageThreshold *
+                           frame_data.rolling_average_packets_per_frame &&
+       NumPackets() > kLowPacketPercentageThreshold *
+                          frame_data.rolling_average_packets_per_frame))
     return;
 
   decodable_ = true;
@@ -308,7 +301,7 @@ VCMSessionInfo::PacketIterator VCMSessionInfo::FindNaluEnd(
   // Find the end of the NAL unit.
   for (; packet_it != packets_.end(); ++packet_it) {
     if (((*packet_it).completeNALU == kNaluComplete &&
-        (*packet_it).sizeBytes > 0) ||
+         (*packet_it).sizeBytes > 0) ||
         // Found next NALU.
         (*packet_it).completeNALU == kNaluStart)
       return --packet_it;
@@ -348,7 +341,7 @@ size_t VCMSessionInfo::BuildVP8FragmentationHeader(
   memset(fragmentation->fragmentationLength, 0,
          kMaxVP8Partitions * sizeof(size_t));
   if (packets_.empty())
-      return new_length;
+    return new_length;
   PacketIterator it = FindNextPartitionBeginning(packets_.begin());
   while (it != packets_.end()) {
     const int partition_id =
@@ -371,7 +364,7 @@ size_t VCMSessionInfo::BuildVP8FragmentationHeader(
   // Set all empty fragments to start where the previous fragment ends,
   // and have zero length.
   if (fragmentation->fragmentationLength[0] == 0)
-      fragmentation->fragmentationOffset[0] = 0;
+    fragmentation->fragmentationOffset[0] = 0;
   for (int i = 1; i < fragmentation->fragmentationVectorSize; ++i) {
     if (fragmentation->fragmentationLength[i] == 0)
       fragmentation->fragmentationOffset[i] =
@@ -379,7 +372,7 @@ size_t VCMSessionInfo::BuildVP8FragmentationHeader(
           fragmentation->fragmentationLength[i - 1];
     assert(i == 0 ||
            fragmentation->fragmentationOffset[i] >=
-           fragmentation->fragmentationOffset[i - 1]);
+               fragmentation->fragmentationOffset[i - 1]);
   }
   assert(new_length <= frame_buffer_length);
   return new_length;
@@ -424,8 +417,8 @@ bool VCMSessionInfo::InSequence(const PacketIterator& packet_it,
   // If the two iterators are pointing to the same packet they are considered
   // to be in sequence.
   return (packet_it == prev_packet_it ||
-      (static_cast<uint16_t>((*prev_packet_it).seqNum + 1) ==
-          (*packet_it).seqNum));
+          (static_cast<uint16_t>((*prev_packet_it).seqNum + 1) ==
+           (*packet_it).seqNum));
 }
 
 size_t VCMSessionInfo::MakeDecodable() {
@@ -435,8 +428,7 @@ size_t VCMSessionInfo::MakeDecodable() {
   }
   PacketIterator it = packets_.begin();
   // Make sure we remove the first NAL unit if it's not decodable.
-  if ((*it).completeNALU == kNaluIncomplete ||
-      (*it).completeNALU == kNaluEnd) {
+  if ((*it).completeNALU == kNaluIncomplete || (*it).completeNALU == kNaluEnd) {
     PacketIterator nalu_end = FindNaluEnd(it);
     return_length += DeletePacketData(it, nalu_end);
     it = nalu_end;
@@ -445,7 +437,7 @@ size_t VCMSessionInfo::MakeDecodable() {
   // Take care of the rest of the NAL units.
   for (; it != packets_.end(); ++it) {
     bool start_of_nalu = ((*it).completeNALU == kNaluStart ||
-        (*it).completeNALU == kNaluComplete);
+                          (*it).completeNALU == kNaluComplete);
     if (!start_of_nalu && !InSequence(it, prev_it)) {
       // Found a sequence number gap due to packet loss.
       PacketIterator nalu_end = FindNaluEnd(it);
@@ -463,18 +455,15 @@ void VCMSessionInfo::SetNotDecodableIfIncomplete() {
   decodable_ = false;
 }
 
-bool
-VCMSessionInfo::HaveFirstPacket() const {
+bool VCMSessionInfo::HaveFirstPacket() const {
   return !packets_.empty() && (first_packet_seq_num_ != -1);
 }
 
-bool
-VCMSessionInfo::HaveLastPacket() const {
+bool VCMSessionInfo::HaveLastPacket() const {
   return !packets_.empty() && (last_packet_seq_num_ != -1);
 }
 
-bool
-VCMSessionInfo::session_nack() const {
+bool VCMSessionInfo::session_nack() const {
   return session_nack_;
 }
 
@@ -502,8 +491,8 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
       break;
 
   // Check for duplicate packets.
-  if (rit != packets_.rend() &&
-      (*rit).seqNum == packet.seqNum && (*rit).sizeBytes > 0)
+  if (rit != packets_.rend() && (*rit).seqNum == packet.seqNum &&
+      (*rit).sizeBytes > 0)
     return -2;
 
   if (packet.codec == kVideoCodecH264) {
@@ -572,8 +561,8 @@ void VCMSessionInfo::InformOfEmptyPacket(uint16_t seq_num) {
     empty_seq_num_high_ = seq_num;
   else
     empty_seq_num_high_ = LatestSequenceNumber(seq_num, empty_seq_num_high_);
-  if (empty_seq_num_low_ == -1 || IsNewerSequenceNumber(empty_seq_num_low_,
-                                                        seq_num))
+  if (empty_seq_num_low_ == -1 ||
+      IsNewerSequenceNumber(empty_seq_num_low_, seq_num))
     empty_seq_num_low_ = seq_num;
 }
 

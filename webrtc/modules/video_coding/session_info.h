@@ -116,8 +116,7 @@ class VCMSessionInfo {
   PacketIterator FindPartitionEnd(PacketIterator it) const;
   static bool InSequence(const PacketIterator& it,
                          const PacketIterator& prev_it);
-  size_t InsertBuffer(uint8_t* frame_buffer,
-                      PacketIterator packetIterator);
+  size_t InsertBuffer(uint8_t* frame_buffer, PacketIterator packetIterator);
   size_t Insert(const uint8_t* buffer,
                 size_t length,
                 bool insert_start_code,
@@ -126,8 +125,7 @@ class VCMSessionInfo {
   PacketIterator FindNaluEnd(PacketIterator packet_iter) const;
   // Deletes the data of all packets between |start| and |end|, inclusively.
   // Note that this function doesn't delete the actual packets.
-  size_t DeletePacketData(PacketIterator start,
-                          PacketIterator end);
+  size_t DeletePacketData(PacketIterator start, PacketIterator end);
   void UpdateCompleteSession();
 
   // When enabled, determine if session is decodable, i.e. incomplete but

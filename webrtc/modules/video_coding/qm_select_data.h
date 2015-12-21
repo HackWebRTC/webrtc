@@ -69,36 +69,36 @@ const uint16_t kMaxRateQm[9] = {
 
 // Frame rate scale for maximum transition rate.
 const float kFrameRateFac[4] = {
-    0.5f,    // Low
-    0.7f,    // Middle level 1
-    0.85f,   // Middle level 2
-    1.0f,    // High
+    0.5f,   // Low
+    0.7f,   // Middle level 1
+    0.85f,  // Middle level 2
+    1.0f,   // High
 };
 
 // Scale for transitional rate: based on content class
 // motion=L/H/D,spatial==L/H/D: for low, high, middle levels
 const float kScaleTransRateQm[18] = {
     // VGA and lower
-    0.40f,       // L, L
-    0.50f,       // L, H
-    0.40f,       // L, D
-    0.60f,       // H ,L
-    0.60f,       // H, H
-    0.60f,       // H, D
-    0.50f,       // D, L
-    0.50f,       // D, D
-    0.50f,       // D, H
+    0.40f,  // L, L
+    0.50f,  // L, H
+    0.40f,  // L, D
+    0.60f,  // H ,L
+    0.60f,  // H, H
+    0.60f,  // H, D
+    0.50f,  // D, L
+    0.50f,  // D, D
+    0.50f,  // D, H
 
     // over VGA
-    0.40f,       // L, L
-    0.50f,       // L, H
-    0.40f,       // L, D
-    0.60f,       // H ,L
-    0.60f,       // H, H
-    0.60f,       // H, D
-    0.50f,       // D, L
-    0.50f,       // D, D
-    0.50f,       // D, H
+    0.40f,  // L, L
+    0.50f,  // L, H
+    0.40f,  // L, D
+    0.60f,  // H ,L
+    0.60f,  // H, H
+    0.60f,  // H, D
+    0.50f,  // D, L
+    0.50f,  // D, D
+    0.50f,  // D, H
 };
 
 // Threshold on the target rate relative to transitional rate.
@@ -108,73 +108,73 @@ const float kFacLowRate = 0.5f;
 // motion=L/H/D,spatial==L/H/D, for low, high, middle levels;
 // rate = 0/1/2, for target rate state relative to transition rate.
 const uint8_t kSpatialAction[27] = {
-// rateClass = 0:
-    1,       // L, L
-    1,       // L, H
-    1,       // L, D
-    4,       // H ,L
-    1,       // H, H
-    4,       // H, D
-    4,       // D, L
-    1,       // D, H
-    2,       // D, D
+    // rateClass = 0:
+    1,  // L, L
+    1,  // L, H
+    1,  // L, D
+    4,  // H ,L
+    1,  // H, H
+    4,  // H, D
+    4,  // D, L
+    1,  // D, H
+    2,  // D, D
 
-// rateClass = 1:
-    1,       // L, L
-    1,       // L, H
-    1,       // L, D
-    2,       // H ,L
-    1,       // H, H
-    2,       // H, D
-    2,       // D, L
-    1,       // D, H
-    2,       // D, D
+    // rateClass = 1:
+    1,  // L, L
+    1,  // L, H
+    1,  // L, D
+    2,  // H ,L
+    1,  // H, H
+    2,  // H, D
+    2,  // D, L
+    1,  // D, H
+    2,  // D, D
 
-// rateClass = 2:
-    1,       // L, L
-    1,       // L, H
-    1,       // L, D
-    2,       // H ,L
-    1,       // H, H
-    2,       // H, D
-    2,       // D, L
-    1,       // D, H
-    2,       // D, D
+    // rateClass = 2:
+    1,  // L, L
+    1,  // L, H
+    1,  // L, D
+    2,  // H ,L
+    1,  // H, H
+    2,  // H, D
+    2,  // D, L
+    1,  // D, H
+    2,  // D, D
 };
 
 const uint8_t kTemporalAction[27] = {
-// rateClass = 0:
-    3,       // L, L
-    2,       // L, H
-    2,       // L, D
-    1,       // H ,L
-    3,       // H, H
-    1,       // H, D
-    1,       // D, L
-    2,       // D, H
-    1,       // D, D
+    // rateClass = 0:
+    3,  // L, L
+    2,  // L, H
+    2,  // L, D
+    1,  // H ,L
+    3,  // H, H
+    1,  // H, D
+    1,  // D, L
+    2,  // D, H
+    1,  // D, D
 
-// rateClass = 1:
-    3,       // L, L
-    3,       // L, H
-    3,       // L, D
-    1,       // H ,L
-    3,       // H, H
-    1,       // H, D
-    1,       // D, L
-    3,       // D, H
-    1,       // D, D
+    // rateClass = 1:
+    3,  // L, L
+    3,  // L, H
+    3,  // L, D
+    1,  // H ,L
+    3,  // H, H
+    1,  // H, D
+    1,  // D, L
+    3,  // D, H
+    1,  // D, D
 
-// rateClass = 2:
-    1,       // L, L
-    3,       // L, H
-    3,       // L, D
-    1,       // H ,L
-    3,       // H, H
-    1,       // H, D
-    1,       // D, L
-    3,       // D, H
-    1,       // D, D
+    // rateClass = 2:
+    1,  // L, L
+    3,  // L, H
+    3,  // L, D
+    1,  // H ,L
+    3,  // H, H
+    1,  // H, D
+    1,  // D, L
+    3,  // D, H
+    1,  // D, D
 };
 
 // Control the total amount of down-sampling allowed.

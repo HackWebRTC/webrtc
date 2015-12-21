@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/packet.h"
 
 #include <assert.h>
+
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 
@@ -34,49 +35,47 @@ VCMPacket::VCMPacket()
 
 VCMPacket::VCMPacket(const uint8_t* ptr,
                      const size_t size,
-                     const WebRtcRTPHeader& rtpHeader) :
-    payloadType(rtpHeader.header.payloadType),
-    timestamp(rtpHeader.header.timestamp),
-    ntp_time_ms_(rtpHeader.ntp_time_ms),
-    seqNum(rtpHeader.header.sequenceNumber),
-    dataPtr(ptr),
-    sizeBytes(size),
-    markerBit(rtpHeader.header.markerBit),
+                     const WebRtcRTPHeader& rtpHeader)
+    : payloadType(rtpHeader.header.payloadType),
+      timestamp(rtpHeader.header.timestamp),
+      ntp_time_ms_(rtpHeader.ntp_time_ms),
+      seqNum(rtpHeader.header.sequenceNumber),
+      dataPtr(ptr),
+      sizeBytes(size),
+      markerBit(rtpHeader.header.markerBit),
 
-    frameType(rtpHeader.frameType),
-    codec(kVideoCodecUnknown),
-    isFirstPacket(rtpHeader.type.Video.isFirstPacket),
-    completeNALU(kNaluComplete),
-    insertStartCode(false),
-    width(rtpHeader.type.Video.width),
-    height(rtpHeader.type.Video.height),
-    codecSpecificHeader(rtpHeader.type.Video)
-{
-    CopyCodecSpecifics(rtpHeader.type.Video);
+      frameType(rtpHeader.frameType),
+      codec(kVideoCodecUnknown),
+      isFirstPacket(rtpHeader.type.Video.isFirstPacket),
+      completeNALU(kNaluComplete),
+      insertStartCode(false),
+      width(rtpHeader.type.Video.width),
+      height(rtpHeader.type.Video.height),
+      codecSpecificHeader(rtpHeader.type.Video) {
+  CopyCodecSpecifics(rtpHeader.type.Video);
 }
 
 VCMPacket::VCMPacket(const uint8_t* ptr,
                      size_t size,
                      uint16_t seq,
                      uint32_t ts,
-                     bool mBit) :
-    payloadType(0),
-    timestamp(ts),
-    ntp_time_ms_(0),
-    seqNum(seq),
-    dataPtr(ptr),
-    sizeBytes(size),
-    markerBit(mBit),
+                     bool mBit)
+    : payloadType(0),
+      timestamp(ts),
+      ntp_time_ms_(0),
+      seqNum(seq),
+      dataPtr(ptr),
+      sizeBytes(size),
+      markerBit(mBit),
 
-    frameType(kVideoFrameDelta),
-    codec(kVideoCodecUnknown),
-    isFirstPacket(false),
-    completeNALU(kNaluComplete),
-    insertStartCode(false),
-    width(0),
-    height(0),
-    codecSpecificHeader()
-{}
+      frameType(kVideoFrameDelta),
+      codec(kVideoCodecUnknown),
+      isFirstPacket(false),
+      completeNALU(kNaluComplete),
+      insertStartCode(false),
+      width(0),
+      height(0),
+      codecSpecificHeader() {}
 
 void VCMPacket::Reset() {
   payloadType = 0;

@@ -20,39 +20,30 @@
 namespace webrtc {
 
 VCMFrameBuffer::VCMFrameBuffer()
-  :
-    _state(kStateEmpty),
-    _nackCount(0),
-    _latestPacketTimeMs(-1) {
-}
+    : _state(kStateEmpty), _nackCount(0), _latestPacketTimeMs(-1) {}
 
-VCMFrameBuffer::~VCMFrameBuffer() {
-}
+VCMFrameBuffer::~VCMFrameBuffer() {}
 
 VCMFrameBuffer::VCMFrameBuffer(const VCMFrameBuffer& rhs)
-:
-VCMEncodedFrame(rhs),
-_state(rhs._state),
-_sessionInfo(),
-_nackCount(rhs._nackCount),
-_latestPacketTimeMs(rhs._latestPacketTimeMs) {
-    _sessionInfo = rhs._sessionInfo;
-    _sessionInfo.UpdateDataPointers(rhs._buffer, _buffer);
+    : VCMEncodedFrame(rhs),
+      _state(rhs._state),
+      _sessionInfo(),
+      _nackCount(rhs._nackCount),
+      _latestPacketTimeMs(rhs._latestPacketTimeMs) {
+  _sessionInfo = rhs._sessionInfo;
+  _sessionInfo.UpdateDataPointers(rhs._buffer, _buffer);
 }
 
-webrtc::FrameType
-VCMFrameBuffer::FrameType() const {
-    return _sessionInfo.FrameType();
+webrtc::FrameType VCMFrameBuffer::FrameType() const {
+  return _sessionInfo.FrameType();
 }
 
-int32_t
-VCMFrameBuffer::GetLowSeqNum() const {
-    return _sessionInfo.LowSequenceNumber();
+int32_t VCMFrameBuffer::GetLowSeqNum() const {
+  return _sessionInfo.LowSequenceNumber();
 }
 
-int32_t
-VCMFrameBuffer::GetHighSeqNum() const {
-    return _sessionInfo.HighSequenceNumber();
+int32_t VCMFrameBuffer::GetHighSeqNum() const {
+  return _sessionInfo.HighSequenceNumber();
 }
 
 int VCMFrameBuffer::PictureId() const {
@@ -84,214 +75,196 @@ void VCMFrameBuffer::SetGofInfo(const GofInfoVP9& gof_info, size_t idx) {
       gof_info.temporal_up_switch[idx];
 }
 
-bool
-VCMFrameBuffer::IsSessionComplete() const {
-    return _sessionInfo.complete();
+bool VCMFrameBuffer::IsSessionComplete() const {
+  return _sessionInfo.complete();
 }
 
 // Insert packet
-VCMFrameBufferEnum
-VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
-                             int64_t timeInMs,
-                             VCMDecodeErrorMode decode_error_mode,
-                             const FrameData& frame_data) {
-    assert(!(NULL == packet.dataPtr && packet.sizeBytes > 0));
-    if (packet.dataPtr != NULL) {
-        _payloadType = packet.payloadType;
+VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
+    const VCMPacket& packet,
+    int64_t timeInMs,
+    VCMDecodeErrorMode decode_error_mode,
+    const FrameData& frame_data) {
+  assert(!(NULL == packet.dataPtr && packet.sizeBytes > 0));
+  if (packet.dataPtr != NULL) {
+    _payloadType = packet.payloadType;
+  }
+
+  if (kStateEmpty == _state) {
+    // First packet (empty and/or media) inserted into this frame.
+    // store some info and set some initial values.
+    _timeStamp = packet.timestamp;
+    // We only take the ntp timestamp of the first packet of a frame.
+    ntp_time_ms_ = packet.ntp_time_ms_;
+    _codec = packet.codec;
+    if (packet.frameType != kEmptyFrame) {
+      // first media packet
+      SetState(kStateIncomplete);
     }
+  }
 
-    if (kStateEmpty == _state) {
-        // First packet (empty and/or media) inserted into this frame.
-        // store some info and set some initial values.
-        _timeStamp = packet.timestamp;
-        // We only take the ntp timestamp of the first packet of a frame.
-        ntp_time_ms_ = packet.ntp_time_ms_;
-        _codec = packet.codec;
-        if (packet.frameType != kEmptyFrame) {
-            // first media packet
-            SetState(kStateIncomplete);
-        }
+  uint32_t requiredSizeBytes =
+      Length() + packet.sizeBytes +
+      (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
+  if (requiredSizeBytes >= _size) {
+    const uint8_t* prevBuffer = _buffer;
+    const uint32_t increments =
+        requiredSizeBytes / kBufferIncStepSizeBytes +
+        (requiredSizeBytes % kBufferIncStepSizeBytes > 0);
+    const uint32_t newSize = _size + increments * kBufferIncStepSizeBytes;
+    if (newSize > kMaxJBFrameSizeBytes) {
+      LOG(LS_ERROR) << "Failed to insert packet due to frame being too "
+                       "big.";
+      return kSizeError;
     }
+    VerifyAndAllocate(newSize);
+    _sessionInfo.UpdateDataPointers(prevBuffer, _buffer);
+  }
 
-    uint32_t requiredSizeBytes = Length() + packet.sizeBytes +
-                   (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
-    if (requiredSizeBytes >= _size) {
-        const uint8_t* prevBuffer = _buffer;
-        const uint32_t increments = requiredSizeBytes /
-                                          kBufferIncStepSizeBytes +
-                                        (requiredSizeBytes %
-                                         kBufferIncStepSizeBytes > 0);
-        const uint32_t newSize = _size +
-                                       increments * kBufferIncStepSizeBytes;
-        if (newSize > kMaxJBFrameSizeBytes) {
-            LOG(LS_ERROR) << "Failed to insert packet due to frame being too "
-                             "big.";
-            return kSizeError;
-        }
-        VerifyAndAllocate(newSize);
-        _sessionInfo.UpdateDataPointers(prevBuffer, _buffer);
-    }
+  if (packet.width > 0 && packet.height > 0) {
+    _encodedWidth = packet.width;
+    _encodedHeight = packet.height;
+  }
 
-    if (packet.width > 0 && packet.height > 0) {
-      _encodedWidth = packet.width;
-      _encodedHeight = packet.height;
-    }
+  // Don't copy payload specific data for empty packets (e.g padding packets).
+  if (packet.sizeBytes > 0)
+    CopyCodecSpecific(&packet.codecSpecificHeader);
 
-    // Don't copy payload specific data for empty packets (e.g padding packets).
-    if (packet.sizeBytes > 0)
-      CopyCodecSpecific(&packet.codecSpecificHeader);
+  int retVal =
+      _sessionInfo.InsertPacket(packet, _buffer, decode_error_mode, frame_data);
+  if (retVal == -1) {
+    return kSizeError;
+  } else if (retVal == -2) {
+    return kDuplicatePacket;
+  } else if (retVal == -3) {
+    return kOutOfBoundsPacket;
+  }
+  // update length
+  _length = Length() + static_cast<uint32_t>(retVal);
 
-    int retVal = _sessionInfo.InsertPacket(packet, _buffer,
-                                           decode_error_mode,
-                                           frame_data);
-    if (retVal == -1) {
-        return kSizeError;
-    } else if (retVal == -2) {
-        return kDuplicatePacket;
-    } else if (retVal == -3) {
-        return kOutOfBoundsPacket;
-    }
-    // update length
-    _length = Length() + static_cast<uint32_t>(retVal);
+  _latestPacketTimeMs = timeInMs;
 
-    _latestPacketTimeMs = timeInMs;
+  // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
+  // ts_126114v120700p.pdf Section 7.4.5.
+  // The MTSI client shall add the payload bytes as defined in this clause
+  // onto the last RTP packet in each group of packets which make up a key
+  // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
+  // (HEVC)).
+  if (packet.markerBit) {
+    RTC_DCHECK(!_rotation_set);
+    _rotation = packet.codecSpecificHeader.rotation;
+    _rotation_set = true;
+  }
 
-    // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
-    // ts_126114v120700p.pdf Section 7.4.5.
-    // The MTSI client shall add the payload bytes as defined in this clause
-    // onto the last RTP packet in each group of packets which make up a key
-    // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
-    // (HEVC)).
-    if (packet.markerBit) {
-      RTC_DCHECK(!_rotation_set);
-      _rotation = packet.codecSpecificHeader.rotation;
-      _rotation_set = true;
-    }
-
-    if (_sessionInfo.complete()) {
-      SetState(kStateComplete);
-      return kCompleteSession;
-    } else if (_sessionInfo.decodable()) {
-      SetState(kStateDecodable);
-      return kDecodableSession;
-    }
-    return kIncomplete;
+  if (_sessionInfo.complete()) {
+    SetState(kStateComplete);
+    return kCompleteSession;
+  } else if (_sessionInfo.decodable()) {
+    SetState(kStateDecodable);
+    return kDecodableSession;
+  }
+  return kIncomplete;
 }
 
-int64_t
-VCMFrameBuffer::LatestPacketTimeMs() const {
-    return _latestPacketTimeMs;
+int64_t VCMFrameBuffer::LatestPacketTimeMs() const {
+  return _latestPacketTimeMs;
 }
 
-void
-VCMFrameBuffer::IncrementNackCount() {
-    _nackCount++;
+void VCMFrameBuffer::IncrementNackCount() {
+  _nackCount++;
 }
 
-int16_t
-VCMFrameBuffer::GetNackCount() const {
-    return _nackCount;
+int16_t VCMFrameBuffer::GetNackCount() const {
+  return _nackCount;
 }
 
-bool
-VCMFrameBuffer::HaveFirstPacket() const {
-    return _sessionInfo.HaveFirstPacket();
+bool VCMFrameBuffer::HaveFirstPacket() const {
+  return _sessionInfo.HaveFirstPacket();
 }
 
-bool
-VCMFrameBuffer::HaveLastPacket() const {
-    return _sessionInfo.HaveLastPacket();
+bool VCMFrameBuffer::HaveLastPacket() const {
+  return _sessionInfo.HaveLastPacket();
 }
 
-int
-VCMFrameBuffer::NumPackets() const {
-    return _sessionInfo.NumPackets();
+int VCMFrameBuffer::NumPackets() const {
+  return _sessionInfo.NumPackets();
 }
 
-void
-VCMFrameBuffer::Reset() {
-    _length = 0;
-    _timeStamp = 0;
-    _sessionInfo.Reset();
-    _payloadType = 0;
-    _nackCount = 0;
-    _latestPacketTimeMs = -1;
-    _state = kStateEmpty;
-    VCMEncodedFrame::Reset();
+void VCMFrameBuffer::Reset() {
+  _length = 0;
+  _timeStamp = 0;
+  _sessionInfo.Reset();
+  _payloadType = 0;
+  _nackCount = 0;
+  _latestPacketTimeMs = -1;
+  _state = kStateEmpty;
+  VCMEncodedFrame::Reset();
 }
 
 // Set state of frame
-void
-VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {
-    if (_state == state) {
-        return;
-    }
-    switch (state) {
+void VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {
+  if (_state == state) {
+    return;
+  }
+  switch (state) {
     case kStateIncomplete:
-        // we can go to this state from state kStateEmpty
-        assert(_state == kStateEmpty);
+      // we can go to this state from state kStateEmpty
+      assert(_state == kStateEmpty);
 
-        // Do nothing, we received a packet
-        break;
+      // Do nothing, we received a packet
+      break;
 
     case kStateComplete:
-        assert(_state == kStateEmpty ||
-               _state == kStateIncomplete ||
-               _state == kStateDecodable);
+      assert(_state == kStateEmpty || _state == kStateIncomplete ||
+             _state == kStateDecodable);
 
-        break;
+      break;
 
     case kStateEmpty:
-        // Should only be set to empty through Reset().
-        assert(false);
-        break;
+      // Should only be set to empty through Reset().
+      assert(false);
+      break;
 
     case kStateDecodable:
-        assert(_state == kStateEmpty ||
-               _state == kStateIncomplete);
-        break;
-    }
-    _state = state;
+      assert(_state == kStateEmpty || _state == kStateIncomplete);
+      break;
+  }
+  _state = state;
 }
 
 // Get current state of frame
-VCMFrameBufferStateEnum
-VCMFrameBuffer::GetState() const {
-    return _state;
+VCMFrameBufferStateEnum VCMFrameBuffer::GetState() const {
+  return _state;
 }
 
 // Get current state of frame
-VCMFrameBufferStateEnum
-VCMFrameBuffer::GetState(uint32_t& timeStamp) const {
-    timeStamp = TimeStamp();
-    return GetState();
+VCMFrameBufferStateEnum VCMFrameBuffer::GetState(uint32_t& timeStamp) const {
+  timeStamp = TimeStamp();
+  return GetState();
 }
 
-bool
-VCMFrameBuffer::IsRetransmitted() const {
-    return _sessionInfo.session_nack();
+bool VCMFrameBuffer::IsRetransmitted() const {
+  return _sessionInfo.session_nack();
 }
 
-void
-VCMFrameBuffer::PrepareForDecode(bool continuous) {
+void VCMFrameBuffer::PrepareForDecode(bool continuous) {
 #ifdef INDEPENDENT_PARTITIONS
-    if (_codec == kVideoCodecVP8) {
-        _length =
-            _sessionInfo.BuildVP8FragmentationHeader(_buffer, _length,
-                                                     &_fragmentation);
-    } else {
-        size_t bytes_removed = _sessionInfo.MakeDecodable();
-        _length -= bytes_removed;
-    }
-#else
+  if (_codec == kVideoCodecVP8) {
+    _length = _sessionInfo.BuildVP8FragmentationHeader(_buffer, _length,
+                                                       &_fragmentation);
+  } else {
     size_t bytes_removed = _sessionInfo.MakeDecodable();
     _length -= bytes_removed;
+  }
+#else
+  size_t bytes_removed = _sessionInfo.MakeDecodable();
+  _length -= bytes_removed;
 #endif
-    // Transfer frame information to EncodedFrame and create any codec
-    // specific information.
-    _frameType = _sessionInfo.FrameType();
-    _completeFrame = _sessionInfo.complete();
-    _missingFrame = !continuous;
+  // Transfer frame information to EncodedFrame and create any codec
+  // specific information.
+  _frameType = _sessionInfo.FrameType();
+  _completeFrame = _sessionInfo.complete();
+  _missingFrame = !continuous;
 }
 
 }  // namespace webrtc

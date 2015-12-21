@@ -11,6 +11,7 @@
 
 #include <list>
 #include <queue>
+#include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
@@ -34,14 +35,11 @@ class TestVCMReceiver : public ::testing::Test {
       : clock_(new SimulatedClock(0)),
         timing_(clock_.get()),
         receiver_(&timing_, clock_.get(), &event_factory_) {
-
-    stream_generator_.reset(new
-        StreamGenerator(0, clock_->TimeInMilliseconds()));
+    stream_generator_.reset(
+        new StreamGenerator(0, clock_->TimeInMilliseconds()));
   }
 
-  virtual void SetUp() {
-    receiver_.Reset();
-  }
+  virtual void SetUp() { receiver_.Reset(); }
 
   int32_t InsertPacket(int index) {
     VCMPacket packet;
@@ -79,7 +77,7 @@ class TestVCMReceiver : public ::testing::Test {
   bool DecodeNextFrame() {
     int64_t render_time_ms = 0;
     VCMEncodedFrame* frame =
-        receiver_.FrameForDecoding(0, render_time_ms, false);
+        receiver_.FrameForDecoding(0, &render_time_ms, false);
     if (!frame)
       return false;
     receiver_.ReleaseFrame(frame);
@@ -116,7 +114,7 @@ TEST_F(TestVCMReceiver, RenderBufferSize_SkipToKeyFrame) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
   EXPECT_EQ((kNumOfFrames - 1) * kDefaultFramePeriodMs,
-      receiver_.RenderBufferSizeMs());
+            receiver_.RenderBufferSizeMs());
 }
 
 TEST_F(TestVCMReceiver, RenderBufferSize_NotAllComplete) {
@@ -132,7 +130,7 @@ TEST_F(TestVCMReceiver, RenderBufferSize_NotAllComplete) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
   EXPECT_EQ((num_of_frames - 1) * kDefaultFramePeriodMs,
-      receiver_.RenderBufferSizeMs());
+            receiver_.RenderBufferSizeMs());
 }
 
 TEST_F(TestVCMReceiver, RenderBufferSize_NoKeyFrame) {
@@ -143,7 +141,7 @@ TEST_F(TestVCMReceiver, RenderBufferSize_NoKeyFrame) {
   }
   int64_t next_render_time_ms = 0;
   VCMEncodedFrame* frame =
-      receiver_.FrameForDecoding(10, next_render_time_ms, false);
+      receiver_.FrameForDecoding(10, &next_render_time_ms, false);
   EXPECT_TRUE(frame == NULL);
   receiver_.ReleaseFrame(frame);
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
@@ -161,7 +159,7 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_Empty) {
   const int kMaxNonDecodableDuration = 500;
   const int kMinDelayMs = 500;
   receiver_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack,
-      kMaxNonDecodableDuration);
+                            kMaxNonDecodableDuration);
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs);
@@ -178,7 +176,7 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoKeyFrame) {
   const int kMaxPacketAgeToNack = 1000;
   const int kMaxNonDecodableDuration = 500;
   receiver_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack,
-      kMaxNonDecodableDuration);
+                            kMaxNonDecodableDuration);
   const int kNumFrames = kDefaultFrameRate * kMaxNonDecodableDuration / 1000;
   for (int i = 0; i < kNumFrames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
@@ -194,24 +192,23 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_OneIncomplete) {
   const size_t kMaxNackListSize = 1000;
   const int kMaxPacketAgeToNack = 1000;
   const int kMaxNonDecodableDuration = 500;
-  const int kMaxNonDecodableDurationFrames = (kDefaultFrameRate *
-      kMaxNonDecodableDuration + 500) / 1000;
+  const int kMaxNonDecodableDurationFrames =
+      (kDefaultFrameRate * kMaxNonDecodableDuration + 500) / 1000;
   const int kMinDelayMs = 500;
   receiver_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack,
-      kMaxNonDecodableDuration);
+                            kMaxNonDecodableDuration);
   receiver_.SetMinReceiverDelay(kMinDelayMs);
   int64_t key_frame_inserted = clock_->TimeInMilliseconds();
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
   // Insert an incomplete frame.
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
   // Insert enough frames to have too long non-decodable sequence.
-  for (int i = 0; i < kMaxNonDecodableDurationFrames;
-       ++i) {
+  for (int i = 0; i < kMaxNonDecodableDurationFrames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs - clock_->TimeInMilliseconds() -
-      key_frame_inserted);
+                                  key_frame_inserted);
   EXPECT_TRUE(DecodeNextFrame());
   // Make sure we get a key frame request.
   bool request_key_frame = false;
@@ -225,11 +222,11 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger) {
   const size_t kMaxNackListSize = 1000;
   const int kMaxPacketAgeToNack = 1000;
   const int kMaxNonDecodableDuration = 500;
-  const int kMaxNonDecodableDurationFrames = (kDefaultFrameRate *
-      kMaxNonDecodableDuration + 500) / 1000;
+  const int kMaxNonDecodableDurationFrames =
+      (kDefaultFrameRate * kMaxNonDecodableDuration + 500) / 1000;
   const int kMinDelayMs = 500;
   receiver_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack,
-      kMaxNonDecodableDuration);
+                            kMaxNonDecodableDuration);
   receiver_.SetMinReceiverDelay(kMinDelayMs);
   int64_t key_frame_inserted = clock_->TimeInMilliseconds();
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
@@ -237,13 +234,12 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger) {
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
   // Insert all but one frame to not trigger a key frame request due to
   // too long duration of non-decodable frames.
-  for (int i = 0; i < kMaxNonDecodableDurationFrames - 1;
-       ++i) {
+  for (int i = 0; i < kMaxNonDecodableDurationFrames - 1; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs - clock_->TimeInMilliseconds() -
-      key_frame_inserted);
+                                  key_frame_inserted);
   EXPECT_TRUE(DecodeNextFrame());
   // Make sure we don't get a key frame request since we haven't generated
   // enough frames.
@@ -258,25 +254,24 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger2) {
   const size_t kMaxNackListSize = 1000;
   const int kMaxPacketAgeToNack = 1000;
   const int kMaxNonDecodableDuration = 500;
-  const int kMaxNonDecodableDurationFrames = (kDefaultFrameRate *
-      kMaxNonDecodableDuration + 500) / 1000;
+  const int kMaxNonDecodableDurationFrames =
+      (kDefaultFrameRate * kMaxNonDecodableDuration + 500) / 1000;
   const int kMinDelayMs = 500;
   receiver_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack,
-      kMaxNonDecodableDuration);
+                            kMaxNonDecodableDuration);
   receiver_.SetMinReceiverDelay(kMinDelayMs);
   int64_t key_frame_inserted = clock_->TimeInMilliseconds();
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
   // Insert enough frames to have too long non-decodable sequence, except that
   // we don't have any losses.
-  for (int i = 0; i < kMaxNonDecodableDurationFrames;
-       ++i) {
+  for (int i = 0; i < kMaxNonDecodableDurationFrames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
   // Insert an incomplete frame.
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs - clock_->TimeInMilliseconds() -
-      key_frame_inserted);
+                                  key_frame_inserted);
   EXPECT_TRUE(DecodeNextFrame());
   // Make sure we don't get a key frame request since the non-decodable duration
   // is only one frame.
@@ -291,25 +286,24 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_KeyFrameAfterIncompleteFrames) {
   const size_t kMaxNackListSize = 1000;
   const int kMaxPacketAgeToNack = 1000;
   const int kMaxNonDecodableDuration = 500;
-  const int kMaxNonDecodableDurationFrames = (kDefaultFrameRate *
-      kMaxNonDecodableDuration + 500) / 1000;
+  const int kMaxNonDecodableDurationFrames =
+      (kDefaultFrameRate * kMaxNonDecodableDuration + 500) / 1000;
   const int kMinDelayMs = 500;
   receiver_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack,
-      kMaxNonDecodableDuration);
+                            kMaxNonDecodableDuration);
   receiver_.SetMinReceiverDelay(kMinDelayMs);
   int64_t key_frame_inserted = clock_->TimeInMilliseconds();
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
   // Insert an incomplete frame.
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
   // Insert enough frames to have too long non-decodable sequence.
-  for (int i = 0; i < kMaxNonDecodableDurationFrames;
-       ++i) {
+  for (int i = 0; i < kMaxNonDecodableDurationFrames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs - clock_->TimeInMilliseconds() -
-      key_frame_inserted);
+                                  key_frame_inserted);
   EXPECT_TRUE(DecodeNextFrame());
   // Make sure we don't get a key frame request since we have a key frame
   // in the list.
@@ -340,7 +334,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
   // Return true if some frame arrives between now and now+|milliseconds|.
   bool AdvanceTimeMilliseconds(int64_t milliseconds, bool stop_on_frame) {
     return AdvanceTimeMicroseconds(milliseconds * 1000, stop_on_frame);
-  };
+  }
 
   bool AdvanceTimeMicroseconds(int64_t microseconds, bool stop_on_frame) {
     int64_t start_time = TimeInMicroseconds();
@@ -364,7 +358,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
       SimulatedClock::AdvanceTimeMicroseconds(end_time - TimeInMicroseconds());
     }
     return frame_injected;
-  };
+  }
 
   // Input timestamps are in unit Milliseconds.
   // And |arrive_timestamps| must be positive and in increasing order.
@@ -431,7 +425,7 @@ class FrameInjectEvent : public EventWrapper {
 
   bool Set() override { return true; }
 
-  EventTypeWrapper Wait(unsigned long max_time) override {
+  EventTypeWrapper Wait(unsigned long max_time) override {  // NOLINT
     if (clock_->AdvanceTimeMilliseconds(max_time, stop_on_frame_) &&
         stop_on_frame_) {
       return EventTypeWrapper::kEventSignaled;
@@ -447,7 +441,6 @@ class FrameInjectEvent : public EventWrapper {
 
 class VCMReceiverTimingTest : public ::testing::Test {
  protected:
-
   VCMReceiverTimingTest()
 
       : clock_(&stream_generator_, &receiver_),
@@ -459,7 +452,6 @@ class VCMReceiverTimingTest : public ::testing::Test {
             rtc::scoped_ptr<EventWrapper>(new FrameInjectEvent(&clock_, false)),
             rtc::scoped_ptr<EventWrapper>(
                 new FrameInjectEvent(&clock_, true))) {}
-
 
   virtual void SetUp() { receiver_.Reset(); }
 
@@ -506,7 +498,7 @@ TEST_F(VCMReceiverTimingTest, FrameForDecoding) {
   while (num_frames_return < kNumFrames) {
     int64_t start_time = clock_.TimeInMilliseconds();
     VCMEncodedFrame* frame =
-        receiver_.FrameForDecoding(kMaxWaitTime, next_render_time, false);
+        receiver_.FrameForDecoding(kMaxWaitTime, &next_render_time, false);
     int64_t end_time = clock_.TimeInMilliseconds();
 
     // In any case the FrameForDecoding should not wait longer than
@@ -566,9 +558,8 @@ TEST_F(VCMReceiverTimingTest, FrameForDecodingPreferLateDecoding) {
   while (num_frames_return < kNumFrames) {
     int64_t start_time = clock_.TimeInMilliseconds();
 
-    VCMEncodedFrame* frame =
-        receiver_.FrameForDecoding(kMaxWaitTime, next_render_time,
-                                   prefer_late_decoding);
+    VCMEncodedFrame* frame = receiver_.FrameForDecoding(
+        kMaxWaitTime, &next_render_time, prefer_late_decoding);
     int64_t end_time = clock_.TimeInMilliseconds();
     if (frame) {
       EXPECT_EQ(frame->RenderTimeMs() - max_decode_ms - render_delay_ms,
