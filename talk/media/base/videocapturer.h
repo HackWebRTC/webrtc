@@ -262,17 +262,6 @@ class VideoCapturer
   sigslot::signal2<VideoCapturer*, const VideoFrame*,
                    sigslot::multi_threaded_local> SignalVideoFrame;
 
-  // If 'screencast_max_pixels' is set greater than zero, screencasts will be
-  // scaled to be no larger than this value.
-  // If set to zero, the max pixels will be limited to
-  // Retina MacBookPro 15" resolution of 2880 x 1800.
-  // For high fps, maximum pixels limit is set based on common 24" monitor
-  // resolution of 2048 x 1280.
-  int screencast_max_pixels() const { return screencast_max_pixels_; }
-  void set_screencast_max_pixels(int p) {
-    screencast_max_pixels_ = std::max(0, p);
-  }
-
   // If true, run video adaptation. By default, video adaptation is enabled
   // and users must call video_adapter()->OnOutputFormatRequest()
   // to receive frames.
@@ -369,7 +358,6 @@ class VideoCapturer
   bool square_pixel_aspect_ratio_;  // Enable scaling to square pixels.
   int scaled_width_;  // Current output size from ComputeScale.
   int scaled_height_;
-  int screencast_max_pixels_;  // Downscale screencasts further if requested.
   bool muted_;
   int black_frame_count_down_;
 
