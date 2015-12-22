@@ -229,7 +229,7 @@ void RefFiles::ReadFromFileAndCompare(
   ASSERT_EQ(stats.accelerate_rate, ref_stats.accelerate_rate());
   ASSERT_EQ(stats.clockdrift_ppm, ref_stats.clockdrift_ppm());
   ASSERT_EQ(stats.added_zero_samples, ref_stats.added_zero_samples());
-  ASSERT_EQ(stats.secondary_decoded_rate, 0);
+  ASSERT_EQ(stats.secondary_decoded_rate, ref_stats.secondary_decoded_rate());
   ASSERT_LE(stats.speech_expand_rate, ref_stats.expand_rate());
 #else
   FAIL() << "Reading from reference file requires Proto Buffer.";
@@ -279,7 +279,8 @@ class NetEqDecodingTest : public ::testing::Test {
   static const size_t kBlockSize8kHz = kTimeStepMs * 8;
   static const size_t kBlockSize16kHz = kTimeStepMs * 16;
   static const size_t kBlockSize32kHz = kTimeStepMs * 32;
-  static const size_t kMaxBlockSize = kBlockSize32kHz;
+  static const size_t kBlockSize48kHz = kTimeStepMs * 48;
+  static const size_t kMaxBlockSize = kBlockSize48kHz;
   static const int kInitSampleRateHz = 8000;
 
   NetEqDecodingTest();
@@ -381,6 +382,10 @@ void NetEqDecodingTest::LoadDecoders() {
   ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderISACswb,
                                            "isac-swb", 104));
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderOpus,
+                                           "opus", 111));
+#endif
   // Load PCM16B nb.
   ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16B,
                                            "pcm16-nb", 93));
@@ -426,7 +431,8 @@ void NetEqDecodingTest::Process(size_t* out_len) {
                                 &num_channels, &type));
   ASSERT_TRUE((*out_len == kBlockSize8kHz) ||
               (*out_len == kBlockSize16kHz) ||
-              (*out_len == kBlockSize32kHz));
+              (*out_len == kBlockSize32kHz) ||
+              (*out_len == kBlockSize48kHz));
   output_sample_rate_ = static_cast<int>(*out_len / 10 * 1000);
   EXPECT_EQ(output_sample_rate_, neteq_->last_output_sample_rate_hz());
 
@@ -511,7 +517,7 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
 }
 
 #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID) &&             \
-     defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                     \
+    defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                      \
     (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
 #define MAYBE_TestBitExactness TestBitExactness
@@ -537,6 +543,34 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
 #endif
   const std::string rtcp_stat_ref_file =
       webrtc::test::ResourcePath("audio_coding/neteq4_rtcp_stats", "dat");
+
+  if (FLAGS_gen_ref) {
+    DecodeAndCompare(input_rtp_file, "", "", "");
+  } else {
+    DecodeAndCompare(input_rtp_file,
+                     input_ref_file,
+                     network_stat_ref_file,
+                     rtcp_stat_ref_file);
+  }
+}
+
+#if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID) &&             \
+    defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                      \
+    defined(WEBRTC_CODEC_OPUS)
+#define MAYBE_TestOpusBitExactness TestOpusBitExactness
+#else
+#define MAYBE_TestOpusBitExactness DISABLED_TestOpusBitExactness
+#endif
+TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
+  const std::string input_rtp_file =
+      webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
+  const std::string input_ref_file =
+      webrtc::test::ResourcePath("audio_coding/neteq4_opus_ref", "pcm");
+  const std::string network_stat_ref_file =
+      webrtc::test::ResourcePath("audio_coding/neteq4_opus_network_stats",
+                                 "dat");
+  const std::string rtcp_stat_ref_file =
+      webrtc::test::ResourcePath("audio_coding/neteq4_opus_rtcp_stats", "dat");
 
   if (FLAGS_gen_ref) {
     DecodeAndCompare(input_rtp_file, "", "", "");
