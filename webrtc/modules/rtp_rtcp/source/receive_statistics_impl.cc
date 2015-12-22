@@ -259,6 +259,7 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
   stats.fraction_lost = local_fraction_lost;
 
   // We need a counter for cumulative loss too.
+  // TODO(danilchap): Ensure cumulative loss is below maximum value of 2^24.
   cumulative_loss_ += missing;
   stats.cumulative_lost = cumulative_loss_;
   stats.extended_max_sequence_number =

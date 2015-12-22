@@ -453,26 +453,6 @@ bool RTCPSender::SendTimeOfXrRrReport(uint32_t mid_ntp,
   return true;
 }
 
-int32_t RTCPSender::AddReportBlock(const RTCPReportBlock& report_block) {
-  if (report_blocks_.size() >= RTCP_MAX_REPORT_BLOCKS) {
-    LOG(LS_WARNING) << "Too many report blocks.";
-    return -1;
-  }
-  rtcp::ReportBlock* block = &report_blocks_[report_block.remoteSSRC];
-  block->To(report_block.remoteSSRC);
-  block->WithFractionLost(report_block.fractionLost);
-  if (!block->WithCumulativeLost(report_block.cumulativeLost)) {
-    LOG(LS_WARNING) << "Cumulative lost is oversized.";
-    return -1;
-  }
-  block->WithExtHighestSeqNum(report_block.extendedHighSeqNum);
-  block->WithJitter(report_block.jitter);
-  block->WithLastSr(report_block.lastSR);
-  block->WithDelayLastSr(report_block.delaySinceLastSR);
-
-  return 0;
-}
-
 rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
   for (int i = (RTCP_NUMBER_OF_SR - 2); i >= 0; i--) {
     // shift old
@@ -916,33 +896,37 @@ void RTCPSender::PrepareReport(const std::set<RTCPPacketType>& packetTypes,
 
     StatisticianMap statisticians =
         receive_statistics_->GetActiveStatisticians();
-    if (!statisticians.empty()) {
-      for (auto it = statisticians.begin(); it != statisticians.end(); ++it) {
-        RTCPReportBlock report_block;
-        if (PrepareReportBlock(feedback_state, it->first, it->second,
-                               &report_block)) {
-          // TODO(danilchap) AddReportBlock may fail (for 2 different reasons).
-          // Probably it shouldn't be ignored.
-          AddReportBlock(report_block);
-        }
-      }
+    RTC_DCHECK(report_blocks_.empty());
+    for (auto& it : statisticians) {
+      AddReportBlock(feedback_state, it.first, it.second);
     }
   }
 }
 
-bool RTCPSender::PrepareReportBlock(const FeedbackState& feedback_state,
-                                    uint32_t ssrc,
-                                    StreamStatistician* statistician,
-                                    RTCPReportBlock* report_block) {
+bool RTCPSender::AddReportBlock(const FeedbackState& feedback_state,
+                                uint32_t ssrc,
+                                StreamStatistician* statistician) {
   // Do we have receive statistics to send?
   RtcpStatistics stats;
   if (!statistician->GetStatistics(&stats, true))
     return false;
-  report_block->fractionLost = stats.fraction_lost;
-  report_block->cumulativeLost = stats.cumulative_lost;
-  report_block->extendedHighSeqNum = stats.extended_max_sequence_number;
-  report_block->jitter = stats.jitter;
-  report_block->remoteSSRC = ssrc;
+
+  if (report_blocks_.size() >= RTCP_MAX_REPORT_BLOCKS) {
+    LOG(LS_WARNING) << "Too many report blocks.";
+    return false;
+  }
+  RTC_DCHECK(report_blocks_.find(ssrc) == report_blocks_.end());
+  rtcp::ReportBlock* block = &report_blocks_[ssrc];
+  block->To(ssrc);
+  block->WithFractionLost(stats.fraction_lost);
+  if (!block->WithCumulativeLost(stats.cumulative_lost)) {
+    report_blocks_.erase(ssrc);
+    LOG(LS_WARNING) << "Cumulative lost is oversized.";
+    return false;
+  }
+  block->WithExtHighestSeqNum(stats.extended_max_sequence_number);
+  block->WithJitter(stats.jitter);
+  block->WithLastSr(feedback_state.remote_sr);
 
   // TODO(sprang): Do we really need separate time stamps for each report?
   // Get our NTP as late as possible to avoid a race.
@@ -951,7 +935,6 @@ bool RTCPSender::PrepareReportBlock(const FeedbackState& feedback_state,
   clock_->CurrentNtp(ntp_secs, ntp_frac);
 
   // Delay since last received report.
-  uint32_t delaySinceLastReceivedSR = 0;
   if ((feedback_state.last_rr_ntp_secs != 0) ||
       (feedback_state.last_rr_ntp_frac != 0)) {
     // Get the 16 lowest bits of seconds and the 16 highest bits of fractions.
@@ -963,10 +946,8 @@ bool RTCPSender::PrepareReportBlock(const FeedbackState& feedback_state,
     receiveTime <<= 16;
     receiveTime += (feedback_state.last_rr_ntp_frac & 0xffff0000) >> 16;
 
-    delaySinceLastReceivedSR = now - receiveTime;
+    block->WithDelayLastSr(now - receiveTime);
   }
-  report_block->delaySinceLastSR = delaySinceLastReceivedSR;
-  report_block->lastSR = feedback_state.remote_sr;
   return true;
 }
 

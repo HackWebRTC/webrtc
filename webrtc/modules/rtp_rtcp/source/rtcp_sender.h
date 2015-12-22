@@ -158,13 +158,10 @@ class RTCPSender {
                      const FeedbackState& feedback_state)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
-  int32_t AddReportBlock(const RTCPReportBlock& report_block)
+  bool AddReportBlock(const FeedbackState& feedback_state,
+                      uint32_t ssrc,
+                      StreamStatistician* statistician)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-
-  bool PrepareReportBlock(const FeedbackState& feedback_state,
-                          uint32_t ssrc,
-                          StreamStatistician* statistician,
-                          RTCPReportBlock* report_block);
 
   rtc::scoped_ptr<rtcp::RtcpPacket> BuildSR(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
