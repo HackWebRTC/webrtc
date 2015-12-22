@@ -26,7 +26,6 @@ using webrtc::rtcp::Bye;
 using webrtc::rtcp::Dlrr;
 using webrtc::rtcp::Empty;
 using webrtc::rtcp::Fir;
-using webrtc::rtcp::Nack;
 using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiverReport;
 using webrtc::rtcp::Remb;
@@ -241,104 +240,6 @@ TEST(RtcpPacketTest, Sli) {
   EXPECT_EQ(kFirstMb, parser.sli_item()->FirstMb());
   EXPECT_EQ(kNumberOfMb, parser.sli_item()->NumberOfMb());
   EXPECT_EQ(kPictureId, parser.sli_item()->PictureId());
-}
-
-TEST(RtcpPacketTest, Nack) {
-  Nack nack;
-  const uint16_t kList[] = {0, 1, 3, 8, 16};
-  const uint16_t kListLength = sizeof(kList) / sizeof(kList[0]);
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kList, kListLength);
-  rtc::scoped_ptr<RawPacket> packet(nack.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.nack()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.nack()->Ssrc());
-  EXPECT_EQ(kRemoteSsrc, parser.nack()->MediaSsrc());
-  EXPECT_EQ(1, parser.nack_item()->num_packets());
-  std::vector<uint16_t> seqs = parser.nack_item()->last_nack_list();
-  EXPECT_EQ(kListLength, seqs.size());
-  for (size_t i = 0; i < kListLength; ++i) {
-    EXPECT_EQ(kList[i], seqs[i]);
-  }
-}
-
-TEST(RtcpPacketTest, NackWithWrap) {
-  Nack nack;
-  const uint16_t kList[] = {65500, 65516, 65534, 65535, 0, 1, 3, 20, 100};
-  const uint16_t kListLength = sizeof(kList) / sizeof(kList[0]);
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kList, kListLength);
-  rtc::scoped_ptr<RawPacket> packet(nack.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.nack()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.nack()->Ssrc());
-  EXPECT_EQ(kRemoteSsrc, parser.nack()->MediaSsrc());
-  EXPECT_EQ(4, parser.nack_item()->num_packets());
-  std::vector<uint16_t> seqs = parser.nack_item()->last_nack_list();
-  EXPECT_EQ(kListLength, seqs.size());
-  for (size_t i = 0; i < kListLength; ++i) {
-    EXPECT_EQ(kList[i], seqs[i]);
-  }
-}
-
-TEST(RtcpPacketTest, NackFragmented) {
-  Nack nack;
-  const uint16_t kList[] = {1, 100, 200, 300, 400};
-  const uint16_t kListLength = sizeof(kList) / sizeof(kList[0]);
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kList, kListLength);
-
-  class Verifier : public rtcp::RtcpPacket::PacketReadyCallback {
-   public:
-    void OnPacketReady(uint8_t* data, size_t length) override {
-      ++packets_created_;
-      RtcpPacketParser parser;
-      parser.Parse(data, length);
-      EXPECT_EQ(1, parser.nack()->num_packets());
-      EXPECT_EQ(kSenderSsrc, parser.nack()->Ssrc());
-      EXPECT_EQ(kRemoteSsrc, parser.nack()->MediaSsrc());
-      switch (packets_created_) {
-        case 1:
-          EXPECT_THAT(parser.nack_item()->last_nack_list(),
-                      ElementsAre(1, 100, 200));
-          break;
-        case 2:
-          EXPECT_THAT(parser.nack_item()->last_nack_list(),
-                      ElementsAre(300, 400));
-          break;
-        default:
-          ADD_FAILURE() << "Unexpected packet count: " << packets_created_;
-      }
-    }
-    int packets_created_ = 0;
-  } verifier;
-  const size_t kBufferSize = 12 + (3 * 4);  // Fits common header + 3 nack items
-  uint8_t buffer[kBufferSize];
-  EXPECT_TRUE(nack.BuildExternalBuffer(buffer, kBufferSize, &verifier));
-  EXPECT_EQ(2, verifier.packets_created_);
-}
-
-TEST(RtcpPacketTest, NackWithTooSmallBuffer) {
-  const uint16_t kList[] = {1};
-  const size_t kMinNackBlockSize = 16;
-  Nack nack;
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kList, 1);
-  class Verifier : public rtcp::RtcpPacket::PacketReadyCallback {
-   public:
-    void OnPacketReady(uint8_t* data, size_t length) override {
-      ADD_FAILURE() << "Buffer should be too small.";
-    }
-  } verifier;
-  uint8_t buffer[kMinNackBlockSize - 1];
-  EXPECT_FALSE(
-      nack.BuildExternalBuffer(buffer, kMinNackBlockSize - 1, &verifier));
 }
 
 TEST(RtcpPacketTest, Rpsi) {

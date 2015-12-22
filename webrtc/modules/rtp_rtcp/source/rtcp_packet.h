@@ -327,46 +327,6 @@ class Sli : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Sli);
 };
 
-// Generic NACK (RFC 4585).
-//
-// FCI:
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |            PID                |             BLP               |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Nack : public RtcpPacket {
- public:
-  Nack() : RtcpPacket() {
-    memset(&nack_, 0, sizeof(nack_));
-  }
-
-  virtual ~Nack() {}
-
-  void From(uint32_t ssrc) {
-    nack_.SenderSSRC = ssrc;
-  }
-  void To(uint32_t ssrc) {
-    nack_.MediaSSRC = ssrc;
-  }
-  void WithList(const uint16_t* nack_list, int length);
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
-  size_t BlockLength() const override;
-
- private:
-  RTCPUtility::RTCPPacketRTPFBNACK nack_;
-  std::vector<RTCPUtility::RTCPPacketRTPFBNACKItem> nack_fields_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Nack);
-};
-
 // Reference picture selection indication (RPSI) (RFC 4585).
 //
 // FCI:
