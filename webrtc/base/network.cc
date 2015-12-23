@@ -24,13 +24,23 @@
 #elif !defined(__native_client__)
 #include <net/if.h>
 #endif
+#include <sys/socket.h>
+#include <sys/utsname.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <errno.h>
+
+#if defined(WEBRTC_ANDROID)
+#include "webrtc/base/ifaddrs-android.h"
+#elif !defined(__native_client__)
+#include <ifaddrs.h>
+#endif
+
 #endif  // WEBRTC_POSIX
 
 #if defined(WEBRTC_WIN)
 #include "webrtc/base/win32.h"
 #include <Iphlpapi.h>
-#else
-#include "webrtc/base/ifaddrs_converter.h"
 #endif
 
 #include <stdio.h>
@@ -119,7 +129,7 @@ std::string AdapterTypeToString(AdapterType type) {
   }
 }
 
-bool IsIgnoredIPv6(const InterfaceAddress& ip) {
+bool IsIgnoredIPv6(const IPAddress& ip) {
   if (ip.family() != AF_INET6) {
     return false;
   }
@@ -133,11 +143,6 @@ bool IsIgnoredIPv6(const InterfaceAddress& ip) {
 
   // Any MAC based IPv6 should be avoided to prevent the MAC tracking.
   if (IPIsMacBased(ip)) {
-    return true;
-  }
-
-  // Ignore deprecated IPv6.
-  if (ip.ipv6_flags() & IPV6_ADDRESS_FLAG_DEPRECATED) {
     return true;
   }
 
@@ -388,47 +393,49 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 
 #elif defined(WEBRTC_POSIX)
 void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
-                                         IfAddrsConverter* ifaddrs_converter,
                                          bool include_ignored,
                                          NetworkList* networks) const {
   NetworkMap current_networks;
-
   for (struct ifaddrs* cursor = interfaces;
        cursor != NULL; cursor = cursor->ifa_next) {
     IPAddress prefix;
     IPAddress mask;
-    InterfaceAddress ip;
+    IPAddress ip;
     int scope_id = 0;
 
     // Some interfaces may not have address assigned.
-    if (!cursor->ifa_addr || !cursor->ifa_netmask) {
+    if (!cursor->ifa_addr || !cursor->ifa_netmask)
       continue;
-    }
-    // Skip ones which are down.
-    if (!(cursor->ifa_flags & IFF_RUNNING)) {
-      continue;
-    }
-    // Skip unknown family.
-    if (cursor->ifa_addr->sa_family != AF_INET &&
-        cursor->ifa_addr->sa_family != AF_INET6) {
-      continue;
-    }
-    // Skip IPv6 if not enabled.
-    if (cursor->ifa_addr->sa_family == AF_INET6 && !ipv6_enabled()) {
-      continue;
-    }
-    // Convert to InterfaceAddress.
-    if (!ifaddrs_converter->ConvertIfAddrsToIPAddress(cursor, &ip, &mask)) {
-      continue;
-    }
 
-    // Special case for IPv6 address.
-    if (cursor->ifa_addr->sa_family == AF_INET6) {
-      if (IsIgnoredIPv6(ip)) {
+    switch (cursor->ifa_addr->sa_family) {
+      case AF_INET: {
+        ip = IPAddress(
+            reinterpret_cast<sockaddr_in*>(cursor->ifa_addr)->sin_addr);
+        mask = IPAddress(
+            reinterpret_cast<sockaddr_in*>(cursor->ifa_netmask)->sin_addr);
+        break;
+      }
+      case AF_INET6: {
+        if (ipv6_enabled()) {
+          ip = IPAddress(
+              reinterpret_cast<sockaddr_in6*>(cursor->ifa_addr)->sin6_addr);
+
+          if (IsIgnoredIPv6(ip)) {
+            continue;
+          }
+
+          mask = IPAddress(
+              reinterpret_cast<sockaddr_in6*>(cursor->ifa_netmask)->sin6_addr);
+          scope_id =
+              reinterpret_cast<sockaddr_in6*>(cursor->ifa_addr)->sin6_scope_id;
+          break;
+        } else {
+          continue;
+        }
+      }
+      default: {
         continue;
       }
-      scope_id =
-          reinterpret_cast<sockaddr_in6*>(cursor->ifa_addr)->sin6_scope_id;
     }
 
     int prefix_length = CountIPMaskBits(mask);
@@ -474,9 +481,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
     return false;
   }
 
-  rtc::scoped_ptr<IfAddrsConverter> ifaddrs_converter(CreateIfAddrsConverter());
-  ConvertIfAddrs(interfaces, ifaddrs_converter.get(), include_ignored,
-                 networks);
+  ConvertIfAddrs(interfaces, include_ignored, networks);
 
   freeifaddrs(interfaces);
   return true;

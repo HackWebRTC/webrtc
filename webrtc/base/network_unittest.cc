@@ -15,17 +15,18 @@
 #include <vector>
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>
-#include <net/if.h>
-#include "webrtc/base/ifaddrs_converter.h"
-#endif  // defined(WEBRTC_POSIX)
+#if !defined(WEBRTC_ANDROID)
+#include <ifaddrs.h>
+#else
+#include "webrtc/base/ifaddrs-android.h"
+#endif
+#endif
 #include "webrtc/base/gunit.h"
 #if defined(WEBRTC_WIN)
 #include "webrtc/base/logging.h"  // For LOG_GLE
 #endif
 
 namespace rtc {
-
-namespace {
 
 class FakeNetworkMonitor : public NetworkMonitorBase {
  public:
@@ -40,8 +41,6 @@ class FakeNetworkMonitorFactory : public NetworkMonitorFactory {
     return new FakeNetworkMonitor();
   }
 };
-
-}  // namespace
 
 class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
  public:
@@ -90,10 +89,7 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
                                  struct ifaddrs* interfaces,
                                  bool include_ignored,
                                  NetworkManager::NetworkList* networks) {
-    // Use the base IfAddrsConverter for test cases.
-    rtc::scoped_ptr<IfAddrsConverter> ifaddrs_converter(new IfAddrsConverter());
-    network_manager.ConvertIfAddrs(interfaces, ifaddrs_converter.get(),
-                                   include_ignored, networks);
+    network_manager.ConvertIfAddrs(interfaces, include_ignored, networks);
   }
 
   struct sockaddr_in6* CreateIpv6Addr(const std::string& ip_string,
@@ -122,7 +118,6 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     if_addr->ifa_netmask =
         reinterpret_cast<struct sockaddr*>(CreateIpv6Addr(ipv6_netmask, 0));
     if_addr->ifa_next = list;
-    if_addr->ifa_flags = IFF_RUNNING;
     return if_addr;
   }
 
@@ -766,21 +761,6 @@ TEST_F(NetworkTest, TestConvertIfAddrsMultiAddressesOnOneInterface) {
   // This ensures we release the objects created in CallConvertIfAddrs.
   MergeNetworkList(manager, result, &changed);
   ReleaseIfAddrs(list);
-}
-
-TEST_F(NetworkTest, TestConvertIfAddrsNotRunning) {
-  ifaddrs list;
-  memset(&list, 0, sizeof(list));
-  list.ifa_name = const_cast<char*>("test_iface");
-  sockaddr ifa_addr;
-  sockaddr ifa_netmask;
-  list.ifa_addr = &ifa_addr;
-  list.ifa_netmask = &ifa_netmask;
-
-  NetworkManager::NetworkList result;
-  BasicNetworkManager manager;
-  CallConvertIfAddrs(manager, &list, true, &result);
-  EXPECT_TRUE(result.empty());
 }
 #endif  // defined(WEBRTC_POSIX)
 

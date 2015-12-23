@@ -221,9 +221,6 @@
         'httpserver.h',
         'ifaddrs-android.cc',
         'ifaddrs-android.h',
-        'ifaddrs_converter.cc',
-        'ifaddrs_converter.h',
-        'macifaddrs_converter.cc',
         'iosfilesystem.mm',
         'ipaddress.cc',
         'ipaddress.h',
@@ -662,9 +659,6 @@
           ],
         }],
         ['OS=="win"', {
-          'sources!': [
-            'ifaddrs_converter.cc',
-          ],
           'link_settings': {
             'libraries': [
               '-lcrypt32.lib',
@@ -716,7 +710,6 @@
         }],
         ['OS!="ios" and OS!="mac"', {
           'sources!': [
-            'macifaddrs_converter.cc',
             'scoped_autorelease_pool.mm',
           ],
         }],
