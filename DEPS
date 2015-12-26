@@ -6,7 +6,7 @@
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '0f24b97228ff04893813bbead0fc320cbf52e242',
+  'chromium_revision': 'e13537fe418eff11d3cab9077f6a647d7c74f103',
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
