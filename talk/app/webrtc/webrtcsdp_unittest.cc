@@ -80,11 +80,13 @@ static const char kSessionTime[] = "t=0 0\r\n";
 static const uint32_t kCandidatePriority = 2130706432U;  // pref = 1.0
 static const char kCandidateUfragVoice[] = "ufrag_voice";
 static const char kCandidatePwdVoice[] = "pwd_voice";
+static const char kAttributeIceUfragVoice[] = "a=ice-ufrag:ufrag_voice\r\n";
 static const char kAttributeIcePwdVoice[] = "a=ice-pwd:pwd_voice\r\n";
 static const char kCandidateUfragVideo[] = "ufrag_video";
 static const char kCandidatePwdVideo[] = "pwd_video";
 static const char kCandidateUfragData[] = "ufrag_data";
 static const char kCandidatePwdData[] = "pwd_data";
+static const char kAttributeIceUfragVideo[] = "a=ice-ufrag:ufrag_video\r\n";
 static const char kAttributeIcePwdVideo[] = "a=ice-pwd:pwd_video\r\n";
 static const uint32_t kCandidateGeneration = 2;
 static const char kCandidateFoundation1[] = "a0+B/1";
@@ -525,10 +527,14 @@ static void ReplaceDirection(cricket::MediaContentDirection direction,
 static void ReplaceRejected(bool audio_rejected, bool video_rejected,
                             std::string* message) {
   if (audio_rejected) {
-    Replace("m=audio 2345", "m=audio 0", message);
+    Replace("m=audio 9", "m=audio 0", message);
+    Replace(kAttributeIceUfragVoice, "", message);
+    Replace(kAttributeIcePwdVoice, "", message);
   }
   if (video_rejected) {
-    Replace("m=video 3457", "m=video 0", message);
+    Replace("m=video 9", "m=video 0", message);
+    Replace(kAttributeIceUfragVideo, "", message);
+    Replace(kAttributeIcePwdVideo, "", message);
   }
 }
 
@@ -985,6 +991,18 @@ class WebRtcSdpTest : public testing::Test {
     desc_.AddTransportInfo(transport_info);
   }
 
+  void SetIceUfragPwd(const std::string& content_name,
+                      const std::string& ice_ufrag,
+                      const std::string& ice_pwd) {
+    ASSERT_TRUE(desc_.GetTransportInfoByName(content_name) != NULL);
+    cricket::TransportInfo transport_info =
+        *(desc_.GetTransportInfoByName(content_name));
+    desc_.RemoveTransportInfoByName(content_name);
+    transport_info.description.ice_ufrag = ice_ufrag;
+    transport_info.description.ice_pwd = ice_pwd;
+    desc_.AddTransportInfo(transport_info);
+  }
+
   void AddFingerprint() {
     desc_.RemoveTransportInfoByName(kAudioContentName);
     desc_.RemoveTransportInfoByName(kVideoContentName);
@@ -1056,15 +1074,22 @@ class WebRtcSdpTest : public testing::Test {
                      audio_desc_);
     desc_.AddContent(kVideoContentName, NS_JINGLE_RTP, video_rejected,
                      video_desc_);
-    std::string new_sdp = kSdpFullString;
+    SetIceUfragPwd(kAudioContentName,
+                   audio_rejected ? "" : kCandidateUfragVoice,
+                   audio_rejected ? "" : kCandidatePwdVoice);
+    SetIceUfragPwd(kVideoContentName,
+                   video_rejected ? "" : kCandidateUfragVideo,
+                   video_rejected ? "" : kCandidatePwdVideo);
+
+    std::string new_sdp = kSdpString;
     ReplaceRejected(audio_rejected, video_rejected, &new_sdp);
 
-    if (!jdesc_.Initialize(desc_.Copy(),
-                           jdesc_.session_id(),
-                           jdesc_.session_version())) {
+    JsepSessionDescription jdesc_no_candidates(kDummyString);
+    if (!jdesc_no_candidates.Initialize(desc_.Copy(), kSessionId,
+                                        kSessionVersion)) {
       return false;
     }
-    std::string message = webrtc::SdpSerialize(jdesc_);
+    std::string message = webrtc::SdpSerialize(jdesc_no_candidates);
     EXPECT_EQ(new_sdp, message);
     return true;
   }
@@ -1127,11 +1152,11 @@ class WebRtcSdpTest : public testing::Test {
   }
 
   bool TestDeserializeRejected(bool audio_rejected, bool video_rejected) {
-    std::string new_sdp = kSdpFullString;
+    std::string new_sdp = kSdpString;
     ReplaceRejected(audio_rejected, video_rejected, &new_sdp);
     JsepSessionDescription new_jdesc(JsepSessionDescription::kOffer);
-
     EXPECT_TRUE(SdpDeserialize(new_sdp, &new_jdesc));
+
     audio_desc_ = static_cast<AudioContentDescription*>(
         audio_desc_->Copy());
     video_desc_ = static_cast<VideoContentDescription*>(
@@ -1142,12 +1167,18 @@ class WebRtcSdpTest : public testing::Test {
                      audio_desc_);
     desc_.AddContent(kVideoContentName, NS_JINGLE_RTP, video_rejected,
                      video_desc_);
-    if (!jdesc_.Initialize(desc_.Copy(),
-                           jdesc_.session_id(),
-                           jdesc_.session_version())) {
+    SetIceUfragPwd(kAudioContentName,
+                   audio_rejected ? "" : kCandidateUfragVoice,
+                   audio_rejected ? "" : kCandidatePwdVoice);
+    SetIceUfragPwd(kVideoContentName,
+                   video_rejected ? "" : kCandidateUfragVideo,
+                   video_rejected ? "" : kCandidatePwdVideo);
+    JsepSessionDescription jdesc_no_candidates(kDummyString);
+    if (!jdesc_no_candidates.Initialize(desc_.Copy(), jdesc_.session_id(),
+                                        jdesc_.session_version())) {
       return false;
     }
-    EXPECT_TRUE(CompareSessionDescription(jdesc_, new_jdesc));
+    EXPECT_TRUE(CompareSessionDescription(jdesc_no_candidates, new_jdesc));
     return true;
   }
 
@@ -1546,8 +1577,8 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithFingerprintNoCryptos) {
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithoutCandidates) {
   // JsepSessionDescription with desc but without candidates.
   JsepSessionDescription jdesc_no_candidates(kDummyString);
-  ASSERT_TRUE(jdesc_no_candidates.Initialize(desc_.Copy(),
-                                             kSessionId, kSessionVersion));
+  ASSERT_TRUE(jdesc_no_candidates.Initialize(desc_.Copy(), kSessionId,
+                                             kSessionVersion));
   std::string message = webrtc::SdpSerialize(jdesc_no_candidates);
   EXPECT_EQ(std::string(kSdpString), message);
 }

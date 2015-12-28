@@ -1295,13 +1295,17 @@ void BuildMediaDescription(const ContentInfo* content_info,
     // ice-pwd-att           = "ice-pwd" ":" password
     // ice-ufrag-att         = "ice-ufrag" ":" ufrag
     // ice-ufrag
-    InitAttrLine(kAttributeIceUfrag, &os);
-    os << kSdpDelimiterColon << transport_info->description.ice_ufrag;
-    AddLine(os.str(), message);
+    if (!transport_info->description.ice_ufrag.empty()) {
+      InitAttrLine(kAttributeIceUfrag, &os);
+      os << kSdpDelimiterColon << transport_info->description.ice_ufrag;
+      AddLine(os.str(), message);
+    }
     // ice-pwd
-    InitAttrLine(kAttributeIcePwd, &os);
-    os << kSdpDelimiterColon << transport_info->description.ice_pwd;
-    AddLine(os.str(), message);
+    if (!transport_info->description.ice_pwd.empty()) {
+      InitAttrLine(kAttributeIcePwd, &os);
+      os << kSdpDelimiterColon << transport_info->description.ice_pwd;
+      AddLine(os.str(), message);
+    }
 
     // draft-petithuguenin-mmusic-ice-attributes-level-03
     BuildIceOptions(transport_info->description.transport_options, message);
