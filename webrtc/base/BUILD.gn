@@ -331,6 +331,8 @@ static_library("rtc_base") {
 
   if (is_posix) {
     sources += [
+      "ifaddrs-android.h",
+      "ifaddrs_converter.cc",
       "unixfilesystem.cc",
       "unixfilesystem.h",
     ]
@@ -338,6 +340,10 @@ static_library("rtc_base") {
 
   if (build_with_chromium) {
     deps += [ "..:webrtc_common" ]
+
+    if (is_mac) {
+      sources += [ "macifaddrs_converter.cc" ]
+    }
 
     if (is_win) {
       sources += [ "../../webrtc_overrides/webrtc/base/win32socketinit.cc" ]

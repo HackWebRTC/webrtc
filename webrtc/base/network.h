@@ -31,6 +31,7 @@ namespace rtc {
 extern const char kPublicIPv4Host[];
 extern const char kPublicIPv6Host[];
 
+class IfAddrsConverter;
 class Network;
 class NetworkMonitorInterface;
 class Thread;
@@ -229,6 +230,7 @@ class BasicNetworkManager : public NetworkManagerBase,
 #if defined(WEBRTC_POSIX)
   // Separated from CreateNetworks for tests.
   void ConvertIfAddrs(ifaddrs* interfaces,
+                      IfAddrsConverter* converter,
                       bool include_ignored,
                       NetworkList* networks) const;
 #endif  // defined(WEBRTC_POSIX)
