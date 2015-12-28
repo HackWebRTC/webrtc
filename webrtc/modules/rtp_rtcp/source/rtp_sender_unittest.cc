@@ -208,7 +208,7 @@ class RtpSenderVideoTest : public RtpSenderTest {
     } else {
       ASSERT_EQ(kRtpHeaderSize, length);
     }
-    ASSERT_TRUE(rtp_parser.Parse(rtp_header, map));
+    ASSERT_TRUE(rtp_parser.Parse(&rtp_header, map));
     ASSERT_FALSE(rtp_parser.RTCP());
     EXPECT_EQ(payload_, rtp_header.payloadType);
     EXPECT_EQ(seq_num, rtp_header.sequenceNumber);
@@ -335,7 +335,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacket) {
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
   webrtc::RTPHeader rtp_header;
 
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, nullptr);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, nullptr);
 
   ASSERT_TRUE(valid_rtp_header);
   ASSERT_FALSE(rtp_parser.RTCP());
@@ -370,7 +370,7 @@ TEST_F(RtpSenderTestWithoutPacer,
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionTransmissionTimeOffset,
                kTransmissionTimeOffsetExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
   ASSERT_FALSE(rtp_parser.RTCP());
@@ -381,7 +381,7 @@ TEST_F(RtpSenderTestWithoutPacer,
 
   // Parse without map extension
   webrtc::RTPHeader rtp_header2;
-  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, nullptr);
+  const bool valid_rtp_header2 = rtp_parser.Parse(&rtp_header2, nullptr);
 
   ASSERT_TRUE(valid_rtp_header2);
   VerifyRTPHeaderCommon(rtp_header2);
@@ -410,7 +410,7 @@ TEST_F(RtpSenderTestWithoutPacer,
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionTransmissionTimeOffset,
                kTransmissionTimeOffsetExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
   ASSERT_FALSE(rtp_parser.RTCP());
@@ -437,7 +437,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAbsoluteSendTimeExtension) {
 
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
   ASSERT_FALSE(rtp_parser.RTCP());
@@ -448,7 +448,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAbsoluteSendTimeExtension) {
 
   // Parse without map extension
   webrtc::RTPHeader rtp_header2;
-  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, nullptr);
+  const bool valid_rtp_header2 = rtp_parser.Parse(&rtp_header2, nullptr);
 
   ASSERT_TRUE(valid_rtp_header2);
   VerifyRTPHeaderCommon(rtp_header2);
@@ -476,7 +476,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithVideoRotation_MarkerBit) {
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
   webrtc::RTPHeader rtp_header;
 
-  ASSERT_TRUE(rtp_parser.Parse(rtp_header, &map));
+  ASSERT_TRUE(rtp_parser.Parse(&rtp_header, &map));
   ASSERT_FALSE(rtp_parser.RTCP());
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
@@ -504,7 +504,7 @@ TEST_F(RtpSenderTestWithoutPacer,
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
   webrtc::RTPHeader rtp_header;
 
-  ASSERT_TRUE(rtp_parser.Parse(rtp_header, &map));
+  ASSERT_TRUE(rtp_parser.Parse(&rtp_header, &map));
   ASSERT_FALSE(rtp_parser.RTCP());
   VerifyRTPHeaderCommon(rtp_header, false);
   EXPECT_EQ(length, rtp_header.headerLength);
@@ -525,12 +525,12 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAudioLevelExtension) {
   webrtc::RTPHeader rtp_header;
 
   // Updating audio level is done in RTPSenderAudio, so simulate it here.
-  rtp_parser.Parse(rtp_header);
+  rtp_parser.Parse(&rtp_header);
   rtp_sender_->UpdateAudioLevel(packet_, length, rtp_header, true, kAudioLevel);
 
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
   ASSERT_FALSE(rtp_parser.RTCP());
@@ -542,7 +542,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAudioLevelExtension) {
 
   // Parse without map extension
   webrtc::RTPHeader rtp_header2;
-  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, nullptr);
+  const bool valid_rtp_header2 = rtp_parser.Parse(&rtp_header2, nullptr);
 
   ASSERT_TRUE(valid_rtp_header2);
   VerifyRTPHeaderCommon(rtp_header2);
@@ -579,7 +579,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithHeaderExtensions) {
   webrtc::RTPHeader rtp_header;
 
   // Updating audio level is done in RTPSenderAudio, so simulate it here.
-  rtp_parser.Parse(rtp_header);
+  rtp_parser.Parse(&rtp_header);
   rtp_sender_->UpdateAudioLevel(packet_, length, rtp_header, true, kAudioLevel);
 
   RtpHeaderExtensionMap map;
@@ -589,7 +589,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithHeaderExtensions) {
   map.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
   map.Register(kRtpExtensionTransportSequenceNumber,
                kTransportSequenceNumberExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
   ASSERT_FALSE(rtp_parser.RTCP());
@@ -608,7 +608,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithHeaderExtensions) {
 
   // Parse without map extension
   webrtc::RTPHeader rtp_header2;
-  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, nullptr);
+  const bool valid_rtp_header2 = rtp_parser.Parse(&rtp_header2, nullptr);
 
   ASSERT_TRUE(valid_rtp_header2);
   VerifyRTPHeaderCommon(rtp_header2);
@@ -667,7 +667,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   map.Register(kRtpExtensionTransmissionTimeOffset,
                kTransmissionTimeOffsetExtensionId);
   map.Register(kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, &map);
   ASSERT_TRUE(valid_rtp_header);
 
   // Verify transmission time offset.
@@ -727,7 +727,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   map.Register(kRtpExtensionTransmissionTimeOffset,
                kTransmissionTimeOffsetExtensionId);
   map.Register(kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, &map);
   ASSERT_TRUE(valid_rtp_header);
 
   // Verify transmission time offset.
@@ -934,7 +934,7 @@ TEST_F(RtpSenderTestWithoutPacer, SendGenericVideo) {
   RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
                                          transport_.last_sent_packet_len_);
   webrtc::RTPHeader rtp_header;
-  ASSERT_TRUE(rtp_parser.Parse(rtp_header));
+  ASSERT_TRUE(rtp_parser.Parse(&rtp_header));
 
   const uint8_t* payload_data =
       GetPayloadData(rtp_header, transport_.last_sent_packet_);
@@ -959,7 +959,7 @@ TEST_F(RtpSenderTestWithoutPacer, SendGenericVideo) {
 
   RtpUtility::RtpHeaderParser rtp_parser2(transport_.last_sent_packet_,
                                           transport_.last_sent_packet_len_);
-  ASSERT_TRUE(rtp_parser.Parse(rtp_header));
+  ASSERT_TRUE(rtp_parser.Parse(&rtp_header));
 
   payload_data = GetPayloadData(rtp_header, transport_.last_sent_packet_);
   generic_header = *payload_data++;
@@ -1217,7 +1217,7 @@ TEST_F(RtpSenderAudioTest, SendAudio) {
   RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
                                          transport_.last_sent_packet_len_);
   webrtc::RTPHeader rtp_header;
-  ASSERT_TRUE(rtp_parser.Parse(rtp_header));
+  ASSERT_TRUE(rtp_parser.Parse(&rtp_header));
 
   const uint8_t* payload_data =
       GetPayloadData(rtp_header, transport_.last_sent_packet_);
@@ -1246,7 +1246,7 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
   RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
                                          transport_.last_sent_packet_len_);
   webrtc::RTPHeader rtp_header;
-  ASSERT_TRUE(rtp_parser.Parse(rtp_header));
+  ASSERT_TRUE(rtp_parser.Parse(&rtp_header));
 
   const uint8_t* payload_data =
       GetPayloadData(rtp_header, transport_.last_sent_packet_);

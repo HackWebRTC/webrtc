@@ -10,38 +10,10 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
-#include <assert.h>
-#include <math.h>  // ceil
-#include <string.h>  // memcpy
-
-#if defined(_WIN32)
-// Order for these headers are important
-#include <winsock2.h>  // timeval
-#include <windows.h>  // FILETIME NOLINT(build/include_alpha)
-#include <MMSystem.h>  // timeGetTime
-#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
-#include <sys/time.h>  // gettimeofday
-#include <time.h>
-#endif
-#if (!defined(NDEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
-#include <stdio.h>
-#endif
+#include <string.h>
 
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
-
-#if (!defined(NDEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
-#define DEBUG_PRINT(...)           \
-  {                                \
-    char msg[256];                 \
-    sprintf(msg, __VA_ARGS__);     \
-    OutputDebugString(msg);        \
-  }
-#else
-// special fix for visual 2003
-#define DEBUG_PRINT(exp)        ((void)0)
-#endif  // !defined(NDEBUG) && defined(_WIN32)
 
 namespace webrtc {
 
@@ -83,12 +55,12 @@ enum {
 #if defined(_WIN32)
 bool StringCompare(const char* str1, const char* str2,
                    const uint32_t length) {
-  return (_strnicmp(str1, str2, length) == 0) ? true : false;
+  return _strnicmp(str1, str2, length) == 0;
 }
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 bool StringCompare(const char* str1, const char* str2,
                    const uint32_t length) {
-  return (strncasecmp(str1, str2, length) == 0) ? true : false;
+  return strncasecmp(str1, str2, length) == 0;
 }
 #endif
 
@@ -97,10 +69,6 @@ size_t Word32Align(size_t size) {
   if (remainder != 0)
     return size + 4 - remainder;
   return size;
-}
-
-uint32_t pow2(uint8_t exp) {
-  return 1 << exp;
 }
 
 RtpHeaderParser::RtpHeaderParser(const uint8_t* rtpData,
@@ -212,7 +180,7 @@ bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
   return true;
 }
 
-bool RtpHeaderParser::Parse(RTPHeader& header,
+bool RtpHeaderParser::Parse(RTPHeader* header,
                             RtpHeaderExtensionMap* ptrExtensionMap) const {
   const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
   if (length < kRtpMinParseLength) {
@@ -251,39 +219,39 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
     return false;
   }
 
-  header.markerBit      = M;
-  header.payloadType    = PT;
-  header.sequenceNumber = sequenceNumber;
-  header.timestamp      = RTPTimestamp;
-  header.ssrc           = SSRC;
-  header.numCSRCs       = CC;
-  header.paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
+  header->markerBit      = M;
+  header->payloadType    = PT;
+  header->sequenceNumber = sequenceNumber;
+  header->timestamp      = RTPTimestamp;
+  header->ssrc           = SSRC;
+  header->numCSRCs       = CC;
+  header->paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
 
   for (uint8_t i = 0; i < CC; ++i) {
     uint32_t CSRC = ByteReader<uint32_t>::ReadBigEndian(ptr);
     ptr += 4;
-    header.arrOfCSRCs[i] = CSRC;
+    header->arrOfCSRCs[i] = CSRC;
   }
 
-  header.headerLength   = 12 + CSRCocts;
+  header->headerLength   = 12 + CSRCocts;
 
   // If in effect, MAY be omitted for those packets for which the offset
   // is zero.
-  header.extension.hasTransmissionTimeOffset = false;
-  header.extension.transmissionTimeOffset = 0;
+  header->extension.hasTransmissionTimeOffset = false;
+  header->extension.transmissionTimeOffset = 0;
 
   // May not be present in packet.
-  header.extension.hasAbsoluteSendTime = false;
-  header.extension.absoluteSendTime = 0;
+  header->extension.hasAbsoluteSendTime = false;
+  header->extension.absoluteSendTime = 0;
 
   // May not be present in packet.
-  header.extension.hasAudioLevel = false;
-  header.extension.voiceActivity = false;
-  header.extension.audioLevel = 0;
+  header->extension.hasAudioLevel = false;
+  header->extension.voiceActivity = false;
+  header->extension.audioLevel = 0;
 
   // May not be present in packet.
-  header.extension.hasVideoRotation = false;
-  header.extension.videoRotation = 0;
+  header->extension.hasVideoRotation = false;
+  header->extension.videoRotation = 0;
 
   if (X) {
     /* RTP header extension, RFC 3550.
@@ -300,7 +268,7 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
       return false;
     }
 
-    header.headerLength += 4;
+    header->headerLength += 4;
 
     uint16_t definedByProfile = ByteReader<uint16_t>::ReadBigEndian(ptr);
     ptr += 2;
@@ -320,15 +288,16 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
                                   ptrRTPDataExtensionEnd,
                                   ptr);
     }
-    header.headerLength += XLen;
+    header->headerLength += XLen;
   }
-  if (header.headerLength + header.paddingLength > static_cast<size_t>(length))
+  if (header->headerLength + header->paddingLength >
+      static_cast<size_t>(length))
     return false;
   return true;
 }
 
 void RtpHeaderParser::ParseOneByteExtensionHeader(
-    RTPHeader& header,
+    RTPHeader* header,
     const RtpHeaderExtensionMap* ptrExtensionMap,
     const uint8_t* ptrRTPDataExtensionEnd,
     const uint8_t* ptr) const {
@@ -374,9 +343,9 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           // |  ID   | len=2 |              transmission offset              |
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-          header.extension.transmissionTimeOffset =
+          header->extension.transmissionTimeOffset =
               ByteReader<int32_t, 3>::ReadBigEndian(ptr);
-          header.extension.hasTransmissionTimeOffset = true;
+          header->extension.hasTransmissionTimeOffset = true;
           break;
         }
         case kRtpExtensionAudioLevel: {
@@ -390,9 +359,9 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           // |  ID   | len=0 |V|   level     |
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           //
-          header.extension.audioLevel = ptr[0] & 0x7f;
-          header.extension.voiceActivity = (ptr[0] & 0x80) != 0;
-          header.extension.hasAudioLevel = true;
+          header->extension.audioLevel = ptr[0] & 0x7f;
+          header->extension.voiceActivity = (ptr[0] & 0x80) != 0;
+          header->extension.hasAudioLevel = true;
           break;
         }
         case kRtpExtensionAbsoluteSendTime: {
@@ -406,9 +375,9 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           // |  ID   | len=2 |              absolute send time               |
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-          header.extension.absoluteSendTime =
+          header->extension.absoluteSendTime =
               ByteReader<uint32_t, 3>::ReadBigEndian(ptr);
-          header.extension.hasAbsoluteSendTime = true;
+          header->extension.hasAbsoluteSendTime = true;
           break;
         }
         case kRtpExtensionVideoRotation: {
@@ -422,8 +391,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           // |  ID   | len=0 |0 0 0 0 C F R R|
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-          header.extension.hasVideoRotation = true;
-          header.extension.videoRotation = ptr[0];
+          header->extension.hasVideoRotation = true;
+          header->extension.videoRotation = ptr[0];
           break;
         }
         case kRtpExtensionTransportSequenceNumber: {
@@ -440,8 +409,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
 
           uint16_t sequence_number = ptr[0] << 8;
           sequence_number += ptr[1];
-          header.extension.transportSequenceNumber = sequence_number;
-          header.extension.hasTransportSequenceNumber = true;
+          header->extension.transportSequenceNumber = sequence_number;
+          header->extension.hasTransportSequenceNumber = true;
           break;
         }
         default: {
@@ -470,5 +439,4 @@ uint8_t RtpHeaderParser::ParsePaddingBytes(
   return num_zero_bytes;
 }
 }  // namespace RtpUtility
-
 }  // namespace webrtc

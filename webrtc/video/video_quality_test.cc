@@ -116,7 +116,7 @@ class VideoAnalyzer : public PacketReceiver,
                                const PacketTime& packet_time) override {
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
-    parser.Parse(header);
+    parser.Parse(&header);
     {
       rtc::CritScope lock(&crit_);
       recv_times_[header.timestamp - rtp_timestamp_delta_] =
@@ -152,7 +152,7 @@ class VideoAnalyzer : public PacketReceiver,
                const PacketOptions& options) override {
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
-    parser.Parse(header);
+    parser.Parse(&header);
 
     int64_t current_time =
         Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();

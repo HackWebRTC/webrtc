@@ -458,7 +458,7 @@ class PcapReader : public RtpFileReaderImpl {
       rtp_parser.ParseRtcp(&marker.rtp_header);
       packets_.push_back(marker);
     } else {
-      if (!rtp_parser.Parse(marker.rtp_header, NULL)) {
+      if (!rtp_parser.Parse(&marker.rtp_header, nullptr)) {
         DEBUG_LOG("Not recognized as RTP/RTCP");
         return kResultSkip;
       }

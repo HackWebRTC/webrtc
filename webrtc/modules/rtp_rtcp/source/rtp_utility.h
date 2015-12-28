@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
 
-#include <stddef.h> // size_t, ptrdiff_t
-
 #include <map>
 
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
@@ -31,62 +29,43 @@ RtpAudioFeedback* NullObjectRtpAudioFeedback();
 ReceiveStatistics* NullObjectReceiveStatistics();
 
 namespace RtpUtility {
-    // January 1970, in NTP seconds.
-    const uint32_t NTP_JAN_1970 = 2208988800UL;
 
-    // Magic NTP fractional unit.
-    const double NTP_FRAC = 4.294967296E+9;
+struct Payload {
+  char name[RTP_PAYLOAD_NAME_SIZE];
+  bool audio;
+  PayloadUnion typeSpecific;
+};
 
-    struct Payload
-    {
-        char name[RTP_PAYLOAD_NAME_SIZE];
-        bool audio;
-        PayloadUnion typeSpecific;
-    };
+typedef std::map<int8_t, Payload*> PayloadTypeMap;
 
-    typedef std::map<int8_t, Payload*> PayloadTypeMap;
+bool StringCompare(const char* str1, const char* str2, const uint32_t length);
 
-    uint32_t pow2(uint8_t exp);
+// Round up to the nearest size that is a multiple of 4.
+size_t Word32Align(size_t size);
 
-    // Returns true if |newTimestamp| is older than |existingTimestamp|.
-    // |wrapped| will be set to true if there has been a wraparound between the
-    // two timestamps.
-    bool OldTimestamp(uint32_t newTimestamp,
-                      uint32_t existingTimestamp,
-                      bool* wrapped);
+class RtpHeaderParser {
+ public:
+  RtpHeaderParser(const uint8_t* rtpData, size_t rtpDataLength);
+  ~RtpHeaderParser();
 
-    bool StringCompare(const char* str1,
-                       const char* str2,
-                       const uint32_t length);
+  bool RTCP() const;
+  bool ParseRtcp(RTPHeader* header) const;
+  bool Parse(RTPHeader* parsedPacket,
+             RtpHeaderExtensionMap* ptrExtensionMap = nullptr) const;
 
-    // Round up to the nearest size that is a multiple of 4.
-    size_t Word32Align(size_t size);
+ private:
+  void ParseOneByteExtensionHeader(RTPHeader* parsedPacket,
+                                   const RtpHeaderExtensionMap* ptrExtensionMap,
+                                   const uint8_t* ptrRTPDataExtensionEnd,
+                                   const uint8_t* ptr) const;
 
-    class RtpHeaderParser {
-    public:
-     RtpHeaderParser(const uint8_t* rtpData, size_t rtpDataLength);
-     ~RtpHeaderParser();
+  uint8_t ParsePaddingBytes(const uint8_t* ptrRTPDataExtensionEnd,
+                            const uint8_t* ptr) const;
 
-        bool RTCP() const;
-        bool ParseRtcp(RTPHeader* header) const;
-        bool Parse(RTPHeader& parsedPacket,
-                   RtpHeaderExtensionMap* ptrExtensionMap = NULL) const;
-
-    private:
-        void ParseOneByteExtensionHeader(
-            RTPHeader& parsedPacket,
-            const RtpHeaderExtensionMap* ptrExtensionMap,
-            const uint8_t* ptrRTPDataExtensionEnd,
-            const uint8_t* ptr) const;
-
-        uint8_t ParsePaddingBytes(
-            const uint8_t* ptrRTPDataExtensionEnd,
-            const uint8_t* ptr) const;
-
-        const uint8_t* const _ptrRTPDataBegin;
-        const uint8_t* const _ptrRTPDataEnd;
-    };
+  const uint8_t* const _ptrRTPDataBegin;
+  const uint8_t* const _ptrRTPDataEnd;
+};
 }  // namespace RtpUtility
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_

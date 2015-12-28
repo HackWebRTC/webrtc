@@ -47,7 +47,7 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
   bool set_marker_bit = false;
   RtpUtility::RtpHeaderParser parser(packet, length);
   RTPHeader header;
-  parser.Parse(header);
+  parser.Parse(&header);
 
   RTC_DCHECK_LE(length, static_cast<size_t>(IP_PACKET_SIZE));
   uint8_t temp_buffer[IP_PACKET_SIZE];

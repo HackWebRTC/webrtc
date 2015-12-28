@@ -304,7 +304,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
       size_t packetSize = payloadSize + rtp_header_length;
       RtpUtility::RtpHeaderParser rtp_parser(dataBuffer, packetSize);
       RTPHeader rtp_header;
-      rtp_parser.Parse(rtp_header);
+      rtp_parser.Parse(&rtp_header);
       _rtpSender.UpdateVideoRotation(dataBuffer, packetSize, rtp_header,
                                      rtpHdr->rotation);
     }

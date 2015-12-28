@@ -58,7 +58,7 @@ bool RtpHeaderParserImpl::Parse(const uint8_t* packet,
     rtp_header_extension_map_.GetCopy(&map);
   }
 
-  const bool valid_rtpheader = rtp_parser.Parse(*header, &map);
+  const bool valid_rtpheader = rtp_parser.Parse(header, &map);
   if (!valid_rtpheader) {
     return false;
   }

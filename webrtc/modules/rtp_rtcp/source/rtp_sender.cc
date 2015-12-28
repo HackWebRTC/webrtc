@@ -579,7 +579,7 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send) {
       break;
     RtpUtility::RtpHeaderParser rtp_parser(buffer, length);
     RTPHeader rtp_header;
-    rtp_parser.Parse(rtp_header);
+    rtp_parser.Parse(&rtp_header);
     bytes_left -= static_cast<int>(length - rtp_header.headerLength);
   }
   return bytes_to_send - bytes_left;
@@ -589,8 +589,7 @@ void RTPSender::BuildPaddingPacket(uint8_t* packet,
                                    size_t header_length,
                                    size_t padding_length) {
   packet[0] |= 0x20;  // Set padding bit.
-  int32_t *data =
-      reinterpret_cast<int32_t *>(&(packet[header_length]));
+  int32_t* data = reinterpret_cast<int32_t*>(&(packet[header_length]));
 
   // Fill data buffer with random data.
   for (size_t j = 0; j < (padding_length >> 2); ++j) {
@@ -671,7 +670,7 @@ size_t RTPSender::SendPadData(size_t bytes,
 
     RtpUtility::RtpHeaderParser rtp_parser(padding_packet, length);
     RTPHeader rtp_header;
-    rtp_parser.Parse(rtp_header);
+    rtp_parser.Parse(&rtp_header);
 
     if (capture_time_ms > 0) {
       UpdateTransmissionTimeOffset(
@@ -723,7 +722,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
   if (paced_sender_) {
     RtpUtility::RtpHeaderParser rtp_parser(data_buffer, length);
     RTPHeader header;
-    if (!rtp_parser.Parse(header)) {
+    if (!rtp_parser.Parse(&header)) {
       assert(false);
       return -1;
     }
@@ -909,11 +908,11 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
                                      int64_t capture_time_ms,
                                      bool send_over_rtx,
                                      bool is_retransmit) {
-  uint8_t *buffer_to_send_ptr = buffer;
+  uint8_t* buffer_to_send_ptr = buffer;
 
   RtpUtility::RtpHeaderParser rtp_parser(buffer, length);
   RTPHeader rtp_header;
-  rtp_parser.Parse(rtp_header);
+  rtp_parser.Parse(&rtp_header);
   if (!is_retransmit && rtp_header.markerBit) {
     TRACE_EVENT_ASYNC_END0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "PacedSend",
                            capture_time_ms);
@@ -1032,7 +1031,7 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
   RtpUtility::RtpHeaderParser rtp_parser(buffer,
                                          payload_length + rtp_header_length);
   RTPHeader rtp_header;
-  rtp_parser.Parse(rtp_header);
+  rtp_parser.Parse(&rtp_header);
 
   int64_t now_ms = clock_->TimeInMilliseconds();
 
@@ -1175,7 +1174,7 @@ size_t RTPSender::CreateRtpHeader(uint8_t* header,
   int32_t rtp_header_length = kRtpHeaderLength;
 
   if (csrcs.size() > 0) {
-    uint8_t *ptr = &header[rtp_header_length];
+    uint8_t* ptr = &header[rtp_header_length];
     for (size_t i = 0; i < csrcs.size(); ++i) {
       ByteWriter<uint32_t>::WriteBigEndian(ptr, csrcs[i]);
       ptr += 4;
@@ -1827,7 +1826,7 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
       reinterpret_cast<const uint8_t*>(buffer), *length);
 
   RTPHeader rtp_header;
-  rtp_parser.Parse(rtp_header);
+  rtp_parser.Parse(&rtp_header);
 
   // Add original RTP header.
   memcpy(data_buffer_rtx, buffer, rtp_header.headerLength);
@@ -1840,7 +1839,7 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
   }
 
   // Replace sequence number.
-  uint8_t *ptr = data_buffer_rtx + 2;
+  uint8_t* ptr = data_buffer_rtx + 2;
   ByteWriter<uint16_t>::WriteBigEndian(ptr, sequence_number_rtx_++);
 
   // Replace SSRC.
