@@ -307,14 +307,14 @@ for test_binary in binaries:
     if line[0] != " ":
       test_group = line.strip()
       continue
-    line = line.strip()
-    if not options.gtest_also_run_disabled_tests and 'DISABLED' in line:
-      continue
+    # Remove comments for parameterized tests and strip whitespace.
     line = line.split('#')[0].strip()
     if not line:
       continue
 
     test = test_group + line
+    if not options.gtest_also_run_disabled_tests and 'DISABLED_' in test:
+      continue
     tests.append((times.get_test_time(test_binary, test),
                   test_binary, test, command))
 
