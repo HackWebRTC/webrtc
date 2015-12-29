@@ -13,6 +13,7 @@
 
 #include <map>
 
+#include "webrtc/base/deprecation.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -52,6 +53,11 @@ class RtpHeaderParser {
   bool ParseRtcp(RTPHeader* header) const;
   bool Parse(RTPHeader* parsedPacket,
              RtpHeaderExtensionMap* ptrExtensionMap = nullptr) const;
+  RTC_DEPRECATED bool Parse(
+      RTPHeader& parsedPacket,  // NOLINT(runtime/references)
+      RtpHeaderExtensionMap* ptrExtensionMap = nullptr) const {
+    return Parse(&parsedPacket, ptrExtensionMap);
+  }
 
  private:
   void ParseOneByteExtensionHeader(RTPHeader* parsedPacket,
