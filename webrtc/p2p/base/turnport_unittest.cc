@@ -975,6 +975,10 @@ TEST_F(TurnPortTest, DISABLED_TestTurnTCPReleaseAllocation) {
 // This test verifies any FD's are not leaked after TurnPort is destroyed.
 // https://code.google.com/p/webrtc/issues/detail?id=2651
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
+// 1 second is not always enough for getaddrinfo().
+// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5191
+static const unsigned int kResolverTimeout = 10000;
+
 TEST_F(TurnPortTest, TestResolverShutdown) {
   turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, cricket::PROTO_UDP);
   int last_fd_count = GetFDCount();
@@ -983,7 +987,7 @@ TEST_F(TurnPortTest, TestResolverShutdown) {
                  cricket::ProtocolAddress(rtc::SocketAddress(
                     "www.google.invalid", 3478), cricket::PROTO_UDP));
   turn_port_->PrepareAddress();
-  ASSERT_TRUE_WAIT(turn_error_, kTimeout);
+  ASSERT_TRUE_WAIT(turn_error_, kResolverTimeout);
   EXPECT_TRUE(turn_port_->Candidates().empty());
   turn_port_.reset();
   rtc::Thread::Current()->Post(this, MSG_TESTFINISH);
