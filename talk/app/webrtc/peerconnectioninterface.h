@@ -489,51 +489,6 @@ class PeerConnectionObserver {
   ~PeerConnectionObserver() {}
 };
 
-// Factory class used for creating cricket::PortAllocator that is used
-// for ICE negotiation.
-class PortAllocatorFactoryInterface : public rtc::RefCountInterface {
- public:
-  struct StunConfiguration {
-    StunConfiguration(const std::string& address, int port)
-        : server(address, port) {}
-    // STUN server address and port.
-    rtc::SocketAddress server;
-  };
-
-  struct TurnConfiguration {
-    TurnConfiguration(const std::string& address,
-                      int port,
-                      const std::string& username,
-                      const std::string& password,
-                      const std::string& transport_type,
-                      bool secure)
-        : server(address, port),
-          username(username),
-          password(password),
-          transport_type(transport_type),
-          secure(secure) {}
-    rtc::SocketAddress server;
-    std::string username;
-    std::string password;
-    std::string transport_type;
-    bool secure;
-  };
-
-  virtual cricket::PortAllocator* CreatePortAllocator(
-      const std::vector<StunConfiguration>& stun_servers,
-      const std::vector<TurnConfiguration>& turn_configurations) = 0;
-
-  // TODO(phoglund): Make pure virtual when Chrome's factory implements this.
-  // After this method is called, the port allocator should consider loopback
-  // network interfaces as well.
-  virtual void SetNetworkIgnoreMask(int network_ignore_mask) {
-  }
-
- protected:
-  PortAllocatorFactoryInterface() {}
-  ~PortAllocatorFactoryInterface() {}
-};
-
 // PeerConnectionFactoryInterface is the factory interface use for creating
 // PeerConnection, MediaStream and media tracks.
 // PeerConnectionFactoryInterface will create required libjingle threads,
@@ -541,7 +496,7 @@ class PortAllocatorFactoryInterface : public rtc::RefCountInterface {
 // If an application decides to provide its own threads and network
 // implementation of these classes it should use the alternate
 // CreatePeerConnectionFactory method which accepts threads as input and use the
-// CreatePeerConnection version that takes a PortAllocatorFactoryInterface as
+// CreatePeerConnection version that takes a PortAllocator as an
 // argument.
 class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
  public:
@@ -571,45 +526,12 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 
   virtual void SetOptions(const Options& options) = 0;
 
-  // TODO(deadbeef): Remove this overload of CreatePeerConnection once clients
-  // are moved to the new version.
-  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      const MediaConstraintsInterface* constraints,
-      PortAllocatorFactoryInterface* allocator_factory,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-      PeerConnectionObserver* observer) {
-    return nullptr;
-  }
-
-  // TODO(deadbeef): Make this pure virtual once it's implemented by all
-  // subclasses.
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
       rtc::scoped_ptr<cricket::PortAllocator> allocator,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-      PeerConnectionObserver* observer) {
-    return nullptr;
-  }
-
-  // TODO(hbos): Remove below version after clients are updated to above method.
-  // In latest W3C WebRTC draft, PC constructor will take RTCConfiguration,
-  // and not IceServers. RTCConfiguration is made up of ice servers and
-  // ice transport type.
-  // http://dev.w3.org/2011/webrtc/editor/webrtc.html
-  inline rtc::scoped_refptr<PeerConnectionInterface>
-      CreatePeerConnection(
-          const PeerConnectionInterface::IceServers& servers,
-          const MediaConstraintsInterface* constraints,
-          PortAllocatorFactoryInterface* allocator_factory,
-          rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-          PeerConnectionObserver* observer) {
-      PeerConnectionInterface::RTCConfiguration rtc_config;
-      rtc_config.servers = servers;
-      return CreatePeerConnection(rtc_config, constraints, allocator_factory,
-                                  std::move(dtls_identity_store), observer);
-  }
+      PeerConnectionObserver* observer) = 0;
 
   virtual rtc::scoped_refptr<MediaStreamInterface>
       CreateLocalMediaStream(const std::string& label) = 0;

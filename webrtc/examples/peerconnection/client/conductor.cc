@@ -113,10 +113,10 @@ bool Conductor::CreatePeerConnection(bool dtls) {
   ASSERT(peer_connection_factory_.get() != NULL);
   ASSERT(peer_connection_.get() == NULL);
 
-  webrtc::PeerConnectionInterface::IceServers servers;
+  webrtc::PeerConnectionInterface::RTCConfiguration config;
   webrtc::PeerConnectionInterface::IceServer server;
   server.uri = GetPeerConnectionString();
-  servers.push_back(server);
+  config.servers.push_back(server);
 
   webrtc::FakeConstraints constraints;
   if (dtls) {
@@ -127,12 +127,8 @@ bool Conductor::CreatePeerConnection(bool dtls) {
                             "false");
   }
 
-  peer_connection_ =
-      peer_connection_factory_->CreatePeerConnection(servers,
-                                                     &constraints,
-                                                     NULL,
-                                                     NULL,
-                                                     this);
+  peer_connection_ = peer_connection_factory_->CreatePeerConnection(
+      config, &constraints, NULL, NULL, this);
   return peer_connection_.get() != NULL;
 }
 

@@ -29,7 +29,6 @@
 #include <utility>
 
 #include "talk/app/webrtc/audiotrack.h"
-#include "talk/app/webrtc/fakeportallocatorfactory.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
@@ -53,6 +52,7 @@
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/p2p/client/fakeportallocator.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kStreamLabel2[] = "local_stream_2";
@@ -259,7 +259,6 @@ using webrtc::AudioTrackInterface;
 using webrtc::DataBuffer;
 using webrtc::DataChannelInterface;
 using webrtc::FakeConstraints;
-using webrtc::FakePortAllocatorFactory;
 using webrtc::IceCandidateInterface;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStream;
@@ -271,7 +270,6 @@ using webrtc::MockSetSessionDescriptionObserver;
 using webrtc::MockStatsObserver;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionObserver;
-using webrtc::PortAllocatorFactoryInterface;
 using webrtc::RtpReceiverInterface;
 using webrtc::RtpSenderInterface;
 using webrtc::SdpParseError;
@@ -534,15 +532,17 @@ class PeerConnectionInterfaceTest : public testing::Test {
   void CreatePeerConnection(const std::string& uri,
                             const std::string& password,
                             webrtc::MediaConstraintsInterface* constraints) {
+    PeerConnectionInterface::RTCConfiguration config;
     PeerConnectionInterface::IceServer server;
-    PeerConnectionInterface::IceServers servers;
     if (!uri.empty()) {
       server.uri = uri;
       server.password = password;
-      servers.push_back(server);
+      config.servers.push_back(server);
     }
 
-    port_allocator_factory_ = FakePortAllocatorFactory::Create();
+    rtc::scoped_ptr<cricket::FakePortAllocator> port_allocator(
+        new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
+    port_allocator_ = port_allocator.get();
 
     // DTLS does not work in a loopback call, so is disabled for most of the
     // tests in this file. We only create a FakeIdentityService if the test
@@ -564,7 +564,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
       dtls_identity_store.reset(new FakeDtlsIdentityStore());
     }
     pc_ = pc_factory_->CreatePeerConnection(
-        servers, constraints, port_allocator_factory_.get(),
+        config, constraints, std::move(port_allocator),
         std::move(dtls_identity_store), &observer_);
     ASSERT_TRUE(pc_.get() != NULL);
     observer_.SetPeerConnectionInterface(pc_.get());
@@ -572,42 +572,38 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   void CreatePeerConnectionExpectFail(const std::string& uri) {
+    PeerConnectionInterface::RTCConfiguration config;
     PeerConnectionInterface::IceServer server;
-    PeerConnectionInterface::IceServers servers;
     server.uri = uri;
-    servers.push_back(server);
+    config.servers.push_back(server);
 
-    scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store;
-    port_allocator_factory_ = FakePortAllocatorFactory::Create();
     scoped_refptr<PeerConnectionInterface> pc;
-    pc = pc_factory_->CreatePeerConnection(
-        servers, nullptr, port_allocator_factory_.get(),
-        std::move(dtls_identity_store), &observer_);
-    ASSERT_EQ(nullptr, pc);
+    pc = pc_factory_->CreatePeerConnection(config, nullptr, nullptr, nullptr,
+                                           &observer_);
+    EXPECT_EQ(nullptr, pc);
   }
 
   void CreatePeerConnectionWithDifferentConfigurations() {
     CreatePeerConnection(kStunAddressOnly, "", NULL);
-    EXPECT_EQ(1u, port_allocator_factory_->stun_configs().size());
-    EXPECT_EQ(0u, port_allocator_factory_->turn_configs().size());
-    EXPECT_EQ("address",
-        port_allocator_factory_->stun_configs()[0].server.hostname());
+    EXPECT_EQ(1u, port_allocator_->stun_servers().size());
+    EXPECT_EQ(0u, port_allocator_->turn_servers().size());
+    EXPECT_EQ("address", port_allocator_->stun_servers().begin()->hostname());
     EXPECT_EQ(kDefaultStunPort,
-        port_allocator_factory_->stun_configs()[0].server.port());
+              port_allocator_->stun_servers().begin()->port());
 
     CreatePeerConnectionExpectFail(kStunInvalidPort);
     CreatePeerConnectionExpectFail(kStunAddressPortAndMore1);
     CreatePeerConnectionExpectFail(kStunAddressPortAndMore2);
 
     CreatePeerConnection(kTurnIceServerUri, kTurnPassword, NULL);
-    EXPECT_EQ(0u, port_allocator_factory_->stun_configs().size());
-    EXPECT_EQ(1u, port_allocator_factory_->turn_configs().size());
+    EXPECT_EQ(0u, port_allocator_->stun_servers().size());
+    EXPECT_EQ(1u, port_allocator_->turn_servers().size());
     EXPECT_EQ(kTurnUsername,
-              port_allocator_factory_->turn_configs()[0].username);
+              port_allocator_->turn_servers()[0].credentials.username);
     EXPECT_EQ(kTurnPassword,
-              port_allocator_factory_->turn_configs()[0].password);
+              port_allocator_->turn_servers()[0].credentials.password);
     EXPECT_EQ(kTurnHostname,
-              port_allocator_factory_->turn_configs()[0].server.hostname());
+              port_allocator_->turn_servers()[0].ports[0].address.hostname());
   }
 
   void ReleasePeerConnection() {
@@ -926,7 +922,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     ASSERT_TRUE(stream->AddTrack(video_track));
   }
 
-  scoped_refptr<FakePortAllocatorFactory> port_allocator_factory_;
+  cricket::FakePortAllocator* port_allocator_ = nullptr;
   scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory_;
   scoped_refptr<PeerConnectionInterface> pc_;
   MockPeerConnectionObserver observer_;
@@ -1729,10 +1725,9 @@ TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesIceServers) {
   config.servers.push_back(server);
   EXPECT_TRUE(pc_->SetConfiguration(config));
 
-  cricket::FakePortAllocator* allocator =
-      port_allocator_factory_->last_created_allocator();
-  EXPECT_EQ(1u, allocator->stun_servers().size());
-  EXPECT_EQ("test_hostname", allocator->stun_servers().begin()->hostname());
+  EXPECT_EQ(1u, port_allocator_->stun_servers().size());
+  EXPECT_EQ("test_hostname",
+            port_allocator_->stun_servers().begin()->hostname());
 }
 
 // Test that PeerConnection::Close changes the states to closed and all remote

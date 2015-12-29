@@ -45,11 +45,6 @@ namespace webrtc {
 class MediaStreamObserver;
 class RemoteMediaStreamFactory;
 
-typedef std::vector<PortAllocatorFactoryInterface::StunConfiguration>
-    StunConfigurations;
-typedef std::vector<PortAllocatorFactoryInterface::TurnConfiguration>
-    TurnConfigurations;
-
 // Populates |session_options| from |rtc_options|, and returns true if options
 // are valid.
 bool ConvertRtcOptionsForOffer(
@@ -61,11 +56,11 @@ bool ConvertRtcOptionsForOffer(
 bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
                                cricket::MediaSessionOptions* session_options);
 
-// Parses the URLs for each server in |servers| to build |stun_config| and
-// |turn_config|.
+// Parses the URLs for each server in |servers| to build |stun_servers| and
+// |turn_servers|.
 bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
-                     StunConfigurations* stun_config,
-                     TurnConfigurations* turn_config);
+                     cricket::ServerAddresses* stun_servers,
+                     std::vector<cricket::RelayServerConfig>* turn_servers);
 
 // PeerConnection implements the PeerConnectionInterface interface.
 // It uses WebRtcSession to implement the PeerConnection functionality.
@@ -75,15 +70,6 @@ class PeerConnection : public PeerConnectionInterface,
                        public sigslot::has_slots<> {
  public:
   explicit PeerConnection(PeerConnectionFactory* factory);
-
-  // TODO(deadbeef): Remove this overload of Initialize once everyone is moved
-  // to the new version.
-  bool Initialize(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      const MediaConstraintsInterface* constraints,
-      PortAllocatorFactoryInterface* allocator_factory,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-      PeerConnectionObserver* observer);
 
   bool Initialize(
       const PeerConnectionInterface::RTCConfiguration& configuration,

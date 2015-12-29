@@ -365,7 +365,6 @@ bool NetworkManagerBase::GetDefaultLocalAddress(int family,
 
 BasicNetworkManager::BasicNetworkManager()
     : thread_(NULL), sent_first_update_(false), start_count_(0),
-      network_ignore_mask_(kDefaultNetworkIgnoreMask),
       ignore_non_default_routes_(false) {
 }
 
@@ -665,9 +664,6 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
     }
   }
 
-  if (network_ignore_mask_ & network.type()) {
-    return true;
-  }
 #if defined(WEBRTC_POSIX)
   // Filter out VMware/VirtualBox interfaces, typically named vmnet1,
   // vmnet8, or vboxnet0.

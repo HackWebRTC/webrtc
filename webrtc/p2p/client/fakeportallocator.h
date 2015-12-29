@@ -157,6 +157,8 @@ class FakePortAllocator : public cricket::PortAllocator {
     turn_servers_ = turn_servers;
   }
 
+  void SetNetworkIgnoreMask(int network_ignore_mask) override {}
+
   const ServerAddresses& stun_servers() const { return stun_servers_; }
 
   const std::vector<RelayServerConfig>& turn_servers() const {

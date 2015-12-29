@@ -34,11 +34,6 @@
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
 #include "webrtc/base/sigslot.h"
 
-namespace webrtc {
-class DtlsIdentityStoreInterface;
-class PortAllocatorFactoryInterface;
-}
-
 class PeerConnectionTestWrapper
     : public webrtc::PeerConnectionObserver,
       public webrtc::CreateSessionDescriptionObserver,
@@ -110,8 +105,6 @@ class PeerConnectionTestWrapper
       bool video, const webrtc::FakeConstraints& video_constraints);
 
   std::string name_;
-  rtc::scoped_refptr<webrtc::PortAllocatorFactoryInterface>
-      allocator_factory_;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;

@@ -207,18 +207,6 @@ class BasicNetworkManager : public NetworkManagerBase,
     network_ignore_list_ = list;
   }
 
-  // Sets the network types to ignore. For instance, calling this with
-  // ADAPTER_TYPE_ETHERNET | ADAPTER_TYPE_LOOPBACK will ignore Ethernet and
-  // loopback interfaces. Set to kDefaultNetworkIgnoreMask by default.
-  void set_network_ignore_mask(int network_ignore_mask) {
-    // TODO(phoglund): implement support for other types than loopback.
-    // See https://code.google.com/p/webrtc/issues/detail?id=4288.
-    // Then remove set_network_ignore_list.
-    network_ignore_mask_ = network_ignore_mask;
-  }
-
-  int network_ignore_mask() const { return network_ignore_mask_; }
-
 #if defined(WEBRTC_LINUX)
   // Sets the flag for ignoring non-default routes.
   void set_ignore_non_default_routes(bool value) {
@@ -266,7 +254,6 @@ class BasicNetworkManager : public NetworkManagerBase,
   bool sent_first_update_;
   int start_count_;
   std::vector<std::string> network_ignore_list_;
-  int network_ignore_mask_;
   bool ignore_non_default_routes_;
   scoped_ptr<NetworkMonitorInterface> network_monitor_;
 };

@@ -35,7 +35,6 @@
 
 #include "talk/app/webrtc/dtmfsender.h"
 #include "talk/app/webrtc/fakemetricsobserver.h"
-#include "talk/app/webrtc/fakeportallocatorfactory.h"
 #include "talk/app/webrtc/localaudiosource.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/peerconnection.h"
@@ -59,6 +58,7 @@
 #include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
+#include "webrtc/p2p/client/fakeportallocator.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(feature())) {                               \
@@ -740,10 +740,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
     EXPECT_TRUE(!peer_connection_);
     EXPECT_TRUE(!peer_connection_factory_);
-    allocator_factory_ = webrtc::FakePortAllocatorFactory::Create();
-    if (!allocator_factory_) {
-      return false;
-    }
+    rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
+        new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
     fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
 
     if (fake_audio_capture_module_ == nullptr) {
@@ -762,23 +760,23 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       peer_connection_factory_->SetOptions(*options);
     }
     peer_connection_ = CreatePeerConnection(
-        allocator_factory_.get(), constraints, std::move(dtls_identity_store));
+        std::move(port_allocator), constraints, std::move(dtls_identity_store));
     return peer_connection_.get() != nullptr;
   }
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
-      webrtc::PortAllocatorFactoryInterface* factory,
+      rtc::scoped_ptr<cricket::PortAllocator> port_allocator,
       const MediaConstraintsInterface* constraints,
       rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
-    // CreatePeerConnection with IceServers.
-    webrtc::PeerConnectionInterface::IceServers ice_servers;
+    // CreatePeerConnection with RTCConfiguration.
+    webrtc::PeerConnectionInterface::RTCConfiguration config;
     webrtc::PeerConnectionInterface::IceServer ice_server;
     ice_server.uri = "stun:stun.l.google.com:19302";
-    ice_servers.push_back(ice_server);
+    config.servers.push_back(ice_server);
 
     return peer_connection_factory_->CreatePeerConnection(
-        ice_servers, constraints, factory, std::move(dtls_identity_store),
-        this);
+        config, constraints, std::move(port_allocator),
+        std::move(dtls_identity_store), this);
   }
 
   void HandleIncomingOffer(const std::string& msg) {
@@ -885,7 +883,6 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   std::string id_;
 
-  rtc::scoped_refptr<webrtc::PortAllocatorFactoryInterface> allocator_factory_;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
@@ -1865,38 +1862,37 @@ class IceServerParsingTest : public testing::Test {
     server.username = username;
     server.password = password;
     servers.push_back(server);
-    return webrtc::ParseIceServers(servers, &stun_configurations_,
-                                   &turn_configurations_);
+    return webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_);
   }
 
  protected:
-  webrtc::StunConfigurations stun_configurations_;
-  webrtc::TurnConfigurations turn_configurations_;
+  cricket::ServerAddresses stun_servers_;
+  std::vector<cricket::RelayServerConfig> turn_servers_;
 };
 
 // Make sure all STUN/TURN prefixes are parsed correctly.
 TEST_F(IceServerParsingTest, ParseStunPrefixes) {
   EXPECT_TRUE(ParseUrl("stun:hostname"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ(0U, turn_configurations_.size());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ(0U, turn_servers_.size());
+  stun_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("stuns:hostname"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ(0U, turn_configurations_.size());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ(0U, turn_servers_.size());
+  stun_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("turn:hostname"));
-  EXPECT_EQ(0U, stun_configurations_.size());
-  EXPECT_EQ(1U, turn_configurations_.size());
-  EXPECT_FALSE(turn_configurations_[0].secure);
-  turn_configurations_.clear();
+  EXPECT_EQ(0U, stun_servers_.size());
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_FALSE(turn_servers_[0].ports[0].secure);
+  turn_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("turns:hostname"));
-  EXPECT_EQ(0U, stun_configurations_.size());
-  EXPECT_EQ(1U, turn_configurations_.size());
-  EXPECT_TRUE(turn_configurations_[0].secure);
-  turn_configurations_.clear();
+  EXPECT_EQ(0U, stun_servers_.size());
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_TRUE(turn_servers_[0].ports[0].secure);
+  turn_servers_.clear();
 
   // invalid prefixes
   EXPECT_FALSE(ParseUrl("stunn:hostname"));
@@ -1908,67 +1904,69 @@ TEST_F(IceServerParsingTest, ParseStunPrefixes) {
 TEST_F(IceServerParsingTest, VerifyDefaults) {
   // TURNS defaults
   EXPECT_TRUE(ParseUrl("turns:hostname"));
-  EXPECT_EQ(1U, turn_configurations_.size());
-  EXPECT_EQ(5349, turn_configurations_[0].server.port());
-  EXPECT_EQ("tcp", turn_configurations_[0].transport_type);
-  turn_configurations_.clear();
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_EQ(5349, turn_servers_[0].ports[0].address.port());
+  EXPECT_EQ(cricket::PROTO_TCP, turn_servers_[0].ports[0].proto);
+  turn_servers_.clear();
 
   // TURN defaults
   EXPECT_TRUE(ParseUrl("turn:hostname"));
-  EXPECT_EQ(1U, turn_configurations_.size());
-  EXPECT_EQ(3478, turn_configurations_[0].server.port());
-  EXPECT_EQ("udp", turn_configurations_[0].transport_type);
-  turn_configurations_.clear();
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_EQ(3478, turn_servers_[0].ports[0].address.port());
+  EXPECT_EQ(cricket::PROTO_UDP, turn_servers_[0].ports[0].proto);
+  turn_servers_.clear();
 
   // STUN defaults
   EXPECT_TRUE(ParseUrl("stun:hostname"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ(3478, stun_configurations_[0].server.port());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ(3478, stun_servers_.begin()->port());
+  stun_servers_.clear();
 }
 
 // Check that the 6 combinations of IPv4/IPv6/hostname and with/without port
 // can be parsed correctly.
 TEST_F(IceServerParsingTest, ParseHostnameAndPort) {
   EXPECT_TRUE(ParseUrl("stun:1.2.3.4:1234"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ("1.2.3.4", stun_configurations_[0].server.hostname());
-  EXPECT_EQ(1234, stun_configurations_[0].server.port());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ("1.2.3.4", stun_servers_.begin()->hostname());
+  EXPECT_EQ(1234, stun_servers_.begin()->port());
+  stun_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("stun:[1:2:3:4:5:6:7:8]:4321"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ("1:2:3:4:5:6:7:8", stun_configurations_[0].server.hostname());
-  EXPECT_EQ(4321, stun_configurations_[0].server.port());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ("1:2:3:4:5:6:7:8", stun_servers_.begin()->hostname());
+  EXPECT_EQ(4321, stun_servers_.begin()->port());
+  stun_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("stun:hostname:9999"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ("hostname", stun_configurations_[0].server.hostname());
-  EXPECT_EQ(9999, stun_configurations_[0].server.port());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ("hostname", stun_servers_.begin()->hostname());
+  EXPECT_EQ(9999, stun_servers_.begin()->port());
+  stun_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("stun:1.2.3.4"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ("1.2.3.4", stun_configurations_[0].server.hostname());
-  EXPECT_EQ(3478, stun_configurations_[0].server.port());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ("1.2.3.4", stun_servers_.begin()->hostname());
+  EXPECT_EQ(3478, stun_servers_.begin()->port());
+  stun_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("stun:[1:2:3:4:5:6:7:8]"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ("1:2:3:4:5:6:7:8", stun_configurations_[0].server.hostname());
-  EXPECT_EQ(3478, stun_configurations_[0].server.port());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ("1:2:3:4:5:6:7:8", stun_servers_.begin()->hostname());
+  EXPECT_EQ(3478, stun_servers_.begin()->port());
+  stun_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("stun:hostname"));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ("hostname", stun_configurations_[0].server.hostname());
-  EXPECT_EQ(3478, stun_configurations_[0].server.port());
-  stun_configurations_.clear();
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ("hostname", stun_servers_.begin()->hostname());
+  EXPECT_EQ(3478, stun_servers_.begin()->port());
+  stun_servers_.clear();
 
   // Try some invalid hostname:port strings.
   EXPECT_FALSE(ParseUrl("stun:hostname:99a99"));
   EXPECT_FALSE(ParseUrl("stun:hostname:-1"));
+  EXPECT_FALSE(ParseUrl("stun:hostname:port:more"));
+  EXPECT_FALSE(ParseUrl("stun:hostname:port more"));
   EXPECT_FALSE(ParseUrl("stun:hostname:"));
   EXPECT_FALSE(ParseUrl("stun:[1:2:3:4:5:6:7:8]junk:1000"));
   EXPECT_FALSE(ParseUrl("stun::5555"));
@@ -1978,14 +1976,14 @@ TEST_F(IceServerParsingTest, ParseHostnameAndPort) {
 // Test parsing the "?transport=xxx" part of the URL.
 TEST_F(IceServerParsingTest, ParseTransport) {
   EXPECT_TRUE(ParseUrl("turn:hostname:1234?transport=tcp"));
-  EXPECT_EQ(1U, turn_configurations_.size());
-  EXPECT_EQ("tcp", turn_configurations_[0].transport_type);
-  turn_configurations_.clear();
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_EQ(cricket::PROTO_TCP, turn_servers_[0].ports[0].proto);
+  turn_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("turn:hostname?transport=udp"));
-  EXPECT_EQ(1U, turn_configurations_.size());
-  EXPECT_EQ("udp", turn_configurations_[0].transport_type);
-  turn_configurations_.clear();
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_EQ(cricket::PROTO_UDP, turn_servers_[0].ports[0].proto);
+  turn_servers_.clear();
 
   EXPECT_FALSE(ParseUrl("turn:hostname?transport=invalid"));
 }
@@ -1993,9 +1991,9 @@ TEST_F(IceServerParsingTest, ParseTransport) {
 // Test parsing ICE username contained in URL.
 TEST_F(IceServerParsingTest, ParseUsername) {
   EXPECT_TRUE(ParseUrl("turn:user@hostname"));
-  EXPECT_EQ(1U, turn_configurations_.size());
-  EXPECT_EQ("user", turn_configurations_[0].username);
-  turn_configurations_.clear();
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_EQ("user", turn_servers_[0].credentials.username);
+  turn_servers_.clear();
 
   EXPECT_FALSE(ParseUrl("turn:@hostname"));
   EXPECT_FALSE(ParseUrl("turn:username@"));
@@ -2004,12 +2002,12 @@ TEST_F(IceServerParsingTest, ParseUsername) {
 }
 
 // Test that username and password from IceServer is copied into the resulting
-// TurnConfiguration.
+// RelayServerConfig.
 TEST_F(IceServerParsingTest, CopyUsernameAndPasswordFromIceServer) {
   EXPECT_TRUE(ParseUrl("turn:hostname", "username", "password"));
-  EXPECT_EQ(1U, turn_configurations_.size());
-  EXPECT_EQ("username", turn_configurations_[0].username);
-  EXPECT_EQ("password", turn_configurations_[0].password);
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_EQ("username", turn_servers_[0].credentials.username);
+  EXPECT_EQ("password", turn_servers_[0].credentials.password);
 }
 
 // Ensure that if a server has multiple URLs, each one is parsed.
@@ -2019,10 +2017,9 @@ TEST_F(IceServerParsingTest, ParseMultipleUrls) {
   server.urls.push_back("stun:hostname");
   server.urls.push_back("turn:hostname");
   servers.push_back(server);
-  EXPECT_TRUE(webrtc::ParseIceServers(servers, &stun_configurations_,
-                                      &turn_configurations_));
-  EXPECT_EQ(1U, stun_configurations_.size());
-  EXPECT_EQ(1U, turn_configurations_.size());
+  EXPECT_TRUE(webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_));
+  EXPECT_EQ(1U, stun_servers_.size());
+  EXPECT_EQ(1U, turn_servers_.size());
 }
 
 #endif // if !defined(THREAD_SANITIZER)

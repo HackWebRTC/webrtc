@@ -55,17 +55,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
     options_ = options;
   }
 
-  // webrtc::PeerConnectionFactoryInterface override;
-  // TODO(deadbeef): Get rid of this overload once clients are moved to the
-  // new version.
-  rtc::scoped_refptr<PeerConnectionInterface>
-      CreatePeerConnection(
-          const PeerConnectionInterface::RTCConfiguration& configuration,
-          const MediaConstraintsInterface* constraints,
-          PortAllocatorFactoryInterface* allocator_factory,
-          rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-          PeerConnectionObserver* observer) override;
-
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
@@ -121,7 +110,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   rtc::Thread* signaling_thread_;
   rtc::Thread* worker_thread_;
   Options options_;
-  rtc::scoped_refptr<PortAllocatorFactoryInterface> default_allocator_factory_;
   // External Audio device used for audio playback.
   rtc::scoped_refptr<AudioDeviceModule> default_adm_;
   rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;

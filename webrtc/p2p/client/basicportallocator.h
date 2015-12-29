@@ -44,6 +44,16 @@ class BasicPortAllocator : public PortAllocator {
     turn_servers_ = turn_servers;
   }
 
+  // Set to kDefaultNetworkIgnoreMask by default.
+  void SetNetworkIgnoreMask(int network_ignore_mask) override {
+    // TODO(phoglund): implement support for other types than loopback.
+    // See https://code.google.com/p/webrtc/issues/detail?id=4288.
+    // Then remove set_network_ignore_list from NetworkManager.
+    network_ignore_mask_ = network_ignore_mask;
+  }
+
+  int network_ignore_mask() const { return network_ignore_mask_; }
+
   rtc::NetworkManager* network_manager() { return network_manager_; }
 
   // If socket_factory() is set to NULL each PortAllocatorSession
@@ -75,6 +85,7 @@ class BasicPortAllocator : public PortAllocator {
   ServerAddresses stun_servers_;
   std::vector<RelayServerConfig> turn_servers_;
   bool allow_tcp_listen_;
+  int network_ignore_mask_ = rtc::kDefaultNetworkIgnoreMask;
 };
 
 struct PortConfiguration;

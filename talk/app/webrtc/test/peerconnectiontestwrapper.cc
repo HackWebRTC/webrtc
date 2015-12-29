@@ -27,13 +27,13 @@
 
 #include <utility>
 
-#include "talk/app/webrtc/fakeportallocatorfactory.h"
 #include "talk/app/webrtc/test/fakedtlsidentitystore.h"
 #include "talk/app/webrtc/test/fakeperiodicvideocapturer.h"
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
 #include "talk/app/webrtc/test/peerconnectiontestwrapper.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/p2p/client/fakeportallocator.h"
 
 static const char kStreamLabelBase[] = "stream_label";
 static const char kVideoTrackLabelBase[] = "video_track";
@@ -72,10 +72,8 @@ PeerConnectionTestWrapper::~PeerConnectionTestWrapper() {}
 
 bool PeerConnectionTestWrapper::CreatePc(
   const MediaConstraintsInterface* constraints) {
-  allocator_factory_ = webrtc::FakePortAllocatorFactory::Create();
-  if (!allocator_factory_) {
-    return false;
-  }
+  rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
+      new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
 
   fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
   if (fake_audio_capture_module_ == NULL) {
@@ -89,16 +87,16 @@ bool PeerConnectionTestWrapper::CreatePc(
     return false;
   }
 
-  // CreatePeerConnection with IceServers.
-  webrtc::PeerConnectionInterface::IceServers ice_servers;
+  // CreatePeerConnection with RTCConfiguration.
+  webrtc::PeerConnectionInterface::RTCConfiguration config;
   webrtc::PeerConnectionInterface::IceServer ice_server;
   ice_server.uri = "stun:stun.l.google.com:19302";
-  ice_servers.push_back(ice_server);
+  config.servers.push_back(ice_server);
   rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
       rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
       new FakeDtlsIdentityStore() : nullptr);
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-      ice_servers, constraints, allocator_factory_.get(),
+      config, constraints, std::move(port_allocator),
       std::move(dtls_identity_store), this);
 
   return peer_connection_.get() != NULL;

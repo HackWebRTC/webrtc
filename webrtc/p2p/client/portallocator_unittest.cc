@@ -32,6 +32,7 @@
 #include "webrtc/base/virtualsocketserver.h"
 
 using cricket::ServerAddresses;
+using rtc::IPAddress;
 using rtc::SocketAddress;
 using rtc::Thread;
 
@@ -113,6 +114,11 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   }
   void AddInterface(const SocketAddress& addr, const std::string& if_name) {
     network_manager_.AddInterface(addr, if_name);
+  }
+  void AddInterface(const SocketAddress& addr,
+                    const std::string& if_name,
+                    rtc::AdapterType type) {
+    network_manager_.AddInterface(addr, if_name, type);
   }
   // The default route is the public address that STUN server will observe when
   // the endpoint is sitting on the public internet and the local port is bound
@@ -400,6 +406,50 @@ TEST_F(PortAllocatorTest, TestBasic) {
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
 }
 
+// Tests that our network filtering works properly.
+TEST_F(PortAllocatorTest, TestIgnoreOnlyLoopbackNetworkByDefault) {
+  AddInterface(SocketAddress(IPAddress(0x12345600U), 0), "test_eth0",
+               rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(SocketAddress(IPAddress(0x12345601U), 0), "test_wlan0",
+               rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(SocketAddress(IPAddress(0x12345602U), 0), "test_cell0",
+               rtc::ADAPTER_TYPE_CELLULAR);
+  AddInterface(SocketAddress(IPAddress(0x12345603U), 0), "test_vpn0",
+               rtc::ADAPTER_TYPE_VPN);
+  AddInterface(SocketAddress(IPAddress(0x12345604U), 0), "test_lo",
+               rtc::ADAPTER_TYPE_LOOPBACK);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_DISABLE_RELAY |
+                      cricket::PORTALLOCATOR_DISABLE_TCP);
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, candidates_.size());
+  for (cricket::Candidate candidate : candidates_) {
+    EXPECT_LT(candidate.address().ip(), 0x12345604U);
+  }
+}
+
+TEST_F(PortAllocatorTest, TestIgnoreNetworksAccordingToIgnoreMask) {
+  AddInterface(SocketAddress(IPAddress(0x12345600U), 0), "test_eth0",
+               rtc::ADAPTER_TYPE_ETHERNET);
+  AddInterface(SocketAddress(IPAddress(0x12345601U), 0), "test_wlan0",
+               rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(SocketAddress(IPAddress(0x12345602U), 0), "test_cell0",
+               rtc::ADAPTER_TYPE_CELLULAR);
+  allocator_->SetNetworkIgnoreMask(rtc::ADAPTER_TYPE_ETHERNET |
+                                   rtc::ADAPTER_TYPE_LOOPBACK |
+                                   rtc::ADAPTER_TYPE_WIFI);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                      cricket::PORTALLOCATOR_DISABLE_RELAY |
+                      cricket::PORTALLOCATOR_DISABLE_TCP);
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_EQ(0x12345602U, candidates_[0].address().ip());
+}
+
 // Tests that we allocator session not trying to allocate ports for every 250ms.
 TEST_F(PortAllocatorTest, TestNoNetworkInterface) {
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
@@ -415,7 +465,8 @@ TEST_F(PortAllocatorTest, TestNoNetworkInterface) {
 
 // Test that we could use loopback interface as host candidate.
 TEST_F(PortAllocatorTest, TestLoopbackNetworkInterface) {
-  AddInterface(kLoopbackAddr);
+  AddInterface(kLoopbackAddr, "test_loopback", rtc::ADAPTER_TYPE_LOOPBACK);
+  allocator_->SetNetworkIgnoreMask(0);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
                       cricket::PORTALLOCATOR_DISABLE_RELAY |

@@ -37,7 +37,6 @@
 #include "talk/app/webrtc/peerconnection.h"
 #include "talk/app/webrtc/peerconnectionfactoryproxy.h"
 #include "talk/app/webrtc/peerconnectionproxy.h"
-#include "talk/app/webrtc/portallocatorfactory.h"
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videosourceproxy.h"
 #include "talk/app/webrtc/videotrack.h"
@@ -157,7 +156,6 @@ PeerConnectionFactory::PeerConnectionFactory(
 PeerConnectionFactory::~PeerConnectionFactory() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   channel_manager_.reset(nullptr);
-  default_allocator_factory_ = nullptr;
 
   // Make sure |worker_thread_| and |signaling_thread_| outlive
   // |dtls_identity_store_|, |default_socket_factory_| and
@@ -176,11 +174,6 @@ PeerConnectionFactory::~PeerConnectionFactory() {
 bool PeerConnectionFactory::Initialize() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::InitRandom(rtc::Time());
-
-  default_allocator_factory_ = PortAllocatorFactory::Create(worker_thread_);
-  if (!default_allocator_factory_) {
-    return false;
-  }
 
   default_network_manager_.reset(new rtc::BasicNetworkManager());
   if (!default_network_manager_) {
@@ -256,37 +249,6 @@ rtc::scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactory::CreatePeerConnection(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     const MediaConstraintsInterface* constraints,
-    PortAllocatorFactoryInterface* allocator_factory,
-    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-    PeerConnectionObserver* observer) {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  RTC_DCHECK(allocator_factory || default_allocator_factory_);
-
-  if (!dtls_identity_store.get()) {
-    // Because |pc|->Initialize takes ownership of the store we need a new
-    // wrapper object that can be deleted without deleting the underlying
-    // |dtls_identity_store_|, protecting it from being deleted multiple times.
-    dtls_identity_store.reset(
-        new DtlsIdentityStoreWrapper(dtls_identity_store_));
-  }
-
-  PortAllocatorFactoryInterface* chosen_allocator_factory =
-      allocator_factory ? allocator_factory : default_allocator_factory_.get();
-  chosen_allocator_factory->SetNetworkIgnoreMask(options_.network_ignore_mask);
-
-  rtc::scoped_refptr<PeerConnection> pc(
-      new rtc::RefCountedObject<PeerConnection>(this));
-  if (!pc->Initialize(configuration, constraints, chosen_allocator_factory,
-                      std::move(dtls_identity_store), observer)) {
-    return NULL;
-  }
-  return PeerConnectionProxy::Create(signaling_thread(), pc);
-}
-
-rtc::scoped_refptr<PeerConnectionInterface>
-PeerConnectionFactory::CreatePeerConnection(
-    const PeerConnectionInterface::RTCConfiguration& configuration,
-    const MediaConstraintsInterface* constraints,
     rtc::scoped_ptr<cricket::PortAllocator> allocator,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
@@ -304,8 +266,7 @@ PeerConnectionFactory::CreatePeerConnection(
     allocator.reset(new cricket::BasicPortAllocator(
         default_network_manager_.get(), default_socket_factory_.get()));
   }
-  default_network_manager_->set_network_ignore_mask(
-      options_.network_ignore_mask);
+  allocator->SetNetworkIgnoreMask(options_.network_ignore_mask);
 
   rtc::scoped_refptr<PeerConnection> pc(
       new rtc::RefCountedObject<PeerConnection>(this));

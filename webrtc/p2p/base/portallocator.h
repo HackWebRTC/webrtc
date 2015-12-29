@@ -91,6 +91,17 @@ typedef std::vector<ProtocolAddress> PortList;
 struct RelayServerConfig {
   RelayServerConfig(RelayType type) : type(type), priority(0) {}
 
+  RelayServerConfig(const std::string& address,
+                    int port,
+                    const std::string& username,
+                    const std::string& password,
+                    ProtocolType proto,
+                    bool secure)
+      : type(RELAY_TURN), credentials(username, password) {
+    ports.push_back(
+        ProtocolAddress(rtc::SocketAddress(address, port), proto, secure));
+  }
+
   RelayType type;
   PortList ports;
   RelayCredentials credentials;
@@ -167,6 +178,13 @@ class PortAllocator : public sigslot::has_slots<> {
   virtual void SetIceServers(
       const ServerAddresses& stun_servers,
       const std::vector<RelayServerConfig>& turn_servers) = 0;
+
+  // Sets the network types to ignore.
+  // Values are defined by the AdapterType enum.
+  // For instance, calling this with
+  // ADAPTER_TYPE_ETHERNET | ADAPTER_TYPE_LOOPBACK will ignore Ethernet and
+  // loopback interfaces.
+  virtual void SetNetworkIgnoreMask(int network_ignore_mask) = 0;
 
   PortAllocatorSession* CreateSession(
       const std::string& sid,

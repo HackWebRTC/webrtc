@@ -271,11 +271,13 @@ class RTCStatsObserver : public StatsObserver {
 - (instancetype)initWithFactory:(webrtc::PeerConnectionFactoryInterface*)factory
      iceServers:(const webrtc::PeerConnectionInterface::IceServers&)iceServers
     constraints:(const webrtc::MediaConstraintsInterface*)constraints {
-  NSParameterAssert(factory != NULL);
+  NSParameterAssert(factory != nullptr);
   if (self = [super init]) {
+    webrtc::PeerConnectionInterface::RTCConfiguration config;
+    config.servers = iceServers;
     _observer.reset(new webrtc::RTCPeerConnectionObserver(self));
     _peerConnection = factory->CreatePeerConnection(
-        iceServers, constraints, NULL, NULL, _observer.get());
+        config, constraints, nullptr, nullptr, _observer.get());
     _localStreams = [[NSMutableArray alloc] init];
   }
   return self;

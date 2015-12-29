@@ -66,12 +66,6 @@ using webrtc::MediaStreamInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::RtpSenderInterface;
 using webrtc::StreamCollection;
-using webrtc::StunConfigurations;
-using webrtc::TurnConfigurations;
-typedef webrtc::PortAllocatorFactoryInterface::StunConfiguration
-    StunConfiguration;
-typedef webrtc::PortAllocatorFactoryInterface::TurnConfiguration
-    TurnConfiguration;
 
 static const char kDefaultStreamLabel[] = "default";
 static const char kDefaultAudioTrackLabel[] = "defaulta0";
@@ -86,8 +80,6 @@ static const size_t kTurnTransportTokensNum = 2;
 static const int kDefaultStunPort = 3478;
 static const int kDefaultStunTlsPort = 5349;
 static const char kTransport[] = "transport";
-static const char kUdpTransportType[] = "udp";
-static const char kTcpTransportType[] = "tcp";
 
 // NOTE: Must be in the same order as the ServiceType enum.
 static const char* kValidIceServiceTypes[] = {"stun", "stuns", "turn", "turns"};
@@ -223,12 +215,12 @@ bool ParseHostnameAndPortFromString(const std::string& in_str,
   return !host->empty();
 }
 
-// Adds a StunConfiguration or TurnConfiguration to the appropriate list,
+// Adds a STUN or TURN server to the appropriate list,
 // by parsing |url| and using the username/password in |server|.
 bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
                        const std::string& url,
-                       StunConfigurations* stun_config,
-                       TurnConfigurations* turn_config) {
+                       cricket::ServerAddresses* stun_servers,
+                       std::vector<cricket::RelayServerConfig>* turn_servers) {
   // draft-nandakumar-rtcweb-stun-uri-01
   // stunURI       = scheme ":" stun-host [ ":" stun-port ]
   // scheme        = "stun" / "stuns"
@@ -243,10 +235,10 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   // transport-ext = 1*unreserved
   // turn-host     = IP-literal / IPv4address / reg-name
   // turn-port     = *DIGIT
-  RTC_DCHECK(stun_config != nullptr);
-  RTC_DCHECK(turn_config != nullptr);
+  RTC_DCHECK(stun_servers != nullptr);
+  RTC_DCHECK(turn_servers != nullptr);
   std::vector<std::string> tokens;
-  std::string turn_transport_type = kUdpTransportType;
+  cricket::ProtocolType turn_transport_type = cricket::PROTO_UDP;
   RTC_DCHECK(!url.empty());
   rtc::tokenize(url, '?', &tokens);
   std::string uri_without_transport = tokens[0];
@@ -257,11 +249,12 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
     if (tokens[0] == kTransport) {
       // As per above grammar transport param will be consist of lower case
       // letters.
-      if (tokens[1] != kUdpTransportType && tokens[1] != kTcpTransportType) {
+      if (!cricket::StringToProto(tokens[1].c_str(), &turn_transport_type) ||
+          (turn_transport_type != cricket::PROTO_UDP &&
+           turn_transport_type != cricket::PROTO_TCP)) {
         LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
         return false;
       }
-      turn_transport_type = tokens[1];
     }
   }
 
@@ -300,7 +293,7 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   int port = kDefaultStunPort;
   if (service_type == TURNS) {
     port = kDefaultStunTlsPort;
-    turn_transport_type = kTcpTransportType;
+    turn_transport_type = cricket::PROTO_TCP;
   }
 
   std::string address;
@@ -317,16 +310,14 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   switch (service_type) {
     case STUN:
     case STUNS:
-      stun_config->push_back(StunConfiguration(address, port));
+      stun_servers->insert(rtc::SocketAddress(address, port));
       break;
     case TURN:
     case TURNS: {
       bool secure = (service_type == TURNS);
-      turn_config->push_back(TurnConfiguration(address, port,
-                                               username,
-                                               server.password,
-                                               turn_transport_type,
-                                               secure));
+      turn_servers->push_back(
+          cricket::RelayServerConfig(address, port, username, server.password,
+                                     turn_transport_type, secure));
       break;
     }
     case INVALID:
@@ -335,40 +326,6 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
       return false;
   }
   return true;
-}
-
-void ConvertToCricketIceServers(
-    const std::vector<StunConfiguration>& stuns,
-    const std::vector<TurnConfiguration>& turns,
-    cricket::ServerAddresses* cricket_stuns,
-    std::vector<cricket::RelayServerConfig>* cricket_turns) {
-  RTC_DCHECK(cricket_stuns && cricket_turns);
-  for (const StunConfiguration& stun : stuns) {
-    cricket_stuns->insert(stun.server);
-  }
-
-  int priority = static_cast<int>(turns.size() - 1);
-  for (const TurnConfiguration& turn : turns) {
-    cricket::RelayCredentials credentials(turn.username, turn.password);
-    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
-    cricket::ProtocolType protocol;
-    // Using VERIFY because ParseIceServers should have already caught an
-    // invalid transport type.
-    if (!VERIFY(
-            cricket::StringToProto(turn.transport_type.c_str(), &protocol))) {
-      LOG(LS_WARNING) << "Ignoring TURN server " << turn.server << ". "
-                      << "Reason= Incorrect " << turn.transport_type
-                      << " transport parameter.";
-    } else {
-      relay_server.ports.push_back(
-          cricket::ProtocolAddress(turn.server, protocol, turn.secure));
-      relay_server.credentials = credentials;
-      relay_server.priority = priority;
-      cricket_turns->push_back(relay_server);
-    }
-    // First in the list gets highest priority.
-    --priority;
-  }
 }
 
 // Check if we can send |new_stream| on a PeerConnection.
@@ -563,8 +520,8 @@ bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
 }
 
 bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
-                     StunConfigurations* stun_config,
-                     TurnConfigurations* turn_config) {
+                     cricket::ServerAddresses* stun_servers,
+                     std::vector<cricket::RelayServerConfig>* turn_servers) {
   for (const webrtc::PeerConnectionInterface::IceServer& server : servers) {
     if (!server.urls.empty()) {
       for (const std::string& url : server.urls) {
@@ -572,19 +529,26 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
           LOG(LS_ERROR) << "Empty uri.";
           return false;
         }
-        if (!ParseIceServerUrl(server, url, stun_config, turn_config)) {
+        if (!ParseIceServerUrl(server, url, stun_servers, turn_servers)) {
           return false;
         }
       }
     } else if (!server.uri.empty()) {
       // Fallback to old .uri if new .urls isn't present.
-      if (!ParseIceServerUrl(server, server.uri, stun_config, turn_config)) {
+      if (!ParseIceServerUrl(server, server.uri, stun_servers, turn_servers)) {
         return false;
       }
     } else {
       LOG(LS_ERROR) << "Empty uri.";
       return false;
     }
+  }
+  // Candidates must have unique priorities, so that connectivity checks
+  // are performed in a well-defined order.
+  int priority = static_cast<int>(turn_servers->size() - 1);
+  for (cricket::RelayServerConfig& turn_server : *turn_servers) {
+    // First in the list gets highest priority.
+    turn_server.priority = priority--;
   }
   return true;
 }
@@ -616,30 +580,6 @@ PeerConnection::~PeerConnection() {
 bool PeerConnection::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     const MediaConstraintsInterface* constraints,
-    PortAllocatorFactoryInterface* allocator_factory,
-    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-    PeerConnectionObserver* observer) {
-  RTC_DCHECK(observer != nullptr);
-  if (!observer) {
-    return false;
-  }
-
-  // This Initialize function parses ICE servers an extra time, but it will
-  // be removed once all PortAllocaotrs support SetIceServers.
-  std::vector<PortAllocatorFactoryInterface::StunConfiguration> stun_config;
-  std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turn_config;
-  if (!ParseIceServers(configuration.servers, &stun_config, &turn_config)) {
-    return false;
-  }
-  rtc::scoped_ptr<cricket::PortAllocator> allocator(
-      allocator_factory->CreatePortAllocator(stun_config, turn_config));
-  return Initialize(configuration, constraints, std::move(allocator),
-                    std::move(dtls_identity_store), observer);
-}
-
-bool PeerConnection::Initialize(
-    const PeerConnectionInterface::RTCConfiguration& configuration,
-    const MediaConstraintsInterface* constraints,
     rtc::scoped_ptr<cricket::PortAllocator> allocator,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
@@ -652,17 +592,12 @@ bool PeerConnection::Initialize(
 
   port_allocator_ = std::move(allocator);
 
-  std::vector<PortAllocatorFactoryInterface::StunConfiguration> stun_config;
-  std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turn_config;
-  if (!ParseIceServers(configuration.servers, &stun_config, &turn_config)) {
+  cricket::ServerAddresses stun_servers;
+  std::vector<cricket::RelayServerConfig> turn_servers;
+  if (!ParseIceServers(configuration.servers, &stun_servers, &turn_servers)) {
     return false;
   }
-
-  cricket::ServerAddresses cricket_stuns;
-  std::vector<cricket::RelayServerConfig> cricket_turns;
-  ConvertToCricketIceServers(stun_config, turn_config, &cricket_stuns,
-                             &cricket_turns);
-  port_allocator_->SetIceServers(cricket_stuns, cricket_turns);
+  port_allocator_->SetIceServers(stun_servers, turn_servers);
 
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
@@ -1185,16 +1120,12 @@ void PeerConnection::SetRemoteDescription(
 bool PeerConnection::SetConfiguration(const RTCConfiguration& config) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
   if (port_allocator_) {
-    std::vector<PortAllocatorFactoryInterface::StunConfiguration> stuns;
-    std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turns;
-    if (!ParseIceServers(config.servers, &stuns, &turns)) {
+    cricket::ServerAddresses stun_servers;
+    std::vector<cricket::RelayServerConfig> turn_servers;
+    if (!ParseIceServers(config.servers, &stun_servers, &turn_servers)) {
       return false;
     }
-
-    cricket::ServerAddresses cricket_stuns;
-    std::vector<cricket::RelayServerConfig> cricket_turns;
-    ConvertToCricketIceServers(stuns, turns, &cricket_stuns, &cricket_turns);
-    port_allocator_->SetIceServers(cricket_stuns, cricket_turns);
+    port_allocator_->SetIceServers(stun_servers, turn_servers);
   }
   session_->SetIceConfig(session_->ParseIceConfig(config));
   return session_->SetIceTransports(config.type);

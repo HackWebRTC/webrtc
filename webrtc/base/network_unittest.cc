@@ -159,26 +159,6 @@ TEST_F(NetworkTest, TestNetworkConstruct) {
   EXPECT_FALSE(ipv4_network1.ignored());
 }
 
-// Tests that our ignore function works properly.
-TEST_F(NetworkTest, TestIsIgnoredNetworkIgnoresOnlyLoopbackByDefault) {
-  Network ipv4_network1("test_eth0", "Test Network Adapter 1",
-                        IPAddress(0x12345600U), 24, ADAPTER_TYPE_ETHERNET);
-  Network ipv4_network2("test_wlan0", "Test Network Adapter 2",
-                        IPAddress(0x12345601U), 16, ADAPTER_TYPE_WIFI);
-  Network ipv4_network3("test_cell0", "Test Network Adapter 3",
-                        IPAddress(0x12345602U), 16, ADAPTER_TYPE_CELLULAR);
-  Network ipv4_network4("test_vpn0", "Test Network Adapter 4",
-                        IPAddress(0x12345603U), 16, ADAPTER_TYPE_VPN);
-  Network ipv4_network5("test_lo", "Test Network Adapter 5",
-                        IPAddress(0x12345604U), 16, ADAPTER_TYPE_LOOPBACK);
-  BasicNetworkManager network_manager;
-  EXPECT_FALSE(IsIgnoredNetwork(network_manager, ipv4_network1));
-  EXPECT_FALSE(IsIgnoredNetwork(network_manager, ipv4_network2));
-  EXPECT_FALSE(IsIgnoredNetwork(network_manager, ipv4_network3));
-  EXPECT_FALSE(IsIgnoredNetwork(network_manager, ipv4_network4));
-  EXPECT_TRUE(IsIgnoredNetwork(network_manager, ipv4_network5));
-}
-
 TEST_F(NetworkTest, TestIsIgnoredNetworkIgnoresIPsStartingWith0) {
   Network ipv4_network1("test_eth0", "Test Network Adapter 1",
                         IPAddress(0x12345600U), 24, ADAPTER_TYPE_ETHERNET);
@@ -187,21 +167,6 @@ TEST_F(NetworkTest, TestIsIgnoredNetworkIgnoresIPsStartingWith0) {
   BasicNetworkManager network_manager;
   EXPECT_FALSE(IsIgnoredNetwork(network_manager, ipv4_network1));
   EXPECT_TRUE(IsIgnoredNetwork(network_manager, ipv4_network2));
-}
-
-TEST_F(NetworkTest, TestIsIgnoredNetworkIgnoresNetworksAccordingToIgnoreMask) {
-  Network ipv4_network1("test_eth0", "Test Network Adapter 1",
-                        IPAddress(0x12345600U), 24, ADAPTER_TYPE_ETHERNET);
-  Network ipv4_network2("test_wlan0", "Test Network Adapter 2",
-                        IPAddress(0x12345601U), 16, ADAPTER_TYPE_WIFI);
-  Network ipv4_network3("test_cell0", "Test Network Adapter 3",
-                        IPAddress(0x12345602U), 16, ADAPTER_TYPE_CELLULAR);
-  BasicNetworkManager network_manager;
-  network_manager.set_network_ignore_mask(
-      ADAPTER_TYPE_ETHERNET | ADAPTER_TYPE_LOOPBACK | ADAPTER_TYPE_WIFI);
-  EXPECT_TRUE(IsIgnoredNetwork(network_manager, ipv4_network1));
-  EXPECT_TRUE(IsIgnoredNetwork(network_manager, ipv4_network2));
-  EXPECT_FALSE(IsIgnoredNetwork(network_manager, ipv4_network3));
 }
 
 // TODO(phoglund): Remove when ignore list goes away.

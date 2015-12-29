@@ -24,49 +24,10 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-// This file defines the default implementation of
-// PortAllocatorFactoryInterface.
-// This implementation creates instances of cricket::HTTPPortAllocator and uses
-// the BasicNetworkManager and BasicPacketSocketFactory.
+// TODO(deadbeef): Remove this file once chromium build files no longer
+// reference it.
 
 #ifndef TALK_APP_WEBRTC_PORTALLOCATORFACTORY_H_
 #define TALK_APP_WEBRTC_PORTALLOCATORFACTORY_H_
-
-#include "talk/app/webrtc/peerconnectioninterface.h"
-#include "webrtc/base/scoped_ptr.h"
-
-namespace cricket {
-class PortAllocator;
-}
-
-namespace rtc {
-class BasicNetworkManager;
-class BasicPacketSocketFactory;
-}
-
-namespace webrtc {
-
-class PortAllocatorFactory : public PortAllocatorFactoryInterface {
- public:
-  static rtc::scoped_refptr<PortAllocatorFactoryInterface> Create(
-      rtc::Thread* worker_thread);
-
-  virtual cricket::PortAllocator* CreatePortAllocator(
-      const std::vector<StunConfiguration>& stun,
-      const std::vector<TurnConfiguration>& turn);
-
-  virtual void SetNetworkIgnoreMask(int network_ignore_mask);
-
- protected:
-  explicit PortAllocatorFactory(rtc::Thread* worker_thread);
-  ~PortAllocatorFactory();
-
- private:
-  rtc::scoped_ptr<rtc::BasicNetworkManager> network_manager_;
-  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> socket_factory_;
-};
-
-}  // namespace webrtc
 
 #endif  // TALK_APP_WEBRTC_PORTALLOCATORFACTORY_H_
