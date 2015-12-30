@@ -12,6 +12,7 @@ package org.appspot.apprtc;
 
 import android.content.Context;
 import android.os.ParcelFileDescriptor;
+import android.os.Environment;
 import android.util.Log;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
@@ -293,7 +294,9 @@ public class PeerConnectionClient {
   private void createPeerConnectionFactoryInternal(Context context) {
       PeerConnectionFactory.initializeInternalTracer();
       if (peerConnectionParameters.tracing) {
-          PeerConnectionFactory.startInternalTracingCapture("/mnt/sdcard/webrtc-trace.txt");
+          PeerConnectionFactory.startInternalTracingCapture(
+                  Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
+                  + "webrtc-trace.txt");
       }
     Log.d(TAG, "Create peer connection factory. Use video: " +
         peerConnectionParameters.videoCallEnabled);
