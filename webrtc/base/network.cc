@@ -119,6 +119,7 @@ std::string AdapterTypeToString(AdapterType type) {
   }
 }
 
+#if !defined(__native_client__)
 bool IsIgnoredIPv6(const InterfaceAddress& ip) {
   if (ip.family() != AF_INET6) {
     return false;
@@ -143,6 +144,7 @@ bool IsIgnoredIPv6(const InterfaceAddress& ip) {
 
   return false;
 }
+#endif  // !defined(__native_client__)
 
 }  // namespace
 
