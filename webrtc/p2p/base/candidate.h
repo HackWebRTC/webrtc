@@ -105,6 +105,7 @@ class Candidate {
         std::min(prio_val, static_cast<uint64_t>(UINT_MAX)));
   }
 
+  // TODO(honghaiz): Change to usernameFragment or ufrag.
   const std::string & username() const { return username_; }
   void set_username(const std::string & username) { username_ = username; }
 

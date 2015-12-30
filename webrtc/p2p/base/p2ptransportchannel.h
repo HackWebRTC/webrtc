@@ -178,6 +178,11 @@ class P2PTransportChannel : public TransportChannelImpl,
     return allocator_sessions_.back();
   }
 
+  // Public for unit tests.
+  const std::vector<RemoteCandidate>& remote_candidates() const {
+    return remote_candidates_;
+  }
+
  private:
   rtc::Thread* thread() { return worker_thread_; }
   bool IsGettingPorts() { return allocator_session()->IsGettingPorts(); }
@@ -247,6 +252,10 @@ class P2PTransportChannel : public TransportChannelImpl,
     return remote_ice_parameters_.empty() ? nullptr
                                           : &remote_ice_parameters_.back();
   }
+  // Returns the remote IceParameters and generation that match |ufrag|
+  // if found, and returns nullptr otherwise.
+  const IceParameters* FindRemoteIceFromUfrag(const std::string& ufrag,
+                                              uint32_t* generation);
   // Returns the index of the latest remote ICE parameters, or 0 if no remote
   // ICE parameters have been received.
   uint32_t remote_ice_generation() {

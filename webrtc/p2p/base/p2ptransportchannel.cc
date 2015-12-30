@@ -354,10 +354,15 @@ void P2PTransportChannel::SetRemoteIceCredentials(const std::string& ice_ufrag,
     remote_ice_parameters_.push_back(new_ice);
   }
 
+  // Update the pwd of remote candidate if needed.
+  for (RemoteCandidate& candidate : remote_candidates_) {
+    if (candidate.username() == ice_ufrag && candidate.password().empty()) {
+      candidate.set_password(ice_pwd);
+    }
+  }
   // We need to update the credentials for any peer reflexive candidates.
-  std::vector<Connection*>::iterator it = connections_.begin();
-  for (; it != connections_.end(); ++it) {
-    (*it)->MaybeSetRemoteIceCredentials(ice_ufrag, ice_pwd);
+  for (Connection* conn : connections_) {
+    conn->MaybeSetRemoteIceCredentials(ice_ufrag, ice_pwd);
   }
 }
 
@@ -525,13 +530,16 @@ void P2PTransportChannel::OnUnknownAddress(
     }
   }
 
+  uint32_t remote_generation = 0;
   // The STUN binding request may arrive after setRemoteDescription and before
   // adding remote candidate, so we need to set the password to the shared
   // password if the user name matches.
   if (remote_password.empty()) {
-    IceParameters* current_ice = remote_ice();
-    if (current_ice && remote_username == current_ice->ufrag) {
-      remote_password = current_ice->pwd;
+    const IceParameters* ice_param =
+        FindRemoteIceFromUfrag(remote_username, &remote_generation);
+    // Note: if not found, the remote_generation will still be 0.
+    if (ice_param != nullptr) {
+      remote_password = ice_param->pwd;
     }
   }
 
@@ -564,9 +572,9 @@ void P2PTransportChannel::OnUnknownAddress(
     // If the source transport address of the request does not match any
     // existing remote candidates, it represents a new peer reflexive remote
     // candidate.
-    remote_candidate =
-        Candidate(component(), ProtoToString(proto), address, 0,
-                  remote_username, remote_password, PRFLX_PORT_TYPE, 0U, "");
+    remote_candidate = Candidate(component(), ProtoToString(proto), address, 0,
+                                 remote_username, remote_password,
+                                 PRFLX_PORT_TYPE, remote_generation, "");
 
     // From RFC 5245, section-7.2.1.3:
     // The foundation of the candidate is set to an arbitrary value, different
@@ -624,6 +632,21 @@ void P2PTransportChannel::OnUnknownAddress(
 void P2PTransportChannel::OnRoleConflict(PortInterface* port) {
   SignalRoleConflict(this);  // STUN ping will be sent when SetRole is called
                              // from Transport.
+}
+
+const IceParameters* P2PTransportChannel::FindRemoteIceFromUfrag(
+    const std::string& ufrag,
+    uint32_t* generation) {
+  const auto& params = remote_ice_parameters_;
+  auto it = std::find_if(
+      params.rbegin(), params.rend(),
+      [ufrag](const IceParameters& param) { return param.ufrag == ufrag; });
+  if (it == params.rend()) {
+    // Not found.
+    return nullptr;
+  }
+  *generation = params.rend() - it - 1;
+  return &(*it);
 }
 
 void P2PTransportChannel::OnNominated(Connection* conn) {
@@ -788,22 +811,14 @@ bool P2PTransportChannel::FindConnection(
 
 uint32_t P2PTransportChannel::GetRemoteCandidateGeneration(
     const Candidate& candidate) {
-  // We need to keep track of the remote ice restart so newer
-  // connections are prioritized over the older.
-  const auto& params = remote_ice_parameters_;
+  // If the candidate has a ufrag, use it to find the generation.
   if (!candidate.username().empty()) {
-    // If remote side sets the ufrag, we use that to determine the candidate
-    // generation.
-    // Search backward as it is more likely to find it near the end.
-    auto it = std::find_if(params.rbegin(), params.rend(),
-                           [candidate](const IceParameters& param) {
-                             return param.ufrag == candidate.username();
-                           });
-    if (it == params.rend()) {
-      // If not found, assume it is the next (future) generation.
-      return static_cast<uint32_t>(remote_ice_parameters_.size());
+    uint32_t generation = 0;
+    if (!FindRemoteIceFromUfrag(candidate.username(), &generation)) {
+      // If the ufrag is not found, assume the next/future generation.
+      generation = static_cast<uint32_t>(remote_ice_parameters_.size());
     }
-    return params.rend() - it - 1;
+    return generation;
   }
   // If candidate generation is set, use that.
   if (candidate.generation() > 0) {

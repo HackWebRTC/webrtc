@@ -1901,6 +1901,17 @@ TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithVariousUfrags) {
   const cricket::Candidate& new_candidate = conn3->remote_candidate();
   EXPECT_EQ(kIcePwd[2], new_candidate.password());
   EXPECT_EQ(1U, new_candidate.generation());
+
+  // Check that the pwd of all remote candidates are properly assigned.
+  for (const cricket::RemoteCandidate& candidate : ch.remote_candidates()) {
+    EXPECT_TRUE(candidate.username() == kIceUfrag[1] ||
+                candidate.username() == kIceUfrag[2]);
+    if (candidate.username() == kIceUfrag[1]) {
+      EXPECT_EQ(kIcePwd[1], candidate.password());
+    } else if (candidate.username() == kIceUfrag[2]) {
+      EXPECT_EQ(kIcePwd[2], candidate.password());
+    }
+  }
 }
 
 TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
@@ -2040,7 +2051,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
 // on requests from an unknown address before the controlling side nominates
 // a connection, and will nominate a connection from an unknown address if the
 // request contains the use_candidate attribute. Plus, it will also sends back
-// a ping response.
+// a ping response and set the ICE pwd in the remote candidate appropriately.
 TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
@@ -2105,6 +2116,18 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_EQ(conn2, ch.best_connection());
   conn4->ReceivedPingResponse();  // Become writable.
   EXPECT_EQ(conn4, ch.best_connection());
+
+  // Test that the request from an unknown address contains a ufrag from an old
+  // generation.
+  port->set_sent_binding_response(false);
+  ch.SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
+  ch.SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
+  port->SignalUnknownAddress(port, rtc::SocketAddress("5.5.5.5", 5),
+                             cricket::PROTO_UDP, &request, kIceUfrag[2], false);
+  cricket::Connection* conn5 = WaitForConnectionTo(&ch, "5.5.5.5", 5);
+  ASSERT_TRUE(conn5 != nullptr);
+  EXPECT_TRUE(port->sent_binding_response());
+  EXPECT_EQ(kIcePwd[2], conn5->remote_candidate().password());
 }
 
 // The controlled side will select a connection as the "best connection"
