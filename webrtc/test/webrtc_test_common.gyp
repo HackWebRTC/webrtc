@@ -67,7 +67,7 @@
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/modules/modules.gyp:media_file',
         '<(webrtc_root)/modules/modules.gyp:video_render',
-        '<(webrtc_root)/test/test.gyp:frame_generator',
+        '<(webrtc_root)/test/test.gyp:fake_video_frames',
         '<(webrtc_root)/test/test.gyp:test_support',
         '<(webrtc_root)/test/test.gyp:rtp_test_utils',
         '<(webrtc_root)/webrtc.gyp:webrtc',
@@ -132,7 +132,7 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(webrtc_root)/modules/modules.gyp:media_file',
-        '<(webrtc_root)/test/test.gyp:frame_generator',
+        '<(webrtc_root)/test/test.gyp:fake_video_frames',
         '<(webrtc_root)/test/test.gyp:test_support',
       ],
       'direct_dependent_settings': {

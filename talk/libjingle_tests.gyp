@@ -139,16 +139,6 @@
             },
           },
         },],
-        ['clang==1', {
-          # Disabled due to failing when compiled with -Wall, see
-          # https://bugs.chromium.org/p/webrtc/issues/detail?id=5398
-          'cflags': [
-            '-Wno-unused-function',
-          ],
-          'xcode_settings': {
-            'WARNING_CFLAGS': ['-Wno-unused-function'],
-          },
-        },],
         ['OS=="ios"', {
           'sources!': [
             'media/sctp/sctpdataengine_unittest.cc',

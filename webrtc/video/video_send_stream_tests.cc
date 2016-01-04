@@ -1158,13 +1158,13 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   test::FakeNativeHandle* handle1 = new test::FakeNativeHandle();
   test::FakeNativeHandle* handle2 = new test::FakeNativeHandle();
   test::FakeNativeHandle* handle3 = new test::FakeNativeHandle();
-  input_frames.push_back(test::CreateFakeNativeHandleFrame(
+  input_frames.push_back(test::FakeNativeHandle::CreateFrame(
       handle1, width, height, 1, 1, kVideoRotation_0));
-  input_frames.push_back(test::CreateFakeNativeHandleFrame(
+  input_frames.push_back(test::FakeNativeHandle::CreateFrame(
       handle2, width, height, 2, 2, kVideoRotation_0));
   input_frames.push_back(CreateVideoFrame(width, height, 3));
   input_frames.push_back(CreateVideoFrame(width, height, 4));
-  input_frames.push_back(test::CreateFakeNativeHandleFrame(
+  input_frames.push_back(test::FakeNativeHandle::CreateFrame(
       handle3, width, height, 5, 5, kVideoRotation_0));
 
   video_send_stream_->Start();

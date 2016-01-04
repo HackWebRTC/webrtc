@@ -243,7 +243,7 @@ TEST(TestVideoFrame, FailToReuseAllocation) {
 
 TEST(TestVideoFrame, TextureInitialValues) {
   test::FakeNativeHandle* handle = new test::FakeNativeHandle();
-  VideoFrame frame = test::CreateFakeNativeHandleFrame(
+  VideoFrame frame = test::FakeNativeHandle::CreateFrame(
       handle, 640, 480, 100, 10, webrtc::kVideoRotation_0);
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());

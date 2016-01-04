@@ -191,7 +191,7 @@ TEST_F(VideoCaptureInputTest, TestTextureFrames) {
   for (int i = 0 ; i < kNumFrame; ++i) {
     test::FakeNativeHandle* dummy_handle = new test::FakeNativeHandle();
     // Add one to |i| so that width/height > 0.
-    input_frames_.push_back(new VideoFrame(test::CreateFakeNativeHandleFrame(
+    input_frames_.push_back(new VideoFrame(test::FakeNativeHandle::CreateFrame(
         dummy_handle, i + 1, i + 1, i + 1, i + 1, webrtc::kVideoRotation_0)));
     AddInputFrame(input_frames_[i]);
     WaitOutputFrame();
@@ -220,7 +220,7 @@ TEST_F(VideoCaptureInputTest, TestI420Frames) {
 
 TEST_F(VideoCaptureInputTest, TestI420FrameAfterTextureFrame) {
   test::FakeNativeHandle* dummy_handle = new test::FakeNativeHandle();
-  input_frames_.push_back(new VideoFrame(test::CreateFakeNativeHandleFrame(
+  input_frames_.push_back(new VideoFrame(test::FakeNativeHandle::CreateFrame(
       dummy_handle, 1, 1, 1, 1, webrtc::kVideoRotation_0)));
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
@@ -239,7 +239,7 @@ TEST_F(VideoCaptureInputTest, TestTextureFrameAfterI420Frame) {
   WaitOutputFrame();
 
   test::FakeNativeHandle* dummy_handle = new test::FakeNativeHandle();
-  input_frames_.push_back(new VideoFrame(test::CreateFakeNativeHandleFrame(
+  input_frames_.push_back(new VideoFrame(test::FakeNativeHandle::CreateFrame(
       dummy_handle, 1, 1, 2, 2, webrtc::kVideoRotation_0)));
   AddInputFrame(input_frames_[1]);
   WaitOutputFrame();
