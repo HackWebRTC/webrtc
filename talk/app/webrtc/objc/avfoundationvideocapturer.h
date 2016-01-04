@@ -71,7 +71,6 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer {
 
   RTCAVFoundationVideoCapturerInternal* _capturer;
   rtc::Thread* _startThread;  // Set in Start(), unset in Stop().
-  uint64_t _startTime;
 };  // AVFoundationVideoCapturer
 
 }  // namespace webrtc

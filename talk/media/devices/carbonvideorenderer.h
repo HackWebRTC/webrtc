@@ -65,7 +65,6 @@ class CarbonVideoRenderer : public VideoRenderer {
   int image_height_;
   int x_;
   int y_;
-  CGImageRef image_ref_;
   WindowRef window_ref_;
 };
 

@@ -40,7 +40,6 @@ CarbonVideoRenderer::CarbonVideoRenderer(int x, int y)
       image_height_(0),
       x_(x),
       y_(y),
-      image_ref_(NULL),
       window_ref_(NULL) {
 }
 

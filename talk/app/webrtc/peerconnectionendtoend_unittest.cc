@@ -50,56 +50,6 @@ namespace {
 
 const size_t kMaxWait = 10000;
 
-void RemoveLinesFromSdp(const std::string& line_start,
-                               std::string* sdp) {
-  const char kSdpLineEnd[] = "\r\n";
-  size_t ssrc_pos = 0;
-  while ((ssrc_pos = sdp->find(line_start, ssrc_pos)) !=
-      std::string::npos) {
-    size_t end_ssrc = sdp->find(kSdpLineEnd, ssrc_pos);
-    sdp->erase(ssrc_pos, end_ssrc - ssrc_pos + strlen(kSdpLineEnd));
-  }
-}
-
-// Add |newlines| to the |message| after |line|.
-void InjectAfter(const std::string& line,
-                 const std::string& newlines,
-                 std::string* message) {
-  const std::string tmp = line + newlines;
-  rtc::replace_substrs(line.c_str(), line.length(),
-                             tmp.c_str(), tmp.length(), message);
-}
-
-void Replace(const std::string& line,
-             const std::string& newlines,
-             std::string* message) {
-  rtc::replace_substrs(line.c_str(), line.length(),
-                             newlines.c_str(), newlines.length(), message);
-}
-
-void UseExternalSdes(std::string* sdp) {
-  // Remove current crypto specification.
-  RemoveLinesFromSdp("a=crypto", sdp);
-  RemoveLinesFromSdp("a=fingerprint", sdp);
-  // Add external crypto.
-  const char kAudioSdes[] =
-      "a=crypto:1 AES_CM_128_HMAC_SHA1_80 "
-      "inline:PS1uQCVeeCFCanVmcjkpPywjNWhcYD0mXXtxaVBR\r\n";
-  const char kVideoSdes[] =
-      "a=crypto:1 AES_CM_128_HMAC_SHA1_80 "
-      "inline:d0RmdmcmVCspeEc3QGZiNWpVLFJhQX1cfHAwJSoj\r\n";
-  const char kDataSdes[] =
-      "a=crypto:1 AES_CM_128_HMAC_SHA1_80 "
-      "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj\r\n";
-  InjectAfter("a=mid:audio\r\n", kAudioSdes, sdp);
-  InjectAfter("a=mid:video\r\n", kVideoSdes, sdp);
-  InjectAfter("a=mid:data\r\n", kDataSdes, sdp);
-}
-
-void RemoveBundle(std::string* sdp) {
-  RemoveLinesFromSdp("a=group:BUNDLE", sdp);
-}
-
 }  // namespace
 
 class PeerConnectionEndToEndTest

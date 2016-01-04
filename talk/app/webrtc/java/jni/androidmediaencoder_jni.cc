@@ -250,9 +250,6 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
     JNIEnv* jni, VideoCodecType codecType, jobject egl_context) :
     codecType_(codecType),
     callback_(NULL),
-    inited_(false),
-    use_surface_(false),
-    picture_id_(0),
     codec_thread_(new Thread()),
     j_media_codec_video_encoder_class_(
         jni,
@@ -264,6 +261,9 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
                                    *j_media_codec_video_encoder_class_,
                                    "<init>",
                                    "()V"))),
+    inited_(false),
+    use_surface_(false),
+    picture_id_(0),
     egl_context_(egl_context) {
   ScopedLocalRefFrame local_ref_frame(jni);
   // It would be nice to avoid spinning up a new thread per MediaCodec, and

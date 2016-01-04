@@ -40,7 +40,7 @@
 
 namespace webrtc_jni {
 
-class NativeHandleImpl;
+struct NativeHandleImpl;
 class SurfaceTextureHelper;
 
 // AndroidVideoCapturerJni implements AndroidVideoCapturerDelegate.

@@ -171,15 +171,6 @@ static const char kAudioTrack2[] = "audio2";
 
 enum RTCCertificateGenerationMethod { ALREADY_GENERATED, DTLS_IDENTITY_STORE };
 
-// Add some extra |newlines| to the |message| after |line|.
-static void InjectAfter(const std::string& line,
-                        const std::string& newlines,
-                        std::string* message) {
-  const std::string tmp = line + newlines;
-  rtc::replace_substrs(line.c_str(), line.length(), tmp.c_str(), tmp.length(),
-                       message);
-}
-
 class MockIceObserver : public webrtc::IceObserver {
  public:
   MockIceObserver()

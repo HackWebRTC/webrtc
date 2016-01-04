@@ -62,6 +62,13 @@
             '<(libyuv_dir)/include',
           ],
           'conditions': [
+            ['clang==1', {
+              'cflags': [
+                # Disabled due to failing when compiled with -Wall, see
+                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5399
+                '-Wno-overloaded-virtual',
+              ],
+            }],
             ['OS=="linux"', {
               'defines': [
                 'HAVE_GTK',
@@ -357,6 +364,9 @@
             # common.gypi enables this for mac but we want this to be disabled
             # like it is for ios.
             'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
+            # Disabled due to failing when compiled with -Wall, see
+            # https://bugs.chromium.org/p/webrtc/issues/detail?id=5397
+            'WARNING_CFLAGS': ['-Wno-unused-property-ivar'],
           },
           'conditions': [
             ['OS=="ios"', {

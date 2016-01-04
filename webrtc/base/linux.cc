@@ -233,33 +233,6 @@ bool ConfigParser::ParseLine(std::string* key, std::string* value) {
   return true;
 }
 
-#if !defined(WEBRTC_CHROMIUM_BUILD)
-static bool ExpectLineFromStream(FileStream* stream,
-                                 std::string* out) {
-  StreamResult res = stream->ReadLine(out);
-  if (res != SR_SUCCESS) {
-    if (res != SR_EOS) {
-      LOG(LS_ERROR) << "Error when reading from stream";
-    } else {
-      LOG(LS_ERROR) << "Incorrect number of lines in stream";
-    }
-    return false;
-  }
-  return true;
-}
-
-static void ExpectEofFromStream(FileStream* stream) {
-  std::string unused;
-  StreamResult res = stream->ReadLine(&unused);
-  if (res == SR_SUCCESS) {
-    LOG(LS_WARNING) << "Ignoring unexpected extra lines from stream";
-  } else if (res != SR_EOS) {
-    LOG(LS_WARNING) << "Error when checking for extra lines from stream";
-  }
-}
-
-#endif
-
 std::string ReadLinuxUname() {
   struct utsname buf;
   if (uname(&buf) < 0) {

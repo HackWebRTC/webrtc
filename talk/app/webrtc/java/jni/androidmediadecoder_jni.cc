@@ -112,6 +112,10 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   // Type of video codec.
   VideoCodecType codecType_;
 
+  // Render EGL context - owned by factory, should not be allocated/destroyed
+  // by VideoDecoder.
+  jobject render_egl_context_;
+
   bool key_frame_required_;
   bool inited_;
   bool sw_fallback_required_;
@@ -165,10 +169,6 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
 
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
-
-  // Render EGL context - owned by factory, should not be allocated/destroyed
-  // by VideoDecoder.
-  jobject render_egl_context_;
 };
 
 MediaCodecVideoDecoder::MediaCodecVideoDecoder(
