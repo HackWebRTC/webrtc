@@ -17,7 +17,6 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scopedptrcollection.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 

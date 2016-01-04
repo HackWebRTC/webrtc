@@ -14,7 +14,6 @@
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 

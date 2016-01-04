@@ -11,7 +11,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 using namespace rtc;
 

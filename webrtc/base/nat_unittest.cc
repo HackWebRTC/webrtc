@@ -21,7 +21,6 @@
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/virtualsocketserver.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 using namespace rtc;
 

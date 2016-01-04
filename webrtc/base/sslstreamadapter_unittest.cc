@@ -22,7 +22,6 @@
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stream.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 using ::testing::WithParamInterface;
 using ::testing::Values;

@@ -12,7 +12,6 @@
 #include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 class MediaFileTest : public testing::Test {
  protected:
@@ -28,8 +27,14 @@ class MediaFileTest : public testing::Test {
   webrtc::MediaFile* media_file_;
 };
 
-TEST_F(MediaFileTest, DISABLED_ON_IOS(
-       DISABLED_ON_ANDROID(StartPlayingAudioFileWithoutError))) {
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#define MAYBE_StartPlayingAudioFileWithoutError \
+  DISABLED_StartPlayingAudioFileWithoutError
+#else
+#define MAYBE_StartPlayingAudioFileWithoutError \
+  StartPlayingAudioFileWithoutError
+#endif
+TEST_F(MediaFileTest, MAYBE_StartPlayingAudioFileWithoutError) {
   // TODO(leozwang): Use hard coded filename here, we want to
   // loop through all audio files in future
   const std::string audio_file = webrtc::test::ProjectRootPath() +
@@ -47,7 +52,12 @@ TEST_F(MediaFileTest, DISABLED_ON_IOS(
   ASSERT_EQ(0, media_file_->StopPlaying());
 }
 
-TEST_F(MediaFileTest, DISABLED_ON_IOS(WriteWavFile)) {
+#if defined(WEBRTC_IOS)
+#define MAYBE_WriteWavFile DISABLED_WriteWavFile
+#else
+#define MAYBE_WriteWavFile WriteWavFile
+#endif
+TEST_F(MediaFileTest, MAYBE_WriteWavFile) {
   // Write file.
   static const size_t kHeaderSize = 44;
   static const size_t kPayloadSize = 320;

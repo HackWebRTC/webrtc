@@ -14,7 +14,6 @@ extern "C" {
 }
 #include "webrtc/modules/audio_processing/aec/echo_cancellation_internal.h"
 #include "webrtc/modules/audio_processing/aec/echo_cancellation.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/typedefs.h"
 
 namespace {

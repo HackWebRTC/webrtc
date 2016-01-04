@@ -15,7 +15,6 @@
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 #if defined(WEBRTC_WIN)
 #include <comdef.h>  // NOLINT

@@ -24,7 +24,6 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -424,8 +423,12 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
   int available_bitrate_kbps_;
 };
 
-TEST_F(TestVideoSenderWithVp8,
-       DISABLED_ON_IOS(DISABLED_ON_ANDROID(FixedTemporalLayersStrategy))) {
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#define MAYBE_FixedTemporalLayersStrategy DISABLED_FixedTemporalLayersStrategy
+#else
+#define MAYBE_FixedTemporalLayersStrategy FixedTemporalLayersStrategy
+#endif
+TEST_F(TestVideoSenderWithVp8, MAYBE_FixedTemporalLayersStrategy) {
   const int low_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][0];
   const int mid_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][1];
   const int high_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][2];
@@ -439,8 +442,13 @@ TEST_F(TestVideoSenderWithVp8,
   }
 }
 
-TEST_F(TestVideoSenderWithVp8,
-       DISABLED_ON_IOS(DISABLED_ON_ANDROID(RealTimeTemporalLayersStrategy))) {
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#define MAYBE_RealTimeTemporalLayersStrategy \
+  DISABLED_RealTimeTemporalLayersStrategy
+#else
+#define MAYBE_RealTimeTemporalLayersStrategy RealTimeTemporalLayersStrategy
+#endif
+TEST_F(TestVideoSenderWithVp8, MAYBE_RealTimeTemporalLayersStrategy) {
   Config extra_options;
   extra_options.Set<TemporalLayers::Factory>(
       new RealTimeTemporalLayersFactory());

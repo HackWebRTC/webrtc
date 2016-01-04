@@ -15,7 +15,6 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 using buzz::QName;
 using buzz::XmlAttr;

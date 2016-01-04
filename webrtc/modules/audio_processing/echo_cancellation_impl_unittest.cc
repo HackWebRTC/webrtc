@@ -14,7 +14,6 @@ extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 }
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 

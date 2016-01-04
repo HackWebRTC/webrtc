@@ -17,7 +17,6 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -221,7 +220,12 @@ TEST_F(TestVp8Impl, EncoderParameterTest) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->InitDecode(&codec_inst_, 1));
 }
 
-TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_AlignedStrideEncodeDecode DISABLED_AlignedStrideEncodeDecode
+#else
+#define MAYBE_AlignedStrideEncodeDecode AlignedStrideEncodeDecode
+#endif
+TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
   SetUpEncodeDecode();
   encoder_->Encode(input_frame_, NULL, NULL);
   EXPECT_GT(WaitForEncodedFrame(), 0u);
@@ -237,7 +241,12 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
   EXPECT_EQ(kTestNtpTimeMs, decoded_frame_.ntp_time_ms());
 }
 
-TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_DecodeWithACompleteKeyFrame DISABLED_DecodeWithACompleteKeyFrame
+#else
+#define MAYBE_DecodeWithACompleteKeyFrame DecodeWithACompleteKeyFrame
+#endif
+TEST_F(TestVp8Impl, MAYBE_DecodeWithACompleteKeyFrame) {
   SetUpEncodeDecode();
   encoder_->Encode(input_frame_, NULL, NULL);
   EXPECT_GT(WaitForEncodedFrame(), 0u);

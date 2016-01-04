@@ -30,7 +30,6 @@
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/typedefs.h"
 
 #ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
@@ -930,13 +929,13 @@ TEST_F(NetEqDecodingTest, UnknownPayloadType) {
   EXPECT_EQ(NetEq::kUnknownRtpPayloadType, neteq_->LastError());
 }
 
-#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
-#define IF_ISAC(x) x
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_DecoderError DISABLED_DecoderError
 #else
-#define IF_ISAC(x) DISABLED_##x
+#define MAYBE_DecoderError DecoderError
 #endif
-
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(IF_ISAC(DecoderError))) {
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+TEST_F(NetEqDecodingTest, MAYBE_DecoderError) {
   const size_t kPayloadBytes = 100;
   uint8_t payload[kPayloadBytes] = {0};
   WebRtcRTPHeader rtp_info;
@@ -974,6 +973,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(IF_ISAC(DecoderError))) {
     EXPECT_EQ(1, out_data_[i]);
   }
 }
+#endif
 
 TEST_F(NetEqDecodingTest, GetAudioBeforeInsertPacket) {
   NetEqOutputType type;
@@ -1171,7 +1171,8 @@ TEST_F(NetEqBgnTestFade, RunTest) {
   CheckBgn(32000);
 }
 
-TEST_F(NetEqDecodingTest, IF_ISAC(SyncPacketInsert)) {
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+TEST_F(NetEqDecodingTest, SyncPacketInsert) {
   WebRtcRTPHeader rtp_info;
   uint32_t receive_timestamp = 0;
   // For the readability use the following payloads instead of the defaults of
@@ -1250,6 +1251,7 @@ TEST_F(NetEqDecodingTest, IF_ISAC(SyncPacketInsert)) {
   --rtp_info.header.ssrc;
   EXPECT_EQ(0, neteq_->InsertSyncPacket(rtp_info, receive_timestamp));
 }
+#endif
 
 // First insert several noise like packets, then sync-packets. Decoding all
 // packets should not produce error, statistics should not show any packet loss

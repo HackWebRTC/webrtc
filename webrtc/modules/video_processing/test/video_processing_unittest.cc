@@ -17,7 +17,6 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -92,7 +91,11 @@ void VideoProcessingTest::TearDown() {
   vp_ = NULL;
 }
 
-TEST_F(VideoProcessingTest, DISABLED_ON_IOS(HandleNullBuffer)) {
+#if defined(WEBRTC_IOS)
+TEST_F(VideoProcessingTest, DISABLED_HandleNullBuffer) {
+#else
+TEST_F(VideoProcessingTest, HandleNullBuffer) {
+#endif
   // TODO(mikhal/stefan): Do we need this one?
   VideoProcessing::FrameStats stats;
   // Video frame with unallocated buffer.
@@ -106,7 +109,11 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(HandleNullBuffer)) {
   EXPECT_EQ(-3, vp_->BrightnessDetection(videoFrame, stats));
 }
 
-TEST_F(VideoProcessingTest, DISABLED_ON_IOS(HandleBadStats)) {
+#if defined(WEBRTC_IOS)
+TEST_F(VideoProcessingTest, DISABLED_HandleBadStats) {
+#else
+TEST_F(VideoProcessingTest, HandleBadStats) {
+#endif
   VideoProcessing::FrameStats stats;
   vp_->ClearFrameStats(&stats);
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
@@ -120,7 +127,11 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(HandleBadStats)) {
   EXPECT_EQ(-3, vp_->BrightnessDetection(video_frame_, stats));
 }
 
-TEST_F(VideoProcessingTest, DISABLED_ON_IOS(IdenticalResultsAfterReset)) {
+#if defined(WEBRTC_IOS)
+TEST_F(VideoProcessingTest, DISABLED_IdenticalResultsAfterReset) {
+#else
+TEST_F(VideoProcessingTest, IdenticalResultsAfterReset) {
+#endif
   VideoFrame video_frame2;
   VideoProcessing::FrameStats stats;
   // Only testing non-static functions here.
@@ -153,7 +164,11 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(IdenticalResultsAfterReset)) {
   EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
 }
 
-TEST_F(VideoProcessingTest, DISABLED_ON_IOS(FrameStats)) {
+#if defined(WEBRTC_IOS)
+TEST_F(VideoProcessingTest, DISABLED_FrameStats) {
+#else
+TEST_F(VideoProcessingTest, FrameStats) {
+#endif
   VideoProcessing::FrameStats stats;
   vp_->ClearFrameStats(&stats);
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
@@ -178,7 +193,11 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(FrameStats)) {
   EXPECT_FALSE(vp_->ValidFrameStats(stats));
 }
 
-TEST_F(VideoProcessingTest, DISABLED_ON_IOS(PreprocessorLogic)) {
+#if defined(WEBRTC_IOS)
+TEST_F(VideoProcessingTest, DISABLED_PreprocessorLogic) {
+#else
+TEST_F(VideoProcessingTest, PreprocessorLogic) {
+#endif
   // Disable temporal sampling (frame dropping).
   vp_->EnableTemporalDecimation(false);
   int resolution = 100;
@@ -197,7 +216,11 @@ TEST_F(VideoProcessingTest, DISABLED_ON_IOS(PreprocessorLogic)) {
   EXPECT_TRUE(vp_->PreprocessFrame(video_frame_) != nullptr);
 }
 
-TEST_F(VideoProcessingTest, DISABLED_ON_IOS(Resampler)) {
+#if defined(WEBRTC_IOS)
+TEST_F(VideoProcessingTest, DISABLED_Resampler) {
+#else
+TEST_F(VideoProcessingTest, Resampler) {
+#endif
   enum { NumRuns = 1 };
 
   int64_t min_runtime = 0;

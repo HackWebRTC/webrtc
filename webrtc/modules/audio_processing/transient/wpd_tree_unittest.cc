@@ -19,7 +19,6 @@
 #include "webrtc/modules/audio_processing/transient/file_utils.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -69,7 +68,11 @@ TEST(WPDTreeTest, Construction) {
 // It also writes the results in its own set of files in the out directory.
 // Matlab and output files contain all the results in double precision (Little
 // endian) appended.
-TEST(WPDTreeTest, DISABLED_ON_IOS(CorrectnessBasedOnMatlabFiles)) {
+#if defined(WEBRTC_IOS)
+TEST(WPDTreeTest, DISABLED_CorrectnessBasedOnMatlabFiles) {
+#else
+TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
+#endif
   // 10 ms at 16000 Hz.
   const size_t kTestBufferSize = 160;
   const int kLevels = 3;

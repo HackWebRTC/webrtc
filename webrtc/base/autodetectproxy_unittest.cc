@@ -12,7 +12,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 

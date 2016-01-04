@@ -28,7 +28,6 @@
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "gtest/gtest.h"
 #include "external/webrtc/webrtc/modules/audio_processing/test/unittest.pb.h"

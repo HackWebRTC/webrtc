@@ -13,7 +13,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"

@@ -41,7 +41,6 @@
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 using ::testing::AtLeast;
 using ::testing::Invoke;
@@ -238,7 +237,12 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
 
 // Check if the statistics are initialized correctly. Before any call to ACM
 // all fields have to be zero.
-TEST_F(AudioCodingModuleTestOldApi, DISABLED_ON_ANDROID(InitializedToZero)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_InitializedToZero DISABLED_InitializedToZero
+#else
+#define MAYBE_InitializedToZero InitializedToZero
+#endif
+TEST_F(AudioCodingModuleTestOldApi, MAYBE_InitializedToZero) {
   RegisterCodec();
   AudioDecodingCallStats stats;
   acm_->GetDecodingCallStatistics(&stats);
@@ -253,7 +257,12 @@ TEST_F(AudioCodingModuleTestOldApi, DISABLED_ON_ANDROID(InitializedToZero)) {
 // Insert some packets and pull audio. Check statistics are valid. Then,
 // simulate packet loss and check if PLC and PLC-to-CNG statistics are
 // correctly updated.
-TEST_F(AudioCodingModuleTestOldApi, DISABLED_ON_ANDROID(NetEqCalls)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_NetEqCalls DISABLED_NetEqCalls
+#else
+#define MAYBE_NetEqCalls NetEqCalls
+#endif
+TEST_F(AudioCodingModuleTestOldApi, MAYBE_NetEqCalls) {
   RegisterCodec();
   AudioDecodingCallStats stats;
   const int kNumNormalCalls = 10;
@@ -320,15 +329,9 @@ TEST_F(AudioCodingModuleTestOldApi, TransportCallbackIsInvokedForEachPacket) {
 }
 
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
-#define IF_ISAC(x) x
-#else
-#define IF_ISAC(x) DISABLED_##x
-#endif
-
 // Verifies that the RTP timestamp series is not reset when the codec is
 // changed.
-TEST_F(AudioCodingModuleTestOldApi,
-       IF_ISAC(TimestampSeriesContinuesWhenCodecChanges)) {
+TEST_F(AudioCodingModuleTestOldApi, TimestampSeriesContinuesWhenCodecChanges) {
   RegisterCodec();  // This registers the default codec.
   uint32_t expected_ts = input_frame_.timestamp_;
   int blocks_per_packet = codec_.pacsize / (kSampleRateHz / 100);
@@ -360,6 +363,7 @@ TEST_F(AudioCodingModuleTestOldApi,
     expected_ts += codec_.pacsize;
   }
 }
+#endif
 
 // Introduce this class to set different expectations on the number of encoded
 // bytes. This class expects all encoded packets to be 9 bytes (matching one
@@ -582,7 +586,12 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   rtc::scoped_ptr<SimulatedClock> fake_clock_;
 };
 
-TEST_F(AudioCodingModuleMtTestOldApi, DISABLED_ON_IOS(DoTest)) {
+#if defined(WEBRTC_IOS)
+#define MAYBE_DoTest DISABLED_DoTest
+#else
+#define MAYBE_DoTest DoTest
+#endif
+TEST_F(AudioCodingModuleMtTestOldApi, MAYBE_DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
@@ -686,9 +695,16 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   test::AudioLoop audio_loop_;
 };
 
-TEST_F(AcmIsacMtTestOldApi, DISABLED_ON_IOS(IF_ISAC(DoTest))) {
+#if defined(WEBRTC_IOS)
+#define MAYBE_DoTest DISABLED_DoTest
+#else
+#define MAYBE_DoTest DoTest
+#endif
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+TEST_F(AcmIsacMtTestOldApi, MAYBE_DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
+#endif
 
 class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
  protected:
@@ -838,9 +854,16 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   test::AudioLoop audio_loop_;
 };
 
-TEST_F(AcmReRegisterIsacMtTestOldApi, DISABLED_ON_IOS(IF_ISAC(DoTest))) {
+#if defined(WEBRTC_IOS)
+#define MAYBE_DoTest DISABLED_DoTest
+#else
+#define MAYBE_DoTest DoTest
+#endif
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+TEST_F(AcmReRegisterIsacMtTestOldApi, MAYBE_DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
+#endif
 
 // Disabling all of these tests on iOS until file support has been added.
 // See https://code.google.com/p/webrtc/issues/detail?id=4752 for details.
@@ -919,12 +942,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
-#define IF_ALL_CODECS(x) x
-#else
-#define IF_ALL_CODECS(x) DISABLED_##x
-#endif
-
-TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(8kHzOutput)) {
+TEST_F(AcmReceiverBitExactnessOldApi, 8kHzOutput) {
   Run(8000, PlatformChecksum("908002dc01fc4eb1d2be24eb1d3f354b",
                              "dcee98c623b147ebe1b40dd30efa896e",
                              "adc92e173f908f93b96ba5844209815a",
@@ -932,7 +950,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(8kHzOutput)) {
       std::vector<ExternalDecoder>());
 }
 
-TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(16kHzOutput)) {
+TEST_F(AcmReceiverBitExactnessOldApi, 16kHzOutput) {
   Run(16000, PlatformChecksum("a909560b5ca49fa472b17b7b277195e9",
                               "f790e7a8cce4e2c8b7bb5e0e4c5dac0d",
                               "8cffa6abcb3e18e33b9d857666dff66a",
@@ -940,7 +958,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(16kHzOutput)) {
       std::vector<ExternalDecoder>());
 }
 
-TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(32kHzOutput)) {
+TEST_F(AcmReceiverBitExactnessOldApi, 32kHzOutput) {
   Run(32000, PlatformChecksum("441aab4b347fb3db4e9244337aca8d8e",
                               "306e0d990ee6e92de3fbecc0123ece37",
                               "3e126fe894720c3f85edadcc91964ba5",
@@ -948,7 +966,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(32kHzOutput)) {
       std::vector<ExternalDecoder>());
 }
 
-TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(48kHzOutput)) {
+TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutput) {
   Run(48000, PlatformChecksum("4ee2730fa1daae755e8a8fd3abd779ec",
                               "aa7c232f63a67b2a72703593bdd172e0",
                               "0155665e93067c4e89256b944dd11999",
@@ -956,8 +974,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(48kHzOutput)) {
       std::vector<ExternalDecoder>());
 }
 
-TEST_F(AcmReceiverBitExactnessOldApi,
-       IF_ALL_CODECS(48kHzOutputExternalDecoder)) {
+TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
   // Class intended to forward a call from a mock DecodeInternal to Decode on
   // the real decoder's Decode. DecodeInternal for the real decoder isn't
   // public.
@@ -1016,6 +1033,7 @@ TEST_F(AcmReceiverBitExactnessOldApi,
 
   EXPECT_CALL(mock_decoder, Die());
 }
+#endif
 
 // This test verifies bit exactness for the send-side of ACM. The test setup is
 // a chain of three different test classes:
@@ -1194,7 +1212,8 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
   rtc::Md5Digest payload_checksum_;
 };
 
-TEST_F(AcmSenderBitExactnessOldApi, IF_ISAC(IsacWb30ms)) {
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+TEST_F(AcmSenderBitExactnessOldApi, IsacWb30ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 16000, 1, 103, 480, 480));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "0b58f9eeee43d5891f5f6c75e77984a3",
@@ -1209,7 +1228,7 @@ TEST_F(AcmSenderBitExactnessOldApi, IF_ISAC(IsacWb30ms)) {
       33, test::AcmReceiveTestOldApi::kMonoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, IF_ISAC(IsacWb60ms)) {
+TEST_F(AcmSenderBitExactnessOldApi, IsacWb60ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 16000, 1, 103, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "1ad29139a04782a33daad8c2b9b35875",
@@ -1223,15 +1242,15 @@ TEST_F(AcmSenderBitExactnessOldApi, IF_ISAC(IsacWb60ms)) {
           "9e0a0ab743ad987b55b8e14802769c56"),
       16, test::AcmReceiveTestOldApi::kMonoOutput);
 }
-
-#ifdef WEBRTC_CODEC_ISAC
-#define IF_ISAC_FLOAT(x) x
-#else
-#define IF_ISAC_FLOAT(x) DISABLED_##x
 #endif
 
-TEST_F(AcmSenderBitExactnessOldApi,
-       DISABLED_ON_ANDROID(IF_ISAC_FLOAT(IsacSwb30ms))) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_IsacSwb30ms DISABLED_IsacSwb30ms
+#else
+#define MAYBE_IsacSwb30ms IsacSwb30ms
+#endif
+#if defined(WEBRTC_CODEC_ISAC)
+TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacSwb30ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 32000, 1, 104, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "5683b58da0fbf2063c7adc2e6bfb3fb8",
@@ -1243,6 +1262,7 @@ TEST_F(AcmSenderBitExactnessOldApi,
           "android_arm64_payload"),
       33, test::AcmReceiveTestOldApi::kMonoOutput);
 }
+#endif
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcm16_8000khz_10ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
@@ -1324,13 +1344,13 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcma_stereo_20ms) {
       test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-#ifdef WEBRTC_CODEC_ILBC
-#define IF_ILBC(x) x
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_Ilbc_30ms DISABLED_Ilbc_30ms
 #else
-#define IF_ILBC(x) DISABLED_##x
+#define MAYBE_Ilbc_30ms Ilbc_30ms
 #endif
-
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(IF_ILBC(Ilbc_30ms))) {
+#if defined(WEBRTC_CODEC_ILBC)
+TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Ilbc_30ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ILBC", 8000, 1, 102, 240, 240));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "7b6ec10910debd9af08011d3ed5249f7",
@@ -1342,14 +1362,15 @@ TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(IF_ILBC(Ilbc_30ms))) {
           "android_arm64_payload"),
       33, test::AcmReceiveTestOldApi::kMonoOutput);
 }
-
-#ifdef WEBRTC_CODEC_G722
-#define IF_G722(x) x
-#else
-#define IF_G722(x) DISABLED_##x
 #endif
 
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(IF_G722(G722_20ms))) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_G722_20ms DISABLED_G722_20ms
+#else
+#define MAYBE_G722_20ms G722_20ms
+#endif
+#if defined(WEBRTC_CODEC_G722)
+TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 1, 9, 320, 160));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "7d759436f2533582950d148b5161a36c",
@@ -1361,9 +1382,15 @@ TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(IF_G722(G722_20ms))) {
           "android_arm64_payload"),
       50, test::AcmReceiveTestOldApi::kMonoOutput);
 }
+#endif
 
-TEST_F(AcmSenderBitExactnessOldApi,
-       DISABLED_ON_ANDROID(IF_G722(G722_stereo_20ms))) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_G722_stereo_20ms DISABLED_G722_stereo_20ms
+#else
+#define MAYBE_G722_stereo_20ms G722_stereo_20ms
+#endif
+#if defined(WEBRTC_CODEC_G722)
+TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 2, 119, 320, 160));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "7190ee718ab3d80eca181e5f7140c210",
@@ -1375,6 +1402,7 @@ TEST_F(AcmSenderBitExactnessOldApi,
           "android_arm64_payload"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
+#endif
 
 TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
@@ -1490,7 +1518,12 @@ TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
 
 // The result on the Android platforms is inconsistent for this test case.
 // On android_rel the result is different from android and android arm64 rel.
-TEST_F(AcmSetBitRateOldApi, DISABLED_ON_ANDROID(Opus_48khz_20ms_100kbps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_Opus_48khz_20ms_100kbps DISABLED_Opus_48khz_20ms_100kbps
+#else
+#define MAYBE_Opus_48khz_20ms_100kbps Opus_48khz_20ms_100kbps
+#endif
+TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_100kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
   Run(100000, 100888);
 }

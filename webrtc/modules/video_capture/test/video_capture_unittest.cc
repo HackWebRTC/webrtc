@@ -23,7 +23,6 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/video_frame.h"
 
 using rtc::scoped_ptr;
@@ -479,7 +478,12 @@ TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
 
 // Test frame rate and no picture alarm.
 // Flaky on Win32, see webrtc:3270.
-TEST_F(VideoCaptureExternalTest, DISABLED_ON_WIN(FrameRate)) {
+#if defined(WEBRTC_WIN)
+#define MAYBE_FrameRate DISABLED_FrameRate
+#else
+#define MAYBE_FrameRate FrameRate
+#endif
+TEST_F(VideoCaptureExternalTest, MAYBE_FrameRate) {
   int64_t testTime = 3;
   TickTime startTime = TickTime::Now();
 

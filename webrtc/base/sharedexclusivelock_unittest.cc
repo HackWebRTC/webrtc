@@ -16,7 +16,6 @@
 #include "webrtc/base/sharedexclusivelock.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 

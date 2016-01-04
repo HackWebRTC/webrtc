@@ -16,11 +16,14 @@
 #include "webrtc/modules/video_processing/test/video_processing_unittest.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
-TEST_F(VideoProcessingTest, DISABLED_ON_IOS(Deflickering)) {
+#if defined(WEBRTC_IOS)
+TEST_F(VideoProcessingTest, DISABLED_Deflickering) {
+#else
+TEST_F(VideoProcessingTest, Deflickering) {
+#endif
   enum { NumRuns = 30 };
   uint32_t frameNum = 0;
   const uint32_t frame_rate = 15;

@@ -24,7 +24,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
 #include "webrtc/test/field_trial.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 namespace testing {
@@ -318,8 +317,13 @@ TEST_F(OveruseDetectorTest, OveruseWithLowVariance2000Kbit30fps) {
   EXPECT_EQ(kBwOverusing, overuse_detector_->State());
 }
 
-TEST_F(OveruseDetectorTest,
-       DISABLED_ON_ANDROID(LowGaussianVariance30Kbit3fps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_LowGaussianVariance30Kbit3fps \
+  DISABLED_LowGaussianVariance30Kbit3fps
+#else
+#define MAYBE_LowGaussianVariance30Kbit3fps LowGaussianVariance30Kbit3fps
+#endif
+TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance30Kbit3fps) {
   size_t packet_size = 1200;
   int packets_per_frame = 1;
   int frame_duration_ms = 333;
@@ -375,8 +379,13 @@ TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift30Kbit3fps) {
   EXPECT_EQ(4, frames_until_overuse);
 }
 
-TEST_F(OveruseDetectorTest,
-       DISABLED_ON_ANDROID(LowGaussianVariance100Kbit5fps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_LowGaussianVariance100Kbit5fps \
+  DISABLED_LowGaussianVariance100Kbit5fps
+#else
+#define MAYBE_LowGaussianVariance100Kbit5fps LowGaussianVariance100Kbit5fps
+#endif
+TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance100Kbit5fps) {
   size_t packet_size = 1200;
   int packets_per_frame = 2;
   int frame_duration_ms = 200;
@@ -390,8 +399,13 @@ TEST_F(OveruseDetectorTest,
   EXPECT_EQ(13, frames_until_overuse);
 }
 
-TEST_F(OveruseDetectorTest,
-       DISABLED_ON_ANDROID(HighGaussianVariance100Kbit5fps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_HighGaussianVariance100Kbit5fps \
+  DISABLED_HighGaussianVariance100Kbit5fps
+#else
+#define MAYBE_HighGaussianVariance100Kbit5fps HighGaussianVariance100Kbit5fps
+#endif
+TEST_F(OveruseDetectorTest, MAYBE_HighGaussianVariance100Kbit5fps) {
   size_t packet_size = 1200;
   int packets_per_frame = 2;
   int frame_duration_ms = 200;
@@ -405,8 +419,13 @@ TEST_F(OveruseDetectorTest,
   EXPECT_EQ(32, frames_until_overuse);
 }
 
-TEST_F(OveruseDetectorTest,
-       DISABLED_ON_ANDROID(LowGaussianVariance100Kbit10fps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_LowGaussianVariance100Kbit10fps \
+  DISABLED_LowGaussianVariance100Kbit10fps
+#else
+#define MAYBE_LowGaussianVariance100Kbit10fps LowGaussianVariance100Kbit10fps
+#endif
+TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance100Kbit10fps) {
   size_t packet_size = 1200;
   int packets_per_frame = 1;
   int frame_duration_ms = 100;
@@ -420,8 +439,13 @@ TEST_F(OveruseDetectorTest,
   EXPECT_EQ(13, frames_until_overuse);
 }
 
-TEST_F(OveruseDetectorTest,
-       DISABLED_ON_ANDROID(HighGaussianVariance100Kbit10fps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_HighGaussianVariance100Kbit10fps \
+  DISABLED_HighGaussianVariance100Kbit10fps
+#else
+#define MAYBE_HighGaussianVariance100Kbit10fps HighGaussianVariance100Kbit10fps
+#endif
+TEST_F(OveruseDetectorTest, MAYBE_HighGaussianVariance100Kbit10fps) {
   size_t packet_size = 1200;
   int packets_per_frame = 1;
   int frame_duration_ms = 100;
@@ -435,8 +459,13 @@ TEST_F(OveruseDetectorTest,
   EXPECT_EQ(32, frames_until_overuse);
 }
 
-TEST_F(OveruseDetectorTest,
-       DISABLED_ON_ANDROID(LowGaussianVariance300Kbit30fps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_LowGaussianVariance300Kbit30fps \
+  DISABLED_LowGaussianVariance300Kbit30fps
+#else
+#define MAYBE_LowGaussianVariance300Kbit30fps LowGaussianVariance300Kbit30fps
+#endif
+TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance300Kbit30fps) {
   size_t packet_size = 1200;
   int packets_per_frame = 1;
   int frame_duration_ms = 33;
@@ -492,8 +521,13 @@ TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift300Kbit30fps) {
   EXPECT_EQ(10, frames_until_overuse);
 }
 
-TEST_F(OveruseDetectorTest,
-       DISABLED_ON_ANDROID(LowGaussianVariance1000Kbit30fps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_LowGaussianVariance1000Kbit30fps \
+  DISABLED_LowGaussianVariance1000Kbit30fps
+#else
+#define MAYBE_LowGaussianVariance1000Kbit30fps LowGaussianVariance1000Kbit30fps
+#endif
+TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance1000Kbit30fps) {
   size_t packet_size = 1200;
   int packets_per_frame = 3;
   int frame_duration_ms = 33;
@@ -549,8 +583,13 @@ TEST_F(OveruseDetectorTest, HighGaussianVarianceFastDrift1000Kbit30fps) {
   EXPECT_EQ(10, frames_until_overuse);
 }
 
-TEST_F(OveruseDetectorTest,
-       DISABLED_ON_ANDROID(LowGaussianVariance2000Kbit30fps)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_LowGaussianVariance2000Kbit30fps \
+  DISABLED_LowGaussianVariance2000Kbit30fps
+#else
+#define MAYBE_LowGaussianVariance2000Kbit30fps LowGaussianVariance2000Kbit30fps
+#endif
+TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance2000Kbit30fps) {
   size_t packet_size = 1200;
   int packets_per_frame = 6;
   int frame_duration_ms = 33;

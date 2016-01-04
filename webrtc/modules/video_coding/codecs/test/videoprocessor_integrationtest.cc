@@ -22,7 +22,6 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/test/testsupport/metrics/video_metrics.h"
 #include "webrtc/test/testsupport/packet_reader.h"
 #include "webrtc/typedefs.h"
@@ -814,8 +813,13 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
 // low to high to medium. Check that quality and encoder response to the new
 // target rate/per-frame bandwidth (for each rate update) is within limits.
 // One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest,
-       DISABLED_ON_ANDROID(ProcessNoLossChangeBitRateVP8)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_ProcessNoLossChangeBitRateVP8 \
+  DISABLED_ProcessNoLossChangeBitRateVP8
+#else
+#define MAYBE_ProcessNoLossChangeBitRateVP8 ProcessNoLossChangeBitRateVP8
+#endif
+TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 200, 30, 0);
@@ -846,8 +850,15 @@ TEST_F(VideoProcessorIntegrationTest,
 // for the rate control metrics can be lower. One key frame (first frame only).
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8 \
+  DISABLED_ProcessNoLossChangeFrameRateFrameDropVP8
+#else
+#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8 \
+  ProcessNoLossChangeFrameRateFrameDropVP8
+#endif
 TEST_F(VideoProcessorIntegrationTest,
-       DISABLED_ON_ANDROID(ProcessNoLossChangeFrameRateFrameDropVP8)) {
+       MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
@@ -874,8 +885,15 @@ TEST_F(VideoProcessorIntegrationTest,
 
 // Run with no packet loss, at low bitrate. During this time we should've
 // resized once. Expect 2 key frames generated (first and one for resize).
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP8 \
+  DISABLED_ProcessNoLossSpatialResizeFrameDropVP8
+#else
+#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP8 \
+  ProcessNoLossSpatialResizeFrameDropVP8
+#endif
 TEST_F(VideoProcessorIntegrationTest,
-       DISABLED_ON_ANDROID(ProcessNoLossSpatialResizeFrameDropVP8)) {
+       MAYBE_ProcessNoLossSpatialResizeFrameDropVP8) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
@@ -901,8 +919,13 @@ TEST_F(VideoProcessorIntegrationTest,
 // encoding rate mismatch are applied to each layer.
 // No dropped frames in this test, and internal spatial resizer is off.
 // One key frame (first frame only) in sequence, so no spatial resizing.
-TEST_F(VideoProcessorIntegrationTest,
-       DISABLED_ON_ANDROID(ProcessNoLossTemporalLayersVP8)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_ProcessNoLossTemporalLayersVP8 \
+  DISABLED_ProcessNoLossTemporalLayersVP8
+#else
+#define MAYBE_ProcessNoLossTemporalLayersVP8 ProcessNoLossTemporalLayersVP8
+#endif
+TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;

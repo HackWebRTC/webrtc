@@ -21,7 +21,6 @@
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -276,7 +275,12 @@ class NetEqStereoTestNoJitter : public NetEqStereoTest {
   }
 };
 
-TEST_P(NetEqStereoTestNoJitter, DISABLED_ON_ANDROID(RunTest)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_RunTest DISABLED_RunTest
+#else
+#define MAYBE_RunTest RunTest
+#endif
+TEST_P(NetEqStereoTestNoJitter, MAYBE_RunTest) {
   RunTest(8);
 }
 
@@ -301,7 +305,7 @@ class NetEqStereoTestPositiveDrift : public NetEqStereoTest {
   double drift_factor;
 };
 
-TEST_P(NetEqStereoTestPositiveDrift, DISABLED_ON_ANDROID(RunTest)) {
+TEST_P(NetEqStereoTestPositiveDrift, MAYBE_RunTest) {
   RunTest(100);
 }
 
@@ -314,7 +318,7 @@ class NetEqStereoTestNegativeDrift : public NetEqStereoTestPositiveDrift {
   }
 };
 
-TEST_P(NetEqStereoTestNegativeDrift, DISABLED_ON_ANDROID(RunTest)) {
+TEST_P(NetEqStereoTestNegativeDrift, MAYBE_RunTest) {
   RunTest(100);
 }
 
@@ -342,7 +346,7 @@ class NetEqStereoTestDelays : public NetEqStereoTest {
   int frame_index_;
 };
 
-TEST_P(NetEqStereoTestDelays, DISABLED_ON_ANDROID(RunTest)) {
+TEST_P(NetEqStereoTestDelays, MAYBE_RunTest) {
   RunTest(1000);
 }
 
@@ -361,7 +365,10 @@ class NetEqStereoTestLosses : public NetEqStereoTest {
   int frame_index_;
 };
 
-TEST_P(NetEqStereoTestLosses, DISABLED_ON_ANDROID(RunTest)) {
+// TODO(pbos): Enable on non-Android, this went failing while being accidentally
+// disabled on all platforms and not just Android.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5387
+TEST_P(NetEqStereoTestLosses, DISABLED_RunTest) {
   RunTest(100);
 }
 

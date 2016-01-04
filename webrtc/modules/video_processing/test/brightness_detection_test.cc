@@ -11,11 +11,15 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/test/video_processing_unittest.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
-TEST_F(VideoProcessingTest, DISABLED_ON_IOS(BrightnessDetection)) {
+#if defined(WEBRTC_IOS)
+#define MAYBE_BrightnessDetection DISABLED_BrightnessDetection
+#else
+#define MAYBE_BrightnessDetection BrightnessDetection
+#endif
+TEST_F(VideoProcessingTest, MAYBE_BrightnessDetection) {
   uint32_t frameNum = 0;
   int32_t brightnessWarning = 0;
   uint32_t warningCount = 0;

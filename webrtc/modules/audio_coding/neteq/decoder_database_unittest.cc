@@ -19,7 +19,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/audio_coding/neteq/mock/mock_audio_decoder.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 

@@ -18,7 +18,6 @@
 #include "webrtc/base/socket_unittest.h"
 #include "webrtc/base/testutils.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 

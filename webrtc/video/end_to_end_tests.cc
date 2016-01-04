@@ -41,7 +41,6 @@
 #include "webrtc/test/rtcp_packet_parser.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video_encoder.h"
 

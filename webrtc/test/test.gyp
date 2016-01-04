@@ -142,7 +142,6 @@
         'testsupport/frame_reader.h',
         'testsupport/frame_writer.cc',
         'testsupport/frame_writer.h',
-        'testsupport/gtest_disable.h',
         'testsupport/iosfileutils.mm',
         'testsupport/mock/mock_frame_reader.h',
         'testsupport/mock/mock_frame_writer.h',

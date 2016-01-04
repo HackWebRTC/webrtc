@@ -27,7 +27,6 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 // Files generated at build-time by the protobuf compiler.
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD

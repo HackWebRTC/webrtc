@@ -20,7 +20,6 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -164,7 +163,12 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
   FrameType last_frame_type_;
 };
 
-TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecGetCodec)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_AddCodecGetCodec DISABLED_AddCodecGetCodec
+#else
+#define MAYBE_AddCodecGetCodec AddCodecGetCodec
+#endif
+TEST_F(AcmReceiverTestOldApi, MAYBE_AddCodecGetCodec) {
   // Add codec.
   for (size_t n = 0; n < codecs_.size(); ++n) {
     if (n & 0x1)  // Just add codecs with odd index.
@@ -188,7 +192,12 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecGetCodec)) {
   }
 }
 
-TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecChangePayloadType)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_AddCodecChangePayloadType DISABLED_AddCodecChangePayloadType
+#else
+#define MAYBE_AddCodecChangePayloadType AddCodecChangePayloadType
+#endif
+TEST_F(AcmReceiverTestOldApi, MAYBE_AddCodecChangePayloadType) {
   const CodecIdInst codec1(RentACodec::CodecId::kPCMA);
   CodecInst codec2 = codec1.inst;
   ++codec2.pltype;
@@ -209,7 +218,12 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecChangePayloadType)) {
   EXPECT_EQ(true, CodecsEqual(codec2, test_codec));
 }
 
-TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecChangeCodecId)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_AddCodecChangeCodecId DISABLED_AddCodecChangeCodecId
+#else
+#define MAYBE_AddCodecChangeCodecId AddCodecChangeCodecId
+#endif
+TEST_F(AcmReceiverTestOldApi, AddCodecChangeCodecId) {
   const CodecIdInst codec1(RentACodec::CodecId::kPCMU);
   CodecIdInst codec2(RentACodec::CodecId::kPCMA);
   codec2.inst.pltype = codec1.inst.pltype;
@@ -229,7 +243,12 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecChangeCodecId)) {
   EXPECT_EQ(true, CodecsEqual(codec2.inst, test_codec));
 }
 
-TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecRemoveCodec)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_AddCodecRemoveCodec DISABLED_AddCodecRemoveCodec
+#else
+#define MAYBE_AddCodecRemoveCodec AddCodecRemoveCodec
+#endif
+TEST_F(AcmReceiverTestOldApi, MAYBE_AddCodecRemoveCodec) {
   const CodecIdInst codec(RentACodec::CodecId::kPCMA);
   const int payload_type = codec.inst.pltype;
   EXPECT_EQ(
@@ -247,7 +266,12 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecRemoveCodec)) {
   EXPECT_EQ(-1, receiver_->DecoderByPayloadType(payload_type, &ci));
 }
 
-TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(SampleRate)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_SampleRate DISABLED_SampleRate
+#else
+#define MAYBE_SampleRate SampleRate
+#endif
+TEST_F(AcmReceiverTestOldApi, MAYBE_SampleRate) {
   const RentACodec::CodecId kCodecId[] = {RentACodec::CodecId::kISAC,
                                           RentACodec::CodecId::kISACSWB};
   AddSetOfCodecs(kCodecId);
@@ -265,7 +289,12 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(SampleRate)) {
   }
 }
 
-TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(PostdecodingVad)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_PostdecodingVad DISABLED_PostdecodingVad
+#else
+#define MAYBE_PostdecodingVad PostdecodingVad
+#endif
+TEST_F(AcmReceiverTestOldApi, MAYBE_PostdecodingVad) {
   receiver_->EnableVad();
   EXPECT_TRUE(receiver_->vad_enabled());
   const CodecIdInst codec(RentACodec::CodecId::kPCM16Bwb);
@@ -293,14 +322,13 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(PostdecodingVad)) {
   EXPECT_EQ(AudioFrame::kVadUnknown, frame.vad_activity_);
 }
 
-#ifdef WEBRTC_CODEC_ISAC
-#define IF_ISAC_FLOAT(x) x
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_LastAudioCodec DISABLED_LastAudioCodec
 #else
-#define IF_ISAC_FLOAT(x) DISABLED_##x
+#define MAYBE_LastAudioCodec LastAudioCodec
 #endif
-
-TEST_F(AcmReceiverTestOldApi,
-       DISABLED_ON_ANDROID(IF_ISAC_FLOAT(LastAudioCodec))) {
+#if defined(WEBRTC_CODEC_ISAC)
+TEST_F(AcmReceiverTestOldApi, MAYBE_LastAudioCodec) {
   const RentACodec::CodecId kCodecId[] = {
       RentACodec::CodecId::kISAC, RentACodec::CodecId::kPCMA,
       RentACodec::CodecId::kISACSWB, RentACodec::CodecId::kPCM16Bswb32kHz};
@@ -363,6 +391,7 @@ TEST_F(AcmReceiverTestOldApi,
     EXPECT_TRUE(CodecsEqual(c.inst, codec));
   }
 }
+#endif
 
 }  // namespace acm2
 
