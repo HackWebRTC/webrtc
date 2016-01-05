@@ -1255,19 +1255,26 @@ TEST_F(PortTest, TestConnectionDead) {
   ASSERT_EQ_WAIT(1, ch1.complete_count(), kTimeout);
   ASSERT_EQ_WAIT(1, ch2.complete_count(), kTimeout);
 
+  // Test case that the connection has never received anything.
   uint32_t before_created = rtc::Time();
   ch1.CreateConnection(GetCandidate(port2));
   uint32_t after_created = rtc::Time();
   Connection* conn = ch1.conn();
   ASSERT(conn != nullptr);
-  // If the connection has never received anything, it will be dead after
-  // MIN_CONNECTION_LIFETIME
-  conn->UpdateState(before_created + MIN_CONNECTION_LIFETIME - 1);
-  rtc::Thread::Current()->ProcessMessages(100);
+  // It is not dead if it is after MIN_CONNECTION_LIFETIME but not pruned.
+  conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
+  rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_TRUE(ch1.conn() != nullptr);
+  // It is not dead if it is before MIN_CONNECTION_LIFETIME and pruned.
+  conn->UpdateState(before_created + MIN_CONNECTION_LIFETIME - 1);
+  conn->Prune();
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_TRUE(ch1.conn() != nullptr);
+  // It will be dead after MIN_CONNECTION_LIFETIME and pruned.
   conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
   EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kTimeout);
 
+  // Test case that the connection has received something.
   // Create a connection again and receive a ping.
   ch1.CreateConnection(GetCandidate(port2));
   conn = ch1.conn();

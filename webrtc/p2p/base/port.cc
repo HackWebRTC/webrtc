@@ -1124,17 +1124,28 @@ void Connection::ReceivedPingResponse() {
 }
 
 bool Connection::dead(uint32_t now) const {
-  if (now < (time_created_ms_ + MIN_CONNECTION_LIFETIME)) {
-    // A connection that hasn't passed its minimum lifetime is still alive.
-    // We do this to prevent connections from being pruned too quickly
-    // during a network change event when two networks would be up
-    // simultaneously but only for a brief period.
+  if (last_received() > 0) {
+    // If it has ever received anything, we keep it alive until it hasn't
+    // received anything for DEAD_CONNECTION_RECEIVE_TIMEOUT. This covers the
+    // normal case of a successfully used connection that stops working. This
+    // also allows a remote peer to continue pinging over a locally inactive
+    // (pruned) connection.
+    return (now > (last_received() + DEAD_CONNECTION_RECEIVE_TIMEOUT));
+  }
+
+  if (active()) {
+    // If it has never received anything, keep it alive as long as it is
+    // actively pinging and not pruned. Otherwise, the connection might be
+    // deleted before it has a chance to ping. This is the normal case for a
+    // new connection that is pinging but hasn't received anything yet.
     return false;
   }
 
-  // It is dead if it has not received anything for
-  // DEAD_CONNECTION_RECEIVE_TIMEOUT milliseconds.
-  return (now > (last_received() + DEAD_CONNECTION_RECEIVE_TIMEOUT));
+  // If it has never received anything and is not actively pinging (pruned), we
+  // keep it around for at least MIN_CONNECTION_LIFETIME to prevent connections
+  // from being pruned too quickly during a network change event when two
+  // networks would be up simultaneously but only for a brief period.
+  return now > (time_created_ms_ + MIN_CONNECTION_LIFETIME);
 }
 
 std::string Connection::ToDebugId() const {
