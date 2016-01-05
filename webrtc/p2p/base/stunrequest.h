@@ -21,6 +21,8 @@ namespace cricket {
 
 class StunRequest;
 
+const int kAllRequests = 0;
+
 // Manages a set of STUN requests, sending and resending until we receive a
 // response or determine that the request has timed out.
 class StunRequestManager {
@@ -32,8 +34,10 @@ class StunRequestManager {
   void Send(StunRequest* request);
   void SendDelayed(StunRequest* request, int delay);
 
-  // Sends all pending requests right away. Only for testing.
-  void Flush();
+  // If |msg_type| is kAllRequests, sends all pending requests right away.
+  // Otherwise, sends those that have a matching type right away.
+  // Only for testing.
+  void Flush(int msg_type);
 
   // Removes a stun request that was added previously.  This will happen
   // automatically when a request succeeds, fails, or times out.

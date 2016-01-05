@@ -309,7 +309,7 @@ class TurnPortTest : public testing::Test,
   }
 
   bool CheckConnectionDestroyed() {
-    turn_port_->FlushRequests();
+    turn_port_->FlushRequests(cricket::kAllRequests);
     rtc::Thread::Current()->ProcessMessages(50);
     return connection_destroyed_;
   }
@@ -693,8 +693,9 @@ TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
 
 TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  turn_port_->PrepareAddress();
-  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  PrepareTurnAndUdpPorts();
+  turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                               Port::ORIGIN_MESSAGE);
   // Set bad credentials.
   cricket::RelayCredentials bad_credentials("bad_user", "bad_pwd");
   turn_port_->set_credentials(bad_credentials);
@@ -702,13 +703,14 @@ TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   // This sends out the first RefreshRequest with correct credentials.
   // When this succeeds, it will schedule a new RefreshRequest with the bad
   // credential.
-  turn_port_->FlushRequests();
+  turn_port_->FlushRequests(cricket::TURN_REFRESH_REQUEST);
   EXPECT_TRUE_WAIT(turn_refresh_success_, kTimeout);
   // Flush it again, it will receive a bad response.
-  turn_port_->FlushRequests();
+  turn_port_->FlushRequests(cricket::TURN_REFRESH_REQUEST);
   EXPECT_TRUE_WAIT(!turn_refresh_success_, kTimeout);
+  EXPECT_TRUE_WAIT(!turn_port_->connected(), kTimeout);
   EXPECT_TRUE(turn_port_->connections().empty());
-  EXPECT_FALSE(turn_port_->connected());
+  EXPECT_FALSE(turn_port_->HasRequests());
 }
 
 // Test that CreateConnection will return null if port becomes disconnected.
@@ -840,10 +842,10 @@ TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
   // another request with bad_ufrag and bad_pwd.
   cricket::RelayCredentials bad_credentials("bad_user", "bad_pwd");
   turn_port_->set_credentials(bad_credentials);
-  turn_port_->FlushRequests();
+  turn_port_->FlushRequests(cricket::kAllRequests);
   ASSERT_TRUE_WAIT(turn_create_permission_success_, kTimeout);
   // Flush the requests again; the create-permission-request will fail.
-  turn_port_->FlushRequests();
+  turn_port_->FlushRequests(cricket::kAllRequests);
   EXPECT_TRUE_WAIT(!turn_create_permission_success_, kTimeout);
   EXPECT_TRUE_WAIT(connection_destroyed_, kTimeout);
 }

@@ -141,7 +141,8 @@ class TurnPort : public Port {
   sigslot::signal2<TurnPort*, int> SignalTurnRefreshResult;
   sigslot::signal3<TurnPort*, const rtc::SocketAddress&, int>
       SignalCreatePermissionResult;
-  void FlushRequests() { request_manager_.Flush(); }
+  void FlushRequests(int msg_type) { request_manager_.Flush(msg_type); }
+  bool HasRequests() { return !request_manager_.empty(); }
   void set_credentials(RelayCredentials& credentials) {
     credentials_ = credentials;
   }
@@ -178,7 +179,8 @@ class TurnPort : public Port {
   enum {
     MSG_ALLOCATE_ERROR = MSG_FIRST_AVAILABLE,
     MSG_ALLOCATE_MISMATCH,
-    MSG_TRY_ALTERNATE_SERVER
+    MSG_TRY_ALTERNATE_SERVER,
+    MSG_REFRESH_ERROR
   };
 
   typedef std::list<TurnEntry*> EntryList;
@@ -199,7 +201,7 @@ class TurnPort : public Port {
 
   // Shuts down the turn port, usually because of some fatal errors.
   void Close();
-  void OnTurnRefreshError() { Close(); }
+  void OnTurnRefreshError();
   bool SetAlternateServer(const rtc::SocketAddress& address);
   void ResolveTurnAddress(const rtc::SocketAddress& address);
   void OnResolveResult(rtc::AsyncResolverInterface* resolver);

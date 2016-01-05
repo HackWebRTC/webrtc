@@ -53,11 +53,13 @@ void StunRequestManager::SendDelayed(StunRequest* request, int delay) {
   }
 }
 
-void StunRequestManager::Flush() {
+void StunRequestManager::Flush(int msg_type) {
   for (const auto kv : requests_) {
     StunRequest* request = kv.second;
-    thread_->Clear(request, MSG_STUN_SEND);
-    thread_->Send(request, MSG_STUN_SEND, NULL);
+    if (msg_type == kAllRequests || msg_type == request->type()) {
+      thread_->Clear(request, MSG_STUN_SEND);
+      thread_->Send(request, MSG_STUN_SEND, NULL);
+    }
   }
 }
 
