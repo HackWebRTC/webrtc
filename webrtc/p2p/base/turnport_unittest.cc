@@ -709,7 +709,7 @@ TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   turn_port_->FlushRequests(cricket::TURN_REFRESH_REQUEST);
   EXPECT_TRUE_WAIT(!turn_refresh_success_, kTimeout);
   EXPECT_TRUE_WAIT(!turn_port_->connected(), kTimeout);
-  EXPECT_TRUE(turn_port_->connections().empty());
+  EXPECT_TRUE_WAIT(turn_port_->connections().empty(), kTimeout);
   EXPECT_FALSE(turn_port_->HasRequests());
 }
 
