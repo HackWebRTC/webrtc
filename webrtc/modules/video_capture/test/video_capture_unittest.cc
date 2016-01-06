@@ -274,7 +274,14 @@ class VideoCaptureTest : public testing::Test {
   unsigned int number_of_devices_;
 };
 
-TEST_F(VideoCaptureTest, CreateDelete) {
+#ifdef WEBRTC_MAC
+// Currently fails on Mac 64-bit, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5406
+#define MAYBE_CreateDelete DISABLED_CreateDelete
+#else
+#define MAYBE_CreateDelete CreateDelete
+#endif
+TEST_F(VideoCaptureTest, MAYBE_CreateDelete) {
   for (int i = 0; i < 5; ++i) {
     int64_t start_time = TickTime::MillisecondTimestamp();
     TestVideoCaptureCallback capture_observer;
@@ -311,7 +318,14 @@ TEST_F(VideoCaptureTest, CreateDelete) {
   }
 }
 
-TEST_F(VideoCaptureTest, Capabilities) {
+#ifdef WEBRTC_MAC
+// Currently fails on Mac 64-bit, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5406
+#define MAYBE_Capabilities DISABLED_Capabilities
+#else
+#define MAYBE_Capabilities Capabilities
+#endif
+TEST_F(VideoCaptureTest, MAYBE_Capabilities) {
 #ifdef WEBRTC_MAC
   printf("Video capture capabilities are not supported on Mac.\n");
   return;
