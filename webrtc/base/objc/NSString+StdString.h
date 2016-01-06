@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) std::string stdString;
 
 + (std::string)stdStringForString:(NSString *)nsString;
++ (NSString *)stringForStdString:(const std::string&)stdString;
 
 @end
 

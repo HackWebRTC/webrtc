@@ -19,7 +19,8 @@
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
           ],
           'sources': [
-            'objctests/RTCIceServerTest.mm'
+            'objctests/RTCIceCandidateTest.mm',
+            'objctests/RTCIceServerTest.mm',
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',

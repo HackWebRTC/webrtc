@@ -16,8 +16,12 @@
           'type': 'static_library',
           'dependencies': [
             '<(webrtc_root)/base/base.gyp:rtc_base_objc',
+            '../../talk/libjingle.gyp:libjingle_peerconnection',
           ],
           'sources': [
+            'objc/RTCIceCandidate+Private.h',
+            'objc/RTCIceCandidate.h',
+            'objc/RTCIceCandidate.mm',
             'objc/RTCIceServer+Private.h',
             'objc/RTCIceServer.h',
             'objc/RTCIceServer.mm',
