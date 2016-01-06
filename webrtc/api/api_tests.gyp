@@ -21,6 +21,7 @@
           'sources': [
             'objctests/RTCIceCandidateTest.mm',
             'objctests/RTCIceServerTest.mm',
+            'objctests/RTCSessionDescriptionTest.mm',
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',

@@ -26,6 +26,9 @@ if (is_ios) {
       "objc/RTCIceServer+Private.h",
       "objc/RTCIceServer.h",
       "objc/RTCIceServer.mm",
+      "objc/RTCSessionDescription+Private.h",
+      "objc/RTCSessionDescription.h",
+      "objc/RTCSessionDescription.mm",
       "objc/WebRTC-Prefix.pch",
     ]
   }

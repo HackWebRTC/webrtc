@@ -25,6 +25,9 @@
             'objc/RTCIceServer+Private.h',
             'objc/RTCIceServer.h',
             'objc/RTCIceServer.mm',
+            'objc/RTCSessionDescription+Private.h',
+            'objc/RTCSessionDescription.h',
+            'objc/RTCSessionDescription.mm',
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
