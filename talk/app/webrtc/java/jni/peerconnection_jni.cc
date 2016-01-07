@@ -2120,11 +2120,11 @@ JOW(jbyteArray, CallSessionFileRotatingLogSink_nativeGetLogData)(
   return result;
 }
 
-JOW(void, RtpSender_nativeSetTrack)(JNIEnv* jni,
+JOW(jboolean, RtpSender_nativeSetTrack)(JNIEnv* jni,
                                     jclass,
                                     jlong j_rtp_sender_pointer,
                                     jlong j_track_pointer) {
-  reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+  return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
       ->SetTrack(reinterpret_cast<MediaStreamTrackInterface*>(j_track_pointer));
 }
 

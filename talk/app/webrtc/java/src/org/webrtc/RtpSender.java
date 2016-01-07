@@ -32,6 +32,7 @@ public class RtpSender {
   final long nativeRtpSender;
 
   private MediaStreamTrack cachedTrack;
+  private boolean ownsTrack = true;
 
   public RtpSender(long nativeRtpSender) {
     this.nativeRtpSender = nativeRtpSender;
@@ -40,14 +41,22 @@ public class RtpSender {
     cachedTrack = (track == 0) ? null : new MediaStreamTrack(track);
   }
 
-  // NOTE: This should not be called with a track that's already used by
-  // another RtpSender, because then it would be double-disposed.
-  public void setTrack(MediaStreamTrack track) {
-    if (cachedTrack != null) {
+  // If |takeOwnership| is true, the RtpSender takes ownership of the track
+  // from the caller, and will auto-dispose of it when no longer needed.
+  // |takeOwnership| should only be used if the caller owns the track; it is
+  // not appropriate when the track is owned by, for example, another RtpSender
+  // or a MediaStream.
+  public boolean setTrack(MediaStreamTrack track, boolean takeOwnership) {
+    if (!nativeSetTrack(nativeRtpSender,
+                        (track == null) ? 0 : track.nativeTrack)) {
+        return false;
+    }
+    if (cachedTrack != null && ownsTrack) {
       cachedTrack.dispose();
     }
     cachedTrack = track;
-    nativeSetTrack(nativeRtpSender, (track == null) ? 0 : track.nativeTrack);
+    ownsTrack = takeOwnership;
+    return true;
   }
 
   public MediaStreamTrack track() {
@@ -59,14 +68,14 @@ public class RtpSender {
   }
 
   public void dispose() {
-    if (cachedTrack != null) {
+    if (cachedTrack != null && ownsTrack) {
       cachedTrack.dispose();
     }
     free(nativeRtpSender);
   }
 
-  private static native void nativeSetTrack(long nativeRtpSender,
-                                            long nativeTrack);
+  private static native boolean nativeSetTrack(long nativeRtpSender,
+                                               long nativeTrack);
 
   // This should increment the reference count of the track.
   // Will be released in dispose() or setTrack().
