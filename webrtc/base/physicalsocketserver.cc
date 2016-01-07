@@ -546,6 +546,220 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
   return 0;
 }
 
+SocketDispatcher::SocketDispatcher(PhysicalSocketServer *ss)
+#if defined(WEBRTC_WIN)
+  : PhysicalSocket(ss), id_(0), signal_close_(false)
+#else
+  : PhysicalSocket(ss)
+#endif
+{
+}
+
+SocketDispatcher::SocketDispatcher(SOCKET s, PhysicalSocketServer *ss)
+#if defined(WEBRTC_WIN)
+  : PhysicalSocket(ss, s), id_(0), signal_close_(false)
+#else
+  : PhysicalSocket(ss, s)
+#endif
+{
+}
+
+SocketDispatcher::~SocketDispatcher() {
+  Close();
+}
+
+bool SocketDispatcher::Initialize() {
+  ASSERT(s_ != INVALID_SOCKET);
+  // Must be a non-blocking
+#if defined(WEBRTC_WIN)
+  u_long argp = 1;
+  ioctlsocket(s_, FIONBIO, &argp);
+#elif defined(WEBRTC_POSIX)
+  fcntl(s_, F_SETFL, fcntl(s_, F_GETFL, 0) | O_NONBLOCK);
+#endif
+  ss_->Add(this);
+  return true;
+}
+
+bool SocketDispatcher::Create(int type) {
+  return Create(AF_INET, type);
+}
+
+bool SocketDispatcher::Create(int family, int type) {
+  // Change the socket to be non-blocking.
+  if (!PhysicalSocket::Create(family, type))
+    return false;
+
+  if (!Initialize())
+    return false;
+
+#if defined(WEBRTC_WIN)
+  do { id_ = ++next_id_; } while (id_ == 0);
+#endif
+  return true;
+}
+
+#if defined(WEBRTC_WIN)
+
+WSAEVENT SocketDispatcher::GetWSAEvent() {
+  return WSA_INVALID_EVENT;
+}
+
+SOCKET SocketDispatcher::GetSocket() {
+  return s_;
+}
+
+bool SocketDispatcher::CheckSignalClose() {
+  if (!signal_close_)
+    return false;
+
+  char ch;
+  if (recv(s_, &ch, 1, MSG_PEEK) > 0)
+    return false;
+
+  state_ = CS_CLOSED;
+  signal_close_ = false;
+  SignalCloseEvent(this, signal_err_);
+  return true;
+}
+
+int SocketDispatcher::next_id_ = 0;
+
+#elif defined(WEBRTC_POSIX)
+
+int SocketDispatcher::GetDescriptor() {
+  return s_;
+}
+
+bool SocketDispatcher::IsDescriptorClosed() {
+  // We don't have a reliable way of distinguishing end-of-stream
+  // from readability.  So test on each readable call.  Is this
+  // inefficient?  Probably.
+  char ch;
+  ssize_t res = ::recv(s_, &ch, 1, MSG_PEEK);
+  if (res > 0) {
+    // Data available, so not closed.
+    return false;
+  } else if (res == 0) {
+    // EOF, so closed.
+    return true;
+  } else {  // error
+    switch (errno) {
+      // Returned if we've already closed s_.
+      case EBADF:
+      // Returned during ungraceful peer shutdown.
+      case ECONNRESET:
+        return true;
+      default:
+        // Assume that all other errors are just blocking errors, meaning the
+        // connection is still good but we just can't read from it right now.
+        // This should only happen when connecting (and at most once), because
+        // in all other cases this function is only called if the file
+        // descriptor is already known to be in the readable state. However,
+        // it's not necessary a problem if we spuriously interpret a
+        // "connection lost"-type error as a blocking error, because typically
+        // the next recv() will get EOF, so we'll still eventually notice that
+        // the socket is closed.
+        LOG_ERR(LS_WARNING) << "Assuming benign blocking error";
+        return false;
+    }
+  }
+}
+
+#endif // WEBRTC_POSIX
+
+uint32_t SocketDispatcher::GetRequestedEvents() {
+  return enabled_events_;
+}
+
+void SocketDispatcher::OnPreEvent(uint32_t ff) {
+  if ((ff & DE_CONNECT) != 0)
+    state_ = CS_CONNECTED;
+
+#if defined(WEBRTC_WIN)
+  // We set CS_CLOSED from CheckSignalClose.
+#elif defined(WEBRTC_POSIX)
+  if ((ff & DE_CLOSE) != 0)
+    state_ = CS_CLOSED;
+#endif
+}
+
+#if defined(WEBRTC_WIN)
+
+void SocketDispatcher::OnEvent(uint32_t ff, int err) {
+  int cache_id = id_;
+  // Make sure we deliver connect/accept first. Otherwise, consumers may see
+  // something like a READ followed by a CONNECT, which would be odd.
+  if (((ff & DE_CONNECT) != 0) && (id_ == cache_id)) {
+    if (ff != DE_CONNECT)
+      LOG(LS_VERBOSE) << "Signalled with DE_CONNECT: " << ff;
+    enabled_events_ &= ~DE_CONNECT;
+#if !defined(NDEBUG)
+    dbg_addr_ = "Connected @ ";
+    dbg_addr_.append(GetRemoteAddress().ToString());
+#endif
+    SignalConnectEvent(this);
+  }
+  if (((ff & DE_ACCEPT) != 0) && (id_ == cache_id)) {
+    enabled_events_ &= ~DE_ACCEPT;
+    SignalReadEvent(this);
+  }
+  if ((ff & DE_READ) != 0) {
+    enabled_events_ &= ~DE_READ;
+    SignalReadEvent(this);
+  }
+  if (((ff & DE_WRITE) != 0) && (id_ == cache_id)) {
+    enabled_events_ &= ~DE_WRITE;
+    SignalWriteEvent(this);
+  }
+  if (((ff & DE_CLOSE) != 0) && (id_ == cache_id)) {
+    signal_close_ = true;
+    signal_err_ = err;
+  }
+}
+
+#elif defined(WEBRTC_POSIX)
+
+void SocketDispatcher::OnEvent(uint32_t ff, int err) {
+  // Make sure we deliver connect/accept first. Otherwise, consumers may see
+  // something like a READ followed by a CONNECT, which would be odd.
+  if ((ff & DE_CONNECT) != 0) {
+    enabled_events_ &= ~DE_CONNECT;
+    SignalConnectEvent(this);
+  }
+  if ((ff & DE_ACCEPT) != 0) {
+    enabled_events_ &= ~DE_ACCEPT;
+    SignalReadEvent(this);
+  }
+  if ((ff & DE_READ) != 0) {
+    enabled_events_ &= ~DE_READ;
+    SignalReadEvent(this);
+  }
+  if ((ff & DE_WRITE) != 0) {
+    enabled_events_ &= ~DE_WRITE;
+    SignalWriteEvent(this);
+  }
+  if ((ff & DE_CLOSE) != 0) {
+    // The socket is now dead to us, so stop checking it.
+    enabled_events_ = 0;
+    SignalCloseEvent(this, err);
+  }
+}
+
+#endif // WEBRTC_POSIX
+
+int SocketDispatcher::Close() {
+  if (s_ == INVALID_SOCKET)
+    return 0;
+
+#if defined(WEBRTC_WIN)
+  id_ = 0;
+  signal_close_ = false;
+#endif
+  ss_->Remove(this);
+  return PhysicalSocket::Close();
+}
+
 #if defined(WEBRTC_POSIX)
 class EventDispatcher : public Dispatcher {
  public:
@@ -782,120 +996,6 @@ class PosixSignalDispatcher : public Dispatcher {
   PhysicalSocketServer *owner_;
 };
 
-SocketDispatcher::SocketDispatcher(PhysicalSocketServer *ss)
-  : PhysicalSocket(ss) {
-}
-
-SocketDispatcher::SocketDispatcher(SOCKET s, PhysicalSocketServer *ss)
-  : PhysicalSocket(ss, s) {
-}
-
-SocketDispatcher::~SocketDispatcher() {
-  Close();
-}
-
-bool SocketDispatcher::Initialize() {
-  ss_->Add(this);
-  fcntl(s_, F_SETFL, fcntl(s_, F_GETFL, 0) | O_NONBLOCK);
-  return true;
-}
-
-bool SocketDispatcher::Create(int type) {
-  return Create(AF_INET, type);
-}
-
-bool SocketDispatcher::Create(int family, int type) {
-  // Change the socket to be non-blocking.
-  if (!PhysicalSocket::Create(family, type))
-    return false;
-
-  return Initialize();
-}
-
-int SocketDispatcher::GetDescriptor() {
-  return s_;
-}
-
-bool SocketDispatcher::IsDescriptorClosed() {
-  // We don't have a reliable way of distinguishing end-of-stream
-  // from readability.  So test on each readable call.  Is this
-  // inefficient?  Probably.
-  char ch;
-  ssize_t res = ::recv(s_, &ch, 1, MSG_PEEK);
-  if (res > 0) {
-    // Data available, so not closed.
-    return false;
-  } else if (res == 0) {
-    // EOF, so closed.
-    return true;
-  } else {  // error
-    switch (errno) {
-      // Returned if we've already closed s_.
-      case EBADF:
-      // Returned during ungraceful peer shutdown.
-      case ECONNRESET:
-        return true;
-      default:
-        // Assume that all other errors are just blocking errors, meaning the
-        // connection is still good but we just can't read from it right now.
-        // This should only happen when connecting (and at most once), because
-        // in all other cases this function is only called if the file
-        // descriptor is already known to be in the readable state. However,
-        // it's not necessary a problem if we spuriously interpret a
-        // "connection lost"-type error as a blocking error, because typically
-        // the next recv() will get EOF, so we'll still eventually notice that
-        // the socket is closed.
-        LOG_ERR(LS_WARNING) << "Assuming benign blocking error";
-        return false;
-    }
-  }
-}
-
-uint32_t SocketDispatcher::GetRequestedEvents() {
-  return enabled_events_;
-}
-
-void SocketDispatcher::OnPreEvent(uint32_t ff) {
-  if ((ff & DE_CONNECT) != 0)
-    state_ = CS_CONNECTED;
-  if ((ff & DE_CLOSE) != 0)
-    state_ = CS_CLOSED;
-}
-
-void SocketDispatcher::OnEvent(uint32_t ff, int err) {
-  // Make sure we deliver connect/accept first. Otherwise, consumers may see
-  // something like a READ followed by a CONNECT, which would be odd.
-  if ((ff & DE_CONNECT) != 0) {
-    enabled_events_ &= ~DE_CONNECT;
-    SignalConnectEvent(this);
-  }
-  if ((ff & DE_ACCEPT) != 0) {
-    enabled_events_ &= ~DE_ACCEPT;
-    SignalReadEvent(this);
-  }
-  if ((ff & DE_READ) != 0) {
-    enabled_events_ &= ~DE_READ;
-    SignalReadEvent(this);
-  }
-  if ((ff & DE_WRITE) != 0) {
-    enabled_events_ &= ~DE_WRITE;
-    SignalWriteEvent(this);
-  }
-  if ((ff & DE_CLOSE) != 0) {
-    // The socket is now dead to us, so stop checking it.
-    enabled_events_ = 0;
-    SignalCloseEvent(this, err);
-  }
-}
-
-int SocketDispatcher::Close() {
-  if (s_ == INVALID_SOCKET)
-    return 0;
-
-  ss_->Remove(this);
-  return PhysicalSocket::Close();
-}
-
 class FileDispatcher: public Dispatcher, public AsyncFile {
  public:
   FileDispatcher(int fd, PhysicalSocketServer *ss) : ss_(ss), fd_(fd) {
@@ -1009,124 +1109,6 @@ private:
   PhysicalSocketServer* ss_;
   WSAEVENT hev_;
 };
-
-SocketDispatcher::SocketDispatcher(PhysicalSocketServer* ss)
-  : PhysicalSocket(ss),
-    id_(0),
-    signal_close_(false) {
-}
-
-SocketDispatcher::SocketDispatcher(SOCKET s, PhysicalSocketServer* ss)
-  : PhysicalSocket(ss, s),
-    id_(0),
-    signal_close_(false) {
-}
-
-SocketDispatcher::~SocketDispatcher() {
-  Close();
-}
-
-bool SocketDispatcher::Initialize() {
-  ASSERT(s_ != INVALID_SOCKET);
-  // Must be a non-blocking
-  u_long argp = 1;
-  ioctlsocket(s_, FIONBIO, &argp);
-  ss_->Add(this);
-  return true;
-}
-
-bool SocketDispatcher::Create(int type) {
-  return Create(AF_INET, type);
-}
-
-bool SocketDispatcher::Create(int family, int type) {
-  // Create socket
-  if (!PhysicalSocket::Create(family, type))
-    return false;
-
-  if (!Initialize())
-    return false;
-
-  do { id_ = ++next_id_; } while (id_ == 0);
-  return true;
-}
-
-int SocketDispatcher::Close() {
-  if (s_ == INVALID_SOCKET)
-    return 0;
-
-  id_ = 0;
-  signal_close_ = false;
-  ss_->Remove(this);
-  return PhysicalSocket::Close();
-}
-
-uint32_t SocketDispatcher::GetRequestedEvents() {
-  return enabled_events_;
-}
-
-void SocketDispatcher::OnPreEvent(uint32_t ff) {
-  if ((ff & DE_CONNECT) != 0)
-    state_ = CS_CONNECTED;
-  // We set CS_CLOSED from CheckSignalClose.
-}
-
-void SocketDispatcher::OnEvent(uint32_t ff, int err) {
-  int cache_id = id_;
-  // Make sure we deliver connect/accept first. Otherwise, consumers may see
-  // something like a READ followed by a CONNECT, which would be odd.
-  if (((ff & DE_CONNECT) != 0) && (id_ == cache_id)) {
-    if (ff != DE_CONNECT)
-      LOG(LS_VERBOSE) << "Signalled with DE_CONNECT: " << ff;
-    enabled_events_ &= ~DE_CONNECT;
-#if !defined(NDEBUG)
-    dbg_addr_ = "Connected @ ";
-    dbg_addr_.append(GetRemoteAddress().ToString());
-#endif
-    SignalConnectEvent(this);
-  }
-  if (((ff & DE_ACCEPT) != 0) && (id_ == cache_id)) {
-    enabled_events_ &= ~DE_ACCEPT;
-    SignalReadEvent(this);
-  }
-  if ((ff & DE_READ) != 0) {
-    enabled_events_ &= ~DE_READ;
-    SignalReadEvent(this);
-  }
-  if (((ff & DE_WRITE) != 0) && (id_ == cache_id)) {
-    enabled_events_ &= ~DE_WRITE;
-    SignalWriteEvent(this);
-  }
-  if (((ff & DE_CLOSE) != 0) && (id_ == cache_id)) {
-    signal_close_ = true;
-    signal_err_ = err;
-  }
-}
-
-WSAEVENT SocketDispatcher::GetWSAEvent() {
-  return WSA_INVALID_EVENT;
-}
-
-SOCKET SocketDispatcher::GetSocket() {
-  return s_;
-}
-
-bool SocketDispatcher::CheckSignalClose() {
-  if (!signal_close_)
-    return false;
-
-  char ch;
-  if (recv(s_, &ch, 1, MSG_PEEK) > 0)
-    return false;
-
-  state_ = CS_CLOSED;
-  signal_close_ = false;
-  SignalCloseEvent(this, signal_err_);
-  return true;
-}
-
-int SocketDispatcher::next_id_ = 0;
-
 #endif  // WEBRTC_WIN 
 
 // Sets the value of a boolean value to false when signaled.
