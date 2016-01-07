@@ -284,7 +284,7 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
 
   test::FakeDecoder fake_decoder;
 
-  CreateSendConfig(1, &sync_send_transport);
+  CreateSendConfig(1, 0, &sync_send_transport);
   CreateMatchingReceiveConfigs(&sync_receive_transport);
 
   AudioSendStream::Config audio_send_config(&audio_send_transport);
@@ -318,9 +318,9 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   if (create_audio_first) {
     audio_receive_stream =
         receiver_call_->CreateAudioReceiveStream(audio_recv_config);
-    CreateStreams();
+    CreateVideoStreams();
   } else {
-    CreateStreams();
+    CreateVideoStreams();
     audio_receive_stream =
         receiver_call_->CreateAudioReceiveStream(audio_recv_config);
   }

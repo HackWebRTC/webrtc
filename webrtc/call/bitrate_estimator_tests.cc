@@ -120,17 +120,18 @@ class BitrateEstimatorTest : public test::CallTest {
     receive_transport_->SetReceiver(sender_call_->Receiver());
 
     video_send_config_ = VideoSendStream::Config(send_transport_.get());
-    video_send_config_.rtp.ssrcs.push_back(kSendSsrcs[0]);
+    video_send_config_.rtp.ssrcs.push_back(kVideoSendSsrcs[0]);
     // Encoders will be set separately per stream.
     video_send_config_.encoder_settings.encoder = nullptr;
     video_send_config_.encoder_settings.payload_name = "FAKE";
-    video_send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
+    video_send_config_.encoder_settings.payload_type =
+        kFakeVideoSendPayloadType;
     video_encoder_config_.streams = test::CreateVideoStreams(1);
 
     receive_config_ = VideoReceiveStream::Config(receive_transport_.get());
     // receive_config_.decoders will be set by every stream separately.
     receive_config_.rtp.remote_ssrc = video_send_config_.rtp.ssrcs[0];
-    receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
+    receive_config_.rtp.local_ssrc = kReceiverLocalVideoSsrc;
     receive_config_.rtp.remb = true;
     receive_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));

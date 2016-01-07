@@ -68,8 +68,8 @@ TEST_F(VideoSendStreamTest, CanStartStartedStream) {
   CreateSenderCall(call_config);
 
   test::NullTransport transport;
-  CreateSendConfig(1, &transport);
-  CreateStreams();
+  CreateSendConfig(1, 0, &transport);
+  CreateVideoStreams();
   video_send_stream_->Start();
   video_send_stream_->Start();
   DestroyStreams();
@@ -80,8 +80,8 @@ TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
   CreateSenderCall(call_config);
 
   test::NullTransport transport;
-  CreateSendConfig(1, &transport);
-  CreateStreams();
+  CreateSendConfig(1, 0, &transport);
+  CreateVideoStreams();
   video_send_stream_->Stop();
   video_send_stream_->Stop();
   DestroyStreams();
@@ -327,14 +327,14 @@ class FecObserver : public test::SendTest {
     if (send_count_++ % 2 != 0) {
       // Receive statistics reporting having lost 50% of the packets.
       FakeReceiveStatistics lossy_receive_stats(
-          VideoSendStreamTest::kSendSsrcs[0], header.sequenceNumber,
+          VideoSendStreamTest::kVideoSendSsrcs[0], header.sequenceNumber,
           send_count_ / 2, 127);
       RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
                              &lossy_receive_stats, nullptr,
                              transport_adapter_.get());
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
-      rtcp_sender.SetRemoteSSRC(VideoSendStreamTest::kSendSsrcs[0]);
+      rtcp_sender.SetRemoteSSRC(VideoSendStreamTest::kVideoSendSsrcs[0]);
 
       RTCPSender::FeedbackState feedback_state;
 
@@ -345,11 +345,12 @@ class FecObserver : public test::SendTest {
     if (header.payloadType == VideoSendStreamTest::kRedPayloadType) {
       encapsulated_payload_type = static_cast<int>(packet[header.headerLength]);
       if (encapsulated_payload_type !=
-          VideoSendStreamTest::kFakeSendPayloadType)
+          VideoSendStreamTest::kFakeVideoSendPayloadType)
         EXPECT_EQ(VideoSendStreamTest::kUlpfecPayloadType,
                   encapsulated_payload_type);
     } else {
-      EXPECT_EQ(VideoSendStreamTest::kFakeSendPayloadType, header.payloadType);
+      EXPECT_EQ(VideoSendStreamTest::kFakeVideoSendPayloadType,
+                header.payloadType);
     }
 
     if (header_extensions_enabled_) {
@@ -459,7 +460,7 @@ void VideoSendStreamTest::TestNackRetransmission(
                                nullptr, transport_adapter_.get());
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
-        rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
+        rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
 
         RTCPSender::FeedbackState feedback_state;
 
@@ -471,8 +472,8 @@ void VideoSendStreamTest::TestNackRetransmission(
       uint16_t sequence_number = header.sequenceNumber;
 
       if (header.ssrc == retransmit_ssrc_ &&
-          retransmit_ssrc_ != kSendSsrcs[0]) {
-        // Not kSendSsrcs[0], assume correct RTX packet. Extract sequence
+          retransmit_ssrc_ != kVideoSendSsrcs[0]) {
+        // Not kVideoSendSsrcs[0], assume correct RTX packet. Extract sequence
         // number.
         const uint8_t* rtx_header = packet + header.headerLength;
         sequence_number = (rtx_header[0] << 8) + rtx_header[1];
@@ -496,7 +497,7 @@ void VideoSendStreamTest::TestNackRetransmission(
       transport_adapter_->Enable();
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       send_config->rtp.rtx.payload_type = retransmit_payload_type_;
-      if (retransmit_ssrc_ != kSendSsrcs[0])
+      if (retransmit_ssrc_ != kVideoSendSsrcs[0])
         send_config->rtp.rtx.ssrcs.push_back(retransmit_ssrc_);
     }
 
@@ -516,7 +517,7 @@ void VideoSendStreamTest::TestNackRetransmission(
 
 TEST_F(VideoSendStreamTest, RetransmitsNack) {
   // Normal NACKs should use the send SSRC.
-  TestNackRetransmission(kSendSsrcs[0], kFakeSendPayloadType);
+  TestNackRetransmission(kVideoSendSsrcs[0], kFakeVideoSendPayloadType);
 }
 
 TEST_F(VideoSendStreamTest, RetransmitsNackOverRtx) {
@@ -641,13 +642,13 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       if (packet_count_++ % 2 != 0) {
         // Receive statistics reporting having lost 50% of the packets.
         FakeReceiveStatistics lossy_receive_stats(
-            kSendSsrcs[0], header.sequenceNumber, packet_count_ / 2, 127);
+            kVideoSendSsrcs[0], header.sequenceNumber, packet_count_ / 2, 127);
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
                                &lossy_receive_stats, nullptr,
                                transport_adapter_.get());
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
-        rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
+        rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
 
         RTCPSender::FeedbackState feedback_state;
 
@@ -864,13 +865,13 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
     virtual void SendRtcpFeedback(int remb_value)
         EXCLUSIVE_LOCKS_REQUIRED(crit_) {
-      FakeReceiveStatistics receive_stats(
-          kSendSsrcs[0], last_sequence_number_, rtp_count_, 0);
+      FakeReceiveStatistics receive_stats(kVideoSendSsrcs[0],
+                                          last_sequence_number_, rtp_count_, 0);
       RTCPSender rtcp_sender(false, clock_, &receive_stats, nullptr,
                              transport_adapter_.get());
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
-      rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
+      rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
       if (remb_value > 0) {
         rtcp_sender.SetREMBStatus(true);
         rtcp_sender.SetREMBData(remb_value, std::vector<uint32_t>());
@@ -921,12 +922,12 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
               kVideoMutedThresholdMs)
         observation_complete_.Set();
       // Receive statistics reporting having lost 50% of the packets.
-      FakeReceiveStatistics receive_stats(kSendSsrcs[0], 1, 1, 0);
+      FakeReceiveStatistics receive_stats(kVideoSendSsrcs[0], 1, 1, 0);
       RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), &receive_stats,
                              nullptr, transport_adapter_.get());
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
-      rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
+      rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
 
       RTCPSender::FeedbackState feedback_state;
 
@@ -942,7 +943,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
       transport_adapter_->Enable();
     }
 
-    size_t GetNumStreams() const override { return 3; }
+    size_t GetNumVideoStreams() const override { return 3; }
 
     virtual void OnFrameGeneratorCapturerCreated(
         test::FrameGeneratorCapturer* frame_generator_capturer) {
@@ -1085,7 +1086,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   CreateSenderCall(Call::Config());
 
   test::NullTransport transport;
-  CreateSendConfig(1, &transport);
+  CreateSendConfig(1, 0, &transport);
 
   Call::Config::BitrateConfig bitrate_config;
   bitrate_config.start_bitrate_bps =
@@ -1095,7 +1096,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   StartBitrateObserver encoder;
   video_send_config_.encoder_settings.encoder = &encoder;
 
-  CreateStreams();
+  CreateVideoStreams();
 
   EXPECT_EQ(video_encoder_config_.streams[0].max_bitrate_bps / 1000,
             encoder.GetStartBitrateKbps());
@@ -1145,10 +1146,10 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   CreateSenderCall(Call::Config());
 
   test::NullTransport transport;
-  CreateSendConfig(1, &transport);
+  CreateSendConfig(1, 0, &transport);
   FrameObserver observer;
   video_send_config_.pre_encode_callback = &observer;
-  CreateStreams();
+  CreateVideoStreams();
 
   // Prepare five input frames. Send ordinary VideoFrame and texture frames
   // alternatively.
@@ -1819,7 +1820,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
       EXPECT_EQ(kNumStreams, encoder_config->streams.size());
     }
 
-    size_t GetNumStreams() const override { return kNumStreams; }
+    size_t GetNumVideoStreams() const override { return kNumStreams; }
 
     void PerformTest() override {
       EXPECT_TRUE(Wait())
@@ -1827,12 +1828,12 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
       VideoSendStream::Stats stats = send_stream_->GetStats();
 
       for (size_t i = 0; i < kNumStreams; ++i) {
-        ASSERT_TRUE(stats.substreams.find(kSendSsrcs[i]) !=
+        ASSERT_TRUE(stats.substreams.find(kVideoSendSsrcs[i]) !=
                     stats.substreams.end())
-            << "No stats for SSRC: " << kSendSsrcs[i]
+            << "No stats for SSRC: " << kVideoSendSsrcs[i]
             << ", stats should exist as soon as frames have been encoded.";
         VideoSendStream::StreamStats ssrc_stats =
-            stats.substreams[kSendSsrcs[i]];
+            stats.substreams[kVideoSendSsrcs[i]];
         EXPECT_EQ(kEncodedResolution[i].width, ssrc_stats.width);
         EXPECT_EQ(kEncodedResolution[i].height, ssrc_stats.height);
       }

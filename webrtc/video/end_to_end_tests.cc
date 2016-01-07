@@ -31,7 +31,6 @@
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
-#include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator.h"
@@ -86,10 +85,10 @@ TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
   CreateCalls(Call::Config(), Call::Config());
 
   test::NullTransport transport;
-  CreateSendConfig(1, &transport);
+  CreateSendConfig(1, 0, &transport);
   CreateMatchingReceiveConfigs(&transport);
 
-  CreateStreams();
+  CreateVideoStreams();
 
   video_receive_streams_[0]->Start();
   video_receive_streams_[0]->Start();
@@ -101,10 +100,10 @@ TEST_F(EndToEndTest, ReceiverCanBeStoppedTwice) {
   CreateCalls(Call::Config(), Call::Config());
 
   test::NullTransport transport;
-  CreateSendConfig(1, &transport);
+  CreateSendConfig(1, 0, &transport);
   CreateMatchingReceiveConfigs(&transport);
 
-  CreateStreams();
+  CreateVideoStreams();
 
   video_receive_streams_[0]->Stop();
   video_receive_streams_[0]->Stop();
@@ -158,14 +157,14 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, &sender_transport);
+  CreateSendConfig(1, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
 
   TestFrameCallback pre_render_callback;
   video_receive_configs_[0].pre_render_callback = &pre_render_callback;
   video_receive_configs_[0].renderer = &renderer;
 
-  CreateStreams();
+  CreateVideoStreams();
   Start();
 
   // Create frames that are smaller than the send width/height, this is done to
@@ -210,11 +209,11 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, &sender_transport);
+  CreateSendConfig(1, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
   video_receive_configs_[0].renderer = &renderer;
 
-  CreateStreams();
+  CreateVideoStreams();
   Start();
 
   rtc::scoped_ptr<test::FrameGenerator> frame_generator(
@@ -308,7 +307,7 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
           (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       send_config->encoder_settings.encoder = &fake_encoder_;
       send_config->encoder_settings.payload_name = "H264";
-      send_config->encoder_settings.payload_type = kFakeSendPayloadType;
+      send_config->encoder_settings.payload_type = kFakeVideoSendPayloadType;
       encoder_config->streams[0].min_bitrate_bps = 50000;
       encoder_config->streams[0].target_bitrate_bps =
           encoder_config->streams[0].max_bitrate_bps = 2000000;
@@ -353,7 +352,7 @@ TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
       ssrc |= static_cast<uint32_t>(packet[5]) << 16;
       ssrc |= static_cast<uint32_t>(packet[6]) << 8;
       ssrc |= static_cast<uint32_t>(packet[7]) << 0;
-      EXPECT_EQ(kReceiverLocalSsrc, ssrc);
+      EXPECT_EQ(kReceiverLocalVideoSsrc, ssrc);
       observation_complete_.Set();
 
       return SEND_PACKET;
@@ -474,10 +473,10 @@ TEST_F(EndToEndTest, CanReceiveFec) {
       if (header.payloadType == kRedPayloadType) {
         encapsulated_payload_type =
             static_cast<int>(packet[header.headerLength]);
-        if (encapsulated_payload_type != kFakeSendPayloadType)
+        if (encapsulated_payload_type != kFakeVideoSendPayloadType)
           EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
       } else {
-        EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
+        EXPECT_EQ(kFakeVideoSendPayloadType, header.payloadType);
       }
 
       if (protected_sequence_numbers_.count(header.sequenceNumber) != 0) {
@@ -501,7 +500,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
             return DROP_PACKET;
           break;
         case kDropNextMediaPacket:
-          if (encapsulated_payload_type == kFakeSendPayloadType) {
+          if (encapsulated_payload_type == kFakeVideoSendPayloadType) {
             protected_sequence_numbers_.insert(header.sequenceNumber);
             protected_timestamps_.insert(header.timestamp);
             state_ = kDropEveryOtherPacketUntilFec;
@@ -580,10 +579,10 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
       if (header.payloadType == kRedPayloadType) {
         encapsulated_payload_type =
             static_cast<int>(packet[header.headerLength]);
-        if (encapsulated_payload_type != kFakeSendPayloadType)
+        if (encapsulated_payload_type != kFakeVideoSendPayloadType)
           EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
       } else {
-        EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
+        EXPECT_EQ(kFakeVideoSendPayloadType, header.payloadType);
       }
 
       if (has_last_sequence_number_ &&
@@ -698,7 +697,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
     explicit RetransmissionObserver(bool use_rtx, bool use_red)
         : EndToEndTest(kDefaultTimeoutMs),
           payload_type_(GetPayloadType(false, use_red)),
-          retransmission_ssrc_(use_rtx ? kSendRtxSsrcs[0] : kSendSsrcs[0]),
+          retransmission_ssrc_(use_rtx ? kSendRtxSsrcs[0] : kVideoSendSsrcs[0]),
           retransmission_payload_type_(GetPayloadType(use_rtx, use_red)),
           marker_bits_observed_(0),
           num_packets_observed_(0),
@@ -726,7 +725,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
         return SEND_PACKET;
       }
 
-      EXPECT_EQ(kSendSsrcs[0], header.ssrc);
+      EXPECT_EQ(kVideoSendSsrcs[0], header.ssrc);
       EXPECT_EQ(payload_type_, header.payloadType);
 
       // Found the final packet of the frame to inflict loss to, drop this and
@@ -765,9 +764,9 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
       if (retransmission_ssrc_ == kSendRtxSsrcs[0]) {
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
-        (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].ssrc =
+        (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].ssrc =
             kSendRtxSsrcs[0];
-        (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].payload_type =
+        (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].payload_type =
             kSendRtxPayloadType;
       }
     }
@@ -779,7 +778,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
 
     int GetPayloadType(bool use_rtx, bool use_red) {
       return use_rtx ? kSendRtxPayloadType
-                     : (use_red ? kRedPayloadType : kFakeSendPayloadType);
+                     : (use_red ? kRedPayloadType : kFakeVideoSendPayloadType);
     }
 
     rtc::CriticalSection crit_;
@@ -876,7 +875,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, &sender_transport);
+  CreateSendConfig(1, 0, &sender_transport);
   rtc::scoped_ptr<VideoEncoder> encoder(
       VideoEncoder::Create(VideoEncoder::kVp8));
   video_send_config_.encoder_settings.encoder = encoder.get();
@@ -890,7 +889,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   video_receive_configs_[0].pre_render_callback = &pre_render_callback;
   video_receive_configs_[0].renderer = &renderer;
 
-  CreateStreams();
+  CreateVideoStreams();
   Start();
 
   // Create frames that are smaller than the send width/height, this is done to
@@ -1050,10 +1049,10 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   send_transport.SetReceiver(&input_observer);
   receive_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, &send_transport);
+  CreateSendConfig(1, 0, &send_transport);
   CreateMatchingReceiveConfigs(&receive_transport);
 
-  CreateStreams();
+  CreateVideoStreams();
   CreateFrameGeneratorCapturer();
   Start();
 
@@ -1227,7 +1226,7 @@ class MultiStreamTest {
 
       VideoReceiveStream::Config receive_config(receiver_transport.get());
       receive_config.rtp.remote_ssrc = ssrc;
-      receive_config.rtp.local_ssrc = test::CallTest::kReceiverLocalSsrc;
+      receive_config.rtp.local_ssrc = test::CallTest::kReceiverLocalVideoSsrc;
       VideoReceiveStream::Decoder decoder =
           test::CreateMatchingDecoder(send_config.encoder_settings);
       allocated_decoders.push_back(decoder.decoder);
@@ -1659,12 +1658,12 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, &sender_transport);
+  CreateSendConfig(1, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
   video_send_config_.post_encode_callback = &post_encode_observer;
   video_receive_configs_[0].pre_decode_callback = &pre_decode_observer;
 
-  CreateStreams();
+  CreateVideoStreams();
   Start();
 
   rtc::scoped_ptr<test::FrameGenerator> frame_generator(
@@ -1705,13 +1704,13 @@ TEST_F(EndToEndTest, ReceiveStreamSendsRemb) {
       while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
         if (packet_type == RTCPUtility::RTCPPacketTypes::kPsfbRemb) {
           const RTCPUtility::RTCPPacket& packet = parser.Packet();
-          EXPECT_EQ(packet.PSFBAPP.SenderSSRC, kReceiverLocalSsrc);
+          EXPECT_EQ(packet.PSFBAPP.SenderSSRC, kReceiverLocalVideoSsrc);
           received_psfb = true;
         } else if (packet_type == RTCPUtility::RTCPPacketTypes::kPsfbRembItem) {
           const RTCPUtility::RTCPPacket& packet = parser.Packet();
           EXPECT_GT(packet.REMBItem.BitRate, 0u);
           EXPECT_EQ(packet.REMBItem.NumberOfSSRCs, 1u);
-          EXPECT_EQ(packet.REMBItem.SSRCs[0], kSendSsrcs[0]);
+          EXPECT_EQ(packet.REMBItem.SSRCs[0], kVideoSendSsrcs[0]);
           received_remb = true;
         }
         packet_type = parser.Iterate();
@@ -1825,8 +1824,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
         receive_stream_nack_packets +=
             stats.rtcp_packet_type_counts.nack_packets;
       }
-      if (send_stream_nack_packets >= 1 &&
-          receive_stream_nack_packets >= 1) {
+      if (send_stream_nack_packets >= 1 && receive_stream_nack_packets >= 1) {
         // NACK packet sent on receive stream and received on sent stream.
         if (MinMetricRunTimePassed())
           observation_complete_.Set();
@@ -1940,9 +1938,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       if (use_rtx_) {
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
-        (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].ssrc =
+        (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].ssrc =
             kSendRtxSsrcs[0];
-        (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].payload_type =
+        (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].payload_type =
             kSendRtxPayloadType;
       }
       encoder_config->content_type =
@@ -2236,7 +2234,7 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
       return SEND_PACKET;
     }
 
-    size_t GetNumStreams() const override { return num_ssrcs_; }
+    size_t GetNumVideoStreams() const override { return num_ssrcs_; }
 
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
@@ -2287,7 +2285,7 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
 
     VideoSendStream* send_stream_;
     VideoEncoderConfig video_encoder_config_all_streams_;
-  } test(kSendSsrcs, num_ssrcs, send_single_ssrc_first);
+  } test(kVideoSendSsrcs, num_ssrcs, send_single_ssrc_first);
 
   RunBaseTest(&test, FakeNetworkPipe::Config());
 }
@@ -2443,9 +2441,9 @@ TEST_F(EndToEndTest, GetStats) {
             stats.rtcp_packet_type_counts.unique_nack_requests != 0;
 
         assert(stats.current_payload_type == -1 ||
-               stats.current_payload_type == kFakeSendPayloadType);
+               stats.current_payload_type == kFakeVideoSendPayloadType);
         receive_stats_filled_["IncomingPayloadType"] |=
-            stats.current_payload_type == kFakeSendPayloadType;
+            stats.current_payload_type == kFakeVideoSendPayloadType;
       }
 
       return AllStatsFilled(receive_stats_filled_);
@@ -2552,7 +2550,7 @@ TEST_F(EndToEndTest, GetStats) {
       }
     }
 
-    size_t GetNumStreams() const override { return kNumSsrcs; }
+    size_t GetNumVideoStreams() const override { return kNumSsrcs; }
 
     void OnVideoStreamsCreated(
         VideoSendStream* send_stream,
@@ -2713,7 +2711,7 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
       return SEND_PACKET;
     }
 
-    size_t GetNumStreams() const override { return kNumSsrcs; }
+    size_t GetNumVideoStreams() const override { return kNumSsrcs; }
 
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
@@ -2759,7 +2757,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
         : test::RtpRtcpObserver(kDefaultTimeoutMs),
           ssrcs_to_observe_(kNumSsrcs) {
       for (size_t i = 0; i < kNumSsrcs; ++i) {
-        configured_ssrcs_[kSendSsrcs[i]] = true;
+        configured_ssrcs_[kVideoSendSsrcs[i]] = true;
         if (use_rtx)
           configured_ssrcs_[kSendRtxSsrcs[i]] = true;
       }
@@ -2852,7 +2850,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
   send_transport.SetReceiver(receiver_call_->Receiver());
   receive_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(kNumSsrcs, &send_transport);
+  CreateSendConfig(kNumSsrcs, 0, &send_transport);
 
   if (use_rtx) {
     for (size_t i = 0; i < kNumSsrcs; ++i) {
@@ -2883,7 +2881,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
 
   CreateMatchingReceiveConfigs(&receive_transport);
 
-  CreateStreams();
+  CreateVideoStreams();
   CreateFrameGeneratorCapturer();
 
   Start();
@@ -3129,10 +3127,10 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, &sender_transport);
+  CreateSendConfig(1, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
 
-  CreateStreams();
+  CreateVideoStreams();
   CreateFrameGeneratorCapturer();
   Start();
 
@@ -3170,10 +3168,10 @@ TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
   sender_call_->SignalNetworkState(kNetworkDown);
 
   UnusedTransport transport;
-  CreateSendConfig(1, &transport);
+  CreateSendConfig(1, 0, &transport);
   UnusedEncoder unused_encoder;
   video_send_config_.encoder_settings.encoder = &unused_encoder;
-  CreateStreams();
+  CreateVideoStreams();
   CreateFrameGeneratorCapturer();
 
   Start();
@@ -3189,10 +3187,10 @@ TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
 
   test::DirectTransport sender_transport(sender_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
-  CreateSendConfig(1, &sender_transport);
+  CreateSendConfig(1, 0, &sender_transport);
   UnusedTransport transport;
   CreateMatchingReceiveConfigs(&transport);
-  CreateStreams();
+  CreateVideoStreams();
   CreateFrameGeneratorCapturer();
 
   Start();
@@ -3249,4 +3247,76 @@ TEST_F(EndToEndTest, VerifyDefaultReceiveConfigParameters) {
   VerifyEmptyFecConfig(default_receive_config.rtp.fec);
 }
 
+TEST_F(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
+  static const int kExtensionId = 8;
+  class TransportSequenceNumberTest : public test::EndToEndTest {
+   public:
+    TransportSequenceNumberTest()
+        : EndToEndTest(kDefaultTimeoutMs),
+          video_observed_(false),
+          audio_observed_(false) {
+      parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
+                                          kExtensionId);
+    }
+
+    size_t GetNumVideoStreams() const override { return 1; }
+    size_t GetNumAudioStreams() const override { return 1; }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+      (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
+    }
+
+    void ModifyAudioConfigs(
+        AudioSendStream::Config* send_config,
+        std::vector<AudioReceiveStream::Config>* receive_configs) override {
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+      (*receive_configs)[0].rtp.extensions.clear();
+      (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+      EXPECT_TRUE(header.extension.hasTransportSequenceNumber);
+      // Unwrap packet id and verify uniqueness.
+      int64_t packet_id =
+          unwrapper_.Unwrap(header.extension.transportSequenceNumber);
+      EXPECT_TRUE(received_packet_ids_.insert(packet_id).second);
+
+      if (header.ssrc == kVideoSendSsrcs[0])
+        video_observed_ = true;
+      if (header.ssrc == kAudioSendSsrc)
+        audio_observed_ = true;
+      if (audio_observed_ && video_observed_ &&
+          received_packet_ids_.size() == 50) {
+        size_t packet_id_range =
+            *received_packet_ids_.rbegin() - *received_packet_ids_.begin() + 1;
+        EXPECT_EQ(received_packet_ids_.size(), packet_id_range);
+        observation_complete_.Set();
+      }
+      return SEND_PACKET;
+    }
+
+    void PerformTest() override {
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for audio and video "
+                             "packets with transport sequence number.";
+    }
+
+   private:
+    bool video_observed_;
+    bool audio_observed_;
+    SequenceNumberUnwrapper unwrapper_;
+    std::set<int64_t> received_packet_ids_;
+  } test;
+
+  RunBaseTest(&test, FakeNetworkPipe::Config());
+}
 }  // namespace webrtc

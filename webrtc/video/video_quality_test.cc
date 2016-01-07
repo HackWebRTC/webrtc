@@ -781,7 +781,7 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
     trace_to_stderr_.reset(new test::TraceToStderr);
 
   size_t num_streams = params_.ss.streams.size();
-  CreateSendConfig(num_streams, send_transport);
+  CreateSendConfig(num_streams, 0, send_transport);
 
   int payload_type;
   if (params_.common.codec == "VP8") {
@@ -964,7 +964,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       disable_quality_check ? -1.1 : params_.analyzer.avg_ssim_threshold,
       params_.analyzer.test_durations_secs * params_.common.fps,
       graph_data_output_file, graph_title,
-      kSendSsrcs[params_.ss.selected_stream]);
+      kVideoSendSsrcs[params_.ss.selected_stream]);
 
   analyzer.SetReceiver(receiver_call_->Receiver());
   send_transport.SetReceiver(&analyzer);
@@ -979,7 +979,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   if (params_.screenshare.enabled)
     SetupScreenshare();
 
-  CreateStreams();
+  CreateVideoStreams();
   analyzer.input_ = video_send_stream_->Input();
   analyzer.send_stream_ = video_send_stream_;
 
