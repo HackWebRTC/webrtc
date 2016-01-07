@@ -172,7 +172,7 @@ class Buffer {
   // b.Pass() does the same thing as std::move(b).
   Buffer&& Pass() {
     assert(IsConsistent());
-    return static_cast<Buffer&&>(*this);
+    return std::move(*this);
   }
 
   // Resets the buffer to zero size and capacity. Works even if the buffer has

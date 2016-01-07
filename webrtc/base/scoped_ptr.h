@@ -374,7 +374,7 @@ class scoped_ptr {
   scoped_ptr& operator=(const scoped_ptr& other) = delete;
 
   // Get an rvalue reference. (sp.Pass() does the same thing as std::move(sp).)
-  scoped_ptr&& Pass() { return static_cast<scoped_ptr&&>(*this); }
+  scoped_ptr&& Pass() { return std::move(*this); }
 
   // Reset.  Deletes the currently owned object, if any.
   // Then takes ownership of a new object, if given.
@@ -507,7 +507,7 @@ class scoped_ptr<T[], D> {
   scoped_ptr& operator=(const scoped_ptr& other) = delete;
 
   // Get an rvalue reference. (sp.Pass() does the same thing as std::move(sp).)
-  scoped_ptr&& Pass() { return static_cast<scoped_ptr&&>(*this); }
+  scoped_ptr&& Pass() { return std::move(*this); }
 
   // Reset.  Deletes the currently owned array, if any.
   // Then takes ownership of a new object, if given.

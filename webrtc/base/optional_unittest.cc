@@ -162,7 +162,7 @@ TEST(OptionalTest, TestConstructMoveEmpty) {
   {
     Optional<Logger> x;
     EXPECT_FALSE(x);
-    auto y = static_cast<Optional<Logger>&&>(x);
+    auto y = std::move(x);
     EXPECT_FALSE(y);
   }
   EXPECT_EQ(V("0:0. default constructor", "1:0. move constructor (from 0:0)",
@@ -176,7 +176,7 @@ TEST(OptionalTest, TestConstructMoveFull) {
     Optional<Logger> x(Logger(17));
     EXPECT_TRUE(x);
     log->push_back("---");
-    auto y = static_cast<Optional<Logger>&&>(x);
+    auto y = std::move(x);
     EXPECT_TRUE(x);
     EXPECT_TRUE(y);
     log->push_back("---");
@@ -289,7 +289,7 @@ TEST(OptionalTest, TestMoveAssignToEmptyFromEmpty) {
   auto log = Logger::Setup();
   {
     Optional<Logger> x, y;
-    x = static_cast<Optional<Logger>&&>(y);
+    x = std::move(y);
   }
   EXPECT_EQ(
       V("0:0. default constructor", "1:1. default constructor",
@@ -303,7 +303,7 @@ TEST(OptionalTest, TestMoveAssignToFullFromEmpty) {
     Optional<Logger> x(Logger(17));
     Optional<Logger> y;
     log->push_back("---");
-    x = static_cast<Optional<Logger>&&>(y);
+    x = std::move(y);
     log->push_back("---");
   }
   EXPECT_EQ(
@@ -320,7 +320,7 @@ TEST(OptionalTest, TestMoveAssignToEmptyFromFull) {
     Optional<Logger> x;
     Optional<Logger> y(Logger(17));
     log->push_back("---");
-    x = static_cast<Optional<Logger>&&>(y);
+    x = std::move(y);
     log->push_back("---");
   }
   EXPECT_EQ(V("0:0. default constructor", "1:17. explicit constructor",
@@ -336,7 +336,7 @@ TEST(OptionalTest, TestMoveAssignToFullFromFull) {
     Optional<Logger> x(Logger(17));
     Optional<Logger> y(Logger(42));
     log->push_back("---");
-    x = static_cast<Optional<Logger>&&>(y);
+    x = std::move(y);
     log->push_back("---");
   }
   EXPECT_EQ(
@@ -354,7 +354,7 @@ TEST(OptionalTest, TestMoveAssignToEmptyFromT) {
     Optional<Logger> x;
     Logger y(17);
     log->push_back("---");
-    x = Optional<Logger>(static_cast<Logger&&>(y));
+    x = Optional<Logger>(std::move(y));
     log->push_back("---");
   }
   EXPECT_EQ(V("0:0. default constructor", "1:17. explicit constructor", "---",
@@ -370,7 +370,7 @@ TEST(OptionalTest, TestMoveAssignToFullFromT) {
     Optional<Logger> x(Logger(17));
     Logger y(42);
     log->push_back("---");
-    x = Optional<Logger>(static_cast<Logger&&>(y));
+    x = Optional<Logger>(std::move(y));
     log->push_back("---");
   }
   EXPECT_EQ(
@@ -390,13 +390,13 @@ TEST(OptionalTest, TestDereference) {
     log->push_back("---");
     x->Foo();
     y->Foo();
-    static_cast<Optional<Logger>&&>(x)->Foo();
-    static_cast<const Optional<Logger>&&>(y)->Foo();
+    std::move(x)->Foo();
+    std::move(y)->Foo();
     log->push_back("---");
     (*x).Foo();
     (*y).Foo();
-    (*static_cast<Optional<Logger>&&>(x)).Foo();
-    (*static_cast<const Optional<Logger>&&>(y)).Foo();
+    (*std::move(x)).Foo();
+    (*std::move(y)).Foo();
     log->push_back("---");
   }
   EXPECT_EQ(V("0:42. explicit constructor",

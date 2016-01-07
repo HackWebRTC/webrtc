@@ -66,20 +66,19 @@ class Optional final {
 
   // Construct an Optional that contains a value.
   explicit Optional(const T& val) : value_(val), has_value_(true) {}
-  explicit Optional(T&& val)
-      : value_(static_cast<T&&>(val)), has_value_(true) {}
+  explicit Optional(T&& val) : value_(std::move(val)), has_value_(true) {}
 
   // Copy and move constructors.
   // TODO(kwiberg): =default the move constructor when MSVC supports it.
   Optional(const Optional&) = default;
   Optional(Optional&& m)
-      : value_(static_cast<T&&>(m.value_)), has_value_(m.has_value_) {}
+      : value_(std::move(m.value_)), has_value_(m.has_value_) {}
 
   // Assignment.
   // TODO(kwiberg): =default the move assignment op when MSVC supports it.
   Optional& operator=(const Optional&) = default;
   Optional& operator=(Optional&& m) {
-    value_ = static_cast<T&&>(m.value_);
+    value_ = std::move(m.value_);
     has_value_ = m.has_value_;
     return *this;
   }
