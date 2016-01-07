@@ -2144,6 +2144,9 @@ TEST_F(VideoSendStreamTest, Vp9NonFlexMode_1Tl2SLayers) {
   TestVp9NonFlexMode(kNumTemporalLayers, kNumSpatialLayers);
 }
 
+#if !defined(MEMORY_SANITIZER)
+// Fails under MemorySanitizer:
+// See https://code.google.com/p/webrtc/issues/detail?id=5402.
 TEST_F(VideoSendStreamTest, Vp9NonFlexMode_2Tl2SLayers) {
   const uint8_t kNumTemporalLayers = 2;
   const uint8_t kNumSpatialLayers = 2;
@@ -2155,6 +2158,7 @@ TEST_F(VideoSendStreamTest, Vp9NonFlexMode_3Tl2SLayers) {
   const uint8_t kNumSpatialLayers = 2;
   TestVp9NonFlexMode(kNumTemporalLayers, kNumSpatialLayers);
 }
+#endif
 
 void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
                                              uint8_t num_spatial_layers) {
@@ -2206,6 +2210,9 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
   RunBaseTest(&test, FakeNetworkPipe::Config());
 }
 
+#if !defined(MEMORY_SANITIZER)
+// Fails under MemorySanitizer:
+// See https://code.google.com/p/webrtc/issues/detail?id=5402.
 TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
   class FlexibleMode : public Vp9HeaderObserver {
     void ModifyVideoConfigsHook(
@@ -2230,5 +2237,6 @@ TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
 
   RunBaseTest(&test, FakeNetworkPipe::Config());
 }
+#endif
 
 }  // namespace webrtc

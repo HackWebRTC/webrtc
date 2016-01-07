@@ -652,6 +652,15 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
                          rc_metrics);
 }
 
+#if defined(WEBRTC_ANDROID)
+// Fails on Android, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5401
+#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
+    DISABLED_ProcessNoLossChangeFrameRateFrameDropVP9
+#else
+#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
+    ProcessNoLossChangeFrameRateFrameDropVP9
+#endif
 // VP9: Run with no packet loss, with an update (decrease) in frame rate.
 // Lower frame rate means higher per-frame-bandwidth, so easier to encode.
 // At the low bitrate in this test, this means better rate control after the
@@ -660,7 +669,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
 TEST_F(VideoProcessorIntegrationTest,
-       ProcessNoLossChangeFrameRateFrameDropVP9) {
+       MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
@@ -706,10 +715,20 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
                          rc_metrics);
 }
 
+#if defined(WEBRTC_ANDROID)
+// Fails on Android, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5401
+#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP9 \
+    DISABLED_ProcessNoLossSpatialResizeFrameDropVP9
+#else
+#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP9 \
+    ProcessNoLossSpatialResizeFrameDropVP9
+#endif
 // Run with no packet loss, at low bitrate.
 // spatial_resize is on, for this low bitrate expect one resize in sequence.
 // Resize happens on delta frame. Expect only one key frame (first frame).
-TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
+TEST_F(VideoProcessorIntegrationTest,
+       MAYBE_ProcessNoLossSpatialResizeFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
