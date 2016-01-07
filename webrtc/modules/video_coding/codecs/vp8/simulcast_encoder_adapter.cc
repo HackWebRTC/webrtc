@@ -496,4 +496,11 @@ bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
   return streaminfos_[0].encoder->SupportsNativeHandle();
 }
 
+const char* SimulcastEncoderAdapter::ImplementationName() const {
+  // We should not be calling this method before streaminfos_ are configured.
+  RTC_DCHECK(!streaminfos_.empty());
+  // TODO(pbos): Support multiple implementation names for different encoders.
+  return streaminfos_[0].encoder->ImplementationName();
+}
+
 }  // namespace webrtc

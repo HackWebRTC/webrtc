@@ -59,6 +59,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
 
   int GetTargetFramerate() override;
   bool SupportsNativeHandle() const override;
+  const char* ImplementationName() const override;
 
  private:
   struct StreamInfo {
