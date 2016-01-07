@@ -147,7 +147,6 @@ bool VideoCaptureInput::EncoderProcess() {
     if (encode_start_time != -1) {
       int encode_time_ms = static_cast<int>(
           Clock::GetRealTimeClock()->TimeInMilliseconds() - encode_start_time);
-      overuse_detector_->FrameEncoded(encode_time_ms);
       stats_proxy_->OnEncodedFrame(encode_time_ms);
       if (encoding_time_observer_) {
         encoding_time_observer_->OnReportEncodedTime(

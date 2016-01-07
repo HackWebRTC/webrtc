@@ -38,23 +38,15 @@ class CpuOveruseObserver {
 
 struct CpuOveruseOptions {
   CpuOveruseOptions()
-      : enable_encode_usage_method(true),
-        low_encode_usage_threshold_percent(55),
+      : low_encode_usage_threshold_percent(55),
         high_encode_usage_threshold_percent(85),
-        enable_extended_processing_usage(true),
         frame_timeout_interval_ms(1500),
         min_frame_samples(120),
         min_process_count(3),
         high_threshold_consecutive_count(2) {}
 
-  // Method based on encode time of frames.
-  bool enable_encode_usage_method;
   int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
   int high_encode_usage_threshold_percent;  // Threshold for triggering overuse.
-  bool enable_extended_processing_usage;  // Include a larger time span (in
-                                          // addition to encode time) for
-                                          // measuring the processing time of a
-                                          // frame.
   // General settings.
   int frame_timeout_interval_ms;  // The maximum allowed interval between two
                                   // frames before resetting estimations.
@@ -92,9 +84,6 @@ class OveruseFrameDetector : public Module {
 
   // Called for each captured frame.
   void FrameCaptured(int width, int height, int64_t capture_time_ms);
-
-  // Called for each encoded frame.
-  void FrameEncoded(int encode_time_ms);
 
   // Called for each sent frame.
   void FrameSent(int64_t capture_time_ms);

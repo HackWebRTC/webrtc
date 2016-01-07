@@ -255,23 +255,10 @@ void OveruseFrameDetector::FrameCaptured(int width,
 
   last_capture_time_ = now;
 
-  if (options_.enable_extended_processing_usage) {
-    frame_queue_->Start(capture_time_ms, now);
-  }
-}
-
-void OveruseFrameDetector::FrameEncoded(int encode_time_ms) {
-  if (options_.enable_extended_processing_usage)
-    return;
-
-  rtc::CritScope cs(&crit_);
-  AddProcessingTime(encode_time_ms);
+  frame_queue_->Start(capture_time_ms, now);
 }
 
 void OveruseFrameDetector::FrameSent(int64_t capture_time_ms) {
-  if (!options_.enable_extended_processing_usage)
-    return;
-
   rtc::CritScope cs(&crit_);
   int delay_ms = frame_queue_->End(capture_time_ms,
                                    clock_->TimeInMilliseconds());
@@ -356,12 +343,8 @@ int32_t OveruseFrameDetector::Process() {
 }
 
 bool OveruseFrameDetector::IsOverusing(const CpuOveruseMetrics& metrics) {
-  bool overusing = false;
-  if (options_.enable_encode_usage_method) {
-    overusing = metrics.encode_usage_percent >=
-                options_.high_encode_usage_threshold_percent;
-  }
-  if (overusing) {
+  if (metrics.encode_usage_percent >=
+      options_.high_encode_usage_threshold_percent) {
     ++checks_above_threshold_;
   } else {
     checks_above_threshold_ = 0;
@@ -375,11 +358,7 @@ bool OveruseFrameDetector::IsUnderusing(const CpuOveruseMetrics& metrics,
   if (time_now < last_rampup_time_ + delay)
     return false;
 
-  bool underusing = false;
-  if (options_.enable_encode_usage_method) {
-    underusing = metrics.encode_usage_percent <
-                 options_.low_encode_usage_threshold_percent;
-  }
-  return underusing;
+  return metrics.encode_usage_percent <
+         options_.low_encode_usage_threshold_percent;
 }
 }  // namespace webrtc
