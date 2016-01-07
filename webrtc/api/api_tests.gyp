@@ -21,6 +21,7 @@
           'sources': [
             'objctests/RTCIceCandidateTest.mm',
             'objctests/RTCIceServerTest.mm',
+            'objctests/RTCMediaConstraintsTest.mm',
             'objctests/RTCSessionDescriptionTest.mm',
           ],
           'xcode_settings': {
