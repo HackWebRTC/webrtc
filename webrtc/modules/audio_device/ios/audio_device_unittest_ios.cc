@@ -428,7 +428,9 @@ class MockAudioTransport : public AudioTransport {
       audio_stream_->Write(audioSamples, nSamples);
     }
     if (ReceivedEnoughCallbacks()) {
-      test_is_done_->Set();
+      if (test_is_done_) {
+        test_is_done_->Set();
+      }
     }
     return 0;
   }
@@ -450,7 +452,9 @@ class MockAudioTransport : public AudioTransport {
       audio_stream_->Read(audioSamples, nSamples);
     }
     if (ReceivedEnoughCallbacks()) {
-      test_is_done_->Set();
+      if (test_is_done_) {
+        test_is_done_->Set();
+      }
     }
     return 0;
   }
@@ -638,7 +642,9 @@ TEST_F(AudioDeviceTest, StopPlayoutRequiresInitToRestart) {
 
 // Verify that we can create two ADMs and start playing on the second ADM.
 // Only the first active instance shall activate an audio session and the
-// last active instace shall deactivate the audio session.
+// last active instance shall deactivate the audio session. The test does not
+// explicitly verify correct audio session calls but instead focuses on
+// ensuring that audio starts for both ADMs.
 TEST_F(AudioDeviceTest, StartPlayoutOnTwoInstances) {
   // Create and initialize a second/extra ADM instance. The default ADM is
   // created by the test harness.
@@ -647,8 +653,16 @@ TEST_F(AudioDeviceTest, StartPlayoutOnTwoInstances) {
   EXPECT_NE(second_audio_device.get(), nullptr);
   EXPECT_EQ(0, second_audio_device->Init());
 
-  // Start playout for the default ADM. Ignore the callback sequence.
+  // Start playout for the default ADM but don't wait here. Instead use the
+  // upcoming second stream for that. We set the same expectation on number
+  // of callbacks as for the second stream.
   NiceMock<MockAudioTransport> mock(kPlayout);
+  mock.HandleCallbacks(nullptr, nullptr, 0);
+  EXPECT_CALL(
+      mock, NeedMorePlayData(playout_frames_per_10ms_buffer(), kBytesPerSample,
+                             playout_channels(), playout_sample_rate(),
+                             NotNull(), _, _, _))
+      .Times(AtLeast(kNumCallbacks));
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
 
@@ -660,13 +674,10 @@ TEST_F(AudioDeviceTest, StartPlayoutOnTwoInstances) {
   EXPECT_EQ(0, second_audio_device->InitPlayout());
   EXPECT_TRUE(second_audio_device->PlayoutIsInitialized());
 
-  // Stop playout for the default ADM. The audio session shall not be
-  // deactivated since it is used by the second ADM.
-  StopPlayout();
-
   // Start playout for the second ADM and verify that it starts as intended.
   // Passing this test ensures that initialization of the second audio unit
-  // has been done successfully.
+  // has been done successfully and that there is no conflict with the already
+  // playing first ADM.
   MockAudioTransport mock2(kPlayout);
   mock2.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
   EXPECT_CALL(
