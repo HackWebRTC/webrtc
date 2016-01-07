@@ -217,6 +217,7 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
       kFecHeaderSize + ulp_header_size - kRtpHeaderSize;
 
   for (int i = 0; i < num_fec_packets; ++i) {
+    Packet* const fec_packet = &generated_fec_packets_[i];
     PacketList::const_iterator media_list_it = media_packet_list.begin();
     uint32_t pkt_mask_idx = i * num_mask_bytes;
     uint32_t media_pkt_idx = 0;
@@ -234,42 +235,40 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
 
         fec_packet_length = media_packet->length + fec_rtp_offset;
         // On the first protected packet, we don't need to XOR.
-        if (generated_fec_packets_[i].length == 0) {
+        if (fec_packet->length == 0) {
           // Copy the first 2 bytes of the RTP header.
-          memcpy(generated_fec_packets_[i].data, media_packet->data, 2);
+          memcpy(fec_packet->data, media_packet->data, 2);
           // Copy the 5th to 8th bytes of the RTP header.
-          memcpy(&generated_fec_packets_[i].data[4], &media_packet->data[4], 4);
+          memcpy(&fec_packet->data[4], &media_packet->data[4], 4);
           // Copy network-ordered payload size.
-          memcpy(&generated_fec_packets_[i].data[8], media_payload_length, 2);
+          memcpy(&fec_packet->data[8], media_payload_length, 2);
 
           // Copy RTP payload, leaving room for the ULP header.
-          memcpy(
-              &generated_fec_packets_[i].data[kFecHeaderSize + ulp_header_size],
-              &media_packet->data[kRtpHeaderSize],
-              media_packet->length - kRtpHeaderSize);
+          memcpy(&fec_packet->data[kFecHeaderSize + ulp_header_size],
+                 &media_packet->data[kRtpHeaderSize],
+                 media_packet->length - kRtpHeaderSize);
         } else {
           // XOR with the first 2 bytes of the RTP header.
-          generated_fec_packets_[i].data[0] ^= media_packet->data[0];
-          generated_fec_packets_[i].data[1] ^= media_packet->data[1];
+          fec_packet->data[0] ^= media_packet->data[0];
+          fec_packet->data[1] ^= media_packet->data[1];
 
           // XOR with the 5th to 8th bytes of the RTP header.
           for (uint32_t j = 4; j < 8; ++j) {
-            generated_fec_packets_[i].data[j] ^= media_packet->data[j];
+            fec_packet->data[j] ^= media_packet->data[j];
           }
 
           // XOR with the network-ordered payload size.
-          generated_fec_packets_[i].data[8] ^= media_payload_length[0];
-          generated_fec_packets_[i].data[9] ^= media_payload_length[1];
+          fec_packet->data[8] ^= media_payload_length[0];
+          fec_packet->data[9] ^= media_payload_length[1];
 
           // XOR with RTP payload, leaving room for the ULP header.
           for (int32_t j = kFecHeaderSize + ulp_header_size;
                j < fec_packet_length; j++) {
-            generated_fec_packets_[i].data[j] ^=
-                media_packet->data[j - fec_rtp_offset];
+            fec_packet->data[j] ^= media_packet->data[j - fec_rtp_offset];
           }
         }
-        if (fec_packet_length > generated_fec_packets_[i].length) {
-          generated_fec_packets_[i].length = fec_packet_length;
+        if (fec_packet_length > fec_packet->length) {
+          fec_packet->length = fec_packet_length;
         }
       }
       media_list_it++;
@@ -281,7 +280,7 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
       pkt_mask_idx += media_pkt_idx / 8;
       media_pkt_idx %= 8;
     }
-    RTC_DCHECK_GT(generated_fec_packets_[i].length, 0u)
+    RTC_DCHECK_GT(fec_packet->length, 0u)
         << "Packet mask is wrong or poorly designed.";
   }
 }
@@ -424,28 +423,29 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
       l_bit ? kUlpHeaderSizeLBitSet : kUlpHeaderSizeLBitClear;
 
   for (int i = 0; i < num_fec_packets; ++i) {
+    Packet* const fec_packet = &generated_fec_packets_[i];
     // -- FEC header --
-    generated_fec_packets_[i].data[0] &= 0x7f;  // Set E to zero.
+    fec_packet->data[0] &= 0x7f;  // Set E to zero.
     if (l_bit == 0) {
-      generated_fec_packets_[i].data[0] &= 0xbf;  // Clear the L bit.
+      fec_packet->data[0] &= 0xbf;  // Clear the L bit.
     } else {
-      generated_fec_packets_[i].data[0] |= 0x40;  // Set the L bit.
+      fec_packet->data[0] |= 0x40;  // Set the L bit.
     }
     // Two byte sequence number from first RTP packet to SN base.
     // We use the same sequence number base for every FEC packet,
     // but that's not required in general.
-    memcpy(&generated_fec_packets_[i].data[2], &media_packet->data[2], 2);
+    memcpy(&fec_packet->data[2], &media_packet->data[2], 2);
 
     // -- ULP header --
     // Copy the payload size to the protection length field.
     // (We protect the entire packet.)
     ByteWriter<uint16_t>::WriteBigEndian(
-        &generated_fec_packets_[i].data[10],
-        generated_fec_packets_[i].length - kFecHeaderSize - ulp_header_size);
+        &fec_packet->data[10],
+        fec_packet->length - kFecHeaderSize - ulp_header_size);
 
     // Copy the packet mask.
-    memcpy(&generated_fec_packets_[i].data[12],
-           &packet_mask[i * num_mask_bytes], num_mask_bytes);
+    memcpy(&fec_packet->data[12], &packet_mask[i * num_mask_bytes],
+           num_mask_bytes);
   }
 }
 
