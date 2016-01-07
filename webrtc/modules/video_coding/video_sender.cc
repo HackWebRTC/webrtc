@@ -133,24 +133,6 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   return VCM_OK;
 }
 
-const VideoCodec& VideoSender::GetSendCodec() const {
-  RTC_DCHECK(main_thread_.CalledOnValidThread());
-  return current_codec_;
-}
-
-int32_t VideoSender::SendCodecBlocking(VideoCodec* currentSendCodec) const {
-  rtc::CritScope lock(&send_crit_);
-  if (currentSendCodec == nullptr) {
-    return VCM_PARAMETER_ERROR;
-  }
-  return _codecDataBase.SendCodec(currentSendCodec) ? 0 : -1;
-}
-
-VideoCodecType VideoSender::SendCodecBlocking() const {
-  rtc::CritScope lock(&send_crit_);
-  return _codecDataBase.SendCodec();
-}
-
 // Register an external decoder object.
 // This can not be used together with external decoder callbacks.
 void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,

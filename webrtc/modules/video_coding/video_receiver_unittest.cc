@@ -39,8 +39,7 @@ class TestVideoReceiver : public ::testing::Test {
     const int kMaxPacketAgeToNack = 450;
     receiver_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);
 
-    memset(&settings_, 0, sizeof(settings_));
-    EXPECT_EQ(0, VideoCodingModule::Codec(kVideoCodecVP8, &settings_));
+    VideoCodingModule::Codec(kVideoCodecVP8, &settings_);
     settings_.plType = kUnusedPayloadType;  // Use the mocked encoder.
     EXPECT_EQ(0, receiver_->RegisterReceiveCodec(&settings_, 1, true));
   }

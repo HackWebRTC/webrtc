@@ -42,7 +42,7 @@ class VCMRobustnessTest : public ::testing::Test {
     vcm_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);
     ASSERT_EQ(0, vcm_->RegisterFrameTypeCallback(&frame_type_callback_));
     ASSERT_EQ(0, vcm_->RegisterPacketRequestCallback(&request_callback_));
-    ASSERT_EQ(VCM_OK, vcm_->Codec(kVideoCodecVP8, &video_codec_));
+    VideoCodingModule::Codec(kVideoCodecVP8, &video_codec_);
     ASSERT_EQ(VCM_OK, vcm_->RegisterReceiveCodec(&video_codec_, 1));
     vcm_->RegisterExternalDecoder(&decoder_, video_codec_.plType);
   }

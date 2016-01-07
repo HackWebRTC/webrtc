@@ -67,20 +67,6 @@ class VideoSender {
   int32_t RegisterSendCodec(const VideoCodec* sendCodec,
                             uint32_t numberOfCores,
                             uint32_t maxPayloadSize);
-  // Non-blocking access to the currently active send codec configuration.
-  // Must be called from the same thread as the VideoSender instance was
-  // created on.
-  const VideoCodec& GetSendCodec() const;
-
-  // Get a copy of the currently configured send codec.
-  // This method acquires a lock to copy the current configuration out,
-  // so it can block and the returned information is not guaranteed to be
-  // accurate upon return.  Consider using GetSendCodec() instead and make
-  // decisions on that thread with regards to the current codec.
-  int32_t SendCodecBlocking(VideoCodec* currentSendCodec) const;
-
-  // Same as SendCodecBlocking.  Try to use GetSendCodec() instead.
-  VideoCodecType SendCodecBlocking() const;
 
   void RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                uint8_t payloadType,

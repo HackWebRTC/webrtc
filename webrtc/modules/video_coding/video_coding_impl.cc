@@ -108,20 +108,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_.RegisterSendCodec(sendCodec, numberOfCores, maxPayloadSize);
   }
 
-  const VideoCodec& GetSendCodec() const override {
-    return sender_.GetSendCodec();
-  }
-
-  // DEPRECATED.
-  int32_t SendCodec(VideoCodec* currentSendCodec) const override {
-    return sender_.SendCodecBlocking(currentSendCodec);
-  }
-
-  // DEPRECATED.
-  VideoCodecType SendCodec() const override {
-    return sender_.SendCodecBlocking();
-  }
-
   int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                   uint8_t payloadType,
                                   bool internalSource) override {
@@ -306,9 +292,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 };
 }  // namespace
 
-int32_t VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
+void VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
   VCMCodecDataBase::Codec(codecType, codec);
-  return 0;
 }
 
 VideoCodingModule* VideoCodingModule::Create(

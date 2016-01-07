@@ -77,22 +77,6 @@ class VideoCodingModule : public Module {
 
   static void Destroy(VideoCodingModule* module);
 
-  // Get number of supported codecs
-  //
-  // Return value     : Number of supported codecs
-  static uint8_t NumberOfCodecs();
-
-  // Get supported codec settings with using id
-  //
-  // Input:
-  //      - listId         : Id or index of the codec to look up
-  //      - codec          : Memory where the codec settings will be stored
-  //
-  // Return value     : VCM_OK,              on success
-  //                    VCM_PARAMETER_ERROR  if codec not supported or id too
-  //                    high
-  static int32_t Codec(const uint8_t listId, VideoCodec* codec);
-
   // Get supported codec settings using codec type
   //
   // Input:
@@ -101,7 +85,7 @@ class VideoCodingModule : public Module {
   //
   // Return value     : VCM_OK,              on success
   //                    VCM_PARAMETER_ERROR  if codec not supported
-  static int32_t Codec(VideoCodecType codecType, VideoCodec* codec);
+  static void Codec(VideoCodecType codecType, VideoCodec* codec);
 
   /*
   *   Sender
@@ -124,40 +108,6 @@ class VideoCodingModule : public Module {
   virtual int32_t RegisterSendCodec(const VideoCodec* sendCodec,
                                     uint32_t numberOfCores,
                                     uint32_t maxPayloadSize) = 0;
-
-  // Get the current send codec in use.
-  //
-  // If a codec has not been set yet, the |id| property of the return value
-  // will be 0 and |name| empty.
-  //
-  // NOTE: This method intentionally does not hold locks and minimizes data
-  // copying.  It must be called on the thread where the VCM was constructed.
-  virtual const VideoCodec& GetSendCodec() const = 0;
-
-  // DEPRECATED: Use GetSendCodec() instead.
-  //
-  // API to get the current send codec in use.
-  //
-  // Input:
-  //      - currentSendCodec : Address where the sendCodec will be written.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
-  //
-  // NOTE: The returned codec information is not guaranteed to be current when
-  // the call returns.  This method acquires a lock that is aligned with
-  // video encoding, so it should be assumed to be allowed to block for
-  // several milliseconds.
-  virtual int32_t SendCodec(VideoCodec* currentSendCodec) const = 0;
-
-  // DEPRECATED: Use GetSendCodec() instead.
-  //
-  // API to get the current send codec type
-  //
-  // Return value      : Codec type, on success.
-  //                     kVideoCodecUnknown, on error or if no send codec is set
-  // NOTE: Same notes apply as for SendCodec() above.
-  virtual VideoCodecType SendCodec() const = 0;
 
   // Register an external encoder object. This can not be used together with
   // external decoder callbacks.

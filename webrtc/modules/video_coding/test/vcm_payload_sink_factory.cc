@@ -137,9 +137,7 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
     if (it->codec_type() != kVideoCodecULPFEC &&
         it->codec_type() != kVideoCodecRED) {
       VideoCodec codec;
-      if (VideoCodingModule::Codec(it->codec_type(), &codec) < 0) {
-        return NULL;
-      }
+      VideoCodingModule::Codec(it->codec_type(), &codec);
       codec.plType = it->payload_type();
       if (vcm->RegisterReceiveCodec(&codec, 1) < 0) {
         return NULL;

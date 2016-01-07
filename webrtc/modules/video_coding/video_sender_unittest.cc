@@ -205,8 +205,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
   void SetUp() override {
     TestVideoSender::SetUp();
     sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, false);
-    memset(&settings_, 0, sizeof(settings_));
-    EXPECT_EQ(0, VideoCodingModule::Codec(kVideoCodecVP8, &settings_));
+    VideoCodingModule::Codec(kVideoCodecVP8, &settings_);
     settings_.numberOfSimulcastStreams = kNumberOfStreams;
     ConfigureStream(kDefaultWidth / 4, kDefaultHeight / 4, 100,
                     &settings_.simulcastStream[0]);
@@ -380,8 +379,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
                                       int height,
                                       int temporal_layers) {
     VideoCodec codec;
-    memset(&codec, 0, sizeof(codec));
-    EXPECT_EQ(0, VideoCodingModule::Codec(kVideoCodecVP8, &codec));
+    VideoCodingModule::Codec(kVideoCodecVP8, &codec);
     codec.width = width;
     codec.height = height;
     codec.codecSpecific.VP8.numberOfTemporalLayers = temporal_layers;
