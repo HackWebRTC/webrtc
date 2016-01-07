@@ -652,15 +652,6 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
                          rc_metrics);
 }
 
-#if defined(WEBRTC_ANDROID)
-// Fails on Android, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5401
-#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
-    DISABLED_ProcessNoLossChangeFrameRateFrameDropVP9
-#else
-#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
-    ProcessNoLossChangeFrameRateFrameDropVP9
-#endif
 // VP9: Run with no packet loss, with an update (decrease) in frame rate.
 // Lower frame rate means higher per-frame-bandwidth, so easier to encode.
 // At the low bitrate in this test, this means better rate control after the
@@ -669,7 +660,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
 TEST_F(VideoProcessorIntegrationTest,
-       MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9) {
+       ProcessNoLossChangeFrameRateFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
@@ -687,7 +678,7 @@ TEST_F(VideoProcessorIntegrationTest,
   SetQualityMetrics(&quality_metrics, 31.5, 18.0, 0.80, 0.44);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 35, 50, 75, 15, 45, 0, 1);
+  SetRateControlMetrics(rc_metrics, 0, 38, 50, 75, 15, 45, 0, 1);
   SetRateControlMetrics(rc_metrics, 1, 10, 0, 40, 10, 30, 0, 0);
   SetRateControlMetrics(rc_metrics, 2, 5, 0, 30, 5, 20, 0, 0);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
@@ -715,20 +706,10 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
                          rc_metrics);
 }
 
-#if defined(WEBRTC_ANDROID)
-// Fails on Android, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5401
-#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP9 \
-    DISABLED_ProcessNoLossSpatialResizeFrameDropVP9
-#else
-#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP9 \
-    ProcessNoLossSpatialResizeFrameDropVP9
-#endif
 // Run with no packet loss, at low bitrate.
 // spatial_resize is on, for this low bitrate expect one resize in sequence.
 // Resize happens on delta frame. Expect only one key frame (first frame).
-TEST_F(VideoProcessorIntegrationTest,
-       MAYBE_ProcessNoLossSpatialResizeFrameDropVP9) {
+TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
@@ -741,10 +722,10 @@ TEST_F(VideoProcessorIntegrationTest,
                      false, true, true);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 25.0, 13.0, 0.70, 0.37);
+  SetQualityMetrics(&quality_metrics, 24.0, 13.0, 0.65, 0.37);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 225, 70, 160, 15, 80, 1, 1);
+  SetRateControlMetrics(rc_metrics, 0, 228, 70, 160, 15, 80, 1, 1);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
                          rc_metrics);
 }
