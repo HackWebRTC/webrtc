@@ -500,7 +500,12 @@ bool FileAudioDevice::PlayThreadProcess()
     }
     _playoutFramesLeft = 0;
     _critSect.Leave();
-    SleepMs(10 - (_clock->CurrentNtpInMilliseconds() - currentTime));
+
+    uint64_t deltaTimeMillis = _clock->CurrentNtpInMilliseconds() - currentTime;
+    if(deltaTimeMillis < 10) {
+      SleepMs(10 - deltaTimeMillis);
+    }
+
     return true;
 }
 
@@ -530,7 +535,12 @@ bool FileAudioDevice::RecThreadProcess()
     }
 
     _critSect.Leave();
-    SleepMs(10 - (_clock->CurrentNtpInMilliseconds() - currentTime));
+
+    uint64_t deltaTimeMillis = _clock->CurrentNtpInMilliseconds() - currentTime;
+    if(deltaTimeMillis < 10) {
+      SleepMs(10 - deltaTimeMillis);
+    }
+
     return true;
 }
 
