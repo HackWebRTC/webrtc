@@ -582,11 +582,12 @@ void AudioDeviceIOS::RegisterNotificationObservers() {
             LOG(LS_INFO) << " OldDeviceUnavailable";
             break;
           case AVAudioSessionRouteChangeReasonCategoryChange:
+            // It turns out that we see this notification (at least in iOS 9.2)
+            // when making a switch from a BT device to e.g. Speaker using the
+            // iOS Control Center and that we therefore must check if the sample
+            // rate has changed. And if so is the case, restart the audio unit.
             LOG(LS_INFO) << " CategoryChange";
             LOG(LS_INFO) << " New category: " << ios::GetAudioSessionCategory();
-            // Don't see this as route change since it can be triggered in
-            // combination with session interruptions as well.
-            valid_route_change = false;
             break;
           case AVAudioSessionRouteChangeReasonOverride:
             LOG(LS_INFO) << " Override";
@@ -598,9 +599,11 @@ void AudioDeviceIOS::RegisterNotificationObservers() {
             LOG(LS_INFO) << " NoSuitableRouteForCategory";
             break;
           case AVAudioSessionRouteChangeReasonRouteConfigurationChange:
-            // Ignore this type of route change since we are focusing
+            // The set of input and output ports has not changed, but their
+            // configuration has, e.g., a port’s selected data source has
+            // changed. Ignore this type of route change since we are focusing
             // on detecting headset changes.
-            LOG(LS_INFO) << " RouteConfigurationChange";
+            LOG(LS_INFO) << " RouteConfigurationChange (ignored)";
             valid_route_change = false;
             break;
         }
@@ -934,10 +937,12 @@ bool AudioDeviceIOS::RestartAudioUnitWithNewFormat(float sample_rate) {
   // Prepare the audio unit to render audio again.
   LOG_AND_RETURN_IF_ERROR(AudioUnitInitialize(vpio_unit_),
                           "Failed to initialize the Voice-Processing I/O unit");
+  LOG(LS_INFO) << "Voice-Processing I/O unit is now reinitialized";
 
   // Start rendering audio using the new format.
   LOG_AND_RETURN_IF_ERROR(AudioOutputUnitStart(vpio_unit_),
                           "Failed to start the Voice-Processing I/O unit");
+  LOG(LS_INFO) << "Voice-Processing I/O unit is now restarted";
   return true;
 }
 
@@ -1033,8 +1038,11 @@ OSStatus AudioDeviceIOS::OnRecordedDataIsAvailable(
   if (in_number_frames != record_parameters_.frames_per_buffer()) {
     // We have seen short bursts (1-2 frames) where |in_number_frames| changes.
     // Add a log to keep track of longer sequences if that should ever happen.
+    // Also return since calling AudioUnitRender in this state will only result
+    // in kAudio_ParamError (-50) anyhow.
     LOG(LS_WARNING) << "in_number_frames (" << in_number_frames
                     << ") != " << record_parameters_.frames_per_buffer();
+    return noErr;
   }
   // Obtain the recorded audio samples by initiating a rendering cycle.
   // Since it happens on the input bus, the |io_data| parameter is a reference
@@ -1044,7 +1052,7 @@ OSStatus AudioDeviceIOS::OnRecordedDataIsAvailable(
   result = AudioUnitRender(vpio_unit_, io_action_flags, in_time_stamp,
                            in_bus_number, in_number_frames, io_data);
   if (result != noErr) {
-    LOG_F(LS_ERROR) << "AudioOutputUnitStart failed: " << result;
+    LOG_F(LS_ERROR) << "AudioUnitRender failed: " << result;
     return result;
   }
   // Get a pointer to the recorded audio and send it to the WebRTC ADB.
