@@ -547,7 +547,7 @@ class SdpObserverWrapper : public T {
  protected:
   // Common implementation for failure of Set & Create types, distinguished by
   // |op| being "Set" or "Create".
-  void OnFailure(const std::string& op, const std::string& error) {
+  void DoOnFailure(const std::string& op, const std::string& error) {
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "on" + op + "Failure",
                               "(Ljava/lang/String;)V");
     jstring j_error_string = JavaStringFromStdString(jni(), error);
@@ -574,7 +574,7 @@ class CreateSdpObserverWrapper
 
   void OnFailure(const std::string& error) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    SdpObserverWrapper::OnFailure(std::string("Create"), error);
+    SdpObserverWrapper::DoOnFailure(std::string("Create"), error);
   }
 };
 
@@ -587,7 +587,7 @@ class SetSdpObserverWrapper
 
   void OnFailure(const std::string& error) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    SdpObserverWrapper::OnFailure(std::string("Set"), error);
+    SdpObserverWrapper::DoOnFailure(std::string("Set"), error);
   }
 };
 

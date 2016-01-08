@@ -62,13 +62,6 @@
             '<(libyuv_dir)/include',
           ],
           'conditions': [
-            ['clang==1', {
-              'cflags': [
-                # Disabled due to failing when compiled with -Wall, see
-                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5399
-                '-Wno-overloaded-virtual',
-              ],
-            }],
             ['OS=="linux"', {
               'defines': [
                 'HAVE_GTK',
