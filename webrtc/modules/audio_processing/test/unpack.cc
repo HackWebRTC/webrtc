@@ -76,9 +76,9 @@ int do_main(int argc, char* argv[]) {
 
   Event event_msg;
   int frame_count = 0;
-  int reverse_samples_per_channel = 0;
-  int input_samples_per_channel = 0;
-  int output_samples_per_channel = 0;
+  size_t reverse_samples_per_channel = 0;
+  size_t input_samples_per_channel = 0;
+  size_t output_samples_per_channel = 0;
   int num_reverse_channels = 0;
   int num_input_channels = 0;
   int num_output_channels = 0;
@@ -283,9 +283,12 @@ int do_main(int argc, char* argv[]) {
         output_sample_rate = input_sample_rate;
       }
 
-      reverse_samples_per_channel = reverse_sample_rate / 100;
-      input_samples_per_channel = input_sample_rate / 100;
-      output_samples_per_channel = output_sample_rate / 100;
+      reverse_samples_per_channel =
+          static_cast<size_t>(reverse_sample_rate / 100);
+      input_samples_per_channel =
+          static_cast<size_t>(input_sample_rate / 100);
+      output_samples_per_channel =
+          static_cast<size_t>(output_sample_rate / 100);
 
       if (!FLAGS_raw) {
         // The WAV files need to be reset every time, because they cant change

@@ -43,7 +43,7 @@ const int kEchoReturnLossEnhancement = 101;
 const unsigned int kSpeechInputLevel = 96;
 const CallStatistics kCallStats = {
     1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
-const CodecInst kCodecInst = {-121, "codec_name_send", 48000, -231, -451, -671};
+const CodecInst kCodecInst = {-121, "codec_name_send", 48000, -231, 0, -671};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
 const int kTelephoneEventPayloadType = 123;
 const uint8_t kTelephoneEventCode = 45;

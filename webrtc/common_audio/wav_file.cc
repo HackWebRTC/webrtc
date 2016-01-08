@@ -24,7 +24,7 @@ namespace webrtc {
 
 // We write 16-bit PCM WAV files.
 static const WavFormat kWavFormat = kWavFormatPcm;
-static const int kBytesPerSample = 2;
+static const size_t kBytesPerSample = 2;
 
 // Doesn't take ownership of the file handle and won't close it.
 class ReadableWavFile : public ReadableWav {
@@ -52,7 +52,7 @@ WavReader::WavReader(const std::string& filename)
 
   ReadableWavFile readable(file_handle_);
   WavFormat format;
-  int bytes_per_sample;
+  size_t bytes_per_sample;
   RTC_CHECK(ReadWavHeader(&readable, &num_channels_, &sample_rate_, &format,
                           &bytes_per_sample, &num_samples_));
   num_samples_remaining_ = num_samples_;
@@ -69,14 +69,13 @@ size_t WavReader::ReadSamples(size_t num_samples, int16_t* samples) {
 #error "Need to convert samples to big-endian when reading from WAV file"
 #endif
   // There could be metadata after the audio; ensure we don't read it.
-  num_samples = std::min(rtc::checked_cast<uint32_t>(num_samples),
-                         num_samples_remaining_);
+  num_samples = std::min(num_samples, num_samples_remaining_);
   const size_t read =
       fread(samples, sizeof(*samples), num_samples, file_handle_);
   // If we didn't read what was requested, ensure we've reached the EOF.
   RTC_CHECK(read == num_samples || feof(file_handle_));
   RTC_CHECK_LE(read, num_samples_remaining_);
-  num_samples_remaining_ -= rtc::checked_cast<uint32_t>(read);
+  num_samples_remaining_ -= read;
   return read;
 }
 
@@ -126,9 +125,8 @@ void WavWriter::WriteSamples(const int16_t* samples, size_t num_samples) {
   const size_t written =
       fwrite(samples, sizeof(*samples), num_samples, file_handle_);
   RTC_CHECK_EQ(num_samples, written);
-  num_samples_ += static_cast<uint32_t>(written);
-  RTC_CHECK(written <= std::numeric_limits<uint32_t>::max() ||
-            num_samples_ >= written);  // detect uint32_t overflow
+  num_samples_ += written;
+  RTC_CHECK(num_samples_ >= written);  // detect size_t overflow
 }
 
 void WavWriter::WriteSamples(const float* samples, size_t num_samples) {
@@ -178,6 +176,6 @@ int rtc_WavNumChannels(const rtc_WavWriter* wf) {
   return reinterpret_cast<const webrtc::WavWriter*>(wf)->num_channels();
 }
 
-uint32_t rtc_WavNumSamples(const rtc_WavWriter* wf) {
+size_t rtc_WavNumSamples(const rtc_WavWriter* wf) {
   return reinterpret_cast<const webrtc::WavWriter*>(wf)->num_samples();
 }

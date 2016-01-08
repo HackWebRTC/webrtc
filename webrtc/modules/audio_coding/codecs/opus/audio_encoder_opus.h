@@ -85,8 +85,8 @@ class AudioEncoderOpus final : public AudioEncoder {
   bool dtx_enabled() const { return config_.dtx_enabled; }
 
  private:
-  int Num10msFramesPerPacket() const;
-  int SamplesPer10msFrame() const;
+  size_t Num10msFramesPerPacket() const;
+  size_t SamplesPer10msFrame() const;
   bool RecreateEncoderInstance(const Config& config);
 
   Config config_;

@@ -134,7 +134,7 @@ class AudioCodingModule {
   //    0 if succeeded.
   //
   static int Codec(const char* payload_name, CodecInst* codec,
-                       int sampling_freq_hz, int channels);
+                   int sampling_freq_hz, int channels);
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t Codec()
@@ -153,7 +153,7 @@ class AudioCodingModule {
   //   -1 if the codec is not found.
   //
   static int Codec(const char* payload_name, int sampling_freq_hz,
-                             int channels);
+                   int channels);
 
   ///////////////////////////////////////////////////////////////////////////
   // bool IsCodecValid()

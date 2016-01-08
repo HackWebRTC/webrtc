@@ -26,7 +26,7 @@ const size_t kSamplesPer48kHzChannel = 480;
 int KeyboardChannelIndex(const StreamConfig& stream_config) {
   if (!stream_config.has_keyboard()) {
     assert(false);
-    return -1;
+    return 0;
   }
 
   return stream_config.num_channels();

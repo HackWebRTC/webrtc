@@ -163,7 +163,7 @@ void TransposedConjugatedProduct(const ComplexMatrix<float>& in,
 }
 
 std::vector<Point> GetCenteredArray(std::vector<Point> array_geometry) {
-  for (int dim = 0; dim < 3; ++dim) {
+  for (size_t dim = 0; dim < 3; ++dim) {
     float center = 0.f;
     for (size_t i = 0; i < array_geometry.size(); ++i) {
       center += array_geometry[i].c[dim];
@@ -379,7 +379,7 @@ void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
       (high_pass_postfilter_mask_ - old_high_pass_mask) /
       input.num_frames_per_band();
   // Apply the smoothed high-pass mask to the first channel of each band.
-  // This can be done because the effct of the linear beamformer is negligible
+  // This can be done because the effect of the linear beamformer is negligible
   // compared to the post-filter.
   for (size_t i = 1; i < input.num_bands(); ++i) {
     float smoothed_mask = old_high_pass_mask;
@@ -412,9 +412,9 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
                                             size_t num_freq_bins,
                                             int num_output_channels,
                                             complex_f* const* output) {
-  RTC_CHECK_EQ(num_freq_bins, kNumFreqBins);
-  RTC_CHECK_EQ(num_input_channels, num_input_channels_);
-  RTC_CHECK_EQ(num_output_channels, 1);
+  RTC_CHECK_EQ(kNumFreqBins, num_freq_bins);
+  RTC_CHECK_EQ(num_input_channels_, num_input_channels);
+  RTC_CHECK_EQ(1, num_output_channels);
 
   // Calculating the post-filter masks. Note that we need two for each
   // frequency bin to account for the positive and negative interferer

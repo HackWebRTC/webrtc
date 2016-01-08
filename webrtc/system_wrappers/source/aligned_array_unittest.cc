@@ -16,7 +16,7 @@
 
 namespace {
 
-bool IsAligned(const void* ptr, int alignment) {
+bool IsAligned(const void* ptr, size_t alignment) {
   return reinterpret_cast<uintptr_t>(ptr) % alignment == 0;
 }
 

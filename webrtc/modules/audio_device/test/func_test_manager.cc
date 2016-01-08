@@ -573,32 +573,6 @@ int32_t AudioTransportImpl::NeedMorePlayData(
     return 0;
 }
 
-int AudioTransportImpl::OnDataAvailable(const int voe_channels[],
-                                        int number_of_voe_channels,
-                                        const int16_t* audio_data,
-                                        int sample_rate,
-                                        int number_of_channels,
-                                        size_t number_of_frames,
-                                        int audio_delay_milliseconds,
-                                        int current_volume,
-                                        bool key_pressed,
-                                        bool need_audio_processing) {
-  return 0;
-}
-
-void AudioTransportImpl::PushCaptureData(int voe_channel,
-                                         const void* audio_data,
-                                         int bits_per_sample, int sample_rate,
-                                         int number_of_channels,
-                                         size_t number_of_frames) {}
-
-void AudioTransportImpl::PullRenderData(int bits_per_sample, int sample_rate,
-                                        int number_of_channels,
-                                        size_t number_of_frames,
-                                        void* audio_data,
-                                        int64_t* elapsed_time_ms,
-                                        int64_t* ntp_time_ms) {}
-
 FuncTestManager::FuncTestManager() :
     _audioDevice(NULL),
     _audioEventObserver(NULL),

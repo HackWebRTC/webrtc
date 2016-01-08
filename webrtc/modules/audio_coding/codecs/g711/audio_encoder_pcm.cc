@@ -83,7 +83,8 @@ size_t AudioEncoderPcm::Max10MsFramesInAPacket() const {
 }
 
 int AudioEncoderPcm::GetTargetBitrate() const {
-  return 8 * BytesPerSample() * SampleRateHz() * NumChannels();
+  return static_cast<int>(
+      8 * BytesPerSample() * SampleRateHz() * NumChannels());
 }
 
 AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
@@ -122,7 +123,7 @@ size_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,
   return WebRtcG711_EncodeA(audio, input_len, encoded);
 }
 
-int AudioEncoderPcmA::BytesPerSample() const {
+size_t AudioEncoderPcmA::BytesPerSample() const {
   return 1;
 }
 
@@ -135,7 +136,7 @@ size_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
   return WebRtcG711_EncodeU(audio, input_len, encoded);
 }
 
-int AudioEncoderPcmU::BytesPerSample() const {
+size_t AudioEncoderPcmU::BytesPerSample() const {
   return 1;
 }
 

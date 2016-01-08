@@ -165,7 +165,7 @@ float NoiseSuppressionImpl::speech_probability() const {
     probability_average +=
         WebRtcNs_prior_speech_probability(suppressor->state());
   }
-  if (suppressors_.size() > 0) {
+  if (!suppressors_.empty()) {
     probability_average /= suppressors_.size();
   }
   return probability_average;

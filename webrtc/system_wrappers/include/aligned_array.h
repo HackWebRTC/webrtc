@@ -20,16 +20,15 @@ namespace webrtc {
 // aligned to the given byte alignment.
 template<typename T> class AlignedArray {
  public:
-  AlignedArray(int rows, size_t cols, int alignment)
+  AlignedArray(int rows, size_t cols, size_t alignment)
       : rows_(rows),
-        cols_(cols),
-        alignment_(alignment) {
-    RTC_CHECK_GT(alignment_, 0);
+        cols_(cols) {
+    RTC_CHECK_GT(alignment, 0u);
     head_row_ = static_cast<T**>(AlignedMalloc(rows_ * sizeof(*head_row_),
-                                               alignment_));
+                                               alignment));
     for (int i = 0; i < rows_; ++i) {
       head_row_[i] = static_cast<T*>(AlignedMalloc(cols_ * sizeof(**head_row_),
-                                                   alignment_));
+                                                   alignment));
     }
   }
 
@@ -79,7 +78,6 @@ template<typename T> class AlignedArray {
  private:
   int rows_;
   size_t cols_;
-  int alignment_;
   T** head_row_;
 };
 

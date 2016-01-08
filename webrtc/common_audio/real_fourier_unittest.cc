@@ -26,15 +26,15 @@ TEST(RealFourierStaticsTest, AllocatorAlignment) {
     RealFourier::fft_real_scoper real;
     real = RealFourier::AllocRealBuffer(3);
     ASSERT_TRUE(real.get() != nullptr);
-    int64_t ptr_value = reinterpret_cast<int64_t>(real.get());
-    EXPECT_EQ(0, ptr_value % RealFourier::kFftBufferAlignment);
+    uintptr_t ptr_value = reinterpret_cast<uintptr_t>(real.get());
+    EXPECT_EQ(0u, ptr_value % RealFourier::kFftBufferAlignment);
   }
   {
     RealFourier::fft_cplx_scoper cplx;
     cplx = RealFourier::AllocCplxBuffer(3);
     ASSERT_TRUE(cplx.get() != nullptr);
-    int64_t ptr_value = reinterpret_cast<int64_t>(cplx.get());
-    EXPECT_EQ(0, ptr_value % RealFourier::kFftBufferAlignment);
+    uintptr_t ptr_value = reinterpret_cast<uintptr_t>(cplx.get());
+    EXPECT_EQ(0u, ptr_value % RealFourier::kFftBufferAlignment);
   }
 }
 

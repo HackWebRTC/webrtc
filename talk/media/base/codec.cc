@@ -163,13 +163,15 @@ void Codec::IntersectFeedbackParams(const Codec& other) {
   feedback_params.Intersect(other.feedback_params);
 }
 
-AudioCodec::AudioCodec(int pt,
-                       const std::string& nm,
-                       int cr,
-                       int br,
-                       int cs,
-                       int pr)
-    : Codec(pt, nm, cr, pr), bitrate(br), channels(cs) {
+AudioCodec::AudioCodec(int id,
+                       const std::string& name,
+                       int clockrate,
+                       int bitrate,
+                       int channels,
+                       int preference)
+    : Codec(id, name, clockrate, preference),
+      bitrate(bitrate),
+      channels(channels) {
 }
 
 AudioCodec::AudioCodec() : Codec(), bitrate(0), channels(0) {
@@ -219,20 +221,20 @@ std::string VideoCodec::ToString() const {
   return os.str();
 }
 
-VideoCodec::VideoCodec(int pt,
-                       const std::string& nm,
-                       int w,
-                       int h,
-                       int fr,
-                       int pr)
-    : Codec(pt, nm, kVideoCodecClockrate, pr),
-      width(w),
-      height(h),
-      framerate(fr) {
+VideoCodec::VideoCodec(int id,
+                       const std::string& name,
+                       int width,
+                       int height,
+                       int framerate,
+                       int preference)
+    : Codec(id, name, kVideoCodecClockrate, preference),
+      width(width),
+      height(height),
+      framerate(framerate) {
 }
 
-VideoCodec::VideoCodec(int pt, const std::string& nm)
-    : Codec(pt, nm, kVideoCodecClockrate, 0),
+VideoCodec::VideoCodec(int id, const std::string& name)
+    : Codec(id, name, kVideoCodecClockrate, 0),
       width(0),
       height(0),
       framerate(0) {

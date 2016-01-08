@@ -31,7 +31,10 @@ class OpusTest : public ACMTest {
   void Perform();
 
  private:
-  void Run(TestPackStereo* channel, int channels, int bitrate, int frame_length,
+  void Run(TestPackStereo* channel,
+           int channels,
+           int bitrate,
+           size_t frame_length,
            int percent_loss = 0);
 
   void OpenOutFile(int test_number);
@@ -44,7 +47,7 @@ class OpusTest : public ACMTest {
   PCMFile out_file_standalone_;
   int counter_;
   uint8_t payload_type_;
-  int rtp_timestamp_;
+  uint32_t rtp_timestamp_;
   acm2::ACMResampler resampler_;
   WebRtcOpusEncInst* opus_mono_encoder_;
   WebRtcOpusEncInst* opus_stereo_encoder_;

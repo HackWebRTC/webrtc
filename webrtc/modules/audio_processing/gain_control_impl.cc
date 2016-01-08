@@ -111,8 +111,8 @@ void GainControlImpl::ReadQueuedRenderData() {
   }
 
   while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
-    int buffer_index = 0;
-    const int num_frames_per_band =
+    size_t buffer_index = 0;
+    const size_t num_frames_per_band =
         capture_queue_buffer_.size() / num_handles();
     for (int i = 0; i < num_handles(); i++) {
       Handle* my_handle = static_cast<Handle*>(handle(i));

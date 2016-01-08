@@ -54,7 +54,7 @@ class AudioEncoderPcm : public AudioEncoder {
                             size_t input_len,
                             uint8_t* encoded) = 0;
 
-  virtual int BytesPerSample() const = 0;
+  virtual size_t BytesPerSample() const = 0;
 
  private:
   const int sample_rate_hz_;
@@ -83,7 +83,7 @@ class AudioEncoderPcmA final : public AudioEncoderPcm {
                     size_t input_len,
                     uint8_t* encoded) override;
 
-  int BytesPerSample() const override;
+  size_t BytesPerSample() const override;
 
  private:
   static const int kSampleRateHz = 8000;
@@ -105,7 +105,7 @@ class AudioEncoderPcmU final : public AudioEncoderPcm {
                     size_t input_len,
                     uint8_t* encoded) override;
 
-  int BytesPerSample() const override;
+  size_t BytesPerSample() const override;
 
  private:
   static const int kSampleRateHz = 8000;

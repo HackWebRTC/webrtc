@@ -27,7 +27,7 @@ static inline int ChannelsFromLayout(AudioProcessing::ChannelLayout layout) {
       return 2;
   }
   assert(false);
-  return -1;
+  return 0;
 }
 
 }  // namespace webrtc

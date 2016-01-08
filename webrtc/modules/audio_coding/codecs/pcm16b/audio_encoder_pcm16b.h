@@ -37,7 +37,7 @@ class AudioEncoderPcm16B final : public AudioEncoderPcm {
                     size_t input_len,
                     uint8_t* encoded) override;
 
-  int BytesPerSample() const override;
+  size_t BytesPerSample() const override;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderPcm16B);

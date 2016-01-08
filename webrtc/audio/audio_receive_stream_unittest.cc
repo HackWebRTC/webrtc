@@ -49,7 +49,7 @@ const unsigned int kSpeechOutputLevel = 99;
 const CallStatistics kCallStats = {
     345,  678,  901, 234, -12, 3456, 7890, 567, 890, 123};
 const CodecInst kCodecInst = {
-    123, "codec_name_recv", 96000, -187, -198, -103};
+    123, "codec_name_recv", 96000, -187, 0, -103};
 const NetworkStatistics kNetworkStats = {
     123, 456, false, 0, 0, 789, 12, 345, 678, 901, -1, -1, -1, -1, -1, 0};
 const AudioDecodingCallStats kAudioDecodeStats = MakeAudioDecodeStatsForTest();

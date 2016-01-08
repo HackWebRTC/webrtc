@@ -28,7 +28,7 @@ class WavFile {
 
   virtual int sample_rate() const = 0;
   virtual int num_channels() const = 0;
-  virtual uint32_t num_samples() const = 0;
+  virtual size_t num_samples() const = 0;
 
   // Returns a human-readable string containing the audio format.
   std::string FormatAsString() const;
@@ -52,13 +52,13 @@ class WavWriter final : public WavFile {
 
   int sample_rate() const override { return sample_rate_; }
   int num_channels() const override { return num_channels_; }
-  uint32_t num_samples() const override { return num_samples_; }
+  size_t num_samples() const override { return num_samples_; }
 
  private:
   void Close();
   const int sample_rate_;
   const int num_channels_;
-  uint32_t num_samples_;  // Total number of samples written to file.
+  size_t num_samples_;  // Total number of samples written to file.
   FILE* file_handle_;  // Output file, owned by this class
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WavWriter);
@@ -80,14 +80,14 @@ class WavReader final : public WavFile {
 
   int sample_rate() const override { return sample_rate_; }
   int num_channels() const override { return num_channels_; }
-  uint32_t num_samples() const override { return num_samples_; }
+  size_t num_samples() const override { return num_samples_; }
 
  private:
   void Close();
   int sample_rate_;
   int num_channels_;
-  uint32_t num_samples_;  // Total number of samples in the file.
-  uint32_t num_samples_remaining_;
+  size_t num_samples_;  // Total number of samples in the file.
+  size_t num_samples_remaining_;
   FILE* file_handle_;  // Input file, owned by this class.
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WavReader);
@@ -109,7 +109,7 @@ void rtc_WavWriteSamples(rtc_WavWriter* wf,
                          size_t num_samples);
 int rtc_WavSampleRate(const rtc_WavWriter* wf);
 int rtc_WavNumChannels(const rtc_WavWriter* wf);
-uint32_t rtc_WavNumSamples(const rtc_WavWriter* wf);
+size_t rtc_WavNumSamples(const rtc_WavWriter* wf);
 
 #ifdef __cplusplus
 }  // extern "C"

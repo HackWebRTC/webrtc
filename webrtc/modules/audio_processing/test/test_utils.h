@@ -78,7 +78,7 @@ void WriteIntData(const int16_t* data,
                   RawFile* raw_file);
 
 void WriteFloatData(const float* const* data,
-                    int samples_per_channel,
+                    size_t samples_per_channel,
                     int num_channels,
                     WavWriter* wav_file,
                     RawFile* raw_file);
@@ -86,7 +86,7 @@ void WriteFloatData(const float* const* data,
 // Exits on failure; do not use in unit tests.
 FILE* OpenFile(const std::string& filename, const char* mode);
 
-int SamplesFromRate(int rate);
+size_t SamplesFromRate(int rate);
 
 void SetFrameSampleRate(AudioFrame* frame,
                         int sample_rate_hz);
@@ -104,11 +104,11 @@ void SetContainerFormat(int sample_rate_hz,
 AudioProcessing::ChannelLayout LayoutFromChannels(int num_channels);
 
 template <typename T>
-float ComputeSNR(const T* ref, const T* test, int length, float* variance) {
+float ComputeSNR(const T* ref, const T* test, size_t length, float* variance) {
   float mse = 0;
   float mean = 0;
   *variance = 0;
-  for (int i = 0; i < length; ++i) {
+  for (size_t i = 0; i < length; ++i) {
     T error = ref[i] - test[i];
     mse += error * error;
     *variance += ref[i] * ref[i];

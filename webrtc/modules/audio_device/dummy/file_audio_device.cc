@@ -17,10 +17,10 @@ const int kRecordingFixedSampleRate = 48000;
 const int kRecordingNumChannels = 2;
 const int kPlayoutFixedSampleRate = 48000;
 const int kPlayoutNumChannels = 2;
-const int kPlayoutBufferSize = kPlayoutFixedSampleRate / 100
-                               * kPlayoutNumChannels * 2;
-const int kRecordingBufferSize = kRecordingFixedSampleRate / 100
-                                 * kRecordingNumChannels * 2;
+const size_t kPlayoutBufferSize =
+    kPlayoutFixedSampleRate / 100 * kPlayoutNumChannels * 2;
+const size_t kRecordingBufferSize =
+    kRecordingFixedSampleRate / 100 * kRecordingNumChannels * 2;
 
 FileAudioDevice::FileAudioDevice(const int32_t id,
                                  const char* inputFilename,
@@ -194,9 +194,7 @@ int32_t FileAudioDevice::StartPlayout() {
   _playoutFramesLeft = 0;
 
   if (!_playoutBuffer) {
-      _playoutBuffer = new int8_t[2 *
-                                  kPlayoutNumChannels *
-                                  kPlayoutFixedSampleRate/100];
+      _playoutBuffer = new int8_t[kPlayoutBufferSize];
   }
   if (!_playoutBuffer) {
     _playing = false;

@@ -176,7 +176,7 @@ public:
 
 private:
     // Biggest WAV frame supported is 10 ms at 48kHz of 2 channel, 16 bit audio.
-    enum{WAV_MAX_BUFFER_SIZE = 480*2*2};
+    static const size_t WAV_MAX_BUFFER_SIZE = 480 * 2 * 2;
 
 
     int32_t InitWavCodec(uint32_t samplesPerSec,
@@ -194,16 +194,16 @@ private:
     // stereo. format is the encode format (e.g. PCMU, PCMA, PCM etc).
     // lengthInBytes is the number of bytes the audio samples are using up.
     int32_t WriteWavHeader(OutStream& stream,
-                           const uint32_t freqInHz,
-                           const uint32_t bytesPerSample,
-                           const uint32_t channels,
-                           const uint32_t format,
-                           const uint32_t lengthInBytes);
+                           uint32_t freqInHz,
+                           size_t bytesPerSample,
+                           uint32_t channels,
+                           uint32_t format,
+                           size_t lengthInBytes);
 
     // Put dataLengthInBytes of audio data from stream into the audioBuffer.
     // The return value is the number of bytes written to audioBuffer.
     int32_t ReadWavData(InStream& stream, uint8_t* audioBuffer,
-                        const uint32_t dataLengthInBytes);
+                        size_t dataLengthInBytes);
 
     // Update the current audio codec being used for reading or writing
     // according to codecInst.
@@ -254,10 +254,10 @@ private:
     // TODO (hellner): why store multiple formats. Just store either codec_info_
     //                 or _wavFormatObj and supply conversion functions.
     WAVE_FMTINFO_header _wavFormatObj;
-    int32_t _dataSize;      // Chunk size if reading a WAV file
+    size_t _dataSize;      // Chunk size if reading a WAV file
     // Number of bytes to read. I.e. frame size in bytes. May be multiple
     // chunks if reading WAV.
-    int32_t _readSizeBytes;
+    size_t _readSizeBytes;
 
     int32_t _id;
 
@@ -270,8 +270,8 @@ private:
     MediaFileUtility_CodecType _codecId;
 
     // The amount of bytes, on average, used for one audio sample.
-    int32_t  _bytesPerSample;
-    int32_t  _readPos;
+    size_t _bytesPerSample;
+    size_t _readPos;
 
     // Only reading or writing can be enabled, not both.
     bool _reading;

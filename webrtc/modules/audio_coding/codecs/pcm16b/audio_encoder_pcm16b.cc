@@ -22,7 +22,7 @@ size_t AudioEncoderPcm16B::EncodeCall(const int16_t* audio,
   return WebRtcPcm16b_Encode(audio, input_len, encoded);
 }
 
-int AudioEncoderPcm16B::BytesPerSample() const {
+size_t AudioEncoderPcm16B::BytesPerSample() const {
   return 2;
 }
 

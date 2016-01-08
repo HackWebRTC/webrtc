@@ -206,16 +206,16 @@ void OpusTest::Perform() {
 }
 
 void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
-                   int frame_length, int percent_loss) {
+                   size_t frame_length, int percent_loss) {
   AudioFrame audio_frame;
   int32_t out_freq_hz_b = out_file_.SamplingFrequency();
-  const int kBufferSizeSamples = 480 * 12 * 2;  // Can hold 120 ms stereo audio.
+  const size_t kBufferSizeSamples = 480 * 12 * 2;  // 120 ms stereo audio.
   int16_t audio[kBufferSizeSamples];
   int16_t out_audio[kBufferSizeSamples];
   int16_t audio_type;
-  int written_samples = 0;
-  int read_samples = 0;
-  int decoded_samples = 0;
+  size_t written_samples = 0;
+  size_t read_samples = 0;
+  size_t decoded_samples = 0;
   bool first_packet = true;
   uint32_t start_time_stamp = 0;
 
@@ -268,14 +268,14 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
 
     // Sometimes we need to loop over the audio vector to produce the right
     // number of packets.
-    int loop_encode = (written_samples - read_samples) /
+    size_t loop_encode = (written_samples - read_samples) /
         (channels * frame_length);
 
     if (loop_encode > 0) {
-      const int kMaxBytes = 1000;  // Maximum number of bytes for one packet.
+      const size_t kMaxBytes = 1000;  // Maximum number of bytes for one packet.
       size_t bitstream_len_byte;
       uint8_t bitstream[kMaxBytes];
-      for (int i = 0; i < loop_encode; i++) {
+      for (size_t i = 0; i < loop_encode; i++) {
         int bitstream_len_byte_int = WebRtcOpus_Encode(
             (channels == 1) ? opus_mono_encoder_ : opus_stereo_encoder_,
             &audio[read_samples], frame_length, kMaxBytes, bitstream);
@@ -326,7 +326,7 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
           first_packet = false;
           start_time_stamp = rtp_timestamp_;
         }
-        rtp_timestamp_ += frame_length;
+        rtp_timestamp_ += static_cast<uint32_t>(frame_length);
         read_samples += frame_length * channels;
       }
       if (read_samples == written_samples) {
@@ -344,8 +344,7 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
         audio_frame.samples_per_channel_ * audio_frame.num_channels_);
 
     // Write stand-alone speech to file.
-    out_file_standalone_.Write10MsData(
-        out_audio, static_cast<size_t>(decoded_samples) * channels);
+    out_file_standalone_.Write10MsData(out_audio, decoded_samples * channels);
 
     if (audio_frame.timestamp_ > start_time_stamp) {
       // Number of channels should be the same for both stand-alone and

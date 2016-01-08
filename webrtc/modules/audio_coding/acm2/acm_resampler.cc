@@ -32,7 +32,6 @@ int ACMResampler::Resample10Msec(const int16_t* in_audio,
                                  size_t out_capacity_samples,
                                  int16_t* out_audio) {
   size_t in_length = static_cast<size_t>(in_freq_hz * num_audio_channels / 100);
-  int out_length = out_freq_hz * num_audio_channels / 100;
   if (in_freq_hz == out_freq_hz) {
     if (out_capacity_samples < in_length) {
       assert(false);
@@ -49,7 +48,7 @@ int ACMResampler::Resample10Msec(const int16_t* in_audio,
     return -1;
   }
 
-  out_length =
+  int out_length =
       resampler_.Resample(in_audio, in_length, out_audio, out_capacity_samples);
   if (out_length == -1) {
     LOG(LS_ERROR) << "Resample(" << in_audio << ", " << in_length << ", "

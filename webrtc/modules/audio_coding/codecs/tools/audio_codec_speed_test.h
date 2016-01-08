@@ -55,10 +55,10 @@ class AudioCodecSpeedTest : public testing::TestWithParam<coding_param> {
   int output_sampling_khz_;
 
   // Number of samples-per-channel in a frame.
-  int input_length_sample_;
+  size_t input_length_sample_;
 
   // Expected output number of samples-per-channel in a frame.
-  int output_length_sample_;
+  size_t output_length_sample_;
 
   rtc::scoped_ptr<int16_t[]> in_data_;
   rtc::scoped_ptr<int16_t[]> out_data_;

@@ -14,6 +14,7 @@
 #include <limits>
 #include <queue>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
@@ -49,11 +50,8 @@ namespace {
 // file. This is the typical case. When the file should be updated, it can
 // be set to true with the command-line switch --write_ref_data.
 bool write_ref_data = false;
-const int kChannels[] = {1, 2};
-const size_t kChannelsSize = sizeof(kChannels) / sizeof(*kChannels);
-
+const google::protobuf::int32 kChannels[] = {1, 2};
 const int kSampleRates[] = {8000, 16000, 32000, 48000};
-const size_t kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
 
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
 // AECM doesn't support super-wb.
@@ -61,8 +59,6 @@ const int kProcessSampleRates[] = {8000, 16000};
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
 const int kProcessSampleRates[] = {8000, 16000, 32000, 48000};
 #endif
-const size_t kProcessSampleRatesSize = sizeof(kProcessSampleRates) /
-    sizeof(*kProcessSampleRates);
 
 enum StreamDirection { kForward = 0, kReverse };
 
@@ -96,7 +92,7 @@ int TotalChannelsFromLayout(AudioProcessing::ChannelLayout layout) {
       return 3;
   }
   assert(false);
-  return -1;
+  return 0;
 }
 
 int TruncateToMultipleOf10(int value) {
@@ -104,25 +100,25 @@ int TruncateToMultipleOf10(int value) {
 }
 
 void MixStereoToMono(const float* stereo, float* mono,
-                     int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; ++i)
+                     size_t samples_per_channel) {
+  for (size_t i = 0; i < samples_per_channel; ++i)
     mono[i] = (stereo[i * 2] + stereo[i * 2 + 1]) / 2;
 }
 
 void MixStereoToMono(const int16_t* stereo, int16_t* mono,
-                     int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; ++i)
+                     size_t samples_per_channel) {
+  for (size_t i = 0; i < samples_per_channel; ++i)
     mono[i] = (stereo[i * 2] + stereo[i * 2 + 1]) >> 1;
 }
 
-void CopyLeftToRightChannel(int16_t* stereo, int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; i++) {
+void CopyLeftToRightChannel(int16_t* stereo, size_t samples_per_channel) {
+  for (size_t i = 0; i < samples_per_channel; i++) {
     stereo[i * 2 + 1] = stereo[i * 2];
   }
 }
 
-void VerifyChannelsAreEqual(int16_t* stereo, int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; i++) {
+void VerifyChannelsAreEqual(int16_t* stereo, size_t samples_per_channel) {
+  for (size_t i = 0; i < samples_per_channel; i++) {
     EXPECT_EQ(stereo[i * 2 + 1], stereo[i * 2]);
   }
 }
@@ -195,9 +191,9 @@ T AbsValue(T a) {
 }
 
 int16_t MaxAudioFrame(const AudioFrame& frame) {
-  const int length = frame.samples_per_channel_ * frame.num_channels_;
+  const size_t length = frame.samples_per_channel_ * frame.num_channels_;
   int16_t max_data = AbsValue(frame.data_[0]);
-  for (int i = 1; i < length; i++) {
+  for (size_t i = 1; i < length; i++) {
     max_data = std::max(max_data, AbsValue(frame.data_[i]));
   }
 
@@ -898,7 +894,7 @@ TEST_F(ApmTest, SampleRatesInt) {
   EXPECT_EQ(apm_->kBadSampleRateError, ProcessStreamChooser(kIntFormat));
   // Testing valid sample rates
   int fs[] = {8000, 16000, 32000, 48000};
-  for (size_t i = 0; i < sizeof(fs) / sizeof(*fs); i++) {
+  for (size_t i = 0; i < arraysize(fs); i++) {
     SetContainerFormat(fs[i], 2, frame_, &float_cb_);
     EXPECT_NOERR(ProcessStreamChooser(kIntFormat));
   }
@@ -917,7 +913,7 @@ TEST_F(ApmTest, EchoCancellation) {
     EchoCancellation::kModerateSuppression,
     EchoCancellation::kHighSuppression,
   };
-  for (size_t i = 0; i < sizeof(level)/sizeof(*level); i++) {
+  for (size_t i = 0; i < arraysize(level); i++) {
     EXPECT_EQ(apm_->kNoError,
         apm_->echo_cancellation()->set_suppression_level(level[i]));
     EXPECT_EQ(level[i],
@@ -994,7 +990,7 @@ TEST_F(ApmTest, DISABLED_EchoCancellationReportsCorrectDelays) {
   // Test a couple of corner cases and verify that the estimated delay is
   // within a valid region (set to +-1.5 blocks). Note that these cases are
   // sampling frequency dependent.
-  for (size_t i = 0; i < kProcessSampleRatesSize; i++) {
+  for (size_t i = 0; i < arraysize(kProcessSampleRates); i++) {
     Init(kProcessSampleRates[i],
          kProcessSampleRates[i],
          kProcessSampleRates[i],
@@ -1066,7 +1062,7 @@ TEST_F(ApmTest, EchoControlMobile) {
       EchoControlMobile::kSpeakerphone,
       EchoControlMobile::kLoudSpeakerphone,
   };
-  for (size_t i = 0; i < sizeof(mode)/sizeof(*mode); i++) {
+  for (size_t i = 0; i < arraysize(mode); i++) {
     EXPECT_EQ(apm_->kNoError,
         apm_->echo_control_mobile()->set_routing_mode(mode[i]));
     EXPECT_EQ(mode[i],
@@ -1131,7 +1127,7 @@ TEST_F(ApmTest, GainControl) {
     GainControl::kAdaptiveDigital,
     GainControl::kFixedDigital
   };
-  for (size_t i = 0; i < sizeof(mode)/sizeof(*mode); i++) {
+  for (size_t i = 0; i < arraysize(mode); i++) {
     EXPECT_EQ(apm_->kNoError,
         apm_->gain_control()->set_mode(mode[i]));
     EXPECT_EQ(mode[i], apm_->gain_control()->mode());
@@ -1147,7 +1143,7 @@ TEST_F(ApmTest, GainControl) {
       apm_->gain_control()->target_level_dbfs()));
 
   int level_dbfs[] = {0, 6, 31};
-  for (size_t i = 0; i < sizeof(level_dbfs)/sizeof(*level_dbfs); i++) {
+  for (size_t i = 0; i < arraysize(level_dbfs); i++) {
     EXPECT_EQ(apm_->kNoError,
         apm_->gain_control()->set_target_level_dbfs(level_dbfs[i]));
     EXPECT_EQ(level_dbfs[i], apm_->gain_control()->target_level_dbfs());
@@ -1165,7 +1161,7 @@ TEST_F(ApmTest, GainControl) {
       apm_->gain_control()->compression_gain_db()));
 
   int gain_db[] = {0, 10, 90};
-  for (size_t i = 0; i < sizeof(gain_db)/sizeof(*gain_db); i++) {
+  for (size_t i = 0; i < arraysize(gain_db); i++) {
     EXPECT_EQ(apm_->kNoError,
         apm_->gain_control()->set_compression_gain_db(gain_db[i]));
     EXPECT_EQ(gain_db[i], apm_->gain_control()->compression_gain_db());
@@ -1196,14 +1192,14 @@ TEST_F(ApmTest, GainControl) {
       apm_->gain_control()->analog_level_maximum()));
 
   int min_level[] = {0, 255, 1024};
-  for (size_t i = 0; i < sizeof(min_level)/sizeof(*min_level); i++) {
+  for (size_t i = 0; i < arraysize(min_level); i++) {
     EXPECT_EQ(apm_->kNoError,
         apm_->gain_control()->set_analog_level_limits(min_level[i], 1024));
     EXPECT_EQ(min_level[i], apm_->gain_control()->analog_level_minimum());
   }
 
   int max_level[] = {0, 1024, 65535};
-  for (size_t i = 0; i < sizeof(min_level)/sizeof(*min_level); i++) {
+  for (size_t i = 0; i < arraysize(min_level); i++) {
     EXPECT_EQ(apm_->kNoError,
         apm_->gain_control()->set_analog_level_limits(0, max_level[i]));
     EXPECT_EQ(max_level[i], apm_->gain_control()->analog_level_maximum());
@@ -1242,7 +1238,7 @@ void ApmTest::RunQuantizedVolumeDoesNotGetStuckTest(int sample_rate) {
 // Verifies that despite volume slider quantization, the AGC can continue to
 // increase its volume.
 TEST_F(ApmTest, QuantizedVolumeDoesNotGetStuck) {
-  for (size_t i = 0; i < kSampleRatesSize; ++i) {
+  for (size_t i = 0; i < arraysize(kSampleRates); ++i) {
     RunQuantizedVolumeDoesNotGetStuckTest(kSampleRates[i]);
   }
 }
@@ -1287,7 +1283,7 @@ void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
 }
 
 TEST_F(ApmTest, ManualVolumeChangeIsPossible) {
-  for (size_t i = 0; i < kSampleRatesSize; ++i) {
+  for (size_t i = 0; i < arraysize(kSampleRates); ++i) {
     RunManualVolumeChangeIsPossibleTest(kSampleRates[i]);
   }
 }
@@ -1295,11 +1291,11 @@ TEST_F(ApmTest, ManualVolumeChangeIsPossible) {
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
 TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   const int kSampleRateHz = 16000;
-  const int kSamplesPerChannel =
-      AudioProcessing::kChunkSizeMs * kSampleRateHz / 1000;
+  const size_t kSamplesPerChannel =
+      static_cast<size_t>(AudioProcessing::kChunkSizeMs * kSampleRateHz / 1000);
   const int kNumInputChannels = 2;
   const int kNumOutputChannels = 1;
-  const int kNumChunks = 700;
+  const size_t kNumChunks = 700;
   const float kScaleFactor = 0.25f;
   Config config;
   std::vector<webrtc::Point> geometry;
@@ -1313,8 +1309,8 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   EXPECT_EQ(kNoErr, apm->gain_control()->Enable(true));
   ChannelBuffer<float> src_buf(kSamplesPerChannel, kNumInputChannels);
   ChannelBuffer<float> dest_buf(kSamplesPerChannel, kNumOutputChannels);
-  const int max_length = kSamplesPerChannel * std::max(kNumInputChannels,
-                                                       kNumOutputChannels);
+  const size_t max_length = kSamplesPerChannel * std::max(kNumInputChannels,
+                                                          kNumOutputChannels);
   rtc::scoped_ptr<int16_t[]> int_data(new int16_t[max_length]);
   rtc::scoped_ptr<float[]> float_data(new float[max_length]);
   std::string filename = ResourceFilePath("far", kSampleRateHz);
@@ -1326,13 +1322,13 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   bool is_target = false;
   EXPECT_CALL(*beamformer, is_target_present())
       .WillRepeatedly(testing::ReturnPointee(&is_target));
-  for (int i = 0; i < kNumChunks; ++i) {
+  for (size_t i = 0; i < kNumChunks; ++i) {
     ASSERT_TRUE(ReadChunk(far_file,
                           int_data.get(),
                           float_data.get(),
                           &src_buf));
     for (int j = 0; j < kNumInputChannels; ++j) {
-      for (int k = 0; k < kSamplesPerChannel; ++k) {
+      for (size_t k = 0; k < kSamplesPerChannel; ++k) {
         src_buf.channels()[j][k] *= kScaleFactor;
       }
     }
@@ -1351,13 +1347,13 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
             apm->gain_control()->compression_gain_db());
   rewind(far_file);
   is_target = true;
-  for (int i = 0; i < kNumChunks; ++i) {
+  for (size_t i = 0; i < kNumChunks; ++i) {
     ASSERT_TRUE(ReadChunk(far_file,
                           int_data.get(),
                           float_data.get(),
                           &src_buf));
     for (int j = 0; j < kNumInputChannels; ++j) {
-      for (int k = 0; k < kSamplesPerChannel; ++k) {
+      for (size_t k = 0; k < kSamplesPerChannel; ++k) {
         src_buf.channels()[j][k] *= kScaleFactor;
       }
     }
@@ -1386,7 +1382,7 @@ TEST_F(ApmTest, NoiseSuppression) {
     NoiseSuppression::kHigh,
     NoiseSuppression::kVeryHigh
   };
-  for (size_t i = 0; i < sizeof(level)/sizeof(*level); i++) {
+  for (size_t i = 0; i < arraysize(level); i++) {
     EXPECT_EQ(apm_->kNoError,
         apm_->noise_suppression()->set_level(level[i]));
     EXPECT_EQ(level[i], apm_->noise_suppression()->level());
@@ -1488,7 +1484,7 @@ TEST_F(ApmTest, VoiceDetection) {
       VoiceDetection::kModerateLikelihood,
       VoiceDetection::kHighLikelihood
   };
-  for (size_t i = 0; i < sizeof(likelihood)/sizeof(*likelihood); i++) {
+  for (size_t i = 0; i < arraysize(likelihood); i++) {
     EXPECT_EQ(apm_->kNoError,
               apm_->voice_detection()->set_likelihood(likelihood[i]));
     EXPECT_EQ(likelihood[i], apm_->voice_detection()->likelihood());
@@ -1520,7 +1516,7 @@ TEST_F(ApmTest, VoiceDetection) {
       AudioFrame::kVadPassive,
       AudioFrame::kVadUnknown
   };
-  for (size_t i = 0; i < sizeof(activity)/sizeof(*activity); i++) {
+  for (size_t i = 0; i < arraysize(activity); i++) {
     frame_->vad_activity_ = activity[i];
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
     EXPECT_EQ(activity[i], frame_->vad_activity_);
@@ -1546,7 +1542,7 @@ TEST_F(ApmTest, AllProcessingDisabledByDefault) {
 }
 
 TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
-  for (size_t i = 0; i < kSampleRatesSize; i++) {
+  for (size_t i = 0; i < arraysize(kSampleRates); i++) {
     Init(kSampleRates[i], kSampleRates[i], kSampleRates[i], 2, 2, 2, false);
     SetFrameTo(frame_, 1000, 2000);
     AudioFrame frame_copy;
@@ -1598,7 +1594,7 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
 TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
   EnableAllComponents();
 
-  for (size_t i = 0; i < kProcessSampleRatesSize; i++) {
+  for (size_t i = 0; i < arraysize(kProcessSampleRates); i++) {
     Init(kProcessSampleRates[i],
          kProcessSampleRates[i],
          kProcessSampleRates[i],
@@ -1937,8 +1933,8 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
     const int num_render_channels = test->num_reverse_channels();
     const int num_input_channels = test->num_input_channels();
     const int num_output_channels = test->num_output_channels();
-    const int samples_per_channel = test->sample_rate() *
-        AudioProcessing::kChunkSizeMs / 1000;
+    const size_t samples_per_channel = static_cast<size_t>(
+        test->sample_rate() * AudioProcessing::kChunkSizeMs / 1000);
 
     Init(test->sample_rate(), test->sample_rate(), test->sample_rate(),
          num_input_channels, num_output_channels, num_render_channels, true);
@@ -2030,9 +2026,9 @@ TEST_F(ApmTest, Process) {
     OpenFileAndReadMessage(ref_filename_, &ref_data);
   } else {
     // Write the desired tests to the protobuf reference file.
-    for (size_t i = 0; i < kChannelsSize; i++) {
-      for (size_t j = 0; j < kChannelsSize; j++) {
-        for (size_t l = 0; l < kProcessSampleRatesSize; l++) {
+    for (size_t i = 0; i < arraysize(kChannels); i++) {
+      for (size_t j = 0; j < arraysize(kChannels); j++) {
+        for (size_t l = 0; l < arraysize(kProcessSampleRates); l++) {
           audioproc::Test* test = ref_data.add_test();
           test->set_num_reverse_channels(kChannels[i]);
           test->set_num_input_channels(kChannels[j]);
@@ -2259,12 +2255,11 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
     {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kMono},
     {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kStereo},
   };
-  size_t channel_format_size = sizeof(cf) / sizeof(*cf);
 
   rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
   // Enable one component just to ensure some processing takes place.
   ap->noise_suppression()->Enable(true);
-  for (size_t i = 0; i < channel_format_size; ++i) {
+  for (size_t i = 0; i < arraysize(cf); ++i) {
     const int in_rate = 44100;
     const int out_rate = 48000;
     ChannelBuffer<float> in_cb(SamplesFromRate(in_rate),
@@ -2291,7 +2286,7 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
 // error results to the supplied accumulators.
 void UpdateBestSNR(const float* ref,
                    const float* test,
-                   int length,
+                   size_t length,
                    int expected_delay,
                    double* variance_acc,
                    double* sq_error_acc) {
@@ -2303,7 +2298,7 @@ void UpdateBestSNR(const float* ref,
        ++delay) {
     double sq_error = 0;
     double variance = 0;
-    for (int i = 0; i < length - delay; ++i) {
+    for (size_t i = 0; i < length - delay; ++i) {
       double error = test[i + delay] - ref[i];
       sq_error += error * error;
       variance += ref[i] * ref[i];
@@ -2355,14 +2350,10 @@ class AudioProcessingTest
   static void SetUpTestCase() {
     // Create all needed output reference files.
     const int kNativeRates[] = {8000, 16000, 32000, 48000};
-    const size_t kNativeRatesSize =
-        sizeof(kNativeRates) / sizeof(*kNativeRates);
     const int kNumChannels[] = {1, 2};
-    const size_t kNumChannelsSize =
-        sizeof(kNumChannels) / sizeof(*kNumChannels);
-    for (size_t i = 0; i < kNativeRatesSize; ++i) {
-      for (size_t j = 0; j < kNumChannelsSize; ++j) {
-        for (size_t k = 0; k < kNumChannelsSize; ++k) {
+    for (size_t i = 0; i < arraysize(kNativeRates); ++i) {
+      for (size_t j = 0; j < arraysize(kNumChannels); ++j) {
+        for (size_t k = 0; k < arraysize(kNumChannels); ++k) {
           // The reference files always have matching input and output channels.
           ProcessFormat(kNativeRates[i], kNativeRates[i], kNativeRates[i],
                         kNativeRates[i], kNumChannels[j], kNumChannels[j],
@@ -2461,18 +2452,19 @@ class AudioProcessingTest
       // Dump forward output to file.
       Interleave(out_cb.channels(), out_cb.num_frames(), out_cb.num_channels(),
                  float_data.get());
-      int out_length = out_cb.num_channels() * out_cb.num_frames();
+      size_t out_length = out_cb.num_channels() * out_cb.num_frames();
 
-      ASSERT_EQ(static_cast<size_t>(out_length),
+      ASSERT_EQ(out_length,
                 fwrite(float_data.get(), sizeof(float_data[0]),
                        out_length, out_file));
 
       // Dump reverse output to file.
       Interleave(rev_out_cb.channels(), rev_out_cb.num_frames(),
                  rev_out_cb.num_channels(), float_data.get());
-      int rev_out_length = rev_out_cb.num_channels() * rev_out_cb.num_frames();
+      size_t rev_out_length =
+          rev_out_cb.num_channels() * rev_out_cb.num_frames();
 
-      ASSERT_EQ(static_cast<size_t>(rev_out_length),
+      ASSERT_EQ(rev_out_length,
                 fwrite(float_data.get(), sizeof(float_data[0]), rev_out_length,
                        rev_out_file));
 
@@ -2508,9 +2500,8 @@ TEST_P(AudioProcessingTest, Formats) {
       {2, 2, 1, 1},
       {2, 2, 2, 2},
   };
-  size_t channel_format_size = sizeof(cf) / sizeof(*cf);
 
-  for (size_t i = 0; i < channel_format_size; ++i) {
+  for (size_t i = 0; i < arraysize(cf); ++i) {
     ProcessFormat(input_rate_, output_rate_, reverse_input_rate_,
                   reverse_output_rate_, cf[i].num_input, cf[i].num_output,
                   cf[i].num_reverse_input, cf[i].num_reverse_output, "out");
@@ -2560,8 +2551,8 @@ TEST_P(AudioProcessingTest, Formats) {
       ASSERT_TRUE(out_file != NULL);
       ASSERT_TRUE(ref_file != NULL);
 
-      const int ref_length = SamplesFromRate(ref_rate) * out_num;
-      const int out_length = SamplesFromRate(out_rate) * out_num;
+      const size_t ref_length = SamplesFromRate(ref_rate) * out_num;
+      const size_t out_length = SamplesFromRate(out_rate) * out_num;
       // Data from the reference file.
       rtc::scoped_ptr<float[]> ref_data(new float[ref_length]);
       // Data from the output file.
@@ -2601,8 +2592,9 @@ TEST_P(AudioProcessingTest, Formats) {
         if (out_rate != ref_rate) {
           // Resample the output back to its internal processing rate if
           // necssary.
-          ASSERT_EQ(ref_length, resampler.Resample(out_ptr, out_length,
-                                                   cmp_data.get(), ref_length));
+          ASSERT_EQ(ref_length,
+                    static_cast<size_t>(resampler.Resample(
+                        out_ptr, out_length, cmp_data.get(), ref_length)));
           out_ptr = cmp_data.get();
         }
 

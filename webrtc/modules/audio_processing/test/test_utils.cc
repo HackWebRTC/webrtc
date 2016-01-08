@@ -75,7 +75,7 @@ void WriteIntData(const int16_t* data,
 }
 
 void WriteFloatData(const float* const* data,
-                    int samples_per_channel,
+                    size_t samples_per_channel,
                     int num_channels,
                     WavWriter* wav_file,
                     RawFile* raw_file) {
@@ -105,8 +105,8 @@ FILE* OpenFile(const std::string& filename, const char* mode) {
   return file;
 }
 
-int SamplesFromRate(int rate) {
-  return AudioProcessing::kChunkSizeMs * rate / 1000;
+size_t SamplesFromRate(int rate) {
+  return static_cast<size_t>(AudioProcessing::kChunkSizeMs * rate / 1000);
 }
 
 void SetFrameSampleRate(AudioFrame* frame,

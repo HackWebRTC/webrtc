@@ -147,8 +147,8 @@ void EchoControlMobileImpl::ReadQueuedRenderData() {
 
   while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
     size_t handle_index = 0;
-    int buffer_index = 0;
-    const int num_frames_per_band =
+    size_t buffer_index = 0;
+    const size_t num_frames_per_band =
         capture_queue_buffer_.size() /
         (apm_->num_output_channels() * apm_->num_reverse_channels());
     for (int i = 0; i < apm_->num_output_channels(); i++) {
@@ -396,8 +396,7 @@ int EchoControlMobileImpl::ConfigureHandle(void* handle) const {
 
 int EchoControlMobileImpl::num_handles_required() const {
   // Not locked as it only relies on APM public API which is threadsafe.
-  return apm_->num_output_channels() *
-         apm_->num_reverse_channels();
+  return apm_->num_output_channels() * apm_->num_reverse_channels();
 }
 
 int EchoControlMobileImpl::GetHandleError(void* handle) const {

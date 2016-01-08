@@ -23,8 +23,10 @@ AudioCodecSpeedTest::AudioCodecSpeedTest(int block_duration_ms,
     : block_duration_ms_(block_duration_ms),
       input_sampling_khz_(input_sampling_khz),
       output_sampling_khz_(output_sampling_khz),
-      input_length_sample_(block_duration_ms_ * input_sampling_khz_),
-      output_length_sample_(block_duration_ms_ * output_sampling_khz_),
+      input_length_sample_(
+          static_cast<size_t>(block_duration_ms_ * input_sampling_khz_)),
+      output_length_sample_(
+          static_cast<size_t>(block_duration_ms_ * output_sampling_khz_)),
       data_pointer_(0),
       loop_length_samples_(0),
       max_bytes_(0),
@@ -65,8 +67,7 @@ void AudioCodecSpeedTest::SetUp() {
   memcpy(&in_data_[loop_length_samples_], &in_data_[0],
          input_length_sample_ * channels_ * sizeof(int16_t));
 
-  max_bytes_ =
-      static_cast<size_t>(input_length_sample_ * channels_ * sizeof(int16_t));
+  max_bytes_ = input_length_sample_ * channels_ * sizeof(int16_t);
   out_data_.reset(new int16_t[output_length_sample_ * channels_]);
   bit_stream_.reset(new uint8_t[max_bytes_]);
 

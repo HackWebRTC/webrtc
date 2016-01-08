@@ -35,8 +35,8 @@ enum WavFormat {
 bool CheckWavParameters(int num_channels,
                         int sample_rate,
                         WavFormat format,
-                        int bytes_per_sample,
-                        uint32_t num_samples);
+                        size_t bytes_per_sample,
+                        size_t num_samples);
 
 // Write a kWavHeaderSize bytes long WAV header to buf. The payload that
 // follows the header is supposed to have the specified number of interleaved
@@ -46,8 +46,8 @@ void WriteWavHeader(uint8_t* buf,
                     int num_channels,
                     int sample_rate,
                     WavFormat format,
-                    int bytes_per_sample,
-                    uint32_t num_samples);
+                    size_t bytes_per_sample,
+                    size_t num_samples);
 
 // Read a WAV header from an implemented ReadableWav and parse the values into
 // the provided output parameters. ReadableWav is used because the header can
@@ -56,8 +56,8 @@ bool ReadWavHeader(ReadableWav* readable,
                    int* num_channels,
                    int* sample_rate,
                    WavFormat* format,
-                   int* bytes_per_sample,
-                   uint32_t* num_samples);
+                   size_t* bytes_per_sample,
+                   size_t* num_samples);
 
 }  // namespace webrtc
 

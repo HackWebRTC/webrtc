@@ -19,7 +19,7 @@ namespace webrtc {
 
 using std::complex;
 
-const int RealFourier::kFftBufferAlignment = 32;
+const size_t RealFourier::kFftBufferAlignment = 32;
 
 rtc::scoped_ptr<RealFourier> RealFourier::Create(int fft_order) {
 #if defined(RTC_USE_OPENMAX_DL)
