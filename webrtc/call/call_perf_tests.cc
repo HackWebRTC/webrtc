@@ -384,8 +384,12 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
   class CaptureNtpTimeObserver : public test::EndToEndTest,
                                  public VideoRenderer {
    public:
-    CaptureNtpTimeObserver(int threshold_ms, int start_time_ms, int run_time_ms)
+    CaptureNtpTimeObserver(const FakeNetworkPipe::Config& net_config,
+                           int threshold_ms,
+                           int start_time_ms,
+                           int run_time_ms)
         : EndToEndTest(kLongTimeoutMs),
+          net_config_(net_config),
           clock_(Clock::GetRealTimeClock()),
           threshold_ms_(threshold_ms),
           start_time_ms_(start_time_ms),
@@ -396,6 +400,11 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
           rtp_start_timestamp_(0) {}
 
    private:
+    test::PacketTransport* CreateSendTransport(Call* sender_call) override {
+      return new test::PacketTransport(
+          sender_call, this, test::PacketTransport::kSender, net_config_);
+    }
+
     void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       rtc::CritScope lock(&crit_);
@@ -480,6 +489,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
     }
 
     rtc::CriticalSection crit_;
+    const FakeNetworkPipe::Config net_config_;
     Clock* const clock_;
     int threshold_ms_;
     int start_time_ms_;
@@ -490,9 +500,9 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
     uint32_t rtp_start_timestamp_;
     typedef std::map<uint32_t, uint32_t> FrameCaptureTimeList;
     FrameCaptureTimeList capture_time_list_ GUARDED_BY(&crit_);
-  } test(threshold_ms, start_time_ms, run_time_ms);
+  } test(net_config, threshold_ms, start_time_ms, run_time_ms);
 
-  RunBaseTest(&test, net_config);
+  RunBaseTest(&test);
 }
 
 TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkDelay) {
@@ -548,7 +558,7 @@ void CallPerfTest::TestCpuOveruse(LoadObserver::Load tested_load,
     test::DelayedEncoder encoder_;
   } test(tested_load, encode_delay_ms);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(CallPerfTest, ReceivesCpuUnderuse) {
@@ -642,7 +652,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
   } test(pad_to_min_bitrate);
 
   fake_encoder_.SetMaxBitrate(kMaxEncodeBitrateKbps);
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(CallPerfTest, PadsToMinTransmitBitrate) { TestMinTransmitBitrate(true); }
@@ -738,7 +748,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
     VideoEncoderConfig encoder_config_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 }  // namespace webrtc

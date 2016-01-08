@@ -39,8 +39,7 @@ CallTest::CallTest()
 CallTest::~CallTest() {
 }
 
-void CallTest::RunBaseTest(BaseTest* test,
-                           const FakeNetworkPipe::Config& config) {
+void CallTest::RunBaseTest(BaseTest* test) {
   num_video_streams_ = test->GetNumVideoStreams();
   num_audio_streams_ = test->GetNumAudioStreams();
   RTC_DCHECK(num_video_streams_ > 0 || num_audio_streams_ > 0);
@@ -61,11 +60,8 @@ void CallTest::RunBaseTest(BaseTest* test,
     }
     CreateReceiverCall(recv_config);
   }
-  send_transport_.reset(new PacketTransport(
-      sender_call_.get(), test, test::PacketTransport::kSender, config));
-  receive_transport_.reset(new PacketTransport(
-      nullptr, test, test::PacketTransport::kReceiver, config));
-  test->OnTransportsCreated(send_transport_.get(), receive_transport_.get());
+  send_transport_.reset(test->CreateSendTransport(sender_call_.get()));
+  receive_transport_.reset(test->CreateReceiveTransport());
   test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
 
   if (test->ShouldCreateReceivers()) {
@@ -384,8 +380,15 @@ Call::Config BaseTest::GetReceiverCallConfig() {
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 }
 
-void BaseTest::OnTransportsCreated(PacketTransport* send_transport,
-                                   PacketTransport* receive_transport) {}
+test::PacketTransport* BaseTest::CreateSendTransport(Call* sender_call) {
+  return new PacketTransport(sender_call, this, test::PacketTransport::kSender,
+                             FakeNetworkPipe::Config());
+}
+
+test::PacketTransport* BaseTest::CreateReceiveTransport() {
+  return new PacketTransport(nullptr, this, test::PacketTransport::kReceiver,
+                             FakeNetworkPipe::Config());
+}
 
 size_t BaseTest::GetNumVideoStreams() const {
   return 1;

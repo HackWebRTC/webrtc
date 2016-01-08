@@ -283,7 +283,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
     int frame_counter_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
@@ -336,7 +336,7 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
     int frame_counter_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
@@ -364,7 +364,7 @@ TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
     }
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
@@ -454,7 +454,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
     int nacks_left_ GUARDED_BY(&crit_);
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, CanReceiveFec) {
@@ -555,7 +555,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
     std::set<uint32_t> protected_timestamps_ GUARDED_BY(crit_);
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 // Flacky on all platforms. See webrtc:4328.
@@ -637,6 +637,16 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
       return SEND_PACKET;
     }
 
+    test::PacketTransport* CreateSendTransport(Call* sender_call) override {
+      // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
+      // Configure some network delay.
+      const int kNetworkDelayMs = 50;
+      FakeNetworkPipe::Config config;
+      config.queue_delay_ms = kNetworkDelayMs;
+      return new test::PacketTransport(sender_call, this,
+                                       test::PacketTransport::kSender, config);
+    }
+
     // TODO(holmer): Investigate why we don't send FEC packets when the bitrate
     // is 10 kbps.
     Call::Config GetSenderCallConfig() override {
@@ -677,12 +687,7 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
     uint16_t last_sequence_number_;
   } test;
 
-  // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
-  // Configure some network delay.
-  const int kNetworkDelayMs = 50;
-  FakeNetworkPipe::Config config;
-  config.queue_delay_ms = kNetworkDelayMs;
-  RunBaseTest(&test, config);
+  RunBaseTest(&test);
 }
 
 // This test drops second RTP packet with a marker bit set, makes sure it's
@@ -791,7 +796,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
     bool frame_retransmitted_;
   } test(use_rtx, use_red);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, DecodesRetransmittedFrame) {
@@ -1001,7 +1006,7 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
     bool received_pli_ GUARDED_BY(&crit_);
   } test(rtp_history_ms);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, ReceivesPliAndRecoversWithNack) {
@@ -1149,7 +1154,7 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
     int sent_rtcp_;
   } test(rtcp_mode);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, UsesRtcpCompoundMode) {
@@ -1726,7 +1731,7 @@ TEST_F(EndToEndTest, ReceiveStreamSendsRemb) {
     }
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, VerifyBandwidthStats) {
@@ -1766,7 +1771,7 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
     bool has_seen_pacer_delay_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, VerifyNackStats) {
@@ -1870,7 +1875,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
   } test;
 
   test::ClearHistograms();
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.UniqueNackRequestsSentInPercent"));
@@ -1966,7 +1971,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
   } test(use_rtx, use_red, screenshare);
 
   test::ClearHistograms();
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 
   // Delete the call for Call stats to be reported.
   sender_call_.reset();
@@ -2188,7 +2193,7 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
     int sent_rtcp_dlrr_;
   } test(enable_rrtr);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
@@ -2287,7 +2292,7 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
     VideoEncoderConfig video_encoder_config_all_streams_;
   } test(kVideoSendSsrcs, num_ssrcs, send_single_ssrc_first);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, ReportsSetEncoderRates) {
@@ -2348,7 +2353,7 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
     uint32_t bitrate_kbps_ GUARDED_BY(crit_);
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, GetStats) {
@@ -2528,6 +2533,13 @@ TEST_F(EndToEndTest, GetStats) {
       return true;
     }
 
+    test::PacketTransport* CreateSendTransport(Call* sender_call) override {
+      FakeNetworkPipe::Config network_config;
+      network_config.loss_percent = 5;
+      return new test::PacketTransport(
+          sender_call, this, test::PacketTransport::kSender, network_config);
+    }
+
     Call::Config GetSenderCallConfig() override {
       Call::Config config = EndToEndTest::GetSenderCallConfig();
       config.bitrate_config.start_bitrate_bps = kStartBitrateBps;
@@ -2614,9 +2626,7 @@ TEST_F(EndToEndTest, GetStats) {
     rtc::Event check_stats_event_;
   } test;
 
-  FakeNetworkPipe::Config network_config;
-  network_config.loss_percent = 5;
-  RunBaseTest(&test, network_config);
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, ReceiverReferenceTimeReportEnabled) {
@@ -2664,7 +2674,7 @@ TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
     uint32_t sent_rtp_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, SendsSetSsrc) { TestSendsSetSsrcs(1, false); }
@@ -2745,7 +2755,7 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
     std::map<uint32_t, bool> registered_rtx_ssrc_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
@@ -3110,7 +3120,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     int down_frames_ GUARDED_BY(test_crit_);
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, CallReportsRttForSender) {
@@ -3317,6 +3327,6 @@ TEST_F(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
     std::set<int64_t> received_packet_ids_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 }  // namespace webrtc

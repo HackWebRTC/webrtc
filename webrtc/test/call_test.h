@@ -58,7 +58,7 @@ class CallTest : public ::testing::Test {
   // RunBaseTest overwrites the audio_state and the voice_engine of the send and
   // receive Call configs to simplify test code and avoid having old VoiceEngine
   // APIs in the tests.
-  void RunBaseTest(BaseTest* test, const FakeNetworkPipe::Config& config);
+  void RunBaseTest(BaseTest* test);
 
   void CreateCalls(const Call::Config& sender_config,
                    const Call::Config& receiver_config);
@@ -151,8 +151,9 @@ class BaseTest : public RtpRtcpObserver {
   virtual Call::Config GetSenderCallConfig();
   virtual Call::Config GetReceiverCallConfig();
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
-  virtual void OnTransportsCreated(PacketTransport* send_transport,
-                                   PacketTransport* receive_transport);
+
+  virtual test::PacketTransport* CreateSendTransport(Call* sender_call);
+  virtual test::PacketTransport* CreateReceiveTransport();
 
   virtual void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,

@@ -123,7 +123,7 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
     }
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
@@ -161,7 +161,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
     }
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
@@ -206,7 +206,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
     test::DelayedEncoder encoder_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
@@ -250,7 +250,7 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
     test::FakeEncoder encoder_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 class FakeReceiveStatistics : public NullReceiveStatistics {
@@ -423,13 +423,13 @@ class FecObserver : public test::SendTest {
 TEST_F(VideoSendStreamTest, SupportsFecWithExtensions) {
   FecObserver test(true);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsFecWithoutExtensions) {
   FecObserver test(false);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 void VideoSendStreamTest::TestNackRetransmission(
@@ -512,7 +512,7 @@ void VideoSendStreamTest::TestNackRetransmission(
     int nacked_sequence_number_;
   } test(retransmit_ssrc, retransmit_payload_type);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, RetransmitsNack) {
@@ -723,7 +723,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
   FrameFragmentationTest test(
       kMaxPacketSize, start, stop, format == kGeneric, with_fec);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 // TODO(sprang): Is there any way of speeding up these tests?
@@ -893,7 +893,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     int high_remb_bps_ GUARDED_BY(crit_);
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
@@ -935,12 +935,13 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
       return SEND_PACKET;
     }
 
-    void OnTransportsCreated(
-        test::PacketTransport* send_transport,
-        test::PacketTransport* receive_transport) override {
-      transport_adapter_.reset(
-          new internal::TransportAdapter(receive_transport));
+    test::PacketTransport* CreateReceiveTransport() override {
+      test::PacketTransport* transport = new test::PacketTransport(
+          nullptr, this, test::PacketTransport::kReceiver,
+          FakeNetworkPipe::Config());
+      transport_adapter_.reset(new internal::TransportAdapter(transport));
       transport_adapter_->Enable();
+      return transport;
     }
 
     size_t GetNumVideoStreams() const override { return 3; }
@@ -963,7 +964,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
     test::FrameGeneratorCapturer* capturer_ GUARDED_BY(crit_);
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 // This test first observes "high" bitrate use at which point it sends a REMB to
@@ -1051,7 +1052,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
     bool bitrate_capped_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
@@ -1360,7 +1361,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
     VideoEncoderConfig encoder_config_;
   } test_encoder;
 
-  RunBaseTest(&test_encoder, FakeNetworkPipe::Config());
+  RunBaseTest(&test_encoder);
 
   EXPECT_TRUE(test_encoder.IsReleased());
   EXPECT_EQ(1u, test_encoder.num_releases());
@@ -1419,7 +1420,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
     VideoEncoderConfig encoder_config_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 static const size_t kVideoCodecConfigObserverNumberOfTemporalLayers = 4;
@@ -1547,17 +1548,17 @@ void VideoCodecConfigObserver<VideoCodecVP9>::VerifyCodecSpecifics(
 
 TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
   VideoCodecConfigObserver<VideoCodecVP8> test(kVideoCodecVP8, "VP8");
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp9Config) {
   VideoCodecConfigObserver<VideoCodecVP9> test(kVideoCodecVP9, "VP9");
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, EncoderSetupPropagatesH264Config) {
   VideoCodecConfigObserver<VideoCodecH264> test(kVideoCodecH264, "H264");
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
@@ -1609,7 +1610,7 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
     size_t media_bytes_sent_ GUARDED_BY(&crit_);
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
@@ -1650,7 +1651,7 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
     }
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 // Disabled on LinuxAsan:
@@ -1768,7 +1769,7 @@ TEST_F(VideoSendStreamTest,
     webrtc::VideoEncoderConfig encoder_config_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, ReportsSentResolution) {
@@ -1848,7 +1849,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
     VideoSendStream* send_stream_;
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 class Vp9HeaderObserver : public test::SendTest {
@@ -2208,7 +2209,7 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
     const bool l_field_;
   } test(num_temporal_layers, num_spatial_layers);
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 
 #if !defined(MEMORY_SANITIZER)
@@ -2236,7 +2237,7 @@ TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
     }
   } test;
 
-  RunBaseTest(&test, FakeNetworkPipe::Config());
+  RunBaseTest(&test);
 }
 #endif
 
