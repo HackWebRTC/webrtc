@@ -153,6 +153,7 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
 int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
                         size_t* samples_per_channel, int* num_channels,
                         NetEqOutputType* type) {
+  TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   CriticalSectionScoped lock(crit_sect_.get());
   int error = GetAudioInternal(max_length, output_audio, samples_per_channel,
                                num_channels);
