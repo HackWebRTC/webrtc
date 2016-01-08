@@ -143,22 +143,6 @@ static bool factory_static_initialized = false;
 static bool video_hw_acceleration_enabled = true;
 #endif
 
-extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
-  jint ret = InitGlobalJniVariables(jvm);
-  if (ret < 0)
-    return -1;
-
-  RTC_CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
-  LoadGlobalClassReferenceHolder();
-
-  return ret;
-}
-
-extern "C" void JNIEXPORT JNICALL JNI_OnUnLoad(JavaVM *jvm, void *reserved) {
-  FreeGlobalClassReferenceHolder();
-  RTC_CHECK(rtc::CleanupSSL()) << "Failed to CleanupSSL()";
-}
-
 // Return the (singleton) Java Enum object corresponding to |index|;
 // |state_class_fragment| is something like "MediaSource$State".
 static jobject JavaEnumFromIndex(
