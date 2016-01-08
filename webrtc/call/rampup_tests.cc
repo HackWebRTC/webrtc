@@ -414,6 +414,9 @@ TEST_F(RampUpTest, SingleStreamWithHighStartBitrate) {
   RunBaseTest(&test);
 }
 
+// Disabled on Mac due to flakiness, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5407
+#ifndef WEBRTC_MAC
 TEST_F(RampUpTest, UpDownUpOneStream) {
   RampUpDownUpTester test(1, 60000, RtpExtension::kAbsSendTime, false, false);
   RunBaseTest(&test);
@@ -443,6 +446,7 @@ TEST_F(RampUpTest, UpDownUpThreeStreamsByRedRtx) {
   RampUpDownUpTester test(3, 60000, RtpExtension::kAbsSendTime, true, true);
   RunBaseTest(&test);
 }
+#endif
 
 TEST_F(RampUpTest, AbsSendTimeSingleStream) {
   RampUpTester test(1, 0, 0, RtpExtension::kAbsSendTime, false, false);
