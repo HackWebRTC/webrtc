@@ -149,7 +149,8 @@ AudioDeviceMac::AudioDeviceMac(const int32_t id) :
     _paRenderBuffer(NULL),
     _captureBufSizeSamples(0),
     _renderBufSizeSamples(0),
-    prev_key_state_()
+    prev_key_state_(),
+    get_mic_volume_counter_ms_(0)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,
                  "%s created", __FUNCTION__);
@@ -378,6 +379,8 @@ int32_t AudioDeviceMac::Init()
     _playError = 0;
     _recWarning = 0;
     _recError = 0;
+
+    get_mic_volume_counter_ms_ = 0;
 
     _initialized = true;
 
@@ -3181,12 +3184,17 @@ bool AudioDeviceMac::CaptureWorkerThread()
 
         if (AGC())
         {
-            // store current mic level in the audio buffer if AGC is enabled
-            if (MicrophoneVolume(currentMicLevel) == 0)
-            {
-                // this call does not affect the actual microphone volume
-                _ptrAudioBuffer->SetCurrentMicLevel(currentMicLevel);
+            // Use mod to ensure we check the volume on the first pass.
+            if (get_mic_volume_counter_ms_ % kGetMicVolumeIntervalMs == 0) {
+                get_mic_volume_counter_ms_ = 0;
+                // store current mic level in the audio buffer if AGC is enabled
+                if (MicrophoneVolume(currentMicLevel) == 0)
+                {
+                    // this call does not affect the actual microphone volume
+                    _ptrAudioBuffer->SetCurrentMicLevel(currentMicLevel);
+                }
             }
+            get_mic_volume_counter_ms_ += kBufferSizeMs;
         }
 
         _ptrAudioBuffer->SetVQEData(msecOnPlaySide, msecOnRecordSide, 0);

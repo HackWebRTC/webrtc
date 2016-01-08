@@ -38,19 +38,25 @@ const uint32_t N_REC_CHANNELS = 1; // default is mono recording
 const uint32_t N_PLAY_CHANNELS = 2; // default is stereo playout
 const uint32_t N_DEVICE_CHANNELS = 64;
 
-const uint32_t ENGINE_REC_BUF_SIZE_IN_SAMPLES = (N_REC_SAMPLES_PER_SEC / 100);
-const uint32_t ENGINE_PLAY_BUF_SIZE_IN_SAMPLES = (N_PLAY_SAMPLES_PER_SEC / 100);
+const int kBufferSizeMs = 10;
+
+const uint32_t ENGINE_REC_BUF_SIZE_IN_SAMPLES =
+    N_REC_SAMPLES_PER_SEC * kBufferSizeMs / 1000;
+const uint32_t ENGINE_PLAY_BUF_SIZE_IN_SAMPLES =
+    N_PLAY_SAMPLES_PER_SEC * kBufferSizeMs / 1000;
 
 const int N_BLOCKS_IO = 2;
 const int N_BUFFERS_IN = 2;  // Must be at least N_BLOCKS_IO.
 const int N_BUFFERS_OUT = 3;  // Must be at least N_BLOCKS_IO.
 
-const uint32_t TIMER_PERIOD_MS = (2 * 10 * N_BLOCKS_IO * 1000000);
+const uint32_t TIMER_PERIOD_MS = 2 * 10 * N_BLOCKS_IO * 1000000;
 
 const uint32_t REC_BUF_SIZE_IN_SAMPLES =
     ENGINE_REC_BUF_SIZE_IN_SAMPLES * N_DEVICE_CHANNELS * N_BUFFERS_IN;
 const uint32_t PLAY_BUF_SIZE_IN_SAMPLES =
     ENGINE_PLAY_BUF_SIZE_IN_SAMPLES * N_PLAY_CHANNELS * N_BUFFERS_OUT;
+
+const int kGetMicVolumeIntervalMs = 1000;
 
 class AudioDeviceMac: public AudioDeviceGeneric
 {
@@ -372,6 +378,8 @@ private:
     // Typing detection
     // 0x5c is key "9", after that comes function keys.
     bool prev_key_state_[0x5d];
+
+    int get_mic_volume_counter_ms_;
 };
 
 }  // namespace webrtc
