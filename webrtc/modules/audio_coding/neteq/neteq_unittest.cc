@@ -524,8 +524,8 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
 #define MAYBE_TestBitExactness DISABLED_TestBitExactness
 #endif
 TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
-  const std::string input_rtp_file = webrtc::test::ProjectRootPath() +
-      "resources/audio_coding/neteq_universal_new.rtp";
+  const std::string input_rtp_file =
+      webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
   // Note that neteq4_universal_ref.pcm and neteq4_universal_ref_win_32.pcm
   // are identical. The latter could have been removed, but if clients still
   // have a copy of the file, the test will fail.
