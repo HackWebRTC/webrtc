@@ -162,7 +162,6 @@ void SendStatisticsProxy::SetContentType(
     VideoEncoderConfig::ContentType content_type) {
   rtc::CritScope lock(&crit_);
   if (content_type_ != content_type) {
-    uma_container_->UpdateHistograms();
     uma_container_.reset(new UmaSamplesContainer(GetUmaPrefix(content_type)));
     content_type_ = content_type;
   }
