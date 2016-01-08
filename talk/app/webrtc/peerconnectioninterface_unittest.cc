@@ -2323,7 +2323,9 @@ TEST(CreateSessionOptionsTest, GetDefaultMediaSessionOptionsForOffer) {
   EXPECT_FALSE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
   EXPECT_TRUE(options.vad_enabled);
-  EXPECT_FALSE(options.transport_options.ice_restart);
+  EXPECT_FALSE(options.audio_transport_options.ice_restart);
+  EXPECT_FALSE(options.video_transport_options.ice_restart);
+  EXPECT_FALSE(options.data_transport_options.ice_restart);
 }
 
 // Test that a correct MediaSessionOptions is created for an offer if
@@ -2358,18 +2360,22 @@ TEST(CreateSessionOptionsTest,
 
 // Test that a correct MediaSessionOptions is created to restart ice if
 // IceRestart is set. It also tests that subsequent MediaSessionOptions don't
-// have |transport_options.ice_restart| set.
+// have |audio_transport_options.ice_restart| etc. set.
 TEST(CreateSessionOptionsTest, GetMediaSessionOptionsForOfferWithIceRestart) {
   RTCOfferAnswerOptions rtc_options;
   rtc_options.ice_restart = true;
 
   cricket::MediaSessionOptions options;
   EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
-  EXPECT_TRUE(options.transport_options.ice_restart);
+  EXPECT_TRUE(options.audio_transport_options.ice_restart);
+  EXPECT_TRUE(options.video_transport_options.ice_restart);
+  EXPECT_TRUE(options.data_transport_options.ice_restart);
 
   rtc_options = RTCOfferAnswerOptions();
   EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
-  EXPECT_FALSE(options.transport_options.ice_restart);
+  EXPECT_FALSE(options.audio_transport_options.ice_restart);
+  EXPECT_FALSE(options.video_transport_options.ice_restart);
+  EXPECT_FALSE(options.data_transport_options.ice_restart);
 }
 
 // Test that the MediaConstraints in an answer don't affect if audio and video

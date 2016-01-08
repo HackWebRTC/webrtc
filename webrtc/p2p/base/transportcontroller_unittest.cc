@@ -262,7 +262,8 @@ TEST_F(TransportControllerTest, TestGetSslRole) {
   ASSERT_NE(nullptr, channel);
   ASSERT_TRUE(channel->SetSslRole(rtc::SSL_CLIENT));
   rtc::SSLRole role;
-  EXPECT_TRUE(transport_controller_->GetSslRole(&role));
+  EXPECT_FALSE(transport_controller_->GetSslRole("video", &role));
+  EXPECT_TRUE(transport_controller_->GetSslRole("audio", &role));
   EXPECT_EQ(rtc::SSL_CLIENT, role);
 }
 

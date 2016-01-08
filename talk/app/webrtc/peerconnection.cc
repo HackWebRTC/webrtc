@@ -461,7 +461,11 @@ bool ConvertRtcOptionsForOffer(
   }
 
   session_options->vad_enabled = rtc_options.voice_activity_detection;
-  session_options->transport_options.ice_restart = rtc_options.ice_restart;
+  session_options->audio_transport_options.ice_restart =
+      rtc_options.ice_restart;
+  session_options->video_transport_options.ice_restart =
+      rtc_options.ice_restart;
+  session_options->data_transport_options.ice_restart = rtc_options.ice_restart;
   session_options->bundle_enabled = rtc_options.use_rtp_mux;
 
   return true;
@@ -507,10 +511,14 @@ bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
 
   if (FindConstraint(constraints, MediaConstraintsInterface::kIceRestart,
                      &value, &mandatory_constraints_satisfied)) {
-    session_options->transport_options.ice_restart = value;
+    session_options->audio_transport_options.ice_restart = value;
+    session_options->video_transport_options.ice_restart = value;
+    session_options->data_transport_options.ice_restart = value;
   } else {
     // kIceRestart defaults to false according to spec.
-    session_options->transport_options.ice_restart = false;
+    session_options->audio_transport_options.ice_restart = false;
+    session_options->video_transport_options.ice_restart = false;
+    session_options->data_transport_options.ice_restart = false;
   }
 
   if (!constraints) {
@@ -962,7 +970,7 @@ void PeerConnection::SetLocalDescription(
   // SCTP sids.
   rtc::SSLRole role;
   if (session_->data_channel_type() == cricket::DCT_SCTP &&
-      session_->GetSslRole(&role)) {
+      session_->GetSslRole(session_->data_channel(), &role)) {
     AllocateSctpSids(role);
   }
 
@@ -1040,7 +1048,7 @@ void PeerConnection::SetRemoteDescription(
   // SCTP sids.
   rtc::SSLRole role;
   if (session_->data_channel_type() == cricket::DCT_SCTP &&
-      session_->GetSslRole(&role)) {
+      session_->GetSslRole(session_->data_channel(), &role)) {
     AllocateSctpSids(role);
   }
 
@@ -1833,7 +1841,7 @@ rtc::scoped_refptr<DataChannel> PeerConnection::InternalCreateDataChannel(
   if (session_->data_channel_type() == cricket::DCT_SCTP) {
     if (new_config.id < 0) {
       rtc::SSLRole role;
-      if (session_->GetSslRole(&role) &&
+      if ((session_->GetSslRole(session_->data_channel(), &role)) &&
           !sid_allocator_.AllocateSid(role, &new_config.id)) {
         LOG(LS_ERROR) << "No id can be allocated for the SCTP data channel.";
         return nullptr;

@@ -549,8 +549,8 @@ static bool AddStreamParams(
 
 // Updates the transport infos of the |sdesc| according to the given
 // |bundle_group|. The transport infos of the content names within the
-// |bundle_group| should be updated to use the ufrag and pwd of the first
-// content within the |bundle_group|.
+// |bundle_group| should be updated to use the ufrag, pwd and DTLS role of the
+// first content within the |bundle_group|.
 static bool UpdateTransportInfoForBundle(const ContentGroup& bundle_group,
                                          SessionDescription* sdesc) {
   // The bundle should not be empty.
@@ -571,6 +571,8 @@ static bool UpdateTransportInfoForBundle(const ContentGroup& bundle_group,
       selected_transport_info->description.ice_ufrag;
   const std::string& selected_pwd =
       selected_transport_info->description.ice_pwd;
+  ConnectionRole selected_connection_role =
+      selected_transport_info->description.connection_role;
   for (TransportInfos::iterator it =
            sdesc->transport_infos().begin();
        it != sdesc->transport_infos().end(); ++it) {
@@ -578,6 +580,7 @@ static bool UpdateTransportInfoForBundle(const ContentGroup& bundle_group,
         it->content_name != selected_content_name) {
       it->description.ice_ufrag = selected_ufrag;
       it->description.ice_pwd = selected_pwd;
+      it->description.connection_role = selected_connection_role;
     }
   }
   return true;
@@ -1600,7 +1603,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   }
 
   desc->AddContent(content_name, NS_JINGLE_RTP, audio.release());
-  if (!AddTransportOffer(content_name, options.transport_options,
+  if (!AddTransportOffer(content_name, options.audio_transport_options,
                          current_description, desc)) {
     return false;
   }
@@ -1660,7 +1663,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
   }
 
   desc->AddContent(content_name, NS_JINGLE_RTP, video.release());
-  if (!AddTransportOffer(content_name, options.transport_options,
+  if (!AddTransportOffer(content_name, options.video_transport_options,
                          current_description, desc)) {
     return false;
   }
@@ -1724,7 +1727,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     SetMediaProtocol(secure_transport, data.get());
     desc->AddContent(content_name, NS_JINGLE_RTP, data.release());
   }
-  if (!AddTransportOffer(content_name, options.transport_options,
+  if (!AddTransportOffer(content_name, options.data_transport_options,
                          current_description, desc)) {
     return false;
   }
@@ -1739,10 +1742,9 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     SessionDescription* answer) const {
   const ContentInfo* audio_content = GetFirstAudioContent(offer);
 
-  scoped_ptr<TransportDescription> audio_transport(
-      CreateTransportAnswer(audio_content->name, offer,
-                            options.transport_options,
-                            current_description));
+  scoped_ptr<TransportDescription> audio_transport(CreateTransportAnswer(
+      audio_content->name, offer, options.audio_transport_options,
+      current_description));
   if (!audio_transport) {
     return false;
   }
@@ -1798,10 +1800,9 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
   const ContentInfo* video_content = GetFirstVideoContent(offer);
-  scoped_ptr<TransportDescription> video_transport(
-      CreateTransportAnswer(video_content->name, offer,
-                            options.transport_options,
-                            current_description));
+  scoped_ptr<TransportDescription> video_transport(CreateTransportAnswer(
+      video_content->name, offer, options.video_transport_options,
+      current_description));
   if (!video_transport) {
     return false;
   }
@@ -1854,10 +1855,9 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
   const ContentInfo* data_content = GetFirstDataContent(offer);
-  scoped_ptr<TransportDescription> data_transport(
-      CreateTransportAnswer(data_content->name, offer,
-                            options.transport_options,
-                            current_description));
+  scoped_ptr<TransportDescription> data_transport(CreateTransportAnswer(
+      data_content->name, offer, options.data_transport_options,
+      current_description));
   if (!data_transport) {
     return false;
   }

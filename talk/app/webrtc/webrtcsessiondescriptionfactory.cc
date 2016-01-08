@@ -392,7 +392,9 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
     return;
   }
   if (session_->local_description() &&
-      !request.options.transport_options.ice_restart) {
+      !request.options.audio_transport_options.ice_restart &&
+      !request.options.video_transport_options.ice_restart &&
+      !request.options.data_transport_options.ice_restart) {
     // Include all local ice candidates in the SessionDescription unless
     // the an ice restart has been requested.
     CopyCandidatesFromSessionDescription(session_->local_description(), offer);
@@ -405,12 +407,25 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   // According to http://tools.ietf.org/html/rfc5245#section-9.2.1.1
   // an answer should also contain new ice ufrag and password if an offer has
   // been received with new ufrag and password.
-  request.options.transport_options.ice_restart = session_->IceRestartPending();
+  request.options.audio_transport_options.ice_restart =
+      session_->IceRestartPending();
+  request.options.video_transport_options.ice_restart =
+      session_->IceRestartPending();
+  request.options.data_transport_options.ice_restart =
+      session_->IceRestartPending();
   // We should pass current ssl role to the transport description factory, if
   // there is already an existing ongoing session.
   rtc::SSLRole ssl_role;
-  if (session_->GetSslRole(&ssl_role)) {
-    request.options.transport_options.prefer_passive_role =
+  if (session_->GetSslRole(session_->voice_channel(), &ssl_role)) {
+    request.options.audio_transport_options.prefer_passive_role =
+        (rtc::SSL_SERVER == ssl_role);
+  }
+  if (session_->GetSslRole(session_->video_channel(), &ssl_role)) {
+    request.options.video_transport_options.prefer_passive_role =
+        (rtc::SSL_SERVER == ssl_role);
+  }
+  if (session_->GetSslRole(session_->data_channel(), &ssl_role)) {
+    request.options.data_transport_options.prefer_passive_role =
         (rtc::SSL_SERVER == ssl_role);
   }
 
@@ -439,7 +454,9 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
     return;
   }
   if (session_->local_description() &&
-      !request.options.transport_options.ice_restart) {
+      !request.options.audio_transport_options.ice_restart &&
+      !request.options.video_transport_options.ice_restart &&
+      !request.options.data_transport_options.ice_restart) {
     // Include all local ice candidates in the SessionDescription unless
     // the remote peer has requested an ice restart.
     CopyCandidatesFromSessionDescription(session_->local_description(), answer);

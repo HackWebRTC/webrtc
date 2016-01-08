@@ -134,6 +134,10 @@ struct MediaSessionOptions {
 
   bool HasSendMediaStream(MediaType type) const;
 
+  // TODO(deadbeef): Put all the audio/video/data-specific options into a map
+  // structure (content name -> options).
+  // MediaSessionDescriptionFactory assumes there will never be more than one
+  // audio/video/data content, but this will change with unified plan.
   bool recv_audio;
   bool recv_video;
   DataChannelType data_channel_type;
@@ -144,7 +148,9 @@ struct MediaSessionOptions {
   // bps. -1 == auto.
   int video_bandwidth;
   int data_bandwidth;
-  TransportOptions transport_options;
+  TransportOptions audio_transport_options;
+  TransportOptions video_transport_options;
+  TransportOptions data_transport_options;
 
   struct Stream {
     Stream(MediaType type,

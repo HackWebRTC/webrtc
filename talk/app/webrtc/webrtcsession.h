@@ -204,7 +204,11 @@ class WebRtcSession : public AudioProviderInterface,
   cricket::SecurePolicy SdesPolicy() const;
 
   // Get current ssl role from transport.
-  bool GetSslRole(rtc::SSLRole* role);
+  bool GetSslRole(const std::string& transport_name, rtc::SSLRole* role);
+
+  // Get current SSL role for this channel's transport.
+  // If |transport| is null, returns false.
+  bool GetSslRole(const cricket::BaseChannel* channel, rtc::SSLRole* role);
 
   void CreateOffer(
       CreateSessionDescriptionObserver* observer,

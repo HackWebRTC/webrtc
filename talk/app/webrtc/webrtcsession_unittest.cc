@@ -1957,6 +1957,67 @@ TEST_P(WebRtcSessionTest, TestCreateAnswerReceiveOfferWithoutEncryption) {
   SetLocalDescriptionWithoutError(answer);
 }
 
+// Test that we can create and set an answer correctly when different
+// SSL roles have been negotiated for different transports.
+// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4525
+TEST_P(WebRtcSessionTest, TestCreateAnswerWithDifferentSslRoles) {
+  SendAudioVideoStream1();
+  InitWithDtls(GetParam());
+  SetFactoryDtlsSrtp();
+
+  SessionDescriptionInterface* offer = CreateOffer();
+  SetLocalDescriptionWithoutError(offer);
+
+  cricket::MediaSessionOptions options;
+  options.recv_video = true;
+
+  // First, negotiate different SSL roles.
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(offer, options, cricket::SEC_DISABLED);
+  TransportInfo* audio_transport_info =
+      answer->description()->GetTransportInfoByName("audio");
+  audio_transport_info->description.connection_role =
+      cricket::CONNECTIONROLE_ACTIVE;
+  TransportInfo* video_transport_info =
+      answer->description()->GetTransportInfoByName("video");
+  video_transport_info->description.connection_role =
+      cricket::CONNECTIONROLE_PASSIVE;
+  SetRemoteDescriptionWithoutError(answer);
+
+  // Now create an offer in the reverse direction, and ensure the initial
+  // offerer responds with an answer with correct SSL roles.
+  offer = CreateRemoteOfferWithVersion(options, cricket::SEC_DISABLED,
+                                       kSessionVersion,
+                                       session_->remote_description());
+  SetRemoteDescriptionWithoutError(offer);
+
+  answer = CreateAnswer(nullptr);
+  audio_transport_info = answer->description()->GetTransportInfoByName("audio");
+  EXPECT_EQ(cricket::CONNECTIONROLE_PASSIVE,
+            audio_transport_info->description.connection_role);
+  video_transport_info = answer->description()->GetTransportInfoByName("video");
+  EXPECT_EQ(cricket::CONNECTIONROLE_ACTIVE,
+            video_transport_info->description.connection_role);
+  SetLocalDescriptionWithoutError(answer);
+
+  // Lastly, start BUNDLE-ing on "audio", expecting that the "passive" role of
+  // audio is transferred over to video in the answer that completes the BUNDLE
+  // negotiation.
+  options.bundle_enabled = true;
+  offer = CreateRemoteOfferWithVersion(options, cricket::SEC_DISABLED,
+                                       kSessionVersion,
+                                       session_->remote_description());
+  SetRemoteDescriptionWithoutError(offer);
+  answer = CreateAnswer(nullptr);
+  audio_transport_info = answer->description()->GetTransportInfoByName("audio");
+  EXPECT_EQ(cricket::CONNECTIONROLE_PASSIVE,
+            audio_transport_info->description.connection_role);
+  video_transport_info = answer->description()->GetTransportInfoByName("video");
+  EXPECT_EQ(cricket::CONNECTIONROLE_PASSIVE,
+            video_transport_info->description.connection_role);
+  SetLocalDescriptionWithoutError(answer);
+}
+
 TEST_F(WebRtcSessionTest, TestSetLocalOfferTwice) {
   Init();
   SendNothing();
@@ -3625,7 +3686,9 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithNewUfragAndPassword) {
   SetLocalDescriptionWithoutError(answer.release());
 
   // Receive an offer with new ufrag and password.
-  options.transport_options.ice_restart = true;
+  options.audio_transport_options.ice_restart = true;
+  options.video_transport_options.ice_restart = true;
+  options.data_transport_options.ice_restart = true;
   rtc::scoped_ptr<JsepSessionDescription> updated_offer1(
       CreateRemoteOffer(options, session_->remote_description()));
   SetRemoteDescriptionWithoutError(updated_offer1.release());
@@ -3656,7 +3719,9 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithOldUfragAndPassword) {
   SetLocalDescriptionWithoutError(answer.release());
 
   // Receive an offer without changed ufrag or password.
-  options.transport_options.ice_restart = false;
+  options.audio_transport_options.ice_restart = false;
+  options.video_transport_options.ice_restart = false;
+  options.data_transport_options.ice_restart = false;
   rtc::scoped_ptr<JsepSessionDescription> updated_offer2(
       CreateRemoteOffer(options, session_->remote_description()));
   SetRemoteDescriptionWithoutError(updated_offer2.release());

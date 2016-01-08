@@ -761,14 +761,20 @@ cricket::SecurePolicy WebRtcSession::SdesPolicy() const {
   return webrtc_session_desc_factory_->SdesPolicy();
 }
 
-bool WebRtcSession::GetSslRole(rtc::SSLRole* role) {
+bool WebRtcSession::GetSslRole(const std::string& transport_name,
+                               rtc::SSLRole* role) {
   if (!local_desc_ || !remote_desc_) {
     LOG(LS_INFO) << "Local and Remote descriptions must be applied to get "
                  << "SSL Role of the session.";
     return false;
   }
 
-  return transport_controller_->GetSslRole(role);
+  return transport_controller_->GetSslRole(transport_name, role);
+}
+
+bool WebRtcSession::GetSslRole(const cricket::BaseChannel* channel,
+                               rtc::SSLRole* role) {
+  return channel && GetSslRole(channel->transport_name(), role);
 }
 
 void WebRtcSession::CreateOffer(
@@ -970,21 +976,23 @@ bool WebRtcSession::UpdateSessionState(
       return BadPranswerSdp(source, GetSessionErrorMsg(), err_desc);
     }
   } else if (action == kAnswer) {
-    if (!PushdownTransportDescription(source, cricket::CA_ANSWER, &td_err)) {
-      return BadAnswerSdp(source, MakeTdErrorString(td_err), err_desc);
-    }
     const cricket::ContentGroup* local_bundle =
         local_desc_->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
     const cricket::ContentGroup* remote_bundle =
         remote_desc_->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
     if (local_bundle && remote_bundle) {
-      // The answerer decides the transport to bundle on
+      // The answerer decides the transport to bundle on.
       const cricket::ContentGroup* answer_bundle =
           (source == cricket::CS_LOCAL ? local_bundle : remote_bundle);
       if (!EnableBundle(*answer_bundle)) {
         LOG(LS_WARNING) << "Failed to enable BUNDLE.";
         return BadAnswerSdp(source, kEnableBundleFailed, err_desc);
       }
+    }
+    // Only push down the transport description after enabling BUNDLE; we don't
+    // want to push down a description on a transport about to be destroyed.
+    if (!PushdownTransportDescription(source, cricket::CA_ANSWER, &td_err)) {
+      return BadAnswerSdp(source, MakeTdErrorString(td_err), err_desc);
     }
     EnableChannels();
     SetState(STATE_INPROGRESS);

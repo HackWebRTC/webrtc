@@ -66,9 +66,10 @@ void TransportController::SetIceRole(IceRole ice_role) {
       rtc::Bind(&TransportController::SetIceRole_w, this, ice_role));
 }
 
-bool TransportController::GetSslRole(rtc::SSLRole* role) {
-  return worker_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::GetSslRole_w, this, role));
+bool TransportController::GetSslRole(const std::string& transport_name,
+                                     rtc::SSLRole* role) {
+  return worker_thread_->Invoke<bool>(rtc::Bind(
+      &TransportController::GetSslRole_w, this, transport_name, role));
 }
 
 bool TransportController::SetLocalCertificate(
@@ -343,13 +344,16 @@ void TransportController::SetIceRole_w(IceRole ice_role) {
   }
 }
 
-bool TransportController::GetSslRole_w(rtc::SSLRole* role) {
+bool TransportController::GetSslRole_w(const std::string& transport_name,
+                                       rtc::SSLRole* role) {
   RTC_DCHECK(worker_thread()->IsCurrent());
 
-  if (transports_.empty()) {
+  Transport* t = GetTransport_w(transport_name);
+  if (!t) {
     return false;
   }
-  return transports_.begin()->second->GetSslRole(role);
+
+  return t->GetSslRole(role);
 }
 
 bool TransportController::SetLocalCertificate_w(
