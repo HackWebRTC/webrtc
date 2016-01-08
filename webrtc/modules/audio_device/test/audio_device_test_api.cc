@@ -1040,9 +1040,15 @@ TEST_F(AudioDeviceAPITest, MicrophoneVolumeIsAvailable) {
 // MicrophoneVolume
 // MaxMicrophoneVolume
 // MinMicrophoneVolume
-// NOTE: Disabled on mac due to issue 257.
-#ifndef WEBRTC_MAC
-TEST_F(AudioDeviceAPITest, MicrophoneVolumeTests) {
+
+// Disabled on Mac and Linux,
+// see https://bugs.chromium.org/p/webrtc/issues/detail?id=5414
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
+#define MAYBE_MicrophoneVolumeTests DISABLED_MicrophoneVolumeTests
+#else
+#define MAYBE_MicrophoneVolumeTests MicrophoneVolumeTests
+#endif
+TEST_F(AudioDeviceAPITest, MAYBE_MicrophoneVolumeTests) {
   uint32_t vol(0);
   uint32_t volume(0);
   uint32_t maxVolume(0);
@@ -1135,7 +1141,6 @@ TEST_F(AudioDeviceAPITest, MicrophoneVolumeTests) {
     EXPECT_EQ(0, audio_device_->SetMicrophoneVolume(maxVolume/10));
   }
 }
-#endif  // !WEBRTC_MAC
 
 TEST_F(AudioDeviceAPITest, SpeakerMuteIsAvailable) {
   bool available;
