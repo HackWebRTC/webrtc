@@ -89,7 +89,7 @@ class TryCritScope {
 #if defined(WEBRTC_WIN)
   _Check_return_ bool locked() const;
 #else
-  bool locked() const __attribute__((warn_unused_result));
+  bool locked() const __attribute__ ((__warn_unused_result__));
 #endif
  private:
   CriticalSection* const cs_;

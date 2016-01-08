@@ -178,7 +178,7 @@ inline bool ImplicitCastToBool(bool result) { return result; }
 
 // Forces compiler to inline, even against its better judgement. Use wisely.
 #if defined(__GNUC__)
-#define FORCE_INLINE __attribute__((always_inline))
+#define FORCE_INLINE __attribute__ ((__always_inline__))
 #elif defined(WEBRTC_WIN)
 #define FORCE_INLINE __forceinline
 #else
@@ -193,7 +193,7 @@ inline bool ImplicitCastToBool(bool result) { return result; }
 // libjingle are merged.
 #if !defined(WARN_UNUSED_RESULT)
 #if defined(__GNUC__) || defined(__clang__)
-#define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#define WARN_UNUSED_RESULT __attribute__ ((__warn_unused_result__))
 #else
 #define WARN_UNUSED_RESULT
 #endif
