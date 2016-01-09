@@ -612,6 +612,7 @@ static_library("rtc_base") {
   if (is_nacl) {
     deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
     defines += [ "timezone=_timezone" ]
+    sources -= [ "ifaddrs_converter.cc" ]
   }
 }
 
