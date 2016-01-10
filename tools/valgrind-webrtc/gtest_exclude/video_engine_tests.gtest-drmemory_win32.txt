@@ -10,6 +10,8 @@ EndToEndTest.RestartingSendStreamPreservesRtpStatesWithRtx
 EndToEndTest.SendsAndReceivesH264
 EndToEndTest.SendsAndReceivesVP9
 EndToEndTest.TransportFeedbackNotConfigured
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=5402
+EndToEndTest.TransportSeqNumOnAudioAndVideo
 VideoSendStreamTest.CanReconfigureToUseStartBitrateAbovePreviousMax
 VideoSendStreamTest.ReconfigureBitratesSetsEncoderBitratesCorrectly
 # https://code.google.com/p/webrtc/issues/detail?id=5417
