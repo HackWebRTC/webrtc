@@ -19,10 +19,13 @@ if (is_ios) {
       "-Wobjc-missing-property-synthesis",
     ]
     sources = [
-      # Add RTCIceCandidate when there's a BUILD.gn for peer connection APIs
+      # Add these when there's a BUILD.gn for peer connection APIs
       #"objc/RTCIceCandidate+Private.h",
       #"objc/RTCIceCandidate.h",
       #"objc/RTCIceCandidate.mm",
+      #"objc/RTCMediaStreamTrack+Private.h",
+      #"objc/RTCMediaStreamTrack.h",
+      #"objc/RTCMediaStreamTrack.mm",
       "objc/RTCIceServer+Private.h",
       "objc/RTCIceServer.h",
       "objc/RTCIceServer.mm",
