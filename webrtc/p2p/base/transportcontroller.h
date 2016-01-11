@@ -198,7 +198,7 @@ class TransportController : public sigslot::has_slots<>,
   std::vector<RefCountedChannel> channels_;
 
   PortAllocator* const port_allocator_ = nullptr;
-  rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_10;
+  rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
 
   // Aggregate state for TransportChannelImpls.
   IceConnectionState connection_state_ = kIceConnectionConnecting;

@@ -301,12 +301,13 @@ OpenSSLStreamAdapter::OpenSSLStreamAdapter(StreamInterface* stream)
     : SSLStreamAdapter(stream),
       state_(SSL_NONE),
       role_(SSL_CLIENT),
-      ssl_read_needs_write_(false), ssl_write_needs_read_(false),
-      ssl_(NULL), ssl_ctx_(NULL),
+      ssl_read_needs_write_(false),
+      ssl_write_needs_read_(false),
+      ssl_(NULL),
+      ssl_ctx_(NULL),
       custom_verification_succeeded_(false),
       ssl_mode_(SSL_MODE_TLS),
-      ssl_max_version_(SSL_PROTOCOL_TLS_11) {
-}
+      ssl_max_version_(SSL_PROTOCOL_TLS_12) {}
 
 OpenSSLStreamAdapter::~OpenSSLStreamAdapter() {
   Cleanup();

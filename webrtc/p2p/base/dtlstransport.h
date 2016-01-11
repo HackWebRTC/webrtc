@@ -35,7 +35,7 @@ class DtlsTransport : public Base {
       : Base(name, allocator),
         certificate_(certificate),
         secure_role_(rtc::SSL_CLIENT),
-        ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10) {}
+        ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12) {}
 
   ~DtlsTransport() {
     Base::DestroyAllChannels();

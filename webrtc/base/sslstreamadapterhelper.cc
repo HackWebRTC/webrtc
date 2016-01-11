@@ -29,8 +29,7 @@ SSLStreamAdapterHelper::SSLStreamAdapterHelper(StreamInterface* stream)
       role_(SSL_CLIENT),
       ssl_error_code_(0),  // Not meaningful yet
       ssl_mode_(SSL_MODE_TLS),
-      ssl_max_version_(SSL_PROTOCOL_TLS_11) {
-}
+      ssl_max_version_(SSL_PROTOCOL_TLS_12) {}
 
 SSLStreamAdapterHelper::~SSLStreamAdapterHelper() = default;
 

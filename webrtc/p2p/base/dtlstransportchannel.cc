@@ -97,7 +97,7 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       channel_(channel),
       downward_(NULL),
       ssl_role_(rtc::SSL_CLIENT),
-      ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10) {
+      ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12) {
   channel_->SignalWritableState.connect(this,
       &DtlsTransportChannelWrapper::OnWritableState);
   channel_->SignalReadPacket.connect(this,

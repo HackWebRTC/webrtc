@@ -332,7 +332,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   std::string remote_ice_ufrag_;
   std::string remote_ice_pwd_;
   IceMode remote_ice_mode_ = ICEMODE_FULL;
-  rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_10;
+  rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
   rtc::SSLFingerprint dtls_fingerprint_;
   rtc::SSLRole ssl_role_ = rtc::SSL_CLIENT;
   size_t connection_count_ = 0;
@@ -453,7 +453,7 @@ class FakeTransport : public Transport {
   FakeTransport* dest_ = nullptr;
   bool async_ = false;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
-  rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_10;
+  rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
 };
 
 // Fake TransportController class, which can be passed into a BaseChannel object

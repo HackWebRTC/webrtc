@@ -502,13 +502,12 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
  public:
   class Options {
    public:
-    Options() :
-      disable_encryption(false),
-      disable_sctp_data_channels(false),
-      disable_network_monitor(false),
-      network_ignore_mask(rtc::kDefaultNetworkIgnoreMask),
-      ssl_max_version(rtc::SSL_PROTOCOL_DTLS_10) {
-    }
+    Options()
+        : disable_encryption(false),
+          disable_sctp_data_channels(false),
+          disable_network_monitor(false),
+          network_ignore_mask(rtc::kDefaultNetworkIgnoreMask),
+          ssl_max_version(rtc::SSL_PROTOCOL_DTLS_12) {}
     bool disable_encryption;
     bool disable_sctp_data_channels;
     bool disable_network_monitor;
