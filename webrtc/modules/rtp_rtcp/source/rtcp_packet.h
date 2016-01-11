@@ -479,52 +479,6 @@ class Tmmbr : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Tmmbr);
 };
 
-// Temporary Maximum Media Stream Bit Rate Notification (TMMBN) (RFC 5104).
-//
-// FCI:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                              SSRC                             |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Tmmbn : public RtcpPacket {
- public:
-  Tmmbn() : RtcpPacket() {
-    memset(&tmmbn_, 0, sizeof(tmmbn_));
-  }
-
-  virtual ~Tmmbn() {}
-
-  void From(uint32_t ssrc) {
-    tmmbn_.SenderSSRC = ssrc;
-  }
-  // Max 50 TMMBR can be added per TMMBN.
-  bool WithTmmbr(uint32_t ssrc, uint32_t bitrate_kbps, uint16_t overhead);
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  static const int kMaxNumberOfTmmbrs = 50;
-
-  size_t BlockLength() const {
-    const size_t kFciLen = 8;
-    return kCommonFbFmtLength + kFciLen * tmmbn_items_.size();
-  }
-
-  RTCPUtility::RTCPPacketRTPFBTMMBN tmmbn_;
-  std::vector<RTCPUtility::RTCPPacketRTPFBTMMBRItem> tmmbn_items_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Tmmbn);
-};
-
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
 //
 //    0                   1                   2                   3

@@ -39,8 +39,6 @@ using webrtc::RTCPUtility::RTCPPacketPSFBSLIItem;
 using webrtc::RTCPUtility::RTCPPacketReportBlockItem;
 using webrtc::RTCPUtility::RTCPPacketRTPFBNACK;
 using webrtc::RTCPUtility::RTCPPacketRTPFBNACKItem;
-using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBN;
-using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBNItem;
 using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBR;
 using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBRItem;
 using webrtc::RTCPUtility::RTCPPacketSR;
@@ -295,29 +293,6 @@ void CreateTmmbr(const RTCPPacketRTPFBTMMBR& tmmbr,
   AssignUWord32(buffer, pos, tmmbr.SenderSSRC);
   AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
   CreateTmmbrItem(tmmbr_item, buffer, pos);
-}
-
-// Temporary Maximum Media Stream Bit Rate Notification (TMMBN) (RFC 5104).
-//
-// FCI:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                              SSRC                             |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateTmmbn(const RTCPPacketRTPFBTMMBN& tmmbn,
-                 const std::vector<RTCPPacketRTPFBTMMBRItem>& tmmbn_items,
-                 uint8_t* buffer,
-                 size_t* pos) {
-  AssignUWord32(buffer, pos, tmmbn.SenderSSRC);
-  AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
-  for (uint8_t i = 0; i < tmmbn_items.size(); ++i) {
-    CreateTmmbrItem(tmmbn_items[i], buffer, pos);
-  }
 }
 
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
@@ -661,34 +636,6 @@ bool Tmmbr::Create(uint8_t* packet,
   const uint8_t kFmt = 3;
   CreateHeader(kFmt, PT_RTPFB, HeaderLength(), packet, index);
   CreateTmmbr(tmmbr_, tmmbr_item_, packet, index);
-  return true;
-}
-
-bool Tmmbn::WithTmmbr(uint32_t ssrc, uint32_t bitrate_kbps, uint16_t overhead) {
-  assert(overhead <= 0x1ff);
-  if (tmmbn_items_.size() >= kMaxNumberOfTmmbrs) {
-    LOG(LS_WARNING) << "Max TMMBN size reached.";
-    return false;
-  }
-  RTCPPacketRTPFBTMMBRItem tmmbn_item;
-  tmmbn_item.SSRC = ssrc;
-  tmmbn_item.MaxTotalMediaBitRate = bitrate_kbps;
-  tmmbn_item.MeasuredOverhead = overhead;
-  tmmbn_items_.push_back(tmmbn_item);
-  return true;
-}
-
-bool Tmmbn::Create(uint8_t* packet,
-                   size_t* index,
-                   size_t max_length,
-                   RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  const uint8_t kFmt = 4;
-  CreateHeader(kFmt, PT_RTPFB, HeaderLength(), packet, index);
-  CreateTmmbn(tmmbn_, tmmbn_items_, packet, index);
   return true;
 }
 
