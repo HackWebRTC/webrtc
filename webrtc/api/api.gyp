@@ -31,6 +31,8 @@
             'objc/RTCMediaStreamTrack+Private.h',
             'objc/RTCMediaStreamTrack.h',
             'objc/RTCMediaStreamTrack.mm',
+            'objc/RTCOpenGLVideoRenderer.h',
+            'objc/RTCOpenGLVideoRenderer.mm',
             'objc/RTCSessionDescription+Private.h',
             'objc/RTCSessionDescription.h',
             'objc/RTCSessionDescription.mm',
@@ -40,6 +42,31 @@
             'objc/RTCVideoFrame+Private.h',
             'objc/RTCVideoFrame.h',
             'objc/RTCVideoFrame.mm',
+            'objc/RTCVideoRenderer.h',
+          ],
+          'conditions': [
+            ['OS=="ios"', {
+              'sources': [
+                'objc/RTCEAGLVideoView.h',
+                'objc/RTCEAGLVideoView.m',
+              ],
+              'all_dependent_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework CoreGraphics',
+                    '-framework GLKit',
+                    '-framework OpenGLES',
+                    '-framework QuartzCore',
+                  ]
+                }
+              }
+            }],
+            ['OS=="mac"', {
+              'sources': [
+                'objc/RTCNSGLVideoView.h',
+                'objc/RTCNSGLVideoView.m',
+              ],
+            }],
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
