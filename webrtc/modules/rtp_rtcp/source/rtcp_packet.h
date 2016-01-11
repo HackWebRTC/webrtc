@@ -426,59 +426,6 @@ class Fir : public RtcpPacket {
   RTCPUtility::RTCPPacketPSFBFIRItem fir_item_;
 };
 
-// Temporary Maximum Media Stream Bit Rate Request (TMMBR) (RFC 5104).
-//
-// FCI:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                              SSRC                             |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Tmmbr : public RtcpPacket {
- public:
-  Tmmbr() : RtcpPacket() {
-    memset(&tmmbr_, 0, sizeof(tmmbr_));
-    memset(&tmmbr_item_, 0, sizeof(tmmbr_item_));
-  }
-
-  virtual ~Tmmbr() {}
-
-  void From(uint32_t ssrc) {
-    tmmbr_.SenderSSRC = ssrc;
-  }
-  void To(uint32_t ssrc) {
-    tmmbr_item_.SSRC = ssrc;
-  }
-  void WithBitrateKbps(uint32_t bitrate_kbps) {
-    tmmbr_item_.MaxTotalMediaBitRate = bitrate_kbps;
-  }
-  void WithOverhead(uint16_t overhead) {
-    assert(overhead <= 0x1ff);
-    tmmbr_item_.MeasuredOverhead = overhead;
-  }
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  size_t BlockLength() const {
-    const size_t kFciLen = 8;
-    return kCommonFbFmtLength + kFciLen;
-  }
-
-  RTCPUtility::RTCPPacketRTPFBTMMBR tmmbr_;
-  RTCPUtility::RTCPPacketRTPFBTMMBRItem tmmbr_item_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Tmmbr);
-};
-
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
 //
 //    0                   1                   2                   3

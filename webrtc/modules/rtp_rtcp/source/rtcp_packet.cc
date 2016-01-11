@@ -39,8 +39,6 @@ using webrtc::RTCPUtility::RTCPPacketPSFBSLIItem;
 using webrtc::RTCPUtility::RTCPPacketReportBlockItem;
 using webrtc::RTCPUtility::RTCPPacketRTPFBNACK;
 using webrtc::RTCPUtility::RTCPPacketRTPFBNACKItem;
-using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBR;
-using webrtc::RTCPUtility::RTCPPacketRTPFBTMMBRItem;
 using webrtc::RTCPUtility::RTCPPacketSR;
 using webrtc::RTCPUtility::RTCPPacketXRDLRRReportBlockItem;
 using webrtc::RTCPUtility::RTCPPacketXR;
@@ -256,43 +254,6 @@ void CreateFir(const RTCPPacketPSFBFIR& fir,
   AssignUWord32(buffer, pos, fir_item.SSRC);
   AssignUWord8(buffer, pos, fir_item.CommandSequenceNumber);
   AssignUWord24(buffer, pos, 0);
-}
-
-void CreateTmmbrItem(const RTCPPacketRTPFBTMMBRItem& tmmbr_item,
-                     uint8_t* buffer,
-                     size_t* pos) {
-  uint32_t bitrate_bps = tmmbr_item.MaxTotalMediaBitRate * 1000;
-  uint32_t mantissa = 0;
-  uint8_t exp = 0;
-  ComputeMantissaAnd6bitBase2Exponent(bitrate_bps, 17, &mantissa, &exp);
-
-  AssignUWord32(buffer, pos, tmmbr_item.SSRC);
-  AssignUWord8(buffer, pos, (exp << 2) + ((mantissa >> 15) & 0x03));
-  AssignUWord8(buffer, pos, mantissa >> 7);
-  AssignUWord8(buffer, pos, (mantissa << 1) +
-                            ((tmmbr_item.MeasuredOverhead >> 8) & 0x01));
-  AssignUWord8(buffer, pos, tmmbr_item.MeasuredOverhead);
-}
-
-// Temporary Maximum Media Stream Bit Rate Request (TMMBR) (RFC 5104).
-//
-// FCI:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                              SSRC                             |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateTmmbr(const RTCPPacketRTPFBTMMBR& tmmbr,
-                 const RTCPPacketRTPFBTMMBRItem& tmmbr_item,
-                 uint8_t* buffer,
-                 size_t* pos) {
-  AssignUWord32(buffer, pos, tmmbr.SenderSSRC);
-  AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
-  CreateTmmbrItem(tmmbr_item, buffer, pos);
 }
 
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
@@ -623,20 +584,6 @@ void Remb::AppliesTo(uint32_t ssrc) {
     return;
   }
   remb_item_.SSRCs[remb_item_.NumberOfSSRCs++] = ssrc;
-}
-
-bool Tmmbr::Create(uint8_t* packet,
-                   size_t* index,
-                   size_t max_length,
-                   RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  const uint8_t kFmt = 3;
-  CreateHeader(kFmt, PT_RTPFB, HeaderLength(), packet, index);
-  CreateTmmbr(tmmbr_, tmmbr_item_, packet, index);
-  return true;
 }
 
 bool Xr::Create(uint8_t* packet,

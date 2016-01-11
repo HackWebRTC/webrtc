@@ -35,7 +35,6 @@ using webrtc::rtcp::Rrtr;
 using webrtc::rtcp::Sdes;
 using webrtc::rtcp::SenderReport;
 using webrtc::rtcp::Sli;
-using webrtc::rtcp::Tmmbr;
 using webrtc::rtcp::VoipMetric;
 using webrtc::rtcp::Xr;
 using webrtc::test::RtcpPacketParser;
@@ -494,23 +493,6 @@ TEST(RtcpPacketTest, Remb) {
   EXPECT_EQ(kRemoteSsrc, ssrcs[0]);
   EXPECT_EQ(kRemoteSsrc + 1, ssrcs[1]);
   EXPECT_EQ(kRemoteSsrc + 2, ssrcs[2]);
-}
-
-TEST(RtcpPacketTest, Tmmbr) {
-  Tmmbr tmmbr;
-  tmmbr.From(kSenderSsrc);
-  tmmbr.To(kRemoteSsrc);
-  tmmbr.WithBitrateKbps(312);
-  tmmbr.WithOverhead(60);
-
-  rtc::scoped_ptr<RawPacket> packet(tmmbr.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.tmmbr()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.tmmbr()->Ssrc());
-  EXPECT_EQ(1, parser.tmmbr_item()->num_packets());
-  EXPECT_EQ(312U, parser.tmmbr_item()->BitrateKbps());
-  EXPECT_EQ(60U, parser.tmmbr_item()->Overhead());
 }
 
 TEST(RtcpPacketTest, XrWithNoReportBlocks) {
