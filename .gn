@@ -43,6 +43,7 @@ exec_script_whitelist = [
   "//build/toolchain/mac/BUILD.gn",
   "//build/toolchain/win/BUILD.gn",
   "//third_party/boringssl/BUILD.gn",
+  "//third_party/openh264/BUILD.gn",
   "//third_party/opus/BUILD.gn",
   "//webrtc/modules/video_render/BUILD.gn",
 ]

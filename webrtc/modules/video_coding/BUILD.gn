@@ -136,6 +136,18 @@ source_set("webrtc_h264") {
   deps = [
     "../../system_wrappers",
   ]
+
+  if (use_third_party_h264) {
+    # Dependency added so that variables use_openh264 and ffmpeg_branding are
+    # recognized build arguments (avoid "Build argument has no effect" error).
+    # The variables and dependencies will be used for real as soon as
+    # https://codereview.webrtc.org/1306813009/ lands. In the meantime, the
+    # build arguments are to be used by waterfall/trybots.
+    deps += [
+      "//third_party/ffmpeg:ffmpeg",
+      "//third_party/openh264:encoder",
+    ]
+  }
 }
 
 # TODO(tkchin): Source set for webrtc_h264_video_toolbox. Currently not

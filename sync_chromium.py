@@ -31,7 +31,7 @@ import textwrap
 
 # Bump this whenever the algorithm changes and you need bots/devs to re-sync,
 # ignoring the .last_sync_chromium file
-SCRIPT_VERSION = 5
+SCRIPT_VERSION = 6
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMIUM_NO_HISTORY = 'CHROMIUM_NO_HISTORY'

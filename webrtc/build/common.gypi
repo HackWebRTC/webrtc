@@ -123,6 +123,17 @@
     # Enabling this may break interop with Android clients that support H264.
     'use_objc_h264%': 0,
 
+    # Enable this to build H.264 encoder/decoder using third party libraries.
+    # Encoding uses OpenH264 and decoding uses FFmpeg. Because of this, OpenH264
+    # and FFmpeg have to be correctly enabled separately.
+    # - use_openh264=1 is required for OpenH264 targets to be defined.
+    # - ffmpeg_branding=Chrome is one way to support H.264 decoding in FFmpeg.
+    #   FFmpeg can be built with/without H.264 support, see 'ffmpeg_branding'.
+    #   Without it, it compiles but H264DecoderImpl fails to initialize.
+    # CHECK THE OPENH264, FFMPEG AND H.264 LICENSES/PATENTS BEFORE BUILDING.
+    # http://www.openh264.org, https://www.ffmpeg.org/
+    'use_third_party_h264%': 0,  # TODO(hbos): To be used in follow-up CL(s).
+
     'conditions': [
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require

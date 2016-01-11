@@ -91,6 +91,7 @@
 /third_party/directxsdk
 /third_party/drmemory
 /third_party/expat
+/third_party/ffmpeg
 /third_party/gaeunit
 /third_party/gflags/src
 /third_party/google-visualization-python
@@ -121,6 +122,7 @@
 /third_party/nss
 /third_party/oauth2
 /third_party/ocmock
+/third_party/openh264
 /third_party/openmax_dl
 /third_party/opus
 /third_party/proguard
