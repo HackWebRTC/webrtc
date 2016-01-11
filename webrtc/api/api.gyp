@@ -31,6 +31,9 @@
             'objc/RTCSessionDescription+Private.h',
             'objc/RTCSessionDescription.h',
             'objc/RTCSessionDescription.mm',
+            'objc/RTCVideoFrame+Private.h',
+            'objc/RTCVideoFrame.h',
+            'objc/RTCVideoFrame.mm',
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',

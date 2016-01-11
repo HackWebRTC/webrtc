@@ -32,6 +32,9 @@ if (is_ios) {
       "objc/RTCSessionDescription+Private.h",
       "objc/RTCSessionDescription.h",
       "objc/RTCSessionDescription.mm",
+      "objc/RTCVideoFrame+Private.h",
+      "objc/RTCVideoFrame.h",
+      "objc/RTCVideoFrame.mm",
       "objc/WebRTC-Prefix.pch",
     ]
   }
