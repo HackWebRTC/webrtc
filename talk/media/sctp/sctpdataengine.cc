@@ -729,7 +729,13 @@ bool SctpDataMediaChannel::AddStream(const StreamParams& stream) {
   }
 
   const uint32_t ssrc = stream.first_ssrc();
-  if (open_streams_.find(ssrc) != open_streams_.end()) {
+  if (ssrc >= cricket::kMaxSctpSid) {
+    LOG(LS_WARNING) << debug_name_ << "->Add(Send|Recv)Stream(...): "
+                    << "Not adding data stream '" << stream.id
+                    << "' with ssrc=" << ssrc
+                    << " because stream ssrc is too high.";
+    return false;
+  } else if (open_streams_.find(ssrc) != open_streams_.end()) {
     LOG(LS_WARNING) << debug_name_ << "->Add(Send|Recv)Stream(...): "
                     << "Not adding data stream '" << stream.id
                     << "' with ssrc=" << ssrc

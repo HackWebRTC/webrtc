@@ -270,12 +270,14 @@ class SctpDataMediaChannelTest : public testing::Test,
     ProcessMessagesUntilIdle();
   }
 
-  void AddStream(int ssrc) {
+  bool AddStream(int ssrc) {
+    bool ret = true;
     cricket::StreamParams p(cricket::StreamParams::CreateLegacy(ssrc));
-    chan1_->AddSendStream(p);
-    chan1_->AddRecvStream(p);
-    chan2_->AddSendStream(p);
-    chan2_->AddRecvStream(p);
+    ret = ret && chan1_->AddSendStream(p);
+    ret = ret && chan1_->AddRecvStream(p);
+    ret = ret && chan2_->AddSendStream(p);
+    ret = ret && chan2_->AddRecvStream(p);
+    return ret;
   }
 
   cricket::SctpDataMediaChannel* CreateChannel(
@@ -502,6 +504,12 @@ TEST_F(SctpDataMediaChannelTest, EngineSignalsRightChannel) {
   int prior_count = channel1_ready_to_send_count();
   cricket::SctpDataEngine::SendThresholdCallback(sock, 0);
   EXPECT_GT(channel1_ready_to_send_count(), prior_count);
+}
+
+TEST_F(SctpDataMediaChannelTest, RefusesHighNumberedChannels) {
+  SetupConnectedChannels();
+  EXPECT_TRUE(AddStream(1022));
+  EXPECT_FALSE(AddStream(1023));
 }
 
 // Flaky on Linux and Windows. See webrtc:4453.
