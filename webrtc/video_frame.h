@@ -158,6 +158,8 @@ class VideoFrame {
   // called on a non-native-handle frame.
   VideoFrame ConvertNativeToI420Frame() const;
 
+  bool EqualsFrame(const VideoFrame& frame) const;
+
  private:
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;

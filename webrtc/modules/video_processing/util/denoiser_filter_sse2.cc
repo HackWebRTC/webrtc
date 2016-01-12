@@ -47,7 +47,7 @@ static void Get8x8varSse2(const uint8_t* src,
   vsum = _mm_add_epi16(vsum, _mm_srli_si128(vsum, 8));
   vsum = _mm_add_epi16(vsum, _mm_srli_si128(vsum, 4));
   vsum = _mm_add_epi16(vsum, _mm_srli_si128(vsum, 2));
-  *sum = static_cast<int>(_mm_extract_epi16(vsum, 0));
+  *sum = static_cast<int16_t>(_mm_extract_epi16(vsum, 0));
 
   // sse
   vsse = _mm_add_epi32(vsse, _mm_srli_si128(vsse, 8));
@@ -62,7 +62,7 @@ static void VarianceSSE2(const unsigned char* src,
                          int w,
                          int h,
                          uint32_t* sse,
-                         uint32_t* sum,
+                         int64_t* sum,
                          int block_size) {
   *sse = 0;
   *sum = 0;
@@ -126,9 +126,9 @@ uint32_t DenoiserFilterSSE2::Variance16x8(const uint8_t* src,
                                           int src_stride,
                                           const uint8_t* ref,
                                           int ref_stride,
-                                          unsigned int* sse) {
-  uint32_t sum = 0;
-  VarianceSSE2(src, src_stride, ref, ref_stride, 16, 8, sse, &sum, 8);
+                                          uint32_t* sse) {
+  int64_t sum = 0;
+  VarianceSSE2(src, src_stride << 1, ref, ref_stride << 1, 16, 8, sse, &sum, 8);
   return *sse - ((sum * sum) >> 7);
 }
 

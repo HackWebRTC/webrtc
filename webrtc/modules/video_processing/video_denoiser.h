@@ -18,7 +18,7 @@ namespace webrtc {
 
 class VideoDenoiser {
  public:
-  VideoDenoiser();
+  explicit VideoDenoiser(bool runtime_cpu_detection);
   void DenoiseFrame(const VideoFrame& frame, VideoFrame* denoised_frame);
 
  private:

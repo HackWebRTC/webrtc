@@ -30,7 +30,7 @@ struct DenoiseMetrics {
 
 class DenoiserFilter {
  public:
-  static DenoiserFilter* Create();
+  static DenoiserFilter* Create(bool runtime_cpu_detection);
 
   virtual ~DenoiserFilter() {}
 

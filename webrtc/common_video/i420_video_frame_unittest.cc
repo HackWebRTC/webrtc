@@ -24,7 +24,6 @@ bool EqualPlane(const uint8_t* data1,
                 int stride,
                 int width,
                 int height);
-bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2);
 int ExpectedSize(int plane_stride, int image_height, PlaneType type);
 
 TEST(TestVideoFrame, InitialValues) {
@@ -102,7 +101,7 @@ TEST(TestVideoFrame, CopyFrame) {
                                   stride_u, stride_v, kRotation));
   // Frame of smaller dimensions.
   EXPECT_EQ(0, small_frame.CopyFrame(big_frame));
-  EXPECT_TRUE(EqualFrames(small_frame, big_frame));
+  EXPECT_TRUE(small_frame.EqualsFrame(big_frame));
   EXPECT_EQ(kRotation, small_frame.rotation());
 
   // Frame of larger dimensions.
@@ -112,7 +111,7 @@ TEST(TestVideoFrame, CopyFrame) {
   memset(small_frame.buffer(kUPlane), 2, small_frame.allocated_size(kUPlane));
   memset(small_frame.buffer(kVPlane), 3, small_frame.allocated_size(kVPlane));
   EXPECT_EQ(0, big_frame.CopyFrame(small_frame));
-  EXPECT_TRUE(EqualFrames(small_frame, big_frame));
+  EXPECT_TRUE(small_frame.EqualsFrame(big_frame));
 }
 
 TEST(TestVideoFrame, ShallowCopy) {
@@ -255,50 +254,6 @@ TEST(TestVideoFrame, TextureInitialValues) {
   EXPECT_EQ(200u, frame.timestamp());
   frame.set_render_time_ms(20);
   EXPECT_EQ(20, frame.render_time_ms());
-}
-
-bool EqualPlane(const uint8_t* data1,
-                const uint8_t* data2,
-                int stride,
-                int width,
-                int height) {
-  for (int y = 0; y < height; ++y) {
-    if (memcmp(data1, data2, width) != 0)
-      return false;
-    data1 += stride;
-    data2 += stride;
-  }
-  return true;
-}
-
-bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
-  if ((frame1.width() != frame2.width()) ||
-      (frame1.height() != frame2.height()) ||
-      (frame1.stride(kYPlane) != frame2.stride(kYPlane)) ||
-      (frame1.stride(kUPlane) != frame2.stride(kUPlane)) ||
-      (frame1.stride(kVPlane) != frame2.stride(kVPlane)) ||
-      (frame1.timestamp() != frame2.timestamp()) ||
-      (frame1.ntp_time_ms() != frame2.ntp_time_ms()) ||
-      (frame1.render_time_ms() != frame2.render_time_ms())) {
-    return false;
-  }
-  const int half_width = (frame1.width() + 1) / 2;
-  const int half_height = (frame1.height() + 1) / 2;
-  return EqualPlane(frame1.buffer(kYPlane), frame2.buffer(kYPlane),
-                    frame1.stride(kYPlane), frame1.width(), frame1.height()) &&
-         EqualPlane(frame1.buffer(kUPlane), frame2.buffer(kUPlane),
-                    frame1.stride(kUPlane), half_width, half_height) &&
-         EqualPlane(frame1.buffer(kVPlane), frame2.buffer(kVPlane),
-                    frame1.stride(kVPlane), half_width, half_height);
-}
-
-int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
-  if (type == kYPlane) {
-    return (plane_stride * image_height);
-  } else {
-    int half_height = (image_height + 1) / 2;
-    return (plane_stride * half_height);
-  }
 }
 
 }  // namespace webrtc

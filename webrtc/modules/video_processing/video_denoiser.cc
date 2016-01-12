@@ -13,8 +13,10 @@
 
 namespace webrtc {
 
-VideoDenoiser::VideoDenoiser()
-    : width_(0), height_(0), filter_(DenoiserFilter::Create()) {}
+VideoDenoiser::VideoDenoiser(bool runtime_cpu_detection)
+    : width_(0),
+      height_(0),
+      filter_(DenoiserFilter::Create(runtime_cpu_detection)) {}
 
 void VideoDenoiser::TrailingReduction(int mb_rows,
                                       int mb_cols,
@@ -78,7 +80,7 @@ void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
   int mb_cols = width_ >> 4;
   int mb_rows = height_ >> 4;
   if (metrics_.get() == nullptr)
-    metrics_.reset(new DenoiseMetrics[mb_cols * mb_rows]);
+    metrics_.reset(new DenoiseMetrics[mb_cols * mb_rows]());
   // Denoise on Y plane.
   uint8_t* y_dst = denoised_frame->buffer(kYPlane);
   uint8_t* u_dst = denoised_frame->buffer(kUPlane);

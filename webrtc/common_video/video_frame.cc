@@ -19,6 +19,29 @@
 
 namespace webrtc {
 
+bool EqualPlane(const uint8_t* data1,
+                const uint8_t* data2,
+                int stride,
+                int width,
+                int height) {
+  for (int y = 0; y < height; ++y) {
+    if (memcmp(data1, data2, width) != 0)
+      return false;
+    data1 += stride;
+    data2 += stride;
+  }
+  return true;
+}
+
+int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
+  if (type == kYPlane) {
+    return (plane_stride * image_height);
+  } else {
+    int half_height = (image_height + 1) / 2;
+    return (plane_stride * half_height);
+  }
+}
+
 VideoFrame::VideoFrame() {
   // Intentionally using Reset instead of initializer list so that any missed
   // fields in Reset will be caught by memory checkers.
@@ -200,6 +223,26 @@ VideoFrame VideoFrame::ConvertNativeToI420Frame() const {
   frame.ShallowCopy(*this);
   frame.set_video_frame_buffer(video_frame_buffer_->NativeToI420Buffer());
   return frame;
+}
+
+bool VideoFrame::EqualsFrame(const VideoFrame& frame) const {
+  if ((this->width() != frame.width()) || (this->height() != frame.height()) ||
+      (this->stride(kYPlane) != frame.stride(kYPlane)) ||
+      (this->stride(kUPlane) != frame.stride(kUPlane)) ||
+      (this->stride(kVPlane) != frame.stride(kVPlane)) ||
+      (this->timestamp() != frame.timestamp()) ||
+      (this->ntp_time_ms() != frame.ntp_time_ms()) ||
+      (this->render_time_ms() != frame.render_time_ms())) {
+    return false;
+  }
+  const int half_width = (this->width() + 1) / 2;
+  const int half_height = (this->height() + 1) / 2;
+  return EqualPlane(this->buffer(kYPlane), frame.buffer(kYPlane),
+                    this->stride(kYPlane), this->width(), this->height()) &&
+         EqualPlane(this->buffer(kUPlane), frame.buffer(kUPlane),
+                    this->stride(kUPlane), half_width, half_height) &&
+         EqualPlane(this->buffer(kVPlane), frame.buffer(kVPlane),
+                    this->stride(kVPlane), half_width, half_height);
 }
 
 }  // namespace webrtc

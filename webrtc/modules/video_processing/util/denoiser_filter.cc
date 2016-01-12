@@ -20,26 +20,30 @@ const int kMotionMagnitudeThreshold = 8 * 3;
 const int kSumDiffThreshold = 16 * 16 * 2;
 const int kSumDiffThresholdHigh = 600;
 
-DenoiserFilter* DenoiserFilter::Create() {
+DenoiserFilter* DenoiserFilter::Create(bool runtime_cpu_detection) {
   DenoiserFilter* filter = NULL;
 
+  if (runtime_cpu_detection) {
 // If we know the minimum architecture at compile time, avoid CPU detection.
 #if defined(WEBRTC_ARCH_X86_FAMILY)
-  // x86 CPU detection required.
-  if (WebRtc_GetCPUInfo(kSSE2)) {
-    filter = new DenoiserFilterSSE2();
-  } else {
-    filter = new DenoiserFilterC();
-  }
+    // x86 CPU detection required.
+    if (WebRtc_GetCPUInfo(kSSE2)) {
+      filter = new DenoiserFilterSSE2();
+    } else {
+      filter = new DenoiserFilterC();
+    }
 #elif defined(WEBRTC_DETECT_NEON)
-  if (WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) {
-    filter = new DenoiserFilterNEON();
+    if (WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) {
+      filter = new DenoiserFilterNEON();
+    } else {
+      filter = new DenoiserFilterC();
+    }
+#else
+    filter = new DenoiserFilterC();
+#endif
   } else {
     filter = new DenoiserFilterC();
   }
-#else
-  filter = new DenoiserFilterC();
-#endif
 
   return filter;
 }

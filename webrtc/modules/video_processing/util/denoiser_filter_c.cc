@@ -56,7 +56,7 @@ uint32_t DenoiserFilterC::Variance16x8(const uint8_t* a,
     a += a_stride;
     b += b_stride;
   }
-  return *sse - ((static_cast<int64_t>(sum) * sum) >> 8);
+  return *sse - ((static_cast<int64_t>(sum) * sum) >> 7);
 }
 
 DenoiserDecision DenoiserFilterC::MbDenoise(uint8_t* mc_running_avg_y,
@@ -72,7 +72,7 @@ DenoiserDecision DenoiserFilterC::MbDenoise(uint8_t* mc_running_avg_y,
   int adj_val[3] = {3, 4, 6};
   int shift_inc1 = 0;
   int shift_inc2 = 1;
-  int col_sum[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int col_sum[16] = {0};
   if (motion_magnitude <= kMotionMagnitudeThreshold) {
     if (increase_denoising) {
       shift_inc1 = 1;

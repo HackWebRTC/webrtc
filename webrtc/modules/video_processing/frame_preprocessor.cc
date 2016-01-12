@@ -95,7 +95,7 @@ uint32_t VPMFramePreprocessor::GetDecimatedHeight() const {
 }
 
 void VPMFramePreprocessor::EnableDenosing(bool enable) {
-  denoiser_.reset(new VideoDenoiser());
+  denoiser_.reset(new VideoDenoiser(true));
 }
 
 const VideoFrame* VPMFramePreprocessor::PreprocessFrame(
