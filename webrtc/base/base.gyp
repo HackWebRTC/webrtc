@@ -152,6 +152,9 @@
         '<(webrtc_root)/common.gyp:webrtc_common',
         'rtc_base_approved',
       ],
+      'export_dependent_settings': [
+        'rtc_base_approved',
+      ],
       'defines': [
         'FEATURE_ENABLE_SSL',
         'SSL_USE_OPENSSL',

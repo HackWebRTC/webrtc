@@ -177,7 +177,8 @@ static_library("rtc_base") {
   cflags = []
   cflags_cc = []
   libs = []
-  deps = [
+  deps = []
+  public_deps = [
     ":rtc_base_approved",
   ]
 
