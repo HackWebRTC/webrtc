@@ -73,6 +73,12 @@ class AudioReceiveStream : public ReceiveStream {
       // Sender SSRC used for sending RTCP (such as receiver reports).
       uint32_t local_ssrc = 0;
 
+      // Enable feedback for send side bandwidth estimation.
+      // See
+      // https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions
+      // for details.
+      bool transport_cc = false;
+
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
     } rtp;

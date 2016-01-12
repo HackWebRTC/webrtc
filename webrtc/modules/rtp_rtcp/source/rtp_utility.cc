@@ -314,8 +314,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
 
     // Note that 'len' is the header extension element length, which is the
     // number of bytes - 1.
-    const uint8_t id = (*ptr & 0xf0) >> 4;
-    const uint8_t len = (*ptr & 0x0f);
+    const int id = (*ptr & 0xf0) >> 4;
+    const int len = (*ptr & 0x0f);
     ptr++;
 
     if (id == 15) {
@@ -327,8 +327,7 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
     RTPExtensionType type;
     if (ptrExtensionMap->GetType(id, &type) != 0) {
       // If we encounter an unknown extension, just skip over it.
-      LOG(LS_WARNING) << "Failed to find extension id: "
-                      << static_cast<int>(id);
+      LOG(LS_WARNING) << "Failed to find extension id: " << id;
     } else {
       switch (type) {
         case kRtpExtensionTransmissionTimeOffset: {
@@ -397,8 +396,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
         }
         case kRtpExtensionTransportSequenceNumber: {
           if (len != 1) {
-            LOG(LS_WARNING)
-                << "Incorrect peer connection sequence number len: " << len;
+            LOG(LS_WARNING) << "Incorrect transport sequence number len: "
+                            << len;
             return;
           }
           //   0                   1                   2

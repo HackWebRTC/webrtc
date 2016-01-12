@@ -2927,14 +2927,19 @@ void Channel::SetCongestionControlObjects(
     RtpPacketSender* rtp_packet_sender,
     TransportFeedbackObserver* transport_feedback_observer,
     PacketRouter* packet_router) {
-  RTC_DCHECK(feedback_observer_proxy_.get());
-  RTC_DCHECK(seq_num_allocator_proxy_.get());
-  RTC_DCHECK(rtp_packet_sender_proxy_.get());
   RTC_DCHECK(packet_router != nullptr || packet_router_ != nullptr);
-  feedback_observer_proxy_->SetTransportFeedbackObserver(
-      transport_feedback_observer);
-  seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
-  rtp_packet_sender_proxy_->SetPacketSender(rtp_packet_sender);
+  if (transport_feedback_observer) {
+    RTC_DCHECK(feedback_observer_proxy_.get());
+    feedback_observer_proxy_->SetTransportFeedbackObserver(
+        transport_feedback_observer);
+  }
+  if (rtp_packet_sender) {
+    RTC_DCHECK(rtp_packet_sender_proxy_.get());
+    rtp_packet_sender_proxy_->SetPacketSender(rtp_packet_sender);
+  }
+  if (seq_num_allocator_proxy_.get()) {
+    seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
+  }
   _rtpRtcpModule->SetStorePacketsStatus(rtp_packet_sender != nullptr, 600);
   if (packet_router != nullptr) {
     packet_router->AddRtpModule(_rtpRtcpModule.get());

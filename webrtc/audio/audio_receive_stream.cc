@@ -18,6 +18,7 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/call/congestion_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/voice_engine/channel_proxy.h"
@@ -30,6 +31,21 @@
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
+namespace {
+
+bool UseSendSideBwe(const webrtc::AudioReceiveStream::Config& config) {
+  if (!config.rtp.transport_cc) {
+    return false;
+  }
+  for (const auto& extension : config.rtp.extensions) {
+    if (extension.name == RtpExtension::kTransportSequenceNumber) {
+      return true;
+    }
+  }
+  return false;
+}
+}  // namespace
+
 std::string AudioReceiveStream::Config::Rtp::ToString() const {
   std::stringstream ss;
   ss << "{remote_ssrc: " << remote_ssrc;
@@ -65,17 +81,16 @@ std::string AudioReceiveStream::Config::ToString() const {
 
 namespace internal {
 AudioReceiveStream::AudioReceiveStream(
-    RemoteBitrateEstimator* remote_bitrate_estimator,
+    CongestionController* congestion_controller,
     const webrtc::AudioReceiveStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state)
-    : remote_bitrate_estimator_(remote_bitrate_estimator),
-      config_(config),
+    : config_(config),
       audio_state_(audio_state),
       rtp_header_parser_(RtpHeaderParser::Create()) {
   LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
-  RTC_DCHECK(remote_bitrate_estimator_);
   RTC_DCHECK(audio_state_.get());
+  RTC_DCHECK(congestion_controller);
   RTC_DCHECK(rtp_header_parser_);
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
@@ -93,8 +108,6 @@ AudioReceiveStream::AudioReceiveStream(
           kRtpExtensionAbsoluteSendTime, extension.id);
       RTC_DCHECK(registered);
     } else if (extension.name == RtpExtension::kTransportSequenceNumber) {
-      // TODO(holmer): Need to do something here or in  DeliverRtp() to actually
-      //               handle audio packets with this header extension.
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionTransportSequenceNumber, extension.id);
       RTC_DCHECK(registered);
@@ -102,11 +115,28 @@ AudioReceiveStream::AudioReceiveStream(
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }
   }
+  // Configure bandwidth estimation.
+  channel_proxy_->SetCongestionControlObjects(
+      nullptr, nullptr, congestion_controller->packet_router());
+  if (config.combined_audio_video_bwe) {
+    if (UseSendSideBwe(config)) {
+      remote_bitrate_estimator_ =
+          congestion_controller->GetRemoteBitrateEstimator(true);
+    } else {
+      remote_bitrate_estimator_ =
+          congestion_controller->GetRemoteBitrateEstimator(false);
+    }
+    RTC_DCHECK(remote_bitrate_estimator_);
+  }
 }
 
 AudioReceiveStream::~AudioReceiveStream() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
+  channel_proxy_->SetCongestionControlObjects(nullptr, nullptr, nullptr);
+  if (remote_bitrate_estimator_) {
+    remote_bitrate_estimator_->RemoveStream(config_.rtp.remote_ssrc);
+  }
 }
 
 void AudioReceiveStream::Start() {
@@ -141,10 +171,12 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
     return false;
   }
 
-  // Only forward if the parsed header has absolute sender time. RTP timestamps
-  // may have different rates for audio and video and shouldn't be mixed.
-  if (config_.combined_audio_video_bwe &&
-      header.extension.hasAbsoluteSendTime) {
+  // Only forward if the parsed header has one of the headers necessary for
+  // bandwidth estimation. RTP timestamps has different rates for audio and
+  // video and shouldn't be mixed.
+  if (remote_bitrate_estimator_ &&
+      (header.extension.hasAbsoluteSendTime ||
+       header.extension.hasTransportSequenceNumber)) {
     int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
     if (packet_time.timestamp >= 0)
       arrival_time_ms = (packet_time.timestamp + 500) / 1000;

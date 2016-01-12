@@ -336,8 +336,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      congestion_controller_->GetRemoteBitrateEstimator(false), config,
-      config_.audio_state);
+      congestion_controller_.get(), config, config_.audio_state);
   {
     WriteLockScoped write_lock(*receive_crit_);
     RTC_DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==

@@ -17,7 +17,7 @@
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/call/congestion_controller.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
+#include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
@@ -154,19 +154,12 @@ struct ConfigHelper {
   }
 
  private:
-  class NullBitrateObserver : public BitrateObserver {
-   public:
-    virtual void OnNetworkChanged(uint32_t bitrate_bps,
-                                  uint8_t fraction_loss,
-                                  int64_t rtt_ms) {}
-  };
-
   testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
   CallStats call_stats_;
-  NullBitrateObserver bitrate_observer_;
+  testing::NiceMock<MockBitrateObserver> bitrate_observer_;
   rtc::scoped_ptr<ProcessThread> process_thread_;
   CongestionController congestion_controller_;
 };

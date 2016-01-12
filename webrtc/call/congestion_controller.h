@@ -40,28 +40,32 @@ class CongestionController {
  public:
   CongestionController(ProcessThread* process_thread, CallStats* call_stats,
                        BitrateObserver* bitrate_observer);
-  ~CongestionController();
-  void AddEncoder(ViEEncoder* encoder);
-  void RemoveEncoder(ViEEncoder* encoder);
-  void SetBweBitrates(int min_bitrate_bps,
-                      int start_bitrate_bps,
-                      int max_bitrate_bps);
+  virtual ~CongestionController();
+  virtual void AddEncoder(ViEEncoder* encoder);
+  virtual void RemoveEncoder(ViEEncoder* encoder);
+  virtual void SetBweBitrates(int min_bitrate_bps,
+                              int start_bitrate_bps,
+                              int max_bitrate_bps);
 
-  void SetChannelRembStatus(bool sender, bool receiver, RtpRtcp* rtp_module);
+  virtual void SetChannelRembStatus(bool sender,
+                                    bool receiver,
+                                    RtpRtcp* rtp_module);
 
-  void SignalNetworkState(NetworkState state);
+  virtual void SignalNetworkState(NetworkState state);
 
-  BitrateController* GetBitrateController() const;
-  RemoteBitrateEstimator* GetRemoteBitrateEstimator(bool send_side_bwe) const;
-  int64_t GetPacerQueuingDelayMs() const;
-  PacedSender* pacer() const { return pacer_.get(); }
-  PacketRouter* packet_router() const { return packet_router_.get(); }
-  TransportFeedbackObserver* GetTransportFeedbackObserver();
+  virtual BitrateController* GetBitrateController() const;
+  virtual RemoteBitrateEstimator* GetRemoteBitrateEstimator(
+      bool send_side_bwe) const;
+  virtual int64_t GetPacerQueuingDelayMs() const;
+  virtual PacedSender* pacer() const { return pacer_.get(); }
+  virtual PacketRouter* packet_router() const { return packet_router_.get(); }
+  virtual TransportFeedbackObserver* GetTransportFeedbackObserver();
 
-  void UpdatePacerBitrate(int bitrate_kbps, int max_bitrate_kbps,
-                          int min_bitrate_kbps);
+  virtual void UpdatePacerBitrate(int bitrate_kbps,
+                                  int max_bitrate_kbps,
+                                  int min_bitrate_kbps);
 
-  void OnSentPacket(const rtc::SentPacket& sent_packet);
+  virtual void OnSentPacket(const rtc::SentPacket& sent_packet);
 
  private:
   rtc::scoped_ptr<VieRemb> remb_;
@@ -82,6 +86,8 @@ class CongestionController {
   rtc::scoped_ptr<BitrateController> bitrate_controller_;
   rtc::scoped_ptr<TransportFeedbackAdapter> transport_feedback_adapter_;
   int min_bitrate_bps_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(CongestionController);
 };
 
 }  // namespace webrtc
