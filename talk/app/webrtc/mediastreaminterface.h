@@ -118,13 +118,6 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
 // Interface for rendering VideoFrames from a VideoTrack
 class VideoRendererInterface {
  public:
-  // TODO(guoweis): Remove this function.  Obsolete. The implementation of
-  // VideoRendererInterface should be able to handle different frame size as
-  // well as pending rotation. If it can't apply the frame rotation by itself,
-  // it should call |frame|.GetCopyWithRotationApplied() to get a frame that has
-  // the rotation applied.
-  virtual void SetSize(int width, int height) {}
-
   // |frame| may have pending rotation. For clients which can't apply rotation,
   // |frame|->GetCopyWithRotationApplied() will return a frame that has the
   // rotation applied.
