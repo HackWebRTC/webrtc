@@ -39,6 +39,8 @@ class RampUpTester : public test::EndToEndTest {
                bool red);
   ~RampUpTester() override;
 
+  size_t GetNumVideoStreams() const override;
+
   void PerformTest() override;
 
  protected:

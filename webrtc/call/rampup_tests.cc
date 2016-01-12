@@ -87,6 +87,10 @@ test::PacketTransport* RampUpTester::CreateSendTransport(Call* sender_call) {
   return send_transport_;
 }
 
+size_t RampUpTester::GetNumVideoStreams() const {
+  return num_video_streams_;
+}
+
 void RampUpTester::ModifyVideoConfigs(
     VideoSendStream::Config* send_config,
     std::vector<VideoReceiveStream::Config>* receive_configs,
