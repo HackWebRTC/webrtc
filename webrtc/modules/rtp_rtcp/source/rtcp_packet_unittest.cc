@@ -34,7 +34,6 @@ using webrtc::rtcp::Rpsi;
 using webrtc::rtcp::Rrtr;
 using webrtc::rtcp::Sdes;
 using webrtc::rtcp::SenderReport;
-using webrtc::rtcp::Sli;
 using webrtc::rtcp::VoipMetric;
 using webrtc::rtcp::Xr;
 using webrtc::test::RtcpPacketParser;
@@ -215,29 +214,6 @@ TEST(RtcpPacketTest, CnameItemWithEmptyString) {
   EXPECT_EQ(1, parser.sdes_chunk()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.sdes_chunk()->Ssrc());
   EXPECT_EQ("", parser.sdes_chunk()->Cname());
-}
-
-TEST(RtcpPacketTest, Sli) {
-  const uint16_t kFirstMb = 7777;
-  const uint16_t kNumberOfMb = 6666;
-  const uint8_t kPictureId = 60;
-  Sli sli;
-  sli.From(kSenderSsrc);
-  sli.To(kRemoteSsrc);
-  sli.WithFirstMb(kFirstMb);
-  sli.WithNumberOfMb(kNumberOfMb);
-  sli.WithPictureId(kPictureId);
-
-  rtc::scoped_ptr<RawPacket> packet(sli.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.sli()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.sli()->Ssrc());
-  EXPECT_EQ(kRemoteSsrc, parser.sli()->MediaSsrc());
-  EXPECT_EQ(1, parser.sli_item()->num_packets());
-  EXPECT_EQ(kFirstMb, parser.sli_item()->FirstMb());
-  EXPECT_EQ(kNumberOfMb, parser.sli_item()->NumberOfMb());
-  EXPECT_EQ(kPictureId, parser.sli_item()->PictureId());
 }
 
 TEST(RtcpPacketTest, Rpsi) {

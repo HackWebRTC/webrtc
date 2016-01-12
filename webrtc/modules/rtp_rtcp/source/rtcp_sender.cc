@@ -27,6 +27,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
@@ -559,8 +560,6 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildSLI(const RtcpContext& ctx) {
   sli->To(remote_ssrc_);
   // Crop picture id to 6 least significant bits.
   sli->WithPictureId(ctx.picture_id_ & 0x3F);
-  sli->WithFirstMb(0);
-  sli->WithNumberOfMb(0x1FFF);  // 13 bits, only ones for now.
 
   return rtc::scoped_ptr<rtcp::Sli>(sli);
 }

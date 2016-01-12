@@ -272,61 +272,6 @@ class Sdes : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Sdes);
 };
 
-// Slice loss indication (SLI) (RFC 4585).
-//
-// FCI:
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |            First        |        Number           | PictureID |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Sli : public RtcpPacket {
- public:
-  Sli() : RtcpPacket() {
-    memset(&sli_, 0, sizeof(sli_));
-    memset(&sli_item_, 0, sizeof(sli_item_));
-  }
-
-  virtual ~Sli() {}
-
-  void From(uint32_t ssrc) {
-    sli_.SenderSSRC = ssrc;
-  }
-  void To(uint32_t ssrc) {
-    sli_.MediaSSRC = ssrc;
-  }
-  void WithFirstMb(uint16_t first_mb) {
-    assert(first_mb <= 0x1fff);
-    sli_item_.FirstMB = first_mb;
-  }
-  void WithNumberOfMb(uint16_t number_mb) {
-    assert(number_mb <= 0x1fff);
-    sli_item_.NumberOfMB = number_mb;
-  }
-  void WithPictureId(uint8_t picture_id) {
-    assert(picture_id <= 0x3f);
-    sli_item_.PictureId = picture_id;
-  }
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  size_t BlockLength() const {
-    const size_t kFciLength = 4;
-    return kCommonFbFmtLength + kFciLength;
-  }
-
-  RTCPUtility::RTCPPacketPSFBSLI sli_;
-  RTCPUtility::RTCPPacketPSFBSLIItem sli_item_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Sli);
-};
-
 // Reference picture selection indication (RPSI) (RFC 4585).
 //
 // FCI:
