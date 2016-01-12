@@ -267,28 +267,22 @@ class AudioProcessingImpl : public AudioProcessing {
   // APM constants.
   const struct ApmConstants {
     ApmConstants(int agc_startup_min_volume,
-                 const std::vector<Point> array_geometry,
-                 SphericalPointf target_direction,
                  bool use_new_agc,
-                 bool intelligibility_enabled,
-                 bool beamformer_enabled)
+                 bool intelligibility_enabled)
         :  // Format of processing streams at input/output call sites.
           agc_startup_min_volume(agc_startup_min_volume),
-          array_geometry(array_geometry),
-          target_direction(target_direction),
           use_new_agc(use_new_agc),
-          intelligibility_enabled(intelligibility_enabled),
-          beamformer_enabled(beamformer_enabled) {}
+          intelligibility_enabled(intelligibility_enabled) {}
     int agc_startup_min_volume;
-    std::vector<Point> array_geometry;
-    SphericalPointf target_direction;
     bool use_new_agc;
     bool intelligibility_enabled;
-    bool beamformer_enabled;
   } constants_;
 
   struct ApmCaptureState {
-    ApmCaptureState(bool transient_suppressor_enabled)
+    ApmCaptureState(bool transient_suppressor_enabled,
+                    bool beamformer_enabled,
+                    const std::vector<Point>& array_geometry,
+                    SphericalPointf target_direction)
         : aec_system_delay_jumps(-1),
           delay_offset_ms(0),
           was_stream_delay_set(false),
@@ -298,6 +292,9 @@ class AudioProcessingImpl : public AudioProcessing {
           output_will_be_muted(false),
           key_pressed(false),
           transient_suppressor_enabled(transient_suppressor_enabled),
+          beamformer_enabled(beamformer_enabled),
+          array_geometry(array_geometry),
+          target_direction(target_direction),
           fwd_proc_format(kSampleRate16kHz),
           split_rate(kSampleRate16kHz) {}
     int aec_system_delay_jumps;
@@ -309,6 +306,9 @@ class AudioProcessingImpl : public AudioProcessing {
     bool output_will_be_muted;
     bool key_pressed;
     bool transient_suppressor_enabled;
+    bool beamformer_enabled;
+    std::vector<Point> array_geometry;
+    SphericalPointf target_direction;
     rtc::scoped_ptr<AudioBuffer> capture_audio;
     // Only the rate and samples fields of fwd_proc_format_ are used because the
     // forward processing number of channels is mutable and is tracked by the

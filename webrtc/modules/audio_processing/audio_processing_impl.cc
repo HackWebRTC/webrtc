@@ -214,21 +214,21 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
     : public_submodules_(new ApmPublicSubmodules()),
       private_submodules_(new ApmPrivateSubmodules(beamformer)),
       constants_(config.Get<ExperimentalAgc>().startup_min_volume,
-                 config.Get<Beamforming>().array_geometry,
-                 config.Get<Beamforming>().target_direction,
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
                  false,
 #else
                  config.Get<ExperimentalAgc>().enabled,
 #endif
-                 config.Get<Intelligibility>().enabled,
-                 config.Get<Beamforming>().enabled),
+                 config.Get<Intelligibility>().enabled),
 
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-      capture_(false)
+      capture_(false,
 #else
-      capture_(config.Get<ExperimentalNs>().enabled)
+      capture_(config.Get<ExperimentalNs>().enabled,
 #endif
+               config.Get<Beamforming>().enabled,
+               config.Get<Beamforming>().array_geometry,
+               config.Get<Beamforming>().target_direction)
 {
   {
     rtc::CritScope cs_render(&crit_render_);
@@ -345,7 +345,7 @@ int AudioProcessingImpl::MaybeInitialize(
 
 int AudioProcessingImpl::InitializeLocked() {
   const int fwd_audio_buffer_channels =
-      constants_.beamformer_enabled
+      capture_.beamformer_enabled
           ? formats_.api_format.input_stream().num_channels()
           : formats_.api_format.output_stream().num_channels();
   const int rev_audio_buffer_out_num_frames =
@@ -428,9 +428,9 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
     return kBadNumberChannelsError;
   }
 
-  if (constants_.beamformer_enabled && (static_cast<size_t>(num_in_channels) !=
-                                            constants_.array_geometry.size() ||
-                                        num_out_channels > 1)) {
+  if (capture_.beamformer_enabled &&
+      (static_cast<size_t>(num_in_channels) != capture_.array_geometry.size() ||
+       num_out_channels > 1)) {
     return kBadNumberChannelsError;
   }
 
@@ -498,6 +498,17 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
         config.Get<ExperimentalNs>().enabled;
     InitializeTransient();
   }
+
+#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+  if (capture_.beamformer_enabled != config.Get<Beamforming>().enabled) {
+    capture_.beamformer_enabled = config.Get<Beamforming>().enabled;
+    if (config.Get<Beamforming>().array_geometry.size() > 1) {
+      capture_.array_geometry = config.Get<Beamforming>().array_geometry;
+    }
+    capture_.target_direction = config.Get<Beamforming>().target_direction;
+    InitializeBeamformer();
+  }
+#endif  // WEBRTC_ANDROID_PLATFORM_BUILD
 }
 
 int AudioProcessingImpl::input_sample_rate_hz() const {
@@ -760,7 +771,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
         ca->num_channels());
   }
 
-  if (constants_.beamformer_enabled) {
+  if (capture_.beamformer_enabled) {
     private_submodules_->beamformer->ProcessChunk(*ca->split_data_f(),
                                                   ca->split_data_f());
     ca->set_num_channels(1);
@@ -782,7 +793,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 
   if (constants_.use_new_agc &&
       public_submodules_->gain_control->is_enabled() &&
-      (!constants_.beamformer_enabled ||
+      (!capture_.beamformer_enabled ||
        private_submodules_->beamformer->is_target_present())) {
     private_submodules_->agc_manager->Process(
         ca->split_bands_const(0)[kBand0To8kHz], ca->num_frames_per_band(),
@@ -1172,7 +1183,7 @@ VoiceDetection* AudioProcessingImpl::voice_detection() const {
 }
 
 bool AudioProcessingImpl::is_data_processed() const {
-  if (constants_.beamformer_enabled) {
+  if (capture_.beamformer_enabled) {
     return true;
   }
 
@@ -1287,10 +1298,10 @@ void AudioProcessingImpl::InitializeTransient() {
 }
 
 void AudioProcessingImpl::InitializeBeamformer() {
-  if (constants_.beamformer_enabled) {
+  if (capture_.beamformer_enabled) {
     if (!private_submodules_->beamformer) {
       private_submodules_->beamformer.reset(new NonlinearBeamformer(
-          constants_.array_geometry, constants_.target_direction));
+          capture_.array_geometry, capture_.target_direction));
     }
     private_submodules_->beamformer->Initialize(kChunkSizeMs,
                                                 capture_nonlocked_.split_rate);
