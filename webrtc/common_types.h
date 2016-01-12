@@ -311,12 +311,6 @@ struct CodecInst {
 // RTP
 enum {kRtpCsrcSize = 15}; // RFC 3550 page 13
 
-enum RTPDirections
-{
-    kRtpIncoming = 0,
-    kRtpOutgoing
-};
-
 enum PayloadFrequencies
 {
     kFreq8000Hz = 8000,
