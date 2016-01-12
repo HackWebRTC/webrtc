@@ -150,7 +150,7 @@ void AudioBuffer::CopyFrom(const float* const* data,
 void AudioBuffer::CopyTo(const StreamConfig& stream_config,
                          float* const* data) {
   assert(stream_config.num_frames() == output_num_frames_);
-  assert(stream_config.num_channels() == num_channels_);
+  assert(stream_config.num_channels() == num_channels_ || num_channels_ == 1);
 
   // Convert to the float range.
   float* const* data_ptr = data;
@@ -172,6 +172,11 @@ void AudioBuffer::CopyTo(const StreamConfig& stream_config,
                                       data[i],
                                       output_num_frames_);
     }
+  }
+
+  // Upmix.
+  for (int i = num_channels_; i < stream_config.num_channels(); ++i) {
+    memcpy(data[i], data[0], output_num_frames_ * sizeof(**data));
   }
 }
 

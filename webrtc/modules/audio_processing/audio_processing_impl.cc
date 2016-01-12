@@ -226,9 +226,9 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
 #else
       capture_(config.Get<ExperimentalNs>().enabled,
 #endif
-               config.Get<Beamforming>().enabled,
                config.Get<Beamforming>().array_geometry,
-               config.Get<Beamforming>().target_direction)
+               config.Get<Beamforming>().target_direction),
+      capture_nonlocked_(config.Get<Beamforming>().enabled)
 {
   {
     rtc::CritScope cs_render(&crit_render_);
@@ -345,7 +345,7 @@ int AudioProcessingImpl::MaybeInitialize(
 
 int AudioProcessingImpl::InitializeLocked() {
   const int fwd_audio_buffer_channels =
-      capture_.beamformer_enabled
+      capture_nonlocked_.beamformer_enabled
           ? formats_.api_format.input_stream().num_channels()
           : formats_.api_format.output_stream().num_channels();
   const int rev_audio_buffer_out_num_frames =
@@ -428,9 +428,8 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
     return kBadNumberChannelsError;
   }
 
-  if (capture_.beamformer_enabled &&
-      (static_cast<size_t>(num_in_channels) != capture_.array_geometry.size() ||
-       num_out_channels > 1)) {
+  if (capture_nonlocked_.beamformer_enabled &&
+      static_cast<size_t>(num_in_channels) != capture_.array_geometry.size()) {
     return kBadNumberChannelsError;
   }
 
@@ -500,8 +499,9 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
   }
 
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-  if (capture_.beamformer_enabled != config.Get<Beamforming>().enabled) {
-    capture_.beamformer_enabled = config.Get<Beamforming>().enabled;
+  if (capture_nonlocked_.beamformer_enabled !=
+          config.Get<Beamforming>().enabled) {
+    capture_nonlocked_.beamformer_enabled = config.Get<Beamforming>().enabled;
     if (config.Get<Beamforming>().array_geometry.size() > 1) {
       capture_.array_geometry = config.Get<Beamforming>().array_geometry;
     }
@@ -535,6 +535,11 @@ int AudioProcessingImpl::num_reverse_channels() const {
 int AudioProcessingImpl::num_input_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
   return formats_.api_format.input_stream().num_channels();
+}
+
+int AudioProcessingImpl::num_proc_channels() const {
+  // Used as callback from submodules, hence locking is not allowed.
+  return capture_nonlocked_.beamformer_enabled ? 1 : num_output_channels();
 }
 
 int AudioProcessingImpl::num_output_channels() const {
@@ -771,7 +776,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
         ca->num_channels());
   }
 
-  if (capture_.beamformer_enabled) {
+  if (capture_nonlocked_.beamformer_enabled) {
     private_submodules_->beamformer->ProcessChunk(*ca->split_data_f(),
                                                   ca->split_data_f());
     ca->set_num_channels(1);
@@ -793,7 +798,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 
   if (constants_.use_new_agc &&
       public_submodules_->gain_control->is_enabled() &&
-      (!capture_.beamformer_enabled ||
+      (!capture_nonlocked_.beamformer_enabled ||
        private_submodules_->beamformer->is_target_present())) {
     private_submodules_->agc_manager->Process(
         ca->split_bands_const(0)[kBand0To8kHz], ca->num_frames_per_band(),
@@ -1183,7 +1188,7 @@ VoiceDetection* AudioProcessingImpl::voice_detection() const {
 }
 
 bool AudioProcessingImpl::is_data_processed() const {
-  if (capture_.beamformer_enabled) {
+  if (capture_nonlocked_.beamformer_enabled) {
     return true;
   }
 
@@ -1293,12 +1298,12 @@ void AudioProcessingImpl::InitializeTransient() {
     public_submodules_->transient_suppressor->Initialize(
         capture_nonlocked_.fwd_proc_format.sample_rate_hz(),
         capture_nonlocked_.split_rate,
-        formats_.api_format.output_stream().num_channels());
+        num_proc_channels());
   }
 }
 
 void AudioProcessingImpl::InitializeBeamformer() {
-  if (capture_.beamformer_enabled) {
+  if (capture_nonlocked_.beamformer_enabled) {
     if (!private_submodules_->beamformer) {
       private_submodules_->beamformer.reset(new NonlinearBeamformer(
           capture_.array_geometry, capture_.target_direction));
@@ -1320,12 +1325,12 @@ void AudioProcessingImpl::InitializeIntelligibility() {
 }
 
 void AudioProcessingImpl::InitializeHighPassFilter() {
-  public_submodules_->high_pass_filter->Initialize(num_output_channels(),
+  public_submodules_->high_pass_filter->Initialize(num_proc_channels(),
                                                    proc_sample_rate_hz());
 }
 
 void AudioProcessingImpl::InitializeNoiseSuppression() {
-  public_submodules_->noise_suppression->Initialize(num_output_channels(),
+  public_submodules_->noise_suppression->Initialize(num_proc_channels(),
                                                     proc_sample_rate_hz());
 }
 

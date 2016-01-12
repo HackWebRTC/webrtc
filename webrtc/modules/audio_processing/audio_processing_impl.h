@@ -102,6 +102,7 @@ class AudioProcessingImpl : public AudioProcessing {
   int proc_sample_rate_hz() const override;
   int proc_split_sample_rate_hz() const override;
   int num_input_channels() const override;
+  int num_proc_channels() const override;
   int num_output_channels() const override;
   int num_reverse_channels() const override;
   int stream_delay_ms() const override;
@@ -280,7 +281,6 @@ class AudioProcessingImpl : public AudioProcessing {
 
   struct ApmCaptureState {
     ApmCaptureState(bool transient_suppressor_enabled,
-                    bool beamformer_enabled,
                     const std::vector<Point>& array_geometry,
                     SphericalPointf target_direction)
         : aec_system_delay_jumps(-1),
@@ -292,7 +292,6 @@ class AudioProcessingImpl : public AudioProcessing {
           output_will_be_muted(false),
           key_pressed(false),
           transient_suppressor_enabled(transient_suppressor_enabled),
-          beamformer_enabled(beamformer_enabled),
           array_geometry(array_geometry),
           target_direction(target_direction),
           fwd_proc_format(kSampleRate16kHz),
@@ -306,7 +305,6 @@ class AudioProcessingImpl : public AudioProcessing {
     bool output_will_be_muted;
     bool key_pressed;
     bool transient_suppressor_enabled;
-    bool beamformer_enabled;
     std::vector<Point> array_geometry;
     SphericalPointf target_direction;
     rtc::scoped_ptr<AudioBuffer> capture_audio;
@@ -318,16 +316,18 @@ class AudioProcessingImpl : public AudioProcessing {
   } capture_ GUARDED_BY(crit_capture_);
 
   struct ApmCaptureNonLockedState {
-    ApmCaptureNonLockedState()
+    ApmCaptureNonLockedState(bool beamformer_enabled)
         : fwd_proc_format(kSampleRate16kHz),
           split_rate(kSampleRate16kHz),
-          stream_delay_ms(0) {}
+          stream_delay_ms(0),
+          beamformer_enabled(beamformer_enabled) {}
     // Only the rate and samples fields of fwd_proc_format_ are used because the
     // forward processing number of channels is mutable and is tracked by the
     // capture_audio_.
     StreamConfig fwd_proc_format;
     int split_rate;
     int stream_delay_ms;
+    bool beamformer_enabled;
   } capture_nonlocked_;
 
   struct ApmRenderState {

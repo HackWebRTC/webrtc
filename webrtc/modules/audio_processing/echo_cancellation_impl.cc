@@ -174,7 +174,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   }
 
   assert(audio->num_frames_per_band() <= 160);
-  assert(audio->num_channels() == apm_->num_output_channels());
+  assert(audio->num_channels() == apm_->num_proc_channels());
 
   int err = AudioProcessing::kNoError;
 

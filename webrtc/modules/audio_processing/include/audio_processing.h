@@ -288,6 +288,7 @@ class AudioProcessing {
   virtual int proc_sample_rate_hz() const = 0;
   virtual int proc_split_sample_rate_hz() const = 0;
   virtual int num_input_channels() const = 0;
+  virtual int num_proc_channels() const = 0;
   virtual int num_output_channels() const = 0;
   virtual int num_reverse_channels() const = 0;
 

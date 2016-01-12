@@ -78,6 +78,7 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB_CONST(proc_sample_rate_hz, ());
   WEBRTC_STUB_CONST(proc_split_sample_rate_hz, ());
   WEBRTC_STUB_CONST(num_input_channels, ());
+  WEBRTC_STUB_CONST(num_proc_channels, ());
   WEBRTC_STUB_CONST(num_output_channels, ());
   WEBRTC_STUB_CONST(num_reverse_channels, ());
   WEBRTC_VOID_STUB(set_output_will_be_muted, (bool muted));

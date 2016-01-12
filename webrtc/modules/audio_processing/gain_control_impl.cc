@@ -435,7 +435,7 @@ int GainControlImpl::ConfigureHandle(void* handle) const {
 
 int GainControlImpl::num_handles_required() const {
   // Not locked as it only relies on APM public API which is threadsafe.
-  return apm_->num_output_channels();
+  return apm_->num_proc_channels();
 }
 
 int GainControlImpl::GetHandleError(void* handle) const {
