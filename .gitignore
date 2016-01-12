@@ -84,6 +84,7 @@
 /third_party/binutils
 /third_party/boringssl
 /third_party/BUILD.gn
+/third_party/catapult
 /third_party/clang_format
 /third_party/class-dump
 /third_party/colorama
@@ -149,6 +150,7 @@
 /tools/python
 /tools/sanitizer_options
 /tools/swarming_client
+/tools/telemetry
 /tools/tsan_suppressions
 /tools/valgrind
 /tools/vim
