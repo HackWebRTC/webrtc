@@ -48,7 +48,6 @@ class VideoTrackRenderers : public cricket::VideoRenderer {
   ~VideoTrackRenderers();
 
   // Implements cricket::VideoRenderer
-  virtual bool SetSize(int width, int height, int reserved);
   virtual bool RenderFrame(const cricket::VideoFrame* frame);
 
   void AddRenderer(VideoRendererInterface* renderer);

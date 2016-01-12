@@ -54,10 +54,6 @@ void VideoTrackRenderers::SetEnabled(bool enable) {
   enabled_ = enable;
 }
 
-bool VideoTrackRenderers::SetSize(int width, int height, int reserved) {
-  return true;
-}
-
 bool VideoTrackRenderers::RenderFrame(const cricket::VideoFrame* frame) {
   rtc::CritScope cs(&critical_section_);
   if (!enabled_) {
