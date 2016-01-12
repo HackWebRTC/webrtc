@@ -221,7 +221,8 @@ TEST(ScopedVectorTest, MoveConstruct) {
     EXPECT_FALSE(scoped_vector.empty());
     EXPECT_TRUE(watcher.IsWatching(scoped_vector.back()));
 
-    ScopedVector<LifeCycleObject> scoped_vector_copy(scoped_vector.Pass());
+    ScopedVector<LifeCycleObject> scoped_vector_copy(
+        scoped_vector.DEPRECATED_Pass());
     EXPECT_TRUE(scoped_vector.empty());
     EXPECT_FALSE(scoped_vector_copy.empty());
     EXPECT_TRUE(watcher.IsWatching(scoped_vector_copy.back()));
@@ -241,7 +242,7 @@ TEST(ScopedVectorTest, MoveAssign) {
     EXPECT_FALSE(scoped_vector.empty());
     EXPECT_TRUE(watcher.IsWatching(scoped_vector.back()));
 
-    scoped_vector_assign = scoped_vector.Pass();
+    scoped_vector_assign = scoped_vector.DEPRECATED_Pass();
     EXPECT_TRUE(scoped_vector.empty());
     EXPECT_FALSE(scoped_vector_assign.empty());
     EXPECT_TRUE(watcher.IsWatching(scoped_vector_assign.back()));
@@ -273,10 +274,11 @@ class DeleteCounter {
 template <typename T>
 class PassThru  {
  public:
-  explicit PassThru(ScopedVector<T> scoper) : scoper_(scoper.Pass()) {}
+  explicit PassThru(ScopedVector<T> scoper)
+      : scoper_(scoper.DEPRECATED_Pass()) {}
 
   ScopedVector<T> Run() {
-    return scoper_.Pass();
+    return scoper_.DEPRECATED_Pass();
   }
 
  private:
@@ -288,7 +290,7 @@ TEST(ScopedVectorTest, Passed) {
   ScopedVector<DeleteCounter> deleter_vector;
   deleter_vector.push_back(new DeleteCounter(&deletes));
   EXPECT_EQ(0, deletes);
-  PassThru<DeleteCounter> pass_thru(deleter_vector.Pass());
+  PassThru<DeleteCounter> pass_thru(deleter_vector.DEPRECATED_Pass());
   EXPECT_EQ(0, deletes);
   ScopedVector<DeleteCounter> result = pass_thru.Run();
   EXPECT_EQ(0, deletes);

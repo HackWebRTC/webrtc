@@ -138,7 +138,7 @@ TEST(BufferTest, TestEnsureCapacityLarger) {
 TEST(BufferTest, TestMoveConstruct) {
   Buffer buf1(kTestData, 3, 40);
   const uint8_t* data = buf1.data();
-  Buffer buf2(buf1.Pass());
+  Buffer buf2(buf1.DEPRECATED_Pass());
   EXPECT_EQ(buf2.size(), 3u);
   EXPECT_EQ(buf2.capacity(), 40u);
   EXPECT_EQ(buf2.data(), data);
@@ -152,7 +152,7 @@ TEST(BufferTest, TestMoveAssign) {
   Buffer buf1(kTestData, 3, 40);
   const uint8_t* data = buf1.data();
   Buffer buf2(kTestData);
-  buf2 = buf1.Pass();
+  buf2 = buf1.DEPRECATED_Pass();
   EXPECT_EQ(buf2.size(), 3u);
   EXPECT_EQ(buf2.capacity(), 40u);
   EXPECT_EQ(buf2.data(), data);

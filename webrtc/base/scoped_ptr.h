@@ -90,6 +90,7 @@
 #include <cstddef>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/deprecation.h"
 #include "webrtc/base/template_util.h"
 #include "webrtc/typedefs.h"
 
@@ -374,7 +375,10 @@ class scoped_ptr {
   scoped_ptr& operator=(const scoped_ptr& other) = delete;
 
   // Get an rvalue reference. (sp.Pass() does the same thing as std::move(sp).)
-  scoped_ptr&& Pass() { return std::move(*this); }
+  // Deprecated; remove in March 2016 (bug 5373).
+  RTC_DEPRECATED scoped_ptr&& Pass() {
+    return std::move(*this);
+  }
 
   // Reset.  Deletes the currently owned object, if any.
   // Then takes ownership of a new object, if given.
@@ -507,7 +511,10 @@ class scoped_ptr<T[], D> {
   scoped_ptr& operator=(const scoped_ptr& other) = delete;
 
   // Get an rvalue reference. (sp.Pass() does the same thing as std::move(sp).)
-  scoped_ptr&& Pass() { return std::move(*this); }
+  // Deprecated; remove in March 2016 (bug 5373).
+  RTC_DEPRECATED scoped_ptr&& Pass() {
+    return std::move(*this);
+  }
 
   // Reset.  Deletes the currently owned array, if any.
   // Then takes ownership of a new object, if given.

@@ -15,6 +15,8 @@
 #include <cassert>
 #include <cstring>
 #include <utility>  // std::swap (C++11 and later)
+
+#include "webrtc/base/deprecation.h"
 #include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
@@ -170,7 +172,9 @@ class Buffer {
   }
 
   // b.Pass() does the same thing as std::move(b).
-  Buffer&& Pass() {
+  // Deprecated; remove in March 2016 (bug 5373).
+  RTC_DEPRECATED Buffer&& Pass() { return DEPRECATED_Pass(); }
+  Buffer&& DEPRECATED_Pass() {
     assert(IsConsistent());
     return std::move(*this);
   }
