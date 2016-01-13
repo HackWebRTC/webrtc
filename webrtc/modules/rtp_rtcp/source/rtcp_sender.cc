@@ -24,6 +24,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/compound_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
@@ -79,7 +80,7 @@ RTCPSender::FeedbackState::FeedbackState()
       has_last_xr_rr(false),
       module(nullptr) {}
 
-class PacketContainer : public rtcp::Empty,
+class PacketContainer : public rtcp::CompoundPacket,
                         public rtcp::RtcpPacket::PacketReadyCallback {
  public:
   explicit PacketContainer(Transport* transport)
@@ -95,7 +96,7 @@ class PacketContainer : public rtcp::Empty,
   }
 
   size_t SendPackets() {
-    rtcp::Empty::Build(this);
+    rtcp::CompoundPacket::Build(this);
     return bytes_sent_;
   }
 

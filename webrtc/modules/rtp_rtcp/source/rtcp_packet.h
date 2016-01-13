@@ -127,24 +127,6 @@ class RtcpPacket {
 
 // TODO(sprang): Move RtcpPacket subclasses out to separate files.
 
-class Empty : public RtcpPacket {
- public:
-  Empty() : RtcpPacket() {}
-
-  virtual ~Empty() {}
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
-  size_t BlockLength() const override;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(Empty);
-};
-
 // RTCP sender report (RFC 3550).
 //
 //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1

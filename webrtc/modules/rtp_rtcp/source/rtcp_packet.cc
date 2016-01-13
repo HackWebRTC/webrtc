@@ -390,17 +390,6 @@ void RtcpPacket::CreateHeader(
   AssignUWord16(buffer, pos, length);
 }
 
-bool Empty::Create(uint8_t* packet,
-                   size_t* index,
-                   size_t max_length,
-                   RtcpPacket::PacketReadyCallback* callback) const {
-  return true;
-}
-
-size_t Empty::BlockLength() const {
-  return 0;
-}
-
 bool SenderReport::Create(uint8_t* packet,
                           size_t* index,
                           size_t max_length,
