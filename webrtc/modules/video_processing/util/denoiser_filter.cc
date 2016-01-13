@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_processing/util/denoiser_filter.h"
 #include "webrtc/modules/video_processing/util/denoiser_filter_c.h"
 #include "webrtc/modules/video_processing/util/denoiser_filter_neon.h"
@@ -20,31 +21,33 @@ const int kMotionMagnitudeThreshold = 8 * 3;
 const int kSumDiffThreshold = 16 * 16 * 2;
 const int kSumDiffThresholdHigh = 600;
 
-DenoiserFilter* DenoiserFilter::Create(bool runtime_cpu_detection) {
-  DenoiserFilter* filter = NULL;
+rtc::scoped_ptr<DenoiserFilter> DenoiserFilter::Create(
+    bool runtime_cpu_detection) {
+  rtc::scoped_ptr<DenoiserFilter> filter;
 
   if (runtime_cpu_detection) {
 // If we know the minimum architecture at compile time, avoid CPU detection.
 #if defined(WEBRTC_ARCH_X86_FAMILY)
     // x86 CPU detection required.
     if (WebRtc_GetCPUInfo(kSSE2)) {
-      filter = new DenoiserFilterSSE2();
+      filter.reset(new DenoiserFilterSSE2());
     } else {
-      filter = new DenoiserFilterC();
+      filter.reset(new DenoiserFilterC());
     }
 #elif defined(WEBRTC_DETECT_NEON)
     if (WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) {
-      filter = new DenoiserFilterNEON();
+      filter.reset(new DenoiserFilterNEON());
     } else {
-      filter = new DenoiserFilterC();
+      filter.reset(new DenoiserFilterC());
     }
 #else
-    filter = new DenoiserFilterC();
+    filter.reset(new DenoiserFilterC());
 #endif
   } else {
-    filter = new DenoiserFilterC();
+    filter.reset(new DenoiserFilterC());
   }
 
+  RTC_DCHECK(filter.get() != nullptr);
   return filter;
 }
 

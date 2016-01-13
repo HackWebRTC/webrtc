@@ -34,12 +34,9 @@ bool EqualPlane(const uint8_t* data1,
 }
 
 int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
-  if (type == kYPlane) {
-    return (plane_stride * image_height);
-  } else {
-    int half_height = (image_height + 1) / 2;
-    return (plane_stride * half_height);
-  }
+  if (type == kYPlane)
+    return plane_stride * image_height;
+  return plane_stride * ((image_height + 1) / 2);
 }
 
 VideoFrame::VideoFrame() {
@@ -226,23 +223,23 @@ VideoFrame VideoFrame::ConvertNativeToI420Frame() const {
 }
 
 bool VideoFrame::EqualsFrame(const VideoFrame& frame) const {
-  if ((this->width() != frame.width()) || (this->height() != frame.height()) ||
-      (this->stride(kYPlane) != frame.stride(kYPlane)) ||
-      (this->stride(kUPlane) != frame.stride(kUPlane)) ||
-      (this->stride(kVPlane) != frame.stride(kVPlane)) ||
-      (this->timestamp() != frame.timestamp()) ||
-      (this->ntp_time_ms() != frame.ntp_time_ms()) ||
-      (this->render_time_ms() != frame.render_time_ms())) {
+  if (width() != frame.width() || height() != frame.height() ||
+      stride(kYPlane) != frame.stride(kYPlane) ||
+      stride(kUPlane) != frame.stride(kUPlane) ||
+      stride(kVPlane) != frame.stride(kVPlane) ||
+      timestamp() != frame.timestamp() ||
+      ntp_time_ms() != frame.ntp_time_ms() ||
+      render_time_ms() != frame.render_time_ms()) {
     return false;
   }
-  const int half_width = (this->width() + 1) / 2;
-  const int half_height = (this->height() + 1) / 2;
-  return EqualPlane(this->buffer(kYPlane), frame.buffer(kYPlane),
-                    this->stride(kYPlane), this->width(), this->height()) &&
-         EqualPlane(this->buffer(kUPlane), frame.buffer(kUPlane),
-                    this->stride(kUPlane), half_width, half_height) &&
-         EqualPlane(this->buffer(kVPlane), frame.buffer(kVPlane),
-                    this->stride(kVPlane), half_width, half_height);
+  const int half_width = (width() + 1) / 2;
+  const int half_height = (height() + 1) / 2;
+  return EqualPlane(buffer(kYPlane), frame.buffer(kYPlane),
+                    stride(kYPlane), width(), height()) &&
+         EqualPlane(buffer(kUPlane), frame.buffer(kUPlane),
+                    stride(kUPlane), half_width, half_height) &&
+         EqualPlane(buffer(kVPlane), frame.buffer(kVPlane),
+                    stride(kVPlane), half_width, half_height);
 }
 
 }  // namespace webrtc

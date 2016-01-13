@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_processing/include/video_processing_defines.h"
 
@@ -30,7 +31,7 @@ struct DenoiseMetrics {
 
 class DenoiserFilter {
  public:
-  static DenoiserFilter* Create(bool runtime_cpu_detection);
+  static rtc::scoped_ptr<DenoiserFilter> Create(bool runtime_cpu_detection);
 
   virtual ~DenoiserFilter() {}
 
