@@ -14,6 +14,7 @@
 
 #include "vpx/vpx_encoder.h"
 
+#include "webrtc/common.h"
 #include "webrtc/common_video/include/video_image.h"
 #include "webrtc/typedefs.h"
 
@@ -30,6 +31,8 @@ class TemporalLayers {
     virtual ~Factory() {}
     virtual TemporalLayers* Create(int temporal_layers,
                                    uint8_t initial_tl0_pic_idx) const;
+    static const ConfigOptionID identifier =
+        ConfigOptionID::kTemporalLayersFactory;
   };
 
   virtual ~TemporalLayers() {}

@@ -238,6 +238,12 @@ source_set("webrtc_common") {
 
   configs += [ ":common_config" ]
   public_configs = [ ":common_inherited_config" ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
 
 source_set("gtest_prod") {
