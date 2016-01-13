@@ -25,7 +25,7 @@ class AudioEncoderPcm : public AudioEncoder {
     bool IsOk() const;
 
     int frame_size_ms;
-    int num_channels;
+    size_t num_channels;
     int payload_type;
 
    protected:
@@ -37,7 +37,7 @@ class AudioEncoderPcm : public AudioEncoder {
 
   size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
-  int NumChannels() const override;
+  size_t NumChannels() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
@@ -58,7 +58,7 @@ class AudioEncoderPcm : public AudioEncoder {
 
  private:
   const int sample_rate_hz_;
-  const int num_channels_;
+  const size_t num_channels_;
   const int payload_type_;
   const size_t num_10ms_frames_per_packet_;
   const size_t full_frame_samples_;

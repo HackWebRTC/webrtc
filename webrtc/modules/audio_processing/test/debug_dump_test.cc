@@ -327,7 +327,8 @@ void DebugDumpTest::OnStreamEvent(const audioproc::Stream& msg) {
   else
     apm_->set_stream_key_pressed(true);
 
-  ASSERT_EQ(input_config_.num_channels(), msg.input_channel_size());
+  ASSERT_EQ(input_config_.num_channels(),
+            static_cast<size_t>(msg.input_channel_size()));
   ASSERT_EQ(input_config_.num_frames() * sizeof(float),
             msg.input_channel(0).size());
 
@@ -341,7 +342,8 @@ void DebugDumpTest::OnStreamEvent(const audioproc::Stream& msg) {
                                 output_config_, output_->channels()));
 
   // Check that output of APM is bit-exact to the output in the dump.
-  ASSERT_EQ(output_config_.num_channels(), msg.output_channel_size());
+  ASSERT_EQ(output_config_.num_channels(),
+            static_cast<size_t>(msg.output_channel_size()));
   ASSERT_EQ(output_config_.num_frames() * sizeof(float),
             msg.output_channel(0).size());
   for (int i = 0; i < msg.output_channel_size(); ++i) {
@@ -355,7 +357,8 @@ void DebugDumpTest::OnReverseStreamEvent(const audioproc::ReverseStream& msg) {
   ASSERT_TRUE(apm_.get());
 
   ASSERT_GT(msg.channel_size(), 0);
-  ASSERT_EQ(reverse_config_.num_channels(), msg.channel_size());
+  ASSERT_EQ(reverse_config_.num_channels(),
+            static_cast<size_t>(msg.channel_size()));
   ASSERT_EQ(reverse_config_.num_frames() * sizeof(float),
             msg.channel(0).size());
 

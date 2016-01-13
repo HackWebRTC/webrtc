@@ -54,12 +54,12 @@ IntelligibilityEnhancer::TransformCallback::TransformCallback(
 
 void IntelligibilityEnhancer::TransformCallback::ProcessAudioBlock(
     const complex<float>* const* in_block,
-    int in_channels,
+    size_t in_channels,
     size_t frames,
-    int /* out_channels */,
+    size_t /* out_channels */,
     complex<float>* const* out_block) {
   RTC_DCHECK_EQ(parent_->freqs_, frames);
-  for (int i = 0; i < in_channels; ++i) {
+  for (size_t i = 0; i < in_channels; ++i) {
     parent_->DispatchAudio(source_, in_block[i], out_block[i]);
   }
 }
@@ -129,7 +129,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(const Config& config)
 
 void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
                                                  int sample_rate_hz,
-                                                 int num_channels) {
+                                                 size_t num_channels) {
   RTC_CHECK_EQ(sample_rate_hz_, sample_rate_hz);
   RTC_CHECK_EQ(num_render_channels_, num_channels);
 
@@ -138,7 +138,7 @@ void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
   }
 
   if (active_) {
-    for (int i = 0; i < num_render_channels_; ++i) {
+    for (size_t i = 0; i < num_render_channels_; ++i) {
       memcpy(audio[i], temp_render_out_buffer_.channels()[i],
              chunk_length_ * sizeof(**audio));
     }
@@ -147,7 +147,7 @@ void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
 
 void IntelligibilityEnhancer::AnalyzeCaptureAudio(float* const* audio,
                                                   int sample_rate_hz,
-                                                  int num_channels) {
+                                                  size_t num_channels) {
   RTC_CHECK_EQ(sample_rate_hz_, sample_rate_hz);
   RTC_CHECK_EQ(num_capture_channels_, num_channels);
 

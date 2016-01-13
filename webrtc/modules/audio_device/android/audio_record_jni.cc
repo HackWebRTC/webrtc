@@ -43,7 +43,7 @@ AudioRecordJni::JavaAudioRecord::JavaAudioRecord(
 AudioRecordJni::JavaAudioRecord::~JavaAudioRecord() {}
 
 int AudioRecordJni::JavaAudioRecord::InitRecording(
-    int sample_rate, int channels) {
+    int sample_rate, size_t channels) {
   return audio_record_->CallIntMethod(init_recording_,
                                       static_cast<jint>(sample_rate),
                                       static_cast<jint>(channels));
@@ -185,8 +185,8 @@ void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   const int sample_rate_hz = audio_parameters_.sample_rate();
   ALOGD("SetRecordingSampleRate(%d)", sample_rate_hz);
   audio_device_buffer_->SetRecordingSampleRate(sample_rate_hz);
-  const int channels = audio_parameters_.channels();
-  ALOGD("SetRecordingChannels(%d)", channels);
+  const size_t channels = audio_parameters_.channels();
+  ALOGD("SetRecordingChannels(%" PRIuS ")", channels);
   audio_device_buffer_->SetRecordingChannels(channels);
   total_delay_in_milliseconds_ =
       audio_manager_->GetDelayEstimateInMilliseconds();

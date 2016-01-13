@@ -68,7 +68,7 @@ class GainControlImpl : public GainControl,
   int InitializeHandle(void* handle) const override;
   int ConfigureHandle(void* handle) const override;
   void DestroyHandle(void* handle) const override;
-  int num_handles_required() const override;
+  size_t num_handles_required() const override;
   int GetHandleError(void* handle) const override;
 
   void AllocateRenderQueue();

@@ -26,8 +26,8 @@ class BlockerCallback {
 
   virtual void ProcessBlock(const float* const* input,
                             size_t num_frames,
-                            int num_input_channels,
-                            int num_output_channels,
+                            size_t num_input_channels,
+                            size_t num_output_channels,
                             float* const* output) = 0;
 };
 
@@ -65,23 +65,23 @@ class Blocker {
  public:
   Blocker(size_t chunk_size,
           size_t block_size,
-          int num_input_channels,
-          int num_output_channels,
+          size_t num_input_channels,
+          size_t num_output_channels,
           const float* window,
           size_t shift_amount,
           BlockerCallback* callback);
 
   void ProcessChunk(const float* const* input,
                     size_t chunk_size,
-                    int num_input_channels,
-                    int num_output_channels,
+                    size_t num_input_channels,
+                    size_t num_output_channels,
                     float* const* output);
 
  private:
   const size_t chunk_size_;
   const size_t block_size_;
-  const int num_input_channels_;
-  const int num_output_channels_;
+  const size_t num_input_channels_;
+  const size_t num_output_channels_;
 
   // The number of frames of delay to add at the beginning of the first chunk.
   const size_t initial_delay_;

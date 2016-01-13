@@ -194,7 +194,7 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
     const void* audioSamples,
     const size_t nSamples,
     const size_t nBytesPerSample,
-    const uint8_t nChannels,
+    const size_t nChannels,
     const uint32_t samplesPerSec,
     const uint32_t totalDelayMS,
     const int32_t clockDrift,
@@ -339,7 +339,7 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
 int32_t AudioTransportImpl::NeedMorePlayData(
     const size_t nSamples,
     const size_t nBytesPerSample,
-    const uint8_t nChannels,
+    const size_t nChannels,
     const uint32_t samplesPerSec,
     void* audioSamples,
     size_t& nSamplesOut,
@@ -365,7 +365,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                 int16_t* ptr16Out = NULL;
 
                 const size_t nSamplesIn = packet->nSamples;
-                const uint8_t nChannelsIn = packet->nChannels;
+                const size_t nChannelsIn = packet->nChannels;
                 const uint32_t samplesPerSecIn = packet->samplesPerSec;
                 const size_t nBytesPerSampleIn = packet->nBytesPerSample;
 

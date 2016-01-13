@@ -19,6 +19,7 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/engine_configurations.h"
@@ -113,8 +114,8 @@ void PrintCodecs(bool opus_stereo) {
     int res = codec->GetCodec(i, codec_params);
     VALIDATE;
     SetStereoIfOpus(opus_stereo, &codec_params);
-    printf("%2d. %3d  %s/%d/%d \n", i, codec_params.pltype, codec_params.plname,
-           codec_params.plfreq, codec_params.channels);
+    printf("%2d. %3d  %s/%d/%" PRIuS " \n", i, codec_params.pltype,
+           codec_params.plname, codec_params.plfreq, codec_params.channels);
   }
 }
 

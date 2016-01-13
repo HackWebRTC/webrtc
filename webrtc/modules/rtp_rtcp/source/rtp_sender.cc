@@ -296,7 +296,7 @@ int32_t RTPSender::RegisterPayload(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     int8_t payload_number,
     uint32_t frequency,
-    uint8_t channels,
+    size_t channels,
     uint32_t rate) {
   assert(payload_name);
   CriticalSectionScoped cs(send_critsect_.get());

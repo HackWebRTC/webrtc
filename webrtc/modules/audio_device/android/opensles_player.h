@@ -94,7 +94,7 @@ class OpenSLESPlayer {
   void EnqueuePlayoutData();
 
   // Configures the SL_DATAFORMAT_PCM structure.
-  SLDataFormat_PCM CreatePCMConfiguration(int channels,
+  SLDataFormat_PCM CreatePCMConfiguration(size_t channels,
                                           int sample_rate,
                                           size_t bits_per_sample);
 

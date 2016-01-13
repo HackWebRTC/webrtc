@@ -40,7 +40,7 @@ template <typename T>
 class ChannelBuffer {
  public:
   ChannelBuffer(size_t num_frames,
-                int num_channels,
+                size_t num_channels,
                 size_t num_bands = 1)
       : data_(new T[num_frames * num_channels]()),
         channels_(new T*[num_channels * num_bands]),
@@ -49,7 +49,7 @@ class ChannelBuffer {
         num_frames_per_band_(num_frames / num_bands),
         num_channels_(num_channels),
         num_bands_(num_bands) {
-    for (int i = 0; i < num_channels_; ++i) {
+    for (size_t i = 0; i < num_channels_; ++i) {
       for (size_t j = 0; j < num_bands_; ++j) {
         channels_[j * num_channels_ + i] =
             &data_[i * num_frames_ + j * num_frames_per_band_];
@@ -90,12 +90,12 @@ class ChannelBuffer {
   // 0 <= channel < |num_channels_|
   // 0 <= band < |num_bands_|
   // 0 <= sample < |num_frames_per_band_|
-  const T* const* bands(int channel) const {
+  const T* const* bands(size_t channel) const {
     RTC_DCHECK_LT(channel, num_channels_);
-    RTC_DCHECK_GE(channel, 0);
+    RTC_DCHECK_GE(channel, 0u);
     return &bands_[channel * num_bands_];
   }
-  T* const* bands(int channel) {
+  T* const* bands(size_t channel) {
     const ChannelBuffer<T>* t = this;
     return const_cast<T* const*>(t->bands(channel));
   }
@@ -104,7 +104,7 @@ class ChannelBuffer {
   // Returns |slice| for convenience.
   const T* const* Slice(T** slice, size_t start_frame) const {
     RTC_DCHECK_LT(start_frame, num_frames_);
-    for (int i = 0; i < num_channels_; ++i)
+    for (size_t i = 0; i < num_channels_; ++i)
       slice[i] = &channels_[i][start_frame];
     return slice;
   }
@@ -115,7 +115,7 @@ class ChannelBuffer {
 
   size_t num_frames() const { return num_frames_; }
   size_t num_frames_per_band() const { return num_frames_per_band_; }
-  int num_channels() const { return num_channels_; }
+  size_t num_channels() const { return num_channels_; }
   size_t num_bands() const { return num_bands_; }
   size_t size() const {return num_frames_ * num_channels_; }
 
@@ -130,7 +130,7 @@ class ChannelBuffer {
   rtc::scoped_ptr<T* []> bands_;
   const size_t num_frames_;
   const size_t num_frames_per_band_;
-  const int num_channels_;
+  const size_t num_channels_;
   const size_t num_bands_;
 };
 
@@ -142,7 +142,7 @@ class ChannelBuffer {
 // fbuf() until the next call to any of the other functions.
 class IFChannelBuffer {
  public:
-  IFChannelBuffer(size_t num_frames, int num_channels, size_t num_bands = 1);
+  IFChannelBuffer(size_t num_frames, size_t num_channels, size_t num_bands = 1);
 
   ChannelBuffer<int16_t>* ibuf();
   ChannelBuffer<float>* fbuf();
@@ -151,7 +151,7 @@ class IFChannelBuffer {
 
   size_t num_frames() const { return ibuf_.num_frames(); }
   size_t num_frames_per_band() const { return ibuf_.num_frames_per_band(); }
-  int num_channels() const { return ibuf_.num_channels(); }
+  size_t num_channels() const { return ibuf_.num_channels(); }
   size_t num_bands() const { return ibuf_.num_bands(); }
 
  private:

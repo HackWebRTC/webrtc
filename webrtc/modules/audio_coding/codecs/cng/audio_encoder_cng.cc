@@ -75,7 +75,7 @@ int AudioEncoderCng::SampleRateHz() const {
   return speech_encoder_->SampleRateHz();
 }
 
-int AudioEncoderCng::NumChannels() const {
+size_t AudioEncoderCng::NumChannels() const {
   return 1;
 }
 

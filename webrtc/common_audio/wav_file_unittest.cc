@@ -30,7 +30,7 @@ TEST(WavWriterTest, CPP) {
   {
     WavWriter w(outfile, 14099, 1);
     EXPECT_EQ(14099, w.sample_rate());
-    EXPECT_EQ(1, w.num_channels());
+    EXPECT_EQ(1u, w.num_channels());
     EXPECT_EQ(0u, w.num_samples());
     w.WriteSamples(kSamples, kNumSamples);
     EXPECT_EQ(kNumSamples, w.num_samples());
@@ -78,7 +78,7 @@ TEST(WavWriterTest, CPP) {
   {
     WavReader r(outfile);
     EXPECT_EQ(14099, r.sample_rate());
-    EXPECT_EQ(1, r.num_channels());
+    EXPECT_EQ(1u, r.num_channels());
     EXPECT_EQ(kNumSamples, r.num_samples());
     static const float kTruncatedSamples[] = {0.0, 10.0, 32767.0};
     float samples[kNumSamples];
@@ -93,7 +93,7 @@ TEST(WavWriterTest, C) {
   const std::string outfile = test::OutputPath() + "wavtest2.wav";
   rtc_WavWriter* w = rtc_WavOpen(outfile.c_str(), 11904, 2);
   EXPECT_EQ(11904, rtc_WavSampleRate(w));
-  EXPECT_EQ(2, rtc_WavNumChannels(w));
+  EXPECT_EQ(2u, rtc_WavNumChannels(w));
   EXPECT_EQ(0u, rtc_WavNumSamples(w));
   static const size_t kNumSamples = 4;
   rtc_WavWriteSamples(w, &kSamples[0], 2);
@@ -136,7 +136,7 @@ TEST(WavWriterTest, C) {
 TEST(WavWriterTest, LargeFile) {
   std::string outfile = test::OutputPath() + "wavtest3.wav";
   static const int kSampleRate = 8000;
-  static const int kNumChannels = 2;
+  static const size_t kNumChannels = 2;
   static const size_t kNumSamples = 3 * kSampleRate * kNumChannels;
   float samples[kNumSamples];
   for (size_t i = 0; i < kNumSamples; i += kNumChannels) {

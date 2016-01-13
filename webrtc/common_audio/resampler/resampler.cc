@@ -39,7 +39,7 @@ Resampler::Resampler()
       slave_right_(nullptr) {
 }
 
-Resampler::Resampler(int inFreq, int outFreq, int num_channels)
+Resampler::Resampler(int inFreq, int outFreq, size_t num_channels)
     : Resampler() {
   Reset(inFreq, outFreq, num_channels);
 }
@@ -76,7 +76,7 @@ Resampler::~Resampler()
     }
 }
 
-int Resampler::ResetIfNeeded(int inFreq, int outFreq, int num_channels)
+int Resampler::ResetIfNeeded(int inFreq, int outFreq, size_t num_channels)
 {
     int tmpInFreq_kHz = inFreq / 1000;
     int tmpOutFreq_kHz = outFreq / 1000;
@@ -91,7 +91,7 @@ int Resampler::ResetIfNeeded(int inFreq, int outFreq, int num_channels)
     }
 }
 
-int Resampler::Reset(int inFreq, int outFreq, int num_channels)
+int Resampler::Reset(int inFreq, int outFreq, size_t num_channels)
 {
     if (num_channels != 1 && num_channels != 2) {
       return -1;

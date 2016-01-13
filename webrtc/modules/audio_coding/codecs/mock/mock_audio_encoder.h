@@ -24,7 +24,7 @@ class MockAudioEncoder final : public AudioEncoder {
   MOCK_METHOD1(Mark, void(std::string desc));
   MOCK_CONST_METHOD0(MaxEncodedBytes, size_t());
   MOCK_CONST_METHOD0(SampleRateHz, int());
-  MOCK_CONST_METHOD0(NumChannels, int());
+  MOCK_CONST_METHOD0(NumChannels, size_t());
   MOCK_CONST_METHOD0(RtpTimestampRateHz, int());
   MOCK_CONST_METHOD0(Num10MsFramesInNextPacket, size_t());
   MOCK_CONST_METHOD0(Max10MsFramesInAPacket, size_t());

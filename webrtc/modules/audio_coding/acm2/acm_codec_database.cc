@@ -292,7 +292,9 @@ int ACMCodecDB::CodecId(const CodecInst& codec_inst) {
                   codec_inst.channels));
 }
 
-int ACMCodecDB::CodecId(const char* payload_name, int frequency, int channels) {
+int ACMCodecDB::CodecId(const char* payload_name,
+                        int frequency,
+                        size_t channels) {
   for (const CodecInst& ci : RentACodec::Database()) {
     bool name_match = false;
     bool frequency_match = false;

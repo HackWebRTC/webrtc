@@ -59,7 +59,7 @@ NetEqIsacQualityTest::NetEqIsacQualityTest()
       bit_rate_kbps_(FLAGS_bit_rate_kbps) {}
 
 void NetEqIsacQualityTest::SetUp() {
-  ASSERT_EQ(1, channels_) << "iSAC supports only mono audio.";
+  ASSERT_EQ(1u, channels_) << "iSAC supports only mono audio.";
   // Create encoder memory.
   WebRtcIsacfix_Create(&isac_encoder_);
   ASSERT_TRUE(isac_encoder_ != NULL);

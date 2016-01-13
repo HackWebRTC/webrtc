@@ -29,7 +29,7 @@ class RTPSenderAudio : public DTMFqueue {
   int32_t RegisterAudioPayload(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                                int8_t payloadType,
                                uint32_t frequency,
-                               uint8_t channels,
+                               size_t channels,
                                uint32_t rate,
                                RtpUtility::Payload** payload);
 

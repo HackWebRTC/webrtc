@@ -45,7 +45,7 @@ struct TwoBandsStates {
 // used.
 class SplittingFilter {
  public:
-  SplittingFilter(int num_channels, size_t num_bands, size_t num_frames);
+  SplittingFilter(size_t num_channels, size_t num_bands, size_t num_frames);
 
   void Analysis(const IFChannelBuffer* data, IFChannelBuffer* bands);
   void Synthesis(const IFChannelBuffer* bands, IFChannelBuffer* data);

@@ -55,7 +55,7 @@ bool ModifyAndUseThisCodec(CodecInst* codec_param) {
 // G.722 = 94
 bool RemapPltypeAndUseThisCodec(const char* plname,
                                 int plfreq,
-                                int channels,
+                                size_t channels,
                                 int* pltype) {
   if (channels != 1)
     return false;  // Don't use non-mono codecs.

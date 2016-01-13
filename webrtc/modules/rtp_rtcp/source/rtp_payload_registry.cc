@@ -40,7 +40,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int8_t payload_type,
     const uint32_t frequency,
-    const uint8_t channels,
+    const size_t channels,
     const uint32_t rate,
     bool* created_new_payload) {
   assert(payload_type >= 0);
@@ -139,7 +139,7 @@ void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const size_t payload_name_length,
     const uint32_t frequency,
-    const uint8_t channels,
+    const size_t channels,
     const uint32_t rate) {
   RtpUtility::PayloadTypeMap::iterator iterator = payload_type_map_.begin();
   for (; iterator != payload_type_map_.end(); ++iterator) {
@@ -171,7 +171,7 @@ void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
 int32_t RTPPayloadRegistry::ReceivePayloadType(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const uint32_t frequency,
-    const uint8_t channels,
+    const size_t channels,
     const uint32_t rate,
     int8_t* payload_type) const {
   assert(payload_type);
@@ -388,7 +388,7 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
 
   bool PayloadIsCompatible(const RtpUtility::Payload& payload,
                            const uint32_t frequency,
-                           const uint8_t channels,
+                           const size_t channels,
                            const uint32_t rate) const override {
     return
         payload.audio &&
@@ -407,7 +407,7 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payloadType,
       const uint32_t frequency,
-      const uint8_t channels,
+      const size_t channels,
       const uint32_t rate) const override {
     RtpUtility::Payload* payload = new RtpUtility::Payload;
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
@@ -431,7 +431,7 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
 
   bool PayloadIsCompatible(const RtpUtility::Payload& payload,
                            const uint32_t frequency,
-                           const uint8_t channels,
+                           const size_t channels,
                            const uint32_t rate) const override {
     return !payload.audio;
   }
@@ -445,7 +445,7 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payloadType,
       const uint32_t frequency,
-      const uint8_t channels,
+      const size_t channels,
       const uint32_t rate) const override {
     RtpVideoCodecTypes videoType = kRtpVideoGeneric;
 

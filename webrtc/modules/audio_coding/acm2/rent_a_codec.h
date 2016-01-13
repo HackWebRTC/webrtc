@@ -162,12 +162,12 @@ class RentACodec {
 
   static rtc::Optional<CodecId> CodecIdByParams(const char* payload_name,
                                                 int sampling_freq_hz,
-                                                int channels);
+                                                size_t channels);
   static rtc::Optional<CodecInst> CodecInstById(CodecId codec_id);
   static rtc::Optional<CodecId> CodecIdByInst(const CodecInst& codec_inst);
   static rtc::Optional<CodecInst> CodecInstByParams(const char* payload_name,
                                                     int sampling_freq_hz,
-                                                    int channels);
+                                                    size_t channels);
   static bool IsCodecValid(const CodecInst& codec_inst);
 
   static inline bool IsPayloadTypeValid(int payload_type) {
@@ -177,10 +177,11 @@ class RentACodec {
   static rtc::ArrayView<const CodecInst> Database();
 
   static rtc::Optional<bool> IsSupportedNumChannels(CodecId codec_id,
-                                                    int num_channels);
+                                                    size_t num_channels);
 
-  static rtc::Optional<NetEqDecoder> NetEqDecoderFromCodecId(CodecId codec_id,
-                                                             int num_channels);
+  static rtc::Optional<NetEqDecoder> NetEqDecoderFromCodecId(
+      CodecId codec_id,
+      size_t num_channels);
 
   // Parse codec_inst and extract payload types. If the given CodecInst was for
   // the wrong sort of codec, return kSkip; otherwise, if the rate was illegal,

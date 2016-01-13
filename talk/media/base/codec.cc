@@ -167,7 +167,7 @@ AudioCodec::AudioCodec(int id,
                        const std::string& name,
                        int clockrate,
                        int bitrate,
-                       int channels,
+                       size_t channels,
                        int preference)
     : Codec(id, name, clockrate, preference),
       bitrate(bitrate),

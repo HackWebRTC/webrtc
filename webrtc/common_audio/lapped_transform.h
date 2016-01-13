@@ -35,8 +35,8 @@ class LappedTransform {
     virtual ~Callback() {}
 
     virtual void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                                   int num_in_channels, size_t frames,
-                                   int num_out_channels,
+                                   size_t num_in_channels, size_t frames,
+                                   size_t num_out_channels,
                                    std::complex<float>* const* out_block) = 0;
   };
 
@@ -46,8 +46,8 @@ class LappedTransform {
   // |block_length| defines the length of a block, in samples.
   // |shift_amount| is in samples. |callback| is the caller-owned audio
   // processing function called for each block of the input chunk.
-  LappedTransform(int num_in_channels,
-                  int num_out_channels,
+  LappedTransform(size_t num_in_channels,
+                  size_t num_out_channels,
                   size_t chunk_length,
                   const float* window,
                   size_t block_length,
@@ -75,7 +75,7 @@ class LappedTransform {
   // in_chunk.
   //
   // Returns the same num_in_channels passed to the LappedTransform constructor.
-  int num_in_channels() const { return num_in_channels_; }
+  size_t num_in_channels() const { return num_in_channels_; }
 
   // Get the number of output channels.
   //
@@ -84,7 +84,7 @@ class LappedTransform {
   //
   // Returns the same num_out_channels passed to the LappedTransform
   // constructor.
-  int num_out_channels() const { return num_out_channels_; }
+  size_t num_out_channels() const { return num_out_channels_; }
 
  private:
   // Internal middleware callback, given to the blocker. Transforms each block
@@ -93,16 +93,18 @@ class LappedTransform {
    public:
     explicit BlockThunk(LappedTransform* parent) : parent_(parent) {}
 
-    virtual void ProcessBlock(const float* const* input, size_t num_frames,
-                              int num_input_channels, int num_output_channels,
+    virtual void ProcessBlock(const float* const* input,
+                              size_t num_frames,
+                              size_t num_input_channels,
+                              size_t num_output_channels,
                               float* const* output);
 
    private:
     LappedTransform* const parent_;
   } blocker_callback_;
 
-  const int num_in_channels_;
-  const int num_out_channels_;
+  const size_t num_in_channels_;
+  const size_t num_out_channels_;
 
   const size_t block_length_;
   const size_t chunk_length_;

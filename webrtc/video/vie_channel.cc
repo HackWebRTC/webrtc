@@ -1184,7 +1184,7 @@ int32_t ViEChannel::OnInitializeDecoder(
     const int8_t payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int frequency,
-    const uint8_t channels,
+    const size_t channels,
     const uint32_t rate) {
   LOG(LS_INFO) << "OnInitializeDecoder " << static_cast<int>(payload_type)
                << " " << payload_name;

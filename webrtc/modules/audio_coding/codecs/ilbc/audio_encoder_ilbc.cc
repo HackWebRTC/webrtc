@@ -64,7 +64,7 @@ int AudioEncoderIlbc::SampleRateHz() const {
   return kSampleRateHz;
 }
 
-int AudioEncoderIlbc::NumChannels() const {
+size_t AudioEncoderIlbc::NumChannels() const {
   return 1;
 }
 

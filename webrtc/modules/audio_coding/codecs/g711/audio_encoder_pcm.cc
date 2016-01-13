@@ -20,15 +20,6 @@ namespace webrtc {
 
 namespace {
 
-int16_t NumSamplesPerFrame(int num_channels,
-                           int frame_size_ms,
-                           int sample_rate_hz) {
-  int samples_per_frame = num_channels * frame_size_ms * sample_rate_hz / 1000;
-  RTC_CHECK_LE(samples_per_frame, std::numeric_limits<int16_t>::max())
-      << "Frame size too large.";
-  return static_cast<int16_t>(samples_per_frame);
-}
-
 template <typename T>
 typename T::Config CreateConfig(const CodecInst& codec_inst) {
   typename T::Config config;
@@ -50,9 +41,8 @@ AudioEncoderPcm::AudioEncoderPcm(const Config& config, int sample_rate_hz)
       payload_type_(config.payload_type),
       num_10ms_frames_per_packet_(
           static_cast<size_t>(config.frame_size_ms / 10)),
-      full_frame_samples_(NumSamplesPerFrame(config.num_channels,
-                                             config.frame_size_ms,
-                                             sample_rate_hz_)),
+      full_frame_samples_(
+          config.num_channels * config.frame_size_ms * sample_rate_hz / 1000),
       first_timestamp_in_buffer_(0) {
   RTC_CHECK_GT(sample_rate_hz, 0) << "Sample rate must be larger than 0 Hz";
   RTC_CHECK_EQ(config.frame_size_ms % 10, 0)
@@ -70,7 +60,7 @@ int AudioEncoderPcm::SampleRateHz() const {
   return sample_rate_hz_;
 }
 
-int AudioEncoderPcm::NumChannels() const {
+size_t AudioEncoderPcm::NumChannels() const {
   return num_channels_;
 }
 

@@ -27,7 +27,7 @@ class AudioEncoderG722 final : public AudioEncoder {
 
     int payload_type = 9;
     int frame_size_ms = 20;
-    int num_channels = 1;
+    size_t num_channels = 1;
   };
 
   explicit AudioEncoderG722(const Config& config);
@@ -36,7 +36,7 @@ class AudioEncoderG722 final : public AudioEncoder {
 
   size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
-  int NumChannels() const override;
+  size_t NumChannels() const override;
   int RtpTimestampRateHz() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
@@ -59,7 +59,7 @@ class AudioEncoderG722 final : public AudioEncoder {
 
   size_t SamplesPerChannel() const;
 
-  const int num_channels_;
+  const size_t num_channels_;
   const int payload_type_;
   const size_t num_10ms_frames_per_packet_;
   size_t num_10ms_frames_buffered_;

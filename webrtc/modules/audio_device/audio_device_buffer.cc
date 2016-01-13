@@ -169,7 +169,7 @@ int32_t AudioDeviceBuffer::PlayoutSampleRate() const
 //  SetRecordingChannels
 // ----------------------------------------------------------------------------
 
-int32_t AudioDeviceBuffer::SetRecordingChannels(uint8_t channels)
+int32_t AudioDeviceBuffer::SetRecordingChannels(size_t channels)
 {
     CriticalSectionScoped lock(&_critSect);
     _recChannels = channels;
@@ -181,7 +181,7 @@ int32_t AudioDeviceBuffer::SetRecordingChannels(uint8_t channels)
 //  SetPlayoutChannels
 // ----------------------------------------------------------------------------
 
-int32_t AudioDeviceBuffer::SetPlayoutChannels(uint8_t channels)
+int32_t AudioDeviceBuffer::SetPlayoutChannels(size_t channels)
 {
     CriticalSectionScoped lock(&_critSect);
     _playChannels = channels;
@@ -239,7 +239,7 @@ int32_t AudioDeviceBuffer::RecordingChannel(AudioDeviceModule::ChannelType& chan
 //  RecordingChannels
 // ----------------------------------------------------------------------------
 
-uint8_t AudioDeviceBuffer::RecordingChannels() const
+size_t AudioDeviceBuffer::RecordingChannels() const
 {
     return _recChannels;
 }
@@ -248,7 +248,7 @@ uint8_t AudioDeviceBuffer::RecordingChannels() const
 //  PlayoutChannels
 // ----------------------------------------------------------------------------
 
-uint8_t AudioDeviceBuffer::PlayoutChannels() const
+size_t AudioDeviceBuffer::PlayoutChannels() const
 {
     return _playChannels;
 }
@@ -487,7 +487,7 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t nSamples)
 {
     uint32_t playSampleRate = 0;
     size_t playBytesPerSample = 0;
-    uint8_t playChannels = 0;
+    size_t playChannels = 0;
     {
         CriticalSectionScoped lock(&_critSect);
 

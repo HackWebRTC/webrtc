@@ -38,7 +38,7 @@ class AudioEncoderCopyRed final : public AudioEncoder {
 
   size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
-  int NumChannels() const override;
+  size_t NumChannels() const override;
   int RtpTimestampRateHz() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;

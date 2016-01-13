@@ -23,7 +23,7 @@ class MockRTPPayloadStrategy : public RTPPayloadStrategy {
   MOCK_CONST_METHOD4(PayloadIsCompatible,
                      bool(const RtpUtility::Payload& payload,
                           const uint32_t frequency,
-                          const uint8_t channels,
+                          const size_t channels,
                           const uint32_t rate));
   MOCK_CONST_METHOD2(UpdatePayloadRate,
                      void(RtpUtility::Payload* payload, const uint32_t rate));
@@ -34,7 +34,7 @@ class MockRTPPayloadStrategy : public RTPPayloadStrategy {
       RtpUtility::Payload*(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                            const int8_t payloadType,
                            const uint32_t frequency,
-                           const uint8_t channels,
+                           const size_t channels,
                            const uint32_t rate));
 };
 

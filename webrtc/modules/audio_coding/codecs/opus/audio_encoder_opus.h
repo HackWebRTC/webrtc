@@ -31,7 +31,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   struct Config {
     bool IsOk() const;
     int frame_size_ms = 20;
-    int num_channels = 1;
+    size_t num_channels = 1;
     int payload_type = 120;
     ApplicationMode application = kVoip;
     int bitrate_bps = 64000;
@@ -56,7 +56,7 @@ class AudioEncoderOpus final : public AudioEncoder {
 
   size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
-  int NumChannels() const override;
+  size_t NumChannels() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;

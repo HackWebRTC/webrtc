@@ -419,11 +419,11 @@ int32_t Channel::OnInitializeDecoder(
     int8_t payloadType,
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     int frequency,
-    uint8_t channels,
+    size_t channels,
     uint32_t rate) {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnInitializeDecoder(payloadType=%d, "
-                 "payloadName=%s, frequency=%u, channels=%u, rate=%u)",
+                 "payloadName=%s, frequency=%u, channels=%" PRIuS ", rate=%u)",
                  payloadType, payloadName, frequency, channels, rate);
 
     CodecInst receiveCodec = {0};
@@ -459,7 +459,7 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnReceivedPayloadData(payloadSize=%" PRIuS ","
-                 " payloadType=%u, audioChannel=%u)",
+                 " payloadType=%u, audioChannel=%" PRIuS ")",
                  payloadSize,
                  rtpHeader->header.payloadType,
                  rtpHeader->type.Audio.channel);
@@ -1079,8 +1079,8 @@ Channel::Init()
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                          VoEId(_instanceId,_channelId),
-                         "Channel::Init() unable to register %s (%d/%d/%d/%d) "
-                         "to RTP/RTCP receiver",
+                         "Channel::Init() unable to register %s "
+                         "(%d/%d/%" PRIuS "/%d) to RTP/RTCP receiver",
                          codec.plname, codec.pltype, codec.plfreq,
                          codec.channels, codec.rate);
         }
@@ -1088,8 +1088,8 @@ Channel::Init()
         {
             WEBRTC_TRACE(kTraceInfo, kTraceVoice,
                          VoEId(_instanceId,_channelId),
-                         "Channel::Init() %s (%d/%d/%d/%d) has been added to "
-                         "the RTP/RTCP receiver",
+                         "Channel::Init() %s (%d/%d/%" PRIuS "/%d) has been "
+                         "added to the RTP/RTCP receiver",
                          codec.plname, codec.pltype, codec.plfreq,
                          codec.channels, codec.rate);
         }
@@ -1591,7 +1591,7 @@ Channel::SetSendCNPayloadType(int type, PayloadFrequencies frequency)
 
     CodecInst codec;
     int32_t samplingFreqHz(-1);
-    const int kMono = 1;
+    const size_t kMono = 1;
     if (frequency == kFreq32000Hz)
         samplingFreqHz = 32000;
     else if (frequency == kFreq16000Hz)
@@ -3355,7 +3355,7 @@ Channel::Demultiplex(const AudioFrame& audioFrame)
 void Channel::Demultiplex(const int16_t* audio_data,
                           int sample_rate,
                           size_t number_of_frames,
-                          int number_of_channels) {
+                          size_t number_of_channels) {
   CodecInst codec;
   GetSendCodec(codec);
 
@@ -3842,7 +3842,7 @@ Channel::InsertInbandDtmfTone()
             sample < _audioFrame.samples_per_channel_;
             sample++)
         {
-            for (int channel = 0;
+            for (size_t channel = 0;
                 channel < _audioFrame.num_channels_;
                 channel++)
             {
@@ -3976,7 +3976,8 @@ Channel::RegisterReceiveCodecsToRTPModule()
                          kTraceVoice,
                          VoEId(_instanceId, _channelId),
                          "Channel::RegisterReceiveCodecsToRTPModule() unable"
-                         " to register %s (%d/%d/%d/%d) to RTP/RTCP receiver",
+                         " to register %s (%d/%d/%" PRIuS "/%d) to RTP/RTCP "
+                         "receiver",
                          codec.plname, codec.pltype, codec.plfreq,
                          codec.channels, codec.rate);
         }
@@ -3986,7 +3987,7 @@ Channel::RegisterReceiveCodecsToRTPModule()
                          kTraceVoice,
                          VoEId(_instanceId, _channelId),
                          "Channel::RegisterReceiveCodecsToRTPModule() %s "
-                         "(%d/%d/%d/%d) has been added to the RTP/RTCP "
+                         "(%d/%d/%" PRIuS "/%d) has been added to the RTP/RTCP "
                          "receiver",
                          codec.plname, codec.pltype, codec.plfreq,
                          codec.channels, codec.rate);

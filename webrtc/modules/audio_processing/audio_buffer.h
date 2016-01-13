@@ -34,14 +34,14 @@ class AudioBuffer {
  public:
   // TODO(ajm): Switch to take ChannelLayouts.
   AudioBuffer(size_t input_num_frames,
-              int num_input_channels,
+              size_t num_input_channels,
               size_t process_num_frames,
-              int num_process_channels,
+              size_t num_process_channels,
               size_t output_num_frames);
   virtual ~AudioBuffer();
 
-  int num_channels() const;
-  void set_num_channels(int num_channels);
+  size_t num_channels() const;
+  void set_num_channels(size_t num_channels);
   size_t num_frames() const;
   size_t num_frames_per_band() const;
   size_t num_keyboard_frames() const;
@@ -65,10 +65,10 @@ class AudioBuffer {
   // 0 <= channel < |num_proc_channels_|
   // 0 <= band < |num_bands_|
   // 0 <= sample < |num_split_frames_|
-  int16_t* const* split_bands(int channel);
-  const int16_t* const* split_bands_const(int channel) const;
-  float* const* split_bands_f(int channel);
-  const float* const* split_bands_const_f(int channel) const;
+  int16_t* const* split_bands(size_t channel);
+  const int16_t* const* split_bands_const(size_t channel) const;
+  float* const* split_bands_f(size_t channel);
+  const float* const* split_bands_const_f(size_t channel) const;
 
   // Returns a pointer array to the channels for a specific band.
   // Usage:
@@ -128,16 +128,16 @@ class AudioBuffer {
   // The audio is passed into DeinterleaveFrom() or CopyFrom() with input
   // format (samples per channel and number of channels).
   const size_t input_num_frames_;
-  const int num_input_channels_;
+  const size_t num_input_channels_;
   // The audio is stored by DeinterleaveFrom() or CopyFrom() with processing
   // format.
   const size_t proc_num_frames_;
-  const int num_proc_channels_;
+  const size_t num_proc_channels_;
   // The audio is returned by InterleaveTo() and CopyTo() with output samples
   // per channels and the current number of channels. This last one can be
   // changed at any time using set_num_channels().
   const size_t output_num_frames_;
-  int num_channels_;
+  size_t num_channels_;
 
   size_t num_bands_;
   size_t num_split_frames_;

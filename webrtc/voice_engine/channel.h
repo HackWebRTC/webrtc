@@ -381,7 +381,7 @@ public:
     int32_t OnInitializeDecoder(int8_t payloadType,
                                 const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                                 int frequency,
-                                uint8_t channels,
+                                size_t channels,
                                 uint32_t rate) override;
     void OnIncomingSSRCChanged(uint32_t ssrc) override;
     void OnIncomingCSRCChanged(uint32_t CSRC, bool added) override;
@@ -451,7 +451,7 @@ public:
     void Demultiplex(const int16_t* audio_data,
                      int sample_rate,
                      size_t number_of_frames,
-                     int number_of_channels);
+                     size_t number_of_channels);
     uint32_t PrepareEncodeAndSend(int mixingFrequency);
     uint32_t EncodeAndSend();
 

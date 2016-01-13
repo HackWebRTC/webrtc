@@ -324,7 +324,7 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
   }
 
   // Check whether we need an up-mix or down-mix?
-  const int current_num_channels =
+  const size_t current_num_channels =
       rent_a_codec_.GetEncoderStack()->NumChannels();
   const bool same_num_channels =
       ptr_frame->num_channels_ == current_num_channels;
@@ -589,7 +589,7 @@ int AudioCodingModuleImpl::PlayoutFrequency() const {
 int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   CriticalSectionScoped lock(acm_crit_sect_.get());
   RTC_DCHECK(receiver_initialized_);
-  if (codec.channels > 2 || codec.channels < 0) {
+  if (codec.channels > 2) {
     LOG_F(LS_ERROR) << "Unsupported number of channels: " << codec.channels;
     return -1;
   }

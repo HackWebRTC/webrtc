@@ -10,6 +10,7 @@
 
 #include "webrtc/voice_engine/voe_codec_impl.h"
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -64,7 +65,7 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec) {
                "SetSendCodec(channel=%d, codec)", channel);
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "codec: plname=%s, pacsize=%d, plfreq=%d, pltype=%d, "
-               "channels=%d, rate=%d",
+               "channels=%" PRIuS ", rate=%d",
                codec.plname, codec.pacsize, codec.plfreq, codec.pltype,
                codec.channels, codec.rate);
   if (!_shared->statistics().Initialized()) {
@@ -161,7 +162,7 @@ int VoECodecImpl::SetRecPayloadType(int channel, const CodecInst& codec) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetRecPayloadType(channel=%d, codec)", channel);
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "codec: plname=%s, plfreq=%d, pltype=%d, channels=%u, "
+               "codec: plname=%s, plfreq=%d, pltype=%d, channels=%" PRIuS ", "
                "pacsize=%d, rate=%d",
                codec.plname, codec.plfreq, codec.pltype, codec.channels,
                codec.pacsize, codec.rate);

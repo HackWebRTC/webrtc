@@ -287,10 +287,10 @@ class AudioProcessing {
   // necessary classes?
   virtual int proc_sample_rate_hz() const = 0;
   virtual int proc_split_sample_rate_hz() const = 0;
-  virtual int num_input_channels() const = 0;
-  virtual int num_proc_channels() const = 0;
-  virtual int num_output_channels() const = 0;
-  virtual int num_reverse_channels() const = 0;
+  virtual size_t num_input_channels() const = 0;
+  virtual size_t num_proc_channels() const = 0;
+  virtual size_t num_output_channels() const = 0;
+  virtual size_t num_reverse_channels() const = 0;
 
   // Set to true when the output of AudioProcessing will be muted or in some
   // other way not used. Ideally, the captured audio would still be processed,
@@ -502,7 +502,7 @@ class StreamConfig {
   //               is true, the last channel in any corresponding list of
   //               channels is the keyboard channel.
   StreamConfig(int sample_rate_hz = 0,
-               int num_channels = 0,
+               size_t num_channels = 0,
                bool has_keyboard = false)
       : sample_rate_hz_(sample_rate_hz),
         num_channels_(num_channels),
@@ -513,14 +513,14 @@ class StreamConfig {
     sample_rate_hz_ = value;
     num_frames_ = calculate_frames(value);
   }
-  void set_num_channels(int value) { num_channels_ = value; }
+  void set_num_channels(size_t value) { num_channels_ = value; }
   void set_has_keyboard(bool value) { has_keyboard_ = value; }
 
   int sample_rate_hz() const { return sample_rate_hz_; }
 
   // The number of channels in the stream, not including the keyboard channel if
   // present.
-  int num_channels() const { return num_channels_; }
+  size_t num_channels() const { return num_channels_; }
 
   bool has_keyboard() const { return has_keyboard_; }
   size_t num_frames() const { return num_frames_; }
@@ -541,7 +541,7 @@ class StreamConfig {
   }
 
   int sample_rate_hz_;
-  int num_channels_;
+  size_t num_channels_;
   bool has_keyboard_;
   size_t num_frames_;
 };

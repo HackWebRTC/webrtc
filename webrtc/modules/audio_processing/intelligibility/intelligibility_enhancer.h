@@ -47,8 +47,8 @@ class IntelligibilityEnhancer {
           gain_change_limit(0.1f),
           rho(0.02f) {}
     int sample_rate_hz;
-    int num_capture_channels;
-    int num_render_channels;
+    size_t num_capture_channels;
+    size_t num_render_channels;
     intelligibility::VarianceArray::StepType var_type;
     float var_decay_rate;
     size_t var_window_size;
@@ -63,12 +63,12 @@ class IntelligibilityEnhancer {
   // Reads and processes chunk of noise stream in time domain.
   void AnalyzeCaptureAudio(float* const* audio,
                            int sample_rate_hz,
-                           int num_channels);
+                           size_t num_channels);
 
   // Reads chunk of speech in time domain and updates with modified signal.
   void ProcessRenderAudio(float* const* audio,
                           int sample_rate_hz,
-                          int num_channels);
+                          size_t num_channels);
   bool active() const;
 
  private:
@@ -85,9 +85,9 @@ class IntelligibilityEnhancer {
     // All in frequency domain, receives input |in_block|, applies
     // intelligibility enhancement, and writes result to |out_block|.
     void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                           int in_channels,
+                           size_t in_channels,
                            size_t frames,
-                           int out_channels,
+                           size_t out_channels,
                            std::complex<float>* const* out_block) override;
 
    private:
@@ -144,8 +144,8 @@ class IntelligibilityEnhancer {
   const size_t bank_size_;     // Num ERB filters.
   const int sample_rate_hz_;
   const int erb_resolution_;
-  const int num_capture_channels_;
-  const int num_render_channels_;
+  const size_t num_capture_channels_;
+  const size_t num_render_channels_;
   const int analysis_rate_;    // Num blocks before gains recalculated.
 
   const bool active_;          // Whether render gains are being updated.

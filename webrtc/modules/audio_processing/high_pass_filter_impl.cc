@@ -92,10 +92,9 @@ HighPassFilterImpl::HighPassFilterImpl(rtc::CriticalSection* crit)
 
 HighPassFilterImpl::~HighPassFilterImpl() {}
 
-void HighPassFilterImpl::Initialize(int channels, int sample_rate_hz) {
-  RTC_DCHECK_LE(0, channels);
+void HighPassFilterImpl::Initialize(size_t channels, int sample_rate_hz) {
   std::vector<rtc::scoped_ptr<BiquadFilter>> new_filters(channels);
-  for (int i = 0; i < channels; i++) {
+  for (size_t i = 0; i < channels; i++) {
     new_filters[i].reset(new BiquadFilter(sample_rate_hz));
   }
   rtc::CritScope cs(crit_);
@@ -110,7 +109,7 @@ void HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   }
 
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(filters_.size(), static_cast<size_t>(audio->num_channels()));
+  RTC_DCHECK_EQ(filters_.size(), audio->num_channels());
   for (size_t i = 0; i < filters_.size(); i++) {
     filters_[i]->Process(audio->split_bands(i)[kBand0To8kHz],
                          audio->num_frames_per_band());

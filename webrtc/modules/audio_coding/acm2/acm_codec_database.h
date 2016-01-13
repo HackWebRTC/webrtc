@@ -48,7 +48,7 @@ class ACMCodecDB {
     int num_packet_sizes;
     int packet_sizes_samples[kMaxNumPacketSize];
     int basic_block_samples;
-    int channel_support;
+    size_t channel_support;
   };
 
   // Returns codec id from database, given the information received in the input
@@ -60,7 +60,7 @@ class ACMCodecDB {
   //   codec id if successful, otherwise < 0.
   static int CodecNumber(const CodecInst& codec_inst);
   static int CodecId(const CodecInst& codec_inst);
-  static int CodecId(const char* payload_name, int frequency, int channels);
+  static int CodecId(const char* payload_name, int frequency, size_t channels);
   static int ReceiverCodecNumber(const CodecInst& codec_inst);
 
   // Databases with information about the supported codecs

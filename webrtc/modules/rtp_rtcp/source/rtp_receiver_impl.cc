@@ -96,7 +96,7 @@ int32_t RtpReceiverImpl::RegisterReceivePayload(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int8_t payload_type,
     const uint32_t frequency,
-    const uint8_t channels,
+    const size_t channels,
     const uint32_t rate) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_.get());
 
@@ -252,7 +252,7 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
   bool new_ssrc = false;
   bool re_initialize_decoder = false;
   char payload_name[RTP_PAYLOAD_NAME_SIZE];
-  uint8_t channels = 1;
+  size_t channels = 1;
   uint32_t rate = 0;
 
   {

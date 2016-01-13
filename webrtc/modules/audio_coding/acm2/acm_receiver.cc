@@ -213,7 +213,7 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
 int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   enum NetEqOutputType type;
   size_t samples_per_channel;
-  int num_channels;
+  size_t num_channels;
 
   // Accessing members, take the lock.
   CriticalSectionScoped lock(crit_sect_.get());
@@ -301,7 +301,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
 
 int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               uint8_t payload_type,
-                              int channels,
+                              size_t channels,
                               int sample_rate_hz,
                               AudioDecoder* audio_decoder,
                               const std::string& name) {

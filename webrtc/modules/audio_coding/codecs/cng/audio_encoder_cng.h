@@ -32,7 +32,7 @@ class AudioEncoderCng final : public AudioEncoder {
   struct Config {
     bool IsOk() const;
 
-    int num_channels = 1;
+    size_t num_channels = 1;
     int payload_type = 13;
     // Caller keeps ownership of the AudioEncoder object.
     AudioEncoder* speech_encoder = nullptr;
@@ -51,7 +51,7 @@ class AudioEncoderCng final : public AudioEncoder {
 
   size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
-  int NumChannels() const override;
+  size_t NumChannels() const override;
   int RtpTimestampRateHz() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;

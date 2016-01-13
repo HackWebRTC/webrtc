@@ -171,7 +171,7 @@ class NetEq {
   // The speech type is written to |type|, if |type| is not NULL.
   // Returns kOK on success, or kFail in case of an error.
   virtual int GetAudio(size_t max_length, int16_t* output_audio,
-                       size_t* samples_per_channel, int* num_channels,
+                       size_t* samples_per_channel, size_t* num_channels,
                        NetEqOutputType* type) = 0;
 
   // Associates |rtp_payload_type| with |codec| and |codec_name|, and stores the

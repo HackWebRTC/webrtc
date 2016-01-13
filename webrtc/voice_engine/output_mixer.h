@@ -63,7 +63,7 @@ public:
     int32_t SetAnonymousMixabilityStatus(MixerParticipant& participant,
                                          bool mixable);
 
-    int GetMixedAudio(int sample_rate_hz, int num_channels,
+    int GetMixedAudio(int sample_rate_hz, size_t num_channels,
                       AudioFrame* audioFrame);
 
     // VoEVolumeControl

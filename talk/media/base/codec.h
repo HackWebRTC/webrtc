@@ -128,14 +128,14 @@ struct Codec {
 
 struct AudioCodec : public Codec {
   int bitrate;
-  int channels;
+  size_t channels;
 
   // Creates a codec with the given parameters.
   AudioCodec(int id,
              const std::string& name,
              int clockrate,
              int bitrate,
-             int channels,
+             size_t channels,
              int preference);
   // Creates an empty codec.
   AudioCodec();

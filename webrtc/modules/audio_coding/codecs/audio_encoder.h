@@ -61,7 +61,7 @@ class AudioEncoder {
   // Returns the input sample rate in Hz and the number of input channels.
   // These are constants set at instantiation time.
   virtual int SampleRateHz() const = 0;
-  virtual int NumChannels() const = 0;
+  virtual size_t NumChannels() const = 0;
 
   // Returns the rate at which the RTP timestamps are updated. The default
   // implementation returns SampleRateHz().

@@ -26,9 +26,9 @@ typedef rtc::scoped_ptr<ChannelBuffer<float>> ScopedBuffer;
 
 // Sets the signal value to increase by |data| with every sample.
 ScopedBuffer CreateBuffer(const std::vector<float>& data, size_t frames) {
-  const int num_channels = static_cast<int>(data.size());
+  const size_t num_channels = data.size();
   ScopedBuffer sb(new ChannelBuffer<float>(frames, num_channels));
-  for (int i = 0; i < num_channels; ++i)
+  for (size_t i = 0; i < num_channels; ++i)
     for (size_t j = 0; j < frames; ++j)
       sb->channels()[i][j] = data[i] * j;
   return sb;
@@ -57,7 +57,7 @@ float ComputeSNR(const ChannelBuffer<float>& ref,
     float mse = 0;
     float variance = 0;
     float mean = 0;
-    for (int i = 0; i < ref.num_channels(); ++i) {
+    for (size_t i = 0; i < ref.num_channels(); ++i) {
       for (size_t j = 0; j < ref.num_frames() - delay; ++j) {
         float error = ref.channels()[i][j] - test.channels()[i][j + delay];
         mse += error * error;
@@ -86,9 +86,9 @@ float ComputeSNR(const ChannelBuffer<float>& ref,
 // Sets the source to a linearly increasing signal for which we can easily
 // generate a reference. Runs the AudioConverter and ensures the output has
 // sufficiently high SNR relative to the reference.
-void RunAudioConverterTest(int src_channels,
+void RunAudioConverterTest(size_t src_channels,
                            int src_sample_rate_hz,
-                           int dst_channels,
+                           size_t dst_channels,
                            int dst_sample_rate_hz) {
   const float kSrcLeft = 0.0002f;
   const float kSrcRight = 0.0001f;
@@ -128,8 +128,9 @@ void RunAudioConverterTest(int src_channels,
       static_cast<size_t>(
           PushSincResampler::AlgorithmicDelaySeconds(src_sample_rate_hz) *
           dst_sample_rate_hz);
-  printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
-      src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
+  // SNR reported on the same line later.
+  printf("(%" PRIuS ", %d Hz) -> (%" PRIuS ", %d Hz) ",
+         src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
 
   rtc::scoped_ptr<AudioConverter> converter = AudioConverter::Create(
       src_channels, src_frames, dst_channels, dst_frames);
@@ -142,7 +143,7 @@ void RunAudioConverterTest(int src_channels,
 
 TEST(AudioConverterTest, ConversionsPassSNRThreshold) {
   const int kSampleRates[] = {8000, 16000, 32000, 44100, 48000};
-  const int kChannels[] = {1, 2};
+  const size_t kChannels[] = {1, 2};
   for (size_t src_rate = 0; src_rate < arraysize(kSampleRates); ++src_rate) {
     for (size_t dst_rate = 0; dst_rate < arraysize(kSampleRates); ++dst_rate) {
       for (size_t src_channel = 0; src_channel < arraysize(kChannels);

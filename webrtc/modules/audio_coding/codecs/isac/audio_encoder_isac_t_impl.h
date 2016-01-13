@@ -88,7 +88,7 @@ int AudioEncoderIsacT<T>::SampleRateHz() const {
 }
 
 template <typename T>
-int AudioEncoderIsacT<T>::NumChannels() const {
+size_t AudioEncoderIsacT<T>::NumChannels() const {
   return 1;
 }
 

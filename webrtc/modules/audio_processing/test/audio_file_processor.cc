@@ -132,7 +132,8 @@ void AecDumpFileProcessor::HandleMessage(const Init& msg) {
 
 void AecDumpFileProcessor::HandleMessage(const Stream& msg) {
   RTC_CHECK(!msg.has_input_data());
-  RTC_CHECK_EQ(in_buf_->num_channels(), msg.input_channel_size());
+  RTC_CHECK_EQ(in_buf_->num_channels(),
+               static_cast<size_t>(msg.input_channel_size()));
 
   for (int i = 0; i < msg.input_channel_size(); ++i) {
     RTC_CHECK_EQ(in_buf_->num_frames() * sizeof(*in_buf_->channels()[i]),
@@ -157,7 +158,8 @@ void AecDumpFileProcessor::HandleMessage(const Stream& msg) {
 
 void AecDumpFileProcessor::HandleMessage(const ReverseStream& msg) {
   RTC_CHECK(!msg.has_data());
-  RTC_CHECK_EQ(reverse_buf_->num_channels(), msg.channel_size());
+  RTC_CHECK_EQ(reverse_buf_->num_channels(),
+               static_cast<size_t>(msg.channel_size()));
 
   for (int i = 0; i < msg.channel_size(); ++i) {
     RTC_CHECK_EQ(reverse_buf_->num_frames() * sizeof(*in_buf_->channels()[i]),

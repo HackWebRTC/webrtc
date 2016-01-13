@@ -52,15 +52,14 @@ NoiseSuppressionImpl::NoiseSuppressionImpl(rtc::CriticalSection* crit)
 
 NoiseSuppressionImpl::~NoiseSuppressionImpl() {}
 
-void NoiseSuppressionImpl::Initialize(int channels, int sample_rate_hz) {
-  RTC_DCHECK_LE(0, channels);
+void NoiseSuppressionImpl::Initialize(size_t channels, int sample_rate_hz) {
   rtc::CritScope cs(crit_);
   channels_ = channels;
   sample_rate_hz_ = sample_rate_hz;
   std::vector<rtc::scoped_ptr<Suppressor>> new_suppressors;
   if (enabled_) {
     new_suppressors.resize(channels);
-    for (int i = 0; i < channels; i++) {
+    for (size_t i = 0; i < channels; i++) {
       new_suppressors[i].reset(new Suppressor(sample_rate_hz));
     }
   }
@@ -77,8 +76,7 @@ void NoiseSuppressionImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
   }
 
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(suppressors_.size(),
-                static_cast<size_t>(audio->num_channels()));
+  RTC_DCHECK_EQ(suppressors_.size(), audio->num_channels());
   for (size_t i = 0; i < suppressors_.size(); i++) {
     WebRtcNs_Analyze(suppressors_[i]->state(),
                      audio->split_bands_const_f(i)[kBand0To8kHz]);
@@ -94,8 +92,7 @@ void NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   }
 
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(suppressors_.size(),
-                static_cast<size_t>(audio->num_channels()));
+  RTC_DCHECK_EQ(suppressors_.size(), audio->num_channels());
   for (size_t i = 0; i < suppressors_.size(); i++) {
 #if defined(WEBRTC_NS_FLOAT)
     WebRtcNs_Process(suppressors_[i]->state(),

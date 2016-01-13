@@ -44,7 +44,7 @@ LocalAudioSinkAdapter::~LocalAudioSinkAdapter() {
 void LocalAudioSinkAdapter::OnData(const void* audio_data,
                                    int bits_per_sample,
                                    int sample_rate,
-                                   int number_of_channels,
+                                   size_t number_of_channels,
                                    size_t number_of_frames) {
   rtc::CritScope lock(&lock_);
   if (sink_) {

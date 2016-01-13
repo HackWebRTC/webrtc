@@ -151,7 +151,7 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
 }
 
 int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
-                        size_t* samples_per_channel, int* num_channels,
+                        size_t* samples_per_channel, size_t* num_channels,
                         NetEqOutputType* type) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   CriticalSectionScoped lock(crit_sect_.get());
@@ -744,7 +744,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
 int NetEqImpl::GetAudioInternal(size_t max_length,
                                 int16_t* output,
                                 size_t* samples_per_channel,
-                                int* num_channels) {
+                                size_t* num_channels) {
   PacketList packet_list;
   DtmfEvent dtmf_event;
   Operations operation;
@@ -868,7 +868,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
   const size_t samples_from_sync =
       sync_buffer_->GetNextAudioInterleaved(num_output_samples_per_channel,
                                             output);
-  *num_channels = static_cast<int>(sync_buffer_->Channels());
+  *num_channels = sync_buffer_->Channels();
   if (sync_buffer_->FutureLength() < expand_->overlap_length()) {
     // The sync buffer should always contain |overlap_length| samples, but now
     // too many samples have been extracted. Reinstall the |overlap_length|

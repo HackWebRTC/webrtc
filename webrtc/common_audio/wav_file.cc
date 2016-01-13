@@ -99,7 +99,7 @@ void WavReader::Close() {
 }
 
 WavWriter::WavWriter(const std::string& filename, int sample_rate,
-                     int num_channels)
+                     size_t num_channels)
     : sample_rate_(sample_rate),
       num_channels_(num_channels),
       num_samples_(0),
@@ -153,7 +153,7 @@ void WavWriter::Close() {
 
 rtc_WavWriter* rtc_WavOpen(const char* filename,
                            int sample_rate,
-                           int num_channels) {
+                           size_t num_channels) {
   return reinterpret_cast<rtc_WavWriter*>(
       new webrtc::WavWriter(filename, sample_rate, num_channels));
 }
@@ -172,7 +172,7 @@ int rtc_WavSampleRate(const rtc_WavWriter* wf) {
   return reinterpret_cast<const webrtc::WavWriter*>(wf)->sample_rate();
 }
 
-int rtc_WavNumChannels(const rtc_WavWriter* wf) {
+size_t rtc_WavNumChannels(const rtc_WavWriter* wf) {
   return reinterpret_cast<const webrtc::WavWriter*>(wf)->num_channels();
 }
 

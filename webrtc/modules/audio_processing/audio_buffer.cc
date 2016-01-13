@@ -44,9 +44,9 @@ size_t NumBandsFromSamplesPerChannel(size_t num_frames) {
 }  // namespace
 
 AudioBuffer::AudioBuffer(size_t input_num_frames,
-                         int num_input_channels,
+                         size_t num_input_channels,
                          size_t process_num_frames,
-                         int num_process_channels,
+                         size_t num_process_channels,
                          size_t output_num_frames)
   : input_num_frames_(input_num_frames),
     num_input_channels_(num_input_channels),
@@ -74,7 +74,7 @@ AudioBuffer::AudioBuffer(size_t input_num_frames,
                                                    num_proc_channels_));
 
     if (input_num_frames_ != proc_num_frames_) {
-      for (int i = 0; i < num_proc_channels_; ++i) {
+      for (size_t i = 0; i < num_proc_channels_; ++i) {
         input_resamplers_.push_back(
             new PushSincResampler(input_num_frames_,
                                   proc_num_frames_));
@@ -82,7 +82,7 @@ AudioBuffer::AudioBuffer(size_t input_num_frames,
     }
 
     if (output_num_frames_ != proc_num_frames_) {
-      for (int i = 0; i < num_proc_channels_; ++i) {
+      for (size_t i = 0; i < num_proc_channels_; ++i) {
         output_resamplers_.push_back(
             new PushSincResampler(proc_num_frames_,
                                   output_num_frames_));
@@ -130,7 +130,7 @@ void AudioBuffer::CopyFrom(const float* const* data,
 
   // Resample.
   if (input_num_frames_ != proc_num_frames_) {
-    for (int i = 0; i < num_proc_channels_; ++i) {
+    for (size_t i = 0; i < num_proc_channels_; ++i) {
       input_resamplers_[i]->Resample(data_ptr[i],
                                      input_num_frames_,
                                      process_buffer_->channels()[i],
@@ -140,7 +140,7 @@ void AudioBuffer::CopyFrom(const float* const* data,
   }
 
   // Convert to the S16 range.
-  for (int i = 0; i < num_proc_channels_; ++i) {
+  for (size_t i = 0; i < num_proc_channels_; ++i) {
     FloatToFloatS16(data_ptr[i],
                     proc_num_frames_,
                     data_->fbuf()->channels()[i]);
@@ -158,7 +158,7 @@ void AudioBuffer::CopyTo(const StreamConfig& stream_config,
     // Convert to an intermediate buffer for subsequent resampling.
     data_ptr = process_buffer_->channels();
   }
-  for (int i = 0; i < num_channels_; ++i) {
+  for (size_t i = 0; i < num_channels_; ++i) {
     FloatS16ToFloat(data_->fbuf()->channels()[i],
                     proc_num_frames_,
                     data_ptr[i]);
@@ -166,7 +166,7 @@ void AudioBuffer::CopyTo(const StreamConfig& stream_config,
 
   // Resample.
   if (output_num_frames_ != proc_num_frames_) {
-    for (int i = 0; i < num_channels_; ++i) {
+    for (size_t i = 0; i < num_channels_; ++i) {
       output_resamplers_[i]->Resample(data_ptr[i],
                                       proc_num_frames_,
                                       data[i],
@@ -175,7 +175,7 @@ void AudioBuffer::CopyTo(const StreamConfig& stream_config,
   }
 
   // Upmix.
-  for (int i = num_channels_; i < stream_config.num_channels(); ++i) {
+  for (size_t i = num_channels_; i < stream_config.num_channels(); ++i) {
     memcpy(data[i], data[0], output_num_frames_ * sizeof(**data));
   }
 }
@@ -197,13 +197,13 @@ int16_t* const* AudioBuffer::channels() {
   return data_->ibuf()->channels();
 }
 
-const int16_t* const* AudioBuffer::split_bands_const(int channel) const {
+const int16_t* const* AudioBuffer::split_bands_const(size_t channel) const {
   return split_data_.get() ?
          split_data_->ibuf_const()->bands(channel) :
          data_->ibuf_const()->bands(channel);
 }
 
-int16_t* const* AudioBuffer::split_bands(int channel) {
+int16_t* const* AudioBuffer::split_bands(size_t channel) {
   mixed_low_pass_valid_ = false;
   return split_data_.get() ?
          split_data_->ibuf()->bands(channel) :
@@ -254,13 +254,13 @@ float* const* AudioBuffer::channels_f() {
   return data_->fbuf()->channels();
 }
 
-const float* const* AudioBuffer::split_bands_const_f(int channel) const {
+const float* const* AudioBuffer::split_bands_const_f(size_t channel) const {
   return split_data_.get() ?
          split_data_->fbuf_const()->bands(channel) :
          data_->fbuf_const()->bands(channel);
 }
 
-float* const* AudioBuffer::split_bands_f(int channel) {
+float* const* AudioBuffer::split_bands_f(size_t channel) {
   mixed_low_pass_valid_ = false;
   return split_data_.get() ?
          split_data_->fbuf()->bands(channel) :
@@ -341,11 +341,11 @@ AudioFrame::VADActivity AudioBuffer::activity() const {
   return activity_;
 }
 
-int AudioBuffer::num_channels() const {
+size_t AudioBuffer::num_channels() const {
   return num_channels_;
 }
 
-void AudioBuffer::set_num_channels(int num_channels) {
+void AudioBuffer::set_num_channels(size_t num_channels) {
   num_channels_ = num_channels;
 }
 
@@ -398,7 +398,7 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
 
   // Resample.
   if (input_num_frames_ != proc_num_frames_) {
-    for (int i = 0; i < num_proc_channels_; ++i) {
+    for (size_t i = 0; i < num_proc_channels_; ++i) {
       input_resamplers_[i]->Resample(input_buffer_->fbuf_const()->channels()[i],
                                      input_num_frames_,
                                      data_->fbuf()->channels()[i],
@@ -423,7 +423,7 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) {
       output_buffer_.reset(
           new IFChannelBuffer(output_num_frames_, num_channels_));
     }
-    for (int i = 0; i < num_channels_; ++i) {
+    for (size_t i = 0; i < num_channels_; ++i) {
       output_resamplers_[i]->Resample(
           data_->fbuf()->channels()[i], proc_num_frames_,
           output_buffer_->fbuf()->channels()[i], output_num_frames_);
@@ -448,7 +448,7 @@ void AudioBuffer::CopyLowPassToReference() {
         new ChannelBuffer<int16_t>(num_split_frames_,
                                    num_proc_channels_));
   }
-  for (int i = 0; i < num_proc_channels_; i++) {
+  for (size_t i = 0; i < num_proc_channels_; i++) {
     memcpy(low_pass_reference_channels_->channels()[i],
            split_bands_const(i)[kBand0To8kHz],
            low_pass_reference_channels_->num_frames_per_band() *

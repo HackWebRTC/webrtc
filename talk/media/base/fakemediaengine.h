@@ -368,7 +368,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     void OnData(const void* audio_data,
                 int bits_per_sample,
                 int sample_rate,
-                int number_of_channels,
+                size_t number_of_channels,
                 size_t number_of_frames) override {}
     void OnClose() override { renderer_ = NULL; }
     AudioRenderer* renderer() const { return renderer_; }

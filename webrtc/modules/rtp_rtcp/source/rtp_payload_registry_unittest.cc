@@ -25,7 +25,7 @@ using ::testing::Return;
 using ::testing::_;
 
 static const char* kTypicalPayloadName = "name";
-static const uint8_t kTypicalChannels = 1;
+static const size_t kTypicalChannels = 1;
 static const int kTypicalFrequency = 44000;
 static const int kTypicalRate = 32 * 1024;
 
@@ -90,7 +90,7 @@ TEST_F(RtpPayloadRegistryTest, RegistersAndRemembersPayloadsUntilDeregistered) {
 TEST_F(RtpPayloadRegistryTest, AudioRedWorkProperly) {
   const uint8_t kRedPayloadType = 127;
   const int kRedSampleRate = 8000;
-  const int kRedChannels = 1;
+  const size_t kRedChannels = 1;
   const int kRedBitRate = 0;
 
   // This creates an audio RTP payload strategy.

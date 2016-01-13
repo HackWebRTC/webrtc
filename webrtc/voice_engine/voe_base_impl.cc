@@ -82,7 +82,7 @@ void VoEBaseImpl::OnWarningIsReported(const WarningCode warning) {
 int32_t VoEBaseImpl::RecordedDataIsAvailable(const void* audioSamples,
                                              const size_t nSamples,
                                              const size_t nBytesPerSample,
-                                             const uint8_t nChannels,
+                                             const size_t nChannels,
                                              const uint32_t samplesPerSec,
                                              const uint32_t totalDelayMS,
                                              const int32_t clockDrift,
@@ -97,23 +97,22 @@ int32_t VoEBaseImpl::RecordedDataIsAvailable(const void* audioSamples,
 
 int32_t VoEBaseImpl::NeedMorePlayData(const size_t nSamples,
                                       const size_t nBytesPerSample,
-                                      const uint8_t nChannels,
+                                      const size_t nChannels,
                                       const uint32_t samplesPerSec,
                                       void* audioSamples,
                                       size_t& nSamplesOut,
                                       int64_t* elapsed_time_ms,
                                       int64_t* ntp_time_ms) {
-  GetPlayoutData(static_cast<int>(samplesPerSec), static_cast<int>(nChannels),
-                 nSamples, true, audioSamples,
-                 elapsed_time_ms, ntp_time_ms);
+  GetPlayoutData(static_cast<int>(samplesPerSec), nChannels, nSamples, true,
+                 audioSamples, elapsed_time_ms, ntp_time_ms);
   nSamplesOut = audioFrame_.samples_per_channel_;
   return 0;
 }
 
 int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
-                                 int number_of_voe_channels,
+                                 size_t number_of_voe_channels,
                                  const int16_t* audio_data, int sample_rate,
-                                 int number_of_channels,
+                                 size_t number_of_channels,
                                  size_t number_of_frames,
                                  int audio_delay_milliseconds, int volume,
                                  bool key_pressed, bool need_audio_processing) {
@@ -128,7 +127,7 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
 
   // No need to go through the APM, demultiplex the data to each VoE channel,
   // encode and send to the network.
-  for (int i = 0; i < number_of_voe_channels; ++i) {
+  for (size_t i = 0; i < number_of_voe_channels; ++i) {
     // TODO(ajm): In the case where multiple channels are using the same codec
     // rate, this path needlessly does extra conversions. We should convert once
     // and share between channels.
@@ -142,14 +141,14 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
 
 void VoEBaseImpl::OnData(int voe_channel, const void* audio_data,
                          int bits_per_sample, int sample_rate,
-                         int number_of_channels, size_t number_of_frames) {
+                         size_t number_of_channels, size_t number_of_frames) {
   PushCaptureData(voe_channel, audio_data, bits_per_sample, sample_rate,
                   number_of_channels, number_of_frames);
 }
 
 void VoEBaseImpl::PushCaptureData(int voe_channel, const void* audio_data,
                                   int bits_per_sample, int sample_rate,
-                                  int number_of_channels,
+                                  size_t number_of_channels,
                                   size_t number_of_frames) {
   voe::ChannelOwner ch = shared_->channel_manager().GetChannel(voe_channel);
   voe::Channel* channel_ptr = ch.channel();
@@ -165,7 +164,7 @@ void VoEBaseImpl::PushCaptureData(int voe_channel, const void* audio_data,
 
 void VoEBaseImpl::PullRenderData(int bits_per_sample,
                                  int sample_rate,
-                                 int number_of_channels,
+                                 size_t number_of_channels,
                                  size_t number_of_frames,
                                  void* audio_data, int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
@@ -699,8 +698,8 @@ int32_t VoEBaseImpl::TerminateInternal() {
 }
 
 int VoEBaseImpl::ProcessRecordedDataWithAPM(
-    const int voe_channels[], int number_of_voe_channels,
-    const void* audio_data, uint32_t sample_rate, uint8_t number_of_channels,
+    const int voe_channels[], size_t number_of_voe_channels,
+    const void* audio_data, uint32_t sample_rate, size_t number_of_channels,
     size_t number_of_frames, uint32_t audio_delay_milliseconds,
     int32_t clock_drift, uint32_t volume, bool key_pressed) {
   assert(shared_->transmit_mixer() != nullptr);
@@ -765,7 +764,7 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
   return 0;
 }
 
-void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
+void VoEBaseImpl::GetPlayoutData(int sample_rate, size_t number_of_channels,
                                  size_t number_of_frames, bool feed_data_to_apm,
                                  void* audio_data, int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {

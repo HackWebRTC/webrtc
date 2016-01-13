@@ -43,7 +43,7 @@ typedef struct WebRtcOpusDecInst OpusDecInst;
  *                            -1 - Error
  */
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
-                                 int32_t channels,
+                                 size_t channels,
                                  int32_t application);
 
 int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
@@ -195,7 +195,7 @@ int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst);
  */
 int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity);
 
-int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels);
+int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels);
 int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst);
 
 /****************************************************************************
@@ -203,7 +203,7 @@ int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst);
  *
  * This function returns the number of channels created for Opus decoder.
  */
-int WebRtcOpus_DecoderChannels(OpusDecInst* inst);
+size_t WebRtcOpus_DecoderChannels(OpusDecInst* inst);
 
 /****************************************************************************
  * WebRtcOpus_DecoderInit(...)

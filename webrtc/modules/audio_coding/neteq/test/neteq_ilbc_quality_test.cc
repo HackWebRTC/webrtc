@@ -50,7 +50,7 @@ class NetEqIlbcQualityTest : public NetEqQualityTest {
                          NetEqDecoder::kDecoderILBC) {}
 
   void SetUp() override {
-    ASSERT_EQ(1, channels_) << "iLBC supports only mono audio.";
+    ASSERT_EQ(1u, channels_) << "iLBC supports only mono audio.";
     AudioEncoderIlbc::Config config;
     config.frame_size_ms = FLAGS_frame_size_ms;
     encoder_.reset(new AudioEncoderIlbc(config));

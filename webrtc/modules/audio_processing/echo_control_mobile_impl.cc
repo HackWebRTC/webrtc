@@ -104,8 +104,8 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
   // The ordering convention must be followed to pass to the correct AECM.
   size_t handle_index = 0;
   render_queue_buffer_.clear();
-  for (int i = 0; i < apm_->num_output_channels(); i++) {
-    for (int j = 0; j < audio->num_channels(); j++) {
+  for (size_t i = 0; i < apm_->num_output_channels(); i++) {
+    for (size_t j = 0; j < audio->num_channels(); j++) {
       Handle* my_handle = static_cast<Handle*>(handle(handle_index));
       err = WebRtcAecm_GetBufferFarendError(
           my_handle, audio->split_bands_const(j)[kBand0To8kHz],
@@ -151,8 +151,8 @@ void EchoControlMobileImpl::ReadQueuedRenderData() {
     const size_t num_frames_per_band =
         capture_queue_buffer_.size() /
         (apm_->num_output_channels() * apm_->num_reverse_channels());
-    for (int i = 0; i < apm_->num_output_channels(); i++) {
-      for (int j = 0; j < apm_->num_reverse_channels(); j++) {
+    for (size_t i = 0; i < apm_->num_output_channels(); i++) {
+      for (size_t j = 0; j < apm_->num_reverse_channels(); j++) {
         Handle* my_handle = static_cast<Handle*>(handle(handle_index));
         WebRtcAecm_BufferFarend(my_handle, &capture_queue_buffer_[buffer_index],
                                 num_frames_per_band);
@@ -182,7 +182,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 
   // The ordering convention must be followed to pass to the correct AECM.
   size_t handle_index = 0;
-  for (int i = 0; i < audio->num_channels(); i++) {
+  for (size_t i = 0; i < audio->num_channels(); i++) {
     // TODO(ajm): improve how this works, possibly inside AECM.
     //            This is kind of hacked up.
     const int16_t* noisy = audio->low_pass_reference(i);
@@ -191,7 +191,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       noisy = clean;
       clean = NULL;
     }
-    for (int j = 0; j < apm_->num_reverse_channels(); j++) {
+    for (size_t j = 0; j < apm_->num_reverse_channels(); j++) {
       Handle* my_handle = static_cast<Handle*>(handle(handle_index));
       err = WebRtcAecm_Process(
           my_handle,
@@ -394,7 +394,7 @@ int EchoControlMobileImpl::ConfigureHandle(void* handle) const {
   return WebRtcAecm_set_config(static_cast<Handle*>(handle), config);
 }
 
-int EchoControlMobileImpl::num_handles_required() const {
+size_t EchoControlMobileImpl::num_handles_required() const {
   // Not locked as it only relies on APM public API which is threadsafe.
   return apm_->num_output_channels() * apm_->num_reverse_channels();
 }

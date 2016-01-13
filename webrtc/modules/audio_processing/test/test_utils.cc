@@ -76,7 +76,7 @@ void WriteIntData(const int16_t* data,
 
 void WriteFloatData(const float* const* data,
                     size_t samples_per_channel,
-                    int num_channels,
+                    size_t num_channels,
                     WavWriter* wav_file,
                     RawFile* raw_file) {
   size_t length = num_channels * samples_per_channel;
@@ -116,7 +116,7 @@ void SetFrameSampleRate(AudioFrame* frame,
       sample_rate_hz / 1000;
 }
 
-AudioProcessing::ChannelLayout LayoutFromChannels(int num_channels) {
+AudioProcessing::ChannelLayout LayoutFromChannels(size_t num_channels) {
   switch (num_channels) {
     case 1:
       return AudioProcessing::kMono;

@@ -300,7 +300,8 @@ TransmitMixer::SetAudioProcessingModule(AudioProcessing* audioProcessingModule)
     return 0;
 }
 
-void TransmitMixer::GetSendCodecInfo(int* max_sample_rate, int* max_channels) {
+void TransmitMixer::GetSendCodecInfo(int* max_sample_rate,
+                                     size_t* max_channels) {
   *max_sample_rate = 8000;
   *max_channels = 1;
   for (ChannelManager::Iterator it(_channelManagerPtr); it.IsValid();
@@ -318,7 +319,7 @@ void TransmitMixer::GetSendCodecInfo(int* max_sample_rate, int* max_channels) {
 int32_t
 TransmitMixer::PrepareDemux(const void* audioSamples,
                             size_t nSamples,
-                            uint8_t nChannels,
+                            size_t nChannels,
                             uint32_t samplesPerSec,
                             uint16_t totalDelayMS,
                             int32_t clockDrift,
@@ -327,7 +328,7 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::PrepareDemux(nSamples=%" PRIuS ", "
-                 "nChannels=%u, samplesPerSec=%u, totalDelayMS=%u, "
+                 "nChannels=%" PRIuS ", samplesPerSec=%u, totalDelayMS=%u, "
                  "clockDrift=%d, currentMicLevel=%u)",
                  nSamples, nChannels, samplesPerSec, totalDelayMS, clockDrift,
                  currentMicLevel);
@@ -432,8 +433,8 @@ TransmitMixer::DemuxAndMix()
 }
 
 void TransmitMixer::DemuxAndMix(const int voe_channels[],
-                                int number_of_voe_channels) {
-  for (int i = 0; i < number_of_voe_channels; ++i) {
+                                size_t number_of_voe_channels) {
+  for (size_t i = 0; i < number_of_voe_channels; ++i) {
     voe::ChannelOwner ch = _channelManagerPtr->GetChannel(voe_channels[i]);
     voe::Channel* channel_ptr = ch.channel();
     if (channel_ptr) {
@@ -465,8 +466,8 @@ TransmitMixer::EncodeAndSend()
 }
 
 void TransmitMixer::EncodeAndSend(const int voe_channels[],
-                                  int number_of_voe_channels) {
-  for (int i = 0; i < number_of_voe_channels; ++i) {
+                                  size_t number_of_voe_channels) {
+  for (size_t i = 0; i < number_of_voe_channels; ++i) {
     voe::ChannelOwner ch = _channelManagerPtr->GetChannel(voe_channels[i]);
     voe::Channel* channel_ptr = ch.channel();
     if (channel_ptr && channel_ptr->Sending())
@@ -698,8 +699,7 @@ int TransmitMixer::StartRecordingMicrophone(const char* fileName,
     const uint32_t notificationTime(0); // Not supported in VoE
     CodecInst dummyCodec = { 100, "L16", 16000, 320, 1, 320000 };
 
-    if (codecInst != NULL &&
-      (codecInst->channels < 0 || codecInst->channels > 2))
+    if (codecInst != NULL && codecInst->channels > 2)
     {
         _engineStatisticsPtr->SetLastError(
             VE_BAD_ARGUMENT, kTraceError,
@@ -1133,10 +1133,10 @@ bool TransmitMixer::IsRecordingMic()
 
 void TransmitMixer::GenerateAudioFrame(const int16_t* audio,
                                        size_t samples_per_channel,
-                                       int num_channels,
+                                       size_t num_channels,
                                        int sample_rate_hz) {
   int codec_rate;
-  int num_codec_channels;
+  size_t num_codec_channels;
   GetSendCodecInfo(&codec_rate, &num_codec_channels);
   stereo_codec_ = num_codec_channels == 2;
 

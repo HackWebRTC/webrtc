@@ -17,6 +17,7 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/audio_processing/debug.pb.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
@@ -79,9 +80,9 @@ int do_main(int argc, char* argv[]) {
   size_t reverse_samples_per_channel = 0;
   size_t input_samples_per_channel = 0;
   size_t output_samples_per_channel = 0;
-  int num_reverse_channels = 0;
-  int num_input_channels = 0;
-  int num_output_channels = 0;
+  size_t num_reverse_channels = 0;
+  size_t num_input_channels = 0;
+  size_t num_output_channels = 0;
   rtc::scoped_ptr<WavWriter> reverse_wav_file;
   rtc::scoped_ptr<WavWriter> input_wav_file;
   rtc::scoped_ptr<WavWriter> output_wav_file;
@@ -117,7 +118,7 @@ int do_main(int argc, char* argv[]) {
         }
         rtc::scoped_ptr<const float* []> data(
             new const float* [num_reverse_channels]);
-        for (int i = 0; i < num_reverse_channels; ++i) {
+        for (size_t i = 0; i < num_reverse_channels; ++i) {
           data[i] = reinterpret_cast<const float*>(msg.channel(i).data());
         }
         WriteFloatData(data.get(),
@@ -148,7 +149,7 @@ int do_main(int argc, char* argv[]) {
         }
         rtc::scoped_ptr<const float* []> data(
             new const float* [num_input_channels]);
-        for (int i = 0; i < num_input_channels; ++i) {
+        for (size_t i = 0; i < num_input_channels; ++i) {
           data[i] = reinterpret_cast<const float*>(msg.input_channel(i).data());
         }
         WriteFloatData(data.get(),
@@ -172,7 +173,7 @@ int do_main(int argc, char* argv[]) {
         }
         rtc::scoped_ptr<const float* []> data(
             new const float* [num_output_channels]);
-        for (int i = 0; i < num_output_channels; ++i) {
+        for (size_t i = 0; i < num_output_channels; ++i) {
           data[i] =
               reinterpret_cast<const float*>(msg.output_channel(i).data());
         }
@@ -268,11 +269,14 @@ int do_main(int argc, char* argv[]) {
               "  Reverse sample rate: %d\n",
               reverse_sample_rate);
       num_input_channels = msg.num_input_channels();
-      fprintf(settings_file, "  Input channels: %d\n", num_input_channels);
+      fprintf(settings_file, "  Input channels: %" PRIuS "\n",
+              num_input_channels);
       num_output_channels = msg.num_output_channels();
-      fprintf(settings_file, "  Output channels: %d\n", num_output_channels);
+      fprintf(settings_file, "  Output channels: %" PRIuS "\n",
+              num_output_channels);
       num_reverse_channels = msg.num_reverse_channels();
-      fprintf(settings_file, "  Reverse channels: %d\n", num_reverse_channels);
+      fprintf(settings_file, "  Reverse channels: %" PRIuS "\n",
+              num_reverse_channels);
 
       fprintf(settings_file, "\n");
 

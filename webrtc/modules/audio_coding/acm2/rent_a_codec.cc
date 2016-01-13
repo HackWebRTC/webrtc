@@ -45,7 +45,7 @@ namespace acm2 {
 rtc::Optional<RentACodec::CodecId> RentACodec::CodecIdByParams(
     const char* payload_name,
     int sampling_freq_hz,
-    int channels) {
+    size_t channels) {
   return CodecIdFromIndex(
       ACMCodecDB::CodecId(payload_name, sampling_freq_hz, channels));
 }
@@ -63,7 +63,7 @@ rtc::Optional<RentACodec::CodecId> RentACodec::CodecIdByInst(
 
 rtc::Optional<CodecInst> RentACodec::CodecInstByParams(const char* payload_name,
                                                        int sampling_freq_hz,
-                                                       int channels) {
+                                                       size_t channels) {
   rtc::Optional<CodecId> codec_id =
       CodecIdByParams(payload_name, sampling_freq_hz, channels);
   if (!codec_id)
@@ -83,7 +83,7 @@ bool RentACodec::IsCodecValid(const CodecInst& codec_inst) {
 }
 
 rtc::Optional<bool> RentACodec::IsSupportedNumChannels(CodecId codec_id,
-                                                       int num_channels) {
+                                                       size_t num_channels) {
   auto i = CodecIndexFromId(codec_id);
   return i ? rtc::Optional<bool>(
                  ACMCodecDB::codec_settings_[*i].channel_support >=
@@ -98,7 +98,7 @@ rtc::ArrayView<const CodecInst> RentACodec::Database() {
 
 rtc::Optional<NetEqDecoder> RentACodec::NetEqDecoderFromCodecId(
     CodecId codec_id,
-    int num_channels) {
+    size_t num_channels) {
   rtc::Optional<int> i = CodecIndexFromId(codec_id);
   if (!i)
     return rtc::Optional<NetEqDecoder>();

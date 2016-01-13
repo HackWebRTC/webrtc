@@ -44,7 +44,7 @@ class AcmReceiver {
     uint8_t payload_type;
     // This field is meaningful for codecs where both mono and
     // stereo versions are registered under the same ID.
-    int channels;
+    size_t channels;
     int sample_rate_hz;
   };
 
@@ -116,7 +116,7 @@ class AcmReceiver {
   //
   int AddCodec(int acm_codec_id,
                uint8_t payload_type,
-               int channels,
+               size_t channels,
                int sample_rate_hz,
                AudioDecoder* audio_decoder,
                const std::string& name);

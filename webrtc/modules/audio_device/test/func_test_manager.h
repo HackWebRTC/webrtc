@@ -49,7 +49,7 @@ struct AudioPacket
     uint8_t dataBuffer[4 * 960];
     size_t nSamples;
     size_t nBytesPerSample;
-    uint8_t nChannels;
+    size_t nChannels;
     uint32_t samplesPerSec;
 };
 
@@ -88,7 +88,7 @@ public:
     int32_t RecordedDataIsAvailable(const void* audioSamples,
                                     const size_t nSamples,
                                     const size_t nBytesPerSample,
-                                    const uint8_t nChannels,
+                                    const size_t nChannels,
                                     const uint32_t samplesPerSec,
                                     const uint32_t totalDelayMS,
                                     const int32_t clockDrift,
@@ -98,7 +98,7 @@ public:
 
     int32_t NeedMorePlayData(const size_t nSamples,
                              const size_t nBytesPerSample,
-                             const uint8_t nChannels,
+                             const size_t nChannels,
                              const uint32_t samplesPerSec,
                              void* audioSamples,
                              size_t& nSamplesOut,

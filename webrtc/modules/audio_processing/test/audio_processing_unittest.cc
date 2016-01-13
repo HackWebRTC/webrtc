@@ -69,7 +69,7 @@ void ConvertToFloat(const int16_t* int_data, ChannelBuffer<float>* cb) {
                cb->num_frames(),
                cb->num_channels(),
                cb_int.channels());
-  for (int i = 0; i < cb->num_channels(); ++i) {
+  for (size_t i = 0; i < cb->num_channels(); ++i) {
     S16ToFloat(cb_int.channels()[i],
                cb->num_frames(),
                cb->channels()[i]);
@@ -81,7 +81,7 @@ void ConvertToFloat(const AudioFrame& frame, ChannelBuffer<float>* cb) {
 }
 
 // Number of channels including the keyboard channel.
-int TotalChannelsFromLayout(AudioProcessing::ChannelLayout layout) {
+size_t TotalChannelsFromLayout(AudioProcessing::ChannelLayout layout) {
   switch (layout) {
     case AudioProcessing::kMono:
       return 1;
@@ -131,7 +131,7 @@ void SetFrameTo(AudioFrame* frame, int16_t value) {
 }
 
 void SetFrameTo(AudioFrame* frame, int16_t left, int16_t right) {
-  ASSERT_EQ(2, frame->num_channels_);
+  ASSERT_EQ(2u, frame->num_channels_);
   for (size_t i = 0; i < frame->samples_per_channel_ * 2; i += 2) {
     frame->data_[i] = left;
     frame->data_[i + 1] = right;
@@ -256,10 +256,10 @@ std::string OutputFilePath(std::string name,
                            int output_rate,
                            int reverse_input_rate,
                            int reverse_output_rate,
-                           int num_input_channels,
-                           int num_output_channels,
-                           int num_reverse_input_channels,
-                           int num_reverse_output_channels,
+                           size_t num_input_channels,
+                           size_t num_output_channels,
+                           size_t num_reverse_input_channels,
+                           size_t num_reverse_output_channels,
                            StreamDirection file_direction) {
   std::ostringstream ss;
   ss << name << "_i" << num_input_channels << "_" << input_rate / 1000 << "_ir"
@@ -354,9 +354,9 @@ class ApmTest : public ::testing::Test {
   void Init(int sample_rate_hz,
             int output_sample_rate_hz,
             int reverse_sample_rate_hz,
-            int num_input_channels,
-            int num_output_channels,
-            int num_reverse_channels,
+            size_t num_input_channels,
+            size_t num_output_channels,
+            size_t num_reverse_channels,
             bool open_output_file);
   void Init(AudioProcessing* ap);
   void EnableAllComponents();
@@ -369,12 +369,12 @@ class ApmTest : public ::testing::Test {
   void ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
                                     int delay_min, int delay_max);
   void TestChangingChannelsInt16Interface(
-      int num_channels,
+      size_t num_channels,
       AudioProcessing::Error expected_return);
-  void TestChangingForwardChannels(int num_in_channels,
-                                   int num_out_channels,
+  void TestChangingForwardChannels(size_t num_in_channels,
+                                   size_t num_out_channels,
                                    AudioProcessing::Error expected_return);
-  void TestChangingReverseChannels(int num_rev_channels,
+  void TestChangingReverseChannels(size_t num_rev_channels,
                                    AudioProcessing::Error expected_return);
   void RunQuantizedVolumeDoesNotGetStuckTest(int sample_rate);
   void RunManualVolumeChangeIsPossibleTest(int sample_rate);
@@ -395,7 +395,7 @@ class ApmTest : public ::testing::Test {
   rtc::scoped_ptr<ChannelBuffer<float> > float_cb_;
   rtc::scoped_ptr<ChannelBuffer<float> > revfloat_cb_;
   int output_sample_rate_hz_;
-  int num_output_channels_;
+  size_t num_output_channels_;
   FILE* far_file_;
   FILE* near_file_;
   FILE* out_file_;
@@ -479,9 +479,9 @@ void ApmTest::Init(AudioProcessing* ap) {
 void ApmTest::Init(int sample_rate_hz,
                    int output_sample_rate_hz,
                    int reverse_sample_rate_hz,
-                   int num_input_channels,
-                   int num_output_channels,
-                   int num_reverse_channels,
+                   size_t num_input_channels,
+                   size_t num_output_channels,
+                   size_t num_reverse_channels,
                    bool open_output_file) {
   SetContainerFormat(sample_rate_hz, num_input_channels, frame_, &float_cb_);
   output_sample_rate_hz_ = output_sample_rate_hz;
@@ -813,7 +813,7 @@ TEST_F(ApmTest, DelayOffsetWithLimitsIsSetProperly) {
 }
 
 void ApmTest::TestChangingChannelsInt16Interface(
-    int num_channels,
+    size_t num_channels,
     AudioProcessing::Error expected_return) {
   frame_->num_channels_ = num_channels;
   EXPECT_EQ(expected_return, apm_->ProcessStream(frame_));
@@ -821,8 +821,8 @@ void ApmTest::TestChangingChannelsInt16Interface(
 }
 
 void ApmTest::TestChangingForwardChannels(
-    int num_in_channels,
-    int num_out_channels,
+    size_t num_in_channels,
+    size_t num_out_channels,
     AudioProcessing::Error expected_return) {
   const StreamConfig input_stream = {frame_->sample_rate_hz_, num_in_channels};
   const StreamConfig output_stream = {output_sample_rate_hz_, num_out_channels};
@@ -833,7 +833,7 @@ void ApmTest::TestChangingForwardChannels(
 }
 
 void ApmTest::TestChangingReverseChannels(
-    int num_rev_channels,
+    size_t num_rev_channels,
     AudioProcessing::Error expected_return) {
   const ProcessingConfig processing_config = {
       {{frame_->sample_rate_hz_, apm_->num_input_channels()},
@@ -854,11 +854,11 @@ TEST_F(ApmTest, ChannelsInt16Interface) {
 
   TestChangingChannelsInt16Interface(0, apm_->kBadNumberChannelsError);
 
-  for (int i = 1; i < 4; i++) {
+  for (size_t i = 1; i < 4; i++) {
     TestChangingChannelsInt16Interface(i, kNoErr);
     EXPECT_EQ(i, apm_->num_input_channels());
     // We always force the number of reverse channels used for processing to 1.
-    EXPECT_EQ(1, apm_->num_reverse_channels());
+    EXPECT_EQ(1u, apm_->num_reverse_channels());
   }
 }
 
@@ -869,8 +869,8 @@ TEST_F(ApmTest, Channels) {
   TestChangingForwardChannels(0, 1, apm_->kBadNumberChannelsError);
   TestChangingReverseChannels(0, apm_->kBadNumberChannelsError);
 
-  for (int i = 1; i < 4; ++i) {
-    for (int j = 0; j < 1; ++j) {
+  for (size_t i = 1; i < 4; ++i) {
+    for (size_t j = 0; j < 1; ++j) {
       // Output channels much be one or match input channels.
       if (j == 1 || i == j) {
         TestChangingForwardChannels(i, j, kNoErr);
@@ -879,7 +879,7 @@ TEST_F(ApmTest, Channels) {
         EXPECT_EQ(i, apm_->num_input_channels());
         EXPECT_EQ(j, apm_->num_output_channels());
         // The number of reverse channels used for processing to is always 1.
-        EXPECT_EQ(1, apm_->num_reverse_channels());
+        EXPECT_EQ(1u, apm_->num_reverse_channels());
       } else {
         TestChangingForwardChannels(i, j,
                                     AudioProcessing::kBadNumberChannelsError);
@@ -1293,8 +1293,8 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   const int kSampleRateHz = 16000;
   const size_t kSamplesPerChannel =
       static_cast<size_t>(AudioProcessing::kChunkSizeMs * kSampleRateHz / 1000);
-  const int kNumInputChannels = 2;
-  const int kNumOutputChannels = 1;
+  const size_t kNumInputChannels = 2;
+  const size_t kNumOutputChannels = 1;
   const size_t kNumChunks = 700;
   const float kScaleFactor = 0.25f;
   Config config;
@@ -1327,7 +1327,7 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
                           int_data.get(),
                           float_data.get(),
                           &src_buf));
-    for (int j = 0; j < kNumInputChannels; ++j) {
+    for (size_t j = 0; j < kNumInputChannels; ++j) {
       for (size_t k = 0; k < kSamplesPerChannel; ++k) {
         src_buf.channels()[j][k] *= kScaleFactor;
       }
@@ -1352,7 +1352,7 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
                           int_data.get(),
                           float_data.get(),
                           &src_buf));
-    for (int j = 0; j < kNumInputChannels; ++j) {
+    for (size_t j = 0; j < kNumInputChannels; ++j) {
       for (size_t k = 0; k < kSamplesPerChannel; ++k) {
         src_buf.channels()[j][k] *= kScaleFactor;
       }
@@ -1742,7 +1742,8 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
       const audioproc::ReverseStream msg = event_msg.reverse_stream();
 
       if (msg.channel_size() > 0) {
-        ASSERT_EQ(revframe_->num_channels_, msg.channel_size());
+        ASSERT_EQ(revframe_->num_channels_,
+                  static_cast<size_t>(msg.channel_size()));
         for (int i = 0; i < msg.channel_size(); ++i) {
            memcpy(revfloat_cb_->channels()[i],
                   msg.channel(i).data(),
@@ -1772,7 +1773,8 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
       }
 
       if (msg.input_channel_size() > 0) {
-        ASSERT_EQ(frame_->num_channels_, msg.input_channel_size());
+        ASSERT_EQ(frame_->num_channels_,
+                  static_cast<size_t>(msg.input_channel_size()));
         for (int i = 0; i < msg.input_channel_size(); ++i) {
            memcpy(float_cb_->channels()[i],
                   msg.input_channel(i).data(),
@@ -1930,9 +1932,12 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
     if (test->num_input_channels() != test->num_output_channels())
       continue;
 
-    const int num_render_channels = test->num_reverse_channels();
-    const int num_input_channels = test->num_input_channels();
-    const int num_output_channels = test->num_output_channels();
+    const size_t num_render_channels =
+        static_cast<size_t>(test->num_reverse_channels());
+    const size_t num_input_channels =
+        static_cast<size_t>(test->num_input_channels());
+    const size_t num_output_channels =
+        static_cast<size_t>(test->num_output_channels());
     const size_t samples_per_channel = static_cast<size_t>(
         test->sample_rate() * AudioProcessing::kChunkSizeMs / 1000);
 
@@ -1975,7 +1980,7 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
           test->sample_rate(),
           LayoutFromChannels(num_output_channels),
           float_cb_->channels()));
-      for (int j = 0; j < num_output_channels; ++j) {
+      for (size_t j = 0; j < num_output_channels; ++j) {
         FloatToS16(float_cb_->channels()[j],
                    samples_per_channel,
                    output_cb.channels()[j]);
@@ -2008,7 +2013,7 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
                   0.01);
 
       // Reset in case of downmixing.
-      frame_->num_channels_ = test->num_input_channels();
+      frame_->num_channels_ = static_cast<size_t>(test->num_input_channels());
     }
     rewind(far_file_);
     rewind(near_file_);
@@ -2069,9 +2074,9 @@ TEST_F(ApmTest, Process) {
     Init(test->sample_rate(),
          test->sample_rate(),
          test->sample_rate(),
-         test->num_input_channels(),
-         test->num_output_channels(),
-         test->num_reverse_channels(),
+         static_cast<size_t>(test->num_input_channels()),
+         static_cast<size_t>(test->num_output_channels()),
+         static_cast<size_t>(test->num_reverse_channels()),
          true);
 
     int frame_count = 0;
@@ -2096,7 +2101,8 @@ TEST_F(ApmTest, Process) {
       EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
 
       // Ensure the frame was downmixed properly.
-      EXPECT_EQ(test->num_output_channels(), frame_->num_channels_);
+      EXPECT_EQ(static_cast<size_t>(test->num_output_channels()),
+                frame_->num_channels_);
 
       max_output_average += MaxAudioFrame(*frame_);
 
@@ -2126,7 +2132,7 @@ TEST_F(ApmTest, Process) {
       ASSERT_EQ(frame_size, write_count);
 
       // Reset in case of downmixing.
-      frame_->num_channels_ = test->num_input_channels();
+      frame_->num_channels_ = static_cast<size_t>(test->num_input_channels());
       frame_count++;
     }
     max_output_average /= frame_count;
@@ -2350,7 +2356,7 @@ class AudioProcessingTest
   static void SetUpTestCase() {
     // Create all needed output reference files.
     const int kNativeRates[] = {8000, 16000, 32000, 48000};
-    const int kNumChannels[] = {1, 2};
+    const size_t kNumChannels[] = {1, 2};
     for (size_t i = 0; i < arraysize(kNativeRates); ++i) {
       for (size_t j = 0; j < arraysize(kNumChannels); ++j) {
         for (size_t k = 0; k < arraysize(kNumChannels); ++k) {
@@ -2374,10 +2380,10 @@ class AudioProcessingTest
                             int output_rate,
                             int reverse_input_rate,
                             int reverse_output_rate,
-                            int num_input_channels,
-                            int num_output_channels,
-                            int num_reverse_input_channels,
-                            int num_reverse_output_channels,
+                            size_t num_input_channels,
+                            size_t num_output_channels,
+                            size_t num_reverse_input_channels,
+                            size_t num_reverse_output_channels,
                             std::string output_file_prefix) {
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));

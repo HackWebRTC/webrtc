@@ -29,7 +29,7 @@ class RTPPayloadStrategy {
 
   virtual bool PayloadIsCompatible(const RtpUtility::Payload& payload,
                                    const uint32_t frequency,
-                                   const uint8_t channels,
+                                   const size_t channels,
                                    const uint32_t rate) const = 0;
 
   virtual void UpdatePayloadRate(RtpUtility::Payload* payload,
@@ -39,7 +39,7 @@ class RTPPayloadStrategy {
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payloadType,
       const uint32_t frequency,
-      const uint8_t channels,
+      const size_t channels,
       const uint32_t rate) const = 0;
 
   virtual int GetPayloadTypeFrequency(
@@ -61,7 +61,7 @@ class RTPPayloadRegistry {
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payload_type,
       const uint32_t frequency,
-      const uint8_t channels,
+      const size_t channels,
       const uint32_t rate,
       bool* created_new_payload_type);
 
@@ -71,7 +71,7 @@ class RTPPayloadRegistry {
   int32_t ReceivePayloadType(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const uint32_t frequency,
-      const uint8_t channels,
+      const size_t channels,
       const uint32_t rate,
       int8_t* payload_type) const;
 
@@ -173,7 +173,7 @@ class RTPPayloadRegistry {
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const size_t payload_name_length,
       const uint32_t frequency,
-      const uint8_t channels,
+      const size_t channels,
       const uint32_t rate);
 
   bool IsRtxInternal(const RTPHeader& header) const;

@@ -107,7 +107,7 @@ class NetEqImpl : public webrtc::NetEq {
   int GetAudio(size_t max_length,
                int16_t* output_audio,
                size_t* samples_per_channel,
-               int* num_channels,
+               size_t* num_channels,
                NetEqOutputType* type) override;
 
   int RegisterPayloadType(NetEqDecoder codec,
@@ -220,7 +220,8 @@ class NetEqImpl : public webrtc::NetEq {
   int GetAudioInternal(size_t max_length,
                        int16_t* output,
                        size_t* samples_per_channel,
-                       int* num_channels) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+                       size_t* num_channels)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Provides a decision to the GetAudioInternal method. The decision what to
   // do is written to |operation|. Packets to decode are written to

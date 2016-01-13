@@ -17,7 +17,7 @@
 
 struct WebRtcOpusEncInst {
   OpusEncoder* encoder;
-  int channels;
+  size_t channels;
   int in_dtx_mode;
   // When Opus is in DTX mode, we use |zero_counts| to count consecutive zeros
   // to break long zero segment so as to prevent DTX from going wrong. We use
@@ -30,7 +30,7 @@ struct WebRtcOpusEncInst {
 struct WebRtcOpusDecInst {
   OpusDecoder* decoder;
   int prev_decoded_samples;
-  int channels;
+  size_t channels;
   int in_dtx_mode;
 };
 

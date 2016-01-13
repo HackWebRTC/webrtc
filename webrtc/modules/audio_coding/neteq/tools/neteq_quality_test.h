@@ -99,7 +99,7 @@ class NetEqQualityTest : public ::testing::Test {
   std::ofstream& Log();
 
   NetEqDecoder decoder_type_;
-  const int channels_;
+  const size_t channels_;
 
  private:
   int decoded_time_ms_;

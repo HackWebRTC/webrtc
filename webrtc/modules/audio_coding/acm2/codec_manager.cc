@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -25,8 +26,8 @@ int IsValidSendCodec(const CodecInst& send_codec) {
   int dummy_id = 0;
   if ((send_codec.channels != 1) && (send_codec.channels != 2)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                 "Wrong number of channels (%d, only mono and stereo are "
-                 "supported)",
+                 "Wrong number of channels (%" PRIuS ", only mono and stereo "
+                 "are supported)",
                  send_codec.channels);
     return -1;
   }
@@ -48,7 +49,7 @@ int IsValidSendCodec(const CodecInst& send_codec) {
   if (!RentACodec::IsSupportedNumChannels(*maybe_codec_id, send_codec.channels)
            .value_or(false)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                 "%d number of channels not supportedn for %s.",
+                 "%" PRIuS " number of channels not supportedn for %s.",
                  send_codec.channels, send_codec.plname);
     return -1;
   }

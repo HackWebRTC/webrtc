@@ -62,7 +62,7 @@ void OpusTest::Perform() {
   return;
 #else
   uint16_t frequency_hz;
-  int audio_channels;
+  size_t audio_channels;
   int16_t test_cntr = 0;
 
   // Open both mono and stereo test files in 32 kHz.
@@ -205,7 +205,7 @@ void OpusTest::Perform() {
 #endif
 }
 
-void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
+void OpusTest::Run(TestPackStereo* channel, size_t channels, int bitrate,
                    size_t frame_length, int percent_loss) {
   AudioFrame audio_frame;
   int32_t out_freq_hz_b = out_file_.SamplingFrequency();

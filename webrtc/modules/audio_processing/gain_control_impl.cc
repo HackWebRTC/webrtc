@@ -75,7 +75,7 @@ int GainControlImpl::ProcessRenderAudio(AudioBuffer* audio) {
   assert(audio->num_frames_per_band() <= 160);
 
   render_queue_buffer_.resize(0);
-  for (int i = 0; i < num_handles(); i++) {
+  for (size_t i = 0; i < num_handles(); i++) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
     int err =
         WebRtcAgc_GetAddFarendError(my_handle, audio->num_frames_per_band());
@@ -114,7 +114,7 @@ void GainControlImpl::ReadQueuedRenderData() {
     size_t buffer_index = 0;
     const size_t num_frames_per_band =
         capture_queue_buffer_.size() / num_handles();
-    for (int i = 0; i < num_handles(); i++) {
+    for (size_t i = 0; i < num_handles(); i++) {
       Handle* my_handle = static_cast<Handle*>(handle(i));
       WebRtcAgc_AddFarend(my_handle, &capture_queue_buffer_[buffer_index],
                           num_frames_per_band);
@@ -138,7 +138,7 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
 
   if (mode_ == kAdaptiveAnalog) {
     capture_levels_.assign(num_handles(), analog_capture_level_);
-    for (int i = 0; i < num_handles(); i++) {
+    for (size_t i = 0; i < num_handles(); i++) {
       Handle* my_handle = static_cast<Handle*>(handle(i));
       err = WebRtcAgc_AddMic(
           my_handle,
@@ -152,7 +152,7 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
     }
   } else if (mode_ == kAdaptiveDigital) {
 
-    for (int i = 0; i < num_handles(); i++) {
+    for (size_t i = 0; i < num_handles(); i++) {
       Handle* my_handle = static_cast<Handle*>(handle(i));
       int32_t capture_level_out = 0;
 
@@ -191,7 +191,7 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   assert(audio->num_channels() == num_handles());
 
   stream_is_saturated_ = false;
-  for (int i = 0; i < num_handles(); i++) {
+  for (size_t i = 0; i < num_handles(); i++) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
     int32_t capture_level_out = 0;
     uint8_t saturation_warning = 0;
@@ -222,7 +222,7 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   if (mode_ == kAdaptiveAnalog) {
     // Take the analog level to be the average across the handles.
     analog_capture_level_ = 0;
-    for (int i = 0; i < num_handles(); i++) {
+    for (size_t i = 0; i < num_handles(); i++) {
       analog_capture_level_ += capture_levels_[i];
     }
 
@@ -433,7 +433,7 @@ int GainControlImpl::ConfigureHandle(void* handle) const {
   return WebRtcAgc_set_config(static_cast<Handle*>(handle), config);
 }
 
-int GainControlImpl::num_handles_required() const {
+size_t GainControlImpl::num_handles_required() const {
   // Not locked as it only relies on APM public API which is threadsafe.
   return apm_->num_proc_channels();
 }

@@ -28,14 +28,14 @@ class Resampler
 
 public:
     Resampler();
-    Resampler(int inFreq, int outFreq, int num_channels);
+    Resampler(int inFreq, int outFreq, size_t num_channels);
     ~Resampler();
 
     // Reset all states
-    int Reset(int inFreq, int outFreq, int num_channels);
+    int Reset(int inFreq, int outFreq, size_t num_channels);
 
     // Reset all states if any parameter has changed
-    int ResetIfNeeded(int inFreq, int outFreq, int num_channels);
+    int ResetIfNeeded(int inFreq, int outFreq, size_t num_channels);
 
     // Resample samplesIn to samplesOut.
     int Push(const int16_t* samplesIn, size_t lengthIn, int16_t* samplesOut,
@@ -83,7 +83,7 @@ private:
     int my_in_frequency_khz_;
     int my_out_frequency_khz_;
     ResamplerMode my_mode_;
-    int num_channels_;
+    size_t num_channels_;
 
     // Extra instance for stereo
     Resampler* slave_left_;

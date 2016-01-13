@@ -109,7 +109,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
     static const size_t kOutDataLen =
         kOutputBlockSizeMs * kMaxSamplesPerMs * kMaxChannels;
     int16_t out_data[kOutDataLen];
-    int num_channels;
+    size_t num_channels;
     size_t samples_per_channel;
     int error = neteq->GetAudio(kOutDataLen, out_data, &samples_per_channel,
                                 &num_channels, NULL);

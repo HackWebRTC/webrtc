@@ -26,7 +26,7 @@ class HighPassFilterImpl : public HighPassFilter {
   ~HighPassFilterImpl() override;
 
   // TODO(peah): Fold into ctor, once public API is removed.
-  void Initialize(int channels, int sample_rate_hz);
+  void Initialize(size_t channels, int sample_rate_hz);
   void ProcessCaptureAudio(AudioBuffer* audio);
 
   // HighPassFilter implementation.

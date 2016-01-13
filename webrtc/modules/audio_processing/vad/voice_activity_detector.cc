@@ -18,7 +18,7 @@ namespace webrtc {
 namespace {
 
 const size_t kMaxLength = 320;
-const int kNumChannels = 1;
+const size_t kNumChannels = 1;
 
 const double kDefaultVoiceValue = 1.0;
 const double kNeutralProbability = 0.5;

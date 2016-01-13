@@ -49,7 +49,7 @@ class AudioRecordJni {
                    rtc::scoped_ptr<GlobalRef> audio_track);
     ~JavaAudioRecord();
 
-    int InitRecording(int sample_rate, int channels);
+    int InitRecording(int sample_rate, size_t channels);
     bool StartRecording();
     bool StopRecording();
     bool EnableBuiltInAEC(bool enable);

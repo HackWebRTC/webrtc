@@ -25,12 +25,12 @@ class NoopCallback : public webrtc::LappedTransform::Callback {
   NoopCallback() : block_num_(0) {}
 
   virtual void ProcessAudioBlock(const complex<float>* const* in_block,
-                                 int in_channels,
+                                 size_t in_channels,
                                  size_t frames,
-                                 int out_channels,
+                                 size_t out_channels,
                                  complex<float>* const* out_block) {
     RTC_CHECK_EQ(in_channels, out_channels);
-    for (int i = 0; i < out_channels; ++i) {
+    for (size_t i = 0; i < out_channels; ++i) {
       memcpy(out_block[i], in_block[i], sizeof(**in_block) * frames);
     }
     ++block_num_;
@@ -49,9 +49,9 @@ class FftCheckerCallback : public webrtc::LappedTransform::Callback {
   FftCheckerCallback() : block_num_(0) {}
 
   virtual void ProcessAudioBlock(const complex<float>* const* in_block,
-                                 int in_channels,
+                                 size_t in_channels,
                                  size_t frames,
-                                 int out_channels,
+                                 size_t out_channels,
                                  complex<float>* const* out_block) {
     RTC_CHECK_EQ(in_channels, out_channels);
 
@@ -90,7 +90,7 @@ void SetFloatArray(float value, int rows, int cols, float* const* array) {
 namespace webrtc {
 
 TEST(LappedTransformTest, Windowless) {
-  const int kChannels = 3;
+  const size_t kChannels = 3;
   const size_t kChunkLength = 512;
   const size_t kBlockLength = 64;
   const size_t kShiftAmount = 64;
@@ -118,7 +118,7 @@ TEST(LappedTransformTest, Windowless) {
 
   trans.ProcessChunk(in_chunk, out_chunk);
 
-  for (int i = 0; i < kChannels; ++i) {
+  for (size_t i = 0; i < kChannels; ++i) {
     for (size_t j = 0; j < kChunkLength; ++j) {
       ASSERT_NEAR(out_chunk[i][j], 2.0f, 1e-5f);
     }

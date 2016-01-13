@@ -16,6 +16,7 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/wav_file.h"
@@ -26,6 +27,14 @@
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 
+namespace {
+
+bool ValidateOutChannels(const char* flagname, int32_t value) {
+  return value >= 0;
+}
+
+}  // namespace
+
 DEFINE_string(dump, "", "Name of the aecdump debug file to read from.");
 DEFINE_string(i, "", "Name of the capture input stream file to read from.");
 DEFINE_string(
@@ -33,6 +42,8 @@ DEFINE_string(
     "out.wav",
     "Name of the output file to write the processed capture stream to.");
 DEFINE_int32(out_channels, 1, "Number of output channels.");
+const bool out_channels_dummy =
+    google::RegisterFlagValidator(&FLAGS_out_channels, &ValidateOutChannels);
 DEFINE_int32(out_sample_rate, 48000, "Output sample rate in Hz.");
 DEFINE_string(mic_positions, "",
     "Space delimited cartesian coordinates of microphones in meters. "
@@ -117,8 +128,8 @@ int main(int argc, char* argv[]) {
   ap->set_stream_key_pressed(FLAGS_ts);
 
   rtc::scoped_ptr<AudioFileProcessor> processor;
-  auto out_file = rtc_make_scoped_ptr(
-      new WavWriter(FLAGS_o, FLAGS_out_sample_rate, FLAGS_out_channels));
+  auto out_file = rtc_make_scoped_ptr(new WavWriter(
+      FLAGS_o, FLAGS_out_sample_rate, static_cast<size_t>(FLAGS_out_channels)));
   std::cout << FLAGS_o << ": " << out_file->FormatAsString() << std::endl;
   if (FLAGS_dump.empty()) {
     auto in_file = rtc_make_scoped_ptr(new WavReader(FLAGS_i));

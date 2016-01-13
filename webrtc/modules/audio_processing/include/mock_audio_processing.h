@@ -201,11 +201,11 @@ class MockAudioProcessing : public AudioProcessing {
   MOCK_CONST_METHOD0(proc_split_sample_rate_hz,
       int());
   MOCK_CONST_METHOD0(num_input_channels,
-      int());
+      size_t());
   MOCK_CONST_METHOD0(num_output_channels,
-      int());
+      size_t());
   MOCK_CONST_METHOD0(num_reverse_channels,
-      int());
+      size_t());
   MOCK_METHOD1(set_output_will_be_muted,
       void(bool muted));
   MOCK_CONST_METHOD0(output_will_be_muted,

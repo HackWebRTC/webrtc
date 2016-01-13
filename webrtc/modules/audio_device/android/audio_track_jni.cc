@@ -202,8 +202,8 @@ void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   const int sample_rate_hz = audio_parameters_.sample_rate();
   ALOGD("SetPlayoutSampleRate(%d)", sample_rate_hz);
   audio_device_buffer_->SetPlayoutSampleRate(sample_rate_hz);
-  const int channels = audio_parameters_.channels();
-  ALOGD("SetPlayoutChannels(%d)", channels);
+  const size_t channels = audio_parameters_.channels();
+  ALOGD("SetPlayoutChannels(%" PRIuS ")", channels);
   audio_device_buffer_->SetPlayoutChannels(channels);
 }
 

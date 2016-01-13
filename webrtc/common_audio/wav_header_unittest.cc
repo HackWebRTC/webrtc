@@ -91,7 +91,7 @@ TEST(WavHeaderTest, CheckWavParameters) {
 }
 
 TEST(WavHeaderTest, ReadWavHeaderWithErrors) {
-  int num_channels = 0;
+  size_t num_channels = 0;
   int sample_rate = 0;
   WavFormat format = kWavFormatPcm;
   size_t bytes_per_sample = 0;
@@ -268,7 +268,7 @@ TEST(WavHeaderTest, WriteAndReadWavHeader) {
   static_assert(sizeof(kExpectedBuf) == kSize, "buffer size");
   EXPECT_EQ(0, memcmp(kExpectedBuf, buf, kSize));
 
-  int num_channels = 0;
+  size_t num_channels = 0;
   int sample_rate = 0;
   WavFormat format = kWavFormatPcm;
   size_t bytes_per_sample = 0;
@@ -277,7 +277,7 @@ TEST(WavHeaderTest, WriteAndReadWavHeader) {
   EXPECT_TRUE(
       ReadWavHeader(&r, &num_channels, &sample_rate, &format,
                     &bytes_per_sample, &num_samples));
-  EXPECT_EQ(17, num_channels);
+  EXPECT_EQ(17u, num_channels);
   EXPECT_EQ(12345, sample_rate);
   EXPECT_EQ(kWavFormatALaw, format);
   EXPECT_EQ(1u, bytes_per_sample);
@@ -304,7 +304,7 @@ TEST(WavHeaderTest, ReadAtypicalWavHeader) {
     0x99, 0xd0, 0x5b, 0x07,  // size of payload: 123457689
   };
 
-  int num_channels = 0;
+  size_t num_channels = 0;
   int sample_rate = 0;
   WavFormat format = kWavFormatPcm;
   size_t bytes_per_sample = 0;
@@ -313,7 +313,7 @@ TEST(WavHeaderTest, ReadAtypicalWavHeader) {
   EXPECT_TRUE(
       ReadWavHeader(&r, &num_channels, &sample_rate, &format,
                     &bytes_per_sample, &num_samples));
-  EXPECT_EQ(17, num_channels);
+  EXPECT_EQ(17u, num_channels);
   EXPECT_EQ(12345, sample_rate);
   EXPECT_EQ(kWavFormatALaw, format);
   EXPECT_EQ(1u, bytes_per_sample);

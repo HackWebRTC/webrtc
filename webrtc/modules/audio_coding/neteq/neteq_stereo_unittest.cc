@@ -27,7 +27,7 @@ namespace webrtc {
 struct TestParameters {
   int frame_size;
   int sample_rate;
-  int num_channels;
+  size_t num_channels;
 };
 
 // This is a parameterized test. The test parameters are supplied through a
@@ -163,7 +163,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
 
   void VerifyOutput(size_t num_samples) {
     for (size_t i = 0; i < num_samples; ++i) {
-      for (int j = 0; j < num_channels_; ++j) {
+      for (size_t j = 0; j < num_channels_; ++j) {
         ASSERT_EQ(output_[i], output_multi_channel_[i * num_channels_ + j]) <<
             "Diff in sample " << i << ", channel " << j << ".";
       }
@@ -214,12 +214,12 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
       NetEqOutputType output_type;
       // Get audio from mono instance.
       size_t samples_per_channel;
-      int num_channels;
+      size_t num_channels;
       EXPECT_EQ(NetEq::kOK,
                 neteq_mono_->GetAudio(kMaxBlockSize, output_,
                                       &samples_per_channel, &num_channels,
                                       &output_type));
-      EXPECT_EQ(1, num_channels);
+      EXPECT_EQ(1u, num_channels);
       EXPECT_EQ(output_size_samples_, samples_per_channel);
       // Get audio from multi-channel instance.
       ASSERT_EQ(NetEq::kOK,
@@ -239,7 +239,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
     }
   }
 
-  const int num_channels_;
+  const size_t num_channels_;
   const int sample_rate_hz_;
   const int samples_per_ms_;
   const int frame_size_ms_;

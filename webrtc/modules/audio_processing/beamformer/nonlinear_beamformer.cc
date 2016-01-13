@@ -79,7 +79,7 @@ const float kCompensationGain = 2.f;
 // The returned norm is clamped to be non-negative.
 float Norm(const ComplexMatrix<float>& mat,
            const ComplexMatrix<float>& norm_mat) {
-  RTC_CHECK_EQ(norm_mat.num_rows(), 1);
+  RTC_CHECK_EQ(1u, norm_mat.num_rows());
   RTC_CHECK_EQ(norm_mat.num_columns(), mat.num_rows());
   RTC_CHECK_EQ(norm_mat.num_columns(), mat.num_columns());
 
@@ -89,8 +89,8 @@ float Norm(const ComplexMatrix<float>& mat,
   const complex<float>* const* mat_els = mat.elements();
   const complex<float>* const* norm_mat_els = norm_mat.elements();
 
-  for (int i = 0; i < norm_mat.num_columns(); ++i) {
-    for (int j = 0; j < norm_mat.num_columns(); ++j) {
+  for (size_t i = 0; i < norm_mat.num_columns(); ++i) {
+    for (size_t j = 0; j < norm_mat.num_columns(); ++j) {
       first_product += conj(norm_mat_els[0][j]) * mat_els[j][i];
     }
     second_product += first_product * norm_mat_els[0][i];
@@ -102,15 +102,15 @@ float Norm(const ComplexMatrix<float>& mat,
 // Does conjugate(|lhs|) * |rhs| for row vectors |lhs| and |rhs|.
 complex<float> ConjugateDotProduct(const ComplexMatrix<float>& lhs,
                                    const ComplexMatrix<float>& rhs) {
-  RTC_CHECK_EQ(lhs.num_rows(), 1);
-  RTC_CHECK_EQ(rhs.num_rows(), 1);
+  RTC_CHECK_EQ(1u, lhs.num_rows());
+  RTC_CHECK_EQ(1u, rhs.num_rows());
   RTC_CHECK_EQ(lhs.num_columns(), rhs.num_columns());
 
   const complex<float>* const* lhs_elements = lhs.elements();
   const complex<float>* const* rhs_elements = rhs.elements();
 
   complex<float> result = complex<float>(0.f, 0.f);
-  for (int i = 0; i < lhs.num_columns(); ++i) {
+  for (size_t i = 0; i < lhs.num_columns(); ++i) {
     result += conj(lhs_elements[0][i]) * rhs_elements[0][i];
   }
 
@@ -126,8 +126,8 @@ size_t Round(float x) {
 float SumAbs(const ComplexMatrix<float>& mat) {
   float sum_abs = 0.f;
   const complex<float>* const* mat_els = mat.elements();
-  for (int i = 0; i < mat.num_rows(); ++i) {
-    for (int j = 0; j < mat.num_columns(); ++j) {
+  for (size_t i = 0; i < mat.num_rows(); ++i) {
+    for (size_t j = 0; j < mat.num_columns(); ++j) {
       sum_abs += std::abs(mat_els[i][j]);
     }
   }
@@ -138,8 +138,8 @@ float SumAbs(const ComplexMatrix<float>& mat) {
 float SumSquares(const ComplexMatrix<float>& mat) {
   float sum_squares = 0.f;
   const complex<float>* const* mat_els = mat.elements();
-  for (int i = 0; i < mat.num_rows(); ++i) {
-    for (int j = 0; j < mat.num_columns(); ++j) {
+  for (size_t i = 0; i < mat.num_rows(); ++i) {
+    for (size_t j = 0; j < mat.num_columns(); ++j) {
       float abs_value = std::abs(mat_els[i][j]);
       sum_squares += abs_value * abs_value;
     }
@@ -150,13 +150,13 @@ float SumSquares(const ComplexMatrix<float>& mat) {
 // Does |out| = |in|.' * conj(|in|) for row vector |in|.
 void TransposedConjugatedProduct(const ComplexMatrix<float>& in,
                                  ComplexMatrix<float>* out) {
-  RTC_CHECK_EQ(in.num_rows(), 1);
+  RTC_CHECK_EQ(1u, in.num_rows());
   RTC_CHECK_EQ(out->num_rows(), in.num_columns());
   RTC_CHECK_EQ(out->num_columns(), in.num_columns());
   const complex<float>* in_elements = in.elements()[0];
   complex<float>* const* out_elements = out->elements();
-  for (int i = 0; i < out->num_rows(); ++i) {
-    for (int j = 0; j < out->num_columns(); ++j) {
+  for (size_t i = 0; i < out->num_rows(); ++i) {
+    for (size_t j = 0; j < out->num_columns(); ++j) {
       out_elements[i][j] = in_elements[i] * conj(in_elements[j]);
     }
   }
@@ -408,13 +408,13 @@ bool NonlinearBeamformer::IsInBeam(const SphericalPointf& spherical_point) {
 }
 
 void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
-                                            int num_input_channels,
+                                            size_t num_input_channels,
                                             size_t num_freq_bins,
-                                            int num_output_channels,
+                                            size_t num_output_channels,
                                             complex_f* const* output) {
   RTC_CHECK_EQ(kNumFreqBins, num_freq_bins);
   RTC_CHECK_EQ(num_input_channels_, num_input_channels);
-  RTC_CHECK_EQ(1, num_output_channels);
+  RTC_CHECK_EQ(1u, num_output_channels);
 
   // Calculating the post-filter masks. Note that we need two for each
   // frequency bin to account for the positive and negative interferer
@@ -483,7 +483,7 @@ void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
 
     const complex_f* delay_sum_mask_els =
         normalized_delay_sum_masks_[f_ix].elements()[0];
-    for (int c_ix = 0; c_ix < num_input_channels_; ++c_ix) {
+    for (size_t c_ix = 0; c_ix < num_input_channels_; ++c_ix) {
       output_channel[f_ix] += input[c_ix][f_ix] * delay_sum_mask_els[c_ix];
     }
 

@@ -153,7 +153,7 @@ class TargetDelayTest : public ::testing::Test {
       ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &frame));
       // Had to use ASSERT_TRUE, ASSERT_EQ generated error.
       ASSERT_TRUE(kSampleRateHz == frame.sample_rate_hz_);
-      ASSERT_EQ(1, frame.num_channels_);
+      ASSERT_EQ(1u, frame.num_channels_);
       ASSERT_TRUE(kSampleRateHz / 100 == frame.samples_per_channel_);
     }
   }

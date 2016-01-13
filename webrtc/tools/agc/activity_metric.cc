@@ -56,7 +56,7 @@ namespace webrtc {
 // silence frame. Otherwise true VAD would drift with respect to the audio.
 // We only consider mono inputs.
 static void DitherSilence(AudioFrame* frame) {
-  ASSERT_EQ(1, frame->num_channels_);
+  ASSERT_EQ(1u, frame->num_channels_);
   const double kRmsSilence = 5;
   const double sum_squared_silence = kRmsSilence * kRmsSilence *
       frame->samples_per_channel_;

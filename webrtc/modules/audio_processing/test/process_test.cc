@@ -17,6 +17,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -159,9 +160,9 @@ void void_main(int argc, char* argv[]) {
 
   int32_t sample_rate_hz = 16000;
 
-  int num_capture_input_channels = 1;
-  int num_capture_output_channels = 1;
-  int num_render_channels = 1;
+  size_t num_capture_input_channels = 1;
+  size_t num_capture_output_channels = 1;
+  size_t num_render_channels = 1;
 
   int samples_per_channel = sample_rate_hz / 100;
 
@@ -207,14 +208,14 @@ void void_main(int argc, char* argv[]) {
     } else if (strcmp(argv[i], "-ch") == 0) {
       i++;
       ASSERT_LT(i + 1, argc) << "Specify number of channels after -ch";
-      ASSERT_EQ(1, sscanf(argv[i], "%d", &num_capture_input_channels));
+      ASSERT_EQ(1, sscanf(argv[i], "%" PRIuS, &num_capture_input_channels));
       i++;
-      ASSERT_EQ(1, sscanf(argv[i], "%d", &num_capture_output_channels));
+      ASSERT_EQ(1, sscanf(argv[i], "%" PRIuS, &num_capture_output_channels));
 
     } else if (strcmp(argv[i], "-rch") == 0) {
       i++;
       ASSERT_LT(i, argc) << "Specify number of channels after -rch";
-      ASSERT_EQ(1, sscanf(argv[i], "%d", &num_render_channels));
+      ASSERT_EQ(1, sscanf(argv[i], "%" PRIuS, &num_render_channels));
 
     } else if (strcmp(argv[i], "-aec") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
@@ -447,10 +448,10 @@ void void_main(int argc, char* argv[]) {
 
   if (verbose) {
     printf("Sample rate: %d Hz\n", sample_rate_hz);
-    printf("Primary channels: %d (in), %d (out)\n",
+    printf("Primary channels: %" PRIuS " (in), %" PRIuS " (out)\n",
            num_capture_input_channels,
            num_capture_output_channels);
-    printf("Reverse channels: %d \n", num_render_channels);
+    printf("Reverse channels: %" PRIuS "\n", num_render_channels);
   }
 
   const std::string out_path = webrtc::test::OutputPath();
@@ -601,14 +602,18 @@ void void_main(int argc, char* argv[]) {
         if (msg.has_output_sample_rate()) {
           output_sample_rate = msg.output_sample_rate();
         }
-        output_layout = LayoutFromChannels(msg.num_output_channels());
-        ASSERT_EQ(kNoErr, apm->Initialize(
-                              msg.sample_rate(),
-                              output_sample_rate,
-                              reverse_sample_rate,
-                              LayoutFromChannels(msg.num_input_channels()),
-                              output_layout,
-                              LayoutFromChannels(msg.num_reverse_channels())));
+        output_layout =
+            LayoutFromChannels(static_cast<size_t>(msg.num_output_channels()));
+        ASSERT_EQ(kNoErr,
+                  apm->Initialize(
+                      msg.sample_rate(),
+                      output_sample_rate,
+                      reverse_sample_rate,
+                      LayoutFromChannels(
+                          static_cast<size_t>(msg.num_input_channels())),
+                      output_layout,
+                      LayoutFromChannels(
+                          static_cast<size_t>(msg.num_reverse_channels()))));
 
         samples_per_channel = msg.sample_rate() / 100;
         far_frame.sample_rate_hz_ = reverse_sample_rate;
@@ -638,9 +643,9 @@ void void_main(int argc, char* argv[]) {
         if (!raw_output) {
           // The WAV file needs to be reset every time, because it can't change
           // its sample rate or number of channels.
-          output_wav_file.reset(new WavWriter(out_filename + ".wav",
-                                              output_sample_rate,
-                                              msg.num_output_channels()));
+          output_wav_file.reset(new WavWriter(
+              out_filename + ".wav", output_sample_rate,
+              static_cast<size_t>(msg.num_output_channels())));
         }
 
       } else if (event_msg.type() == Event::REVERSE_STREAM) {

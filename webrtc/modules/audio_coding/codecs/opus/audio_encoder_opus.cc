@@ -114,7 +114,7 @@ int AudioEncoderOpus::SampleRateHz() const {
   return kSampleRateHz;
 }
 
-int AudioEncoderOpus::NumChannels() const {
+size_t AudioEncoderOpus::NumChannels() const {
   return config_.num_channels;
 }
 
@@ -147,8 +147,7 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
                Num10msFramesPerPacket() * SamplesPer10msFrame());
   int status = WebRtcOpus_Encode(
       inst_, &input_buffer_[0],
-      rtc::CheckedDivExact(input_buffer_.size(),
-                           static_cast<size_t>(config_.num_channels)),
+      rtc::CheckedDivExact(input_buffer_.size(), config_.num_channels),
       rtc::saturated_cast<int16_t>(max_encoded_bytes), encoded);
   RTC_CHECK_GE(status, 0);  // Fails only if fed invalid data.
   input_buffer_.clear();

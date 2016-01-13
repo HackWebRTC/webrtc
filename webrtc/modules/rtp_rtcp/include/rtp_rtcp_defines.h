@@ -35,7 +35,7 @@ const uint8_t kRtpHeaderSize = 12;
 
 struct AudioPayload {
     uint32_t    frequency;
-    uint8_t     channels;
+    size_t      channels;
     uint32_t    rate;
 };
 
@@ -210,7 +210,7 @@ class RtpFeedback {
       const int8_t payloadType,
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const int frequency,
-      const uint8_t channels,
+      const size_t channels,
       const uint32_t rate) = 0;
 
   virtual void OnIncomingSSRCChanged(const uint32_t ssrc) = 0;
@@ -333,7 +333,7 @@ class NullRtpFeedback : public RtpFeedback {
   int32_t OnInitializeDecoder(const int8_t payloadType,
                               const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                               const int frequency,
-                              const uint8_t channels,
+                              const size_t channels,
                               const uint32_t rate) override {
     return 0;
   }

@@ -59,7 +59,7 @@ static_assert(sizeof(WavHeader) == kWavHeaderSize, "no padding in header");
 
 }  // namespace
 
-bool CheckWavParameters(int num_channels,
+bool CheckWavParameters(size_t num_channels,
                         int sample_rate,
                         WavFormat format,
                         size_t bytes_per_sample,
@@ -67,12 +67,11 @@ bool CheckWavParameters(int num_channels,
   // num_channels, sample_rate, and bytes_per_sample must be positive, must fit
   // in their respective fields, and their product must fit in the 32-bit
   // ByteRate field.
-  if (num_channels <= 0 || sample_rate <= 0 || bytes_per_sample == 0)
+  if (num_channels == 0 || sample_rate <= 0 || bytes_per_sample == 0)
     return false;
   if (static_cast<uint64_t>(sample_rate) > std::numeric_limits<uint32_t>::max())
     return false;
-  if (static_cast<uint64_t>(num_channels) >
-      std::numeric_limits<uint16_t>::max())
+  if (num_channels > std::numeric_limits<uint16_t>::max())
     return false;
   if (static_cast<uint64_t>(bytes_per_sample) * 8 >
       std::numeric_limits<uint16_t>::max())
@@ -136,17 +135,18 @@ static inline uint32_t RiffChunkSize(size_t bytes_in_payload) {
       bytes_in_payload + kWavHeaderSize - sizeof(ChunkHeader));
 }
 
-static inline uint32_t ByteRate(int num_channels, int sample_rate,
+static inline uint32_t ByteRate(size_t num_channels, int sample_rate,
                                 size_t bytes_per_sample) {
   return static_cast<uint32_t>(num_channels * sample_rate * bytes_per_sample);
 }
 
-static inline uint16_t BlockAlign(int num_channels, size_t bytes_per_sample) {
+static inline uint16_t BlockAlign(size_t num_channels,
+                                  size_t bytes_per_sample) {
   return static_cast<uint16_t>(num_channels * bytes_per_sample);
 }
 
 void WriteWavHeader(uint8_t* buf,
-                    int num_channels,
+                    size_t num_channels,
                     int sample_rate,
                     WavFormat format,
                     size_t bytes_per_sample,
@@ -181,7 +181,7 @@ void WriteWavHeader(uint8_t* buf,
 }
 
 bool ReadWavHeader(ReadableWav* readable,
-                   int* num_channels,
+                   size_t* num_channels,
                    int* sample_rate,
                    WavFormat* format,
                    size_t* bytes_per_sample,

@@ -12,6 +12,7 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -176,8 +177,8 @@ class AgcVoiceEngine {
     printf("Codecs:\n");
     for (int i = 0; i < codec_->NumOfCodecs(); i++) {
       RTC_CHECK_EQ(0, codec_->GetCodec(i, params));
-      printf("%d %s/%d/%d\n", params.pltype, params.plname, params.plfreq,
-             params.channels);
+      printf("%d %s/%d/%" PRIuS "\n", params.pltype, params.plname,
+             params.plfreq, params.channels);
     }
   }
 

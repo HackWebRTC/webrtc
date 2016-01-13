@@ -25,7 +25,7 @@ class ACMResampler {
   int Resample10Msec(const int16_t* in_audio,
                      int in_freq_hz,
                      int out_freq_hz,
-                     int num_audio_channels,
+                     size_t num_audio_channels,
                      size_t out_capacity_samples,
                      int16_t* out_audio);
 

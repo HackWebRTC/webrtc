@@ -61,7 +61,7 @@ class RtpReceiver {
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payload_type,
       const uint32_t frequency,
-      const uint8_t channels,
+      const size_t channels,
       const uint32_t rate) = 0;
 
   // De-registers |payload_type| from the payload registry.

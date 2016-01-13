@@ -40,10 +40,10 @@ public:
     int32_t RecordingSampleRate() const;
     int32_t PlayoutSampleRate() const;
 
-    virtual int32_t SetRecordingChannels(uint8_t channels);
-    virtual int32_t SetPlayoutChannels(uint8_t channels);
-    uint8_t RecordingChannels() const;
-    uint8_t PlayoutChannels() const;
+    virtual int32_t SetRecordingChannels(size_t channels);
+    virtual int32_t SetPlayoutChannels(size_t channels);
+    size_t RecordingChannels() const;
+    size_t PlayoutChannels() const;
     int32_t SetRecordingChannel(
         const AudioDeviceModule::ChannelType channel);
     int32_t RecordingChannel(
@@ -80,8 +80,8 @@ private:
     uint32_t                  _recSampleRate;
     uint32_t                  _playSampleRate;
 
-    uint8_t                   _recChannels;
-    uint8_t                   _playChannels;
+    size_t                   _recChannels;
+    size_t                   _playChannels;
 
     // selected recording channel (left/right/both)
     AudioDeviceModule::ChannelType _recChannel;

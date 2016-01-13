@@ -54,7 +54,7 @@ class NetEqExternalDecoderTest {
   std::string name_ = "dummy name";
   AudioDecoder* decoder_;
   int sample_rate_hz_;
-  int channels_;
+  size_t channels_;
   rtc::scoped_ptr<NetEq> neteq_;
 };
 

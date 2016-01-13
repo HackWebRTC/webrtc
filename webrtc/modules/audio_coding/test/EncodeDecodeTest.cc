@@ -52,7 +52,7 @@ Sender::Sender()
 }
 
 void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
-                   std::string in_file_name, int sample_rate, int channels) {
+                   std::string in_file_name, int sample_rate, size_t channels) {
   struct CodecInst sendCodec;
   int noOfCodecs = acm->NumberOfCodecs();
   int codecNo;
@@ -123,7 +123,7 @@ Receiver::Receiver()
 }
 
 void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
-                     std::string out_file_name, int channels) {
+                     std::string out_file_name, size_t channels) {
   struct CodecInst recvCodec = CodecInst();
   int noOfCodecs;
   EXPECT_EQ(0, acm->InitializeReceiver());

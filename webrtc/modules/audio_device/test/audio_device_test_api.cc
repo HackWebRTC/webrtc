@@ -85,7 +85,7 @@ class AudioTransportAPI: public AudioTransport {
   int32_t RecordedDataIsAvailable(const void* audioSamples,
                                   const size_t nSamples,
                                   const size_t nBytesPerSample,
-                                  const uint8_t nChannels,
+                                  const size_t nChannels,
                                   const uint32_t sampleRate,
                                   const uint32_t totalDelay,
                                   const int32_t clockSkew,
@@ -110,7 +110,7 @@ class AudioTransportAPI: public AudioTransport {
 
   int32_t NeedMorePlayData(const size_t nSamples,
                            const size_t nBytesPerSample,
-                           const uint8_t nChannels,
+                           const size_t nChannels,
                            const uint32_t sampleRate,
                            void* audioSamples,
                            size_t& nSamplesOut,

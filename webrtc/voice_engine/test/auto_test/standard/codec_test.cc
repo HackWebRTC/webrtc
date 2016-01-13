@@ -50,7 +50,7 @@ static bool IsNotViableSendCodec(const char* codec_name) {
 
 TEST_F(CodecTest, PcmuIsDefaultCodecAndHasTheRightValues) {
   EXPECT_EQ(0, voe_codec_->GetSendCodec(channel_, codec_instance_));
-  EXPECT_EQ(1, codec_instance_.channels);
+  EXPECT_EQ(1u, codec_instance_.channels);
   EXPECT_EQ(160, codec_instance_.pacsize);
   EXPECT_EQ(8000, codec_instance_.plfreq);
   EXPECT_EQ(0, codec_instance_.pltype);

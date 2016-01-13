@@ -25,7 +25,7 @@ namespace webrtc {
 
 class CopyConverter : public AudioConverter {
  public:
-  CopyConverter(int src_channels, size_t src_frames, int dst_channels,
+  CopyConverter(size_t src_channels, size_t src_frames, size_t dst_channels,
                 size_t dst_frames)
       : AudioConverter(src_channels, src_frames, dst_channels, dst_frames) {}
   ~CopyConverter() override {};
@@ -34,7 +34,7 @@ class CopyConverter : public AudioConverter {
                size_t dst_capacity) override {
     CheckSizes(src_size, dst_capacity);
     if (src != dst) {
-      for (int i = 0; i < src_channels(); ++i)
+      for (size_t i = 0; i < src_channels(); ++i)
         std::memcpy(dst[i], src[i], dst_frames() * sizeof(*dst[i]));
     }
   }
@@ -42,7 +42,7 @@ class CopyConverter : public AudioConverter {
 
 class UpmixConverter : public AudioConverter {
  public:
-  UpmixConverter(int src_channels, size_t src_frames, int dst_channels,
+  UpmixConverter(size_t src_channels, size_t src_frames, size_t dst_channels,
                  size_t dst_frames)
       : AudioConverter(src_channels, src_frames, dst_channels, dst_frames) {}
   ~UpmixConverter() override {};
@@ -52,7 +52,7 @@ class UpmixConverter : public AudioConverter {
     CheckSizes(src_size, dst_capacity);
     for (size_t i = 0; i < dst_frames(); ++i) {
       const float value = src[0][i];
-      for (int j = 0; j < dst_channels(); ++j)
+      for (size_t j = 0; j < dst_channels(); ++j)
         dst[j][i] = value;
     }
   }
@@ -60,7 +60,7 @@ class UpmixConverter : public AudioConverter {
 
 class DownmixConverter : public AudioConverter {
  public:
-  DownmixConverter(int src_channels, size_t src_frames, int dst_channels,
+  DownmixConverter(size_t src_channels, size_t src_frames, size_t dst_channels,
                    size_t dst_frames)
       : AudioConverter(src_channels, src_frames, dst_channels, dst_frames) {
   }
@@ -72,7 +72,7 @@ class DownmixConverter : public AudioConverter {
     float* dst_mono = dst[0];
     for (size_t i = 0; i < src_frames(); ++i) {
       float sum = 0;
-      for (int j = 0; j < src_channels(); ++j)
+      for (size_t j = 0; j < src_channels(); ++j)
         sum += src[j][i];
       dst_mono[i] = sum / src_channels();
     }
@@ -81,11 +81,11 @@ class DownmixConverter : public AudioConverter {
 
 class ResampleConverter : public AudioConverter {
  public:
-  ResampleConverter(int src_channels, size_t src_frames, int dst_channels,
+  ResampleConverter(size_t src_channels, size_t src_frames, size_t dst_channels,
                     size_t dst_frames)
       : AudioConverter(src_channels, src_frames, dst_channels, dst_frames) {
     resamplers_.reserve(src_channels);
-    for (int i = 0; i < src_channels; ++i)
+    for (size_t i = 0; i < src_channels; ++i)
       resamplers_.push_back(new PushSincResampler(src_frames, dst_frames));
   }
   ~ResampleConverter() override {};
@@ -136,9 +136,9 @@ class CompositionConverter : public AudioConverter {
   ScopedVector<ChannelBuffer<float>> buffers_;
 };
 
-rtc::scoped_ptr<AudioConverter> AudioConverter::Create(int src_channels,
+rtc::scoped_ptr<AudioConverter> AudioConverter::Create(size_t src_channels,
                                                        size_t src_frames,
-                                                       int dst_channels,
+                                                       size_t dst_channels,
                                                        size_t dst_frames) {
   rtc::scoped_ptr<AudioConverter> sp;
   if (src_channels > dst_channels) {
@@ -183,8 +183,8 @@ AudioConverter::AudioConverter()
       dst_channels_(0),
       dst_frames_(0) {}
 
-AudioConverter::AudioConverter(int src_channels, size_t src_frames,
-                               int dst_channels, size_t dst_frames)
+AudioConverter::AudioConverter(size_t src_channels, size_t src_frames,
+                               size_t dst_channels, size_t dst_frames)
     : src_channels_(src_channels),
       src_frames_(src_frames),
       dst_channels_(dst_channels),

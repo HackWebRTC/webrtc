@@ -253,7 +253,7 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav)
 }
 
 int32_t ModuleFileUtility::InitWavCodec(uint32_t samplesPerSec,
-                                        uint32_t channels,
+                                        size_t channels,
                                         uint32_t bitsPerSample,
                                         uint32_t formatTag)
 {
@@ -663,8 +663,7 @@ int32_t ModuleFileUtility::InitWavWriting(OutStream& wav,
         return -1;
     }
     _writing = false;
-    uint32_t channels = (codecInst.channels == 0) ?
-        1 : codecInst.channels;
+    size_t channels = (codecInst.channels == 0) ? 1 : codecInst.channels;
 
     if(STR_CASE_CMP(codecInst.plname, "PCMU") == 0)
     {
@@ -732,7 +731,7 @@ int32_t ModuleFileUtility::WriteWavHeader(
     OutStream& wav,
     uint32_t freq,
     size_t bytesPerSample,
-    uint32_t channels,
+    size_t channels,
     uint32_t format,
     size_t lengthInBytes)
 {
@@ -758,7 +757,7 @@ int32_t ModuleFileUtility::UpdateWavHeader(OutStream& wav)
     {
         return -1;
     }
-    uint32_t channels = (codec_info_.channels == 0) ? 1 : codec_info_.channels;
+    size_t channels = (codec_info_.channels == 0) ? 1 : codec_info_.channels;
 
     if(STR_CASE_CMP(codec_info_.plname, "L16") == 0)
     {
@@ -861,13 +860,13 @@ int32_t ModuleFileUtility::InitPreEncodedWriting(
     }
     _writing = true;
     _bytesWritten = 1;
-     out.Write(&_codecId, 1);
-     return 0;
+    out.Write(&_codecId, 1);
+    return 0;
 }
 
 int32_t ModuleFileUtility::WritePreEncodedData(
     OutStream& out,
-    const int8_t*  buffer,
+    const int8_t* buffer,
     const size_t dataLength)
 {
     WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
@@ -1010,7 +1009,7 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
         (_codecId == kCodecIlbc30Ms))
     {
         size_t byteSize = 0;
-         if(_codecId == kCodecIlbc30Ms)
+        if(_codecId == kCodecIlbc30Ms)
         {
             byteSize = 50;
         }

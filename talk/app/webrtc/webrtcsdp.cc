@@ -2064,7 +2064,7 @@ static bool ParseDtlsSetup(const std::string& line,
 struct StaticPayloadAudioCodec {
   const char* name;
   int clockrate;
-  int channels;
+  size_t channels;
 };
 static const StaticPayloadAudioCodec kStaticPayloadAudioCodecs[] = {
   { "PCMU", 8000, 1 },
@@ -2103,7 +2103,7 @@ void MaybeCreateStaticPayloadAudioCodecs(
         payload_type < arraysize(kStaticPayloadAudioCodecs)) {
       std::string encoding_name = kStaticPayloadAudioCodecs[payload_type].name;
       int clock_rate = kStaticPayloadAudioCodecs[payload_type].clockrate;
-      int channels = kStaticPayloadAudioCodecs[payload_type].channels;
+      size_t channels = kStaticPayloadAudioCodecs[payload_type].channels;
       media_desc->AddCodec(cricket::AudioCodec(payload_type, encoding_name,
                                                clock_rate, 0, channels,
                                                preference));
@@ -2838,7 +2838,7 @@ bool ParseCryptoAttribute(const std::string& line,
 // Updates or creates a new codec entry in the audio description with according
 // to |name|, |clockrate|, |bitrate|, |channels| and |preference|.
 void UpdateCodec(int payload_type, const std::string& name, int clockrate,
-                 int bitrate, int channels, int preference,
+                 int bitrate, size_t channels, int preference,
                  AudioContentDescription* audio_desc) {
   // Codec may already be populated with (only) optional parameters
   // (from an fmtp).
@@ -2937,7 +2937,7 @@ bool ParseRtpmapAttribute(const std::string& line,
     // of audio channels.  This parameter is OPTIONAL and may be
     // omitted if the number of channels is one, provided that no
     // additional parameters are needed.
-    int channels = 1;
+    size_t channels = 1;
     if (codec_params.size() == 3) {
       if (!GetValueFromString(line, codec_params[2], &channels, error)) {
         return false;

@@ -68,7 +68,7 @@ DEFINE_string(out_file,
               "Enhanced output. Use '-' to "
               "play through aplay immediately.");
 
-const int kNumChannels = 1;
+const size_t kNumChannels = 1;
 
 // void function for gtest
 void void_main(int argc, char* argv[]) {

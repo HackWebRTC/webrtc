@@ -32,7 +32,7 @@ PushResampler<T>::~PushResampler() {
 template <typename T>
 int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
                                          int dst_sample_rate_hz,
-                                         int num_channels) {
+                                         size_t num_channels) {
   if (src_sample_rate_hz == src_sample_rate_hz_ &&
       dst_sample_rate_hz == dst_sample_rate_hz_ &&
       num_channels == num_channels_)
@@ -68,10 +68,8 @@ int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
 template <typename T>
 int PushResampler<T>::Resample(const T* src, size_t src_length, T* dst,
                                size_t dst_capacity) {
-  const size_t src_size_10ms =
-      static_cast<size_t>(src_sample_rate_hz_ * num_channels_ / 100);
-  const size_t dst_size_10ms =
-      static_cast<size_t>(dst_sample_rate_hz_ * num_channels_ / 100);
+  const size_t src_size_10ms = src_sample_rate_hz_ * num_channels_ / 100;
+  const size_t dst_size_10ms = dst_sample_rate_hz_ * num_channels_ / 100;
   if (src_length != src_size_10ms || dst_capacity < dst_size_10ms)
     return -1;
 

@@ -42,7 +42,7 @@ enum {
 };
 
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
-                                 int32_t channels,
+                                 size_t channels,
                                  int32_t application) {
   int opus_app;
   if (!inst)
@@ -67,7 +67,7 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
   assert(state->zero_counts);
 
   int error;
-  state->encoder = opus_encoder_create(48000, channels, opus_app,
+  state->encoder = opus_encoder_create(48000, (int)channels, opus_app,
                                        &error);
   if (error != OPUS_OK || !state->encoder) {
     WebRtcOpus_EncoderFree(state);
@@ -99,7 +99,7 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
                       uint8_t* encoded) {
   int res;
   size_t i;
-  int c;
+  size_t c;
 
   int16_t buffer[2 * 48 * kWebRtcOpusMaxEncodeFrameSizeMs];
 
@@ -107,7 +107,7 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
     return -1;
   }
 
-  const int channels = inst->channels;
+  const size_t channels = inst->channels;
   int use_buffer = 0;
 
   // Break long consecutive zeros by forcing a "1" every |kZeroBreakCount|
@@ -248,7 +248,7 @@ int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
   }
 }
 
-int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
+int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels) {
   int error;
   OpusDecInst* state;
 
@@ -260,7 +260,7 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
     }
 
     /* Create new memory, always at 48000 Hz. */
-    state->decoder = opus_decoder_create(48000, channels, &error);
+    state->decoder = opus_decoder_create(48000, (int)channels, &error);
     if (error == OPUS_OK && state->decoder != NULL) {
       /* Creation of memory all ok. */
       state->channels = channels;
@@ -289,7 +289,7 @@ int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst) {
   }
 }
 
-int WebRtcOpus_DecoderChannels(OpusDecInst* inst) {
+size_t WebRtcOpus_DecoderChannels(OpusDecInst* inst) {
   return inst->channels;
 }
 

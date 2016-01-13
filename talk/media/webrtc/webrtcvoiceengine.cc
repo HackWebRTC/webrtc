@@ -410,7 +410,7 @@ class WebRtcVoiceCodecs final {
   struct CodecPref {
     const char* name;
     int clockrate;
-    int channels;
+    size_t channels;
     int payload_type;
     bool is_multi_rate;
     int packet_sizes_ms[kMaxNumPacketSize];
@@ -1155,7 +1155,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   void OnData(const void* audio_data,
               int bits_per_sample,
               int sample_rate,
-              int number_of_channels,
+              size_t number_of_channels,
               size_t number_of_frames) override {
     RTC_DCHECK(!worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(audio_capture_thread_checker_.CalledOnValidThread());

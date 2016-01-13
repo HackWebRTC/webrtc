@@ -20,10 +20,10 @@ class PlusThreeBlockerCallback : public webrtc::BlockerCallback {
  public:
   void ProcessBlock(const float* const* input,
                     size_t num_frames,
-                    int num_input_channels,
-                    int num_output_channels,
+                    size_t num_input_channels,
+                    size_t num_output_channels,
                     float* const* output) override {
-    for (int i = 0; i < num_output_channels; ++i) {
+    for (size_t i = 0; i < num_output_channels; ++i) {
       for (size_t j = 0; j < num_frames; ++j) {
         output[i][j] = input[i][j] + 3;
       }
@@ -36,10 +36,10 @@ class CopyBlockerCallback : public webrtc::BlockerCallback {
  public:
   void ProcessBlock(const float* const* input,
                     size_t num_frames,
-                    int num_input_channels,
-                    int num_output_channels,
+                    size_t num_input_channels,
+                    size_t num_output_channels,
                     float* const* output) override {
-    for (int i = 0; i < num_output_channels; ++i) {
+    for (size_t i = 0; i < num_output_channels; ++i) {
       for (size_t j = 0; j < num_frames; ++j) {
         output[i][j] = input[i][j];
       }
@@ -63,8 +63,8 @@ class BlockerTest : public ::testing::Test {
                float* const* input_chunk,
                float* const* output,
                float* const* output_chunk,
-               int num_input_channels,
-               int num_output_channels) {
+               size_t num_input_channels,
+               size_t num_output_channels) {
     size_t start = 0;
     size_t end = chunk_size - 1;
     while (end < num_frames) {
@@ -83,9 +83,9 @@ class BlockerTest : public ::testing::Test {
 
   void ValidateSignalEquality(const float* const* expected,
                               const float* const* actual,
-                              int num_channels,
+                              size_t num_channels,
                               size_t num_frames) {
-    for (int i = 0; i < num_channels; ++i) {
+    for (size_t i = 0; i < num_channels; ++i) {
       for (size_t j = 0; j < num_frames; ++j) {
         EXPECT_FLOAT_EQ(expected[i][j], actual[i][j]);
       }
@@ -93,10 +93,10 @@ class BlockerTest : public ::testing::Test {
   }
 
   void ValidateInitialDelay(const float* const* output,
-                            int num_channels,
+                            size_t num_channels,
                             size_t num_frames,
                             size_t initial_delay) {
-    for (int i = 0; i < num_channels; ++i) {
+    for (size_t i = 0; i < num_channels; ++i) {
       for (size_t j = 0; j < num_frames; ++j) {
         if (j < initial_delay) {
           EXPECT_FLOAT_EQ(output[i][j], 0.f);
@@ -110,10 +110,10 @@ class BlockerTest : public ::testing::Test {
   static void CopyTo(float* const* dst,
                      size_t start_index_dst,
                      size_t start_index_src,
-                     int num_channels,
+                     size_t num_channels,
                      size_t num_frames,
                      const float* const* src) {
-    for (int i = 0; i < num_channels; ++i) {
+    for (size_t i = 0; i < num_channels; ++i) {
       memcpy(&dst[i][start_index_dst],
              &src[i][start_index_src],
              num_frames * sizeof(float));
@@ -122,8 +122,8 @@ class BlockerTest : public ::testing::Test {
 };
 
 TEST_F(BlockerTest, TestBlockerMutuallyPrimeChunkandBlockSize) {
-  const int kNumInputChannels = 3;
-  const int kNumOutputChannels = 2;
+  const size_t kNumInputChannels = 3;
+  const size_t kNumOutputChannels = 2;
   const size_t kNumFrames = 10;
   const size_t kBlockSize = 4;
   const size_t kChunkSize = 5;
@@ -175,8 +175,8 @@ TEST_F(BlockerTest, TestBlockerMutuallyPrimeChunkandBlockSize) {
 }
 
 TEST_F(BlockerTest, TestBlockerMutuallyPrimeShiftAndBlockSize) {
-  const int kNumInputChannels = 3;
-  const int kNumOutputChannels = 2;
+  const size_t kNumInputChannels = 3;
+  const size_t kNumOutputChannels = 2;
   const size_t kNumFrames = 12;
   const size_t kBlockSize = 4;
   const size_t kChunkSize = 6;
@@ -228,8 +228,8 @@ TEST_F(BlockerTest, TestBlockerMutuallyPrimeShiftAndBlockSize) {
 }
 
 TEST_F(BlockerTest, TestBlockerNoOverlap) {
-  const int kNumInputChannels = 3;
-  const int kNumOutputChannels = 2;
+  const size_t kNumInputChannels = 3;
+  const size_t kNumOutputChannels = 2;
   const size_t kNumFrames = 12;
   const size_t kBlockSize = 4;
   const size_t kChunkSize = 4;
@@ -281,8 +281,8 @@ TEST_F(BlockerTest, TestBlockerNoOverlap) {
 }
 
 TEST_F(BlockerTest, InitialDelaysAreMinimum) {
-  const int kNumInputChannels = 3;
-  const int kNumOutputChannels = 2;
+  const size_t kNumInputChannels = 3;
+  const size_t kNumOutputChannels = 2;
   const size_t kNumFrames = 1280;
   const size_t kChunkSize[] =
       {80, 80, 80, 80, 80, 80, 160, 160, 160, 160, 160, 160};
@@ -294,7 +294,7 @@ TEST_F(BlockerTest, InitialDelaysAreMinimum) {
       {48, 48, 48, 112, 112, 112, 96, 96, 96, 224, 224, 224};
 
   float input[kNumInputChannels][kNumFrames];
-  for (int i = 0; i < kNumInputChannels; ++i) {
+  for (size_t i = 0; i < kNumInputChannels; ++i) {
     for (size_t j = 0; j < kNumFrames; ++j) {
       input[i][j] = i + 1;
     }

@@ -67,9 +67,9 @@ class NonlinearBeamformer
   // Process one frequency-domain block of audio. This is where the fun
   // happens. Implements LappedTransform::Callback.
   void ProcessAudioBlock(const complex<float>* const* input,
-                         int num_input_channels,
+                         size_t num_input_channels,
                          size_t num_freq_bins,
-                         int num_output_channels,
+                         size_t num_output_channels,
                          complex<float>* const* output) override;
 
  private:
@@ -129,7 +129,7 @@ class NonlinearBeamformer
   float window_[kFftSize];
 
   // Parameters exposed to the user.
-  const int num_input_channels_;
+  const size_t num_input_channels_;
   int sample_rate_hz_;
 
   const std::vector<Point> array_geometry_;

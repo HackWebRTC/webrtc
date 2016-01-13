@@ -180,7 +180,7 @@ private:
 
 
     int32_t InitWavCodec(uint32_t samplesPerSec,
-                         uint32_t channels,
+                         size_t channels,
                          uint32_t bitsPerSample,
                          uint32_t formatTag);
 
@@ -196,7 +196,7 @@ private:
     int32_t WriteWavHeader(OutStream& stream,
                            uint32_t freqInHz,
                            size_t bytesPerSample,
-                           uint32_t channels,
+                           size_t channels,
                            uint32_t format,
                            size_t lengthInBytes);
 

@@ -64,7 +64,7 @@ class RTPCallback : public NullRtpFeedback {
   int32_t OnInitializeDecoder(const int8_t payloadType,
                               const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                               const int frequency,
-                              const uint8_t channels,
+                              const size_t channels,
                               const uint32_t rate) override {
     if (payloadType == 96) {
       EXPECT_EQ(test_rate, rate) <<

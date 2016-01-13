@@ -179,15 +179,15 @@ void OpenSLESPlayer::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   const int sample_rate_hz = audio_parameters_.sample_rate();
   ALOGD("SetPlayoutSampleRate(%d)", sample_rate_hz);
   audio_device_buffer_->SetPlayoutSampleRate(sample_rate_hz);
-  const int channels = audio_parameters_.channels();
-  ALOGD("SetPlayoutChannels(%d)", channels);
+  const size_t channels = audio_parameters_.channels();
+  ALOGD("SetPlayoutChannels(%" PRIuS ")", channels);
   audio_device_buffer_->SetPlayoutChannels(channels);
   RTC_CHECK(audio_device_buffer_);
   AllocateDataBuffers();
 }
 
 SLDataFormat_PCM OpenSLESPlayer::CreatePCMConfiguration(
-    int channels,
+    size_t channels,
     int sample_rate,
     size_t bits_per_sample) {
   ALOGD("CreatePCMConfiguration");

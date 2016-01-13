@@ -48,7 +48,7 @@ class Sender {
  public:
   Sender();
   void Setup(AudioCodingModule *acm, RTPStream *rtpStream,
-             std::string in_file_name, int sample_rate, int channels);
+             std::string in_file_name, int sample_rate, size_t channels);
   void Teardown();
   void Run();
   bool Add10MsData();
@@ -71,7 +71,7 @@ class Receiver {
   Receiver();
   virtual ~Receiver() {};
   void Setup(AudioCodingModule *acm, RTPStream *rtpStream,
-             std::string out_file_name, int channels);
+             std::string out_file_name, size_t channels);
   void Teardown();
   void Run();
   virtual bool IncomingPacket();

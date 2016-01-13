@@ -28,10 +28,10 @@ ACMResampler::~ACMResampler() {
 int ACMResampler::Resample10Msec(const int16_t* in_audio,
                                  int in_freq_hz,
                                  int out_freq_hz,
-                                 int num_audio_channels,
+                                 size_t num_audio_channels,
                                  size_t out_capacity_samples,
                                  int16_t* out_audio) {
-  size_t in_length = static_cast<size_t>(in_freq_hz * num_audio_channels / 100);
+  size_t in_length = in_freq_hz * num_audio_channels / 100;
   if (in_freq_hz == out_freq_hz) {
     if (out_capacity_samples < in_length) {
       assert(false);
@@ -56,7 +56,7 @@ int ACMResampler::Resample10Msec(const int16_t* in_audio,
     return -1;
   }
 
-  return out_length / num_audio_channels;
+  return static_cast<int>(out_length / num_audio_channels);
 }
 
 }  // namespace acm2

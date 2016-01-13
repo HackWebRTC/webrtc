@@ -32,7 +32,7 @@ enum WavFormat {
 };
 
 // Return true if the given parameters will make a well-formed WAV header.
-bool CheckWavParameters(int num_channels,
+bool CheckWavParameters(size_t num_channels,
                         int sample_rate,
                         WavFormat format,
                         size_t bytes_per_sample,
@@ -43,7 +43,7 @@ bool CheckWavParameters(int num_channels,
 // channels and contain the specified total number of samples of the specified
 // type. CHECKs the input parameters for validity.
 void WriteWavHeader(uint8_t* buf,
-                    int num_channels,
+                    size_t num_channels,
                     int sample_rate,
                     WavFormat format,
                     size_t bytes_per_sample,
@@ -53,7 +53,7 @@ void WriteWavHeader(uint8_t* buf,
 // the provided output parameters. ReadableWav is used because the header can
 // be variably sized. Returns false if the header is invalid.
 bool ReadWavHeader(ReadableWav* readable,
-                   int* num_channels,
+                   size_t* num_channels,
                    int* sample_rate,
                    WavFormat* format,
                    size_t* bytes_per_sample,

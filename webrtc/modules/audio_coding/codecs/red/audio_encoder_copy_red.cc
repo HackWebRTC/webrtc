@@ -32,7 +32,7 @@ int AudioEncoderCopyRed::SampleRateHz() const {
   return speech_encoder_->SampleRateHz();
 }
 
-int AudioEncoderCopyRed::NumChannels() const {
+size_t AudioEncoderCopyRed::NumChannels() const {
   return speech_encoder_->NumChannels();
 }
 

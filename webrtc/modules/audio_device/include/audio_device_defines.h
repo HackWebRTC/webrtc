@@ -49,7 +49,7 @@ class AudioTransport {
   virtual int32_t RecordedDataIsAvailable(const void* audioSamples,
                                           const size_t nSamples,
                                           const size_t nBytesPerSample,
-                                          const uint8_t nChannels,
+                                          const size_t nChannels,
                                           const uint32_t samplesPerSec,
                                           const uint32_t totalDelayMS,
                                           const int32_t clockDrift,
@@ -59,7 +59,7 @@ class AudioTransport {
 
   virtual int32_t NeedMorePlayData(const size_t nSamples,
                                    const size_t nBytesPerSample,
-                                   const uint8_t nChannels,
+                                   const size_t nChannels,
                                    const uint32_t samplesPerSec,
                                    void* audioSamples,
                                    size_t& nSamplesOut,
@@ -82,10 +82,10 @@ class AudioTransport {
   // TODO(xians): Remove this interface after Chrome and Libjingle switches
   // to OnData().
   virtual int OnDataAvailable(const int voe_channels[],
-                              int number_of_voe_channels,
+                              size_t number_of_voe_channels,
                               const int16_t* audio_data,
                               int sample_rate,
-                              int number_of_channels,
+                              size_t number_of_channels,
                               size_t number_of_frames,
                               int audio_delay_milliseconds,
                               int current_volume,
@@ -103,7 +103,7 @@ class AudioTransport {
                       const void* audio_data,
                       int bits_per_sample,
                       int sample_rate,
-                      int number_of_channels,
+                      size_t number_of_channels,
                       size_t number_of_frames) {}
 
   // Method to push the captured audio data to the specific VoE channel.
@@ -116,7 +116,7 @@ class AudioTransport {
                                const void* audio_data,
                                int bits_per_sample,
                                int sample_rate,
-                               int number_of_channels,
+                               size_t number_of_channels,
                                size_t number_of_frames) {}
 
   // Method to pull mixed render audio data from all active VoE channels.
@@ -125,7 +125,7 @@ class AudioTransport {
   // channel.
   virtual void PullRenderData(int bits_per_sample,
                               int sample_rate,
-                              int number_of_channels,
+                              size_t number_of_channels,
                               size_t number_of_frames,
                               void* audio_data,
                               int64_t* elapsed_time_ms,
@@ -149,27 +149,27 @@ class AudioParameters {
         channels_(0),
         frames_per_buffer_(0),
         frames_per_10ms_buffer_(0) {}
-  AudioParameters(int sample_rate, int channels, size_t frames_per_buffer)
+  AudioParameters(int sample_rate, size_t channels, size_t frames_per_buffer)
       : sample_rate_(sample_rate),
         channels_(channels),
         frames_per_buffer_(frames_per_buffer),
         frames_per_10ms_buffer_(static_cast<size_t>(sample_rate / 100)) {}
-  void reset(int sample_rate, int channels, size_t frames_per_buffer) {
+  void reset(int sample_rate, size_t channels, size_t frames_per_buffer) {
     sample_rate_ = sample_rate;
     channels_ = channels;
     frames_per_buffer_ = frames_per_buffer;
     frames_per_10ms_buffer_ = static_cast<size_t>(sample_rate / 100);
   }
   size_t bits_per_sample() const { return kBitsPerSample; }
-  void reset(int sample_rate, int channels, double ms_per_buffer) {
+  void reset(int sample_rate, size_t channels, double ms_per_buffer) {
     reset(sample_rate, channels,
           static_cast<size_t>(sample_rate * ms_per_buffer + 0.5));
   }
-  void reset(int sample_rate, int channels) {
+  void reset(int sample_rate, size_t channels) {
     reset(sample_rate, channels, static_cast<size_t>(0));
   }
   int sample_rate() const { return sample_rate_; }
-  int channels() const { return channels_; }
+  size_t channels() const { return channels_; }
   size_t frames_per_buffer() const { return frames_per_buffer_; }
   size_t frames_per_10ms_buffer() const { return frames_per_10ms_buffer_; }
   size_t GetBytesPerFrame() const { return channels_ * kBitsPerSample / 8; }
@@ -200,7 +200,7 @@ class AudioParameters {
 
  private:
   int sample_rate_;
-  int channels_;
+  size_t channels_;
   size_t frames_per_buffer_;
   size_t frames_per_10ms_buffer_;
 };

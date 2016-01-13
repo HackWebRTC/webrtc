@@ -101,10 +101,10 @@ class AudioProcessingImpl : public AudioProcessing {
   // Hence there is no need for locks in these.
   int proc_sample_rate_hz() const override;
   int proc_split_sample_rate_hz() const override;
-  int num_input_channels() const override;
-  int num_proc_channels() const override;
-  int num_output_channels() const override;
-  int num_reverse_channels() const override;
+  size_t num_input_channels() const override;
+  size_t num_proc_channels() const override;
+  size_t num_output_channels() const override;
+  size_t num_reverse_channels() const override;
   int stream_delay_ms() const override;
   bool was_stream_delay_set() const override
       EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);

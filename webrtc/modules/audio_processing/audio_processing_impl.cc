@@ -410,16 +410,13 @@ int AudioProcessingImpl::InitializeLocked() {
 
 int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
   for (const auto& stream : config.streams) {
-    if (stream.num_channels() < 0) {
-      return kBadNumberChannelsError;
-    }
     if (stream.num_channels() > 0 && stream.sample_rate_hz() <= 0) {
       return kBadSampleRateError;
     }
   }
 
-  const int num_in_channels = config.input_stream().num_channels();
-  const int num_out_channels = config.output_stream().num_channels();
+  const size_t num_in_channels = config.input_stream().num_channels();
+  const size_t num_out_channels = config.output_stream().num_channels();
 
   // Need at least one input channel.
   // Need either one output channel or as many outputs as there are inputs.
@@ -429,7 +426,7 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
   }
 
   if (capture_nonlocked_.beamformer_enabled &&
-      static_cast<size_t>(num_in_channels) != capture_.array_geometry.size()) {
+      num_in_channels != capture_.array_geometry.size()) {
     return kBadNumberChannelsError;
   }
 
@@ -527,22 +524,22 @@ int AudioProcessingImpl::proc_split_sample_rate_hz() const {
   return capture_nonlocked_.split_rate;
 }
 
-int AudioProcessingImpl::num_reverse_channels() const {
+size_t AudioProcessingImpl::num_reverse_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
   return formats_.rev_proc_format.num_channels();
 }
 
-int AudioProcessingImpl::num_input_channels() const {
+size_t AudioProcessingImpl::num_input_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
   return formats_.api_format.input_stream().num_channels();
 }
 
-int AudioProcessingImpl::num_proc_channels() const {
+size_t AudioProcessingImpl::num_proc_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
   return capture_nonlocked_.beamformer_enabled ? 1 : num_output_channels();
 }
 
-int AudioProcessingImpl::num_output_channels() const {
+size_t AudioProcessingImpl::num_output_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
   return formats_.api_format.output_stream().num_channels();
 }
@@ -631,7 +628,8 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
     const size_t channel_size =
         sizeof(float) * formats_.api_format.input_stream().num_frames();
-    for (int i = 0; i < formats_.api_format.input_stream().num_channels(); ++i)
+    for (size_t i = 0; i < formats_.api_format.input_stream().num_channels();
+         ++i)
       msg->add_input_channel(src[i], channel_size);
   }
 #endif
@@ -645,7 +643,8 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
     const size_t channel_size =
         sizeof(float) * formats_.api_format.output_stream().num_frames();
-    for (int i = 0; i < formats_.api_format.output_stream().num_channels(); ++i)
+    for (size_t i = 0; i < formats_.api_format.output_stream().num_channels();
+         ++i)
       msg->add_output_channel(dest[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
                                           &crit_debug_, &debug_dump_.capture));
@@ -879,7 +878,7 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
     return kNullPointerError;
   }
 
-  if (reverse_input_config.num_channels() <= 0) {
+  if (reverse_input_config.num_channels() == 0) {
     return kBadNumberChannelsError;
   }
 
@@ -898,7 +897,7 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
         debug_dump_.render.event_msg->mutable_reverse_stream();
     const size_t channel_size =
         sizeof(float) * formats_.api_format.reverse_input_stream().num_frames();
-    for (int i = 0;
+    for (size_t i = 0;
          i < formats_.api_format.reverse_input_stream().num_channels(); ++i)
       msg->add_channel(src[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
@@ -1455,12 +1454,12 @@ int AudioProcessingImpl::WriteInitMessage() {
   audioproc::Init* msg = debug_dump_.capture.event_msg->mutable_init();
   msg->set_sample_rate(formats_.api_format.input_stream().sample_rate_hz());
 
-  msg->set_num_input_channels(
-      formats_.api_format.input_stream().num_channels());
-  msg->set_num_output_channels(
-      formats_.api_format.output_stream().num_channels());
-  msg->set_num_reverse_channels(
-      formats_.api_format.reverse_input_stream().num_channels());
+  msg->set_num_input_channels(static_cast<google::protobuf::int32>(
+      formats_.api_format.input_stream().num_channels()));
+  msg->set_num_output_channels(static_cast<google::protobuf::int32>(
+      formats_.api_format.output_stream().num_channels()));
+  msg->set_num_reverse_channels(static_cast<google::protobuf::int32>(
+      formats_.api_format.reverse_input_stream().num_channels()));
   msg->set_reverse_sample_rate(
       formats_.api_format.reverse_input_stream().sample_rate_hz());
   msg->set_output_sample_rate(

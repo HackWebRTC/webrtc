@@ -79,7 +79,7 @@ void WriteIntData(const int16_t* data,
 
 void WriteFloatData(const float* const* data,
                     size_t samples_per_channel,
-                    int num_channels,
+                    size_t num_channels,
                     WavWriter* wav_file,
                     RawFile* raw_file);
 
@@ -93,7 +93,7 @@ void SetFrameSampleRate(AudioFrame* frame,
 
 template <typename T>
 void SetContainerFormat(int sample_rate_hz,
-                        int num_channels,
+                        size_t num_channels,
                         AudioFrame* frame,
                         rtc::scoped_ptr<ChannelBuffer<T> >* cb) {
   SetFrameSampleRate(frame, sample_rate_hz);
@@ -101,7 +101,7 @@ void SetContainerFormat(int sample_rate_hz,
   cb->reset(new ChannelBuffer<T>(frame->samples_per_channel_, num_channels));
 }
 
-AudioProcessing::ChannelLayout LayoutFromChannels(int num_channels);
+AudioProcessing::ChannelLayout LayoutFromChannels(size_t num_channels);
 
 template <typename T>
 float ComputeSNR(const T* ref, const T* test, size_t length, float* variance) {

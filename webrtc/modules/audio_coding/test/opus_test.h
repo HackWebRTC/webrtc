@@ -32,7 +32,7 @@ class OpusTest : public ACMTest {
 
  private:
   void Run(TestPackStereo* channel,
-           int channels,
+           size_t channels,
            int bitrate,
            size_t frame_length,
            int percent_loss = 0);
