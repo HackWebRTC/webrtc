@@ -712,15 +712,9 @@
       'include_dirs': [
         '<(DEPTH)/testing/gtest/include',
       ],
-      'include_dirs!': [
-        '<(DEPTH)/webrtc',
-      ],
       'direct_dependent_settings': {
         'include_dirs': [
           '<(DEPTH)/testing/gtest/include',
-        ],
-        'include_dirs!': [
-          '<(DEPTH)/webrtc',
         ],
       },
       'sources': [

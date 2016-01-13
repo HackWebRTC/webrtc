@@ -17,23 +17,6 @@
 
 namespace webrtc {
 
-// Only add new values to the end of the enumeration and never remove (only
-// deprecate) to maintain binary compatibility.
-enum class ConfigOptionID {
-  kMyExperimentForTest,
-  kAlgo1CostFunctionForTest,
-  kTemporalLayersFactory,
-  kNetEqCapacityConfig,
-  kNetEqFastAccelerate,
-  kVoicePacing,
-  kExtendedFilter,
-  kDelayAgnostic,
-  kExperimentalAgc,
-  kExperimentalNs,
-  kBeamforming,
-  kIntelligibility
-};
-
 // Class Config is designed to ease passing a set of options across webrtc code.
 // Options are identified by typename in order to avoid incorrect casts.
 //
@@ -78,6 +61,8 @@ class Config {
   }
 
  private:
+  typedef void* OptionIdentifier;
+
   struct BaseOption {
     virtual ~BaseOption() {}
   };
@@ -91,9 +76,11 @@ class Config {
     T* value;
   };
 
+  // Own implementation of rtti-subset to avoid depending on rtti and its costs.
   template<typename T>
-  static ConfigOptionID identifier() {
-    return T::identifier;
+  static OptionIdentifier identifier() {
+    static char id_placeholder;
+    return &id_placeholder;
   }
 
   // Used to instantiate a default constructed object that doesn't needs to be
@@ -105,7 +92,7 @@ class Config {
     return def;
   }
 
-  typedef std::map<ConfigOptionID, BaseOption*> OptionMap;
+  typedef std::map<OptionIdentifier, BaseOption*> OptionMap;
   OptionMap options_;
 
   // RTC_DISALLOW_COPY_AND_ASSIGN

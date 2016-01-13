@@ -65,7 +65,6 @@ class VoiceDetection;
 struct ExtendedFilter {
   ExtendedFilter() : enabled(false) {}
   explicit ExtendedFilter(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kExtendedFilter;
   bool enabled;
 };
 
@@ -77,7 +76,6 @@ struct ExtendedFilter {
 struct DelayAgnostic {
   DelayAgnostic() : enabled(false) {}
   explicit DelayAgnostic(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kDelayAgnostic;
   bool enabled;
 };
 
@@ -98,7 +96,6 @@ struct ExperimentalAgc {
       : enabled(enabled), startup_min_volume(kAgcStartupMinVolume) {}
   ExperimentalAgc(bool enabled, int startup_min_volume)
       : enabled(enabled), startup_min_volume(startup_min_volume) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kExperimentalAgc;
   bool enabled;
   int startup_min_volume;
 };
@@ -108,7 +105,6 @@ struct ExperimentalAgc {
 struct ExperimentalNs {
   ExperimentalNs() : enabled(false) {}
   explicit ExperimentalNs(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kExperimentalNs;
   bool enabled;
 };
 
@@ -131,7 +127,6 @@ struct Beamforming {
       : enabled(enabled),
         array_geometry(array_geometry),
         target_direction(target_direction) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kBeamforming;
   const bool enabled;
   const std::vector<Point> array_geometry;
   const SphericalPointf target_direction;
@@ -146,7 +141,6 @@ struct Beamforming {
 struct Intelligibility {
   Intelligibility() : enabled(false) {}
   explicit Intelligibility(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kIntelligibility;
   bool enabled;
 };
 
