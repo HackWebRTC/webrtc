@@ -89,6 +89,9 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   void SetStats(const webrtc::AudioReceiveStream::Stats& stats);
   int received_packets() const { return received_packets_; }
   void IncrementReceivedPackets();
+  const rtc::scoped_refptr<webrtc::AudioSinkInterface>& sink() const {
+    return sink_;
+  }
 
  private:
   // webrtc::ReceiveStream implementation.
@@ -106,12 +109,13 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
 
   // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
-  void SetSink(rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) override;
+  void SetSink(
+      const rtc::scoped_refptr<webrtc::AudioSinkInterface>& sink) override;
 
   webrtc::AudioReceiveStream::Config config_;
   webrtc::AudioReceiveStream::Stats stats_;
   int received_packets_;
-  rtc::scoped_ptr<webrtc::AudioSinkInterface> sink_;
+  rtc::scoped_refptr<webrtc::AudioSinkInterface> sink_;
 };
 
 class FakeVideoSendStream final : public webrtc::VideoSendStream,

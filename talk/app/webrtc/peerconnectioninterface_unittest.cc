@@ -1989,8 +1989,12 @@ TEST_F(PeerConnectionInterfaceTest, SdpWithoutMsidCreatesDefaultStream) {
   ASSERT_EQ(1u, observer_.remote_streams()->count());
   ASSERT_EQ(1u, remote_stream->GetAudioTracks().size());
   EXPECT_EQ("defaulta0", remote_stream->GetAudioTracks()[0]->id());
+  EXPECT_EQ(MediaStreamTrackInterface::kLive,
+            remote_stream->GetAudioTracks()[0]->state());
   ASSERT_EQ(1u, remote_stream->GetVideoTracks().size());
   EXPECT_EQ("defaultv0", remote_stream->GetVideoTracks()[0]->id());
+  EXPECT_EQ(MediaStreamTrackInterface::kLive,
+            remote_stream->GetVideoTracks()[0]->state());
 }
 
 // This tests that a default MediaStream is created if a remote session

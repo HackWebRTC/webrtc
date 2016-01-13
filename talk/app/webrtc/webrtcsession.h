@@ -254,8 +254,9 @@ class WebRtcSession : public AudioProviderInterface,
                     const cricket::AudioOptions& options,
                     cricket::AudioRenderer* renderer) override;
   void SetAudioPlayoutVolume(uint32_t ssrc, double volume) override;
-  void SetRawAudioSink(uint32_t ssrc,
-                       rtc::scoped_ptr<AudioSinkInterface> sink) override;
+  void SetRawAudioSink(
+      uint32_t ssrc,
+      const rtc::scoped_refptr<AudioSinkInterface>& sink) override;
 
   // Implements VideoMediaProviderInterface.
   bool SetCaptureDevice(uint32_t ssrc, cricket::VideoCapturer* camera) override;

@@ -1185,9 +1185,9 @@ Channel::UpdateLocalTimeStamp()
     return 0;
 }
 
-void Channel::SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) {
+void Channel::SetSink(const rtc::scoped_refptr<AudioSinkInterface>& sink) {
   CriticalSectionScoped cs(&_callbackCritSect);
-  audio_sink_ = std::move(sink);
+  audio_sink_ = sink;
 }
 
 int32_t
