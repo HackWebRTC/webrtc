@@ -405,6 +405,11 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
           sender_call, this, test::PacketTransport::kSender, net_config_);
     }
 
+    test::PacketTransport* CreateReceiveTransport() override {
+      return new test::PacketTransport(
+          nullptr, this, test::PacketTransport::kReceiver, net_config_);
+    }
+
     void RenderFrame(const VideoFrame& video_frame,
                      int time_to_render_ms) override {
       rtc::CritScope lock(&crit_);
