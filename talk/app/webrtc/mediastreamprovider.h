@@ -29,7 +29,7 @@
 #define TALK_APP_WEBRTC_MEDIASTREAMPROVIDER_H_
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {
 
@@ -75,7 +75,7 @@ class AudioProviderInterface {
   // passed to the provider.
   virtual void SetRawAudioSink(
       uint32_t ssrc,
-      const rtc::scoped_refptr<webrtc::AudioSinkInterface>& sink) = 0;
+      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) = 0;
 
  protected:
   virtual ~AudioProviderInterface() {}

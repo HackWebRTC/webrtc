@@ -1037,7 +1037,7 @@ class VoiceMediaChannel : public MediaChannel {
 
   virtual void SetRawAudioSink(
       uint32_t ssrc,
-      const rtc::scoped_refptr<webrtc::AudioSinkInterface>& sink) = 0;
+      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) = 0;
 };
 
 struct VideoSendParameters : RtpSendParameters<VideoCodec, VideoOptions> {

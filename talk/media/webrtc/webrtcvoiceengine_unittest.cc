@@ -72,11 +72,6 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
 };
 }  // namespace
 
-class FakeAudioSink : public rtc::RefCountedObject<webrtc::AudioSinkInterface> {
- public:
-  void OnData(const Data& audio) override {}
-};
-
 class WebRtcVoiceEngineTestFake : public testing::Test {
  public:
   WebRtcVoiceEngineTestFake()
@@ -128,12 +123,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     const auto* send_stream = call_.GetAudioSendStream(ssrc);
     EXPECT_TRUE(send_stream);
     return *send_stream;
-  }
-
-  const cricket::FakeAudioReceiveStream& GetRecvStream(uint32_t ssrc) {
-    const auto* recv_stream = call_.GetAudioReceiveStream(ssrc);
-    EXPECT_TRUE(recv_stream);
-    return *recv_stream;
   }
 
   const webrtc::AudioSendStream::Config& GetSendStreamConfig(uint32_t ssrc) {
@@ -3114,57 +3103,6 @@ TEST_F(WebRtcVoiceEngineTestFake, AssociateChannelResetUponDeleteChannnel) {
 
   EXPECT_TRUE(channel_->RemoveSendStream(2));
   EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), -1);
-}
-
-TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSink) {
-  EXPECT_TRUE(SetupEngine());
-  rtc::scoped_refptr<FakeAudioSink> fake_sink = new FakeAudioSink();
-
-  // This should do nothing, since there's no recv stream yet.
-  channel_->SetRawAudioSink(kSsrc1, fake_sink);
-  // Ensure the ref count wasn't incremented.
-  EXPECT_TRUE(fake_sink->HasOneRef());
-
-  EXPECT_TRUE(
-      channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc1)));
-  // Now, the channel should latch on to the sink.
-  channel_->SetRawAudioSink(kSsrc1, fake_sink);
-  EXPECT_FALSE(fake_sink->HasOneRef());
-  EXPECT_EQ(fake_sink.get(), GetRecvStream(kSsrc1).sink().get());
-
-  // Setting a nullptr should release the reference.
-  channel_->SetRawAudioSink(kSsrc1, nullptr);
-  EXPECT_TRUE(fake_sink->HasOneRef());
-}
-
-TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSinkDefaultRecvStream) {
-  EXPECT_TRUE(SetupEngine());
-  rtc::scoped_refptr<FakeAudioSink> fake_sink_1 = new FakeAudioSink();
-  rtc::scoped_refptr<FakeAudioSink> fake_sink_2 = new FakeAudioSink();
-
-  // Should be able to set a default sink even when no stream exists.
-  channel_->SetRawAudioSink(0, fake_sink_1);
-  EXPECT_FALSE(fake_sink_1->HasOneRef());
-
-  // Create default channel.
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
-  EXPECT_EQ(fake_sink_1.get(), GetRecvStream(0x01).sink().get());
-
-  // Should be able to set the default sink after a stream exists.
-  channel_->SetRawAudioSink(0, fake_sink_2);
-  EXPECT_TRUE(fake_sink_1->HasOneRef());
-  EXPECT_FALSE(fake_sink_2->HasOneRef());
-  EXPECT_EQ(fake_sink_2.get(), GetRecvStream(0x01).sink().get());
-
-  // If we remove and add a default stream, it should get the same sink.
-  EXPECT_TRUE(channel_->RemoveRecvStream(0x01));
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
-  EXPECT_FALSE(fake_sink_2->HasOneRef());
-  EXPECT_EQ(fake_sink_2.get(), GetRecvStream(0x01).sink().get());
-
-  // Finally, try resetting the default sink.
-  channel_->SetRawAudioSink(0, nullptr);
-  EXPECT_TRUE(fake_sink_2->HasOneRef());
 }
 
 // Tests that the library initializes and shuts down properly.

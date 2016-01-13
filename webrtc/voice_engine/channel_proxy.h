@@ -11,7 +11,6 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 #define WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 
-#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
@@ -66,7 +65,7 @@ class ChannelProxy {
   virtual bool SetSendTelephoneEventPayloadType(int payload_type);
   virtual bool SendTelephoneEventOutband(uint8_t event, uint32_t duration_ms);
 
-  virtual void SetSink(const rtc::scoped_refptr<AudioSinkInterface>& sink);
+  virtual void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink);
 
  private:
   Channel* channel() const;

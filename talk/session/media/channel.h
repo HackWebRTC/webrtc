@@ -375,9 +375,8 @@ class VoiceChannel : public BaseChannel {
   // event 0-9, *, #, A-D.
   bool InsertDtmf(uint32_t ssrc, int event_code, int duration);
   bool SetOutputVolume(uint32_t ssrc, double volume);
-  void SetRawAudioSink(
-      uint32_t ssrc,
-      const rtc::scoped_refptr<webrtc::AudioSinkInterface>& sink);
+  void SetRawAudioSink(uint32_t ssrc,
+                       rtc::scoped_ptr<webrtc::AudioSinkInterface> sink);
 
   // Get statistics about the current media session.
   bool GetStats(VoiceMediaInfo* stats);

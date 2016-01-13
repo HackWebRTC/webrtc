@@ -45,6 +45,16 @@
 namespace cricket {
 using rtc::Bind;
 
+namespace {
+// See comment below for why we need to use a pointer to a scoped_ptr.
+bool SetRawAudioSink_w(VoiceMediaChannel* channel,
+                       uint32_t ssrc,
+                       rtc::scoped_ptr<webrtc::AudioSinkInterface>* sink) {
+  channel->SetRawAudioSink(ssrc, std::move(*sink));
+  return true;
+}
+}  // namespace
+
 enum {
   MSG_EARLYMEDIATIMEOUT = 1,
   MSG_SCREENCASTWINDOWEVENT,
@@ -1389,9 +1399,11 @@ bool VoiceChannel::SetOutputVolume(uint32_t ssrc, double volume) {
 
 void VoiceChannel::SetRawAudioSink(
     uint32_t ssrc,
-    const rtc::scoped_refptr<webrtc::AudioSinkInterface>& sink) {
-  worker_thread()->Invoke<void>(
-      Bind(&VoiceMediaChannel::SetRawAudioSink, media_channel(), ssrc, sink));
+    rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
+  // We need to work around Bind's lack of support for scoped_ptr and ownership
+  // passing.  So we invoke to our own little routine that gets a pointer to
+  // our local variable.  This is OK since we're synchronously invoking.
+  InvokeOnWorker(Bind(&SetRawAudioSink_w, media_channel(), ssrc, &sink));
 }
 
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {

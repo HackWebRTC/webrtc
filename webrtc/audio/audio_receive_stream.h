@@ -45,7 +45,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
   // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
 
-  void SetSink(const rtc::scoped_refptr<AudioSinkInterface>& sink) override;
+  void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) override;
 
   const webrtc::AudioReceiveStream::Config& config() const;
 

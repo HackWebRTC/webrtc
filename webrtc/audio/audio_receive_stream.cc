@@ -235,10 +235,9 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   return stats;
 }
 
-void AudioReceiveStream::SetSink(
-    const rtc::scoped_refptr<AudioSinkInterface>& sink) {
+void AudioReceiveStream::SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  channel_proxy_->SetSink(sink);
+  channel_proxy_->SetSink(std::move(sink));
 }
 
 const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {

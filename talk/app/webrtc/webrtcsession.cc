@@ -1328,14 +1328,13 @@ void WebRtcSession::SetAudioPlayoutVolume(uint32_t ssrc, double volume) {
   }
 }
 
-void WebRtcSession::SetRawAudioSink(
-    uint32_t ssrc,
-    const rtc::scoped_refptr<AudioSinkInterface>& sink) {
+void WebRtcSession::SetRawAudioSink(uint32_t ssrc,
+                                    rtc::scoped_ptr<AudioSinkInterface> sink) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_)
     return;
 
-  voice_channel_->SetRawAudioSink(ssrc, sink);
+  voice_channel_->SetRawAudioSink(ssrc, std::move(sink));
 }
 
 bool WebRtcSession::SetCaptureDevice(uint32_t ssrc,

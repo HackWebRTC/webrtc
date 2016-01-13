@@ -70,14 +70,13 @@ class MockAudioProvider : public AudioProviderInterface {
                     cricket::AudioRenderer* renderer));
   MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32_t ssrc, double volume));
 
-  void SetRawAudioSink(
-      uint32_t,
-      const rtc::scoped_refptr<AudioSinkInterface>& sink) override {
-    sink_ = sink;
+  void SetRawAudioSink(uint32_t,
+                       rtc::scoped_ptr<AudioSinkInterface> sink) override {
+    sink_ = std::move(sink);
   }
 
  private:
-  rtc::scoped_refptr<AudioSinkInterface> sink_;
+  rtc::scoped_ptr<AudioSinkInterface> sink_;
 };
 
 // Helper class to test RtpSender/RtpReceiver.

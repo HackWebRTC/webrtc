@@ -96,7 +96,8 @@ void RemoteAudioSource::Initialize(uint32_t ssrc,
   // To make sure we always get notified when the provider goes out of scope,
   // we register for callbacks here and not on demand in AddSink.
   if (provider) {  // May be null in tests.
-    provider->SetRawAudioSink(ssrc, new rtc::RefCountedObject<Sink>(this));
+    provider->SetRawAudioSink(
+        ssrc, rtc::scoped_ptr<AudioSinkInterface>(new Sink(this)));
   }
 }
 

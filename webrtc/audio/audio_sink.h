@@ -19,12 +19,10 @@
 #include <inttypes.h>
 #include <stddef.h>
 
-#include "webrtc/base/refcount.h"
-
 namespace webrtc {
 
 // Represents a simple push audio sink.
-class AudioSinkInterface : public rtc::RefCountInterface {
+class AudioSinkInterface {
  public:
   virtual ~AudioSinkInterface() {}
 

@@ -14,7 +14,6 @@
 #include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
@@ -194,7 +193,7 @@ public:
         CriticalSectionWrapper* callbackCritSect);
     int32_t UpdateLocalTimeStamp();
 
-    void SetSink(const rtc::scoped_refptr<AudioSinkInterface>& sink);
+    void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink);
 
     // API methods
 
@@ -512,7 +511,7 @@ private:
     TelephoneEventHandler* telephone_event_handler_;
     rtc::scoped_ptr<RtpRtcp> _rtpRtcpModule;
     rtc::scoped_ptr<AudioCodingModule> audio_coding_;
-    rtc::scoped_refptr<AudioSinkInterface> audio_sink_;
+    rtc::scoped_ptr<AudioSinkInterface> audio_sink_;
     AudioLevel _outputAudioLevel;
     bool _externalTransport;
     AudioFrame _audioFrame;

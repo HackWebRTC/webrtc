@@ -139,9 +139,9 @@ bool ChannelProxy::SendTelephoneEventOutband(uint8_t event,
       channel()->SendTelephoneEventOutband(event, duration_ms, 10, false) == 0;
 }
 
-void ChannelProxy::SetSink(const rtc::scoped_refptr<AudioSinkInterface>& sink) {
+void ChannelProxy::SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  channel()->SetSink(sink);
+  channel()->SetSink(std::move(sink));
 }
 
 Channel* ChannelProxy::channel() const {
