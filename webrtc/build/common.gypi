@@ -91,6 +91,7 @@
     'build_libyuv%': 1,
     'build_openmax_dl%': 1,
     'build_opus%': 1,
+    'build_protobuf%': 1,
     'build_ssl%': 1,
 
     # Disable by default
