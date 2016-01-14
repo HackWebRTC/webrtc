@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -128,6 +129,7 @@ struct VideoEncoderConfig {
 struct NetEqCapacityConfig {
   NetEqCapacityConfig() : enabled(false), capacity(0) {}
   explicit NetEqCapacityConfig(int value) : enabled(true), capacity(value) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kNetEqCapacityConfig;
   bool enabled;
   int capacity;
 };
@@ -135,12 +137,14 @@ struct NetEqCapacityConfig {
 struct NetEqFastAccelerate {
   NetEqFastAccelerate() : enabled(false) {}
   explicit NetEqFastAccelerate(bool value) : enabled(value) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kNetEqFastAccelerate;
   bool enabled;
 };
 
 struct VoicePacing {
   VoicePacing() : enabled(false) {}
   explicit VoicePacing(bool value) : enabled(value) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kVoicePacing;
   bool enabled;
 };
 
