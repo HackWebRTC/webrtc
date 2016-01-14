@@ -125,8 +125,6 @@ class RtpSenderTest : public ::testing::Test {
         payload_(kPayload),
         transport_(),
         kMarkerBit(true) {
-    EXPECT_CALL(mock_paced_sender_, InsertPacket(_, _, _, _, _, _))
-        .WillRepeatedly(testing::Return());
   }
 
   void SetUp() override { SetUpRtpSender(true); }
@@ -627,8 +625,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithHeaderExtensions) {
 
 TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
-                                               _, kSeqNum, _, _, _))
-      .WillRepeatedly(testing::Return());
+                                               _, kSeqNum, _, _, _));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
@@ -679,8 +676,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
 
 TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
-                                               _, kSeqNum, _, _, _))
-      .WillRepeatedly(testing::Return());
+                                               _, kSeqNum, _, _, _));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
@@ -703,9 +699,8 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
 
   EXPECT_EQ(0, transport_.packets_sent_);
 
-  EXPECT_CALL(mock_paced_sender_,
-              InsertPacket(RtpPacketSender::kHighPriority, _, kSeqNum, _, _, _))
-      .WillRepeatedly(testing::Return());
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
+                                               _, kSeqNum, _, _, _));
 
   const int kStoredTimeInMs = 100;
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
@@ -741,9 +736,8 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
 // 1 more regular packet.
 TEST_F(RtpSenderTest, SendPadding) {
   // Make all (non-padding) packets go to send queue.
-  EXPECT_CALL(mock_paced_sender_,
-              InsertPacket(RtpPacketSender::kNormalPriority, _, _, _, _, _))
-      .WillRepeatedly(testing::Return());
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
+                                               _, kSeqNum, _, _, _));
 
   uint16_t seq_num = kSeqNum;
   uint32_t timestamp = kTimestamp;
@@ -832,6 +826,9 @@ TEST_F(RtpSenderTest, SendPadding) {
   ASSERT_NE(-1, rtp_length_int);
   rtp_length = static_cast<size_t>(rtp_length_int);
 
+  EXPECT_CALL(mock_paced_sender_,
+              InsertPacket(RtpPacketSender::kNormalPriority, _, _, _, _, _));
+
   // Packet should be stored in a send bucket.
   EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
                                           capture_time_ms, kAllowRetransmission,
@@ -862,10 +859,6 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
                                   nullptr, nullptr, nullptr));
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
-  // Make all packets go through the pacer.
-  EXPECT_CALL(mock_paced_sender_,
-              InsertPacket(RtpPacketSender::kNormalPriority, _, _, _, _, _))
-      .WillRepeatedly(testing::Return());
 
   uint16_t seq_num = kSeqNum;
   rtp_sender_->SetStorePacketsStatus(true, 10);
@@ -891,6 +884,10 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   const size_t kNumPayloadSizes = 10;
   const size_t kPayloadSizes[kNumPayloadSizes] = {500, 550, 600, 650, 700,
                                                   750, 800, 850, 900, 950};
+  // Expect all packets go through the pacer.
+  EXPECT_CALL(mock_paced_sender_,
+              InsertPacket(RtpPacketSender::kNormalPriority, _, _, _, _, _))
+      .Times(kNumPayloadSizes);
   // Send 10 packets of increasing size.
   for (size_t i = 0; i < kNumPayloadSizes; ++i) {
     int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
@@ -1002,6 +999,9 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
   uint8_t payload[] = {47, 11, 32, 93, 89};
   rtp_sender_->SetStorePacketsStatus(true, 1);
   uint32_t ssrc = rtp_sender_->SSRC();
+
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(_, _, _, _, _, _))
+      .Times(::testing::AtLeast(2));
 
   ASSERT_EQ(
       0, rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234, 4321,
