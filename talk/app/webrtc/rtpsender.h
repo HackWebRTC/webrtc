@@ -78,6 +78,11 @@ class AudioRtpSender : public ObserverInterface,
                  AudioProviderInterface* provider,
                  StatsCollector* stats);
 
+  // Randomly generates stream_id.
+  AudioRtpSender(AudioTrackInterface* track,
+                 AudioProviderInterface* provider,
+                 StatsCollector* stats);
+
   // Randomly generates id and stream_id.
   AudioRtpSender(AudioProviderInterface* provider, StatsCollector* stats);
 
@@ -135,6 +140,9 @@ class VideoRtpSender : public ObserverInterface,
   VideoRtpSender(VideoTrackInterface* track,
                  const std::string& stream_id,
                  VideoProviderInterface* provider);
+
+  // Randomly generates stream_id.
+  VideoRtpSender(VideoTrackInterface* track, VideoProviderInterface* provider);
 
   // Randomly generates id and stream_id.
   explicit VideoRtpSender(VideoProviderInterface* provider);

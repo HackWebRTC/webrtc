@@ -1025,6 +1025,101 @@ TEST_F(PeerConnectionInterfaceTest, RemoveStream) {
   EXPECT_EQ(0u, pc_->local_streams()->count());
 }
 
+// Test for AddTrack and RemoveTrack methods.
+// Tests that the created offer includes tracks we added,
+// and that the RtpSenders are created correctly.
+// Also tests that RemoveTrack removes the tracks from subsequent offers.
+TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
+  CreatePeerConnection();
+  // Create a dummy stream, so tracks share a stream label.
+  scoped_refptr<MediaStreamInterface> stream(
+      pc_factory_->CreateLocalMediaStream(kStreamLabel1));
+  std::vector<MediaStreamInterface*> stream_list;
+  stream_list.push_back(stream.get());
+  scoped_refptr<AudioTrackInterface> audio_track(
+      pc_factory_->CreateAudioTrack("audio_track", nullptr));
+  scoped_refptr<VideoTrackInterface> video_track(
+      pc_factory_->CreateVideoTrack("video_track", nullptr));
+  auto audio_sender = pc_->AddTrack(audio_track, stream_list);
+  auto video_sender = pc_->AddTrack(video_track, stream_list);
+  EXPECT_EQ(kStreamLabel1, audio_sender->stream_id());
+  EXPECT_EQ("audio_track", audio_sender->id());
+  EXPECT_EQ(audio_track, audio_sender->track());
+  EXPECT_EQ(kStreamLabel1, video_sender->stream_id());
+  EXPECT_EQ("video_track", video_sender->id());
+  EXPECT_EQ(video_track, video_sender->track());
+
+  // Now create an offer and check for the senders.
+  scoped_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(offer.accept(), nullptr));
+
+  const cricket::ContentInfo* audio_content =
+      cricket::GetFirstAudioContent(offer->description());
+  const cricket::AudioContentDescription* audio_desc =
+      static_cast<const cricket::AudioContentDescription*>(
+          audio_content->description);
+  EXPECT_TRUE(
+      ContainsTrack(audio_desc->streams(), kStreamLabel1, "audio_track"));
+
+  const cricket::ContentInfo* video_content =
+      cricket::GetFirstVideoContent(offer->description());
+  const cricket::VideoContentDescription* video_desc =
+      static_cast<const cricket::VideoContentDescription*>(
+          video_content->description);
+  EXPECT_TRUE(
+      ContainsTrack(video_desc->streams(), kStreamLabel1, "video_track"));
+
+  EXPECT_TRUE(DoSetLocalDescription(offer.release()));
+
+  // Now try removing the tracks.
+  EXPECT_TRUE(pc_->RemoveTrack(audio_sender));
+  EXPECT_TRUE(pc_->RemoveTrack(video_sender));
+
+  // Create a new offer and ensure it doesn't contain the removed senders.
+  ASSERT_TRUE(DoCreateOffer(offer.accept(), nullptr));
+
+  audio_content = cricket::GetFirstAudioContent(offer->description());
+  audio_desc = static_cast<const cricket::AudioContentDescription*>(
+      audio_content->description);
+  EXPECT_FALSE(
+      ContainsTrack(audio_desc->streams(), kStreamLabel1, "audio_track"));
+
+  video_content = cricket::GetFirstVideoContent(offer->description());
+  video_desc = static_cast<const cricket::VideoContentDescription*>(
+      video_content->description);
+  EXPECT_FALSE(
+      ContainsTrack(video_desc->streams(), kStreamLabel1, "video_track"));
+
+  EXPECT_TRUE(DoSetLocalDescription(offer.release()));
+
+  // Calling RemoveTrack on a sender no longer attached to a PeerConnection
+  // should return false.
+  EXPECT_FALSE(pc_->RemoveTrack(audio_sender));
+  EXPECT_FALSE(pc_->RemoveTrack(video_sender));
+}
+
+// Test creating senders without a stream specified,
+// expecting a random stream ID to be generated.
+TEST_F(PeerConnectionInterfaceTest, AddTrackWithoutStream) {
+  CreatePeerConnection();
+  // Create a dummy stream, so tracks share a stream label.
+  scoped_refptr<AudioTrackInterface> audio_track(
+      pc_factory_->CreateAudioTrack("audio_track", nullptr));
+  scoped_refptr<VideoTrackInterface> video_track(
+      pc_factory_->CreateVideoTrack("video_track", nullptr));
+  auto audio_sender =
+      pc_->AddTrack(audio_track, std::vector<MediaStreamInterface*>());
+  auto video_sender =
+      pc_->AddTrack(video_track, std::vector<MediaStreamInterface*>());
+  EXPECT_EQ("audio_track", audio_sender->id());
+  EXPECT_EQ(audio_track, audio_sender->track());
+  EXPECT_EQ("video_track", video_sender->id());
+  EXPECT_EQ(video_track, video_sender->track());
+  // If the ID is truly a random GUID, it should be infinitely unlikely they
+  // will be the same.
+  EXPECT_NE(video_sender->stream_id(), audio_sender->stream_id());
+}
+
 TEST_F(PeerConnectionInterfaceTest, CreateOfferReceiveAnswer) {
   InitiateCall();
   WaitAndVerifyOnAddStream(kStreamLabel1);

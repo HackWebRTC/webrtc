@@ -83,6 +83,11 @@ class PeerConnection : public PeerConnectionInterface,
   bool AddStream(MediaStreamInterface* local_stream) override;
   void RemoveStream(MediaStreamInterface* local_stream) override;
 
+  rtc::scoped_refptr<RtpSenderInterface> AddTrack(
+      MediaStreamTrackInterface* track,
+      std::vector<MediaStreamInterface*> streams) override;
+  bool RemoveTrack(RtpSenderInterface* sender) override;
+
   virtual WebRtcSession* session() { return session_.get(); }
 
   rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(

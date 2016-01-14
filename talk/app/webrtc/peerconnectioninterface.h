@@ -331,6 +331,23 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // remote peer is notified.
   virtual void RemoveStream(MediaStreamInterface* stream) = 0;
 
+  // TODO(deadbeef): Make the following two methods pure virtual once
+  // implemented by all subclasses of PeerConnectionInterface.
+  // Add a new MediaStreamTrack to be sent on this PeerConnection.
+  // |streams| indicates which stream labels the track should be associated
+  // with.
+  virtual rtc::scoped_refptr<RtpSenderInterface> AddTrack(
+      MediaStreamTrackInterface* track,
+      std::vector<MediaStreamInterface*> streams) {
+    return nullptr;
+  }
+
+  // Remove an RtpSender from this PeerConnection.
+  // Returns true on success.
+  virtual bool RemoveTrack(RtpSenderInterface* sender) {
+    return false;
+  }
+
   // Returns pointer to the created DtmfSender on success.
   // Otherwise returns NULL.
   virtual rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(

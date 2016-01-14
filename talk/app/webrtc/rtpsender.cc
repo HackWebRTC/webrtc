@@ -75,6 +75,21 @@ AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
   track_->AddSink(sink_adapter_.get());
 }
 
+AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
+                               AudioProviderInterface* provider,
+                               StatsCollector* stats)
+    : id_(track->id()),
+      stream_id_(rtc::CreateRandomUuid()),
+      provider_(provider),
+      stats_(stats),
+      track_(track),
+      cached_track_enabled_(track->enabled()),
+      sink_adapter_(new LocalAudioSinkAdapter()) {
+  RTC_DCHECK(provider != nullptr);
+  track_->RegisterObserver(this);
+  track_->AddSink(sink_adapter_.get());
+}
+
 AudioRtpSender::AudioRtpSender(AudioProviderInterface* provider,
                                StatsCollector* stats)
     : id_(rtc::CreateRandomUuid()),
@@ -204,6 +219,17 @@ VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
                                VideoProviderInterface* provider)
     : id_(track->id()),
       stream_id_(stream_id),
+      provider_(provider),
+      track_(track),
+      cached_track_enabled_(track->enabled()) {
+  RTC_DCHECK(provider != nullptr);
+  track_->RegisterObserver(this);
+}
+
+VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
+                               VideoProviderInterface* provider)
+    : id_(track->id()),
+      stream_id_(rtc::CreateRandomUuid()),
       provider_(provider),
       track_(track),
       cached_track_enabled_(track->enabled()) {
