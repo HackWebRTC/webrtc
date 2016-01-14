@@ -1150,10 +1150,6 @@ INSTANTIATE_TEST_CASE_P(
             Values(rtc::KeyParams::RSA(1024, 65537),
                    rtc::KeyParams::RSA(1152, 65537),
                    rtc::KeyParams::ECDSA(rtc::EC_NIST_P256))));
-
-#if !defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
 INSTANTIATE_TEST_CASE_P(
     SSLStreamAdapterTestsDTLS,
     SSLStreamAdapterTestDTLS,
@@ -1163,4 +1159,3 @@ INSTANTIATE_TEST_CASE_P(
             Values(rtc::KeyParams::RSA(1024, 65537),
                    rtc::KeyParams::RSA(1152, 65537),
                    rtc::KeyParams::ECDSA(rtc::EC_NIST_P256))));
-#endif

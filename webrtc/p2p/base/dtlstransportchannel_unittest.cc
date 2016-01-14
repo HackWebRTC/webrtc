@@ -655,15 +655,8 @@ TEST_F(DtlsTransportChannelTest, TestDtls12None) {
   ASSERT_TRUE(Connect());
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestDtls12Both DISABLED_TestDtls12Both
-#else
-#define MAYBE_TestDtls12Both TestDtls12Both
-#endif
 // Create two channels with DTLS 1.2 and check ciphers.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestDtls12Both) {
+TEST_F(DtlsTransportChannelTest, TestDtls12Both) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
