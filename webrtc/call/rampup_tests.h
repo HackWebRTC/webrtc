@@ -40,6 +40,7 @@ class RampUpTester : public test::EndToEndTest {
   ~RampUpTester() override;
 
   size_t GetNumVideoStreams() const override;
+  size_t GetNumAudioStreams() const override;
 
   void PerformTest() override;
 
@@ -79,6 +80,9 @@ class RampUpTester : public test::EndToEndTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override;
+  void ModifyAudioConfigs(
+      AudioSendStream::Config* send_config,
+      std::vector<AudioReceiveStream::Config>* receive_configs) override;
   void OnCallsCreated(Call* sender_call, Call* receiver_call) override;
 
   static bool BitrateStatsPollingThread(void* obj);
@@ -101,7 +105,8 @@ class RampUpTester : public test::EndToEndTest {
 
 class RampUpDownUpTester : public RampUpTester {
  public:
-  RampUpDownUpTester(size_t num_streams,
+  RampUpDownUpTester(size_t num_video_streams,
+                     size_t num_audio_streams,
                      unsigned int start_bitrate_bps,
                      const std::string& extension_type,
                      bool rtx,

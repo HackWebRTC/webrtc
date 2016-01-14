@@ -46,6 +46,8 @@ class DirectTransport : public Transport {
                const PacketOptions& options) override;
   bool SendRtcp(const uint8_t* data, size_t length) override;
 
+  int GetAverageDelayMs();
+
  private:
   static bool NetworkProcess(void* transport);
   bool SendPackets();

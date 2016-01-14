@@ -70,6 +70,10 @@ bool DirectTransport::SendRtcp(const uint8_t* data, size_t length) {
   return true;
 }
 
+int DirectTransport::GetAverageDelayMs() {
+  return fake_network_.AverageDelay();
+}
+
 bool DirectTransport::NetworkProcess(void* transport) {
   return static_cast<DirectTransport*>(transport)->SendPackets();
 }

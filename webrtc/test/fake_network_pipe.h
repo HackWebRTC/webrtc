@@ -82,7 +82,7 @@ class FakeNetworkPipe {
   // Statistics.
   size_t dropped_packets_;
   size_t sent_packets_;
-  int total_packet_delay_;
+  int64_t total_packet_delay_;
 
   int64_t next_process_time_;
 

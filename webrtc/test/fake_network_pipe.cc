@@ -146,7 +146,8 @@ int FakeNetworkPipe::AverageDelay() {
   if (sent_packets_ == 0)
     return 0;
 
-  return total_packet_delay_ / static_cast<int>(sent_packets_);
+  return static_cast<int>(total_packet_delay_ /
+                          static_cast<int64_t>(sent_packets_));
 }
 
 void FakeNetworkPipe::Process() {
