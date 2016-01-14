@@ -28,7 +28,7 @@
 #ifndef TALK_MEDIA_BASE_MEDIAENGINE_H_
 #define TALK_MEDIA_BASE_MEDIAENGINE_H_
 
-#ifdef OSX
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <CoreAudio/CoreAudio.h>
 #endif
 

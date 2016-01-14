@@ -601,7 +601,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
                     << " (default is false).";
   }
 
-#if defined(IOS)
+#if defined(WEBRTC_IOS)
   // On iOS, VPIO provides built-in EC and AGC.
   options.echo_cancellation = rtc::Optional<bool>(false);
   options.auto_gain_control = rtc::Optional<bool>(false);
@@ -610,7 +610,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   ec_mode = webrtc::kEcAecm;
 #endif
 
-#if defined(IOS) || defined(ANDROID)
+#if defined(WEBRTC_IOS) || defined(ANDROID)
   // Set the AGC mode for iOS as well despite disabling it above, to avoid
   // unsupported configuration errors from webrtc.
   agc_mode = webrtc::kAgcFixedDigital;
@@ -623,7 +623,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   // Delay Agnostic AEC automatically turns on EC if not set except on iOS
   // where the feature is not supported.
   bool use_delay_agnostic_aec = false;
-#if !defined(IOS)
+#if !defined(WEBRTC_IOS)
   if (options.delay_agnostic_aec) {
     use_delay_agnostic_aec = *options.delay_agnostic_aec;
     if (use_delay_agnostic_aec) {
@@ -861,7 +861,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
 void WebRtcVoiceEngine::SetDefaultDevices() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-#if !defined(IOS)
+#if !defined(WEBRTC_IOS)
   int in_id = kDefaultAudioDeviceId;
   int out_id = kDefaultAudioDeviceId;
   LOG(LS_INFO) << "Setting microphone to (id=" << in_id
@@ -886,7 +886,7 @@ void WebRtcVoiceEngine::SetDefaultDevices() {
     LOG(LS_INFO) << "Set microphone to (id=" << in_id
                  << ") and speaker to (id=" << out_id << ")";
   }
-#endif  // !IOS
+#endif  // !WEBRTC_IOS
 }
 
 bool WebRtcVoiceEngine::GetOutputVolume(int* level) {

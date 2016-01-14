@@ -32,9 +32,9 @@
 #define TALK_MEDIA_DEVICES_VIDEORENDERERFACTORY_H_
 
 #include "talk/media/base/videorenderer.h"
-#if defined(LINUX) && defined(HAVE_GTK)
+#if defined(WEBRTC_LINUX) && defined(HAVE_GTK)
 #include "talk/media/devices/gtkvideorenderer.h"
-#elif defined(OSX) && !defined(CARBON_DEPRECATED)
+#elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && !defined(CARBON_DEPRECATED)
 #include "talk/media/devices/carbonvideorenderer.h"
 #elif defined(WIN32)
 #include "talk/media/devices/gdivideorenderer.h"
@@ -45,9 +45,10 @@ namespace cricket {
 class VideoRendererFactory {
  public:
   static VideoRenderer* CreateGuiVideoRenderer(int x, int y) {
-  #if defined(LINUX) && defined(HAVE_GTK)
+  #if defined(WEBRTC_LINUX) && defined(HAVE_GTK)
     return new GtkVideoRenderer(x, y);
-  #elif defined(OSX) && !defined(CARBON_DEPRECATED)
+  #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && \
+      !defined(CARBON_DEPRECATED)
     CarbonVideoRenderer* renderer = new CarbonVideoRenderer(x, y);
     // Needs to be initialized on the main thread.
     if (renderer->Initialize()) {

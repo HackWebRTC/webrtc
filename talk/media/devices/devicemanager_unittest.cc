@@ -48,10 +48,10 @@
 #include "webrtc/base/stream.h"
 #include "webrtc/base/windowpickerfactory.h"
 
-#ifdef LINUX
+#ifdef WEBRTC_LINUX
 // TODO(juberti): Figure out why this doesn't compile on Windows.
 #include "webrtc/base/fileutils_mock.h"
-#endif  // LINUX
+#endif  // WEBRTC_LINUX
 
 using rtc::Pathname;
 using rtc::FileTimeType;
@@ -285,7 +285,7 @@ TEST(DeviceManagerTest, VerifyFilterDevices) {
                                 arraysize(kDevicesName)));
 }
 
-#ifdef LINUX
+#ifdef WEBRTC_LINUX
 class FakeV4LLookup : public cricket::V4LLookup {
  public:
   explicit FakeV4LLookup(std::vector<std::string> device_paths)
@@ -377,7 +377,7 @@ TEST(DeviceManagerTest, GetVideoCaptureDevices_KUnknown) {
   EXPECT_EQ("/dev/video0", video_ins.at(0).name);
   EXPECT_EQ("/dev/video5", video_ins.at(1).name);
 }
-#endif  // LINUX
+#endif  // WEBRTC_LINUX
 
 // TODO(noahric): These are flaky on windows on headless machines.
 #ifndef WIN32

@@ -28,7 +28,7 @@
 #ifndef TALK_MEDIA_BASE_EXECUTABLEHELPERS_H_
 #define TALK_MEDIA_BASE_EXECUTABLEHELPERS_H_
 
-#ifdef OSX
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <mach-o/dyld.h>
 #endif
 
@@ -62,15 +62,15 @@ inline Pathname GetExecutablePath() {
 #else  // UNICODE
   rtc::Pathname path(exe_path_buffer);
 #endif  // UNICODE
-#elif defined(OSX) || defined(LINUX)
+#elif (defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)) || defined(WEBRTC_LINUX)
   char exe_path_buffer[kMaxExePathSize];
-#ifdef OSX
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   uint32_t copied_length = kMaxExePathSize - 1;
   if (_NSGetExecutablePath(exe_path_buffer, &copied_length) == -1) {
     LOG(LS_ERROR) << "Buffer too small";
     return rtc::Pathname();
   }
-#elif defined LINUX
+#elif defined WEBRTC_LINUX
   int32_t copied_length = kMaxExePathSize - 1;
   const char* kProcExeFmt = "/proc/%d/exe";
   char proc_exe_link[40];
@@ -86,11 +86,11 @@ inline Pathname GetExecutablePath() {
     return rtc::Pathname();
   }
   exe_path_buffer[copied_length] = '\0';
-#endif  // LINUX
+#endif  // WEBRTC_LINUX
   rtc::Pathname path(exe_path_buffer);
-#else  // Android || IOS
+#else  // Android || iOS
   rtc::Pathname path;
-#endif  // OSX || LINUX
+#endif  // Mac || Linux
   return path;
 }
 

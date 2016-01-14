@@ -373,7 +373,7 @@ bool UnixFilesystem::GetAppPathname(Pathname* path) {
   return success;
 #elif defined(__native_client__)
   return false;
-#elif IOS
+#elif WEBRTC_IOS
   IOSAppName(path);
   return true;
 #else  // WEBRTC_MAC && !defined(WEBRTC_IOS)

@@ -156,7 +156,7 @@ class FakeDeviceManager : public DeviceManagerInterface {
     return true;
   }
 
-#ifdef OSX
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   bool QtKitToSgDevice(const std::string& qtkit_name, Device* out) {
     out->name = qtkit_name;
     out->id = "sg:" + qtkit_name;

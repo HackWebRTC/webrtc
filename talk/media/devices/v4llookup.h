@@ -37,7 +37,7 @@
 
 #include <string>
 
-#ifdef LINUX
+#ifdef WEBRTC_LINUX
 namespace cricket {
 class V4LLookup {
  public:
@@ -66,5 +66,5 @@ class V4LLookup {
 
 }  // namespace cricket
 
-#endif  // LINUX
+#endif  // WEBRTC_LINUX
 #endif  // TALK_MEDIA_DEVICES_V4LLOOKUP_H_

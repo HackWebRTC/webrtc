@@ -123,7 +123,7 @@ bool DeviceManager::GetAudioOutputDevice(const std::string& name, Device* out) {
 
 bool DeviceManager::GetVideoCaptureDevices(std::vector<Device>* devices) {
   devices->clear();
-#if defined(ANDROID) || defined(IOS)
+#if defined(ANDROID) || defined(WEBRTC_IOS)
   // On Android and iOS, we treat the camera(s) as a single device. Even if
   // there are multiple cameras, that's abstracted away at a higher level.
   Device dev("camera", "1");    // name and ID

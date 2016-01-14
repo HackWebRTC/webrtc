@@ -59,7 +59,7 @@ enum {
 };
 
 static const int64_t kMaxDistance = ~(static_cast<int64_t>(1) << 63);
-#ifdef LINUX
+#ifdef WEBRTC_LINUX
 static const int kYU12Penalty = 16;  // Needs to be higher than MJPG index.
 #endif
 static const int kDefaultScreencastFps = 5;
@@ -594,7 +594,7 @@ int64_t VideoCapturer::GetFormatDistance(const VideoFormat& desired,
     for (size_t i = 0; i < preferred_fourccs.size(); ++i) {
       if (supported_fourcc == CanonicalFourCC(preferred_fourccs[i])) {
         delta_fourcc = i;
-#ifdef LINUX
+#ifdef WEBRTC_LINUX
         // For HD avoid YU12 which is a software conversion and has 2 bugs
         // b/7326348 b/6960899.  Reenable when fixed.
         if (supported.height >= 720 && (supported_fourcc == FOURCC_YU12 ||
