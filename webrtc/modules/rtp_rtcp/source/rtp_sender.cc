@@ -1456,8 +1456,9 @@ bool RTPSender::FindHeaderExtensionPosition(RTPExtensionType type,
 
   HeaderExtension header_extension(type);
 
-  size_t block_pos =
-      kRtpHeaderLength + rtp_header.numCSRCs + extension_block_pos;
+  size_t extension_pos =
+      kRtpHeaderLength + rtp_header.numCSRCs * sizeof(uint32_t);
+  size_t block_pos = extension_pos + extension_block_pos;
   if (rtp_packet_length < block_pos + header_extension.length ||
       rtp_header.headerLength < block_pos + header_extension.length) {
     LOG(LS_WARNING) << "Failed to find extension position for " << type
@@ -1466,8 +1467,8 @@ bool RTPSender::FindHeaderExtensionPosition(RTPExtensionType type,
   }
 
   // Verify that header contains extension.
-  if (!((rtp_packet[kRtpHeaderLength + rtp_header.numCSRCs] == 0xBE) &&
-        (rtp_packet[kRtpHeaderLength + rtp_header.numCSRCs + 1] == 0xDE))) {
+  if (!(rtp_packet[extension_pos] == 0xBE &&
+        rtp_packet[extension_pos + 1] == 0xDE)) {
     LOG(LS_WARNING) << "Failed to find extension position for " << type
                     << "as hdr extension not found.";
     return false;
@@ -1493,14 +1494,6 @@ RTPSender::ExtensionStatus RTPSender::VerifyExtension(
   if (!FindHeaderExtensionPosition(extension_type, rtp_packet,
                                    rtp_packet_length, rtp_header, &block_pos))
     return ExtensionStatus::kError;
-
-  // Verify that header contains extension.
-  if (!((rtp_packet[kRtpHeaderLength + rtp_header.numCSRCs] == 0xBE) &&
-        (rtp_packet[kRtpHeaderLength + rtp_header.numCSRCs + 1] == 0xDE))) {
-    LOG(LS_WARNING)
-        << "Failed to update absolute send time, hdr extension not found.";
-    return ExtensionStatus::kError;
-  }
 
   // Verify first byte in block.
   const uint8_t first_block_byte = (id << 4) + (extension_length_bytes - 2);

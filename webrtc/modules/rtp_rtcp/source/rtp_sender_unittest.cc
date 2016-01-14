@@ -146,16 +146,22 @@ class RtpSenderTest : public ::testing::Test {
   uint8_t packet_[kMaxPacketLength];
 
   void VerifyRTPHeaderCommon(const RTPHeader& rtp_header) {
-    VerifyRTPHeaderCommon(rtp_header, kMarkerBit);
+    VerifyRTPHeaderCommon(rtp_header, kMarkerBit, 0);
   }
 
   void VerifyRTPHeaderCommon(const RTPHeader& rtp_header, bool marker_bit) {
+    VerifyRTPHeaderCommon(rtp_header, marker_bit, 0);
+  }
+
+  void VerifyRTPHeaderCommon(const RTPHeader& rtp_header,
+                             bool marker_bit,
+                             uint8_t number_of_csrcs) {
     EXPECT_EQ(marker_bit, rtp_header.markerBit);
     EXPECT_EQ(payload_, rtp_header.payloadType);
     EXPECT_EQ(kSeqNum, rtp_header.sequenceNumber);
     EXPECT_EQ(kTimestamp, rtp_header.timestamp);
     EXPECT_EQ(rtp_sender_->SSRC(), rtp_header.ssrc);
-    EXPECT_EQ(0, rtp_header.numCSRCs);
+    EXPECT_EQ(number_of_csrcs, rtp_header.numCSRCs);
     EXPECT_EQ(0U, rtp_header.paddingLength);
   }
 
@@ -548,6 +554,40 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAudioLevelExtension) {
   EXPECT_FALSE(rtp_header2.extension.hasAudioLevel);
   EXPECT_FALSE(rtp_header2.extension.voiceActivity);
   EXPECT_EQ(0u, rtp_header2.extension.audioLevel);
+}
+
+TEST_F(RtpSenderTestWithoutPacer,
+       BuildRTPPacketWithCSRCAndAudioLevelExtension) {
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
+                                                       kAudioLevelExtensionId));
+  std::vector<uint32_t> csrcs;
+  csrcs.push_back(0x23456789);
+  rtp_sender_->SetCsrcs(csrcs);
+  size_t length = static_cast<size_t>(rtp_sender_->BuildRTPheader(
+      packet_, kPayload, kMarkerBit, kTimestamp, 0));
+
+  // Verify
+  webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
+  webrtc::RTPHeader rtp_header;
+
+  // Updating audio level is done in RTPSenderAudio, so simulate it here.
+  rtp_parser.Parse(&rtp_header);
+  EXPECT_TRUE(rtp_sender_->UpdateAudioLevel(packet_, length, rtp_header, true,
+                                            kAudioLevel));
+
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+  const bool valid_rtp_header = rtp_parser.Parse(&rtp_header, &map);
+
+  ASSERT_TRUE(valid_rtp_header);
+  ASSERT_FALSE(rtp_parser.RTCP());
+  VerifyRTPHeaderCommon(rtp_header, kMarkerBit, csrcs.size());
+  EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_TRUE(rtp_header.extension.hasAudioLevel);
+  EXPECT_TRUE(rtp_header.extension.voiceActivity);
+  EXPECT_EQ(kAudioLevel, rtp_header.extension.audioLevel);
+  EXPECT_EQ(1u, rtp_header.numCSRCs);
+  EXPECT_EQ(csrcs[0], rtp_header.arrOfCSRCs[0]);
 }
 
 TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithHeaderExtensions) {
