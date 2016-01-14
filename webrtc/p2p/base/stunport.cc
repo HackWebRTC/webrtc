@@ -340,7 +340,7 @@ void UDPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
 
 void UDPPort::OnSentPacket(rtc::AsyncPacketSocket* socket,
                            const rtc::SentPacket& sent_packet) {
-  Port::OnSentPacket(sent_packet);
+  PortInterface::SignalSentPacket(sent_packet);
 }
 
 void UDPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {

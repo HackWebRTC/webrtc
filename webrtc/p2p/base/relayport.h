@@ -29,7 +29,7 @@ class RelayConnection;
 // is created. The RelayEntry will try to reach the remote destination
 // by connecting to all available server addresses in a pre defined
 // order with a small delay in between. When a connection is
-// successful all other connection attemts are aborted.
+// successful all other connection attempts are aborted.
 class RelayPort : public Port {
  public:
   typedef std::pair<rtc::Socket::Option, int> OptionValue;
@@ -95,6 +95,11 @@ class RelayPort : public Port {
                     const rtc::SocketAddress& remote_addr,
                     ProtocolType proto,
                     const rtc::PacketTime& packet_time);
+
+  // The OnSentPacket callback is left empty here since they are handled by
+  // RelayEntry.
+  void OnSentPacket(rtc::AsyncPacketSocket* socket,
+                    const rtc::SentPacket& sent_packet) override {}
 
  private:
   friend class RelayEntry;

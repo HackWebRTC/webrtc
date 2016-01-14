@@ -1424,8 +1424,7 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
   }
 }
 
-void P2PTransportChannel::OnSentPacket(PortInterface* port,
-                                       const rtc::SentPacket& sent_packet) {
+void P2PTransportChannel::OnSentPacket(const rtc::SentPacket& sent_packet) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
   SignalSentPacket(this, sent_packet);

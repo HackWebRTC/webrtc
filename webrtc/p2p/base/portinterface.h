@@ -116,7 +116,7 @@ class PortInterface {
                    const rtc::SocketAddress&> SignalReadPacket;
 
   // Emitted each time a packet is sent on this port.
-  sigslot::signal2<PortInterface*, const rtc::SentPacket&> SignalSentPacket;
+  sigslot::signal1<const rtc::SentPacket&> SignalSentPacket;
 
   virtual std::string ToString() const = 0;
 
