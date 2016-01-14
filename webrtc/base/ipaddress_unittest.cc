@@ -61,7 +61,7 @@ static const std::string kIPv6PublicAddr2String =
 static const std::string kIPv6PublicAddrAnonymizedString =
     "2401:fa00:4:x:x:x:x:x";
 static const std::string kIPv6PublicAddr2AnonymizedString =
-    "2401::x:x:x:x:x";
+    "2401:0:0:x:x:x:x:x";
 static const std::string kIPv4MappedAnyAddrString = "::ffff:0:0";
 static const std::string kIPv4MappedRFC1918AddrString = "::ffff:c0a8:701";
 static const std::string kIPv4MappedLoopbackAddrString = "::ffff:7f00:1";

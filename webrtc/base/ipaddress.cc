@@ -28,8 +28,9 @@
 #include "webrtc/base/ipaddress.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/nethelpers.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/stringutils.h"
 #include "webrtc/base/win32.h"
 
 namespace rtc {
@@ -158,19 +159,16 @@ std::string IPAddress::ToSensitiveString() const {
       return address;
     }
     case AF_INET6: {
-      // Remove the last 5 groups (80 bits).
-      std::string address = TruncateIP(*this, 128 - 80).ToString();
-
-      // If all three remaining groups are written out explicitly in the string,
-      // remove one of the two trailing colons before appending the stripped
-      // groups as "x"s. There should be max 4 colons (2 between the 3 groups +
-      // 2 trailing) in the truncated address string.
-      size_t number_of_colons = std::count(address.begin(), address.end(), ':');
-      RTC_CHECK_LE(number_of_colons, 4u);
-      if (number_of_colons > 3)
-        address.resize(address.length() - 1);
-
-      return address + "x:x:x:x:x";
+      std::string result;
+      result.resize(INET6_ADDRSTRLEN);
+      in6_addr addr = ipv6_address();
+      size_t len =
+          rtc::sprintfn(&(result[0]), result.size(), "%x:%x:%x:x:x:x:x:x",
+                        (addr.s6_addr[0] << 8) + addr.s6_addr[1],
+                        (addr.s6_addr[2] << 8) + addr.s6_addr[3],
+                        (addr.s6_addr[4] << 8) + addr.s6_addr[5]);
+      result.resize(len);
+      return result;
     }
   }
   return std::string();
