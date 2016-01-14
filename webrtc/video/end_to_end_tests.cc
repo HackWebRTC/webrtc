@@ -1542,82 +1542,115 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
   tester.RunTest();
 }
 
-void TransportFeedbackTest(bool feedback_enabled) {
+class TransportFeedbackTester : public test::EndToEndTest {
+ public:
+  explicit TransportFeedbackTester(bool feedback_enabled,
+                                   size_t num_video_streams,
+                                   size_t num_audio_streams)
+      : EndToEndTest(::webrtc::EndToEndTest::kDefaultTimeoutMs),
+        feedback_enabled_(feedback_enabled),
+        num_video_streams_(num_video_streams),
+        num_audio_streams_(num_audio_streams) {
+    // Only one stream of each supported for now.
+    EXPECT_LE(num_video_streams, 1u);
+    EXPECT_LE(num_audio_streams, 1u);
+  }
+
+ protected:
+  Action OnSendRtcp(const uint8_t* data, size_t length) override {
+    EXPECT_FALSE(HasTransportFeedback(data, length));
+    return SEND_PACKET;
+  }
+
+  Action OnReceiveRtcp(const uint8_t* data, size_t length) override {
+    if (HasTransportFeedback(data, length))
+      observation_complete_.Set();
+    return SEND_PACKET;
+  }
+
+  bool HasTransportFeedback(const uint8_t* data, size_t length) const {
+    RTCPUtility::RTCPParserV2 parser(data, length, true);
+    EXPECT_TRUE(parser.IsValid());
+
+    RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+    while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+      if (packet_type == RTCPUtility::RTCPPacketTypes::kTransportFeedback)
+        return true;
+      packet_type = parser.Iterate();
+    }
+
+    return false;
+  }
+
+  void PerformTest() override {
+    const int64_t kDisabledFeedbackTimeoutMs = 5000;
+    EXPECT_EQ(feedback_enabled_,
+              observation_complete_.Wait(feedback_enabled_
+                                             ? test::CallTest::kDefaultTimeoutMs
+                                             : kDisabledFeedbackTimeoutMs));
+  }
+
+  void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+    receiver_call_ = receiver_call;
+  }
+
+  size_t GetNumVideoStreams() const override { return num_video_streams_; }
+  size_t GetNumAudioStreams() const override { return num_audio_streams_; }
+
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
+    send_config->rtp.extensions.clear();
+    send_config->rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+    (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
+    (*receive_configs)[0].rtp.transport_cc = feedback_enabled_;
+  }
+
+  void ModifyAudioConfigs(
+      AudioSendStream::Config* send_config,
+      std::vector<AudioReceiveStream::Config>* receive_configs) override {
+    send_config->rtp.extensions.clear();
+    send_config->rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+    (*receive_configs)[0].rtp.extensions.clear();
+    (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
+    (*receive_configs)[0].rtp.transport_cc = feedback_enabled_;
+    (*receive_configs)[0].combined_audio_video_bwe = true;
+  }
+
+ private:
   static const int kExtensionId = 5;
-  class TransportFeedbackObserver : public test::DirectTransport {
-   public:
-    TransportFeedbackObserver(Call* receiver_call, rtc::Event* done_event)
-        : DirectTransport(receiver_call), done_(done_event) {}
-    virtual ~TransportFeedbackObserver() {}
+  const bool feedback_enabled_;
+  const size_t num_video_streams_;
+  const size_t num_audio_streams_;
+  Call* receiver_call_;
+};
 
-    bool SendRtcp(const uint8_t* data, size_t length) override {
-      RTCPUtility::RTCPParserV2 parser(data, length, true);
-      EXPECT_TRUE(parser.IsValid());
-
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kTransportFeedback) {
-          done_->Set();
-          break;
-        }
-        packet_type = parser.Iterate();
-      }
-
-      return test::DirectTransport::SendRtcp(data, length);
-    }
-
-    rtc::Event* done_;
-  };
-
-  class TransportFeedbackTester : public MultiStreamTest {
-   public:
-    explicit TransportFeedbackTester(bool feedback_enabled)
-        : feedback_enabled_(feedback_enabled), done_(false, false) {}
-    virtual ~TransportFeedbackTester() {}
-
-   protected:
-    void Wait() override {
-      const int64_t kDisabledFeedbackTimeoutMs = 5000;
-      EXPECT_EQ(feedback_enabled_, done_.Wait(feedback_enabled_
-                                  ? test::CallTest::kDefaultTimeoutMs
-                                  : kDisabledFeedbackTimeoutMs));
-    }
-
-    void UpdateSendConfig(
-        size_t stream_index,
-        VideoSendStream::Config* send_config,
-        VideoEncoderConfig* encoder_config,
-        test::FrameGeneratorCapturer** frame_generator) override {
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
-    }
-
-    void UpdateReceiveConfig(
-        size_t stream_index,
-        VideoReceiveStream::Config* receive_config) override {
-      receive_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
-      receive_config->rtp.transport_cc = feedback_enabled_;
-    }
-
-    test::DirectTransport* CreateReceiveTransport(
-        Call* receiver_call) override {
-      return new TransportFeedbackObserver(receiver_call, &done_);
-    }
-
-   private:
-    const bool feedback_enabled_;
-    rtc::Event done_;
-  } tester(feedback_enabled);
-  tester.RunTest();
+TEST_F(EndToEndTest, VideoReceivesTransportFeedback) {
+  TransportFeedbackTester test(true, 1, 0);
+  RunBaseTest(&test);
 }
 
-TEST_F(EndToEndTest, ReceivesTransportFeedback) {
-  TransportFeedbackTest(true);
+TEST_F(EndToEndTest, VideoTransportFeedbackNotConfigured) {
+  TransportFeedbackTester test(false, 1, 0);
+  RunBaseTest(&test);
 }
 
-TEST_F(EndToEndTest, TransportFeedbackNotConfigured) {
-  TransportFeedbackTest(false);
+TEST_F(EndToEndTest, AudioReceivesTransportFeedback) {
+  TransportFeedbackTester test(true, 0, 1);
+  RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, AudioTransportFeedbackNotConfigured) {
+  TransportFeedbackTester test(false, 0, 1);
+  RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, AudioVideoReceivesTransportFeedback) {
+  TransportFeedbackTester test(true, 1, 1);
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, ObserversEncodedFrames) {
