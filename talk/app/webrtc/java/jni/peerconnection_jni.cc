@@ -1352,6 +1352,16 @@ JOW(void, PeerConnectionFactory_nativeSetOptions)(
   PeerConnectionFactoryInterface::Options options_to_set =
       ParseOptionsFromJava(jni, options);
   factory->SetOptions(options_to_set);
+
+  if (options_to_set.disable_network_monitor) {
+    OwnedFactoryAndThreads* owner =
+        reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
+    if (owner->network_monitor_factory()) {
+      rtc::NetworkMonitorFactory::ReleaseFactory(
+          owner->network_monitor_factory());
+      owner->clear_network_monitor_factory();
+    }
+  }
 }
 
 JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
