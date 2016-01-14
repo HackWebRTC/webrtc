@@ -517,19 +517,17 @@ public class PeerConnectionTest {
   }
 
   void doTest() throws Exception {
-    PeerConnectionFactory factory = new PeerConnectionFactory();
+    // Allow loopback interfaces too since our Android devices often don't
+    // have those.
+    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+    options.networkIgnoreMask = 0;
+    PeerConnectionFactory factory = new PeerConnectionFactory(options);
     // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
     // NOTE: this _must_ happen while |factory| is alive!
     // Logging.enableTracing(
     //     "/tmp/PeerConnectionTest-log.txt",
     //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
     //     Logging.Severity.LS_SENSITIVE);
-
-    // Allow loopback interfaces too since our Android devices often don't
-    // have those.
-    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-    options.networkIgnoreMask = 0;
-    factory.setOptions(options);
 
     MediaConstraints pcConstraints = new MediaConstraints();
     pcConstraints.mandatory.add(

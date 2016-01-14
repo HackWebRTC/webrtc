@@ -83,8 +83,13 @@ public class PeerConnectionFactory {
   public static native boolean startInternalTracingCapture(String tracing_filename);
   public static native void stopInternalTracingCapture();
 
+  @Deprecated
   public PeerConnectionFactory() {
-    nativeFactory = nativeCreatePeerConnectionFactory();
+    this(null);
+  }
+
+  public PeerConnectionFactory(Options options) {
+    nativeFactory = nativeCreatePeerConnectionFactory(options);
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -166,6 +171,7 @@ public class PeerConnectionFactory {
     nativeStopRtcEventLog(nativeFactory);
   }
 
+  @Deprecated
   public void setOptions(Options options) {
     nativeSetOptions(nativeFactory, options);
   }
@@ -225,7 +231,7 @@ public class PeerConnectionFactory {
     Logging.d(TAG, "onSignalingThreadReady");
   }
 
-  private static native long nativeCreatePeerConnectionFactory();
+  private static native long nativeCreatePeerConnectionFactory(Options options);
 
   private static native long nativeCreateObserver(
       PeerConnection.Observer observer);
@@ -258,6 +264,7 @@ public class PeerConnectionFactory {
 
   private static native void nativeStopRtcEventLog(long nativeFactory);
 
+  @Deprecated
   public native void nativeSetOptions(long nativeFactory, Options options);
 
   private static native void nativeSetVideoHwAccelerationOptions(

@@ -1142,8 +1142,36 @@ void OwnedFactoryAndThreads::InvokeJavaCallbacksOnFactoryThreads() {
       Bind(&OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads, this));
 }
 
+PeerConnectionFactoryInterface::Options ParseOptionsFromJava(JNIEnv* jni,
+                                                             jobject options) {
+  jclass options_class = jni->GetObjectClass(options);
+  jfieldID network_ignore_mask_field =
+      jni->GetFieldID(options_class, "networkIgnoreMask", "I");
+  int network_ignore_mask =
+      jni->GetIntField(options, network_ignore_mask_field);
+
+  jfieldID disable_encryption_field =
+      jni->GetFieldID(options_class, "disableEncryption", "Z");
+  bool disable_encryption =
+      jni->GetBooleanField(options, disable_encryption_field);
+
+  jfieldID disable_network_monitor_field =
+      jni->GetFieldID(options_class, "disableNetworkMonitor", "Z");
+  bool disable_network_monitor =
+      jni->GetBooleanField(options, disable_network_monitor_field);
+
+  PeerConnectionFactoryInterface::Options native_options;
+
+  // This doesn't necessarily match the c++ version of this struct; feel free
+  // to add more parameters as necessary.
+  native_options.network_ignore_mask = network_ignore_mask;
+  native_options.disable_encryption = disable_encryption;
+  native_options.disable_network_monitor = disable_network_monitor;
+  return native_options;
+}
+
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
-    JNIEnv* jni, jclass) {
+    JNIEnv* jni, jclass, jobject joptions) {
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
   // created.  Since the semantics around when auto-wrapping happens in
@@ -1161,13 +1189,22 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   WebRtcVideoDecoderFactory* decoder_factory = nullptr;
   rtc::NetworkMonitorFactory* network_monitor_factory = nullptr;
 
+  PeerConnectionFactoryInterface::Options options;
+  bool has_options = joptions != NULL;
+  if (has_options) {
+    options = ParseOptionsFromJava(jni, joptions);
+  }
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   if (video_hw_acceleration_enabled) {
     encoder_factory = new MediaCodecVideoEncoderFactory();
     decoder_factory = new MediaCodecVideoDecoderFactory();
   }
-  network_monitor_factory = new AndroidNetworkMonitorFactory();
-  rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
+  // Do not create network_monitor_factory only if the options are
+  // provided and disable_network_monitor therein is set to true.
+  if (!(has_options && options.disable_network_monitor)) {
+    network_monitor_factory = new AndroidNetworkMonitorFactory();
+    rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
+  }
 #endif
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory(worker_thread,
@@ -1177,6 +1214,11 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
                                           decoder_factory));
   RTC_CHECK(factory) << "Failed to create the peer connection factory; "
                      << "WebRTC/libjingle init likely failed on this device";
+  // TODO(honghaiz): Maybe put the options as the argument of
+  // CreatePeerConnectionFactory.
+  if (has_options) {
+    factory->SetOptions(options);
+  }
   OwnedFactoryAndThreads* owned_factory = new OwnedFactoryAndThreads(
       worker_thread, signaling_thread,
       encoder_factory, decoder_factory,
@@ -1307,40 +1349,9 @@ JOW(void, PeerConnectionFactory_nativeSetOptions)(
     JNIEnv* jni, jclass, jlong native_factory, jobject options) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  jclass options_class = jni->GetObjectClass(options);
-  jfieldID network_ignore_mask_field =
-      jni->GetFieldID(options_class, "networkIgnoreMask", "I");
-  int network_ignore_mask =
-      jni->GetIntField(options, network_ignore_mask_field);
-
-  jfieldID disable_encryption_field =
-      jni->GetFieldID(options_class, "disableEncryption", "Z");
-  bool disable_encryption =
-      jni->GetBooleanField(options, disable_encryption_field);
-
-  jfieldID disable_network_monitor_field =
-      jni->GetFieldID(options_class, "disableNetworkMonitor", "Z");
-  bool disable_network_monitor =
-      jni->GetBooleanField(options, disable_network_monitor_field);
-
-  PeerConnectionFactoryInterface::Options options_to_set;
-
-  // This doesn't necessarily match the c++ version of this struct; feel free
-  // to add more parameters as necessary.
-  options_to_set.network_ignore_mask = network_ignore_mask;
-  options_to_set.disable_encryption = disable_encryption;
-  options_to_set.disable_network_monitor = disable_network_monitor;
+  PeerConnectionFactoryInterface::Options options_to_set =
+      ParseOptionsFromJava(jni, options);
   factory->SetOptions(options_to_set);
-
-  if (disable_network_monitor) {
-    OwnedFactoryAndThreads* owner =
-        reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
-    if (owner->network_monitor_factory()) {
-      rtc::NetworkMonitorFactory::ReleaseFactory(
-          owner->network_monitor_factory());
-      owner->clear_network_monitor_factory();
-    }
-  }
 }
 
 JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(

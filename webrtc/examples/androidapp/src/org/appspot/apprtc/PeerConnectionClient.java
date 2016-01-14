@@ -337,11 +337,10 @@ public class PeerConnectionClient {
         peerConnectionParameters.videoCodecHwAcceleration)) {
       events.onPeerConnectionError("Failed to initializeAndroidGlobals");
     }
-    factory = new PeerConnectionFactory();
     if (options != null) {
       Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
-      factory.setOptions(options);
     }
+    factory = new PeerConnectionFactory(options);
     Log.d(TAG, "Peer connection factory created.");
   }
 
