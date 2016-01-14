@@ -1485,8 +1485,15 @@ TEST_F(P2PTestConductor, GetDtls12None) {
                                           kDefaultSrtpCryptoSuite));
 }
 
+#if defined(MEMORY_SANITIZER)
+// Fails under MemorySanitizer:
+// See https://code.google.com/p/webrtc/issues/detail?id=5381.
+#define MAYBE_GetDtls12Both DISABLED_GetDtls12Both
+#else
+#define MAYBE_GetDtls12Both GetDtls12Both
+#endif
 // Test that DTLS 1.2 is used if both ends support it.
-TEST_F(P2PTestConductor, GetDtls12Both) {
+TEST_F(P2PTestConductor, MAYBE_GetDtls12Both) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   PeerConnectionFactory::Options recv_options;
