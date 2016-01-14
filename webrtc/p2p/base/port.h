@@ -280,11 +280,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
                             const std::string& remote_ufrag);
 
   // Called when a packet has been sent to the socket.
-  // This is made pure virtual to notify subclasses of Port that they MUST
-  // listen to AsyncPacketSocket::SignalSentPacket and then call
-  // PortInterface::OnSentPacket.
-  virtual void OnSentPacket(rtc::AsyncPacketSocket* socket,
-                            const rtc::SentPacket& sent_packet) = 0;
+  void OnSentPacket(const rtc::SentPacket& sent_packet);
 
   // Called when the socket is currently able to send.
   void OnReadyToSend();

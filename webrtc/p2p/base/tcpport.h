@@ -96,9 +96,6 @@ class TCPPort : public Port {
                     const rtc::SocketAddress& remote_addr,
                     const rtc::PacketTime& packet_time);
 
-  void OnSentPacket(rtc::AsyncPacketSocket* socket,
-                    const rtc::SentPacket& sent_packet) override;
-
   void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
   void OnAddressReady(rtc::AsyncPacketSocket* socket,

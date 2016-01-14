@@ -351,8 +351,6 @@ bool TurnPort::CreateTurnClientSocket() {
 
   socket_->SignalReadyToSend.connect(this, &TurnPort::OnReadyToSend);
 
-  socket_->SignalSentPacket.connect(this, &TurnPort::OnSentPacket);
-
   // TCP port is ready to send stun requests after the socket is connected,
   // while UDP port is ready to do so once the socket is created.
   if (server_address_.proto == PROTO_TCP) {
@@ -582,11 +580,6 @@ void TurnPort::OnReadPacket(
     }
     request_manager_.CheckResponse(data, size);
   }
-}
-
-void TurnPort::OnSentPacket(rtc::AsyncPacketSocket* socket,
-                            const rtc::SentPacket& sent_packet) {
-  PortInterface::SignalSentPacket(sent_packet);
 }
 
 void TurnPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {

@@ -106,8 +106,6 @@ class TurnPort : public Port {
                             const rtc::SocketAddress& remote_addr,
                             const rtc::PacketTime& packet_time);
 
-  virtual void OnSentPacket(rtc::AsyncPacketSocket* socket,
-                            const rtc::SentPacket& sent_packet);
   virtual void OnReadyToSend(rtc::AsyncPacketSocket* socket);
   virtual bool SupportsProtocol(const std::string& protocol) const {
     // Turn port only connects to UDP candidates.

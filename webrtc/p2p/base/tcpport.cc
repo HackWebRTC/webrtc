@@ -258,7 +258,6 @@ void TCPPort::OnNewConnection(rtc::AsyncPacketSocket* socket,
   incoming.socket = new_socket;
   incoming.socket->SignalReadPacket.connect(this, &TCPPort::OnReadPacket);
   incoming.socket->SignalReadyToSend.connect(this, &TCPPort::OnReadyToSend);
-  incoming.socket->SignalSentPacket.connect(this, &TCPPort::OnSentPacket);
 
   LOG_J(LS_VERBOSE, this) << "Accepted connection from "
                           << incoming.addr.ToSensitiveString();
@@ -285,12 +284,6 @@ void TCPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
                            const rtc::SocketAddress& remote_addr,
                            const rtc::PacketTime& packet_time) {
   Port::OnReadPacket(data, size, remote_addr, PROTO_TCP);
-}
-
-void TCPPort::OnSentPacket(rtc::AsyncPacketSocket* socket,
-                           const rtc::SentPacket& sent_packet) {
-  ASSERT(socket == socket_);
-  PortInterface::SignalSentPacket(sent_packet);
 }
 
 void TCPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
