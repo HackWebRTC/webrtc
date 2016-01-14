@@ -59,14 +59,18 @@ class WebRtcVideoFrame : public VideoFrame {
             int dh,
             uint8_t* sample,
             size_t sample_size,
+            size_t pixel_width,
+            size_t pixel_height,
             int64_t time_stamp_ns,
             webrtc::VideoRotation rotation);
 
   bool Init(const CapturedFrame* frame, int dw, int dh, bool apply_rotation);
 
-  void InitToEmptyBuffer(int w, int h, int64_t time_stamp_ns);
+  void InitToEmptyBuffer(int w, int h, size_t pixel_width, size_t pixel_height,
+                         int64_t time_stamp_ns);
 
-  bool InitToBlack(int w, int h, int64_t time_stamp_ns) override;
+  bool InitToBlack(int w, int h, size_t pixel_width, size_t pixel_height,
+                   int64_t time_stamp_ns) override;
 
   // From base class VideoFrame.
   bool Reset(uint32_t format,
@@ -76,6 +80,8 @@ class WebRtcVideoFrame : public VideoFrame {
                      int dh,
                      uint8_t* sample,
                      size_t sample_size,
+                     size_t pixel_width,
+                     size_t pixel_height,
                      int64_t time_stamp_ns,
                      webrtc::VideoRotation rotation,
                      bool apply_rotation) override;
@@ -95,6 +101,8 @@ class WebRtcVideoFrame : public VideoFrame {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
       const override;
 
+  size_t GetPixelWidth() const override { return pixel_width_; }
+  size_t GetPixelHeight() const override { return pixel_height_; }
   int64_t GetTimeStamp() const override { return time_stamp_ns_; }
   void SetTimeStamp(int64_t time_stamp_ns) override {
     time_stamp_ns_ = time_stamp_ns;
@@ -120,11 +128,14 @@ class WebRtcVideoFrame : public VideoFrame {
   }
 
  private:
-  VideoFrame* CreateEmptyFrame(int w, int h,
+  VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,
+                               size_t pixel_height,
                                int64_t time_stamp_ns) const override;
 
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
+  size_t pixel_width_;
+  size_t pixel_height_;
   int64_t time_stamp_ns_;
   webrtc::VideoRotation rotation_;
 

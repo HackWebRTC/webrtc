@@ -39,9 +39,11 @@ class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
 
   virtual VideoFrame* CreateEmptyFrame(int w,
                                        int h,
+                                       size_t pixel_width,
+                                       size_t pixel_height,
                                        int64_t time_stamp) const override {
     WebRtcVideoTestFrame* frame = new WebRtcVideoTestFrame();
-    frame->InitToBlack(w, h, time_stamp);
+    frame->InitToBlack(w, h, pixel_width, pixel_height, time_stamp);
     return frame;
   }
 };
@@ -62,6 +64,8 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     // Build the CapturedFrame.
     cricket::CapturedFrame captured_frame;
     captured_frame.fourcc = cricket::FOURCC_I420;
+    captured_frame.pixel_width = 1;
+    captured_frame.pixel_height = 1;
     captured_frame.time_stamp = 5678;
     captured_frame.rotation = frame_rotation;
     captured_frame.width = frame_width;
@@ -81,6 +85,8 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
                    apply_rotation));
 
     // Verify the new frame.
+    EXPECT_EQ(1u, frame.GetPixelWidth());
+    EXPECT_EQ(1u, frame.GetPixelHeight());
     EXPECT_EQ(5678, frame.GetTimeStamp());
     if (apply_rotation)
       EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetRotation());
