@@ -289,7 +289,6 @@ void TCPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
 
 void TCPPort::OnSentPacket(rtc::AsyncPacketSocket* socket,
                            const rtc::SentPacket& sent_packet) {
-  ASSERT(socket == socket_);
   PortInterface::SignalSentPacket(sent_packet);
 }
 
