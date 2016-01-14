@@ -204,6 +204,10 @@ class TestPort : public Port {
   }
 
  private:
+  void OnSentPacket(rtc::AsyncPacketSocket* socket,
+                    const rtc::SentPacket& sent_packet) {
+    PortInterface::SignalSentPacket(sent_packet);
+  }
   rtc::scoped_ptr<ByteBuffer> last_stun_buf_;
   rtc::scoped_ptr<IceMessage> last_stun_msg_;
   int type_preference_ = 0;

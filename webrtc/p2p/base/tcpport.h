@@ -45,17 +45,17 @@ class TCPPort : public Port {
     }
     return port;
   }
-  virtual ~TCPPort();
+  ~TCPPort() override;
 
-  virtual Connection* CreateConnection(const Candidate& address,
-                                       CandidateOrigin origin);
+  Connection* CreateConnection(const Candidate& address,
+                               CandidateOrigin origin) override;
 
-  virtual void PrepareAddress();
+  void PrepareAddress() override;
 
-  virtual int GetOption(rtc::Socket::Option opt, int* value);
-  virtual int SetOption(rtc::Socket::Option opt, int value);
-  virtual int GetError();
-  virtual bool SupportsProtocol(const std::string& protocol) const {
+  int GetOption(rtc::Socket::Option opt, int* value) override;
+  int SetOption(rtc::Socket::Option opt, int value) override;
+  int GetError() override;
+  bool SupportsProtocol(const std::string& protocol) const override {
     return protocol == TCP_PROTOCOL_NAME || protocol == SSLTCP_PROTOCOL_NAME;
   }
 
@@ -72,10 +72,11 @@ class TCPPort : public Port {
   bool Init();
 
   // Handles sending using the local TCP socket.
-  virtual int SendTo(const void* data, size_t size,
-                     const rtc::SocketAddress& addr,
-                     const rtc::PacketOptions& options,
-                     bool payload);
+  int SendTo(const void* data,
+             size_t size,
+             const rtc::SocketAddress& addr,
+             const rtc::PacketOptions& options,
+             bool payload) override;
 
   // Accepts incoming TCP connection.
   void OnNewConnection(rtc::AsyncPacketSocket* socket,
@@ -95,6 +96,9 @@ class TCPPort : public Port {
                     const char* data, size_t size,
                     const rtc::SocketAddress& remote_addr,
                     const rtc::PacketTime& packet_time);
+
+  void OnSentPacket(rtc::AsyncPacketSocket* socket,
+                    const rtc::SentPacket& sent_packet) override;
 
   void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
@@ -116,15 +120,16 @@ class TCPConnection : public Connection {
   // Connection is outgoing unless socket is specified
   TCPConnection(TCPPort* port, const Candidate& candidate,
                 rtc::AsyncPacketSocket* socket = 0);
-  virtual ~TCPConnection();
+  ~TCPConnection() override;
 
-  virtual int Send(const void* data, size_t size,
-                   const rtc::PacketOptions& options);
-  virtual int GetError();
+  int Send(const void* data,
+           size_t size,
+           const rtc::PacketOptions& options) override;
+  int GetError() override;
 
   rtc::AsyncPacketSocket* socket() { return socket_.get(); }
 
-  void OnMessage(rtc::Message* pmsg);
+  void OnMessage(rtc::Message* pmsg) override;
 
   // Allow test cases to overwrite the default timeout period.
   int reconnection_timeout() const { return reconnection_timeout_; }
@@ -139,8 +144,8 @@ class TCPConnection : public Connection {
 
   // Set waiting_for_stun_binding_complete_ to false to allow data packets in
   // addition to what Port::OnConnectionRequestResponse does.
-  virtual void OnConnectionRequestResponse(ConnectionRequest* req,
-                                           StunMessage* response);
+  void OnConnectionRequestResponse(ConnectionRequest* req,
+                                   StunMessage* response) override;
 
  private:
   // Helper function to handle the case when Ping or Send fails with error

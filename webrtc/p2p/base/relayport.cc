@@ -754,7 +754,7 @@ void RelayEntry::OnReadPacket(
 
 void RelayEntry::OnSentPacket(rtc::AsyncPacketSocket* socket,
                               const rtc::SentPacket& sent_packet) {
-  port_->OnSentPacket(sent_packet);
+  port_->OnSentPacket(socket, sent_packet);
 }
 
 void RelayEntry::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
