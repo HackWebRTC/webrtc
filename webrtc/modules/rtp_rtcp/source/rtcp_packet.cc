@@ -19,7 +19,6 @@
 using webrtc::RTCPUtility::PT_APP;
 using webrtc::RTCPUtility::PT_IJ;
 using webrtc::RTCPUtility::PT_RTPFB;
-using webrtc::RTCPUtility::PT_SDES;
 using webrtc::RTCPUtility::PT_SR;
 
 using webrtc::RTCPUtility::RTCPPacketAPP;
@@ -96,48 +95,6 @@ void CreateReportBlocks(const std::vector<ReportBlock>& blocks,
   for (const ReportBlock& block : blocks) {
     block.Create(buffer + *pos);
     *pos += ReportBlock::kLength;
-  }
-}
-
-// Source Description (SDES) (RFC 3550).
-//
-//         0                   1                   2                   3
-//         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// header |V=2|P|    SC   |  PT=SDES=202  |             length            |
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-// chunk  |                          SSRC/CSRC_1                          |
-//   1    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                           SDES items                          |
-//        |                              ...                              |
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-// chunk  |                          SSRC/CSRC_2                          |
-//   2    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                           SDES items                          |
-//        |                              ...                              |
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//
-// Canonical End-Point Identifier SDES Item (CNAME)
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |    CNAME=1    |     length    | user and domain name        ...
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateSdes(const std::vector<Sdes::Chunk>& chunks,
-                uint8_t* buffer,
-                size_t* pos) {
-  const uint8_t kSdesItemType = 1;
-  for (std::vector<Sdes::Chunk>::const_iterator it = chunks.begin();
-       it != chunks.end(); ++it) {
-    AssignUWord32(buffer, pos, (*it).ssrc);
-    AssignUWord8(buffer, pos, kSdesItemType);
-    AssignUWord8(buffer, pos, (*it).name.length());
-    memcpy(buffer + *pos, (*it).name.data(), (*it).name.length());
-    *pos += (*it).name.length();
-    memset(buffer + *pos, 0, (*it).null_octets);
-    *pos += (*it).null_octets;
   }
 }
 }  // namespace
@@ -260,49 +217,6 @@ bool SenderReport::WithReportBlock(const ReportBlock& block) {
   report_blocks_.push_back(block);
   sr_.NumberOfReportBlocks = report_blocks_.size();
   return true;
-}
-
-bool Sdes::Create(uint8_t* packet,
-                  size_t* index,
-                  size_t max_length,
-                  RtcpPacket::PacketReadyCallback* callback) const {
-  assert(!chunks_.empty());
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  CreateHeader(chunks_.size(), PT_SDES, HeaderLength(), packet, index);
-  CreateSdes(chunks_, packet, index);
-  return true;
-}
-
-bool Sdes::WithCName(uint32_t ssrc, const std::string& cname) {
-  assert(cname.length() <= 0xff);
-  if (chunks_.size() >= kMaxNumberOfChunks) {
-    LOG(LS_WARNING) << "Max SDES chunks reached.";
-    return false;
-  }
-  // In each chunk, the list of items must be terminated by one or more null
-  // octets. The next chunk must start on a 32-bit boundary.
-  // CNAME (1 byte) | length (1 byte) | name | padding.
-  int null_octets = 4 - ((2 + cname.length()) % 4);
-  Chunk chunk;
-  chunk.ssrc = ssrc;
-  chunk.name = cname;
-  chunk.null_octets = null_octets;
-  chunks_.push_back(chunk);
-  return true;
-}
-
-size_t Sdes::BlockLength() const {
-  // Header (4 bytes).
-  // Chunk:
-  // SSRC/CSRC (4 bytes) | CNAME (1 byte) | length (1 byte) | name | padding.
-  size_t length = kHeaderLength;
-  for (const Chunk& chunk : chunks_)
-    length += 6 + chunk.name.length() + chunk.null_octets;
-  assert(length % 4 == 0);
-  return length;
 }
 
 RawPacket::RawPacket(size_t buffer_length)

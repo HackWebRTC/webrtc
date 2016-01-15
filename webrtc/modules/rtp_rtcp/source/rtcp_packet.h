@@ -12,7 +12,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 
-#include <string>
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
@@ -192,62 +191,6 @@ class SenderReport : public RtcpPacket {
   std::vector<ReportBlock> report_blocks_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SenderReport);
-};
-
-// Source Description (SDES) (RFC 3550).
-//
-//         0                   1                   2                   3
-//         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// header |V=2|P|    SC   |  PT=SDES=202  |             length            |
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-// chunk  |                          SSRC/CSRC_1                          |
-//   1    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                           SDES items                          |
-//        |                              ...                              |
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-// chunk  |                          SSRC/CSRC_2                          |
-//   2    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                           SDES items                          |
-//        |                              ...                              |
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//
-// Canonical End-Point Identifier SDES Item (CNAME)
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |    CNAME=1    |     length    | user and domain name        ...
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Sdes : public RtcpPacket {
- public:
-  Sdes() : RtcpPacket() {}
-
-  virtual ~Sdes() {}
-
-  bool WithCName(uint32_t ssrc, const std::string& cname);
-
-  struct Chunk {
-    uint32_t ssrc;
-    std::string name;
-    int null_octets;
-  };
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  static const int kMaxNumberOfChunks = 0x1f;
-
-  size_t BlockLength() const;
-
-  std::vector<Chunk> chunks_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Sdes);
 };
 
 // Class holding a RTCP packet.
