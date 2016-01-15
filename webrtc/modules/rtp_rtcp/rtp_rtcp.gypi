@@ -67,6 +67,8 @@
         'source/rtcp_packet/remb.h',
         'source/rtcp_packet/report_block.cc',
         'source/rtcp_packet/report_block.h',
+        'source/rtcp_packet/rpsi.cc',
+        'source/rtcp_packet/rpsi.h',
         'source/rtcp_packet/rrtr.cc',
         'source/rtcp_packet/rrtr.h',
         'source/rtcp_packet/rtpfb.cc',

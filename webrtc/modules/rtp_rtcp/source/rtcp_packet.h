@@ -250,58 +250,6 @@ class Sdes : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Sdes);
 };
 
-// Reference picture selection indication (RPSI) (RFC 4585).
-//
-// FCI:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |      PB       |0| Payload Type|    Native RPSI bit string     |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |   defined per codec          ...                | Padding (0) |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Rpsi : public RtcpPacket {
- public:
-  Rpsi()
-      : RtcpPacket(),
-        padding_bytes_(0) {
-    memset(&rpsi_, 0, sizeof(rpsi_));
-  }
-
-  virtual ~Rpsi() {}
-
-  void From(uint32_t ssrc) {
-    rpsi_.SenderSSRC = ssrc;
-  }
-  void To(uint32_t ssrc) {
-    rpsi_.MediaSSRC = ssrc;
-  }
-  void WithPayloadType(uint8_t payload) {
-    assert(payload <= 0x7f);
-    rpsi_.PayloadType = payload;
-  }
-  void WithPictureId(uint64_t picture_id);
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  size_t BlockLength() const {
-    size_t fci_length = 2 + (rpsi_.NumberOfValidBits / 8) + padding_bytes_;
-    return kCommonFbFmtLength + fci_length;
-  }
-
-  uint8_t padding_bytes_;
-  RTCPUtility::RTCPPacketPSFBRPSI rpsi_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Rpsi);
-};
-
 // Class holding a RTCP packet.
 //
 // Takes a built rtcp packet.

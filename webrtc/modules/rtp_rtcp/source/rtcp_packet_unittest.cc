@@ -26,7 +26,6 @@ using webrtc::rtcp::Bye;
 using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiverReport;
 using webrtc::rtcp::ReportBlock;
-using webrtc::rtcp::Rpsi;
 using webrtc::rtcp::Sdes;
 using webrtc::rtcp::SenderReport;
 using webrtc::test::RtcpPacketParser;
@@ -209,78 +208,6 @@ TEST(RtcpPacketTest, CnameItemWithEmptyString) {
   EXPECT_EQ("", parser.sdes_chunk()->Cname());
 }
 
-TEST(RtcpPacketTest, Rpsi) {
-  Rpsi rpsi;
-  // 1000001 (7 bits = 1 byte in native string).
-  const uint64_t kPictureId = 0x41;
-  const uint16_t kNumberOfValidBytes = 1;
-  rpsi.WithPayloadType(100);
-  rpsi.WithPictureId(kPictureId);
-
-  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(100, parser.rpsi()->PayloadType());
-  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
-  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
-}
-
-TEST(RtcpPacketTest, RpsiWithTwoByteNativeString) {
-  Rpsi rpsi;
-  // |1 0000001 (7 bits = 1 byte in native string).
-  const uint64_t kPictureId = 0x81;
-  const uint16_t kNumberOfValidBytes = 2;
-  rpsi.WithPictureId(kPictureId);
-
-  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
-  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
-}
-
-TEST(RtcpPacketTest, RpsiWithThreeByteNativeString) {
-  Rpsi rpsi;
-  // 10000|00 100000|0 1000000 (7 bits = 1 byte in native string).
-  const uint64_t kPictureId = 0x102040;
-  const uint16_t kNumberOfValidBytes = 3;
-  rpsi.WithPictureId(kPictureId);
-
-  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
-  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
-}
-
-TEST(RtcpPacketTest, RpsiWithFourByteNativeString) {
-  Rpsi rpsi;
-  // 1000|001 00001|01 100001|1 1000010 (7 bits = 1 byte in native string).
-  const uint64_t kPictureId = 0x84161C2;
-  const uint16_t kNumberOfValidBytes = 4;
-  rpsi.WithPictureId(kPictureId);
-
-  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
-  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
-}
-
-TEST(RtcpPacketTest, RpsiWithMaxPictureId) {
-  Rpsi rpsi;
-  // 1 1111111| 1111111 1|111111 11|11111 111|1111 1111|111 11111|
-  // 11 111111|1 1111111 (7 bits = 1 byte in native string).
-  const uint64_t kPictureId = 0xffffffffffffffff;
-  const uint16_t kNumberOfValidBytes = 10;
-  rpsi.WithPictureId(kPictureId);
-
-  rtc::scoped_ptr<RawPacket> packet(rpsi.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
-  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
-}
 
 TEST(RtcpPacketTest, BuildWithTooSmallBuffer) {
   ReportBlock rb;
