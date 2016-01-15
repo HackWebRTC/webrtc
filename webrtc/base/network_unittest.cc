@@ -29,14 +29,18 @@ namespace {
 
 class FakeNetworkMonitor : public NetworkMonitorBase {
  public:
-  void Start() override {}
-  void Stop() override {}
+  void Start() override { started_ = true; }
+  void Stop() override { started_ = false; }
+  bool started() { return started_; }
+
+ private:
+  bool started_ = false;
 };
 
 class FakeNetworkMonitorFactory : public NetworkMonitorFactory {
  public:
   FakeNetworkMonitorFactory() {}
-  NetworkMonitorInterface* CreateNetworkMonitor() {
+  NetworkMonitorInterface* CreateNetworkMonitor() override {
     return new FakeNetworkMonitor();
   }
 };
@@ -72,9 +76,9 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     return list;
   }
 
-  NetworkMonitorInterface* GetNetworkMonitor(
-      BasicNetworkManager& network_manager) {
-    return network_manager.network_monitor_.get();
+  FakeNetworkMonitor* GetNetworkMonitor(BasicNetworkManager& network_manager) {
+    return static_cast<FakeNetworkMonitor*>(
+        network_manager.network_monitor_.get());
   }
   void ClearNetworks(BasicNetworkManager& network_manager) {
     for (const auto& kv : network_manager.networks_map_) {
@@ -921,7 +925,8 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
   FakeNetworkMonitorFactory* factory = new FakeNetworkMonitorFactory();
   NetworkMonitorFactory::SetFactory(factory);
   manager.StartUpdating();
-  NetworkMonitorInterface* network_monitor = GetNetworkMonitor(manager);
+  FakeNetworkMonitor* network_monitor = GetNetworkMonitor(manager);
+  EXPECT_TRUE(network_monitor && network_monitor->started());
   EXPECT_TRUE_WAIT(callback_called_, 1000);
   callback_called_ = false;
 
@@ -932,9 +937,9 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
   network_monitor->OnNetworksChanged();
   EXPECT_TRUE_WAIT(callback_called_, 1000);
 
-  // Network manager is stopped; the network monitor is removed.
+  // Network manager is stopped.
   manager.StopUpdating();
-  EXPECT_TRUE(GetNetworkMonitor(manager) == nullptr);
+  EXPECT_FALSE(GetNetworkMonitor(manager)->started());
 
   NetworkMonitorFactory::ReleaseFactory(factory);
 }

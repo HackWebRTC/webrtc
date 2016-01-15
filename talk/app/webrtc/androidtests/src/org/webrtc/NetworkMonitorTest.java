@@ -29,6 +29,7 @@ package org.webrtc;
 import static org.webrtc.NetworkMonitorAutoDetect.ConnectionType;
 import static org.webrtc.NetworkMonitorAutoDetect.ConnectivityManagerDelegate;
 import static org.webrtc.NetworkMonitorAutoDetect.INVALID_NET_ID;
+import static org.webrtc.NetworkMonitorAutoDetect.NetworkInformation;
 import static org.webrtc.NetworkMonitorAutoDetect.NetworkState;
 
 import android.annotation.SuppressLint;
@@ -138,6 +139,9 @@ public class NetworkMonitorTest extends ActivityTestCase {
 
     @Override
     public void onConnectionTypeChanged(ConnectionType newConnectionType) {}
+
+    @Override
+    public void onNetworkConnect(NetworkInformation networkInfo) {}
   }
 
   private static final Object lock = new Object();
@@ -178,7 +182,7 @@ public class NetworkMonitorTest extends ActivityTestCase {
   private NetworkMonitorAutoDetect.ConnectionType getCurrentConnectionType() {
     final NetworkMonitorAutoDetect.NetworkState networkState =
         receiver.getCurrentNetworkState();
-    return receiver.getCurrentConnectionType(networkState);
+    return receiver.getConnectionType(networkState);
   }
 
   @Override

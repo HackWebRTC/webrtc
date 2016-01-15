@@ -27,6 +27,8 @@
  */
 #include "talk/app/webrtc/java/jni/jni_helpers.h"
 
+#include "talk/app/webrtc/java/jni/classreferenceholder.h"
+
 #include <asm/unistd.h>
 #include <sys/prctl.h>
 #include <sys/syscall.h>
@@ -254,6 +256,19 @@ jobject JavaEnumFromIndex(JNIEnv* jni, jclass state_class,
   jobject ret = jni->GetObjectArrayElement(state_values, index);
   CHECK_EXCEPTION(jni) << "error during GetObjectArrayElement";
   return ret;
+}
+
+std::string GetJavaEnumName(JNIEnv* jni,
+                            const std::string& className,
+                            jobject j_enum) {
+  jclass enumClass = FindClass(jni, className.c_str());
+  jmethodID nameMethod =
+      GetMethodID(jni, enumClass, "name", "()Ljava/lang/String;");
+  jstring name =
+      reinterpret_cast<jstring>(jni->CallObjectMethod(j_enum, nameMethod));
+  CHECK_EXCEPTION(jni) << "error during CallObjectMethod for " << className
+                       << ".name";
+  return JavaToStdString(jni, name);
 }
 
 jobject NewGlobalRef(JNIEnv* jni, jobject o) {

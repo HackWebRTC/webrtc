@@ -26,12 +26,12 @@ NetworkMonitorInterface::NetworkMonitorInterface() {}
 
 NetworkMonitorInterface::~NetworkMonitorInterface() {}
 
-NetworkMonitorBase::NetworkMonitorBase() : thread_(Thread::Current()) {}
+NetworkMonitorBase::NetworkMonitorBase() : worker_thread_(Thread::Current()) {}
 NetworkMonitorBase::~NetworkMonitorBase() {}
 
 void NetworkMonitorBase::OnNetworksChanged() {
   LOG(LS_VERBOSE) << "Network change is received at the network monitor";
-  thread_->Post(this, UPDATE_NETWORKS_MESSAGE);
+  worker_thread_->Post(this, UPDATE_NETWORKS_MESSAGE);
 }
 
 void NetworkMonitorBase::OnMessage(Message* msg) {

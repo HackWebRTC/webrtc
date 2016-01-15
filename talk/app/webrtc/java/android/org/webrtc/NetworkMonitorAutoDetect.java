@@ -29,6 +29,8 @@ package org.webrtc;
 
 import static android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET;
 
+import org.webrtc.Logging;
+
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -37,14 +39,17 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
+import android.net.ConnectivityManager.NetworkCallback;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 /**
  * Borrowed from Chromium's
@@ -65,6 +70,28 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     CONNECTION_BLUETOOTH,
     CONNECTION_NONE
   }
+
+  public static class IPAddress {
+    public final byte[] address;
+    public IPAddress (byte[] address) {
+      this.address = address;
+    }
+  }
+
+  /** Java version of NetworkMonitor.NetworkInformation */
+  public static class NetworkInformation{
+    public final String name;
+    public final ConnectionType type;
+    public final int handle;
+    public final IPAddress[] ipAddresses;
+    public NetworkInformation(String name, ConnectionType type, int handle,
+                              IPAddress[] addresses) {
+      this.name = name;
+      this.type = type;
+      this.handle = handle;
+      this.ipAddresses = addresses;
+    }
+  };
 
   static class NetworkState {
     private final boolean connected;
@@ -101,6 +128,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      *  gracefully below.
      */
     private final ConnectivityManager connectivityManager;
+    private NetworkCallback networkCallback;
 
     ConnectivityManagerDelegate(Context context) {
       connectivityManager =
@@ -211,30 +239,69 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
           connectivityManager.getNetworkCapabilities(network);
       return capabilities != null && capabilities.hasCapability(NET_CAPABILITY_INTERNET);
     }
+
+    @SuppressLint("NewApi")
+    public void requestMobileNetwork(final Observer observer) {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ||
+          connectivityManager == null) {
+        return;
+      }
+      networkCallback = new NetworkCallback() {
+        @Override
+        public void onAvailable(Network network) {
+          super.onAvailable(network);
+          LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
+          NetworkInformation networkInformation = new NetworkInformation(
+            linkProperties.getInterfaceName(),
+            getConnectionType(getNetworkState(network)),
+            networkToNetId(network),
+            getIPAddresses(linkProperties));
+          Logging.d(TAG, "Network " + networkInformation.name + " is connected ");
+          observer.onNetworkConnect(networkInformation);
+        }
+      };
+      Logging.d(TAG, "Requesting cellular network");
+      NetworkRequest.Builder builder = new NetworkRequest.Builder();
+      builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+      builder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
+      connectivityManager.requestNetwork(builder.build(), networkCallback);
+    }
+
+    @SuppressLint("NewApi")
+    IPAddress[] getIPAddresses(LinkProperties linkProperties) {
+      IPAddress[] ipAddresses = new IPAddress[linkProperties.getLinkAddresses().size()];
+      int i = 0;
+      for (LinkAddress linkAddress : linkProperties.getLinkAddresses()) {
+        ipAddresses[i] = new IPAddress(linkAddress.getAddress().getAddress());
+        ++i;
+      }
+      return ipAddresses;
+    }
+
+    @SuppressLint("NewApi")
+    public void releaseCallback() {
+      if (networkCallback != null) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+          connectivityManager.unregisterNetworkCallback(networkCallback);
+        }
+        networkCallback = null;
+      }
+    }
+
   }
+
 
   /** Queries the WifiManager for SSID of the current Wifi connection. */
   static class WifiManagerDelegate {
     private final Context context;
-    private final WifiManager wifiManager;
-    private final boolean hasWifiPermission;
-
     WifiManagerDelegate(Context context) {
       this.context = context;
-
-      hasWifiPermission = context.getPackageManager().checkPermission(
-          permission.ACCESS_WIFI_STATE, context.getPackageName())
-          == PackageManager.PERMISSION_GRANTED;
-      wifiManager = hasWifiPermission
-          ? (WifiManager) context.getSystemService(Context.WIFI_SERVICE) : null;
     }
 
     // For testing.
     WifiManagerDelegate() {
       // All the methods below should be overridden.
       context = null;
-      wifiManager = null;
-      hasWifiPermission = false;
     }
 
     String getWifiSSID() {
@@ -252,9 +319,6 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       return "";
     }
 
-    boolean getHasWifiPermission() {
-      return hasWifiPermission;
-    }
   }
 
   static final int INVALID_NET_ID = -1;
@@ -280,6 +344,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      * Called when default network changes.
      */
     public void onConnectionTypeChanged(ConnectionType newConnectionType);
+    public void onNetworkConnect(NetworkInformation networkInfo);
   }
 
   /**
@@ -292,8 +357,8 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     wifiManagerDelegate = new WifiManagerDelegate(context);
 
     final NetworkState networkState = connectivityManagerDelegate.getNetworkState();
-    connectionType = getCurrentConnectionType(networkState);
-    wifiSSID = getCurrentWifiSSID(networkState);
+    connectionType = getConnectionType(networkState);
+    wifiSSID = getWifiSSID(networkState);
     intentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
     registerReceiver();
   }
@@ -331,6 +396,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     if (!isRegistered) {
       isRegistered = true;
       context.registerReceiver(this, intentFilter);
+      connectivityManagerDelegate.requestMobileNetwork(observer);
     }
   }
 
@@ -341,6 +407,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     if (isRegistered) {
       isRegistered = false;
       context.unregisterReceiver(this);
+      connectivityManagerDelegate.releaseCallback();
     }
   }
 
@@ -361,7 +428,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     return connectivityManagerDelegate.getDefaultNetId();
   }
 
-  public ConnectionType getCurrentConnectionType(NetworkState networkState) {
+  public static ConnectionType getConnectionType(NetworkState networkState) {
     if (!networkState.isConnected()) {
       return ConnectionType.CONNECTION_NONE;
     }
@@ -404,8 +471,8 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     }
   }
 
-  private String getCurrentWifiSSID(NetworkState networkState) {
-    if (getCurrentConnectionType(networkState) != ConnectionType.CONNECTION_WIFI) return "";
+  private String getWifiSSID(NetworkState networkState) {
+    if (getConnectionType(networkState) != ConnectionType.CONNECTION_WIFI) return "";
     return wifiManagerDelegate.getWifiSSID();
   }
 
@@ -419,13 +486,13 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
   }
 
   private void connectionTypeChanged(NetworkState networkState) {
-    ConnectionType newConnectionType = getCurrentConnectionType(networkState);
-    String newWifiSSID = getCurrentWifiSSID(networkState);
+    ConnectionType newConnectionType = getConnectionType(networkState);
+    String newWifiSSID = getWifiSSID(networkState);
     if (newConnectionType == connectionType && newWifiSSID.equals(wifiSSID)) return;
 
     connectionType = newConnectionType;
     wifiSSID = newWifiSSID;
-    Log.d(TAG, "Network connectivity changed, type is: " + connectionType);
+    Logging.d(TAG, "Network connectivity changed, type is: " + connectionType);
     observer.onConnectionTypeChanged(newConnectionType);
   }
 

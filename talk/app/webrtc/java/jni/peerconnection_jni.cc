@@ -1395,18 +1395,6 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
 #endif
 }
 
-static std::string
-GetJavaEnumName(JNIEnv* jni, const std::string& className, jobject j_enum) {
-  jclass enumClass = FindClass(jni, className.c_str());
-  jmethodID nameMethod =
-      GetMethodID(jni, enumClass, "name", "()Ljava/lang/String;");
-  jstring name =
-      reinterpret_cast<jstring>(jni->CallObjectMethod(j_enum, nameMethod));
-  CHECK_EXCEPTION(jni) << "error during CallObjectMethod for "
-                       << className << ".name";
-  return JavaToStdString(jni, name);
-}
-
 static PeerConnectionInterface::IceTransportsType
 JavaIceTransportsTypeToNativeType(JNIEnv* jni, jobject j_ice_transports_type) {
   std::string enum_name = GetJavaEnumName(

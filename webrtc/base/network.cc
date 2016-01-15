@@ -731,10 +731,13 @@ void BasicNetworkManager::StartNetworkMonitor() {
   if (factory == nullptr) {
     return;
   }
-  network_monitor_.reset(factory->CreateNetworkMonitor());
   if (!network_monitor_) {
-    return;
+    network_monitor_.reset(factory->CreateNetworkMonitor());
+    if (!network_monitor_) {
+      return;
+    }
   }
+
   network_monitor_->SignalNetworksChanged.connect(
       this, &BasicNetworkManager::OnNetworksChanged);
   network_monitor_->Start();
@@ -745,7 +748,6 @@ void BasicNetworkManager::StopNetworkMonitor() {
     return;
   }
   network_monitor_->Stop();
-  network_monitor_.reset();
 }
 
 void BasicNetworkManager::OnMessage(Message* msg) {

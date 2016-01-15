@@ -17,6 +17,27 @@
 #include "webrtc/base/thread.h"
 
 namespace rtc {
+
+class IPAddress;
+
+// Error values are negative.
+enum NetworkBindingResults {
+  NETWORK_BIND_SUCCESS = 0,   // No error
+  NETWORK_BIND_FAILURE = -1,  // Generic error
+  NETWORK_BIND_NOT_IMPLEMENTED = -2,
+  NETWORK_BIND_ADDRESS_NOT_FOUND = -3,
+  NETWORK_BIND_NETWORK_CHANGED = -4
+};
+
+class NetworkBinderInterface {
+ public:
+  // Binds a socket to the network that is attached to |address| so that all
+  // packets on the socket |socket_fd| will be sent via that network.
+  // This is needed because some operating systems (like Android) require a
+  // special bind call to put packets on a non-default network interface.
+  virtual int BindSocketToNetwork(int socket_fd, const IPAddress& address) = 0;
+};
+
 /*
  * Receives network-change events via |OnNetworksChanged| and signals the
  * networks changed event.
@@ -62,8 +83,11 @@ class NetworkMonitorBase : public NetworkMonitorInterface,
 
   void OnMessage(Message* msg) override;
 
+ protected:
+  Thread* worker_thread() { return worker_thread_; }
+
  private:
-  Thread* thread_;
+  Thread* worker_thread_;
 };
 
 /*

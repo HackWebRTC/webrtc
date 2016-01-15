@@ -104,6 +104,11 @@ std::string JavaToStdString(JNIEnv* jni, const jstring& j_string);
 jobject JavaEnumFromIndex(JNIEnv* jni, jclass state_class,
                           const std::string& state_class_name, int index);
 
+// Returns the name of a Java enum.
+std::string GetJavaEnumName(JNIEnv* jni,
+                            const std::string& className,
+                            jobject j_enum);
+
 jobject NewGlobalRef(JNIEnv* jni, jobject o);
 
 void DeleteGlobalRef(JNIEnv* jni, jobject o);

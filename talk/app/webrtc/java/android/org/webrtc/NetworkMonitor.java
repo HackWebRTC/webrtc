@@ -29,9 +29,11 @@ package org.webrtc;
 
 import static org.webrtc.NetworkMonitorAutoDetect.ConnectionType;
 import static org.webrtc.NetworkMonitorAutoDetect.INVALID_NET_ID;
+import static org.webrtc.NetworkMonitorAutoDetect.NetworkInformation;
+
+import org.webrtc.Logging;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -117,14 +119,14 @@ public class NetworkMonitor {
 
   // Called by the native code.
   private void startMonitoring(long nativeObserver) {
-    Log.d(TAG, "Start monitoring from native observer " + nativeObserver);
+    Logging.d(TAG, "Start monitoring from native observer " + nativeObserver);
     nativeNetworkObservers.add(nativeObserver);
     setAutoDetectConnectivityStateInternal(true);
   }
 
   // Called by the native code.
   private void stopMonitoring(long nativeObserver) {
-    Log.d(TAG, "Stop monitoring from native observer " + nativeObserver);
+    Logging.d(TAG, "Stop monitoring from native observer " + nativeObserver);
     setAutoDetectConnectivityStateInternal(false);
     nativeNetworkObservers.remove(nativeObserver);
   }
@@ -156,11 +158,15 @@ public class NetworkMonitor {
           public void onConnectionTypeChanged(ConnectionType newConnectionType) {
             updateCurrentConnectionType(newConnectionType);
           }
+          @Override
+          public void onNetworkConnect(NetworkInformation networkInfo) {
+            updateNetworkInformation(networkInfo);
+          }
         },
         applicationContext);
       final NetworkMonitorAutoDetect.NetworkState networkState =
           autoDetector.getCurrentNetworkState();
-      updateCurrentConnectionType(autoDetector.getCurrentConnectionType(networkState));
+      updateCurrentConnectionType(autoDetector.getConnectionType(networkState));
     }
   }
 
@@ -178,6 +184,12 @@ public class NetworkMonitor {
     }
     for (NetworkObserver observer : networkObservers) {
       observer.onConnectionTypeChanged(newConnectionType);
+    }
+  }
+
+  private void updateNetworkInformation(NetworkInformation networkInfo) {
+    for (long nativeObserver : nativeNetworkObservers) {
+      nativeNotifyOfNetworkConnect(nativeObserver, networkInfo);
     }
   }
 
@@ -215,6 +227,8 @@ public class NetworkMonitor {
   private native long nativeCreateNetworkMonitor();
 
   private native void nativeNotifyConnectionTypeChanged(long nativePtr);
+
+  private native void nativeNotifyOfNetworkConnect(long nativePtr, NetworkInformation networkInfo);
 
   // For testing only.
   static void resetInstanceForTests(Context context) {

@@ -30,12 +30,41 @@
 
 #include "webrtc/base/networkmonitor.h"
 
+#include <map>
+
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/thread_checker.h"
 #include "talk/app/webrtc/java/jni/jni_helpers.h"
 
 namespace webrtc_jni {
 
-class AndroidNetworkMonitor : public rtc::NetworkMonitorBase {
+typedef uint32_t NetworkHandle;
+
+// c++ equivalent of java NetworkMonitorAutoDetect.ConnectionType.
+enum NetworkType {
+  NETWORK_UNKNOWN,
+  NETWORK_ETHERNET,
+  NETWORK_WIFI,
+  NETWORK_4G,
+  NETWORK_3G,
+  NETWORK_2G,
+  NETWORK_BLUETOOTH,
+  NETWORK_NONE
+};
+
+// The information is collected from Android OS so that the native code can get
+// the network type and handle (Android network ID) for each interface.
+struct NetworkInformation {
+  std::string interface_name;
+  NetworkHandle handle;
+  NetworkType type;
+  std::vector<rtc::IPAddress> ip_addresses;
+
+  std::string ToString() const;
+};
+
+class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
+                              public rtc::NetworkBinderInterface {
  public:
   AndroidNetworkMonitor();
 
@@ -44,22 +73,28 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase {
   void Start() override;
   void Stop() override;
 
+  int BindSocketToNetwork(int socket_fd,
+                          const rtc::IPAddress& address) override;
+  void OnNetworkAvailable(const NetworkInformation& network_info);
+
  private:
   JNIEnv* jni() { return AttachCurrentThreadIfNeeded(); }
+
+  void OnNetworkAvailable_w(const NetworkInformation& network_info);
 
   ScopedGlobalRef<jclass> j_network_monitor_class_;
   ScopedGlobalRef<jobject> j_network_monitor_;
   rtc::ThreadChecker thread_checker_;
   static jobject application_context_;
+  bool started_ = false;
+  std::map<rtc::IPAddress, NetworkInformation> network_info_by_address_;
 };
 
 class AndroidNetworkMonitorFactory : public rtc::NetworkMonitorFactory {
  public:
   AndroidNetworkMonitorFactory() {}
 
-  rtc::NetworkMonitorInterface* CreateNetworkMonitor() override {
-    return new AndroidNetworkMonitor();
-  }
+  rtc::NetworkMonitorInterface* CreateNetworkMonitor() override;
 };
 
 }  // namespace webrtc_jni
