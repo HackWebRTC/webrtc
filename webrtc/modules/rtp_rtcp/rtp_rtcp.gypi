@@ -51,6 +51,8 @@
         'source/rtcp_packet/dlrr.h',
         'source/rtcp_packet/extended_jitter_report.cc',
         'source/rtcp_packet/extended_jitter_report.h',
+        'source/rtcp_packet/extended_reports.cc',
+        'source/rtcp_packet/extended_reports.h',
         'source/rtcp_packet/fir.cc',
         'source/rtcp_packet/fir.h',
         'source/rtcp_packet/nack.cc',

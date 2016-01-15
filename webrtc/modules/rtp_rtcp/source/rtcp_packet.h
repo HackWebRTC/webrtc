@@ -12,16 +12,12 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 
-#include <map>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/voip_metric.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/typedefs.h"
 
@@ -304,70 +300,6 @@ class Rpsi : public RtcpPacket {
   RTCPUtility::RTCPPacketPSFBRPSI rpsi_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Rpsi);
-};
-
-// From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
-//
-// Format for XR packets:
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |V=2|P|reserved |   PT=XR=207   |             length            |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                              SSRC                             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  :                         report blocks                         :
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Xr : public RtcpPacket {
- public:
-  typedef std::vector<RTCPUtility::RTCPPacketXRDLRRReportBlockItem> DlrrBlock;
-  Xr() : RtcpPacket() {
-    memset(&xr_header_, 0, sizeof(xr_header_));
-  }
-
-  virtual ~Xr() {}
-
-  void From(uint32_t ssrc) {
-    xr_header_.OriginatorSSRC = ssrc;
-  }
-
-  // Max 50 items of each of {Rrtr, Dlrr, VoipMetric} allowed per Xr.
-  bool WithRrtr(Rrtr* rrtr);
-  bool WithDlrr(Dlrr* dlrr);
-  bool WithVoipMetric(VoipMetric* voip_metric);
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  static const int kMaxNumberOfRrtrBlocks = 50;
-  static const int kMaxNumberOfDlrrBlocks = 50;
-  static const int kMaxNumberOfVoipMetricBlocks = 50;
-
-  size_t BlockLength() const {
-    const size_t kXrHeaderLength = 8;
-    return kXrHeaderLength + RrtrLength() + DlrrLength() + VoipMetricLength();
-  }
-
-  size_t RrtrLength() const { return Rrtr::kLength * rrtr_blocks_.size(); }
-
-  size_t DlrrLength() const;
-
-  size_t VoipMetricLength() const {
-    return VoipMetric::kLength * voip_metric_blocks_.size();
-  }
-
-  RTCPUtility::RTCPPacketXR xr_header_;
-  std::vector<Rrtr> rrtr_blocks_;
-  std::vector<Dlrr> dlrr_blocks_;
-  std::vector<VoipMetric> voip_metric_blocks_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Xr);
 };
 
 // Class holding a RTCP packet.

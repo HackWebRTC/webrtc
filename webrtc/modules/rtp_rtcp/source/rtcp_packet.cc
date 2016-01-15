@@ -16,17 +16,12 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
-using webrtc::RTCPUtility::kBtDlrr;
-using webrtc::RTCPUtility::kBtReceiverReferenceTime;
-using webrtc::RTCPUtility::kBtVoipMetric;
-
 using webrtc::RTCPUtility::PT_APP;
 using webrtc::RTCPUtility::PT_IJ;
 using webrtc::RTCPUtility::PT_PSFB;
 using webrtc::RTCPUtility::PT_RTPFB;
 using webrtc::RTCPUtility::PT_SDES;
 using webrtc::RTCPUtility::PT_SR;
-using webrtc::RTCPUtility::PT_XR;
 
 using webrtc::RTCPUtility::RTCPPacketAPP;
 using webrtc::RTCPUtility::RTCPPacketPSFBRPSI;
@@ -34,8 +29,6 @@ using webrtc::RTCPUtility::RTCPPacketReportBlockItem;
 using webrtc::RTCPUtility::RTCPPacketRTPFBNACK;
 using webrtc::RTCPUtility::RTCPPacketRTPFBNACKItem;
 using webrtc::RTCPUtility::RTCPPacketSR;
-using webrtc::RTCPUtility::RTCPPacketXRDLRRReportBlockItem;
-using webrtc::RTCPUtility::RTCPPacketXR;
 
 namespace webrtc {
 namespace rtcp {
@@ -177,27 +170,6 @@ void CreateRpsi(const RTCPPacketPSFBRPSI& rpsi,
   memset(buffer + *pos, 0, padding_bytes);
   *pos += padding_bytes;
 }
-
-// From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
-//
-// Format for XR packets:
-//
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |V=2|P|reserved |   PT=XR=207   |             length            |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                              SSRC                             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  :                         report blocks                         :
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-void CreateXrHeader(const RTCPPacketXR& header,
-                    uint8_t* buffer,
-                    size_t* pos) {
-  AssignUWord32(buffer, pos, header.OriginatorSSRC);
-}
-
 }  // namespace
 
 void RtcpPacket::Append(RtcpPacket* packet) {
@@ -403,69 +375,6 @@ void Rpsi::WithPictureId(uint64_t picture_id) {
   if (padding_bytes_ == 4) {
     padding_bytes_ = 0;
   }
-}
-
-bool Xr::Create(uint8_t* packet,
-                size_t* index,
-                size_t max_length,
-                RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  CreateHeader(0U, PT_XR, HeaderLength(), packet, index);
-  CreateXrHeader(xr_header_, packet, index);
-  for (const Rrtr& block : rrtr_blocks_) {
-    block.Create(packet + *index);
-    *index += Rrtr::kLength;
-  }
-  for (const Dlrr& block : dlrr_blocks_) {
-    block.Create(packet + *index);
-    *index += block.BlockLength();
-  }
-  for (const VoipMetric& block : voip_metric_blocks_) {
-    block.Create(packet + *index);
-    *index += VoipMetric::kLength;
-  }
-  return true;
-}
-
-bool Xr::WithRrtr(Rrtr* rrtr) {
-  RTC_DCHECK(rrtr);
-  if (rrtr_blocks_.size() >= kMaxNumberOfRrtrBlocks) {
-    LOG(LS_WARNING) << "Max RRTR blocks reached.";
-    return false;
-  }
-  rrtr_blocks_.push_back(*rrtr);
-  return true;
-}
-
-bool Xr::WithDlrr(Dlrr* dlrr) {
-  RTC_DCHECK(dlrr);
-  if (dlrr_blocks_.size() >= kMaxNumberOfDlrrBlocks) {
-    LOG(LS_WARNING) << "Max DLRR blocks reached.";
-    return false;
-  }
-  dlrr_blocks_.push_back(*dlrr);
-  return true;
-}
-
-bool Xr::WithVoipMetric(VoipMetric* voip_metric) {
-  assert(voip_metric);
-  if (voip_metric_blocks_.size() >= kMaxNumberOfVoipMetricBlocks) {
-    LOG(LS_WARNING) << "Max Voip Metric blocks reached.";
-    return false;
-  }
-  voip_metric_blocks_.push_back(*voip_metric);
-  return true;
-}
-
-size_t Xr::DlrrLength() const {
-  size_t length = 0;
-  for (const Dlrr& block : dlrr_blocks_) {
-    length += block.BlockLength();
-  }
-  return length;
 }
 
 RawPacket::RawPacket(size_t buffer_length)

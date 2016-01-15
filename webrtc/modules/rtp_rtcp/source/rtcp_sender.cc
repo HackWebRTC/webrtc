@@ -25,6 +25,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/compound_packet.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/fir.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/pli.h"
@@ -742,7 +743,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildReceiverReferenceTime(
       RTCPUtility::MidNtp(ctx.ntp_sec_, ctx.ntp_frac_),
       Clock::NtpToMs(ctx.ntp_sec_, ctx.ntp_frac_)));
 
-  rtcp::Xr* xr = new rtcp::Xr();
+  rtcp::ExtendedReports* xr = new rtcp::ExtendedReports();
   xr->From(ssrc_);
 
   rtcp::Rrtr rrtr;
@@ -752,12 +753,12 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildReceiverReferenceTime(
 
   // TODO(sprang): Merge XR report sending to contain all of RRTR, DLRR, VOIP?
 
-  return rtc::scoped_ptr<rtcp::Xr>(xr);
+  return rtc::scoped_ptr<rtcp::RtcpPacket>(xr);
 }
 
 rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildDlrr(
     const RtcpContext& ctx) {
-  rtcp::Xr* xr = new rtcp::Xr();
+  rtcp::ExtendedReports* xr = new rtcp::ExtendedReports();
   xr->From(ssrc_);
 
   rtcp::Dlrr dlrr;
@@ -766,13 +767,13 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildDlrr(
 
   xr->WithDlrr(&dlrr);
 
-  return rtc::scoped_ptr<rtcp::Xr>(xr);
+  return rtc::scoped_ptr<rtcp::RtcpPacket>(xr);
 }
 
 // TODO(sprang): Add a unit test for this, or remove if the code isn't used.
 rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildVoIPMetric(
     const RtcpContext& context) {
-  rtcp::Xr* xr = new rtcp::Xr();
+  rtcp::ExtendedReports* xr = new rtcp::ExtendedReports();
   xr->From(ssrc_);
 
   rtcp::VoipMetric voip;
@@ -781,7 +782,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildVoIPMetric(
 
   xr->WithVoipMetric(&voip);
 
-  return rtc::scoped_ptr<rtcp::Xr>(xr);
+  return rtc::scoped_ptr<rtcp::RtcpPacket>(xr);
 }
 
 int32_t RTCPSender::SendRTCP(const FeedbackState& feedback_state,

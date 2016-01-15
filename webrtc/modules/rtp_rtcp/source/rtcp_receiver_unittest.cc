@@ -23,6 +23,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/fir.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
@@ -577,15 +578,15 @@ TEST_F(RtcpReceiverTest, InjectSliPacket) {
   EXPECT_EQ(40, rtcp_packet_info_.sliPictureId);
 }
 
-TEST_F(RtcpReceiverTest, XrPacketWithZeroReportBlocksIgnored) {
-  rtcp::Xr xr;
+TEST_F(RtcpReceiverTest, ExtendedReportsPacketWithZeroReportBlocksIgnored) {
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
-TEST_F(RtcpReceiverTest, InjectXrVoipPacket) {
+TEST_F(RtcpReceiverTest, InjectExtendedReportsVoipPacket) {
   const uint32_t kSourceSsrc = 0x123456;
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kSourceSsrc);
@@ -597,7 +598,7 @@ TEST_F(RtcpReceiverTest, InjectXrVoipPacket) {
   RTCPVoIPMetric metric;
   metric.lossRate = kLossRate;
   voip_metric.WithVoipMetric(metric);
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   xr.WithVoipMetric(&voip_metric);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
@@ -607,7 +608,7 @@ TEST_F(RtcpReceiverTest, InjectXrVoipPacket) {
   EXPECT_EQ(kRtcpXrVoipMetric, rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
-TEST_F(RtcpReceiverTest, XrVoipPacketNotToUsIgnored) {
+TEST_F(RtcpReceiverTest, ExtendedReportsVoipPacketNotToUsIgnored) {
   const uint32_t kSourceSsrc = 0x123456;
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kSourceSsrc);
@@ -615,7 +616,7 @@ TEST_F(RtcpReceiverTest, XrVoipPacketNotToUsIgnored) {
 
   rtcp::VoipMetric voip_metric;
   voip_metric.To(kSourceSsrc + 1);
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   xr.WithVoipMetric(&voip_metric);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
@@ -623,10 +624,10 @@ TEST_F(RtcpReceiverTest, XrVoipPacketNotToUsIgnored) {
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
-TEST_F(RtcpReceiverTest, InjectXrReceiverReferenceTimePacket) {
+TEST_F(RtcpReceiverTest, InjectExtendedReportsReceiverReferenceTimePacket) {
   rtcp::Rrtr rrtr;
   rrtr.WithNtp(NtpTime(0x10203, 0x40506));
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   xr.WithRrtr(&rrtr);
 
@@ -636,7 +637,7 @@ TEST_F(RtcpReceiverTest, InjectXrReceiverReferenceTimePacket) {
             rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
-TEST_F(RtcpReceiverTest, XrDlrrPacketNotToUsIgnored) {
+TEST_F(RtcpReceiverTest, ExtendedReportsDlrrPacketNotToUsIgnored) {
   const uint32_t kSourceSsrc = 0x123456;
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kSourceSsrc);
@@ -644,7 +645,7 @@ TEST_F(RtcpReceiverTest, XrDlrrPacketNotToUsIgnored) {
 
   rtcp::Dlrr dlrr;
   dlrr.WithDlrrItem(kSourceSsrc + 1, 0x12345, 0x67890);
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   xr.WithDlrr(&dlrr);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
@@ -653,7 +654,7 @@ TEST_F(RtcpReceiverTest, XrDlrrPacketNotToUsIgnored) {
   EXPECT_FALSE(rtcp_packet_info_.xr_dlrr_item);
 }
 
-TEST_F(RtcpReceiverTest, InjectXrDlrrPacketWithSubBlock) {
+TEST_F(RtcpReceiverTest, InjectExtendedReportsDlrrPacketWithSubBlock) {
   const uint32_t kSourceSsrc = 0x123456;
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kSourceSsrc);
@@ -661,7 +662,7 @@ TEST_F(RtcpReceiverTest, InjectXrDlrrPacketWithSubBlock) {
 
   rtcp::Dlrr dlrr;
   dlrr.WithDlrrItem(kSourceSsrc, 0x12345, 0x67890);
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   xr.WithDlrr(&dlrr);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
@@ -671,7 +672,7 @@ TEST_F(RtcpReceiverTest, InjectXrDlrrPacketWithSubBlock) {
   EXPECT_TRUE(rtcp_packet_info_.xr_dlrr_item);
 }
 
-TEST_F(RtcpReceiverTest, InjectXrDlrrPacketWithMultipleSubBlocks) {
+TEST_F(RtcpReceiverTest, InjectExtendedReportsDlrrPacketWithMultipleSubBlocks) {
   const uint32_t kSourceSsrc = 0x123456;
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kSourceSsrc);
@@ -681,7 +682,7 @@ TEST_F(RtcpReceiverTest, InjectXrDlrrPacketWithMultipleSubBlocks) {
   dlrr.WithDlrrItem(kSourceSsrc + 1, 0x12345, 0x67890);
   dlrr.WithDlrrItem(kSourceSsrc + 2, 0x12345, 0x67890);
   dlrr.WithDlrrItem(kSourceSsrc,     0x12345, 0x67890);
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   xr.WithDlrr(&dlrr);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
@@ -691,7 +692,7 @@ TEST_F(RtcpReceiverTest, InjectXrDlrrPacketWithMultipleSubBlocks) {
   EXPECT_TRUE(rtcp_packet_info_.xr_dlrr_item);
 }
 
-TEST_F(RtcpReceiverTest, InjectXrPacketWithMultipleReportBlocks) {
+TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithMultipleReportBlocks) {
   const uint32_t kSourceSsrc = 0x123456;
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kSourceSsrc);
@@ -702,7 +703,7 @@ TEST_F(RtcpReceiverTest, InjectXrPacketWithMultipleReportBlocks) {
   dlrr.WithDlrrItem(kSourceSsrc, 0x12345, 0x67890);
   rtcp::VoipMetric metric;
   metric.To(kSourceSsrc);
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   xr.WithRrtr(&rrtr);
   xr.WithDlrr(&dlrr);
@@ -717,7 +718,7 @@ TEST_F(RtcpReceiverTest, InjectXrPacketWithMultipleReportBlocks) {
   EXPECT_TRUE(rtcp_packet_info_.xr_dlrr_item);
 }
 
-TEST_F(RtcpReceiverTest, InjectXrPacketWithUnknownReportBlock) {
+TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithUnknownReportBlock) {
   const uint32_t kSourceSsrc = 0x123456;
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kSourceSsrc);
@@ -730,7 +731,7 @@ TEST_F(RtcpReceiverTest, InjectXrPacketWithUnknownReportBlock) {
   dlrr.WithDlrrItem(kSourceSsrc, 0x12345, 0x67890);
   rtcp::VoipMetric metric;
   metric.To(kSourceSsrc);
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(0x2345);
   xr.WithRrtr(&rrtr);
   xr.WithDlrr(&dlrr);
@@ -758,7 +759,7 @@ TEST_F(RtcpReceiverTest, LastReceivedXrReferenceTimeInfoInitiallyFalse) {
   EXPECT_FALSE(rtcp_receiver_->LastReceivedXrReferenceTimeInfo(&info));
 }
 
-TEST_F(RtcpReceiverTest, GetLastReceivedXrReferenceTimeInfo) {
+TEST_F(RtcpReceiverTest, GetLastReceivedExtendedReportsReferenceTimeInfo) {
   const uint32_t kSenderSsrc = 0x123456;
   const NtpTime kNtp(0x10203, 0x40506);
   const uint32_t kNtpMid =
@@ -766,7 +767,7 @@ TEST_F(RtcpReceiverTest, GetLastReceivedXrReferenceTimeInfo) {
 
   rtcp::Rrtr rrtr;
   rrtr.WithNtp(kNtp);
-  rtcp::Xr xr;
+  rtcp::ExtendedReports xr;
   xr.From(kSenderSsrc);
   xr.WithRrtr(&rrtr);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
