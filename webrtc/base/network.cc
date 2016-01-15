@@ -771,12 +771,14 @@ IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {
   scoped_ptr<AsyncSocket> socket(
       thread_->socketserver()->CreateAsyncSocket(family, SOCK_DGRAM));
   if (!socket) {
+    LOG_ERR(LERROR) << "Socket creation failed";
     return IPAddress();
   }
 
-  if (!socket->Connect(
-          SocketAddress(family == AF_INET ? kPublicIPv4Host : kPublicIPv6Host,
-                        kPublicPort))) {
+  if (socket->Connect(SocketAddress(
+          family == AF_INET ? kPublicIPv4Host : kPublicIPv6Host, kPublicPort)) <
+      0) {
+    LOG_ERR(LERROR) << "Connect failed with " << socket->GetError();
     return IPAddress();
   }
   return socket->GetLocalAddress().ipaddr();

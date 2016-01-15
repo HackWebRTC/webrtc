@@ -940,22 +940,27 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
 }
 
 TEST_F(NetworkTest, DefaultLocalAddress) {
-  TestBasicNetworkManager manager;
-  manager.StartUpdating();
   IPAddress ip;
-
-  // GetDefaultLocalAddress should return false when not set.
-  EXPECT_FALSE(manager.GetDefaultLocalAddress(AF_INET, &ip));
-  EXPECT_FALSE(manager.GetDefaultLocalAddress(AF_INET6, &ip));
+  TestBasicNetworkManager manager;
+  manager.SignalNetworksChanged.connect(static_cast<NetworkTest*>(this),
+                                        &NetworkTest::OnNetworksChanged);
+  FakeNetworkMonitorFactory* factory = new FakeNetworkMonitorFactory();
+  NetworkMonitorFactory::SetFactory(factory);
+  manager.StartUpdating();
+  EXPECT_TRUE_WAIT(callback_called_, 1000);
 
   // Make sure we can query default local address when an address for such
   // address family exists.
   std::vector<Network*> networks;
   manager.GetNetworks(&networks);
+  EXPECT_TRUE(!networks.empty());
   for (auto& network : networks) {
     if (network->GetBestIP().family() == AF_INET) {
       EXPECT_TRUE(manager.QueryDefaultLocalAddress(AF_INET) != IPAddress());
-    } else if (network->GetBestIP().family() == AF_INET6) {
+    } else if (network->GetBestIP().family() == AF_INET6 &&
+               !IPIsLoopback(network->GetBestIP())) {
+      // Existence of an IPv6 loopback address doesn't mean it has IPv6 network
+      // enabled.
       EXPECT_TRUE(manager.QueryDefaultLocalAddress(AF_INET6) != IPAddress());
     }
   }
