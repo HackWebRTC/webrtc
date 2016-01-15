@@ -600,30 +600,16 @@ TEST_F(DtlsTransportChannelTest, TestTransferSrtpTwoChannels) {
   TestTransfer(1, 1000, 100, true);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtls DISABLED_TestTransferDtls
-#else
-#define MAYBE_TestTransferDtls TestTransferDtls
-#endif
 // Connect with DTLS, and transfer some data.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtls) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtls) {
   MAYBE_SKIP_TEST(HaveDtls);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
   TestTransfer(0, 1000, 100, false);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtlsTwoChannels DISABLED_TestTransferDtlsTwoChannels
-#else
-#define MAYBE_TestTransferDtlsTwoChannels TestTransferDtlsTwoChannels
-#endif
 // Create two channels with DTLS, and transfer some data.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsTwoChannels) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsTwoChannels) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -655,15 +641,8 @@ TEST_F(DtlsTransportChannelTest, TestDtls12None) {
   ASSERT_TRUE(Connect());
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestDtls12Both DISABLED_TestDtls12Both
-#else
-#define MAYBE_TestDtls12Both TestDtls12Both
-#endif
 // Create two channels with DTLS 1.2 and check ciphers.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestDtls12Both) {
+TEST_F(DtlsTransportChannelTest, TestDtls12Both) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -689,15 +668,8 @@ TEST_F(DtlsTransportChannelTest, TestDtls12Client2) {
   ASSERT_TRUE(Connect());
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtlsSrtp DISABLED_TestTransferDtlsSrtp
-#else
-#define MAYBE_TestTransferDtlsSrtp TestTransferDtlsSrtp
-#endif
 // Connect with DTLS, negotiate DTLS-SRTP, and transfer SRTP using bypass.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsSrtp) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtp) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -705,18 +677,9 @@ TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsSrtp) {
   TestTransfer(0, 1000, 100, true);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtlsInvalidSrtpPacket \
-  DISABLED_TestTransferDtlsInvalidSrtpPacket
-#else
-#define MAYBE_TestTransferDtlsInvalidSrtpPacket \
-  TestTransferDtlsInvalidSrtpPacket
-#endif
 // Connect with DTLS-SRTP, transfer an invalid SRTP packet, and expects -1
 // returned.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsInvalidSrtpPacket) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsInvalidSrtpPacket) {
   MAYBE_SKIP_TEST(HaveDtls);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -725,47 +688,24 @@ TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsInvalidSrtpPacket) {
   ASSERT_EQ(-1, result);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtlsSrtpRejected DISABLED_TestTransferDtlsSrtpRejected
-#else
-#define MAYBE_TestTransferDtlsSrtpRejected TestTransferDtlsSrtpRejected
-#endif
 // Connect with DTLS. A does DTLS-SRTP but B does not.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsSrtpRejected) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpRejected) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, false);
   ASSERT_TRUE(Connect());
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtlsSrtpNotOffered \
-  DISABLED_TestTransferDtlsSrtpNotOffered
-#else
-#define MAYBE_TestTransferDtlsSrtpNotOffered TestTransferDtlsSrtpNotOffered
-#endif
 // Connect with DTLS. B does DTLS-SRTP but A does not.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsSrtpNotOffered) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpNotOffered) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(false, true);
   ASSERT_TRUE(Connect());
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtlsSrtpTwoChannels \
-  DISABLED_TestTransferDtlsSrtpTwoChannels
-#else
-#define MAYBE_TestTransferDtlsSrtpTwoChannels TestTransferDtlsSrtpTwoChannels
-#endif
 // Create two channels with DTLS, negotiate DTLS-SRTP, and transfer bypass SRTP.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsSrtpTwoChannels) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpTwoChannels) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -775,15 +715,8 @@ TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsSrtpTwoChannels) {
   TestTransfer(1, 1000, 100, true);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtlsSrtpDemux DISABLED_TestTransferDtlsSrtpDemux
-#else
-#define MAYBE_TestTransferDtlsSrtpDemux TestTransferDtlsSrtpDemux
-#endif
 // Create a single channel with DTLS, and send normal data and SRTP data on it.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsSrtpDemux) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpDemux) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -792,17 +725,8 @@ TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsSrtpDemux) {
   TestTransfer(0, 1000, 100, true);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestTransferDtlsAnswererIsPassive \
-  DISABLED_TestTransferDtlsAnswererIsPassive
-#else
-#define MAYBE_TestTransferDtlsAnswererIsPassive \
-  TestTransferDtlsAnswererIsPassive
-#endif
 // Testing when the remote is passive.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestTransferDtlsAnswererIsPassive) {
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsAnswererIsPassive) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -827,16 +751,9 @@ TEST_F(DtlsTransportChannelTest, TestDtlsSetupWithLegacyAsAnswerer) {
   EXPECT_EQ(rtc::SSL_CLIENT, channel2_role);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestDtlsReOfferFromOfferer DISABLED_TestDtlsReOfferFromOfferer
-#else
-#define MAYBE_TestDtlsReOfferFromOfferer TestDtlsReOfferFromOfferer
-#endif
 // Testing re offer/answer after the session is estbalished. Roles will be
 // kept same as of the previous negotiation.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestDtlsReOfferFromOfferer) {
+TEST_F(DtlsTransportChannelTest, TestDtlsReOfferFromOfferer) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -853,14 +770,7 @@ TEST_F(DtlsTransportChannelTest, MAYBE_TestDtlsReOfferFromOfferer) {
   TestTransfer(1, 1000, 100, true);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestDtlsReOfferFromAnswerer DISABLED_TestDtlsReOfferFromAnswerer
-#else
-#define MAYBE_TestDtlsReOfferFromAnswerer TestDtlsReOfferFromAnswerer
-#endif
-TEST_F(DtlsTransportChannelTest, MAYBE_TestDtlsReOfferFromAnswerer) {
+TEST_F(DtlsTransportChannelTest, TestDtlsReOfferFromAnswerer) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -877,15 +787,8 @@ TEST_F(DtlsTransportChannelTest, MAYBE_TestDtlsReOfferFromAnswerer) {
   TestTransfer(1, 1000, 100, true);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestDtlsRoleReversal DISABLED_TestDtlsRoleReversal
-#else
-#define MAYBE_TestDtlsRoleReversal TestDtlsRoleReversal
-#endif
 // Test that any change in role after the intial setup will result in failure.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestDtlsRoleReversal) {
+TEST_F(DtlsTransportChannelTest, TestDtlsRoleReversal) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -899,18 +802,9 @@ TEST_F(DtlsTransportChannelTest, MAYBE_TestDtlsRoleReversal) {
               NF_REOFFER | NF_EXPECT_FAILURE);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestDtlsReOfferWithDifferentSetupAttr \
-  DISABLED_TestDtlsReOfferWithDifferentSetupAttr
-#else
-#define MAYBE_TestDtlsReOfferWithDifferentSetupAttr \
-  TestDtlsReOfferWithDifferentSetupAttr
-#endif
 // Test that using different setup attributes which results in similar ssl
 // role as the initial negotiation will result in success.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestDtlsReOfferWithDifferentSetupAttr) {
+TEST_F(DtlsTransportChannelTest, TestDtlsReOfferWithDifferentSetupAttr) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -970,15 +864,8 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
   ASSERT_FALSE(remote_cert2 != NULL);
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5381.
-#define MAYBE_TestCertificatesAfterConnect DISABLED_TestCertificatesAfterConnect
-#else
-#define MAYBE_TestCertificatesAfterConnect TestCertificatesAfterConnect
-#endif
 // Test Certificates state after connection.
-TEST_F(DtlsTransportChannelTest, MAYBE_TestCertificatesAfterConnect) {
+TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
   MAYBE_SKIP_TEST(HaveDtls);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
