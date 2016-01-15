@@ -67,6 +67,18 @@ using webrtc::kVideoCodecVP9;
 
 namespace webrtc_jni {
 
+// Logging macros.
+#define TAG_DECODER "MediaCodecVideoDecoder"
+#ifdef TRACK_BUFFER_TIMING
+#define ALOGV(...)
+  __android_log_print(ANDROID_LOG_VERBOSE, TAG_DECODER, __VA_ARGS__)
+#else
+#define ALOGV(...)
+#endif
+#define ALOGD LOG_TAG(rtc::LS_INFO, TAG_DECODER)
+#define ALOGW LOG_TAG(rtc::LS_WARNING, TAG_DECODER)
+#define ALOGE LOG_TAG(rtc::LS_ERROR, TAG_DECODER)
+
 class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
                                public rtc::MessageHandler {
  public:

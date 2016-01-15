@@ -71,6 +71,25 @@ namespace webrtc_jni {
 #define MAX_VIDEO_HEIGHT 1280
 // Maximum supported HW video encoder fps.
 #define MAX_VIDEO_FPS 30
+// Maximum allowed fps value in SetRates() call.
+#define MAX_ALLOWED_VIDEO_FPS 60
+// Maximum allowed frames in encoder input queue.
+#define MAX_ENCODER_Q_SIZE 2
+// Maximum allowed latency in ms.
+#define MAX_ENCODER_LATENCY_MS 70
+
+
+// Logging macros.
+#define TAG_ENCODER "MediaCodecVideoEncoder"
+#ifdef TRACK_BUFFER_TIMING
+#define ALOGV(...)
+  __android_log_print(ANDROID_LOG_VERBOSE, TAG_ENCODER, __VA_ARGS__)
+#else
+#define ALOGV(...)
+#endif
+#define ALOGD LOG_TAG(rtc::LS_INFO, TAG_ENCODER)
+#define ALOGW LOG_TAG(rtc::LS_WARNING, TAG_ENCODER)
+#define ALOGE LOG_TAG(rtc::LS_ERROR, TAG_ENCODER)
 
 // MediaCodecVideoEncoder is a webrtc::VideoEncoder implementation that uses
 // Android's MediaCodec SDK API behind the scenes to implement (hopefully)
@@ -206,6 +225,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int64_t start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
   int current_bytes_;  // Encoded bytes in the current statistics interval.
+  int current_acc_qp_; // Accumulated QP in the current statistics interval.
   int current_encoding_time_ms_;  // Overall encoding time in the current second
   int64_t last_input_timestamp_ms_;  // Timestamp of last received yuv frame.
   int64_t last_output_timestamp_ms_;  // Timestamp of last encoded frame.
@@ -467,13 +487,13 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
     kbps = last_set_bitrate_kbps_;
   }
   if (fps == 0) {
-    fps = last_set_fps_;
+    fps = MAX_VIDEO_FPS;
   }
 
   width_ = width;
   height_ = height;
   last_set_bitrate_kbps_ = kbps;
-  last_set_fps_ = fps;
+  last_set_fps_ = (fps < MAX_VIDEO_FPS) ? fps : MAX_VIDEO_FPS;
   yuv_size_ = width_ * height_ * 3 / 2;
   frames_received_ = 0;
   frames_encoded_ = 0;
@@ -483,6 +503,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   start_time_ms_ = GetCurrentTimeMs();
   current_frames_ = 0;
   current_bytes_ = 0;
+  current_acc_qp_ = 0;
   current_encoding_time_ms_ = 0;
   last_input_timestamp_ms_ = -1;
   last_output_timestamp_ms_ = -1;
@@ -569,14 +590,36 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     if (!ResetCodecOnCodecThread())
       return WEBRTC_VIDEO_CODEC_ERROR;
   }
+  if (frames_encoded_ < kMaxEncodedLogFrames) {
+    ALOGD << "Encoder frame in # " << (frames_received_ - 1) << ". TS: " <<
+        (int)(current_timestamp_us_ / 1000) << ". Q: " << frames_in_queue_ <<
+        ". Fps: " << last_set_fps_ << ". Kbps: " << last_set_bitrate_kbps_;
+  }
 
   if (drop_next_input_frame_) {
     ALOGW << "Encoder drop frame - failed callback.";
     drop_next_input_frame_ = false;
+    current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+    OnDroppedFrame();
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
   RTC_CHECK(frame_types->size() == 1) << "Unexpected stream count";
+
+  // Check if we accumulated too many frames in encoder input buffers
+  // or the encoder latency exceeds 70 ms and drop frame if so.
+  if (frames_in_queue_ > 0 && last_input_timestamp_ms_ >= 0) {
+    int encoder_latency_ms = last_input_timestamp_ms_ -
+        last_output_timestamp_ms_;
+    if (frames_in_queue_ > MAX_ENCODER_Q_SIZE ||
+        encoder_latency_ms > MAX_ENCODER_LATENCY_MS) {
+      ALOGD << "Drop frame - encoder is behind by " << encoder_latency_ms <<
+          " ms. Q size: " << frames_in_queue_;
+      current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+      OnDroppedFrame();
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+  }
 
   VideoFrame input_frame = frame;
   if (scale_) {
@@ -605,20 +648,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  // Check if we accumulated too many frames in encoder input buffers
-  // or the encoder latency exceeds 70 ms and drop frame if so.
-  if (frames_in_queue_ > 0 && last_input_timestamp_ms_ >= 0) {
-    int encoder_latency_ms = last_input_timestamp_ms_ -
-        last_output_timestamp_ms_;
-    if (frames_in_queue_ > 2 || encoder_latency_ms > 70) {
-      ALOGD << "Drop frame - encoder is behind by " << encoder_latency_ms <<
-          " ms. Q size: " << frames_in_queue_;
-      frames_dropped_++;
-      // Report dropped frame to quality_scaler_.
-      OnDroppedFrame();
-      return WEBRTC_VIDEO_CODEC_OK;
-    }
-  }
+  // Save time when input frame is sent to the encoder input.
+  frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
 
   const bool key_frame = frame_types->front() != webrtc::kVideoFrameDelta;
   bool encode_status = true;
@@ -629,9 +660,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     if (j_input_buffer_index == -1) {
       // Video codec falls behind - no input buffer available.
       ALOGW << "Encoder drop frame - no input buffers available";
-      frames_dropped_++;
-      // Report dropped frame to quality_scaler_.
-      OnDroppedFrame();
+      current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+      frame_rtc_times_ms_.erase(frame_rtc_times_ms_.begin());
       return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
     }
     if (j_input_buffer_index == -2) {
@@ -657,7 +687,6 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   // Save input image timestamps for later output
   timestamps_.push_back(input_frame.timestamp());
   render_times_ms_.push_back(input_frame.render_time_ms());
-  frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
   current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
 
   if (!DeliverPendingOutputs(jni)) {
@@ -704,9 +733,6 @@ bool MediaCodecVideoEncoder::EncodeByteBufferOnCodecThread(JNIEnv* jni,
     bool key_frame, const webrtc::VideoFrame& frame, int input_buffer_index) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   RTC_CHECK(!use_surface_);
-
-  ALOGV("Encoder frame in # %d. TS: %lld. Q: %d",
-      frames_received_ - 1, current_timestamp_us_ / 1000, frames_in_queue_);
 
   jobject j_input_buffer = input_buffers_[input_buffer_index];
   uint8_t* yuv_buffer =
@@ -783,6 +809,8 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
 int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
                                                       uint32_t frame_rate) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+  frame_rate = (frame_rate < MAX_ALLOWED_VIDEO_FPS) ?
+      frame_rate : MAX_ALLOWED_VIDEO_FPS;
   if (last_set_bitrate_kbps_ == new_bit_rate &&
       last_set_fps_ == frame_rate) {
     return WEBRTC_VIDEO_CODEC_OK;
@@ -875,32 +903,12 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         jni->GetDirectBufferAddress(j_output_buffer));
     CHECK_EXCEPTION(jni);
 
-    ALOGV("Encoder frame out # %d. Key: %d. Size: %d. TS: %lld."
-        " Latency: %lld. EncTime: %lld",
-        frames_encoded_, key_frame, payload_size,
-        last_output_timestamp_ms_,
-        last_input_timestamp_ms_ - last_output_timestamp_ms_,
-        frame_encoding_time_ms);
-
-    // Calculate and print encoding statistics - every 3 seconds.
-    frames_encoded_++;
-    current_frames_++;
-    current_bytes_ += payload_size;
-    current_encoding_time_ms_ += frame_encoding_time_ms;
-    int statistic_time_ms = GetCurrentTimeMs() - start_time_ms_;
-    if (statistic_time_ms >= kMediaCodecStatisticsIntervalMs &&
-        current_frames_ > 0) {
-      ALOGD << "Encoded frames: " << frames_encoded_ << ". Bitrate: " <<
-          (current_bytes_ * 8 / statistic_time_ms) <<
-          ", target: " << last_set_bitrate_kbps_ << " kbps, fps: " <<
-          ((current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms)
-          << ", encTime: " <<
-          (current_encoding_time_ms_ / current_frames_) << " for last " <<
-          statistic_time_ms << " ms.";
-      start_time_ms_ = GetCurrentTimeMs();
-      current_frames_ = 0;
-      current_bytes_ = 0;
-      current_encoding_time_ms_ = 0;
+    if (frames_encoded_ < kMaxEncodedLogFrames) {
+      ALOGD << "Encoder frame out # " << frames_encoded_ << ". Key: " <<
+          key_frame << ". Size: " << payload_size << ". TS: " <<
+          (int)last_output_timestamp_ms_ << ". Latency: " <<
+          (int)(last_input_timestamp_ms_ - last_output_timestamp_ms_) <<
+          ". EncTime: " << frame_encoding_time_ms;
     }
 
     // Callback - return encoded frame.
@@ -966,15 +974,19 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         header.fragmentationTimeDiff[0] = 0;
         if (codecType_ == kVideoCodecVP8 && scale_) {
           int qp;
-          if (webrtc::vp8::GetQp(payload, payload_size, &qp))
+          if (webrtc::vp8::GetQp(payload, payload_size, &qp)) {
+            current_acc_qp_ += qp;
             quality_scaler_.ReportQP(qp);
+          }
         }
       } else if (codecType_ == kVideoCodecH264) {
         if (scale_) {
           h264_bitstream_parser_.ParseBitstream(payload, payload_size);
           int qp;
-          if (h264_bitstream_parser_.GetLastSliceQp(&qp))
+          if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
+            current_acc_qp_ += qp;
             quality_scaler_.ReportQP(qp);
+          }
         }
         // For H.264 search for start codes.
         int32_t scPositions[MAX_NALUS_PERFRAME + 1] = {};
@@ -1022,6 +1034,29 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       return false;
     }
 
+    // Calculate and print encoding statistics - every 3 seconds.
+    frames_encoded_++;
+    current_frames_++;
+    current_bytes_ += payload_size;
+    current_encoding_time_ms_ += frame_encoding_time_ms;
+    int statistic_time_ms = GetCurrentTimeMs() - start_time_ms_;
+    if (statistic_time_ms >= kMediaCodecStatisticsIntervalMs &&
+        current_frames_ > 0) {
+      ALOGD << "Encoded frames: " << frames_encoded_ << ". Bitrate: " <<
+          (current_bytes_ * 8 / statistic_time_ms) <<
+          ", target: " << last_set_bitrate_kbps_ << " kbps, fps: " <<
+          ((current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms)
+          << ", encTime: " <<
+          (current_encoding_time_ms_ / current_frames_) << ". QP: " <<
+          (current_acc_qp_ / current_frames_) <<  " for last " <<
+          statistic_time_ms << " ms.";
+      start_time_ms_ = GetCurrentTimeMs();
+      current_frames_ = 0;
+      current_bytes_ = 0;
+      current_acc_qp_ = 0;
+      current_encoding_time_ms_ = 0;
+    }
+
     if (callback_status > 0) {
       drop_next_input_frame_ = true;
       // Theoretically could handle callback_status<0 here, but unclear what
@@ -1065,6 +1100,8 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
 }
 
 void MediaCodecVideoEncoder::OnDroppedFrame() {
+  frames_dropped_++;
+  // Report dropped frame to quality_scaler_.
   if (scale_)
     quality_scaler_.ReportDroppedFrame();
 }

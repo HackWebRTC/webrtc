@@ -41,15 +41,7 @@ namespace webrtc_jni {
 // video frame.
 //#define TRACK_BUFFER_TIMING
 
-#define TAG "MediaCodecVideo"
-#ifdef TRACK_BUFFER_TIMING
-#define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
-#else
-#define ALOGV(...)
-#endif
-#define ALOGD LOG_TAG(rtc::LS_INFO, TAG)
-#define ALOGW LOG_TAG(rtc::LS_WARNING, TAG)
-#define ALOGE LOG_TAG(rtc::LS_ERROR, TAG)
+#define TAG_COMMON "MediaCodecVideo"
 
 // Color formats supported by encoder - should mirror supportedColorList
 // from MediaCodecVideoEncoder.java
@@ -78,6 +70,8 @@ enum { kMaxPendingFramesVp9 = 1 };
 enum { kMaxPendingFramesH264 = 30 };
 // Maximum amount of decoded frames for which per-frame logging is enabled.
 enum { kMaxDecodedLogFrames = 5 };
+// Maximum amount of encoded frames for which per-frame logging is enabled.
+enum { kMaxEncodedLogFrames = 5 };
 
 static inline int64_t GetCurrentTimeMs() {
   return webrtc::TickTime::Now().Ticks() / 1000000LL;
@@ -102,7 +96,7 @@ static inline jobject JavaEnumFromIndex(
 // currently thrown exception.
 static inline bool CheckException(JNIEnv* jni) {
   if (jni->ExceptionCheck()) {
-    ALOGE << "Java JNI exception.";
+    LOG_TAG(rtc::LS_ERROR, TAG_COMMON) << "Java JNI exception.";
     jni->ExceptionDescribe();
     jni->ExceptionClear();
     return true;
