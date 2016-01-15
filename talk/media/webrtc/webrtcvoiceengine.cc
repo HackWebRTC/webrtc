@@ -532,6 +532,28 @@ bool WebRtcVoiceEngine::InitInternal() {
     return false;
   }
 
+  // Set default engine options.
+  {
+    AudioOptions options;
+    options.echo_cancellation = rtc::Optional<bool>(true);
+    options.auto_gain_control = rtc::Optional<bool>(true);
+    options.noise_suppression = rtc::Optional<bool>(true);
+    options.highpass_filter = rtc::Optional<bool>(true);
+    options.stereo_swapping = rtc::Optional<bool>(false);
+    options.audio_jitter_buffer_max_packets = rtc::Optional<int>(50);
+    options.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(false);
+    options.typing_detection = rtc::Optional<bool>(true);
+    options.adjust_agc_delta = rtc::Optional<int>(0);
+    options.experimental_agc = rtc::Optional<bool>(false);
+    options.extended_filter_aec = rtc::Optional<bool>(false);
+    options.delay_agnostic_aec = rtc::Optional<bool>(false);
+    options.experimental_ns = rtc::Optional<bool>(false);
+    options.aec_dump = rtc::Optional<bool>(false);
+    if (!ApplyOptions(options)) {
+      return false;
+    }
+  }
+
   // Print our codec list again for the call diagnostic log
   LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
   for (const AudioCodec& codec : codecs_) {
@@ -569,26 +591,7 @@ VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(webrtc::Call* call,
 bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "ApplyOptions: " << options_in.ToString();
-
-  // Default engine options.
-  AudioOptions options;
-  options.echo_cancellation = rtc::Optional<bool>(true);
-  options.auto_gain_control = rtc::Optional<bool>(true);
-  options.noise_suppression = rtc::Optional<bool>(true);
-  options.highpass_filter = rtc::Optional<bool>(true);
-  options.stereo_swapping = rtc::Optional<bool>(false);
-  options.audio_jitter_buffer_max_packets = rtc::Optional<int>(50);
-  options.audio_jitter_buffer_fast_accelerate = rtc::Optional<bool>(false);
-  options.typing_detection = rtc::Optional<bool>(true);
-  options.adjust_agc_delta = rtc::Optional<int>(0);
-  options.experimental_agc = rtc::Optional<bool>(false);
-  options.extended_filter_aec = rtc::Optional<bool>(false);
-  options.delay_agnostic_aec = rtc::Optional<bool>(false);
-  options.experimental_ns = rtc::Optional<bool>(false);
-  options.aec_dump = rtc::Optional<bool>(false);
-
-  // Apply any given options on top.
-  options.SetAll(options_in);
+  AudioOptions options = options_in;  // The options are modified below.
 
   // kEcConference is AEC with high suppression.
   webrtc::EcModes ec_mode = webrtc::kEcConference;
