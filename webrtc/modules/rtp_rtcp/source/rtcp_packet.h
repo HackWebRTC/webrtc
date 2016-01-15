@@ -353,62 +353,6 @@ class Fir : public RtcpPacket {
   RTCPUtility::RTCPPacketPSFBFIRItem fir_item_;
 };
 
-// Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |V=2|P| FMT=15  |   PT=206      |             length            |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                  SSRC of packet sender                        |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                  SSRC of media source                         |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |  Unique identifier 'R' 'E' 'M' 'B'                            |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |  Num SSRC     | BR Exp    |  BR Mantissa                      |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |   SSRC feedback                                               |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |  ...
-
-class Remb : public RtcpPacket {
- public:
-  Remb() : RtcpPacket() {
-    memset(&remb_, 0, sizeof(remb_));
-    memset(&remb_item_, 0, sizeof(remb_item_));
-  }
-
-  virtual ~Remb() {}
-
-  void From(uint32_t ssrc) {
-    remb_.SenderSSRC = ssrc;
-  }
-  void AppliesTo(uint32_t ssrc);
-
-  void WithBitrateBps(uint32_t bitrate_bps) {
-    remb_item_.BitRate = bitrate_bps;
-  }
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  static const int kMaxNumberOfSsrcs = 0xff;
-
-  size_t BlockLength() const {
-    return (remb_item_.NumberOfSSRCs + 5) * 4;
-  }
-
-  RTCPUtility::RTCPPacketPSFBAPP remb_;
-  RTCPUtility::RTCPPacketPSFBREMBItem remb_item_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Remb);
-};
-
 // From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
 //
 // Format for XR packets:

@@ -27,7 +27,6 @@ using webrtc::rtcp::Dlrr;
 using webrtc::rtcp::Fir;
 using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiverReport;
-using webrtc::rtcp::Remb;
 using webrtc::rtcp::ReportBlock;
 using webrtc::rtcp::Rpsi;
 using webrtc::rtcp::Rrtr;
@@ -324,26 +323,6 @@ TEST(RtcpPacketTest, BuildWithTooSmallBuffer) {
   EXPECT_FALSE(rr.BuildExternalBuffer(buffer, kBufferSize, &verifier));
 }
 
-TEST(RtcpPacketTest, Remb) {
-  Remb remb;
-  remb.From(kSenderSsrc);
-  remb.AppliesTo(kRemoteSsrc);
-  remb.AppliesTo(kRemoteSsrc + 1);
-  remb.AppliesTo(kRemoteSsrc + 2);
-  remb.WithBitrateBps(261011);
-
-  rtc::scoped_ptr<RawPacket> packet(remb.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.psfb_app()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.psfb_app()->Ssrc());
-  EXPECT_EQ(1, parser.remb_item()->num_packets());
-  EXPECT_EQ(261011, parser.remb_item()->last_bitrate_bps());
-  std::vector<uint32_t> ssrcs = parser.remb_item()->last_ssrc_list();
-  EXPECT_EQ(kRemoteSsrc, ssrcs[0]);
-  EXPECT_EQ(kRemoteSsrc + 1, ssrcs[1]);
-  EXPECT_EQ(kRemoteSsrc + 2, ssrcs[2]);
-}
 
 TEST(RtcpPacketTest, XrWithNoReportBlocks) {
   Xr xr;
