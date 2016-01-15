@@ -87,6 +87,7 @@
         'media/base/streamparams_unittest.cc',
         'media/base/testutils.cc',
         'media/base/testutils.h',
+        'media/base/turnutils_unittest.cc',
         'media/base/videoadapter_unittest.cc',
         'media/base/videocapturer_unittest.cc',
         'media/base/videocommon_unittest.cc',

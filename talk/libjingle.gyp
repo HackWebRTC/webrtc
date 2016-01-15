@@ -513,6 +513,8 @@
         'media/base/screencastid.h',
         'media/base/streamparams.cc',
         'media/base/streamparams.h',
+        'media/base/turnutils.cc',
+        'media/base/turnutils.h',
         'media/base/videoadapter.cc',
         'media/base/videoadapter.h',
         'media/base/videocapturer.cc',

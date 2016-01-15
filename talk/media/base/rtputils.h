@@ -30,6 +30,10 @@
 
 #include "webrtc/base/byteorder.h"
 
+namespace rtc {
+struct PacketTimeUpdateParams;
+}  // namespace rtc
+
 namespace cricket {
 
 const size_t kMinRtpPacketLen = 12;
@@ -70,6 +74,25 @@ bool IsRtpPacket(const void* data, size_t len);
 
 // True if |payload type| is 0-127.
 bool IsValidRtpPayloadType(int payload_type);
+
+// Verifies that a packet has a valid RTP header.
+bool ValidateRtpHeader(const uint8_t* rtp,
+                       size_t length,
+                       size_t* header_length);
+
+// Helper method which updates the absolute send time extension if present.
+bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
+                                   size_t length,
+                                   int extension_id,
+                                   uint64_t time_us);
+
+// Applies specified |options| to the packet. It updates the absolute send time
+// extension header if it is present present then updates HMAC.
+bool ApplyPacketOptions(uint8_t* data,
+                        size_t length,
+                        const rtc::PacketTimeUpdateParams& packet_time_params,
+                        uint64_t time_us);
+
 
 }  // namespace cricket
 
