@@ -112,7 +112,7 @@ class AudioReceiveStream : public ReceiveStream {
   // Sets an audio sink that receives unmixed audio from the receive stream.
   // Ownership of the sink is passed to the stream and can be used by the
   // caller to do lifetime management (i.e. when the sink's dtor is called).
-  // Only one sink can be set and passing a null sink, clears an existing one.
+  // Only one sink can be set and passing a null sink clears an existing one.
   // NOTE: Audio must still somehow be pulled through AudioTransport for audio
   // to stream through this sink. In practice, this happens if mixed audio
   // is being pulled+rendered and/or if audio is being pulled for the purposes

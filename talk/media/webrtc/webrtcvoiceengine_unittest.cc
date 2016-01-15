@@ -72,6 +72,11 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
 };
 }  // namespace
 
+class FakeAudioSink : public webrtc::AudioSinkInterface {
+ public:
+  void OnData(const Data& audio) override {}
+};
+
 class WebRtcVoiceEngineTestFake : public testing::Test {
  public:
   WebRtcVoiceEngineTestFake()
@@ -123,6 +128,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     const auto* send_stream = call_.GetAudioSendStream(ssrc);
     EXPECT_TRUE(send_stream);
     return *send_stream;
+  }
+
+  const cricket::FakeAudioReceiveStream& GetRecvStream(uint32_t ssrc) {
+    const auto* recv_stream = call_.GetAudioReceiveStream(ssrc);
+    EXPECT_TRUE(recv_stream);
+    return *recv_stream;
   }
 
   const webrtc::AudioSendStream::Config& GetSendStreamConfig(uint32_t ssrc) {
@@ -3103,6 +3114,52 @@ TEST_F(WebRtcVoiceEngineTestFake, AssociateChannelResetUponDeleteChannnel) {
 
   EXPECT_TRUE(channel_->RemoveSendStream(2));
   EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), -1);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSink) {
+  EXPECT_TRUE(SetupEngine());
+  rtc::scoped_ptr<FakeAudioSink> fake_sink_1(new FakeAudioSink());
+  rtc::scoped_ptr<FakeAudioSink> fake_sink_2(new FakeAudioSink());
+
+  // Setting the sink before a recv stream exists should do nothing.
+  channel_->SetRawAudioSink(kSsrc1, std::move(fake_sink_1));
+  EXPECT_TRUE(
+      channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc1)));
+  EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
+
+  // Now try actually setting the sink.
+  channel_->SetRawAudioSink(kSsrc1, std::move(fake_sink_2));
+  EXPECT_NE(nullptr, GetRecvStream(kSsrc1).sink());
+
+  // Now try resetting it.
+  channel_->SetRawAudioSink(kSsrc1, nullptr);
+  EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSinkDefaultRecvStream) {
+  EXPECT_TRUE(SetupEngine());
+  rtc::scoped_ptr<FakeAudioSink> fake_sink_1(new FakeAudioSink());
+  rtc::scoped_ptr<FakeAudioSink> fake_sink_2(new FakeAudioSink());
+
+  // Should be able to set a default sink even when no stream exists.
+  channel_->SetRawAudioSink(0, std::move(fake_sink_1));
+
+  // Create default channel and ensure it's assigned the default sink.
+  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  EXPECT_NE(nullptr, GetRecvStream(0x01).sink());
+
+  // Try resetting the default sink.
+  channel_->SetRawAudioSink(0, nullptr);
+  EXPECT_EQ(nullptr, GetRecvStream(0x01).sink());
+
+  // Try setting the default sink while the default stream exists.
+  channel_->SetRawAudioSink(0, std::move(fake_sink_2));
+  EXPECT_NE(nullptr, GetRecvStream(0x01).sink());
+
+  // If we remove and add a default stream, it should get the same sink.
+  EXPECT_TRUE(channel_->RemoveRecvStream(0x01));
+  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  EXPECT_NE(nullptr, GetRecvStream(0x01).sink());
 }
 
 // Tests that the library initializes and shuts down properly.

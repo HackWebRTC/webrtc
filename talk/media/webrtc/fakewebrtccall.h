@@ -89,6 +89,7 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   void SetStats(const webrtc::AudioReceiveStream::Stats& stats);
   int received_packets() const { return received_packets_; }
   void IncrementReceivedPackets();
+  const webrtc::AudioSinkInterface* sink() const { return sink_.get(); }
 
  private:
   // webrtc::ReceiveStream implementation.

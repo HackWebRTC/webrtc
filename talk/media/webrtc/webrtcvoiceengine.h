@@ -272,6 +272,8 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   int64_t default_recv_ssrc_ = -1;
   // Volume for unsignalled stream, which may be set before the stream exists.
   double default_recv_volume_ = 1.0;
+  // Sink for unsignalled stream, which may be set before the stream exists.
+  rtc::scoped_ptr<webrtc::AudioSinkInterface> default_sink_;
   // Default SSRC to use for RTCP receiver reports in case of no signaled
   // send streams. See: https://code.google.com/p/webrtc/issues/detail?id=4740
   // and https://code.google.com/p/chromium/issues/detail?id=547661

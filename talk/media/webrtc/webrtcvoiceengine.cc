@@ -132,6 +132,16 @@ const int kMaxTelephoneEventCode = 255;
 const int kMinTelephoneEventDuration = 100;
 const int kMaxTelephoneEventDuration = 60000;   // Actual limit is 2^16
 
+class ProxySink : public webrtc::AudioSinkInterface {
+ public:
+  ProxySink(AudioSinkInterface* sink) : sink_(sink) { RTC_DCHECK(sink); }
+
+  void OnData(const Data& audio) override { sink_->OnData(audio); }
+
+ private:
+  webrtc::AudioSinkInterface* sink_;
+};
+
 bool ValidateStreamParams(const StreamParams& sp) {
   if (sp.ssrcs.empty()) {
     LOG(LS_ERROR) << "No SSRCs in stream parameters: " << sp.ToString();
@@ -2191,6 +2201,11 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
     }
     default_recv_ssrc_ = ssrc;
     SetOutputVolume(default_recv_ssrc_, default_recv_volume_);
+    if (default_sink_) {
+      rtc::scoped_ptr<webrtc::AudioSinkInterface> proxy_sink(
+          new ProxySink(default_sink_.get()));
+      SetRawAudioSink(default_recv_ssrc_, std::move(proxy_sink));
+    }
   }
 
   // Forward packet to Call. If the SSRC is unknown we'll return after this.
@@ -2419,7 +2434,17 @@ void WebRtcVoiceMediaChannel::SetRawAudioSink(
     uint32_t ssrc,
     rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::SetRawAudioSink";
+  LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::SetRawAudioSink: ssrc:" << ssrc
+                  << " " << (sink ? "(ptr)" : "NULL");
+  if (ssrc == 0) {
+    if (default_recv_ssrc_ != -1) {
+      rtc::scoped_ptr<webrtc::AudioSinkInterface> proxy_sink(
+          sink ? new ProxySink(sink.get()) : nullptr);
+      SetRawAudioSink(default_recv_ssrc_, std::move(proxy_sink));
+    }
+    default_sink_ = std::move(sink);
+    return;
+  }
   const auto it = recv_streams_.find(ssrc);
   if (it == recv_streams_.end()) {
     LOG(LS_WARNING) << "SetRawAudioSink: no recv stream" << ssrc;
