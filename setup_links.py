@@ -66,6 +66,7 @@ DIRECTORIES = [
   'third_party/zlib',
   'tools/clang',
   'tools/generate_library_loader',
+  'tools/generate_stubs',
   'tools/gn',
   'tools/gyp',
   'tools/memory',
