@@ -498,7 +498,7 @@ public class PeerConnectionClient {
                 ParcelFileDescriptor.MODE_READ_WRITE |
                 ParcelFileDescriptor.MODE_CREATE |
                 ParcelFileDescriptor.MODE_TRUNCATE);
-        factory.startAecDump(aecDumpFileDescriptor.getFd());
+        factory.startAecDump(aecDumpFileDescriptor.getFd(), -1);
       } catch(IOException e) {
         Log.e(TAG, "Can not open aecdump file", e);
       }

@@ -57,8 +57,10 @@ class AudioProcessingImpl : public AudioProcessing {
   int Initialize(const ProcessingConfig& processing_config) override;
   void SetExtraOptions(const Config& config) override;
   void UpdateHistogramsOnCallEnd() override;
-  int StartDebugRecording(const char filename[kMaxFilenameSize]) override;
-  int StartDebugRecording(FILE* handle) override;
+  int StartDebugRecording(const char filename[kMaxFilenameSize],
+                          int64_t max_log_size_bytes) override;
+  int StartDebugRecording(FILE* handle, int64_t max_log_size_bytes) override;
+
   int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) override;
   int StopDebugRecording() override;
 
@@ -144,6 +146,9 @@ class AudioProcessingImpl : public AudioProcessing {
 
   struct ApmDebugDumpState {
     ApmDebugDumpState() : debug_file(FileWrapper::Create()) {}
+    // Number of bytes that can still be written to the log before the maximum
+    // size is reached. A value of <= 0 indicates that no limit is used.
+    int64_t num_bytes_left_for_log_ = -1;
     rtc::scoped_ptr<FileWrapper> debug_file;
     ApmDebugDumpThreadState render;
     ApmDebugDumpThreadState capture;
@@ -222,6 +227,7 @@ class AudioProcessingImpl : public AudioProcessing {
   // TODO(andrew): make this more graceful. Ideally we would split this stuff
   // out into a separate class with an "enabled" and "disabled" implementation.
   static int WriteMessageToDebugFile(FileWrapper* debug_file,
+                                     int64_t* filesize_limit_bytes,
                                      rtc::CriticalSection* crit_debug,
                                      ApmDebugDumpThreadState* debug_state);
   int WriteInitMessage() EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);

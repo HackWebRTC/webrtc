@@ -250,10 +250,11 @@ class MockAudioProcessing : public AudioProcessing {
       void(int offset));
   MOCK_CONST_METHOD0(delay_offset_ms,
       int());
-  MOCK_METHOD1(StartDebugRecording,
-      int(const char filename[kMaxFilenameSize]));
-  MOCK_METHOD1(StartDebugRecording,
-      int(FILE* handle));
+  MOCK_METHOD2(StartDebugRecording,
+               int(const char filename[kMaxFilenameSize],
+                   int64_t max_log_size_bytes));
+  MOCK_METHOD2(StartDebugRecording,
+               int(FILE* handle, int64_t max_log_size_bytes));
   MOCK_METHOD0(StopDebugRecording,
       int());
   MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());
