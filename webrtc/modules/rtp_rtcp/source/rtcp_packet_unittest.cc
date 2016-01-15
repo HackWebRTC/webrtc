@@ -24,7 +24,6 @@ using ::testing::ElementsAre;
 using webrtc::rtcp::App;
 using webrtc::rtcp::Bye;
 using webrtc::rtcp::Dlrr;
-using webrtc::rtcp::Fir;
 using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiverReport;
 using webrtc::rtcp::ReportBlock;
@@ -285,22 +284,6 @@ TEST(RtcpPacketTest, RpsiWithMaxPictureId) {
   parser.Parse(packet->Buffer(), packet->Length());
   EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
   EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
-}
-
-TEST(RtcpPacketTest, Fir) {
-  Fir fir;
-  fir.From(kSenderSsrc);
-  fir.To(kRemoteSsrc);
-  fir.WithCommandSeqNum(123);
-
-  rtc::scoped_ptr<RawPacket> packet(fir.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.fir()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.fir()->Ssrc());
-  EXPECT_EQ(1, parser.fir_item()->num_packets());
-  EXPECT_EQ(kRemoteSsrc, parser.fir_item()->Ssrc());
-  EXPECT_EQ(123U, parser.fir_item()->SeqNum());
 }
 
 TEST(RtcpPacketTest, BuildWithTooSmallBuffer) {

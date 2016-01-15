@@ -306,53 +306,6 @@ class Rpsi : public RtcpPacket {
   RTC_DISALLOW_COPY_AND_ASSIGN(Rpsi);
 };
 
-// Full intra request (FIR) (RFC 5104).
-//
-// FCI:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                              SSRC                             |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   | Seq nr.       |    Reserved                                   |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-class Fir : public RtcpPacket {
- public:
-  Fir() : RtcpPacket() {
-    memset(&fir_, 0, sizeof(fir_));
-    memset(&fir_item_, 0, sizeof(fir_item_));
-  }
-
-  virtual ~Fir() {}
-
-  void From(uint32_t ssrc) {
-    fir_.SenderSSRC = ssrc;
-  }
-  void To(uint32_t ssrc) {
-    fir_item_.SSRC = ssrc;
-  }
-  void WithCommandSeqNum(uint8_t seq_num) {
-    fir_item_.CommandSequenceNumber = seq_num;
-  }
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  size_t BlockLength() const {
-    const size_t kFciLength = 8;
-    return kCommonFbFmtLength + kFciLength;
-  }
-
-  RTCPUtility::RTCPPacketPSFBFIR fir_;
-  RTCPUtility::RTCPPacketPSFBFIRItem fir_item_;
-};
-
 // From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
 //
 // Format for XR packets:

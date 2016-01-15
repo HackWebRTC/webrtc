@@ -310,6 +310,7 @@
                 'rtp_rtcp/source/rtcp_packet/compound_packet_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/dlrr_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/extended_jitter_report_unittest.cc',
+                'rtp_rtcp/source/rtcp_packet/fir_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/nack_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/pli_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/receiver_report_unittest.cc',
