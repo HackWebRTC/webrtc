@@ -73,6 +73,9 @@ class WebRtcVideoFrame : public VideoFrame {
   }
 
   bool InitToBlack(int w, int h, int64_t time_stamp_ns) override;
+  // Needed to inherit the InitToBlack wrapper method with 5
+  // arguments.
+  using VideoFrame::InitToBlack;
 
   // From base class VideoFrame.
   bool Reset(uint32_t format,
