@@ -41,8 +41,13 @@ class VideoFrame {
   VideoFrame() {}
   virtual ~VideoFrame() {}
 
+  virtual bool InitToBlack(int w, int h, int64_t time_stamp) = 0;
+
+  // TODO(nisse): Old signature. Delete after chrome is updated.
   virtual bool InitToBlack(int w, int h, size_t pixel_width,
-                           size_t pixel_height, int64_t time_stamp) = 0;
+                           size_t pixel_height, int64_t time_stamp) {
+    return InitToBlack(w, h, time_stamp);
+  }
   // Creates a frame from a raw sample with FourCC |format| and size |w| x |h|.
   // |h| can be negative indicating a vertically flipped image.
   // |dw| is destination width; can be less than |w| if cropping is desired.
@@ -56,8 +61,6 @@ class VideoFrame {
                      int dh,
                      uint8_t* sample,
                      size_t sample_size,
-                     size_t pixel_width,
-                     size_t pixel_height,
                      int64_t time_stamp,
                      webrtc::VideoRotation rotation,
                      bool apply_rotation) = 0;
@@ -91,11 +94,6 @@ class VideoFrame {
   // multiple times, but the returned object will refer to the same memory.
   virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
       const = 0;
-
-  // For retrieving the aspect ratio of each pixel. Usually this is 1x1, but
-  // the aspect_ratio_idc parameter of H.264 can specify non-square pixels.
-  virtual size_t GetPixelWidth() const = 0;
-  virtual size_t GetPixelHeight() const = 0;
 
   virtual int64_t GetTimeStamp() const = 0;
   virtual void SetTimeStamp(int64_t time_stamp) = 0;
@@ -209,8 +207,7 @@ class VideoFrame {
 
  protected:
   // Creates an empty frame.
-  virtual VideoFrame *CreateEmptyFrame(int w, int h, size_t pixel_width,
-                                       size_t pixel_height,
+  virtual VideoFrame *CreateEmptyFrame(int w, int h,
                                        int64_t time_stamp) const = 0;
   virtual void SetRotation(webrtc::VideoRotation rotation) = 0;
 };

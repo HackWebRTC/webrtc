@@ -220,7 +220,6 @@ VideoFrame* VideoFrame::Stretch(size_t dst_width, size_t dst_height,
                                 bool interpolate, bool vert_crop) const {
   VideoFrame* dest = CreateEmptyFrame(static_cast<int>(dst_width),
                                       static_cast<int>(dst_height),
-                                      GetPixelWidth(), GetPixelHeight(),
                                       GetTimeStamp());
   if (dest) {
     StretchToFrame(dest, interpolate, vert_crop);
