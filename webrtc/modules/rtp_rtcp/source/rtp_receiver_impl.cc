@@ -23,7 +23,6 @@
 namespace webrtc {
 
 using RtpUtility::Payload;
-using RtpUtility::StringCompare;
 
 RtpReceiver* RtpReceiver::CreateVideoReceiver(
     Clock* clock,

@@ -28,7 +28,6 @@
 #include "webrtc/base/logging.h"
 
 using rtc::CreateRandomId;
-using rtc::CreateRandomString;
 
 namespace {
 
