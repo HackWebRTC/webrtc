@@ -32,6 +32,10 @@
     ],
     'audio_coding_defines': [],
     'conditions': [
+      ['include_ilbc==1', {
+        'audio_coding_dependencies': ['ilbc',],
+        'audio_coding_defines': ['WEBRTC_CODEC_ILBC',],
+      }],
       ['include_opus==1', {
         'audio_coding_dependencies': ['webrtc_opus',],
         'audio_coding_defines': ['WEBRTC_CODEC_OPUS',],
@@ -50,8 +54,8 @@
         'audio_coding_defines': ['WEBRTC_CODEC_G722',],
       }],
       ['build_with_mozilla==0 and build_with_chromium==0', {
-        'audio_coding_dependencies': ['ilbc', 'red',],
-        'audio_coding_defines': ['WEBRTC_CODEC_ILBC', 'WEBRTC_CODEC_RED',],
+        'audio_coding_dependencies': ['red',],
+        'audio_coding_defines': ['WEBRTC_CODEC_RED',],
       }],
     ],
   },

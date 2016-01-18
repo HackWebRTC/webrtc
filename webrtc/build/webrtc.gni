@@ -103,6 +103,14 @@ declare_args() {
   use_third_party_h264 = false  # TODO(hbos): To be used in follow-up CL(s).
 }
 
+# A second declare_args block, so that declarations within it can
+# depend on the possibly overridden variables in the first
+# declare_args block.
+declare_args() {
+  # Include the iLBC audio codec?
+  rtc_include_ilbc = !(build_with_chromium || build_with_mozilla)
+}
+
 # Make it possible to provide custom locations for some libraries (move these
 # up into declare_args should we need to actually use them for the GN build).
 rtc_libvpx_dir = "//third_party/libvpx_new"

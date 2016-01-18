@@ -19,6 +19,9 @@
         },
         'build_with_chromium%': '<(build_with_chromium)',
 
+        # Enable to use the Mozilla internal settings.
+        'build_with_mozilla%': 0,
+
         'conditions': [
           ['build_with_chromium==1', {
             'webrtc_root%': '<(DEPTH)/third_party/webrtc',
@@ -32,6 +35,7 @@
         ],
       },
       'build_with_chromium%': '<(build_with_chromium)',
+      'build_with_mozilla%': '<(build_with_mozilla)',
       'webrtc_root%': '<(webrtc_root)',
       'apk_tests_path%': '<(apk_tests_path)',
       'modules_java_gyp_path%': '<(modules_java_gyp_path)',
@@ -40,8 +44,14 @@
       'include_opus%': 1,
       'opus_dir%': '<(DEPTH)/third_party/opus',
 
-      # Enable to use the Mozilla internal settings.
-      'build_with_mozilla%': 0,
+      # Include the iLBC audio codec?
+      'conditions': [
+        ['build_with_chromium==1 or build_with_mozilla==1', {
+          'include_ilbc%': 0,
+        }, {
+          'include_ilbc%': 1,
+        }],
+      ],
     },
     'build_with_chromium%': '<(build_with_chromium)',
     'build_with_mozilla%': '<(build_with_mozilla)',
@@ -50,6 +60,7 @@
     'modules_java_gyp_path%': '<(modules_java_gyp_path)',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
     'webrtc_vp9_dir%': '<(webrtc_vp9_dir)',
+    'include_ilbc%': '<(include_ilbc)',
     'include_opus%': '<(include_opus)',
     'rtc_relative_path%': 1,
     'external_libraries%': '0',

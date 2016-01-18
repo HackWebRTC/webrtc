@@ -23,6 +23,9 @@ source_set("rent_a_codec") {
   ]
 
   defines = []
+  if (rtc_include_ilbc) {
+    defines += [ "WEBRTC_CODEC_ILBC" ]
+  }
   if (rtc_include_opus) {
     defines += [ "WEBRTC_CODEC_OPUS" ]
   }
@@ -35,10 +38,7 @@ source_set("rent_a_codec") {
     defines += [ "WEBRTC_CODEC_G722" ]
   }
   if (!build_with_mozilla && !build_with_chromium) {
-    defines += [
-      "WEBRTC_CODEC_ILBC",
-      "WEBRTC_CODEC_RED",
-    ]
+    defines += [ "WEBRTC_CODEC_RED" ]
   }
 }
 
@@ -103,6 +103,10 @@ source_set("audio_coding") {
     "../../system_wrappers",
   ]
 
+  if (rtc_include_ilbc) {
+    defines += [ "WEBRTC_CODEC_ILBC" ]
+    deps += [ ":ilbc" ]
+  }
   if (rtc_include_opus) {
     defines += [ "WEBRTC_CODEC_OPUS" ]
     deps += [ ":webrtc_opus" ]
@@ -119,14 +123,8 @@ source_set("audio_coding") {
     deps += [ ":g722" ]
   }
   if (!build_with_mozilla && !build_with_chromium) {
-    defines += [
-      "WEBRTC_CODEC_ILBC",
-      "WEBRTC_CODEC_RED",
-    ]
-    deps += [
-      ":ilbc",
-      ":red",
-    ]
+    defines += [ "WEBRTC_CODEC_RED" ]
+    deps += [ ":red" ]
   }
 }
 
@@ -850,6 +848,10 @@ source_set("neteq") {
 
   defines = []
 
+  if (rtc_include_ilbc) {
+    defines += [ "WEBRTC_CODEC_ILBC" ]
+    deps += [ ":ilbc" ]
+  }
   if (rtc_include_opus) {
     defines += [ "WEBRTC_CODEC_OPUS" ]
     deps += [ ":webrtc_opus" ]
@@ -864,9 +866,5 @@ source_set("neteq") {
     }
     defines += [ "WEBRTC_CODEC_G722" ]
     deps += [ ":g722" ]
-  }
-  if (!build_with_mozilla && !build_with_chromium) {
-    defines += [ "WEBRTC_CODEC_ILBC" ]
-    deps += [ ":ilbc" ]
   }
 }
