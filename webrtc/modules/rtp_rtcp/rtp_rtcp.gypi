@@ -75,6 +75,8 @@
         'source/rtcp_packet/rtpfb.h',
         'source/rtcp_packet/sdes.cc',
         'source/rtcp_packet/sdes.h',
+        'source/rtcp_packet/sender_report.cc',
+        'source/rtcp_packet/sender_report.h',
         'source/rtcp_packet/sli.cc',
         'source/rtcp_packet/sli.h',
         'source/rtcp_packet/tmmbn.cc',

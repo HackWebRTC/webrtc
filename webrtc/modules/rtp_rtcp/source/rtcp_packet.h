@@ -15,8 +15,6 @@
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/typedefs.h"
 
@@ -24,7 +22,6 @@ namespace webrtc {
 namespace rtcp {
 
 static const int kCommonFbFmtLength = 12;
-static const int kReportBlockLength = 24;
 
 class RawPacket;
 
@@ -118,79 +115,6 @@ class RtcpPacket {
                             size_t* index,
                             size_t max_length,
                             PacketReadyCallback* callback) const;
-};
-
-// TODO(sprang): Move RtcpPacket subclasses out to separate files.
-
-// RTCP sender report (RFC 3550).
-//
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |V=2|P|    RC   |   PT=SR=200   |             length            |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                         SSRC of sender                        |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |              NTP timestamp, most significant word             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |             NTP timestamp, least significant word             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                         RTP timestamp                         |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                     sender's packet count                     |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                      sender's octet count                     |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |                         report block(s)                       |
-//  |                            ....                               |
-
-class SenderReport : public RtcpPacket {
- public:
-  SenderReport() : RtcpPacket() {
-    memset(&sr_, 0, sizeof(sr_));
-  }
-
-  virtual ~SenderReport() {}
-
-  void From(uint32_t ssrc) {
-    sr_.SenderSSRC = ssrc;
-  }
-  void WithNtpSec(uint32_t sec) {
-    sr_.NTPMostSignificant = sec;
-  }
-  void WithNtpFrac(uint32_t frac) {
-    sr_.NTPLeastSignificant = frac;
-  }
-  void WithRtpTimestamp(uint32_t rtp_timestamp) {
-    sr_.RTPTimestamp = rtp_timestamp;
-  }
-  void WithPacketCount(uint32_t packet_count) {
-    sr_.SenderPacketCount = packet_count;
-  }
-  void WithOctetCount(uint32_t octet_count) {
-    sr_.SenderOctetCount = octet_count;
-  }
-  bool WithReportBlock(const ReportBlock& block);
-
- protected:
-  bool Create(uint8_t* packet,
-              size_t* index,
-              size_t max_length,
-              RtcpPacket::PacketReadyCallback* callback) const override;
-
- private:
-  static const int kMaxNumberOfReportBlocks = 0x1f;
-
-  size_t BlockLength() const {
-    const size_t kSrHeaderLength = 8;
-    const size_t kSenderInfoLength = 20;
-    return kSrHeaderLength + kSenderInfoLength +
-           report_blocks_.size() * kReportBlockLength;
-  }
-
-  RTCPUtility::RTCPPacketSR sr_;
-  std::vector<ReportBlock> report_blocks_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(SenderReport);
 };
 
 // Class holding a RTCP packet.

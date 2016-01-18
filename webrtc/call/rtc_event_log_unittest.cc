@@ -23,6 +23,7 @@
 #include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/test_suite.h"
@@ -355,8 +356,8 @@ rtc::scoped_ptr<rtcp::RawPacket> GenerateRtcpPacket(Random* prng) {
 
   rtcp::SenderReport sender_report;
   sender_report.From(prng->Rand<uint32_t>());  // Sender SSRC.
-  sender_report.WithNtpSec(prng->Rand<uint32_t>());
-  sender_report.WithNtpFrac(prng->Rand<uint32_t>());
+  sender_report.WithNtp(
+      NtpTime(prng->Rand<uint32_t>(), prng->Rand<uint32_t>()));
   sender_report.WithPacketCount(prng->Rand<uint32_t>());
   sender_report.WithReportBlock(report_block);
 

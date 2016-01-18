@@ -320,6 +320,7 @@
                 'rtp_rtcp/source/rtcp_packet/rpsi_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/rrtr_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/sdes_unittest.cc',
+                'rtp_rtcp/source/rtcp_packet/sender_report_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/sli_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/tmmbn_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/tmmbr_unittest.cc',

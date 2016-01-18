@@ -10,22 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 
-#include <algorithm>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-
-using webrtc::RTCPUtility::PT_APP;
-using webrtc::RTCPUtility::PT_IJ;
-using webrtc::RTCPUtility::PT_RTPFB;
-using webrtc::RTCPUtility::PT_SR;
-
-using webrtc::RTCPUtility::RTCPPacketAPP;
-using webrtc::RTCPUtility::RTCPPacketReportBlockItem;
-using webrtc::RTCPUtility::RTCPPacketRTPFBNACK;
-using webrtc::RTCPUtility::RTCPPacketRTPFBNACKItem;
-using webrtc::RTCPUtility::RTCPPacketSR;
 
 namespace webrtc {
 namespace rtcp {
@@ -36,66 +23,6 @@ void AssignUWord8(uint8_t* buffer, size_t* offset, uint8_t value) {
 void AssignUWord16(uint8_t* buffer, size_t* offset, uint16_t value) {
   ByteWriter<uint16_t>::WriteBigEndian(buffer + *offset, value);
   *offset += 2;
-}
-void AssignUWord32(uint8_t* buffer, size_t* offset, uint32_t value) {
-  ByteWriter<uint32_t>::WriteBigEndian(buffer + *offset, value);
-  *offset += 4;
-}
-
-//  Sender report (SR) (RFC 3550).
-//   0                   1                   2                   3
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |V=2|P|    RC   |   PT=SR=200   |             length            |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                         SSRC of sender                        |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |              NTP timestamp, most significant word             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |             NTP timestamp, least significant word             |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                         RTP timestamp                         |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                     sender's packet count                     |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                      sender's octet count                     |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-
-void CreateSenderReport(const RTCPPacketSR& sr,
-                        uint8_t* buffer,
-                        size_t* pos) {
-  AssignUWord32(buffer, pos, sr.SenderSSRC);
-  AssignUWord32(buffer, pos, sr.NTPMostSignificant);
-  AssignUWord32(buffer, pos, sr.NTPLeastSignificant);
-  AssignUWord32(buffer, pos, sr.RTPTimestamp);
-  AssignUWord32(buffer, pos, sr.SenderPacketCount);
-  AssignUWord32(buffer, pos, sr.SenderOctetCount);
-}
-
-//  Report block (RFC 3550).
-//
-//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  |                 SSRC_1 (SSRC of first source)                 |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  | fraction lost |       cumulative number of packets lost       |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |           extended highest sequence number received           |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                      interarrival jitter                      |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                         last SR (LSR)                         |
-//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//  |                   delay since last SR (DLSR)                  |
-//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-
-void CreateReportBlocks(const std::vector<ReportBlock>& blocks,
-                        uint8_t* buffer,
-                        size_t* pos) {
-  for (const ReportBlock& block : blocks) {
-    block.Create(buffer + *pos);
-    *pos += ReportBlock::kLength;
-  }
 }
 }  // namespace
 
@@ -193,30 +120,6 @@ void RtcpPacket::CreateHeader(
   AssignUWord8(buffer, pos, (kVersion << 6) + count_or_format);
   AssignUWord8(buffer, pos, packet_type);
   AssignUWord16(buffer, pos, length);
-}
-
-bool SenderReport::Create(uint8_t* packet,
-                          size_t* index,
-                          size_t max_length,
-                          RtcpPacket::PacketReadyCallback* callback) const {
-  while (*index + BlockLength() > max_length) {
-    if (!OnBufferFull(packet, index, callback))
-      return false;
-  }
-  CreateHeader(sr_.NumberOfReportBlocks, PT_SR, HeaderLength(), packet, index);
-  CreateSenderReport(sr_, packet, index);
-  CreateReportBlocks(report_blocks_, packet, index);
-  return true;
-}
-
-bool SenderReport::WithReportBlock(const ReportBlock& block) {
-  if (report_blocks_.size() >= kMaxNumberOfReportBlocks) {
-    LOG(LS_WARNING) << "Max report blocks reached.";
-    return false;
-  }
-  report_blocks_.push_back(block);
-  sr_.NumberOfReportBlocks = report_blocks_.size();
-  return true;
 }
 
 RawPacket::RawPacket(size_t buffer_length)

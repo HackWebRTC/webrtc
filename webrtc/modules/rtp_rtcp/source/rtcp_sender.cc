@@ -33,6 +33,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/remb.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rpsi.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
@@ -483,8 +484,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
 
   rtcp::SenderReport* report = new rtcp::SenderReport();
   report->From(ssrc_);
-  report->WithNtpSec(ctx.ntp_sec_);
-  report->WithNtpFrac(ctx.ntp_frac_);
+  report->WithNtp(NtpTime(ctx.ntp_sec_, ctx.ntp_frac_));
   report->WithRtpTimestamp(rtp_timestamp);
   report->WithPacketCount(ctx.feedback_state_.packets_sent);
   report->WithOctetCount(ctx.feedback_state_.media_bytes_sent);
