@@ -91,7 +91,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   // Implementing VideoCaptureCallback.
   void DeliverFrame(VideoFrame video_frame) override;
 
-  int32_t SendKeyFrame();
+  void SendKeyFrame();
 
   uint32_t LastObservedBitrateBps() const;
   int CodecTargetBitrate(uint32_t* bitrate) const;

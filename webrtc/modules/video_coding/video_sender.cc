@@ -32,7 +32,6 @@ VideoSender::VideoSender(Clock* clock,
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _encoder(nullptr),
       _encodedFrameCallback(post_encode_callback),
-      _nextFrameTypes(1, kVideoFrameDelta),
       _mediaOpt(clock_),
       _sendStatsCallback(nullptr),
       _codecDataBase(encoder_rate_observer, &_encodedFrameCallback),
@@ -41,7 +40,9 @@ VideoSender::VideoSender(Clock* clock,
       current_codec_(),
       qm_settings_callback_(qm_settings_callback),
       protection_callback_(nullptr),
-      encoder_params_({0, 0, 0, 0}) {
+      encoder_params_({0, 0, 0, 0}),
+      encoder_has_internal_source_(false),
+      next_frame_types_(1, kVideoFrameDelta) {
   // Allow VideoSender to be created on one thread but used on another, post
   // construction. This is currently how this class is being used by at least
   // one external project (diffractor).
@@ -66,7 +67,7 @@ int32_t VideoSender::Process() {
   }
 
   {
-    rtc::CritScope cs(&params_lock_);
+    rtc::CritScope cs(&params_crit_);
     // Force an encoder parameters update, so that incoming frame rate is
     // updated even if bandwidth hasn't changed.
     encoder_params_.input_frame_rate = _mediaOpt.InputFrameRate();
@@ -84,7 +85,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                                        uint32_t numberOfCores,
                                        uint32_t maxPayloadSize) {
   RTC_DCHECK(main_thread_.CalledOnValidThread());
-  rtc::CritScope lock(&send_crit_);
+  rtc::CritScope lock(&encoder_crit_);
   if (sendCodec == nullptr) {
     return VCM_PARAMETER_ERROR;
   }
@@ -105,6 +106,9 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
     return VCM_CODEC_ERROR;
   }
 
+  // SetSendCodec succeeded, _encoder should be set.
+  RTC_DCHECK(_encoder);
+
   int numLayers;
   if (sendCodec->codecType == kVideoCodecVP8) {
     numLayers = sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
@@ -122,9 +126,15 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   } else if (frame_dropper_enabled_) {
     _mediaOpt.EnableFrameDropper(true);
   }
-  _nextFrameTypes.clear();
-  _nextFrameTypes.resize(VCM_MAX(sendCodec->numberOfSimulcastStreams, 1),
-                         kVideoFrameDelta);
+  {
+    rtc::CritScope cs(&params_crit_);
+    next_frame_types_.clear();
+    next_frame_types_.resize(VCM_MAX(sendCodec->numberOfSimulcastStreams, 1),
+                             kVideoFrameKey);
+    // Cache InternalSource() to have this available from IntraFrameRequest()
+    // without having to acquire encoder_crit_ (avoid blocking on encoder use).
+    encoder_has_internal_source_ = _encoder->InternalSource();
+  }
 
   _mediaOpt.SetEncodingData(sendCodec->codecType, sendCodec->maxBitrate * 1000,
                             sendCodec->startBitrate * 1000, sendCodec->width,
@@ -140,7 +150,7 @@ void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                           bool internalSource /*= false*/) {
   RTC_DCHECK(main_thread_.CalledOnValidThread());
 
-  rtc::CritScope lock(&send_crit_);
+  rtc::CritScope lock(&encoder_crit_);
 
   if (externalEncoder == nullptr) {
     bool wasSendCodec = false;
@@ -148,7 +158,9 @@ void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
         _codecDataBase.DeregisterExternalEncoder(payloadType, &wasSendCodec));
     if (wasSendCodec) {
       // Make sure the VCM doesn't use the de-registered codec
+      rtc::CritScope params_lock(&params_crit_);
       _encoder = nullptr;
+      encoder_has_internal_source_ = false;
     }
     return;
   }
@@ -190,7 +202,7 @@ int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
 
   uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
 
-  rtc::CritScope cs(&params_lock_);
+  rtc::CritScope cs(&params_crit_);
   encoder_params_ = {target_rate, lossRate, rtt, input_frame_rate};
 
   return VCM_OK;
@@ -210,7 +222,7 @@ void VideoSender::SetEncoderParameters(EncoderParameters params) {
 
 int32_t VideoSender::RegisterTransportCallback(
     VCMPacketizationCallback* transport) {
-  rtc::CritScope lock(&send_crit_);
+  rtc::CritScope lock(&encoder_crit_);
   _encodedFrameCallback.SetMediaOpt(&_mediaOpt);
   _encodedFrameCallback.SetTransportCallback(transport);
   return VCM_OK;
@@ -239,7 +251,7 @@ int32_t VideoSender::RegisterProtectionCallback(
 
 // Enable or disable a video protection method.
 void VideoSender::SetVideoProtection(VCMVideoProtection videoProtection) {
-  rtc::CritScope lock(&send_crit_);
+  rtc::CritScope lock(&encoder_crit_);
   switch (videoProtection) {
     case kProtectionNone:
       _mediaOpt.SetProtectionMethod(media_optimization::kNone);
@@ -260,19 +272,16 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
                                    const VideoContentMetrics* contentMetrics,
                                    const CodecSpecificInfo* codecSpecificInfo) {
   EncoderParameters encoder_params;
+  std::vector<FrameType> next_frame_types;
   {
-    rtc::CritScope lock(&params_lock_);
+    rtc::CritScope lock(&params_crit_);
     encoder_params = encoder_params_;
+    next_frame_types = next_frame_types_;
   }
-  rtc::CritScope lock(&send_crit_);
+  rtc::CritScope lock(&encoder_crit_);
   if (_encoder == nullptr)
     return VCM_UNINITIALIZED;
   SetEncoderParameters(encoder_params);
-  // TODO(holmer): Add support for dropping frames per stream. Currently we
-  // only have one frame dropper for all streams.
-  if (_nextFrameTypes[0] == kEmptyFrame) {
-    return VCM_OK;
-  }
   if (_mediaOpt.DropFrame()) {
     _encoder->OnDroppedFrame();
     return VCM_OK;
@@ -294,13 +303,20 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
         << "Frame conversion failed, won't be able to encode frame.";
   }
   int32_t ret =
-      _encoder->Encode(converted_frame, codecSpecificInfo, _nextFrameTypes);
+      _encoder->Encode(converted_frame, codecSpecificInfo, next_frame_types);
   if (ret < 0) {
     LOG(LS_ERROR) << "Failed to encode frame. Error code: " << ret;
     return ret;
   }
-  for (size_t i = 0; i < _nextFrameTypes.size(); ++i) {
-    _nextFrameTypes[i] = kVideoFrameDelta;  // Default frame type.
+  {
+    // Change all keyframe requests to encode delta frames the next time.
+    rtc::CritScope lock(&params_crit_);
+    for (size_t i = 0; i < next_frame_types_.size(); ++i) {
+      // Check for equality (same requested as before encoding) to not
+      // accidentally drop a keyframe request while encoding.
+      if (next_frame_types[i] == next_frame_types_[i])
+        next_frame_types_[i] = kVideoFrameDelta;
+    }
   }
   if (qm_settings_callback_)
     qm_settings_callback_->SetTargetFramerate(_encoder->GetTargetFramerate());
@@ -308,24 +324,38 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
 }
 
 int32_t VideoSender::IntraFrameRequest(int stream_index) {
-  rtc::CritScope lock(&send_crit_);
-  if (stream_index < 0 ||
-      static_cast<unsigned int>(stream_index) >= _nextFrameTypes.size()) {
-    return -1;
+  {
+    rtc::CritScope lock(&params_crit_);
+    if (stream_index < 0 ||
+        static_cast<size_t>(stream_index) >= next_frame_types_.size()) {
+      return -1;
+    }
+    next_frame_types_[stream_index] = kVideoFrameKey;
+    if (!encoder_has_internal_source_)
+      return VCM_OK;
   }
-  _nextFrameTypes[stream_index] = kVideoFrameKey;
+  // TODO(pbos): Remove when InternalSource() is gone. Both locks have to be
+  // held here for internal consistency, since _encoder could be removed while
+  // not holding encoder_crit_. Checks have to be performed again since
+  // params_crit_ was dropped to not cause lock-order inversions with
+  // encoder_crit_.
+  rtc::CritScope lock(&encoder_crit_);
+  rtc::CritScope params_lock(&params_crit_);
+  if (static_cast<size_t>(stream_index) >= next_frame_types_.size())
+    return -1;
   if (_encoder != nullptr && _encoder->InternalSource()) {
     // Try to request the frame if we have an external encoder with
     // internal source since AddVideoFrame never will be called.
-    if (_encoder->RequestFrame(_nextFrameTypes) == WEBRTC_VIDEO_CODEC_OK) {
-      _nextFrameTypes[stream_index] = kVideoFrameDelta;
+    if (_encoder->RequestFrame(next_frame_types_) == WEBRTC_VIDEO_CODEC_OK) {
+      // Try to remove just-performed keyframe request, if stream still exists.
+      next_frame_types_[stream_index] = kVideoFrameDelta;
     }
   }
   return VCM_OK;
 }
 
 int32_t VideoSender::EnableFrameDropper(bool enable) {
-  rtc::CritScope lock(&send_crit_);
+  rtc::CritScope lock(&encoder_crit_);
   frame_dropper_enabled_ = enable;
   _mediaOpt.EnableFrameDropper(enable);
   return VCM_OK;

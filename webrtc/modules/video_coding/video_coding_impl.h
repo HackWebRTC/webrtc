@@ -99,19 +99,18 @@ class VideoSender {
 
  private:
   void SetEncoderParameters(EncoderParameters params)
-      EXCLUSIVE_LOCKS_REQUIRED(send_crit_);
+      EXCLUSIVE_LOCKS_REQUIRED(encoder_crit_);
 
   Clock* const clock_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
-  mutable rtc::CriticalSection send_crit_;
+  mutable rtc::CriticalSection encoder_crit_;
   VCMGenericEncoder* _encoder;
-  VCMEncodedFrameCallback _encodedFrameCallback;
-  std::vector<FrameType> _nextFrameTypes;
+  VCMEncodedFrameCallback _encodedFrameCallback GUARDED_BY(encoder_crit_);
   media_optimization::MediaOptimization _mediaOpt;
   VCMSendStatisticsCallback* _sendStatsCallback GUARDED_BY(process_crit_sect_);
-  VCMCodecDataBase _codecDataBase GUARDED_BY(send_crit_);
-  bool frame_dropper_enabled_ GUARDED_BY(send_crit_);
+  VCMCodecDataBase _codecDataBase GUARDED_BY(encoder_crit_);
+  bool frame_dropper_enabled_ GUARDED_BY(encoder_crit_);
   VCMProcessTimer _sendStatsTimer;
 
   // Must be accessed on the construction thread of VideoSender.
@@ -121,8 +120,10 @@ class VideoSender {
   VCMQMSettingsCallback* const qm_settings_callback_;
   VCMProtectionCallback* protection_callback_;
 
-  rtc::CriticalSection params_lock_;
-  EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
+  rtc::CriticalSection params_crit_;
+  EncoderParameters encoder_params_ GUARDED_BY(params_crit_);
+  bool encoder_has_internal_source_ GUARDED_BY(params_crit_);
+  std::vector<FrameType> next_frame_types_ GUARDED_BY(params_crit_);
 };
 
 class VideoReceiver {

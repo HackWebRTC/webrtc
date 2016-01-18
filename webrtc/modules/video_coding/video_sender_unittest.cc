@@ -40,7 +40,12 @@ using webrtc::test::FrameGenerator;
 namespace webrtc {
 namespace vcm {
 namespace {
-enum { kMaxNumberOfTemporalLayers = 3 };
+static const int kDefaultHeight = 720;
+static const int kDefaultWidth = 1280;
+static const int kMaxNumberOfTemporalLayers = 3;
+static const int kNumberOfLayers = 3;
+static const int kNumberOfStreams = 3;
+static const int kUnusedPayloadType = 10;
 
 struct Vp8StreamInfo {
   float framerate_fps[kMaxNumberOfTemporalLayers];
@@ -196,12 +201,6 @@ class TestVideoSender : public ::testing::Test {
 
 class TestVideoSenderWithMockEncoder : public TestVideoSender {
  protected:
-  static const int kDefaultWidth = 1280;
-  static const int kDefaultHeight = 720;
-  static const int kNumberOfStreams = 3;
-  static const int kNumberOfLayers = 3;
-  static const int kUnusedPayloadType = 10;
-
   void SetUp() override {
     TestVideoSender::SetUp();
     sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, false);
@@ -222,20 +221,29 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
   void TearDown() override { sender_.reset(); }
 
   void ExpectIntraRequest(int stream) {
-    if (stream == -1) {
-      // No intra request expected.
-      EXPECT_CALL(
-          encoder_,
-          Encode(_, _, Pointee(ElementsAre(kVideoFrameDelta, kVideoFrameDelta,
-                                           kVideoFrameDelta))))
+    ExpectEncodeWithFrameTypes(stream, false);
+  }
+
+  void ExpectInitialKeyFrames() {
+    ExpectEncodeWithFrameTypes(-1, true);
+  }
+
+  void ExpectEncodeWithFrameTypes(int intra_request_stream, bool first_frame) {
+    if (intra_request_stream == -1) {
+      // No intra request expected, keyframes on first frame.
+      FrameType frame_type = first_frame ? kVideoFrameKey : kVideoFrameDelta;
+      EXPECT_CALL(encoder_,
+                  Encode(_, _, Pointee(ElementsAre(frame_type, frame_type,
+                                                   frame_type))))
           .Times(1)
           .WillRepeatedly(Return(0));
       return;
     }
-    assert(stream >= 0);
-    assert(stream < kNumberOfStreams);
+    ASSERT_FALSE(first_frame);
+    ASSERT_GE(intra_request_stream, 0);
+    ASSERT_LT(intra_request_stream, kNumberOfStreams);
     std::vector<FrameType> frame_types(kNumberOfStreams, kVideoFrameDelta);
-    frame_types[stream] = kVideoFrameKey;
+    frame_types[intra_request_stream] = kVideoFrameKey;
     EXPECT_CALL(encoder_,
                 Encode(_, _, Pointee(ElementsAreArray(&frame_types[0],
                                                       frame_types.size()))))
@@ -260,6 +268,9 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
 };
 
 TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequests) {
+  // Initial request should be all keyframes.
+  ExpectInitialKeyFrames();
+  AddFrame();
   EXPECT_EQ(0, sender_->IntraFrameRequest(0));
   ExpectIntraRequest(0);
   AddFrame();
@@ -293,6 +304,9 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
   // Register encoder with internal capture.
   sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, true);
   EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
+  // Initial request should be all keyframes.
+  ExpectInitialKeyFrames();
+  AddFrame();
   ExpectIntraRequest(0);
   EXPECT_EQ(0, sender_->IntraFrameRequest(0));
   ExpectIntraRequest(1);

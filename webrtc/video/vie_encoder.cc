@@ -401,8 +401,8 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
   vcm_->AddVideoFrame(*frame_to_send);
 }
 
-int ViEEncoder::SendKeyFrame() {
-  return vcm_->IntraFrameRequest(0);
+void ViEEncoder::SendKeyFrame() {
+  vcm_->IntraFrameRequest(0);
 }
 
 uint32_t ViEEncoder::LastObservedBitrateBps() const {
