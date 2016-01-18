@@ -23,9 +23,6 @@
 #include "webrtc/test/channel_transport/udp_socket_wrapper.h"
 
 namespace webrtc {
-
-class ConditionVariableWrapper;
-
 namespace test {
 
 class UdpSocketPosix;

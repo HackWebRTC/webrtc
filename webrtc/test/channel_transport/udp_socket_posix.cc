@@ -27,7 +27,10 @@
 namespace webrtc {
 namespace test {
 UdpSocketPosix::UdpSocketPosix(const int32_t id, UdpSocketManager* mgr,
-                               bool ipV6Enable) : _id(id)
+                               bool ipV6Enable)
+    : _id(id),
+      _closeBlockingCompletedCond(true, false),
+      _readyForDeletionCond(true, false)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, id,
                  "UdpSocketPosix::UdpSocketPosix()");
@@ -37,13 +40,9 @@ UdpSocketPosix::UdpSocketPosix(const int32_t id, UdpSocketManager* mgr,
 
     _obj = NULL;
     _incomingCb = NULL;
-    _readyForDeletionCond = ConditionVariableWrapper::CreateConditionVariable();
-    _closeBlockingCompletedCond =
-        ConditionVariableWrapper::CreateConditionVariable();
-    _cs = CriticalSectionWrapper::CreateCriticalSection();
     _readyForDeletion = false;
     _closeBlockingActive = false;
-    _closeBlockingCompleted= false;
+    _closeBlockingCompleted = false;
     if(ipV6Enable)
     {
         _socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
@@ -74,20 +73,6 @@ UdpSocketPosix::~UdpSocketPosix()
     {
         close(_socket);
         _socket = INVALID_SOCKET;
-    }
-    if(_readyForDeletionCond)
-    {
-        delete _readyForDeletionCond;
-    }
-
-    if(_closeBlockingCompletedCond)
-    {
-        delete _closeBlockingCompletedCond;
-    }
-
-    if(_cs)
-    {
-        delete _cs;
     }
 }
 
@@ -227,41 +212,42 @@ bool UdpSocketPosix::WantsIncoming() { return _wantsIncoming; }
 
 void UdpSocketPosix::CloseBlocking()
 {
-    _cs->Enter();
+    rtc::CritScope lock(&_cs);
     _closeBlockingActive = true;
     if(!CleanUp())
     {
         _closeBlockingActive = false;
-        _cs->Leave();
         return;
     }
 
-    while(!_readyForDeletion)
+    if(!_readyForDeletion)
     {
-        _readyForDeletionCond->SleepCS(*_cs);
+        _cs.Leave();
+        _readyForDeletionCond.Wait(rtc::Event::kForever);
+        _cs.Enter();
     }
     _closeBlockingCompleted = true;
-    _closeBlockingCompletedCond->Wake();
-    _cs->Leave();
+    _closeBlockingCompletedCond.Set();
 }
 
 void UdpSocketPosix::ReadyForDeletion()
 {
-    _cs->Enter();
+    rtc::CritScope lock(&_cs);
     if(!_closeBlockingActive)
     {
-        _cs->Leave();
         return;
     }
+
     close(_socket);
     _socket = INVALID_SOCKET;
     _readyForDeletion = true;
-    _readyForDeletionCond->Wake();
-    while(!_closeBlockingCompleted)
+    _readyForDeletionCond.Set();
+    if(!_closeBlockingCompleted)
     {
-        _closeBlockingCompletedCond->SleepCS(*_cs);
+        _cs.Leave();
+        _closeBlockingCompletedCond.Wait(rtc::Event::kForever);
+        _cs.Enter();
     }
-    _cs->Leave();
 }
 
 bool UdpSocketPosix::CleanUp()

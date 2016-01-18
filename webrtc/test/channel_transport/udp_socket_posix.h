@@ -16,8 +16,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/test/channel_transport/udp_socket_wrapper.h"
 
 namespace webrtc {
@@ -78,14 +78,14 @@ private:
 
     SOCKET _socket;
     UdpSocketManager* _mgr;
-    ConditionVariableWrapper* _closeBlockingCompletedCond;
-    ConditionVariableWrapper* _readyForDeletionCond;
+    rtc::Event _closeBlockingCompletedCond;
+    rtc::Event _readyForDeletionCond;
 
     bool _closeBlockingActive;
     bool _closeBlockingCompleted;
     bool _readyForDeletion;
 
-    CriticalSectionWrapper* _cs;
+    rtc::CriticalSection _cs;
 };
 
 }  // namespace test
