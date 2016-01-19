@@ -38,8 +38,8 @@ def main():
         'webrtc/common_audio/common_audio_unittests.isolate',
     'common_video_unittests':
         'webrtc/common_video/common_video_unittests.isolate',
-    'libjingle_peerconnection_unittest':
-        'talk/libjingle_peerconnection_unittest.isolate',
+    'peerconnection_unittests':
+        'talk/peerconnection_unittests.isolate',
     'modules_tests': 'webrtc/modules/modules_tests.isolate',
     'modules_unittests': 'webrtc/modules/modules_unittests.isolate',
     'rtc_unittests': 'webrtc/rtc_unittests.isolate',

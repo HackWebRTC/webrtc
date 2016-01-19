@@ -80,7 +80,7 @@ char kLSanDefaultSuppressions[] =
 "leak:WebRtcVideoEngineTestFake_SetBandwidthInConference_Test::TestBody\n"
 "leak:WebRtcVideoEngineTestFake_SetSendCodecsRejectBadFormat_Test::TestBody\n"
 
-// libjingle_peerconnection_unittest
+// peerconnection_unittests
 // https://code.google.com/p/webrtc/issues/detail?id=2528
 "leak:cricket::FakeVideoMediaChannel::~FakeVideoMediaChannel\n"
 "leak:cricket::MediaSessionDescriptionFactory::CreateAnswer\n"

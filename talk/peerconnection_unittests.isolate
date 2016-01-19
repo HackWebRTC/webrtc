@@ -29,10 +29,10 @@
     ['OS=="linux" or OS=="mac" or OS=="win"', {
       'variables': {
         'command': [
-          '<(PRODUCT_DIR)/libjingle_peerconnection_unittest<(EXECUTABLE_SUFFIX)',
+          '<(PRODUCT_DIR)/peerconnection_unittests<(EXECUTABLE_SUFFIX)',
         ],
         'files': [
-          '<(PRODUCT_DIR)/libjingle_peerconnection_unittest<(EXECUTABLE_SUFFIX)',
+          '<(PRODUCT_DIR)/peerconnection_unittests<(EXECUTABLE_SUFFIX)',
         ],
       },
     }],

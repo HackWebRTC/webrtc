@@ -187,7 +187,7 @@
       ],
     },  # target libjingle_p2p_unittest
     {
-      'target_name': 'libjingle_peerconnection_unittest',
+      'target_name': 'peerconnection_unittests',
       'type': '<(gtest_target_type)',
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
@@ -260,7 +260,7 @@
           },
         }],
       ],
-    },  # target libjingle_peerconnection_unittest
+    },  # target peerconnection_unittests
   ],
   'conditions': [
     ['OS=="linux"', {
@@ -415,10 +415,10 @@
     ['OS=="android"', {
       'targets': [
         {
-          'target_name': 'libjingle_peerconnection_unittest_apk_target',
+          'target_name': 'peerconnection_unittests_apk_target',
           'type': 'none',
           'dependencies': [
-            '<(DEPTH)/webrtc/build/apk_tests.gyp:libjingle_peerconnection_unittest_apk',
+            '<(DEPTH)/webrtc/build/apk_tests.gyp:peerconnection_unittests_apk',
           ],
         },
       ],
@@ -452,16 +452,16 @@
           ],
         },
         {
-          'target_name': 'libjingle_peerconnection_unittest_run',
+          'target_name': 'peerconnection_unittests_run',
           'type': 'none',
           'dependencies': [
-            'libjingle_peerconnection_unittest',
+            'peerconnection_unittests',
           ],
           'includes': [
             'build/isolate.gypi',
           ],
           'sources': [
-            'libjingle_peerconnection_unittest.isolate',
+            'peerconnection_unittests.isolate',
           ],
         },
       ],

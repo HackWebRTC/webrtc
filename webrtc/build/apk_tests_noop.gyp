@@ -22,7 +22,7 @@
       'type': 'none',
     },
     {
-      'target_name': 'libjingle_peerconnection_unittest_apk',
+      'target_name': 'peerconnection_unittests_apk',
       'type': 'none',
     },
     {
