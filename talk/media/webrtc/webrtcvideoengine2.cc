@@ -2452,9 +2452,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
     return;
   }
 
-  if (frame.width() != last_width_ || frame.height() != last_height_) {
-    SetSize(frame.width(), frame.height());
-  }
+  last_width_ = frame.width();
+  last_height_ = frame.height();
 
   const WebRtcVideoFrame render_frame(
       frame.video_frame_buffer(),
@@ -2479,9 +2478,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRenderer(
     cricket::VideoRenderer* renderer) {
   rtc::CritScope crit(&renderer_lock_);
   renderer_ = renderer;
-  if (renderer_ != NULL && last_width_ != -1) {
-    SetSize(last_width_, last_height_);
-  }
 }
 
 VideoRenderer* WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetRenderer() {
@@ -2489,16 +2485,6 @@ VideoRenderer* WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetRenderer() {
   // design.
   rtc::CritScope crit(&renderer_lock_);
   return renderer_;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetSize(int width,
-                                                            int height) {
-  rtc::CritScope crit(&renderer_lock_);
-  if (!renderer_->SetSize(width, height, 0)) {
-    LOG(LS_ERROR) << "Could not set renderer size.";
-  }
-  last_width_ = width;
-  last_height_ = height;
 }
 
 std::string

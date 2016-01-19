@@ -116,14 +116,8 @@ void CaptureRenderAdapter::MaybeSetRenderingSize(const VideoFrame* frame) {
     const bool new_resolution = iter->render_width != frame->GetWidth() ||
         iter->render_height != frame->GetHeight();
     if (new_resolution) {
-      if (iter->renderer->SetSize(static_cast<int>(frame->GetWidth()),
-                                  static_cast<int>(frame->GetHeight()), 0)) {
-        iter->render_width = frame->GetWidth();
-        iter->render_height = frame->GetHeight();
-      } else {
-        LOG(LS_ERROR) << "Captured frame size not supported by renderer: " <<
-            frame->GetWidth() << " x " << frame->GetHeight();
-      }
+      iter->render_width = frame->GetWidth();
+      iter->render_height = frame->GetHeight();
     }
   }
 }

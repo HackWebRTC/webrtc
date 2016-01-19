@@ -864,11 +864,6 @@ TEST_F(WebRtcVideoChannel2BaseTest, TwoStreamsReUseFirstStream) {
   Base::TwoStreamsReUseFirstStream(kVp8Codec);
 }
 
-//Disabled for TSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=4963
-#if !defined(THREAD_SANITIZER)
-WEBRTC_BASE_TEST(SendManyResizeOnce);
-#endif  // THREAD_SANITIZER
-
 // TODO(pbos): Enable and figure out why this fails (or should work).
 TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
   EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));

@@ -224,7 +224,6 @@ TEST_F(VideoSourceTest, StartStopRemote) {
 
   cricket::VideoRenderer* frameinput = source_->FrameInput();
   cricket::WebRtcVideoFrame test_frame;
-  frameinput->SetSize(1280, 720, 0);
   frameinput->RenderFrame(&test_frame);
   EXPECT_EQ(1, renderer_.num_rendered_frames());
 
@@ -550,4 +549,3 @@ TEST_F(VideoSourceTest, OptionalSubOneFpsConstraints) {
   ASSERT_TRUE(format != NULL);
   EXPECT_EQ(30, format->framerate());
 }
-

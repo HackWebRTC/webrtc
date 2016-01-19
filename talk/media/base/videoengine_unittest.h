@@ -455,28 +455,6 @@ class VideoMediaChannelTest : public testing::Test,
     rtc::scoped_ptr<const rtc::Buffer> p(GetRtpPacket(0));
     EXPECT_EQ(codec.id, GetPayloadType(p.get()));
   }
-  // Tests that we only get a VideoRenderer::SetSize() callback when needed.
-  void SendManyResizeOnce() {
-    cricket::VideoCodec codec(DefaultCodec());
-    EXPECT_TRUE(SetOneCodec(codec));
-    EXPECT_TRUE(SetSend(true));
-    EXPECT_TRUE(channel_->SetRenderer(kDefaultReceiveSsrc, &renderer_));
-    EXPECT_EQ(0, renderer_.num_rendered_frames());
-    EXPECT_TRUE(WaitAndSendFrame(30));
-    EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
-    EXPECT_TRUE(WaitAndSendFrame(30));
-    EXPECT_FRAME_WAIT(2, codec.width, codec.height, kTimeout);
-    rtc::scoped_ptr<const rtc::Buffer> p(GetRtpPacket(0));
-    EXPECT_EQ(codec.id, GetPayloadType(p.get()));
-    EXPECT_EQ(1, renderer_.num_set_sizes());
-
-    codec.width /= 2;
-    codec.height /= 2;
-    EXPECT_TRUE(SetOneCodec(codec));
-    EXPECT_TRUE(WaitAndSendFrame(30));
-    EXPECT_FRAME_WAIT(3, codec.width, codec.height, kTimeout);
-    EXPECT_EQ(2, renderer_.num_set_sizes());
-  }
   void SendReceiveManyAndGetStats(const cricket::VideoCodec& codec,
                                   int duration_sec, int fps) {
     EXPECT_TRUE(SetOneCodec(codec));

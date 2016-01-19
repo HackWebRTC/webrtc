@@ -724,23 +724,14 @@ class VideoRendererWrapper : public VideoRendererInterface {
 
   virtual ~VideoRendererWrapper() {}
 
-  // This wraps VideoRenderer which still has SetSize.
   void RenderFrame(const cricket::VideoFrame* video_frame) override {
     ScopedLocalRefFrame local_ref_frame(AttachCurrentThreadIfNeeded());
-    const cricket::VideoFrame* frame =
-      video_frame->GetCopyWithRotationApplied();
-    if (width_ != frame->GetWidth() || height_ != frame->GetHeight()) {
-      width_ = frame->GetWidth();
-      height_ = frame->GetHeight();
-      renderer_->SetSize(width_, height_, 0);
-    }
-    renderer_->RenderFrame(frame);
+    renderer_->RenderFrame(video_frame->GetCopyWithRotationApplied());
   }
 
  private:
   explicit VideoRendererWrapper(cricket::VideoRenderer* renderer)
-    : width_(0), height_(0), renderer_(renderer) {}
-  int width_, height_;
+      : renderer_(renderer) {}
   scoped_ptr<cricket::VideoRenderer> renderer_;
 };
 

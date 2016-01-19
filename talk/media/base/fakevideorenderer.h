@@ -42,18 +42,8 @@ class FakeVideoRenderer : public VideoRenderer {
       : errors_(0),
         width_(0),
         height_(0),
-        num_set_sizes_(0),
         num_rendered_frames_(0),
         black_frame_(false) {
-  }
-
-  virtual bool SetSize(int width, int height, int reserved) {
-    rtc::CritScope cs(&crit_);
-    width_ = width;
-    height_ = height;
-    ++num_set_sizes_;
-    SignalSetSize(width, height, reserved);
-    return true;
   }
 
   virtual bool RenderFrame(const VideoFrame* frame) {
@@ -62,20 +52,14 @@ class FakeVideoRenderer : public VideoRenderer {
     // tolerance on Y values.
     black_frame_ = CheckFrameColorYuv(6, 48, 128, 128, 128, 128, frame);
     // Treat unexpected frame size as error.
-    if (!frame ||
-        frame->GetWidth() != static_cast<size_t>(width_) ||
-        frame->GetHeight() != static_cast<size_t>(height_)) {
-      if (!frame) {
-        LOG(LS_WARNING) << "RenderFrame expected non-null frame.";
-      } else {
-        LOG(LS_WARNING) << "RenderFrame expected frame of size " << width_
-                        << "x" << height_ << " but received frame of size "
-                        << frame->GetWidth() << "x" << frame->GetHeight();
-      }
+    if (!frame) {
+      LOG(LS_WARNING) << "RenderFrame expected non-null frame.";
       ++errors_;
       return false;
     }
     ++num_rendered_frames_;
+    width_ = static_cast<int>(frame->GetWidth());
+    height_ = static_cast<int>(frame->GetHeight());
     SignalRenderFrame(frame);
     return true;
   }
@@ -88,10 +72,6 @@ class FakeVideoRenderer : public VideoRenderer {
   int height() const {
     rtc::CritScope cs(&crit_);
     return height_;
-  }
-  int num_set_sizes() const {
-    rtc::CritScope cs(&crit_);
-    return num_set_sizes_;
   }
   int num_rendered_frames() const {
     rtc::CritScope cs(&crit_);
@@ -160,7 +140,6 @@ class FakeVideoRenderer : public VideoRenderer {
   int errors_;
   int width_;
   int height_;
-  int num_set_sizes_;
   int num_rendered_frames_;
   bool black_frame_;
   mutable rtc::CriticalSection crit_;

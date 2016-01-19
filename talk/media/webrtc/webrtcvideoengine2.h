@@ -431,7 +431,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       bool external;
     };
 
-    void SetSize(int width, int height);
     void RecreateWebRtcStream();
 
     AllocatedDecoder CreateOrReuseVideoDecoder(

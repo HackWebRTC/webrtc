@@ -42,12 +42,6 @@ class VideoFrame;
 class VideoRenderer {
  public:
   virtual ~VideoRenderer() {}
-  // Called when the video has changed size.
-  // TODO(nisse): This method is not really used, and should be
-  // deleted. Provide a default do-nothing implementation, to easy the
-  // transition as the method is deleted in subclasses, in particular,
-  // chrome's MockVideoRenderer class.
-  virtual bool SetSize(int width, int height, int reserved) { return true; };
   // Called when a new frame is available for display.
   virtual bool RenderFrame(const VideoFrame *frame) = 0;
 

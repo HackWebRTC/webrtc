@@ -214,9 +214,10 @@ TEST_F(VideoCapturerTest, ScreencastScaledOddWidth) {
       cricket::FOURCC_ARGB)));
   EXPECT_TRUE(capturer_.IsRunning());
   EXPECT_EQ(0, renderer_.num_rendered_frames());
-  renderer_.SetSize(kWidth, kHeight, 0);
   EXPECT_TRUE(capturer_.CaptureFrame());
   EXPECT_EQ(1, renderer_.num_rendered_frames());
+  EXPECT_EQ(kWidth, renderer_.width());
+  EXPECT_EQ(kHeight, renderer_.height());
 }
 
 TEST_F(VideoCapturerTest, TestRotationPending) {
@@ -244,24 +245,26 @@ TEST_F(VideoCapturerTest, TestRotationPending) {
   // the rotation information, the renderer should be given the right dimension
   // such that the frame could be rendered.
 
-  // Swap the dimension for the next 2 frames which are rotated by 90 and 270
-  // degree.
-  renderer_.SetSize(kHeight, kWidth, 0);
-
   capturer_.SetRotation(webrtc::kVideoRotation_90);
   EXPECT_TRUE(capturer_.CaptureFrame());
   EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
+  // Swapped width and height
+  EXPECT_EQ(kWidth, renderer_.height());
+  EXPECT_EQ(kHeight, renderer_.width());
 
   capturer_.SetRotation(webrtc::kVideoRotation_270);
   EXPECT_TRUE(capturer_.CaptureFrame());
   EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
-
-  // Reset the renderer to have corresponding width and height.
-  renderer_.SetSize(kWidth, kHeight, 0);
+  // Swapped width and height
+  EXPECT_EQ(kWidth, renderer_.height());
+  EXPECT_EQ(kHeight, renderer_.width());
 
   capturer_.SetRotation(webrtc::kVideoRotation_180);
   EXPECT_TRUE(capturer_.CaptureFrame());
   EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
+  // Back to normal width and height
+  EXPECT_EQ(kWidth, renderer_.width());
+  EXPECT_EQ(kHeight, renderer_.height());
 }
 
 TEST_F(VideoCapturerTest, TestRotationApplied) {
@@ -285,8 +288,6 @@ TEST_F(VideoCapturerTest, TestRotationApplied) {
                 cricket::FOURCC_I420)));
   EXPECT_TRUE(capturer_.IsRunning());
   EXPECT_EQ(0, renderer_.num_rendered_frames());
-
-  renderer_.SetSize(kWidth, kHeight, 0);
 
   // If the frame's rotation is compensated anywhere in the pipeline, the frame
   // won't have its original dimension out from capturer. Since the renderer
@@ -331,9 +332,10 @@ TEST_F(VideoCapturerTest, ScreencastScaledSuperLarge) {
       cricket::FOURCC_ARGB)));
   EXPECT_TRUE(capturer_.IsRunning());
   EXPECT_EQ(0, renderer_.num_rendered_frames());
-  renderer_.SetSize(2050, 1538, 0);
   EXPECT_TRUE(capturer_.CaptureFrame());
   EXPECT_EQ(1, renderer_.num_rendered_frames());
+  EXPECT_EQ(kWidth / 2, renderer_.width());
+  EXPECT_EQ(kHeight / 2, renderer_.height());
 }
 
 TEST_F(VideoCapturerTest, TestFourccMatch) {

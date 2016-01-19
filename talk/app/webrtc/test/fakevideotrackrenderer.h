@@ -45,12 +45,6 @@ class FakeVideoTrackRenderer : public VideoRendererInterface {
 
   virtual void RenderFrame(const cricket::VideoFrame* video_frame) override {
     last_frame_ = const_cast<cricket::VideoFrame*>(video_frame);
-    if (!fake_renderer_.SetSize(static_cast<int>(video_frame->GetWidth()),
-                                static_cast<int>(video_frame->GetHeight()),
-                                0)) {
-      return;
-    }
-
     fake_renderer_.RenderFrame(video_frame);
   }
 
