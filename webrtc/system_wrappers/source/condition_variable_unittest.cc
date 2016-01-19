@@ -10,6 +10,11 @@
 
 #include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
 
+// TODO(tommi): Remove completely.  As is there is still some code for Windows
+// that relies on ConditionVariableWrapper, but code has been removed on other
+// platforms.
+#if defined(WEBRTC_WIN)
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -201,3 +206,5 @@ TEST(CondVarWaitTest, WaitingWaits) {
 }  // anonymous namespace
 
 }  // namespace webrtc
+
+#endif  // defined(WEBRTC_WIN)

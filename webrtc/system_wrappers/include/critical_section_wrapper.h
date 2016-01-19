@@ -51,9 +51,7 @@ private:
   friend class ConditionVariableEventWin;
   friend class ConditionVariableNativeWin;
 #else
-  // TODO(tommi): Remove friendness.
   pthread_mutex_t mutex_;
-  friend class ConditionVariablePosix;
 #endif
 };
 

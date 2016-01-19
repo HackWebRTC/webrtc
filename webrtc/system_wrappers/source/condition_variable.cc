@@ -10,19 +10,17 @@
 
 #include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
 
-#if defined(_WIN32)
+// TODO(tommi): Remove completely.  As is there is still some code for Windows
+// that relies on ConditionVariableWrapper, but code has been removed on other
+// platforms.
+#if defined(WEBRTC_WIN)
+
 #include <windows.h>
 #include "webrtc/system_wrappers/source/condition_variable_event_win.h"
 #include "webrtc/system_wrappers/source/condition_variable_native_win.h"
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-#include <pthread.h>
-#include "webrtc/system_wrappers/source/condition_variable_posix.h"
-#endif
 
 namespace webrtc {
-
 ConditionVariableWrapper* ConditionVariableWrapper::CreateConditionVariable() {
-#if defined(_WIN32)
   // Try to create native condition variable implementation.
   ConditionVariableWrapper* ret_val = ConditionVariableNativeWin::Create();
   if (!ret_val) {
@@ -31,11 +29,7 @@ ConditionVariableWrapper* ConditionVariableWrapper::CreateConditionVariable() {
     ret_val = new ConditionVariableEventWin();
   }
   return ret_val;
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  return ConditionVariablePosix::Create();
-#else
-  return NULL;
-#endif
 }
-
 }  // namespace webrtc
+
+#endif  // defined(WEBRTC_WIN)

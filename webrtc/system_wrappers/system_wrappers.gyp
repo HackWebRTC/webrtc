@@ -55,8 +55,6 @@
         'source/atomic32_win.cc',
         'source/clock.cc',
         'source/condition_variable.cc',
-        'source/condition_variable_posix.cc',
-        'source/condition_variable_posix.h',
         'source/condition_variable_event_win.cc',
         'source/condition_variable_event_win.h',
         'source/condition_variable_native_win.cc',

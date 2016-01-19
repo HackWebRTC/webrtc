@@ -50,8 +50,6 @@ static_library("system_wrappers") {
     "source/condition_variable_event_win.h",
     "source/condition_variable_native_win.cc",
     "source/condition_variable_native_win.h",
-    "source/condition_variable_posix.cc",
-    "source/condition_variable_posix.h",
     "source/cpu_features.cc",
     "source/cpu_info.cc",
     "source/critical_section.cc",

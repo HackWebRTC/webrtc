@@ -11,6 +11,11 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CONDITION_VARIABLE_WRAPPER_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CONDITION_VARIABLE_WRAPPER_H_
 
+// TODO(tommi): Remove completely.  As is there is still some code for Windows
+// that relies on ConditionVariableWrapper, but code has been removed on other
+// platforms.
+#if defined(WEBRTC_WIN)
+
 namespace webrtc {
 
 class CriticalSectionWrapper;
@@ -38,5 +43,7 @@ class ConditionVariableWrapper {
 };
 
 }  // namespace webrtc
+
+#endif  // defined(WEBRTC_WIN)
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CONDITION_VARIABLE_WRAPPER_H_
