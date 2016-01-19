@@ -8,21 +8,53 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if defined(_WIN32)
-#include <windows.h>
-#include "webrtc/system_wrappers/source/critical_section_win.h"
-#else
-#include "webrtc/system_wrappers/source/critical_section_posix.h"
-#endif
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
 CriticalSectionWrapper* CriticalSectionWrapper::CreateCriticalSection() {
-#ifdef _WIN32
-  return new CriticalSectionWindows();
-#else
-  return new CriticalSectionPosix();
-#endif
+  return new CriticalSectionWrapper();
 }
+
+#if defined (WEBRTC_WIN)
+
+CriticalSectionWrapper::CriticalSectionWrapper() {
+  InitializeCriticalSection(&crit_);
+}
+
+CriticalSectionWrapper::~CriticalSectionWrapper() {
+  DeleteCriticalSection(&crit_);
+}
+
+void CriticalSectionWrapper::Enter() {
+  EnterCriticalSection(&crit_);
+}
+
+void CriticalSectionWrapper::Leave() {
+  LeaveCriticalSection(&crit_);
+}
+
+#else
+
+CriticalSectionWrapper::CriticalSectionWrapper() {
+  pthread_mutexattr_t attr;
+  pthread_mutexattr_init(&attr);
+  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+  pthread_mutex_init(&mutex_, &attr);
+}
+
+CriticalSectionWrapper::~CriticalSectionWrapper() {
+  pthread_mutex_destroy(&mutex_);
+}
+
+void CriticalSectionWrapper::Enter() {
+  pthread_mutex_lock(&mutex_);
+}
+
+void CriticalSectionWrapper::Leave() {
+  pthread_mutex_unlock(&mutex_);
+}
+
+#endif
 
 }  // namespace webrtc

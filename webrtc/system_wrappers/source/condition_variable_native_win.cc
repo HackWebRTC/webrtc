@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/system_wrappers/source/condition_variable_native_win.h"
-#include "webrtc/system_wrappers/source/critical_section_win.h"
 
 namespace webrtc {
 
@@ -86,10 +86,8 @@ void ConditionVariableNativeWin::SleepCS(CriticalSectionWrapper& crit_sect) {
 
 bool ConditionVariableNativeWin::SleepCS(CriticalSectionWrapper& crit_sect,
                                          unsigned long max_time_in_ms) {
-  CriticalSectionWindows* cs =
-      static_cast<CriticalSectionWindows*>(&crit_sect);
   BOOL ret_val = PSleepConditionVariableCS_(&condition_variable_,
-                                            &(cs->crit), max_time_in_ms);
+                                            &crit_sect.crit_, max_time_in_ms);
   return ret_val != 0;
 }
 
