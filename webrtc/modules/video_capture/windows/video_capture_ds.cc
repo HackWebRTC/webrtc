@@ -395,7 +395,7 @@ HRESULT VideoCaptureDS::ConnectDVCamera()
     hr = _graphBuilder->ConnectDirect(_outputDvPin, _inputSendPin, NULL);
     if (hr != S_OK)
     {
-        if (hr == (long)0x80070004)
+        if (hr == HRESULT_FROM_WIN32(ERROR_TOO_MANY_OPEN_FILES))
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                          "Failed to connect the capture device, busy");
