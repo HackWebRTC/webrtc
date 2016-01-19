@@ -26,7 +26,7 @@ CHROMIUM_LOG_TEMPLATE = CHROMIUM_SRC_URL + '/+log/%s'
 CHROMIUM_FILE_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s/%s'
 
 COMMIT_POSITION_RE = re.compile('^Cr-Commit-Position: .*#([0-9]+).*$')
-CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION=(\d+)$')
+CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION = \'(\d+)\'$')
 ROLL_BRANCH_NAME = 'roll_chromium_revision'
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,6 +47,9 @@ CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join('tools', 'clang', 'scripts',
 DepsEntry = collections.namedtuple('DepsEntry', 'path url revision')
 ChangedDep = collections.namedtuple('ChangedDep',
                                     'path url current_rev new_rev')
+
+class RollError(Exception):
+  pass
 
 
 def ParseDepsDict(deps_content):
@@ -234,7 +237,7 @@ def CalculateChangedClang(new_cr_rev):
       match = CLANG_REVISION_RE.match(line)
       if match:
         return match.group(1)
-    return None
+    raise RollError('Could not parse Clang revision!')
 
   chromium_src_path = os.path.join(CHECKOUT_ROOT_DIR, 'chromium', 'src',
                                    CLANG_UPDATE_SCRIPT_LOCAL_PATH)
@@ -242,9 +245,9 @@ def CalculateChangedClang(new_cr_rev):
     current_lines = f.readlines()
   current_rev = GetClangRev(current_lines)
 
-  new_clang_update_sh = ReadRemoteCrFile(CLANG_UPDATE_SCRIPT_URL_PATH,
-                                         new_cr_rev).splitlines()
-  new_rev = GetClangRev(new_clang_update_sh)
+  new_clang_update_py = ReadRemoteCrFile(CLANG_UPDATE_SCRIPT_URL_PATH,
+                                             new_cr_rev).splitlines()
+  new_rev = GetClangRev(new_clang_update_py)
   return ChangedDep(CLANG_UPDATE_SCRIPT_LOCAL_PATH, None, current_rev, new_rev)
 
 
