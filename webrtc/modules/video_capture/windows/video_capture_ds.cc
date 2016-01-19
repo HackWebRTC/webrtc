@@ -395,7 +395,7 @@ HRESULT VideoCaptureDS::ConnectDVCamera()
     hr = _graphBuilder->ConnectDirect(_outputDvPin, _inputSendPin, NULL);
     if (hr != S_OK)
     {
-        if (hr == 0x80070004)
+        if (hr == (long)0x80070004)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                          "Failed to connect the capture device, busy");

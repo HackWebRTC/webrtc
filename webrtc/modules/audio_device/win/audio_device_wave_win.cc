@@ -2737,7 +2737,7 @@ int32_t AudioDeviceWindowsWave::GetPlayoutBufferDelay(uint32_t& writtenSamples, 
             msecInPlayoutBuffer = ((writtenSamples - playedSamples)/nSamplesPerMs);
         }
     }
-    else if ((_writtenSamplesOld > POW2(31)) && (writtenSamples < 96000))
+    else if ((_writtenSamplesOld > (unsigned long)POW2(31)) && (writtenSamples < 96000))
     {
         // Wrap around as expected after having used all 32 bits. (But we still
         // test if the wrap around happened earlier which it should not)
@@ -2754,7 +2754,7 @@ int32_t AudioDeviceWindowsWave::GetPlayoutBufferDelay(uint32_t& writtenSamples, 
         msecInPlayoutBuffer = (int)((writtenSamples + POW2(i + 1) - playedSamples)/nSamplesPerMs);
 
     }
-    else if ((writtenSamples < 96000) && (playedSamples > POW2(31)))
+    else if ((writtenSamples < 96000) && (playedSamples > (unsigned long)POW2(31)))
     {
         // Wrap around has, as expected, happened for written_sampels before
         // playedSampels so we have to adjust for this until also playedSampels
@@ -2953,7 +2953,7 @@ int32_t AudioDeviceWindowsWave::GetRecordingBufferDelay(uint32_t& readSamples, u
     if((_wrapCounter>200)){
         // Do nothing, handled later
     }
-    else if((_rec_samples_old > POW2(31)) && (recSamples < 96000)) {
+    else if((_rec_samples_old > (unsigned long)POW2(31)) && (recSamples < 96000)) {
         WEBRTC_TRACE (kTraceDebug, kTraceUtility, -1,"WRAP 2 (_rec_samples_old %d recSamples %d)",_rec_samples_old, recSamples);
         // Wrap around as expected after having used all 32 bits.
         _read_samples_old = readSamples;
@@ -2962,7 +2962,7 @@ int32_t AudioDeviceWindowsWave::GetRecordingBufferDelay(uint32_t& readSamples, u
         return (int)((recSamples + POW2(32) - readSamples)/nSamplesPerMs);
 
 
-    } else if((recSamples < 96000) && (readSamples > POW2(31))) {
+    } else if((recSamples < 96000) && (readSamples > (unsigned long)POW2(31))) {
         WEBRTC_TRACE (kTraceDebug, kTraceUtility, -1,"WRAP 3 (readSamples %d recSamples %d)",readSamples, recSamples);
         // Wrap around has, as expected, happened for rec_sampels before
         // readSampels so we have to adjust for this until also readSampels

@@ -552,6 +552,7 @@
                   'AdditionalOptions': [
                     # Disable warnings failing when compiling with Clang on Windows.
                     # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                    '-Wno-sign-compare',
                     '-Wno-missing-braces',
                   ],
                 },

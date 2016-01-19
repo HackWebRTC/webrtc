@@ -1125,12 +1125,6 @@ int32_t VideoRenderDirect3D9::SetBitmap(const void* bitMap,
 int32_t VideoRenderDirect3D9::GetGraphicsMemory(uint64_t& totalMemory,
                                                 uint64_t& availableMemory)
 {
-    if (_totalMemory == -1 || _availableMemory == -1)
-    {
-        totalMemory = 0;
-        availableMemory = 0;
-        return -1;
-    }
     totalMemory = _totalMemory;
     availableMemory = _availableMemory;
     return 0;

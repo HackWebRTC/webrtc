@@ -141,6 +141,7 @@
                   # Disable warnings failing when compiling with Clang on Windows.
                   # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
                   '-Wno-missing-braces',
+                  '-Wno-sign-compare',
                   '-Wno-unused-const-variable',
                 ],
               },

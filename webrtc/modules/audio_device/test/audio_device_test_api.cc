@@ -915,7 +915,7 @@ TEST_F(AudioDeviceAPITest, SpeakerVolumeTests) {
     EXPECT_EQ(0, audio_device_->MaxSpeakerVolume(&maxVolume));
     EXPECT_EQ(0, audio_device_->MinSpeakerVolume(&minVolume));
     EXPECT_EQ(0, audio_device_->SpeakerVolumeStepSize(&stepSize));
-    for (vol = minVolume; vol < (int)maxVolume; vol += 20*stepSize) {
+    for (vol = minVolume; vol < (unsigned int)maxVolume; vol += 20*stepSize) {
       EXPECT_EQ(0, audio_device_->SetSpeakerVolume(vol));
       EXPECT_EQ(0, audio_device_->SpeakerVolume(&volume));
       CheckVolume(volume, vol);
@@ -1067,7 +1067,7 @@ TEST_F(AudioDeviceAPITest, MAYBE_MicrophoneVolumeTests) {
     EXPECT_EQ(0, audio_device_->MaxMicrophoneVolume(&maxVolume));
     EXPECT_EQ(0, audio_device_->MinMicrophoneVolume(&minVolume));
     EXPECT_EQ(0, audio_device_->MicrophoneVolumeStepSize(&stepSize));
-    for (vol = minVolume; vol < (int)maxVolume; vol += 10*stepSize)
+    for (vol = minVolume; vol < (unsigned int)maxVolume; vol += 10*stepSize)
     {
       EXPECT_EQ(0, audio_device_->SetMicrophoneVolume(vol));
       EXPECT_EQ(0, audio_device_->MicrophoneVolume(&volume));

@@ -2237,9 +2237,9 @@ int32_t AudioDeviceWindowsCore::InitPlayout()
     hr = S_FALSE;
 
     // Iterate over frequencies and channels, in order of priority
-    for (int freq = 0; freq < sizeof(freqs)/sizeof(freqs[0]); freq++)
+    for (unsigned int freq = 0; freq < sizeof(freqs)/sizeof(freqs[0]); freq++)
     {
-        for (int chan = 0; chan < sizeof(_playChannelsPrioList)/sizeof(_playChannelsPrioList[0]); chan++)
+        for (unsigned int chan = 0; chan < sizeof(_playChannelsPrioList)/sizeof(_playChannelsPrioList[0]); chan++)
         {
             Wfx.nChannels = _playChannelsPrioList[chan];
             Wfx.nSamplesPerSec = freqs[freq];
@@ -2574,9 +2574,9 @@ int32_t AudioDeviceWindowsCore::InitRecording()
     hr = S_FALSE;
 
     // Iterate over frequencies and channels, in order of priority
-    for (int freq = 0; freq < sizeof(freqs)/sizeof(freqs[0]); freq++)
+    for (unsigned int freq = 0; freq < sizeof(freqs)/sizeof(freqs[0]); freq++)
     {
-        for (int chan = 0; chan < sizeof(_recChannelsPrioList)/sizeof(_recChannelsPrioList[0]); chan++)
+        for (unsigned int chan = 0; chan < sizeof(_recChannelsPrioList)/sizeof(_recChannelsPrioList[0]); chan++)
         {
             Wfx.nChannels = _recChannelsPrioList[chan];
             Wfx.nSamplesPerSec = freqs[freq];
@@ -5078,7 +5078,7 @@ char* AudioDeviceWindowsCore::WideToUTF8(const TCHAR* src) const {
     const size_t kStrLen = sizeof(_str);
     memset(_str, 0, kStrLen);
     // Get required size (in bytes) to be able to complete the conversion.
-    int required_size = WideCharToMultiByte(CP_UTF8, 0, src, -1, _str, 0, 0, 0);
+    unsigned int required_size = (unsigned int)WideCharToMultiByte(CP_UTF8, 0, src, -1, _str, 0, 0, 0);
     if (required_size <= kStrLen)
     {
         // Process the entire input string, including the terminating null char.
