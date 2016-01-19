@@ -73,7 +73,7 @@ class VideoAnalyzer : public PacketReceiver,
         avg_ssim_threshold_(avg_ssim_threshold),
         stats_polling_thread_(&PollStatsThread, this, "StatsPoller"),
         comparison_available_event_(false, false),
-        done_(false, false) {
+        done_(true, false) {
     // Create thread pool for CPU-expensive PSNR/SSIM calculations.
 
     // Try to use about as many threads as cores, but leave kMinCoresLeft alone,
@@ -243,18 +243,18 @@ class VideoAnalyzer : public PacketReceiver,
         last_frames_processed = frames_processed;
         continue;
       }
-      ASSERT_GT(frames_processed, last_frames_processed)
-          << "Analyzer stalled while waiting for test to finish.";
+      if (frames_processed == last_frames_processed) {
+        EXPECT_GT(frames_processed, last_frames_processed)
+            << "Analyzer stalled while waiting for test to finish.";
+        done_.Set();
+        break;
+      }
       last_frames_processed = frames_processed;
     }
 
     if (iteration > 0)
       printf("- Farewell, sweet Concorde!\n");
 
-    // Signal stats polling thread if that is still waiting and stop it now,
-    // since it uses the send_stream_ reference that might be reclaimed after
-    // returning from this method.
-    done_.Set();
     stats_polling_thread_.Stop();
   }
 
@@ -359,12 +359,8 @@ class VideoAnalyzer : public PacketReceiver,
   }
 
   bool PollStats() {
-    if (done_.Wait(kSendStatsPollingIntervalMs)) {
-      // Set event again to make sure main thread is also signaled, then we're
-      // done.
-      done_.Set();
+    if (done_.Wait(kSendStatsPollingIntervalMs))
       return false;
-    }
 
     VideoSendStream::Stats stats = send_stream_->GetStats();
 
