@@ -328,8 +328,7 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
       new_send_codec.qpMax != send_codec_.qpMax ||
       new_send_codec.numberOfSimulcastStreams !=
           send_codec_.numberOfSimulcastStreams ||
-      new_send_codec.mode != send_codec_.mode ||
-      new_send_codec.extra_options != send_codec_.extra_options) {
+      new_send_codec.mode != send_codec_.mode) {
     return true;
   }
 

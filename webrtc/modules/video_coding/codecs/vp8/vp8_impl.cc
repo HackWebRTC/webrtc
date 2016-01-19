@@ -21,7 +21,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -314,10 +313,10 @@ void VP8EncoderImpl::SetStreamState(bool send_stream,
 void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
                                          int num_temporal_layers,
                                          const VideoCodec& codec) {
-  const Config default_options;
-  const TemporalLayers::Factory& tl_factory =
-      (codec.extra_options ? codec.extra_options : &default_options)
-          ->Get<TemporalLayers::Factory>();
+  TemporalLayersFactory default_factory;
+  const TemporalLayersFactory* tl_factory = codec.codecSpecific.VP8.tl_factory;
+  if (!tl_factory)
+    tl_factory = &default_factory;
   if (num_streams == 1) {
     if (codec.mode == kScreensharing) {
       // Special mode when screensharing on a single stream.
@@ -325,7 +324,7 @@ void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
           new ScreenshareLayers(num_temporal_layers, rand()));
     } else {
       temporal_layers_.push_back(
-          tl_factory.Create(num_temporal_layers, rand()));
+          tl_factory->Create(num_temporal_layers, rand()));
     }
   } else {
     for (int i = 0; i < num_streams; ++i) {
@@ -333,7 +332,7 @@ void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
       int layers = codec.simulcastStream[i].numberOfTemporalLayers;
       if (layers < 1)
         layers = 1;
-      temporal_layers_.push_back(tl_factory.Create(layers, rand()));
+      temporal_layers_.push_back(tl_factory->Create(layers, rand()));
     }
   }
 }

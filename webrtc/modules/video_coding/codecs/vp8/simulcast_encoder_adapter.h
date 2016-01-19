@@ -110,7 +110,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
   bool Initialized() const;
 
   rtc::scoped_ptr<VideoEncoderFactory> factory_;
-  rtc::scoped_ptr<Config> screensharing_extra_options_;
+  rtc::scoped_ptr<TemporalLayersFactory> screensharing_tl_factory_;
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;

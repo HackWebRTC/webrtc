@@ -283,7 +283,7 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
   }
 }
 
-TemporalLayers* TemporalLayers::Factory::Create(
+TemporalLayers* TemporalLayersFactory::Create(
     int temporal_layers,
     uint8_t initial_tl0_pic_idx) const {
   return new DefaultTemporalLayers(temporal_layers, initial_tl0_pic_idx);

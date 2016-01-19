@@ -16,7 +16,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -147,19 +146,16 @@ class SkipEncodingUnusedStreamsTest {
   std::vector<unsigned int> RunTest(VP8Encoder* encoder,
                                     VideoCodec* settings,
                                     uint32_t target_bitrate) {
-    Config options;
-    SpyingTemporalLayersFactory* spy_factory =
-        new SpyingTemporalLayersFactory();
-    options.Set<TemporalLayers::Factory>(spy_factory);
-    settings->extra_options = &options;
+    SpyingTemporalLayersFactory spy_factory;
+    settings->codecSpecific.VP8.tl_factory = &spy_factory;
     EXPECT_EQ(0, encoder->InitEncode(settings, 1, 1200));
 
     encoder->SetRates(target_bitrate, 30);
 
     std::vector<unsigned int> configured_bitrates;
     for (std::vector<TemporalLayers*>::const_iterator it =
-             spy_factory->spying_layers_.begin();
-         it != spy_factory->spying_layers_.end(); ++it) {
+             spy_factory.spying_layers_.begin();
+         it != spy_factory.spying_layers_.end(); ++it) {
       configured_bitrates.push_back(
           static_cast<SpyingTemporalLayers*>(*it)->configured_bitrate_);
     }
@@ -206,13 +202,13 @@ class SkipEncodingUnusedStreamsTest {
     TemporalLayers* layers_;
   };
 
-  class SpyingTemporalLayersFactory : public TemporalLayers::Factory {
+  class SpyingTemporalLayersFactory : public TemporalLayersFactory {
    public:
     virtual ~SpyingTemporalLayersFactory() {}
     TemporalLayers* Create(int temporal_layers,
                            uint8_t initial_tl0_pic_idx) const override {
       SpyingTemporalLayers* layers =
-          new SpyingTemporalLayers(TemporalLayers::Factory::Create(
+          new SpyingTemporalLayers(TemporalLayersFactory::Create(
               temporal_layers, initial_tl0_pic_idx));
       spying_layers_.push_back(layers);
       return layers;

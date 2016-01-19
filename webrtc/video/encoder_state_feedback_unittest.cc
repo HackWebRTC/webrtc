@@ -16,7 +16,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/pacing/packet_router.h"

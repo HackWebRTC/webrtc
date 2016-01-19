@@ -12,7 +12,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
@@ -461,11 +460,9 @@ TEST_F(TestVideoSenderWithVp8, MAYBE_FixedTemporalLayersStrategy) {
 #define MAYBE_RealTimeTemporalLayersStrategy RealTimeTemporalLayersStrategy
 #endif
 TEST_F(TestVideoSenderWithVp8, MAYBE_RealTimeTemporalLayersStrategy) {
-  Config extra_options;
-  extra_options.Set<TemporalLayers::Factory>(
-      new RealTimeTemporalLayersFactory());
   VideoCodec codec = MakeVp8VideoCodec(352, 288, 3);
-  codec.extra_options = &extra_options;
+  RealTimeTemporalLayersFactory realtime_tl_factory;
+  codec.codecSpecific.VP8.tl_factory = &realtime_tl_factory;
   codec.minBitrate = 10;
   codec.startBitrate = codec_bitrate_kbps_;
   codec.maxBitrate = codec_bitrate_kbps_;

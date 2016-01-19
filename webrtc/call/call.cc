@@ -27,7 +27,6 @@
 #include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/call/congestion_controller.h"
 #include "webrtc/call/rtc_event_log.h"
-#include "webrtc/common.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"

@@ -13,7 +13,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/common.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/pacing/packet_router.h"

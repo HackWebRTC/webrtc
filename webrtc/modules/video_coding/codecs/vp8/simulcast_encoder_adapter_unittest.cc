@@ -278,10 +278,11 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
               target.codecSpecific.VP8.frameDroppingOn);
     EXPECT_EQ(ref.codecSpecific.VP8.keyFrameInterval,
               target.codecSpecific.VP8.keyFrameInterval);
+    EXPECT_EQ(ref.codecSpecific.VP8.tl_factory,
+              target.codecSpecific.VP8.tl_factory);
     EXPECT_EQ(ref.qpMax, target.qpMax);
     EXPECT_EQ(0, target.numberOfSimulcastStreams);
     EXPECT_EQ(ref.mode, target.mode);
-    EXPECT_EQ(ref.extra_options, target.extra_options);
 
     // No need to compare simulcastStream as numberOfSimulcastStreams should
     // always be 0.

@@ -16,7 +16,6 @@
 #include "libyuv/scale.h"  // NOLINT
 
 #include "webrtc/base/checks.h"
-#include "webrtc/common.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 
 namespace {
@@ -95,7 +94,7 @@ int VerifyCodec(const webrtc::VideoCodec* inst) {
 // TL1 FrameDropper's max time to drop frames.
 const float kTl1MaxTimeToDropFrames = 20.0f;
 
-struct ScreenshareTemporalLayersFactory : webrtc::TemporalLayers::Factory {
+struct ScreenshareTemporalLayersFactory : webrtc::TemporalLayersFactory {
   ScreenshareTemporalLayersFactory()
       : tl1_frame_dropper_(kTl1MaxTimeToDropFrames) {}
 
@@ -189,10 +188,8 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
 
   // Special mode when screensharing on a single stream.
   if (number_of_streams == 1 && inst->mode == kScreensharing) {
-    screensharing_extra_options_.reset(new Config());
-    screensharing_extra_options_->Set<TemporalLayers::Factory>(
-        new ScreenshareTemporalLayersFactory());
-    codec_.extra_options = screensharing_extra_options_.get();
+    screensharing_tl_factory_.reset(new ScreenshareTemporalLayersFactory());
+    codec_.codecSpecific.VP8.tl_factory = screensharing_tl_factory_.get();
   }
 
   // Create |number_of_streams| of encoder instances and init them.

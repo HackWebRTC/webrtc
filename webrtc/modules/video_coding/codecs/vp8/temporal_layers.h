@@ -14,7 +14,6 @@
 
 #include "vpx/vpx_encoder.h"
 
-#include "webrtc/common.h"
 #include "webrtc/common_video/include/video_image.h"
 #include "webrtc/typedefs.h"
 
@@ -26,15 +25,6 @@ class TemporalLayers {
  public:
   // Factory for TemporalLayer strategy. Default behaviour is a fixed pattern
   // of temporal layers. See default_temporal_layers.cc
-  struct Factory {
-    Factory() {}
-    virtual ~Factory() {}
-    virtual TemporalLayers* Create(int temporal_layers,
-                                   uint8_t initial_tl0_pic_idx) const;
-    static const ConfigOptionID identifier =
-        ConfigOptionID::kTemporalLayersFactory;
-  };
-
   virtual ~TemporalLayers() {}
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
@@ -57,13 +47,21 @@ class TemporalLayers {
   virtual bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) = 0;
 };
 
+class TemporalLayersFactory {
+ public:
+  virtual ~TemporalLayersFactory() {}
+  virtual TemporalLayers* Create(int temporal_layers,
+                                 uint8_t initial_tl0_pic_idx) const;
+};
+
 // Factory for a temporal layers strategy that adaptively changes the number of
 // layers based on input framerate so that the base layer has an acceptable
 // framerate. See realtime_temporal_layers.cc
-struct RealTimeTemporalLayersFactory : TemporalLayers::Factory {
-  virtual ~RealTimeTemporalLayersFactory() {}
-  virtual TemporalLayers* Create(int num_temporal_layers,
-                                 uint8_t initial_tl0_pic_idx) const;
+class RealTimeTemporalLayersFactory : public TemporalLayersFactory {
+ public:
+  ~RealTimeTemporalLayersFactory() override {}
+  TemporalLayers* Create(int num_temporal_layers,
+                         uint8_t initial_tl0_pic_idx) const override;
 };
 
 }  // namespace webrtc
