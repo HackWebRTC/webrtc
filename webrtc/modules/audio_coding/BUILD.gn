@@ -9,6 +9,36 @@
 import("//build/config/arm.gni")
 import("../../build/webrtc.gni")
 
+audio_codec_deps = [
+  ":cng",
+  ":g711",
+  ":pcm16b",
+]
+audio_codec_defines = []
+if (rtc_include_ilbc) {
+  audio_codec_defines += [ "WEBRTC_CODEC_ILBC" ]
+  audio_codec_deps += [ ":ilbc" ]
+}
+if (rtc_include_opus) {
+  audio_codec_defines += [ "WEBRTC_CODEC_OPUS" ]
+  audio_codec_deps += [ ":webrtc_opus" ]
+}
+if (!build_with_mozilla) {
+  if (current_cpu == "arm") {
+    audio_codec_defines += [ "WEBRTC_CODEC_ISACFX" ]
+    audio_codec_deps += [ ":isac_fix" ]
+  } else {
+    audio_codec_defines += [ "WEBRTC_CODEC_ISAC" ]
+    audio_codec_deps += [ ":isac" ]
+  }
+  audio_codec_defines += [ "WEBRTC_CODEC_G722" ]
+  audio_codec_deps += [ ":g722" ]
+}
+if (!build_with_mozilla && !build_with_chromium) {
+  audio_codec_defines += [ "WEBRTC_CODEC_RED" ]
+  audio_codec_deps += [ ":red" ]
+}
+
 source_set("rent_a_codec") {
   sources = [
     "acm2/acm_codec_database.cc",
@@ -18,28 +48,8 @@ source_set("rent_a_codec") {
   ]
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
-  deps = [
-    "../..:webrtc_common",
-  ]
-
-  defines = []
-  if (rtc_include_ilbc) {
-    defines += [ "WEBRTC_CODEC_ILBC" ]
-  }
-  if (rtc_include_opus) {
-    defines += [ "WEBRTC_CODEC_OPUS" ]
-  }
-  if (!build_with_mozilla) {
-    if (current_cpu == "arm") {
-      defines += [ "WEBRTC_CODEC_ISACFX" ]
-    } else {
-      defines += [ "WEBRTC_CODEC_ISAC" ]
-    }
-    defines += [ "WEBRTC_CODEC_G722" ]
-  }
-  if (!build_with_mozilla && !build_with_chromium) {
-    defines += [ "WEBRTC_CODEC_RED" ]
-  }
+  deps = [ "../..:webrtc_common" ] + audio_codec_deps
+  defines = audio_codec_defines
 }
 
 config("audio_coding_config") {
@@ -91,41 +101,15 @@ source_set("audio_coding") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = [
-    ":cng",
-    ":g711",
-    ":neteq",
-    ":pcm16b",
-    ":rent_a_codec",
-    "../..:rtc_event_log",
-    "../..:webrtc_common",
-    "../../common_audio",
-    "../../system_wrappers",
-  ]
-
-  if (rtc_include_ilbc) {
-    defines += [ "WEBRTC_CODEC_ILBC" ]
-    deps += [ ":ilbc" ]
-  }
-  if (rtc_include_opus) {
-    defines += [ "WEBRTC_CODEC_OPUS" ]
-    deps += [ ":webrtc_opus" ]
-  }
-  if (!build_with_mozilla) {
-    if (current_cpu == "arm") {
-      defines += [ "WEBRTC_CODEC_ISACFX" ]
-      deps += [ ":isac_fix" ]
-    } else {
-      defines += [ "WEBRTC_CODEC_ISAC" ]
-      deps += [ ":isac" ]
-    }
-    defines += [ "WEBRTC_CODEC_G722" ]
-    deps += [ ":g722" ]
-  }
-  if (!build_with_mozilla && !build_with_chromium) {
-    defines += [ "WEBRTC_CODEC_RED" ]
-    deps += [ ":red" ]
-  }
+  deps = audio_codec_deps + [
+           ":neteq",
+           ":rent_a_codec",
+           "../..:rtc_event_log",
+           "../..:webrtc_common",
+           "../../common_audio",
+           "../../system_wrappers",
+         ]
+  defines = audio_codec_defines
 }
 
 source_set("audio_decoder_interface") {

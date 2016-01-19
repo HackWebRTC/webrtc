@@ -16,13 +16,23 @@
         'variables': {
           # This will already be set to zero by supplement.gypi
           'build_with_chromium%': 1,
+
+          # Enable to use the Mozilla internal settings.
+          'build_with_mozilla%': 0,
         },
         'build_with_chromium%': '<(build_with_chromium)',
-
-        # Enable to use the Mozilla internal settings.
-        'build_with_mozilla%': 0,
+        'build_with_mozilla%': '<(build_with_mozilla%)',
+        'include_opus%': 1,
 
         'conditions': [
+
+          # Include the iLBC audio codec?
+          ['build_with_chromium==1 or build_with_mozilla==1', {
+            'include_ilbc%': 0,
+          }, {
+            'include_ilbc%': 1,
+          }],
+
           ['build_with_chromium==1', {
             'webrtc_root%': '<(DEPTH)/third_party/webrtc',
             'apk_tests_path%': '<(DEPTH)/third_party/webrtc/build/apk_tests_noop.gyp',
@@ -41,17 +51,9 @@
       'modules_java_gyp_path%': '<(modules_java_gyp_path)',
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
       'webrtc_vp9_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp9',
-      'include_opus%': 1,
+      'include_ilbc%': '<(include_ilbc)',
+      'include_opus%': '<(include_opus)',
       'opus_dir%': '<(DEPTH)/third_party/opus',
-
-      # Include the iLBC audio codec?
-      'conditions': [
-        ['build_with_chromium==1 or build_with_mozilla==1', {
-          'include_ilbc%': 0,
-        }, {
-          'include_ilbc%': 1,
-        }],
-      ],
     },
     'build_with_chromium%': '<(build_with_chromium)',
     'build_with_mozilla%': '<(build_with_mozilla)',

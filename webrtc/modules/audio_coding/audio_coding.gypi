@@ -22,52 +22,61 @@
     'neteq/neteq.gypi',
   ],
   'variables': {
+    'variables': {
+      'audio_codec_dependencies': [
+        'cng',
+        'g711',
+        'pcm16b',
+      ],
+      'audio_codec_defines': [],
+      'conditions': [
+        ['include_ilbc==1', {
+          'audio_codec_dependencies': ['ilbc',],
+          'audio_codec_defines': ['WEBRTC_CODEC_ILBC',],
+        }],
+        ['include_opus==1', {
+          'audio_codec_dependencies': ['webrtc_opus',],
+          'audio_codec_defines': ['WEBRTC_CODEC_OPUS',],
+        }],
+        ['build_with_mozilla==0', {
+          'conditions': [
+            ['target_arch=="arm"', {
+              'audio_codec_dependencies': ['isac_fix',],
+              'audio_codec_defines': ['WEBRTC_CODEC_ISACFX',],
+            }, {
+              'audio_codec_dependencies': ['isac',],
+              'audio_codec_defines': ['WEBRTC_CODEC_ISAC',],
+            }],
+          ],
+          'audio_codec_dependencies': ['g722',],
+          'audio_codec_defines': ['WEBRTC_CODEC_G722',],
+        }],
+        ['build_with_mozilla==0 and build_with_chromium==0', {
+          'audio_codec_dependencies': ['red',],
+          'audio_codec_defines': ['WEBRTC_CODEC_RED',],
+        }],
+      ],
+    },
+    'audio_codec_dependencies': '<(audio_codec_dependencies)',
+    'audio_codec_defines': '<(audio_codec_defines)',
     'audio_coding_dependencies': [
-      'cng',
-      'g711',
-      'pcm16b',
+      '<@(audio_codec_dependencies)',
       '<(webrtc_root)/common.gyp:webrtc_common',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
     ],
-    'audio_coding_defines': [],
-    'conditions': [
-      ['include_ilbc==1', {
-        'audio_coding_dependencies': ['ilbc',],
-        'audio_coding_defines': ['WEBRTC_CODEC_ILBC',],
-      }],
-      ['include_opus==1', {
-        'audio_coding_dependencies': ['webrtc_opus',],
-        'audio_coding_defines': ['WEBRTC_CODEC_OPUS',],
-      }],
-      ['build_with_mozilla==0', {
-        'conditions': [
-          ['target_arch=="arm"', {
-            'audio_coding_dependencies': ['isac_fix',],
-            'audio_coding_defines': ['WEBRTC_CODEC_ISACFX',],
-          }, {
-            'audio_coding_dependencies': ['isac',],
-            'audio_coding_defines': ['WEBRTC_CODEC_ISAC',],
-          }],
-        ],
-        'audio_coding_dependencies': ['g722',],
-        'audio_coding_defines': ['WEBRTC_CODEC_G722',],
-      }],
-      ['build_with_mozilla==0 and build_with_chromium==0', {
-        'audio_coding_dependencies': ['red',],
-        'audio_coding_defines': ['WEBRTC_CODEC_RED',],
-      }],
-    ],
+    'audio_coding_defines': '<(audio_codec_defines)',
   },
   'targets': [
     {
       'target_name': 'rent_a_codec',
       'type': 'static_library',
       'defines': [
-        '<@(audio_coding_defines)',
+        '<@(audio_codec_defines)',
       ],
       'dependencies': [
         '<(webrtc_root)/common.gyp:webrtc_common',
+        '<@(audio_codec_dependencies)',
       ],
       'include_dirs': [
         '<(webrtc_root)',
