@@ -50,7 +50,7 @@ UdpSocket2Windows::UdpSocket2Windows(const int32_t id,
       _outstandingCallComplete(0),
       _terminate(false),
       _addedToMgr(false),
-      _safeTodelete(false),
+      delete_event_(true, false),
       _outstandingCallsDisabled(false),
       _clientHandle(NULL),
       _flowHandle(NULL),
@@ -69,12 +69,9 @@ UdpSocket2Windows::UdpSocket2Windows(const int32_t id,
     _obj = NULL;
     _incomingCb = NULL;
     _socket = INVALID_SOCKET;
-    _pCrit = CriticalSectionWrapper::CreateCriticalSection();
     _ptrCbRWLock     = RWLockWrapper::CreateRWLock();
     _ptrDestRWLock   = RWLockWrapper::CreateRWLock();
     _ptrSocketRWLock = RWLockWrapper::CreateRWLock();
-    _ptrDeleteCrit   = CriticalSectionWrapper::CreateCriticalSection();
-    _ptrDeleteCond   = ConditionVariableWrapper::CreateConditionVariable();
 
     // Check if QoS is supported.
     BOOL bProtocolFound = FALSE;
@@ -185,16 +182,12 @@ UdpSocket2Windows::~UdpSocket2Windows()
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, _id,
                  "UdpSocket2Windows::~UdpSocket2Windows()");
 
-    WaitForOutstandingCalls();
+    delete_event_.Wait(rtc::Event::kForever);
+
 
     delete _ptrCbRWLock;
-    delete _ptrDeleteCrit;
-    delete _ptrDeleteCond;
     delete _ptrDestRWLock;
     delete _ptrSocketRWLock;
-
-    if(_pCrit)
-        delete _pCrit;
 
     if (_flow)
     {
@@ -667,7 +660,6 @@ void UdpSocket2Windows::CloseBlocking()
     // Reclaims the socket and prevents it from being used again.
     InvalidateSocket();
     DisableNewOutstandingCalls();
-    WaitForOutstandingCalls();
     delete this;
 }
 
@@ -1279,9 +1271,7 @@ void UdpSocket2Windows::OutstandingCallCompleted()
     {
         // Only one thread will enter here. The thread with the last outstanding
         // call.
-        CriticalSectionScoped cs(_ptrDeleteCrit);
-        _safeTodelete = true;
-        _ptrDeleteCond->Wake();
+        delete_event_.Set();
     }
 }
 
@@ -1302,18 +1292,7 @@ void UdpSocket2Windows::DisableNewOutstandingCalls()
 
     if(noOutstandingCalls)
     {
-        CriticalSectionScoped cs(_ptrDeleteCrit);
-        _safeTodelete = true;
-        _ptrDeleteCond->Wake();
-    }
-}
-
-void UdpSocket2Windows::WaitForOutstandingCalls()
-{
-    CriticalSectionScoped cs(_ptrDeleteCrit);
-    while(!_safeTodelete)
-    {
-        _ptrDeleteCond->SleepCS(*_ptrDeleteCrit);
+        delete_event_.Set();
     }
 }
 

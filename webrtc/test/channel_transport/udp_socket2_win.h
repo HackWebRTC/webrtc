@@ -19,9 +19,8 @@
 #include <Ntddndis.h>
 #include <traffic.h>
 
+#include "webrtc/base/event.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -133,22 +132,18 @@ private:
     int32_t _iProtocol;
     UdpSocket2ManagerWindows* _mgr;
 
-    CriticalSectionWrapper* _pCrit;
     Atomic32 _outstandingCalls;
     Atomic32 _outstandingCallComplete;
     volatile bool _terminate;
     volatile bool _addedToMgr;
 
-    CriticalSectionWrapper* _ptrDeleteCrit;
-    ConditionVariableWrapper* _ptrDeleteCond;
-    bool _safeTodelete;
+    rtc::Event delete_event_;
 
     RWLockWrapper* _ptrDestRWLock;
     bool _outstandingCallsDisabled;
     bool NewOutstandingCall();
     void OutstandingCallCompleted();
     void DisableNewOutstandingCalls();
-    void WaitForOutstandingCalls();
 
     void RemoveSocketFromManager();
 
