@@ -8,21 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_GENERIC_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_GENERIC_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WINXP_WIN_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WINXP_WIN_H_
 
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/source/condition_variable_event_win.h"
+#include "webrtc/system_wrappers/source/critical_section_win.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
-class ConditionVariableWrapper;
-
-class RWLockGeneric : public RWLockWrapper {
+class RWLockWinXP : public RWLockWrapper {
  public:
-  RWLockGeneric();
-  ~RWLockGeneric() override;
+  RWLockWinXP();
+  ~RWLockWinXP() override;
 
   void AcquireLockExclusive() override;
   void ReleaseLockExclusive() override;
@@ -31,16 +30,16 @@ class RWLockGeneric : public RWLockWrapper {
   void ReleaseLockShared() override;
 
  private:
-  CriticalSectionWrapper* critical_section_;
-  ConditionVariableWrapper* read_condition_;
-  ConditionVariableWrapper* write_condition_;
+  CriticalSectionWindows critical_section_;
+  ConditionVariableEventWin read_condition_;
+  ConditionVariableEventWin write_condition_;
 
-  int readers_active_;
-  bool writer_active_;
-  int readers_waiting_;
-  int writers_waiting_;
+  int readers_active_ = 0;
+  bool writer_active_ = false;
+  int readers_waiting_ = 0;
+  int writers_waiting_ = 0;
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_GENERIC_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WINXP_WIN_H_
