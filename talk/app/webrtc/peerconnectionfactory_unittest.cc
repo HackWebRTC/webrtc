@@ -360,13 +360,15 @@ TEST_F(PeerConnectionFactoryTest, LocalRendering) {
   EXPECT_EQ(0, local_renderer.num_rendered_frames());
   EXPECT_TRUE(capturer->CaptureFrame());
   EXPECT_EQ(1, local_renderer.num_rendered_frames());
+  EXPECT_FALSE(local_renderer.black_frame());
 
   track->set_enabled(false);
   EXPECT_TRUE(capturer->CaptureFrame());
-  EXPECT_EQ(1, local_renderer.num_rendered_frames());
+  EXPECT_EQ(2, local_renderer.num_rendered_frames());
+  EXPECT_TRUE(local_renderer.black_frame());
 
   track->set_enabled(true);
   EXPECT_TRUE(capturer->CaptureFrame());
-  EXPECT_EQ(2, local_renderer.num_rendered_frames());
+  EXPECT_EQ(3, local_renderer.num_rendered_frames());
+  EXPECT_FALSE(local_renderer.black_frame());
 }
-

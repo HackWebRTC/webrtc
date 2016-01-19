@@ -57,6 +57,8 @@ class FakeVideoTrackRenderer : public VideoRendererInterface {
   int errors() const { return fake_renderer_.errors(); }
   int width() const { return fake_renderer_.width(); }
   int height() const { return fake_renderer_.height(); }
+  bool black_frame() const { return fake_renderer_.black_frame(); }
+
   int num_rendered_frames() const {
     return fake_renderer_.num_rendered_frames();
   }

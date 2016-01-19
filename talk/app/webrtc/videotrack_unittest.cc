@@ -109,3 +109,38 @@ TEST_F(VideoTrackTest, RenderVideo) {
   EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(2, renderer_2->num_rendered_frames());
 }
+
+// Test that disabling the track results in blacked out frames.
+TEST_F(VideoTrackTest, DisableTrackBlackout) {
+  rtc::scoped_ptr<FakeVideoTrackRenderer> renderer(
+      new FakeVideoTrackRenderer(video_track_.get()));
+
+  cricket::VideoRenderer* renderer_input =
+      video_track_->GetSource()->FrameInput();
+  ASSERT_FALSE(renderer_input == NULL);
+
+  cricket::WebRtcVideoFrame frame;
+  frame.InitToBlack(100, 200, 1, 1, 0);
+  // Make it not all-black
+  frame.GetUPlane()[0] = 0;
+
+  renderer_input->RenderFrame(&frame);
+  EXPECT_EQ(1, renderer->num_rendered_frames());
+  EXPECT_FALSE(renderer->black_frame());
+  EXPECT_EQ(100, renderer->width());
+  EXPECT_EQ(200, renderer->height());
+
+  video_track_->set_enabled(false);
+  renderer_input->RenderFrame(&frame);
+  EXPECT_EQ(2, renderer->num_rendered_frames());
+  EXPECT_TRUE(renderer->black_frame());
+  EXPECT_EQ(100, renderer->width());
+  EXPECT_EQ(200, renderer->height());
+
+  video_track_->set_enabled(true);
+  renderer_input->RenderFrame(&frame);
+  EXPECT_EQ(3, renderer->num_rendered_frames());
+  EXPECT_FALSE(renderer->black_frame());
+  EXPECT_EQ(100, renderer->width());
+  EXPECT_EQ(200, renderer->height());
+}
