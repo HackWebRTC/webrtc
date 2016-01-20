@@ -161,7 +161,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
     return next_send_time;
   }
 
-  void VerifyOutput(size_t num_samples) {
+  virtual void VerifyOutput(size_t num_samples) {
     for (size_t i = 0; i < num_samples; ++i) {
       for (size_t j = 0; j < num_channels_; ++j) {
         ASSERT_EQ(output_[i], output_multi_channel_[i * num_channels_ + j]) <<
@@ -275,12 +275,7 @@ class NetEqStereoTestNoJitter : public NetEqStereoTest {
   }
 };
 
-#if defined(WEBRTC_ANDROID)
-#define MAYBE_RunTest DISABLED_RunTest
-#else
-#define MAYBE_RunTest RunTest
-#endif
-TEST_P(NetEqStereoTestNoJitter, MAYBE_RunTest) {
+TEST_P(NetEqStereoTestNoJitter, RunTest) {
   RunTest(8);
 }
 
@@ -305,7 +300,7 @@ class NetEqStereoTestPositiveDrift : public NetEqStereoTest {
   double drift_factor;
 };
 
-TEST_P(NetEqStereoTestPositiveDrift, MAYBE_RunTest) {
+TEST_P(NetEqStereoTestPositiveDrift, RunTest) {
   RunTest(100);
 }
 
@@ -318,7 +313,7 @@ class NetEqStereoTestNegativeDrift : public NetEqStereoTestPositiveDrift {
   }
 };
 
-TEST_P(NetEqStereoTestNegativeDrift, MAYBE_RunTest) {
+TEST_P(NetEqStereoTestNegativeDrift, RunTest) {
   RunTest(100);
 }
 
@@ -346,7 +341,7 @@ class NetEqStereoTestDelays : public NetEqStereoTest {
   int frame_index_;
 };
 
-TEST_P(NetEqStereoTestDelays, MAYBE_RunTest) {
+TEST_P(NetEqStereoTestDelays, RunTest) {
   RunTest(1000);
 }
 
@@ -362,13 +357,25 @@ class NetEqStereoTestLosses : public NetEqStereoTest {
     return (++frame_index_) % kLossInterval == 0;
   }
 
+  // TODO(hlundin): NetEq is not giving bitexact results for these cases.
+  virtual void VerifyOutput(size_t num_samples) {
+    for (size_t i = 0; i < num_samples; ++i) {
+      auto first_channel_sample = output_multi_channel_[i * num_channels_];
+      for (size_t j = 0; j < num_channels_; ++j) {
+        const int kErrorMargin = 200;
+        EXPECT_NEAR(output_[i], output_multi_channel_[i * num_channels_ + j],
+                    kErrorMargin)
+            << "Diff in sample " << i << ", channel " << j << ".";
+        EXPECT_EQ(first_channel_sample,
+                  output_multi_channel_[i * num_channels_ + j]);
+      }
+    }
+  }
+
   int frame_index_;
 };
 
-// TODO(pbos): Enable on non-Android, this went failing while being accidentally
-// disabled on all platforms and not just Android.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5387
-TEST_P(NetEqStereoTestLosses, DISABLED_RunTest) {
+TEST_P(NetEqStereoTestLosses, RunTest) {
   RunTest(100);
 }
 

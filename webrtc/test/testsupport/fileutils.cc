@@ -222,6 +222,9 @@ std::string ResourcePath(std::string name, std::string extension) {
 #ifdef WEBRTC_MAC
   platform = "mac";
 #endif  // WEBRTC_MAC
+#ifdef WEBRTC_ANDROID
+  platform = "android";
+#endif  // WEBRTC_ANDROID
 
 #ifdef WEBRTC_ARCH_64_BITS
   std::string architecture = "64";

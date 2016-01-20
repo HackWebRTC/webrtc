@@ -412,6 +412,10 @@ void NetEqDecodingTest::Process(size_t* out_len) {
     if (packet_->payload_length_bytes() > 0) {
       WebRtcRTPHeader rtp_header;
       packet_->ConvertHeader(&rtp_header);
+#ifndef WEBRTC_CODEC_ISAC
+      // Ignore payload type 104 (iSAC-swb) if ISAC is not supported.
+      if (rtp_header.header.payloadType != 104)
+#endif
       ASSERT_EQ(0, neteq_->InsertPacket(
                        rtp_header,
                        rtc::ArrayView<const uint8_t>(
@@ -515,10 +519,10 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
-#if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID) &&             \
-    defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                      \
-    (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
-    defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
+#if !defined(WEBRTC_IOS) && defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) && \
+    (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) &&    \
+    defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722) &&        \
+    !defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_TestBitExactness TestBitExactness
 #else
 #define MAYBE_TestBitExactness DISABLED_TestBitExactness
@@ -929,12 +933,12 @@ TEST_F(NetEqDecodingTest, UnknownPayloadType) {
   EXPECT_EQ(NetEq::kUnknownRtpPayloadType, neteq_->LastError());
 }
 
-#if defined(WEBRTC_ANDROID)
-#define MAYBE_DecoderError DISABLED_DecoderError
-#else
-#define MAYBE_DecoderError DecoderError
-#endif
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+#define MAYBE_DecoderError DecoderError
+#else
+#define MAYBE_DecoderError DISABLED_DecoderError
+#endif
+
 TEST_F(NetEqDecodingTest, MAYBE_DecoderError) {
   const size_t kPayloadBytes = 100;
   uint8_t payload[kPayloadBytes] = {0};
@@ -955,8 +959,16 @@ TEST_F(NetEqDecodingTest, MAYBE_DecoderError) {
                              &samples_per_channel, &num_channels, &type));
   // Verify that there is a decoder error to check.
   EXPECT_EQ(NetEq::kDecoderErrorCode, neteq_->LastError());
-  // Code 6730 is an iSAC error code.
-  EXPECT_EQ(6730, neteq_->LastDecoderError());
+
+  enum NetEqDecoderError {
+    ISAC_LENGTH_MISMATCH = 6730,
+    ISAC_RANGE_ERROR_DECODE_FRAME_LENGTH = 6640
+  };
+#if defined(WEBRTC_CODEC_ISAC)
+  EXPECT_EQ(ISAC_LENGTH_MISMATCH, neteq_->LastDecoderError());
+#elif defined(WEBRTC_CODEC_ISACFX)
+  EXPECT_EQ(ISAC_RANGE_ERROR_DECODE_FRAME_LENGTH, neteq_->LastDecoderError());
+#endif
   // Verify that the first 160 samples are set to 0, and that the remaining
   // samples are left unmodified.
   static const int kExpectedOutputLength = 160;  // 10 ms at 16 kHz sample rate.
@@ -973,7 +985,6 @@ TEST_F(NetEqDecodingTest, MAYBE_DecoderError) {
     EXPECT_EQ(1, out_data_[i]);
   }
 }
-#endif
 
 TEST_F(NetEqDecodingTest, GetAudioBeforeInsertPacket) {
   NetEqOutputType type;
@@ -1172,7 +1183,11 @@ TEST_F(NetEqBgnTestFade, RunTest) {
 }
 
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
-TEST_F(NetEqDecodingTest, SyncPacketInsert) {
+#define MAYBE_SyncPacketInsert SyncPacketInsert
+#else
+#define MAYBE_SyncPacketInsert DISABLED_SyncPacketInsert
+#endif
+TEST_F(NetEqDecodingTest, MAYBE_SyncPacketInsert) {
   WebRtcRTPHeader rtp_info;
   uint32_t receive_timestamp = 0;
   // For the readability use the following payloads instead of the defaults of
@@ -1251,7 +1266,6 @@ TEST_F(NetEqDecodingTest, SyncPacketInsert) {
   --rtp_info.header.ssrc;
   EXPECT_EQ(0, neteq_->InsertSyncPacket(rtp_info, receive_timestamp));
 }
-#endif
 
 // First insert several noise like packets, then sync-packets. Decoding all
 // packets should not produce error, statistics should not show any packet loss

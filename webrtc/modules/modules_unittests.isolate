@@ -11,6 +11,9 @@
       'variables': {
         'files': [
           '<(DEPTH)/data/audio_processing/output_data_fixed.pb',
+          '<(DEPTH)/resources/audio_coding/neteq4_network_stats_android.dat',
+          '<(DEPTH)/resources/audio_coding/neteq4_rtcp_stats_android.dat',
+          '<(DEPTH)/resources/audio_coding/neteq4_universal_ref_android.pcm',
         ],
       },
     }],
