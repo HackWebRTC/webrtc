@@ -35,6 +35,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
@@ -90,6 +91,12 @@ namespace webrtc_jni {
 #define ALOGD LOG_TAG(rtc::LS_INFO, TAG_ENCODER)
 #define ALOGW LOG_TAG(rtc::LS_WARNING, TAG_ENCODER)
 #define ALOGE LOG_TAG(rtc::LS_ERROR, TAG_ENCODER)
+
+namespace {
+// Maximum time limit between incoming frames before requesting a key frame.
+const size_t kFrameDiffThresholdMs = 1100;
+const int kMinKeyFrameInterval = 2;
+}  // namespace
 
 // MediaCodecVideoEncoder is a webrtc::VideoEncoder implementation that uses
 // Android's MediaCodec SDK API behind the scenes to implement (hopefully)
@@ -259,6 +266,13 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // EGL context - owned by factory, should not be allocated/destroyed
   // by MediaCodecVideoEncoder.
   jobject egl_context_;
+
+  // Temporary fix for VP8.
+  // Sends a key frame if frames are largely spaced apart (possibly
+  // corresponding to a large image change).
+  int64_t last_frame_received_ms_;
+  int frames_received_since_last_key_;
+  webrtc::VideoCodecMode codec_mode_;
 };
 
 MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
@@ -360,6 +374,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       << codecType_;
 
   ALOGD << "InitEncode request";
+  codec_mode_ = codec_settings->mode;
   scale_ = (codecType_ != kVideoCodecVP9) && (webrtc::field_trial::FindFullName(
         "WebRTC-MediaCodecVideoEncoder-AutomaticResize") == "Enabled");
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");
@@ -518,6 +533,8 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   gof_.SetGofInfoVP9(webrtc::TemporalStructureMode::kTemporalStructureMode1);
   tl0_pic_idx_ = static_cast<uint8_t>(rand());
   gof_idx_ = 0;
+  last_frame_received_ms_ = -1;
+  frames_received_since_last_key_ = kMinKeyFrameInterval;
 
   // We enforce no extra stride/padding in the format creation step.
   jobject j_video_codec_enum = JavaEnumFromIndex(
@@ -583,6 +600,23 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+
+  bool send_key_frame = false;
+  if (codecType_ == kVideoCodecVP8 && codec_mode_ == webrtc::kRealtimeVideo) {
+    ++frames_received_since_last_key_;
+    int64_t now_ms = GetCurrentTimeMs();
+    if (last_frame_received_ms_ != -1 &&
+        (now_ms - last_frame_received_ms_) > kFrameDiffThresholdMs) {
+      // Add limit to prevent triggering a key for every frame for very low
+      // framerates (e.g. if frame diff > kFrameDiffThresholdMs).
+      if (frames_received_since_last_key_ > kMinKeyFrameInterval) {
+        ALOGD << "Send key, frame diff: " << (now_ms - last_frame_received_ms_);
+        send_key_frame = true;
+      }
+      frames_received_since_last_key_ = 0;
+    }
+    last_frame_received_ms_ = now_ms;
   }
 
   frames_received_++;
@@ -651,7 +685,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   // Save time when input frame is sent to the encoder input.
   frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
 
-  const bool key_frame = frame_types->front() != webrtc::kVideoFrameDelta;
+  const bool key_frame =
+      frame_types->front() != webrtc::kVideoFrameDelta || send_key_frame;
   bool encode_status = true;
   if (!input_frame.native_handle()) {
     int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_encoder_,
