@@ -14,6 +14,7 @@
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
@@ -32,7 +33,6 @@ class Accelerate;
 class BackgroundNoise;
 class BufferLevelFilter;
 class ComfortNoise;
-class CriticalSectionWrapper;
 class DecisionLogic;
 class DecoderDatabase;
 class DelayManager;
@@ -338,7 +338,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Creates DecisionLogic object with the mode given by |playout_mode_|.
   virtual void CreateDecisionLogic() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  mutable rtc::CriticalSection crit_sect_;
   const rtc::scoped_ptr<BufferLevelFilter> buffer_level_filter_
       GUARDED_BY(crit_sect_);
   const rtc::scoped_ptr<DecoderDatabase> decoder_database_

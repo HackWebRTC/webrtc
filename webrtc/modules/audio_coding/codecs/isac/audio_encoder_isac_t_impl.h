@@ -14,6 +14,7 @@
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/common_types.h"
 
 namespace webrtc {
 

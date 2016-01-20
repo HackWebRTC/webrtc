@@ -44,7 +44,6 @@
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 // Modify the code to obtain backwards bit-exactness. Once bit-exactness is no
 // longer required, this #define should be removed (and the code that it
@@ -67,8 +66,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
                      ExpandFactory* expand_factory,
                      PreemptiveExpandFactory* preemptive_expand_factory,
                      bool create_components)
-    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      buffer_level_filter_(buffer_level_filter),
+    : buffer_level_filter_(buffer_level_filter),
       decoder_database_(decoder_database),
       delay_manager_(delay_manager),
       delay_peak_detector_(delay_peak_detector),
@@ -126,7 +124,7 @@ int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
                             rtc::ArrayView<const uint8_t> payload,
                             uint32_t receive_timestamp) {
   TRACE_EVENT0("webrtc", "NetEqImpl::InsertPacket");
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   int error =
       InsertPacketInternal(rtp_header, payload, receive_timestamp, false);
   if (error != 0) {
@@ -138,7 +136,7 @@ int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
 
 int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
                                 uint32_t receive_timestamp) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   const uint8_t kSyncPayload[] = { 's', 'y', 'n', 'c' };
   int error =
       InsertPacketInternal(rtp_header, kSyncPayload, receive_timestamp, true);
@@ -154,7 +152,7 @@ int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
                         size_t* samples_per_channel, size_t* num_channels,
                         NetEqOutputType* type) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   int error = GetAudioInternal(max_length, output_audio, samples_per_channel,
                                num_channels);
   if (error != 0) {
@@ -177,7 +175,7 @@ int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
 int NetEqImpl::RegisterPayloadType(NetEqDecoder codec,
                                    const std::string& name,
                                    uint8_t rtp_payload_type) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   LOG(LS_VERBOSE) << "RegisterPayloadType "
                   << static_cast<int>(rtp_payload_type) << " "
                   << static_cast<int>(codec);
@@ -206,7 +204,7 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
                                        const std::string& codec_name,
                                        uint8_t rtp_payload_type,
                                        int sample_rate_hz) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   LOG(LS_VERBOSE) << "RegisterExternalDecoder "
                   << static_cast<int>(rtp_payload_type) << " "
                   << static_cast<int>(codec);
@@ -243,7 +241,7 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
 }
 
 int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   int ret = decoder_database_->Remove(rtp_payload_type);
   if (ret == DecoderDatabase::kOK) {
     return kOK;
@@ -256,7 +254,7 @@ int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
 }
 
 bool NetEqImpl::SetMinimumDelay(int delay_ms) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (delay_ms >= 0 && delay_ms < 10000) {
     assert(delay_manager_.get());
     return delay_manager_->SetMinimumDelay(delay_ms);
@@ -265,7 +263,7 @@ bool NetEqImpl::SetMinimumDelay(int delay_ms) {
 }
 
 bool NetEqImpl::SetMaximumDelay(int delay_ms) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (delay_ms >= 0 && delay_ms < 10000) {
     assert(delay_manager_.get());
     return delay_manager_->SetMaximumDelay(delay_ms);
@@ -274,7 +272,7 @@ bool NetEqImpl::SetMaximumDelay(int delay_ms) {
 }
 
 int NetEqImpl::LeastRequiredDelayMs() const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   assert(delay_manager_.get());
   return delay_manager_->least_required_delay_ms();
 }
@@ -288,7 +286,7 @@ int NetEqImpl::TargetDelay() {
 }
 
 int NetEqImpl::CurrentDelayMs() const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (fs_hz_ == 0)
     return 0;
   // Sum up the samples in the packet buffer with the future length of the sync
@@ -306,7 +304,7 @@ int NetEqImpl::CurrentDelayMs() const {
 // Deprecated.
 // TODO(henrik.lundin) Delete.
 void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (mode != playout_mode_) {
     playout_mode_ = mode;
     CreateDecisionLogic();
@@ -316,12 +314,12 @@ void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
 // Deprecated.
 // TODO(henrik.lundin) Delete.
 NetEqPlayoutMode NetEqImpl::PlayoutMode() const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   return playout_mode_;
 }
 
 int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   assert(decoder_database_.get());
   const size_t total_samples_in_buffers =
       packet_buffer_->NumSamplesInBuffer(decoder_database_.get(),
@@ -336,33 +334,33 @@ int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
 }
 
 void NetEqImpl::GetRtcpStatistics(RtcpStatistics* stats) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (stats) {
     rtcp_.GetStatistics(false, stats);
   }
 }
 
 void NetEqImpl::GetRtcpStatisticsNoReset(RtcpStatistics* stats) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (stats) {
     rtcp_.GetStatistics(true, stats);
   }
 }
 
 void NetEqImpl::EnableVad() {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   assert(vad_.get());
   vad_->Enable();
 }
 
 void NetEqImpl::DisableVad() {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   assert(vad_.get());
   vad_->Disable();
 }
 
 bool NetEqImpl::GetPlayoutTimestamp(uint32_t* timestamp) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (first_packet_) {
     // We don't have a valid RTP timestamp until we have decoded our first
     // RTP packet.
@@ -373,7 +371,7 @@ bool NetEqImpl::GetPlayoutTimestamp(uint32_t* timestamp) {
 }
 
 int NetEqImpl::last_output_sample_rate_hz() const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   return last_output_sample_rate_hz_;
 }
 
@@ -386,17 +384,17 @@ int NetEqImpl::SetTargetSampleRate() {
 }
 
 int NetEqImpl::LastError() const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   return error_code_;
 }
 
 int NetEqImpl::LastDecoderError() {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   return decoder_error_code_;
 }
 
 void NetEqImpl::FlushBuffers() {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   LOG(LS_VERBOSE) << "FlushBuffers";
   packet_buffer_->Flush();
   assert(sync_buffer_.get());
@@ -410,12 +408,12 @@ void NetEqImpl::FlushBuffers() {
 
 void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
                                        int* max_num_packets) const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   packet_buffer_->BufferStat(current_num_packets, max_num_packets);
 }
 
 void NetEqImpl::EnableNack(size_t max_nack_list_size) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (!nack_enabled_) {
     const int kNackThresholdPackets = 2;
     nack_.reset(Nack::Create(kNackThresholdPackets));
@@ -426,13 +424,13 @@ void NetEqImpl::EnableNack(size_t max_nack_list_size) {
 }
 
 void NetEqImpl::DisableNack() {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   nack_.reset();
   nack_enabled_ = false;
 }
 
 std::vector<uint16_t> NetEqImpl::GetNackList(int64_t round_trip_time_ms) const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (!nack_enabled_) {
     return std::vector<uint16_t>();
   }
@@ -441,7 +439,7 @@ std::vector<uint16_t> NetEqImpl::GetNackList(int64_t round_trip_time_ms) const {
 }
 
 const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   return sync_buffer_.get();
 }
 

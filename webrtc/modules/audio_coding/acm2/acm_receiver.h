@@ -16,15 +16,16 @@
 #include <vector>
 
 #include "webrtc/base/array_view.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/acm2/call_statistics.h"
 #include "webrtc/modules/audio_coding/acm2/initial_delay_manager.h"
+#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
@@ -32,7 +33,6 @@
 namespace webrtc {
 
 struct CodecInst;
-class CriticalSectionWrapper;
 class NetEq;
 
 namespace acm2 {
@@ -281,7 +281,7 @@ class AcmReceiver {
 
   uint32_t NowInTimestamp(int decoder_sampling_rate) const;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  mutable rtc::CriticalSection crit_sect_;
   int id_;  // TODO(henrik.lundin) Make const.
   const Decoder* last_audio_decoder_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity previous_audio_activity_ GUARDED_BY(crit_sect_);

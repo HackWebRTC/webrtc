@@ -25,7 +25,6 @@
 #include "webrtc/modules/audio_coding/acm2/call_statistics.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
@@ -119,8 +118,7 @@ bool IsCng(int codec_id) {
 }  // namespace
 
 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
-    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      id_(config.id),
+    : id_(config.id),
       last_audio_decoder_(nullptr),
       previous_audio_activity_(AudioFrame::kVadPassive),
       audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
@@ -157,7 +155,7 @@ int AcmReceiver::LeastRequiredDelayMs() const {
 }
 
 rtc::Optional<int> AcmReceiver::last_packet_sample_rate_hz() const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   return last_packet_sample_rate_hz_;
 }
 
@@ -171,7 +169,7 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
   const RTPHeader* header = &rtp_header.header;  // Just a shorthand.
 
   {
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
 
     const Decoder* decoder = RtpHeaderToDecoder(*header, incoming_payload[0]);
     if (!decoder) {
@@ -216,7 +214,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   size_t num_channels;
 
   // Accessing members, take the lock.
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
 
   // Always write the output to |audio_buffer_| first.
   if (neteq_->GetAudio(AudioFrame::kMaxDataSizeSamples,
@@ -317,7 +315,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
     return *ned;
   }();
 
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
 
   // The corresponding NetEq decoder ID.
   // If this codec has been registered before.
@@ -366,13 +364,13 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
 
 void AcmReceiver::EnableVad() {
   neteq_->EnableVad();
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   vad_enabled_ = true;
 }
 
 void AcmReceiver::DisableVad() {
   neteq_->DisableVad();
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   vad_enabled_ = false;
 }
 
@@ -384,7 +382,7 @@ void AcmReceiver::FlushBuffers() {
 // many as it can.
 int AcmReceiver::RemoveAllCodecs() {
   int ret_val = 0;
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   for (auto it = decoders_.begin(); it != decoders_.end(); ) {
     auto cur = it;
     ++it;  // it will be valid even if we erase cur
@@ -404,7 +402,7 @@ int AcmReceiver::RemoveAllCodecs() {
 }
 
 int AcmReceiver::RemoveCodec(uint8_t payload_type) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   auto it = decoders_.find(payload_type);
   if (it == decoders_.end()) {  // Such a payload-type is not registered.
     return 0;
@@ -422,7 +420,7 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
 }
 
 void AcmReceiver::set_id(int id) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   id_ = id;
 }
 
@@ -431,7 +429,7 @@ bool AcmReceiver::GetPlayoutTimestamp(uint32_t* timestamp) {
 }
 
 int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   if (!last_audio_decoder_) {
     return -1;
   }
@@ -468,7 +466,7 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
 
 int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
                                       CodecInst* codec) const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   auto it = decoders_.find(payload_type);
   if (it == decoders_.end()) {
     LOG(LERROR) << "AcmReceiver::DecoderByPayloadType "
@@ -532,7 +530,7 @@ uint32_t AcmReceiver::NowInTimestamp(int decoder_sampling_rate) const {
 
 void AcmReceiver::GetDecodingCallStatistics(
     AudioDecodingCallStats* stats) const {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   *stats = call_stats_.GetDecodingStatistics();
 }
 

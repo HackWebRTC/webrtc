@@ -13,17 +13,18 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/audio_coding/acm2/acm_receive_test_oldapi.h"
+#include "webrtc/modules/audio_coding/acm2/acm_send_test_oldapi.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
-#include "webrtc/modules/audio_coding/acm2/acm_receive_test_oldapi.h"
-#include "webrtc/modules/audio_coding/acm2/acm_send_test_oldapi.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
@@ -37,7 +38,6 @@
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -94,8 +94,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
       : num_calls_(0),
         last_frame_type_(kEmptyFrame),
         last_payload_type_(-1),
-        last_timestamp_(0),
-        crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
+        last_timestamp_(0) {}
 
   int32_t SendData(FrameType frame_type,
                    uint8_t payload_type,
@@ -103,7 +102,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
                    const uint8_t* payload_data,
                    size_t payload_len_bytes,
                    const RTPFragmentationHeader* fragmentation) override {
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
     ++num_calls_;
     last_frame_type_ = frame_type;
     last_payload_type_ = payload_type;
@@ -113,32 +112,32 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
   }
 
   int num_calls() const {
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
     return num_calls_;
   }
 
   int last_payload_len_bytes() const {
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
     return last_payload_vec_.size();
   }
 
   FrameType last_frame_type() const {
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
     return last_frame_type_;
   }
 
   int last_payload_type() const {
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
     return last_payload_type_;
   }
 
   uint32_t last_timestamp() const {
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
     return last_timestamp_;
   }
 
   void SwapBuffers(std::vector<uint8_t>* payload) {
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
     last_payload_vec_.swap(*payload);
   }
 
@@ -148,7 +147,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
   int last_payload_type_ GUARDED_BY(crit_sect_);
   uint32_t last_timestamp_ GUARDED_BY(crit_sect_);
   std::vector<uint8_t> last_payload_vec_ GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  mutable rtc::CriticalSection crit_sect_;
 };
 
 class AudioCodingModuleTestOldApi : public ::testing::Test {
@@ -469,7 +468,6 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
         send_count_(0),
         insert_packet_count_(0),
         pull_audio_count_(0),
-        crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         next_insert_packet_time_ms_(0),
         fake_clock_(new SimulatedClock(0)) {
     clock_ = fake_clock_.get();
@@ -503,7 +501,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   virtual bool TestDone() {
     if (packet_cb_.num_calls() > kNumPackets) {
-      CriticalSectionScoped lock(crit_sect_.get());
+      rtc::CritScope lock(&crit_sect_);
       if (pull_audio_count_ > kNumPullCalls) {
         // Both conditions for completion are met. End the test.
         return true;
@@ -541,7 +539,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   bool CbInsertPacketImpl() {
     SleepMs(1);
     {
-      CriticalSectionScoped lock(crit_sect_.get());
+      rtc::CritScope lock(&crit_sect_);
       if (clock_->TimeInMilliseconds() < next_insert_packet_time_ms_) {
         return true;
       }
@@ -561,7 +559,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   bool CbPullAudioImpl() {
     SleepMs(1);
     {
-      CriticalSectionScoped lock(crit_sect_.get());
+      rtc::CritScope lock(&crit_sect_);
       // Don't let the insert thread fall behind.
       if (next_insert_packet_time_ms_ < clock_->TimeInMilliseconds()) {
         return true;
@@ -581,7 +579,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   int send_count_;
   int insert_packet_count_;
   int pull_audio_count_ GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  mutable rtc::CriticalSection crit_sect_;
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
   rtc::scoped_ptr<SimulatedClock> fake_clock_;
 };
@@ -681,7 +679,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   // run).
   virtual bool TestDone() {
     if (packet_cb_.num_calls() > kNumPackets) {
-      CriticalSectionScoped lock(crit_sect_.get());
+      rtc::CritScope lock(&crit_sect_);
       if (pull_audio_count_ > kNumPullCalls) {
         // Both conditions for completion are met. End the test.
         return true;
@@ -720,7 +718,6 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
                                    this,
                                    "codec_registration"),
         test_complete_(EventWrapper::Create()),
-        crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         codec_registered_(false),
         receive_packet_count_(0),
         next_insert_packet_time_ms_(0),
@@ -781,7 +778,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     rtc::scoped_ptr<uint8_t[]> encoded(new uint8_t[max_encoded_bytes]);
     AudioEncoder::EncodedInfo info;
     {
-      CriticalSectionScoped lock(crit_sect_.get());
+      rtc::CritScope lock(&crit_sect_);
       if (clock_->TimeInMilliseconds() < next_insert_packet_time_ms_) {
         return true;
       }
@@ -829,7 +826,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
       // End the test early if a fatal failure (ASSERT_*) has occurred.
       test_complete_->Set();
     }
-    CriticalSectionScoped lock(crit_sect_.get());
+    rtc::CritScope lock(&crit_sect_);
     if (!codec_registered_ &&
         receive_packet_count_ > kRegisterAfterNumPackets) {
       // Register the iSAC encoder.
@@ -845,7 +842,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   rtc::PlatformThread receive_thread_;
   rtc::PlatformThread codec_registration_thread_;
   const rtc::scoped_ptr<EventWrapper> test_complete_;
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  mutable rtc::CriticalSection crit_sect_;
   bool codec_registered_ GUARDED_BY(crit_sect_);
   int receive_packet_count_ GUARDED_BY(crit_sect_);
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
