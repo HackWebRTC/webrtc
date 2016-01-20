@@ -10,86 +10,88 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/remb.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
-using webrtc::RTCPUtility::PT_PSFB;
-using webrtc::RTCPUtility::RTCPPacketPSFBAPP;
-using webrtc::RTCPUtility::RTCPPacketPSFBREMBItem;
+using webrtc::RTCPUtility::RtcpCommonHeader;
 
 namespace webrtc {
 namespace rtcp {
-namespace {
-const uint32_t kUnusedMediaSourceSsrc0 = 0;
-
-void AssignUWord8(uint8_t* buffer, size_t* offset, uint8_t value) {
-  buffer[(*offset)++] = value;
-}
-
-void AssignUWord32(uint8_t* buffer, size_t* offset, uint32_t value) {
-  ByteWriter<uint32_t>::WriteBigEndian(buffer + *offset, value);
-  *offset += 4;
-}
-
-void ComputeMantissaAnd6bitBase2Exponent(uint32_t input_base10,
-                                         uint8_t bits_mantissa,
-                                         uint32_t* mantissa,
-                                         uint8_t* exp) {
-  // input_base10 = mantissa * 2^exp
-  assert(bits_mantissa <= 32);
-  uint32_t mantissa_max = (1 << bits_mantissa) - 1;
-  uint8_t exponent = 0;
-  for (uint32_t i = 0; i < 64; ++i) {
-    if (input_base10 <= (mantissa_max << i)) {
-      exponent = i;
-      break;
-    }
-  }
-  *exp = exponent;
-  *mantissa = (input_base10 >> exponent);
-}
-
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
 //
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |V=2|P| FMT=15  |   PT=206      |             length            |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                  SSRC of packet sender                        |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                  SSRC of media source                         |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |  Unique identifier 'R' 'E' 'M' 'B'                            |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |  Num SSRC     | BR Exp    |  BR Mantissa                      |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |   SSRC feedback                                               |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |  ...                                                          |
-void CreateRemb(const RTCPPacketPSFBAPP& remb,
-                const RTCPPacketPSFBREMBItem& remb_item,
-                uint8_t* buffer,
-                size_t* pos) {
-  uint32_t mantissa = 0;
-  uint8_t exp = 0;
-  ComputeMantissaAnd6bitBase2Exponent(remb_item.BitRate, 18, &mantissa, &exp);
+//     0                   1                   2                   3
+//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//    |V=2|P| FMT=15  |   PT=206      |             length            |
+//    +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+//  0 |                  SSRC of packet sender                        |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  4 |                       Unused = 0                              |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  8 |  Unique identifier 'R' 'E' 'M' 'B'                            |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// 12 |  Num SSRC     | BR Exp    |  BR Mantissa                      |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// 16 |   SSRC feedback                                               |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//    :  ...                                                          :
+bool Remb::Parse(const RtcpCommonHeader& header, const uint8_t* payload) {
+  RTC_DCHECK(header.packet_type == kPacketType);
+  RTC_DCHECK(header.count_or_format == kFeedbackMessageType);
 
-  AssignUWord32(buffer, pos, remb.SenderSSRC);
-  AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
-  AssignUWord8(buffer, pos, 'R');
-  AssignUWord8(buffer, pos, 'E');
-  AssignUWord8(buffer, pos, 'M');
-  AssignUWord8(buffer, pos, 'B');
-  AssignUWord8(buffer, pos, remb_item.NumberOfSSRCs);
-  AssignUWord8(buffer, pos, (exp << 2) + ((mantissa >> 16) & 0x03));
-  AssignUWord8(buffer, pos, mantissa >> 8);
-  AssignUWord8(buffer, pos, mantissa);
-  for (uint8_t i = 0; i < remb_item.NumberOfSSRCs; ++i) {
-    AssignUWord32(buffer, pos, remb_item.SSRCs[i]);
+  if (header.payload_size_bytes < 16) {
+    LOG(LS_WARNING) << "Payload length " << header.payload_size_bytes
+                    << " is too small for Remb packet.";
+    return false;
   }
+  if (kUniqueIdentifier != ByteReader<uint32_t>::ReadBigEndian(&payload[8])) {
+    LOG(LS_WARNING) << "REMB identifier not found, not a REMB packet.";
+    return false;
+  }
+  uint8_t number_of_ssrcs = payload[12];
+  if (header.payload_size_bytes !=
+      kCommonFeedbackLength + (2 + number_of_ssrcs) * 4) {
+    LOG(LS_WARNING) << "Payload size " << header.payload_size_bytes
+                    << " does not match " << number_of_ssrcs << " ssrcs.";
+    return false;
+  }
+
+  ParseCommonFeedback(payload);
+  uint8_t exponenta = payload[13] >> 2;
+  uint32_t mantissa = (static_cast<uint32_t>(payload[13] & 0x03) << 16) |
+                      ByteReader<uint16_t>::ReadBigEndian(&payload[14]);
+  bitrate_bps_ = (mantissa << exponenta);
+
+  const uint8_t* next_ssrc = payload + 16;
+  ssrcs_.clear();
+  ssrcs_.reserve(number_of_ssrcs);
+  for (uint8_t i = 0; i < number_of_ssrcs; ++i) {
+    ssrcs_.push_back(ByteReader<uint32_t>::ReadBigEndian(next_ssrc));
+    next_ssrc += sizeof(uint32_t);
+  }
+
+  return true;
 }
-}  // namespace
+
+bool Remb::AppliesTo(uint32_t ssrc) {
+  if (ssrcs_.size() >= kMaxNumberOfSsrcs) {
+    LOG(LS_WARNING) << "Max number of REMB feedback SSRCs reached.";
+    return false;
+  }
+  ssrcs_.push_back(ssrc);
+  return true;
+}
+
+bool Remb::AppliesToMany(const std::vector<uint32_t>& ssrcs) {
+  if (ssrcs_.size() + ssrcs.size() > kMaxNumberOfSsrcs) {
+    LOG(LS_WARNING) << "Not enough space for all given SSRCs.";
+    return false;
+  }
+  // Append.
+  ssrcs_.insert(ssrcs_.end(), ssrcs.begin(), ssrcs.end());
+  return true;
+}
 
 bool Remb::Create(uint8_t* packet,
                   size_t* index,
@@ -99,19 +101,33 @@ bool Remb::Create(uint8_t* packet,
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  const uint8_t kFmt = 15;
-  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
-  CreateRemb(remb_, remb_item_, packet, index);
+  size_t index_end = *index + BlockLength();
+  CreateHeader(kFeedbackMessageType, kPacketType, HeaderLength(), packet,
+               index);
+  RTC_DCHECK_EQ(0u, Psfb::media_ssrc());
+  CreateCommonFeedback(packet + *index);
+  *index += kCommonFeedbackLength;
+
+  ByteWriter<uint32_t>::WriteBigEndian(packet + *index, kUniqueIdentifier);
+  *index += sizeof(uint32_t);
+  const uint32_t kMaxMantissa = 0x3ffff;  // 18 bits.
+  uint32_t mantissa = bitrate_bps_;
+  uint8_t exponenta = 0;
+  while (mantissa > kMaxMantissa) {
+    mantissa >>= 1;
+    ++exponenta;
+  }
+  packet[(*index)++] = ssrcs_.size();
+  packet[(*index)++] = (exponenta << 2) | (mantissa >> 16);
+  ByteWriter<uint16_t>::WriteBigEndian(packet + *index, mantissa & 0xffff);
+  *index += sizeof(uint16_t);
+
+  for (uint32_t ssrc : ssrcs_) {
+    ByteWriter<uint32_t>::WriteBigEndian(packet + *index, ssrc);
+    *index += sizeof(uint32_t);
+  }
+  RTC_DCHECK_EQ(index_end, *index);
   return true;
 }
-
-void Remb::AppliesTo(uint32_t ssrc) {
-  if (remb_item_.NumberOfSSRCs >= kMaxNumberOfSsrcs) {
-    LOG(LS_WARNING) << "Max number of REMB feedback SSRCs reached.";
-    return;
-  }
-  remb_item_.SSRCs[remb_item_.NumberOfSSRCs++] = ssrc;
-}
-
 }  // namespace rtcp
 }  // namespace webrtc

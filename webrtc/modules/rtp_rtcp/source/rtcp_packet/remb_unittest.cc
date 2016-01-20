@@ -12,35 +12,120 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/test/rtcp_packet_parser.h"
 
+using testing::ElementsAreArray;
+using testing::IsEmpty;
+using testing::make_tuple;
 using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::Remb;
-using webrtc::test::RtcpPacketParser;
+using webrtc::RTCPUtility::RtcpCommonHeader;
+using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
+namespace {
 
 const uint32_t kSenderSsrc = 0x12345678;
-const uint32_t kRemoteSsrc = 0x23456789;
+const uint32_t kRemoteSsrcs[] = {0x23456789, 0x2345678a, 0x2345678b};
+const uint32_t kBitrateBps = 0x3fb93 * 2;  // 522022;
+const uint8_t kPacket[] = {0x8f, 206,  0x00, 0x07, 0x12, 0x34, 0x56, 0x78,
+                           0x00, 0x00, 0x00, 0x00, 'R',  'E',  'M',  'B',
+                           0x03, 0x07, 0xfb, 0x93, 0x23, 0x45, 0x67, 0x89,
+                           0x23, 0x45, 0x67, 0x8a, 0x23, 0x45, 0x67, 0x8b};
+const size_t kPacketLength = sizeof(kPacket);
 
-TEST(RtcpPacketRembTest, Remb) {
+bool ParseRemb(const uint8_t* buffer, size_t length, Remb* remb) {
+  RtcpCommonHeader header;
+  EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
+  EXPECT_EQ(length, header.BlockSize());
+  return remb->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
+}
+
+TEST(RtcpPacketRembTest, Create) {
   Remb remb;
   remb.From(kSenderSsrc);
-  remb.AppliesTo(kRemoteSsrc);
-  remb.AppliesTo(kRemoteSsrc + 1);
-  remb.AppliesTo(kRemoteSsrc + 2);
-  remb.WithBitrateBps(261011);
+  remb.AppliesTo(kRemoteSsrcs[0]);
+  remb.AppliesTo(kRemoteSsrcs[1]);
+  remb.AppliesTo(kRemoteSsrcs[2]);
+  remb.WithBitrateBps(kBitrateBps);
 
   rtc::scoped_ptr<RawPacket> packet(remb.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.psfb_app()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.psfb_app()->Ssrc());
-  EXPECT_EQ(1, parser.remb_item()->num_packets());
-  EXPECT_EQ(261011, parser.remb_item()->last_bitrate_bps());
-  std::vector<uint32_t> ssrcs = parser.remb_item()->last_ssrc_list();
-  EXPECT_EQ(kRemoteSsrc, ssrcs[0]);
-  EXPECT_EQ(kRemoteSsrc + 1, ssrcs[1]);
-  EXPECT_EQ(kRemoteSsrc + 2, ssrcs[2]);
+
+  EXPECT_THAT(make_tuple(packet->Buffer(), packet->Length()),
+              ElementsAreArray(kPacket));
 }
+
+TEST(RtcpPacketRembTest, Parse) {
+  Remb remb;
+  EXPECT_TRUE(ParseRemb(kPacket, kPacketLength, &remb));
+  const Remb& parsed = remb;
+
+  EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
+  EXPECT_EQ(kBitrateBps, parsed.bitrate_bps());
+  EXPECT_THAT(parsed.ssrcs(), ElementsAreArray(kRemoteSsrcs));
+}
+
+TEST(RtcpPacketRembTest, CreateAndParseWithoutSsrcs) {
+  Remb remb;
+  remb.From(kSenderSsrc);
+  remb.WithBitrateBps(kBitrateBps);
+  rtc::scoped_ptr<RawPacket> packet(remb.Build());
+
+  Remb parsed;
+  EXPECT_TRUE(ParseRemb(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
+  EXPECT_EQ(kBitrateBps, parsed.bitrate_bps());
+  EXPECT_THAT(parsed.ssrcs(), IsEmpty());
+}
+
+TEST(RtcpPacketRembTest, ParseFailsOnTooSmallPacketToBeRemb) {
+  uint8_t packet[kPacketLength];
+  memcpy(packet, kPacket, kPacketLength);
+  packet[3] = 3;  // Make it too small.
+
+  Remb remb;
+  EXPECT_FALSE(ParseRemb(packet, (1 + 3) * 4, &remb));
+}
+
+TEST(RtcpPacketRembTest, ParseFailsWhenUniqueIdentifierIsNotRemb) {
+  uint8_t packet[kPacketLength];
+  memcpy(packet, kPacket, kPacketLength);
+  packet[12] = 'N';  // Swap 'R' -> 'N' in the 'REMB' unique identifier.
+
+  Remb remb;
+  EXPECT_FALSE(ParseRemb(packet, kPacketLength, &remb));
+}
+
+TEST(RtcpPacketRembTest, ParseFailsWhenSsrcCountMismatchLength) {
+  uint8_t packet[kPacketLength];
+  memcpy(packet, kPacket, kPacketLength);
+  packet[16]++;  // Swap 3 -> 4 in the ssrcs count.
+
+  Remb remb;
+  EXPECT_FALSE(ParseRemb(packet, kPacketLength, &remb));
+}
+
+TEST(RtcpPacketRembTest, TooManySsrcs) {
+  const size_t kMax = 0xff;
+  Remb remb;
+  for (size_t i = 1; i <= kMax; ++i)
+    EXPECT_TRUE(remb.AppliesTo(kRemoteSsrcs[0] + i));
+  EXPECT_FALSE(remb.AppliesTo(kRemoteSsrcs[0]));
+}
+
+TEST(RtcpPacketRembTest, TooManySsrcsForBatchAssign) {
+  const uint32_t kRemoteSsrc = kRemoteSsrcs[0];
+  const size_t kMax = 0xff;
+  const std::vector<uint32_t> kAllButOneSsrc(kMax - 1, kRemoteSsrc);
+  const std::vector<uint32_t> kTwoSsrcs(2, kRemoteSsrc);
+
+  Remb remb;
+  EXPECT_TRUE(remb.AppliesToMany(kAllButOneSsrc));
+  // Should be no place for 2 more.
+  EXPECT_FALSE(remb.AppliesToMany(kTwoSsrcs));
+  // But enough place for 1 more.
+  EXPECT_TRUE(remb.AppliesTo(kRemoteSsrc));
+  // But not for another one.
+  EXPECT_FALSE(remb.AppliesTo(kRemoteSsrc));
+}
+}  // namespace
 }  // namespace webrtc

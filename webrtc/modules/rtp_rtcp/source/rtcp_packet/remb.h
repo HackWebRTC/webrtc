@@ -12,30 +12,31 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_REMB_H_
 
 #include <vector>
+
 #include "webrtc/base/basictypes.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/psfb.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
-class Remb : public RtcpPacket {
+class Remb : public Psfb {
  public:
-  Remb() : RtcpPacket() {
-    memset(&remb_, 0, sizeof(remb_));
-    memset(&remb_item_, 0, sizeof(remb_item_));
-  }
+  static const uint8_t kFeedbackMessageType = 15;
 
-  virtual ~Remb() {}
+  Remb() : bitrate_bps_(0) {}
+  ~Remb() override {}
 
-  void From(uint32_t ssrc) {
-    remb_.SenderSSRC = ssrc;
-  }
-  void AppliesTo(uint32_t ssrc);
+  // Parse assumes header is already parsed and validated.
+  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
+             const uint8_t* payload);  // Size of the payload is in the header.
 
-  void WithBitrateBps(uint32_t bitrate_bps) {
-    remb_item_.BitRate = bitrate_bps;
-  }
+  bool AppliesTo(uint32_t ssrc);
+  bool AppliesToMany(const std::vector<uint32_t>& ssrcs);
+  void WithBitrateBps(uint32_t bitrate_bps) { bitrate_bps_ = bitrate_bps; }
+
+  uint32_t bitrate_bps() const { return bitrate_bps_; }
+  const std::vector<uint32_t>& ssrcs() const { return ssrcs_; }
 
  protected:
   bool Create(uint8_t* packet,
@@ -43,15 +44,20 @@ class Remb : public RtcpPacket {
               size_t max_length,
               RtcpPacket::PacketReadyCallback* callback) const override;
 
- private:
-  static const int kMaxNumberOfSsrcs = 0xff;
-
-  size_t BlockLength() const {
-    return (remb_item_.NumberOfSSRCs + 5) * 4;
+  size_t BlockLength() const override {
+    return kHeaderLength + kCommonFeedbackLength + (2 + ssrcs_.size()) * 4;
   }
 
-  RTCPUtility::RTCPPacketPSFBAPP remb_;
-  RTCPUtility::RTCPPacketPSFBREMBItem remb_item_;
+ private:
+  static const size_t kMaxNumberOfSsrcs = 0xff;
+  static const uint32_t kUniqueIdentifier = 0x52454D42;  // 'R' 'E' 'M' 'B'.
+
+  // Media ssrc is unused, shadow base class setter and getter.
+  void To(uint32_t);
+  uint32_t media_ssrc() const;
+
+  uint32_t bitrate_bps_;
+  std::vector<uint32_t> ssrcs_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Remb);
 };
