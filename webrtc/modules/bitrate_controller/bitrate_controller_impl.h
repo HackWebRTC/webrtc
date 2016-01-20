@@ -36,8 +36,9 @@ class BitrateControllerImpl : public BitrateController {
   RtcpBandwidthObserver* CreateRtcpBandwidthObserver() override;
 
   void SetStartBitrate(int start_bitrate_bps) override;
-  void SetMinMaxBitrate(int min_bitrate_bps,
-                                int max_bitrate_bps) override;
+  void SetMinMaxBitrate(int min_bitrate_bps, int max_bitrate_bps) override;
+
+  void UpdateDelayBasedEstimate(uint32_t bitrate_bps) override;
 
   void SetReservedBitrate(uint32_t reserved_bitrate_bps) override;
 

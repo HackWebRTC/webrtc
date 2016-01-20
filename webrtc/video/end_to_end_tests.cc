@@ -20,6 +20,7 @@
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -1802,6 +1803,143 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
     Call* sender_call_;
     Call* receiver_call_;
     bool has_seen_pacer_delay_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
+
+// Verifies that it's possible to limit the send BWE by sending a REMB.
+// This is verified by allowing the send BWE to ramp-up to >1000 kbps,
+// then have the test generate a REMB of 500 kbps and verify that the send BWE
+// is reduced to exactly 500 kbps. Then a REMB of 1000 kbps is generated and the
+// test verifies that the send BWE ramps back up to exactly 1000 kbps.
+TEST_F(EndToEndTest, RembWithSendSideBwe) {
+  class BweObserver : public test::EndToEndTest {
+   public:
+    BweObserver()
+        : EndToEndTest(kDefaultTimeoutMs),
+          sender_call_(nullptr),
+          clock_(Clock::GetRealTimeClock()),
+          sender_ssrc_(0),
+          remb_bitrate_bps_(1000000),
+          receive_transport_(nullptr),
+          event_(false, false),
+          poller_thread_(&BitrateStatsPollingThread,
+                         this,
+                         "BitrateStatsPollingThread"),
+          state_(kWaitForFirstRampUp) {}
+
+    ~BweObserver() {}
+
+    test::PacketTransport* CreateReceiveTransport() {
+      receive_transport_ = new test::PacketTransport(
+          nullptr, this, test::PacketTransport::kReceiver,
+          FakeNetworkPipe::Config());
+      return receive_transport_;
+    }
+
+    Call::Config GetSenderCallConfig() override {
+      Call::Config config;
+      // Set a high start bitrate to reduce the test completion time.
+      config.bitrate_config.start_bitrate_bps = remb_bitrate_bps_;
+      return config;
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      ASSERT_EQ(1u, send_config->rtp.ssrcs.size());
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumber,
+                       test::kTransportSequenceNumberExtensionId));
+      sender_ssrc_ = send_config->rtp.ssrcs[0];
+
+      encoder_config->streams[0].max_bitrate_bps =
+          encoder_config->streams[0].target_bitrate_bps = 2000000;
+
+      ASSERT_EQ(1u, receive_configs->size());
+      (*receive_configs)[0].rtp.remb = false;
+      (*receive_configs)[0].rtp.transport_cc = true;
+      (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
+      RtpRtcp::Configuration config;
+      config.receiver_only = true;
+      config.clock = clock_;
+      config.outgoing_transport = receive_transport_;
+      rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
+      rtp_rtcp_->SetRemoteSSRC((*receive_configs)[0].rtp.remote_ssrc);
+      rtp_rtcp_->SetSSRC((*receive_configs)[0].rtp.local_ssrc);
+      rtp_rtcp_->SetREMBStatus(true);
+      rtp_rtcp_->SetSendingStatus(true);
+      rtp_rtcp_->SetRTCPStatus(RtcpMode::kReducedSize);
+    }
+
+    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+      sender_call_ = sender_call;
+    }
+
+    static bool BitrateStatsPollingThread(void* obj) {
+      return static_cast<BweObserver*>(obj)->PollStats();
+    }
+
+    bool PollStats() {
+      if (sender_call_) {
+        Call::Stats stats = sender_call_->GetStats();
+        switch (state_) {
+          case kWaitForFirstRampUp:
+            if (stats.send_bandwidth_bps >= remb_bitrate_bps_) {
+              state_ = kWaitForRemb;
+              remb_bitrate_bps_ /= 2;
+              rtp_rtcp_->SetREMBData(
+                  remb_bitrate_bps_,
+                  std::vector<uint32_t>(&sender_ssrc_, &sender_ssrc_ + 1));
+              rtp_rtcp_->SendRTCP(kRtcpRr);
+            }
+            break;
+
+          case kWaitForRemb:
+            if (stats.send_bandwidth_bps == remb_bitrate_bps_) {
+              state_ = kWaitForSecondRampUp;
+              remb_bitrate_bps_ *= 2;
+              rtp_rtcp_->SetREMBData(
+                  remb_bitrate_bps_,
+                  std::vector<uint32_t>(&sender_ssrc_, &sender_ssrc_ + 1));
+              rtp_rtcp_->SendRTCP(kRtcpRr);
+            }
+            break;
+
+          case kWaitForSecondRampUp:
+            if (stats.send_bandwidth_bps == remb_bitrate_bps_) {
+              observation_complete_.Set();
+            }
+            break;
+        }
+      }
+
+      return !event_.Wait(1000);
+    }
+
+    void PerformTest() override {
+      poller_thread_.Start();
+      EXPECT_TRUE(Wait())
+          << "Timed out while waiting for bitrate to change according to REMB.";
+      poller_thread_.Stop();
+    }
+
+   private:
+    enum TestState { kWaitForFirstRampUp, kWaitForRemb, kWaitForSecondRampUp };
+
+    Call* sender_call_;
+    Clock* const clock_;
+    uint32_t sender_ssrc_;
+    int remb_bitrate_bps_;
+    rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
+    test::PacketTransport* receive_transport_;
+    rtc::Event event_;
+    rtc::PlatformThread poller_thread_;
+    TestState state_;
   } test;
 
   RunBaseTest(&test);

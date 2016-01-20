@@ -16,6 +16,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -34,13 +35,14 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   TransportFeedbackAdapterTest()
       : clock_(0),
         bitrate_estimator_(nullptr),
+        bitrate_controller_(this),
         receiver_estimated_bitrate_(0) {}
 
   virtual ~TransportFeedbackAdapterTest() {}
 
   virtual void SetUp() {
-    adapter_.reset(new TransportFeedbackAdapter(
-        new RtcpBandwidthObserverAdapter(this), &clock_, &process_thread_));
+    adapter_.reset(new TransportFeedbackAdapter(&bitrate_controller_, &clock_,
+                                                &process_thread_));
 
     bitrate_estimator_ = new MockRemoteBitrateEstimator();
     EXPECT_CALL(process_thread_, RegisterModule(bitrate_estimator_)).Times(1);
@@ -55,19 +57,15 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
  protected:
   // Proxy class used since TransportFeedbackAdapter will own the instance
   // passed at construction.
-  class RtcpBandwidthObserverAdapter : public RtcpBandwidthObserver {
+  class MockBitrateControllerAdapter : public MockBitrateController {
    public:
-    explicit RtcpBandwidthObserverAdapter(TransportFeedbackAdapterTest* owner)
-        : owner_(owner) {}
+    explicit MockBitrateControllerAdapter(TransportFeedbackAdapterTest* owner)
+        : MockBitrateController(), owner_(owner) {}
 
-    void OnReceivedEstimatedBitrate(uint32_t bitrate) override {
-      owner_->receiver_estimated_bitrate_ = bitrate;
-    }
+    ~MockBitrateControllerAdapter() override {}
 
-    void OnReceivedRtcpReceiverReport(const ReportBlockList& report_blocks,
-                                      int64_t rtt,
-                                      int64_t now_ms) override {
-      RTC_NOTREACHED();
+    void UpdateDelayBasedEstimate(uint32_t bitrate_bps) override {
+      owner_->receiver_estimated_bitrate_ = bitrate_bps;
     }
 
     TransportFeedbackAdapterTest* const owner_;
@@ -113,6 +111,7 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   SimulatedClock clock_;
   MockProcessThread process_thread_;
   MockRemoteBitrateEstimator* bitrate_estimator_;
+  MockBitrateControllerAdapter bitrate_controller_;
   rtc::scoped_ptr<TransportFeedbackAdapter> adapter_;
 
   uint32_t receiver_estimated_bitrate_;

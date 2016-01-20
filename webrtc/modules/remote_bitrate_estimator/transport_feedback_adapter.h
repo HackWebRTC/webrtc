@@ -15,7 +15,7 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
@@ -28,7 +28,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
                                  public CallStatsObserver,
                                  public RemoteBitrateObserver {
  public:
-  TransportFeedbackAdapter(RtcpBandwidthObserver* bandwidth_observer,
+  TransportFeedbackAdapter(BitrateController* bitrate_controller,
                            Clock* clock,
                            ProcessThread* process_thread);
   virtual ~TransportFeedbackAdapter();
@@ -54,7 +54,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
 
   rtc::CriticalSection lock_;
   SendTimeHistory send_time_history_ GUARDED_BY(&lock_);
-  rtc::scoped_ptr<RtcpBandwidthObserver> rtcp_bandwidth_observer_;
+  BitrateController* bitrate_controller_;
   rtc::scoped_ptr<RemoteBitrateEstimator> bitrate_estimator_;
   ProcessThread* const process_thread_;
   Clock* const clock_;

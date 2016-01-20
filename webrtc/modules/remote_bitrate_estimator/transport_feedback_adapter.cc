@@ -27,11 +27,11 @@ const int64_t kBaseTimestampScaleFactor =
 const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
 
 TransportFeedbackAdapter::TransportFeedbackAdapter(
-    RtcpBandwidthObserver* bandwidth_observer,
+    BitrateController* bitrate_controller,
     Clock* clock,
     ProcessThread* process_thread)
     : send_time_history_(clock, kSendTimeHistoryWindowMs),
-      rtcp_bandwidth_observer_(bandwidth_observer),
+      bitrate_controller_(bitrate_controller),
       process_thread_(process_thread),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
@@ -124,7 +124,7 @@ void TransportFeedbackAdapter::OnTransportFeedback(
 void TransportFeedbackAdapter::OnReceiveBitrateChanged(
     const std::vector<unsigned int>& ssrcs,
     unsigned int bitrate) {
-  rtcp_bandwidth_observer_->OnReceivedEstimatedBitrate(bitrate);
+  bitrate_controller_->UpdateDelayBasedEstimate(bitrate);
 }
 
 void TransportFeedbackAdapter::OnRttUpdate(int64_t avg_rtt_ms,

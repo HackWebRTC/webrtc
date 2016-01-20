@@ -57,6 +57,8 @@ class BitrateController : public Module {
   virtual void SetStartBitrate(int start_bitrate_bps) = 0;
   virtual void SetMinMaxBitrate(int min_bitrate_bps, int max_bitrate_bps) = 0;
 
+  virtual void UpdateDelayBasedEstimate(uint32_t bitrate_bps) = 0;
+
   virtual void SetEventLog(RtcEventLog* event_log) = 0;
 
   // Gets the available payload bandwidth in bits per second. Note that

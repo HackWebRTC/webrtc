@@ -35,6 +35,9 @@ class SendSideBandwidthEstimation {
   // Call when we receive a RTCP message with TMMBR or REMB.
   void UpdateReceiverEstimate(int64_t now_ms, uint32_t bandwidth);
 
+  // Call when a new delay-based estimate is available.
+  void UpdateDelayBasedEstimate(int64_t now_ms, uint32_t bitrate_bps);
+
   // Call when we receive a RTCP message with a ReceiveBlock.
   void UpdateReceiverBlock(uint8_t fraction_loss,
                            int64_t rtt,
@@ -80,6 +83,7 @@ class SendSideBandwidthEstimation {
   int64_t last_round_trip_time_ms_;
 
   uint32_t bwe_incoming_;
+  uint32_t delay_based_bitrate_bps_;
   int64_t time_last_decrease_ms_;
   int64_t first_report_time_ms_;
   int initially_lost_packets_;

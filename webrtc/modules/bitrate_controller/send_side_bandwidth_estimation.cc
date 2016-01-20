@@ -55,6 +55,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       last_fraction_loss_(0),
       last_round_trip_time_ms_(0),
       bwe_incoming_(0),
+      delay_based_bitrate_bps_(0),
       time_last_decrease_ms_(0),
       first_report_time_ms_(-1),
       initially_lost_packets_(0),
@@ -101,6 +102,13 @@ void SendSideBandwidthEstimation::CurrentEstimate(int* bitrate,
 void SendSideBandwidthEstimation::UpdateReceiverEstimate(
     int64_t now_ms, uint32_t bandwidth) {
   bwe_incoming_ = bandwidth;
+  bitrate_ = CapBitrateToThresholds(now_ms, bitrate_);
+}
+
+void SendSideBandwidthEstimation::UpdateDelayBasedEstimate(
+    int64_t now_ms,
+    uint32_t bitrate_bps) {
+  delay_based_bitrate_bps_ = bitrate_bps;
   bitrate_ = CapBitrateToThresholds(now_ms, bitrate_);
 }
 
@@ -267,6 +275,9 @@ uint32_t SendSideBandwidthEstimation::CapBitrateToThresholds(
     int64_t now_ms, uint32_t bitrate) {
   if (bwe_incoming_ > 0 && bitrate > bwe_incoming_) {
     bitrate = bwe_incoming_;
+  }
+  if (delay_based_bitrate_bps_ > 0 && bitrate > delay_based_bitrate_bps_) {
+    bitrate = delay_based_bitrate_bps_;
   }
   if (bitrate > max_bitrate_configured_) {
     bitrate = max_bitrate_configured_;

@@ -24,6 +24,21 @@ class MockBitrateObserver : public BitrateObserver {
                     uint8_t fraction_loss,
                     int64_t rtt_ms));
 };
+
+class MockBitrateController : public BitrateController {
+ public:
+  MOCK_METHOD0(CreateRtcpBandwidthObserver, RtcpBandwidthObserver*());
+  MOCK_METHOD1(SetStartBitrate, void(int start_bitrate_bps));
+  MOCK_METHOD2(SetMinMaxBitrate,
+               void(int min_bitrate_bps, int max_bitrate_bps));
+  MOCK_METHOD1(UpdateDelayBasedEstimate, void(uint32_t bitrate_bps));
+  MOCK_METHOD1(SetEventLog, void(RtcEventLog* event_log));
+  MOCK_CONST_METHOD1(AvailableBandwidth, bool(uint32_t* bandwidth));
+  MOCK_METHOD1(SetReservedBitrate, void(uint32_t reserved_bitrate_bps));
+
+  MOCK_METHOD0(Process, int());
+  MOCK_METHOD0(TimeUntilNextProcess, int64_t());
+};
 }  // namespace test
 }  // namespace webrtc
 

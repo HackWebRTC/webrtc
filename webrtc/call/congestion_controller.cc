@@ -237,8 +237,7 @@ TransportFeedbackObserver*
 CongestionController::GetTransportFeedbackObserver() {
   if (transport_feedback_adapter_.get() == nullptr) {
     transport_feedback_adapter_.reset(new TransportFeedbackAdapter(
-        bitrate_controller_->CreateRtcpBandwidthObserver(),
-        Clock::GetRealTimeClock(), process_thread_));
+        bitrate_controller_.get(), Clock::GetRealTimeClock(), process_thread_));
     transport_feedback_adapter_->SetBitrateEstimator(
         new RemoteBitrateEstimatorAbsSendTime(
             transport_feedback_adapter_.get(), Clock::GetRealTimeClock()));

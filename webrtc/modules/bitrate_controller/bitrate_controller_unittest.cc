@@ -162,14 +162,18 @@ TEST_F(BitrateControllerTest, OneBitrateObserverOneRtcpObserver) {
   bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, time_ms);
   EXPECT_EQ(300000, bitrate_observer_.last_bitrate_);
 
-  // Test that a low REMB trigger immediately.
+  // Test that a low delay-based estimate limits the combined estimate.
+  controller_->UpdateDelayBasedEstimate(280000);
+  EXPECT_EQ(280000, bitrate_observer_.last_bitrate_);
+
+  // Test that a low REMB limits the combined estimate.
   bandwidth_observer_->OnReceivedEstimatedBitrate(250000);
   EXPECT_EQ(250000, bitrate_observer_.last_bitrate_);
   EXPECT_EQ(0, bitrate_observer_.last_fraction_loss_);
   EXPECT_EQ(50, bitrate_observer_.last_rtt_);
 
   bandwidth_observer_->OnReceivedEstimatedBitrate(1000);
-  EXPECT_EQ(100000, bitrate_observer_.last_bitrate_);  // Min cap.
+  EXPECT_EQ(100000, bitrate_observer_.last_bitrate_);
 }
 
 TEST_F(BitrateControllerTest, OneBitrateObserverTwoRtcpObservers) {
