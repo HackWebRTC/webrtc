@@ -635,6 +635,8 @@ if (is_ios) {
       "objc/RTCDispatcher.m",
       "objc/RTCLogging.h",
       "objc/RTCLogging.mm",
+      "objc/RTCSSLAdapter.h",
+      "objc/RTCSSLAdapter.mm",
     ]
   }
 }
