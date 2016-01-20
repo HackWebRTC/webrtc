@@ -13,7 +13,6 @@
 
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/source/condition_variable_event_win.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -30,7 +29,7 @@ class RWLockWinXP : public RWLockWrapper {
   void ReleaseLockShared() override;
 
  private:
-  CriticalSectionWrapper critical_section_;
+  CRITICAL_SECTION critical_section_;
   ConditionVariableEventWin read_condition_;
   ConditionVariableEventWin write_condition_;
 

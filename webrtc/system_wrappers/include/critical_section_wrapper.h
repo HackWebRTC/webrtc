@@ -46,10 +46,6 @@ class LOCKABLE CriticalSectionWrapper {
 private:
 #if defined (WEBRTC_WIN)
   CRITICAL_SECTION crit_;
-
-  // TODO(tommi): Remove friendness.
-  friend class ConditionVariableEventWin;
-  friend class ConditionVariableNativeWin;
 #else
   pthread_mutex_t mutex_;
 #endif

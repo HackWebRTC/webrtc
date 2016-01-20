@@ -11,16 +11,34 @@
 #include "webrtc/system_wrappers/source/rw_lock_winxp_win.h"
 
 namespace webrtc {
+namespace {
+class ScopedLock {
+ public:
+  ScopedLock(CRITICAL_SECTION* lock) : lock_(lock) {
+    EnterCriticalSection(lock_);
+  }
+  ~ScopedLock() {
+    LeaveCriticalSection(lock_);
+  }
+ private:
+  CRITICAL_SECTION* const lock_;
+};
+}
 
-RWLockWinXP::RWLockWinXP() {}
-RWLockWinXP::~RWLockWinXP() {}
+RWLockWinXP::RWLockWinXP() {
+  InitializeCriticalSection(&critical_section_);
+}
+
+RWLockWinXP::~RWLockWinXP() {
+  DeleteCriticalSection(&critical_section_);
+}
 
 void RWLockWinXP::AcquireLockExclusive() {
-  CriticalSectionScoped cs(&critical_section_);
+  ScopedLock cs(&critical_section_);
   if (writer_active_ || readers_active_ > 0) {
     ++writers_waiting_;
     while (writer_active_ || readers_active_ > 0) {
-      write_condition_.SleepCS(critical_section_);
+      write_condition_.SleepCS(&critical_section_);
     }
     --writers_waiting_;
   }
@@ -28,7 +46,7 @@ void RWLockWinXP::AcquireLockExclusive() {
 }
 
 void RWLockWinXP::ReleaseLockExclusive() {
-  CriticalSectionScoped cs(&critical_section_);
+  ScopedLock cs(&critical_section_);
   writer_active_ = false;
   if (writers_waiting_ > 0) {
     write_condition_.Wake();
@@ -38,12 +56,12 @@ void RWLockWinXP::ReleaseLockExclusive() {
 }
 
 void RWLockWinXP::AcquireLockShared() {
-  CriticalSectionScoped cs(&critical_section_);
+  ScopedLock cs(&critical_section_);
   if (writer_active_ || writers_waiting_ > 0) {
     ++readers_waiting_;
 
     while (writer_active_ || writers_waiting_ > 0) {
-      read_condition_.SleepCS(critical_section_);
+      read_condition_.SleepCS(&critical_section_);
     }
     --readers_waiting_;
   }
@@ -51,7 +69,7 @@ void RWLockWinXP::AcquireLockShared() {
 }
 
 void RWLockWinXP::ReleaseLockShared() {
-  CriticalSectionScoped cs(&critical_section_);
+  ScopedLock cs(&critical_section_);
   --readers_active_;
   if (readers_active_ == 0 && writers_waiting_ > 0) {
     write_condition_.Wake();
