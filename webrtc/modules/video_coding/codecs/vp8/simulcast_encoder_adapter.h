@@ -12,6 +12,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_ENCODER_ADAPTER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_ENCODER_ADAPTER_H_
 
+#include <string>
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
@@ -114,6 +115,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;
+  std::string implementation_name_;
 };
 
 }  // namespace webrtc

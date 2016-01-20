@@ -152,6 +152,8 @@ class MockVideoEncoder : public VideoEncoder {
     supports_native_handle_ = enabled;
   }
 
+  MOCK_CONST_METHOD0(ImplementationName, const char*());
+
  private:
   bool supports_native_handle_ = false;
   VideoCodec codec_;
@@ -162,6 +164,10 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
  public:
   VideoEncoder* Create() override {
     MockVideoEncoder* encoder = new MockVideoEncoder();
+    const char* encoder_name = encoder_names_.empty()
+                                   ? "codec_implementation_name"
+                                   : encoder_names_[encoders_.size()];
+    ON_CALL(*encoder, ImplementationName()).WillByDefault(Return(encoder_name));
     encoders_.push_back(encoder);
     return encoder;
   }
@@ -171,9 +177,13 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
   virtual ~MockVideoEncoderFactory() {}
 
   const std::vector<MockVideoEncoder*>& encoders() const { return encoders_; }
+  void SetEncoderNames(const std::vector<const char*>& encoder_names) {
+    encoder_names_ = encoder_names;
+  }
 
  private:
   std::vector<MockVideoEncoder*> encoders_;
+  std::vector<const char*> encoder_names_;
 };
 
 class TestSimulcastEncoderAdapterFakeHelper {
@@ -395,6 +405,20 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsNativeHandleForSingleStreams) {
   EXPECT_TRUE(adapter_->SupportsNativeHandle());
   helper_->factory()->encoders()[0]->set_supports_native_handle(false);
   EXPECT_FALSE(adapter_->SupportsNativeHandle());
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, SupportsImplementationName) {
+  EXPECT_STREQ("SimulcastEncoderAdapter", adapter_->ImplementationName());
+  TestVp8Simulcast::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
+  std::vector<const char*> encoder_names;
+  encoder_names.push_back("codec1");
+  encoder_names.push_back("codec2");
+  encoder_names.push_back("codec3");
+  helper_->factory()->SetEncoderNames(encoder_names);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_STREQ("SimulcastEncoderAdapter (codec1, codec2, codec3)",
+               adapter_->ImplementationName());
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake,
