@@ -11,12 +11,23 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
 
+#include <ApplicationServices/ApplicationServices.h>
+
+#include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
 #include "webrtc/modules/desktop_capture/window_capturer.h"
 
 namespace webrtc {
 
 // A helper function to get the on-screen windows.
 bool GetWindowList(WindowCapturer::WindowList* windows);
+
+// Returns true if the window is occupying a full screen.
+bool IsWindowFullScreen(const MacDesktopConfiguration& desktop_config,
+                                 CFDictionaryRef window);
+
+// Returns true if the window is minimized.
+bool IsWindowMinimized(CGWindowID id);
+
 
 }  // namespace webrtc
 

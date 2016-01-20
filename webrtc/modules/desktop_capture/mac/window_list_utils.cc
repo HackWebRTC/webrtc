@@ -59,4 +59,56 @@ bool GetWindowList(WindowCapturer::WindowList* windows) {
   return true;
 }
 
+// Returns true if the window is occupying a full screen.
+bool IsWindowFullScreen(
+    const MacDesktopConfiguration& desktop_config,
+    CFDictionaryRef window) {
+  bool fullscreen = false;
+  CFDictionaryRef bounds_ref = reinterpret_cast<CFDictionaryRef>(
+      CFDictionaryGetValue(window, kCGWindowBounds));
+
+  CGRect bounds;
+  if (bounds_ref &&
+      CGRectMakeWithDictionaryRepresentation(bounds_ref, &bounds)) {
+    for (MacDisplayConfigurations::const_iterator it =
+             desktop_config.displays.begin();
+         it != desktop_config.displays.end(); ++it) {
+      if (it->bounds.equals(DesktopRect::MakeXYWH(bounds.origin.x,
+                                                  bounds.origin.y,
+                                                  bounds.size.width,
+                                                  bounds.size.height))) {
+        fullscreen = true;
+        break;
+      }
+    }
+  }
+
+  return fullscreen;
+}
+
+// Returns true if the window is minimized.
+bool IsWindowMinimized(CGWindowID id) {
+  CFArrayRef window_id_array =
+      CFArrayCreate(NULL, reinterpret_cast<const void **>(&id), 1, NULL);
+  CFArrayRef window_array =
+      CGWindowListCreateDescriptionFromArray(window_id_array);
+  bool minimized = false;
+
+  if (window_array && CFArrayGetCount(window_array)) {
+    CFDictionaryRef window = reinterpret_cast<CFDictionaryRef>(
+        CFArrayGetValueAtIndex(window_array, 0));
+    CFBooleanRef on_screen =  reinterpret_cast<CFBooleanRef>(
+        CFDictionaryGetValue(window, kCGWindowIsOnscreen));
+
+    minimized = !on_screen;
+  }
+
+  CFRelease(window_id_array);
+  CFRelease(window_array);
+
+  return minimized;
+}
+
+
+
 }  // namespace webrtc
