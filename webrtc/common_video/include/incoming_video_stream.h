@@ -11,13 +11,13 @@
 #ifndef WEBRTC_COMMON_VIDEO_INCLUDE_INCOMING_VIDEO_STREAM_H_
 #define WEBRTC_COMMON_VIDEO_INCLUDE_INCOMING_VIDEO_STREAM_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_video/video_render_frames.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
 class EventTimerWrapper;
 
 class VideoRenderCallback {
@@ -77,9 +77,9 @@ class IncomingVideoStream : public VideoRenderCallback {
   uint32_t const stream_id_;
   const bool disable_prerenderer_smoothing_;
   // Critsects in allowed to enter order.
-  const rtc::scoped_ptr<CriticalSectionWrapper> stream_critsect_;
-  const rtc::scoped_ptr<CriticalSectionWrapper> thread_critsect_;
-  const rtc::scoped_ptr<CriticalSectionWrapper> buffer_critsect_;
+  mutable rtc::CriticalSection stream_critsect_;
+  mutable rtc::CriticalSection thread_critsect_;
+  mutable rtc::CriticalSection buffer_critsect_;
   // TODO(pbos): Make plain member and stop resetting this thread, just
   // start/stoping it is enough.
   rtc::scoped_ptr<rtc::PlatformThread> incoming_render_thread_

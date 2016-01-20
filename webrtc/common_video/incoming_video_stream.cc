@@ -36,9 +36,6 @@ IncomingVideoStream::IncomingVideoStream(uint32_t stream_id,
                                          bool disable_prerenderer_smoothing)
     : stream_id_(stream_id),
       disable_prerenderer_smoothing_(disable_prerenderer_smoothing),
-      stream_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      thread_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      buffer_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       incoming_render_thread_(),
       deliver_buffer_event_(EventTimerWrapper::Create()),
       running_(false),
@@ -59,13 +56,12 @@ IncomingVideoStream::~IncomingVideoStream() {
 }
 
 VideoRenderCallback* IncomingVideoStream::ModuleCallback() {
-  CriticalSectionScoped cs(stream_critsect_.get());
   return this;
 }
 
 int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
                                          const VideoFrame& video_frame) {
-  CriticalSectionScoped csS(stream_critsect_.get());
+  rtc::CritScope csS(&stream_critsect_);
 
   if (!running_) {
     return -1;
@@ -86,7 +82,7 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
   if (disable_prerenderer_smoothing_) {
     DeliverFrame(video_frame);
   } else {
-    CriticalSectionScoped csB(buffer_critsect_.get());
+    rtc::CritScope csB(&buffer_critsect_);
     if (render_buffers_->AddFrame(video_frame) == 1) {
       deliver_buffer_event_->Set();
     }
@@ -95,47 +91,47 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
 }
 
 int32_t IncomingVideoStream::SetStartImage(const VideoFrame& video_frame) {
-  CriticalSectionScoped csS(thread_critsect_.get());
+  rtc::CritScope csS(&thread_critsect_);
   return start_image_.CopyFrame(video_frame);
 }
 
 int32_t IncomingVideoStream::SetTimeoutImage(const VideoFrame& video_frame,
                                              const uint32_t timeout) {
-  CriticalSectionScoped csS(thread_critsect_.get());
+  rtc::CritScope csS(&thread_critsect_);
   timeout_time_ = timeout;
   return timeout_image_.CopyFrame(video_frame);
 }
 
 void IncomingVideoStream::SetRenderCallback(
     VideoRenderCallback* render_callback) {
-  CriticalSectionScoped cs(thread_critsect_.get());
+  rtc::CritScope cs(&thread_critsect_);
   render_callback_ = render_callback;
 }
 
 int32_t IncomingVideoStream::SetExpectedRenderDelay(
     int32_t delay_ms) {
-  CriticalSectionScoped csS(stream_critsect_.get());
+  rtc::CritScope csS(&stream_critsect_);
   if (running_) {
     return -1;
   }
-  CriticalSectionScoped cs(buffer_critsect_.get());
+  rtc::CritScope cs(&buffer_critsect_);
   return render_buffers_->SetRenderDelay(delay_ms);
 }
 
 void IncomingVideoStream::SetExternalCallback(
     VideoRenderCallback* external_callback) {
-  CriticalSectionScoped cs(thread_critsect_.get());
+  rtc::CritScope cs(&thread_critsect_);
   external_callback_ = external_callback;
 }
 
 int32_t IncomingVideoStream::Start() {
-  CriticalSectionScoped csS(stream_critsect_.get());
+  rtc::CritScope csS(&stream_critsect_);
   if (running_) {
     return 0;
   }
 
   if (!disable_prerenderer_smoothing_) {
-    CriticalSectionScoped csT(thread_critsect_.get());
+    rtc::CritScope csT(&thread_critsect_);
     assert(incoming_render_thread_ == NULL);
 
     incoming_render_thread_.reset(new rtc::PlatformThread(
@@ -154,7 +150,7 @@ int32_t IncomingVideoStream::Start() {
 }
 
 int32_t IncomingVideoStream::Stop() {
-  CriticalSectionScoped cs_stream(stream_critsect_.get());
+  rtc::CritScope cs_stream(&stream_critsect_);
 
   if (!running_) {
     return 0;
@@ -162,7 +158,7 @@ int32_t IncomingVideoStream::Stop() {
 
   rtc::PlatformThread* thread = NULL;
   {
-    CriticalSectionScoped cs_thread(thread_critsect_.get());
+    rtc::CritScope cs_thread(&thread_critsect_);
     if (incoming_render_thread_) {
       // Setting the incoming render thread to NULL marks that we're performing
       // a shutdown and will make IncomingVideoStreamProcess abort after wakeup.
@@ -182,7 +178,7 @@ int32_t IncomingVideoStream::Stop() {
 }
 
 int32_t IncomingVideoStream::Reset() {
-  CriticalSectionScoped cs_buffer(buffer_critsect_.get());
+  rtc::CritScope cs_buffer(&buffer_critsect_);
   render_buffers_->ReleaseAllFrames();
   return 0;
 }
@@ -192,7 +188,7 @@ uint32_t IncomingVideoStream::StreamId() const {
 }
 
 uint32_t IncomingVideoStream::IncomingRate() const {
-  CriticalSectionScoped cs(stream_critsect_.get());
+  rtc::CritScope cs(&stream_critsect_);
   return incoming_rate_;
 }
 
@@ -202,7 +198,7 @@ bool IncomingVideoStream::IncomingVideoStreamThreadFun(void* obj) {
 
 bool IncomingVideoStream::IncomingVideoStreamProcess() {
   if (kEventError != deliver_buffer_event_->Wait(kEventMaxWaitTimeMs)) {
-    CriticalSectionScoped cs(thread_critsect_.get());
+    rtc::CritScope cs(&thread_critsect_);
     if (incoming_render_thread_ == NULL) {
       // Terminating
       return false;
@@ -212,7 +208,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     VideoFrame frame_to_render;
     uint32_t wait_time;
     {
-      CriticalSectionScoped cs(buffer_critsect_.get());
+      rtc::CritScope cs(&buffer_critsect_);
       frame_to_render = render_buffers_->FrameToRender();
       wait_time = render_buffers_->TimeToNextFrameRelease();
     }
@@ -229,7 +225,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
 }
 
 void IncomingVideoStream::DeliverFrame(const VideoFrame& video_frame) {
-  CriticalSectionScoped cs(thread_critsect_.get());
+  rtc::CritScope cs(&thread_critsect_);
   if (video_frame.IsZeroSize()) {
     if (render_callback_) {
       if (last_render_time_ms_ == 0 && !start_image_.IsZeroSize()) {
