@@ -19,9 +19,9 @@
 #include <map>
 #include <utility>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -89,7 +89,7 @@ class BitrateAllocator {
   ObserverBitrateMap LowRateAllocation(uint32_t bitrate)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  mutable rtc::CriticalSection crit_sect_;
   // Stored in a list to keep track of the insertion order.
   BitrateObserverConfList bitrate_observers_ GUARDED_BY(crit_sect_);
   bool bitrate_observers_modified_ GUARDED_BY(crit_sect_);

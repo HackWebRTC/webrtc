@@ -24,8 +24,7 @@ const int kTransmissionMaxBitrateMultiplier = 2;
 const int kDefaultBitrateBps = 300000;
 
 BitrateAllocator::BitrateAllocator()
-    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      bitrate_observers_(),
+    : bitrate_observers_(),
       bitrate_observers_modified_(false),
       enforce_min_bitrate_(true),
       last_bitrate_bps_(kDefaultBitrateBps),
@@ -35,7 +34,7 @@ BitrateAllocator::BitrateAllocator()
 uint32_t BitrateAllocator::OnNetworkChanged(uint32_t bitrate,
                                             uint8_t fraction_loss,
                                             int64_t rtt) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   last_bitrate_bps_ = bitrate;
   last_fraction_loss_ = fraction_loss;
   last_rtt_ = rtt;
@@ -64,7 +63,7 @@ BitrateAllocator::ObserverBitrateMap BitrateAllocator::AllocateBitrates() {
 int BitrateAllocator::AddBitrateObserver(BitrateObserver* observer,
                                          uint32_t min_bitrate_bps,
                                          uint32_t max_bitrate_bps) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
 
   BitrateObserverConfList::iterator it =
       FindObserverConfigurationPair(observer);
@@ -96,7 +95,7 @@ int BitrateAllocator::AddBitrateObserver(BitrateObserver* observer,
 }
 
 void BitrateAllocator::RemoveBitrateObserver(BitrateObserver* observer) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   BitrateObserverConfList::iterator it =
       FindObserverConfigurationPair(observer);
   if (it != bitrate_observers_.end()) {
@@ -110,7 +109,7 @@ void BitrateAllocator::GetMinMaxBitrateSumBps(int* min_bitrate_sum_bps,
   *min_bitrate_sum_bps = 0;
   *max_bitrate_sum_bps = 0;
 
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   for (const auto& observer : bitrate_observers_) {
     *min_bitrate_sum_bps += observer.second.min_bitrate;
     *max_bitrate_sum_bps += observer.second.max_bitrate;
@@ -129,7 +128,7 @@ BitrateAllocator::FindObserverConfigurationPair(
 }
 
 void BitrateAllocator::EnforceMinBitrate(bool enforce_min_bitrate) {
-  CriticalSectionScoped lock(crit_sect_.get());
+  rtc::CritScope lock(&crit_sect_);
   enforce_min_bitrate_ = enforce_min_bitrate;
 }
 
