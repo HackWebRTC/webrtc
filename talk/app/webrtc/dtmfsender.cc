@@ -99,6 +99,8 @@ DtmfSender::DtmfSender(AudioTrackInterface* track,
       inter_tone_gap_(kDtmfDefaultGapMs) {
   ASSERT(track_ != NULL);
   ASSERT(signaling_thread_ != NULL);
+  // TODO(deadbeef): Once we can use shared_ptr and weak_ptr,
+  // do that instead of relying on a "destroyed" signal.
   if (provider_) {
     ASSERT(provider_->GetOnDestroyedSignal() != NULL);
     provider_->GetOnDestroyedSignal()->connect(
@@ -107,10 +109,6 @@ DtmfSender::DtmfSender(AudioTrackInterface* track,
 }
 
 DtmfSender::~DtmfSender() {
-  if (provider_) {
-    ASSERT(provider_->GetOnDestroyedSignal() != NULL);
-    provider_->GetOnDestroyedSignal()->disconnect(this);
-  }
   StopSending();
 }
 

@@ -590,6 +590,7 @@ WebRtcSession::~WebRtcSession() {
     SignalDataChannelDestroyed();
     channel_manager_->DestroyDataChannel(data_channel_.release());
   }
+  SignalDestroyed();
 
   LOG(LS_INFO) << "Session: " << id() << " is destroyed.";
 }
@@ -1428,7 +1429,7 @@ bool WebRtcSession::InsertDtmf(const std::string& track_id,
 }
 
 sigslot::signal0<>* WebRtcSession::GetOnDestroyedSignal() {
-  return &SignalVoiceChannelDestroyed;
+  return &SignalDestroyed;
 }
 
 bool WebRtcSession::SendData(const cricket::SendDataParams& params,

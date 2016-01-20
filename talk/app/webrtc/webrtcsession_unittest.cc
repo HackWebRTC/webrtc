@@ -410,6 +410,8 @@ class WebRtcSessionTest
         allocator_.get(), &observer_));
     session_->SignalDataChannelOpenMessage.connect(
         this, &WebRtcSessionTest::OnDataChannelOpenMessage);
+    session_->GetOnDestroyedSignal()->connect(
+        this, &WebRtcSessionTest::OnSessionDestroyed);
 
     EXPECT_EQ(PeerConnectionInterface::kIceConnectionNew,
         observer_.ice_connection_state_);
@@ -427,6 +429,8 @@ class WebRtcSessionTest
     last_data_channel_label_ = label;
     last_data_channel_config_ = config;
   }
+
+  void OnSessionDestroyed() { session_destroyed_ = true; }
 
   void Init() {
     PeerConnectionInterface::RTCConfiguration configuration;
@@ -1473,6 +1477,7 @@ class WebRtcSessionTest
   // Last values received from data channel creation signal.
   std::string last_data_channel_label_;
   InternalDataChannelInit last_data_channel_config_;
+  bool session_destroyed_;
 };
 
 TEST_P(WebRtcSessionTest, TestInitializeWithDtls) {
@@ -4311,6 +4316,14 @@ TEST_F(WebRtcSessionTest, CreateOffersAndShutdown) {
 
 TEST_F(WebRtcSessionTest, TestPacketOptionsAndOnPacketSent) {
   TestPacketOptions();
+}
+
+// Make sure the signal from "GetOnDestroyedSignal()" fires when the session
+// is destroyed.
+TEST_F(WebRtcSessionTest, TestOnDestroyedSignal) {
+  Init();
+  session_.reset();
+  EXPECT_TRUE(session_destroyed_);
 }
 
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test

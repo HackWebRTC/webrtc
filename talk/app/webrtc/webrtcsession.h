@@ -327,6 +327,8 @@ class WebRtcSession : public AudioProviderInterface,
   sigslot::signal0<> SignalVideoChannelDestroyed;
   sigslot::signal0<> SignalDataChannelCreated;
   sigslot::signal0<> SignalDataChannelDestroyed;
+  // Called when the whole session is destroyed.
+  sigslot::signal0<> SignalDestroyed;
 
   // Called when a valid data channel OPEN message is received.
   // std::string represents the data channel label.
