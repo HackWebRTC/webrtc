@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCMediaSource.h"
+#import "RTCVideoSource.h"
 
-#include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/videosourceinterface.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCMediaSource ()
+@interface RTCVideoSource ()
 
 /**
- * The MediaSourceInterface object passed to this RTCMediaSource during
+ * The VideoSourceInterface object passed to this RTCVideoSource during
  * construction.
  */
 @property(nonatomic, readonly)
-    rtc::scoped_refptr<webrtc::MediaSourceInterface> nativeMediaSource;
+    rtc::scoped_refptr<webrtc::VideoSourceInterface> nativeVideoSource;
 
-/** Initialize an RTCMediaSource from a native MediaSourceInterface. */
-- (instancetype)initWithNativeMediaSource:
-    (rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
+/** Initialize an RTCVideoSource from a native VideoSourceInterface. */
+- (instancetype)initWithNativeVideoSource:
+    (rtc::scoped_refptr<webrtc::VideoSourceInterface>)nativeVideoSource
     NS_DESIGNATED_INITIALIZER;
 
 + (webrtc::MediaSourceInterface::SourceState)nativeSourceStateForState:

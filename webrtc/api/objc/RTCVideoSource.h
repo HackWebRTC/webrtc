@@ -19,9 +19,9 @@ typedef NS_ENUM(NSInteger, RTCSourceState) {
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCMediaSource : NSObject
+@interface RTCVideoSource : NSObject
 
-/** The current state of the RTCMediaSource. */
+/** The current state of the RTCVideoSource. */
 @property(nonatomic, readonly) RTCSourceState state;
 
 - (instancetype)init NS_UNAVAILABLE;

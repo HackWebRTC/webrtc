@@ -8,34 +8,34 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCMediaSource.h"
+#import "RTCVideoSource.h"
 
-#import "webrtc/api/objc/RTCMediaSource+Private.h"
+#import "webrtc/api/objc/RTCVideoSource+Private.h"
 
-@implementation RTCMediaSource {
-  rtc::scoped_refptr<webrtc::MediaSourceInterface> _nativeMediaSource;
+@implementation RTCVideoSource {
+  rtc::scoped_refptr<webrtc::VideoSourceInterface> _nativeVideoSource;
 }
 
 - (RTCSourceState)state {
-  return [[self class] sourceStateForNativeState:_nativeMediaSource->state()];
+  return [[self class] sourceStateForNativeState:_nativeVideoSource->state()];
 }
 
 - (NSString *)description {
-  return [NSString stringWithFormat:@"RTCMediaSource:\n%@",
+  return [NSString stringWithFormat:@"RTCVideoSource:\n%@",
                                     [[self class] stringForState:self.state]];
 }
 
 #pragma mark - Private
 
-- (rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource {
-  return _nativeMediaSource;
+- (rtc::scoped_refptr<webrtc::VideoSourceInterface>)nativeVideoSource {
+  return _nativeVideoSource;
 }
 
-- (instancetype)initWithNativeMediaSource:
-    (rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource {
-  NSParameterAssert(nativeMediaSource);
+- (instancetype)initWithNativeVideoSource:
+    (rtc::scoped_refptr<webrtc::VideoSourceInterface>)nativeVideoSource {
+  NSParameterAssert(nativeVideoSource);
   if (self = [super init]) {
-    _nativeMediaSource = nativeMediaSource;
+    _nativeVideoSource = nativeVideoSource;
   }
   return self;
 }

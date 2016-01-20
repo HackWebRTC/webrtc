@@ -28,9 +28,6 @@
             'objc/RTCMediaConstraints+Private.h',
             'objc/RTCMediaConstraints.h',
             'objc/RTCMediaConstraints.mm',
-            'objc/RTCMediaSource+Private.h',
-            'objc/RTCMediaSource.h',
-            'objc/RTCMediaSource.mm',
             'objc/RTCMediaStreamTrack+Private.h',
             'objc/RTCMediaStreamTrack.h',
             'objc/RTCMediaStreamTrack.mm',
@@ -46,6 +43,9 @@
             'objc/RTCVideoFrame.h',
             'objc/RTCVideoFrame.mm',
             'objc/RTCVideoRenderer.h',
+            'objc/RTCVideoSource+Private.h',
+            'objc/RTCVideoSource.h',
+            'objc/RTCVideoSource.mm',
           ],
           'conditions': [
             ['OS=="ios"', {
