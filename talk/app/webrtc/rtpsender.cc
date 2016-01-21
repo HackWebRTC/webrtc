@@ -199,12 +199,17 @@ void AudioRtpSender::Stop() {
 void AudioRtpSender::SetAudioSend() {
   RTC_DCHECK(!stopped_ && can_send_track());
   cricket::AudioOptions options;
+#if !defined(WEBRTC_CHROMIUM_BUILD)
+  // TODO(tommi): Remove this hack when we move CreateAudioSource out of
+  // PeerConnection.  This is a bit of a strange way to apply local audio
+  // options since it is also applied to all streams/channels, local or remote.
   if (track_->enabled() && track_->GetSource() &&
       !track_->GetSource()->remote()) {
     // TODO(xians): Remove this static_cast since we should be able to connect
     // a remote audio track to a peer connection.
     options = static_cast<LocalAudioSource*>(track_->GetSource())->options();
   }
+#endif
 
   // Use the renderer if the audio track has one, otherwise use the sink
   // adapter owned by this class.
