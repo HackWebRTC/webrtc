@@ -1184,22 +1184,6 @@ bool WebRtcVideoChannel2::SetRenderer(uint32_t ssrc, VideoRenderer* renderer) {
   return true;
 }
 
-bool WebRtcVideoChannel2::GetRenderer(uint32_t ssrc, VideoRenderer** renderer) {
-  if (ssrc == 0) {
-    *renderer = default_unsignalled_ssrc_handler_.GetDefaultRenderer();
-    return *renderer != NULL;
-  }
-
-  rtc::CritScope stream_lock(&stream_crit_);
-  std::map<uint32_t, WebRtcVideoReceiveStream*>::iterator it =
-      receive_streams_.find(ssrc);
-  if (it == receive_streams_.end()) {
-    return false;
-  }
-  *renderer = it->second->GetRenderer();
-  return true;
-}
-
 bool WebRtcVideoChannel2::GetStats(VideoMediaInfo* info) {
   info->Clear();
   FillSenderStats(info);
@@ -2478,13 +2462,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRenderer(
     cricket::VideoRenderer* renderer) {
   rtc::CritScope crit(&renderer_lock_);
   renderer_ = renderer;
-}
-
-VideoRenderer* WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetRenderer() {
-  // TODO(pbos): Remove GetRenderer and all uses of it, it's thread-unsafe by
-  // design.
-  rtc::CritScope crit(&renderer_lock_);
-  return renderer_;
 }
 
 std::string

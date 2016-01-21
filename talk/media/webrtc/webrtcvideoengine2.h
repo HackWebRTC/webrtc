@@ -193,7 +193,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
   uint32_t GetDefaultSendChannelSsrc() { return default_send_ssrc_; }
-  bool GetRenderer(uint32_t ssrc, VideoRenderer** renderer);
 
  private:
   bool MuteStream(uint32_t ssrc, bool mute);
@@ -415,7 +414,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     bool IsDefaultStream() const;
 
     void SetRenderer(cricket::VideoRenderer* renderer);
-    cricket::VideoRenderer* GetRenderer();
 
     VideoReceiverInfo GetVideoReceiverInfo();
 

@@ -803,11 +803,8 @@ WEBRTC_BASE_TEST(SetSendSsrc);
 WEBRTC_BASE_TEST(SetSendSsrcAfterSetCodecs);
 
 WEBRTC_BASE_TEST(SetRenderer);
-WEBRTC_BASE_TEST(AddRemoveRecvStreams);
 
 WEBRTC_DISABLED_BASE_TEST(AddRemoveRecvStreamAndRender);
-
-WEBRTC_BASE_TEST(AddRemoveRecvStreamsNoConference);
 
 WEBRTC_BASE_TEST(AddRemoveSendStreams);
 
