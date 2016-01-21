@@ -19,6 +19,9 @@
             '../../talk/libjingle.gyp:libjingle_peerconnection',
           ],
           'sources': [
+            'objc/RTCAVFoundationVideoSource+Private.h',
+            'objc/RTCAVFoundationVideoSource.h',
+            'objc/RTCAVFoundationVideoSource.mm',
             'objc/RTCIceCandidate+Private.h',
             'objc/RTCIceCandidate.h',
             'objc/RTCIceCandidate.mm',
@@ -52,6 +55,8 @@
             'objc/RTCVideoSource+Private.h',
             'objc/RTCVideoSource.h',
             'objc/RTCVideoSource.mm',
+            'objc/avfoundationvideocapturer.h',
+            'objc/avfoundationvideocapturer.mm',
           ],
           'conditions': [
             ['OS=="ios"', {
