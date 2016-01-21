@@ -123,6 +123,8 @@ def main(_):
                     help="run the tests with --test-launcher-total-shards")
   parser.add_option("--test-launcher-shard-index", type=int,
                     help="run the tests with --test-launcher-shard-index")
+  parser.add_option("--drmemory_ops",
+                    help="extra options passed to Dr. Memory")
   options, args = parser.parse_args()
 
   if options.verbose:
