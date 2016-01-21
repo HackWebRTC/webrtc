@@ -1477,7 +1477,7 @@ class WebRtcSessionTest
   // Last values received from data channel creation signal.
   std::string last_data_channel_label_;
   InternalDataChannelInit last_data_channel_config_;
-  bool session_destroyed_;
+  bool session_destroyed_ = false;
 };
 
 TEST_P(WebRtcSessionTest, TestInitializeWithDtls) {
