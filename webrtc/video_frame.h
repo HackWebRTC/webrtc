@@ -173,6 +173,12 @@ class VideoFrame {
 // TODO(pbos): Rename EncodedFrame and reformat this class' members.
 class EncodedImage {
  public:
+  static const size_t kBufferPaddingBytesH264;
+
+  // Some decoders require encoded image buffers to be padded with a small
+  // number of additional bytes (due to over-reading byte readers).
+  static size_t GetBufferPaddingBytes(VideoCodecType codec_type);
+
   EncodedImage() : EncodedImage(nullptr, 0, 0) {}
   EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _buffer(buffer), _length(length), _size(size) {}

@@ -41,7 +41,8 @@ VCMEncodedFrame::VCMEncodedFrame(const webrtc::EncodedImage& rhs)
   _size = 0;
   _length = 0;
   if (rhs._buffer != NULL) {
-    VerifyAndAllocate(rhs._length);
+    VerifyAndAllocate(rhs._length +
+                      EncodedImage::GetBufferPaddingBytes(_codec));
     memcpy(_buffer, rhs._buffer, rhs._length);
   }
 }
@@ -60,7 +61,8 @@ VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
   _size = 0;
   _length = 0;
   if (rhs._buffer != NULL) {
-    VerifyAndAllocate(rhs._length);
+    VerifyAndAllocate(rhs._length +
+                      EncodedImage::GetBufferPaddingBytes(_codec));
     memcpy(_buffer, rhs._buffer, rhs._length);
     _length = rhs._length;
   }

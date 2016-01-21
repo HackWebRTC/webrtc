@@ -50,6 +50,7 @@
           'link_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [
+                '-framework CoreFoundation',
                 '-framework CoreMedia',
                 '-framework CoreVideo',
                 '-framework VideoToolbox',
