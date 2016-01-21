@@ -24,6 +24,8 @@ class ReceiveStatistics;
 class RemoteBitrateEstimator;
 class RtpReceiver;
 class Transport;
+class RtcEventLog;
+
 namespace rtcp {
 class TransportFeedback;
 }
@@ -73,6 +75,9 @@ class RtpRtcp : public Module {
     BitrateStatisticsObserver* send_bitrate_observer;
     FrameCountObserver* send_frame_count_observer;
     SendSideDelayObserver* send_side_delay_observer;
+    RtcEventLog* event_log;
+
+    RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
   };
 
   /*

@@ -94,7 +94,7 @@ void RtcpFormatRembTest::SetUp() {
                                     nullptr, nullptr, dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
   rtcp_sender_ = new RTCPSender(false, system_clock_, receive_statistics_.get(),
-                                nullptr, test_transport_);
+                                nullptr, nullptr, test_transport_);
 }
 
 void RtcpFormatRembTest::TearDown() {

@@ -43,7 +43,8 @@ RtpRtcp::Configuration::Configuration()
       transport_sequence_number_allocator(nullptr),
       send_bitrate_observer(nullptr),
       send_frame_count_observer(nullptr),
-      send_side_delay_observer(nullptr) {}
+      send_side_delay_observer(nullptr),
+      event_log(nullptr) {}
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {
@@ -68,11 +69,13 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.transport_feedback_callback,
                   configuration.send_bitrate_observer,
                   configuration.send_frame_count_observer,
-                  configuration.send_side_delay_observer),
+                  configuration.send_side_delay_observer,
+                  configuration.event_log),
       rtcp_sender_(configuration.audio,
                    configuration.clock,
                    configuration.receive_statistics,
                    configuration.rtcp_packet_type_counter_observer,
+                   configuration.event_log,
                    configuration.outgoing_transport),
       rtcp_receiver_(configuration.clock,
                      configuration.receiver_only,

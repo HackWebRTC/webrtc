@@ -314,7 +314,8 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
                        nullptr,   // SendTimeObserver*
                        nullptr,   // BitrateStatisticsObserver*
                        nullptr,   // FrameCountObserver*
-                       nullptr);  // SendSideDelayObserver*
+                       nullptr,   // SendSideDelayObserver*
+                       nullptr);  // RtcEventLog*
 
   std::vector<uint32_t> csrcs;
   for (unsigned i = 0; i < csrcs_count; i++) {
@@ -480,12 +481,12 @@ void LogSessionAndReadBack(size_t rtp_count,
     size_t bwe_loss_index = 1;
     for (size_t i = 1; i <= rtp_count; i++) {
       log_dumper->LogRtpHeader(
-          (i % 2 == 0),  // Every second packet is incoming.
+          (i % 2 == 0) ? kIncomingPacket : kOutgoingPacket,
           (i % 3 == 0) ? MediaType::AUDIO : MediaType::VIDEO,
           rtp_packets[i - 1].data(), rtp_packets[i - 1].size());
       if (i * rtcp_count >= rtcp_index * rtp_count) {
         log_dumper->LogRtcpPacket(
-            rtcp_index % 2 == 0,  // Every second packet is incoming
+            (rtcp_index % 2 == 0) ? kIncomingPacket : kOutgoingPacket,
             rtcp_index % 3 == 0 ? MediaType::AUDIO : MediaType::VIDEO,
             rtcp_packets[rtcp_index - 1]->Buffer(),
             rtcp_packets[rtcp_index - 1]->Length());
@@ -643,16 +644,18 @@ void DropOldEvents(uint32_t extensions_bitvector,
     log_dumper->SetBufferDuration(50000);
     log_dumper->LogVideoReceiveStreamConfig(receiver_config);
     log_dumper->LogVideoSendStreamConfig(sender_config);
-    log_dumper->LogRtpHeader(false, MediaType::AUDIO, old_rtp_packet.data(),
-                             old_rtp_packet.size());
-    log_dumper->LogRtcpPacket(true, MediaType::AUDIO, old_rtcp_packet->Buffer(),
+    log_dumper->LogRtpHeader(kOutgoingPacket, MediaType::AUDIO,
+                             old_rtp_packet.data(), old_rtp_packet.size());
+    log_dumper->LogRtcpPacket(kIncomingPacket, MediaType::AUDIO,
+                              old_rtcp_packet->Buffer(),
                               old_rtcp_packet->Length());
     // Sleep 55 ms to let old events be removed from the queue.
     rtc::Thread::SleepMs(55);
     log_dumper->StartLogging(temp_filename, 10000000);
-    log_dumper->LogRtpHeader(true, MediaType::VIDEO, recent_rtp_packet.data(),
+    log_dumper->LogRtpHeader(kIncomingPacket, MediaType::VIDEO,
+                             recent_rtp_packet.data(),
                              recent_rtp_packet.size());
-    log_dumper->LogRtcpPacket(false, MediaType::VIDEO,
+    log_dumper->LogRtcpPacket(kOutgoingPacket, MediaType::VIDEO,
                               recent_rtcp_packet->Buffer(),
                               recent_rtcp_packet->Length());
   }

@@ -666,7 +666,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
       if (stream->DeliverRtcp(packet, length)) {
         rtcp_delivered = true;
         if (event_log_)
-          event_log_->LogRtcpPacket(true, media_type, packet, length);
+          event_log_->LogRtcpPacket(kIncomingPacket, media_type, packet,
+                                    length);
       }
     }
   }
@@ -676,7 +677,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
       if (stream->DeliverRtcp(packet, length)) {
         rtcp_delivered = true;
         if (event_log_)
-          event_log_->LogRtcpPacket(false, media_type, packet, length);
+          event_log_->LogRtcpPacket(kIncomingPacket, media_type, packet,
+                                    length);
       }
     }
   }
@@ -706,7 +708,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                         ? DELIVERY_OK
                         : DELIVERY_PACKET_ERROR;
       if (status == DELIVERY_OK && event_log_)
-        event_log_->LogRtpHeader(true, media_type, packet, length);
+        event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
       return status;
     }
   }
@@ -718,7 +720,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                         ? DELIVERY_OK
                         : DELIVERY_PACKET_ERROR;
       if (status == DELIVERY_OK && event_log_)
-        event_log_->LogRtpHeader(true, media_type, packet, length);
+        event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
       return status;
     }
   }

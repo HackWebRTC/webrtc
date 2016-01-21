@@ -36,6 +36,7 @@ namespace webrtc {
 
 class ModuleRtpRtcpImpl;
 class RTCPReceiver;
+class RtcEventLog;
 
 class NACKStringBuilder {
  public:
@@ -78,6 +79,7 @@ class RTCPSender {
              Clock* clock,
              ReceiveStatistics* receive_statistics,
              RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+             RtcEventLog* event_log,
              Transport* outgoing_transport);
   virtual ~RTCPSender();
 
@@ -204,6 +206,7 @@ class RTCPSender {
   Random random_ GUARDED_BY(critical_section_rtcp_sender_);
   RtcpMode method_ GUARDED_BY(critical_section_rtcp_sender_);
 
+  RtcEventLog* const event_log_;
   Transport* const transport_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> critical_section_rtcp_sender_;
@@ -297,6 +300,8 @@ class RTCPSender {
   typedef rtc::scoped_ptr<rtcp::RtcpPacket> (RTCPSender::*BuilderFunc)(
       const RtcpContext&);
   std::map<RTCPPacketType, BuilderFunc> builders_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTCPSender);
 };
 }  // namespace webrtc
 

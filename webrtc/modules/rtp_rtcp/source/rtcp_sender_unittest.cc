@@ -233,7 +233,7 @@ class RtcpSenderTest : public ::testing::Test {
 
     rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
     rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
-                                      nullptr, &test_transport_));
+                                      nullptr, nullptr, &test_transport_));
     rtcp_sender_->SetSSRC(kSenderSsrc);
     rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
   }
@@ -669,7 +669,7 @@ TEST_F(RtcpSenderTest, TestSendTimeOfXrRrtr) {
 TEST_F(RtcpSenderTest, TestRegisterRtcpPacketTypeObserver) {
   RtcpPacketTypeCounterObserverImpl observer;
   rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
-                                    &observer, &test_transport_));
+                                    &observer, nullptr, &test_transport_));
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpPli));

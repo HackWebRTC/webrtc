@@ -17,6 +17,8 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/call.h"
+#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
@@ -122,7 +124,8 @@ RTPSender::RTPSender(
     TransportFeedbackObserver* transport_feedback_observer,
     BitrateStatisticsObserver* bitrate_callback,
     FrameCountObserver* frame_count_observer,
-    SendSideDelayObserver* send_side_delay_observer)
+    SendSideDelayObserver* send_side_delay_observer,
+    RtcEventLog* event_log)
     : clock_(clock),
       // TODO(holmer): Remove this conversion when we remove the use of
       // TickTime.
@@ -161,6 +164,7 @@ RTPSender::RTPSender(
       rtp_stats_callback_(NULL),
       frame_count_observer_(frame_count_observer),
       send_side_delay_observer_(send_side_delay_observer),
+      event_log_(event_log),
       // RTP variables
       start_timestamp_forced_(false),
       start_timestamp_(0),
@@ -755,6 +759,9 @@ bool RTPSender::SendPacketToNetwork(const uint8_t* packet,
     bytes_sent = transport_->SendRtp(packet, size, options)
                      ? static_cast<int>(size)
                      : -1;
+    if (event_log_ && bytes_sent > 0) {
+      event_log_->LogRtpHeader(kOutgoingPacket, MediaType::ANY, packet, size);
+    }
   }
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "RTPSender::SendPacketToNetwork", "size", size, "sent",
@@ -1028,8 +1035,9 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
                                  int64_t capture_time_ms,
                                  StorageType storage,
                                  RtpPacketSender::Priority priority) {
-  RtpUtility::RtpHeaderParser rtp_parser(buffer,
-                                         payload_length + rtp_header_length);
+  size_t length = payload_length + rtp_header_length;
+  RtpUtility::RtpHeaderParser rtp_parser(buffer, length);
+
   RTPHeader rtp_header;
   rtp_parser.Parse(&rtp_header);
 
@@ -1039,16 +1047,15 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
   // TODO(holmer): This should be changed all over Video Engine so that negative
   // time is consider invalid, while 0 is considered a valid time.
   if (capture_time_ms > 0) {
-    UpdateTransmissionTimeOffset(buffer, payload_length + rtp_header_length,
-                                 rtp_header, now_ms - capture_time_ms);
+    UpdateTransmissionTimeOffset(buffer, length, rtp_header,
+                                 now_ms - capture_time_ms);
   }
 
-  UpdateAbsoluteSendTime(buffer, payload_length + rtp_header_length,
-                         rtp_header, now_ms);
+  UpdateAbsoluteSendTime(buffer, length, rtp_header, now_ms);
 
   // Used for NACK and to spread out the transmission of packets.
-  if (packet_history_.PutRTPPacket(buffer, rtp_header_length + payload_length,
-                                   capture_time_ms, storage) != 0) {
+  if (packet_history_.PutRTPPacket(buffer, length, capture_time_ms, storage) !=
+      0) {
     return -1;
   }
 
@@ -1072,7 +1079,6 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
     UpdateDelayStatistics(capture_time_ms, now_ms);
   }
 
-  size_t length = payload_length + rtp_header_length;
   bool sent = SendPacketToNetwork(buffer, length, PacketOptions());
 
   // Mark the packet as sent in the history even if send failed. Dropping a

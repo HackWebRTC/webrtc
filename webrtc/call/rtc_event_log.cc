@@ -47,11 +47,11 @@ class RtcEventLogImpl final : public RtcEventLog {
       const VideoReceiveStream::Config& config) override {}
   void LogVideoSendStreamConfig(
       const VideoSendStream::Config& config) override {}
-  void LogRtpHeader(bool incoming,
+  void LogRtpHeader(PacketDirection direction,
                     MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length) override {}
-  void LogRtcpPacket(bool incoming,
+  void LogRtcpPacket(PacketDirection direction,
                      MediaType media_type,
                      const uint8_t* packet,
                      size_t length) override {}
@@ -74,11 +74,11 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogVideoReceiveStreamConfig(
       const VideoReceiveStream::Config& config) override;
   void LogVideoSendStreamConfig(const VideoSendStream::Config& config) override;
-  void LogRtpHeader(bool incoming,
+  void LogRtpHeader(PacketDirection direction,
                     MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length) override;
-  void LogRtcpPacket(bool incoming,
+  void LogRtcpPacket(PacketDirection direction,
                      MediaType media_type,
                      const uint8_t* packet,
                      size_t length) override;
@@ -327,7 +327,7 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
   HandleEvent(&event);
 }
 
-void RtcEventLogImpl::LogRtpHeader(bool incoming,
+void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
                                    MediaType media_type,
                                    const uint8_t* header,
                                    size_t packet_length) {
@@ -351,14 +351,14 @@ void RtcEventLogImpl::LogRtpHeader(bool incoming,
   rtclog::Event rtp_event;
   rtp_event.set_timestamp_us(clock_->TimeInMicroseconds());
   rtp_event.set_type(rtclog::Event::RTP_EVENT);
-  rtp_event.mutable_rtp_packet()->set_incoming(incoming);
+  rtp_event.mutable_rtp_packet()->set_incoming(direction == kIncomingPacket);
   rtp_event.mutable_rtp_packet()->set_type(ConvertMediaType(media_type));
   rtp_event.mutable_rtp_packet()->set_packet_length(packet_length);
   rtp_event.mutable_rtp_packet()->set_header(header, header_length);
   HandleEvent(&rtp_event);
 }
 
-void RtcEventLogImpl::LogRtcpPacket(bool incoming,
+void RtcEventLogImpl::LogRtcpPacket(PacketDirection direction,
                                     MediaType media_type,
                                     const uint8_t* packet,
                                     size_t length) {
@@ -366,7 +366,7 @@ void RtcEventLogImpl::LogRtcpPacket(bool incoming,
   rtclog::Event rtcp_event;
   rtcp_event.set_timestamp_us(clock_->TimeInMicroseconds());
   rtcp_event.set_type(rtclog::Event::RTCP_EVENT);
-  rtcp_event.mutable_rtcp_packet()->set_incoming(incoming);
+  rtcp_event.mutable_rtcp_packet()->set_incoming(direction == kIncomingPacket);
   rtcp_event.mutable_rtcp_packet()->set_type(ConvertMediaType(media_type));
 
   RTCPUtility::RtcpCommonHeader header;

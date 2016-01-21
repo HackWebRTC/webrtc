@@ -20,6 +20,8 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/call.h"
+#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
@@ -89,16 +91,21 @@ RTCPSender::FeedbackState::FeedbackState()
 class PacketContainer : public rtcp::CompoundPacket,
                         public rtcp::RtcpPacket::PacketReadyCallback {
  public:
-  explicit PacketContainer(Transport* transport)
-      : transport_(transport), bytes_sent_(0) {}
+  PacketContainer(Transport* transport, RtcEventLog* event_log)
+      : transport_(transport), event_log_(event_log), bytes_sent_(0) {}
   virtual ~PacketContainer() {
     for (RtcpPacket* packet : appended_packets_)
       delete packet;
   }
 
   void OnPacketReady(uint8_t* data, size_t length) override {
-    if (transport_->SendRtcp(data, length))
+    if (transport_->SendRtcp(data, length)) {
       bytes_sent_ += length;
+      if (event_log_) {
+        event_log_->LogRtcpPacket(kOutgoingPacket, MediaType::ANY, data,
+                                  length);
+      }
+    }
   }
 
   size_t SendPackets() {
@@ -108,7 +115,10 @@ class PacketContainer : public rtcp::CompoundPacket,
 
  private:
   Transport* transport_;
+  RtcEventLog* const event_log_;
   size_t bytes_sent_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(PacketContainer);
 };
 
 class RTCPSender::RtcpContext {
@@ -148,11 +158,13 @@ RTCPSender::RTCPSender(
     Clock* clock,
     ReceiveStatistics* receive_statistics,
     RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+    RtcEventLog* event_log,
     Transport* outgoing_transport)
     : audio_(audio),
       clock_(clock),
       random_(clock_->TimeInMicroseconds()),
       method_(RtcpMode::kOff),
+      event_log_(event_log),
       transport_(outgoing_transport),
 
       critical_section_rtcp_sender_(
@@ -805,7 +817,7 @@ int32_t RTCPSender::SendCompoundRTCP(
     const uint16_t* nack_list,
     bool repeat,
     uint64_t pictureID) {
-  PacketContainer container(transport_);
+  PacketContainer container(transport_, event_log_);
   {
     CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
     if (method_ == RtcpMode::kOff) {
@@ -1047,17 +1059,27 @@ bool RTCPSender::AllVolatileFlagsConsumed() const {
 bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
   class Sender : public rtcp::RtcpPacket::PacketReadyCallback {
    public:
-    explicit Sender(Transport* transport)
-        : transport_(transport), send_failure_(false) {}
+    Sender(Transport* transport, RtcEventLog* event_log)
+        : transport_(transport), event_log_(event_log), send_failure_(false) {}
 
     void OnPacketReady(uint8_t* data, size_t length) override {
-      if (!transport_->SendRtcp(data, length))
+      if (transport_->SendRtcp(data, length)) {
+        if (event_log_) {
+          event_log_->LogRtcpPacket(kOutgoingPacket, MediaType::ANY, data,
+                                    length);
+        }
+      } else {
         send_failure_ = true;
+      }
     }
 
     Transport* const transport_;
+    RtcEventLog* const event_log_;
     bool send_failure_;
-  } sender(transport_);
+    // TODO(terelius): We would like to
+    // RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Sender);
+    // but we can't because of an incorrect warning (C4822) in MVS 2013.
+  } sender(transport_, event_log_);
 
   uint8_t buffer[IP_PACKET_SIZE];
   return packet.BuildExternalBuffer(buffer, IP_PACKET_SIZE, &sender) &&

@@ -30,6 +30,8 @@ class RtcEventLogImpl;
 
 enum class MediaType;
 
+enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
+
 class RtcEventLog {
  public:
   virtual ~RtcEventLog() {}
@@ -63,13 +65,13 @@ class RtcEventLog {
 
   // Logs the header of an incoming or outgoing RTP packet. packet_length
   // is the total length of the packet, including both header and payload.
-  virtual void LogRtpHeader(bool incoming,
+  virtual void LogRtpHeader(PacketDirection direction,
                             MediaType media_type,
                             const uint8_t* header,
                             size_t packet_length) = 0;
 
   // Logs an incoming or outgoing RTCP packet.
-  virtual void LogRtcpPacket(bool incoming,
+  virtual void LogRtcpPacket(PacketDirection direction,
                              MediaType media_type,
                              const uint8_t* packet,
                              size_t length) = 0;

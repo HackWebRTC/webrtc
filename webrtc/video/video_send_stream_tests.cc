@@ -330,7 +330,7 @@ class FecObserver : public test::SendTest {
           VideoSendStreamTest::kVideoSendSsrcs[0], header.sequenceNumber,
           send_count_ / 2, 127);
       RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
-                             &lossy_receive_stats, nullptr,
+                             &lossy_receive_stats, nullptr, nullptr,
                              transport_adapter_.get());
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
@@ -457,7 +457,7 @@ void VideoSendStreamTest::TestNackRetransmission(
         nacked_sequence_number_ = nack_sequence_number;
         NullReceiveStatistics null_stats;
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), &null_stats,
-                               nullptr, transport_adapter_.get());
+                               nullptr, nullptr, transport_adapter_.get());
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
         rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
@@ -644,7 +644,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
         FakeReceiveStatistics lossy_receive_stats(
             kVideoSendSsrcs[0], header.sequenceNumber, packet_count_ / 2, 127);
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
-                               &lossy_receive_stats, nullptr,
+                               &lossy_receive_stats, nullptr, nullptr,
                                transport_adapter_.get());
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
@@ -867,7 +867,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         EXCLUSIVE_LOCKS_REQUIRED(crit_) {
       FakeReceiveStatistics receive_stats(kVideoSendSsrcs[0],
                                           last_sequence_number_, rtp_count_, 0);
-      RTCPSender rtcp_sender(false, clock_, &receive_stats, nullptr,
+      RTCPSender rtcp_sender(false, clock_, &receive_stats, nullptr, nullptr,
                              transport_adapter_.get());
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
@@ -924,7 +924,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
       // Receive statistics reporting having lost 50% of the packets.
       FakeReceiveStatistics receive_stats(kVideoSendSsrcs[0], 1, 1, 0);
       RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), &receive_stats,
-                             nullptr, transport_adapter_.get());
+                             nullptr, nullptr, transport_adapter_.get());
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
       rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);

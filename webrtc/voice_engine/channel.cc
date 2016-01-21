@@ -922,6 +922,7 @@ Channel::Channel(int32_t channelId,
     configuration.transport_sequence_number_allocator =
         seq_num_allocator_proxy_.get();
     configuration.transport_feedback_callback = feedback_observer_proxy_.get();
+    configuration.event_log = event_log;
 
     _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
 

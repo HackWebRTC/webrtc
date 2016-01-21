@@ -34,6 +34,7 @@ class BitrateAggregator;
 class CriticalSectionWrapper;
 class RTPSenderAudio;
 class RTPSenderVideo;
+class RtcEventLog;
 
 class RTPSenderInterface {
  public:
@@ -96,7 +97,8 @@ class RTPSender : public RTPSenderInterface {
             TransportFeedbackObserver* transport_feedback_callback,
             BitrateStatisticsObserver* bitrate_callback,
             FrameCountObserver* frame_count_observer,
-            SendSideDelayObserver* send_side_delay_observer);
+            SendSideDelayObserver* send_side_delay_observer,
+            RtcEventLog* event_log);
   virtual ~RTPSender();
 
   void ProcessBitrate();
@@ -433,6 +435,7 @@ class RTPSender : public RTPSenderInterface {
   StreamDataCountersCallback* rtp_stats_callback_ GUARDED_BY(statistics_crit_);
   FrameCountObserver* const frame_count_observer_;
   SendSideDelayObserver* const send_side_delay_observer_;
+  RtcEventLog* const event_log_;
 
   // RTP variables
   bool start_timestamp_forced_ GUARDED_BY(send_critsect_);
@@ -464,6 +467,8 @@ class RTPSender : public RTPSenderInterface {
   // that the target bitrate is still valid.
   rtc::scoped_ptr<CriticalSectionWrapper> target_bitrate_critsect_;
   uint32_t target_bitrate_ GUARDED_BY(target_bitrate_critsect_);
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSender);
 };
 
 }  // namespace webrtc
