@@ -14,7 +14,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/video/vie_encoder.h"
 
 namespace webrtc {
@@ -47,8 +46,7 @@ class EncoderStateFeedbackObserver : public  RtcpIntraFrameObserver {
 };
 
 EncoderStateFeedback::EncoderStateFeedback()
-    : crit_(CriticalSectionWrapper::CreateCriticalSection()),
-      observer_(new EncoderStateFeedbackObserver(this)) {}
+    : observer_(new EncoderStateFeedbackObserver(this)) {}
 
 EncoderStateFeedback::~EncoderStateFeedback() {
   assert(encoders_.empty());
@@ -57,7 +55,7 @@ EncoderStateFeedback::~EncoderStateFeedback() {
 void EncoderStateFeedback::AddEncoder(const std::vector<uint32_t>& ssrcs,
                                       ViEEncoder* encoder) {
   RTC_DCHECK(!ssrcs.empty());
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   for (uint32_t ssrc : ssrcs) {
     RTC_DCHECK(encoders_.find(ssrc) == encoders_.end());
     encoders_[ssrc] = encoder;
@@ -65,7 +63,7 @@ void EncoderStateFeedback::AddEncoder(const std::vector<uint32_t>& ssrcs,
 }
 
 void EncoderStateFeedback::RemoveEncoder(const ViEEncoder* encoder)  {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   SsrcEncoderMap::iterator it = encoders_.begin();
   while (it != encoders_.end()) {
     if (it->second == encoder) {
@@ -81,7 +79,7 @@ RtcpIntraFrameObserver* EncoderStateFeedback::GetRtcpIntraFrameObserver() {
 }
 
 void EncoderStateFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   SsrcEncoderMap::iterator it = encoders_.find(ssrc);
   if (it == encoders_.end())
     return;
@@ -90,7 +88,7 @@ void EncoderStateFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
 }
 
 void EncoderStateFeedback::OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   SsrcEncoderMap::iterator it = encoders_.find(ssrc);
   if (it == encoders_.end())
     return;
@@ -99,7 +97,7 @@ void EncoderStateFeedback::OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) {
 }
 
 void EncoderStateFeedback::OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   SsrcEncoderMap::iterator it = encoders_.find(ssrc);
   if (it == encoders_.end())
     return;
@@ -109,7 +107,7 @@ void EncoderStateFeedback::OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) {
 
 void EncoderStateFeedback::OnLocalSsrcChanged(uint32_t old_ssrc,
                                               uint32_t new_ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   SsrcEncoderMap::iterator it = encoders_.find(old_ssrc);
   if (it == encoders_.end() || encoders_.find(new_ssrc) != encoders_.end()) {
     return;

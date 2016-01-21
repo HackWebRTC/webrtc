@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -31,7 +32,6 @@ namespace webrtc {
 class BitrateAllocator;
 class BitrateObserver;
 class Config;
-class CriticalSectionWrapper;
 class EncodedImageCallback;
 class PacedSender;
 class PayloadRouter;
@@ -158,7 +158,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   const rtc::scoped_ptr<VideoCodingModule> vcm_;
   rtc::scoped_refptr<PayloadRouter> send_payload_router_;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
+  mutable rtc::CriticalSection data_cs_;
   rtc::scoped_ptr<BitrateObserver> bitrate_observer_;
 
   SendStatisticsProxy* const stats_proxy_;

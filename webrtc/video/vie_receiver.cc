@@ -23,7 +23,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
@@ -36,8 +35,7 @@ static const int kPacketLogIntervalMs = 10000;
 ViEReceiver::ViEReceiver(VideoCodingModule* module_vcm,
                          RemoteBitrateEstimator* remote_bitrate_estimator,
                          RtpFeedback* rtp_feedback)
-    : receive_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      clock_(Clock::GetRealTimeClock()),
+    : clock_(Clock::GetRealTimeClock()),
       rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_payload_registry_(
           new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false))),
@@ -153,7 +151,7 @@ RtpReceiver* ViEReceiver::GetRtpReceiver() const {
 
 void ViEReceiver::RegisterRtpRtcpModules(
     const std::vector<RtpRtcp*>& rtp_modules) {
-  CriticalSectionScoped cs(receive_cs_.get());
+  rtc::CritScope lock(&receive_cs_);
   // Only change the "simulcast" modules, the base module can be accessed
   // without a lock whereas the simulcast modules require locking as they can be
   // changed in runtime.
@@ -262,7 +260,7 @@ int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,
                                  size_t rtp_packet_length,
                                  const PacketTime& packet_time) {
   {
-    CriticalSectionScoped cs(receive_cs_.get());
+    rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {
       return -1;
     }
@@ -283,7 +281,7 @@ int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,
 
   {
     // Periodically log the RTP header of incoming packets.
-    CriticalSectionScoped cs(receive_cs_.get());
+    rtc::CritScope lock(&receive_cs_);
     if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
       std::stringstream ss;
       ss << "Packet received on SSRC: " << header.ssrc << " with payload type: "
@@ -361,7 +359,7 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
       return false;
     if (packet_length > sizeof(restored_packet_))
       return false;
-    CriticalSectionScoped cs(receive_cs_.get());
+    rtc::CritScope lock(&receive_cs_);
     if (restored_packet_in_use_) {
       LOG(LS_WARNING) << "Multiple RTX headers detected, dropping packet.";
       return false;
@@ -410,7 +408,7 @@ void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
 int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
                                   size_t rtcp_packet_length) {
   {
-    CriticalSectionScoped cs(receive_cs_.get());
+    rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {
       return -1;
     }
@@ -444,12 +442,12 @@ int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
 }
 
 void ViEReceiver::StartReceive() {
-  CriticalSectionScoped cs(receive_cs_.get());
+  rtc::CritScope lock(&receive_cs_);
   receiving_ = true;
 }
 
 void ViEReceiver::StopReceive() {
-  CriticalSectionScoped cs(receive_cs_.get());
+  rtc::CritScope lock(&receive_cs_);
   receiving_ = false;
 }
 

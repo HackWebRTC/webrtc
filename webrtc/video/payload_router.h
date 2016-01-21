@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
@@ -22,7 +23,6 @@
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class RTPFragmentationHeader;
 class RtpRtcp;
 struct RTPVideoHeader;
@@ -69,11 +69,11 @@ class PayloadRouter {
  private:
   // TODO(mflodman): When the new video API has launched, remove crit_ and
   // assume rtp_modules_ will never change during a call.
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  mutable rtc::CriticalSection crit_;
 
   // Active sending RTP modules, in layer order.
-  std::vector<RtpRtcp*> rtp_modules_ GUARDED_BY(crit_.get());
-  bool active_ GUARDED_BY(crit_.get());
+  std::vector<RtpRtcp*> rtp_modules_ GUARDED_BY(crit_);
+  bool active_ GUARDED_BY(crit_);
 
   Atomic32 ref_count_;
 

@@ -14,6 +14,7 @@
 #include <list>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -21,7 +22,6 @@
 namespace webrtc {
 
 class CallStatsObserver;
-class CriticalSectionWrapper;
 class RtcpRttStats;
 
 // CallStats keeps track of statistics for a call.
@@ -60,7 +60,7 @@ class CallStats : public Module {
  private:
   Clock* const clock_;
   // Protecting all members.
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  mutable rtc::CriticalSection crit_;
   // Observer receiving statistics updates.
   rtc::scoped_ptr<RtcpRttStats> rtcp_rtt_stats_;
   // The last time 'Process' resulted in statistic update.

@@ -16,7 +16,6 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/scoped_vector.h"
 #include "webrtc/test/fake_texture_frame.h"

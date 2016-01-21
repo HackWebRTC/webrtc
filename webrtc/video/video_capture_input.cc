@@ -19,7 +19,6 @@
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/send_statistics_proxy.h"
@@ -35,12 +34,10 @@ VideoCaptureInput::VideoCaptureInput(
     SendStatisticsProxy* stats_proxy,
     CpuOveruseObserver* overuse_observer,
     EncodingTimeObserver* encoding_time_observer)
-    : capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      module_process_thread_(module_process_thread),
+    : module_process_thread_(module_process_thread),
       frame_callback_(frame_callback),
       local_renderer_(local_renderer),
       stats_proxy_(stats_proxy),
-      incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       encoder_thread_(EncoderThreadFunction, this, "EncoderThread"),
       capture_event_(false, false),
       stop_(0),
@@ -95,7 +92,7 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   incoming_frame.set_timestamp(
       kMsToRtpTimestamp * static_cast<uint32_t>(incoming_frame.ntp_time_ms()));
 
-  CriticalSectionScoped cs(capture_cs_.get());
+  rtc::CritScope lock(&crit_);
   if (incoming_frame.ntp_time_ms() <= last_captured_timestamp_) {
     // We don't allow the same capture time for two frames, drop this one.
     LOG(LS_WARNING) << "Same/old NTP timestamp ("
@@ -132,7 +129,7 @@ bool VideoCaptureInput::EncoderProcess() {
     int64_t encode_start_time = -1;
     VideoFrame deliver_frame;
     {
-      CriticalSectionScoped cs(capture_cs_.get());
+      rtc::CritScope lock(&crit_);
       if (!captured_frame_.IsZeroSize()) {
         deliver_frame = captured_frame_;
         captured_frame_.Reset();

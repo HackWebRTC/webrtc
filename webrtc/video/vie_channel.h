@@ -15,6 +15,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -22,7 +23,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video/vie_receiver.h"
@@ -33,7 +33,6 @@ namespace webrtc {
 class CallStatsObserver;
 class ChannelStatsObserver;
 class Config;
-class CriticalSectionWrapper;
 class EncodedImageCallback;
 class I420FrameCallback;
 class IncomingVideoStream;
@@ -322,12 +321,10 @@ class ViEChannel : public VCMFrameTypeCallback,
   template <class T>
   class RegisterableCallback : public T {
    public:
-    RegisterableCallback()
-        : critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-          callback_(NULL) {}
+    RegisterableCallback() : callback_(NULL) {}
 
     void Set(T* callback) {
-      CriticalSectionScoped cs(critsect_.get());
+      rtc::CritScope lock(&critsect_);
       callback_ = callback;
     }
 
@@ -335,7 +332,7 @@ class ViEChannel : public VCMFrameTypeCallback,
     // Note: this should be implemented with a RW-lock to allow simultaneous
     // calls into the callback. However that doesn't seem to be needed for the
     // current type of callbacks covered by this class.
-    rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
+    mutable rtc::CriticalSection critsect_;
     T* callback_ GUARDED_BY(critsect_);
 
    private:
@@ -347,7 +344,7 @@ class ViEChannel : public VCMFrameTypeCallback,
     virtual void Notify(const BitrateStatistics& total_stats,
                         const BitrateStatistics& retransmit_stats,
                         uint32_t ssrc) {
-      CriticalSectionScoped cs(critsect_.get());
+      rtc::CritScope lock(&critsect_);
       if (callback_)
         callback_->Notify(total_stats, retransmit_stats, ssrc);
     }
@@ -358,7 +355,7 @@ class ViEChannel : public VCMFrameTypeCallback,
    public:
     virtual void FrameCountUpdated(const FrameCounts& frame_counts,
                                    uint32_t ssrc) {
-      CriticalSectionScoped cs(critsect_.get());
+      rtc::CritScope lock(&critsect_);
       if (callback_)
         callback_->FrameCountUpdated(frame_counts, ssrc);
     }
@@ -371,7 +368,7 @@ class ViEChannel : public VCMFrameTypeCallback,
     void SendSideDelayUpdated(int avg_delay_ms,
                               int max_delay_ms,
                               uint32_t ssrc) override {
-      CriticalSectionScoped cs(critsect_.get());
+      rtc::CritScope lock(&critsect_);
       if (callback_)
         callback_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms, ssrc);
     }
@@ -383,7 +380,7 @@ class ViEChannel : public VCMFrameTypeCallback,
     void RtcpPacketTypesCounterUpdated(
         uint32_t ssrc,
         const RtcpPacketTypeCounter& packet_counter) override {
-      CriticalSectionScoped cs(critsect_.get());
+      rtc::CritScope lock(&critsect_);
       if (callback_)
         callback_->RtcpPacketTypesCounterUpdated(ssrc, packet_counter);
       counter_map_[ssrc] = packet_counter;
@@ -391,7 +388,7 @@ class ViEChannel : public VCMFrameTypeCallback,
 
     virtual std::map<uint32_t, RtcpPacketTypeCounter> GetPacketTypeCounterMap()
         const {
-      CriticalSectionScoped cs(critsect_.get());
+      rtc::CritScope lock(&critsect_);
       return counter_map_;
     }
 
@@ -406,7 +403,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   ProcessThread* const module_process_thread_;
 
   // Used for all registered callbacks except rendering.
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  mutable rtc::CriticalSection crit_;
 
   // Owned modules/classes.
   rtc::scoped_refptr<PayloadRouter> send_payload_router_;

@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -22,7 +23,6 @@
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class FecReceiver;
 class RemoteNtpTimeEstimator;
 class ReceiveStatistics;
@@ -104,7 +104,7 @@ class ViEReceiver : public RtpData {
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   void UpdateHistograms();
 
-  rtc::scoped_ptr<CriticalSectionWrapper> receive_cs_;
+  rtc::CriticalSection receive_cs_;
   Clock* clock_;
   rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
   rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;

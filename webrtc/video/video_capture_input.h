@@ -24,7 +24,6 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_send_stream.h"
 
@@ -33,7 +32,6 @@ namespace webrtc {
 class Config;
 class CpuOveruseMetricsObserver;
 class CpuOveruseObserver;
-class CriticalSectionWrapper;
 class OveruseFrameDetector;
 class ProcessThread;
 class RegistrableCpuOveruseMetricsObserver;
@@ -65,23 +63,19 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   static bool EncoderThreadFunction(void* obj);
   bool EncoderProcess();
 
-  rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
+  mutable rtc::CriticalSection crit_;
   ProcessThread* const module_process_thread_;
 
   VideoCaptureCallback* const frame_callback_;
   VideoRenderer* const local_renderer_;
   SendStatisticsProxy* const stats_proxy_;
 
-  // Frame used in IncomingFrameI420.
-  rtc::scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
-  VideoFrame incoming_frame_;
-
   rtc::PlatformThread encoder_thread_;
   rtc::Event capture_event_;
 
   volatile int stop_;
 
-  VideoFrame captured_frame_ GUARDED_BY(capture_cs_.get());
+  VideoFrame captured_frame_ GUARDED_BY(crit_);
   // Used to make sure incoming time stamp is increasing for every frame.
   int64_t last_captured_timestamp_;
   // Delta used for translating between NTP and internal timestamps.

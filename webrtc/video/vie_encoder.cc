@@ -29,7 +29,6 @@
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/payload_router.h"
@@ -117,7 +116,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                                      this,
                                      qm_callback_.get())),
       send_payload_router_(NULL),
-      data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       stats_proxy_(stats_proxy),
       pre_encode_callback_(pre_encode_callback),
       pacer_(pacer),
@@ -175,18 +173,18 @@ ViEEncoder::~ViEEncoder() {
 
 void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
   {
-    CriticalSectionScoped cs(data_cs_.get());
+    rtc::CritScope lock(&data_cs_);
     network_is_transmitting_ = is_transmitting;
   }
 }
 
 void ViEEncoder::Pause() {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   encoder_paused_ = true;
 }
 
 void ViEEncoder::Restart() {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   encoder_paused_ = false;
 }
 
@@ -218,7 +216,7 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   // Cache codec before calling AddBitrateObserver (which calls OnNetworkChanged
   // that makes use of the number of simulcast streams configured).
   {
-    CriticalSectionScoped cs(data_cs_.get());
+    rtc::CritScope lock(&data_cs_);
     encoder_config_ = video_codec;
   }
 
@@ -246,7 +244,7 @@ int ViEEncoder::GetPaddingNeededBps() const {
   int bitrate_bps;
   VideoCodec send_codec;
   {
-    CriticalSectionScoped cs(data_cs_.get());
+    rtc::CritScope lock(&data_cs_);
     bool send_padding = encoder_config_.numberOfSimulcastStreams > 1 ||
                         video_suspended_ || min_transmit_bitrate_kbps_ > 0;
     if (!send_padding)
@@ -345,7 +343,7 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
   }
   VideoCodecType codec_type;
   {
-    CriticalSectionScoped cs(data_cs_.get());
+    rtc::CritScope lock(&data_cs_);
     time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
     if (EncoderPaused()) {
       TraceFrameDropStart();
@@ -381,7 +379,7 @@ void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
     webrtc::CodecSpecificInfo codec_specific_info;
     codec_specific_info.codecType = webrtc::kVideoCodecVP8;
     {
-      CriticalSectionScoped cs(data_cs_.get());
+      rtc::CritScope lock(&data_cs_);
       codec_specific_info.codecSpecific.VP8.hasReceivedRPSI =
           has_received_rpsi_;
       codec_specific_info.codecSpecific.VP8.hasReceivedSLI =
@@ -406,7 +404,7 @@ void ViEEncoder::SendKeyFrame() {
 }
 
 uint32_t ViEEncoder::LastObservedBitrateBps() const {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   return last_observed_bitrate_bps_;
 }
 
@@ -430,7 +428,7 @@ void ViEEncoder::SetProtectionMethod(bool nack, bool fec) {
 
 void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
   {
-    CriticalSectionScoped cs(data_cs_.get());
+    rtc::CritScope lock(&data_cs_);
     target_delay_ms_ = target_delay_ms;
   }
   if (target_delay_ms > 0) {
@@ -457,7 +455,7 @@ int32_t ViEEncoder::SendData(
   RTC_DCHECK(send_payload_router_ != NULL);
 
   {
-    CriticalSectionScoped cs(data_cs_.get());
+    rtc::CritScope lock(&data_cs_);
     time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
   }
 
@@ -487,14 +485,14 @@ int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
 
 void ViEEncoder::OnReceivedSLI(uint32_t /*ssrc*/,
                                uint8_t picture_id) {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   picture_id_sli_ = picture_id;
   has_received_sli_ = true;
 }
 
 void ViEEncoder::OnReceivedRPSI(uint32_t /*ssrc*/,
                                 uint64_t picture_id) {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   picture_id_rpsi_ = picture_id;
   has_received_rpsi_ = true;
 }
@@ -505,7 +503,7 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
 
   int idx = 0;
   {
-    CriticalSectionScoped cs(data_cs_.get());
+    rtc::CritScope lock(&data_cs_);
     auto stream_it = ssrc_streams_.find(ssrc);
     if (stream_it == ssrc_streams_.end()) {
       LOG_F(LS_WARNING) << "ssrc not found: " << ssrc << ", map size "
@@ -531,7 +529,7 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
 }
 
 void ViEEncoder::OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   std::map<unsigned int, int>::iterator it = ssrc_streams_.find(old_ssrc);
   if (it == ssrc_streams_.end()) {
     return;
@@ -551,7 +549,7 @@ void ViEEncoder::OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {
 }
 
 void ViEEncoder::SetSsrcs(const std::vector<uint32_t>& ssrcs) {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   ssrc_streams_.clear();
   time_last_intra_request_ms_.clear();
   int idx = 0;
@@ -562,7 +560,7 @@ void ViEEncoder::SetSsrcs(const std::vector<uint32_t>& ssrcs) {
 
 void ViEEncoder::SetMinTransmitBitrate(int min_transmit_bitrate_kbps) {
   assert(min_transmit_bitrate_kbps >= 0);
-  CriticalSectionScoped crit(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   min_transmit_bitrate_kbps_ = min_transmit_bitrate_kbps;
 }
 
@@ -580,7 +578,7 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
   VideoCodec send_codec;
   uint32_t first_ssrc;
   {
-    CriticalSectionScoped cs(data_cs_.get());
+    rtc::CritScope lock(&data_cs_);
     last_observed_bitrate_bps_ = bitrate_bps;
     video_suspension_changed = video_suspended_ != video_is_suspended;
     video_suspended_ = video_is_suspended;

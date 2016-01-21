@@ -18,12 +18,12 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class EncoderStateFeedbackObserver;
 class RtcpIntraFrameObserver;
 class ViEEncoder;
@@ -55,7 +55,7 @@ class EncoderStateFeedback {
  private:
   typedef std::map<uint32_t,  ViEEncoder*> SsrcEncoderMap;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  mutable rtc::CriticalSection crit_;
 
   // Instance registered at the class requesting new key frames.
   rtc::scoped_ptr<EncoderStateFeedbackObserver> observer_;

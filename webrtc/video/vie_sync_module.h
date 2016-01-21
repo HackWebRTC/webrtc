@@ -14,6 +14,7 @@
 #ifndef WEBRTC_VIDEO_VIE_SYNC_MODULE_H_
 #define WEBRTC_VIDEO_VIE_SYNC_MODULE_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
@@ -22,7 +23,6 @@
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class RtpRtcp;
 class VideoCodingModule;
 class ViEChannel;
@@ -45,7 +45,7 @@ class ViESyncModule : public Module {
   int32_t Process() override;
 
  private:
-  rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
+  rtc::CriticalSection data_cs_;
   VideoCodingModule* const vcm_;
   RtpReceiver* video_receiver_;
   RtpRtcp* video_rtp_rtcp_;

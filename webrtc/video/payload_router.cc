@@ -13,13 +13,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
 PayloadRouter::PayloadRouter()
-    : crit_(CriticalSectionWrapper::CreateCriticalSection()),
-      active_(false) {}
+    : active_(false) {}
 
 PayloadRouter::~PayloadRouter() {}
 
@@ -30,7 +28,7 @@ size_t PayloadRouter::DefaultMaxPayloadLength() {
 
 void PayloadRouter::SetSendingRtpModules(
     const std::list<RtpRtcp*>& rtp_modules) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   rtp_modules_.clear();
   rtp_modules_.reserve(rtp_modules.size());
   for (auto* rtp_module : rtp_modules) {
@@ -39,12 +37,12 @@ void PayloadRouter::SetSendingRtpModules(
 }
 
 void PayloadRouter::set_active(bool active) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   active_ = active;
 }
 
 bool PayloadRouter::active() {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   return active_ && !rtp_modules_.empty();
 }
 
@@ -56,7 +54,7 @@ bool PayloadRouter::RoutePayload(FrameType frame_type,
                                  size_t payload_length,
                                  const RTPFragmentationHeader* fragmentation,
                                  const RTPVideoHeader* rtp_video_hdr) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (!active_ || rtp_modules_.empty())
     return false;
 
@@ -76,7 +74,7 @@ bool PayloadRouter::RoutePayload(FrameType frame_type,
 
 void PayloadRouter::SetTargetSendBitrates(
     const std::vector<uint32_t>& stream_bitrates) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (stream_bitrates.size() < rtp_modules_.size()) {
     // There can be a size mis-match during codec reconfiguration.
     return;
@@ -89,7 +87,7 @@ void PayloadRouter::SetTargetSendBitrates(
 
 size_t PayloadRouter::MaxPayloadLength() const {
   size_t min_payload_length = DefaultMaxPayloadLength();
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   for (auto* rtp_module : rtp_modules_) {
     size_t module_payload_length = rtp_module->MaxDataPayloadLength();
     if (module_payload_length < min_payload_length)

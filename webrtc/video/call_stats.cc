@@ -15,7 +15,6 @@
 #include <algorithm>
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
@@ -93,7 +92,6 @@ class RtcpObserver : public RtcpRttStats {
 
 CallStats::CallStats(Clock* clock)
     : clock_(clock),
-      crit_(CriticalSectionWrapper::CreateCriticalSection()),
       rtcp_rtt_stats_(new RtcpObserver(this)),
       last_process_time_(clock_->TimeInMilliseconds()),
       max_rtt_ms_(0),
@@ -108,7 +106,7 @@ int64_t CallStats::TimeUntilNextProcess() {
 }
 
 int32_t CallStats::Process() {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope cs(&crit_);
   int64_t now = clock_->TimeInMilliseconds();
   if (now < last_process_time_ + kUpdateIntervalMs)
     return 0;
@@ -131,7 +129,7 @@ int32_t CallStats::Process() {
 }
 
 int64_t CallStats::avg_rtt_ms() const {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope cs(&crit_);
   return avg_rtt_ms_;
 }
 
@@ -140,7 +138,7 @@ RtcpRttStats* CallStats::rtcp_rtt_stats() const {
 }
 
 void CallStats::RegisterStatsObserver(CallStatsObserver* observer) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope cs(&crit_);
   for (std::list<CallStatsObserver*>::iterator it = observers_.begin();
        it != observers_.end(); ++it) {
     if (*it == observer)
@@ -150,7 +148,7 @@ void CallStats::RegisterStatsObserver(CallStatsObserver* observer) {
 }
 
 void CallStats::DeregisterStatsObserver(CallStatsObserver* observer) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope cs(&crit_);
   for (std::list<CallStatsObserver*>::iterator it = observers_.begin();
        it != observers_.end(); ++it) {
     if (*it == observer) {
@@ -161,7 +159,7 @@ void CallStats::DeregisterStatsObserver(CallStatsObserver* observer) {
 }
 
 void CallStats::OnRttUpdate(int64_t rtt) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope cs(&crit_);
   reports_.push_back(RttTime(rtt, clock_->TimeInMilliseconds()));
 }
 

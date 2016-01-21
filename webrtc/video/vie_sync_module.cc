@@ -15,7 +15,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/video/stream_synchronization.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 
@@ -49,8 +48,7 @@ int UpdateMeasurements(StreamSynchronization::Measurements* stream,
 }
 
 ViESyncModule::ViESyncModule(VideoCodingModule* vcm)
-    : data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      vcm_(vcm),
+    : vcm_(vcm),
       video_receiver_(NULL),
       video_rtp_rtcp_(NULL),
       voe_channel_id_(-1),
@@ -66,7 +64,7 @@ int ViESyncModule::ConfigureSync(int voe_channel_id,
                                  VoEVideoSync* voe_sync_interface,
                                  RtpRtcp* video_rtcp_module,
                                  RtpReceiver* video_receiver) {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   // Prevent expensive no-ops.
   if (voe_channel_id_ == voe_channel_id &&
       voe_sync_interface_ == voe_sync_interface &&
@@ -102,7 +100,7 @@ int64_t ViESyncModule::TimeUntilNextProcess() {
 }
 
 int32_t ViESyncModule::Process() {
-  CriticalSectionScoped cs(data_cs_.get());
+  rtc::CritScope lock(&data_cs_);
   last_sync_time_ = TickTime::Now();
 
   const int current_video_delay_ms = vcm_->Delay();

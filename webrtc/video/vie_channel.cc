@@ -28,7 +28,6 @@
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/payload_router.h"
@@ -93,7 +92,6 @@ ViEChannel::ViEChannel(uint32_t number_of_cores,
     : number_of_cores_(number_of_cores),
       sender_(sender),
       module_process_thread_(module_process_thread),
-      crit_(CriticalSectionWrapper::CreateCriticalSection()),
       send_payload_router_(new PayloadRouter()),
       vcm_protection_callback_(new ViEChannelProtectionCallback(this)),
       vcm_(VideoCodingModule::Create(Clock::GetRealTimeClock(),
@@ -196,7 +194,7 @@ void ViEChannel::UpdateHistograms() {
   int64_t now = Clock::GetRealTimeClock()->TimeInMilliseconds();
 
   {
-    CriticalSectionScoped cs(crit_.get());
+    rtc::CritScope lock(&crit_);
     int64_t elapsed_sec = (now - time_of_first_rtt_ms_) / 1000;
     if (time_of_first_rtt_ms_ != -1 && num_rtts_ > 0 &&
         elapsed_sec > metrics::kMinRunTimeInSeconds) {
@@ -367,7 +365,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   size_t num_prev_active_modules;
   {
     // Cache which modules are active so StartSend can know which ones to start.
-    CriticalSectionScoped cs(crit_.get());
+    rtc::CritScope lock(&crit_);
     num_prev_active_modules = num_active_rtp_rtcp_modules_;
     num_active_rtp_rtcp_modules_ = num_active_modules;
   }
@@ -446,7 +444,7 @@ void ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
 
 int32_t ViEChannel::ReceiveCodecStatistics(uint32_t* num_key_frames,
                                            uint32_t* num_delta_frames) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   *num_key_frames = receive_frame_counts_.key_frames;
   *num_delta_frames = receive_frame_counts_.delta_frames;
   return 0;
@@ -884,7 +882,7 @@ void ViEChannel::RegisterSendBitrateObserver(
 }
 
 int32_t ViEChannel::StartSend() {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
 
   if (rtp_rtcp_modules_[0]->Sending())
     return -1;
@@ -970,7 +968,7 @@ CallStatsObserver* ViEChannel::GetStatsObserver() {
 // held the lock when calling VideoDecoder::Decode, Reset, or Release. Acquiring
 // the same lock in the path of decode callback can deadlock.
 int32_t ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
 
   if (pre_render_callback_ != NULL)
     pre_render_callback_->FrameCallback(&video_frame);
@@ -986,31 +984,31 @@ int32_t ViEChannel::ReceivedDecodedReferenceFrame(
 }
 
 void ViEChannel::OnIncomingPayloadType(int payload_type) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (receive_stats_callback_)
     receive_stats_callback_->OnIncomingPayloadType(payload_type);
 }
 
 void ViEChannel::OnDecoderImplementationName(const char* implementation_name) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (receive_stats_callback_)
     receive_stats_callback_->OnDecoderImplementationName(implementation_name);
 }
 
 void ViEChannel::OnReceiveRatesUpdated(uint32_t bit_rate, uint32_t frame_rate) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (receive_stats_callback_)
     receive_stats_callback_->OnIncomingRate(frame_rate, bit_rate);
 }
 
 void ViEChannel::OnDiscardedPacketsUpdated(int discarded_packets) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (receive_stats_callback_)
     receive_stats_callback_->OnDiscardedPacketsUpdated(discarded_packets);
 }
 
 void ViEChannel::OnFrameCountsUpdated(const FrameCounts& frame_counts) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   receive_frame_counts_ = frame_counts;
   if (receive_stats_callback_)
     receive_stats_callback_->OnFrameCountsUpdated(frame_counts);
@@ -1023,7 +1021,7 @@ void ViEChannel::OnDecoderTiming(int decode_ms,
                                  int jitter_buffer_ms,
                                  int min_playout_delay_ms,
                                  int render_delay_ms) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (!receive_stats_callback_)
     return;
   receive_stats_callback_->OnDecoderTiming(
@@ -1058,7 +1056,7 @@ bool ViEChannel::ChannelDecodeProcess() {
 void ViEChannel::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   vcm_->SetReceiveChannelParameters(max_rtt_ms);
 
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (time_of_first_rtt_ms_ == -1)
     time_of_first_rtt_ms_ = Clock::GetRealTimeClock()->TimeInMilliseconds();
   rtt_sum_ms_ += avg_rtt_ms;
@@ -1168,7 +1166,7 @@ int32_t ViEChannel::VoiceChannel() {
 
 void ViEChannel::RegisterPreRenderCallback(
     I420FrameCallback* pre_render_callback) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   pre_render_callback_ = pre_render_callback;
 }
 
@@ -1205,13 +1203,13 @@ void ViEChannel::RegisterSendFrameCountObserver(
 
 void ViEChannel::RegisterReceiveStatisticsProxy(
     ReceiveStatisticsProxy* receive_statistics_proxy) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   receive_stats_callback_ = receive_statistics_proxy;
 }
 
 void ViEChannel::SetIncomingVideoStream(
     IncomingVideoStream* incoming_video_stream) {
-  CriticalSectionScoped cs(crit_.get());
+  rtc::CritScope lock(&crit_);
   incoming_video_stream_ = incoming_video_stream;
 }
 }  // namespace webrtc
