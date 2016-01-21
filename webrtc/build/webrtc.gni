@@ -91,16 +91,14 @@ declare_args() {
   # Enabling this may break interop with Android clients that support H264.
   rtc_use_objc_h264 = false
 
-  # Enable this to build H.264 encoder/decoder using third party libraries.
-  # Encoding uses OpenH264 and decoding uses FFmpeg. Because of this, OpenH264
-  # and FFmpeg have to be correctly enabled separately.
-  # - use_openh264=true is required for OpenH264 targets to be defined.
-  # - ffmpeg_branding="Chrome" is one way to support H.264 decoding in FFmpeg.
-  #   FFmpeg can be built with/without H.264 support, see 'ffmpeg_branding'.
-  #   Without it, it compiles but H264DecoderImpl fails to initialize.
+  # Enable this to build OpenH264 encoder/FFmpeg decoder. This is supported on
+  # all platforms except iOS. Because FFmpeg can be built with/without H.264
+  # support, |ffmpeg_branding| has to separately be set to a value that
+  # includes H.264, for example "Chrome". If FFmpeg is built without H.264,
+  # compilation succeeds but |H264DecoderImpl| fails to initialize.
   # CHECK THE OPENH264, FFMPEG AND H.264 LICENSES/PATENTS BEFORE BUILDING.
   # http://www.openh264.org, https://www.ffmpeg.org/
-  use_third_party_h264 = false  # TODO(hbos): To be used in follow-up CL(s).
+  rtc_use_h264 = false  # TODO(hbos): enc/dec in follow up CL(s).
 }
 
 # A second declare_args block, so that declarations within it can
