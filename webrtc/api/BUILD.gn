@@ -59,6 +59,9 @@ if (is_ios) {
       "objc/RTCVideoFrame.h",
       "objc/RTCVideoFrame.mm",
       "objc/RTCVideoRenderer.h",
+      "objc/RTCVideoRendererAdapter+Private.h",
+      "objc/RTCVideoRendererAdapter.h",
+      "objc/RTCVideoRendererAdapter.mm",
       "objc/WebRTC-Prefix.pch",
     ]
 
