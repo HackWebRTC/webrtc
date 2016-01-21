@@ -17,11 +17,11 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -128,17 +128,16 @@ class ConferenceTransport: public webrtc::Transport {
   void SendPacket(const Packet& packet);
   bool DispatchPackets();
 
-  const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> pq_crit_;
-  const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> stream_crit_;
+  mutable rtc::CriticalSection pq_crit_;
+  mutable rtc::CriticalSection stream_crit_;
   const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
   rtc::PlatformThread thread_;
 
   unsigned int rtt_ms_;
   unsigned int stream_count_;
 
-  std::map<unsigned int, std::pair<int, int>> streams_
-    GUARDED_BY(stream_crit_.get());
-  std::deque<Packet> packet_queue_ GUARDED_BY(pq_crit_.get());
+  std::map<unsigned int, std::pair<int, int>> streams_ GUARDED_BY(stream_crit_);
+  std::deque<Packet> packet_queue_ GUARDED_BY(pq_crit_);
 
   int local_sender_;  // Channel Id of local sender
   int reflector_;

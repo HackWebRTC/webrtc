@@ -13,9 +13,9 @@
 
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
+#include "webrtc/base/criticalsection.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
 
 class DtmfInband
 {
@@ -67,7 +67,7 @@ private:
                                    int16_t length);
 
 private:
-    CriticalSectionWrapper& _critSect;
+    mutable rtc::CriticalSection _critSect;
     int32_t _id;
     uint16_t _outputFrequencyHz;  // {8000, 16000, 32000}
     int16_t _oldOutputLow[2];     // Data needed for oscillator model

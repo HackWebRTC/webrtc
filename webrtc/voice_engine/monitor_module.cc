@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/voice_engine/monitor_module.h"
 
@@ -18,20 +17,18 @@ namespace voe  {
 
 MonitorModule::MonitorModule() :
     _observerPtr(NULL),
-    _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _lastProcessTime(TickTime::MillisecondTimestamp())
 {
 }
 
 MonitorModule::~MonitorModule()
 {
-    delete &_callbackCritSect;
 }
 
 int32_t
 MonitorModule::RegisterObserver(MonitorObserver& observer)
 {
-    CriticalSectionScoped lock(&_callbackCritSect);
+    rtc::CritScope lock(&_callbackCritSect);
     if (_observerPtr)
     {
         return -1;
@@ -43,7 +40,7 @@ MonitorModule::RegisterObserver(MonitorObserver& observer)
 int32_t
 MonitorModule::DeRegisterObserver()
 {
-    CriticalSectionScoped lock(&_callbackCritSect);
+    rtc::CritScope lock(&_callbackCritSect);
     if (!_observerPtr)
     {
         return 0;
@@ -64,9 +61,9 @@ int32_t
 MonitorModule::Process()
 {
     _lastProcessTime = TickTime::MillisecondTimestamp();
+    rtc::CritScope lock(&_callbackCritSect);
     if (_observerPtr)
     {
-        CriticalSectionScoped lock(&_callbackCritSect);
         _observerPtr->OnPeriodicProcess();
     }
     return 0;

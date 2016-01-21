@@ -10,7 +10,7 @@
 
 #include "webrtc/voice_engine/voe_dtmf_impl.h"
 
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
@@ -197,7 +197,7 @@ int VoEDtmfImpl::SetDtmfFeedbackStatus(bool enable, bool directFeedback) {
                "SetDtmfFeedbackStatus(enable=%d, directFeeback=%d)",
                (int)enable, (int)directFeedback);
 
-  CriticalSectionScoped sc(_shared->crit_sec());
+  rtc::CritScope cs(_shared->crit_sec());
 
   _dtmfFeedback = enable;
   _dtmfDirectFeedback = directFeedback;
@@ -206,7 +206,7 @@ int VoEDtmfImpl::SetDtmfFeedbackStatus(bool enable, bool directFeedback) {
 }
 
 int VoEDtmfImpl::GetDtmfFeedbackStatus(bool& enabled, bool& directFeedback) {
-  CriticalSectionScoped sc(_shared->crit_sec());
+  rtc::CritScope cs(_shared->crit_sec());
 
   enabled = _dtmfFeedback;
   directFeedback = _dtmfDirectFeedback;

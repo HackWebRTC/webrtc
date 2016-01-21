@@ -17,7 +17,6 @@
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
@@ -39,16 +38,14 @@ VoEBase* VoEBase::GetInterface(VoiceEngine* voiceEngine) {
 
 VoEBaseImpl::VoEBaseImpl(voe::SharedData* shared)
     : voiceEngineObserverPtr_(nullptr),
-      callbackCritSect_(*CriticalSectionWrapper::CreateCriticalSection()),
       shared_(shared) {}
 
 VoEBaseImpl::~VoEBaseImpl() {
   TerminateInternal();
-  delete &callbackCritSect_;
 }
 
 void VoEBaseImpl::OnErrorIsReported(const ErrorCode error) {
-  CriticalSectionScoped cs(&callbackCritSect_);
+  rtc::CritScope cs(&callbackCritSect_);
   int errCode = 0;
   if (error == AudioDeviceObserver::kRecordingError) {
     errCode = VE_RUNTIME_REC_ERROR;
@@ -64,7 +61,7 @@ void VoEBaseImpl::OnErrorIsReported(const ErrorCode error) {
 }
 
 void VoEBaseImpl::OnWarningIsReported(const WarningCode warning) {
-  CriticalSectionScoped cs(&callbackCritSect_);
+  rtc::CritScope cs(&callbackCritSect_);
   int warningCode = 0;
   if (warning == AudioDeviceObserver::kRecordingWarning) {
     warningCode = VE_RUNTIME_REC_WARNING;
@@ -176,7 +173,7 @@ void VoEBaseImpl::PullRenderData(int bits_per_sample,
 }
 
 int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
-  CriticalSectionScoped cs(&callbackCritSect_);
+  rtc::CritScope cs(&callbackCritSect_);
   if (voiceEngineObserverPtr_) {
     shared_->SetLastError(
         VE_INVALID_OPERATION, kTraceError,
@@ -196,7 +193,7 @@ int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
 }
 
 int VoEBaseImpl::DeRegisterVoiceEngineObserver() {
-  CriticalSectionScoped cs(&callbackCritSect_);
+  rtc::CritScope cs(&callbackCritSect_);
   if (!voiceEngineObserverPtr_) {
     shared_->SetLastError(
         VE_INVALID_OPERATION, kTraceError,
@@ -216,7 +213,7 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver() {
 
 int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
                       AudioProcessing* audioproc) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   WebRtcSpl_Init();
   if (shared_->statistics().Initialized()) {
     return 0;
@@ -382,12 +379,12 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
 }
 
 int VoEBaseImpl::Terminate() {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   return TerminateInternal();
 }
 
 int VoEBaseImpl::CreateChannel() {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -398,7 +395,7 @@ int VoEBaseImpl::CreateChannel() {
 }
 
 int VoEBaseImpl::CreateChannel(const Config& config) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -434,7 +431,7 @@ int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner) {
 }
 
 int VoEBaseImpl::DeleteChannel(int channel) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -461,7 +458,7 @@ int VoEBaseImpl::DeleteChannel(int channel) {
 }
 
 int VoEBaseImpl::StartReceive(int channel) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -477,7 +474,7 @@ int VoEBaseImpl::StartReceive(int channel) {
 }
 
 int VoEBaseImpl::StopReceive(int channel) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -493,7 +490,7 @@ int VoEBaseImpl::StopReceive(int channel) {
 }
 
 int VoEBaseImpl::StartPlayout(int channel) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -517,7 +514,7 @@ int VoEBaseImpl::StartPlayout(int channel) {
 }
 
 int VoEBaseImpl::StopPlayout(int channel) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -537,7 +534,7 @@ int VoEBaseImpl::StopPlayout(int channel) {
 }
 
 int VoEBaseImpl::StartSend(int channel) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -561,7 +558,7 @@ int VoEBaseImpl::StartSend(int channel) {
 }
 
 int VoEBaseImpl::StopSend(int channel) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -795,7 +792,7 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, size_t number_of_channels,
 
 int VoEBaseImpl::AssociateSendChannel(int channel,
                                       int accociate_send_channel) {
-  CriticalSectionScoped cs(shared_->crit_sec());
+  rtc::CritScope cs(shared_->crit_sec());
 
   if (!shared_->statistics().Initialized()) {
       shared_->SetLastError(VE_NOT_INITED, kTraceError);

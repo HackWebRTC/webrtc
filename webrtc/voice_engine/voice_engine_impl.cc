@@ -17,7 +17,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
@@ -66,7 +65,7 @@ int VoiceEngineImpl::Release() {
 rtc::scoped_ptr<voe::ChannelProxy> VoiceEngineImpl::GetChannelProxy(
     int channel_id) {
   RTC_DCHECK(channel_id >= 0);
-  CriticalSectionScoped cs(crit_sec());
+  rtc::CritScope cs(crit_sec());
   RTC_DCHECK(statistics().Initialized());
   return rtc::scoped_ptr<voe::ChannelProxy>(
       new voe::ChannelProxy(channel_manager().GetChannel(channel_id)));

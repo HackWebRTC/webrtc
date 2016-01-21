@@ -11,7 +11,6 @@
 #include "webrtc/voice_engine/shared_data.h"
 
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/output_mixer.h"
@@ -25,7 +24,6 @@ static int32_t _gInstanceCounter = 0;
 
 SharedData::SharedData(const Config& config)
     : _instanceId(++_gInstanceCounter),
-      _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
       _channelManager(_gInstanceCounter, config),
       _engineStatistics(_gInstanceCounter),
       _audioDevicePtr(NULL),
@@ -51,7 +49,6 @@ SharedData::~SharedData()
     if (_audioDevicePtr) {
         _audioDevicePtr->Release();
     }
-    delete _apiCritPtr;
     _moduleProcessThreadPtr->Stop();
     Trace::ReturnTrace();
 }

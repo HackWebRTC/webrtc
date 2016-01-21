@@ -15,7 +15,6 @@ namespace webrtc {
 
 DtmfInbandQueue::DtmfInbandQueue(int32_t id):
     _id(id),
-    _DtmfCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
     _nextEmptyIndex(0)
 {
     memset(_DtmfKey,0, sizeof(_DtmfKey));
@@ -25,13 +24,12 @@ DtmfInbandQueue::DtmfInbandQueue(int32_t id):
 
 DtmfInbandQueue::~DtmfInbandQueue()
 {
-    delete &_DtmfCritsect;
 }
 
 int
 DtmfInbandQueue::AddDtmf(uint8_t key, uint16_t len, uint8_t level)
 {
-    CriticalSectionScoped lock(&_DtmfCritsect);
+    rtc::CritScope lock(&_DtmfCritsect);
 
     if (_nextEmptyIndex >= kDtmfInbandMax)
     {
@@ -50,7 +48,7 @@ DtmfInbandQueue::AddDtmf(uint8_t key, uint16_t len, uint8_t level)
 int8_t
 DtmfInbandQueue::NextDtmf(uint16_t* len, uint8_t* level)
 {
-    CriticalSectionScoped lock(&_DtmfCritsect);
+    rtc::CritScope lock(&_DtmfCritsect);
 
     if(!PendingDtmf())
     {
@@ -74,14 +72,14 @@ DtmfInbandQueue::NextDtmf(uint16_t* len, uint8_t* level)
 bool
 DtmfInbandQueue::PendingDtmf()
 {
-    CriticalSectionScoped lock(&_DtmfCritsect);
+    rtc::CritScope lock(&_DtmfCritsect);
     return _nextEmptyIndex > 0;
 }
 
 void
 DtmfInbandQueue::ResetDtmf()
 {
-    CriticalSectionScoped lock(&_DtmfCritsect);
+    rtc::CritScope lock(&_DtmfCritsect);
     _nextEmptyIndex = 0;
 }
 

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_SHARED_DATA_H
 #define WEBRTC_VOICE_ENGINE_SHARED_DATA_H
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -23,7 +24,6 @@ class ProcessThread;
 
 namespace webrtc {
 class Config;
-class CriticalSectionWrapper;
 
 namespace voe {
 
@@ -43,7 +43,7 @@ public:
     void set_audio_processing(AudioProcessing* audio_processing);
     TransmitMixer* transmit_mixer() { return _transmitMixerPtr; }
     OutputMixer* output_mixer() { return _outputMixerPtr; }
-    CriticalSectionWrapper* crit_sec() { return _apiCritPtr; }
+    rtc::CriticalSection* crit_sec() { return &_apiCritPtr; }
     ProcessThread* process_thread() { return _moduleProcessThreadPtr.get(); }
     AudioDeviceModule::AudioLayer audio_device_layer() const {
       return _audioDeviceLayer;
@@ -63,7 +63,7 @@ public:
 
 protected:
     const uint32_t _instanceId;
-    CriticalSectionWrapper* _apiCritPtr;
+    mutable rtc::CriticalSection _apiCritPtr;
     ChannelManager _channelManager;
     Statistics _engineStatistics;
     AudioDeviceModule* _audioDevicePtr;

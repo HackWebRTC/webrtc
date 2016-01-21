@@ -14,10 +14,10 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -123,7 +123,7 @@ class ChannelManager {
 
   Atomic32 last_channel_id_;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> lock_;
+  mutable rtc::CriticalSection lock_;
   std::vector<ChannelOwner> channels_;
 
   const Config& config_;

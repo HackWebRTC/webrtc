@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_DTMF_INBAND_QUEUE_H
 #define WEBRTC_VOICE_ENGINE_DTMF_INBAND_QUEUE_H
 
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
@@ -38,7 +38,7 @@ private:
     enum {kDtmfInbandMax = 20};
 
     int32_t _id;
-    CriticalSectionWrapper& _DtmfCritsect;
+    rtc::CriticalSection _DtmfCritsect;
     uint8_t _nextEmptyIndex;
     uint8_t _DtmfKey[kDtmfInbandMax];
     uint16_t _DtmfLen[kDtmfInbandMax];

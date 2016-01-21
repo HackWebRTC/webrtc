@@ -47,7 +47,6 @@ namespace webrtc {
 
 class AudioDeviceModule;
 class Config;
-class CriticalSectionWrapper;
 class FileWrapper;
 class PacketRouter;
 class ProcessThread;
@@ -103,57 +102,56 @@ class ChannelState {
         bool receiving;
     };
 
-    ChannelState() : lock_(CriticalSectionWrapper::CreateCriticalSection()) {
-    }
+    ChannelState() {}
     virtual ~ChannelState() {}
 
     void Reset() {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         state_ = State();
     }
 
     State Get() const {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         return state_;
     }
 
     void SetRxApmIsEnabled(bool enable) {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         state_.rx_apm_is_enabled = enable;
     }
 
     void SetInputExternalMedia(bool enable) {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         state_.input_external_media = enable;
     }
 
     void SetOutputFilePlaying(bool enable) {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         state_.output_file_playing = enable;
     }
 
     void SetInputFilePlaying(bool enable) {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         state_.input_file_playing = enable;
     }
 
     void SetPlaying(bool enable) {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         state_.playing = enable;
     }
 
     void SetSending(bool enable) {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         state_.sending = enable;
     }
 
     void SetReceiving(bool enable) {
-        CriticalSectionScoped lock(lock_.get());
+        rtc::CritScope lock(&lock_);
         state_.receiving = enable;
     }
 
 private:
- rtc::scoped_ptr<CriticalSectionWrapper> lock_;
+    mutable rtc::CriticalSection lock_;
     State state_;
 };
 
@@ -190,7 +188,7 @@ public:
         ProcessThread& moduleProcessThread,
         AudioDeviceModule& audioDeviceModule,
         VoiceEngineObserver* voiceEngineObserver,
-        CriticalSectionWrapper* callbackCritSect);
+        rtc::CriticalSection* callbackCritSect);
     int32_t UpdateLocalTimeStamp();
 
     void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink);
@@ -430,7 +428,7 @@ public:
     }
     bool ExternalTransport() const
     {
-        CriticalSectionScoped cs(&_callbackCritSect);
+        rtc::CritScope cs(&_callbackCritSect);
         return _externalTransport;
     }
     bool ExternalMixing() const
@@ -460,7 +458,7 @@ public:
     // Used for obtaining RTT for a receive-only channel.
     void set_associate_send_channel(const ChannelOwner& channel) {
       assert(_channelId != channel.channel()->ChannelId());
-      CriticalSectionScoped lock(assoc_send_channel_lock_.get());
+      rtc::CritScope lock(&assoc_send_channel_lock_);
       associate_send_channel_ = channel;
     }
 
@@ -494,9 +492,9 @@ private:
     int32_t GetPlayoutFrequency();
     int64_t GetRTT(bool allow_associate_channel) const;
 
-    CriticalSectionWrapper& _fileCritSect;
-    CriticalSectionWrapper& _callbackCritSect;
-    CriticalSectionWrapper& volume_settings_critsect_;
+    mutable rtc::CriticalSection _fileCritSect;
+    mutable rtc::CriticalSection _callbackCritSect;
+    mutable rtc::CriticalSection volume_settings_critsect_;
     uint32_t _instanceId;
     int32_t _channelId;
 
@@ -544,7 +542,7 @@ private:
     uint16_t send_sequence_number_;
     uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
 
-    rtc::scoped_ptr<CriticalSectionWrapper> ts_stats_lock_;
+    mutable rtc::CriticalSection ts_stats_lock_;
 
     rtc::scoped_ptr<rtc::TimestampWrapAroundHandler> rtp_ts_wraparound_handler_;
     // The rtp timestamp of the first played out audio frame.
@@ -560,7 +558,7 @@ private:
     ProcessThread* _moduleProcessThreadPtr;
     AudioDeviceModule* _audioDeviceModulePtr;
     VoiceEngineObserver* _voiceEngineObserverPtr; // owned by base
-    CriticalSectionWrapper* _callbackCritSectPtr; // owned by base
+    rtc::CriticalSection* _callbackCritSectPtr; // owned by base
     Transport* _transportPtr; // WebRtc socket or external transport
     RMSLevel rms_level_;
     rtc::scoped_ptr<AudioProcessing> rx_audioproc_;  // far end AudioProcessing
@@ -585,7 +583,7 @@ private:
     // VoENetwork
     AudioFrame::SpeechType _outputSpeechType;
     // VoEVideoSync
-    rtc::scoped_ptr<CriticalSectionWrapper> video_sync_lock_;
+    mutable rtc::CriticalSection video_sync_lock_;
     uint32_t _average_jitter_buffer_delay_us GUARDED_BY(video_sync_lock_);
     uint32_t _previousTimestamp;
     uint16_t _recPacketDelayMs GUARDED_BY(video_sync_lock_);
@@ -598,7 +596,7 @@ private:
     rtc::scoped_ptr<VoERtcpObserver> rtcp_observer_;
     rtc::scoped_ptr<NetworkPredictor> network_predictor_;
     // An associated send channel.
-    rtc::scoped_ptr<CriticalSectionWrapper> assoc_send_channel_lock_;
+    mutable rtc::CriticalSection assoc_send_channel_lock_;
     ChannelOwner associate_send_channel_ GUARDED_BY(assoc_send_channel_lock_);
 
     bool pacing_enabled_;

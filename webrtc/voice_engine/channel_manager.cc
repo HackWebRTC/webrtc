@@ -48,7 +48,6 @@ ChannelOwner::ChannelRef::ChannelRef(class Channel* channel)
 ChannelManager::ChannelManager(uint32_t instance_id, const Config& config)
     : instance_id_(instance_id),
       last_channel_id_(-1),
-      lock_(CriticalSectionWrapper::CreateCriticalSection()),
       config_(config),
       event_log_(RtcEventLog::Create()) {}
 
@@ -66,7 +65,7 @@ ChannelOwner ChannelManager::CreateChannelInternal(const Config& config) {
                          event_log_.get(), config);
   ChannelOwner channel_owner(channel);
 
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
 
   channels_.push_back(channel_owner);
 
@@ -74,7 +73,7 @@ ChannelOwner ChannelManager::CreateChannelInternal(const Config& config) {
 }
 
 ChannelOwner ChannelManager::GetChannel(int32_t channel_id) {
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
 
   for (size_t i = 0; i < channels_.size(); ++i) {
     if (channels_[i].channel()->ChannelId() == channel_id)
@@ -84,7 +83,7 @@ ChannelOwner ChannelManager::GetChannel(int32_t channel_id) {
 }
 
 void ChannelManager::GetAllChannels(std::vector<ChannelOwner>* channels) {
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
 
   *channels = channels_;
 }
@@ -95,7 +94,7 @@ void ChannelManager::DestroyChannel(int32_t channel_id) {
   // Channels while holding a lock, but rather when the method returns.
   ChannelOwner reference(NULL);
   {
-    CriticalSectionScoped crit(lock_.get());
+    rtc::CritScope crit(&lock_);
     std::vector<ChannelOwner>::iterator to_delete = channels_.end();
     for (auto it = channels_.begin(); it != channels_.end(); ++it) {
       Channel* channel = it->channel();
@@ -119,14 +118,14 @@ void ChannelManager::DestroyAllChannels() {
   // lock, but rather when the method returns.
   std::vector<ChannelOwner> references;
   {
-    CriticalSectionScoped crit(lock_.get());
+    rtc::CritScope crit(&lock_);
     references = channels_;
     channels_.clear();
   }
 }
 
 size_t ChannelManager::NumOfChannels() const {
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
   return channels_.size();
 }
 

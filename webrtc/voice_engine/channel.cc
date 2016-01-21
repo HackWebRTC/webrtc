@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread_checker.h"
@@ -30,7 +31,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
@@ -157,9 +157,7 @@ struct ChannelStatistics : public RtcpStatistics {
 // Statistics callback, called at each generation of a new RTCP report block.
 class StatisticsProxy : public RtcpStatisticsCallback {
  public:
-  StatisticsProxy(uint32_t ssrc)
-   : stats_lock_(CriticalSectionWrapper::CreateCriticalSection()),
-     ssrc_(ssrc) {}
+  StatisticsProxy(uint32_t ssrc) : ssrc_(ssrc) {}
   virtual ~StatisticsProxy() {}
 
   void StatisticsUpdated(const RtcpStatistics& statistics,
@@ -167,7 +165,7 @@ class StatisticsProxy : public RtcpStatisticsCallback {
     if (ssrc != ssrc_)
       return;
 
-    CriticalSectionScoped cs(stats_lock_.get());
+    rtc::CritScope cs(&stats_lock_);
     stats_.rtcp = statistics;
     if (statistics.jitter > stats_.max_jitter) {
       stats_.max_jitter = statistics.jitter;
@@ -177,7 +175,7 @@ class StatisticsProxy : public RtcpStatisticsCallback {
   void CNameChanged(const char* cname, uint32_t ssrc) override {}
 
   ChannelStatistics GetStats() {
-    CriticalSectionScoped cs(stats_lock_.get());
+    rtc::CritScope cs(&stats_lock_);
     return stats_;
   }
 
@@ -185,7 +183,7 @@ class StatisticsProxy : public RtcpStatisticsCallback {
   // StatisticsUpdated calls are triggered from threads in the RTP module,
   // while GetStats calls can be triggered from the public voice engine API,
   // hence synchronization is needed.
-  rtc::scoped_ptr<CriticalSectionWrapper> stats_lock_;
+  rtc::CriticalSection stats_lock_;
   const uint32_t ssrc_;
   ChannelStatistics stats_;
 };
@@ -298,7 +296,7 @@ Channel::InFrameType(FrameType frame_type)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::InFrameType(frame_type=%d)", frame_type);
 
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
     _sendFrameType = (frame_type == kAudioFrameSpeech);
     return 0;
 }
@@ -306,7 +304,7 @@ Channel::InFrameType(FrameType frame_type)
 int32_t
 Channel::OnRxVadDetected(int vadDecision)
 {
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
     if (_rxVadObserverPtr)
     {
         _rxVadObserverPtr->OnRxVad(_channelId, vadDecision);
@@ -321,7 +319,7 @@ bool Channel::SendRtp(const uint8_t* data,
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SendPacket(channel=%d, len=%" PRIuS ")", len);
 
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (_transportPtr == NULL)
     {
@@ -352,7 +350,7 @@ Channel::SendRtcp(const uint8_t *data, size_t len)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SendRtcp(len=%" PRIuS ")", len);
 
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
     if (_transportPtr == NULL)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
@@ -566,7 +564,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
       // scaling/panning, as that applies to the mix operation.
       // External recipients of the audio (e.g. via AudioTrack), will do their
       // own mixing/dynamic processing.
-      CriticalSectionScoped cs(&_callbackCritSect);
+      rtc::CritScope cs(&_callbackCritSect);
       if (audio_sink_) {
         AudioSinkInterface::Data data(
             &audioFrame->data_[0],
@@ -580,7 +578,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
     float left_pan =  1.0f;
     float right_pan =  1.0f;
     {
-      CriticalSectionScoped cs(&volume_settings_critsect_);
+      rtc::CritScope cs(&volume_settings_critsect_);
       output_gain = _outputGain;
       left_pan = _panLeft;
       right_pan= _panRight;
@@ -620,7 +618,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
     // External media
     if (_outputExternalMedia)
     {
-        CriticalSectionScoped cs(&_callbackCritSect);
+        rtc::CritScope cs(&_callbackCritSect);
         const bool isStereo = (audioFrame->num_channels_ == 2);
         if (_outputExternalMediaCallbackPtr)
         {
@@ -633,7 +631,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
 
     // Record playout if enabled
     {
-        CriticalSectionScoped cs(&_fileCritSect);
+        rtc::CritScope cs(&_fileCritSect);
 
         if (_outputFileRecording && _outputFileRecorderPtr)
         {
@@ -660,7 +658,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
           (GetPlayoutFrequency() / 1000);
 
       {
-        CriticalSectionScoped lock(ts_stats_lock_.get());
+        rtc::CritScope lock(&ts_stats_lock_);
         // Compute ntp time.
         audioFrame->ntp_time_ms_ = ntp_estimator_.Estimate(
             audioFrame->timestamp_);
@@ -704,7 +702,7 @@ Channel::NeededFrequency(int32_t id) const
     // limit the spectrum anyway.
     if (channel_state_.Get().output_file_playing)
     {
-        CriticalSectionScoped cs(&_fileCritSect);
+        rtc::CritScope cs(&_fileCritSect);
         if (_outputFilePlayerPtr)
         {
             if(_outputFilePlayerPtr->Frequency()>highestNeeded)
@@ -790,7 +788,7 @@ Channel::RecordFileEnded(int32_t id)
 
     assert(id == _outputFileRecorderId);
 
-    CriticalSectionScoped cs(&_fileCritSect);
+    rtc::CritScope cs(&_fileCritSect);
 
     _outputFileRecording = false;
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
@@ -803,11 +801,7 @@ Channel::Channel(int32_t channelId,
                  uint32_t instanceId,
                  RtcEventLog* const event_log,
                  const Config& config)
-    : _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-      _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-      volume_settings_critsect_(
-          *CriticalSectionWrapper::CreateCriticalSection()),
-      _instanceId(instanceId),
+    : _instanceId(instanceId),
       _channelId(channelId),
       event_log_(event_log),
       rtp_header_parser_(RtpHeaderParser::Create()),
@@ -848,7 +842,6 @@ Channel::Channel(int32_t channelId,
       playout_delay_ms_(0),
       _numberOfDiscardedPackets(0),
       send_sequence_number_(0),
-      ts_stats_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       rtp_ts_wraparound_handler_(new rtc::TimestampWrapAroundHandler()),
       capture_start_rtp_time_stamp_(-1),
       capture_start_ntp_time_ms_(-1),
@@ -875,7 +868,6 @@ Channel::Channel(int32_t channelId,
       _lastPayloadType(0),
       _includeAudioLevelIndication(false),
       _outputSpeechType(AudioFrame::kNormalSpeech),
-      video_sync_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       _average_jitter_buffer_delay_us(0),
       _previousTimestamp(0),
       _recPacketDelayMs(20),
@@ -885,7 +877,6 @@ Channel::Channel(int32_t channelId,
       restored_packet_in_use_(false),
       rtcp_observer_(new VoERtcpObserver(this)),
       network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
-      assoc_send_channel_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       associate_send_channel_(ChannelOwner(nullptr)),
       pacing_enabled_(config.Get<VoicePacing>().enabled),
       feedback_observer_proxy_(pacing_enabled_ ? new TransportFeedbackProxy()
@@ -953,7 +944,7 @@ Channel::~Channel()
     StopPlayout();
 
     {
-        CriticalSectionScoped cs(&_fileCritSect);
+        rtc::CritScope cs(&_fileCritSect);
         if (_inputFilePlayerPtr)
         {
             _inputFilePlayerPtr->RegisterModuleFileCallback(NULL);
@@ -999,11 +990,6 @@ Channel::~Channel()
     _moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get());
 
     // End of modules shutdown
-
-    // Delete other objects
-    delete &_callbackCritSect;
-    delete &_fileCritSect;
-    delete &volume_settings_critsect_;
 }
 
 int32_t
@@ -1164,7 +1150,7 @@ Channel::SetEngineInformation(Statistics& engineStatistics,
                               ProcessThread& moduleProcessThread,
                               AudioDeviceModule& audioDeviceModule,
                               VoiceEngineObserver* voiceEngineObserver,
-                              CriticalSectionWrapper* callbackCritSect)
+                              rtc::CriticalSection* callbackCritSect)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetEngineInformation()");
@@ -1187,7 +1173,7 @@ Channel::UpdateLocalTimeStamp()
 }
 
 void Channel::SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) {
-  CriticalSectionScoped cs(&_callbackCritSect);
+  rtc::CritScope cs(&_callbackCritSect);
   audio_sink_ = std::move(sink);
 }
 
@@ -1267,7 +1253,7 @@ Channel::StartSend()
         _engineStatisticsPtr->SetLastError(
             VE_RTP_RTCP_MODULE_ERROR, kTraceError,
             "StartSend() RTP/RTCP failed to start sending");
-        CriticalSectionScoped cs(&_callbackCritSect);
+        rtc::CritScope cs(&_callbackCritSect);
         channel_state_.SetSending(false);
         return -1;
     }
@@ -1339,7 +1325,7 @@ Channel::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RegisterVoiceEngineObserver()");
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (_voiceEngineObserverPtr)
     {
@@ -1357,7 +1343,7 @@ Channel::DeRegisterVoiceEngineObserver()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::DeRegisterVoiceEngineObserver()");
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (!_voiceEngineObserverPtr)
     {
@@ -1664,7 +1650,7 @@ int32_t Channel::RegisterExternalTransport(Transport& transport)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::RegisterExternalTransport()");
 
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (_externalTransport)
     {
@@ -1684,7 +1670,7 @@ Channel::DeRegisterExternalTransport()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::DeRegisterExternalTransport()");
 
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (!_transportPtr)
     {
@@ -1828,7 +1814,7 @@ int32_t Channel::ReceivedRTCPPacket(const int8_t* data, size_t length) {
   }
 
   {
-    CriticalSectionScoped lock(ts_stats_lock_.get());
+    rtc::CritScope lock(&ts_stats_lock_);
     ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
   }
   return 0;
@@ -1857,7 +1843,7 @@ int Channel::StartPlayingFileLocally(const char* fileName,
     }
 
     {
-        CriticalSectionScoped cs(&_fileCritSect);
+        rtc::CritScope cs(&_fileCritSect);
 
         if (_outputFilePlayerPtr)
         {
@@ -1936,7 +1922,7 @@ int Channel::StartPlayingFileLocally(InStream* stream,
     }
 
     {
-      CriticalSectionScoped cs(&_fileCritSect);
+      rtc::CritScope cs(&_fileCritSect);
 
       // Destroy the old instance
       if (_outputFilePlayerPtr)
@@ -1995,7 +1981,7 @@ int Channel::StopPlayingFileLocally()
     }
 
     {
-        CriticalSectionScoped cs(&_fileCritSect);
+        rtc::CritScope cs(&_fileCritSect);
 
         if (_outputFilePlayerPtr->StopPlayingFile() != 0)
         {
@@ -2047,7 +2033,7 @@ int Channel::RegisterFilePlayingToMixer()
     if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, true) != 0)
     {
         channel_state_.SetOutputFilePlaying(false);
-        CriticalSectionScoped cs(&_fileCritSect);
+        rtc::CritScope cs(&_fileCritSect);
         _engineStatisticsPtr->SetLastError(
             VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
             "StartPlayingFile() failed to add participant as file to mixer");
@@ -2074,7 +2060,7 @@ int Channel::StartPlayingFileAsMicrophone(const char* fileName,
                  "stopPosition=%d)", fileName, loop, format, volumeScaling,
                  startPosition, stopPosition);
 
-    CriticalSectionScoped cs(&_fileCritSect);
+    rtc::CritScope cs(&_fileCritSect);
 
     if (channel_state_.Get().input_file_playing)
     {
@@ -2149,7 +2135,7 @@ int Channel::StartPlayingFileAsMicrophone(InStream* stream,
         return -1;
     }
 
-    CriticalSectionScoped cs(&_fileCritSect);
+    rtc::CritScope cs(&_fileCritSect);
 
     if (channel_state_.Get().input_file_playing)
     {
@@ -2205,7 +2191,7 @@ int Channel::StopPlayingFileAsMicrophone()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopPlayingFileAsMicrophone()");
 
-    CriticalSectionScoped cs(&_fileCritSect);
+    rtc::CritScope cs(&_fileCritSect);
 
     if (!channel_state_.Get().input_file_playing)
     {
@@ -2273,7 +2259,7 @@ int Channel::StartRecordingPlayout(const char* fileName,
         format = kFileFormatCompressedFile;
     }
 
-    CriticalSectionScoped cs(&_fileCritSect);
+    rtc::CritScope cs(&_fileCritSect);
 
     // Destroy the old instance
     if (_outputFileRecorderPtr)
@@ -2350,7 +2336,7 @@ int Channel::StartRecordingPlayout(OutStream* stream,
         format = kFileFormatCompressedFile;
     }
 
-    CriticalSectionScoped cs(&_fileCritSect);
+    rtc::CritScope cs(&_fileCritSect);
 
     // Destroy the old instance
     if (_outputFileRecorderPtr)
@@ -2401,7 +2387,7 @@ int Channel::StopRecordingPlayout()
     }
 
 
-    CriticalSectionScoped cs(&_fileCritSect);
+    rtc::CritScope cs(&_fileCritSect);
 
     if (_outputFileRecorderPtr->StopRecording() != 0)
     {
@@ -2421,7 +2407,7 @@ int Channel::StopRecordingPlayout()
 void
 Channel::SetMixWithMicStatus(bool mix)
 {
-    CriticalSectionScoped cs(&_fileCritSect);
+    rtc::CritScope cs(&_fileCritSect);
     _mixFileWithMicrophone=mix;
 }
 
@@ -2444,7 +2430,7 @@ Channel::GetSpeechOutputLevelFullRange(uint32_t& level) const
 int
 Channel::SetMute(bool enable)
 {
-    CriticalSectionScoped cs(&volume_settings_critsect_);
+    rtc::CritScope cs(&volume_settings_critsect_);
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetMute(enable=%d)", enable);
     _mute = enable;
@@ -2454,14 +2440,14 @@ Channel::SetMute(bool enable)
 bool
 Channel::Mute() const
 {
-    CriticalSectionScoped cs(&volume_settings_critsect_);
+    rtc::CritScope cs(&volume_settings_critsect_);
     return _mute;
 }
 
 int
 Channel::SetOutputVolumePan(float left, float right)
 {
-    CriticalSectionScoped cs(&volume_settings_critsect_);
+    rtc::CritScope cs(&volume_settings_critsect_);
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetOutputVolumePan()");
     _panLeft = left;
@@ -2472,7 +2458,7 @@ Channel::SetOutputVolumePan(float left, float right)
 int
 Channel::GetOutputVolumePan(float& left, float& right) const
 {
-    CriticalSectionScoped cs(&volume_settings_critsect_);
+    rtc::CritScope cs(&volume_settings_critsect_);
     left = _panLeft;
     right = _panRight;
     return 0;
@@ -2481,7 +2467,7 @@ Channel::GetOutputVolumePan(float& left, float& right) const
 int
 Channel::SetChannelOutputVolumeScaling(float scaling)
 {
-    CriticalSectionScoped cs(&volume_settings_critsect_);
+    rtc::CritScope cs(&volume_settings_critsect_);
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetChannelOutputVolumeScaling()");
     _outputGain = scaling;
@@ -2491,7 +2477,7 @@ Channel::SetChannelOutputVolumeScaling(float scaling)
 int
 Channel::GetChannelOutputVolumeScaling(float& scaling) const
 {
-    CriticalSectionScoped cs(&volume_settings_critsect_);
+    rtc::CritScope cs(&volume_settings_critsect_);
     scaling = _outputGain;
     return 0;
 }
@@ -2601,7 +2587,7 @@ Channel::RegisterRxVadObserver(VoERxVadCallback &observer)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RegisterRxVadObserver()");
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (_rxVadObserverPtr)
     {
@@ -2620,7 +2606,7 @@ Channel::DeRegisterRxVadObserver()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::DeRegisterRxVadObserver()");
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (!_rxVadObserverPtr)
     {
@@ -3260,7 +3246,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
 
     // --- Timestamps
     {
-      CriticalSectionScoped lock(ts_stats_lock_.get());
+      rtc::CritScope lock(&ts_stats_lock_);
       stats.capture_start_ntp_time_ms_ = capture_start_ntp_time_ms_;
     }
     return 0;
@@ -3401,7 +3387,7 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
 
     if (channel_state_.Get().input_external_media)
     {
-        CriticalSectionScoped cs(&_callbackCritSect);
+        rtc::CritScope cs(&_callbackCritSect);
         const bool isStereo = (_audioFrame.num_channels_ == 2);
         if (_inputExternalMediaCallbackPtr)
         {
@@ -3465,7 +3451,7 @@ Channel::EncodeAndSend()
 }
 
 void Channel::DisassociateSendChannel(int channel_id) {
-  CriticalSectionScoped lock(assoc_send_channel_lock_.get());
+  rtc::CritScope lock(&assoc_send_channel_lock_);
   Channel* channel = associate_send_channel_.channel();
   if (channel && channel->ChannelId() == channel_id) {
     // If this channel is associated with a send channel of the specified
@@ -3482,7 +3468,7 @@ int Channel::RegisterExternalMediaProcessing(
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RegisterExternalMediaProcessing()");
 
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (kPlaybackPerChannel == type)
     {
@@ -3518,7 +3504,7 @@ int Channel::DeRegisterExternalMediaProcessing(ProcessingTypes type)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::DeRegisterExternalMediaProcessing()");
 
-    CriticalSectionScoped cs(&_callbackCritSect);
+    rtc::CritScope cs(&_callbackCritSect);
 
     if (kPlaybackPerChannel == type)
     {
@@ -3580,7 +3566,7 @@ void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
 
 bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
                                int* playout_buffer_delay_ms) const {
-  CriticalSectionScoped cs(video_sync_lock_.get());
+  rtc::CritScope lock(&video_sync_lock_);
   if (_average_jitter_buffer_delay_us == 0) {
     return false;
   }
@@ -3627,7 +3613,7 @@ Channel::SetMinimumPlayoutDelay(int delayMs)
 int Channel::GetPlayoutTimestamp(unsigned int& timestamp) {
   uint32_t playout_timestamp_rtp = 0;
   {
-    CriticalSectionScoped cs(video_sync_lock_.get());
+    rtc::CritScope lock(&video_sync_lock_);
     playout_timestamp_rtp = playout_timestamp_rtp_;
   }
   if (playout_timestamp_rtp == 0)  {
@@ -3681,7 +3667,7 @@ Channel::MixOrReplaceAudioWithFile(int mixingFrequency)
     size_t fileSamples(0);
 
     {
-        CriticalSectionScoped cs(&_fileCritSect);
+        rtc::CritScope cs(&_fileCritSect);
 
         if (_inputFilePlayerPtr == NULL)
         {
@@ -3751,7 +3737,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
     size_t fileSamples(0);
 
     {
-        CriticalSectionScoped cs(&_fileCritSect);
+        rtc::CritScope cs(&_fileCritSect);
 
         if (_outputFilePlayerPtr == NULL)
         {
@@ -3900,7 +3886,7 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
                playout_timestamp);
 
   {
-    CriticalSectionScoped cs(video_sync_lock_.get());
+    rtc::CritScope lock(&video_sync_lock_);
     if (rtcp) {
       playout_timestamp_rtcp_ = playout_timestamp;
     } else {
@@ -3941,7 +3927,7 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
   if (timestamp_diff_ms == 0) return;
 
   {
-    CriticalSectionScoped cs(video_sync_lock_.get());
+    rtc::CritScope lock(&video_sync_lock_);
 
     if (packet_delay_ms >= 10 && packet_delay_ms <= 60) {
       _recPacketDelayMs = packet_delay_ms;
@@ -4085,7 +4071,7 @@ int64_t Channel::GetRTT(bool allow_associate_channel) const {
   int64_t rtt = 0;
   if (report_blocks.empty()) {
     if (allow_associate_channel) {
-      CriticalSectionScoped lock(assoc_send_channel_lock_.get());
+      rtc::CritScope lock(&assoc_send_channel_lock_);
       Channel* channel = associate_send_channel_.channel();
       // Tries to get RTT from an associated channel. This is important for
       // receive-only channels.

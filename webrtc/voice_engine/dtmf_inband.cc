@@ -12,7 +12,6 @@
 
 #include <assert.h>
 
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
@@ -66,7 +65,6 @@ const int16_t Dtmf_dBm0kHz[37]=
 
 
 DtmfInband::DtmfInband(int32_t id) :
-    _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _id(id),
     _outputFrequencyHz(8000),
     _frameLengthSamples(0),
@@ -84,7 +82,6 @@ DtmfInband::DtmfInband(int32_t id) :
 
 DtmfInband::~DtmfInband()
 {
-	delete &_critSect;
 }
 
 int
@@ -109,7 +106,7 @@ DtmfInband::GetSampleRate(uint16_t& frequency)
     return 0;
 }
 
-void 
+void
 DtmfInband::Init()
 {
     _remainingSamples = 0;
@@ -130,7 +127,7 @@ DtmfInband::AddTone(uint8_t eventCode,
                     int32_t lengthMs,
                     int32_t attenuationDb)
 {
-    CriticalSectionScoped lock(&_critSect);
+    rtc::CritScope lock(&_critSect);
 
     if (attenuationDb > 36 || eventCode > 15)
     {
@@ -159,7 +156,7 @@ DtmfInband::AddTone(uint8_t eventCode,
 int
 DtmfInband::ResetTone()
 {
-    CriticalSectionScoped lock(&_critSect);
+    rtc::CritScope lock(&_critSect);
 
     ReInit();
 
@@ -174,7 +171,7 @@ int
 DtmfInband::StartTone(uint8_t eventCode,
                       int32_t attenuationDb)
 {
-    CriticalSectionScoped lock(&_critSect);
+    rtc::CritScope lock(&_critSect);
 
     if (attenuationDb > 36 || eventCode > 15)
     {
@@ -200,7 +197,7 @@ DtmfInband::StartTone(uint8_t eventCode,
 int
 DtmfInband::StopTone()
 {
-    CriticalSectionScoped lock(&_critSect);
+    rtc::CritScope lock(&_critSect);
 
     if (!_playing)
     {
@@ -213,16 +210,16 @@ DtmfInband::StopTone()
 }
 
 // Shall be called between tones
-void 
+void
 DtmfInband::ReInit()
 {
     _reinit = true;
 }
 
-bool 
+bool
 DtmfInband::IsAddingTone()
 {
-    CriticalSectionScoped lock(&_critSect);
+    rtc::CritScope lock(&_critSect);
     return (_remainingSamples > 0 || _playing);
 }
 
@@ -230,7 +227,7 @@ int
 DtmfInband::Get10msTone(int16_t output[320],
                         uint16_t& outputSizeInSamples)
 {
-    CriticalSectionScoped lock(&_critSect);
+    rtc::CritScope lock(&_critSect);
     if (DtmfFix_generate(output,
                          _eventCode,
                          _attenuationDb,
@@ -248,6 +245,7 @@ DtmfInband::Get10msTone(int16_t output[320],
 void
 DtmfInband::UpdateDelaySinceLastTone()
 {
+    rtc::CritScope lock(&_critSect);
     _delaySinceLastToneMS += kDtmfFrameSizeMs;
     // avoid wraparound
     if (_delaySinceLastToneMS > (1<<30))
@@ -259,6 +257,7 @@ DtmfInband::UpdateDelaySinceLastTone()
 uint32_t
 DtmfInband::DelaySinceLastTone() const
 {
+    rtc::CritScope lock(&_critSect);
     return _delaySinceLastToneMS;
 }
 

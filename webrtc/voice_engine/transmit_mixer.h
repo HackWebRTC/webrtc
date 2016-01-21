@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
 #define WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
@@ -210,8 +211,8 @@ private:
     bool _fileCallRecording;
     voe::AudioLevel _audioLevel;
     // protect file instances and their variables in MixedParticipants()
-    CriticalSectionWrapper& _critSect;
-    CriticalSectionWrapper& _callbackCritSect;
+    rtc::CriticalSection _critSect;
+    rtc::CriticalSection _callbackCritSect;
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     webrtc::TypingDetection _typingDetection;
