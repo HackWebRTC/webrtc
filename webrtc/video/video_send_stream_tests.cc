@@ -2208,6 +2208,33 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, Vp9NonFlexModeSmallResolution) {
+  static const size_t kNumFramesToSend = 50;
+  static const int kWidth = 4;
+  static const int kHeight = 4;
+  class NonFlexibleModeResolution : public Vp9HeaderObserver {
+    void ModifyVideoConfigsHook(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      vp9_settings_.flexibleMode = false;
+      vp9_settings_.numberOfTemporalLayers = 1;
+      vp9_settings_.numberOfSpatialLayers = 1;
+
+      EXPECT_EQ(1u, encoder_config->streams.size());
+      encoder_config->streams[0].width = kWidth;
+      encoder_config->streams[0].height = kHeight;
+    }
+
+    void InspectHeader(const RTPVideoHeaderVP9& vp9_header) override {
+      if (frames_sent_ > kNumFramesToSend)
+        observation_complete_.Set();
+    }
+  } test;
+
+  RunBaseTest(&test);
+}
+
 #if !defined(MEMORY_SANITIZER)
 // Fails under MemorySanitizer:
 // See https://code.google.com/p/webrtc/issues/detail?id=5402.

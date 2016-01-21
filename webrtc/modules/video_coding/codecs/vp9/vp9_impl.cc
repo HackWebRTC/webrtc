@@ -659,6 +659,12 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   int part_idx = 0;
   CodecSpecificInfo codec_specific;
 
+  if (pkt->data.frame.sz > encoded_image_._size) {
+    delete[] encoded_image_._buffer;
+    encoded_image_._size = pkt->data.frame.sz;
+    encoded_image_._buffer = new uint8_t[encoded_image_._size];
+  }
+
   assert(pkt->kind == VPX_CODEC_CX_FRAME_PKT);
   memcpy(&encoded_image_._buffer[encoded_image_._length], pkt->data.frame.buf,
          pkt->data.frame.sz);
