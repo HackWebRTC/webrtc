@@ -297,7 +297,8 @@ bool CaptureManager::AddVideoRenderer(VideoCapturer* video_capturer,
   if (!adapter) {
     return false;
   }
-  return adapter->AddRenderer(video_renderer);
+  adapter->AddRenderer(video_renderer);
+  return true;
 }
 
 bool CaptureManager::RemoveVideoRenderer(VideoCapturer* video_capturer,
@@ -310,7 +311,8 @@ bool CaptureManager::RemoveVideoRenderer(VideoCapturer* video_capturer,
   if (!adapter) {
     return false;
   }
-  return adapter->RemoveRenderer(video_renderer);
+  adapter->RemoveRenderer(video_renderer);
+  return true;
 }
 
 bool CaptureManager::IsCapturerRegistered(VideoCapturer* video_capturer) const {

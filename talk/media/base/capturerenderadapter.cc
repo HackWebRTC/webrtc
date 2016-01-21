@@ -61,31 +61,32 @@ CaptureRenderAdapter* CaptureRenderAdapter::Create(
   return return_value;
 }
 
-bool CaptureRenderAdapter::AddRenderer(VideoRenderer* video_renderer) {
-  if (!video_renderer) {
-    return false;
-  }
+void CaptureRenderAdapter::AddRenderer(VideoRenderer* video_renderer) {
+  RTC_DCHECK(video_renderer);
+
   rtc::CritScope cs(&capture_crit_);
-  if (IsRendererRegistered(*video_renderer)) {
-    return false;
-  }
-  video_renderers_.push_back(VideoRendererInfo(video_renderer));
-  return true;
+  // This implements set semantics, the same renderer can only be
+  // added once.
+  // TODO(nisse): Is this really needed?
+  if (std::find(video_renderers_.begin(), video_renderers_.end(),
+                video_renderer) == video_renderers_.end())
+    video_renderers_.push_back(video_renderer);
 }
 
-bool CaptureRenderAdapter::RemoveRenderer(VideoRenderer* video_renderer) {
-  if (!video_renderer) {
-    return false;
-  }
+void CaptureRenderAdapter::RemoveRenderer(VideoRenderer* video_renderer) {
+  RTC_DCHECK(video_renderer);
+
   rtc::CritScope cs(&capture_crit_);
+  // TODO(nisse): Switch to using std::list, and use its remove
+  // method. And similarly in VideoTrackRenderers, which this class
+  // mostly duplicates.
   for (VideoRenderers::iterator iter = video_renderers_.begin();
        iter != video_renderers_.end(); ++iter) {
-    if (video_renderer == iter->renderer) {
+    if (video_renderer == *iter) {
       video_renderers_.erase(iter);
-      return true;
+      break;
     }
   }
-  return false;
 }
 
 void CaptureRenderAdapter::Init() {
@@ -100,38 +101,9 @@ void CaptureRenderAdapter::OnVideoFrame(VideoCapturer* capturer,
   if (video_renderers_.empty()) {
     return;
   }
-  MaybeSetRenderingSize(video_frame);
 
-  for (VideoRenderers::iterator iter = video_renderers_.begin();
-       iter != video_renderers_.end(); ++iter) {
-    VideoRenderer* video_renderer = iter->renderer;
-    video_renderer->RenderFrame(video_frame);
-  }
-}
-
-// The renderer_crit_ lock needs to be taken when calling this function.
-void CaptureRenderAdapter::MaybeSetRenderingSize(const VideoFrame* frame) {
-  for (VideoRenderers::iterator iter = video_renderers_.begin();
-       iter != video_renderers_.end(); ++iter) {
-    const bool new_resolution = iter->render_width != frame->GetWidth() ||
-        iter->render_height != frame->GetHeight();
-    if (new_resolution) {
-      iter->render_width = frame->GetWidth();
-      iter->render_height = frame->GetHeight();
-    }
-  }
-}
-
-// The renderer_crit_ lock needs to be taken when calling this function.
-bool CaptureRenderAdapter::IsRendererRegistered(
-    const VideoRenderer& video_renderer) const {
-  for (VideoRenderers::const_iterator iter = video_renderers_.begin();
-       iter != video_renderers_.end(); ++iter) {
-    if (&video_renderer == iter->renderer) {
-      return true;
-    }
-  }
-  return false;
+  for (auto* renderer : video_renderers_)
+    renderer->RenderFrame(video_frame);
 }
 
 }  // namespace cricket

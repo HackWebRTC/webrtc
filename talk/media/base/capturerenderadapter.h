@@ -51,34 +51,20 @@ class CaptureRenderAdapter : public sigslot::has_slots<> {
   static CaptureRenderAdapter* Create(VideoCapturer* video_capturer);
   ~CaptureRenderAdapter();
 
-  bool AddRenderer(VideoRenderer* video_renderer);
-  bool RemoveRenderer(VideoRenderer* video_renderer);
+  void AddRenderer(VideoRenderer* video_renderer);
+  void RemoveRenderer(VideoRenderer* video_renderer);
 
   VideoCapturer* video_capturer() { return video_capturer_; }
  private:
-  struct VideoRendererInfo {
-    explicit VideoRendererInfo(VideoRenderer* r)
-        : renderer(r),
-          render_width(0),
-          render_height(0) {
-    }
-    VideoRenderer* renderer;
-    size_t render_width;
-    size_t render_height;
-  };
 
   // Just pointers since ownership is not handed over to this class.
-  typedef std::vector<VideoRendererInfo> VideoRenderers;
+  typedef std::vector<VideoRenderer*> VideoRenderers;
 
   explicit CaptureRenderAdapter(VideoCapturer* video_capturer);
   void Init();
 
   // Callback for frames received from the capturer.
   void OnVideoFrame(VideoCapturer* capturer, const VideoFrame* video_frame);
-
-  void MaybeSetRenderingSize(const VideoFrame* frame);
-
-  bool IsRendererRegistered(const VideoRenderer& video_renderer) const;
 
   VideoRenderers video_renderers_;
   VideoCapturer* video_capturer_;

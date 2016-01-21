@@ -103,8 +103,6 @@ TEST_F(CaptureManagerTest, InvalidAddingRemoving) {
   EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
   EXPECT_EQ(1, callback_count());
   EXPECT_FALSE(capture_manager_.AddVideoRenderer(&video_capturer_, NULL));
-  EXPECT_FALSE(capture_manager_.RemoveVideoRenderer(&video_capturer_,
-                                                    &video_renderer_));
   EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_, format_vga_));
 }
 
