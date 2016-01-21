@@ -130,7 +130,6 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   if (!HaveValidEncoder("Process"))
     return -1;
 
-  AudioEncoder* audio_encoder = rent_a_codec_.GetEncoderStack();
   // Scale the timestamp to the codec's RTP timestamp rate.
   uint32_t rtp_timestamp =
       first_frame_ ? input_data.input_timestamp
@@ -138,20 +137,20 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
                          rtc::CheckedDivExact(
                              input_data.input_timestamp - last_timestamp_,
                              static_cast<uint32_t>(rtc::CheckedDivExact(
-                                 audio_encoder->SampleRateHz(),
-                                 audio_encoder->RtpTimestampRateHz())));
+                                 encoder_stack_->SampleRateHz(),
+                                 encoder_stack_->RtpTimestampRateHz())));
   last_timestamp_ = input_data.input_timestamp;
   last_rtp_timestamp_ = rtp_timestamp;
   first_frame_ = false;
 
-  encode_buffer_.SetSize(audio_encoder->MaxEncodedBytes());
-  encoded_info = audio_encoder->Encode(
+  encode_buffer_.SetSize(encoder_stack_->MaxEncodedBytes());
+  encoded_info = encoder_stack_->Encode(
       rtp_timestamp, rtc::ArrayView<const int16_t>(
                          input_data.audio, input_data.audio_channel *
                                                input_data.length_per_channel),
       encode_buffer_.size(), encode_buffer_.data());
   encode_buffer_.SetSize(encoded_info.encoded_bytes);
-  bitrate_logger_.MaybeLog(audio_encoder->GetTargetBitrate() / 1000);
+  bitrate_logger_.MaybeLog(encoder_stack_->GetTargetBitrate() / 1000);
   if (encode_buffer_.size() == 0 && !encoded_info.send_even_if_empty) {
     // Not enough data.
     return 0;
@@ -208,7 +207,7 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
     sp->speech_encoder = enc;
   }
   if (sp->speech_encoder)
-    rent_a_codec_.RentEncoderStack(sp);
+    encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
   return 0;
 }
 
@@ -217,7 +216,7 @@ void AudioCodingModuleImpl::RegisterExternalSendCodec(
   rtc::CritScope lock(&acm_crit_sect_);
   auto* sp = codec_manager_.GetStackParams();
   sp->speech_encoder = external_speech_encoder;
-  rent_a_codec_.RentEncoderStack(sp);
+  encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
 }
 
 // Get current send codec.
@@ -240,21 +239,19 @@ int AudioCodingModuleImpl::SendFrequency() const {
                "SendFrequency()");
   rtc::CritScope lock(&acm_crit_sect_);
 
-  const auto* enc = rent_a_codec_.GetEncoderStack();
-  if (!enc) {
+  if (!encoder_stack_) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                  "SendFrequency Failed, no codec is registered");
     return -1;
   }
 
-  return enc->SampleRateHz();
+  return encoder_stack_->SampleRateHz();
 }
 
 void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
   rtc::CritScope lock(&acm_crit_sect_);
-  auto* enc = rent_a_codec_.GetEncoderStack();
-  if (enc) {
-    enc->SetTargetBitrate(bitrate_bps);
+  if (encoder_stack_) {
+    encoder_stack_->SetTargetBitrate(bitrate_bps);
   }
 }
 
@@ -321,8 +318,7 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
   }
 
   // Check whether we need an up-mix or down-mix?
-  const size_t current_num_channels =
-      rent_a_codec_.GetEncoderStack()->NumChannels();
+  const size_t current_num_channels = encoder_stack_->NumChannels();
   const bool same_num_channels =
       ptr_frame->num_channels_ == current_num_channels;
 
@@ -359,14 +355,15 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
 // is required, |*ptr_out| points to |in_frame|.
 int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
                                                const AudioFrame** ptr_out) {
-  const auto* enc = rent_a_codec_.GetEncoderStack();
-  const bool resample = in_frame.sample_rate_hz_ != enc->SampleRateHz();
+  const bool resample =
+      in_frame.sample_rate_hz_ != encoder_stack_->SampleRateHz();
 
   // This variable is true if primary codec and secondary codec (if exists)
   // are both mono and input is stereo.
   // TODO(henrik.lundin): This condition should probably be
-  //   in_frame.num_channels_ > enc->NumChannels()
-  const bool down_mix = in_frame.num_channels_ == 2 && enc->NumChannels() == 1;
+  //   in_frame.num_channels_ > encoder_stack_->NumChannels()
+  const bool down_mix =
+      in_frame.num_channels_ == 2 && encoder_stack_->NumChannels() == 1;
 
   if (!first_10ms_data_) {
     expected_in_ts_ = in_frame.timestamp_;
@@ -376,8 +373,9 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
     // TODO(turajs): Do we need a warning here.
     expected_codec_ts_ +=
         (in_frame.timestamp_ - expected_in_ts_) *
-        static_cast<uint32_t>(static_cast<double>(enc->SampleRateHz()) /
-                              static_cast<double>(in_frame.sample_rate_hz_));
+        static_cast<uint32_t>(
+            static_cast<double>(encoder_stack_->SampleRateHz()) /
+            static_cast<double>(in_frame.sample_rate_hz_));
     expected_in_ts_ = in_frame.timestamp_;
   }
 
@@ -416,7 +414,7 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
     dest_ptr_audio = preprocess_frame_.data_;
 
     int samples_per_channel = resampler_.Resample10Msec(
-        src_ptr_audio, in_frame.sample_rate_hz_, enc->SampleRateHz(),
+        src_ptr_audio, in_frame.sample_rate_hz_, encoder_stack_->SampleRateHz(),
         preprocess_frame_.num_channels_, AudioFrame::kMaxDataSizeSamples,
         dest_ptr_audio);
 
@@ -427,7 +425,7 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
     }
     preprocess_frame_.samples_per_channel_ =
         static_cast<size_t>(samples_per_channel);
-    preprocess_frame_.sample_rate_hz_ = enc->SampleRateHz();
+    preprocess_frame_.sample_rate_hz_ = encoder_stack_->SampleRateHz();
   }
 
   expected_codec_ts_ +=
@@ -455,7 +453,7 @@ int AudioCodingModuleImpl::SetREDStatus(bool enable_red) {
   }
   auto* sp = codec_manager_.GetStackParams();
   if (sp->speech_encoder)
-    rent_a_codec_.RentEncoderStack(sp);
+    encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
   return 0;
 #else
   WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
@@ -480,7 +478,7 @@ int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
   }
   auto* sp = codec_manager_.GetStackParams();
   if (sp->speech_encoder)
-    rent_a_codec_.RentEncoderStack(sp);
+    encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
   if (enable_codec_fec) {
     return sp->use_codec_fec ? 0 : -1;
   } else {
@@ -492,8 +490,7 @@ int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
 int AudioCodingModuleImpl::SetPacketLossRate(int loss_rate) {
   rtc::CritScope lock(&acm_crit_sect_);
   if (HaveValidEncoder("SetPacketLossRate")) {
-    rent_a_codec_.GetEncoderStack()->SetProjectedPacketLossRate(loss_rate /
-                                                                100.0);
+    encoder_stack_->SetProjectedPacketLossRate(loss_rate / 100.0);
   }
   return 0;
 }
@@ -512,7 +509,7 @@ int AudioCodingModuleImpl::SetVAD(bool enable_dtx,
   }
   auto* sp = codec_manager_.GetStackParams();
   if (sp->speech_encoder)
-    rent_a_codec_.RentEncoderStack(sp);
+    encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
   return 0;
 }
 
@@ -753,7 +750,7 @@ int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
       FATAL();
       return 0;
   }
-  return rent_a_codec_.GetEncoderStack()->SetApplication(app) ? 0 : -1;
+  return encoder_stack_->SetApplication(app) ? 0 : -1;
 }
 
 // Informs Opus encoder of the maximum playback rate the receiver will render.
@@ -762,7 +759,7 @@ int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
   if (!HaveValidEncoder("SetOpusMaxPlaybackRate")) {
     return -1;
   }
-  rent_a_codec_.GetEncoderStack()->SetMaxPlaybackRate(frequency_hz);
+  encoder_stack_->SetMaxPlaybackRate(frequency_hz);
   return 0;
 }
 
@@ -771,7 +768,7 @@ int AudioCodingModuleImpl::EnableOpusDtx() {
   if (!HaveValidEncoder("EnableOpusDtx")) {
     return -1;
   }
-  return rent_a_codec_.GetEncoderStack()->SetDtx(true) ? 0 : -1;
+  return encoder_stack_->SetDtx(true) ? 0 : -1;
 }
 
 int AudioCodingModuleImpl::DisableOpusDtx() {
@@ -779,7 +776,7 @@ int AudioCodingModuleImpl::DisableOpusDtx() {
   if (!HaveValidEncoder("DisableOpusDtx")) {
     return -1;
   }
-  return rent_a_codec_.GetEncoderStack()->SetDtx(false) ? 0 : -1;
+  return encoder_stack_->SetDtx(false) ? 0 : -1;
 }
 
 int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
@@ -787,7 +784,7 @@ int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
 }
 
 bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
-  if (!rent_a_codec_.GetEncoderStack()) {
+  if (!encoder_stack_) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "%s failed: No send codec is registered.", caller_name);
     return false;

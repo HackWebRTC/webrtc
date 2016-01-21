@@ -223,10 +223,6 @@ class RentACodec {
   // the Rent-A-Codec is destroyed.
   AudioEncoder* RentEncoderStack(StackParameters* param);
 
-  // The last return value of RentEncoderStack, or null if it hasn't been
-  // called.
-  AudioEncoder* GetEncoderStack() const { return encoder_stack_; }
-
   // Creates and returns an iSAC decoder, which will remain live until the
   // Rent-A-Codec is destroyed. Subsequent calls will simply return the same
   // object.
@@ -237,7 +233,6 @@ class RentACodec {
   rtc::scoped_ptr<AudioEncoder> cng_encoder_;
   rtc::scoped_ptr<AudioEncoder> red_encoder_;
   rtc::scoped_ptr<AudioDecoder> isac_decoder_;
-  AudioEncoder* encoder_stack_ = nullptr;
   LockedIsacBandwidthInfo isac_bandwidth_info_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RentACodec);

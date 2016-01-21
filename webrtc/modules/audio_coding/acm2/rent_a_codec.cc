@@ -280,21 +280,21 @@ AudioEncoder* RentACodec::RentEncoderStack(StackParameters* param) {
     // reset the latter to ensure its buffer is empty.
     param->speech_encoder->Reset();
   }
-  encoder_stack_ = param->speech_encoder;
+  AudioEncoder* encoder_stack = param->speech_encoder;
   if (param->use_red) {
-    red_encoder_ = CreateRedEncoder(encoder_stack_, *red_pt);
+    red_encoder_ = CreateRedEncoder(encoder_stack, *red_pt);
     if (red_encoder_)
-      encoder_stack_ = red_encoder_.get();
+      encoder_stack = red_encoder_.get();
   } else {
     red_encoder_.reset();
   }
   if (param->use_cng) {
-    cng_encoder_ = CreateCngEncoder(encoder_stack_, *cng_pt, param->vad_mode);
-    encoder_stack_ = cng_encoder_.get();
+    cng_encoder_ = CreateCngEncoder(encoder_stack, *cng_pt, param->vad_mode);
+    encoder_stack = cng_encoder_.get();
   } else {
     cng_encoder_.reset();
   }
-  return encoder_stack_;
+  return encoder_stack;
 }
 
 AudioDecoder* RentACodec::RentIsacDecoder() {

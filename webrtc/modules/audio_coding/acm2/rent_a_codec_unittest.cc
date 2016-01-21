@@ -135,7 +135,7 @@ TEST(RentACodecTest, ExternalEncoder) {
     EXPECT_CALL(external_encoder, Die());
   }
 
-  info = rac.GetEncoderStack()->Encode(0, audio, arraysize(encoded), encoded);
+  info = external_encoder.Encode(0, audio, arraysize(encoded), encoded);
   EXPECT_EQ(0u, info.encoded_timestamp);
   external_encoder.Mark("A");
 
@@ -147,13 +147,13 @@ TEST(RentACodecTest, ExternalEncoder) {
   EXPECT_EQ(param.speech_encoder, rac.RentEncoderStack(&param));
 
   // Don't expect any more calls to the external encoder.
-  info = rac.GetEncoderStack()->Encode(1, audio, arraysize(encoded), encoded);
+  info = param.speech_encoder->Encode(1, audio, arraysize(encoded), encoded);
   external_encoder.Mark("B");
 
   // Change back to external encoder again.
   param.speech_encoder = &external_encoder;
   EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&param));
-  info = rac.GetEncoderStack()->Encode(2, audio, arraysize(encoded), encoded);
+  info = external_encoder.Encode(2, audio, arraysize(encoded), encoded);
   EXPECT_EQ(2u, info.encoded_timestamp);
 }
 

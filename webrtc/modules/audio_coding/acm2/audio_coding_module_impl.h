@@ -251,6 +251,9 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   CodecManager codec_manager_ GUARDED_BY(acm_crit_sect_);
   RentACodec rent_a_codec_ GUARDED_BY(acm_crit_sect_);
 
+  // Last encoder stack obtained from rent_a_codec_.RentEncoderStack.
+  AudioEncoder* encoder_stack_ GUARDED_BY(acm_crit_sect_);
+
   // This is to keep track of CN instances where we can send DTMFs.
   uint8_t previous_pltype_ GUARDED_BY(acm_crit_sect_);
 
