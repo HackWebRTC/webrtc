@@ -16,7 +16,7 @@
 
 namespace webrtc {
 
-TEST(SendSideBweTest, InitialRembWithProbing) {
+void TestProbing(bool use_delay_based) {
   SendSideBandwidthEstimation bwe;
   bwe.SetMinMaxBitrate(100000, 1500000);
   bwe.SetSendBitrate(200000);
@@ -28,7 +28,11 @@ TEST(SendSideBweTest, InitialRembWithProbing) {
   bwe.UpdateReceiverBlock(0, 50, 1, now_ms);
 
   // Initial REMB applies immediately.
-  bwe.UpdateReceiverEstimate(now_ms, kRembBps);
+  if (use_delay_based) {
+    bwe.UpdateDelayBasedEstimate(now_ms, kRembBps);
+  } else {
+    bwe.UpdateReceiverEstimate(now_ms, kRembBps);
+  }
   bwe.UpdateEstimate(now_ms);
   int bitrate;
   uint8_t fraction_loss;
@@ -38,11 +42,23 @@ TEST(SendSideBweTest, InitialRembWithProbing) {
 
   // Second REMB doesn't apply immediately.
   now_ms += 2001;
-  bwe.UpdateReceiverEstimate(now_ms, kSecondRembBps);
+  if (use_delay_based) {
+    bwe.UpdateDelayBasedEstimate(now_ms, kSecondRembBps);
+  } else {
+    bwe.UpdateReceiverEstimate(now_ms, kSecondRembBps);
+  }
   bwe.UpdateEstimate(now_ms);
   bitrate = 0;
   bwe.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   EXPECT_EQ(kRembBps, bitrate);
+}
+
+TEST(SendSideBweTest, InitialRembWithProbing) {
+  TestProbing(false);
+}
+
+TEST(SendSideBweTest, InitialDelayBasedBweWithProbing) {
+  TestProbing(true);
 }
 
 TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {

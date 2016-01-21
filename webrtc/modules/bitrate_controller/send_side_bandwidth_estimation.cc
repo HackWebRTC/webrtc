@@ -181,14 +181,19 @@ void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
 }
 
 void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
-  // We trust the REMB during the first 2 seconds if we haven't had any
-  // packet loss reported, to allow startup bitrate probing.
-  if (last_fraction_loss_ == 0 && IsInStartPhase(now_ms) &&
-      bwe_incoming_ > bitrate_) {
-    bitrate_ = CapBitrateToThresholds(now_ms, bwe_incoming_);
-    min_bitrate_history_.clear();
-    min_bitrate_history_.push_back(std::make_pair(now_ms, bitrate_));
-    return;
+  // We trust the REMB and/or delay-based estimate during the first 2 seconds if
+  // we haven't had any packet loss reported, to allow startup bitrate probing.
+  if (last_fraction_loss_ == 0 && IsInStartPhase(now_ms)) {
+    uint32_t prev_bitrate = bitrate_;
+    if (bwe_incoming_ > bitrate_)
+      bitrate_ = CapBitrateToThresholds(now_ms, bwe_incoming_);
+    if (delay_based_bitrate_bps_ > bitrate_)
+      bitrate_ = CapBitrateToThresholds(now_ms, delay_based_bitrate_bps_);
+    if (bitrate_ != prev_bitrate) {
+      min_bitrate_history_.clear();
+      min_bitrate_history_.push_back(std::make_pair(now_ms, bitrate_));
+      return;
+    }
   }
   UpdateMinHistory(now_ms);
   // Only start updating bitrate when receiving receiver blocks.
