@@ -41,14 +41,17 @@
 
 namespace rtc {
 
+// Locking methods (Enter, TryEnter, Leave)are const to permit protecting
+// members inside a const context without requiring mutable CriticalSections
+// everywhere.
 class LOCKABLE CriticalSection {
  public:
   CriticalSection();
   ~CriticalSection();
 
-  void Enter() EXCLUSIVE_LOCK_FUNCTION();
-  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true);
-  void Leave() UNLOCK_FUNCTION();
+  void Enter() const EXCLUSIVE_LOCK_FUNCTION();
+  bool TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true);
+  void Leave() const UNLOCK_FUNCTION();
 
   // Use only for RTC_DCHECKing.
   bool CurrentThreadIsOwner() const;
@@ -57,21 +60,21 @@ class LOCKABLE CriticalSection {
 
  private:
 #if defined(WEBRTC_WIN)
-  CRITICAL_SECTION crit_;
+  mutable CRITICAL_SECTION crit_;
 #elif defined(WEBRTC_POSIX)
-  pthread_mutex_t mutex_;
-  CS_DEBUG_CODE(pthread_t thread_);
-  CS_DEBUG_CODE(int recursion_count_);
+  mutable pthread_mutex_t mutex_;
+  CS_DEBUG_CODE(mutable pthread_t thread_);
+  CS_DEBUG_CODE(mutable int recursion_count_);
 #endif
 };
 
 // CritScope, for serializing execution through a scope.
 class SCOPED_LOCKABLE CritScope {
  public:
-  explicit CritScope(CriticalSection* cs) EXCLUSIVE_LOCK_FUNCTION(cs);
+  explicit CritScope(const CriticalSection* cs) EXCLUSIVE_LOCK_FUNCTION(cs);
   ~CritScope() UNLOCK_FUNCTION();
  private:
-  CriticalSection* const cs_;
+  const CriticalSection* const cs_;
   RTC_DISALLOW_COPY_AND_ASSIGN(CritScope);
 };
 
@@ -84,7 +87,7 @@ class SCOPED_LOCKABLE CritScope {
 // lock was taken. If you're not calling locked(), you're doing it wrong!
 class TryCritScope {
  public:
-  explicit TryCritScope(CriticalSection* cs);
+  explicit TryCritScope(const CriticalSection* cs);
   ~TryCritScope();
 #if defined(WEBRTC_WIN)
   _Check_return_ bool locked() const;
@@ -92,7 +95,7 @@ class TryCritScope {
   bool locked() const __attribute__ ((__warn_unused_result__));
 #endif
  private:
-  CriticalSection* const cs_;
+  const CriticalSection* const cs_;
   const bool locked_;
   CS_DEBUG_CODE(mutable bool lock_was_called_);
   RTC_DISALLOW_COPY_AND_ASSIGN(TryCritScope);

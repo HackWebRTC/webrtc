@@ -36,7 +36,7 @@ CriticalSection::~CriticalSection() {
 #endif
 }
 
-void CriticalSection::Enter() EXCLUSIVE_LOCK_FUNCTION() {
+void CriticalSection::Enter() const EXCLUSIVE_LOCK_FUNCTION() {
 #if defined(WEBRTC_WIN)
   EnterCriticalSection(&crit_);
 #else
@@ -53,7 +53,7 @@ void CriticalSection::Enter() EXCLUSIVE_LOCK_FUNCTION() {
 #endif
 }
 
-bool CriticalSection::TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+bool CriticalSection::TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true) {
 #if defined(WEBRTC_WIN)
   return TryEnterCriticalSection(&crit_) != FALSE;
 #else
@@ -71,7 +71,7 @@ bool CriticalSection::TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
   return true;
 #endif
 }
-void CriticalSection::Leave() UNLOCK_FUNCTION() {
+void CriticalSection::Leave() const UNLOCK_FUNCTION() {
   RTC_DCHECK(CurrentThreadIsOwner());
 #if defined(WEBRTC_WIN)
   LeaveCriticalSection(&crit_);
@@ -115,10 +115,10 @@ bool CriticalSection::IsLocked() const {
 #endif
 }
 
-CritScope::CritScope(CriticalSection* cs) : cs_(cs) { cs_->Enter(); }
+CritScope::CritScope(const CriticalSection* cs) : cs_(cs) { cs_->Enter(); }
 CritScope::~CritScope() { cs_->Leave(); }
 
-TryCritScope::TryCritScope(CriticalSection* cs)
+TryCritScope::TryCritScope(const CriticalSection* cs)
     : cs_(cs), locked_(cs->TryEnter()) {
   CS_DEBUG_CODE(lock_was_called_ = false);
 }
