@@ -2924,6 +2924,14 @@ void Channel::EnableSendTransportSequenceNumber(int id) {
   RTC_DCHECK_EQ(0, ret);
 }
 
+void Channel::EnableReceiveTransportSequenceNumber(int id) {
+  rtp_header_parser_->DeregisterRtpHeaderExtension(
+      kRtpExtensionTransportSequenceNumber);
+  bool ret = rtp_header_parser_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransportSequenceNumber, id);
+  RTC_DCHECK(ret);
+}
+
 void Channel::SetCongestionControlObjects(
     RtpPacketSender* rtp_packet_sender,
     TransportFeedbackObserver* transport_feedback_observer,

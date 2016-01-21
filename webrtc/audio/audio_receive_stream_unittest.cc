@@ -9,6 +9,7 @@
  */
 
 #include <string>
+#include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -90,6 +91,9 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_,
               SetReceiveAudioLevelIndicationStatus(true, kAudioLevelId))
                   .Times(1);
+          EXPECT_CALL(*channel_proxy_, EnableReceiveTransportSequenceNumber(
+                                           kTransportSequenceNumberId))
+              .Times(1);
           EXPECT_CALL(*channel_proxy_, SetCongestionControlObjects(
                                            nullptr, nullptr, &packet_router_))
               .Times(1);
@@ -107,6 +111,8 @@ struct ConfigHelper {
         RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAudioLevel, kAudioLevelId));
+    stream_config_.rtp.extensions.push_back(RtpExtension(
+        RtpExtension::kTransportSequenceNumber, kTransportSequenceNumberId));
   }
 
   MockCongestionController* congestion_controller() {
@@ -261,8 +267,6 @@ TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweFeedback) {
   ConfigHelper helper;
   helper.config().combined_audio_video_bwe = true;
   helper.config().rtp.transport_cc = true;
-  helper.config().rtp.extensions.push_back(RtpExtension(
-      RtpExtension::kTransportSequenceNumber, kTransportSequenceNumberId));
   helper.SetupMockForBweFeedback(true);
   internal::AudioReceiveStream recv_stream(
       helper.congestion_controller(), helper.config(), helper.audio_state());

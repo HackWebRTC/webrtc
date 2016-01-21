@@ -57,11 +57,6 @@ void ChannelProxy::SetSendAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK_EQ(0, error);
 }
 
-void ChannelProxy::EnableSendTransportSequenceNumber(int id) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  channel()->EnableSendTransportSequenceNumber(id);
-}
-
 void ChannelProxy::SetReceiveAbsoluteSenderTimeStatus(bool enable, int id) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   int error = channel()->SetReceiveAbsoluteSenderTimeStatus(enable, id);
@@ -72,6 +67,16 @@ void ChannelProxy::SetReceiveAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   int error = channel()->SetReceiveAudioLevelIndicationStatus(enable, id);
   RTC_DCHECK_EQ(0, error);
+}
+
+void ChannelProxy::EnableSendTransportSequenceNumber(int id) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->EnableSendTransportSequenceNumber(id);
+}
+
+void ChannelProxy::EnableReceiveTransportSequenceNumber(int id) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->EnableReceiveTransportSequenceNumber(id);
 }
 
 void ChannelProxy::SetCongestionControlObjects(

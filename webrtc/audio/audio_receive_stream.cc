@@ -108,6 +108,7 @@ AudioReceiveStream::AudioReceiveStream(
           kRtpExtensionAbsoluteSendTime, extension.id);
       RTC_DCHECK(registered);
     } else if (extension.name == RtpExtension::kTransportSequenceNumber) {
+      channel_proxy_->EnableReceiveTransportSequenceNumber(extension.id);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionTransportSequenceNumber, extension.id);
       RTC_DCHECK(registered);

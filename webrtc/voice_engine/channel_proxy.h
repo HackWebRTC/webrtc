@@ -47,9 +47,10 @@ class ChannelProxy {
   virtual void SetRTCP_CNAME(const std::string& c_name);
   virtual void SetSendAbsoluteSenderTimeStatus(bool enable, int id);
   virtual void SetSendAudioLevelIndicationStatus(bool enable, int id);
-  virtual void EnableSendTransportSequenceNumber(int id);
   virtual void SetReceiveAbsoluteSenderTimeStatus(bool enable, int id);
   virtual void SetReceiveAudioLevelIndicationStatus(bool enable, int id);
+  virtual void EnableSendTransportSequenceNumber(int id);
+  virtual void EnableReceiveTransportSequenceNumber(int id);
   virtual void SetCongestionControlObjects(
       RtpPacketSender* rtp_packet_sender,
       TransportFeedbackObserver* transport_feedback_observer,

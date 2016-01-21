@@ -329,6 +329,7 @@ public:
     int SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id);
     int SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id);
     void EnableSendTransportSequenceNumber(int id);
+    void EnableReceiveTransportSequenceNumber(int id);
 
     void SetCongestionControlObjects(
         RtpPacketSender* rtp_packet_sender,
