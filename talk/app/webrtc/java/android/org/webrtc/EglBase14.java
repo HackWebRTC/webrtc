@@ -44,7 +44,7 @@ import org.webrtc.Logging;
  * and an EGLSurface.
  */
 @TargetApi(18)
-final class EglBase14 extends EglBase {
+public final class EglBase14 extends EglBase {
   private static final String TAG = "EglBase14";
   private static final int EGLExt_SDK_VERSION = android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
   private static final int CURRENT_SDK_VERSION = android.os.Build.VERSION.SDK_INT;
@@ -64,14 +64,14 @@ final class EglBase14 extends EglBase {
   public static class Context extends EglBase.Context {
     private final android.opengl.EGLContext egl14Context;
 
-    Context(android.opengl.EGLContext eglContext) {
+    public Context(android.opengl.EGLContext eglContext) {
       this.egl14Context = eglContext;
     }
   }
 
   // Create a new context with the specified config type, sharing data with sharedContext.
   // |sharedContext| may be null.
-  EglBase14(EglBase14.Context sharedContext, int[] configAttributes) {
+  public EglBase14(EglBase14.Context sharedContext, int[] configAttributes) {
     eglDisplay = getEglDisplay();
     eglConfig = getEglConfig(eglDisplay, configAttributes);
     eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
