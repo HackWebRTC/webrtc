@@ -13,14 +13,18 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "webrtc/base/scoped_ptr.h"
 
+typedef NS_ENUM(NSInteger, RTCMediaStreamTrackType) {
+  RTCMediaStreamTrackTypeAudio,
+  RTCMediaStreamTrackTypeVideo,
+};
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface RTCMediaStreamTrack ()
 
 /**
- * The native MediaStreamTrackInterface representation of this
- * RTCMediaStreamTrack object. This is needed to pass to the underlying C++
- * APIs.
+ * The native MediaStreamTrackInterface passed in or created during
+ * construction.
  */
 @property(nonatomic, readonly)
     rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> nativeTrack;
@@ -30,6 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)initWithNativeTrack:
     (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
+                               type:(RTCMediaStreamTrackType)type
     NS_DESIGNATED_INITIALIZER;
 
 + (webrtc::MediaStreamTrackInterface::TrackState)nativeTrackStateForState:

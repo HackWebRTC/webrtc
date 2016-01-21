@@ -29,6 +29,9 @@ if (is_ios) {
     ]
     sources = [
       # Add these when there's a BUILD.gn for peer connection APIs
+      #"objc/RTCAudioTrack+Private.h",
+      #"objc/RTCAudioTrack.h",
+      #"objc/RTCAudioTrack.mm",s
       #"objc/RTCAVFoundationVideoSource+Private.h",
       #"objc/RTCAVFoundationVideoSource.h",
       #"objc/RTCAVFoundationVideoSource.mm",
@@ -44,6 +47,9 @@ if (is_ios) {
       #"objc/RTCVideoSource+Private.h",
       #"objc/RTCVideoSource.h",
       #"objc/RTCVideoSource.mm",
+      #"objc/RTCVideoTrack+Private.h",
+      #"objc/RTCVideoTrack.h",
+      #"objc/RTCVideoTrack.mm",
       "objc/RTCIceServer+Private.h",
       "objc/RTCIceServer.h",
       "objc/RTCIceServer.mm",

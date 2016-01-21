@@ -15,6 +15,7 @@
 
 @implementation RTCMediaStreamTrack {
   rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> _nativeTrack;
+  RTCMediaStreamTrackType _type;
 }
 
 - (NSString *)kind {
@@ -53,10 +54,12 @@
 }
 
 - (instancetype)initWithNativeTrack:
-    (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack {
+    (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
+                               type:(RTCMediaStreamTrackType)type {
   NSParameterAssert(nativeTrack);
   if (self = [super init]) {
     _nativeTrack = nativeTrack;
+    _type = type;
   }
   return self;
 }
