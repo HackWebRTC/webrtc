@@ -12,17 +12,26 @@
 
 #include "webrtc/base/checks.h"
 
+// TODO(tommi): Split this file up to per-platform implementation files.
+
 namespace rtc {
 
 CriticalSection::CriticalSection() {
 #if defined(WEBRTC_WIN)
   InitializeCriticalSection(&crit_);
 #else
+#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+  lock_queue_ = 0;
+  owning_thread_ = 0;
+  recursion_ = 0;
+  semaphore_ = dispatch_semaphore_create(0);
+#else
   pthread_mutexattr_t mutex_attribute;
   pthread_mutexattr_init(&mutex_attribute);
   pthread_mutexattr_settype(&mutex_attribute, PTHREAD_MUTEX_RECURSIVE);
   pthread_mutex_init(&mutex_, &mutex_attribute);
   pthread_mutexattr_destroy(&mutex_attribute);
+#endif
   CS_DEBUG_CODE(thread_ = 0);
   CS_DEBUG_CODE(recursion_count_ = 0);
 #endif
@@ -32,7 +41,11 @@ CriticalSection::~CriticalSection() {
 #if defined(WEBRTC_WIN)
   DeleteCriticalSection(&crit_);
 #else
+#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+  dispatch_release(semaphore_);
+#else
   pthread_mutex_destroy(&mutex_);
+#endif
 #endif
 }
 
@@ -40,7 +53,47 @@ void CriticalSection::Enter() const EXCLUSIVE_LOCK_FUNCTION() {
 #if defined(WEBRTC_WIN)
   EnterCriticalSection(&crit_);
 #else
+#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+  int spin = 3000;
+  pthread_t self = pthread_self();
+  bool have_lock = false;
+  do {
+    // Instead of calling TryEnter() in this loop, we do two interlocked
+    // operations, first a read-only one in order to avoid affecting the lock
+    // cache-line while spinning, in case another thread is using the lock.
+    if (owning_thread_ != self) {
+      if (AtomicOps::AcquireLoad(&lock_queue_) == 0) {
+        if (AtomicOps::CompareAndSwap(&lock_queue_, 0, 1) == 0) {
+          have_lock = true;
+          break;
+        }
+      }
+    } else {
+      AtomicOps::Increment(&lock_queue_);
+      have_lock = true;
+      break;
+    }
+
+    sched_yield();
+  } while (--spin);
+
+  if (!have_lock && AtomicOps::Increment(&lock_queue_) > 1) {
+    // Owning thread cannot be the current thread since TryEnter() would
+    // have succeeded.
+    RTC_DCHECK(owning_thread_ != self);
+    // Wait for the lock to become available.
+    dispatch_semaphore_wait(semaphore_, DISPATCH_TIME_FOREVER);
+    RTC_DCHECK(owning_thread_ == 0);
+    RTC_DCHECK(!recursion_);
+  }
+
+  owning_thread_ = self;
+  ++recursion_;
+
+#else
   pthread_mutex_lock(&mutex_);
+#endif
+
 #if CS_DEBUG_CHECKS
   if (!recursion_count_) {
     RTC_DCHECK(!thread_);
@@ -57,8 +110,20 @@ bool CriticalSection::TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true) {
 #if defined(WEBRTC_WIN)
   return TryEnterCriticalSection(&crit_) != FALSE;
 #else
+#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+  if (owning_thread_ != pthread_self()) {
+    if (AtomicOps::CompareAndSwap(&lock_queue_, 0, 1) != 0)
+      return false;
+    owning_thread_ = pthread_self();
+    RTC_DCHECK(!recursion_);
+  } else {
+    AtomicOps::Increment(&lock_queue_);
+  }
+  ++recursion_;
+#else
   if (pthread_mutex_trylock(&mutex_) != 0)
     return false;
+#endif
 #if CS_DEBUG_CHECKS
   if (!recursion_count_) {
     RTC_DCHECK(!thread_);
@@ -82,7 +147,18 @@ void CriticalSection::Leave() const UNLOCK_FUNCTION() {
   if (!recursion_count_)
     thread_ = 0;
 #endif
+#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+  RTC_DCHECK_EQ(owning_thread_, pthread_self());
+  RTC_DCHECK_GE(recursion_, 0);
+  --recursion_;
+  if (!recursion_)
+    owning_thread_ = 0;
+
+  if (AtomicOps::Decrement(&lock_queue_) > 0 && !recursion_)
+    dispatch_semaphore_signal(semaphore_);
+#else
   pthread_mutex_unlock(&mutex_);
+#endif
 #endif
 }
 
@@ -135,13 +211,15 @@ bool TryCritScope::locked() const {
 }
 
 void GlobalLockPod::Lock() {
-#if !defined(WEBRTC_WIN)
+#if !defined(WEBRTC_WIN) && (!defined(WEBRTC_MAC) || USE_NATIVE_MUTEX_ON_MAC)
   const struct timespec ts_null = {0};
 #endif
 
   while (AtomicOps::CompareAndSwap(&lock_acquired, 0, 1)) {
 #if defined(WEBRTC_WIN)
     ::Sleep(0);
+#elif defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+    sched_yield();
 #else
     nanosleep(&ts_null, nullptr);
 #endif
