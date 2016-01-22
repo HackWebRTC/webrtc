@@ -14,6 +14,7 @@
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/platform_thread_types.h"
 
 #if defined(WEBRTC_WIN)
 // Include winsock2.h before including <windows.h> to maintain consistency with
@@ -80,11 +81,11 @@ class LOCKABLE CriticalSection {
   // Used to signal a single waiting thread when the lock becomes available.
   mutable dispatch_semaphore_t semaphore_;
   // The thread that currently holds the lock. Required to handle recursion.
-  mutable pthread_t owning_thread_;
+  mutable PlatformThreadRef owning_thread_;
 #else
   mutable pthread_mutex_t mutex_;
 #endif
-  CS_DEBUG_CODE(mutable pthread_t thread_);
+  CS_DEBUG_CODE(mutable PlatformThreadRef thread_);
   CS_DEBUG_CODE(mutable int recursion_count_);
 #endif
 };

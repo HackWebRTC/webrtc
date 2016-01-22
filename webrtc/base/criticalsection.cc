@@ -11,6 +11,7 @@
 #include "webrtc/base/criticalsection.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/platform_thread.h"
 
 // TODO(tommi): Split this file up to per-platform implementation files.
 
@@ -55,13 +56,13 @@ void CriticalSection::Enter() const EXCLUSIVE_LOCK_FUNCTION() {
 #else
 #if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
   int spin = 3000;
-  pthread_t self = pthread_self();
+  PlatformThreadRef self = CurrentThreadRef();
   bool have_lock = false;
   do {
     // Instead of calling TryEnter() in this loop, we do two interlocked
     // operations, first a read-only one in order to avoid affecting the lock
     // cache-line while spinning, in case another thread is using the lock.
-    if (owning_thread_ != self) {
+    if (!IsThreadRefEqual(owning_thread_, self)) {
       if (AtomicOps::AcquireLoad(&lock_queue_) == 0) {
         if (AtomicOps::CompareAndSwap(&lock_queue_, 0, 1) == 0) {
           have_lock = true;
@@ -80,7 +81,7 @@ void CriticalSection::Enter() const EXCLUSIVE_LOCK_FUNCTION() {
   if (!have_lock && AtomicOps::Increment(&lock_queue_) > 1) {
     // Owning thread cannot be the current thread since TryEnter() would
     // have succeeded.
-    RTC_DCHECK(owning_thread_ != self);
+    RTC_DCHECK(!IsThreadRefEqual(owning_thread_, self));
     // Wait for the lock to become available.
     dispatch_semaphore_wait(semaphore_, DISPATCH_TIME_FOREVER);
     RTC_DCHECK(owning_thread_ == 0);
@@ -97,7 +98,7 @@ void CriticalSection::Enter() const EXCLUSIVE_LOCK_FUNCTION() {
 #if CS_DEBUG_CHECKS
   if (!recursion_count_) {
     RTC_DCHECK(!thread_);
-    thread_ = pthread_self();
+    thread_ = CurrentThreadRef();
   } else {
     RTC_DCHECK(CurrentThreadIsOwner());
   }
@@ -111,10 +112,10 @@ bool CriticalSection::TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true) {
   return TryEnterCriticalSection(&crit_) != FALSE;
 #else
 #if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
-  if (owning_thread_ != pthread_self()) {
+  if (!IsThreadRefEqual(owning_thread_, CurrentThreadRef())) {
     if (AtomicOps::CompareAndSwap(&lock_queue_, 0, 1) != 0)
       return false;
-    owning_thread_ = pthread_self();
+    owning_thread_ = CurrentThreadRef();
     RTC_DCHECK(!recursion_);
   } else {
     AtomicOps::Increment(&lock_queue_);
@@ -127,7 +128,7 @@ bool CriticalSection::TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true) {
 #if CS_DEBUG_CHECKS
   if (!recursion_count_) {
     RTC_DCHECK(!thread_);
-    thread_ = pthread_self();
+    thread_ = CurrentThreadRef();
   } else {
     RTC_DCHECK(CurrentThreadIsOwner());
   }
@@ -148,7 +149,7 @@ void CriticalSection::Leave() const UNLOCK_FUNCTION() {
     thread_ = 0;
 #endif
 #if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
-  RTC_DCHECK_EQ(owning_thread_, pthread_self());
+  RTC_DCHECK(IsThreadRefEqual(owning_thread_, CurrentThreadRef()));
   RTC_DCHECK_GE(recursion_, 0);
   --recursion_;
   if (!recursion_)
@@ -172,7 +173,7 @@ bool CriticalSection::CurrentThreadIsOwner() const {
          reinterpret_cast<HANDLE>(static_cast<size_t>(GetCurrentThreadId()));
 #else
 #if CS_DEBUG_CHECKS
-  return pthread_equal(thread_, pthread_self());
+  return IsThreadRefEqual(thread_, CurrentThreadRef());
 #else
   return true;
 #endif  // CS_DEBUG_CHECKS
