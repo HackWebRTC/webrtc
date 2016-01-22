@@ -28,12 +28,6 @@
 #ifndef TALK_MEDIA_BASE_VIDEORENDERER_H_
 #define TALK_MEDIA_BASE_VIDEORENDERER_H_
 
-#if !defined(NDEBUG)
-#include <string>
-#endif
-
-#include "webrtc/base/sigslot.h"
-
 namespace cricket {
 
 class VideoFrame;
@@ -44,11 +38,6 @@ class VideoRenderer {
   virtual ~VideoRenderer() {}
   // Called when a new frame is available for display.
   virtual bool RenderFrame(const VideoFrame *frame) = 0;
-
-#if !defined(NDEBUG)
-  // Allow renderer dumping out rendered frames.
-  virtual bool SetDumpPath(const std::string &path) { return true; }
-#endif
 };
 
 }  // namespace cricket
