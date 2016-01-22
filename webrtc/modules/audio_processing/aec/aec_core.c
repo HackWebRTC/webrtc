@@ -565,41 +565,17 @@ static void InitMetrics(AecCore* self) {
   InitStats(&self->rerl);
 }
 
-static void UpdateLevel(PowerLevel* level, float in[2][PART_LEN1]) {
-  // Do the energy calculation in the frequency domain. The FFT is performed on
-  // a segment of PART_LEN2 samples due to overlap, but we only want the energy
-  // of half that data (the last PART_LEN samples). Parseval's relation states
-  // that the energy is preserved according to
-  //
-  // \sum_{n=0}^{N-1} |x(n)|^2 = 1/N * \sum_{n=0}^{N-1} |X(n)|^2
-  //                           = ENERGY,
-  //
-  // where N = PART_LEN2. Since we are only interested in calculating the energy
-  // for the last PART_LEN samples we approximate by calculating ENERGY and
-  // divide by 2,
-  //
-  // \sum_{n=N/2}^{N-1} |x(n)|^2 ~= ENERGY / 2
-  //
-  // Since we deal with real valued time domain signals we only store frequency
-  // bins [0, PART_LEN], which is what |in| consists of. To calculate ENERGY we
-  // need to add the contribution from the missing part in
-  // [PART_LEN+1, PART_LEN2-1]. These values are, up to a phase shift, identical
-  // with the values in [1, PART_LEN-1], hence multiply those values by 2. This
-  // is the values in the for loop below, but multiplication by 2 and division
-  // by 2 cancel.
+static float CalculatePower(const float* in, size_t num_samples) {
+  size_t k;
+  float energy = 0.0f;
 
-  // TODO(bjornv): Investigate reusing energy calculations performed at other
-  // places in the code.
-  int k = 1;
-  // Imaginary parts are zero at end points and left out of the calculation.
-  float energy = (in[0][0] * in[0][0]) / 2;
-  energy += (in[0][PART_LEN] * in[0][PART_LEN]) / 2;
-
-  for (k = 1; k < PART_LEN; k++) {
-    energy += (in[0][k] * in[0][k] + in[1][k] * in[1][k]);
+  for (k = 0; k < num_samples; ++k) {
+    energy += in[k] * in[k];
   }
-  energy /= PART_LEN2;
+  return energy / num_samples;
+}
 
+static void UpdateLevel(PowerLevel* level, float energy) {
   level->sfrsum += energy;
   level->sfrcounter++;
 
@@ -630,7 +606,12 @@ static void UpdateMetrics(AecCore* aec) {
   const float actThresholdNoisy = 8.0f;
   const float actThresholdClean = 40.0f;
   const float safety = 0.99995f;
-  const float noisyPower = 300000.0f;
+
+  // To make noisePower consistent with the legacy code, a factor of
+  // 2.0f / PART_LEN2 is applied to noisyPower, since the legacy code uses
+  // the energy of a frame as the audio levels, while the new code uses a
+  // a per-sample energy (i.e., power).
+  const float noisyPower = 300000.0f * 2.0f / PART_LEN2;
 
   float actThreshold;
   float echo, suppressedEcho;
@@ -846,7 +827,6 @@ static void Fft(float time_data[PART_LEN2],
   }
 }
 
-
 static int SignalBasedDelayCorrection(AecCore* self) {
   int delay_correction = 0;
   int last_delay = -2;
@@ -979,7 +959,7 @@ static void EchoSubtraction(
     // Note that the first PART_LEN samples in fft (before transformation) are
     // zero. Hence, the scaling by two in UpdateLevel() should not be
     // performed. That scaling is taken care of in UpdateMetrics() instead.
-    UpdateLevel(linout_level, e_fft);
+    UpdateLevel(linout_level, CalculatePower(e, PART_LEN) / 2.0f);
   }
 
   // Scale error signal inversely with far power.
@@ -1171,6 +1151,9 @@ static void EchoSuppression(AecCore* aec,
   // Add comfort noise.
   WebRtcAec_ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
 
+  // Inverse error fft.
+  ScaledInverseFft(efw, fft, 2.0f, 1);
+
   // TODO(bjornv): Investigate how to take the windowing below into account if
   // needed.
   if (aec->metricsMode == 1) {
@@ -1178,11 +1161,8 @@ static void EchoSuppression(AecCore* aec,
     // In addition the time domain signal is windowed before transformation,
     // losing half the energy on the average. We take care of the first
     // scaling only in UpdateMetrics().
-    UpdateLevel(&aec->nlpoutlevel, efw);
+    UpdateLevel(&aec->nlpoutlevel, CalculatePower(fft, PART_LEN2));
   }
-
-  // Inverse error fft.
-  ScaledInverseFft(efw, fft, 2.0f, 1);
 
   // Overlap and add to obtain output.
   for (i = 0; i < PART_LEN; i++) {
@@ -1308,6 +1288,12 @@ static void ProcessBlock(AecCore* aec) {
   memcpy(fft, aec->dBuf, sizeof(float) * PART_LEN2);
   Fft(fft, df);
 
+  if (aec->metricsMode == 1) {
+    // Update power levels
+    UpdateLevel(&aec->farlevel, CalculatePower(farend_ptr, PART_LEN2));
+    UpdateLevel(&aec->nearlevel, CalculatePower(aec->dBuf, PART_LEN2));
+  }
+
   // Power smoothing
   for (i = 0; i < PART_LEN1; i++) {
     far_spectrum = (xf_ptr[i] * xf_ptr[i]) +
@@ -1405,9 +1391,6 @@ static void ProcessBlock(AecCore* aec) {
   EchoSuppression(aec, farend_ptr, echo_subtractor_output, output, outputH_ptr);
 
   if (aec->metricsMode == 1) {
-    // Update power levels and echo metrics
-    UpdateLevel(&aec->farlevel, (float(*)[PART_LEN1])xf_ptr);
-    UpdateLevel(&aec->nearlevel, df);
     UpdateMetrics(aec);
   }
 
