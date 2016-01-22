@@ -1517,7 +1517,13 @@ TEST_F(WebRtcSessionTest, TestMultihomeCandidates) {
   EXPECT_EQ(8u, observer_.mline_1_candidates_.size());
 }
 
-TEST_F(WebRtcSessionTest, TestStunError) {
+// Crashes on Win only. See webrtc:5411.
+#if defined(WEBRTC_WIN)
+#define MAYBE_TestStunError DISABLED_TestStunError
+#else
+#define MAYBE_TestStunError TestStunError
+#endif
+TEST_F(WebRtcSessionTest, MAYBE_TestStunError) {
   AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
   AddInterface(rtc::SocketAddress(kClientAddrHost2, kClientAddrPort));
   fss_->AddRule(false,
