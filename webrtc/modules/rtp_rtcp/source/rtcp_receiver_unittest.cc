@@ -552,7 +552,7 @@ TEST_F(RtcpReceiverTest, InjectFirPacket) {
   rtcp_receiver_->SetSsrcs(kSourceSsrc, ssrcs);
 
   rtcp::Fir fir;
-  fir.To(kSourceSsrc);
+  fir.WithRequestTo(kSourceSsrc, 13);
   rtc::scoped_ptr<rtcp::RawPacket> packet(fir.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(kRtcpFir, rtcp_packet_info_.rtcpPacketTypeFlags);
@@ -565,7 +565,7 @@ TEST_F(RtcpReceiverTest, FirPacketNotToUsIgnored) {
   rtcp_receiver_->SetSsrcs(kSourceSsrc, ssrcs);
 
   rtcp::Fir fir;
-  fir.To(kSourceSsrc + 1);
+  fir.WithRequestTo(kSourceSsrc + 1, 13);
   rtc::scoped_ptr<rtcp::RawPacket> packet(fir.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);

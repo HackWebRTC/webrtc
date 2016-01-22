@@ -6,38 +6,41 @@
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- *
  */
 
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_FIR_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_FIR_H_
 
+#include <vector>
+
 #include "webrtc/base/basictypes.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/psfb.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
-
 // Full intra request (FIR) (RFC 5104).
-class Fir : public RtcpPacket {
+class Fir : public Psfb {
  public:
-  Fir() : RtcpPacket() {
-    memset(&fir_, 0, sizeof(fir_));
-    memset(&fir_item_, 0, sizeof(fir_item_));
-  }
+  static const uint8_t kFeedbackMessageType = 4;
+  struct Request {
+    Request() : ssrc(0), seq_nr(0) {}
+    Request(uint32_t ssrc, uint8_t seq_nr) : ssrc(ssrc), seq_nr(seq_nr) {}
+    uint32_t ssrc;
+    uint8_t seq_nr;
+  };
 
-  virtual ~Fir() {}
+  Fir() {}
+  ~Fir() override {}
 
-  void From(uint32_t ssrc) {
-    fir_.SenderSSRC = ssrc;
+  // Parse assumes header is already parsed and validated.
+  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
+             const uint8_t* payload);  // Size of the payload is in the header.
+
+  void WithRequestTo(uint32_t ssrc, uint8_t seq_num) {
+    items_.push_back(Request(ssrc, seq_num));
   }
-  void To(uint32_t ssrc) {
-    fir_item_.SSRC = ssrc;
-  }
-  void WithCommandSeqNum(uint8_t seq_num) {
-    fir_item_.CommandSequenceNumber = seq_num;
-  }
+  const std::vector<Request>& requests() const { return items_; }
 
  protected:
   bool Create(uint8_t* packet,
@@ -46,15 +49,16 @@ class Fir : public RtcpPacket {
               RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  size_t BlockLength() const {
-    const size_t kFciLength = 8;
-    return kCommonFbFmtLength + kFciLength;
+  static const size_t kFciLength = 8;
+  size_t BlockLength() const override {
+    return kHeaderLength + kCommonFeedbackLength + kFciLength * items_.size();
   }
+  // SSRC of media source is not used in FIR packet. Shadow base functions.
+  void To(uint32_t ssrc);
+  uint32_t media_ssrc() const;
 
-  RTCPUtility::RTCPPacketPSFBFIR fir_;
-  RTCPUtility::RTCPPacketPSFBFIRItem fir_item_;
+  std::vector<Request> items_;
 };
-
 }  // namespace rtcp
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_FIR_H_

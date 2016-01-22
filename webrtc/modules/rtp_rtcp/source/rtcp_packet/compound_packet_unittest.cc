@@ -30,9 +30,12 @@ using webrtc::test::RtcpPacketParser;
 namespace webrtc {
 
 const uint32_t kSenderSsrc = 0x12345678;
+const uint32_t kRemoteSsrc = 0x23456789;
+const uint8_t kSeqNo = 13;
 
 TEST(RtcpCompoundPacketTest, AppendPacket) {
   Fir fir;
+  fir.WithRequestTo(kRemoteSsrc, kSeqNo);
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
@@ -63,6 +66,7 @@ TEST(RtcpCompoundPacketTest, AppendPacketOnEmpty) {
 
 TEST(RtcpCompoundPacketTest, AppendPacketWithOwnAppendedPacket) {
   Fir fir;
+  fir.WithRequestTo(kRemoteSsrc, kSeqNo);
   Bye bye;
   ReportBlock rb;
 
@@ -86,6 +90,7 @@ TEST(RtcpCompoundPacketTest, AppendPacketWithOwnAppendedPacket) {
 
 TEST(RtcpCompoundPacketTest, BuildWithInputBuffer) {
   Fir fir;
+  fir.WithRequestTo(kRemoteSsrc, kSeqNo);
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
@@ -117,6 +122,7 @@ TEST(RtcpCompoundPacketTest, BuildWithInputBuffer) {
 
 TEST(RtcpCompoundPacketTest, BuildWithTooSmallBuffer_FragmentedSend) {
   Fir fir;
+  fir.WithRequestTo(kRemoteSsrc, kSeqNo);
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);

@@ -38,11 +38,10 @@ class RawPacket;
 //
 //  Fir fir;
 //  fir.From(123);
-//  fir.To(234)
-//  fir.WithCommandSeqNum(123);
+//  fir.WithRequestTo(234, 56);
 //
 //  size_t length = 0;                     // Builds an intra frame request
-//  uint8_t packet[kPacketSize];           // with sequence number 123.
+//  uint8_t packet[kPacketSize];           // with sequence number 56.
 //  fir.Build(packet, &length, kPacketSize);
 //
 //  RawPacket packet = fir.Build();        // Returns a RawPacket holding

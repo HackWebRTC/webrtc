@@ -14,65 +14,89 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
-using webrtc::RTCPUtility::PT_PSFB;
-using webrtc::RTCPUtility::RTCPPacketPSFBFIR;
-using webrtc::RTCPUtility::RTCPPacketPSFBFIRItem;
+using webrtc::RTCPUtility::RtcpCommonHeader;
 
 namespace webrtc {
 namespace rtcp {
-namespace {
-const uint32_t kUnusedMediaSourceSsrc0 = 0;
-
-void AssignUWord8(uint8_t* buffer, size_t* offset, uint8_t value) {
-  buffer[(*offset)++] = value;
-}
-
-void AssignUWord24(uint8_t* buffer, size_t* offset, uint32_t value) {
-  ByteWriter<uint32_t, 3>::WriteBigEndian(buffer + *offset, value);
-  *offset += 3;
-}
-
-void AssignUWord32(uint8_t* buffer, size_t* offset, uint32_t value) {
-  ByteWriter<uint32_t>::WriteBigEndian(buffer + *offset, value);
-  *offset += 4;
-}
-
+// RFC 4585: Feedback format.
+// Common packet format:
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |V=2|P|   FMT   |       PT      |          length               |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |                  SSRC of packet sender                        |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |             SSRC of media source (unused) = 0                 |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  :            Feedback Control Information (FCI)                 :
+//  :                                                               :
 // Full intra request (FIR) (RFC 5104).
-//
+// The Feedback Control Information (FCI) for the Full Intra Request
+// consists of one or more FCI entries.
 // FCI:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |                              SSRC                             |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   | Seq nr.       |    Reserved                                   |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-void CreateFir(const RTCPPacketPSFBFIR& fir,
-               const RTCPPacketPSFBFIRItem& fir_item,
-               uint8_t* buffer,
-               size_t* pos) {
-  AssignUWord32(buffer, pos, fir.SenderSSRC);
-  AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
-  AssignUWord32(buffer, pos, fir_item.SSRC);
-  AssignUWord8(buffer, pos, fir_item.CommandSequenceNumber);
-  AssignUWord24(buffer, pos, 0);
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |                              SSRC                             |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  | Seq nr.       |    Reserved = 0                               |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+bool Fir::Parse(const RtcpCommonHeader& header, const uint8_t* payload) {
+  RTC_CHECK(header.packet_type == kPacketType);
+  RTC_CHECK(header.count_or_format == kFeedbackMessageType);
+
+  // The FCI field MUST contain one or more FIR entries.
+  if (header.payload_size_bytes < kCommonFeedbackLength + kFciLength) {
+    LOG(LS_WARNING) << "Packet is too small to be a valid FIR packet.";
+    return false;
+  }
+
+  if ((header.payload_size_bytes - kCommonFeedbackLength) % kFciLength != 0) {
+    LOG(LS_WARNING) << "Invalid size for a valid FIR packet.";
+    return false;
+  }
+
+  ParseCommonFeedback(payload);
+
+  size_t number_of_fci_items =
+      (header.payload_size_bytes - kCommonFeedbackLength) / kFciLength;
+  const uint8_t* next_fci = payload + kCommonFeedbackLength;
+  items_.resize(number_of_fci_items);
+  for (Request& request : items_) {
+    request.ssrc = ByteReader<uint32_t>::ReadBigEndian(next_fci);
+    request.seq_nr = ByteReader<uint8_t>::ReadBigEndian(next_fci + 4);
+    next_fci += kFciLength;
+  }
+  return true;
 }
-}  // namespace
 
 bool Fir::Create(uint8_t* packet,
                  size_t* index,
                  size_t max_length,
                  RtcpPacket::PacketReadyCallback* callback) const {
+  RTC_DCHECK(!items_.empty());
   while (*index + BlockLength() > max_length) {
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  const uint8_t kFmt = 4;
-  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
-  CreateFir(fir_, fir_item_, packet, index);
+  size_t index_end = *index + BlockLength();
+  CreateHeader(kFeedbackMessageType, kPacketType, HeaderLength(), packet,
+               index);
+  RTC_DCHECK_EQ(Psfb::media_ssrc(), 0u);
+  CreateCommonFeedback(packet + *index);
+  *index += kCommonFeedbackLength;
+
+  const uint32_t kReserved = 0;
+  for (const Request& request : items_) {
+    ByteWriter<uint32_t>::WriteBigEndian(packet + *index, request.ssrc);
+    ByteWriter<uint8_t>::WriteBigEndian(packet + *index + 4, request.seq_nr);
+    ByteWriter<uint32_t, 3>::WriteBigEndian(packet + *index + 5, kReserved);
+    *index += kFciLength;
+  }
+  RTC_CHECK_EQ(*index, index_end);
   return true;
 }
-
 }  // namespace rtcp
 }  // namespace webrtc

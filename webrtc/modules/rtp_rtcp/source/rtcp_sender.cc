@@ -553,8 +553,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildFIR(const RtcpContext& ctx) {
 
   rtcp::Fir* fir = new rtcp::Fir();
   fir->From(ssrc_);
-  fir->To(remote_ssrc_);
-  fir->WithCommandSeqNum(sequence_number_fir_);
+  fir->WithRequestTo(remote_ssrc_, sequence_number_fir_);
 
   TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "RTCPSender::FIR");

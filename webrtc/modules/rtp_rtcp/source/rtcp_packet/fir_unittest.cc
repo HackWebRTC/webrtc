@@ -12,31 +12,116 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/test/rtcp_packet_parser.h"
 
+using testing::AllOf;
+using testing::ElementsAre;
+using testing::ElementsAreArray;
+using testing::Eq;
+using testing::Field;
+using testing::make_tuple;
 using webrtc::rtcp::Fir;
 using webrtc::rtcp::RawPacket;
-using webrtc::test::RtcpPacketParser;
+using webrtc::RTCPUtility::RtcpCommonHeader;
+using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
+namespace {
 
 const uint32_t kSenderSsrc = 0x12345678;
 const uint32_t kRemoteSsrc = 0x23456789;
+const uint8_t kSeqNr = 13;
+// Manually created Fir packet matching constants above.
+const uint8_t kPacket[] = {0x84, 206,  0x00, 0x04,
+                           0x12, 0x34, 0x56, 0x78,
+                           0x00, 0x00, 0x00, 0x00,
+                           0x23, 0x45, 0x67, 0x89,
+                           0x0d, 0x00, 0x00, 0x00};
 
-TEST(RtcpPacketFirTest, Fir) {
-  Fir fir;
-  fir.From(kSenderSsrc);
-  fir.To(kRemoteSsrc);
-  fir.WithCommandSeqNum(123);
-
-  rtc::scoped_ptr<RawPacket> packet(fir.Build());
-  RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
-  EXPECT_EQ(1, parser.fir()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.fir()->Ssrc());
-  EXPECT_EQ(1, parser.fir_item()->num_packets());
-  EXPECT_EQ(kRemoteSsrc, parser.fir_item()->Ssrc());
-  EXPECT_EQ(123U, parser.fir_item()->SeqNum());
+bool ParseFir(const uint8_t* buffer, size_t length, Fir* fir) {
+  RtcpCommonHeader header;
+  EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
+  EXPECT_THAT(header.BlockSize(), Eq(length));
+  return fir->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
 }
 
+TEST(RtcpPacketFirTest, Parse) {
+  Fir mutable_parsed;
+  EXPECT_TRUE(ParseFir(kPacket, sizeof(kPacket), &mutable_parsed));
+  const Fir& parsed = mutable_parsed;  // Read values from constant object.
+
+  EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
+  EXPECT_THAT(parsed.requests(),
+              ElementsAre(AllOf(Field(&Fir::Request::ssrc, Eq(kRemoteSsrc)),
+                                Field(&Fir::Request::seq_nr, Eq(kSeqNr)))));
+}
+
+TEST(RtcpPacketFirTest, Create) {
+  Fir fir;
+  fir.From(kSenderSsrc);
+  fir.WithRequestTo(kRemoteSsrc, kSeqNr);
+
+  rtc::scoped_ptr<RawPacket> packet = fir.Build();
+
+  EXPECT_THAT(make_tuple(packet->Buffer(), packet->Length()),
+              ElementsAreArray(kPacket));
+}
+
+TEST(RtcpPacketFirTest, TwoFciEntries) {
+  Fir fir;
+  fir.From(kSenderSsrc);
+  fir.WithRequestTo(kRemoteSsrc, kSeqNr);
+  fir.WithRequestTo(kRemoteSsrc + 1, kSeqNr + 1);
+
+  rtc::scoped_ptr<RawPacket> packet = fir.Build();
+  Fir parsed;
+  EXPECT_TRUE(ParseFir(packet->Buffer(), packet->Length(), &parsed));
+
+  EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
+  EXPECT_THAT(parsed.requests(),
+              ElementsAre(AllOf(Field(&Fir::Request::ssrc, Eq(kRemoteSsrc)),
+                                Field(&Fir::Request::seq_nr, Eq(kSeqNr))),
+                          AllOf(Field(&Fir::Request::ssrc, Eq(kRemoteSsrc + 1)),
+                                Field(&Fir::Request::seq_nr, Eq(kSeqNr + 1)))));
+}
+
+TEST(RtcpPacketFirTest, ParseFailsOnZeroFciEntries) {
+  Fir fir;
+  fir.From(kSenderSsrc);
+  fir.WithRequestTo(kRemoteSsrc, kSeqNr);
+
+  rtc::scoped_ptr<RawPacket> packet = fir.Build();
+
+  RtcpCommonHeader header;
+  RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header);
+  ASSERT_EQ(16u, header.payload_size_bytes);  // Common: 8, 1xfci: 8.
+  header.payload_size_bytes = 8;              // Common: 8, 0xfcis.
+
+  Fir parsed;
+  EXPECT_FALSE(parsed.Parse(
+      header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+}
+
+TEST(RtcpPacketFirTest, ParseFailsOnFractionalFciEntries) {
+  Fir fir;
+  fir.From(kSenderSsrc);
+  fir.WithRequestTo(kRemoteSsrc, kSeqNr);
+  fir.WithRequestTo(kRemoteSsrc + 1, kSeqNr + 1);
+
+  rtc::scoped_ptr<RawPacket> packet = fir.Build();
+
+  RtcpCommonHeader header;
+  RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header);
+  ASSERT_EQ(24u, header.payload_size_bytes);  // Common: 8, 2xfcis: 16.
+
+  const uint8_t* payload =
+      packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes;
+  Fir good;
+  EXPECT_TRUE(good.Parse(header, payload));
+  for (size_t i = 1; i < 8; ++i) {
+    header.payload_size_bytes = 16 + i;
+    Fir bad;
+    EXPECT_FALSE(bad.Parse(header, payload));
+  }
+}
+}  // namespace
 }  // namespace webrtc
