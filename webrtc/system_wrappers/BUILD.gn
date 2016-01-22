@@ -48,7 +48,6 @@ static_library("system_wrappers") {
     "source/condition_variable_event_win.h",
     "source/cpu_features.cc",
     "source/cpu_info.cc",
-    "source/critical_section.cc",
     "source/data_log_c.cc",
     "source/event.cc",
     "source/event_timer_posix.cc",

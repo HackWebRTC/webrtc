@@ -11,15 +11,7 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CRITICAL_SECTION_WRAPPER_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CRITICAL_SECTION_WRAPPER_H_
 
-// If the critical section is heavily contended it may be beneficial to use
-// read/write locks instead.
-
-#if defined (WEBRTC_WIN)
-#include <windows.h>
-#else
-#include <pthread.h>
-#endif
-
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 
@@ -29,26 +21,23 @@ class LOCKABLE CriticalSectionWrapper {
  public:
   // Legacy factory method, being deprecated. Please use the constructor.
   // TODO(tommi): Remove the CriticalSectionWrapper class and move users over
-  // to using rtc::CriticalSection.  Before we can do that though, we need to
-  // fix the problem with the ConditionVariable* classes (see below).
-  static CriticalSectionWrapper* CreateCriticalSection();
+  // to using rtc::CriticalSection.
+  static CriticalSectionWrapper* CreateCriticalSection() {
+    return new CriticalSectionWrapper();
+  }
 
-  CriticalSectionWrapper();
-  ~CriticalSectionWrapper();
+  CriticalSectionWrapper() {}
+  ~CriticalSectionWrapper() {}
 
   // Tries to grab lock, beginning of a critical section. Will wait for the
   // lock to become available if the grab failed.
-  void Enter() EXCLUSIVE_LOCK_FUNCTION();
+  void Enter() EXCLUSIVE_LOCK_FUNCTION() { lock_.Enter(); }
 
   // Returns a grabbed lock, end of critical section.
-  void Leave() UNLOCK_FUNCTION();
+  void Leave() UNLOCK_FUNCTION() { lock_.Leave(); }
 
-private:
-#if defined (WEBRTC_WIN)
-  CRITICAL_SECTION crit_;
-#else
-  pthread_mutex_t mutex_;
-#endif
+ private:
+  rtc::CriticalSection lock_;
 };
 
 // RAII extension of the critical section. Prevents Enter/Leave mismatches and

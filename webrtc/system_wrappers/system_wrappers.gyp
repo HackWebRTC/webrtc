@@ -57,7 +57,6 @@
         'source/condition_variable_event_win.h',
         'source/cpu_info.cc',
         'source/cpu_features.cc',
-        'source/critical_section.cc',
         'source/data_log.cc',
         'source/data_log_c.cc',
         'source/data_log_no_op.cc',
