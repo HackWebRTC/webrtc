@@ -172,7 +172,8 @@ class VideoProcessorImpl : public VideoProcessor {
 
  private:
   // Invoked by the callback when a frame has completed encoding.
-  void FrameEncoded(const webrtc::EncodedImage& encodedImage);
+  void FrameEncoded(webrtc::VideoCodecType codec,
+                    const webrtc::EncodedImage& encodedImage);
   // Invoked by the callback when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
   // Used for getting a 32-bit integer representing time
