@@ -11,10 +11,6 @@
 #ifndef WEBRTC_BASE_TIMING_H_
 #define WEBRTC_BASE_TIMING_H_
 
-#if defined(WEBRTC_WIN)
-#include "webrtc/base/win32.h"
-#endif
-
 namespace rtc {
 
 class Timing {
@@ -33,26 +29,10 @@ class Timing {
   // timing unit, they do not necessarily correlate because wall-clock
   // time may be adjusted backwards, hence not monotonic.
   // Made virtual so we can make a fake one.
+  // TODO(tommi): The only place we use this (virtual) is in
+  // rtpdata_engine_unittest.cc.  See if it doesn't make more sense to change
+  // that contract or test than to modify this generic class.
   virtual double TimerNow();
-
-  // BusyWait() exhausts CPU as long as the time elapsed is less than
-  // the specified interval in seconds.  Returns the actual waiting
-  // time based on TimerNow() measurement.
-  double BusyWait(double period);
-
-  // IdleWait() relinquishes control of CPU for specified period in
-  // seconds.  It uses highest resolution sleep mechanism as possible,
-  // but does not otherwise guarantee the accuracy.  Returns the
-  // actual waiting time based on TimerNow() measurement.
-  //
-  // This function is not re-entrant for an object.  Create a fresh
-  // Timing object for each thread.
-  double IdleWait(double period);
-
- private:
-#if defined(WEBRTC_WIN)
-  HANDLE timer_handle_;
-#endif
 };
 
 }  // namespace rtc
