@@ -132,6 +132,7 @@
 /third_party/robolectric
 /third_party/sqlite
 /third_party/syzygy
+/third_party/tcmalloc
 /third_party/usrsctp
 /third_party/valgrind
 /third_party/WebKit

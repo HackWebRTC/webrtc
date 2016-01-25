@@ -99,6 +99,7 @@ if 'android' in target_os:
     'third_party/modp_b64',
     'third_party/requests',
     'third_party/robolectric',
+    'third_party/tcmalloc',
     'tools/android',
     'tools/grit',
     'tools/telemetry',
