@@ -278,7 +278,7 @@ class FakeAudioCaptureModule
 
   // Protects variables that are accessed from process_thread_ and
   // the main thread.
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   // Protects |audio_callback_| that is accessed from process_thread_ and
   // the main thread.
   rtc::CriticalSection crit_callback_;

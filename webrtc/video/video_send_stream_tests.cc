@@ -1079,7 +1079,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
     }
 
    private:
-    mutable rtc::CriticalSection crit_;
+    rtc::CriticalSection crit_;
     int start_bitrate_kbps_ GUARDED_BY(crit_);
   };
 

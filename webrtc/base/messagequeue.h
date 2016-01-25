@@ -251,7 +251,7 @@ class MessageQueue {
   MessageList msgq_;
   PriorityQueue dmsgq_;
   uint32_t dmsgq_next_num_;
-  mutable CriticalSection crit_;
+  CriticalSection crit_;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(MessageQueue);

@@ -74,7 +74,7 @@ class BitrateControllerImpl : public BitrateController {
   BitrateObserver* observer_;
   int64_t last_bitrate_update_ms_;
 
-  mutable rtc::CriticalSection critsect_;
+  rtc::CriticalSection critsect_;
   SendSideBandwidthEstimation bandwidth_estimation_ GUARDED_BY(critsect_);
   uint32_t reserved_bitrate_bps_ GUARDED_BY(critsect_);
 

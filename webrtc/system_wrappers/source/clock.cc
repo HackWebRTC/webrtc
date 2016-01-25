@@ -179,7 +179,7 @@ class WindowsRealTimeClock : public RealTimeClock {
   }
 
   // mutable as time-accessing functions are const.
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   mutable DWORD last_time_ms_;
   mutable LONG num_timer_wraps_;
   const ReferencePoint ref_point_;

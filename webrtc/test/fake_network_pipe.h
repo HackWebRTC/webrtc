@@ -71,7 +71,7 @@ class FakeNetworkPipe {
 
  private:
   Clock* const clock_;
-  mutable rtc::CriticalSection lock_;
+  rtc::CriticalSection lock_;
   PacketReceiver* packet_receiver_;
   std::queue<NetworkPacket*> capacity_link_;
   std::queue<NetworkPacket*> delay_link_;

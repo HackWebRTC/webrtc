@@ -77,9 +77,9 @@ class IncomingVideoStream : public VideoRenderCallback {
   uint32_t const stream_id_;
   const bool disable_prerenderer_smoothing_;
   // Critsects in allowed to enter order.
-  mutable rtc::CriticalSection stream_critsect_;
-  mutable rtc::CriticalSection thread_critsect_;
-  mutable rtc::CriticalSection buffer_critsect_;
+  rtc::CriticalSection stream_critsect_;
+  rtc::CriticalSection thread_critsect_;
+  rtc::CriticalSection buffer_critsect_;
   // TODO(pbos): Make plain member and stop resetting this thread, just
   // start/stoping it is enough.
   rtc::scoped_ptr<rtc::PlatformThread> incoming_render_thread_

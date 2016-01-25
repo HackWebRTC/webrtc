@@ -36,7 +36,7 @@ class LockedIsacBandwidthInfo final {
   }
 
  private:
-  mutable rtc::CriticalSection lock_;
+  rtc::CriticalSection lock_;
   IsacBandwidthInfo bwinfo_ GUARDED_BY(lock_);
 };
 

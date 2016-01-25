@@ -45,7 +45,7 @@ class BufferQueue {
  private:
   size_t capacity_;
   size_t default_size_;
-  mutable CriticalSection crit_;
+  CriticalSection crit_;
   std::deque<Buffer*> queue_ GUARDED_BY(crit_);
   std::vector<Buffer*> free_list_ GUARDED_BY(crit_);
 

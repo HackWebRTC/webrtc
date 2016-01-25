@@ -69,7 +69,7 @@ class CaptureRenderAdapter : public sigslot::has_slots<> {
   VideoRenderers video_renderers_;
   VideoCapturer* video_capturer_;
   // Critical section synchronizing the capture thread.
-  mutable rtc::CriticalSection capture_crit_;
+  rtc::CriticalSection capture_crit_;
 };
 
 }  // namespace cricket

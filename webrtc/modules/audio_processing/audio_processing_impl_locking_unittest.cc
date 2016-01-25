@@ -298,7 +298,7 @@ class FrameCounters {
   }
 
  private:
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   int render_count GUARDED_BY(crit_) = 0;
   int capture_count GUARDED_BY(crit_) = 0;
 };

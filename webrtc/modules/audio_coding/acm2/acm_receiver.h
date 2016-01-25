@@ -281,7 +281,7 @@ class AcmReceiver {
 
   uint32_t NowInTimestamp(int decoder_sampling_rate) const;
 
-  mutable rtc::CriticalSection crit_sect_;
+  rtc::CriticalSection crit_sect_;
   int id_;  // TODO(henrik.lundin) Make const.
   const Decoder* last_audio_decoder_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity previous_audio_activity_ GUARDED_BY(crit_sect_);

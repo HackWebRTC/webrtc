@@ -149,7 +149,7 @@ class FileVideoCapturer::FileReadThread
 
  private:
   FileVideoCapturer* capturer_;
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   bool finished_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FileReadThread);

@@ -119,7 +119,7 @@ class OveruseFrameDetector : public Module {
   // processing thread.
   // TODO(asapersson): See if we can reduce locking.  As is, video frame
   // processing contends with reading stats and the processing thread.
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
 
   const CpuOveruseOptions options_;
 

@@ -338,7 +338,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Creates DecisionLogic object with the mode given by |playout_mode_|.
   virtual void CreateDecisionLogic() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  mutable rtc::CriticalSection crit_sect_;
+  rtc::CriticalSection crit_sect_;
   const rtc::scoped_ptr<BufferLevelFilter> buffer_level_filter_
       GUARDED_BY(crit_sect_);
   const rtc::scoped_ptr<DecoderDatabase> decoder_database_

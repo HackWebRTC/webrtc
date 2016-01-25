@@ -239,15 +239,15 @@ class AudioProcessingImpl : public AudioProcessing {
       EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Critical section.
-  mutable rtc::CriticalSection crit_debug_;
+  rtc::CriticalSection crit_debug_;
 
   // Debug dump state.
   ApmDebugDumpState debug_dump_;
 #endif
 
   // Critical sections.
-  mutable rtc::CriticalSection crit_render_ ACQUIRED_BEFORE(crit_capture_);
-  mutable rtc::CriticalSection crit_capture_;
+  rtc::CriticalSection crit_render_ ACQUIRED_BEFORE(crit_capture_);
+  rtc::CriticalSection crit_capture_;
 
   // Structs containing the pointers to the submodules.
   rtc::scoped_ptr<ApmPublicSubmodules> public_submodules_;

@@ -113,7 +113,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
     ntp_rtp_pairs_.push_front(ntp_rtp_pair);
   }
 
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   RtcpList ntp_rtp_pairs_ GUARDED_BY(crit_);
 };
 

@@ -126,7 +126,7 @@ class FakeAdmTest : public testing::Test,
     return min_buffer_size;
   }
 
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
 
   int push_iterations_;
   int pull_iterations_;

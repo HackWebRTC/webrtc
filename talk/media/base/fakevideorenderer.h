@@ -142,7 +142,7 @@ class FakeVideoRenderer : public VideoRenderer {
   int height_;
   int num_rendered_frames_;
   bool black_frame_;
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
 };
 
 }  // namespace cricket

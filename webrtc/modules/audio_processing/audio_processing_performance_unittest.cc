@@ -202,7 +202,7 @@ class FrameCounters {
   }
 
  private:
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   int render_count_ GUARDED_BY(crit_) = 0;
   int capture_count_ GUARDED_BY(crit_) = 0;
 };
@@ -221,7 +221,7 @@ class LockedFlag {
   }
 
  private:
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   bool flag_ GUARDED_BY(crit_) = false;
 };
 

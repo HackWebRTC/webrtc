@@ -58,7 +58,7 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
 
   Clock* clock_;
   rtc::scoped_ptr<EventTimerWrapper> tick_;
-  mutable rtc::CriticalSection lock_;
+  rtc::CriticalSection lock_;
   rtc::PlatformThread thread_;
   rtc::scoped_ptr<ModuleFileUtility> file_utility_;
   rtc::scoped_ptr<FileWrapper> input_stream_;

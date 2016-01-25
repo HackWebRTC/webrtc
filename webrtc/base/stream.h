@@ -555,7 +555,7 @@ class FifoBuffer : public StreamInterface {
   size_t data_length_;  // amount of readable data in the buffer
   size_t read_position_;  // offset to the readable data
   Thread* owner_;  // stream callbacks are dispatched on this thread
-  mutable CriticalSection crit_;  // object lock
+  CriticalSection crit_;  // object lock
   RTC_DISALLOW_COPY_AND_ASSIGN(FifoBuffer);
 };
 

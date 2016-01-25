@@ -44,7 +44,7 @@ class VideoProcessingImpl : public VideoProcessing {
   VideoContentMetrics* GetContentMetrics() const override;
 
  private:
-  mutable rtc::CriticalSection mutex_;
+  rtc::CriticalSection mutex_;
   VPMDeflickering deflickering_ GUARDED_BY(mutex_);
   VPMBrightnessDetection brightness_detection_;
   VPMFramePreprocessor frame_pre_processor_;

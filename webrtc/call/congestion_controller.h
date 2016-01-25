@@ -74,7 +74,7 @@ class CongestionController {
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   rtc::scoped_ptr<RemoteEstimatorProxy> remote_estimator_proxy_;
 
-  mutable rtc::CriticalSection encoder_crit_;
+  rtc::CriticalSection encoder_crit_;
   std::vector<ViEEncoder*> encoders_ GUARDED_BY(encoder_crit_);
 
   // Registered at construct time and assumed to outlive this class.

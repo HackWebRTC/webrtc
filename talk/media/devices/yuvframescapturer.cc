@@ -85,7 +85,7 @@ class YuvFramesCapturer::YuvFramesThread
 
  private:
   YuvFramesCapturer* capturer_;
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   bool finished_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(YuvFramesThread);

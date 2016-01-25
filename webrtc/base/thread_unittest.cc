@@ -164,7 +164,7 @@ class AtomicBool {
   }
 
  private:
-  mutable CriticalSection cs_;
+  CriticalSection cs_;
   bool flag_;
 };
 

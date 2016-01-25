@@ -104,7 +104,7 @@ class VideoSender {
   Clock* const clock_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
-  mutable rtc::CriticalSection encoder_crit_;
+  rtc::CriticalSection encoder_crit_;
   VCMGenericEncoder* _encoder;
   VCMEncodedFrameCallback _encodedFrameCallback GUARDED_BY(encoder_crit_);
   media_optimization::MediaOptimization _mediaOpt;

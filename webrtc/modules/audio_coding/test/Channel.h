@@ -100,7 +100,7 @@ class Channel : public AudioPacketizationCallback {
   // 60msec * 32 sample(max)/msec * 2 description (maybe) * 2 bytes/sample
   uint8_t _payloadData[60 * 32 * 2 * 2];
 
-  mutable rtc::CriticalSection _channelCritSect;
+  rtc::CriticalSection _channelCritSect;
   FILE* _bitStreamFile;
   bool _saveBitStream;
   int16_t _lastPayloadType;

@@ -138,7 +138,7 @@ class VCMGenericEncoder {
   VideoEncoderRateObserver* const rate_observer_;
   VCMEncodedFrameCallback* const vcm_encoded_frame_callback_;
   const bool internal_source_;
-  mutable rtc::CriticalSection params_lock_;
+  rtc::CriticalSection params_lock_;
   EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
   VideoRotation rotation_;
   bool is_screenshare_;

@@ -147,7 +147,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
   int last_payload_type_ GUARDED_BY(crit_sect_);
   uint32_t last_timestamp_ GUARDED_BY(crit_sect_);
   std::vector<uint8_t> last_payload_vec_ GUARDED_BY(crit_sect_);
-  mutable rtc::CriticalSection crit_sect_;
+  rtc::CriticalSection crit_sect_;
 };
 
 class AudioCodingModuleTestOldApi : public ::testing::Test {
@@ -579,7 +579,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   int send_count_;
   int insert_packet_count_;
   int pull_audio_count_ GUARDED_BY(crit_sect_);
-  mutable rtc::CriticalSection crit_sect_;
+  rtc::CriticalSection crit_sect_;
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
   rtc::scoped_ptr<SimulatedClock> fake_clock_;
 };
@@ -842,7 +842,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   rtc::PlatformThread receive_thread_;
   rtc::PlatformThread codec_registration_thread_;
   const rtc::scoped_ptr<EventWrapper> test_complete_;
-  mutable rtc::CriticalSection crit_sect_;
+  rtc::CriticalSection crit_sect_;
   bool codec_registered_ GUARDED_BY(crit_sect_);
   int receive_packet_count_ GUARDED_BY(crit_sect_);
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);

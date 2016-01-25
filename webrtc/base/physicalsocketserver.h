@@ -172,7 +172,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   SOCKET s_;
   uint8_t enabled_events_;
   bool udp_;
-  mutable CriticalSection crit_;
+  CriticalSection crit_;
   int error_ GUARDED_BY(crit_);
   ConnState state_;
   AsyncResolver* resolver_;
