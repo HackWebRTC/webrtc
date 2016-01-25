@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testing/gtest/include/gtest/gtest.h"
-
 #include <algorithm>
 #include <vector>
+
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"

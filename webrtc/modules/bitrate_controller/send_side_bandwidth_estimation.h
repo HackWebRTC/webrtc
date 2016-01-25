@@ -14,6 +14,8 @@
 #define WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
 
 #include <deque>
+#include <utility>
+#include <vector>
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"

@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "webrtc/base/checks.h"
@@ -41,7 +42,7 @@ const UmaRampUpMetric kUmaRampupMetrics[] = {
 const size_t kNumUmaRampupMetrics =
     sizeof(kUmaRampupMetrics) / sizeof(kUmaRampupMetrics[0]);
 
-}
+}  // namespace
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation()
     : lost_packets_since_last_loss_update_Q8_(0),
