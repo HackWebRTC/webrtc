@@ -14,27 +14,28 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_unittest.h"
-#include "webrtc/modules/video_coding/codecs/vp8/vp8_factory.h"
 
 namespace webrtc {
 namespace testing {
 
-static VP8Encoder* CreateTestEncoderAdapter() {
-  VP8EncoderFactoryConfig::set_use_simulcast_adapter(true);
-  return VP8Encoder::Create();
-}
-
 class TestSimulcastEncoderAdapter : public TestVp8Simulcast {
  public:
   TestSimulcastEncoderAdapter()
-      : TestVp8Simulcast(CreateTestEncoderAdapter(), VP8Decoder::Create()) {}
+      : TestVp8Simulcast(new SimulcastEncoderAdapter(new Vp8EncoderFactory()),
+                         VP8Decoder::Create()) {}
 
  protected:
+  class Vp8EncoderFactory : public VideoEncoderFactory {
+   public:
+    VideoEncoder* Create() override { return VP8Encoder::Create(); }
+
+    void Destroy(VideoEncoder* encoder) override { delete encoder; }
+
+    virtual ~Vp8EncoderFactory() {}
+  };
+
   virtual void SetUp() { TestVp8Simulcast::SetUp(); }
-  virtual void TearDown() {
-    TestVp8Simulcast::TearDown();
-    VP8EncoderFactoryConfig::set_use_simulcast_adapter(false);
-  }
+  virtual void TearDown() { TestVp8Simulcast::TearDown(); }
 };
 
 TEST_F(TestSimulcastEncoderAdapter, TestKeyFrameRequestsOnAllStreams) {

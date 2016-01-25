@@ -140,6 +140,14 @@ int NumStreamsDisabled(const std::vector<bool>& streams) {
 }
 }  // namespace
 
+VP8Encoder* VP8Encoder::Create() {
+  return new VP8EncoderImpl();
+}
+
+VP8Decoder* VP8Decoder::Create() {
+  return new VP8DecoderImpl();
+}
+
 const float kTl1MaxTimeToDropFrames = 20.0f;
 
 VP8EncoderImpl::VP8EncoderImpl()

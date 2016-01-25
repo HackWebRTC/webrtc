@@ -40,8 +40,6 @@
         'simulcast_encoder_adapter.cc',
         'simulcast_encoder_adapter.h',
         'temporal_layers.h',
-        'vp8_factory.cc',
-        'vp8_factory.h',
         'vp8_impl.cc',
         'vp8_impl.h',
       ],

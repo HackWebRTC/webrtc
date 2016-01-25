@@ -186,8 +186,6 @@ source_set("webrtc_vp8") {
     "codecs/vp8/simulcast_encoder_adapter.cc",
     "codecs/vp8/simulcast_encoder_adapter.h",
     "codecs/vp8/temporal_layers.h",
-    "codecs/vp8/vp8_factory.cc",
-    "codecs/vp8/vp8_factory.h",
     "codecs/vp8/vp8_impl.cc",
     "codecs/vp8/vp8_impl.h",
   ]
