@@ -441,16 +441,6 @@ inline const RtpHeaderExtension* FindHeaderExtension(
   return NULL;
 }
 
-enum MediaChannelOptions {
-  // Tune the stream for conference mode.
-  OPT_CONFERENCE = 0x0001
-};
-
-enum VoiceMediaChannelOptions {
-  // Tune the audio stream for vcs with different target levels.
-  OPT_AGC_MINUS_10DB = 0x80000000
-};
-
 class MediaChannel : public sigslot::has_slots<> {
  public:
   class NetworkInterface {

@@ -3138,7 +3138,7 @@ TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_NoSimulcastWith1on1) {
   FAIL() << "Not implemented.";
 }
 
-// Test SetOptions with OPT_CONFERENCE flag.
+// Test SetOptions with conference mode.
 TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_SetOptionsWithConferenceMode) {
   // TODO(pbos): Implement.
   FAIL() << "Not implemented.";
