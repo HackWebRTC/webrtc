@@ -62,14 +62,14 @@ void VCMTiming::UpdateHistograms() const {
   if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
     return;
   }
-  RTC_HISTOGRAM_COUNTS_SPARSE_100(
+  RTC_HISTOGRAM_COUNTS_100(
       "WebRTC.Video.DecodedFramesPerSecond",
       static_cast<int>((num_decoded_frames_ / elapsed_sec) + 0.5f));
-  RTC_HISTOGRAM_PERCENTAGE_SPARSE(
+  RTC_HISTOGRAM_PERCENTAGE(
       "WebRTC.Video.DelayedFramesToRenderer",
       num_delayed_decoded_frames_ * 100 / num_decoded_frames_);
   if (num_delayed_decoded_frames_ > 0) {
-    RTC_HISTOGRAM_COUNTS_SPARSE_1000(
+    RTC_HISTOGRAM_COUNTS_1000(
         "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs",
         sum_missed_render_deadline_ms_ / num_delayed_decoded_frames_);
   }

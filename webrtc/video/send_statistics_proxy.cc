@@ -56,8 +56,9 @@ HistogramCodecType PayloadNameToHistogramCodecType(
 }
 
 void UpdateCodecTypeHistogram(const std::string& payload_name) {
-  RTC_HISTOGRAM_ENUMERATION_SPARSE("WebRTC.Video.Encoder.CodecType",
-      PayloadNameToHistogramCodecType(payload_name), kVideoMax);
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.Encoder.CodecType",
+                            PayloadNameToHistogramCodecType(payload_name),
+                            kVideoMax);
 }
 }  // namespace
 
