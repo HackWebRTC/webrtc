@@ -61,4 +61,19 @@
   return iceServer;
 }
 
+- (instancetype)initWithNativeServer:
+    (webrtc::PeerConnectionInterface::IceServer)nativeServer {
+  NSMutableArray *urls =
+      [NSMutableArray arrayWithCapacity:nativeServer.urls.size()];
+  for (auto const &url : nativeServer.urls) {
+    [urls addObject:[NSString stringForStdString:url]];
+  }
+  NSString *username = [NSString stringForStdString:nativeServer.username];
+  NSString *credential = [NSString stringForStdString:nativeServer.password];
+  self = [self initWithURLStrings:urls
+                         username:username
+                       credential:credential];
+  return self;
+}
+
 @end

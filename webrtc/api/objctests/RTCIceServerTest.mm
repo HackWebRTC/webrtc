@@ -16,11 +16,13 @@
 
 #import "webrtc/api/objc/RTCIceServer.h"
 #import "webrtc/api/objc/RTCIceServer+Private.h"
+#import "webrtc/base/objc/NSString+StdString.h"
 
 @interface RTCIceServerTest : NSObject
 - (void)testOneURLServer;
 - (void)testTwoURLServer;
 - (void)testPasswordCredential;
+- (void)testInitFromNativeServer;
 @end
 
 @implementation RTCIceServerTest
@@ -30,7 +32,7 @@
       @"stun:stun1.example.net" ]];
 
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.iceServer;
-  EXPECT_EQ((size_t)1, iceStruct.urls.size());
+  EXPECT_EQ(1u, iceStruct.urls.size());
   EXPECT_EQ("stun:stun1.example.net", iceStruct.urls.front());
   EXPECT_EQ("", iceStruct.username);
   EXPECT_EQ("", iceStruct.password);
@@ -41,7 +43,7 @@
       @"turn1:turn1.example.net", @"turn2:turn2.example.net" ]];
 
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.iceServer;
-  EXPECT_EQ((size_t)2, iceStruct.urls.size());
+  EXPECT_EQ(2u, iceStruct.urls.size());
   EXPECT_EQ("turn1:turn1.example.net", iceStruct.urls.front());
   EXPECT_EQ("turn2:turn2.example.net", iceStruct.urls.back());
   EXPECT_EQ("", iceStruct.username);
@@ -54,10 +56,25 @@
                 username:@"username"
               credential:@"credential"];
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.iceServer;
-  EXPECT_EQ((size_t)1, iceStruct.urls.size());
+  EXPECT_EQ(1u, iceStruct.urls.size());
   EXPECT_EQ("turn1:turn1.example.net", iceStruct.urls.front());
   EXPECT_EQ("username", iceStruct.username);
   EXPECT_EQ("credential", iceStruct.password);
+}
+
+- (void)testInitFromNativeServer {
+  webrtc::PeerConnectionInterface::IceServer nativeServer;
+  nativeServer.username = "username";
+  nativeServer.password = "password";
+  nativeServer.urls.push_back("stun:stun.example.net");
+
+  RTCIceServer *iceServer =
+      [[RTCIceServer alloc] initWithNativeServer:nativeServer];
+  EXPECT_EQ(1u, iceServer.urlStrings.count);
+  EXPECT_EQ("stun:stun.example.net",
+      [NSString stdStringForString:iceServer.urlStrings.firstObject]);
+  EXPECT_EQ("username", [NSString stdStringForString:iceServer.username]);
+  EXPECT_EQ("password", [NSString stdStringForString:iceServer.credential]);
 }
 
 @end
@@ -80,5 +97,12 @@ TEST(RTCIceServerTest, PasswordCredentialTest) {
   @autoreleasepool {
     RTCIceServerTest *test = [[RTCIceServerTest alloc] init];
     [test testPasswordCredential];
+  }
+}
+
+TEST(RTCIceServerTest, InitFromNativeServerTest) {
+  @autoreleasepool {
+    RTCIceServerTest *test = [[RTCIceServerTest alloc] init];
+    [test testInitFromNativeServer];
   }
 }

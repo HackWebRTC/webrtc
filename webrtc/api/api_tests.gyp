@@ -19,6 +19,7 @@
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
           ],
           'sources': [
+            'objctests/RTCConfigurationTest.mm',
             'objctests/RTCIceCandidateTest.mm',
             'objctests/RTCIceServerTest.mm',
             'objctests/RTCMediaConstraintsTest.mm',
