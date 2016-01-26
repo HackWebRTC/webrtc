@@ -245,9 +245,9 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  int retVal = Release();
-  if (retVal < 0) {
-    return retVal;
+  int ret_val = Release();
+  if (ret_val < 0) {
+    return ret_val;
   }
   if (encoder_ == NULL) {
     encoder_ = new vpx_codec_ctx_t;
@@ -650,30 +650,24 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 }
 
 int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
-  encoded_image_._length = 0;
-  encoded_image_._frameType = kVideoFrameDelta;
-  RTPFragmentationHeader frag_info;
-  // Note: no data partitioning in VP9, so 1 partition only. We keep this
-  // fragmentation data for now, until VP9 packetizer is implemented.
-  frag_info.VerifyAndAllocateFragmentationHeader(1);
-  int part_idx = 0;
-  CodecSpecificInfo codec_specific;
+  RTC_DCHECK_EQ(pkt->kind, VPX_CODEC_CX_FRAME_PKT);
 
   if (pkt->data.frame.sz > encoded_image_._size) {
     delete[] encoded_image_._buffer;
     encoded_image_._size = pkt->data.frame.sz;
     encoded_image_._buffer = new uint8_t[encoded_image_._size];
   }
+  memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
+  encoded_image_._length = pkt->data.frame.sz;
 
-  assert(pkt->kind == VPX_CODEC_CX_FRAME_PKT);
-  memcpy(&encoded_image_._buffer[encoded_image_._length], pkt->data.frame.buf,
-         pkt->data.frame.sz);
-  frag_info.fragmentationOffset[part_idx] = encoded_image_._length;
-  frag_info.fragmentationLength[part_idx] =
-      static_cast<uint32_t>(pkt->data.frame.sz);
+  // No data partitioning in VP9, so 1 partition only.
+  int part_idx = 0;
+  RTPFragmentationHeader frag_info;
+  frag_info.VerifyAndAllocateFragmentationHeader(1);
+  frag_info.fragmentationOffset[part_idx] = 0;
+  frag_info.fragmentationLength[part_idx] = pkt->data.frame.sz;
   frag_info.fragmentationPlType[part_idx] = 0;
   frag_info.fragmentationTimeDiff[part_idx] = 0;
-  encoded_image_._length += static_cast<uint32_t>(pkt->data.frame.sz);
 
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
@@ -682,13 +676,15 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
         static_cast<unsigned int>(encoded_image_._length),
         layer_id.spatial_layer_id);
 
-  assert(encoded_image_._length <= encoded_image_._size);
-
   // End of frame.
   // Check if encoded frame is a key frame.
+  encoded_image_._frameType = kVideoFrameDelta;
   if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
     encoded_image_._frameType = kVideoFrameKey;
   }
+  RTC_DCHECK_LE(encoded_image_._length, encoded_image_._size);
+
+  CodecSpecificInfo codec_specific;
   PopulateCodecSpecific(&codec_specific, *pkt, input_image_->timestamp());
 
   if (encoded_image_._length > 0) {
