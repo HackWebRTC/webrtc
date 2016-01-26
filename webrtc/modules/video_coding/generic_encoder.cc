@@ -109,6 +109,7 @@ VCMGenericEncoder::VCMGenericEncoder(
 VCMGenericEncoder::~VCMGenericEncoder() {}
 
 int32_t VCMGenericEncoder::Release() {
+  TRACE_EVENT0("webrtc", "VCMGenericEncoder::Release");
   return encoder_->Release();
 }
 
