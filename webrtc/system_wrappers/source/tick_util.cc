@@ -106,12 +106,7 @@ int64_t TickTime::QueryOsForTicks() {
   return now + (num_wrap_time_get_time << 32);
 #elif defined(WEBRTC_LINUX)
   struct timespec ts;
-  // TODO(wu): Remove CLOCK_REALTIME implementation.
-#ifdef WEBRTC_CLOCK_TYPE_REALTIME
-  clock_gettime(CLOCK_REALTIME, &ts);
-#else
   clock_gettime(CLOCK_MONOTONIC, &ts);
-#endif
   return 1000000000LL * ts.tv_sec + ts.tv_nsec;
 #elif defined(WEBRTC_MAC)
   // Return absolute time as an offset from the first call to this function, so

@@ -41,15 +41,18 @@ EventTimerPosix::EventTimerPosix()
   pthread_mutexattr_init(&attr);
   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
   pthread_mutex_init(&mutex_, &attr);
-#ifdef WEBRTC_CLOCK_TYPE_REALTIME
-  pthread_cond_init(&cond_, 0);
-#else
   pthread_condattr_t cond_attr;
   pthread_condattr_init(&cond_attr);
+// TODO(sprang): Remove HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC special case once
+// all supported Android platforms support pthread_condattr_setclock.
+// TODO(sprang): Add support for monotonic clock on Apple platforms.
+#if !(defined(WEBRTC_MAC) || defined(WEBRTC_IOS)) && \
+    !(defined(WEBRTC_ANDROID) &&                     \
+      defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC))
   pthread_condattr_setclock(&cond_attr, CLOCK_MONOTONIC);
+#endif
   pthread_cond_init(&cond_, &cond_attr);
   pthread_condattr_destroy(&cond_attr);
-#endif
 }
 
 EventTimerPosix::~EventTimerPosix() {
@@ -75,11 +78,7 @@ EventTypeWrapper EventTimerPosix::Wait(unsigned long timeout) {
     if (WEBRTC_EVENT_INFINITE != timeout) {
       timespec end_at;
 #ifndef WEBRTC_MAC
-#ifdef WEBRTC_CLOCK_TYPE_REALTIME
-      clock_gettime(CLOCK_REALTIME, &end_at);
-#else
       clock_gettime(CLOCK_MONOTONIC, &end_at);
-#endif
 #else
       timeval value;
       struct timezone time_zone;
@@ -95,8 +94,13 @@ EventTypeWrapper EventTimerPosix::Wait(unsigned long timeout) {
         end_at.tv_sec++;
         end_at.tv_nsec -= E9;
       }
-      while (ret_val == 0 && !event_set_)
+      while (ret_val == 0 && !event_set_) {
+#if defined(WEBRTC_ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC)
+        ret_val = pthread_cond_timedwait_monotonic_np(&cond_, &mutex_, &end_at);
+#else
         ret_val = pthread_cond_timedwait(&cond_, &mutex_, &end_at);
+#endif  // WEBRTC_ANDROID && HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC
+      }
     } else {
       while (ret_val == 0 && !event_set_)
         ret_val = pthread_cond_wait(&cond_, &mutex_);
@@ -119,8 +123,13 @@ EventTypeWrapper EventTimerPosix::Wait(timespec* end_at) {
   int ret_val = 0;
   RTC_CHECK_EQ(0, pthread_mutex_lock(&mutex_));
 
-  while (ret_val == 0 && !event_set_)
+  while (ret_val == 0 && !event_set_) {
+#if defined(WEBRTC_ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC)
+    ret_val = pthread_cond_timedwait_monotonic_np(&cond_, &mutex_, end_at);
+#else
     ret_val = pthread_cond_timedwait(&cond_, &mutex_, end_at);
+#endif  // WEBRTC_ANDROID && HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC
+  }
 
   RTC_DCHECK(ret_val == 0 || ret_val == ETIMEDOUT);
 
@@ -172,11 +181,7 @@ bool EventTimerPosix::Process() {
   pthread_mutex_lock(&mutex_);
   if (created_at_.tv_sec == 0) {
 #ifndef WEBRTC_MAC
-#ifdef WEBRTC_CLOCK_TYPE_REALTIME
-    clock_gettime(CLOCK_REALTIME, &created_at_);
-#else
     clock_gettime(CLOCK_MONOTONIC, &created_at_);
-#endif
 #else
     timeval value;
     struct timezone time_zone;

@@ -179,7 +179,7 @@ void PlatformThread::Run() {
   if (!name_.empty())
     rtc::SetCurrentThreadName(name_.c_str());
   do {
-    // The interface contract of Start/Stop is that for a successfull call to
+    // The interface contract of Start/Stop is that for a successful call to
     // Start, there should be at least one call to the run function.  So we
     // call the function before checking |stop_|.
     if (!run_function_(obj_))
