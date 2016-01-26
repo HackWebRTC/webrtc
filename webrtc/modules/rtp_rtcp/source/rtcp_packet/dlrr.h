@@ -18,17 +18,19 @@
 
 namespace webrtc {
 namespace rtcp {
+struct ReceiveTimeInfo {
+  // RFC 3611 4.5
+  ReceiveTimeInfo() : ssrc(0), last_rr(0), delay_since_last_rr(0) {}
+  ReceiveTimeInfo(uint32_t ssrc, uint32_t last_rr, uint32_t delay)
+      : ssrc(ssrc), last_rr(last_rr), delay_since_last_rr(delay) {}
+  uint32_t ssrc;
+  uint32_t last_rr;
+  uint32_t delay_since_last_rr;
+};
 
 // DLRR Report Block: Delay since the Last Receiver Report (RFC 3611).
 class Dlrr {
  public:
-  struct SubBlock {
-    // RFC 3611 4.5
-    uint32_t ssrc;
-    uint32_t last_rr;
-    uint32_t delay_since_last_rr;
-  };
-
   static const uint8_t kBlockType = 5;
   static const size_t kMaxNumberOfDlrrItems = 100;
 
@@ -48,15 +50,16 @@ class Dlrr {
   void Create(uint8_t* buffer) const;
 
   // Max 100 DLRR Items can be added per DLRR report block.
+  bool WithDlrrItem(const ReceiveTimeInfo& time_info);
   bool WithDlrrItem(uint32_t ssrc, uint32_t last_rr, uint32_t delay_last_rr);
 
-  const std::vector<SubBlock>& sub_blocks() const { return sub_blocks_; }
+  const std::vector<ReceiveTimeInfo>& sub_blocks() const { return sub_blocks_; }
 
  private:
   static const size_t kBlockHeaderLength = 4;
   static const size_t kSubBlockLength = 12;
 
-  std::vector<SubBlock> sub_blocks_;
+  std::vector<ReceiveTimeInfo> sub_blocks_;
 };
 }  // namespace rtcp
 }  // namespace webrtc

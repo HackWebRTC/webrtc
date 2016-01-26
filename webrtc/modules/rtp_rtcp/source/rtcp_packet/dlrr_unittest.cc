@@ -15,16 +15,17 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
 using webrtc::rtcp::Dlrr;
+using webrtc::rtcp::ReceiveTimeInfo;
 
 namespace webrtc {
 namespace {
-
 const uint32_t kSsrc = 0x12345678;
 const uint32_t kLastRR = 0x23344556;
 const uint32_t kDelay = 0x33343536;
 const uint8_t kBlock[] = {0x05, 0x00, 0x00, 0x03, 0x12, 0x34, 0x56, 0x78,
                           0x23, 0x34, 0x45, 0x56, 0x33, 0x34, 0x35, 0x36};
 const size_t kBlockSizeBytes = sizeof(kBlock);
+}  // namespace
 
 TEST(RtcpPacketDlrrTest, Empty) {
   Dlrr dlrr;
@@ -49,7 +50,7 @@ TEST(RtcpPacketDlrrTest, Parse) {
   EXPECT_TRUE(dlrr.Parse(kBlock, block_length));
 
   EXPECT_EQ(1u, dlrr.sub_blocks().size());
-  const Dlrr::SubBlock& block = dlrr.sub_blocks().front();
+  const ReceiveTimeInfo& block = dlrr.sub_blocks().front();
   EXPECT_EQ(kSsrc, block.ssrc);
   EXPECT_EQ(kLastRR, block.last_rr);
   EXPECT_EQ(kDelay, block.delay_since_last_rr);
@@ -97,6 +98,4 @@ TEST(RtcpPacketDlrrTest, CreateAndParseMaxSubBlocks) {
   EXPECT_TRUE(parsed.Parse(buffer, block_length));
   EXPECT_TRUE(parsed.sub_blocks().size() == Dlrr::kMaxNumberOfDlrrItems);
 }
-
-}  // namespace
 }  // namespace webrtc
