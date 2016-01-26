@@ -610,6 +610,8 @@ class TestVp8Simulcast : public ::testing::Test {
 
   void TestSwitchingToOneOddStream() { SwitchingToOneStream(1023, 769); }
 
+  void TestSwitchingToOneSmallStream() { SwitchingToOneStream(4, 4); }
+
   void TestRPSIEncoder() {
     Vp8TestEncodedImageCallback encoder_callback;
     encoder_->RegisterEncodeCompleteCallback(&encoder_callback);

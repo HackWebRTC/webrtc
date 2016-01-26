@@ -63,6 +63,10 @@ TEST_F(TestVp8Impl, TestSwitchingToOneOddStream) {
   TestVp8Simulcast::TestSwitchingToOneOddStream();
 }
 
+TEST_F(TestVp8Impl, TestSwitchingToOneSmallStream) {
+  TestVp8Simulcast::TestSwitchingToOneSmallStream();
+}
+
 TEST_F(TestVp8Impl, TestRPSIEncoder) {
   TestVp8Simulcast::TestRPSIEncoder();
 }

@@ -979,6 +979,14 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
       switch (pkt->kind) {
         case VPX_CODEC_CX_FRAME_PKT: {
           uint32_t length = encoded_images_[encoder_idx]._length;
+          if (pkt->data.frame.sz + length >
+              encoded_images_[encoder_idx]._size) {
+            uint8_t* buffer = new uint8_t[pkt->data.frame.sz + length];
+            memcpy(buffer, encoded_images_[encoder_idx]._buffer, length);
+            delete[] encoded_images_[encoder_idx]._buffer;
+            encoded_images_[encoder_idx]._buffer = buffer;
+            encoded_images_[encoder_idx]._size = pkt->data.frame.sz + length;
+          }
           memcpy(&encoded_images_[encoder_idx]._buffer[length],
                  pkt->data.frame.buf, pkt->data.frame.sz);
           frag_info.fragmentationOffset[part_idx] = length;
