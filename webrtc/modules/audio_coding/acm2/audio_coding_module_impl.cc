@@ -107,6 +107,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       expected_in_ts_(0xD87F3F9F),
       receiver_(config),
       bitrate_logger_("WebRTC.Audio.TargetBitrateInKbps"),
+      encoder_factory_(new EncoderFactory),
       encoder_stack_(nullptr),
       previous_pltype_(255),
       receiver_initialized_(false),
@@ -195,39 +196,39 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
 // Can be called multiple times for Codec, CNG, RED.
 int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
   rtc::CritScope lock(&acm_crit_sect_);
-  if (!codec_manager_.RegisterEncoder(send_codec)) {
+  if (!encoder_factory_->codec_manager.RegisterEncoder(send_codec)) {
     return -1;
   }
-  auto* sp = codec_manager_.GetStackParams();
-  if (!sp->speech_encoder && codec_manager_.GetCodecInst()) {
+  auto* sp = encoder_factory_->codec_manager.GetStackParams();
+  if (!sp->speech_encoder && encoder_factory_->codec_manager.GetCodecInst()) {
     // We have no speech encoder, but we have a specification for making one.
-    AudioEncoder* enc =
-        rent_a_codec_.RentEncoder(*codec_manager_.GetCodecInst());
+    AudioEncoder* enc = encoder_factory_->rent_a_codec.RentEncoder(
+        *encoder_factory_->codec_manager.GetCodecInst());
     if (!enc)
       return -1;
     sp->speech_encoder = enc;
   }
   if (sp->speech_encoder)
-    encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
+    encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
   return 0;
 }
 
 void AudioCodingModuleImpl::RegisterExternalSendCodec(
     AudioEncoder* external_speech_encoder) {
   rtc::CritScope lock(&acm_crit_sect_);
-  auto* sp = codec_manager_.GetStackParams();
+  auto* sp = encoder_factory_->codec_manager.GetStackParams();
   sp->speech_encoder = external_speech_encoder;
-  encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
+  encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
 }
 
 // Get current send codec.
 rtc::Optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
   rtc::CritScope lock(&acm_crit_sect_);
-  auto* ci = codec_manager_.GetCodecInst();
+  auto* ci = encoder_factory_->codec_manager.GetCodecInst();
   if (ci) {
     return rtc::Optional<CodecInst>(*ci);
   }
-  auto* enc = codec_manager_.GetStackParams()->speech_encoder;
+  auto* enc = encoder_factory_->codec_manager.GetStackParams()->speech_encoder;
   if (enc) {
     return rtc::Optional<CodecInst>(CodecManager::ForgeCodecInst(enc));
   }
@@ -442,19 +443,19 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
 
 bool AudioCodingModuleImpl::REDStatus() const {
   rtc::CritScope lock(&acm_crit_sect_);
-  return codec_manager_.GetStackParams()->use_red;
+  return encoder_factory_->codec_manager.GetStackParams()->use_red;
 }
 
 // Configure RED status i.e on/off.
 int AudioCodingModuleImpl::SetREDStatus(bool enable_red) {
 #ifdef WEBRTC_CODEC_RED
   rtc::CritScope lock(&acm_crit_sect_);
-  if (!codec_manager_.SetCopyRed(enable_red)) {
+  if (!encoder_factory_->codec_manager.SetCopyRed(enable_red)) {
     return -1;
   }
-  auto* sp = codec_manager_.GetStackParams();
+  auto* sp = encoder_factory_->codec_manager.GetStackParams();
   if (sp->speech_encoder)
-    encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
+    encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
   return 0;
 #else
   WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
@@ -469,17 +470,17 @@ int AudioCodingModuleImpl::SetREDStatus(bool enable_red) {
 
 bool AudioCodingModuleImpl::CodecFEC() const {
   rtc::CritScope lock(&acm_crit_sect_);
-  return codec_manager_.GetStackParams()->use_codec_fec;
+  return encoder_factory_->codec_manager.GetStackParams()->use_codec_fec;
 }
 
 int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
   rtc::CritScope lock(&acm_crit_sect_);
-  if (!codec_manager_.SetCodecFEC(enable_codec_fec)) {
+  if (!encoder_factory_->codec_manager.SetCodecFEC(enable_codec_fec)) {
     return -1;
   }
-  auto* sp = codec_manager_.GetStackParams();
+  auto* sp = encoder_factory_->codec_manager.GetStackParams();
   if (sp->speech_encoder)
-    encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
+    encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
   if (enable_codec_fec) {
     return sp->use_codec_fec ? 0 : -1;
   } else {
@@ -505,12 +506,12 @@ int AudioCodingModuleImpl::SetVAD(bool enable_dtx,
   // Note: |enable_vad| is not used; VAD is enabled based on the DTX setting.
   RTC_DCHECK_EQ(enable_dtx, enable_vad);
   rtc::CritScope lock(&acm_crit_sect_);
-  if (!codec_manager_.SetVAD(enable_dtx, mode)) {
+  if (!encoder_factory_->codec_manager.SetVAD(enable_dtx, mode)) {
     return -1;
   }
-  auto* sp = codec_manager_.GetStackParams();
+  auto* sp = encoder_factory_->codec_manager.GetStackParams();
   if (sp->speech_encoder)
-    encoder_stack_ = rent_a_codec_.RentEncoderStack(sp);
+    encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
   return 0;
 }
 
@@ -518,7 +519,7 @@ int AudioCodingModuleImpl::SetVAD(bool enable_dtx,
 int AudioCodingModuleImpl::VAD(bool* dtx_enabled, bool* vad_enabled,
                                ACMVADMode* mode) const {
   rtc::CritScope lock(&acm_crit_sect_);
-  const auto* sp = codec_manager_.GetStackParams();
+  const auto* sp = encoder_factory_->codec_manager.GetStackParams();
   *dtx_enabled = *vad_enabled = sp->use_cng;
   *mode = sp->vad_mode;
   return 0;
@@ -609,8 +610,9 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   // not own its decoder.
   return receiver_.AddCodec(
       *codec_index, codec.pltype, codec.channels, codec.plfreq,
-      STR_CASE_CMP(codec.plname, "isac") == 0 ? rent_a_codec_.RentIsacDecoder()
-                                              : nullptr,
+      STR_CASE_CMP(codec.plname, "isac") == 0
+          ? encoder_factory_->rent_a_codec.RentIsacDecoder()
+          : nullptr,
       codec.plname);
 }
 
