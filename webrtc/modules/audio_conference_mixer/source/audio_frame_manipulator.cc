@@ -39,16 +39,16 @@ const size_t rampSize = sizeof(rampArray)/sizeof(rampArray[0]);
 }  // namespace
 
 namespace webrtc {
-uint32_t CalculateEnergy(const AudioFrame& audioFrame)
+void CalculateEnergy(AudioFrame& audioFrame)
 {
-    uint32_t energy = 0;
+    audioFrame.energy_ = 0;
     for(size_t position = 0; position < audioFrame.samples_per_channel_;
         position++)
     {
         // TODO(andrew): this can easily overflow.
-        energy += audioFrame.data_[position] * audioFrame.data_[position];
+        audioFrame.energy_ += audioFrame.data_[position] *
+                              audioFrame.data_[position];
     }
-    return energy;
 }
 
 void RampIn(AudioFrame& audioFrame)

@@ -583,16 +583,17 @@ void AudioConferenceMixerImpl::UpdateToMix(
                 // There are already more active participants than should be
                 // mixed. Only keep the ones with the highest energy.
                 AudioFrameList::iterator replaceItem;
-                uint32_t lowestEnergy = CalculateEnergy(*audioFrame);
+                CalculateEnergy(*audioFrame);
+                uint32_t lowestEnergy = audioFrame->energy_;
 
                 bool found_replace_item = false;
                 for (AudioFrameList::iterator iter = activeList.begin();
                      iter != activeList.end();
                      ++iter) {
-                    const uint32_t energy = CalculateEnergy(**iter);
-                    if(energy < lowestEnergy) {
+                    CalculateEnergy(**iter);
+                    if((*iter)->energy_ < lowestEnergy) {
                         replaceItem = iter;
-                        lowestEnergy = energy;
+                        lowestEnergy = (*iter)->energy_;
                         found_replace_item = true;
                     }
                 }
@@ -780,6 +781,18 @@ void AudioConferenceMixerImpl::ClearAudioFrameList(
         _audioFramePool->PushMemory(*iter);
     }
     audioFrameList->clear();
+}
+
+void AudioConferenceMixerImpl::UpdateVADPositiveParticipants(
+    AudioFrameList* mixList) const {
+    WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
+                 "UpdateVADPositiveParticipants(mixList)");
+
+    for (AudioFrameList::const_iterator iter = mixList->begin();
+         iter != mixList->end();
+         ++iter) {
+        CalculateEnergy(**iter);
+    }
 }
 
 bool AudioConferenceMixerImpl::IsParticipantInList(

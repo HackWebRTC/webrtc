@@ -116,6 +116,10 @@ private:
     // Clears audioFrameList and reclaims all memory associated with it.
     void ClearAudioFrameList(AudioFrameList* audioFrameList) const;
 
+    // Update the list of MixerParticipants who have a positive VAD. mixList
+    // should be a list of AudioFrames
+    void UpdateVADPositiveParticipants(AudioFrameList* mixList) const;
+
     // This function returns true if it finds the MixerParticipant in the
     // specified list of MixerParticipants.
     bool IsParticipantInList(const MixerParticipant& participant,

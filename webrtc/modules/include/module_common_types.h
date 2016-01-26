@@ -508,7 +508,7 @@ class AudioFrame {
   void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
                    size_t samples_per_channel, int sample_rate_hz,
                    SpeechType speech_type, VADActivity vad_activity,
-                   size_t num_channels = 1);
+                   size_t num_channels = 1, uint32_t energy = -1);
 
   AudioFrame& Append(const AudioFrame& rhs);
 
@@ -535,6 +535,11 @@ class AudioFrame {
   size_t num_channels_;
   SpeechType speech_type_;
   VADActivity vad_activity_;
+  // Note that there is no guarantee that |energy_| is correct. Any user of this
+  // member must verify that the value is correct.
+  // TODO(henrike) Remove |energy_|.
+  // See https://code.google.com/p/webrtc/issues/detail?id=3315.
+  uint32_t energy_;
   bool interleaved_;
 
  private:
@@ -558,6 +563,7 @@ inline void AudioFrame::Reset() {
   num_channels_ = 0;
   speech_type_ = kUndefined;
   vad_activity_ = kVadUnknown;
+  energy_ = 0xffffffff;
   interleaved_ = true;
 }
 
@@ -568,7 +574,8 @@ inline void AudioFrame::UpdateFrame(int id,
                                     int sample_rate_hz,
                                     SpeechType speech_type,
                                     VADActivity vad_activity,
-                                    size_t num_channels) {
+                                    size_t num_channels,
+                                    uint32_t energy) {
   id_ = id;
   timestamp_ = timestamp;
   samples_per_channel_ = samples_per_channel;
@@ -576,6 +583,7 @@ inline void AudioFrame::UpdateFrame(int id,
   speech_type_ = speech_type;
   vad_activity_ = vad_activity;
   num_channels_ = num_channels;
+  energy_ = energy;
 
   const size_t length = samples_per_channel * num_channels;
   assert(length <= kMaxDataSizeSamples);
@@ -598,6 +606,7 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src) {
   speech_type_ = src.speech_type_;
   vad_activity_ = src.vad_activity_;
   num_channels_ = src.num_channels_;
+  energy_ = src.energy_;
   interleaved_ = src.interleaved_;
 
   const size_t length = samples_per_channel_ * num_channels_;
@@ -692,6 +701,7 @@ inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
       data_[i] = ClampToInt16(wrap_guard);
     }
   }
+  energy_ = 0xffffffff;
   return *this;
 }
 
@@ -715,6 +725,7 @@ inline AudioFrame& AudioFrame::operator-=(const AudioFrame& rhs) {
         static_cast<int32_t>(data_[i]) - static_cast<int32_t>(rhs.data_[i]);
     data_[i] = ClampToInt16(wrap_guard);
   }
+  energy_ = 0xffffffff;
   return *this;
 }
 
