@@ -174,6 +174,8 @@ DEFINE_bool(logs, false, "print logs to stderr");
 
 DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
 
+DEFINE_bool(allow_reordering, false, "Allow packet reordering to occur");
+
 DEFINE_string(
     force_fieldtrials,
     "",
@@ -212,6 +214,7 @@ void Loopback() {
   pipe_config.queue_length_packets = flags::QueueSize();
   pipe_config.queue_delay_ms = flags::AvgPropagationDelayMs();
   pipe_config.delay_standard_deviation_ms = flags::StdPropagationDelayMs();
+  pipe_config.allow_reordering = flags::FLAGS_allow_reordering;
 
   Call::Config::BitrateConfig call_bitrate_config;
   call_bitrate_config.min_bitrate_bps = flags::MinBitrateKbps() * 1000;

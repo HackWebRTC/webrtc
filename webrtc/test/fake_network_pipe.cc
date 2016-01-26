@@ -20,60 +20,16 @@
 
 namespace webrtc {
 
-const double kPi = 3.14159265;
-
-static int GaussianRandom(int mean_delay_ms, int standard_deviation_ms) {
-  // Creating a Normal distribution variable from two independent uniform
-  // variables based on the Box-Muller transform.
-  double uniform1 = (rand() + 1.0) / (RAND_MAX + 1.0);  // NOLINT
-  double uniform2 = (rand() + 1.0) / (RAND_MAX + 1.0);  // NOLINT
-  return static_cast<int>(mean_delay_ms + standard_deviation_ms *
-                          sqrt(-2 * log(uniform1)) * cos(2 * kPi * uniform2));
-}
-
-static bool UniformLoss(int loss_percent) {
-  int outcome = rand() % 100;
-  return outcome < loss_percent;
-}
-
-class NetworkPacket {
- public:
-  NetworkPacket(const uint8_t* data, size_t length, int64_t send_time,
-      int64_t arrival_time)
-      : data_(NULL),
-        data_length_(length),
-        send_time_(send_time),
-        arrival_time_(arrival_time) {
-    data_ = new uint8_t[length];
-    memcpy(data_, data, length);
-  }
-  ~NetworkPacket() {
-    delete [] data_;
-  }
-
-  uint8_t* data() const { return data_; }
-  size_t data_length() const { return data_length_; }
-  int64_t send_time() const { return send_time_; }
-  int64_t arrival_time() const { return arrival_time_; }
-  void IncrementArrivalTime(int64_t extra_delay) {
-    arrival_time_+= extra_delay;
-  }
-
- private:
-  // The packet data.
-  uint8_t* data_;
-  // Length of data_.
-  size_t data_length_;
-  // The time the packet was sent out on the network.
-  const int64_t send_time_;
-  // The time the packet should arrive at the reciver.
-  int64_t arrival_time_;
-};
-
 FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  const FakeNetworkPipe::Config& config)
+    : FakeNetworkPipe(clock, config, 1) {}
+
+FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
+                                 const FakeNetworkPipe::Config& config,
+                                 uint64_t seed)
     : clock_(clock),
       packet_receiver_(NULL),
+      random_(seed),
       config_(config),
       dropped_packets_(0),
       sent_packets_(0),
@@ -86,8 +42,8 @@ FakeNetworkPipe::~FakeNetworkPipe() {
     capacity_link_.pop();
   }
   while (!delay_link_.empty()) {
-    delete delay_link_.front();
-    delay_link_.pop();
+    delete *delay_link_.begin();
+    delay_link_.erase(delay_link_.begin());
   }
 }
 
@@ -123,7 +79,7 @@ void FakeNetworkPipe::SendPacket(const uint8_t* data, size_t data_length) {
 
   // Check if there already are packets on the link and change network start
   // time if there is.
-  if (capacity_link_.size() > 0)
+  if (!capacity_link_.empty())
     network_start_time = capacity_link_.back()->arrival_time();
 
   int64_t arrival_time = network_start_time + capacity_delay_ms;
@@ -156,41 +112,42 @@ void FakeNetworkPipe::Process() {
   {
     rtc::CritScope crit(&lock_);
     // Check the capacity link first.
-    while (capacity_link_.size() > 0 &&
+    while (!capacity_link_.empty() &&
            time_now >= capacity_link_.front()->arrival_time()) {
       // Time to get this packet.
       NetworkPacket* packet = capacity_link_.front();
       capacity_link_.pop();
 
       // Packets are randomly dropped after being affected by the bottleneck.
-      if (UniformLoss(config_.loss_percent)) {
+      if (random_.Rand(100) < static_cast<uint32_t>(config_.loss_percent)) {
         delete packet;
         continue;
       }
 
-      // Add extra delay and jitter, but make sure the arrival time is not
-      // earlier than the last packet in the queue.
-      int extra_delay = GaussianRandom(config_.queue_delay_ms,
-                                       config_.delay_standard_deviation_ms);
-      if (delay_link_.size() > 0 &&
-          packet->arrival_time() + extra_delay <
-          delay_link_.back()->arrival_time()) {
-        extra_delay = delay_link_.back()->arrival_time() -
-            packet->arrival_time();
+      int arrival_time_jitter = random_.Gaussian(
+          config_.queue_delay_ms, config_.delay_standard_deviation_ms);
+
+      // If reordering is not allowed then adjust arrival_time_jitter
+      // to make sure all packets are sent in order.
+      if (!config_.allow_reordering && !delay_link_.empty() &&
+          packet->arrival_time() + arrival_time_jitter <
+              (*delay_link_.rbegin())->arrival_time()) {
+        arrival_time_jitter =
+            (*delay_link_.rbegin())->arrival_time() - packet->arrival_time();
       }
-      packet->IncrementArrivalTime(extra_delay);
+      packet->IncrementArrivalTime(arrival_time_jitter);
       if (packet->arrival_time() < next_process_time_)
         next_process_time_ = packet->arrival_time();
-      delay_link_.push(packet);
+      delay_link_.insert(packet);
     }
 
     // Check the extra delay queue.
-    while (delay_link_.size() > 0 &&
-           time_now >= delay_link_.front()->arrival_time()) {
+    while (!delay_link_.empty() &&
+           time_now >= (*delay_link_.begin())->arrival_time()) {
       // Deliver this packet.
-      NetworkPacket* packet = delay_link_.front();
+      NetworkPacket* packet = *delay_link_.begin();
       packets_to_deliver.push(packet);
-      delay_link_.pop();
+      delay_link_.erase(delay_link_.begin());
       // |time_now| might be later than when the packet should have arrived, due
       // to NetworkProcess being called too late. For stats, use the time it
       // should have been on the link.
@@ -210,7 +167,7 @@ void FakeNetworkPipe::Process() {
 int64_t FakeNetworkPipe::TimeUntilNextProcess() const {
   rtc::CritScope crit(&lock_);
   const int64_t kDefaultProcessIntervalMs = 30;
-  if (capacity_link_.size() == 0 || delay_link_.size() == 0)
+  if (capacity_link_.empty() || delay_link_.empty())
     return kDefaultProcessIntervalMs;
   return std::max<int64_t>(next_process_time_ - clock_->TimeInMilliseconds(),
                            0);

@@ -23,19 +23,36 @@ using ::testing::Invoke;
 
 namespace webrtc {
 
-class MockReceiver : public PacketReceiver {
+class TestReceiver : public PacketReceiver {
  public:
-  MockReceiver() {}
-  virtual ~MockReceiver() {}
+  TestReceiver() {}
+  virtual ~TestReceiver() {}
 
   void IncomingPacket(const uint8_t* data, size_t length) {
     DeliverPacket(MediaType::ANY, data, length, PacketTime());
     delete [] data;
   }
 
-  MOCK_METHOD4(
+  virtual MOCK_METHOD4(
       DeliverPacket,
       DeliveryStatus(MediaType, const uint8_t*, size_t, const PacketTime&));
+};
+
+class ReorderTestReceiver : public TestReceiver {
+ public:
+  ReorderTestReceiver() {}
+  virtual ~ReorderTestReceiver() {}
+
+  DeliveryStatus DeliverPacket(MediaType media_type,
+                               const uint8_t* packet,
+                               size_t length,
+                               const PacketTime& packet_time) override {
+    int seq_num;
+    memcpy(&seq_num, packet, sizeof(int));
+    delivered_sequence_numbers_.push_back(seq_num);
+    return PacketReceiver::DELIVERY_OK;
+  }
+  std::vector<int> delivered_sequence_numbers_;
 };
 
 class FakeNetworkPipeTest : public ::testing::Test {
@@ -44,7 +61,7 @@ class FakeNetworkPipeTest : public ::testing::Test {
 
  protected:
   virtual void SetUp() {
-    receiver_.reset(new MockReceiver());
+    receiver_.reset(new TestReceiver());
     ON_CALL(*receiver_, DeliverPacket(_, _, _, _))
         .WillByDefault(Return(PacketReceiver::DELIVERY_OK));
   }
@@ -52,19 +69,23 @@ class FakeNetworkPipeTest : public ::testing::Test {
   virtual void TearDown() {
   }
 
-  void SendPackets(FakeNetworkPipe* pipe, int number_packets, int kPacketSize) {
-    rtc::scoped_ptr<uint8_t[]> packet(new uint8_t[kPacketSize]);
+  void SendPackets(FakeNetworkPipe* pipe, int number_packets, int packet_size) {
+    RTC_DCHECK_GE(packet_size, static_cast<int>(sizeof(int)));
+    rtc::scoped_ptr<uint8_t[]> packet(new uint8_t[packet_size]);
     for (int i = 0; i < number_packets; ++i) {
-      pipe->SendPacket(packet.get(), kPacketSize);
+      // Set a sequence number for the packets by
+      // using the first bytes in the packet.
+      memcpy(packet.get(), &i, sizeof(int));
+      pipe->SendPacket(packet.get(), packet_size);
     }
   }
 
-  int PacketTimeMs(int capacity_kbps, int kPacketSize) const {
-    return 8 * kPacketSize / capacity_kbps;
+  int PacketTimeMs(int capacity_kbps, int packet_size) const {
+    return 8 * packet_size / capacity_kbps;
   }
 
   SimulatedClock fake_clock_;
-  rtc::scoped_ptr<MockReceiver> receiver_;
+  rtc::scoped_ptr<TestReceiver> receiver_;
 };
 
 void DeleteMemory(uint8_t* data, int length) { delete [] data; }
@@ -307,5 +328,54 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithPacketsInPipeTest) {
   fake_clock_.AdvanceTimeMilliseconds(pipe->TimeUntilNextProcess());
   EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(0);
   pipe->Process();
+}
+
+// At first disallow reordering and then allow reordering.
+TEST_F(FakeNetworkPipeTest, DisallowReorderingThenAllowReordering) {
+  FakeNetworkPipe::Config config;
+  config.queue_length_packets = 1000;
+  config.link_capacity_kbps = 800;
+  config.queue_delay_ms = 100;
+  config.delay_standard_deviation_ms = 10;
+  rtc::scoped_ptr<FakeNetworkPipe> pipe(
+      new FakeNetworkPipe(&fake_clock_, config));
+  ReorderTestReceiver* receiver = new ReorderTestReceiver();
+  receiver_.reset(receiver);
+  pipe->SetReceiver(receiver_.get());
+
+  const uint32_t kNumPackets = 100;
+  const int kPacketSize = 10;
+  SendPackets(pipe.get(), kNumPackets, kPacketSize);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
+  pipe->Process();
+
+  // Confirm that all packets have been delivered in order.
+  EXPECT_EQ(kNumPackets, receiver->delivered_sequence_numbers_.size());
+  int last_seq_num = -1;
+  for (int seq_num : receiver->delivered_sequence_numbers_) {
+    EXPECT_GT(seq_num, last_seq_num);
+    last_seq_num = seq_num;
+  }
+
+  config.allow_reordering = true;
+  pipe->SetConfig(config);
+  SendPackets(pipe.get(), kNumPackets, kPacketSize);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
+  receiver->delivered_sequence_numbers_.clear();
+  pipe->Process();
+
+  // Confirm that all packets have been delivered
+  // and that reordering has occured.
+  EXPECT_EQ(kNumPackets, receiver->delivered_sequence_numbers_.size());
+  bool reordering_has_occured = false;
+  last_seq_num = -1;
+  for (int seq_num : receiver->delivered_sequence_numbers_) {
+    if (last_seq_num > seq_num) {
+      reordering_has_occured = true;
+      break;
+    }
+    last_seq_num = seq_num;
+  }
+  EXPECT_TRUE(reordering_has_occured);
 }
 }  // namespace webrtc
