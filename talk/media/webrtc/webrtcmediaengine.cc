@@ -29,13 +29,21 @@
 
 #include <algorithm>
 
+#ifdef HAVE_WEBRTC_VIDEO
 #include "talk/media/webrtc/webrtcvideoengine2.h"
+#else
+#include "talk/media/webrtc/nullwebrtcvideoengine.h"
+#endif
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 
 namespace cricket {
 
 class WebRtcMediaEngine2
+#ifdef HAVE_WEBRTC_VIDEO
     : public CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2> {
+#else
+    : public CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine> {
+#endif
  public:
   WebRtcMediaEngine2(webrtc::AudioDeviceModule* adm,
                      WebRtcVideoEncoderFactory* encoder_factory,

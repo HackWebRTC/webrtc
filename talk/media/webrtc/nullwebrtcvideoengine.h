@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2014 Google Inc.
+ * Copyright 2016 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,23 +25,57 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/media/webrtc/webrtcvideocapturer.h"
-#include "talk/media/webrtc/webrtcvideocapturerfactory.h"
-#include "webrtc/base/scoped_ptr.h"
+#ifndef TALK_MEDIA_WEBRTC_NULLWEBRTCVIDEOENGINE_H_
+#define TALK_MEDIA_WEBRTC_NULLWEBRTCVIDEOENGINE_H_
+
+#include <vector>
+
+#include "talk/media/base/mediachannel.h"
+#include "talk/media/base/mediaengine.h"
+
+namespace webrtc {
+
+class Call;
+
+}  // namespace webrtc
+
 
 namespace cricket {
 
-VideoCapturer* WebRtcVideoDeviceCapturerFactory::Create(const Device& device) {
-#ifdef HAVE_WEBRTC_VIDEO
-  rtc::scoped_ptr<WebRtcVideoCapturer> capturer(
-      new WebRtcVideoCapturer());
-  if (!capturer->Init(device)) {
+class VideoMediaChannel;
+class WebRtcVideoDecoderFactory;
+class WebRtcVideoEncoderFactory;
+
+// Video engine implementation that does nothing and can be used in
+// CompositeMediaEngine.
+class NullWebRtcVideoEngine {
+ public:
+  NullWebRtcVideoEngine() {}
+  ~NullWebRtcVideoEngine() {}
+
+  void SetExternalDecoderFactory(WebRtcVideoDecoderFactory* decoder_factory) {}
+  void SetExternalEncoderFactory(WebRtcVideoEncoderFactory* encoder_factory) {}
+
+  void Init() {}
+
+  const std::vector<VideoCodec>& codecs() {
+    return codecs_;
+  }
+
+  RtpCapabilities GetCapabilities() {
+    RtpCapabilities capabilities;
+    return capabilities;
+  }
+
+  VideoMediaChannel* CreateChannel(webrtc::Call* call,
+      const VideoOptions& options) {
     return nullptr;
   }
-  return capturer.release();
-#else
-  return nullptr;
-#endif
-}
+
+ private:
+  std::vector<VideoCodec> codecs_;
+};
 
 }  // namespace cricket
+
+#endif  // TALK_MEDIA_WEBRTC_NULLWEBRTCVIDEOENGINE_H_

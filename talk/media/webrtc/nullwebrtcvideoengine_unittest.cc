@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2014 Google Inc.
+ * Copyright 2016 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,23 +25,32 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/media/webrtc/webrtcvideocapturer.h"
-#include "talk/media/webrtc/webrtcvideocapturerfactory.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "testing/gtest/include/gtest/gtest.h"
+
+#include "talk/media/webrtc/nullwebrtcvideoengine.h"
+#include "talk/media/webrtc/webrtcvoiceengine.h"
 
 namespace cricket {
 
-VideoCapturer* WebRtcVideoDeviceCapturerFactory::Create(const Device& device) {
-#ifdef HAVE_WEBRTC_VIDEO
-  rtc::scoped_ptr<WebRtcVideoCapturer> capturer(
-      new WebRtcVideoCapturer());
-  if (!capturer->Init(device)) {
-    return nullptr;
+class WebRtcMediaEngineNullVideo
+    : public CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine> {
+ public:
+  WebRtcMediaEngineNullVideo(webrtc::AudioDeviceModule* adm,
+                             WebRtcVideoEncoderFactory* encoder_factory,
+                             WebRtcVideoDecoderFactory* decoder_factory) {
+    voice_.SetAudioDeviceModule(adm);
+    video_.SetExternalDecoderFactory(decoder_factory);
+    video_.SetExternalEncoderFactory(encoder_factory);
   }
-  return capturer.release();
-#else
-  return nullptr;
-#endif
+};
+
+// Simple test to check if NullWebRtcVideoEngine implements the methods
+// required by CompositeMediaEngine.
+TEST(NullWebRtcVideoEngineTest, CheckInterface) {
+  WebRtcMediaEngineNullVideo engine(nullptr, nullptr, nullptr);
+
+  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
+  engine.Terminate();
 }
 
 }  // namespace cricket

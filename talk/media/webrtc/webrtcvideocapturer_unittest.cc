@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_WEBRTC_VIDEO
+
 #include <stdio.h>
 #include <vector>
 #include "talk/media/base/testutils.h"
@@ -146,3 +148,5 @@ TEST_F(WebRtcVideoCapturerTest, TestCaptureWithoutInit) {
   EXPECT_TRUE(capturer_->GetCaptureFormat() == NULL);
   EXPECT_FALSE(capturer_->IsRunning());
 }
+
+#endif  // HAVE_WEBRTC_VIDEO

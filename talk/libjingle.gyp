@@ -540,6 +540,7 @@
         'media/devices/yuvframescapturer.h',
         'media/sctp/sctpdataengine.cc',
         'media/sctp/sctpdataengine.h',
+        'media/webrtc/nullwebrtcvideoengine.h',
         'media/webrtc/simulcast.cc',
         'media/webrtc/simulcast.h',
         'media/webrtc/webrtccommon.h',

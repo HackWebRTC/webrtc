@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_WEBRTC_VIDEO
+
 #include <algorithm>
 #include <map>
 #include <vector>
@@ -3404,3 +3406,5 @@ TEST_F(WebRtcVideoChannel2SimulcastTest,
 }
 
 }  // namespace cricket
+
+#endif  // HAVE_WEBRTC_VIDEO

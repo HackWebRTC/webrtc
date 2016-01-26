@@ -96,6 +96,7 @@
         'media/devices/dummydevicemanager_unittest.cc',
         'media/devices/filevideocapturer_unittest.cc',
         'media/sctp/sctpdataengine_unittest.cc',
+        'media/webrtc/nullwebrtcvideoengine_unittest.cc',
         'media/webrtc/simulcast_unittest.cc',
         'media/webrtc/webrtcmediaengine_unittest.cc',
         'media/webrtc/webrtcvideocapturer_unittest.cc',
