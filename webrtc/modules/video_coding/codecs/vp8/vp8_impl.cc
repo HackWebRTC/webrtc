@@ -978,7 +978,7 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
            NULL) {
       switch (pkt->kind) {
         case VPX_CODEC_CX_FRAME_PKT: {
-          uint32_t length = encoded_images_[encoder_idx]._length;
+          size_t length = encoded_images_[encoder_idx]._length;
           if (pkt->data.frame.sz + length >
               encoded_images_[encoder_idx]._size) {
             uint8_t* buffer = new uint8_t[pkt->data.frame.sz + length];
