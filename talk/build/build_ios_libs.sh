@@ -60,16 +60,12 @@ function build_webrtc {
   FLAVOR=$2
   TARGET_ARCH=$3
   TARGET_SUBARCH=$4
-  if [[ ${TARGET_ARCH} = 'armv7' || ${TARGET_ARCH} = 'arm64' ]]; then
+  if [[ ${TARGET_ARCH} = 'arm' || ${TARGET_ARCH} = 'arm64' ]]; then
     FLAVOR="${FLAVOR}-iphoneos"
   else
     FLAVOR="${FLAVOR}-iphonesimulator"
   fi
-  export GYP_DEFINES="OS=ios use_openssl=1"
-  export GYP_DEFINES="${GYP_DEFINES} target_arch=${TARGET_ARCH}"
-  if [[ -n ${TARGET_SUBARCH} ]]; then
-    export GYP_DEFINES="${GYP_DEFINES} target_subarch=${TARGET_SUBARCH}"
-  fi
+  export GYP_DEFINES="OS=ios target_arch=${TARGET_ARCH} clang_xcode=1"
   export GYP_GENERATORS="ninja"
   export GYP_GENERATOR_FLAGS="output_dir=${OUTPUT_DIR}"
   webrtc/build/gyp_webrtc talk/build/merge_ios_libs.gyp
@@ -79,10 +75,10 @@ function build_webrtc {
 }
 
 # Build all the common architectures.
-build_webrtc "out_ios_armv7" "Release" "armv7" "arm32"
-build_webrtc "out_ios_arm64" "Release" "arm64" "arm64"
-build_webrtc "out_ios_ia32" "Release" "ia32" "arm32"
-build_webrtc "out_ios_x86_64" "Release" "x64" "arm64"
+build_webrtc "out_ios_arm" "Release" "arm"
+build_webrtc "out_ios_arm64" "Release" "arm64"
+build_webrtc "out_ios_ia32" "Release" "ia32"
+build_webrtc "out_ios_x86_64" "Release" "x64"
 
 popd
 
