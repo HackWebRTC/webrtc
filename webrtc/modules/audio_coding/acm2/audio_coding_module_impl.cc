@@ -107,6 +107,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       expected_in_ts_(0xD87F3F9F),
       receiver_(config),
       bitrate_logger_("WebRTC.Audio.TargetBitrateInKbps"),
+      encoder_stack_(nullptr),
       previous_pltype_(255),
       receiver_initialized_(false),
       first_10ms_data_(false),
