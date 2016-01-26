@@ -44,6 +44,8 @@ int VCMContentMetricsProcessing::Reset() {
 }
 
 void VCMContentMetricsProcessing::UpdateFrameRate(uint32_t frameRate) {
+  if (frameRate == 0)
+    frameRate = 1;
   // Update factor for recursive averaging.
   recursive_avg_factor_ = static_cast<float>(1000.0f) /
                           static_cast<float>(frameRate * kQmMinIntervalMs);
