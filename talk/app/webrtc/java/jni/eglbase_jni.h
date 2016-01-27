@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2015 Google Inc.
+ * Copyright 2016 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,34 +26,35 @@
  *
  */
 
-#ifndef TALK_APP_WEBRTC_JAVA_JNI_ANDROIDMEDIADECODER_JNI_H_
-#define TALK_APP_WEBRTC_JAVA_JNI_ANDROIDMEDIADECODER_JNI_H_
+#ifndef TALK_APP_WEBRTC_JAVA_JNI_EGLBASE_JNI_H_
+#define TALK_APP_WEBRTC_JAVA_JNI_EGLBASE_JNI_H_
 
-#include "talk/app/webrtc/java/jni/eglbase_jni.h"
-#include "talk/media/webrtc/webrtcvideodecoderfactory.h"
+#include <jni.h>
+
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc_jni {
 
-// Implementation of Android MediaCodec based decoder factory.
-class MediaCodecVideoDecoderFactory
-    : public cricket::WebRtcVideoDecoderFactory {
+// Helper class used for creating a Java instance of org/webrtc/EglBase.
+class EglBase {
  public:
-  MediaCodecVideoDecoderFactory();
-  virtual ~MediaCodecVideoDecoderFactory();
+  EglBase();
+  ~EglBase();
 
-  void SetEGLContext(JNIEnv* jni, jobject render_egl_context);
-
-  // WebRtcVideoDecoderFactory implementation.
-  webrtc::VideoDecoder* CreateVideoDecoder(webrtc::VideoCodecType type)
-      override;
-
-  void DestroyVideoDecoder(webrtc::VideoDecoder* decoder) override;
+  // Creates an new java EglBase instance. |egl_base_context| must be a valid
+  // EglBase$Context.
+  // Returns false if |egl_base_context| is a null Java object or if an
+  // exception occur in Java.
+  bool CreateEglBase(JNIEnv* jni, jobject egl_base_context);
+  jobject egl_base_context() const { return egl_base_context_; }
 
  private:
-  EglBase egl_;
-  std::vector<webrtc::VideoCodecType> supported_codec_types_;
+  jobject egl_base_ = nullptr;  // instance of org/webrtc/EglBase
+  jobject egl_base_context_ = nullptr;  // instance of EglBase$Context
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(EglBase);
 };
 
 }  // namespace webrtc_jni
 
-#endif  // TALK_APP_WEBRTC_JAVA_JNI_ANDROIDMEDIADECODER_JNI_H_
+#endif  // TALK_APP_WEBRTC_JAVA_JNI_EGLBASE_JNI_H_

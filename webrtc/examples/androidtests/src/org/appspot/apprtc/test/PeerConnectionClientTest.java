@@ -225,7 +225,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   PeerConnectionClient createPeerConnectionClient(
       MockRenderer localRenderer, MockRenderer remoteRenderer,
-      PeerConnectionParameters peerConnectionParameters, boolean useTexures) {
+      PeerConnectionParameters peerConnectionParameters, EglBase.Context eglContext) {
     List<PeerConnection.IceServer> iceServers =
         new LinkedList<PeerConnection.IceServer>();
     SignalingParameters signalingParameters = new SignalingParameters(
@@ -240,8 +240,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     client.setPeerConnectionFactoryOptions(options);
     client.createPeerConnectionFactory(
         getInstrumentation().getContext(), peerConnectionParameters, this);
-    client.createPeerConnection(useTexures ? eglBase.getEglBaseContext() : null,
-        localRenderer, remoteRenderer, signalingParameters);
+    client.createPeerConnection(eglContext, localRenderer, remoteRenderer, signalingParameters);
     client.createOffer();
     return client;
   }
@@ -288,7 +287,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     pcClient = createPeerConnectionClient(
         localRenderer, new MockRenderer(0, null),
-        createParametersForVideoCall(VIDEO_CODEC_VP8, false), false);
+        createParametersForVideoCall(VIDEO_CODEC_VP8, false), null);
 
     // Wait for local SDP and ice candidates set events.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -317,8 +316,8 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     } else {
       Log.d(TAG, "testLoopback for audio.");
     }
-    pcClient = createPeerConnectionClient(
-        localRenderer, remoteRenderer, parameters, decodeToTexure);
+    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer, parameters,
+        decodeToTexure ? eglBase.getEglBaseContext() : null);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -401,6 +400,62 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, true), true);
   }
 
+
+  // Test that a call can be setup even if a released EGL context is used during setup.
+  // The HW encoder and decoder will fallback to encode and decode from byte buffers.
+  public void testLoopbackEglContextReleasedBeforeSetup() throws InterruptedException {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+      Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
+      return;
+    }
+    eglBase.release();
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, false), true);
+    eglBase = null;
+  }
+
+  // Test that a call can be setup even if the EGL context used during initialization is
+  // released before the Video codecs are created. The HW encoder and decoder is setup to use
+  // textures.
+  public void testLoopbackEglContextReleasedAfterCreatingPc() throws InterruptedException {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+      Log.i(TAG, "Decode to textures is not supported. Requires SDK version 19");
+      return;
+    }
+
+    loopback = true;
+    PeerConnectionParameters parameters = createParametersForVideoCall(VIDEO_CODEC_VP8, false);
+    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
+    MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, parameters, eglBase.getEglBaseContext());
+
+    // Wait for local SDP, rename it to answer and set as remote SDP.
+    assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
+
+    // Release the EGL context used for creating the PeerConnectionClient.
+    // Since createPeerConnectionClient is asynchronous, we must wait for the local
+    // SessionDescription.
+    eglBase.release();
+    eglBase = null;
+
+    SessionDescription remoteSdp = new SessionDescription(
+        SessionDescription.Type.fromCanonicalForm("answer"),
+        localSdp.description);
+    pcClient.setRemoteDescription(remoteSdp);
+
+    // Wait for ICE connection.
+    assertTrue("ICE connection failure.", waitForIceConnected(ICE_CONNECTION_WAIT_TIMEOUT));
+    // Check that local and remote video frames were rendered.
+    assertTrue("Local video frames were not rendered.",
+        localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    assertTrue("Remote video frames were not rendered.",
+        remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+
+    pcClient.close();
+    assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
+    Log.d(TAG, "testLoopback done.");
+  }
+
   public void testLoopbackH264CaptureToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Encode to textures is not supported. Requires KITKAT");
@@ -426,7 +481,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
 
     pcClient = createPeerConnectionClient(
-        localRenderer, remoteRenderer, createParametersForVideoCall(VIDEO_CODEC_VP8, false), false);
+        localRenderer, remoteRenderer, createParametersForVideoCall(VIDEO_CODEC_VP8, false), null);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -472,7 +527,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
 
     pcClient = createPeerConnectionClient(
-        localRenderer, remoteRenderer, createParametersForVideoCall(VIDEO_CODEC_VP8, false), false);
+        localRenderer, remoteRenderer, createParametersForVideoCall(VIDEO_CODEC_VP8, false), null);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -509,5 +564,4 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
     Log.d(TAG, "testVideoSourceRestart done.");
   }
-
 }

@@ -241,6 +241,9 @@ public final class EglBase14 extends EglBase {
   // Return an EGLConfig, or die trying.
   private static EGLContext createEglContext(
       EglBase14.Context sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
+    if (sharedContext != null && sharedContext.egl14Context == EGL14.EGL_NO_CONTEXT) {
+      throw new RuntimeException("Invalid sharedContext");
+    }
     int[] contextAttributes = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE};
     EGLContext rootContext =
         sharedContext == null ? EGL14.EGL_NO_CONTEXT : sharedContext.egl14Context;

@@ -347,7 +347,7 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
         jni, java_surface_texture_helper_);
   }
 
-  jobject j_video_codec_enum = JavaEnumFromIndex(
+  jobject j_video_codec_enum = JavaEnumFromIndexAndClassName(
       jni, "MediaCodecVideoDecoder$VideoCodecType", codecType_);
   bool success = jni->CallBooleanMethod(
       *j_media_codec_video_decoder_,
@@ -819,8 +819,7 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
 }
 
-MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() :
-    render_egl_context_(NULL) {
+MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() {
   ALOGD << "MediaCodecVideoDecoderFactory ctor";
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
@@ -863,37 +862,13 @@ MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() :
 
 MediaCodecVideoDecoderFactory::~MediaCodecVideoDecoderFactory() {
   ALOGD << "MediaCodecVideoDecoderFactory dtor";
-  if (render_egl_context_) {
-    JNIEnv* jni = AttachCurrentThreadIfNeeded();
-    jni->DeleteGlobalRef(render_egl_context_);
-    render_egl_context_ = NULL;
-  }
 }
 
 void MediaCodecVideoDecoderFactory::SetEGLContext(
     JNIEnv* jni, jobject render_egl_context) {
   ALOGD << "MediaCodecVideoDecoderFactory::SetEGLContext";
-  if (render_egl_context_) {
-    jni->DeleteGlobalRef(render_egl_context_);
-    render_egl_context_ = NULL;
-  }
-  if (!IsNull(jni, render_egl_context)) {
-    render_egl_context_ = jni->NewGlobalRef(render_egl_context);
-    if (CheckException(jni)) {
-      ALOGE << "error calling NewGlobalRef for EGL Context.";
-      render_egl_context_ = NULL;
-    } else {
-      jclass j_egl_context_class =
-          FindClass(jni, "org/webrtc/EglBase$Context");
-      if (!jni->IsInstanceOf(render_egl_context_, j_egl_context_class)) {
-        ALOGE << "Wrong EGL Context.";
-        jni->DeleteGlobalRef(render_egl_context_);
-        render_egl_context_ = NULL;
-      }
-    }
-  }
-  if (render_egl_context_ == NULL) {
-    ALOGW << "NULL VideoDecoder EGL context - HW surface decoding is disabled.";
+  if (!egl_.CreateEglBase(jni, render_egl_context)) {
+    ALOGW << "Invalid EGL context - HW surface decoding is disabled.";
   }
 }
 
@@ -901,17 +876,17 @@ webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
     VideoCodecType type) {
   if (supported_codec_types_.empty()) {
     ALOGW << "No HW video decoder for type " << (int)type;
-    return NULL;
+    return nullptr;
   }
   for (VideoCodecType codec_type : supported_codec_types_) {
     if (codec_type == type) {
       ALOGD << "Create HW video decoder for type " << (int)type;
-      return new MediaCodecVideoDecoder(
-          AttachCurrentThreadIfNeeded(), type, render_egl_context_);
+      return new MediaCodecVideoDecoder(AttachCurrentThreadIfNeeded(), type,
+                                        egl_.egl_base_context());
     }
   }
   ALOGW << "Can not find HW video decoder for type " << (int)type;
-  return NULL;
+  return nullptr;
 }
 
 void MediaCodecVideoDecoderFactory::DestroyVideoDecoder(

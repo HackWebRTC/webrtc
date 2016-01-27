@@ -176,18 +176,12 @@ public class PeerConnectionFactory {
     nativeSetOptions(nativeFactory, options);
   }
 
-  @Deprecated
-  public void setVideoHwAccelerationOptions(Object renderEGLContext) {
-    nativeSetVideoHwAccelerationOptions(nativeFactory, renderEGLContext, renderEGLContext);
-  }
-
   /** Set the EGL context used by HW Video encoding and decoding.
    *
-   *
-   * @param localEGLContext   An instance of javax.microedition.khronos.egl.EGLContext.
+   * @param localEGLContext   An instance of EglBase.Context.
    *                          Must be the same as used by VideoCapturerAndroid and any local
    *                          video renderer.
-   * @param remoteEGLContext  An instance of javax.microedition.khronos.egl.EGLContext.
+   * @param remoteEGLContext  An instance of EglBase.Context.
    *                          Must be the same as used by any remote video renderer.
    */
   public void setVideoHwAccelerationOptions(Object localEGLContext, Object remoteEGLContext) {

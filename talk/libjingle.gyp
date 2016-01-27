@@ -89,6 +89,8 @@
                 'app/webrtc/java/jni/androidnetworkmonitor_jni.h',
                 'app/webrtc/java/jni/androidvideocapturer_jni.cc',
                 'app/webrtc/java/jni/androidvideocapturer_jni.h',
+                'app/webrtc/java/jni/eglbase_jni.cc',
+                'app/webrtc/java/jni/eglbase_jni.h',
                 'app/webrtc/java/jni/surfacetexturehelper_jni.cc',
                 'app/webrtc/java/jni/surfacetexturehelper_jni.h',
               ]

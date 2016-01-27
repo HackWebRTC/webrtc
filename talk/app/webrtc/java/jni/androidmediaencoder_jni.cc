@@ -134,7 +134,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
 
   int GetTargetFramerate() override;
 
-  bool SupportsNativeHandle() const override { return true; }
+  bool SupportsNativeHandle() const override { return egl_context_ != nullptr; }
   const char* ImplementationName() const override;
 
  private:
@@ -537,7 +537,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   frames_received_since_last_key_ = kMinKeyFrameInterval;
 
   // We enforce no extra stride/padding in the format creation step.
-  jobject j_video_codec_enum = JavaEnumFromIndex(
+  jobject j_video_codec_enum = JavaEnumFromIndexAndClassName(
       jni, "MediaCodecVideoEncoder$VideoCodecType", codecType_);
   const bool encode_status = jni->CallBooleanMethod(
       *j_media_codec_video_encoder_, j_init_encode_method_,
@@ -1149,8 +1149,7 @@ const char* MediaCodecVideoEncoder::ImplementationName() const {
   return "MediaCodec";
 }
 
-MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
-    : egl_context_(nullptr) {
+MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   jclass j_encoder_class = FindClass(jni, "org/webrtc/MediaCodecVideoEncoder");
@@ -1187,32 +1186,15 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
   }
 }
 
-MediaCodecVideoEncoderFactory::~MediaCodecVideoEncoderFactory() {}
+MediaCodecVideoEncoderFactory::~MediaCodecVideoEncoderFactory() {
+  ALOGD << "MediaCodecVideoEncoderFactory dtor";
+}
 
 void MediaCodecVideoEncoderFactory::SetEGLContext(
     JNIEnv* jni, jobject render_egl_context) {
   ALOGD << "MediaCodecVideoEncoderFactory::SetEGLContext";
-  if (egl_context_) {
-    jni->DeleteGlobalRef(egl_context_);
-    egl_context_ = NULL;
-  }
-  if (!IsNull(jni, render_egl_context)) {
-    egl_context_ = jni->NewGlobalRef(render_egl_context);
-    if (CheckException(jni)) {
-      ALOGE << "error calling NewGlobalRef for EGL Context.";
-      egl_context_ = NULL;
-    } else {
-      jclass j_egl_context_class =
-          FindClass(jni, "org/webrtc/EglBase14$Context");
-      if (!jni->IsInstanceOf(egl_context_, j_egl_context_class)) {
-        ALOGE << "Wrong EGL Context.";
-        jni->DeleteGlobalRef(egl_context_);
-        egl_context_ = NULL;
-      }
-    }
-  }
-  if (egl_context_ == NULL) {
-    ALOGW << "NULL VideoDecoder EGL context - HW surface encoding is disabled.";
+  if (!egl_base_.CreateEglBase(jni, render_egl_context)) {
+    ALOGW << "Invalid EGL context - HW surface encoding is disabled.";
   }
 }
 
@@ -1220,7 +1202,7 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
     VideoCodecType type) {
   if (supported_codecs_.empty()) {
     ALOGW << "No HW video encoder for type " << (int)type;
-    return NULL;
+    return nullptr;
   }
   for (std::vector<VideoCodec>::const_iterator it = supported_codecs_.begin();
          it != supported_codecs_.end(); ++it) {
@@ -1228,11 +1210,11 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
       ALOGD << "Create HW video encoder for type " << (int)type <<
           " (" << it->name << ").";
       return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), type,
-          egl_context_);
+          egl_base_.egl_base_context());
     }
   }
   ALOGW << "Can not find HW video encoder for type " << (int)type;
-  return NULL;
+  return nullptr;
 }
 
 const std::vector<MediaCodecVideoEncoderFactory::VideoCodec>&

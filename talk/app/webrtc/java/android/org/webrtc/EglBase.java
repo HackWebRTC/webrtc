@@ -104,6 +104,10 @@ public abstract class EglBase {
     return create(null, CONFIG_PLAIN);
   }
 
+  public static EglBase create(Context sharedContext) {
+    return create(sharedContext, CONFIG_PLAIN);
+  }
+
   public abstract void createSurface(Surface surface);
 
   // Create EGLSurface from the Android SurfaceTexture.

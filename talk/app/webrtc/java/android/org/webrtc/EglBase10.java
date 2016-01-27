@@ -286,6 +286,9 @@ final class EglBase10 extends EglBase {
   // Return an EGLConfig, or die trying.
   private EGLContext createEglContext(
       Context sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
+    if (sharedContext != null && sharedContext.eglContext == EGL10.EGL_NO_CONTEXT) {
+      throw new RuntimeException("Invalid sharedContext");
+    }
     int[] contextAttributes = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
     EGLContext rootContext =
         sharedContext == null ? EGL10.EGL_NO_CONTEXT : sharedContext.eglContext;

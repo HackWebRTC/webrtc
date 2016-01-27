@@ -31,7 +31,7 @@
 
 #include <vector>
 
-#include "talk/app/webrtc/java/jni/jni_helpers.h"
+#include "talk/app/webrtc/java/jni/eglbase_jni.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 
 namespace webrtc_jni {
@@ -52,7 +52,8 @@ class MediaCodecVideoEncoderFactory
   void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
 
  private:
-  jobject egl_context_;
+  EglBase egl_base_;
+
   // Empty if platform support is lacking, const after ctor returns.
   std::vector<VideoCodec> supported_codecs_;
 };

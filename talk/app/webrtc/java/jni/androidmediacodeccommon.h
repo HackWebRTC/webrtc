@@ -30,7 +30,10 @@
 #define TALK_APP_WEBRTC_JAVA_JNI_ANDROIDMEDIACODECCOMMON_H_
 
 #include <android/log.h>
+#include <string>
+
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
+#include "talk/app/webrtc/java/jni/jni_helpers.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
@@ -85,7 +88,7 @@ static inline void AllowBlockingCalls() {
 
 // Return the (singleton) Java Enum object corresponding to |index|;
 // |state_class_fragment| is something like "MediaSource$State".
-static inline jobject JavaEnumFromIndex(
+static inline jobject JavaEnumFromIndexAndClassName(
     JNIEnv* jni, const std::string& state_class_fragment, int index) {
   const std::string state_class = "org/webrtc/" + state_class_fragment;
   return JavaEnumFromIndex(jni, FindClass(jni, state_class.c_str()),
