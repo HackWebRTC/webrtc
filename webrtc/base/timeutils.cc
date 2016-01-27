@@ -74,6 +74,8 @@ uint64_t TimeNanos() {
   // TODO: Calculate with nanosecond precision.  Otherwise, we're just
   // wasting a multiply and divide when doing Time() on Windows.
   ticks = ticks * kNumNanosecsPerMillisec;
+#else
+#error Unsupported platform.
 #endif
   return ticks;
 }
