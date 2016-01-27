@@ -39,23 +39,26 @@
 #include "talk/media/base/videocapturer.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslot.h"
-#include "webrtc/media/base/videosinkinterface.h"
 
 namespace cricket {
 
 class VideoCapturer;
 class VideoProcessor;
+class VideoRenderer;
 
 class CaptureRenderAdapter : public sigslot::has_slots<> {
  public:
   static CaptureRenderAdapter* Create(VideoCapturer* video_capturer);
   ~CaptureRenderAdapter();
 
-  void AddSink(rtc::VideoSinkInterface<VideoFrame>* sink);
-  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink);
+  void AddRenderer(VideoRenderer* video_renderer);
+  void RemoveRenderer(VideoRenderer* video_renderer);
 
   VideoCapturer* video_capturer() { return video_capturer_; }
  private:
+
+  // Just pointers since ownership is not handed over to this class.
+  typedef std::vector<VideoRenderer*> VideoRenderers;
 
   explicit CaptureRenderAdapter(VideoCapturer* video_capturer);
   void Init();
@@ -63,8 +66,7 @@ class CaptureRenderAdapter : public sigslot::has_slots<> {
   // Callback for frames received from the capturer.
   void OnVideoFrame(VideoCapturer* capturer, const VideoFrame* video_frame);
 
-  // Just pointers since ownership is not handed over to this class.
-  std::vector<rtc::VideoSinkInterface<VideoFrame>*> sinks_;
+  VideoRenderers video_renderers_;
   VideoCapturer* video_capturer_;
   // Critical section synchronizing the capture thread.
   rtc::CriticalSection capture_crit_;

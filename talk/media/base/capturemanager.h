@@ -79,10 +79,10 @@ class CaptureManager : public sigslot::has_slots<> {
                                    const VideoFormat& desired_format,
                                    RestartOptions options);
 
-  virtual void AddVideoSink(VideoCapturer* video_capturer,
-                            rtc::VideoSinkInterface<VideoFrame>* sink);
-  virtual void RemoveVideoSink(VideoCapturer* video_capturer,
-                               rtc::VideoSinkInterface<VideoFrame>* sink);
+  virtual bool AddVideoRenderer(VideoCapturer* video_capturer,
+                                VideoRenderer* video_renderer);
+  virtual bool RemoveVideoRenderer(VideoCapturer* video_capturer,
+                                   VideoRenderer* video_renderer);
 
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCapturerStateChange;
 

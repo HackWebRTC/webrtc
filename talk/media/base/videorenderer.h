@@ -28,23 +28,16 @@
 #ifndef TALK_MEDIA_BASE_VIDEORENDERER_H_
 #define TALK_MEDIA_BASE_VIDEORENDERER_H_
 
-#include "webrtc/media/base/videosinkinterface.h"
-
 namespace cricket {
 
 class VideoFrame;
 
 // Abstract interface for rendering VideoFrames.
-class VideoRenderer : public rtc::VideoSinkInterface<VideoFrame> {
+class VideoRenderer {
  public:
   virtual ~VideoRenderer() {}
   // Called when a new frame is available for display.
   virtual bool RenderFrame(const VideoFrame *frame) = 0;
-  // Intended to replace RenderFrame.
-  void OnFrame(const cricket::VideoFrame& frame) override {
-    // Unused return value
-    RenderFrame(&frame);
-  }
 };
 
 }  // namespace cricket

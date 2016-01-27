@@ -37,10 +37,14 @@ class FakeCaptureManager : public CaptureManager {
   FakeCaptureManager() {}
   ~FakeCaptureManager() {}
 
-  void AddVideoSink(VideoCapturer* video_capturer,
-                    rtc::VideoSinkInterface<VideoFrame>* sink) override {}
-  void RemoveVideoSink(VideoCapturer* video_capturer,
-                       rtc::VideoSinkInterface<VideoFrame>* sink) override {}
+  virtual bool AddVideoRenderer(VideoCapturer* video_capturer,
+                                VideoRenderer* video_renderer) {
+    return true;
+  }
+  virtual bool RemoveVideoRenderer(VideoCapturer* video_capturer,
+                                   VideoRenderer* video_renderer) {
+    return true;
+  }
 };
 
 }  // namespace cricket

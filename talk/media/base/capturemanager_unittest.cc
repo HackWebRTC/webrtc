@@ -89,6 +89,12 @@ class CaptureManagerTest : public ::testing::Test, public sigslot::has_slots<> {
 };
 
 // Incorrect use cases.
+TEST_F(CaptureManagerTest, InvalidCallOrder) {
+  // Capturer must be registered before any of these calls.
+  EXPECT_FALSE(capture_manager_.AddVideoRenderer(&video_capturer_,
+                                                 &video_renderer_));
+}
+
 TEST_F(CaptureManagerTest, InvalidAddingRemoving) {
   EXPECT_FALSE(capture_manager_.StopVideoCapture(&video_capturer_,
                                                  cricket::VideoFormat()));
@@ -96,8 +102,7 @@ TEST_F(CaptureManagerTest, InvalidAddingRemoving) {
                                                  format_vga_));
   EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
   EXPECT_EQ(1, callback_count());
-  // NULL argument currently allowed, and does nothing.
-  capture_manager_.AddVideoSink(&video_capturer_, NULL);
+  EXPECT_FALSE(capture_manager_.AddVideoRenderer(&video_capturer_, NULL));
   EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_, format_vga_));
 }
 
@@ -107,7 +112,8 @@ TEST_F(CaptureManagerTest, KeepFirstResolutionHigh) {
                                                  format_vga_));
   EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
   EXPECT_EQ(1, callback_count());
-  capture_manager_.AddVideoSink(&video_capturer_, &video_renderer_);
+  EXPECT_TRUE(capture_manager_.AddVideoRenderer(&video_capturer_,
+                                                &video_renderer_));
   EXPECT_TRUE(video_capturer_.CaptureFrame());
   EXPECT_EQ(1, NumFramesRendered());
   // Renderer should be fed frames with the resolution of format_vga_.
@@ -136,7 +142,8 @@ TEST_F(CaptureManagerTest, KeepFirstResolutionLow) {
                                                  format_qvga_));
   EXPECT_TRUE(capture_manager_.StartVideoCapture(&video_capturer_,
                                                  format_vga_));
-  capture_manager_.AddVideoSink(&video_capturer_, &video_renderer_);
+  EXPECT_TRUE(capture_manager_.AddVideoRenderer(&video_capturer_,
+                                                &video_renderer_));
   EXPECT_EQ_WAIT(1, callback_count(), kMsCallbackWait);
   EXPECT_TRUE(video_capturer_.CaptureFrame());
   EXPECT_EQ(1, NumFramesRendered());
@@ -157,7 +164,8 @@ TEST_F(CaptureManagerTest, MultipleStartStops) {
                                                  format_qvga_));
   EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
   EXPECT_EQ(1, callback_count());
-  capture_manager_.AddVideoSink(&video_capturer_, &video_renderer_);
+  EXPECT_TRUE(capture_manager_.AddVideoRenderer(&video_capturer_,
+                                                &video_renderer_));
   // Ensure that a frame can be captured when two start calls have been made.
   EXPECT_TRUE(video_capturer_.CaptureFrame());
   EXPECT_EQ(1, NumFramesRendered());
@@ -181,7 +189,8 @@ TEST_F(CaptureManagerTest, MultipleStartStops) {
 TEST_F(CaptureManagerTest, TestForceRestart) {
   EXPECT_TRUE(capture_manager_.StartVideoCapture(&video_capturer_,
                                                  format_qvga_));
-  capture_manager_.AddVideoSink(&video_capturer_, &video_renderer_);
+  EXPECT_TRUE(capture_manager_.AddVideoRenderer(&video_capturer_,
+                                                &video_renderer_));
   EXPECT_EQ_WAIT(1, callback_count(), kMsCallbackWait);
   EXPECT_TRUE(video_capturer_.CaptureFrame());
   EXPECT_EQ(1, NumFramesRendered());
@@ -200,7 +209,8 @@ TEST_F(CaptureManagerTest, TestForceRestart) {
 TEST_F(CaptureManagerTest, TestRequestRestart) {
   EXPECT_TRUE(capture_manager_.StartVideoCapture(&video_capturer_,
                                                  format_vga_));
-  capture_manager_.AddVideoSink(&video_capturer_, &video_renderer_);
+  EXPECT_TRUE(capture_manager_.AddVideoRenderer(&video_capturer_,
+                                                &video_renderer_));
   EXPECT_EQ_WAIT(1, callback_count(), kMsCallbackWait);
   EXPECT_TRUE(video_capturer_.CaptureFrame());
   EXPECT_EQ(1, NumFramesRendered());

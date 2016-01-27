@@ -49,10 +49,8 @@ class VideoSourceInterface : public MediaSourceInterface {
   virtual void Restart() = 0;
 
   // Adds |output| to the source to receive frames.
-  virtual void AddSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* output) = 0;
-  virtual void RemoveSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* output) = 0;
+  virtual void AddSink(cricket::VideoRenderer* output) = 0;
+  virtual void RemoveSink(cricket::VideoRenderer* output) = 0;
   virtual const cricket::VideoOptions* options() const = 0;
   virtual cricket::VideoRenderer* FrameInput() = 0;
 

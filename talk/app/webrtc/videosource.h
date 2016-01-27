@@ -38,7 +38,6 @@
 #include "talk/media/base/videocommon.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
-#include "webrtc/media/base/videosinkinterface.h"
 
 // VideoSource implements VideoSourceInterface. It owns a
 // cricket::VideoCapturer and make sure the camera is started at a resolution
@@ -85,8 +84,8 @@ class VideoSource : public Notifier<VideoSourceInterface>,
 
   // |output| will be served video frames as long as the underlying capturer
   // is running video frames.
-  virtual void AddSink(rtc::VideoSinkInterface<cricket::VideoFrame>* output);
-  virtual void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* output);
+  virtual void AddSink(cricket::VideoRenderer* output);
+  virtual void RemoveSink(cricket::VideoRenderer* output);
 
  protected:
   VideoSource(cricket::ChannelManager* channel_manager,
@@ -104,7 +103,7 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   rtc::scoped_ptr<cricket::VideoCapturer> video_capturer_;
   rtc::scoped_ptr<cricket::VideoRenderer> frame_input_;
 
-  std::list<rtc::VideoSinkInterface<cricket::VideoFrame>*> sinks_;
+  std::list<cricket::VideoRenderer*> sinks_;
 
   cricket::VideoFormat format_;
   cricket::VideoOptions options_;

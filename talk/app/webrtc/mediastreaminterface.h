@@ -40,7 +40,6 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/media/base/videosinkinterface.h"
 
 namespace cricket {
 
@@ -117,17 +116,12 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
 };
 
 // Interface for rendering VideoFrames from a VideoTrack
-class VideoRendererInterface
-    : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+class VideoRendererInterface {
  public:
   // |frame| may have pending rotation. For clients which can't apply rotation,
   // |frame|->GetCopyWithRotationApplied() will return a frame that has the
   // rotation applied.
   virtual void RenderFrame(const cricket::VideoFrame* frame) = 0;
-  // Intended to replace RenderFrame.
-  void OnFrame(const cricket::VideoFrame& frame) override {
-    RenderFrame(&frame);
-  }
 
  protected:
   // The destructor is protected to prevent deletion via the interface.

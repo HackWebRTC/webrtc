@@ -436,21 +436,19 @@ void VideoSource::Restart() {
     SetState(kEnded);
     return;
   }
-  for (auto* sink : sinks_) {
-    channel_manager_->AddVideoSink(video_capturer_.get(), sink);
+  for(cricket::VideoRenderer* sink : sinks_) {
+    channel_manager_->AddVideoRenderer(video_capturer_.get(), sink);
   }
 }
 
-void VideoSource::AddSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* output) {
+void VideoSource::AddSink(cricket::VideoRenderer* output) {
   sinks_.push_back(output);
-  channel_manager_->AddVideoSink(video_capturer_.get(), output);
+  channel_manager_->AddVideoRenderer(video_capturer_.get(), output);
 }
 
-void VideoSource::RemoveSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* output) {
+void VideoSource::RemoveSink(cricket::VideoRenderer* output) {
   sinks_.remove(output);
-  channel_manager_->RemoveVideoSink(video_capturer_.get(), output);
+  channel_manager_->RemoveVideoRenderer(video_capturer_.get(), output);
 }
 
 // OnStateChange listens to the ChannelManager::SignalVideoCaptureStateChange.
