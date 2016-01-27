@@ -46,6 +46,7 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
 
 @synthesize severity = _severity;
 @synthesize rotationType = _rotationType;
+@synthesize shouldDisableBuffering = _shouldDisableBuffering;
 
 - (instancetype)init {
   NSArray *paths = NSSearchPathForDirectoriesInDomains(
@@ -120,6 +121,9 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
                   << _dirPath.UTF8String;
     _logSink.reset();
     return;
+  }
+  if (_shouldDisableBuffering) {
+    _logSink->DisableBuffering();
   }
   rtc::LogMessage::LogThreads(true);
   rtc::LogMessage::LogTimestamps(true);
