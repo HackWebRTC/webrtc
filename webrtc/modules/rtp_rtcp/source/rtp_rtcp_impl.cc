@@ -291,6 +291,7 @@ void ModuleRtpRtcpImpl::SetSequenceNumber(const uint16_t seq_num) {
 bool ModuleRtpRtcpImpl::SetRtpStateForSsrc(uint32_t ssrc,
                                            const RtpState& rtp_state) {
   if (rtp_sender_.SSRC() == ssrc) {
+    SetStartTimestamp(rtp_state.start_timestamp);
     rtp_sender_.SetRtpState(rtp_state);
     return true;
   }

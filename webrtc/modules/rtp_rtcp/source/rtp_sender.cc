@@ -1872,7 +1872,6 @@ uint32_t RTPSender::BitrateSent() const {
 }
 
 void RTPSender::SetRtpState(const RtpState& rtp_state) {
-  SetStartTimestamp(rtp_state.start_timestamp, true);
   CriticalSectionScoped lock(send_critsect_.get());
   sequence_number_ = rtp_state.sequence_number;
   sequence_number_forced_ = true;
