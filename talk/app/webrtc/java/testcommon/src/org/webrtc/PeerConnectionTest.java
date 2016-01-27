@@ -289,9 +289,6 @@ public class PeerConnectionTest {
       ++expectedStatsCallbacks;
     }
 
-    @Override
-    public synchronized void onFirstMediaPacketReceived() {}
-
     public synchronized LinkedList<StatsReport[]> takeStatsReports() {
       LinkedList<StatsReport[]> got = gotStatsReports;
       gotStatsReports = new LinkedList<StatsReport[]>();

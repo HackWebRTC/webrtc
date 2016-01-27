@@ -326,7 +326,6 @@ class PeerConnection : public PeerConnectionInterface,
   // webrtc::DataChannel should be opened.
   void OnDataChannelOpenMessage(const std::string& label,
                                 const InternalDataChannelInit& config);
-  void OnFirstMediaPacketReceived();
 
   RtpSenderInterface* FindSenderById(const std::string& id);
 

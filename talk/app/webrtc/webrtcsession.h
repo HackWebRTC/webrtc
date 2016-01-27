@@ -309,7 +309,6 @@ class WebRtcSession : public AudioProviderInterface,
   void OnCertificateReady(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   void OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp);
-  void OnChannelFirstPacketReceived(cricket::BaseChannel*);
 
   // For unit test.
   bool waiting_for_certificate_for_testing() const;
@@ -335,9 +334,6 @@ class WebRtcSession : public AudioProviderInterface,
   // std::string represents the data channel label.
   sigslot::signal2<const std::string&, const InternalDataChannelInit&>
       SignalDataChannelOpenMessage;
-
-  // Called when the first RTP packet is received.
-  sigslot::signal0<> SignalFirstMediaPacketReceived;
 
  private:
   // Indicates the type of SessionDescription in a call to SetLocalDescription
@@ -521,8 +517,6 @@ class WebRtcSession : public AudioProviderInterface,
 
   // Declares the RTCP mux policy for the WebRTCSession.
   PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy_;
-
-  bool has_received_media_packet_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
 };

@@ -69,8 +69,4 @@
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     didOpenDataChannel:(RTCDataChannel*)dataChannel;
 
-// Called when the first RTP packet is received.
-- (void)peerConnectionOnFirstMediaPacketReceived:
-    (RTCPeerConnection *)peerConnection;
-
 @end

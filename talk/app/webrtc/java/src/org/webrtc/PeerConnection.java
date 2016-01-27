@@ -86,9 +86,6 @@ public class PeerConnection {
 
     /** Triggered when renegotiation is necessary. */
     public void onRenegotiationNeeded();
-
-    /** Called when the first RTP packet is received. */
-    public void onFirstMediaPacketReceived();
   }
 
   /** Java version of PeerConnectionInterface.IceServer. */

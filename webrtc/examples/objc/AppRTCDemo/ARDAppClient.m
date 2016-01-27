@@ -384,11 +384,6 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
     didOpenDataChannel:(RTCDataChannel *)dataChannel {
 }
 
-- (void)peerConnectionOnFirstMediaPacketReceived:
-    (RTCPeerConnection *)peerConnection {
-  RTCLog(@"Received first media packet.");
-}
-
 #pragma mark - RTCStatsDelegate
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection

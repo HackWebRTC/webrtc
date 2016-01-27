@@ -663,8 +663,6 @@ bool PeerConnection::Initialize(
       this, &PeerConnection::OnDataChannelDestroyed);
   session_->SignalDataChannelOpenMessage.connect(
       this, &PeerConnection::OnDataChannelOpenMessage);
-  session_->SignalFirstMediaPacketReceived.connect(
-      this, &PeerConnection::OnFirstMediaPacketReceived);
   return true;
 }
 
@@ -2029,11 +2027,6 @@ void PeerConnection::OnDataChannelOpenMessage(
 
   observer_->OnDataChannel(
       DataChannelProxy::Create(signaling_thread(), channel));
-}
-
-void PeerConnection::OnFirstMediaPacketReceived() {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
-  observer_->OnFirstMediaPacketReceived();
 }
 
 RtpSenderInterface* PeerConnection::FindSenderById(const std::string& id) {
