@@ -78,7 +78,9 @@ namespace webrtc_jni {
 #define MAX_ENCODER_Q_SIZE 2
 // Maximum allowed latency in ms.
 #define MAX_ENCODER_LATENCY_MS 70
-
+// Maximum amount of dropped frames caused by full encoder queue - exceeding
+// this threshold means that encoder probably got stuck and need to be reset.
+#define ENCODER_STALL_FRAMEDROP_THRESHOLD 60
 
 // Logging macros.
 #define TAG_ENCODER "MediaCodecVideoEncoder"
@@ -227,7 +229,9 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int64_t current_timestamp_us_;  // Current frame timestamps in us.
   int frames_received_;  // Number of frames received by encoder.
   int frames_encoded_;  // Number of frames encoded by encoder.
-  int frames_dropped_;  // Number of frames dropped by encoder.
+  int frames_dropped_media_encoder_;  // Number of frames dropped by encoder.
+  // Number of dropped frames caused by full queue.
+  int consecutive_full_queue_frame_drops_;
   int frames_in_queue_;  // Number of frames in encoder queue.
   int64_t start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
@@ -385,18 +389,15 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       // always = 127. Note that in SW, QP is that of the user-level range [0,
       // 63].
       const int kMaxQp = 127;
-      // TODO(pbos): Investigate whether high-QP thresholds make sense for VP8.
-      // This effectively disables high QP as VP8 QP can't go above this
-      // threshold.
-      const int kDisabledBadQpThreshold = kMaxQp + 1;
-      quality_scaler_.Init(kMaxQp / kLowQpThresholdDenominator,
-                           kDisabledBadQpThreshold, true);
+      const int kBadQpThreshold = 95;
+      quality_scaler_.Init(
+          kMaxQp / kLowQpThresholdDenominator, kBadQpThreshold, false);
     } else if (codecType_ == kVideoCodecH264) {
       // H264 QP is in the range [0, 51].
       const int kMaxQp = 51;
       const int kBadQpThreshold = 40;
-      quality_scaler_.Init(kMaxQp / kLowQpThresholdDenominator, kBadQpThreshold,
-                           false);
+      quality_scaler_.Init(
+          kMaxQp / kLowQpThresholdDenominator, kBadQpThreshold, false);
     } else {
       // When adding codec support to additional hardware codecs, also configure
       // their QP thresholds for scaling.
@@ -444,9 +445,6 @@ int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
 
 int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
                                          uint32_t frame_rate) {
-  if (scale_)
-    quality_scaler_.ReportFramerate(frame_rate);
-
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread,
            this,
@@ -512,7 +510,8 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   yuv_size_ = width_ * height_ * 3 / 2;
   frames_received_ = 0;
   frames_encoded_ = 0;
-  frames_dropped_ = 0;
+  frames_dropped_media_encoder_ = 0;
+  consecutive_full_queue_frame_drops_ = 0;
   frames_in_queue_ = 0;
   current_timestamp_us_ = 0;
   start_time_ms_ = GetCurrentTimeMs();
@@ -634,6 +633,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     ALOGW << "Encoder drop frame - failed callback.";
     drop_next_input_frame_ = false;
     current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+    frames_dropped_media_encoder_++;
     OnDroppedFrame();
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -648,12 +648,22 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     if (frames_in_queue_ > MAX_ENCODER_Q_SIZE ||
         encoder_latency_ms > MAX_ENCODER_LATENCY_MS) {
       ALOGD << "Drop frame - encoder is behind by " << encoder_latency_ms <<
-          " ms. Q size: " << frames_in_queue_;
+          " ms. Q size: " << frames_in_queue_ << ". Consecutive drops: " <<
+          consecutive_full_queue_frame_drops_;
       current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+      consecutive_full_queue_frame_drops_++;
+      if (consecutive_full_queue_frame_drops_ >=
+          ENCODER_STALL_FRAMEDROP_THRESHOLD) {
+        ALOGE << "Encoder got stuck. Reset.";
+        ResetCodecOnCodecThread();
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+      frames_dropped_media_encoder_++;
       OnDroppedFrame();
       return WEBRTC_VIDEO_CODEC_OK;
     }
   }
+  consecutive_full_queue_frame_drops_ = 0;
 
   VideoFrame input_frame = frame;
   if (scale_) {
@@ -695,8 +705,10 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     if (j_input_buffer_index == -1) {
       // Video codec falls behind - no input buffer available.
       ALOGW << "Encoder drop frame - no input buffers available";
-      current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
       frame_rtc_times_ms_.erase(frame_rtc_times_ms_.begin());
+      current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+      frames_dropped_media_encoder_++;
+      OnDroppedFrame();
       return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
     }
     if (j_input_buffer_index == -2) {
@@ -827,7 +839,7 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ALOGD << "EncoderReleaseOnCodecThread: Frames received: " <<
       frames_received_ << ". Encoded: " << frames_encoded_ <<
-      ". Dropped: " << frames_dropped_;
+      ". Dropped: " << frames_dropped_media_encoder_;
   ScopedLocalRefFrame local_ref_frame(jni);
   for (size_t i = 0; i < input_buffers_.size(); ++i)
     jni->DeleteGlobalRef(input_buffers_[i]);
@@ -849,6 +861,9 @@ int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
   if (last_set_bitrate_kbps_ == new_bit_rate &&
       last_set_fps_ == frame_rate) {
     return WEBRTC_VIDEO_CODEC_OK;
+  }
+  if (scale_) {
+    quality_scaler_.ReportFramerate(frame_rate);
   }
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
@@ -1135,7 +1150,6 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
 }
 
 void MediaCodecVideoEncoder::OnDroppedFrame() {
-  frames_dropped_++;
   // Report dropped frame to quality_scaler_.
   if (scale_)
     quality_scaler_.ReportDroppedFrame();
