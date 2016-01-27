@@ -501,6 +501,9 @@ class PeerConnectionObserver {
   // Called when the ICE connection receiving status changes.
   virtual void OnIceConnectionReceivingChange(bool receiving) {}
 
+  // Called when the first RTP packet is received.
+  virtual void OnFirstMediaPacketReceived() {}
+
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
   ~PeerConnectionObserver() {}

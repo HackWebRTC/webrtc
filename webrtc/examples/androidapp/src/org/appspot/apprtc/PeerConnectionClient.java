@@ -1000,6 +1000,10 @@ public class PeerConnectionClient {
       // No need to do anything; AppRTC follows a pre-agreed-upon
       // signaling/negotiation protocol.
     }
+
+    @Override
+    public void onFirstMediaPacketReceived() {
+    }
   }
 
   // Implementation detail: handle offer creation/signaling and answer setting,

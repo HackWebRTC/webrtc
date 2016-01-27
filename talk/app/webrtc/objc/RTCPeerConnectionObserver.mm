@@ -105,4 +105,9 @@ void RTCPeerConnectionObserver::OnIceCandidate(
                            gotICECandidate:iceCandidate];
 }
 
+void RTCPeerConnectionObserver::OnFirstMediaPacketReceived() {
+  id<RTCPeerConnectionDelegate> delegate = _peerConnection.delegate;
+  [delegate peerConnectionOnFirstMediaPacketReceived:_peerConnection];
+}
+
 }  // namespace webrtc
