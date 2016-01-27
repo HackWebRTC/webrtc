@@ -128,8 +128,6 @@ class WebRtcVideoEngine2 {
   virtual void SetExternalEncoderFactory(
       WebRtcVideoEncoderFactory* encoder_factory);
 
-  bool EnableTimedRender();
-
   bool FindCodec(const VideoCodec& in);
   // Check whether the supplied trace should be ignored.
   bool ShouldIgnoreTrace(const std::string& trace);
@@ -195,14 +193,32 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   uint32_t GetDefaultSendChannelSsrc() { return default_send_ssrc_; }
 
  private:
+  struct VideoCodecSettings {
+    VideoCodecSettings();
+
+    bool operator==(const VideoCodecSettings& other) const;
+    bool operator!=(const VideoCodecSettings& other) const;
+
+    VideoCodec codec;
+    webrtc::FecConfig fec;
+    int rtx_payload_type;
+  };
+
+  struct ChangedSendParameters {
+    // These optionals are unset if not changed.
+    rtc::Optional<VideoCodecSettings> codec;
+    rtc::Optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
+    rtc::Optional<int> max_bandwidth_bps;
+    rtc::Optional<VideoOptions> options;
+    rtc::Optional<webrtc::RtcpMode> rtcp_mode;
+  };
+  bool GetChangedSendParameters(const VideoSendParameters& params,
+                                ChangedSendParameters* changed_params) const;
   bool MuteStream(uint32_t ssrc, bool mute);
   class WebRtcVideoReceiveStream;
 
-  bool SetSendCodecs(const std::vector<VideoCodec>& codecs);
-  bool SetSendRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions);
-  bool SetMaxSendBandwidth(int bps);
-  bool SetOptions(const VideoOptions& options);
+  void SetMaxSendBandwidth(int bps);
+  void SetOptions(const VideoOptions& options);
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs);
   bool SetRecvRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions);
@@ -216,17 +232,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
   void DeleteReceiveStream(WebRtcVideoReceiveStream* stream)
       EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
-
-  struct VideoCodecSettings {
-    VideoCodecSettings();
-
-    bool operator==(const VideoCodecSettings& other) const;
-    bool operator!=(const VideoCodecSettings& other) const;
-
-    VideoCodec codec;
-    webrtc::FecConfig fec;
-    int rtx_payload_type;
-  };
 
   static std::string CodecSettingsVectorToString(
       const std::vector<VideoCodecSettings>& codecs);
@@ -248,12 +253,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     ~WebRtcVideoSendStream();
 
     void SetOptions(const VideoOptions& options);
-    void SetCodec(const VideoCodecSettings& codec);
-    void SetRtpExtensions(
-        const std::vector<webrtc::RtpExtension>& rtp_extensions);
-    // TODO(deadbeef): Move logic from SetCodec/SetRtpExtensions/etc.
-    // into this method. Currently this method only sets the RTCP mode.
-    void SetSendParameters(const VideoSendParameters& send_params);
+    // TODO(pbos): Move logic from SetOptions into this method.
+    void SetSendParameters(const ChangedSendParameters& send_params);
 
     void InputFrame(VideoCapturer* capturer, const VideoFrame* frame);
     bool SetCapturer(VideoCapturer* capturer);
@@ -261,16 +262,12 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void MuteStream(bool mute);
     bool DisconnectCapturer();
 
-    void SetApplyRotation(bool apply_rotation);
-
     void Start();
     void Stop();
 
     const std::vector<uint32_t>& GetSsrcs() const;
     VideoSenderInfo GetVideoSenderInfo();
     void FillBandwidthEstimationInfo(BandwidthEstimationInfo* bwe_info);
-
-    void SetMaxBitrateBps(int max_bitrate_bps);
 
    private:
     // Parameters needed to reconstruct the underlying stream.
@@ -362,6 +359,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     rtc::CriticalSection lock_;
     webrtc::VideoSendStream* stream_ GUARDED_BY(lock_);
     VideoSendStreamParameters parameters_ GUARDED_BY(lock_);
+    bool pending_encoder_reconfiguration_ GUARDED_BY(lock_);
     VideoEncoderSettings encoder_settings_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
     Dimensions last_dimensions_ GUARDED_BY(lock_);

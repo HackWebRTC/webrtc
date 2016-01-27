@@ -2101,14 +2101,22 @@ TEST_F(WebRtcVideoChannel2Test, SetMaxSendBitrateCanIncreaseSenderBitrate) {
 
   FakeVideoSendStream* stream = AddSendStream();
 
+  cricket::FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+
   std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
   int initial_max_bitrate_bps = streams[0].max_bitrate_bps;
   EXPECT_GT(initial_max_bitrate_bps, 0);
 
   parameters.max_bandwidth_bps = initial_max_bitrate_bps * 2;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  // Insert a frame to update the encoder config.
+  EXPECT_TRUE(capturer.CaptureFrame());
   streams = stream->GetVideoStreams();
   EXPECT_EQ(initial_max_bitrate_bps * 2, streams[0].max_bitrate_bps);
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, nullptr));
 }
 
 TEST_F(WebRtcVideoChannel2Test,
@@ -2136,6 +2144,8 @@ TEST_F(WebRtcVideoChannel2Test,
 
   parameters.max_bandwidth_bps = initial_max_bitrate_bps * 2;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  // Insert a frame to update the encoder config.
+  EXPECT_TRUE(capturer.CaptureFrame());
   streams = stream->GetVideoStreams();
   int increased_max_bitrate_bps = GetTotalMaxBitrateBps(streams);
   EXPECT_EQ(initial_max_bitrate_bps * 2, increased_max_bitrate_bps);
