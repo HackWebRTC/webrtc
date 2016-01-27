@@ -43,7 +43,7 @@ CaptureRenderAdapter::~CaptureRenderAdapter() {
   // outstanding calls to OnVideoFrame will be done when this is done, and no
   // more calls will be serviced by this.
   // We do this explicitly instead of just letting the has_slots<> destructor
-  // take care of it because we need to do this *before* video_renderers_ is
+  // take care of it because we need to do this *before* sinks_ is
   // cleared by the destructor; otherwise we could mess with it while
   // OnVideoFrame is running.
   // We *don't* take capture_crit_ here since it could deadlock with the lock
@@ -61,32 +61,23 @@ CaptureRenderAdapter* CaptureRenderAdapter::Create(
   return return_value;
 }
 
-void CaptureRenderAdapter::AddRenderer(VideoRenderer* video_renderer) {
-  RTC_DCHECK(video_renderer);
+void CaptureRenderAdapter::AddSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
+  RTC_DCHECK(sink);
 
   rtc::CritScope cs(&capture_crit_);
   // This implements set semantics, the same renderer can only be
   // added once.
   // TODO(nisse): Is this really needed?
-  if (std::find(video_renderers_.begin(), video_renderers_.end(),
-                video_renderer) == video_renderers_.end())
-    video_renderers_.push_back(video_renderer);
+  if (std::find(sinks_.begin(), sinks_.end(), sink) == sinks_.end())
+    sinks_.push_back(sink);
 }
 
-void CaptureRenderAdapter::RemoveRenderer(VideoRenderer* video_renderer) {
-  RTC_DCHECK(video_renderer);
+void CaptureRenderAdapter::RemoveSink(
+    rtc::VideoSinkInterface<VideoFrame>* sink) {
+  RTC_DCHECK(sink);
 
   rtc::CritScope cs(&capture_crit_);
-  // TODO(nisse): Switch to using std::list, and use its remove
-  // method. And similarly in VideoTrackRenderers, which this class
-  // mostly duplicates.
-  for (VideoRenderers::iterator iter = video_renderers_.begin();
-       iter != video_renderers_.end(); ++iter) {
-    if (video_renderer == *iter) {
-      video_renderers_.erase(iter);
-      break;
-    }
-  }
+  sinks_.erase(std::remove(sinks_.begin(), sinks_.end(), sink), sinks_.end());
 }
 
 void CaptureRenderAdapter::Init() {
@@ -98,12 +89,12 @@ void CaptureRenderAdapter::Init() {
 void CaptureRenderAdapter::OnVideoFrame(VideoCapturer* capturer,
                                         const VideoFrame* video_frame) {
   rtc::CritScope cs(&capture_crit_);
-  if (video_renderers_.empty()) {
+  if (sinks_.empty()) {
     return;
   }
 
-  for (auto* renderer : video_renderers_)
-    renderer->RenderFrame(video_frame);
+  for (auto* sink : sinks_)
+    sink->OnFrame(*video_frame);
 }
 
 }  // namespace cricket
