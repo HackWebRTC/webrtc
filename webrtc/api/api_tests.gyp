@@ -20,6 +20,7 @@
           ],
           'sources': [
             'objctests/RTCConfigurationTest.mm',
+            'objctests/RTCDataChannelConfigurationTest.mm',
             'objctests/RTCIceCandidateTest.mm',
             'objctests/RTCIceServerTest.mm',
             'objctests/RTCMediaConstraintsTest.mm',
