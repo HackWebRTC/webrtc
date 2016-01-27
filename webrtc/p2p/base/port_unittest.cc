@@ -58,6 +58,7 @@ static const SocketAddress kRelayTcpExtAddr("99.99.99.3", 5003);
 static const SocketAddress kRelaySslTcpIntAddr("99.99.99.2", 5004);
 static const SocketAddress kRelaySslTcpExtAddr("99.99.99.3", 5005);
 static const SocketAddress kTurnUdpIntAddr("99.99.99.4", STUN_SERVER_PORT);
+static const SocketAddress kTurnTcpIntAddr("99.99.99.4", 5010);
 static const SocketAddress kTurnUdpExtAddr("99.99.99.5", 0);
 static const RelayCredentials kRelayCredentials("test", "test");
 
@@ -497,19 +498,19 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   TurnPort* CreateTurnPort(const SocketAddress& addr,
                            PacketSocketFactory* socket_factory,
                            ProtocolType int_proto, ProtocolType ext_proto) {
-    return CreateTurnPort(addr, socket_factory,
-                          int_proto, ext_proto, kTurnUdpIntAddr);
+    SocketAddress server_addr =
+        int_proto == PROTO_TCP ? kTurnTcpIntAddr : kTurnUdpIntAddr;
+    return CreateTurnPort(addr, socket_factory, int_proto, ext_proto,
+                          server_addr);
   }
   TurnPort* CreateTurnPort(const SocketAddress& addr,
                            PacketSocketFactory* socket_factory,
                            ProtocolType int_proto, ProtocolType ext_proto,
                            const rtc::SocketAddress& server_addr) {
-    return TurnPort::Create(main_, socket_factory, &network_,
-                            addr.ipaddr(), 0, 0,
-                            username_, password_, ProtocolAddress(
-                                server_addr, PROTO_UDP),
-                            kRelayCredentials, 0,
-                            std::string());
+    return TurnPort::Create(main_, socket_factory, &network_, addr.ipaddr(), 0,
+                            0, username_, password_,
+                            ProtocolAddress(server_addr, int_proto),
+                            kRelayCredentials, 0, std::string());
   }
   RelayPort* CreateGturnPort(const SocketAddress& addr,
                              ProtocolType int_proto, ProtocolType ext_proto) {
@@ -2162,6 +2163,17 @@ TEST_F(PortTest, TestCandidateFoundation) {
   ASSERT_EQ_WAIT(1U, turnport3->Candidates().size(), kTimeout);
   EXPECT_NE(turnport3->Candidates()[0].foundation(),
             turnport2->Candidates()[0].foundation());
+
+  // Start a TCP turn server, and check that two turn candidates have
+  // different foundations if their relay protocols are different.
+  TestTurnServer turn_server3(rtc::Thread::Current(), kTurnTcpIntAddr,
+                              kTurnUdpExtAddr, PROTO_TCP);
+  rtc::scoped_ptr<Port> turnport4(
+      CreateTurnPort(kLocalAddr1, nat_socket_factory1(), PROTO_TCP, PROTO_UDP));
+  turnport4->PrepareAddress();
+  ASSERT_EQ_WAIT(1U, turnport4->Candidates().size(), kTimeout);
+  EXPECT_NE(turnport2->Candidates()[0].foundation(),
+            turnport4->Candidates()[0].foundation());
 }
 
 // This test verifies the related addresses of different types of

@@ -120,12 +120,12 @@ const char TCPTYPE_SIMOPEN_STR[] = "so";
 //   then the foundation will be different.  Two candidate pairs with
 //   the same foundation pairs are likely to have similar network
 //   characteristics.  Foundations are used in the frozen algorithm.
-static std::string ComputeFoundation(
-    const std::string& type,
-    const std::string& protocol,
-    const rtc::SocketAddress& base_address) {
+static std::string ComputeFoundation(const std::string& type,
+                                     const std::string& protocol,
+                                     const std::string& relay_protocol,
+                                     const rtc::SocketAddress& base_address) {
   std::ostringstream ost;
-  ost << type << base_address.ipaddr().ToString() << protocol;
+  ost << type << base_address.ipaddr().ToString() << protocol << relay_protocol;
   return rtc::ToString<uint32_t>(rtc::ComputeCrc32(ost.str()));
 }
 
@@ -252,7 +252,8 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   c.set_network_type(network_->type());
   c.set_generation(generation_);
   c.set_related_address(related_address);
-  c.set_foundation(ComputeFoundation(type, protocol, base_address));
+  c.set_foundation(
+      ComputeFoundation(type, protocol, relay_protocol, base_address));
   candidates_.push_back(c);
   SignalCandidateReady(this, c);
 
@@ -1389,9 +1390,9 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   new_local_candidate.set_network_name(local_candidate().network_name());
   new_local_candidate.set_network_type(local_candidate().network_type());
   new_local_candidate.set_related_address(local_candidate().address());
-  new_local_candidate.set_foundation(
-      ComputeFoundation(PRFLX_PORT_TYPE, local_candidate().protocol(),
-                        local_candidate().address()));
+  new_local_candidate.set_foundation(ComputeFoundation(
+      PRFLX_PORT_TYPE, local_candidate().protocol(),
+      local_candidate().relay_protocol(), local_candidate().address()));
 
   // Change the local candidate of this Connection to the new prflx candidate.
   local_candidate_index_ = port_->AddPrflxCandidate(new_local_candidate);
