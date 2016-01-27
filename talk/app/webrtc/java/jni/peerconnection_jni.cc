@@ -374,6 +374,14 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
+  void OnFirstMediaPacketReceived() override {
+    ScopedLocalRefFrame local_ref_frame(jni());
+    jmethodID m = GetMethodID(jni(), *j_observer_class_,
+                              "onFirstMediaPacketReceived", "()V");
+    jni()->CallVoidMethod(*j_observer_global_, m);
+    CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  }
+
   void SetConstraints(ConstraintsWrapper* constraints) {
     RTC_CHECK(!constraints_.get()) << "constraints already set!";
     constraints_.reset(constraints);
