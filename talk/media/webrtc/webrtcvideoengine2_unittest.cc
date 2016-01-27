@@ -716,10 +716,11 @@ TEST_F(WebRtcVideoEngine2Test, SimulcastDisabledForH264) {
   EXPECT_EQ(1u, encoder->GetCodecSettings().numberOfSimulcastStreams);
 }
 
-// Test external codec with be added to the end of the supported codec list.
+// Test that external codecs are added to the end of the supported codec list.
 TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecs) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecUnknown,
+                                             "FakeExternalCodec");
   engine_.SetExternalEncoderFactory(&encoder_factory);
   engine_.Init();
 
@@ -730,7 +731,7 @@ TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecs) {
 
   // The external codec will appear at last.
   EXPECT_EQ("VP8", internal_codec.name);
-  EXPECT_EQ("H264", external_codec.name);
+  EXPECT_EQ("FakeExternalCodec", external_codec.name);
 }
 
 TEST_F(WebRtcVideoEngine2Test, RegisterExternalDecodersIfSupported) {

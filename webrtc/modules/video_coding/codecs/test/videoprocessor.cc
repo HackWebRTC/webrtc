@@ -225,8 +225,10 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
   }
 }
 
-void VideoProcessorImpl::FrameEncoded(webrtc::VideoCodecType codec,
-                                      const EncodedImage& encoded_image) {
+void VideoProcessorImpl::FrameEncoded(
+    webrtc::VideoCodecType codec,
+    const EncodedImage& encoded_image,
+    const webrtc::RTPFragmentationHeader* fragmentation) {
   // Timestamp is frame number, so this gives us #dropped frames.
   int num_dropped_from_prev_encode =
       encoded_image._timeStamp - prev_time_stamp_ - 1;
@@ -277,14 +279,18 @@ void VideoProcessorImpl::FrameEncoded(webrtc::VideoCodecType codec,
         assert(false);
     }
   }
+
+  // Make a raw copy of the |encoded_image| buffer.
   size_t copied_buffer_size = encoded_image._length +
                               EncodedImage::GetBufferPaddingBytes(codec);
   rtc::scoped_ptr<uint8_t[]> copied_buffer(new uint8_t[copied_buffer_size]);
   memcpy(copied_buffer.get(), encoded_image._buffer, encoded_image._length);
+  // The image to feed to the decoder.
   EncodedImage copied_image;
   memcpy(&copied_image, &encoded_image, sizeof(copied_image));
   copied_image._size = copied_buffer_size;
   copied_image._buffer = copied_buffer.get();
+
   if (!exclude_this_frame) {
     stat.packets_dropped =
         packet_manipulator_->ManipulatePackets(&copied_image);
@@ -415,14 +421,17 @@ int32_t VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::Encoded(
     const EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo* codec_specific_info,
     const webrtc::RTPFragmentationHeader* fragmentation) {
+  // Forward to parent class.
   RTC_CHECK(codec_specific_info);
   video_processor_->FrameEncoded(codec_specific_info->codecType,
-                                 encoded_image);  // Forward to parent class.
+                                 encoded_image,
+                                 fragmentation);
   return 0;
 }
 int32_t VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
     VideoFrame& image) {
-  video_processor_->FrameDecoded(image);  // Forward to parent class.
+  // Forward to parent class.
+  video_processor_->FrameDecoded(image);
   return 0;
 }
 

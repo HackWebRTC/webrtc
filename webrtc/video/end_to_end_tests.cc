@@ -23,6 +23,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
@@ -286,12 +287,15 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
   RunBaseTest(&test);
 }
 
+#if defined(WEBRTC_END_TO_END_H264_TESTS)
+
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
   class H264Observer : public test::EndToEndTest, public VideoRenderer {
    public:
     H264Observer()
         : EndToEndTest(2 * kDefaultTimeoutMs),
-          fake_encoder_(Clock::GetRealTimeClock()),
+          encoder_(VideoEncoder::Create(VideoEncoder::kH264)),
+          decoder_(H264Decoder::Create()),
           frame_counter_(0) {}
 
     void PerformTest() override {
@@ -305,9 +309,9 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.nack.rtp_history_ms =
           (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      send_config->encoder_settings.encoder = &fake_encoder_;
+      send_config->encoder_settings.encoder = encoder_.get();
       send_config->encoder_settings.payload_name = "H264";
-      send_config->encoder_settings.payload_type = kFakeVideoSendPayloadType;
+      send_config->encoder_settings.payload_type = 126;
       encoder_config->streams[0].min_bitrate_bps = 50000;
       encoder_config->streams[0].target_bitrate_bps =
           encoder_config->streams[0].max_bitrate_bps = 2000000;
@@ -318,7 +322,7 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
           send_config->encoder_settings.payload_type;
       (*receive_configs)[0].decoders[0].payload_name =
           send_config->encoder_settings.payload_name;
-      (*receive_configs)[0].decoders[0].decoder = &fake_decoder_;
+      (*receive_configs)[0].decoders[0].decoder = decoder_.get();
     }
 
     void RenderFrame(const VideoFrame& video_frame,
@@ -331,13 +335,15 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
     bool IsTextureSupported() const override { return false; }
 
    private:
-    test::FakeH264Decoder fake_decoder_;
-    test::FakeH264Encoder fake_encoder_;
+    rtc::scoped_ptr<webrtc::VideoEncoder> encoder_;
+    rtc::scoped_ptr<webrtc::VideoDecoder> decoder_;
     int frame_counter_;
   } test;
 
   RunBaseTest(&test);
 }
+
+#endif  // defined(WEBRTC_END_TO_END_H264_TESTS)
 
 TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
   class SyncRtcpObserver : public test::EndToEndTest {

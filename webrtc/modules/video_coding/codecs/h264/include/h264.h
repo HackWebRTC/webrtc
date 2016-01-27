@@ -30,6 +30,7 @@ namespace webrtc {
 class H264Encoder : public VideoEncoder {
  public:
   static H264Encoder* Create();
+  // If H.264 is supported (any implementation).
   static bool IsSupported();
 
   ~H264Encoder() override {}

@@ -194,6 +194,11 @@
         'webrtc',
       ],
       'conditions': [
+        ['rtc_use_h264==1', {
+          'defines': [
+            'WEBRTC_END_TO_END_H264_TESTS',
+          ],
+        }],
         ['OS=="android"', {
           'dependencies': [
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',

@@ -19,9 +19,9 @@
 
 namespace webrtc {
 
-// TODO(hbos): The FFmpeg video decoder will require up to 8 bytes, update this
-// when the FFmpeg decoder is added.
-const size_t EncodedImage::kBufferPaddingBytesH264 = 0;
+// FFmpeg's decoder, used by H264DecoderImpl, requires up to 8 bytes padding due
+// to optimized bitstream readers. See avcodec_decode_video2.
+const size_t EncodedImage::kBufferPaddingBytesH264 = 8;
 
 bool EqualPlane(const uint8_t* data1,
                 const uint8_t* data2,

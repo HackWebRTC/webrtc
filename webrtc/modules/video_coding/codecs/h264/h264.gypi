@@ -24,11 +24,18 @@
           ],
         }],
         ['rtc_use_h264==1', {
-          # Dependency for sake of compiling The dependencies will be used for
-          # real as soon as https://codereview.webrtc.org/1306813009/ lands.
+          'defines': [
+            'WEBRTC_THIRD_PARTY_H264',
+          ],
           'dependencies': [
             '<(DEPTH)/third_party/ffmpeg/ffmpeg.gyp:ffmpeg',
             '<(DEPTH)/third_party/openh264/openh264.gyp:openh264_encoder',
+          ],
+          'sources': [
+            'h264_decoder_impl.cc',
+            'h264_decoder_impl.h',
+            'h264_encoder_impl.cc',
+            'h264_encoder_impl.h',
           ],
         }],
       ],

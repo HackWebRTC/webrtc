@@ -19,6 +19,7 @@
       ],
       'dependencies': [
         '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/modules/modules.gyp:webrtc_h264',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'direct_dependent_settings': {

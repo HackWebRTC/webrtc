@@ -144,7 +144,7 @@
     # compilation succeeds but |H264DecoderImpl| fails to initialize.
     # CHECK THE OPENH264, FFMPEG AND H.264 LICENSES/PATENTS BEFORE BUILDING.
     # http://www.openh264.org, https://www.ffmpeg.org/
-    'rtc_use_h264%': 0,  # TODO(hbos): enc/dec in follow up CL(s).
+    'rtc_use_h264%': 0,
 
     'conditions': [
       ['build_with_chromium==1', {

@@ -58,7 +58,9 @@ VideoReceiveStream::Decoder CreateMatchingDecoder(
   VideoReceiveStream::Decoder decoder;
   decoder.payload_type = encoder_settings.payload_type;
   decoder.payload_name = encoder_settings.payload_name;
-  if (encoder_settings.payload_name == "VP8") {
+  if (encoder_settings.payload_name == "H264") {
+    decoder.decoder = VideoDecoder::Create(VideoDecoder::kH264);
+  } else if (encoder_settings.payload_name == "VP8") {
     decoder.decoder = VideoDecoder::Create(VideoDecoder::kVp8);
   } else if (encoder_settings.payload_name == "VP9") {
     decoder.decoder = VideoDecoder::Create(VideoDecoder::kVp9);

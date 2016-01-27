@@ -37,6 +37,7 @@
 namespace webrtc {
 
 static const int kSendStatsPollingIntervalMs = 1000;
+static const int kPayloadTypeH264 = 122;
 static const int kPayloadTypeVP8 = 123;
 static const int kPayloadTypeVP9 = 124;
 
@@ -780,7 +781,10 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
   CreateSendConfig(num_streams, 0, send_transport);
 
   int payload_type;
-  if (params_.common.codec == "VP8") {
+  if (params_.common.codec == "H264") {
+    encoder_.reset(VideoEncoder::Create(VideoEncoder::kH264));
+    payload_type = kPayloadTypeH264;
+  } else if (params_.common.codec == "VP8") {
     encoder_.reset(VideoEncoder::Create(VideoEncoder::kVp8));
     payload_type = kPayloadTypeVP8;
   } else if (params_.common.codec == "VP9") {

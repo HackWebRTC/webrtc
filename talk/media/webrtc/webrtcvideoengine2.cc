@@ -414,6 +414,11 @@ void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     denoising = options.video_noise_reduction.value_or(false);
   }
 
+  if (CodecNamesEq(codec.name, kH264CodecName)) {
+    encoder_settings_.h264 = webrtc::VideoEncoder::GetDefaultH264Settings();
+    encoder_settings_.h264.frameDroppingOn = frame_dropping;
+    return &encoder_settings_.h264;
+  }
   if (CodecNamesEq(codec.name, kVp8CodecName)) {
     encoder_settings_.vp8 = webrtc::VideoEncoder::GetDefaultVp8Settings();
     encoder_settings_.vp8.automaticResizeOn = automatic_resize;

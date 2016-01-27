@@ -45,6 +45,13 @@
           }, {
             'desktop_capture_supported%': 0,
           }],
+          ['rtc_use_h264==1', {
+            'videoprocessor_defines': [
+              'WEBRTC_VIDEOPROCESSOR_H264_TESTS',
+            ],
+          }, {
+            'videoprocessor_defines': [],
+          }],
         ],
       },
       'targets': [
@@ -69,6 +76,7 @@
           ],
           'defines': [
             '<@(audio_coding_defines)',
+            '<@(videoprocessor_defines)',
           ],
           'sources': [
             'audio_coding/test/APITest.cc',
