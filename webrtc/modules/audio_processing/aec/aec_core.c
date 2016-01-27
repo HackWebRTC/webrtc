@@ -667,12 +667,11 @@ static void UpdateMetrics(AecCore* aec) {
 
       // A_NLP
       dtmp = 10 * (float)log10(aec->nearlevel.averagelevel /
-                                   (2 * aec->linoutlevel.averagelevel) +
-                               1e-10f);
+          aec->linoutlevel.averagelevel + 1e-10f);
 
       // subtract noise power
-      suppressedEcho = 2 * (aec->linoutlevel.averagelevel -
-                            safety * aec->linoutlevel.minlevel);
+      suppressedEcho = aec->linoutlevel.averagelevel -
+          safety * aec->linoutlevel.minlevel;
 
       dtmp2 = 10 * (float)log10(echo / suppressedEcho + 1e-10f);
 
@@ -903,7 +902,6 @@ static void EchoSubtraction(
     AecCore* aec,
     int num_partitions,
     int x_fft_buf_block_pos,
-    int metrics_mode,
     int extended_filter_enabled,
     float normal_mu,
     float normal_error_threshold,
@@ -911,7 +909,6 @@ static void EchoSubtraction(
     float* const y,
     float x_pow[PART_LEN1],
     float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
-    PowerLevel* linout_level,
     float echo_subtractor_output[PART_LEN]) {
   float s_fft[2][PART_LEN1];
   float e_extended[PART_LEN2];
@@ -955,13 +952,6 @@ static void EchoSubtraction(
                           &e_fft[0][0],
                           sizeof(e_fft[0][0]) * PART_LEN1 * 2);
 
-  if (metrics_mode == 1) {
-    // Note that the first PART_LEN samples in fft (before transformation) are
-    // zero. Hence, the scaling by two in UpdateLevel() should not be
-    // performed. That scaling is taken care of in UpdateMetrics() instead.
-    UpdateLevel(linout_level, CalculatePower(e, PART_LEN) / 2.0f);
-  }
-
   // Scale error signal inversely with far power.
   WebRtcAec_ScaleErrorSignal(extended_filter_enabled,
                              normal_mu,
@@ -975,7 +965,6 @@ static void EchoSubtraction(
                              h_fft_buf);
   memcpy(echo_subtractor_output, e, sizeof(float) * PART_LEN);
 }
-
 
 static void EchoSuppression(AecCore* aec,
                             float farend[PART_LEN2],
@@ -1279,6 +1268,13 @@ static void ProcessBlock(AecCore* aec) {
   }
 #endif
 
+  if (aec->metricsMode == 1) {
+    // Update power levels
+    UpdateLevel(&aec->farlevel,
+                CalculatePower(&farend_ptr[PART_LEN], PART_LEN));
+    UpdateLevel(&aec->nearlevel, CalculatePower(nearend_ptr, PART_LEN));
+  }
+
   // Convert far-end signal to the frequency domain.
   memcpy(fft, farend_ptr, sizeof(float) * PART_LEN2);
   Fft(fft, xf);
@@ -1287,12 +1283,6 @@ static void ProcessBlock(AecCore* aec) {
   // Near fft
   memcpy(fft, aec->dBuf, sizeof(float) * PART_LEN2);
   Fft(fft, df);
-
-  if (aec->metricsMode == 1) {
-    // Update power levels
-    UpdateLevel(&aec->farlevel, CalculatePower(farend_ptr, PART_LEN2));
-    UpdateLevel(&aec->nearlevel, CalculatePower(aec->dBuf, PART_LEN2));
-  }
 
   // Power smoothing
   for (i = 0; i < PART_LEN1; i++) {
@@ -1374,7 +1364,6 @@ static void ProcessBlock(AecCore* aec) {
   EchoSubtraction(aec,
                   aec->num_partitions,
                   aec->xfBufBlockPos,
-                  aec->metricsMode,
                   aec->extended_filter_enabled,
                   aec->normal_mu,
                   aec->normal_error_threshold,
@@ -1382,10 +1371,14 @@ static void ProcessBlock(AecCore* aec) {
                   nearend_ptr,
                   aec->xPow,
                   aec->wfBuf,
-                  &aec->linoutlevel,
                   echo_subtractor_output);
 
   RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, echo_subtractor_output, PART_LEN);
+
+  if (aec->metricsMode == 1) {
+    UpdateLevel(&aec->linoutlevel,
+                CalculatePower(echo_subtractor_output, PART_LEN));
+  }
 
   // Perform echo suppression.
   EchoSuppression(aec, farend_ptr, echo_subtractor_output, output, outputH_ptr);
@@ -1712,7 +1705,6 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
 
   return 0;
 }
-
 
 // For bit exactness with a legacy code, |farend| is supposed to contain
 // |PART_LEN2| samples with an overlap of |PART_LEN| samples from the last
