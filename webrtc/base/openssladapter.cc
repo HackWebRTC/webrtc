@@ -336,7 +336,7 @@ OpenSSLAdapter::BeginSSL() {
     goto ssl_error;
   }
 
-  bio = BIO_new_socket(static_cast<AsyncSocketAdapter*>(socket_));
+  bio = BIO_new_socket(socket_);
   if (!bio) {
     err = -1;
     goto ssl_error;
