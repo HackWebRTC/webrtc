@@ -642,11 +642,15 @@ size_t RTPSender::SendPadData(size_t bytes,
         payload_type = payload_type_;
         over_rtx = false;
       } else {
-        // Without abs-send-time a media packet must be sent before padding so
-        // that the timestamps used for estimation are correct.
-        if (!media_has_been_sent_ && !rtp_header_extension_map_.IsRegistered(
-            kRtpExtensionAbsoluteSendTime))
+        // Without abs-send-time or transport sequence number a media packet
+        // must be sent before padding so that the timestamps used for
+        // estimation are correct.
+        if (!media_has_been_sent_ &&
+            !(rtp_header_extension_map_.IsRegistered(
+                  kRtpExtensionAbsoluteSendTime) ||
+              using_transport_seq)) {
           return 0;
+        }
         // Only change change the timestamp of padding packets sent over RTX.
         // Padding only packets over RTP has to be sent as part of a media
         // frame (and therefore the same timestamp).
@@ -1079,7 +1083,21 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
     UpdateDelayStatistics(capture_time_ms, now_ms);
   }
 
-  bool sent = SendPacketToNetwork(buffer, length, PacketOptions());
+  // TODO(sprang): Potentially too much overhead in IsRegistered()?
+  bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
+                                 kRtpExtensionTransportSequenceNumber) &&
+                             transport_sequence_number_allocator_;
+
+  PacketOptions options;
+  if (using_transport_seq) {
+    options.packet_id =
+        UpdateTransportSequenceNumber(buffer, length, rtp_header);
+    if (transport_feedback_observer_) {
+      transport_feedback_observer_->AddPacket(options.packet_id, length, true);
+    }
+  }
+
+  bool sent = SendPacketToNetwork(buffer, length, options);
 
   // Mark the packet as sent in the history even if send failed. Dropping a
   // packet here should be treated as any other packet drop so we should be

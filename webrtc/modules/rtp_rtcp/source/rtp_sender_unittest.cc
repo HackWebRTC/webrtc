@@ -76,7 +76,8 @@ class LoopbackTransportTest : public webrtc::Transport {
       : packets_sent_(0),
         last_sent_packet_len_(0),
         total_bytes_sent_(0),
-        last_sent_packet_(nullptr) {}
+        last_sent_packet_(nullptr),
+        last_packet_id_(-1) {}
 
   ~LoopbackTransportTest() {
     STLDeleteContainerPointers(sent_packets_.begin(), sent_packets_.end());
@@ -89,6 +90,7 @@ class LoopbackTransportTest : public webrtc::Transport {
         new rtc::Buffer(reinterpret_cast<const uint8_t*>(data), len);
     last_sent_packet_ = buffer->data();
     last_sent_packet_len_ = len;
+    last_packet_id_ = options.packet_id;
     total_bytes_sent_ += len;
     sent_packets_.push_back(buffer);
     return true;
@@ -98,6 +100,7 @@ class LoopbackTransportTest : public webrtc::Transport {
   size_t last_sent_packet_len_;
   size_t total_bytes_sent_;
   uint8_t* last_sent_packet_;
+  int last_packet_id_;
   std::vector<rtc::Buffer*> sent_packets_;
 };
 
@@ -117,6 +120,12 @@ class MockRtpPacketSender : public RtpPacketSender {
                     bool retransmission));
 };
 
+class MockTransportSequenceNumberAllocator
+    : public TransportSequenceNumberAllocator {
+ public:
+  MOCK_METHOD0(AllocateSequenceNumber, uint16_t());
+};
+
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
@@ -134,14 +143,15 @@ class RtpSenderTest : public ::testing::Test {
   void SetUpRtpSender(bool pacer) {
     rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_, nullptr,
                                     pacer ? &mock_paced_sender_ : nullptr,
-                                    nullptr, nullptr, nullptr, nullptr, nullptr,
-                                    &mock_rtc_event_log_));
+                                    &seq_num_allocator_, nullptr, nullptr,
+                                    nullptr, nullptr, &mock_rtc_event_log_));
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
 
   SimulatedClock fake_clock_;
   MockRtcEventLog mock_rtc_event_log_;
   MockRtpPacketSender mock_paced_sender_;
+  MockTransportSequenceNumberAllocator seq_num_allocator_;
   rtc::scoped_ptr<RTPSender> rtp_sender_;
   int payload_;
   LoopbackTransportTest transport_;
@@ -462,6 +472,45 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAbsoluteSendTimeExtension) {
   EXPECT_EQ(length, rtp_header2.headerLength);
   EXPECT_FALSE(rtp_header2.extension.hasAbsoluteSendTime);
   EXPECT_EQ(0u, rtp_header2.extension.absoluteSendTime);
+}
+
+TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
+  // Ignore rtc event calls.
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _));
+
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransportSequenceNumber,
+                   kTransportSequenceNumberExtensionId));
+
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const uint8_t payload_type = 127;
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
+                                            0, 1500));
+  // Create a dummy payload of 5 bytes.
+  uint8_t payload[] = {47, 11, 32, 93, 89};
+
+  const uint16_t kTransportSequenceNumber = 17;
+  EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
+      .WillOnce(testing::Return(kTransportSequenceNumber));
+  const uint32_t kTimestamp = 1234;
+  const int64_t kCaptureTimeMs = 4321;
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(
+                   kVideoFrameKey, payload_type, kTimestamp, kCaptureTimeMs,
+                   payload, sizeof(payload), nullptr));
+
+  RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
+                                         transport_.last_sent_packet_len_);
+  webrtc::RTPHeader rtp_header;
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionTransportSequenceNumber,
+               kTransportSequenceNumberExtensionId);
+  EXPECT_TRUE(rtp_parser.Parse(&rtp_header, &map));
+  EXPECT_TRUE(rtp_header.extension.hasTransportSequenceNumber);
+  EXPECT_EQ(kTransportSequenceNumber,
+            rtp_header.extension.transportSequenceNumber);
+  EXPECT_EQ(transport_.last_packet_id_,
+            rtp_header.extension.transportSequenceNumber);
 }
 
 // Test CVO header extension is only set when marker bit is true.
