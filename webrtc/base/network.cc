@@ -780,7 +780,7 @@ IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {
   if (socket->Connect(SocketAddress(
           family == AF_INET ? kPublicIPv4Host : kPublicIPv6Host, kPublicPort)) <
       0) {
-    LOG_ERR(LERROR) << "Connect failed with " << socket->GetError();
+    LOG(LS_INFO) << "Connect failed with " << socket->GetError();
     return IPAddress();
   }
   return socket->GetLocalAddress().ipaddr();
