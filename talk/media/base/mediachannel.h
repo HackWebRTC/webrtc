@@ -951,7 +951,7 @@ struct RtpSendParameters : RtpParameters<Codec> {
     ost << "{";
     ost << "codecs: " << VectorToString(this->codecs) << ", ";
     ost << "extensions: " << VectorToString(this->extensions) << ", ";
-    ost << "max_bandiwidth_bps: " << max_bandwidth_bps << ", ";
+    ost << "max_bandwidth_bps: " << max_bandwidth_bps << ", ";
     ost << "options: " << options.ToString();
     ost << "}";
     return ost.str();
@@ -1165,7 +1165,7 @@ struct DataSendParameters : RtpSendParameters<DataCodec, DataOptions> {
     // Options and extensions aren't used.
     ost << "{";
     ost << "codecs: " << VectorToString(codecs) << ", ";
-    ost << "max_bandiwidth_bps: " << max_bandwidth_bps;
+    ost << "max_bandwidth_bps: " << max_bandwidth_bps;
     ost << "}";
     return ost.str();
   }

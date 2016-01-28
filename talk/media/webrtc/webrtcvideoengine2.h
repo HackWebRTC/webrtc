@@ -194,6 +194,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   uint32_t GetDefaultSendChannelSsrc() { return default_send_ssrc_; }
 
  private:
+  class WebRtcVideoReceiveStream;
   struct VideoCodecSettings {
     VideoCodecSettings();
 
@@ -213,16 +214,23 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     rtc::Optional<VideoOptions> options;
     rtc::Optional<webrtc::RtcpMode> rtcp_mode;
   };
+
+  struct ChangedRecvParameters {
+    // These optionals are unset if not changed.
+    rtc::Optional<std::vector<VideoCodecSettings>> codec_settings;
+    rtc::Optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
+    rtc::Optional<webrtc::RtcpMode> rtcp_mode;
+  };
+
   bool GetChangedSendParameters(const VideoSendParameters& params,
                                 ChangedSendParameters* changed_params) const;
+  bool GetChangedRecvParameters(const VideoRecvParameters& params,
+                                ChangedRecvParameters* changed_params) const;
+
   bool MuteStream(uint32_t ssrc, bool mute);
-  class WebRtcVideoReceiveStream;
 
   void SetMaxSendBandwidth(int bps);
   void SetOptions(const VideoOptions& options);
-  bool SetRecvCodecs(const std::vector<VideoCodec>& codecs);
-  bool SetRecvRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions);
 
   void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
                             const StreamParams& sp) const;
@@ -401,11 +409,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void SetFeedbackParameters(bool nack_enabled,
                                bool remb_enabled,
                                bool transport_cc_enabled);
-    void SetRecvCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
-    void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions);
-    // TODO(deadbeef): Move logic from SetRecvCodecs/SetRtpExtensions/etc.
-    // into this method. Currently this method only sets the RTCP mode.
-    void SetRecvParameters(const VideoRecvParameters& recv_params);
+    void SetRecvParameters(const ChangedRecvParameters& recv_params);
 
     void RenderFrame(const webrtc::VideoFrame& frame,
                      int time_to_render_ms) override;
@@ -431,6 +435,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     void RecreateWebRtcStream();
 
+    void ConfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs,
+                         std::vector<AllocatedDecoder>* old_codecs);
     AllocatedDecoder CreateOrReuseVideoDecoder(
         std::vector<AllocatedDecoder>* old_decoder,
         const VideoCodec& codec);
