@@ -236,10 +236,10 @@ void Transport::ConnectChannels() {
     // initiate request initiated by the remote.
     LOG(LS_INFO) << "Transport::ConnectChannels: No local description has "
                  << "been set. Will generate one.";
-    TransportDescription desc(
-        std::vector<std::string>(), rtc::CreateRandomString(ICE_UFRAG_LENGTH),
-        rtc::CreateRandomString(ICE_PWD_LENGTH), ICEMODE_FULL,
-        CONNECTIONROLE_NONE, nullptr, Candidates());
+    TransportDescription desc(std::vector<std::string>(),
+                              rtc::CreateRandomString(ICE_UFRAG_LENGTH),
+                              rtc::CreateRandomString(ICE_PWD_LENGTH),
+                              ICEMODE_FULL, CONNECTIONROLE_NONE, nullptr);
     SetLocalTransportDescription(desc, CA_OFFER, nullptr);
   }
 

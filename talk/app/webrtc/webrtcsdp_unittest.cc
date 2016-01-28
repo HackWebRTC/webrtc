@@ -898,24 +898,10 @@ class WebRtcSdpTest : public testing::Test {
       }
       EXPECT_EQ(transport1.description.transport_options,
                 transport2.description.transport_options);
-      EXPECT_TRUE(CompareCandidates(transport1.description.candidates,
-                                    transport2.description.candidates));
     }
 
     // global attributes
     EXPECT_EQ(desc1.msid_supported(), desc2.msid_supported());
-  }
-
-  bool CompareCandidates(const Candidates& cs1, const Candidates& cs2) {
-    EXPECT_EQ(cs1.size(), cs2.size());
-    if (cs1.size() != cs2.size())
-      return false;
-    for (size_t i = 0; i< cs1.size(); ++i) {
-      const Candidate c1 = cs1.at(i);
-      const Candidate c2 = cs2.at(i);
-      EXPECT_TRUE(c1.IsEquivalent(c2));
-    }
-    return true;
   }
 
   bool CompareSessionDescription(
@@ -1015,22 +1001,16 @@ class WebRtcSdpTest : public testing::Test {
     rtc::SSLFingerprint fingerprint(rtc::DIGEST_SHA_1,
                                           kIdentityDigest,
                                           sizeof(kIdentityDigest));
-    EXPECT_TRUE(desc_.AddTransportInfo(
-        TransportInfo(kAudioContentName,
-                      TransportDescription(std::vector<std::string>(),
-                                           kCandidateUfragVoice,
-                                           kCandidatePwdVoice,
-                                           cricket::ICEMODE_FULL,
-                                           cricket::CONNECTIONROLE_NONE,
-                                           &fingerprint, Candidates()))));
-    EXPECT_TRUE(desc_.AddTransportInfo(
-        TransportInfo(kVideoContentName,
-                      TransportDescription(std::vector<std::string>(),
-                                           kCandidateUfragVideo,
-                                           kCandidatePwdVideo,
-                                           cricket::ICEMODE_FULL,
-                                           cricket::CONNECTIONROLE_NONE,
-                                           &fingerprint, Candidates()))));
+    EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
+        kAudioContentName,
+        TransportDescription(std::vector<std::string>(), kCandidateUfragVoice,
+                             kCandidatePwdVoice, cricket::ICEMODE_FULL,
+                             cricket::CONNECTIONROLE_NONE, &fingerprint))));
+    EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
+        kVideoContentName,
+        TransportDescription(std::vector<std::string>(), kCandidateUfragVideo,
+                             kCandidatePwdVideo, cricket::ICEMODE_FULL,
+                             cricket::CONNECTIONROLE_NONE, &fingerprint))));
   }
 
   void AddExtmap() {

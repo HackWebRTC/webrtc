@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslfingerprint.h"
@@ -69,8 +68,6 @@ extern const char CONNECTIONROLE_HOLDCONN_STR[];
 bool StringToConnectionRole(const std::string& role_str, ConnectionRole* role);
 bool ConnectionRoleToString(const ConnectionRole& role, std::string* role_str);
 
-typedef std::vector<Candidate> Candidates;
-
 struct TransportDescription {
   TransportDescription()
       : ice_mode(ICEMODE_FULL),
@@ -81,15 +78,13 @@ struct TransportDescription {
                        const std::string& ice_pwd,
                        IceMode ice_mode,
                        ConnectionRole role,
-                       const rtc::SSLFingerprint* identity_fingerprint,
-                       const Candidates& candidates)
+                       const rtc::SSLFingerprint* identity_fingerprint)
       : transport_options(transport_options),
         ice_ufrag(ice_ufrag),
         ice_pwd(ice_pwd),
         ice_mode(ice_mode),
         connection_role(role),
-        identity_fingerprint(CopyFingerprint(identity_fingerprint)),
-        candidates(candidates) {}
+        identity_fingerprint(CopyFingerprint(identity_fingerprint)) {}
   TransportDescription(const std::string& ice_ufrag,
                        const std::string& ice_pwd)
       : ice_ufrag(ice_ufrag),
@@ -102,8 +97,8 @@ struct TransportDescription {
         ice_pwd(from.ice_pwd),
         ice_mode(from.ice_mode),
         connection_role(from.connection_role),
-        identity_fingerprint(CopyFingerprint(from.identity_fingerprint.get())),
-        candidates(from.candidates) {}
+        identity_fingerprint(CopyFingerprint(from.identity_fingerprint.get())) {
+  }
 
   TransportDescription& operator=(const TransportDescription& from) {
     // Self-assignment
@@ -118,7 +113,6 @@ struct TransportDescription {
 
     identity_fingerprint.reset(CopyFingerprint(
         from.identity_fingerprint.get()));
-    candidates = from.candidates;
     return *this;
   }
 
@@ -146,7 +140,6 @@ struct TransportDescription {
   ConnectionRole connection_role;
 
   rtc::scoped_ptr<rtc::SSLFingerprint> identity_fingerprint;
-  Candidates candidates;
 };
 
 }  // namespace cricket

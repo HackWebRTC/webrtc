@@ -162,12 +162,11 @@ class DtlsTestClient : public sigslot::has_slots<> {
         // without any fingerprint.
         (action == cricket::CA_ANSWER && !remote_cert)
             ? nullptr
-            : local_fingerprint.get(),
-        cricket::Candidates());
+            : local_fingerprint.get());
 
     cricket::TransportDescription remote_desc(
         std::vector<std::string>(), kIceUfrag1, kIcePwd1, cricket::ICEMODE_FULL,
-        remote_role, remote_fingerprint.get(), cricket::Candidates());
+        remote_role, remote_fingerprint.get());
 
     bool expect_success = (flags & NF_EXPECT_FAILURE) ? false : true;
     // If |expect_success| is false, expect SRTD or SLTD to fail when

@@ -2207,13 +2207,10 @@ bool ParseMediaDescription(const std::string& message,
 
     // Make a temporary TransportDescription based on |session_td|.
     // Some of this gets overwritten by ParseContent.
-    TransportDescription transport(session_td.transport_options,
-                                   session_td.ice_ufrag,
-                                   session_td.ice_pwd,
-                                   session_td.ice_mode,
-                                   session_td.connection_role,
-                                   session_td.identity_fingerprint.get(),
-                                   Candidates());
+    TransportDescription transport(
+        session_td.transport_options, session_td.ice_ufrag, session_td.ice_pwd,
+        session_td.ice_mode, session_td.connection_role,
+        session_td.identity_fingerprint.get());
 
     rtc::scoped_ptr<MediaContentDescription> content;
     std::string content_name;
