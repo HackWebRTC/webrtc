@@ -410,7 +410,8 @@ const char* StatsReport::Value::display_name() const {
       return "datachannelid";
     case kStatsValueNameCodecImplementationName:
       return "codecImplementationName";
-
+    case kStatsValueNameMediaType:
+      return "mediaType";
     // 'goog' prefixed constants.
     case kStatsValueNameAccelerateRate:
       return "googAccelerateRate";

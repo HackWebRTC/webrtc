@@ -177,6 +177,7 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.bytes_rcvd);
   report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
                    info.capture_start_ntp_time_ms);
+  report->AddString(StatsReport::kStatsValueNameMediaType, "audio");
 }
 
 void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
@@ -197,6 +198,7 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
 
   for (const auto& i : ints)
     report->AddInt(i.name, i.value);
+  report->AddString(StatsReport::kStatsValueNameMediaType, "audio");
 }
 
 void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
@@ -230,6 +232,7 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
 
   for (const auto& i : ints)
     report->AddInt(i.name, i.value);
+  report->AddString(StatsReport::kStatsValueNameMediaType, "video");
 }
 
 void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
@@ -264,6 +267,7 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
 
   for (const auto& i : ints)
     report->AddInt(i.name, i.value);
+  report->AddString(StatsReport::kStatsValueNameMediaType, "video");
 }
 
 void ExtractStats(const cricket::BandwidthEstimationInfo& info,
