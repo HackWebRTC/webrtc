@@ -47,7 +47,6 @@ BEGIN_PROXY_MAP(AudioTrack)
   PROXY_METHOD1(bool, GetSignalLevel, int*)
   PROXY_METHOD0(rtc::scoped_refptr<AudioProcessorInterface>,
                 GetAudioProcessor)
-  PROXY_METHOD0(cricket::AudioRenderer*, GetRenderer)
 
   PROXY_METHOD1(bool, set_enabled, bool)
   PROXY_METHOD1(bool, set_state, TrackState)

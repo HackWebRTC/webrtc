@@ -235,12 +235,6 @@ class AudioTrackInterface : public MediaStreamTrackInterface {
   virtual rtc::scoped_refptr<AudioProcessorInterface>
       GetAudioProcessor() { return NULL; }
 
-  // Get a pointer to the audio renderer of this AudioTrack.
-  // The pointer is valid for the lifetime of this AudioTrack.
-  // TODO(xians): Remove the following interface after Chrome switches to
-  // AddSink() and RemoveSink() interfaces.
-  virtual cricket::AudioRenderer* GetRenderer() { return NULL; }
-
  protected:
   virtual ~AudioTrackInterface() {}
 };

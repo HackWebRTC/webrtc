@@ -211,10 +211,7 @@ void AudioRtpSender::SetAudioSend() {
   }
 #endif
 
-  // Use the renderer if the audio track has one, otherwise use the sink
-  // adapter owned by this class.
-  cricket::AudioRenderer* renderer =
-      track_->GetRenderer() ? track_->GetRenderer() : sink_adapter_.get();
+  cricket::AudioRenderer* renderer = sink_adapter_.get();
   ASSERT(renderer != nullptr);
   provider_->SetAudioSend(ssrc_, track_->enabled(), options, renderer);
 }
