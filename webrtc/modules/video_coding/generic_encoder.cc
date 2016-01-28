@@ -285,7 +285,7 @@ int32_t VCMEncodedFrameCallback::Encoded(
   rtpVideoHeader.rotation = _rotation;
 
   int32_t callbackReturn = send_callback_->SendData(
-      _payloadType, encoded_image, *fragmentationHeader, rtpVideoHeaderPtr);
+      _payloadType, encoded_image, fragmentationHeader, rtpVideoHeaderPtr);
   if (callbackReturn < 0) {
     return callbackReturn;
   }

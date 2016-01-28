@@ -447,11 +447,10 @@ void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {
     stats_proxy_->OnSetRates(bitrate_bps, framerate);
 }
 
-int32_t ViEEncoder::SendData(
-    const uint8_t payload_type,
-    const EncodedImage& encoded_image,
-    const webrtc::RTPFragmentationHeader& fragmentation_header,
-    const RTPVideoHeader* rtp_video_hdr) {
+int32_t ViEEncoder::SendData(const uint8_t payload_type,
+                             const EncodedImage& encoded_image,
+                             const RTPFragmentationHeader* fragmentation_header,
+                             const RTPVideoHeader* rtp_video_hdr) {
   RTC_DCHECK(send_payload_router_ != NULL);
 
   {
@@ -465,7 +464,7 @@ int32_t ViEEncoder::SendData(
   return send_payload_router_->RoutePayload(
              encoded_image._frameType, payload_type, encoded_image._timeStamp,
              encoded_image.capture_time_ms_, encoded_image._buffer,
-             encoded_image._length, &fragmentation_header, rtp_video_hdr)
+             encoded_image._length, fragmentation_header, rtp_video_hdr)
              ? 0
              : -1;
 }

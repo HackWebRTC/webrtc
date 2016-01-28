@@ -59,7 +59,7 @@ class VCMPacketizationCallback {
  public:
   virtual int32_t SendData(uint8_t payloadType,
                            const EncodedImage& encoded_image,
-                           const RTPFragmentationHeader& fragmentationHeader,
+                           const RTPFragmentationHeader* fragmentationHeader,
                            const RTPVideoHeader* rtpVideoHdr) = 0;
 
   virtual void OnEncoderImplementationName(const char* implementation_name) {}

@@ -110,7 +110,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   // Implements VCMPacketizationCallback.
   int32_t SendData(uint8_t payload_type,
                    const EncodedImage& encoded_image,
-                   const RTPFragmentationHeader& fragmentation_header,
+                   const RTPFragmentationHeader* fragmentation_header,
                    const RTPVideoHeader* rtp_video_hdr) override;
   void OnEncoderImplementationName(const char* implementation_name) override;
 

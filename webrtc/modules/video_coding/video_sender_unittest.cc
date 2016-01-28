@@ -95,7 +95,7 @@ class PacketizationCallback : public VCMPacketizationCallback {
 
   int32_t SendData(uint8_t payload_type,
                    const EncodedImage& encoded_image,
-                   const RTPFragmentationHeader& fragmentation_header,
+                   const RTPFragmentationHeader* fragmentation_header,
                    const RTPVideoHeader* rtp_video_header) override {
     assert(rtp_video_header);
     frame_data_.push_back(FrameData(encoded_image._length, *rtp_video_header));
