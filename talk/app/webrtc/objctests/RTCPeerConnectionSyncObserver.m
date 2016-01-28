@@ -233,10 +233,6 @@
            @"Unexpected state");
 }
 
-- (void)peerConnectionOnFirstMediaPacketReceived:
-    (RTCPeerConnection*)peerConnection {
-}
-
 #pragma mark - RTCDataChannelDelegate
 
 - (void)channelDidChangeState:(RTCDataChannel*)channel {

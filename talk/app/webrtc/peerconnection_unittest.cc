@@ -251,7 +251,6 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     signaling_message_receiver_->ReceiveIceMessage(
         candidate->sdp_mid(), candidate->sdp_mline_index(), ice_sdp);
   }
-  void OnFirstMediaPacketReceived() override { received_media_packet_ = true; }
 
   // MediaStreamInterface callback
   void OnChanged() override {
@@ -386,8 +385,6 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     }
     return true;
   }
-
-  bool received_media_packet() const { return received_media_packet_; }
 
   void OnIceComplete() override { LOG(INFO) << id_ << "OnIceComplete"; }
 
@@ -927,10 +924,6 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   rtc::scoped_refptr<DataChannelInterface> data_channel_;
   rtc::scoped_ptr<MockDataChannelObserver> data_observer_;
-
-  // "true" if the PeerConnection indicated that a packet was received,
-  // through PeerConnectionObserverInterface.
-  bool received_media_packet_ = false;
 };
 
 class P2PTestConductor : public testing::Test {
@@ -1111,12 +1104,6 @@ class P2PTestConductor : public testing::Test {
 
     EXPECT_TRUE_WAIT(FramesNotPending(audio_frame_count, video_frame_count),
                      kMaxWaitForFramesMs);
-    if (audio_frame_count != -1 || video_frame_count != -1) {
-      EXPECT_TRUE_WAIT(initiating_client_->received_media_packet(),
-                       kMaxWaitForFramesMs);
-      EXPECT_TRUE_WAIT(receiving_client_->received_media_packet(),
-                       kMaxWaitForFramesMs);
-    }
   }
 
   void SetupAndVerifyDtlsCall() {

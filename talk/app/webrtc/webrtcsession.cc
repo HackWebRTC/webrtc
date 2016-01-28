@@ -1844,8 +1844,6 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
 
   voice_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
-  voice_channel_->SignalFirstPacketReceived.connect(
-      this, &WebRtcSession::OnChannelFirstPacketReceived);
 
   SignalVoiceChannelCreated();
   voice_channel_->transport_channel()->SignalSentPacket.connect(
@@ -1863,8 +1861,6 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
 
   video_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
-  video_channel_->SignalFirstPacketReceived.connect(
-      this, &WebRtcSession::OnChannelFirstPacketReceived);
 
   SignalVideoChannelCreated();
   video_channel_->transport_channel()->SignalSentPacket.connect(
@@ -1897,14 +1893,6 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
 void WebRtcSession::OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp) {
   SetError(ERROR_TRANSPORT,
            rtcp ? kDtlsSetupFailureRtcp : kDtlsSetupFailureRtp);
-}
-
-void WebRtcSession::OnChannelFirstPacketReceived(cricket::BaseChannel*) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!has_received_media_packet_) {
-    has_received_media_packet_ = true;
-    SignalFirstMediaPacketReceived();
-  }
 }
 
 void WebRtcSession::OnDataChannelMessageReceived(
