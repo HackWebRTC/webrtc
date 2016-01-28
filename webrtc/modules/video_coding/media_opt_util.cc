@@ -434,6 +434,8 @@ int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
   // TODO(mikhal): Update factor following testing.
   float adjustmentFactor = 1;
 
+  if (frameRate < 1.0f)
+    frameRate = 1.0f;
   // Average bits per frame (units of kbits)
   return static_cast<int>(adjustmentFactor * bitRate / frameRate);
 }
