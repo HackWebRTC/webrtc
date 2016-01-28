@@ -16,7 +16,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/array_view.h"
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/safe_conversions.h"
@@ -168,28 +168,19 @@ struct SimulationConfig {
 class FrameCounters {
  public:
   void IncreaseRenderCounter() {
-    rtc::CritScope cs(&crit_);
-    render_count_++;
+    rtc::AtomicOps::Increment(&render_count_);
   }
 
   void IncreaseCaptureCounter() {
-    rtc::CritScope cs(&crit_);
-    capture_count_++;
-  }
-
-  int GetCaptureCounter() const {
-    rtc::CritScope cs(&crit_);
-    return capture_count_;
-  }
-
-  int GetRenderCounter() const {
-    rtc::CritScope cs(&crit_);
-    return render_count_;
+    rtc::AtomicOps::Increment(&capture_count_);
   }
 
   int CaptureMinusRenderCounters() const {
-    rtc::CritScope cs(&crit_);
-    return capture_count_ - render_count_;
+    // The return value will be approximate, but that's good enough since
+    // by the time we return the value, it's not guaranteed to be correct
+    // anyway.
+    return rtc::AtomicOps::AcquireLoad(&capture_count_) -
+           rtc::AtomicOps::AcquireLoad(&render_count_);
   }
 
   int RenderMinusCaptureCounters() const {
@@ -197,32 +188,32 @@ class FrameCounters {
   }
 
   bool BothCountersExceedeThreshold(int threshold) const {
-    rtc::CritScope cs(&crit_);
-    return (render_count_ > threshold && capture_count_ > threshold);
+    // TODO(tommi): We could use an event to signal this so that we don't need
+    // to be polling from the main thread and possibly steal cycles.
+    const int capture_count = rtc::AtomicOps::AcquireLoad(&capture_count_);
+    const int render_count = rtc::AtomicOps::AcquireLoad(&render_count_);
+    return (render_count > threshold && capture_count > threshold);
   }
 
  private:
-  rtc::CriticalSection crit_;
-  int render_count_ GUARDED_BY(crit_) = 0;
-  int capture_count_ GUARDED_BY(crit_) = 0;
+  int render_count_ = 0;
+  int capture_count_ = 0;
 };
 
-// Class that protects a flag using a lock.
+// Class that represents a flag that can only be raised.
 class LockedFlag {
  public:
   bool get_flag() const {
-    rtc::CritScope cs(&crit_);
-    return flag_;
+    return rtc::AtomicOps::AcquireLoad(&flag_);
   }
 
   void set_flag() {
-    rtc::CritScope cs(&crit_);
-    flag_ = true;
+    if (!get_flag())  // read-only operation to avoid affecting the cache-line.
+      rtc::AtomicOps::CompareAndSwap(&flag_, 0, 1);
   }
 
  private:
-  rtc::CriticalSection crit_;
-  bool flag_ GUARDED_BY(crit_) = false;
+  int flag_ = 0;
 };
 
 // Parent class for the thread processors.
@@ -422,10 +413,9 @@ class TimedThreadApiProcessor {
     switch (processor_type_) {
       case ProcessorType::kRender:
         return ReadyToProcessRender();
-        break;
+
       case ProcessorType::kCapture:
         return ReadyToProcessCapture();
-        break;
     }
 
     // Should not be reached, but the return statement is needed for the code to
@@ -689,6 +679,8 @@ bool TimedThreadApiProcessor::Process() {
   // Wait in a spinlock manner until it is ok to start processing.
   // Note that SleepMs is not applicable since it only allows sleeping
   // on a millisecond basis which is too long.
+  // TODO(tommi): This loop may affect the performance of the test that it's
+  // meant to measure.  See if we could use events instead to signal readiness.
   while (!ReadyToProcess()) {
   }
 
