@@ -30,7 +30,6 @@
 #include <algorithm>
 
 #include "talk/media/base/videocapturer.h"
-#include "talk/media/base/videorenderer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
@@ -287,32 +286,32 @@ bool CaptureManager::RestartVideoCapture(
   return true;
 }
 
-bool CaptureManager::AddVideoRenderer(VideoCapturer* video_capturer,
-                                      VideoRenderer* video_renderer) {
+void CaptureManager::AddVideoSink(VideoCapturer* video_capturer,
+                                  rtc::VideoSinkInterface<VideoFrame>* sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!video_capturer || !video_renderer) {
-    return false;
+  // TODO(nisse): Do we really need to tolerate NULL inputs?
+  if (!video_capturer || !sink) {
+    return;
   }
   CaptureRenderAdapter* adapter = GetAdapter(video_capturer);
   if (!adapter) {
-    return false;
+    return;
   }
-  adapter->AddRenderer(video_renderer);
-  return true;
+  adapter->AddSink(sink);
 }
 
-bool CaptureManager::RemoveVideoRenderer(VideoCapturer* video_capturer,
-                                         VideoRenderer* video_renderer) {
+void CaptureManager::RemoveVideoSink(
+    VideoCapturer* video_capturer,
+    rtc::VideoSinkInterface<VideoFrame>* sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!video_capturer || !video_renderer) {
-    return false;
+  if (!video_capturer || !sink) {
+    return;
   }
   CaptureRenderAdapter* adapter = GetAdapter(video_capturer);
   if (!adapter) {
-    return false;
+    return;
   }
-  adapter->RemoveRenderer(video_renderer);
-  return true;
+  adapter->RemoveSink(sink);
 }
 
 bool CaptureManager::IsCapturerRegistered(VideoCapturer* video_capturer) const {

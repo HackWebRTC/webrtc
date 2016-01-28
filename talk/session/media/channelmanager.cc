@@ -500,18 +500,20 @@ bool ChannelManager::RestartVideoCapture(
            video_capturer, previous_format, desired_format, options));
 }
 
-bool ChannelManager::AddVideoRenderer(
-    VideoCapturer* capturer, VideoRenderer* renderer) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&CaptureManager::AddVideoRenderer,
-           capture_manager_.get(), capturer, renderer));
+void ChannelManager::AddVideoSink(
+    VideoCapturer* capturer, rtc::VideoSinkInterface<VideoFrame>* sink) {
+  if (initialized_)
+    worker_thread_->Invoke<void>(
+        Bind(&CaptureManager::AddVideoSink,
+             capture_manager_.get(), capturer, sink));
 }
 
-bool ChannelManager::RemoveVideoRenderer(
-    VideoCapturer* capturer, VideoRenderer* renderer) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&CaptureManager::RemoveVideoRenderer,
-           capture_manager_.get(), capturer, renderer));
+void ChannelManager::RemoveVideoSink(
+    VideoCapturer* capturer, rtc::VideoSinkInterface<VideoFrame>* sink) {
+  if (initialized_)
+    worker_thread_->Invoke<void>(
+        Bind(&CaptureManager::RemoveVideoSink,
+             capture_manager_.get(), capturer, sink));
 }
 
 bool ChannelManager::IsScreencastRunning() const {

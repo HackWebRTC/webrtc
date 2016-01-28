@@ -156,8 +156,10 @@ class ChannelManager : public rtc::MessageHandler,
                            const VideoFormat& desired_format,
                            CaptureManager::RestartOptions options);
 
-  bool AddVideoRenderer(VideoCapturer* capturer, VideoRenderer* renderer);
-  bool RemoveVideoRenderer(VideoCapturer* capturer, VideoRenderer* renderer);
+  virtual void AddVideoSink(VideoCapturer* video_capturer,
+                            rtc::VideoSinkInterface<VideoFrame>* sink);
+  virtual void RemoveVideoSink(VideoCapturer* video_capturer,
+                               rtc::VideoSinkInterface<VideoFrame>* sink);
   bool IsScreencastRunning() const;
 
   // The operations below occur on the main thread.

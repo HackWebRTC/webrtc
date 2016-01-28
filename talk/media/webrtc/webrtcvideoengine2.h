@@ -40,6 +40,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/call.h"
 #include "webrtc/transport.h"
 #include "webrtc/video_frame.h"
@@ -412,7 +413,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     bool SmoothsRenderedFrames() const override;
     bool IsDefaultStream() const;
 
-    void SetRenderer(cricket::VideoRenderer* renderer);
+    void SetSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink);
 
     VideoReceiverInfo GetVideoReceiverInfo();
 
@@ -450,18 +451,18 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     const bool disable_prerenderer_smoothing_;
 
-    rtc::CriticalSection renderer_lock_;
-    cricket::VideoRenderer* renderer_ GUARDED_BY(renderer_lock_);
-    int last_width_ GUARDED_BY(renderer_lock_);
-    int last_height_ GUARDED_BY(renderer_lock_);
+    rtc::CriticalSection sink_lock_;
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink_ GUARDED_BY(sink_lock_);
+    int last_width_ GUARDED_BY(sink_lock_);
+    int last_height_ GUARDED_BY(sink_lock_);
     // Expands remote RTP timestamps to int64_t to be able to estimate how long
     // the stream has been running.
     rtc::TimestampWrapAroundHandler timestamp_wraparound_handler_
-        GUARDED_BY(renderer_lock_);
-    int64_t first_frame_timestamp_ GUARDED_BY(renderer_lock_);
+        GUARDED_BY(sink_lock_);
+    int64_t first_frame_timestamp_ GUARDED_BY(sink_lock_);
     // Start NTP time is estimated as current remote NTP time (estimated from
     // RTCP) minus the elapsed time, as soon as remote NTP time is available.
-    int64_t estimated_remote_start_ntp_time_ms_ GUARDED_BY(renderer_lock_);
+    int64_t estimated_remote_start_ntp_time_ms_ GUARDED_BY(sink_lock_);
   };
 
   void Construct(webrtc::Call* call, WebRtcVideoEngine2* engine);

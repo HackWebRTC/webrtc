@@ -1254,7 +1254,7 @@ bool WebRtcVideoChannel2::SetRenderer(uint32_t ssrc, VideoRenderer* renderer) {
     return false;
   }
 
-  it->second->SetRenderer(renderer);
+  it->second->SetSink(renderer);
   return true;
 }
 
@@ -2214,7 +2214,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       config_(config),
       external_decoder_factory_(external_decoder_factory),
       disable_prerenderer_smoothing_(disable_prerenderer_smoothing),
-      renderer_(NULL),
+      sink_(NULL),
       last_width_(-1),
       last_height_(-1),
       first_frame_timestamp_(-1),
@@ -2407,7 +2407,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders(
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
     const webrtc::VideoFrame& frame,
     int time_to_render_ms) {
-  rtc::CritScope crit(&renderer_lock_);
+  rtc::CritScope crit(&sink_lock_);
 
   if (first_frame_timestamp_ < 0)
     first_frame_timestamp_ = frame.timestamp();
@@ -2419,8 +2419,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
   if (frame.ntp_time_ms() > 0)
     estimated_remote_start_ntp_time_ms_ = frame.ntp_time_ms() - elapsed_time_ms;
 
-  if (renderer_ == NULL) {
-    LOG(LS_WARNING) << "VideoReceiveStream not connected to a VideoRenderer.";
+  if (sink_ == NULL) {
+    LOG(LS_WARNING) << "VideoReceiveStream not connected to a VideoSink.";
     return;
   }
 
@@ -2430,7 +2430,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
   const WebRtcVideoFrame render_frame(
       frame.video_frame_buffer(),
       frame.render_time_ms() * rtc::kNumNanosecsPerMillisec, frame.rotation());
-  renderer_->RenderFrame(&render_frame);
+  sink_->OnFrame(render_frame);
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsTextureSupported() const {
@@ -2446,10 +2446,10 @@ bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsDefaultStream() const {
   return default_stream_;
 }
 
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRenderer(
-    cricket::VideoRenderer* renderer) {
-  rtc::CritScope crit(&renderer_lock_);
-  renderer_ = renderer;
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetSink(
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+  rtc::CritScope crit(&sink_lock_);
+  sink_ = sink;
 }
 
 std::string
@@ -2483,7 +2483,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   info.framerate_output = stats.render_frame_rate;
 
   {
-    rtc::CritScope frame_cs(&renderer_lock_);
+    rtc::CritScope frame_cs(&sink_lock_);
     info.frame_width = last_width_;
     info.frame_height = last_height_;
     info.capture_start_ntp_time_ms = estimated_remote_start_ntp_time_ms_;
