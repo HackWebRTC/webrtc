@@ -12,7 +12,7 @@
     ['OS=="ios"', {
       'targets': [
         {
-          'target_name': 'rtc_api_objc_test',
+          'target_name': 'rtc_api_objc_tests',
           'type': 'executable',
           'dependencies': [
             '<(webrtc_root)/api/api.gyp:rtc_api_objc',

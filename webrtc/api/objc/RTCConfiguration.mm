@@ -10,8 +10,11 @@
 
 #import "RTCConfiguration.h"
 
+#include "webrtc/base/sslidentity.h"
+
 #import "webrtc/api/objc/RTCConfiguration+Private.h"
 #import "webrtc/api/objc/RTCIceServer+Private.h"
+#import "webrtc/base/objc/RTCLogging.h"
 
 @implementation RTCConfiguration
 
@@ -24,6 +27,7 @@
 @synthesize iceConnectionReceivingTimeout = _iceConnectionReceivingTimeout;
 @synthesize iceBackupCandidatePairPingInterval =
     _iceBackupCandidatePairPingInterval;
+@synthesize keyType = _keyType;
 
 - (instancetype)init {
   if (self = [super init]) {
@@ -42,29 +46,7 @@
     _iceConnectionReceivingTimeout = config.ice_connection_receiving_timeout;
     _iceBackupCandidatePairPingInterval =
         config.ice_backup_candidate_pair_ping_interval;
-  }
-  return self;
-}
-
-- (instancetype)initWithIceServers:(NSArray<RTCIceServer *> *)iceServers
-                    iceTransportPolicy:(RTCIceTransportPolicy)iceTransportPolicy
-                          bundlePolicy:(RTCBundlePolicy)bundlePolicy
-                         rtcpMuxPolicy:(RTCRtcpMuxPolicy)rtcpMuxPolicy
-                    tcpCandidatePolicy:(RTCTcpCandidatePolicy)tcpCandidatePolicy
-           audioJitterBufferMaxPackets:(int)audioJitterBufferMaxPackets
-         iceConnectionReceivingTimeout:(int)iceConnectionReceivingTimeout
-    iceBackupCandidatePairPingInterval:(int)iceBackupCandidatePairPingInterval {
-  if (self = [self init]) {
-    if (iceServers) {
-      _iceServers = [iceServers copy];
-    }
-    _iceTransportPolicy = iceTransportPolicy;
-    _bundlePolicy = bundlePolicy;
-    _rtcpMuxPolicy = rtcpMuxPolicy;
-    _tcpCandidatePolicy = tcpCandidatePolicy;
-    _audioJitterBufferMaxPackets = audioJitterBufferMaxPackets;
-    _iceConnectionReceivingTimeout = iceConnectionReceivingTimeout;
-    _iceBackupCandidatePairPingInterval = iceBackupCandidatePairPingInterval;
+    _keyType = RTCEncryptionKeyTypeECDSA;
   }
   return self;
 }
@@ -103,40 +85,18 @@
       _iceConnectionReceivingTimeout;
   nativeConfig.ice_backup_candidate_pair_ping_interval =
       _iceBackupCandidatePairPingInterval;
+  if (_keyType == RTCEncryptionKeyTypeECDSA) {
+    rtc::scoped_ptr<rtc::SSLIdentity> identity(
+        rtc::SSLIdentity::Generate(webrtc::kIdentityName, rtc::KT_ECDSA));
+    if (identity) {
+      nativeConfig.certificates.push_back(
+          rtc::RTCCertificate::Create(std::move(identity)));
+    } else {
+      RTCLogWarning(@"Failed to generate ECDSA identity. RSA will be used.");
+    }
+  }
 
   return nativeConfig;
-}
-
-- (instancetype)initWithNativeConfiguration:
-    (webrtc::PeerConnectionInterface::RTCConfiguration)nativeConfig {
-  NSMutableArray *iceServers =
-        [NSMutableArray arrayWithCapacity:nativeConfig.servers.size()];
-  for (auto const &server : nativeConfig.servers) {
-    RTCIceServer *iceServer =
-        [[RTCIceServer alloc] initWithNativeServer:server];
-    [iceServers addObject:iceServer];
-  }
-
-  if (self = [self init]) {
-    if (iceServers) {
-      _iceServers = [iceServers copy];
-    }
-    _iceTransportPolicy =
-        [[self class] transportPolicyForTransportsType:nativeConfig.type];
-    _bundlePolicy =
-        [[self class] bundlePolicyForNativePolicy:nativeConfig.bundle_policy];
-    _rtcpMuxPolicy = [[self class] rtcpMuxPolicyForNativePolicy:
-        nativeConfig.rtcp_mux_policy];
-    _tcpCandidatePolicy = [[self class] tcpCandidatePolicyForNativePolicy:
-        nativeConfig.tcp_candidate_policy];
-    _audioJitterBufferMaxPackets = nativeConfig.audio_jitter_buffer_max_packets;
-    _iceConnectionReceivingTimeout =
-        nativeConfig.ice_connection_receiving_timeout;
-    _iceBackupCandidatePairPingInterval =
-        nativeConfig.ice_backup_candidate_pair_ping_interval;
-  }
-
-  return self;
 }
 
 + (webrtc::PeerConnectionInterface::IceTransportsType)

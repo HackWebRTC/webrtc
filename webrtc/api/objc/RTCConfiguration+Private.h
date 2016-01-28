@@ -23,9 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly)
     webrtc::PeerConnectionInterface::RTCConfiguration nativeConfiguration;
 
-- (instancetype)initWithNativeConfiguration:
-    (webrtc::PeerConnectionInterface::RTCConfiguration)nativeConfiguration;
-
 + (webrtc::PeerConnectionInterface::IceTransportsType)
     nativeTransportsTypeForTransportPolicy:(RTCIceTransportPolicy)policy;
 

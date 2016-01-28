@@ -86,6 +86,7 @@
     return RTCSdpTypeAnswer;
   } else {
     RTC_NOTREACHED();
+    return RTCSdpTypeOffer;
   }
 }
 

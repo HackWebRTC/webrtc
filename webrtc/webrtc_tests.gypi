@@ -34,7 +34,7 @@
         }],
         ['OS=="ios"', {
           'dependencies': [
-            'api/api_tests.gyp:rtc_api_objc_test',
+            'api/api_tests.gyp:rtc_api_objc_tests',
           ]
         }]
       ],

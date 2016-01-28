@@ -89,6 +89,14 @@
             'webrtc_tests',
           ],
         }],
+        ['OS=="ios"', {
+          'dependencies': [
+            # TODO(tkchin): Move this target to webrtc_all_dependencies once it
+            # has more than iOS specific targets.
+            # TODO(tkchin): Figure out where to add this in BUILD.gn.
+            'api/api.gyp:*',
+          ],
+        }],
       ],
     },
     {

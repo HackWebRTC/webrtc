@@ -21,7 +21,6 @@
 
 @interface RTCConfigurationTest : NSObject
 - (void)testConversionToNativeConfiguration;
-- (void)testInitFromNativeConfiguration;
 @end
 
 @implementation RTCConfigurationTest
@@ -30,15 +29,18 @@
   NSArray *urlStrings = @[ @"stun:stun1.example.net" ];
   RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:urlStrings];
 
-  RTCConfiguration *config =
-      [[RTCConfiguration alloc] initWithIceServers:@[ server ]
-                                iceTransportPolicy:RTCIceTransportPolicyRelay
-                                      bundlePolicy:RTCBundlePolicyMaxBundle
-                                     rtcpMuxPolicy:RTCRtcpMuxPolicyNegotiate
-                                tcpCandidatePolicy:RTCTcpCandidatePolicyDisabled
-                       audioJitterBufferMaxPackets:60
-                     iceConnectionReceivingTimeout:1
-                iceBackupCandidatePairPingInterval:2];
+  RTCConfiguration *config = [[RTCConfiguration alloc] init];
+  config.iceServers = @[ server ];
+  config.iceTransportPolicy = RTCIceTransportPolicyRelay;
+  config.bundlePolicy = RTCBundlePolicyMaxBundle;
+  config.rtcpMuxPolicy = RTCRtcpMuxPolicyNegotiate;
+  config.tcpCandidatePolicy = RTCTcpCandidatePolicyDisabled;
+  const int maxPackets = 60;
+  const int timeout = 1;
+  const int interval = 2;
+  config.audioJitterBufferMaxPackets = maxPackets;
+  config.iceConnectionReceivingTimeout = timeout;
+  config.iceBackupCandidatePairPingInterval = interval;
 
   webrtc::PeerConnectionInterface::RTCConfiguration nativeConfig =
       config.nativeConfiguration;
@@ -55,50 +57,9 @@
             nativeConfig.rtcp_mux_policy);
   EXPECT_EQ(webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled,
             nativeConfig.tcp_candidate_policy);
-  EXPECT_EQ(60, nativeConfig.audio_jitter_buffer_max_packets);
-  EXPECT_EQ(1, nativeConfig.ice_connection_receiving_timeout);
-  EXPECT_EQ(2, nativeConfig.ice_backup_candidate_pair_ping_interval);
-}
-
-- (void)testInitFromNativeConfiguration {
-  webrtc::PeerConnectionInterface::RTCConfiguration nativeConfig;
-
-  webrtc::PeerConnectionInterface::IceServer nativeServer;
-  nativeServer.username = "username";
-  nativeServer.password = "password";
-  nativeServer.urls.push_back("stun:stun.example.net");
-  webrtc::PeerConnectionInterface::IceServers servers { nativeServer };
-
-  nativeConfig.servers = servers;
-  nativeConfig.type = webrtc::PeerConnectionInterface::kNoHost;
-  nativeConfig.bundle_policy =
-      webrtc::PeerConnectionInterface::kBundlePolicyMaxCompat;
-  nativeConfig.rtcp_mux_policy =
-      webrtc::PeerConnectionInterface::kRtcpMuxPolicyRequire;
-  nativeConfig.tcp_candidate_policy =
-      webrtc::PeerConnectionInterface::kTcpCandidatePolicyEnabled;
-  nativeConfig.audio_jitter_buffer_max_packets = 40;
-  nativeConfig.ice_connection_receiving_timeout =
-      webrtc::PeerConnectionInterface::RTCConfiguration::kUndefined;
-  nativeConfig.ice_backup_candidate_pair_ping_interval =
-      webrtc::PeerConnectionInterface::RTCConfiguration::kUndefined;
-
-  RTCConfiguration *config =
-      [[RTCConfiguration alloc] initWithNativeConfiguration:nativeConfig];
-
-  EXPECT_EQ(1u, config.iceServers.count);
-  RTCIceServer *server = config.iceServers.firstObject;
-  EXPECT_EQ(1u, server.urlStrings.count);
-  EXPECT_TRUE([@"stun:stun.example.net" isEqualToString:
-      server.urlStrings.firstObject]);
-
-  EXPECT_EQ(RTCIceTransportPolicyNoHost, config.iceTransportPolicy);
-  EXPECT_EQ(RTCBundlePolicyMaxCompat, config.bundlePolicy);
-  EXPECT_EQ(RTCRtcpMuxPolicyRequire, config.rtcpMuxPolicy);
-  EXPECT_EQ(RTCTcpCandidatePolicyEnabled, config.tcpCandidatePolicy);
-  EXPECT_EQ(40, config.audioJitterBufferMaxPackets);
-  EXPECT_EQ(-1, config.iceConnectionReceivingTimeout);
-  EXPECT_EQ(-1, config.iceBackupCandidatePairPingInterval);
+  EXPECT_EQ(maxPackets, nativeConfig.audio_jitter_buffer_max_packets);
+  EXPECT_EQ(timeout, nativeConfig.ice_connection_receiving_timeout);
+  EXPECT_EQ(interval, nativeConfig.ice_backup_candidate_pair_ping_interval);
 }
 
 @end
@@ -110,9 +71,3 @@ TEST(RTCConfigurationTest, NativeConfigurationConversionTest) {
   }
 }
 
-TEST(RTCConfigurationTest, InitFromConfigurationTest) {
-  @autoreleasepool {
-    RTCConfigurationTest *test = [[RTCConfigurationTest alloc] init];
-    [test testInitFromNativeConfiguration];
-  }
-}

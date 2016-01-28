@@ -42,6 +42,12 @@ typedef NS_ENUM(NSInteger, RTCTcpCandidatePolicy) {
   RTCTcpCandidatePolicyDisabled
 };
 
+/** Represents the encryption key type. */
+typedef NS_ENUM(NSInteger, RTCEncryptionKeyType) {
+  RTCEncryptionKeyTypeRSA,
+  RTCEncryptionKeyTypeECDSA,
+};
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface RTCConfiguration : NSObject
@@ -63,17 +69,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, assign) int iceConnectionReceivingTimeout;
 @property(nonatomic, assign) int iceBackupCandidatePairPingInterval;
 
-- (instancetype)init NS_DESIGNATED_INITIALIZER;
+/** Key type used to generate SSL identity. Default is ECDSA. */
+@property(nonatomic, assign) RTCEncryptionKeyType keyType;
 
-- (instancetype)initWithIceServers:
-    (nullable NSArray<RTCIceServer *> *)iceServers
-                iceTransportPolicy:(RTCIceTransportPolicy)iceTransportPolicy
-                      bundlePolicy:(RTCBundlePolicy)bundlePolicy
-                     rtcpMuxPolicy:(RTCRtcpMuxPolicy)rtcpMuxPolicy
-                tcpCandidatePolicy:(RTCTcpCandidatePolicy)tcpCandidatePolicy
-       audioJitterBufferMaxPackets:(int)audioJitterBufferMaxPackets
-     iceConnectionReceivingTimeout:(int)iceConnectionReceivingTimeout
-iceBackupCandidatePairPingInterval:(int)iceBackupCandidatePairPingInterval;
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
 
 @end
 
