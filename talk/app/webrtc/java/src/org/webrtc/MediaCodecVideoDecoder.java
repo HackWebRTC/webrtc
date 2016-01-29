@@ -27,7 +27,6 @@
 
 package org.webrtc;
 
-import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -41,8 +40,10 @@ import org.webrtc.Logging;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -65,13 +66,19 @@ public class MediaCodecVideoDecoder {
     VIDEO_CODEC_H264
   }
 
-  private static final int DEQUEUE_INPUT_TIMEOUT = 500000;  // 500 ms timeout.
-  private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000; // Timeout for codec releasing.
+  // Timeout for input buffer dequeue.
+  private static final int DEQUEUE_INPUT_TIMEOUT = 500000;
+  // Timeout for codec releasing.
+  private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000;
+  // Max number of output buffers queued before starting to drop decoded frames.
+  private static final int MAX_QUEUED_OUTPUTBUFFERS = 3;
   // Active running decoder instance. Set in initDecode() (called from native code)
   // and reset to null in release() call.
   private static MediaCodecVideoDecoder runningInstance = null;
   private static MediaCodecVideoDecoderErrorCallback errorCallback = null;
   private static int codecErrors = 0;
+  // List of disabled codec types - can be set from application.
+  private static Set<String> hwDecoderDisabledTypes = new HashSet<String>();
 
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
@@ -110,8 +117,6 @@ public class MediaCodecVideoDecoder {
 
   // The below variables are only used when decoding to a Surface.
   private TextureListener textureListener;
-  // Max number of output buffers queued before starting to drop decoded frames.
-  private static final int MAX_QUEUED_OUTPUTBUFFERS = 3;
   private int droppedFrames;
   private Surface surface = null;
   private final Queue<DecodedOutputBuffer>
@@ -129,7 +134,52 @@ public class MediaCodecVideoDecoder {
     MediaCodecVideoDecoder.errorCallback = errorCallback;
   }
 
-  // Helper struct for findVp8Decoder() below.
+  // Functions to disable HW decoding - can be called from applications for platforms
+  // which have known HW decoding problems.
+  public static void disableVp8HwCodec() {
+    Logging.w(TAG, "VP8 decoding is disabled by application.");
+    hwDecoderDisabledTypes.add(VP8_MIME_TYPE);
+  }
+
+  public static void disableVp9HwCodec() {
+    Logging.w(TAG, "VP9 decoding is disabled by application.");
+    hwDecoderDisabledTypes.add(VP9_MIME_TYPE);
+  }
+
+  public static void disableH264HwCodec() {
+    Logging.w(TAG, "H.264 decoding is disabled by application.");
+    hwDecoderDisabledTypes.add(H264_MIME_TYPE);
+  }
+
+  // Functions to query if HW decoding is supported.
+  public static boolean isVp8HwSupported() {
+    return !hwDecoderDisabledTypes.contains(VP8_MIME_TYPE) &&
+        (findDecoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null);
+  }
+
+  public static boolean isVp9HwSupported() {
+    return !hwDecoderDisabledTypes.contains(VP9_MIME_TYPE) &&
+        (findDecoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes) != null);
+  }
+
+  public static boolean isH264HwSupported() {
+    return !hwDecoderDisabledTypes.contains(H264_MIME_TYPE) &&
+        (findDecoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null);
+  }
+
+  public static void printStackTrace() {
+    if (runningInstance != null && runningInstance.mediaCodecThread != null) {
+      StackTraceElement[] mediaCodecStackTraces = runningInstance.mediaCodecThread.getStackTrace();
+      if (mediaCodecStackTraces.length > 0) {
+        Logging.d(TAG, "MediaCodecVideoDecoder stacks trace:");
+        for (StackTraceElement stackTrace : mediaCodecStackTraces) {
+          Logging.d(TAG, stackTrace.toString());
+        }
+      }
+    }
+  }
+
+  // Helper struct for findDecoder() below.
   private static class DecoderProperties {
     public DecoderProperties(String codecName, int colorFormat) {
       this.codecName = codecName;
@@ -193,30 +243,6 @@ public class MediaCodecVideoDecoder {
     }
     Logging.d(TAG, "No HW decoder found for mime " + mime);
     return null;  // No HW decoder.
-  }
-
-  public static boolean isVp8HwSupported() {
-    return findDecoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null;
-  }
-
-  public static boolean isVp9HwSupported() {
-    return findDecoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes) != null;
-  }
-
-  public static boolean isH264HwSupported() {
-    return findDecoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null;
-  }
-
-  public static void printStackTrace() {
-    if (runningInstance != null && runningInstance.mediaCodecThread != null) {
-      StackTraceElement[] mediaCodecStackTraces = runningInstance.mediaCodecThread.getStackTrace();
-      if (mediaCodecStackTraces.length > 0) {
-        Logging.d(TAG, "MediaCodecVideoDecoder stacks trace:");
-        for (StackTraceElement stackTrace : mediaCodecStackTraces) {
-          Logging.d(TAG, stackTrace.toString());
-        }
-      }
-    }
   }
 
   private void checkOnMediaCodecThread() throws IllegalStateException {
@@ -376,9 +402,12 @@ public class MediaCodecVideoDecoder {
       this.timeStampMs = timeStampMs;
       this.ntpTimeStampMs = ntpTimeStampMs;
     }
-    private final long decodeStartTimeMs; // Time when this frame was queued for decoding.
-    private final long timeStampMs; // Only used for bookkeeping in Java. Used in C++;
-    private final long ntpTimeStampMs; // Only used for bookkeeping in Java. Used in C++;
+    // Time when this frame was queued for decoding.
+    private final long decodeStartTimeMs;
+    // Only used for bookkeeping in Java. Stores C++ inputImage._timeStamp value for input frame.
+    private final long timeStampMs;
+    // Only used for bookkeeping in Java. Stores C++ inputImage.ntp_time_ms_ value for input frame.
+    private final long ntpTimeStampMs;
   }
 
   // Helper struct for dequeueOutputBuffer() below.
@@ -397,11 +426,13 @@ public class MediaCodecVideoDecoder {
     private final int index;
     private final int offset;
     private final int size;
+    // C++ inputImage._timeStamp value for output frame.
     private final long timeStampMs;
+    // C++ inputImage.ntp_time_ms_ value for output frame.
     private final long ntpTimeStampMs;
     // Number of ms it took to decode this frame.
     private final long decodeTimeMs;
-    // System time when this frame finished decoding.
+    // System time when this frame decoding finished.
     private final long endDecodeTimeMs;
   }
 
@@ -409,8 +440,11 @@ public class MediaCodecVideoDecoder {
   private static class DecodedTextureBuffer {
     private final int textureID;
     private final float[] transformMatrix;
+    // C++ inputImage._timeStamp value for output frame.
     private final long timeStampMs;
+    // C++ inputImage.ntp_time_ms_ value for output frame.
     private final long ntpTimeStampMs;
+    // Number of ms it took to decode this frame.
     private final long decodeTimeMs;
     // Interval from when the frame finished decoding until this buffer has been created.
     // Since there is only one texture, this interval depend on the time from when
@@ -614,8 +648,9 @@ public class MediaCodecVideoDecoder {
         // Logging.w(TAG, "Draining decoder. Dropping frame with TS: "
         //    + droppedFrame.timeStampMs + ". Total number of dropped frames: " + droppedFrames);
       } else {
-        Logging.w(TAG, "Too many output buffers. Dropping frame with TS: "
-            + droppedFrame.timeStampMs + ". Total number of dropped frames: " + droppedFrames);
+        Logging.w(TAG, "Too many output buffers " + dequeuedSurfaceOutputBuffers.size() +
+            ". Dropping frame with TS: " + droppedFrame.timeStampMs +
+            ". Total number of dropped frames: " + droppedFrames);
       }
 
       mediaCodec.releaseOutputBuffer(droppedFrame.index, false /* render */);

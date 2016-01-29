@@ -42,7 +42,9 @@ import org.webrtc.Logging;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -72,6 +74,8 @@ public class MediaCodecVideoEncoder {
   private static MediaCodecVideoEncoder runningInstance = null;
   private static MediaCodecVideoEncoderErrorCallback errorCallback = null;
   private static int codecErrors = 0;
+  // List of disabled codec types - can be set from application.
+  private static Set<String> hwEncoderDisabledTypes = new HashSet<String>();
 
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
@@ -104,7 +108,6 @@ public class MediaCodecVideoEncoder {
 
   // Bitrate modes - should be in sync with OMX_VIDEO_CONTROLRATETYPE defined
   // in OMX_Video.h
-  private static final int VIDEO_ControlRateVariable = 1;
   private static final int VIDEO_ControlRateConstant = 2;
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
@@ -136,6 +139,54 @@ public class MediaCodecVideoEncoder {
   public static void setErrorCallback(MediaCodecVideoEncoderErrorCallback errorCallback) {
     Logging.d(TAG, "Set error callback");
     MediaCodecVideoEncoder.errorCallback = errorCallback;
+  }
+
+  // Functions to disable HW encoding - can be called from applications for platforms
+  // which have known HW decoding problems.
+  public static void disableVp8HwCodec() {
+    Logging.w(TAG, "VP8 encoding is disabled by application.");
+    hwEncoderDisabledTypes.add(VP8_MIME_TYPE);
+  }
+
+  public static void disableVp9HwCodec() {
+    Logging.w(TAG, "VP9 encoding is disabled by application.");
+    hwEncoderDisabledTypes.add(VP9_MIME_TYPE);
+  }
+
+  public static void disableH264HwCodec() {
+    Logging.w(TAG, "H.264 encoding is disabled by application.");
+    hwEncoderDisabledTypes.add(H264_MIME_TYPE);
+  }
+
+  // Functions to query if HW encoding is supported.
+  public static boolean isVp8HwSupported() {
+    return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE) &&
+        (findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes, supportedColorList) != null);
+  }
+
+  public static boolean isVp9HwSupported() {
+    return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE) &&
+        (findHwEncoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes, supportedColorList) != null);
+  }
+
+  public static boolean isH264HwSupported() {
+    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE) &&
+        (findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes, supportedColorList) != null);
+  }
+
+  public static boolean isVp8HwSupportedUsingTextures() {
+    return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE) && (findHwEncoder(
+        VP8_MIME_TYPE, supportedVp8HwCodecPrefixes, supportedSurfaceColorList) != null);
+  }
+
+  public static boolean isVp9HwSupportedUsingTextures() {
+    return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE) && (findHwEncoder(
+        VP9_MIME_TYPE, supportedVp9HwCodecPrefixes, supportedSurfaceColorList) != null);
+  }
+
+  public static boolean isH264HwSupportedUsingTextures() {
+    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE) && (findHwEncoder(
+        H264_MIME_TYPE, supportedH264HwCodecPrefixes, supportedSurfaceColorList) != null);
   }
 
   // Helper struct for findHwEncoder() below.
@@ -211,33 +262,6 @@ public class MediaCodecVideoEncoder {
       }
     }
     return null;  // No HW encoder.
-  }
-
-  public static boolean isVp8HwSupported() {
-    return findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes, supportedColorList) != null;
-  }
-
-  public static boolean isVp9HwSupported() {
-    return findHwEncoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes, supportedColorList) != null;
-  }
-
-  public static boolean isH264HwSupported() {
-    return findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes, supportedColorList) != null;
-  }
-
-  public static boolean isVp8HwSupportedUsingTextures() {
-    return findHwEncoder(
-        VP8_MIME_TYPE, supportedVp8HwCodecPrefixes, supportedSurfaceColorList) != null;
-  }
-
-  public static boolean isVp9HwSupportedUsingTextures() {
-    return findHwEncoder(
-        VP9_MIME_TYPE, supportedVp9HwCodecPrefixes, supportedSurfaceColorList) != null;
-  }
-
-  public static boolean isH264HwSupportedUsingTextures() {
-    return findHwEncoder(
-        H264_MIME_TYPE, supportedH264HwCodecPrefixes, supportedSurfaceColorList) != null;
   }
 
   private void checkOnMediaCodecThread() {
