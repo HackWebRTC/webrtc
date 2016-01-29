@@ -713,6 +713,31 @@ TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   EXPECT_FALSE(turn_port_->HasRequests());
 }
 
+// Test that TurnPort will not handle any incoming packets once it has been
+// closed.
+TEST_F(TurnPortTest, TestStopProcessingPacketsAfterClosed) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  PrepareTurnAndUdpPorts();
+  Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                                                   Port::ORIGIN_MESSAGE);
+  Connection* conn2 = udp_port_->CreateConnection(turn_port_->Candidates()[0],
+                                                  Port::ORIGIN_MESSAGE);
+  ASSERT_TRUE(conn1 != NULL);
+  ASSERT_TRUE(conn2 != NULL);
+  // Make sure conn2 is writable.
+  conn2->Ping(0);
+  EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, conn2->write_state(), kTimeout);
+
+  turn_port_->Close();
+  rtc::Thread::Current()->ProcessMessages(0);
+  turn_unknown_address_ = false;
+  conn2->Ping(0);
+  rtc::Thread::Current()->ProcessMessages(500);
+  // Since the turn port does not handle packets any more, it should not
+  // SignalUnknownAddress.
+  EXPECT_FALSE(turn_unknown_address_);
+}
+
 // Test that CreateConnection will return null if port becomes disconnected.
 TEST_F(TurnPortTest, TestCreateConnectionWhenSocketClosed) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);

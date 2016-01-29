@@ -555,6 +555,12 @@ void TurnPort::OnReadPacket(
     return;
   }
 
+  if (state_ == STATE_DISCONNECTED) {
+    LOG_J(LS_WARNING, this)
+        << "Received TURN message while the Turn port is disconnected";
+    return;
+  }
+
   // Check the message type, to see if is a Channel Data message.
   // The message will either be channel data, a TURN data indication, or
   // a response to a previous request.

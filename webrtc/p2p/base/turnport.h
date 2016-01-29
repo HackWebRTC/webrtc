@@ -151,6 +151,9 @@ class TurnPort : public Port {
   // Finds the turn entry with |address| and sets its channel id.
   // Returns true if the entry is found.
   bool SetEntryChannelId(const rtc::SocketAddress& address, int channel_id);
+  // Visible for testing.
+  // Shuts down the turn port, usually because of some fatal errors.
+  void Close();
 
  protected:
   TurnPort(rtc::Thread* thread,
@@ -201,8 +204,6 @@ class TurnPort : public Port {
     }
   }
 
-  // Shuts down the turn port, usually because of some fatal errors.
-  void Close();
   void OnTurnRefreshError();
   bool SetAlternateServer(const rtc::SocketAddress& address);
   void ResolveTurnAddress(const rtc::SocketAddress& address);
