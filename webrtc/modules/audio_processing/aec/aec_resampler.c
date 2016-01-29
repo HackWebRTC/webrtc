@@ -21,9 +21,7 @@
 
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 
-enum {
-  kEstimateLengthFrames = 400
-};
+enum { kEstimateLengthFrames = 400 };
 
 typedef struct {
   float buffer[kResamplerBufferSize];
@@ -81,8 +79,7 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   assert(size_out != NULL);
 
   // Add new frame data in lookahead
-  memcpy(&obj->buffer[FRAME_LEN + kResamplingDelay],
-         inspeech,
+  memcpy(&obj->buffer[FRAME_LEN + kResamplingDelay], inspeech,
          size * sizeof(inspeech[0]));
 
   // Sample rate ratio
@@ -96,7 +93,6 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   tn = (size_t)tnew;
 
   while (tn < size) {
-
     // Interpolation
     outspeech[mm] = y[tn] + (tnew - tn) * (y[tn + 1] - y[tn]);
     mm++;
@@ -109,8 +105,7 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   obj->position += (*size_out) * be - size;
 
   // Shift buffer
-  memmove(obj->buffer,
-          &obj->buffer[size],
+  memmove(obj->buffer, &obj->buffer[size],
           (kResamplerBufferSize - size) * sizeof(obj->buffer[0]));
 }
 
@@ -122,8 +117,8 @@ int WebRtcAec_GetSkew(void* resampInst, int rawSkew, float* skewEst) {
     obj->skewData[obj->skewDataIndex] = rawSkew;
     obj->skewDataIndex++;
   } else if (obj->skewDataIndex == kEstimateLengthFrames) {
-    err = EstimateSkew(
-        obj->skewData, kEstimateLengthFrames, obj->deviceSampleRateHz, skewEst);
+    err = EstimateSkew(obj->skewData, kEstimateLengthFrames,
+                       obj->deviceSampleRateHz, skewEst);
     obj->skewEstimate = *skewEst;
     obj->skewDataIndex++;
   } else {

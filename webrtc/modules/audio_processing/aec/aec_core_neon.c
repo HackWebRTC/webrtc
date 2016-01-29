@@ -34,12 +34,13 @@ __inline static float MulIm(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bIm + aIm * bRe;
 }
 
-static void FilterFarNEON(
-    int num_partitions,
-    int x_fft_buf_block_pos,
-    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
-    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
-    float y_fft[2][PART_LEN1]) {
+static void FilterFarNEON(int num_partitions,
+                          int x_fft_buf_block_pos,
+                          float x_fft_buf[2]
+                                         [kExtendedNumPartitions * PART_LEN1],
+                          float h_fft_buf[2]
+                                         [kExtendedNumPartitions * PART_LEN1],
+                          float y_fft[2][PART_LEN1]) {
   int i;
   for (i = 0; i < num_partitions; i++) {
     int j;
@@ -69,20 +70,16 @@ static void FilterFarNEON(
     }
     // scalar code for the remaining items.
     for (; j < PART_LEN1; j++) {
-      y_fft[0][j] += MulRe(x_fft_buf[0][xPos + j],
-                           x_fft_buf[1][xPos + j],
-                           h_fft_buf[0][pos + j],
-                           h_fft_buf[1][pos + j]);
-      y_fft[1][j] += MulIm(x_fft_buf[0][xPos + j],
-                           x_fft_buf[1][xPos + j],
-                           h_fft_buf[0][pos + j],
-                           h_fft_buf[1][pos + j]);
+      y_fft[0][j] += MulRe(x_fft_buf[0][xPos + j], x_fft_buf[1][xPos + j],
+                           h_fft_buf[0][pos + j], h_fft_buf[1][pos + j]);
+      y_fft[1][j] += MulIm(x_fft_buf[0][xPos + j], x_fft_buf[1][xPos + j],
+                           h_fft_buf[0][pos + j], h_fft_buf[1][pos + j]);
     }
   }
 }
 
 // ARM64's arm_neon.h has already defined vdivq_f32 vsqrtq_f32.
-#if !defined (WEBRTC_ARCH_ARM64)
+#if !defined(WEBRTC_ARCH_ARM64)
 static float32x4_t vdivq_f32(float32x4_t a, float32x4_t b) {
   int i;
   float32x4_t x = vrecpeq_f32(b);
@@ -110,8 +107,8 @@ static float32x4_t vsqrtq_f32(float32x4_t s) {
   // check for divide by zero
   const uint32x4_t div_by_zero = vceqq_u32(vec_p_inf, vreinterpretq_u32_f32(x));
   // zero out the positive infinity results
-  x = vreinterpretq_f32_u32(vandq_u32(vmvnq_u32(div_by_zero),
-                                      vreinterpretq_u32_f32(x)));
+  x = vreinterpretq_f32_u32(
+      vandq_u32(vmvnq_u32(div_by_zero), vreinterpretq_u32_f32(x)));
   // from arm documentation
   // The Newton-Raphson iteration:
   //     x[n+1] = x[n] * (3 - d * (x[n] * x[n])) / 2)
@@ -122,7 +119,8 @@ static float32x4_t vsqrtq_f32(float32x4_t s) {
     x = vmulq_f32(vrsqrtsq_f32(vmulq_f32(x, x), s), x);
   }
   // sqrt(s) = s * 1/sqrt(s)
-  return vmulq_f32(s, x);;
+  return vmulq_f32(s, x);
+  ;
 }
 #endif  // WEBRTC_ARCH_ARM64
 
@@ -132,8 +130,9 @@ static void ScaleErrorSignalNEON(int extended_filter_enabled,
                                  float x_pow[PART_LEN1],
                                  float ef[2][PART_LEN1]) {
   const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
-  const float error_threshold = extended_filter_enabled ?
-      kExtendedErrorThreshold : normal_error_threshold;
+  const float error_threshold = extended_filter_enabled
+                                    ? kExtendedErrorThreshold
+                                    : normal_error_threshold;
   const float32x4_t k1e_10f = vdupq_n_f32(1e-10f);
   const float32x4_t kMu = vmovq_n_f32(mu);
   const float32x4_t kThresh = vmovq_n_f32(error_threshold);
@@ -154,10 +153,10 @@ static void ScaleErrorSignalNEON(int extended_filter_enabled,
     const float32x4_t absEfInv = vdivq_f32(kThresh, absEfPlus);
     uint32x4_t ef_re_if = vreinterpretq_u32_f32(vmulq_f32(ef_re, absEfInv));
     uint32x4_t ef_im_if = vreinterpretq_u32_f32(vmulq_f32(ef_im, absEfInv));
-    uint32x4_t ef_re_u32 = vandq_u32(vmvnq_u32(bigger),
-                                     vreinterpretq_u32_f32(ef_re));
-    uint32x4_t ef_im_u32 = vandq_u32(vmvnq_u32(bigger),
-                                     vreinterpretq_u32_f32(ef_im));
+    uint32x4_t ef_re_u32 =
+        vandq_u32(vmvnq_u32(bigger), vreinterpretq_u32_f32(ef_re));
+    uint32x4_t ef_im_u32 =
+        vandq_u32(vmvnq_u32(bigger), vreinterpretq_u32_f32(ef_im));
     ef_re_if = vandq_u32(bigger, ef_re_if);
     ef_im_if = vandq_u32(bigger, ef_im_if);
     ef_re_u32 = vorrq_u32(ef_re_u32, ef_re_if);
@@ -224,10 +223,9 @@ static void FilterAdaptationNEON(
       vst1q_f32(&fft[2 * j + 4], g_n_h.val[1]);
     }
     // ... and fixup the first imaginary entry.
-    fft[1] = MulRe(x_fft_buf[0][xPos + PART_LEN],
-                   -x_fft_buf[1][xPos + PART_LEN],
-                   e_fft[0][PART_LEN],
-                   e_fft[1][PART_LEN]);
+    fft[1] =
+        MulRe(x_fft_buf[0][xPos + PART_LEN], -x_fft_buf[1][xPos + PART_LEN],
+              e_fft[0][PART_LEN], e_fft[1][PART_LEN]);
 
     aec_rdft_inverse_128(fft);
     memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
@@ -292,8 +290,8 @@ static float32x4_t vpowq_f32(float32x4_t a, float32x4_t b) {
     const uint32x4_t vec_float_exponent_mask = vdupq_n_u32(0x7F800000);
     const uint32x4_t vec_eight_biased_exponent = vdupq_n_u32(0x43800000);
     const uint32x4_t vec_implicit_leading_one = vdupq_n_u32(0x43BF8000);
-    const uint32x4_t two_n = vandq_u32(vreinterpretq_u32_f32(a),
-                                       vec_float_exponent_mask);
+    const uint32x4_t two_n =
+        vandq_u32(vreinterpretq_u32_f32(a), vec_float_exponent_mask);
     const uint32x4_t n_1 = vshrq_n_u32(two_n, kShiftExponentIntoTopMantissa);
     const uint32x4_t n_0 = vorrq_u32(n_1, vec_eight_biased_exponent);
     const float32x4_t n =
@@ -302,11 +300,10 @@ static float32x4_t vpowq_f32(float32x4_t a, float32x4_t b) {
     // Compute y.
     const uint32x4_t vec_mantissa_mask = vdupq_n_u32(0x007FFFFF);
     const uint32x4_t vec_zero_biased_exponent_is_one = vdupq_n_u32(0x3F800000);
-    const uint32x4_t mantissa = vandq_u32(vreinterpretq_u32_f32(a),
-                                          vec_mantissa_mask);
-    const float32x4_t y =
-        vreinterpretq_f32_u32(vorrq_u32(mantissa,
-                                        vec_zero_biased_exponent_is_one));
+    const uint32x4_t mantissa =
+        vandq_u32(vreinterpretq_u32_f32(a), vec_mantissa_mask);
+    const float32x4_t y = vreinterpretq_f32_u32(
+        vorrq_u32(mantissa, vec_zero_biased_exponent_is_one));
     // Approximate log2(y) ~= (y - 1) * pol5(y).
     //    pol5(y) = C5 * y^5 + C4 * y^4 + C3 * y^3 + C2 * y^2 + C1 * y + C0
     const float32x4_t C5 = vdupq_n_f32(-3.4436006e-2f);
@@ -395,13 +392,13 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
     float32x4_t vec_hNl = vld1q_f32(&hNl[i]);
     const float32x4_t vec_weightCurve = vld1q_f32(&WebRtcAec_weightCurve[i]);
     const uint32x4_t bigger = vcgtq_f32(vec_hNl, vec_hNlFb);
-    const float32x4_t vec_weightCurve_hNlFb = vmulq_f32(vec_weightCurve,
-                                                        vec_hNlFb);
+    const float32x4_t vec_weightCurve_hNlFb =
+        vmulq_f32(vec_weightCurve, vec_hNlFb);
     const float32x4_t vec_one_weightCurve = vsubq_f32(vec_one, vec_weightCurve);
-    const float32x4_t vec_one_weightCurve_hNl = vmulq_f32(vec_one_weightCurve,
-                                                          vec_hNl);
-    const uint32x4_t vec_if0 = vandq_u32(vmvnq_u32(bigger),
-                                         vreinterpretq_u32_f32(vec_hNl));
+    const float32x4_t vec_one_weightCurve_hNl =
+        vmulq_f32(vec_one_weightCurve, vec_hNl);
+    const uint32x4_t vec_if0 =
+        vandq_u32(vmvnq_u32(bigger), vreinterpretq_u32_f32(vec_hNl));
     const float32x4_t vec_one_weightCurve_add =
         vaddq_f32(vec_weightCurve_hNlFb, vec_one_weightCurve_hNl);
     const uint32x4_t vec_if1 =
@@ -513,12 +510,13 @@ static void SmoothedPSD(AecCore* aec,
                         float xfw[2][PART_LEN1],
                         int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
-  const float* ptrGCoh = aec->extended_filter_enabled
-      ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
-      : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
+  const float* ptrGCoh =
+      aec->extended_filter_enabled
+          ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
+          : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
   int i;
   float sdSum = 0, seSum = 0;
-  const float32x4_t vec_15 =  vdupq_n_f32(WebRtcAec_kMinFarendPSD);
+  const float32x4_t vec_15 = vdupq_n_f32(WebRtcAec_kMinFarendPSD);
   float32x4_t vec_sdSum = vdupq_n_f32(0.0f);
   float32x4_t vec_seSum = vdupq_n_f32(0.0f);
 
@@ -581,10 +579,10 @@ static void SmoothedPSD(AecCore* aec,
     float32x2_t vec_sdSum_total;
     float32x2_t vec_seSum_total;
     // A B C D
-    vec_sdSum_total = vpadd_f32(vget_low_f32(vec_sdSum),
-                                vget_high_f32(vec_sdSum));
-    vec_seSum_total = vpadd_f32(vget_low_f32(vec_seSum),
-                                vget_high_f32(vec_seSum));
+    vec_sdSum_total =
+        vpadd_f32(vget_low_f32(vec_sdSum), vget_high_f32(vec_sdSum));
+    vec_seSum_total =
+        vpadd_f32(vget_low_f32(vec_seSum), vget_high_f32(vec_seSum));
     // A+B C+D
     vec_sdSum_total = vpadd_f32(vec_sdSum_total, vec_sdSum_total);
     vec_seSum_total = vpadd_f32(vec_seSum_total, vec_seSum_total);
@@ -603,11 +601,10 @@ static void SmoothedPSD(AecCore* aec,
     // The threshold is not arbitrarily chosen, but balances protection and
     // adverse interaction with the algorithm's tuning.
     // TODO(bjornv): investigate further why this is so sensitive.
-    aec->sx[i] =
-        ptrGCoh[0] * aec->sx[i] +
-        ptrGCoh[1] * WEBRTC_SPL_MAX(
-            xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
-            WebRtcAec_kMinFarendPSD);
+    aec->sx[i] = ptrGCoh[0] * aec->sx[i] +
+                 ptrGCoh[1] * WEBRTC_SPL_MAX(
+                                  xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
+                                  WebRtcAec_kMinFarendPSD);
 
     aec->sde[i][0] =
         ptrGCoh[0] * aec->sde[i][0] +
@@ -652,7 +649,7 @@ static void WindowDataNEON(float* x_windowed, const float* x) {
                                        vget_low_f32(vec_sqrtHanning_rev));
     vst1q_f32(&x_windowed[i], vmulq_f32(vec_Buf1, vec_sqrtHanning));
     vst1q_f32(&x_windowed[PART_LEN + i],
-            vmulq_f32(vec_Buf2, vec_sqrtHanning_rev));
+              vmulq_f32(vec_Buf2, vec_sqrtHanning_rev));
   }
 }
 
@@ -685,7 +682,7 @@ static void SubbandCoherenceNEON(AecCore* aec,
   SmoothedPSD(aec, efw, dfw, xfw, extreme_filter_divergence);
 
   {
-    const float32x4_t vec_1eminus10 =  vdupq_n_f32(1e-10f);
+    const float32x4_t vec_1eminus10 = vdupq_n_f32(1e-10f);
 
     // Subband coherence
     for (i = 0; i + 3 < PART_LEN1; i += 4) {

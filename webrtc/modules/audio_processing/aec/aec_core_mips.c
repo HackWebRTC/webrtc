@@ -44,7 +44,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
   float randTemp, randTemp2, randTemp3, randTemp4;
   int32_t tmp1s, tmp2s, tmp3s, tmp4s;
 
-  for (i = 0; i < PART_LEN; i+=4) {
+  for (i = 0; i < PART_LEN; i += 4) {
     __asm __volatile (
       ".set     push                                           \n\t"
       ".set     noreorder                                      \n\t"
@@ -75,14 +75,14 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
       : "memory"
     );
 
-    u[i+1][0] = cosf(randTemp);
-    u[i+1][1] = sinf(randTemp);
-    u[i+2][0] = cosf(randTemp2);
-    u[i+2][1] = sinf(randTemp2);
-    u[i+3][0] = cosf(randTemp3);
-    u[i+3][1] = sinf(randTemp3);
-    u[i+4][0] = cosf(randTemp4);
-    u[i+4][1] = sinf(randTemp4);
+    u[i + 1][0] = cosf(randTemp);
+    u[i + 1][1] = sinf(randTemp);
+    u[i + 2][0] = cosf(randTemp2);
+    u[i + 2][1] = sinf(randTemp2);
+    u[i + 3][0] = cosf(randTemp3);
+    u[i + 3][1] = sinf(randTemp3);
+    u[i + 4][0] = cosf(randTemp4);
+    u[i + 4][1] = sinf(randTemp4);
   }
 
   // Reject LF noise
@@ -92,7 +92,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
 
   u[0][0] = 0;
   u[0][1] = 0;
-  for (i = 1; i < PART_LEN1; i+=4) {
+  for (i = 1; i < PART_LEN1; i += 4) {
     __asm __volatile (
       ".set     push                                            \n\t"
       ".set     noreorder                                       \n\t"
@@ -264,7 +264,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
 
   lambda -= PART_LEN;
   tmp = sqrtf(WEBRTC_SPL_MAX(1 - lambda[PART_LEN] * lambda[PART_LEN], 0));
-  //tmp = 1 - lambda[i];
+  // tmp = 1 - lambda[i];
   efw[0][PART_LEN] += tmp * u[PART_LEN][0];
   efw[1][PART_LEN] += tmp * u[PART_LEN][1];
 
@@ -333,8 +333,8 @@ void WebRtcAec_FilterFar_mips(
     int xPos = (i + x_fft_buf_block_pos) * PART_LEN1;
     int pos = i * PART_LEN1;
     // Check for wrap
-    if (i + x_fft_buf_block_pos >=  num_partitions) {
-      xPos -=  num_partitions * (PART_LEN1);
+    if (i + x_fft_buf_block_pos >= num_partitions) {
+      xPos -= num_partitions * (PART_LEN1);
     }
     float* yf0 = y_fft[0];
     float* yf1 = y_fft[1];
@@ -448,7 +448,7 @@ void WebRtcAec_FilterAdaptation_mips(
   float fft[PART_LEN2];
   int i;
   for (i = 0; i < num_partitions; i++) {
-    int xPos = (i + x_fft_buf_block_pos)*(PART_LEN1);
+    int xPos = (i + x_fft_buf_block_pos) * (PART_LEN1);
     int pos;
     // Check for wrap
     if (i + x_fft_buf_block_pos >= num_partitions) {
@@ -462,7 +462,7 @@ void WebRtcAec_FilterAdaptation_mips(
     float* bIm = e_fft[1];
     float* fft_tmp;
 
-    float f0, f1, f2, f3, f4, f5, f6 ,f7, f8, f9, f10, f11, f12;
+    float f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12;
     int len = PART_LEN >> 1;
 
     __asm __volatile (

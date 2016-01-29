@@ -23,7 +23,7 @@
 #define PART_LEN 64               // Length of partition
 #define PART_LEN1 (PART_LEN + 1)  // Unique fft coefficients
 #define PART_LEN2 (PART_LEN * 2)  // Length of partition * 2
-#define NUM_HIGH_BANDS_MAX  2     // Max number of high bands
+#define NUM_HIGH_BANDS_MAX 2      // Max number of high bands
 
 typedef float complex_t[2];
 // For performance reasons, some arrays of complex numbers are replaced by twice
@@ -35,9 +35,7 @@ typedef float complex_t[2];
 // compile time.
 
 // Metrics
-enum {
-  kOffsetLevel = -100
-};
+enum { kOffsetLevel = -100 };
 
 typedef struct Stats {
   float instant;
@@ -83,7 +81,9 @@ int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements);
 // values we mean values that most likely will cause the AEC to perform poorly.
 // TODO(bjornv): Consider changing tests and tools to handle constant
 // constant aggregation window throughout the session instead.
-int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std,
+int WebRtcAec_GetDelayMetricsCore(AecCore* self,
+                                  int* median,
+                                  int* std,
                                   float* fraction_poor_delays);
 
 // Returns the echo state (1: echo, 0: no echo).

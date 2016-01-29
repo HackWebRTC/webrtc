@@ -13,12 +13,8 @@
 
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 
-enum {
-  kResamplingDelay = 1
-};
-enum {
-  kResamplerBufferSize = FRAME_LEN * 4
-};
+enum { kResamplingDelay = 1 };
+enum { kResamplerBufferSize = FRAME_LEN * 4 };
 
 // Unless otherwise specified, functions return 0 on success and -1 on error.
 void* WebRtcAec_CreateResampler();  // Returns NULL on error.

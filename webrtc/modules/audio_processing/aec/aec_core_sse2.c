@@ -29,13 +29,13 @@ __inline static float MulIm(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bIm + aIm * bRe;
 }
 
-static void FilterFarSSE2(
-    int num_partitions,
-    int x_fft_buf_block_pos,
-    float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
-    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
-    float y_fft[2][PART_LEN1]) {
-
+static void FilterFarSSE2(int num_partitions,
+                          int x_fft_buf_block_pos,
+                          float x_fft_buf[2]
+                                         [kExtendedNumPartitions * PART_LEN1],
+                          float h_fft_buf[2]
+                                         [kExtendedNumPartitions * PART_LEN1],
+                          float y_fft[2][PART_LEN1]) {
   int i;
   for (i = 0; i < num_partitions; i++) {
     int j;
@@ -67,14 +67,10 @@ static void FilterFarSSE2(
     }
     // scalar code for the remaining items.
     for (; j < PART_LEN1; j++) {
-      y_fft[0][j] += MulRe(x_fft_buf[0][xPos + j],
-                           x_fft_buf[1][xPos + j],
-                           h_fft_buf[0][pos + j],
-                           h_fft_buf[1][pos + j]);
-      y_fft[1][j] += MulIm(x_fft_buf[0][xPos + j],
-                           x_fft_buf[1][xPos + j],
-                           h_fft_buf[0][pos + j],
-                           h_fft_buf[1][pos + j]);
+      y_fft[0][j] += MulRe(x_fft_buf[0][xPos + j], x_fft_buf[1][xPos + j],
+                           h_fft_buf[0][pos + j], h_fft_buf[1][pos + j]);
+      y_fft[1][j] += MulIm(x_fft_buf[0][xPos + j], x_fft_buf[1][xPos + j],
+                           h_fft_buf[0][pos + j], h_fft_buf[1][pos + j]);
     }
   }
 }
@@ -86,7 +82,7 @@ static void ScaleErrorSignalSSE2(int extended_filter_enabled,
                                  float ef[2][PART_LEN1]) {
   const __m128 k1e_10f = _mm_set1_ps(1e-10f);
   const __m128 kMu = extended_filter_enabled ? _mm_set1_ps(kExtendedMu)
-      : _mm_set1_ps(normal_mu);
+                                             : _mm_set1_ps(normal_mu);
   const __m128 kThresh = extended_filter_enabled
                              ? _mm_set1_ps(kExtendedErrorThreshold)
                              : _mm_set1_ps(normal_error_threshold);
@@ -124,8 +120,7 @@ static void ScaleErrorSignalSSE2(int extended_filter_enabled,
   }
   // scalar code for the remaining items.
   {
-    const float mu =
-        extended_filter_enabled ? kExtendedMu : normal_mu;
+    const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
     const float error_threshold = extended_filter_enabled
                                       ? kExtendedErrorThreshold
                                       : normal_error_threshold;
@@ -188,10 +183,9 @@ static void FilterAdaptationSSE2(
       _mm_storeu_ps(&fft[2 * j + 4], h);
     }
     // ... and fixup the first imaginary entry.
-    fft[1] = MulRe(x_fft_buf[0][xPos + PART_LEN],
-                   -x_fft_buf[1][xPos + PART_LEN],
-                   e_fft[0][PART_LEN],
-                   e_fft[1][PART_LEN]);
+    fft[1] =
+        MulRe(x_fft_buf[0][xPos + PART_LEN], -x_fft_buf[1][xPos + PART_LEN],
+              e_fft[0][PART_LEN], e_fft[1][PART_LEN]);
 
     aec_rdft_inverse_128(fft);
     memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
@@ -281,16 +275,16 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
     //    pol5(y) = C5 * y^5 + C4 * y^4 + C3 * y^3 + C2 * y^2 + C1 * y + C0
     static const ALIGN16_BEG float ALIGN16_END C5[4] = {
         -3.4436006e-2f, -3.4436006e-2f, -3.4436006e-2f, -3.4436006e-2f};
-    static const ALIGN16_BEG float ALIGN16_END
-        C4[4] = {3.1821337e-1f, 3.1821337e-1f, 3.1821337e-1f, 3.1821337e-1f};
-    static const ALIGN16_BEG float ALIGN16_END
-        C3[4] = {-1.2315303f, -1.2315303f, -1.2315303f, -1.2315303f};
-    static const ALIGN16_BEG float ALIGN16_END
-        C2[4] = {2.5988452f, 2.5988452f, 2.5988452f, 2.5988452f};
-    static const ALIGN16_BEG float ALIGN16_END
-        C1[4] = {-3.3241990f, -3.3241990f, -3.3241990f, -3.3241990f};
-    static const ALIGN16_BEG float ALIGN16_END
-        C0[4] = {3.1157899f, 3.1157899f, 3.1157899f, 3.1157899f};
+    static const ALIGN16_BEG float ALIGN16_END C4[4] = {
+        3.1821337e-1f, 3.1821337e-1f, 3.1821337e-1f, 3.1821337e-1f};
+    static const ALIGN16_BEG float ALIGN16_END C3[4] = {
+        -1.2315303f, -1.2315303f, -1.2315303f, -1.2315303f};
+    static const ALIGN16_BEG float ALIGN16_END C2[4] = {2.5988452f, 2.5988452f,
+                                                        2.5988452f, 2.5988452f};
+    static const ALIGN16_BEG float ALIGN16_END C1[4] = {
+        -3.3241990f, -3.3241990f, -3.3241990f, -3.3241990f};
+    static const ALIGN16_BEG float ALIGN16_END C0[4] = {3.1157899f, 3.1157899f,
+                                                        3.1157899f, 3.1157899f};
     const __m128 pol5_y_0 = _mm_mul_ps(y, *((__m128*)C5));
     const __m128 pol5_y_1 = _mm_add_ps(pol5_y_0, *((__m128*)C4));
     const __m128 pol5_y_2 = _mm_mul_ps(pol5_y_1, y);
@@ -334,8 +328,8 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
     const __m128 x_min = _mm_min_ps(b_log2_a, *((__m128*)max_input));
     const __m128 x_max = _mm_max_ps(x_min, *((__m128*)min_input));
     // Compute n.
-    static const ALIGN16_BEG float half[4] ALIGN16_END = {0.5f, 0.5f,
-                                                          0.5f, 0.5f};
+    static const ALIGN16_BEG float half[4] ALIGN16_END = {0.5f, 0.5f, 0.5f,
+                                                          0.5f};
     const __m128 x_minus_half = _mm_sub_ps(x_max, *((__m128*)half));
     const __m128i x_minus_half_floor = _mm_cvtps_epi32(x_minus_half);
     // Compute 2^n.
@@ -432,7 +426,7 @@ static void OverdriveAndSuppressSSE2(AecCore* aec,
   }
 }
 
-__inline static void _mm_add_ps_4x1(__m128 sum, float *dst) {
+__inline static void _mm_add_ps_4x1(__m128 sum, float* dst) {
   // A+B C+D
   sum = _mm_add_ps(sum, _mm_shuffle_ps(sum, sum, _MM_SHUFFLE(0, 0, 3, 2)));
   // A+B+C+D A+B+C+D
@@ -492,12 +486,13 @@ static void SmoothedPSD(AecCore* aec,
                         float xfw[2][PART_LEN1],
                         int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
-  const float* ptrGCoh = aec->extended_filter_enabled
-      ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
-      : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
+  const float* ptrGCoh =
+      aec->extended_filter_enabled
+          ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
+          : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
   int i;
   float sdSum = 0, seSum = 0;
-  const __m128 vec_15 =  _mm_set1_ps(WebRtcAec_kMinFarendPSD);
+  const __m128 vec_15 = _mm_set1_ps(WebRtcAec_kMinFarendPSD);
   const __m128 vec_GCoh0 = _mm_set1_ps(ptrGCoh[0]);
   const __m128 vec_GCoh1 = _mm_set1_ps(ptrGCoh[1]);
   __m128 vec_sdSum = _mm_set1_ps(0.0f);
@@ -530,18 +525,18 @@ static void SmoothedPSD(AecCore* aec,
     {
       const __m128 vec_3210 = _mm_loadu_ps(&aec->sde[i][0]);
       const __m128 vec_7654 = _mm_loadu_ps(&aec->sde[i + 2][0]);
-      __m128 vec_a = _mm_shuffle_ps(vec_3210, vec_7654,
-                                    _MM_SHUFFLE(2, 0, 2, 0));
-      __m128 vec_b = _mm_shuffle_ps(vec_3210, vec_7654,
-                                    _MM_SHUFFLE(3, 1, 3, 1));
+      __m128 vec_a =
+          _mm_shuffle_ps(vec_3210, vec_7654, _MM_SHUFFLE(2, 0, 2, 0));
+      __m128 vec_b =
+          _mm_shuffle_ps(vec_3210, vec_7654, _MM_SHUFFLE(3, 1, 3, 1));
       __m128 vec_dfwefw0011 = _mm_mul_ps(vec_dfw0, vec_efw0);
       __m128 vec_dfwefw0110 = _mm_mul_ps(vec_dfw0, vec_efw1);
       vec_a = _mm_mul_ps(vec_a, vec_GCoh0);
       vec_b = _mm_mul_ps(vec_b, vec_GCoh0);
-      vec_dfwefw0011 = _mm_add_ps(vec_dfwefw0011,
-                                  _mm_mul_ps(vec_dfw1, vec_efw1));
-      vec_dfwefw0110 = _mm_sub_ps(vec_dfwefw0110,
-                                  _mm_mul_ps(vec_dfw1, vec_efw0));
+      vec_dfwefw0011 =
+          _mm_add_ps(vec_dfwefw0011, _mm_mul_ps(vec_dfw1, vec_efw1));
+      vec_dfwefw0110 =
+          _mm_sub_ps(vec_dfwefw0110, _mm_mul_ps(vec_dfw1, vec_efw0));
       vec_a = _mm_add_ps(vec_a, _mm_mul_ps(vec_dfwefw0011, vec_GCoh1));
       vec_b = _mm_add_ps(vec_b, _mm_mul_ps(vec_dfwefw0110, vec_GCoh1));
       _mm_storeu_ps(&aec->sde[i][0], _mm_unpacklo_ps(vec_a, vec_b));
@@ -551,18 +546,18 @@ static void SmoothedPSD(AecCore* aec,
     {
       const __m128 vec_3210 = _mm_loadu_ps(&aec->sxd[i][0]);
       const __m128 vec_7654 = _mm_loadu_ps(&aec->sxd[i + 2][0]);
-      __m128 vec_a = _mm_shuffle_ps(vec_3210, vec_7654,
-                                    _MM_SHUFFLE(2, 0, 2, 0));
-      __m128 vec_b = _mm_shuffle_ps(vec_3210, vec_7654,
-                                    _MM_SHUFFLE(3, 1, 3, 1));
+      __m128 vec_a =
+          _mm_shuffle_ps(vec_3210, vec_7654, _MM_SHUFFLE(2, 0, 2, 0));
+      __m128 vec_b =
+          _mm_shuffle_ps(vec_3210, vec_7654, _MM_SHUFFLE(3, 1, 3, 1));
       __m128 vec_dfwxfw0011 = _mm_mul_ps(vec_dfw0, vec_xfw0);
       __m128 vec_dfwxfw0110 = _mm_mul_ps(vec_dfw0, vec_xfw1);
       vec_a = _mm_mul_ps(vec_a, vec_GCoh0);
       vec_b = _mm_mul_ps(vec_b, vec_GCoh0);
-      vec_dfwxfw0011 = _mm_add_ps(vec_dfwxfw0011,
-                                  _mm_mul_ps(vec_dfw1, vec_xfw1));
-      vec_dfwxfw0110 = _mm_sub_ps(vec_dfwxfw0110,
-                                  _mm_mul_ps(vec_dfw1, vec_xfw0));
+      vec_dfwxfw0011 =
+          _mm_add_ps(vec_dfwxfw0011, _mm_mul_ps(vec_dfw1, vec_xfw1));
+      vec_dfwxfw0110 =
+          _mm_sub_ps(vec_dfwxfw0110, _mm_mul_ps(vec_dfw1, vec_xfw0));
       vec_a = _mm_add_ps(vec_a, _mm_mul_ps(vec_dfwxfw0011, vec_GCoh1));
       vec_b = _mm_add_ps(vec_b, _mm_mul_ps(vec_dfwxfw0110, vec_GCoh1));
       _mm_storeu_ps(&aec->sxd[i][0], _mm_unpacklo_ps(vec_a, vec_b));
@@ -585,11 +580,10 @@ static void SmoothedPSD(AecCore* aec,
     // The threshold is not arbitrarily chosen, but balances protection and
     // adverse interaction with the algorithm's tuning.
     // TODO(bjornv): investigate further why this is so sensitive.
-    aec->sx[i] =
-        ptrGCoh[0] * aec->sx[i] +
-        ptrGCoh[1] * WEBRTC_SPL_MAX(
-            xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
-            WebRtcAec_kMinFarendPSD);
+    aec->sx[i] = ptrGCoh[0] * aec->sx[i] +
+                 ptrGCoh[1] * WEBRTC_SPL_MAX(
+                                  xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
+                                  WebRtcAec_kMinFarendPSD);
 
     aec->sde[i][0] =
         ptrGCoh[0] * aec->sde[i][0] +
@@ -628,9 +622,8 @@ static void WindowDataSSE2(float* x_windowed, const float* x) {
     __m128 vec_sqrtHanning_rev =
         _mm_loadu_ps(&WebRtcAec_sqrtHanning[PART_LEN - i - 3]);
     // D C B A
-    vec_sqrtHanning_rev =
-        _mm_shuffle_ps(vec_sqrtHanning_rev, vec_sqrtHanning_rev,
-                       _MM_SHUFFLE(0, 1, 2, 3));
+    vec_sqrtHanning_rev = _mm_shuffle_ps(
+        vec_sqrtHanning_rev, vec_sqrtHanning_rev, _MM_SHUFFLE(0, 1, 2, 3));
     _mm_storeu_ps(&x_windowed[i], _mm_mul_ps(vec_Buf1, vec_sqrtHanning));
     _mm_storeu_ps(&x_windowed[PART_LEN + i],
                   _mm_mul_ps(vec_Buf2, vec_sqrtHanning_rev));
@@ -644,10 +637,10 @@ static void StoreAsComplexSSE2(const float* data,
   for (i = 0; i < PART_LEN; i += 4) {
     const __m128 vec_fft0 = _mm_loadu_ps(&data[2 * i]);
     const __m128 vec_fft4 = _mm_loadu_ps(&data[2 * i + 4]);
-    const __m128 vec_a = _mm_shuffle_ps(vec_fft0, vec_fft4,
-                                        _MM_SHUFFLE(2, 0, 2, 0));
-    const __m128 vec_b = _mm_shuffle_ps(vec_fft0, vec_fft4,
-                                        _MM_SHUFFLE(3, 1, 3, 1));
+    const __m128 vec_a =
+        _mm_shuffle_ps(vec_fft0, vec_fft4, _MM_SHUFFLE(2, 0, 2, 0));
+    const __m128 vec_b =
+        _mm_shuffle_ps(vec_fft0, vec_fft4, _MM_SHUFFLE(3, 1, 3, 1));
     _mm_storeu_ps(&data_complex[0][i], vec_a);
     _mm_storeu_ps(&data_complex[1][i], vec_b);
   }
@@ -671,29 +664,29 @@ static void SubbandCoherenceSSE2(AecCore* aec,
   SmoothedPSD(aec, efw, dfw, xfw, extreme_filter_divergence);
 
   {
-    const __m128 vec_1eminus10 =  _mm_set1_ps(1e-10f);
+    const __m128 vec_1eminus10 = _mm_set1_ps(1e-10f);
 
     // Subband coherence
     for (i = 0; i + 3 < PART_LEN1; i += 4) {
       const __m128 vec_sd = _mm_loadu_ps(&aec->sd[i]);
       const __m128 vec_se = _mm_loadu_ps(&aec->se[i]);
       const __m128 vec_sx = _mm_loadu_ps(&aec->sx[i]);
-      const __m128 vec_sdse = _mm_add_ps(vec_1eminus10,
-                                         _mm_mul_ps(vec_sd, vec_se));
-      const __m128 vec_sdsx = _mm_add_ps(vec_1eminus10,
-                                         _mm_mul_ps(vec_sd, vec_sx));
+      const __m128 vec_sdse =
+          _mm_add_ps(vec_1eminus10, _mm_mul_ps(vec_sd, vec_se));
+      const __m128 vec_sdsx =
+          _mm_add_ps(vec_1eminus10, _mm_mul_ps(vec_sd, vec_sx));
       const __m128 vec_sde_3210 = _mm_loadu_ps(&aec->sde[i][0]);
       const __m128 vec_sde_7654 = _mm_loadu_ps(&aec->sde[i + 2][0]);
       const __m128 vec_sxd_3210 = _mm_loadu_ps(&aec->sxd[i][0]);
       const __m128 vec_sxd_7654 = _mm_loadu_ps(&aec->sxd[i + 2][0]);
-      const __m128 vec_sde_0 = _mm_shuffle_ps(vec_sde_3210, vec_sde_7654,
-                                              _MM_SHUFFLE(2, 0, 2, 0));
-      const __m128 vec_sde_1 = _mm_shuffle_ps(vec_sde_3210, vec_sde_7654,
-                                              _MM_SHUFFLE(3, 1, 3, 1));
-      const __m128 vec_sxd_0 = _mm_shuffle_ps(vec_sxd_3210, vec_sxd_7654,
-                                              _MM_SHUFFLE(2, 0, 2, 0));
-      const __m128 vec_sxd_1 = _mm_shuffle_ps(vec_sxd_3210, vec_sxd_7654,
-                                              _MM_SHUFFLE(3, 1, 3, 1));
+      const __m128 vec_sde_0 =
+          _mm_shuffle_ps(vec_sde_3210, vec_sde_7654, _MM_SHUFFLE(2, 0, 2, 0));
+      const __m128 vec_sde_1 =
+          _mm_shuffle_ps(vec_sde_3210, vec_sde_7654, _MM_SHUFFLE(3, 1, 3, 1));
+      const __m128 vec_sxd_0 =
+          _mm_shuffle_ps(vec_sxd_3210, vec_sxd_7654, _MM_SHUFFLE(2, 0, 2, 0));
+      const __m128 vec_sxd_1 =
+          _mm_shuffle_ps(vec_sxd_3210, vec_sxd_7654, _MM_SHUFFLE(3, 1, 3, 1));
       __m128 vec_cohde = _mm_mul_ps(vec_sde_0, vec_sde_0);
       __m128 vec_cohxd = _mm_mul_ps(vec_sxd_0, vec_sxd_0);
       vec_cohde = _mm_add_ps(vec_cohde, _mm_mul_ps(vec_sde_1, vec_sde_1));

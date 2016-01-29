@@ -29,4 +29,3 @@ extern const float WebRtcAec_kNormalSmoothingCoefficients[2][2];
 extern const float WebRtcAec_kMinFarendPSD;
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_COMMON_H_
-

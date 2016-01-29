@@ -25,16 +25,9 @@
 // Warnings
 #define AEC_BAD_PARAMETER_WARNING 12050
 
-enum {
-  kAecNlpConservative = 0,
-  kAecNlpModerate,
-  kAecNlpAggressive
-};
+enum { kAecNlpConservative = 0, kAecNlpModerate, kAecNlpAggressive };
 
-enum {
-  kAecFalse = 0,
-  kAecTrue
-};
+enum { kAecFalse = 0, kAecTrue };
 
 typedef struct {
   int16_t nlpMode;      // default kAecNlpModerate
