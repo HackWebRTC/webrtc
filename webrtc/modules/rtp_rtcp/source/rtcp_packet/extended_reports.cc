@@ -14,16 +14,10 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
-using webrtc::RTCPUtility::PT_XR;
-using webrtc::RTCPUtility::RTCPPacketXR;
+using webrtc::RTCPUtility::RtcpCommonHeader;
 
 namespace webrtc {
 namespace rtcp {
-namespace {
-void AssignUWord32(uint8_t* buffer, size_t* offset, uint32_t value) {
-  ByteWriter<uint32_t>::WriteBigEndian(buffer + *offset, value);
-  *offset += 4;
-}
 // From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
 //
 // Format for XR packets:
@@ -37,23 +31,106 @@ void AssignUWord32(uint8_t* buffer, size_t* offset, uint32_t value) {
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //  :                         report blocks                         :
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-void CreateXrHeader(const RTCPPacketXR& header,
-                    uint8_t* buffer,
-                    size_t* pos) {
-  AssignUWord32(buffer, pos, header.OriginatorSSRC);
+//
+// Extended report block:
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |  Block Type   |   reserved    |         block length          |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  :             type-specific block contents                      :
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ExtendedReports::ExtendedReports() : sender_ssrc_(0) {}
+ExtendedReports::~ExtendedReports() {}
+
+bool ExtendedReports::Parse(const RtcpCommonHeader& header,
+                            const uint8_t* payload) {
+  RTC_CHECK(header.packet_type == kPacketType);
+
+  if (header.payload_size_bytes < kXrBaseLength) {
+    LOG(LS_WARNING) << "Packet is too small to be an ExtendedReports packet.";
+    return false;
+  }
+
+  sender_ssrc_ = ByteReader<uint32_t>::ReadBigEndian(payload);
+  rrtr_blocks_.clear();
+  dlrr_blocks_.clear();
+  voip_metric_blocks_.clear();
+
+  const uint8_t* current_block = payload + kXrBaseLength;
+  const uint8_t* const packet_end = payload + header.payload_size_bytes;
+  const size_t kBlockHeaderSizeBytes = 4;
+  while (current_block + kBlockHeaderSizeBytes <= packet_end) {
+    uint8_t block_type = ByteReader<uint8_t>::ReadBigEndian(current_block);
+    uint16_t block_length =
+        ByteReader<uint16_t>::ReadBigEndian(current_block + 2);
+    const uint8_t* next_block =
+        current_block + kBlockHeaderSizeBytes + block_length * 4;
+    if (next_block > packet_end) {
+      LOG(LS_WARNING) << "Report block in extended report packet is too big.";
+      return false;
+    }
+    switch (block_type) {
+      case Rrtr::kBlockType:
+        ParseRrtrBlock(current_block, block_length);
+        break;
+      case Dlrr::kBlockType:
+        ParseDlrrBlock(current_block, block_length);
+        break;
+      case VoipMetric::kBlockType:
+        ParseVoipMetricBlock(current_block, block_length);
+        break;
+      default:
+        // Unknown block, ignore.
+        LOG(LS_WARNING) << "Unknown extended report block type " << block_type;
+        break;
+    }
+    current_block = next_block;
+  }
+
+  return true;
 }
-}  // namespace
+
+bool ExtendedReports::WithRrtr(const Rrtr& rrtr) {
+  if (rrtr_blocks_.size() >= kMaxNumberOfRrtrBlocks) {
+    LOG(LS_WARNING) << "Max RRTR blocks reached.";
+    return false;
+  }
+  rrtr_blocks_.push_back(rrtr);
+  return true;
+}
+
+bool ExtendedReports::WithDlrr(const Dlrr& dlrr) {
+  if (dlrr_blocks_.size() >= kMaxNumberOfDlrrBlocks) {
+    LOG(LS_WARNING) << "Max DLRR blocks reached.";
+    return false;
+  }
+  dlrr_blocks_.push_back(dlrr);
+  return true;
+}
+
+bool ExtendedReports::WithVoipMetric(const VoipMetric& voip_metric) {
+  if (voip_metric_blocks_.size() >= kMaxNumberOfVoipMetricBlocks) {
+    LOG(LS_WARNING) << "Max Voip Metric blocks reached.";
+    return false;
+  }
+  voip_metric_blocks_.push_back(voip_metric);
+  return true;
+}
 
 bool ExtendedReports::Create(uint8_t* packet,
-                size_t* index,
-                size_t max_length,
-                RtcpPacket::PacketReadyCallback* callback) const {
+                             size_t* index,
+                             size_t max_length,
+                             RtcpPacket::PacketReadyCallback* callback) const {
   while (*index + BlockLength() > max_length) {
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  CreateHeader(0U, PT_XR, HeaderLength(), packet, index);
-  CreateXrHeader(xr_header_, packet, index);
+  size_t index_end = *index + BlockLength();
+  const uint8_t kReserved = 0;
+  CreateHeader(kReserved, kPacketType, HeaderLength(), packet, index);
+  ByteWriter<uint32_t>::WriteBigEndian(packet + *index, sender_ssrc_);
+  *index += sizeof(uint32_t);
   for (const Rrtr& block : rrtr_blocks_) {
     block.Create(packet + *index);
     *index += Rrtr::kLength;
@@ -66,36 +143,7 @@ bool ExtendedReports::Create(uint8_t* packet,
     block.Create(packet + *index);
     *index += VoipMetric::kLength;
   }
-  return true;
-}
-
-bool ExtendedReports::WithRrtr(Rrtr* rrtr) {
-  RTC_DCHECK(rrtr);
-  if (rrtr_blocks_.size() >= kMaxNumberOfRrtrBlocks) {
-    LOG(LS_WARNING) << "Max RRTR blocks reached.";
-    return false;
-  }
-  rrtr_blocks_.push_back(*rrtr);
-  return true;
-}
-
-bool ExtendedReports::WithDlrr(Dlrr* dlrr) {
-  RTC_DCHECK(dlrr);
-  if (dlrr_blocks_.size() >= kMaxNumberOfDlrrBlocks) {
-    LOG(LS_WARNING) << "Max DLRR blocks reached.";
-    return false;
-  }
-  dlrr_blocks_.push_back(*dlrr);
-  return true;
-}
-
-bool ExtendedReports::WithVoipMetric(VoipMetric* voip_metric) {
-  assert(voip_metric);
-  if (voip_metric_blocks_.size() >= kMaxNumberOfVoipMetricBlocks) {
-    LOG(LS_WARNING) << "Max Voip Metric blocks reached.";
-    return false;
-  }
-  voip_metric_blocks_.push_back(*voip_metric);
+  RTC_CHECK_EQ(*index, index_end);
   return true;
 }
 
@@ -107,5 +155,34 @@ size_t ExtendedReports::DlrrLength() const {
   return length;
 }
 
+void ExtendedReports::ParseRrtrBlock(const uint8_t* block,
+                                     uint16_t block_length) {
+  if (block_length != Rrtr::kBlockLength) {
+    LOG(LS_WARNING) << "Incorrect rrtr block size " << block_length
+                    << " Should be " << Rrtr::kBlockLength;
+    return;
+  }
+  rrtr_blocks_.push_back(Rrtr());
+  rrtr_blocks_.back().Parse(block);
+}
+
+void ExtendedReports::ParseDlrrBlock(const uint8_t* block,
+                                     uint16_t block_length) {
+  dlrr_blocks_.push_back(Dlrr());
+  if (!dlrr_blocks_.back().Parse(block, block_length)) {
+    dlrr_blocks_.pop_back();
+  }
+}
+
+void ExtendedReports::ParseVoipMetricBlock(const uint8_t* block,
+                                           uint16_t block_length) {
+  if (block_length != VoipMetric::kBlockLength) {
+    LOG(LS_WARNING) << "Incorrect voip metric block size " << block_length
+                    << " Should be " << VoipMetric::kBlockLength;
+    return;
+  }
+  voip_metric_blocks_.push_back(VoipMetric());
+  voip_metric_blocks_.back().Parse(block);
+}
 }  // namespace rtcp
 }  // namespace webrtc

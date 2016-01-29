@@ -762,7 +762,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildReceiverReferenceTime(
   rtcp::Rrtr rrtr;
   rrtr.WithNtp(NtpTime(ctx.ntp_sec_, ctx.ntp_frac_));
 
-  xr->WithRrtr(&rrtr);
+  xr->WithRrtr(rrtr);
 
   // TODO(sprang): Merge XR report sending to contain all of RRTR, DLRR, VOIP?
 
@@ -778,7 +778,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildDlrr(
   const RtcpReceiveTimeInfo& info = ctx.feedback_state_.last_xr_rr;
   dlrr.WithDlrrItem(info.sourceSSRC, info.lastRR, info.delaySinceLastRR);
 
-  xr->WithDlrr(&dlrr);
+  xr->WithDlrr(dlrr);
 
   return rtc::scoped_ptr<rtcp::RtcpPacket>(xr);
 }
@@ -793,7 +793,7 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildVoIPMetric(
   voip.To(remote_ssrc_);
   voip.WithVoipMetric(xr_voip_metric_);
 
-  xr->WithVoipMetric(&voip);
+  xr->WithVoipMetric(voip);
 
   return rtc::scoped_ptr<rtcp::RtcpPacket>(xr);
 }

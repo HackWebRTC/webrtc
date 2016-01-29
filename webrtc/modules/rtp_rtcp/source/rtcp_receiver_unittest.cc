@@ -602,7 +602,7 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsVoipPacket) {
   voip_metric.WithVoipMetric(metric);
   rtcp::ExtendedReports xr;
   xr.From(0x2345);
-  xr.WithVoipMetric(&voip_metric);
+  xr.WithVoipMetric(voip_metric);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   ASSERT_TRUE(rtcp_packet_info_.VoIPMetric != nullptr);
@@ -620,7 +620,7 @@ TEST_F(RtcpReceiverTest, ExtendedReportsVoipPacketNotToUsIgnored) {
   voip_metric.To(kSourceSsrc + 1);
   rtcp::ExtendedReports xr;
   xr.From(0x2345);
-  xr.WithVoipMetric(&voip_metric);
+  xr.WithVoipMetric(voip_metric);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
@@ -631,7 +631,7 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsReceiverReferenceTimePacket) {
   rrtr.WithNtp(NtpTime(0x10203, 0x40506));
   rtcp::ExtendedReports xr;
   xr.From(0x2345);
-  xr.WithRrtr(&rrtr);
+  xr.WithRrtr(rrtr);
 
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
@@ -649,7 +649,7 @@ TEST_F(RtcpReceiverTest, ExtendedReportsDlrrPacketNotToUsIgnored) {
   dlrr.WithDlrrItem(kSourceSsrc + 1, 0x12345, 0x67890);
   rtcp::ExtendedReports xr;
   xr.From(0x2345);
-  xr.WithDlrr(&dlrr);
+  xr.WithDlrr(dlrr);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
@@ -666,7 +666,7 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsDlrrPacketWithSubBlock) {
   dlrr.WithDlrrItem(kSourceSsrc, 0x12345, 0x67890);
   rtcp::ExtendedReports xr;
   xr.From(0x2345);
-  xr.WithDlrr(&dlrr);
+  xr.WithDlrr(dlrr);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   // The parser should note the DLRR report block item, but not flag the packet
@@ -686,7 +686,7 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsDlrrPacketWithMultipleSubBlocks) {
   dlrr.WithDlrrItem(kSourceSsrc,     0x12345, 0x67890);
   rtcp::ExtendedReports xr;
   xr.From(0x2345);
-  xr.WithDlrr(&dlrr);
+  xr.WithDlrr(dlrr);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   // The parser should note the DLRR report block item, but not flag the packet
@@ -707,9 +707,9 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithMultipleReportBlocks) {
   metric.To(kSourceSsrc);
   rtcp::ExtendedReports xr;
   xr.From(0x2345);
-  xr.WithRrtr(&rrtr);
-  xr.WithDlrr(&dlrr);
-  xr.WithVoipMetric(&metric);
+  xr.WithRrtr(rrtr);
+  xr.WithDlrr(dlrr);
+  xr.WithVoipMetric(metric);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(static_cast<unsigned int>(kRtcpXrReceiverReferenceTime +
@@ -735,9 +735,9 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithUnknownReportBlock) {
   metric.To(kSourceSsrc);
   rtcp::ExtendedReports xr;
   xr.From(0x2345);
-  xr.WithRrtr(&rrtr);
-  xr.WithDlrr(&dlrr);
-  xr.WithVoipMetric(&metric);
+  xr.WithRrtr(rrtr);
+  xr.WithDlrr(dlrr);
+  xr.WithVoipMetric(metric);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   // Modify the DLRR block to have an unsupported block type, from 5 to 6.
   uint8_t* buffer = const_cast<uint8_t*>(packet->Buffer());
@@ -771,7 +771,7 @@ TEST_F(RtcpReceiverTest, GetLastReceivedExtendedReportsReferenceTimeInfo) {
   rrtr.WithNtp(kNtp);
   rtcp::ExtendedReports xr;
   xr.From(kSenderSsrc);
-  xr.WithRrtr(&rrtr);
+  xr.WithRrtr(rrtr);
   rtc::scoped_ptr<rtcp::RawPacket> packet(xr.Build());
   EXPECT_EQ(0, InjectRtcpPacket(packet->Buffer(), packet->Length()));
   EXPECT_EQ(kRtcpXrReceiverReferenceTime,
