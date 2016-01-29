@@ -20,7 +20,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   size_t i = 0;
   if (size < 4)
     return;
-  FecProtectionParams params = {data[i++] % 128, data[i++] % 1,
+  FecProtectionParams params = {data[i++] % 128, data[i++] % 2 == 1,
                                 static_cast<int>(data[i++] % 10),
                                 kFecMaskBursty};
   producer.SetFecParameters(&params, 0);
@@ -40,7 +40,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     const int kRedPayloadType = 98;
     rtc::scoped_ptr<RedPacket> red_packet(producer.BuildRedPacket(
         packet.get(), payload_size, rtp_header_length, kRedPayloadType));
-    bool protect = static_cast<bool>(data[i++] % 2);
+    const bool protect = data[i++] % 2 == 1;
     if (protect) {
       producer.AddRtpPacketAndGenerateFec(packet.get(), payload_size,
                                           rtp_header_length);
