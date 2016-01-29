@@ -238,160 +238,89 @@ struct AudioOptions {
 // We are moving all of the setting of options to structs like this,
 // but some things currently still use flags.
 struct VideoOptions {
-  VideoOptions()
-      : process_adaptation_threshhold(kProcessCpuThreshold),
-        system_low_adaptation_threshhold(kLowSystemCpuThreshold),
-        system_high_adaptation_threshhold(kHighSystemCpuThreshold),
-        unsignalled_recv_stream_limit(kNumDefaultUnsignalledVideoRecvStreams) {}
-
   void SetAll(const VideoOptions& change) {
-    SetFrom(&adapt_input_to_cpu_usage, change.adapt_input_to_cpu_usage);
-    SetFrom(&adapt_cpu_with_smoothing, change.adapt_cpu_with_smoothing);
-    SetFrom(&video_adapt_third, change.video_adapt_third);
     SetFrom(&video_noise_reduction, change.video_noise_reduction);
-    SetFrom(&video_start_bitrate, change.video_start_bitrate);
     SetFrom(&cpu_overuse_detection, change.cpu_overuse_detection);
-    SetFrom(&cpu_underuse_threshold, change.cpu_underuse_threshold);
-    SetFrom(&cpu_overuse_threshold, change.cpu_overuse_threshold);
-    SetFrom(&cpu_underuse_encode_rsd_threshold,
-            change.cpu_underuse_encode_rsd_threshold);
-    SetFrom(&cpu_overuse_encode_rsd_threshold,
-            change.cpu_overuse_encode_rsd_threshold);
-    SetFrom(&cpu_overuse_encode_usage, change.cpu_overuse_encode_usage);
     SetFrom(&conference_mode, change.conference_mode);
-    SetFrom(&process_adaptation_threshhold,
-            change.process_adaptation_threshhold);
-    SetFrom(&system_low_adaptation_threshhold,
-            change.system_low_adaptation_threshhold);
-    SetFrom(&system_high_adaptation_threshhold,
-            change.system_high_adaptation_threshhold);
     SetFrom(&dscp, change.dscp);
     SetFrom(&suspend_below_min_bitrate, change.suspend_below_min_bitrate);
-    SetFrom(&unsignalled_recv_stream_limit,
-            change.unsignalled_recv_stream_limit);
-    SetFrom(&use_simulcast_adapter, change.use_simulcast_adapter);
-    SetFrom(&screencast_min_bitrate, change.screencast_min_bitrate);
+    SetFrom(&screencast_min_bitrate_kbps, change.screencast_min_bitrate_kbps);
     SetFrom(&disable_prerenderer_smoothing,
             change.disable_prerenderer_smoothing);
   }
 
   bool operator==(const VideoOptions& o) const {
-    return adapt_input_to_cpu_usage == o.adapt_input_to_cpu_usage &&
-           adapt_cpu_with_smoothing == o.adapt_cpu_with_smoothing &&
-           video_adapt_third == o.video_adapt_third &&
-           video_noise_reduction == o.video_noise_reduction &&
-           video_start_bitrate == o.video_start_bitrate &&
+    return video_noise_reduction == o.video_noise_reduction &&
            cpu_overuse_detection == o.cpu_overuse_detection &&
-           cpu_underuse_threshold == o.cpu_underuse_threshold &&
-           cpu_overuse_threshold == o.cpu_overuse_threshold &&
-           cpu_underuse_encode_rsd_threshold ==
-               o.cpu_underuse_encode_rsd_threshold &&
-           cpu_overuse_encode_rsd_threshold ==
-               o.cpu_overuse_encode_rsd_threshold &&
-           cpu_overuse_encode_usage == o.cpu_overuse_encode_usage &&
            conference_mode == o.conference_mode &&
-           process_adaptation_threshhold == o.process_adaptation_threshhold &&
-           system_low_adaptation_threshhold ==
-               o.system_low_adaptation_threshhold &&
-           system_high_adaptation_threshhold ==
-               o.system_high_adaptation_threshhold &&
            dscp == o.dscp &&
            suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
-           unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
-           use_simulcast_adapter == o.use_simulcast_adapter &&
-           screencast_min_bitrate == o.screencast_min_bitrate &&
+           screencast_min_bitrate_kbps == o.screencast_min_bitrate_kbps &&
            disable_prerenderer_smoothing == o.disable_prerenderer_smoothing;
   }
 
   std::string ToString() const {
     std::ostringstream ost;
     ost << "VideoOptions {";
-    ost << ToStringIfSet("cpu adaption", adapt_input_to_cpu_usage);
-    ost << ToStringIfSet("cpu adaptation smoothing", adapt_cpu_with_smoothing);
-    ost << ToStringIfSet("video adapt third", video_adapt_third);
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
-    ost << ToStringIfSet("start bitrate", video_start_bitrate);
     ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
-    ost << ToStringIfSet("cpu underuse threshold", cpu_underuse_threshold);
-    ost << ToStringIfSet("cpu overuse threshold", cpu_overuse_threshold);
-    ost << ToStringIfSet("cpu underuse encode rsd threshold",
-                         cpu_underuse_encode_rsd_threshold);
-    ost << ToStringIfSet("cpu overuse encode rsd threshold",
-                         cpu_overuse_encode_rsd_threshold);
-    ost << ToStringIfSet("cpu overuse encode usage",
-                         cpu_overuse_encode_usage);
     ost << ToStringIfSet("conference mode", conference_mode);
-    ost << ToStringIfSet("process", process_adaptation_threshhold);
-    ost << ToStringIfSet("low", system_low_adaptation_threshhold);
-    ost << ToStringIfSet("high", system_high_adaptation_threshhold);
     ost << ToStringIfSet("dscp", dscp);
     ost << ToStringIfSet("suspend below min bitrate",
                          suspend_below_min_bitrate);
-    ost << ToStringIfSet("num channels for early receive",
-                         unsignalled_recv_stream_limit);
-    ost << ToStringIfSet("use simulcast adapter", use_simulcast_adapter);
-    ost << ToStringIfSet("screencast min bitrate", screencast_min_bitrate);
+    ost << ToStringIfSet("screencast min bitrate kbps",
+                         screencast_min_bitrate_kbps);
     ost << "}";
     return ost.str();
   }
 
-  // Enable CPU adaptation?
-  rtc::Optional<bool> adapt_input_to_cpu_usage;
-  // Enable CPU adaptation smoothing?
-  rtc::Optional<bool> adapt_cpu_with_smoothing;
-  // Enable video adapt third?
-  rtc::Optional<bool> video_adapt_third;
-  // Enable denoising?
+  // Enable denoising? This flag comes from the getUserMedia
+  // constraint 'googNoiseReduction', and WebRtcVideoEngine2 passes it
+  // on to the codec options. Disabled by default.
   rtc::Optional<bool> video_noise_reduction;
-  // Experimental: Enable WebRtc higher start bitrate?
-  rtc::Optional<int> video_start_bitrate;
-  // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU
-  // adaptation algorithm. So this option will override the
-  // |adapt_input_to_cpu_usage|.
+  // Enable WebRTC Cpu Overuse Detection. This flag comes from the
+  // PeerConnection constraint 'googCpuOveruseDetection' and is
+  // checked in WebRtcVideoChannel2::OnLoadUpdate, where it's passed
+  // to VideoCapturer::video_adapter()->OnCpuResolutionRequest.
   rtc::Optional<bool> cpu_overuse_detection;
-  // Low threshold (t1) for cpu overuse adaptation.  (Adapt up)
-  // Metric: encode usage (m1). m1 < t1 => underuse.
-  rtc::Optional<int> cpu_underuse_threshold;
-  // High threshold (t1) for cpu overuse adaptation.  (Adapt down)
-  // Metric: encode usage (m1). m1 > t1 => overuse.
-  rtc::Optional<int> cpu_overuse_threshold;
-  // Low threshold (t2) for cpu overuse adaptation. (Adapt up)
-  // Metric: relative standard deviation of encode time (m2).
-  // Optional threshold. If set, (m1 < t1 && m2 < t2) => underuse.
-  // Note: t2 will have no effect if t1 is not set.
-  rtc::Optional<int> cpu_underuse_encode_rsd_threshold;
-  // High threshold (t2) for cpu overuse adaptation. (Adapt down)
-  // Metric: relative standard deviation of encode time (m2).
-  // Optional threshold. If set, (m1 > t1 || m2 > t2) => overuse.
-  // Note: t2 will have no effect if t1 is not set.
-  rtc::Optional<int> cpu_overuse_encode_rsd_threshold;
-  // Use encode usage for cpu detection.
-  rtc::Optional<bool> cpu_overuse_encode_usage;
-  // Use conference mode?
+  // Use conference mode? This flag comes from the remote
+  // description's SDP line 'a=x-google-flag:conference', copied over
+  // by VideoChannel::SetRemoteContent_w, and ultimately used by
+  // conference mode screencast logic in
+  // WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig.
+  // The special screencast behaviour is disabled by default.
   rtc::Optional<bool> conference_mode;
-  // Threshhold for process cpu adaptation.  (Process limit)
-  rtc::Optional<float> process_adaptation_threshhold;
-  // Low threshhold for cpu adaptation.  (Adapt up)
-  rtc::Optional<float> system_low_adaptation_threshhold;
-  // High threshhold for cpu adaptation.  (Adapt down)
-  rtc::Optional<float> system_high_adaptation_threshhold;
-  // Set DSCP value for packet sent from video channel.
+  // Set DSCP value for packet sent from video channel. This flag
+  // comes from the PeerConnection constraint 'googDscp' and,
+  // WebRtcVideoChannel2::SetOptions checks it before calling
+  // MediaChannel::SetDscp. If enabled, rtc::DSCP_AF41 is used. If
+  // disabled, which is the default, rtc::DSCP_DEFAULT is used.
   rtc::Optional<bool> dscp;
-  // Enable WebRTC suspension of video. No video frames will be sent when the
-  // bitrate is below the configured minimum bitrate.
+  // Enable WebRTC suspension of video. No video frames will be sent
+  // when the bitrate is below the configured minimum bitrate. This
+  // flag comes from the PeerConnection constraint
+  // 'googSuspendBelowMinBitrate', and WebRtcVideoChannel2 copies it
+  // to VideoSendStream::Config::suspend_below_min_bitrate.
   rtc::Optional<bool> suspend_below_min_bitrate;
-  // Limit on the number of early receive channels that can be created.
-  rtc::Optional<int> unsignalled_recv_stream_limit;
-  // Enable use of simulcast adapter.
-  rtc::Optional<bool> use_simulcast_adapter;
-  // Force screencast to use a minimum bitrate
-  rtc::Optional<int> screencast_min_bitrate;
+  // Force screencast to use a minimum bitrate. This flag comes from
+  // the PeerConnection constraint 'googScreencastMinBitrate'. It is
+  // copied to the encoder config by WebRtcVideoChannel2.
+  rtc::Optional<int> screencast_min_bitrate_kbps;
   // Set to true if the renderer has an algorithm of frame selection.
   // If the value is true, then WebRTC will hand over a frame as soon as
   // possible without delay, and rendering smoothness is completely the duty
   // of the renderer;
   // If the value is false, then WebRTC is responsible to delay frame release
   // in order to increase rendering smoothness.
+  //
+  // This flag comes from PeerConnection's RtcConfiguration, but is
+  // currently only set by the command line flag
+  // 'disable-rtc-smoothness-algorithm'.
+  // WebRtcVideoChannel2::AddRecvStream copies it to the created
+  // WebRtcVideoReceiveStream, where it is returned by the
+  // SmoothsRenderedFrames method. This method is used by the
+  // VideoReceiveStream, where the value is passed on to the
+  // IncomingVideoStream constructor.
   rtc::Optional<bool> disable_prerenderer_smoothing;
 
  private:

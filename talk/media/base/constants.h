@@ -162,8 +162,6 @@ extern const char kRtpVideoRotation6BitsHeaderExtensionForTesting[];
 extern const int kRtpTransportSequenceNumberHeaderExtensionDefaultId;
 extern const char kRtpTransportSequenceNumberHeaderExtension[];
 
-extern const int kNumDefaultUnsignalledVideoRecvStreams;
-
 extern const char kVp8CodecName[];
 extern const char kVp9CodecName[];
 extern const char kH264CodecName[];
@@ -181,4 +179,3 @@ extern const int kDefaultVideoMaxFramerate;
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_BASE_CONSTANTS_H_
-

@@ -663,7 +663,7 @@ void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.cpu_overuse_detection = rtc::Optional<bool>(true);
   options_.dscp = rtc::Optional<bool>(false);
   options_.suspend_below_min_bitrate = rtc::Optional<bool>(false);
-  options_.screencast_min_bitrate = rtc::Optional<int>(0);
+  options_.screencast_min_bitrate_kbps = rtc::Optional<int>(0);
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -1936,9 +1936,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     const VideoCodec& codec) const {
   webrtc::VideoEncoderConfig encoder_config;
   if (dimensions.is_screencast) {
-    RTC_CHECK(parameters_.options.screencast_min_bitrate);
+    RTC_CHECK(parameters_.options.screencast_min_bitrate_kbps);
     encoder_config.min_transmit_bitrate_bps =
-        *parameters_.options.screencast_min_bitrate * 1000;
+        *parameters_.options.screencast_min_bitrate_kbps * 1000;
     encoder_config.content_type =
         webrtc::VideoEncoderConfig::ContentType::kScreen;
   } else {

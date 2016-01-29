@@ -117,22 +117,10 @@ class MediaConstraintsInterface {
   // Temporary constraint to enable suspend below min bitrate feature.
   static const char kEnableVideoSuspendBelowMinBitrate[];
       // googSuspendBelowMinBitrate
-  static const char kNumUnsignalledRecvStreams[];
-      // googNumUnsignalledRecvStreams
   // Constraint to enable combined audio+video bandwidth estimation.
   static const char kCombinedAudioVideoBwe[];  // googCombinedAudioVideoBwe
   static const char kScreencastMinBitrate[];  // googScreencastMinBitrate
   static const char kCpuOveruseDetection[];  // googCpuOveruseDetection
-  static const char kCpuUnderuseThreshold[];  // googCpuUnderuseThreshold
-  static const char kCpuOveruseThreshold[];  // googCpuOveruseThreshold
-  // Low cpu adaptation threshold for relative standard deviation of encode
-  // time.
-  static const char kCpuUnderuseEncodeRsdThreshold[];
-  // High cpu adaptation threshold for relative standard deviation of encode
-  // time.
-  static const char kCpuOveruseEncodeRsdThreshold[];
-  static const char kCpuOveruseEncodeUsage[];  // googCpuOveruseEncodeUsage
-  static const char kHighStartBitrate[];  // googHighStartBitrate
   static const char kPayloadPadding[];  // googPayloadPadding
 
   // The prefix of internal-only constraints whose JS set values should be

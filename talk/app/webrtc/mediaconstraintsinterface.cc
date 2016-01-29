@@ -95,8 +95,6 @@ const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
 const char MediaConstraintsInterface::kEnableIPv6[] = "googIPv6";
 const char MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate[] =
     "googSuspendBelowMinBitrate";
-const char MediaConstraintsInterface::kNumUnsignalledRecvStreams[] =
-    "googNumUnsignalledRecvStreams";
 const char MediaConstraintsInterface::kCombinedAudioVideoBwe[] =
     "googCombinedAudioVideoBwe";
 const char MediaConstraintsInterface::kScreencastMinBitrate[] =
@@ -104,18 +102,6 @@ const char MediaConstraintsInterface::kScreencastMinBitrate[] =
 // TODO(ronghuawu): Remove once cpu overuse detection is stable.
 const char MediaConstraintsInterface::kCpuOveruseDetection[] =
     "googCpuOveruseDetection";
-const char MediaConstraintsInterface::kCpuUnderuseThreshold[] =
-    "googCpuUnderuseThreshold";
-const char MediaConstraintsInterface::kCpuOveruseThreshold[] =
-    "googCpuOveruseThreshold";
-const char MediaConstraintsInterface::kCpuUnderuseEncodeRsdThreshold[] =
-    "googCpuUnderuseEncodeRsdThreshold";
-const char MediaConstraintsInterface::kCpuOveruseEncodeRsdThreshold[] =
-    "googCpuOveruseEncodeRsdThreshold";
-const char MediaConstraintsInterface::kCpuOveruseEncodeUsage[] =
-    "googCpuOveruseEncodeUsage";
-const char MediaConstraintsInterface::kHighStartBitrate[] =
-    "googHighStartBitrate";
 const char MediaConstraintsInterface::kPayloadPadding[] = "googPayloadPadding";
 
 

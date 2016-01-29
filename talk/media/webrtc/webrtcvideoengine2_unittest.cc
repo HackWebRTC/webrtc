@@ -1552,7 +1552,7 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   cricket::VideoCodec codec = kVp8Codec360p;
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(codec);
-  parameters.options.screencast_min_bitrate =
+  parameters.options.screencast_min_bitrate_kbps =
       rtc::Optional<int>(kScreenshareMinBitrateKbps);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 

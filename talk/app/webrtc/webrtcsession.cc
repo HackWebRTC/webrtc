@@ -92,7 +92,6 @@ const char kDtlsSetupFailureRtp[] =
 const char kDtlsSetupFailureRtcp[] =
     "Couldn't set up DTLS-SRTP on RTCP channel.";
 const char kEnableBundleFailed[] = "Failed to enable BUNDLE.";
-const int kMaxUnsignalledRecvStreams = 20;
 
 IceCandidatePairType GetIceCandidatePairCounter(
     const cricket::Candidate& local,
@@ -670,40 +669,12 @@ bool WebRtcSession::Initialize(
 
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kScreencastMinBitrate,
-      &video_options_.screencast_min_bitrate);
+      &video_options_.screencast_min_bitrate_kbps);
 
   // Find constraints for cpu overuse detection.
   SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCpuUnderuseThreshold,
-      &video_options_.cpu_underuse_threshold);
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCpuOveruseThreshold,
-      &video_options_.cpu_overuse_threshold);
-  SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kCpuOveruseDetection,
       &video_options_.cpu_overuse_detection);
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCpuOveruseEncodeUsage,
-      &video_options_.cpu_overuse_encode_usage);
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCpuUnderuseEncodeRsdThreshold,
-      &video_options_.cpu_underuse_encode_rsd_threshold);
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCpuOveruseEncodeRsdThreshold,
-      &video_options_.cpu_overuse_encode_rsd_threshold);
-
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kNumUnsignalledRecvStreams,
-      &video_options_.unsignalled_recv_stream_limit);
-  if (video_options_.unsignalled_recv_stream_limit) {
-    video_options_.unsignalled_recv_stream_limit = rtc::Optional<int>(
-        std::max(0, std::min(kMaxUnsignalledRecvStreams,
-                             *video_options_.unsignalled_recv_stream_limit)));
-  }
-
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kHighStartBitrate,
-      &video_options_.video_start_bitrate);
 
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kCombinedAudioVideoBwe,

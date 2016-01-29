@@ -1314,62 +1314,6 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0u, channel_->GetDefaultSendChannelSsrc());
   }
 
-  // Tests that we can send and receive frames with early receive.
-  void TwoStreamsSendAndUnsignalledRecv(const cricket::VideoCodec& codec) {
-    cricket::VideoSendParameters parameters;
-    parameters.options.conference_mode = rtc::Optional<bool>(true);
-    parameters.options.unsignalled_recv_stream_limit = rtc::Optional<int>(1);
-    EXPECT_TRUE(channel_->SetSendParameters(parameters));
-    SetUpSecondStreamWithNoRecv();
-    // Test sending and receiving on first stream.
-    Send(codec);
-    EXPECT_EQ_WAIT(2, NumRtpPackets(), kTimeout);
-    EXPECT_EQ_WAIT(1, renderer_.num_rendered_frames(), kTimeout);
-    // The first send is not expected to yield frames, because the ssrc
-    // is not signalled yet. With unsignalled recv enabled, we will drop frames
-    // instead of packets.
-    EXPECT_EQ(0, renderer2_.num_rendered_frames());
-    // Give a chance for the decoder to process before adding the receiver.
-    rtc::Thread::Current()->ProcessMessages(100);
-    // Test sending and receiving on second stream.
-    EXPECT_TRUE(channel_->AddRecvStream(
-        cricket::StreamParams::CreateLegacy(kSsrc + 2)));
-    EXPECT_TRUE(channel_->SetRenderer(kSsrc + 2, &renderer2_));
-    SendFrame();
-    EXPECT_EQ_WAIT(2, renderer_.num_rendered_frames(), kTimeout);
-    EXPECT_EQ(4, NumRtpPackets());
-    // The second send is expected to yield frame as the ssrc is signalled now.
-    // Decode should succeed here, though we received the key frame earlier.
-    // Without early recv, we would have dropped it and decoding would have
-    // failed.
-    EXPECT_EQ_WAIT(1, renderer2_.num_rendered_frames(), kTimeout);
-  }
-
-  // Tests that we drop key frames when conference mode is enabled and we
-  // receive rtp packets on unsignalled streams. Removal of a unsignalled recv
-  // stream is successful.
-  void TwoStreamsAddAndRemoveUnsignalledRecv(
-      const cricket::VideoCodec& codec) {
-    cricket::VideoOptions vmo;
-    vmo.conference_mode = rtc::Optional<bool>(true);
-    vmo.unsignalled_recv_stream_limit = rtc::Optional<int>(1);
-    EXPECT_TRUE(channel_->SetOptions(vmo));
-    SetUpSecondStreamWithNoRecv();
-    // Sending and receiving on first stream.
-    Send(codec);
-    EXPECT_EQ_WAIT(2, NumRtpPackets(), kTimeout);
-    EXPECT_EQ_WAIT(1, renderer_.num_rendered_frames(), kTimeout);
-    // The first send is not expected to yield frames, because the ssrc
-    // is no signalled yet. With unsignalled recv enabled, we will drop frames
-    // instead of packets.
-    EXPECT_EQ(0, renderer2_.num_rendered_frames());
-    // Give a chance for the decoder to process before adding the receiver.
-    rtc::Thread::Current()->ProcessMessages(100);
-    // Ensure that we can remove the unsignalled recv stream that was created
-    // when the first video packet with unsignalled recv ssrc is received.
-    EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc + 2));
-  }
-
   const rtc::scoped_ptr<webrtc::Call> call_;
   VideoEngineOverride<E> engine_;
   rtc::scoped_ptr<cricket::FakeVideoCapturer> video_capturer_;

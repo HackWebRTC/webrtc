@@ -764,27 +764,6 @@ class WebRtcSessionTest
     VerifyCryptoParams(answer->description());
   }
 
-  void SetAndVerifyNumUnsignalledRecvStreams(
-      int value_set, int value_expected) {
-    constraints_.reset(new FakeConstraints());
-    constraints_->AddOptional(
-        webrtc::MediaConstraintsInterface::kNumUnsignalledRecvStreams,
-        value_set);
-    session_.reset();
-    Init();
-    SendAudioVideoStream1();
-    SessionDescriptionInterface* offer = CreateOffer();
-
-    SetLocalDescriptionWithoutError(offer);
-
-    video_channel_ = media_engine_->GetVideoChannel(0);
-
-    ASSERT_TRUE(video_channel_ != NULL);
-    const cricket::VideoOptions& video_options = video_channel_->options();
-    EXPECT_EQ(value_expected,
-              video_options.unsignalled_recv_stream_limit.value_or(-1));
-  }
-
   void CompareIceUfragAndPassword(const cricket::SessionDescription* desc1,
                                   const cricket::SessionDescription* desc2,
                                   bool expect_equal) {
@@ -4132,15 +4111,6 @@ TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
   ASSERT_TRUE(video_channel_ != NULL);
   const cricket::VideoOptions& video_options = video_channel_->options();
   EXPECT_EQ(rtc::Optional<bool>(true), video_options.suspend_below_min_bitrate);
-}
-
-TEST_F(WebRtcSessionTest, TestNumUnsignalledRecvStreamsConstraint) {
-  // Number of unsignalled receiving streams should be between 0 and
-  // kMaxUnsignalledRecvStreams.
-  SetAndVerifyNumUnsignalledRecvStreams(10, 10);
-  SetAndVerifyNumUnsignalledRecvStreams(kMaxUnsignalledRecvStreams + 1,
-                                        kMaxUnsignalledRecvStreams);
-  SetAndVerifyNumUnsignalledRecvStreams(-1, 0);
 }
 
 TEST_F(WebRtcSessionTest, TestCombinedAudioVideoBweConstraint) {

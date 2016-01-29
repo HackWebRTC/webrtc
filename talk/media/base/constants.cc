@@ -129,8 +129,6 @@ const int kRtpTransportSequenceNumberHeaderExtensionDefaultId = 5;
 const char kRtpTransportSequenceNumberHeaderExtension[] =
     "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions";
 
-const int kNumDefaultUnsignalledVideoRecvStreams = 0;
-
 const char kVp8CodecName[] = "VP8";
 const char kVp9CodecName[] = "VP9";
 const char kH264CodecName[] = "H264";
@@ -146,4 +144,3 @@ const int kDefaultVideoMaxWidth = 640;
 const int kDefaultVideoMaxHeight = 400;
 const int kDefaultVideoMaxFramerate = 30;
 }  // namespace cricket
-
