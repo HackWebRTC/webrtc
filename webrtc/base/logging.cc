@@ -13,7 +13,9 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #undef ERROR  // wingdi.h
 #endif
 

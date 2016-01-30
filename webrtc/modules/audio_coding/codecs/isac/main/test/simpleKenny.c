@@ -17,7 +17,9 @@
 
 #ifdef WIN32
 #include "windows.h"
+#ifndef CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC 1000
+#endif
 #endif
 
 #include <ctype.h>
@@ -218,7 +220,7 @@ int main(int argc, char* argv[]) {
   _makepath(bitrateFileName, outDrive, outPath, "bitrate", ".txt");
 
   bitrateFile = fopen(bitrateFileName, "a");
-  fprintf(bitrateFile, "%  %%s  \n", inname);
+  fprintf(bitrateFile, "%%  %s  \n", inname);
 #endif
 
   printf("\n");

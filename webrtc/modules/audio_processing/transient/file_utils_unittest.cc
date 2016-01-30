@@ -419,9 +419,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
   rtc::scoped_ptr<float[]> written_buffer(new float[kBufferLength]);
   rtc::scoped_ptr<float[]> read_buffer(new float[kBufferLength]);
 
-  written_buffer[0] = kPi;
-  written_buffer[1] = kE;
-  written_buffer[2] = kAvogadro;
+  written_buffer[0] = static_cast<float>(kPi);
+  written_buffer[1] = static_cast<float>(kE);
+  written_buffer[2] = static_cast<float>(kAvogadro);
 
   EXPECT_EQ(kBufferLength, WriteFloatBufferToFile(file.get(),
                                                   kBufferLength,

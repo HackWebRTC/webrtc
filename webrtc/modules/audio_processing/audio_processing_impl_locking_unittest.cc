@@ -198,8 +198,12 @@ struct TestConfig {
           AecType::BasicWebRtcAecSettingsWithDelayAgnosticAec,
           AecType::BasicWebRtcAecSettingsWithAecMobile};
       for (auto test_config : in) {
-        for (auto aec_type : aec_types) {
-          test_config.aec_type = aec_type;
+        // Due to a VisualStudio 2015 compiler issue, the internal loop
+        // variable here cannot override a previously defined name.
+        // In other words "type" cannot be named "aec_type" here.
+        // https://connect.microsoft.com/VisualStudio/feedback/details/2291755
+        for (auto type : aec_types) {
+          test_config.aec_type = type;
           out.push_back(test_config);
         }
       }
