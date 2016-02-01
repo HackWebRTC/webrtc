@@ -123,7 +123,7 @@ class ChannelManager {
 
   Atomic32 last_channel_id_;
 
-  mutable rtc::CriticalSection lock_;
+  rtc::CriticalSection lock_;
   std::vector<ChannelOwner> channels_;
 
   const Config& config_;

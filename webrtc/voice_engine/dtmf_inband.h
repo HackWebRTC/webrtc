@@ -67,7 +67,7 @@ private:
                                    int16_t length);
 
 private:
-    mutable rtc::CriticalSection _critSect;
+    rtc::CriticalSection _critSect;
     int32_t _id;
     uint16_t _outputFrequencyHz;  // {8000, 16000, 32000}
     int16_t _oldOutputLow[2];     // Data needed for oscillator model

@@ -142,7 +142,7 @@ class LoopBackTransport : public webrtc::Transport {
     return true;
   }
 
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
   rtc::PlatformThread thread_;
   std::deque<Packet> packet_queue_ GUARDED_BY(crit_);

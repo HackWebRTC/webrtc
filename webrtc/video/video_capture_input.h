@@ -63,7 +63,7 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   static bool EncoderThreadFunction(void* obj);
   bool EncoderProcess();
 
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   ProcessThread* const module_process_thread_;
 
   VideoCaptureCallback* const frame_callback_;

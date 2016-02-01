@@ -152,7 +152,7 @@ class ChannelState {
   }
 
  private:
-  mutable rtc::CriticalSection lock_;
+  rtc::CriticalSection lock_;
   State state_;
 };
 
@@ -483,9 +483,9 @@ class Channel
   int32_t GetPlayoutFrequency();
   int64_t GetRTT(bool allow_associate_channel) const;
 
-  mutable rtc::CriticalSection _fileCritSect;
-  mutable rtc::CriticalSection _callbackCritSect;
-  mutable rtc::CriticalSection volume_settings_critsect_;
+  rtc::CriticalSection _fileCritSect;
+  rtc::CriticalSection _callbackCritSect;
+  rtc::CriticalSection volume_settings_critsect_;
   uint32_t _instanceId;
   int32_t _channelId;
 
@@ -533,7 +533,7 @@ class Channel
   uint16_t send_sequence_number_;
   uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
 
-  mutable rtc::CriticalSection ts_stats_lock_;
+  rtc::CriticalSection ts_stats_lock_;
 
   rtc::scoped_ptr<rtc::TimestampWrapAroundHandler> rtp_ts_wraparound_handler_;
   // The rtp timestamp of the first played out audio frame.
@@ -574,7 +574,7 @@ class Channel
   // VoENetwork
   AudioFrame::SpeechType _outputSpeechType;
   // VoEVideoSync
-  mutable rtc::CriticalSection video_sync_lock_;
+  rtc::CriticalSection video_sync_lock_;
   uint32_t _average_jitter_buffer_delay_us GUARDED_BY(video_sync_lock_);
   uint32_t _previousTimestamp;
   uint16_t _recPacketDelayMs GUARDED_BY(video_sync_lock_);
@@ -587,7 +587,7 @@ class Channel
   rtc::scoped_ptr<VoERtcpObserver> rtcp_observer_;
   rtc::scoped_ptr<NetworkPredictor> network_predictor_;
   // An associated send channel.
-  mutable rtc::CriticalSection assoc_send_channel_lock_;
+  rtc::CriticalSection assoc_send_channel_lock_;
   ChannelOwner associate_send_channel_ GUARDED_BY(assoc_send_channel_lock_);
 
   bool pacing_enabled_;

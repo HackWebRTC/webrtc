@@ -69,7 +69,7 @@ class PayloadRouter {
  private:
   // TODO(mflodman): When the new video API has launched, remove crit_ and
   // assume rtp_modules_ will never change during a call.
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
 
   // Active sending RTP modules, in layer order.
   std::vector<RtpRtcp*> rtp_modules_ GUARDED_BY(crit_);

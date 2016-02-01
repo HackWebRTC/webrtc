@@ -158,7 +158,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   const rtc::scoped_ptr<VideoCodingModule> vcm_;
   rtc::scoped_refptr<PayloadRouter> send_payload_router_;
 
-  mutable rtc::CriticalSection data_cs_;
+  rtc::CriticalSection data_cs_;
   rtc::scoped_ptr<BitrateObserver> bitrate_observer_;
 
   SendStatisticsProxy* const stats_proxy_;

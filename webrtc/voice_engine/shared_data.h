@@ -63,7 +63,7 @@ public:
 
 protected:
     const uint32_t _instanceId;
-    mutable rtc::CriticalSection _apiCritPtr;
+    rtc::CriticalSection _apiCritPtr;
     ChannelManager _channelManager;
     Statistics _engineStatistics;
     AudioDeviceModule* _audioDevicePtr;

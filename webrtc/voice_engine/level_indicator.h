@@ -40,7 +40,7 @@ public:
 private:
     enum { kUpdateFrequency = 10};
 
-    mutable rtc::CriticalSection _critSect;
+    rtc::CriticalSection _critSect;
 
     int16_t _absMax;
     int16_t _count;

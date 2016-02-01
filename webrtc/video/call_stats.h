@@ -60,7 +60,7 @@ class CallStats : public Module {
  private:
   Clock* const clock_;
   // Protecting all members.
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   // Observer receiving statistics updates.
   rtc::scoped_ptr<RtcpRttStats> rtcp_rtt_stats_;
   // The last time 'Process' resulted in statistic update.

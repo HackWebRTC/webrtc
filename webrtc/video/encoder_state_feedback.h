@@ -55,7 +55,7 @@ class EncoderStateFeedback {
  private:
   typedef std::map<uint32_t,  ViEEncoder*> SsrcEncoderMap;
 
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
 
   // Instance registered at the class requesting new key frames.
   rtc::scoped_ptr<EncoderStateFeedbackObserver> observer_;

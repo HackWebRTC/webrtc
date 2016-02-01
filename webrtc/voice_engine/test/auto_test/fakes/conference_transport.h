@@ -128,8 +128,8 @@ class ConferenceTransport: public webrtc::Transport {
   void SendPacket(const Packet& packet);
   bool DispatchPackets();
 
-  mutable rtc::CriticalSection pq_crit_;
-  mutable rtc::CriticalSection stream_crit_;
+  rtc::CriticalSection pq_crit_;
+  rtc::CriticalSection stream_crit_;
   const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
   rtc::PlatformThread thread_;
 

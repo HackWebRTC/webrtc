@@ -332,7 +332,7 @@ class ViEChannel : public VCMFrameTypeCallback,
     // Note: this should be implemented with a RW-lock to allow simultaneous
     // calls into the callback. However that doesn't seem to be needed for the
     // current type of callbacks covered by this class.
-    mutable rtc::CriticalSection critsect_;
+    rtc::CriticalSection critsect_;
     T* callback_ GUARDED_BY(critsect_);
 
    private:
@@ -403,7 +403,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   ProcessThread* const module_process_thread_;
 
   // Used for all registered callbacks except rendering.
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
 
   // Owned modules/classes.
   rtc::scoped_refptr<PayloadRouter> send_payload_router_;

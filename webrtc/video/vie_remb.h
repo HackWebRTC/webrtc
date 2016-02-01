@@ -58,7 +58,7 @@ class VieRemb : public RemoteBitrateObserver {
   typedef std::list<RtpRtcp*> RtpModules;
 
   Clock* const clock_;
-  mutable rtc::CriticalSection list_crit_;
+  rtc::CriticalSection list_crit_;
 
   // The last time a REMB was sent.
   int64_t last_remb_time_;

@@ -39,7 +39,7 @@ class Statistics
     int32_t LastError() const;
 
  private:
-    mutable rtc::CriticalSection lock_;
+    rtc::CriticalSection lock_;
     const uint32_t _instanceId;
     mutable int32_t _lastError;
     bool _isInitialized;
