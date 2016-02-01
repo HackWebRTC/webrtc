@@ -22,6 +22,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -120,7 +121,8 @@ class VideoAnalyzer : public PacketReceiver,
     parser.Parse(&header);
     {
       rtc::CritScope lock(&crit_);
-      recv_times_[header.timestamp - rtp_timestamp_delta_] =
+      int64_t timestamp = wrap_handler_.Unwrap(header.timestamp);
+      recv_times_[timestamp - rtp_timestamp_delta_] =
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
     }
 
@@ -160,11 +162,13 @@ class VideoAnalyzer : public PacketReceiver,
     bool result = transport_->SendRtp(packet, length, options);
     {
       rtc::CritScope lock(&crit_);
+      int64_t timestamp = wrap_handler_.Unwrap(header.timestamp);
+
       if (rtp_timestamp_delta_ == 0) {
-        rtp_timestamp_delta_ = header.timestamp - first_send_frame_.timestamp();
+        rtp_timestamp_delta_ = timestamp - first_send_frame_.timestamp();
         first_send_frame_.Reset();
       }
-      uint32_t timestamp = header.timestamp - rtp_timestamp_delta_;
+      timestamp -= rtp_timestamp_delta_;
       send_times_[timestamp] = current_time;
       if (!transport_->DiscardedLastPacket() &&
           header.ssrc == ssrc_to_analyze_) {
@@ -330,15 +334,16 @@ class VideoAnalyzer : public PacketReceiver,
                           bool dropped,
                           int64_t render_time_ms)
       EXCLUSIVE_LOCKS_REQUIRED(crit_) {
-    int64_t send_time_ms = send_times_[reference.timestamp()];
-    send_times_.erase(reference.timestamp());
-    int64_t recv_time_ms = recv_times_[reference.timestamp()];
-    recv_times_.erase(reference.timestamp());
+    int64_t reference_timestamp = wrap_handler_.Unwrap(reference.timestamp());
+    int64_t send_time_ms = send_times_[reference_timestamp];
+    send_times_.erase(reference_timestamp);
+    int64_t recv_time_ms = recv_times_[reference_timestamp];
+    recv_times_.erase(reference_timestamp);
 
     // TODO(ivica): Make this work for > 2 streams.
-    auto it = encoded_frame_sizes_.find(reference.timestamp());
+    auto it = encoded_frame_sizes_.find(reference_timestamp);
     if (it == encoded_frame_sizes_.end())
-      it = encoded_frame_sizes_.find(reference.timestamp() - 1);
+      it = encoded_frame_sizes_.find(reference_timestamp - 1);
     size_t encoded_size = it == encoded_frame_sizes_.end() ? 0 : it->second;
     if (it != encoded_frame_sizes_.end())
       encoded_frame_sizes_.erase(it);
@@ -585,9 +590,10 @@ class VideoAnalyzer : public PacketReceiver,
   rtc::CriticalSection crit_;
   std::deque<VideoFrame> frames_ GUARDED_BY(crit_);
   VideoFrame last_rendered_frame_ GUARDED_BY(crit_);
-  std::map<uint32_t, int64_t> send_times_ GUARDED_BY(crit_);
-  std::map<uint32_t, int64_t> recv_times_ GUARDED_BY(crit_);
-  std::map<uint32_t, size_t> encoded_frame_sizes_ GUARDED_BY(crit_);
+  rtc::TimestampWrapAroundHandler wrap_handler_ GUARDED_BY(crit_);
+  std::map<int64_t, int64_t> send_times_ GUARDED_BY(crit_);
+  std::map<int64_t, int64_t> recv_times_ GUARDED_BY(crit_);
+  std::map<int64_t, size_t> encoded_frame_sizes_ GUARDED_BY(crit_);
   VideoFrame first_send_frame_ GUARDED_BY(crit_);
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
