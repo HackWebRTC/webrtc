@@ -315,7 +315,7 @@ void MetricRecorder::PlotDelayHistogram(const std::string& title,
   int64_t percentile_5_ms = NthDelayPercentile(5);
   int64_t percentile_95_ms = NthDelayPercentile(95);
 
-  BWE_TEST_LOGGING_LABEL(5, title, "average_delay_(ms)", num_flows)
+  BWE_TEST_LOGGING_LABEL(5, title, "average_delay_(ms)", num_flows);
   BWE_TEST_LOGGING_ERRORBAR(5, bwe_name, average_delay_ms, percentile_5_ms,
                             percentile_95_ms, "5th and 95th percentiles",
                             flow_id_);
@@ -337,7 +337,7 @@ void MetricRecorder::PlotLossHistogram(const std::string& title,
                                        const std::string& bwe_name,
                                        size_t num_flows,
                                        float global_loss_ratio) const {
-  BWE_TEST_LOGGING_LABEL(6, title, "packet_loss_ratio_(%)", num_flows)
+  BWE_TEST_LOGGING_LABEL(6, title, "packet_loss_ratio_(%)", num_flows);
   BWE_TEST_LOGGING_BAR(6, bwe_name, 100.0f * global_loss_ratio, flow_id_);
 
   BWE_TEST_LOGGING_LOG1("RESULTS >>> " + bwe_name + " Loss Ratio : ", "%f %%",
@@ -347,7 +347,7 @@ void MetricRecorder::PlotLossHistogram(const std::string& title,
 void MetricRecorder::PlotObjectiveHistogram(const std::string& title,
                                             const std::string& bwe_name,
                                             size_t num_flows) const {
-  BWE_TEST_LOGGING_LABEL(7, title, "objective_function", num_flows)
+  BWE_TEST_LOGGING_LABEL(7, title, "objective_function", num_flows);
   BWE_TEST_LOGGING_BAR(7, bwe_name, ObjectiveFunction(), flow_id_);
 }
 
