@@ -478,9 +478,6 @@ class VideoChannel : public BaseChannel {
   sigslot::signal2<VideoChannel*, const VideoMediaInfo&> SignalMediaMonitor;
   sigslot::signal2<uint32_t, rtc::WindowEvent> SignalScreencastWindowEvent;
 
-  bool SendIntraFrame();
-  bool RequestIntraFrame();
-
   bool SetVideoSend(uint32_t ssrc, bool enable, const VideoOptions* options);
 
  private:

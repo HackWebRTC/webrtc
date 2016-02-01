@@ -1006,11 +1006,6 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VideoMediaInfo* info) = 0;
-  // Send an intra frame to the receivers.
-  virtual bool SendIntraFrame() = 0;
-  // Reuqest each of the remote senders to send an intra frame.
-  virtual bool RequestIntraFrame() = 0;
-  virtual void UpdateAspectRatio(int ratio_w, int ratio_h) = 0;
 
  protected:
   VideoRenderer *renderer_;

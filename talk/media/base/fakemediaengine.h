@@ -441,10 +441,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
  public:
   explicit FakeVideoMediaChannel(FakeVideoEngine* engine,
                                  const VideoOptions& options)
-      : engine_(engine),
-        sent_intra_frame_(false),
-        requested_intra_frame_(false),
-        max_bps_(-1) {
+      : engine_(engine), max_bps_(-1) {
     SetOptions(options);
   }
 
@@ -545,19 +542,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   }
 
   virtual bool GetStats(VideoMediaInfo* info) { return false; }
-  virtual bool SendIntraFrame() {
-    sent_intra_frame_ = true;
-    return true;
-  }
-  virtual bool RequestIntraFrame() {
-    requested_intra_frame_ = true;
-    return true;
-  }
-  virtual void UpdateAspectRatio(int ratio_w, int ratio_h) {}
-  void set_sent_intra_frame(bool v) { sent_intra_frame_ = v; }
-  bool sent_intra_frame() const { return sent_intra_frame_; }
-  void set_requested_intra_frame(bool v) { requested_intra_frame_ = v; }
-  bool requested_intra_frame() const { return requested_intra_frame_; }
 
  private:
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
@@ -606,8 +590,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   std::map<uint32_t, VideoRenderer*> renderers_;
   std::map<uint32_t, VideoFormat> send_formats_;
   std::map<uint32_t, VideoCapturer*> capturers_;
-  bool sent_intra_frame_;
-  bool requested_intra_frame_;
   VideoOptions options_;
   int max_bps_;
 };

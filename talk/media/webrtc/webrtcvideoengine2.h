@@ -145,8 +145,7 @@ class WebRtcVideoEngine2 {
   rtc::scoped_ptr<WebRtcVideoEncoderFactory> simulcast_encoder_factory_;
 };
 
-class WebRtcVideoChannel2 : public rtc::MessageHandler,
-                            public VideoMediaChannel,
+class WebRtcVideoChannel2 : public VideoMediaChannel,
                             public webrtc::Transport,
                             public webrtc::LoadObserver {
  public:
@@ -174,8 +173,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   bool SetRenderer(uint32_t ssrc, VideoRenderer* renderer) override;
   bool GetStats(VideoMediaInfo* info) override;
   bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) override;
-  bool SendIntraFrame() override;
-  bool RequestIntraFrame() override;
 
   void OnPacketReceived(rtc::Buffer* packet,
                         const rtc::PacketTime& packet_time) override;
@@ -183,9 +180,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override;
   void SetInterface(NetworkInterface* iface) override;
-  void UpdateAspectRatio(int ratio_w, int ratio_h) override;
-
-  void OnMessage(rtc::Message* msg) override;
 
   void OnLoadUpdate(Load load) override;
 

@@ -1707,18 +1707,6 @@ bool VideoChannel::IsScreencasting() {
   return InvokeOnWorker(Bind(&VideoChannel::IsScreencasting_w, this));
 }
 
-bool VideoChannel::SendIntraFrame() {
-  worker_thread()->Invoke<void>(Bind(
-      &VideoMediaChannel::SendIntraFrame, media_channel()));
-  return true;
-}
-
-bool VideoChannel::RequestIntraFrame() {
-  worker_thread()->Invoke<void>(Bind(
-      &VideoMediaChannel::RequestIntraFrame, media_channel()));
-  return true;
-}
-
 bool VideoChannel::SetVideoSend(uint32_t ssrc,
                                 bool mute,
                                 const VideoOptions* options) {

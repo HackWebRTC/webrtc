@@ -1347,18 +1347,6 @@ bool WebRtcVideoChannel2::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
   return true;
 }
 
-bool WebRtcVideoChannel2::SendIntraFrame() {
-  // TODO(pbos): Implement.
-  LOG(LS_VERBOSE) << "SendIntraFrame().";
-  return true;
-}
-
-bool WebRtcVideoChannel2::RequestIntraFrame() {
-  // TODO(pbos): Implement.
-  LOG(LS_VERBOSE) << "SendIntraFrame().";
-  return true;
-}
-
 void WebRtcVideoChannel2::OnPacketReceived(
     rtc::Buffer* packet,
     const rtc::PacketTime& packet_time) {
@@ -1472,14 +1460,6 @@ void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
   MediaChannel::SetOption(NetworkInterface::ST_RTP,
                           rtc::Socket::OPT_SNDBUF,
                           kVideoRtpBufferSize);
-}
-
-void WebRtcVideoChannel2::UpdateAspectRatio(int ratio_w, int ratio_h) {
-  // TODO(pbos): Implement.
-}
-
-void WebRtcVideoChannel2::OnMessage(rtc::Message* msg) {
-  // Ignored.
 }
 
 void WebRtcVideoChannel2::OnLoadUpdate(Load load) {

@@ -588,7 +588,6 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrc)));
     EXPECT_TRUE(channel_->SetRenderer(kSsrc, &renderer_));
-    channel_->UpdateAspectRatio(640, 400);
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(SendFrame());
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
@@ -758,47 +757,6 @@ class VideoMediaChannelTest : public testing::Test,
     p.reset(GetRtpPacket(static_cast<int>(last_packet)));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(789u, ssrc);
-  }
-
-  // Test that no frames are rendered after the receive stream have been
-  // removed.
-  void AddRemoveRecvStreamAndRender() {
-    cricket::FakeVideoRenderer renderer1;
-    EXPECT_TRUE(SetDefaultCodec());
-    EXPECT_TRUE(SetSend(true));
-    EXPECT_TRUE(channel_->AddRecvStream(
-        cricket::StreamParams::CreateLegacy(kSsrc)));
-    EXPECT_TRUE(channel_->SetRenderer(kSsrc, &renderer1));
-
-    EXPECT_TRUE(SendFrame());
-    EXPECT_FRAME_ON_RENDERER_WAIT(
-        renderer1, 1, DefaultCodec().width, DefaultCodec().height, kTimeout);
-    EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc));
-    // Send three more frames. This is to avoid that the test might be flaky
-    // due to frame dropping.
-    for (size_t i = 0; i < 3; ++i)
-      EXPECT_TRUE(WaitAndSendFrame(100));
-
-    // Test that no more frames have been rendered.
-    EXPECT_EQ(1, renderer1.num_rendered_frames());
-
-    // Re-add the stream again and make sure it renders.
-    EXPECT_TRUE(channel_->AddRecvStream(
-        cricket::StreamParams::CreateLegacy(kSsrc)));
-    // Force the next frame to be a key frame to make the receiving
-    // decoder happy.
-    EXPECT_TRUE(channel_->SendIntraFrame());
-
-    EXPECT_TRUE(channel_->SetRenderer(kSsrc, &renderer1));
-    EXPECT_TRUE(SendFrame());
-    // Because the default channel is used, RemoveRecvStream above is not going
-    // to delete the channel. As a result the engine will continue to receive
-    // and decode the 3 frames sent above. So it is possible we will receive
-    // some (e.g. 1) of these 3 frames after the renderer is set again.
-    EXPECT_GT_FRAME_ON_RENDERER_WAIT(
-        renderer1, 2, DefaultCodec().width, DefaultCodec().height, kTimeout);
-    // Detach |renderer1| before exit as there might be frames come late.
-    EXPECT_TRUE(channel_->SetRenderer(kSsrc, NULL));
   }
 
   // Tests the behavior of incoming streams in a conference scenario.
