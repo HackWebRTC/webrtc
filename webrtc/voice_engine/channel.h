@@ -339,10 +339,12 @@ class Channel
   void EnableSendTransportSequenceNumber(int id);
   void EnableReceiveTransportSequenceNumber(int id);
 
-  void SetCongestionControlObjects(
-      RtpPacketSender* rtp_packet_sender,
-      TransportFeedbackObserver* transport_feedback_observer,
-      PacketRouter* packet_router);
+    void RegisterSenderCongestionControlObjects(
+        RtpPacketSender* rtp_packet_sender,
+        TransportFeedbackObserver* transport_feedback_observer,
+        PacketRouter* packet_router);
+    void RegisterReceiverCongestionControlObjects(PacketRouter* packet_router);
+    void ResetCongestionControlObjects();
 
   void SetRTCPStatus(bool enable);
   int GetRTCPStatus(bool& enabled);

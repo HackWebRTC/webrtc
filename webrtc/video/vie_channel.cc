@@ -150,7 +150,7 @@ int32_t ViEChannel::Init() {
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
       rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
   }
-  packet_router_->AddRtpModule(rtp_rtcp_modules_[0]);
+  packet_router_->AddRtpModule(rtp_rtcp_modules_[0], sender_);
   if (sender_) {
     std::list<RtpRtcp*> send_rtp_modules(1, rtp_rtcp_modules_[0]);
     send_payload_router_->SetSendingRtpModules(send_rtp_modules);
@@ -179,7 +179,7 @@ ViEChannel::~ViEChannel() {
   module_process_thread_->DeRegisterModule(&vie_sync_);
   send_payload_router_->SetSendingRtpModules(std::list<RtpRtcp*>());
   for (size_t i = 0; i < num_active_rtp_rtcp_modules_; ++i)
-    packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i]);
+    packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i], sender_);
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     module_process_thread_->DeRegisterModule(rtp_rtcp);
     delete rtp_rtcp;
@@ -400,12 +400,12 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   // Deregister previously registered modules.
   for (size_t i = num_active_modules; i < num_prev_active_modules; ++i) {
     module_process_thread_->DeRegisterModule(rtp_rtcp_modules_[i]);
-    packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i]);
+    packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i], sender_);
   }
   // Register new active modules.
   for (size_t i = num_prev_active_modules; i < num_active_modules; ++i) {
     module_process_thread_->RegisterModule(rtp_rtcp_modules_[i]);
-    packet_router_->AddRtpModule(rtp_rtcp_modules_[i]);
+    packet_router_->AddRtpModule(rtp_rtcp_modules_[i], sender_);
   }
   return 0;
 }

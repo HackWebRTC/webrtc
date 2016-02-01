@@ -171,9 +171,9 @@ CongestionController::CongestionController(ProcessThread* process_thread,
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
 
   pacer_thread_->RegisterModule(pacer_.get());
+  pacer_thread_->RegisterModule(remote_estimator_proxy_.get());
   pacer_thread_->Start();
 
-  process_thread->RegisterModule(remote_estimator_proxy_.get());
   process_thread->RegisterModule(remote_bitrate_estimator_.get());
   process_thread->RegisterModule(bitrate_controller_.get());
 }
@@ -181,9 +181,9 @@ CongestionController::CongestionController(ProcessThread* process_thread,
 CongestionController::~CongestionController() {
   pacer_thread_->Stop();
   pacer_thread_->DeRegisterModule(pacer_.get());
+  pacer_thread_->DeRegisterModule(remote_estimator_proxy_.get());
   process_thread_->DeRegisterModule(bitrate_controller_.get());
   process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
-  process_thread_->DeRegisterModule(remote_estimator_proxy_.get());
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
   if (transport_feedback_adapter_.get())
     call_stats_->DeregisterStatsObserver(transport_feedback_adapter_.get());

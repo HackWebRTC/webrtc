@@ -16,6 +16,7 @@
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/base/scoped_ptr.h"
 
 using ::testing::_;
@@ -35,8 +36,8 @@ class PacketRouterTest : public ::testing::Test {
 TEST_F(PacketRouterTest, TimeToSendPacket) {
   MockRtpRtcp rtp_1;
   MockRtpRtcp rtp_2;
-  packet_router_->AddRtpModule(&rtp_1);
-  packet_router_->AddRtpModule(&rtp_2);
+  packet_router_->AddRtpModule(&rtp_1, true);
+  packet_router_->AddRtpModule(&rtp_2, true);
 
   const uint16_t kSsrc1 = 1234;
   uint16_t sequence_number = 17;
@@ -88,7 +89,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
   EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc1 + kSsrc2, sequence_number,
                                                timestamp, retransmission));
 
-  packet_router_->RemoveRtpModule(&rtp_1);
+  packet_router_->RemoveRtpModule(&rtp_1, true);
 
   // rtp_1 has been removed, try sending a packet on that ssrc and make sure
   // it is dropped as expected by not expecting any calls to rtp_1.
@@ -98,7 +99,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
   EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc1, sequence_number,
                                                timestamp, retransmission));
 
-  packet_router_->RemoveRtpModule(&rtp_2);
+  packet_router_->RemoveRtpModule(&rtp_2, true);
 }
 
 TEST_F(PacketRouterTest, TimeToSendPadding) {
@@ -109,8 +110,8 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   EXPECT_CALL(rtp_1, SSRC()).WillRepeatedly(Return(kSsrc1));
   MockRtpRtcp rtp_2;
   EXPECT_CALL(rtp_2, SSRC()).WillRepeatedly(Return(kSsrc2));
-  packet_router_->AddRtpModule(&rtp_1);
-  packet_router_->AddRtpModule(&rtp_2);
+  packet_router_->AddRtpModule(&rtp_1, true);
+  packet_router_->AddRtpModule(&rtp_2, true);
 
   // Default configuration, sending padding on all modules sending media,
   // ordered by SSRC.
@@ -146,7 +147,7 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   EXPECT_CALL(rtp_2, TimeToSendPadding(_)).Times(0);
   EXPECT_EQ(0u, packet_router_->TimeToSendPadding(requested_padding_bytes));
 
-  packet_router_->RemoveRtpModule(&rtp_1);
+  packet_router_->RemoveRtpModule(&rtp_1, true);
 
   // rtp_1 has been removed, try sending padding and make sure rtp_1 isn't asked
   // to send by not expecting any calls. Instead verify rtp_2 is called.
@@ -154,7 +155,7 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes)).Times(1);
   EXPECT_EQ(0u, packet_router_->TimeToSendPadding(requested_padding_bytes));
 
-  packet_router_->RemoveRtpModule(&rtp_2);
+  packet_router_->RemoveRtpModule(&rtp_2, true);
 }
 
 TEST_F(PacketRouterTest, AllocateSequenceNumbers) {
@@ -168,5 +169,20 @@ TEST_F(PacketRouterTest, AllocateSequenceNumbers) {
     uint32_t expected_unwrapped_seq = static_cast<uint32_t>(kStartSeq) + i;
     EXPECT_EQ(static_cast<uint16_t>(expected_unwrapped_seq & 0xFFFF), seq);
   }
+}
+
+TEST_F(PacketRouterTest, SendFeedback) {
+  MockRtpRtcp rtp_1;
+  MockRtpRtcp rtp_2;
+  packet_router_->AddRtpModule(&rtp_1, false);
+  packet_router_->AddRtpModule(&rtp_2, true);
+
+  rtcp::TransportFeedback feedback;
+  EXPECT_CALL(rtp_1, SendFeedbackPacket(_)).Times(1);
+  packet_router_->SendFeedback(&feedback);
+  packet_router_->RemoveRtpModule(&rtp_1, false);
+  EXPECT_CALL(rtp_2, SendFeedbackPacket(_)).Times(1);
+  packet_router_->SendFeedback(&feedback);
+  packet_router_->RemoveRtpModule(&rtp_2, true);
 }
 }  // namespace webrtc

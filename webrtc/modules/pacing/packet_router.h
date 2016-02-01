@@ -17,6 +17,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -36,8 +37,8 @@ class PacketRouter : public PacedSender::Callback,
   PacketRouter();
   virtual ~PacketRouter();
 
-  void AddRtpModule(RtpRtcp* rtp_module);
-  void RemoveRtpModule(RtpRtcp* rtp_module);
+  void AddRtpModule(RtpRtcp* rtp_module, bool sender);
+  void RemoveRtpModule(RtpRtcp* rtp_module, bool sender);
 
   // Implements PacedSender::Callback.
   bool TimeToSendPacket(uint32_t ssrc,
@@ -54,9 +55,10 @@ class PacketRouter : public PacedSender::Callback,
   virtual bool SendFeedback(rtcp::TransportFeedback* packet);
 
  private:
-  rtc::CriticalSection modules_lock_;
-  // Map from ssrc to sending rtp module.
-  std::list<RtpRtcp*> rtp_modules_ GUARDED_BY(modules_lock_);
+  rtc::ThreadChecker pacer_thread_checker_;
+  rtc::CriticalSection modules_crit_;
+  std::list<RtpRtcp*> send_rtp_modules_ GUARDED_BY(modules_crit_);
+  std::list<RtpRtcp*> recv_rtp_modules_ GUARDED_BY(modules_crit_);
 
   volatile int transport_seq_;
 

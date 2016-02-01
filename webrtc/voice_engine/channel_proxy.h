@@ -51,10 +51,13 @@ class ChannelProxy {
   virtual void SetReceiveAudioLevelIndicationStatus(bool enable, int id);
   virtual void EnableSendTransportSequenceNumber(int id);
   virtual void EnableReceiveTransportSequenceNumber(int id);
-  virtual void SetCongestionControlObjects(
+  virtual void RegisterSenderCongestionControlObjects(
       RtpPacketSender* rtp_packet_sender,
       TransportFeedbackObserver* transport_feedback_observer,
       PacketRouter* packet_router);
+  virtual void RegisterReceiverCongestionControlObjects(
+      PacketRouter* packet_router);
+  virtual void ResetCongestionControlObjects();
 
   virtual CallStatistics GetRTCPStatistics() const;
   virtual std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const;

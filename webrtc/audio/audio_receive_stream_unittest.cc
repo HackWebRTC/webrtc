@@ -94,13 +94,12 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_, EnableReceiveTransportSequenceNumber(
                                            kTransportSequenceNumberId))
               .Times(1);
-          EXPECT_CALL(*channel_proxy_, SetCongestionControlObjects(
-                                           nullptr, nullptr, &packet_router_))
+          EXPECT_CALL(*channel_proxy_,
+                      RegisterReceiverCongestionControlObjects(&packet_router_))
               .Times(1);
           EXPECT_CALL(congestion_controller_, packet_router())
               .WillOnce(Return(&packet_router_));
-          EXPECT_CALL(*channel_proxy_,
-                      SetCongestionControlObjects(nullptr, nullptr, nullptr))
+          EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects())
               .Times(1);
           return channel_proxy_;
         }));

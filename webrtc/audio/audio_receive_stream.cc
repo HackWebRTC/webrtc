@@ -117,8 +117,8 @@ AudioReceiveStream::AudioReceiveStream(
     }
   }
   // Configure bandwidth estimation.
-  channel_proxy_->SetCongestionControlObjects(
-      nullptr, nullptr, congestion_controller->packet_router());
+  channel_proxy_->RegisterReceiverCongestionControlObjects(
+      congestion_controller->packet_router());
   if (config.combined_audio_video_bwe) {
     if (UseSendSideBwe(config)) {
       remote_bitrate_estimator_ =
@@ -134,7 +134,7 @@ AudioReceiveStream::AudioReceiveStream(
 AudioReceiveStream::~AudioReceiveStream() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
-  channel_proxy_->SetCongestionControlObjects(nullptr, nullptr, nullptr);
+  channel_proxy_->ResetCongestionControlObjects();
   if (remote_bitrate_estimator_) {
     remote_bitrate_estimator_->RemoveStream(config_.rtp.remote_ssrc);
   }

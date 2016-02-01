@@ -79,13 +79,24 @@ void ChannelProxy::EnableReceiveTransportSequenceNumber(int id) {
   channel()->EnableReceiveTransportSequenceNumber(id);
 }
 
-void ChannelProxy::SetCongestionControlObjects(
+void ChannelProxy::RegisterSenderCongestionControlObjects(
     RtpPacketSender* rtp_packet_sender,
     TransportFeedbackObserver* transport_feedback_observer,
     PacketRouter* packet_router) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  channel()->SetCongestionControlObjects(
+  channel()->RegisterSenderCongestionControlObjects(
       rtp_packet_sender, transport_feedback_observer, packet_router);
+}
+
+void ChannelProxy::RegisterReceiverCongestionControlObjects(
+    PacketRouter* packet_router) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->RegisterReceiverCongestionControlObjects(packet_router);
+}
+
+void ChannelProxy::ResetCongestionControlObjects() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->ResetCongestionControlObjects();
 }
 
 CallStatistics ChannelProxy::GetRTCPStatistics() const {

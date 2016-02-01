@@ -124,6 +124,12 @@ class RtpPacketSenderProxy : public RtpPacketSender {
     rtp_packet_sender_ = rtp_packet_sender;
   }
 
+  bool HasPacketSender() const {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    rtc::CritScope lock(&crit_);
+    return rtp_packet_sender_ != nullptr;
+  }
+
   // Implements RtpPacketSender.
   void InsertPacket(Priority priority,
                     uint32_t ssrc,
@@ -813,12 +819,9 @@ Channel::Channel(int32_t channelId,
       network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
       associate_send_channel_(ChannelOwner(nullptr)),
       pacing_enabled_(config.Get<VoicePacing>().enabled),
-      feedback_observer_proxy_(pacing_enabled_ ? new TransportFeedbackProxy()
-                                               : nullptr),
-      seq_num_allocator_proxy_(
-          pacing_enabled_ ? new TransportSequenceNumberProxy() : nullptr),
-      rtp_packet_sender_proxy_(pacing_enabled_ ? new RtpPacketSenderProxy()
-                                               : nullptr) {
+      feedback_observer_proxy_(new TransportFeedbackProxy()),
+      seq_num_allocator_proxy_(new TransportSequenceNumberProxy()),
+      rtp_packet_sender_proxy_(new RtpPacketSenderProxy()) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
   AudioCodingModule::Config acm_config;
@@ -843,10 +846,12 @@ Channel::Channel(int32_t channelId,
   configuration.audio_messages = this;
   configuration.receive_statistics = rtp_receive_statistics_.get();
   configuration.bandwidth_callback = rtcp_observer_.get();
-  configuration.paced_sender = rtp_packet_sender_proxy_.get();
-  configuration.transport_sequence_number_allocator =
-      seq_num_allocator_proxy_.get();
-  configuration.transport_feedback_callback = feedback_observer_proxy_.get();
+  if (pacing_enabled_) {
+    configuration.paced_sender = rtp_packet_sender_proxy_.get();
+    configuration.transport_sequence_number_allocator =
+        seq_num_allocator_proxy_.get();
+    configuration.transport_feedback_callback = feedback_observer_proxy_.get();
+  }
   configuration.event_log = event_log;
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
@@ -2582,30 +2587,38 @@ void Channel::EnableReceiveTransportSequenceNumber(int id) {
   RTC_DCHECK(ret);
 }
 
-void Channel::SetCongestionControlObjects(
+void Channel::RegisterSenderCongestionControlObjects(
     RtpPacketSender* rtp_packet_sender,
     TransportFeedbackObserver* transport_feedback_observer,
     PacketRouter* packet_router) {
-  RTC_DCHECK(packet_router != nullptr || packet_router_ != nullptr);
-  if (transport_feedback_observer) {
-    RTC_DCHECK(feedback_observer_proxy_.get());
-    feedback_observer_proxy_->SetTransportFeedbackObserver(
-        transport_feedback_observer);
-  }
-  if (rtp_packet_sender) {
-    RTC_DCHECK(rtp_packet_sender_proxy_.get());
-    rtp_packet_sender_proxy_->SetPacketSender(rtp_packet_sender);
-  }
-  if (seq_num_allocator_proxy_.get()) {
-    seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
-  }
-  _rtpRtcpModule->SetStorePacketsStatus(rtp_packet_sender != nullptr, 600);
-  if (packet_router != nullptr) {
-    packet_router->AddRtpModule(_rtpRtcpModule.get());
-  } else {
-    packet_router_->RemoveRtpModule(_rtpRtcpModule.get());
-  }
+  RTC_DCHECK(rtp_packet_sender);
+  RTC_DCHECK(transport_feedback_observer);
+  RTC_DCHECK(packet_router && !packet_router_);
+  feedback_observer_proxy_->SetTransportFeedbackObserver(
+      transport_feedback_observer);
+  seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
+  rtp_packet_sender_proxy_->SetPacketSender(rtp_packet_sender);
+  _rtpRtcpModule->SetStorePacketsStatus(true, 600);
+  packet_router->AddRtpModule(_rtpRtcpModule.get(), true);
   packet_router_ = packet_router;
+}
+
+void Channel::RegisterReceiverCongestionControlObjects(
+    PacketRouter* packet_router) {
+  RTC_DCHECK(packet_router && !packet_router_);
+  packet_router->AddRtpModule(_rtpRtcpModule.get(), false);
+  packet_router_ = packet_router;
+}
+
+void Channel::ResetCongestionControlObjects() {
+  RTC_DCHECK(packet_router_);
+  _rtpRtcpModule->SetStorePacketsStatus(false, 600);
+  feedback_observer_proxy_->SetTransportFeedbackObserver(nullptr);
+  seq_num_allocator_proxy_->SetSequenceNumberAllocator(nullptr);
+  const bool sender = rtp_packet_sender_proxy_->HasPacketSender();
+  packet_router_->RemoveRtpModule(_rtpRtcpModule.get(), sender);
+  packet_router_ = nullptr;
+  rtp_packet_sender_proxy_->SetPacketSender(nullptr);
 }
 
 void Channel::SetRTCPStatus(bool enable) {
