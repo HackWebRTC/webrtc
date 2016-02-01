@@ -9,7 +9,6 @@
  */
 #include <algorithm>
 #include <map>
-#include <set>
 #include <sstream>
 #include <string>
 
@@ -18,7 +17,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/frame_callback.h"
@@ -2938,6 +2936,7 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
 
 void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
   static const uint32_t kMaxSequenceNumberGap = 100;
+  static const uint64_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
   class RtpSequenceObserver : public test::RtpRtcpObserver {
    public:
     explicit RtpSequenceObserver(bool use_rtx)
@@ -2948,42 +2947,24 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
         if (use_rtx)
           configured_ssrcs_[kSendRtxSsrcs[i]] = true;
       }
-      thread_checker_.DetachFromThread();
     }
 
     void ResetExpectedSsrcs(size_t num_expected_ssrcs) {
       rtc::CritScope lock(&crit_);
-      ssrc_observed_rtp_.clear();
-      ssrc_observed_rtcp_sr_.clear();
+      ssrc_observed_.clear();
       ssrcs_to_observe_ = num_expected_ssrcs;
     }
 
    private:
-    void ValidateTimestampGap(uint32_t ssrc, uint32_t timestamp)
-        EXCLUSIVE_LOCKS_REQUIRED(crit_) {
-      auto timestamp_it = last_observed_timestamp_.find(ssrc);
-      if (timestamp_it == last_observed_timestamp_.end()) {
-        last_observed_timestamp_[ssrc] = timestamp;
-      } else {
-        static const int32_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
-        // It is normal for the gap to be negative: RTCP with current time
-        // can be sent just before RTP with capture time.
-        int32_t gap = rtc::TimeDiff(timestamp, timestamp_it->second);
-        EXPECT_LE(std::abs(gap), kMaxTimestampGap)
-            << "Gap in timestamps (" << timestamp_it->second << " -> "
-            << timestamp << ") too large for SSRC: " << ssrc << ".";
-        timestamp_it->second = timestamp;
-      }
-    }
-
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
       const uint32_t ssrc = header.ssrc;
       const uint16_t sequence_number = header.sequenceNumber;
       const uint32_t timestamp = header.timestamp;
+      const bool only_padding =
+          header.headerLength + header.paddingLength == length;
 
-      RTC_DCHECK(thread_checker_.CalledOnValidThread());
       EXPECT_TRUE(configured_ssrcs_[ssrc])
           << "Received SSRC that wasn't configured: " << ssrc;
 
@@ -2991,6 +2972,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
           last_observed_sequence_number_.find(header.ssrc);
       if (it == last_observed_sequence_number_.end()) {
         last_observed_sequence_number_[ssrc] = sequence_number;
+        last_observed_timestamp_[ssrc] = timestamp;
       } else {
         // Verify sequence numbers are reasonably close.
         uint32_t extended_sequence_number = sequence_number;
@@ -3004,46 +2986,43 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
             << last_observed_sequence_number_[ssrc] << " -> " << sequence_number
             << ") too large for SSRC: " << ssrc << ".";
         last_observed_sequence_number_[ssrc] = sequence_number;
-      }
-      rtc::CritScope lock(&crit_);
-      ValidateTimestampGap(ssrc, timestamp);
 
-      ssrc_observed_rtp_.insert(ssrc);
-      if (ssrc_observed_rtcp_sr_.size() >= ssrcs_to_observe_ &&
-          ssrc_observed_rtp_.size() >= ssrcs_to_observe_) {
-        observation_complete_.Set();
-      }
-
-      return SEND_PACKET;
-    }
-    Action OnSendRtcp(const uint8_t* packet, size_t length) override {
-      test::RtcpPacketParser rtcp_parser;
-      rtcp_parser.Parse(packet, length);
-      if (rtcp_parser.sender_report()->num_packets() > 0) {
-        uint32_t ssrc = rtcp_parser.sender_report()->Ssrc();
-        uint32_t rtcp_timestamp = rtcp_parser.sender_report()->RtpTimestamp();
-
-        rtc::CritScope lock(&crit_);
-        ValidateTimestampGap(ssrc, rtcp_timestamp);
-
-        ssrc_observed_rtcp_sr_.insert(ssrc);
-        if (ssrc_observed_rtcp_sr_.size() >= ssrcs_to_observe_ &&
-            ssrc_observed_rtp_.size() >= ssrcs_to_observe_) {
-          observation_complete_.Set();
+        // TODO(pbos): Remove this check if we ever have monotonically
+        // increasing timestamps. Right now padding packets add a delta which
+        // can cause reordering between padding packets and regular packets,
+        // hence we drop padding-only packets to not flake.
+        if (only_padding) {
+          // Verify that timestamps are reasonably close.
+          uint64_t extended_timestamp = timestamp;
+          // Check for roll-over.
+          if (timestamp < last_observed_timestamp_[ssrc])
+            extended_timestamp += static_cast<uint64_t>(0xFFFFFFFFu) + 1;
+          EXPECT_LE(extended_timestamp - last_observed_timestamp_[ssrc],
+                    kMaxTimestampGap)
+              << "Gap in timestamps (" << last_observed_timestamp_[ssrc]
+              << " -> " << timestamp << ") too large for SSRC: " << ssrc << ".";
         }
+        last_observed_timestamp_[ssrc] = timestamp;
       }
+
+      rtc::CritScope lock(&crit_);
+      // Wait for media packets on all ssrcs.
+      if (!ssrc_observed_[ssrc] && !only_padding) {
+        ssrc_observed_[ssrc] = true;
+        if (--ssrcs_to_observe_ == 0)
+          observation_complete_.Set();
+      }
+
       return SEND_PACKET;
     }
 
-    rtc::ThreadChecker thread_checker_;
     std::map<uint32_t, uint16_t> last_observed_sequence_number_;
+    std::map<uint32_t, uint32_t> last_observed_timestamp_;
     std::map<uint32_t, bool> configured_ssrcs_;
 
     rtc::CriticalSection crit_;
     size_t ssrcs_to_observe_ GUARDED_BY(crit_);
-    std::map<uint32_t, uint32_t> last_observed_timestamp_ GUARDED_BY(crit_);
-    std::set<uint32_t> ssrc_observed_rtp_ GUARDED_BY(crit_);
-    std::set<uint32_t> ssrc_observed_rtcp_sr_ GUARDED_BY(crit_);
+    std::map<uint32_t, bool> ssrc_observed_ GUARDED_BY(crit_);
   } observer(use_rtx);
 
   CreateCalls(Call::Config(), Call::Config());
