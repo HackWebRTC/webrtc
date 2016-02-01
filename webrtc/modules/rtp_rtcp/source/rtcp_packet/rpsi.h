@@ -12,33 +12,28 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_RPSI_H_
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/psfb.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
 // Reference picture selection indication (RPSI) (RFC 4585).
-class Rpsi : public RtcpPacket {
+// Assumes native bit string stores PictureId (VP8, VP9).
+class Rpsi : public Psfb {
  public:
-  Rpsi()
-      : RtcpPacket(),
-        padding_bytes_(0) {
-    memset(&rpsi_, 0, sizeof(rpsi_));
-  }
+  static const uint8_t kFeedbackMessageType = 3;
+  Rpsi();
+  ~Rpsi() override {}
 
-  virtual ~Rpsi() {}
+  // Parse assumes header is already parsed and validated.
+  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
+             const uint8_t* payload);  // Size of the payload is in the header.
 
-  void From(uint32_t ssrc) {
-    rpsi_.SenderSSRC = ssrc;
-  }
-  void To(uint32_t ssrc) {
-    rpsi_.MediaSSRC = ssrc;
-  }
-  void WithPayloadType(uint8_t payload) {
-    assert(payload <= 0x7f);
-    rpsi_.PayloadType = payload;
-  }
+  void WithPayloadType(uint8_t payload);
   void WithPictureId(uint64_t picture_id);
+
+  uint8_t payload_type() const { return payload_type_; }
+  uint64_t picture_id() const { return picture_id_; }
 
  protected:
   bool Create(uint8_t* packet,
@@ -47,13 +42,12 @@ class Rpsi : public RtcpPacket {
               RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  size_t BlockLength() const {
-    size_t fci_length = 2 + (rpsi_.NumberOfValidBits / 8) + padding_bytes_;
-    return kCommonFbFmtLength + fci_length;
-  }
+  size_t BlockLength() const override { return block_length_; }
+  static size_t CalculateBlockLength(uint8_t bitstring_size_bytes);
 
-  uint8_t padding_bytes_;
-  RTCPUtility::RTCPPacketPSFBRPSI rpsi_;
+  uint8_t payload_type_;
+  uint64_t picture_id_;
+  size_t block_length_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Rpsi);
 };

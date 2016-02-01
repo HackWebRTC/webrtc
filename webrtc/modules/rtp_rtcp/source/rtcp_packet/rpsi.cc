@@ -10,93 +10,139 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rpsi.h"
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
-using webrtc::RTCPUtility::PT_PSFB;
-using webrtc::RTCPUtility::RTCPPacketPSFBRPSI;
+using webrtc::RTCPUtility::RtcpCommonHeader;
+using webrtc::RtpUtility::Word32Align;
 
 namespace webrtc {
 namespace rtcp {
-namespace {
-void AssignUWord8(uint8_t* buffer, size_t* offset, uint8_t value) {
-  buffer[(*offset)++] = value;
-}
-
-void AssignUWord32(uint8_t* buffer, size_t* offset, uint32_t value) {
-  ByteWriter<uint32_t>::WriteBigEndian(buffer + *offset, value);
-  *offset += 4;
-}
-
+// RFC 4585: Feedback format.
 // Reference picture selection indication (RPSI) (RFC 4585).
 //
-// FCI:
-//
-//    0                   1                   2                   3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |      PB       |0| Payload Type|    Native RPSI bit string     |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |   defined per codec          ...                | Padding (0) |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-void CreateRpsi(const RTCPPacketPSFBRPSI& rpsi,
-                uint8_t padding_bytes,
-                uint8_t* buffer,
-                size_t* pos) {
-  // Native bit string should be a multiple of 8 bits.
-  assert(rpsi.NumberOfValidBits % 8 == 0);
-  AssignUWord32(buffer, pos, rpsi.SenderSSRC);
-  AssignUWord32(buffer, pos, rpsi.MediaSSRC);
-  AssignUWord8(buffer, pos, padding_bytes * 8);
-  AssignUWord8(buffer, pos, rpsi.PayloadType);
-  memcpy(buffer + *pos, rpsi.NativeBitString, rpsi.NumberOfValidBits / 8);
-  *pos += rpsi.NumberOfValidBits / 8;
-  memset(buffer + *pos, 0, padding_bytes);
-  *pos += padding_bytes;
+//     0                   1                   2                   3
+//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//    |V=2|P| RPSI=3  |  PT=PSFB=206  |          length               |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  0 |                  SSRC of packet sender                        |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  4 |                  SSRC of media source                         |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  8 | Padding Bits  |
+//  9                 |0| Payload Type|
+// 10                                 |  Native RPSI bit string       :
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//    :   defined per codec          ...                | Padding (0) |
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+namespace {
+const size_t kPaddingSizeOffset = 8;
+const size_t kPayloadTypeOffset = 9;
+const size_t kBitStringOffset = 10;
+
+const size_t kPidBits = 7;
+// Calculates number of bytes required to store given picture id.
+uint8_t RequiredBytes(uint64_t picture_id) {
+  uint8_t required_bytes = 0;
+  uint64_t shifted_pid = picture_id;
+  do {
+    ++required_bytes;
+    shifted_pid >>= kPidBits;
+  } while (shifted_pid > 0);
+
+  return required_bytes;
 }
 }  // namespace
+
+Rpsi::Rpsi()
+    : payload_type_(0),
+      picture_id_(0),
+      block_length_(CalculateBlockLength(1)) {}
+
+bool Rpsi::Parse(const RTCPUtility::RtcpCommonHeader& header,
+                 const uint8_t* payload) {
+  RTC_CHECK(header.packet_type == kPacketType);
+  RTC_CHECK(header.count_or_format == kFeedbackMessageType);
+
+  if (header.payload_size_bytes < kCommonFeedbackLength + 4) {
+    LOG(LS_WARNING) << "Packet is too small to be a valid RPSI packet.";
+    return false;
+  }
+
+  ParseCommonFeedback(payload);
+
+  uint8_t padding_bits = payload[kPaddingSizeOffset];
+  if (padding_bits % 8 != 0) {
+    LOG(LS_WARNING) << "Unknown rpsi packet with fractional number of bytes.";
+    return false;
+  }
+  size_t padding_bytes = padding_bits / 8;
+  if (padding_bytes + kBitStringOffset >= header.payload_size_bytes) {
+    LOG(LS_WARNING) << "Too many padding bytes in a RPSI packet.";
+    return false;
+  }
+  size_t padding_offset = header.payload_size_bytes - padding_bytes;
+  payload_type_ = payload[kPayloadTypeOffset] & 0x7f;
+  picture_id_ = 0;
+  for (size_t pos = kBitStringOffset; pos < padding_offset; ++pos) {
+    picture_id_ <<= kPidBits;
+    picture_id_ |= (payload[pos] & 0x7f);
+  }
+  // Required bytes might become less than came in the packet.
+  block_length_ = CalculateBlockLength(RequiredBytes(picture_id_));
+  return true;
+}
 
 bool Rpsi::Create(uint8_t* packet,
                   size_t* index,
                   size_t max_length,
                   RtcpPacket::PacketReadyCallback* callback) const {
-  assert(rpsi_.NumberOfValidBits > 0);
   while (*index + BlockLength() > max_length) {
     if (!OnBufferFull(packet, index, callback))
       return false;
   }
-  const uint8_t kFmt = 3;
-  CreateHeader(kFmt, PT_PSFB, HeaderLength(), packet, index);
-  CreateRpsi(rpsi_, padding_bytes_, packet, index);
+  size_t index_end = *index + BlockLength();
+
+  CreateHeader(kFeedbackMessageType, kPacketType, HeaderLength(), packet,
+               index);
+  CreateCommonFeedback(packet + *index);
+  *index += kCommonFeedbackLength;
+
+  size_t bitstring_size_bytes = RequiredBytes(picture_id_);
+  size_t padding_bytes =
+      Word32Align(2 + bitstring_size_bytes) - (2 + bitstring_size_bytes);
+  packet[(*index)++] = padding_bytes * 8;
+  packet[(*index)++] = payload_type_;
+
+  // Convert picture id to native bit string (defined by the video codec).
+  for (size_t i = bitstring_size_bytes - 1; i > 0; --i) {
+    packet[(*index)++] =
+        0x80 | static_cast<uint8_t>(picture_id_ >> (i * kPidBits));
+  }
+  packet[(*index)++] = static_cast<uint8_t>(picture_id_ & 0x7f);
+  const uint8_t kPadding = 0;
+  for (size_t i = 0; i < padding_bytes; ++i)
+    packet[(*index)++] = kPadding;
+  RTC_CHECK_EQ(*index, index_end);
   return true;
 }
 
-void Rpsi::WithPictureId(uint64_t picture_id) {
-  const uint32_t kPidBits = 7;
-  const uint64_t k7MsbZeroMask = 0x1ffffffffffffffULL;
-  uint8_t required_bytes = 0;
-  uint64_t shifted_pid = picture_id;
-  do {
-    ++required_bytes;
-    shifted_pid = (shifted_pid >> kPidBits) & k7MsbZeroMask;
-  } while (shifted_pid > 0);
-
-  // Convert picture id to native bit string (natively defined by the video
-  // codec).
-  int pos = 0;
-  for (int i = required_bytes - 1; i > 0; i--) {
-    rpsi_.NativeBitString[pos++] =
-        0x80 | static_cast<uint8_t>(picture_id >> (i * kPidBits));
-  }
-  rpsi_.NativeBitString[pos++] = static_cast<uint8_t>(picture_id & 0x7f);
-  rpsi_.NumberOfValidBits = pos * 8;
-
-  // Calculate padding bytes (to reach next 32-bit boundary, 1, 2 or 3 bytes).
-  padding_bytes_ = 4 - ((2 + required_bytes) % 4);
-  if (padding_bytes_ == 4) {
-    padding_bytes_ = 0;
-  }
+void Rpsi::WithPayloadType(uint8_t payload) {
+  RTC_DCHECK_LE(payload, 0x7f);
+  payload_type_ = payload;
 }
 
+void Rpsi::WithPictureId(uint64_t picture_id) {
+  picture_id_ = picture_id;
+  block_length_ = CalculateBlockLength(RequiredBytes(picture_id_));
+}
 
+size_t Rpsi::CalculateBlockLength(uint8_t bitstring_size_bytes) {
+  return RtcpPacket::kHeaderLength + Psfb::kCommonFeedbackLength +
+         Word32Align(2 + bitstring_size_bytes);
+}
 }  // namespace rtcp
 }  // namespace webrtc
