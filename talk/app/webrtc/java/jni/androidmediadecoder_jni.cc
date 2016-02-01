@@ -167,6 +167,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   // MediaCodecVideoDecoder.DecodedTextureBuffer fields.
   jfieldID j_texture_id_field_;
   jfieldID j_transform_matrix_field_;
+  jfieldID j_texture_presentation_timestamp_ms_field_;
   jfieldID j_texture_timestamp_ms_field_;
   jfieldID j_texture_ntp_timestamp_ms_field_;
   jfieldID j_texture_decode_time_ms_field_;
@@ -175,8 +176,9 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   jfieldID j_info_index_field_;
   jfieldID j_info_offset_field_;
   jfieldID j_info_size_field_;
-  jfieldID j_info_timestamp_ms_field_;
-  jfieldID j_info_ntp_timestamp_ms_field_;
+  jfieldID j_presentation_timestamp_ms_field_;
+  jfieldID j_timestamp_ms_field_;
+  jfieldID j_ntp_timestamp_ms_field_;
   jfieldID j_byte_buffer_decode_time_ms_field_;
 
   // Global references; must be deleted in Release().
@@ -248,6 +250,8 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, j_decoded_texture_buffer_class, "textureID", "I");
   j_transform_matrix_field_ = GetFieldID(
       jni, j_decoded_texture_buffer_class, "transformMatrix", "[F");
+  j_texture_presentation_timestamp_ms_field_ = GetFieldID(
+      jni, j_decoded_texture_buffer_class, "presentationTimeStampMs", "J");
   j_texture_timestamp_ms_field_ = GetFieldID(
       jni, j_decoded_texture_buffer_class, "timeStampMs", "J");
   j_texture_ntp_timestamp_ms_field_ = GetFieldID(
@@ -265,9 +269,11 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, j_decoded_output_buffer_class, "offset", "I");
   j_info_size_field_ = GetFieldID(
       jni, j_decoded_output_buffer_class, "size", "I");
-  j_info_timestamp_ms_field_ = GetFieldID(
+  j_presentation_timestamp_ms_field_ = GetFieldID(
+      jni, j_decoded_output_buffer_class, "presentationTimeStampMs", "J");
+  j_timestamp_ms_field_ = GetFieldID(
       jni, j_decoded_output_buffer_class, "timeStampMs", "J");
-  j_info_ntp_timestamp_ms_field_ = GetFieldID(
+  j_ntp_timestamp_ms_field_ = GetFieldID(
       jni, j_decoded_output_buffer_class, "ntpTimeStampMs", "J");
   j_byte_buffer_decode_time_ms_field_ = GetFieldID(
       jni, j_decoded_output_buffer_class, "decodeTimeMs", "J");
@@ -566,15 +572,15 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   }
   jlong presentation_timestamp_us =
       (frames_received_ * 1000000) / codec_.maxFramerate;
-  if (frames_decoded_ < kMaxDecodedLogFrames) {
-    ALOGD << "Decoder frame in # " << frames_received_ << ". Type: "
-        << inputImage._frameType << ". Buffer # " <<
-        j_input_buffer_index << ". pTS: "
-        << (int)(presentation_timestamp_us / 1000)
-        << ". TS: " << inputImage._timeStamp
-        << ". Size: " << inputImage._length;
-  }
   memcpy(buffer, inputImage._buffer, inputImage._length);
+
+  if (frames_decoded_ < kMaxDecodedLogFrames) {
+    ALOGD << "Decoder frame in # " << frames_received_ <<
+        ". Type: " << inputImage._frameType <<
+        ". Buffer # " << j_input_buffer_index <<
+        ". TS: " << (int)(presentation_timestamp_us / 1000) <<
+        ". Size: " << inputImage._length;
+  }
 
   // Save input image timestamps for later output.
   frames_received_++;
@@ -635,6 +641,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       j_slice_height_field_);
 
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> frame_buffer;
+  int64_t presentation_timestamps_ms = 0;
   int64_t output_timestamps_ms = 0;
   int64_t output_ntp_timestamps_ms = 0;
   int decode_time_ms = 0;
@@ -647,18 +654,19 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       const jfloatArray j_transform_matrix =
           reinterpret_cast<jfloatArray>(GetObjectField(
               jni, j_decoder_output_buffer, j_transform_matrix_field_));
-      const int64_t timestamp_us =
-          GetLongField(jni, j_decoder_output_buffer,
-              j_texture_timestamp_ms_field_);
-      output_timestamps_ms = GetLongField(jni, j_decoder_output_buffer,
-                                          j_texture_timestamp_ms_field_);
-      output_ntp_timestamps_ms =
-          GetLongField(jni, j_decoder_output_buffer,
-                       j_texture_ntp_timestamp_ms_field_);
-      decode_time_ms = GetLongField(jni, j_decoder_output_buffer,
-          j_texture_decode_time_ms_field_);
-      frame_delayed_ms = GetLongField(jni, j_decoder_output_buffer,
-          j_texture_frame_delay_ms_field_);
+      const int64_t timestamp_us = GetLongField(
+          jni, j_decoder_output_buffer, j_texture_timestamp_ms_field_);
+      presentation_timestamps_ms = GetLongField(
+          jni, j_decoder_output_buffer,
+          j_texture_presentation_timestamp_ms_field_);
+      output_timestamps_ms = GetLongField(
+          jni, j_decoder_output_buffer, j_texture_timestamp_ms_field_);
+      output_ntp_timestamps_ms = GetLongField(
+          jni, j_decoder_output_buffer, j_texture_ntp_timestamp_ms_field_);
+      decode_time_ms = GetLongField(
+          jni, j_decoder_output_buffer, j_texture_decode_time_ms_field_);
+      frame_delayed_ms = GetLongField(
+          jni, j_decoder_output_buffer, j_texture_frame_delay_ms_field_);
 
       // Create webrtc::VideoFrameBuffer with native texture handle.
       frame_buffer = surface_texture_helper_->CreateTextureFrame(
@@ -667,17 +675,18 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   } else {
     // Extract data from Java ByteBuffer and create output yuv420 frame -
     // for non surface decoding only.
-    const int output_buffer_index =
-        GetIntField(jni, j_decoder_output_buffer, j_info_index_field_);
-    const int output_buffer_offset =
-        GetIntField(jni, j_decoder_output_buffer, j_info_offset_field_);
-    const int output_buffer_size =
-        GetIntField(jni, j_decoder_output_buffer, j_info_size_field_);
-    output_timestamps_ms = GetLongField(jni, j_decoder_output_buffer,
-                                        j_info_timestamp_ms_field_);
-    output_ntp_timestamps_ms =
-        GetLongField(jni, j_decoder_output_buffer,
-                     j_info_ntp_timestamp_ms_field_);
+    const int output_buffer_index = GetIntField(
+        jni, j_decoder_output_buffer, j_info_index_field_);
+    const int output_buffer_offset = GetIntField(
+        jni, j_decoder_output_buffer, j_info_offset_field_);
+    const int output_buffer_size = GetIntField(
+        jni, j_decoder_output_buffer, j_info_size_field_);
+    presentation_timestamps_ms = GetLongField(
+        jni, j_decoder_output_buffer, j_presentation_timestamp_ms_field_);
+    output_timestamps_ms = GetLongField(
+        jni, j_decoder_output_buffer, j_timestamp_ms_field_);
+    output_ntp_timestamps_ms = GetLongField(
+        jni, j_decoder_output_buffer, j_ntp_timestamp_ms_field_);
 
     decode_time_ms = GetLongField(jni, j_decoder_output_buffer,
                                   j_byte_buffer_decode_time_ms_field_);
@@ -747,9 +756,11 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   decoded_frame.set_ntp_time_ms(output_ntp_timestamps_ms);
 
   if (frames_decoded_ < kMaxDecodedLogFrames) {
-    ALOGD << "Decoder frame out # " << frames_decoded_ << ". " << width <<
-        " x " << height << ". " << stride << " x " <<  slice_height <<
-        ". Color: " << color_format << ". TS:" << decoded_frame.timestamp() <<
+    ALOGD << "Decoder frame out # " << frames_decoded_ <<
+        ". " << width << " x " << height <<
+        ". " << stride << " x " <<  slice_height <<
+        ". Color: " << color_format <<
+        ". TS: " << presentation_timestamps_ms <<
         ". DecTime: " << (int)decode_time_ms <<
         ". DelayTime: " << (int)frame_delayed_ms;
   }
@@ -761,11 +772,14 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int statistic_time_ms = GetCurrentTimeMs() - start_time_ms_;
   if (statistic_time_ms >= kMediaCodecStatisticsIntervalMs &&
       current_frames_ > 0) {
-    ALOGD << "Decoded frames: " << frames_decoded_ <<  ". Received frames: "
-        <<  frames_received_ << ".  Bitrate: " <<
-        (current_bytes_ * 8 / statistic_time_ms) << " kbps, fps: " <<
-        ((current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms)
-        << ". decTime: " << (current_decoding_time_ms_ / current_frames_) <<
+    int current_bitrate = current_bytes_ * 8 / statistic_time_ms;
+    int current_fps =
+        (current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms;
+    ALOGD << "Decoded frames: " << frames_decoded_ <<
+        ". Received frames: " <<  frames_received_ <<
+        ". Bitrate: " << current_bitrate << " kbps" <<
+        ". Fps: " << current_fps <<
+        ". DecTime: " << (current_decoding_time_ms_ / current_frames_) <<
         " for last " << statistic_time_ms << " ms.";
     start_time_ms_ = GetCurrentTimeMs();
     current_frames_ = 0;

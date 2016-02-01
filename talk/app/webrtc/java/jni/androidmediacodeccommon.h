@@ -72,9 +72,9 @@ enum { kMaxPendingFramesVp9 = 1 };
 // Maximum amount of pending frames for H.264 decoder.
 enum { kMaxPendingFramesH264 = 30 };
 // Maximum amount of decoded frames for which per-frame logging is enabled.
-enum { kMaxDecodedLogFrames = 5 };
+enum { kMaxDecodedLogFrames = 7 };
 // Maximum amount of encoded frames for which per-frame logging is enabled.
-enum { kMaxEncodedLogFrames = 5 };
+enum { kMaxEncodedLogFrames = 7 };
 
 static inline int64_t GetCurrentTimeMs() {
   return webrtc::TickTime::Now().Ticks() / 1000000LL;

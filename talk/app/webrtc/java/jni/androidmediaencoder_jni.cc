@@ -188,6 +188,9 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // Search for H.264 start codes.
   int32_t NextNaluPosition(uint8_t *buffer, size_t buffer_size);
 
+  // Displays encoder statistics.
+  void LogStatistics(bool force_log);
+
   // Type of video codec.
   VideoCodecType codecType_;
 
@@ -233,7 +236,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // Number of dropped frames caused by full queue.
   int consecutive_full_queue_frame_drops_;
   int frames_in_queue_;  // Number of frames in encoder queue.
-  int64_t start_time_ms_;  // Start time for statistics.
+  int64_t stat_start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
   int current_bytes_;  // Encoded bytes in the current statistics interval.
   int current_acc_qp_; // Accumulated QP in the current statistics interval.
@@ -514,7 +517,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   consecutive_full_queue_frame_drops_ = 0;
   frames_in_queue_ = 0;
   current_timestamp_us_ = 0;
-  start_time_ms_ = GetCurrentTimeMs();
+  stat_start_time_ms_ = GetCurrentTimeMs();
   current_frames_ = 0;
   current_bytes_ = 0;
   current_acc_qp_ = 0;
@@ -602,7 +605,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   }
 
   bool send_key_frame = false;
-  if (codecType_ == kVideoCodecVP8 && codec_mode_ == webrtc::kRealtimeVideo) {
+  if (codec_mode_ == webrtc::kRealtimeVideo) {
     ++frames_received_since_last_key_;
     int64_t now_ms = GetCurrentTimeMs();
     if (last_frame_received_ms_ != -1 &&
@@ -624,9 +627,11 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       return WEBRTC_VIDEO_CODEC_ERROR;
   }
   if (frames_encoded_ < kMaxEncodedLogFrames) {
-    ALOGD << "Encoder frame in # " << (frames_received_ - 1) << ". TS: " <<
-        (int)(current_timestamp_us_ / 1000) << ". Q: " << frames_in_queue_ <<
-        ". Fps: " << last_set_fps_ << ". Kbps: " << last_set_bitrate_kbps_;
+    ALOGD << "Encoder frame in # " << (frames_received_ - 1) <<
+        ". TS: " << (int)(current_timestamp_us_ / 1000) <<
+        ". Q: " << frames_in_queue_ <<
+        ". Fps: " << last_set_fps_ <<
+        ". Kbps: " << last_set_bitrate_kbps_;
   }
 
   if (drop_next_input_frame_) {
@@ -648,8 +653,9 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     if (frames_in_queue_ > MAX_ENCODER_Q_SIZE ||
         encoder_latency_ms > MAX_ENCODER_LATENCY_MS) {
       ALOGD << "Drop frame - encoder is behind by " << encoder_latency_ms <<
-          " ms. Q size: " << frames_in_queue_ << ". Consecutive drops: " <<
-          consecutive_full_queue_frame_drops_;
+          " ms. Q size: " << frames_in_queue_ << ". TS: " <<
+          (int)(current_timestamp_us_ / 1000) <<  ". Fps: " << last_set_fps_ <<
+          ". Consecutive drops: " << consecutive_full_queue_frame_drops_ ;
       current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
       consecutive_full_queue_frame_drops_++;
       if (consecutive_full_queue_frame_drops_ >=
@@ -758,11 +764,13 @@ bool MediaCodecVideoEncoder::MaybeReconfigureEncoderOnCodecThread(
             << (use_surface_ ?
                 "Reconfiguring to encode from byte buffer." :
                 "Reconfiguring to encode from texture.");
+      LogStatistics(true);
   }
   if (reconfigure_due_to_size) {
-    ALOGD << "Reconfigure encoder due to frame resolution change from "
+    ALOGW << "Reconfigure encoder due to frame resolution change from "
         << width_ << " x " << height_ << " to " << frame.width() << " x "
         << frame.height();
+    LogStatistics(true);
     width_ = frame.width();
     height_ = frame.height();
   }
@@ -954,10 +962,13 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     CHECK_EXCEPTION(jni);
 
     if (frames_encoded_ < kMaxEncodedLogFrames) {
-      ALOGD << "Encoder frame out # " << frames_encoded_ << ". Key: " <<
-          key_frame << ". Size: " << payload_size << ". TS: " <<
-          (int)last_output_timestamp_ms_ << ". Latency: " <<
-          (int)(last_input_timestamp_ms_ - last_output_timestamp_ms_) <<
+      int current_latency =
+          (int)(last_input_timestamp_ms_ - last_output_timestamp_ms_);
+      ALOGD << "Encoder frame out # " << frames_encoded_ <<
+          ". Key: " << key_frame <<
+          ". Size: " << payload_size <<
+          ". TS: " << (int)last_output_timestamp_ms_ <<
+          ". Latency: " << current_latency <<
           ". EncTime: " << frame_encoding_time_ms;
     }
 
@@ -1089,23 +1100,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     current_frames_++;
     current_bytes_ += payload_size;
     current_encoding_time_ms_ += frame_encoding_time_ms;
-    int statistic_time_ms = GetCurrentTimeMs() - start_time_ms_;
-    if (statistic_time_ms >= kMediaCodecStatisticsIntervalMs &&
-        current_frames_ > 0) {
-      ALOGD << "Encoded frames: " << frames_encoded_ << ". Bitrate: " <<
-          (current_bytes_ * 8 / statistic_time_ms) <<
-          ", target: " << last_set_bitrate_kbps_ << " kbps, fps: " <<
-          ((current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms)
-          << ", encTime: " <<
-          (current_encoding_time_ms_ / current_frames_) << ". QP: " <<
-          (current_acc_qp_ / current_frames_) <<  " for last " <<
-          statistic_time_ms << " ms.";
-      start_time_ms_ = GetCurrentTimeMs();
-      current_frames_ = 0;
-      current_bytes_ = 0;
-      current_acc_qp_ = 0;
-      current_encoding_time_ms_ = 0;
-    }
+    LogStatistics(false);
 
     if (callback_status > 0) {
       drop_next_input_frame_ = true;
@@ -1113,8 +1108,29 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       // that would mean for us.
     }
   }
-
   return true;
+}
+
+void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
+  int statistic_time_ms = GetCurrentTimeMs() - stat_start_time_ms_;
+  if ((statistic_time_ms >= kMediaCodecStatisticsIntervalMs || force_log) &&
+      current_frames_ > 0 && statistic_time_ms > 0) {
+    int current_bitrate = current_bytes_ * 8 / statistic_time_ms;
+    int current_fps =
+        (current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms;
+    ALOGD << "Encoded frames: " << frames_encoded_ <<
+        ". Bitrate: " << current_bitrate <<
+        ", target: " << last_set_bitrate_kbps_ << " kbps" <<
+        ", fps: " << current_fps <<
+        ", encTime: " << (current_encoding_time_ms_ / current_frames_) <<
+        ". QP: " << (current_acc_qp_ / current_frames_) <<
+        " for last " << statistic_time_ms << " ms.";
+    stat_start_time_ms_ = GetCurrentTimeMs();
+    current_frames_ = 0;
+    current_bytes_ = 0;
+    current_acc_qp_ = 0;
+    current_encoding_time_ms_ = 0;
+  }
 }
 
 int32_t MediaCodecVideoEncoder::NextNaluPosition(

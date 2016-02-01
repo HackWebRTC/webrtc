@@ -412,11 +412,12 @@ public class MediaCodecVideoDecoder {
 
   // Helper struct for dequeueOutputBuffer() below.
   private static class DecodedOutputBuffer {
-    public DecodedOutputBuffer(int index, int offset, int size, long timeStampMs,
-        long ntpTimeStampMs, long decodeTime, long endDecodeTime) {
+    public DecodedOutputBuffer(int index, int offset, int size, long presentationTimeStampMs,
+        long timeStampMs, long ntpTimeStampMs, long decodeTime, long endDecodeTime) {
       this.index = index;
       this.offset = offset;
       this.size = size;
+      this.presentationTimeStampMs = presentationTimeStampMs;
       this.timeStampMs = timeStampMs;
       this.ntpTimeStampMs = ntpTimeStampMs;
       this.decodeTimeMs = decodeTime;
@@ -426,6 +427,8 @@ public class MediaCodecVideoDecoder {
     private final int index;
     private final int offset;
     private final int size;
+    // Presentation timestamp returned in dequeueOutputBuffer call.
+    private final long presentationTimeStampMs;
     // C++ inputImage._timeStamp value for output frame.
     private final long timeStampMs;
     // C++ inputImage.ntp_time_ms_ value for output frame.
@@ -440,6 +443,8 @@ public class MediaCodecVideoDecoder {
   private static class DecodedTextureBuffer {
     private final int textureID;
     private final float[] transformMatrix;
+    // Presentation timestamp returned in dequeueOutputBuffer call.
+    private final long presentationTimeStampMs;
     // C++ inputImage._timeStamp value for output frame.
     private final long timeStampMs;
     // C++ inputImage.ntp_time_ms_ value for output frame.
@@ -454,10 +459,12 @@ public class MediaCodecVideoDecoder {
 
     // A DecodedTextureBuffer with zero |textureID| has special meaning and represents a frame
     // that was dropped.
-    public DecodedTextureBuffer(int textureID, float[] transformMatrix, long timeStampMs,
-        long ntpTimeStampMs, long decodeTimeMs, long frameDelay) {
+    public DecodedTextureBuffer(int textureID, float[] transformMatrix,
+        long presentationTimeStampMs, long timeStampMs, long ntpTimeStampMs, long decodeTimeMs,
+        long frameDelay) {
       this.textureID = textureID;
       this.transformMatrix = transformMatrix;
+      this.presentationTimeStampMs = presentationTimeStampMs;
       this.timeStampMs = timeStampMs;
       this.ntpTimeStampMs = ntpTimeStampMs;
       this.decodeTimeMs = decodeTimeMs;
@@ -508,7 +515,8 @@ public class MediaCodecVideoDecoder {
         }
         // |timestampNs| is always zero on some Android versions.
         renderedBuffer = new DecodedTextureBuffer(oesTextureId, transformMatrix,
-            bufferToRender.timeStampMs, bufferToRender.ntpTimeStampMs, bufferToRender.decodeTimeMs,
+            bufferToRender.presentationTimeStampMs, bufferToRender.timeStampMs,
+            bufferToRender.ntpTimeStampMs, bufferToRender.decodeTimeMs,
             SystemClock.elapsedRealtime() - bufferToRender.endDecodeTimeMs);
         bufferToRender = null;
         newFrameLock.notifyAll();
@@ -603,7 +611,11 @@ public class MediaCodecVideoDecoder {
         default:
           hasDecodedFirstFrame = true;
           TimeStamps timeStamps = decodeStartTimeMs.remove();
-          return new DecodedOutputBuffer(result, info.offset, info.size, timeStamps.timeStampMs,
+          return new DecodedOutputBuffer(result,
+              info.offset,
+              info.size,
+              TimeUnit.MICROSECONDS.toMillis(info.presentationTimeUs),
+              timeStamps.timeStampMs,
               timeStamps.ntpTimeStampMs,
               SystemClock.elapsedRealtime() - timeStamps.decodeStartTimeMs,
               SystemClock.elapsedRealtime());
@@ -649,12 +661,13 @@ public class MediaCodecVideoDecoder {
         //    + droppedFrame.timeStampMs + ". Total number of dropped frames: " + droppedFrames);
       } else {
         Logging.w(TAG, "Too many output buffers " + dequeuedSurfaceOutputBuffers.size() +
-            ". Dropping frame with TS: " + droppedFrame.timeStampMs +
+            ". Dropping frame with TS: " + droppedFrame.presentationTimeStampMs +
             ". Total number of dropped frames: " + droppedFrames);
       }
 
       mediaCodec.releaseOutputBuffer(droppedFrame.index, false /* render */);
-      return new DecodedTextureBuffer(0, null, droppedFrame.timeStampMs,
+      return new DecodedTextureBuffer(0, null,
+          droppedFrame.presentationTimeStampMs, droppedFrame.timeStampMs,
           droppedFrame.ntpTimeStampMs, droppedFrame.decodeTimeMs,
           SystemClock.elapsedRealtime() - droppedFrame.endDecodeTimeMs);
     }
