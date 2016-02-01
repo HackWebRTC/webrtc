@@ -429,7 +429,7 @@ bool VCMJitterEstimator::LowRateExperimentEnabled() {
 }
 
 double VCMJitterEstimator::GetFrameRate() const {
-  if (fps_counter_.count() == 0)
+  if (fps_counter_.ComputeMean() == 0.0)
     return 0;
 
   double fps = 1000000.0 / fps_counter_.ComputeMean();
