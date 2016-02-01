@@ -433,6 +433,7 @@ void TurnPort::OnAllocateMismatch() {
   }
   socket_ = NULL;
 
+  ResetNonce();
   PrepareAddress();
   ++allocate_mismatch_retries_;
 }
@@ -931,6 +932,12 @@ bool TurnPort::UpdateNonce(StunMessage* response) {
   }
   set_nonce(nonce_attr->GetString());
   return true;
+}
+
+void TurnPort::ResetNonce() {
+  hash_.clear();
+  nonce_.clear();
+  realm_.clear();
 }
 
 static bool MatchesIP(TurnEntry* e, rtc::IPAddress ipaddr) {

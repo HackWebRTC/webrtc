@@ -233,6 +233,7 @@ class TurnPort : public Port {
            const rtc::PacketOptions& options);
   void UpdateHash();
   bool UpdateNonce(StunMessage* response);
+  void ResetNonce();
 
   bool HasPermission(const rtc::IPAddress& ipaddr) const;
   TurnEntry* FindEntry(const rtc::SocketAddress& address) const;

@@ -392,9 +392,8 @@ void TurnServer::HandleAllocateRequest(TurnServerConnection* conn,
   }
 }
 
-std::string TurnServer::GenerateNonce() const {
+std::string TurnServer::GenerateNonce(uint32_t now) const {
   // Generate a nonce of the form hex(now + HMAC-MD5(nonce_key_, now))
-  uint32_t now = rtc::Time();
   std::string input(reinterpret_cast<const char*>(&now), sizeof(now));
   std::string nonce = rtc::hex_encode(input.c_str(), input.size());
   nonce += rtc::ComputeHmac(rtc::DIGEST_MD5, nonce_key_, input);
@@ -464,8 +463,14 @@ void TurnServer::SendErrorResponseWithRealmAndNonce(
     int code, const std::string& reason) {
   TurnMessage resp;
   InitErrorResponse(msg, code, reason, &resp);
-  VERIFY(resp.AddAttribute(new StunByteStringAttribute(
-      STUN_ATTR_NONCE, GenerateNonce())));
+
+  uint32_t timestamp = rtc::Time();
+  if (ts_for_next_nonce_) {
+    timestamp = ts_for_next_nonce_;
+    ts_for_next_nonce_ = 0;
+  }
+  VERIFY(resp.AddAttribute(
+      new StunByteStringAttribute(STUN_ATTR_NONCE, GenerateNonce(timestamp))));
   VERIFY(resp.AddAttribute(new StunByteStringAttribute(
       STUN_ATTR_REALM, realm_)));
   SendStun(conn, &resp);
