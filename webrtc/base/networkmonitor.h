@@ -29,6 +29,16 @@ enum NetworkBindingResults {
   NETWORK_BIND_NETWORK_CHANGED = -4
 };
 
+enum AdapterType {
+  // This enum resembles the one in Chromium net::ConnectionType.
+  ADAPTER_TYPE_UNKNOWN = 0,
+  ADAPTER_TYPE_ETHERNET = 1 << 0,
+  ADAPTER_TYPE_WIFI = 1 << 1,
+  ADAPTER_TYPE_CELLULAR = 1 << 2,
+  ADAPTER_TYPE_VPN = 1 << 3,
+  ADAPTER_TYPE_LOOPBACK = 1 << 4
+};
+
 class NetworkBinderInterface {
  public:
   // Binds a socket to the network that is attached to |address| so that all
@@ -70,6 +80,8 @@ class NetworkMonitorInterface {
   // Implementations should call this method on the base when networks change,
   // and the base will fire SignalNetworksChanged on the right thread.
   virtual void OnNetworksChanged() = 0;
+
+  virtual AdapterType GetAdapterType(const std::string& interface_name) = 0;
 };
 
 class NetworkMonitorBase : public NetworkMonitorInterface,

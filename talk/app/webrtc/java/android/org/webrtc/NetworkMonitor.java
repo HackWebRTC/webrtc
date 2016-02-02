@@ -154,19 +154,27 @@ public class NetworkMonitor {
     if (autoDetector == null) {
       autoDetector = new NetworkMonitorAutoDetect(
         new NetworkMonitorAutoDetect.Observer() {
+
           @Override
           public void onConnectionTypeChanged(ConnectionType newConnectionType) {
             updateCurrentConnectionType(newConnectionType);
           }
+
           @Override
           public void onNetworkConnect(NetworkInformation networkInfo) {
-            updateNetworkInformation(networkInfo);
+            notifyObserversOfNetworkConnect(networkInfo);
+          }
+
+          @Override
+          public void onNetworkDisconnect(int networkHandle) {
+            notifyObserversOfNetworkDisconnect(networkHandle);
           }
         },
         applicationContext);
       final NetworkMonitorAutoDetect.NetworkState networkState =
           autoDetector.getCurrentNetworkState();
       updateCurrentConnectionType(autoDetector.getConnectionType(networkState));
+      updateActiveNetworkList();
     }
   }
 
@@ -187,9 +195,25 @@ public class NetworkMonitor {
     }
   }
 
-  private void updateNetworkInformation(NetworkInformation networkInfo) {
+  private void notifyObserversOfNetworkConnect(NetworkInformation networkInfo) {
     for (long nativeObserver : nativeNetworkObservers) {
       nativeNotifyOfNetworkConnect(nativeObserver, networkInfo);
+    }
+  }
+
+  private void notifyObserversOfNetworkDisconnect(int networkHandle) {
+    for (long nativeObserver : nativeNetworkObservers) {
+      nativeNotifyOfNetworkDisconnect(nativeObserver, networkHandle);
+    }
+  }
+
+  private void updateActiveNetworkList() {
+    NetworkInformation[] networkInfos = autoDetector.getActiveNetworkList();
+    if (networkInfos.length == 0) {
+      return;
+    }
+    for (long nativeObserver : nativeNetworkObservers) {
+      nativeNotifyOfActiveNetworkList(nativeObserver, networkInfos);
     }
   }
 
@@ -224,11 +248,11 @@ public class NetworkMonitor {
         && connectionType != ConnectionType.CONNECTION_NONE;
   }
 
-  private native long nativeCreateNetworkMonitor();
-
   private native void nativeNotifyConnectionTypeChanged(long nativePtr);
-
   private native void nativeNotifyOfNetworkConnect(long nativePtr, NetworkInformation networkInfo);
+  private native void nativeNotifyOfNetworkDisconnect(long nativePtr, int networkHandle);
+  private native void nativeNotifyOfActiveNetworkList(long nativePtr,
+                                                      NetworkInformation[] networkInfos);
 
   // For testing only.
   static void resetInstanceForTests(Context context) {

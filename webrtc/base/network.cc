@@ -441,6 +441,8 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
       AdapterType adapter_type = ADAPTER_TYPE_UNKNOWN;
       if (cursor->ifa_flags & IFF_LOOPBACK) {
         adapter_type = ADAPTER_TYPE_LOOPBACK;
+      } else if (network_monitor_) {
+        adapter_type = network_monitor_->GetAdapterType(cursor->ifa_name);
       }
 #if defined(WEBRTC_IOS)
       // Cell networks are pdp_ipN on iOS.

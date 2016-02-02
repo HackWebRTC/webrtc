@@ -75,19 +75,25 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
 
   int BindSocketToNetwork(int socket_fd,
                           const rtc::IPAddress& address) override;
-  void OnNetworkAvailable(const NetworkInformation& network_info);
+  rtc::AdapterType GetAdapterType(const std::string& if_name) override;
+  void OnNetworkConnected(const NetworkInformation& network_info);
+  void OnNetworkDisconnected(NetworkHandle network_handle);
+  void SetNetworkInfos(const std::vector<NetworkInformation>& network_infos);
 
  private:
   JNIEnv* jni() { return AttachCurrentThreadIfNeeded(); }
 
-  void OnNetworkAvailable_w(const NetworkInformation& network_info);
+  void OnNetworkConnected_w(const NetworkInformation& network_info);
+  void OnNetworkDisconnected_w(NetworkHandle network_handle);
 
   ScopedGlobalRef<jclass> j_network_monitor_class_;
   ScopedGlobalRef<jobject> j_network_monitor_;
   rtc::ThreadChecker thread_checker_;
   static jobject application_context_;
   bool started_ = false;
-  std::map<rtc::IPAddress, NetworkInformation> network_info_by_address_;
+  std::map<std::string, rtc::AdapterType> adapter_type_by_name_;
+  std::map<rtc::IPAddress, NetworkHandle> network_handle_by_address_;
+  std::map<NetworkHandle, NetworkInformation> network_info_by_handle_;
 };
 
 class AndroidNetworkMonitorFactory : public rtc::NetworkMonitorFactory {

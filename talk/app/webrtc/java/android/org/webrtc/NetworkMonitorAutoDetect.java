@@ -28,6 +28,8 @@
 package org.webrtc;
 
 import static android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET;
+import static android.net.NetworkCapabilities.TRANSPORT_CELLULAR;
+
 
 import org.webrtc.Logging;
 
@@ -120,6 +122,54 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       return subtype;
     }
   }
+  /**
+   * The methods in this class get called when the network changes if the callback
+   * is registered with a proper network request. It is only available in Android Lollipop
+   * and above.
+   */
+  @SuppressLint("NewApi")
+  private class SimpleNetworkCallback extends NetworkCallback {
+
+    @Override
+    public void onAvailable(Network network) {
+      NetworkInformation networkInformation = connectivityManagerDelegate.networkToInfo(network);
+      Logging.d(TAG, "Network " + networkInformation.name + " with handle " +
+                networkInformation.handle + " is connected ");
+      observer.onNetworkConnect(networkInformation);
+    }
+
+    @Override
+    public void onCapabilitiesChanged(
+        Network network, NetworkCapabilities networkCapabilities) {
+      // A capabilities change may indicate the ConnectionType has changed,
+      // so forward the new NetworkInformation along to observer.
+      NetworkInformation networkInformation = connectivityManagerDelegate.networkToInfo(network);
+      observer.onNetworkConnect(networkInformation);
+    }
+
+    @Override
+    public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
+      // A link property change may indicate the IP address changes.
+      // so forward the new NetworkInformation to the observer.
+      NetworkInformation networkInformation = connectivityManagerDelegate.networkToInfo(network);
+      observer.onNetworkConnect(networkInformation);
+    }
+
+    @Override
+    public void onLosing(Network network, int maxMsToLive) {
+      // Tell the network is going to lose in MaxMsToLive milliseconds.
+      // We may use this signal later.
+      Logging.d(TAG, "Network with handle " + networkToNetId(network) +
+                " is about to lose in " + maxMsToLive + "ms");
+    }
+
+    @Override
+    public void onLost(Network network) {
+      int handle = networkToNetId(network);
+      Logging.d(TAG, "Network with handle " + handle + " is disconnected");
+      observer.onNetworkDisconnect(handle);
+    }
+  }
 
   /** Queries the ConnectivityManager for information about the current connection. */
   static class ConnectivityManagerDelegate {
@@ -128,7 +178,6 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      *  gracefully below.
      */
     private final ConnectivityManager connectivityManager;
-    private NetworkCallback networkCallback;
 
     ConnectivityManagerDelegate(Context context) {
       connectivityManager =
@@ -186,6 +235,18 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       return connectivityManager.getAllNetworks();
     }
 
+    NetworkInformation[] getActiveNetworkList() {
+      if (!supportNetworkCallback()) {
+        return new NetworkInformation[0];
+      }
+      Network[] networks = getAllNetworks();
+      NetworkInformation[] netInfos = new NetworkInformation[networks.length];
+      for (int i = 0; i < networks.length; ++i) {
+        netInfos[i] = networkToInfo(networks[i]);
+      }
+      return netInfos;
+    }
+
     /**
      * Returns the NetID of the current default network. Returns
      * INVALID_NET_ID if no current default network connected.
@@ -193,7 +254,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      */
     @SuppressLint("NewApi")
     int getDefaultNetId() {
-      if (connectivityManager == null) {
+      if (!supportNetworkCallback()) {
         return INVALID_NET_ID;
       }
       // Android Lollipop had no API to get the default network; only an
@@ -226,6 +287,17 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       return defaultNetId;
     }
 
+    @SuppressLint("NewApi")
+    private NetworkInformation networkToInfo(Network network) {
+      LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
+      NetworkInformation networkInformation = new NetworkInformation(
+          linkProperties.getInterfaceName(),
+          getConnectionType(getNetworkState(network)),
+          networkToNetId(network),
+          getIPAddresses(linkProperties));
+      return networkInformation;
+    }
+
     /**
      * Returns true if {@code network} can provide Internet access. Can be used to
      * ignore specialized networks (e.g. IMS, FOTA).
@@ -240,30 +312,19 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       return capabilities != null && capabilities.hasCapability(NET_CAPABILITY_INTERNET);
     }
 
+    /** Only callable on Lollipop and newer releases. */
     @SuppressLint("NewApi")
-    public void requestMobileNetwork(final Observer observer) {
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ||
-          connectivityManager == null) {
-        return;
-      }
-      networkCallback = new NetworkCallback() {
-        @Override
-        public void onAvailable(Network network) {
-          super.onAvailable(network);
-          LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
-          NetworkInformation networkInformation = new NetworkInformation(
-            linkProperties.getInterfaceName(),
-            getConnectionType(getNetworkState(network)),
-            networkToNetId(network),
-            getIPAddresses(linkProperties));
-          Logging.d(TAG, "Network " + networkInformation.name + " is connected ");
-          observer.onNetworkConnect(networkInformation);
-        }
-      };
-      Logging.d(TAG, "Requesting cellular network");
+    public void registerNetworkCallback(NetworkCallback networkCallback) {
+      connectivityManager.registerNetworkCallback(
+          new NetworkRequest.Builder().addCapability(NET_CAPABILITY_INTERNET).build(),
+          networkCallback);
+    }
+
+    /** Only callable on Lollipop and newer releases. */
+    @SuppressLint("NewApi")
+    public void requestMobileNetwork(NetworkCallback networkCallback) {
       NetworkRequest.Builder builder = new NetworkRequest.Builder();
-      builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-      builder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
+      builder.addCapability(NET_CAPABILITY_INTERNET).addTransportType(TRANSPORT_CELLULAR);
       connectivityManager.requestNetwork(builder.build(), networkCallback);
     }
 
@@ -279,15 +340,16 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     }
 
     @SuppressLint("NewApi")
-    public void releaseCallback() {
-      if (networkCallback != null) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-          connectivityManager.unregisterNetworkCallback(networkCallback);
-        }
-        networkCallback = null;
+    public void releaseCallback(NetworkCallback networkCallback) {
+      if (supportNetworkCallback()) {
+        Logging.d(TAG, "Unregister network callback");
+        connectivityManager.unregisterNetworkCallback(networkCallback);
       }
     }
 
+    public boolean supportNetworkCallback() {
+      return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && connectivityManager != null;
+    }
   }
 
 
@@ -323,15 +385,20 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
   static final int INVALID_NET_ID = -1;
   private static final String TAG = "NetworkMonitorAutoDetect";
-  private final IntentFilter intentFilter;
 
   // Observer for the connection type change.
   private final Observer observer;
-
+  private final IntentFilter intentFilter;
   private final Context context;
-  // connectivityManagerDelegates and wifiManagerDelegate are only non-final for testing.
+  // Used to request mobile network. It does not do anything except for keeping
+  // the callback for releasing the request.
+  private final NetworkCallback mobileNetworkCallback;
+  // Used to receive updates on all networks.
+  private final NetworkCallback allNetworkCallback;
+  // connectivityManagerDelegate and wifiManagerDelegate are only non-final for testing.
   private ConnectivityManagerDelegate connectivityManagerDelegate;
   private WifiManagerDelegate wifiManagerDelegate;
+
   private boolean isRegistered;
   private ConnectionType connectionType;
   private String wifiSSID;
@@ -345,11 +412,13 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      */
     public void onConnectionTypeChanged(ConnectionType newConnectionType);
     public void onNetworkConnect(NetworkInformation networkInfo);
+    public void onNetworkDisconnect(int networkHandle);
   }
 
   /**
    * Constructs a NetworkMonitorAutoDetect. Should only be called on UI thread.
    */
+  @SuppressLint("NewApi")
   public NetworkMonitorAutoDetect(Observer observer, Context context) {
     this.observer = observer;
     this.context = context;
@@ -360,7 +429,17 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     connectionType = getConnectionType(networkState);
     wifiSSID = getWifiSSID(networkState);
     intentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+
     registerReceiver();
+    if (connectivityManagerDelegate.supportNetworkCallback()) {
+      mobileNetworkCallback = new NetworkCallback();
+      connectivityManagerDelegate.requestMobileNetwork(mobileNetworkCallback);
+      allNetworkCallback = new SimpleNetworkCallback();
+      connectivityManagerDelegate.registerNetworkCallback(allNetworkCallback);
+    } else {
+      mobileNetworkCallback = null;
+      allNetworkCallback = null;
+    }
   }
 
   /**
@@ -385,7 +464,17 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     return isRegistered;
   }
 
+  NetworkInformation[] getActiveNetworkList() {
+    return connectivityManagerDelegate.getActiveNetworkList();
+  }
+
   public void destroy() {
+    if (allNetworkCallback != null) {
+      connectivityManagerDelegate.releaseCallback(allNetworkCallback);
+    }
+    if (mobileNetworkCallback != null) {
+      connectivityManagerDelegate.releaseCallback(mobileNetworkCallback);
+    }
     unregisterReceiver();
   }
 
@@ -393,22 +482,20 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
    * Registers a BroadcastReceiver in the given context.
    */
   private void registerReceiver() {
-    if (!isRegistered) {
-      isRegistered = true;
-      context.registerReceiver(this, intentFilter);
-      connectivityManagerDelegate.requestMobileNetwork(observer);
-    }
+    if (isRegistered) return;
+
+    isRegistered = true;
+    context.registerReceiver(this, intentFilter);
   }
 
   /**
    * Unregisters the BroadcastReceiver in the given context.
    */
   private void unregisterReceiver() {
-    if (isRegistered) {
-      isRegistered = false;
-      context.unregisterReceiver(this);
-      connectivityManagerDelegate.releaseCallback();
-    }
+    if (!isRegistered) return;
+
+    isRegistered = false;
+    context.unregisterReceiver(this);
   }
 
   public NetworkState getCurrentNetworkState() {
@@ -422,9 +509,6 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
    * when not implemented.
    */
   public int getDefaultNetId() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-      return INVALID_NET_ID;
-    }
     return connectivityManagerDelegate.getDefaultNetId();
   }
 

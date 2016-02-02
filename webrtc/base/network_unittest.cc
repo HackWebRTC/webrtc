@@ -32,6 +32,9 @@ class FakeNetworkMonitor : public NetworkMonitorBase {
   void Start() override { started_ = true; }
   void Stop() override { started_ = false; }
   bool started() { return started_; }
+  AdapterType GetAdapterType(const std::string& if_name) override {
+    return ADAPTER_TYPE_UNKNOWN;
+  }
 
  private:
   bool started_ = false;

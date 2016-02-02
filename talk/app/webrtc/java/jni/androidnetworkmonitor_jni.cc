@@ -71,6 +71,29 @@ static NetworkType GetNetworkTypeFromJava(JNIEnv* jni, jobject j_network_type) {
   return NetworkType::NETWORK_UNKNOWN;
 }
 
+static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
+  switch (network_type) {
+    case NETWORK_UNKNOWN:
+      RTC_DCHECK(false) << "Unknown network type ";
+      return rtc::ADAPTER_TYPE_UNKNOWN;
+    case NETWORK_ETHERNET:
+      return rtc::ADAPTER_TYPE_ETHERNET;
+    case NETWORK_WIFI:
+      return rtc::ADAPTER_TYPE_WIFI;
+    case NETWORK_4G:
+    case NETWORK_3G:
+    case NETWORK_2G:
+      return rtc::ADAPTER_TYPE_CELLULAR;
+    case NETWORK_BLUETOOTH:
+      // There is no corresponding mapping for bluetooth networks.
+      // Map it to VPN for now.
+      return rtc::ADAPTER_TYPE_VPN;
+    default:
+      RTC_DCHECK(false) << "Invalid network type " << network_type;
+      return rtc::ADAPTER_TYPE_UNKNOWN;
+  }
+}
+
 static rtc::IPAddress GetIPAddressFromJava(JNIEnv* jni, jobject j_ip_address) {
   jclass j_ip_address_class = GetObjectClass(jni, j_ip_address);
   jfieldID j_address_id = GetFieldID(jni, j_ip_address_class, "address", "[B");
@@ -186,7 +209,7 @@ void AndroidNetworkMonitor::Start() {
   jmethodID m =
       GetMethodID(jni(), *j_network_monitor_class_, "startMonitoring", "(J)V");
   jni()->CallVoidMethod(*j_network_monitor_, m, jlongFromPointer(this));
-  CHECK_EXCEPTION(jni()) << "Error during NetworkMonitor.startMonitoring";
+  CHECK_EXCEPTION(jni()) << "Error during CallVoidMethod";
 }
 
 void AndroidNetworkMonitor::Stop() {
@@ -207,21 +230,24 @@ void AndroidNetworkMonitor::Stop() {
   jni()->CallVoidMethod(*j_network_monitor_, m, jlongFromPointer(this));
   CHECK_EXCEPTION(jni()) << "Error during NetworkMonitor.stopMonitoring";
 
-  network_info_by_address_.clear();
+  network_handle_by_address_.clear();
+  network_info_by_handle_.clear();
 }
 
 int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
                                                const rtc::IPAddress& address) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
-  auto it = network_info_by_address_.find(address);
-  if (it == network_info_by_address_.end()) {
-    return rtc::NETWORK_BIND_ADDRESS_NOT_FOUND;
-  }
   // Android prior to Lollipop didn't have support for binding sockets to
   // networks. However, in that case it should not have reached here because
-  // |network_info_by_address_| should only be populated in Android Lollipop
+  // |network_handle_by_address_| should only be populated in Android Lollipop
   // and above.
-  NetworkInformation network = it->second;
+  // TODO(honghaiz): Add a check for Android version here so that it won't try
+  // to look for handle if the Android version is before Lollipop.
+  auto iter = network_handle_by_address_.find(address);
+  if (iter == network_handle_by_address_.end()) {
+    return rtc::NETWORK_BIND_ADDRESS_NOT_FOUND;
+  }
+  NetworkHandle network_handle = iter->second;
 
   // NOTE: This does rely on Android implementation details, but
   // these details are unlikely to change.
@@ -244,7 +270,7 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
     LOG(LS_ERROR) << "Symbol setNetworkForSocket not found ";
     return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
   }
-  int rv = setNetworkForSocket(network.handle, socket_fd);
+  int rv = setNetworkForSocket(network_handle, socket_fd);
   // If |network| has since disconnected, |rv| will be ENONET.  Surface this as
   // ERR_NETWORK_CHANGED, rather than MapSystemError(ENONET) which gives back
   // the less descriptive ERR_FAILED.
@@ -257,18 +283,56 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
   return rtc::NETWORK_BIND_FAILURE;
 }
 
-void AndroidNetworkMonitor::OnNetworkAvailable(
+void AndroidNetworkMonitor::OnNetworkConnected(
     const NetworkInformation& network_info) {
+  LOG(LS_INFO) << "Network connected: " << network_info.ToString();
   worker_thread()->Invoke<void>(rtc::Bind(
-      &AndroidNetworkMonitor::OnNetworkAvailable_w, this, network_info));
+      &AndroidNetworkMonitor::OnNetworkConnected_w, this, network_info));
 }
 
-void AndroidNetworkMonitor::OnNetworkAvailable_w(
+void AndroidNetworkMonitor::OnNetworkConnected_w(
     const NetworkInformation& network_info) {
-  LOG(LS_INFO) << "Network available: " << network_info.ToString();
-  for (rtc::IPAddress address : network_info.ip_addresses) {
-    network_info_by_address_[address] = network_info;
+  adapter_type_by_name_[network_info.interface_name] =
+      AdapterTypeFromNetworkType(network_info.type);
+  network_info_by_handle_[network_info.handle] = network_info;
+  for (const rtc::IPAddress& address : network_info.ip_addresses) {
+    network_handle_by_address_[address] = network_info.handle;
   }
+}
+
+void AndroidNetworkMonitor::OnNetworkDisconnected(NetworkHandle handle) {
+  LOG(LS_INFO) << "Network disconnected for handle " << handle;
+  worker_thread()->Invoke<void>(
+      rtc::Bind(&AndroidNetworkMonitor::OnNetworkDisconnected_w, this, handle));
+}
+
+void AndroidNetworkMonitor::OnNetworkDisconnected_w(NetworkHandle handle) {
+  auto iter = network_info_by_handle_.find(handle);
+  if (iter != network_info_by_handle_.end()) {
+    for (const rtc::IPAddress& address : iter->second.ip_addresses) {
+      network_handle_by_address_.erase(address);
+    }
+    network_info_by_handle_.erase(iter);
+  }
+}
+
+void AndroidNetworkMonitor::SetNetworkInfos(
+    const std::vector<NetworkInformation>& network_infos) {
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
+  network_handle_by_address_.clear();
+  network_info_by_handle_.clear();
+  for (NetworkInformation network : network_infos) {
+    OnNetworkConnected_w(network);
+  }
+}
+
+rtc::AdapterType AndroidNetworkMonitor::GetAdapterType(
+    const std::string& if_name) {
+  auto iter = adapter_type_by_name_.find(if_name);
+  if (iter == adapter_type_by_name_.end()) {
+    return rtc::ADAPTER_TYPE_UNKNOWN;
+  }
+  return iter->second;
 }
 
 rtc::NetworkMonitorInterface*
@@ -283,6 +347,21 @@ JOW(void, NetworkMonitor_nativeNotifyConnectionTypeChanged)(
   network_monitor->OnNetworksChanged();
 }
 
+JOW(void, NetworkMonitor_nativeNotifyOfActiveNetworkList)(
+    JNIEnv* jni, jobject j_monitor, jlong j_native_monitor,
+    jobjectArray j_network_infos) {
+  AndroidNetworkMonitor* network_monitor =
+      reinterpret_cast<AndroidNetworkMonitor*>(j_native_monitor);
+  std::vector<NetworkInformation> network_infos;
+  size_t num_networks = jni->GetArrayLength(j_network_infos);
+  for (size_t i = 0; i < num_networks; ++i) {
+    jobject j_network_info = jni->GetObjectArrayElement(j_network_infos, i);
+    CHECK_EXCEPTION(jni) << "Error during GetObjectArrayElement";
+    network_infos.push_back(GetNetworkInformationFromJava(jni, j_network_info));
+  }
+  network_monitor->SetNetworkInfos(network_infos);
+}
+
 JOW(void, NetworkMonitor_nativeNotifyOfNetworkConnect)(
     JNIEnv* jni, jobject j_monitor, jlong j_native_monitor,
     jobject j_network_info) {
@@ -290,7 +369,16 @@ JOW(void, NetworkMonitor_nativeNotifyOfNetworkConnect)(
       reinterpret_cast<AndroidNetworkMonitor*>(j_native_monitor);
   NetworkInformation network_info =
       GetNetworkInformationFromJava(jni, j_network_info);
-  network_monitor->OnNetworkAvailable(network_info);
+  network_monitor->OnNetworkConnected(network_info);
+}
+
+JOW(void, NetworkMonitor_nativeNotifyOfNetworkDisconnect)(
+    JNIEnv* jni, jobject j_monitor, jlong j_native_monitor,
+    jint network_handle) {
+  AndroidNetworkMonitor* network_monitor =
+      reinterpret_cast<AndroidNetworkMonitor*>(j_native_monitor);
+  network_monitor->OnNetworkDisconnected(
+      static_cast<NetworkHandle>(network_handle));
 }
 
 }  // namespace webrtc_jni

@@ -142,6 +142,9 @@ public class NetworkMonitorTest extends ActivityTestCase {
 
     @Override
     public void onNetworkConnect(NetworkInformation networkInfo) {}
+
+    @Override
+    public void onNetworkDisconnect(int networkHandle) {}
   }
 
   private static final Object lock = new Object();
