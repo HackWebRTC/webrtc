@@ -114,6 +114,7 @@
           '<(DEPTH)/resources/remote_bitrate_estimator/VideoSendersTest_BweTest_UnlimitedSpeed_0_AST.bin',
           '<(DEPTH)/resources/remote_bitrate_estimator/VideoSendersTest_BweTest_UnlimitedSpeed_0_TOF.bin',
           '<(DEPTH)/resources/short_mixed_mono_48.dat',
+          '<(DEPTH)/resources/short_mixed_mono_48_arm.dat',
           '<(DEPTH)/resources/short_mixed_mono_48.pcm',
           '<(DEPTH)/resources/short_mixed_stereo_48.dat',
           '<(DEPTH)/resources/short_mixed_stereo_48.pcm',

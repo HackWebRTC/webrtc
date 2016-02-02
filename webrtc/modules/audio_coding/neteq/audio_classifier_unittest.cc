@@ -61,9 +61,15 @@ void RunAnalysisTest(const std::string& audio_filename,
 }
 
 TEST(AudioClassifierTest, DoAnalysisMono) {
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
+  RunAnalysisTest(test::ResourcePath("short_mixed_mono_48", "pcm"),
+                  test::ResourcePath("short_mixed_mono_48_arm", "dat"),
+                  1);
+#else
   RunAnalysisTest(test::ResourcePath("short_mixed_mono_48", "pcm"),
                   test::ResourcePath("short_mixed_mono_48", "dat"),
                   1);
+#endif // WEBRTC_ARCH_ARM
 }
 
 TEST(AudioClassifierTest, DoAnalysisStereo) {

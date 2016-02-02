@@ -206,9 +206,9 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
   const int kCheckTimeMs = 1500;
 
 #if defined(OPUS_FIXED_POINT)
-  const uint16_t kOutputValueBound = 20;
+  const uint16_t kOutputValueBound = 30;
 #else
-  const uint16_t kOutputValueBound = 2;
+  const uint16_t kOutputValueBound = 8;
 #endif
 
   int time = 0;

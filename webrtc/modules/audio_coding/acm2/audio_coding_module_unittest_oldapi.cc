@@ -1406,13 +1406,13 @@ TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "855041f2490b887302bce9d544731849",
           "855041f2490b887302bce9d544731849",
-          "1e1a0fce893fef2d66886a7f09e2ebce",
-          "7417a66c28be42d5d9b2d64e0c191585"),
+          "9692eede45638eb425e0daf9c75b5c7a",
+          "c4faa472fbb0730370aaf34920381a09"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "d781cce1ab986b618d0da87226cdde30",
           "d781cce1ab986b618d0da87226cdde30",
-          "1a1fe04dd12e755949987c8d729fb3e0",
-          "47b0b04f1d03076b857c86c72c2c298b"),
+          "8d6782b905c3230d4b0e3e83e1fc3439",
+          "8b0126eab82d9e4e367ab33ded2f1a8e"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
@@ -1423,13 +1423,13 @@ TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms_voip) {
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "9b9e12bc3cc793740966e11cbfa8b35b",
           "9b9e12bc3cc793740966e11cbfa8b35b",
-          "57412a4b5771d19ff03ec35deffe7067",
-          "7ad0bbefcaa87e23187bf4a56d2f3513"),
+          "0de6249018fdd316c21086db84e10610",
+          "fd21a19b6b1e891f5daea6c4a299c254"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "c7340b1189652ab6b5e80dade7390cb4",
           "c7340b1189652ab6b5e80dade7390cb4",
-          "cdfe85939c411d12b61701c566e22d26",
-          "7a678fbe46df5bf0c67e88264a2d9275"),
+          "95612864c954ee63e28cc6eebad56626",
+          "49954b0d5a5f705a8798e7071b0c6f36"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
@@ -1497,9 +1497,9 @@ class AcmSetBitRateOldApi : public ::testing::Test {
 TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(10000, 9328);
+  Run(10000, 9288);
 #else
-  Run(10000, 9072);
+  Run(10000, 9024);
 #endif // WEBRTC_ANDROID
 
 }
@@ -1507,9 +1507,9 @@ TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
 TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(50000, 47952);
+  Run(50000, 47960);
 #else
-  Run(50000, 49600);
+  Run(50000, 49544);
 #endif // WEBRTC_ANDROID
 }
 
@@ -1589,18 +1589,18 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_10kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(10000, 32200, 5496);
+  Run(10000, 32200, 5176);
 #else
-  Run(10000, 32200, 5432);
+  Run(10000, 32200, 5456);
 #endif // WEBRTC_ANDROID
 }
 
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(50000, 32200, 24912);
+  Run(50000, 32200, 24768);
 #else
-  Run(50000, 32200, 24792);
+  Run(50000, 32200, 24848);
 #endif // WEBRTC_ANDROID
 }
 
