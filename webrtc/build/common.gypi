@@ -142,11 +142,23 @@
     # support, |ffmpeg_branding| has to separately be set to a value that
     # includes H.264, for example "Chrome". If FFmpeg is built without H.264,
     # compilation succeeds but |H264DecoderImpl| fails to initialize.
+    # See also: |rtc_initialize_ffmpeg|.
     # CHECK THE OPENH264, FFMPEG AND H.264 LICENSES/PATENTS BEFORE BUILDING.
     # http://www.openh264.org, https://www.ffmpeg.org/
     'rtc_use_h264%': 0,
 
     'conditions': [
+      # FFmpeg must be initialized for |H264DecoderImpl| to work. This can be
+      # done by WebRTC during |H264DecoderImpl::InitDecode| or externally.
+      # FFmpeg must only be initialized once. Projects that initialize FFmpeg
+      # externally, such as Chromium, must turn this flag off so that WebRTC
+      # does not also initialize.
+      ['build_with_chromium==0', {
+        'rtc_initialize_ffmpeg%': 1,
+      }, {
+        'rtc_initialize_ffmpeg%': 0,
+      }],
+
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require
         # pulse audio.

@@ -34,8 +34,9 @@ const size_t kYPlaneIndex = 0;
 const size_t kUPlaneIndex = 1;
 const size_t kVPlaneIndex = 2;
 
-#if !defined(WEBRTC_CHROMIUM_BUILD)
+#if defined(WEBRTC_INITIALIZE_FFMPEG)
 
+rtc::CriticalSection ffmpeg_init_lock;
 bool ffmpeg_initialized = false;
 
 // Called by FFmpeg to do mutex operations if initialized using
@@ -61,10 +62,8 @@ int LockManagerOperation(void** lock, AVLockOp op)
   return -1;
 }
 
-// TODO(hbos): Assumed to be called on a single thread. Should DCHECK that
-// InitializeFFmpeg is only called on one thread or make it thread safe.
-// See https://bugs.chromium.org/p/webrtc/issues/detail?id=5427.
 void InitializeFFmpeg() {
+  rtc::CritScope cs(&ffmpeg_init_lock);
   if (!ffmpeg_initialized) {
     if (av_lockmgr_register(LockManagerOperation) < 0) {
       RTC_NOTREACHED() << "av_lockmgr_register failed.";
@@ -75,7 +74,7 @@ void InitializeFFmpeg() {
   }
 }
 
-#endif  // !defined(WEBRTC_CHROMIUM_BUILD)
+#endif  // defined(WEBRTC_INITIALIZE_FFMPEG)
 
 // Called by FFmpeg when it is done with a frame buffer, see AVGetBuffer2.
 void AVFreeBuffer2(void* opaque, uint8_t* data) {
@@ -179,13 +178,15 @@ int32_t H264DecoderImpl::InitDecode(const VideoCodec* codec_settings,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  // In Chromium FFmpeg will be initialized outside of WebRTC and we should not
-  // attempt to do so ourselves or it will be initialized twice.
-  // TODO(hbos): Put behind a different flag in case non-chromium project wants
-  // to initialize externally.
-  // See https://bugs.chromium.org/p/webrtc/issues/detail?id=5427.
-#if !defined(WEBRTC_CHROMIUM_BUILD)
-  // Make sure FFmpeg has been initialized.
+  // FFmpeg must have been initialized (with |av_lockmgr_register| and
+  // |av_register_all|) before we proceed. |InitializeFFmpeg| does this, which
+  // makes sense for WebRTC standalone. In other cases, such as Chromium, FFmpeg
+  // is initialized externally and calling |InitializeFFmpeg| would be
+  // thread-unsafe and result in FFmpeg being initialized twice, which could
+  // break other FFmpeg usage. See the |rtc_initialize_ffmpeg| flag.
+#if defined(WEBRTC_INITIALIZE_FFMPEG)
+  // Make sure FFmpeg has been initialized. Subsequent |InitializeFFmpeg| calls
+  // do nothing.
   InitializeFFmpeg();
 #endif
 

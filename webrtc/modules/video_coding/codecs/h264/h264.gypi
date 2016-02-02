@@ -27,6 +27,13 @@
           'defines': [
             'WEBRTC_THIRD_PARTY_H264',
           ],
+          'conditions': [
+            ['rtc_initialize_ffmpeg==1', {
+              'defines': [
+                'WEBRTC_INITIALIZE_FFMPEG',
+              ],
+            }],
+          ],
           'dependencies': [
             '<(DEPTH)/third_party/ffmpeg/ffmpeg.gyp:ffmpeg',
             '<(DEPTH)/third_party/openh264/openh264.gyp:openh264_encoder',
