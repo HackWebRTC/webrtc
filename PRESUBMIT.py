@@ -235,6 +235,10 @@ def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
   violating_gyp_files = set()
   violating_source_entries = []
   for gyp_file in gyp_files:
+    if 'supplement.gypi' in gyp_file.LocalPath():
+      # Exclude supplement.gypi from this check, as the LSan and TSan
+      # suppression files are located in a different location.
+      continue
     contents = input_api.ReadFile(gyp_file)
     for source_block_match in source_pattern.finditer(contents):
       # Find all source list entries starting with ../ in the source block
