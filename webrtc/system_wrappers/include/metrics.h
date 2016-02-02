@@ -153,6 +153,58 @@
     webrtc::metrics::HistogramAdd(histogram_pointer, name, sample); \
   } while (0)
 
+
+// Helper macros.
+// Macros for calling a histogram with varying name (e.g. when using a metric
+// in different modes such as real-time vs screenshare).
+#define RTC_HISTOGRAMS_COUNTS_100(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_HISTOGRAM_COUNTS(name, sample, 1, 100, 50))
+
+#define RTC_HISTOGRAMS_COUNTS_200(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_HISTOGRAM_COUNTS(name, sample, 1, 200, 50))
+
+#define RTC_HISTOGRAMS_COUNTS_1000(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_HISTOGRAM_COUNTS(name, sample, 1, 1000, 50))
+
+#define RTC_HISTOGRAMS_COUNTS_10000(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_HISTOGRAM_COUNTS(name, sample, 1, 10000, 50))
+
+#define RTC_HISTOGRAMS_COUNTS_100000(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_HISTOGRAM_COUNTS(name, sample, 1, 100000, 50))
+
+#define RTC_HISTOGRAMS_ENUMERATION(index, name, sample, boundary) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_HISTOGRAM_ENUMERATION(name, sample, boundary))
+
+#define RTC_HISTOGRAMS_PERCENTAGE(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_HISTOGRAM_PERCENTAGE(name, sample))
+
+#define RTC_HISTOGRAMS_COMMON(index, name, sample, macro_invocation) \
+  do { \
+    RTC_DCHECK(index >= 0); \
+    RTC_DCHECK(index <= 2); \
+    switch (index) { \
+      case 0: \
+        macro_invocation; \
+        break; \
+      case 1: \
+        macro_invocation; \
+        break; \
+      case 2: \
+        macro_invocation; \
+        break; \
+      default: \
+        RTC_NOTREACHED(); \
+    } \
+  } while (0)
+
+
 namespace webrtc {
 namespace metrics {
 

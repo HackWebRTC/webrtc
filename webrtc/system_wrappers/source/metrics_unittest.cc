@@ -21,6 +21,9 @@ const std::string kName = "Name";
 void AddSparseSample(const std::string& name, int sample) {
   RTC_HISTOGRAM_COUNTS_SPARSE_100(name, sample);
 }
+void AddSampleWithVaryingName(int index, const std::string& name, int sample) {
+  RTC_HISTOGRAMS_COUNTS_100(index, name, sample);
+}
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 void AddSample(const std::string& name, int sample) {
   RTC_HISTOGRAM_COUNTS_100(name, sample);
@@ -71,6 +74,27 @@ TEST(MetricsTest, RtcHistogramCounts_AddMultipleSamples) {
   EXPECT_EQ(kNumSamples, test::NumHistogramSamples(kName));
   EXPECT_EQ(kNumSamples - 1, test::LastHistogramSample(kName));
 }
+
+TEST(MetricsTest, RtcHistogramsCounts_AddSample) {
+  test::ClearHistograms();
+  AddSampleWithVaryingName(0, "Name1", kSample);
+  AddSampleWithVaryingName(1, "Name2", kSample + 1);
+  AddSampleWithVaryingName(2, "Name3", kSample + 2);
+  EXPECT_EQ(1, test::NumHistogramSamples("Name1"));
+  EXPECT_EQ(1, test::NumHistogramSamples("Name2"));
+  EXPECT_EQ(1, test::NumHistogramSamples("Name3"));
+  EXPECT_EQ(kSample + 0, test::LastHistogramSample("Name1"));
+  EXPECT_EQ(kSample + 1, test::LastHistogramSample("Name2"));
+  EXPECT_EQ(kSample + 2, test::LastHistogramSample("Name3"));
+}
+
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST(MetricsTest, RtcHistogramsCounts_InvalidIndex) {
+  EXPECT_DEATH(RTC_HISTOGRAMS_COUNTS_1000(-1, kName, kSample), "");
+  EXPECT_DEATH(RTC_HISTOGRAMS_COUNTS_1000(3, kName, kSample), "");
+  EXPECT_DEATH(RTC_HISTOGRAMS_COUNTS_1000(3u, kName, kSample), "");
+}
+#endif
 
 TEST(MetricsTest, RtcHistogramSparse_NonConstantNameWorks) {
   test::ClearHistograms();
