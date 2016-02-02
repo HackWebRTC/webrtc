@@ -45,15 +45,13 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
       producer.AddRtpPacketAndGenerateFec(packet.get(), payload_size,
                                           rtp_header_length);
     }
-    uint16_t num_fec_packets = producer.NumAvailableFecPackets();
-    std::vector<RedPacket*> fec_packets;
+    const size_t num_fec_packets = producer.NumAvailableFecPackets();
     if (num_fec_packets > 0) {
-      fec_packets =
+      std::vector<RedPacket*> fec_packets =
           producer.GetFecPackets(kRedPayloadType, 99, 100, rtp_header_length);
       RTC_CHECK_EQ(num_fec_packets, fec_packets.size());
-    }
-    for (RedPacket* fec_packet : fec_packets) {
-      delete fec_packet;
+      for (RedPacket* fec_packet : fec_packets)
+        delete fec_packet;
     }
   }
 }
