@@ -63,6 +63,10 @@ double RateTracker::ComputeRateForInterval(
     milliseconds_to_skip = 0u;
     available_interval_milliseconds =
         TimeDiff(current_time, initialization_time_milliseconds_);
+    // Let one bucket interval pass after initialization before reporting.
+    if (available_interval_milliseconds < bucket_milliseconds_) {
+      return 0.0;
+    }
   }
   // If we're skipping all buckets that means that there have been no samples
   // within the sampling interval so report 0.

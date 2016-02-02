@@ -12,10 +12,13 @@
 #include "webrtc/base/ratetracker.h"
 
 namespace rtc {
+namespace {
+  const uint32_t kBucketIntervalMs = 100;
+}  // namespace
 
 class RateTrackerForTest : public RateTracker {
  public:
-  RateTrackerForTest() : RateTracker(100u, 10u), time_(0) {}
+  RateTrackerForTest() : RateTracker(kBucketIntervalMs, 10u), time_(0) {}
   virtual uint32_t Time() const { return time_; }
   void AdvanceTime(uint32_t delta) { time_ += delta; }
 
@@ -55,8 +58,11 @@ TEST(RateTrackerTest, TestRateTrackerBasics) {
 
   // Add a sample.
   tracker.AddSamples(1234);
-  // Advance the clock by 100 ms.
-  tracker.AdvanceTime(100);
+  // Advance the clock by less than one bucket interval (no rate returned).
+  tracker.AdvanceTime(kBucketIntervalMs - 1);
+  EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRate());
+  // Advance the clock by 100 ms (one bucket interval).
+  tracker.AdvanceTime(1);
   EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeRateForInterval(1000u));
   EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeRate());
   EXPECT_EQ(1234U, tracker.TotalSampleCount());
