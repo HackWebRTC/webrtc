@@ -219,8 +219,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_.Decode(maxWaitTimeMs);
   }
 
-  int32_t ResetDecoder() override { return receiver_.ResetDecoder(); }
-
   int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const override {
     return receiver_.ReceiveCodec(currentReceiveCodec);
   }

@@ -100,8 +100,6 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
 
   int32_t Release() override;
 
-  int32_t Reset() override;
-
   bool PrefersLateDecoding() const override { return true; }
 
   // rtc::MessageHandler implementation.
@@ -803,14 +801,6 @@ int32_t MediaCodecVideoDecoder::RegisterDecodeCompleteCallback(
     DecodedImageCallback* callback) {
   callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
-}
-
-int32_t MediaCodecVideoDecoder::Reset() {
-  ALOGD << "DecoderReset";
-  if (!inited_) {
-    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  }
-  return InitDecode(&codec_, 1);
 }
 
 void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {

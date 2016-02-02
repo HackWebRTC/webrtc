@@ -149,8 +149,6 @@ class VP9DecoderImpl : public VP9Decoder {
 
   int Release() override;
 
-  int Reset() override;
-
   const char* ImplementationName() const override;
 
  private:

@@ -149,7 +149,6 @@ class VideoReceiver {
   int RegisterRenderBufferSizeCallback(VCMRenderBufferSizeCallback* callback);
 
   int32_t Decode(uint16_t maxWaitTimeMs);
-  int32_t ResetDecoder();
 
   int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const;
   VideoCodecType ReceiveCodec() const;
@@ -208,10 +207,12 @@ class VideoReceiver {
 #endif
   VCMFrameBuffer _frameFromFile;
   bool _scheduleKeyRequest GUARDED_BY(process_crit_sect_);
+  bool drop_frames_until_keyframe_ GUARDED_BY(process_crit_sect_);
   size_t max_nack_list_size_ GUARDED_BY(process_crit_sect_);
-  EncodedImageCallback* pre_decode_image_callback_ GUARDED_BY(_receiveCritSect);
 
   VCMCodecDataBase _codecDataBase GUARDED_BY(_receiveCritSect);
+  EncodedImageCallback* pre_decode_image_callback_ GUARDED_BY(_receiveCritSect);
+
   VCMProcessTimer _receiveStatsTimer;
   VCMProcessTimer _retransmissionTimer;
   VCMProcessTimer _keyRequestTimer;

@@ -73,7 +73,9 @@ class VideoDecoder {
       DecodedImageCallback* callback) = 0;
 
   virtual int32_t Release() = 0;
-  virtual int32_t Reset() = 0;
+  // TODO(pbos): Remove, this is no longer called. A no-op implementation is
+  // added here to permit removal elsewhere.
+  virtual int32_t Reset() { return 0; }
 
   // Returns true if the decoder prefer to decode frames late.
   // That is, it can not decode infinite number of frames before the decoded
@@ -104,7 +106,6 @@ class VideoDecoderSoftwareFallbackWrapper : public webrtc::VideoDecoder {
       DecodedImageCallback* callback) override;
 
   int32_t Release() override;
-  int32_t Reset() override;
   bool PrefersLateDecoding() const override;
 
   const char* ImplementationName() const override;

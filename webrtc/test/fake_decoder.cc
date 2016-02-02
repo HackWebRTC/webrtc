@@ -54,10 +54,6 @@ int32_t FakeDecoder::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t FakeDecoder::Reset() {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 const char* FakeDecoder::kImplementationName = "fake_decoder";
 const char* FakeDecoder::ImplementationName() const {
   return kImplementationName;

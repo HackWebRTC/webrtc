@@ -84,8 +84,6 @@ class FakeWebRtcVideoDecoder : public webrtc::VideoDecoder {
 
   virtual int32_t Release() { return WEBRTC_VIDEO_CODEC_OK; }
 
-  virtual int32_t Reset() { return WEBRTC_VIDEO_CODEC_OK; }
-
   int GetNumFramesReceived() const {
     return num_frames_received_;
   }

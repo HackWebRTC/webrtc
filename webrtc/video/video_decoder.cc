@@ -128,12 +128,6 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Release() {
   return decoder_->Release();
 }
 
-int32_t VideoDecoderSoftwareFallbackWrapper::Reset() {
-  if (fallback_decoder_)
-    fallback_decoder_->Reset();
-  return decoder_->Reset();
-}
-
 bool VideoDecoderSoftwareFallbackWrapper::PrefersLateDecoding() const {
   if (fallback_decoder_)
     return fallback_decoder_->PrefersLateDecoding();

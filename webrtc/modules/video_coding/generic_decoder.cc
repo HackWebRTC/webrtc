@@ -171,10 +171,6 @@ int32_t VCMGenericDecoder::Release() {
   return _decoder->Release();
 }
 
-int32_t VCMGenericDecoder::Reset() {
-  return _decoder->Reset();
-}
-
 int32_t VCMGenericDecoder::RegisterDecodeCompleteCallback(
     VCMDecodedFrameCallback* callback) {
   _callback = callback;

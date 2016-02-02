@@ -49,11 +49,6 @@ class VideoDecoderSoftwareFallbackWrapperTest : public ::testing::Test {
       return WEBRTC_VIDEO_CODEC_OK;
     }
 
-    int32_t Reset() override {
-      ++reset_count_;
-      return WEBRTC_VIDEO_CODEC_OK;
-    }
-
     const char* ImplementationName() const override {
       return "fake-decoder";
     }
@@ -132,20 +127,6 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, ForwardsReleaseCall) {
       << "Decoder should not be released during fallback.";
   fallback_wrapper_.Release();
   EXPECT_EQ(2, fake_decoder_.release_count_);
-}
-
-TEST_F(VideoDecoderSoftwareFallbackWrapperTest, ForwardsResetCall) {
-  VideoCodec codec = {};
-  fallback_wrapper_.InitDecode(&codec, 2);
-  fallback_wrapper_.Reset();
-  EXPECT_EQ(1, fake_decoder_.reset_count_);
-
-  fake_decoder_.decode_return_code_ = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
-  EncodedImage encoded_image;
-  fallback_wrapper_.Decode(encoded_image, false, nullptr, nullptr, -1);
-  fallback_wrapper_.Reset();
-  EXPECT_EQ(2, fake_decoder_.reset_count_)
-      << "Reset not forwarded during fallback.";
 }
 
 // TODO(pbos): Fake a VP8 frame well enough to actually receive a callback from

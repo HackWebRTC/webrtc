@@ -136,7 +136,6 @@ class VP8DecoderImpl : public VP8Decoder {
 
   int RegisterDecodeCompleteCallback(DecodedImageCallback* callback) override;
   int Release() override;
-  int Reset() override;
 
   const char* ImplementationName() const override;
 

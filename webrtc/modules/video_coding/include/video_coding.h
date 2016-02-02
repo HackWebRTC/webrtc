@@ -384,12 +384,6 @@ class VideoCodingModule : public Module {
   virtual int RegisterRenderBufferSizeCallback(
       VCMRenderBufferSizeCallback* callback) = 0;
 
-  // Reset the decoder state to the initial state.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
-  virtual int32_t ResetDecoder() = 0;
-
   // API to get the codec which is currently used for decoding by the module.
   //
   // Input:

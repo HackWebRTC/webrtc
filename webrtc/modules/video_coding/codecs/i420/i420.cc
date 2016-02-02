@@ -147,10 +147,6 @@ I420Decoder::~I420Decoder() {
   Release();
 }
 
-int I420Decoder::Reset() {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int I420Decoder::InitDecode(const VideoCodec* codecSettings,
                             int /*numberOfCores */) {
   if (codecSettings == NULL) {

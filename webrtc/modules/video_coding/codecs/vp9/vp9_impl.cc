@@ -840,14 +840,6 @@ VP9DecoderImpl::~VP9DecoderImpl() {
   }
 }
 
-int VP9DecoderImpl::Reset() {
-  if (!inited_) {
-    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  }
-  InitDecode(&codec_, 1);
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   if (inst == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;

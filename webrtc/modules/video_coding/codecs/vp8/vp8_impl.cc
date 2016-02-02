@@ -1085,15 +1085,6 @@ VP8DecoderImpl::~VP8DecoderImpl() {
   Release();
 }
 
-int VP8DecoderImpl::Reset() {
-  if (!inited_) {
-    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  }
-  InitDecode(&codec_, 1);
-  propagation_cnt_ = -1;
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   int ret_val = Release();
   if (ret_val < 0) {

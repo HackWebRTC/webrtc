@@ -114,14 +114,8 @@ int32_t RTPReceiverVideo::InvokeOnInitializeDecoder(
     int8_t payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const PayloadUnion& specific_payload) const {
-  // For video we just go with default values.
-  if (-1 ==
-      callback->OnInitializeDecoder(payload_type, payload_name,
-                                    kVideoPayloadTypeFrequency, 1, 0)) {
-    LOG(LS_ERROR) << "Failed to created decoder for payload type: "
-                  << static_cast<int>(payload_type);
-    return -1;
-  }
+  // TODO(pbos): Remove as soon as audio can handle a changing payload type
+  // without this callback.
   return 0;
 }
 

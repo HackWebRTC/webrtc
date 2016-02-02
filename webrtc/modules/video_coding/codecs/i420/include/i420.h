@@ -131,12 +131,6 @@ class I420Decoder : public VideoDecoder {
   //                                  <0 - Error
   int Release() override;
 
-  // Reset decoder state and prepare for a new call.
-  //
-  // Return value         :  WEBRTC_VIDEO_CODEC_OK.
-  //                          <0 - Error
-  int Reset() override;
-
  private:
   static const uint8_t* ExtractHeader(const uint8_t* buffer,
                                       uint16_t* width,

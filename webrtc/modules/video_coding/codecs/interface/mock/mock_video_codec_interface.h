@@ -73,7 +73,6 @@ class MockVideoDecoder : public VideoDecoder {
   MOCK_METHOD1(RegisterDecodeCompleteCallback,
                int32_t(DecodedImageCallback* callback));
   MOCK_METHOD0(Release, int32_t());
-  MOCK_METHOD0(Reset, int32_t());
   MOCK_METHOD0(Copy, VideoDecoder*());
 };
 

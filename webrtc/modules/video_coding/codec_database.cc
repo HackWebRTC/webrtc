@@ -529,6 +529,8 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
     const VCMEncodedFrame& frame,
     VideoCodec* new_codec) const {
   uint8_t payload_type = frame.PayloadType();
+  LOG(LS_INFO) << "Initializing decoder with payload type '"
+               << static_cast<int>(payload_type) << "'.";
   assert(new_codec);
   const VCMDecoderMapItem* decoder_item = FindDecoderItem(payload_type);
   if (!decoder_item) {

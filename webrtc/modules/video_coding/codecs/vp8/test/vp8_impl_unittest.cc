@@ -266,22 +266,4 @@ TEST_F(TestVp8Impl, MAYBE_DecodeWithACompleteKeyFrame) {
   EXPECT_GT(I420PSNR(&input_frame_, &decoded_frame_), 36);
 }
 
-TEST_F(TestVp8Impl, TestReset) {
-  SetUpEncodeDecode();
-  EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
-  EXPECT_EQ(0, decoder_->Decode(encoded_frame_, false, NULL));
-  size_t length = CalcBufferSize(kI420, kWidth, kHeight);
-  rtc::scoped_ptr<uint8_t[]> first_frame_buffer(new uint8_t[length]);
-  ExtractBuffer(decoded_frame_, length, first_frame_buffer.get());
-
-  EXPECT_EQ(0, decoder_->Reset());
-
-  EXPECT_EQ(0, decoder_->Decode(encoded_frame_, false, NULL));
-  rtc::scoped_ptr<uint8_t[]> second_frame_buffer(new uint8_t[length]);
-  ExtractBuffer(decoded_frame_, length, second_frame_buffer.get());
-
-  EXPECT_EQ(
-      0, memcmp(second_frame_buffer.get(), first_frame_buffer.get(), length));
-}
-
 }  // namespace webrtc

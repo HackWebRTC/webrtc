@@ -43,9 +43,10 @@ VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
 #endif
       _frameFromFile(),
       _scheduleKeyRequest(false),
+      drop_frames_until_keyframe_(false),
       max_nack_list_size_(0),
-      pre_decode_image_callback_(NULL),
       _codecDataBase(nullptr, nullptr),
+      pre_decode_image_callback_(NULL),
       _receiveStatsTimer(1000, clock_),
       _retransmissionTimer(10, clock_),
       _keyRequestTimer(500, clock_) {
@@ -282,6 +283,19 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   if (!frame)
     return VCM_FRAME_NOT_READY;
 
+  {
+    CriticalSectionScoped cs(process_crit_sect_.get());
+    if (drop_frames_until_keyframe_) {
+      // Still getting delta frames, schedule another keyframe request as if
+      // decode failed.
+      if (frame->FrameType() != kVideoFrameKey) {
+        _scheduleKeyRequest = true;
+        _receiver.ReleaseFrame(frame);
+        return VCM_FRAME_NOT_READY;
+      }
+      drop_frames_until_keyframe_ = false;
+    }
+  }
   CriticalSectionScoped cs(_receiveCritSect);
 
   // If this frame was too late, we should adjust the delay accordingly
@@ -380,25 +394,6 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
   return ret;
 }
 
-// Reset the decoder state
-int32_t VideoReceiver::ResetDecoder() {
-  bool reset_key_request = false;
-  {
-    CriticalSectionScoped cs(_receiveCritSect);
-    if (_decoder != NULL) {
-      _receiver.Reset();
-      _timing.Reset();
-      reset_key_request = true;
-      _decoder->Reset();
-    }
-  }
-  if (reset_key_request) {
-    CriticalSectionScoped cs(process_crit_sect_.get());
-    _scheduleKeyRequest = false;
-  }
-  return VCM_OK;
-}
-
 // Register possible receive codecs, can be called multiple times
 int32_t VideoReceiver::RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                             int32_t numberOfCores,
@@ -449,8 +444,11 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
   // TODO(holmer): Investigate if this somehow should use the key frame
   // request scheduling to throttle the requests.
   if (ret == VCM_FLUSH_INDICATOR) {
+    {
+      CriticalSectionScoped process_cs(process_crit_sect_.get());
+      drop_frames_until_keyframe_ = true;
+    }
     RequestKeyFrame();
-    ResetDecoder();
   } else if (ret < 0) {
     return ret;
   }

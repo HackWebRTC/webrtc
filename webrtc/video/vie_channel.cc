@@ -914,10 +914,8 @@ void ViEChannel::StartReceive() {
 
 void ViEChannel::StopReceive() {
   vie_receiver_.StopReceive();
-  if (!sender_) {
+  if (!sender_)
     StopDecodeThread();
-    vcm_->ResetDecoder();
-  }
 }
 
 int32_t ViEChannel::ReceivedRTPPacket(const void* rtp_packet,
@@ -1166,18 +1164,15 @@ void ViEChannel::RegisterPreDecodeImageCallback(
   vcm_->RegisterPreDecodeImageCallback(pre_decode_callback);
 }
 
-// TODO(pbos): Remove OnInitializeDecoder which is called from the RTP module,
-// any decoder resetting should be handled internally within the VCM.
+// TODO(pbos): Remove as soon as audio can handle a changing payload type
+// without this callback.
 int32_t ViEChannel::OnInitializeDecoder(
     const int8_t payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int frequency,
     const size_t channels,
     const uint32_t rate) {
-  LOG(LS_INFO) << "OnInitializeDecoder " << static_cast<int>(payload_type)
-               << " " << payload_name;
-  vcm_->ResetDecoder();
-
+  RTC_NOTREACHED();
   return 0;
 }
 
