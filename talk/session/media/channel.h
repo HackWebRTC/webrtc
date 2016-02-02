@@ -61,7 +61,6 @@ namespace cricket {
 
 struct CryptoParams;
 class MediaContentDescription;
-struct ViewRequest;
 
 enum SinkType {
   SINK_PRE_CRYPTO,  // Sink packets before encryption or after decryption.
@@ -456,7 +455,6 @@ class VideoChannel : public BaseChannel {
   }
 
   bool SetRenderer(uint32_t ssrc, VideoRenderer* renderer);
-  bool ApplyViewRequest(const ViewRequest& request);
 
   // TODO(pthatcher): Refactor to use a "capture id" instead of an
   // ssrc here as the "key".
@@ -492,7 +490,6 @@ class VideoChannel : public BaseChannel {
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
                                   ContentAction action,
                                   std::string* error_desc);
-  bool ApplyViewRequest_w(const ViewRequest& request);
 
   bool AddScreencast_w(uint32_t ssrc, VideoCapturer* capturer);
   bool RemoveScreencast_w(uint32_t ssrc);

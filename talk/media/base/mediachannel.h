@@ -989,9 +989,6 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
   // Gets the currently set codecs/payload types to be used for outgoing media.
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
-  // Sets the format of a specified outgoing stream.
-  virtual bool SetSendStreamFormat(uint32_t ssrc,
-                                   const VideoFormat& format) = 0;
   // Starts or stops transmission (and potentially capture) of local video.
   virtual bool SetSend(bool send) = 0;
   // Configure stream for sending.

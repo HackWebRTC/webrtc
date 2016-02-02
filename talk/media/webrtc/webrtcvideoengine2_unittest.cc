@@ -705,15 +705,20 @@ TEST_F(WebRtcVideoEngine2Test, SimulcastDisabledForH264) {
   const std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
   EXPECT_TRUE(
       channel->AddSendStream(cricket::CreateSimStreamParams("cname", ssrcs)));
-  // Set the stream to 720p. This should trigger a "real" encoder
-  // initialization.
+
+  // Send a frame of 720p. This should trigger a "real" encoder initialization.
   cricket::VideoFormat format(
       1280, 720, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420);
-  EXPECT_TRUE(channel->SetSendStreamFormat(ssrcs[0], format));
+  cricket::FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel->SetCapturer(ssrcs[0], &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(format));
+  EXPECT_TRUE(capturer.CaptureFrame());
+
   ASSERT_EQ(1u, encoder_factory.encoders().size());
   FakeWebRtcVideoEncoder* encoder = encoder_factory.encoders()[0];
   EXPECT_EQ(webrtc::kVideoCodecH264, encoder->GetCodecSettings().codecType);
   EXPECT_EQ(1u, encoder->GetCodecSettings().numberOfSimulcastStreams);
+  EXPECT_TRUE(channel->SetCapturer(ssrcs[0], nullptr));
 }
 
 // Test that external codecs are added to the end of the supported codec list.
@@ -836,11 +841,6 @@ WEBRTC_BASE_TEST(SendsLowerResolutionOnSmallerFrames);
 WEBRTC_BASE_TEST(MuteStream);
 
 WEBRTC_BASE_TEST(MultipleSendStreams);
-
-WEBRTC_BASE_TEST(SetSendStreamFormat0x0);
-
-// TODO(zhurunz): Fix the flakey test.
-WEBRTC_DISABLED_BASE_TEST(SetSendStreamFormat);
 
 TEST_F(WebRtcVideoChannel2BaseTest, SendAndReceiveVp8Vga) {
   SendAndReceive(cricket::VideoCodec(100, "VP8", 640, 400, 30, 0));

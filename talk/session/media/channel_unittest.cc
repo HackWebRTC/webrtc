@@ -2502,67 +2502,6 @@ TEST_F(VideoChannelTest, TestOnReadyToSendWithRtcpMux) {
   Base::TestOnReadyToSendWithRtcpMux();
 }
 
-TEST_F(VideoChannelTest, TestApplyViewRequest) {
-  CreateChannels(0, 0);
-  cricket::StreamParams stream2;
-  stream2.id = "stream2";
-  stream2.ssrcs.push_back(2222);
-  local_media_content1_.AddStream(stream2);
-
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-
-  cricket::VideoFormat send_format;
-  EXPECT_TRUE(media_channel1_->GetSendStreamFormat(kSsrc1, &send_format));
-  EXPECT_EQ(640, send_format.width);
-  EXPECT_EQ(400, send_format.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(30), send_format.interval);
-
-  cricket::ViewRequest request;
-  // stream1: 320x200x15; stream2: 0x0x0
-  request.static_video_views.push_back(cricket::StaticVideoView(
-      cricket::StreamSelector(kSsrc1), 320, 200, 15));
-  EXPECT_TRUE(channel1_->ApplyViewRequest(request));
-  EXPECT_TRUE(media_channel1_->GetSendStreamFormat(kSsrc1, &send_format));
-  EXPECT_EQ(320, send_format.width);
-  EXPECT_EQ(200, send_format.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(15), send_format.interval);
-  EXPECT_TRUE(media_channel1_->GetSendStreamFormat(2222, &send_format));
-  EXPECT_EQ(0, send_format.width);
-  EXPECT_EQ(0, send_format.height);
-
-  // stream1: 160x100x8; stream2: 0x0x0
-  request.static_video_views.clear();
-  request.static_video_views.push_back(cricket::StaticVideoView(
-      cricket::StreamSelector(kSsrc1), 160, 100, 8));
-  EXPECT_TRUE(channel1_->ApplyViewRequest(request));
-  EXPECT_TRUE(media_channel1_->GetSendStreamFormat(kSsrc1, &send_format));
-  EXPECT_EQ(160, send_format.width);
-  EXPECT_EQ(100, send_format.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(8), send_format.interval);
-
-  // stream1: 0x0x0; stream2: 640x400x30
-  request.static_video_views.clear();
-  request.static_video_views.push_back(cricket::StaticVideoView(
-      cricket::StreamSelector(std::string(), stream2.id), 640, 400, 30));
-  EXPECT_TRUE(channel1_->ApplyViewRequest(request));
-  EXPECT_TRUE(media_channel1_->GetSendStreamFormat(kSsrc1, &send_format));
-  EXPECT_EQ(0, send_format.width);
-  EXPECT_EQ(0, send_format.height);
-  EXPECT_TRUE(media_channel1_->GetSendStreamFormat(2222, &send_format));
-  EXPECT_EQ(640, send_format.width);
-  EXPECT_EQ(400, send_format.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(30), send_format.interval);
-
-  // stream1: 0x0x0; stream2: 0x0x0
-  request.static_video_views.clear();
-  EXPECT_TRUE(channel1_->ApplyViewRequest(request));
-  EXPECT_TRUE(media_channel1_->GetSendStreamFormat(kSsrc1, &send_format));
-  EXPECT_EQ(0, send_format.width);
-  EXPECT_EQ(0, send_format.height);
-}
-
-
 // DataChannelTest
 
 class DataChannelTest

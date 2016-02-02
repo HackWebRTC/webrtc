@@ -970,17 +970,6 @@ bool WebRtcVideoChannel2::GetSendCodec(VideoCodec* codec) {
   return true;
 }
 
-bool WebRtcVideoChannel2::SetSendStreamFormat(uint32_t ssrc,
-                                              const VideoFormat& format) {
-  LOG(LS_VERBOSE) << "SetSendStreamFormat:" << ssrc << " -> "
-                  << format.ToString();
-  rtc::CritScope stream_lock(&stream_crit_);
-  if (send_streams_.find(ssrc) == send_streams_.end()) {
-    return false;
-  }
-  return send_streams_[ssrc]->SetVideoFormat(format);
-}
-
 bool WebRtcVideoChannel2::SetSend(bool send) {
   LOG(LS_VERBOSE) << "SetSend: " << (send ? "true" : "false");
   if (send && !send_codec_) {
@@ -1689,32 +1678,6 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
   // Lock cannot be held while connecting the capturer to prevent lock-order
   // violations.
   capturer->SignalVideoFrame.connect(this, &WebRtcVideoSendStream::InputFrame);
-  return true;
-}
-
-// TODO(pbos): Apply this on the VideoAdapter instead!
-bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoFormat(
-    const VideoFormat& format) {
-  if ((format.width == 0 || format.height == 0) &&
-      format.width != format.height) {
-    LOG(LS_ERROR) << "Can't set VideoFormat, width or height is zero (but not "
-                     "both, 0x0 drops frames).";
-    return false;
-  }
-
-  rtc::CritScope cs(&lock_);
-  if (format.width == 0 && format.height == 0) {
-    LOG(LS_INFO)
-        << "0x0 resolution selected. Captured frames will be dropped for ssrc: "
-        << parameters_.config.rtp.ssrcs[0] << ".";
-  } else {
-    // TODO(pbos): Fix me, this only affects the last stream!
-    parameters_.encoder_config.streams.back().max_framerate =
-        VideoFormat::IntervalToFps(format.interval);
-    SetDimensions(format.width, format.height, false);
-  }
-
-  format_ = format;
   return true;
 }
 

@@ -1685,10 +1685,6 @@ bool VideoChannel::SetRenderer(uint32_t ssrc, VideoRenderer* renderer) {
   return true;
 }
 
-bool VideoChannel::ApplyViewRequest(const ViewRequest& request) {
-  return InvokeOnWorker(Bind(&VideoChannel::ApplyViewRequest_w, this, request));
-}
-
 bool VideoChannel::AddScreencast(uint32_t ssrc, VideoCapturer* capturer) {
   return worker_thread()->Invoke<bool>(Bind(
       &VideoChannel::AddScreencast_w, this, ssrc, capturer));
@@ -1844,43 +1840,6 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   set_remote_content_direction(content->direction());
   ChangeState();
   return true;
-}
-
-bool VideoChannel::ApplyViewRequest_w(const ViewRequest& request) {
-  bool ret = true;
-  // Set the send format for each of the local streams. If the view request
-  // does not contain a local stream, set its send format to 0x0, which will
-  // drop all frames.
-  for (std::vector<StreamParams>::const_iterator it = local_streams().begin();
-      it != local_streams().end(); ++it) {
-    VideoFormat format(0, 0, 0, cricket::FOURCC_I420);
-    StaticVideoViews::const_iterator view;
-    for (view = request.static_video_views.begin();
-         view != request.static_video_views.end(); ++view) {
-      if (view->selector.Matches(*it)) {
-        format.width = view->width;
-        format.height = view->height;
-        format.interval = cricket::VideoFormat::FpsToInterval(view->framerate);
-        break;
-      }
-    }
-
-    ret &= media_channel()->SetSendStreamFormat(it->first_ssrc(), format);
-  }
-
-  // Check if the view request has invalid streams.
-  for (StaticVideoViews::const_iterator it = request.static_video_views.begin();
-      it != request.static_video_views.end(); ++it) {
-    if (!GetStream(local_streams(), it->selector)) {
-      LOG(LS_WARNING) << "View request for ("
-                      << it->selector.ssrc << ", '"
-                      << it->selector.groupid << "', '"
-                      << it->selector.streamid << "'"
-                      << ") is not in the local streams.";
-    }
-  }
-
-  return ret;
 }
 
 bool VideoChannel::AddScreencast_w(uint32_t ssrc, VideoCapturer* capturer) {

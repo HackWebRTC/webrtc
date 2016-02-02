@@ -233,12 +233,6 @@ class VideoMediaChannelTest : public testing::Test,
   bool SetSend(bool send) {
     return channel_->SetSend(send);
   }
-  bool SetSendStreamFormat(uint32_t ssrc, const cricket::VideoCodec& codec) {
-    return channel_->SetSendStreamFormat(ssrc, cricket::VideoFormat(
-        codec.width, codec.height,
-        cricket::VideoFormat::FpsToInterval(codec.framerate),
-        cricket::FOURCC_ANY));
-  }
   int DrainOutgoingPackets() {
     int packets = 0;
     do {
@@ -657,7 +651,6 @@ class VideoMediaChannelTest : public testing::Test,
   // Test that we can set the SSRC for the default send source.
   void SetSendSsrc() {
     EXPECT_TRUE(SetDefaultCodec());
-    EXPECT_TRUE(SetSendStreamFormat(kSsrc, DefaultCodec()));
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(SendFrame());
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
@@ -681,7 +674,6 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(999)));
     EXPECT_TRUE(channel_->SetCapturer(999u, video_capturer_.get()));
-    EXPECT_TRUE(SetSendStreamFormat(999u, DefaultCodec()));
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(WaitAndSendFrame(0));
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
@@ -1097,63 +1089,6 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(video_capturer_->CaptureCustomFrame(
         codec.width / 2, codec.height / 2, cricket::FOURCC_I420));
     EXPECT_FRAME_WAIT(2, codec.width / 2, codec.height / 2, kTimeout);
-  }
-  // Tests that we can set the send stream format properly.
-  void SetSendStreamFormat() {
-    cricket::VideoCodec codec(DefaultCodec());
-    SendAndReceive(codec);
-    int frame_count = 1;
-    EXPECT_FRAME_WAIT(frame_count, codec.width, codec.height, kTimeout);
-
-    // Adapt the resolution and frame rate to half.
-    cricket::VideoFormat format(
-        codec.width / 2,
-        codec.height / 2,
-        cricket::VideoFormat::FpsToInterval(codec.framerate / 2),
-        cricket::FOURCC_I420);
-    // The SSRC differs from the send SSRC.
-    EXPECT_FALSE(channel_->SetSendStreamFormat(kSsrc - 1, format));
-    EXPECT_TRUE(channel_->SetSendStreamFormat(kSsrc, format));
-
-    EXPECT_TRUE(WaitAndSendFrame(30));  // Should be dropped.
-    EXPECT_TRUE(WaitAndSendFrame(30));  // Should be rendered.
-    EXPECT_TRUE(WaitAndSendFrame(30));  // Should be dropped.
-    frame_count += 1;
-    EXPECT_FRAME_WAIT(frame_count, format.width, format.height, kTimeout);
-
-    // Adapt the resolution to 0x0, which should drop all frames.
-    format.width = 0;
-    format.height = 0;
-    EXPECT_TRUE(channel_->SetSendStreamFormat(kSsrc, format));
-    EXPECT_TRUE(SendFrame());
-    EXPECT_TRUE(SendFrame());
-    rtc::Thread::Current()->ProcessMessages(500);
-    EXPECT_EQ(frame_count, renderer_.num_rendered_frames());
-  }
-  // Test that setting send stream format to 0x0 resolution will result in
-  // frames being dropped.
-  void SetSendStreamFormat0x0() {
-    EXPECT_TRUE(SetOneCodec(DefaultCodec()));
-    EXPECT_TRUE(SetSendStreamFormat(kSsrc, DefaultCodec()));
-    EXPECT_TRUE(SetSend(true));
-    EXPECT_TRUE(channel_->SetRenderer(kDefaultReceiveSsrc, &renderer_));
-    EXPECT_EQ(0, renderer_.num_rendered_frames());
-    // This frame should be received.
-    EXPECT_TRUE(SendFrame());
-    EXPECT_FRAME_WAIT(1, DefaultCodec().width, DefaultCodec().height, kTimeout);
-    const int64_t interval =
-        cricket::VideoFormat::FpsToInterval(DefaultCodec().framerate);
-    cricket::VideoFormat format(
-        0,
-        0,
-        interval,
-        cricket::FOURCC_I420);
-    EXPECT_TRUE(channel_->SetSendStreamFormat(kSsrc, format));
-    // This frame should not be received.
-    EXPECT_TRUE(WaitAndSendFrame(
-        static_cast<int>(interval/rtc::kNumNanosecsPerMillisec)));
-    rtc::Thread::Current()->ProcessMessages(500);
-    EXPECT_EQ(1, renderer_.num_rendered_frames());
   }
 
   // Tests that we can mute and unmute the channel properly.

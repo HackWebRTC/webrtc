@@ -456,20 +456,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     return renderers_;
   }
   int max_bps() const { return max_bps_; }
-  bool GetSendStreamFormat(uint32_t ssrc, VideoFormat* format) {
-    if (send_formats_.find(ssrc) == send_formats_.end()) {
-      return false;
-    }
-    *format = send_formats_[ssrc];
-    return true;
-  }
-  virtual bool SetSendStreamFormat(uint32_t ssrc, const VideoFormat& format) {
-    if (send_formats_.find(ssrc) == send_formats_.end()) {
-      return false;
-    }
-    send_formats_[ssrc] = format;
-    return true;
-  }
   virtual bool SetSendParameters(const VideoSendParameters& params) {
     return (SetSendCodecs(params.codecs) &&
             SetSendRtpHeaderExtensions(params.extensions) &&
@@ -482,14 +468,9 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
             SetRecvRtpHeaderExtensions(params.extensions));
   }
   virtual bool AddSendStream(const StreamParams& sp) {
-    if (!RtpHelper<VideoMediaChannel>::AddSendStream(sp)) {
-      return false;
-    }
-    SetSendStreamDefaultFormat(sp.first_ssrc());
-    return true;
+    return RtpHelper<VideoMediaChannel>::AddSendStream(sp);
   }
   virtual bool RemoveSendStream(uint32_t ssrc) {
-    send_formats_.erase(ssrc);
     return RtpHelper<VideoMediaChannel>::RemoveSendStream(ssrc);
   }
 
@@ -559,10 +540,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     }
     send_codecs_ = codecs;
 
-    for (std::vector<StreamParams>::const_iterator it = send_streams().begin();
-         it != send_streams().end(); ++it) {
-      SetSendStreamDefaultFormat(it->first_ssrc());
-    }
     return true;
   }
   bool SetOptions(const VideoOptions& options) {
@@ -574,21 +551,10 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     return true;
   }
 
-  // Be default, each send stream uses the first send codec format.
-  void SetSendStreamDefaultFormat(uint32_t ssrc) {
-    if (!send_codecs_.empty()) {
-      send_formats_[ssrc] = VideoFormat(
-          send_codecs_[0].width, send_codecs_[0].height,
-          cricket::VideoFormat::FpsToInterval(send_codecs_[0].framerate),
-          cricket::FOURCC_I420);
-    }
-  }
-
   FakeVideoEngine* engine_;
   std::vector<VideoCodec> recv_codecs_;
   std::vector<VideoCodec> send_codecs_;
   std::map<uint32_t, VideoRenderer*> renderers_;
-  std::map<uint32_t, VideoFormat> send_formats_;
   std::map<uint32_t, VideoCapturer*> capturers_;
   VideoOptions options_;
   int max_bps_;

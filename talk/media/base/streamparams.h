@@ -247,31 +247,6 @@ struct MediaStreams {
   RTC_DISALLOW_COPY_AND_ASSIGN(MediaStreams);
 };
 
-// A request for a specific format of a specific stream.
-struct StaticVideoView {
-  StaticVideoView(const StreamSelector& selector,
-                  int width, int height, int framerate)
-      : selector(selector),
-        width(width),
-        height(height),
-        framerate(framerate),
-        preference(0) {
-  }
-
-  StreamSelector selector;
-  int width;
-  int height;
-  int framerate;
-  int preference;
-};
-
-typedef std::vector<StaticVideoView> StaticVideoViews;
-
-// A request for several streams in various formats.
-struct ViewRequest {
-  StaticVideoViews static_video_views;
-};
-
 template <class Condition>
 const StreamParams* GetStream(const StreamParamsVec& streams,
                               Condition condition) {

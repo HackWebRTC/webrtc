@@ -160,7 +160,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
   bool SetSendParameters(const VideoSendParameters& params) override;
   bool SetRecvParameters(const VideoRecvParameters& params) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
-  bool SetSendStreamFormat(uint32_t ssrc, const VideoFormat& format) override;
   bool SetSend(bool send) override;
   bool SetVideoSend(uint32_t ssrc,
                     bool mute,
@@ -261,7 +260,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
 
     void InputFrame(VideoCapturer* capturer, const VideoFrame* frame);
     bool SetCapturer(VideoCapturer* capturer);
-    bool SetVideoFormat(const VideoFormat& format);
     void MuteStream(bool mute);
     bool DisconnectCapturer();
 
