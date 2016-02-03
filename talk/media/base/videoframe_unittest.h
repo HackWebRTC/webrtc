@@ -249,7 +249,7 @@ class VideoFrameTest : public testing::Test {
     }
 
     for (uint32_t i = 0; i < width * height * bpp / 8; ++i) {
-      char value = ((i / 63) & 1) ? 192 : 64;
+      uint8_t value = ((i / 63) & 1) ? 192 : 64;
       ms->Write(&value, sizeof(value), NULL, NULL);
     }
     return ms.release();
