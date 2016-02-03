@@ -1,0 +1,7 @@
+{
+  "tests": [
+    {
+      "app": "modules_unittests"
+    }
+  ]
+}
