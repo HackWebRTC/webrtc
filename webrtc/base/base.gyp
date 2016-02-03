@@ -39,8 +39,11 @@
             'objc/RTCDispatcher.m',
             'objc/RTCLogging.h',
             'objc/RTCLogging.mm',
+            'objc/RTCMacros.h',
             'objc/RTCSSLAdapter.h',
             'objc/RTCSSLAdapter.mm',
+            'objc/RTCTracing.h',
+            'objc/RTCTracing.mm',
           ],
           'conditions': [
             ['OS=="ios"', {

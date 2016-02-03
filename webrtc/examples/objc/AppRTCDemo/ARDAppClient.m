@@ -11,6 +11,7 @@
 #import "ARDAppClient+Internal.h"
 
 #if defined(WEBRTC_IOS)
+#import "webrtc/base/objc/RTCTracing.h"
 #import "RTCAVFoundationVideoSource.h"
 #endif
 #import "RTCFileLogger.h"
@@ -47,6 +48,12 @@ static NSInteger const kARDAppClientErrorCreateSDP = -3;
 static NSInteger const kARDAppClientErrorSetSDP = -4;
 static NSInteger const kARDAppClientErrorInvalidClient = -5;
 static NSInteger const kARDAppClientErrorInvalidRoom = -6;
+
+// TODO(tkchin): Remove guard once rtc_base_objc compiles on Mac.
+#if defined(WEBRTC_IOS)
+// TODO(tkchin): Add this as a UI option.
+static BOOL const kARDAppClientEnableTracing = NO;
+#endif
 
 // We need a proxy to NSTimer because it causes a strong retain cycle. When
 // using the proxy, |invalidate| must be called before it properly deallocs.
@@ -209,6 +216,17 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
   _isAudioOnly = isAudioOnly;
   self.state = kARDAppClientStateConnecting;
 
+#if defined(WEBRTC_IOS)
+  if (kARDAppClientEnableTracing) {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(
+        NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirPath = paths.firstObject;
+    NSString *filePath =
+        [documentsDirPath stringByAppendingPathComponent:@"webrtc-trace.txt"];
+    RTCStartInternalCapture(filePath);
+  }
+#endif
+
   // Request TURN.
   __weak ARDAppClient *weakSelf = self;
   [_turnClient requestServersWithCompletionHandler:^(NSArray *turnServers,
@@ -285,6 +303,9 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
   _messageQueue = [NSMutableArray array];
   _peerConnection = nil;
   self.state = kARDAppClientStateDisconnected;
+#if defined(WEBRTC_IOS)
+  RTCStopInternalCapture();
+#endif
 }
 
 #pragma mark - ARDSignalingChannelDelegate
