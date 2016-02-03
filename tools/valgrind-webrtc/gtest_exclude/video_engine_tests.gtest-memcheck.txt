@@ -1,7 +1,6 @@
 # Fails when run under memcheck
 EndToEndTest.CanSwitchToUseAllSsrcs
 EndToEndTest.SendsAndReceivesVP9
-EndToEndTest.RestartingSendStreamPreservesRtpStatesWithRtx
 VideoSendStreamTest.VP9FlexMode
 
 # Flaky under memcheck (WebRTC issue 5134)

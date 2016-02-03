@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <algorithm>
+#include <list>
 #include <map>
 #include <sstream>
 #include <string>
@@ -17,9 +18,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
@@ -2948,8 +2951,6 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
 }
 
 void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
-  static const uint32_t kMaxSequenceNumberGap = 100;
-  static const uint64_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
   class RtpSequenceObserver : public test::RtpRtcpObserver {
    public:
     explicit RtpSequenceObserver(bool use_rtx)
@@ -2973,7 +2974,8 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
       const uint32_t ssrc = header.ssrc;
-      const uint16_t sequence_number = header.sequenceNumber;
+      const int64_t sequence_number =
+          seq_numbers_unwrapper_.Unwrap(header.sequenceNumber);
       const uint32_t timestamp = header.timestamp;
       const bool only_padding =
           header.headerLength + header.paddingLength == length;
@@ -2981,41 +2983,41 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
       EXPECT_TRUE(configured_ssrcs_[ssrc])
           << "Received SSRC that wasn't configured: " << ssrc;
 
-      std::map<uint32_t, uint16_t>::iterator it =
-          last_observed_sequence_number_.find(header.ssrc);
-      if (it == last_observed_sequence_number_.end()) {
-        last_observed_sequence_number_[ssrc] = sequence_number;
+      static const int64_t kMaxSequenceNumberGap = 100;
+      std::list<int64_t>* seq_numbers = &last_observed_seq_numbers_[ssrc];
+      if (seq_numbers->empty()) {
+        seq_numbers->push_back(sequence_number);
+      } else {
+        // We shouldn't get replays of previous sequence numbers.
+        for (int64_t observed : *seq_numbers) {
+          EXPECT_NE(observed, sequence_number)
+              << "Received sequence number " << sequence_number
+              << " for SSRC " << ssrc << " 2nd time.";
+        }
+        // Verify sequence numbers are reasonably close.
+        int64_t latest_observed = seq_numbers->back();
+        int64_t sequence_number_gap = sequence_number - latest_observed;
+        EXPECT_LE(std::abs(sequence_number_gap), kMaxSequenceNumberGap)
+            << "Gap in sequence numbers (" << latest_observed << " -> "
+            << sequence_number << ") too large for SSRC: " << ssrc << ".";
+        seq_numbers->push_back(sequence_number);
+        if (seq_numbers->size() >= kMaxSequenceNumberGap) {
+          seq_numbers->pop_front();
+        }
+      }
+
+      static const int32_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
+      auto timestamp_it = last_observed_timestamp_.find(ssrc);
+      if (timestamp_it == last_observed_timestamp_.end()) {
         last_observed_timestamp_[ssrc] = timestamp;
       } else {
-        // Verify sequence numbers are reasonably close.
-        uint32_t extended_sequence_number = sequence_number;
-        // Check for roll-over.
-        if (sequence_number < last_observed_sequence_number_[ssrc])
-          extended_sequence_number += 0xFFFFu + 1;
-        EXPECT_LE(
-            extended_sequence_number - last_observed_sequence_number_[ssrc],
-            kMaxSequenceNumberGap)
-            << "Gap in sequence numbers ("
-            << last_observed_sequence_number_[ssrc] << " -> " << sequence_number
-            << ") too large for SSRC: " << ssrc << ".";
-        last_observed_sequence_number_[ssrc] = sequence_number;
-
-        // TODO(pbos): Remove this check if we ever have monotonically
-        // increasing timestamps. Right now padding packets add a delta which
-        // can cause reordering between padding packets and regular packets,
-        // hence we drop padding-only packets to not flake.
-        if (only_padding) {
-          // Verify that timestamps are reasonably close.
-          uint64_t extended_timestamp = timestamp;
-          // Check for roll-over.
-          if (timestamp < last_observed_timestamp_[ssrc])
-            extended_timestamp += static_cast<uint64_t>(0xFFFFFFFFu) + 1;
-          EXPECT_LE(extended_timestamp - last_observed_timestamp_[ssrc],
-                    kMaxTimestampGap)
-              << "Gap in timestamps (" << last_observed_timestamp_[ssrc]
-              << " -> " << timestamp << ") too large for SSRC: " << ssrc << ".";
-        }
-        last_observed_timestamp_[ssrc] = timestamp;
+        // Verify timestamps are reasonably close.
+        uint32_t latest_observed = timestamp_it->second;
+        int32_t timestamp_gap = rtc::TimeDiff(timestamp, latest_observed);
+        EXPECT_LE(std::abs(timestamp_gap), kMaxTimestampGap)
+            << "Gap in timestamps (" << latest_observed << " -> "
+            << timestamp << ") too large for SSRC: " << ssrc << ".";
+        timestamp_it->second = timestamp;
       }
 
       rtc::CritScope lock(&crit_);
@@ -3029,7 +3031,8 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
       return SEND_PACKET;
     }
 
-    std::map<uint32_t, uint16_t> last_observed_sequence_number_;
+    SequenceNumberUnwrapper seq_numbers_unwrapper_;
+    std::map<uint32_t, std::list<int64_t>> last_observed_seq_numbers_;
     std::map<uint32_t, uint32_t> last_observed_timestamp_;
     std::map<uint32_t, bool> configured_ssrcs_;
 
@@ -3128,7 +3131,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
   DestroyStreams();
 }
 
-TEST_F(EndToEndTest, DISABLED_RestartingSendStreamPreservesRtpState) {
+TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpState) {
   TestRtpStatePreservation(false);
 }
 
