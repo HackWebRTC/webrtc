@@ -74,7 +74,7 @@ static NetworkType GetNetworkTypeFromJava(JNIEnv* jni, jobject j_network_type) {
 static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
   switch (network_type) {
     case NETWORK_UNKNOWN:
-      RTC_DCHECK(false) << "Unknown network type ";
+      LOG(LS_WARNING) << "Unknown network type";
       return rtc::ADAPTER_TYPE_UNKNOWN;
     case NETWORK_ETHERNET:
       return rtc::ADAPTER_TYPE_ETHERNET;
