@@ -139,7 +139,7 @@ source_set("webrtc_h264") {
   ]
 
   if (rtc_use_h264) {
-    defines += [ "WEBRTC_THIRD_PARTY_H264" ]
+    defines += [ "WEBRTC_USE_H264" ]
     if (rtc_initialize_ffmpeg) {
       defines += [ "WEBRTC_INITIALIZE_FFMPEG" ]
     }

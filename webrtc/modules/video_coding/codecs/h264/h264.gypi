@@ -23,9 +23,12 @@
             'h264_objc.mm',
           ],
         }],
+        # TODO(hbos): Consider renaming this flag and the below macro to
+        # something which helps distinguish OpenH264/FFmpeg from other H264
+        # implementations.
         ['rtc_use_h264==1', {
           'defines': [
-            'WEBRTC_THIRD_PARTY_H264',
+            'WEBRTC_USE_H264',
           ],
           'conditions': [
             ['rtc_initialize_ffmpeg==1', {

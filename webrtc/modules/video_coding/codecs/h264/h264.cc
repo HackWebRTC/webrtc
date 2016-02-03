@@ -11,9 +11,9 @@
 
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 
-#if defined(WEBRTC_THIRD_PARTY_H264)
-#include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
+#if defined(WEBRTC_USE_H264)
 #include "webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.h"
+#include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #endif
 #if defined(WEBRTC_IOS)
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_decoder.h"
@@ -24,6 +24,20 @@
 #include "webrtc/base/logging.h"
 
 namespace webrtc {
+
+namespace {
+
+#if defined(WEBRTC_USE_H264)
+bool g_rtc_use_h264 = true;
+#endif
+
+}  // namespace
+
+void DisableRtcUseH264() {
+#if defined(WEBRTC_USE_H264)
+  g_rtc_use_h264 = false;
+#endif
+}
 
 // We need this file to be C++ only so it will compile properly for all
 // platforms. In order to write ObjC specific implementations we use private
@@ -39,8 +53,8 @@ bool IsH264CodecSupported() {
     return true;
   }
 #endif
-#if defined(WEBRTC_THIRD_PARTY_H264)
-  return true;
+#if defined(WEBRTC_USE_H264)
+  return g_rtc_use_h264;
 #else
   return false;
 #endif
@@ -54,7 +68,8 @@ H264Encoder* H264Encoder::Create() {
     return new H264VideoToolboxEncoder();
   }
 #endif
-#if defined(WEBRTC_THIRD_PARTY_H264)
+#if defined(WEBRTC_USE_H264)
+  RTC_CHECK(g_rtc_use_h264);
   LOG(LS_INFO) << "Creating H264EncoderImpl.";
   return new H264EncoderImpl();
 #else
@@ -75,7 +90,8 @@ H264Decoder* H264Decoder::Create() {
     return new H264VideoToolboxDecoder();
   }
 #endif
-#if defined(WEBRTC_THIRD_PARTY_H264)
+#if defined(WEBRTC_USE_H264)
+  RTC_CHECK(g_rtc_use_h264);
   LOG(LS_INFO) << "Creating H264DecoderImpl.";
   return new H264DecoderImpl();
 #else
