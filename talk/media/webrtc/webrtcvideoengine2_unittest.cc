@@ -165,50 +165,6 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   std::map<int, int> default_apt_rtx_types_;
 };
 
-TEST_F(WebRtcVideoEngine2Test, FindCodec) {
-  const std::vector<cricket::VideoCodec>& c = engine_.codecs();
-  EXPECT_EQ(cricket::DefaultVideoCodecList().size(), c.size());
-
-  cricket::VideoCodec vp8(104, "VP8", 320, 200, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(vp8));
-
-  cricket::VideoCodec vp8_ci(104, "vp8", 320, 200, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(vp8));
-
-  cricket::VideoCodec vp8_diff_fr_diff_pref(104, "VP8", 320, 200, 50, 50);
-  EXPECT_TRUE(engine_.FindCodec(vp8_diff_fr_diff_pref));
-
-  cricket::VideoCodec vp8_diff_id(95, "VP8", 320, 200, 30, 0);
-  EXPECT_FALSE(engine_.FindCodec(vp8_diff_id));
-  vp8_diff_id.id = 97;
-  EXPECT_TRUE(engine_.FindCodec(vp8_diff_id));
-
-  // FindCodec ignores the codec size.
-  // Test that FindCodec can accept uncommon codec size.
-  cricket::VideoCodec vp8_diff_res(104, "VP8", 320, 111, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(vp8_diff_res));
-
-  // PeerConnection doesn't negotiate the resolution at this point.
-  // Test that FindCodec can handle the case when width/height is 0.
-  cricket::VideoCodec vp8_zero_res(104, "VP8", 0, 0, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(vp8_zero_res));
-
-  cricket::VideoCodec red(101, "RED", 0, 0, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(red));
-
-  cricket::VideoCodec red_ci(101, "red", 0, 0, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(red));
-
-  cricket::VideoCodec fec(102, "ULPFEC", 0, 0, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(fec));
-
-  cricket::VideoCodec fec_ci(102, "ulpfec", 0, 0, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(fec));
-
-  cricket::VideoCodec rtx(96, "rtx", 0, 0, 30, 0);
-  EXPECT_TRUE(engine_.FindCodec(rtx));
-}
-
 TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
   std::vector<VideoCodec> engine_codecs = engine_.codecs();
   for (size_t i = 0; i < engine_codecs.size(); ++i) {

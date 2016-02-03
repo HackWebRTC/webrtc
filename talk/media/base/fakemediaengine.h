@@ -760,14 +760,6 @@ class FakeVideoEngine : public FakeBaseEngine {
   }
 
   const std::vector<VideoCodec>& codecs() const { return codecs_; }
-  bool FindCodec(const VideoCodec& in) {
-    for (size_t i = 0; i < codecs_.size(); ++i) {
-      if (codecs_[i].Matches(in)) {
-        return true;
-      }
-    }
-    return false;
-  }
   void SetCodecs(const std::vector<VideoCodec> codecs) { codecs_ = codecs; }
 
   bool SetCaptureDevice(const Device* device) {

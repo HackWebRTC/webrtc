@@ -129,10 +129,6 @@ class WebRtcVideoEngine2 {
   virtual void SetExternalEncoderFactory(
       WebRtcVideoEncoderFactory* encoder_factory);
 
-  bool FindCodec(const VideoCodec& in);
-  // Check whether the supplied trace should be ignored.
-  bool ShouldIgnoreTrace(const std::string& trace);
-
  private:
   std::vector<VideoCodec> GetSupportedCodecs() const;
 

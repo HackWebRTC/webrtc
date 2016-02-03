@@ -583,32 +583,6 @@ void WebRtcVideoEngine2::SetExternalEncoderFactory(
   video_codecs_ = GetSupportedCodecs();
 }
 
-// Checks to see whether we comprehend and could receive a particular codec
-bool WebRtcVideoEngine2::FindCodec(const VideoCodec& in) {
-  // TODO(pbos): Probe encoder factory to figure out that the codec is supported
-  // if supported by the encoder factory. Add a corresponding test that fails
-  // with this code (that doesn't ask the factory).
-  for (size_t j = 0; j < video_codecs_.size(); ++j) {
-    VideoCodec codec(video_codecs_[j].id, video_codecs_[j].name, 0, 0, 0, 0);
-    if (codec.Matches(in)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// Ignore spammy trace messages, mostly from the stats API when we haven't
-// gotten RTCP info yet from the remote side.
-bool WebRtcVideoEngine2::ShouldIgnoreTrace(const std::string& trace) {
-  static const char* const kTracesToIgnore[] = {NULL};
-  for (const char* const* p = kTracesToIgnore; *p; ++p) {
-    if (trace.find(*p) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
 std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
   std::vector<VideoCodec> supported_codecs = DefaultVideoCodecList();
 
