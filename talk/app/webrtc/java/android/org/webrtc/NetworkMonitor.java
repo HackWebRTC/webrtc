@@ -173,7 +173,7 @@ public class NetworkMonitor {
         applicationContext);
       final NetworkMonitorAutoDetect.NetworkState networkState =
           autoDetector.getCurrentNetworkState();
-      updateCurrentConnectionType(autoDetector.getConnectionType(networkState));
+      updateCurrentConnectionType(NetworkMonitorAutoDetect.getConnectionType(networkState));
       updateActiveNetworkList();
     }
   }
