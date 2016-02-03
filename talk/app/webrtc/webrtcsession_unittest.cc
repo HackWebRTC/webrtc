@@ -4190,9 +4190,16 @@ TEST_P(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
   answer = CreateAnswer(NULL);
   SetLocalDescriptionWithoutError(answer);
 }
+
+// Flaky on Win and Mac only. See webrtc:4943
+#if defined(WEBRTC_WIN) || defined(WEBRTC_MAC)
+#define MAYBE_TestRtxRemovedByCreateAnswer DISABLED_TestRtxRemovedByCreateAnswer
+#else
+#define MAYBE_TestRtxRemovedByCreateAnswer TestRtxRemovedByCreateAnswer
+#endif
 // Tests that RTX codec is removed from the answer when it isn't supported
 // by local side.
-TEST_F(WebRtcSessionTest, TestRtxRemovedByCreateAnswer) {
+TEST_F(WebRtcSessionTest, MAYBE_TestRtxRemovedByCreateAnswer) {
   Init();
   SendAudioVideoStream1();
   std::string offer_sdp(kSdpWithRtx);
