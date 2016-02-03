@@ -132,27 +132,25 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
     @Override
     public void onAvailable(Network network) {
-      NetworkInformation networkInformation = connectivityManagerDelegate.networkToInfo(network);
-      Logging.d(TAG, "Network " + networkInformation.name + " with handle " +
-                networkInformation.handle + " is connected ");
-      observer.onNetworkConnect(networkInformation);
+      Logging.d(TAG, "Network becomes available: " + network.toString());
+      onNetworkChanged(network);
     }
 
     @Override
     public void onCapabilitiesChanged(
         Network network, NetworkCapabilities networkCapabilities) {
       // A capabilities change may indicate the ConnectionType has changed,
-      // so forward the new NetworkInformation along to observer.
-      NetworkInformation networkInformation = connectivityManagerDelegate.networkToInfo(network);
-      observer.onNetworkConnect(networkInformation);
+      // so forward the new NetworkInformation along to the observer.
+      Logging.d(TAG, "capabilities changed: " + networkCapabilities.toString());
+      onNetworkChanged(network);
     }
 
     @Override
     public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
       // A link property change may indicate the IP address changes.
       // so forward the new NetworkInformation to the observer.
-      NetworkInformation networkInformation = connectivityManagerDelegate.networkToInfo(network);
-      observer.onNetworkConnect(networkInformation);
+      Logging.d(TAG, "link properties changed: " + linkProperties.toString());
+      onNetworkChanged(network);
     }
 
     @Override
@@ -168,6 +166,14 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       int handle = networkToNetId(network);
       Logging.d(TAG, "Network with handle " + handle + " is disconnected");
       observer.onNetworkDisconnect(handle);
+    }
+
+    private void onNetworkChanged(Network network) {
+      NetworkInformation networkInformation = connectivityManagerDelegate.networkToInfo(network);
+      if (networkInformation.type != ConnectionType.CONNECTION_UNKNOWN
+          && networkInformation.type != ConnectionType.CONNECTION_NONE) {
+        observer.onNetworkConnect(networkInformation);
+      }
     }
   }
 
