@@ -27,8 +27,8 @@ VideoDecoder* VideoDecoder::Create(VideoDecoder::DecoderType codec_type) {
     case kVp9:
       return VP9Decoder::Create();
     case kUnsupportedCodec:
-      RTC_NOTREACHED();
-      return nullptr;
+      LOG(LS_ERROR) << "Creating NullVideoDecoder for unsupported codec.";
+      return new NullVideoDecoder();
   }
   RTC_NOTREACHED();
   return nullptr;
@@ -138,6 +138,42 @@ const char* VideoDecoderSoftwareFallbackWrapper::ImplementationName() const {
   if (fallback_decoder_)
     return fallback_implementation_name_.c_str();
   return decoder_->ImplementationName();
+}
+
+NullVideoDecoder::NullVideoDecoder() {}
+
+int32_t NullVideoDecoder::InitDecode(const VideoCodec* codec_settings,
+                                     int32_t number_of_cores) {
+  LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
+  return WEBRTC_VIDEO_CODEC_OK;
+}
+
+int32_t NullVideoDecoder::Decode(const EncodedImage& input_image,
+    bool missing_frames,
+    const RTPFragmentationHeader* fragmentation,
+    const CodecSpecificInfo* codec_specific_info,
+    int64_t render_time_ms) {
+  LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
+  return WEBRTC_VIDEO_CODEC_OK;
+}
+
+int32_t NullVideoDecoder::RegisterDecodeCompleteCallback(
+    DecodedImageCallback* callback) {
+  LOG(LS_ERROR)
+      << "Can't register decode complete callback on NullVideoDecoder.";
+  return WEBRTC_VIDEO_CODEC_OK;
+}
+
+int32_t NullVideoDecoder::Release() {
+  return WEBRTC_VIDEO_CODEC_OK;
+}
+
+int32_t NullVideoDecoder::Reset() {
+  return WEBRTC_VIDEO_CODEC_OK;
+}
+
+const char* NullVideoDecoder::ImplementationName() const {
+  return "NullVideoDecoder";
 }
 
 }  // namespace webrtc

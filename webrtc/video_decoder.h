@@ -123,6 +123,30 @@ class VideoDecoderSoftwareFallbackWrapper : public webrtc::VideoDecoder {
   DecodedImageCallback* callback_;
 };
 
+// Video decoder class to be used for unknown codecs. Doesn't support decoding
+// but logs messages to LS_ERROR.
+class NullVideoDecoder : public VideoDecoder {
+ public:
+  NullVideoDecoder();
+
+  int32_t InitDecode(const VideoCodec* codec_settings,
+                     int32_t number_of_cores) override;
+
+  int32_t Decode(const EncodedImage& input_image,
+                 bool missing_frames,
+                 const RTPFragmentationHeader* fragmentation,
+                 const CodecSpecificInfo* codec_specific_info,
+                 int64_t render_time_ms) override;
+
+  int32_t RegisterDecodeCompleteCallback(
+      DecodedImageCallback* callback) override;
+
+  int32_t Release() override;
+  int32_t Reset() override;
+
+  const char* ImplementationName() const override;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_DECODER_H_

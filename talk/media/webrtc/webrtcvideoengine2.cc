@@ -2226,10 +2226,9 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
         webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kH264), type, false);
   }
 
-  // This shouldn't happen, we should not be trying to create something we don't
-  // support.
-  RTC_DCHECK(false);
-  return AllocatedDecoder(NULL, webrtc::kVideoCodecUnknown, false);
+  return AllocatedDecoder(
+      webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kUnsupportedCodec),
+      webrtc::kVideoCodecUnknown, false);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
