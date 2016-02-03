@@ -101,6 +101,7 @@ bool ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
   switch (nal_type) {
     case kSps:
     case kPps:
+    case kSei:
     case kIdr:
       parsed_payload->frame_type = kVideoFrameKey;
       break;
