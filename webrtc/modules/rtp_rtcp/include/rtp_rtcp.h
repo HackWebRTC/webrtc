@@ -249,10 +249,6 @@ class RtpRtcp : public Module {
     virtual void SetRtxSendPayloadType(int payload_type,
                                        int associated_payload_type) = 0;
 
-    // Gets the payload type pair of (RTX, associated) to use when sending RTX
-    // packets.
-    virtual std::pair<int, int> RtxSendPayloadType() const = 0;
-
     /*
     *   sends kRtcpByeCode when going from true to false
     *

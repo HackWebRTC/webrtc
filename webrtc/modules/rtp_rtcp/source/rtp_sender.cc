@@ -168,7 +168,6 @@ RTPSender::RTPSender(
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
-      rtx_payload_type_(-1),
       target_bitrate_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       target_bitrate_(0) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
@@ -440,17 +439,6 @@ void RTPSender::SetRtxPayloadType(int payload_type,
   }
 
   rtx_payload_type_map_[associated_payload_type] = payload_type;
-  rtx_payload_type_ = payload_type;
-}
-
-std::pair<int, int> RTPSender::RtxPayloadType() const {
-  rtc::CritScope lock(&send_critsect_);
-  for (const auto& kv : rtx_payload_type_map_) {
-    if (kv.second == rtx_payload_type_) {
-      return std::make_pair(rtx_payload_type_, kv.first);
-    }
-  }
-  return std::make_pair(-1, -1);
 }
 
 int32_t RTPSender::CheckPayloadType(int8_t payload_type,
@@ -666,7 +654,7 @@ size_t RTPSender::SendPadData(size_t bytes,
         ssrc = ssrc_rtx_;
         sequence_number = sequence_number_rtx_;
         ++sequence_number_rtx_;
-        payload_type = rtx_payload_type_;
+        payload_type = rtx_payload_type_map_.begin()->second;
         over_rtx = true;
       }
     }
@@ -1854,11 +1842,16 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
   memcpy(data_buffer_rtx, buffer, rtp_header.headerLength);
 
   // Replace payload type, if a specific type is set for RTX.
-  if (rtx_payload_type_ != -1) {
-    data_buffer_rtx[1] = static_cast<uint8_t>(rtx_payload_type_);
-    if (rtp_header.markerBit)
-      data_buffer_rtx[1] |= kRtpMarkerBitMask;
-  }
+  auto kv = rtx_payload_type_map_.find(rtp_header.payloadType);
+  // Use rtx mapping associated with media codec if we can't find one, assuming
+  // it's red.
+  // TODO(holmer): Remove once old Chrome versions don't rely on this.
+  if (kv == rtx_payload_type_map_.end())
+    kv = rtx_payload_type_map_.find(payload_type_);
+  if (kv != rtx_payload_type_map_.end())
+    data_buffer_rtx[1] = kv->second;
+  if (rtp_header.markerBit)
+    data_buffer_rtx[1] |= kRtpMarkerBitMask;
 
   // Replace sequence number.
   uint8_t* ptr = data_buffer_rtx + 2;

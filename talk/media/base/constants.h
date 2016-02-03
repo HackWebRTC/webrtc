@@ -172,6 +172,8 @@ extern const int kDefaultH264PlType;
 extern const int kDefaultRedPlType;
 extern const int kDefaultUlpfecType;
 extern const int kDefaultRtxVp8PlType;
+extern const int kDefaultRtxVp9PlType;
+extern const int kDefaultRtxRedPlType;
 
 extern const int kDefaultVideoMaxWidth;
 extern const int kDefaultVideoMaxHeight;

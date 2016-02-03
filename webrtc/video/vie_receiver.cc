@@ -366,7 +366,9 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
     if (!rtp_payload_registry_->RestoreOriginalPacket(
             restored_packet_, packet, &packet_length, rtp_receiver_->SSRC(),
             header)) {
-      LOG(LS_WARNING) << "Incoming RTX packet: Invalid RTP header";
+      LOG(LS_WARNING) << "Incoming RTX packet: Invalid RTP header ssrc: "
+                      << header.ssrc << " payload type: "
+                      << static_cast<int>(header.payloadType);
       return false;
     }
     restored_packet_in_use_ = true;

@@ -736,7 +736,9 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
         return SEND_PACKET;
       }
 
-      EXPECT_EQ(kVideoSendSsrcs[0], header.ssrc);
+      EXPECT_EQ(kVideoSendSsrcs[0], header.ssrc)
+          << "Payload type " << static_cast<int>(header.payloadType)
+          << " not expected.";
       EXPECT_EQ(payload_type_, header.payloadType);
 
       // Found the final packet of the frame to inflict loss to, drop this and
@@ -768,16 +770,21 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
       if (payload_type_ == kRedPayloadType) {
         send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
         send_config->rtp.fec.red_payload_type = kRedPayloadType;
-        (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
-        (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+        if (retransmission_ssrc_ == kSendRtxSsrcs[0])
+          send_config->rtp.fec.red_rtx_payload_type = kRtxRedPayloadType;
+        (*receive_configs)[0].rtp.fec.ulpfec_payload_type =
+            send_config->rtp.fec.ulpfec_payload_type;
+        (*receive_configs)[0].rtp.fec.red_payload_type =
+            send_config->rtp.fec.red_payload_type;
+        (*receive_configs)[0].rtp.fec.red_rtx_payload_type =
+            send_config->rtp.fec.red_rtx_payload_type;
       }
 
       if (retransmission_ssrc_ == kSendRtxSsrcs[0]) {
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
-        (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].ssrc =
-            kSendRtxSsrcs[0];
-        (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].payload_type =
+        (*receive_configs)[0].rtp.rtx[payload_type_].ssrc = kSendRtxSsrcs[0];
+        (*receive_configs)[0].rtp.rtx[payload_type_].payload_type =
             kSendRtxPayloadType;
       }
     }
@@ -788,8 +795,14 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
     }
 
     int GetPayloadType(bool use_rtx, bool use_red) {
-      return use_rtx ? kSendRtxPayloadType
-                     : (use_red ? kRedPayloadType : kFakeVideoSendPayloadType);
+      if (use_red) {
+        if (use_rtx)
+          return kRtxRedPayloadType;
+        return kRedPayloadType;
+      }
+      if (use_rtx)
+        return kSendRtxPayloadType;
+      return kFakeVideoSendPayloadType;
     }
 
     rtc::CriticalSection crit_;

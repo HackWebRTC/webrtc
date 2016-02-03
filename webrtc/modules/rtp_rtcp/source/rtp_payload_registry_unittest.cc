@@ -303,7 +303,7 @@ void TestRtxPacket(RTPPayloadRegistry* rtp_payload_registry,
   size_t length = original_length;
   bool success = rtp_payload_registry->RestoreOriginalPacket(
       restored_packet.get(), packet.get(), &length, original_ssrc, header);
-  ASSERT_EQ(should_succeed, success)
+  EXPECT_EQ(should_succeed, success)
       << "Test success should match should_succeed.";
   if (!success) {
     return;
@@ -335,47 +335,9 @@ TEST_F(RtpPayloadRegistryTest, MultipleRtxPayloadTypes) {
   // Map two RTX payload types.
   rtp_payload_registry_->SetRtxPayloadType(105, 95);
   rtp_payload_registry_->SetRtxPayloadType(106, 96);
-  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(true);
 
   TestRtxPacket(rtp_payload_registry_.get(), 105, 95, true);
   TestRtxPacket(rtp_payload_registry_.get(), 106, 96, true);
-
-  // If the option is off, the map will be ignored.
-  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(false);
-  TestRtxPacket(rtp_payload_registry_.get(), 105, 90, true);
-  TestRtxPacket(rtp_payload_registry_.get(), 106, 90, true);
-}
-
-// TODO(holmer): Ignored by default for compatibility with misconfigured RTX
-// streams in Chrome. When that is fixed, remove this.
-TEST_F(RtpPayloadRegistryTest, IgnoresRtxPayloadTypeMappingByDefault) {
-  // Set the incoming payload type to 90.
-  RTPHeader header;
-  header.payloadType = 90;
-  header.ssrc = 1;
-  rtp_payload_registry_->SetIncomingPayloadType(header);
-  rtp_payload_registry_->SetRtxSsrc(100);
-  // Map two RTX payload types.
-  rtp_payload_registry_->SetRtxPayloadType(105, 95);
-  rtp_payload_registry_->SetRtxPayloadType(106, 96);
-
-  TestRtxPacket(rtp_payload_registry_.get(), 105, 90, true);
-  TestRtxPacket(rtp_payload_registry_.get(), 106, 90, true);
-}
-
-TEST_F(RtpPayloadRegistryTest, InferLastReceivedPacketIfPayloadTypeUnknown) {
-  rtp_payload_registry_->SetRtxSsrc(100);
-  // Set the incoming payload type to 90.
-  RTPHeader header;
-  header.payloadType = 90;
-  header.ssrc = 1;
-  rtp_payload_registry_->SetIncomingPayloadType(header);
-  rtp_payload_registry_->SetRtxPayloadType(105, 95);
-  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(true);
-  // Mapping respected for known type.
-  TestRtxPacket(rtp_payload_registry_.get(), 105, 95, true);
-  // Mapping ignored for unknown type, even though the option is on.
-  TestRtxPacket(rtp_payload_registry_.get(), 106, 90, true);
 }
 
 TEST_F(RtpPayloadRegistryTest, InvalidRtxConfiguration) {
@@ -384,9 +346,28 @@ TEST_F(RtpPayloadRegistryTest, InvalidRtxConfiguration) {
   TestRtxPacket(rtp_payload_registry_.get(), 105, 0, false);
   // Succeeds when the mapping is used, but fails for the implicit fallback.
   rtp_payload_registry_->SetRtxPayloadType(105, 95);
-  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(true);
   TestRtxPacket(rtp_payload_registry_.get(), 105, 95, true);
   TestRtxPacket(rtp_payload_registry_.get(), 106, 0, false);
+}
+
+TEST_F(RtpPayloadRegistryTest, AssumeRtxWrappingRed) {
+  rtp_payload_registry_->SetRtxSsrc(100);
+  // Succeeds when the mapping is used, but fails for the implicit fallback.
+  rtp_payload_registry_->SetRtxPayloadType(105, 95);
+  // Set the incoming payload type to 96, which we assume is red.
+  RTPHeader header;
+  header.payloadType = 96;
+  header.ssrc = 1;
+  rtp_payload_registry_->SetIncomingPayloadType(header);
+  // Recovers with correct, but unexpected, payload type since we haven't
+  // configured red.
+  TestRtxPacket(rtp_payload_registry_.get(), 105, 95, true);
+  bool created_new_payload;
+  rtp_payload_registry_->RegisterReceivePayload(
+      "RED", header.payloadType, 90000, 1, 0, &created_new_payload);
+  // Now that red is configured we expect to get the red payload type back on
+  // recovery because of the workaround to always recover red when configured.
+  TestRtxPacket(rtp_payload_registry_.get(), 105, header.payloadType, true);
 }
 
 INSTANTIATE_TEST_CASE_P(TestDynamicRange,

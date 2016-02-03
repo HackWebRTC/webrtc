@@ -139,6 +139,8 @@ const int kDefaultH264PlType = 107;
 const int kDefaultRedPlType = 116;
 const int kDefaultUlpfecType = 117;
 const int kDefaultRtxVp8PlType = 96;
+const int kDefaultRtxVp9PlType = 97;
+const int kDefaultRtxRedPlType = 98;
 
 const int kDefaultVideoMaxWidth = 640;
 const int kDefaultVideoMaxHeight = 400;

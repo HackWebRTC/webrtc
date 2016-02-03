@@ -234,7 +234,6 @@ class RTPSender : public RTPSenderInterface {
   void SetRtxSsrc(uint32_t ssrc);
 
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
-  std::pair<int, int> RtxPayloadType() const;
 
   // Functions wrapping RTPSenderInterface.
   int32_t BuildRTPheader(uint8_t* data_buffer,
@@ -486,9 +485,6 @@ class RTPSender : public RTPSenderInterface {
   std::vector<uint32_t> csrcs_ GUARDED_BY(send_critsect_);
   int rtx_ GUARDED_BY(send_critsect_);
   uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
-  // TODO(changbin): Remove rtx_payload_type_ once interop with old clients that
-  // only understand one RTX PT is no longer needed.
-  int rtx_payload_type_ GUARDED_BY(send_critsect_);
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ GUARDED_BY(send_critsect_);
 

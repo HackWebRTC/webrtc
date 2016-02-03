@@ -357,7 +357,6 @@ std::vector<VideoCodec> DefaultVideoCodecList() {
   if (CodecIsInternallySupported(kVp9CodecName)) {
     codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp9PlType,
                                                              kVp9CodecName));
-    // TODO(andresp): Add rtx codec for vp9 and verify it works.
   }
   if (CodecIsInternallySupported(kH264CodecName)) {
     codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultH264PlType,
@@ -365,7 +364,13 @@ std::vector<VideoCodec> DefaultVideoCodecList() {
   }
   codecs.push_back(
       VideoCodec::CreateRtxCodec(kDefaultRtxVp8PlType, kDefaultVp8PlType));
+  if (CodecIsInternallySupported(kVp9CodecName)) {
+    codecs.push_back(
+        VideoCodec::CreateRtxCodec(kDefaultRtxVp9PlType, kDefaultVp9PlType));
+  }
   codecs.push_back(VideoCodec(kDefaultRedPlType, kRedCodecName));
+  codecs.push_back(
+      VideoCodec::CreateRtxCodec(kDefaultRtxRedPlType, kDefaultRedPlType));
   codecs.push_back(VideoCodec(kDefaultUlpfecType, kUlpfecCodecName));
   return codecs;
 }

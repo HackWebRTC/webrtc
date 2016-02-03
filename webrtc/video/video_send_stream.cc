@@ -494,6 +494,11 @@ void VideoSendStream::ConfigureSsrcs() {
   RTC_DCHECK_GE(config_.rtp.rtx.payload_type, 0);
   vie_channel_->SetRtxSendPayloadType(config_.rtp.rtx.payload_type,
                                       config_.encoder_settings.payload_type);
+  if (config_.rtp.fec.red_payload_type != -1 &&
+      config_.rtp.fec.red_rtx_payload_type != -1) {
+    vie_channel_->SetRtxSendPayloadType(config_.rtp.fec.red_rtx_payload_type,
+                                        config_.rtp.fec.red_payload_type);
+  }
 }
 
 std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {

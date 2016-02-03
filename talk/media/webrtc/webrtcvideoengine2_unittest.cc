@@ -1109,8 +1109,6 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamWithSimAndRtx) {
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
   ASSERT_GT(recv_stream->GetConfig().rtp.rtx.size(), 0u)
       << "No SSRCs for RTX configured by AddRecvStream.";
-  ASSERT_EQ(1u, recv_stream->GetConfig().rtp.rtx.size())
-      << "This test only works with one receive codec. Please update the test.";
   EXPECT_EQ(rtx_ssrcs[0],
             recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
   // TODO(pbos): Make sure we set the RTX for correct payloads etc.
@@ -1122,7 +1120,6 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamWithRtx) {
       cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
   params.AddFidSsrc(kSsrcs1[0], kRtxSsrcs1[0]);
   FakeVideoReceiveStream* recv_stream = AddRecvStream(params);
-  ASSERT_EQ(1u, recv_stream->GetConfig().rtp.rtx.size());
   EXPECT_EQ(kRtxSsrcs1[0],
             recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
 }
@@ -2736,7 +2733,7 @@ TEST_F(WebRtcVideoChannel2Test, DefaultReceiveStreamReconfiguresToUseRtx) {
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "AddRecvStream should've reconfigured, not added a new receiver.";
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
-  ASSERT_EQ(1u, recv_stream->GetConfig().rtp.rtx.size());
+  ASSERT_GE(2u, recv_stream->GetConfig().rtp.rtx.size());
   EXPECT_EQ(rtx_ssrcs[0],
             recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
 }

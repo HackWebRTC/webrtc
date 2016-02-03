@@ -93,7 +93,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   void SetRtxSendPayloadType(int payload_type,
                              int associated_payload_type) override;
-  std::pair<int, int> RtxSendPayloadType() const override;
 
   // Sends kRtcpByeCode when going from true to false.
   int32_t SetSendingStatus(bool sending) override;

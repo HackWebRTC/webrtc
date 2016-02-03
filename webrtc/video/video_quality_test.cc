@@ -827,9 +827,8 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
 
   for (size_t i = 0; i < num_streams; ++i) {
     video_receive_configs_[i].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-    video_receive_configs_[i].rtp.rtx[kSendRtxPayloadType].ssrc =
-        kSendRtxSsrcs[i];
-    video_receive_configs_[i].rtp.rtx[kSendRtxPayloadType].payload_type =
+    video_receive_configs_[i].rtp.rtx[payload_type].ssrc = kSendRtxSsrcs[i];
+    video_receive_configs_[i].rtp.rtx[payload_type].payload_type =
         kSendRtxPayloadType;
     video_receive_configs_[i].rtp.transport_cc = params_.common.send_side_bwe;
   }

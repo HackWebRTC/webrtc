@@ -25,7 +25,6 @@ RTPPayloadRegistry::RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy)
       last_received_media_payload_type_(-1),
       rtx_(false),
       rtx_payload_type_(-1),
-      use_rtx_payload_mapping_on_restore_(false),
       ssrc_rtx_(0) {}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() {
@@ -271,21 +270,18 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
 
   int associated_payload_type;
   auto apt_mapping = rtx_payload_type_map_.find(header.payloadType);
-  if (use_rtx_payload_mapping_on_restore_ &&
-      apt_mapping != rtx_payload_type_map_.end()) {
-    associated_payload_type = apt_mapping->second;
-  } else {
-    // In the future, this will be a bug. For now, just assume this RTX packet
-    // matches the last non-RTX payload type we received. There are cases where
-    // this could break, especially where RTX is sent outside of NACKing (e.g.
-    // padding with redundant payloads).
-    if (rtx_payload_type_ == -1 || incoming_payload_type_ == -1) {
-      LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
-      return false;
-    }
-    associated_payload_type = incoming_payload_type_;
+  if (apt_mapping == rtx_payload_type_map_.end())
+    return false;
+  associated_payload_type = apt_mapping->second;
+  if (red_payload_type_ != -1) {
+    // Assume red will be used if it's configured.
+    // This is a workaround for a Chrome sdp bug where rtx is associated
+    // with the media codec even though media is sent over red.
+    // TODO(holmer): Remove once the Chrome versions exposing this bug are
+    // old enough, which should be once Chrome Stable reaches M53 as this
+    // work-around went into M50.
+    associated_payload_type = red_payload_type_;
   }
-
   restored_packet[1] = static_cast<uint8_t>(associated_payload_type);
   if (header.markerBit) {
     restored_packet[1] |= kRtpMarkerBitMask;  // Marker bit is set.
