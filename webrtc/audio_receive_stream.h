@@ -102,9 +102,6 @@ class AudioReceiveStream : public ReceiveStream {
     // Call::CreateReceiveStream().
     // TODO(solenberg): Use unique_ptr<> once our std lib fully supports C++11.
     std::map<uint8_t, AudioDecoder*> decoder_map;
-
-    // TODO(pbos): Remove config option once combined A/V BWE is always on.
-    bool combined_audio_video_bwe = false;
   };
 
   virtual Stats GetStats() const = 0;

@@ -213,12 +213,12 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
   config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
   config.voe_channel_id = kChannelId;
-  config.combined_audio_video_bwe = true;
   EXPECT_EQ(
       "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, extensions: [{name: "
-      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 2}]}, "
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 2}], "
+      "transport_cc: off}, "
       "receive_transport: nullptr, rtcp_send_transport: nullptr, "
-      "voe_channel_id: 2, combined_audio_video_bwe: true}",
+      "voe_channel_id: 2}",
       config.ToString());
 }
 
@@ -239,32 +239,8 @@ MATCHER_P(VerifyHeaderExtension, expected_extension, "") {
              expected_extension.transportSequenceNumber;
 }
 
-TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweWithTimestamp) {
-  ConfigHelper helper;
-  helper.config().combined_audio_video_bwe = true;
-  helper.SetupMockForBweFeedback(false);
-  internal::AudioReceiveStream recv_stream(
-      helper.congestion_controller(), helper.config(), helper.audio_state());
-  const int kAbsSendTimeValue = 1234;
-  std::vector<uint8_t> rtp_packet =
-      CreateRtpHeaderWithOneByteExtension(kAbsSendTimeId, kAbsSendTimeValue, 3);
-  PacketTime packet_time(5678000, 0);
-  const size_t kExpectedHeaderLength = 20;
-  RTPHeaderExtension expected_extension;
-  expected_extension.hasAbsoluteSendTime = true;
-  expected_extension.absoluteSendTime = kAbsSendTimeValue;
-  EXPECT_CALL(*helper.remote_bitrate_estimator(),
-              IncomingPacket(packet_time.timestamp / 1000,
-                             rtp_packet.size() - kExpectedHeaderLength,
-                             VerifyHeaderExtension(expected_extension), false))
-      .Times(1);
-  EXPECT_TRUE(
-      recv_stream.DeliverRtp(&rtp_packet[0], rtp_packet.size(), packet_time));
-}
-
 TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweFeedback) {
   ConfigHelper helper;
-  helper.config().combined_audio_video_bwe = true;
   helper.config().rtp.transport_cc = true;
   helper.SetupMockForBweFeedback(true);
   internal::AudioReceiveStream recv_stream(

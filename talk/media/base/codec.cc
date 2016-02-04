@@ -326,17 +326,17 @@ std::string DataCodec::ToString() const {
   return os.str();
 }
 
-bool HasNack(const VideoCodec& codec) {
+bool HasNack(const Codec& codec) {
   return codec.HasFeedbackParam(
       FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
 }
 
-bool HasRemb(const VideoCodec& codec) {
+bool HasRemb(const Codec& codec) {
   return codec.HasFeedbackParam(
       FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
 }
 
-bool HasTransportCc(const VideoCodec& codec) {
+bool HasTransportCc(const Codec& codec) {
   return codec.HasFeedbackParam(
       FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
 }

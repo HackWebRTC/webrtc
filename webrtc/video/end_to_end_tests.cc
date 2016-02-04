@@ -1639,7 +1639,6 @@ class TransportFeedbackTester : public test::EndToEndTest {
     (*receive_configs)[0].rtp.extensions.clear();
     (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
     (*receive_configs)[0].rtp.transport_cc = feedback_enabled_;
-    (*receive_configs)[0].combined_audio_video_bwe = true;
   }
 
  private:

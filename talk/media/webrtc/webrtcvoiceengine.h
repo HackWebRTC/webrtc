@@ -234,9 +234,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   WebRtcVoiceEngine* engine() { return engine_; }
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
   int GetOutputLevel(int channel);
-  bool GetRedSendCodec(const AudioCodec& red_codec,
-                       const std::vector<AudioCodec>& all_codecs,
-                       webrtc::CodecInst* send_codec);
   bool SetPlayout(int channel, bool playout);
   void SetNack(int channel, bool nack_enabled);
   bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
@@ -263,6 +260,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   rtc::Optional<int> dtmf_payload_type_;
   bool desired_playout_ = false;
   bool nack_enabled_ = false;
+  bool transport_cc_enabled_ = false;
   bool playout_ = false;
   SendFlags desired_send_ = SEND_NOTHING;
   SendFlags send_ = SEND_NOTHING;

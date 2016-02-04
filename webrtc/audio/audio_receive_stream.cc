@@ -58,6 +58,7 @@ std::string AudioReceiveStream::Config::Rtp::ToString() const {
     }
   }
   ss << ']';
+  ss << ", transport_cc: " << (transport_cc ? "on" : "off");
   ss << '}';
   return ss.str();
 }
@@ -73,8 +74,6 @@ std::string AudioReceiveStream::Config::ToString() const {
   if (!sync_group.empty()) {
     ss << ", sync_group: " << sync_group;
   }
-  ss << ", combined_audio_video_bwe: "
-     << (combined_audio_video_bwe ? "true" : "false");
   ss << '}';
   return ss.str();
 }
@@ -119,15 +118,9 @@ AudioReceiveStream::AudioReceiveStream(
   // Configure bandwidth estimation.
   channel_proxy_->RegisterReceiverCongestionControlObjects(
       congestion_controller->packet_router());
-  if (config.combined_audio_video_bwe) {
-    if (UseSendSideBwe(config)) {
-      remote_bitrate_estimator_ =
-          congestion_controller->GetRemoteBitrateEstimator(true);
-    } else {
-      remote_bitrate_estimator_ =
-          congestion_controller->GetRemoteBitrateEstimator(false);
-    }
-    RTC_DCHECK(remote_bitrate_estimator_);
+  if (UseSendSideBwe(config)) {
+    remote_bitrate_estimator_ =
+        congestion_controller->GetRemoteBitrateEstimator(true);
   }
 }
 
@@ -176,8 +169,7 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
   // bandwidth estimation. RTP timestamps has different rates for audio and
   // video and shouldn't be mixed.
   if (remote_bitrate_estimator_ &&
-      (header.extension.hasAbsoluteSendTime ||
-       header.extension.hasTransportSequenceNumber)) {
+      header.extension.hasTransportSequenceNumber) {
     int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
     if (packet_time.timestamp >= 0)
       arrival_time_ms = (packet_time.timestamp + 500) / 1000;

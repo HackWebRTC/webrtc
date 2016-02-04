@@ -190,7 +190,6 @@ class BitrateEstimatorTest : public test::CallTest {
         receive_config.voe_channel_id = 0;
         receive_config.rtp.extensions.push_back(
             RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
-        receive_config.combined_audio_video_bwe = true;
         audio_receive_stream_ =
             test_->receiver_call_->CreateAudioReceiveStream(receive_config);
       } else {
@@ -273,17 +272,6 @@ TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefaultForVideo) {
   EXPECT_TRUE(receiver_log_.Wait());
 }
 
-TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForAudio) {
-  video_send_config_.rtp.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
-  receiver_log_.PushExpectedLogLine(kSingleStreamLog);
-  receiver_log_.PushExpectedLogLine(kSingleStreamLog);
-  receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
-  receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
-  streams_.push_back(new Stream(this, true));
-  EXPECT_TRUE(receiver_log_.Wait());
-}
-
 TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForVideo) {
   video_send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
@@ -292,20 +280,6 @@ TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForVideo) {
   receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
   receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, false));
-  EXPECT_TRUE(receiver_log_.Wait());
-}
-
-TEST_F(BitrateEstimatorTest, SwitchesToASTForAudio) {
-  receiver_log_.PushExpectedLogLine(kSingleStreamLog);
-  receiver_log_.PushExpectedLogLine(kSingleStreamLog);
-  streams_.push_back(new Stream(this, true));
-  EXPECT_TRUE(receiver_log_.Wait());
-
-  video_send_config_.rtp.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
-  receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
-  receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
-  streams_.push_back(new Stream(this, true));
   EXPECT_TRUE(receiver_log_.Wait());
 }
 
