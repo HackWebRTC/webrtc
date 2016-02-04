@@ -120,7 +120,7 @@ TEST_F(VideoTrackTest, DisableTrackBlackout) {
   ASSERT_FALSE(renderer_input == NULL);
 
   cricket::WebRtcVideoFrame frame;
-  frame.InitToBlack(100, 200, 1, 1, 0);
+  frame.InitToBlack(100, 200, 0);
   // Make it not all-black
   frame.GetUPlane()[0] = 0;
 

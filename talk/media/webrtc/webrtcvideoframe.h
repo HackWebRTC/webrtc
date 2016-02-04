@@ -66,16 +66,7 @@ class WebRtcVideoFrame : public VideoFrame {
 
   void InitToEmptyBuffer(int w, int h, int64_t time_stamp_ns);
 
-  // TODO(nisse): Old signature. Delete after chrome is updated.
-  void InitToEmptyBuffer(int w, int h, size_t pixel_width, size_t pixel_height,
-                         int64_t time_stamp_ns) {
-    InitToEmptyBuffer(w, h, time_stamp_ns);
-  }
-
   bool InitToBlack(int w, int h, int64_t time_stamp_ns) override;
-  // Needed to inherit the InitToBlack wrapper method with 5
-  // arguments.
-  using VideoFrame::InitToBlack;
 
   // From base class VideoFrame.
   bool Reset(uint32_t format,

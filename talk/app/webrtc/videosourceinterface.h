@@ -49,27 +49,11 @@ class VideoSourceInterface : public MediaSourceInterface {
   virtual void Stop() = 0;
   virtual void Restart() = 0;
 
-  // TODO(nisse): Delete these backwards compatibility wrappers after
-  // chrome is updated. Needed now because chrome's MockVideoSource
-  // defines a method with this signature (and marked with override).
-  // In addition, we need a dummy default implementation for the new
-  // AddSink/RemoveSink methods below, because they're unimplemented
-  // in the same class. This is ugly, but for MockVideoSource it
-  // doesn't really matter what these methods do, because they're not
-  // used.
-  virtual void AddSink(cricket::VideoRenderer* output) {
-    AddSink(static_cast<rtc::VideoSinkInterface<cricket::VideoFrame>*>(output));
-  }
-  virtual void RemoveSink(cricket::VideoRenderer* output) {
-    RemoveSink(
-        static_cast<rtc::VideoSinkInterface<cricket::VideoFrame>*>(output));
-  }
-
   // Adds |output| to the source to receive frames.
-  // TODO(nisse): Delete dummy default implementation.
-  virtual void AddSink(rtc::VideoSinkInterface<cricket::VideoFrame>* output){};
+  virtual void AddSink(
+      rtc::VideoSinkInterface<cricket::VideoFrame>* output) = 0;
   virtual void RemoveSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* output){};
+      rtc::VideoSinkInterface<cricket::VideoFrame>* output) = 0;
   virtual const cricket::VideoOptions* options() const = 0;
   virtual cricket::VideoRenderer* FrameInput() = 0;
 

@@ -43,11 +43,6 @@ class VideoFrame {
 
   virtual bool InitToBlack(int w, int h, int64_t time_stamp) = 0;
 
-  // TODO(nisse): Old signature. Delete after chrome is updated.
-  virtual bool InitToBlack(int w, int h, size_t pixel_width,
-                           size_t pixel_height, int64_t time_stamp) {
-    return InitToBlack(w, h, time_stamp);
-  }
   // Creates a frame from a raw sample with FourCC |format| and size |w| x |h|.
   // |h| can be negative indicating a vertically flipped image.
   // |dw| is destination width; can be less than |w| if cropping is desired.
