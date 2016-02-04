@@ -57,8 +57,8 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
       max_qp_(-1),
       max_debt_bytes_(0),
       frame_rate_(-1) {
-  assert(num_temporal_layers > 0);
-  assert(num_temporal_layers <= 2);
+  RTC_CHECK_GT(num_temporal_layers, 0);
+  RTC_CHECK_LE(num_temporal_layers, 2);
 }
 
 int ScreenshareLayers::CurrentLayerId() const {
@@ -147,7 +147,8 @@ bool ScreenshareLayers::ConfigureBitrates(int bitrate_kbps,
     }
 
     // Don't reconfigure qp limits during quality boost frames.
-    if (layers_[active_layer_].state != TemporalLayer::State::kQualityBoost) {
+    if (active_layer_ == -1 ||
+        layers_[active_layer_].state != TemporalLayer::State::kQualityBoost) {
       min_qp_ = cfg->rc_min_quantizer;
       max_qp_ = cfg->rc_max_quantizer;
       // After a dropped frame, a frame with max qp will be encoded and the
@@ -169,6 +170,10 @@ bool ScreenshareLayers::ConfigureBitrates(int bitrate_kbps,
 void ScreenshareLayers::FrameEncoded(unsigned int size,
                                      uint32_t timestamp,
                                      int qp) {
+  if (number_of_temporal_layers_ == 1)
+    return;
+
+  RTC_DCHECK_NE(-1, active_layer_);
   if (size == 0) {
     layers_[active_layer_].state = TemporalLayer::State::kDropped;
     return;
@@ -198,6 +203,7 @@ void ScreenshareLayers::PopulateCodecSpecific(bool base_layer_sync,
     vp8_info->layerSync = false;
     vp8_info->tl0PicIdx = kNoTl0PicIdx;
   } else {
+    RTC_DCHECK_NE(-1, active_layer_);
     vp8_info->temporalIdx = active_layer_;
     if (base_layer_sync) {
       vp8_info->temporalIdx = 0;
@@ -218,10 +224,7 @@ void ScreenshareLayers::PopulateCodecSpecific(bool base_layer_sync,
 }
 
 bool ScreenshareLayers::TimeToSync(int64_t timestamp) const {
-  if (active_layer_ != 1) {
-    RTC_NOTREACHED();
-    return false;
-  }
+  RTC_DCHECK_EQ(1, active_layer_);
   RTC_DCHECK_NE(-1, layers_[0].last_qp);
   if (layers_[1].last_qp == -1) {
     // First frame in TL1 should only depend on TL0 since there are no
@@ -248,6 +251,7 @@ bool ScreenshareLayers::TimeToSync(int64_t timestamp) const {
 bool ScreenshareLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
   if (max_qp_ == -1 || number_of_temporal_layers_ <= 1)
     return false;
+  RTC_DCHECK_NE(-1, active_layer_);
 
   // If layer is in the quality boost state (following a dropped frame), update
   // the configuration with the adjusted (lower) qp and set the state back to
