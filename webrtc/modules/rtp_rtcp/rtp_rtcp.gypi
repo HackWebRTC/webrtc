@@ -79,6 +79,8 @@
         'source/rtcp_packet/sender_report.h',
         'source/rtcp_packet/sli.cc',
         'source/rtcp_packet/sli.h',
+        'source/rtcp_packet/tmmb_item.cc',
+        'source/rtcp_packet/tmmb_item.h',
         'source/rtcp_packet/tmmbn.cc',
         'source/rtcp_packet/tmmbn.h',
         'source/rtcp_packet/tmmbr.cc',
