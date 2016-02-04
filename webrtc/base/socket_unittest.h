@@ -62,6 +62,10 @@ class SocketTest : public testing::Test {
   const IPAddress kIPv4Loopback;
   const IPAddress kIPv6Loopback;
 
+ protected:
+  void TcpInternal(const IPAddress& loopback, size_t data_size,
+      ssize_t max_send_size);
+
  private:
   void ConnectInternal(const IPAddress& loopback);
   void ConnectWithDnsLookupInternal(const IPAddress& loopback,
@@ -76,7 +80,6 @@ class SocketTest : public testing::Test {
   void ServerCloseInternal(const IPAddress& loopback);
   void CloseInClosedCallbackInternal(const IPAddress& loopback);
   void SocketServerWaitInternal(const IPAddress& loopback);
-  void TcpInternal(const IPAddress& loopback);
   void SingleFlowControlCallbackInternal(const IPAddress& loopback);
   void UdpInternal(const IPAddress& loopback);
   void UdpReadyToSend(const IPAddress& loopback);

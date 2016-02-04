@@ -68,8 +68,8 @@ class PhysicalSocketServer : public SocketServer {
   AsyncSocket* CreateAsyncSocket(int type) override;
   AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
-  // Internal Factory for Accept
-  AsyncSocket* WrapSocket(SOCKET s);
+  // Internal Factory for Accept (virtual so it can be overwritten in tests).
+  virtual AsyncSocket* WrapSocket(SOCKET s);
 
   // SocketServer:
   bool Wait(int cms, bool process_io) override;
@@ -160,6 +160,13 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
 
   // Make virtual so ::accept can be overwritten in tests.
   virtual SOCKET DoAccept(SOCKET socket, sockaddr* addr, socklen_t* addrlen);
+
+  // Make virtual so ::send can be overwritten in tests.
+  virtual int DoSend(SOCKET socket, const char* buf, int len, int flags);
+
+  // Make virtual so ::sendto can be overwritten in tests.
+  virtual int DoSendTo(SOCKET socket, const char* buf, int len, int flags,
+                       const struct sockaddr* dest_addr, socklen_t addrlen);
 
   void OnResolveResult(AsyncResolverInterface* resolver);
 

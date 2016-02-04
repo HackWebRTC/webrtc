@@ -271,7 +271,8 @@ int PhysicalSocket::SetOption(Option opt, int value) {
 }
 
 int PhysicalSocket::Send(const void* pv, size_t cb) {
-  int sent = ::send(s_, reinterpret_cast<const char *>(pv), (int)cb,
+  int sent = DoSend(s_, reinterpret_cast<const char *>(pv),
+      static_cast<int>(cb),
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
       // Suppress SIGPIPE. Without this, attempting to send on a socket whose
       // other end is closed will result in a SIGPIPE signal being raised to
@@ -287,7 +288,8 @@ int PhysicalSocket::Send(const void* pv, size_t cb) {
   MaybeRemapSendError();
   // We have seen minidumps where this may be false.
   ASSERT(sent <= static_cast<int>(cb));
-  if ((sent < 0) && IsBlockingError(GetError())) {
+  if ((sent > 0 && sent < static_cast<int>(cb)) ||
+      (sent < 0 && IsBlockingError(GetError()))) {
     enabled_events_ |= DE_WRITE;
   }
   return sent;
@@ -298,7 +300,7 @@ int PhysicalSocket::SendTo(const void* buffer,
                            const SocketAddress& addr) {
   sockaddr_storage saddr;
   size_t len = addr.ToSockAddrStorage(&saddr);
-  int sent = ::sendto(
+  int sent = DoSendTo(
       s_, static_cast<const char *>(buffer), static_cast<int>(length),
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
       // Suppress SIGPIPE. See above for explanation.
@@ -311,7 +313,8 @@ int PhysicalSocket::SendTo(const void* buffer,
   MaybeRemapSendError();
   // We have seen minidumps where this may be false.
   ASSERT(sent <= static_cast<int>(length));
-  if ((sent < 0) && IsBlockingError(GetError())) {
+  if ((sent > 0 && sent < static_cast<int>(length)) ||
+      (sent < 0 && IsBlockingError(GetError()))) {
     enabled_events_ |= DE_WRITE;
   }
   return sent;
@@ -474,11 +477,23 @@ int PhysicalSocket::EstimateMTU(uint16_t* mtu) {
 #endif
 }
 
-
 SOCKET PhysicalSocket::DoAccept(SOCKET socket,
                                 sockaddr* addr,
                                 socklen_t* addrlen) {
   return ::accept(socket, addr, addrlen);
+}
+
+int PhysicalSocket::DoSend(SOCKET socket, const char* buf, int len, int flags) {
+  return ::send(socket, buf, len, flags);
+}
+
+int PhysicalSocket::DoSendTo(SOCKET socket,
+                             const char* buf,
+                             int len,
+                             int flags,
+                             const struct sockaddr* dest_addr,
+                             socklen_t addrlen) {
+  return ::sendto(socket, buf, len, flags, dest_addr, addrlen);
 }
 
 void PhysicalSocket::OnResolveResult(AsyncResolverInterface* resolver) {

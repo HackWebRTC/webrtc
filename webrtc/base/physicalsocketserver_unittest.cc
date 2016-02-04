@@ -29,8 +29,15 @@ class FakeSocketDispatcher : public SocketDispatcher {
     : SocketDispatcher(ss) {
   }
 
+  FakeSocketDispatcher(SOCKET s, PhysicalSocketServer* ss)
+    : SocketDispatcher(s, ss) {
+  }
+
  protected:
   SOCKET DoAccept(SOCKET socket, sockaddr* addr, socklen_t* addrlen) override;
+  int DoSend(SOCKET socket, const char* buf, int len, int flags) override;
+  int DoSendTo(SOCKET socket, const char* buf, int len, int flags,
+               const struct sockaddr* dest_addr, socklen_t addrlen) override;
 };
 
 class FakePhysicalSocketServer : public PhysicalSocketServer {
@@ -41,22 +48,29 @@ class FakePhysicalSocketServer : public PhysicalSocketServer {
 
   AsyncSocket* CreateAsyncSocket(int type) override {
     SocketDispatcher* dispatcher = new FakeSocketDispatcher(this);
-    if (dispatcher->Create(type)) {
-      return dispatcher;
-    } else {
+    if (!dispatcher->Create(type)) {
       delete dispatcher;
       return nullptr;
     }
+    return dispatcher;
   }
 
   AsyncSocket* CreateAsyncSocket(int family, int type) override {
     SocketDispatcher* dispatcher = new FakeSocketDispatcher(this);
-    if (dispatcher->Create(family, type)) {
-      return dispatcher;
-    } else {
+    if (!dispatcher->Create(family, type)) {
       delete dispatcher;
       return nullptr;
     }
+    return dispatcher;
+  }
+
+  AsyncSocket* WrapSocket(SOCKET s) override {
+    SocketDispatcher* dispatcher = new FakeSocketDispatcher(s, this);
+    if (!dispatcher->Initialize()) {
+      delete dispatcher;
+      return nullptr;
+    }
+    return dispatcher;
   }
 
   PhysicalSocketTest* GetTest() const { return test_; }
@@ -71,18 +85,25 @@ class PhysicalSocketTest : public SocketTest {
   void SetFailAccept(bool fail) { fail_accept_ = fail; }
   bool FailAccept() const { return fail_accept_; }
 
+  // Maximum size to ::send to a socket. Set to < 0 to disable limiting.
+  void SetMaxSendSize(int max_size) { max_send_size_ = max_size; }
+  int MaxSendSize() const { return max_send_size_; }
+
  protected:
   PhysicalSocketTest()
     : server_(new FakePhysicalSocketServer(this)),
       scope_(server_.get()),
-      fail_accept_(false) {
+      fail_accept_(false),
+      max_send_size_(-1) {
   }
 
   void ConnectInternalAcceptError(const IPAddress& loopback);
+  void WritableAfterPartialWrite(const IPAddress& loopback);
 
   rtc::scoped_ptr<FakePhysicalSocketServer> server_;
   SocketServerScope scope_;
   bool fail_accept_;
+  int max_send_size_;
 };
 
 SOCKET FakeSocketDispatcher::DoAccept(SOCKET socket,
@@ -95,6 +116,29 @@ SOCKET FakeSocketDispatcher::DoAccept(SOCKET socket,
   }
 
   return SocketDispatcher::DoAccept(socket, addr, addrlen);
+}
+
+int FakeSocketDispatcher::DoSend(SOCKET socket, const char* buf, int len,
+    int flags) {
+  FakePhysicalSocketServer* ss =
+      static_cast<FakePhysicalSocketServer*>(socketserver());
+  if (ss->GetTest()->MaxSendSize() >= 0) {
+    len = std::min(len, ss->GetTest()->MaxSendSize());
+  }
+
+  return SocketDispatcher::DoSend(socket, buf, len, flags);
+}
+
+int FakeSocketDispatcher::DoSendTo(SOCKET socket, const char* buf, int len,
+    int flags, const struct sockaddr* dest_addr, socklen_t addrlen) {
+  FakePhysicalSocketServer* ss =
+      static_cast<FakePhysicalSocketServer*>(socketserver());
+  if (ss->GetTest()->MaxSendSize() >= 0) {
+    len = std::min(len, ss->GetTest()->MaxSendSize());
+  }
+
+  return SocketDispatcher::DoSendTo(socket, buf, len, flags, dest_addr,
+      addrlen);
 }
 
 TEST_F(PhysicalSocketTest, TestConnectIPv4) {
@@ -207,6 +251,33 @@ TEST_F(PhysicalSocketTest, TestConnectAcceptErrorIPv4) {
 #endif
 TEST_F(PhysicalSocketTest, MAYBE_TestConnectAcceptErrorIPv6) {
   ConnectInternalAcceptError(kIPv6Loopback);
+}
+
+void PhysicalSocketTest::WritableAfterPartialWrite(const IPAddress& loopback) {
+  // Simulate a really small maximum send size.
+  const int kMaxSendSize = 128;
+  SetMaxSendSize(kMaxSendSize);
+
+  // Run the default send/receive socket tests with a smaller amount of data
+  // to avoid long running times due to the small maximum send size.
+  const size_t kDataSize = 128 * 1024;
+  TcpInternal(loopback, kDataSize, kMaxSendSize);
+}
+
+TEST_F(PhysicalSocketTest, TestWritableAfterPartialWriteIPv4) {
+  WritableAfterPartialWrite(kIPv4Loopback);
+}
+
+// Crashes on Linux. See webrtc:4923.
+#if defined(WEBRTC_LINUX)
+#define MAYBE_TestWritableAfterPartialWriteIPv6 \
+    DISABLED_TestWritableAfterPartialWriteIPv6
+#else
+#define MAYBE_TestWritableAfterPartialWriteIPv6 \
+    TestWritableAfterPartialWriteIPv6
+#endif
+TEST_F(PhysicalSocketTest, MAYBE_TestWritableAfterPartialWriteIPv6) {
+  WritableAfterPartialWrite(kIPv6Loopback);
 }
 
 // Crashes on Linux. See webrtc:4923.
