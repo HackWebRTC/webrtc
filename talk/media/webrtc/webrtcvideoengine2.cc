@@ -471,7 +471,7 @@ void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
 }
 
 DefaultUnsignalledSsrcHandler::DefaultUnsignalledSsrcHandler()
-    : default_recv_ssrc_(0), default_renderer_(NULL) {}
+    : default_recv_ssrc_(0), default_sink_(NULL) {}
 
 UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
     WebRtcVideoChannel2* channel,
@@ -488,21 +488,22 @@ UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
     LOG(LS_WARNING) << "Could not create default receive stream.";
   }
 
-  channel->SetRenderer(ssrc, default_renderer_);
+  channel->SetSink(ssrc, default_sink_);
   default_recv_ssrc_ = ssrc;
   return kDeliverPacket;
 }
 
-VideoRenderer* DefaultUnsignalledSsrcHandler::GetDefaultRenderer() const {
-  return default_renderer_;
+rtc::VideoSinkInterface<VideoFrame>*
+DefaultUnsignalledSsrcHandler::GetDefaultSink() const {
+  return default_sink_;
 }
 
-void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
+void DefaultUnsignalledSsrcHandler::SetDefaultSink(
     VideoMediaChannel* channel,
-    VideoRenderer* renderer) {
-  default_renderer_ = renderer;
+    rtc::VideoSinkInterface<VideoFrame>* sink) {
+  default_sink_ = sink;
   if (default_recv_ssrc_ != 0) {
-    channel->SetRenderer(default_recv_ssrc_, default_renderer_);
+    channel->SetSink(default_recv_ssrc_, default_sink_);
   }
 }
 
@@ -1220,11 +1221,11 @@ bool WebRtcVideoChannel2::RemoveRecvStream(uint32_t ssrc) {
   return true;
 }
 
-bool WebRtcVideoChannel2::SetRenderer(uint32_t ssrc, VideoRenderer* renderer) {
-  LOG(LS_INFO) << "SetRenderer: ssrc:" << ssrc << " "
-               << (renderer ? "(ptr)" : "NULL");
+bool WebRtcVideoChannel2::SetSink(uint32_t ssrc,
+                                  rtc::VideoSinkInterface<VideoFrame>* sink) {
+  LOG(LS_INFO) << "SetSink: ssrc:" << ssrc << " " << (sink ? "(ptr)" : "NULL");
   if (ssrc == 0) {
-    default_unsignalled_ssrc_handler_.SetDefaultRenderer(this, renderer);
+    default_unsignalled_ssrc_handler_.SetDefaultSink(this, sink);
     return true;
   }
 
@@ -1235,7 +1236,7 @@ bool WebRtcVideoChannel2::SetRenderer(uint32_t ssrc, VideoRenderer* renderer) {
     return false;
   }
 
-  it->second->SetSink(renderer);
+  it->second->SetSink(sink);
   return true;
 }
 

@@ -88,7 +88,7 @@ class MockVideoProvider : public VideoProviderInterface {
   MOCK_METHOD3(SetVideoPlayout,
                void(uint32_t ssrc,
                     bool enable,
-                    cricket::VideoRenderer* renderer));
+                    rtc::VideoSinkInterface<cricket::VideoFrame>* sink));
   MOCK_METHOD3(SetVideoSend,
                void(uint32_t ssrc,
                     bool enable,

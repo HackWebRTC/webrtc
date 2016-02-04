@@ -42,6 +42,7 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/window.h"
+#include "webrtc/media/base/videosinkinterface.h"
 // TODO(juberti): re-evaluate this include
 #include "talk/session/media/audiomonitor.h"
 
@@ -60,7 +61,7 @@ namespace cricket {
 class AudioRenderer;
 class ScreencastId;
 class VideoCapturer;
-class VideoRenderer;
+class VideoFrame;
 struct RtpHeader;
 struct VideoFormat;
 
@@ -982,7 +983,7 @@ class VideoMediaChannel : public MediaChannel {
     ERROR_PLAY_SRTP_REPLAY,               // Packet replay detected.
   };
 
-  VideoMediaChannel() : renderer_(NULL) {}
+  VideoMediaChannel() {}
   virtual ~VideoMediaChannel() {}
 
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
@@ -995,17 +996,15 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool SetVideoSend(uint32_t ssrc,
                             bool enable,
                             const VideoOptions* options) = 0;
-  // Sets the renderer object to be used for the specified stream.
+  // Sets the sink object to be used for the specified stream.
   // If SSRC is 0, the renderer is used for the 'default' stream.
-  virtual bool SetRenderer(uint32_t ssrc, VideoRenderer* renderer) = 0;
+  virtual bool SetSink(uint32_t ssrc,
+                       rtc::VideoSinkInterface<cricket::VideoFrame>* sink) = 0;
   // If |ssrc| is 0, replace the default capturer (engine capturer) with
   // |capturer|. If |ssrc| is non zero create a new stream with |ssrc| as SSRC.
   virtual bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VideoMediaInfo* info) = 0;
-
- protected:
-  VideoRenderer *renderer_;
 };
 
 enum DataMessageType {

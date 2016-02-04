@@ -1650,7 +1650,6 @@ VideoChannel::VideoChannel(rtc::Thread* thread,
                   transport_controller,
                   content_name,
                   rtcp),
-      renderer_(NULL),
       previous_we_(rtc::WE_CLOSE) {}
 
 bool VideoChannel::Init() {
@@ -1679,9 +1678,10 @@ VideoChannel::~VideoChannel() {
   Deinit();
 }
 
-bool VideoChannel::SetRenderer(uint32_t ssrc, VideoRenderer* renderer) {
-  worker_thread()->Invoke<void>(Bind(
-      &VideoMediaChannel::SetRenderer, media_channel(), ssrc, renderer));
+bool VideoChannel::SetSink(uint32_t ssrc,
+                           rtc::VideoSinkInterface<VideoFrame>* sink) {
+  worker_thread()->Invoke<void>(
+      Bind(&VideoMediaChannel::SetSink, media_channel(), ssrc, sink));
   return true;
 }
 

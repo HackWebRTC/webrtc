@@ -50,6 +50,7 @@
 #include "webrtc/base/network.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/window.h"
+#include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/p2p/client/socketmonitor.h"
 
@@ -454,7 +455,7 @@ class VideoChannel : public BaseChannel {
     return static_cast<VideoMediaChannel*>(BaseChannel::media_channel());
   }
 
-  bool SetRenderer(uint32_t ssrc, VideoRenderer* renderer);
+  bool SetSink(uint32_t ssrc, rtc::VideoSinkInterface<VideoFrame>* sink);
 
   // TODO(pthatcher): Refactor to use a "capture id" instead of an
   // ssrc here as the "key".
@@ -507,7 +508,6 @@ class VideoChannel : public BaseChannel {
   virtual void OnStateChange(VideoCapturer* capturer, CaptureState ev);
   bool GetLocalSsrc(const VideoCapturer* capturer, uint32_t* ssrc);
 
-  VideoRenderer* renderer_;
   ScreencastMap screencast_capturers_;
   rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;
 

@@ -259,9 +259,10 @@ class WebRtcSession : public AudioProviderInterface,
 
   // Implements VideoMediaProviderInterface.
   bool SetCaptureDevice(uint32_t ssrc, cricket::VideoCapturer* camera) override;
-  void SetVideoPlayout(uint32_t ssrc,
-                       bool enable,
-                       cricket::VideoRenderer* renderer) override;
+  void SetVideoPlayout(
+      uint32_t ssrc,
+      bool enable,
+      rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
   void SetVideoSend(uint32_t ssrc,
                     bool enable,
                     const cricket::VideoOptions* options) override;

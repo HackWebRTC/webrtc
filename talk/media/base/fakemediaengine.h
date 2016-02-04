@@ -452,8 +452,9 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   const std::vector<VideoCodec>& codecs() const { return send_codecs(); }
   bool rendering() const { return playout(); }
   const VideoOptions& options() const { return options_; }
-  const std::map<uint32_t, VideoRenderer*>& renderers() const {
-    return renderers_;
+  const std::map<uint32_t, rtc::VideoSinkInterface<VideoFrame>*>& sinks()
+      const {
+    return sinks_;
   }
   int max_bps() const { return max_bps_; }
   virtual bool SetSendParameters(const VideoSendParameters& params) {
@@ -481,12 +482,13 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     *send_codec = send_codecs_[0];
     return true;
   }
-  virtual bool SetRenderer(uint32_t ssrc, VideoRenderer* r) {
-    if (ssrc != 0 && renderers_.find(ssrc) == renderers_.end()) {
+  bool SetSink(uint32_t ssrc,
+               rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override {
+    if (ssrc != 0 && sinks_.find(ssrc) == sinks_.end()) {
       return false;
     }
     if (ssrc != 0) {
-      renderers_[ssrc] = r;
+      sinks_[ssrc] = sink;
     }
     return true;
   }
@@ -512,13 +514,13 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   virtual bool AddRecvStream(const StreamParams& sp) {
     if (!RtpHelper<VideoMediaChannel>::AddRecvStream(sp))
       return false;
-    renderers_[sp.first_ssrc()] = NULL;
+    sinks_[sp.first_ssrc()] = NULL;
     return true;
   }
   virtual bool RemoveRecvStream(uint32_t ssrc) {
     if (!RtpHelper<VideoMediaChannel>::RemoveRecvStream(ssrc))
       return false;
-    renderers_.erase(ssrc);
+    sinks_.erase(ssrc);
     return true;
   }
 
@@ -554,7 +556,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   FakeVideoEngine* engine_;
   std::vector<VideoCodec> recv_codecs_;
   std::vector<VideoCodec> send_codecs_;
-  std::map<uint32_t, VideoRenderer*> renderers_;
+  std::map<uint32_t, rtc::VideoSinkInterface<VideoFrame>*> sinks_;
   std::map<uint32_t, VideoCapturer*> capturers_;
   VideoOptions options_;
   int max_bps_;

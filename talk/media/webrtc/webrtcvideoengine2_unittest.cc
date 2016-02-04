@@ -766,7 +766,7 @@ WEBRTC_BASE_TEST(SetSendBandwidth);
 WEBRTC_BASE_TEST(SetSendSsrc);
 WEBRTC_BASE_TEST(SetSendSsrcAfterSetCodecs);
 
-WEBRTC_BASE_TEST(SetRenderer);
+WEBRTC_BASE_TEST(SetSink);
 
 WEBRTC_BASE_TEST(AddRemoveSendStreams);
 
@@ -1771,7 +1771,7 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeCorrectly) {
 
   FakeVideoReceiveStream* stream = AddRecvStream();
   cricket::FakeVideoRenderer renderer;
-  EXPECT_TRUE(channel_->SetRenderer(last_ssrc_, &renderer));
+  EXPECT_TRUE(channel_->SetSink(last_ssrc_, &renderer));
 
   webrtc::VideoFrame video_frame;
   CreateBlackFrame(&video_frame, 4, 4);

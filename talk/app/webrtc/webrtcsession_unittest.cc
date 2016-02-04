@@ -3438,15 +3438,15 @@ TEST_F(WebRtcSessionTest, SetVideoPlayout) {
   CreateAndSetRemoteOfferAndLocalAnswer();
   cricket::FakeVideoMediaChannel* channel = media_engine_->GetVideoChannel(0);
   ASSERT_TRUE(channel != NULL);
-  ASSERT_LT(0u, channel->renderers().size());
-  EXPECT_TRUE(channel->renderers().begin()->second == NULL);
+  ASSERT_LT(0u, channel->sinks().size());
+  EXPECT_TRUE(channel->sinks().begin()->second == NULL);
   ASSERT_EQ(1u, channel->recv_streams().size());
   uint32_t receive_ssrc = channel->recv_streams()[0].first_ssrc();
   cricket::FakeVideoRenderer renderer;
   session_->SetVideoPlayout(receive_ssrc, true, &renderer);
-  EXPECT_TRUE(channel->renderers().begin()->second == &renderer);
+  EXPECT_TRUE(channel->sinks().begin()->second == &renderer);
   session_->SetVideoPlayout(receive_ssrc, false, &renderer);
-  EXPECT_TRUE(channel->renderers().begin()->second == NULL);
+  EXPECT_TRUE(channel->sinks().begin()->second == NULL);
 }
 
 TEST_F(WebRtcSessionTest, SetVideoSend) {

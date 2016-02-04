@@ -1329,19 +1329,20 @@ bool WebRtcSession::SetCaptureDevice(uint32_t ssrc,
   return true;
 }
 
-void WebRtcSession::SetVideoPlayout(uint32_t ssrc,
-                                    bool enable,
-                                    cricket::VideoRenderer* renderer) {
+void WebRtcSession::SetVideoPlayout(
+    uint32_t ssrc,
+    bool enable,
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!video_channel_) {
     LOG(LS_WARNING) << "SetVideoPlayout: No video channel exists.";
     return;
   }
-  if (!video_channel_->SetRenderer(ssrc, enable ? renderer : NULL)) {
-    // Allow that SetRenderer fail if |renderer| is NULL but assert otherwise.
+  if (!video_channel_->SetSink(ssrc, enable ? sink : NULL)) {
+    // Allow that SetSink fail if |sink| is NULL but assert otherwise.
     // This in the normal case when the underlying media channel has already
     // been deleted.
-    ASSERT(renderer == NULL);
+    ASSERT(sink == NULL);
   }
 }
 

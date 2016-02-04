@@ -96,12 +96,13 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
   Action OnUnsignalledSsrc(WebRtcVideoChannel2* channel,
                            uint32_t ssrc) override;
 
-  VideoRenderer* GetDefaultRenderer() const;
-  void SetDefaultRenderer(VideoMediaChannel* channel, VideoRenderer* renderer);
+  rtc::VideoSinkInterface<VideoFrame>* GetDefaultSink() const;
+  void SetDefaultSink(VideoMediaChannel* channel,
+                      rtc::VideoSinkInterface<VideoFrame>* sink);
 
  private:
   uint32_t default_recv_ssrc_;
-  VideoRenderer* default_renderer_;
+  rtc::VideoSinkInterface<VideoFrame>* default_sink_;
 };
 
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
@@ -165,7 +166,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
   bool AddRecvStream(const StreamParams& sp) override;
   bool AddRecvStream(const StreamParams& sp, bool default_stream);
   bool RemoveRecvStream(uint32_t ssrc) override;
-  bool SetRenderer(uint32_t ssrc, VideoRenderer* renderer) override;
+  bool SetSink(uint32_t ssrc,
+               rtc::VideoSinkInterface<VideoFrame>* sink) override;
   bool GetStats(VideoMediaInfo* info) override;
   bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) override;
 

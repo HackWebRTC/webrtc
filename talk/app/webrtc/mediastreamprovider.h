@@ -30,11 +30,13 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace cricket {
 
 class AudioRenderer;
 class VideoCapturer;
+class VideoFrame;
 class VideoRenderer;
 struct AudioOptions;
 struct VideoOptions;
@@ -88,9 +90,10 @@ class VideoProviderInterface {
   virtual bool SetCaptureDevice(uint32_t ssrc,
                                 cricket::VideoCapturer* camera) = 0;
   // Enable/disable the video playout of a remote video track with |ssrc|.
-  virtual void SetVideoPlayout(uint32_t ssrc,
-                               bool enable,
-                               cricket::VideoRenderer* renderer) = 0;
+  virtual void SetVideoPlayout(
+      uint32_t ssrc,
+      bool enable,
+      rtc::VideoSinkInterface<cricket::VideoFrame>* sink) = 0;
   // Enable sending video on the local video track with |ssrc|.
   virtual void SetVideoSend(uint32_t ssrc,
                             bool enable,
