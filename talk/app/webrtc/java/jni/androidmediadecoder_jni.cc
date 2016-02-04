@@ -79,6 +79,8 @@ namespace webrtc_jni {
 #define ALOGW LOG_TAG(rtc::LS_WARNING, TAG_DECODER)
 #define ALOGE LOG_TAG(rtc::LS_ERROR, TAG_DECODER)
 
+enum { kMaxWarningLogFrames = 2 };
+
 class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
                                public rtc::MessageHandler {
  public:
@@ -118,6 +120,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   // true on success.
   bool DeliverPendingOutputs(JNIEnv* jni, int dequeue_timeout_us);
   int32_t ProcessHWErrorOnCodecThread();
+  void EnableFrameLogOnWarning();
 
   // Type of video codec.
   VideoCodecType codecType_;
@@ -136,6 +139,8 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   DecodedImageCallback* callback_;
   int frames_received_;  // Number of frames received by decoder.
   int frames_decoded_;  // Number of frames decoded by decoder.
+  // Number of decoded frames for which log information is displayed.
+  int frames_decoded_logged_;
   int64_t start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
   int current_bytes_;  // Encoded bytes in the current statistics interval.
@@ -335,6 +340,7 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   key_frame_required_ = true;
   frames_received_ = 0;
   frames_decoded_ = 0;
+  frames_decoded_logged_ = kMaxDecodedLogFrames;
 
   jobject java_surface_texture_helper_ = nullptr;
   if (use_surface_) {
@@ -441,6 +447,12 @@ void MediaCodecVideoDecoder::CheckOnCodecThread() {
       << "Running on wrong thread!";
 }
 
+void MediaCodecVideoDecoder::EnableFrameLogOnWarning() {
+  // Log next 2 output frames.
+  frames_decoded_logged_ = std::max(
+      frames_decoded_logged_, frames_decoded_ + kMaxWarningLogFrames);
+}
+
 int32_t MediaCodecVideoDecoder::ProcessHWErrorOnCodecThread() {
   CheckOnCodecThread();
   int ret_val = ReleaseOnCodecThread();
@@ -532,11 +544,14 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
 
   // Try to drain the decoder and wait until output is not too
   // much behind the input.
+  if (frames_received_ > frames_decoded_ + max_pending_frames_) {
+    ALOGW << "Decoder is too far behind. Try to drain. Received: " <<
+        frames_received_ << ". Decoded: " << frames_decoded_;
+    EnableFrameLogOnWarning();
+  }
   const int64 drain_start = GetCurrentTimeMs();
   while ((frames_received_ > frames_decoded_ + max_pending_frames_) &&
          (GetCurrentTimeMs() - drain_start) < kMediaCodecTimeoutMs) {
-    ALOGV("Received: %d. Decoded: %d. Wait for output...",
-        frames_received_, frames_decoded_);
     if (!DeliverPendingOutputs(jni, kMediaCodecPollMs)) {
       ALOGE << "DeliverPendingOutputs error. Frames received: " <<
           frames_received_ << ". Frames decoded: " << frames_decoded_;
@@ -550,11 +565,25 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   }
 
   // Get input buffer.
-  int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_decoder_,
-                                                j_dequeue_input_buffer_method_);
+  int j_input_buffer_index = jni->CallIntMethod(
+      *j_media_codec_video_decoder_, j_dequeue_input_buffer_method_);
   if (CheckException(jni) || j_input_buffer_index < 0) {
-    ALOGE << "dequeueInputBuffer error";
-    return ProcessHWErrorOnCodecThread();
+    ALOGE << "dequeueInputBuffer error: " << j_input_buffer_index <<
+        ". Retry DeliverPendingOutputs.";
+    EnableFrameLogOnWarning();
+    // Try to drain the decoder.
+    if (!DeliverPendingOutputs(jni, kMediaCodecPollMs)) {
+      ALOGE << "DeliverPendingOutputs error. Frames received: " <<
+          frames_received_ << ". Frames decoded: " << frames_decoded_;
+      return ProcessHWErrorOnCodecThread();
+    }
+    // Try dequeue input buffer one last time.
+    j_input_buffer_index = jni->CallIntMethod(
+        *j_media_codec_video_decoder_, j_dequeue_input_buffer_method_);
+    if (CheckException(jni) || j_input_buffer_index < 0) {
+      ALOGE << "dequeueInputBuffer critical error: " << j_input_buffer_index;
+      return ProcessHWErrorOnCodecThread();
+    }
   }
 
   // Copy encoded data to Java ByteBuffer.
@@ -568,15 +597,15 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
         " is bigger than buffer size " << buffer_capacity;
     return ProcessHWErrorOnCodecThread();
   }
-  jlong presentation_timestamp_us =
-      (frames_received_ * 1000000) / codec_.maxFramerate;
+  jlong presentation_timestamp_us = static_cast<jlong>(
+      static_cast<int64_t>(frames_received_) * 1000000 / codec_.maxFramerate);
   memcpy(buffer, inputImage._buffer, inputImage._length);
 
-  if (frames_decoded_ < kMaxDecodedLogFrames) {
+  if (frames_decoded_ < frames_decoded_logged_) {
     ALOGD << "Decoder frame in # " << frames_received_ <<
         ". Type: " << inputImage._frameType <<
         ". Buffer # " << j_input_buffer_index <<
-        ". TS: " << (int)(presentation_timestamp_us / 1000) <<
+        ". TS: " << presentation_timestamp_us / 1000 <<
         ". Size: " << inputImage._length;
   }
 
@@ -646,29 +675,30 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int64_t frame_delayed_ms = 0;
   if (use_surface_) {
     // Extract data from Java DecodedTextureBuffer.
+    presentation_timestamps_ms = GetLongField(
+        jni, j_decoder_output_buffer,
+        j_texture_presentation_timestamp_ms_field_);
+    output_timestamps_ms = GetLongField(
+        jni, j_decoder_output_buffer, j_texture_timestamp_ms_field_);
+    output_ntp_timestamps_ms = GetLongField(
+        jni, j_decoder_output_buffer, j_texture_ntp_timestamp_ms_field_);
+    decode_time_ms = GetLongField(
+        jni, j_decoder_output_buffer, j_texture_decode_time_ms_field_);
+
     const int texture_id =
         GetIntField(jni, j_decoder_output_buffer, j_texture_id_field_);
     if (texture_id != 0) {  // |texture_id| == 0 represents a dropped frame.
       const jfloatArray j_transform_matrix =
           reinterpret_cast<jfloatArray>(GetObjectField(
               jni, j_decoder_output_buffer, j_transform_matrix_field_));
-      const int64_t timestamp_us = GetLongField(
-          jni, j_decoder_output_buffer, j_texture_timestamp_ms_field_);
-      presentation_timestamps_ms = GetLongField(
-          jni, j_decoder_output_buffer,
-          j_texture_presentation_timestamp_ms_field_);
-      output_timestamps_ms = GetLongField(
-          jni, j_decoder_output_buffer, j_texture_timestamp_ms_field_);
-      output_ntp_timestamps_ms = GetLongField(
-          jni, j_decoder_output_buffer, j_texture_ntp_timestamp_ms_field_);
-      decode_time_ms = GetLongField(
-          jni, j_decoder_output_buffer, j_texture_decode_time_ms_field_);
       frame_delayed_ms = GetLongField(
           jni, j_decoder_output_buffer, j_texture_frame_delay_ms_field_);
 
       // Create webrtc::VideoFrameBuffer with native texture handle.
       frame_buffer = surface_texture_helper_->CreateTextureFrame(
           width, height, NativeHandleImpl(jni, texture_id, j_transform_matrix));
+    } else {
+      EnableFrameLogOnWarning();
     }
   } else {
     // Extract data from Java ByteBuffer and create output yuv420 frame -
@@ -753,7 +783,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   decoded_frame.set_timestamp(output_timestamps_ms);
   decoded_frame.set_ntp_time_ms(output_ntp_timestamps_ms);
 
-  if (frames_decoded_ < kMaxDecodedLogFrames) {
+  if (frames_decoded_ < frames_decoded_logged_) {
     ALOGD << "Decoder frame out # " << frames_decoded_ <<
         ". " << width << " x " << height <<
         ". " << stride << " x " <<  slice_height <<
