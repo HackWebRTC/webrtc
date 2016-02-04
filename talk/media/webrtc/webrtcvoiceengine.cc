@@ -1153,12 +1153,22 @@ void WebRtcVoiceEngine::StopAecDump() {
 
 bool WebRtcVoiceEngine::StartRtcEventLog(rtc::PlatformFile file) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return voe_wrapper_->codec()->GetEventLog()->StartLogging(file);
+  webrtc::RtcEventLog* event_log = voe_wrapper_->codec()->GetEventLog();
+  if (event_log) {
+    return event_log->StartLogging(file);
+  }
+  LOG_RTCERR0(StartRtcEventLog);
+  return false;
 }
 
 void WebRtcVoiceEngine::StopRtcEventLog() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  voe_wrapper_->codec()->GetEventLog()->StopLogging();
+  webrtc::RtcEventLog* event_log = voe_wrapper_->codec()->GetEventLog();
+  if (event_log) {
+    event_log->StopLogging();
+    return;
+  }
+  LOG_RTCERR0(StopRtcEventLog);
 }
 
 int WebRtcVoiceEngine::CreateVoEChannel() {
