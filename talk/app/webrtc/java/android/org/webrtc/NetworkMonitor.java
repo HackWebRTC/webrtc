@@ -36,6 +36,7 @@ import org.webrtc.Logging;
 import android.content.Context;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Borrowed from Chromium's src/net/android/java/src/org/chromium/net/NetworkChangeNotifier.java
@@ -208,10 +209,13 @@ public class NetworkMonitor {
   }
 
   private void updateActiveNetworkList() {
-    NetworkInformation[] networkInfos = autoDetector.getActiveNetworkList();
-    if (networkInfos.length == 0) {
+    List<NetworkInformation> networkInfoList = autoDetector.getActiveNetworkList();
+    if (networkInfoList == null || networkInfoList.size() == 0) {
       return;
     }
+
+    NetworkInformation[] networkInfos = new NetworkInformation[networkInfoList.size()];
+    networkInfos = networkInfoList.toArray(networkInfos);
     for (long nativeObserver : nativeNetworkObservers) {
       nativeNotifyOfActiveNetworkList(nativeObserver, networkInfos);
     }

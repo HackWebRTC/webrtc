@@ -53,6 +53,9 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Borrowed from Chromium's
  * src/net/android/java/src/org/chromium/net/NetworkChangeNotifierAutoDetect.java
@@ -241,16 +244,19 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       return connectivityManager.getAllNetworks();
     }
 
-    NetworkInformation[] getActiveNetworkList() {
+    List<NetworkInformation> getActiveNetworkList() {
       if (!supportNetworkCallback()) {
-        return new NetworkInformation[0];
+        return null;
       }
-      Network[] networks = getAllNetworks();
-      NetworkInformation[] netInfos = new NetworkInformation[networks.length];
-      for (int i = 0; i < networks.length; ++i) {
-        netInfos[i] = networkToInfo(networks[i]);
+      ArrayList<NetworkInformation> netInfoList = new ArrayList<NetworkInformation>();
+      for (Network network : getAllNetworks()) {
+        NetworkInformation info = networkToInfo(network);
+        if (info.name != null && info.type != ConnectionType.CONNECTION_NONE
+            && info.type != ConnectionType.CONNECTION_UNKNOWN) {
+          netInfoList.add(info);
+        }
       }
-      return netInfos;
+      return netInfoList;
     }
 
     /**
@@ -470,7 +476,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     return isRegistered;
   }
 
-  NetworkInformation[] getActiveNetworkList() {
+  List<NetworkInformation> getActiveNetworkList() {
     return connectivityManagerDelegate.getActiveNetworkList();
   }
 
