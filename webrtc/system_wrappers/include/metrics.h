@@ -187,8 +187,6 @@
 
 #define RTC_HISTOGRAMS_COMMON(index, name, sample, macro_invocation) \
   do { \
-    RTC_DCHECK(index >= 0); \
-    RTC_DCHECK(index <= 2); \
     switch (index) { \
       case 0: \
         macro_invocation; \

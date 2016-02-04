@@ -155,8 +155,8 @@ void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
   for (size_t i = 0; i < kNumUmaRampupMetrics; ++i) {
     if (!rampup_uma_stats_updated_[i] &&
         bitrate_kbps >= kUmaRampupMetrics[i].bitrate_kbps) {
-      RTC_HISTOGRAM_COUNTS_SPARSE_100000(kUmaRampupMetrics[i].metric_name,
-                                         now_ms - first_report_time_ms_);
+      RTC_HISTOGRAMS_COUNTS_100000(i, kUmaRampupMetrics[i].metric_name,
+                                   now_ms - first_report_time_ms_);
       rampup_uma_stats_updated_[i] = true;
     }
   }
