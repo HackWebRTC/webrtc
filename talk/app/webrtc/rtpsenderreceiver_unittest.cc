@@ -181,7 +181,7 @@ class RtpSenderReceiverTest : public testing::Test {
     AddVideoTrack(true);
     EXPECT_CALL(video_provider_,
                 SetVideoPlayout(kVideoSsrc, true,
-                                video_track_->GetSource()->FrameInput()));
+                                video_track_->GetSink()));
     video_rtp_receiver_ = new VideoRtpReceiver(stream_->GetVideoTracks()[0],
                                                kVideoSsrc, &video_provider_);
   }

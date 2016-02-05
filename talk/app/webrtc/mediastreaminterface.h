@@ -147,6 +147,26 @@ class VideoTrackInterface : public MediaStreamTrackInterface {
 
   virtual VideoSourceInterface* GetSource() const = 0;
 
+  // Return the track input sink. I.e., frames sent to this sink are
+  // propagated to all renderers registered with the track. The
+  // returned sink must not change between calls. Currently, this
+  // method is used for remote tracks (VideoRtpReceiver); further
+  // refactoring is planned for this path, it's unclear if this method
+  // belongs here long term.
+
+  // We do this instead of simply implementing the
+  // VideoSourceInterface directly, because if we did the latter, we'd
+  // need an OnFrame method in VideoTrackProxy, with a thread jump on
+  // each call.
+
+  // TODO(nisse): It has a default implementation so that mock
+  // objects, in particular, chrome's MockWebRtcVideoTrack, doesn't
+  // need to know about it. Consider removing the implementation (or
+  // this comment) after refactoring dust settles.
+  virtual rtc::VideoSinkInterface<cricket::VideoFrame>* GetSink() {
+    return nullptr;
+  };
+
  protected:
   virtual ~VideoTrackInterface() {}
 };

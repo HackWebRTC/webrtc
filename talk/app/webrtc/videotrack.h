@@ -47,6 +47,7 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
   virtual VideoSourceInterface* GetSource() const {
     return video_source_.get();
   }
+  rtc::VideoSinkInterface<cricket::VideoFrame>* GetSink() override;
   virtual bool set_enabled(bool enable);
   virtual std::string kind() const;
 

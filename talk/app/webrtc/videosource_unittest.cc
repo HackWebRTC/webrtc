@@ -222,11 +222,6 @@ TEST_F(VideoSourceTest, StartStopRemote) {
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
 
-  cricket::VideoRenderer* frameinput = source_->FrameInput();
-  cricket::WebRtcVideoFrame test_frame;
-  frameinput->RenderFrame(&test_frame);
-  EXPECT_EQ(1, renderer_.num_rendered_frames());
-
   source_->GetVideoCapturer()->Stop();
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);

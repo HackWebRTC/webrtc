@@ -74,7 +74,6 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   bool remote() const override { return remote_; }
 
   virtual const cricket::VideoOptions* options() const { return &options_; }
-  virtual cricket::VideoRenderer* FrameInput();
 
   virtual cricket::VideoCapturer* GetVideoCapturer() {
     return video_capturer_.get();

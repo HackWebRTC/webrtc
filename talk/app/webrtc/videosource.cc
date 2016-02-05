@@ -294,34 +294,6 @@ bool ExtractVideoOptions(const MediaConstraintsInterface* all_constraints,
   return all_valid;
 }
 
-class FrameInputWrapper : public cricket::VideoRenderer {
- public:
-  explicit FrameInputWrapper(cricket::VideoCapturer* capturer)
-      : capturer_(capturer) {
-    ASSERT(capturer_ != NULL);
-  }
-
-  virtual ~FrameInputWrapper() {}
-
-  // VideoRenderer implementation.
-  bool RenderFrame(const cricket::VideoFrame* frame) override {
-    if (!capturer_->IsRunning()) {
-      return true;
-    }
-
-    // This signal will be made on media engine render thread. The clients
-    // of this signal should have no assumptions on what thread this signal
-    // come from.
-    capturer_->SignalVideoFrame(capturer_, frame);
-    return true;
-  }
-
- private:
-  cricket::VideoCapturer* capturer_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(FrameInputWrapper);
-};
-
 }  // anonymous namespace
 
 namespace webrtc {
@@ -416,15 +388,6 @@ void VideoSource::Initialize(
     return;
   }
   // Initialize hasn't succeeded until a successful state change has occurred.
-}
-
-cricket::VideoRenderer* VideoSource::FrameInput() {
-  // Defer creation of frame_input_ until it's needed, e.g. the local video
-  // sources will never need it.
-  if (!frame_input_) {
-    frame_input_.reset(new FrameInputWrapper(video_capturer_.get()));
-  }
-  return frame_input_.get();
 }
 
 void VideoSource::Stop() {

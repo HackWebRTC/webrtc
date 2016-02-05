@@ -55,7 +55,9 @@ class VideoSourceInterface : public MediaSourceInterface {
   virtual void RemoveSink(
       rtc::VideoSinkInterface<cricket::VideoFrame>* output) = 0;
   virtual const cricket::VideoOptions* options() const = 0;
-  virtual cricket::VideoRenderer* FrameInput() = 0;
+  // TODO(nisse): Dummy implementation. Delete as soon as chrome's
+  // MockVideoSource is updated.
+  virtual cricket::VideoRenderer* FrameInput() { return nullptr; }
 
  protected:
   virtual ~VideoSourceInterface() {}

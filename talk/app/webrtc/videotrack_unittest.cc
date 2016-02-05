@@ -77,13 +77,13 @@ TEST_F(VideoTrackTest, RenderVideo) {
   rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_1(
       new FakeVideoTrackRenderer(video_track_.get()));
 
-  cricket::VideoRenderer* renderer_input =
-      video_track_->GetSource()->FrameInput();
+  rtc::VideoSinkInterface<cricket::VideoFrame>* renderer_input =
+      video_track_->GetSink();
   ASSERT_FALSE(renderer_input == NULL);
 
   cricket::WebRtcVideoFrame frame;
   frame.InitToBlack(123, 123, 0);
-  renderer_input->RenderFrame(&frame);
+  renderer_input->OnFrame(frame);
   EXPECT_EQ(1, renderer_1->num_rendered_frames());
 
   EXPECT_EQ(123, renderer_1->width());
@@ -93,7 +93,7 @@ TEST_F(VideoTrackTest, RenderVideo) {
   rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_2(
       new FakeVideoTrackRenderer(video_track_.get()));
 
-  renderer_input->RenderFrame(&frame);
+  renderer_input->OnFrame(frame);
 
   EXPECT_EQ(123, renderer_1->width());
   EXPECT_EQ(123, renderer_1->height());
@@ -104,7 +104,7 @@ TEST_F(VideoTrackTest, RenderVideo) {
   EXPECT_EQ(1, renderer_2->num_rendered_frames());
 
   video_track_->RemoveRenderer(renderer_1.get());
-  renderer_input->RenderFrame(&frame);
+  renderer_input->OnFrame(frame);
 
   EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(2, renderer_2->num_rendered_frames());
@@ -115,8 +115,8 @@ TEST_F(VideoTrackTest, DisableTrackBlackout) {
   rtc::scoped_ptr<FakeVideoTrackRenderer> renderer(
       new FakeVideoTrackRenderer(video_track_.get()));
 
-  cricket::VideoRenderer* renderer_input =
-      video_track_->GetSource()->FrameInput();
+  rtc::VideoSinkInterface<cricket::VideoFrame>* renderer_input =
+      video_track_->GetSink();
   ASSERT_FALSE(renderer_input == NULL);
 
   cricket::WebRtcVideoFrame frame;
@@ -124,21 +124,21 @@ TEST_F(VideoTrackTest, DisableTrackBlackout) {
   // Make it not all-black
   frame.GetUPlane()[0] = 0;
 
-  renderer_input->RenderFrame(&frame);
+  renderer_input->OnFrame(frame);
   EXPECT_EQ(1, renderer->num_rendered_frames());
   EXPECT_FALSE(renderer->black_frame());
   EXPECT_EQ(100, renderer->width());
   EXPECT_EQ(200, renderer->height());
 
   video_track_->set_enabled(false);
-  renderer_input->RenderFrame(&frame);
+  renderer_input->OnFrame(frame);
   EXPECT_EQ(2, renderer->num_rendered_frames());
   EXPECT_TRUE(renderer->black_frame());
   EXPECT_EQ(100, renderer->width());
   EXPECT_EQ(200, renderer->height());
 
   video_track_->set_enabled(true);
-  renderer_input->RenderFrame(&frame);
+  renderer_input->OnFrame(frame);
   EXPECT_EQ(3, renderer->num_rendered_frames());
   EXPECT_FALSE(renderer->black_frame());
   EXPECT_EQ(100, renderer->width());
