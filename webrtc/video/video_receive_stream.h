@@ -88,9 +88,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   CallStats* const call_stats_;
 
   rtc::scoped_ptr<VideoCodingModule> vcm_;
-  rtc::scoped_ptr<IncomingVideoStream> incoming_video_stream_;
-  rtc::scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
-  rtc::scoped_ptr<ViEChannel> vie_channel_;
+  IncomingVideoStream incoming_video_stream_;
+  ReceiveStatisticsProxy stats_proxy_;
+  ViEChannel vie_channel_;
 };
 }  // namespace internal
 }  // namespace webrtc
