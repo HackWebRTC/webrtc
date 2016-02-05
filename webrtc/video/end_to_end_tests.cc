@@ -2554,6 +2554,7 @@ TEST_F(EndToEndTest, GetStats) {
    public:
     StatsObserver()
         : EndToEndTest(kLongTimeoutMs),
+          encoder_(Clock::GetRealTimeClock(), 10),
           send_stream_(nullptr),
           expected_send_ssrcs_(),
           check_stats_event_(false, false) {}
@@ -2751,6 +2752,9 @@ TEST_F(EndToEndTest, GetStats) {
             (*receive_configs)[i].rtp.remote_ssrc);
         (*receive_configs)[i].render_delay_ms = kExpectedRenderDelayMs;
       }
+      // Use a delayed encoder to make sure we see CpuOveruseMetrics stats that
+      // are non-zero.
+      send_config->encoder_settings.encoder = &encoder_;
     }
 
     size_t GetNumVideoStreams() const override { return kNumSsrcs; }
@@ -2804,6 +2808,7 @@ TEST_F(EndToEndTest, GetStats) {
       }
     }
 
+    test::DelayedEncoder encoder_;
     std::vector<VideoReceiveStream*> receive_streams_;
     std::map<std::string, bool> receive_stats_filled_;
 
