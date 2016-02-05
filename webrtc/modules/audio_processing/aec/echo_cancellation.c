@@ -164,7 +164,7 @@ void* WebRtcAec_Create() {
 }
 
 void WebRtcAec_Free(void* aecInst) {
-  Aec* aecpc = aecInst;
+  Aec* aecpc = (Aec*)aecInst;
 
   if (aecpc == NULL) {
     return;
@@ -184,7 +184,7 @@ void WebRtcAec_Free(void* aecInst) {
 }
 
 int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
-  Aec* aecpc = aecInst;
+  Aec* aecpc = (Aec*)aecInst;
   AecConfig aecConfig;
 
   if (sampFreq != 8000 && sampFreq != 16000 && sampFreq != 32000 &&
@@ -265,7 +265,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
 int32_t WebRtcAec_GetBufferFarendError(void* aecInst,
                                        const float* farend,
                                        size_t nrOfSamples) {
-  Aec* aecpc = aecInst;
+  Aec* aecpc = (Aec*)aecInst;
 
   if (!farend)
     return AEC_NULL_POINTER_ERROR;
@@ -284,7 +284,7 @@ int32_t WebRtcAec_GetBufferFarendError(void* aecInst,
 int32_t WebRtcAec_BufferFarend(void* aecInst,
                                const float* farend,
                                size_t nrOfSamples) {
-  Aec* aecpc = aecInst;
+  Aec* aecpc = (Aec*)aecInst;
   size_t newNrOfSamples = nrOfSamples;
   float new_farend[MAX_RESAMP_LEN];
   const float* farend_ptr = farend;
@@ -335,7 +335,7 @@ int32_t WebRtcAec_Process(void* aecInst,
                           size_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew) {
-  Aec* aecpc = aecInst;
+  Aec* aecpc = (Aec*)aecInst;
   int32_t retVal = 0;
 
   if (out == NULL) {
@@ -524,7 +524,7 @@ int WebRtcAec_GetDelayMetrics(void* handle,
                               int* median,
                               int* std,
                               float* fraction_poor_delays) {
-  Aec* self = handle;
+  Aec* self = (Aec*)handle;
   if (median == NULL) {
     return AEC_NULL_POINTER_ERROR;
   }
