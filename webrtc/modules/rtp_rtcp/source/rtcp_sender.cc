@@ -678,9 +678,11 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
 
   rtcp::Tmmbr* tmmbr = new rtcp::Tmmbr();
   tmmbr->From(ssrc_);
-  tmmbr->To(remote_ssrc_);
-  tmmbr->WithBitrateKbps(tmmbr_send_);
-  tmmbr->WithOverhead(packet_oh_send_);
+  rtcp::TmmbItem request;
+  request.set_ssrc(remote_ssrc_);
+  request.set_bitrate_bps(tmmbr_send_ * 1000);
+  request.set_packet_overhead(packet_oh_send_);
+  tmmbr->WithTmmbr(request);
 
   return rtc::scoped_ptr<rtcp::Tmmbr>(tmmbr);
 }

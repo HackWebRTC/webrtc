@@ -869,8 +869,7 @@ TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
 
   rtcp::Tmmbr tmmbr;
   tmmbr.From(kSenderSsrc);
-  tmmbr.To(kMediaFlowSsrc);
-  tmmbr.WithBitrateKbps(30);
+  tmmbr.WithTmmbr(rtcp::TmmbItem(kMediaFlowSsrc, 30000, 0));
 
   rtcp::SenderReport sr;
   sr.From(kSenderSsrc);
@@ -892,8 +891,8 @@ TEST_F(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
 
   rtcp::Tmmbr tmmbr;
   tmmbr.From(kSenderSsrc);
-  tmmbr.To(kMediaFlowSsrc + 1);  // This SSRC is not what we are sending.
-  tmmbr.WithBitrateKbps(30);
+  // This SSRC is not what we are sending.
+  tmmbr.WithTmmbr(rtcp::TmmbItem(kMediaFlowSsrc + 1, 30000, 0));
 
   rtcp::SenderReport sr;
   sr.From(kSenderSsrc);
@@ -916,8 +915,7 @@ TEST_F(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
 
   rtcp::Tmmbr tmmbr;
   tmmbr.From(kSenderSsrc);
-  tmmbr.To(kMediaFlowSsrc);
-  tmmbr.WithBitrateKbps(0);
+  tmmbr.WithTmmbr(rtcp::TmmbItem(kMediaFlowSsrc, 0, 0));
 
   rtcp::SenderReport sr;
   sr.From(kSenderSsrc);
@@ -940,8 +938,7 @@ TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
   for (uint32_t ssrc = kSenderSsrc; ssrc < kSenderSsrc + 3; ++ssrc) {
     rtcp::Tmmbr tmmbr;
     tmmbr.From(ssrc);
-    tmmbr.To(kMediaFlowSsrc);
-    tmmbr.WithBitrateKbps(30);
+    tmmbr.WithTmmbr(rtcp::TmmbItem(kMediaFlowSsrc, 30000, 0));
 
     rtcp::SenderReport sr;
     sr.From(ssrc);
