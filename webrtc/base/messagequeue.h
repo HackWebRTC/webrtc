@@ -167,7 +167,18 @@ class MessageQueue {
  public:
   static const int kForever = -1;
 
-  explicit MessageQueue(SocketServer* ss = NULL);
+  // Create a new MessageQueue and optionally assign it to the passed
+  // SocketServer. Subclasses that override Clear should pass false for
+  // init_queue and call DoInit() from their constructor to prevent races
+  // with the MessageQueueManager using the object while the vtable is still
+  // being created.
+  explicit MessageQueue(SocketServer* ss = NULL,
+                        bool init_queue = true);
+
+  // NOTE: SUBCLASSES OF MessageQueue THAT OVERRIDE Clear MUST CALL
+  // DoDestroy() IN THEIR DESTRUCTORS! This is required to avoid a data race
+  // between the destructor modifying the vtable, and the MessageQueueManager
+  // calling Clear on the object from a different thread.
   virtual ~MessageQueue();
 
   SocketServer* socketserver() { return ss_; }
@@ -241,6 +252,14 @@ class MessageQueue {
                    uint32_t id,
                    MessageData* pdata);
 
+  // Perform initialization, subclasses must call this from their constructor
+  // if false was passed as init_queue to the MessageQueue constructor.
+  void DoInit();
+
+  // Perform cleanup, subclasses that override Clear must call this from the
+  // destructor.
+  void DoDestroy();
+
   // The SocketServer is not owned by MessageQueue.
   SocketServer* ss_;
   // If a server isn't supplied in the constructor, use this one.
@@ -252,6 +271,8 @@ class MessageQueue {
   PriorityQueue dmsgq_;
   uint32_t dmsgq_next_num_;
   CriticalSection crit_;
+  bool fInitialized_;
+  bool fDestroyed_;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(MessageQueue);

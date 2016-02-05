@@ -13,6 +13,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
 
@@ -375,6 +376,42 @@ TEST(ThreadTest, ThreeThreadsInvoke) {
   EXPECT_FALSE(thread_a_called.Get());
 
   EXPECT_TRUE_WAIT(thread_a_called.Get(), 2000);
+}
+
+// Set the name on a thread when the underlying QueueDestroyed signal is
+// triggered. This causes an error if the object is already partially
+// destroyed.
+class SetNameOnSignalQueueDestroyedTester : public sigslot::has_slots<> {
+ public:
+  SetNameOnSignalQueueDestroyedTester(Thread* thread) : thread_(thread) {
+    thread->SignalQueueDestroyed.connect(
+        this, &SetNameOnSignalQueueDestroyedTester::OnQueueDestroyed);
+  }
+
+  void OnQueueDestroyed() {
+    // Makes sure that if we access the Thread while it's being destroyed, that
+    // it doesn't cause a problem because the vtable has been modified.
+    thread_->SetName("foo", nullptr);
+  }
+
+ private:
+  Thread* thread_;
+};
+
+TEST(ThreadTest, SetNameOnSignalQueueDestroyed) {
+  Thread* thread1 = new Thread();
+  SetNameOnSignalQueueDestroyedTester tester1(thread1);
+  delete thread1;
+
+  Thread* thread2 = new AutoThread();
+  SetNameOnSignalQueueDestroyedTester tester2(thread2);
+  delete thread2;
+
+#if defined(WEBRTC_WIN)
+  Thread* thread3 = new ComThread();
+  SetNameOnSignalQueueDestroyedTester tester3(thread3);
+  delete thread3;
+#endif
 }
 
 class AsyncInvokeTest : public testing::Test {

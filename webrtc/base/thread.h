@@ -94,7 +94,13 @@ class Runnable {
 
 class Thread : public MessageQueue {
  public:
-  explicit Thread(SocketServer* ss = NULL);
+  // Create a new Thread and optionally assign it to the passed SocketServer.
+  // Subclasses that override Clear should pass false for init_queue and call
+  // DoInit() from their constructor to prevent races with the
+  // MessageQueueManager already using the object while the vtable is still
+  // being created.
+  explicit Thread(SocketServer* ss = nullptr, bool init_queue = true);
+
   // NOTE: ALL SUBCLASSES OF Thread MUST CALL Stop() IN THEIR DESTRUCTORS (or
   // guarantee Stop() is explicitly called before the subclass is destroyed).
   // This is required to avoid a data race between the destructor modifying the
@@ -285,7 +291,7 @@ class Thread : public MessageQueue {
 
 class AutoThread : public Thread {
  public:
-  explicit AutoThread(SocketServer* ss = 0);
+  explicit AutoThread(SocketServer* ss = nullptr);
   ~AutoThread() override;
 
  private:
@@ -297,10 +303,10 @@ class AutoThread : public Thread {
 class ComThread : public Thread {
  public:
   ComThread() {}
-  virtual ~ComThread() { Stop(); }
+  ~ComThread() override { Stop(); }
 
  protected:
-  virtual void Run();
+  void Run() override;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(ComThread);

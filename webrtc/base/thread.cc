@@ -138,8 +138,8 @@ Thread::ScopedDisallowBlockingCalls::~ScopedDisallowBlockingCalls() {
   thread_->SetAllowBlockingCalls(previous_state_);
 }
 
-Thread::Thread(SocketServer* ss)
-    : MessageQueue(ss),
+Thread::Thread(SocketServer* ss, bool init_queue)
+    : MessageQueue(ss, false),
       running_(true, false),
 #if defined(WEBRTC_WIN)
       thread_(NULL),
@@ -148,11 +148,14 @@ Thread::Thread(SocketServer* ss)
       owned_(true),
       blocking_calls_allowed_(true) {
   SetName("Thread", this);  // default name
+  if (init_queue) {
+    DoInit();
+  }
 }
 
 Thread::~Thread() {
   Stop();
-  Clear(NULL);
+  DoDestroy();
 }
 
 bool Thread::SleepMs(int milliseconds) {

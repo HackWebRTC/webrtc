@@ -116,9 +116,9 @@ void MessageQueueManager::ClearInternal(MessageHandler *handler) {
 //------------------------------------------------------------------
 // MessageQueue
 
-MessageQueue::MessageQueue(SocketServer* ss)
+MessageQueue::MessageQueue(SocketServer* ss, bool init_queue)
     : ss_(ss), fStop_(false), fPeekKeep_(false),
-      dmsgq_next_num_(0) {
+      dmsgq_next_num_(0), fInitialized_(false), fDestroyed_(false) {
   if (!ss_) {
     // Currently, MessageQueue holds a socket server, and is the base class for
     // Thread.  It seems like it makes more sense for Thread to hold the socket
@@ -129,10 +129,30 @@ MessageQueue::MessageQueue(SocketServer* ss)
     ss_ = default_ss_.get();
   }
   ss_->SetMessageQueue(this);
-  MessageQueueManager::Add(this);
+  if (init_queue) {
+    DoInit();
+  }
 }
 
 MessageQueue::~MessageQueue() {
+  DoDestroy();
+}
+
+void MessageQueue::DoInit() {
+  if (fInitialized_) {
+    return;
+  }
+
+  fInitialized_ = true;
+  MessageQueueManager::Add(this);
+}
+
+void MessageQueue::DoDestroy() {
+  if (fDestroyed_) {
+    return;
+  }
+
+  fDestroyed_ = true;
   // The signal is done from here to ensure
   // that it always gets called when the queue
   // is going away.
