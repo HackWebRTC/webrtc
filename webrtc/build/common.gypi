@@ -121,9 +121,6 @@
     # TODO(henrika): add support for Open SL ES.
     'enable_android_opensl%': 0,
 
-    # Disable this to skip building source requiring GTK.
-    'use_gtk%': 1,
-
     # Link-Time Optimizations
     # Executes code generation at link-time instead of compile-time
     # https://gcc.gnu.org/wiki/LinkTimeOptimization
@@ -164,6 +161,9 @@
       }],
 
       ['build_with_chromium==1', {
+        # Build sources requiring GTK. NOTICE: This is not present in Chrome OS
+        # build environments, even if available for Chromium builds.
+        'use_gtk%': 0,
         # Exclude pulse audio on Chromium since its prerequisites don't require
         # pulse audio.
         'include_pulse_audio%': 0,
@@ -175,6 +175,7 @@
         'include_tests%': 0,
         'restrict_webrtc_logging%': 1,
       }, {  # Settings for the standalone (not-in-Chromium) build.
+        'use_gtk%': 1,
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:
         # http://code.google.com/p/webrtc/issues/detail?id=163
