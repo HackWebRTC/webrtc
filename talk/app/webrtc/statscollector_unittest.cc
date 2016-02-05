@@ -31,14 +31,13 @@
 
 #include "talk/app/webrtc/statscollector.h"
 
-#include "talk/app/webrtc/peerconnection.h"
-#include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamtrack.h"
+#include "talk/app/webrtc/peerconnection.h"
+#include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
 #include "talk/app/webrtc/videotrack.h"
-#include "talk/media/base/fakemediaengine.h"
 #include "talk/session/media/channelmanager.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -46,6 +45,7 @@
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/network.h"
+#include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 
 using rtc::scoped_ptr;

@@ -29,15 +29,15 @@
 
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/sessiondescription.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/sessiondescription.h"
 
 using webrtc::IceCandidateCollection;
 using webrtc::IceCandidateInterface;

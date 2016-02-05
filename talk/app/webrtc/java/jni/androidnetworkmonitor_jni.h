@@ -32,9 +32,9 @@
 
 #include <map>
 
+#include "talk/app/webrtc/java/jni/jni_helpers.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/thread_checker.h"
-#include "talk/app/webrtc/java/jni/jni_helpers.h"
 
 namespace webrtc_jni {
 

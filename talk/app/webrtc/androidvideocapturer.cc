@@ -27,10 +27,10 @@
 #include "talk/app/webrtc/androidvideocapturer.h"
 
 #include "talk/app/webrtc/java/jni/native_handle_impl.h"
-#include "talk/media/webrtc/webrtcvideoframe.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/media/webrtc/webrtcvideoframe.h"
 
 namespace webrtc {
 

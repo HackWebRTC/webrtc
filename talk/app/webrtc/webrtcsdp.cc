@@ -27,29 +27,29 @@
 
 #include "talk/app/webrtc/webrtcsdp.h"
 
+#include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <ctype.h>
 
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
-#include "talk/media/base/codec.h"
-#include "talk/media/base/constants.h"
-#include "talk/media/base/cryptoparams.h"
-#include "talk/media/base/rtputils.h"
-#include "talk/media/sctp/sctpdataengine.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/port.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/media/base/codec.h"
+#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/cryptoparams.h"
+#include "webrtc/media/base/rtputils.h"
+#include "webrtc/media/sctp/sctpdataengine.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/port.h"
 
 using cricket::AudioContentDescription;
 using cricket::Candidate;

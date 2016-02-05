@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
-#include "talk/media/base/mediaengine.h"
+#include "webrtc/media/base/mediaengine.h"
 
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaSourceInterface;

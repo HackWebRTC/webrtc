@@ -74,8 +74,8 @@
 
 #include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/app/webrtc/dtlsidentitystore.h"
-#include "talk/app/webrtc/dtmfsenderinterface.h"
 #include "talk/app/webrtc/dtlsidentitystore.h"
+#include "talk/app/webrtc/dtmfsenderinterface.h"
 #include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/rtpreceiverinterface.h"
@@ -85,8 +85,8 @@
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/rtccertificate.h"
-#include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/socketaddress.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/p2p/base/portallocator.h"
 
 namespace rtc {

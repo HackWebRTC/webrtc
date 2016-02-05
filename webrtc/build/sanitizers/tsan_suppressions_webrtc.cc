@@ -29,7 +29,7 @@ char kTSanDefaultSuppressions[] =
 "race:vp8cx_remove_encoder_threads\n"
 "race:third_party/libvpx_new/source/libvpx/vp9/common/vp9_scan.h\n"
 
-// Usage of trace callback and trace level is racy in libjingle_media_unittests.
+// Usage of trace callback and trace level is racy in rtc_media_unittests.
 // https://code.google.com/p/webrtc/issues/detail?id=3372
 "race:webrtc::TraceImpl::WriteToFile\n"
 "race:webrtc::VideoEngine::SetTraceFilter\n"
@@ -46,7 +46,7 @@ char kTSanDefaultSuppressions[] =
 // https://code.google.com/p/webrtc/issues/detail?id=5152
 "race:webrtc::AudioDeviceLinuxPulse::Init\n"
 
-// rtc_unittest
+// rtc_unittests
 // https://code.google.com/p/webrtc/issues/detail?id=3911 for details.
 "race:rtc::AsyncInvoker::OnMessage\n"
 "race:rtc::FireAndForgetAsyncClosure<FunctorB>::Execute\n"

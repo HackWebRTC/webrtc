@@ -31,9 +31,9 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/keep_ref_until_done.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/logging.h"
 
 using webrtc::NativeHandleBuffer;
 

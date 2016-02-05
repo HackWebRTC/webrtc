@@ -70,7 +70,7 @@ char kLSanDefaultSuppressions[] =
 "leak:PubSubClientTest::PubSubClientTest\n"
 "leak:PubSubTasksTest::PubSubTasksTest\n"
 
-// libjingle_media_unittest
+// rtc_media_unittests
 "leak:cricket::FakeNetworkInterface::SetOption\n"
 "leak:CodecTest_TestCodecOperators_Test::TestBody\n"
 "leak:VideoEngineTest*::ConstrainNewCodecBody\n"

@@ -28,16 +28,12 @@
 #ifndef TALK_SESSION_MEDIA_CHANNEL_H_
 #define TALK_SESSION_MEDIA_CHANNEL_H_
 
-#include <string>
-#include <vector>
 #include <map>
 #include <set>
+#include <string>
 #include <utility>
+#include <vector>
 
-#include "talk/media/base/mediachannel.h"
-#include "talk/media/base/mediaengine.h"
-#include "talk/media/base/streamparams.h"
-#include "talk/media/base/videocapturer.h"
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/bundlefilter.h"
 #include "talk/session/media/mediamonitor.h"
@@ -50,6 +46,10 @@
 #include "webrtc/base/network.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/window.h"
+#include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/mediaengine.h"
+#include "webrtc/media/base/streamparams.h"
+#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/p2p/client/socketmonitor.h"

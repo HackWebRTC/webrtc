@@ -35,8 +35,8 @@
 #define TALK_APP_WEBRTC_JAVA_JNI_CLASSREFERENCEHOLDER_H_
 
 #include <jni.h>
-#include <string>
 #include <map>
+#include <string>
 
 namespace webrtc_jni {
 

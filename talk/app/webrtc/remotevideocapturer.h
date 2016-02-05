@@ -31,8 +31,8 @@
 #include <vector>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/media/base/videocapturer.h"
-#include "talk/media/base/videorenderer.h"
+#include "webrtc/media/base/videocapturer.h"
+#include "webrtc/media/base/videorenderer.h"
 
 namespace webrtc {
 

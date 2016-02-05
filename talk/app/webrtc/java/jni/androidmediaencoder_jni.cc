@@ -27,9 +27,14 @@
  */
 
 #include "talk/app/webrtc/java/jni/androidmediaencoder_jni.h"
-#include "talk/app/webrtc/java/jni/classreferenceholder.h"
+// NOTICE: androidmediaencoder_jni.h must be included before
+// androidmediacodeccommon.h to avoid build errors.
 #include "talk/app/webrtc/java/jni/androidmediacodeccommon.h"
+#include "talk/app/webrtc/java/jni/classreferenceholder.h"
 #include "talk/app/webrtc/java/jni/native_handle_impl.h"
+#include "third_party/libyuv/include/libyuv/convert.h"
+#include "third_party/libyuv/include/libyuv/convert_from.h"
+#include "third_party/libyuv/include/libyuv/video_common.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -42,9 +47,6 @@
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
-#include "third_party/libyuv/include/libyuv/convert.h"
-#include "third_party/libyuv/include/libyuv/convert_from.h"
-#include "third_party/libyuv/include/libyuv/video_common.h"
 
 using rtc::Bind;
 using rtc::Thread;

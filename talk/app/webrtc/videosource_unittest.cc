@@ -31,12 +31,12 @@
 #include "talk/app/webrtc/remotevideocapturer.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/videosource.h"
-#include "talk/media/base/fakemediaengine.h"
-#include "talk/media/base/fakevideocapturer.h"
-#include "talk/media/base/fakevideorenderer.h"
-#include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/media/base/fakevideocapturer.h"
+#include "webrtc/media/base/fakevideorenderer.h"
+#include "webrtc/media/webrtc/webrtcvideoframe.h"
 
 using webrtc::FakeConstraints;
 using webrtc::VideoSource;

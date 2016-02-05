@@ -31,9 +31,9 @@
 
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/sctputils.h"
-#include "talk/media/sctp/sctpdataengine.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/refcount.h"
+#include "webrtc/media/sctp/sctpdataengine.h"
 
 namespace webrtc {
 

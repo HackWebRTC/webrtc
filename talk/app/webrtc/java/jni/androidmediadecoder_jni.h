@@ -30,7 +30,7 @@
 #define TALK_APP_WEBRTC_JAVA_JNI_ANDROIDMEDIADECODER_JNI_H_
 
 #include "talk/app/webrtc/java/jni/eglbase_jni.h"
-#include "talk/media/webrtc/webrtcvideodecoderfactory.h"
+#include "webrtc/media/webrtc/webrtcvideodecoderfactory.h"
 
 namespace webrtc_jni {
 

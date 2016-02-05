@@ -42,6 +42,7 @@ include_rules = [
   '+testing',
   '+third_party',
   '+unicode',
+  '+usrsctplib',
   '+webrtc',
   '+vpx',
 ]

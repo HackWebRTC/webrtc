@@ -37,10 +37,10 @@
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/rtpsenderinterface.h"
 #include "talk/app/webrtc/statscollector.h"
-#include "talk/media/base/audiorenderer.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/media/base/audiorenderer.h"
 
 namespace webrtc {
 

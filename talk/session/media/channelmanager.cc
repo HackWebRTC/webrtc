@@ -34,13 +34,13 @@
 #include <algorithm>
 
 #include "talk/app/webrtc/mediacontroller.h"
-#include "talk/media/base/capturemanager.h"
-#include "talk/media/base/device.h"
-#include "talk/media/base/hybriddataengine.h"
-#include "talk/media/base/rtpdataengine.h"
-#include "talk/media/base/videocapturer.h"
+#include "webrtc/media/base/capturemanager.h"
+#include "webrtc/media/base/device.h"
+#include "webrtc/media/base/hybriddataengine.h"
+#include "webrtc/media/base/rtpdataengine.h"
+#include "webrtc/media/base/videocapturer.h"
 #ifdef HAVE_SCTP
-#include "talk/media/sctp/sctpdataengine.h"
+#include "webrtc/media/sctp/sctpdataengine.h"
 #endif
 #include "talk/session/media/srtpfilter.h"
 #include "webrtc/base/bind.h"

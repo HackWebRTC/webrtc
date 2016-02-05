@@ -36,12 +36,12 @@
 #include "talk/app/webrtc/test/fakedtlsidentitystore.h"
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
 #include "talk/app/webrtc/videosourceinterface.h"
-#include "talk/media/base/fakevideocapturer.h"
-#include "talk/media/webrtc/webrtccommon.h"
-#include "talk/media/webrtc/webrtcvoe.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/media/base/fakevideocapturer.h"
+#include "webrtc/media/webrtc/webrtccommon.h"
+#include "webrtc/media/webrtc/webrtcvoe.h"
 #include "webrtc/p2p/client/fakeportallocator.h"
 
 using webrtc::DataChannelInterface;

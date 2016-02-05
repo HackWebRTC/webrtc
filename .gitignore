@@ -50,13 +50,16 @@
 /out
 /resources/**/*.aecdump
 /resources/**/*.bin
+/resources/**/*.byte
 /resources/**/*.chn
 /resources/**/*.dat
+/resources/**/*.frames
 /resources/**/*.gai
 /resources/**/*.jpg
 /resources/**/*.pcap
 /resources/**/*.pcm
 /resources/**/*.rtp
+/resources/**/*.rtpdump
 /resources/**/*.rx
 /resources/**/*.wav
 /resources/**/*.yuv

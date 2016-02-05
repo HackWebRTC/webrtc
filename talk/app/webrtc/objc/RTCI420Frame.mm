@@ -27,7 +27,7 @@
 
 #import "RTCI420Frame.h"
 
-#include "talk/media/base/videoframe.h"
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/base/scoped_ptr.h"
 
 @implementation RTCI420Frame {

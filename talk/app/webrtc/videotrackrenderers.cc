@@ -26,7 +26,7 @@
  */
 
 #include "talk/app/webrtc/videotrackrenderers.h"
-#include "talk/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/media/webrtc/webrtcvideoframe.h"
 
 namespace webrtc {
 

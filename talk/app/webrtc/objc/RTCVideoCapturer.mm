@@ -31,8 +31,8 @@
 
 #import "RTCVideoCapturer+Internal.h"
 
-#include "talk/media/base/videocapturer.h"
-#include "talk/media/devices/devicemanager.h"
+#include "webrtc/media/base/videocapturer.h"
+#include "webrtc/media/devices/devicemanager.h"
 
 @implementation RTCVideoCapturer {
   rtc::scoped_ptr<cricket::VideoCapturer> _capturer;

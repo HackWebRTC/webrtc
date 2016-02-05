@@ -25,14 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/media/base/fakemediaengine.h"
-#include "talk/media/base/fakertp.h"
-#include "talk/media/base/fakescreencapturerfactory.h"
-#include "talk/media/base/fakevideocapturer.h"
-#include "talk/media/base/mediachannel.h"
-#include "talk/media/base/rtpdump.h"
-#include "talk/media/base/screencastid.h"
-#include "talk/media/base/testutils.h"
 #include "talk/session/media/channel.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
@@ -44,6 +36,14 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/window.h"
+#include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/media/base/fakertp.h"
+#include "webrtc/media/base/fakescreencapturerfactory.h"
+#include "webrtc/media/base/fakevideocapturer.h"
+#include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/rtpdump.h"
+#include "webrtc/media/base/screencastid.h"
+#include "webrtc/media/base/testutils.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \

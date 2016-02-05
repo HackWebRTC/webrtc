@@ -32,18 +32,18 @@
 #include <set>
 #include <utility>
 
-#include "talk/media/base/constants.h"
-#include "talk/media/base/cryptoparams.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/srtpfilter.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/p2p/base/constants.h"
 
 #ifdef HAVE_SCTP
-#include "talk/media/sctp/sctpdataengine.h"
+#include "webrtc/media/sctp/sctpdataengine.h"
 #else
 static const uint32_t kMaxSctpSid = 1023;
 #endif

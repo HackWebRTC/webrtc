@@ -33,13 +33,13 @@
 #include <string>
 #include <vector>
 
-#include "talk/media/base/cryptoparams.h"
-#include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/media/base/cryptoparams.h"
+#include "webrtc/p2p/base/sessiondescription.h"
 
 // Forward declaration to avoid pulling in libsrtp headers here
 struct srtp_event_data_t;

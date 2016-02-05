@@ -30,10 +30,15 @@
 #include <vector>
 
 #include "talk/app/webrtc/java/jni/androidmediadecoder_jni.h"
+// NOTICE: androidmediadecoder_jni.h must be included before
+// androidmediacodeccommon.h to avoid build errors.
 #include "talk/app/webrtc/java/jni/androidmediacodeccommon.h"
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
 #include "talk/app/webrtc/java/jni/native_handle_impl.h"
 #include "talk/app/webrtc/java/jni/surfacetexturehelper_jni.h"
+#include "third_party/libyuv/include/libyuv/convert.h"
+#include "third_party/libyuv/include/libyuv/convert_from.h"
+#include "third_party/libyuv/include/libyuv/video_common.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -44,9 +49,6 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
-#include "third_party/libyuv/include/libyuv/convert.h"
-#include "third_party/libyuv/include/libyuv/convert_from.h"
-#include "third_party/libyuv/include/libyuv/video_common.h"
 
 using rtc::Bind;
 using rtc::Thread;

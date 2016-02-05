@@ -36,6 +36,7 @@
 #include "talk/app/webrtc/java/jni/jni_helpers.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc_jni {

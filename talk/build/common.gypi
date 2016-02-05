@@ -30,7 +30,6 @@
 {
   'variables': {
     'webrtc_root%': '<(DEPTH)/webrtc',
-    'libjingle_tests_additional_deps%': [],
     # TODO(ronghuawu): For now, disable the Chrome plugins, which causes a
     # flood of chromium-style warnings.
     'clang_use_chrome_plugins%': 0,
@@ -43,8 +42,6 @@
     'build_expat%': 1,
     'build_json%': 1,
     'build_libsrtp%': 1,
-    'build_libyuv%': 1,
-    'build_usrsctp%': 1,
     # Make it possible to provide custom locations for some libraries.
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
 
@@ -65,8 +62,6 @@
       # Feature selection
       'HAVE_SCTP',
       'HAVE_SRTP',
-      'HAVE_WEBRTC_VIDEO',
-      'HAVE_WEBRTC_VOICE',
     ],
     'conditions': [
       ['OS=="linux"', {

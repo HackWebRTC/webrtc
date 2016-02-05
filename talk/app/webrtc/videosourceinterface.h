@@ -29,8 +29,8 @@
 #define TALK_APP_WEBRTC_VIDEOSOURCEINTERFACE_H_
 
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/media/base/mediachannel.h"
-#include "talk/media/base/videorenderer.h"
+#include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/videorenderer.h"
 
 namespace webrtc {
 

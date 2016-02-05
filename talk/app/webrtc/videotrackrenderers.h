@@ -31,9 +31,9 @@
 #include <set>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/media/base/videorenderer.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/media/base/videorenderer.h"
 
 namespace webrtc {
 

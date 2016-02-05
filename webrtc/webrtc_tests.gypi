@@ -356,6 +356,19 @@
           ],
         },
         {
+          'target_name': 'libjingle_media_unittest_run',
+          'type': 'none',
+          'dependencies': [
+            'libjingle_media_unittest',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+          ],
+          'sources': [
+            'libjingle_media_unittest.isolate',
+          ],
+        },
+        {
           'target_name': 'video_engine_tests_run',
           'type': 'none',
           'dependencies': [

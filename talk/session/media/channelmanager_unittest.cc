@@ -26,15 +26,15 @@
  */
 
 #include "talk/app/webrtc/fakemediacontroller.h"
-#include "talk/media/base/fakecapturemanager.h"
-#include "talk/media/base/fakemediaengine.h"
-#include "talk/media/base/fakevideocapturer.h"
-#include "talk/media/base/testutils.h"
-#include "talk/media/webrtc/fakewebrtccall.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/media/base/fakecapturemanager.h"
+#include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/media/base/fakevideocapturer.h"
+#include "webrtc/media/base/testutils.h"
+#include "webrtc/media/webrtc/fakewebrtccall.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 
 namespace cricket {

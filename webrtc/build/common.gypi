@@ -106,6 +106,7 @@
     'build_opus%': 1,
     'build_protobuf%': 1,
     'build_ssl%': 1,
+    'build_usrsctp%': 1,
 
     # Disable by default
     'have_dbus_glib%': 0,
@@ -119,6 +120,9 @@
     # Change this setting to 1 to use Open SL audio instead.
     # TODO(henrika): add support for Open SL ES.
     'enable_android_opensl%': 0,
+
+    # Disable this to skip building source requiring GTK.
+    'use_gtk%': 1,
 
     # Link-Time Optimizations
     # Executes code generation at link-time instead of compile-time

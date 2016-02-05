@@ -32,11 +32,11 @@
 #include "libyuv/convert_from_argb.h"
 #include "libyuv/mjpeg_decoder.h"
 #include "libyuv/planar_functions.h"
-#include "talk/media/base/testutils.h"
-#include "talk/media/base/videocommon.h"
 #include "webrtc/base/flags.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/media/base/testutils.h"
+#include "webrtc/media/base/videocommon.h"
 
 // Undefine macros for the windows build.
 #undef max

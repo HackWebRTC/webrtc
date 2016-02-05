@@ -34,16 +34,16 @@
 #include <string>
 #include <vector>
 
-#include "talk/media/base/codec.h"
-#include "talk/media/base/constants.h"
-#include "talk/media/base/cryptoparams.h"
-#include "talk/media/base/mediachannel.h"
-#include "talk/media/base/mediaengine.h"  // For DataChannelType
-#include "talk/media/base/streamparams.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/media/base/codec.h"
+#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/cryptoparams.h"
+#include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/mediaengine.h"  // For DataChannelType
+#include "webrtc/media/base/streamparams.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {
 

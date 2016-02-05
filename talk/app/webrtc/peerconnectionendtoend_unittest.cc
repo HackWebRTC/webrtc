@@ -26,6 +26,7 @@
  */
 
 #include "talk/app/webrtc/test/peerconnectiontestwrapper.h"
+// Notice that mockpeerconnectionobservers.h must be included after the above!
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
 #ifdef WEBRTC_ANDROID
 #include "talk/app/webrtc/test/androidtestinitializer.h"

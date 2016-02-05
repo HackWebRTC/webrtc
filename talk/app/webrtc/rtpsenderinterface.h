@@ -33,8 +33,8 @@
 
 #include <string>
 
-#include "talk/app/webrtc/proxy.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/proxy.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"

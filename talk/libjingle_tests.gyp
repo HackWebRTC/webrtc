@@ -28,135 +28,13 @@
   'includes': ['build/common.gypi'],
   'targets': [
     {
-      'target_name': 'libjingle_unittest_main',
-      'type': 'static_library',
-      'dependencies': [
-        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-        '<@(libjingle_tests_additional_deps)',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '<(libyuv_dir)/include',
-          '<(DEPTH)/testing/gtest/include',
-          '<(DEPTH)/testing/gtest',
-        ],
-      },
-      'conditions': [
-        ['build_libyuv==1', {
-          'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',],
-        }],
-      ],
-      'include_dirs': [
-         '<(DEPTH)/testing/gtest/include',
-         '<(DEPTH)/testing/gtest',
-       ],
-      'sources': [
-        'media/base/fakecapturemanager.h',
-        'media/base/fakemediaengine.h',
-        'media/base/fakenetworkinterface.h',
-        'media/base/fakertp.h',
-        'media/base/fakevideocapturer.h',
-        'media/base/fakevideorenderer.h',
-        'media/base/testutils.cc',
-        'media/base/testutils.h',
-        'media/devices/fakedevicemanager.h',
-        'media/webrtc/fakewebrtccall.cc',
-        'media/webrtc/fakewebrtccall.h',
-        'media/webrtc/fakewebrtccommon.h',
-        'media/webrtc/fakewebrtcdeviceinfo.h',
-        'media/webrtc/fakewebrtcvcmfactory.h',
-        'media/webrtc/fakewebrtcvideocapturemodule.h',
-        'media/webrtc/fakewebrtcvideoengine.h',
-        'media/webrtc/fakewebrtcvoiceengine.h',
-      ],
-    },  # target libjingle_unittest_main
-    {
-      'target_name': 'libjingle_media_unittest',
-      'type': 'executable',
-      'dependencies': [
-        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-        'libjingle.gyp:libjingle_media',
-        'libjingle_unittest_main',
-      ],
-      'sources': [
-        'media/base/capturemanager_unittest.cc',
-        'media/base/codec_unittest.cc',
-        'media/base/rtpdataengine_unittest.cc',
-        'media/base/rtpdump_unittest.cc',
-        'media/base/rtputils_unittest.cc',
-        'media/base/streamparams_unittest.cc',
-        'media/base/testutils.cc',
-        'media/base/testutils.h',
-        'media/base/turnutils_unittest.cc',
-        'media/base/videoadapter_unittest.cc',
-        'media/base/videocapturer_unittest.cc',
-        'media/base/videocommon_unittest.cc',
-        'media/base/videoengine_unittest.h',
-        'media/base/videoframe_unittest.h',
-        'media/devices/dummydevicemanager_unittest.cc',
-        'media/devices/filevideocapturer_unittest.cc',
-        'media/sctp/sctpdataengine_unittest.cc',
-        'media/webrtc/nullwebrtcvideoengine_unittest.cc',
-        'media/webrtc/simulcast_unittest.cc',
-        'media/webrtc/webrtcmediaengine_unittest.cc',
-        'media/webrtc/webrtcvideocapturer_unittest.cc',
-        'media/webrtc/webrtcvideoframe_unittest.cc',
-        'media/webrtc/webrtcvideoframefactory_unittest.cc',
-        # Disabled because some tests fail.
-        # TODO(ronghuawu): Reenable these tests.
-        # 'media/devices/devicemanager_unittest.cc',
-        'media/webrtc/webrtcvideoengine2_unittest.cc',
-        'media/webrtc/webrtcvoiceengine_unittest.cc',
-      ],
-      'conditions': [
-        ['OS=="win"', {
-          'conditions': [
-            ['use_openssl==0', {
-              'dependencies': [
-                '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
-                '<(DEPTH)/third_party/nss/nss.gyp:nspr',
-                '<(DEPTH)/third_party/nss/nss.gyp:nss',
-              ],
-            }],
-          ],
-          'msvs_settings': {
-            'VCLinkerTool': {
-              'AdditionalDependencies': [
-                # TODO(ronghuawu): Since we've included strmiids in
-                # libjingle_media target, we shouldn't need this here.
-                # Find out why it doesn't work without this.
-                'strmiids.lib',
-              ],
-            },
-          },
-        }],
-        ['OS=="win" and clang==1', {
-          'msvs_settings': {
-            'VCCLCompilerTool': {
-              'AdditionalOptions': [
-                # Disable warnings failing when compiling with Clang on Windows.
-                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-                '-Wno-unused-function',
-              ],
-            },
-          },
-        },],
-        ['OS=="ios"', {
-          'sources!': [
-            'media/sctp/sctpdataengine_unittest.cc',
-          ],
-        }],
-      ],
-    },  # target libjingle_media_unittest
-    {
       'target_name': 'libjingle_p2p_unittest',
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-        'libjingle.gyp:libjingle',
+        '<(webrtc_root)/webrtc.gyp:rtc_unittest_main',
         'libjingle.gyp:libjingle_peerconnection',
         'libjingle.gyp:libjingle_p2p',
-        'libjingle_unittest_main',
       ],
       'include_dirs': [
         '<(DEPTH)/third_party/libsrtp/srtp',
@@ -194,10 +72,9 @@
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         '<(webrtc_root)/common.gyp:webrtc_common',
-        'libjingle.gyp:libjingle',
+        '<(webrtc_root)/webrtc.gyp:rtc_unittest_main',
         'libjingle.gyp:libjingle_p2p',
         'libjingle.gyp:libjingle_peerconnection',
-        'libjingle_unittest_main',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -426,19 +303,6 @@
     }],
     ['test_isolation_mode != "noop"', {
       'targets': [
-        {
-          'target_name': 'libjingle_media_unittest_run',
-          'type': 'none',
-          'dependencies': [
-            'libjingle_media_unittest',
-          ],
-          'includes': [
-            'build/isolate.gypi',
-          ],
-          'sources': [
-            'libjingle_media_unittest.isolate',
-          ],
-        },
         {
           'target_name': 'libjingle_p2p_unittest_run',
           'type': 'none',

@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/java/jni/eglbase_jni.h"
-#include "talk/media/webrtc/webrtcvideoencoderfactory.h"
+#include "webrtc/media/webrtc/webrtcvideoencoderfactory.h"
 
 namespace webrtc_jni {
 

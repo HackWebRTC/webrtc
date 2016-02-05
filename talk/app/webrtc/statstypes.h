@@ -38,9 +38,9 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
+#include "webrtc/base/linked_ptr.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/linked_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/thread_checker.h"

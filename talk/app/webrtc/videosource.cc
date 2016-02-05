@@ -27,8 +27,8 @@
 
 #include "talk/app/webrtc/videosource.h"
 
-#include <vector>
 #include <cstdlib>
+#include <vector>
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/session/media/channelmanager.h"

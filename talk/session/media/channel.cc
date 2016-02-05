@@ -29,8 +29,6 @@
 
 #include "talk/session/media/channel.h"
 
-#include "talk/media/base/constants.h"
-#include "talk/media/base/rtputils.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/bind.h"
@@ -40,6 +38,8 @@
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/rtputils.h"
 #include "webrtc/p2p/base/transportchannel.h"
 
 namespace cricket {

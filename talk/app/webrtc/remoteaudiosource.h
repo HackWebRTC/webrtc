@@ -33,9 +33,9 @@
 
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/notifier.h"
-#include "talk/media/base/audiorenderer.h"
 #include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/media/base/audiorenderer.h"
 
 namespace rtc {
 struct Message;

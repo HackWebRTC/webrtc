@@ -28,8 +28,8 @@
 #ifndef TALK_APP_WEBRTC_OBJC_AVFOUNDATION_VIDEO_CAPTURER_H_
 #define TALK_APP_WEBRTC_OBJC_AVFOUNDATION_VIDEO_CAPTURER_H_
 
-#include "talk/media/base/videocapturer.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/video_frame.h"
 
 #import <AVFoundation/AVFoundation.h>

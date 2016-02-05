@@ -91,7 +91,17 @@
                     '-framework QuartzCore',
                   ]
                 }
-              }
+              },
+              # TODO(kjellander): Make the code compile without disabling these.
+              # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
+              'cflags': [
+                '-Wno-return-type',
+              ],
+              'xcode_settings': {
+                'WARNING_CFLAGS': [
+                  '-Wno-return-type',
+                ],
+              },
             }],
             ['OS=="mac"', {
               'sources': [

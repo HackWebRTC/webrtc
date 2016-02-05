@@ -30,11 +30,11 @@
 #ifndef TALK_SESSION_MEDIA_MEDIAMONITOR_H_
 #define TALK_SESSION_MEDIA_MEDIAMONITOR_H_
 
-#include "talk/media/base/mediachannel.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/media/base/mediachannel.h"
 
 namespace cricket {
 

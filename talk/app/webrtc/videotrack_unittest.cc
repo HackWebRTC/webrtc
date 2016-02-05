@@ -31,11 +31,11 @@
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
-#include "talk/media/base/fakemediaengine.h"
-#include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/media/webrtc/webrtcvideoframe.h"
 
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::VideoSource;

@@ -33,11 +33,11 @@
 
 extern "C" {
 #ifdef SRTP_RELATIVE_PATH
-#include "srtp.h"  // NOLINT
 #include "crypto_kernel.h"  // NOLINT
+#include "srtp.h"  // NOLINT
 #else
-#include "third_party/libsrtp/srtp/include/srtp.h"
 #include "third_party/libsrtp/srtp/crypto/include/crypto_kernel.h"
+#include "third_party/libsrtp/srtp/include/srtp.h"
 #endif  // SRTP_RELATIVE_PATH
 }
 

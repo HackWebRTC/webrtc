@@ -29,11 +29,11 @@
 
 #include <dlfcn.h>
 
+#include "talk/app/webrtc/java/jni/classreferenceholder.h"
+#include "talk/app/webrtc/java/jni/jni_helpers.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/ipaddress.h"
-#include "talk/app/webrtc/java/jni/classreferenceholder.h"
-#include "talk/app/webrtc/java/jni/jni_helpers.h"
 
 namespace webrtc_jni {
 

@@ -11,6 +11,7 @@
       'includes': [
         'libjingle/xmllite/xmllite_tests.gypi',
         'libjingle/xmpp/xmpp_tests.gypi',
+        'media/media_tests.gypi',
         'p2p/p2p_tests.gypi',
         'sound/sound_tests.gypi',
         'webrtc_tests.gypi',
@@ -60,6 +61,7 @@
       'common.gyp:*',
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
+      'media/media.gyp:*',
       'modules/modules.gyp:*',
       'p2p/p2p.gyp:*',
       'system_wrappers/system_wrappers.gyp:*',

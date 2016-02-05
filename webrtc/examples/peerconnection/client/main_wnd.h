@@ -16,12 +16,12 @@
 #include <string>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "webrtc/examples/peerconnection/client/peer_connection_client.h"
-#include "talk/media/base/mediachannel.h"
-#include "talk/media/base/videocommon.h"
-#include "talk/media/base/videoframe.h"
-#include "talk/media/base/videorenderer.h"
 #include "webrtc/base/win32.h"
+#include "webrtc/examples/peerconnection/client/peer_connection_client.h"
+#include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/videocommon.h"
+#include "webrtc/media/base/videoframe.h"
+#include "webrtc/media/base/videorenderer.h"
 
 class MainWndCallback {
  public:

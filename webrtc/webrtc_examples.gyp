@@ -14,7 +14,7 @@
       'target_name': 'relayserver',
       'type': 'executable',
       'dependencies': [
-        '../talk/libjingle.gyp:libjingle',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
         '../talk/libjingle.gyp:libjingle_p2p',
       ],
       'sources': [
@@ -25,7 +25,7 @@
       'target_name': 'stunserver',
       'type': 'executable',
       'dependencies': [
-        '../talk/libjingle.gyp:libjingle',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
         '../talk/libjingle.gyp:libjingle_p2p',
       ],
       'sources': [
@@ -36,7 +36,7 @@
       'target_name': 'turnserver',
       'type': 'executable',
       'dependencies': [
-        '../talk/libjingle.gyp:libjingle',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
         '../talk/libjingle.gyp:libjingle_p2p',
       ],
       'sources': [
@@ -56,8 +56,8 @@
         'examples/peerconnection/server/utils.h',
       ],
       'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/common.gyp:webrtc_common',
-        '../talk/libjingle.gyp:libjingle',
       ],
       # TODO(ronghuawu): crbug.com/167187 fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4309, ],
@@ -80,7 +80,6 @@
           'dependencies': [
             '../talk/libjingle.gyp:libjingle_peerconnection',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
-            '<@(libjingle_tests_additional_deps)',
           ],
           'conditions': [
             ['build_json==1', {
