@@ -27,12 +27,13 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/payload_router.h"
 #include "webrtc/video/send_statistics_proxy.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -107,6 +108,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
                        I420FrameCallback* pre_encode_callback,
+                       OveruseFrameDetector* overuse_detector,
                        PacedSender* pacer,
                        BitrateAllocator* bitrate_allocator)
     : number_of_cores_(number_of_cores),
@@ -118,6 +120,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       send_payload_router_(NULL),
       stats_proxy_(stats_proxy),
       pre_encode_callback_(pre_encode_callback),
+      overuse_detector_(overuse_detector),
       pacer_(pacer),
       bitrate_allocator_(bitrate_allocator),
       time_of_last_frame_activity_ms_(0),
@@ -461,12 +464,12 @@ int32_t ViEEncoder::SendData(const uint8_t payload_type,
   if (stats_proxy_ != NULL)
     stats_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
 
-  return send_payload_router_->RoutePayload(
-             encoded_image._frameType, payload_type, encoded_image._timeStamp,
-             encoded_image.capture_time_ms_, encoded_image._buffer,
-             encoded_image._length, fragmentation_header, rtp_video_hdr)
-             ? 0
-             : -1;
+  bool success = send_payload_router_->RoutePayload(
+      encoded_image._frameType, payload_type, encoded_image._timeStamp,
+      encoded_image.capture_time_ms_, encoded_image._buffer,
+      encoded_image._length, fragmentation_header, rtp_video_hdr);
+  overuse_detector_->FrameSent(encoded_image._timeStamp);
+  return success ? 0 : -1;
 }
 
 void ViEEncoder::OnEncoderImplementationName(

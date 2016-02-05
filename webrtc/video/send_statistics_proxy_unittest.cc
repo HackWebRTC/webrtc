@@ -289,12 +289,15 @@ TEST_F(SendStatisticsProxyTest, SendSideDelay) {
   ExpectEqual(expected_, stats);
 }
 
-TEST_F(SendStatisticsProxyTest, OnEncodedFrame) {
+TEST_F(SendStatisticsProxyTest, OnEncodedFrameTimeMeasured) {
   const int kEncodeTimeMs = 11;
-  statistics_proxy_->OnEncodedFrame(kEncodeTimeMs);
+  CpuOveruseMetrics metrics;
+  metrics.encode_usage_percent = 80;
+  statistics_proxy_->OnEncodedFrameTimeMeasured(kEncodeTimeMs, metrics);
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(kEncodeTimeMs, stats.avg_encode_time_ms);
+  EXPECT_EQ(metrics.encode_usage_percent, stats.encode_usage_percent);
 }
 
 TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {

@@ -14,7 +14,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
@@ -27,15 +26,11 @@
 namespace webrtc {
 
 namespace internal {
-VideoCaptureInput::VideoCaptureInput(
-    ProcessThread* module_process_thread,
-    VideoCaptureCallback* frame_callback,
-    VideoRenderer* local_renderer,
-    SendStatisticsProxy* stats_proxy,
-    CpuOveruseObserver* overuse_observer,
-    EncodingTimeObserver* encoding_time_observer)
-    : module_process_thread_(module_process_thread),
-      frame_callback_(frame_callback),
+VideoCaptureInput::VideoCaptureInput(VideoCaptureCallback* frame_callback,
+                                     VideoRenderer* local_renderer,
+                                     SendStatisticsProxy* stats_proxy,
+                                     OveruseFrameDetector* overuse_detector)
+    : frame_callback_(frame_callback),
       local_renderer_(local_renderer),
       stats_proxy_(stats_proxy),
       encoder_thread_(EncoderThreadFunction, this, "EncoderThread"),
@@ -45,19 +40,12 @@ VideoCaptureInput::VideoCaptureInput(
       delta_ntp_internal_ms_(
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -
           TickTime::MillisecondTimestamp()),
-      overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock(),
-                                                 CpuOveruseOptions(),
-                                                 overuse_observer,
-                                                 stats_proxy)),
-      encoding_time_observer_(encoding_time_observer) {
+      overuse_detector_(overuse_detector) {
   encoder_thread_.Start();
   encoder_thread_.SetPriority(rtc::kHighPriority);
-  module_process_thread_->RegisterModule(overuse_detector_.get());
 }
 
 VideoCaptureInput::~VideoCaptureInput() {
-  module_process_thread_->DeRegisterModule(overuse_detector_.get());
-
   // Stop the thread.
   rtc::AtomicOps::ReleaseStore(&stop_, 1);
   capture_event_.Set();
@@ -105,9 +93,7 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   captured_frame_.ShallowCopy(incoming_frame);
   last_captured_timestamp_ = incoming_frame.ntp_time_ms();
 
-  overuse_detector_->FrameCaptured(captured_frame_.width(),
-                                   captured_frame_.height(),
-                                   captured_frame_.render_time_ms());
+  overuse_detector_->FrameCaptured(captured_frame_);
 
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
@@ -121,12 +107,10 @@ bool VideoCaptureInput::EncoderThreadFunction(void* obj) {
 
 bool VideoCaptureInput::EncoderProcess() {
   static const int kThreadWaitTimeMs = 100;
-  int64_t capture_time = -1;
   if (capture_event_.Wait(kThreadWaitTimeMs)) {
     if (rtc::AtomicOps::AcquireLoad(&stop_))
       return false;
 
-    int64_t encode_start_time = -1;
     VideoFrame deliver_frame;
     {
       rtc::CritScope lock(&crit_);
@@ -136,24 +120,8 @@ bool VideoCaptureInput::EncoderProcess() {
       }
     }
     if (!deliver_frame.IsZeroSize()) {
-      capture_time = deliver_frame.render_time_ms();
-      encode_start_time = Clock::GetRealTimeClock()->TimeInMilliseconds();
       frame_callback_->DeliverFrame(deliver_frame);
     }
-    // Update the overuse detector with the duration.
-    if (encode_start_time != -1) {
-      int encode_time_ms = static_cast<int>(
-          Clock::GetRealTimeClock()->TimeInMilliseconds() - encode_start_time);
-      stats_proxy_->OnEncodedFrame(encode_time_ms);
-      if (encoding_time_observer_) {
-        encoding_time_observer_->OnReportEncodedTime(
-            deliver_frame.ntp_time_ms(), encode_time_ms);
-      }
-    }
-  }
-  // We're done!
-  if (capture_time != -1) {
-    overuse_detector_->FrameSent(capture_time);
   }
   return true;
 }

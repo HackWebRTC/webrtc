@@ -16,7 +16,6 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -30,11 +29,7 @@
 namespace webrtc {
 
 class Config;
-class CpuOveruseMetricsObserver;
-class CpuOveruseObserver;
 class OveruseFrameDetector;
-class ProcessThread;
-class RegistrableCpuOveruseMetricsObserver;
 class SendStatisticsProxy;
 class VideoRenderer;
 
@@ -48,12 +43,10 @@ class VideoCaptureCallback {
 namespace internal {
 class VideoCaptureInput : public webrtc::VideoCaptureInput {
  public:
-  VideoCaptureInput(ProcessThread* module_process_thread,
-                    VideoCaptureCallback* frame_callback,
+  VideoCaptureInput(VideoCaptureCallback* frame_callback,
                     VideoRenderer* local_renderer,
                     SendStatisticsProxy* send_stats_proxy,
-                    CpuOveruseObserver* overuse_observer,
-                    EncodingTimeObserver* encoding_time_observer);
+                    OveruseFrameDetector* overuse_detector);
   ~VideoCaptureInput();
 
   void IncomingCapturedFrame(const VideoFrame& video_frame) override;
@@ -64,7 +57,6 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   bool EncoderProcess();
 
   rtc::CriticalSection crit_;
-  ProcessThread* const module_process_thread_;
 
   VideoCaptureCallback* const frame_callback_;
   VideoRenderer* const local_renderer_;
@@ -81,8 +73,7 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   // Delta used for translating between NTP and internal timestamps.
   const int64_t delta_ntp_internal_ms_;
 
-  rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
-  EncodingTimeObserver* const encoding_time_observer_;
+  OveruseFrameDetector* const overuse_detector_;
 };
 
 }  // namespace internal

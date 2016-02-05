@@ -86,6 +86,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   CallStats* const call_stats_;
   CongestionController* const congestion_controller_;
 
+  OveruseFrameDetector overuse_detector_;
   rtc::scoped_ptr<VideoCaptureInput> input_;
   rtc::scoped_ptr<ViEChannel> vie_channel_;
   rtc::scoped_ptr<ViEEncoder> vie_encoder_;

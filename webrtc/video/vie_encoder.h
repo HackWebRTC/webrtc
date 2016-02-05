@@ -33,6 +33,7 @@ class BitrateAllocator;
 class BitrateObserver;
 class Config;
 class EncodedImageCallback;
+class OveruseFrameDetector;
 class PacedSender;
 class PayloadRouter;
 class ProcessThread;
@@ -54,6 +55,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
              ProcessThread* module_process_thread,
              SendStatisticsProxy* stats_proxy,
              I420FrameCallback* pre_encode_callback,
+             OveruseFrameDetector* overuse_detector,
              PacedSender* pacer,
              BitrateAllocator* bitrate_allocator);
   ~ViEEncoder();
@@ -163,6 +165,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   SendStatisticsProxy* const stats_proxy_;
   I420FrameCallback* const pre_encode_callback_;
+  OveruseFrameDetector* const overuse_detector_;
   PacedSender* const pacer_;
   BitrateAllocator* const bitrate_allocator_;
 

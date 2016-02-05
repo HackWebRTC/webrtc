@@ -2653,7 +2653,7 @@ TEST_F(EndToEndTest, GetStats) {
           stats.substreams.size() == expected_send_ssrcs_.size();
 
       send_stats_filled_["CpuOveruseMetrics"] |=
-          stats.avg_encode_time_ms != 0 || stats.encode_usage_percent != 0;
+          stats.avg_encode_time_ms != 0 && stats.encode_usage_percent != 0;
 
       send_stats_filled_["EncoderImplementationName"] |=
           stats.encoder_implementation_name ==

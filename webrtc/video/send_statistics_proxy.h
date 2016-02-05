@@ -52,12 +52,6 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
 
-  // Used to update encode time of frames.
-  void OnEncodedFrame(int encode_time_ms);
-
-  // From VideoEncoderRateObserver.
-  void OnSetRates(uint32_t bitrate_bps, int framerate) override;
-
   void OnEncoderImplementationName(const char* implementation_name);
   void OnOutgoingRate(uint32_t framerate, uint32_t bitrate);
   void OnSuspendChange(bool is_suspended);
@@ -67,9 +61,14 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // how stats are collected.
   void SetContentType(VideoEncoderConfig::ContentType content_type);
 
+  // Implements VideoEncoderRateObserver.
+  void OnSetRates(uint32_t bitrate_bps, int framerate) override;
+
+  // Implements CpuOveruseMetricsObserver.
+  void OnEncodedFrameTimeMeasured(int encode_time_ms,
+                                  const CpuOveruseMetrics& metrics) override;
+
  protected:
-  // From CpuOveruseMetricsObserver.
-  void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) override;
   // From RtcpStatisticsCallback.
   void StatisticsUpdated(const RtcpStatistics& statistics,
                          uint32_t ssrc) override;

@@ -46,8 +46,7 @@ class VideoAnalyzer : public PacketReceiver,
                       public Transport,
                       public VideoRenderer,
                       public VideoCaptureInput,
-                      public EncodedFrameObserver,
-                      public EncodingTimeObserver {
+                      public EncodedFrameObserver {
  public:
   VideoAnalyzer(test::LayerFilteringTransport* transport,
                 const std::string& test_label,
@@ -65,6 +64,7 @@ class VideoAnalyzer : public PacketReceiver,
         graph_data_output_file_(graph_data_output_file),
         graph_title_(graph_title),
         ssrc_to_analyze_(ssrc_to_analyze),
+        encode_timing_proxy_(this),
         frames_to_process_(duration_frames),
         frames_recorded_(0),
         frames_processed_(0),
@@ -129,8 +129,7 @@ class VideoAnalyzer : public PacketReceiver,
     return receiver_->DeliverPacket(media_type, packet, length, packet_time);
   }
 
-  // EncodingTimeObserver.
-  void OnReportEncodedTime(int64_t ntp_time_ms, int encode_time_ms) override {
+  void MeasuredEncodeTiming(int64_t ntp_time_ms, int encode_time_ms) {
     rtc::CritScope crit(&comparison_lock_);
     samples_encode_time_ms_[ntp_time_ms] = encode_time_ms;
   }
@@ -208,7 +207,7 @@ class VideoAnalyzer : public PacketReceiver,
     assert(!reference_frame.IsZeroSize());
     if (send_timestamp == reference_frame.timestamp() - 1) {
       // TODO(ivica): Make this work for > 2 streams.
-      // Look at rtp_sender.c:RTPSender::BuildRTPHeader.
+      // Look at RTPSender::BuildRTPHeader.
       ++send_timestamp;
     }
     EXPECT_EQ(reference_frame.timestamp(), send_timestamp);
@@ -262,6 +261,8 @@ class VideoAnalyzer : public PacketReceiver,
 
     stats_polling_thread_.Stop();
   }
+
+  EncodedFrameObserver* encode_timing_proxy() { return &encode_timing_proxy_; }
 
   VideoCaptureInput* input_;
   test::LayerFilteringTransport* const transport_;
@@ -327,6 +328,21 @@ class VideoAnalyzer : public PacketReceiver,
     size_t encoded_frame_size;
     double psnr;
     double ssim;
+  };
+
+  // This class receives the send-side OnEncodeTiming and is provided to not
+  // conflict with the receiver-side pre_decode_callback.
+  class OnEncodeTimingProxy : public EncodedFrameObserver {
+   public:
+    explicit OnEncodeTimingProxy(VideoAnalyzer* parent) : parent_(parent) {}
+
+    void OnEncodeTiming(int64_t ntp_time_ms, int encode_time_ms) override {
+      parent_->MeasuredEncodeTiming(ntp_time_ms, encode_time_ms);
+    }
+    void EncodedFrameCallback(const EncodedFrame& frame) override {}
+
+   private:
+    VideoAnalyzer* const parent_;
   };
 
   void AddFrameComparison(const VideoFrame& reference,
@@ -566,6 +582,7 @@ class VideoAnalyzer : public PacketReceiver,
   FILE* const graph_data_output_file_;
   const std::string graph_title_;
   const uint32_t ssrc_to_analyze_;
+  OnEncodeTimingProxy encode_timing_proxy_;
   std::vector<Sample> samples_ GUARDED_BY(comparison_lock_);
   std::map<int64_t, int> samples_encode_time_ms_ GUARDED_BY(comparison_lock_);
   test::Statistics sender_time_ GUARDED_BY(comparison_lock_);
@@ -976,10 +993,11 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   recv_transport.SetReceiver(sender_call_->Receiver());
 
   SetupCommon(&analyzer, &recv_transport);
-  video_send_config_.encoding_time_observer = &analyzer;
   video_receive_configs_[params_.ss.selected_stream].renderer = &analyzer;
   for (auto& config : video_receive_configs_)
     config.pre_decode_callback = &analyzer;
+  RTC_DCHECK(!video_send_config_.post_encode_callback);
+  video_send_config_.post_encode_callback = analyzer.encode_timing_proxy();
 
   if (params_.screenshare.enabled)
     SetupScreenshare();

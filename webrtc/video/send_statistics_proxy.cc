@@ -189,9 +189,13 @@ void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
   stats_.media_bitrate_bps = bitrate;
 }
 
-void SendStatisticsProxy::CpuOveruseMetricsUpdated(
+void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
+    int encode_time_ms,
     const CpuOveruseMetrics& metrics) {
   rtc::CritScope lock(&crit_);
+  uma_container_->encode_time_counter_.Add(encode_time_ms);
+  encode_time_.Apply(1.0f, encode_time_ms);
+  stats_.avg_encode_time_ms = round(encode_time_.filtered());
   stats_.encode_usage_percent = metrics.encode_usage_percent;
 }
 
@@ -329,13 +333,6 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   uma_container_->input_frame_rate_tracker_.AddSamples(1);
   uma_container_->input_width_counter_.Add(width);
   uma_container_->input_height_counter_.Add(height);
-}
-
-void SendStatisticsProxy::OnEncodedFrame(int encode_time_ms) {
-  rtc::CritScope lock(&crit_);
-  uma_container_->encode_time_counter_.Add(encode_time_ms);
-  encode_time_.Apply(1.0f, encode_time_ms);
-  stats_.avg_encode_time_ms = round(encode_time_.filtered());
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(

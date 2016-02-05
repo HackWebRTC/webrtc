@@ -15,7 +15,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/scoped_vector.h"
 #include "webrtc/test/fake_texture_frame.h"
@@ -47,28 +46,23 @@ VideoFrame* CreateVideoFrame(uint8_t length);
 class VideoCaptureInputTest : public ::testing::Test {
  protected:
   VideoCaptureInputTest()
-      : mock_process_thread_(new NiceMock<MockProcessThread>),
-        mock_frame_callback_(new NiceMock<MockVideoCaptureCallback>),
-        output_frame_event_(false, false),
-        stats_proxy_(Clock::GetRealTimeClock(),
+      : stats_proxy_(Clock::GetRealTimeClock(),
                      webrtc::VideoSendStream::Config(nullptr),
-                     webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo) {}
+                     webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo),
+        mock_frame_callback_(new NiceMock<MockVideoCaptureCallback>),
+        output_frame_event_(false, false) {}
 
   virtual void SetUp() {
     EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_))
         .WillRepeatedly(
             WithArg<0>(Invoke(this, &VideoCaptureInputTest::AddOutputFrame)));
 
-    input_.reset(new internal::VideoCaptureInput(
-        mock_process_thread_.get(), mock_frame_callback_.get(), nullptr,
-        &stats_proxy_, nullptr, nullptr));
-  }
-
-  virtual void TearDown() {
-    // VideoCaptureInput accesses |mock_process_thread_| in destructor and
-    // should
-    // be deleted first.
-    input_.reset();
+    overuse_detector_.reset(
+        new OveruseFrameDetector(Clock::GetRealTimeClock(), CpuOveruseOptions(),
+                                 nullptr, nullptr, &stats_proxy_));
+    input_.reset(new internal::VideoCaptureInput(mock_frame_callback_.get(),
+                                                 nullptr, &stats_proxy_,
+                                                 overuse_detector_.get()));
   }
 
   void AddInputFrame(VideoFrame* frame) {
@@ -86,8 +80,11 @@ class VideoCaptureInputTest : public ::testing::Test {
     EXPECT_TRUE(output_frame_event_.Wait(FRAME_TIMEOUT_MS));
   }
 
-  rtc::scoped_ptr<MockProcessThread> mock_process_thread_;
+  SendStatisticsProxy stats_proxy_;
+
   rtc::scoped_ptr<MockVideoCaptureCallback> mock_frame_callback_;
+
+  rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
 
   // Used to send input capture frames to VideoCaptureInput.
   rtc::scoped_ptr<internal::VideoCaptureInput> input_;
@@ -104,7 +101,6 @@ class VideoCaptureInputTest : public ::testing::Test {
   // The pointers of Y plane buffers of output frames. This is used to verify
   // the frame are swapped and not copied.
   std::vector<const uint8_t*> output_frame_ybuffers_;
-  SendStatisticsProxy stats_proxy_;
 };
 
 TEST_F(VideoCaptureInputTest, DoesNotRetainHandleNorCopyBuffer) {

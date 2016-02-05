@@ -1768,6 +1768,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
 
   AllocatedEncoder new_encoder = CreateVideoEncoder(codec_settings.codec);
   parameters_.config.encoder_settings.encoder = new_encoder.encoder;
+  parameters_.config.encoder_settings.full_overuse_time = new_encoder.external;
   parameters_.config.encoder_settings.payload_name = codec_settings.codec.name;
   parameters_.config.encoder_settings.payload_type = codec_settings.codec.id;
   if (new_encoder.external) {

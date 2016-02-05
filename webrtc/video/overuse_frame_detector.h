@@ -11,8 +11,11 @@
 #ifndef WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
 #define WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
 
+#include <list>
+
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/base/thread_annotations.h"
@@ -22,6 +25,8 @@
 namespace webrtc {
 
 class Clock;
+class EncodedFrameObserver;
+class VideoFrame;
 
 // CpuOveruseObserver is called when a system overuse is detected and
 // VideoEngine cannot keep up the encoding frequency.
@@ -68,9 +73,9 @@ struct CpuOveruseMetrics {
 class CpuOveruseMetricsObserver {
  public:
   virtual ~CpuOveruseMetricsObserver() {}
-  virtual void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) = 0;
+  virtual void OnEncodedFrameTimeMeasured(int encode_duration_ms,
+                                          const CpuOveruseMetrics& metrics) = 0;
 };
-
 
 // Use to detect system overuse based on the send-side processing time of
 // incoming frames.
@@ -79,18 +84,15 @@ class OveruseFrameDetector : public Module {
   OveruseFrameDetector(Clock* clock,
                        const CpuOveruseOptions& options,
                        CpuOveruseObserver* overuse_observer,
+                       EncodedFrameObserver* encoder_timing_,
                        CpuOveruseMetricsObserver* metrics_observer);
   ~OveruseFrameDetector();
 
   // Called for each captured frame.
-  void FrameCaptured(int width, int height, int64_t capture_time_ms);
+  void FrameCaptured(const VideoFrame& frame);
 
   // Called for each sent frame.
-  void FrameSent(int64_t capture_time_ms);
-
-  // Only public for testing.
-  int LastProcessingTimeMs() const;
-  int FramesInQueue() const;
+  void FrameSent(uint32_t timestamp);
 
   // Implements Module.
   int64_t TimeUntilNextProcess() override;
@@ -98,13 +100,20 @@ class OveruseFrameDetector : public Module {
 
  private:
   class SendProcessingUsage;
-  class FrameQueue;
+  struct FrameTiming {
+    FrameTiming(int64_t capture_ntp_ms, uint32_t timestamp, int64_t now)
+        : capture_ntp_ms(capture_ntp_ms),
+          timestamp(timestamp),
+          capture_ms(now),
+          last_send_ms(-1) {}
+    int64_t capture_ntp_ms;
+    uint32_t timestamp;
+    int64_t capture_ms;
+    int64_t last_send_ms;
+  };
 
-  void UpdateCpuOveruseMetrics() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  // TODO(asapersson): This method is only used on one thread, so it shouldn't
-  // need a guard.
-  void AddProcessingTime(int elapsed_ms) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void EncodedFrameTimeMeasured(int encode_duration_ms)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Only called on the processing thread.
   bool IsOverusing(const CpuOveruseMetrics& metrics);
@@ -125,34 +134,34 @@ class OveruseFrameDetector : public Module {
 
   // Observer getting overuse reports.
   CpuOveruseObserver* const observer_;
+  EncodedFrameObserver* const encoder_timing_;
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;
-  CpuOveruseMetrics metrics_ GUARDED_BY(crit_);
+  rtc::Optional<CpuOveruseMetrics> metrics_ GUARDED_BY(crit_);
 
   Clock* const clock_;
   int64_t num_process_times_ GUARDED_BY(crit_);
 
-  int64_t last_capture_time_ GUARDED_BY(crit_);
+  int64_t last_capture_time_ms_ GUARDED_BY(crit_);
+  int64_t last_processed_capture_time_ms_ GUARDED_BY(crit_);
 
   // Number of pixels of last captured frame.
   int num_pixels_ GUARDED_BY(crit_);
 
   // These seven members are only accessed on the processing thread.
-  int64_t next_process_time_;
-  int64_t last_overuse_time_;
+  int64_t next_process_time_ms_;
+  int64_t last_overuse_time_ms_;
   int checks_above_threshold_;
   int num_overuse_detections_;
-  int64_t last_rampup_time_;
+  int64_t last_rampup_time_ms_;
   bool in_quick_rampup_;
   int current_rampup_delay_ms_;
-
-  int64_t last_sample_time_ms_;    // Only accessed by one thread.
 
   // TODO(asapersson): Can these be regular members (avoid separate heap
   // allocs)?
   const rtc::scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
-  const rtc::scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
+  std::list<FrameTiming> frame_timing_ GUARDED_BY(crit_);
 
   rtc::ThreadChecker processing_thread_;
 

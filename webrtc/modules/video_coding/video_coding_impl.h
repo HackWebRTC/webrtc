@@ -31,8 +31,6 @@
 
 namespace webrtc {
 
-class EncodedFrameObserver;
-
 namespace vcm {
 
 class VCMProcessTimer {

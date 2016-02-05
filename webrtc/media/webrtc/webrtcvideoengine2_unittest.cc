@@ -153,6 +153,8 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
       cricket::WebRtcVideoDecoderFactory* decoder_factory,
       const std::vector<VideoCodec>& codecs);
 
+  void TestExtendedEncoderOveruse(bool use_external_encoder);
+
   webrtc::test::ScopedFieldTrials override_field_trials_;
   // Used in WebRtcVideoEngine2VoiceTest, but defined here so it's properly
   // initialized when the constructor is called.
@@ -354,6 +356,42 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
   // Remove stream previously added to free the external encoder instance.
   EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
   EXPECT_EQ(0u, encoder_factory.encoders().size());
+}
+
+void WebRtcVideoEngine2Test::TestExtendedEncoderOveruse(
+    bool use_external_encoder) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(kVp8Codec);
+  rtc::scoped_ptr<VideoMediaChannel> channel;
+  FakeCall* fake_call = new FakeCall(webrtc::Call::Config());
+  call_.reset(fake_call);
+  if (use_external_encoder) {
+    channel.reset(
+        SetUpForExternalEncoderFactory(&encoder_factory, parameters.codecs));
+  } else {
+    engine_.Init();
+    channel.reset(engine_.CreateChannel(call_.get(), cricket::VideoOptions()));
+  }
+  ASSERT_TRUE(
+      channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  EXPECT_TRUE(channel->SetSendParameters(parameters));
+  EXPECT_TRUE(channel->SetSend(true));
+  FakeVideoSendStream* stream = fake_call->GetVideoSendStreams()[0];
+
+  EXPECT_EQ(use_external_encoder,
+            stream->GetConfig().encoder_settings.full_overuse_time);
+  // Remove stream previously added to free the external encoder instance.
+  EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
+}
+
+TEST_F(WebRtcVideoEngine2Test, EnablesFullEncoderTimeForExternalEncoders) {
+  TestExtendedEncoderOveruse(true);
+}
+
+TEST_F(WebRtcVideoEngine2Test, DisablesFullEncoderTimeForNonExternalEncoders) {
+  TestExtendedEncoderOveruse(false);
 }
 
 TEST_F(WebRtcVideoEngine2Test, CanConstructDecoderForVp9EncoderFactory) {

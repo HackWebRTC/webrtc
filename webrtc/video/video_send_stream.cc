@@ -22,6 +22,7 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
+#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/encoder_state_feedback.h"
 #include "webrtc/video/payload_router.h"
@@ -107,6 +108,18 @@ std::string VideoSendStream::Config::ToString() const {
   return ss.str();
 }
 
+namespace {
+
+CpuOveruseOptions GetCpuOveruseOptions(bool full_overuse_time) {
+  CpuOveruseOptions options;
+  if (full_overuse_time) {
+    options.low_encode_usage_threshold_percent = 100;
+    options.high_encode_usage_threshold_percent = 120;
+  }
+  return options;
+}
+}  // namespace
+
 namespace internal {
 VideoSendStream::VideoSendStream(
     int num_cpu_cores,
@@ -127,6 +140,12 @@ VideoSendStream::VideoSendStream(
       module_process_thread_(module_process_thread),
       call_stats_(call_stats),
       congestion_controller_(congestion_controller),
+      overuse_detector_(
+          Clock::GetRealTimeClock(),
+          GetCpuOveruseOptions(config.encoder_settings.full_overuse_time),
+          this,
+          config.post_encode_callback,
+          &stats_proxy_),
       encoder_feedback_(new EncoderStateFeedback()),
       use_config_bitrate_(true) {
   LOG(LS_INFO) << "VideoSendStream: " << config_.ToString();
@@ -144,10 +163,10 @@ VideoSendStream::VideoSendStream(
 
   const std::vector<uint32_t>& ssrcs = config.rtp.ssrcs;
 
-  vie_encoder_.reset(new ViEEncoder(
-      num_cpu_cores, module_process_thread_, &stats_proxy_,
-      config.pre_encode_callback, congestion_controller_->pacer(),
-      bitrate_allocator));
+  vie_encoder_.reset(
+      new ViEEncoder(num_cpu_cores, module_process_thread_, &stats_proxy_,
+                     config.pre_encode_callback, &overuse_detector_,
+                     congestion_controller_->pacer(), bitrate_allocator));
   RTC_CHECK(vie_encoder_->Init());
 
   vie_channel_.reset(new ViEChannel(
@@ -207,8 +226,8 @@ VideoSendStream::VideoSendStream(
   vie_channel_->SetRTCPCName(config_.rtp.c_name.c_str());
 
   input_.reset(new internal::VideoCaptureInput(
-      module_process_thread_, vie_encoder_.get(), config_.local_renderer,
-      &stats_proxy_, this, config_.encoding_time_observer));
+      vie_encoder_.get(), config_.local_renderer, &stats_proxy_,
+      &overuse_detector_));
 
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
   RTC_DCHECK_LE(config_.rtp.max_packet_size, static_cast<size_t>(0xFFFF - 28));
@@ -240,10 +259,13 @@ VideoSendStream::VideoSendStream(
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(&stats_proxy_);
   vie_channel_->RegisterSendBitrateObserver(&stats_proxy_);
   vie_channel_->RegisterSendFrameCountObserver(&stats_proxy_);
+
+  module_process_thread_->RegisterModule(&overuse_detector_);
 }
 
 VideoSendStream::~VideoSendStream() {
   LOG(LS_INFO) << "~VideoSendStream: " << config_.ToString();
+  module_process_thread_->DeRegisterModule(&overuse_detector_);
   vie_channel_->RegisterSendFrameCountObserver(nullptr);
   vie_channel_->RegisterSendBitrateObserver(nullptr);
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(nullptr);

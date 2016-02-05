@@ -12,6 +12,7 @@
 #define WEBRTC_FRAME_CALLBACK_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "webrtc/common_types.h"
 
@@ -43,6 +44,7 @@ class I420FrameCallback {
 class EncodedFrameObserver {
  public:
   virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) = 0;
+  virtual void OnEncodeTiming(int64_t capture_ntp_ms, int encode_duration_ms) {}
 
  protected:
   virtual ~EncodedFrameObserver() {}
