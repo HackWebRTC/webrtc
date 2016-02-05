@@ -147,7 +147,8 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   int current_frames_;  // Number of frames in the current statistics interval.
   int current_bytes_;  // Encoded bytes in the current statistics interval.
   int current_decoding_time_ms_;  // Overall decoding time in the current second
-  uint32_t max_pending_frames_;  // Maximum number of pending input frames
+  int current_delay_time_ms_;  // Overall delay time in the current second.
+  uint32_t max_pending_frames_;  // Maximum number of pending input frames.
 
   // State that is constant for the lifetime of this object once the ctor
   // returns.
@@ -392,6 +393,7 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   current_frames_ = 0;
   current_bytes_ = 0;
   current_decoding_time_ms_ = 0;
+  current_delay_time_ms_ = 0;
 
   jobjectArray input_buffers = (jobjectArray)GetObjectField(
       jni, *j_media_codec_video_decoder_, j_input_buffers_field_);
@@ -799,22 +801,25 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   frames_decoded_++;
   current_frames_++;
   current_decoding_time_ms_ += decode_time_ms;
+  current_delay_time_ms_ += frame_delayed_ms;
   int statistic_time_ms = GetCurrentTimeMs() - start_time_ms_;
   if (statistic_time_ms >= kMediaCodecStatisticsIntervalMs &&
       current_frames_ > 0) {
     int current_bitrate = current_bytes_ * 8 / statistic_time_ms;
     int current_fps =
         (current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms;
-    ALOGD << "Decoded frames: " << frames_decoded_ <<
-        ". Received frames: " <<  frames_received_ <<
+    ALOGD << "Frames decoded: " << frames_decoded_ <<
+        ". Received: " <<  frames_received_ <<
         ". Bitrate: " << current_bitrate << " kbps" <<
         ". Fps: " << current_fps <<
         ". DecTime: " << (current_decoding_time_ms_ / current_frames_) <<
+        ". DelayTime: " << (current_delay_time_ms_ / current_frames_) <<
         " for last " << statistic_time_ms << " ms.";
     start_time_ms_ = GetCurrentTimeMs();
     current_frames_ = 0;
     current_bytes_ = 0;
     current_decoding_time_ms_ = 0;
+    current_delay_time_ms_ = 0;
   }
 
   // |.IsZeroSize())| returns true when a frame has been dropped.
