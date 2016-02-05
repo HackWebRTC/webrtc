@@ -25,7 +25,6 @@ char kTSanDefaultSuppressions[] =
 
 // Split up suppressions covered previously by thread.cc and messagequeue.cc.
 "race:rtc::MessageQueue::Quit\n"
-"race:FileVideoCapturerTest::VideoCapturerListener::OnFrameCaptured\n"
 "race:vp8cx_remove_encoder_threads\n"
 "race:third_party/libvpx_new/source/libvpx/vp9/common/vp9_scan.h\n"
 

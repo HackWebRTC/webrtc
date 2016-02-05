@@ -90,7 +90,6 @@
         'base/videoengine_unittest.h',
         'base/videoframe_unittest.h',
         'devices/dummydevicemanager_unittest.cc',
-        'devices/filevideocapturer_unittest.cc',
         'sctp/sctpdataengine_unittest.cc',
         'webrtc/nullwebrtcvideoengine_unittest.cc',
         'webrtc/simulcast_unittest.cc',

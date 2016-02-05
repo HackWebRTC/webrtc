@@ -35,10 +35,9 @@
 #include "webrtc/base/windowpicker.h"
 #include "webrtc/base/windowpickerfactory.h"
 #include "webrtc/media/base/mediacommon.h"
+#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocapturerfactory.h"
 #include "webrtc/media/devices/deviceinfo.h"
-#include "webrtc/media/devices/filevideocapturer.h"
-#include "webrtc/media/devices/yuvframescapturer.h"
 
 #ifdef HAVE_WEBRTC_VIDEO
 #include "webrtc/media/webrtc/webrtcvideocapturerfactory.h"
@@ -154,27 +153,6 @@ bool DeviceManager::GetVideoCaptureDevice(const std::string& name,
     }
   }
 
-  // If |name| is a valid name for a file or yuvframedevice,
-  // return a fake video capturer device.
-  if (GetFakeVideoCaptureDevice(name, out)) {
-    return true;
-  }
-
-  return false;
-}
-
-bool DeviceManager::GetFakeVideoCaptureDevice(const std::string& name,
-                                              Device* out) const {
-  if (rtc::Filesystem::IsFile(name)) {
-    *out = FileVideoCapturer::CreateFileVideoCapturerDevice(name);
-    return true;
-  }
-
-  if (name == YuvFramesCapturer::kYuvFrameDeviceName) {
-    *out = YuvFramesCapturer::CreateYuvFramesCapturerDevice();
-    return true;
-  }
-
   return false;
 }
 
@@ -190,16 +168,12 @@ void DeviceManager::ClearVideoCaptureDeviceMaxFormat(
 }
 
 VideoCapturer* DeviceManager::CreateVideoCapturer(const Device& device) const {
-  VideoCapturer* capturer = MaybeConstructFakeVideoCapturer(device);
-  if (capturer) {
-    return capturer;
-  }
-
   if (!video_device_capturer_factory_) {
     LOG(LS_ERROR) << "No video capturer factory for devices.";
     return NULL;
   }
-  capturer = video_device_capturer_factory_->Create(device);
+  cricket::VideoCapturer* capturer =
+      video_device_capturer_factory_->Create(device);
   if (!capturer) {
     return NULL;
   }
@@ -211,29 +185,6 @@ VideoCapturer* DeviceManager::CreateVideoCapturer(const Device& device) const {
     capturer->ConstrainSupportedFormats(video_format);
   }
   return capturer;
-}
-
-VideoCapturer* DeviceManager::MaybeConstructFakeVideoCapturer(
-    const Device& device) const {
-  // TODO(hellner): Throw out the creation of a file video capturer once the
-  // refactoring is completed.
-  if (FileVideoCapturer::IsFileVideoCapturerDevice(device)) {
-    FileVideoCapturer* capturer = new FileVideoCapturer;
-    if (!capturer->Init(device)) {
-      delete capturer;
-      return NULL;
-    }
-    LOG(LS_INFO) << "Created file video capturer " << device.name;
-    capturer->set_repeat(FileVideoCapturer::kForever);
-    return capturer;
-  }
-
-  if (YuvFramesCapturer::IsYuvFramesCapturerDevice(device)) {
-    YuvFramesCapturer* capturer = new YuvFramesCapturer();
-    capturer->Init();
-    return capturer;
-  }
-  return NULL;
 }
 
 bool DeviceManager::GetWindows(

@@ -45,7 +45,6 @@
 #include "webrtc/media/base/screencastid.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/base/videocapturerfactory.h"
-#include "webrtc/media/devices/filevideocapturer.h"
 #include "webrtc/media/devices/v4llookup.h"
 
 #ifdef WEBRTC_LINUX
@@ -200,16 +199,6 @@ TEST(DeviceManagerTest, GetVideoDeviceIds) {
     EXPECT_EQ(device.name, video_ins[0].name);
     EXPECT_EQ(device.id, video_ins[0].id);
   }
-}
-
-TEST(DeviceManagerTest, GetVideoDeviceIds_File) {
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
-  EXPECT_TRUE(dm->Init());
-  Device device;
-  const std::string test_file =
-      cricket::GetTestFilePath("captured-320x240-2s-48.frames");
-  EXPECT_TRUE(dm->GetVideoCaptureDevice(test_file, &device));
-  EXPECT_TRUE(cricket::FileVideoCapturer::IsFileVideoCapturerDevice(device));
 }
 
 TEST(DeviceManagerTest, VerifyDevicesListsAreCleared) {
