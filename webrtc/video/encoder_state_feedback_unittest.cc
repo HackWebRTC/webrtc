@@ -37,6 +37,7 @@ class MockVieEncoder : public ViEEncoder {
                    nullptr,
                    nullptr,
                    pacer,
+                   nullptr,
                    nullptr) {}
   ~MockVieEncoder() {}
 

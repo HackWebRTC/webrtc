@@ -19,6 +19,7 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
+#include "webrtc/video/payload_router.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/video_capture_input.h"
 #include "webrtc/video_receive_stream.h"
@@ -88,8 +89,12 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   OveruseFrameDetector overuse_detector_;
   rtc::scoped_ptr<VideoCaptureInput> input_;
-  rtc::scoped_ptr<ViEChannel> vie_channel_;
+  PayloadRouter payload_router_;
   rtc::scoped_ptr<ViEEncoder> vie_encoder_;
+  rtc::scoped_ptr<ViEChannel> vie_channel_;
+  // TODO(pbos): Make proper const.
+  // const after construction.
+  VideoCodingModule* vcm_;
   rtc::scoped_ptr<EncoderStateFeedback> encoder_feedback_;
 
   // Used as a workaround to indicate that we should be using the configured

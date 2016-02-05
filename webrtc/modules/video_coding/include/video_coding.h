@@ -75,8 +75,6 @@ class VideoCodingModule : public Module {
 
   static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
-  static void Destroy(VideoCodingModule* module);
-
   // Get supported codec settings using codec type
   //
   // Input:

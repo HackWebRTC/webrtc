@@ -232,6 +232,7 @@ int ViEReceiver::ReceivedRTCPPacket(const void* rtcp_packet,
 int32_t ViEReceiver::OnReceivedPayloadData(const uint8_t* payload_data,
                                            const size_t payload_size,
                                            const WebRtcRTPHeader* rtp_header) {
+  RTC_DCHECK(vcm_);
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_->Estimate(rtp_header->header.timestamp);

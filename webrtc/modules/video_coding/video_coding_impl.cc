@@ -310,9 +310,4 @@ VideoCodingModule* VideoCodingModule::Create(Clock* clock,
                                    nullptr);
 }
 
-void VideoCodingModule::Destroy(VideoCodingModule* module) {
-  if (module != NULL) {
-    delete static_cast<VideoCodingModuleImpl*>(module);
-  }
-}
 }  // namespace webrtc

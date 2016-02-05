@@ -19,6 +19,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/call/congestion_controller.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/receive_statistics_proxy.h"
@@ -148,9 +149,11 @@ VideoReceiveStream::VideoReceiveStream(
     : transport_adapter_(config.rtcp_send_transport),
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
+      process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
       congestion_controller_(congestion_controller),
-      call_stats_(call_stats) {
+      call_stats_(call_stats),
+      vcm_(VideoCodingModule::Create(clock_, nullptr, nullptr)) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   bool send_side_bwe =
@@ -160,10 +163,10 @@ VideoReceiveStream::VideoReceiveStream(
       congestion_controller_->GetRemoteBitrateEstimator(send_side_bwe);
 
   vie_channel_.reset(new ViEChannel(
-      num_cpu_cores, &transport_adapter_, process_thread, nullptr,
-      nullptr, nullptr, bitrate_estimator, call_stats_->rtcp_rtt_stats(),
-      congestion_controller_->pacer(), congestion_controller_->packet_router(),
-      1, false));
+      num_cpu_cores, &transport_adapter_, process_thread, nullptr, vcm_.get(),
+      nullptr, nullptr, nullptr, bitrate_estimator,
+      call_stats_->rtcp_rtt_stats(), congestion_controller_->pacer(),
+      congestion_controller_->packet_router(), 1, false));
 
   RTC_CHECK(vie_channel_->Init() == 0);
 
@@ -284,11 +287,14 @@ VideoReceiveStream::VideoReceiveStream(
 
   vie_channel_->RegisterPreDecodeImageCallback(this);
   vie_channel_->RegisterPreRenderCallback(this);
+
+  process_thread_->RegisterModule(vcm_.get());
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
   LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   incoming_video_stream_->Stop();
+  process_thread_->DeRegisterModule(vcm_.get());
   vie_channel_->RegisterPreRenderCallback(nullptr);
   vie_channel_->RegisterPreDecodeImageCallback(nullptr);
 

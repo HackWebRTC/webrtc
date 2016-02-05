@@ -21,6 +21,7 @@
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
+#include "webrtc/video/payload_router.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/vie_channel.h"
 #include "webrtc/video/vie_encoder.h"
@@ -80,11 +81,13 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoReceiveStream::Config config_;
+  ProcessThread* const process_thread_;
   Clock* const clock_;
 
   CongestionController* const congestion_controller_;
   CallStats* const call_stats_;
 
+  rtc::scoped_ptr<VideoCodingModule> vcm_;
   rtc::scoped_ptr<IncomingVideoStream> incoming_video_stream_;
   rtc::scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
   rtc::scoped_ptr<ViEChannel> vie_channel_;

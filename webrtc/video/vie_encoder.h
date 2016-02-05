@@ -57,22 +57,13 @@ class ViEEncoder : public RtcpIntraFrameObserver,
              I420FrameCallback* pre_encode_callback,
              OveruseFrameDetector* overuse_detector,
              PacedSender* pacer,
+             PayloadRouter* payload_router,
              BitrateAllocator* bitrate_allocator);
   ~ViEEncoder();
 
   bool Init();
 
-  // This function is assumed to be called before any frames are delivered and
-  // only once.
-  // Ideally this would be done in Init, but the dependencies between ViEEncoder
-  // and ViEChannel makes it really hard to do in a good way.
-  void StartThreadsAndSetSharedMembers(
-      rtc::scoped_refptr<PayloadRouter> send_payload_router,
-      VCMProtectionCallback* vcm_protection_callback);
-
-  // This function must be called before the corresponding ViEChannel is
-  // deleted.
-  void StopThreadsAndRemoveSharedMembers();
+  VideoCodingModule* vcm() const;
 
   void SetNetworkTransmissionState(bool is_transmitting);
 
@@ -158,7 +149,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   const rtc::scoped_ptr<VideoProcessing> vp_;
   const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
   const rtc::scoped_ptr<VideoCodingModule> vcm_;
-  rtc::scoped_refptr<PayloadRouter> send_payload_router_;
 
   rtc::CriticalSection data_cs_;
   rtc::scoped_ptr<BitrateObserver> bitrate_observer_;
@@ -167,6 +157,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   I420FrameCallback* const pre_encode_callback_;
   OveruseFrameDetector* const overuse_detector_;
   PacedSender* const pacer_;
+  PayloadRouter* const send_payload_router_;
   BitrateAllocator* const bitrate_allocator_;
 
   // The time we last received an input frame or encoded frame. This is used to

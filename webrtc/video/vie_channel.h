@@ -68,6 +68,8 @@ class ViEChannel : public VCMFrameTypeCallback,
   ViEChannel(uint32_t number_of_cores,
              Transport* transport,
              ProcessThread* module_process_thread,
+             PayloadRouter* send_payload_router,
+             VideoCodingModule* vcm,
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,
              TransportFeedbackObserver* transport_feedback_observer,
@@ -89,11 +91,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void RegisterExternalDecoder(const uint8_t pl_type, VideoDecoder* decoder);
   int32_t ReceiveCodecStatistics(uint32_t* num_key_frames,
                                  uint32_t* num_delta_frames);
-  uint32_t DiscardedPackets() const;
-
-  // Returns the estimated delay in milliseconds.
-  int ReceiveDelay() const;
-
   void SetExpectedRenderDelay(int delay_ms);
 
   void SetRTCPMode(const RtcpMode rtcp_mode);
@@ -214,7 +211,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
-  rtc::scoped_refptr<PayloadRouter> send_payload_router();
   VCMProtectionCallback* vcm_protection_callback();
 
 
@@ -401,12 +397,12 @@ class ViEChannel : public VCMFrameTypeCallback,
   const bool sender_;
 
   ProcessThread* const module_process_thread_;
+  PayloadRouter* const send_payload_router_;
 
   // Used for all registered callbacks except rendering.
   rtc::CriticalSection crit_;
 
   // Owned modules/classes.
-  rtc::scoped_refptr<PayloadRouter> send_payload_router_;
   rtc::scoped_ptr<ViEChannelProtectionCallback> vcm_protection_callback_;
 
   VideoCodingModule* const vcm_;

@@ -25,7 +25,6 @@
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/encoder_state_feedback.h"
-#include "webrtc/video/payload_router.h"
 #include "webrtc/video/video_capture_input.h"
 #include "webrtc/video/vie_channel.h"
 #include "webrtc/video/vie_encoder.h"
@@ -163,28 +162,27 @@ VideoSendStream::VideoSendStream(
 
   const std::vector<uint32_t>& ssrcs = config.rtp.ssrcs;
 
-  vie_encoder_.reset(
-      new ViEEncoder(num_cpu_cores, module_process_thread_, &stats_proxy_,
-                     config.pre_encode_callback, &overuse_detector_,
-                     congestion_controller_->pacer(), bitrate_allocator));
+  vie_encoder_.reset(new ViEEncoder(
+      num_cpu_cores, module_process_thread_, &stats_proxy_,
+      config.pre_encode_callback, &overuse_detector_,
+      congestion_controller_->pacer(), &payload_router_, bitrate_allocator));
+  vcm_ = vie_encoder_->vcm();
   RTC_CHECK(vie_encoder_->Init());
 
   vie_channel_.reset(new ViEChannel(
       num_cpu_cores, config.send_transport, module_process_thread_,
-      encoder_feedback_->GetRtcpIntraFrameObserver(),
-      congestion_controller_->GetBitrateController()->
-          CreateRtcpBandwidthObserver(),
+      &payload_router_, nullptr, encoder_feedback_->GetRtcpIntraFrameObserver(),
+      congestion_controller_->GetBitrateController()
+          ->CreateRtcpBandwidthObserver(),
       transport_feedback_observer,
       congestion_controller_->GetRemoteBitrateEstimator(false),
       call_stats_->rtcp_rtt_stats(), congestion_controller_->pacer(),
       congestion_controller_->packet_router(), ssrcs.size(), true));
   RTC_CHECK(vie_channel_->Init() == 0);
 
-  call_stats_->RegisterStatsObserver(vie_channel_->GetStatsObserver());
+  vcm_->RegisterProtectionCallback(vie_channel_->vcm_protection_callback());
 
-  vie_encoder_->StartThreadsAndSetSharedMembers(
-      vie_channel_->send_payload_router(),
-      vie_channel_->vcm_protection_callback());
+  call_stats_->RegisterStatsObserver(vie_channel_->GetStatsObserver());
 
   std::vector<uint32_t> first_ssrc(1, ssrcs[0]);
   vie_encoder_->SetSsrcs(first_ssrc);
@@ -266,6 +264,10 @@ VideoSendStream::VideoSendStream(
 VideoSendStream::~VideoSendStream() {
   LOG(LS_INFO) << "~VideoSendStream: " << config_.ToString();
   module_process_thread_->DeRegisterModule(&overuse_detector_);
+  // Remove vcm_protection_callback (part of vie_channel_) before destroying
+  // ViEChannel. vcm_ is owned by ViEEncoder and the registered callback does
+  // not outlive it.
+  vcm_->RegisterProtectionCallback(nullptr);
   vie_channel_->RegisterSendFrameCountObserver(nullptr);
   vie_channel_->RegisterSendBitrateObserver(nullptr);
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(nullptr);
@@ -287,7 +289,6 @@ VideoSendStream::~VideoSendStream() {
   // done before deleting the channel.
   congestion_controller_->RemoveEncoder(vie_encoder_.get());
   encoder_feedback_->RemoveEncoder(vie_encoder_.get());
-  vie_encoder_->StopThreadsAndRemoveSharedMembers();
 
   uint32_t remote_ssrc = vie_channel_->GetRemoteSSRC();
   congestion_controller_->GetRemoteBitrateEstimator(false)->RemoveStream(
