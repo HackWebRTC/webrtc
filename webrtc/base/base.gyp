@@ -746,5 +746,12 @@
         }],
       ],
     },
+    {
+     'target_name': 'gtest_prod',
+      'type': 'static_library',
+      'sources': [
+        'gtest_prod_util.h',
+      ],
+    },
   ],
 }

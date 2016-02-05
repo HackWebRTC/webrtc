@@ -20,7 +20,7 @@ source_set("command_line_parser") {
     "simple_command_line_parser.h",
   ]
   deps = [
-    "..:gtest_prod",
+    "../base:gtest_prod",
   ]
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]

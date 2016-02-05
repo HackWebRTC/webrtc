@@ -14,9 +14,9 @@
 #include <string.h>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/test/testsupport/gtest_prod_util.h"
 
 namespace webrtc {
 

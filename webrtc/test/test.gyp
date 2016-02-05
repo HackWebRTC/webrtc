@@ -133,7 +133,7 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(webrtc_root)/common.gyp:gtest_prod',
+        '<(webrtc_root)/base/base.gyp:gtest_prod',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [

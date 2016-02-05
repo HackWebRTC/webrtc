@@ -643,3 +643,9 @@ if (is_ios) {
     ]
   }
 }
+
+source_set("gtest_prod") {
+  sources = [
+    "gtest_prod_util.h",
+  ]
+}

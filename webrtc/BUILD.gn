@@ -246,12 +246,6 @@ source_set("webrtc_common") {
   }
 }
 
-source_set("gtest_prod") {
-  sources = [
-    "test/testsupport/gtest_prod_util.h",
-  ]
-}
-
 if (rtc_enable_protobuf) {
   proto_library("rtc_event_log_proto") {
     sources = [

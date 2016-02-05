@@ -14,8 +14,8 @@
 #include <deque>
 #include <set>
 
+#include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/test/testsupport/gtest_prod_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

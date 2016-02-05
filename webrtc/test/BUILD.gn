@@ -70,7 +70,7 @@ source_set("test_support") {
   ]
 
   deps = [
-    "..:gtest_prod",
+    "../base:gtest_prod",
     "../system_wrappers",
     "//testing/gmock",
     "//testing/gtest",
