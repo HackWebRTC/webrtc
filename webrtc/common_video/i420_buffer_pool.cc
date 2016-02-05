@@ -53,7 +53,8 @@ class PooledI420Buffer : public webrtc::VideoFrameBuffer {
 
 namespace webrtc {
 
-I420BufferPool::I420BufferPool() {
+I420BufferPool::I420BufferPool(bool zero_initialize)
+    : zero_initialize_(zero_initialize) {
   Release();
 }
 
@@ -83,7 +84,11 @@ rtc::scoped_refptr<VideoFrameBuffer> I420BufferPool::CreateBuffer(int width,
       return new rtc::RefCountedObject<PooledI420Buffer>(buffer);
   }
   // Allocate new buffer.
-  buffers_.push_back(new rtc::RefCountedObject<I420Buffer>(width, height));
+  rtc::scoped_refptr<I420Buffer> buffer = new rtc::RefCountedObject<I420Buffer>(
+      width, height);
+  if (zero_initialize_)
+    buffer->InitializeData();
+  buffers_.push_back(buffer);
   return new rtc::RefCountedObject<PooledI420Buffer>(buffers_.back());
 }
 

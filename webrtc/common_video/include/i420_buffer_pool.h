@@ -25,7 +25,9 @@ namespace webrtc {
 // changes, old buffers will be purged from the pool.
 class I420BufferPool {
  public:
-  I420BufferPool();
+  I420BufferPool() : I420BufferPool(false) {}
+  explicit I420BufferPool(bool zero_initialize);
+
   // Returns a buffer from the pool, or creates a new buffer if no suitable
   // buffer exists in the pool.
   rtc::scoped_refptr<VideoFrameBuffer> CreateBuffer(int width, int height);
@@ -36,6 +38,12 @@ class I420BufferPool {
  private:
   rtc::ThreadChecker thread_checker_;
   std::list<rtc::scoped_refptr<I420Buffer>> buffers_;
+  // If true, newly allocated buffers are zero-initialized. Note that recycled
+  // buffers are not zero'd before reuse. This is required of buffers used by
+  // FFmpeg according to http://crbug.com/390941, which only requires it for the
+  // initial allocation (as shown by FFmpeg's own buffer allocation code). It
+  // has to do with "Use-of-uninitialized-value" on "Linux_msan_chrome".
+  bool zero_initialize_;
 };
 
 }  // namespace webrtc

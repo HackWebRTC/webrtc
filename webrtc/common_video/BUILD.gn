@@ -48,7 +48,6 @@ source_set("common_video") {
 
   deps = [
     "..:webrtc_common",
-    "../modules/video_coding:webrtc_h264",
     "../system_wrappers",
   ]
 

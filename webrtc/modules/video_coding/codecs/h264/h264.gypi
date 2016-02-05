@@ -40,6 +40,7 @@
           'dependencies': [
             '<(DEPTH)/third_party/ffmpeg/ffmpeg.gyp:ffmpeg',
             '<(DEPTH)/third_party/openh264/openh264.gyp:openh264_encoder',
+            '<(DEPTH)/webrtc/common_video/common_video.gyp:common_video',
           ],
           'sources': [
             'h264_decoder_impl.cc',

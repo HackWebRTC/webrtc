@@ -76,23 +76,18 @@ void InitializeFFmpeg() {
 
 #endif  // defined(WEBRTC_INITIALIZE_FFMPEG)
 
-// Called by FFmpeg when it is done with a frame buffer, see AVGetBuffer2.
-void AVFreeBuffer2(void* opaque, uint8_t* data) {
-  VideoFrame* video_frame = static_cast<VideoFrame*>(opaque);
-  delete video_frame;
-}
+}  // namespace
 
-// Called by FFmpeg when it needs a frame buffer to store decoded frames in.
-// The VideoFrames returned by FFmpeg at |Decode| originate from here. They are
-// reference counted and freed by FFmpeg using |AVFreeBuffer2|.
-// TODO(hbos): Use a frame pool for better performance instead of create/free.
-// Could be owned by decoder, |static_cast<H264DecoderImpl*>(context->opaque)|.
-// Consider verifying that the buffer was allocated by us to avoid unsafe type
-// cast. See https://bugs.chromium.org/p/webrtc/issues/detail?id=5428.
-int AVGetBuffer2(AVCodecContext* context, AVFrame* av_frame, int flags) {
-  RTC_CHECK_EQ(context->pix_fmt, kPixelFormat);  // Same as in InitDecode.
+int H264DecoderImpl::AVGetBuffer2(
+    AVCodecContext* context, AVFrame* av_frame, int flags) {
+  // Set in |InitDecode|.
+  H264DecoderImpl* decoder = static_cast<H264DecoderImpl*>(context->opaque);
+  // DCHECK values set in |InitDecode|.
+  RTC_DCHECK(decoder);
+  RTC_DCHECK_EQ(context->pix_fmt, kPixelFormat);
   // Necessary capability to be allowed to provide our own buffers.
-  RTC_CHECK(context->codec->capabilities | AV_CODEC_CAP_DR1);
+  RTC_DCHECK(context->codec->capabilities | AV_CODEC_CAP_DR1);
+
   // |av_frame->width| and |av_frame->height| are set by FFmpeg. These are the
   // actual image's dimensions and may be different from |context->width| and
   // |context->coded_width| due to reordering.
@@ -120,25 +115,18 @@ int AVGetBuffer2(AVCodecContext* context, AVFrame* av_frame, int flags) {
   // The video frame is stored in |video_frame|. |av_frame| is FFmpeg's version
   // of a video frame and will be set up to reference |video_frame|'s buffers.
   VideoFrame* video_frame = new VideoFrame();
-  int stride_y = width;
-  int stride_uv = (width + 1) / 2;
-  RTC_CHECK_EQ(0, video_frame->CreateEmptyFrame(
-      width, height, stride_y, stride_uv, stride_uv));
-  int total_size = video_frame->allocated_size(kYPlane) +
-                   video_frame->allocated_size(kUPlane) +
-                   video_frame->allocated_size(kVPlane);
-  RTC_DCHECK_EQ(total_size, stride_y * height +
-                (stride_uv + stride_uv) * ((height + 1) / 2));
-
   // FFmpeg expects the initial allocation to be zero-initialized according to
-  // http://crbug.com/390941.
-  // Using a single |av_frame->buf| - YUV is required to be a continuous blob of
-  // memory. We can zero-initialize with one memset operation for all planes.
+  // http://crbug.com/390941. Our pool is set up to zero-initialize new buffers.
+  video_frame->set_video_frame_buffer(
+      decoder->pool_.CreateBuffer(width, height));
+  // DCHECK that we have a continuous buffer as is required.
   RTC_DCHECK_EQ(video_frame->buffer(kUPlane),
       video_frame->buffer(kYPlane) + video_frame->allocated_size(kYPlane));
   RTC_DCHECK_EQ(video_frame->buffer(kVPlane),
       video_frame->buffer(kUPlane) + video_frame->allocated_size(kUPlane));
-  memset(video_frame->buffer(kYPlane), 0, total_size);
+  int total_size = video_frame->allocated_size(kYPlane) +
+                   video_frame->allocated_size(kUPlane) +
+                   video_frame->allocated_size(kVPlane);
 
   av_frame->format = context->pix_fmt;
   av_frame->reordered_opaque = context->reordered_opaque;
@@ -161,10 +149,16 @@ int AVGetBuffer2(AVCodecContext* context, AVFrame* av_frame, int flags) {
   return 0;
 }
 
-}  // namespace
+void H264DecoderImpl::AVFreeBuffer2(void* opaque, uint8_t* data) {
+  // The buffer pool recycles the buffer used by |video_frame| when there are no
+  // more references to it. |video_frame| is a thin buffer holder and is not
+  // recycled.
+  VideoFrame* video_frame = static_cast<VideoFrame*>(opaque);
+  delete video_frame;
+}
 
-H264DecoderImpl::H264DecoderImpl()
-    : decoded_image_callback_(nullptr) {
+H264DecoderImpl::H264DecoderImpl() : pool_(true),
+                                     decoded_image_callback_(nullptr) {
 }
 
 H264DecoderImpl::~H264DecoderImpl() {
@@ -209,13 +203,15 @@ int32_t H264DecoderImpl::InitDecode(const VideoCodec* codec_settings,
   av_context_->extradata = nullptr;
   av_context_->extradata_size = 0;
 
+  // If this is ever increased, look at |av_context_->thread_safe_callbacks| and
+  // make it possible to disable the thread checker in the frame buffer pool.
   av_context_->thread_count = 1;
   av_context_->thread_type = FF_THREAD_SLICE;
 
-  // FFmpeg will get video buffers from our AVGetBuffer2, memory managed by us.
+  // Function used by FFmpeg to get buffers to store decoded frames in.
   av_context_->get_buffer2 = AVGetBuffer2;
-  // get_buffer2 is called with the context, there |opaque| can be used to get a
-  // pointer |this|.
+  // |get_buffer2| is called with the context, there |opaque| can be used to get
+  // a pointer |this|.
   av_context_->opaque = this;
   // Use ref counted frames (av_frame_unref).
   av_context_->refcounted_frames = 1;  // true

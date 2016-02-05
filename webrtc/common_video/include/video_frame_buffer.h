@@ -66,6 +66,7 @@ class I420Buffer : public VideoFrameBuffer {
  public:
   I420Buffer(int width, int height);
   I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
+  void InitializeData();
 
   int width() const override;
   int height() const override;

@@ -19,6 +19,7 @@ extern "C" {
 }  // extern "C"
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/common_video/include/i420_buffer_pool.h"
 
 namespace webrtc {
 
@@ -52,8 +53,17 @@ class H264DecoderImpl : public H264Decoder {
                  int64_t render_time_ms = -1) override;
 
  private:
+  // Called by FFmpeg when it needs a frame buffer to store decoded frames in.
+  // The |VideoFrame| returned by FFmpeg at |Decode| originate from here. Their
+  // buffers are reference counted and freed by FFmpeg using |AVFreeBuffer2|.
+  static int AVGetBuffer2(
+      AVCodecContext* context, AVFrame* av_frame, int flags);
+  // Called by FFmpeg when it is done with a video frame, see |AVGetBuffer2|.
+  static void AVFreeBuffer2(void* opaque, uint8_t* data);
+
   bool IsInitialized() const;
 
+  I420BufferPool pool_;
   rtc::scoped_ptr<AVCodecContext, AVCodecContextDeleter> av_context_;
   rtc::scoped_ptr<AVFrame, AVFrameDeleter> av_frame_;
 
