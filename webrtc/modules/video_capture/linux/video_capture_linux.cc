@@ -245,7 +245,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
       // continue
     } else {
       // check the capability flag is set to V4L2_CAP_TIMEPERFRAME.
-      if (streamparms.parm.capture.capability == V4L2_CAP_TIMEPERFRAME) {
+      if (streamparms.parm.capture.capability & V4L2_CAP_TIMEPERFRAME) {
         // driver supports the feature. Set required framerate.
         memset(&streamparms, 0, sizeof(streamparms));
         streamparms.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
