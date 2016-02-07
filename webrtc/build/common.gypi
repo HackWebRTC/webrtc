@@ -138,21 +138,17 @@
     # Enabling this may break interop with Android clients that support H264.
     'use_objc_h264%': 0,
 
-    'conditions': [
-      # Enable this to build OpenH264 encoder/FFmpeg decoder. This is supported
-      # on all platforms except Android and iOS. Because FFmpeg can be built
-      # with/without H.264 support, |ffmpeg_branding| has to separately be set
-      # to a value that includes H.264, for example "Chrome". If FFmpeg is built
-      # without H.264, compilation succeeds but |H264DecoderImpl| fails to
-      # initialize. See also: |rtc_initialize_ffmpeg|.
-      # CHECK THE OPENH264, FFMPEG AND H.264 LICENSES/PATENTS BEFORE BUILDING.
-      # http://www.openh264.org, https://www.ffmpeg.org/
-      ['proprietary_codecs==1 and OS!="android" and OS!="ios"', {
-        'rtc_use_h264%': 1,
-      }, {
-        'rtc_use_h264%': 0,
-      }],
+    # Enable this to build OpenH264 encoder/FFmpeg decoder. This is supported on
+    # all platforms except iOS. Because FFmpeg can be built with/without H.264
+    # support, |ffmpeg_branding| has to separately be set to a value that
+    # includes H.264, for example "Chrome". If FFmpeg is built without H.264,
+    # compilation succeeds but |H264DecoderImpl| fails to initialize.
+    # See also: |rtc_initialize_ffmpeg|.
+    # CHECK THE OPENH264, FFMPEG AND H.264 LICENSES/PATENTS BEFORE BUILDING.
+    # http://www.openh264.org, https://www.ffmpeg.org/
+    'rtc_use_h264%': 0,
 
+    'conditions': [
       # FFmpeg must be initialized for |H264DecoderImpl| to work. This can be
       # done by WebRTC during |H264DecoderImpl::InitDecode| or externally.
       # FFmpeg must only be initialized once. Projects that initialize FFmpeg
