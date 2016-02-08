@@ -356,8 +356,7 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
   stats->rtcp_stats = statistics;
 }
 
-void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
-}
+void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {}
 
 void SendStatisticsProxy::DataCountersUpdated(
     const StreamDataCounters& counters,

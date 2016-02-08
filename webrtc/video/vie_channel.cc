@@ -77,8 +77,7 @@ class ViEChannelProtectionCallback : public VCMProtectionCallback {
   ViEChannel* owner_;
 };
 
-ViEChannel::ViEChannel(uint32_t number_of_cores,
-                       Transport* transport,
+ViEChannel::ViEChannel(Transport* transport,
                        ProcessThread* module_process_thread,
                        PayloadRouter* send_payload_router,
                        VideoCodingModule* vcm,
@@ -91,8 +90,7 @@ ViEChannel::ViEChannel(uint32_t number_of_cores,
                        PacketRouter* packet_router,
                        size_t max_rtp_streams,
                        bool sender)
-    : number_of_cores_(number_of_cores),
-      sender_(sender),
+    : sender_(sender),
       module_process_thread_(module_process_thread),
       send_payload_router_(send_payload_router),
       vcm_protection_callback_(new ViEChannelProtectionCallback(this)),
@@ -415,43 +413,8 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   return 0;
 }
 
-int32_t ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
-  RTC_DCHECK(!sender_);
-  if (!vie_receiver_.SetReceiveCodec(video_codec)) {
-    return -1;
-  }
-
-  if (video_codec.codecType != kVideoCodecRED &&
-      video_codec.codecType != kVideoCodecULPFEC) {
-    // Register codec type with VCM, but do not register RED or ULPFEC.
-    if (vcm_->RegisterReceiveCodec(&video_codec, number_of_cores_, false) !=
-        VCM_OK) {
-      return -1;
-    }
-  }
-  return 0;
-}
-
-void ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
-                                         VideoDecoder* decoder) {
-  RTC_DCHECK(!sender_);
-  vcm_->RegisterExternalDecoder(decoder, pl_type);
-}
-
-int32_t ViEChannel::ReceiveCodecStatistics(uint32_t* num_key_frames,
-                                           uint32_t* num_delta_frames) {
-  rtc::CritScope lock(&crit_);
-  *num_key_frames = receive_frame_counts_.key_frames;
-  *num_delta_frames = receive_frame_counts_.delta_frames;
-  return 0;
-}
-
-void ViEChannel::SetExpectedRenderDelay(int delay_ms) {
-  RTC_DCHECK(!sender_);
-  vcm_->SetRenderDelay(delay_ms);
-}
-
 void ViEChannel::SetRTCPMode(const RtcpMode rtcp_mode) {
+  RTC_DCHECK(sender_);
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     rtp_rtcp->SetRTCPStatus(rtcp_mode);
 }
@@ -580,10 +543,6 @@ int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
   return error;
 }
 
-int ViEChannel::SetReceiveTimestampOffsetStatus(bool enable, int id) {
-  return vie_receiver_.SetReceiveTimestampOffsetStatus(enable, id) ? 0 : -1;
-}
-
 int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
   // Disable any previous registrations of this extension to avoid errors.
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
@@ -597,10 +556,6 @@ int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
         kRtpExtensionAbsoluteSendTime, id);
   }
   return error;
-}
-
-int ViEChannel::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
-  return vie_receiver_.SetReceiveAbsoluteSendTimeStatus(enable, id) ? 0 : -1;
 }
 
 int ViEChannel::SetSendVideoRotationStatus(bool enable, int id) {
@@ -618,11 +573,8 @@ int ViEChannel::SetSendVideoRotationStatus(bool enable, int id) {
   return error;
 }
 
-int ViEChannel::SetReceiveVideoRotationStatus(bool enable, int id) {
-  return vie_receiver_.SetReceiveVideoRotationStatus(enable, id) ? 0 : -1;
-}
-
 int ViEChannel::SetSendTransportSequenceNumber(bool enable, int id) {
+  RTC_DCHECK(sender_);
   // Disable any previous registrations of this extension to avoid errors.
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     rtp_rtcp->DeregisterSendRtpHeaderExtension(
@@ -639,33 +591,16 @@ int ViEChannel::SetSendTransportSequenceNumber(bool enable, int id) {
   return error;
 }
 
-int ViEChannel::SetReceiveTransportSequenceNumber(bool enable, int id) {
-  return vie_receiver_.SetReceiveTransportSequenceNumber(enable, id) ? 0 : -1;
-}
-
-void ViEChannel::SetRtcpXrRrtrStatus(bool enable) {
-  rtp_rtcp_modules_[0]->SetRtcpXrRrtrStatus(enable);
-}
-
-void ViEChannel::EnableTMMBR(bool enable) {
-  rtp_rtcp_modules_[0]->SetTMMBRStatus(enable);
-}
-
 int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
                             const StreamType usage,
                             const uint8_t simulcast_idx) {
+  RTC_DCHECK(sender_);
   RtpRtcp* rtp_rtcp = rtp_rtcp_modules_[simulcast_idx];
   if (usage == kViEStreamTypeRtx) {
     rtp_rtcp->SetRtxSsrc(SSRC);
   } else {
     rtp_rtcp->SetSSRC(SSRC);
   }
-  return 0;
-}
-
-int32_t ViEChannel::SetRemoteSSRCType(const StreamType usage,
-                                      const uint32_t SSRC) {
-  vie_receiver_.SetRtxSsrc(SSRC);
   return 0;
 }
 
@@ -676,6 +611,7 @@ int32_t ViEChannel::GetLocalSSRC(uint8_t idx, unsigned int* ssrc) {
 }
 
 uint32_t ViEChannel::GetRemoteSSRC() {
+  RTC_DCHECK(sender_);
   return vie_receiver_.GetRemoteSsrc();
 }
 
@@ -692,15 +628,6 @@ void ViEChannel::SetRtxSendStatus(bool enable) {
       enable ? kRtxRetransmitted | kRtxRedundantPayloads : kRtxOff;
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     rtp_rtcp->SetRtxSendStatus(rtx_settings);
-}
-
-void ViEChannel::SetRtxReceivePayloadType(int payload_type,
-                                          int associated_payload_type) {
-  vie_receiver_.SetRtxPayloadType(payload_type, associated_payload_type);
-}
-
-void ViEChannel::SetUseRtxPayloadMappingOnRestore(bool val) {
-  vie_receiver_.SetUseRtxPayloadMappingOnRestore(val);
 }
 
 void ViEChannel::SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state) {
@@ -786,13 +713,6 @@ void ViEChannel::RegisterSendChannelRtcpStatisticsCallback(
     rtp_rtcp->RegisterRtcpStatisticsCallback(callback);
 }
 
-void ViEChannel::RegisterReceiveChannelRtcpStatisticsCallback(
-    RtcpStatisticsCallback* callback) {
-  vie_receiver_.GetReceiveStatistics()->RegisterRtcpStatisticsCallback(
-      callback);
-  rtp_rtcp_modules_[0]->RegisterRtcpStatisticsCallback(callback);
-}
-
 void ViEChannel::RegisterRtcpPacketTypeCounterObserver(
     RtcpPacketTypeCounterObserver* observer) {
   rtcp_packet_type_counter_observer_.Set(observer);
@@ -834,11 +754,6 @@ void ViEChannel::RegisterSendChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback) {
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(callback);
-}
-
-void ViEChannel::RegisterReceiveChannelRtpStatisticsCallback(
-    StreamDataCountersCallback* callback) {
-  vie_receiver_.GetReceiveStatistics()->RegisterRtpStatisticsCallback(callback);
 }
 
 void ViEChannel::GetSendRtcpPacketTypeCounter(
@@ -922,19 +837,17 @@ void ViEChannel::StopReceive() {
     StopDecodeThread();
 }
 
-int32_t ViEChannel::ReceivedRTPPacket(const void* rtp_packet,
-                                      size_t rtp_packet_length,
-                                      const PacketTime& packet_time) {
-  return vie_receiver_.ReceivedRTPPacket(
-      rtp_packet, rtp_packet_length, packet_time);
-}
-
 int32_t ViEChannel::ReceivedRTCPPacket(const void* rtcp_packet,
                                        size_t rtcp_packet_length) {
-  return vie_receiver_.ReceivedRTCPPacket(rtcp_packet, rtcp_packet_length);
+  RTC_DCHECK(sender_);
+  return vie_receiver_.DeliverRtcp(
+             reinterpret_cast<const uint8_t*>(rtcp_packet), rtcp_packet_length)
+             ? 0
+             : -1;
 }
 
 int32_t ViEChannel::SetMTU(uint16_t mtu) {
+  RTC_DCHECK(sender_);
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     rtp_rtcp->SetMaxTransferUnit(mtu);
   return 0;
@@ -942,6 +855,10 @@ int32_t ViEChannel::SetMTU(uint16_t mtu) {
 
 RtpRtcp* ViEChannel::rtp_rtcp() {
   return rtp_rtcp_modules_[0];
+}
+
+ViEReceiver* ViEChannel::vie_receiver() {
+  return &vie_receiver_;
 }
 
 VCMProtectionCallback* ViEChannel::vcm_protection_callback() {
@@ -1160,14 +1077,9 @@ int32_t ViEChannel::VoiceChannel() {
 
 void ViEChannel::RegisterPreRenderCallback(
     I420FrameCallback* pre_render_callback) {
+  RTC_DCHECK(!sender_);
   rtc::CritScope lock(&crit_);
   pre_render_callback_ = pre_render_callback;
-}
-
-void ViEChannel::RegisterPreDecodeImageCallback(
-    EncodedImageCallback* pre_decode_callback) {
-  RTC_DCHECK(!sender_);
-  vcm_->RegisterPreDecodeImageCallback(pre_decode_callback);
 }
 
 // TODO(pbos): Remove as soon as audio can handle a changing payload type

@@ -65,8 +65,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   friend class ChannelStatsObserver;
   friend class ViEChannelProtectionCallback;
 
-  ViEChannel(uint32_t number_of_cores,
-             Transport* transport,
+  ViEChannel(Transport* transport,
              ProcessThread* module_process_thread,
              PayloadRouter* send_payload_router,
              VideoCodingModule* vcm,
@@ -86,12 +85,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Sets the encoder to use for the channel. |new_stream| indicates the encoder
   // type has changed and we should start a new RTP stream.
   int32_t SetSendCodec(const VideoCodec& video_codec, bool new_stream = true);
-  int32_t SetReceiveCodec(const VideoCodec& video_codec);
-  // Registers an external decoder.
-  void RegisterExternalDecoder(const uint8_t pl_type, VideoDecoder* decoder);
-  int32_t ReceiveCodecStatistics(uint32_t* num_key_frames,
-                                 uint32_t* num_delta_frames);
-  void SetExpectedRenderDelay(int delay_ms);
 
   void SetRTCPMode(const RtcpMode rtcp_mode);
   void SetProtectionMode(bool enable_nack,
@@ -101,15 +94,9 @@ class ViEChannel : public VCMFrameTypeCallback,
   bool IsSendingFecEnabled();
   int SetSenderBufferingMode(int target_delay_ms);
   int SetSendTimestampOffsetStatus(bool enable, int id);
-  int SetReceiveTimestampOffsetStatus(bool enable, int id);
   int SetSendAbsoluteSendTimeStatus(bool enable, int id);
-  int SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
   int SetSendVideoRotationStatus(bool enable, int id);
-  int SetReceiveVideoRotationStatus(bool enable, int id);
   int SetSendTransportSequenceNumber(bool enable, int id);
-  int SetReceiveTransportSequenceNumber(bool enable, int id);
-  void SetRtcpXrRrtrStatus(bool enable);
-  void EnableTMMBR(bool enable);
 
   // Sets SSRC for outgoing stream.
   int32_t SetSSRC(const uint32_t SSRC,
@@ -123,12 +110,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   uint32_t GetRemoteSSRC();
 
   int SetRtxSendPayloadType(int payload_type, int associated_payload_type);
-  void SetRtxReceivePayloadType(int payload_type, int associated_payload_type);
-  // If set to true, the RTX payload type mapping supplied in
-  // |SetRtxReceivePayloadType| will be used when restoring RTX packets. Without
-  // it, RTX packets will always be restored to the last non-RTX packet payload
-  // type received.
-  void SetUseRtxPayloadMappingOnRestore(bool val);
 
   void SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state);
   RtpState GetRtpStateForSsrc(uint32_t ssrc);
@@ -151,10 +132,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void RegisterSendChannelRtcpStatisticsCallback(
       RtcpStatisticsCallback* callback);
 
-  // Called on generation of RTCP stats
-  void RegisterReceiveChannelRtcpStatisticsCallback(
-      RtcpStatisticsCallback* callback);
-
   // Gets send statistics for the rtp and rtx stream.
   void GetSendStreamDataCounters(StreamDataCounters* rtp_counters,
                                  StreamDataCounters* rtx_counters) const;
@@ -165,10 +142,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   // Called on update of RTP statistics.
   void RegisterSendChannelRtpStatisticsCallback(
-      StreamDataCountersCallback* callback);
-
-  // Called on update of RTP statistics.
-  void RegisterReceiveChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback);
 
   void GetSendRtcpPacketTypeCounter(
@@ -191,8 +164,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void OnIncomingSSRCChanged(const uint32_t ssrc) override;
   void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override;
 
-  int32_t SetRemoteSSRCType(const StreamType usage, const uint32_t SSRC);
-
   int32_t StartSend();
   int32_t StopSend();
   bool Sending();
@@ -211,6 +182,7 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
+  ViEReceiver* vie_receiver();
   VCMProtectionCallback* vcm_protection_callback();
 
 
@@ -256,10 +228,7 @@ class ViEChannel : public VCMFrameTypeCallback,
                           VoEVideoSync* ve_sync_interface);
   int32_t VoiceChannel();
 
-  // New-style callbacks, used by VideoReceiveStream.
   void RegisterPreRenderCallback(I420FrameCallback* pre_render_callback);
-  void RegisterPreDecodeImageCallback(
-      EncodedImageCallback* pre_decode_callback);
 
   void RegisterSendFrameCountObserver(FrameCountObserver* observer);
   void RegisterRtcpPacketTypeCounterObserver(
@@ -393,7 +362,6 @@ class ViEChannel : public VCMFrameTypeCallback,
         GUARDED_BY(critsect_);
   } rtcp_packet_type_counter_observer_;
 
-  const uint32_t number_of_cores_;
   const bool sender_;
 
   ProcessThread* const module_process_thread_;

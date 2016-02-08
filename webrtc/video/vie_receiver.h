@@ -73,10 +73,10 @@ class ViEReceiver : public RtpData {
   void StartReceive();
   void StopReceive();
 
-  // Receives packets from external transport.
-  int ReceivedRTPPacket(const void* rtp_packet, size_t rtp_packet_length,
-                        const PacketTime& packet_time);
-  int ReceivedRTCPPacket(const void* rtcp_packet, size_t rtcp_packet_length);
+  bool DeliverRtp(const uint8_t* rtp_packet,
+                  size_t rtp_packet_length,
+                  const PacketTime& packet_time);
+  bool DeliverRtcp(const uint8_t* rtcp_packet, size_t rtcp_packet_length);
 
   // Implements RtpData.
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
@@ -87,8 +87,6 @@ class ViEReceiver : public RtpData {
   ReceiveStatistics* GetReceiveStatistics() const;
 
  private:
-  int InsertRTPPacket(const uint8_t* rtp_packet, size_t rtp_packet_length,
-                      const PacketTime& packet_time);
   bool ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
                      const RTPHeader& header,
@@ -99,7 +97,6 @@ class ViEReceiver : public RtpData {
                                          size_t packet_length,
                                          const RTPHeader& header);
   void NotifyReceiverOfFecPacket(const RTPHeader& header);
-  int InsertRTCPPacket(const uint8_t* rtcp_packet, size_t rtcp_packet_length);
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   void UpdateHistograms();

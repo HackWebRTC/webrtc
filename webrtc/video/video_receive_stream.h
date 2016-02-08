@@ -21,7 +21,6 @@
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
-#include "webrtc/video/payload_router.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/vie_channel.h"
 #include "webrtc/video/vie_encoder.h"
@@ -32,6 +31,7 @@ namespace webrtc {
 
 class CallStats;
 class CongestionController;
+class ProcessThread;
 class VoiceEngine;
 
 namespace internal {
@@ -91,6 +91,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   IncomingVideoStream incoming_video_stream_;
   ReceiveStatisticsProxy stats_proxy_;
   ViEChannel vie_channel_;
+  ViEReceiver* const vie_receiver_;
+  RtpRtcp* const rtp_rtcp_;
 };
 }  // namespace internal
 }  // namespace webrtc

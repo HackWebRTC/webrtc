@@ -170,8 +170,8 @@ VideoSendStream::VideoSendStream(
   RTC_CHECK(vie_encoder_->Init());
 
   vie_channel_.reset(new ViEChannel(
-      num_cpu_cores, config.send_transport, module_process_thread_,
-      &payload_router_, nullptr, encoder_feedback_->GetRtcpIntraFrameObserver(),
+      config.send_transport, module_process_thread_, &payload_router_, nullptr,
+      encoder_feedback_->GetRtcpIntraFrameObserver(),
       congestion_controller_->GetBitrateController()
           ->CreateRtcpBandwidthObserver(),
       transport_feedback_observer,
