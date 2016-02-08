@@ -150,9 +150,9 @@ source_set("webrtc_h264") {
       "codecs/h264/h264_encoder_impl.h",
     ]
     deps += [
+      "../../common_video",
       "//third_party/ffmpeg:ffmpeg",
       "//third_party/openh264:encoder",
-      "//webrtc/common_video",
     ]
   }
 }

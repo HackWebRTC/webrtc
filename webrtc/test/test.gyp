@@ -83,8 +83,8 @@
         'rtp_file_writer.h',
       ],
       'dependencies': [
-        '<(DEPTH)/webrtc/common.gyp:webrtc_common',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
       ],
     },

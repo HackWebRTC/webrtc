@@ -20,8 +20,8 @@ config("ios_config") {
 if (is_ios) {
   source_set("rtc_api_objc") {
     deps = [
-      "//webrtc/base:rtc_base_objc",
-      #"//talk/libjingle:libjingle_peerconnection",
+      "../base:rtc_base_objc",
+      #"../../talk/libjingle:libjingle_peerconnection",
     ]
     cflags = [
       "-fobjc-arc",
