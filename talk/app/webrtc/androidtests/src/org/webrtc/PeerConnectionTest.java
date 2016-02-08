@@ -31,6 +31,8 @@ import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnection.IceGatheringState;
 import org.webrtc.PeerConnection.SignalingState;
 
+import android.test.suitebuilder.annotation.MediumTest;
+
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -44,14 +46,18 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.Assert.*;
-
 /** End-to-end tests for PeerConnection.java. */
-public class PeerConnectionTest {
-  // Set to true to render video.
-  private static final boolean RENDER_TO_GUI = false;
+import android.test.ActivityTestCase;
+
+public class PeerConnectionTest extends ActivityTestCase {
   private static final int TIMEOUT_SECONDS = 20;
   private TreeSet<String> threadsBeforeTest = null;
+
+  @Override
+  protected void setUp() {
+    assertTrue(PeerConnectionFactory.initializeAndroidGlobals(
+        getInstrumentation().getContext(), true, true, true));
+  }
 
   private static class ObserverExpectations implements PeerConnection.Observer,
                                                        VideoRenderer.Callbacks,
@@ -118,7 +124,6 @@ public class PeerConnectionTest {
     }
 
     private synchronized void setSize(int width, int height) {
-      assertFalse(RENDER_TO_GUI);
       // Because different camera devices (fake & physical) produce different
       // resolutions, we only sanity-check the set sizes,
       assertTrue(width > 0);
@@ -133,7 +138,6 @@ public class PeerConnectionTest {
     }
 
     public synchronized void expectFramesDelivered(int count) {
-      assertFalse(RENDER_TO_GUI);
       expectedFramesDelivered += count;
     }
 
@@ -458,14 +462,7 @@ public class PeerConnectionTest {
 
   private static VideoRenderer createVideoRenderer(
       VideoRenderer.Callbacks videoCallbacks) {
-    if (!RENDER_TO_GUI) {
-      return new VideoRenderer(videoCallbacks);
-    }
-    ++videoWindowsMapped;
-    assertTrue(videoWindowsMapped < 4);
-    int x = videoWindowsMapped % 2 != 0 ? 700 : 0;
-    int y = videoWindowsMapped >= 2 ? 0 : 500;
-    return VideoRenderer.createGui(x, y);
+    return new VideoRenderer(videoCallbacks);
   }
 
   // Return a weak reference to test that ownership is correctly held by
@@ -516,7 +513,8 @@ public class PeerConnectionTest {
     // Thread.sleep(100);
   }
 
-  void doTest() throws Exception {
+  @MediumTest
+  public void testCompleteSession() throws Exception {
     // Allow loopback interfaces too since our Android devices often don't
     // have those.
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
@@ -554,7 +552,7 @@ public class PeerConnectionTest {
     // We want to use the same camera for offerer & answerer, so create it here
     // instead of in addTracksToPC.
     VideoSource videoSource = factory.createVideoSource(
-        VideoCapturer.create(""), new MediaConstraints());
+        VideoCapturerAndroid.create("", null), new MediaConstraints());
 
     offeringExpectations.expectRenegotiationNeeded();
     WeakReference<MediaStream> oLMS = addTracksToPC(
@@ -648,12 +646,11 @@ public class PeerConnectionTest {
     assertEquals(answeringPC.getSenders().size(), 2);
     assertEquals(answeringPC.getReceivers().size(), 2);
 
-    if (!RENDER_TO_GUI) {
-      // Wait for at least some frames to be delivered at each end (number
-      // chosen arbitrarily).
-      offeringExpectations.expectFramesDelivered(10);
-      answeringExpectations.expectFramesDelivered(10);
-    }
+
+    // Wait for at least some frames to be delivered at each end (number
+    // chosen arbitrarily).
+    offeringExpectations.expectFramesDelivered(10);
+    answeringExpectations.expectFramesDelivered(10);
 
     offeringExpectations.expectStateChange(DataChannel.State.OPEN);
     // See commentary about SCTP DataChannels above for why this is here.
@@ -707,14 +704,6 @@ public class PeerConnectionTest {
     answeringExpectations.expectStateChange(DataChannel.State.CLOSED);
     answeringExpectations.dataChannel.close();
     offeringExpectations.dataChannel.close();
-
-    if (RENDER_TO_GUI) {
-      try {
-        Thread.sleep(3000);
-      } catch (Throwable t) {
-        throw new RuntimeException(t);
-      }
-    }
 
     // TODO(fischman) MOAR test ideas:
     // - Test that PC.removeStream() works; requires a second

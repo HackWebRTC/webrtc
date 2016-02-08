@@ -144,27 +144,14 @@ public class VideoRenderer {
      }
    }
 
-  // |this| either wraps a native (GUI) renderer or a client-supplied Callbacks
-  // (Java) implementation; this is indicated by |isWrappedVideoRenderer|.
   long nativeVideoRenderer;
-  private final boolean isWrappedVideoRenderer;
-
-  public static VideoRenderer createGui(int x, int y) {
-    long nativeVideoRenderer = nativeCreateGuiVideoRenderer(x, y);
-    if (nativeVideoRenderer == 0) {
-      return null;
-    }
-    return new VideoRenderer(nativeVideoRenderer);
-  }
 
   public VideoRenderer(Callbacks callbacks) {
     nativeVideoRenderer = nativeWrapVideoRenderer(callbacks);
-    isWrappedVideoRenderer = true;
   }
 
   private VideoRenderer(long nativeVideoRenderer) {
     this.nativeVideoRenderer = nativeVideoRenderer;
-    isWrappedVideoRenderer = false;
   }
 
   public void dispose() {
@@ -172,19 +159,12 @@ public class VideoRenderer {
       // Already disposed.
       return;
     }
-    if (!isWrappedVideoRenderer) {
-      freeGuiVideoRenderer(nativeVideoRenderer);
-    } else {
-      freeWrappedVideoRenderer(nativeVideoRenderer);
-    }
+
+    freeWrappedVideoRenderer(nativeVideoRenderer);
     nativeVideoRenderer = 0;
   }
 
-  private static native long nativeCreateGuiVideoRenderer(int x, int y);
   private static native long nativeWrapVideoRenderer(Callbacks callbacks);
-
-  private static native void freeGuiVideoRenderer(long nativeVideoRenderer);
   private static native void freeWrappedVideoRenderer(long nativeVideoRenderer);
-
   private static native void releaseNativeFrame(long nativeFramePointer);
 }

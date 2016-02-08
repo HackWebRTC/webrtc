@@ -59,7 +59,12 @@
 #include <limits>
 #include <utility>
 
+#include "talk/app/webrtc/androidvideocapturer.h"
 #include "talk/app/webrtc/dtlsidentitystore.h"
+#include "talk/app/webrtc/java/jni/androidmediadecoder_jni.h"
+#include "talk/app/webrtc/java/jni/androidmediaencoder_jni.h"
+#include "talk/app/webrtc/java/jni/androidvideocapturer_jni.h"
+#include "talk/app/webrtc/java/jni/androidnetworkmonitor_jni.h"
 #include "talk/app/webrtc/java/jni/classreferenceholder.h"
 #include "talk/app/webrtc/java/jni/jni_helpers.h"
 #include "talk/app/webrtc/java/jni/native_handle_impl.h"
@@ -83,19 +88,9 @@
 #include "webrtc/media/webrtc/webrtcvideodecoderfactory.h"
 #include "webrtc/media/webrtc/webrtcvideoencoderfactory.h"
 #include "webrtc/system_wrappers/include/field_trial_default.h"
+#include "webrtc/system_wrappers/include/logcat_trace_context.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/include/voe_base.h"
-
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
-#include "talk/app/webrtc/androidvideocapturer.h"
-#include "talk/app/webrtc/java/jni/androidmediadecoder_jni.h"
-#include "talk/app/webrtc/java/jni/androidmediaencoder_jni.h"
-#include "talk/app/webrtc/java/jni/androidnetworkmonitor_jni.h"
-#include "talk/app/webrtc/java/jni/androidvideocapturer_jni.h"
-#include "webrtc/modules/video_render/video_render_internal.h"
-#include "webrtc/system_wrappers/include/logcat_trace_context.h"
-using webrtc::LogcatTraceContext;
-#endif
 
 using cricket::WebRtcVideoDecoderFactory;
 using cricket::WebRtcVideoEncoderFactory;
@@ -112,6 +107,7 @@ using webrtc::DataChannelInit;
 using webrtc::DataChannelInterface;
 using webrtc::DataChannelObserver;
 using webrtc::IceCandidateInterface;
+using webrtc::LogcatTraceContext;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaSourceInterface;
 using webrtc::MediaStreamInterface;
@@ -137,11 +133,9 @@ namespace webrtc_jni {
 // Field trials initialization string
 static char *field_trials_init_string = NULL;
 
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
 static bool video_hw_acceleration_enabled = true;
-#endif
 
 // Return the (singleton) Java Enum object corresponding to |index|;
 // |state_class_fragment| is something like "MediaSource$State".
@@ -889,18 +883,14 @@ JOW(void, Logging_nativeEnableTracing)(
   std::string path = JavaToStdString(jni, j_path);
   if (nativeLevels != webrtc::kTraceNone) {
     webrtc::Trace::set_level_filter(nativeLevels);
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     if (path != "logcat:") {
-#endif
       RTC_CHECK_EQ(0, webrtc::Trace::SetTraceFile(path.c_str(), false))
           << "SetTraceFile failed";
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     } else {
       // Intentionally leak this to avoid needing to reason about its lifecycle.
       // It keeps no state and functions only as a dispatch point.
       static LogcatTraceContext* g_trace_callback = new LogcatTraceContext();
     }
-#endif
   }
   if (nativeSeverity >= rtc::LS_SENSITIVE && nativeSeverity <= rtc::LS_ERROR) {
     rtc::LogMessage::LogToDebug(
@@ -938,10 +928,6 @@ JOW(void, MediaSource_free)(JNIEnv*, jclass, jlong j_p) {
 
 JOW(void, VideoCapturer_free)(JNIEnv*, jclass, jlong j_p) {
   delete reinterpret_cast<cricket::VideoCapturer*>(j_p);
-}
-
-JOW(void, VideoRenderer_freeGuiVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
-  delete reinterpret_cast<VideoRendererWrapper*>(j_p);
 }
 
 JOW(void, VideoRenderer_freeWrappedVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
@@ -995,7 +981,6 @@ JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
   return (jlong)new PCOJava(jni, j_observer);
 }
 
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
     JNIEnv* jni, jclass, jobject context,
     jboolean initialize_audio, jboolean initialize_video,
@@ -1005,7 +990,6 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
   AndroidNetworkMonitor::SetAndroidContext(jni, context);
   if (!factory_static_initialized) {
     if (initialize_video) {
-      failure |= webrtc::SetRenderAndroidVM(GetJVM());
       failure |= AndroidVideoCapturerJni::SetAndroidObjects(jni, context);
     }
     if (initialize_audio)
@@ -1014,7 +998,6 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
   }
   return !failure;
 }
-#endif  // defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 
 JOW(void, PeerConnectionFactory_initializeFieldTrials)(
     JNIEnv* jni, jclass, jstring j_trials_init_string) {
@@ -1185,7 +1168,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   if (has_options) {
     options = ParseOptionsFromJava(jni, joptions);
   }
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
+
   if (video_hw_acceleration_enabled) {
     encoder_factory = new MediaCodecVideoEncoderFactory();
     decoder_factory = new MediaCodecVideoDecoderFactory();
@@ -1196,7 +1179,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
     network_monitor_factory = new AndroidNetworkMonitorFactory();
     rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
   }
-#endif
+
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory(worker_thread,
                                           signaling_thread,
@@ -1299,42 +1282,30 @@ JOW(jlong, PeerConnectionFactory_nativeCreateAudioTrack)(
 JOW(jboolean, PeerConnectionFactory_nativeStartAecDump)(
     JNIEnv* jni, jclass, jlong native_factory, jint file,
     jint filesize_limit_bytes) {
-#if defined(ANDROID)
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   return factory->StartAecDump(file, filesize_limit_bytes);
-#else
-  return false;
-#endif
 }
 
 JOW(void, PeerConnectionFactory_nativeStopAecDump)(
     JNIEnv* jni, jclass, jlong native_factory) {
-#if defined(ANDROID)
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   factory->StopAecDump();
-#endif
 }
 
 JOW(jboolean, PeerConnectionFactory_nativeStartRtcEventLog)(
     JNIEnv* jni, jclass, jlong native_factory, jint file) {
-#if defined(ANDROID)
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   return factory->StartRtcEventLog(file);
-#else
-  return false;
-#endif
 }
 
 JOW(void, PeerConnectionFactory_nativeStopRtcEventLog)(
     JNIEnv* jni, jclass, jlong native_factory) {
-#if defined(ANDROID)
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
   factory->StopRtcEventLog();
-#endif
 }
 
 JOW(void, PeerConnectionFactory_nativeSetOptions)(
@@ -1359,7 +1330,6 @@ JOW(void, PeerConnectionFactory_nativeSetOptions)(
 JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
     JNIEnv* jni, jclass, jlong native_factory, jobject local_egl_context,
     jobject remote_egl_context) {
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   OwnedFactoryAndThreads* owned_factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
 
@@ -1383,7 +1353,6 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
     LOG(LS_INFO) << "Set EGL context for HW decoding.";
     decoder_factory->SetEGLContext(jni, remote_egl_context);
   }
-#endif
 }
 
 static PeerConnectionInterface::IceTransportsType
@@ -1891,75 +1860,6 @@ JOW(jobject, MediaSource_nativeState)(JNIEnv* jni, jclass, jlong j_p) {
   rtc::scoped_refptr<MediaSourceInterface> p(
       reinterpret_cast<MediaSourceInterface*>(j_p));
   return JavaEnumFromIndex(jni, "MediaSource$State", p->state());
-}
-
-JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
-    JNIEnv* jni, jclass, jstring j_device_name) {
-// Since we can't create platform specific java implementations in Java, we
-// defer the creation to C land.
-#if defined(ANDROID)
-  // TODO(nisse): This case is intended to be deleted.
-  jclass j_video_capturer_class(
-      FindClass(jni, "org/webrtc/VideoCapturerAndroid"));
-  const int camera_id = jni->CallStaticIntMethod(
-      j_video_capturer_class,
-      GetStaticMethodID(jni, j_video_capturer_class, "lookupDeviceName",
-                        "(Ljava/lang/String;)I"),
-      j_device_name);
-  CHECK_EXCEPTION(jni) << "error during VideoCapturerAndroid.lookupDeviceName";
-  if (camera_id == -1)
-    return nullptr;
-  jobject j_video_capturer = jni->NewObject(
-      j_video_capturer_class,
-      GetMethodID(jni, j_video_capturer_class, "<init>", "(I)V"), camera_id);
-  CHECK_EXCEPTION(jni) << "error during creation of VideoCapturerAndroid";
-  jfieldID helper_fid = GetFieldID(jni, j_video_capturer_class, "surfaceHelper",
-                                   "Lorg/webrtc/SurfaceTextureHelper;");
-
-  rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
-      new rtc::RefCountedObject<AndroidVideoCapturerJni>(
-          jni, j_video_capturer,
-          GetObjectField(jni, j_video_capturer, helper_fid));
-  rtc::scoped_ptr<cricket::VideoCapturer> capturer(
-      new webrtc::AndroidVideoCapturer(delegate));
-
-#else
-  std::string device_name = JavaToStdString(jni, j_device_name);
-  scoped_ptr<cricket::DeviceManagerInterface> device_manager(
-      cricket::DeviceManagerFactory::Create());
-  RTC_CHECK(device_manager->Init()) << "DeviceManager::Init() failed";
-  cricket::Device device;
-  if (!device_manager->GetVideoCaptureDevice(device_name, &device)) {
-    LOG(LS_ERROR) << "GetVideoCaptureDevice failed for " << device_name;
-    return 0;
-  }
-  scoped_ptr<cricket::VideoCapturer> capturer(
-      device_manager->CreateVideoCapturer(device));
-
-  jclass j_video_capturer_class(
-      FindClass(jni, "org/webrtc/VideoCapturer"));
-  const jmethodID j_videocapturer_ctor(GetMethodID(
-      jni, j_video_capturer_class, "<init>", "()V"));
-  jobject j_video_capturer =
-      jni->NewObject(j_video_capturer_class,
-                     j_videocapturer_ctor);
-  CHECK_EXCEPTION(jni) << "error during creation of VideoCapturer";
-
-#endif
-  const jmethodID j_videocapturer_set_native_capturer(GetMethodID(
-      jni, j_video_capturer_class, "setNativeCapturer", "(J)V"));
-  jni->CallVoidMethod(j_video_capturer,
-                      j_videocapturer_set_native_capturer,
-                      jlongFromPointer(capturer.release()));
-  CHECK_EXCEPTION(jni) << "error during setNativeCapturer";
-  return j_video_capturer;
-}
-
-JOW(jlong, VideoRenderer_nativeCreateGuiVideoRenderer)(
-    JNIEnv* jni, jclass, int x, int y) {
-  scoped_ptr<VideoRendererWrapper> renderer(VideoRendererWrapper::Create(
-      cricket::VideoRendererFactory::CreateGuiVideoRenderer(x, y)));
-  return (jlong)renderer.release();
 }
 
 JOW(jlong, VideoRenderer_nativeWrapVideoRenderer)(

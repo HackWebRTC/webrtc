@@ -141,74 +141,6 @@
     },  # target peerconnection_unittests
   ],
   'conditions': [
-    ['OS=="linux"', {
-      'variables': {
-        'junit_jar': '<(DEPTH)/third_party/junit-jar/junit-4.11.jar',
-      },
-      'targets': [
-        {
-          'target_name': 'libjingle_peerconnection_test_jar',
-          'type': 'none',
-          'dependencies': [
-            'libjingle.gyp:libjingle_peerconnection_jar',
-          ],
-          'actions': [
-            {
-              'variables': {
-                'java_src_dir': 'app/webrtc/javatests/src',
-                'java_files': [
-                  'app/webrtc/java/testcommon/src/org/webrtc/PeerConnectionTest.java',
-                  'app/webrtc/javatests/src/org/webrtc/PeerConnectionTestJava.java',
-                ],
-              },
-              'action_name': 'create_jar',
-              'inputs': [
-                'build/build_jar.sh',
-                '<@(java_files)',
-                '<(PRODUCT_DIR)/libjingle_peerconnection.jar',
-                '<(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so',
-                '<(junit_jar)',
-              ],
-              'outputs': [
-                '<(PRODUCT_DIR)/libjingle_peerconnection_test.jar',
-              ],
-              'action': [
-                'build/build_jar.sh', '<(java_home)', '<@(_outputs)',
-                '<(INTERMEDIATE_DIR)',
-                '<(java_src_dir):<(PRODUCT_DIR)/libjingle_peerconnection.jar:<(junit_jar)',
-                '<@(java_files)'
-              ],
-            },
-          ],
-        },
-        {
-          'target_name': 'libjingle_peerconnection_java_unittest',
-          'type': 'none',
-          'actions': [
-            {
-              'action_name': 'copy libjingle_peerconnection_java_unittest',
-              'inputs': [
-                'app/webrtc/javatests/libjingle_peerconnection_java_unittest.sh',
-                '<(PRODUCT_DIR)/libjingle_peerconnection_test_jar',
-                '<(junit_jar)',
-              ],
-              'outputs': [
-                '<(PRODUCT_DIR)/libjingle_peerconnection_java_unittest',
-              ],
-              'action': [
-                'bash', '-c',
-                'rm -f <(PRODUCT_DIR)/libjingle_peerconnection_java_unittest && '
-                'sed -e "s@GYP_JAVA_HOME@<(java_home)@" '
-                '< app/webrtc/javatests/libjingle_peerconnection_java_unittest.sh '
-                '> <(PRODUCT_DIR)/libjingle_peerconnection_java_unittest && '
-                'cp <(junit_jar) <(PRODUCT_DIR) && '
-                'chmod u+x <(PRODUCT_DIR)/libjingle_peerconnection_java_unittest'
-              ],
-            },
-          ],
-        },
-      ],
-    }],
     ['OS=="android"', {
       'targets': [
         {
@@ -221,7 +153,6 @@
             'apk_name': 'libjingle_peerconnection_android_unittest',
             'java_in_dir': 'app/webrtc/androidtests',
             'resource_dir': 'app/webrtc/androidtests/res',
-            'additional_src_dirs': ['app/webrtc/java/testcommon'],
             'native_lib_target': 'libjingle_peerconnection_so',
             'is_test_apk': 1,
           },

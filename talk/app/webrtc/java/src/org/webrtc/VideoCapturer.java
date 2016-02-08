@@ -28,17 +28,11 @@
 package org.webrtc;
 
 /** Java version of cricket::VideoCapturer. */
+// TODO(perkj): Merge VideoCapturer and VideoCapturerAndroid.
 public class VideoCapturer {
   private long nativeVideoCapturer;
 
   protected VideoCapturer() {
-  }
-
-  public static VideoCapturer create(String deviceName) {
-    Object capturer = nativeCreateVideoCapturer(deviceName);
-    if (capturer != null)
-      return (VideoCapturer) (capturer);
-    return null;
   }
 
   // Sets |nativeCapturer| to be owned by VideoCapturer.
@@ -63,8 +57,6 @@ public class VideoCapturer {
       free(nativeVideoCapturer);
     }
   }
-
-  private static native Object nativeCreateVideoCapturer(String deviceName);
 
   private static native void free(long nativeVideoCapturer);
 }
