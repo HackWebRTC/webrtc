@@ -34,6 +34,7 @@ class EncoderStateFeedback;
 class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
+class VieRemb;
 
 namespace internal {
 
@@ -44,6 +45,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   ProcessThread* module_process_thread,
                   CallStats* call_stats,
                   CongestionController* congestion_controller,
+                  VieRemb* remb,
                   BitrateAllocator* bitrate_allocator,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
@@ -86,6 +88,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   ProcessThread* const module_process_thread_;
   CallStats* const call_stats_;
   CongestionController* const congestion_controller_;
+  VieRemb* const remb_;
 
   OveruseFrameDetector overuse_detector_;
   rtc::scoped_ptr<VideoCaptureInput> input_;

@@ -32,8 +32,8 @@ class RemoteBitrateObserver {
  public:
   // Called when a receive channel group has a new bitrate estimate for the
   // incoming streams.
-  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate) = 0;
+  virtual void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                       uint32_t bitrate) = 0;
 
   virtual ~RemoteBitrateObserver() {}
 };
@@ -80,13 +80,13 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
                               bool was_paced) = 0;
 
   // Removes all data for |ssrc|.
-  virtual void RemoveStream(unsigned int ssrc) = 0;
+  virtual void RemoveStream(uint32_t ssrc) = 0;
 
   // Returns true if a valid estimate exists and sets |bitrate_bps| to the
   // estimated payload bitrate in bits per second. |ssrcs| is the list of ssrcs
   // currently being received and of which the bitrate estimate is based upon.
-  virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
-                              unsigned int* bitrate_bps) const = 0;
+  virtual bool LatestEstimate(std::vector<uint32_t>* ssrcs,
+                              uint32_t* bitrate_bps) const = 0;
 
   // Returns true if the statistics are available.
   virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const = 0;

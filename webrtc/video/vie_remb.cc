@@ -24,7 +24,7 @@ namespace webrtc {
 const int kRembSendIntervalMs = 200;
 
 // % threshold for if we should send a new REMB asap.
-const unsigned int kSendThresholdPercent = 97;
+const uint32_t kSendThresholdPercent = 97;
 
 VieRemb::VieRemb(Clock* clock)
     : clock_(clock),
@@ -90,15 +90,15 @@ bool VieRemb::InUse() const {
   return !receive_modules_.empty() || !rtcp_sender_.empty();
 }
 
-void VieRemb::OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                      unsigned int bitrate) {
+void VieRemb::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                      uint32_t bitrate) {
   RtpRtcp* sender = NULL;
   {
     rtc::CritScope lock(&list_crit_);
     // If we already have an estimate, check if the new total estimate is below
     // kSendThresholdPercent of the previous estimate.
     if (last_send_bitrate_ > 0) {
-      unsigned int new_remb_bitrate = last_send_bitrate_ - bitrate_ + bitrate;
+      uint32_t new_remb_bitrate = last_send_bitrate_ - bitrate_ + bitrate;
 
       if (new_remb_bitrate < kSendThresholdPercent * last_send_bitrate_ / 100) {
         // The new bitrate estimate is less than kSendThresholdPercent % of the

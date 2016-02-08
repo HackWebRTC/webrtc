@@ -33,6 +33,7 @@ class CallStats;
 class CongestionController;
 class ProcessThread;
 class VoiceEngine;
+class VieRemb;
 
 namespace internal {
 
@@ -46,7 +47,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      const VideoReceiveStream::Config& config,
                      webrtc::VoiceEngine* voice_engine,
                      ProcessThread* process_thread,
-                     CallStats* call_stats);
+                     CallStats* call_stats,
+                     VieRemb* remb);
   ~VideoReceiveStream() override;
 
   // webrtc::ReceiveStream implementation.
@@ -86,6 +88,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   CongestionController* const congestion_controller_;
   CallStats* const call_stats_;
+  VieRemb* const remb_;
 
   rtc::scoped_ptr<VideoCodingModule> vcm_;
   IncomingVideoStream incoming_video_stream_;

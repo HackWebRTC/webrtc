@@ -11,45 +11,40 @@
 #ifndef WEBRTC_CALL_CONGESTION_CONTROLLER_H_
 #define WEBRTC_CALL_CONGESTION_CONTROLLER_H_
 
-#include <vector>
-
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/socket.h"
 #include "webrtc/stream.h"
+
+namespace rtc {
+struct SentPacket;
+}
 
 namespace webrtc {
 
 class BitrateController;
 class BitrateObserver;
 class CallStats;
-class Config;
+class Clock;
 class PacedSender;
 class PacketRouter;
 class ProcessThread;
 class RemoteBitrateEstimator;
+class RemoteBitrateObserver;
 class RemoteEstimatorProxy;
 class RtpRtcp;
-class SendStatisticsProxy;
 class TransportFeedbackAdapter;
 class TransportFeedbackObserver;
-class ViEEncoder;
-class VieRemb;
 
 class CongestionController {
  public:
-  CongestionController(ProcessThread* process_thread, CallStats* call_stats,
-                       BitrateObserver* bitrate_observer);
+  CongestionController(Clock* clock,
+                       ProcessThread* process_thread,
+                       CallStats* call_stats,
+                       BitrateObserver* bitrate_observer,
+                       RemoteBitrateObserver* remote_bitrate_observer);
   virtual ~CongestionController();
-  virtual void AddEncoder(ViEEncoder* encoder);
-  virtual void RemoveEncoder(ViEEncoder* encoder);
   virtual void SetBweBitrates(int min_bitrate_bps,
                               int start_bitrate_bps,
                               int max_bitrate_bps);
-
-  virtual void SetChannelRembStatus(bool sender,
-                                    bool receiver,
-                                    RtpRtcp* rtp_module);
 
   virtual void SignalNetworkState(NetworkState state);
 
@@ -68,14 +63,11 @@ class CongestionController {
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet);
 
  private:
-  rtc::scoped_ptr<VieRemb> remb_;
+  Clock* const clock_;
   rtc::scoped_ptr<PacketRouter> packet_router_;
   rtc::scoped_ptr<PacedSender> pacer_;
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   rtc::scoped_ptr<RemoteEstimatorProxy> remote_estimator_proxy_;
-
-  rtc::CriticalSection encoder_crit_;
-  std::vector<ViEEncoder*> encoders_ GUARDED_BY(encoder_crit_);
 
   // Registered at construct time and assumed to outlive this class.
   ProcessThread* const process_thread_;

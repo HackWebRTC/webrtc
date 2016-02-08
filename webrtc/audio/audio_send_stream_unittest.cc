@@ -19,6 +19,7 @@
 #include "webrtc/call/congestion_controller.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
 #include "webrtc/video/call_stats.h"
@@ -51,12 +52,15 @@ const uint32_t kTelephoneEventDuration = 6789;
 
 struct ConfigHelper {
   ConfigHelper()
-      : stream_config_(nullptr),
-        call_stats_(Clock::GetRealTimeClock()),
+      : simulated_clock_(123456),
+        stream_config_(nullptr),
+        call_stats_(&simulated_clock_),
         process_thread_(ProcessThread::Create("AudioTestThread")),
-        congestion_controller_(process_thread_.get(),
+        congestion_controller_(&simulated_clock_,
+                               process_thread_.get(),
                                &call_stats_,
-                               &bitrate_observer_) {
+                               &bitrate_observer_,
+                               &remote_bitrate_observer_) {
     using testing::Invoke;
     using testing::StrEq;
 
@@ -153,12 +157,14 @@ struct ConfigHelper {
   }
 
  private:
+  SimulatedClock simulated_clock_;
   testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
   CallStats call_stats_;
   testing::NiceMock<MockBitrateObserver> bitrate_observer_;
+  testing::NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   rtc::scoped_ptr<ProcessThread> process_thread_;
   CongestionController congestion_controller_;
 };

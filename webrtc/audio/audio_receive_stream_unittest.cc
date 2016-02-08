@@ -67,9 +67,11 @@ struct ConfigHelper {
   ConfigHelper()
       : simulated_clock_(123456),
         call_stats_(&simulated_clock_),
-        congestion_controller_(&process_thread_,
+        congestion_controller_(&simulated_clock_,
+                               &process_thread_,
                                &call_stats_,
-                               &bitrate_observer_) {
+                               &bitrate_observer_,
+                               &remote_bitrate_observer_) {
     using testing::Invoke;
 
     EXPECT_CALL(voice_engine_,
@@ -157,6 +159,7 @@ struct ConfigHelper {
   CallStats call_stats_;
   PacketRouter packet_router_;
   testing::NiceMock<MockBitrateObserver> bitrate_observer_;
+  testing::NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   testing::NiceMock<MockProcessThread> process_thread_;
   MockCongestionController congestion_controller_;
   MockRemoteBitrateEstimator remote_bitrate_estimator_;

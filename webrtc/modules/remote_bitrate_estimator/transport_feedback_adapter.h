@@ -48,8 +48,8 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   }
 
  private:
-  void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                               unsigned int bitrate) override;
+  void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                               uint32_t bitrate) override;
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
   rtc::CriticalSection lock_;

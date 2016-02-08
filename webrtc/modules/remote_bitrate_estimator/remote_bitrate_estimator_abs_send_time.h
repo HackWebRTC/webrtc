@@ -83,14 +83,14 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   int32_t Process() override;
   int64_t TimeUntilNextProcess() override;
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
-  void RemoveStream(unsigned int ssrc) override;
-  bool LatestEstimate(std::vector<unsigned int>* ssrcs,
-                      unsigned int* bitrate_bps) const override;
+  void RemoveStream(uint32_t ssrc) override;
+  bool LatestEstimate(std::vector<uint32_t>* ssrcs,
+                      uint32_t* bitrate_bps) const override;
   bool GetStats(ReceiveBandwidthEstimatorStats* output) const override;
   void SetMinBitrate(int min_bitrate_bps) override;
 
  private:
-  typedef std::map<unsigned int, int64_t> Ssrcs;
+  typedef std::map<uint32_t, int64_t> Ssrcs;
 
   static bool IsWithinClusterBounds(int send_delta_ms,
                                     const Cluster& cluster_aggregate);

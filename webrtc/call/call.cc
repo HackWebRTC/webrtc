@@ -41,6 +41,7 @@
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
+#include "webrtc/video/vie_remb.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 
 namespace webrtc {
@@ -165,6 +166,7 @@ class Call : public webrtc::Call, public PacketReceiver,
   int64_t pacer_bitrate_sum_kbits_ GUARDED_BY(&bitrate_crit_);
   int64_t num_bitrate_updates_ GUARDED_BY(&bitrate_crit_);
 
+  VieRemb remb_;
   const rtc::scoped_ptr<CongestionController> congestion_controller_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
@@ -196,10 +198,13 @@ Call::Call(const Call::Config& config)
       estimated_send_bitrate_sum_kbits_(0),
       pacer_bitrate_sum_kbits_(0),
       num_bitrate_updates_(0),
+      remb_(clock_),
       congestion_controller_(
-          new CongestionController(module_process_thread_.get(),
+          new CongestionController(clock_,
+                                   module_process_thread_.get(),
                                    call_stats_.get(),
-                                   this)) {
+                                   this,
+                                   &remb_)) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -226,6 +231,7 @@ Call::Call(const Call::Config& config)
 }
 
 Call::~Call() {
+  RTC_DCHECK(!remb_.InUse());
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   UpdateSendHistograms();
   UpdateReceiveHistograms();
@@ -379,7 +385,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // the call has already started.
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), call_stats_.get(),
-      congestion_controller_.get(), bitrate_allocator_.get(), config,
+      congestion_controller_.get(), &remb_, bitrate_allocator_.get(), config,
       encoder_config, suspended_video_send_ssrcs_);
 
   if (!network_enabled_)
@@ -437,8 +443,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      num_cpu_cores_, congestion_controller_.get(), config,
-      voice_engine(), module_process_thread_.get(), call_stats_.get());
+      num_cpu_cores_, congestion_controller_.get(), config, voice_engine(),
+      module_process_thread_.get(), call_stats_.get(), &remb_);
 
   WriteLockScoped write_lock(*receive_crit_);
   RTC_DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==

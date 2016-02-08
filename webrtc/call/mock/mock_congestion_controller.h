@@ -12,6 +12,7 @@
 #define WEBRTC_CALL_MOCK_MOCK_CONGESTION_CONTROLLER_H_
 
 #include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/base/socket.h"
 #include "webrtc/call/congestion_controller.h"
 
 namespace webrtc {
@@ -19,18 +20,20 @@ namespace test {
 
 class MockCongestionController : public CongestionController {
  public:
-  MockCongestionController(ProcessThread* process_thread,
+  MockCongestionController(Clock* clock,
+                           ProcessThread* process_thread,
                            CallStats* call_stats,
-                           BitrateObserver* bitrate_observer)
-      : CongestionController(process_thread, call_stats, bitrate_observer) {}
-  MOCK_METHOD1(AddEncoder, void(ViEEncoder* encoder));
-  MOCK_METHOD1(RemoveEncoder, void(ViEEncoder* encoder));
+                           BitrateObserver* bitrate_observer,
+                           RemoteBitrateObserver* remote_bitrate_observer)
+      : CongestionController(clock,
+                             process_thread,
+                             call_stats,
+                             bitrate_observer,
+                             remote_bitrate_observer) {}
   MOCK_METHOD3(SetBweBitrates,
                void(int min_bitrate_bps,
                     int start_bitrate_bps,
                     int max_bitrate_bps));
-  MOCK_METHOD3(SetChannelRembStatus,
-               void(bool sender, bool receiver, RtpRtcp* rtp_module));
   MOCK_METHOD1(SignalNetworkState, void(NetworkState state));
   MOCK_CONST_METHOD0(GetBitrateController, BitrateController*());
   MOCK_CONST_METHOD1(GetRemoteBitrateEstimator,

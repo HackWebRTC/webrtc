@@ -28,6 +28,7 @@
 #include "webrtc/video/video_capture_input.h"
 #include "webrtc/video/vie_channel.h"
 #include "webrtc/video/vie_encoder.h"
+#include "webrtc/video/vie_remb.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -125,6 +126,7 @@ VideoSendStream::VideoSendStream(
     ProcessThread* module_process_thread,
     CallStats* call_stats,
     CongestionController* congestion_controller,
+    VieRemb* remb,
     BitrateAllocator* bitrate_allocator,
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
@@ -139,6 +141,7 @@ VideoSendStream::VideoSendStream(
       module_process_thread_(module_process_thread),
       call_stats_(call_stats),
       congestion_controller_(congestion_controller),
+      remb_(remb),
       overuse_detector_(
           Clock::GetRealTimeClock(),
           GetCpuOveruseOptions(config.encoder_settings.full_overuse_time),
@@ -148,7 +151,12 @@ VideoSendStream::VideoSendStream(
       encoder_feedback_(new EncoderStateFeedback()),
       use_config_bitrate_(true) {
   LOG(LS_INFO) << "VideoSendStream: " << config_.ToString();
+
   RTC_DCHECK(!config_.rtp.ssrcs.empty());
+  RTC_DCHECK(module_process_thread_);
+  RTC_DCHECK(call_stats_);
+  RTC_DCHECK(congestion_controller_);
+  RTC_DCHECK(remb_);
 
   // Set up Call-wide sequence numbers, if configured for this send stream.
   TransportFeedbackObserver* transport_feedback_observer = nullptr;
@@ -206,8 +214,9 @@ VideoSendStream::VideoSendStream(
     }
   }
 
-  congestion_controller_->SetChannelRembStatus(true, false,
-                                               vie_channel_->rtp_rtcp());
+  RtpRtcp* rtp_module = vie_channel_->rtp_rtcp();
+  remb_->AddRembSender(rtp_module);
+  rtp_module->SetREMBStatus(true);
 
   // Enable NACK, FEC or both.
   const bool enable_protection_nack = config_.rtp.nack.rtp_history_ms > 0;
@@ -249,7 +258,6 @@ VideoSendStream::VideoSendStream(
   if (config_.suspend_below_min_bitrate)
     vie_encoder_->SuspendBelowMinBitrate();
 
-  congestion_controller_->AddEncoder(vie_encoder_.get());
   encoder_feedback_->AddEncoder(ssrcs, vie_encoder_.get());
 
   vie_channel_->RegisterSendChannelRtcpStatisticsCallback(&stats_proxy_);
@@ -282,12 +290,13 @@ VideoSendStream::~VideoSendStream() {
       config_.encoder_settings.payload_type);
 
   call_stats_->DeregisterStatsObserver(vie_channel_->GetStatsObserver());
-  congestion_controller_->SetChannelRembStatus(false, false,
-                                               vie_channel_->rtp_rtcp());
+
+  RtpRtcp* rtp_module = vie_channel_->rtp_rtcp();
+  rtp_module->SetREMBStatus(false);
+  remb_->RemoveRembSender(rtp_module);
 
   // Remove the feedback, stop all encoding threads and processing. This must be
   // done before deleting the channel.
-  congestion_controller_->RemoveEncoder(vie_encoder_.get());
   encoder_feedback_->RemoveEncoder(vie_encoder_.get());
 
   uint32_t remote_ssrc = vie_channel_->GetRemoteSSRC();

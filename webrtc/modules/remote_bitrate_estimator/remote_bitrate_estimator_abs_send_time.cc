@@ -371,7 +371,7 @@ void RemoteBitrateEstimatorAbsSendTime::UpdateEstimate(int64_t now_ms) {
                                incoming_bitrate_.Rate(now_ms),
                                estimator_.var_noise());
   remote_rate_.Update(&input, now_ms);
-  unsigned int target_bitrate = remote_rate_.UpdateBandwidthEstimate(now_ms);
+  uint32_t target_bitrate = remote_rate_.UpdateBandwidthEstimate(now_ms);
   if (remote_rate_.ValidEstimate()) {
     process_interval_ms_ = remote_rate_.GetFeedbackInterval();
     observer_->OnReceiveBitrateChanged(Keys(ssrcs_), target_bitrate);
@@ -384,14 +384,14 @@ void RemoteBitrateEstimatorAbsSendTime::OnRttUpdate(int64_t avg_rtt_ms,
   remote_rate_.SetRtt(avg_rtt_ms);
 }
 
-void RemoteBitrateEstimatorAbsSendTime::RemoveStream(unsigned int ssrc) {
+void RemoteBitrateEstimatorAbsSendTime::RemoveStream(uint32_t ssrc) {
   CriticalSectionScoped cs(crit_sect_.get());
   ssrcs_.erase(ssrc);
 }
 
 bool RemoteBitrateEstimatorAbsSendTime::LatestEstimate(
-    std::vector<unsigned int>* ssrcs,
-    unsigned int* bitrate_bps) const {
+    std::vector<uint32_t>* ssrcs,
+    uint32_t* bitrate_bps) const {
   CriticalSectionScoped cs(crit_sect_.get());
   assert(ssrcs);
   assert(bitrate_bps);

@@ -24,8 +24,8 @@ class Observer : public webrtc::RemoteBitrateObserver {
 
   // Called when a receive channel group has a new bitrate estimate for the
   // incoming streams.
-  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate) {
+  virtual void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                       uint32_t bitrate) {
     printf("[%u] Num SSRCs: %d, bitrate: %u\n",
            static_cast<uint32_t>(clock_->TimeInMilliseconds()),
            static_cast<int>(ssrcs.size()), bitrate);

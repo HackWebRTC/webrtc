@@ -51,8 +51,8 @@ class VieRemb : public RemoteBitrateObserver {
   // estimate has decreased or if no RTCP REMB packet has been sent for
   // a certain time interval.
   // Implements RtpReceiveBitrateUpdate.
-  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate);
+  virtual void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                       uint32_t bitrate);
 
  private:
   typedef std::list<RtpRtcp*> RtpModules;
@@ -62,7 +62,7 @@ class VieRemb : public RemoteBitrateObserver {
 
   // The last time a REMB was sent.
   int64_t last_remb_time_;
-  unsigned int last_send_bitrate_;
+  uint32_t last_send_bitrate_;
 
   // All RtpRtcp modules to include in the REMB packet.
   RtpModules receive_modules_;
@@ -71,7 +71,7 @@ class VieRemb : public RemoteBitrateObserver {
   RtpModules rtcp_sender_;
 
   // The last bitrate update.
-  unsigned int bitrate_;
+  uint32_t bitrate_;
 };
 
 }  // namespace webrtc

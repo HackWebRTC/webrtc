@@ -58,8 +58,8 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
                      const MediaPacket& media_packet) override;
   FeedbackPacket* GetFeedback(int64_t now_ms) override;
   // Implements RemoteBitrateObserver.
-  void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                               unsigned int bitrate) override;
+  void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                               uint32_t bitrate) override;
 
  private:
   static RTCPReportBlock BuildReportBlock(StreamStatistician* statistician);

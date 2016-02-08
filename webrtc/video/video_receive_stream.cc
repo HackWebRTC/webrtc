@@ -23,6 +23,7 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/receive_statistics_proxy.h"
+#include "webrtc/video/vie_remb.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
@@ -147,7 +148,8 @@ VideoReceiveStream::VideoReceiveStream(
     const VideoReceiveStream::Config& config,
     webrtc::VoiceEngine* voice_engine,
     ProcessThread* process_thread,
-    CallStats* call_stats)
+    CallStats* call_stats,
+    VieRemb* remb)
     : transport_adapter_(config.rtcp_send_transport),
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
@@ -155,6 +157,7 @@ VideoReceiveStream::VideoReceiveStream(
       clock_(Clock::GetRealTimeClock()),
       congestion_controller_(congestion_controller),
       call_stats_(call_stats),
+      remb_(remb),
       vcm_(VideoCodingModule::Create(clock_, nullptr, nullptr)),
       incoming_video_stream_(
           0,
@@ -178,6 +181,10 @@ VideoReceiveStream::VideoReceiveStream(
       rtp_rtcp_(vie_channel_.rtp_rtcp()) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
+  RTC_DCHECK(process_thread_);
+  RTC_DCHECK(congestion_controller_);
+  RTC_DCHECK(call_stats_);
+  RTC_DCHECK(remb_);
   RTC_CHECK(vie_channel_.Init() == 0);
 
   // Register the channel to receive stats updates.
@@ -210,8 +217,10 @@ VideoReceiveStream::VideoReceiveStream(
   vie_receiver_->SetUseRtxPayloadMappingOnRestore(
       config_.rtp.use_rtx_payload_mapping_on_restore);
 
-  congestion_controller_->SetChannelRembStatus(false, config_.rtp.remb,
-                                               rtp_rtcp_);
+  if (config_.rtp.remb) {
+    rtp_rtcp_->SetREMBStatus(true);
+    remb_->AddReceiveChannel(rtp_rtcp_);
+  }
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
@@ -304,7 +313,8 @@ VideoReceiveStream::~VideoReceiveStream() {
   vcm_->RegisterPreDecodeImageCallback(nullptr);
 
   call_stats_->DeregisterStatsObserver(vie_channel_.GetStatsObserver());
-  congestion_controller_->SetChannelRembStatus(false, false, rtp_rtcp_);
+  rtp_rtcp_->SetREMBStatus(false);
+  remb_->RemoveReceiveChannel(rtp_rtcp_);
 
   congestion_controller_->GetRemoteBitrateEstimator(UseSendSideBwe(config_))
       ->RemoveStream(vie_receiver_->GetRemoteSsrc());

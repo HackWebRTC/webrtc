@@ -10,8 +10,11 @@
 
 #include "webrtc/call/congestion_controller.h"
 
+#include <vector>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/socket.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
@@ -21,14 +24,10 @@
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/payload_router.h"
-#include "webrtc/video/vie_encoder.h"
-#include "webrtc/video/vie_remb.h"
-#include "webrtc/voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
 namespace {
@@ -131,7 +130,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   }
 
   RemoteBitrateObserver* observer_;
-  Clock* clock_;
+  Clock* const clock_;
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   rtc::scoped_ptr<RemoteBitrateEstimator> rbe_;
   bool using_absolute_send_time_;
@@ -143,30 +142,31 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
 }  // namespace
 
-CongestionController::CongestionController(ProcessThread* process_thread,
-                                           CallStats* call_stats,
-                                           BitrateObserver* bitrate_observer)
-    : remb_(new VieRemb(Clock::GetRealTimeClock())),
+CongestionController::CongestionController(
+    Clock* clock,
+    ProcessThread* process_thread,
+    CallStats* call_stats,
+    BitrateObserver* bitrate_observer,
+    RemoteBitrateObserver* remote_bitrate_observer)
+    : clock_(clock),
       packet_router_(new PacketRouter()),
-      pacer_(new PacedSender(Clock::GetRealTimeClock(),
+      pacer_(new PacedSender(clock_,
                              packet_router_.get(),
                              BitrateController::kDefaultStartBitrateKbps,
                              PacedSender::kDefaultPaceMultiplier *
                                  BitrateController::kDefaultStartBitrateKbps,
                              0)),
       remote_bitrate_estimator_(
-          new WrappingBitrateEstimator(remb_.get(), Clock::GetRealTimeClock())),
+          new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
       remote_estimator_proxy_(
-          new RemoteEstimatorProxy(Clock::GetRealTimeClock(),
-                                   packet_router_.get())),
+          new RemoteEstimatorProxy(clock_, packet_router_.get())),
       process_thread_(process_thread),
       call_stats_(call_stats),
       pacer_thread_(ProcessThread::Create("PacerThread")),
       // Constructed last as this object calls the provided callback on
       // construction.
       bitrate_controller_(
-          BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                     bitrate_observer)),
+          BitrateController::CreateBitrateController(clock_, bitrate_observer)),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps) {
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
 
@@ -174,8 +174,8 @@ CongestionController::CongestionController(ProcessThread* process_thread,
   pacer_thread_->RegisterModule(remote_estimator_proxy_.get());
   pacer_thread_->Start();
 
-  process_thread->RegisterModule(remote_bitrate_estimator_.get());
-  process_thread->RegisterModule(bitrate_controller_.get());
+  process_thread_->RegisterModule(remote_bitrate_estimator_.get());
+  process_thread_->RegisterModule(bitrate_controller_.get());
 }
 
 CongestionController::~CongestionController() {
@@ -187,24 +187,8 @@ CongestionController::~CongestionController() {
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
   if (transport_feedback_adapter_.get())
     call_stats_->DeregisterStatsObserver(transport_feedback_adapter_.get());
-  RTC_DCHECK(!remb_->InUse());
-  RTC_DCHECK(encoders_.empty());
 }
 
-void CongestionController::AddEncoder(ViEEncoder* encoder) {
-  rtc::CritScope lock(&encoder_crit_);
-  encoders_.push_back(encoder);
-}
-
-void CongestionController::RemoveEncoder(ViEEncoder* encoder) {
-  rtc::CritScope lock(&encoder_crit_);
-  for (auto it = encoders_.begin(); it != encoders_.end(); ++it) {
-    if (*it == encoder) {
-      encoders_.erase(it);
-      return;
-    }
-  }
-}
 
 void CongestionController::SetBweBitrates(int min_bitrate_bps,
                                           int start_bitrate_bps,
@@ -237,10 +221,10 @@ TransportFeedbackObserver*
 CongestionController::GetTransportFeedbackObserver() {
   if (transport_feedback_adapter_.get() == nullptr) {
     transport_feedback_adapter_.reset(new TransportFeedbackAdapter(
-        bitrate_controller_.get(), Clock::GetRealTimeClock(), process_thread_));
+        bitrate_controller_.get(), clock_, process_thread_));
     transport_feedback_adapter_->SetBitrateEstimator(
-        new RemoteBitrateEstimatorAbsSendTime(
-            transport_feedback_adapter_.get(), Clock::GetRealTimeClock()));
+        new RemoteBitrateEstimatorAbsSendTime(transport_feedback_adapter_.get(),
+                                              clock_));
     transport_feedback_adapter_->GetBitrateEstimator()->SetMinBitrate(
         min_bitrate_bps_);
     call_stats_->RegisterStatsObserver(transport_feedback_adapter_.get());
@@ -256,23 +240,6 @@ void CongestionController::UpdatePacerBitrate(int bitrate_kbps,
 
 int64_t CongestionController::GetPacerQueuingDelayMs() const {
   return pacer_->QueueInMs();
-}
-
-// TODO(mflodman): Move out of this class.
-void CongestionController::SetChannelRembStatus(bool sender,
-                                                bool receiver,
-                                                RtpRtcp* rtp_module) {
-  rtp_module->SetREMBStatus(sender || receiver);
-  if (sender) {
-    remb_->AddRembSender(rtp_module);
-  } else {
-    remb_->RemoveRembSender(rtp_module);
-  }
-  if (receiver) {
-    remb_->AddReceiveChannel(rtp_module);
-  } else {
-    remb_->RemoveReceiveChannel(rtp_module);
-  }
 }
 
 void CongestionController::SignalNetworkState(NetworkState state) {

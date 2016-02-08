@@ -128,10 +128,8 @@ FeedbackPacket* RembReceiver::GetFeedback(int64_t now_ms) {
   return feedback;
 }
 
-void RembReceiver::OnReceiveBitrateChanged(
-    const std::vector<unsigned int>& ssrcs,
-    unsigned int bitrate) {
-}
+void RembReceiver::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                           uint32_t bitrate) {}
 
 RTCPReportBlock RembReceiver::BuildReportBlock(
     StreamStatistician* statistician) {
@@ -148,8 +146,8 @@ RTCPReportBlock RembReceiver::BuildReportBlock(
 
 bool RembReceiver::LatestEstimate(uint32_t* estimate_bps) {
   if (latest_estimate_bps_ < 0) {
-    std::vector<unsigned int> ssrcs;
-    unsigned int bps = 0;
+    std::vector<uint32_t> ssrcs;
+    uint32_t bps = 0;
     if (!estimator_->LatestEstimate(&ssrcs, &bps)) {
       return false;
     }

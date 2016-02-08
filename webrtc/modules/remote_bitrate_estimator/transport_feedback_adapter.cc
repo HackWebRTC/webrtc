@@ -122,8 +122,8 @@ void TransportFeedbackAdapter::OnTransportFeedback(
 }
 
 void TransportFeedbackAdapter::OnReceiveBitrateChanged(
-    const std::vector<unsigned int>& ssrcs,
-    unsigned int bitrate) {
+    const std::vector<uint32_t>& ssrcs,
+    uint32_t bitrate) {
   bitrate_controller_->UpdateDelayBasedEstimate(bitrate);
 }
 
