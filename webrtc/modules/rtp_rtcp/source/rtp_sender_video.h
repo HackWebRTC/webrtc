@@ -52,7 +52,7 @@ class RTPSenderVideo {
                     const uint8_t* payloadData,
                     const size_t payloadSize,
                     const RTPFragmentationHeader* fragmentation,
-                    const RTPVideoHeader* rtpHdr);
+                    const RTPVideoHeader* video_header);
 
   int32_t SendRTPIntraRequest();
 

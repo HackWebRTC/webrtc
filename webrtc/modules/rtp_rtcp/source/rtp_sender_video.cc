@@ -230,14 +230,14 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
                                   const uint8_t* payloadData,
                                   const size_t payloadSize,
                                   const RTPFragmentationHeader* fragmentation,
-                                  const RTPVideoHeader* rtpHdr) {
+                                  const RTPVideoHeader* video_header) {
   if (payloadSize == 0) {
     return -1;
   }
 
-  rtc::scoped_ptr<RtpPacketizer> packetizer(
-      RtpPacketizer::Create(videoType, _rtpSender.MaxDataPayloadLength(),
-                            &(rtpHdr->codecHeader), frameType));
+  rtc::scoped_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
+      videoType, _rtpSender.MaxDataPayloadLength(),
+      video_header ? &(video_header->codecHeader) : nullptr, frameType));
 
   StorageType storage;
   bool fec_enabled;
@@ -253,7 +253,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
   // Register CVO rtp header extension at the first time when we receive a frame
   // with pending rotation.
   RTPSenderInterface::CVOMode cvo_mode = RTPSenderInterface::kCVONone;
-  if (rtpHdr && rtpHdr->rotation != kVideoRotation_0) {
+  if (video_header && video_header->rotation != kVideoRotation_0) {
     cvo_mode = _rtpSender.ActivateCVORtpHeaderExtension();
   }
 
@@ -292,7 +292,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     // (e.g. a P-Frame) only if the current value is different from the previous
     // value sent.
     // Here we are adding it to every packet of every frame at this point.
-    if (!rtpHdr) {
+    if (!video_header) {
       RTC_DCHECK(!_rtpSender.IsRtpHeaderExtensionRegistered(
           kRtpExtensionVideoRotation));
     } else if (cvo_mode == RTPSenderInterface::kCVOActivated) {
@@ -306,7 +306,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
       RTPHeader rtp_header;
       rtp_parser.Parse(&rtp_header);
       _rtpSender.UpdateVideoRotation(dataBuffer, packetSize, rtp_header,
-                                     rtpHdr->rotation);
+                                     video_header->rotation);
     }
     if (fec_enabled) {
       SendVideoPacketAsRed(dataBuffer, payload_bytes_in_packet,
