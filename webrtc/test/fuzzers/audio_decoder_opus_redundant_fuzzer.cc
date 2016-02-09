@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,16 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/opus/audio_decoder_opus.h"
 #include "webrtc/test/fuzzers/audio_decoder_fuzzer.h"
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  AudioDecoderIlbc dec;
-  static const int kSampleRateHz = 8000;
-  static const size_t kAllocatedOuputSizeSamples = kSampleRateHz / 10;
+  const size_t channels = (size % 2) + 1;  // 1 or 2 channels.
+  AudioDecoderOpus dec(channels);
+  const int kSampleRateHz = 48000;
+  const size_t kAllocatedOuputSizeSamples = kSampleRateHz / 10;  // 100 ms.
   int16_t output[kAllocatedOuputSizeSamples];
-  FuzzAudioDecoder(DecoderFunctionType::kNormalDecode, data, size, &dec,
+  FuzzAudioDecoder(DecoderFunctionType::kRedundantDecode, data, size, &dec,
                    kSampleRateHz, sizeof(output), output);
 }
 }  // namespace webrtc
