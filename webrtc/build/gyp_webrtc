@@ -38,13 +38,6 @@ def GetSupplementalFiles():
 if __name__ == '__main__':
   args = sys.argv[1:]
 
-  use_analyzer = len(args) and args[0] == '--analyzer'
-  if use_analyzer:
-    args.pop(0)
-    os.environ['GYP_GENERATORS'] = 'analyzer'
-    args.append('-Gconfig_path=' + args.pop(0))
-    args.append('-Ganalyzer_output_path=' + args.pop(0))
-
   if int(os.environ.get('GYP_CHROMIUM_NO_ACTION', 0)):
     print 'Skipping gyp_webrtc due to GYP_CHROMIUM_NO_ACTION env var.'
     sys.exit(0)
@@ -107,14 +100,13 @@ if __name__ == '__main__':
   # Set the gyp depth variable to the root of the checkout.
   args.append('--depth=' + os.path.relpath(checkout_root))
 
-  if not use_analyzer:
-    print 'Updating projects from gyp files...'
-    sys.stdout.flush()
+  print 'Updating projects from gyp files...'
+  sys.stdout.flush()
 
   # Off we go...
   gyp_rc = gyp.main(args)
 
-  if vs2013_runtime_dll_dirs and not use_analyzer:
+  if vs2013_runtime_dll_dirs:
     x64_runtime, x86_runtime = vs2013_runtime_dll_dirs
     vs_toolchain.CopyVsRuntimeDlls(
         os.path.join(checkout_root, gyp_chromium.GetOutputDirectory()),
