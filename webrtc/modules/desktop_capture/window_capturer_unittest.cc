@@ -30,8 +30,6 @@ class WindowCapturerTest : public testing::Test,
   void TearDown() override {}
 
   // DesktopCapturer::Callback interface
-  SharedMemory* CreateSharedMemory(size_t size) override { return NULL; }
-
   void OnCaptureCompleted(DesktopFrame* frame) override { frame_.reset(frame); }
 
  protected:

@@ -31,6 +31,11 @@ void CroppingWindowCapturer::Start(DesktopCapturer::Callback* callback) {
   window_capturer_->Start(callback);
 }
 
+void CroppingWindowCapturer::SetSharedMemoryFactory(
+    rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) {
+  window_capturer_->SetSharedMemoryFactory(std::move(shared_memory_factory));
+}
+
 void CroppingWindowCapturer::Capture(const DesktopRegion& region) {
   if (ShouldUseScreenCapturer()) {
     if (!screen_capturer_.get()) {
@@ -67,10 +72,6 @@ bool CroppingWindowCapturer::SelectWindow(WindowId id) {
 
 bool CroppingWindowCapturer::BringSelectedWindowToFront() {
   return window_capturer_->BringSelectedWindowToFront();
-}
-
-SharedMemory* CroppingWindowCapturer::CreateSharedMemory(size_t size) {
-  return callback_->CreateSharedMemory(size);
 }
 
 void CroppingWindowCapturer::OnCaptureCompleted(DesktopFrame* frame) {

@@ -110,10 +110,18 @@ class BasicDesktopFrame : public DesktopFrame {
 // A DesktopFrame that stores data in shared memory.
 class SharedMemoryDesktopFrame : public DesktopFrame {
  public:
+  static rtc::scoped_ptr<DesktopFrame> Create(
+      DesktopSize size,
+      SharedMemoryFactory* shared_memory_factory);
+
   // Takes ownership of |shared_memory|.
+  // TODO(sergeyu): Remove this constructor and keep the second one.
   SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
                            SharedMemory* shared_memory);
+  SharedMemoryDesktopFrame(DesktopSize size,
+                           int stride,
+                           rtc::scoped_ptr<SharedMemory> shared_memory);
   ~SharedMemoryDesktopFrame() override;
 
  private:

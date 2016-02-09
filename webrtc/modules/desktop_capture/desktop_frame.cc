@@ -77,15 +77,38 @@ DesktopFrame* BasicDesktopFrame::CopyOf(const DesktopFrame& frame) {
   return result;
 }
 
+// static
+rtc::scoped_ptr<DesktopFrame> SharedMemoryDesktopFrame::Create(
+    DesktopSize size,
+    SharedMemoryFactory* shared_memory_factory) {
+  size_t buffer_size =
+      size.width() * size.height() * DesktopFrame::kBytesPerPixel;
+  rtc::scoped_ptr<SharedMemory> shared_memory;
+  shared_memory = shared_memory_factory->CreateSharedMemory(buffer_size);
+  if (!shared_memory)
+    return nullptr;
+
+  return rtc_make_scoped_ptr(new SharedMemoryDesktopFrame(
+      size, size.width() * DesktopFrame::kBytesPerPixel,
+      std::move(shared_memory)));
+}
+
+SharedMemoryDesktopFrame::SharedMemoryDesktopFrame(DesktopSize size,
+                                                   int stride,
+                                                   SharedMemory* shared_memory)
+    : DesktopFrame(size,
+                   stride,
+                   reinterpret_cast<uint8_t*>(shared_memory->data()),
+                   shared_memory) {}
 
 SharedMemoryDesktopFrame::SharedMemoryDesktopFrame(
     DesktopSize size,
     int stride,
-    SharedMemory* shared_memory)
-    : DesktopFrame(size, stride,
+    rtc::scoped_ptr<SharedMemory> shared_memory)
+    : DesktopFrame(size,
+                   stride,
                    reinterpret_cast<uint8_t*>(shared_memory->data()),
-                   shared_memory) {
-}
+                   shared_memory.release()) {}
 
 SharedMemoryDesktopFrame::~SharedMemoryDesktopFrame() {
   delete shared_memory_;

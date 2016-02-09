@@ -80,10 +80,6 @@ TEST_F(ScreenCapturerMacTest, Capture) {
       .WillOnce(Invoke(this, &ScreenCapturerMacTest::CaptureDoneCallback1))
       .WillOnce(Invoke(this, &ScreenCapturerMacTest::CaptureDoneCallback2));
 
-  EXPECT_CALL(callback_, CreateSharedMemory(_))
-      .Times(AnyNumber())
-      .WillRepeatedly(Return(static_cast<SharedMemory*>(NULL)));
-
   SCOPED_TRACE("");
   capturer_->Start(&callback_);
 

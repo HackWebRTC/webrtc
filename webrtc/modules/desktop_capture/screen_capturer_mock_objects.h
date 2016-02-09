@@ -35,7 +35,6 @@ class MockScreenCapturerCallback : public ScreenCapturer::Callback {
   MockScreenCapturerCallback() {}
   virtual ~MockScreenCapturerCallback() {}
 
-  MOCK_METHOD1(CreateSharedMemory, SharedMemory*(size_t));
   MOCK_METHOD1(OnCaptureCompleted, void(DesktopFrame*));
 
  private:

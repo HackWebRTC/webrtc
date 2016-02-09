@@ -29,6 +29,8 @@ class CroppingWindowCapturer : public WindowCapturer,
 
   // DesktopCapturer implementation.
   void Start(DesktopCapturer::Callback* callback) override;
+  void SetSharedMemoryFactory(
+      rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void Capture(const DesktopRegion& region) override;
   void SetExcludedWindow(WindowId window) override;
 
@@ -39,7 +41,6 @@ class CroppingWindowCapturer : public WindowCapturer,
 
   // DesktopCapturer::Callback implementation, passed to |screen_capturer_| to
   // intercept the capture result.
-  SharedMemory* CreateSharedMemory(size_t size) override;
   void OnCaptureCompleted(DesktopFrame* frame) override;
 
  protected:

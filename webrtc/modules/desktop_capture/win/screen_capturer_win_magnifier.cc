@@ -81,6 +81,11 @@ void ScreenCapturerWinMagnifier::Start(Callback* callback) {
   InitializeMagnifier();
 }
 
+void ScreenCapturerWinMagnifier::SetSharedMemoryFactory(
+    rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) {
+  shared_memory_factory_ = std::move(shared_memory_factory);
+}
+
 void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
   TickTime capture_start_time = TickTime::Now();
 
@@ -422,18 +427,12 @@ void ScreenCapturerWinMagnifier::CreateCurrentFrameIfNecessary(
   // Note that we can't reallocate other buffers at this point, since the caller
   // may still be reading from them.
   if (!queue_.current_frame() || !queue_.current_frame()->size().equals(size)) {
-    size_t buffer_size =
-        size.width() * size.height() * DesktopFrame::kBytesPerPixel;
-    SharedMemory* shared_memory = callback_->CreateSharedMemory(buffer_size);
-
-    rtc::scoped_ptr<DesktopFrame> buffer;
-    if (shared_memory) {
-      buffer.reset(new SharedMemoryDesktopFrame(
-          size, size.width() * DesktopFrame::kBytesPerPixel, shared_memory));
-    } else {
-      buffer.reset(new BasicDesktopFrame(size));
-    }
-    queue_.ReplaceCurrentFrame(buffer.release());
+    rtc::scoped_ptr<DesktopFrame> frame =
+        shared_memory_factory_
+            ? SharedMemoryDesktopFrame::Create(size,
+                                               shared_memory_factory_.get())
+            : rtc::scoped_ptr<DesktopFrame>(new BasicDesktopFrame(size));
+    queue_.ReplaceCurrentFrame(frame.release());
   }
 }
 

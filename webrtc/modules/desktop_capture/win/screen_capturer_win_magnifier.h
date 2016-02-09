@@ -44,6 +44,8 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
 
   // Overridden from ScreenCapturer:
   void Start(Callback* callback) override;
+  void SetSharedMemoryFactory(
+      rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void Capture(const DesktopRegion& region) override;
   bool GetScreenList(ScreenList* screens) override;
   bool SelectScreen(ScreenId id) override;
@@ -104,6 +106,7 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   rtc::scoped_ptr<ScreenCapturer> fallback_capturer_;
   bool fallback_capturer_started_;
   Callback* callback_;
+  rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory_;
   ScreenId current_screen_id_;
   std::wstring current_device_key_;
   HWND excluded_window_;
