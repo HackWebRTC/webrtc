@@ -443,30 +443,29 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     return remote_streams_->find(label);
   }
   StreamCollectionInterface* remote_streams() const { return remote_streams_; }
-  virtual void OnAddStream(MediaStreamInterface* stream) {
+  void OnAddStream(MediaStreamInterface* stream) override {
     last_added_stream_ = stream;
     remote_streams_->AddStream(stream);
   }
-  virtual void OnRemoveStream(MediaStreamInterface* stream) {
+  void OnRemoveStream(MediaStreamInterface* stream) override {
     last_removed_stream_ = stream;
     remote_streams_->RemoveStream(stream);
   }
-  virtual void OnRenegotiationNeeded() {
-    renegotiation_needed_ = true;
-  }
-  virtual void OnDataChannel(DataChannelInterface* data_channel) {
+  void OnRenegotiationNeeded() override { renegotiation_needed_ = true; }
+  void OnDataChannel(DataChannelInterface* data_channel) override {
     last_datachannel_ = data_channel;
   }
 
-  virtual void OnIceConnectionChange(
-      PeerConnectionInterface::IceConnectionState new_state) {
+  void OnIceConnectionChange(
+      PeerConnectionInterface::IceConnectionState new_state) override {
     EXPECT_EQ(pc_->ice_connection_state(), new_state);
   }
-  virtual void OnIceGatheringChange(
-      PeerConnectionInterface::IceGatheringState new_state) {
+  void OnIceGatheringChange(
+      PeerConnectionInterface::IceGatheringState new_state) override {
     EXPECT_EQ(pc_->ice_gathering_state(), new_state);
+    ice_complete_ = new_state == PeerConnectionInterface::kIceGatheringComplete;
   }
-  virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
+  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
     EXPECT_NE(PeerConnectionInterface::kIceGatheringNew,
               pc_->ice_gathering_state());
 
@@ -476,15 +475,6 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     last_candidate_.reset(webrtc::CreateIceCandidate(candidate->sdp_mid(),
         candidate->sdp_mline_index(), sdp, NULL));
     EXPECT_TRUE(last_candidate_.get() != NULL);
-  }
-  // TODO(bemasc): Remove this once callers transition to OnSignalingChange.
-  virtual void OnIceComplete() {
-    ice_complete_ = true;
-    // OnIceGatheringChange(IceGatheringCompleted) and OnIceComplete() should
-    // be called approximately simultaneously.  For ease of testing, this
-    // check additionally requires that they be called in the above order.
-    EXPECT_EQ(PeerConnectionInterface::kIceGatheringComplete,
-      pc_->ice_gathering_state());
   }
 
   // Returns the label of the last added stream.

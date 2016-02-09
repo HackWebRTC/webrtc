@@ -96,10 +96,6 @@ class IceObserver {
       PeerConnectionInterface::IceGatheringState new_state) {}
   // New Ice candidate have been found.
   virtual void OnIceCandidate(const IceCandidateInterface* candidate) = 0;
-  // All Ice candidates have been found.
-  // TODO(bemasc): Remove this once callers transition to OnIceGatheringChange.
-  // (via PeerConnectionObserver)
-  virtual void OnIceComplete() {}
 
   // Called whenever the state changes between receiving and not receiving.
   virtual void OnIceConnectionReceivingChange(bool receiving) {}

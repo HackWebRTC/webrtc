@@ -386,8 +386,6 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     return true;
   }
 
-  void OnIceComplete() override { LOG(INFO) << id_ << "OnIceComplete"; }
-
   void OnDataChannel(DataChannelInterface* data_channel) override {
     LOG(INFO) << id_ << "OnDataChannel";
     data_channel_ = data_channel;

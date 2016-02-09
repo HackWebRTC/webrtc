@@ -465,11 +465,7 @@ class PeerConnectionObserver {
 
   // Triggered when the SignalingState changed.
   virtual void OnSignalingChange(
-     PeerConnectionInterface::SignalingState new_state) {}
-
-  // Triggered when SignalingState or IceState have changed.
-  // TODO(bemasc): Remove once callers transition to OnSignalingChange.
-  virtual void OnStateChange(StateType state_changed) {}
+      PeerConnectionInterface::SignalingState new_state) = 0;
 
   // Triggered when media is received on a new stream from remote peer.
   virtual void OnAddStream(MediaStreamInterface* stream) = 0;
@@ -485,18 +481,14 @@ class PeerConnectionObserver {
 
   // Called any time the IceConnectionState changes
   virtual void OnIceConnectionChange(
-      PeerConnectionInterface::IceConnectionState new_state) {}
+      PeerConnectionInterface::IceConnectionState new_state) = 0;
 
   // Called any time the IceGatheringState changes
   virtual void OnIceGatheringChange(
-      PeerConnectionInterface::IceGatheringState new_state) {}
+      PeerConnectionInterface::IceGatheringState new_state) = 0;
 
   // New Ice candidate have been found.
   virtual void OnIceCandidate(const IceCandidateInterface* candidate) = 0;
-
-  // TODO(bemasc): Remove this once callers transition to OnIceGatheringChange.
-  // All Ice candidates have been found.
-  virtual void OnIceComplete() {}
 
   // Called when the ICE connection receiving status changes.
   virtual void OnIceConnectionReceivingChange(bool receiving) {}

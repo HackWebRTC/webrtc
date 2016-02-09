@@ -179,26 +179,21 @@ class MockIceObserver : public webrtc::IceObserver {
         ice_gathering_state_(PeerConnectionInterface::kIceGatheringNew) {
   }
 
-  virtual void OnIceConnectionChange(
-      PeerConnectionInterface::IceConnectionState new_state) {
+  void OnIceConnectionChange(
+      PeerConnectionInterface::IceConnectionState new_state) override {
     ice_connection_state_ = new_state;
   }
-  virtual void OnIceGatheringChange(
-      PeerConnectionInterface::IceGatheringState new_state) {
+  void OnIceGatheringChange(
+      PeerConnectionInterface::IceGatheringState new_state) override {
     // We can never transition back to "new".
     EXPECT_NE(PeerConnectionInterface::kIceGatheringNew, new_state);
     ice_gathering_state_ = new_state;
-
-    // oncandidatesready_ really means "ICE gathering is complete".
-    // This if statement ensures that this value remains correct when we
-    // transition from kIceGatheringComplete to kIceGatheringGathering.
-    if (new_state == PeerConnectionInterface::kIceGatheringGathering) {
-      oncandidatesready_ = false;
-    }
+    oncandidatesready_ =
+        new_state == PeerConnectionInterface::kIceGatheringComplete;
   }
 
   // Found a new candidate.
-  virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
+  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
     switch (candidate->sdp_mline_index()) {
       case kMediaContentIndex0:
         mline_0_candidates_.push_back(candidate->candidate());
@@ -213,18 +208,6 @@ class MockIceObserver : public webrtc::IceObserver {
     // The ICE gathering state should always be Gathering when a candidate is
     // received (or possibly Completed in the case of the final candidate).
     EXPECT_NE(PeerConnectionInterface::kIceGatheringNew, ice_gathering_state_);
-  }
-
-  // TODO(bemasc): Remove this once callers transition to OnIceGatheringChange.
-  virtual void OnIceComplete() {
-    EXPECT_FALSE(oncandidatesready_);
-    oncandidatesready_ = true;
-
-    // OnIceGatheringChange(IceGatheringCompleted) and OnIceComplete() should
-    // be called approximately simultaneously.  For ease of testing, this
-    // check additionally requires that they be called in the above order.
-    EXPECT_EQ(PeerConnectionInterface::kIceGatheringComplete,
-              ice_gathering_state_);
   }
 
   bool oncandidatesready_;

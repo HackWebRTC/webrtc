@@ -2059,7 +2059,6 @@ void WebRtcSession::OnTransportControllerGatheringState(
     if (ice_observer_) {
       ice_observer_->OnIceGatheringChange(
           PeerConnectionInterface::kIceGatheringComplete);
-      ice_observer_->OnIceComplete();
     }
   }
 }

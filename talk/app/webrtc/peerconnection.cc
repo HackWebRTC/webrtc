@@ -1390,11 +1390,6 @@ void PeerConnection::OnIceCandidate(const IceCandidateInterface* candidate) {
   observer_->OnIceCandidate(candidate);
 }
 
-void PeerConnection::OnIceComplete() {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
-  observer_->OnIceComplete();
-}
-
 void PeerConnection::OnIceConnectionReceivingChange(bool receiving) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
   observer_->OnIceConnectionReceivingChange(receiving);
@@ -1412,7 +1407,6 @@ void PeerConnection::ChangeSignalingState(
     }
   }
   observer_->OnSignalingChange(signaling_state_);
-  observer_->OnStateChange(PeerConnectionObserver::kSignalingState);
 }
 
 void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,

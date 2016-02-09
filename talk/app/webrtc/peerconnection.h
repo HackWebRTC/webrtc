@@ -187,7 +187,6 @@ class PeerConnection : public PeerConnectionInterface,
   void OnIceConnectionChange(IceConnectionState new_state) override;
   void OnIceGatheringChange(IceGatheringState new_state) override;
   void OnIceCandidate(const IceCandidateInterface* candidate) override;
-  void OnIceComplete() override;
   void OnIceConnectionReceivingChange(bool receiving) override;
 
   // Signals from WebRtcSession.
