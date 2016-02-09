@@ -322,6 +322,7 @@
                 'rtp_rtcp/source/rtcp_packet/fir_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/nack_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/pli_unittest.cc',
+                'rtp_rtcp/source/rtcp_packet/rapid_resync_request_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/receiver_report_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/remb_unittest.cc',
                 'rtp_rtcp/source/rtcp_packet/report_block_unittest.cc',
