@@ -22,7 +22,7 @@
 #include <limits>
 #include <string>
 
-#include "google/gflags.h"
+#include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/scoped_ptr.h"

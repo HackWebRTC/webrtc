@@ -9,13 +9,11 @@ vars = {
   'chromium_revision': '3a90ecfeb74acfc47de7df8b531ef30aa743f296',
 }
 
-# NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
-# https; the latter can cause problems for users behind proxies.
+# NOTE: Use http rather than https; the latter can cause problems for users
+# behind proxies.
 deps = {
-  # When rolling gflags, also update
-  # https://chromium.googlesource.com/chromium/deps/webrtc/webrtc.DEPS
   'src/third_party/gflags/src':
-    Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
+    Var('chromium_git') + '/external/github.com/gflags/gflags@03bebcb065c83beff83d50ae025a55a4bf94dfca',
 }
 
 deps_os = {

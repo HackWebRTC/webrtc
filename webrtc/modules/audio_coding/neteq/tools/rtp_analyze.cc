@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <vector>
 
-#include "google/gflags.h"
+#include "gflags/gflags.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
