@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_IMPL_H_
 
+#include <vector>
+
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -36,6 +38,7 @@ class NoiseSuppressionImpl : public NoiseSuppression {
   int set_level(Level level) override;
   Level level() const override;
   float speech_probability() const override;
+  std::vector<float> NoiseEstimate() override;
 
  private:
   class Suppressor;

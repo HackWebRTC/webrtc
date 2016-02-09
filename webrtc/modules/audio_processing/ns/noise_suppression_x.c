@@ -44,3 +44,15 @@ void WebRtcNsx_Process(NsxHandle* nsxInst,
   WebRtcNsx_ProcessCore((NoiseSuppressionFixedC*)nsxInst, speechFrame,
                         num_bands, outFrame);
 }
+
+const uint32_t* WebRtcNsx_noise_estimate(const NsxHandle* nsxInst) {
+  const NoiseSuppressionFixedC* self = (const NoiseSuppressionFixedC*)nsxInst;
+  if (nsxInst == NULL || self->initFlag == 0) {
+    return NULL;
+  }
+  return self->prevNoiseU32;
+}
+
+size_t WebRtcNsx_num_freq() {
+  return HALF_ANAL_BLOCKL;
+}

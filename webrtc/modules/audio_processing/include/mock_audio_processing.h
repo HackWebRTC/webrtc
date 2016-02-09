@@ -140,6 +140,7 @@ class MockNoiseSuppression : public NoiseSuppression {
       Level());
   MOCK_CONST_METHOD0(speech_probability,
       float());
+  MOCK_METHOD0(NoiseEstimate, std::vector<float>());
 };
 
 class MockVoiceDetection : public VoiceDetection {

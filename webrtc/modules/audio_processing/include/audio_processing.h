@@ -915,6 +915,9 @@ class NoiseSuppression {
   // which |kUnsupportedFunctionError| is returned.
   virtual float speech_probability() const = 0;
 
+  // Returns the noise estimate per frequency bin averaged over all channels.
+  virtual std::vector<float> NoiseEstimate() = 0;
+
  protected:
   virtual ~NoiseSuppression() {}
 };

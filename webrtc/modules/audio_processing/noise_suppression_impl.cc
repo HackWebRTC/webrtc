@@ -172,4 +172,30 @@ float NoiseSuppressionImpl::speech_probability() const {
   return AudioProcessing::kUnsupportedFunctionError;
 #endif
 }
+
+std::vector<float> NoiseSuppressionImpl::NoiseEstimate() {
+  rtc::CritScope cs(crit_);
+  std::vector<float> noise_estimate;
+#if defined(WEBRTC_NS_FLOAT)
+  noise_estimate.assign(WebRtcNs_num_freq(), 0.f);
+  for (auto& suppressor : suppressors_) {
+    const float* noise = WebRtcNs_noise_estimate(suppressor->state());
+    for (size_t i = 0; i < noise_estimate.size(); ++i) {
+      noise_estimate[i] += noise[i] / suppressors_.size();
+    }
+  }
+#elif defined(WEBRTC_NS_FIXED)
+  const float kNormalizationFactor = 1.f / (1 << 8);
+  noise_estimate.assign(WebRtcNsx_num_freq(), 0.f);
+  for (auto& suppressor : suppressors_) {
+    const uint32_t* noise = WebRtcNsx_noise_estimate(suppressor->state());
+    for (size_t i = 0; i < noise_estimate.size(); ++i) {
+      noise_estimate[i] += kNormalizationFactor *
+          static_cast<float>(noise[i]) / suppressors_.size();
+    }
+  }
+#endif
+  return noise_estimate;
+}
+
 }  // namespace webrtc
