@@ -230,7 +230,7 @@ if (rtc_enable_protobuf) {
       "debug.proto",
     ]
 
-    proto_out_dir = "webrtc/audio_processing"
+    proto_out_dir = "webrtc/modules/audio_processing"
   }
 }
 

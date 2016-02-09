@@ -33,7 +33,7 @@
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
 #else
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/audio_processing/debug.pb.h"
+#include "webrtc/modules/audio_processing/debug.pb.h"
 #endif
 
 namespace webrtc {

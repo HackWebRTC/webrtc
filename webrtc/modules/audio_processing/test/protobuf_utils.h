@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_PROTOBUF_UTILS_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_PROTOBUF_UTILS_H_
 
-#include "webrtc/audio_processing/debug.pb.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/audio_processing/debug.pb.h"
 
 namespace webrtc {
 

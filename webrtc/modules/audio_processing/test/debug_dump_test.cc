@@ -13,11 +13,11 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/audio_processing/debug.pb.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
+#include "webrtc/modules/audio_processing/debug.pb.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"

@@ -16,9 +16,9 @@
 #include <stdio.h>
 
 #include "gflags/gflags.h"
-#include "webrtc/audio_processing/debug.pb.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/audio_processing/debug.pb.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/typedefs.h"

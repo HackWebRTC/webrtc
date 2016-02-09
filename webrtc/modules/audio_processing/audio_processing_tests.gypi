@@ -85,7 +85,7 @@
             'proto_in_dir': 'test',
             # Workaround to protect against gyp's pathname relativization when
             # this file is included by modules.gyp.
-            'proto_out_protected': 'webrtc/audio_processing',
+            'proto_out_protected': 'webrtc/modules/audio_processing',
             'proto_out_dir': '<(proto_out_protected)',
           },
           'includes': [ '../../build/protoc.gypi', ],

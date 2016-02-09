@@ -34,7 +34,7 @@
 #include "external/webrtc/webrtc/modules/audio_processing/test/unittest.pb.h"
 #else
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/audio_processing/unittest.pb.h"
+#include "webrtc/modules/audio_processing/unittest.pb.h"
 #endif
 
 namespace webrtc {
