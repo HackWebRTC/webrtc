@@ -95,7 +95,7 @@ void StatisticsCalculator::PeriodicUmaAverage::RegisterSample(int value) {
 }
 
 int StatisticsCalculator::PeriodicUmaAverage::Metric() const {
-  return static_cast<int>(sum_ / counter_);
+  return counter_ == 0 ? 0 : static_cast<int>(sum_ / counter_);
 }
 
 void StatisticsCalculator::PeriodicUmaAverage::Reset() {
