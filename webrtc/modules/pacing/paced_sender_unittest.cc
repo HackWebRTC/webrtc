@@ -288,7 +288,7 @@ TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
                   TimeToSendPacket(ssrc, queued_sequence_number++, _, false))
           .Times(1)
           .WillRepeatedly(Return(true));
-   }
+    }
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
     EXPECT_EQ(0, send_bucket_->Process());
   }
@@ -422,7 +422,8 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   int64_t start_time = clock_.TimeInMilliseconds();
   size_t media_bytes = 0;
   while (clock_.TimeInMilliseconds() - start_time < kBitrateWindow) {
-    size_t media_payload = rand() % 100 + 200;  // [200, 300] bytes.
+    int rand_value = rand();  // NOLINT (rand_r instead of rand)
+    size_t media_payload = rand_value % 100 + 200;  // [200, 300] bytes.
     send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
                                sequence_number++, capture_time_ms,
                                media_payload, false);

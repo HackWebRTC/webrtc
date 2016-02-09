@@ -10,9 +10,11 @@
 
 #include "webrtc/modules/pacing/paced_sender.h"
 
+#include <algorithm>
 #include <map>
 #include <queue>
 #include <set>
+#include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"

@@ -40,7 +40,7 @@ bool SendFeedback(rtcp::TransportFeedback* packet,
   }
   return false;
 }
-}
+}  // namespace
 
 PacketRouter::PacketRouter() : transport_seq_(0) {
   pacer_thread_checker_.DetachFromThread();
