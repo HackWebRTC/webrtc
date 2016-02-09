@@ -741,6 +741,7 @@ StreamResult FifoBuffer::WriteOffset(const void* buffer, size_t bytes,
 }
 
 StreamState FifoBuffer::GetState() const {
+  CritScope cs(&crit_);
   return state_;
 }
 
