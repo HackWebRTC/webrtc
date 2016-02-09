@@ -98,6 +98,22 @@
             'FEATURE_ENABLE_PSTN',
           ],
         }],
+        ['use_quic==1', {
+      	  'dependencies': [
+      	    '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
+      	  ],
+          'sources': [
+            'quic/quicconnectionhelper.cc',
+            'quic/quicconnectionhelper.h',
+            'quic/quicsession.cc',
+            'quic/quicsession.h',
+            'quic/reliablequicstream.cc',
+            'quic/reliablequicstream.h',
+          ],
+      	  'export_dependent_settings': [
+      	    '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
+      	  ],
+        }],
       ],
     },
     {

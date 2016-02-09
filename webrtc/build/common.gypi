@@ -138,6 +138,9 @@
     # Enabling this may break interop with Android clients that support H264.
     'use_objc_h264%': 0,
 
+    # Determines whether QUIC code will be built.
+    'use_quic%': 0,
+
     'conditions': [
       # Enable this to build OpenH264 encoder/FFmpeg decoder. This is supported
       # on all platforms except Android and iOS. Because FFmpeg can be built
