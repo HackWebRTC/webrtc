@@ -13,3 +13,10 @@ src:*/third_party/yasm/*
 #############################################################################
 # Ignore system libraries.
 src:*/usr/*
+
+#############################################################################
+# iSAC exhibits a few problems (entropy coding and a unit test).
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=5513
+src:*/webrtc/modules/audio_coding/codecs/isac/main/source/entropy_coding.c
+src:*/webrtc/modules/audio_coding/codecs/isac/fix/source/entropy_coding.c
+fun:*FilterBanksTest*CalculateResidualEnergyTester*
