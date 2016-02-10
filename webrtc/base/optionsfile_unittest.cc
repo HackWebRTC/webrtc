@@ -42,6 +42,10 @@ class OptionsFileTest : public testing::Test {
     OpenStore();
   }
 
+  ~OptionsFileTest() override {
+    remove(test_file_.c_str());
+  }
+
  protected:
   void OpenStore() {
     store_.reset(new OptionsFile(test_file_));

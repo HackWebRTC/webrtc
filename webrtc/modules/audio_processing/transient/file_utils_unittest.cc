@@ -12,6 +12,7 @@
 
 #include <string.h>
 #include <string>
+#include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -45,6 +46,25 @@ class TransientFileUtilsTest: public ::testing::Test {
         kTestFileNamef(
             test::ResourcePath("audio_processing/transient/float-utils",
                                "dat")) {}
+
+  ~TransientFileUtilsTest() override {
+    CleanupTempFiles();
+  }
+
+  std::string CreateTempFilename(const std::string& dir,
+      const std::string& prefix) {
+    std::string filename = test::TempFilename(dir, prefix);
+    temp_filenames_.push_back(filename);
+    return filename;
+  }
+
+  void CleanupTempFiles() {
+    for (const std::string& filename : temp_filenames_) {
+      remove(filename.c_str());
+    }
+    temp_filenames_.clear();
+  }
+
   // This file (used in some tests) contains binary data. The data correspond to
   // the double representation of the constants: Pi, E, and the Avogadro's
   // Number;
@@ -56,6 +76,9 @@ class TransientFileUtilsTest: public ::testing::Test {
   // Number;
   // appended in that order.
   const std::string kTestFileNamef;
+
+  // List of temporary filenames created by CreateTempFilename.
+  std::vector<std::string> temp_filenames_;
 };
 
 #if defined(WEBRTC_IOS)
@@ -358,7 +381,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadDoubleBufferFromFile) {
 TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
   rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
 
-  std::string kOutFileName = test::TempFilename(test::OutputPath(),
+  std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
 
   file->OpenFile(kOutFileName.c_str(),
@@ -405,7 +428,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
 TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
   rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
 
-  std::string kOutFileName = test::TempFilename(test::OutputPath(),
+  std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
 
   file->OpenFile(kOutFileName.c_str(),
@@ -452,7 +475,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
 TEST_F(TransientFileUtilsTest, MAYBE_WriteDoubleBufferToFile) {
   rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
 
-  std::string kOutFileName = test::TempFilename(test::OutputPath(),
+  std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
 
   file->OpenFile(kOutFileName.c_str(),
