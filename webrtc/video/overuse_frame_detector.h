@@ -42,13 +42,7 @@ class CpuOveruseObserver {
 };
 
 struct CpuOveruseOptions {
-  CpuOveruseOptions()
-      : low_encode_usage_threshold_percent(55),
-        high_encode_usage_threshold_percent(85),
-        frame_timeout_interval_ms(1500),
-        min_frame_samples(120),
-        min_process_count(3),
-        high_threshold_consecutive_count(2) {}
+  CpuOveruseOptions();
 
   int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
   int high_encode_usage_threshold_percent;  // Threshold for triggering overuse.
