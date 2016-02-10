@@ -71,7 +71,7 @@ declare_args() {
     rtc_enable_protobuf = false
   }
 
-  if (current_cpu == "arm") {
+  if (current_cpu == "arm" || current_cpu == "arm64") {
     rtc_prefer_fixed_point = true
   }
 
