@@ -1572,11 +1572,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
   if (!sending_)
     return;
 
-  if (format_.width == 0) {  // Dropping frames.
-    RTC_DCHECK(format_.height == 0);
-    LOG(LS_VERBOSE) << "VideoFormat 0x0 set, Dropping frame.";
-    return;
-  }
   if (muted_) {
     // Create a black frame to transmit instead.
     CreateBlackFrame(&video_frame,
@@ -1626,8 +1621,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
         // timestamp is less than or equal to last frame's timestamp, it is
         // necessary to give this black frame a larger timestamp than the
         // previous one.
-        last_frame_timestamp_ms_ +=
-            format_.interval / rtc::kNumNanosecsPerMillisec;
+        last_frame_timestamp_ms_ += 1;
         black_frame.set_render_time_ms(last_frame_timestamp_ms_);
         stream_->Input()->IncomingCapturedFrame(black_frame);
       }
@@ -1743,11 +1737,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
   parameters_.encoder_config =
       CreateVideoEncoderConfig(last_dimensions_, codec_settings.codec);
   RTC_DCHECK(!parameters_.encoder_config.streams.empty());
-
-  format_ = VideoFormat(codec_settings.codec.width,
-                        codec_settings.codec.height,
-                        VideoFormat::FpsToInterval(30),
-                        FOURCC_I420);
 
   AllocatedEncoder new_encoder = CreateVideoEncoder(codec_settings.codec);
   parameters_.config.encoder_settings.encoder = new_encoder.encoder;

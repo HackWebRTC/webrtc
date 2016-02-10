@@ -349,7 +349,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
     VideoCapturer* capturer_ GUARDED_BY(lock_);
     bool sending_ GUARDED_BY(lock_);
     bool muted_ GUARDED_BY(lock_);
-    VideoFormat format_ GUARDED_BY(lock_);
     int old_adapt_changes_ GUARDED_BY(lock_);
 
     // The timestamp of the first frame received
