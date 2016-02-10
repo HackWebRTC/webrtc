@@ -10,7 +10,7 @@
 
 #import "RTCStatsReport.h"
 
-#include "talk/app/webrtc/statstypes.h"
+#include "webrtc/api/statstypes.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -78,7 +78,7 @@
             'examples/peerconnection/client/peer_connection_client.h',
           ],
           'dependencies': [
-            '../talk/libjingle.gyp:libjingle_peerconnection',
+            'api/api.gyp:libjingle_peerconnection',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
           ],
           'conditions': [
@@ -364,7 +364,7 @@
           'target_name': 'AppRTCDemo',
           'type': 'none',
           'dependencies': [
-            '../talk/libjingle.gyp:libjingle_peerconnection_java',
+            'api/api.gyp:libjingle_peerconnection_java',
           ],
           'variables': {
             'apk_name': 'AppRTCDemo',

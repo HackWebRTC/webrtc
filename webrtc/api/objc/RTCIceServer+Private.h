@@ -10,7 +10,7 @@
 
 #import "RTCIceServer.h"
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

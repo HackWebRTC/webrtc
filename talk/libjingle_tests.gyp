@@ -31,9 +31,9 @@
       'target_name': 'libjingle_p2p_unittest',
       'type': 'executable',
       'dependencies': [
+        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         '<(webrtc_root)/webrtc.gyp:rtc_unittest_main',
-        'libjingle.gyp:libjingle_peerconnection',
         'libjingle.gyp:libjingle_p2p',
       ],
       'include_dirs': [
@@ -65,101 +65,8 @@
         }],
       ],
     },  # target libjingle_p2p_unittest
-    {
-      'target_name': 'peerconnection_unittests',
-      'type': '<(gtest_target_type)',
-      'dependencies': [
-        '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-        '<(webrtc_root)/common.gyp:webrtc_common',
-        '<(webrtc_root)/webrtc.gyp:rtc_unittest_main',
-        'libjingle.gyp:libjingle_p2p',
-        'libjingle.gyp:libjingle_peerconnection',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '<(DEPTH)/testing/gmock/include',
-        ],
-      },
-      'sources': [
-        'app/webrtc/datachannel_unittest.cc',
-        'app/webrtc/dtlsidentitystore_unittest.cc',
-        'app/webrtc/dtmfsender_unittest.cc',
-        'app/webrtc/fakemetricsobserver.cc',
-        'app/webrtc/fakemetricsobserver.h',
-        'app/webrtc/jsepsessiondescription_unittest.cc',
-        'app/webrtc/localaudiosource_unittest.cc',
-        'app/webrtc/mediastream_unittest.cc',
-        'app/webrtc/peerconnection_unittest.cc',
-        'app/webrtc/peerconnectionendtoend_unittest.cc',
-        'app/webrtc/peerconnectionfactory_unittest.cc',
-        'app/webrtc/peerconnectioninterface_unittest.cc',
-        # 'app/webrtc/peerconnectionproxy_unittest.cc',
-        'app/webrtc/remotevideocapturer_unittest.cc',
-        'app/webrtc/rtpsenderreceiver_unittest.cc',
-        'app/webrtc/statscollector_unittest.cc',
-        'app/webrtc/test/fakeaudiocapturemodule.cc',
-        'app/webrtc/test/fakeaudiocapturemodule.h',
-        'app/webrtc/test/fakeaudiocapturemodule_unittest.cc',
-        'app/webrtc/test/fakeconstraints.h',
-        'app/webrtc/test/fakedatachannelprovider.h',
-        'app/webrtc/test/fakedtlsidentitystore.h',
-        'app/webrtc/test/fakeperiodicvideocapturer.h',
-        'app/webrtc/test/fakevideotrackrenderer.h',
-        'app/webrtc/test/mockpeerconnectionobservers.h',
-        'app/webrtc/test/peerconnectiontestwrapper.h',
-        'app/webrtc/test/peerconnectiontestwrapper.cc',
-        'app/webrtc/test/testsdpstrings.h',
-        'app/webrtc/videosource_unittest.cc',
-        'app/webrtc/videotrack_unittest.cc',
-        'app/webrtc/webrtcsdp_unittest.cc',
-        'app/webrtc/webrtcsession_unittest.cc',
-      ],
-      'conditions': [
-        ['OS=="android"', {
-          'sources': [
-            'app/webrtc/test/androidtestinitializer.cc',
-            'app/webrtc/test/androidtestinitializer.h',
-          ],
-          'dependencies': [
-            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
-            'libjingle.gyp:libjingle_peerconnection_jni',
-          ],
-        }],
-        ['OS=="win" and clang==1', {
-          'msvs_settings': {
-            'VCCLCompilerTool': {
-              'AdditionalOptions': [
-                # Disable warnings failing when compiling with Clang on Windows.
-                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-                '-Wno-unused-function',
-              ],
-            },
-          },
-        }],
-      ],
-    },  # target peerconnection_unittests
   ],
   'conditions': [
-    ['OS=="android"', {
-      'targets': [
-        {
-          'target_name': 'libjingle_peerconnection_android_unittest',
-          'type': 'none',
-          'dependencies': [
-            'libjingle.gyp:libjingle_peerconnection_java',
-          ],
-          'variables': {
-            'apk_name': 'libjingle_peerconnection_android_unittest',
-            'java_in_dir': 'app/webrtc/androidtests',
-            'resource_dir': 'app/webrtc/androidtests/res',
-            'native_lib_target': 'libjingle_peerconnection_so',
-            'is_test_apk': 1,
-          },
-          'includes': [ '../build/java_apk.gypi' ],
-        },
-      ],  # targets
-    }],  # OS=="android"
     ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
       # The >=10.7 above is required to make ARC link cleanly (e.g. as
       # opposed to _compile_ cleanly, which the library under test
@@ -204,8 +111,8 @@
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
-            '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
             '<(webrtc_root)/webrtc_examples.gyp:apprtc_signaling',
+            '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
           ],
           'sources': [
             'app/webrtc/objctests/mac/main.mm',
@@ -221,17 +128,6 @@
         },  # target apprtc_signaling_gunit_test
       ],
     }],
-    ['OS=="android"', {
-      'targets': [
-        {
-          'target_name': 'peerconnection_unittests_apk_target',
-          'type': 'none',
-          'dependencies': [
-            '<(DEPTH)/webrtc/build/apk_tests.gyp:peerconnection_unittests_apk',
-          ],
-        },
-      ],
-    }],
     ['test_isolation_mode != "noop"', {
       'targets': [
         {
@@ -245,19 +141,6 @@
           ],
           'sources': [
             'libjingle_p2p_unittest.isolate',
-          ],
-        },
-        {
-          'target_name': 'peerconnection_unittests_run',
-          'type': 'none',
-          'dependencies': [
-            'peerconnection_unittests',
-          ],
-          'includes': [
-            'build/isolate.gypi',
-          ],
-          'sources': [
-            'peerconnection_unittests.isolate',
           ],
         },
       ],

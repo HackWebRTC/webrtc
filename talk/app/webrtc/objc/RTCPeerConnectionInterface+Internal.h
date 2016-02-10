@@ -27,7 +27,7 @@
 
 #import "talk/app/webrtc/objc/public/RTCPeerConnectionInterface.h"
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 @interface RTCConfiguration ()
 

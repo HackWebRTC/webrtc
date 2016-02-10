@@ -27,7 +27,7 @@
 
 #import "RTCMediaStream.h"
 
-#include "talk/app/webrtc/mediastreamtrack.h"
+#include "webrtc/api/mediastreamtrack.h"
 
 @interface RTCMediaStream (Internal)
 

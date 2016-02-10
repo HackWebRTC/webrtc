@@ -27,7 +27,7 @@
 
 #import "RTCStatsReport.h"
 
-#include "talk/app/webrtc/statstypes.h"
+#include "webrtc/api/statstypes.h"
 
 @interface RTCStatsReport (Internal)
 

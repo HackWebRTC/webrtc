@@ -46,11 +46,11 @@
 #import "RTCVideoSource+Internal.h"
 #import "RTCVideoTrack+Internal.h"
 
-#include "talk/app/webrtc/audiotrack.h"
-#include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/app/webrtc/peerconnectioninterface.h"
-#include "talk/app/webrtc/videosourceinterface.h"
-#include "talk/app/webrtc/videotrack.h"
+#include "webrtc/api/audiotrack.h"
+#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/videotrack.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
 

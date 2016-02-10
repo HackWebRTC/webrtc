@@ -35,7 +35,7 @@
 #import "RTCMediaStreamTrack+Internal.h"
 #import "RTCVideoTrack+Internal.h"
 
-#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 
 @implementation RTCMediaStream {
   NSMutableArray* _audioTracks;

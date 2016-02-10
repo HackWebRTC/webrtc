@@ -13,8 +13,8 @@
 #include <utility>
 #include <vector>
 
-#include "talk/app/webrtc/test/fakeconstraints.h"
-#include "talk/app/webrtc/videosourceinterface.h"
+#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/logging.h"

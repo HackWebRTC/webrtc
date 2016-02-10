@@ -31,10 +31,10 @@
 
 #import "RTCVideoTrack+Internal.h"
 
+#import "RTCMediaSource+Internal.h"
 #import "RTCMediaStreamTrack+Internal.h"
 #import "RTCPeerConnectionFactory+Internal.h"
 #import "RTCVideoRendererAdapter.h"
-#import "RTCMediaSource+Internal.h"
 #import "RTCVideoSource+Internal.h"
 
 @implementation RTCVideoTrack {

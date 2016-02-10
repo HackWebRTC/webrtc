@@ -15,7 +15,7 @@
 #include <map>
 #include <string>
 
-#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/base/win32.h"
 #include "webrtc/examples/peerconnection/client/peer_connection_client.h"
 #include "webrtc/media/base/mediachannel.h"

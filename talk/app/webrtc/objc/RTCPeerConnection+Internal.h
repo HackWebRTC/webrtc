@@ -29,7 +29,7 @@
 
 #import "RTCPeerConnectionDelegate.h"
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 @interface RTCPeerConnection (Internal)
 

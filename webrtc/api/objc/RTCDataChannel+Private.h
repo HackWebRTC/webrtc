@@ -10,7 +10,7 @@
 
 #import "RTCDataChannel.h"
 
-#include "talk/app/webrtc/datachannelinterface.h"
+#include "webrtc/api/datachannelinterface.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 
 NS_ASSUME_NONNULL_BEGIN

@@ -27,8 +27,8 @@
 
 #import "RTCVideoTrack.h"
 
-#include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 @class RTCVideoRenderer;
 

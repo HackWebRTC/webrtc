@@ -39,7 +39,7 @@ def main():
     'common_video_unittests':
         'webrtc/common_video/common_video_unittests.isolate',
     'peerconnection_unittests':
-        'talk/peerconnection_unittests.isolate',
+        'webrtc/api/peerconnection_unittests.isolate',
     'modules_tests': 'webrtc/modules/modules_tests.isolate',
     'modules_unittests': 'webrtc/modules/modules_unittests.isolate',
     'rtc_unittests': 'webrtc/rtc_unittests.isolate',

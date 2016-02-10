@@ -27,8 +27,8 @@
 
 #import "RTCSessionDescription.h"
 
-#include "talk/app/webrtc/jsep.h"
-#include "talk/app/webrtc/webrtcsession.h"
+#include "webrtc/api/jsep.h"
+#include "webrtc/api/webrtcsession.h"
 
 @interface RTCSessionDescription (Internal)
 

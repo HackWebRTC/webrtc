@@ -33,7 +33,15 @@
 
 #include <algorithm>
 
-#include "talk/app/webrtc/mediacontroller.h"
+#include "talk/session/media/srtpfilter.h"
+#include "webrtc/api/mediacontroller.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/capturemanager.h"
 #include "webrtc/media/base/device.h"
 #include "webrtc/media/base/hybriddataengine.h"
@@ -42,14 +50,6 @@
 #ifdef HAVE_SCTP
 #include "webrtc/media/sctp/sctpdataengine.h"
 #endif
-#include "talk/session/media/srtpfilter.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/common.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/sigslotrepeater.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/trace_event.h"
 
 namespace cricket {
 

@@ -134,6 +134,9 @@
     # Determines whether NEON code will be built.
     'build_with_neon%': 0,
 
+    # Disable this to skip building source requiring GTK.
+    'use_gtk%': 1,
+
     # Enable this to use HW H.264 encoder/decoder on iOS/Mac PeerConnections.
     # Enabling this may break interop with Android clients that support H264.
     'use_objc_h264%': 0,
@@ -192,6 +195,9 @@
         'include_internal_audio_device%': 1,
         'include_tests%': 1,
         'restrict_webrtc_logging%': 0,
+      }],
+      ['OS=="android" or OS=="linux"', {
+        'java_home%': '<!(python -c "import os; dir=os.getenv(\'JAVA_HOME\', \'/usr/lib/jvm/java-7-openjdk-amd64\'); assert os.path.exists(os.path.join(dir, \'include/jni.h\')), \'Point \\$JAVA_HOME or the java_home gyp variable to a directory containing include/jni.h!\'; print dir")',
       }],
       ['OS=="ios"', {
         'build_libjpeg%': 0,

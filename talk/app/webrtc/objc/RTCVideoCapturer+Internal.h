@@ -27,7 +27,7 @@
 
 #import "RTCVideoCapturer.h"
 
-#include "talk/app/webrtc/videosourceinterface.h"
+#include "webrtc/api/videosourceinterface.h"
 
 @interface RTCVideoCapturer (Internal)
 

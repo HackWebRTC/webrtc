@@ -45,7 +45,7 @@
 #import "RTCStatsDelegate.h"
 #import "RTCStatsReport+Internal.h"
 
-#include "talk/app/webrtc/jsep.h"
+#include "webrtc/api/jsep.h"
 
 NSString* const kRTCSessionDescriptionDelegateErrorDomain = @"RTCSDPError";
 int const kRTCSessionDescriptionDelegateErrorCode = -1;

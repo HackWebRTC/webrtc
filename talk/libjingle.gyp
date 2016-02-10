@@ -27,113 +27,6 @@
 {
   'includes': ['build/common.gypi'],
   'conditions': [
-    ['os_posix == 1 and OS != "mac" and OS != "ios"', {
-     'conditions': [
-       ['sysroot!=""', {
-         'variables': {
-           'pkg-config': '../../../build/linux/pkg-config-wrapper "<(sysroot)" "<(target_arch)"',
-         },
-       }, {
-         'variables': {
-           'pkg-config': 'pkg-config'
-         },
-       }],
-     ],
-    }],
-    ['OS=="android"', {
-      'targets': [
-        {
-          'target_name': 'libjingle_peerconnection_jni',
-          'type': 'static_library',
-          'dependencies': [
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
-            'libjingle_peerconnection',
-          ],
-          'sources': [
-            'app/webrtc/androidvideocapturer.cc',
-            'app/webrtc/androidvideocapturer.h',
-            'app/webrtc/java/jni/androidmediacodeccommon.h',
-            'app/webrtc/java/jni/androidmediadecoder_jni.cc',
-            'app/webrtc/java/jni/androidmediadecoder_jni.h',
-            'app/webrtc/java/jni/androidmediaencoder_jni.cc',
-            'app/webrtc/java/jni/androidmediaencoder_jni.h',
-            'app/webrtc/java/jni/androidnetworkmonitor_jni.cc',
-            'app/webrtc/java/jni/androidnetworkmonitor_jni.h',
-            'app/webrtc/java/jni/androidvideocapturer_jni.cc',
-            'app/webrtc/java/jni/androidvideocapturer_jni.h',
-            'app/webrtc/java/jni/classreferenceholder.cc',
-            'app/webrtc/java/jni/classreferenceholder.h',
-            'app/webrtc/java/jni/eglbase_jni.cc',
-            'app/webrtc/java/jni/eglbase_jni.h',
-            'app/webrtc/java/jni/jni_helpers.cc',
-            'app/webrtc/java/jni/jni_helpers.h',
-            'app/webrtc/java/jni/native_handle_impl.cc',
-            'app/webrtc/java/jni/native_handle_impl.h',
-            'app/webrtc/java/jni/peerconnection_jni.cc',
-            'app/webrtc/java/jni/surfacetexturehelper_jni.cc',
-            'app/webrtc/java/jni/surfacetexturehelper_jni.h',
-          ],
-          'include_dirs': [
-            '<(libyuv_dir)/include',
-          ],
-          'conditions': [
-           ['build_json==1', {
-              'dependencies': [
-                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-              ],
-              'export_dependent_settings': [
-                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-              ],
-            }],
-          ],
-        },
-        {
-          'target_name': 'libjingle_peerconnection_so',
-          'type': 'shared_library',
-          'dependencies': [
-            'libjingle_peerconnection',
-            'libjingle_peerconnection_jni',
-          ],
-          'sources': [
-           'app/webrtc/java/jni/jni_onload.cc',
-          ],
-          'variables': {
-            # This library uses native JNI exports; tell GYP so that the
-            # required symbols will be kept.
-            'use_native_jni_exports': 1,
-          },
-        },
-        {
-          # |libjingle_peerconnection_java| builds a jar file with name
-          # libjingle_peerconnection_java.jar using Chromes build system.
-          # It includes all Java files needed to setup a PeeerConnection call
-          # from Android.
-          'target_name': 'libjingle_peerconnection_java',
-          'type': 'none',
-          'dependencies': [
-            'libjingle_peerconnection_so',
-          ],
-          'variables': {
-            # Designate as Chromium code and point to our lint settings to
-            # enable linting of the WebRTC code (this is the only way to make
-            # lint_action invoke the Android linter).
-            'android_manifest_path': '<(webrtc_root)/build/android/AndroidManifest.xml',
-            'suppressions_file': '<(webrtc_root)/build/android/suppressions.xml',
-            'chromium_code': 1,
-            'java_in_dir': 'app/webrtc/java',
-            'webrtc_base_dir': '<(webrtc_root)/base',
-            'webrtc_modules_dir': '<(webrtc_root)/modules',
-            'additional_src_dirs' : [
-              'app/webrtc/java/android',
-              '<(webrtc_base_dir)/java/src',
-              '<(webrtc_modules_dir)/audio_device/android/java/src',
-              '<(webrtc_modules_dir)/video_render/android/java/src',
-            ],
-          },
-          'includes': ['../build/java.gypi'],
-        }, # libjingle_peerconnection_java
-      ]
-    }],
     ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
       # The >= 10.7 above is required for ARC.
       'targets': [
@@ -141,7 +34,7 @@
           'target_name': 'libjingle_peerconnection_objc',
           'type': 'static_library',
           'dependencies': [
-            'libjingle_peerconnection',
+            '<(webrtc_root)/api/api.gyp:libjingle_peerconnection',
           ],
           'sources': [
             'app/webrtc/objc/RTCAudioTrack+Internal.h',
@@ -223,7 +116,7 @@
             ],
           },
           'include_dirs': [
-            '<(DEPTH)/talk/app/webrtc',
+            '<(webrtc_root)/webrtc/api',
             '<(DEPTH)/talk/app/webrtc/objc',
             '<(DEPTH)/talk/app/webrtc/objc/public',
           ],
@@ -295,7 +188,6 @@
       ],
     }],
   ],
-
   'targets': [
     {
       'target_name': 'libjingle_p2p',
@@ -348,86 +240,5 @@
         'session/media/voicechannel.h',
       ],
     },  # target libjingle_p2p
-    {
-      'target_name': 'libjingle_peerconnection',
-      'type': 'static_library',
-      'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_base',
-        '<(webrtc_root)/media/media.gyp:rtc_media',
-        'libjingle_p2p',
-      ],
-      'sources': [
-        'app/webrtc/audiotrack.cc',
-        'app/webrtc/audiotrack.h',
-        'app/webrtc/datachannel.cc',
-        'app/webrtc/datachannel.h',
-        'app/webrtc/datachannelinterface.h',
-        'app/webrtc/dtlsidentitystore.cc',
-        'app/webrtc/dtlsidentitystore.h',
-        'app/webrtc/dtmfsender.cc',
-        'app/webrtc/dtmfsender.h',
-        'app/webrtc/dtmfsenderinterface.h',
-        'app/webrtc/jsep.h',
-        'app/webrtc/jsepicecandidate.cc',
-        'app/webrtc/jsepicecandidate.h',
-        'app/webrtc/jsepsessiondescription.cc',
-        'app/webrtc/jsepsessiondescription.h',
-        'app/webrtc/localaudiosource.cc',
-        'app/webrtc/localaudiosource.h',
-        'app/webrtc/mediaconstraintsinterface.cc',
-        'app/webrtc/mediaconstraintsinterface.h',
-        'app/webrtc/mediacontroller.cc',
-        'app/webrtc/mediacontroller.h',
-        'app/webrtc/mediastream.cc',
-        'app/webrtc/mediastream.h',
-        'app/webrtc/mediastreaminterface.h',
-        'app/webrtc/mediastreamobserver.cc',
-        'app/webrtc/mediastreamobserver.h',
-        'app/webrtc/mediastreamprovider.h',
-        'app/webrtc/mediastreamproxy.h',
-        'app/webrtc/mediastreamtrack.h',
-        'app/webrtc/mediastreamtrackproxy.h',
-        'app/webrtc/notifier.h',
-        'app/webrtc/peerconnection.cc',
-        'app/webrtc/peerconnection.h',
-        'app/webrtc/peerconnectionfactory.cc',
-        'app/webrtc/peerconnectionfactory.h',
-        'app/webrtc/peerconnectionfactoryproxy.h',
-        'app/webrtc/peerconnectioninterface.h',
-        'app/webrtc/peerconnectionproxy.h',
-        'app/webrtc/proxy.h',
-        'app/webrtc/remoteaudiosource.cc',
-        'app/webrtc/remoteaudiosource.h',
-        'app/webrtc/remotevideocapturer.cc',
-        'app/webrtc/remotevideocapturer.h',
-        'app/webrtc/rtpreceiver.cc',
-        'app/webrtc/rtpreceiver.h',
-        'app/webrtc/rtpreceiverinterface.h',
-        'app/webrtc/rtpsender.cc',
-        'app/webrtc/rtpsender.h',
-        'app/webrtc/rtpsenderinterface.h',
-        'app/webrtc/sctputils.cc',
-        'app/webrtc/sctputils.h',
-        'app/webrtc/statscollector.cc',
-        'app/webrtc/statscollector.h',
-        'app/webrtc/statstypes.cc',
-        'app/webrtc/statstypes.h',
-        'app/webrtc/streamcollection.h',
-        'app/webrtc/videosource.cc',
-        'app/webrtc/videosource.h',
-        'app/webrtc/videosourceinterface.h',
-        'app/webrtc/videosourceproxy.h',
-        'app/webrtc/videotrack.cc',
-        'app/webrtc/videotrack.h',
-        'app/webrtc/videotrackrenderers.cc',
-        'app/webrtc/videotrackrenderers.h',
-        'app/webrtc/webrtcsdp.cc',
-        'app/webrtc/webrtcsdp.h',
-        'app/webrtc/webrtcsession.cc',
-        'app/webrtc/webrtcsession.h',
-        'app/webrtc/webrtcsessiondescriptionfactory.cc',
-        'app/webrtc/webrtcsessiondescriptionfactory.h',
-      ],
-    },  # target libjingle_peerconnection
   ],
 }

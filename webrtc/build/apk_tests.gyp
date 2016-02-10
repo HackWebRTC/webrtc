@@ -68,8 +68,8 @@
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)peerconnection_unittests<(SHARED_LIB_SUFFIX)',
       },
       'dependencies': [
-        '<(DEPTH)/talk/libjingle_tests.gyp:peerconnection_unittests',
-        '<(DEPTH)/talk/libjingle.gyp:libjingle_peerconnection_java',
+        '<(webrtc_root)/api/api_tests.gyp:peerconnection_unittests',
+        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection_java',
       ],
       'includes': [
         '../../build/apk_test.gypi',

@@ -10,7 +10,7 @@
 
 #import "RTCMediaStreamTrack.h"
 
-#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/base/scoped_ptr.h"
 
 typedef NS_ENUM(NSInteger, RTCMediaStreamTrackType) {

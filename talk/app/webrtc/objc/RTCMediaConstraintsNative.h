@@ -28,7 +28,7 @@
 #ifndef TALK_APP_WEBRTC_OBJC_RTCMEDIACONSTRAINTSNATIVE_H_
 #define TALK_APP_WEBRTC_OBJC_RTCMEDIACONSTRAINTSNATIVE_H_
 
-#include "talk/app/webrtc/mediaconstraintsinterface.h"
+#include "webrtc/api/mediaconstraintsinterface.h"
 
 namespace webrtc {
 class RTCMediaConstraintsNative : public MediaConstraintsInterface {
