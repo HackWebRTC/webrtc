@@ -881,10 +881,11 @@ static int SignalBasedDelayCorrection(AecCore* self) {
 
 static void EchoSubtraction(AecCore* aec,
                             int num_partitions,
-                            int x_fft_buf_block_pos,
                             int extended_filter_enabled,
                             float normal_mu,
                             float normal_error_threshold,
+                            float* x_fft,
+                            int* x_fft_buf_block_pos,
                             float x_fft_buf[2]
                                            [kExtendedNumPartitions * PART_LEN1],
                             float* const y,
@@ -899,6 +900,19 @@ static void EchoSubtraction(AecCore* aec,
   float e[PART_LEN];
   float e_fft[2][PART_LEN1];
   int i;
+
+  // Update the x_fft_buf block position.
+  (*x_fft_buf_block_pos)--;
+  if ((*x_fft_buf_block_pos) == -1) {
+    *x_fft_buf_block_pos = num_partitions - 1;
+  }
+
+  // Buffer x_fft.
+  memcpy(x_fft_buf[0] + (*x_fft_buf_block_pos) * PART_LEN1, x_fft,
+         sizeof(float) * PART_LEN1);
+  memcpy(x_fft_buf[1] + (*x_fft_buf_block_pos) * PART_LEN1, &x_fft[PART_LEN1],
+         sizeof(float) * PART_LEN1);
+
   memset(s_fft, 0, sizeof(s_fft));
 
   // Conditionally reset the echo subtraction filter if the filter has diverged
@@ -909,8 +923,8 @@ static void EchoSubtraction(AecCore* aec,
   }
 
   // Produce echo estimate s_fft.
-  WebRtcAec_FilterFar(num_partitions, x_fft_buf_block_pos, x_fft_buf, h_fft_buf,
-                      s_fft);
+  WebRtcAec_FilterFar(num_partitions, *x_fft_buf_block_pos, x_fft_buf,
+                      h_fft_buf, s_fft);
 
   // Compute the time-domain echo estimate s.
   ScaledInverseFft(s_fft, s_extended, 2.0f, 0);
@@ -932,7 +946,7 @@ static void EchoSubtraction(AecCore* aec,
   // Scale error signal inversely with far power.
   WebRtcAec_ScaleErrorSignal(extended_filter_enabled, normal_mu,
                              normal_error_threshold, x_pow, e_fft);
-  WebRtcAec_FilterAdaptation(num_partitions, x_fft_buf_block_pos, x_fft_buf,
+  WebRtcAec_FilterAdaptation(num_partitions, *x_fft_buf_block_pos, x_fft_buf,
                              e_fft, h_fft_buf);
   memcpy(echo_subtractor_output, e, sizeof(float) * PART_LEN);
 }
@@ -1180,7 +1194,7 @@ static void ProcessBlock(AecCore* aec) {
   size_t i;
 
   float fft[PART_LEN2];
-  float xf[2][PART_LEN1];
+  float x_fft[2][PART_LEN1];
   float df[2][PART_LEN1];
   float far_spectrum = 0.0f;
   float near_spectrum = 0.0f;
@@ -1203,7 +1217,7 @@ static void ProcessBlock(AecCore* aec) {
   float output[PART_LEN];
   float outputH[NUM_HIGH_BANDS_MAX][PART_LEN];
   float* outputH_ptr[NUM_HIGH_BANDS_MAX];
-  float* xf_ptr = NULL;
+  float* x_fft_ptr = NULL;
 
   for (i = 0; i < NUM_HIGH_BANDS_MAX; ++i) {
     outputH_ptr[i] = outputH[i];
@@ -1241,8 +1255,8 @@ static void ProcessBlock(AecCore* aec) {
 
   // Convert far-end signal to the frequency domain.
   memcpy(fft, farend_ptr, sizeof(float) * PART_LEN2);
-  Fft(fft, xf);
-  xf_ptr = &xf[0][0];
+  Fft(fft, x_fft);
+  x_fft_ptr = &x_fft[0][0];
 
   // Near fft
   memcpy(fft, aec->dBuf, sizeof(float) * PART_LEN2);
@@ -1250,8 +1264,8 @@ static void ProcessBlock(AecCore* aec) {
 
   // Power smoothing
   for (i = 0; i < PART_LEN1; i++) {
-    far_spectrum = (xf_ptr[i] * xf_ptr[i]) +
-                   (xf_ptr[PART_LEN1 + i] * xf_ptr[PART_LEN1 + i]);
+    far_spectrum = (x_fft_ptr[i] * x_fft_ptr[i]) +
+                   (x_fft_ptr[PART_LEN1 + i] * x_fft_ptr[PART_LEN1 + i]);
     aec->xPow[i] =
         gPow[0] * aec->xPow[i] + gPow[1] * aec->num_partitions * far_spectrum;
     // Calculate absolute spectra
@@ -1310,24 +1324,11 @@ static void ProcessBlock(AecCore* aec) {
     }
   }
 
-  // Update the xfBuf block position.
-  aec->xfBufBlockPos--;
-  if (aec->xfBufBlockPos == -1) {
-    aec->xfBufBlockPos = aec->num_partitions - 1;
-  }
-
-  // Buffer xf
-  memcpy(aec->xfBuf[0] + aec->xfBufBlockPos * PART_LEN1, xf_ptr,
-         sizeof(float) * PART_LEN1);
-  memcpy(aec->xfBuf[1] + aec->xfBufBlockPos * PART_LEN1, &xf_ptr[PART_LEN1],
-         sizeof(float) * PART_LEN1);
-
   // Perform echo subtraction.
-  EchoSubtraction(aec, aec->num_partitions, aec->xfBufBlockPos,
-                  aec->extended_filter_enabled,
-                  aec->normal_mu, aec->normal_error_threshold, aec->xfBuf,
-                  nearend_ptr, aec->xPow, aec->wfBuf,
-                  echo_subtractor_output);
+  EchoSubtraction(aec, aec->num_partitions, aec->extended_filter_enabled,
+                  aec->normal_mu, aec->normal_error_threshold, &x_fft[0][0],
+                  &aec->xfBufBlockPos, aec->xfBuf, nearend_ptr, aec->xPow,
+                  aec->wfBuf, echo_subtractor_output);
 
   RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, echo_subtractor_output, PART_LEN);
 
