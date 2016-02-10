@@ -940,34 +940,34 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
 TEST_F(AcmReceiverBitExactnessOldApi, 8kHzOutput) {
-  Run(8000, PlatformChecksum("908002dc01fc4eb1d2be24eb1d3f354b",
-                             "dcee98c623b147ebe1b40dd30efa896e",
-                             "adc92e173f908f93b96ba5844209815a",
-                             "ba16137d3a5a1e637252289c57522bfe"),
+  Run(8000, PlatformChecksum("d9334a99c7f185860028e6f08e5b7390",
+                             "946803da293ef3fa39242d3059eac491",
+                             "efb5a07480bad8afb184c4150f4b3f3a",
+                             "51717ab374871cbfa2c6977ea2aa40f3"),
       std::vector<ExternalDecoder>());
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 16kHzOutput) {
-  Run(16000, PlatformChecksum("a909560b5ca49fa472b17b7b277195e9",
-                              "f790e7a8cce4e2c8b7bb5e0e4c5dac0d",
-                              "8cffa6abcb3e18e33b9d857666dff66a",
-                              "66ee001e23534d4dcf5d0f81f916c93b"),
+  Run(16000, PlatformChecksum("9ad7d5a5f3c9fac4e880a6fbfd9d3ac8",
+                              "4fc1b82404ae33511c1cdb385774b2a4",
+                              "f580bfd4e5e29f0399b61b7512d4e3b4",
+                              "5b2ae32c590b41d0c601179e14eaae96"),
       std::vector<ExternalDecoder>());
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 32kHzOutput) {
-  Run(32000, PlatformChecksum("441aab4b347fb3db4e9244337aca8d8e",
-                              "306e0d990ee6e92de3fbecc0123ece37",
-                              "3e126fe894720c3f85edadcc91964ba5",
-                              "9c6ff204b14152c48fe41d5ab757943b"),
+  Run(32000, PlatformChecksum("08e6085ccb96494b242f0ecc4c8a2dc8",
+                              "d1f853b1e046c67c9ee186786eaf2124",
+                              "fdf5166b98c43235978685e40e28fea6",
+                              "7f620312f2fa74a10048bbb7739d4bf3"),
       std::vector<ExternalDecoder>());
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutput) {
-  Run(48000, PlatformChecksum("4ee2730fa1daae755e8a8fd3abd779ec",
-                              "aa7c232f63a67b2a72703593bdd172e0",
-                              "0155665e93067c4e89256b944dd11999",
-                              "fc4f0da8844cd808d822bbddf3b9c285"),
+  Run(48000, PlatformChecksum("31343887b7ef70772df733d072b0dd00",
+                              "f6893278d75dad42ac44bff77f674b33",
+                              "71f89e87ee1bad594f529d6c036289ad",
+                              "b64c891e99eccc9ff45541ef67c9e9bf"),
       std::vector<ExternalDecoder>());
 }
 
@@ -1022,10 +1022,10 @@ TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
   std::vector<ExternalDecoder> external_decoders;
   external_decoders.push_back(ed);
 
-  Run(48000, PlatformChecksum("4ee2730fa1daae755e8a8fd3abd779ec",
-                              "aa7c232f63a67b2a72703593bdd172e0",
-                              "0155665e93067c4e89256b944dd11999",
-                              "fc4f0da8844cd808d822bbddf3b9c285"),
+  Run(48000, PlatformChecksum("31343887b7ef70772df733d072b0dd00",
+                              "f6893278d75dad42ac44bff77f674b33",
+                              "71f89e87ee1bad594f529d6c036289ad",
+                              "b64c891e99eccc9ff45541ef67c9e9bf"),
       external_decoders);
 
   EXPECT_CALL(mock_decoder, Die());
