@@ -60,10 +60,8 @@ class IntelligibilityEnhancer {
   explicit IntelligibilityEnhancer(const Config& config);
   IntelligibilityEnhancer();  // Initialize with default config.
 
-  // Reads and processes chunk of noise stream in time domain.
-  void AnalyzeCaptureAudio(float* const* audio,
-                           int sample_rate_hz,
-                           size_t num_channels);
+  // Sets the capture noise magnitude spectrum estimate.
+  void SetCaptureNoiseEstimate(std::vector<float> noise);
 
   // Reads chunk of speech in time domain and updates with modified signal.
   void ProcessRenderAudio(float* const* audio,
@@ -72,15 +70,10 @@ class IntelligibilityEnhancer {
   bool active() const;
 
  private:
-  enum AudioSource {
-    kRenderStream = 0,  // Clear speech stream.
-    kCaptureStream,  // Noise stream.
-  };
-
   // Provides access point to the frequency domain.
   class TransformCallback : public LappedTransform::Callback {
    public:
-    TransformCallback(IntelligibilityEnhancer* parent, AudioSource source);
+    TransformCallback(IntelligibilityEnhancer* parent);
 
     // All in frequency domain, receives input |in_block|, applies
     // intelligibility enhancement, and writes result to |out_block|.
@@ -92,16 +85,10 @@ class IntelligibilityEnhancer {
 
    private:
     IntelligibilityEnhancer* parent_;
-    AudioSource source_;
   };
   friend class TransformCallback;
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestErbCreation);
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestSolveForGains);
-
-  // Sends streams to ProcessClearBlock or ProcessNoiseBlock based on source.
-  void DispatchAudio(AudioSource source,
-                     const std::complex<float>* in_block,
-                     std::complex<float>* out_block);
 
   // Updates variance computation and analysis with |in_block_|,
   // and writes modified speech to |out_block|.
@@ -117,26 +104,15 @@ class IntelligibilityEnhancer {
   // Transforms freq gains to ERB gains.
   void UpdateErbGains();
 
-  // Updates variance calculation for noise input with |in_block|.
-  void ProcessNoiseBlock(const std::complex<float>* in_block,
-                         std::complex<float>* out_block);
-
   // Returns number of ERB filters.
   static size_t GetBankSize(int sample_rate, size_t erb_resolution);
 
   // Initializes ERB filterbank.
-  void CreateErbBank();
+  std::vector<std::vector<float>> CreateErbBank(size_t num_freqs);
 
   // Analytically solves quadratic for optimal gains given |lambda|.
   // Negative gains are set to 0. Stores the results in |sols|.
   void SolveForGainsGivenLambda(float lambda, size_t start_freq, float* sols);
-
-  // Computes variance across ERB filters from freq variance |var|.
-  // Stores in |result|.
-  void FilterVariance(const float* var, float* result);
-
-  // Returns dot product of vectors specified by size |length| arrays |a|,|b|.
-  static float DotProduct(const float* a, const float* b, size_t length);
 
   const size_t freqs_;         // Num frequencies in frequency domain.
   const size_t window_size_;   // Window size in samples; also the block size.
@@ -152,11 +128,12 @@ class IntelligibilityEnhancer {
                                // TODO(ekm): Add logic for updating |active_|.
 
   intelligibility::VarianceArray clear_variance_;
-  intelligibility::VarianceArray noise_variance_;
+  std::vector<float> noise_power_;
   rtc::scoped_ptr<float[]> filtered_clear_var_;
   rtc::scoped_ptr<float[]> filtered_noise_var_;
-  std::vector<std::vector<float>> filter_bank_;
   rtc::scoped_ptr<float[]> center_freqs_;
+  std::vector<std::vector<float>> capture_filter_bank_;
+  std::vector<std::vector<float>> render_filter_bank_;
   size_t start_freq_;
   rtc::scoped_ptr<float[]> rho_;  // Production and interpretation SNR.
                                   // for each ERB band.
@@ -166,13 +143,10 @@ class IntelligibilityEnhancer {
   // Destination buffers used to reassemble blocked chunks before overwriting
   // the original input array with modifications.
   ChannelBuffer<float> temp_render_out_buffer_;
-  ChannelBuffer<float> temp_capture_out_buffer_;
 
   rtc::scoped_ptr<float[]> kbd_window_;
   TransformCallback render_callback_;
-  TransformCallback capture_callback_;
   rtc::scoped_ptr<LappedTransform> render_mangler_;
-  rtc::scoped_ptr<LappedTransform> capture_mangler_;
   int block_count_;
   int analysis_step_;
 };

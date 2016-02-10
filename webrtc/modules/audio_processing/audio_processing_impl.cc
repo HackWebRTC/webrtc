@@ -771,12 +771,6 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     ca->SplitIntoFrequencyBands();
   }
 
-  if (constants_.intelligibility_enabled) {
-    public_submodules_->intelligibility_enhancer->AnalyzeCaptureAudio(
-        ca->split_channels_f(kBand0To8kHz), capture_nonlocked_.split_rate,
-        ca->num_channels());
-  }
-
   if (capture_nonlocked_.beamformer_enabled) {
     private_submodules_->beamformer->ProcessChunk(*ca->split_data_f(),
                                                   ca->split_data_f());
@@ -793,6 +787,11 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     ca->CopyLowPassToReference();
   }
   public_submodules_->noise_suppression->ProcessCaptureAudio(ca);
+  if (constants_.intelligibility_enabled) {
+    RTC_DCHECK(public_submodules_->noise_suppression->is_enabled());
+    public_submodules_->intelligibility_enhancer->SetCaptureNoiseEstimate(
+        public_submodules_->noise_suppression->NoiseEstimate());
+  }
   RETURN_ON_ERR(
       public_submodules_->echo_control_mobile->ProcessCaptureAudio(ca));
   public_submodules_->voice_detection->ProcessCaptureAudio(ca);

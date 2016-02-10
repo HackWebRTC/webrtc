@@ -99,7 +99,6 @@ class IntelligibilityEnhancerTest : public ::testing::Test {
     float* clear_cursor = &clear_data_[0];
     float* noise_cursor = &noise_data_[0];
     for (int i = 0; i < kSamples; i += kFragmentSize) {
-      enh_->AnalyzeCaptureAudio(&noise_cursor, kSampleRate, kNumChannels);
       enh_->ProcessRenderAudio(&clear_cursor, kSampleRate, kNumChannels);
       clear_cursor += kFragmentSize;
       noise_cursor += kFragmentSize;
@@ -154,7 +153,7 @@ TEST_F(IntelligibilityEnhancerTest, TestErbCreation) {
     EXPECT_NEAR(kTestCenterFreqs[i], enh_->center_freqs_[i], kMaxTestError);
     ASSERT_EQ(arraysize(kTestFilterBank[0]), enh_->freqs_);
     for (size_t j = 0; j < enh_->freqs_; ++j) {
-      EXPECT_NEAR(kTestFilterBank[i][j], enh_->filter_bank_[i][j],
+      EXPECT_NEAR(kTestFilterBank[i][j], enh_->render_filter_bank_[i][j],
                   kMaxTestError);
     }
   }

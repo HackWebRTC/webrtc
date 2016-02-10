@@ -23,10 +23,14 @@
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/real_fourier.h"
 #include "webrtc/common_audio/wav_file.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
+#include "webrtc/modules/audio_processing/noise_suppression_impl.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -115,6 +119,17 @@ void void_main(int argc, char* argv[]) {
   config.analysis_rate = FLAGS_ana_rate;
   config.gain_change_limit = FLAGS_gain_limit;
   IntelligibilityEnhancer enh(config);
+  rtc::CriticalSection crit;
+  NoiseSuppressionImpl ns(&crit);
+  ns.Initialize(kNumChannels, FLAGS_sample_rate);
+  ns.Enable(true);
+
+  AudioBuffer capture_audio(fragment_size,
+                            kNumChannels,
+                            fragment_size,
+                            kNumChannels,
+                            fragment_size);
+  StreamConfig stream_config(FLAGS_sample_rate, kNumChannels);
 
   // Slice the input into smaller chunks, as the APM would do, and feed them
   // through the enhancer.
@@ -122,7 +137,10 @@ void void_main(int argc, char* argv[]) {
   float* noise_cursor = &noise_fpcm[0];
 
   for (size_t i = 0; i < samples; i += fragment_size) {
-    enh.AnalyzeCaptureAudio(&noise_cursor, FLAGS_sample_rate, kNumChannels);
+    capture_audio.CopyFrom(&noise_cursor, stream_config);
+    ns.AnalyzeCaptureAudio(&capture_audio);
+    ns.ProcessCaptureAudio(&capture_audio);
+    enh.SetCaptureNoiseEstimate(ns.NoiseEstimate());
     enh.ProcessRenderAudio(&clear_cursor, FLAGS_sample_rate, kNumChannels);
     clear_cursor += fragment_size;
     noise_cursor += fragment_size;
