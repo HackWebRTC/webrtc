@@ -474,7 +474,7 @@ class VideoAnalyzer : public PacketReceiver,
   void PrintResults() {
     rtc::CritScope crit(&comparison_lock_);
     PrintResult("psnr", psnr_, " dB");
-    PrintResult("ssim", ssim_, "");
+    PrintResult("ssim", ssim_, " score");
     PrintResult("sender_time", sender_time_, " ms");
     printf("RESULT dropped_frames: %s = %d frames\n", test_label_.c_str(),
            dropped_frames_);
