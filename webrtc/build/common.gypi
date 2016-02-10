@@ -25,7 +25,6 @@
         'include_opus%': 1,
 
         'conditions': [
-
           # Include the iLBC audio codec?
           ['build_with_chromium==1 or build_with_mozilla==1', {
             'include_ilbc%': 0,
@@ -195,9 +194,6 @@
         'include_internal_audio_device%': 1,
         'include_tests%': 1,
         'restrict_webrtc_logging%': 0,
-      }],
-      ['OS=="android" or OS=="linux"', {
-        'java_home%': '<!(python -c "import os; dir=os.getenv(\'JAVA_HOME\', \'/usr/lib/jvm/java-7-openjdk-amd64\'); assert os.path.exists(os.path.join(dir, \'include/jni.h\')), \'Point \\$JAVA_HOME or the java_home gyp variable to a directory containing include/jni.h!\'; print dir")',
       }],
       ['OS=="ios"', {
         'build_libjpeg%': 0,
