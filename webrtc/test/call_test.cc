@@ -236,6 +236,14 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
   }
 }
 
+void CallTest::CreateFrameGeneratorCapturerWithDrift(Clock* clock,
+                                                     float speed) {
+  VideoStream stream = video_encoder_config_.streams.back();
+  frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
+      video_send_stream_->Input(), stream.width, stream.height,
+      stream.max_framerate * speed, clock));
+}
+
 void CallTest::CreateFrameGeneratorCapturer() {
   VideoStream stream = video_encoder_config_.streams.back();
   frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
@@ -245,9 +253,11 @@ void CallTest::CreateFrameGeneratorCapturer() {
 
 void CallTest::CreateFakeAudioDevices() {
   fake_send_audio_device_.reset(new FakeAudioDevice(
-      clock_, test::ResourcePath("voice_engine/audio_long16", "pcm")));
+      clock_, test::ResourcePath("voice_engine/audio_long16", "pcm"),
+      DriftingClock::kNoDrift));
   fake_recv_audio_device_.reset(new FakeAudioDevice(
-      clock_, test::ResourcePath("voice_engine/audio_long16", "pcm")));
+      clock_, test::ResourcePath("voice_engine/audio_long16", "pcm"),
+      DriftingClock::kNoDrift));
 }
 
 void CallTest::CreateVideoStreams() {

@@ -22,13 +22,16 @@
 namespace webrtc {
 namespace test {
 
-FakeAudioDevice::FakeAudioDevice(Clock* clock, const std::string& filename)
+FakeAudioDevice::FakeAudioDevice(Clock* clock,
+                                 const std::string& filename,
+                                 float speed)
     : audio_callback_(NULL),
       capturing_(false),
       captured_audio_(),
       playout_buffer_(),
+      speed_(speed),
       last_playout_ms_(-1),
-      clock_(clock),
+      clock_(clock, speed),
       tick_(EventTimerWrapper::Create()),
       thread_(FakeAudioDevice::Run, this, "FakeAudioDevice"),
       file_utility_(new ModuleFileUtility(0)),
@@ -51,7 +54,7 @@ int32_t FakeAudioDevice::Init() {
   if (file_utility_->InitPCMReading(*input_stream_.get()) != 0)
     return -1;
 
-  if (!tick_->StartTimer(true, 10))
+  if (!tick_->StartTimer(true, 10 / speed_))
     return -1;
   thread_.Start();
   thread_.SetPriority(rtc::kHighPriority);
@@ -107,7 +110,7 @@ void FakeAudioDevice::CaptureAudio() {
                                                          false,
                                                          new_mic_level));
       size_t samples_needed = kFrequencyHz / 100;
-      int64_t now_ms = clock_->TimeInMilliseconds();
+      int64_t now_ms = clock_.TimeInMilliseconds();
       uint32_t time_since_last_playout_ms = now_ms - last_playout_ms_;
       if (last_playout_ms_ > 0 && time_since_last_playout_ms > 0) {
         samples_needed = std::min(

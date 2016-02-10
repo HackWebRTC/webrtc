@@ -71,6 +71,7 @@ class CallTest : public ::testing::Test {
                         Transport* send_transport);
   void CreateMatchingReceiveConfigs(Transport* rtcp_send_transport);
 
+  void CreateFrameGeneratorCapturerWithDrift(Clock* drift_clock, float speed);
   void CreateFrameGeneratorCapturer();
   void CreateFakeAudioDevices();
 

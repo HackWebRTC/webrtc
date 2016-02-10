@@ -26,6 +26,7 @@
 #include "webrtc/system_wrappers/include/rtp_to_ntp.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
+#include "webrtc/test/drifting_clock.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
@@ -41,11 +42,18 @@
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 
+using webrtc::test::DriftingClock;
+using webrtc::test::FakeAudioDevice;
+
 namespace webrtc {
 
 class CallPerfTest : public test::CallTest {
  protected:
-  void TestAudioVideoSync(bool fec, bool create_audio_first);
+  void TestAudioVideoSync(bool fec,
+                          bool create_audio_first,
+                          float video_ntp_speed,
+                          float video_rtp_speed,
+                          float audio_rtp_speed);
 
   void TestCpuOveruse(LoadObserver::Load tested_load, int encode_delay_ms);
 
@@ -188,7 +196,11 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
   int64_t first_time_in_sync_;
 };
 
-void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
+void CallPerfTest::TestAudioVideoSync(bool fec,
+                                      bool create_audio_first,
+                                      float video_ntp_speed,
+                                      float video_rtp_speed,
+                                      float audio_rtp_speed) {
   const char* kSyncGroup = "av_sync";
   const uint32_t kAudioSendSsrc = 1234;
   const uint32_t kAudioRecvSsrc = 5678;
@@ -228,8 +240,8 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
   const std::string audio_filename =
       test::ResourcePath("voice_engine/audio_long16", "pcm");
   ASSERT_STRNE("", audio_filename.c_str());
-  test::FakeAudioDevice fake_audio_device(Clock::GetRealTimeClock(),
-                                          audio_filename);
+  FakeAudioDevice fake_audio_device(Clock::GetRealTimeClock(), audio_filename,
+                                    audio_rtp_speed);
   EXPECT_EQ(0, voe_base->Init(&fake_audio_device, nullptr));
   Config voe_config;
   voe_config.Set<VoicePacing>(new VoicePacing(true));
@@ -324,7 +336,8 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
         receiver_call_->CreateAudioReceiveStream(audio_recv_config);
   }
 
-  CreateFrameGeneratorCapturer();
+  DriftingClock drifting_clock(clock_, video_ntp_speed);
+  CreateFrameGeneratorCapturerWithDrift(&drifting_clock, video_rtp_speed);
 
   Start();
 
@@ -365,15 +378,49 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioCreatedFirst) {
-  TestAudioVideoSync(false, true);
+  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
+                     DriftingClock::kNoDrift, DriftingClock::kNoDrift);
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoCreatedFirst) {
-  TestAudioVideoSync(false, false);
+  TestAudioVideoSync(false, false, DriftingClock::kNoDrift,
+                     DriftingClock::kNoDrift, DriftingClock::kNoDrift);
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithFec) {
-  TestAudioVideoSync(true, false);
+  TestAudioVideoSync(true, false, DriftingClock::kNoDrift,
+                     DriftingClock::kNoDrift, DriftingClock::kNoDrift);
+}
+
+// TODO(danilchap): Reenable after adding support for frame capture clock
+// that is not in sync with local TickTime clock.
+TEST_F(CallPerfTest, DISABLED_PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {
+  TestAudioVideoSync(false, true, DriftingClock::PercentsFaster(10.0f),
+                     DriftingClock::kNoDrift, DriftingClock::kNoDrift);
+}
+
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioRtpDrift) {
+  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
+                     DriftingClock::kNoDrift,
+                     DriftingClock::PercentsFaster(30.0f));
+}
+
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoRtpDrift) {
+  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
+                     DriftingClock::PercentsFaster(30.0f),
+                     DriftingClock::kNoDrift);
+}
+
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioFasterThanVideoDrift) {
+  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
+                     DriftingClock::PercentsSlower(30.0f),
+                     DriftingClock::PercentsFaster(30.0f));
+}
+
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoFasterThanAudioDrift) {
+  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
+                     DriftingClock::PercentsFaster(30.0f),
+                     DriftingClock::PercentsSlower(30.0f));
 }
 
 void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,

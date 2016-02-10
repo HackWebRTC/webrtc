@@ -22,6 +22,8 @@
         'constants.h',
         'direct_transport.cc',
         'direct_transport.h',
+        'drifting_clock.cc',
+        'drifting_clock.h',
         'encoder_settings.cc',
         'encoder_settings.h',
         'fake_audio_device.cc',
