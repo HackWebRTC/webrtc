@@ -75,7 +75,7 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
       internal_ref_ = external_timestamp;
       first_packet_received_ = true;
     }
-    int32_t external_diff = external_timestamp - external_ref_;
+    int64_t external_diff = external_timestamp - external_ref_;
     assert(denominator_ > 0);  // Should not be possible.
     external_ref_ = external_timestamp;
     internal_ref_ += (external_diff * numerator_) / denominator_;
@@ -92,7 +92,7 @@ uint32_t TimestampScaler::ToExternal(uint32_t internal_timestamp) const {
     // Not initialized, or scale factor is 1.
     return internal_timestamp;
   } else {
-    int32_t internal_diff = internal_timestamp - internal_ref_;
+    int64_t internal_diff = internal_timestamp - internal_ref_;
     assert(numerator_ > 0);  // Should not be possible.
     // Do not update references in this method.
     // Switch |denominator_| and |numerator_| to convert the other way.
