@@ -98,6 +98,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   VideoCodingModule* const vcm_;
   EncoderStateFeedback encoder_feedback_;
   ViEChannel vie_channel_;
+  ViEReceiver* const vie_receiver_;
   VideoCaptureInput input_;
 };
 }  // namespace internal

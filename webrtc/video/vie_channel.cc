@@ -610,13 +610,9 @@ int32_t ViEChannel::GetLocalSSRC(uint8_t idx, unsigned int* ssrc) {
   return 0;
 }
 
-uint32_t ViEChannel::GetRemoteSSRC() {
-  RTC_DCHECK(sender_);
-  return vie_receiver_.GetRemoteSsrc();
-}
-
 int ViEChannel::SetRtxSendPayloadType(int payload_type,
                                       int associated_payload_type) {
+  RTC_DCHECK(sender_);
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     rtp_rtcp->SetRtxSendPayloadType(payload_type, associated_payload_type);
   SetRtxSendStatus(true);
@@ -835,15 +831,6 @@ void ViEChannel::StopReceive() {
   vie_receiver_.StopReceive();
   if (!sender_)
     StopDecodeThread();
-}
-
-int32_t ViEChannel::ReceivedRTCPPacket(const void* rtcp_packet,
-                                       size_t rtcp_packet_length) {
-  RTC_DCHECK(sender_);
-  return vie_receiver_.DeliverRtcp(
-             reinterpret_cast<const uint8_t*>(rtcp_packet), rtcp_packet_length)
-             ? 0
-             : -1;
 }
 
 int32_t ViEChannel::SetMTU(uint16_t mtu) {

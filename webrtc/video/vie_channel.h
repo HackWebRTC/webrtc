@@ -106,9 +106,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Gets SSRC for outgoing stream number |idx|.
   int32_t GetLocalSSRC(uint8_t idx, unsigned int* ssrc);
 
-  // Gets SSRC for the incoming stream.
-  uint32_t GetRemoteSSRC();
-
   int SetRtxSendPayloadType(int payload_type, int associated_payload_type);
 
   void SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state);
@@ -169,12 +166,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   bool Sending();
   void StartReceive();
   void StopReceive();
-
-  int32_t ReceivedRTPPacket(const void* rtp_packet,
-                            const size_t rtp_packet_length,
-                            const PacketTime& packet_time);
-  int32_t ReceivedRTCPPacket(const void* rtcp_packet,
-                             const size_t rtcp_packet_length);
 
   // Sets the maximum transfer unit size for the network link, i.e. including
   // IP, UDP and RTP headers.

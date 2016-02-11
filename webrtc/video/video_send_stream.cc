@@ -168,6 +168,7 @@ VideoSendStream::VideoSendStream(
                    congestion_controller_->packet_router(),
                    config_.rtp.ssrcs.size(),
                    true),
+      vie_receiver_(vie_channel_.vie_receiver()),
       input_(&vie_encoder_,
              config_.local_renderer,
              &stats_proxy_,
@@ -285,9 +286,8 @@ VideoSendStream::~VideoSendStream() {
   // done before deleting the channel.
   encoder_feedback_.RemoveEncoder(&vie_encoder_);
 
-  uint32_t remote_ssrc = vie_channel_.GetRemoteSSRC();
   congestion_controller_->GetRemoteBitrateEstimator(false)->RemoveStream(
-      remote_ssrc);
+      vie_receiver_->GetRemoteSsrc());
 }
 
 VideoCaptureInput* VideoSendStream::Input() {
@@ -465,7 +465,7 @@ bool VideoSendStream::ReconfigureVideoEncoder(
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  return vie_channel_.ReceivedRTCPPacket(packet, length) == 0;
+  return vie_receiver_->DeliverRtcp(packet, length);
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() {
