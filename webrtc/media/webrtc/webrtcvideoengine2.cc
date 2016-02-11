@@ -337,19 +337,19 @@ std::vector<VideoCodec> DefaultVideoCodecList() {
   std::vector<VideoCodec> codecs;
   codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType,
                                                            kVp8CodecName));
+  codecs.push_back(
+      VideoCodec::CreateRtxCodec(kDefaultRtxVp8PlType, kDefaultVp8PlType));
   if (CodecIsInternallySupported(kVp9CodecName)) {
     codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp9PlType,
                                                              kVp9CodecName));
+    codecs.push_back(
+        VideoCodec::CreateRtxCodec(kDefaultRtxVp9PlType, kDefaultVp9PlType));
   }
   if (CodecIsInternallySupported(kH264CodecName)) {
     codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultH264PlType,
                                                              kH264CodecName));
-  }
-  codecs.push_back(
-      VideoCodec::CreateRtxCodec(kDefaultRtxVp8PlType, kDefaultVp8PlType));
-  if (CodecIsInternallySupported(kVp9CodecName)) {
     codecs.push_back(
-        VideoCodec::CreateRtxCodec(kDefaultRtxVp9PlType, kDefaultVp9PlType));
+        VideoCodec::CreateRtxCodec(kDefaultRtxH264PlType, kDefaultH264PlType));
   }
   codecs.push_back(VideoCodec(kDefaultRedPlType, kRedCodecName));
   codecs.push_back(
