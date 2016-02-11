@@ -213,4 +213,16 @@ JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnOutputFormatRequest)
       j_width, j_height, j_fps);
 }
 
+JOW(jlong, VideoCapturerAndroid_nativeCreateVideoCapturer)
+    (JNIEnv* jni, jclass,
+     jobject j_video_capturer, jobject j_surface_texture_helper) {
+  rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
+      new rtc::RefCountedObject<AndroidVideoCapturerJni>(
+          jni, j_video_capturer, j_surface_texture_helper);
+  rtc::scoped_ptr<cricket::VideoCapturer> capturer(
+      new webrtc::AndroidVideoCapturer(delegate));
+  // Caller takes ownership of the cricket::VideoCapturer* pointer.
+  return jlongFromPointer(capturer.release());
+}
+
 }  // namespace webrtc_jni
