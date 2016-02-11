@@ -66,10 +66,10 @@ WPDTree::WPDTree(size_t data_length, const float* high_pass_coefficients,
 WPDTree::~WPDTree() {}
 
 WPDNode* WPDTree::NodeAt(int level, int index) {
-  const int kNumNodesAtLevel = 1 << level;
-  if (level < 0 || level > levels_ || index < 0 || index >= kNumNodesAtLevel) {
+  if (level < 0 || level > levels_ || index < 0 || index >= 1 << level) {
     return NULL;
   }
+
   return nodes_[(1 << level) + index].get();
 }
 
