@@ -46,7 +46,6 @@ class RtcpRttStats;
 class ViEChannelProtectionCallback;
 class ViERTPObserver;
 class VideoCodingModule;
-class VideoDecoder;
 class VideoRenderCallback;
 class VoEVideoSync;
 
@@ -163,9 +162,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   int32_t StartSend();
   int32_t StopSend();
-  bool Sending();
-  void StartReceive();
-  void StopReceive();
 
   // Sets the maximum transfer unit size for the network link, i.e. including
   // IP, UDP and RTP headers.
@@ -229,9 +225,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void SetIncomingVideoStream(IncomingVideoStream* incoming_video_stream);
 
  protected:
-  static bool ChannelDecodeThreadFunction(void* obj);
-  bool ChannelDecodeProcess();
-
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms);
 
   int ProtectionRequest(const FecProtectionParams* delta_fec_params,
@@ -382,8 +375,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   const rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   TransportFeedbackObserver* const transport_feedback_observer_;
-
-  rtc::PlatformThread decode_thread_;
 
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;

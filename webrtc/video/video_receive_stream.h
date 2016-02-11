@@ -80,11 +80,16 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id);
 
  private:
+  static bool DecodeThreadFunction(void* ptr);
+  void Decode();
+
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoReceiveStream::Config config_;
   ProcessThread* const process_thread_;
   Clock* const clock_;
+
+  rtc::PlatformThread decode_thread_;
 
   CongestionController* const congestion_controller_;
   CallStats* const call_stats_;

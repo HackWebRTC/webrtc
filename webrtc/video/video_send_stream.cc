@@ -262,6 +262,8 @@ VideoSendStream::VideoSendStream(
 
 VideoSendStream::~VideoSendStream() {
   LOG(LS_INFO) << "~VideoSendStream: " << config_.ToString();
+  Stop();
+
   module_process_thread_->DeRegisterModule(&overuse_detector_);
   // Remove vcm_protection_callback (part of vie_channel_) before destroying
   // ViEChannel. vcm_ is owned by ViEEncoder and the registered callback does
@@ -302,13 +304,13 @@ void VideoSendStream::Start() {
     vie_encoder_.SendKeyFrame();
   }
   vie_encoder_.Restart();
-  vie_channel_.StartReceive();
+  vie_receiver_->StartReceive();
 }
 
 void VideoSendStream::Stop() {
   // TODO(pbos): Make sure the encoder stops here.
   vie_channel_.StopSend();
-  vie_channel_.StopReceive();
+  vie_receiver_->StopReceive();
   transport_adapter_.Disable();
 }
 

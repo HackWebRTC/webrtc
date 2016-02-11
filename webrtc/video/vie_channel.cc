@@ -36,7 +36,6 @@
 
 namespace webrtc {
 
-const int kMaxDecodeWaitTimeMs = 50;
 static const int kMaxTargetDelayMs = 10000;
 const int kMinSendSidePacketHistorySize = 600;
 const int kMaxPacketAgeToNack = 450;
@@ -106,7 +105,6 @@ ViEChannel::ViEChannel(Transport* transport,
       packet_router_(packet_router),
       bandwidth_observer_(bandwidth_observer),
       transport_feedback_observer_(transport_feedback_observer),
-      decode_thread_(ChannelDecodeThreadFunction, this, "DecodingThread"),
       nack_history_size_sender_(kMinSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
@@ -189,8 +187,6 @@ ViEChannel::~ViEChannel() {
     module_process_thread_->DeRegisterModule(rtp_rtcp);
     delete rtp_rtcp;
   }
-  if (!sender_)
-    StopDecodeThread();
 }
 
 void ViEChannel::UpdateHistograms() {
@@ -817,22 +813,6 @@ int32_t ViEChannel::StopSend() {
   return 0;
 }
 
-bool ViEChannel::Sending() {
-  return rtp_rtcp_modules_[0]->Sending();
-}
-
-void ViEChannel::StartReceive() {
-  if (!sender_)
-    StartDecodeThread();
-  vie_receiver_.StartReceive();
-}
-
-void ViEChannel::StopReceive() {
-  vie_receiver_.StopReceive();
-  if (!sender_)
-    StopDecodeThread();
-}
-
 int32_t ViEChannel::SetMTU(uint16_t mtu) {
   RTC_DCHECK(sender_);
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
@@ -937,16 +917,6 @@ int32_t ViEChannel::ResendPackets(const uint16_t* sequence_numbers,
   return rtp_rtcp_modules_[0]->SendNACK(sequence_numbers, length);
 }
 
-bool ViEChannel::ChannelDecodeThreadFunction(void* obj) {
-  return static_cast<ViEChannel*>(obj)->ChannelDecodeProcess();
-}
-
-bool ViEChannel::ChannelDecodeProcess() {
-  RTC_DCHECK(!sender_);
-  vcm_->Decode(kMaxDecodeWaitTimeMs);
-  return true;
-}
-
 void ViEChannel::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   if (!sender_)
     vcm_->SetReceiveChannelParameters(max_rtt_ms);
@@ -1031,22 +1001,6 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
     configuration.remote_bitrate_estimator = nullptr;
   }
   return modules;
-}
-
-void ViEChannel::StartDecodeThread() {
-  RTC_DCHECK(!sender_);
-  if (decode_thread_.IsRunning())
-    return;
-  // Start the decode thread
-  decode_thread_.Start();
-  decode_thread_.SetPriority(rtc::kHighestPriority);
-}
-
-void ViEChannel::StopDecodeThread() {
-  RTC_DCHECK(!sender_);
-  vcm_->TriggerDecoderShutdown();
-
-  decode_thread_.Stop();
 }
 
 int32_t ViEChannel::SetVoiceChannel(int32_t ve_channel_id,

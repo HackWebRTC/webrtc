@@ -106,9 +106,7 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
   return ss.str();
 }
 
-namespace internal {
 namespace {
-
 VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
   VideoCodec codec;
   memset(&codec, 0, sizeof(codec));
@@ -142,6 +140,7 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 }
 }  // namespace
 
+namespace internal {
 VideoReceiveStream::VideoReceiveStream(
     int num_cpu_cores,
     CongestionController* congestion_controller,
@@ -155,6 +154,7 @@ VideoReceiveStream::VideoReceiveStream(
       config_(config),
       process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
+      decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
       congestion_controller_(congestion_controller),
       call_stats_(call_stats),
       remb_(remb),
@@ -307,7 +307,8 @@ VideoReceiveStream::VideoReceiveStream(
 
 VideoReceiveStream::~VideoReceiveStream() {
   LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
-  incoming_video_stream_.Stop();
+  Stop();
+
   process_thread_->DeRegisterModule(vcm_.get());
   vie_channel_.RegisterPreRenderCallback(nullptr);
   vcm_->RegisterPreDecodeImageCallback(nullptr);
@@ -321,14 +322,21 @@ VideoReceiveStream::~VideoReceiveStream() {
 }
 
 void VideoReceiveStream::Start() {
+  if (decode_thread_.IsRunning())
+    return;
   transport_adapter_.Enable();
   incoming_video_stream_.Start();
-  vie_channel_.StartReceive();
+  // Start the decode thread
+  decode_thread_.Start();
+  decode_thread_.SetPriority(rtc::kHighestPriority);
+  vie_receiver_->StartReceive();
 }
 
 void VideoReceiveStream::Stop() {
   incoming_video_stream_.Stop();
-  vie_channel_.StopReceive();
+  vie_receiver_->StopReceive();
+  vcm_->TriggerDecoderShutdown();
+  decode_thread_.Stop();
   transport_adapter_.Disable();
 }
 
@@ -401,6 +409,16 @@ int32_t VideoReceiveStream::Encoded(
 void VideoReceiveStream::SignalNetworkState(NetworkState state) {
   rtp_rtcp_->SetRTCPStatus(state == kNetworkUp ? config_.rtp.rtcp_mode
                                                : RtcpMode::kOff);
+}
+
+bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
+  static_cast<VideoReceiveStream*>(ptr)->Decode();
+  return true;
+}
+
+void VideoReceiveStream::Decode() {
+  static const int kMaxDecodeWaitTimeMs = 50;
+  vcm_->Decode(kMaxDecodeWaitTimeMs);
 }
 
 }  // namespace internal
