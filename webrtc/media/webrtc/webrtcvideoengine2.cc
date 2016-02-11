@@ -1544,7 +1544,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
 
 static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
                              int width,
-                             int height) {
+                             int height,
+                             webrtc::VideoRotation rotation) {
   video_frame->CreateEmptyFrame(width, height, width, (width + 1) / 2,
                                 (width + 1) / 2);
   memset(video_frame->buffer(webrtc::kYPlane), 16,
@@ -1553,6 +1554,7 @@ static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
          video_frame->allocated_size(webrtc::kUPlane));
   memset(video_frame->buffer(webrtc::kVPlane), 128,
          video_frame->allocated_size(webrtc::kVPlane));
+  video_frame->set_rotation(rotation);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
@@ -1574,9 +1576,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
 
   if (muted_) {
     // Create a black frame to transmit instead.
-    CreateBlackFrame(&video_frame,
-                     static_cast<int>(frame->GetWidth()),
-                     static_cast<int>(frame->GetHeight()));
+    CreateBlackFrame(&video_frame, static_cast<int>(frame->GetWidth()),
+                     static_cast<int>(frame->GetHeight()),
+                     frame->GetVideoRotation());
   }
 
   int64_t frame_delta_ms = frame->GetTimeStamp() / rtc::kNumNanosecsPerMillisec;
@@ -1590,6 +1592,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
   // Reconfigure codec if necessary.
   SetDimensions(
       video_frame.width(), video_frame.height(), capturer->IsScreencast());
+  last_rotation_ = video_frame.rotation();
 
   stream_->Input()->IncomingCapturedFrame(video_frame);
 }
@@ -1614,7 +1617,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
         webrtc::VideoFrame black_frame;
 
         CreateBlackFrame(&black_frame, last_dimensions_.width,
-                         last_dimensions_.height);
+                         last_dimensions_.height, last_rotation_);
 
         // Force this black frame not to be dropped due to timestamp order
         // check. As IncomingCapturedFrame will drop the frame if this frame's

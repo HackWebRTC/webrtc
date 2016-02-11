@@ -55,20 +55,14 @@ public class MediaStream {
   }
 
   public boolean removeTrack(AudioTrack track) {
-    if (nativeRemoveAudioTrack(nativeStream, track.nativeTrack)) {
-      audioTracks.remove(track);
-      return true;
-    }
-    return false;
+    audioTracks.remove(track);
+    return nativeRemoveAudioTrack(nativeStream, track.nativeTrack);
   }
 
   public boolean removeTrack(VideoTrack track) {
-    if (nativeRemoveVideoTrack(nativeStream, track.nativeTrack)) {
-      videoTracks.remove(track);
-      preservedVideoTracks.remove(track);
-      return true;
-    }
-    return false;
+    videoTracks.remove(track);
+    preservedVideoTracks.remove(track);
+    return nativeRemoveVideoTrack(nativeStream, track.nativeTrack);
   }
 
   public void dispose() {

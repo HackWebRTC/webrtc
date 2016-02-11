@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
@@ -50,8 +51,8 @@ public class PeerConnectionTest extends ActivityTestCase {
     private int expectedIceCandidates = 0;
     private int expectedErrors = 0;
     private int expectedRenegotiations = 0;
-    private int previouslySeenWidth = 0;
-    private int previouslySeenHeight = 0;
+    private int expectedWidth = 0;
+    private int expectedHeight = 0;
     private int expectedFramesDelivered = 0;
     private LinkedList<SignalingState> expectedSignalingChanges =
         new LinkedList<SignalingState>();
@@ -77,6 +78,8 @@ public class PeerConnectionTest extends ActivityTestCase {
     private int expectedStatsCallbacks = 0;
     private LinkedList<StatsReport[]> gotStatsReports =
         new LinkedList<StatsReport[]>();
+    private final HashSet<MediaStream> gotRemoteStreams =
+        new HashSet<MediaStream>();
 
     public ObserverExpectations(String name) {
       this.name = name;
@@ -106,18 +109,9 @@ public class PeerConnectionTest extends ActivityTestCase {
       }
     }
 
-    private synchronized void setSize(int width, int height) {
-      // Because different camera devices (fake & physical) produce different
-      // resolutions, we only sanity-check the set sizes,
-      assertTrue(width > 0);
-      assertTrue(height > 0);
-      if (previouslySeenWidth > 0) {
-        assertEquals(previouslySeenWidth, width);
-        assertEquals(previouslySeenHeight, height);
-      } else {
-        previouslySeenWidth = width;
-        previouslySeenHeight = height;
-      }
+    public synchronized void setExpectedResolution(int width, int height) {
+      expectedWidth = width;
+      expectedHeight = height;
     }
 
     public synchronized void expectFramesDelivered(int count) {
@@ -126,7 +120,10 @@ public class PeerConnectionTest extends ActivityTestCase {
 
     @Override
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
-      setSize(frame.rotatedWidth(), frame.rotatedHeight());
+      assertTrue(expectedWidth > 0);
+      assertTrue(expectedHeight > 0);
+      assertEquals(expectedWidth, frame.rotatedWidth());
+      assertEquals(expectedHeight, frame.rotatedHeight());
       --expectedFramesDelivered;
       VideoRenderer.renderFrameDone(frame);
     }
@@ -200,6 +197,7 @@ public class PeerConnectionTest extends ActivityTestCase {
       stream.videoTracks.get(0).addRenderer(renderer);
       assertNull(renderers.put(
           stream, new WeakReference<VideoRenderer>(renderer)));
+      gotRemoteStreams.add(stream);
     }
 
     public synchronized void expectRemoveStream(String label) {
@@ -214,6 +212,7 @@ public class PeerConnectionTest extends ActivityTestCase {
       assertNotNull(renderer.get());
       assertEquals(1, stream.videoTracks.size());
       stream.videoTracks.get(0).removeRenderer(renderer.get());
+      gotRemoteStreams.remove(stream);
     }
 
     public synchronized void expectDataChannel(String label) {
@@ -388,6 +387,25 @@ public class PeerConnectionTest extends ActivityTestCase {
     }
   }
 
+  // Sets the expected resolution for an ObserverExpectations once a frame
+  // has been captured.
+  private static class ExpectedResolutionSetter implements VideoRenderer.Callbacks {
+    private ObserverExpectations observer;
+
+    public ExpectedResolutionSetter(ObserverExpectations observer) {
+      this.observer = observer;
+    }
+
+    @Override
+    public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
+      // Because different camera devices (fake & physical) produce different
+      // resolutions, we only sanity-check the set sizes,
+      assertTrue(frame.rotatedWidth() > 0);
+      assertTrue(frame.rotatedHeight() > 0);
+      observer.setExpectedResolution(frame.rotatedWidth(), frame.rotatedHeight());
+    }
+  }
+
   private static class SdpObserverLatch implements SdpObserver {
     private boolean success = false;
     private SessionDescription sdp = null;
@@ -496,6 +514,17 @@ public class PeerConnectionTest extends ActivityTestCase {
     // Thread.sleep(100);
   }
 
+  // TODO(fischman) MOAR test ideas:
+  // - Test that PC.removeStream() works; requires a second
+  //   createOffer/createAnswer dance.
+  // - audit each place that uses |constraints| for specifying non-trivial
+  //   constraints (and ensure they're honored).
+  // - test error cases
+  // - ensure reasonable coverage of _jni.cc is achieved.  Coverage is
+  //   extra-important because of all the free-text (class/method names, etc)
+  //   in JNI-style programming; make sure no typos!
+  // - Test that shutdown mid-interaction is crash-free.
+
   @MediumTest
   public void testCompleteSession() throws Exception {
     // Allow loopback interfaces too since our Android devices often don't
@@ -540,7 +569,8 @@ public class PeerConnectionTest extends ActivityTestCase {
     offeringExpectations.expectRenegotiationNeeded();
     WeakReference<MediaStream> oLMS = addTracksToPC(
         factory, offeringPC, videoSource, "offeredMediaStream",
-        "offeredVideoTrack", "offeredAudioTrack", offeringExpectations);
+        "offeredVideoTrack", "offeredAudioTrack",
+        new ExpectedResolutionSetter(answeringExpectations));
 
     offeringExpectations.expectRenegotiationNeeded();
     DataChannel offeringDC = offeringPC.createDataChannel(
@@ -571,7 +601,8 @@ public class PeerConnectionTest extends ActivityTestCase {
     answeringExpectations.expectRenegotiationNeeded();
     WeakReference<MediaStream> aLMS = addTracksToPC(
         factory, answeringPC, videoSource, "answeredMediaStream",
-        "answeredVideoTrack", "answeredAudioTrack", answeringExpectations);
+        "answeredVideoTrack", "answeredAudioTrack",
+        new ExpectedResolutionSetter(offeringExpectations));
 
     sdpLatch = new SdpObserverLatch();
     answeringPC.createAnswer(sdpLatch, new MediaConstraints());
@@ -688,17 +719,6 @@ public class PeerConnectionTest extends ActivityTestCase {
     answeringExpectations.dataChannel.close();
     offeringExpectations.dataChannel.close();
 
-    // TODO(fischman) MOAR test ideas:
-    // - Test that PC.removeStream() works; requires a second
-    //   createOffer/createAnswer dance.
-    // - audit each place that uses |constraints| for specifying non-trivial
-    //   constraints (and ensure they're honored).
-    // - test error cases
-    // - ensure reasonable coverage of _jni.cc is achieved.  Coverage is
-    //   extra-important because of all the free-text (class/method names, etc)
-    //   in JNI-style programming; make sure no typos!
-    // - Test that shutdown mid-interaction is crash-free.
-
     // Free the Java-land objects, collect them, and sleep a bit to make sure we
     // don't get late-arrival crashes after the Java-land objects have been
     // freed.
@@ -711,10 +731,226 @@ public class PeerConnectionTest extends ActivityTestCase {
     System.gc();
   }
 
+  @MediumTest
+  public void testTrackRemoval() throws Exception {
+    // Allow loopback interfaces too since our Android devices often don't
+    // have those.
+    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+    options.networkIgnoreMask = 0;
+    PeerConnectionFactory factory = new PeerConnectionFactory(options);
+
+    MediaConstraints pcConstraints = new MediaConstraints();
+    pcConstraints.mandatory.add(
+        new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
+
+    LinkedList<PeerConnection.IceServer> iceServers =
+        new LinkedList<PeerConnection.IceServer>();
+    iceServers.add(new PeerConnection.IceServer(
+        "stun:stun.l.google.com:19302"));
+
+    ObserverExpectations offeringExpectations =
+        new ObserverExpectations("PCTest:offerer");
+    PeerConnection offeringPC = factory.createPeerConnection(
+        iceServers, pcConstraints, offeringExpectations);
+    assertNotNull(offeringPC);
+
+    ObserverExpectations answeringExpectations =
+        new ObserverExpectations("PCTest:answerer");
+    PeerConnection answeringPC = factory.createPeerConnection(
+        iceServers, pcConstraints, answeringExpectations);
+    assertNotNull(answeringPC);
+
+    // We want to use the same camera for offerer & answerer, so create it here
+    // instead of in addTracksToPC.
+    VideoSource videoSource = factory.createVideoSource(
+        VideoCapturerAndroid.create("", null), new MediaConstraints());
+
+    // Add offerer media stream.
+    offeringExpectations.expectRenegotiationNeeded();
+    WeakReference<MediaStream> oLMS = addTracksToPC(
+        factory, offeringPC, videoSource, "offeredMediaStream",
+        "offeredVideoTrack", "offeredAudioTrack",
+        new ExpectedResolutionSetter(answeringExpectations));
+
+    // Create offer.
+    SdpObserverLatch sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    SessionDescription offerSdp = sdpLatch.getSdp();
+    assertEquals(offerSdp.type, SessionDescription.Type.OFFER);
+    assertFalse(offerSdp.description.isEmpty());
+
+    // Set local description for offerer.
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.HAVE_LOCAL_OFFER);
+    offeringExpectations.expectIceCandidates(2);
+    offeringExpectations.expectIceGatheringChange(IceGatheringState.COMPLETE);
+    offeringPC.setLocalDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Set remote description for answerer.
+    sdpLatch = new SdpObserverLatch();
+    answeringExpectations.expectSignalingChange(
+        SignalingState.HAVE_REMOTE_OFFER);
+    answeringExpectations.expectAddStream("offeredMediaStream");
+    answeringPC.setRemoteDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Add answerer media stream.
+    answeringExpectations.expectRenegotiationNeeded();
+    WeakReference<MediaStream> aLMS = addTracksToPC(
+        factory, answeringPC, videoSource, "answeredMediaStream",
+        "answeredVideoTrack", "answeredAudioTrack",
+        new ExpectedResolutionSetter(offeringExpectations));
+
+    // Create answer.
+    sdpLatch = new SdpObserverLatch();
+    answeringPC.createAnswer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    SessionDescription answerSdp = sdpLatch.getSdp();
+    assertEquals(answerSdp.type, SessionDescription.Type.ANSWER);
+    assertFalse(answerSdp.description.isEmpty());
+
+    // Set local description for answerer.
+    sdpLatch = new SdpObserverLatch();
+    answeringExpectations.expectSignalingChange(SignalingState.STABLE);
+    answeringExpectations.expectIceCandidates(2);
+    answeringExpectations.expectIceGatheringChange(IceGatheringState.COMPLETE);
+    answeringPC.setLocalDescription(sdpLatch, answerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Set remote description for offerer.
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.STABLE);
+    offeringExpectations.expectAddStream("answeredMediaStream");
+
+    offeringExpectations.expectIceConnectionChange(
+        IceConnectionState.CHECKING);
+    offeringExpectations.expectIceConnectionChange(
+        IceConnectionState.CONNECTED);
+    // TODO(bemasc): uncomment once delivery of ICECompleted is reliable
+    // (https://code.google.com/p/webrtc/issues/detail?id=3021).
+    //
+    // offeringExpectations.expectIceConnectionChange(
+    //     IceConnectionState.COMPLETED);
+    answeringExpectations.expectIceConnectionChange(
+        IceConnectionState.CHECKING);
+    answeringExpectations.expectIceConnectionChange(
+        IceConnectionState.CONNECTED);
+
+    offeringPC.setRemoteDescription(sdpLatch, answerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Wait for at least one ice candidate from the offering PC and forward them to the answering
+    // PC.
+    for (IceCandidate candidate : offeringExpectations.getAtLeastOneIceCandidate()) {
+      answeringPC.addIceCandidate(candidate);
+    }
+
+    // Wait for at least one ice candidate from the answering PC and forward them to the offering
+    // PC.
+    for (IceCandidate candidate : answeringExpectations.getAtLeastOneIceCandidate()) {
+      offeringPC.addIceCandidate(candidate);
+    }
+
+    // Wait for one frame of the correct size to be delivered.
+    // Otherwise we could get a dummy black frame of unexpcted size when the
+    // video track is removed.
+    offeringExpectations.expectFramesDelivered(1);
+    answeringExpectations.expectFramesDelivered(1);
+
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+
+    assertEquals(
+        PeerConnection.SignalingState.STABLE, offeringPC.signalingState());
+    assertEquals(
+        PeerConnection.SignalingState.STABLE, answeringPC.signalingState());
+
+    // Now do another negotiation, removing the video track from one peer.
+    // This previously caused a crash on pc.dispose().
+    // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5128
+    VideoTrack offererVideoTrack = oLMS.get().videoTracks.get(0);
+    // Note that when we call removeTrack, we regain responsibility for
+    // disposing of the track.
+    oLMS.get().removeTrack(offererVideoTrack);
+
+    // Create offer.
+    sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    offerSdp = sdpLatch.getSdp();
+    assertEquals(offerSdp.type, SessionDescription.Type.OFFER);
+    assertFalse(offerSdp.description.isEmpty());
+
+    // Set local description for offerer.
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.HAVE_LOCAL_OFFER);
+    offeringPC.setLocalDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Set remote description for answerer.
+    sdpLatch = new SdpObserverLatch();
+    answeringExpectations.expectSignalingChange(
+        SignalingState.HAVE_REMOTE_OFFER);
+    answeringPC.setRemoteDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Create answer.
+    sdpLatch = new SdpObserverLatch();
+    answeringPC.createAnswer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    answerSdp = sdpLatch.getSdp();
+    assertEquals(answerSdp.type, SessionDescription.Type.ANSWER);
+    assertFalse(answerSdp.description.isEmpty());
+
+    // Set local description for answerer.
+    sdpLatch = new SdpObserverLatch();
+    answeringExpectations.expectSignalingChange(SignalingState.STABLE);
+    answeringPC.setLocalDescription(sdpLatch, answerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Set remote description for offerer.
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.STABLE);
+    offeringPC.setRemoteDescription(sdpLatch, answerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Make sure the track was really removed.
+    // TODO(deadbeef): Currently the expectation is that the video track's
+    // state will be set to "ended". However, in the future, it's likely that
+    // the video track will be completely removed from the remote stream
+    // (as it is on the C++ level).
+    MediaStream aRMS = answeringExpectations.gotRemoteStreams.iterator().next();
+    assertEquals(aRMS.videoTracks.get(0).state(), MediaStreamTrack.State.ENDED);
+
+    // Free the Java-land objects, collect them, and sleep a bit to make sure we
+    // don't get late-arrival crashes after the Java-land objects have been
+    // freed.
+    shutdownPC(offeringPC, offeringExpectations);
+    offeringPC = null;
+    shutdownPC(answeringPC, answeringExpectations);
+    answeringPC = null;
+    offererVideoTrack.dispose();
+    videoSource.dispose();
+    factory.dispose();
+    System.gc();
+  }
+
   private static void shutdownPC(
       PeerConnection pc, ObserverExpectations expectations) {
-    expectations.dataChannel.unregisterObserver();
-    expectations.dataChannel.dispose();
+    if (expectations.dataChannel != null) {
+      expectations.dataChannel.unregisterObserver();
+      expectations.dataChannel.dispose();
+    }
     expectations.expectStatsCallback();
     assertTrue(pc.getStats(expectations, null));
     assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));

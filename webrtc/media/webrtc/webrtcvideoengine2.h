@@ -345,6 +345,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
     VideoEncoderSettings encoder_settings_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
     Dimensions last_dimensions_ GUARDED_BY(lock_);
+    webrtc::VideoRotation last_rotation_ GUARDED_BY(lock_) =
+        webrtc::kVideoRotation_0;
 
     VideoCapturer* capturer_ GUARDED_BY(lock_);
     bool sending_ GUARDED_BY(lock_);
