@@ -19,7 +19,6 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/rollingaccumulator.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -28,7 +27,6 @@
 #include "webrtc/base/timing.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videoadapter.h"
-#include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/base/videoframefactory.h"
 #include "webrtc/media/devices/devicemanager.h"
@@ -75,7 +73,7 @@ struct CapturedFrame {
                        // time with nanosecond units.
   uint32_t data_size;  // number of bytes of the frame data
 
-  webrtc::VideoRotation rotation;  // rotation in degrees of the frame.
+  webrtc::VideoRotation rotation; // rotation in degrees of the frame.
 
   void*  data;          // pointer to the frame data. This object allocates the
                         // memory or points to an existing memory.
@@ -110,9 +108,9 @@ struct CapturedFrame {
 //   media engine thread). Hence, the VideoCapture subclasses dont need to be
 //   thread safe.
 //
-class VideoCapturer : public sigslot::has_slots<>,
-                      public rtc::MessageHandler,
-                      public rtc::VideoSourceInterface<cricket::VideoFrame> {
+class VideoCapturer
+    : public sigslot::has_slots<>,
+      public rtc::MessageHandler {
  public:
   // All signals are marshalled to |thread| or the creating thread if
   // none is provided.
@@ -199,6 +197,11 @@ class VideoCapturer : public sigslot::has_slots<>,
     return capture_state_;
   }
 
+  // Tells videocapturer whether to apply the pending rotation. By default, the
+  // rotation is applied and the generated frame is up right. When set to false,
+  // generated frames will carry the rotation information from
+  // SetCaptureRotation. Return value indicates whether this operation succeeds.
+  virtual bool SetApplyRotation(bool enable);
   virtual bool GetApplyRotation() { return apply_rotation_; }
 
   // Returns true if the capturer is screencasting. This can be used to
@@ -237,6 +240,10 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Signal the captured frame to downstream.
   sigslot::signal2<VideoCapturer*, const CapturedFrame*,
                    sigslot::multi_threaded_local> SignalFrameCaptured;
+  // Signal the captured and possibly adapted frame to downstream consumers
+  // such as the encoder.
+  sigslot::signal2<VideoCapturer*, const VideoFrame*,
+                   sigslot::multi_threaded_local> SignalVideoFrame;
 
   // If true, run video adaptation. By default, video adaptation is enabled
   // and users must call video_adapter()->OnOutputFormatRequest()
@@ -262,16 +269,7 @@ class VideoCapturer : public sigslot::has_slots<>,
                 VariableInfo<double>* frame_time_stats,
                 VideoFormat* last_captured_frame_format);
 
-  // Implements VideoSourceInterface
-  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override;
-  void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
-
  protected:
-  // OnSinkWantsChanged can be overridden to change the default behavior
-  // when a sink changes its VideoSinkWants by calling AddOrUpdateSink.
-  virtual void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
-
   // Callback attached to SignalFrameCaptured where SignalVideoFrames is called.
   void OnFrameCaptured(VideoCapturer* video_capturer,
                        const CapturedFrame* captured_frame);
@@ -346,7 +344,6 @@ class VideoCapturer : public sigslot::has_slots<>,
   bool muted_;
   int black_frame_count_down_;
 
-  rtc::VideoBroadcaster broadcaster_;
   bool enable_video_adapter_;
   CoordinatedVideoAdapter video_adapter_;
 

@@ -12,7 +12,6 @@
 #define WEBRTC_MEDIA_WEBRTC_WEBRTCVIDEOENGINE2_H_
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -21,7 +20,6 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/call.h"
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/media/webrtc/webrtcvideochannelfactory.h"
@@ -223,8 +221,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
 
   // Wrapper for the sender part, this is where the capturer is connected and
   // frames are then converted from cricket frames to webrtc frames.
-  class WebRtcVideoSendStream
-      : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+  class WebRtcVideoSendStream : public sigslot::has_slots<> {
    public:
     WebRtcVideoSendStream(
         webrtc::Call* call,
@@ -236,13 +233,13 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
         const rtc::Optional<VideoCodecSettings>& codec_settings,
         const std::vector<webrtc::RtpExtension>& rtp_extensions,
         const VideoSendParameters& send_params);
-    virtual ~WebRtcVideoSendStream();
+    ~WebRtcVideoSendStream();
 
     void SetOptions(const VideoOptions& options);
     // TODO(pbos): Move logic from SetOptions into this method.
     void SetSendParameters(const ChangedSendParameters& send_params);
 
-    void OnFrame(const cricket::VideoFrame& frame) override;
+    void InputFrame(VideoCapturer* capturer, const VideoFrame* frame);
     bool SetCapturer(VideoCapturer* capturer);
     void MuteStream(bool mute);
     bool DisconnectCapturer();
@@ -338,7 +335,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
     const std::vector<uint32_t> ssrcs_;
     const std::vector<SsrcGroup> ssrc_groups_;
     webrtc::Call* const call_;
-    rtc::VideoSinkWants sink_wants_;
     WebRtcVideoEncoderFactory* const external_encoder_factory_
         GUARDED_BY(lock_);
 
