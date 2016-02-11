@@ -12,6 +12,7 @@
     "use_goma": "1",
     "gomadir": "$(goma_dir)"
   },
+  "mb_type": "gyp",
   "compiler": "ninja",
   "configuration": "Debug",
   "sdk": "iphoneos9.0",
