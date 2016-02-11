@@ -8,11 +8,8 @@
   "xcode version": "7.0",
   "GYP_DEFINES": {
     "chromium_ios_signing": "0",
-    "target_arch": "arm",
-    "use_goma": "1",
-    "gomadir": "$(goma_dir)"
+    "target_arch": "arm"
   },
-  "mb_type": "gyp",
   "compiler": "ninja",
   "configuration": "Release",
   "sdk": "iphoneos9.0",

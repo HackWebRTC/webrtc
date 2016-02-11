@@ -8,11 +8,8 @@
   "xcode version": "7.0",
   "GYP_DEFINES": {
     "chromium_ios_signing": "0",
-    "target_arch": "ia32",
-    "use_goma": "1",
-    "gomadir": "$(goma_dir)"
+    "target_arch": "ia32"
   },
-  "mb_type": "gyp",
   "compiler": "ninja",
   "configuration": "Debug",
   "sdk": "iphonesimulator9.0",

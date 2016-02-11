@@ -1,6 +1,6 @@
 {
   "owners": [
-    "kjellander",
+    "kjellander"
   ],
   "comments": [
     "GN + Ninja builder."
@@ -13,9 +13,7 @@
   "gn_args": [
     "ios_enable_code_signing=false",
     "target_cpu=\"arm\"",
-    "target_os=\"ios\"",
-    "use_goma=true",
-    "goma_dir=$(goma_dir)"
+    "target_os=\"ios\""
   ],
   "mb_type": "gn",
   "compiler": "ninja",
