@@ -20,6 +20,6 @@
       "include": "common_tests.json",
       "device type": "iPhone 5s",
       "os": "9.0"
-    },
+    }
   ]
 }

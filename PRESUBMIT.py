@@ -339,6 +339,31 @@ def _CheckUnwantedDependencies(input_api, output_api):
   return results
 
 
+def _CheckJSONParseErrors(input_api, output_api):
+  """Check that JSON files do not contain syntax errors."""
+
+  def FilterFile(affected_file):
+    return input_api.os_path.splitext(affected_file.LocalPath())[1] == '.json'
+
+  def GetJSONParseError(input_api, filename):
+    try:
+      contents = input_api.ReadFile(filename)
+      input_api.json.loads(contents)
+    except ValueError as e:
+      return e
+    return None
+
+  results = []
+  for affected_file in input_api.AffectedFiles(
+      file_filter=FilterFile, include_deletes=False):
+    parse_error = GetJSONParseError(input_api,
+                                    affected_file.AbsoluteLocalPath())
+    if parse_error:
+      results.append(output_api.PresubmitError('%s could not be parsed: %s' %
+          (affected_file.LocalPath(), parse_error)))
+  return results
+
+
 def _RunPythonTests(input_api, output_api):
   def join(*args):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
@@ -403,6 +428,7 @@ def _CommonChecks(input_api, output_api):
                          'W0232',  # Class has no __init__ method
                         ],
       pylintrc='pylintrc'))
+
   # WebRTC can't use the presubmit_canned_checks.PanProjectChecks function since
   # we need to have different license checks in talk/ and webrtc/ directories.
   # Instead, hand-picked checks are included below.
@@ -423,6 +449,7 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
   results.extend(_CheckGypChanges(input_api, output_api))
   results.extend(_CheckUnwantedDependencies(input_api, output_api))
+  results.extend(_CheckJSONParseErrors(input_api, output_api))
   results.extend(_RunPythonTests(input_api, output_api))
   return results
 
