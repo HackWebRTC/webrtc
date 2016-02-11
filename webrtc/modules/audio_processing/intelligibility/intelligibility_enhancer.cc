@@ -20,6 +20,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <limits>
 #include <numeric>
 
 #include "webrtc/base/checks.h"
@@ -225,7 +226,8 @@ void IntelligibilityEnhancer::SolveForLambda(float power_target,
   const float kConvergeThresh = 0.001f;  // TODO(ekmeyerson): Find best values
   const int kMaxIters = 100;             // for these, based on experiments.
 
-  const float reciprocal_power_target = 1.f / power_target;
+  const float reciprocal_power_target =
+      1.f / (power_target + std::numeric_limits<float>::epsilon());
   float lambda_bot = kLambdaBot;
   float lambda_top = kLambdaTop;
   float power_ratio = 2.0f;  // Ratio of achieved power to target power.
@@ -307,13 +309,13 @@ std::vector<std::vector<float>> IntelligibilityEnhancer::CreateErbBank(
 
     float step, element;
 
-    step = 1.0f / (ll - lll);
+    step = ll == lll ? 0.f : 1.f / (ll - lll);
     element = 0.0f;
     for (size_t j = lll; j <= ll; ++j) {
       filter_bank[i - 1][j] = element;
       element += step;
     }
-    step = 1.0f / (rrr - rr);
+    step = rr == rrr ? 0.f : 1.f / (rrr - rr);
     element = 1.0f;
     for (size_t j = rr; j <= rrr; ++j) {
       filter_bank[i - 1][j] = element;
@@ -357,7 +359,8 @@ void IntelligibilityEnhancer::SolveForGainsGivenLambda(float lambda,
     if (quadratic) {
       alpha0 = lambda * var_x0[n] * (1 - rho_[n]) * var_x0[n] * var_x0[n];
       sols[n] =
-          (-beta0 - sqrtf(beta0 * beta0 - 4 * alpha0 * gamma0)) / (2 * alpha0);
+          (-beta0 - sqrtf(beta0 * beta0 - 4 * alpha0 * gamma0)) /
+          (2 * alpha0 + std::numeric_limits<float>::epsilon());
     } else {
       sols[n] = -gamma0 / beta0;
     }
