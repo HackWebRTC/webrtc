@@ -6,7 +6,6 @@
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- *
  */
 
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_SDES_H_
@@ -24,17 +23,24 @@ namespace rtcp {
 // Source Description (SDES) (RFC 3550).
 class Sdes : public RtcpPacket {
  public:
-  Sdes() : RtcpPacket() {}
+  struct Chunk {
+    uint32_t ssrc;
+    std::string cname;
+  };
+  static const uint8_t kPacketType = 202;
 
-  virtual ~Sdes() {}
+  Sdes();
+  ~Sdes() override;
+
+  // Parse assumes header is already parsed and validated.
+  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
+             const uint8_t* payload);  // Size of the payload is in the header.
 
   bool WithCName(uint32_t ssrc, const std::string& cname);
 
-  struct Chunk {
-    uint32_t ssrc;
-    std::string name;
-    int null_octets;
-  };
+  const std::vector<Chunk>& chunks() const { return chunks_; }
+
+  size_t BlockLength() const override { return block_length_; }
 
  protected:
   bool Create(uint8_t* packet,
@@ -43,11 +49,10 @@ class Sdes : public RtcpPacket {
               RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  static const int kMaxNumberOfChunks = 0x1f;
-
-  size_t BlockLength() const;
+  static const size_t kMaxNumberOfChunks = 0x1f;
 
   std::vector<Chunk> chunks_;
+  size_t block_length_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Sdes);
 };
