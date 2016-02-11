@@ -29,13 +29,13 @@
 
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/media/base/capturerenderadapter.h"
 #include "webrtc/media/base/videocommon.h"
+#include "webrtc/media/base/videocapturer.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace cricket {
 
-class VideoCapturer;
-class VideoRenderer;
+class VideoFrame;
 class VideoCapturerState;
 
 class CaptureManager : public sigslot::has_slots<> {
@@ -80,7 +80,6 @@ class CaptureManager : public sigslot::has_slots<> {
                                   VideoCapturer* video_capturer);
 
   VideoCapturerState* GetCaptureState(VideoCapturer* video_capturer) const;
-  CaptureRenderAdapter* GetAdapter(VideoCapturer* video_capturer) const;
 
   rtc::ThreadChecker thread_checker_;
   CaptureStates capture_states_;

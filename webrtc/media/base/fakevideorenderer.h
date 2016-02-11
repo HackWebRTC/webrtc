@@ -43,6 +43,7 @@ class FakeVideoRenderer : public VideoRenderer {
     ++num_rendered_frames_;
     width_ = static_cast<int>(frame->GetWidth());
     height_ = static_cast<int>(frame->GetHeight());
+    rotation_ = frame->GetVideoRotation();
     SignalRenderFrame(frame);
     return true;
   }
@@ -55,6 +56,10 @@ class FakeVideoRenderer : public VideoRenderer {
   int height() const {
     rtc::CritScope cs(&crit_);
     return height_;
+  }
+  int rotation() const {
+    rtc::CritScope cs(&crit_);
+    return rotation_;
   }
   int num_rendered_frames() const {
     rtc::CritScope cs(&crit_);
@@ -123,6 +128,7 @@ class FakeVideoRenderer : public VideoRenderer {
   int errors_;
   int width_;
   int height_;
+  webrtc::VideoRotation rotation_;
   int num_rendered_frames_;
   bool black_frame_;
   rtc::CriticalSection crit_;
