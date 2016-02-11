@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifdef HAVE_WEBRTC_VIDEO
 #include "webrtc/media/webrtc/webrtcvideoengine2.h"
 
 #include <algorithm>
@@ -970,7 +969,7 @@ bool WebRtcVideoChannel2::SetVideoSend(uint32_t ssrc, bool enable,
 
 bool WebRtcVideoChannel2::ValidateSendSsrcAvailability(
     const StreamParams& sp) const {
-  for (uint32_t ssrc: sp.ssrcs) {
+  for (uint32_t ssrc : sp.ssrcs) {
     if (send_ssrcs_.find(ssrc) != send_ssrcs_.end()) {
       LOG(LS_ERROR) << "Send stream with SSRC '" << ssrc << "' already exists.";
       return false;
@@ -981,7 +980,7 @@ bool WebRtcVideoChannel2::ValidateSendSsrcAvailability(
 
 bool WebRtcVideoChannel2::ValidateReceiveSsrcAvailability(
     const StreamParams& sp) const {
-  for (uint32_t ssrc: sp.ssrcs) {
+  for (uint32_t ssrc : sp.ssrcs) {
     if (receive_ssrcs_.find(ssrc) != receive_ssrcs_.end()) {
       LOG(LS_ERROR) << "Receive stream with SSRC '" << ssrc
                     << "' already exists.";
@@ -1287,11 +1286,6 @@ bool WebRtcVideoChannel2::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
       return false;
     }
   }
-
-  if (capturer) {
-    capturer->SetApplyRotation(!ContainsHeaderExtension(
-        send_rtp_extensions_, kRtpVideoRotationHeaderExtension));
-  }
   {
     rtc::CritScope lock(&capturer_crit_);
     capturers_[ssrc] = capturer;
@@ -1555,12 +1549,11 @@ static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
          video_frame->allocated_size(webrtc::kVPlane));
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
-    VideoCapturer* capturer,
-    const VideoFrame* frame) {
-  TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::InputFrame");
-  webrtc::VideoFrame video_frame(frame->GetVideoFrameBuffer(), 0, 0,
-                                 frame->GetVideoRotation());
+void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
+    const VideoFrame& frame) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::OnFrame");
+  webrtc::VideoFrame video_frame(frame.GetVideoFrameBuffer(), 0, 0,
+                                 frame.GetVideoRotation());
   rtc::CritScope cs(&lock_);
   if (stream_ == NULL) {
     // Frame input before send codecs are configured, dropping frame.
@@ -1574,12 +1567,11 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
 
   if (muted_) {
     // Create a black frame to transmit instead.
-    CreateBlackFrame(&video_frame,
-                     static_cast<int>(frame->GetWidth()),
-                     static_cast<int>(frame->GetHeight()));
+    CreateBlackFrame(&video_frame, static_cast<int>(frame.GetWidth()),
+                     static_cast<int>(frame.GetHeight()));
   }
 
-  int64_t frame_delta_ms = frame->GetTimeStamp() / rtc::kNumNanosecsPerMillisec;
+  int64_t frame_delta_ms = frame.GetTimeStamp() / rtc::kNumNanosecsPerMillisec;
   // frame->GetTimeStamp() is essentially a delta, align to webrtc time
   if (first_frame_timestamp_ms_ == 0) {
     first_frame_timestamp_ms_ = rtc::Time() - frame_delta_ms;
@@ -1588,8 +1580,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
   last_frame_timestamp_ms_ = first_frame_timestamp_ms_ + frame_delta_ms;
   video_frame.set_render_time_ms(last_frame_timestamp_ms_);
   // Reconfigure codec if necessary.
-  SetDimensions(
-      video_frame.width(), video_frame.height(), capturer->IsScreencast());
+  SetDimensions(video_frame.width(), video_frame.height(),
+                capturer_->IsScreencast());
 
   stream_->Input()->IncomingCapturedFrame(video_frame);
 }
@@ -1631,10 +1623,8 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
     }
 
     capturer_ = capturer;
+    capturer_->AddOrUpdateSink(this, sink_wants_);
   }
-  // Lock cannot be held while connecting the capturer to prevent lock-order
-  // violations.
-  capturer->SignalVideoFrame.connect(this, &WebRtcVideoSendStream::InputFrame);
   return true;
 }
 
@@ -1656,7 +1646,8 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
     capturer = capturer_;
     capturer_ = NULL;
   }
-  capturer->SignalVideoFrame.disconnect(this);
+  capturer->RemoveSink(this);
+
   return true;
 }
 
@@ -1794,9 +1785,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
   }
   if (params.rtp_header_extensions) {
     parameters_.config.rtp.extensions = *params.rtp_header_extensions;
+    sink_wants_.rotation_applied = !ContainsHeaderExtension(
+        *params.rtp_header_extensions, kRtpVideoRotationHeaderExtension);
     if (capturer_) {
-      capturer_->SetApplyRotation(!ContainsHeaderExtension(
-          *params.rtp_header_extensions, kRtpVideoRotationHeaderExtension));
+      capturer_->AddOrUpdateSink(this, sink_wants_);
     }
     recreate_stream = true;
   }
@@ -2505,5 +2497,3 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
 }
 
 }  // namespace cricket
-
-#endif  // HAVE_WEBRTC_VIDEO

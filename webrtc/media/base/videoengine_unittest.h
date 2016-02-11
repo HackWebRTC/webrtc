@@ -86,21 +86,6 @@ class VideoEngineOverride : public T {
   virtual ~VideoEngineOverride() {
   }
   bool is_camera_on() const { return T::GetVideoCapturer()->IsRunning(); }
-  void set_has_senders(bool has_senders) {
-    cricket::VideoCapturer* video_capturer = T::GetVideoCapturer();
-    if (has_senders) {
-      video_capturer->SignalVideoFrame.connect(this,
-          &VideoEngineOverride<T>::OnLocalFrame);
-    } else {
-      video_capturer->SignalVideoFrame.disconnect(this);
-    }
-  }
-  void OnLocalFrame(cricket::VideoCapturer*,
-                    const cricket::VideoFrame*) {
-  }
-  void OnLocalFrameFormat(cricket::VideoCapturer*,
-                          const cricket::VideoFormat*) {
-  }
 
   void TriggerMediaFrame(uint32_t ssrc,
                          cricket::VideoFrame* frame,
