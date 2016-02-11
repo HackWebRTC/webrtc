@@ -27,13 +27,9 @@ size_t PayloadRouter::DefaultMaxPayloadLength() {
 }
 
 void PayloadRouter::SetSendingRtpModules(
-    const std::list<RtpRtcp*>& rtp_modules) {
+    const std::vector<RtpRtcp*>& rtp_modules) {
   rtc::CritScope lock(&crit_);
-  rtp_modules_.clear();
-  rtp_modules_.reserve(rtp_modules.size());
-  for (auto* rtp_module : rtp_modules) {
-    rtp_modules_.push_back(rtp_module);
-  }
+  rtp_modules_ = rtp_modules;
 }
 
 void PayloadRouter::set_active(bool active) {

@@ -8,9 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-#include <list>
-
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -35,7 +32,7 @@ class PayloadRouterTest : public ::testing::Test {
 
 TEST_F(PayloadRouterTest, SendOnOneModule) {
   MockRtpRtcp rtp;
-  std::list<RtpRtcp*> modules(1, &rtp);
+  std::vector<RtpRtcp*> modules(1, &rtp);
 
   payload_router_->SetSendingRtpModules(modules);
 
@@ -82,7 +79,7 @@ TEST_F(PayloadRouterTest, SendOnOneModule) {
 TEST_F(PayloadRouterTest, SendSimulcast) {
   MockRtpRtcp rtp_1;
   MockRtpRtcp rtp_2;
-  std::list<RtpRtcp*> modules;
+  std::vector<RtpRtcp*> modules;
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
 
@@ -147,7 +144,7 @@ TEST_F(PayloadRouterTest, MaxPayloadLength) {
 
   MockRtpRtcp rtp_1;
   MockRtpRtcp rtp_2;
-  std::list<RtpRtcp*> modules;
+  std::vector<RtpRtcp*> modules;
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
   payload_router_->SetSendingRtpModules(modules);
@@ -175,7 +172,7 @@ TEST_F(PayloadRouterTest, MaxPayloadLength) {
 TEST_F(PayloadRouterTest, SetTargetSendBitrates) {
   MockRtpRtcp rtp_1;
   MockRtpRtcp rtp_2;
-  std::list<RtpRtcp*> modules;
+  std::vector<RtpRtcp*> modules;
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
   payload_router_->SetSendingRtpModules(modules);

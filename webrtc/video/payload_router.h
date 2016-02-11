@@ -11,7 +11,6 @@
 #ifndef WEBRTC_VIDEO_PAYLOAD_ROUTER_H_
 #define WEBRTC_VIDEO_PAYLOAD_ROUTER_H_
 
-#include <list>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
@@ -37,7 +36,7 @@ class PayloadRouter {
   static size_t DefaultMaxPayloadLength();
 
   // Rtp modules are assumed to be sorted in simulcast index order.
-  void SetSendingRtpModules(const std::list<RtpRtcp*>& rtp_modules);
+  void SetSendingRtpModules(const std::vector<RtpRtcp*>& rtp_modules);
 
   // PayloadRouter will only route packets if being active, all packets will be
   // dropped otherwise.

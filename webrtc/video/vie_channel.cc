@@ -155,8 +155,8 @@ int32_t ViEChannel::Init() {
   }
   packet_router_->AddRtpModule(rtp_rtcp_modules_[0], sender_);
   if (sender_) {
-    std::list<RtpRtcp*> send_rtp_modules(1, rtp_rtcp_modules_[0]);
-    send_payload_router_->SetSendingRtpModules(send_rtp_modules);
+    send_payload_router_->SetSendingRtpModules(
+        std::vector<RtpRtcp*>(1, rtp_rtcp_modules_[0]));
     RTC_DCHECK(!send_payload_router_->active());
   } else {
     if (vcm_->RegisterReceiveCallback(this) != 0) {
@@ -177,7 +177,7 @@ ViEChannel::~ViEChannel() {
   module_process_thread_->DeRegisterModule(
       vie_receiver_.GetReceiveStatistics());
   if (sender_) {
-    send_payload_router_->SetSendingRtpModules(std::list<RtpRtcp*>());
+    send_payload_router_->SetSendingRtpModules(std::vector<RtpRtcp*>());
   } else {
     module_process_thread_->DeRegisterModule(&vie_sync_);
   }
@@ -345,7 +345,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   bool is_sending = rtp_rtcp_modules_[0]->Sending();
   bool router_was_active = send_payload_router_->active();
   send_payload_router_->set_active(false);
-  send_payload_router_->SetSendingRtpModules(std::list<RtpRtcp*>());
+  send_payload_router_->SetSendingRtpModules(std::vector<RtpRtcp*>());
 
   std::vector<RtpRtcp*> registered_modules;
   std::vector<RtpRtcp*> deregistered_modules;
@@ -386,12 +386,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   vie_receiver_.RegisterRtpRtcpModules(registered_modules);
 
   // Update the packet and payload routers with the sending RtpRtcp modules.
-  if (sender_) {
-    std::list<RtpRtcp*> active_send_modules;
-    for (RtpRtcp* rtp_rtcp : registered_modules)
-      active_send_modules.push_back(rtp_rtcp);
-    send_payload_router_->SetSendingRtpModules(active_send_modules);
-  }
+  send_payload_router_->SetSendingRtpModules(registered_modules);
 
   if (router_was_active)
     send_payload_router_->set_active(true);
