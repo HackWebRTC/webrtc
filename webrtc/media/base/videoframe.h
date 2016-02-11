@@ -77,12 +77,7 @@ class VideoFrame {
   virtual void SetTimeStamp(int64_t time_stamp) = 0;
 
   // Indicates the rotation angle in degrees.
-  // TODO(guoweis): Remove this function, rename GetVideoRotation and remove the
-  // skeleton implementation of GetRotation once chrome is updated.
-  virtual int GetRotation() const { return GetVideoRotation(); }
-  virtual webrtc::VideoRotation GetVideoRotation() const {
-    return webrtc::kVideoRotation_0;
-  }
+  virtual webrtc::VideoRotation GetVideoRotation() const  = 0;
 
   // Make a shallow copy of the frame. The frame buffer itself is not copied.
   // Both the current and new VideoFrame will share a single reference-counted
@@ -99,36 +94,12 @@ class VideoFrame {
   // buffer if it is currently shared by other objects.
   virtual bool MakeExclusive() = 0;
 
-  // Writes the frame into the given frame buffer, provided that it is of
-  // sufficient size. Returns the frame's actual size, regardless of whether
-  // it was written or not (like snprintf). If there is insufficient space,
-  // nothing is written.
-  virtual size_t CopyToBuffer(uint8_t* buffer, size_t size) const;
-
-  // Writes the frame into the given planes, stretched to the given width and
-  // height. The parameter "interpolate" controls whether to interpolate or just
-  // take the nearest-point. The parameter "crop" controls whether to crop this
-  // frame to the aspect ratio of the given dimensions before stretching.
-  virtual bool CopyToPlanes(uint8_t* dst_y,
-                            uint8_t* dst_u,
-                            uint8_t* dst_v,
-                            int32_t dst_pitch_y,
-                            int32_t dst_pitch_u,
-                            int32_t dst_pitch_v) const;
-
   // Writes the frame into the target VideoFrame.
   virtual void CopyToFrame(VideoFrame* target) const;
 
   // Return a copy of frame which has its pending rotation applied. The
   // ownership of the returned frame is held by this frame.
   virtual const VideoFrame* GetCopyWithRotationApplied() const = 0;
-
-  // Writes the frame into the given stream and returns the StreamResult.
-  // See webrtc/base/stream.h for a description of StreamResult and error.
-  // Error may be NULL. If a non-success value is returned from
-  // StreamInterface::Write(), we immediately return with that value.
-  virtual rtc::StreamResult Write(rtc::StreamInterface* stream,
-                                  int* error) const;
 
   // Converts the I420 data to RGB of a certain type such as ARGB and ABGR.
   // Returns the frame's actual size, regardless of whether it was written or
@@ -178,12 +149,18 @@ class VideoFrame {
                        const uint8_t* sample,
                        size_t sample_size);
 
-  // Size of an I420 image of given dimensions when stored as a frame buffer.
-  static size_t SizeOf(size_t w, size_t h) {
-    return w * h + ((w + 1) / 2) * ((h + 1) / 2) * 2;
-  }
-
  protected:
+  // Writes the frame into the given planes, stretched to the given width and
+  // height. The parameter "interpolate" controls whether to interpolate or just
+  // take the nearest-point. The parameter "crop" controls whether to crop this
+  // frame to the aspect ratio of the given dimensions before stretching.
+  virtual bool CopyToPlanes(uint8_t* dst_y,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int32_t dst_pitch_y,
+                            int32_t dst_pitch_u,
+                            int32_t dst_pitch_v) const;
+
   // Creates an empty frame.
   virtual VideoFrame *CreateEmptyFrame(int w, int h,
                                        int64_t time_stamp) const = 0;

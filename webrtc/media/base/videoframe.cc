@@ -25,58 +25,6 @@ namespace cricket {
 // Round to 2 pixels because Chroma channels are half size.
 #define ROUNDTO2(v) (v & ~1)
 
-rtc::StreamResult VideoFrame::Write(rtc::StreamInterface* stream,
-                                          int* error) const {
-  rtc::StreamResult result = rtc::SR_SUCCESS;
-  const uint8_t* src_y = GetYPlane();
-  const uint8_t* src_u = GetUPlane();
-  const uint8_t* src_v = GetVPlane();
-  if (!src_y || !src_u || !src_v) {
-    return result;  // Nothing to write.
-  }
-  const int32_t y_pitch = GetYPitch();
-  const int32_t u_pitch = GetUPitch();
-  const int32_t v_pitch = GetVPitch();
-  const size_t width = GetWidth();
-  const size_t height = GetHeight();
-  const size_t half_width = (width + 1) >> 1;
-  const size_t half_height = (height + 1) >> 1;
-  // Write Y.
-  for (size_t row = 0; row < height; ++row) {
-    result = stream->Write(src_y + row * y_pitch, width, NULL, error);
-    if (result != rtc::SR_SUCCESS) {
-      return result;
-    }
-  }
-  // Write U.
-  for (size_t row = 0; row < half_height; ++row) {
-    result = stream->Write(src_u + row * u_pitch, half_width, NULL, error);
-    if (result != rtc::SR_SUCCESS) {
-      return result;
-    }
-  }
-  // Write V.
-  for (size_t row = 0; row < half_height; ++row) {
-    result = stream->Write(src_v + row * v_pitch, half_width, NULL, error);
-    if (result != rtc::SR_SUCCESS) {
-      return result;
-    }
-  }
-  return result;
-}
-
-size_t VideoFrame::CopyToBuffer(uint8_t* buffer, size_t size) const {
-  const size_t y_size = GetHeight() * GetYPitch();
-  const size_t u_size = GetUPitch() * GetChromaHeight();
-  const size_t v_size = GetVPitch() * GetChromaHeight();
-  const size_t needed = y_size + u_size + v_size;
-  if (size < needed)
-    return needed;
-  CopyToPlanes(buffer, buffer + y_size, buffer + y_size + u_size,
-               GetYPitch(), GetUPitch(), GetVPitch());
-  return needed;
-}
-
 bool VideoFrame::CopyToPlanes(uint8_t* dst_y,
                               uint8_t* dst_u,
                               uint8_t* dst_v,
