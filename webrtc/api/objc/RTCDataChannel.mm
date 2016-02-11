@@ -13,6 +13,8 @@
 #import "webrtc/api/objc/RTCDataChannel+Private.h"
 #import "webrtc/base/objc/NSString+StdString.h"
 
+#include "webrtc/base/scoped_ptr.h"
+
 namespace webrtc {
 
 class DataChannelDelegateAdapter : public DataChannelObserver {
