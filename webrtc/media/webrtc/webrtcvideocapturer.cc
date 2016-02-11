@@ -14,6 +14,7 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_WEBRTC_VIDEO
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
@@ -202,6 +203,9 @@ bool WebRtcVideoCapturer::Init(const Device& device) {
   SetId(device.id);
   SetSupportedFormats(supported);
 
+  // Ensure these 2 have the same value.
+  SetApplyRotation(module_->GetApplyRotation());
+
   return true;
 }
 
@@ -239,7 +243,7 @@ bool WebRtcVideoCapturer::GetBestCaptureFormat(const VideoFormat& desired,
   }
   return true;
 }
-void WebRtcVideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
+bool WebRtcVideoCapturer::SetApplyRotation(bool enable) {
   // Can't take lock here as this will cause deadlock with
   // OnIncomingCapturedFrame. In fact, the whole method, including methods it
   // calls, can't take lock.
@@ -249,14 +253,13 @@ void WebRtcVideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
       webrtc::field_trial::FindFullName("WebRTC-CVO");
 
   if (group_name == "Disabled") {
-    return;
+    return true;
   }
 
-  VideoCapturer::OnSinkWantsChanged(wants);
-  bool result = module_->SetApplyRotation(wants.rotation_applied);
-  RTC_CHECK(result);
-
-  return;
+  if (!VideoCapturer::SetApplyRotation(enable)) {
+    return false;
+  }
+  return module_->SetApplyRotation(enable);
 }
 
 CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
@@ -424,3 +427,5 @@ WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::VideoFrame& sample,
 }
 
 }  // namespace cricket
+
+#endif  // HAVE_WEBRTC_VIDEO

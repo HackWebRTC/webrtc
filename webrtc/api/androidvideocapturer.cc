@@ -27,8 +27,7 @@ namespace webrtc {
 // for ref counted I420 frames instead of this hack.
 class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
  public:
-  explicit FrameFactory(
-      const rtc::scoped_refptr<AndroidVideoCapturerDelegate>& delegate)
+  FrameFactory(const rtc::scoped_refptr<AndroidVideoCapturerDelegate>& delegate)
       : delegate_(delegate) {
     // Create a CapturedFrame that only contains header information, not the
     // actual pixel data.
@@ -142,6 +141,8 @@ AndroidVideoCapturer::AndroidVideoCapturer(
       formats.push_back(format);
   }
   SetSupportedFormats(formats);
+  // Do not apply frame rotation by default.
+  SetApplyRotation(false);
 }
 
 AndroidVideoCapturer::~AndroidVideoCapturer() {

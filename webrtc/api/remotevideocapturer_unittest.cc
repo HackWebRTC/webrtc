@@ -34,10 +34,13 @@ class RemoteVideoCapturerTest : public testing::Test,
   virtual void SetUp() {
     capturer_.SignalStateChange.connect(
         this, &RemoteVideoCapturerTest::OnStateChange);
+    capturer_.SignalVideoFrame.connect(
+        this, &RemoteVideoCapturerTest::OnVideoFrame);
   }
 
   ~RemoteVideoCapturerTest() {
     capturer_.SignalStateChange.disconnect(this);
+    capturer_.SignalVideoFrame.disconnect(this);
   }
 
   int captured_frame_num() const {
@@ -55,6 +58,11 @@ class RemoteVideoCapturerTest : public testing::Test,
                      CaptureState capture_state) {
     EXPECT_EQ(&capturer_, capturer);
     capture_state_ = capture_state;
+  }
+
+  void OnVideoFrame(VideoCapturer* capturer, const VideoFrame* frame) {
+    EXPECT_EQ(&capturer_, capturer);
+    ++captured_frame_num_;
   }
 
   int captured_frame_num_;
@@ -94,4 +102,14 @@ TEST_F(RemoteVideoCapturerTest, GetBestCaptureFormat) {
   VideoFormat best_format;
   EXPECT_TRUE(capturer_.GetBestCaptureFormat(desired, &best_format));
   EXPECT_EQ(expected_format, best_format);
+}
+
+TEST_F(RemoteVideoCapturerTest, InputFrame) {
+  EXPECT_EQ(0, captured_frame_num());
+
+  cricket::WebRtcVideoFrame test_frame;
+  capturer_.SignalVideoFrame(&capturer_, &test_frame);
+  EXPECT_EQ(1, captured_frame_num());
+  capturer_.SignalVideoFrame(&capturer_, &test_frame);
+  EXPECT_EQ(2, captured_frame_num());
 }

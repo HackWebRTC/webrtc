@@ -17,8 +17,9 @@ template <typename VideoFrameT>
 class VideoSinkInterface {
  public:
   virtual void OnFrame(const VideoFrameT& frame) = 0;
+
  protected:
-  virtual ~VideoSinkInterface() {}
+  ~VideoSinkInterface() {}
 };
 
 }  // namespace rtc

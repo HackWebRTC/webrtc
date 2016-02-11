@@ -23,7 +23,7 @@ class VideoCapturerState {
  public:
   static const VideoFormatPod kDefaultCaptureFormat;
 
-  explicit VideoCapturerState(VideoCapturer* capturer);
+  static VideoCapturerState* Create(VideoCapturer* video_capturer);
   ~VideoCapturerState() {}
 
   void AddCaptureResolution(const VideoFormat& desired_format);
@@ -32,9 +32,13 @@ class VideoCapturerState {
 
   int IncCaptureStartRef();
   int DecCaptureStartRef();
+  CaptureRenderAdapter* adapter() {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    return adapter_.get();
+  }
   VideoCapturer* GetVideoCapturer() {
     RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    return video_capturer_;
+    return adapter()->video_capturer();
   }
 
   int start_count() const {
@@ -49,9 +53,11 @@ class VideoCapturerState {
   };
   typedef std::vector<CaptureResolutionInfo> CaptureFormats;
 
-  rtc::ThreadChecker thread_checker_;
+  explicit VideoCapturerState(CaptureRenderAdapter* adapter);
 
-  VideoCapturer* video_capturer_;
+  rtc::ThreadChecker thread_checker_;
+  rtc::scoped_ptr<CaptureRenderAdapter> adapter_;
+
   int start_count_;
   CaptureFormats capture_formats_;
 };
@@ -60,8 +66,17 @@ const VideoFormatPod VideoCapturerState::kDefaultCaptureFormat = {
   640, 360, FPS_TO_INTERVAL(30), FOURCC_ANY
 };
 
-VideoCapturerState::VideoCapturerState(VideoCapturer* capturer)
-    : video_capturer_(capturer), start_count_(1) {}
+VideoCapturerState::VideoCapturerState(CaptureRenderAdapter* adapter)
+    : adapter_(adapter), start_count_(1) {}
+
+// static
+VideoCapturerState* VideoCapturerState::Create(VideoCapturer* video_capturer) {
+  CaptureRenderAdapter* adapter = CaptureRenderAdapter::Create(video_capturer);
+  if (!adapter) {
+    return NULL;
+  }
+  return new VideoCapturerState(adapter);
+}
 
 void VideoCapturerState::AddCaptureResolution(
     const VideoFormat& desired_format) {
@@ -261,10 +276,11 @@ void CaptureManager::AddVideoSink(VideoCapturer* video_capturer,
   if (!video_capturer || !sink) {
     return;
   }
-  rtc::VideoSinkWants wants;
-  // Renderers must be able to apply rotation.
-  wants.rotation_applied = false;
-  video_capturer->AddOrUpdateSink(sink, wants);
+  CaptureRenderAdapter* adapter = GetAdapter(video_capturer);
+  if (!adapter) {
+    return;
+  }
+  adapter->AddSink(sink);
 }
 
 void CaptureManager::RemoveVideoSink(
@@ -274,7 +290,11 @@ void CaptureManager::RemoveVideoSink(
   if (!video_capturer || !sink) {
     return;
   }
-  video_capturer->RemoveSink(sink);
+  CaptureRenderAdapter* adapter = GetAdapter(video_capturer);
+  if (!adapter) {
+    return;
+  }
+  adapter->RemoveSink(sink);
 }
 
 bool CaptureManager::IsCapturerRegistered(VideoCapturer* video_capturer) const {
@@ -284,7 +304,11 @@ bool CaptureManager::IsCapturerRegistered(VideoCapturer* video_capturer) const {
 
 bool CaptureManager::RegisterVideoCapturer(VideoCapturer* video_capturer) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  VideoCapturerState* capture_state = new VideoCapturerState(video_capturer);
+  VideoCapturerState* capture_state =
+      VideoCapturerState::Create(video_capturer);
+  if (!capture_state) {
+    return false;
+  }
   capture_states_[video_capturer] = capture_state;
   SignalCapturerStateChange.repeat(video_capturer->SignalStateChange);
   return true;
@@ -350,6 +374,16 @@ VideoCapturerState* CaptureManager::GetCaptureState(
     return NULL;
   }
   return iter->second;
+}
+
+CaptureRenderAdapter* CaptureManager::GetAdapter(
+    VideoCapturer* video_capturer) const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  VideoCapturerState* capture_state = GetCaptureState(video_capturer);
+  if (!capture_state) {
+    return NULL;
+  }
+  return capture_state->adapter();
 }
 
 }  // namespace cricket
