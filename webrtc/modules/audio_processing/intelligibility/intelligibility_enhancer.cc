@@ -104,6 +104,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(const Config& config)
                       config.var_type,
                       config.var_window_size,
                       config.var_decay_rate),
+      noise_power_(freqs_, 0.f),
       filtered_clear_var_(new float[bank_size_]),
       filtered_noise_var_(new float[bank_size_]),
       center_freqs_(new float[bank_size_]),
