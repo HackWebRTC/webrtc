@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 // camera thread. The internal *OnCameraThread() methods must check |camera| for null to check if
 // the camera has been stopped.
 @SuppressWarnings("deprecation")
-public class VideoCapturerAndroid extends VideoCapturer implements
+public class VideoCapturerAndroid implements
     android.hardware.Camera.PreviewCallback,
     SurfaceTextureHelper.OnTextureFrameAvailableListener {
   private final static String TAG = "VideoCapturerAndroid";
@@ -196,12 +196,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     if (cameraId == -1) {
       return null;
     }
-
-    final VideoCapturerAndroid capturer = new VideoCapturerAndroid(cameraId, eventsHandler,
-        sharedEglContext);
-    capturer.setNativeCapturer(
-        nativeCreateVideoCapturer(capturer, capturer.surfaceHelper));
-    return capturer;
+    return new VideoCapturerAndroid(cameraId, eventsHandler, sharedEglContext);
   }
 
   public void printStackTrace() {
@@ -302,11 +297,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     return CameraEnumerationAndroid.getSupportedFormatsAsJson(getCurrentCameraId());
   }
 
-  // Called from native VideoCapturer_nativeCreateVideoCapturer.
-  private VideoCapturerAndroid(int cameraId) {
-    this(cameraId, null, null);
-  }
-
   private VideoCapturerAndroid(int cameraId, CameraEventsHandler eventsHandler,
       EglBase.Context sharedContext) {
     this.id = cameraId;
@@ -347,9 +337,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     return -1;
   }
 
-  // Called by native code to quit the camera thread. This needs to be done manually, otherwise the
-  // thread and handler will not be garbage collected.
-  private void release() {
+  // Quits the camera thread. This needs to be done manually, otherwise the thread and handler will
+  // not be garbage collected.
+  public void release() {
     Logging.d(TAG, "release");
     if (isReleased()) {
       throw new IllegalStateException("Already released");
@@ -769,8 +759,4 @@ public class VideoCapturerAndroid extends VideoCapturer implements
     private native void nativeOnOutputFormatRequest(long nativeCapturer,
         int width, int height, int framerate);
   }
-
-  private static native long nativeCreateVideoCapturer(
-      VideoCapturerAndroid videoCapturer,
-      SurfaceTextureHelper surfaceHelper);
 }
