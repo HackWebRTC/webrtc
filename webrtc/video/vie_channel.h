@@ -112,7 +112,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   int SetRtxSendPayloadType(int payload_type, int associated_payload_type);
 
   void SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state);
-  RtpState GetRtpStateForSsrc(uint32_t ssrc);
+  RtpState GetRtpStateForSsrc(uint32_t ssrc) const;
 
   // Sets the CName for the outgoing stream on the channel.
   int32_t SetRTCPCName(const char* rtcp_cname);
@@ -126,7 +126,7 @@ class ViEChannel : public VCMFrameTypeCallback,
                                 uint32_t* cumulative_lost,
                                 uint32_t* extended_max,
                                 uint32_t* jitter_samples,
-                                int64_t* rtt_ms);
+                                int64_t* rtt_ms) const;
 
   // Called on receipt of RTCP report block from remote side.
   void RegisterSendChannelRtcpStatisticsCallback(

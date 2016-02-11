@@ -638,7 +638,7 @@ void ViEChannel::SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state) {
   }
 }
 
-RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) {
+RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) const {
   RTC_DCHECK(!rtp_rtcp_modules_[0]->Sending());
   RtpState rtp_state;
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -664,7 +664,7 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
                                           uint32_t* cumulative_lost,
                                           uint32_t* extended_max,
                                           uint32_t* jitter_samples,
-                                          int64_t* rtt_ms) {
+                                          int64_t* rtt_ms) const {
   // Aggregate the report blocks associated with streams sent on this channel.
   std::vector<RTCPReportBlock> report_blocks;
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)

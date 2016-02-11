@@ -55,9 +55,7 @@ ViEReceiver::ViEReceiver(VideoCodingModule* module_vcm,
       receiving_ast_enabled_(false),
       receiving_cvo_enabled_(false),
       receiving_tsn_enabled_(false),
-      last_packet_log_ms_(-1) {
-  assert(remote_bitrate_estimator);
-}
+      last_packet_log_ms_(-1) {}
 
 ViEReceiver::~ViEReceiver() {
   UpdateHistograms();
@@ -246,6 +244,7 @@ bool ViEReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
 bool ViEReceiver::DeliverRtp(const uint8_t* rtp_packet,
                              size_t rtp_packet_length,
                              const PacketTime& packet_time) {
+  RTC_DCHECK(remote_bitrate_estimator_);
   {
     rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {

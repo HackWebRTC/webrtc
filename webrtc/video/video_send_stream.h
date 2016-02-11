@@ -19,9 +19,12 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
+#include "webrtc/video/encoder_state_feedback.h"
 #include "webrtc/video/payload_router.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/video_capture_input.h"
+#include "webrtc/video/vie_channel.h"
+#include "webrtc/video/vie_encoder.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -30,7 +33,6 @@ namespace webrtc {
 class BitrateAllocator;
 class CallStats;
 class CongestionController;
-class EncoderStateFeedback;
 class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
@@ -91,19 +93,12 @@ class VideoSendStream : public webrtc::VideoSendStream,
   VieRemb* const remb_;
 
   OveruseFrameDetector overuse_detector_;
-  rtc::scoped_ptr<VideoCaptureInput> input_;
   PayloadRouter payload_router_;
-  rtc::scoped_ptr<ViEEncoder> vie_encoder_;
-  rtc::scoped_ptr<ViEChannel> vie_channel_;
-  // TODO(pbos): Make proper const.
-  // const after construction.
-  VideoCodingModule* vcm_;
-  rtc::scoped_ptr<EncoderStateFeedback> encoder_feedback_;
-
-  // Used as a workaround to indicate that we should be using the configured
-  // start bitrate initially, instead of the one reported by VideoEngine (which
-  // defaults to too high).
-  bool use_config_bitrate_;
+  ViEEncoder vie_encoder_;
+  VideoCodingModule* const vcm_;
+  EncoderStateFeedback encoder_feedback_;
+  ViEChannel vie_channel_;
+  VideoCaptureInput input_;
 };
 }  // namespace internal
 }  // namespace webrtc
