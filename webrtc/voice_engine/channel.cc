@@ -2852,13 +2852,9 @@ int Channel::GetRTPStatistics(CallStatistics& stats) {
   RtcpStatistics statistics;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
-  if (!statistician ||
-      !statistician->GetStatistics(&statistics,
-                                   _rtpRtcpModule->RTCP() == RtcpMode::kOff)) {
-    _engineStatisticsPtr->SetLastError(
-        VE_CANNOT_RETRIEVE_RTP_STAT, kTraceWarning,
-        "GetRTPStatistics() failed to read RTP statistics from the "
-        "RTP/RTCP module");
+  if (statistician) {
+    statistician->GetStatistics(&statistics,
+                                _rtpRtcpModule->RTCP() == RtcpMode::kOff);
   }
 
   stats.fractionLost = statistics.fraction_lost;
