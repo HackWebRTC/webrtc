@@ -163,19 +163,6 @@ class VideoFrameTest : public testing::Test {
     return ms.release();
   }
 
-  // Write an I420 frame out to disk.
-  bool DumpFrame(const std::string& prefix,
-                 const cricket::VideoFrame& frame) {
-    char filename[256];
-    rtc::sprintfn(filename, sizeof(filename), "%s.%dx%d_P420.yuv",
-                        prefix.c_str(), frame.GetWidth(), frame.GetHeight());
-    size_t out_size = cricket::VideoFrame::SizeOf(frame.GetWidth(),
-                                                  frame.GetHeight());
-    rtc::scoped_ptr<uint8_t[]> out(new uint8_t[out_size]);
-    frame.CopyToBuffer(out.get(), out_size);
-    return DumpSample(filename, out.get(), out_size);
-  }
-
   bool DumpSample(const std::string& filename, const void* buffer, int size) {
     rtc::Pathname path(filename);
     rtc::scoped_ptr<rtc::FileStream> fs(
@@ -1831,21 +1818,6 @@ class VideoFrameTest : public testing::Test {
     EXPECT_NE(target->GetVPlane(), source->GetVPlane());
   }
 
-  void CopyToBuffer() {
-    T frame;
-    rtc::scoped_ptr<rtc::MemoryStream> ms(
-        LoadSample(kImageFilename));
-    ASSERT_TRUE(ms.get() != NULL);
-    ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
-                          &frame));
-    size_t out_size = kWidth * kHeight * 3 / 2;
-    rtc::scoped_ptr<uint8_t[]> out(new uint8_t[out_size]);
-    for (int i = 0; i < repeat_; ++i) {
-      EXPECT_EQ(out_size, frame.CopyToBuffer(out.get(), out_size));
-    }
-    EXPECT_EQ(0, memcmp(out.get(), ms->GetBuffer(), out_size));
-  }
-
   void CopyToFrame() {
     T source;
     rtc::scoped_ptr<rtc::MemoryStream> ms(
@@ -1863,44 +1835,6 @@ class VideoFrameTest : public testing::Test {
     source.CopyToFrame(&target);
 
     EXPECT_TRUE(IsEqual(source, target, 0));
-  }
-
-  void Write() {
-    T frame;
-    rtc::scoped_ptr<rtc::MemoryStream> ms(
-        LoadSample(kImageFilename));
-    ASSERT_TRUE(ms.get() != NULL);
-    rtc::MemoryStream ms2;
-    size_t size;
-    ASSERT_TRUE(ms->GetSize(&size));
-    ASSERT_TRUE(ms2.ReserveSize(size));
-    ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
-                          &frame));
-    for (int i = 0; i < repeat_; ++i) {
-      ms2.SetPosition(0u);  // Useful when repeat_ > 1.
-      int error;
-      EXPECT_EQ(rtc::SR_SUCCESS, frame.Write(&ms2, &error));
-    }
-    size_t out_size = cricket::VideoFrame::SizeOf(kWidth, kHeight);
-    EXPECT_EQ(0, memcmp(ms2.GetBuffer(), ms->GetBuffer(), out_size));
-  }
-
-  void CopyToBuffer1Pixel() {
-    size_t out_size = 3;
-    rtc::scoped_ptr<uint8_t[]> out(new uint8_t[out_size + 1]);
-    memset(out.get(), 0xfb, out_size + 1);  // Fill buffer
-    uint8_t pixel[3] = {1, 2, 3};
-    T frame;
-    EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1, pixel,
-                           sizeof(pixel), 0,
-                           webrtc::kVideoRotation_0));
-    for (int i = 0; i < repeat_; ++i) {
-      EXPECT_EQ(out_size, frame.CopyToBuffer(out.get(), out_size));
-    }
-    EXPECT_EQ(1, out.get()[0]);  // Check Y.  Should be 1.
-    EXPECT_EQ(2, out.get()[1]);  // Check U.  Should be 2.
-    EXPECT_EQ(3, out.get()[2]);  // Check V.  Should be 3.
-    EXPECT_EQ(0xfb, out.get()[3]);  // Check sentinel is still intact.
   }
 
   void StretchToFrame() {

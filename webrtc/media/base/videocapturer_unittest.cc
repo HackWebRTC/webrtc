@@ -52,9 +52,9 @@ class VideoCapturerTest
   void OnVideoFrame(cricket::VideoCapturer*, const cricket::VideoFrame* frame) {
     ++video_frames_received_;
     if (expects_rotation_applied_) {
-      EXPECT_EQ(webrtc::kVideoRotation_0, frame->GetRotation());
+      EXPECT_EQ(webrtc::kVideoRotation_0, frame->GetVideoRotation());
     } else {
-      EXPECT_EQ(capturer_.GetRotation(), frame->GetRotation());
+      EXPECT_EQ(capturer_.GetRotation(), frame->GetVideoRotation());
     }
     renderer_.RenderFrame(frame);
   }

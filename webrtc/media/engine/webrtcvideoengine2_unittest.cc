@@ -473,8 +473,8 @@ TEST_F(WebRtcVideoEngine2Test,
   frame.width = 1280;
   frame.height = 720;
   frame.fourcc = cricket::FOURCC_I420;
-  frame.data_size = static_cast<uint32_t>(
-      cricket::VideoFrame::SizeOf(frame.width, frame.height));
+  frame.data_size = frame.width * frame.height +
+                    2 * ((frame.width + 1) / 2) * ((frame.height + 1) / 2);
   rtc::scoped_ptr<char[]> data(new char[frame.data_size]);
   frame.data = data.get();
   memset(frame.data, 1, frame.data_size);

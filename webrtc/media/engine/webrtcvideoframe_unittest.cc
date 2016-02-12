@@ -66,9 +66,9 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     // Verify the new frame.
     EXPECT_EQ(5678, frame.GetTimeStamp());
     if (apply_rotation)
-      EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetRotation());
+      EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetVideoRotation());
     else
-      EXPECT_EQ(frame_rotation, frame.GetRotation());
+      EXPECT_EQ(frame_rotation, frame.GetVideoRotation());
     // If |apply_rotation| and the frame rotation is 90 or 270, width and
     // height are flipped.
     if (apply_rotation && (frame_rotation == webrtc::kVideoRotation_90
@@ -233,10 +233,7 @@ TEST_WEBRTCVIDEOFRAME(ConvertFromUYVYBuffer)
 TEST_WEBRTCVIDEOFRAME(ConvertFromUYVYBufferStride)
 TEST_WEBRTCVIDEOFRAME(ConvertFromUYVYBufferInverted)
 // TEST_WEBRTCVIDEOFRAME(ConvertToI422Buffer)
-TEST_WEBRTCVIDEOFRAME(CopyToBuffer)
 TEST_WEBRTCVIDEOFRAME(CopyToFrame)
-TEST_WEBRTCVIDEOFRAME(Write)
-TEST_WEBRTCVIDEOFRAME(CopyToBuffer1Pixel)
 // TEST_WEBRTCVIDEOFRAME(ConstructARGBBlackWhitePixel)
 
 TEST_WEBRTCVIDEOFRAME(StretchToFrame)
