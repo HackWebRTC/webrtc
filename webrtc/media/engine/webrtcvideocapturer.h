@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOCAPTURER_H_
 #define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOCAPTURER_H_
 
-#ifdef HAVE_WEBRTC_VIDEO
-
 #include <string>
 #include <vector>
 
@@ -50,15 +48,15 @@ class WebRtcVideoCapturer : public VideoCapturer,
   bool Init(webrtc::VideoCaptureModule* module);
 
   // Override virtual methods of the parent class VideoCapturer.
-  virtual bool GetBestCaptureFormat(const VideoFormat& desired,
-                                    VideoFormat* best_format);
-  virtual CaptureState Start(const VideoFormat& capture_format);
-  virtual void Stop();
-  virtual bool IsRunning();
-  virtual bool IsScreencast() const { return false; }
-  virtual bool SetApplyRotation(bool enable);
+  bool GetBestCaptureFormat(const VideoFormat& desired,
+                            VideoFormat* best_format) override;
+  CaptureState Start(const VideoFormat& capture_format) override;
+  void Stop() override;
+  bool IsRunning() override;
+  bool IsScreencast() const override { return false; }
 
  protected:
+  void OnSinkWantsChanged(const rtc::VideoSinkWants& wants) override;
   // Override virtual methods of the parent class VideoCapturer.
   virtual bool GetPreferredFourccs(std::vector<uint32_t>* fourccs);
 
@@ -95,5 +93,4 @@ struct WebRtcCapturedFrame : public CapturedFrame {
 
 }  // namespace cricket
 
-#endif  // HAVE_WEBRTC_VIDEO
-#endif  // WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOCAPTURER_H_
+#endif  // WEBRTC_MEDIA_WEBRTC_WEBRTCVIDEOCAPTURER_H_

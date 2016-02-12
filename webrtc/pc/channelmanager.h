@@ -214,7 +214,6 @@ class ChannelManager : public rtc::MessageHandler,
   DataChannels data_channels_;
 
   int audio_output_volume_;
-  VideoRenderer* local_renderer_;
   bool enable_rtx_;
 
   bool capturing_;

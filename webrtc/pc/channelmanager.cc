@@ -86,7 +86,6 @@ void ChannelManager::Construct(MediaEngineInterface* me,
   main_thread_ = rtc::Thread::Current();
   worker_thread_ = worker_thread;
   audio_output_volume_ = kNotSetOutputVolume;
-  local_renderer_ = NULL;
   capturing_ = false;
   enable_rtx_ = false;
 

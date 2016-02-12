@@ -102,6 +102,10 @@ void VideoCapturer::Construct() {
   square_pixel_aspect_ratio_ = false;
   capture_state_ = CS_STOPPED;
   SignalFrameCaptured.connect(this, &VideoCapturer::OnFrameCaptured);
+  // TODO(perkj) SignalVideoFrame is used directly by Chrome remoting.
+  // Before that is refactored, SignalVideoFrame must forward frames to the
+  // |VideoBroadcaster|;
+  SignalVideoFrame.connect(this, &VideoCapturer::OnFrame);
   scaled_width_ = 0;
   scaled_height_ = 0;
   muted_ = false;
@@ -226,16 +230,6 @@ bool VideoCapturer::MuteToBlackThenPause(bool muted) {
   return Pause(false);
 }
 
-// Note that the last caller decides whether rotation should be applied if there
-// are multiple send streams using the same camera.
-bool VideoCapturer::SetApplyRotation(bool enable) {
-  apply_rotation_ = enable;
-  if (frame_factory_) {
-    frame_factory_->SetApplyRotation(apply_rotation_);
-  }
-  return true;
-}
-
 void VideoCapturer::SetSupportedFormats(
     const std::vector<VideoFormat>& formats) {
   supported_formats_ = formats;
@@ -323,6 +317,25 @@ void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,
   frame_time_data_.Reset();
 }
 
+void VideoCapturer::RemoveSink(
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+  broadcaster_.RemoveSink(sink);
+}
+
+void VideoCapturer::AddOrUpdateSink(
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+    const rtc::VideoSinkWants& wants) {
+  broadcaster_.AddOrUpdateSink(sink, wants);
+  OnSinkWantsChanged(broadcaster_.wants());
+}
+
+void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
+  apply_rotation_ = wants.rotation_applied;
+  if (frame_factory_) {
+    frame_factory_->SetApplyRotation(apply_rotation_);
+  }
+}
+
 void VideoCapturer::OnFrameCaptured(VideoCapturer*,
                                     const CapturedFrame* captured_frame) {
   if (muted_) {
@@ -333,7 +346,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     }
   }
 
-  if (SignalVideoFrame.is_empty()) {
+  if (!broadcaster_.frame_wanted()) {
     return;
   }
 
@@ -517,8 +530,11 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     adapted_frame->SetToBlack();
   }
   SignalVideoFrame(this, adapted_frame.get());
-
   UpdateStats(captured_frame);
+}
+
+void VideoCapturer::OnFrame(VideoCapturer* capturer, const VideoFrame* frame) {
+  broadcaster_.OnFrame(*frame);
 }
 
 void VideoCapturer::SetCaptureState(CaptureState state) {
