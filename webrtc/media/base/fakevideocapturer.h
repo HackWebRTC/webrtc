@@ -20,7 +20,7 @@
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/base/videoframe.h"
 #ifdef HAVE_WEBRTC_VIDEO
-#include "webrtc/media/webrtc/webrtcvideoframefactory.h"
+#include "webrtc/media/engine/webrtcvideoframefactory.h"
 #endif
 
 namespace cricket {

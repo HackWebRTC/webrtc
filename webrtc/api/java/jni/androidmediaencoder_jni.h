@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "webrtc/api/java/jni/eglbase_jni.h"
-#include "webrtc/media/webrtc/webrtcvideoencoderfactory.h"
+#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 
 namespace webrtc_jni {
 

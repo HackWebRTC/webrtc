@@ -13,7 +13,7 @@
 #if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
 
 #if defined(HAVE_WEBRTC_VOICE) && defined(HAVE_WEBRTC_VIDEO)
-#include "webrtc/media/webrtc/webrtcmediaengine.h"
+#include "webrtc/media/engine/webrtcmediaengine.h"
 #endif  // HAVE_WEBRTC_VOICE && HAVE_WEBRTC_VIDEO
 
 #ifdef HAVE_CONFIG_H

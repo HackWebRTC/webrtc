@@ -38,7 +38,7 @@
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
-#include "webrtc/media/webrtc/fakewebrtcvideoengine.h"
+#include "webrtc/media/engine/fakewebrtcvideoengine.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/client/fakeportallocator.h"

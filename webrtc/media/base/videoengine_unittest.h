@@ -23,7 +23,7 @@
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/webrtc/fakewebrtccall.h"
+#include "webrtc/media/engine/fakewebrtccall.h"
 
 #define EXPECT_FRAME_WAIT(c, w, h, t) \
   EXPECT_EQ_WAIT((c), renderer_.num_rendered_frames(), (t)); \

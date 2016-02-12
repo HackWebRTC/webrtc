@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/api/videotrackrenderers.h"
-#include "webrtc/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 namespace webrtc {
 

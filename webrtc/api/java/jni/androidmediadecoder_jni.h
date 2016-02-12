@@ -12,7 +12,7 @@
 #define WEBRTC_API_JAVA_JNI_ANDROIDMEDIADECODER_JNI_H_
 
 #include "webrtc/api/java/jni/eglbase_jni.h"
-#include "webrtc/media/webrtc/webrtcvideodecoderfactory.h"
+#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 
 namespace webrtc_jni {
 

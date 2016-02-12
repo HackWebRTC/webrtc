@@ -23,8 +23,8 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/media/webrtc/webrtccommon.h"
-#include "webrtc/media/webrtc/webrtcvoe.h"
+#include "webrtc/media/engine/webrtccommon.h"
+#include "webrtc/media/engine/webrtcvoe.h"
 #include "webrtc/p2p/client/fakeportallocator.h"
 
 using webrtc::DataChannelInterface;

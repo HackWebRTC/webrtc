@@ -21,8 +21,8 @@
 #include "webrtc/media/base/videoframefactory.h"
 
 #if defined(HAVE_WEBRTC_VIDEO)
-#include "webrtc/media/webrtc/webrtcvideoframe.h"
-#include "webrtc/media/webrtc/webrtcvideoframefactory.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
+#include "webrtc/media/engine/webrtcvideoframefactory.h"
 #endif  // HAVE_WEBRTC_VIDEO
 
 namespace cricket {

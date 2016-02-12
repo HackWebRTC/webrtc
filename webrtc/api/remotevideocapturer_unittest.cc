@@ -12,7 +12,7 @@
 
 #include "webrtc/api/remotevideocapturer.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 using cricket::CaptureState;
 using cricket::VideoCapturer;

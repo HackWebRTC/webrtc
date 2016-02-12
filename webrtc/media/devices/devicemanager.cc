@@ -23,7 +23,7 @@
 #include "webrtc/media/devices/deviceinfo.h"
 
 #ifdef HAVE_WEBRTC_VIDEO
-#include "webrtc/media/webrtc/webrtcvideocapturerfactory.h"
+#include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #endif  // HAVE_WEBRTC_VIDEO
 
 namespace {

@@ -42,7 +42,7 @@
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/webrtc/fakewebrtccall.h"
+#include "webrtc/media/engine/fakewebrtccall.h"
 #include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"

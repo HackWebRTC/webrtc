@@ -18,7 +18,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/fakemediaengine.h"
-#include "webrtc/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::VideoSource;

@@ -14,7 +14,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 namespace webrtc {
 

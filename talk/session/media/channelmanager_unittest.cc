@@ -34,7 +34,7 @@
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/testutils.h"
-#include "webrtc/media/webrtc/fakewebrtccall.h"
+#include "webrtc/media/engine/fakewebrtccall.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 
 namespace cricket {
