@@ -94,11 +94,11 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   OveruseFrameDetector overuse_detector_;
   PayloadRouter payload_router_;
-  ViEEncoder vie_encoder_;
-  VideoCodingModule* const vcm_;
   EncoderStateFeedback encoder_feedback_;
   ViEChannel vie_channel_;
   ViEReceiver* const vie_receiver_;
+  ViEEncoder vie_encoder_;
+  VideoCodingModule* const vcm_;
   VideoCaptureInput input_;
 };
 }  // namespace internal

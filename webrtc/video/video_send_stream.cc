@@ -174,15 +174,6 @@ VideoSendStream::VideoSendStream(
           this,
           config.post_encode_callback,
           &stats_proxy_),
-      vie_encoder_(num_cpu_cores,
-                   module_process_thread_,
-                   &stats_proxy_,
-                   config.pre_encode_callback,
-                   &overuse_detector_,
-                   congestion_controller_->pacer(),
-                   &payload_router_,
-                   bitrate_allocator),
-      vcm_(vie_encoder_.vcm()),
       vie_channel_(config.send_transport,
                    module_process_thread_,
                    &payload_router_,
@@ -198,6 +189,15 @@ VideoSendStream::VideoSendStream(
                    config_.rtp.ssrcs.size(),
                    true),
       vie_receiver_(vie_channel_.vie_receiver()),
+      vie_encoder_(num_cpu_cores,
+                   module_process_thread_,
+                   &stats_proxy_,
+                   config.pre_encode_callback,
+                   &overuse_detector_,
+                   congestion_controller_->pacer(),
+                   &payload_router_,
+                   bitrate_allocator),
+      vcm_(vie_encoder_.vcm()),
       input_(&vie_encoder_,
              config_.local_renderer,
              &stats_proxy_,
@@ -306,10 +306,6 @@ VideoSendStream::~VideoSendStream() {
   Stop();
 
   module_process_thread_->DeRegisterModule(&overuse_detector_);
-  // Remove vcm_protection_callback (part of vie_channel_) before destroying
-  // ViEChannel. vcm_ is owned by ViEEncoder and the registered callback does
-  // not outlive it.
-  vcm_->RegisterProtectionCallback(nullptr);
   vie_channel_.RegisterSendFrameCountObserver(nullptr);
   vie_channel_.RegisterSendBitrateObserver(nullptr);
   vie_channel_.RegisterRtcpPacketTypeCounterObserver(nullptr);
