@@ -69,7 +69,7 @@
       ],
     },  # target rtc_unittest_main
     {
-      'target_name': 'libjingle_media_unittest',
+      'target_name': 'rtc_media_unittests',
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',

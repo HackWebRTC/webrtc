@@ -356,16 +356,16 @@
           ],
         },
         {
-          'target_name': 'libjingle_media_unittest_run',
+          'target_name': 'rtc_media_unittests_run',
           'type': 'none',
           'dependencies': [
-            'libjingle_media_unittest',
+            'rtc_media_unittests',
           ],
           'includes': [
             'build/isolate.gypi',
           ],
           'sources': [
-            'libjingle_media_unittest.isolate',
+            'rtc_media_unittests.isolate',
           ],
         },
         {
