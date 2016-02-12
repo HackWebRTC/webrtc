@@ -168,10 +168,6 @@ int32_t NullVideoDecoder::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t NullVideoDecoder::Reset() {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 const char* NullVideoDecoder::ImplementationName() const {
   return "NullVideoDecoder";
 }
