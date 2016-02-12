@@ -285,7 +285,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
 TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
   engine_.Init();
   rtc::scoped_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(call_.get(), cricket::VideoOptions()));
+      engine_.CreateChannel(call_.get(), MediaConfig(), VideoOptions()));
 
   EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
 
@@ -298,7 +298,7 @@ TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
 TEST_F(WebRtcVideoEngine2Test, GetStatsWithoutSendCodecsSetDoesNotCrash) {
   engine_.Init();
   rtc::scoped_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(call_.get(), cricket::VideoOptions()));
+      engine_.CreateChannel(call_.get(), MediaConfig(), VideoOptions()));
   EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
   VideoMediaInfo info;
   channel->GetStats(&info);
@@ -355,7 +355,8 @@ void WebRtcVideoEngine2Test::TestExtendedEncoderOveruse(
         SetUpForExternalEncoderFactory(&encoder_factory, parameters.codecs));
   } else {
     engine_.Init();
-    channel.reset(engine_.CreateChannel(call_.get(), cricket::VideoOptions()));
+    channel.reset(
+        engine_.CreateChannel(call_.get(), MediaConfig(), VideoOptions()));
   }
   ASSERT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
@@ -513,7 +514,7 @@ VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalEncoderFactory(
   engine_.Init();
 
   VideoMediaChannel* channel =
-      engine_.CreateChannel(call_.get(), cricket::VideoOptions());
+      engine_.CreateChannel(call_.get(), MediaConfig(), VideoOptions());
   cricket::VideoSendParameters parameters;
   parameters.codecs = codecs;
   EXPECT_TRUE(channel->SetSendParameters(parameters));
@@ -528,7 +529,7 @@ VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalDecoderFactory(
   engine_.Init();
 
   VideoMediaChannel* channel =
-      engine_.CreateChannel(call_.get(), cricket::VideoOptions());
+      engine_.CreateChannel(call_.get(), MediaConfig(), VideoOptions());
   cricket::VideoRecvParameters parameters;
   parameters.codecs = codecs;
   EXPECT_TRUE(channel->SetRecvParameters(parameters));
@@ -848,7 +849,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     fake_call_.reset(new FakeCall(webrtc::Call::Config()));
     engine_.Init();
     channel_.reset(
-        engine_.CreateChannel(fake_call_.get(), cricket::VideoOptions()));
+        engine_.CreateChannel(fake_call_.get(), MediaConfig(), VideoOptions()));
     last_ssrc_ = 123;
     send_parameters_.codecs = engine_.codecs();
     recv_parameters_.codecs = engine_.codecs();
@@ -1737,9 +1738,14 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   cricket::VideoCodec codec = kVp8Codec720p;
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(codec);
+
+  MediaConfig media_config = MediaConfig();
   if (!enable_overuse) {
-    parameters.options.cpu_overuse_detection = rtc::Optional<bool>(false);
+    media_config.enable_cpu_overuse_detection = false;
   }
+  channel_.reset(
+      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
   AddSendStream();
@@ -2266,21 +2272,25 @@ TEST_F(WebRtcVideoChannel2Test, SetSend) {
 TEST_F(WebRtcVideoChannel2Test, TestSetDscpOptions) {
   rtc::scoped_ptr<cricket::FakeNetworkInterface> network_interface(
       new cricket::FakeNetworkInterface);
-  channel_->SetInterface(network_interface.get());
-  cricket::VideoSendParameters parameters = send_parameters_;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_EQ(rtc::DSCP_NO_CHANGE, network_interface->dscp());
-  parameters.options.dscp = rtc::Optional<bool>(true);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
-  // Verify previous value is not modified if dscp option is not set.
-  cricket::VideoSendParameters parameters1 = send_parameters_;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters1));
-  EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
-  parameters1.options.dscp = rtc::Optional<bool>(false);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters1));
+  MediaConfig config;
+  rtc::scoped_ptr<VideoMediaChannel> channel;
+
+  channel.reset(engine_.CreateChannel(call_.get(), config, VideoOptions()));
+  channel->SetInterface(network_interface.get());
+  // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
-  channel_->SetInterface(NULL);
+
+  config.enable_dscp = true;
+  channel.reset(engine_.CreateChannel(call_.get(), config, VideoOptions()));
+  channel->SetInterface(network_interface.get());
+  EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
+
+  // Verify that setting the option to false resets the
+  // DiffServCodePoint.
+  config.enable_dscp = false;
+  channel.reset(engine_.CreateChannel(call_.get(), config, VideoOptions()));
+  channel->SetInterface(network_interface.get());
+  EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 }
 
 // This test verifies that the RTCP reduced size mode is properly applied to
@@ -2403,8 +2413,6 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   EXPECT_TRUE(channel_->SetSend(true));
 
   // Verify that the CpuOveruseObserver is registered and trigger downgrade.
-  parameters.options.cpu_overuse_detection = rtc::Optional<bool>(true);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
   // Trigger overuse.
   ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
@@ -2480,8 +2488,6 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationAndBandwidthStats) {
   EXPECT_TRUE(channel_->SetSend(true));
 
   // Verify that the CpuOveruseObserver is registered and trigger downgrade.
-  parameters.options.cpu_overuse_detection = rtc::Optional<bool>(true);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
   // Trigger overuse -> adapt CPU.
   ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
@@ -2941,7 +2947,8 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
 
   void SetUp() override {
     engine_.Init();
-    channel_.reset(engine_.CreateChannel(&fake_call_, VideoOptions()));
+    channel_.reset(
+        engine_.CreateChannel(&fake_call_, MediaConfig(), VideoOptions()));
     last_ssrc_ = 123;
   }
 

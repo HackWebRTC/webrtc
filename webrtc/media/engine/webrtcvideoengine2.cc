@@ -509,11 +509,13 @@ void WebRtcVideoEngine2::Init() {
 
 WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
     webrtc::Call* call,
+    const MediaConfig& config,
     const VideoOptions& options) {
   RTC_DCHECK(initialized_);
   LOG(LS_INFO) << "CreateChannel. Options: " << options.ToString();
-  return new WebRtcVideoChannel2(call, options, video_codecs_,
-      external_encoder_factory_, external_decoder_factory_);
+  return new WebRtcVideoChannel2(call, config, options, video_codecs_,
+                                 external_encoder_factory_,
+                                 external_decoder_factory_);
 }
 
 const std::vector<VideoCodec>& WebRtcVideoEngine2::codecs() const {
@@ -602,31 +604,25 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
 
 WebRtcVideoChannel2::WebRtcVideoChannel2(
     webrtc::Call* call,
+    const MediaConfig& config,
     const VideoOptions& options,
     const std::vector<VideoCodec>& recv_codecs,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     WebRtcVideoDecoderFactory* external_decoder_factory)
-    : call_(call),
+    : VideoMediaChannel(config),
+      call_(call),
       unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
+      signal_cpu_adaptation_(config.enable_cpu_overuse_detection),
+      disable_prerenderer_smoothing_(config.disable_prerenderer_smoothing),
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  SetDefaultOptions();
   options_.SetAll(options);
-  if (options_.cpu_overuse_detection)
-    signal_cpu_adaptation_ = *options_.cpu_overuse_detection;
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
   default_send_ssrc_ = 0;
   RTC_DCHECK(ValidateCodecFormats(recv_codecs));
   recv_codecs_ = FilterSupportedCodecs(MapCodecs(recv_codecs));
-}
-
-void WebRtcVideoChannel2::SetDefaultOptions() {
-  options_.cpu_overuse_detection = rtc::Optional<bool>(true);
-  options_.dscp = rtc::Optional<bool>(false);
-  options_.suspend_below_min_bitrate = rtc::Optional<bool>(false);
-  options_.screencast_min_bitrate_kbps = rtc::Optional<int>(0);
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -757,6 +753,10 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
   return true;
 }
 
+rtc::DiffServCodePoint WebRtcVideoChannel2::PreferredDscp() const {
+  return rtc::DSCP_AF41;
+}
+
 bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetSendParameters");
   LOG(LS_INFO) << "SetSendParameters: " << params.ToString();
@@ -801,18 +801,8 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
     call_->SetBitrateConfig(bitrate_config_);
   }
 
-  if (changed_params.options) {
+  if (changed_params.options)
     options_.SetAll(*changed_params.options);
-    {
-      rtc::CritScope lock(&capturer_crit_);
-      if (options_.cpu_overuse_detection) {
-        signal_cpu_adaptation_ = *options_.cpu_overuse_detection;
-      }
-    }
-    rtc::DiffServCodePoint dscp =
-        options_.dscp.value_or(false) ? rtc::DSCP_AF41 : rtc::DSCP_DEFAULT;
-    MediaChannel::SetDscp(dscp);
-  }
 
   {
     rtc::CritScope stream_lock(&stream_crit_);
@@ -1138,7 +1128,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, config, external_decoder_factory_, default_stream,
-      recv_codecs_, options_.disable_prerenderer_smoothing.value_or(false));
+      recv_codecs_, disable_prerenderer_smoothing_);
 
   return true;
 }
@@ -1767,9 +1757,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
   parameters_.config.rtp.nack.rtp_history_ms =
       HasNack(codec_settings.codec) ? kNackHistoryMs : 0;
 
-  RTC_CHECK(options.suspend_below_min_bitrate);
   parameters_.config.suspend_below_min_bitrate =
-      *options.suspend_below_min_bitrate;
+      options.suspend_below_min_bitrate.value_or(false);
 
   parameters_.codec_settings =
       rtc::Optional<WebRtcVideoChannel2::VideoCodecSettings>(codec_settings);
@@ -1835,9 +1824,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     const VideoCodec& codec) const {
   webrtc::VideoEncoderConfig encoder_config;
   if (dimensions.is_screencast) {
-    RTC_CHECK(parameters_.options.screencast_min_bitrate_kbps);
     encoder_config.min_transmit_bitrate_bps =
-        *parameters_.options.screencast_min_bitrate_kbps * 1000;
+        1000 * parameters_.options.screencast_min_bitrate_kbps.value_or(0);
     encoder_config.content_type =
         webrtc::VideoEncoderConfig::ContentType::kScreen;
   } else {

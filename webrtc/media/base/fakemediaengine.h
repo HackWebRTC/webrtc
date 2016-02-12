@@ -665,6 +665,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
   }
 
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
+                                   const MediaConfig& config,
                                    const AudioOptions& options) {
     if (fail_create_channel_) {
       return nullptr;
@@ -728,6 +729,7 @@ class FakeVideoEngine : public FakeBaseEngine {
   }
 
   VideoMediaChannel* CreateChannel(webrtc::Call* call,
+                                   const MediaConfig& config,
                                    const VideoOptions& options) {
     if (fail_create_channel_) {
       return NULL;

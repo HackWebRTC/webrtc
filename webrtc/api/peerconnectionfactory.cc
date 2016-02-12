@@ -286,10 +286,10 @@ PeerConnectionFactory::CreateAudioTrack(const std::string& id,
   return AudioTrackProxy::Create(signaling_thread_, track);
 }
 
-webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController()
-    const {
+webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController(
+    const cricket::MediaConfig& config) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  return MediaControllerInterface::Create(worker_thread_,
+  return MediaControllerInterface::Create(config, worker_thread_,
                                           channel_manager_.get());
 }
 

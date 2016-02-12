@@ -13,6 +13,7 @@
 
 #include "webrtc/api/mediacontroller.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/media/base/mediachannel.h"
 
 namespace cricket {
 
@@ -29,8 +30,10 @@ class FakeMediaController : public webrtc::MediaControllerInterface {
   cricket::ChannelManager* channel_manager() const override {
     return channel_manager_;
   }
+  const MediaConfig& config() const override { return media_config_; }
 
  private:
+  const MediaConfig media_config_ = MediaConfig();
   cricket::ChannelManager* channel_manager_;
   webrtc::Call* call_;
 };

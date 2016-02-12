@@ -34,6 +34,7 @@
 namespace webrtc {
 class VideoDecoder;
 class VideoEncoder;
+struct MediaConfig;
 }
 
 namespace rtc {
@@ -98,6 +99,7 @@ class WebRtcVideoEngine2 {
   void Init();
 
   WebRtcVideoChannel2* CreateChannel(webrtc::Call* call,
+                                     const MediaConfig& config,
                                      const VideoOptions& options);
 
   const std::vector<VideoCodec>& codecs() const;
@@ -130,6 +132,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
                             public webrtc::LoadObserver {
  public:
   WebRtcVideoChannel2(webrtc::Call* call,
+                      const MediaConfig& config,
                       const VideoOptions& options,
                       const std::vector<VideoCodec>& recv_codecs,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
@@ -137,6 +140,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
   ~WebRtcVideoChannel2() override;
 
   // VideoMediaChannel implementation
+  rtc::DiffServCodePoint PreferredDscp() const override;
+
   bool SetSendParameters(const VideoSendParameters& params) override;
   bool SetRecvParameters(const VideoRecvParameters& params) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
@@ -479,11 +484,13 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
   DefaultUnsignalledSsrcHandler default_unsignalled_ssrc_handler_;
   UnsignalledSsrcHandler* const unsignalled_ssrc_handler_;
 
+  const bool signal_cpu_adaptation_;
+  const bool disable_prerenderer_smoothing_;
+
   // Separate list of set capturers used to signal CPU adaptation. These should
   // not be locked while calling methods that take other locks to prevent
   // lock-order inversions.
   rtc::CriticalSection capturer_crit_;
-  bool signal_cpu_adaptation_ GUARDED_BY(capturer_crit_);
   std::map<uint32_t, VideoCapturer*> capturers_ GUARDED_BY(capturer_crit_);
 
   rtc::CriticalSection stream_crit_;

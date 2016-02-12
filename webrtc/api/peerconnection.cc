@@ -616,7 +616,20 @@ bool PeerConnection::Initialize(
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
 
-  media_controller_.reset(factory_->CreateMediaController());
+  // We rely on default values when constraints aren't found.
+  cricket::MediaConfig media_config;
+
+  media_config.disable_prerenderer_smoothing =
+      configuration.disable_prerenderer_smoothing;
+
+  // Find DSCP constraint.
+  FindConstraint(constraints, MediaConstraintsInterface::kEnableDscp,
+                 &media_config.enable_dscp, NULL);
+  // Find constraints for cpu overuse detection.
+  FindConstraint(constraints, MediaConstraintsInterface::kCpuOveruseDetection,
+                 &media_config.enable_cpu_overuse_detection, NULL);
+
+  media_controller_.reset(factory_->CreateMediaController(media_config));
 
   remote_stream_factory_.reset(new RemoteMediaStreamFactory(
       factory_->signaling_thread(), media_controller_->channel_manager()));

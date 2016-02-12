@@ -489,7 +489,8 @@ class StatsCollectorTest : public testing::Test {
         channel_manager_(
             new cricket::ChannelManager(media_engine_, rtc::Thread::Current())),
         media_controller_(
-            webrtc::MediaControllerInterface::Create(rtc::Thread::Current(),
+            webrtc::MediaControllerInterface::Create(cricket::MediaConfig(),
+                                                     rtc::Thread::Current(),
                                                      channel_manager_.get())),
         session_(media_controller_.get()) {
     // By default, we ignore session GetStats calls.

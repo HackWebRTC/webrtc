@@ -649,10 +649,12 @@ rtc::scoped_refptr<webrtc::AudioState>
   return audio_state_;
 }
 
-VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(webrtc::Call* call,
+VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(
+    webrtc::Call* call,
+    const MediaConfig& config,
     const AudioOptions& options) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return new WebRtcVoiceMediaChannel(this, options, call);
+  return new WebRtcVoiceMediaChannel(this, config, options, call);
 }
 
 bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
@@ -1366,9 +1368,10 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
 };
 
 WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
+                                                 const MediaConfig& config,
                                                  const AudioOptions& options,
                                                  webrtc::Call* call)
-    : engine_(engine), call_(call) {
+    : VoiceMediaChannel(config), engine_(engine), call_(call) {
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel";
   RTC_DCHECK(call);
   engine->RegisterChannel(this);
@@ -1388,6 +1391,10 @@ WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
     RemoveRecvStream(recv_streams_.begin()->first);
   }
   engine()->UnregisterChannel(this);
+}
+
+rtc::DiffServCodePoint WebRtcVoiceMediaChannel::PreferredDscp() const {
+  return kAudioDscpValue;
 }
 
 bool WebRtcVoiceMediaChannel::SetSendParameters(
@@ -1453,9 +1460,6 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
   LOG(LS_INFO) << "Setting voice channel options: "
                << options.ToString();
 
-  // Check if DSCP value is changed from previous.
-  bool dscp_option_changed = (options_.dscp != options.dscp);
-
   // We retain all of the existing options, and apply the given ones
   // on top.  This means there is no way to "clear" options such that
   // they go back to the engine default.
@@ -1465,17 +1469,6 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
         "Failed to apply engine options during channel SetOptions.";
     return false;
   }
-
-  if (dscp_option_changed) {
-    rtc::DiffServCodePoint dscp = rtc::DSCP_DEFAULT;
-    if (options_.dscp.value_or(false)) {
-      dscp = kAudioDscpValue;
-    }
-    if (MediaChannel::SetDscp(dscp) != 0) {
-      LOG(LS_WARNING) << "Failed to set DSCP settings for audio channel";
-    }
-  }
-
   LOG(LS_INFO) << "Set voice channel options.  Current options: "
                << options_.ToString();
   return true;

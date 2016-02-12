@@ -584,8 +584,6 @@ bool WebRtcSession::Initialize(
     const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
   bundle_policy_ = rtc_configuration.bundle_policy;
   rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
-  video_options_.disable_prerenderer_smoothing =
-      rtc::Optional<bool>(rtc_configuration.disable_prerenderer_smoothing);
   transport_controller_->SetSslMaxProtocolVersion(options.ssl_max_version);
 
   // Obtain a certificate from RTCConfiguration if any were provided (optional).
@@ -632,15 +630,6 @@ bool WebRtcSession::Initialize(
     }
   }
 
-  // Find DSCP constraint.
-  if (FindConstraint(
-        constraints,
-        MediaConstraintsInterface::kEnableDscp,
-        &value, NULL)) {
-    audio_options_.dscp = rtc::Optional<bool>(value);
-    video_options_.dscp = rtc::Optional<bool>(value);
-  }
-
   // Find Suspend Below Min Bitrate constraint.
   if (FindConstraint(
           constraints,
@@ -653,11 +642,6 @@ bool WebRtcSession::Initialize(
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kScreencastMinBitrate,
       &video_options_.screencast_min_bitrate_kbps);
-
-  // Find constraints for cpu overuse detection.
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCpuOveruseDetection,
-      &video_options_.cpu_overuse_detection);
 
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kCombinedAudioVideoBwe,

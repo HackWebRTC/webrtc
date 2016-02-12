@@ -51,7 +51,8 @@ class NullWebRtcVideoEngine {
   }
 
   VideoMediaChannel* CreateChannel(webrtc::Call* call,
-      const VideoOptions& options) {
+                                   const MediaConfig& config,
+                                   const VideoOptions& options) {
     return nullptr;
   }
 

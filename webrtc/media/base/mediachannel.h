@@ -78,6 +78,40 @@ static std::string VectorToString(const std::vector<T>& vals) {
     return ost.str();
 }
 
+// Construction-time settings, passed to
+// MediaControllerInterface::Create, and passed on when creating
+// MediaChannels.
+struct MediaConfig {
+  // Set DSCP value on packets. This flag comes from the
+  // PeerConnection constraint 'googDscp'.
+  bool enable_dscp = false;
+
+  // Video-specific config
+
+  // Enable WebRTC CPU Overuse Detection. This flag comes from the
+  // PeerConnection constraint 'googCpuOveruseDetection' and is
+  // checked in WebRtcVideoChannel2::OnLoadUpdate, where it's passed
+  // to VideoCapturer::video_adapter()->OnCpuResolutionRequest.
+  bool enable_cpu_overuse_detection = true;
+
+  // Set to true if the renderer has an algorithm of frame selection.
+  // If the value is true, then WebRTC will hand over a frame as soon as
+  // possible without delay, and rendering smoothness is completely the duty
+  // of the renderer;
+  // If the value is false, then WebRTC is responsible to delay frame release
+  // in order to increase rendering smoothness.
+  //
+  // This flag comes from PeerConnection's RtcConfiguration, but is
+  // currently only set by the command line flag
+  // 'disable-rtc-smoothness-algorithm'.
+  // WebRtcVideoChannel2::AddRecvStream copies it to the created
+  // WebRtcVideoReceiveStream, where it is returned by the
+  // SmoothsRenderedFrames method. This method is used by the
+  // VideoReceiveStream, where the value is passed on to the
+  // IncomingVideoStream constructor.
+  bool disable_prerenderer_smoothing = false;
+};
+
 // Options that can be applied to a VoiceMediaChannel or a VoiceMediaEngine.
 // Used to be flags, but that makes it hard to selectively apply options.
 // We are moving all of the setting of options to structs like this,
@@ -108,7 +142,6 @@ struct AudioOptions {
     SetFrom(&tx_agc_limiter, change.tx_agc_limiter);
     SetFrom(&recording_sample_rate, change.recording_sample_rate);
     SetFrom(&playout_sample_rate, change.playout_sample_rate);
-    SetFrom(&dscp, change.dscp);
     SetFrom(&combined_audio_video_bwe, change.combined_audio_video_bwe);
   }
 
@@ -135,7 +168,6 @@ struct AudioOptions {
         tx_agc_limiter == o.tx_agc_limiter &&
         recording_sample_rate == o.recording_sample_rate &&
         playout_sample_rate == o.playout_sample_rate &&
-        dscp == o.dscp &&
         combined_audio_video_bwe == o.combined_audio_video_bwe;
   }
 
@@ -166,7 +198,6 @@ struct AudioOptions {
     ost << ToStringIfSet("tx_agc_limiter", tx_agc_limiter);
     ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
     ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
-    ost << ToStringIfSet("dscp", dscp);
     ost << ToStringIfSet("combined_audio_video_bwe", combined_audio_video_bwe);
     ost << "}";
     return ost.str();
@@ -203,9 +234,10 @@ struct AudioOptions {
   rtc::Optional<bool> tx_agc_limiter;
   rtc::Optional<uint32_t> recording_sample_rate;
   rtc::Optional<uint32_t> playout_sample_rate;
-  // Set DSCP value for packet sent from audio channel.
-  rtc::Optional<bool> dscp;
   // Enable combined audio+bandwidth BWE.
+  // TODO(pthatcher): This flag is set from the
+  // "googCombinedAudioVideoBwe", but not used anywhere. So delete it,
+  // and check if any other AudioOptions members are unused.
   rtc::Optional<bool> combined_audio_video_bwe;
 
  private:
@@ -224,32 +256,23 @@ struct AudioOptions {
 struct VideoOptions {
   void SetAll(const VideoOptions& change) {
     SetFrom(&video_noise_reduction, change.video_noise_reduction);
-    SetFrom(&cpu_overuse_detection, change.cpu_overuse_detection);
     SetFrom(&conference_mode, change.conference_mode);
-    SetFrom(&dscp, change.dscp);
     SetFrom(&suspend_below_min_bitrate, change.suspend_below_min_bitrate);
     SetFrom(&screencast_min_bitrate_kbps, change.screencast_min_bitrate_kbps);
-    SetFrom(&disable_prerenderer_smoothing,
-            change.disable_prerenderer_smoothing);
   }
 
   bool operator==(const VideoOptions& o) const {
     return video_noise_reduction == o.video_noise_reduction &&
-           cpu_overuse_detection == o.cpu_overuse_detection &&
            conference_mode == o.conference_mode &&
-           dscp == o.dscp &&
            suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
-           screencast_min_bitrate_kbps == o.screencast_min_bitrate_kbps &&
-           disable_prerenderer_smoothing == o.disable_prerenderer_smoothing;
+           screencast_min_bitrate_kbps == o.screencast_min_bitrate_kbps;
   }
 
   std::string ToString() const {
     std::ostringstream ost;
     ost << "VideoOptions {";
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
-    ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
     ost << ToStringIfSet("conference mode", conference_mode);
-    ost << ToStringIfSet("dscp", dscp);
     ost << ToStringIfSet("suspend below min bitrate",
                          suspend_below_min_bitrate);
     ost << ToStringIfSet("screencast min bitrate kbps",
@@ -262,11 +285,6 @@ struct VideoOptions {
   // constraint 'googNoiseReduction', and WebRtcVideoEngine2 passes it
   // on to the codec options. Disabled by default.
   rtc::Optional<bool> video_noise_reduction;
-  // Enable WebRTC Cpu Overuse Detection. This flag comes from the
-  // PeerConnection constraint 'googCpuOveruseDetection' and is
-  // checked in WebRtcVideoChannel2::OnLoadUpdate, where it's passed
-  // to VideoCapturer::video_adapter()->OnCpuResolutionRequest.
-  rtc::Optional<bool> cpu_overuse_detection;
   // Use conference mode? This flag comes from the remote
   // description's SDP line 'a=x-google-flag:conference', copied over
   // by VideoChannel::SetRemoteContent_w, and ultimately used by
@@ -274,12 +292,6 @@ struct VideoOptions {
   // WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig.
   // The special screencast behaviour is disabled by default.
   rtc::Optional<bool> conference_mode;
-  // Set DSCP value for packet sent from video channel. This flag
-  // comes from the PeerConnection constraint 'googDscp' and,
-  // WebRtcVideoChannel2::SetOptions checks it before calling
-  // MediaChannel::SetDscp. If enabled, rtc::DSCP_AF41 is used. If
-  // disabled, which is the default, rtc::DSCP_DEFAULT is used.
-  rtc::Optional<bool> dscp;
   // Enable WebRTC suspension of video. No video frames will be sent
   // when the bitrate is below the configured minimum bitrate. This
   // flag comes from the PeerConnection constraint
@@ -290,22 +302,6 @@ struct VideoOptions {
   // the PeerConnection constraint 'googScreencastMinBitrate'. It is
   // copied to the encoder config by WebRtcVideoChannel2.
   rtc::Optional<int> screencast_min_bitrate_kbps;
-  // Set to true if the renderer has an algorithm of frame selection.
-  // If the value is true, then WebRTC will hand over a frame as soon as
-  // possible without delay, and rendering smoothness is completely the duty
-  // of the renderer;
-  // If the value is false, then WebRTC is responsible to delay frame release
-  // in order to increase rendering smoothness.
-  //
-  // This flag comes from PeerConnection's RtcConfiguration, but is
-  // currently only set by the command line flag
-  // 'disable-rtc-smoothness-algorithm'.
-  // WebRtcVideoChannel2::AddRecvStream copies it to the created
-  // WebRtcVideoReceiveStream, where it is returned by the
-  // SmoothsRenderedFrames method. This method is used by the
-  // VideoReceiveStream, where the value is passed on to the
-  // IncomingVideoStream constructor.
-  rtc::Optional<bool> disable_prerenderer_smoothing;
 
  private:
   template <typename T>
@@ -368,15 +364,20 @@ class MediaChannel : public sigslot::has_slots<> {
     virtual ~NetworkInterface() {}
   };
 
-  MediaChannel() : network_interface_(NULL) {}
+  MediaChannel(const MediaConfig& config)
+      : enable_dscp_(config.enable_dscp), network_interface_(NULL) {}
+  MediaChannel() : enable_dscp_(false), network_interface_(NULL) {}
   virtual ~MediaChannel() {}
 
   // Sets the abstract interface class for sending RTP/RTCP data.
   virtual void SetInterface(NetworkInterface *iface) {
     rtc::CritScope cs(&network_interface_crit_);
     network_interface_ = iface;
+    SetDscp(enable_dscp_ ? PreferredDscp() : rtc::DSCP_DEFAULT);
   }
-
+  virtual rtc::DiffServCodePoint PreferredDscp() const {
+    return rtc::DSCP_DEFAULT;
+  }
   // Called when a RTP packet is received.
   virtual void OnPacketReceived(rtc::Buffer* packet,
                                 const rtc::PacketTime& packet_time) = 0;
@@ -424,7 +425,7 @@ class MediaChannel : public sigslot::has_slots<> {
     return network_interface_->SetOption(type, opt, option);
   }
 
- protected:
+ private:
   // This method sets DSCP |value| on both RTP and RTCP channels.
   int SetDscp(rtc::DiffServCodePoint value) {
     int ret;
@@ -439,7 +440,6 @@ class MediaChannel : public sigslot::has_slots<> {
     return ret;
   }
 
- private:
   bool DoSendPacket(rtc::Buffer* packet,
                     bool rtcp,
                     const rtc::PacketOptions& options) {
@@ -451,6 +451,7 @@ class MediaChannel : public sigslot::has_slots<> {
                    : network_interface_->SendRtcp(packet, options);
   }
 
+  const bool enable_dscp_;
   // |network_interface_| can be accessed from the worker_thread and
   // from any MediaEngine threads. This critical section is to protect accessing
   // of network_interface_ object.
@@ -904,6 +905,7 @@ class VoiceMediaChannel : public MediaChannel {
   };
 
   VoiceMediaChannel() {}
+  VoiceMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
   virtual ~VoiceMediaChannel() {}
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
   virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
@@ -967,6 +969,7 @@ class VideoMediaChannel : public MediaChannel {
   };
 
   VideoMediaChannel() {}
+  VideoMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
   virtual ~VideoMediaChannel() {}
 
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;

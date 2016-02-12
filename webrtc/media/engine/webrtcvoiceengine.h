@@ -52,6 +52,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
 
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const;
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
+                                   const MediaConfig& config,
                                    const AudioOptions& options);
 
   bool GetOutputVolume(int* level);
@@ -140,11 +141,14 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
                                       public webrtc::Transport {
  public:
   WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
+                          const MediaConfig& config,
                           const AudioOptions& options,
                           webrtc::Call* call);
   ~WebRtcVoiceMediaChannel() override;
 
   const AudioOptions& options() const { return options_; }
+
+  rtc::DiffServCodePoint PreferredDscp() const override;
 
   bool SetSendParameters(const AudioSendParameters& params) override;
   bool SetRecvParameters(const AudioRecvParameters& params) override;

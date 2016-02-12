@@ -250,8 +250,8 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
   ASSERT(initialized_);
   ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(nullptr != media_controller);
-  VoiceMediaChannel* media_channel =
-      media_engine_->CreateChannel(media_controller->call_w(), options);
+  VoiceMediaChannel* media_channel = media_engine_->CreateChannel(
+      media_controller->call_w(), media_controller->config(), options);
   if (!media_channel)
     return nullptr;
 
@@ -308,8 +308,8 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
   ASSERT(initialized_);
   ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(nullptr != media_controller);
-  VideoMediaChannel* media_channel =
-      media_engine_->CreateVideoChannel(media_controller->call_w(), options);
+  VideoMediaChannel* media_channel = media_engine_->CreateVideoChannel(
+      media_controller->call_w(), media_controller->config(), options);
   if (media_channel == NULL) {
     return NULL;
   }

@@ -62,13 +62,14 @@ class MediaEngineInterface {
 
   // MediaChannel creation
   // Creates a voice media channel. Returns NULL on failure.
-  virtual VoiceMediaChannel* CreateChannel(
-      webrtc::Call* call,
-      const AudioOptions& options) = 0;
+  virtual VoiceMediaChannel* CreateChannel(webrtc::Call* call,
+                                           const MediaConfig& config,
+                                           const AudioOptions& options) = 0;
   // Creates a video media channel, paired with the specified voice channel.
   // Returns NULL on failure.
   virtual VideoMediaChannel* CreateVideoChannel(
       webrtc::Call* call,
+      const MediaConfig& config,
       const VideoOptions& options) = 0;
 
   // Device configuration
@@ -139,12 +140,14 @@ class CompositeMediaEngine : public MediaEngineInterface {
     return voice_.GetAudioState();
   }
   virtual VoiceMediaChannel* CreateChannel(webrtc::Call* call,
+                                           const MediaConfig& config,
                                            const AudioOptions& options) {
-    return voice_.CreateChannel(call, options);
+    return voice_.CreateChannel(call, config, options);
   }
   virtual VideoMediaChannel* CreateVideoChannel(webrtc::Call* call,
+                                                const MediaConfig& config,
                                                 const VideoOptions& options) {
-    return video_.CreateChannel(call, options);
+    return video_.CreateChannel(call, config, options);
   }
 
   virtual bool GetOutputVolume(int* level) {

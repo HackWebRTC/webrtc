@@ -77,7 +77,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     if (!engine_.Init(rtc::Thread::Current())) {
       return false;
     }
-    channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
+    channel_ = engine_.CreateChannel(&call_, cricket::MediaConfig(),
+                                     cricket::AudioOptions());
     return (channel_ != nullptr);
   }
   bool SetupEngineWithRecvStream() {
@@ -137,7 +138,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   void TestInsertDtmf(uint32_t ssrc, bool caller) {
     EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-    channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
+    channel_ = engine_.CreateChannel(&call_, cricket::MediaConfig(),
+                                     cricket::AudioOptions());
     EXPECT_TRUE(channel_ != nullptr);
     if (caller) {
       // If this is a caller, local description will be applied and add the
@@ -414,7 +416,8 @@ TEST_F(WebRtcVoiceEngineTestFake, StartupShutdown) {
 // Tests that we can create and destroy a channel.
 TEST_F(WebRtcVoiceEngineTestFake, CreateChannel) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::MediaConfig(),
+                                   cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 }
 
@@ -1701,7 +1704,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCaller) {
 // Test that we set VAD and DTMF types correctly as callee.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::MediaConfig(),
+                                   cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 
   cricket::AudioSendParameters parameters;
@@ -1818,7 +1822,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCaller) {
 // Test that we set up RED correctly as callee.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCallee) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::MediaConfig(),
+                                   cricket::AudioOptions());
   EXPECT_TRUE(channel_ != nullptr);
 
   cricket::AudioSendParameters parameters;
@@ -2349,7 +2354,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrcWithMultipleStreams) {
 // receive channel is created before the send channel.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrcAfterCreatingReceiveChannel) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(&call_, cricket::AudioOptions());
+  channel_ = engine_.CreateChannel(&call_, cricket::MediaConfig(),
+                                   cricket::AudioOptions());
 
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
   int receive_channel_num = voe_.GetLastChannel();
@@ -2777,11 +2783,11 @@ TEST_F(WebRtcVoiceEngineTestFake, InitDoesNotOverwriteDefaultAgcConfig) {
 TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(SetupEngineWithSendStream());
   rtc::scoped_ptr<cricket::WebRtcVoiceMediaChannel> channel1(
-      static_cast<cricket::WebRtcVoiceMediaChannel*>(
-          engine_.CreateChannel(&call_, cricket::AudioOptions())));
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(engine_.CreateChannel(
+          &call_, cricket::MediaConfig(), cricket::AudioOptions())));
   rtc::scoped_ptr<cricket::WebRtcVoiceMediaChannel> channel2(
-      static_cast<cricket::WebRtcVoiceMediaChannel*>(
-          engine_.CreateChannel(&call_, cricket::AudioOptions())));
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(engine_.CreateChannel(
+          &call_, cricket::MediaConfig(), cricket::AudioOptions())));
 
   // Have to add a stream to make SetSend work.
   cricket::StreamParams stream1;
@@ -2877,21 +2883,29 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
 // This test verifies DSCP settings are properly applied on voice media channel.
 TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   EXPECT_TRUE(SetupEngineWithSendStream());
-  rtc::scoped_ptr<cricket::VoiceMediaChannel> channel(
-      engine_.CreateChannel(&call_, cricket::AudioOptions()));
-  rtc::scoped_ptr<cricket::FakeNetworkInterface> network_interface(
-      new cricket::FakeNetworkInterface);
-  channel->SetInterface(network_interface.get());
-  cricket::AudioSendParameters parameters = send_parameters_;
-  parameters.options.dscp = rtc::Optional<bool>(true);
-  EXPECT_TRUE(channel->SetSendParameters(parameters));
-  EXPECT_EQ(rtc::DSCP_EF, network_interface->dscp());
-  // Verify previous value is not modified if dscp option is not set.
-  EXPECT_TRUE(channel->SetSendParameters(send_parameters_));
-  EXPECT_EQ(rtc::DSCP_EF, network_interface->dscp());
-  parameters.options.dscp = rtc::Optional<bool>(false);
-  EXPECT_TRUE(channel->SetSendParameters(parameters));
-  EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
+  cricket::FakeNetworkInterface network_interface;
+  cricket::MediaConfig config;
+  rtc::scoped_ptr<cricket::VoiceMediaChannel> channel;
+
+  channel.reset(engine_.CreateChannel(&call_, config, cricket::AudioOptions()));
+  channel->SetInterface(&network_interface);
+  // Default value when DSCP is disabled should be DSCP_DEFAULT.
+  EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());
+
+  config.enable_dscp = true;
+  channel.reset(engine_.CreateChannel(&call_, config, cricket::AudioOptions()));
+  channel->SetInterface(&network_interface);
+  EXPECT_EQ(rtc::DSCP_EF, network_interface.dscp());
+
+  // Verify that setting the option to false resets the
+  // DiffServCodePoint.
+  config.enable_dscp = false;
+  channel.reset(engine_.CreateChannel(&call_, config, cricket::AudioOptions()));
+  channel->SetInterface(&network_interface);
+  // Default value when DSCP is disabled should be DSCP_DEFAULT.
+  EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());
+
+  channel->SetInterface(nullptr);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, TestGetReceiveChannelId) {
@@ -3149,8 +3163,8 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
   rtc::scoped_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config()));
-  cricket::VoiceMediaChannel* channel =
-      engine.CreateChannel(call.get(), cricket::AudioOptions());
+  cricket::VoiceMediaChannel* channel = engine.CreateChannel(
+      call.get(), cricket::MediaConfig(), cricket::AudioOptions());
   EXPECT_TRUE(channel != nullptr);
   delete channel;
   engine.Terminate();
@@ -3255,8 +3269,8 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
   cricket::VoiceMediaChannel* channels[32];
   int num_channels = 0;
   while (num_channels < arraysize(channels)) {
-    cricket::VoiceMediaChannel* channel =
-        engine.CreateChannel(call.get(), cricket::AudioOptions());
+    cricket::VoiceMediaChannel* channel = engine.CreateChannel(
+        call.get(), cricket::MediaConfig(), cricket::AudioOptions());
     if (!channel)
       break;
     channels[num_channels++] = channel;
@@ -3277,8 +3291,8 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
   rtc::scoped_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config()));
-  cricket::WebRtcVoiceMediaChannel channel(&engine, cricket::AudioOptions(),
-                                           call.get());
+  cricket::WebRtcVoiceMediaChannel channel(&engine, cricket::MediaConfig(),
+                                           cricket::AudioOptions(), call.get());
   cricket::AudioRecvParameters parameters;
   parameters.codecs = engine.codecs();
   EXPECT_TRUE(channel.SetRecvParameters(parameters));

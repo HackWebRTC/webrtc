@@ -15,6 +15,7 @@
 
 namespace cricket {
 class ChannelManager;
+struct MediaConfig;
 }  // namespace cricket
 
 namespace webrtc {
@@ -26,12 +27,14 @@ class VoiceEngine;
 class MediaControllerInterface {
  public:
   static MediaControllerInterface* Create(
+      const cricket::MediaConfig& config,
       rtc::Thread* worker_thread,
       cricket::ChannelManager* channel_manager);
 
   virtual ~MediaControllerInterface() {}
   virtual webrtc::Call* call_w() = 0;
   virtual cricket::ChannelManager* channel_manager() const = 0;
+  virtual const cricket::MediaConfig& config() const = 0;
 };
 }  // namespace webrtc
 

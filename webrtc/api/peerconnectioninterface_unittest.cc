@@ -2328,6 +2328,105 @@ TEST_F(PeerConnectionInterfaceTest, SignalSameTracksInSeparateMediaStream) {
   EXPECT_TRUE(ContainsSender(senders, kVideoTracks[0]));
 }
 
+// The PeerConnectionMediaConfig tests below verify that configuration
+// and constraints are propagated into the MediaConfig passed to
+// CreateMediaController. These settings are intended for MediaChannel
+// constructors, but that is not exercised by these unittest.
+class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
+ public:
+  webrtc::MediaControllerInterface* CreateMediaController(
+      const cricket::MediaConfig& config) const override {
+    create_media_controller_called_ = true;
+    create_media_controller_config_ = config;
+
+    webrtc::MediaControllerInterface* mc =
+        PeerConnectionFactory::CreateMediaController(config);
+    EXPECT_TRUE(mc != nullptr);
+    return mc;
+  }
+
+  // Mutable, so they can be modified in the above const-declared method.
+  mutable bool create_media_controller_called_ = false;
+  mutable cricket::MediaConfig create_media_controller_config_;
+};
+
+class PeerConnectionMediaConfigTest : public testing::Test {
+ protected:
+  void SetUp() override {
+    pcf_= new rtc::RefCountedObject<PeerConnectionFactoryForTest>();
+    pcf_->Initialize();
+  }
+  const cricket::MediaConfig& TestCreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& config,
+      const MediaConstraintsInterface *constraints) {
+    pcf_->create_media_controller_called_ = false;
+
+    scoped_refptr<PeerConnectionInterface> pc(
+        pcf_->CreatePeerConnection(config, constraints, nullptr, nullptr,
+                                   &observer_));
+    EXPECT_TRUE(pc.get());
+    EXPECT_TRUE(pcf_->create_media_controller_called_);
+    return pcf_->create_media_controller_config_;
+  }
+
+  scoped_refptr<PeerConnectionFactoryForTest> pcf_;
+  MockPeerConnectionObserver observer_;
+};
+
+// This test verifies the default behaviour with no constraints and a
+// default RTCConfiguration.
+TEST_F(PeerConnectionMediaConfigTest, TestDefaults) {
+  PeerConnectionInterface::RTCConfiguration config;
+  FakeConstraints constraints;
+
+  const cricket::MediaConfig& media_config =
+      TestCreatePeerConnection(config, &constraints);
+
+  EXPECT_FALSE(media_config.enable_dscp);
+  EXPECT_TRUE(media_config.enable_cpu_overuse_detection);
+  EXPECT_FALSE(media_config.disable_prerenderer_smoothing);
+}
+
+// This test verifies the DSCP constraint is recognized and passed to
+// the CreateMediaController call.
+TEST_F(PeerConnectionMediaConfigTest, TestDscpConstraintTrue) {
+  PeerConnectionInterface::RTCConfiguration config;
+  FakeConstraints constraints;
+
+  constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDscp, true);
+  const cricket::MediaConfig& media_config =
+      TestCreatePeerConnection(config, &constraints);
+
+  EXPECT_TRUE(media_config.enable_dscp);
+}
+
+// This test verifies the cpu overuse detection constraint is
+// recognized and passed to the CreateMediaController call.
+TEST_F(PeerConnectionMediaConfigTest, TestCpuOveruseConstraintFalse) {
+  PeerConnectionInterface::RTCConfiguration config;
+  FakeConstraints constraints;
+
+  constraints.AddOptional(
+      webrtc::MediaConstraintsInterface::kCpuOveruseDetection, false);
+  const cricket::MediaConfig media_config =
+      TestCreatePeerConnection(config, &constraints);
+
+  EXPECT_FALSE(media_config.enable_cpu_overuse_detection);
+}
+
+// This test verifies that the disable_prerenderer_smoothing flag is
+// propagated from RTCConfiguration to the CreateMediaController call.
+TEST_F(PeerConnectionMediaConfigTest, TestDisablePrerendererSmoothingTrue) {
+  PeerConnectionInterface::RTCConfiguration config;
+  FakeConstraints constraints;
+
+  config.disable_prerenderer_smoothing = true;
+  const cricket::MediaConfig& media_config =
+      TestCreatePeerConnection(config, &constraints);
+
+  EXPECT_TRUE(media_config.disable_prerenderer_smoothing);
+}
+
 // The following tests verify that session options are created correctly.
 // TODO(deadbeef): Convert these tests to be more end-to-end. Instead of
 // "verify options are converted correctly", should be "pass options into

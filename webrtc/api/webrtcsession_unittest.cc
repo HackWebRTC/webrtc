@@ -329,7 +329,8 @@ class WebRtcSessionTest
                                         rtc::Thread::Current())),
         fake_call_(webrtc::Call::Config()),
         media_controller_(
-            webrtc::MediaControllerInterface::Create(rtc::Thread::Current(),
+            webrtc::MediaControllerInterface::Create(cricket::MediaConfig(),
+                                                     rtc::Thread::Current(),
                                                      channel_manager_.get())),
         tdesc_factory_(new cricket::TransportDescriptionFactory()),
         desc_factory_(
@@ -4037,28 +4038,6 @@ TEST_F(WebRtcSessionTest, TestSetRemoteOfferFailIfDtlsDisabledAndNoCrypto) {
           rtc::DIGEST_SHA_256, kFakeDtlsFingerprint));
   SetRemoteDescriptionOfferExpectError(kSdpWithoutSdesCrypto,
                                        offer);
-}
-
-// This test verifies DSCP is properly applied on the media channels.
-TEST_F(WebRtcSessionTest, TestDscpConstraint) {
-  constraints_.reset(new FakeConstraints());
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableDscp, true);
-  Init();
-  SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer();
-
-  SetLocalDescriptionWithoutError(offer);
-
-  video_channel_ = media_engine_->GetVideoChannel(0);
-  voice_channel_ = media_engine_->GetVoiceChannel(0);
-
-  ASSERT_TRUE(video_channel_ != NULL);
-  ASSERT_TRUE(voice_channel_ != NULL);
-  const cricket::AudioOptions& audio_options = voice_channel_->options();
-  const cricket::VideoOptions& video_options = video_channel_->options();
-  EXPECT_EQ(rtc::Optional<bool>(true), audio_options.dscp);
-  EXPECT_EQ(rtc::Optional<bool>(true), video_options.dscp);
 }
 
 TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {

@@ -70,7 +70,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   bool StartRtcEventLog(rtc::PlatformFile file) override;
   void StopRtcEventLog() override;
 
-  virtual webrtc::MediaControllerInterface* CreateMediaController() const;
+  virtual webrtc::MediaControllerInterface* CreateMediaController(
+      const cricket::MediaConfig& config) const;
   virtual rtc::Thread* signaling_thread();
   virtual rtc::Thread* worker_thread();
   const Options& options() const { return options_; }

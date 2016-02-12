@@ -14,6 +14,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/call.h"
 #include "webrtc/pc/channelmanager.h"
+#include "webrtc/media/base/mediachannel.h"
 
 namespace {
 
@@ -24,9 +25,12 @@ const int kMaxBandwidthBps = 2000000;
 class MediaController : public webrtc::MediaControllerInterface,
                         public sigslot::has_slots<> {
  public:
-  MediaController(rtc::Thread* worker_thread,
+  MediaController(const cricket::MediaConfig& config,
+                  rtc::Thread* worker_thread,
                   cricket::ChannelManager* channel_manager)
-      : worker_thread_(worker_thread), channel_manager_(channel_manager) {
+      : worker_thread_(worker_thread),
+        config_(config),
+        channel_manager_(channel_manager) {
     RTC_DCHECK(nullptr != worker_thread);
     worker_thread_->Invoke<void>(
         rtc::Bind(&MediaController::Construct_w, this,
@@ -44,6 +48,7 @@ class MediaController : public webrtc::MediaControllerInterface,
   cricket::ChannelManager* channel_manager() const override {
     return channel_manager_;
   }
+  const cricket::MediaConfig& config() const override { return config_; }
 
  private:
   void Construct_w(cricket::MediaEngineInterface* media_engine) {
@@ -62,6 +67,7 @@ class MediaController : public webrtc::MediaControllerInterface,
   }
 
   rtc::Thread* const worker_thread_;
+  const cricket::MediaConfig config_;
   cricket::ChannelManager* const channel_manager_;
   rtc::scoped_ptr<webrtc::Call> call_;
 
@@ -72,8 +78,9 @@ class MediaController : public webrtc::MediaControllerInterface,
 namespace webrtc {
 
 MediaControllerInterface* MediaControllerInterface::Create(
+    const cricket::MediaConfig& config,
     rtc::Thread* worker_thread,
     cricket::ChannelManager* channel_manager) {
-  return new MediaController(worker_thread, channel_manager);
+  return new MediaController(config, worker_thread, channel_manager);
 }
 }  // namespace webrtc
