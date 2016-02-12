@@ -8,16 +8,12 @@
 
 {
   'includes': ['../build/common.gypi'],
-  'variables': {
-    'talk_root%': '<(webrtc_root)/../talk',
-  },
   'targets': [
     {
       'target_name': 'libjingle_xmpphelp',
       'type': 'static_library',
       'dependencies': [
-        '<(talk_root)/libjingle.gyp:libjingle',
-        '<(talk_root)/libjingle.gyp:libjingle_p2p',
+        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
       ],
       'conditions': [
         ['build_expat==1', {

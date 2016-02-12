@@ -18,7 +18,6 @@
       'type': 'none',
       'dependencies': [
         'webrtc/webrtc.gyp:*',
-        'talk/libjingle.gyp:*',
         '<@(webrtc_root_additional_dependencies)',
       ],
       'conditions': [
@@ -27,9 +26,9 @@
             'webrtc/webrtc_examples.gyp:*',
           ],
         }],
-        ['include_tests==1', {
+        ['OS=="ios" or (OS=="mac" and target_arch!="ia32") and include_tests==1', {
           'dependencies': [
-            'talk/libjingle_tests.gyp:*',
+            'talk/app/webrtc/legacy_objc_api_tests.gyp:*',
           ],
         }],
       ],

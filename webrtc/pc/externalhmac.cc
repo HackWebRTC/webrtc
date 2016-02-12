@@ -27,7 +27,7 @@
 
 #if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 
-#include "talk/session/media/externalhmac.h"
+#include "webrtc/pc/externalhmac.h"
 
 #include <stdlib.h>  // For malloc/free.
 

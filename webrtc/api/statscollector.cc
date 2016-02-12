@@ -14,11 +14,11 @@
 #include <vector>
 
 #include "webrtc/api/peerconnection.h"
-#include "talk/session/media/channel.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timing.h"
+#include "webrtc/pc/channel.h"
 
 using rtc::scoped_ptr;
 

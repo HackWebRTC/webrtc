@@ -26,8 +26,8 @@
  */
 
 #include <assert.h>
-#include "talk/session/media/audiomonitor.h"
-#include "talk/session/media/voicechannel.h"
+#include "webrtc/pc/audiomonitor.h"
+#include "webrtc/pc/voicechannel.h"
 
 namespace cricket {
 

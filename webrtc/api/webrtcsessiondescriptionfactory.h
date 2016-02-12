@@ -11,12 +11,12 @@
 #ifndef WEBRTC_API_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 #define WEBRTC_API_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 
-#include "talk/session/media/mediasession.h"
 #include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/rtccertificate.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
+#include "webrtc/pc/mediasession.h"
 
 namespace cricket {
 class ChannelManager;

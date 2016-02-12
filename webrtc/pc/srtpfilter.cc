@@ -27,7 +27,7 @@
 
 #undef HAVE_CONFIG_H
 
-#include "talk/session/media/srtpfilter.h"
+#include "webrtc/pc/srtpfilter.h"
 
 #include <string.h>
 
@@ -55,7 +55,7 @@ extern "C" {
 #endif  // SRTP_RELATIVE_PATH
 }
 #ifdef  ENABLE_EXTERNAL_AUTH
-#include "talk/session/media/externalhmac.h"
+#include "webrtc/pc/externalhmac.h"
 #endif  // ENABLE_EXTERNAL_AUTH
 #if !defined(NDEBUG)
 extern "C" debug_module_t mod_srtp;

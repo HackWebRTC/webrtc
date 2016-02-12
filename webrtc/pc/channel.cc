@@ -27,9 +27,8 @@
 
 #include <utility>
 
-#include "talk/session/media/channel.h"
+#include "webrtc/pc/channel.h"
 
-#include "talk/session/media/channelmanager.h"
 #include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/buffer.h"
@@ -41,6 +40,7 @@
 #include "webrtc/media/base/constants.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/p2p/base/transportchannel.h"
+#include "webrtc/pc/channelmanager.h"
 
 namespace cricket {
 using rtc::Bind;

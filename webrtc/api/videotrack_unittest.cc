@@ -10,7 +10,6 @@
 
 #include <string>
 
-#include "talk/session/media/channelmanager.h"
 #include "webrtc/api/remotevideocapturer.h"
 #include "webrtc/api/test/fakevideotrackrenderer.h"
 #include "webrtc/api/videosource.h"
@@ -19,6 +18,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
+#include "webrtc/pc/channelmanager.h"
 
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::VideoSource;

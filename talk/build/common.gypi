@@ -34,14 +34,7 @@
     # flood of chromium-style warnings.
     'clang_use_chrome_plugins%': 0,
     # Disable these to not build components which can be externally provided.
-    'build_expat%': 1,
     'build_json%': 1,
-    'build_libsrtp%': 1,
-    # Make it possible to provide custom locations for some libraries.
-    'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
-
-    # Disable this to skip building source requiring GTK.
-    'use_gtk%': 1,
   },
   'target_defaults': {
     'include_dirs': [
@@ -50,13 +43,6 @@
       '../../third_party',
       '../../third_party/webrtc',
       '../../webrtc',
-    ],
-    'defines': [
-      'SRTP_RELATIVE_PATH',
-
-      # Feature selection
-      'HAVE_SCTP',
-      'HAVE_SRTP',
     ],
     'conditions': [
       ['OS=="linux"', {

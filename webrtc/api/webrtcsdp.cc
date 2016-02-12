@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "talk/session/media/mediasession.h"
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/base/arraysize.h"
@@ -33,6 +32,7 @@
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/port.h"
+#include "webrtc/pc/mediasession.h"
 
 using cricket::AudioContentDescription;
 using cricket::Candidate;

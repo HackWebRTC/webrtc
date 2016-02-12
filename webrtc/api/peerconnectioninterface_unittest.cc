@@ -11,7 +11,6 @@
 #include <string>
 #include <utility>
 
-#include "talk/session/media/mediasession.h"
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediastream.h"
@@ -39,6 +38,7 @@
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
 #include "webrtc/p2p/client/fakeportallocator.h"
+#include "webrtc/pc/mediasession.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kStreamLabel2[] = "local_stream_2";

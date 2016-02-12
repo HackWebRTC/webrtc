@@ -17,9 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include "talk/session/media/channel.h"
-#include "talk/session/media/channelmanager.h"
-#include "talk/session/media/mediasession.h"
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
@@ -38,6 +35,9 @@
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/transportchannel.h"
+#include "webrtc/pc/channel.h"
+#include "webrtc/pc/channelmanager.h"
+#include "webrtc/pc/mediasession.h"
 
 using cricket::ContentInfo;
 using cricket::ContentInfos;

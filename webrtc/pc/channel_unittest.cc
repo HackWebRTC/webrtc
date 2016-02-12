@@ -25,7 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/session/media/channel.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
@@ -45,6 +44,7 @@
 #include "webrtc/media/base/screencastid.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/pc/channel.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(rtc::SSLStreamAdapter::feature())) {  \

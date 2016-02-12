@@ -25,11 +25,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/session/media/currentspeakermonitor.h"
+#include "webrtc/pc/currentspeakermonitor.h"
 
-#include "talk/session/media/audiomonitor.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/base/streamparams.h"
+#include "webrtc/pc/audiomonitor.h"
 
 namespace cricket {
 

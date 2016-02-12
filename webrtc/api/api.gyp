@@ -255,7 +255,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/media/media.gyp:rtc_media',
-        '../../talk/libjingle.gyp:libjingle_p2p',
+        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
       ],
       'sources': [
         'audiotrack.cc',

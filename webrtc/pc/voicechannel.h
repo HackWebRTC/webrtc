@@ -25,42 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/session/media/bundlefilter.h"
+#ifndef _VOICECHANNEL_H_
+#define _VOICECHANNEL_H_
 
-#include "webrtc/base/logging.h"
-#include "webrtc/media/base/rtputils.h"
+#include "webrtc/pc/channel.h"
 
-namespace cricket {
-
-BundleFilter::BundleFilter() {
-}
-
-BundleFilter::~BundleFilter() {
-}
-
-bool BundleFilter::DemuxPacket(const uint8_t* data, size_t len) {
-  // For RTP packets, we check whether the payload type can be found.
-  if (!IsRtpPacket(data, len)) {
-    return false;
-  }
-
-  int payload_type = 0;
-  if (!GetRtpPayloadType(data, len, &payload_type)) {
-    return false;
-  }
-  return FindPayloadType(payload_type);
-}
-
-void BundleFilter::AddPayloadType(int payload_type) {
-  payload_types_.insert(payload_type);
-}
-
-bool BundleFilter::FindPayloadType(int pl_type) const {
-  return payload_types_.find(pl_type) != payload_types_.end();
-}
-
-void BundleFilter::ClearAllPayloadTypes() {
-  payload_types_.clear();
-}
-
-}  // namespace cricket
+#endif // _VOICECHANNEL_H_

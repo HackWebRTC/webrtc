@@ -369,6 +369,19 @@
           ],
         },
         {
+          'target_name': 'libjingle_p2p_unittest_run',
+          'type': 'none',
+          'dependencies': [
+            'libjingle_p2p_unittest',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+          ],
+          'sources': [
+            'libjingle_p2p_unittest.isolate',
+          ],
+        },
+        {
           'target_name': 'video_engine_tests_run',
           'type': 'none',
           'dependencies': [

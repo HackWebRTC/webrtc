@@ -34,12 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "talk/session/media/audiomonitor.h"
-#include "talk/session/media/bundlefilter.h"
-#include "talk/session/media/mediamonitor.h"
-#include "talk/session/media/mediasession.h"
-#include "talk/session/media/rtcpmuxfilter.h"
-#include "talk/session/media/srtpfilter.h"
 #include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/criticalsection.h"
@@ -53,6 +47,12 @@
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/p2p/client/socketmonitor.h"
+#include "webrtc/pc/audiomonitor.h"
+#include "webrtc/pc/bundlefilter.h"
+#include "webrtc/pc/mediamonitor.h"
+#include "webrtc/pc/mediasession.h"
+#include "webrtc/pc/rtcpmuxfilter.h"
+#include "webrtc/pc/srtpfilter.h"
 
 namespace webrtc {
 class AudioSinkInterface;

@@ -15,7 +15,7 @@
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/base/base.gyp:rtc_base',
-        '../talk/libjingle.gyp:libjingle_p2p',
+        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
       ],
       'sources': [
         'examples/relayserver/relayserver_main.cc',
@@ -26,7 +26,7 @@
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/base/base.gyp:rtc_base',
-        '../talk/libjingle.gyp:libjingle_p2p',
+        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
       ],
       'sources': [
         'examples/stunserver/stunserver_main.cc',
@@ -37,7 +37,7 @@
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/base/base.gyp:rtc_base',
-        '../talk/libjingle.gyp:libjingle_p2p',
+        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
       ],
       'sources': [
         'examples/turnserver/turnserver_main.cc',
@@ -150,7 +150,7 @@
           'type': 'static_library',
           'dependencies': [
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
-            '../talk/libjingle.gyp:libjingle_peerconnection_objc',
+            '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [
             'examples/objc/AppRTCDemo/common/ARDUtilities.h',
@@ -184,7 +184,7 @@
           'type': 'static_library',
           'dependencies': [
             'apprtc_common',
-            '../talk/libjingle.gyp:libjingle_peerconnection_objc',
+            '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
             'socketrocket',
           ],
           'sources': [
@@ -232,7 +232,7 @@
             ],
           },
           'export_dependent_settings': [
-            '../talk/libjingle.gyp:libjingle_peerconnection_objc',
+            '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
           ],
           'conditions': [
             ['OS=="mac"', {

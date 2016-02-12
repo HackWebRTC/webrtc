@@ -10,10 +10,10 @@
 
 #include "webrtc/api/mediacontroller.h"
 
-#include "talk/session/media/channelmanager.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/call.h"
+#include "webrtc/pc/channelmanager.h"
 
 namespace {
 

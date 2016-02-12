@@ -12,7 +12,6 @@
 
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
-#include "talk/session/media/mediasession.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -21,6 +20,7 @@
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
+#include "webrtc/pc/mediasession.h"
 
 using webrtc::IceCandidateCollection;
 using webrtc::IceCandidateInterface;

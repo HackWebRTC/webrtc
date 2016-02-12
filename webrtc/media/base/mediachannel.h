@@ -27,7 +27,7 @@
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/base/videosinkinterface.h"
 // TODO(juberti): re-evaluate this include
-#include "talk/session/media/audiomonitor.h"
+#include "webrtc/pc/audiomonitor.h"
 
 namespace rtc {
 class Buffer;

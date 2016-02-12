@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "talk/session/media/mediasession.h"
 #include "webrtc/api/dtmfsender.h"
 #include "webrtc/api/fakemetricsobserver.h"
 #include "webrtc/api/localaudiosource.h"
@@ -42,6 +41,7 @@
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/client/fakeportallocator.h"
+#include "webrtc/pc/mediasession.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(feature())) {                               \

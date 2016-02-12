@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "talk/session/media/channelmanager.h"
 #include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/mediacontroller.h"
 #include "webrtc/api/mediastreaminterface.h"
@@ -21,6 +20,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/pc/channelmanager.h"
 
 namespace rtc {
 class BasicNetworkManager;

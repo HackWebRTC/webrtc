@@ -99,6 +99,7 @@
     'build_expat%': 1,
     'build_json%': 1,
     'build_libjpeg%': 1,
+    'build_libsrtp%': 1,
     'build_libvpx%': 1,
     'build_libyuv%': 1,
     'build_openmax_dl%': 1,

@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include "talk/session/media/mediasession.h"
 #include "webrtc/api/datachannel.h"
 #include "webrtc/api/dtmfsender.h"
 #include "webrtc/api/mediacontroller.h"
@@ -26,6 +25,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/p2p/base/transportcontroller.h"
+#include "webrtc/pc/mediasession.h"
 
 namespace cricket {
 

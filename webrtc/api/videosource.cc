@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "webrtc/api/mediaconstraintsinterface.h"
-#include "talk/session/media/channelmanager.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/pc/channelmanager.h"
 
 using cricket::CaptureState;
 using webrtc::MediaConstraintsInterface;

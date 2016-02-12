@@ -11,9 +11,9 @@
 #include "webrtc/api/jsepsessiondescription.h"
 
 #include "webrtc/api/webrtcsdp.h"
-#include "talk/session/media/mediasession.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/pc/mediasession.h"
 
 using rtc::scoped_ptr;
 using cricket::SessionDescription;

@@ -41,6 +41,7 @@
         'libjingle/xmpp/xmpp_tests.gypi',
         'media/media_tests.gypi',
         'p2p/p2p_tests.gypi',
+        'pc/pc_tests.gypi',
         'sound/sound_tests.gypi',
         'webrtc_tests.gypi',
       ],

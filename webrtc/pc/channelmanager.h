@@ -31,13 +31,13 @@
 #include <string>
 #include <vector>
 
-#include "talk/session/media/voicechannel.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/capturemanager.h"
 #include "webrtc/media/base/mediaengine.h"
+#include "webrtc/pc/voicechannel.h"
 
 namespace webrtc {
 class MediaControllerInterface;

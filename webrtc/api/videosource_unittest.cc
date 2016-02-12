@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "talk/session/media/channelmanager.h"
 #include "webrtc/api/remotevideocapturer.h"
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/api/videosource.h"
@@ -20,6 +19,7 @@
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
+#include "webrtc/pc/channelmanager.h"
 
 using webrtc::FakeConstraints;
 using webrtc::VideoSource;

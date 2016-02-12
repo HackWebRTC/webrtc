@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "talk/session/media/channel.h"
+#include "webrtc/pc/channel.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/gunit.h"

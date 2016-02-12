@@ -18,7 +18,7 @@
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/webrtc.gyp:rtc_unittest_main',
-        '../../talk/libjingle.gyp:libjingle_p2p',
+        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
       ],
       'direct_dependent_settings': {
         'include_dirs': [

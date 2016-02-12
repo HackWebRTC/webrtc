@@ -208,8 +208,6 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
     gyp_exceptions = (
         'base_tests.gyp',
         'desktop_capture.gypi',
-        'libjingle.gyp',
-        'libjingle_tests.gyp',
         'p2p.gyp',
         'sound.gyp',
         'webrtc_test_common.gyp',

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/session/media/channelmanager.h"
+#include "webrtc/pc/channelmanager.h"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -33,7 +33,6 @@
 
 #include <algorithm>
 
-#include "talk/session/media/srtpfilter.h"
 #include "webrtc/api/mediacontroller.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
@@ -50,6 +49,7 @@
 #ifdef HAVE_SCTP
 #include "webrtc/media/sctp/sctpdataengine.h"
 #endif
+#include "webrtc/pc/srtpfilter.h"
 
 namespace cricket {
 

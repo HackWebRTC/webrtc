@@ -25,7 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/session/media/channelmanager.h"
 #include "webrtc/api/fakemediacontroller.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
@@ -36,6 +35,7 @@
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/engine/fakewebrtccall.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/pc/channelmanager.h"
 
 namespace cricket {
 

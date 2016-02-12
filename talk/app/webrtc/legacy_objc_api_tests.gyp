@@ -25,47 +25,7 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {
-  'includes': ['build/common.gypi'],
-  'targets': [
-    {
-      'target_name': 'libjingle_p2p_unittest',
-      'type': 'executable',
-      'dependencies': [
-        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection',
-        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-        '<(webrtc_root)/webrtc.gyp:rtc_unittest_main',
-        'libjingle.gyp:libjingle_p2p',
-      ],
-      'include_dirs': [
-        '<(DEPTH)/third_party/libsrtp/srtp',
-      ],
-      'sources': [
-        'session/media/bundlefilter_unittest.cc',
-        'session/media/channel_unittest.cc',
-        'session/media/channelmanager_unittest.cc',
-        'session/media/currentspeakermonitor_unittest.cc',
-        'session/media/mediasession_unittest.cc',
-        'session/media/rtcpmuxfilter_unittest.cc',
-        'session/media/srtpfilter_unittest.cc',
-      ],
-      'conditions': [
-        ['build_libsrtp==1', {
-          'dependencies': [
-            '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
-          ],
-        }],
-        ['OS=="win"', {
-          'msvs_settings': {
-            'VCLinkerTool': {
-              'AdditionalDependencies': [
-                'strmiids.lib',
-              ],
-            },
-          },
-        }],
-      ],
-    },  # target libjingle_p2p_unittest
-  ],
+  'includes': ['../../build/common.gypi'],
   'conditions': [
     ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
       # The >=10.7 above is required to make ARC link cleanly (e.g. as
@@ -75,21 +35,21 @@
         {
           'target_name': 'libjingle_peerconnection_objc_test',
           'type': 'executable',
-          'includes': [ 'build/objc_app.gypi' ],
+          'includes': [ '../../build/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
-            'libjingle.gyp:libjingle_peerconnection_objc',
+            'legacy_objc_api.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [
-            'app/webrtc/objctests/RTCPeerConnectionSyncObserver.h',
-            'app/webrtc/objctests/RTCPeerConnectionSyncObserver.m',
-            'app/webrtc/objctests/RTCPeerConnectionTest.mm',
-            'app/webrtc/objctests/RTCSessionDescriptionSyncObserver.h',
-            'app/webrtc/objctests/RTCSessionDescriptionSyncObserver.m',
+            'objctests/RTCPeerConnectionSyncObserver.h',
+            'objctests/RTCPeerConnectionSyncObserver.m',
+            'objctests/RTCPeerConnectionTest.mm',
+            'objctests/RTCSessionDescriptionSyncObserver.h',
+            'objctests/RTCSessionDescriptionSyncObserver.m',
             # TODO(fischman): figure out if this works for ios or if it
             # needs a GUI driver.
-            'app/webrtc/objctests/mac/main.mm',
+            'objctests/mac/main.mm',
           ],
           'conditions': [
             ['OS=="mac"', {
@@ -107,7 +67,7 @@
         {
           'target_name': 'apprtc_signaling_gunit_test',
           'type': 'executable',
-          'includes': [ 'build/objc_app.gypi' ],
+          'includes': [ '../../build/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
@@ -115,7 +75,7 @@
             '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
           ],
           'sources': [
-            'app/webrtc/objctests/mac/main.mm',
+            'objctests/mac/main.mm',
             '<(webrtc_root)/examples/objc/AppRTCDemo/tests/ARDAppClientTest.mm',
           ],
           'conditions': [
@@ -126,23 +86,6 @@
             }],
           ],
         },  # target apprtc_signaling_gunit_test
-      ],
-    }],
-    ['test_isolation_mode != "noop"', {
-      'targets': [
-        {
-          'target_name': 'libjingle_p2p_unittest_run',
-          'type': 'none',
-          'dependencies': [
-            'libjingle_p2p_unittest',
-          ],
-          'includes': [
-            'build/isolate.gypi',
-          ],
-          'sources': [
-            'libjingle_p2p_unittest.isolate',
-          ],
-        },
       ],
     }],
   ],

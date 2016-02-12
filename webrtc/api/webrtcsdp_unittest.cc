@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "talk/session/media/mediasession.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #ifdef WEBRTC_ANDROID
 #include "webrtc/api/test/androidtestinitializer.h"
@@ -27,6 +26,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/constants.h"
 #include "webrtc/p2p/base/constants.h"
+#include "webrtc/pc/mediasession.h"
 
 using cricket::AudioCodec;
 using cricket::AudioContentDescription;

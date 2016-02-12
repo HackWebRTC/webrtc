@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "talk/session/media/channel.h"
 #include "webrtc/audio_state.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -27,6 +26,7 @@
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/engine/webrtccommon.h"
 #include "webrtc/media/engine/webrtcvoe.h"
+#include "webrtc/pc/channel.h"
 
 namespace cricket {
 

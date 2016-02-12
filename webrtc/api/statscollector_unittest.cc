@@ -14,7 +14,6 @@
 
 #include "webrtc/api/statscollector.h"
 
-#include "talk/session/media/channelmanager.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/api/mediastream.h"
@@ -30,6 +29,7 @@
 #include "webrtc/base/network.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/pc/channelmanager.h"
 
 using rtc::scoped_ptr;
 using testing::_;

@@ -25,15 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/session/media/mediasession.h"
+#include "webrtc/pc/mediasession.h"
 
 #include <functional>
 #include <map>
 #include <set>
 #include <utility>
 
-#include "talk/session/media/channelmanager.h"
-#include "talk/session/media/srtpfilter.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -41,6 +39,8 @@
 #include "webrtc/media/base/constants.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/p2p/base/constants.h"
+#include "webrtc/pc/channelmanager.h"
+#include "webrtc/pc/srtpfilter.h"
 
 #ifdef HAVE_SCTP
 #include "webrtc/media/sctp/sctpdataengine.h"

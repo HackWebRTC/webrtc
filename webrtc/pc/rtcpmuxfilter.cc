@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/session/media/rtcpmuxfilter.h"
+#include "webrtc/pc/rtcpmuxfilter.h"
 
 #include "webrtc/base/logging.h"
 
