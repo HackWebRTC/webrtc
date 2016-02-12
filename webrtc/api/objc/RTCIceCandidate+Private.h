@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  * ownership is taken of the native candidate.
  */
 - (instancetype)initWithNativeCandidate:
-    (webrtc::IceCandidateInterface *)candidate;
+    (const webrtc::IceCandidateInterface *)candidate;
 
 @end
 

@@ -42,7 +42,7 @@
 #pragma mark - Private
 
 - (instancetype)initWithNativeCandidate:
-    (webrtc::IceCandidateInterface *)candidate {
+    (const webrtc::IceCandidateInterface *)candidate {
   NSParameterAssert(candidate);
   std::string sdp;
   candidate->ToString(&sdp);
