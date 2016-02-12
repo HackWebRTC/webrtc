@@ -21,6 +21,29 @@ class FullStackTest : public VideoQualityTest {
   void RunTest(const VideoQualityTest::Params &params) {
     RunWithAnalyzer(params);
   }
+
+  void ForemanCifWithoutPacketLoss(const std::string& video_codec) {
+    // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
+    VideoQualityTest::Params foreman_cif = {
+        {352, 288, 30, 700000, 700000, 700000, video_codec, 1},
+        {"foreman_cif"},
+        {},
+        {"foreman_cif_net_delay_0_0_plr_0_" + video_codec, 0.0, 0.0,
+         kFullStackTestDurationSecs}};
+    RunTest(foreman_cif);
+  }
+
+  void ForemanCifPlr5(const std::string& video_codec) {
+    VideoQualityTest::Params foreman_cif = {
+        {352, 288, 30, 30000, 500000, 2000000, video_codec, 1},
+        {"foreman_cif"},
+        {},
+        {"foreman_cif_delay_50_0_plr_5_" + video_codec, 0.0, 0.0,
+         kFullStackTestDurationSecs}};
+    foreman_cif.pipe.loss_percent = 5;
+    foreman_cif.pipe.queue_delay_ms = 50;
+    RunTest(foreman_cif);
+  }
 };
 
 // VideoQualityTest::Params params = {
@@ -32,6 +55,14 @@ class FullStackTest : public VideoQualityTest {
 //   { ... },      // Spatial scalability.
 //   logs          // bool
 // };
+
+TEST_F(FullStackTest, ForemanCifWithoutPacketLossVp9) {
+  ForemanCifWithoutPacketLoss("VP9");
+}
+
+TEST_F(FullStackTest, ForemanCifPlr5Vp9) {
+  ForemanCifPlr5("VP9");
+}
 
 TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
   VideoQualityTest::Params paris_qcif = {
