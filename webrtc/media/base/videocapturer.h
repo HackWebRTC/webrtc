@@ -289,7 +289,7 @@ class VideoCapturer : public sigslot::has_slots<>,
   void SetCaptureState(CaptureState state);
 
   // Marshals SignalStateChange onto thread_.
-  void OnMessage(rtc::Message* message);
+  void OnMessage(rtc::Message* message) override;
 
   // subclasses override this virtual method to provide a vector of fourccs, in
   // order of preference, that are expected by the media engine.
