@@ -40,7 +40,6 @@ class H264DecoderImpl : public H264Decoder {
   int32_t InitDecode(const VideoCodec* codec_settings,
                      int32_t number_of_cores) override;
   int32_t Release() override;
-  int32_t Reset() override;
 
   int32_t RegisterDecodeCompleteCallback(
       DecodedImageCallback* callback) override;

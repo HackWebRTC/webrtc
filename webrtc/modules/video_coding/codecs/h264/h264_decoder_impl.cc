@@ -241,13 +241,6 @@ int32_t H264DecoderImpl::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t H264DecoderImpl::Reset() {
-  if (!IsInitialized())
-    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  InitDecode(nullptr, 1);
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int32_t H264DecoderImpl::RegisterDecodeCompleteCallback(
     DecodedImageCallback* callback) {
   decoded_image_callback_ = callback;

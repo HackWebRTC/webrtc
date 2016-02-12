@@ -168,11 +168,6 @@ int H264VideoToolboxDecoder::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int H264VideoToolboxDecoder::Reset() {
-  ResetDecompressionSession();
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int H264VideoToolboxDecoder::ResetDecompressionSession() {
   DestroyDecompressionSession();
 
