@@ -42,7 +42,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
 
   std::string GetSupportedFormats() override;
 
-  // Called from VideoCapturerAndroid::NativeObserver on a Java thread.
+  // Called from VideoCapturer::NativeObserver on a Java thread.
   void OnCapturerStarted(bool success);
   void OnMemoryBufferFrame(void* video_frame, int length, int width,
                            int height, int rotation, int64_t timestamp_ns);

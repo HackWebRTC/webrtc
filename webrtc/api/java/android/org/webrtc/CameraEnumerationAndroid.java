@@ -50,9 +50,8 @@ public class CameraEnumerationAndroid {
     public final int height;
     public final int maxFramerate;
     public final int minFramerate;
-    // TODO(hbos): If VideoCapturerAndroid.startCapture is updated to support
-    // other image formats then this needs to be updated and
-    // VideoCapturerAndroid.getSupportedFormats need to return CaptureFormats of
+    // TODO(hbos): If VideoCapturer.startCapture is updated to support other image formats then this
+    // needs to be updated and VideoCapturer.getSupportedFormats need to return CaptureFormats of
     // all imageFormats.
     public final int imageFormat = ImageFormat.NV21;
 

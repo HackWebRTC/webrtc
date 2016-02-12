@@ -108,10 +108,12 @@ public class PeerConnectionFactory {
         nativeCreateLocalMediaStream(nativeFactory, label));
   }
 
+  // The VideoSource takes ownership of |capturer|, so capturer.release() should not be called
+  // manually after this.
   public VideoSource createVideoSource(
       VideoCapturer capturer, MediaConstraints constraints) {
     return new VideoSource(nativeCreateVideoSource(
-        nativeFactory, capturer.takeNativeVideoCapturer(), constraints));
+        nativeFactory, capturer, constraints));
   }
 
   public VideoTrack createVideoTrack(String id, VideoSource source) {
@@ -221,8 +223,7 @@ public class PeerConnectionFactory {
       long nativeFactory, String label);
 
   private static native long nativeCreateVideoSource(
-      long nativeFactory, long nativeVideoCapturer,
-      MediaConstraints constraints);
+      long nativeFactory, VideoCapturer videoCapturer, MediaConstraints constraints);
 
   private static native long nativeCreateVideoTrack(
       long nativeFactory, String id, long nativeVideoSource);

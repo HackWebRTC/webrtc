@@ -82,8 +82,7 @@ public class VideoCapturerAndroidTestFixtures {
     }
   }
 
-  static class FakeCapturerObserver implements
-      VideoCapturerAndroid.CapturerObserver {
+  static class FakeCapturerObserver implements VideoCapturer.CapturerObserver {
     private int framesCaptured = 0;
     private int frameSize = 0;
     private int frameWidth = 0;
@@ -224,7 +223,7 @@ public class VideoCapturerAndroidTestFixtures {
   static public void release(VideoCapturerAndroid capturer) {
     assertNotNull(capturer);
     capturer.dispose();
-    assertTrue(capturer.isReleased());
+    assertTrue(capturer.isDisposed());
   }
 
   static public void startCapturerAndRender(VideoCapturerAndroid capturer)
@@ -239,7 +238,7 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isReleased());
+    assertTrue(capturer.isDisposed());
   }
 
   static public void switchCamera(VideoCapturerAndroid capturer) throws InterruptedException {
@@ -279,7 +278,7 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isReleased());
+    assertTrue(capturer.isDisposed());
   }
 
   static public void cameraEventsInvoked(VideoCapturerAndroid capturer, CameraEvents events,
@@ -297,9 +296,8 @@ public class VideoCapturerAndroidTestFixtures {
     if (capturer.isCapturingToTexture()) {
       capturer.surfaceHelper.returnTextureFrame();
     }
-    capturer.dispose();
+    release(capturer);
 
-    assertTrue(capturer.isReleased());
     assertTrue(events.onCameraOpeningCalled);
     assertTrue(events.onFirstFrameAvailableCalled);
   }
@@ -324,8 +322,7 @@ public class VideoCapturerAndroidTestFixtures {
     capturer.onOutputFormatRequest(640, 480, 15);
     capturer.changeCaptureFormat(640, 480, 15);
 
-    capturer.dispose();
-    assertTrue(capturer.isReleased());
+    release(capturer);
   }
 
   static public void stopRestartVideoSource(VideoCapturerAndroid capturer)
@@ -348,7 +345,7 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isReleased());
+    assertTrue(capturer.isDisposed());
   }
 
   static public void startStopWithDifferentResolutions(VideoCapturerAndroid capturer,
@@ -384,8 +381,7 @@ public class VideoCapturerAndroidTestFixtures {
         capturer.surfaceHelper.returnTextureFrame();
       }
     }
-    capturer.dispose();
-    assertTrue(capturer.isReleased());
+    release(capturer);
   }
 
   static void waitUntilIdle(VideoCapturerAndroid capturer) throws InterruptedException {
@@ -400,10 +396,9 @@ public class VideoCapturerAndroidTestFixtures {
 
   static public void startWhileCameraIsAlreadyOpen(
       VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
-    Camera camera = Camera.open(capturer.getCurrentCameraId());
-
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+    Camera camera = Camera.open(capturer.getCurrentCameraId());
 
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
@@ -417,16 +412,15 @@ public class VideoCapturerAndroidTestFixtures {
       assertFalse(observer.WaitForCapturerToStart());
     }
 
-    capturer.dispose();
+    release(capturer);
     camera.release();
   }
 
   static public void startWhileCameraIsAlreadyOpenAndCloseCamera(
       VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
-    Camera camera = Camera.open(capturer.getCurrentCameraId());
-
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+    Camera camera = Camera.open(capturer.getCurrentCameraId());
 
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
@@ -442,22 +436,20 @@ public class VideoCapturerAndroidTestFixtures {
     if (capturer.isCapturingToTexture()) {
       capturer.surfaceHelper.returnTextureFrame();
     }
-    capturer.dispose();
-    assertTrue(capturer.isReleased());
+    release(capturer);
   }
 
   static public void startWhileCameraIsAlreadyOpenAndStop(
       VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
-    Camera camera = Camera.open(capturer.getCurrentCameraId());
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
+    Camera camera = Camera.open(capturer.getCurrentCameraId());
 
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
         appContext, observer);
     capturer.stopCapture();
-    capturer.dispose();
-    assertTrue(capturer.isReleased());
+    release(capturer);
     camera.release();
   }
 
@@ -493,8 +485,7 @@ public class VideoCapturerAndroidTestFixtures {
       capturer.surfaceHelper.returnTextureFrame();
     }
 
-    capturer.dispose();
-    assertTrue(capturer.isReleased());
+    release(capturer);
   }
 
   static public void returnBufferLateEndToEnd(VideoCapturerAndroid capturer)
@@ -514,7 +505,7 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isReleased());
+    assertTrue(capturer.isDisposed());
 
     // Return the frame(s), on a different thread out of spite.
     final List<I420Frame> pendingFrames = renderer.waitForPendingFrames();
@@ -553,8 +544,7 @@ public class VideoCapturerAndroidTestFixtures {
       capturer.surfaceHelper.returnTextureFrame();
     }
 
-    capturer.dispose();
-    assertTrue(capturer.isReleased());
+    release(capturer);
   }
 
   static public void scaleCameraOutput(VideoCapturerAndroid capturer) throws InterruptedException {
@@ -590,7 +580,7 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isReleased());
+    assertTrue(capturer.isDisposed());
 
     assertTrue(gotExpectedResolution);
   }

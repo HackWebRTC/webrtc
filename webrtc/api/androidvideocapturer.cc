@@ -225,7 +225,7 @@ void AndroidVideoCapturer::OnOutputFormatRequest(
 bool AndroidVideoCapturer::GetBestCaptureFormat(
     const cricket::VideoFormat& desired,
     cricket::VideoFormat* best_format) {
-  // Delegate this choice to VideoCapturerAndroid.startCapture().
+  // Delegate this choice to VideoCapturer.startCapture().
   *best_format = desired;
   return true;
 }
