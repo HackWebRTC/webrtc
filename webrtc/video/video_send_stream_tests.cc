@@ -308,48 +308,55 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
   StatisticianMap stats_map_;
 };
 
-class FecObserver : public test::SendTest {
+class FecObserver : public test::EndToEndTest {
  public:
-  explicit FecObserver(bool header_extensions_enabled)
-      : SendTest(VideoSendStreamTest::kDefaultTimeoutMs),
+  FecObserver(bool header_extensions_enabled,
+              bool use_nack,
+              bool expect_red,
+              const std::string& codec)
+      : EndToEndTest(VideoSendStreamTest::kDefaultTimeoutMs),
+        payload_name_(codec),
+        use_nack_(use_nack),
+        expect_red_(expect_red),
         send_count_(0),
         received_media_(false),
         received_fec_(false),
-        header_extensions_enabled_(header_extensions_enabled) {}
+        header_extensions_enabled_(header_extensions_enabled) {
+    if (codec == "H264") {
+      encoder_.reset(new test::FakeH264Encoder(Clock::GetRealTimeClock()));
+    } else if (codec == "VP8") {
+      encoder_.reset(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8));
+    } else if (codec == "VP9") {
+      encoder_.reset(VideoEncoder::Create(VideoEncoder::EncoderType::kVp9));
+    } else {
+      RTC_NOTREACHED();
+    }
+  }
 
  private:
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
     RTPHeader header;
     EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-    // Send lossy receive reports to trigger FEC enabling.
-    if (send_count_++ % 2 != 0) {
-      // Receive statistics reporting having lost 50% of the packets.
-      FakeReceiveStatistics lossy_receive_stats(
-          VideoSendStreamTest::kVideoSendSsrcs[0], header.sequenceNumber,
-          send_count_ / 2, 127);
-      RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
-                             &lossy_receive_stats, nullptr, nullptr,
-                             transport_adapter_.get());
-
-      rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
-      rtcp_sender.SetRemoteSSRC(VideoSendStreamTest::kVideoSendSsrcs[0]);
-
-      RTCPSender::FeedbackState feedback_state;
-
-      EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
-    }
-
+    ++send_count_;
     int encapsulated_payload_type = -1;
     if (header.payloadType == VideoSendStreamTest::kRedPayloadType) {
+      EXPECT_TRUE(expect_red_);
       encapsulated_payload_type = static_cast<int>(packet[header.headerLength]);
       if (encapsulated_payload_type !=
-          VideoSendStreamTest::kFakeVideoSendPayloadType)
+          VideoSendStreamTest::kFakeVideoSendPayloadType) {
         EXPECT_EQ(VideoSendStreamTest::kUlpfecPayloadType,
                   encapsulated_payload_type);
+      }
     } else {
       EXPECT_EQ(VideoSendStreamTest::kFakeVideoSendPayloadType,
                 header.payloadType);
+      if (static_cast<size_t>(header.headerLength + header.paddingLength) <
+          length) {
+        // Not padding-only, media received outside of RED.
+        EXPECT_FALSE(expect_red_);
+        received_media_ = true;
+      }
     }
 
     if (header_extensions_enabled_) {
@@ -379,12 +386,25 @@ class FecObserver : public test::SendTest {
       }
     }
 
-    if (received_media_ && received_fec_ && send_count_ > 100)
-      observation_complete_.Set();
+    if (send_count_ > 100 && received_media_) {
+      if (received_fec_ || !expect_red_)
+        observation_complete_.Set();
+    }
 
     prev_header_ = header;
 
     return SEND_PACKET;
+  }
+
+  test::PacketTransport* CreateSendTransport(Call* sender_call) override {
+    // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
+    // Configure some network delay.
+    const int kNetworkDelayMs = 100;
+    FakeNetworkPipe::Config config;
+    config.loss_percent = 50;
+    config.queue_delay_ms = kNetworkDelayMs;
+    return new test::PacketTransport(sender_call, this,
+                                     test::PacketTransport::kSender, config);
   }
 
   void ModifyVideoConfigs(
@@ -394,10 +414,17 @@ class FecObserver : public test::SendTest {
     transport_adapter_.reset(
         new internal::TransportAdapter(send_config->send_transport));
     transport_adapter_->Enable();
+    if (use_nack_) {
+      send_config->rtp.nack.rtp_history_ms =
+          (*receive_configs)[0].rtp.nack.rtp_history_ms =
+              VideoSendStreamTest::kNackRtpHistoryMs;
+    }
+    send_config->encoder_settings.encoder = encoder_.get();
+    send_config->encoder_settings.payload_name = payload_name_;
     send_config->rtp.fec.red_payload_type =
-        VideoSendStreamTest::kRedPayloadType;
+            VideoSendStreamTest::kRedPayloadType;
     send_config->rtp.fec.ulpfec_payload_type =
-        VideoSendStreamTest::kUlpfecPayloadType;
+            VideoSendStreamTest::kUlpfecPayloadType;
     if (header_extensions_enabled_) {
       send_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kAbsSendTime, test::kAbsSendTimeExtensionId));
@@ -405,6 +432,10 @@ class FecObserver : public test::SendTest {
           RtpExtension(RtpExtension::kTransportSequenceNumber,
                        test::kTransportSequenceNumberExtensionId));
     }
+    (*receive_configs)[0].rtp.fec.red_payload_type =
+        send_config->rtp.fec.red_payload_type;
+    (*receive_configs)[0].rtp.fec.ulpfec_payload_type =
+        send_config->rtp.fec.ulpfec_payload_type;
   }
 
   void PerformTest() override {
@@ -412,6 +443,10 @@ class FecObserver : public test::SendTest {
   }
 
   rtc::scoped_ptr<internal::TransportAdapter> transport_adapter_;
+  rtc::scoped_ptr<VideoEncoder> encoder_;
+  const std::string payload_name_;
+  const bool use_nack_;
+  const bool expect_red_;
   int send_count_;
   bool received_media_;
   bool received_fec_;
@@ -420,14 +455,37 @@ class FecObserver : public test::SendTest {
 };
 
 TEST_F(VideoSendStreamTest, SupportsFecWithExtensions) {
-  FecObserver test(true);
-
+  FecObserver test(true, false, true, "VP8");
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsFecWithoutExtensions) {
-  FecObserver test(false);
+  FecObserver test(false, false, true, "VP8");
+  RunBaseTest(&test);
+}
 
+// The FEC scheme used is not efficient for H264, so we should not use RED/FEC
+// since we'll still have to re-request FEC packets, effectively wasting
+// bandwidth since the receiver has to wait for FEC retransmissions to determine
+// that the received state is actually decodable.
+TEST_F(VideoSendStreamTest, DoesNotUtilizeRedForH264WithNackEnabled) {
+  FecObserver test(false, true, false, "H264");
+  RunBaseTest(&test);
+}
+
+// Without retransmissions FEC for H264 is fine.
+TEST_F(VideoSendStreamTest, DoesUtilizeRedForH264WithoutNackEnabled) {
+  FecObserver test(false, false, true, "H264");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, DoesUtilizeRedForVp8WithNackEnabled) {
+  FecObserver test(false, true, true, "VP8");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, DoesUtilizeRedForVp9WithNackEnabled) {
+  FecObserver test(false, true, true, "VP9");
   RunBaseTest(&test);
 }
 

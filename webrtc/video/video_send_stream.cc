@@ -107,6 +107,35 @@ std::string VideoSendStream::Config::ToString() const {
 
 namespace {
 
+VideoCodecType PayloadNameToCodecType(const std::string& payload_name) {
+  if (payload_name == "VP8")
+    return kVideoCodecVP8;
+  if (payload_name == "VP9")
+    return kVideoCodecVP9;
+  if (payload_name == "H264")
+    return kVideoCodecH264;
+  return kVideoCodecGeneric;
+}
+
+bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
+  switch (PayloadNameToCodecType(payload_name)) {
+    case kVideoCodecVP8:
+    case kVideoCodecVP9:
+      return true;
+    case kVideoCodecH264:
+    case kVideoCodecGeneric:
+      return false;
+    case kVideoCodecI420:
+    case kVideoCodecRED:
+    case kVideoCodecULPFEC:
+    case kVideoCodecUnknown:
+      RTC_NOTREACHED();
+      return false;
+  }
+  RTC_NOTREACHED();
+  return false;
+}
+
 CpuOveruseOptions GetCpuOveruseOptions(bool full_overuse_time) {
   CpuOveruseOptions options;
   if (full_overuse_time) {
@@ -215,7 +244,19 @@ VideoSendStream::VideoSendStream(
 
   // Enable NACK, FEC or both.
   const bool enable_protection_nack = config_.rtp.nack.rtp_history_ms > 0;
-  const bool enable_protection_fec = config_.rtp.fec.red_payload_type != -1;
+  bool enable_protection_fec = config_.rtp.fec.red_payload_type != -1;
+  // Payload types without picture ID cannot determine that a stream is complete
+  // without retransmitting FEC, so using FEC + NACK for H.264 (for instance) is
+  // a waste of bandwidth since FEC packets still have to be transmitted. Note
+  // that this is not the case with FLEXFEC.
+  if (enable_protection_nack &&
+      !PayloadTypeSupportsSkippingFecPackets(
+          config_.encoder_settings.payload_name)) {
+    LOG(LS_WARNING) << "Transmitting payload type without picture ID using"
+                       "NACK+FEC is a waste of bandwidth since FEC packets "
+                       "also have to be retransmitted. Disabling FEC.";
+    enable_protection_fec = false;
+  }
   // TODO(changbin): Should set RTX for RED mapping in RTP sender in future.
   vie_channel_.SetProtectionMode(enable_protection_nack, enable_protection_fec,
                                   config_.rtp.fec.red_payload_type,
@@ -324,15 +365,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
 
   VideoCodec video_codec;
   memset(&video_codec, 0, sizeof(video_codec));
-  if (config_.encoder_settings.payload_name == "VP8") {
-    video_codec.codecType = kVideoCodecVP8;
-  } else if (config_.encoder_settings.payload_name == "VP9") {
-    video_codec.codecType = kVideoCodecVP9;
-  } else if (config_.encoder_settings.payload_name == "H264") {
-    video_codec.codecType = kVideoCodecH264;
-  } else {
-    video_codec.codecType = kVideoCodecGeneric;
-  }
+  video_codec.codecType =
+      PayloadNameToCodecType(config_.encoder_settings.payload_name);
 
   switch (config.content_type) {
     case VideoEncoderConfig::ContentType::kRealtimeVideo:

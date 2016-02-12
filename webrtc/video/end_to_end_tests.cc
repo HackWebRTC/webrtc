@@ -76,7 +76,7 @@ class EndToEndTest : public test::CallTest {
     }
   };
 
-  void DecodesRetransmittedFrame(bool use_rtx, bool use_red);
+  void DecodesRetransmittedFrame(bool enable_rtx, bool enable_red);
   void ReceivesPliAndRecovers(int rtp_history_ms);
   void RespectsRtcpMode(RtcpMode rtcp_mode);
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
@@ -701,18 +701,20 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
 
 // This test drops second RTP packet with a marker bit set, makes sure it's
 // retransmitted and renders. Retransmission SSRCs are also checked.
-void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
+void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
   // Must be set high enough to allow the bitrate probing to finish.
   static const int kMinProbePackets = 30;
   static const int kDroppedFrameNumber = kMinProbePackets + 1;
   class RetransmissionObserver : public test::EndToEndTest,
                                  public I420FrameCallback {
    public:
-    explicit RetransmissionObserver(bool use_rtx, bool use_red)
+    RetransmissionObserver(bool enable_rtx, bool enable_red)
         : EndToEndTest(kDefaultTimeoutMs),
-          payload_type_(GetPayloadType(false, use_red)),
-          retransmission_ssrc_(use_rtx ? kSendRtxSsrcs[0] : kVideoSendSsrcs[0]),
-          retransmission_payload_type_(GetPayloadType(use_rtx, use_red)),
+          payload_type_(GetPayloadType(false, enable_red)),
+          retransmission_ssrc_(enable_rtx ? kSendRtxSsrcs[0]
+                                          : kVideoSendSsrcs[0]),
+          retransmission_payload_type_(GetPayloadType(enable_rtx, enable_red)),
+          encoder_(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)),
           marker_bits_observed_(0),
           num_packets_observed_(0),
           retransmitted_timestamp_(0),
@@ -790,6 +792,12 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
         (*receive_configs)[0].rtp.rtx[payload_type_].payload_type =
             kSendRtxPayloadType;
       }
+      // Configure encoding and decoding with VP8, since generic packetization
+      // doesn't support FEC with NACK.
+      RTC_DCHECK_EQ(1u, (*receive_configs)[0].decoders.size());
+      send_config->encoder_settings.encoder = encoder_.get();
+      send_config->encoder_settings.payload_name = "VP8";
+      (*receive_configs)[0].decoders[0].payload_name = "VP8";
     }
 
     void PerformTest() override {
@@ -812,11 +820,13 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
     const int payload_type_;
     const uint32_t retransmission_ssrc_;
     const int retransmission_payload_type_;
+    rtc::scoped_ptr<VideoEncoder> encoder_;
+    const std::string payload_name_;
     int marker_bits_observed_;
     int num_packets_observed_;
     uint32_t retransmitted_timestamp_ GUARDED_BY(&crit_);
     bool frame_retransmitted_;
-  } test(use_rtx, use_red);
+  } test(enable_rtx, enable_red);
 
   RunBaseTest(&test);
 }
@@ -2088,6 +2098,10 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
           use_rtx_(use_rtx),
           use_red_(use_red),
           screenshare_(screenshare),
+          // This test uses NACK, so to send FEC we can't use a fake encoder.
+          vp8_encoder_(
+              use_red ? VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)
+                      : nullptr),
           sender_call_(nullptr),
           receiver_call_(nullptr),
           start_runtime_ms_(-1) {}
@@ -2127,6 +2141,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       if (use_red_) {
         send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
         send_config->rtp.fec.red_payload_type = kRedPayloadType;
+        send_config->encoder_settings.encoder = vp8_encoder_.get();
+        send_config->encoder_settings.payload_name = "VP8";
+        (*receive_configs)[0].decoders[0].payload_name = "VP8";
         (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
         (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
       }
@@ -2156,6 +2173,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
     const bool use_rtx_;
     const bool use_red_;
     const bool screenshare_;
+    const rtc::scoped_ptr<VideoEncoder> vp8_encoder_;
     Call* sender_call_;
     Call* receiver_call_;
     int64_t start_runtime_ms_;

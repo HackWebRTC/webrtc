@@ -414,13 +414,15 @@ void ViEChannel::SetProtectionMode(bool enable_nack,
                                    bool enable_fec,
                                    int payload_type_red,
                                    int payload_type_fec) {
-  // Validate payload types.
-  if (enable_fec) {
+  // Validate payload types. If either RED or FEC payload types are set then
+  // both should be. If FEC is enabled then they both have to be set.
+  if (enable_fec || payload_type_red != -1 || payload_type_fec != -1) {
     RTC_DCHECK_GE(payload_type_red, 0);
     RTC_DCHECK_GE(payload_type_fec, 0);
     RTC_DCHECK_LE(payload_type_red, 127);
     RTC_DCHECK_LE(payload_type_fec, 127);
   } else {
+    // Payload types unset.
     RTC_DCHECK_EQ(payload_type_red, -1);
     RTC_DCHECK_EQ(payload_type_fec, -1);
     // Set to valid uint8_ts to be castable later without signed overflows.
