@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_RTC_EVENT_LOG_SOURCE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_RTC_EVENT_LOG_SOURCE_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
@@ -58,8 +58,8 @@ class RtcEventLogSource : public PacketSource {
   int rtp_packet_index_ = 0;
   int audio_output_index_ = 0;
 
-  rtc::scoped_ptr<rtclog::EventStream> event_log_;
-  rtc::scoped_ptr<RtpHeaderParser> parser_;
+  std::unique_ptr<rtclog::EventStream> event_log_;
+  std::unique_ptr<RtpHeaderParser> parser_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcEventLogSource);
 };

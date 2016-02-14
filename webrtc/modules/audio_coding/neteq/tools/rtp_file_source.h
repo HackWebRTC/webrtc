@@ -12,10 +12,11 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_RTP_FILE_SOURCE_H_
 
 #include <stdio.h>
+
+#include <memory>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -56,8 +57,8 @@ class RtpFileSource : public PacketSource {
 
   bool OpenFile(const std::string& file_name);
 
-  rtc::scoped_ptr<RtpFileReader> rtp_reader_;
-  rtc::scoped_ptr<RtpHeaderParser> parser_;
+  std::unique_ptr<RtpFileReader> rtp_reader_;
+  std::unique_ptr<RtpHeaderParser> parser_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpFileSource);
 };

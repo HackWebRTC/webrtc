@@ -12,9 +12,9 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_VECTOR_H_
 
 #include <string.h>  // Access to size_t.
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -100,7 +100,7 @@ class AudioVector {
 
   void Reserve(size_t n);
 
-  rtc::scoped_ptr<int16_t[]> array_;
+  std::unique_ptr<int16_t[]> array_;
   size_t first_free_ix_;  // The first index after the last sample in array_.
                           // Note that this index may point outside of array_.
   size_t capacity_;  // Allocated number of samples in the array.

@@ -17,7 +17,6 @@ extern "C" {
 #include "opus_private.h"
 }
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

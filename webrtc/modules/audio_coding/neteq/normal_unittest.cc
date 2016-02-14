@@ -12,10 +12,10 @@
 
 #include "webrtc/modules/audio_coding/neteq/normal.h"
 
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
@@ -57,7 +57,7 @@ TEST(Normal, AvoidDivideByZero) {
   Normal normal(fs, &db, bgn, &expand);
 
   int16_t input[1000] = {0};
-  rtc::scoped_ptr<int16_t[]> mute_factor_array(new int16_t[channels]);
+  std::unique_ptr<int16_t[]> mute_factor_array(new int16_t[channels]);
   for (size_t i = 0; i < channels; ++i) {
     mute_factor_array[i] = 16384;
   }
@@ -103,7 +103,7 @@ TEST(Normal, InputLengthAndChannelsDoNotMatch) {
   Normal normal(fs, &db, bgn, &expand);
 
   int16_t input[1000] = {0};
-  rtc::scoped_ptr<int16_t[]> mute_factor_array(new int16_t[channels]);
+  std::unique_ptr<int16_t[]> mute_factor_array(new int16_t[channels]);
   for (size_t i = 0; i < channels; ++i) {
     mute_factor_array[i] = 16384;
   }

@@ -10,8 +10,9 @@
 
 // Test to verify correct operation for externally created decoders.
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_external_decoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
@@ -145,16 +146,16 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
 
   int samples_per_ms() const { return samples_per_ms_; }
  private:
-  rtc::scoped_ptr<MockExternalPcm16B> external_decoder_;
+  std::unique_ptr<MockExternalPcm16B> external_decoder_;
   int samples_per_ms_;
   size_t frame_size_samples_;
-  rtc::scoped_ptr<test::RtpGenerator> rtp_generator_;
+  std::unique_ptr<test::RtpGenerator> rtp_generator_;
   int16_t* input_;
   uint8_t* encoded_;
   size_t payload_size_bytes_;
   uint32_t last_send_time_;
   uint32_t last_arrival_time_;
-  rtc::scoped_ptr<test::InputAudioFile> input_file_;
+  std::unique_ptr<test::InputAudioFile> input_file_;
   WebRtcRTPHeader rtp_header_;
 };
 
@@ -225,7 +226,7 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
 
  private:
   int sample_rate_hz_;
-  rtc::scoped_ptr<NetEq> neteq_internal_;
+  std::unique_ptr<NetEq> neteq_internal_;
   int16_t output_internal_[kMaxBlockSize];
   int16_t output_[kMaxBlockSize];
 };

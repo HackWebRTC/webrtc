@@ -11,9 +11,9 @@
 #include "webrtc/modules/audio_coding/neteq/time_stretch.h"
 
 #include <algorithm>  // min, max
+#include <memory>
 
 #include "webrtc/base/safe_conversions.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/dsp_helper.h"
@@ -30,7 +30,7 @@ TimeStretch::ReturnCodes TimeStretch::Process(const int16_t* input,
       static_cast<size_t>(fs_mult_ * 120);  // Corresponds to 15 ms.
 
   const int16_t* signal;
-  rtc::scoped_ptr<int16_t[]> signal_array;
+  std::unique_ptr<int16_t[]> signal_array;
   size_t signal_len;
   if (num_channels_ == 1) {
     signal = input;

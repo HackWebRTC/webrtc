@@ -19,13 +19,13 @@
 #include <string.h>  // memset
 
 #include <algorithm>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
@@ -102,7 +102,7 @@ void ReadMessage(FILE* file, std::string* message) {
   ASSERT_EQ(1u, fread(&size, sizeof(size), 1, file));
   if (size <= 0)
     return;
-  rtc::scoped_ptr<char[]> buffer(new char[size]);
+  std::unique_ptr<char[]> buffer(new char[size]);
   ASSERT_EQ(static_cast<size_t>(size),
             fread(buffer.get(), sizeof(char), size, file));
   message->assign(buffer.get(), size);
@@ -320,8 +320,8 @@ class NetEqDecodingTest : public ::testing::Test {
 
   NetEq* neteq_;
   NetEq::Config config_;
-  rtc::scoped_ptr<test::RtpFileSource> rtp_source_;
-  rtc::scoped_ptr<test::Packet> packet_;
+  std::unique_ptr<test::RtpFileSource> rtp_source_;
+  std::unique_ptr<test::Packet> packet_;
   unsigned int sim_clock_;
   int16_t out_data_[kMaxBlockSize];
   int output_sample_rate_;

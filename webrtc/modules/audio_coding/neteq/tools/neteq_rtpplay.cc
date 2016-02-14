@@ -19,13 +19,13 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <limits>
 #include <string>
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -295,8 +295,8 @@ int CodecTimestampRate(uint8_t payload_type) {
 }
 
 size_t ReplacePayload(webrtc::test::InputAudioFile* replacement_audio_file,
-                      rtc::scoped_ptr<int16_t[]>* replacement_audio,
-                      rtc::scoped_ptr<uint8_t[]>* payload,
+                      std::unique_ptr<int16_t[]>* replacement_audio,
+                      std::unique_ptr<uint8_t[]>* payload,
                       size_t* payload_mem_size_bytes,
                       size_t* frame_size_samples,
                       WebRtcRTPHeader* rtp_header,
@@ -411,7 +411,7 @@ int main(int argc, char* argv[]) {
   printf("Input file: %s\n", argv[1]);
 
   bool is_rtp_dump = false;
-  rtc::scoped_ptr<webrtc::test::PacketSource> file_source;
+  std::unique_ptr<webrtc::test::PacketSource> file_source;
   webrtc::test::RtcEventLogSource* event_log_source = nullptr;
   if (webrtc::test::RtpFileSource::ValidRtpDump(argv[1]) ||
       webrtc::test::RtpFileSource::ValidPcap(argv[1])) {
@@ -433,7 +433,7 @@ int main(int argc, char* argv[]) {
 
   // Check if a replacement audio file was provided, and if so, open it.
   bool replace_payload = false;
-  rtc::scoped_ptr<webrtc::test::InputAudioFile> replacement_audio_file;
+  std::unique_ptr<webrtc::test::InputAudioFile> replacement_audio_file;
   if (!FLAGS_replacement_audio_file.empty()) {
     replacement_audio_file.reset(
         new webrtc::test::InputAudioFile(FLAGS_replacement_audio_file));
@@ -441,7 +441,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Read first packet.
-  rtc::scoped_ptr<webrtc::test::Packet> packet(file_source->NextPacket());
+  std::unique_ptr<webrtc::test::Packet> packet(file_source->NextPacket());
   if (!packet) {
     printf(
         "Warning: input file is empty, or the filters did not match any "
@@ -468,7 +468,7 @@ int main(int argc, char* argv[]) {
   // for wav files.)
   // Check output file type.
   std::string output_file_name = argv[2];
-  rtc::scoped_ptr<webrtc::test::AudioSink> output;
+  std::unique_ptr<webrtc::test::AudioSink> output;
   if (output_file_name.size() >= 4 &&
       output_file_name.substr(output_file_name.size() - 4) == ".wav") {
     // Open a wav file.
@@ -495,11 +495,11 @@ int main(int argc, char* argv[]) {
 
 
   // Set up variables for audio replacement if needed.
-  rtc::scoped_ptr<webrtc::test::Packet> next_packet;
+  std::unique_ptr<webrtc::test::Packet> next_packet;
   bool next_packet_available = false;
   size_t input_frame_size_timestamps = 0;
-  rtc::scoped_ptr<int16_t[]> replacement_audio;
-  rtc::scoped_ptr<uint8_t[]> payload;
+  std::unique_ptr<int16_t[]> replacement_audio;
+  std::unique_ptr<uint8_t[]> payload;
   size_t payload_mem_size_bytes = 0;
   if (replace_payload) {
     // Initially assume that the frame size is 30 ms at the initial sample rate.

@@ -11,11 +11,11 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_NETEQ_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_NETEQ_IMPL_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq/defines.h"
@@ -339,39 +339,39 @@ class NetEqImpl : public webrtc::NetEq {
   virtual void CreateDecisionLogic() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   rtc::CriticalSection crit_sect_;
-  const rtc::scoped_ptr<BufferLevelFilter> buffer_level_filter_
+  const std::unique_ptr<BufferLevelFilter> buffer_level_filter_
       GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<DecoderDatabase> decoder_database_
+  const std::unique_ptr<DecoderDatabase> decoder_database_
       GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<DelayManager> delay_manager_ GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<DelayPeakDetector> delay_peak_detector_
+  const std::unique_ptr<DelayManager> delay_manager_ GUARDED_BY(crit_sect_);
+  const std::unique_ptr<DelayPeakDetector> delay_peak_detector_
       GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<DtmfBuffer> dtmf_buffer_ GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<DtmfToneGenerator> dtmf_tone_generator_
+  const std::unique_ptr<DtmfBuffer> dtmf_buffer_ GUARDED_BY(crit_sect_);
+  const std::unique_ptr<DtmfToneGenerator> dtmf_tone_generator_
       GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<PacketBuffer> packet_buffer_ GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<PayloadSplitter> payload_splitter_
+  const std::unique_ptr<PacketBuffer> packet_buffer_ GUARDED_BY(crit_sect_);
+  const std::unique_ptr<PayloadSplitter> payload_splitter_
       GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<TimestampScaler> timestamp_scaler_
+  const std::unique_ptr<TimestampScaler> timestamp_scaler_
       GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<PostDecodeVad> vad_ GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<ExpandFactory> expand_factory_ GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<AccelerateFactory> accelerate_factory_
+  const std::unique_ptr<PostDecodeVad> vad_ GUARDED_BY(crit_sect_);
+  const std::unique_ptr<ExpandFactory> expand_factory_ GUARDED_BY(crit_sect_);
+  const std::unique_ptr<AccelerateFactory> accelerate_factory_
       GUARDED_BY(crit_sect_);
-  const rtc::scoped_ptr<PreemptiveExpandFactory> preemptive_expand_factory_
+  const std::unique_ptr<PreemptiveExpandFactory> preemptive_expand_factory_
       GUARDED_BY(crit_sect_);
 
-  rtc::scoped_ptr<BackgroundNoise> background_noise_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<DecisionLogic> decision_logic_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<AudioMultiVector> algorithm_buffer_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<SyncBuffer> sync_buffer_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<Expand> expand_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<Normal> normal_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<Merge> merge_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<Accelerate> accelerate_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<PreemptiveExpand> preemptive_expand_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<BackgroundNoise> background_noise_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<DecisionLogic> decision_logic_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<AudioMultiVector> algorithm_buffer_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<SyncBuffer> sync_buffer_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<Expand> expand_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<Normal> normal_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<Merge> merge_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<Accelerate> accelerate_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<PreemptiveExpand> preemptive_expand_ GUARDED_BY(crit_sect_);
   RandomVector random_vector_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<ComfortNoise> comfort_noise_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<ComfortNoise> comfort_noise_ GUARDED_BY(crit_sect_);
   Rtcp rtcp_ GUARDED_BY(crit_sect_);
   StatisticsCalculator stats_ GUARDED_BY(crit_sect_);
   int fs_hz_ GUARDED_BY(crit_sect_);
@@ -380,9 +380,9 @@ class NetEqImpl : public webrtc::NetEq {
   size_t output_size_samples_ GUARDED_BY(crit_sect_);
   size_t decoder_frame_length_ GUARDED_BY(crit_sect_);
   Modes last_mode_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<int16_t[]> mute_factor_array_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<int16_t[]> mute_factor_array_ GUARDED_BY(crit_sect_);
   size_t decoded_buffer_length_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<int16_t[]> decoded_buffer_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<int16_t[]> decoded_buffer_ GUARDED_BY(crit_sect_);
   uint32_t playout_timestamp_ GUARDED_BY(crit_sect_);
   bool new_codec_ GUARDED_BY(crit_sect_);
   uint32_t timestamp_ GUARDED_BY(crit_sect_);
@@ -396,7 +396,7 @@ class NetEqImpl : public webrtc::NetEq {
   const BackgroundNoiseMode background_noise_mode_ GUARDED_BY(crit_sect_);
   NetEqPlayoutMode playout_mode_ GUARDED_BY(crit_sect_);
   bool enable_fast_accelerate_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
   bool nack_enabled_ GUARDED_BY(crit_sect_);
 
  private:

@@ -15,7 +15,6 @@
 #include <map>
 
 #include "webrtc/base/gtest_prod_util.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 
 //

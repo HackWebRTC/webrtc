@@ -12,9 +12,9 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_EXPAND_H_
 
 #include <assert.h>
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/typedefs.h"
 
@@ -138,7 +138,7 @@ class Expand {
   int current_lag_index_;
   bool stop_muting_;
   size_t expand_duration_samples_;
-  rtc::scoped_ptr<ChannelParameters[]> channel_parameters_;
+  std::unique_ptr<ChannelParameters[]> channel_parameters_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Expand);
 };

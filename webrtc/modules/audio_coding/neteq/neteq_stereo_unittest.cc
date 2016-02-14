@@ -11,11 +11,11 @@
 // Test to verify correct stereo and multi-channel operation.
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <list>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -261,7 +261,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
   size_t multi_payload_size_bytes_;
   int last_send_time_;
   int last_arrival_time_;
-  rtc::scoped_ptr<test::InputAudioFile> input_file_;
+  std::unique_ptr<test::InputAudioFile> input_file_;
 };
 
 class NetEqStereoTestNoJitter : public NetEqStereoTest {
