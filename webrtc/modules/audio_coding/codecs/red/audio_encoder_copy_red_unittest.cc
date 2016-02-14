@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
 
@@ -68,7 +68,7 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
   }
 
   MockAudioEncoder mock_encoder_;
-  rtc::scoped_ptr<AudioEncoderCopyRed> red_;
+  std::unique_ptr<AudioEncoderCopyRed> red_;
   uint32_t timestamp_;
   int16_t audio_[kMaxNumSamples];
   const int sample_rate_hz_;

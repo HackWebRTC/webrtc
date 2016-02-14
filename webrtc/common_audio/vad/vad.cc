@@ -56,8 +56,8 @@ class VadImpl final : public Vad {
 
 }  // namespace
 
-rtc::scoped_ptr<Vad> CreateVad(Vad::Aggressiveness aggressiveness) {
-  return rtc::scoped_ptr<Vad>(new VadImpl(aggressiveness));
+std::unique_ptr<Vad> CreateVad(Vad::Aggressiveness aggressiveness) {
+  return std::unique_ptr<Vad>(new VadImpl(aggressiveness));
 }
 
 }  // namespace webrtc

@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 
 #include <algorithm>
+#include <memory>
 #include <limits>
 
 namespace webrtc {
@@ -19,12 +20,13 @@ namespace {
 
 const int kMaxFrameSizeMs = 60;
 
-rtc::scoped_ptr<CNG_enc_inst, CngInstDeleter> CreateCngInst(
+std::unique_ptr<CNG_enc_inst, CngInstDeleter> CreateCngInst(
     int sample_rate_hz,
     int sid_frame_interval_ms,
     int num_cng_coefficients) {
-  rtc::scoped_ptr<CNG_enc_inst, CngInstDeleter> cng_inst;
-  RTC_CHECK_EQ(0, WebRtcCng_CreateEnc(cng_inst.accept()));
+  CNG_enc_inst* ci;
+  RTC_CHECK_EQ(0, WebRtcCng_CreateEnc(&ci));
+  std::unique_ptr<CNG_enc_inst, CngInstDeleter> cng_inst(ci);
   RTC_CHECK_EQ(0,
                WebRtcCng_InitEnc(cng_inst.get(), sample_rate_hz,
                                  sid_frame_interval_ms, num_cng_coefficients));
@@ -55,7 +57,7 @@ AudioEncoderCng::AudioEncoderCng(const Config& config)
       num_cng_coefficients_(config.num_cng_coefficients),
       sid_frame_interval_ms_(config.sid_frame_interval_ms),
       last_frame_active_(true),
-      vad_(config.vad ? rtc_make_scoped_ptr(config.vad)
+      vad_(config.vad ? std::unique_ptr<Vad>(config.vad)
                       : CreateVad(config.vad_mode)) {
   RTC_CHECK(config.IsOk()) << "Invalid configuration.";
   cng_inst_ = CreateCngInst(SampleRateHz(), sid_frame_interval_ms_,

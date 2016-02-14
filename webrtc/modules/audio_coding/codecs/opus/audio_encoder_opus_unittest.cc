@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 
@@ -31,7 +32,7 @@ class AudioEncoderOpusTest : public ::testing::Test {
   }
 
   CodecInst codec_inst_ = kOpusSettings;
-  rtc::scoped_ptr<AudioEncoderOpus> encoder_;
+  std::unique_ptr<AudioEncoderOpus> encoder_;
 };
 
 TEST_F(AudioEncoderOpusTest, DefaultApplicationModeMono) {

@@ -11,16 +11,17 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
 
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_audio/vad/include/vad.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 
 namespace webrtc {
 
-// Deleter for use with scoped_ptr.
+// Deleter for use with unique_ptr.
 struct CngInstDeleter {
   void operator()(CNG_enc_inst* ptr) const { WebRtcCng_FreeEnc(ptr); }
 };
@@ -84,8 +85,8 @@ class AudioEncoderCng final : public AudioEncoder {
   std::vector<int16_t> speech_buffer_;
   std::vector<uint32_t> rtp_timestamps_;
   bool last_frame_active_;
-  rtc::scoped_ptr<Vad> vad_;
-  rtc::scoped_ptr<CNG_enc_inst, CngInstDeleter> cng_inst_;
+  std::unique_ptr<Vad> vad_;
+  std::unique_ptr<CNG_enc_inst, CngInstDeleter> cng_inst_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderCng);
 };

@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+#include <memory>
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -636,7 +638,7 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
 
   // Encode & decode.
   int16_t audio_type;
-  rtc::scoped_ptr<int16_t[]> output_data_decode(
+  std::unique_ptr<int16_t[]> output_data_decode(
       new int16_t[kPackets * kOpus20msFrameSamples * channels_]);
   OpusRepacketizer* rp = opus_repacketizer_create();
 
