@@ -29,6 +29,7 @@ extern "C" {
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/echo_cancellation_impl.h"
 #include "webrtc/modules/audio_processing/echo_control_mobile_impl.h"
+#include "webrtc/modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "webrtc/modules/audio_processing/gain_control_impl.h"
 #include "webrtc/modules/audio_processing/high_pass_filter_impl.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
@@ -80,72 +81,6 @@ static bool LayoutHasKeyboard(AudioProcessing::ChannelLayout layout) {
 // Throughout webrtc, it's assumed that success is represented by zero.
 static_assert(AudioProcessing::kNoError == 0, "kNoError must be zero");
 
-// This class has two main functionalities:
-//
-// 1) It is returned instead of the real GainControl after the new AGC has been
-//    enabled in order to prevent an outside user from overriding compression
-//    settings. It doesn't do anything in its implementation, except for
-//    delegating the const methods and Enable calls to the real GainControl, so
-//    AGC can still be disabled.
-//
-// 2) It is injected into AgcManagerDirect and implements volume callbacks for
-//    getting and setting the volume level. It just caches this value to be used
-//    in VoiceEngine later.
-class GainControlForNewAgc : public GainControl, public VolumeCallbacks {
- public:
-  explicit GainControlForNewAgc(GainControlImpl* gain_control)
-      : real_gain_control_(gain_control), volume_(0) {}
-
-  // GainControl implementation.
-  int Enable(bool enable) override {
-    return real_gain_control_->Enable(enable);
-  }
-  bool is_enabled() const override { return real_gain_control_->is_enabled(); }
-  int set_stream_analog_level(int level) override {
-    volume_ = level;
-    return AudioProcessing::kNoError;
-  }
-  int stream_analog_level() override { return volume_; }
-  int set_mode(Mode mode) override { return AudioProcessing::kNoError; }
-  Mode mode() const override { return GainControl::kAdaptiveAnalog; }
-  int set_target_level_dbfs(int level) override {
-    return AudioProcessing::kNoError;
-  }
-  int target_level_dbfs() const override {
-    return real_gain_control_->target_level_dbfs();
-  }
-  int set_compression_gain_db(int gain) override {
-    return AudioProcessing::kNoError;
-  }
-  int compression_gain_db() const override {
-    return real_gain_control_->compression_gain_db();
-  }
-  int enable_limiter(bool enable) override { return AudioProcessing::kNoError; }
-  bool is_limiter_enabled() const override {
-    return real_gain_control_->is_limiter_enabled();
-  }
-  int set_analog_level_limits(int minimum, int maximum) override {
-    return AudioProcessing::kNoError;
-  }
-  int analog_level_minimum() const override {
-    return real_gain_control_->analog_level_minimum();
-  }
-  int analog_level_maximum() const override {
-    return real_gain_control_->analog_level_maximum();
-  }
-  bool stream_is_saturated() const override {
-    return real_gain_control_->stream_is_saturated();
-  }
-
-  // VolumeCallbacks implementation.
-  void SetMicVolume(int volume) override { volume_ = volume; }
-  int GetMicVolume() override { return volume_; }
-
- private:
-  GainControl* real_gain_control_;
-  int volume_;
-};
-
 struct AudioProcessingImpl::ApmPublicSubmodules {
   ApmPublicSubmodules()
       : echo_cancellation(nullptr),
@@ -159,7 +94,8 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   rtc::scoped_ptr<LevelEstimatorImpl> level_estimator;
   rtc::scoped_ptr<NoiseSuppressionImpl> noise_suppression;
   rtc::scoped_ptr<VoiceDetectionImpl> voice_detection;
-  rtc::scoped_ptr<GainControlForNewAgc> gain_control_for_new_agc;
+  rtc::scoped_ptr<GainControlForExperimentalAgc>
+      gain_control_for_experimental_agc;
 
   // Accessed internally from both render and capture.
   rtc::scoped_ptr<TransientSuppressor> transient_suppressor;
@@ -248,8 +184,9 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
         new NoiseSuppressionImpl(&crit_capture_));
     public_submodules_->voice_detection.reset(
         new VoiceDetectionImpl(&crit_capture_));
-    public_submodules_->gain_control_for_new_agc.reset(
-        new GainControlForNewAgc(public_submodules_->gain_control));
+    public_submodules_->gain_control_for_experimental_agc.reset(
+        new GainControlForExperimentalAgc(public_submodules_->gain_control,
+                                          &crit_capture_));
 
     private_submodules_->component_list.push_back(
         public_submodules_->echo_cancellation);
@@ -264,10 +201,10 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
 
 AudioProcessingImpl::~AudioProcessingImpl() {
   // Depends on gain_control_ and
-  // public_submodules_->gain_control_for_new_agc.
+  // public_submodules_->gain_control_for_experimental_agc.
   private_submodules_->agc_manager.reset();
   // Depends on gain_control_.
-  public_submodules_->gain_control_for_new_agc.reset();
+  public_submodules_->gain_control_for_experimental_agc.reset();
   while (!private_submodules_->component_list.empty()) {
     ProcessingComponent* component =
         private_submodules_->component_list.front();
@@ -759,7 +696,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 
   AudioBuffer* ca = capture_.capture_audio.get();  // For brevity.
 
-  if (constants_.use_new_agc &&
+  if (constants_.use_experimental_agc &&
       public_submodules_->gain_control->is_enabled()) {
     private_submodules_->agc_manager->AnalyzePreProcess(
         ca->channels()[0], ca->num_channels(),
@@ -796,7 +733,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
       public_submodules_->echo_control_mobile->ProcessCaptureAudio(ca));
   public_submodules_->voice_detection->ProcessCaptureAudio(ca);
 
-  if (constants_.use_new_agc &&
+  if (constants_.use_experimental_agc &&
       public_submodules_->gain_control->is_enabled() &&
       (!capture_nonlocked_.beamformer_enabled ||
        private_submodules_->beamformer->is_target_present())) {
@@ -998,7 +935,7 @@ int AudioProcessingImpl::ProcessReverseStreamLocked() {
   RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessRenderAudio(ra));
   RETURN_ON_ERR(
       public_submodules_->echo_control_mobile->ProcessRenderAudio(ra));
-  if (!constants_.use_new_agc) {
+  if (!constants_.use_experimental_agc) {
     RETURN_ON_ERR(public_submodules_->gain_control->ProcessRenderAudio(ra));
   }
 
@@ -1164,8 +1101,8 @@ EchoControlMobile* AudioProcessingImpl::echo_control_mobile() const {
 GainControl* AudioProcessingImpl::gain_control() const {
   // Adding a lock here has no effect as it allows any access to the submodule
   // from the returned pointer.
-  if (constants_.use_new_agc) {
-    return public_submodules_->gain_control_for_new_agc.get();
+  if (constants_.use_experimental_agc) {
+    return public_submodules_->gain_control_for_experimental_agc.get();
   }
   return public_submodules_->gain_control;
 }
@@ -1284,11 +1221,11 @@ bool AudioProcessingImpl::rev_conversion_needed() const {
 }
 
 void AudioProcessingImpl::InitializeExperimentalAgc() {
-  if (constants_.use_new_agc) {
+  if (constants_.use_experimental_agc) {
     if (!private_submodules_->agc_manager.get()) {
       private_submodules_->agc_manager.reset(new AgcManagerDirect(
           public_submodules_->gain_control,
-          public_submodules_->gain_control_for_new_agc.get(),
+          public_submodules_->gain_control_for_experimental_agc.get(),
           constants_.agc_startup_min_volume));
     }
     private_submodules_->agc_manager->Initialize();
@@ -1519,7 +1456,7 @@ int AudioProcessingImpl::WriteConfigMessage(bool forced) {
       static_cast<int>(public_submodules_->gain_control->mode()));
   config.set_agc_limiter_enabled(
       public_submodules_->gain_control->is_limiter_enabled());
-  config.set_noise_robust_agc_enabled(constants_.use_new_agc);
+  config.set_noise_robust_agc_enabled(constants_.use_experimental_agc);
 
   config.set_hpf_enabled(public_submodules_->high_pass_filter->is_enabled());
 

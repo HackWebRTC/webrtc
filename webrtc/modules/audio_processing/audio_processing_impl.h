@@ -274,14 +274,14 @@ class AudioProcessingImpl : public AudioProcessing {
   // APM constants.
   const struct ApmConstants {
     ApmConstants(int agc_startup_min_volume,
-                 bool use_new_agc,
+                 bool use_experimental_agc,
                  bool intelligibility_enabled)
         :  // Format of processing streams at input/output call sites.
           agc_startup_min_volume(agc_startup_min_volume),
-          use_new_agc(use_new_agc),
+          use_experimental_agc(use_experimental_agc),
           intelligibility_enabled(intelligibility_enabled) {}
     int agc_startup_min_volume;
-    bool use_new_agc;
+    bool use_experimental_agc;
     bool intelligibility_enabled;
   } constants_;
 

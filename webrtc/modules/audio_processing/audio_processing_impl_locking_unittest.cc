@@ -600,7 +600,6 @@ bool StatsProcessor::Process() {
                 (test_config_->aec_type ==
                  AecType::BasicWebRtcAecSettingsWithAecMobile));
   EXPECT_TRUE(apm_->gain_control()->is_enabled());
-  apm_->gain_control()->stream_analog_level();
   EXPECT_TRUE(apm_->noise_suppression()->is_enabled());
 
   // The below return values are not testable.
@@ -713,8 +712,11 @@ void CaptureProcessor::CallApmCaptureSide() {
   // Prepare a proper capture side processing API call input.
   PrepareFrame();
 
-  // Set the stream delay
+  // Set the stream delay.
   apm_->set_stream_delay_ms(30);
+
+  // Set the analog level.
+  apm_->gain_control()->set_stream_analog_level(80);
 
   // Call the specified capture side API processing method.
   int result = AudioProcessing::kNoError;
@@ -737,6 +739,9 @@ void CaptureProcessor::CallApmCaptureSide() {
     default:
       FAIL();
   }
+
+  // Retrieve the new analog level.
+  apm_->gain_control()->stream_analog_level();
 
   // Check the return code for error.
   ASSERT_EQ(AudioProcessing::kNoError, result);

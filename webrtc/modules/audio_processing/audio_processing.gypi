@@ -78,6 +78,8 @@
         'echo_cancellation_impl.h',
         'echo_control_mobile_impl.cc',
         'echo_control_mobile_impl.h',
+        'gain_control_for_experimental_agc.cc',
+        'gain_control_for_experimental_agc.h',
         'gain_control_impl.cc',
         'gain_control_impl.h',
         'high_pass_filter_impl.cc',
