@@ -10,7 +10,7 @@
   'includes': ['../build/common.gypi'],
   'targets': [
     {
-      'target_name': 'libjingle_p2p_unittest',
+      'target_name': 'rtc_pc_unittests',
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/api/api.gyp:libjingle_peerconnection',
@@ -56,6 +56,6 @@
           },
         }],
       ],
-    },  # target libjingle_p2p_unittest
+    },  # target rtc_pc_unittests
   ],
 }

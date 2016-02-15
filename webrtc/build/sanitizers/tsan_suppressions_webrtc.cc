@@ -61,7 +61,7 @@ char kTSanDefaultSuppressions[] =
 "deadlock:rtc::MessageQueueManager::Clear\n"
 "deadlock:rtc::MessageQueueManager::ClearInternal\n"
 
-// libjingle_p2p_unittest
+// rtc_pc_unittests
 // https://code.google.com/p/webrtc/issues/detail?id=2079
 "race:webrtc/base/testclient.cc\n"
 "race:webrtc/base/virtualsocketserver.cc\n"

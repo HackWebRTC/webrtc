@@ -369,16 +369,16 @@
           ],
         },
         {
-          'target_name': 'libjingle_p2p_unittest_run',
+          'target_name': 'rtc_pc_unittests_run',
           'type': 'none',
           'dependencies': [
-            'libjingle_p2p_unittest',
+            'rtc_pc_unittests',
           ],
           'includes': [
             'build/isolate.gypi',
           ],
           'sources': [
-            'libjingle_p2p_unittest.isolate',
+            'rtc_pc_unittests.isolate',
           ],
         },
         {
