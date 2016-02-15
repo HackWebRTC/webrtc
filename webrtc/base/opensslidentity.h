@@ -102,7 +102,8 @@ class OpenSSLCertificate : public SSLCertificate {
 class OpenSSLIdentity : public SSLIdentity {
  public:
   static OpenSSLIdentity* Generate(const std::string& common_name,
-                                   const KeyParams& key_params);
+                                   const KeyParams& key_params,
+                                   time_t certificate_lifetime);
   static OpenSSLIdentity* GenerateForTest(const SSLIdentityParams& params);
   static SSLIdentity* FromPEMStrings(const std::string& private_key,
                                      const std::string& certificate);

@@ -36,7 +36,7 @@ class SSLCertChain;
 // possibly caching of intermediate results.)
 class SSLCertificate {
  public:
-  // Parses and build a certificate from a PEM encoded string.
+  // Parses and builds a certificate from a PEM encoded string.
   // Returns NULL on failure.
   // The length of the string representation of the certificate is
   // stored in *pem_length if it is non-NULL, and only if
@@ -125,6 +125,12 @@ static const int kRsaDefaultExponent = 0x10001;  // = 2^16+1 = 65537
 static const int kRsaMinModSize = 1024;
 static const int kRsaMaxModSize = 8192;
 
+// Certificate default validity lifetime.
+static const int kDefaultCertificateLifetime = 60 * 60 * 24 * 30;  // 30 days
+// Certificate validity window.
+// This is to compensate for slightly incorrect system clocks.
+static const int kCertificateWindow = -60 * 60 * 24;
+
 struct RSAParams {
   unsigned int mod_size;
   unsigned int pub_exp;
@@ -184,18 +190,28 @@ struct SSLIdentityParams {
 class SSLIdentity {
  public:
   // Generates an identity (keypair and self-signed certificate). If
-  // common_name is non-empty, it will be used for the certificate's
-  // subject and issuer name, otherwise a random string will be used.
+  // |common_name| is non-empty, it will be used for the certificate's subject
+  // and issuer name, otherwise a random string will be used. The key type and
+  // parameters are defined in |key_param|. The certificate's lifetime in
+  // seconds from the current time is defined in |certificate_lifetime|; it
+  // should be a non-negative number.
   // Returns NULL on failure.
   // Caller is responsible for freeing the returned object.
   static SSLIdentity* Generate(const std::string& common_name,
-                               const KeyParams& key_param);
+                               const KeyParams& key_param,
+                               time_t certificate_lifetime);
+  static SSLIdentity* Generate(const std::string& common_name,
+                               const KeyParams& key_param) {
+    return Generate(common_name, key_param, kDefaultCertificateLifetime);
+  }
   static SSLIdentity* Generate(const std::string& common_name,
                                KeyType key_type) {
     return Generate(common_name, KeyParams(key_type));
   }
 
   // Generates an identity with the specified validity period.
+  // TODO(torbjorng): Now that Generate() accepts relevant params, make tests
+  // use that instead of this function.
   static SSLIdentity* GenerateForTest(const SSLIdentityParams& params);
 
   // Construct an identity from a private key and a certificate.

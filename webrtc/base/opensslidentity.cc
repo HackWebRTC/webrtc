@@ -36,12 +36,6 @@ namespace rtc {
 // Random bits for certificate serial number
 static const int SERIAL_RAND_BITS = 64;
 
-// Certificate validity lifetime
-static const int CERTIFICATE_LIFETIME = 60*60*24*30;  // 30 days, arbitrarily
-// Certificate validity window.
-// This is to compensate for slightly incorrect system clocks.
-static const int CERTIFICATE_WINDOW = -60*60*24;
-
 // Generate a key pair. Caller is responsible for freeing the returned object.
 static EVP_PKEY* MakeKey(const KeyParams& key_params) {
   LOG(LS_INFO) << "Making key pair";
@@ -414,13 +408,15 @@ OpenSSLIdentity* OpenSSLIdentity::GenerateInternal(
 }
 
 OpenSSLIdentity* OpenSSLIdentity::Generate(const std::string& common_name,
-                                           const KeyParams& key_params) {
+                                           const KeyParams& key_params,
+                                           time_t certificate_lifetime) {
   SSLIdentityParams params;
   params.key_params = key_params;
   params.common_name = common_name;
   time_t now = time(NULL);
-  params.not_before = now + CERTIFICATE_WINDOW;
-  params.not_after = now + CERTIFICATE_LIFETIME;
+  params.not_before = now + kCertificateWindow;
+  params.not_after = now + certificate_lifetime;
+  RTC_DCHECK(params.not_before < params.not_after);
   return GenerateInternal(params);
 }
 

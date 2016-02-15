@@ -387,18 +387,17 @@ class SSLIdentityExpirationTest : public testing::Test {
   }
 
   void TestExpireTime(int times) {
+    // We test just ECDSA here since what we're out to exercise is the
+    // interfaces for expiration setting and reading.
     for (int i = 0; i < times; i++) {
-      rtc::SSLIdentityParams params;
-      params.common_name = "";
-      params.not_before = 0;
       // We limit the time to < 2^31 here, i.e., we stay before 2038, since else
       // we hit time offset limitations in OpenSSL on some 32-bit systems.
-      params.not_after = rtc::CreateRandomId() % 0x80000000;
-      // We test just ECDSA here since what we're out to exercise here is the
-      // code for expiration setting and reading.
-      params.key_params = rtc::KeyParams::ECDSA(rtc::EC_NIST_P256);
-      SSLIdentity* identity = rtc::SSLIdentity::GenerateForTest(params);
-      EXPECT_EQ(params.not_after,
+      time_t now = time(NULL);
+      time_t lifetime = rtc::CreateRandomId() % (0x80000000 - now);
+      rtc::KeyParams key_params = rtc::KeyParams::ECDSA(rtc::EC_NIST_P256);
+      SSLIdentity* identity =
+          rtc::SSLIdentity::Generate("", key_params, lifetime);
+      EXPECT_EQ(now + lifetime,
                 identity->certificate().CertificateExpirationTime());
       delete identity;
     }
