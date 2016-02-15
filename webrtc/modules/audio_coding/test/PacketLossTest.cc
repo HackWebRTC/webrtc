@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_coding/test/PacketLossTest.h"
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -126,7 +128,7 @@ void PacketLossTest::Perform() {
 #ifndef WEBRTC_CODEC_OPUS
   return;
 #else
-  rtc::scoped_ptr<AudioCodingModule> acm(AudioCodingModule::Create(0));
+  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create(0));
 
   int codec_id = acm->Codec("opus", 48000, channels_);
 

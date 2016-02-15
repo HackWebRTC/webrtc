@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
@@ -193,7 +194,7 @@ class TargetDelayTest : public ::testing::Test {
     return acm_->LeastRequiredDelayMs();
   }
 
-  rtc::scoped_ptr<AudioCodingModule> acm_;
+  std::unique_ptr<AudioCodingModule> acm_;
   WebRtcRTPHeader rtp_info_;
   uint8_t payload_[kPayloadLenBytes];
 };

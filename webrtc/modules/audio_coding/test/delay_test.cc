@@ -12,10 +12,10 @@
 #include <math.h>
 
 #include <iostream>
+#include <memory>
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -223,8 +223,8 @@ class DelayTest {
     out_file_b_.Close();
   }
 
-  rtc::scoped_ptr<AudioCodingModule> acm_a_;
-  rtc::scoped_ptr<AudioCodingModule> acm_b_;
+  std::unique_ptr<AudioCodingModule> acm_a_;
+  std::unique_ptr<AudioCodingModule> acm_b_;
 
   Channel* channel_a2b_;
 

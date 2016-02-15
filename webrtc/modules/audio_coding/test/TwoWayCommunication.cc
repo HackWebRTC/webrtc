@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <memory>
+
 #ifdef WIN32
 #include <Windows.h>
 #endif
@@ -66,7 +68,7 @@ TwoWayCommunication::~TwoWayCommunication() {
 
 void TwoWayCommunication::ChooseCodec(uint8_t* codecID_A,
                                       uint8_t* codecID_B) {
-  rtc::scoped_ptr<AudioCodingModule> tmpACM(AudioCodingModule::Create(0));
+  std::unique_ptr<AudioCodingModule> tmpACM(AudioCodingModule::Create(0));
   uint8_t noCodec = tmpACM->NumberOfCodecs();
   CodecInst codecInst;
   printf("List of Supported Codecs\n");

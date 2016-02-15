@@ -11,8 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_TEST_TESTREDFEC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_TEST_TESTREDFEC_H_
 
+#include <memory>
 #include <string>
-#include "webrtc/base/scoped_ptr.h"
+
 #include "webrtc/modules/audio_coding/test/ACMTest.h"
 #include "webrtc/modules/audio_coding/test/Channel.h"
 #include "webrtc/modules/audio_coding/test/PCMFile.h"
@@ -36,8 +37,8 @@ class TestRedFec : public ACMTest {
   void Run();
   void OpenOutFile(int16_t testNumber);
   int32_t SetVAD(bool enableDTX, bool enableVAD, ACMVADMode vadMode);
-  rtc::scoped_ptr<AudioCodingModule> _acmA;
-  rtc::scoped_ptr<AudioCodingModule> _acmB;
+  std::unique_ptr<AudioCodingModule> _acmA;
+  std::unique_ptr<AudioCodingModule> _acmB;
 
   Channel* _channelA2B;
 
