@@ -2,8 +2,10 @@
 EndToEndTest.CanSwitchToUseAllSsrcs
 EndToEndTest.SendsAndReceivesVP9
 VideoSendStreamTest.VP9FlexMode
+# Times out due to using a real VP8 encoder.
+EndToEndTest.VerifyHistogramStatsWithRed
 
-# Flaky under memcheck (WebRTC issue 5134)
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=5134
 EndToEndTest.AssignsTransportSequenceNumbers
 # https://bugs.chromium.org/p/webrtc/issues/detail?id=5312
 RtcEventLogTest.DropOldEvents
