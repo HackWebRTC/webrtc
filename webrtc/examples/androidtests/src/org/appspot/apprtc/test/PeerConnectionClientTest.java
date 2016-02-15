@@ -400,19 +400,6 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, true), true);
   }
 
-
-  // Test that a call can be setup even if a released EGL context is used during setup.
-  // The HW encoder and decoder will fallback to encode and decode from byte buffers.
-  public void testLoopbackEglContextReleasedBeforeSetup() throws InterruptedException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-      Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
-      return;
-    }
-    eglBase.release();
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, false), true);
-    eglBase = null;
-  }
-
   // Test that a call can be setup even if the EGL context used during initialization is
   // released before the Video codecs are created. The HW encoder and decoder is setup to use
   // textures.
@@ -423,7 +410,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     }
 
     loopback = true;
-    PeerConnectionParameters parameters = createParametersForVideoCall(VIDEO_CODEC_VP8, false);
+    PeerConnectionParameters parameters = createParametersForVideoCall(VIDEO_CODEC_VP8, true);
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
     pcClient = createPeerConnectionClient(

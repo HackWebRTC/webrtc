@@ -26,6 +26,8 @@ public class PeerConnectionFactory {
   private final long nativeFactory;
   private static Thread workerThread;
   private static Thread signalingThread;
+  private EglBase localEglbase;
+  private EglBase remoteEglbase;
 
   public static class Options {
     // Keep in sync with webrtc/base/network.h!
@@ -163,20 +165,29 @@ public class PeerConnectionFactory {
 
   /** Set the EGL context used by HW Video encoding and decoding.
    *
-   * @param localEGLContext   An instance of EglBase.Context.
-   *                          Must be the same as used by VideoCapturerAndroid and any local
-   *                          video renderer.
-   * @param remoteEGLContext  An instance of EglBase.Context.
-   *                          Must be the same as used by any remote video renderer.
+   * @param localEglContext   Must be the same as used by VideoCapturerAndroid and any local video
+   *                          renderer.
+   * @param remoteEglContext  Must be the same as used by any remote video renderer.
    */
-  public void setVideoHwAccelerationOptions(Object localEGLContext, Object remoteEGLContext) {
-    nativeSetVideoHwAccelerationOptions(nativeFactory, localEGLContext, remoteEGLContext);
+  public void setVideoHwAccelerationOptions(EglBase.Context localEglContext,
+      EglBase.Context remoteEglContext) {
+    if (localEglbase != null || remoteEglbase != null) {
+      throw new IllegalStateException("Egl context already set.");
+    }
+    localEglbase = EglBase.create(localEglContext);
+    remoteEglbase = EglBase.create(remoteEglContext);
+    nativeSetVideoHwAccelerationOptions(nativeFactory, localEglbase.getEglBaseContext(),
+        remoteEglbase.getEglBaseContext());
   }
 
   public void dispose() {
     nativeFreeFactory(nativeFactory);
     signalingThread = null;
     workerThread = null;
+    if (localEglbase != null)
+      localEglbase.release();
+    if (remoteEglbase != null)
+      remoteEglbase.release();
   }
 
   public void threadsCallbacks() {

@@ -843,7 +843,8 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
 }
 
-MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() {
+MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory()
+    : egl_context_(nullptr) {
   ALOGD << "MediaCodecVideoDecoderFactory ctor";
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
@@ -886,13 +887,19 @@ MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() {
 
 MediaCodecVideoDecoderFactory::~MediaCodecVideoDecoderFactory() {
   ALOGD << "MediaCodecVideoDecoderFactory dtor";
+  if (egl_context_) {
+    JNIEnv* jni = AttachCurrentThreadIfNeeded();
+    jni->DeleteGlobalRef(egl_context_);
+  }
 }
 
 void MediaCodecVideoDecoderFactory::SetEGLContext(
-    JNIEnv* jni, jobject render_egl_context) {
+    JNIEnv* jni, jobject egl_context) {
   ALOGD << "MediaCodecVideoDecoderFactory::SetEGLContext";
-  if (!egl_.CreateEglBase(jni, render_egl_context)) {
-    ALOGW << "Invalid EGL context - HW surface decoding is disabled.";
+  RTC_DCHECK(!egl_context_);
+  egl_context_ = jni->NewGlobalRef(egl_context);
+  if (CheckException(jni)) {
+    ALOGE << "error calling NewGlobalRef for EGL Context.";
   }
 }
 
@@ -906,7 +913,7 @@ webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
     if (codec_type == type) {
       ALOGD << "Create HW video decoder for type " << (int)type;
       return new MediaCodecVideoDecoder(AttachCurrentThreadIfNeeded(), type,
-                                        egl_.egl_base_context());
+                                        egl_context_);
     }
   }
   ALOGW << "Can not find HW video decoder for type " << (int)type;

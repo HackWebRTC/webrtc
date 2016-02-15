@@ -43,8 +43,6 @@
             'java/jni/androidnetworkmonitor_jni.h',
             'java/jni/androidvideocapturer_jni.cc',
             'java/jni/androidvideocapturer_jni.h',
-            'java/jni/eglbase_jni.cc',
-            'java/jni/eglbase_jni.h',
             'java/jni/surfacetexturehelper_jni.cc',
             'java/jni/surfacetexturehelper_jni.h',
             'java/jni/classreferenceholder.cc',

@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/api/java/jni/eglbase_jni.h"
+#include "webrtc/api/java/jni/jni_helpers.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 
 namespace webrtc_jni {
@@ -25,7 +25,7 @@ class MediaCodecVideoEncoderFactory
   MediaCodecVideoEncoderFactory();
   virtual ~MediaCodecVideoEncoderFactory();
 
-  void SetEGLContext(JNIEnv* jni, jobject render_egl_context);
+  void SetEGLContext(JNIEnv* jni, jobject egl_context);
 
   // WebRtcVideoEncoderFactory implementation.
   webrtc::VideoEncoder* CreateVideoEncoder(webrtc::VideoCodecType type)
@@ -34,7 +34,7 @@ class MediaCodecVideoEncoderFactory
   void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
 
  private:
-  EglBase egl_base_;
+  jobject egl_context_;
 
   // Empty if platform support is lacking, const after ctor returns.
   std::vector<VideoCodec> supported_codecs_;
