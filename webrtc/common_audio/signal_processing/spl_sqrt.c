@@ -139,8 +139,19 @@ int32_t WebRtcSpl_Sqrt(int32_t value)
 
     A = value;
 
-    if (A == 0)
-        return (int32_t)0; // sqrt(0) = 0
+    // The convention in this function is to calculate sqrt(abs(A)). Negate the
+    // input if it is negative.
+    if (A < 0) {
+        if (A == WEBRTC_SPL_WORD32_MIN) {
+            // This number cannot be held in an int32_t after negating.
+            // Map it to the maximum positive value.
+            A = WEBRTC_SPL_WORD32_MAX;
+        } else {
+            A = -A;
+        }
+    } else if (A == 0) {
+        return 0;  // sqrt(0) = 0
+    }
 
     sh = WebRtcSpl_NormW32(A); // # shifts to normalize A
     A = WEBRTC_SPL_LSHIFT_W32(A, sh); // Normalize A
