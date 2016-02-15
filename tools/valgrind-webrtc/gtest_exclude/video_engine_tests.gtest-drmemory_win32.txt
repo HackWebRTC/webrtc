@@ -8,6 +8,7 @@ EndToEndTest.SendsAndReceivesH264
 EndToEndTest.SendsAndReceivesVP9
 EndToEndTest.TransportFeedbackNotConfigured
 EndToEndTest.TransportSeqNumOnAudioAndVideo
+EndToEndTest.VerifyHistogramStatsWithRed
 VideoSendStreamTest.CanReconfigureToUseStartBitrateAbovePreviousMax
 VideoSendStreamTest.ReconfigureBitratesSetsEncoderBitratesCorrectly
 # https://code.google.com/p/webrtc/issues/detail?id=5417
