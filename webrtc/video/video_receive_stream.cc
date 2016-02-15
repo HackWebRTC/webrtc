@@ -278,8 +278,7 @@ VideoReceiveStream::VideoReceiveStream(
 
   RTC_DCHECK(!config_.decoders.empty());
   std::set<int> decoder_payload_types;
-  for (size_t i = 0; i < config_.decoders.size(); ++i) {
-    const Decoder& decoder = config_.decoders[i];
+  for (const Decoder& decoder : config_.decoders) {
     RTC_CHECK(decoder.decoder);
     RTC_CHECK(decoder_payload_types.find(decoder.payload_type) ==
               decoder_payload_types.end())
@@ -310,6 +309,14 @@ VideoReceiveStream::~VideoReceiveStream() {
   Stop();
 
   process_thread_->DeRegisterModule(vcm_.get());
+
+  // Deregister external decoders so that they are no longer running during
+  // destruction. This effectively stops the VCM since the decoder thread is
+  // stopped, the VCM is deregistered and no asynchronous decoder threads are
+  // running.
+  for (const Decoder& decoder : config_.decoders)
+    vcm_->RegisterExternalDecoder(nullptr, decoder.payload_type);
+
   vie_channel_.RegisterPreRenderCallback(nullptr);
   vcm_->RegisterPreDecodeImageCallback(nullptr);
 
