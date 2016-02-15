@@ -11,9 +11,9 @@
 #include "webrtc/modules/audio_coding/acm2/acm_receiver.h"
 
 #include <algorithm>  // std::min
+#include <memory>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/acm2/audio_coding_module_impl.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
@@ -153,9 +153,9 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     return 0;
   }
 
-  rtc::scoped_ptr<AcmReceiver> receiver_;
+  std::unique_ptr<AcmReceiver> receiver_;
   rtc::ArrayView<const CodecInst> codecs_;
-  rtc::scoped_ptr<AudioCodingModule> acm_;
+  std::unique_ptr<AudioCodingModule> acm_;
   WebRtcRTPHeader rtp_header_;
   uint32_t timestamp_;
   bool packet_sent_;  // Set when SendData is called reset when inserting audio.

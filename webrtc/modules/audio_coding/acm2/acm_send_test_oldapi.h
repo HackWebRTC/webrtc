@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_SEND_TEST_OLDAPI_H_
 #define WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_SEND_TEST_OLDAPI_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -68,7 +68,7 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   Packet* CreatePacket();
 
   SimulatedClock clock_;
-  rtc::scoped_ptr<AudioCodingModule> acm_;
+  std::unique_ptr<AudioCodingModule> acm_;
   InputAudioFile* audio_source_;
   int source_rate_hz_;
   const size_t input_block_size_samples_;

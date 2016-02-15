@@ -13,11 +13,11 @@
 
 #include <stddef.h>
 #include <map>
+#include <memory>
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -229,10 +229,10 @@ class RentACodec {
   AudioDecoder* RentIsacDecoder();
 
  private:
-  rtc::scoped_ptr<AudioEncoder> speech_encoder_;
-  rtc::scoped_ptr<AudioEncoder> cng_encoder_;
-  rtc::scoped_ptr<AudioEncoder> red_encoder_;
-  rtc::scoped_ptr<AudioDecoder> isac_decoder_;
+  std::unique_ptr<AudioEncoder> speech_encoder_;
+  std::unique_ptr<AudioEncoder> cng_encoder_;
+  std::unique_ptr<AudioEncoder> red_encoder_;
+  std::unique_ptr<AudioDecoder> isac_decoder_;
   LockedIsacBandwidthInfo isac_bandwidth_info_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RentACodec);

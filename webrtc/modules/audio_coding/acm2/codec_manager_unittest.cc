@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
@@ -21,8 +23,8 @@ using ::testing::Return;
 namespace {
 
 // Create a MockAudioEncoder with some reasonable default behavior.
-rtc::scoped_ptr<MockAudioEncoder> CreateMockEncoder() {
-  auto enc = rtc_make_scoped_ptr(new MockAudioEncoder);
+std::unique_ptr<MockAudioEncoder> CreateMockEncoder() {
+  auto enc = std::unique_ptr<MockAudioEncoder>(new MockAudioEncoder);
   EXPECT_CALL(*enc, SampleRateHz()).WillRepeatedly(Return(8000));
   EXPECT_CALL(*enc, NumChannels()).WillRepeatedly(Return(1));
   EXPECT_CALL(*enc, Max10MsFramesInAPacket()).WillRepeatedly(Return(1));

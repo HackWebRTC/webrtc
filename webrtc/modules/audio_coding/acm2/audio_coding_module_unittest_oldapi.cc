@@ -10,13 +10,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/acm2/acm_receive_test_oldapi.h"
 #include "webrtc/modules/audio_coding/acm2/acm_send_test_oldapi.h"
@@ -225,8 +225,8 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   }
 
   const int id_;
-  rtc::scoped_ptr<RtpUtility> rtp_utility_;
-  rtc::scoped_ptr<AudioCodingModule> acm_;
+  std::unique_ptr<RtpUtility> rtp_utility_;
+  std::unique_ptr<AudioCodingModule> acm_;
   PacketizationCallbackStubOldApi packet_cb_;
   WebRtcRTPHeader rtp_header_;
   AudioFrame input_frame_;
@@ -575,13 +575,13 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   rtc::PlatformThread send_thread_;
   rtc::PlatformThread insert_packet_thread_;
   rtc::PlatformThread pull_audio_thread_;
-  const rtc::scoped_ptr<EventWrapper> test_complete_;
+  const std::unique_ptr<EventWrapper> test_complete_;
   int send_count_;
   int insert_packet_count_;
   int pull_audio_count_ GUARDED_BY(crit_sect_);
   rtc::CriticalSection crit_sect_;
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<SimulatedClock> fake_clock_;
+  std::unique_ptr<SimulatedClock> fake_clock_;
 };
 
 #if defined(WEBRTC_IOS)
@@ -775,7 +775,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   bool CbReceiveImpl() {
     SleepMs(1);
     const size_t max_encoded_bytes = isac_encoder_->MaxEncodedBytes();
-    rtc::scoped_ptr<uint8_t[]> encoded(new uint8_t[max_encoded_bytes]);
+    std::unique_ptr<uint8_t[]> encoded(new uint8_t[max_encoded_bytes]);
     AudioEncoder::EncodedInfo info;
     {
       rtc::CritScope lock(&crit_sect_);
@@ -841,13 +841,13 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   rtc::PlatformThread receive_thread_;
   rtc::PlatformThread codec_registration_thread_;
-  const rtc::scoped_ptr<EventWrapper> test_complete_;
+  const std::unique_ptr<EventWrapper> test_complete_;
   rtc::CriticalSection crit_sect_;
   bool codec_registered_ GUARDED_BY(crit_sect_);
   int receive_packet_count_ GUARDED_BY(crit_sect_);
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<AudioEncoderIsac> isac_encoder_;
-  rtc::scoped_ptr<SimulatedClock> fake_clock_;
+  std::unique_ptr<AudioEncoderIsac> isac_encoder_;
+  std::unique_ptr<SimulatedClock> fake_clock_;
   test::AudioLoop audio_loop_;
 };
 
@@ -897,7 +897,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
            const std::vector<ExternalDecoder>& external_decoders) {
     const std::string input_file_name =
         webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
-    rtc::scoped_ptr<test::RtpFileSource> packet_source(
+    std::unique_ptr<test::RtpFileSource> packet_source(
         test::RtpFileSource::Create(input_file_name));
 #ifdef WEBRTC_ANDROID
     // Filter out iLBC and iSAC-swb since they are not supported on Android.
@@ -1199,8 +1199,8 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
         RegisterExternalSendCodec(external_speech_encoder, payload_type));
   }
 
-  rtc::scoped_ptr<test::AcmSendTestOldApi> send_test_;
-  rtc::scoped_ptr<test::InputAudioFile> audio_source_;
+  std::unique_ptr<test::AcmSendTestOldApi> send_test_;
+  std::unique_ptr<test::InputAudioFile> audio_source_;
   uint32_t frame_size_rtp_timestamps_;
   int packet_count_;
   uint8_t payload_type_;
@@ -1490,8 +1490,8 @@ class AcmSetBitRateOldApi : public ::testing::Test {
                                   codec_frame_size_rtp_timestamps));
   }
 
-  rtc::scoped_ptr<test::AcmSendTestOldApi> send_test_;
-  rtc::scoped_ptr<test::InputAudioFile> audio_source_;
+  std::unique_ptr<test::AcmSendTestOldApi> send_test_;
+  std::unique_ptr<test::InputAudioFile> audio_source_;
 };
 
 TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {

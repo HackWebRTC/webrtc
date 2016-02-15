@@ -12,13 +12,13 @@
 #define WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/engine_configurations.h"
@@ -288,8 +288,8 @@ class AcmReceiver {
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
   // Used in GetAudio, declared as member to avoid allocating every 10ms.
   // TODO(henrik.lundin) Stack-allocate in GetAudio instead?
-  rtc::scoped_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
   NetEq* neteq_;
   // Decoders map is keyed by payload type

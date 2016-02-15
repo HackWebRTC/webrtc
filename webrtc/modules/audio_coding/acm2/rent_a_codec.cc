@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 
+#include <memory>
 #include <utility>
 
 #include "webrtc/base/logging.h"
@@ -144,52 +145,53 @@ namespace {
 
 // Returns a new speech encoder, or null on error.
 // TODO(kwiberg): Don't handle errors here (bug 5033)
-rtc::scoped_ptr<AudioEncoder> CreateEncoder(
-    const CodecInst& speech_inst,
-    LockedIsacBandwidthInfo* bwinfo) {
+std::unique_ptr<AudioEncoder> CreateEncoder(const CodecInst& speech_inst,
+                                            LockedIsacBandwidthInfo* bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
   if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
-    return rtc_make_scoped_ptr(new AudioEncoderIsacFix(speech_inst, bwinfo));
+    return std::unique_ptr<AudioEncoder>(
+        new AudioEncoderIsacFix(speech_inst, bwinfo));
 #endif
 #if defined(WEBRTC_CODEC_ISAC)
   if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
-    return rtc_make_scoped_ptr(new AudioEncoderIsac(speech_inst, bwinfo));
+    return std::unique_ptr<AudioEncoder>(
+        new AudioEncoderIsac(speech_inst, bwinfo));
 #endif
 #ifdef WEBRTC_CODEC_OPUS
   if (STR_CASE_CMP(speech_inst.plname, "opus") == 0)
-    return rtc_make_scoped_ptr(new AudioEncoderOpus(speech_inst));
+    return std::unique_ptr<AudioEncoder>(new AudioEncoderOpus(speech_inst));
 #endif
   if (STR_CASE_CMP(speech_inst.plname, "pcmu") == 0)
-    return rtc_make_scoped_ptr(new AudioEncoderPcmU(speech_inst));
+    return std::unique_ptr<AudioEncoder>(new AudioEncoderPcmU(speech_inst));
   if (STR_CASE_CMP(speech_inst.plname, "pcma") == 0)
-    return rtc_make_scoped_ptr(new AudioEncoderPcmA(speech_inst));
+    return std::unique_ptr<AudioEncoder>(new AudioEncoderPcmA(speech_inst));
   if (STR_CASE_CMP(speech_inst.plname, "l16") == 0)
-    return rtc_make_scoped_ptr(new AudioEncoderPcm16B(speech_inst));
+    return std::unique_ptr<AudioEncoder>(new AudioEncoderPcm16B(speech_inst));
 #ifdef WEBRTC_CODEC_ILBC
   if (STR_CASE_CMP(speech_inst.plname, "ilbc") == 0)
-    return rtc_make_scoped_ptr(new AudioEncoderIlbc(speech_inst));
+    return std::unique_ptr<AudioEncoder>(new AudioEncoderIlbc(speech_inst));
 #endif
 #ifdef WEBRTC_CODEC_G722
   if (STR_CASE_CMP(speech_inst.plname, "g722") == 0)
-    return rtc_make_scoped_ptr(new AudioEncoderG722(speech_inst));
+    return std::unique_ptr<AudioEncoder>(new AudioEncoderG722(speech_inst));
 #endif
   LOG_F(LS_ERROR) << "Could not create encoder of type " << speech_inst.plname;
-  return rtc::scoped_ptr<AudioEncoder>();
+  return std::unique_ptr<AudioEncoder>();
 }
 
-rtc::scoped_ptr<AudioEncoder> CreateRedEncoder(AudioEncoder* encoder,
+std::unique_ptr<AudioEncoder> CreateRedEncoder(AudioEncoder* encoder,
                                                int red_payload_type) {
 #ifdef WEBRTC_CODEC_RED
   AudioEncoderCopyRed::Config config;
   config.payload_type = red_payload_type;
   config.speech_encoder = encoder;
-  return rtc::scoped_ptr<AudioEncoder>(new AudioEncoderCopyRed(config));
+  return std::unique_ptr<AudioEncoder>(new AudioEncoderCopyRed(config));
 #else
-  return rtc::scoped_ptr<AudioEncoder>();
+  return std::unique_ptr<AudioEncoder>();
 #endif
 }
 
-rtc::scoped_ptr<AudioEncoder> CreateCngEncoder(AudioEncoder* encoder,
+std::unique_ptr<AudioEncoder> CreateCngEncoder(AudioEncoder* encoder,
                                                int payload_type,
                                                ACMVADMode vad_mode) {
   AudioEncoderCng::Config config;
@@ -212,18 +214,18 @@ rtc::scoped_ptr<AudioEncoder> CreateCngEncoder(AudioEncoder* encoder,
     default:
       FATAL();
   }
-  return rtc::scoped_ptr<AudioEncoder>(new AudioEncoderCng(config));
+  return std::unique_ptr<AudioEncoder>(new AudioEncoderCng(config));
 }
 
-rtc::scoped_ptr<AudioDecoder> CreateIsacDecoder(
+std::unique_ptr<AudioDecoder> CreateIsacDecoder(
     LockedIsacBandwidthInfo* bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
-  return rtc_make_scoped_ptr(new AudioDecoderIsacFix(bwinfo));
+  return std::unique_ptr<AudioDecoder>(new AudioDecoderIsacFix(bwinfo));
 #elif defined(WEBRTC_CODEC_ISAC)
-  return rtc_make_scoped_ptr(new AudioDecoderIsac(bwinfo));
+  return std::unique_ptr<AudioDecoder>(new AudioDecoderIsac(bwinfo));
 #else
   FATAL() << "iSAC is not supported.";
-  return rtc::scoped_ptr<AudioDecoder>();
+  return std::unique_ptr<AudioDecoder>();
 #endif
 }
 
@@ -233,7 +235,7 @@ RentACodec::RentACodec() = default;
 RentACodec::~RentACodec() = default;
 
 AudioEncoder* RentACodec::RentEncoder(const CodecInst& codec_inst) {
-  rtc::scoped_ptr<AudioEncoder> enc =
+  std::unique_ptr<AudioEncoder> enc =
       CreateEncoder(codec_inst, &isac_bandwidth_info_);
   if (!enc)
     return nullptr;

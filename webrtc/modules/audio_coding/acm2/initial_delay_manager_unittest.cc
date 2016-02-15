@@ -10,6 +10,8 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/acm2/initial_delay_manager.h"
 
@@ -78,7 +80,7 @@ class InitialDelayManagerTest : public ::testing::Test {
     NextRtpHeader(rtp_info, rtp_receive_timestamp);
   }
 
-  rtc::scoped_ptr<InitialDelayManager> manager_;
+  std::unique_ptr<InitialDelayManager> manager_;
   WebRtcRTPHeader rtp_info_;
   uint32_t rtp_receive_timestamp_;
 };

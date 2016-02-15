@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_ACM2_INITIAL_DELAY_MANAGER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_ACM2_INITIAL_DELAY_MANAGER_H_
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
