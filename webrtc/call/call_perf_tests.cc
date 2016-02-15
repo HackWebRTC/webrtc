@@ -49,8 +49,14 @@ namespace webrtc {
 
 class CallPerfTest : public test::CallTest {
  protected:
-  void TestAudioVideoSync(bool fec,
-                          bool create_audio_first,
+  enum class FecMode {
+    kOn, kOff
+  };
+  enum class CreateOrder {
+    kAudioFirst, kVideoFirst
+  };
+  void TestAudioVideoSync(FecMode fec,
+                          CreateOrder create_first,
                           float video_ntp_speed,
                           float video_rtp_speed,
                           float audio_rtp_speed);
@@ -196,8 +202,8 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
   int64_t first_time_in_sync_;
 };
 
-void CallPerfTest::TestAudioVideoSync(bool fec,
-                                      bool create_audio_first,
+void CallPerfTest::TestAudioVideoSync(FecMode fec,
+                                      CreateOrder create_first,
                                       float video_ntp_speed,
                                       float video_rtp_speed,
                                       float audio_rtp_speed) {
@@ -308,7 +314,7 @@ void CallPerfTest::TestAudioVideoSync(bool fec,
   EXPECT_EQ(0, voe_codec->SetSendCodec(send_channel_id, isac));
 
   video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-  if (fec) {
+  if (fec == FecMode::kOn) {
     video_send_config_.rtp.fec.red_payload_type = kRedPayloadType;
     video_send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
     video_receive_configs_[0].rtp.fec.red_payload_type = kRedPayloadType;
@@ -326,7 +332,7 @@ void CallPerfTest::TestAudioVideoSync(bool fec,
 
   AudioReceiveStream* audio_receive_stream;
 
-  if (create_audio_first) {
+  if (create_first == CreateOrder::kAudioFirst) {
     audio_receive_stream =
         receiver_call_->CreateAudioReceiveStream(audio_recv_config);
     CreateVideoStreams();
@@ -377,48 +383,24 @@ void CallPerfTest::TestAudioVideoSync(bool fec,
   VoiceEngine::Delete(voice_engine);
 }
 
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioCreatedFirst) {
-  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
-                     DriftingClock::kNoDrift, DriftingClock::kNoDrift);
-}
-
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoCreatedFirst) {
-  TestAudioVideoSync(false, false, DriftingClock::kNoDrift,
-                     DriftingClock::kNoDrift, DriftingClock::kNoDrift);
-}
-
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithFec) {
-  TestAudioVideoSync(true, false, DriftingClock::kNoDrift,
-                     DriftingClock::kNoDrift, DriftingClock::kNoDrift);
-}
-
 // TODO(danilchap): Reenable after adding support for frame capture clock
 // that is not in sync with local TickTime clock.
 TEST_F(CallPerfTest, DISABLED_PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {
-  TestAudioVideoSync(false, true, DriftingClock::PercentsFaster(10.0f),
+  TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
+                     DriftingClock::PercentsFaster(10.0f),
                      DriftingClock::kNoDrift, DriftingClock::kNoDrift);
 }
 
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioRtpDrift) {
-  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
-                     DriftingClock::kNoDrift,
-                     DriftingClock::PercentsFaster(30.0f));
-}
-
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoRtpDrift) {
-  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
-                     DriftingClock::PercentsFaster(30.0f),
-                     DriftingClock::kNoDrift);
-}
-
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioFasterThanVideoDrift) {
-  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
+  TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
+                     DriftingClock::kNoDrift,
                      DriftingClock::PercentsSlower(30.0f),
                      DriftingClock::PercentsFaster(30.0f));
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoFasterThanAudioDrift) {
-  TestAudioVideoSync(false, true, DriftingClock::kNoDrift,
+  TestAudioVideoSync(FecMode::kOn, CreateOrder::kVideoFirst,
+                     DriftingClock::kNoDrift,
                      DriftingClock::PercentsFaster(30.0f),
                      DriftingClock::PercentsSlower(30.0f));
 }
