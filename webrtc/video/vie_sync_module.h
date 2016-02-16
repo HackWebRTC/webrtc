@@ -33,12 +33,10 @@ class ViESyncModule : public Module {
   explicit ViESyncModule(VideoCodingModule* vcm);
   ~ViESyncModule();
 
-  int ConfigureSync(int voe_channel_id,
-                    VoEVideoSync* voe_sync_interface,
-                    RtpRtcp* video_rtcp_module,
-                    RtpReceiver* video_receiver);
-
-  int VoiceChannel();
+  void ConfigureSync(int voe_channel_id,
+                     VoEVideoSync* voe_sync_interface,
+                     RtpRtcp* video_rtcp_module,
+                     RtpReceiver* video_receiver);
 
   // Implements Module.
   int64_t TimeUntilNextProcess() override;

@@ -95,7 +95,6 @@ ViEChannel::ViEChannel(Transport* transport,
       vcm_protection_callback_(new ViEChannelProtectionCallback(this)),
       vcm_(vcm),
       vie_receiver_(vcm_, remote_bitrate_estimator, this),
-      vie_sync_(vcm_),
       stats_observer_(new ChannelStatsObserver(this)),
       receive_stats_callback_(nullptr),
       incoming_video_stream_(nullptr),
@@ -166,7 +165,6 @@ int32_t ViEChannel::Init() {
     vcm_->RegisterReceiveStatisticsCallback(this);
     vcm_->RegisterDecoderTimingCallback(this);
     vcm_->SetRenderDelay(kDefaultRenderDelayMs);
-    module_process_thread_->RegisterModule(&vie_sync_);
   }
   return 0;
 }
@@ -178,8 +176,6 @@ ViEChannel::~ViEChannel() {
       vie_receiver_.GetReceiveStatistics());
   if (sender_) {
     send_payload_router_->SetSendingRtpModules(std::vector<RtpRtcp*>());
-  } else {
-    module_process_thread_->DeRegisterModule(&vie_sync_);
   }
   for (size_t i = 0; i < num_active_rtp_rtcp_modules_; ++i)
     packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i], sender_);
@@ -998,19 +994,6 @@ std::vector<RtpRtcp*> ViEChannel::CreateRtpRtcpModules(
     configuration.remote_bitrate_estimator = nullptr;
   }
   return modules;
-}
-
-int32_t ViEChannel::SetVoiceChannel(int32_t ve_channel_id,
-                                    VoEVideoSync* ve_sync_interface) {
-  RTC_DCHECK(!sender_);
-  return vie_sync_.ConfigureSync(ve_channel_id, ve_sync_interface,
-                                 rtp_rtcp_modules_[0],
-                                 vie_receiver_.GetRtpReceiver());
-}
-
-int32_t ViEChannel::VoiceChannel() {
-  RTC_DCHECK(!sender_);
-  return vie_sync_.VoiceChannel();
 }
 
 void ViEChannel::RegisterPreRenderCallback(

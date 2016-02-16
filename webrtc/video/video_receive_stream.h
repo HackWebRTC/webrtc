@@ -100,6 +100,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   ReceiveStatisticsProxy stats_proxy_;
   ViEChannel vie_channel_;
   ViEReceiver* const vie_receiver_;
+  ViESyncModule vie_sync_;
   RtpRtcp* const rtp_rtcp_;
 };
 }  // namespace internal

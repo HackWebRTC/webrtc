@@ -10,6 +10,7 @@
 
 #include "webrtc/video/vie_sync_module.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
@@ -60,17 +61,19 @@ ViESyncModule::ViESyncModule(VideoCodingModule* vcm)
 ViESyncModule::~ViESyncModule() {
 }
 
-int ViESyncModule::ConfigureSync(int voe_channel_id,
-                                 VoEVideoSync* voe_sync_interface,
-                                 RtpRtcp* video_rtcp_module,
-                                 RtpReceiver* video_receiver) {
+void ViESyncModule::ConfigureSync(int voe_channel_id,
+                                  VoEVideoSync* voe_sync_interface,
+                                  RtpRtcp* video_rtcp_module,
+                                  RtpReceiver* video_receiver) {
+  if (voe_channel_id != -1)
+    RTC_DCHECK(voe_sync_interface);
   rtc::CritScope lock(&data_cs_);
   // Prevent expensive no-ops.
   if (voe_channel_id_ == voe_channel_id &&
       voe_sync_interface_ == voe_sync_interface &&
       video_receiver_ == video_receiver &&
       video_rtp_rtcp_ == video_rtcp_module) {
-    return 0;
+    return;
   }
   voe_channel_id_ = voe_channel_id;
   voe_sync_interface_ = voe_sync_interface;
@@ -78,20 +81,6 @@ int ViESyncModule::ConfigureSync(int voe_channel_id,
   video_rtp_rtcp_ = video_rtcp_module;
   sync_.reset(
       new StreamSynchronization(video_rtp_rtcp_->SSRC(), voe_channel_id));
-
-  if (!voe_sync_interface) {
-    voe_channel_id_ = -1;
-    if (voe_channel_id >= 0) {
-      // Trying to set a voice channel but no interface exist.
-      return -1;
-    }
-    return 0;
-  }
-  return 0;
-}
-
-int ViESyncModule::VoiceChannel() {
-  return voe_channel_id_;
 }
 
 int64_t ViESyncModule::TimeUntilNextProcess() {

@@ -178,6 +178,7 @@ VideoReceiveStream::VideoReceiveStream(
                    1,
                    false),
       vie_receiver_(vie_channel_.vie_receiver()),
+      vie_sync_(vcm_.get()),
       rtp_rtcp_(vie_channel_.rtp_rtcp()) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
@@ -302,12 +303,14 @@ VideoReceiveStream::VideoReceiveStream(
   vie_channel_.RegisterPreRenderCallback(this);
 
   process_thread_->RegisterModule(vcm_.get());
+  process_thread_->RegisterModule(&vie_sync_);
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
   LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   Stop();
 
+  process_thread_->DeRegisterModule(&vie_sync_);
   process_thread_->DeRegisterModule(vcm_.get());
 
   // Deregister external decoders so that they are no longer running during
@@ -351,11 +354,13 @@ void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
                                         int audio_channel_id) {
   if (voice_engine != nullptr && audio_channel_id != -1) {
     VoEVideoSync* voe_sync_interface = VoEVideoSync::GetInterface(voice_engine);
-    vie_channel_.SetVoiceChannel(audio_channel_id, voe_sync_interface);
+    vie_sync_.ConfigureSync(audio_channel_id, voe_sync_interface, rtp_rtcp_,
+                            vie_receiver_->GetRtpReceiver());
     voe_sync_interface->Release();
-  } else {
-    vie_channel_.SetVoiceChannel(-1, nullptr);
+    return;
   }
+  vie_sync_.ConfigureSync(-1, nullptr, rtp_rtcp_,
+                          vie_receiver_->GetRtpReceiver());
 }
 
 VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {

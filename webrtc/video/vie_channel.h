@@ -211,10 +211,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   int32_t ResendPackets(const uint16_t* sequence_numbers,
                         uint16_t length) override;
 
-  int32_t SetVoiceChannel(int32_t ve_channel_id,
-                          VoEVideoSync* ve_sync_interface);
-  int32_t VoiceChannel();
-
   void RegisterPreRenderCallback(I420FrameCallback* pre_render_callback);
 
   void RegisterSendFrameCountObserver(FrameCountObserver* observer);
@@ -359,7 +355,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   VideoCodingModule* const vcm_;
   ViEReceiver vie_receiver_;
-  ViESyncModule vie_sync_;
 
   // Helper to report call statistics.
   rtc::scoped_ptr<ChannelStatsObserver> stats_observer_;
