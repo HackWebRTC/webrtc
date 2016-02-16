@@ -154,10 +154,12 @@ SSLCertChain::~SSLCertChain() {
 
 #if SSL_USE_OPENSSL
 
+// static
 SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
   return OpenSSLCertificate::FromPEMString(pem_string);
 }
 
+// static
 SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
                                    const KeyParams& key_params,
                                    time_t certificate_lifetime) {
@@ -165,10 +167,25 @@ SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
                                    certificate_lifetime);
 }
 
+// static
+SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
+                                   const KeyParams& key_params) {
+  return OpenSSLIdentity::Generate(common_name, key_params,
+                                   kDefaultCertificateLifetime);
+}
+
+// static
+SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
+                                   KeyType key_type) {
+  return OpenSSLIdentity::Generate(common_name, KeyParams(key_type),
+                                   kDefaultCertificateLifetime);
+}
+
 SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
   return OpenSSLIdentity::GenerateForTest(params);
 }
 
+// static
 SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
                                          const std::string& certificate) {
   return OpenSSLIdentity::FromPEMStrings(private_key, certificate);

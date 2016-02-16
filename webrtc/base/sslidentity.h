@@ -201,13 +201,9 @@ class SSLIdentity {
                                const KeyParams& key_param,
                                time_t certificate_lifetime);
   static SSLIdentity* Generate(const std::string& common_name,
-                               const KeyParams& key_param) {
-    return Generate(common_name, key_param, kDefaultCertificateLifetime);
-  }
+                               const KeyParams& key_param);
   static SSLIdentity* Generate(const std::string& common_name,
-                               KeyType key_type) {
-    return Generate(common_name, KeyParams(key_type));
-  }
+                               KeyType key_type);
 
   // Generates an identity with the specified validity period.
   // TODO(torbjorng): Now that Generate() accepts relevant params, make tests
