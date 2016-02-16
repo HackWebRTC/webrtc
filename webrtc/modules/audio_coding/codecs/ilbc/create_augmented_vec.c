@@ -29,28 +29,36 @@ void WebRtcIlbcfix_CreateAugmentedVec(
     size_t index,  /* (i) Index for the augmented vector to be created */
     int16_t *buffer,  /* (i) Pointer to the end of the codebook memory that
                                            is used for creation of the augmented codebook */
-    int16_t *cbVec  /* (o) The construced codebook vector */
+    int16_t *cbVec  /* (o) The constructed codebook vector */
                                       ) {
   size_t ilow;
   int16_t *ppo, *ppi;
   int16_t cbVecTmp[4];
+  /* Interpolation starts 4 elements before cbVec+index, but must not start
+     outside |cbVec|; clamping interp_len to stay within |cbVec|.
+   */
+  size_t interp_len = WEBRTC_SPL_MIN(index, 4);
 
-  ilow = index-4;
+  ilow = index - interp_len;
 
   /* copy the first noninterpolated part */
   ppo = buffer-index;
   WEBRTC_SPL_MEMCPY_W16(cbVec, ppo, index);
 
   /* interpolation */
-  ppo = buffer - 4;
-  ppi = buffer - index - 4;
+  ppo = buffer - interp_len;
+  ppi = buffer - index - interp_len;
 
-  /* perform cbVec[ilow+k] = ((ppi[k]*alphaTbl[k])>>15) + ((ppo[k]*alphaTbl[3-k])>>15);
-     for k = 0..3
+  /* perform cbVec[ilow+k] = ((ppi[k]*alphaTbl[k])>>15) +
+                             ((ppo[k]*alphaTbl[interp_len-1-k])>>15);
+     for k = 0..interp_len-1
   */
-  WebRtcSpl_ElementwiseVectorMult(&cbVec[ilow], ppi, WebRtcIlbcfix_kAlpha, 4, 15);
-  WebRtcSpl_ReverseOrderMultArrayElements(cbVecTmp, ppo, &WebRtcIlbcfix_kAlpha[3], 4, 15);
-  WebRtcSpl_AddVectorsAndShift(&cbVec[ilow], &cbVec[ilow], cbVecTmp, 4, 0);
+  WebRtcSpl_ElementwiseVectorMult(&cbVec[ilow], ppi, WebRtcIlbcfix_kAlpha,
+                                  interp_len, 15);
+  WebRtcSpl_ReverseOrderMultArrayElements(
+      cbVecTmp, ppo, &WebRtcIlbcfix_kAlpha[interp_len - 1], interp_len, 15);
+  WebRtcSpl_AddVectorsAndShift(&cbVec[ilow], &cbVec[ilow], cbVecTmp, interp_len,
+                               0);
 
   /* copy the second noninterpolated part */
   ppo = buffer - index;
