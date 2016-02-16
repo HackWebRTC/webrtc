@@ -703,7 +703,7 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
 // retransmitted and renders. Retransmission SSRCs are also checked.
 void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
   // Must be set high enough to allow the bitrate probing to finish.
-  static const int kMinProbePackets = 30;
+  static const int kMinProbePackets = 100;
   static const int kDroppedFrameNumber = kMinProbePackets + 1;
   class RetransmissionObserver : public test::EndToEndTest,
                                  public I420FrameCallback {
