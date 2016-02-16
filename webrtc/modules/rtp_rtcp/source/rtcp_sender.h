@@ -136,7 +136,7 @@ class RTCPSender {
 
   void SetTMMBRStatus(bool enable);
 
-  int32_t SetTMMBN(const TMMBRSet* boundingSet, uint32_t maxBitrateKbit);
+  int32_t SetTMMBN(const TMMBRSet* boundingSet);
 
   int32_t SetApplicationSpecificData(uint8_t subType,
                                      uint32_t name,

@@ -41,8 +41,7 @@ class RTPSenderVideo {
 
   static RtpUtility::Payload* CreateVideoPayload(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payloadType,
-      const uint32_t maxBitRate);
+      const int8_t payloadType);
 
   int32_t SendVideo(const RtpVideoCodecTypes videoType,
                     const FrameType frameType,
@@ -57,10 +56,6 @@ class RTPSenderVideo {
   int32_t SendRTPIntraRequest();
 
   void SetVideoCodecType(RtpVideoCodecTypes type);
-
-  void SetMaxConfiguredBitrateVideo(const uint32_t maxBitrate);
-
-  uint32_t MaxConfiguredBitrateVideo() const;
 
   // FEC
   void SetGenericFECStatus(const bool enable,
@@ -106,7 +101,6 @@ class RTPSenderVideo {
   const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
 
   RtpVideoCodecTypes _videoType;
-  uint32_t _maxBitrate;
   int32_t _retransmissionSettings GUARDED_BY(crit_);
 
   // FEC

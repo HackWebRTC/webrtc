@@ -38,9 +38,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSenderInterface* rtpSender)
     : _rtpSender(*rtpSender),
       crit_(CriticalSectionWrapper::CreateCriticalSection()),
       _videoType(kRtpVideoGeneric),
-      _maxBitrate(0),
       _retransmissionSettings(kRetransmitBaseLayer),
-
       // Generic FEC
       fec_(),
       fec_enabled_(false),
@@ -72,8 +70,7 @@ RtpVideoCodecTypes RTPSenderVideo::VideoCodecType() const {
 // Static.
 RtpUtility::Payload* RTPSenderVideo::CreateVideoPayload(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-    const int8_t payloadType,
-    const uint32_t maxBitRate) {
+    const int8_t payloadType) {
   RtpVideoCodecTypes videoType = kRtpVideoGeneric;
   if (RtpUtility::StringCompare(payloadName, "VP8", 3)) {
     videoType = kRtpVideoVp8;
@@ -90,7 +87,6 @@ RtpUtility::Payload* RTPSenderVideo::CreateVideoPayload(
   payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
   strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
   payload->typeSpecific.Video.videoCodecType = videoType;
-  payload->typeSpecific.Video.maxRate = maxBitRate;
   payload->audio = false;
   return payload;
 }
@@ -323,14 +319,6 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
   TRACE_EVENT_ASYNC_END1(
       "webrtc", "Video", capture_time_ms, "timestamp", _rtpSender.Timestamp());
   return 0;
-}
-
-void RTPSenderVideo::SetMaxConfiguredBitrateVideo(const uint32_t maxBitrate) {
-  _maxBitrate = maxBitrate;
-}
-
-uint32_t RTPSenderVideo::MaxConfiguredBitrateVideo() const {
-  return _maxBitrate;
 }
 
 void RTPSenderVideo::ProcessBitrate() {

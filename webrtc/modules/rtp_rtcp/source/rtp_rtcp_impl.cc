@@ -250,11 +250,8 @@ int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
 
 int32_t ModuleRtpRtcpImpl::RegisterSendPayload(const VideoCodec& video_codec) {
   send_video_codec_ = video_codec;
-  return rtp_sender_.RegisterPayload(video_codec.plName,
-                                     video_codec.plType,
-                                     90000,
-                                     0,
-                                     video_codec.maxBitrate);
+  return rtp_sender_.RegisterPayload(video_codec.plName, video_codec.plType,
+                                     90000, 0, 0);
 }
 
 int32_t ModuleRtpRtcpImpl::DeRegisterSendPayload(const int8_t payload_type) {
@@ -674,9 +671,7 @@ void ModuleRtpRtcpImpl::SetTMMBRStatus(const bool enable) {
 }
 
 int32_t ModuleRtpRtcpImpl::SetTMMBN(const TMMBRSet* bounding_set) {
-  uint32_t max_bitrate_kbit =
-      rtp_sender_.MaxConfiguredBitrateVideo() / 1000;
-  return rtcp_sender_.SetTMMBN(bounding_set, max_bitrate_kbit);
+  return rtcp_sender_.SetTMMBN(bounding_set);
 }
 
 // Returns the currently configured retransmission mode.

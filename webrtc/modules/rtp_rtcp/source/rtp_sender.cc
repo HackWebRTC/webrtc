@@ -339,7 +339,7 @@ int32_t RTPSender::RegisterPayload(
     ret_val = audio_->RegisterAudioPayload(payload_name, payload_number,
                                            frequency, channels, rate, &payload);
   } else {
-    payload = video_->CreateVideoPayload(payload_name, payload_number, rate);
+    payload = video_->CreateVideoPayload(payload_name, payload_number);
   }
   if (payload) {
     payload_type_map_[payload_number] = payload;
@@ -478,7 +478,6 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   if (!payload->audio && !audio_configured_) {
     video_->SetVideoCodecType(payload->typeSpecific.Video.videoCodecType);
     *video_type = payload->typeSpecific.Video.videoCodecType;
-    video_->SetMaxConfiguredBitrateVideo(payload->typeSpecific.Video.maxRate);
   }
   return 0;
 }
@@ -1794,13 +1793,6 @@ int32_t RTPSender::RED(int8_t *payload_type) const {
 RtpVideoCodecTypes RTPSender::VideoCodecType() const {
   assert(!audio_configured_ && "Sender is an audio stream!");
   return video_->VideoCodecType();
-}
-
-uint32_t RTPSender::MaxConfiguredBitrateVideo() const {
-  if (audio_configured_) {
-    return 0;
-  }
-  return video_->MaxConfiguredBitrateVideo();
 }
 
 void RTPSender::SetGenericFECStatus(bool enable,

@@ -433,9 +433,7 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
   }
 
   void UpdatePayloadRate(RtpUtility::Payload* payload,
-                         const uint32_t rate) const override {
-    payload->typeSpecific.Video.maxRate = rate;
-  }
+                         const uint32_t rate) const override {}
 
   RtpUtility::Payload* CreatePayloadType(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
@@ -464,7 +462,6 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
     strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
     payload->typeSpecific.Video.videoCodecType = videoType;
-    payload->typeSpecific.Video.maxRate = rate;
     payload->audio = false;
     return payload;
   }

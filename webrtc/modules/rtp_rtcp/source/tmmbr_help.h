@@ -87,9 +87,7 @@ public:
 
     TMMBRSet* VerifyAndAllocateCandidateSet(const uint32_t minimumSize);
     int32_t FindTMMBRBoundingSet(TMMBRSet*& boundingSet);
-    int32_t SetTMMBRBoundingSetToSend(
-        const TMMBRSet* boundingSetToSend,
-        const uint32_t maxBitrateKbit);
+    int32_t SetTMMBRBoundingSetToSend(const TMMBRSet* boundingSetToSend);
 
     bool IsOwner(const uint32_t ssrc, const uint32_t length) const;
 

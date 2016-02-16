@@ -719,7 +719,7 @@ TEST_F(RtcpSenderTest, SendTmmbn) {
   const uint32_t kPacketOh = 40;
   const uint32_t kSourceSsrc = 12345;
   bounding_set.AddEntry(kBitrateKbps, kPacketOh, kSourceSsrc);
-  EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 0));
+  EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set));
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSr));
   EXPECT_EQ(1, parser()->sender_report()->num_packets());
   EXPECT_EQ(1, parser()->tmmbn()->num_packets());
@@ -739,7 +739,7 @@ TEST_F(RtcpSenderTest, SendTmmbn) {
 TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   TMMBRSet bounding_set;
-  EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 3));
+  EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set));
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSr));
   EXPECT_EQ(1, parser()->sender_report()->num_packets());
   EXPECT_EQ(1, parser()->tmmbn()->num_packets());

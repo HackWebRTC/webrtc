@@ -41,7 +41,6 @@ struct AudioPayload {
 
 struct VideoPayload {
     RtpVideoCodecTypes   videoCodecType;
-    uint32_t       maxRate;
 };
 
 union PayloadUnion {

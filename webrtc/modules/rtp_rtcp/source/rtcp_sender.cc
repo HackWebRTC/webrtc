@@ -1015,11 +1015,10 @@ bool RTCPSender::RtcpXrReceiverReferenceTime() const {
 }
 
 // no callbacks allowed inside this function
-int32_t RTCPSender::SetTMMBN(const TMMBRSet* boundingSet,
-                             uint32_t maxBitrateKbit) {
+int32_t RTCPSender::SetTMMBN(const TMMBRSet* boundingSet) {
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
 
-  if (0 == tmmbr_help_.SetTMMBRBoundingSetToSend(boundingSet, maxBitrateKbit)) {
+  if (0 == tmmbr_help_.SetTMMBRBoundingSetToSend(boundingSet)) {
     SetFlag(kRtcpTmmbn, true);
     return 0;
   }
