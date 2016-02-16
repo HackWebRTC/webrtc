@@ -18,6 +18,7 @@
 
 #include "defines.h"
 #include "constants.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 /*----------------------------------------------------------------*
  *  Recreate a specific codebook vector from the augmented part.
@@ -53,5 +54,15 @@ void WebRtcIlbcfix_CreateAugmentedVec(
 
   /* copy the second noninterpolated part */
   ppo = buffer - index;
-  WEBRTC_SPL_MEMCPY_W16(cbVec+index,ppo,(SUBL-index));
+  /* |tempbuff2| is declared in WebRtcIlbcfix_GetCbVec and is SUBL+5 elements
+     long. |buffer| points one element past the end of that vector, i.e., at
+     tempbuff2+SUBL+5. Since ppo=buffer-index, we cannot read any more than
+     |index| elements from |ppo|.
+
+     |cbVec| is declared to be SUBL elements long in WebRtcIlbcfix_CbConstruct.
+     Therefore, we can only write SUBL-index elements to cbVec+index.
+
+     These two conditions limit the number of elements to copy.
+   */
+  WEBRTC_SPL_MEMCPY_W16(cbVec+index, ppo, WEBRTC_SPL_MIN(SUBL-index, index));
 }
