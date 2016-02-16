@@ -52,7 +52,13 @@ bool BitrateProber::IsProbing() const {
   return probing_state_ == kProbing;
 }
 
-void BitrateProber::MaybeInitializeProbe(int bitrate_bps) {
+void BitrateProber::OnIncomingPacket(int bitrate_bps,
+                                     size_t packet_size,
+                                     int64_t now_ms) {
+  // Don't initialize probing unless we have something large enough to start
+  // probing.
+  if (packet_size < PacedSender::kMinProbePacketSize)
+    return;
   if (probing_state_ != kAllowedToProbe)
     return;
   probe_bitrates_.clear();
@@ -74,6 +80,9 @@ void BitrateProber::MaybeInitializeProbe(int bitrate_bps) {
   }
   bitrate_log << ", num packets: " << probe_bitrates_.size();
   LOG(LS_INFO) << bitrate_log.str().c_str();
+  // Set last send time to current time so TimeUntilNextProbe doesn't short
+  // circuit due to inactivity.
+  time_last_send_ms_ = now_ms;
   probing_state_ = kProbing;
 }
 
@@ -81,16 +90,23 @@ int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
   if (probing_state_ != kDisabled && probe_bitrates_.empty()) {
     probing_state_ = kWait;
   }
-  if (probe_bitrates_.empty()) {
-    // No probe started, or waiting for next probe.
+  if (probe_bitrates_.empty() || time_last_send_ms_ == -1) {
+    // No probe started, probe finished, or too long since last probe packet.
     return -1;
   }
   int64_t elapsed_time_ms = now_ms - time_last_send_ms_;
+  // If no packets have been sent for n milliseconds, temporarily deactivate to
+  // not keep spinning.
+  static const int kInactiveSendDeltaMs = 5000;
+  if (elapsed_time_ms > kInactiveSendDeltaMs) {
+    time_last_send_ms_ = -1;
+    probing_state_ = kAllowedToProbe;
+    return -1;
+  }
   // We will send the first probe packet immediately if no packet has been
   // sent before.
   int time_until_probe_ms = 0;
-  if (packet_size_last_send_ > PacedSender::kMinProbePacketSize &&
-      probing_state_ == kProbing) {
+  if (packet_size_last_send_ != 0 && probing_state_ == kProbing) {
     int next_delta_ms = ComputeDeltaFromBitrate(packet_size_last_send_,
                                                 probe_bitrates_.front());
     time_until_probe_ms = next_delta_ms - elapsed_time_ms;
@@ -119,6 +135,8 @@ size_t BitrateProber::RecommendedPacketSize() const {
 
 void BitrateProber::PacketSent(int64_t now_ms, size_t packet_size) {
   assert(packet_size > 0);
+  if (packet_size < PacedSender::kMinProbePacketSize)
+    return;
   packet_size_last_send_ = packet_size;
   time_last_send_ms_ = now_ms;
   if (probing_state_ != kProbing)

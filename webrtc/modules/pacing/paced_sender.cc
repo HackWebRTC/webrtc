@@ -323,9 +323,9 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
 
   if (probing_enabled_ && !prober_->IsProbing())
     prober_->SetEnabled(true);
-  prober_->MaybeInitializeProbe(bitrate_bps_);
-
   int64_t now_ms = clock_->TimeInMilliseconds();
+  prober_->OnIncomingPacket(bitrate_bps_, bytes, now_ms);
+
   if (capture_time_ms < 0)
     capture_time_ms = now_ms;
 

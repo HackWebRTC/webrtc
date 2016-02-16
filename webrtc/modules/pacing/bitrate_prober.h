@@ -31,8 +31,10 @@ class BitrateProber {
   // TimeUntilNextProbe().
   bool IsProbing() const;
 
-  // Initializes a new probing session if the prober is allowed to probe.
-  void MaybeInitializeProbe(int bitrate_bps);
+  // Initializes a new probing session if the prober is allowed to probe. Does
+  // not initialize the prober unless the packet size is large enough to probe
+  // with.
+  void OnIncomingPacket(int bitrate_bps, size_t packet_size, int64_t now_ms);
 
   // Returns the number of milliseconds until the next packet should be sent to
   // get accurate probing.
