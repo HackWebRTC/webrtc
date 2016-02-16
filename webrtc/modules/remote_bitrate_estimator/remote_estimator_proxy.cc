@@ -52,21 +52,14 @@ void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
   }
   rtc::CritScope cs(&lock_);
   media_ssrc_ = header.ssrc;
+
   OnPacketArrival(header.extension.transportSequenceNumber, arrival_time_ms);
 }
-
-void RemoteEstimatorProxy::RemoveStream(unsigned int ssrc) {}
 
 bool RemoteEstimatorProxy::LatestEstimate(std::vector<unsigned int>* ssrcs,
                                           unsigned int* bitrate_bps) const {
   return false;
 }
-
-bool RemoteEstimatorProxy::GetStats(
-    ReceiveBandwidthEstimatorStats* output) const {
-  return false;
-}
-
 
 int64_t RemoteEstimatorProxy::TimeUntilNextProcess() {
   int64_t now = clock_->TimeInMilliseconds();
@@ -118,6 +111,7 @@ void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
   }
 
   RTC_DCHECK(packet_arrival_times_.end() == packet_arrival_times_.find(seq));
+
   packet_arrival_times_[seq] = arrival_time;
 }
 

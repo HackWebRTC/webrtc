@@ -257,10 +257,8 @@ bool RemoteBitrateEstimatorTest::GenerateAndProcessFrame(uint32_t ssrc,
                    (packet->arrival_time + 500) / 1000, packet->rtp_timestamp,
                    AbsSendTime(packet->send_time, 1000000), true);
     if (bitrate_observer_->updated()) {
-      // Verify that new estimates only are triggered by an overuse and a
-      // rate decrease.
-      overuse = true;
-      EXPECT_LE(bitrate_observer_->latest_bitrate(), bitrate_bps);
+      if (bitrate_observer_->latest_bitrate() < bitrate_bps)
+        overuse = true;
     }
     delete packet;
     packets.pop_front();
@@ -478,15 +476,11 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
   int64_t bitrate_drop_time = -1;
   for (int i = 0; i < 100 * number_of_streams; ++i) {
     GenerateAndProcessFrame(kDefaultSsrc, bitrate_bps);
-    // Check for either increase or decrease.
-    if (bitrate_observer_->updated()) {
-      if (bitrate_drop_time == -1 &&
-          bitrate_observer_->latest_bitrate() <= kReducedCapacityBps) {
-        bitrate_drop_time = clock_.TimeInMilliseconds();
-      }
-      bitrate_bps = bitrate_observer_->latest_bitrate();
-      bitrate_observer_->Reset();
+    if (bitrate_drop_time == -1 &&
+        bitrate_observer_->latest_bitrate() <= kReducedCapacityBps) {
+      bitrate_drop_time = clock_.TimeInMilliseconds();
     }
+    bitrate_bps = bitrate_observer_->latest_bitrate();
   }
 
   EXPECT_NEAR(expected_bitrate_drop_delta,
@@ -561,67 +555,6 @@ void RemoteBitrateEstimatorTest::TestTimestampGroupingTestHelper() {
   EXPECT_TRUE(bitrate_observer_->updated());
   // Should have reduced the estimate.
   EXPECT_LT(bitrate_observer_->latest_bitrate(), 400000u);
-}
-
-void RemoteBitrateEstimatorTest::TestGetStatsHelper() {
-  const int kFramerate = 100;
-  const int kFrameIntervalMs = 1000 / kFramerate;
-  const int kBurstThresholdMs = 5;
-  const uint32_t kFrameIntervalAbsSendTime = AbsSendTime(1, kFramerate);
-  uint32_t timestamp = 0;
-  // Initialize absolute_send_time (24 bits) so that it will definitely wrap
-  // during the test.
-  uint32_t absolute_send_time =
-      AddAbsSendTime((1 << 24),
-      -(50 * static_cast<int>(kFrameIntervalAbsSendTime)));
-
-  // Inject propagation_time_delta of kFrameIntervalMs.
-  for (size_t i = 0; i < 3; ++i) {
-    IncomingPacket(kDefaultSsrc, 1000, clock_.TimeInMilliseconds(), timestamp,
-                   absolute_send_time, true);
-    timestamp += kFrameIntervalMs;
-    // Insert a kFrameIntervalMs propagation_time_delta.
-    clock_.AdvanceTimeMilliseconds(kFrameIntervalMs * 2);
-    absolute_send_time = AddAbsSendTime(absolute_send_time,
-                                        kFrameIntervalAbsSendTime);
-  }
-  ReceiveBandwidthEstimatorStats stats;
-  EXPECT_TRUE(bitrate_estimator_->GetStats(&stats));
-  EXPECT_EQ(1U, stats.recent_propagation_time_delta_ms.size());
-  EXPECT_EQ(kFrameIntervalMs, stats.recent_propagation_time_delta_ms[0]);
-  EXPECT_EQ(1U, stats.recent_arrival_time_ms.size());
-  EXPECT_EQ(kFrameIntervalMs, stats.total_propagation_time_delta_ms);
-
-  // Inject negative propagation_time_deltas. The total propagation_time_delta
-  // should be adjusted to 0.
-  for (size_t i = 0; i < 3; ++i) {
-    IncomingPacket(kDefaultSsrc, 1000, clock_.TimeInMilliseconds(), timestamp,
-                   absolute_send_time, true);
-    timestamp += 10 * kFrameIntervalMs;
-    clock_.AdvanceTimeMilliseconds(kBurstThresholdMs + 1);
-    absolute_send_time = AddAbsSendTime(absolute_send_time,
-                                        10 * kFrameIntervalAbsSendTime);
-  }
-  EXPECT_TRUE(bitrate_estimator_->GetStats(&stats));
-  EXPECT_EQ(0, stats.total_propagation_time_delta_ms);
-
-  // Send more than 1000 frames and make sure the stats queues stays within
-  // limits.
-  for (size_t i = 0; i < 1001; ++i) {
-    IncomingPacket(kDefaultSsrc, 1000, clock_.TimeInMilliseconds(), timestamp,
-                   absolute_send_time, true);
-    timestamp += kFrameIntervalMs;
-    absolute_send_time = AddAbsSendTime(absolute_send_time,
-                                        kFrameIntervalAbsSendTime);
-  }
-  EXPECT_TRUE(bitrate_estimator_->GetStats(&stats));
-  EXPECT_LE(stats.recent_propagation_time_delta_ms.size(), 1000U);
-  EXPECT_LE(stats.recent_arrival_time_ms.size(), 1000U);
-
-  // Move the clock over the 1000ms limit.
-  clock_.AdvanceTimeMilliseconds(2000);
-  EXPECT_TRUE(bitrate_estimator_->GetStats(&stats));
-  EXPECT_EQ(0U, stats.recent_propagation_time_delta_ms.size());
 }
 
 void RemoteBitrateEstimatorTest::TestWrappingHelper(

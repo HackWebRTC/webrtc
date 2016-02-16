@@ -38,27 +38,6 @@ class RemoteBitrateObserver {
   virtual ~RemoteBitrateObserver() {}
 };
 
-struct ReceiveBandwidthEstimatorStats {
-  ReceiveBandwidthEstimatorStats() : total_propagation_time_delta_ms(0) {}
-
-  // The "propagation_time_delta" of a frame is defined as (d_arrival - d_sent),
-  // where d_arrival is the delta of the arrival times of the frame and the
-  // previous frame, d_sent is the delta of the sent times of the frame and
-  // the previous frame. The sent time is calculated from the RTP timestamp.
-
-  // |total_propagation_time_delta_ms| is the sum of the propagation_time_deltas
-  // of all received frames, except that it's is adjusted to 0 when it becomes
-  // negative.
-  int total_propagation_time_delta_ms;
-  // The propagation_time_deltas for the frames arrived in the last
-  // kProcessIntervalMs using the clock passed to
-  // RemoteBitrateEstimatorFactory::Create.
-  std::vector<int> recent_propagation_time_delta_ms;
-  // The arrival times for the frames arrived in the last kProcessIntervalMs
-  // using the clock passed to RemoteBitrateEstimatorFactory::Create.
-  std::vector<int64_t> recent_arrival_time_ms;
-};
-
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
   static const int kDefaultMinBitrateBps = 30000;
@@ -87,9 +66,6 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   // currently being received and of which the bitrate estimate is based upon.
   virtual bool LatestEstimate(std::vector<uint32_t>* ssrcs,
                               uint32_t* bitrate_bps) const = 0;
-
-  // Returns true if the statistics are available.
-  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const = 0;
 
   virtual void SetMinBitrate(int min_bitrate_bps) = 0;
 

@@ -37,7 +37,6 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   void RemoveStream(uint32_t ssrc) override;
   bool LatestEstimate(std::vector<uint32_t>* ssrcs,
                       uint32_t* bitrate_bps) const override;
-  bool GetStats(ReceiveBandwidthEstimatorStats* output) const override;
   void SetMinBitrate(int min_bitrate_bps) override;
 
  private:

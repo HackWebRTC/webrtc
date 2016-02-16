@@ -197,8 +197,6 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
 
   void TestTimestampGroupingTestHelper();
 
-  void TestGetStatsHelper();
-
   void TestWrappingHelper(int silence_time_s);
 
   void InitialBehaviorTestHelper(uint32_t expected_converge_bitrate);

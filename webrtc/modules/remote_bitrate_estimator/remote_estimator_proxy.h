@@ -41,10 +41,9 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
                       size_t payload_size,
                       const RTPHeader& header,
                       bool was_paced) override;
-  void RemoveStream(unsigned int ssrc) override;
+  void RemoveStream(uint32_t ssrc) override {}
   bool LatestEstimate(std::vector<unsigned int>* ssrcs,
                       unsigned int* bitrate_bps) const override;
-  bool GetStats(ReceiveBandwidthEstimatorStats* output) const override;
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override {}
   void SetMinBitrate(int min_bitrate_bps) override {}
   int64_t TimeUntilNextProcess() override;

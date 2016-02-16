@@ -10,6 +10,7 @@
 
 #include "webrtc/call/congestion_controller.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -80,11 +81,6 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
                       unsigned int* bitrate_bps) const override {
     CriticalSectionScoped cs(crit_sect_.get());
     return rbe_->LatestEstimate(ssrcs, bitrate_bps);
-  }
-
-  bool GetStats(ReceiveBandwidthEstimatorStats* output) const override {
-    CriticalSectionScoped cs(crit_sect_.get());
-    return rbe_->GetStats(output);
   }
 
   void SetMinBitrate(int min_bitrate_bps) {
@@ -193,8 +189,18 @@ CongestionController::~CongestionController() {
 void CongestionController::SetBweBitrates(int min_bitrate_bps,
                                           int start_bitrate_bps,
                                           int max_bitrate_bps) {
-  if (start_bitrate_bps > 0)
+  // TODO(holmer): We should make sure the default bitrates are set to 10 kbps,
+  // and that we don't try to set the min bitrate to 0 from any applications.
+  // The congestion controller should allow a min bitrate of 0.
+  const int kMinBitrateBps = 10000;
+  if (min_bitrate_bps < kMinBitrateBps)
+    min_bitrate_bps = kMinBitrateBps;
+  if (max_bitrate_bps > 0)
+    max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
+  if (start_bitrate_bps > 0) {
+    start_bitrate_bps = std::max(min_bitrate_bps, start_bitrate_bps);
     bitrate_controller_->SetStartBitrate(start_bitrate_bps);
+  }
   bitrate_controller_->SetMinMaxBitrate(min_bitrate_bps, max_bitrate_bps);
   if (remote_bitrate_estimator_.get())
     remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);

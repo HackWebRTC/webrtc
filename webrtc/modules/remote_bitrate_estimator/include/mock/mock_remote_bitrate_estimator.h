@@ -31,7 +31,6 @@ class MockRemoteBitrateEstimator : public RemoteBitrateEstimator {
   MOCK_METHOD4(IncomingPacket, void(int64_t, size_t, const RTPHeader&, bool));
   MOCK_METHOD1(RemoveStream, void(uint32_t));
   MOCK_CONST_METHOD2(LatestEstimate, bool(std::vector<uint32_t>*, uint32_t*));
-  MOCK_CONST_METHOD1(GetStats, bool(ReceiveBandwidthEstimatorStats*));
 
   // From CallStatsObserver;
   MOCK_METHOD2(OnRttUpdate, void(int64_t, int64_t));

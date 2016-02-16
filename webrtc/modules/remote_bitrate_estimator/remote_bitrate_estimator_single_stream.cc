@@ -215,12 +215,6 @@ bool RemoteBitrateEstimatorSingleStream::LatestEstimate(
   return true;
 }
 
-bool RemoteBitrateEstimatorSingleStream::GetStats(
-    ReceiveBandwidthEstimatorStats* output) const {
-  // Not implemented.
-  return false;
-}
-
 void RemoteBitrateEstimatorSingleStream::GetSsrcs(
     std::vector<uint32_t>* ssrcs) const {
   assert(ssrcs);
