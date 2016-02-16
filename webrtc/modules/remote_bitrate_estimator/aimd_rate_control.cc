@@ -44,7 +44,7 @@ AimdRateControl::AimdRateControl()
       beta_(0.85f),
       rtt_(kDefaultRttMs),
       time_of_last_log_(-1),
-      in_experiment_(AdaptiveThresholdExperimentIsEnabled()) {}
+      in_experiment_(!AdaptiveThresholdExperimentIsDisabled()) {}
 
 void AimdRateControl::SetMinBitrate(int min_bitrate_bps) {
   min_configured_bitrate_bps_ = min_bitrate_bps;

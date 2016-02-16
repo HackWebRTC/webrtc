@@ -30,17 +30,19 @@ namespace webrtc {
 const char kAdaptiveThresholdExperiment[] = "WebRTC-AdaptiveBweThreshold";
 const char kEnabledPrefix[] = "Enabled";
 const size_t kEnabledPrefixLength = sizeof(kEnabledPrefix) - 1;
-const size_t kMinExperimentLength = kEnabledPrefixLength + 3;
+const char kDisabledPrefix[] = "Disabled";
+const size_t kDisabledPrefixLength = sizeof(kDisabledPrefix) - 1;
 
 const double kMaxAdaptOffsetMs = 15.0;
 const double kOverUsingTimeThreshold = 10;
 
-bool AdaptiveThresholdExperimentIsEnabled() {
+bool AdaptiveThresholdExperimentIsDisabled() {
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kAdaptiveThresholdExperiment);
+  const size_t kMinExperimentLength = kDisabledPrefixLength;
   if (experiment_string.length() < kMinExperimentLength)
     return false;
-  return experiment_string.substr(0, kEnabledPrefixLength) == kEnabledPrefix;
+  return experiment_string.substr(0, kDisabledPrefixLength) == kDisabledPrefix;
 }
 
 // Gets thresholds from the experiment name following the format
@@ -48,14 +50,20 @@ bool AdaptiveThresholdExperimentIsEnabled() {
 bool ReadExperimentConstants(double* k_up, double* k_down) {
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kAdaptiveThresholdExperiment);
+  const size_t kMinExperimentLength = kEnabledPrefixLength + 3;
+  if (experiment_string.length() < kMinExperimentLength ||
+      experiment_string.substr(0, kEnabledPrefixLength) != kEnabledPrefix)
+    return false;
   return sscanf(experiment_string.substr(kEnabledPrefixLength + 1).c_str(),
                 "%lf,%lf", k_up, k_down) == 2;
 }
 
 OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
-    : in_experiment_(AdaptiveThresholdExperimentIsEnabled()),
-      k_up_(0.01),
-      k_down_(0.00018),
+      // Experiment is on by default, but can be disabled with finch by setting
+      // the field trial string to "WebRTC-AdaptiveBweThreshold/Disabled/".
+    : in_experiment_(!AdaptiveThresholdExperimentIsDisabled()),
+      k_up_(0.004),
+      k_down_(0.00006),
       overusing_time_threshold_(100),
       options_(options),
       threshold_(12.5),
@@ -64,7 +72,7 @@ OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
       time_over_using_(-1),
       overuse_counter_(0),
       hypothesis_(kBwNormal) {
-  if (in_experiment_)
+  if (!AdaptiveThresholdExperimentIsDisabled())
     InitializeExperiment();
 }
 

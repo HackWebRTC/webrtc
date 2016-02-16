@@ -20,7 +20,7 @@
 namespace webrtc {
 enum RateControlRegion;
 
-bool AdaptiveThresholdExperimentIsEnabled();
+bool AdaptiveThresholdExperimentIsDisabled();
 
 class OveruseDetector {
  public:
@@ -45,7 +45,7 @@ class OveruseDetector {
   void UpdateThreshold(double modified_offset, int64_t now_ms);
   void InitializeExperiment();
 
-  const bool in_experiment_;
+  bool in_experiment_;
   double k_up_;
   double k_down_;
   double overusing_time_threshold_;
