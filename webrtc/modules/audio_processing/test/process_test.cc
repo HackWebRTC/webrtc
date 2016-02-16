@@ -840,11 +840,7 @@ void void_main(int argc, char* argv[]) {
         if (far_file == NULL) {
           event = kCaptureEvent;
         } else {
-          if (event == kRenderEvent) {
-            event = kCaptureEvent;
-          } else {
-            event = kRenderEvent;
-          }
+          event = (event == kCaptureEvent) ? kRenderEvent : kCaptureEvent;
         }
       } else {
         read_count = fread(&event, sizeof(event), 1, event_file);
