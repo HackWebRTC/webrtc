@@ -296,6 +296,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   void set_candidate_filter(uint32_t candidate_filter) {
     candidate_filter_ = candidate_filter;
   }
+  int32_t network_cost() const { return network_cost_; }
 
  protected:
   enum {
@@ -394,6 +395,11 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // when IceTransportsType is set to relay, both RelayPort and
   // TurnPort will hide raddr to avoid local address leakage.
   uint32_t candidate_filter_;
+
+  // A virtual cost perceived by the user, usually based on the network type
+  // (WiFi. vs. Cellular). It takes precedence over the priority when
+  // comparing two connections.
+  uint32_t network_cost_;
 
   friend class Connection;
 };
@@ -559,6 +565,8 @@ class Connection : public rtc::MessageHandler,
   State state() const { return state_; }
 
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
+
+  uint32_t ComputeNetworkCost() const;
 
   // Update the ICE password of the remote candidate if |ice_ufrag| matches
   // the candidate's ufrag, and the candidate's passwrod has not been set.

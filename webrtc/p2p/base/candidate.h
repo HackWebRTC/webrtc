@@ -27,6 +27,8 @@
 
 namespace cricket {
 
+const uint32_t kMaxNetworkCost = 999;
+
 // Candidate for ICE based connection discovery.
 
 class Candidate {
@@ -138,6 +140,15 @@ class Candidate {
     ist >> generation_;
   }
 
+  // |network_cost| measures the cost/penalty of using this candidate. A network
+  // cost of 0 indicates this candidate can be used freely. A value of
+  // |kMaxNetworkCost| indicates it should be used only as the last resort.
+  void set_network_cost(uint32_t network_cost) {
+    ASSERT(network_cost <= kMaxNetworkCost);
+    network_cost_ = network_cost;
+  }
+  uint32_t network_cost() const { return network_cost_; }
+
   const std::string& foundation() const {
     return foundation_;
   }
@@ -211,10 +222,10 @@ class Candidate {
     std::ostringstream ost;
     std::string address = sensitive ? address_.ToSensitiveString() :
                                       address_.ToString();
-    ost << "Cand[" << foundation_ << ":" << component_ << ":"
-        << protocol_ << ":" << priority_ << ":"
-        << address << ":" << type_ << ":" << related_address_ << ":"
-        << username_ << ":" << password_ << "]";
+    ost << "Cand[" << foundation_ << ":" << component_ << ":" << protocol_
+        << ":" << priority_ << ":" << address << ":" << type_ << ":"
+        << related_address_ << ":" << username_ << ":" << password_ << ":"
+        << network_cost_ << "]";
     return ost.str();
   }
 
@@ -233,6 +244,7 @@ class Candidate {
   std::string foundation_;
   rtc::SocketAddress related_address_;
   std::string tcptype_;
+  uint32_t network_cost_ = 0;
 };
 
 // Used during parsing and writing to map component to channel name

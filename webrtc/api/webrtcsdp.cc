@@ -126,6 +126,7 @@ static const char kAttributeCandidateRport[] = "rport";
 static const char kAttributeCandidateUfrag[] = "ufrag";
 static const char kAttributeCandidatePwd[] = "pwd";
 static const char kAttributeCandidateGeneration[] = "generation";
+static const char kAttributeCandidateNetworkCost[] = "network-cost";
 static const char kAttributeFingerprint[] = "fingerprint";
 static const char kAttributeSetup[] = "setup";
 static const char kAttributeFmtp[] = "fmtp";
@@ -1062,6 +1063,7 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   std::string username;
   std::string password;
   uint32_t generation = 0;
+  uint32_t network_cost = 0;
   for (size_t i = current_position; i + 1 < fields.size(); ++i) {
     // RFC 5245
     // *(SP extension-att-name SP extension-att-value)
@@ -1073,6 +1075,10 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
       username = fields[++i];
     } else if (fields[i] == kAttributeCandidatePwd) {
       password = fields[++i];
+    } else if (fields[i] == kAttributeCandidateNetworkCost) {
+      if (!GetValueFromString(first_line, fields[++i], &network_cost, error)) {
+        return false;
+      }
     } else {
       // Skip the unknown extension.
       ++i;
@@ -1084,6 +1090,7 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
                          generation, foundation);
   candidate->set_related_address(related_address);
   candidate->set_tcptype(tcptype);
+  candidate->set_network_cost(std::min(network_cost, cricket::kMaxNetworkCost));
   return true;
 }
 
@@ -1757,6 +1764,9 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
     os << kAttributeCandidateGeneration << " " << it->generation();
     if (include_ufrag && !it->username().empty()) {
       os << " " << kAttributeCandidateUfrag << " " << it->username();
+    }
+    if (it->network_cost() > 0) {
+      os << " " << kAttributeCandidateNetworkCost << " " << it->network_cost();
     }
 
     AddLine(os.str(), message);

@@ -39,9 +39,20 @@ cricket::PortInterface::CandidateOrigin GetOrigin(cricket::PortInterface* port,
     return cricket::PortInterface::ORIGIN_OTHER_PORT;
 }
 
-// Compares two connections based only on static information about them.
+// Compares two connections based only on the candidate and network information.
+// Returns positive if |a| is better than |b|.
 int CompareConnectionCandidates(cricket::Connection* a,
                                 cricket::Connection* b) {
+  uint32_t a_cost = a->ComputeNetworkCost();
+  uint32_t b_cost = b->ComputeNetworkCost();
+  // Smaller cost is better.
+  if (a_cost < b_cost) {
+    return 1;
+  }
+  if (a_cost > b_cost) {
+    return -1;
+  }
+
   // Compare connection priority. Lower values get sorted last.
   if (a->priority() > b->priority())
     return 1;
@@ -552,8 +563,6 @@ void P2PTransportChannel::OnUnknownAddress(
     }
   } else {
     // Create a new candidate with this address.
-    int remote_candidate_priority;
-
     // The priority of the candidate is set to the PRIORITY attribute
     // from the request.
     const StunUInt32Attribute* priority_attr =
@@ -566,7 +575,11 @@ void P2PTransportChannel::OnUnknownAddress(
                                      STUN_ERROR_REASON_BAD_REQUEST);
       return;
     }
-    remote_candidate_priority = priority_attr->value();
+    int remote_candidate_priority = priority_attr->value();
+
+    const StunUInt32Attribute* cost_attr =
+        stun_msg->GetUInt32(STUN_ATTR_NETWORK_COST);
+    uint32_t network_cost = (cost_attr) ? cost_attr->value() : 0;
 
     // RFC 5245
     // If the source transport address of the request does not match any
@@ -581,8 +594,8 @@ void P2PTransportChannel::OnUnknownAddress(
     // from the foundation for all other remote candidates.
     remote_candidate.set_foundation(
         rtc::ToString<uint32_t>(rtc::ComputeCrc32(remote_candidate.id())));
-
     remote_candidate.set_priority(remote_candidate_priority);
+    remote_candidate.set_network_cost(network_cost);
   }
 
   // RFC5245, the agent constructs a pair whose local candidate is equal to
@@ -1311,7 +1324,7 @@ void P2PTransportChannel::PingConnection(Connection* conn) {
   if (remote_ice_mode_ == ICEMODE_FULL && ice_role_ == ICEROLE_CONTROLLING) {
     use_candidate = (conn == best_connection_) || (best_connection_ == NULL) ||
                     (!best_connection_->writable()) ||
-                    (conn->priority() > best_connection_->priority());
+                    (CompareConnectionCandidates(best_connection_, conn) < 0);
   } else if (remote_ice_mode_ == ICEMODE_LITE && conn == best_connection_) {
     use_candidate = best_connection_->writable();
   }

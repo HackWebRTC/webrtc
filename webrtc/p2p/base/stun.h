@@ -602,10 +602,11 @@ class TurnMessage : public StunMessage {
 
 // RFC 5245 ICE STUN attributes.
 enum IceAttributeType {
-  STUN_ATTR_PRIORITY                    = 0x0024,  // UInt32
-  STUN_ATTR_USE_CANDIDATE               = 0x0025,  // No content, Length = 0
-  STUN_ATTR_ICE_CONTROLLED              = 0x8029,  // UInt64
-  STUN_ATTR_ICE_CONTROLLING             = 0x802A   // UInt64
+  STUN_ATTR_PRIORITY = 0x0024,         // UInt32
+  STUN_ATTR_USE_CANDIDATE = 0x0025,    // No content, Length = 0
+  STUN_ATTR_ICE_CONTROLLED = 0x8029,   // UInt64
+  STUN_ATTR_ICE_CONTROLLING = 0x802A,  // UInt64
+  STUN_ATTR_NETWORK_COST = 0xC057      // UInt32
 };
 
 // RFC 5245-defined errors.
@@ -619,7 +620,9 @@ class IceMessage : public StunMessage {
  protected:
   virtual StunAttributeValueType GetAttributeValueType(int type) const {
     switch (type) {
-      case STUN_ATTR_PRIORITY:        return STUN_VALUE_UINT32;
+      case STUN_ATTR_PRIORITY:
+      case STUN_ATTR_NETWORK_COST:
+        return STUN_VALUE_UINT32;
       case STUN_ATTR_USE_CANDIDATE:   return STUN_VALUE_BYTE_STRING;
       case STUN_ATTR_ICE_CONTROLLED:  return STUN_VALUE_UINT64;
       case STUN_ATTR_ICE_CONTROLLING: return STUN_VALUE_UINT64;

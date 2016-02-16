@@ -195,6 +195,10 @@ void Port::Construct() {
     ice_username_fragment_ = rtc::CreateRandomString(ICE_UFRAG_LENGTH);
     password_ = rtc::CreateRandomString(ICE_PWD_LENGTH);
   }
+  // TODO(honghaiz): Make it configurable from user setting.
+  network_cost_ =
+      (network_->type() == rtc::ADAPTER_TYPE_CELLULAR) ? kMaxNetworkCost : 0;
+
   LOG_J(LS_INFO, this) << "Port created";
 }
 
@@ -250,6 +254,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   c.set_password(password_);
   c.set_network_name(network_->name());
   c.set_network_type(network_->type());
+  c.set_network_cost(network_cost_);
   c.set_generation(generation_);
   c.set_related_address(related_address);
   c.set_foundation(
@@ -691,6 +696,11 @@ class ConnectionRequest : public StunRequest {
           STUN_ATTR_RETRANSMIT_COUNT,
           static_cast<uint32_t>(connection_->pings_since_last_response_.size() -
                                 1)));
+    }
+    uint32_t network_cost = connection_->port()->network_cost();
+    if (network_cost > 0) {
+      request->AddAttribute(
+          new StunUInt32Attribute(STUN_ATTR_NETWORK_COST, network_cost));
     }
 
     // Adding ICE_CONTROLLED or ICE_CONTROLLING attribute based on the role.
@@ -1151,6 +1161,11 @@ std::string Connection::ToDebugId() const {
   return ss.str();
 }
 
+uint32_t Connection::ComputeNetworkCost() const {
+  // TODO(honghaiz): Will add rtt as part of the network cost.
+  return local_candidate().network_cost() + remote_candidate_.network_cost();
+}
+
 std::string Connection::ToString() const {
   const char CONNECT_STATE_ABBREV[2] = {
     '-',  // not connected (false)
@@ -1389,6 +1404,7 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   new_local_candidate.set_password(local_candidate().password());
   new_local_candidate.set_network_name(local_candidate().network_name());
   new_local_candidate.set_network_type(local_candidate().network_type());
+  new_local_candidate.set_network_cost(local_candidate().network_cost());
   new_local_candidate.set_related_address(local_candidate().address());
   new_local_candidate.set_foundation(ComputeFoundation(
       PRFLX_PORT_TYPE, local_candidate().protocol(),

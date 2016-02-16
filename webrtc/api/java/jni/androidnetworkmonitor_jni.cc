@@ -313,6 +313,7 @@ rtc::AdapterType AndroidNetworkMonitor::GetAdapterType(
     const std::string& if_name) {
   auto iter = adapter_type_by_name_.find(if_name);
   if (iter == adapter_type_by_name_.end()) {
+    LOG(LS_WARNING) << "Get adapter type for an unknown interface: " << if_name;
     return rtc::ADAPTER_TYPE_UNKNOWN;
   }
   return iter->second;

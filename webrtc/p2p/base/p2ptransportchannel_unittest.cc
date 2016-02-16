@@ -368,6 +368,13 @@ class P2PTransportChannelTestBase : public testing::Test,
   void AddAddress(int endpoint, const SocketAddress& addr) {
     GetEndpoint(endpoint)->network_manager_.AddInterface(addr);
   }
+  void AddAddress(int endpoint,
+                  const SocketAddress& addr,
+                  const std::string& ifname,
+                  rtc::AdapterType adapter_type) {
+    GetEndpoint(endpoint)->network_manager_.AddInterface(addr, ifname,
+                                                         adapter_type);
+  }
   void RemoveAddress(int endpoint, const SocketAddress& addr) {
     GetEndpoint(endpoint)->network_manager_.RemoveInterface(addr);
   }
@@ -1648,6 +1655,68 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
       RemoteCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[0]));
 
   DestroyChannels();
+}
+
+// Tests that a Wifi-Wifi connection has the highest precedence.
+TEST_F(P2PTransportChannelMultihomedTest, TestPreferWifiToWifiConnection) {
+  // The interface names are chosen so that |cellular| would have higher
+  // candidate priority if it is not for the network type.
+  auto& wifi = kAlternateAddrs;
+  auto& cellular = kPublicAddrs;
+  AddAddress(0, wifi[0], "test0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, cellular[0], "test1", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, wifi[1], "test0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, cellular[1], "test1", rtc::ADAPTER_TYPE_CELLULAR);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  // Need to wait to make sure the connections on both networks are writable.
+  EXPECT_TRUE_WAIT(ep1_ch1()->best_connection() &&
+                       LocalCandidate(ep1_ch1())->address().EqualIPs(wifi[0]) &&
+                       RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]),
+                   1000);
+  EXPECT_TRUE_WAIT(ep2_ch1()->best_connection() &&
+                       LocalCandidate(ep2_ch1())->address().EqualIPs(wifi[1]) &&
+                       RemoteCandidate(ep2_ch1())->address().EqualIPs(wifi[0]),
+                   1000);
+}
+
+// Tests that a Wifi-Cellular connection has higher precedence than
+// a Cellular-Cellular connection.
+TEST_F(P2PTransportChannelMultihomedTest, TestPreferWifiOverCellularNetwork) {
+  // The interface names are chosen so that |cellular| would have higher
+  // candidate priority if it is not for the network type.
+  auto& wifi = kAlternateAddrs;
+  auto& cellular = kPublicAddrs;
+  AddAddress(0, cellular[0], "test1", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, wifi[1], "test0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, cellular[1], "test1", rtc::ADAPTER_TYPE_CELLULAR);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  // Need to wait to make sure the connections on both networks are writable.
+  EXPECT_TRUE_WAIT(ep1_ch1()->best_connection() &&
+                       RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]),
+                   1000);
+  EXPECT_TRUE_WAIT(ep2_ch1()->best_connection() &&
+                       LocalCandidate(ep2_ch1())->address().EqualIPs(wifi[1]),
+                   1000);
 }
 
 // Test that the backup connection is pinged at a rate no faster than
