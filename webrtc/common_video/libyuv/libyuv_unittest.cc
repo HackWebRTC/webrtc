@@ -103,8 +103,8 @@ TestLibYuv::TestLibYuv()
 }
 
 void TestLibYuv::SetUp() {
-  const std::string input_file_name = webrtc::test::ProjectRootPath() +
-                                      "resources/foreman_cif.yuv";
+  const std::string input_file_name = webrtc::test::ResourcePath("foreman_cif",
+                                                                 "yuv");
   source_file_  = fopen(input_file_name.c_str(), "rb");
   ASSERT_TRUE(source_file_ != NULL) << "Cannot read file: "<<
                                        input_file_name << "\n";

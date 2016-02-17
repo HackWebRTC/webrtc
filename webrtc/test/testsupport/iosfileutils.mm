@@ -54,6 +54,18 @@ std::string IOSResourcePath(std::string name, std::string extension) {
   }
 }
 
+// For iOS, we don't have access to the output directory. Return the path to the
+// temporary directory instead. This is mostly used by tests that need to write
+// output files to disk.
+std::string IOSOutputPath()  {
+  @autoreleasepool {
+    NSString* tempDir = NSTemporaryDirectory();
+    if (tempDir == nil)
+        tempDir = @"/tmp";
+    return StdStringFromNSString(tempDir);
+  }
+}
+
 }  // namespace test
 }  // namespace webrtc
 

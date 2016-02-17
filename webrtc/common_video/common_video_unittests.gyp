@@ -35,6 +35,11 @@
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
         }],
+        ['OS=="ios"', {
+          'mac_bundle_resources': [
+            '<(DEPTH)/resources/foreman_cif.yuv',
+          ],
+        }],
       ],
     },
   ],  # targets

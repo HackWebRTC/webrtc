@@ -81,7 +81,13 @@ void ReceivePackets(
   }
 }
 
-TEST(FecTest, FecTest) {
+// Too slow to finish before timeout on iOS. See webrtc:4755.
+#if defined(WEBRTC_IOS)
+#define MAYBE_FecTest DISABLED_FecTest
+#else
+#define MAYBE_FecTest FecTest
+#endif
+TEST(FecTest, MAYBE_FecTest) {
   // TODO(marpan): Split this function into subroutines/helper functions.
   enum { kMaxNumberMediaPackets = 48 };
   enum { kMaxNumberFecPackets = 48 };

@@ -107,6 +107,14 @@
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
             }],
+            ['OS=="ios"', {
+              'mac_bundle_resources': [
+                '<(DEPTH)/resources/audio_coding/testfile32kHz.pcm',
+                '<(DEPTH)/resources/audio_coding/teststereo32kHz.pcm',
+                '<(DEPTH)/resources/foreman_cif.yuv',
+                '<(DEPTH)/resources/paris_qcif.yuv',
+              ],
+            }],
           ],
         },
       ],

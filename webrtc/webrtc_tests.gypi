@@ -204,6 +204,12 @@
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
         }],
+        ['OS=="ios"', {
+          'mac_bundle_resources': [
+            '<(DEPTH)/resources/foreman_cif_short.yuv',
+            '<(DEPTH)/resources/voice_engine/audio_long16.pcm',
+          ],
+        }],
         ['enable_protobuf==1', {
           'defines': [
             'ENABLE_RTC_EVENT_LOG',

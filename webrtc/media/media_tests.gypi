@@ -164,6 +164,15 @@
           'sources!': [
             'sctp/sctpdataengine_unittest.cc',
           ],
+          'mac_bundle_resources': [
+            '<(DEPTH)/resources/media/captured-320x240-2s-48.frames',
+            '<(DEPTH)/resources/media/faces.1280x720_P420.yuv',
+            '<(DEPTH)/resources/media/faces_I420.jpg',
+            '<(DEPTH)/resources/media/faces_I422.jpg',
+            '<(DEPTH)/resources/media/faces_I444.jpg',
+            '<(DEPTH)/resources/media/faces_I411.jpg',
+            '<(DEPTH)/resources/media/faces_I400.jpg',
+          ],
         }],
       ],
     },  # target rtc_media_unittests
