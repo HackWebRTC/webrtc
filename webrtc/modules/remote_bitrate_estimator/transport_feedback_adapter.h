@@ -17,46 +17,44 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 
 namespace webrtc {
 
 class ProcessThread;
+class RemoteBitrateEstimator;
 
 class TransportFeedbackAdapter : public TransportFeedbackObserver,
                                  public CallStatsObserver,
                                  public RemoteBitrateObserver {
  public:
-  TransportFeedbackAdapter(BitrateController* bitrate_controller,
-                           Clock* clock,
-                           ProcessThread* process_thread);
+  TransportFeedbackAdapter(BitrateController* bitrate_controller, Clock* clock);
   virtual ~TransportFeedbackAdapter();
 
-  void AddPacket(uint16_t sequence_number,
-                 size_t length,
-                 bool was_paced) override;
-
-  void OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
-
-  void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
-
   void SetBitrateEstimator(RemoteBitrateEstimator* rbe);
-
   RemoteBitrateEstimator* GetBitrateEstimator() const {
     return bitrate_estimator_.get();
   }
 
+  // Implements TransportFeedbackObserver.
+  void AddPacket(uint16_t sequence_number,
+                 size_t length,
+                 bool was_paced) override;
+  void OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
+  void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
+
+  // Implements CallStatsObserver.
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
+
  private:
+  // Implements RemoteBitrateObserver.
   void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                uint32_t bitrate) override;
-  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
   rtc::CriticalSection lock_;
   SendTimeHistory send_time_history_ GUARDED_BY(&lock_);
   BitrateController* bitrate_controller_;
   rtc::scoped_ptr<RemoteBitrateEstimator> bitrate_estimator_;
-  ProcessThread* const process_thread_;
   Clock* const clock_;
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;

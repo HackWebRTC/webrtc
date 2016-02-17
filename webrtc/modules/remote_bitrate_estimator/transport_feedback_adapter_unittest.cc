@@ -21,7 +21,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 using ::testing::_;
@@ -41,16 +40,13 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   virtual ~TransportFeedbackAdapterTest() {}
 
   virtual void SetUp() {
-    adapter_.reset(new TransportFeedbackAdapter(&bitrate_controller_, &clock_,
-                                                &process_thread_));
+    adapter_.reset(new TransportFeedbackAdapter(&bitrate_controller_, &clock_));
 
     bitrate_estimator_ = new MockRemoteBitrateEstimator();
-    EXPECT_CALL(process_thread_, RegisterModule(bitrate_estimator_)).Times(1);
     adapter_->SetBitrateEstimator(bitrate_estimator_);
   }
 
   virtual void TearDown() {
-    EXPECT_CALL(process_thread_, DeRegisterModule(bitrate_estimator_)).Times(1);
     adapter_.reset();
   }
 
@@ -109,7 +105,6 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   }
 
   SimulatedClock clock_;
-  MockProcessThread process_thread_;
   MockRemoteBitrateEstimator* bitrate_estimator_;
   MockBitrateControllerAdapter bitrate_controller_;
   rtc::scoped_ptr<TransportFeedbackAdapter> adapter_;

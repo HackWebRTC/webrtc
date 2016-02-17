@@ -28,25 +28,20 @@ const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
 
 TransportFeedbackAdapter::TransportFeedbackAdapter(
     BitrateController* bitrate_controller,
-    Clock* clock,
-    ProcessThread* process_thread)
+    Clock* clock)
     : send_time_history_(clock, kSendTimeHistoryWindowMs),
       bitrate_controller_(bitrate_controller),
-      process_thread_(process_thread),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
       last_timestamp_us_(kNoTimestamp) {}
 
 TransportFeedbackAdapter::~TransportFeedbackAdapter() {
-  if (bitrate_estimator_.get())
-    process_thread_->DeRegisterModule(bitrate_estimator_.get());
 }
 
 void TransportFeedbackAdapter::SetBitrateEstimator(
     RemoteBitrateEstimator* rbe) {
   if (bitrate_estimator_.get() != rbe) {
     bitrate_estimator_.reset(rbe);
-    process_thread_->RegisterModule(rbe);
   }
 }
 

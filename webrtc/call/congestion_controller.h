@@ -12,6 +12,12 @@
 #define WEBRTC_CALL_CONGESTION_CONTROLLER_H_
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread_checker.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/pacing/packet_router.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
+#include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
 #include "webrtc/stream.h"
 
 namespace rtc {
@@ -22,38 +28,30 @@ namespace webrtc {
 
 class BitrateController;
 class BitrateObserver;
-class CallStats;
 class Clock;
 class PacedSender;
-class PacketRouter;
 class ProcessThread;
 class RemoteBitrateEstimator;
 class RemoteBitrateObserver;
-class RemoteEstimatorProxy;
-class RtpRtcp;
-class TransportFeedbackAdapter;
 class TransportFeedbackObserver;
 
-class CongestionController {
+class CongestionController : public CallStatsObserver, public Module {
  public:
   CongestionController(Clock* clock,
-                       ProcessThread* process_thread,
-                       CallStats* call_stats,
                        BitrateObserver* bitrate_observer,
                        RemoteBitrateObserver* remote_bitrate_observer);
   virtual ~CongestionController();
+
   virtual void SetBweBitrates(int min_bitrate_bps,
                               int start_bitrate_bps,
                               int max_bitrate_bps);
-
   virtual void SignalNetworkState(NetworkState state);
-
   virtual BitrateController* GetBitrateController() const;
   virtual RemoteBitrateEstimator* GetRemoteBitrateEstimator(
-      bool send_side_bwe) const;
+      bool send_side_bwe);
   virtual int64_t GetPacerQueuingDelayMs() const;
-  virtual PacedSender* pacer() const { return pacer_.get(); }
-  virtual PacketRouter* packet_router() const { return packet_router_.get(); }
+  virtual PacedSender* pacer() { return pacer_.get(); }
+  virtual PacketRouter* packet_router() { return &packet_router_; }
   virtual TransportFeedbackObserver* GetTransportFeedbackObserver();
 
   virtual void UpdatePacerBitrate(int bitrate_kbps,
@@ -62,21 +60,23 @@ class CongestionController {
 
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet);
 
+  // Implements CallStatsObserver.
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
+
+  // Implements Module.
+  int64_t TimeUntilNextProcess() override;
+  int32_t Process() override;
+
  private:
   Clock* const clock_;
-  rtc::scoped_ptr<PacketRouter> packet_router_;
-  rtc::scoped_ptr<PacedSender> pacer_;
-  rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
-  rtc::scoped_ptr<RemoteEstimatorProxy> remote_estimator_proxy_;
-
-  // Registered at construct time and assumed to outlive this class.
-  ProcessThread* const process_thread_;
-  CallStats* const call_stats_;
-
-  rtc::scoped_ptr<ProcessThread> pacer_thread_;
-
-  rtc::scoped_ptr<BitrateController> bitrate_controller_;
-  rtc::scoped_ptr<TransportFeedbackAdapter> transport_feedback_adapter_;
+  rtc::ThreadChecker config_thread_checker_;
+  const rtc::scoped_ptr<PacedSender> pacer_;
+  const rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  const rtc::scoped_ptr<ProcessThread> pacer_thread_;
+  const rtc::scoped_ptr<BitrateController> bitrate_controller_;
+  PacketRouter packet_router_;
+  RemoteEstimatorProxy remote_estimator_proxy_;
+  TransportFeedbackAdapter transport_feedback_adapter_;
   int min_bitrate_bps_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(CongestionController);

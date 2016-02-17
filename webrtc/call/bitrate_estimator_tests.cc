@@ -267,6 +267,7 @@ TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefaultForVideo) {
   video_send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_TRUE(receiver_log_.Wait());
@@ -276,6 +277,7 @@ TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForVideo) {
   video_send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
@@ -287,6 +289,7 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
   video_send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_TRUE(receiver_log_.Wait());
@@ -303,6 +306,7 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOFForVideo) {
   video_send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_TRUE(receiver_log_.Wait());

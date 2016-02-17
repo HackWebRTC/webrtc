@@ -21,13 +21,9 @@ namespace test {
 class MockCongestionController : public CongestionController {
  public:
   MockCongestionController(Clock* clock,
-                           ProcessThread* process_thread,
-                           CallStats* call_stats,
                            BitrateObserver* bitrate_observer,
                            RemoteBitrateObserver* remote_bitrate_observer)
       : CongestionController(clock,
-                             process_thread,
-                             call_stats,
                              bitrate_observer,
                              remote_bitrate_observer) {}
   MOCK_METHOD3(SetBweBitrates,
@@ -36,11 +32,11 @@ class MockCongestionController : public CongestionController {
                     int max_bitrate_bps));
   MOCK_METHOD1(SignalNetworkState, void(NetworkState state));
   MOCK_CONST_METHOD0(GetBitrateController, BitrateController*());
-  MOCK_CONST_METHOD1(GetRemoteBitrateEstimator,
+  MOCK_METHOD1(GetRemoteBitrateEstimator,
                      RemoteBitrateEstimator*(bool send_side_bwe));
   MOCK_CONST_METHOD0(GetPacerQueuingDelayMs, int64_t());
-  MOCK_CONST_METHOD0(pacer, PacedSender*());
-  MOCK_CONST_METHOD0(packet_router, PacketRouter*());
+  MOCK_METHOD0(pacer, PacedSender*());
+  MOCK_METHOD0(packet_router, PacketRouter*());
   MOCK_METHOD0(GetTransportFeedbackObserver, TransportFeedbackObserver*());
   MOCK_METHOD3(UpdatePacerBitrate,
                void(int bitrate_kbps,

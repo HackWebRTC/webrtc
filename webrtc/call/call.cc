@@ -199,12 +199,7 @@ Call::Call(const Call::Config& config)
       pacer_bitrate_sum_kbits_(0),
       num_bitrate_updates_(0),
       remb_(clock_),
-      congestion_controller_(
-          new CongestionController(clock_,
-                                   module_process_thread_.get(),
-                                   call_stats_.get(),
-                                   this,
-                                   &remb_)) {
+      congestion_controller_(new CongestionController(clock_, this, &remb_)) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -221,6 +216,8 @@ Call::Call(const Call::Config& config)
   Trace::CreateTrace();
   module_process_thread_->Start();
   module_process_thread_->RegisterModule(call_stats_.get());
+  module_process_thread_->RegisterModule(congestion_controller_.get());
+  call_stats_->RegisterStatsObserver(congestion_controller_.get());
 
   congestion_controller_->SetBweBitrates(
       config_.bitrate_config.min_bitrate_bps,
@@ -242,6 +239,8 @@ Call::~Call() {
   RTC_CHECK(video_receive_ssrcs_.empty());
   RTC_CHECK(video_receive_streams_.empty());
 
+  call_stats_->DeregisterStatsObserver(congestion_controller_.get());
+  module_process_thread_->DeRegisterModule(congestion_controller_.get());
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
   Trace::ReturnTrace();
