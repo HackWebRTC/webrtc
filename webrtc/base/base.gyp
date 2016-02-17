@@ -22,13 +22,12 @@
         }],
       ],
     }],
-    # TODO(tkchin): Mac support. There are a bunch of problems right now because
-    # of some settings pulled down from Chromium.
-    ['OS=="ios"', {
+    ['OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7")', {
       'targets': [
         {
           'target_name': 'rtc_base_objc',
           'type': 'static_library',
+          'includes': [ '../build/objc_common.gypi' ],
           'dependencies': [
             'rtc_base',
           ],
@@ -60,10 +59,6 @@
               },
             }],
           ],
-          'xcode_settings': {
-            'CLANG_ENABLE_OBJC_ARC': 'YES',
-            'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'YES',
-          },
         }
       ],
     }], # OS=="ios"
