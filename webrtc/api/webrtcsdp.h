@@ -33,8 +33,10 @@ struct SdpParseError;
 // Serialize SessionDescription including candidates if
 // JsepSessionDescription has candidates.
 // jdesc - The JsepSessionDescription object to be serialized.
+// unified_plan_sdp - If set to true, include "a=msid" lines where appropriate.
 // return - SDP string serialized from the arguments.
-std::string SdpSerialize(const JsepSessionDescription& jdesc);
+std::string SdpSerialize(const JsepSessionDescription& jdesc,
+                         bool unified_plan_sdp);
 
 // Serializes the passed in IceCandidateInterface to a SDP string.
 // candidate - The candidate to be serialized.

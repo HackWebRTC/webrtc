@@ -53,6 +53,11 @@ class JsepIceCandidate : public IceCandidateInterface {
 // This implementation stores JsepIceCandidates.
 class JsepCandidateCollection : public IceCandidateCollection {
  public:
+  JsepCandidateCollection() {}
+  // Move constructor is defined so that a vector of JsepCandidateCollections
+  // can be resized.
+  JsepCandidateCollection(JsepCandidateCollection&& o)
+      : candidates_(std::move(o.candidates_)) {}
   ~JsepCandidateCollection();
   virtual size_t count() const {
     return candidates_.size();
@@ -68,6 +73,8 @@ class JsepCandidateCollection : public IceCandidateCollection {
 
  private:
   std::vector<JsepIceCandidate*> candidates_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(JsepCandidateCollection);
 };
 
 }  // namespace webrtc

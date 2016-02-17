@@ -151,9 +151,10 @@ const IceCandidateCollection* JsepSessionDescription::candidates(
 }
 
 bool JsepSessionDescription::ToString(std::string* out) const {
-  if (!description_ || !out)
+  if (!description_ || !out) {
     return false;
-  *out = SdpSerialize(*this);
+  }
+  *out = SdpSerialize(*this, false);
   return !out->empty();
 }
 

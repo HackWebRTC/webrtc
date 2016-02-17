@@ -84,7 +84,7 @@ namespace webrtc {
 // the form:
 // <type>=<value>
 // where <type> MUST be exactly one case-significant character.
-static const int kLinePrefixLength = 2;  // Lenght of <type>=
+static const int kLinePrefixLength = 2;  // Length of <type>=
 static const char kLineTypeVersion = 'v';
 static const char kLineTypeOrigin = 'o';
 static const char kLineTypeSessionName = 's';
@@ -104,6 +104,7 @@ static const char kLineTypeAttributes = 'a';
 // Attributes
 static const char kAttributeGroup[] = "group";
 static const char kAttributeMid[] = "mid";
+static const char kAttributeMsid[] = "msid";
 static const char kAttributeRtcpMux[] = "rtcp-mux";
 static const char kAttributeRtcpReducedSize[] = "rtcp-rsize";
 static const char kAttributeSsrc[] = "ssrc";
@@ -212,15 +213,14 @@ const int kWildcardPayloadType = -1;
 
 struct SsrcInfo {
   SsrcInfo()
-      : msid_identifier(kDefaultMsid),
-        // TODO(ronghuawu): What should we do if the appdata doesn't appear?
+      : stream_id(kDefaultMsid),
+        // TODO(ronghuawu): What should we do if the track id doesn't appear?
         // Create random string (which will be used as track label later)?
-        msid_appdata(rtc::CreateRandomString(8)) {
-  }
+        track_id(rtc::CreateRandomString(8)) {}
   uint32_t ssrc_id;
   std::string cname;
-  std::string msid_identifier;
-  std::string msid_appdata;
+  std::string stream_id;
+  std::string track_id;
 
   // For backward compatibility.
   // TODO(ronghuawu): Remove below 2 fields once all the clients support msid.
@@ -236,12 +236,13 @@ static void BuildMediaDescription(const ContentInfo* content_info,
                                   const TransportInfo* transport_info,
                                   const MediaType media_type,
                                   const std::vector<Candidate>& candidates,
+                                  bool unified_plan_sdp,
                                   std::string* message);
 static void BuildSctpContentAttributes(std::string* message, int sctp_port);
-static void BuildRtpContentAttributes(
-    const MediaContentDescription* media_desc,
-    const MediaType media_type,
-    std::string* message);
+static void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
+                                      const MediaType media_type,
+                                      bool unified_plan_sdp,
+                                      std::string* message);
 static void BuildRtpMap(const MediaContentDescription* media_desc,
                         const MediaType media_type,
                         std::string* message);
@@ -318,6 +319,10 @@ static bool ParseFingerprintAttribute(const std::string& line,
 static bool ParseDtlsSetup(const std::string& line,
                            cricket::ConnectionRole* role,
                            SdpParseError* error);
+static bool ParseMsidAttribute(const std::string& line,
+                               std::string* stream_id,
+                               std::string* track_id,
+                               SdpParseError* error);
 
 // Helper functions
 
@@ -579,18 +584,15 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
 
     std::string sync_label;
     std::string track_id;
-    if (ssrc_info->msid_identifier == kDefaultMsid &&
-        !ssrc_info->mslabel.empty()) {
+    if (ssrc_info->stream_id == kDefaultMsid && !ssrc_info->mslabel.empty()) {
       // If there's no msid and there's mslabel, we consider this is a sdp from
       // a older version of client that doesn't support msid.
       // In that case, we use the mslabel and label to construct the track.
       sync_label = ssrc_info->mslabel;
       track_id = ssrc_info->label;
     } else {
-      sync_label = ssrc_info->msid_identifier;
-      // The appdata consists of the "id" attribute of a MediaStreamTrack, which
-      // is corresponding to the "id" attribute of StreamParams.
-      track_id = ssrc_info->msid_appdata;
+      sync_label = ssrc_info->stream_id;
+      track_id = ssrc_info->track_id;
     }
     if (sync_label.empty() || track_id.empty()) {
       ASSERT(false);
@@ -776,7 +778,8 @@ static void GetCandidatesByMindex(const SessionDescriptionInterface& desci,
   }
 }
 
-std::string SdpSerialize(const JsepSessionDescription& jdesc) {
+std::string SdpSerialize(const JsepSessionDescription& jdesc,
+                         bool unified_plan_sdp) {
   const cricket::SessionDescription* desc = jdesc.description();
   if (!desc) {
     return "";
@@ -847,10 +850,8 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
       static_cast<const MediaContentDescription*>(it->description);
     std::vector<Candidate> candidates;
     GetCandidatesByMindex(jdesc, ++mline_index, &candidates);
-    BuildMediaDescription(&*it,
-                          desc->GetTransportInfoByName(it->name),
-                          mdesc->type(),
-                          candidates,
+    BuildMediaDescription(&*it, desc->GetTransportInfoByName(it->name),
+                          mdesc->type(), candidates, unified_plan_sdp,
                           &message);
   }
   return message;
@@ -1162,6 +1163,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
                            const TransportInfo* transport_info,
                            const MediaType media_type,
                            const std::vector<Candidate>& candidates,
+                           bool unified_plan_sdp,
                            std::string* message) {
   ASSERT(message != NULL);
   if (content_info == NULL || message == NULL) {
@@ -1337,7 +1339,8 @@ void BuildMediaDescription(const ContentInfo* content_info,
   if (IsDtlsSctp(media_desc->protocol())) {
     BuildSctpContentAttributes(message, sctp_port);
   } else if (IsRtp(media_desc->protocol())) {
-    BuildRtpContentAttributes(media_desc, media_type, message);
+    BuildRtpContentAttributes(media_desc, media_type, unified_plan_sdp,
+                              message);
   }
 }
 
@@ -1354,10 +1357,11 @@ void BuildSctpContentAttributes(std::string* message, int sctp_port) {
   AddLine(os.str(), message);
 }
 
-void BuildRtpContentAttributes(
-    const MediaContentDescription* media_desc,
-    const MediaType media_type,
-    std::string* message) {
+// If unified_plan_sdp is true, will use "a=msid".
+void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
+                               const MediaType media_type,
+                               bool unified_plan_sdp,
+                               std::string* message) {
   std::ostringstream os;
   // RFC 5285
   // a=extmap:<value>["/"<direction>] <URI> <extensionattributes>
@@ -1388,6 +1392,22 @@ void BuildRtpContentAttributes(
       break;
   }
   AddLine(os.str(), message);
+
+  // draft-ietf-mmusic-msid-11
+  // a=msid:<stream id> <track id>
+  if (unified_plan_sdp && !media_desc->streams().empty()) {
+    if (media_desc->streams().size() > 1u) {
+      LOG(LS_WARNING) << "Trying to serialize unified plan SDP with more than "
+                      << "one track in a media section. Omitting 'a=msid'.";
+    } else {
+      auto track = media_desc->streams().begin();
+      const std::string& stream_id = track->sync_label;
+      std::ostringstream os;
+      InitAttrLine(kAttributeMsid, &os);
+      os << kSdpDelimiterColon << stream_id << kSdpDelimiterSpace << track->id;
+      AddLine(os.str(), message);
+    }
+  }
 
   // RFC 5761
   // a=rtcp-mux
@@ -1457,17 +1477,18 @@ void BuildRtpContentAttributes(
 
       // draft-alvestrand-mmusic-msid-00
       // a=ssrc:<ssrc-id> msid:identifier [appdata]
-      // The appdata consists of the "id" attribute of a MediaStreamTrack, which
-      // is corresponding to the "name" attribute of StreamParams.
-      std::string appdata = track->id;
+      // The appdata consists of the "id" attribute of a MediaStreamTrack,
+      // which corresponds to the "id" attribute of StreamParams.
+      const std::string& stream_id = track->sync_label;
       std::ostringstream os;
       InitAttrLine(kAttributeSsrc, &os);
       os << kSdpDelimiterColon << ssrc << kSdpDelimiterSpace
-         << kSsrcAttributeMsid << kSdpDelimiterColon << track->sync_label
-         << kSdpDelimiterSpace << appdata;
+         << kSsrcAttributeMsid << kSdpDelimiterColon << stream_id
+         << kSdpDelimiterSpace << track->id;
       AddLine(os.str(), message);
 
-      // TODO(ronghuawu): Remove below code which is for backward compatibility.
+      // TODO(ronghuawu): Remove below code which is for backward
+      // compatibility.
       // draft-alvestrand-rtcweb-mid-01
       // a=ssrc:<ssrc-id> mslabel:<value>
       // The label isn't yet defined.
@@ -2032,6 +2053,29 @@ static bool ParseDtlsSetup(const std::string& line,
   return true;
 }
 
+static bool ParseMsidAttribute(const std::string& line,
+                               std::string* stream_id,
+                               std::string* track_id,
+                               SdpParseError* error) {
+  // draft-ietf-mmusic-msid-11
+  // a=msid:<stream id> <track id>
+  // msid-value = msid-id [ SP msid-appdata ]
+  // msid-id = 1*64token-char ; see RFC 4566
+  // msid-appdata = 1*64token-char  ; see RFC 4566
+  std::string field1;
+  if (!rtc::tokenize_first(line.substr(kLinePrefixLength), kSdpDelimiterSpace,
+                           &field1, track_id)) {
+    const size_t expected_fields = 2;
+    return ParseFailedExpectFieldNum(line, expected_fields, error);
+  }
+
+  // msid:<msid-id>
+  if (!GetValue(field1, kAttributeMsid, stream_id, error)) {
+    return false;
+  }
+  return true;
+}
+
 // RFC 3551
 //  PT   encoding    media type  clock rate   channels
 //                      name                    (Hz)
@@ -2456,6 +2500,8 @@ bool ParseContent(const std::string& message,
   SsrcGroupVec ssrc_groups;
   std::string maxptime_as_string;
   std::string ptime_as_string;
+  std::string stream_id;
+  std::string track_id;
 
   // Loop until the next m line
   while (!IsLineType(message, kLineTypeMedia, *pos)) {
@@ -2615,11 +2661,26 @@ bool ParseContent(const std::string& message,
         }
         if (flag_value.compare(kValueConference) == 0)
           media_desc->set_conference_mode(true);
+      } else if (HasAttribute(line, kAttributeMsid)) {
+        if (!ParseMsidAttribute(line, &stream_id, &track_id, error)) {
+          return false;
+        }
       }
     } else {
       // Only parse lines that we are interested of.
       LOG(LS_INFO) << "Ignored line: " << line;
       continue;
+    }
+  }
+
+  // Found an msid attribute.
+  // Setting the stream_id/track_id will cause only one StreamParams
+  // to be created in CreateTracksFromSsrcInfos, containing all the SSRCs from
+  // the m= section.
+  if (!stream_id.empty() && !track_id.empty()) {
+    for (SsrcInfo& ssrc_info : ssrc_infos) {
+      ssrc_info.stream_id = stream_id;
+      ssrc_info.track_id = track_id;
     }
   }
 
@@ -2642,9 +2703,8 @@ bool ParseContent(const std::string& message,
   }
 
   // Add the new tracks to the |media_desc|.
-  for (StreamParamsVec::iterator track = tracks.begin();
-       track != tracks.end(); ++track) {
-    media_desc->AddStream(*track);
+  for (StreamParams& track : tracks) {
+    media_desc->AddStream(track);
   }
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
@@ -2749,9 +2809,9 @@ bool ParseSsrcAttribute(const std::string& line, SsrcInfoVec* ssrc_infos,
                          "Expected format \"msid:<identifier>[ <appdata>]\".",
                          error);
     }
-    ssrc_info->msid_identifier = fields[0];
+    ssrc_info->stream_id = fields[0];
     if (fields.size() == 2) {
-      ssrc_info->msid_appdata = fields[1];
+      ssrc_info->track_id = fields[1];
     }
   } else if (attribute == kSsrcAttributeMslabel) {
     // draft-alvestrand-rtcweb-mid-01
