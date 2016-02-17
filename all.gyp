@@ -26,7 +26,7 @@
             'webrtc/webrtc_examples.gyp:*',
           ],
         }],
-        ['OS=="ios" or (OS=="mac" and target_arch!="ia32") and include_tests==1', {
+        ['(OS=="ios" or (OS=="mac" and target_arch!="ia32")) and include_tests==1', {
           'dependencies': [
             'talk/app/webrtc/legacy_objc_api_tests.gyp:*',
           ],
