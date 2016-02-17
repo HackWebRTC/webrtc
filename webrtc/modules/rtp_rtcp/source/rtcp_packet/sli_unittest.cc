@@ -15,7 +15,6 @@
 
 using testing::ElementsAreArray;
 using testing::make_tuple;
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::Sli;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
@@ -56,9 +55,9 @@ TEST(RtcpPacketSliTest, Create) {
   sli.To(kRemoteSsrc);
   sli.WithPictureId(kPictureId, kFirstMb, kNumberOfMb);
 
-  rtc::scoped_ptr<RawPacket> packet(sli.Build());
+  rtc::Buffer packet = sli.Build();
 
-  EXPECT_THAT(make_tuple(packet->Buffer(), packet->Length()),
+  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));
 }
 
@@ -81,10 +80,10 @@ TEST(RtcpPacketSliTest, ParseFailsOnTooSmallPacket) {
   sli.To(kRemoteSsrc);
   sli.WithPictureId(kPictureId, kFirstMb, kNumberOfMb);
 
-  rtc::scoped_ptr<RawPacket> packet(sli.Build());
-  packet->MutableBuffer()[3]--;  // Decrease size by 1 word (4 bytes).
+  rtc::Buffer packet = sli.Build();
+  packet.data()[3]--;  // Decrease size by 1 word (4 bytes).
 
-  EXPECT_FALSE(ParseSli(packet->Buffer(), packet->Length() - 4, &sli));
+  EXPECT_FALSE(ParseSli(packet.data(), packet.size() - 4, &sli));
 }
 
 }  // namespace

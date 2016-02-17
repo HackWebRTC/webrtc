@@ -16,7 +16,6 @@
 using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::make_tuple;
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::TmmbItem;
 using webrtc::rtcp::Tmmbr;
 using webrtc::RTCPUtility::RtcpCommonHeader;
@@ -47,9 +46,9 @@ TEST(RtcpPacketTmmbrTest, Create) {
   tmmbr.From(kSenderSsrc);
   tmmbr.WithTmmbr(TmmbItem(kRemoteSsrc, kBitrateBps, kOverhead));
 
-  rtc::scoped_ptr<RawPacket> packet = tmmbr.Build();
+  rtc::Buffer packet = tmmbr.Build();
 
-  EXPECT_THAT(make_tuple(packet->Buffer(), packet->Length()),
+  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));
 }
 
@@ -71,10 +70,10 @@ TEST(RtcpPacketTmmbrTest, CreateAndParseWithTwoEntries) {
   tmmbr.WithTmmbr(TmmbItem(kRemoteSsrc, kBitrateBps, kOverhead));
   tmmbr.WithTmmbr(TmmbItem(kRemoteSsrc + 1, 4 * kBitrateBps, kOverhead + 1));
 
-  rtc::scoped_ptr<RawPacket> packet = tmmbr.Build();
+  rtc::Buffer packet = tmmbr.Build();
 
   Tmmbr parsed;
-  EXPECT_TRUE(ParseTmmbr(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_TRUE(ParseTmmbr(packet.data(), packet.size(), &parsed));
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(2u, parsed.requests().size());

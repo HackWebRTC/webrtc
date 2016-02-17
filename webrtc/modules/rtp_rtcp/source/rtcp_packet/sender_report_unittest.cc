@@ -12,7 +12,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReportBlock;
 using webrtc::rtcp::SenderReport;
 using webrtc::RTCPUtility::RtcpCommonHeader;
@@ -25,13 +24,12 @@ class RtcpPacketSenderReportTest : public ::testing::Test {
   const uint32_t kSenderSsrc = 0x12345678;
   const uint32_t kRemoteSsrc = 0x23456789;
 
-  void ParsePacket(const RawPacket& packet) {
+  void ParsePacket(const rtc::Buffer& packet) {
     RtcpCommonHeader header;
-    EXPECT_TRUE(
-        RtcpParseCommonHeader(packet.Buffer(), packet.Length(), &header));
-    EXPECT_EQ(packet.Length(), header.BlockSize());
+    EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
+    EXPECT_EQ(packet.size(), header.BlockSize());
     EXPECT_TRUE(parsed_.Parse(
-        header, packet.Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+        header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
   }
 
   // Only ParsePacket can change parsed, tests should use it in readonly mode.
@@ -54,8 +52,8 @@ TEST_F(RtcpPacketSenderReportTest, WithoutReportBlocks) {
   sr.WithPacketCount(kPacketCount);
   sr.WithOctetCount(kOctetCount);
 
-  rtc::scoped_ptr<RawPacket> packet = sr.Build();
-  ParsePacket(*packet);
+  rtc::Buffer packet = sr.Build();
+  ParsePacket(packet);
 
   EXPECT_EQ(kSenderSsrc, parsed().sender_ssrc());
   EXPECT_EQ(kNtp, parsed().ntp());
@@ -73,8 +71,8 @@ TEST_F(RtcpPacketSenderReportTest, WithOneReportBlock) {
   sr.From(kSenderSsrc);
   EXPECT_TRUE(sr.WithReportBlock(rb));
 
-  rtc::scoped_ptr<RawPacket> packet = sr.Build();
-  ParsePacket(*packet);
+  rtc::Buffer packet = sr.Build();
+  ParsePacket(packet);
 
   EXPECT_EQ(kSenderSsrc, parsed().sender_ssrc());
   EXPECT_EQ(1u, parsed().report_blocks().size());
@@ -92,8 +90,8 @@ TEST_F(RtcpPacketSenderReportTest, WithTwoReportBlocks) {
   EXPECT_TRUE(sr.WithReportBlock(rb1));
   EXPECT_TRUE(sr.WithReportBlock(rb2));
 
-  rtc::scoped_ptr<RawPacket> packet = sr.Build();
-  ParsePacket(*packet);
+  rtc::Buffer packet = sr.Build();
+  ParsePacket(packet);
 
   EXPECT_EQ(kSenderSsrc, parsed().sender_ssrc());
   EXPECT_EQ(2u, parsed().report_blocks().size());

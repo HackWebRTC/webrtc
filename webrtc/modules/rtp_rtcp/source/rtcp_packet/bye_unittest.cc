@@ -17,7 +17,6 @@
 using ::testing::ElementsAre;
 
 using webrtc::rtcp::Bye;
-using webrtc::rtcp::RawPacket;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
@@ -33,16 +32,15 @@ class RtcpPacketByeTest : public ::testing::Test {
   void BuildPacket() { packet = bye.Build(); }
   void ParsePacket() {
     RtcpCommonHeader header;
-    EXPECT_TRUE(
-        RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header));
+    EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
     // Check that there is exactly one RTCP packet in the buffer.
-    EXPECT_EQ(header.BlockSize(), packet->Length());
+    EXPECT_EQ(header.BlockSize(), packet.size());
     EXPECT_TRUE(parsed_bye.Parse(
-        header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+        header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
   }
 
   Bye bye;
-  rtc::scoped_ptr<RawPacket> packet;
+  rtc::Buffer packet;
   Bye parsed_bye;
 };
 
@@ -64,7 +62,7 @@ TEST_F(RtcpPacketByeTest, WithCsrcs) {
   EXPECT_TRUE(bye.reason().empty());
 
   BuildPacket();
-  EXPECT_EQ(16u, packet->Length());  // Header: 4, 3xSRCs: 12, Reason: 0.
+  EXPECT_EQ(16u, packet.size());  // Header: 4, 3xSRCs: 12, Reason: 0.
 
   ParsePacket();
 
@@ -82,7 +80,7 @@ TEST_F(RtcpPacketByeTest, WithCsrcsAndReason) {
   bye.WithReason(kReason);
 
   BuildPacket();
-  EXPECT_EQ(28u, packet->Length());  // Header: 4, 3xSRCs: 12, Reason: 12.
+  EXPECT_EQ(28u, packet.size());  // Header: 4, 3xSRCs: 12, Reason: 12.
 
   ParsePacket();
 
@@ -148,11 +146,11 @@ TEST_F(RtcpPacketByeTest, ParseFailOnInvalidSrcCount) {
   BuildPacket();
 
   RtcpCommonHeader header;
-  RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header);
+  RtcpParseCommonHeader(packet.data(), packet.size(), &header);
   header.count_or_format = 2;  // Lie there are 2 ssrcs, not one.
 
   EXPECT_FALSE(parsed_bye.Parse(
-      header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+      header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
 }
 
 TEST_F(RtcpPacketByeTest, ParseFailOnInvalidReasonLength) {
@@ -162,11 +160,11 @@ TEST_F(RtcpPacketByeTest, ParseFailOnInvalidReasonLength) {
   BuildPacket();
 
   RtcpCommonHeader header;
-  RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header);
+  RtcpParseCommonHeader(packet.data(), packet.size(), &header);
   header.payload_size_bytes -= 4;  // Payload is usually 32bit aligned.
 
   EXPECT_FALSE(parsed_bye.Parse(
-      header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+      header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
 }
 
 }  // namespace

@@ -31,28 +31,27 @@ void RtcpPacket::Append(RtcpPacket* packet) {
   appended_packets_.push_back(packet);
 }
 
-rtc::scoped_ptr<RawPacket> RtcpPacket::Build() const {
+rtc::Buffer RtcpPacket::Build() const {
   size_t length = 0;
-  rtc::scoped_ptr<RawPacket> packet(new RawPacket(IP_PACKET_SIZE));
+  rtc::Buffer packet(IP_PACKET_SIZE);
 
   class PacketVerifier : public PacketReadyCallback {
    public:
-    explicit PacketVerifier(RawPacket* packet)
+    explicit PacketVerifier(rtc::Buffer* packet)
         : called_(false), packet_(packet) {}
     virtual ~PacketVerifier() {}
     void OnPacketReady(uint8_t* data, size_t length) override {
       RTC_CHECK(!called_) << "Fragmentation not supported.";
       called_ = true;
-      packet_->SetLength(length);
+      packet_->SetSize(length);
     }
 
    private:
     bool called_;
-    RawPacket* const packet_;
-  } verifier(packet.get());
-  CreateAndAddAppended(packet->MutableBuffer(), &length, packet->BufferLength(),
-                       &verifier);
-  OnBufferFull(packet->MutableBuffer(), &length, &verifier);
+    rtc::Buffer* const packet_;
+  } verifier(&packet);
+  CreateAndAddAppended(packet.data(), &length, packet.capacity(), &verifier);
+  OnBufferFull(packet.data(), &length, &verifier);
   return packet;
 }
 
@@ -120,38 +119,6 @@ void RtcpPacket::CreateHeader(
   AssignUWord8(buffer, pos, (kVersion << 6) + count_or_format);
   AssignUWord8(buffer, pos, packet_type);
   AssignUWord16(buffer, pos, length);
-}
-
-RawPacket::RawPacket(size_t buffer_length)
-    : buffer_length_(buffer_length), length_(0) {
-  buffer_.reset(new uint8_t[buffer_length]);
-}
-
-RawPacket::RawPacket(const uint8_t* packet, size_t packet_length)
-    : buffer_length_(packet_length), length_(packet_length) {
-  buffer_.reset(new uint8_t[packet_length]);
-  memcpy(buffer_.get(), packet, packet_length);
-}
-
-const uint8_t* RawPacket::Buffer() const {
-  return buffer_.get();
-}
-
-uint8_t* RawPacket::MutableBuffer() {
-  return buffer_.get();
-}
-
-size_t RawPacket::BufferLength() const {
-  return buffer_length_;
-}
-
-size_t RawPacket::Length() const {
-  return length_;
-}
-
-void RawPacket::SetLength(size_t length) {
-  assert(length <= buffer_length_);
-  length_ = length;
 }
 
 }  // namespace rtcp

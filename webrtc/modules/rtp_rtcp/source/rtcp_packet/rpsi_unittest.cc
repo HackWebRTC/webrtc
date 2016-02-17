@@ -16,7 +16,6 @@
 
 using testing::ElementsAreArray;
 using testing::make_tuple;
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::Rpsi;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
@@ -66,9 +65,9 @@ TEST(RtcpPacketRpsiTest, Create) {
   rpsi.WithPayloadType(kPayloadType);
   rpsi.WithPictureId(kPictureId);
 
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
+  rtc::Buffer packet = rpsi.Build();
 
-  EXPECT_THAT(make_tuple(packet->Buffer(), packet->Length()),
+  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));
 }
 
@@ -77,10 +76,10 @@ TEST(RtcpPacketRpsiTest, ParseFailsOnTooSmallPacket) {
   rpsi.From(kSenderSsrc);
   rpsi.To(kRemoteSsrc);
 
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
-  packet->MutableBuffer()[3]--;  // Reduce size field by one word (4 bytes).
+  rtc::Buffer packet = rpsi.Build();
+  packet.data()[3]--;  // Reduce size field by one word (4 bytes).
 
-  EXPECT_FALSE(ParseRpsi(packet->Buffer(), packet->Length() - 4));
+  EXPECT_FALSE(ParseRpsi(packet.data(), packet.size() - 4));
 }
 
 TEST(RtcpPacketRpsiTest, ParseFailsOnFractionalPaddingBytes) {
@@ -88,14 +87,14 @@ TEST(RtcpPacketRpsiTest, ParseFailsOnFractionalPaddingBytes) {
   rpsi.From(kSenderSsrc);
   rpsi.To(kRemoteSsrc);
   rpsi.WithPictureId(kPictureId);
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
-  uint8_t* padding_bits = packet->MutableBuffer() + 12;
+  rtc::Buffer packet = rpsi.Build();
+  uint8_t* padding_bits = packet.data() + 12;
   uint8_t saved_padding_bits = *padding_bits;
-  ASSERT_TRUE(ParseRpsi(packet->Buffer(), packet->Length()));
+  ASSERT_TRUE(ParseRpsi(packet.data(), packet.size()));
 
   for (uint8_t i = 1; i < 8; ++i) {
     *padding_bits = saved_padding_bits + i;
-    EXPECT_FALSE(ParseRpsi(packet->Buffer(), packet->Length()));
+    EXPECT_FALSE(ParseRpsi(packet.data(), packet.size()));
   }
 }
 
@@ -104,19 +103,19 @@ TEST(RtcpPacketRpsiTest, ParseFailsOnTooBigPadding) {
   rpsi.From(kSenderSsrc);
   rpsi.To(kRemoteSsrc);
   rpsi.WithPictureId(1);  // Small picture id that occupy just 1 byte.
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
-  uint8_t* padding_bits = packet->MutableBuffer() + 12;
-  ASSERT_TRUE(ParseRpsi(packet->Buffer(), packet->Length()));
+  rtc::Buffer packet = rpsi.Build();
+  uint8_t* padding_bits = packet.data() + 12;
+  ASSERT_TRUE(ParseRpsi(packet.data(), packet.size()));
 
   *padding_bits += 8;
-  EXPECT_FALSE(ParseRpsi(packet->Buffer(), packet->Length()));
+  EXPECT_FALSE(ParseRpsi(packet.data(), packet.size()));
 }
 
 // For raw rpsi packet extract how many bytes are used to store picture_id.
-size_t UsedBytes(const RawPacket& packet) {  // Works for small packets only.
-  RTC_CHECK_EQ(packet.Buffer()[2], 0);       // Assume packet is small.
-  size_t total_rpsi_payload_bytes = 4 * (packet.Buffer()[3] - 2) - 2;
-  uint8_t padding_bits = packet.Buffer()[12];
+size_t UsedBytes(const rtc::Buffer& packet) {  // Works for small packets only.
+  RTC_CHECK_EQ(packet.data()[2], 0);       // Assume packet is small.
+  size_t total_rpsi_payload_bytes = 4 * (packet.data()[3] - 2) - 2;
+  uint8_t padding_bits = packet.data()[12];
   RTC_CHECK_EQ(padding_bits % 8, 0);
   return total_rpsi_payload_bytes - (padding_bits / 8);
 }
@@ -128,11 +127,11 @@ TEST(RtcpPacketRpsiTest, WithOneByteNativeString) {
   const uint16_t kNumberOfValidBytes = 1;
   rpsi.WithPictureId(kPictureId);
 
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
-  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(*packet));
+  rtc::Buffer packet = rpsi.Build();
+  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 
@@ -143,11 +142,11 @@ TEST(RtcpPacketRpsiTest, WithTwoByteNativeString) {
   const uint16_t kNumberOfValidBytes = 2;
   rpsi.WithPictureId(kPictureId);
 
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
-  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(*packet));
+  rtc::Buffer packet = rpsi.Build();
+  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 
@@ -158,11 +157,11 @@ TEST(RtcpPacketRpsiTest, WithThreeByteNativeString) {
   const uint16_t kNumberOfValidBytes = 3;
   rpsi.WithPictureId(kPictureId);
 
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
-  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(*packet));
+  rtc::Buffer packet = rpsi.Build();
+  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 
@@ -173,11 +172,11 @@ TEST(RtcpPacketRpsiTest, WithFourByteNativeString) {
   const uint16_t kNumberOfValidBytes = 4;
   rpsi.WithPictureId(kPictureId);
 
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
-  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(*packet));
+  rtc::Buffer packet = rpsi.Build();
+  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 
@@ -189,11 +188,11 @@ TEST(RtcpPacketRpsiTest, WithMaxPictureId) {
   const uint16_t kNumberOfValidBytes = 10;
   rpsi.WithPictureId(kPictureId);
 
-  rtc::scoped_ptr<RawPacket> packet = rpsi.Build();
-  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(*packet));
+  rtc::Buffer packet = rpsi.Build();
+  EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 }  // namespace webrtc

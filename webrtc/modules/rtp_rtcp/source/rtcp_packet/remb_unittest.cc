@@ -16,7 +16,6 @@
 using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::make_tuple;
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::Remb;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
@@ -48,9 +47,9 @@ TEST(RtcpPacketRembTest, Create) {
   remb.AppliesTo(kRemoteSsrcs[2]);
   remb.WithBitrateBps(kBitrateBps);
 
-  rtc::scoped_ptr<RawPacket> packet(remb.Build());
+  rtc::Buffer packet = remb.Build();
 
-  EXPECT_THAT(make_tuple(packet->Buffer(), packet->Length()),
+  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));
 }
 
@@ -68,10 +67,10 @@ TEST(RtcpPacketRembTest, CreateAndParseWithoutSsrcs) {
   Remb remb;
   remb.From(kSenderSsrc);
   remb.WithBitrateBps(kBitrateBps);
-  rtc::scoped_ptr<RawPacket> packet(remb.Build());
+  rtc::Buffer packet = remb.Build();
 
   Remb parsed;
-  EXPECT_TRUE(ParseRemb(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_TRUE(ParseRemb(packet.data(), packet.size(), &parsed));
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(kBitrateBps, parsed.bitrate_bps());
   EXPECT_THAT(parsed.ssrcs(), IsEmpty());

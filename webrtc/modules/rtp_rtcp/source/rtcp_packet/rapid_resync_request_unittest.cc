@@ -16,7 +16,6 @@
 using testing::ElementsAreArray;
 using testing::make_tuple;
 using webrtc::rtcp::RapidResyncRequest;
-using webrtc::rtcp::RawPacket;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
@@ -48,9 +47,9 @@ TEST(RtcpPacketRapidResyncRequestTest, Create) {
   rrr.From(kSenderSsrc);
   rrr.To(kRemoteSsrc);
 
-  rtc::scoped_ptr<RawPacket> packet = rrr.Build();
+  rtc::Buffer packet = rrr.Build();
 
-  EXPECT_THAT(make_tuple(packet->Buffer(), packet->Length()),
+  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));
 }
 

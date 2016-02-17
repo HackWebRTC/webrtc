@@ -16,7 +16,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 using webrtc::rtcp::App;
-using webrtc::rtcp::RawPacket;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
@@ -32,16 +31,15 @@ class RtcpPacketAppTest : public ::testing::Test {
   void BuildPacket() { packet = app.Build(); }
   void ParsePacket() {
     RtcpCommonHeader header;
-    EXPECT_TRUE(
-        RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header));
+    EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
     // Check there is exactly one RTCP packet in the buffer.
-    EXPECT_EQ(header.BlockSize(), packet->Length());
+    EXPECT_EQ(header.BlockSize(), packet.size());
     EXPECT_TRUE(parsed_.Parse(
-        header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+        header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
   }
 
   App app;
-  rtc::scoped_ptr<RawPacket> packet;
+  rtc::Buffer packet;
   const App& parsed() { return parsed_; }
 
  private:

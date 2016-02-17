@@ -12,7 +12,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::Sdes;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
@@ -38,9 +37,9 @@ bool Parse(const uint8_t* buffer, size_t length, Sdes* sdes) {
 TEST(RtcpPacketSdesTest, WithoutChunks) {
   Sdes sdes;
 
-  rtc::scoped_ptr<RawPacket> packet = sdes.Build();
+  rtc::Buffer packet = sdes.Build();
   Sdes parsed;
-  EXPECT_TRUE(Parse(packet->Buffer(), packet->Length(), &parsed));
+  EXPECT_TRUE(Parse(packet.data(), packet.size(), &parsed));
 
   EXPECT_EQ(0u, parsed.chunks().size());
 }
@@ -51,9 +50,9 @@ TEST(RtcpPacketSdesTest, WithOneChunk) {
   Sdes sdes;
   EXPECT_TRUE(sdes.WithCName(kSenderSsrc, kCname));
 
-  rtc::scoped_ptr<RawPacket> packet = sdes.Build();
+  rtc::Buffer packet = sdes.Build();
   Sdes sdes_parsed;
-  Parse(packet->Buffer(), packet->Length(), &sdes_parsed);
+  Parse(packet.data(), packet.size(), &sdes_parsed);
   const Sdes& parsed = sdes_parsed;  // Ensure accessors are const.
 
   EXPECT_EQ(1u, parsed.chunks().size());
@@ -70,9 +69,9 @@ TEST(RtcpPacketSdesTest, WithMultipleChunks) {
   EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 4, "abcde"));
   EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 5, "abcdef"));
 
-  rtc::scoped_ptr<RawPacket> packet = sdes.Build();
+  rtc::Buffer packet = sdes.Build();
   Sdes parsed;
-  Parse(packet->Buffer(), packet->Length(), &parsed);
+  Parse(packet.data(), packet.size(), &parsed);
 
   EXPECT_EQ(6u, parsed.chunks().size());
   EXPECT_EQ(kSenderSsrc + 5, parsed.chunks()[5].ssrc);
@@ -95,9 +94,9 @@ TEST(RtcpPacketSdesTest, CnameItemWithEmptyString) {
   Sdes sdes;
   EXPECT_TRUE(sdes.WithCName(kSenderSsrc, ""));
 
-  rtc::scoped_ptr<RawPacket> packet = sdes.Build();
+  rtc::Buffer packet = sdes.Build();
   Sdes parsed;
-  Parse(packet->Buffer(), packet->Length(), &parsed);
+  Parse(packet.data(), packet.size(), &parsed);
 
   EXPECT_EQ(1u, parsed.chunks().size());
   EXPECT_EQ(kSenderSsrc, parsed.chunks()[0].ssrc);
@@ -236,17 +235,17 @@ TEST(RtcpPacketSdesTest, ParsedSdesCanBeReusedForBuilding) {
   const std::string kBob = "bob@host";
   source.WithCName(kSenderSsrc, kAlice);
 
-  rtc::scoped_ptr<RawPacket> packet1 = source.Build();
+  rtc::Buffer packet1 = source.Build();
   Sdes middle;
-  Parse(packet1->Buffer(), packet1->Length(), &middle);
+  Parse(packet1.data(), packet1.size(), &middle);
 
   EXPECT_EQ(source.BlockLength(), middle.BlockLength());
 
   middle.WithCName(kSenderSsrc + 1, kBob);
 
-  rtc::scoped_ptr<RawPacket> packet2 = middle.Build();
+  rtc::Buffer packet2 = middle.Build();
   Sdes destination;
-  Parse(packet2->Buffer(), packet2->Length(), &destination);
+  Parse(packet2.data(), packet2.size(), &destination);
 
   EXPECT_EQ(middle.BlockLength(), destination.BlockLength());
 

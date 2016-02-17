@@ -15,7 +15,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ExtendedJitterReport;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
@@ -28,15 +27,14 @@ class RtcpPacketExtendedJitterReportTest : public ::testing::Test {
   void BuildPacket() { packet = ij.Build(); }
   void ParsePacket() {
     RtcpCommonHeader header;
-    EXPECT_TRUE(
-        RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header));
-    EXPECT_EQ(header.BlockSize(), packet->Length());
+    EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
+    EXPECT_EQ(header.BlockSize(), packet.size());
     EXPECT_TRUE(parsed_.Parse(
-        header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+        header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
   }
 
   ExtendedJitterReport ij;
-  rtc::scoped_ptr<RawPacket> packet;
+  rtc::Buffer packet;
   const ExtendedJitterReport& parsed() { return parsed_; }
 
  private:
@@ -85,13 +83,13 @@ TEST_F(RtcpPacketExtendedJitterReportTest, ParseFailWithTooManyItems) {
   ij.WithJitter(0x11121418);
   BuildPacket();
   RtcpCommonHeader header;
-  RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header);
+  RtcpParseCommonHeader(packet.data(), packet.size(), &header);
   header.count_or_format++;  // Damage package.
 
   ExtendedJitterReport parsed;
 
   EXPECT_FALSE(parsed.Parse(
-      header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+      header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
 }
 
 }  // namespace

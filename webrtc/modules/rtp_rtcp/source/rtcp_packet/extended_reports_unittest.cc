@@ -20,7 +20,6 @@ using testing::IsEmpty;
 using testing::make_tuple;
 using webrtc::rtcp::Dlrr;
 using webrtc::rtcp::ExtendedReports;
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiveTimeInfo;
 using webrtc::rtcp::Rrtr;
 using webrtc::rtcp::VoipMetric;
@@ -88,8 +87,8 @@ namespace {
     return packet->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
   }
 
-  bool Parse(const RawPacket& buffer, ExtendedReports* packet) {
-    return Parse(buffer.Buffer(), buffer.Length(), packet);
+  bool Parse(const rtc::Buffer& buffer, ExtendedReports* packet) {
+    return Parse(buffer.data(), buffer.size(), packet);
   }
 }  // namespace
 
@@ -167,9 +166,9 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateWithoutReportBlocks) {
   ExtendedReports xr;
   xr.From(kSenderSsrc);
 
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
-  EXPECT_THAT(make_tuple(packet->Buffer(), packet->Length()),
+  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kEmptyPacket));
 }
 
@@ -187,10 +186,10 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithOneRrtrBlock) {
   ExtendedReports xr;
   xr.From(kSenderSsrc);
   EXPECT_TRUE(xr.WithRrtr(rrtr));
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(*packet, &mparsed));
+  EXPECT_TRUE(Parse(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -205,10 +204,10 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithTwoRrtrBlocks) {
   EXPECT_TRUE(xr.WithRrtr(rrtr1));
   EXPECT_TRUE(xr.WithRrtr(rrtr2));
 
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(*packet, &mparsed));
+  EXPECT_TRUE(Parse(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -222,10 +221,10 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithDlrrWithOneSubBlock) {
   xr.From(kSenderSsrc);
   EXPECT_TRUE(xr.WithDlrr(dlrr));
 
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(*packet, &mparsed));
+  EXPECT_TRUE(Parse(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -240,10 +239,10 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithDlrrWithTwoSubBlocks) {
   xr.From(kSenderSsrc);
   EXPECT_TRUE(xr.WithDlrr(dlrr));
 
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(*packet, &mparsed));
+  EXPECT_TRUE(Parse(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -260,10 +259,10 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithTwoDlrrBlocks) {
   EXPECT_TRUE(xr.WithDlrr(dlrr1));
   EXPECT_TRUE(xr.WithDlrr(dlrr2));
 
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(*packet, &mparsed));
+  EXPECT_TRUE(Parse(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -277,10 +276,10 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithVoipMetric) {
   xr.From(kSenderSsrc);
   EXPECT_TRUE(xr.WithVoipMetric(voip_metric));
 
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(*packet, &mparsed));
+  EXPECT_TRUE(Parse(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -298,10 +297,10 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithMultipleReportBlocks) {
   EXPECT_TRUE(xr.WithDlrr(dlrr));
   EXPECT_TRUE(xr.WithVoipMetric(metric));
 
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(*packet, &mparsed));
+  EXPECT_TRUE(Parse(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -320,10 +319,10 @@ TEST_F(RtcpPacketExtendedReportsTest, DlrrWithoutItemNotIncludedInPacket) {
   EXPECT_TRUE(xr.WithDlrr(dlrr));
   EXPECT_TRUE(xr.WithVoipMetric(metric));
 
-  rtc::scoped_ptr<RawPacket> packet = xr.Build();
+  rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(*packet, &mparsed));
+  EXPECT_TRUE(Parse(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_THAT(parsed.rrtrs(), ElementsAre(rrtr));

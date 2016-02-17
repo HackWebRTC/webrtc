@@ -19,7 +19,6 @@ using ::testing::Invoke;
 using ::testing::UnorderedElementsAreArray;
 
 using webrtc::rtcp::Nack;
-using webrtc::rtcp::RawPacket;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
@@ -50,10 +49,10 @@ TEST(RtcpPacketNackTest, Create) {
   nack.To(kRemoteSsrc);
   nack.WithList(kList, kListLength);
 
-  rtc::scoped_ptr<RawPacket> packet = nack.Build();
+  rtc::Buffer packet = nack.Build();
 
-  EXPECT_EQ(kPacketLength, packet->Length());
-  EXPECT_EQ(0, memcmp(kPacket, packet->Buffer(), kPacketLength));
+  EXPECT_EQ(kPacketLength, packet.size());
+  EXPECT_EQ(0, memcmp(kPacket, packet.data(), kPacketLength));
 }
 
 TEST(RtcpPacketNackTest, Parse) {
@@ -77,10 +76,10 @@ TEST(RtcpPacketNackTest, CreateWrap) {
   nack.To(kRemoteSsrc);
   nack.WithList(kWrapList, kWrapListLength);
 
-  rtc::scoped_ptr<RawPacket> packet = nack.Build();
+  rtc::Buffer packet = nack.Build();
 
-  EXPECT_EQ(kWrapPacketLength, packet->Length());
-  EXPECT_EQ(0, memcmp(kWrapPacket, packet->Buffer(), kWrapPacketLength));
+  EXPECT_EQ(kWrapPacketLength, packet.size());
+  EXPECT_EQ(0, memcmp(kWrapPacket, packet.data(), kWrapPacketLength));
 }
 
 TEST(RtcpPacketNackTest, ParseWrap) {
@@ -107,14 +106,13 @@ TEST(RtcpPacketNackTest, BadOrder) {
   nack.To(kRemoteSsrc);
   nack.WithList(kUnorderedList, kUnorderedListLength);
 
-  rtc::scoped_ptr<RawPacket> packet = nack.Build();
+  rtc::Buffer packet = nack.Build();
 
   Nack parsed;
   RtcpCommonHeader header;
-  EXPECT_TRUE(
-      RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header));
+  EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
   EXPECT_TRUE(parsed.Parse(
-      header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+      header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(kRemoteSsrc, parsed.media_ssrc());

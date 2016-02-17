@@ -12,7 +12,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiverReport;
 using webrtc::rtcp::ReportBlock;
 using webrtc::RTCPUtility::RtcpCommonHeader;
@@ -42,15 +41,14 @@ class RtcpPacketReceiverReportTest : public ::testing::Test {
   void BuildPacket() { packet = rr.Build(); }
   void ParsePacket() {
     RtcpCommonHeader header;
-    EXPECT_TRUE(
-        RtcpParseCommonHeader(packet->Buffer(), packet->Length(), &header));
-    EXPECT_EQ(header.BlockSize(), packet->Length());
+    EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
+    EXPECT_EQ(header.BlockSize(), packet.size());
     EXPECT_TRUE(parsed_.Parse(
-        header, packet->Buffer() + RtcpCommonHeader::kHeaderSizeBytes));
+        header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
   }
 
   ReceiverReport rr;
-  rtc::scoped_ptr<RawPacket> packet;
+  rtc::Buffer packet;
   const ReceiverReport& parsed() { return parsed_; }
 
  private:
@@ -96,8 +94,8 @@ TEST_F(RtcpPacketReceiverReportTest, Create) {
 
   BuildPacket();
 
-  ASSERT_EQ(kPacketLength, packet->Length());
-  EXPECT_EQ(0, memcmp(kPacket, packet->Buffer(), kPacketLength));
+  ASSERT_EQ(kPacketLength, packet.size());
+  EXPECT_EQ(0, memcmp(kPacket, packet.data(), kPacketLength));
 }
 
 TEST_F(RtcpPacketReceiverReportTest, WithoutReportBlocks) {

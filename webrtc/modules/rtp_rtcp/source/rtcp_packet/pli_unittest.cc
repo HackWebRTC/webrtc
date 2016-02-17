@@ -14,7 +14,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 using webrtc::rtcp::Pli;
-using webrtc::rtcp::RawPacket;
 using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
@@ -46,10 +45,10 @@ TEST(RtcpPacketPliTest, Create) {
   pli.From(kSenderSsrc);
   pli.To(kRemoteSsrc);
 
-  rtc::scoped_ptr<RawPacket> packet(pli.Build());
+  rtc::Buffer packet = pli.Build();
 
-  ASSERT_EQ(kPacketLength, packet->Length());
-  EXPECT_EQ(0, memcmp(kPacket, packet->Buffer(), kPacketLength));
+  ASSERT_EQ(kPacketLength, packet.size());
+  EXPECT_EQ(0, memcmp(kPacket, packet.data(), kPacketLength));
 }
 
 TEST(RtcpPacketPliTest, ParseFailsOnTooSmallPacket) {

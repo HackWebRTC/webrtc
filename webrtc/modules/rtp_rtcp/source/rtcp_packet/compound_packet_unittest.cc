@@ -21,7 +21,6 @@
 using webrtc::rtcp::Bye;
 using webrtc::rtcp::CompoundPacket;
 using webrtc::rtcp::Fir;
-using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiverReport;
 using webrtc::rtcp::ReportBlock;
 using webrtc::rtcp::SenderReport;
@@ -42,9 +41,9 @@ TEST(RtcpCompoundPacketTest, AppendPacket) {
   EXPECT_TRUE(rr.WithReportBlock(rb));
   rr.Append(&fir);
 
-  rtc::scoped_ptr<RawPacket> packet(rr.Build());
+  rtc::Buffer packet = rr.Build();
   RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
+  parser.Parse(packet.data(), packet.size());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser.receiver_report()->Ssrc());
   EXPECT_EQ(1, parser.report_block()->num_packets());
@@ -57,9 +56,9 @@ TEST(RtcpCompoundPacketTest, AppendPacketOnEmpty) {
   rr.From(kSenderSsrc);
   empty.Append(&rr);
 
-  rtc::scoped_ptr<RawPacket> packet(empty.Build());
+  rtc::Buffer packet = empty.Build();
   RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
+  parser.Parse(packet.data(), packet.size());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(0, parser.report_block()->num_packets());
 }
@@ -78,9 +77,9 @@ TEST(RtcpCompoundPacketTest, AppendPacketWithOwnAppendedPacket) {
   sr.Append(&bye);
   sr.Append(&rr);
 
-  rtc::scoped_ptr<RawPacket> packet(sr.Build());
+  rtc::Buffer packet = sr.Build();
   RtcpPacketParser parser;
-  parser.Parse(packet->Buffer(), packet->Length());
+  parser.Parse(packet.data(), packet.size());
   EXPECT_EQ(1, parser.sender_report()->num_packets());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
   EXPECT_EQ(1, parser.report_block()->num_packets());

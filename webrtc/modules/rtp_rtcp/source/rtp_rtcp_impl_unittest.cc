@@ -223,9 +223,9 @@ class RtpRtcpImplTest : public ::testing::Test {
     nack.From(sender ? kReceiverSsrc : kSenderSsrc);
     nack.To(sender ? kSenderSsrc : kReceiverSsrc);
     nack.WithList(list, kListLength);
-    rtc::scoped_ptr<rtcp::RawPacket> packet(nack.Build());
-    EXPECT_EQ(0, module->impl_->IncomingRtcpPacket(packet->Buffer(),
-                                                   packet->Length()));
+    rtc::Buffer packet = nack.Build();
+    EXPECT_EQ(0, module->impl_->IncomingRtcpPacket(packet.data(),
+                                                   packet.size()));
   }
 };
 
