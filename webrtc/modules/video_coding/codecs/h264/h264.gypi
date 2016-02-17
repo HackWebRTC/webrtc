@@ -62,9 +62,6 @@
         {
           'target_name': 'webrtc_h264_video_toolbox',
           'type': 'static_library',
-          'dependencies': [
-            '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
-          ],
           'link_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [
@@ -82,6 +79,11 @@
             'h264_video_toolbox_encoder.h',
             'h264_video_toolbox_nalu.cc',
             'h264_video_toolbox_nalu.h',
+          ],
+          'conditions': [
+            ['build_libyuv==1', {
+              'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv'],
+            }],
           ],
         }, # webrtc_h264_video_toolbox
       ], # targets
