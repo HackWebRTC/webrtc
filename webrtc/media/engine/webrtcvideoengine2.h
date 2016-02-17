@@ -212,7 +212,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
   bool MuteStream(uint32_t ssrc, bool mute);
 
   void SetMaxSendBandwidth(int bps);
-  void SetOptions(const VideoOptions& options);
+  void SetOptions(uint32_t ssrc, const VideoOptions& options);
 
   void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
                             const StreamParams& sp) const;
@@ -237,7 +237,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
         const StreamParams& sp,
         const webrtc::VideoSendStream::Config& config,
         WebRtcVideoEncoderFactory* external_encoder_factory,
-        const VideoOptions& options,
         int max_bitrate_bps,
         const rtc::Optional<VideoCodecSettings>& codec_settings,
         const std::vector<webrtc::RtpExtension>& rtp_extensions,
@@ -457,7 +456,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
   };
 
   void Construct(webrtc::Call* call, WebRtcVideoEngine2* engine);
-  void SetDefaultOptions();
 
   bool SendRtp(const uint8_t* data,
                size_t len,
@@ -516,7 +514,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
   std::vector<VideoCodecSettings> recv_codecs_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
   webrtc::Call::Config::BitrateConfig bitrate_config_;
-  VideoOptions options_;
   // TODO(deadbeef): Don't duplicate information between
   // send_params/recv_params, rtp_extensions, options, etc.
   VideoSendParameters send_params_;

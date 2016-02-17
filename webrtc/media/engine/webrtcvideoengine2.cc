@@ -616,7 +616,9 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  options_.SetAll(options);
+
+  send_params_.options = options;
+
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
   default_send_ssrc_ = 0;
@@ -742,9 +744,9 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
   // Handle options.
   // TODO(pbos): Require VideoSendParameters to contain a full set of options
   // and check if params.options != options_ instead of applying a delta.
-  VideoOptions new_options = options_;
+  VideoOptions new_options = send_params_.options;
   new_options.SetAll(params.options);
-  if (!(new_options == options_)) {
+  if (!(new_options == send_params_.options)) {
     changed_params->options = rtc::Optional<VideoOptions>(new_options);
   }
 
@@ -807,7 +809,7 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   }
 
   if (changed_params.options)
-    options_.SetAll(*changed_params.options);
+    send_params_.options.SetAll(*changed_params.options);
 
   {
     rtc::CritScope stream_lock(&stream_crit_);
@@ -956,9 +958,7 @@ bool WebRtcVideoChannel2::SetVideoSend(uint32_t ssrc, bool enable,
     return false;
   }
   if (enable && options) {
-    VideoSendParameters new_params = send_params_;
-    new_params.options.SetAll(*options);
-    SetSendParameters(send_params_);
+    SetOptions(ssrc, *options);
   }
   return true;
 }
@@ -1002,10 +1002,10 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   webrtc::VideoSendStream::Config config(this);
   config.overuse_callback = this;
 
-  WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
-      call_, sp, config, external_encoder_factory_, options_,
-      bitrate_config_.max_bitrate_bps, send_codec_, send_rtp_extensions_,
-      send_params_);
+  WebRtcVideoSendStream* stream =
+      new WebRtcVideoSendStream(call_, sp, config, external_encoder_factory_,
+                                bitrate_config_.max_bitrate_bps, send_codec_,
+                                send_rtp_extensions_, send_params_);
 
   uint32_t ssrc = sp.first_ssrc();
   RTC_DCHECK(ssrc != 0);
@@ -1104,7 +1104,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
 
   rtc::CritScope stream_lock(&stream_crit_);
   // Remove running stream if this was a default stream.
-  auto prev_stream = receive_streams_.find(ssrc);
+  const auto& prev_stream = receive_streams_.find(ssrc);
   if (prev_stream != receive_streams_.end()) {
     if (default_stream || !prev_stream->second->IsDefaultStream()) {
       LOG(LS_ERROR) << "Receive stream for SSRC '" << ssrc
@@ -1274,11 +1274,12 @@ bool WebRtcVideoChannel2::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
   RTC_DCHECK(ssrc != 0);
   {
     rtc::CritScope stream_lock(&stream_crit_);
-    if (send_streams_.find(ssrc) == send_streams_.end()) {
+    const auto& kv = send_streams_.find(ssrc);
+    if (kv == send_streams_.end()) {
       LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
       return false;
     }
-    if (!send_streams_[ssrc]->SetCapturer(capturer)) {
+    if (!kv->second->SetCapturer(capturer)) {
       return false;
     }
   }
@@ -1372,20 +1373,27 @@ bool WebRtcVideoChannel2::MuteStream(uint32_t ssrc, bool mute) {
                   << (mute ? "mute" : "unmute");
   RTC_DCHECK(ssrc != 0);
   rtc::CritScope stream_lock(&stream_crit_);
-  if (send_streams_.find(ssrc) == send_streams_.end()) {
+  const auto& kv = send_streams_.find(ssrc);
+  if (kv == send_streams_.end()) {
     LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
     return false;
   }
 
-  send_streams_[ssrc]->MuteStream(mute);
+  kv->second->MuteStream(mute);
   return true;
 }
 
 // TODO(pbos): Remove SetOptions in favor of SetSendParameters.
-void WebRtcVideoChannel2::SetOptions(const VideoOptions& options) {
-  VideoSendParameters new_params = send_params_;
-  new_params.options.SetAll(options);
-  SetSendParameters(send_params_);
+void WebRtcVideoChannel2::SetOptions(uint32_t ssrc,
+                                     const VideoOptions& options) {
+  LOG(LS_INFO) << "SetOptions: ssrc " << ssrc << ": " << options.ToString();
+
+  rtc::CritScope stream_lock(&stream_crit_);
+  const auto& kv = send_streams_.find(ssrc);
+  if (kv == send_streams_.end()) {
+    return;
+  }
+  kv->second->SetOptions(options);
 }
 
 void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
@@ -1487,7 +1495,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     const StreamParams& sp,
     const webrtc::VideoSendStream::Config& config,
     WebRtcVideoEncoderFactory* external_encoder_factory,
-    const VideoOptions& options,
     int max_bitrate_bps,
     const rtc::Optional<VideoCodecSettings>& codec_settings,
     const std::vector<webrtc::RtpExtension>& rtp_extensions,
@@ -1499,7 +1506,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       call_(call),
       external_encoder_factory_(external_encoder_factory),
       stream_(NULL),
-      parameters_(config, options, max_bitrate_bps, codec_settings),
+      parameters_(config, send_params.options, max_bitrate_bps, codec_settings),
       pending_encoder_reconfiguration_(false),
       allocated_encoder_(NULL, webrtc::kVideoCodecUnknown, false),
       capturer_(NULL),
