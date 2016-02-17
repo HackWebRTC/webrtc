@@ -702,9 +702,7 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
 // This test drops second RTP packet with a marker bit set, makes sure it's
 // retransmitted and renders. Retransmission SSRCs are also checked.
 void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
-  // Must be set high enough to allow the bitrate probing to finish.
-  static const int kMinProbePackets = 100;
-  static const int kDroppedFrameNumber = kMinProbePackets + 1;
+  static const int kDroppedFrameNumber = 10;
   class RetransmissionObserver : public test::EndToEndTest,
                                  public I420FrameCallback {
    public:
@@ -716,7 +714,6 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
           retransmission_payload_type_(GetPayloadType(enable_rtx, enable_red)),
           encoder_(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)),
           marker_bits_observed_(0),
-          num_packets_observed_(0),
           retransmitted_timestamp_(0),
           frame_retransmitted_(false) {}
 
@@ -726,14 +723,13 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-      // We accept some padding or RTX packets in the beginning to enable
-      // bitrate probing.
-      if (num_packets_observed_++ < kMinProbePackets &&
-          header.payloadType != payload_type_) {
-        EXPECT_TRUE(retransmission_payload_type_ == header.payloadType ||
-                    length == header.headerLength + header.paddingLength);
-        return SEND_PACKET;
+      // Ignore padding-only packets over RTX.
+      if (header.payloadType != payload_type_) {
+        EXPECT_EQ(retransmission_ssrc_, header.ssrc);
+        if (length == header.headerLength + header.paddingLength)
+          return SEND_PACKET;
       }
+
       if (header.timestamp == retransmitted_timestamp_) {
         EXPECT_EQ(retransmission_ssrc_, header.ssrc);
         EXPECT_EQ(retransmission_payload_type_, header.payloadType);
@@ -823,7 +819,6 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
     rtc::scoped_ptr<VideoEncoder> encoder_;
     const std::string payload_name_;
     int marker_bits_observed_;
-    int num_packets_observed_;
     uint32_t retransmitted_timestamp_ GUARDED_BY(&crit_);
     bool frame_retransmitted_;
   } test(enable_rtx, enable_red);
