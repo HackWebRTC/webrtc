@@ -67,7 +67,8 @@ AudioSendStream::AudioSendStream(
   RTC_DCHECK(congestion_controller);
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
-  channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
+  channel_proxy_ =
+      rtc::UniqueToScoped(voe_impl->GetChannelProxy(config_.voe_channel_id));
   channel_proxy_->RegisterSenderCongestionControlObjects(
       congestion_controller->pacer(),
       congestion_controller->GetTransportFeedbackObserver(),

@@ -10,6 +10,8 @@
 
 #include <math.h>
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/voice_engine/network_predictor.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -23,7 +25,7 @@ class TestNetworkPredictor : public ::testing::Test {
       : clock_(0),
         network_predictor_(new NetworkPredictor(&clock_)) {}
   SimulatedClock clock_;
-  rtc::scoped_ptr<NetworkPredictor> network_predictor_;
+  std::unique_ptr<NetworkPredictor> network_predictor_;
 };
 
 TEST_F(TestNetworkPredictor, TestPacketLossRateFilter) {

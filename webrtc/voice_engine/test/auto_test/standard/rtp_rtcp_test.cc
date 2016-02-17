@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
@@ -35,7 +37,7 @@ class TestRtpObserver : public webrtc::VoERTPObserver {
  public:
   rtc::CriticalSection crit_;
   unsigned int incoming_ssrc_;
-  rtc::scoped_ptr<voetest::EventWrapper> changed_ssrc_event_;
+  std::unique_ptr<voetest::EventWrapper> changed_ssrc_event_;
 };
 
 void TestRtpObserver::OnIncomingSSRCChanged(int channel,

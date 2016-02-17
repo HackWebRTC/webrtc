@@ -62,12 +62,12 @@ int VoiceEngineImpl::Release() {
   return new_ref;
 }
 
-rtc::scoped_ptr<voe::ChannelProxy> VoiceEngineImpl::GetChannelProxy(
+std::unique_ptr<voe::ChannelProxy> VoiceEngineImpl::GetChannelProxy(
     int channel_id) {
   RTC_DCHECK(channel_id >= 0);
   rtc::CritScope cs(crit_sec());
   RTC_DCHECK(statistics().Initialized());
-  return rtc::scoped_ptr<voe::ChannelProxy>(
+  return std::unique_ptr<voe::ChannelProxy>(
       new voe::ChannelProxy(channel_manager().GetChannel(channel_id)));
 }
 

@@ -12,10 +12,10 @@
 #define SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_AFTER_INIT_H_
 
 #include <deque>
+#include <memory>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
@@ -143,7 +143,7 @@ class LoopBackTransport : public webrtc::Transport {
   }
 
   rtc::CriticalSection crit_;
-  const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
+  const std::unique_ptr<webrtc::EventWrapper> packet_event_;
   rtc::PlatformThread thread_;
   std::deque<Packet> packet_queue_ GUARDED_BY(crit_);
   const int channel_;
@@ -163,7 +163,7 @@ class AfterInitializationFixture : public BeforeInitializationFixture {
   virtual ~AfterInitializationFixture();
 
  protected:
-  rtc::scoped_ptr<TestErrorObserver> error_observer_;
+  std::unique_ptr<TestErrorObserver> error_observer_;
 };
 
 #endif  // SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_AFTER_INIT_H_

@@ -10,6 +10,8 @@
 
 #include "webrtc/voice_engine/transmit_mixer.h"
 
+#include <memory>
+
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
@@ -1180,7 +1182,7 @@ int32_t TransmitMixer::RecordAudioToFile(
 int32_t TransmitMixer::MixOrReplaceAudioWithFile(
     int mixingFrequency)
 {
-  rtc::scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
+    std::unique_ptr<int16_t[]> fileBuffer(new int16_t[640]);
 
     size_t fileSamples(0);
     {

@@ -1071,7 +1071,7 @@ int32_t Channel::UpdateLocalTimeStamp() {
   return 0;
 }
 
-void Channel::SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) {
+void Channel::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   rtc::CritScope cs(&_callbackCritSect);
   audio_sink_ = std::move(sink);
 }
@@ -3265,7 +3265,7 @@ int Channel::GetRtpRtcp(RtpRtcp** rtpRtcpModule,
 // TODO(andrew): refactor Mix functions here and in transmit_mixer.cc to use
 // a shared helper.
 int32_t Channel::MixOrReplaceAudioWithFile(int mixingFrequency) {
-  rtc::scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
+  std::unique_ptr<int16_t[]> fileBuffer(new int16_t[640]);
   size_t fileSamples(0);
 
   {
@@ -3313,7 +3313,7 @@ int32_t Channel::MixOrReplaceAudioWithFile(int mixingFrequency) {
 int32_t Channel::MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency) {
   assert(mixingFrequency <= 48000);
 
-  rtc::scoped_ptr<int16_t[]> fileBuffer(new int16_t[960]);
+  std::unique_ptr<int16_t[]> fileBuffer(new int16_t[960]);
   size_t fileSamples(0);
 
   {

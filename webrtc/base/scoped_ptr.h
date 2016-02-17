@@ -88,6 +88,7 @@
 
 #include <algorithm>  // For std::swap().
 #include <cstddef>
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/deprecation.h"
@@ -603,6 +604,16 @@ class scoped_ptr<T[], D> {
 template <class T, class D>
 void swap(rtc::scoped_ptr<T, D>& p1, rtc::scoped_ptr<T, D>& p2) {
   p1.swap(p2);
+}
+
+// Convert between the most common kinds of scoped_ptr and unique_ptr.
+template <typename T>
+std::unique_ptr<T> ScopedToUnique(scoped_ptr<T> sp) {
+  return std::unique_ptr<T>(sp.release());
+}
+template <typename T>
+scoped_ptr<T> UniqueToScoped(std::unique_ptr<T> up) {
+  return scoped_ptr<T>(up.release());
 }
 
 }  // namespace rtc

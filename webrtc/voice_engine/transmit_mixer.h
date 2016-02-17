@@ -12,7 +12,6 @@
 #define WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_processing/typing_detection.h"

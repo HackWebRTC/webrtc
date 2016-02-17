@@ -24,7 +24,6 @@
 
 #include "webrtc/voice_engine/test/auto_test/voe_stress_test.h"
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/channel_transport/channel_transport.h"
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
@@ -144,7 +143,7 @@ int VoEStressTest::StartStopTest() {
   printf("Test will take approximately %d minutes. \n",
          numberOfLoops * loopSleep / 1000 / 60 + 1);
 
-  rtc::scoped_ptr<VoiceChannelTransport> voice_channel_transport(
+  std::unique_ptr<VoiceChannelTransport> voice_channel_transport(
       new VoiceChannelTransport(voe_network, 0));
 
   for (i = 0; i < numberOfLoops; ++i) {

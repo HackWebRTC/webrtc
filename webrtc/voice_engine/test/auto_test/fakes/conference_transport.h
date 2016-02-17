@@ -13,13 +13,13 @@
 
 #include <deque>
 #include <map>
+#include <memory>
 #include <utility>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
@@ -130,7 +130,7 @@ class ConferenceTransport: public webrtc::Transport {
 
   rtc::CriticalSection pq_crit_;
   rtc::CriticalSection stream_crit_;
-  const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
+  const std::unique_ptr<webrtc::EventWrapper> packet_event_;
   rtc::PlatformThread thread_;
 
   unsigned int rtt_ms_;
@@ -156,7 +156,7 @@ class ConferenceTransport: public webrtc::Transport {
 
   LoudestFilter loudest_filter_;
 
-  const rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_header_parser_;
+  const std::unique_ptr<webrtc::RtpHeaderParser> rtp_header_parser_;
 };
 }  // namespace voetest
 

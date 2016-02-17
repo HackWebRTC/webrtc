@@ -11,9 +11,10 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H_
 #define WEBRTC_VOICE_ENGINE_CHANNEL_H_
 
+#include <memory>
+
 #include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
@@ -193,7 +194,7 @@ class Channel
                                rtc::CriticalSection* callbackCritSect);
   int32_t UpdateLocalTimeStamp();
 
-  void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink);
+  void SetSink(std::unique_ptr<AudioSinkInterface> sink);
 
   // API methods
 
@@ -493,15 +494,15 @@ class Channel
 
   RtcEventLog* const event_log_;
 
-  rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  rtc::scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
-  rtc::scoped_ptr<StatisticsProxy> statistics_proxy_;
-  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
+  std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
+  std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
+  std::unique_ptr<StatisticsProxy> statistics_proxy_;
+  std::unique_ptr<RtpReceiver> rtp_receiver_;
   TelephoneEventHandler* telephone_event_handler_;
-  rtc::scoped_ptr<RtpRtcp> _rtpRtcpModule;
-  rtc::scoped_ptr<AudioCodingModule> audio_coding_;
-  rtc::scoped_ptr<AudioSinkInterface> audio_sink_;
+  std::unique_ptr<RtpRtcp> _rtpRtcpModule;
+  std::unique_ptr<AudioCodingModule> audio_coding_;
+  std::unique_ptr<AudioSinkInterface> audio_sink_;
   AudioLevel _outputAudioLevel;
   bool _externalTransport;
   AudioFrame _audioFrame;
@@ -535,7 +536,7 @@ class Channel
 
   rtc::CriticalSection ts_stats_lock_;
 
-  rtc::scoped_ptr<rtc::TimestampWrapAroundHandler> rtp_ts_wraparound_handler_;
+  std::unique_ptr<rtc::TimestampWrapAroundHandler> rtp_ts_wraparound_handler_;
   // The rtp timestamp of the first played out audio frame.
   int64_t capture_start_rtp_time_stamp_;
   // The capture ntp time (in local timebase) of the first played out audio
@@ -552,7 +553,7 @@ class Channel
   rtc::CriticalSection* _callbackCritSectPtr;    // owned by base
   Transport* _transportPtr;  // WebRtc socket or external transport
   RMSLevel rms_level_;
-  rtc::scoped_ptr<AudioProcessing> rx_audioproc_;  // far end AudioProcessing
+  std::unique_ptr<AudioProcessing> rx_audioproc_;  // far end AudioProcessing
   VoERxVadCallback* _rxVadObserverPtr;
   int32_t _oldVadDecision;
   int32_t _sendFrameType;  // Send data is voice, 1-voice, 0-otherwise
@@ -584,17 +585,17 @@ class Channel
   bool _rxNsIsEnabled;
   bool restored_packet_in_use_;
   // RtcpBandwidthObserver
-  rtc::scoped_ptr<VoERtcpObserver> rtcp_observer_;
-  rtc::scoped_ptr<NetworkPredictor> network_predictor_;
+  std::unique_ptr<VoERtcpObserver> rtcp_observer_;
+  std::unique_ptr<NetworkPredictor> network_predictor_;
   // An associated send channel.
   rtc::CriticalSection assoc_send_channel_lock_;
   ChannelOwner associate_send_channel_ GUARDED_BY(assoc_send_channel_lock_);
 
   bool pacing_enabled_;
   PacketRouter* packet_router_ = nullptr;
-  rtc::scoped_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
-  rtc::scoped_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
-  rtc::scoped_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
+  std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
+  std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
+  std::unique_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
 };
 
 }  // namespace voe

@@ -15,6 +15,7 @@
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -69,7 +70,7 @@ class ChannelProxy {
   virtual bool SetSendTelephoneEventPayloadType(int payload_type);
   virtual bool SendTelephoneEventOutband(uint8_t event, uint32_t duration_ms);
 
-  virtual void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink);
+  virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink);
 
  private:
   Channel* channel() const;

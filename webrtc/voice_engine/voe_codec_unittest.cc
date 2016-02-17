@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/voice_engine/include/voe_codec.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
@@ -93,7 +94,7 @@ class VoECodecTest : public ::testing::Test {
   int channel_;
   CodecInst primary_;
   CodecInst valid_secondary_;
-  rtc::scoped_ptr<FakeAudioDeviceModule> adm_;
+  std::unique_ptr<FakeAudioDeviceModule> adm_;
 
   // A codec which is not valid to be registered as secondary codec.
   CodecInst invalid_secondary_;

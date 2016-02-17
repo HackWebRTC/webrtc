@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
@@ -83,7 +85,7 @@ class ExtensionVerifyTransport : public webrtc::Transport {
     kPacketsExpected = 10,
     kSleepIntervalMs = 10
   };
-  rtc::scoped_ptr<webrtc::RtpHeaderParser> parser_;
+  std::unique_ptr<webrtc::RtpHeaderParser> parser_;
   webrtc::Atomic32 received_packets_;
   webrtc::Atomic32 bad_packets_;
   int audio_level_id_;

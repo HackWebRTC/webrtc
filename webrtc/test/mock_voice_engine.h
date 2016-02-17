@@ -11,6 +11,8 @@
 #ifndef WEBRTC_AUDIO_MOCK_VOICE_ENGINE_H_
 #define WEBRTC_AUDIO_MOCK_VOICE_ENGINE_H_
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
@@ -43,8 +45,8 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD1(ChannelProxyFactory, voe::ChannelProxy*(int channel_id));
 
   // VoiceEngineImpl
-  rtc::scoped_ptr<voe::ChannelProxy> GetChannelProxy(int channel_id) override {
-    return rtc::scoped_ptr<voe::ChannelProxy>(ChannelProxyFactory(channel_id));
+  std::unique_ptr<voe::ChannelProxy> GetChannelProxy(int channel_id) override {
+    return std::unique_ptr<voe::ChannelProxy>(ChannelProxyFactory(channel_id));
   }
 
   // VoEAudioProcessing

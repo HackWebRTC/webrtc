@@ -17,7 +17,8 @@
 #include <conio.h>
 #endif
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/test/channel_transport/channel_transport.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
 
@@ -64,7 +65,7 @@ int VoECpuTest::DoTest() {
   CHECK(base->Init());
   channel = base->CreateChannel();
 
-  rtc::scoped_ptr<VoiceChannelTransport> voice_socket_transport(
+  std::unique_ptr<VoiceChannelTransport> voice_socket_transport(
       new VoiceChannelTransport(voe_network, channel));
 
   CHECK(voice_socket_transport->SetSendDestination("127.0.0.1", 5566));
