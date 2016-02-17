@@ -30,7 +30,6 @@
 
 namespace webrtc {
 
-class PacedSender;
 class RtcpIntraFrameObserver;
 class TransportFeedbackObserver;
 
@@ -160,7 +159,6 @@ VideoSendStream::VideoSendStream(
     : stats_proxy_(Clock::GetRealTimeClock(),
                    config,
                    encoder_config.content_type),
-      transport_adapter_(config.send_transport),
       encoded_frame_proxy_(config.post_encode_callback),
       config_(config),
       suspended_ssrcs_(suspended_ssrcs),
@@ -334,7 +332,6 @@ VideoCaptureInput* VideoSendStream::Input() {
 }
 
 void VideoSendStream::Start() {
-  transport_adapter_.Enable();
   vie_encoder_.Pause();
   if (vie_channel_.StartSend() == 0) {
     // Was not already started, trigger a keyframe.
@@ -348,7 +345,6 @@ void VideoSendStream::Stop() {
   // TODO(pbos): Make sure the encoder stops here.
   vie_channel_.StopSend();
   vie_receiver_->StopReceive();
-  transport_adapter_.Disable();
 }
 
 bool VideoSendStream::ReconfigureVideoEncoder(
