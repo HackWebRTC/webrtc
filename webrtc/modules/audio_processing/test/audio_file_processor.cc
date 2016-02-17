@@ -16,7 +16,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 
-using rtc::scoped_ptr;
 using rtc::CheckedDivExact;
 using std::vector;
 using webrtc::audioproc::Event;
@@ -41,9 +40,9 @@ ChannelBuffer<float> GetChannelBuffer(const WavFile& file) {
 
 }  // namespace
 
-WavFileProcessor::WavFileProcessor(scoped_ptr<AudioProcessing> ap,
-                                   scoped_ptr<WavReader> in_file,
-                                   scoped_ptr<WavWriter> out_file)
+WavFileProcessor::WavFileProcessor(std::unique_ptr<AudioProcessing> ap,
+                                   std::unique_ptr<WavReader> in_file,
+                                   std::unique_ptr<WavWriter> out_file)
     : ap_(std::move(ap)),
       in_buf_(GetChannelBuffer(*in_file)),
       out_buf_(GetChannelBuffer(*out_file)),
@@ -66,9 +65,9 @@ bool WavFileProcessor::ProcessChunk() {
   return true;
 }
 
-AecDumpFileProcessor::AecDumpFileProcessor(scoped_ptr<AudioProcessing> ap,
+AecDumpFileProcessor::AecDumpFileProcessor(std::unique_ptr<AudioProcessing> ap,
                                            FILE* dump_file,
-                                           scoped_ptr<WavWriter> out_file)
+                                           std::unique_ptr<WavWriter> out_file)
     : ap_(std::move(ap)),
       dump_file_(dump_file),
       out_buf_(GetChannelBuffer(*out_file)),

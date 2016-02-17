@@ -16,9 +16,9 @@
 #endif
 
 #include <algorithm>
+#include <memory>
 
 #include "webrtc/base/format_macros.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
@@ -147,7 +147,7 @@ void void_main(int argc, char* argv[]) {
     printf("Try `process_test --help' for more information.\n\n");
   }
 
-  rtc::scoped_ptr<AudioProcessing> apm(AudioProcessing::Create());
+  std::unique_ptr<AudioProcessing> apm(AudioProcessing::Create());
   ASSERT_TRUE(apm.get() != NULL);
 
   const char* pb_filename = NULL;
@@ -495,8 +495,8 @@ void void_main(int argc, char* argv[]) {
   FILE* aecm_echo_path_in_file = NULL;
   FILE* aecm_echo_path_out_file = NULL;
 
-  rtc::scoped_ptr<WavWriter> output_wav_file;
-  rtc::scoped_ptr<RawFile> output_raw_file;
+  std::unique_ptr<WavWriter> output_wav_file;
+  std::unique_ptr<RawFile> output_raw_file;
 
   if (pb_filename) {
     pb_file = OpenFile(pb_filename, "rb");
@@ -538,7 +538,7 @@ void void_main(int argc, char* argv[]) {
 
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
-    rtc::scoped_ptr<char[]> echo_path(new char[path_size]);
+    std::unique_ptr<char[]> echo_path(new char[path_size]);
     ASSERT_EQ(path_size, fread(echo_path.get(),
                                sizeof(char),
                                path_size,
@@ -580,8 +580,8 @@ void void_main(int argc, char* argv[]) {
   //            but for now we want to share the variables.
   if (pb_file) {
     Event event_msg;
-    rtc::scoped_ptr<ChannelBuffer<float> > reverse_cb;
-    rtc::scoped_ptr<ChannelBuffer<float> > primary_cb;
+    std::unique_ptr<ChannelBuffer<float> > reverse_cb;
+    std::unique_ptr<ChannelBuffer<float> > primary_cb;
     int output_sample_rate = 32000;
     AudioProcessing::ChannelLayout output_layout = AudioProcessing::kMono;
     while (ReadMessageFromFile(pb_file, &event_msg)) {
@@ -1061,7 +1061,7 @@ void void_main(int argc, char* argv[]) {
   if (aecm_echo_path_out_file != NULL) {
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
-    rtc::scoped_ptr<char[]> echo_path(new char[path_size]);
+    std::unique_ptr<char[]> echo_path(new char[path_size]);
     apm->echo_control_mobile()->GetEchoPath(echo_path.get(), path_size);
     ASSERT_EQ(path_size, fwrite(echo_path.get(),
                                 sizeof(char),

@@ -33,7 +33,7 @@ void RawFile::WriteSamples(const float* samples, size_t num_samples) {
   fwrite(samples, sizeof(*samples), num_samples, file_handle_);
 }
 
-ChannelBufferWavReader::ChannelBufferWavReader(rtc::scoped_ptr<WavReader> file)
+ChannelBufferWavReader::ChannelBufferWavReader(std::unique_ptr<WavReader> file)
     : file_(std::move(file)) {}
 
 bool ChannelBufferWavReader::Read(ChannelBuffer<float>* buffer) {
@@ -50,7 +50,7 @@ bool ChannelBufferWavReader::Read(ChannelBuffer<float>* buffer) {
   return true;
 }
 
-ChannelBufferWavWriter::ChannelBufferWavWriter(rtc::scoped_ptr<WavWriter> file)
+ChannelBufferWavWriter::ChannelBufferWavWriter(std::unique_ptr<WavWriter> file)
     : file_(std::move(file)) {}
 
 void ChannelBufferWavWriter::Write(const ChannelBuffer<float>& buffer) {
@@ -80,7 +80,7 @@ void WriteFloatData(const float* const* data,
                     WavWriter* wav_file,
                     RawFile* raw_file) {
   size_t length = num_channels * samples_per_channel;
-  rtc::scoped_ptr<float[]> buffer(new float[length]);
+  std::unique_ptr<float[]> buffer(new float[length]);
   Interleave(data, samples_per_channel, num_channels, buffer.get());
   if (raw_file) {
     raw_file->WriteSamples(buffer.get(), length);

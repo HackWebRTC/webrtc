@@ -15,9 +15,10 @@
 
 #include <stdio.h>
 
+#include <memory>
+
 #include "gflags/gflags.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/debug.pb.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
@@ -83,12 +84,12 @@ int do_main(int argc, char* argv[]) {
   size_t num_reverse_channels = 0;
   size_t num_input_channels = 0;
   size_t num_output_channels = 0;
-  rtc::scoped_ptr<WavWriter> reverse_wav_file;
-  rtc::scoped_ptr<WavWriter> input_wav_file;
-  rtc::scoped_ptr<WavWriter> output_wav_file;
-  rtc::scoped_ptr<RawFile> reverse_raw_file;
-  rtc::scoped_ptr<RawFile> input_raw_file;
-  rtc::scoped_ptr<RawFile> output_raw_file;
+  std::unique_ptr<WavWriter> reverse_wav_file;
+  std::unique_ptr<WavWriter> input_wav_file;
+  std::unique_ptr<WavWriter> output_wav_file;
+  std::unique_ptr<RawFile> reverse_raw_file;
+  std::unique_ptr<RawFile> input_raw_file;
+  std::unique_ptr<RawFile> output_raw_file;
 
   FILE* settings_file = OpenFile(FLAGS_settings_file, "wb");
 
@@ -116,7 +117,7 @@ int do_main(int argc, char* argv[]) {
         if (FLAGS_raw && !reverse_raw_file) {
           reverse_raw_file.reset(new RawFile(FLAGS_reverse_file + ".float"));
         }
-        rtc::scoped_ptr<const float* []> data(
+        std::unique_ptr<const float* []> data(
             new const float* [num_reverse_channels]);
         for (size_t i = 0; i < num_reverse_channels; ++i) {
           data[i] = reinterpret_cast<const float*>(msg.channel(i).data());
@@ -147,7 +148,7 @@ int do_main(int argc, char* argv[]) {
         if (FLAGS_raw && !input_raw_file) {
           input_raw_file.reset(new RawFile(FLAGS_input_file + ".float"));
         }
-        rtc::scoped_ptr<const float* []> data(
+        std::unique_ptr<const float* []> data(
             new const float* [num_input_channels]);
         for (size_t i = 0; i < num_input_channels; ++i) {
           data[i] = reinterpret_cast<const float*>(msg.input_channel(i).data());
@@ -171,7 +172,7 @@ int do_main(int argc, char* argv[]) {
         if (FLAGS_raw && !output_raw_file) {
           output_raw_file.reset(new RawFile(FLAGS_output_file + ".float"));
         }
-        rtc::scoped_ptr<const float* []> data(
+        std::unique_ptr<const float* []> data(
             new const float* [num_output_channels]);
         for (size_t i = 0; i < num_output_channels; ++i) {
           data[i] =

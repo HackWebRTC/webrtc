@@ -13,9 +13,9 @@
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -84,16 +84,16 @@ class AudioFileProcessor {
 class WavFileProcessor final : public AudioFileProcessor {
  public:
   // Takes ownership of all parameters.
-  WavFileProcessor(rtc::scoped_ptr<AudioProcessing> ap,
-                   rtc::scoped_ptr<WavReader> in_file,
-                   rtc::scoped_ptr<WavWriter> out_file);
+  WavFileProcessor(std::unique_ptr<AudioProcessing> ap,
+                   std::unique_ptr<WavReader> in_file,
+                   std::unique_ptr<WavWriter> out_file);
   virtual ~WavFileProcessor() {}
 
   // Processes one chunk from the WAV input and writes to the WAV output.
   bool ProcessChunk() override;
 
  private:
-  rtc::scoped_ptr<AudioProcessing> ap_;
+  std::unique_ptr<AudioProcessing> ap_;
 
   ChannelBuffer<float> in_buf_;
   ChannelBuffer<float> out_buf_;
@@ -107,9 +107,9 @@ class WavFileProcessor final : public AudioFileProcessor {
 class AecDumpFileProcessor final : public AudioFileProcessor {
  public:
   // Takes ownership of all parameters.
-  AecDumpFileProcessor(rtc::scoped_ptr<AudioProcessing> ap,
+  AecDumpFileProcessor(std::unique_ptr<AudioProcessing> ap,
                        FILE* dump_file,
-                       rtc::scoped_ptr<WavWriter> out_file);
+                       std::unique_ptr<WavWriter> out_file);
 
   virtual ~AecDumpFileProcessor();
 
@@ -122,11 +122,11 @@ class AecDumpFileProcessor final : public AudioFileProcessor {
   void HandleMessage(const webrtc::audioproc::Stream& msg);
   void HandleMessage(const webrtc::audioproc::ReverseStream& msg);
 
-  rtc::scoped_ptr<AudioProcessing> ap_;
+  std::unique_ptr<AudioProcessing> ap_;
   FILE* dump_file_;
 
-  rtc::scoped_ptr<ChannelBuffer<float>> in_buf_;
-  rtc::scoped_ptr<ChannelBuffer<float>> reverse_buf_;
+  std::unique_ptr<ChannelBuffer<float>> in_buf_;
+  std::unique_ptr<ChannelBuffer<float>> reverse_buf_;
   ChannelBuffer<float> out_buf_;
   StreamConfig input_config_;
   StreamConfig reverse_config_;
