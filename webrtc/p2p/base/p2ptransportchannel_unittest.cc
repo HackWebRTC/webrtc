@@ -1770,6 +1770,37 @@ TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
                  ep2_ch1()->GetState(), 1000);
 }
 
+// Tests that when a network interface becomes inactive, the ports associated
+// with that network will be removed from the port list of the channel if
+// and only if Continual Gathering is enabled.
+TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kPublicAddrs[1]);
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  ep1_ch1()->SetIceConfig(CreateIceConfig(2000, true));
+  ep2_ch1()->SetIceConfig(CreateIceConfig(2000, false));
+
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  // More than one port has been created.
+  EXPECT_LE(1U, ep1_ch1()->ports().size());
+  // Endpoint 1 enabled continual gathering; the port will be removed
+  // when the interface is removed.
+  RemoveAddress(0, kPublicAddrs[0]);
+  EXPECT_EQ(0U, ep1_ch1()->ports().size());
+
+  size_t num_ports = ep2_ch1()->ports().size();
+  EXPECT_LE(1U, num_ports);
+  // Endpoint 2 did not enable continual gathering; the port will not be removed
+  // when the interface is removed.
+  RemoveAddress(1, kPublicAddrs[1]);
+  EXPECT_EQ(num_ports, ep2_ch1()->ports().size());
+}
+
 /*
 
 TODO(pthatcher): Once have a way to handle network interfaces changes

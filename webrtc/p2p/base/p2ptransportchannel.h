@@ -227,6 +227,7 @@ class P2PTransportChannel : public TransportChannelImpl,
                         const std::string& remote_username,
                         bool port_muxed);
   void OnPortDestroyed(PortInterface* port);
+  void OnPortNetworkInactive(PortInterface* port);
   void OnRoleConflict(PortInterface* port);
 
   void OnConnectionStateChange(Connection* connection);

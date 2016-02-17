@@ -317,10 +317,11 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
     networks_ = merged_list;
     // Reset the active states of all networks.
     for (const auto& kv : networks_map_) {
-      kv.second->set_active(false);
-    }
-    for (Network* network : networks_) {
-      network->set_active(true);
+      Network* network = kv.second;
+      // If |network| is in the newly generated |networks_|, it is active.
+      bool found = std::find(networks_.begin(), networks_.end(), network) !=
+                   networks_.end();
+      network->set_active(found);
     }
     std::sort(networks_.begin(), networks_.end(), SortNetworks);
     // Now network interfaces are sorted, we should set the preference value

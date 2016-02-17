@@ -12,13 +12,15 @@
 
 #include <algorithm>
 #include <set>
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
-#include "webrtc/p2p/base/stunport.h"  // For STUN_PORT_TYPE.
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/common.h"
+#include "webrtc/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
+#include "webrtc/p2p/base/stunport.h"   // For STUN_PORT_TYPE.
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {
@@ -464,6 +466,8 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   port->SignalUnknownAddress.connect(
       this, &P2PTransportChannel::OnUnknownAddress);
   port->SignalDestroyed.connect(this, &P2PTransportChannel::OnPortDestroyed);
+  port->SignalNetworkInactive.connect(
+      this, &P2PTransportChannel::OnPortNetworkInactive);
   port->SignalRoleConflict.connect(
       this, &P2PTransportChannel::OnRoleConflict);
   port->SignalSentPacket.connect(this, &P2PTransportChannel::OnSentPacket);
@@ -1413,6 +1417,23 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
 
   LOG(INFO) << "Removed port from p2p socket: "
             << static_cast<int>(ports_.size()) << " remaining";
+}
+
+void P2PTransportChannel::OnPortNetworkInactive(PortInterface* port) {
+  // If it does not gather continually, the port will be removed from the list
+  // when ICE restarts.
+  if (!gather_continually_) {
+    return;
+  }
+  auto it = std::find(ports_.begin(), ports_.end(), port);
+  // Don't need to do anything if the port has been deleted from the port list.
+  if (it == ports_.end()) {
+    return;
+  }
+  ports_.erase(it);
+  LOG(INFO) << "Removed port due to inactive networks: " << ports_.size()
+            << " remaining";
+  // TODO(honghaiz): Signal candidate removals to the remote side.
 }
 
 // We data is available, let listeners know

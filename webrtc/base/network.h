@@ -265,6 +265,8 @@ class Network {
           AdapterType type);
   ~Network();
 
+  sigslot::signal1<const Network*> SignalInactive;
+
   const DefaultLocalAddressProvider* default_local_address_provider() {
     return default_local_address_provider_;
   }
@@ -342,7 +344,15 @@ class Network {
   // we do not remove it (because it may be used elsewhere). Instead, we mark
   // it inactive, so that we can detect network changes properly.
   bool active() const { return active_; }
-  void set_active(bool active) { active_ = active; }
+  void set_active(bool active) {
+    if (active_ == active) {
+      return;
+    }
+    active_ = active;
+    if (!active) {
+      SignalInactive(this);
+    }
+  }
 
   // Debugging description of this network
   std::string ToString() const;

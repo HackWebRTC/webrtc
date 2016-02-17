@@ -20,6 +20,7 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
+#include "webrtc/base/network.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
@@ -195,6 +196,7 @@ void Port::Construct() {
     ice_username_fragment_ = rtc::CreateRandomString(ICE_UFRAG_LENGTH);
     password_ = rtc::CreateRandomString(ICE_PWD_LENGTH);
   }
+  network_->SignalInactive.connect(this, &Port::OnNetworkInactive);
   // TODO(honghaiz): Make it configurable from user setting.
   network_cost_ =
       (network_->type() == rtc::ADAPTER_TYPE_CELLULAR) ? kMaxNetworkCost : 0;
@@ -633,11 +635,16 @@ void Port::OnMessage(rtc::Message *pmsg) {
   }
 }
 
+void Port::OnNetworkInactive(const rtc::Network* network) {
+  ASSERT(network == network_);
+  SignalNetworkInactive(this);
+}
+
 std::string Port::ToString() const {
   std::stringstream ss;
-  ss << "Port[" << content_name_ << ":" << component_
-     << ":" << generation_ << ":" << type_
-     << ":" << network_->ToString() << "]";
+  ss << "Port[" << std::hex << this << std::dec << ":" << content_name_ << ":"
+     << component_ << ":" << generation_ << ":" << type_ << ":"
+     << network_->ToString() << "]";
   return ss.str();
 }
 

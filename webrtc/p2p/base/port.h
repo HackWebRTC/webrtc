@@ -358,6 +358,8 @@ class Port : public PortInterface, public rtc::MessageHandler,
     return ice_role_ == ICEROLE_CONTROLLED && connections_.empty();
   }
 
+  void OnNetworkInactive(const rtc::Network* network);
+
   rtc::Thread* thread_;
   rtc::PacketSocketFactory* factory_;
   std::string type_;
