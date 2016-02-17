@@ -77,6 +77,7 @@ EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
       delay_logging_enabled_(false),
       extended_filter_enabled_(false),
       delay_agnostic_enabled_(false),
+      next_generation_aec_enabled_(false),
       render_queue_element_max_size_(0) {
   RTC_DCHECK(apm);
   RTC_DCHECK(crit_render);
@@ -356,6 +357,11 @@ bool EchoCancellationImpl::is_delay_agnostic_enabled() const {
   return delay_agnostic_enabled_;
 }
 
+bool EchoCancellationImpl::is_next_generation_aec_enabled() const {
+  rtc::CritScope cs(crit_capture_);
+  return next_generation_aec_enabled_;
+}
+
 bool EchoCancellationImpl::is_extended_filter_enabled() const {
   rtc::CritScope cs(crit_capture_);
   return extended_filter_enabled_;
@@ -447,6 +453,7 @@ void EchoCancellationImpl::SetExtraOptions(const Config& config) {
     rtc::CritScope cs(crit_capture_);
     extended_filter_enabled_ = config.Get<ExtendedFilter>().enabled;
     delay_agnostic_enabled_ = config.Get<DelayAgnostic>().enabled;
+    next_generation_aec_enabled_ = config.Get<NextGenerationAec>().enabled;
   }
   Configure();
 }
@@ -486,6 +493,9 @@ int EchoCancellationImpl::ConfigureHandle(void* handle) const {
   WebRtcAec_enable_delay_agnostic(
       WebRtcAec_aec_core(static_cast<Handle*>(handle)),
       delay_agnostic_enabled_ ? 1 : 0);
+  WebRtcAec_enable_next_generation_aec(
+      WebRtcAec_aec_core(static_cast<Handle*>(handle)),
+      next_generation_aec_enabled_ ? 1 : 0);
   return WebRtcAec_set_config(static_cast<Handle*>(handle), config);
 }
 

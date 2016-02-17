@@ -69,6 +69,17 @@ struct ExtendedFilter {
   bool enabled;
 };
 
+// Enables the next generation AEC functionality. This feature replaces the
+// standard methods for echo removal in the AEC. This configuration only applies
+// to EchoCancellation and not EchoControlMobile. It can be set in the
+// constructor or using AudioProcessing::SetExtraOptions().
+struct NextGenerationAec {
+  NextGenerationAec() : enabled(false) {}
+  explicit NextGenerationAec(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kNextGenerationAec;
+  bool enabled;
+};
+
 // Enables delay-agnostic echo cancellation. This feature relies on internally
 // estimated delays between the process and reverse streams, thus not relying
 // on reported system delays. This configuration only applies to

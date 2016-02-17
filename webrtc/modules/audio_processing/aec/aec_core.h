@@ -111,6 +111,12 @@ void WebRtcAec_enable_delay_agnostic(AecCore* self, int enable);
 // enabled and zero if disabled.
 int WebRtcAec_delay_agnostic_enabled(AecCore* self);
 
+// Non-zero enables, zero disables.
+void WebRtcAec_enable_next_generation_aec(AecCore* self, int enable);
+
+// Returns 1 if the next generation aec is enabled and zero if disabled.
+int WebRtcAec_next_generation_aec_enabled(AecCore* self);
+
 // Enables or disables extended filter mode. Non-zero enables, zero disables.
 void WebRtcAec_enable_extended_filter(AecCore* self, int enable);
 

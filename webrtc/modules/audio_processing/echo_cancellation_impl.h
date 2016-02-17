@@ -43,6 +43,7 @@ class EchoCancellationImpl : public EchoCancellation,
   void SetExtraOptions(const Config& config) override;
   bool is_delay_agnostic_enabled() const;
   bool is_extended_filter_enabled() const;
+  bool is_next_generation_aec_enabled() const;
 
   // Reads render side data that has been queued on the render call.
   // Called holding the capture lock.
@@ -92,6 +93,7 @@ class EchoCancellationImpl : public EchoCancellation,
   bool delay_logging_enabled_ GUARDED_BY(crit_capture_);
   bool extended_filter_enabled_ GUARDED_BY(crit_capture_);
   bool delay_agnostic_enabled_ GUARDED_BY(crit_capture_);
+  bool next_generation_aec_enabled_ GUARDED_BY(crit_capture_);
 
   size_t render_queue_element_max_size_ GUARDED_BY(crit_render_)
       GUARDED_BY(crit_capture_);
