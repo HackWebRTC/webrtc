@@ -12,10 +12,10 @@
 
 #include <string.h>
 #include <string>
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
@@ -123,7 +123,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ConvertByteArrayToDouble) {
 #define MAYBE_ConvertFloatToByteArray ConvertFloatToByteArray
 #endif
 TEST_F(TransientFileUtilsTest, MAYBE_ConvertFloatToByteArray) {
-  rtc::scoped_ptr<uint8_t[]> bytes(new uint8_t[4]);
+  std::unique_ptr<uint8_t[]> bytes(new uint8_t[4]);
 
   EXPECT_EQ(0, ConvertFloatToByteArray(kPi, bytes.get()));
   EXPECT_EQ(0, memcmp(bytes.get(), kPiBytesf, 4));
@@ -141,7 +141,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ConvertFloatToByteArray) {
 #define MAYBE_ConvertDoubleToByteArray ConvertDoubleToByteArray
 #endif
 TEST_F(TransientFileUtilsTest, MAYBE_ConvertDoubleToByteArray) {
-  rtc::scoped_ptr<uint8_t[]> bytes(new uint8_t[8]);
+  std::unique_ptr<uint8_t[]> bytes(new uint8_t[8]);
 
   EXPECT_EQ(0, ConvertDoubleToByteArray(kPi, bytes.get()));
   EXPECT_EQ(0, memcmp(bytes.get(), kPiBytes, 8));
@@ -161,7 +161,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ConvertDoubleToByteArray) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16BufferFromFile) {
   std::string test_filename = kTestFileName;
 
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   file->OpenFile(test_filename.c_str(),
                  true,    // Read only.
@@ -171,7 +171,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16BufferFromFile) {
       << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
-  rtc::scoped_ptr<int16_t[]> buffer(new int16_t[kBufferLength]);
+  std::unique_ptr<int16_t[]> buffer(new int16_t[kBufferLength]);
 
   EXPECT_EQ(kBufferLength, ReadInt16BufferFromFile(file.get(),
                                                    kBufferLength,
@@ -205,7 +205,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16BufferFromFile) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToFloatBuffer) {
   std::string test_filename = kTestFileName;
 
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   file->OpenFile(test_filename.c_str(),
                  true,    // Read only.
@@ -215,7 +215,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToFloatBuffer) {
       << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
-  rtc::scoped_ptr<float[]> buffer(new float[kBufferLength]);
+  std::unique_ptr<float[]> buffer(new float[kBufferLength]);
 
   EXPECT_EQ(kBufferLength, ReadInt16FromFileToFloatBuffer(file.get(),
                                                           kBufferLength,
@@ -252,7 +252,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToFloatBuffer) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToDoubleBuffer) {
   std::string test_filename = kTestFileName;
 
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   file->OpenFile(test_filename.c_str(),
                  true,    // Read only.
@@ -262,7 +262,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToDoubleBuffer) {
       << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
-  rtc::scoped_ptr<double[]> buffer(new double[kBufferLength]);
+  std::unique_ptr<double[]> buffer(new double[kBufferLength]);
 
   EXPECT_EQ(kBufferLength, ReadInt16FromFileToDoubleBuffer(file.get(),
                                                            kBufferLength,
@@ -297,7 +297,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToDoubleBuffer) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadFloatBufferFromFile) {
   std::string test_filename = kTestFileNamef;
 
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   file->OpenFile(test_filename.c_str(),
                  true,    // Read only.
@@ -307,7 +307,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadFloatBufferFromFile) {
       << kTestFileNamef.c_str();
 
   const size_t kBufferLength = 3;
-  rtc::scoped_ptr<float[]> buffer(new float[kBufferLength]);
+  std::unique_ptr<float[]> buffer(new float[kBufferLength]);
 
   EXPECT_EQ(kBufferLength, ReadFloatBufferFromFile(file.get(),
                                                    kBufferLength,
@@ -339,7 +339,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadFloatBufferFromFile) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadDoubleBufferFromFile) {
   std::string test_filename = kTestFileName;
 
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   file->OpenFile(test_filename.c_str(),
                  true,    // Read only.
@@ -349,7 +349,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadDoubleBufferFromFile) {
       << kTestFileName.c_str();
 
   const size_t kBufferLength = 3;
-  rtc::scoped_ptr<double[]> buffer(new double[kBufferLength]);
+  std::unique_ptr<double[]> buffer(new double[kBufferLength]);
 
   EXPECT_EQ(kBufferLength, ReadDoubleBufferFromFile(file.get(),
                                                     kBufferLength,
@@ -379,7 +379,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadDoubleBufferFromFile) {
 #define MAYBE_WriteInt16BufferToFile WriteInt16BufferToFile
 #endif
 TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
@@ -392,8 +392,8 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
       << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
-  rtc::scoped_ptr<int16_t[]> written_buffer(new int16_t[kBufferLength]);
-  rtc::scoped_ptr<int16_t[]> read_buffer(new int16_t[kBufferLength]);
+  std::unique_ptr<int16_t[]> written_buffer(new int16_t[kBufferLength]);
+  std::unique_ptr<int16_t[]> read_buffer(new int16_t[kBufferLength]);
 
   written_buffer[0] = 1;
   written_buffer[1] = 2;
@@ -426,7 +426,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
 #define MAYBE_WriteFloatBufferToFile WriteFloatBufferToFile
 #endif
 TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
@@ -439,8 +439,8 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
       << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
-  rtc::scoped_ptr<float[]> written_buffer(new float[kBufferLength]);
-  rtc::scoped_ptr<float[]> read_buffer(new float[kBufferLength]);
+  std::unique_ptr<float[]> written_buffer(new float[kBufferLength]);
+  std::unique_ptr<float[]> read_buffer(new float[kBufferLength]);
 
   written_buffer[0] = static_cast<float>(kPi);
   written_buffer[1] = static_cast<float>(kE);
@@ -473,7 +473,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
 #define MAYBE_WriteDoubleBufferToFile WriteDoubleBufferToFile
 #endif
 TEST_F(TransientFileUtilsTest, MAYBE_WriteDoubleBufferToFile) {
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
@@ -486,8 +486,8 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteDoubleBufferToFile) {
       << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
-  rtc::scoped_ptr<double[]> written_buffer(new double[kBufferLength]);
-  rtc::scoped_ptr<double[]> read_buffer(new double[kBufferLength]);
+  std::unique_ptr<double[]> written_buffer(new double[kBufferLength]);
+  std::unique_ptr<double[]> read_buffer(new double[kBufferLength]);
 
   written_buffer[0] = kPi;
   written_buffer[1] = kE;
@@ -523,9 +523,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_ExpectedErrorReturnValues) {
   std::string test_filename = kTestFileName;
 
   double value;
-  rtc::scoped_ptr<int16_t[]> int16_buffer(new int16_t[1]);
-  rtc::scoped_ptr<double[]> double_buffer(new double[1]);
-  rtc::scoped_ptr<FileWrapper> file(FileWrapper::Create());
+  std::unique_ptr<int16_t[]> int16_buffer(new int16_t[1]);
+  std::unique_ptr<double[]> double_buffer(new double[1]);
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   EXPECT_EQ(-1, ConvertByteArrayToDouble(NULL, &value));
   EXPECT_EQ(-1, ConvertByteArrayToDouble(kPiBytes, NULL));

@@ -17,7 +17,6 @@
 #include <deque>
 #include <set>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/fft4g.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"

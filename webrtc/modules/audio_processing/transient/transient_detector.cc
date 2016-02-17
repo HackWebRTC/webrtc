@@ -15,6 +15,8 @@
 #include <math.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "webrtc/modules/audio_processing/transient/common.h"
 #include "webrtc/modules/audio_processing/transient/daubechies_8_wavelet_coeffs.h"
 #include "webrtc/modules/audio_processing/transient/moving_moments.h"
