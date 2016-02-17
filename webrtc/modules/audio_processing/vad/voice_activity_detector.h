@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VOICE_ACTIVITY_DETECTOR_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VOICE_ACTIVITY_DETECTOR_H_
 
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/modules/audio_processing/vad/vad_audio_proc.h"
 #include "webrtc/modules/audio_processing/vad/common.h"
@@ -58,7 +58,7 @@ class VoiceActivityDetector {
   Resampler resampler_;
   VadAudioProc audio_processing_;
 
-  rtc::scoped_ptr<StandaloneVad> standalone_vad_;
+  std::unique_ptr<StandaloneVad> standalone_vad_;
   PitchBasedVad pitch_based_vad_;
 
   int16_t resampled_[kLength10Ms];

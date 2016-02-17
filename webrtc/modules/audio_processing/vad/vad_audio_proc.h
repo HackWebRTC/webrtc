@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_VAD_AUDIO_PROC_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/modules/audio_processing/vad/common.h"
 #include "webrtc/typedefs.h"
 
@@ -79,9 +80,9 @@ class VadAudioProc {
   double log_old_gain_;
   double old_lag_;
 
-  rtc::scoped_ptr<PitchAnalysisStruct> pitch_analysis_handle_;
-  rtc::scoped_ptr<PreFiltBankstr> pre_filter_handle_;
-  rtc::scoped_ptr<PoleZeroFilter> high_pass_filter_;
+  std::unique_ptr<PitchAnalysisStruct> pitch_analysis_handle_;
+  std::unique_ptr<PreFiltBankstr> pre_filter_handle_;
+  std::unique_ptr<PoleZeroFilter> high_pass_filter_;
 };
 
 }  // namespace webrtc
