@@ -286,9 +286,9 @@ class QuicSessionTest : public ::testing::Test,
 // establishes encryption with client.
 void QuicSessionTest::CreateClientAndServerSessions() {
   scoped_ptr<FakeTransportChannel> channel1(
-      new FakeTransportChannel(nullptr, "channel1", 0));
+      new FakeTransportChannel("channel1", 0));
   scoped_ptr<FakeTransportChannel> channel2(
-      new FakeTransportChannel(nullptr, "channel2", 0));
+      new FakeTransportChannel("channel2", 0));
 
   // Prevent channel1->OnReadPacket and channel2->OnReadPacket from calling
   // themselves in a loop, which causes to future packets to be recursively
