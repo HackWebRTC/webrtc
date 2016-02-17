@@ -733,6 +733,12 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
         params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps);
   }
 
+  // Handle conference mode.
+  if (params.conference_mode != send_params_.conference_mode) {
+    changed_params->conference_mode =
+        rtc::Optional<bool>(params.conference_mode);
+  }
+
   // Handle options.
   // TODO(pbos): Require VideoSendParameters to contain a full set of options
   // and check if params.options != options_ instead of applying a delta.
@@ -1503,6 +1509,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       first_frame_timestamp_ms_(0),
       last_frame_timestamp_ms_(0) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
+  parameters_.conference_mode = send_params.conference_mode;
 
   sp.GetPrimarySsrcs(&parameters_.config.rtp.ssrcs);
   sp.GetFidSsrcs(parameters_.config.rtp.ssrcs,
@@ -1792,6 +1799,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
     parameters_.max_bitrate_bps = *params.max_bandwidth_bps;
     pending_encoder_reconfiguration_ = true;
   }
+  if (params.conference_mode) {
+    parameters_.conference_mode = *params.conference_mode;
+  }
   // Set codecs and options.
   if (params.codec) {
     SetCodecAndOptions(*params.codec,
@@ -1805,6 +1815,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
     } else {
       parameters_.options = *params.options;
     }
+  }
+  else if (params.conference_mode && parameters_.codec_settings) {
+    SetCodecAndOptions(*parameters_.codec_settings, parameters_.options);
+    return;
   }
   if (recreate_stream) {
     LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetSendParameters";
@@ -1855,8 +1869,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
                          parameters_.max_bitrate_bps, stream_count);
 
   // Conference mode screencast uses 2 temporal layers split at 100kbit.
-  if (parameters_.options.conference_mode.value_or(false) &&
-      dimensions.is_screencast && encoder_config.streams.size() == 1) {
+  if (parameters_.conference_mode && dimensions.is_screencast &&
+      encoder_config.streams.size() == 1) {
     ScreenshareLayerConfig config = ScreenshareLayerConfig::GetDefault();
 
     // For screenshare in conference mode, tl0 and tl1 bitrates are piggybacked

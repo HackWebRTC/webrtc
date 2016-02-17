@@ -1069,7 +1069,7 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamWithSimAndRtx) {
   parameters.codecs = engine_.codecs();
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   EXPECT_TRUE(channel_->SetSend(true));
-  parameters.options.conference_mode = rtc::Optional<bool>(true);
+  parameters.conference_mode = true;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
   // Send side.
@@ -1513,7 +1513,7 @@ TEST_F(WebRtcVideoChannel2Test,
        ConferenceModeScreencastConfiguresTemporalLayer) {
   static const int kConferenceScreencastTemporalBitrateBps =
       ScreenshareLayerConfig::GetDefault().tl0_bitrate_kbps * 1000;
-  send_parameters_.options.conference_mode = rtc::Optional<bool>(true);
+  send_parameters_.conference_mode = true;
   channel_->SetSendParameters(send_parameters_);
 
   AddSendStream();

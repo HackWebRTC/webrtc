@@ -192,6 +192,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
     rtc::Optional<VideoCodecSettings> codec;
     rtc::Optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
     rtc::Optional<int> max_bandwidth_bps;
+    rtc::Optional<bool> conference_mode;
     rtc::Optional<VideoOptions> options;
     rtc::Optional<webrtc::RtcpMode> rtcp_mode;
   };
@@ -273,6 +274,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
       webrtc::VideoSendStream::Config config;
       VideoOptions options;
       int max_bitrate_bps;
+      bool conference_mode;
       rtc::Optional<VideoCodecSettings> codec_settings;
       // Sent resolutions + bitrates etc. by the underlying VideoSendStream,
       // typically changes when setting a new resolution or reconfiguring

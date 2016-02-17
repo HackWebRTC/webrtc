@@ -1798,7 +1798,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   VideoSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription(video, &send_params);
   if (video->conference_mode()) {
-    send_params.options.conference_mode = rtc::Optional<bool>(true);
+    send_params.conference_mode = true;
   }
   if (!media_channel()->SetSendParameters(send_params)) {
     SafeSetError("Failed to set remote video description send parameters.",

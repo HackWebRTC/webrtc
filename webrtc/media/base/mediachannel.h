@@ -129,7 +129,6 @@ struct AudioOptions {
             change.audio_jitter_buffer_fast_accelerate);
     SetFrom(&typing_detection, change.typing_detection);
     SetFrom(&aecm_generate_comfort_noise, change.aecm_generate_comfort_noise);
-    SetFrom(&conference_mode, change.conference_mode);
     SetFrom(&adjust_agc_delta, change.adjust_agc_delta);
     SetFrom(&experimental_agc, change.experimental_agc);
     SetFrom(&extended_filter_aec, change.extended_filter_aec);
@@ -156,7 +155,6 @@ struct AudioOptions {
             o.audio_jitter_buffer_fast_accelerate &&
         typing_detection == o.typing_detection &&
         aecm_generate_comfort_noise == o.aecm_generate_comfort_noise &&
-        conference_mode == o.conference_mode &&
         experimental_agc == o.experimental_agc &&
         extended_filter_aec == o.extended_filter_aec &&
         delay_agnostic_aec == o.delay_agnostic_aec &&
@@ -185,7 +183,6 @@ struct AudioOptions {
                          audio_jitter_buffer_fast_accelerate);
     ost << ToStringIfSet("typing", typing_detection);
     ost << ToStringIfSet("comfort_noise", aecm_generate_comfort_noise);
-    ost << ToStringIfSet("conference", conference_mode);
     ost << ToStringIfSet("agc_delta", adjust_agc_delta);
     ost << ToStringIfSet("experimental_agc", experimental_agc);
     ost << ToStringIfSet("extended_filter_aec", extended_filter_aec);
@@ -221,7 +218,6 @@ struct AudioOptions {
   // Audio processing to detect typing.
   rtc::Optional<bool> typing_detection;
   rtc::Optional<bool> aecm_generate_comfort_noise;
-  rtc::Optional<bool> conference_mode;
   rtc::Optional<int> adjust_agc_delta;
   rtc::Optional<bool> experimental_agc;
   rtc::Optional<bool> extended_filter_aec;
@@ -256,14 +252,12 @@ struct AudioOptions {
 struct VideoOptions {
   void SetAll(const VideoOptions& change) {
     SetFrom(&video_noise_reduction, change.video_noise_reduction);
-    SetFrom(&conference_mode, change.conference_mode);
     SetFrom(&suspend_below_min_bitrate, change.suspend_below_min_bitrate);
     SetFrom(&screencast_min_bitrate_kbps, change.screencast_min_bitrate_kbps);
   }
 
   bool operator==(const VideoOptions& o) const {
     return video_noise_reduction == o.video_noise_reduction &&
-           conference_mode == o.conference_mode &&
            suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
            screencast_min_bitrate_kbps == o.screencast_min_bitrate_kbps;
   }
@@ -272,7 +266,6 @@ struct VideoOptions {
     std::ostringstream ost;
     ost << "VideoOptions {";
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
-    ost << ToStringIfSet("conference mode", conference_mode);
     ost << ToStringIfSet("suspend below min bitrate",
                          suspend_below_min_bitrate);
     ost << ToStringIfSet("screencast min bitrate kbps",
@@ -285,13 +278,6 @@ struct VideoOptions {
   // constraint 'googNoiseReduction', and WebRtcVideoEngine2 passes it
   // on to the codec options. Disabled by default.
   rtc::Optional<bool> video_noise_reduction;
-  // Use conference mode? This flag comes from the remote
-  // description's SDP line 'a=x-google-flag:conference', copied over
-  // by VideoChannel::SetRemoteContent_w, and ultimately used by
-  // conference mode screencast logic in
-  // WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig.
-  // The special screencast behaviour is disabled by default.
-  rtc::Optional<bool> conference_mode;
   // Enable WebRTC suspension of video. No video frames will be sent
   // when the bitrate is below the configured minimum bitrate. This
   // flag comes from the PeerConnection constraint
@@ -946,6 +932,13 @@ class VoiceMediaChannel : public MediaChannel {
 };
 
 struct VideoSendParameters : RtpSendParameters<VideoCodec, VideoOptions> {
+  // Use conference mode? This flag comes from the remote
+  // description's SDP line 'a=x-google-flag:conference', copied over
+  // by VideoChannel::SetRemoteContent_w, and ultimately used by
+  // conference mode screencast logic in
+  // WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig.
+  // The special screencast behaviour is disabled by default.
+  bool conference_mode = false;
 };
 
 struct VideoRecvParameters : RtpParameters<VideoCodec> {
