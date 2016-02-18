@@ -28,7 +28,7 @@ P2PTransport::~P2PTransport() {
 }
 
 TransportChannelImpl* P2PTransport::CreateTransportChannel(int component) {
-  return new P2PTransportChannel(name(), component, port_allocator());
+  return new P2PTransportChannel(name(), component, this, port_allocator());
 }
 
 void P2PTransport::DestroyTransportChannel(TransportChannelImpl* channel) {

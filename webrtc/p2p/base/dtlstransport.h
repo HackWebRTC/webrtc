@@ -199,7 +199,7 @@ class DtlsTransport : public Base {
 
   DtlsTransportChannelWrapper* CreateTransportChannel(int component) override {
     DtlsTransportChannelWrapper* channel = new DtlsTransportChannelWrapper(
-        Base::CreateTransportChannel(component));
+        this, Base::CreateTransportChannel(component));
     channel->SetSslMaxProtocolVersion(ssl_max_version_);
     return channel;
   }
