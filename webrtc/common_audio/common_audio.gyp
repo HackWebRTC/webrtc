@@ -228,10 +228,9 @@
         },
       ],  # targets
     }],
-    ['include_tests==1 and OS!="ios"', {
+    ['include_tests==1', {
       'targets' : [
         {
-          # Does not compile on iOS: webrtc:4755.
           'target_name': 'common_audio_unittests',
           'type': '<(gtest_target_type)',
           'dependencies': [
@@ -251,7 +250,6 @@
             'resampler/resampler_unittest.cc',
             'resampler/push_resampler_unittest.cc',
             'resampler/push_sinc_resampler_unittest.cc',
-            'resampler/sinc_resampler_unittest.cc',
             'resampler/sinusoidal_linear_chirp_source.cc',
             'resampler/sinusoidal_linear_chirp_source.h',
             'ring_buffer_unittest.cc',
@@ -276,6 +274,12 @@
             ['OS=="android"', {
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+            }],
+            # Does not compile on iOS for arm: webrtc:5544.
+            ['OS!="ios" or target_arch!="arm"' , {
+              'sources': [
+                'resampler/sinc_resampler_unittest.cc',
               ],
             }],
           ],
