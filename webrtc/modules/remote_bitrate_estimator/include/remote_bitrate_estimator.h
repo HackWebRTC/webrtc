@@ -38,6 +38,9 @@ class RemoteBitrateObserver {
   virtual ~RemoteBitrateObserver() {}
 };
 
+// TODO(holmer): Remove when all implementations have been updated.
+struct ReceiveBandwidthEstimatorStats {};
+
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
   static const int kDefaultMinBitrateBps = 30000;
@@ -66,6 +69,11 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   // currently being received and of which the bitrate estimate is based upon.
   virtual bool LatestEstimate(std::vector<uint32_t>* ssrcs,
                               uint32_t* bitrate_bps) const = 0;
+
+  // TODO(holmer): Remove when all implementations have been updated.
+  bool GetStats(ReceiveBandwidthEstimatorStats* output) const {
+    return false;
+  }
 
   virtual void SetMinBitrate(int min_bitrate_bps) = 0;
 

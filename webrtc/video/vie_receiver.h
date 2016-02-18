@@ -32,7 +32,6 @@ class RTPPayloadRegistry;
 class RtpReceiver;
 class RtpRtcp;
 class VideoCodingModule;
-struct ReceiveBandwidthEstimatorStats;
 
 class ViEReceiver : public RtpData {
  public:
