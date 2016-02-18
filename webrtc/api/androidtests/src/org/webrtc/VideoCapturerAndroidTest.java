@@ -153,6 +153,18 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   }
 
   @MediumTest
+  public void testCameraEventsUsingTextures() throws InterruptedException {
+    EglBase eglBase = EglBase.create();
+    VideoCapturerAndroidTestFixtures.CameraEvents cameraEvents =
+        VideoCapturerAndroidTestFixtures.createCameraEvents();
+    VideoCapturerAndroid capturer =
+        VideoCapturerAndroid.create("", cameraEvents, eglBase.getEglBaseContext());
+    VideoCapturerAndroidTestFixtures.cameraEventsInvoked(
+        capturer, cameraEvents, getInstrumentation().getContext());
+    eglBase.release();
+  }
+
+  @MediumTest
   // Test what happens when attempting to call e.g. switchCamera() after camera has been stopped.
   public void testCameraCallsAfterStop() throws InterruptedException {
     final String deviceName = CameraEnumerationAndroid.getDeviceName(0);

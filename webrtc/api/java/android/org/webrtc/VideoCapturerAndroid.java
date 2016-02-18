@@ -678,9 +678,13 @@ public class VideoCapturerAndroid implements
       return;
     }
     if (dropNextFrame)  {
-     surfaceHelper.returnTextureFrame();
-     dropNextFrame = false;
-     return;
+      surfaceHelper.returnTextureFrame();
+      dropNextFrame = false;
+      return;
+    }
+    if (eventsHandler != null && !firstFrameReported) {
+      eventsHandler.onFirstFrameAvailable();
+      firstFrameReported = true;
     }
 
     int rotation = getFrameOrientation();
