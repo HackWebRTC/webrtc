@@ -17,6 +17,14 @@ config("audio_device_config") {
 }
 
 source_set("audio_device") {
+  deps = [
+    "../..:webrtc_common",
+    "../../base:rtc_base_approved",
+    "../../common_audio",
+    "../../system_wrappers",
+    "../utility",
+  ]
+
   sources = [
     "audio_device_buffer.cc",
     "audio_device_buffer.h",
@@ -122,10 +130,14 @@ source_set("audio_device") {
       ]
     }
     if (is_ios) {
+      deps += [ "../../base:rtc_base_objc" ]
       sources += [
         "ios/audio_device_ios.h",
         "ios/audio_device_ios.mm",
         "ios/audio_device_not_implemented_ios.mm",
+        "ios/objc/RTCAudioSession+Private.h",
+        "ios/objc/RTCAudioSession.h",
+        "ios/objc/RTCAudioSession.mm",
       ]
       cflags += [ "-fobjc-arc" ]  # CLANG_ENABLE_OBJC_ARC = YES.
       libs = [
@@ -175,12 +187,4 @@ source_set("audio_device") {
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
-
-  deps = [
-    "../..:webrtc_common",
-    "../../base:rtc_base_approved",
-    "../../common_audio",
-    "../../system_wrappers",
-    "../utility",
-  ]
 }
