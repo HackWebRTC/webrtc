@@ -24,6 +24,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/real_fourier.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
@@ -35,34 +36,17 @@
 #include "webrtc/test/testsupport/fileutils.h"
 
 using std::complex;
-using webrtc::intelligibility::VarianceArray;
 
 namespace webrtc {
 namespace {
 
-bool ValidateClearWindow(const char* flagname, int32_t value) {
-  return value > 0;
-}
-
-DEFINE_int32(clear_type,
-             webrtc::intelligibility::VarianceArray::kStepDecaying,
-             "Variance algorithm for clear data.");
-DEFINE_double(clear_alpha, 0.9, "Variance decay factor for clear data.");
-DEFINE_int32(clear_window,
-             475,
-             "Window size for windowed variance for clear data.");
-const bool clear_window_dummy =
-    google::RegisterFlagValidator(&FLAGS_clear_window, &ValidateClearWindow);
+DEFINE_double(clear_alpha, 0.9, "Power decay factor for clear data.");
 DEFINE_int32(sample_rate,
              16000,
              "Audio sample rate used in the input and output files.");
 DEFINE_int32(ana_rate,
-             800,
+             60,
              "Analysis rate; gains recalculated every N blocks.");
-DEFINE_int32(
-    var_rate,
-    2,
-    "Variance clear rate; history is forgotten every N gain recalculations.");
 DEFINE_double(gain_limit, 1000.0, "Maximum gain change in one block.");
 
 DEFINE_string(clear_file, "speech.wav", "Input file with clear speech.");
@@ -77,11 +61,7 @@ const size_t kNumChannels = 1;
 // void function for gtest
 void void_main(int argc, char* argv[]) {
   google::SetUsageMessage(
-      "\n\nVariance algorithm types are:\n"
-      "  0 - infinite/normal,\n"
-      "  1 - exponentially decaying,\n"
-      "  2 - rolling window.\n"
-      "\nInput files must be little-endian 16-bit signed raw PCM.\n");
+      "\n\nInput files must be little-endian 16-bit signed raw PCM.\n");
   google::ParseCommandLineFlags(&argc, &argv, true);
 
   size_t samples;        // Number of samples in input PCM file
@@ -105,17 +85,17 @@ void void_main(int argc, char* argv[]) {
   WavReader in_file(FLAGS_clear_file);
   std::vector<float> in_fpcm(samples);
   in_file.ReadSamples(samples, &in_fpcm[0]);
+  FloatS16ToFloat(&in_fpcm[0], samples, &in_fpcm[0]);
 
   WavReader noise_file(FLAGS_noise_file);
   std::vector<float> noise_fpcm(samples);
   noise_file.ReadSamples(samples, &noise_fpcm[0]);
+  FloatS16ToFloat(&noise_fpcm[0], samples, &noise_fpcm[0]);
 
   // Run intelligibility enhancement.
   IntelligibilityEnhancer::Config config;
   config.sample_rate_hz = FLAGS_sample_rate;
-  config.var_type = static_cast<VarianceArray::StepType>(FLAGS_clear_type);
-  config.var_decay_rate = static_cast<float>(FLAGS_clear_alpha);
-  config.var_window_size = static_cast<size_t>(FLAGS_clear_window);
+  config.decay_rate = static_cast<float>(FLAGS_clear_alpha);
   config.analysis_rate = FLAGS_ana_rate;
   config.gain_change_limit = FLAGS_gain_limit;
   IntelligibilityEnhancer enh(config);
@@ -145,6 +125,8 @@ void void_main(int argc, char* argv[]) {
     clear_cursor += fragment_size;
     noise_cursor += fragment_size;
   }
+
+  FloatToFloatS16(&in_fpcm[0], samples, &in_fpcm[0]);
 
   if (FLAGS_out_file.compare("-") == 0) {
     const std::string temp_out_filename =

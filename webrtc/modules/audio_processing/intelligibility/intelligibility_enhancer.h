@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//
-//  Specifies core class for intelligbility enhancement.
-//
-
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_ENHANCER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_ENHANCER_H_
 
@@ -28,30 +24,25 @@ namespace webrtc {
 // Speech intelligibility enhancement module. Reads render and capture
 // audio streams and modifies the render stream with a set of gains per
 // frequency bin to enhance speech against the noise background.
-// Note: assumes speech and noise streams are already separated.
+// Details of the model and algorithm can be found in the original paper:
+// http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6882788
 class IntelligibilityEnhancer {
  public:
   struct Config {
-    // |var_*| are parameters for the VarianceArray constructor for the
-    // clear speech stream.
-    // TODO(bercic): the |var_*|, |*_rate| and |gain_limit| parameters should
-    // probably go away once fine tuning is done.
+    // TODO(bercic): the |decay_rate|, |analysis_rate| and |gain_limit|
+    // parameters should probably go away once fine tuning is done.
     Config()
         : sample_rate_hz(16000),
           num_capture_channels(1),
           num_render_channels(1),
-          var_type(intelligibility::VarianceArray::kStepDecaying),
-          var_decay_rate(0.9f),
-          var_window_size(10),
-          analysis_rate(800),
+          decay_rate(0.9f),
+          analysis_rate(60),
           gain_change_limit(0.1f),
           rho(0.02f) {}
     int sample_rate_hz;
     size_t num_capture_channels;
     size_t num_render_channels;
-    intelligibility::VarianceArray::StepType var_type;
-    float var_decay_rate;
-    size_t var_window_size;
+    float decay_rate;
     int analysis_rate;
     float gain_change_limit;
     float rho;
@@ -90,13 +81,13 @@ class IntelligibilityEnhancer {
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestErbCreation);
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestSolveForGains);
 
-  // Updates variance computation and analysis with |in_block_|,
+  // Updates power computation and analysis with |in_block_|,
   // and writes modified speech to |out_block|.
   void ProcessClearBlock(const std::complex<float>* in_block,
                          std::complex<float>* out_block);
 
   // Computes and sets modified gains.
-  void AnalyzeClearBlock(float power_target);
+  void AnalyzeClearBlock();
 
   // Bisection search for optimal |lambda|.
   void SolveForLambda(float power_target, float power_bot, float power_top);
@@ -127,10 +118,10 @@ class IntelligibilityEnhancer {
   const bool active_;          // Whether render gains are being updated.
                                // TODO(ekm): Add logic for updating |active_|.
 
-  intelligibility::VarianceArray clear_variance_;
+  intelligibility::PowerEstimator clear_power_;
   std::vector<float> noise_power_;
-  rtc::scoped_ptr<float[]> filtered_clear_var_;
-  rtc::scoped_ptr<float[]> filtered_noise_var_;
+  rtc::scoped_ptr<float[]> filtered_clear_pow_;
+  rtc::scoped_ptr<float[]> filtered_noise_pow_;
   rtc::scoped_ptr<float[]> center_freqs_;
   std::vector<std::vector<float>> capture_filter_bank_;
   std::vector<std::vector<float>> render_filter_bank_;
