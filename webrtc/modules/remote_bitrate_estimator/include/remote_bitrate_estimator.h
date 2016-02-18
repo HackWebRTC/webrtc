@@ -71,7 +71,7 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
                               uint32_t* bitrate_bps) const = 0;
 
   // TODO(holmer): Remove when all implementations have been updated.
-  bool GetStats(ReceiveBandwidthEstimatorStats* output) const {
+  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const {
     return false;
   }
 
