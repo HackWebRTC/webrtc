@@ -138,6 +138,11 @@
                 ],
               },
             }],  # OS=="linux"
+            ['OS=="linux" and target_arch=="ia32"', {
+              'cflags': [
+                '-Wno-sentinel',
+              ],
+            }],  # OS=="linux" and target_arch=="ia32"
           ],  # conditions
         },  # target peerconnection_client
       ], # targets
