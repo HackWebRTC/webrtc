@@ -165,6 +165,16 @@
             ],
           },
           'conditions': [
+            ['OS=="ios"', {
+              'xcode_settings': {
+                'WARNING_CFLAGS':  [
+                  # Suppress compiler warnings about deprecated that triggered
+                  # when moving from ios_deployment_target 7.0 to 9.0.
+                  # See webrtc:5549 for more details.
+                  '-Wno-deprecated-declarations',
+                ],
+              },
+            }],
             ['OS=="mac"', {
               'xcode_settings': {
                 'MACOSX_DEPLOYMENT_TARGET' : '10.8',
@@ -235,6 +245,16 @@
             '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
           ],
           'conditions': [
+            ['OS=="ios"', {
+              'xcode_settings': {
+                'WARNING_CFLAGS':  [
+                  # Suppress compiler warnings about deprecated that triggered
+                  # when moving from ios_deployment_target 7.0 to 9.0.
+                  # See webrtc:5549 for more details.
+                  '-Wno-deprecated-declarations',
+                ],
+              },
+            }],
             ['OS=="mac"', {
               'xcode_settings': {
                 'MACOSX_DEPLOYMENT_TARGET' : '10.8',
@@ -286,6 +306,12 @@
               ],
               'xcode_settings': {
                 'INFOPLIST_FILE': 'examples/objc/AppRTCDemo/ios/Info.plist',
+                'WARNING_CFLAGS':  [
+                  # Suppress compiler warnings about deprecated that triggered
+                  # when moving from ios_deployment_target 7.0 to 9.0.
+                  # See webrtc:5549 for more details.
+                  '-Wno-deprecated-declarations',
+                ],
               },
             }],
             ['OS=="mac"', {

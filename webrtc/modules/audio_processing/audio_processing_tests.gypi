@@ -72,6 +72,18 @@
       'sources': [
         'intelligibility/test/intelligibility_proc.cc',
       ],
+      'conditions': [
+        ['OS=="ios"', {
+          'xcode_settings': {
+            'WARNING_CFLAGS':  [
+              # Suppress compiler warnings about deprecated that triggered
+              # when moving from ios_deployment_target 7.0 to 9.0.
+              # See webrtc:5549 for more details.
+              '-Wno-deprecated-declarations',
+            ],
+          },
+        }],
+      ],
     }, # intelligibility_proc
   ],
   'conditions': [

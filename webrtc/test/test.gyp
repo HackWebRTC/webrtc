@@ -41,6 +41,9 @@
         'channel_transport/udp_transport_impl.cc',
         'channel_transport/udp_transport_impl.h',
       ],
+      'msvs_disabled_warnings': [
+        4302,  # cast truncation
+      ],
       'conditions': [
         ['OS=="win" and clang==1', {
           'msvs_settings': {
