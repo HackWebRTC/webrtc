@@ -896,7 +896,10 @@ MediaCodecVideoDecoderFactory::~MediaCodecVideoDecoderFactory() {
 void MediaCodecVideoDecoderFactory::SetEGLContext(
     JNIEnv* jni, jobject egl_context) {
   ALOGD << "MediaCodecVideoDecoderFactory::SetEGLContext";
-  RTC_DCHECK(!egl_context_);
+  if (egl_context_) {
+    jni->DeleteGlobalRef(egl_context_);
+    egl_context_ = nullptr;
+  }
   egl_context_ = jni->NewGlobalRef(egl_context);
   if (CheckException(jni)) {
     ALOGE << "error calling NewGlobalRef for EGL Context.";

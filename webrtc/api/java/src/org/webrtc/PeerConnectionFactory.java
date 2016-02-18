@@ -171,8 +171,13 @@ public class PeerConnectionFactory {
    */
   public void setVideoHwAccelerationOptions(EglBase.Context localEglContext,
       EglBase.Context remoteEglContext) {
-    if (localEglbase != null || remoteEglbase != null) {
-      throw new IllegalStateException("Egl context already set.");
+    if (localEglbase != null) {
+      Logging.w(TAG, "Egl context already set.");
+      localEglbase.release();
+    }
+    if (remoteEglbase != null) {
+      Logging.w(TAG, "Egl context already set.");
+      remoteEglbase.release();
     }
     localEglbase = EglBase.create(localEglContext);
     remoteEglbase = EglBase.create(remoteEglContext);
