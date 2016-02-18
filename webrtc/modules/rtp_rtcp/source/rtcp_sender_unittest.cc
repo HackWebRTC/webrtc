@@ -18,10 +18,15 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/test/mock_transport.h"
 #include "webrtc/test/rtcp_packet_parser.h"
 
+using ::testing::_;
 using ::testing::ElementsAre;
+using ::testing::Invoke;
+using webrtc::RTCPUtility::RtcpCommonHeader;
 
 namespace webrtc {
 
@@ -759,6 +764,45 @@ TEST_F(RtcpSenderTest, SendCompoundPliRemb) {
   EXPECT_EQ(0, rtcp_sender_->SendCompoundRTCP(feedback_state(), packet_types));
   EXPECT_EQ(1, parser()->remb_item()->num_packets());
   EXPECT_EQ(1, parser()->pli()->num_packets());
+}
+
+
+// This test is written to verify that BYE is always the last packet
+// type in a RTCP compoud packet.  The rtcp_sender_ is recreated with
+// mock_transport, which is used to check for whether BYE at the end
+// of a RTCP compound packet.
+TEST_F(RtcpSenderTest, ByeMustBeLast) {
+  MockTransport mock_transport;
+  EXPECT_CALL(mock_transport, SendRtcp(_, _))
+    .WillOnce(Invoke([](const uint8_t* data, size_t len) {
+    const uint8_t* next_packet = data;
+    while (next_packet < data + len) {
+      RtcpCommonHeader header;
+      RtcpParseCommonHeader(next_packet, len - (next_packet - data), &header);
+      next_packet = next_packet +
+        header.payload_size_bytes +
+        RtcpCommonHeader::kHeaderSizeBytes;
+      if (header.packet_type == RTCPUtility::PT_BYE) {
+        bool is_last_packet = (data + len == next_packet);
+        EXPECT_TRUE(is_last_packet) <<
+          "Bye packet should be last in a compound RTCP packet.";
+      }
+    }
+
+    return true;
+  }));
+
+  // Re-configure rtcp_sender_ with mock_transport_
+  rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
+                                    nullptr, nullptr, &mock_transport));
+  rtcp_sender_->SetSSRC(kSenderSsrc);
+  rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
+
+  // Set up XR VoIP metric to be included with BYE
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
+  RTCPVoIPMetric metric;
+  EXPECT_EQ(0, rtcp_sender_->SetRTCPVoIPMetrics(&metric));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpBye));
 }
 
 }  // namespace webrtc

@@ -835,6 +835,8 @@ int32_t RTCPSender::SendCompoundRTCP(
 
     PrepareReport(packet_types, feedback_state);
 
+    rtc::scoped_ptr<rtcp::RtcpPacket> packet_bye;
+
     auto it = report_flags_.begin();
     while (it != report_flags_.end()) {
       auto builder_it = builders_.find(it->type);
@@ -849,7 +851,18 @@ int32_t RTCPSender::SendCompoundRTCP(
       rtc::scoped_ptr<rtcp::RtcpPacket> packet = (this->*func)(context);
       if (packet.get() == nullptr)
         return -1;
-      container.Append(packet.release());
+      // If there is a BYE, don't append now - save it and append it
+      // at the end later.
+      if (builder_it->first == kRtcpBye) {
+        packet_bye = std::move(packet);
+      } else {
+        container.Append(packet.release());
+      }
+    }
+
+    // Append the BYE now at the end
+    if (packet_bye) {
+      container.Append(packet_bye.release());
     }
 
     if (packet_type_counter_observer_ != nullptr) {
