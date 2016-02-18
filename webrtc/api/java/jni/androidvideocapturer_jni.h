@@ -40,7 +40,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
              webrtc::AndroidVideoCapturer* capturer) override;
   void Stop() override;
 
-  std::string GetSupportedFormats() override;
+  std::vector<cricket::VideoFormat> GetSupportedFormats() override;
 
   // Called from VideoCapturer::NativeObserver on a Java thread.
   void OnCapturerStarted(bool success);

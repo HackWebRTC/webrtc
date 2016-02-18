@@ -114,14 +114,40 @@ void AndroidVideoCapturerJni::AsyncCapturerInvoke(
   invoker_->AsyncInvoke<void>(rtc::Bind(method, capturer_, args...));
 }
 
-std::string AndroidVideoCapturerJni::GetSupportedFormats() {
-  jmethodID m =
-      GetMethodID(jni(), *j_video_capturer_class_,
-                  "getSupportedFormatsAsJson", "()Ljava/lang/String;");
-  jstring j_json_caps =
-      (jstring) jni()->CallObjectMethod(*j_video_capturer_, m);
-  CHECK_EXCEPTION(jni()) << "error during supportedFormatsAsJson";
-  return JavaToStdString(jni(), j_json_caps);
+std::vector<cricket::VideoFormat>
+AndroidVideoCapturerJni::GetSupportedFormats() {
+  JNIEnv* jni = AttachCurrentThreadIfNeeded();
+  jobject j_list_of_formats = jni->CallObjectMethod(
+      *j_video_capturer_,
+      GetMethodID(jni, *j_video_capturer_class_, "getSupportedFormats",
+                  "()Ljava/util/List;"));
+  CHECK_EXCEPTION(jni) << "error during getSupportedFormats";
+
+  // Extract Java List<CaptureFormat> to std::vector<cricket::VideoFormat>.
+  jclass j_list_class = jni->FindClass("java/util/List");
+  jclass j_format_class =
+      jni->FindClass("org/webrtc/CameraEnumerationAndroid$CaptureFormat");
+  const int size = jni->CallIntMethod(
+      j_list_of_formats, GetMethodID(jni, j_list_class, "size", "()I"));
+  jmethodID j_get =
+      GetMethodID(jni, j_list_class, "get", "(I)Ljava/lang/Object;");
+  jfieldID j_width_field = GetFieldID(jni, j_format_class, "width", "I");
+  jfieldID j_height_field = GetFieldID(jni, j_format_class, "height", "I");
+  jfieldID j_max_framerate_field =
+      GetFieldID(jni, j_format_class, "maxFramerate", "I");
+
+  std::vector<cricket::VideoFormat> formats;
+  formats.reserve(size);
+  for (int i = 0; i < size; ++i) {
+    jobject j_format = jni->CallObjectMethod(j_list_of_formats, j_get, i);
+    const int frame_interval = cricket::VideoFormat::FpsToInterval(
+        (GetIntField(jni, j_format, j_max_framerate_field) + 999) / 1000);
+    formats.emplace_back(GetIntField(jni, j_format, j_width_field),
+                         GetIntField(jni, j_format, j_height_field),
+                         frame_interval, cricket::FOURCC_NV21);
+  }
+  CHECK_EXCEPTION(jni) << "error while extracting formats";
+  return formats;
 }
 
 void AndroidVideoCapturerJni::OnCapturerStarted(bool success) {

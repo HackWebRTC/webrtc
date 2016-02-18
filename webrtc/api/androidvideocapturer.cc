@@ -12,7 +12,6 @@
 
 #include "webrtc/api/java/jni/native_handle_impl.h"
 #include "webrtc/base/common.h"
-#include "webrtc/base/json.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
 
@@ -119,29 +118,7 @@ AndroidVideoCapturer::AndroidVideoCapturer(
       frame_factory_(NULL),
       current_state_(cricket::CS_STOPPED) {
   thread_checker_.DetachFromThread();
-  std::string json_string = delegate_->GetSupportedFormats();
-  LOG(LS_INFO) << json_string;
-
-  Json::Value json_values;
-  Json::Reader reader(Json::Features::strictMode());
-  if (!reader.parse(json_string, json_values)) {
-    LOG(LS_ERROR) << "Failed to parse formats.";
-  }
-
-  std::vector<cricket::VideoFormat> formats;
-  for (Json::ArrayIndex i = 0; i < json_values.size(); ++i) {
-      const Json::Value& json_value = json_values[i];
-      RTC_CHECK(!json_value["width"].isNull() &&
-                !json_value["height"].isNull() &&
-                !json_value["framerate"].isNull());
-      cricket::VideoFormat format(
-          json_value["width"].asInt(),
-          json_value["height"].asInt(),
-          cricket::VideoFormat::FpsToInterval(json_value["framerate"].asInt()),
-          cricket::FOURCC_YV12);
-      formats.push_back(format);
-  }
-  SetSupportedFormats(formats);
+  SetSupportedFormats(delegate_->GetSupportedFormats());
 }
 
 AndroidVideoCapturer::~AndroidVideoCapturer() {

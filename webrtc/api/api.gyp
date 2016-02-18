@@ -74,16 +74,6 @@
             4267,  # conversion from 'size_t' to 'int', possible loss of data.
             4389,  # signed/unsigned mismatch.
           ],
-          'conditions': [
-            ['build_json==1', {
-              'dependencies': [
-                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-              ],
-              'export_dependent_settings': [
-                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-              ],
-            }],
-          ],
         },
         {
           'target_name': 'libjingle_peerconnection_so',

@@ -14,10 +14,6 @@ import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import android.graphics.ImageFormat;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import org.webrtc.Logging;
 
 import java.util.Collections;
@@ -42,7 +38,9 @@ public class CameraEnumerationAndroid {
   }
 
   public static synchronized List<CaptureFormat> getSupportedFormats(int cameraId) {
-    return enumerator.getSupportedFormats(cameraId);
+    final List<CaptureFormat> formats = enumerator.getSupportedFormats(cameraId);
+    Logging.d(TAG, "Supported formats for camera " + cameraId + ": " + formats);
+    return formats;
   }
 
   public static class CaptureFormat {
@@ -135,21 +133,6 @@ public class CameraEnumerationAndroid {
   // camera can not be used or does not exist.
   public static String getNameOfBackFacingDevice() {
     return getNameOfDevice(android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK);
-  }
-
-  public static String getSupportedFormatsAsJson(int id) throws JSONException {
-    List<CaptureFormat> formats = getSupportedFormats(id);
-    JSONArray json_formats = new JSONArray();
-    for (CaptureFormat format : formats) {
-      JSONObject json_format = new JSONObject();
-      json_format.put("width", format.width);
-      json_format.put("height", format.height);
-      json_format.put("framerate", (format.maxFramerate + 999) / 1000);
-      json_formats.put(json_format);
-    }
-    Logging.d(TAG, "Supported formats for camera " + id + ": "
-        +  json_formats.toString(2));
-    return json_formats.toString();
   }
 
   // Helper class for finding the closest supported format for the two functions below.

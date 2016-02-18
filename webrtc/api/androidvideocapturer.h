@@ -34,8 +34,7 @@ class AndroidVideoCapturerDelegate : public rtc::RefCountInterface {
   // The delegate may not call into AndroidVideoCapturer after this call.
   virtual void Stop() = 0;
 
-  // Must returns a JSON string "{{width=xxx, height=xxx, framerate = xxx}}"
-  virtual std::string GetSupportedFormats() = 0;
+  virtual std::vector<cricket::VideoFormat> GetSupportedFormats() = 0;
 };
 
 // Android implementation of cricket::VideoCapturer for use with WebRtc

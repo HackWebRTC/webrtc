@@ -12,7 +12,7 @@ package org.webrtc;
 
 import android.content.Context;
 
-import org.json.JSONException;
+import java.util.List;
 
 // Base interface for all VideoCapturers to implement.
 // TODO(magjed): Simplify and improve this interface.
@@ -83,7 +83,7 @@ public interface VideoCapturer {
         int width, int height, int framerate);
   }
 
-  String getSupportedFormatsAsJson() throws JSONException;
+  List<CameraEnumerationAndroid.CaptureFormat> getSupportedFormats();
 
   SurfaceTextureHelper getSurfaceTextureHelper();
 

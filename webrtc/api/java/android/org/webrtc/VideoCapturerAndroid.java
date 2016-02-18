@@ -17,7 +17,6 @@ import android.os.SystemClock;
 import android.view.Surface;
 import android.view.WindowManager;
 
-import org.json.JSONException;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import org.webrtc.Logging;
 
@@ -284,6 +283,7 @@ public class VideoCapturerAndroid implements
     }
   }
 
+  @Override
   public List<CaptureFormat> getSupportedFormats() {
     return CameraEnumerationAndroid.getSupportedFormats(getCurrentCameraId());
   }
@@ -291,11 +291,6 @@ public class VideoCapturerAndroid implements
   // Returns true if this VideoCapturer is setup to capture video frames to a SurfaceTexture.
   public boolean isCapturingToTexture() {
     return isCapturingToTexture;
-  }
-
-  @Override
-  public String getSupportedFormatsAsJson() throws JSONException {
-    return CameraEnumerationAndroid.getSupportedFormatsAsJson(getCurrentCameraId());
   }
 
   @Override
