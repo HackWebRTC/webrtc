@@ -20,3 +20,13 @@ src:*/usr/*
 src:*/webrtc/modules/audio_coding/codecs/isac/main/source/entropy_coding.c
 src:*/webrtc/modules/audio_coding/codecs/isac/fix/source/entropy_coding.c
 fun:*FilterBanksTest*CalculateResidualEnergyTester*
+
+#############################################################################
+# Ignore errors in common_audio.
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=5486
+src:*/webrtc/common_audio/signal_processing/signal_processing_unittest.cc
+src:*/webrtc/common_audio/signal_processing/resample_by_2_internal.c
+fun:*WebRtcSpl_AddSatW32*
+fun:*WebRtcSpl_SubSatW32*
+fun:*WebRtcSpl_DivW32HiLow*
+fun:*GmmProbability*
