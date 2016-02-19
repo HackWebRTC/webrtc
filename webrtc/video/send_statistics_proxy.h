@@ -24,6 +24,7 @@
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/overuse_frame_detector.h"
+#include "webrtc/video/report_block_stats.h"
 #include "webrtc/video/vie_encoder.h"
 #include "webrtc/video_send_stream.h"
 
@@ -163,6 +164,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     SampleCounter max_delay_counter_;
     rtc::RateTracker input_frame_rate_tracker_;
     rtc::RateTracker sent_frame_rate_tracker_;
+    int64_t first_rtcp_stats_time_ms_;
+    ReportBlockStats report_block_stats_;
   };
 
   rtc::scoped_ptr<UmaSamplesContainer> uma_container_ GUARDED_BY(crit_);

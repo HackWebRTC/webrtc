@@ -10,11 +10,11 @@
 
 #include "webrtc/video/call_stats.h"
 
-#include <assert.h>
-
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
@@ -34,17 +34,17 @@ void RemoveOldReports(int64_t now, std::list<CallStats::RttTime>* reports) {
 }
 
 int64_t GetMaxRttMs(std::list<CallStats::RttTime>* reports) {
+  if (reports->empty())
+    return -1;
   int64_t max_rtt_ms = 0;
-  for (std::list<CallStats::RttTime>::const_iterator it = reports->begin();
-       it != reports->end(); ++it) {
-    max_rtt_ms = std::max(it->rtt, max_rtt_ms);
-  }
+  for (const CallStats::RttTime& rtt_time : *reports)
+    max_rtt_ms = std::max(rtt_time.rtt, max_rtt_ms);
   return max_rtt_ms;
 }
 
 int64_t GetAvgRttMs(std::list<CallStats::RttTime>* reports) {
   if (reports->empty()) {
-    return 0;
+    return -1;
   }
   int64_t sum = 0;
   for (std::list<CallStats::RttTime>::const_iterator it = reports->begin();
@@ -55,13 +55,13 @@ int64_t GetAvgRttMs(std::list<CallStats::RttTime>* reports) {
 }
 
 void UpdateAvgRttMs(std::list<CallStats::RttTime>* reports, int64_t* avg_rtt) {
-  uint32_t cur_rtt_ms = GetAvgRttMs(reports);
-  if (cur_rtt_ms == 0) {
+  int64_t cur_rtt_ms = GetAvgRttMs(reports);
+  if (cur_rtt_ms == -1) {
     // Reset.
-    *avg_rtt = 0;
+    *avg_rtt = -1;
     return;
   }
-  if (*avg_rtt == 0) {
+  if (*avg_rtt == -1) {
     // Initialize.
     *avg_rtt = cur_rtt_ms;
     return;
@@ -94,11 +94,15 @@ CallStats::CallStats(Clock* clock)
     : clock_(clock),
       rtcp_rtt_stats_(new RtcpObserver(this)),
       last_process_time_(clock_->TimeInMilliseconds()),
-      max_rtt_ms_(0),
-      avg_rtt_ms_(0) {}
+      max_rtt_ms_(-1),
+      avg_rtt_ms_(-1),
+      sum_avg_rtt_ms_(0),
+      num_avg_rtt_(0),
+      time_of_first_rtt_ms_(-1) {}
 
 CallStats::~CallStats() {
-  assert(observers_.empty());
+  RTC_DCHECK(observers_.empty());
+  UpdateHistograms();
 }
 
 int64_t CallStats::TimeUntilNextProcess() {
@@ -118,12 +122,15 @@ int32_t CallStats::Process() {
   UpdateAvgRttMs(&reports_, &avg_rtt_ms_);
 
   // If there is a valid rtt, update all observers with the max rtt.
-  // TODO(asapersson): Consider changing this to report the average rtt.
-  if (max_rtt_ms_ > 0) {
+  if (max_rtt_ms_ >= 0) {
+    RTC_DCHECK_GE(avg_rtt_ms_, 0);
     for (std::list<CallStatsObserver*>::iterator it = observers_.begin();
          it != observers_.end(); ++it) {
       (*it)->OnRttUpdate(avg_rtt_ms_, max_rtt_ms_);
     }
+    // Sum for Histogram of average RTT reported over the entire call.
+    sum_avg_rtt_ms_ += avg_rtt_ms_;
+    ++num_avg_rtt_;
   }
   return 0;
 }
@@ -160,7 +167,24 @@ void CallStats::DeregisterStatsObserver(CallStatsObserver* observer) {
 
 void CallStats::OnRttUpdate(int64_t rtt) {
   rtc::CritScope cs(&crit_);
-  reports_.push_back(RttTime(rtt, clock_->TimeInMilliseconds()));
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  reports_.push_back(RttTime(rtt, now_ms));
+  if (time_of_first_rtt_ms_ == -1)
+    time_of_first_rtt_ms_ = now_ms;
+}
+
+void CallStats::UpdateHistograms() {
+  rtc::CritScope cs(&crit_);
+  if (time_of_first_rtt_ms_ == -1 || num_avg_rtt_ < 1)
+    return;
+
+  int64_t elapsed_sec =
+      (clock_->TimeInMilliseconds() - time_of_first_rtt_ms_) / 1000;
+  if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
+    int64_t avg_rtt_ms = (sum_avg_rtt_ms_ + num_avg_rtt_ / 2) / num_avg_rtt_;
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.AverageRoundTripTimeInMilliseconds", avg_rtt_ms);
+  }
 }
 
 }  // namespace webrtc

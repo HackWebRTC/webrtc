@@ -13,7 +13,9 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/test/histogram.h"
 #include "webrtc/video/call_stats.h"
 
 using ::testing::_;
@@ -45,7 +47,7 @@ TEST_F(CallStatsTest, AddAndTriggerCallback) {
   RtcpRttStats* rtcp_rtt_stats = call_stats_->rtcp_rtt_stats();
   call_stats_->RegisterStatsObserver(&stats_observer);
   fake_clock_.AdvanceTimeMilliseconds(1000);
-  EXPECT_EQ(0, rtcp_rtt_stats->LastProcessedRtt());
+  EXPECT_EQ(-1, rtcp_rtt_stats->LastProcessedRtt());
 
   const int64_t kRtt = 25;
   rtcp_rtt_stats->OnRttUpdate(kRtt);
@@ -57,7 +59,7 @@ TEST_F(CallStatsTest, AddAndTriggerCallback) {
   fake_clock_.AdvanceTimeMilliseconds(kRttTimeOutMs);
   EXPECT_CALL(stats_observer, OnRttUpdate(_, _)).Times(0);
   call_stats_->Process();
-  EXPECT_EQ(0, rtcp_rtt_stats->LastProcessedRtt());
+  EXPECT_EQ(-1, rtcp_rtt_stats->LastProcessedRtt());
 
   call_stats_->DeregisterStatsObserver(&stats_observer);
 }
@@ -199,6 +201,21 @@ TEST_F(CallStatsTest, LastProcessedRtt) {
   EXPECT_EQ(kAvgRtt, rtcp_rtt_stats->LastProcessedRtt());
 
   call_stats_->DeregisterStatsObserver(&stats_observer);
+}
+
+TEST_F(CallStatsTest, ProducesHistogramMetrics) {
+  const int64_t kRtt = 123;
+  RtcpRttStats* rtcp_rtt_stats = call_stats_->rtcp_rtt_stats();
+  rtcp_rtt_stats->OnRttUpdate(kRtt);
+  fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);
+  rtcp_rtt_stats->OnRttUpdate(kRtt);
+  call_stats_->Process();
+  call_stats_.reset();
+
+  EXPECT_EQ(1, test::NumHistogramSamples(
+                   "WebRTC.Video.AverageRoundTripTimeInMilliseconds"));
+  EXPECT_EQ(kRtt, test::LastHistogramSample(
+                      "WebRTC.Video.AverageRoundTripTimeInMilliseconds"));
 }
 
 }  // namespace webrtc

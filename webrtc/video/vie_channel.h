@@ -41,7 +41,6 @@ class PacketRouter;
 class PayloadRouter;
 class ProcessThread;
 class ReceiveStatisticsProxy;
-class ReportBlockStats;
 class RtcpRttStats;
 class ViEChannelProtectionCallback;
 class ViERTPObserver;
@@ -115,14 +114,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   // Gets the CName of the incoming stream.
   int32_t GetRemoteRTCPCName(char rtcp_cname[]);
-
-  // Returns statistics reported by the remote client in an RTCP packet.
-  // TODO(pbos): Remove this along with VideoSendStream::GetRtt().
-  int32_t GetSendRtcpStatistics(uint16_t* fraction_lost,
-                                uint32_t* cumulative_lost,
-                                uint32_t* extended_max,
-                                uint32_t* jitter_samples,
-                                int64_t* rtt_ms) const;
 
   // Called on receipt of RTCP report block from remote side.
   void RegisterSendChannelRtcpStatisticsCallback(
@@ -375,12 +366,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_ GUARDED_BY(crit_);
 
-  const rtc::scoped_ptr<ReportBlockStats> report_block_stats_sender_;
-
-  int64_t time_of_first_rtt_ms_ GUARDED_BY(crit_);
-  int64_t rtt_sum_ms_ GUARDED_BY(crit_);
   int64_t last_rtt_ms_ GUARDED_BY(crit_);
-  size_t num_rtts_ GUARDED_BY(crit_);
 
   // RtpRtcp modules, declared last as they use other members on construction.
   const std::vector<RtpRtcp*> rtp_rtcp_modules_;

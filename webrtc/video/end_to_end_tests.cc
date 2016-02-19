@@ -2106,12 +2106,6 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       if (MinMetricRunTimePassed())
         observation_complete_.Set();
 
-      // GetStats calls GetSendChannelRtcpStatistics
-      // (via VideoSendStream::GetRtt) which updates ReportBlockStats used by
-      // WebRTC.Video.SentPacketsLostInPercent.
-      // TODO(asapersson): Remove dependency on calling GetStats.
-      sender_call_->GetStats();
-
       return SEND_PACKET;
     }
 
@@ -2212,8 +2206,8 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.KeyFramesReceivedInPermille"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.SentPacketsLostInPercent"));
+  EXPECT_EQ(
+      1, test::NumHistogramSamples(video_prefix + "SentPacketsLostInPercent"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.ReceivedPacketsLostInPercent"));
 

@@ -89,7 +89,8 @@ SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
       max_sent_width_per_timestamp_(0),
       max_sent_height_per_timestamp_(0),
       input_frame_rate_tracker_(100u, 10u),
-      sent_frame_rate_tracker_(100u, 10u) {}
+      sent_frame_rate_tracker_(100u, 10u),
+      first_rtcp_stats_time_ms_(-1) {}
 
 SendStatisticsProxy::UmaSamplesContainer::~UmaSamplesContainer() {
   UpdateHistograms();
@@ -165,6 +166,16 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms() {
   if (max_delay_ms != -1) {
     RTC_HISTOGRAMS_COUNTS_100000(kIndex, uma_prefix_ + "SendSideDelayMaxInMs",
                                  max_delay_ms);
+  }
+  int fraction_lost = report_block_stats_.FractionLostInPercent();
+  if (first_rtcp_stats_time_ms_ != -1) {
+    int64_t elapsed_time_ms = Clock::GetRealTimeClock()->TimeInMilliseconds() -
+                              first_rtcp_stats_time_ms_;
+    if (elapsed_time_ms / 1000 >= metrics::kMinRunTimeInSeconds &&
+        fraction_lost != -1) {
+      RTC_HISTOGRAMS_PERCENTAGE(
+          kIndex, uma_prefix_ + "SentPacketsLostInPercent", fraction_lost);
+    }
   }
 }
 
@@ -354,6 +365,9 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
     return;
 
   stats->rtcp_stats = statistics;
+  uma_container_->report_block_stats_.Store(statistics, 0, ssrc);
+  if (uma_container_->first_rtcp_stats_time_ms_ == -1)
+    uma_container_->first_rtcp_stats_time_ms_ = clock_->TimeInMilliseconds();
 }
 
 void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {}

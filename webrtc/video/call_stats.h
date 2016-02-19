@@ -58,6 +58,8 @@ class CallStats : public Module {
   int64_t avg_rtt_ms() const;
 
  private:
+  void UpdateHistograms();
+
   Clock* const clock_;
   // Protecting all members.
   rtc::CriticalSection crit_;
@@ -68,6 +70,9 @@ class CallStats : public Module {
   // The last RTT in the statistics update (zero if there is no valid estimate).
   int64_t max_rtt_ms_;
   int64_t avg_rtt_ms_;
+  int64_t sum_avg_rtt_ms_ GUARDED_BY(crit_);
+  int64_t num_avg_rtt_ GUARDED_BY(crit_);
+  int64_t time_of_first_rtt_ms_ GUARDED_BY(crit_);
 
   // All Rtt reports within valid time interval, oldest first.
   std::list<RttTime> reports_;

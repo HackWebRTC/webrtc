@@ -182,8 +182,12 @@ int32_t ModuleRtpRtcpImpl::Process() {
   // Get processed rtt.
   if (process_rtt) {
     last_rtt_process_time_ = now;
-    if (rtt_stats_)
-      set_rtt_ms(rtt_stats_->LastProcessedRtt());
+    if (rtt_stats_) {
+      // Make sure we have a valid RTT before setting.
+      int64_t last_rtt = rtt_stats_->LastProcessedRtt();
+      if (last_rtt >= 0)
+        set_rtt_ms(last_rtt);
+    }
   }
 
   // For sending streams, make sure to not send a SR before media has been sent.

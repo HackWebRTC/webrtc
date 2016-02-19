@@ -571,21 +571,6 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
     vie_channel_.SetRTCPMode(RtcpMode::kOff);
 }
 
-int64_t VideoSendStream::GetRtt() const {
-  webrtc::RtcpStatistics rtcp_stats;
-  uint16_t frac_lost;
-  uint32_t cumulative_lost;
-  uint32_t extended_max_sequence_number;
-  uint32_t jitter;
-  int64_t rtt_ms;
-  if (vie_channel_.GetSendRtcpStatistics(&frac_lost, &cumulative_lost,
-                                          &extended_max_sequence_number,
-                                          &jitter, &rtt_ms) == 0) {
-    return rtt_ms;
-  }
-  return -1;
-}
-
 int VideoSendStream::GetPaddingNeededBps() const {
   return vie_encoder_.GetPaddingNeededBps();
 }

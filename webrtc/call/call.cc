@@ -511,15 +511,7 @@ Call::Stats Call::GetStats() const {
   stats.send_bandwidth_bps = send_bandwidth;
   stats.recv_bandwidth_bps = recv_bandwidth;
   stats.pacer_delay_ms = congestion_controller_->GetPacerQueuingDelayMs();
-  {
-    ReadLockScoped read_lock(*send_crit_);
-    // TODO(solenberg): Add audio send streams.
-    for (const auto& kv : video_send_ssrcs_) {
-      int rtt_ms = kv.second->GetRtt();
-      if (rtt_ms > 0)
-        stats.rtt_ms = rtt_ms;
-    }
-  }
+  stats.rtt_ms = call_stats_->rtcp_rtt_stats()->LastProcessedRtt();
   return stats;
 }
 

@@ -32,7 +32,6 @@
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/payload_router.h"
 #include "webrtc/video/receive_statistics_proxy.h"
-#include "webrtc/video/report_block_stats.h"
 
 namespace webrtc {
 
@@ -107,11 +106,7 @@ ViEChannel::ViEChannel(Transport* transport,
       nack_history_size_sender_(kMinSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
-      report_block_stats_sender_(new ReportBlockStats()),
-      time_of_first_rtt_ms_(-1),
-      rtt_sum_ms_(0),
       last_rtt_ms_(0),
-      num_rtts_(0),
       rtp_rtcp_modules_(
           CreateRtpRtcpModules(!sender,
                                vie_receiver_.GetReceiveStatistics(),
@@ -188,17 +183,6 @@ ViEChannel::~ViEChannel() {
 void ViEChannel::UpdateHistograms() {
   int64_t now = Clock::GetRealTimeClock()->TimeInMilliseconds();
 
-  {
-    rtc::CritScope lock(&crit_);
-    int64_t elapsed_sec = (now - time_of_first_rtt_ms_) / 1000;
-    if (time_of_first_rtt_ms_ != -1 && num_rtts_ > 0 &&
-        elapsed_sec > metrics::kMinRunTimeInSeconds) {
-      int64_t avg_rtt_ms = (rtt_sum_ms_ + num_rtts_ / 2) / num_rtts_;
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.AverageRoundTripTimeInMilliseconds", avg_rtt_ms);
-    }
-  }
-
   if (sender_) {
     RtcpPacketTypeCounter rtcp_counter;
     GetSendRtcpPacketTypeCounter(&rtcp_counter);
@@ -214,11 +198,6 @@ void ViEChannel::UpdateHistograms() {
         RTC_HISTOGRAM_PERCENTAGE(
             "WebRTC.Video.UniqueNackRequestsReceivedInPercent",
             rtcp_counter.UniqueNackRequestsInPercent());
-      }
-      int fraction_lost = report_block_stats_sender_->FractionLostInPercent();
-      if (fraction_lost != -1) {
-        RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.SentPacketsLostInPercent",
-                                 fraction_lost);
       }
     }
 
@@ -645,53 +624,6 @@ int32_t ViEChannel::GetRemoteRTCPCName(char rtcp_cname[]) {
   return rtp_rtcp_modules_[0]->RemoteCNAME(remoteSSRC, rtcp_cname);
 }
 
-int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
-                                          uint32_t* cumulative_lost,
-                                          uint32_t* extended_max,
-                                          uint32_t* jitter_samples,
-                                          int64_t* rtt_ms) const {
-  // Aggregate the report blocks associated with streams sent on this channel.
-  std::vector<RTCPReportBlock> report_blocks;
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->RemoteRTCPStat(&report_blocks);
-
-  if (report_blocks.empty())
-    return -1;
-
-  uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
-  std::vector<RTCPReportBlock>::const_iterator it = report_blocks.begin();
-  for (; it != report_blocks.end(); ++it) {
-    if (it->remoteSSRC == remote_ssrc)
-      break;
-  }
-  if (it == report_blocks.end()) {
-    // We have not received packets with an SSRC matching the report blocks. To
-    // have a chance of calculating an RTT we will try with the SSRC of the
-    // first report block received.
-    // This is very important for send-only channels where we don't know the
-    // SSRC of the other end.
-    remote_ssrc = report_blocks[0].remoteSSRC;
-  }
-
-  // TODO(asapersson): Change report_block_stats to not rely on
-  // GetSendRtcpStatistics to be called.
-  RTCPReportBlock report =
-      report_block_stats_sender_->AggregateAndStore(report_blocks);
-  *fraction_lost = report.fractionLost;
-  *cumulative_lost = report.cumulativeLost;
-  *extended_max = report.extendedHighSeqNum;
-  *jitter_samples = report.jitter;
-
-  int64_t dummy;
-  int64_t rtt = 0;
-  if (rtp_rtcp_modules_[0]->RTT(remote_ssrc, &rtt, &dummy, &dummy, &dummy) !=
-      0) {
-    return -1;
-  }
-  *rtt_ms = rtt;
-  return 0;
-}
-
 void ViEChannel::RegisterSendChannelRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
@@ -915,11 +847,7 @@ void ViEChannel::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
     vcm_->SetReceiveChannelParameters(max_rtt_ms);
 
   rtc::CritScope lock(&crit_);
-  if (time_of_first_rtt_ms_ == -1)
-    time_of_first_rtt_ms_ = Clock::GetRealTimeClock()->TimeInMilliseconds();
-  rtt_sum_ms_ += avg_rtt_ms;
   last_rtt_ms_ = avg_rtt_ms;
-  ++num_rtts_;
 }
 
 int ViEChannel::ProtectionRequest(const FecProtectionParams* delta_fec_params,
