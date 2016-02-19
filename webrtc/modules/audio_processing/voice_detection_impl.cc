@@ -41,7 +41,7 @@ VoiceDetectionImpl::~VoiceDetectionImpl() {}
 void VoiceDetectionImpl::Initialize(int sample_rate_hz) {
   rtc::CritScope cs(crit_);
   sample_rate_hz_ = sample_rate_hz;
-  rtc::scoped_ptr<Vad> new_vad;
+  std::unique_ptr<Vad> new_vad;
   if (enabled_) {
     new_vad.reset(new Vad());
   }

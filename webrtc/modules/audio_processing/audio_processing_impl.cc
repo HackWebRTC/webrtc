@@ -90,16 +90,16 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   EchoCancellationImpl* echo_cancellation;
   EchoControlMobileImpl* echo_control_mobile;
   GainControlImpl* gain_control;
-  rtc::scoped_ptr<HighPassFilterImpl> high_pass_filter;
-  rtc::scoped_ptr<LevelEstimatorImpl> level_estimator;
-  rtc::scoped_ptr<NoiseSuppressionImpl> noise_suppression;
-  rtc::scoped_ptr<VoiceDetectionImpl> voice_detection;
-  rtc::scoped_ptr<GainControlForExperimentalAgc>
+  std::unique_ptr<HighPassFilterImpl> high_pass_filter;
+  std::unique_ptr<LevelEstimatorImpl> level_estimator;
+  std::unique_ptr<NoiseSuppressionImpl> noise_suppression;
+  std::unique_ptr<VoiceDetectionImpl> voice_detection;
+  std::unique_ptr<GainControlForExperimentalAgc>
       gain_control_for_experimental_agc;
 
   // Accessed internally from both render and capture.
-  rtc::scoped_ptr<TransientSuppressor> transient_suppressor;
-  rtc::scoped_ptr<IntelligibilityEnhancer> intelligibility_enhancer;
+  std::unique_ptr<TransientSuppressor> transient_suppressor;
+  std::unique_ptr<IntelligibilityEnhancer> intelligibility_enhancer;
 };
 
 struct AudioProcessingImpl::ApmPrivateSubmodules {
@@ -107,8 +107,8 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
       : beamformer(beamformer) {}
   // Accessed internally from capture or during initialization
   std::list<ProcessingComponent*> component_list;
-  rtc::scoped_ptr<Beamformer<float>> beamformer;
-  rtc::scoped_ptr<AgcManagerDirect> agc_manager;
+  std::unique_ptr<Beamformer<float>> beamformer;
+  std::unique_ptr<AgcManagerDirect> agc_manager;
 };
 
 const int AudioProcessing::kNativeSampleRatesHz[] = {
@@ -297,11 +297,11 @@ int AudioProcessingImpl::InitializeLocked() {
         formats_.rev_proc_format.num_channels(),
         rev_audio_buffer_out_num_frames));
     if (rev_conversion_needed()) {
-      render_.render_converter = AudioConverter::Create(
+      render_.render_converter = rtc::ScopedToUnique(AudioConverter::Create(
           formats_.api_format.reverse_input_stream().num_channels(),
           formats_.api_format.reverse_input_stream().num_frames(),
           formats_.api_format.reverse_output_stream().num_channels(),
-          formats_.api_format.reverse_output_stream().num_frames());
+          formats_.api_format.reverse_output_stream().num_frames()));
     } else {
       render_.render_converter.reset(nullptr);
     }

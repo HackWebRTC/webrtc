@@ -56,7 +56,7 @@ void NoiseSuppressionImpl::Initialize(size_t channels, int sample_rate_hz) {
   rtc::CritScope cs(crit_);
   channels_ = channels;
   sample_rate_hz_ = sample_rate_hz;
-  std::vector<rtc::scoped_ptr<Suppressor>> new_suppressors;
+  std::vector<std::unique_ptr<Suppressor>> new_suppressors;
   if (enabled_) {
     new_suppressors.resize(channels);
     for (size_t i = 0; i < channels; i++) {

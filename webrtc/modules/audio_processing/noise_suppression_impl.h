@@ -11,11 +11,11 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_IMPL_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
@@ -47,7 +47,7 @@ class NoiseSuppressionImpl : public NoiseSuppression {
   Level level_ GUARDED_BY(crit_) = kModerate;
   size_t channels_ GUARDED_BY(crit_) = 0;
   int sample_rate_hz_ GUARDED_BY(crit_) = 0;
-  std::vector<rtc::scoped_ptr<Suppressor>> suppressors_ GUARDED_BY(crit_);
+  std::vector<std::unique_ptr<Suppressor>> suppressors_ GUARDED_BY(crit_);
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(NoiseSuppressionImpl);
 };
 }  // namespace webrtc

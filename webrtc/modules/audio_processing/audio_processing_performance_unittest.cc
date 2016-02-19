@@ -12,6 +12,7 @@
 #include <math.h>
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -657,19 +658,19 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
   }
 
   // Event handler for the test.
-  const rtc::scoped_ptr<EventWrapper> test_complete_;
+  const std::unique_ptr<EventWrapper> test_complete_;
 
   // Thread related variables.
-  rtc::scoped_ptr<rtc::PlatformThread> render_thread_;
-  rtc::scoped_ptr<rtc::PlatformThread> capture_thread_;
+  std::unique_ptr<rtc::PlatformThread> render_thread_;
+  std::unique_ptr<rtc::PlatformThread> capture_thread_;
   Random rand_gen_;
 
-  rtc::scoped_ptr<AudioProcessing> apm_;
+  std::unique_ptr<AudioProcessing> apm_;
   const SimulationConfig simulation_config_;
   FrameCounters frame_counters_;
   LockedFlag capture_call_checker_;
-  rtc::scoped_ptr<TimedThreadApiProcessor> render_thread_state_;
-  rtc::scoped_ptr<TimedThreadApiProcessor> capture_thread_state_;
+  std::unique_ptr<TimedThreadApiProcessor> render_thread_state_;
+  std::unique_ptr<TimedThreadApiProcessor> capture_thread_state_;
 };
 
 // Implements the callback functionality for the threads.

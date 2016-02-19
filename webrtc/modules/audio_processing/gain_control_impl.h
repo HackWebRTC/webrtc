@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_GAIN_CONTROL_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_GAIN_CONTROL_IMPL_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -96,7 +96,7 @@ class GainControlImpl : public GainControl,
   std::vector<int16_t> capture_queue_buffer_ GUARDED_BY(crit_capture_);
 
   // Lock protection not needed.
-  rtc::scoped_ptr<
+  std::unique_ptr<
       SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
       render_signal_queue_;
 };

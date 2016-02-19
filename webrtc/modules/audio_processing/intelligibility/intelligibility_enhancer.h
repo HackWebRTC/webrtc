@@ -12,9 +12,9 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_ENHANCER_H_
 
 #include <complex>
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
@@ -120,24 +120,24 @@ class IntelligibilityEnhancer {
 
   intelligibility::PowerEstimator clear_power_;
   std::vector<float> noise_power_;
-  rtc::scoped_ptr<float[]> filtered_clear_pow_;
-  rtc::scoped_ptr<float[]> filtered_noise_pow_;
-  rtc::scoped_ptr<float[]> center_freqs_;
+  std::unique_ptr<float[]> filtered_clear_pow_;
+  std::unique_ptr<float[]> filtered_noise_pow_;
+  std::unique_ptr<float[]> center_freqs_;
   std::vector<std::vector<float>> capture_filter_bank_;
   std::vector<std::vector<float>> render_filter_bank_;
   size_t start_freq_;
-  rtc::scoped_ptr<float[]> rho_;  // Production and interpretation SNR.
+  std::unique_ptr<float[]> rho_;  // Production and interpretation SNR.
                                   // for each ERB band.
-  rtc::scoped_ptr<float[]> gains_eq_;  // Pre-filter modified gains.
+  std::unique_ptr<float[]> gains_eq_;  // Pre-filter modified gains.
   intelligibility::GainApplier gain_applier_;
 
   // Destination buffers used to reassemble blocked chunks before overwriting
   // the original input array with modifications.
   ChannelBuffer<float> temp_render_out_buffer_;
 
-  rtc::scoped_ptr<float[]> kbd_window_;
+  std::unique_ptr<float[]> kbd_window_;
   TransformCallback render_callback_;
-  rtc::scoped_ptr<LappedTransform> render_mangler_;
+  std::unique_ptr<LappedTransform> render_mangler_;
   int block_count_;
   int analysis_step_;
 };

@@ -10,12 +10,13 @@
 
 #include <math.h>
 #include <stdlib.h>
+
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/arraysize.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 
@@ -105,7 +106,7 @@ class IntelligibilityEnhancerTest : public ::testing::Test {
   }
 
   IntelligibilityEnhancer::Config config_;
-  rtc::scoped_ptr<IntelligibilityEnhancer> enh_;
+  std::unique_ptr<IntelligibilityEnhancer> enh_;
   std::vector<float> clear_data_;
   std::vector<float> noise_data_;
   std::vector<float> orig_data_;

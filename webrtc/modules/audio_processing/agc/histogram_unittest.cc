@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <cmath>
+#include <memory>
 
 #include "gtest/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -37,7 +38,7 @@ class HistogramTest : public ::testing::Test {
 
  private:
   void TestClean();
-  rtc::scoped_ptr<Histogram> hist_;
+  std::unique_ptr<Histogram> hist_;
 };
 
 void HistogramTest::TestClean() {

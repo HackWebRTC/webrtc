@@ -17,6 +17,7 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/agc/agc.h"
 #include "webrtc/modules/audio_processing/agc/histogram.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"

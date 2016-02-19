@@ -11,8 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CONTROL_MOBILE_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CONTROL_MOBILE_IMPL_H_
 
+#include <memory>
+
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
@@ -81,7 +82,7 @@ class EchoControlMobileImpl : public EchoControlMobile,
   std::vector<int16_t> capture_queue_buffer_ GUARDED_BY(crit_capture_);
 
   // Lock protection not needed.
-  rtc::scoped_ptr<
+  std::unique_ptr<
       SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
       render_signal_queue_;
 };

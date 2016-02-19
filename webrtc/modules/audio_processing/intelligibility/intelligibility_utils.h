@@ -12,8 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_UTILS_H_
 
 #include <complex>
-
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
 
 namespace webrtc {
 
@@ -36,13 +35,13 @@ class PowerEstimator {
 
  private:
   // TODO(ekmeyerson): Switch the following running means
-  // and histories from rtc::scoped_ptr to std::vector.
-  rtc::scoped_ptr<std::complex<float>[]> running_mean_sq_;
+  // and histories from std::unique_ptr to std::vector.
+  std::unique_ptr<std::complex<float>[]> running_mean_sq_;
 
   // The current magnitude array.
-  rtc::scoped_ptr<float[]> magnitude_;
+  std::unique_ptr<float[]> magnitude_;
   // The current power array.
-  rtc::scoped_ptr<float[]> power_;
+  std::unique_ptr<float[]> power_;
 
   const size_t num_freqs_;
   const float decay_;
@@ -66,8 +65,8 @@ class GainApplier {
  private:
   const size_t num_freqs_;
   const float change_limit_;
-  rtc::scoped_ptr<float[]> target_;
-  rtc::scoped_ptr<float[]> current_;
+  std::unique_ptr<float[]> target_;
+  std::unique_ptr<float[]> current_;
 };
 
 }  // namespace intelligibility

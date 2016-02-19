@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_processing/audio_processing_impl.h"
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -447,7 +448,7 @@ class AudioProcessingImplLockTest
   rtc::PlatformThread stats_thread_;
   mutable RandomGenerator rand_gen_;
 
-  rtc::scoped_ptr<AudioProcessing> apm_;
+  std::unique_ptr<AudioProcessing> apm_;
   TestConfig test_config_;
   FrameCounters frame_counters_;
   RenderProcessor render_thread_state_;

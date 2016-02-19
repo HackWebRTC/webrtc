@@ -15,6 +15,8 @@
 #define _USE_MATH_DEFINES
 
 #include <math.h>
+
+#include <memory>
 #include <vector>
 
 #include "webrtc/common_audio/lapped_transform.h"
@@ -125,7 +127,7 @@ class NonlinearBeamformer
 
   // Deals with the fft transform and blocking.
   size_t chunk_length_;
-  rtc::scoped_ptr<LappedTransform> lapped_transform_;
+  std::unique_ptr<LappedTransform> lapped_transform_;
   float window_[kFftSize];
 
   // Parameters exposed to the user.

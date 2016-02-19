@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_MOCK_AUDIO_PROCESSING_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_MOCK_AUDIO_PROCESSING_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
@@ -282,13 +283,13 @@ class MockAudioProcessing : public AudioProcessing {
   }
 
  private:
-  rtc::scoped_ptr<MockEchoCancellation> echo_cancellation_;
-  rtc::scoped_ptr<MockEchoControlMobile> echo_control_mobile_;
-  rtc::scoped_ptr<MockGainControl> gain_control_;
-  rtc::scoped_ptr<MockHighPassFilter> high_pass_filter_;
-  rtc::scoped_ptr<MockLevelEstimator> level_estimator_;
-  rtc::scoped_ptr<MockNoiseSuppression> noise_suppression_;
-  rtc::scoped_ptr<MockVoiceDetection> voice_detection_;
+  std::unique_ptr<MockEchoCancellation> echo_cancellation_;
+  std::unique_ptr<MockEchoControlMobile> echo_control_mobile_;
+  std::unique_ptr<MockGainControl> gain_control_;
+  std::unique_ptr<MockHighPassFilter> high_pass_filter_;
+  std::unique_ptr<MockLevelEstimator> level_estimator_;
+  std::unique_ptr<MockNoiseSuppression> noise_suppression_;
+  std::unique_ptr<MockVoiceDetection> voice_detection_;
 };
 
 }  // namespace webrtc

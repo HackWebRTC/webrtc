@@ -93,7 +93,7 @@ HighPassFilterImpl::HighPassFilterImpl(rtc::CriticalSection* crit)
 HighPassFilterImpl::~HighPassFilterImpl() {}
 
 void HighPassFilterImpl::Initialize(size_t channels, int sample_rate_hz) {
-  std::vector<rtc::scoped_ptr<BiquadFilter>> new_filters(channels);
+  std::vector<std::unique_ptr<BiquadFilter>> new_filters(channels);
   for (size_t i = 0; i < channels; i++) {
     new_filters[i].reset(new BiquadFilter(sample_rate_hz));
   }
