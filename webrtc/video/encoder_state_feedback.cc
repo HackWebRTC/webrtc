@@ -10,113 +10,75 @@
 
 #include "webrtc/video/encoder_state_feedback.h"
 
-#include <assert.h>
-
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/video/vie_encoder.h"
 
 namespace webrtc {
 
-// Helper class registered at the RTP module relaying callbacks to
-// EncoderStatFeedback.
-class EncoderStateFeedbackObserver : public  RtcpIntraFrameObserver {
- public:
-  explicit EncoderStateFeedbackObserver(EncoderStateFeedback* owner)
-      : owner_(owner) {}
-  ~EncoderStateFeedbackObserver() {}
+EncoderStateFeedback::EncoderStateFeedback() : vie_encoder_(nullptr) {}
 
-  // Implements RtcpIntraFrameObserver.
-  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) {
-    owner_->OnReceivedIntraFrameRequest(ssrc);
-  }
-  virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) {
-    owner_->OnReceivedSLI(ssrc, picture_id);
-  }
-  virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) {
-    owner_->OnReceivedRPSI(ssrc, picture_id);
-  }
-
-  virtual void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {
-    owner_->OnLocalSsrcChanged(old_ssrc, new_ssrc);
-  }
-
- private:
-  EncoderStateFeedback* owner_;
-};
-
-EncoderStateFeedback::EncoderStateFeedback()
-    : observer_(new EncoderStateFeedbackObserver(this)) {}
-
-EncoderStateFeedback::~EncoderStateFeedback() {
-  assert(encoders_.empty());
-}
-
-void EncoderStateFeedback::AddEncoder(const std::vector<uint32_t>& ssrcs,
-                                      ViEEncoder* encoder) {
+void EncoderStateFeedback::Init(const std::vector<uint32_t>& ssrcs,
+                                ViEEncoder* encoder) {
   RTC_DCHECK(!ssrcs.empty());
   rtc::CritScope lock(&crit_);
-  for (uint32_t ssrc : ssrcs) {
-    RTC_DCHECK(encoders_.find(ssrc) == encoders_.end());
-    encoders_[ssrc] = encoder;
-  }
+  ssrcs_ = ssrcs;
+  vie_encoder_ = encoder;
 }
 
-void EncoderStateFeedback::RemoveEncoder(const ViEEncoder* encoder)  {
+void EncoderStateFeedback::TearDown() {
   rtc::CritScope lock(&crit_);
-  SsrcEncoderMap::iterator it = encoders_.begin();
-  while (it != encoders_.end()) {
-    if (it->second == encoder) {
-      encoders_.erase(it++);
-    } else {
-      ++it;
-    }
-  }
+  RTC_DCHECK(vie_encoder_);
+  ssrcs_.clear();
+  vie_encoder_ = nullptr;
 }
 
-RtcpIntraFrameObserver* EncoderStateFeedback::GetRtcpIntraFrameObserver() {
-  return observer_.get();
+bool EncoderStateFeedback::HasSsrc(uint32_t ssrc) {
+  for (uint32_t registered_ssrc : ssrcs_) {
+    if (registered_ssrc == ssrc)
+      return true;
+  }
+  return false;
 }
 
 void EncoderStateFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
-  SsrcEncoderMap::iterator it = encoders_.find(ssrc);
-  if (it == encoders_.end())
+  if (!HasSsrc(ssrc))
     return;
+  RTC_DCHECK(vie_encoder_);
 
-  it->second->OnReceivedIntraFrameRequest(ssrc);
+  vie_encoder_->OnReceivedIntraFrameRequest(ssrc);
 }
 
 void EncoderStateFeedback::OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) {
   rtc::CritScope lock(&crit_);
-  SsrcEncoderMap::iterator it = encoders_.find(ssrc);
-  if (it == encoders_.end())
+  if (!HasSsrc(ssrc))
     return;
+  RTC_DCHECK(vie_encoder_);
 
-  it->second->OnReceivedSLI(ssrc, picture_id);
+  vie_encoder_->OnReceivedSLI(ssrc, picture_id);
 }
 
 void EncoderStateFeedback::OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) {
   rtc::CritScope lock(&crit_);
-  SsrcEncoderMap::iterator it = encoders_.find(ssrc);
-  if (it == encoders_.end())
+  if (!HasSsrc(ssrc))
     return;
+  RTC_DCHECK(vie_encoder_);
 
-  it->second->OnReceivedRPSI(ssrc, picture_id);
+  vie_encoder_->OnReceivedRPSI(ssrc, picture_id);
 }
 
+// Sending SSRCs for this encoder should never change since they are configured
+// once and not reconfigured.
 void EncoderStateFeedback::OnLocalSsrcChanged(uint32_t old_ssrc,
                                               uint32_t new_ssrc) {
-  rtc::CritScope lock(&crit_);
-  SsrcEncoderMap::iterator it = encoders_.find(old_ssrc);
-  if (it == encoders_.end() || encoders_.find(new_ssrc) != encoders_.end()) {
+  if (!RTC_DCHECK_IS_ON)
     return;
-  }
-
-  ViEEncoder* encoder = it->second;
-  encoders_.erase(it);
-  encoders_[new_ssrc] = encoder;
-  encoder->OnLocalSsrcChanged(old_ssrc, new_ssrc);
+  rtc::CritScope lock(&crit_);
+  if (ssrcs_.empty())  // Encoder not yet attached (or detached for teardown).
+    return;
+  // SSRC shouldn't change to something we haven't already registered with the
+  // encoder.
+  RTC_DCHECK(HasSsrc(new_ssrc));
 }
 
 }  // namespace webrtc

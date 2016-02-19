@@ -14,56 +14,40 @@
 #ifndef WEBRTC_VIDEO_ENCODER_STATE_FEEDBACK_H_
 #define WEBRTC_VIDEO_ENCODER_STATE_FEEDBACK_H_
 
-#include <map>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class EncoderStateFeedbackObserver;
-class RtcpIntraFrameObserver;
 class ViEEncoder;
 
-class EncoderStateFeedback {
+class EncoderStateFeedback : public RtcpIntraFrameObserver {
  public:
-  friend class EncoderStateFeedbackObserver;
-
   EncoderStateFeedback();
-  ~EncoderStateFeedback();
 
   // Adds an encoder to receive feedback for a set of SSRCs.
-  void AddEncoder(const std::vector<uint32_t>& ssrc, ViEEncoder* encoder);
+  void Init(const std::vector<uint32_t>& ssrc, ViEEncoder* encoder);
 
-  // Removes a registered ViEEncoder.
-  void RemoveEncoder(const ViEEncoder* encoder);
+  // Removes the registered encoder. Necessary since RTP modules outlive
+  // ViEEncoder.
+  // TODO(pbos): Make sure RTP modules are not running when tearing down
+  // ViEEncoder, then remove this function.
+  void TearDown();
 
-  // Returns an observer to register at the requesting class. The observer has
-  // the same lifetime as the EncoderStateFeedback instance.
-  RtcpIntraFrameObserver* GetRtcpIntraFrameObserver();
-
- protected:
-  // Called by EncoderStateFeedbackObserver when a new key frame is requested.
-  void OnReceivedIntraFrameRequest(uint32_t ssrc);
-  void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id);
-  void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id);
-  void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc);
+  void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
+  void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) override;
+  void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) override;
+  void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) override;
 
  private:
-  typedef std::map<uint32_t,  ViEEncoder*> SsrcEncoderMap;
-
+  bool HasSsrc(uint32_t ssrc) EXCLUSIVE_LOCKS_REQUIRED(crit_);
   rtc::CriticalSection crit_;
 
-  // Instance registered at the class requesting new key frames.
-  rtc::scoped_ptr<EncoderStateFeedbackObserver> observer_;
-
-  // Maps a unique ssrc to the given encoder.
-  SsrcEncoderMap encoders_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(EncoderStateFeedback);
+  std::vector<uint32_t> ssrcs_ GUARDED_BY(crit_);
+  ViEEncoder* vie_encoder_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

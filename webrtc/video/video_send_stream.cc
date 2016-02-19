@@ -176,7 +176,7 @@ VideoSendStream::VideoSendStream(
                    module_process_thread_,
                    &payload_router_,
                    nullptr,
-                   encoder_feedback_.GetRtcpIntraFrameObserver(),
+                   &encoder_feedback_,
                    congestion_controller_->GetBitrateController()
                        ->CreateRtcpBandwidthObserver(),
                    congestion_controller_->GetTransportFeedbackObserver(),
@@ -209,6 +209,7 @@ VideoSendStream::VideoSendStream(
   RTC_DCHECK(remb_);
 
   RTC_CHECK(vie_encoder_.Init());
+  encoder_feedback_.Init(config_.rtp.ssrcs, &vie_encoder_);
   RTC_CHECK(vie_channel_.Init() == 0);
 
   vcm_->RegisterProtectionCallback(vie_channel_.vcm_protection_callback());
@@ -288,8 +289,6 @@ VideoSendStream::VideoSendStream(
   if (config_.suspend_below_min_bitrate)
     vie_encoder_.SuspendBelowMinBitrate();
 
-  encoder_feedback_.AddEncoder(config_.rtp.ssrcs, &vie_encoder_);
-
   vie_channel_.RegisterSendChannelRtcpStatisticsCallback(&stats_proxy_);
   vie_channel_.RegisterSendChannelRtpStatisticsCallback(&stats_proxy_);
   vie_channel_.RegisterRtcpPacketTypeCounterObserver(&stats_proxy_);
@@ -319,9 +318,9 @@ VideoSendStream::~VideoSendStream() {
   rtp_module->SetREMBStatus(false);
   remb_->RemoveRembSender(rtp_module);
 
-  // Remove the feedback, stop all encoding threads and processing. This must be
-  // done before deleting the channel.
-  encoder_feedback_.RemoveEncoder(&vie_encoder_);
+  // ViEChannel outlives ViEEncoder so remove encoder from feedback before
+  // destruction.
+  encoder_feedback_.TearDown();
 
   congestion_controller_->GetRemoteBitrateEstimator(false)->RemoveStream(
       vie_receiver_->GetRemoteSsrc());
