@@ -722,7 +722,7 @@ TEST_F(VideoProcessorIntegrationTest,
                      false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 31.5, 18.0, 0.80, 0.44);
+  SetQualityMetrics(&quality_metrics, 31.5, 18.0, 0.80, 0.43);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
   SetRateControlMetrics(rc_metrics, 0, 38, 50, 75, 15, 45, 0, 1);
