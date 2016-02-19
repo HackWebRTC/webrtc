@@ -32,11 +32,6 @@ enum { kHighProtectionThreshold = 80 };  // Corresponds to ~30 overhead, range
 // is 0 to 255, where 255 corresponds to 100% overhead (relative to number of
 // media packets).
 
-struct RtpPacket {
-  uint16_t rtpHeaderLength;
-  ForwardErrorCorrection::Packet* pkt;
-};
-
 RedPacket::RedPacket(size_t length)
     : data_(new uint8_t[length]),
       length_(length),

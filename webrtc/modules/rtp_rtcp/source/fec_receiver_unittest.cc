@@ -26,6 +26,7 @@ using ::testing::_;
 using ::testing::Args;
 using ::testing::ElementsAreArray;
 using ::testing::Return;
+using Packet = webrtc::ForwardErrorCorrection::Packet;
 
 namespace webrtc {
 
@@ -46,8 +47,9 @@ class ReceiverFecTest : public ::testing::Test {
     ASSERT_EQ(num_fec_packets, fec_packets->size());
   }
 
-  void GenerateFrame(int num_media_packets, int frame_offset,
-                     std::list<RtpPacket*>* media_rtp_packets,
+  void GenerateFrame(int num_media_packets,
+                     int frame_offset,
+                     std::list<test::RawRtpPacket*>* media_rtp_packets,
                      std::list<Packet*>* media_packets) {
     generator_->NewFrame(num_media_packets);
     for (int i = 0; i < num_media_packets; ++i) {
@@ -57,7 +59,8 @@ class ReceiverFecTest : public ::testing::Test {
     }
   }
 
-  void VerifyReconstructedMediaPacket(const RtpPacket* packet, int times) {
+  void VerifyReconstructedMediaPacket(const test::RawRtpPacket* packet,
+                                      int times) {
     // Verify that the content of the reconstructed packet is equal to the
     // content of |packet|, and that the same content is received |times| number
     // of times in a row.
@@ -67,8 +70,8 @@ class ReceiverFecTest : public ::testing::Test {
         .Times(times).WillRepeatedly(Return(true));
   }
 
-  void BuildAndAddRedMediaPacket(RtpPacket* packet) {
-    RtpPacket* red_packet = generator_->BuildMediaRedPacket(packet);
+  void BuildAndAddRedMediaPacket(test::RawRtpPacket* packet) {
+    test::RawRtpPacket* red_packet = generator_->BuildMediaRedPacket(packet);
     EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
                      red_packet->header.header, red_packet->data,
                      red_packet->length, kFecPayloadType));
@@ -76,7 +79,7 @@ class ReceiverFecTest : public ::testing::Test {
   }
 
   void BuildAndAddRedFecPacket(Packet* packet) {
-    RtpPacket* red_packet = generator_->BuildFecRedPacket(packet);
+    test::RawRtpPacket* red_packet = generator_->BuildFecRedPacket(packet);
     EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
                      red_packet->header.header, red_packet->data,
                      red_packet->length, kFecPayloadType));
@@ -103,14 +106,14 @@ void DeletePackets(std::list<Packet*>* packets) {
 
 TEST_F(ReceiverFecTest, TwoMediaOneFec) {
   const unsigned int kNumFecPackets = 1u;
-  std::list<RtpPacket*> media_rtp_packets;
+  std::list<test::RawRtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
   std::list<Packet*> fec_packets;
   GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
-  std::list<RtpPacket*>::iterator it = media_rtp_packets.begin();
+  std::list<test::RawRtpPacket*>::iterator it = media_rtp_packets.begin();
   BuildAndAddRedMediaPacket(*it);
   VerifyReconstructedMediaPacket(*it, 1);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
@@ -134,7 +137,7 @@ void ReceiverFecTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
       .WillRepeatedly(Return(true));
 
   const unsigned int kNumFecPackets = 1u;
-  std::list<RtpPacket*> media_rtp_packets;
+  std::list<test::RawRtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
   std::list<Packet*> fec_packets;
@@ -169,7 +172,7 @@ TEST_F(ReceiverFecTest, InjectGarbageFecLevelHeaderProtectionLength) {
 
 TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
   const unsigned int kNumFecPackets = 2u;
-  std::list<RtpPacket*> media_rtp_packets;
+  std::list<test::RawRtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
   std::list<Packet*> fec_packets;
@@ -177,7 +180,7 @@ TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
 
   // Recovery
   // Drop both media packets.
-  std::list<RtpPacket*>::iterator it = media_rtp_packets.begin();
+  std::list<test::RawRtpPacket*>::iterator it = media_rtp_packets.begin();
   std::list<Packet*>::iterator fec_it = fec_packets.begin();
   BuildAndAddRedFecPacket(*fec_it);
   VerifyReconstructedMediaPacket(*it, 1);
@@ -193,7 +196,7 @@ TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
 
 TEST_F(ReceiverFecTest, TwoFramesOneFec) {
   const unsigned int kNumFecPackets = 1u;
-  std::list<RtpPacket*> media_rtp_packets;
+  std::list<test::RawRtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   GenerateFrame(1, 0, &media_rtp_packets, &media_packets);
   GenerateFrame(1, 1, &media_rtp_packets, &media_packets);
@@ -201,7 +204,7 @@ TEST_F(ReceiverFecTest, TwoFramesOneFec) {
   GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
-  std::list<RtpPacket*>::iterator it = media_rtp_packets.begin();
+  std::list<test::RawRtpPacket*>::iterator it = media_rtp_packets.begin();
   BuildAndAddRedMediaPacket(media_rtp_packets.front());
   VerifyReconstructedMediaPacket(*it, 1);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
@@ -216,7 +219,7 @@ TEST_F(ReceiverFecTest, TwoFramesOneFec) {
 
 TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
   const unsigned int kNumFecPackets = 1u;
-  std::list<RtpPacket*> media_rtp_packets;
+  std::list<test::RawRtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   GenerateFrame(1, 0, &media_rtp_packets, &media_packets);
   GenerateFrame(2, 1, &media_rtp_packets, &media_packets);
@@ -225,7 +228,7 @@ TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
   GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
-  std::list<RtpPacket*>::iterator it = media_rtp_packets.begin();
+  std::list<test::RawRtpPacket*>::iterator it = media_rtp_packets.begin();
   BuildAndAddRedMediaPacket(*it);  // First frame: one packet.
   VerifyReconstructedMediaPacket(*it, 1);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
@@ -240,7 +243,7 @@ TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
 TEST_F(ReceiverFecTest, MaxFramesOneFec) {
   const unsigned int kNumFecPackets = 1u;
   const unsigned int kNumMediaPackets = 48u;
-  std::list<RtpPacket*> media_rtp_packets;
+  std::list<test::RawRtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   for (unsigned int i = 0; i < kNumMediaPackets; ++i) {
     GenerateFrame(1, i, &media_rtp_packets, &media_packets);
@@ -249,7 +252,7 @@ TEST_F(ReceiverFecTest, MaxFramesOneFec) {
   GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
-  std::list<RtpPacket*>::iterator it = media_rtp_packets.begin();
+  std::list<test::RawRtpPacket*>::iterator it = media_rtp_packets.begin();
   ++it;  // Drop first packet.
   for (; it != media_rtp_packets.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
@@ -267,7 +270,7 @@ TEST_F(ReceiverFecTest, MaxFramesOneFec) {
 TEST_F(ReceiverFecTest, TooManyFrames) {
   const unsigned int kNumFecPackets = 1u;
   const unsigned int kNumMediaPackets = 49u;
-  std::list<RtpPacket*> media_rtp_packets;
+  std::list<test::RawRtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   for (unsigned int i = 0; i < kNumMediaPackets; ++i) {
     GenerateFrame(1, i, &media_rtp_packets, &media_packets);
@@ -286,7 +289,7 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
   Packet* delayed_fec = NULL;
   const unsigned int kNumFecPacketsBatch1 = 1u;
   const unsigned int kNumMediaPacketsBatch1 = 2u;
-  std::list<RtpPacket*> media_rtp_packets_batch1;
+  std::list<test::RawRtpPacket*> media_rtp_packets_batch1;
   std::list<Packet*> media_packets_batch1;
   GenerateFrame(kNumMediaPacketsBatch1, 0, &media_rtp_packets_batch1,
                 &media_packets_batch1);
@@ -301,12 +304,13 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
 
   // Fill the FEC decoder. No packets should be dropped.
   const unsigned int kNumMediaPacketsBatch2 = 46u;
-  std::list<RtpPacket*> media_rtp_packets_batch2;
+  std::list<test::RawRtpPacket*> media_rtp_packets_batch2;
   std::list<Packet*> media_packets_batch2;
   for (unsigned int i = 0; i < kNumMediaPacketsBatch2; ++i) {
     GenerateFrame(1, i, &media_rtp_packets_batch2, &media_packets_batch2);
   }
-  for (std::list<RtpPacket*>::iterator it = media_rtp_packets_batch2.begin();
+  for (std::list<test::RawRtpPacket*>::iterator it =
+           media_rtp_packets_batch2.begin();
        it != media_rtp_packets_batch2.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
     EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
@@ -330,7 +334,7 @@ TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
   Packet* delayed_fec = NULL;
   const unsigned int kNumFecPacketsBatch1 = 1u;
   const unsigned int kNumMediaPacketsBatch1 = 2u;
-  std::list<RtpPacket*> media_rtp_packets_batch1;
+  std::list<test::RawRtpPacket*> media_rtp_packets_batch1;
   std::list<Packet*> media_packets_batch1;
   GenerateFrame(kNumMediaPacketsBatch1, 0, &media_rtp_packets_batch1,
                 &media_packets_batch1);
@@ -345,12 +349,13 @@ TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
 
   // Fill the FEC decoder and force the last packet to be dropped.
   const unsigned int kNumMediaPacketsBatch2 = 48u;
-  std::list<RtpPacket*> media_rtp_packets_batch2;
+  std::list<test::RawRtpPacket*> media_rtp_packets_batch2;
   std::list<Packet*> media_packets_batch2;
   for (unsigned int i = 0; i < kNumMediaPacketsBatch2; ++i) {
     GenerateFrame(1, i, &media_rtp_packets_batch2, &media_packets_batch2);
   }
-  for (std::list<RtpPacket*>::iterator it = media_rtp_packets_batch2.begin();
+  for (std::list<test::RawRtpPacket*>::iterator it =
+           media_rtp_packets_batch2.begin();
        it != media_rtp_packets_batch2.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
     EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
@@ -373,10 +378,10 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
   // 49 frames with 2 media packets and one FEC packet. All media packets
   // missing.
   const unsigned int kNumMediaPackets = 49 * 2;
-  std::list<RtpPacket*> media_rtp_packets;
+  std::list<test::RawRtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   for (unsigned int i = 0; i < kNumMediaPackets / 2; ++i) {
-    std::list<RtpPacket*> frame_media_rtp_packets;
+    std::list<test::RawRtpPacket*> frame_media_rtp_packets;
     std::list<Packet*> frame_media_packets;
     std::list<Packet*> fec_packets;
     GenerateFrame(2, 0, &frame_media_rtp_packets, &frame_media_packets);

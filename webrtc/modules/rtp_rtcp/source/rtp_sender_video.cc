@@ -29,11 +29,6 @@
 namespace webrtc {
 enum { REDForFECHeaderLength = 1 };
 
-struct RtpPacket {
-  uint16_t rtpHeaderLength;
-  ForwardErrorCorrection::Packet* pkt;
-};
-
 RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSenderInterface* rtpSender)
     : _rtpSender(*rtpSender),
       crit_(CriticalSectionWrapper::CreateCriticalSection()),

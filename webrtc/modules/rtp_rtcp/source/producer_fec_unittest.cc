@@ -112,12 +112,12 @@ TEST_F(ProducerFecTest, OneFrameFec) {
   // media packets for 1 frame is at least |minimum_media_packets_fec_|.
   const int kNumPackets = 4;
   FecProtectionParams params = {15, false, 3};
-  std::list<RtpPacket*> rtp_packets;
+  std::list<test::RawRtpPacket*> rtp_packets;
   generator_->NewFrame(kNumPackets);
   producer_->SetFecParameters(&params, 0);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
   for (int i = 0; i < kNumPackets; ++i) {
-    RtpPacket* rtp_packet = generator_->NextPacket(i, 10);
+    test::RawRtpPacket* rtp_packet = generator_->NextPacket(i, 10);
     rtp_packets.push_back(rtp_packet);
     EXPECT_EQ(0, producer_->AddRtpPacketAndGenerateFec(rtp_packet->data,
                                                        rtp_packet->length,
@@ -153,13 +153,14 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
   const int kNumFrames = 2;
 
   FecProtectionParams params = {15, 0, 3};
-  std::list<RtpPacket*> rtp_packets;
+  std::list<test::RawRtpPacket*> rtp_packets;
   producer_->SetFecParameters(&params, 0);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
   for (int i = 0; i < kNumFrames; ++i) {
     generator_->NewFrame(kNumPackets);
     for (int j = 0; j < kNumPackets; ++j) {
-      RtpPacket* rtp_packet = generator_->NextPacket(i * kNumPackets + j, 10);
+      test::RawRtpPacket* rtp_packet =
+          generator_->NextPacket(i * kNumPackets + j, 10);
       rtp_packets.push_back(rtp_packet);
       EXPECT_EQ(0, producer_->AddRtpPacketAndGenerateFec(rtp_packet->data,
                                            rtp_packet->length,
@@ -186,7 +187,7 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
 
 TEST_F(ProducerFecTest, BuildRedPacket) {
   generator_->NewFrame(1);
-  RtpPacket* packet = generator_->NextPacket(0, 10);
+  test::RawRtpPacket* packet = generator_->NextPacket(0, 10);
   rtc::scoped_ptr<RedPacket> red_packet(producer_->BuildRedPacket(
       packet->data, packet->length - kRtpHeaderSize, kRtpHeaderSize,
       kRedPayloadType));

@@ -15,16 +15,15 @@
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 
 namespace webrtc {
+namespace test {
+struct RawRtpPacket : public ForwardErrorCorrection::Packet {
+  WebRtcRTPHeader header;
+};
+}  // namespace test
 
 const uint8_t kFecPayloadType = 96;
 const uint8_t kRedPayloadType = 97;
 const uint8_t kVp8PayloadType = 120;
-
-typedef ForwardErrorCorrection::Packet Packet;
-
-struct RtpPacket : public Packet {
-  WebRtcRTPHeader header;
-};
 
 class FrameGenerator {
  public:
@@ -34,17 +33,19 @@ class FrameGenerator {
 
   uint16_t NextSeqNum();
 
-  RtpPacket* NextPacket(int offset, size_t length);
+  test::RawRtpPacket* NextPacket(int offset, size_t length);
 
   // Creates a new RtpPacket with the RED header added to the packet.
-  RtpPacket* BuildMediaRedPacket(const RtpPacket* packet);
+  test::RawRtpPacket* BuildMediaRedPacket(const test::RawRtpPacket* packet);
 
   // Creates a new RtpPacket with FEC payload and red header. Does this by
   // creating a new fake media RtpPacket, clears the marker bit and adds a RED
   // header. Finally replaces the payload with the content of |packet->data|.
-  RtpPacket* BuildFecRedPacket(const Packet* packet);
+  test::RawRtpPacket* BuildFecRedPacket(
+      const ForwardErrorCorrection::Packet* packet);
 
-  void SetRedHeader(Packet* red_packet, uint8_t payload_type,
+  void SetRedHeader(ForwardErrorCorrection::Packet* red_packet,
+                    uint8_t payload_type,
                     size_t header_length) const;
 
  private:

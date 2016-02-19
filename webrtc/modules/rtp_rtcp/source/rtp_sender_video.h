@@ -28,7 +28,6 @@
 
 namespace webrtc {
 class CriticalSectionWrapper;
-struct RtpPacket;
 
 class RTPSenderVideo {
  public:
