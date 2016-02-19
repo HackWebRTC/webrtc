@@ -11,7 +11,6 @@
 #ifndef WEBRTC_VIDEO_VIE_ENCODER_H_
 #define WEBRTC_VIDEO_VIE_ENCODER_H_
 
-#include <map>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
@@ -43,8 +42,7 @@ class ViEBitrateObserver;
 class ViEEffectFilter;
 class VideoCodingModule;
 
-class ViEEncoder : public RtcpIntraFrameObserver,
-                   public VideoEncoderRateObserver,
+class ViEEncoder : public VideoEncoderRateObserver,
                    public VCMPacketizationCallback,
                    public VCMSendStatisticsCallback,
                    public VideoCaptureCallback {
@@ -52,6 +50,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   friend class ViEBitrateObserver;
 
   ViEEncoder(uint32_t number_of_cores,
+             const std::vector<uint32_t>& ssrcs,
              ProcessThread* module_process_thread,
              SendStatisticsProxy* stats_proxy,
              I420FrameCallback* pre_encode_callback,
@@ -108,14 +107,10 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   int32_t SendStatistics(const uint32_t bit_rate,
                          const uint32_t frame_rate) override;
 
-  // Implements RtcpIntraFrameObserver.
-  void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
-  void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) override;
-  void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) override;
-  void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) override;
-
-  // Sets SSRCs for all streams.
-  void SetSsrcs(const std::vector<uint32_t>& ssrcs);
+  // virtual to test EncoderStateFeedback with mocks.
+  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc);
+  virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id);
+  virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id);
 
   void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
 
@@ -142,6 +137,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
 
   const uint32_t number_of_cores_;
+  const std::vector<uint32_t> ssrcs_;
 
   const rtc::scoped_ptr<VideoProcessing> vp_;
   const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
@@ -168,8 +164,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   bool network_is_transmitting_ GUARDED_BY(data_cs_);
   bool encoder_paused_ GUARDED_BY(data_cs_);
   bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
-  std::map<unsigned int, int64_t> time_last_intra_request_ms_
-      GUARDED_BY(data_cs_);
+  std::vector<int64_t> time_last_intra_request_ms_ GUARDED_BY(data_cs_);
 
   ProcessThread* module_process_thread_;
 
@@ -177,7 +172,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   uint8_t picture_id_sli_ GUARDED_BY(data_cs_);
   bool has_received_rpsi_ GUARDED_BY(data_cs_);
   uint64_t picture_id_rpsi_ GUARDED_BY(data_cs_);
-  std::map<uint32_t, int> ssrc_streams_ GUARDED_BY(data_cs_);
 
   bool video_suspended_ GUARDED_BY(data_cs_);
 };

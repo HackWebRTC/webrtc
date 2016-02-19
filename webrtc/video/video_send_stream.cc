@@ -188,6 +188,7 @@ VideoSendStream::VideoSendStream(
                    true),
       vie_receiver_(vie_channel_.vie_receiver()),
       vie_encoder_(num_cpu_cores,
+                   config_.rtp.ssrcs,
                    module_process_thread_,
                    &stats_proxy_,
                    config.pre_encode_callback,
@@ -215,8 +216,6 @@ VideoSendStream::VideoSendStream(
   vcm_->RegisterProtectionCallback(vie_channel_.vcm_protection_callback());
 
   call_stats_->RegisterStatsObserver(vie_channel_.GetStatsObserver());
-
-  vie_encoder_.SetSsrcs(std::vector<uint32_t>(1, config_.rtp.ssrcs[0]));
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
@@ -601,12 +600,6 @@ bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {
     LOG(LS_ERROR) << "Failed to set send codec.";
     return false;
   }
-
-  // Not all configured SSRCs have to be utilized (simulcast senders don't have
-  // to send on all SSRCs at once etc.)
-  std::vector<uint32_t> used_ssrcs = config_.rtp.ssrcs;
-  used_ssrcs.resize(static_cast<size_t>(video_codec.numberOfSimulcastStreams));
-  vie_encoder_.SetSsrcs(used_ssrcs);
 
   // Restart the media flow
   vie_encoder_.Restart();

@@ -29,6 +29,7 @@ class MockVieEncoder : public ViEEncoder {
  public:
   explicit MockVieEncoder(ProcessThread* process_thread, PacedSender* pacer)
       : ViEEncoder(1,
+                   std::vector<uint32_t>(),
                    process_thread,
                    nullptr,
                    nullptr,
@@ -44,8 +45,6 @@ class MockVieEncoder : public ViEEncoder {
                void(uint32_t ssrc, uint8_t picture_id));
   MOCK_METHOD2(OnReceivedRPSI,
                void(uint32_t ssrc, uint64_t picture_id));
-  MOCK_METHOD2(OnLocalSsrcChanged,
-               void(uint32_t old_ssrc, uint32_t new_ssrc));
 };
 
 TEST(VieKeyRequestTest, CreateAndTriggerRequests) {

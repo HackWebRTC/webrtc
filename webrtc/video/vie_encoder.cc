@@ -105,6 +105,7 @@ class ViEBitrateObserver : public BitrateObserver {
 };
 
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
+                       const std::vector<uint32_t>& ssrcs,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
                        I420FrameCallback* pre_encode_callback,
@@ -113,6 +114,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        PayloadRouter* payload_router,
                        BitrateAllocator* bitrate_allocator)
     : number_of_cores_(number_of_cores),
+      ssrcs_(ssrcs),
       vp_(VideoProcessing::Create()),
       qm_callback_(new QMVideoSettingsCallback(vp_.get())),
       vcm_(VideoCodingModule::Create(Clock::GetRealTimeClock(),
@@ -132,6 +134,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       network_is_transmitting_(true),
       encoder_paused_(false),
       encoder_paused_and_dropped_frame_(false),
+      time_last_intra_request_ms_(ssrcs.size(), -1),
       module_process_thread_(module_process_thread),
       has_received_sli_(false),
       picture_id_sli_(0),
@@ -479,61 +482,22 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   // Key frame request from remote side, signal to VCM.
   TRACE_EVENT0("webrtc", "OnKeyFrameRequest");
 
-  int idx = 0;
-  {
-    rtc::CritScope lock(&data_cs_);
-    auto stream_it = ssrc_streams_.find(ssrc);
-    if (stream_it == ssrc_streams_.end()) {
-      LOG_F(LS_WARNING) << "ssrc not found: " << ssrc << ", map size "
-                        << ssrc_streams_.size();
-      return;
+  for (size_t i = 0; i < ssrcs_.size(); ++i) {
+    if (ssrcs_[i] != ssrc)
+      continue;
+    int64_t now_ms = TickTime::MillisecondTimestamp();
+    {
+      rtc::CritScope lock(&data_cs_);
+      if (time_last_intra_request_ms_[i] + kMinKeyFrameRequestIntervalMs >
+          now_ms) {
+        return;
+      }
+      time_last_intra_request_ms_[i] = now_ms;
     }
-    std::map<unsigned int, int64_t>::iterator time_it =
-        time_last_intra_request_ms_.find(ssrc);
-    if (time_it == time_last_intra_request_ms_.end()) {
-      time_last_intra_request_ms_[ssrc] = 0;
-    }
-
-    int64_t now = TickTime::MillisecondTimestamp();
-    if (time_last_intra_request_ms_[ssrc] + kMinKeyFrameRequestIntervalMs
-        > now) {
-      return;
-    }
-    time_last_intra_request_ms_[ssrc] = now;
-    idx = stream_it->second;
-  }
-  // Release the critsect before triggering key frame.
-  vcm_->IntraFrameRequest(idx);
-}
-
-void ViEEncoder::OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {
-  rtc::CritScope lock(&data_cs_);
-  std::map<unsigned int, int>::iterator it = ssrc_streams_.find(old_ssrc);
-  if (it == ssrc_streams_.end()) {
+    vcm_->IntraFrameRequest(static_cast<int>(i));
     return;
   }
-
-  ssrc_streams_[new_ssrc] = it->second;
-  ssrc_streams_.erase(it);
-
-  std::map<unsigned int, int64_t>::iterator time_it =
-      time_last_intra_request_ms_.find(old_ssrc);
-  int64_t last_intra_request_ms = 0;
-  if (time_it != time_last_intra_request_ms_.end()) {
-    last_intra_request_ms = time_it->second;
-    time_last_intra_request_ms_.erase(time_it);
-  }
-  time_last_intra_request_ms_[new_ssrc] = last_intra_request_ms;
-}
-
-void ViEEncoder::SetSsrcs(const std::vector<uint32_t>& ssrcs) {
-  rtc::CritScope lock(&data_cs_);
-  ssrc_streams_.clear();
-  time_last_intra_request_ms_.clear();
-  int idx = 0;
-  for (uint32_t ssrc : ssrcs) {
-    ssrc_streams_[ssrc] = idx++;
-  }
+  RTC_NOTREACHED() << "Should not receive keyframe requests on unknown SSRCs.";
 }
 
 void ViEEncoder::SetMinTransmitBitrate(int min_transmit_bitrate_kbps) {
@@ -554,14 +518,12 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
   bool video_is_suspended = vcm_->VideoSuspended();
   bool video_suspension_changed;
   VideoCodec send_codec;
-  uint32_t first_ssrc;
   {
     rtc::CritScope lock(&data_cs_);
     last_observed_bitrate_bps_ = bitrate_bps;
     video_suspension_changed = video_suspended_ != video_is_suspended;
     video_suspended_ = video_is_suspended;
     send_codec = encoder_config_;
-    first_ssrc = ssrc_streams_.begin()->first;
   }
 
   SimulcastStream* stream_configs = send_codec.simulcastStream;
@@ -574,7 +536,7 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
     return;
   // Video suspend-state changed, inform codec observer.
   LOG(LS_INFO) << "Video suspend state changed " << video_is_suspended
-               << " for ssrc " << first_ssrc;
+               << " for ssrc " << ssrcs_[0];
   if (stats_proxy_)
     stats_proxy_->OnSuspendChange(video_is_suspended);
 }
