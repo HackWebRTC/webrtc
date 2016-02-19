@@ -35,7 +35,6 @@
 
 namespace webrtc {
 
-static const int kMaxTargetDelayMs = 10000;
 const int kMinSendSidePacketHistorySize = 600;
 const int kMaxPacketAgeToNack = 450;
 const int kMaxNackListSize = 250;
@@ -465,26 +464,6 @@ bool ViEChannel::IsSendingFecEnabled() {
       return true;
   }
   return false;
-}
-
-int ViEChannel::SetSenderBufferingMode(int target_delay_ms) {
-  if ((target_delay_ms < 0) || (target_delay_ms > kMaxTargetDelayMs)) {
-    LOG(LS_ERROR) << "Invalid send buffer value.";
-    return -1;
-  }
-  if (target_delay_ms == 0) {
-    // Real-time mode.
-    nack_history_size_sender_ = kMinSendSidePacketHistorySize;
-  } else {
-    nack_history_size_sender_ = GetRequiredNackListSize(target_delay_ms);
-    // Don't allow a number lower than the default value.
-    if (nack_history_size_sender_ < kMinSendSidePacketHistorySize) {
-      nack_history_size_sender_ = kMinSendSidePacketHistorySize;
-    }
-  }
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
-  return 0;
 }
 
 int ViEChannel::GetRequiredNackListSize(int target_delay_ms) {

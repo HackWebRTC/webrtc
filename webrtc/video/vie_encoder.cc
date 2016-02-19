@@ -421,22 +421,6 @@ void ViEEncoder::SetProtectionMethod(bool nack, bool fec) {
   vcm_->SetVideoProtection(protection_mode, true);
 }
 
-void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
-  {
-    rtc::CritScope lock(&data_cs_);
-    target_delay_ms_ = target_delay_ms;
-  }
-  if (target_delay_ms > 0) {
-    // Disable external frame-droppers.
-    vcm_->EnableFrameDropper(false);
-    vp_->EnableTemporalDecimation(false);
-  } else {
-    // Real-time mode - enable frame droppers.
-    vp_->EnableTemporalDecimation(true);
-    vcm_->EnableFrameDropper(true);
-  }
-}
-
 void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {
   if (stats_proxy_)
     stats_proxy_->OnSetRates(bitrate_bps, framerate);

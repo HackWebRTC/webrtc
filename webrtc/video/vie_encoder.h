@@ -94,9 +94,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
   // this class and set it on construction there.
   void SetProtectionMethod(bool nack, bool fec);
 
-  // Buffering mode.
-  void SetSenderBufferingMode(int target_delay_ms);
-
   // Implements VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
