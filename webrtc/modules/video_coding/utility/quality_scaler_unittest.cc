@@ -16,13 +16,17 @@ namespace webrtc {
 namespace {
 static const int kNumSeconds = 10;
 static const int kWidth = 1920;
+static const int kWidthVga = 640;
 static const int kHalfWidth = kWidth / 2;
 static const int kHeight = 1080;
+static const int kHeightVga = 480;
 static const int kFramerate = 30;
 static const int kLowQp = 15;
 static const int kNormalQp = 30;
 static const int kHighQp = 40;
 static const int kMaxQp = 56;
+static const int kDisabledBadQpThreshold = kMaxQp + 1;
+static const int kLowInitialBitrateKbps = 300;
 }  // namespace
 
 class QualityScalerTest : public ::testing::Test {
@@ -46,7 +50,8 @@ class QualityScalerTest : public ::testing::Test {
   QualityScalerTest() {
     input_frame_.CreateEmptyFrame(kWidth, kHeight, kWidth, kHalfWidth,
                                   kHalfWidth);
-    qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator, kHighQp, false);
+    qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator, kHighQp, false,
+             0, 0, 0);
     qs_.ReportFramerate(kFramerate);
     qs_.OnEncodeFrame(input_frame_);
   }
@@ -296,9 +301,8 @@ void QualityScalerTest::VerifyQualityAdaptation(
     int seconds,
     bool expect_spatial_resize,
     bool expect_framerate_reduction) {
-  const int kDisabledBadQpThreshold = kMaxQp + 1;
   qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator,
-           kDisabledBadQpThreshold, true);
+           kDisabledBadQpThreshold, true, 0, 0, 0);
   qs_.OnEncodeFrame(input_frame_);
   int init_width = qs_.GetScaledResolution().width;
   int init_height = qs_.GetScaledResolution().height;
@@ -362,6 +366,17 @@ TEST_F(QualityScalerTest, DoesNotDownscaleBelow2xDefaultMinDimensionsWidth) {
 TEST_F(QualityScalerTest, DoesNotDownscaleBelow2xDefaultMinDimensionsHeight) {
   DoesNotDownscaleFrameDimensions(
       1000, 2 * QualityScaler::kDefaultMinDownscaleDimension - 1);
+}
+
+TEST_F(QualityScalerTest, DownscaleToVgaOnLowInitialBitrate) {
+  qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator,
+           kDisabledBadQpThreshold, true,
+           kLowInitialBitrateKbps, kWidth, kHeight);
+  qs_.OnEncodeFrame(input_frame_);
+  int init_width = qs_.GetScaledResolution().width;
+  int init_height = qs_.GetScaledResolution().height;
+  EXPECT_LE(init_width, kWidthVga);
+  EXPECT_LE(init_height, kHeightVga);
 }
 
 void QualityScalerTest::DownscaleEndsAt(int input_width,

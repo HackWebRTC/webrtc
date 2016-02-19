@@ -27,7 +27,10 @@ class QualityScaler {
   QualityScaler();
   void Init(int low_qp_threshold,
             int high_qp_threshold,
-            bool use_framerate_reduction);
+            bool use_framerate_reduction,
+            int initial_bitrate_kbps,
+            int width,
+            int height);
   void SetMinResolution(int min_width, int min_height);
   void ReportFramerate(int framerate);
   void ReportQP(int qp);

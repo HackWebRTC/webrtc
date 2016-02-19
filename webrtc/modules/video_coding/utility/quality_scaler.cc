@@ -14,6 +14,8 @@ namespace webrtc {
 static const int kMinFps = 10;
 static const int kMeasureSeconds = 5;
 static const int kFramedropPercentThreshold = 60;
+static const int kHdResolutionThreshold = 700 * 500;
+static const int kHdBitrateThresholdKbps = 500;
 
 const int QualityScaler::kDefaultLowQpDenominator = 3;
 // Note that this is the same for width and height to permit 120x90 in both
@@ -30,11 +32,27 @@ QualityScaler::QualityScaler()
 
 void QualityScaler::Init(int low_qp_threshold,
                          int high_qp_threshold,
-                         bool use_framerate_reduction) {
+                         bool use_framerate_reduction,
+                         int initial_bitrate_kbps,
+                         int width,
+                         int height) {
   ClearSamples();
   low_qp_threshold_ = low_qp_threshold;
   high_qp_threshold_ = high_qp_threshold;
   use_framerate_reduction_ = use_framerate_reduction;
+  // TODO(glaznev): Investigate using thresholds for other resolutions
+  // or threshold tables.
+  if (initial_bitrate_kbps > 0 &&
+      initial_bitrate_kbps < kHdBitrateThresholdKbps) {
+    // Start scaling to roughly VGA.
+    while (width * height > kHdResolutionThreshold) {
+      ++downscale_shift_;
+      width /= 2;
+      height /= 2;
+    }
+  }
+  res_.width = width;
+  res_.height = height;
   target_framerate_ = -1;
 }
 
