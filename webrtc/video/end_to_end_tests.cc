@@ -3148,7 +3148,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
   DestroyStreams();
 }
 
-TEST_F(EndToEndTest, DISABLED_RestartingSendStreamPreservesRtpState) {
+TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpState) {
   TestRtpStatePreservation(false);
 }
 

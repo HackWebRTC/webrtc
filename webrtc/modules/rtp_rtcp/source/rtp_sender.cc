@@ -556,6 +556,8 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
 size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send) {
   {
     rtc::CritScope lock(&send_critsect_);
+    if (!sending_media_)
+      return 0;
     if ((rtx_ & kRtxRedundantPayloads) == 0)
       return 0;
   }
@@ -618,6 +620,8 @@ size_t RTPSender::SendPadData(size_t bytes,
     bool over_rtx;
     {
       rtc::CritScope lock(&send_critsect_);
+      if (!sending_media_)
+        return bytes_sent;
       if (!timestamp_provided) {
         timestamp = timestamp_;
         capture_time_ms = capture_time_ms_;
@@ -1011,11 +1015,6 @@ bool RTPSender::IsFecPacket(const uint8_t* buffer,
 size_t RTPSender::TimeToSendPadding(size_t bytes) {
   if (audio_configured_ || bytes == 0)
     return 0;
-  {
-    rtc::CritScope lock(&send_critsect_);
-    if (!sending_media_)
-      return 0;
-  }
   size_t bytes_sent = TrySendRedundantPayloads(bytes);
   if (bytes_sent < bytes)
     bytes_sent += SendPadData(bytes - bytes_sent, false, 0, 0);
