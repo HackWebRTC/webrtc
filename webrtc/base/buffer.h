@@ -180,12 +180,10 @@ class Buffer {
     return std::move(*this);
   }
 
-  // Resets the buffer to zero size and capacity. Works even if the buffer has
-  // been moved from.
+  // Resets the buffer to zero size without altering capacity. Works even if the
+  // buffer has been moved from.
   void Clear() {
-    data_.reset();
     size_ = 0;
-    capacity_ = 0;
     assert(IsConsistent());
   }
 

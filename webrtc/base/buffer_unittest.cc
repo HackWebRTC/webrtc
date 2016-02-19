@@ -177,4 +177,16 @@ TEST(BufferTest, TestSwap) {
   EXPECT_EQ(buf2.data(), data1);
 }
 
+TEST(BufferTest, TestClear) {
+  Buffer buf;
+  buf.SetData(kTestData, 15);
+  EXPECT_EQ(buf.size(), 15u);
+  EXPECT_EQ(buf.capacity(), 15u);
+  const char *data = buf.data<char>();
+  buf.Clear();
+  EXPECT_EQ(buf.size(), 0u);
+  EXPECT_EQ(buf.capacity(), 15u);  // Hasn't shrunk.
+  EXPECT_EQ(buf.data<char>(), data); // No reallocation.
+}
+
 }  // namespace rtc
