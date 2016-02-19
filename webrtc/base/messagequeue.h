@@ -24,11 +24,9 @@
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/sharedexclusivelock.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socketserver.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/base/thread_annotations.h"
 
 namespace rtc {
 
@@ -183,7 +181,7 @@ class MessageQueue {
   // calling Clear on the object from a different thread.
   virtual ~MessageQueue();
 
-  SocketServer* socketserver();
+  SocketServer* socketserver() { return ss_; }
   void set_socketserver(SocketServer* ss);
 
   // Note: The behavior of MessageQueue has changed.  When a MQ is stopped,
@@ -262,25 +260,21 @@ class MessageQueue {
   // destructor.
   void DoDestroy();
 
-  void WakeUpSocketServer();
-
+  // The SocketServer is not owned by MessageQueue.
+  SocketServer* ss_;
+  // If a server isn't supplied in the constructor, use this one.
+  scoped_ptr<SocketServer> default_ss_;
   bool fStop_;
   bool fPeekKeep_;
   Message msgPeek_;
-  MessageList msgq_ GUARDED_BY(crit_);
-  PriorityQueue dmsgq_ GUARDED_BY(crit_);
-  uint32_t dmsgq_next_num_ GUARDED_BY(crit_);
+  MessageList msgq_;
+  PriorityQueue dmsgq_;
+  uint32_t dmsgq_next_num_;
   CriticalSection crit_;
   bool fInitialized_;
   bool fDestroyed_;
 
  private:
-  // The SocketServer is not owned by MessageQueue.
-  SocketServer* ss_ GUARDED_BY(ss_lock_);
-  // If a server isn't supplied in the constructor, use this one.
-  scoped_ptr<SocketServer> default_ss_;
-  SharedExclusiveLock ss_lock_;
-
   RTC_DISALLOW_COPY_AND_ASSIGN(MessageQueue);
 };
 
