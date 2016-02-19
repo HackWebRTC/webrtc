@@ -31,6 +31,17 @@ CPPLINT_DIRS = [
   'webrtc/video',
 ]
 
+# These filters will always be removed, even if the caller specifies a filter
+# set, as they are problematic or broken in some way.
+#
+# Justifications for each filter:
+# - build/c++11         : Rvalue ref checks are unreliable (false positives),
+#                         include file and feature blacklists are
+#                         google3-specific.
+BLACKLIST_LINT_FILTERS = [
+  '-build/c++11',
+]
+
 # List of directories of "supported" native APIs. That means changes to headers
 # will be done in a compatible way following this scheme:
 # 1. Non-breaking changes are made.
@@ -171,6 +182,10 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
   # Access to a protected member _XX of a client class
   # pylint: disable=W0212
   cpplint._cpplint_state.ResetErrorCounts()
+
+  lint_filters = cpplint._Filters()
+  lint_filters.extend(BLACKLIST_LINT_FILTERS)
+  cpplint._SetFilters(','.join(lint_filters))
 
   # Create a platform independent whitelist for the CPPLINT_DIRS.
   whitelist_dirs = [input_api.os_path.join(*path.split('/'))
