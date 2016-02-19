@@ -14,26 +14,16 @@
 //  Use --help for options.
 //
 
-#include <stdint.h>
-#include <stdlib.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <string>
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/common_audio/real_fourier.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
-#include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
 #include "webrtc/modules/audio_processing/noise_suppression_impl.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/test/testsupport/fileutils.h"
 
 using std::complex;
 
@@ -51,10 +41,7 @@ DEFINE_double(gain_limit, 1000.0, "Maximum gain change in one block.");
 
 DEFINE_string(clear_file, "speech.wav", "Input file with clear speech.");
 DEFINE_string(noise_file, "noise.wav", "Input file with noise data.");
-DEFINE_string(out_file,
-              "proc_enhanced.wav",
-              "Enhanced output. Use '-' to "
-              "play through aplay immediately.");
+DEFINE_string(out_file, "proc_enhanced.wav", "Enhanced output file.");
 
 const size_t kNumChannels = 1;
 
@@ -128,19 +115,8 @@ void void_main(int argc, char* argv[]) {
 
   FloatToFloatS16(&in_fpcm[0], samples, &in_fpcm[0]);
 
-  if (FLAGS_out_file.compare("-") == 0) {
-    const std::string temp_out_filename =
-        test::TempFilename(test::WorkingDir(), "temp_wav_file");
-    {
-      WavWriter out_file(temp_out_filename, FLAGS_sample_rate, kNumChannels);
-      out_file.WriteSamples(&in_fpcm[0], samples);
-    }
-    system(("aplay " + temp_out_filename).c_str());
-    system(("rm " + temp_out_filename).c_str());
-  } else {
-    WavWriter out_file(FLAGS_out_file, FLAGS_sample_rate, kNumChannels);
-    out_file.WriteSamples(&in_fpcm[0], samples);
-  }
+  WavWriter out_file(FLAGS_out_file, FLAGS_sample_rate, kNumChannels);
+  out_file.WriteSamples(&in_fpcm[0], samples);
 }
 
 }  // namespace
