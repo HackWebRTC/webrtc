@@ -27,7 +27,6 @@
 #include "webrtc/p2p/base/p2ptransport.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/sigslot.h"
@@ -67,12 +66,16 @@ class P2PTransportChannel : public TransportChannelImpl,
  public:
   P2PTransportChannel(const std::string& transport_name,
                       int component,
+                      PortAllocator* allocator);
+  // TODO(mikescarlett): Deprecated. Remove when Chromium's
+  // IceTransportChannel does not depend on this.
+  P2PTransportChannel(const std::string& transport_name,
+                      int component,
                       P2PTransport* transport,
                       PortAllocator* allocator);
   virtual ~P2PTransportChannel();
 
   // From TransportChannelImpl:
-  Transport* GetTransport() override { return transport_; }
   TransportChannelState GetState() const override;
   void SetIceRole(IceRole role) override;
   IceRole GetIceRole() const override { return ice_role_; }
@@ -265,7 +268,6 @@ class P2PTransportChannel : public TransportChannelImpl,
                : static_cast<uint32_t>(remote_ice_parameters_.size() - 1);
   }
 
-  P2PTransport* transport_;
   PortAllocator* allocator_;
   rtc::Thread* worker_thread_;
   bool incoming_only_;

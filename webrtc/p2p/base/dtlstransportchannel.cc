@@ -89,10 +89,8 @@ bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
 }
 
 DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
-    Transport* transport,
     TransportChannelImpl* channel)
     : TransportChannelImpl(channel->transport_name(), channel->component()),
-      transport_(transport),
       worker_thread_(rtc::Thread::Current()),
       channel_(channel),
       downward_(NULL),

@@ -45,11 +45,8 @@ struct PacketMessageData : public rtc::MessageData {
 class FakeTransportChannel : public TransportChannelImpl,
                              public rtc::MessageHandler {
  public:
-  explicit FakeTransportChannel(Transport* transport,
-                                const std::string& name,
-                                int component)
+  explicit FakeTransportChannel(const std::string& name, int component)
       : TransportChannelImpl(name, component),
-        transport_(transport),
         dtls_fingerprint_("", nullptr, 0) {}
   ~FakeTransportChannel() { Reset(); }
 
@@ -66,8 +63,6 @@ class FakeTransportChannel : public TransportChannelImpl,
   // If async, will send packets by "Post"-ing to message queue instead of
   // synchronously "Send"-ing.
   void SetAsync(bool async) { async_ = async; }
-
-  Transport* GetTransport() override { return transport_; }
 
   TransportChannelState GetState() const override {
     if (connection_count_ == 0) {
@@ -313,7 +308,6 @@ class FakeTransportChannel : public TransportChannelImpl,
 
  private:
   enum State { STATE_INIT, STATE_CONNECTING, STATE_CONNECTED };
-  Transport* transport_;
   FakeTransportChannel* dest_ = nullptr;
   State state_ = STATE_INIT;
   bool async_ = false;
@@ -414,8 +408,7 @@ class FakeTransport : public Transport {
     if (channels_.find(component) != channels_.end()) {
       return nullptr;
     }
-    FakeTransportChannel* channel =
-        new FakeTransportChannel(this, name(), component);
+    FakeTransportChannel* channel = new FakeTransportChannel(name(), component);
     channel->set_ssl_max_protocol_version(ssl_max_version_);
     channel->SetAsync(async_);
     SetChannelDestination(component, channel);
