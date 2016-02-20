@@ -46,9 +46,11 @@ def MergeLibs(lib_base_dir):
   Returns:
     Exit code of libtool.
   """
-  output_dir_name = 'fat'
+  include_dir_name = 'include'
+  output_dir_name = 'lib'
   archs = [arch for arch in os.listdir(lib_base_dir)
-           if arch[:1] != '.' and arch != output_dir_name]
+           if arch[:1] != '.' and arch != output_dir_name
+           and arch != include_dir_name]
   # For each arch, find (library name, libary path) for arch. We will merge
   # all libraries with the same name.
   libs = {}

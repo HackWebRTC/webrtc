@@ -32,6 +32,9 @@
   'variables': {
     'infoplist_file': './objc_app.plist',
   },
+  'dependencies': [
+    '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+  ],
   'mac_bundle': 1,
   'mac_bundle_resources': [
     '<(infoplist_file)',

@@ -27,6 +27,9 @@
 
 # Generates static FAT libraries for ios in out_ios_libs.
 
+# Flag to build the new or legacy version of the API.
+USE_LEGACY_API=1
+
 # Check for Darwin.
 if [[ ! $(uname) = "Darwin" ]]; then
   echo "OS/X required." >&2
@@ -45,6 +48,12 @@ if [[ ! -x ${GYP_WEBRTC_SCRIPT} ]]; then
   echo "Failed to find gyp generator." >&2
   exit 1
 fi
+# Check for export headers script.
+EXPORT_HEADERS_SCRIPT=${SCRIPT_DIR}/export_headers
+if [[ ! -x ${EXPORT_HEADERS_SCRIPT} ]]; then
+  echo "Failed to find export headers script." >&2
+  exit 1
+fi
 # Check for merge script.
 MERGE_SCRIPT=${SCRIPT_DIR}/merge_ios_libs
 if [[ ! -x ${MERGE_SCRIPT} ]]; then
@@ -59,7 +68,6 @@ function build_webrtc {
   OUTPUT_DIR=$1
   FLAVOR=$2
   TARGET_ARCH=$3
-  TARGET_SUBARCH=$4
   if [[ ${TARGET_ARCH} = 'arm' || ${TARGET_ARCH} = 'arm64' ]]; then
     FLAVOR="${FLAVOR}-iphoneos"
   else
@@ -69,7 +77,11 @@ function build_webrtc {
   export GYP_GENERATORS="ninja"
   export GYP_GENERATOR_FLAGS="output_dir=${OUTPUT_DIR}"
   webrtc/build/gyp_webrtc talk/build/merge_ios_libs.gyp
-  ninja -C ${OUTPUT_DIR}/${FLAVOR} libjingle_peerconnection_objc_no_op
+  if [[ ${USE_LEGACY_API} -eq 1 ]]; then
+    ninja -C ${OUTPUT_DIR}/${FLAVOR} libjingle_peerconnection_objc_no_op
+  else
+    ninja -C ${OUTPUT_DIR}/${FLAVOR} webrtc_api_objc_no_op
+  fi
   mkdir -p ${LIBRARY_BASE_DIR}/${TARGET_ARCH}
   mv ${OUTPUT_DIR}/${FLAVOR}/*.a ${LIBRARY_BASE_DIR}/${TARGET_ARCH}
 }
@@ -81,6 +93,10 @@ build_webrtc "out_ios_ia32" "Release" "ia32"
 build_webrtc "out_ios_x86_64" "Release" "x64"
 
 popd
+
+# Export header files.
+${EXPORT_HEADERS_SCRIPT} ${WEBRTC_BASE_DIR}/${LIBRARY_BASE_DIR} \
+    ${USE_LEGACY_API}
 
 # Merge the libraries together.
 ${MERGE_SCRIPT} ${WEBRTC_BASE_DIR}/${LIBRARY_BASE_DIR}
