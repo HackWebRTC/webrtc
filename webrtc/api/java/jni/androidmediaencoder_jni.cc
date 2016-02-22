@@ -387,8 +387,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(
           codec_settings->width, codec_settings->height);
     } else if (codecType_ == kVideoCodecH264) {
       // H264 QP is in the range [0, 51].
-      const int kLowQpThreshold = 17;
-      const int kBadQpThreshold = 40;
+      const int kLowQpThreshold = 21;
+      const int kBadQpThreshold = 36;
       quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold, false,
           codec_settings->startBitrate,
           codec_settings->width, codec_settings->height);
