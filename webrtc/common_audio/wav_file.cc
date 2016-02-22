@@ -64,6 +64,18 @@ WavReader::~WavReader() {
   Close();
 }
 
+int WavReader::sample_rate() const {
+  return sample_rate_;
+}
+
+size_t WavReader::num_channels() const {
+  return num_channels_;
+}
+
+size_t WavReader::num_samples() const {
+  return num_samples_;
+}
+
 size_t WavReader::ReadSamples(size_t num_samples, int16_t* samples) {
 #ifndef WEBRTC_ARCH_LITTLE_ENDIAN
 #error "Need to convert samples to big-endian when reading from WAV file"
@@ -116,6 +128,18 @@ WavWriter::WavWriter(const std::string& filename, int sample_rate,
 
 WavWriter::~WavWriter() {
   Close();
+}
+
+int WavWriter::sample_rate() const {
+  return sample_rate_;
+}
+
+size_t WavWriter::num_channels() const {
+  return num_channels_;
+}
+
+size_t WavWriter::num_samples() const {
+  return num_samples_;
 }
 
 void WavWriter::WriteSamples(const int16_t* samples, size_t num_samples) {
