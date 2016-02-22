@@ -13,9 +13,6 @@
       "app": "modules_tests"
     },
     {
-      "app": "modules_unittests"
-    },
-    {
       "app": "rtc_api_objc_tests"
     },
     {
