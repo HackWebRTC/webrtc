@@ -13,6 +13,7 @@
 
 #include <complex>
 #include <memory>
+#include <vector>
 
 namespace webrtc {
 
@@ -21,6 +22,7 @@ namespace intelligibility {
 // Internal helper for computing the power of a stream of arrays.
 // The result is an array of power per position: the i-th power is the power of
 // the stream of data on the i-th positions in the input arrays.
+template <typename T>
 class PowerEstimator {
  public:
   // Construct an instance for the given input array length (|freqs|), with the
@@ -28,31 +30,24 @@ class PowerEstimator {
   PowerEstimator(size_t freqs, float decay);
 
   // Add a new data point to the series.
-  void Step(const std::complex<float>* data);
+  void Step(const T* data);
 
   // The current power array.
-  const float* Power();
+  const std::vector<float>& power() { return power_; };
 
  private:
-  // TODO(ekmeyerson): Switch the following running means
-  // and histories from std::unique_ptr to std::vector.
-  std::unique_ptr<std::complex<float>[]> running_mean_sq_;
-
-  // The current magnitude array.
-  std::unique_ptr<float[]> magnitude_;
   // The current power array.
-  std::unique_ptr<float[]> power_;
+  std::vector<float> power_;
 
-  const size_t num_freqs_;
   const float decay_;
 };
 
 // Helper class for smoothing gain changes. On each application step, the
 // currently used gains are changed towards a set of settable target gains,
-// constrained by a limit on the magnitude of the changes.
+// constrained by a limit on the relative changes.
 class GainApplier {
  public:
-  GainApplier(size_t freqs, float change_limit);
+  GainApplier(size_t freqs, float relative_change_limit);
 
   // Copy |in_block| to |out_block|, multiplied by the current set of gains,
   // and step the current set of gains towards the target set.
@@ -64,7 +59,7 @@ class GainApplier {
 
  private:
   const size_t num_freqs_;
-  const float change_limit_;
+  const float relative_change_limit_;
   std::unique_ptr<float[]> target_;
   std::unique_ptr<float[]> current_;
 };

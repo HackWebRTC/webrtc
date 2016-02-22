@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
+#include <limits>
 
 namespace webrtc {
 
@@ -21,45 +22,38 @@ namespace intelligibility {
 
 namespace {
 
-// Return |current| changed towards |target|, with the change being at most
-// |limit|.
+// Return |current| changed towards |target|, with the relative change being at
+// most |limit|.
 float UpdateFactor(float target, float current, float limit) {
-  float delta = fabsf(target - current);
-  float sign = copysign(1.f, target - current);
-  return current + sign * fminf(delta, limit);
+  float gain = target / (current + std::numeric_limits<float>::epsilon());
+  if (gain < 1.f - limit) {
+    gain = 1.f - limit;
+  } else if (gain > 1.f + limit) {
+    gain = 1.f + limit;
+  }
+  return current * gain + std::numeric_limits<float>::epsilon();
 }
 
 }  // namespace
 
-PowerEstimator::PowerEstimator(size_t num_freqs,
-                               float decay)
-    : magnitude_(new float[num_freqs]()),
-      power_(new float[num_freqs]()),
-      num_freqs_(num_freqs),
-      decay_(decay) {
-  memset(magnitude_.get(), 0, sizeof(*magnitude_.get()) * num_freqs_);
-  memset(power_.get(), 0, sizeof(*power_.get()) * num_freqs_);
-}
+template<typename T>
+PowerEstimator<T>::PowerEstimator(size_t num_freqs, float decay)
+    : power_(num_freqs, 0.f), decay_(decay) {}
 
-// Compute the magnitude from the beginning, with exponential decaying of the
-// series data.
-void PowerEstimator::Step(const std::complex<float>* data) {
-  for (size_t i = 0; i < num_freqs_; ++i) {
-    magnitude_[i] = decay_ * magnitude_[i] +
-                (1.f - decay_) * std::abs(data[i]);
+template<typename T>
+void PowerEstimator<T>::Step(const T* data) {
+  for (size_t i = 0; i < power_.size(); ++i) {
+    power_[i] = decay_ * power_[i] +
+                (1.f - decay_) * std::abs(data[i]) * std::abs(data[i]);
   }
 }
 
-const float* PowerEstimator::Power() {
-  for (size_t i = 0; i < num_freqs_; ++i) {
-    power_[i] = magnitude_[i] * magnitude_[i];
-  }
-  return &power_[0];
-}
+template class PowerEstimator<float>;
+template class PowerEstimator<std::complex<float>>;
 
-GainApplier::GainApplier(size_t freqs, float change_limit)
+GainApplier::GainApplier(size_t freqs, float relative_change_limit)
     : num_freqs_(freqs),
-      change_limit_(change_limit),
+      relative_change_limit_(relative_change_limit),
       target_(new float[freqs]()),
       current_(new float[freqs]()) {
   for (size_t i = 0; i < freqs; ++i) {
@@ -71,12 +65,8 @@ GainApplier::GainApplier(size_t freqs, float change_limit)
 void GainApplier::Apply(const std::complex<float>* in_block,
                         std::complex<float>* out_block) {
   for (size_t i = 0; i < num_freqs_; ++i) {
-    float factor = sqrtf(fabsf(current_[i]));
-    if (!std::isnormal(factor)) {
-      factor = 1.f;
-    }
-    out_block[i] = factor * in_block[i];
-    current_[i] = UpdateFactor(target_[i], current_[i], change_limit_);
+    current_[i] = UpdateFactor(target_[i], current_[i], relative_change_limit_);
+    out_block[i] = sqrtf(fabsf(current_[i])) * in_block[i];
   }
 }
 

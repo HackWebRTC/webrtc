@@ -18,6 +18,7 @@
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
+#include "webrtc/modules/audio_processing/vad/voice_activity_detector.h"
 
 namespace webrtc {
 
@@ -28,28 +29,7 @@ namespace webrtc {
 // http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6882788
 class IntelligibilityEnhancer {
  public:
-  struct Config {
-    // TODO(bercic): the |decay_rate|, |analysis_rate| and |gain_limit|
-    // parameters should probably go away once fine tuning is done.
-    Config()
-        : sample_rate_hz(16000),
-          num_capture_channels(1),
-          num_render_channels(1),
-          decay_rate(0.9f),
-          analysis_rate(60),
-          gain_change_limit(0.1f),
-          rho(0.02f) {}
-    int sample_rate_hz;
-    size_t num_capture_channels;
-    size_t num_render_channels;
-    float decay_rate;
-    int analysis_rate;
-    float gain_change_limit;
-    float rho;
-  };
-
-  explicit IntelligibilityEnhancer(const Config& config);
-  IntelligibilityEnhancer();  // Initialize with default config.
+  IntelligibilityEnhancer(int sample_rate_hz, size_t num_render_channels);
 
   // Sets the capture noise magnitude spectrum estimate.
   void SetCaptureNoiseEstimate(std::vector<float> noise);
@@ -86,9 +66,6 @@ class IntelligibilityEnhancer {
   void ProcessClearBlock(const std::complex<float>* in_block,
                          std::complex<float>* out_block);
 
-  // Computes and sets modified gains.
-  void AnalyzeClearBlock();
-
   // Bisection search for optimal |lambda|.
   void SolveForLambda(float power_target, float power_bot, float power_top);
 
@@ -105,29 +82,25 @@ class IntelligibilityEnhancer {
   // Negative gains are set to 0. Stores the results in |sols|.
   void SolveForGainsGivenLambda(float lambda, size_t start_freq, float* sols);
 
+  // Returns true if the audio is speech.
+  bool IsSpeech(const float* audio);
+
   const size_t freqs_;         // Num frequencies in frequency domain.
-  const size_t window_size_;   // Window size in samples; also the block size.
   const size_t chunk_length_;  // Chunk size in samples.
   const size_t bank_size_;     // Num ERB filters.
   const int sample_rate_hz_;
-  const int erb_resolution_;
-  const size_t num_capture_channels_;
   const size_t num_render_channels_;
-  const int analysis_rate_;    // Num blocks before gains recalculated.
 
-  const bool active_;          // Whether render gains are being updated.
-                               // TODO(ekm): Add logic for updating |active_|.
-
-  intelligibility::PowerEstimator clear_power_;
-  std::vector<float> noise_power_;
+  intelligibility::PowerEstimator<std::complex<float>> clear_power_estimator_;
+  std::unique_ptr<intelligibility::PowerEstimator<float>>
+      noise_power_estimator_;
   std::unique_ptr<float[]> filtered_clear_pow_;
   std::unique_ptr<float[]> filtered_noise_pow_;
   std::unique_ptr<float[]> center_freqs_;
   std::vector<std::vector<float>> capture_filter_bank_;
   std::vector<std::vector<float>> render_filter_bank_;
   size_t start_freq_;
-  std::unique_ptr<float[]> rho_;  // Production and interpretation SNR.
-                                  // for each ERB band.
+
   std::unique_ptr<float[]> gains_eq_;  // Pre-filter modified gains.
   intelligibility::GainApplier gain_applier_;
 
@@ -135,11 +108,13 @@ class IntelligibilityEnhancer {
   // the original input array with modifications.
   ChannelBuffer<float> temp_render_out_buffer_;
 
-  std::unique_ptr<float[]> kbd_window_;
   TransformCallback render_callback_;
   std::unique_ptr<LappedTransform> render_mangler_;
-  int block_count_;
-  int analysis_step_;
+
+  VoiceActivityDetector vad_;
+  std::vector<int16_t> audio_s16_;
+  size_t chunks_since_voice_;
+  bool is_speech_;
 };
 
 }  // namespace webrtc

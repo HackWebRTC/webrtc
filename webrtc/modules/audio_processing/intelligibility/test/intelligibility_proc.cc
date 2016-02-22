@@ -30,20 +30,9 @@ using std::complex;
 namespace webrtc {
 namespace {
 
-DEFINE_double(clear_alpha, 0.9, "Power decay factor for clear data.");
-DEFINE_int32(sample_rate,
-             16000,
-             "Audio sample rate used in the input and output files.");
-DEFINE_int32(ana_rate,
-             60,
-             "Analysis rate; gains recalculated every N blocks.");
-DEFINE_double(gain_limit, 1000.0, "Maximum gain change in one block.");
-
 DEFINE_string(clear_file, "speech.wav", "Input file with clear speech.");
 DEFINE_string(noise_file, "noise.wav", "Input file with noise data.");
 DEFINE_string(out_file, "proc_enhanced.wav", "Enhanced output file.");
-
-const size_t kNumChannels = 1;
 
 // void function for gtest
 void void_main(int argc, char* argv[]) {
@@ -51,23 +40,14 @@ void void_main(int argc, char* argv[]) {
       "\n\nInput files must be little-endian 16-bit signed raw PCM.\n");
   google::ParseCommandLineFlags(&argc, &argv, true);
 
-  size_t samples;        // Number of samples in input PCM file
-  size_t fragment_size;  // Number of samples to process at a time
-                         // to simulate APM stream processing
-
   // Load settings and wav input.
-
-  fragment_size = FLAGS_sample_rate / 100;  // Mirror real time APM chunk size.
-                                            // Duplicates chunk_length_ in
-                                            // IntelligibilityEnhancer.
-
   struct stat in_stat, noise_stat;
   ASSERT_EQ(stat(FLAGS_clear_file.c_str(), &in_stat), 0)
       << "Empty speech file.";
   ASSERT_EQ(stat(FLAGS_noise_file.c_str(), &noise_stat), 0)
       << "Empty noise file.";
 
-  samples = std::min(in_stat.st_size, noise_stat.st_size) / 2;
+  const size_t samples = std::min(in_stat.st_size, noise_stat.st_size) / 2;
 
   WavReader in_file(FLAGS_clear_file);
   std::vector<float> in_fpcm(samples);
@@ -80,23 +60,19 @@ void void_main(int argc, char* argv[]) {
   FloatS16ToFloat(&noise_fpcm[0], samples, &noise_fpcm[0]);
 
   // Run intelligibility enhancement.
-  IntelligibilityEnhancer::Config config;
-  config.sample_rate_hz = FLAGS_sample_rate;
-  config.decay_rate = static_cast<float>(FLAGS_clear_alpha);
-  config.analysis_rate = FLAGS_ana_rate;
-  config.gain_change_limit = FLAGS_gain_limit;
-  IntelligibilityEnhancer enh(config);
+  IntelligibilityEnhancer enh(in_file.sample_rate(), in_file.num_channels());
   rtc::CriticalSection crit;
   NoiseSuppressionImpl ns(&crit);
-  ns.Initialize(kNumChannels, FLAGS_sample_rate);
+  ns.Initialize(noise_file.num_channels(), noise_file.sample_rate());
   ns.Enable(true);
 
-  AudioBuffer capture_audio(fragment_size,
-                            kNumChannels,
-                            fragment_size,
-                            kNumChannels,
+  // Mirror real time APM chunk size. Duplicates chunk_length_ in
+  // IntelligibilityEnhancer.
+  size_t fragment_size = in_file.sample_rate() / 100;
+  AudioBuffer capture_audio(fragment_size, noise_file.num_channels(),
+                            fragment_size, noise_file.num_channels(),
                             fragment_size);
-  StreamConfig stream_config(FLAGS_sample_rate, kNumChannels);
+  StreamConfig stream_config(in_file.sample_rate(), noise_file.num_channels());
 
   // Slice the input into smaller chunks, as the APM would do, and feed them
   // through the enhancer.
@@ -108,14 +84,17 @@ void void_main(int argc, char* argv[]) {
     ns.AnalyzeCaptureAudio(&capture_audio);
     ns.ProcessCaptureAudio(&capture_audio);
     enh.SetCaptureNoiseEstimate(ns.NoiseEstimate());
-    enh.ProcessRenderAudio(&clear_cursor, FLAGS_sample_rate, kNumChannels);
+    enh.ProcessRenderAudio(&clear_cursor, in_file.sample_rate(),
+                           in_file.num_channels());
     clear_cursor += fragment_size;
     noise_cursor += fragment_size;
   }
 
   FloatToFloatS16(&in_fpcm[0], samples, &in_fpcm[0]);
 
-  WavWriter out_file(FLAGS_out_file, FLAGS_sample_rate, kNumChannels);
+  WavWriter out_file(FLAGS_out_file,
+                     in_file.sample_rate(),
+                     in_file.num_channels());
   out_file.WriteSamples(&in_fpcm[0], samples);
 }
 

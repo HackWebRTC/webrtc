@@ -182,8 +182,8 @@ std::vector<float> NoiseSuppressionImpl::NoiseEstimate() {
   for (auto& suppressor : suppressors_) {
     const float* noise = WebRtcNs_noise_estimate(suppressor->state());
     for (size_t i = 0; i < noise_estimate.size(); ++i) {
-      noise_estimate[i] += kNormalizationFactor *
-          noise[i] / suppressors_.size();
+      noise_estimate[i] +=
+          kNormalizationFactor * noise[i] / suppressors_.size();
     }
   }
 #elif defined(WEBRTC_NS_FIXED)

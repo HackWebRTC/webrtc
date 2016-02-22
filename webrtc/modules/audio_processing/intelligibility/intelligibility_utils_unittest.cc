@@ -39,17 +39,16 @@ TEST(IntelligibilityUtilsTest, TestPowerEstimator) {
   const float kDecay = 0.5f;
   const std::vector<std::vector<std::complex<float>>> test_data(
       GenerateTestData(kFreqs, kSamples));
-  PowerEstimator power_estimator(kFreqs, kDecay);
-  EXPECT_EQ(0, power_estimator.Power()[0]);
+  PowerEstimator<std::complex<float>> power_estimator(kFreqs, kDecay);
+  EXPECT_EQ(0, power_estimator.power()[0]);
 
   // Makes sure Step is doing something.
   power_estimator.Step(&test_data[0][0]);
   for (size_t i = 1; i < kSamples; ++i) {
     power_estimator.Step(&test_data[i][0]);
     for (size_t j = 0; j < kFreqs; ++j) {
-      const float* power = power_estimator.Power();
-      EXPECT_GE(power[j], 0.f);
-      EXPECT_LE(power[j], 1.f);
+      EXPECT_GE(power_estimator.power()[j], 0.f);
+      EXPECT_LE(power_estimator.power()[j], 1.f);
     }
   }
 }
@@ -62,8 +61,8 @@ TEST(IntelligibilityUtilsTest, TestGainApplier) {
   GainApplier gain_applier(kFreqs, kChangeLimit);
   const std::vector<std::vector<std::complex<float>>> in_data(
       GenerateTestData(kFreqs, kSamples));
-  std::vector<std::vector<std::complex<float>>> out_data(GenerateTestData(
-      kFreqs, kSamples));
+  std::vector<std::vector<std::complex<float>>> out_data(
+      GenerateTestData(kFreqs, kSamples));
   for (size_t i = 0; i < kSamples; ++i) {
     gain_applier.Apply(&in_data[i][0], &out_data[i][0]);
     for (size_t j = 0; j < kFreqs; ++j) {

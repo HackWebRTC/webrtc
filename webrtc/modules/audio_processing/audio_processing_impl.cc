@@ -1184,8 +1184,7 @@ bool AudioProcessingImpl::analysis_needed(bool is_data_processed) const {
 }
 
 bool AudioProcessingImpl::is_rev_processed() const {
-  return constants_.intelligibility_enabled &&
-         public_submodules_->intelligibility_enhancer->active();
+  return constants_.intelligibility_enabled;
 }
 
 bool AudioProcessingImpl::render_check_rev_conversion_needed() const {
@@ -1236,12 +1235,9 @@ void AudioProcessingImpl::InitializeBeamformer() {
 
 void AudioProcessingImpl::InitializeIntelligibility() {
   if (constants_.intelligibility_enabled) {
-    IntelligibilityEnhancer::Config config;
-    config.sample_rate_hz = capture_nonlocked_.split_rate;
-    config.num_capture_channels = capture_.capture_audio->num_channels();
-    config.num_render_channels = render_.render_audio->num_channels();
     public_submodules_->intelligibility_enhancer.reset(
-        new IntelligibilityEnhancer(config));
+        new IntelligibilityEnhancer(capture_nonlocked_.split_rate,
+                                    render_.render_audio->num_channels()));
   }
 }
 
