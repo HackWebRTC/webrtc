@@ -309,10 +309,10 @@ TEST_F(RtpRtcpImplTest, Rtt) {
   int64_t max_rtt;
   EXPECT_EQ(0,
       sender_.impl_->RTT(kReceiverSsrc, &rtt, &avg_rtt, &min_rtt, &max_rtt));
-  EXPECT_EQ(2 * kOneWayNetworkDelayMs, rtt);
-  EXPECT_EQ(2 * kOneWayNetworkDelayMs, avg_rtt);
-  EXPECT_EQ(2 * kOneWayNetworkDelayMs, min_rtt);
-  EXPECT_EQ(2 * kOneWayNetworkDelayMs, max_rtt);
+  EXPECT_NEAR(2 * kOneWayNetworkDelayMs, rtt, 1);
+  EXPECT_NEAR(2 * kOneWayNetworkDelayMs, avg_rtt, 1);
+  EXPECT_NEAR(2 * kOneWayNetworkDelayMs, min_rtt, 1);
+  EXPECT_NEAR(2 * kOneWayNetworkDelayMs, max_rtt, 1);
 
   // No RTT from other ssrc.
   EXPECT_EQ(-1,
@@ -322,8 +322,9 @@ TEST_F(RtpRtcpImplTest, Rtt) {
   EXPECT_EQ(0, sender_.rtt_stats_.LastProcessedRtt());
   EXPECT_EQ(0, sender_.impl_->rtt_ms());
   sender_.impl_->Process();
-  EXPECT_EQ(2 * kOneWayNetworkDelayMs, sender_.rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(2 * kOneWayNetworkDelayMs, sender_.impl_->rtt_ms());
+  EXPECT_NEAR(2 * kOneWayNetworkDelayMs, sender_.rtt_stats_.LastProcessedRtt(),
+              1);
+  EXPECT_NEAR(2 * kOneWayNetworkDelayMs, sender_.impl_->rtt_ms(), 1);
 }
 
 TEST_F(RtpRtcpImplTest, SetRtcpXrRrtrStatus) {
@@ -346,8 +347,9 @@ TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
   EXPECT_EQ(0, receiver_.rtt_stats_.LastProcessedRtt());
   EXPECT_EQ(0, receiver_.impl_->rtt_ms());
   receiver_.impl_->Process();
-  EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.impl_->rtt_ms());
+  EXPECT_NEAR(2 * kOneWayNetworkDelayMs,
+              receiver_.rtt_stats_.LastProcessedRtt(), 1);
+  EXPECT_NEAR(2 * kOneWayNetworkDelayMs, receiver_.impl_->rtt_ms(), 1);
 }
 
 TEST_F(RtpRtcpImplTest, NoSrBeforeMedia) {

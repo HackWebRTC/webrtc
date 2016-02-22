@@ -896,16 +896,6 @@ int32_t ModuleRtpRtcpImpl::SendRTCPReferencePictureSelection(
       GetFeedbackState(), kRtcpRpsi, 0, 0, false, picture_id);
 }
 
-int64_t ModuleRtpRtcpImpl::SendTimeOfSendReport(
-    const uint32_t send_report) {
-  return rtcp_sender_.SendTimeOfSendReport(send_report);
-}
-
-bool ModuleRtpRtcpImpl::SendTimeOfXrRrReport(
-    uint32_t mid_ntp, int64_t* time_ms) const {
-  return rtcp_sender_.SendTimeOfXrRrReport(mid_ntp, time_ms);
-}
-
 void ModuleRtpRtcpImpl::OnReceivedNACK(
     const std::list<uint16_t>& nack_sequence_numbers) {
   for (uint16_t nack_sequence_number : nack_sequence_numbers) {

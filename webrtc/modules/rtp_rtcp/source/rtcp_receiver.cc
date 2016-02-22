@@ -21,6 +21,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/modules/rtp_rtcp/source/time_util.h"
+#include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 using RTCPHelp::RTCPPacketInformation;
@@ -487,13 +489,6 @@ void RTCPReceiver::HandleReportBlock(
     return;
   }
 
-  // To avoid problem with acquiring _criticalSectionRTCPSender while holding
-  // _criticalSectionRTCPReceiver.
-  _criticalSectionRTCPReceiver->Leave();
-  int64_t sendTimeMS =
-      _rtpRtcp.SendTimeOfSendReport(rtcpPacket.ReportBlockItem.LastSR);
-  _criticalSectionRTCPReceiver->Enter();
-
   RTCPReportBlockInformation* reportBlock =
       CreateOrGetReportBlockInformation(remoteSSRC,
                                         rtcpPacket.ReportBlockItem.SSRC);
@@ -526,60 +521,48 @@ void RTCPReceiver::HandleReportBlock(
     reportBlock->remoteMaxJitter = rtcpPacket.ReportBlockItem.Jitter;
   }
 
-  uint32_t delaySinceLastSendReport =
-      rtcpPacket.ReportBlockItem.DelayLastSR;
+  uint32_t send_time = rtcpPacket.ReportBlockItem.LastSR;
+  uint32_t rtt = 0;
 
-  // local NTP time when we received this
-  uint32_t lastReceivedRRNTPsecs = 0;
-  uint32_t lastReceivedRRNTPfrac = 0;
+  if (send_time > 0) {
+    uint32_t delay = rtcpPacket.ReportBlockItem.DelayLastSR;
+    // Local NTP time.
+    uint32_t receive_time = CompactNtp(NtpTime(*_clock));
 
-  _clock->CurrentNtp(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
-
-  // time when we received this in MS
-  int64_t receiveTimeMS = Clock::NtpToMs(lastReceivedRRNTPsecs,
-                                         lastReceivedRRNTPfrac);
-
-  // Estimate RTT
-  uint32_t d = (delaySinceLastSendReport & 0x0000ffff) * 1000;
-  d /= 65536;
-  d += ((delaySinceLastSendReport & 0xffff0000) >> 16) * 1000;
-
-  int64_t RTT = 0;
-
-  if (sendTimeMS > 0) {
-    RTT = receiveTimeMS - d - sendTimeMS;
-    if (RTT <= 0) {
-      RTT = 1;
-    }
-    if (RTT > reportBlock->maxRTT) {
-      // store max RTT
-      reportBlock->maxRTT = RTT;
+    // RTT in 1/(2^16) seconds.
+    uint32_t rtt_ntp = receive_time - delay - send_time;
+    // Convert to 1/1000 seconds (milliseconds).
+    uint32_t rtt_ms = CompactNtpIntervalToMs(rtt_ntp);
+    rtt = std::max<uint32_t>(rtt_ms, 1);
+    if (rtt > reportBlock->maxRTT) {
+      // Store max RTT.
+      reportBlock->maxRTT = rtt;
     }
     if (reportBlock->minRTT == 0) {
-      // first RTT
-      reportBlock->minRTT = RTT;
-    } else if (RTT < reportBlock->minRTT) {
-      // Store min RTT
-      reportBlock->minRTT = RTT;
+      // First RTT.
+      reportBlock->minRTT = rtt;
+    } else if (rtt < reportBlock->minRTT) {
+      // Store min RTT.
+      reportBlock->minRTT = rtt;
     }
-    // store last RTT
-    reportBlock->RTT = RTT;
+    // Store last RTT.
+    reportBlock->RTT = rtt;
 
     // store average RTT
     if (reportBlock->numAverageCalcs != 0) {
       float ac = static_cast<float>(reportBlock->numAverageCalcs);
       float newAverage =
-          ((ac / (ac + 1)) * reportBlock->avgRTT) + ((1 / (ac + 1)) * RTT);
+          ((ac / (ac + 1)) * reportBlock->avgRTT) + ((1 / (ac + 1)) * rtt);
       reportBlock->avgRTT = static_cast<int64_t>(newAverage + 0.5f);
     } else {
-      // first RTT
-      reportBlock->avgRTT = RTT;
+      // First RTT.
+      reportBlock->avgRTT = rtt;
     }
     reportBlock->numAverageCalcs++;
   }
 
   TRACE_COUNTER_ID1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR_RTT", rb.SSRC,
-                    RTT);
+                    rtt);
 
   rtcpPacketInformation.AddReportInfo(*reportBlock);
 }
@@ -934,28 +917,19 @@ void RTCPReceiver::HandleXrDlrrReportBlockItem(
 
   rtcpPacketInformation.xr_dlrr_item = true;
 
-  // To avoid problem with acquiring _criticalSectionRTCPSender while holding
-  // _criticalSectionRTCPReceiver.
-  _criticalSectionRTCPReceiver->Leave();
-
-  int64_t send_time_ms;
-  bool found = _rtpRtcp.SendTimeOfXrRrReport(
-      packet.XRDLRRReportBlockItem.LastRR, &send_time_ms);
-
-  _criticalSectionRTCPReceiver->Enter();
-
-  if (!found) {
+  // The send_time and delay_rr fields are in units of 1/2^16 sec.
+  uint32_t send_time = packet.XRDLRRReportBlockItem.LastRR;
+  // RFC3411, section 4.5, LRR field discription states:
+  // If no such block has been received, the field is set to zero.
+  if (send_time == 0)
     return;
-  }
 
-  // The DelayLastRR field is in units of 1/65536 sec.
-  uint32_t delay_rr_ms =
-      (((packet.XRDLRRReportBlockItem.DelayLastRR & 0x0000ffff) * 1000) >> 16) +
-      (((packet.XRDLRRReportBlockItem.DelayLastRR & 0xffff0000) >> 16) * 1000);
+  uint32_t delay_rr = packet.XRDLRRReportBlockItem.DelayLastRR;
+  uint32_t now = CompactNtp(NtpTime(*_clock));
 
-  int64_t rtt = _clock->CurrentNtpInMilliseconds() - delay_rr_ms - send_time_ms;
-
-  xr_rr_rtt_ms_ = std::max<int64_t>(rtt, 1);
+  uint32_t rtt_ntp = now - delay_rr - send_time;
+  uint32_t rtt_ms = CompactNtpIntervalToMs(rtt_ntp);
+  xr_rr_rtt_ms_ = std::max<uint32_t>(rtt_ms, 1);
 
   rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrDlrrReportBlock;
 }

@@ -106,10 +106,6 @@ class RTCPSender {
 
   int32_t RemoveMixedCNAME(uint32_t SSRC);
 
-  int64_t SendTimeOfSendReport(uint32_t sendReport);
-
-  bool SendTimeOfXrRrReport(uint32_t mid_ntp, int64_t* time_ms) const;
-
   bool TimeToSendRTCPReport(bool sendKeyframeBeforeRTP = false) const;
 
   int32_t SendRTCP(const FeedbackState& feedback_state,
@@ -229,17 +225,6 @@ class RTCPSender {
   std::map<uint32_t, rtcp::ReportBlock> report_blocks_
       GUARDED_BY(critical_section_rtcp_sender_);
   std::map<uint32_t, std::string> csrc_cnames_
-      GUARDED_BY(critical_section_rtcp_sender_);
-
-  // Sent
-  uint32_t last_send_report_[RTCP_NUMBER_OF_SR] GUARDED_BY(
-      critical_section_rtcp_sender_);  // allow packet loss and RTT above 1 sec
-  int64_t last_rtcp_time_[RTCP_NUMBER_OF_SR] GUARDED_BY(
-      critical_section_rtcp_sender_);
-
-  // Sent XR receiver reference time report.
-  // <mid ntp (mid 32 bits of the 64 bits NTP timestamp), send time in ms>.
-  std::map<uint32_t, int64_t> last_xr_rr_
       GUARDED_BY(critical_section_rtcp_sender_);
 
   // send CSRCs

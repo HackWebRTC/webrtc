@@ -195,8 +195,6 @@ RTCPSender::RTCPSender(
 
       xr_send_receiver_reference_time_enabled_(false),
       packet_type_counter_observer_(packet_type_counter_observer) {
-  memset(last_send_report_, 0, sizeof(last_send_report_));
-  memset(last_rtcp_time_, 0, sizeof(last_rtcp_time_));
   RTC_DCHECK(transport_ != nullptr);
 
   builders_[kRtcpSr] = &RTCPSender::BuildSR;
@@ -445,46 +443,7 @@ bool RTCPSender::TimeToSendRTCPReport(bool sendKeyframeBeforeRTP) const {
   return false;
 }
 
-int64_t RTCPSender::SendTimeOfSendReport(uint32_t sendReport) {
-  CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-
-  // This is only saved when we are the sender
-  if ((last_send_report_[0] == 0) || (sendReport == 0)) {
-    return 0;  // will be ignored
-  } else {
-    for (int i = 0; i < RTCP_NUMBER_OF_SR; ++i) {
-      if (last_send_report_[i] == sendReport)
-        return last_rtcp_time_[i];
-    }
-  }
-  return 0;
-}
-
-bool RTCPSender::SendTimeOfXrRrReport(uint32_t mid_ntp,
-                                      int64_t* time_ms) const {
-  CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-
-  if (last_xr_rr_.empty()) {
-    return false;
-  }
-  std::map<uint32_t, int64_t>::const_iterator it = last_xr_rr_.find(mid_ntp);
-  if (it == last_xr_rr_.end()) {
-    return false;
-  }
-  *time_ms = it->second;
-  return true;
-}
-
 rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
-  for (int i = (RTCP_NUMBER_OF_SR - 2); i >= 0; i--) {
-    // shift old
-    last_send_report_[i + 1] = last_send_report_[i];
-    last_rtcp_time_[i + 1] = last_rtcp_time_[i];
-  }
-
-  last_rtcp_time_[0] = Clock::NtpToMs(ctx.ntp_sec_, ctx.ntp_frac_);
-  last_send_report_[0] = (ctx.ntp_sec_ << 16) + (ctx.ntp_frac_ >> 16);
-
   // The timestamp of this RTCP packet should be estimated as the timestamp of
   // the frame being captured at this moment. We are calculating that
   // timestamp as the last frame's timestamp + the time since the last frame
@@ -752,11 +711,6 @@ rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildBYE(const RtcpContext& ctx) {
 
 rtc::scoped_ptr<rtcp::RtcpPacket> RTCPSender::BuildReceiverReferenceTime(
     const RtcpContext& ctx) {
-  if (last_xr_rr_.size() >= RTCP_NUMBER_OF_SR)
-    last_xr_rr_.erase(last_xr_rr_.begin());
-  last_xr_rr_.insert(std::pair<uint32_t, int64_t>(
-      RTCPUtility::MidNtp(ctx.ntp_sec_, ctx.ntp_frac_),
-      Clock::NtpToMs(ctx.ntp_sec_, ctx.ntp_frac_)));
 
   rtcp::ExtendedReports* xr = new rtcp::ExtendedReports();
   xr->From(ssrc_);

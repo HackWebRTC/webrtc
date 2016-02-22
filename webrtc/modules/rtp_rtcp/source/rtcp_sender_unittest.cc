@@ -643,34 +643,6 @@ TEST_F(RtcpSenderTest, TestNoXrRrtrSentIfNotEnabled) {
   EXPECT_EQ(0, parser()->rrtr()->num_packets());
 }
 
-TEST_F(RtcpSenderTest, TestSendTimeOfXrRrtr) {
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
-  RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
-  EXPECT_EQ(0, rtcp_sender_->SetSendingStatus(feedback_state, false));
-  rtcp_sender_->SendRtcpXrReceiverReferenceTime(true);
-  uint32_t ntp_sec;
-  uint32_t ntp_frac;
-  clock_.CurrentNtp(ntp_sec, ntp_frac);
-  uint32_t initial_mid_ntp = RTCPUtility::MidNtp(ntp_sec, ntp_frac);
-
-  // No packet sent.
-  int64_t time_ms;
-  EXPECT_FALSE(rtcp_sender_->SendTimeOfXrRrReport(initial_mid_ntp, &time_ms));
-
-  // Send XR RR packets.
-  for (int i = 0; i <= RTCP_NUMBER_OF_SR; ++i) {
-    EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpReport));
-    EXPECT_EQ(i + 1, test_transport_.parser_.rrtr()->num_packets());
-    clock_.CurrentNtp(ntp_sec, ntp_frac);
-    uint32_t mid_ntp = RTCPUtility::MidNtp(ntp_sec, ntp_frac);
-    EXPECT_TRUE(rtcp_sender_->SendTimeOfXrRrReport(mid_ntp, &time_ms));
-    EXPECT_EQ(clock_.CurrentNtpInMilliseconds(), time_ms);
-    clock_.AdvanceTimeMilliseconds(1000);
-  }
-  // The first report should no longer be stored.
-  EXPECT_FALSE(rtcp_sender_->SendTimeOfXrRrReport(initial_mid_ntp, &time_ms));
-}
-
 TEST_F(RtcpSenderTest, TestRegisterRtcpPacketTypeObserver) {
   RtcpPacketTypeCounterObserverImpl observer;
   rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
