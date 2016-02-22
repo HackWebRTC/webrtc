@@ -378,12 +378,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   return 0;
 }
 
-void ViEChannel::SetRTCPMode(const RtcpMode rtcp_mode) {
-  RTC_DCHECK(sender_);
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->SetRTCPStatus(rtcp_mode);
-}
-
 void ViEChannel::SetProtectionMode(bool enable_nack,
                                    bool enable_fec,
                                    int payload_type_red,
@@ -451,19 +445,6 @@ void ViEChannel::ProcessNACKRequest(const bool enable) {
     }
     vie_receiver_.SetNackStatus(false, max_nack_reordering_threshold_);
   }
-}
-
-bool ViEChannel::IsSendingFecEnabled() {
-  bool fec_enabled = false;
-  uint8_t pltype_red = 0;
-  uint8_t pltype_fec = 0;
-
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    rtp_rtcp->GenericFECStatus(&fec_enabled, &pltype_red, &pltype_fec);
-    if (fec_enabled)
-      return true;
-  }
-  return false;
 }
 
 int ViEChannel::GetRequiredNackListSize(int target_delay_ms) {
@@ -538,49 +519,6 @@ int ViEChannel::SetSendTransportSequenceNumber(bool enable, int id) {
   return error;
 }
 
-int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
-                            const StreamType usage,
-                            const uint8_t simulcast_idx) {
-  RTC_DCHECK(sender_);
-  RtpRtcp* rtp_rtcp = rtp_rtcp_modules_[simulcast_idx];
-  if (usage == kViEStreamTypeRtx) {
-    rtp_rtcp->SetRtxSsrc(SSRC);
-  } else {
-    rtp_rtcp->SetSSRC(SSRC);
-  }
-  return 0;
-}
-
-int32_t ViEChannel::GetLocalSSRC(uint8_t idx, unsigned int* ssrc) {
-  RTC_DCHECK_LE(idx, rtp_rtcp_modules_.size());
-  *ssrc = rtp_rtcp_modules_[idx]->SSRC();
-  return 0;
-}
-
-int ViEChannel::SetRtxSendPayloadType(int payload_type,
-                                      int associated_payload_type) {
-  RTC_DCHECK(sender_);
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->SetRtxSendPayloadType(payload_type, associated_payload_type);
-  SetRtxSendStatus(true);
-  return 0;
-}
-
-void ViEChannel::SetRtxSendStatus(bool enable) {
-  int rtx_settings =
-      enable ? kRtxRetransmitted | kRtxRedundantPayloads : kRtxOff;
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->SetRtxSendStatus(rtx_settings);
-}
-
-void ViEChannel::SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state) {
-  RTC_DCHECK(!rtp_rtcp_modules_[0]->Sending());
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    if (rtp_rtcp->SetRtpStateForSsrc(ssrc, rtp_state))
-      return;
-  }
-}
-
 RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) const {
   RTC_DCHECK(!rtp_rtcp_modules_[0]->Sending());
   RtpState rtp_state;
@@ -590,23 +528,6 @@ RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) const {
   }
   LOG(LS_ERROR) << "Couldn't get RTP state for ssrc: " << ssrc;
   return rtp_state;
-}
-
-// TODO(pbos): Set CNAME on all modules.
-int32_t ViEChannel::SetRTCPCName(const char* rtcp_cname) {
-  RTC_DCHECK(!rtp_rtcp_modules_[0]->Sending());
-  return rtp_rtcp_modules_[0]->SetCNAME(rtcp_cname);
-}
-
-int32_t ViEChannel::GetRemoteRTCPCName(char rtcp_cname[]) {
-  uint32_t remoteSSRC = vie_receiver_.GetRemoteSsrc();
-  return rtp_rtcp_modules_[0]->RemoteCNAME(remoteSSRC, rtcp_cname);
-}
-
-void ViEChannel::RegisterSendChannelRtcpStatisticsCallback(
-    RtcpStatisticsCallback* callback) {
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->RegisterRtcpStatisticsCallback(callback);
 }
 
 void ViEChannel::RegisterRtcpPacketTypeCounterObserver(
@@ -644,12 +565,6 @@ void ViEChannel::GetReceiveStreamDataCounters(
       statistician->GetReceiveStreamDataCounters(rtx_counters);
     }
   }
-}
-
-void ViEChannel::RegisterSendChannelRtpStatisticsCallback(
-      StreamDataCountersCallback* callback) {
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(callback);
 }
 
 void ViEChannel::GetSendRtcpPacketTypeCounter(
@@ -717,15 +632,8 @@ int32_t ViEChannel::StopSend() {
   return 0;
 }
 
-int32_t ViEChannel::SetMTU(uint16_t mtu) {
-  RTC_DCHECK(sender_);
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->SetMaxTransferUnit(mtu);
-  return 0;
-}
-
-RtpRtcp* ViEChannel::rtp_rtcp() {
-  return rtp_rtcp_modules_[0];
+const std::vector<RtpRtcp*>& ViEChannel::rtp_rtcp() const {
+  return rtp_rtcp_modules_;
 }
 
 ViEReceiver* ViEChannel::vie_receiver() {

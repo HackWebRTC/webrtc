@@ -179,7 +179,7 @@ VideoReceiveStream::VideoReceiveStream(
                    false),
       vie_receiver_(vie_channel_.vie_receiver()),
       vie_sync_(vcm_.get()),
-      rtp_rtcp_(vie_channel_.rtp_rtcp()) {
+      rtp_rtcp_(vie_channel_.rtp_rtcp().front()) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);

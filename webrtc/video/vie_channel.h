@@ -84,39 +84,16 @@ class ViEChannel : public VCMFrameTypeCallback,
   // type has changed and we should start a new RTP stream.
   int32_t SetSendCodec(const VideoCodec& video_codec, bool new_stream = true);
 
-  void SetRTCPMode(const RtcpMode rtcp_mode);
   void SetProtectionMode(bool enable_nack,
                          bool enable_fec,
                          int payload_type_red,
                          int payload_type_fec);
-  bool IsSendingFecEnabled();
   int SetSendTimestampOffsetStatus(bool enable, int id);
   int SetSendAbsoluteSendTimeStatus(bool enable, int id);
   int SetSendVideoRotationStatus(bool enable, int id);
   int SetSendTransportSequenceNumber(bool enable, int id);
 
-  // Sets SSRC for outgoing stream.
-  int32_t SetSSRC(const uint32_t SSRC,
-                  const StreamType usage,
-                  const unsigned char simulcast_idx);
-
-  // Gets SSRC for outgoing stream number |idx|.
-  int32_t GetLocalSSRC(uint8_t idx, unsigned int* ssrc);
-
-  int SetRtxSendPayloadType(int payload_type, int associated_payload_type);
-
-  void SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state);
   RtpState GetRtpStateForSsrc(uint32_t ssrc) const;
-
-  // Sets the CName for the outgoing stream on the channel.
-  int32_t SetRTCPCName(const char* rtcp_cname);
-
-  // Gets the CName of the incoming stream.
-  int32_t GetRemoteRTCPCName(char rtcp_cname[]);
-
-  // Called on receipt of RTCP report block from remote side.
-  void RegisterSendChannelRtcpStatisticsCallback(
-      RtcpStatisticsCallback* callback);
 
   // Gets send statistics for the rtp and rtx stream.
   void GetSendStreamDataCounters(StreamDataCounters* rtp_counters,
@@ -125,10 +102,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Gets received stream data counters.
   void GetReceiveStreamDataCounters(StreamDataCounters* rtp_counters,
                                     StreamDataCounters* rtx_counters) const;
-
-  // Called on update of RTP statistics.
-  void RegisterSendChannelRtpStatisticsCallback(
-      StreamDataCountersCallback* callback);
 
   void GetSendRtcpPacketTypeCounter(
       RtcpPacketTypeCounter* packet_counter) const;
@@ -153,12 +126,8 @@ class ViEChannel : public VCMFrameTypeCallback,
   int32_t StartSend();
   int32_t StopSend();
 
-  // Sets the maximum transfer unit size for the network link, i.e. including
-  // IP, UDP and RTP headers.
-  int32_t SetMTU(uint16_t mtu);
-
   // Gets the modules used by the channel.
-  RtpRtcp* rtp_rtcp();
+  const std::vector<RtpRtcp*>& rtp_rtcp() const;
   ViEReceiver* vie_receiver();
   VCMProtectionCallback* vcm_protection_callback();
 
@@ -244,7 +213,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void ProcessNACKRequest(const bool enable);
   // Compute NACK list parameters for the buffering mode.
   int GetRequiredNackListSize(int target_delay_ms);
-  void SetRtxSendStatus(bool enable);
 
   void UpdateHistograms();
 

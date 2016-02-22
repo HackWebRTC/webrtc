@@ -197,6 +197,7 @@ VideoSendStream::VideoSendStream(
                    &payload_router_,
                    bitrate_allocator),
       vcm_(vie_encoder_.vcm()),
+      rtp_rtcp_modules_(vie_channel_.rtp_rtcp()),
       input_(&vie_encoder_,
              config_.local_renderer,
              &stats_proxy_,
@@ -236,9 +237,8 @@ VideoSendStream::VideoSendStream(
     }
   }
 
-  RtpRtcp* rtp_module = vie_channel_.rtp_rtcp();
-  remb_->AddRembSender(rtp_module);
-  rtp_module->SetREMBStatus(true);
+  remb_->AddRembSender(rtp_rtcp_modules_[0]);
+  rtp_rtcp_modules_[0]->SetREMBStatus(true);
 
   // Enable NACK, FEC or both.
   const bool enable_protection_nack = config_.rtp.nack.rtp_history_ms > 0;
@@ -257,18 +257,25 @@ VideoSendStream::VideoSendStream(
   }
   // TODO(changbin): Should set RTX for RED mapping in RTP sender in future.
   vie_channel_.SetProtectionMode(enable_protection_nack, enable_protection_fec,
-                                  config_.rtp.fec.red_payload_type,
-                                  config_.rtp.fec.ulpfec_payload_type);
+                                 config_.rtp.fec.red_payload_type,
+                                 config_.rtp.fec.ulpfec_payload_type);
   vie_encoder_.SetProtectionMethod(enable_protection_nack,
-                                    enable_protection_fec);
+                                   enable_protection_fec);
 
   ConfigureSsrcs();
 
-  vie_channel_.SetRTCPCName(config_.rtp.c_name.c_str());
-
+  // TODO(pbos): Should we set CNAME on all RTP modules?
+  rtp_rtcp_modules_.front()->SetCNAME(config_.rtp.c_name.c_str());
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
-  RTC_DCHECK_LE(config_.rtp.max_packet_size, static_cast<size_t>(0xFFFF - 28));
-  vie_channel_.SetMTU(static_cast<uint16_t>(config_.rtp.max_packet_size + 28));
+  static const size_t kRtpPacketSizeOverhead = 28;
+  RTC_DCHECK_LE(config_.rtp.max_packet_size, 0xFFFFu + kRtpPacketSizeOverhead);
+  const uint16_t mtu = static_cast<uint16_t>(config_.rtp.max_packet_size +
+                                             kRtpPacketSizeOverhead);
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    rtp_rtcp->RegisterRtcpStatisticsCallback(&stats_proxy_);
+    rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(&stats_proxy_);
+    rtp_rtcp->SetMaxTransferUnit(mtu);
+  }
 
   RTC_DCHECK(config.encoder_settings.encoder != nullptr);
   RTC_DCHECK_GE(config.encoder_settings.payload_type, 0);
@@ -288,8 +295,6 @@ VideoSendStream::VideoSendStream(
   if (config_.suspend_below_min_bitrate)
     vie_encoder_.SuspendBelowMinBitrate();
 
-  vie_channel_.RegisterSendChannelRtcpStatisticsCallback(&stats_proxy_);
-  vie_channel_.RegisterSendChannelRtpStatisticsCallback(&stats_proxy_);
   vie_channel_.RegisterRtcpPacketTypeCounterObserver(&stats_proxy_);
   vie_channel_.RegisterSendBitrateObserver(&stats_proxy_);
   vie_channel_.RegisterSendFrameCountObserver(&stats_proxy_);
@@ -305,17 +310,12 @@ VideoSendStream::~VideoSendStream() {
   vie_channel_.RegisterSendFrameCountObserver(nullptr);
   vie_channel_.RegisterSendBitrateObserver(nullptr);
   vie_channel_.RegisterRtcpPacketTypeCounterObserver(nullptr);
-  vie_channel_.RegisterSendChannelRtpStatisticsCallback(nullptr);
-  vie_channel_.RegisterSendChannelRtcpStatisticsCallback(nullptr);
 
-  vie_encoder_.DeRegisterExternalEncoder(
-      config_.encoder_settings.payload_type);
+  vie_encoder_.DeRegisterExternalEncoder(config_.encoder_settings.payload_type);
 
   call_stats_->DeregisterStatsObserver(vie_channel_.GetStatsObserver());
-
-  RtpRtcp* rtp_module = vie_channel_.rtp_rtcp();
-  rtp_module->SetREMBStatus(false);
-  remb_->RemoveRembSender(rtp_module);
+  rtp_rtcp_modules_[0]->SetREMBStatus(false);
+  remb_->RemoveRembSender(rtp_rtcp_modules_[0]);
 
   // ViEChannel outlives ViEEncoder so remove encoder from feedback before
   // destruction.
@@ -509,38 +509,46 @@ void VideoSendStream::NormalUsage() {
 }
 
 void VideoSendStream::ConfigureSsrcs() {
-  vie_channel_.SetSSRC(config_.rtp.ssrcs.front(), kViEStreamTypeNormal, 0);
+  // Configure regular SSRCs.
   for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
     uint32_t ssrc = config_.rtp.ssrcs[i];
-    vie_channel_.SetSSRC(ssrc, kViEStreamTypeNormal,
-                          static_cast<unsigned char>(i));
+    RtpRtcp* const rtp_rtcp = rtp_rtcp_modules_[i];
+    rtp_rtcp->SetSSRC(ssrc);
+
+    // Restore RTP state if previous existed.
     RtpStateMap::iterator it = suspended_ssrcs_.find(ssrc);
     if (it != suspended_ssrcs_.end())
-      vie_channel_.SetRtpStateForSsrc(ssrc, it->second);
+      rtp_rtcp->SetRtpStateForSsrc(ssrc, it->second);
   }
 
-  if (config_.rtp.rtx.ssrcs.empty()) {
+  // Set up RTX if available.
+  if (config_.rtp.rtx.ssrcs.empty())
     return;
-  }
 
-  // Set up RTX.
+  // Configure RTX SSRCs.
   RTC_DCHECK_EQ(config_.rtp.rtx.ssrcs.size(), config_.rtp.ssrcs.size());
   for (size_t i = 0; i < config_.rtp.rtx.ssrcs.size(); ++i) {
     uint32_t ssrc = config_.rtp.rtx.ssrcs[i];
-    vie_channel_.SetSSRC(config_.rtp.rtx.ssrcs[i], kViEStreamTypeRtx,
-                          static_cast<unsigned char>(i));
+    RtpRtcp* const rtp_rtcp = rtp_rtcp_modules_[i];
+    rtp_rtcp->SetRtxSsrc(ssrc);
     RtpStateMap::iterator it = suspended_ssrcs_.find(ssrc);
     if (it != suspended_ssrcs_.end())
-      vie_channel_.SetRtpStateForSsrc(ssrc, it->second);
+      rtp_rtcp->SetRtpStateForSsrc(ssrc, it->second);
   }
 
+  // Configure RTX payload types.
   RTC_DCHECK_GE(config_.rtp.rtx.payload_type, 0);
-  vie_channel_.SetRtxSendPayloadType(config_.rtp.rtx.payload_type,
-                                      config_.encoder_settings.payload_type);
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    rtp_rtcp->SetRtxSendPayloadType(config_.rtp.rtx.payload_type,
+                                    config_.encoder_settings.payload_type);
+    rtp_rtcp->SetRtxSendStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+  }
   if (config_.rtp.fec.red_payload_type != -1 &&
       config_.rtp.fec.red_rtx_payload_type != -1) {
-    vie_channel_.SetRtxSendPayloadType(config_.rtp.fec.red_rtx_payload_type,
-                                        config_.rtp.fec.red_payload_type);
+    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+      rtp_rtcp->SetRtxSendPayloadType(config_.rtp.fec.red_rtx_payload_type,
+                                      config_.rtp.fec.red_payload_type);
+    }
   }
 }
 
@@ -563,11 +571,15 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
   // When network goes up, enable RTCP status before setting transmission state.
   // When it goes down, disable RTCP afterwards. This ensures that any packets
   // sent due to the network state changed will not be dropped.
-  if (state == kNetworkUp)
-    vie_channel_.SetRTCPMode(config_.rtp.rtcp_mode);
+  if (state == kNetworkUp) {
+    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+      rtp_rtcp->SetRTCPStatus(config_.rtp.rtcp_mode);
+  }
   vie_encoder_.SetNetworkTransmissionState(state == kNetworkUp);
-  if (state == kNetworkDown)
-    vie_channel_.SetRTCPMode(RtcpMode::kOff);
+  if (state == kNetworkDown) {
+    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+      rtp_rtcp->SetRTCPStatus(RtcpMode::kOff);
+  }
 }
 
 int VideoSendStream::GetPaddingNeededBps() const {

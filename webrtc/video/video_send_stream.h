@@ -16,7 +16,6 @@
 
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/encoder_state_feedback.h"
 #include "webrtc/video/payload_router.h"
@@ -33,6 +32,7 @@ class BitrateAllocator;
 class CallStats;
 class CongestionController;
 class ProcessThread;
+class RtpRtcp;
 class ViEChannel;
 class ViEEncoder;
 class VieRemb;
@@ -96,6 +96,10 @@ class VideoSendStream : public webrtc::VideoSendStream,
   ViEReceiver* const vie_receiver_;
   ViEEncoder vie_encoder_;
   VideoCodingModule* const vcm_;
+  // TODO(pbos): Move RtpRtcp ownership to VideoSendStream.
+  // RtpRtcp modules, currently owned by ViEChannel but ownership should
+  // eventually move here.
+  const std::vector<RtpRtcp*> rtp_rtcp_modules_;
   VideoCaptureInput input_;
 };
 }  // namespace internal
