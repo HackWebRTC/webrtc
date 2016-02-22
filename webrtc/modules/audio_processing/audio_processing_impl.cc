@@ -1132,46 +1132,23 @@ VoiceDetection* AudioProcessingImpl::voice_detection() const {
 }
 
 bool AudioProcessingImpl::is_data_processed() const {
-  if (capture_nonlocked_.beamformer_enabled) {
+  // The beamformer, noise suppressor and highpass filter
+  // modify the data.
+  if (capture_nonlocked_.beamformer_enabled ||
+      public_submodules_->high_pass_filter->is_enabled() ||
+      public_submodules_->noise_suppression->is_enabled()) {
     return true;
   }
 
-  int enabled_count = 0;
+  // All of the private submodules modify the data.
   for (auto item : private_submodules_->component_list) {
     if (item->is_component_enabled()) {
-      enabled_count++;
+      return true;
     }
-  }
-  if (public_submodules_->high_pass_filter->is_enabled()) {
-    enabled_count++;
-  }
-  if (public_submodules_->noise_suppression->is_enabled()) {
-    enabled_count++;
-  }
-  if (public_submodules_->level_estimator->is_enabled()) {
-    enabled_count++;
-  }
-  if (public_submodules_->voice_detection->is_enabled()) {
-    enabled_count++;
   }
 
-  // Data is unchanged if no components are enabled, or if only
-  // public_submodules_->level_estimator
-  // or public_submodules_->voice_detection is enabled.
-  if (enabled_count == 0) {
-    return false;
-  } else if (enabled_count == 1) {
-    if (public_submodules_->level_estimator->is_enabled() ||
-        public_submodules_->voice_detection->is_enabled()) {
-      return false;
-    }
-  } else if (enabled_count == 2) {
-    if (public_submodules_->level_estimator->is_enabled() &&
-        public_submodules_->voice_detection->is_enabled()) {
-      return false;
-    }
-  }
-  return true;
+  // The capture data is otherwise unchanged.
+  return false;
 }
 
 bool AudioProcessingImpl::output_copy_needed(bool is_data_processed) const {
