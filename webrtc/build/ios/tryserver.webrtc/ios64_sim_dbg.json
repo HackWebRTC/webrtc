@@ -8,9 +8,7 @@
   "xcode version": "7.0",
   "GYP_DEFINES": {
     "chromium_ios_signing": "0",
-    "target_arch": "x64",
-    "use_goma": "1",
-    "gomadir": "$(goma_dir)"
+    "target_arch": "x64"
   },
   "use_analyze": "false",
   "compiler": "ninja",
@@ -21,6 +19,6 @@
       "include": "common_tests.json",
       "device type": "iPhone 5s",
       "os": "9.0"
-    },
+    }
   ]
 }
