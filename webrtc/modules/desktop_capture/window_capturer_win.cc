@@ -103,6 +103,10 @@ class WindowCapturerWin : public WindowCapturer {
 
   AeroChecker aero_checker_;
 
+  // This map is used to avoid flickering for the case when SelectWindow() calls
+  // are interleaved with Capture() calls.
+  std::map<HWND, DesktopSize> window_size_map_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
 };
 
@@ -120,6 +124,14 @@ bool WindowCapturerWin::GetWindowList(WindowList* windows) {
   if (!EnumWindows(&WindowsEnumerationHandler, param))
     return false;
   windows->swap(result);
+
+  std::map<HWND, DesktopSize> new_map;
+  for (const auto& item : *windows) {
+    HWND hwnd = reinterpret_cast<HWND>(item.id);
+    new_map[hwnd] = window_size_map_[hwnd];
+  }
+  window_size_map_.swap(new_map);
+
   return true;
 }
 
@@ -128,7 +140,9 @@ bool WindowCapturerWin::SelectWindow(WindowId id) {
   if (!IsWindow(window) || !IsWindowVisible(window) || IsIconic(window))
     return false;
   window_ = window;
-  previous_size_.set(0, 0);
+  // When a window is not in the map, window_size_map_[window] will create an
+  // item with DesktopSize (0, 0).
+  previous_size_ = window_size_map_[window];
   return true;
 }
 
@@ -170,6 +184,7 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     memset(frame->data(), 0, frame->stride() * frame->size().height());
 
     previous_size_ = frame->size();
+    window_size_map_[window_] = previous_size_;
     callback_->OnCaptureCompleted(frame);
     return;
   }
@@ -236,6 +251,7 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   ReleaseDC(window_, window_dc);
 
   previous_size_ = frame->size();
+  window_size_map_[window_] = previous_size_;
 
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
