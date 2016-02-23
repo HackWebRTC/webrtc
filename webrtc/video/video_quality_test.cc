@@ -387,10 +387,16 @@ class VideoAnalyzer : public PacketReceiver,
     VideoSendStream::Stats stats = send_stream_->GetStats();
 
     rtc::CritScope crit(&comparison_lock_);
-    encode_frame_rate_.AddSample(stats.encode_frame_rate);
-    encode_time_ms.AddSample(stats.avg_encode_time_ms);
-    encode_usage_percent.AddSample(stats.encode_usage_percent);
-    media_bitrate_bps.AddSample(stats.media_bitrate_bps);
+    // It's not certain that we yet have estimates for any of these stats. Check
+    // that they are positive before mixing them in.
+    if (stats.encode_frame_rate > 0)
+      encode_frame_rate_.AddSample(stats.encode_frame_rate);
+    if (stats.avg_encode_time_ms > 0)
+      encode_time_ms.AddSample(stats.avg_encode_time_ms);
+    if (stats.encode_usage_percent > 0)
+      encode_usage_percent.AddSample(stats.encode_usage_percent);
+    if (stats.media_bitrate_bps > 0)
+      media_bitrate_bps.AddSample(stats.media_bitrate_bps);
 
     return true;
   }
