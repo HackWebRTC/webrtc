@@ -10,8 +10,6 @@
 
 #include "webrtc/common_audio/channel_buffer.h"
 
-#include "webrtc/base/checks.h"
-
 namespace webrtc {
 
 IFChannelBuffer::IFChannelBuffer(size_t num_frames,
@@ -46,7 +44,7 @@ const ChannelBuffer<float>* IFChannelBuffer::fbuf_const() const {
 
 void IFChannelBuffer::RefreshF() const {
   if (!fvalid_) {
-    RTC_DCHECK(ivalid_);
+    assert(ivalid_);
     const int16_t* const* int_channels = ibuf_.channels();
     float* const* float_channels = fbuf_.channels();
     for (size_t i = 0; i < ibuf_.num_channels(); ++i) {
@@ -60,7 +58,7 @@ void IFChannelBuffer::RefreshF() const {
 
 void IFChannelBuffer::RefreshI() const {
   if (!ivalid_) {
-    RTC_DCHECK(fvalid_);
+    assert(fvalid_);
     int16_t* const* int_channels = ibuf_.channels();
     const float* const* float_channels = fbuf_.channels();
     for (size_t i = 0; i < ibuf_.num_channels(); ++i) {

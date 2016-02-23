@@ -13,10 +13,9 @@
 
 #include <string.h>
 
-#include <memory>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gtest_prod_util.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/include/audio_util.h"
 
 namespace webrtc {
@@ -126,9 +125,9 @@ class ChannelBuffer {
   }
 
  private:
-  std::unique_ptr<T[]> data_;
-  std::unique_ptr<T* []> channels_;
-  std::unique_ptr<T* []> bands_;
+  rtc::scoped_ptr<T[]> data_;
+  rtc::scoped_ptr<T* []> channels_;
+  rtc::scoped_ptr<T* []> bands_;
   const size_t num_frames_;
   const size_t num_frames_per_band_;
   const size_t num_channels_;

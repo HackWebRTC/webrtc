@@ -21,11 +21,11 @@ using std::complex;
 
 const size_t RealFourier::kFftBufferAlignment = 32;
 
-std::unique_ptr<RealFourier> RealFourier::Create(int fft_order) {
+rtc::scoped_ptr<RealFourier> RealFourier::Create(int fft_order) {
 #if defined(RTC_USE_OPENMAX_DL)
-  return std::unique_ptr<RealFourier>(new RealFourierOpenmax(fft_order));
+  return rtc::scoped_ptr<RealFourier>(new RealFourierOpenmax(fft_order));
 #else
-  return std::unique_ptr<RealFourier>(new RealFourierOoura(fft_order));
+  return rtc::scoped_ptr<RealFourier>(new RealFourierOoura(fft_order));
 #endif
 }
 

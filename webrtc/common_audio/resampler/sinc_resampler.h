@@ -14,10 +14,9 @@
 #ifndef WEBRTC_COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
 #define WEBRTC_COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
 
-#include <memory>
-
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/gtest_prod_util.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/aligned_malloc.h"
 #include "webrtc/typedefs.h"
 
@@ -138,12 +137,12 @@ class SincResampler {
   // Contains kKernelOffsetCount kernels back-to-back, each of size kKernelSize.
   // The kernel offsets are sub-sample shifts of a windowed sinc shifted from
   // 0.0 to 1.0 sample.
-  std::unique_ptr<float[], AlignedFreeDeleter> kernel_storage_;
-  std::unique_ptr<float[], AlignedFreeDeleter> kernel_pre_sinc_storage_;
-  std::unique_ptr<float[], AlignedFreeDeleter> kernel_window_storage_;
+  rtc::scoped_ptr<float[], AlignedFreeDeleter> kernel_storage_;
+  rtc::scoped_ptr<float[], AlignedFreeDeleter> kernel_pre_sinc_storage_;
+  rtc::scoped_ptr<float[], AlignedFreeDeleter> kernel_window_storage_;
 
   // Data from the source is copied into this buffer for each processing pass.
-  std::unique_ptr<float[], AlignedFreeDeleter> input_buffer_;
+  rtc::scoped_ptr<float[], AlignedFreeDeleter> input_buffer_;
 
   // Stores the runtime selection of which Convolve function to use.
   // TODO(ajm): Move to using a global static which must only be initialized
