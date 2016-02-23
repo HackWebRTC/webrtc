@@ -16,7 +16,7 @@
     "target_os=\"ios\""
   ],
   "mb_type": "gn",
-  "use_analyze": "false",
+  "use_analyze": false,
   "compiler": "ninja",
   "configuration": "Release",
   "sdk": "iphoneos9.0",

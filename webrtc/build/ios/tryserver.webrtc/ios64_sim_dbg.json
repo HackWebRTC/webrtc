@@ -10,7 +10,7 @@
     "chromium_ios_signing": "0",
     "target_arch": "x64"
   },
-  "use_analyze": "false",
+  "use_analyze": false,
   "compiler": "ninja",
   "configuration": "Debug",
   "sdk": "iphonesimulator9.0",
