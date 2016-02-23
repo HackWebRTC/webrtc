@@ -470,7 +470,8 @@ TEST_F(RampUpTest, SingleStreamWithHighStartBitrate) {
 
 static const uint32_t kStartBitrateBps = 60000;
 
-TEST_F(RampUpTest, UpDownUpOneStream) {
+// Disabled: https://bugs.chromium.org/p/webrtc/issues/detail?id=5576
+TEST_F(RampUpTest, DISABLED_UpDownUpOneStream) {
   RampUpDownUpTester test(1, 0, kStartBitrateBps, RtpExtension::kAbsSendTime,
                           false, false);
   RunBaseTest(&test);
@@ -482,7 +483,8 @@ TEST_F(RampUpTest, UpDownUpThreeStreams) {
   RunBaseTest(&test);
 }
 
-TEST_F(RampUpTest, UpDownUpOneStreamRtx) {
+// Disabled: https://bugs.chromium.org/p/webrtc/issues/detail?id=5576
+TEST_F(RampUpTest, DISABLED_UpDownUpOneStreamRtx) {
   RampUpDownUpTester test(1, 0, kStartBitrateBps, RtpExtension::kAbsSendTime,
                           true, false);
   RunBaseTest(&test);
@@ -494,7 +496,8 @@ TEST_F(RampUpTest, UpDownUpThreeStreamsRtx) {
   RunBaseTest(&test);
 }
 
-TEST_F(RampUpTest, UpDownUpOneStreamByRedRtx) {
+// Disabled: https://bugs.chromium.org/p/webrtc/issues/detail?id=5576
+TEST_F(RampUpTest, DISABLED_UpDownUpOneStreamByRedRtx) {
   RampUpDownUpTester test(1, 0, kStartBitrateBps, RtpExtension::kAbsSendTime,
                           true, true);
   RunBaseTest(&test);
