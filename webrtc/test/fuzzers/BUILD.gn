@@ -66,6 +66,15 @@ webrtc_fuzzer_test("producer_fec_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
+  sources = [
+    "rtcp_receiver_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp/",
+  ]
+}
+
 source_set("audio_decoder_fuzzer") {
   public_configs = [ "../..:common_inherited_config" ]
   sources = [
