@@ -13,9 +13,7 @@
 #include <assert.h>
 #include <string.h>
 
-extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
-}
 #include "webrtc/modules/audio_processing/aec/echo_cancellation.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 

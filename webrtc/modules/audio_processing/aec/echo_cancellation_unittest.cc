@@ -15,10 +15,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
-}
-
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
 

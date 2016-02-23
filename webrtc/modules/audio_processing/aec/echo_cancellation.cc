@@ -20,10 +20,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+}
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
+extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_resampler.h"
+}
 #include "webrtc/modules/audio_processing/aec/echo_cancellation_internal.h"
 #include "webrtc/typedefs.h"
 
@@ -119,7 +123,7 @@ static void ProcessExtended(Aec* self,
                             int32_t skew);
 
 void* WebRtcAec_Create() {
-  Aec* aecpc = malloc(sizeof(Aec));
+  Aec* aecpc = reinterpret_cast<Aec*>(malloc(sizeof(Aec)));
 
   if (!aecpc) {
     return NULL;
@@ -150,11 +154,14 @@ void* WebRtcAec_Create() {
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   {
     char filename[64];
-    sprintf(filename, "aec_buf%d.dat", webrtc_aec_instance_count);
+    snprintf(filename, sizeof(filename), "aec_buf%d.dat",
+             webrtc_aec_instance_count);
     aecpc->bufFile = fopen(filename, "wb");
-    sprintf(filename, "aec_skew%d.dat", webrtc_aec_instance_count);
+    snprintf(filename, sizeof(filename), "aec_skew%d.dat",
+             webrtc_aec_instance_count);
     aecpc->skewFile = fopen(filename, "wb");
-    sprintf(filename, "aec_delay%d.dat", webrtc_aec_instance_count);
+    snprintf(filename, sizeof(filename), "aec_delay%d.dat",
+             webrtc_aec_instance_count);
     aecpc->delayFile = fopen(filename, "wb");
     webrtc_aec_instance_count++;
   }
@@ -164,7 +171,7 @@ void* WebRtcAec_Create() {
 }
 
 void WebRtcAec_Free(void* aecInst) {
-  Aec* aecpc = (Aec*)aecInst;
+  Aec* aecpc = reinterpret_cast<Aec*>(aecInst);
 
   if (aecpc == NULL) {
     return;
@@ -184,7 +191,7 @@ void WebRtcAec_Free(void* aecInst) {
 }
 
 int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
-  Aec* aecpc = (Aec*)aecInst;
+  Aec* aecpc = reinterpret_cast<Aec*>(aecInst);
   AecConfig aecConfig;
 
   if (sampFreq != 8000 && sampFreq != 16000 && sampFreq != 32000 &&
@@ -265,7 +272,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
 int32_t WebRtcAec_GetBufferFarendError(void* aecInst,
                                        const float* farend,
                                        size_t nrOfSamples) {
-  Aec* aecpc = (Aec*)aecInst;
+  Aec* aecpc = reinterpret_cast<Aec*>(aecInst);
 
   if (!farend)
     return AEC_NULL_POINTER_ERROR;
@@ -284,7 +291,7 @@ int32_t WebRtcAec_GetBufferFarendError(void* aecInst,
 int32_t WebRtcAec_BufferFarend(void* aecInst,
                                const float* farend,
                                size_t nrOfSamples) {
-  Aec* aecpc = (Aec*)aecInst;
+  Aec* aecpc = reinterpret_cast<Aec*>(aecInst);
   size_t newNrOfSamples = nrOfSamples;
   float new_farend[MAX_RESAMP_LEN];
   const float* farend_ptr = farend;
@@ -304,8 +311,8 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
   }
 
   aecpc->farend_started = 1;
-  WebRtcAec_SetSystemDelay(
-      aecpc->aec, WebRtcAec_system_delay(aecpc->aec) + (int)newNrOfSamples);
+  WebRtcAec_SetSystemDelay(aecpc->aec, WebRtcAec_system_delay(aecpc->aec) +
+                           static_cast<int>(newNrOfSamples));
 
   // Write the time-domain data to |far_pre_buf|.
   WebRtc_WriteBuffer(aecpc->far_pre_buf, farend_ptr, newNrOfSamples);
@@ -317,7 +324,8 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
     {
       float* ptmp = NULL;
       float tmp[PART_LEN2];
-      WebRtc_ReadBuffer(aecpc->far_pre_buf, (void**)&ptmp, tmp, PART_LEN2);
+      WebRtc_ReadBuffer(aecpc->far_pre_buf,
+                        reinterpret_cast<void**>(&ptmp), tmp, PART_LEN2);
       WebRtcAec_BufferFarendPartition(aecpc->aec, ptmp);
     }
 
@@ -335,7 +343,7 @@ int32_t WebRtcAec_Process(void* aecInst,
                           size_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew) {
-  Aec* aecpc = (Aec*)aecInst;
+  Aec* aecpc = reinterpret_cast<Aec*>(aecInst);
   int32_t retVal = 0;
 
   if (out == NULL) {
@@ -382,7 +390,7 @@ int32_t WebRtcAec_Process(void* aecInst,
 }
 
 int WebRtcAec_set_config(void* handle, AecConfig config) {
-  Aec* self = (Aec*)handle;
+  Aec* self = reinterpret_cast<Aec*>(handle);
   if (self->initFlag != initCheck) {
     return AEC_UNINITIALIZED_ERROR;
   }
@@ -412,7 +420,7 @@ int WebRtcAec_set_config(void* handle, AecConfig config) {
 }
 
 int WebRtcAec_get_echo_status(void* handle, int* status) {
-  Aec* self = (Aec*)handle;
+  Aec* self = reinterpret_cast<Aec*>(handle);
   if (status == NULL) {
     return AEC_NULL_POINTER_ERROR;
   }
@@ -429,7 +437,7 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
   const float kUpWeight = 0.7f;
   float dtmp;
   int stmp;
-  Aec* self = (Aec*)handle;
+  Aec* self = reinterpret_cast<Aec*>(handle);
   Stats erl;
   Stats erle;
   Stats a_nlp;
@@ -447,39 +455,39 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
   WebRtcAec_GetEchoStats(self->aec, &erl, &erle, &a_nlp);
 
   // ERL
-  metrics->erl.instant = (int)erl.instant;
+  metrics->erl.instant = static_cast<int>(erl.instant);
 
   if ((erl.himean > kOffsetLevel) && (erl.average > kOffsetLevel)) {
     // Use a mix between regular average and upper part average.
     dtmp = kUpWeight * erl.himean + (1 - kUpWeight) * erl.average;
-    metrics->erl.average = (int)dtmp;
+    metrics->erl.average = static_cast<int>(dtmp);
   } else {
     metrics->erl.average = kOffsetLevel;
   }
 
-  metrics->erl.max = (int)erl.max;
+  metrics->erl.max = static_cast<int>(erl.max);
 
   if (erl.min < (kOffsetLevel * (-1))) {
-    metrics->erl.min = (int)erl.min;
+    metrics->erl.min = static_cast<int>(erl.min);
   } else {
     metrics->erl.min = kOffsetLevel;
   }
 
   // ERLE
-  metrics->erle.instant = (int)erle.instant;
+  metrics->erle.instant = static_cast<int>(erle.instant);
 
   if ((erle.himean > kOffsetLevel) && (erle.average > kOffsetLevel)) {
     // Use a mix between regular average and upper part average.
     dtmp = kUpWeight * erle.himean + (1 - kUpWeight) * erle.average;
-    metrics->erle.average = (int)dtmp;
+    metrics->erle.average = static_cast<int>(dtmp);
   } else {
     metrics->erle.average = kOffsetLevel;
   }
 
-  metrics->erle.max = (int)erle.max;
+  metrics->erle.max = static_cast<int>(erle.max);
 
   if (erle.min < (kOffsetLevel * (-1))) {
-    metrics->erle.min = (int)erle.min;
+    metrics->erle.min = static_cast<int>(erle.min);
   } else {
     metrics->erle.min = kOffsetLevel;
   }
@@ -499,20 +507,20 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
   metrics->rerl.min = stmp;
 
   // A_NLP
-  metrics->aNlp.instant = (int)a_nlp.instant;
+  metrics->aNlp.instant = static_cast<int>(a_nlp.instant);
 
   if ((a_nlp.himean > kOffsetLevel) && (a_nlp.average > kOffsetLevel)) {
     // Use a mix between regular average and upper part average.
     dtmp = kUpWeight * a_nlp.himean + (1 - kUpWeight) * a_nlp.average;
-    metrics->aNlp.average = (int)dtmp;
+    metrics->aNlp.average = static_cast<int>(dtmp);
   } else {
     metrics->aNlp.average = kOffsetLevel;
   }
 
-  metrics->aNlp.max = (int)a_nlp.max;
+  metrics->aNlp.max = static_cast<int>(a_nlp.max);
 
   if (a_nlp.min < (kOffsetLevel * (-1))) {
-    metrics->aNlp.min = (int)a_nlp.min;
+    metrics->aNlp.min = static_cast<int>(a_nlp.min);
   } else {
     metrics->aNlp.min = kOffsetLevel;
   }
@@ -524,7 +532,7 @@ int WebRtcAec_GetDelayMetrics(void* handle,
                               int* median,
                               int* std,
                               float* fraction_poor_delays) {
-  Aec* self = (Aec*)handle;
+  Aec* self = reinterpret_cast<Aec*>(handle);
   if (median == NULL) {
     return AEC_NULL_POINTER_ERROR;
   }
@@ -547,7 +555,7 @@ AecCore* WebRtcAec_aec_core(void* handle) {
   if (!handle) {
     return NULL;
   }
-  return ((Aec*)handle)->aec;
+  return reinterpret_cast<Aec*>(handle)->aec;
 }
 
 static int ProcessNormal(Aec* aecpc,
@@ -795,7 +803,9 @@ static void EstBufDelayNormal(Aec* aecpc) {
   // compensate for that.
   aecpc->filtDelay = aecpc->filtDelay < 0 ? 0 : aecpc->filtDelay;
   aecpc->filtDelay =
-      WEBRTC_SPL_MAX(0, (short)(0.8 * aecpc->filtDelay + 0.2 * current_delay));
+      WEBRTC_SPL_MAX(0, static_cast<int16_t>(0.8 *
+                                             aecpc->filtDelay +
+                                             0.2 * current_delay));
 
   delay_difference = aecpc->filtDelay - aecpc->knownDelay;
   if (delay_difference > 224) {
@@ -848,7 +858,7 @@ static void EstBufDelayExtended(Aec* self) {
     self->filtDelay = WEBRTC_SPL_MAX(0, 0.5 * current_delay);
   } else {
     self->filtDelay = WEBRTC_SPL_MAX(
-        0, (short)(0.95 * self->filtDelay + 0.05 * current_delay));
+        0, static_cast<int16_t>(0.95 * self->filtDelay + 0.05 * current_delay));
   }
 
   delay_difference = self->filtDelay - self->knownDelay;

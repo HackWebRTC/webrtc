@@ -24,13 +24,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
+}
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
+extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+}
 #include "webrtc/modules/audio_processing/logging/aec_logging.h"
+extern "C" {
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
+}
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
 
@@ -43,8 +49,7 @@ static const int countLen = 50;
 static const int kDelayMetricsAggregationWindow = 1250;  // 5 seconds at 16 kHz.
 
 // Quantities to control H band scaling for SWB input
-static const float cnScaleHband =
-    (float)0.4;  // scale for comfort noise in H band
+static const float cnScaleHband = 0.4f;  // scale for comfort noise in H band.
 // Initial bin for averaging nlp gain in low band
 static const int freqAvgIc = PART_LEN / 2;
 
@@ -416,11 +421,11 @@ static void SubbandCoherence(AecCore* aec,
 static void GetHighbandGain(const float* lambda, float* nlpGainHband) {
   int i;
 
-  *nlpGainHband = (float)0.0;
+  *nlpGainHband = 0.0f;
   for (i = freqAvgIc; i < PART_LEN1 - 1; i++) {
     *nlpGainHband += lambda[i];
   }
-  *nlpGainHband /= (float)(PART_LEN1 - 1 - freqAvgIc);
+  *nlpGainHband /= static_cast<float>(PART_LEN1 - 1 - freqAvgIc);
 }
 
 static void ComfortNoise(AecCore* aec,
@@ -439,7 +444,7 @@ static void ComfortNoise(AecCore* aec,
   // Generate a uniform random array on [0 1]
   WebRtcSpl_RandUArray(randW16, PART_LEN, &aec->seed);
   for (i = 0; i < PART_LEN; i++) {
-    rand[i] = ((float)randW16[i]) / 32768;
+    rand[i] = static_cast<float>(randW16[i]) / 32768;
   }
 
   // Reject LF noise
@@ -463,32 +468,34 @@ static void ComfortNoise(AecCore* aec,
   }
 
   // For H band comfort noise
-  // TODO: don't compute noise and "tmp" twice. Use the previous results.
+  // TODO(peah): don't compute noise and "tmp" twice. Use the previous results.
   noiseAvg = 0.0;
   tmpAvg = 0.0;
   num = 0;
   if (aec->num_bands > 1) {
     // average noise scale
     // average over second half of freq spectrum (i.e., 4->8khz)
-    // TODO: we shouldn't need num. We know how many elements we're summing.
+    // TODO(peah): we shouldn't need num. We know how many elements we're
+    // summing.
     for (i = PART_LEN1 >> 1; i < PART_LEN1; i++) {
       num++;
       noiseAvg += sqrtf(noisePow[i]);
     }
-    noiseAvg /= (float)num;
+    noiseAvg /= static_cast<float>(num);
 
     // average nlp scale
     // average over second half of freq spectrum (i.e., 4->8khz)
-    // TODO: we shouldn't need num. We know how many elements we're summing.
+    // TODO(peah): we shouldn't need num. We know how many elements
+    // we're summing.
     num = 0;
     for (i = PART_LEN1 >> 1; i < PART_LEN1; i++) {
       num++;
       tmpAvg += sqrtf(WEBRTC_SPL_MAX(1 - lambda[i] * lambda[i], 0));
     }
-    tmpAvg /= (float)num;
+    tmpAvg /= static_cast<float>(num);
 
     // Use average noise for H band
-    // TODO: we should probably have a new random vector here.
+    // TODO(peah): we should probably have a new random vector here.
     // Reject LF noise
     u[0][0] = 0;
     u[1][0] = 0;
@@ -496,8 +503,8 @@ static void ComfortNoise(AecCore* aec,
       tmp = pi2 * rand[i - 1];
 
       // Use average noise for H band
-      u[0][i] = noiseAvg * (float)cos(tmp);
-      u[1][i] = -noiseAvg * (float)sin(tmp);
+      u[0][i] = noiseAvg * static_cast<float>(cos(tmp));
+      u[1][i] = -noiseAvg * static_cast<float>(sin(tmp));
     }
     u[1][PART_LEN] = 0;
 
@@ -621,10 +628,12 @@ static void UpdateMetrics(AecCore* aec) {
       echo = aec->nearlevel.averagelevel - safety * aec->nearlevel.minlevel;
 
       // ERL
-      dtmp = 10 * (float)log10(aec->farlevel.averagelevel /
-                                   aec->nearlevel.averagelevel +
-                               1e-10f);
-      dtmp2 = 10 * (float)log10(aec->farlevel.averagelevel / echo + 1e-10f);
+      dtmp = 10 * static_cast<float>(log10(aec->farlevel.averagelevel /
+                                           aec->nearlevel.averagelevel +
+                                           1e-10f));
+      dtmp2 = 10 * static_cast<float>(log10(aec->farlevel.averagelevel /
+                                            echo +
+                                            1e-10f));
 
       aec->erl.instant = dtmp;
       if (dtmp > aec->erl.max) {
@@ -647,14 +656,15 @@ static void UpdateMetrics(AecCore* aec) {
       }
 
       // A_NLP
-      dtmp = 10 * (float)log10(aec->nearlevel.averagelevel /
-          aec->linoutlevel.averagelevel + 1e-10f);
+      dtmp = 10 * static_cast<float>(log10(aec->nearlevel.averagelevel /
+                                           aec->linoutlevel.averagelevel +
+                                           1e-10f));
 
       // subtract noise power
       suppressedEcho = aec->linoutlevel.averagelevel -
           safety * aec->linoutlevel.minlevel;
 
-      dtmp2 = 10 * (float)log10(echo / suppressedEcho + 1e-10f);
+      dtmp2 = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
 
       aec->aNlp.instant = dtmp2;
       if (dtmp > aec->aNlp.max) {
@@ -682,10 +692,10 @@ static void UpdateMetrics(AecCore* aec) {
       suppressedEcho = 2 * (aec->nlpoutlevel.averagelevel -
                             safety * aec->nlpoutlevel.minlevel);
 
-      dtmp = 10 * (float)log10(aec->nearlevel.averagelevel /
-                                   (2 * aec->nlpoutlevel.averagelevel) +
-                               1e-10f);
-      dtmp2 = 10 * (float)log10(echo / suppressedEcho + 1e-10f);
+      dtmp = 10 * static_cast<float>(log10(aec->nearlevel.averagelevel /
+                                           (2 * aec->nlpoutlevel.averagelevel) +
+                                           1e-10f));
+      dtmp2 = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
 
       dtmp = dtmp2;
       aec->erle.instant = dtmp;
@@ -751,8 +761,8 @@ static void UpdateDelayMetrics(AecCore* self) {
     l1_norm += abs(i - median) * self->delay_histogram[i];
   }
   self->delay_std =
-      (int)((l1_norm + self->num_delay_values / 2) / self->num_delay_values) *
-      kMsPerBlock;
+      static_cast<int>((l1_norm + self->num_delay_values / 2) /
+                       self->num_delay_values) * kMsPerBlock;
 
   // Determine fraction of delays that are out of bounds, that is, either
   // negative (anti-causal system) or larger than the AEC filter length.
@@ -765,7 +775,7 @@ static void UpdateDelayMetrics(AecCore* self) {
         num_delays_out_of_bounds -= self->delay_histogram[i];
     }
     self->fraction_poor_delays =
-        (float)num_delays_out_of_bounds / self->num_delay_values;
+        static_cast<float>(num_delays_out_of_bounds) / self->num_delay_values;
   }
 
   // Reset histogram.
@@ -780,7 +790,7 @@ static void ScaledInverseFft(float freq_data[2][PART_LEN1],
                              float scale,
                              int conjugate) {
   int i;
-  const float normalization = scale / ((float)PART_LEN2);
+  const float normalization = scale / static_cast<float>(PART_LEN2);
   const float sign = (conjugate ? -1 : 1);
   time_data[0] = freq_data[0][0] * normalization;
   time_data[1] = freq_data[0][PART_LEN] * normalization;
@@ -844,7 +854,8 @@ static int SignalBasedDelayCorrection(AecCore* self) {
     const int upper_bound = self->num_partitions * 3 / 4;
     const int do_correction = delay <= lower_bound || delay > upper_bound;
     if (do_correction == 1) {
-      int available_read = (int)WebRtc_available_read(self->far_time_buf);
+      int available_read =
+          static_cast<int>(WebRtc_available_read(self->far_time_buf));
       // With |shift_offset| we gradually rely on the delay estimates.  For
       // positive delays we reduce the correction by |shift_offset| to lower the
       // risk of pushing the AEC into a non causal state.  For negative delays
@@ -1079,11 +1090,14 @@ static void EchoSuppression(AecCore* aec,
       }
 
       // Select an order statistic from the preferred bands.
-      // TODO: Using quicksort now, but a selection algorithm may be preferred.
+      // TODO(peah): Using quicksort now, but a selection algorithm may be
+      // preferred.
       memcpy(hNlPref, &hNl[minPrefBand], sizeof(float) * prefBandSize);
       qsort(hNlPref, prefBandSize, sizeof(float), CmpFloat);
-      hNlFb = hNlPref[(int)floor(prefBandQuant * (prefBandSize - 1))];
-      hNlFbLow = hNlPref[(int)floor(prefBandQuantLow * (prefBandSize - 1))];
+      hNlFb = hNlPref[static_cast<int>(floor(prefBandQuant *
+                                             (prefBandSize - 1)))];
+      hNlFbLow = hNlPref[static_cast<int>(floor(prefBandQuantLow *
+                                                (prefBandSize - 1)))];
     }
   }
 
@@ -1106,7 +1120,7 @@ static void EchoSuppression(AecCore* aec,
     aec->hNlMinCtr = 0;
     aec->overDrive =
         WEBRTC_SPL_MAX(kTargetSupp[aec->nlp_mode] /
-                           ((float)log(aec->hNlFbMin + 1e-10f) + 1e-10f),
+                       static_cast<float>(log(aec->hNlFbMin + 1e-10f) + 1e-10f),
                        min_overdrive[aec->nlp_mode]);
   }
 
@@ -1225,16 +1239,19 @@ static void ProcessBlock(AecCore* aec) {
 
   // Concatenate old and new nearend blocks.
   for (i = 0; i < aec->num_bands - 1; ++i) {
-    WebRtc_ReadBuffer(aec->nearFrBufH[i], (void**)&nearend_ptr, nearend,
-                      PART_LEN);
+    WebRtc_ReadBuffer(aec->nearFrBufH[i],
+                      reinterpret_cast<void**>(&nearend_ptr),
+                      nearend, PART_LEN);
     memcpy(aec->dBufH[i] + PART_LEN, nearend_ptr, sizeof(nearend));
   }
-  WebRtc_ReadBuffer(aec->nearFrBuf, (void**)&nearend_ptr, nearend, PART_LEN);
+  WebRtc_ReadBuffer(aec->nearFrBuf, reinterpret_cast<void**>(&nearend_ptr),
+                    nearend, PART_LEN);
   memcpy(aec->dBuf + PART_LEN, nearend_ptr, sizeof(nearend));
 
   // We should always have at least one element stored in |far_buf|.
   assert(WebRtc_available_read(aec->far_time_buf) > 0);
-  WebRtc_ReadBuffer(aec->far_time_buf, (void**)&farend_ptr, farend, 1);
+  WebRtc_ReadBuffer(aec->far_time_buf, reinterpret_cast<void**>(&farend_ptr),
+                    farend, 1);
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   {
@@ -1356,7 +1373,7 @@ static void ProcessBlock(AecCore* aec) {
 
 AecCore* WebRtcAec_CreateAec() {
   int i;
-  AecCore* aec = malloc(sizeof(AecCore));
+  AecCore* aec = reinterpret_cast<AecCore*>(malloc(sizeof(AecCore)));
   if (!aec) {
     return NULL;
   }
@@ -1585,7 +1602,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   if (aec->num_bands > 1) {
     aec->mult = 2;
   } else {
-    aec->mult = (short)aec->sampFreq / 8000;
+    aec->mult = static_cast<int16_t>(aec->sampFreq) / 8000;
   }
 
   aec->farBufWritePos = 0;
@@ -1616,8 +1633,8 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
 
   // Holds the last block written to
   aec->xfBufBlockPos = 0;
-  // TODO: Investigate need for these initializations. Deleting them doesn't
-  //       change the output at all and yields 0.4% overall speedup.
+  // TODO(peah): Investigate need for these initializations. Deleting them
+  // doesn't change the output at all and yields 0.4% overall speedup.
   memset(aec->xfBuf, 0, sizeof(complex_t) * kExtendedNumPartitions * PART_LEN1);
   memset(aec->wfBuf, 0, sizeof(complex_t) * kExtendedNumPartitions * PART_LEN1);
   memset(aec->sde, 0, sizeof(complex_t) * PART_LEN1);
@@ -1782,7 +1799,7 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
     // 6) Update output frame.
     // Stuff the out buffer if we have less than a frame to output.
     // This should only happen for the first frame.
-    out_elements = (int)WebRtc_available_read(aec->outFrBuf);
+    out_elements = static_cast<int>(WebRtc_available_read(aec->outFrBuf));
     if (out_elements < FRAME_LEN) {
       WebRtc_MoveReadPtr(aec->outFrBuf, out_elements - FRAME_LEN);
       for (i = 0; i < num_bands - 1; ++i) {

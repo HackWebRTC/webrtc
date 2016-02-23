@@ -18,10 +18,14 @@
 #include <math.h>
 #include <string.h>  // memset
 
+extern "C" {
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+}
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
+extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+}
 
 enum { kShiftExponentIntoTopMantissa = 8 };
 enum { kFloatExponentShift = 23 };
@@ -120,7 +124,6 @@ static float32x4_t vsqrtq_f32(float32x4_t s) {
   }
   // sqrt(s) = s * 1/sqrt(s)
   return vmulq_f32(s, x);
-  ;
 }
 #endif  // WEBRTC_ARCH_ARM64
 

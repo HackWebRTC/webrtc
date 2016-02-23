@@ -32,14 +32,14 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        'aec/aec_core.c',
+        'aec/aec_core.cc',
         'aec/aec_core.h',
         'aec/aec_core_internal.h',
         'aec/aec_rdft.c',
         'aec/aec_rdft.h',
         'aec/aec_resampler.c',
         'aec/aec_resampler.h',
-        'aec/echo_cancellation.c',
+        'aec/echo_cancellation.cc',
         'aec/echo_cancellation_internal.h',
         'aec/echo_cancellation.h',
         'aecm/aecm_core.c',
@@ -205,7 +205,7 @@
           'conditions': [
             ['mips_float_abi=="hard"', {
               'sources': [
-                'aec/aec_core_mips.c',
+                'aec/aec_core_mips.cc',
                 'aec/aec_rdft_mips.c',
               ],
             }],
@@ -244,7 +244,7 @@
           'target_name': 'audio_processing_sse2',
           'type': 'static_library',
           'sources': [
-            'aec/aec_core_sse2.c',
+            'aec/aec_core_sse2.cc',
             'aec/aec_rdft_sse2.c',
           ],
           'conditions': [
@@ -267,7 +267,7 @@
           '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         ],
         'sources': [
-          'aec/aec_core_neon.c',
+          'aec/aec_core_neon.cc',
           'aec/aec_rdft_neon.c',
           'aecm/aecm_core_neon.c',
           'ns/nsx_core_neon.c',

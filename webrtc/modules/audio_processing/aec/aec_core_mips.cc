@@ -16,9 +16,13 @@
 
 #include <math.h>
 
+extern "C" {
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+}
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
+extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+}
 
 extern const float WebRtcAec_weightCurve[65];
 extern const float WebRtcAec_overDriveCurve[65];
@@ -45,7 +49,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
   int32_t tmp1s, tmp2s, tmp3s, tmp4s;
 
   for (i = 0; i < PART_LEN; i += 4) {
-    __asm __volatile (
+    __asm __volatile(
       ".set     push                                           \n\t"
       ".set     noreorder                                      \n\t"
       "lh       %[tmp1s],       0(%[randWptr])                 \n\t"
@@ -72,8 +76,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
         [tmp2s] "=&r" (tmp2s), [tmp3s] "=&r" (tmp3s),
         [tmp4s] "=&r" (tmp4s)
       : [pi2t] "f" (pi2t)
-      : "memory"
-    );
+      : "memory");
 
     u[i + 1][0] = cosf(randTemp);
     u[i + 1][1] = sinf(randTemp);
@@ -93,7 +96,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
   u[0][0] = 0;
   u[0][1] = 0;
   for (i = 1; i < PART_LEN1; i += 4) {
-    __asm __volatile (
+    __asm __volatile(
       ".set     push                                            \n\t"
       ".set     noreorder                                       \n\t"
       "lwc1     %[noise],       4(%[noisePow])                  \n\t"
@@ -143,8 +146,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
         [tmp5f] "=&f" (tmp5f), [tmp6f] "=&f" (tmp6f),
         [tmp7f] "=&f" (tmp7f), [tmp8f] "=&f" (tmp8f)
       :
-      : "memory"
-    );
+      : "memory");
   }
   u[PART_LEN][1] = 0;
   noisePow -= PART_LEN;
@@ -156,10 +158,10 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
   float tmp9f, tmp10f;
   const float tmp1c = 1.0;
 
-  __asm __volatile (
+  __asm __volatile(
     ".set     push                                                        \n\t"
     ".set     noreorder                                                   \n\t"
-   "1:                                                                    \n\t"
+    "1:                                                                   \n\t"
     "lwc1     %[tmp1f],       0(%[lambda])                                \n\t"
     "lwc1     %[tmp6f],       4(%[lambda])                                \n\t"
     "addiu    %[lambda],      %[lambda],        8                         \n\t"
@@ -169,7 +171,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
     "c.lt.s   %[tmp6f],       %[tmp1c]                                    \n\t"
     "bc1f     3f                                                          \n\t"
     " nop                                                                 \n\t"
-   "2:                                                                    \n\t"
+    "2:                                                                   \n\t"
     "mul.s    %[tmp1f],       %[tmp1f],         %[tmp1f]                  \n\t"
     "mul.s    %[tmp6f],       %[tmp6f],         %[tmp6f]                  \n\t"
     "sub.s    %[tmp1f],       %[tmp1c],         %[tmp1f]                  \n\t"
@@ -193,18 +195,18 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
     "add.s    %[tmp7f],       %[tmp7f],         %[tmp3f]                  \n\t"
     "mul.s    %[tmp3f],       %[tmp6f],         %[tmp10f]                 \n\t"
     "add.s    %[tmp9f],       %[tmp9f],         %[tmp3f]                  \n\t"
-#else // #if !defined(MIPS32_R2_LE)
+#else  // #if !defined(MIPS32_R2_LE)
     "madd.s   %[tmp2f],       %[tmp2f],         %[tmp1f],     %[tmp3f]    \n\t"
     "madd.s   %[tmp4f],       %[tmp4f],         %[tmp1f],     %[tmp5f]    \n\t"
     "madd.s   %[tmp7f],       %[tmp7f],         %[tmp6f],     %[tmp8f]    \n\t"
     "madd.s   %[tmp9f],       %[tmp9f],         %[tmp6f],     %[tmp10f]   \n\t"
-#endif // #if !defined(MIPS32_R2_LE)
+#endif  // #if !defined(MIPS32_R2_LE)
     "swc1     %[tmp2f],       0(%[efw_ptr_0])                             \n\t"
     "swc1     %[tmp4f],       0(%[efw_ptr_1])                             \n\t"
     "swc1     %[tmp7f],       4(%[efw_ptr_0])                             \n\t"
     "b        5f                                                          \n\t"
     " swc1    %[tmp9f],       4(%[efw_ptr_1])                             \n\t"
-   "3:                                                                    \n\t"
+    "3:                                                                   \n\t"
     "mul.s    %[tmp1f],       %[tmp1f],         %[tmp1f]                  \n\t"
     "sub.s    %[tmp1f],       %[tmp1c],         %[tmp1f]                  \n\t"
     "sqrt.s   %[tmp1f],       %[tmp1f]                                    \n\t"
@@ -217,14 +219,14 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
     "add.s    %[tmp2f],       %[tmp2f],         %[tmp3f]                  \n\t"
     "mul.s    %[tmp3f],       %[tmp1f],         %[tmp5f]                  \n\t"
     "add.s    %[tmp4f],       %[tmp4f],         %[tmp3f]                  \n\t"
-#else // #if !defined(MIPS32_R2_LE)
+#else  // #if !defined(MIPS32_R2_LE)
     "madd.s   %[tmp2f],       %[tmp2f],         %[tmp1f],     %[tmp3f]    \n\t"
     "madd.s   %[tmp4f],       %[tmp4f],         %[tmp1f],     %[tmp5f]    \n\t"
-#endif // #if !defined(MIPS32_R2_LE)
+#endif  // #if !defined(MIPS32_R2_LE)
     "swc1     %[tmp2f],       0(%[efw_ptr_0])                             \n\t"
     "b        5f                                                          \n\t"
     " swc1    %[tmp4f],       0(%[efw_ptr_1])                             \n\t"
-   "4:                                                                    \n\t"
+    "4:                                                                   \n\t"
     "c.lt.s   %[tmp6f],       %[tmp1c]                                    \n\t"
     "bc1f     5f                                                          \n\t"
     " nop                                                                 \n\t"
@@ -240,13 +242,13 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
     "add.s    %[tmp7f],       %[tmp7f],         %[tmp3f]                  \n\t"
     "mul.s    %[tmp3f],       %[tmp6f],         %[tmp10f]                 \n\t"
     "add.s    %[tmp9f],       %[tmp9f],         %[tmp3f]                  \n\t"
-#else // #if !defined(MIPS32_R2_LE)
+#else  // #if !defined(MIPS32_R2_LE)
     "madd.s   %[tmp7f],       %[tmp7f],         %[tmp6f],     %[tmp8f]    \n\t"
     "madd.s   %[tmp9f],       %[tmp9f],         %[tmp6f],     %[tmp10f]   \n\t"
-#endif // #if !defined(MIPS32_R2_LE)
+#endif  // #if !defined(MIPS32_R2_LE)
     "swc1     %[tmp7f],       4(%[efw_ptr_0])                             \n\t"
     "swc1     %[tmp9f],       4(%[efw_ptr_1])                             \n\t"
-   "5:                                                                    \n\t"
+    "5:                                                                   \n\t"
     "addiu    %[u_ptr],       %[u_ptr],         16                        \n\t"
     "addiu    %[efw_ptr_0],   %[efw_ptr_0],     8                         \n\t"
     "bne      %[u_ptr],       %[u_ptr_end],     1b                        \n\t"
@@ -259,8 +261,7 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
       [tmp6f] "=&f" (tmp6f), [tmp7f] "=&f" (tmp7f), [tmp8f] "=&f" (tmp8f),
       [tmp9f] "=&f" (tmp9f), [tmp10f] "=&f" (tmp10f)
     : [tmp1c] "f" (tmp1c), [u_ptr_end] "r" (u_ptr_end)
-    : "memory"
-  );
+    : "memory");
 
   lambda -= PART_LEN;
   tmp = sqrtf(WEBRTC_SPL_MAX(1 - lambda[PART_LEN] * lambda[PART_LEN], 0));
@@ -269,36 +270,38 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
   efw[1][PART_LEN] += tmp * u[PART_LEN][1];
 
   // For H band comfort noise
-  // TODO: don't compute noise and "tmp" twice. Use the previous results.
+  // TODO(peah): don't compute noise and "tmp" twice. Use the previous results.
   noiseAvg = 0.0;
   tmpAvg = 0.0;
   num = 0;
   if (aec->num_bands > 1) {
     for (i = 0; i < PART_LEN; i++) {
-      rand[i] = ((float)randW16[i]) / 32768;
+      rand[i] = (static_cast<float>(randW16[i])) / 32768;
     }
 
     // average noise scale
     // average over second half of freq spectrum (i.e., 4->8khz)
-    // TODO: we shouldn't need num. We know how many elements we're summing.
+    // TODO(peah): we shouldn't need num. We know how many elements we're
+    // summing.
     for (i = PART_LEN1 >> 1; i < PART_LEN1; i++) {
       num++;
       noiseAvg += sqrtf(noisePow[i]);
     }
-    noiseAvg /= (float)num;
+    noiseAvg /= static_cast<float>(num);
 
     // average nlp scale
     // average over second half of freq spectrum (i.e., 4->8khz)
-    // TODO: we shouldn't need num. We know how many elements we're summing.
+    // TODO(peah): we shouldn't need num. We know how many elements we're
+    // summing.
     num = 0;
     for (i = PART_LEN1 >> 1; i < PART_LEN1; i++) {
       num++;
       tmpAvg += sqrtf(WEBRTC_SPL_MAX(1 - lambda[i] * lambda[i], 0));
     }
-    tmpAvg /= (float)num;
+    tmpAvg /= static_cast<float>(num);
 
     // Use average noise for H band
-    // TODO: we should probably have a new random vector here.
+    // TODO(peah): we should probably have a new random vector here.
     // Reject LF noise
     u[0][0] = 0;
     u[0][1] = 0;
@@ -306,8 +309,8 @@ void WebRtcAec_ComfortNoise_mips(AecCore* aec,
       tmp = pi2 * rand[i - 1];
 
       // Use average noise for H band
-      u[i][0] = noiseAvg * (float)cos(tmp);
-      u[i][1] = -noiseAvg * (float)sin(tmp);
+      u[i][0] = noiseAvg * static_cast<float>(cos(tmp));
+      u[i][1] = -noiseAvg * static_cast<float>(sin(tmp));
     }
     u[PART_LEN][1] = 0;
 
@@ -345,10 +348,10 @@ void WebRtcAec_FilterFar_mips(
     float f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13;
     int len = PART_LEN1 >> 1;
 
-    __asm __volatile (
+    __asm __volatile(
       ".set       push                                                \n\t"
       ".set       noreorder                                           \n\t"
-     "1:                                                              \n\t"
+      "1:                                                             \n\t"
       "lwc1       %[f0],      0(%[aRe])                               \n\t"
       "lwc1       %[f1],      0(%[bRe])                               \n\t"
       "lwc1       %[f2],      0(%[bIm])                               \n\t"
@@ -376,7 +379,7 @@ void WebRtcAec_FilterFar_mips(
       "sub.s      %[f9],      %[f9],          %[f11]                  \n\t"
       "lwc1       %[f6],      4(%[yf0])                               \n\t"
       "add.s      %[f4],      %[f4],          %[f12]                  \n\t"
-#else // #if !defined(MIPS32_R2_LE)
+#else  // #if !defined(MIPS32_R2_LE)
       "addiu      %[aRe],     %[aRe],         8                       \n\t"
       "addiu      %[aIm],     %[aIm],         8                       \n\t"
       "addiu      %[len],     %[len],         -1                      \n\t"
@@ -387,7 +390,7 @@ void WebRtcAec_FilterFar_mips(
       "nmsub.s    %[f9],      %[f9],          %[f6],      %[f7]       \n\t"
       "lwc1       %[f6],      4(%[yf0])                               \n\t"
       "madd.s     %[f4],      %[f4],          %[f7],      %[f5]       \n\t"
-#endif // #if !defined(MIPS32_R2_LE)
+#endif  // #if !defined(MIPS32_R2_LE)
       "lwc1       %[f5],      4(%[yf1])                               \n\t"
       "add.s      %[f2],      %[f2],          %[f8]                   \n\t"
       "addiu      %[bRe],     %[bRe],         8                       \n\t"
@@ -415,12 +418,12 @@ void WebRtcAec_FilterFar_mips(
       "lwc1       %[f2],      0(%[yf0])                               \n\t"
       "add.s      %[f1],      %[f0],          %[f1]                   \n\t"
       "lwc1       %[f3],      0(%[yf1])                               \n\t"
-#else // #if !defined(MIPS32_R2_LE)
+#else  // #if !defined(MIPS32_R2_LE)
       "nmsub.s    %[f8],      %[f8],          %[f2],      %[f3]       \n\t"
       "lwc1       %[f2],      0(%[yf0])                               \n\t"
       "madd.s     %[f1],      %[f0],          %[f3],      %[f1]       \n\t"
       "lwc1       %[f3],      0(%[yf1])                               \n\t"
-#endif // #if !defined(MIPS32_R2_LE)
+#endif  // #if !defined(MIPS32_R2_LE)
       "add.s      %[f2],      %[f2],          %[f8]                   \n\t"
       "add.s      %[f3],      %[f3],          %[f1]                   \n\t"
       "swc1       %[f2],      0(%[yf0])                               \n\t"
@@ -434,8 +437,7 @@ void WebRtcAec_FilterFar_mips(
         [aIm] "+r" (aIm), [bRe] "+r" (bRe), [bIm] "+r" (bIm),
         [yf0] "+r" (yf0), [yf1] "+r" (yf1), [len] "+r" (len)
       :
-      : "memory"
-    );
+      : "memory");
   }
 }
 
@@ -465,11 +467,11 @@ void WebRtcAec_FilterAdaptation_mips(
     float f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12;
     int len = PART_LEN >> 1;
 
-    __asm __volatile (
+    __asm __volatile(
       ".set       push                                                \n\t"
       ".set       noreorder                                           \n\t"
       "addiu      %[fft_tmp], %[fft],         0                       \n\t"
-     "1:                                                              \n\t"
+      "1:                                                             \n\t"
       "lwc1       %[f0],      0(%[aRe])                               \n\t"
       "lwc1       %[f1],      0(%[bRe])                               \n\t"
       "lwc1       %[f2],      0(%[bIm])                               \n\t"
@@ -496,7 +498,7 @@ void WebRtcAec_FilterAdaptation_mips(
       "sub.s      %[f1],      %[f0],          %[f1]                   \n\t"
       "add.s      %[f9],      %[f9],          %[f11]                  \n\t"
       "sub.s      %[f5],      %[f4],          %[f5]                   \n\t"
-#else // #if !defined(MIPS32_R2_LE)
+#else  // #if !defined(MIPS32_R2_LE)
       "addiu      %[aIm],     %[aIm],         8                       \n\t"
       "addiu      %[bIm],     %[bIm],         8                       \n\t"
       "addiu      %[len],     %[len],         -1                      \n\t"
@@ -504,7 +506,7 @@ void WebRtcAec_FilterAdaptation_mips(
       "nmsub.s    %[f1],      %[f0],          %[f3],      %[f1]       \n\t"
       "madd.s     %[f9],      %[f9],          %[f7],      %[f6]       \n\t"
       "nmsub.s    %[f5],      %[f4],          %[f7],      %[f5]       \n\t"
-#endif // #if !defined(MIPS32_R2_LE)
+#endif  // #if !defined(MIPS32_R2_LE)
       "swc1       %[f8],      0(%[fft_tmp])                           \n\t"
       "swc1       %[f1],      4(%[fft_tmp])                           \n\t"
       "swc1       %[f9],      8(%[fft_tmp])                           \n\t"
@@ -519,9 +521,9 @@ void WebRtcAec_FilterAdaptation_mips(
 #if !defined(MIPS32_R2_LE)
       "mul.s      %[f10],     %[f3],          %[f2]                   \n\t"
       "add.s      %[f8],      %[f8],          %[f10]                  \n\t"
-#else // #if !defined(MIPS32_R2_LE)
+#else  // #if !defined(MIPS32_R2_LE)
       "madd.s     %[f8],      %[f8],          %[f3],      %[f2]       \n\t"
-#endif // #if !defined(MIPS32_R2_LE)
+#endif  // #if !defined(MIPS32_R2_LE)
       "swc1       %[f8],      4(%[fft])                               \n\t"
       ".set       pop                                                 \n\t"
       : [f0] "=&f" (f0), [f1] "=&f" (f1), [f2] "=&f" (f2),
@@ -532,8 +534,7 @@ void WebRtcAec_FilterAdaptation_mips(
         [bRe] "+r" (bRe), [bIm] "+r" (bIm), [fft_tmp] "=&r" (fft_tmp),
         [len] "+r" (len)
       : [fft] "r" (fft)
-      : "memory"
-    );
+      : "memory");
 
     aec_rdft_inverse_128(fft);
     memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
@@ -541,12 +542,12 @@ void WebRtcAec_FilterAdaptation_mips(
     // fft scaling
     {
       float scale = 2.0f / PART_LEN2;
-      __asm __volatile (
+      __asm __volatile(
         ".set     push                                    \n\t"
         ".set     noreorder                               \n\t"
         "addiu    %[fft_tmp], %[fft],        0            \n\t"
         "addiu    %[len],     $zero,         8            \n\t"
-       "1:                                                \n\t"
+        "1:                                               \n\t"
         "addiu    %[len],     %[len],        -1           \n\t"
         "lwc1     %[f0],      0(%[fft_tmp])               \n\t"
         "lwc1     %[f1],      4(%[fft_tmp])               \n\t"
@@ -580,13 +581,12 @@ void WebRtcAec_FilterAdaptation_mips(
           [f6] "=&f" (f6), [f7] "=&f" (f7), [len] "=&r" (len),
           [fft_tmp] "=&r" (fft_tmp)
         : [scale] "f" (scale), [fft] "r" (fft)
-        : "memory"
-      );
+        : "memory");
     }
     aec_rdft_forward_128(fft);
     aRe = h_fft_buf[0] + pos;
     aIm = h_fft_buf[1] + pos;
-    __asm __volatile (
+    __asm __volatile(
       ".set     push                                    \n\t"
       ".set     noreorder                               \n\t"
       "addiu    %[fft_tmp], %[fft],        0            \n\t"
@@ -610,7 +610,7 @@ void WebRtcAec_FilterAdaptation_mips(
       "addiu    %[aRe],     %[aRe],        8            \n\t"
       "swc1     %[f6],      4(%[aIm])                   \n\t"
       "addiu    %[aIm],     %[aIm],        8            \n\t"
-     "1:                                                \n\t"
+      "1:                                               \n\t"
       "lwc1     %[f0],      0(%[aRe])                   \n\t"
       "lwc1     %[f1],      0(%[fft_tmp])               \n\t"
       "lwc1     %[f2],      0(%[aIm])                   \n\t"
@@ -638,8 +638,7 @@ void WebRtcAec_FilterAdaptation_mips(
         [f6] "=&f" (f6), [f7] "=&f" (f7), [len] "=&r" (len),
         [fft_tmp] "=&r" (fft_tmp), [aRe] "+r" (aRe), [aIm] "+r" (aIm)
       : [fft] "r" (fft)
-      : "memory"
-    );
+      : "memory");
   }
 }
 
@@ -658,11 +657,11 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
   p_hNl = &hNl[0];
   p_efw0 = &efw[0][0];
   p_efw1 = &efw[1][0];
-  p_WebRtcAec_wC = (float*)&WebRtcAec_weightCurve[0];
+  p_WebRtcAec_wC = reinterpret_cast<float*>(&WebRtcAec_weightCurve[0]);
 
   for (i = 0; i < PART_LEN1; i++) {
     // Weight subbands
-    __asm __volatile (
+    __asm __volatile(
       ".set      push                                              \n\t"
       ".set      noreorder                                         \n\t"
       "lwc1      %[temp1],    0(%[p_hNl])                          \n\t"
@@ -674,9 +673,9 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
 #if !defined(MIPS32_R2_LE)
       "mul.s     %[temp1],    %[temp1],     %[temp4]               \n\t"
       "add.s     %[temp1],    %[temp3],     %[temp1]               \n\t"
-#else // #if !defined(MIPS32_R2_LE)
+#else  // #if !defined(MIPS32_R2_LE)
       "madd.s    %[temp1],    %[temp3],     %[temp1],   %[temp4]   \n\t"
-#endif // #if !defined(MIPS32_R2_LE)
+#endif  // #if !defined(MIPS32_R2_LE)
       "swc1      %[temp1],    0(%[p_hNl])                          \n\t"
      "1:                                                           \n\t"
       "addiu     %[p_wC],     %[p_wC],      4                      \n\t"
@@ -684,12 +683,11 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
       : [temp1] "=&f" (temp1), [temp2] "=&f" (temp2), [temp3] "=&f" (temp3),
         [temp4] "=&f" (temp4), [p_wC] "+r" (p_WebRtcAec_wC)
       : [hNlFb] "f" (hNlFb), [one] "f" (one), [p_hNl] "r" (p_hNl)
-      : "memory"
-    );
+      : "memory");
 
     hNl[i] = powf(hNl[i], aec->overDriveSm * WebRtcAec_overDriveCurve[i]);
 
-    __asm __volatile (
+    __asm __volatile(
       "lwc1      %[temp1],    0(%[p_hNl])              \n\t"
       "lwc1      %[temp3],    0(%[p_efw1])             \n\t"
       "lwc1      %[temp2],    0(%[p_efw0])             \n\t"
@@ -705,8 +703,7 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
         [temp4] "=&f" (temp4), [p_efw0] "+r" (p_efw0), [p_efw1] "+r" (p_efw1),
         [p_hNl] "+r" (p_hNl)
       :
-      : "memory"
-    );
+      : "memory");
   }
 }
 
@@ -729,10 +726,10 @@ void WebRtcAec_ScaleErrorSignal_mips(int extended_filter_enabled,
   float f3;
 #endif
 
-  __asm __volatile (
+  __asm __volatile(
     ".set       push                                   \n\t"
     ".set       noreorder                              \n\t"
-   "1:                                                 \n\t"
+    "1:                                                \n\t"
     "lwc1       %[f0],     0(%[x_pow])                 \n\t"
     "lwc1       %[f1],     0(%[ef0])                   \n\t"
     "lwc1       %[f2],     0(%[ef1])                   \n\t"
@@ -755,7 +752,7 @@ void WebRtcAec_ScaleErrorSignal_mips(int extended_filter_enabled,
     "div.s      %[f0],     %[err_th],   %[f0]          \n\t"
     "mul.s      %[f1],     %[f1],       %[f0]          \n\t"
     "mul.s      %[f2],     %[f2],       %[f0]          \n\t"
-   "2:                                                 \n\t"
+    "2:                                                \n\t"
     "mul.s      %[f1],     %[f1],       %[mu]          \n\t"
     "mul.s      %[f2],     %[f2],       %[mu]          \n\t"
     "swc1       %[f1],     0(%[ef0])                   \n\t"
@@ -774,8 +771,7 @@ void WebRtcAec_ScaleErrorSignal_mips(int extended_filter_enabled,
       [len] "+r" (len)
     : [fac1] "f" (fac1), [err_th2] "f" (err_th2), [mu] "f" (mu),
       [err_th] "f" (error_threshold)
-    : "memory"
-  );
+    : "memory");
 }
 
 void WebRtcAec_InitAec_mips(void) {

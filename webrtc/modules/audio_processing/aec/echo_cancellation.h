@@ -53,10 +53,6 @@ typedef struct {
 
 struct AecCore;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*
  * Allocates the memory needed by the AEC. The memory needs to be initialized
  * separately using the WebRtcAec_Init() function. Returns a pointer to the
@@ -238,7 +234,4 @@ int WebRtcAec_GetDelayMetrics(void* handle,
 //
 struct AecCore* WebRtcAec_aec_core(void* handle);
 
-#ifdef __cplusplus
-}
-#endif
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_H_

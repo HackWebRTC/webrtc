@@ -16,10 +16,14 @@
 #include <math.h>
 #include <string.h>  // memset
 
+extern "C" {
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+}
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
+extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+}
 
 __inline static float MulRe(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bRe - aIm * bIm;
@@ -256,20 +260,25 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
     static const ALIGN16_BEG int implicit_leading_one[4] ALIGN16_END = {
         0x43BF8000, 0x43BF8000, 0x43BF8000, 0x43BF8000};
     static const int shift_exponent_into_top_mantissa = 8;
-    const __m128 two_n = _mm_and_ps(a, *((__m128*)float_exponent_mask));
+    const __m128 two_n =
+        _mm_and_ps(a, *(reinterpret_cast<const __m128*>(float_exponent_mask)));
     const __m128 n_1 = _mm_castsi128_ps(_mm_srli_epi32(
         _mm_castps_si128(two_n), shift_exponent_into_top_mantissa));
-    const __m128 n_0 = _mm_or_ps(n_1, *((__m128*)eight_biased_exponent));
-    const __m128 n = _mm_sub_ps(n_0, *((__m128*)implicit_leading_one));
+    const __m128 n_0 =
+      _mm_or_ps(n_1, *(reinterpret_cast<const __m128*>(eight_biased_exponent)));
+    const __m128 n =
+      _mm_sub_ps(n_0, *(reinterpret_cast<const __m128*>(implicit_leading_one)));
 
     // Compute y.
     static const ALIGN16_BEG int mantissa_mask[4] ALIGN16_END = {
         0x007FFFFF, 0x007FFFFF, 0x007FFFFF, 0x007FFFFF};
     static const ALIGN16_BEG int zero_biased_exponent_is_one[4] ALIGN16_END = {
         0x3F800000, 0x3F800000, 0x3F800000, 0x3F800000};
-    const __m128 mantissa = _mm_and_ps(a, *((__m128*)mantissa_mask));
+    const __m128 mantissa =
+        _mm_and_ps(a, *(reinterpret_cast<const __m128*>(mantissa_mask)));
     const __m128 y =
-        _mm_or_ps(mantissa, *((__m128*)zero_biased_exponent_is_one));
+        _mm_or_ps(mantissa,
+               *(reinterpret_cast<const __m128*>(zero_biased_exponent_is_one)));
 
     // Approximate log2(y) ~= (y - 1) * pol5(y).
     //    pol5(y) = C5 * y^5 + C4 * y^4 + C3 * y^3 + C2 * y^2 + C1 * y + C0
@@ -285,18 +294,25 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
         -3.3241990f, -3.3241990f, -3.3241990f, -3.3241990f};
     static const ALIGN16_BEG float ALIGN16_END C0[4] = {3.1157899f, 3.1157899f,
                                                         3.1157899f, 3.1157899f};
-    const __m128 pol5_y_0 = _mm_mul_ps(y, *((__m128*)C5));
-    const __m128 pol5_y_1 = _mm_add_ps(pol5_y_0, *((__m128*)C4));
+    const __m128 pol5_y_0 =
+        _mm_mul_ps(y, *(reinterpret_cast<const __m128*>(C5)));
+    const __m128 pol5_y_1 =
+        _mm_add_ps(pol5_y_0, *(reinterpret_cast<const __m128*>(C4)));
     const __m128 pol5_y_2 = _mm_mul_ps(pol5_y_1, y);
-    const __m128 pol5_y_3 = _mm_add_ps(pol5_y_2, *((__m128*)C3));
+    const __m128 pol5_y_3 =
+        _mm_add_ps(pol5_y_2, *(reinterpret_cast<const __m128*>(C3)));
     const __m128 pol5_y_4 = _mm_mul_ps(pol5_y_3, y);
-    const __m128 pol5_y_5 = _mm_add_ps(pol5_y_4, *((__m128*)C2));
+    const __m128 pol5_y_5 =
+        _mm_add_ps(pol5_y_4, *(reinterpret_cast<const __m128*>(C2)));
     const __m128 pol5_y_6 = _mm_mul_ps(pol5_y_5, y);
-    const __m128 pol5_y_7 = _mm_add_ps(pol5_y_6, *((__m128*)C1));
+    const __m128 pol5_y_7 =
+        _mm_add_ps(pol5_y_6, *(reinterpret_cast<const __m128*>(C1)));
     const __m128 pol5_y_8 = _mm_mul_ps(pol5_y_7, y);
-    const __m128 pol5_y = _mm_add_ps(pol5_y_8, *((__m128*)C0));
+    const __m128 pol5_y =
+        _mm_add_ps(pol5_y_8, *(reinterpret_cast<const __m128*>(C0)));
     const __m128 y_minus_one =
-        _mm_sub_ps(y, *((__m128*)zero_biased_exponent_is_one));
+        _mm_sub_ps(y,
+               *(reinterpret_cast<const __m128*>(zero_biased_exponent_is_one)));
     const __m128 log2_y = _mm_mul_ps(y_minus_one, pol5_y);
 
     // Combine parts.
@@ -325,19 +341,23 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
                                                                129.f, 129.f};
     static const ALIGN16_BEG float min_input[4] ALIGN16_END = {
         -126.99999f, -126.99999f, -126.99999f, -126.99999f};
-    const __m128 x_min = _mm_min_ps(b_log2_a, *((__m128*)max_input));
-    const __m128 x_max = _mm_max_ps(x_min, *((__m128*)min_input));
+    const __m128 x_min =
+        _mm_min_ps(b_log2_a, *(reinterpret_cast<const __m128*>(max_input)));
+    const __m128 x_max =
+        _mm_max_ps(x_min, *(reinterpret_cast<const __m128*>(min_input)));
     // Compute n.
     static const ALIGN16_BEG float half[4] ALIGN16_END = {0.5f, 0.5f, 0.5f,
                                                           0.5f};
-    const __m128 x_minus_half = _mm_sub_ps(x_max, *((__m128*)half));
+    const __m128 x_minus_half =
+        _mm_sub_ps(x_max, *(reinterpret_cast<const __m128*>(half)));
     const __m128i x_minus_half_floor = _mm_cvtps_epi32(x_minus_half);
     // Compute 2^n.
     static const ALIGN16_BEG int float_exponent_bias[4] ALIGN16_END = {
         127, 127, 127, 127};
     static const int float_exponent_shift = 23;
     const __m128i two_n_exponent =
-        _mm_add_epi32(x_minus_half_floor, *((__m128i*)float_exponent_bias));
+        _mm_add_epi32(x_minus_half_floor,
+                      *(reinterpret_cast<const __m128i*>(float_exponent_bias)));
     const __m128 two_n =
         _mm_castsi128_ps(_mm_slli_epi32(two_n_exponent, float_exponent_shift));
     // Compute y.
@@ -349,10 +369,13 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
         6.5763628e-1f, 6.5763628e-1f, 6.5763628e-1f, 6.5763628e-1f};
     static const ALIGN16_BEG float C0[4] ALIGN16_END = {1.0017247f, 1.0017247f,
                                                         1.0017247f, 1.0017247f};
-    const __m128 exp2_y_0 = _mm_mul_ps(y, *((__m128*)C2));
-    const __m128 exp2_y_1 = _mm_add_ps(exp2_y_0, *((__m128*)C1));
+    const __m128 exp2_y_0 =
+        _mm_mul_ps(y, *(reinterpret_cast<const __m128*>(C2)));
+    const __m128 exp2_y_1 =
+        _mm_add_ps(exp2_y_0, *(reinterpret_cast<const __m128*>(C1)));
     const __m128 exp2_y_2 = _mm_mul_ps(exp2_y_1, y);
-    const __m128 exp2_y = _mm_add_ps(exp2_y_2, *((__m128*)C0));
+    const __m128 exp2_y =
+        _mm_add_ps(exp2_y_2, *(reinterpret_cast<const __m128*>(C0)));
 
     // Combine parts.
     a_exp_b = _mm_mul_ps(exp2_y, two_n);
