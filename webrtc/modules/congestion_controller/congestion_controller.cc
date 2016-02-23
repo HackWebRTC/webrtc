@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 
 #include <algorithm>
 #include <vector>

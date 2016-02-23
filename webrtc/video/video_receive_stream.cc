@@ -17,8 +17,8 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/call/congestion_controller.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/call_stats.h"

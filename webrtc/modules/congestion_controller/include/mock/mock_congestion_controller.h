@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_MOCK_MOCK_CONGESTION_CONTROLLER_H_
-#define WEBRTC_CALL_MOCK_MOCK_CONGESTION_CONTROLLER_H_
+#ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_MOCK_MOCK_CONGESTION_CONTROLLER_H_
+#define WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_MOCK_MOCK_CONGESTION_CONTROLLER_H_
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/base/socket.h"
-#include "webrtc/call/congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 
 namespace webrtc {
 namespace test {
@@ -48,4 +48,4 @@ class MockCongestionController : public CongestionController {
 };
 }  // namespace test
 }  // namespace webrtc
-#endif  // WEBRTC_CALL_MOCK_MOCK_CONGESTION_CONTROLLER_H_
+#endif  // WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_MOCK_MOCK_CONGESTION_CONTROLLER_H_

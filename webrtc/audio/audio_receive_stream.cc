@@ -18,7 +18,7 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/call/congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/voice_engine/channel_proxy.h"

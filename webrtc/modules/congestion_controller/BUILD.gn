@@ -1,4 +1,4 @@
-# Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -6,18 +6,23 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../build/webrtc.gni")
+import("../../build/webrtc.gni")
 
-source_set("call") {
+source_set("congestion_controller") {
   sources = [
-    "bitrate_allocator.cc",
-    "call.cc",
-    "transport_adapter.cc",
-    "transport_adapter.h",
+    "congestion_controller.cc",
+    "include/congestion_controller.h",
   ]
 
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
+  if (is_win) {
+    cflags = [
+      # TODO(jschuh): Bug 1348: fix this warning.
+      "/wd4267",  # size_t to int truncations
+    ]
+  }
+
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -26,10 +31,8 @@ source_set("call") {
   }
 
   deps = [
-    "..:rtc_event_log",
-    "..:webrtc_common",
-    "../modules/congestion_controller",
-    "../modules/rtp_rtcp",
-    "../system_wrappers",
+    "../bitrate_controller",
+    "../pacing",
+    "../remote_bitrate_estimator",
   ]
 }

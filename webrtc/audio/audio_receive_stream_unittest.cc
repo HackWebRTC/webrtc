@@ -15,8 +15,8 @@
 
 #include "webrtc/audio/audio_receive_stream.h"
 #include "webrtc/audio/conversion.h"
-#include "webrtc/call/mock/mock_congestion_controller.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
+#include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"

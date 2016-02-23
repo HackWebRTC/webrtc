@@ -17,7 +17,7 @@
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/call/congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/voice_engine/channel_proxy.h"

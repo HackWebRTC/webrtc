@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_CONGESTION_CONTROLLER_H_
-#define WEBRTC_CALL_CONGESTION_CONTROLLER_H_
+#ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
+#define WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
@@ -84,4 +84,4 @@ class CongestionController : public CallStatsObserver, public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_CONGESTION_CONTROLLER_H_
+#endif  // WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
