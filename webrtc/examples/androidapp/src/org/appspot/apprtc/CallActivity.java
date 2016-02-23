@@ -32,6 +32,7 @@ import android.widget.Toast;
 
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
+import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.RendererCommon.ScalingType;
@@ -262,6 +263,11 @@ public class CallActivity extends Activity
     }
 
     peerConnectionClient = PeerConnectionClient.getInstance();
+    if (loopback) {
+      PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+      options.networkIgnoreMask = 0;
+      peerConnectionClient.setPeerConnectionFactoryOptions(options);
+    }
     peerConnectionClient.createPeerConnectionFactory(
         CallActivity.this, peerConnectionParameters, CallActivity.this);
   }

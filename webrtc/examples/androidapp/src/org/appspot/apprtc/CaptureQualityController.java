@@ -26,7 +26,9 @@ import java.util.List;
 public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener {
   private final List<CaptureFormat> formats = Arrays.asList(
       new CaptureFormat(1280, 720, 0, 30000),
+      new CaptureFormat(960, 540, 0, 30000),
       new CaptureFormat(640, 480, 0, 30000),
+      new CaptureFormat(480, 360, 0, 30000),
       new CaptureFormat(320, 240, 0, 30000),
       new CaptureFormat(256, 144, 0, 30000));
   // Prioritize framerate below this threshold and resolution above the threshold.
