@@ -1402,7 +1402,6 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     } else {
       auto track = media_desc->streams().begin();
       const std::string& stream_id = track->sync_label;
-      std::ostringstream os;
       InitAttrLine(kAttributeMsid, &os);
       os << kSdpDelimiterColon << stream_id << kSdpDelimiterSpace << track->id;
       AddLine(os.str(), message);
@@ -1457,7 +1456,6 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
       if (track->ssrc_groups[i].ssrcs.empty()) {
         continue;
       }
-      std::ostringstream os;
       InitAttrLine(kAttributeSsrcGroup, &os);
       os << kSdpDelimiterColon << track->ssrc_groups[i].semantics;
       std::vector<uint32_t>::const_iterator ssrc =
@@ -1480,7 +1478,6 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
       // The appdata consists of the "id" attribute of a MediaStreamTrack,
       // which corresponds to the "id" attribute of StreamParams.
       const std::string& stream_id = track->sync_label;
-      std::ostringstream os;
       InitAttrLine(kAttributeSsrc, &os);
       os << kSdpDelimiterColon << ssrc << kSdpDelimiterSpace
          << kSsrcAttributeMsid << kSdpDelimiterColon << stream_id
