@@ -12,8 +12,8 @@
 #define WEBRTC_COMMON_AUDIO_LAPPED_TRANSFORM_H_
 
 #include <complex>
+#include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/blocker.h"
 #include "webrtc/common_audio/real_fourier.h"
 #include "webrtc/system_wrappers/include/aligned_array.h"
@@ -112,7 +112,7 @@ class LappedTransform {
   Callback* const block_processor_;
   Blocker blocker_;
 
-  rtc::scoped_ptr<RealFourier> fft_;
+  std::unique_ptr<RealFourier> fft_;
   const size_t cplx_length_;
   AlignedArray<float> real_buf_;
   AlignedArray<std::complex<float> > cplx_pre_;

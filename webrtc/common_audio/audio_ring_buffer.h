@@ -47,7 +47,7 @@ class AudioRingBuffer final {
 
  private:
   // We don't use a ScopedVector because it doesn't support a specialized
-  // deleter (like scoped_ptr for instance.)
+  // deleter (like unique_ptr for instance.)
   std::vector<RingBuffer*> buffers_;
 };
 

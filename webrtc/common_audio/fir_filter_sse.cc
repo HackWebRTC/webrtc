@@ -11,6 +11,7 @@
 #include "webrtc/common_audio/fir_filter_sse.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <string.h>
 #include <xmmintrin.h>
 

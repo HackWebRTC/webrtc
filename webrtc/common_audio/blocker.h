@@ -11,7 +11,8 @@
 #ifndef WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 #define WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/common_audio/audio_ring_buffer.h"
 #include "webrtc/common_audio/channel_buffer.h"
 
@@ -109,7 +110,7 @@ class Blocker {
   // Space for the output block (can't wrap because of overlap/add).
   ChannelBuffer<float> output_block_;
 
-  rtc::scoped_ptr<float[]> window_;
+  std::unique_ptr<float[]> window_;
 
   // The amount of frames between the start of contiguous blocks. For example,
   // |shift_amount_| = |block_size_| / 2 for a Hann window.

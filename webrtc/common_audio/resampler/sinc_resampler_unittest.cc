@@ -16,9 +16,10 @@
 
 #include <math.h>
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/sinc_resampler.h"
 #include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
@@ -62,7 +63,7 @@ TEST(SincResamplerTest, ChunkedResample) {
 
   static const int kChunks = 2;
   size_t max_chunk_size = resampler.ChunkSize() * kChunks;
-  rtc::scoped_ptr<float[]> resampled_destination(new float[max_chunk_size]);
+  std::unique_ptr<float[]> resampled_destination(new float[max_chunk_size]);
 
   // Verify requesting ChunkSize() frames causes a single callback.
   EXPECT_CALL(mock_source, Run(_, _))
@@ -81,7 +82,7 @@ TEST(SincResamplerTest, Flush) {
   MockSource mock_source;
   SincResampler resampler(kSampleRateRatio, SincResampler::kDefaultRequestSize,
                           &mock_source);
-  rtc::scoped_ptr<float[]> resampled_destination(
+  std::unique_ptr<float[]> resampled_destination(
       new float[resampler.ChunkSize()]);
 
   // Fill the resampler with junk data.
@@ -269,7 +270,7 @@ TEST_P(SincResamplerTest, Resample) {
 
   // Force an update to the sample rate ratio to ensure dyanmic sample rate
   // changes are working correctly.
-  rtc::scoped_ptr<float[]> kernel(new float[SincResampler::kKernelStorageSize]);
+  std::unique_ptr<float[]> kernel(new float[SincResampler::kKernelStorageSize]);
   memcpy(kernel.get(), resampler.get_kernel_for_testing(),
          SincResampler::kKernelStorageSize);
   resampler.SetRatio(M_PI);
@@ -281,8 +282,8 @@ TEST_P(SincResamplerTest, Resample) {
 
   // TODO(dalecurtis): If we switch to AVX/SSE optimization, we'll need to
   // allocate these on 32-byte boundaries and ensure they're sized % 32 bytes.
-  rtc::scoped_ptr<float[]> resampled_destination(new float[output_samples]);
-  rtc::scoped_ptr<float[]> pure_destination(new float[output_samples]);
+  std::unique_ptr<float[]> resampled_destination(new float[output_samples]);
+  std::unique_ptr<float[]> pure_destination(new float[output_samples]);
 
   // Generate resampled signal.
   resampler.Resample(output_samples, resampled_destination.get());
