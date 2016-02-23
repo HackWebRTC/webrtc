@@ -1338,7 +1338,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
 
   void SetRawAudioSink(rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    stream_->SetSink(std::move(sink));
+    stream_->SetSink(rtc::ScopedToUnique(std::move(sink)));
   }
 
  private:

@@ -76,8 +76,8 @@ webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
 }
 
 void FakeAudioReceiveStream::SetSink(
-    rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
-  sink_ = std::move(sink);
+    std::unique_ptr<webrtc::AudioSinkInterface> sink) {
+  sink_ = rtc::UniqueToScoped(std::move(sink));
 }
 
 FakeVideoSendStream::FakeVideoSendStream(

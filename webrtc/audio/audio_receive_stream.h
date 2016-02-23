@@ -11,6 +11,8 @@
 #ifndef WEBRTC_AUDIO_AUDIO_RECEIVE_STREAM_H_
 #define WEBRTC_AUDIO_AUDIO_RECEIVE_STREAM_H_
 
+#include <memory>
+
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/audio_state.h"
 #include "webrtc/base/thread_checker.h"
@@ -45,7 +47,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
   // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
 
-  void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) override;
+  void SetSink(std::unique_ptr<AudioSinkInterface> sink) override;
 
   const webrtc::AudioReceiveStream::Config& config() const;
 
@@ -56,8 +58,8 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
   RemoteBitrateEstimator* remote_bitrate_estimator_ = nullptr;
   const webrtc::AudioReceiveStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
-  rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-  rtc::scoped_ptr<voe::ChannelProxy> channel_proxy_;
+  std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
+  std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioReceiveStream);
 };

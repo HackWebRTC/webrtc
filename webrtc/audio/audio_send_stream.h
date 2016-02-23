@@ -11,10 +11,11 @@
 #ifndef WEBRTC_AUDIO_AUDIO_SEND_STREAM_H_
 #define WEBRTC_AUDIO_AUDIO_SEND_STREAM_H_
 
+#include <memory>
+
 #include "webrtc/audio_send_stream.h"
 #include "webrtc/audio_state.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 class CongestionController;
@@ -51,7 +52,7 @@ class AudioSendStream final : public webrtc::AudioSendStream {
   rtc::ThreadChecker thread_checker_;
   const webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
-  rtc::scoped_ptr<voe::ChannelProxy> channel_proxy_;
+  std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };

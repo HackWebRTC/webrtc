@@ -12,10 +12,10 @@
 #define WEBRTC_AUDIO_RECEIVE_STREAM_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/config.h"
 #include "webrtc/stream.h"
 #include "webrtc/transport.h"
@@ -114,7 +114,7 @@ class AudioReceiveStream : public ReceiveStream {
   // to stream through this sink. In practice, this happens if mixed audio
   // is being pulled+rendered and/or if audio is being pulled for the purposes
   // of feeding to the AEC.
-  virtual void SetSink(rtc::scoped_ptr<AudioSinkInterface> sink) = 0;
+  virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink) = 0;
 };
 }  // namespace webrtc
 

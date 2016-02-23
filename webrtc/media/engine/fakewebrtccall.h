@@ -20,6 +20,7 @@
 #ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
 #define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/audio_receive_stream.h"
@@ -90,7 +91,7 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
 
   // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
-  void SetSink(rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) override;
+  void SetSink(std::unique_ptr<webrtc::AudioSinkInterface> sink) override;
 
   webrtc::AudioReceiveStream::Config config_;
   webrtc::AudioReceiveStream::Stats stats_;
