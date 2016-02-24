@@ -92,23 +92,6 @@ const int kOpusMaxBitrate = 510000;
 // See also http://tools.ietf.org/html/draft-jennings-rtcweb-qos-00
 const rtc::DiffServCodePoint kAudioDscpValue = rtc::DSCP_EF;
 
-// Ensure we open the file in a writeable path on ChromeOS and Android. This
-// workaround can be removed when it's possible to specify a filename for audio
-// option based AEC dumps.
-//
-// TODO(grunell): Use a string in the options instead of hardcoding it here
-// and let the embedder choose the filename (crbug.com/264223).
-//
-// NOTE(ajm): Don't use hardcoded paths on platforms not explicitly specified
-// below.
-#if defined(CHROMEOS)
-const char kAecDumpByAudioOptionFilename[] = "/tmp/audio.aecdump";
-#elif defined(ANDROID)
-const char kAecDumpByAudioOptionFilename[] = "/sdcard/audio.aecdump";
-#else
-const char kAecDumpByAudioOptionFilename[] = "audio.aecdump";
-#endif
-
 // Constants from voice_engine_defines.h.
 const int kMinTelephoneEventCode = 0;           // RFC4733 (Section 2.3.1)
 const int kMaxTelephoneEventCode = 255;
@@ -615,7 +598,6 @@ bool WebRtcVoiceEngine::InitInternal() {
     options.extended_filter_aec = rtc::Optional<bool>(false);
     options.delay_agnostic_aec = rtc::Optional<bool>(false);
     options.experimental_ns = rtc::Optional<bool>(false);
-    options.aec_dump = rtc::Optional<bool>(false);
     if (!ApplyOptions(options)) {
       return false;
     }
@@ -866,14 +848,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     if (!AdjustAgcLevel(*options.adjust_agc_delta)) {
       return false;
     }
-  }
-
-  if (options.aec_dump) {
-    LOG(LS_INFO) << "Aec dump is enabled? " << *options.aec_dump;
-    if (*options.aec_dump)
-      StartAecDump(kAecDumpByAudioOptionFilename);
-    else
-      StopAecDump();
   }
 
   webrtc::Config config;

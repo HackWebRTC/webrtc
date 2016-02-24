@@ -35,7 +35,6 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
       MediaConstraintsInterface::kExperimentalAutoGainControl, true);
   constraints.AddMandatory(MediaConstraintsInterface::kNoiseSuppression, false);
   constraints.AddOptional(MediaConstraintsInterface::kHighpassFilter, true);
-  constraints.AddOptional(MediaConstraintsInterface::kAecDump, true);
 
   rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
@@ -48,7 +47,6 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   EXPECT_EQ(rtc::Optional<bool>(true), source->options().experimental_agc);
   EXPECT_EQ(rtc::Optional<bool>(false), source->options().noise_suppression);
   EXPECT_EQ(rtc::Optional<bool>(true), source->options().highpass_filter);
-  EXPECT_EQ(rtc::Optional<bool>(true), source->options().aec_dump);
 }
 
 TEST(LocalAudioSourceTest, OptionNotSet) {

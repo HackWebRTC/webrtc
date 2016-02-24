@@ -50,8 +50,7 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
       {MediaConstraintsInterface::kHighpassFilter, options->highpass_filter},
       {MediaConstraintsInterface::kTypingNoiseDetection,
        options->typing_detection},
-      {MediaConstraintsInterface::kAudioMirroring, options->stereo_swapping},
-      {MediaConstraintsInterface::kAecDump, options->aec_dump}
+      {MediaConstraintsInterface::kAudioMirroring, options->stereo_swapping}
   };
 
   for (const auto& constraint : constraints) {
