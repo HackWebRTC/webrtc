@@ -35,9 +35,9 @@
 
 namespace webrtc {
 
-const int kMinSendSidePacketHistorySize = 600;
-const int kMaxPacketAgeToNack = 450;
-const int kMaxNackListSize = 250;
+static const int kMinSendSidePacketHistorySize = 600;
+static const int kMaxPacketAgeToNack = 450;
+static const int kMaxNackListSize = 250;
 
 // Helper class receiving statistics callbacks.
 class ChannelStatsObserver : public CallStatsObserver {
@@ -102,7 +102,6 @@ ViEChannel::ViEChannel(Transport* transport,
       packet_router_(packet_router),
       bandwidth_observer_(bandwidth_observer),
       transport_feedback_observer_(transport_feedback_observer),
-      nack_history_size_sender_(kMinSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
       last_rtt_ms_(0),
@@ -139,12 +138,13 @@ int32_t ViEChannel::Init() {
   module_process_thread_->RegisterModule(vie_receiver_.GetReceiveStatistics());
 
   // RTP/RTCP initialization.
-  module_process_thread_->RegisterModule(rtp_rtcp_modules_[0]);
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+    module_process_thread_->RegisterModule(rtp_rtcp);
 
   rtp_rtcp_modules_[0]->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
   if (paced_sender_) {
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-      rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
+      rtp_rtcp->SetStorePacketsStatus(true, kMinSendSidePacketHistorySize);
   }
   packet_router_->AddRtpModule(rtp_rtcp_modules_[0], sender_);
   if (sender_) {
@@ -330,15 +330,11 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
     send_payload_router_->set_active(true);
 
   // Deregister previously registered modules.
-  for (size_t i = num_active_modules; i < num_prev_active_modules; ++i) {
-    module_process_thread_->DeRegisterModule(rtp_rtcp_modules_[i]);
-    packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i], sender_);
-  }
+  for (size_t i = num_active_modules; i < num_prev_active_modules; ++i)
+    packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i], true);
   // Register new active modules.
-  for (size_t i = num_prev_active_modules; i < num_active_modules; ++i) {
-    module_process_thread_->RegisterModule(rtp_rtcp_modules_[i]);
-    packet_router_->AddRtpModule(rtp_rtcp_modules_[i], sender_);
-  }
+  for (size_t i = num_prev_active_modules; i < num_active_modules; ++i)
+    packet_router_->AddRtpModule(rtp_rtcp_modules_[i], true);
   return 0;
 }
 
@@ -391,7 +387,7 @@ void ViEChannel::ProcessNACKRequest(const bool enable) {
     vie_receiver_.SetNackStatus(true, max_nack_reordering_threshold_);
 
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-      rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
+      rtp_rtcp->SetStorePacketsStatus(true, kMinSendSidePacketHistorySize);
 
     if (!sender_) {
       vcm_->RegisterPacketRequestCallback(this);

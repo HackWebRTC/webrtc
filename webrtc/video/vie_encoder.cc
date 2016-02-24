@@ -37,15 +37,7 @@
 
 namespace webrtc {
 
-// Margin on when we pause the encoder when the pacing buffer overflows relative
-// to the configured buffer delay.
-static const float kEncoderPausePacerMargin = 2.0f;
-
-// Don't stop the encoder unless the delay is above this configured value.
-static const int kMinPacingDelayMs = 200;
-
 static const float kStopPaddingThresholdMs = 2000;
-
 static const int kMinKeyFrameRequestIntervalMs = 300;
 
 std::vector<uint32_t> AllocateStreamBitrates(
@@ -130,7 +122,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       encoder_config_(),
       min_transmit_bitrate_kbps_(0),
       last_observed_bitrate_bps_(0),
-      target_delay_ms_(0),
       network_is_transmitting_(true),
       encoder_paused_(false),
       encoder_paused_and_dropped_frame_(false),
@@ -299,15 +290,6 @@ bool ViEEncoder::EncoderPaused() const {
   // pacer queue has grown too large in buffered mode.
   if (encoder_paused_) {
     return true;
-  }
-  if (target_delay_ms_ > 0) {
-    // Buffered mode.
-    // TODO(pwestin): Workaround until nack is configured as a time and not
-    // number of packets.
-    return pacer_->QueueInMs() >=
-           std::max(
-               static_cast<int>(target_delay_ms_ * kEncoderPausePacerMargin),
-               kMinPacingDelayMs);
   }
   if (pacer_->ExpectedQueueTimeMs() > PacedSender::kMaxQueueLengthMs) {
     // Too much data in pacer queue, drop frame.

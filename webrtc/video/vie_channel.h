@@ -325,7 +325,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   const rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   TransportFeedbackObserver* const transport_feedback_observer_;
 
-  int nack_history_size_sender_;
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_ GUARDED_BY(crit_);
 

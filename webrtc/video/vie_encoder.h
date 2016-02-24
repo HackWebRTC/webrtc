@@ -160,7 +160,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   VideoCodec encoder_config_ GUARDED_BY(data_cs_);
   int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
-  int target_delay_ms_ GUARDED_BY(data_cs_);
   bool network_is_transmitting_ GUARDED_BY(data_cs_);
   bool encoder_paused_ GUARDED_BY(data_cs_);
   bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
