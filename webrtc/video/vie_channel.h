@@ -99,10 +99,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void GetSendStreamDataCounters(StreamDataCounters* rtp_counters,
                                  StreamDataCounters* rtx_counters) const;
 
-  // Gets received stream data counters.
-  void GetReceiveStreamDataCounters(StreamDataCounters* rtp_counters,
-                                    StreamDataCounters* rtx_counters) const;
-
   void GetSendRtcpPacketTypeCounter(
       RtcpPacketTypeCounter* packet_counter) const;
 

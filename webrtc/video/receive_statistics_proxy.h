@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VIDEO_RECEIVE_STATISTICS_PROXY_H_
 #define WEBRTC_VIDEO_RECEIVE_STATISTICS_PROXY_H_
 
+#include <map>
 #include <string>
 
 #include "webrtc/base/criticalsection.h"
@@ -37,7 +38,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                                public RtcpPacketTypeCounterObserver,
                                public StreamDataCountersCallback {
  public:
-  ReceiveStatisticsProxy(uint32_t ssrc, Clock* clock);
+  ReceiveStatisticsProxy(const VideoReceiveStream::Config& config,
+                         Clock* clock);
   virtual ~ReceiveStatisticsProxy();
 
   VideoReceiveStream::Stats GetStats() const;
@@ -94,6 +96,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
+  const VideoReceiveStream::Config config_;
 
   rtc::CriticalSection crit_;
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);
@@ -107,6 +110,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   SampleCounter delay_counter_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
   QpCounters qp_counters_;  // Only accessed on the decoding thread.
+  std::map<uint32_t, StreamDataCounters> rtx_stats_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

@@ -259,42 +259,6 @@ void ViEChannel::UpdateHistograms() {
                                  rtcp_counter.UniqueNackRequestsInPercent());
       }
     }
-
-    StreamDataCounters rtp;
-    StreamDataCounters rtx;
-    GetReceiveStreamDataCounters(&rtp, &rtx);
-    StreamDataCounters rtp_rtx = rtp;
-    rtp_rtx.Add(rtx);
-    elapsed_sec = rtp_rtx.TimeSinceFirstPacketInMs(now) / 1000;
-    if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.BitrateReceivedInKbps",
-          static_cast<int>(rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
-                           1000));
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.MediaBitrateReceivedInKbps",
-          static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000));
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.PaddingBitrateReceivedInKbps",
-          static_cast<int>(rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec /
-                           1000));
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.RetransmittedBitrateReceivedInKbps",
-          static_cast<int>(rtp_rtx.retransmitted.TotalBytes() * 8 /
-                           elapsed_sec / 1000));
-      uint32_t ssrc = 0;
-      if (vie_receiver_.GetRtxSsrc(&ssrc)) {
-        RTC_HISTOGRAM_COUNTS_10000(
-            "WebRTC.Video.RtxBitrateReceivedInKbps",
-            static_cast<int>(rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
-                             1000));
-      }
-      if (vie_receiver_.IsFecEnabled()) {
-        RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FecBitrateReceivedInKbps",
-                                   static_cast<int>(rtp_rtx.fec.TotalBytes() *
-                                                    8 / elapsed_sec / 1000));
-      }
-    }
   }
 }
 
@@ -546,24 +510,6 @@ void ViEChannel::GetSendStreamDataCounters(
     rtp_rtcp->GetSendStreamDataCounters(&rtp_data, &rtx_data);
     rtp_counters->Add(rtp_data);
     rtx_counters->Add(rtx_data);
-  }
-}
-
-void ViEChannel::GetReceiveStreamDataCounters(
-    StreamDataCounters* rtp_counters,
-    StreamDataCounters* rtx_counters) const {
-  StreamStatistician* statistician = vie_receiver_.GetReceiveStatistics()->
-      GetStatistician(vie_receiver_.GetRemoteSsrc());
-  if (statistician) {
-    statistician->GetReceiveStreamDataCounters(rtp_counters);
-  }
-  uint32_t rtx_ssrc = 0;
-  if (vie_receiver_.GetRtxSsrc(&rtx_ssrc)) {
-    StreamStatistician* statistician =
-        vie_receiver_.GetReceiveStatistics()->GetStatistician(rtx_ssrc);
-    if (statistician) {
-      statistician->GetReceiveStreamDataCounters(rtx_counters);
-    }
   }
 }
 

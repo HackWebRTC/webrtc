@@ -162,7 +162,7 @@ VideoReceiveStream::VideoReceiveStream(
       incoming_video_stream_(
           0,
           config.renderer ? config.renderer->SmoothsRenderedFrames() : false),
-      stats_proxy_(config_.rtp.remote_ssrc, clock_),
+      stats_proxy_(config_, clock_),
       vie_channel_(&transport_adapter_,
                    process_thread,
                    nullptr,

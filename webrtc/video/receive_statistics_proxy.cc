@@ -19,14 +19,19 @@
 
 namespace webrtc {
 
-ReceiveStatisticsProxy::ReceiveStatisticsProxy(uint32_t ssrc, Clock* clock)
+ReceiveStatisticsProxy::ReceiveStatisticsProxy(
+    const VideoReceiveStream::Config& config,
+    Clock* clock)
     : clock_(clock),
+      config_(config),
       // 1000ms window, scale 1000 for ms to s.
       decode_fps_estimator_(1000, 1000),
       renders_fps_estimator_(1000, 1000),
       render_fps_tracker_(100u, 10u),
       render_pixel_tracker_(100u, 10u) {
-  stats_.ssrc = ssrc;
+  stats_.ssrc = config.rtp.remote_ssrc;
+  for (auto it : config.rtp.rtx)
+    rtx_stats_[it.second.ssrc] = StreamDataCounters();
 }
 
 ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
@@ -68,6 +73,42 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   int delay_ms = delay_counter_.Avg(kMinRequiredDecodeSamples);
   if (delay_ms != -1)
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", delay_ms);
+
+  StreamDataCounters rtp = stats_.rtp_stats;
+  StreamDataCounters rtx;
+  for (auto it : rtx_stats_)
+    rtx.Add(it.second);
+  StreamDataCounters rtp_rtx = rtp;
+  rtp_rtx.Add(rtx);
+  int64_t elapsed_sec =
+      rtp_rtx.TimeSinceFirstPacketInMs(clock_->TimeInMilliseconds()) / 1000;
+  if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.BitrateReceivedInKbps",
+        static_cast<int>(rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
+                         1000));
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.MediaBitrateReceivedInKbps",
+        static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000));
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.PaddingBitrateReceivedInKbps",
+        static_cast<int>(rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec /
+                         1000));
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.RetransmittedBitrateReceivedInKbps",
+        static_cast<int>(rtp_rtx.retransmitted.TotalBytes() * 8 / elapsed_sec /
+                         1000));
+    if (!rtx_stats_.empty()) {
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
+                                 static_cast<int>(rtx.transmitted.TotalBytes() *
+                                                  8 / elapsed_sec / 1000));
+    }
+    if (config_.rtp.fec.ulpfec_payload_type != -1) {
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Video.FecBitrateReceivedInKbps",
+          static_cast<int>(rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000));
+    }
+  }
 }
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
@@ -148,9 +189,16 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
     const webrtc::StreamDataCounters& counters,
     uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
-  if (stats_.ssrc != ssrc)
-    return;
-  stats_.rtp_stats = counters;
+  if (ssrc == stats_.ssrc) {
+    stats_.rtp_stats = counters;
+  } else {
+    auto it = rtx_stats_.find(ssrc);
+    if (it != rtx_stats_.end()) {
+      it->second = counters;
+    } else {
+      RTC_NOTREACHED() << "Unexpected stream ssrc: " << ssrc;
+    }
+  }
 }
 
 void ReceiveStatisticsProxy::OnDecodedFrame() {
