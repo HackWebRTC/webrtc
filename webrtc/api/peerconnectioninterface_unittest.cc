@@ -2489,14 +2489,15 @@ TEST(CreateSessionOptionsTest, GetDefaultMediaSessionOptionsForOffer) {
   RTCOfferAnswerOptions rtc_options;
 
   cricket::MediaSessionOptions options;
+  options.transport_options["audio"] = cricket::TransportOptions();
+  options.transport_options["video"] = cricket::TransportOptions();
   EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
   EXPECT_TRUE(options.has_audio());
   EXPECT_FALSE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
   EXPECT_TRUE(options.vad_enabled);
-  EXPECT_FALSE(options.audio_transport_options.ice_restart);
-  EXPECT_FALSE(options.video_transport_options.ice_restart);
-  EXPECT_FALSE(options.data_transport_options.ice_restart);
+  EXPECT_FALSE(options.transport_options["audio"].ice_restart);
+  EXPECT_FALSE(options.transport_options["video"].ice_restart);
 }
 
 // Test that a correct MediaSessionOptions is created for an offer if
@@ -2537,16 +2538,16 @@ TEST(CreateSessionOptionsTest, GetMediaSessionOptionsForOfferWithIceRestart) {
   rtc_options.ice_restart = true;
 
   cricket::MediaSessionOptions options;
+  options.transport_options["audio"] = cricket::TransportOptions();
+  options.transport_options["video"] = cricket::TransportOptions();
   EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
-  EXPECT_TRUE(options.audio_transport_options.ice_restart);
-  EXPECT_TRUE(options.video_transport_options.ice_restart);
-  EXPECT_TRUE(options.data_transport_options.ice_restart);
+  EXPECT_TRUE(options.transport_options["audio"].ice_restart);
+  EXPECT_TRUE(options.transport_options["video"].ice_restart);
 
   rtc_options = RTCOfferAnswerOptions();
   EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
-  EXPECT_FALSE(options.audio_transport_options.ice_restart);
-  EXPECT_FALSE(options.video_transport_options.ice_restart);
-  EXPECT_FALSE(options.data_transport_options.ice_restart);
+  EXPECT_FALSE(options.transport_options["audio"].ice_restart);
+  EXPECT_FALSE(options.transport_options["video"].ice_restart);
 }
 
 // Test that the MediaConstraints in an answer don't affect if audio and video

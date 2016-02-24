@@ -50,10 +50,10 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& old_pwd,
                            const std::string& new_ufrag,
                            const std::string& new_pwd) {
-  // TODO(jiayl): The standard (RFC 5245 Section 9.1.1.1) says that ICE should
-  // restart when both the ufrag and password are changed, but we do restart
-  // when either ufrag or passwrod is changed to keep compatible with GICE. We
-  // should clean this up when GICE is no longer used.
+  // The standard (RFC 5245 Section 9.1.1.1) says that ICE restarts MUST change
+  // both the ufrag and password. However, section 9.2.1.1 says changing the
+  // ufrag OR password indicates an ICE restart. So, to keep compatibility with
+  // endpoints that only change one, we'll treat this as an ICE restart.
   return (old_ufrag != new_ufrag) || (old_pwd != new_pwd);
 }
 

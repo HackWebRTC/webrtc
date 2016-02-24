@@ -30,12 +30,15 @@ class RemoteMediaStreamFactory;
 
 // Populates |session_options| from |rtc_options|, and returns true if options
 // are valid.
+// |session_options|->transport_options map entries must exist in order for
+// them to be populated from |rtc_options|.
 bool ConvertRtcOptionsForOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
     cricket::MediaSessionOptions* session_options);
 
 // Populates |session_options| from |constraints|, and returns true if all
 // mandatory constraints are satisfied.
+// Assumes that |session_options|->transport_options map entries exist.
 bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
                                cricket::MediaSessionOptions* session_options);
 

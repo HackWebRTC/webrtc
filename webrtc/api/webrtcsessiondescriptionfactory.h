@@ -97,8 +97,9 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   virtual ~WebRtcSessionDescriptionFactory();
 
   static void CopyCandidatesFromSessionDescription(
-    const SessionDescriptionInterface* source_desc,
-    SessionDescriptionInterface* dest_desc);
+      const SessionDescriptionInterface* source_desc,
+      const std::string& content_name,
+      SessionDescriptionInterface* dest_desc);
 
   void CreateOffer(
       CreateSessionDescriptionObserver* observer,

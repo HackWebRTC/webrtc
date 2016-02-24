@@ -457,69 +457,37 @@ uint32_t ConvertIceTransportTypeToCandidateFilter(
   return cricket::CF_NONE;
 }
 
-// Help class used to remember if a a remote peer has requested ice restart by
-// by sending a description with new ice ufrag and password.
-class IceRestartAnswerLatch {
- public:
-  IceRestartAnswerLatch() : ice_restart_(false) { }
-
-  // Returns true if CheckForRemoteIceRestart has been called with a new session
-  // description where ice password and ufrag has changed since last time
-  // Reset() was called.
-  bool Get() const {
-    return ice_restart_;
-  }
-
-  void Reset() {
-    if (ice_restart_) {
-      ice_restart_ = false;
-    }
-  }
-
-  // This method has two purposes: 1. Return whether |new_desc| requests
-  // an ICE restart (i.e., new ufrag/pwd). 2. If it requests an ICE restart
-  // and it is an OFFER, remember this in |ice_restart_| so that the next
-  // Local Answer will be created with new ufrag and pwd.
-  bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
-                                const SessionDescriptionInterface* new_desc) {
-    if (!old_desc) {
-      return false;
-    }
-    const SessionDescription* new_sd = new_desc->description();
-    const SessionDescription* old_sd = old_desc->description();
-    const ContentInfos& contents = new_sd->contents();
-    for (size_t index = 0; index < contents.size(); ++index) {
-      const ContentInfo* cinfo = &contents[index];
-      if (cinfo->rejected) {
-        continue;
-      }
-      // If the content isn't rejected, check if ufrag and password has
-      // changed.
-      const cricket::TransportDescription* new_transport_desc =
-          new_sd->GetTransportDescriptionByName(cinfo->name);
-      const cricket::TransportDescription* old_transport_desc =
-          old_sd->GetTransportDescriptionByName(cinfo->name);
-      if (!new_transport_desc || !old_transport_desc) {
-        // No transport description exist. This is not an ice restart.
-        continue;
-      }
-      if (cricket::IceCredentialsChanged(old_transport_desc->ice_ufrag,
-                                         old_transport_desc->ice_pwd,
-                                         new_transport_desc->ice_ufrag,
-                                         new_transport_desc->ice_pwd)) {
-        LOG(LS_INFO) << "Remote peer request ice restart.";
-        if (new_desc->type() == SessionDescriptionInterface::kOffer) {
-          ice_restart_ = true;
-        }
-        return true;
-      }
-    }
+// Returns true if |new_desc| requests an ICE restart (i.e., new ufrag/pwd).
+bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
+                              const SessionDescriptionInterface* new_desc,
+                              const std::string& content_name) {
+  if (!old_desc) {
     return false;
   }
-
- private:
-  bool ice_restart_;
-};
+  const SessionDescription* new_sd = new_desc->description();
+  const SessionDescription* old_sd = old_desc->description();
+  const ContentInfo* cinfo = new_sd->GetContentByName(content_name);
+  if (!cinfo || cinfo->rejected) {
+    return false;
+  }
+  // If the content isn't rejected, check if ufrag and password has changed.
+  const cricket::TransportDescription* new_transport_desc =
+      new_sd->GetTransportDescriptionByName(content_name);
+  const cricket::TransportDescription* old_transport_desc =
+      old_sd->GetTransportDescriptionByName(content_name);
+  if (!new_transport_desc || !old_transport_desc) {
+    // No transport description exists. This is not an ICE restart.
+    return false;
+  }
+  if (cricket::IceCredentialsChanged(
+          old_transport_desc->ice_ufrag, old_transport_desc->ice_pwd,
+          new_transport_desc->ice_ufrag, new_transport_desc->ice_pwd)) {
+    LOG(LS_INFO) << "Remote peer requests ICE restart for " << content_name
+                 << ".";
+    return true;
+  }
+  return false;
+}
 
 WebRtcSession::WebRtcSession(webrtc::MediaControllerInterface* media_controller,
                              rtc::Thread* signaling_thread,
@@ -543,7 +511,6 @@ WebRtcSession::WebRtcSession(webrtc::MediaControllerInterface* media_controller,
       older_version_remote_peer_(false),
       dtls_enabled_(false),
       data_channel_type_(cricket::DCT_NONE),
-      ice_restart_latch_(new IceRestartAnswerLatch),
       metrics_observer_(NULL) {
   transport_controller_->SetIceRole(cricket::ICEROLE_CONTROLLED);
   transport_controller_->SignalConnectionState.connect(
@@ -692,6 +659,20 @@ void WebRtcSession::Close() {
   ASSERT(!data_channel_);
 }
 
+cricket::BaseChannel* WebRtcSession::GetChannel(
+    const std::string& content_name) {
+  if (voice_channel() && voice_channel()->content_name() == content_name) {
+    return voice_channel();
+  }
+  if (video_channel() && video_channel()->content_name() == content_name) {
+    return video_channel();
+  }
+  if (data_channel() && data_channel()->content_name() == content_name) {
+    return data_channel();
+  }
+  return nullptr;
+}
+
 void WebRtcSession::SetSdesPolicy(cricket::SecurePolicy secure_policy) {
   webrtc_session_desc_factory_->SetSdesPolicy(secure_policy);
 }
@@ -779,6 +760,8 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
     UseCandidatesInSessionDescription(remote_desc_.get());
   }
 
+  pending_ice_restarts_.clear();
+
   if (error() != ERROR_NONE) {
     return BadLocalSdp(desc->type(), GetSessionErrorMsg(), err_desc);
   }
@@ -822,20 +805,30 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
     return BadRemoteSdp(desc->type(), kInvalidCandidates, err_desc);
   }
 
-  // Check if this new SessionDescription contains new ice ufrag and password
-  // that indicates the remote peer requests ice restart.
-  bool ice_restart =
-      ice_restart_latch_->CheckForRemoteIceRestart(old_remote_desc.get(), desc);
-  // We retain all received candidates only if ICE is not restarted.
-  // When ICE is restarted, all previous candidates belong to an old generation
-  // and should not be kept.
-  // TODO(deadbeef): This goes against the W3C spec which says the remote
-  // description should only contain candidates from the last set remote
-  // description plus any candidates added since then. We should remove this
-  // once we're sure it won't break anything.
-  if (!ice_restart) {
-    WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
-        old_remote_desc.get(), desc);
+  if (old_remote_desc) {
+    for (const cricket::ContentInfo& content :
+         old_remote_desc->description()->contents()) {
+      // Check if this new SessionDescription contains new ICE ufrag and
+      // password that indicates the remote peer requests an ICE restart.
+      // TODO(deadbeef): When we start storing both the current and pending
+      // remote description, this should reset pending_ice_restarts and compare
+      // against the current description.
+      if (CheckForRemoteIceRestart(old_remote_desc.get(), desc, content.name)) {
+        if (action == kOffer) {
+          pending_ice_restarts_.insert(content.name);
+        }
+      } else {
+        // We retain all received candidates only if ICE is not restarted.
+        // When ICE is restarted, all previous candidates belong to an old
+        // generation and should not be kept.
+        // TODO(deadbeef): This goes against the W3C spec which says the remote
+        // description should only contain candidates from the last set remote
+        // description plus any candidates added since then. We should remove
+        // this once we're sure it won't break anything.
+        WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
+            old_remote_desc.get(), content.name, desc);
+      }
+    }
   }
 
   if (error() != ERROR_NONE) {
@@ -1092,20 +1085,6 @@ bool WebRtcSession::GetRemoteSSLCertificate(const std::string& transport_name,
                                             rtc::SSLCertificate** cert) {
   ASSERT(signaling_thread()->IsCurrent());
   return transport_controller_->GetRemoteSSLCertificate(transport_name, cert);
-}
-
-cricket::BaseChannel* WebRtcSession::GetChannel(
-    const std::string& content_name) {
-  if (voice_channel() && voice_channel()->content_name() == content_name) {
-    return voice_channel();
-  }
-  if (video_channel() && video_channel()->content_name() == content_name) {
-    return video_channel();
-  }
-  if (data_channel() && data_channel()->content_name() == content_name) {
-    return data_channel();
-  }
-  return nullptr;
 }
 
 bool WebRtcSession::EnableBundle(const cricket::ContentGroup& bundle) {
@@ -1432,12 +1411,9 @@ cricket::DataChannelType WebRtcSession::data_channel_type() const {
   return data_channel_type_;
 }
 
-bool WebRtcSession::IceRestartPending() const {
-  return ice_restart_latch_->Get();
-}
-
-void WebRtcSession::ResetIceRestartLatch() {
-  ice_restart_latch_->Reset();
+bool WebRtcSession::IceRestartPending(const std::string& content_name) const {
+  return pending_ice_restarts_.find(content_name) !=
+         pending_ice_restarts_.end();
 }
 
 void WebRtcSession::OnCertificateReady(

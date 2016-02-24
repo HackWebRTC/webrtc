@@ -721,6 +721,15 @@ static bool IsRtxCodec(const C& codec) {
   return stricmp(codec.name.c_str(), kRtxCodecName) == 0;
 }
 
+static TransportOptions GetTransportOptions(const MediaSessionOptions& options,
+                                            const std::string& content_name) {
+  auto it = options.transport_options.find(content_name);
+  if (it == options.transport_options.end()) {
+    return TransportOptions();
+  }
+  return it->second;
+}
+
 // Create a media content to be offered in a session-initiate,
 // according to the given options.rtcp_mux, options.is_muc,
 // options.streams, codecs, secure_transport, crypto, and streams.  If we don't
@@ -1586,7 +1595,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   }
 
   desc->AddContent(content_name, NS_JINGLE_RTP, audio.release());
-  if (!AddTransportOffer(content_name, options.audio_transport_options,
+  if (!AddTransportOffer(content_name,
+                         GetTransportOptions(options, content_name),
                          current_description, desc)) {
     return false;
   }
@@ -1646,7 +1656,8 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
   }
 
   desc->AddContent(content_name, NS_JINGLE_RTP, video.release());
-  if (!AddTransportOffer(content_name, options.video_transport_options,
+  if (!AddTransportOffer(content_name,
+                         GetTransportOptions(options, content_name),
                          current_description, desc)) {
     return false;
   }
@@ -1710,7 +1721,8 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     SetMediaProtocol(secure_transport, data.get());
     desc->AddContent(content_name, NS_JINGLE_RTP, data.release());
   }
-  if (!AddTransportOffer(content_name, options.data_transport_options,
+  if (!AddTransportOffer(content_name,
+                         GetTransportOptions(options, content_name),
                          current_description, desc)) {
     return false;
   }
@@ -1726,8 +1738,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   const ContentInfo* audio_content = GetFirstAudioContent(offer);
 
   scoped_ptr<TransportDescription> audio_transport(CreateTransportAnswer(
-      audio_content->name, offer, options.audio_transport_options,
-      current_description));
+      audio_content->name, offer,
+      GetTransportOptions(options, audio_content->name), current_description));
   if (!audio_transport) {
     return false;
   }
@@ -1784,8 +1796,8 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     SessionDescription* answer) const {
   const ContentInfo* video_content = GetFirstVideoContent(offer);
   scoped_ptr<TransportDescription> video_transport(CreateTransportAnswer(
-      video_content->name, offer, options.video_transport_options,
-      current_description));
+      video_content->name, offer,
+      GetTransportOptions(options, video_content->name), current_description));
   if (!video_transport) {
     return false;
   }
@@ -1839,8 +1851,8 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
     SessionDescription* answer) const {
   const ContentInfo* data_content = GetFirstDataContent(offer);
   scoped_ptr<TransportDescription> data_transport(CreateTransportAnswer(
-      data_content->name, offer, options.data_transport_options,
-      current_description));
+      data_content->name, offer,
+      GetTransportOptions(options, data_content->name), current_description));
   if (!data_transport) {
     return false;
   }
@@ -1908,15 +1920,15 @@ bool IsDataContent(const ContentInfo* content) {
   return IsMediaContentOfType(content, MEDIA_TYPE_DATA);
 }
 
-static const ContentInfo* GetFirstMediaContent(const ContentInfos& contents,
-                                               MediaType media_type) {
+const ContentInfo* GetFirstMediaContent(const ContentInfos& contents,
+                                        MediaType media_type) {
   for (ContentInfos::const_iterator content = contents.begin();
        content != contents.end(); content++) {
     if (IsMediaContentOfType(&*content, media_type)) {
       return &*content;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 const ContentInfo* GetFirstAudioContent(const ContentInfos& contents) {
@@ -1933,8 +1945,9 @@ const ContentInfo* GetFirstDataContent(const ContentInfos& contents) {
 
 static const ContentInfo* GetFirstMediaContent(const SessionDescription* sdesc,
                                                MediaType media_type) {
-  if (sdesc == NULL)
-    return NULL;
+  if (sdesc == nullptr) {
+    return nullptr;
+  }
 
   return GetFirstMediaContent(sdesc->contents(), media_type);
 }

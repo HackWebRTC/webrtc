@@ -444,12 +444,10 @@ bool ConvertRtcOptionsForOffer(
   }
 
   session_options->vad_enabled = rtc_options.voice_activity_detection;
-  session_options->audio_transport_options.ice_restart =
-      rtc_options.ice_restart;
-  session_options->video_transport_options.ice_restart =
-      rtc_options.ice_restart;
-  session_options->data_transport_options.ice_restart = rtc_options.ice_restart;
   session_options->bundle_enabled = rtc_options.use_rtp_mux;
+  for (auto& kv : session_options->transport_options) {
+    kv.second.ice_restart = rtc_options.ice_restart;
+  }
 
   return true;
 }
@@ -492,16 +490,14 @@ bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
     session_options->bundle_enabled = true;
   }
 
+  bool ice_restart = false;
   if (FindConstraint(constraints, MediaConstraintsInterface::kIceRestart,
                      &value, &mandatory_constraints_satisfied)) {
-    session_options->audio_transport_options.ice_restart = value;
-    session_options->video_transport_options.ice_restart = value;
-    session_options->data_transport_options.ice_restart = value;
-  } else {
     // kIceRestart defaults to false according to spec.
-    session_options->audio_transport_options.ice_restart = false;
-    session_options->video_transport_options.ice_restart = false;
-    session_options->data_transport_options.ice_restart = false;
+    ice_restart = true;
+  }
+  for (auto& kv : session_options->transport_options) {
+    kv.second.ice_restart = ice_restart;
   }
 
   if (!constraints) {
@@ -1500,6 +1496,15 @@ void PeerConnection::PostCreateSessionDescriptionFailure(
 bool PeerConnection::GetOptionsForOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
     cricket::MediaSessionOptions* session_options) {
+  // TODO(deadbeef): Once we have transceivers, enumerate them here instead of
+  // ContentInfos.
+  if (session_->local_description()) {
+    for (const cricket::ContentInfo& content :
+         session_->local_description()->description()->contents()) {
+      session_options->transport_options[content.name] =
+          cricket::TransportOptions();
+    }
+  }
   if (!ConvertRtcOptionsForOffer(rtc_options, session_options)) {
     return false;
   }
@@ -1533,6 +1538,16 @@ bool PeerConnection::GetOptionsForAnswer(
     cricket::MediaSessionOptions* session_options) {
   session_options->recv_audio = false;
   session_options->recv_video = false;
+  // TODO(deadbeef): Once we have transceivers, enumerate them here instead of
+  // ContentInfos.
+  if (session_->remote_description()) {
+    // Initialize the transport_options map.
+    for (const cricket::ContentInfo& content :
+         session_->remote_description()->description()->contents()) {
+      session_options->transport_options[content.name] =
+          cricket::TransportOptions();
+    }
+  }
   if (!ParseConstraintsForAnswer(constraints, session_options)) {
     return false;
   }

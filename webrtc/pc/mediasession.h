@@ -14,6 +14,7 @@
 #define TALK_SESSION_MEDIA_MEDIASESSION_H_
 
 #include <algorithm>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -131,9 +132,8 @@ struct MediaSessionOptions {
   // bps. -1 == auto.
   int video_bandwidth;
   int data_bandwidth;
-  TransportOptions audio_transport_options;
-  TransportOptions video_transport_options;
-  TransportOptions data_transport_options;
+  // content name ("mid") => options.
+  std::map<std::string, TransportOptions> transport_options;
 
   struct Stream {
     Stream(MediaType type,
@@ -519,6 +519,8 @@ bool IsMediaContent(const ContentInfo* content);
 bool IsAudioContent(const ContentInfo* content);
 bool IsVideoContent(const ContentInfo* content);
 bool IsDataContent(const ContentInfo* content);
+const ContentInfo* GetFirstMediaContent(const ContentInfos& contents,
+                                        MediaType media_type);
 const ContentInfo* GetFirstAudioContent(const ContentInfos& contents);
 const ContentInfo* GetFirstVideoContent(const ContentInfos& contents);
 const ContentInfo* GetFirstDataContent(const ContentInfos& contents);

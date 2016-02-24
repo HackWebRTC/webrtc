@@ -11,6 +11,7 @@
 #ifndef WEBRTC_API_WEBRTCSESSION_H_
 #define WEBRTC_API_WEBRTCSESSION_H_
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -179,6 +180,8 @@ class WebRtcSession : public AudioProviderInterface,
     return data_channel_.get();
   }
 
+  cricket::BaseChannel* GetChannel(const std::string& content_name);
+
   void SetSdesPolicy(cricket::SecurePolicy secure_policy);
   cricket::SecurePolicy SdesPolicy() const;
 
@@ -280,9 +283,7 @@ class WebRtcSession : public AudioProviderInterface,
 
   cricket::DataChannelType data_channel_type() const;
 
-  bool IceRestartPending() const;
-
-  void ResetIceRestartLatch();
+  bool IceRestartPending(const std::string& content_name) const;
 
   // Called when an RTCCertificate is generated or retrieved by
   // WebRTCSessionDescriptionFactory. Should happen before setLocalDescription.
@@ -364,7 +365,6 @@ class WebRtcSession : public AudioProviderInterface,
       const std::string& content_name,
       cricket::TransportDescription* info);
 
-  cricket::BaseChannel* GetChannel(const std::string& content_name);
   // Cause all the BaseChannels in the bundle group to have the same
   // transport channel.
   bool EnableBundle(const cricket::ContentGroup& bundle);
@@ -482,7 +482,8 @@ class WebRtcSession : public AudioProviderInterface,
   // 2. If constraint kEnableRtpDataChannels is true, RTP is allowed (DCT_RTP);
   // 3. If both 1&2 are false, data channel is not allowed (DCT_NONE).
   cricket::DataChannelType data_channel_type_;
-  rtc::scoped_ptr<IceRestartAnswerLatch> ice_restart_latch_;
+  // List of content names for which the remote side triggered an ICE restart.
+  std::set<std::string> pending_ice_restarts_;
 
   rtc::scoped_ptr<WebRtcSessionDescriptionFactory>
       webrtc_session_desc_factory_;

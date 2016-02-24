@@ -731,12 +731,10 @@ class WebRtcSessionTest
     VerifyCryptoParams(answer->description());
   }
 
-  void CompareIceUfragAndPassword(const cricket::SessionDescription* desc1,
-                                  const cricket::SessionDescription* desc2,
-                                  bool expect_equal) {
+  bool IceUfragPwdEqual(const cricket::SessionDescription* desc1,
+                        const cricket::SessionDescription* desc2) {
     if (desc1->contents().size() != desc2->contents().size()) {
-      EXPECT_FALSE(expect_equal);
-      return;
+      return false;
     }
 
     const cricket::ContentInfos& contents = desc1->contents();
@@ -748,16 +746,38 @@ class WebRtcSessionTest
       const cricket::TransportDescription* transport_desc2 =
           desc2->GetTransportDescriptionByName(it->name);
       if (!transport_desc1 || !transport_desc2) {
-        EXPECT_FALSE(expect_equal);
-        return;
+        return false;
       }
       if (transport_desc1->ice_pwd != transport_desc2->ice_pwd ||
           transport_desc1->ice_ufrag != transport_desc2->ice_ufrag) {
-        EXPECT_FALSE(expect_equal);
-        return;
+        return false;
       }
     }
-    EXPECT_TRUE(expect_equal);
+    return true;
+  }
+
+  // Compares ufrag/password only for the specified |media_type|.
+  bool IceUfragPwdEqual(const cricket::SessionDescription* desc1,
+                        const cricket::SessionDescription* desc2,
+                        cricket::MediaType media_type) {
+    if (desc1->contents().size() != desc2->contents().size()) {
+      return false;
+    }
+
+    const cricket::ContentInfo* cinfo =
+        cricket::GetFirstMediaContent(desc1->contents(), media_type);
+    const cricket::TransportDescription* transport_desc1 =
+        desc1->GetTransportDescriptionByName(cinfo->name);
+    const cricket::TransportDescription* transport_desc2 =
+        desc2->GetTransportDescriptionByName(cinfo->name);
+    if (!transport_desc1 || !transport_desc2) {
+      return false;
+    }
+    if (transport_desc1->ice_pwd != transport_desc2->ice_pwd ||
+        transport_desc1->ice_ufrag != transport_desc2->ice_ufrag) {
+      return false;
+    }
+    return true;
   }
 
   void RemoveIceUfragPwdLines(const SessionDescriptionInterface* current_desc,
@@ -784,33 +804,31 @@ class WebRtcSessionTest
     }
   }
 
-  void ModifyIceUfragPwdLines(const SessionDescriptionInterface* current_desc,
-                              const std::string& modified_ice_ufrag,
-                              const std::string& modified_ice_pwd,
-                              std::string* sdp) {
-    const cricket::SessionDescription* desc = current_desc->description();
-    EXPECT_TRUE(current_desc->ToString(sdp));
-
-    const cricket::ContentInfos& contents = desc->contents();
-    cricket::ContentInfos::const_iterator it = contents.begin();
-    // Replace ufrag and pwd lines with |modified_ice_ufrag| and
-    // |modified_ice_pwd| strings.
-    for (; it != contents.end(); ++it) {
-      const cricket::TransportDescription* transport_desc =
-          desc->GetTransportDescriptionByName(it->name);
-      std::string ufrag_line = "a=ice-ufrag:" + transport_desc->ice_ufrag
-          + "\r\n";
-      std::string pwd_line = "a=ice-pwd:" + transport_desc->ice_pwd
-          + "\r\n";
-      std::string mod_ufrag = "a=ice-ufrag:" + modified_ice_ufrag + "\r\n";
-      std::string mod_pwd = "a=ice-pwd:" + modified_ice_pwd + "\r\n";
-      rtc::replace_substrs(ufrag_line.c_str(), ufrag_line.length(),
-                                 mod_ufrag.c_str(), mod_ufrag.length(),
-                                 sdp);
-      rtc::replace_substrs(pwd_line.c_str(), pwd_line.length(),
-                                 mod_pwd.c_str(), mod_pwd.length(),
-                                 sdp);
+  void SetIceUfragPwd(SessionDescriptionInterface* current_desc,
+                      const std::string& ufrag,
+                      const std::string& pwd) {
+    cricket::SessionDescription* desc = current_desc->description();
+    for (TransportInfo& transport_info : desc->transport_infos()) {
+      cricket::TransportDescription& transport_desc =
+          transport_info.description;
+      transport_desc.ice_ufrag = ufrag;
+      transport_desc.ice_pwd = pwd;
     }
+  }
+
+  // Sets ufrag/pwd for specified |media_type|.
+  void SetIceUfragPwd(SessionDescriptionInterface* current_desc,
+                      cricket::MediaType media_type,
+                      const std::string& ufrag,
+                      const std::string& pwd) {
+    cricket::SessionDescription* desc = current_desc->description();
+    const cricket::ContentInfo* cinfo =
+        cricket::GetFirstMediaContent(desc->contents(), media_type);
+    TransportInfo* transport_info = desc->GetTransportInfoByName(cinfo->name);
+    cricket::TransportDescription* transport_desc =
+        &transport_info->description;
+    transport_desc->ice_ufrag = ufrag;
+    transport_desc->ice_pwd = pwd;
   }
 
   // Creates a remote offer and and applies it as a remote description,
@@ -2775,23 +2793,16 @@ TEST_F(WebRtcSessionTest, TestSetLocalDescriptionInvalidIceCredentials) {
   Init();
   SendAudioVideoStream1();
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
-
-  std::string sdp;
   // Modifying ice ufrag and pwd in local offer with strings smaller than the
   // recommended values of 4 and 22 bytes respectively.
-  ModifyIceUfragPwdLines(offer.get(), "ice", "icepwd", &sdp);
-  SessionDescriptionInterface* modified_offer =
-      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  SetIceUfragPwd(offer.get(), "ice", "icepwd");
   std::string error;
-  EXPECT_FALSE(session_->SetLocalDescription(modified_offer, &error));
+  EXPECT_FALSE(session_->SetLocalDescription(offer.release(), &error));
 
   // Test with string greater than 256.
-  sdp.clear();
-  ModifyIceUfragPwdLines(offer.get(), kTooLongIceUfragPwd, kTooLongIceUfragPwd,
-                         &sdp);
-  modified_offer = CreateSessionDescription(JsepSessionDescription::kOffer, sdp,
-                                            NULL);
-  EXPECT_FALSE(session_->SetLocalDescription(modified_offer, &error));
+  offer.reset(CreateOffer());
+  SetIceUfragPwd(offer.get(), kTooLongIceUfragPwd, kTooLongIceUfragPwd);
+  EXPECT_FALSE(session_->SetLocalDescription(offer.release(), &error));
 }
 
 // This test verifies that setRemoteDescription fails if remote offer has
@@ -2799,76 +2810,57 @@ TEST_F(WebRtcSessionTest, TestSetLocalDescriptionInvalidIceCredentials) {
 TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
   Init();
   rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
-  std::string sdp;
   // Modifying ice ufrag and pwd in remote offer with strings smaller than the
   // recommended values of 4 and 22 bytes respectively.
-  ModifyIceUfragPwdLines(offer.get(), "ice", "icepwd", &sdp);
-  SessionDescriptionInterface* modified_offer =
-     CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  SetIceUfragPwd(offer.get(), "ice", "icepwd");
   std::string error;
-  EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
+  EXPECT_FALSE(session_->SetRemoteDescription(offer.release(), &error));
 
-  sdp.clear();
-  ModifyIceUfragPwdLines(offer.get(), kTooLongIceUfragPwd, kTooLongIceUfragPwd,
-                         &sdp);
-  modified_offer = CreateSessionDescription(JsepSessionDescription::kOffer, sdp,
-                                            NULL);
-  EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
+  offer.reset(CreateRemoteOffer());
+  SetIceUfragPwd(offer.get(), kTooLongIceUfragPwd, kTooLongIceUfragPwd);
+  EXPECT_FALSE(session_->SetRemoteDescription(offer.release(), &error));
 }
 
 // Test that if the remote offer indicates the peer requested ICE restart (via
 // a new ufrag or pwd), the old ICE candidates are not copied, and vice versa.
 TEST_F(WebRtcSessionTest, TestSetRemoteOfferWithIceRestart) {
   Init();
-  scoped_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
 
   // Create the first offer.
-  std::string sdp;
-  ModifyIceUfragPwdLines(offer.get(), "0123456789012345",
-                         "abcdefghijklmnopqrstuvwx", &sdp);
-  SessionDescriptionInterface* offer1 =
-      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  scoped_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
+  SetIceUfragPwd(offer.get(), "0123456789012345", "abcdefghijklmnopqrstuvwx");
   cricket::Candidate candidate1(1, "udp", rtc::SocketAddress("1.1.1.1", 5000),
                                 0, "", "", "relay", 0, "");
   JsepIceCandidate ice_candidate1(kMediaContentName0, kMediaContentIndex0,
                                   candidate1);
-  EXPECT_TRUE(offer1->AddCandidate(&ice_candidate1));
-  SetRemoteDescriptionWithoutError(offer1);
+  EXPECT_TRUE(offer->AddCandidate(&ice_candidate1));
+  SetRemoteDescriptionWithoutError(offer.release());
   EXPECT_EQ(1, session_->remote_description()->candidates(0)->count());
 
   // The second offer has the same ufrag and pwd but different address.
-  sdp.clear();
-  ModifyIceUfragPwdLines(offer.get(), "0123456789012345",
-                         "abcdefghijklmnopqrstuvwx", &sdp);
-  SessionDescriptionInterface* offer2 =
-      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  offer.reset(CreateRemoteOffer());
+  SetIceUfragPwd(offer.get(), "0123456789012345", "abcdefghijklmnopqrstuvwx");
   candidate1.set_address(rtc::SocketAddress("1.1.1.1", 6000));
   JsepIceCandidate ice_candidate2(kMediaContentName0, kMediaContentIndex0,
                                   candidate1);
-  EXPECT_TRUE(offer2->AddCandidate(&ice_candidate2));
-  SetRemoteDescriptionWithoutError(offer2);
+  EXPECT_TRUE(offer->AddCandidate(&ice_candidate2));
+  SetRemoteDescriptionWithoutError(offer.release());
   EXPECT_EQ(2, session_->remote_description()->candidates(0)->count());
 
   // The third offer has a different ufrag and different address.
-  sdp.clear();
-  ModifyIceUfragPwdLines(offer.get(), "0123456789012333",
-                         "abcdefghijklmnopqrstuvwx", &sdp);
-  SessionDescriptionInterface* offer3 =
-      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  offer.reset(CreateRemoteOffer());
+  SetIceUfragPwd(offer.get(), "0123456789012333", "abcdefghijklmnopqrstuvwx");
   candidate1.set_address(rtc::SocketAddress("1.1.1.1", 7000));
   JsepIceCandidate ice_candidate3(kMediaContentName0, kMediaContentIndex0,
                                   candidate1);
-  EXPECT_TRUE(offer3->AddCandidate(&ice_candidate3));
-  SetRemoteDescriptionWithoutError(offer3);
+  EXPECT_TRUE(offer->AddCandidate(&ice_candidate3));
+  SetRemoteDescriptionWithoutError(offer.release());
   EXPECT_EQ(1, session_->remote_description()->candidates(0)->count());
 
   // The fourth offer has no candidate but a different ufrag/pwd.
-  sdp.clear();
-  ModifyIceUfragPwdLines(offer.get(), "0123456789012444",
-                         "abcdefghijklmnopqrstuvyz", &sdp);
-  SessionDescriptionInterface* offer4 =
-      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
-  SetRemoteDescriptionWithoutError(offer4);
+  offer.reset(CreateRemoteOffer());
+  SetIceUfragPwd(offer.get(), "0123456789012444", "abcdefghijklmnopqrstuvyz");
+  SetRemoteDescriptionWithoutError(offer.release());
   EXPECT_EQ(0, session_->remote_description()->candidates(0)->count());
 }
 
@@ -2878,55 +2870,46 @@ TEST_F(WebRtcSessionTest, TestSetRemoteAnswerWithIceRestart) {
   Init();
   SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
-  scoped_ptr<SessionDescriptionInterface> answer(CreateRemoteAnswer(offer));
 
   // Create the first answer.
-  std::string sdp;
-  ModifyIceUfragPwdLines(answer.get(), "0123456789012345",
-                         "abcdefghijklmnopqrstuvwx", &sdp);
-  SessionDescriptionInterface* answer1 =
-      CreateSessionDescription(JsepSessionDescription::kPrAnswer, sdp, NULL);
+  scoped_ptr<JsepSessionDescription> answer(CreateRemoteAnswer(offer));
+  answer->set_type(JsepSessionDescription::kPrAnswer);
+  SetIceUfragPwd(answer.get(), "0123456789012345", "abcdefghijklmnopqrstuvwx");
   cricket::Candidate candidate1(1, "udp", rtc::SocketAddress("1.1.1.1", 5000),
                                 0, "", "", "relay", 0, "");
   JsepIceCandidate ice_candidate1(kMediaContentName0, kMediaContentIndex0,
                                   candidate1);
-  EXPECT_TRUE(answer1->AddCandidate(&ice_candidate1));
-  SetRemoteDescriptionWithoutError(answer1);
+  EXPECT_TRUE(answer->AddCandidate(&ice_candidate1));
+  SetRemoteDescriptionWithoutError(answer.release());
   EXPECT_EQ(1, session_->remote_description()->candidates(0)->count());
 
   // The second answer has the same ufrag and pwd but different address.
-  sdp.clear();
-  ModifyIceUfragPwdLines(answer.get(), "0123456789012345",
-                         "abcdefghijklmnopqrstuvwx", &sdp);
-  SessionDescriptionInterface* answer2 =
-      CreateSessionDescription(JsepSessionDescription::kPrAnswer, sdp, NULL);
+  answer.reset(CreateRemoteAnswer(offer));
+  answer->set_type(JsepSessionDescription::kPrAnswer);
+  SetIceUfragPwd(answer.get(), "0123456789012345", "abcdefghijklmnopqrstuvwx");
   candidate1.set_address(rtc::SocketAddress("1.1.1.1", 6000));
   JsepIceCandidate ice_candidate2(kMediaContentName0, kMediaContentIndex0,
                                   candidate1);
-  EXPECT_TRUE(answer2->AddCandidate(&ice_candidate2));
-  SetRemoteDescriptionWithoutError(answer2);
+  EXPECT_TRUE(answer->AddCandidate(&ice_candidate2));
+  SetRemoteDescriptionWithoutError(answer.release());
   EXPECT_EQ(2, session_->remote_description()->candidates(0)->count());
 
   // The third answer has a different ufrag and different address.
-  sdp.clear();
-  ModifyIceUfragPwdLines(answer.get(), "0123456789012333",
-                         "abcdefghijklmnopqrstuvwx", &sdp);
-  SessionDescriptionInterface* answer3 =
-      CreateSessionDescription(JsepSessionDescription::kPrAnswer, sdp, NULL);
+  answer.reset(CreateRemoteAnswer(offer));
+  answer->set_type(JsepSessionDescription::kPrAnswer);
+  SetIceUfragPwd(answer.get(), "0123456789012333", "abcdefghijklmnopqrstuvwx");
   candidate1.set_address(rtc::SocketAddress("1.1.1.1", 7000));
   JsepIceCandidate ice_candidate3(kMediaContentName0, kMediaContentIndex0,
                                   candidate1);
-  EXPECT_TRUE(answer3->AddCandidate(&ice_candidate3));
-  SetRemoteDescriptionWithoutError(answer3);
+  EXPECT_TRUE(answer->AddCandidate(&ice_candidate3));
+  SetRemoteDescriptionWithoutError(answer.release());
   EXPECT_EQ(1, session_->remote_description()->candidates(0)->count());
 
   // The fourth answer has no candidate but a different ufrag/pwd.
-  sdp.clear();
-  ModifyIceUfragPwdLines(answer.get(), "0123456789012444",
-                         "abcdefghijklmnopqrstuvyz", &sdp);
-  SessionDescriptionInterface* offer4 =
-      CreateSessionDescription(JsepSessionDescription::kPrAnswer, sdp, NULL);
-  SetRemoteDescriptionWithoutError(offer4);
+  answer.reset(CreateRemoteAnswer(offer));
+  answer->set_type(JsepSessionDescription::kPrAnswer);
+  SetIceUfragPwd(answer.get(), "0123456789012444", "abcdefghijklmnopqrstuvyz");
+  SetRemoteDescriptionWithoutError(answer.release());
   EXPECT_EQ(0, session_->remote_description()->candidates(0)->count());
 }
 
@@ -3643,9 +3626,10 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithNewUfragAndPassword) {
   SetLocalDescriptionWithoutError(answer.release());
 
   // Receive an offer with new ufrag and password.
-  options.audio_transport_options.ice_restart = true;
-  options.video_transport_options.ice_restart = true;
-  options.data_transport_options.ice_restart = true;
+  for (const cricket::ContentInfo& content :
+       session_->local_description()->description()->contents()) {
+    options.transport_options[content.name].ice_restart = true;
+  }
   rtc::scoped_ptr<JsepSessionDescription> updated_offer1(
       CreateRemoteOffer(options, session_->remote_description()));
   SetRemoteDescriptionWithoutError(updated_offer1.release());
@@ -3653,11 +3637,64 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithNewUfragAndPassword) {
   rtc::scoped_ptr<SessionDescriptionInterface> updated_answer1(
       CreateAnswer(NULL));
 
-  CompareIceUfragAndPassword(updated_answer1->description(),
-                             session_->local_description()->description(),
-                             false);
+  EXPECT_FALSE(IceUfragPwdEqual(updated_answer1->description(),
+                                session_->local_description()->description()));
 
+  // Even a second answer (created before the description is set) should have
+  // a new ufrag/password.
+  rtc::scoped_ptr<SessionDescriptionInterface> updated_answer2(
+      CreateAnswer(NULL));
+
+  EXPECT_FALSE(IceUfragPwdEqual(updated_answer2->description(),
+                                session_->local_description()->description()));
+
+  SetLocalDescriptionWithoutError(updated_answer2.release());
+}
+
+// This test verifies that an answer contains new ufrag and password if an offer
+// that changes either the ufrag or password (but not both) is received.
+// RFC 5245 says: "If the offer contained a change in the a=ice-ufrag or
+// a=ice-pwd attributes compared to the previous SDP from the peer, it
+// indicates that ICE is restarting for this media stream."
+TEST_F(WebRtcSessionTest, TestOfferChangingOnlyUfragOrPassword) {
+  Init();
+  cricket::MediaSessionOptions options;
+  options.recv_audio = true;
+  options.recv_video = true;
+  // Create an offer with audio and video.
+  rtc::scoped_ptr<JsepSessionDescription> offer(CreateRemoteOffer(options));
+  SetIceUfragPwd(offer.get(), "original_ufrag", "original_password12345");
+  SetRemoteDescriptionWithoutError(offer.release());
+
+  SendAudioVideoStream1();
+  rtc::scoped_ptr<SessionDescriptionInterface> answer(CreateAnswer(nullptr));
+  SetLocalDescriptionWithoutError(answer.release());
+
+  // Receive an offer with a new ufrag but stale password.
+  rtc::scoped_ptr<JsepSessionDescription> ufrag_changed_offer(
+      CreateRemoteOffer(options, session_->remote_description()));
+  SetIceUfragPwd(ufrag_changed_offer.get(), "modified_ufrag",
+                 "original_password12345");
+  SetRemoteDescriptionWithoutError(ufrag_changed_offer.release());
+
+  rtc::scoped_ptr<SessionDescriptionInterface> updated_answer1(
+      CreateAnswer(nullptr));
+  EXPECT_FALSE(IceUfragPwdEqual(updated_answer1->description(),
+                                session_->local_description()->description()));
   SetLocalDescriptionWithoutError(updated_answer1.release());
+
+  // Receive an offer with a new password but stale ufrag.
+  rtc::scoped_ptr<JsepSessionDescription> password_changed_offer(
+      CreateRemoteOffer(options, session_->remote_description()));
+  SetIceUfragPwd(password_changed_offer.get(), "modified_ufrag",
+                 "modified_password12345");
+  SetRemoteDescriptionWithoutError(password_changed_offer.release());
+
+  rtc::scoped_ptr<SessionDescriptionInterface> updated_answer2(
+      CreateAnswer(nullptr));
+  EXPECT_FALSE(IceUfragPwdEqual(updated_answer2->description(),
+                                session_->local_description()->description()));
+  SetLocalDescriptionWithoutError(updated_answer2.release());
 }
 
 // This test verifies that an answer contains old ufrag and password if an offer
@@ -3676,9 +3713,6 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithOldUfragAndPassword) {
   SetLocalDescriptionWithoutError(answer.release());
 
   // Receive an offer without changed ufrag or password.
-  options.audio_transport_options.ice_restart = false;
-  options.video_transport_options.ice_restart = false;
-  options.data_transport_options.ice_restart = false;
   rtc::scoped_ptr<JsepSessionDescription> updated_offer2(
       CreateRemoteOffer(options, session_->remote_description()));
   SetRemoteDescriptionWithoutError(updated_offer2.release());
@@ -3686,11 +3720,53 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithOldUfragAndPassword) {
   rtc::scoped_ptr<SessionDescriptionInterface> updated_answer2(
       CreateAnswer(NULL));
 
-  CompareIceUfragAndPassword(updated_answer2->description(),
-                             session_->local_description()->description(),
-                             true);
+  EXPECT_TRUE(IceUfragPwdEqual(updated_answer2->description(),
+                               session_->local_description()->description()));
 
   SetLocalDescriptionWithoutError(updated_answer2.release());
+}
+
+// This test verifies that if an offer does an ICE restart on some, but not all
+// media sections, the answer will change the ufrag/password in the correct
+// media sections.
+TEST_F(WebRtcSessionTest, TestCreateAnswerWithNewAndOldUfragAndPassword) {
+  Init();
+  cricket::MediaSessionOptions options;
+  options.recv_video = true;
+  options.recv_audio = true;
+  options.bundle_enabled = false;
+  rtc::scoped_ptr<JsepSessionDescription> offer(CreateRemoteOffer(options));
+
+  SetIceUfragPwd(offer.get(), cricket::MEDIA_TYPE_AUDIO, "aaaa",
+                 "aaaaaaaaaaaaaaaaaaaaaa");
+  SetIceUfragPwd(offer.get(), cricket::MEDIA_TYPE_VIDEO, "bbbb",
+                 "bbbbbbbbbbbbbbbbbbbbbb");
+  SetRemoteDescriptionWithoutError(offer.release());
+
+  SendAudioVideoStream1();
+  rtc::scoped_ptr<SessionDescriptionInterface> answer(CreateAnswer(nullptr));
+  SetLocalDescriptionWithoutError(answer.release());
+
+  // Receive an offer with new ufrag and password, but only for the video media
+  // section.
+  rtc::scoped_ptr<JsepSessionDescription> updated_offer(
+      CreateRemoteOffer(options, session_->remote_description()));
+  SetIceUfragPwd(updated_offer.get(), cricket::MEDIA_TYPE_VIDEO, "cccc",
+                 "cccccccccccccccccccccc");
+  SetRemoteDescriptionWithoutError(updated_offer.release());
+
+  rtc::scoped_ptr<SessionDescriptionInterface> updated_answer(
+      CreateAnswer(nullptr));
+
+  EXPECT_TRUE(IceUfragPwdEqual(updated_answer->description(),
+                               session_->local_description()->description(),
+                               cricket::MEDIA_TYPE_AUDIO));
+
+  EXPECT_FALSE(IceUfragPwdEqual(updated_answer->description(),
+                                session_->local_description()->description(),
+                                cricket::MEDIA_TYPE_VIDEO));
+
+  SetLocalDescriptionWithoutError(updated_answer.release());
 }
 
 TEST_F(WebRtcSessionTest, TestSessionContentError) {
