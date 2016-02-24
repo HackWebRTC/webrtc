@@ -51,6 +51,23 @@ std::string GetDeviceType();
 // Examples: "iPhone 5s (GSM)" and "iPhone 6 Plus".
 std::string GetDeviceName();
 
+// Returns the name of the process. Does not uniquely identify the process.
+std::string GetProcessName();
+
+// Returns the identifier of the process (often called process ID).
+int GetProcessID();
+
+// Returns a string containing the version of the operating system on which the
+// process is executing. The string is string is human readable, localized, and
+// is appropriate for displaying to the user.
+std::string GetOSVersionString();
+
+// Returns the number of processing cores available on the device.
+int GetProcessorCount();
+
+// Indicates whether Low Power Mode is enabled on the iOS device.
+bool GetLowPowerModeEnabled();
+
 }  // namespace ios
 }  // namespace webrtc
 

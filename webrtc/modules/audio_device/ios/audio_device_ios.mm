@@ -52,7 +52,10 @@ namespace webrtc {
 // will be set to this value as well to avoid resampling the the audio unit's
 // format converter. Note that, some devices, e.g. BT headsets, only supports
 // 8000Hz as native sample rate.
-const double kPreferredSampleRate = 48000.0;
+const double kHighPerformanceSampleRate = 48000.0;
+// A lower sample rate will be used for devices with only one core
+// (e.g. iPhone 4). The goal is to reduce the CPU load of the application.
+const double kLowComplexitySampleRate = 16000.0;
 // Use a hardware I/O buffer size (unit is in seconds) that matches the 10ms
 // size used by WebRTC. The exact actual size will differ between devices.
 // Example: using 48kHz on iPhone 6 results in a native buffer size of
@@ -61,7 +64,13 @@ const double kPreferredSampleRate = 48000.0;
 // buffers used by WebRTC. It is beneficial for the performance if the native
 // size is as close to 10ms as possible since it results in "clean" callback
 // sequence without bursts of callbacks back to back.
-const double kPreferredIOBufferDuration = 0.01;
+const double kHighPerformanceIOBufferDuration = 0.01;
+// Use a larger buffer size on devices with only one core (e.g. iPhone 4).
+// It will result in a lower CPU consumption at the cost of a larger latency.
+// The size of 60ms is based on instrumentation that shows a significant
+// reduction in CPU load compared with 10ms on low-end devices.
+// TODO(henrika): monitor this size and determine if it should be modified.
+const double kLowComplexityIOBufferDuration = 0.06;
 // Try to use mono to save resources. Also avoids channel format conversion
 // in the I/O audio unit. Initial tests have shown that it is possible to use
 // mono natively for built-in microphones and for BT headsets but not for
@@ -84,8 +93,21 @@ const UInt16 kFixedRecordDelayEstimate = 30;
 // initialization attempts.
 const int kMaxNumberOfAudioUnitInitializeAttempts = 5;
 
-
 using ios::CheckAndLogError;
+
+// Return the preferred sample rate given number of CPU cores. Use highest
+// possible if the CPU has more than one core.
+static double GetPreferredSampleRate() {
+  return (ios::GetProcessorCount() > 1) ? kHighPerformanceSampleRate
+                                        : kLowComplexitySampleRate;
+}
+
+// Return the preferred I/O buffer size given number of CPU cores. Use smallest
+// possible if the CPU has more than one core.
+static double GetPreferredIOBufferDuration() {
+  return (ios::GetProcessorCount() > 1) ? kHighPerformanceIOBufferDuration
+                                        : kLowComplexityIOBufferDuration;
+}
 
 // Verifies that the current audio session supports input audio and that the
 // required category and mode are enabled.
@@ -152,12 +174,12 @@ static bool ActivateAudioSession(RTCAudioSession* session, bool activate) {
   // to ensure that the I/O unit does not have to do sample rate conversion.
   error = nil;
   success =
-      [session setPreferredSampleRate:kPreferredSampleRate error:&error];
+      [session setPreferredSampleRate:GetPreferredSampleRate() error:&error];
   RTC_DCHECK(CheckAndLogError(success, error));
 
   // Set the preferred audio I/O buffer duration, in seconds.
   error = nil;
-  success = [session setPreferredIOBufferDuration:kPreferredIOBufferDuration
+  success = [session setPreferredIOBufferDuration:GetPreferredIOBufferDuration()
                                             error:&error];
   RTC_DCHECK(CheckAndLogError(success, error));
 
@@ -243,6 +265,11 @@ static void LogDeviceInfo() {
     LOG(LS_INFO) << " system version: " << ios::GetSystemVersion();
     LOG(LS_INFO) << " device type: " << ios::GetDeviceType();
     LOG(LS_INFO) << " device name: " << ios::GetDeviceName();
+    LOG(LS_INFO) << " process name: " << ios::GetProcessName();
+    LOG(LS_INFO) << " process ID: " << ios::GetProcessID();
+    LOG(LS_INFO) << " OS version: " << ios::GetOSVersionString();
+    LOG(LS_INFO) << " processing cores: " << ios::GetProcessorCount();
+    LOG(LS_INFO) << " low power mode: " << ios::GetLowPowerModeEnabled();
   }
 }
 #endif  // !defined(NDEBUG)
@@ -286,8 +313,10 @@ int32_t AudioDeviceIOS::Init() {
   // here. They have not been set and confirmed yet since ActivateAudioSession()
   // is not called until audio is about to start. However, it makes sense to
   // store the parameters now and then verify at a later stage.
-  playout_parameters_.reset(kPreferredSampleRate, kPreferredNumberOfChannels);
-  record_parameters_.reset(kPreferredSampleRate, kPreferredNumberOfChannels);
+  playout_parameters_.reset(GetPreferredSampleRate(),
+                            kPreferredNumberOfChannels);
+  record_parameters_.reset(GetPreferredSampleRate(),
+                           kPreferredNumberOfChannels);
   // Ensure that the audio device buffer (ADB) knows about the internal audio
   // parameters. Note that, even if we are unable to get a mono audio session,
   // we will always tell the I/O audio unit to do a channel format conversion
@@ -641,7 +670,7 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   // hardware sample rate but continue and use the non-ideal sample rate after
   // reinitializing the audio parameters. Most BT headsets only support 8kHz or
   // 16kHz.
-  if (session.sampleRate != kPreferredSampleRate) {
+  if (session.sampleRate != GetPreferredSampleRate()) {
     LOG(LS_WARNING) << "Unable to set the preferred sample rate";
   }
 
