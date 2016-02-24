@@ -10,6 +10,8 @@
 
 #import "ARDMainView.h"
 
+#import <AVFoundation/AVFoundation.h>
+
 #import "UIImage+ARDUtilities.h"
 
 // TODO(tkchin): retrieve status bar height dynamically.
@@ -123,12 +125,23 @@ static CGFloat const kAppLabelHeight = 20;
   UISwitch *_loopbackSwitch;
   UILabel *_loopbackLabel;
   UIButton *_startCallButton;
+  UIButton *_audioLoopButton;
+  AVAudioPlayer *_audioPlayer;
 }
 
 @synthesize delegate = _delegate;
 
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
+    NSString *audioFilePath =
+        [[NSBundle mainBundle] pathForResource:@"mozart" ofType:@"mp3"];
+    NSURL *audioFileURL = [NSURL URLWithString:audioFilePath];
+    _audioPlayer = [[AVAudioPlayer alloc] initWithContentsOfURL:audioFileURL
+                                                          error:nil];
+    _audioPlayer.numberOfLoops = -1;
+    _audioPlayer.volume = 1.0;
+    [_audioPlayer prepareToPlay];
+
     _appLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     _appLabel.text = @"AppRTCDemo";
     _appLabel.font = [UIFont fontWithName:@"Roboto" size:34];
@@ -171,8 +184,6 @@ static CGFloat const kAppLabelHeight = 20;
     [_loopbackLabel sizeToFit];
     [self addSubview:_loopbackLabel];
 
-    _startCallButton = [[UIButton alloc] initWithFrame:CGRectZero];
-
     _startCallButton = [UIButton buttonWithType:UIButtonTypeSystem];
     _startCallButton.backgroundColor = [UIColor blueColor];
     _startCallButton.layer.cornerRadius = 10;
@@ -190,6 +201,22 @@ static CGFloat const kAppLabelHeight = 20;
                          action:@selector(onStartCall:)
                forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:_startCallButton];
+
+    // Used to test what happens to sounds when calls are in progress.
+    _audioLoopButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    _audioLoopButton.layer.cornerRadius = 10;
+    _audioLoopButton.clipsToBounds = YES;
+    _audioLoopButton.contentEdgeInsets = UIEdgeInsetsMake(5, 10, 5, 10);
+    _audioLoopButton.titleLabel.font = controlFont;
+    [_audioLoopButton setTitleColor:[UIColor whiteColor]
+                           forState:UIControlStateNormal];
+    [_audioLoopButton setTitleColor:[UIColor lightGrayColor]
+                           forState:UIControlStateSelected];
+    [self updateAudioLoopButton];
+    [_audioLoopButton addTarget:self
+                         action:@selector(onToggleAudioLoop:)
+               forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:_audioLoopButton];
 
     self.backgroundColor = [UIColor whiteColor];
   }
@@ -237,8 +264,15 @@ static CGFloat const kAppLabelHeight = 20;
   _loopbackLabel.center = CGPointMake(loopbackModeLabelCenterX,
                                       CGRectGetMidY(loopbackModeRect));
 
-  CGFloat startCallTop =
+  CGFloat audioLoopTop =
      CGRectGetMaxY(loopbackModeRect) + kCallControlMargin * 3;
+  _audioLoopButton.frame = CGRectMake(kCallControlMargin,
+                                      audioLoopTop,
+                                      _audioLoopButton.frame.size.width,
+                                      _audioLoopButton.frame.size.height);
+
+  CGFloat startCallTop =
+      CGRectGetMaxY(_audioLoopButton.frame) + kCallControlMargin * 3;
   _startCallButton.frame = CGRectMake(kCallControlMargin,
                                       startCallTop,
                                       _startCallButton.frame.size.width,
@@ -246,6 +280,29 @@ static CGFloat const kAppLabelHeight = 20;
 }
 
 #pragma mark - Private
+
+- (void)updateAudioLoopButton {
+  if (_audioPlayer.playing) {
+    _audioLoopButton.backgroundColor = [UIColor redColor];
+    [_audioLoopButton setTitle:@"Stop sound"
+                      forState:UIControlStateNormal];
+    [_audioLoopButton sizeToFit];
+  } else {
+    _audioLoopButton.backgroundColor = [UIColor greenColor];
+    [_audioLoopButton setTitle:@"Play sound"
+                      forState:UIControlStateNormal];
+    [_audioLoopButton sizeToFit];
+  }
+}
+
+- (void)onToggleAudioLoop:(id)sender {
+  if (_audioPlayer.playing) {
+    [_audioPlayer stop];
+  } else {
+    [_audioPlayer play];
+  }
+  [self updateAudioLoopButton];
+}
 
 - (void)onStartCall:(id)sender {
   NSString *room = _roomText.roomText;
