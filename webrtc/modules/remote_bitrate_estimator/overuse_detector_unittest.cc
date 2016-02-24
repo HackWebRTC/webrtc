@@ -17,12 +17,12 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/random.h"
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
-#include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
 #include "webrtc/test/field_trial.h"
 
 namespace webrtc {

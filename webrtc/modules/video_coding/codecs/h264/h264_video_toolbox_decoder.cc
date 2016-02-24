@@ -164,6 +164,10 @@ int H264VideoToolboxDecoder::RegisterDecodeCompleteCallback(
 }
 
 int H264VideoToolboxDecoder::Release() {
+  // Need to invalidate the session so that callbacks no longer occur and it
+  // is safe to null out the callback.
+  DestroyDecompressionSession();
+  SetVideoFormat(nullptr);
   callback_ = nullptr;
   return WEBRTC_VIDEO_CODEC_OK;
 }

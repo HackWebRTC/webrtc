@@ -138,6 +138,8 @@ static_library("rtc_base_approved") {
     "platform_thread_types.h",
     "random.cc",
     "random.h",
+    "rate_statistics.cc",
+    "rate_statistics.h",
     "refcount.h",
     "safe_conversions.h",
     "safe_conversions_impl.h",

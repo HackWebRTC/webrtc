@@ -21,6 +21,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace internal {
 
@@ -67,6 +68,22 @@ void SetVTSessionProperty(VTSessionRef session,
 }
 
 // Convenience function for setting a VT property.
+void SetVTSessionProperty(VTSessionRef session,
+                          CFStringRef key,
+                          uint32_t value) {
+  int64_t value_64 = value;
+  CFNumberRef cfNum =
+      CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt64Type, &value_64);
+  OSStatus status = VTSessionSetProperty(session, key, cfNum);
+  CFRelease(cfNum);
+  if (status != noErr) {
+    std::string key_string = CFStringToString(key);
+    LOG(LS_ERROR) << "VTSessionSetProperty failed to set: " << key_string
+                  << " to " << value << ": " << status;
+  }
+}
+
+// Convenience function for setting a VT property.
 void SetVTSessionProperty(VTSessionRef session, CFStringRef key, bool value) {
   CFBooleanRef cf_bool = (value) ? kCFBooleanTrue : kCFBooleanFalse;
   OSStatus status = VTSessionSetProperty(session, key, cf_bool);
@@ -93,20 +110,21 @@ void SetVTSessionProperty(VTSessionRef session,
 // Struct that we pass to the encoder per frame to encode. We receive it again
 // in the encoder callback.
 struct FrameEncodeParams {
-  FrameEncodeParams(webrtc::EncodedImageCallback* cb,
+  FrameEncodeParams(webrtc::H264VideoToolboxEncoder* e,
                     const webrtc::CodecSpecificInfo* csi,
                     int32_t w,
                     int32_t h,
                     int64_t rtms,
                     uint32_t ts)
-      : callback(cb), width(w), height(h), render_time_ms(rtms), timestamp(ts) {
+      : encoder(e), width(w), height(h), render_time_ms(rtms), timestamp(ts) {
     if (csi) {
       codec_specific_info = *csi;
     } else {
       codec_specific_info.codecType = webrtc::kVideoCodecH264;
     }
   }
-  webrtc::EncodedImageCallback* callback;
+
+  webrtc::H264VideoToolboxEncoder* encoder;
   webrtc::CodecSpecificInfo codec_specific_info;
   int32_t width;
   int32_t height;
@@ -153,7 +171,7 @@ bool CopyVideoFrameToPixelBuffer(const webrtc::VideoFrame& frame,
 }
 
 // This is the callback function that VideoToolbox calls when encode is
-// complete.
+// complete. From inspection this happens on its own queue.
 void VTCompressionOutputCallback(void* encoder,
                                  void* params,
                                  OSStatus status,
@@ -161,54 +179,27 @@ void VTCompressionOutputCallback(void* encoder,
                                  CMSampleBufferRef sample_buffer) {
   rtc::scoped_ptr<FrameEncodeParams> encode_params(
       reinterpret_cast<FrameEncodeParams*>(params));
-  if (status != noErr) {
-    LOG(LS_ERROR) << "H264 encoding failed.";
-    return;
-  }
-  if (info_flags & kVTEncodeInfo_FrameDropped) {
-    LOG(LS_INFO) << "H264 encode dropped frame.";
-  }
-
-  bool is_keyframe = false;
-  CFArrayRef attachments =
-      CMSampleBufferGetSampleAttachmentsArray(sample_buffer, 0);
-  if (attachments != nullptr && CFArrayGetCount(attachments)) {
-    CFDictionaryRef attachment =
-        static_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(attachments, 0));
-    is_keyframe =
-        !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
-  }
-
-  // Convert the sample buffer into a buffer suitable for RTP packetization.
-  // TODO(tkchin): Allocate buffers through a pool.
-  rtc::scoped_ptr<rtc::Buffer> buffer(new rtc::Buffer());
-  rtc::scoped_ptr<webrtc::RTPFragmentationHeader> header;
-  if (!H264CMSampleBufferToAnnexBBuffer(sample_buffer, is_keyframe,
-                                        buffer.get(), header.accept())) {
-    return;
-  }
-  webrtc::EncodedImage frame(buffer->data(), buffer->size(), buffer->size());
-  frame._encodedWidth = encode_params->width;
-  frame._encodedHeight = encode_params->height;
-  frame._completeFrame = true;
-  frame._frameType =
-      is_keyframe ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta;
-  frame.capture_time_ms_ = encode_params->render_time_ms;
-  frame._timeStamp = encode_params->timestamp;
-
-  int result = encode_params->callback->Encoded(
-      frame, &(encode_params->codec_specific_info), header.get());
-  if (result != 0) {
-    LOG(LS_ERROR) << "Encoded callback failed: " << result;
-  }
+  encode_params->encoder->OnEncodedFrame(
+      status, info_flags, sample_buffer, encode_params->codec_specific_info,
+      encode_params->width, encode_params->height,
+      encode_params->render_time_ms, encode_params->timestamp);
 }
 
 }  // namespace internal
 
 namespace webrtc {
 
+// .5 is set as a mininum to prevent overcompensating for large temporary
+// overshoots. We don't want to degrade video quality too badly.
+// .95 is set to prevent oscillations. When a lower bitrate is set on the
+// encoder than previously set, its output seems to have a brief period of
+// drastically reduced bitrate, so we want to avoid that. In steady state
+// conditions, 0.95 seems to give us better overall bitrate over long periods
+// of time.
 H264VideoToolboxEncoder::H264VideoToolboxEncoder()
-    : callback_(nullptr), compression_session_(nullptr) {}
+    : callback_(nullptr),
+      compression_session_(nullptr),
+      bitrate_adjuster_(Clock::GetRealTimeClock(), .5, .95) {}
 
 H264VideoToolboxEncoder::~H264VideoToolboxEncoder() {
   DestroyCompressionSession();
@@ -224,7 +215,8 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
   width_ = codec_settings->width;
   height_ = codec_settings->height;
   // We can only set average bitrate on the HW encoder.
-  bitrate_ = codec_settings->startBitrate * 1000;
+  target_bitrate_bps_ = codec_settings->startBitrate;
+  bitrate_adjuster_.SetTargetBitrateBps(target_bitrate_bps_);
 
   // TODO(tkchin): Try setting payload size via
   // kVTCompressionPropertyKey_MaxH264SliceBytes.
@@ -287,8 +279,12 @@ int H264VideoToolboxEncoder::Encode(
   }
   rtc::scoped_ptr<internal::FrameEncodeParams> encode_params;
   encode_params.reset(new internal::FrameEncodeParams(
-      callback_, codec_specific_info, width_, height_,
-      input_image.render_time_ms(), input_image.timestamp()));
+      this, codec_specific_info, width_, height_, input_image.render_time_ms(),
+      input_image.timestamp()));
+
+  // Update the bitrate if needed.
+  SetBitrateBps(bitrate_adjuster_.GetAdjustedBitrateBps());
+
   VTCompressionSessionEncodeFrame(
       compression_session_, pixel_buffer, presentation_time_stamp,
       kCMTimeInvalid, frame_properties, encode_params.release(), nullptr);
@@ -315,20 +311,20 @@ int H264VideoToolboxEncoder::SetChannelParameters(uint32_t packet_loss,
 
 int H264VideoToolboxEncoder::SetRates(uint32_t new_bitrate_kbit,
                                       uint32_t frame_rate) {
-  bitrate_ = new_bitrate_kbit * 1000;
-  if (compression_session_) {
-    internal::SetVTSessionProperty(compression_session_,
-                                   kVTCompressionPropertyKey_AverageBitRate,
-                                   bitrate_);
-  }
+  target_bitrate_bps_ = 1000 * new_bitrate_kbit;
+  bitrate_adjuster_.SetTargetBitrateBps(target_bitrate_bps_);
+  SetBitrateBps(bitrate_adjuster_.GetAdjustedBitrateBps());
+
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int H264VideoToolboxEncoder::Release() {
+  // Need to reset so that the session is invalidated and won't use the
+  // callback anymore. Do not remove callback until the session is invalidated
+  // since async encoder callbacks can occur until invalidation.
+  int ret = ResetCompressionSession();
   callback_ = nullptr;
-  // Need to reset to that the session is invalidated and won't use the
-  // callback anymore.
-  return ResetCompressionSession();
+  return ret;
 }
 
 int H264VideoToolboxEncoder::ResetCompressionSession() {
@@ -389,11 +385,10 @@ void H264VideoToolboxEncoder::ConfigureCompressionSession() {
   internal::SetVTSessionProperty(compression_session_,
                                  kVTCompressionPropertyKey_ProfileLevel,
                                  kVTProfileLevel_H264_Baseline_AutoLevel);
-  internal::SetVTSessionProperty(
-      compression_session_, kVTCompressionPropertyKey_AverageBitRate, bitrate_);
   internal::SetVTSessionProperty(compression_session_,
                                  kVTCompressionPropertyKey_AllowFrameReordering,
                                  false);
+  SetEncoderBitrateBps(target_bitrate_bps_);
   // TODO(tkchin): Look at entropy mode and colorspace matrices.
   // TODO(tkchin): Investigate to see if there's any way to make this work.
   // May need it to interop with Android. Currently this call just fails.
@@ -421,6 +416,73 @@ void H264VideoToolboxEncoder::DestroyCompressionSession() {
 
 const char* H264VideoToolboxEncoder::ImplementationName() const {
   return "VideoToolbox";
+}
+
+void H264VideoToolboxEncoder::SetBitrateBps(uint32_t bitrate_bps) {
+  if (encoder_bitrate_bps_ != bitrate_bps) {
+    SetEncoderBitrateBps(bitrate_bps);
+  }
+}
+
+void H264VideoToolboxEncoder::SetEncoderBitrateBps(uint32_t bitrate_bps) {
+  if (compression_session_) {
+    internal::SetVTSessionProperty(compression_session_,
+                                   kVTCompressionPropertyKey_AverageBitRate,
+                                   bitrate_bps);
+    encoder_bitrate_bps_ = bitrate_bps;
+  }
+}
+
+void H264VideoToolboxEncoder::OnEncodedFrame(
+    OSStatus status,
+    VTEncodeInfoFlags info_flags,
+    CMSampleBufferRef sample_buffer,
+    CodecSpecificInfo codec_specific_info,
+    int32_t width,
+    int32_t height,
+    int64_t render_time_ms,
+    uint32_t timestamp) {
+  if (status != noErr) {
+    LOG(LS_ERROR) << "H264 encode failed.";
+    return;
+  }
+  if (info_flags & kVTEncodeInfo_FrameDropped) {
+    LOG(LS_INFO) << "H264 encode dropped frame.";
+  }
+
+  bool is_keyframe = false;
+  CFArrayRef attachments =
+      CMSampleBufferGetSampleAttachmentsArray(sample_buffer, 0);
+  if (attachments != nullptr && CFArrayGetCount(attachments)) {
+    CFDictionaryRef attachment =
+        static_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(attachments, 0));
+    is_keyframe =
+        !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
+  }
+
+  // Convert the sample buffer into a buffer suitable for RTP packetization.
+  // TODO(tkchin): Allocate buffers through a pool.
+  rtc::scoped_ptr<rtc::Buffer> buffer(new rtc::Buffer());
+  rtc::scoped_ptr<webrtc::RTPFragmentationHeader> header;
+  if (!H264CMSampleBufferToAnnexBBuffer(sample_buffer, is_keyframe,
+                                        buffer.get(), header.accept())) {
+    return;
+  }
+  webrtc::EncodedImage frame(buffer->data(), buffer->size(), buffer->size());
+  frame._encodedWidth = width;
+  frame._encodedHeight = height;
+  frame._completeFrame = true;
+  frame._frameType =
+      is_keyframe ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta;
+  frame.capture_time_ms_ = render_time_ms;
+  frame._timeStamp = timestamp;
+
+  int result = callback_->Encoded(frame, &codec_specific_info, header.get());
+  if (result != 0) {
+    LOG(LS_ERROR) << "Encode callback failed: " << result;
+    return;
+  }
+  bitrate_adjuster_.Update(frame._size);
 }
 
 }  // namespace webrtc

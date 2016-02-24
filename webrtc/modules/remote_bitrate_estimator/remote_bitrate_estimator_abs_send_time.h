@@ -17,6 +17,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/remote_bitrate_estimator/aimd_rate_control.h"
@@ -24,7 +25,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
-#include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {

@@ -13,6 +13,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_ENCODER_H_
 
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
+#include "webrtc/modules/video_coding/include/bitrate_adjuster.h"
 
 #if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
 
@@ -50,14 +51,27 @@ class H264VideoToolboxEncoder : public H264Encoder {
 
   const char* ImplementationName() const override;
 
+  void OnEncodedFrame(OSStatus status,
+                      VTEncodeInfoFlags info_flags,
+                      CMSampleBufferRef sample_buffer,
+                      CodecSpecificInfo codec_specific_info,
+                      int32_t width,
+                      int32_t height,
+                      int64_t render_time_ms,
+                      uint32_t timestamp);
+
  private:
   int ResetCompressionSession();
   void ConfigureCompressionSession();
   void DestroyCompressionSession();
+  void SetBitrateBps(uint32_t bitrate_bps);
+  void SetEncoderBitrateBps(uint32_t bitrate_bps);
 
-  webrtc::EncodedImageCallback* callback_;
+  EncodedImageCallback* callback_;
   VTCompressionSessionRef compression_session_;
-  int32_t bitrate_;  // Bitrate in bits per second.
+  BitrateAdjuster bitrate_adjuster_;
+  uint32_t target_bitrate_bps_;
+  uint32_t encoder_bitrate_bps_;
   int32_t width_;
   int32_t height_;
 };  // H264VideoToolboxEncoder

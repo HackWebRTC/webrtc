@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
+#include "webrtc/base/rate_statistics.h"
 
 #include <assert.h>
 
@@ -20,11 +20,9 @@ RateStatistics::RateStatistics(uint32_t window_size_ms, float scale)
       accumulated_count_(0),
       oldest_time_(0),
       oldest_index_(0),
-      scale_(scale / (num_buckets_ - 1)) {
-}
+      scale_(scale / (num_buckets_ - 1)) {}
 
-RateStatistics::~RateStatistics() {
-}
+RateStatistics::~RateStatistics() {}
 
 void RateStatistics::Reset() {
   accumulated_count_ = 0;

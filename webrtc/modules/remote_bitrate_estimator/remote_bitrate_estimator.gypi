@@ -30,8 +30,6 @@
         'overuse_detector.h',
         'overuse_estimator.cc',
         'overuse_estimator.h',
-        'rate_statistics.cc',
-        'rate_statistics.h',
         'remote_bitrate_estimator_abs_send_time.cc',
         'remote_bitrate_estimator_abs_send_time.h',
         'remote_bitrate_estimator_single_stream.cc',

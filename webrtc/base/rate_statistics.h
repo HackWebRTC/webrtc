@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_RATE_STATISTICS_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_RATE_STATISTICS_H_
+#ifndef WEBRTC_BASE_RATE_STATISTICS_H_
+#define WEBRTC_BASE_RATE_STATISTICS_H_
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
@@ -50,4 +50,4 @@ class RateStatistics {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_RATE_STATISTICS_H_
+#endif  // WEBRTC_BASE_RATE_STATISTICS_H_

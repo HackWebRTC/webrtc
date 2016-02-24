@@ -22,6 +22,7 @@
       ],
       'sources': [
         # interfaces
+        'include/bitrate_adjuster.h',
         'include/video_coding.h',
         'include/video_coding_defines.h',
 
@@ -54,6 +55,7 @@
         'video_coding_impl.h',
 
         # sources
+        'bitrate_adjuster.cc',
         'codec_database.cc',
         'codec_timer.cc',
         'content_metrics_processing.cc',

@@ -106,6 +106,8 @@
         'platform_thread_types.h',
         'random.cc',
         'random.h',
+        'rate_statistics.cc',
+        'rate_statistics.h',
         'ratetracker.cc',
         'ratetracker.h',
         'refcount.h',
