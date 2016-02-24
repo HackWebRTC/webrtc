@@ -135,11 +135,15 @@ bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
   return false;
 }
 
+// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
+// pipelining encoders better (multiple input frames before something comes
+// out). This should effectively turn off CPU adaptations for systems that
+// remotely cope with the load right now.
 CpuOveruseOptions GetCpuOveruseOptions(bool full_overuse_time) {
   CpuOveruseOptions options;
   if (full_overuse_time) {
-    options.low_encode_usage_threshold_percent = 100;
-    options.high_encode_usage_threshold_percent = 120;
+    options.low_encode_usage_threshold_percent = 150;
+    options.high_encode_usage_threshold_percent = 200;
   }
   return options;
 }
