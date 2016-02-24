@@ -200,17 +200,17 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
   const int max_dtx_frames = 400 / block_length_ms + 1;
 
   // We run |kRunTimeMs| milliseconds of pure silence.
-  const int kRunTimeMs = 2000;
+  const int kRunTimeMs = 4500;
 
   // We check that, after a |kCheckTimeMs| milliseconds (given that the CNG in
   // Opus needs time to adapt), the absolute values of DTX decoded signal are
   // bounded by |kOutputValueBound|.
-  const int kCheckTimeMs = 1500;
+  const int kCheckTimeMs = 4000;
 
 #if defined(OPUS_FIXED_POINT)
-  const uint16_t kOutputValueBound = 30;
+  const uint16_t kOutputValueBound = 20;
 #else
-  const uint16_t kOutputValueBound = 8;
+  const uint16_t kOutputValueBound = 2;
 #endif
 
   int time = 0;
