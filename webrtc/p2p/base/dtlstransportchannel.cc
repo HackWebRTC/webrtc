@@ -88,6 +88,11 @@ bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
   return ret;
 }
 
+void StreamInterfaceChannel::Close() {
+  packets_.Clear();
+  state_ = rtc::SS_CLOSED;
+}
+
 DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
     TransportChannelImpl* channel)
     : TransportChannelImpl(channel->transport_name(), channel->component()),

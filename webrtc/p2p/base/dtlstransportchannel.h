@@ -34,7 +34,7 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
 
   // Implementations of StreamInterface
   rtc::StreamState GetState() const override { return state_; }
-  void Close() override { state_ = rtc::SS_CLOSED; }
+  void Close() override;
   rtc::StreamResult Read(void* buffer,
                          size_t buffer_len,
                          size_t* read,

@@ -636,6 +636,10 @@ StreamResult OpenSSLStreamAdapter::Read(void* data, size_t data_len,
       return SR_BLOCK;
     case SSL_ERROR_ZERO_RETURN:
       LOG(LS_VERBOSE) << " -- remote side closed";
+      // When we're closed at SSL layer, also close the stream level which
+      // performs necessary clean up. Otherwise, a new incoming packet after
+      // this could overflow the stream buffer.
+      this->stream()->Close();
       return SR_EOS;
       break;
     default:

@@ -28,6 +28,9 @@ class BufferQueue {
   // Return number of queued buffers.
   size_t size() const;
 
+  // Clear the BufferQueue by moving all Buffers from |queue_| to |free_list_|.
+  void Clear();
+
   // ReadFront will only read one buffer at a time and will truncate buffers
   // that don't fit in the passed memory.
   // Returns true unless no data could be returned.
