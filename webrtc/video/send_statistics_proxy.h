@@ -142,12 +142,16 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // content type changes between real-time video and screenshare, since these
   // will be reported separately.
   struct UmaSamplesContainer {
-    explicit UmaSamplesContainer(const char* prefix);
+    UmaSamplesContainer(const char* prefix,
+                        const VideoSendStream::Stats& start_stats,
+                        Clock* clock);
     ~UmaSamplesContainer();
 
-    void UpdateHistograms();
+    void UpdateHistograms(const VideoSendStream::Config& config,
+                          const VideoSendStream::Stats& current_stats);
 
     const std::string uma_prefix_;
+    Clock* const clock_;
     int max_sent_width_per_timestamp_;
     int max_sent_height_per_timestamp_;
     SampleCounter input_width_counter_;
@@ -166,6 +170,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     rtc::RateTracker sent_frame_rate_tracker_;
     int64_t first_rtcp_stats_time_ms_;
     ReportBlockStats report_block_stats_;
+    const VideoSendStream::Stats start_stats_;
   };
 
   rtc::scoped_ptr<UmaSamplesContainer> uma_container_ GUARDED_BY(crit_);

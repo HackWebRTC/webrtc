@@ -2190,16 +2190,16 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
 
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.NackPacketsSentPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.NackPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix +
+                                         "NackPacketsReceivedPerMinute"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.FirPacketsSentPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.FirPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix +
+                                         "FirPacketsReceivedPerMinute"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.PliPacketsSentPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.PliPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix +
+                                         "PliPacketsReceivedPerMinute"));
 
   EXPECT_EQ(
       1, test::NumHistogramSamples(video_prefix + "KeyFramesSentInPermille"));

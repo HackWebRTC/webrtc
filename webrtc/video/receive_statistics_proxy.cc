@@ -108,6 +108,17 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
           "WebRTC.Video.FecBitrateReceivedInKbps",
           static_cast<int>(rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000));
     }
+    const RtcpPacketTypeCounter& counters = stats_.rtcp_packet_type_counts;
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsSentPerMinute",
+                               counters.nack_packets * 60 / elapsed_sec);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsSentPerMinute",
+                               counters.fir_packets * 60 / elapsed_sec);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsSentPerMinute",
+                               counters.pli_packets * 60 / elapsed_sec);
+    if (counters.nack_requests > 0) {
+      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
+                               counters.UniqueNackRequestsInPercent());
+    }
   }
 }
 

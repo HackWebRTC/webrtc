@@ -99,12 +99,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void GetSendStreamDataCounters(StreamDataCounters* rtp_counters,
                                  StreamDataCounters* rtx_counters) const;
 
-  void GetSendRtcpPacketTypeCounter(
-      RtcpPacketTypeCounter* packet_counter) const;
-
-  void GetReceiveRtcpPacketTypeCounter(
-      RtcpPacketTypeCounter* packet_counter) const;
-
   void RegisterSendSideDelayObserver(SendSideDelayObserver* observer);
 
   // Called on any new send bitrate estimate.
@@ -282,18 +276,9 @@ class ViEChannel : public VCMFrameTypeCallback,
       rtc::CritScope lock(&critsect_);
       if (callback_)
         callback_->RtcpPacketTypesCounterUpdated(ssrc, packet_counter);
-      counter_map_[ssrc] = packet_counter;
-    }
-
-    virtual std::map<uint32_t, RtcpPacketTypeCounter> GetPacketTypeCounterMap()
-        const {
-      rtc::CritScope lock(&critsect_);
-      return counter_map_;
     }
 
    private:
-    std::map<uint32_t, RtcpPacketTypeCounter> counter_map_
-        GUARDED_BY(critsect_);
   } rtcp_packet_type_counter_observer_;
 
   const bool sender_;

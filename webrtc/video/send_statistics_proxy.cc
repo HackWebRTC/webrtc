@@ -77,26 +77,34 @@ SendStatisticsProxy::SendStatisticsProxy(
       content_type_(content_type),
       last_sent_frame_timestamp_(0),
       encode_time_(kEncodeTimeWeigthFactor),
-      uma_container_(new UmaSamplesContainer(GetUmaPrefix(content_type_))) {
+      uma_container_(
+          new UmaSamplesContainer(GetUmaPrefix(content_type_), stats_, clock)) {
   UpdateCodecTypeHistogram(config_.encoder_settings.payload_name);
 }
 
-SendStatisticsProxy::~SendStatisticsProxy() {}
+SendStatisticsProxy::~SendStatisticsProxy() {
+  rtc::CritScope lock(&crit_);
+  uma_container_->UpdateHistograms(config_, stats_);
+}
 
 SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
-    const char* prefix)
+    const char* prefix,
+    const VideoSendStream::Stats& stats,
+    Clock* const clock)
     : uma_prefix_(prefix),
+      clock_(clock),
       max_sent_width_per_timestamp_(0),
       max_sent_height_per_timestamp_(0),
       input_frame_rate_tracker_(100u, 10u),
       sent_frame_rate_tracker_(100u, 10u),
-      first_rtcp_stats_time_ms_(-1) {}
+      first_rtcp_stats_time_ms_(-1),
+      start_stats_(stats) {}
 
-SendStatisticsProxy::UmaSamplesContainer::~UmaSamplesContainer() {
-  UpdateHistograms();
-}
+SendStatisticsProxy::UmaSamplesContainer::~UmaSamplesContainer() {}
 
-void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms() {
+void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
+    const VideoSendStream::Config& config,
+    const VideoSendStream::Stats& current_stats) {
   RTC_DCHECK(uma_prefix_ == kRealtimePrefix || uma_prefix_ == kScreenPrefix);
   const int kIndex = uma_prefix_ == kScreenPrefix ? 1 : 0;
   const int kMinRequiredSamples = 200;
@@ -167,14 +175,52 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms() {
     RTC_HISTOGRAMS_COUNTS_100000(kIndex, uma_prefix_ + "SendSideDelayMaxInMs",
                                  max_delay_ms);
   }
-  int fraction_lost = report_block_stats_.FractionLostInPercent();
+
   if (first_rtcp_stats_time_ms_ != -1) {
-    int64_t elapsed_time_ms = Clock::GetRealTimeClock()->TimeInMilliseconds() -
-                              first_rtcp_stats_time_ms_;
-    if (elapsed_time_ms / 1000 >= metrics::kMinRunTimeInSeconds &&
-        fraction_lost != -1) {
-      RTC_HISTOGRAMS_PERCENTAGE(
-          kIndex, uma_prefix_ + "SentPacketsLostInPercent", fraction_lost);
+    int64_t elapsed_sec =
+        (clock_->TimeInMilliseconds() - first_rtcp_stats_time_ms_) / 1000;
+    if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
+      int fraction_lost = report_block_stats_.FractionLostInPercent();
+      if (fraction_lost != -1) {
+        RTC_HISTOGRAMS_PERCENTAGE(
+            kIndex, uma_prefix_ + "SentPacketsLostInPercent", fraction_lost);
+      }
+
+      // The RTCP packet type counters, delivered via the
+      // RtcpPacketTypeCounterObserver interface, are aggregates over the entire
+      // life of the send stream and are not reset when switching content type.
+      // For the purpose of these statistics though, we want new counts when
+      // switching since we switch histogram name. On every reset of the
+      // UmaSamplesContainer, we save the initial state of the counters, so that
+      // we can calculate the delta here and aggregate over all ssrcs.
+      RtcpPacketTypeCounter counters;
+      for (uint32_t ssrc : config.rtp.ssrcs) {
+        auto kv = current_stats.substreams.find(ssrc);
+        if (kv == current_stats.substreams.end())
+          continue;
+
+        RtcpPacketTypeCounter stream_counters =
+            kv->second.rtcp_packet_type_counts;
+        kv = start_stats_.substreams.find(ssrc);
+        if (kv != start_stats_.substreams.end())
+          stream_counters.Subtract(kv->second.rtcp_packet_type_counts);
+
+        counters.Add(stream_counters);
+      }
+      RTC_HISTOGRAMS_COUNTS_10000(kIndex,
+                                  uma_prefix_ + "NackPacketsReceivedPerMinute",
+                                  counters.nack_packets * 60 / elapsed_sec);
+      RTC_HISTOGRAMS_COUNTS_10000(kIndex,
+                                  uma_prefix_ + "FirPacketsReceivedPerMinute",
+                                  counters.fir_packets * 60 / elapsed_sec);
+      RTC_HISTOGRAMS_COUNTS_10000(kIndex,
+                                  uma_prefix_ + "PliPacketsReceivedPerMinute",
+                                  counters.pli_packets * 60 / elapsed_sec);
+      if (counters.nack_requests > 0) {
+        RTC_HISTOGRAMS_PERCENTAGE(
+            kIndex, uma_prefix_ + "UniqueNackRequestsReceivedInPercent",
+            counters.UniqueNackRequestsInPercent());
+      }
     }
   }
 }
@@ -183,7 +229,9 @@ void SendStatisticsProxy::SetContentType(
     VideoEncoderConfig::ContentType content_type) {
   rtc::CritScope lock(&crit_);
   if (content_type_ != content_type) {
-    uma_container_.reset(new UmaSamplesContainer(GetUmaPrefix(content_type)));
+    uma_container_->UpdateHistograms(config_, stats_);
+    uma_container_.reset(
+        new UmaSamplesContainer(GetUmaPrefix(content_type), stats_, clock_));
     content_type_ = content_type;
   }
 }
@@ -355,6 +403,8 @@ void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
     return;
 
   stats->rtcp_packet_type_counts = packet_counter;
+  if (uma_container_->first_rtcp_stats_time_ms_ == -1)
+    uma_container_->first_rtcp_stats_time_ms_ = clock_->TimeInMilliseconds();
 }
 
 void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
@@ -366,8 +416,6 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
 
   stats->rtcp_stats = statistics;
   uma_container_->report_block_stats_.Store(statistics, 0, ssrc);
-  if (uma_container_->first_rtcp_stats_time_ms_ == -1)
-    uma_container_->first_rtcp_stats_time_ms_ = clock_->TimeInMilliseconds();
 }
 
 void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {}

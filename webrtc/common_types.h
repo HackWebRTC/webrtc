@@ -211,6 +211,20 @@ struct RtcpPacketTypeCounter {
     }
   }
 
+  void Subtract(const RtcpPacketTypeCounter& other) {
+    nack_packets -= other.nack_packets;
+    fir_packets -= other.fir_packets;
+    pli_packets -= other.pli_packets;
+    nack_requests -= other.nack_requests;
+    unique_nack_requests -= other.unique_nack_requests;
+    if (other.first_packet_time_ms != -1 &&
+        (other.first_packet_time_ms > first_packet_time_ms ||
+         first_packet_time_ms == -1)) {
+      // Use youngest time.
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
   int64_t TimeSinceFirstPacketInMs(int64_t now_ms) const {
     return (first_packet_time_ms == -1) ? -1 : (now_ms - first_packet_time_ms);
   }
