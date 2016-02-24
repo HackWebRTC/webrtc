@@ -725,10 +725,9 @@ TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
   const int kInitialBitrateKbps = 300;
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  const int expected_deltas[kNumDeltas] = {
-      10, 10, 10, 10, 10, 5, 5, 5, 5, 5};
+  const int expected_deltas[kNumDeltas] = {10, 10, 10, 10, 10, 5, 5, 5, 5, 5};
   std::list<int> expected_deltas_list(expected_deltas,
-                                      expected_deltas + kNumPackets - 1);
+                                      expected_deltas + kNumDeltas);
   PacedSenderProbing callback(expected_deltas_list, &clock_);
   send_bucket_.reset(
       new PacedSender(&clock_,
@@ -761,7 +760,7 @@ TEST_F(PacedSenderTest, ProbingWithTooSmallInitialFrame) {
   uint16_t sequence_number = 1234;
   const int expected_deltas[kNumDeltas] = {10, 10, 10, 10, 10, 5, 5, 5, 5, 5};
   std::list<int> expected_deltas_list(expected_deltas,
-                                      expected_deltas + kNumPackets - 1);
+                                      expected_deltas + kNumDeltas);
   PacedSenderProbing callback(expected_deltas_list, &clock_);
   send_bucket_.reset(new PacedSender(&clock_, &callback, kInitialBitrateKbps,
                                      kPaceMultiplier * kInitialBitrateKbps, 0));
