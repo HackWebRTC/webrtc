@@ -150,6 +150,7 @@
 /tools/grit
 /tools/gyp
 /tools/isolate_driver.py
+/tools/mb
 /tools/memory
 /tools/protoc_wrapper
 /tools/python
