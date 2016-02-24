@@ -10,6 +10,7 @@
 
 #include "webrtc/base/buffer.h"
 
+#include <algorithm>
 #include <cassert>
 #include <utility>
 

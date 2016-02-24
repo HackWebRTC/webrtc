@@ -10,6 +10,8 @@
 
 #include "webrtc/base/bufferqueue.h"
 
+#include <algorithm>
+
 namespace rtc {
 
 BufferQueue::BufferQueue(size_t capacity, size_t default_size)

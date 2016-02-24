@@ -189,4 +189,94 @@ TEST(BufferTest, TestClear) {
   EXPECT_EQ(buf.data<char>(), data); // No reallocation.
 }
 
+TEST(BufferTest, TestLambdaSetAppend) {
+  auto setter = [] (rtc::ArrayView<uint8_t> av) {
+    for (int i = 0; i != 15; ++i)
+      av[i] = kTestData[i];
+    return 15;
+  };
+
+  Buffer buf1;
+  buf1.SetData(kTestData, 15);
+  buf1.AppendData(kTestData, 15);
+
+  Buffer buf2;
+  EXPECT_EQ(buf2.SetData(15, setter), 15u);
+  EXPECT_EQ(buf2.AppendData(15, setter), 15u);
+  EXPECT_EQ(buf1, buf2);
+  EXPECT_EQ(buf1.capacity(), buf2.capacity());
+}
+
+TEST(BufferTest, TestLambdaSetAppendSigned) {
+  auto setter = [] (rtc::ArrayView<int8_t> av) {
+    for (int i = 0; i != 15; ++i)
+      av[i] = kTestData[i];
+    return 15;
+  };
+
+  Buffer buf1;
+  buf1.SetData(kTestData, 15);
+  buf1.AppendData(kTestData, 15);
+
+  Buffer buf2;
+  EXPECT_EQ(buf2.SetData<int8_t>(15, setter), 15u);
+  EXPECT_EQ(buf2.AppendData<int8_t>(15, setter), 15u);
+  EXPECT_EQ(buf1, buf2);
+  EXPECT_EQ(buf1.capacity(), buf2.capacity());
+}
+
+TEST(BufferTest, TestLambdaAppendEmpty) {
+  auto setter = [] (rtc::ArrayView<uint8_t> av) {
+    for (int i = 0; i != 15; ++i)
+      av[i] = kTestData[i];
+    return 15;
+  };
+
+  Buffer buf1;
+  buf1.SetData(kTestData, 15);
+
+  Buffer buf2;
+  EXPECT_EQ(buf2.AppendData(15, setter), 15u);
+  EXPECT_EQ(buf1, buf2);
+  EXPECT_EQ(buf1.capacity(), buf2.capacity());
+}
+
+TEST(BufferTest, TestLambdaAppendPartial) {
+  auto setter = [] (rtc::ArrayView<uint8_t> av) {
+    for (int i = 0; i != 7; ++i)
+      av[i] = kTestData[i];
+    return 7;
+  };
+
+  Buffer buf;
+  EXPECT_EQ(buf.AppendData(15, setter), 7u);
+  EXPECT_EQ(buf.size(), 7u);            // Size is exactly what we wrote.
+  EXPECT_GE(buf.capacity(), 7u);        // Capacity is valid.
+  EXPECT_NE(buf.data<char>(), nullptr); // Data is actually stored.
+}
+
+TEST(BufferTest, TestMutableLambdaSetAppend) {
+  uint8_t magic_number = 17;
+  auto setter = [magic_number] (rtc::ArrayView<uint8_t> av) mutable {
+    for (int i = 0; i != 15; ++i) {
+      av[i] = magic_number;
+      ++magic_number;
+    }
+    return 15;
+  };
+
+  EXPECT_EQ(magic_number, 17);
+
+  Buffer buf;
+  EXPECT_EQ(buf.SetData(15, setter), 15u);
+  EXPECT_EQ(buf.AppendData(15, setter), 15u);
+  EXPECT_EQ(buf.size(), 30u);           // Size is exactly what we wrote.
+  EXPECT_GE(buf.capacity(), 30u);       // Capacity is valid.
+  EXPECT_NE(buf.data<char>(), nullptr); // Data is actually stored.
+
+  for (uint8_t i = 0; i != buf.size(); ++i) {
+    EXPECT_EQ(buf.data()[i], magic_number + i);
+  }
+}
+
 }  // namespace rtc
