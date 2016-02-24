@@ -147,7 +147,6 @@ CongestionController::CongestionController(
              0)),
       remote_bitrate_estimator_(
           new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
-      pacer_thread_(ProcessThread::Create("PacerThread")),
       // Constructed last as this object calls the provided callback on
       // construction.
       bitrate_controller_(
@@ -160,15 +159,9 @@ CongestionController::CongestionController(
                                             clock_));
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
-  pacer_thread_->RegisterModule(pacer_.get());
-  pacer_thread_->RegisterModule(&remote_estimator_proxy_);
-  pacer_thread_->Start();
 }
 
 CongestionController::~CongestionController() {
-  pacer_thread_->Stop();
-  pacer_thread_->DeRegisterModule(pacer_.get());
-  pacer_thread_->DeRegisterModule(&remote_estimator_proxy_);
 }
 
 

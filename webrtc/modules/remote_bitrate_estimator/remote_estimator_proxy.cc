@@ -72,8 +72,6 @@ int64_t RemoteEstimatorProxy::TimeUntilNextProcess() {
 }
 
 int32_t RemoteEstimatorProxy::Process() {
-  // TODO(sprang): Perhaps we need a dedicated thread here instead?
-
   if (TimeUntilNextProcess() > 0)
     return 0;
   last_process_time_ms_ = clock_->TimeInMilliseconds();

@@ -72,7 +72,6 @@ class CongestionController : public CallStatsObserver, public Module {
   rtc::ThreadChecker config_thread_checker_;
   const rtc::scoped_ptr<PacedSender> pacer_;
   const rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
-  const rtc::scoped_ptr<ProcessThread> pacer_thread_;
   const rtc::scoped_ptr<BitrateController> bitrate_controller_;
   PacketRouter packet_router_;
   RemoteEstimatorProxy remote_estimator_proxy_;

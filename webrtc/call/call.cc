@@ -121,6 +121,7 @@ class Call : public webrtc::Call, public PacketReceiver,
 
   const int num_cpu_cores_;
   const rtc::scoped_ptr<ProcessThread> module_process_thread_;
+  const rtc::scoped_ptr<ProcessThread> pacer_thread_;
   const rtc::scoped_ptr<CallStats> call_stats_;
   const rtc::scoped_ptr<BitrateAllocator> bitrate_allocator_;
   Call::Config config_;
@@ -183,6 +184,7 @@ Call::Call(const Call::Config& config)
     : clock_(Clock::GetRealTimeClock()),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
+      pacer_thread_(ProcessThread::Create("PacerThread")),
       call_stats_(new CallStats(clock_)),
       bitrate_allocator_(new BitrateAllocator()),
       config_(config),
@@ -214,17 +216,21 @@ Call::Call(const Call::Config& config)
   }
 
   Trace::CreateTrace();
-  module_process_thread_->Start();
-  module_process_thread_->RegisterModule(call_stats_.get());
-  module_process_thread_->RegisterModule(congestion_controller_.get());
   call_stats_->RegisterStatsObserver(congestion_controller_.get());
 
   congestion_controller_->SetBweBitrates(
       config_.bitrate_config.min_bitrate_bps,
       config_.bitrate_config.start_bitrate_bps,
       config_.bitrate_config.max_bitrate_bps);
-
   congestion_controller_->GetBitrateController()->SetEventLog(event_log_);
+
+  module_process_thread_->Start();
+  module_process_thread_->RegisterModule(call_stats_.get());
+  module_process_thread_->RegisterModule(congestion_controller_.get());
+  pacer_thread_->RegisterModule(congestion_controller_->pacer());
+  pacer_thread_->RegisterModule(
+      congestion_controller_->GetRemoteBitrateEstimator(true));
+  pacer_thread_->Start();
 }
 
 Call::~Call() {
@@ -239,10 +245,14 @@ Call::~Call() {
   RTC_CHECK(video_receive_ssrcs_.empty());
   RTC_CHECK(video_receive_streams_.empty());
 
-  call_stats_->DeregisterStatsObserver(congestion_controller_.get());
+  pacer_thread_->Stop();
+  pacer_thread_->DeRegisterModule(congestion_controller_->pacer());
+  pacer_thread_->DeRegisterModule(
+      congestion_controller_->GetRemoteBitrateEstimator(true));
   module_process_thread_->DeRegisterModule(congestion_controller_.get());
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
+  call_stats_->DeregisterStatsObserver(congestion_controller_.get());
   Trace::ReturnTrace();
 }
 
