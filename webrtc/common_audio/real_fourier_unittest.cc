@@ -13,7 +13,6 @@
 #include <stdlib.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/real_fourier_openmax.h"
 #include "webrtc/common_audio/real_fourier_ooura.h"
 

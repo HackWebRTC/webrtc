@@ -136,11 +136,11 @@ class CompositionConverter : public AudioConverter {
   ScopedVector<ChannelBuffer<float>> buffers_;
 };
 
-rtc::scoped_ptr<AudioConverter> AudioConverter::Create(size_t src_channels,
+std::unique_ptr<AudioConverter> AudioConverter::Create(size_t src_channels,
                                                        size_t src_frames,
                                                        size_t dst_channels,
                                                        size_t dst_frames) {
-  rtc::scoped_ptr<AudioConverter> sp;
+  std::unique_ptr<AudioConverter> sp;
   if (src_channels > dst_channels) {
     if (src_frames != dst_frames) {
       ScopedVector<AudioConverter> converters;

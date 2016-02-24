@@ -295,11 +295,11 @@ int AudioProcessingImpl::InitializeLocked() {
         formats_.rev_proc_format.num_channels(),
         rev_audio_buffer_out_num_frames));
     if (rev_conversion_needed()) {
-      render_.render_converter = rtc::ScopedToUnique(AudioConverter::Create(
+      render_.render_converter = AudioConverter::Create(
           formats_.api_format.reverse_input_stream().num_channels(),
           formats_.api_format.reverse_input_stream().num_frames(),
           formats_.api_format.reverse_output_stream().num_channels(),
-          formats_.api_format.reverse_output_stream().num_frames()));
+          formats_.api_format.reverse_output_stream().num_frames());
     } else {
       render_.render_converter.reset(nullptr);
     }
