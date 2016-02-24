@@ -178,7 +178,8 @@ void NadaBweSender::GiveFeedback(const FeedbackPacket& feedback) {
 
   // Following parameters might be optimized.
   const int64_t kQueuingDelayUpperBoundMs = 10;
-  const float kDerivativeUpperBound = 10.0f / min_feedback_delay_ms_;
+  const float kDerivativeUpperBound =
+      10.0f / std::max<int64_t>(1, min_feedback_delay_ms_);
   // In the modified version, a higher kMinUpperBound allows a higher d_hat
   // upper bound for calling AcceleratedRampUp.
   const float kProportionalityDelayBits = 20.0f;
