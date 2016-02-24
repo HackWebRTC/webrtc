@@ -297,14 +297,14 @@ void OveruseFrameDetector::FrameSent(uint32_t timestamp) {
   }
 }
 
-int32_t OveruseFrameDetector::Process() {
+void OveruseFrameDetector::Process() {
   RTC_DCHECK(processing_thread_.CalledOnValidThread());
 
   int64_t now = clock_->TimeInMilliseconds();
 
   // Used to protect against Process() being called too often.
   if (now < next_process_time_ms_)
-    return 0;
+    return;
 
   next_process_time_ms_ = now + kProcessIntervalMs;
 
@@ -313,7 +313,7 @@ int32_t OveruseFrameDetector::Process() {
     rtc::CritScope cs(&crit_);
     ++num_process_times_;
     if (num_process_times_ <= options_.min_process_count || !metrics_)
-      return 0;
+      return;
 
     current_metrics = *metrics_;
   }
@@ -358,8 +358,6 @@ int32_t OveruseFrameDetector::Process() {
                   << " encode usage " << current_metrics.encode_usage_percent
                   << " overuse detections " << num_overuse_detections_
                   << " rampup delay " << rampup_delay;
-
-  return 0;
 }
 
 bool OveruseFrameDetector::IsOverusing(const CpuOveruseMetrics& metrics) {

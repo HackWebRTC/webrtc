@@ -249,7 +249,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD0(TimeUntilNextProcess,
         int64_t());
   MOCK_METHOD0(Process,
-        int32_t());
+        void());
   MOCK_METHOD1(RegisterSendFrameCountObserver,
       void(FrameCountObserver*));
   MOCK_CONST_METHOD0(GetSendFrameCountObserver,

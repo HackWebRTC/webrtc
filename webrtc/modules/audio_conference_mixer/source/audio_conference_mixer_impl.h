@@ -64,7 +64,7 @@ public:
 
     // Module functions
     int64_t TimeUntilNextProcess() override;
-    int32_t Process() override;
+    void Process() override;
 
     // AudioConferenceMixer functions
     int32_t RegisterMixedStreamCallback(

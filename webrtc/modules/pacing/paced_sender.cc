@@ -373,7 +373,7 @@ int64_t PacedSender::TimeUntilNextProcess() {
   return std::max<int64_t>(kMinPacketLimitMs - elapsed_time_ms, 0);
 }
 
-int32_t PacedSender::Process() {
+void PacedSender::Process() {
   int64_t now_us = clock_->TimeInMicroseconds();
   CriticalSectionScoped cs(critsect_.get());
   int64_t elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
@@ -402,7 +402,7 @@ int32_t PacedSender::Process() {
   }
   while (!packets_->Empty()) {
     if (media_budget_->bytes_remaining() == 0 && !prober_->IsProbing())
-      return 0;
+      return;
 
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
@@ -413,17 +413,17 @@ int32_t PacedSender::Process() {
       // Send succeeded, remove it from the queue.
       packets_->FinalizePop(packet);
       if (prober_->IsProbing())
-        return 0;
+        return;
     } else {
       // Send failed, put it back into the queue.
       packets_->CancelPop(packet);
-      return 0;
+      return;
     }
   }
 
   // TODO(holmer): Remove the paused_ check when issue 5307 has been fixed.
   if (paused_ || !packets_->Empty())
-    return 0;
+    return;
 
   size_t padding_needed;
   if (prober_->IsProbing()) {
@@ -434,7 +434,6 @@ int32_t PacedSender::Process() {
 
   if (padding_needed > 0)
     SendPadding(static_cast<size_t>(padding_needed));
-  return 0;
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet) {

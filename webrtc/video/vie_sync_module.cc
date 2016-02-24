@@ -88,14 +88,14 @@ int64_t ViESyncModule::TimeUntilNextProcess() {
   return kSyncIntervalMs - (TickTime::Now() - last_sync_time_).Milliseconds();
 }
 
-int32_t ViESyncModule::Process() {
+void ViESyncModule::Process() {
   rtc::CritScope lock(&data_cs_);
   last_sync_time_ = TickTime::Now();
 
   const int current_video_delay_ms = vcm_->Delay();
 
   if (voe_channel_id_ == -1) {
-    return 0;
+    return;
   }
   assert(video_rtp_rtcp_ && voe_sync_interface_);
   assert(sync_.get());
@@ -105,7 +105,7 @@ int32_t ViESyncModule::Process() {
   if (voe_sync_interface_->GetDelayEstimate(voe_channel_id_,
                                             &audio_jitter_buffer_delay_ms,
                                             &playout_buffer_delay_ms) != 0) {
-    return 0;
+    return;
   }
   const int current_audio_delay_ms = audio_jitter_buffer_delay_ms +
       playout_buffer_delay_ms;
@@ -114,26 +114,26 @@ int32_t ViESyncModule::Process() {
   RtpReceiver* voice_receiver = NULL;
   if (0 != voe_sync_interface_->GetRtpRtcp(voe_channel_id_, &voice_rtp_rtcp,
                                            &voice_receiver)) {
-    return 0;
+    return;
   }
   assert(voice_rtp_rtcp);
   assert(voice_receiver);
 
   if (UpdateMeasurements(&video_measurement_, *video_rtp_rtcp_,
                          *video_receiver_) != 0) {
-    return 0;
+    return;
   }
 
   if (UpdateMeasurements(&audio_measurement_, *voice_rtp_rtcp,
                          *voice_receiver) != 0) {
-    return 0;
+    return;
   }
 
   int relative_delay_ms;
   // Calculate how much later or earlier the audio stream is compared to video.
   if (!sync_->ComputeRelativeDelay(audio_measurement_, video_measurement_,
                                    &relative_delay_ms)) {
-    return 0;
+    return;
   }
 
   TRACE_COUNTER1("webrtc", "SyncCurrentVideoDelay", current_video_delay_ms);
@@ -147,7 +147,7 @@ int32_t ViESyncModule::Process() {
                             current_audio_delay_ms,
                             &target_audio_delay_ms,
                             &target_video_delay_ms)) {
-    return 0;
+    return;
   }
 
   if (voe_sync_interface_->SetMinimumPlayoutDelay(
@@ -155,7 +155,6 @@ int32_t ViESyncModule::Process() {
     LOG(LS_ERROR) << "Error setting voice delay.";
   }
   vcm_->SetMinimumPlayoutDelay(target_video_delay_ms);
-  return 0;
 }
 
 }  // namespace webrtc

@@ -123,8 +123,8 @@ TEST_F(FakeAdmTest, TestProccess) {
   // Next process call must be some time in the future (or now).
   EXPECT_LE(0, fake_audio_capture_module_->TimeUntilNextProcess());
   // Process call updates TimeUntilNextProcess() but there are no guarantees on
-  // timing so just check that Process can ba called successfully.
-  EXPECT_LE(0, fake_audio_capture_module_->Process());
+  // timing so just check that Process can be called successfully.
+  fake_audio_capture_module_->Process();
 }
 
 TEST_F(FakeAdmTest, PlayoutTest) {

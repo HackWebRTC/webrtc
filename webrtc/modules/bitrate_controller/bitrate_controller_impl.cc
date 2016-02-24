@@ -162,16 +162,15 @@ int64_t BitrateControllerImpl::TimeUntilNextProcess() {
       kBitrateControllerUpdateIntervalMs - time_since_update_ms, 0);
 }
 
-int32_t BitrateControllerImpl::Process() {
+void BitrateControllerImpl::Process() {
   if (TimeUntilNextProcess() > 0)
-    return 0;
+    return;
   {
     rtc::CritScope cs(&critsect_);
     bandwidth_estimation_.UpdateEstimate(clock_->TimeInMilliseconds());
   }
   MaybeTriggerOnNetworkChanged();
   last_bitrate_update_ms_ = clock_->TimeInMilliseconds();
-  return 0;
 }
 
 void BitrateControllerImpl::OnReceivedRtcpReceiverReport(

@@ -53,8 +53,8 @@ int64_t RembBweSender::TimeUntilNextProcess() {
   return bitrate_controller_->TimeUntilNextProcess();
 }
 
-int RembBweSender::Process() {
-  return bitrate_controller_->Process();
+void RembBweSender::Process() {
+  bitrate_controller_->Process();
 }
 
 int RembBweSender::GetFeedbackIntervalMs() const {

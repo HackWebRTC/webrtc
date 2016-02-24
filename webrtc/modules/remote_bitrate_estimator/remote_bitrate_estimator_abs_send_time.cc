@@ -333,9 +333,7 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
   }
 }
 
-int32_t RemoteBitrateEstimatorAbsSendTime::Process() {
-  return 0;
-}
+void RemoteBitrateEstimatorAbsSendTime::Process() {}
 
 int64_t RemoteBitrateEstimatorAbsSendTime::TimeUntilNextProcess() {
   const int64_t kDisabledModuleTime = 1000;

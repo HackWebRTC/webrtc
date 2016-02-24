@@ -95,11 +95,10 @@ int64_t MediaFileImpl::TimeUntilNextProcess()
     return -1;
 }
 
-int32_t MediaFileImpl::Process()
+void MediaFileImpl::Process()
 {
     WEBRTC_TRACE(kTraceWarning, kTraceFile, _id,
                  "Process: This method is not used by MediaFile class.");
-    return -1;
 }
 
 int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,

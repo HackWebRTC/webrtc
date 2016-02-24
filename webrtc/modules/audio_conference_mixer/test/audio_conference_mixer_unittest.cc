@@ -145,7 +145,7 @@ TEST(AudioConferenceMixer, LargestEnergyVadActiveMixed) {
   EXPECT_CALL(output_receiver, NewMixedAudio(_, _, _, _))
       .Times(AtLeast(1));
 
-  EXPECT_EQ(0, mixer->Process());
+  mixer->Process();
 
   for (int i = 0; i < kParticipants; ++i) {
     bool is_mixed = participants[i].IsMixed();

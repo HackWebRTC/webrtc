@@ -53,7 +53,7 @@ public:
     static void DestroyVideoRender(VideoRender* module);
 
     int64_t TimeUntilNextProcess() override = 0;
-    int32_t Process() override = 0;
+    void Process() override = 0;
 
     /**************************************************************************
      *

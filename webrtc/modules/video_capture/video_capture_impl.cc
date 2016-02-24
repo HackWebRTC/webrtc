@@ -93,7 +93,7 @@ int64_t VideoCaptureImpl::TimeUntilNextProcess()
 }
 
 // Process any pending tasks such as timeouts
-int32_t VideoCaptureImpl::Process()
+void VideoCaptureImpl::Process()
 {
     CriticalSectionScoped cs(&_callBackCs);
 
@@ -136,8 +136,6 @@ int32_t VideoCaptureImpl::Process()
     }
 
     _lastProcessFrameCount = _incomingFrameTimes[0];
-
-    return 0;
 }
 
 VideoCaptureImpl::VideoCaptureImpl(const int32_t id)

@@ -53,9 +53,7 @@ VideoSender::VideoSender(Clock* clock,
 
 VideoSender::~VideoSender() {}
 
-int32_t VideoSender::Process() {
-  int32_t returnValue = VCM_OK;
-
+void VideoSender::Process() {
   if (_sendStatsTimer.TimeUntilProcess() == 0) {
     _sendStatsTimer.Processed();
     CriticalSectionScoped cs(process_crit_sect_.get());
@@ -72,8 +70,6 @@ int32_t VideoSender::Process() {
     // updated even if bandwidth hasn't changed.
     encoder_params_.input_frame_rate = _mediaOpt.InputFrameRate();
   }
-
-  return returnValue;
 }
 
 int64_t VideoSender::TimeUntilNextProcess() {
