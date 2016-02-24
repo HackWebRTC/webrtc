@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 
+#include <memory>
 #include <string>
 
 #include "webrtc/modules/audio_device/audio_device_generic.h"
@@ -182,8 +183,8 @@ class FileAudioDevice : public AudioDeviceGeneric {
   size_t _playoutFramesIn10MS;
 
   // TODO(pbos): Make plain members instead of pointers and stop resetting them.
-  rtc::scoped_ptr<rtc::PlatformThread> _ptrThreadRec;
-  rtc::scoped_ptr<rtc::PlatformThread> _ptrThreadPlay;
+  std::unique_ptr<rtc::PlatformThread> _ptrThreadRec;
+  std::unique_ptr<rtc::PlatformThread> _ptrThreadPlay;
 
   bool _playing;
   bool _recording;

@@ -13,8 +13,9 @@
 
 #if defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 
+#include <memory>
+
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 
@@ -216,7 +217,7 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
 
   AudioDeviceBuffer _audioDeviceBuffer;
 #if defined(WEBRTC_ANDROID)
-  rtc::scoped_ptr<AudioManager> _audioManagerAndroid;
+  std::unique_ptr<AudioManager> _audioManagerAndroid;
 #endif
   int32_t _id;
   AudioLayer _platformAudioLayer;

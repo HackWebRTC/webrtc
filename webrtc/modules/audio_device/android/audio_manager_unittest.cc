@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/android/build_info.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/android/ensure_initialized.h"
@@ -43,7 +44,7 @@ class AudioManagerTest : public ::testing::Test {
     EXPECT_NE(0, audio_manager()->GetDelayEstimateInMilliseconds());
   }
 
-  rtc::scoped_ptr<AudioManager> audio_manager_;
+  std::unique_ptr<AudioManager> audio_manager_;
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
 };

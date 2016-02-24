@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <limits>
 #include <list>
+#include <memory>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -21,7 +22,6 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
@@ -145,7 +145,7 @@ class FileAudioStream : public AudioStreamInterface {
  private:
   size_t file_size_in_bytes_;
   int sample_rate_;
-  rtc::scoped_ptr<int16_t[]> file_;
+  std::unique_ptr<int16_t[]> file_;
   size_t file_pos_;
 };
 
@@ -233,7 +233,7 @@ class FifoAudioStream : public AudioStreamInterface {
   rtc::CriticalSection lock_;
   const size_t frames_per_buffer_;
   const size_t bytes_per_buffer_;
-  rtc::scoped_ptr<AudioBufferList> fifo_;
+  std::unique_ptr<AudioBufferList> fifo_;
   size_t largest_size_;
   size_t total_written_elements_;
   size_t write_count_;
@@ -593,7 +593,7 @@ class AudioDeviceTest : public ::testing::Test {
     EXPECT_FALSE(audio_device()->Recording());
   }
 
-  rtc::scoped_ptr<EventWrapper> test_is_done_;
+  std::unique_ptr<EventWrapper> test_is_done_;
   rtc::scoped_refptr<AudioDeviceModule> audio_device_;
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
@@ -761,7 +761,7 @@ TEST_F(AudioDeviceTest, RunPlayoutWithFileAsSource) {
   NiceMock<MockAudioTransport> mock(kPlayout);
   const int num_callbacks = kFilePlayTimeInSec * kNumCallbacksPerSecond;
   std::string file_name = GetFileName(playout_sample_rate());
-  rtc::scoped_ptr<FileAudioStream> file_audio_stream(
+  std::unique_ptr<FileAudioStream> file_audio_stream(
       new FileAudioStream(num_callbacks, file_name, playout_sample_rate()));
   mock.HandleCallbacks(test_is_done_.get(), file_audio_stream.get(),
                        num_callbacks);
@@ -795,7 +795,7 @@ TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   EXPECT_EQ(record_channels(), playout_channels());
   EXPECT_EQ(record_sample_rate(), playout_sample_rate());
   NiceMock<MockAudioTransport> mock(kPlayout | kRecording);
-  rtc::scoped_ptr<FifoAudioStream> fifo_audio_stream(
+  std::unique_ptr<FifoAudioStream> fifo_audio_stream(
       new FifoAudioStream(playout_frames_per_10ms_buffer()));
   mock.HandleCallbacks(test_is_done_.get(), fifo_audio_stream.get(),
                        kFullDuplexTimeInSec * kNumCallbacksPerSecond);
@@ -824,7 +824,7 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   EXPECT_EQ(record_channels(), playout_channels());
   EXPECT_EQ(record_sample_rate(), playout_sample_rate());
   NiceMock<MockAudioTransport> mock(kPlayout | kRecording);
-  rtc::scoped_ptr<LatencyMeasuringAudioStream> latency_audio_stream(
+  std::unique_ptr<LatencyMeasuringAudioStream> latency_audio_stream(
       new LatencyMeasuringAudioStream(playout_frames_per_10ms_buffer()));
   mock.HandleCallbacks(test_is_done_.get(), latency_audio_stream.get(),
                        kMeasureLatencyTimeInSec * kNumCallbacksPerSecond);

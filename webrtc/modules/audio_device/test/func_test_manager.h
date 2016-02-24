@@ -12,6 +12,7 @@
 #define WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 
 #include <list>
+#include <memory>
 #include <string>
 
 #include "webrtc/common_audio/resampler/include/resampler.h"
@@ -206,7 +207,7 @@ private:
     std::string _playoutFile16;
     std::string _playoutFile8;
 
-    rtc::scoped_ptr<ProcessThread> _processThread;
+    std::unique_ptr<ProcessThread> _processThread;
     AudioDeviceModule* _audioDevice;
     AudioEventObserver* _audioEventObserver;
     AudioTransportImpl* _audioTransport;

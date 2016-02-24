@@ -11,9 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
 
+#include <memory>
+
 #include <AudioUnit/AudioUnit.h>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 
@@ -256,11 +257,11 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // can provide audio data frames of size 128 and these are accumulated until
   // enough data to supply one 10ms call exists. This 10ms chunk is then sent
   // to WebRTC and the remaining part is stored.
-  rtc::scoped_ptr<FineAudioBuffer> fine_audio_buffer_;
+  std::unique_ptr<FineAudioBuffer> fine_audio_buffer_;
 
   // Extra audio buffer to be used by the playout side for rendering audio.
   // The buffer size is given by FineAudioBuffer::RequiredBufferSizeBytes().
-  rtc::scoped_ptr<SInt8[]> playout_audio_buffer_;
+  std::unique_ptr<SInt8[]> playout_audio_buffer_;
 
   // Provides a mechanism for encapsulating one or more buffers of audio data.
   // Only used on the recording side.
@@ -268,7 +269,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
 
   // Temporary storage for recorded data. AudioUnitRender() renders into this
   // array as soon as a frame of the desired buffer size has been recorded.
-  rtc::scoped_ptr<SInt8[]> record_audio_buffer_;
+  std::unique_ptr<SInt8[]> record_audio_buffer_;
 
   // Set to 1 when recording is active and 0 otherwise.
   volatile int recording_;

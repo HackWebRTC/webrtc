@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_BUILD_INFO_H_
 
 #include <jni.h>
+#include <memory>
 #include <string>
 
 #include "webrtc/modules/utility/include/jvm_android.h"
@@ -55,7 +56,7 @@ class BuildInfo {
 
   // Provides access to the JNIEnv interface pointer and the JavaToStdString()
   // method which is used to translate Java strings to std strings.
-  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+  std::unique_ptr<JNIEnvironment> j_environment_;
 
   // Holds the jclass object and provides access to CallStaticObjectMethod().
   // Used by GetStringFromJava() during construction only.

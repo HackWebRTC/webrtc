@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_RECORD_JNI_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_RECORD_JNI_H_
 
+#include <memory>
+
 #include <jni.h>
 
 #include "webrtc/base/thread_checker.h"
@@ -46,7 +48,7 @@ class AudioRecordJni {
   class JavaAudioRecord {
    public:
     JavaAudioRecord(NativeRegistration* native_registration,
-                   rtc::scoped_ptr<GlobalRef> audio_track);
+                   std::unique_ptr<GlobalRef> audio_track);
     ~JavaAudioRecord();
 
     int InitRecording(int sample_rate, size_t channels);
@@ -57,7 +59,7 @@ class AudioRecordJni {
     bool EnableBuiltInNS(bool enable);
 
    private:
-    rtc::scoped_ptr<GlobalRef> audio_record_;
+    std::unique_ptr<GlobalRef> audio_record_;
     jmethodID init_recording_;
     jmethodID start_recording_;
     jmethodID stop_recording_;
@@ -117,13 +119,13 @@ class AudioRecordJni {
   AttachCurrentThreadIfNeeded attach_thread_if_needed_;
 
   // Wraps the JNI interface pointer and methods associated with it.
-  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+  std::unique_ptr<JNIEnvironment> j_environment_;
 
   // Contains factory method for creating the Java object.
-  rtc::scoped_ptr<NativeRegistration> j_native_registration_;
+  std::unique_ptr<NativeRegistration> j_native_registration_;
 
   // Wraps the Java specific parts of the AudioRecordJni class.
-  rtc::scoped_ptr<AudioRecordJni::JavaAudioRecord> j_audio_record_;
+  std::unique_ptr<AudioRecordJni::JavaAudioRecord> j_audio_record_;
 
   // Raw pointer to the audio manger.
   const AudioManager* audio_manager_;

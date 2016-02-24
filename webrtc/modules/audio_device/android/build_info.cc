@@ -15,7 +15,7 @@
 namespace webrtc {
 
 BuildInfo::BuildInfo()
-    : j_environment_(JVM::GetInstance()->environment()),
+    : j_environment_(rtc::ScopedToUnique(JVM::GetInstance()->environment())),
       j_build_info_(JVM::GetInstance()->GetClass(
           "org/webrtc/voiceengine/BuildInfo")) {
 }

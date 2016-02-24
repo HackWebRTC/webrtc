@@ -16,7 +16,6 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/utility/include/helpers_android.h"
 
@@ -32,7 +31,7 @@ namespace webrtc {
 // AudioManager::JavaAudioManager implementation
 AudioManager::JavaAudioManager::JavaAudioManager(
     NativeRegistration* native_reg,
-    rtc::scoped_ptr<GlobalRef> audio_manager)
+    std::unique_ptr<GlobalRef> audio_manager)
     : audio_manager_(std::move(audio_manager)),
       init_(native_reg->GetMethodId("init", "()Z")),
       dispose_(native_reg->GetMethodId("dispose", "()V")),
@@ -67,7 +66,7 @@ bool AudioManager::JavaAudioManager::IsDeviceBlacklistedForOpenSLESUsage() {
 
 // AudioManager implementation
 AudioManager::AudioManager()
-    : j_environment_(JVM::GetInstance()->environment()),
+    : j_environment_(rtc::ScopedToUnique(JVM::GetInstance()->environment())),
       audio_layer_(AudioDeviceModule::kPlatformDefaultAudio),
       initialized_(false),
       hardware_aec_(false),
@@ -81,14 +80,14 @@ AudioManager::AudioManager()
       {"nativeCacheAudioParameters",
        "(IIZZZZIIJ)V",
        reinterpret_cast<void*>(&webrtc::AudioManager::CacheAudioParameters)}};
-  j_native_registration_ = j_environment_->RegisterNatives(
+  j_native_registration_ = rtc::ScopedToUnique(j_environment_->RegisterNatives(
       "org/webrtc/voiceengine/WebRtcAudioManager",
-      native_methods, arraysize(native_methods));
+      native_methods, arraysize(native_methods)));
   j_audio_manager_.reset(new JavaAudioManager(
       j_native_registration_.get(),
-      j_native_registration_->NewObject(
+      rtc::ScopedToUnique(j_native_registration_->NewObject(
           "<init>", "(Landroid/content/Context;J)V",
-          JVM::GetInstance()->context(), PointerTojlong(this))));
+          JVM::GetInstance()->context(), PointerTojlong(this)))));
 }
 
 AudioManager::~AudioManager() {

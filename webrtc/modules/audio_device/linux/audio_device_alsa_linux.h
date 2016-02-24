@@ -11,6 +11,8 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ALSA_LINUX_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ALSA_LINUX_H
 
+#include <memory>
+
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
@@ -187,8 +189,8 @@ private:
 
     // TODO(pbos): Make plain members and start/stop instead of resetting these
     // pointers. A thread can be reused.
-    rtc::scoped_ptr<rtc::PlatformThread> _ptrThreadRec;
-    rtc::scoped_ptr<rtc::PlatformThread> _ptrThreadPlay;
+    std::unique_ptr<rtc::PlatformThread> _ptrThreadRec;
+    std::unique_ptr<rtc::PlatformThread> _ptrThreadPlay;
 
     int32_t _id;
 
