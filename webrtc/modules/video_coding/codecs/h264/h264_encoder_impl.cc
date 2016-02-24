@@ -20,12 +20,20 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
 namespace {
 
 const bool kOpenH264EncoderDetailedLogging = false;
+
+// Used by histograms. Values of entries should not be changed.
+enum H264EncoderImplEvent {
+  kH264EncoderEventInit = 0,
+  kH264EncoderEventError = 1,
+  kH264EncoderEventMax = 16,
+};
 
 int NumberOfThreads(int width, int height, int number_of_cores) {
   // TODO(hbos): In Chromium, multiple threads do not work with sandbox on Mac,
@@ -141,7 +149,9 @@ static void RtpFragmentize(EncodedImage* encoded_image,
 
 H264EncoderImpl::H264EncoderImpl()
     : openh264_encoder_(nullptr),
-      encoded_image_callback_(nullptr) {
+      encoded_image_callback_(nullptr),
+      has_reported_init_(false),
+      has_reported_error_(false) {
 }
 
 H264EncoderImpl::~H264EncoderImpl() {
@@ -151,18 +161,26 @@ H264EncoderImpl::~H264EncoderImpl() {
 int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
                                     int32_t number_of_cores,
                                     size_t /*max_payload_size*/) {
+  ReportInit();
   if (!codec_settings ||
       codec_settings->codecType != kVideoCodecH264) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (codec_settings->maxFramerate == 0)
+  if (codec_settings->maxFramerate == 0) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  if (codec_settings->width < 1 || codec_settings->height < 1)
+  }
+  if (codec_settings->width < 1 || codec_settings->height < 1) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
 
   int32_t release_ret = Release();
-  if (release_ret != WEBRTC_VIDEO_CODEC_OK)
+  if (release_ret != WEBRTC_VIDEO_CODEC_OK) {
+    ReportError();
     return release_ret;
+  }
   RTC_DCHECK(!openh264_encoder_);
 
   // Create encoder.
@@ -170,6 +188,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
     // Failed to create encoder.
     LOG(LS_ERROR) << "Failed to create OpenH264 encoder";
     RTC_DCHECK(!openh264_encoder_);
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   RTC_DCHECK(openh264_encoder_);
@@ -196,6 +215,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
   } else if (codec_settings_.mode == kScreensharing) {
     init_params.iUsageType = SCREEN_CONTENT_REAL_TIME;
   } else {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   init_params.iPicWidth = codec_settings_.width;
@@ -236,6 +256,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
   if (openh264_encoder_->InitializeExt(&init_params) != 0) {
     LOG(LS_ERROR) << "Failed to initialize OpenH264 encoder";
     Release();
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   int video_format = EVideoFormatType::videoFormatI420;
@@ -299,13 +320,18 @@ int32_t H264EncoderImpl::SetRates(uint32_t bitrate, uint32_t framerate) {
 int32_t H264EncoderImpl::Encode(
     const VideoFrame& frame, const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
-  if (!IsInitialized())
+  if (!IsInitialized()) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  if (frame.IsZeroSize())
+  }
+  if (frame.IsZeroSize()) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
   if (!encoded_image_callback_) {
     LOG(LS_WARNING) << "InitEncode() has been called, but a callback function "
                     << "has not been set with RegisterEncodeCompleteCallback()";
+    ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (frame.width()  != codec_settings_.width ||
@@ -313,6 +339,7 @@ int32_t H264EncoderImpl::Encode(
     LOG(LS_WARNING) << "Encoder initialized for " << codec_settings_.width
                     << "x" << codec_settings_.height << " but trying to encode "
                     << frame.width() << "x" << frame.height() << " frame.";
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_SIZE;
   }
 
@@ -357,6 +384,7 @@ int32_t H264EncoderImpl::Encode(
   if (enc_ret != 0) {
     LOG(LS_ERROR) << "OpenH264 frame encoding failed, EncodeFrame returned "
                   << enc_ret << ".";
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
@@ -387,6 +415,24 @@ int32_t H264EncoderImpl::Encode(
 
 bool H264EncoderImpl::IsInitialized() const {
   return openh264_encoder_ != nullptr;
+}
+
+void H264EncoderImpl::ReportInit() {
+  if (has_reported_init_)
+    return;
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.H264EncoderImpl.Event",
+                            kH264EncoderEventInit,
+                            kH264EncoderEventMax);
+  has_reported_init_ = true;
+}
+
+void H264EncoderImpl::ReportError() {
+  if (has_reported_error_)
+    return;
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.H264EncoderImpl.Event",
+                            kH264EncoderEventError,
+                            kH264EncoderEventMax);
+  has_reported_error_ = true;
 }
 
 int32_t H264EncoderImpl::SetChannelParameters(

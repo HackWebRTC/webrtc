@@ -57,12 +57,19 @@ class H264EncoderImpl : public H264Encoder {
  private:
   bool IsInitialized() const;
 
+  // Reports statistics with histograms.
+  void ReportInit();
+  void ReportError();
+
   ISVCEncoder* openh264_encoder_;
   VideoCodec codec_settings_;
 
   EncodedImage encoded_image_;
   rtc::scoped_ptr<uint8_t[]> encoded_image_buffer_;
   EncodedImageCallback* encoded_image_callback_;
+
+  bool has_reported_init_;
+  bool has_reported_error_;
 };
 
 }  // namespace webrtc

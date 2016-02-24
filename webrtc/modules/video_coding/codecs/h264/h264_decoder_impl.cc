@@ -24,6 +24,7 @@ extern "C" {
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -33,6 +34,13 @@ const AVPixelFormat kPixelFormat = AV_PIX_FMT_YUV420P;
 const size_t kYPlaneIndex = 0;
 const size_t kUPlaneIndex = 1;
 const size_t kVPlaneIndex = 2;
+
+// Used by histograms. Values of entries should not be changed.
+enum H264DecoderImplEvent {
+  kH264DecoderEventInit = 0,
+  kH264DecoderEventError = 1,
+  kH264DecoderEventMax = 16,
+};
 
 #if defined(WEBRTC_INITIALIZE_FFMPEG)
 
@@ -109,6 +117,7 @@ int H264DecoderImpl::AVGetBuffer2(
                                 static_cast<unsigned int>(height), 0, nullptr);
   if (ret < 0) {
     LOG(LS_ERROR) << "Invalid picture size " << width << "x" << height;
+    decoder->ReportError();
     return ret;
   }
 
@@ -158,7 +167,9 @@ void H264DecoderImpl::AVFreeBuffer2(void* opaque, uint8_t* data) {
 }
 
 H264DecoderImpl::H264DecoderImpl() : pool_(true),
-                                     decoded_image_callback_(nullptr) {
+                                     decoded_image_callback_(nullptr),
+                                     has_reported_init_(false),
+                                     has_reported_error_(false) {
 }
 
 H264DecoderImpl::~H264DecoderImpl() {
@@ -167,8 +178,10 @@ H264DecoderImpl::~H264DecoderImpl() {
 
 int32_t H264DecoderImpl::InitDecode(const VideoCodec* codec_settings,
                                     int32_t number_of_cores) {
+  ReportInit();
   if (codec_settings &&
       codec_settings->codecType != kVideoCodecH264) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
@@ -186,8 +199,10 @@ int32_t H264DecoderImpl::InitDecode(const VideoCodec* codec_settings,
 
   // Release necessary in case of re-initializing.
   int32_t ret = Release();
-  if (ret != WEBRTC_VIDEO_CODEC_OK)
+  if (ret != WEBRTC_VIDEO_CODEC_OK) {
+    ReportError();
     return ret;
+  }
   RTC_DCHECK(!av_context_);
 
   // Initialize AVCodecContext.
@@ -222,12 +237,14 @@ int32_t H264DecoderImpl::InitDecode(const VideoCodec* codec_settings,
     // been compiled/initialized with the correct set of codecs.
     LOG(LS_ERROR) << "FFmpeg H.264 decoder not found.";
     Release();
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   int res = avcodec_open2(av_context_.get(), codec, nullptr);
   if (res < 0) {
     LOG(LS_ERROR) << "avcodec_open2 error: " << res;
     Release();
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
@@ -252,17 +269,23 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
                                 const RTPFragmentationHeader* /*fragmentation*/,
                                 const CodecSpecificInfo* codec_specific_info,
                                 int64_t /*render_time_ms*/) {
-  if (!IsInitialized())
+  if (!IsInitialized()) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
   if (!decoded_image_callback_) {
     LOG(LS_WARNING) << "InitDecode() has been called, but a callback function "
         "has not been set with RegisterDecodeCompleteCallback()";
+    ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (!input_image._buffer || !input_image._length)
+  if (!input_image._buffer || !input_image._length) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
   if (codec_specific_info &&
       codec_specific_info->codecType != kVideoCodecH264) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
@@ -282,6 +305,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   packet.data = input_image._buffer;
   if (input_image._length >
       static_cast<size_t>(std::numeric_limits<int>::max())) {
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   packet.size = static_cast<int>(input_image._length);
@@ -294,12 +318,14 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
                                      &packet);
   if (result < 0) {
     LOG(LS_ERROR) << "avcodec_decode_video2 error: " << result;
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   // |result| is number of bytes used, which should be all of them.
   if (result != packet.size) {
     LOG(LS_ERROR) << "avcodec_decode_video2 consumed " << result << " bytes "
         "when " << packet.size << " bytes were expected.";
+    ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
@@ -347,6 +373,24 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
 
 bool H264DecoderImpl::IsInitialized() const {
   return av_context_ != nullptr;
+}
+
+void H264DecoderImpl::ReportInit() {
+  if (has_reported_init_)
+    return;
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.H264DecoderImpl.Event",
+                            kH264DecoderEventInit,
+                            kH264DecoderEventMax);
+  has_reported_init_ = true;
+}
+
+void H264DecoderImpl::ReportError() {
+  if (has_reported_error_)
+    return;
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.H264DecoderImpl.Event",
+                            kH264DecoderEventError,
+                            kH264DecoderEventMax);
+  has_reported_error_ = true;
 }
 
 }  // namespace webrtc

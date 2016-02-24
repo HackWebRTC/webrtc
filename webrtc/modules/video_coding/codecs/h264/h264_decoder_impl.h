@@ -62,11 +62,18 @@ class H264DecoderImpl : public H264Decoder {
 
   bool IsInitialized() const;
 
+  // Reports statistics with histograms.
+  void ReportInit();
+  void ReportError();
+
   I420BufferPool pool_;
   rtc::scoped_ptr<AVCodecContext, AVCodecContextDeleter> av_context_;
   rtc::scoped_ptr<AVFrame, AVFrameDeleter> av_frame_;
 
   DecodedImageCallback* decoded_image_callback_;
+
+  bool has_reported_init_;
+  bool has_reported_error_;
 };
 
 }  // namespace webrtc
