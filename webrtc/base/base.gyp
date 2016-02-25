@@ -36,6 +36,8 @@
             'objc/NSString+StdString.mm',
             'objc/RTCDispatcher.h',
             'objc/RTCDispatcher.m',
+            'objc/RTCFileLogger.h',
+            'objc/RTCFileLogger.mm',
             'objc/RTCLogging.h',
             'objc/RTCLogging.mm',
             'objc/RTCMacros.h',

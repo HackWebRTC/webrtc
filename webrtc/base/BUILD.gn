@@ -635,6 +635,8 @@ if (is_ios) {
       "objc/RTCCameraPreviewView.m",
       "objc/RTCDispatcher.h",
       "objc/RTCDispatcher.m",
+      "objc/RTCFileLogger.h",
+      "objc/RTCFileLogger.mm",
       "objc/RTCLogging.h",
       "objc/RTCLogging.mm",
       "objc/RTCMacros.h",

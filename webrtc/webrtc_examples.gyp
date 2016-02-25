@@ -199,6 +199,7 @@
           'type': 'static_library',
           'dependencies': [
             'apprtc_common',
+            'base/base.gyp:rtc_base_objc',
             '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
             'socketrocket',
           ],
@@ -247,6 +248,7 @@
             ],
           },
           'export_dependent_settings': [
+            'base/base.gyp:rtc_base_objc',
             '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
           ],
           'conditions': [
