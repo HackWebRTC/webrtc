@@ -499,8 +499,6 @@
             'safe_conversions_impl.h',
             'scopedptrcollection.h',
             'sec_buffer.h',
-            'sharedexclusivelock.cc',
-            'sharedexclusivelock.h',
             'sslconfig.h',
             'sslroots.h',
             'testbase64.h',
