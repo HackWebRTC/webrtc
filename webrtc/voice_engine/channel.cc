@@ -124,12 +124,6 @@ class RtpPacketSenderProxy : public RtpPacketSender {
     rtp_packet_sender_ = rtp_packet_sender;
   }
 
-  bool HasPacketSender() const {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    rtc::CritScope lock(&crit_);
-    return rtp_packet_sender_ != nullptr;
-  }
-
   // Implements RtpPacketSender.
   void InsertPacket(Priority priority,
                     uint32_t ssrc,
@@ -855,6 +849,7 @@ Channel::Channel(int32_t channelId,
   configuration.event_log = event_log;
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
+  _rtpRtcpModule->SetSendingMediaStatus(false);
 
   statistics_proxy_.reset(new StatisticsProxy(_rtpRtcpModule->SSRC()));
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(
@@ -1136,10 +1131,12 @@ int32_t Channel::StartSend() {
   }
   channel_state_.SetSending(true);
 
+  _rtpRtcpModule->SetSendingMediaStatus(true);
   if (_rtpRtcpModule->SetSendingStatus(true) != 0) {
     _engineStatisticsPtr->SetLastError(
         VE_RTP_RTCP_MODULE_ERROR, kTraceError,
         "StartSend() RTP/RTCP failed to start sending");
+    _rtpRtcpModule->SetSendingMediaStatus(false);
     rtc::CritScope cs(&_callbackCritSect);
     channel_state_.SetSending(false);
     return -1;
@@ -1171,6 +1168,7 @@ int32_t Channel::StopSend() {
         VE_RTP_RTCP_MODULE_ERROR, kTraceWarning,
         "StartSend() RTP/RTCP failed to stop sending");
   }
+  _rtpRtcpModule->SetSendingMediaStatus(false);
 
   return 0;
 }
@@ -2599,14 +2597,14 @@ void Channel::RegisterSenderCongestionControlObjects(
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
   rtp_packet_sender_proxy_->SetPacketSender(rtp_packet_sender);
   _rtpRtcpModule->SetStorePacketsStatus(true, 600);
-  packet_router->AddRtpModule(_rtpRtcpModule.get(), true);
+  packet_router->AddRtpModule(_rtpRtcpModule.get());
   packet_router_ = packet_router;
 }
 
 void Channel::RegisterReceiverCongestionControlObjects(
     PacketRouter* packet_router) {
   RTC_DCHECK(packet_router && !packet_router_);
-  packet_router->AddRtpModule(_rtpRtcpModule.get(), false);
+  packet_router->AddRtpModule(_rtpRtcpModule.get());
   packet_router_ = packet_router;
 }
 
@@ -2615,8 +2613,7 @@ void Channel::ResetCongestionControlObjects() {
   _rtpRtcpModule->SetStorePacketsStatus(false, 600);
   feedback_observer_proxy_->SetTransportFeedbackObserver(nullptr);
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(nullptr);
-  const bool sender = rtp_packet_sender_proxy_->HasPacketSender();
-  packet_router_->RemoveRtpModule(_rtpRtcpModule.get(), sender);
+  packet_router_->RemoveRtpModule(_rtpRtcpModule.get());
   packet_router_ = nullptr;
   rtp_packet_sender_proxy_->SetPacketSender(nullptr);
 }
