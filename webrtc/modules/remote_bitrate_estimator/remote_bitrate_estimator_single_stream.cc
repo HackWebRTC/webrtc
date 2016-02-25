@@ -118,16 +118,15 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(int64_t arrival_time_ms,
   }
 }
 
-int32_t RemoteBitrateEstimatorSingleStream::Process() {
+void RemoteBitrateEstimatorSingleStream::Process() {
   if (TimeUntilNextProcess() > 0) {
-    return 0;
+    return;
   }
   {
     CriticalSectionScoped cs(crit_sect_.get());
     UpdateEstimate(clock_->TimeInMilliseconds());
   }
   last_process_time_ = clock_->TimeInMilliseconds();
-  return 0;
 }
 
 int64_t RemoteBitrateEstimatorSingleStream::TimeUntilNextProcess() {

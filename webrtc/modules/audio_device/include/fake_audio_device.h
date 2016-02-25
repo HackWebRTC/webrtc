@@ -37,7 +37,7 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual int32_t SetAGC(bool enable) { return 0; }
   virtual int32_t StopRecording() { return 0; }
   virtual int64_t TimeUntilNextProcess() { return 0; }
-  virtual int32_t Process() { return 0; }
+  virtual void Process() {}
   virtual int32_t Terminate() { return 0; }
 
   virtual int32_t ActiveAudioLayer(AudioLayer* audioLayer) const { return 0; }

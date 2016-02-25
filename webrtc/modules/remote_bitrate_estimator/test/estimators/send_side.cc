@@ -110,9 +110,9 @@ int64_t FullBweSender::TimeUntilNextProcess() {
   return bitrate_controller_->TimeUntilNextProcess();
 }
 
-int FullBweSender::Process() {
+void FullBweSender::Process() {
   rbe_->Process();
-  return bitrate_controller_->Process();
+  bitrate_controller_->Process();
 }
 
 SendSideBweReceiver::SendSideBweReceiver(int flow_id)

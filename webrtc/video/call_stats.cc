@@ -109,11 +109,11 @@ int64_t CallStats::TimeUntilNextProcess() {
   return last_process_time_ + kUpdateIntervalMs - clock_->TimeInMilliseconds();
 }
 
-int32_t CallStats::Process() {
+void CallStats::Process() {
   rtc::CritScope cs(&crit_);
   int64_t now = clock_->TimeInMilliseconds();
   if (now < last_process_time_ + kUpdateIntervalMs)
-    return 0;
+    return;
 
   last_process_time_ = now;
 
@@ -132,7 +132,6 @@ int32_t CallStats::Process() {
     sum_avg_rtt_ms_ += avg_rtt_ms_;
     ++num_avg_rtt_;
   }
-  return 0;
 }
 
 int64_t CallStats::avg_rtt_ms() const {

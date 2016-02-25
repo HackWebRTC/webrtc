@@ -90,7 +90,7 @@ class NullReceiveStatistics : public ReceiveStatistics {
   StatisticianMap GetActiveStatisticians() const override;
   StreamStatistician* GetStatistician(uint32_t ssrc) const override;
   int64_t TimeUntilNextProcess() override;
-  int32_t Process() override;
+  void Process() override;
   void SetMaxReorderingThreshold(int max_reordering_threshold) override;
   void RegisterRtcpStatisticsCallback(
       RtcpStatisticsCallback* callback) override;

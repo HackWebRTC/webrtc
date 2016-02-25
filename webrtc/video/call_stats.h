@@ -34,7 +34,7 @@ class CallStats : public Module {
 
   // Implements Module, to use the process thread.
   int64_t TimeUntilNextProcess() override;
-  int32_t Process() override;
+  void Process() override;
 
   // Returns a RtcpRttStats to register at a statistics provider. The object
   // has the same lifetime as the CallStats instance.

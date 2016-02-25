@@ -122,7 +122,7 @@ class PacedSender : public Module, public RtpPacketSender {
   int64_t TimeUntilNextProcess() override;
 
   // Process any pending packets in the queue(s).
-  int32_t Process() override;
+  void Process() override;
 
  private:
   // Updates the number of bytes that can be sent for the next time interval.

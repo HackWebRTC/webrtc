@@ -53,9 +53,9 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     rbe_->IncomingPacket(arrival_time_ms, payload_size, header, was_paced);
   }
 
-  int32_t Process() override {
+  void Process() override {
     CriticalSectionScoped cs(crit_sect_.get());
-    return rbe_->Process();
+    rbe_->Process();
   }
 
   int64_t TimeUntilNextProcess() override {
@@ -241,10 +241,9 @@ int64_t CongestionController::TimeUntilNextProcess() {
                   remote_bitrate_estimator_->TimeUntilNextProcess());
 }
 
-int32_t CongestionController::Process() {
+void CongestionController::Process() {
   bitrate_controller_->Process();
   remote_bitrate_estimator_->Process();
-  return 0;
 }
 
 }  // namespace webrtc

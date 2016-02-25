@@ -71,9 +71,9 @@ int64_t RemoteEstimatorProxy::TimeUntilNextProcess() {
   return time_until_next;
 }
 
-int32_t RemoteEstimatorProxy::Process() {
+void RemoteEstimatorProxy::Process() {
   if (TimeUntilNextProcess() > 0)
-    return 0;
+    return;
   last_process_time_ms_ = clock_->TimeInMilliseconds();
 
   bool more_to_build = true;
@@ -86,8 +86,6 @@ int32_t RemoteEstimatorProxy::Process() {
       more_to_build = false;
     }
   }
-
-  return 0;
 }
 
 void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,

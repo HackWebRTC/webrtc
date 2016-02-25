@@ -35,7 +35,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   int64_t TimeUntilNextProcess() override;
 
   // Process any pending tasks such as timeouts.
-  int32_t Process() override;
+  void Process() override;
 
   // Receiver part.
 

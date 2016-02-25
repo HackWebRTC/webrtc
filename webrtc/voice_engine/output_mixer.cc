@@ -224,7 +224,8 @@ OutputMixer::SetAnonymousMixabilityStatus(MixerParticipant& participant,
 int32_t
 OutputMixer::MixActiveChannels()
 {
-    return _mixerModule.Process();
+    _mixerModule.Process();
+    return 0;
 }
 
 int

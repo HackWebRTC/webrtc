@@ -454,14 +454,13 @@ void ReceiveStatisticsImpl::SetMaxReorderingThreshold(
   }
 }
 
-int32_t ReceiveStatisticsImpl::Process() {
+void ReceiveStatisticsImpl::Process() {
   CriticalSectionScoped cs(receive_statistics_lock_.get());
   for (StatisticianImplMap::iterator it = statisticians_.begin();
        it != statisticians_.end(); ++it) {
     it->second->ProcessBitrate();
   }
   last_rate_update_ms_ = clock_->TimeInMilliseconds();
-  return 0;
 }
 
 int64_t ReceiveStatisticsImpl::TimeUntilNextProcess() {
@@ -530,7 +529,7 @@ void NullReceiveStatistics::SetMaxReorderingThreshold(
 
 int64_t NullReceiveStatistics::TimeUntilNextProcess() { return 0; }
 
-int32_t NullReceiveStatistics::Process() { return 0; }
+void NullReceiveStatistics::Process() {}
 
 void NullReceiveStatistics::RegisterRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {}

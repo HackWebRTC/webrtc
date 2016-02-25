@@ -36,7 +36,7 @@ class MockBitrateController : public BitrateController {
   MOCK_CONST_METHOD1(AvailableBandwidth, bool(uint32_t* bandwidth));
   MOCK_METHOD1(SetReservedBitrate, void(uint32_t reserved_bitrate_bps));
 
-  MOCK_METHOD0(Process, int());
+  MOCK_METHOD0(Process, void());
   MOCK_METHOD0(TimeUntilNextProcess, int64_t());
 };
 }  // namespace test

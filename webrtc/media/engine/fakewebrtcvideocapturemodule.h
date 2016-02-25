@@ -30,7 +30,7 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
         delay_(0) {
   }
   int64_t TimeUntilNextProcess() override { return 0; }
-  int32_t Process() override { return 0; }
+  void Process() override {}
   void RegisterCaptureDataCallback(
       webrtc::VideoCaptureDataCallback& callback) override {
     callback_ = &callback;

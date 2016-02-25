@@ -94,12 +94,9 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return VCM_MIN(sender_time, receiver_time);
   }
 
-  int32_t Process() override {
-    int32_t sender_return = sender_.Process();
-    int32_t receiver_return = receiver_.Process();
-    if (sender_return != VCM_OK)
-      return sender_return;
-    return receiver_return;
+  void Process() override {
+    sender_.Process();
+    receiver_.Process();
   }
 
   int32_t RegisterSendCodec(const VideoCodec* sendCodec,

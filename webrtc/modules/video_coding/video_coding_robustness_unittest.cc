@@ -113,20 +113,20 @@ TEST_F(VCMRobustnessTest, TestHardNack) {
 
   clock_->AdvanceTimeMilliseconds(10);
 
-  ASSERT_EQ(VCM_OK, vcm_->Process());
+  vcm_->Process();
 
   ASSERT_EQ(VCM_FRAME_NOT_READY, vcm_->Decode(0));
 
   InsertPacket(6000, 8, false, true, kVideoFrameDelta);
   clock_->AdvanceTimeMilliseconds(10);
-  ASSERT_EQ(VCM_OK, vcm_->Process());
+  vcm_->Process();
 
   ASSERT_EQ(VCM_FRAME_NOT_READY, vcm_->Decode(0));
 
   InsertPacket(6000, 6, true, false, kVideoFrameDelta);
   InsertPacket(6000, 7, false, false, kVideoFrameDelta);
   clock_->AdvanceTimeMilliseconds(10);
-  ASSERT_EQ(VCM_OK, vcm_->Process());
+  vcm_->Process();
 
   ASSERT_EQ(VCM_OK, vcm_->Decode(0));
 }
@@ -143,12 +143,12 @@ TEST_F(VCMRobustnessTest, TestHardNackNoneDecoded) {
   InsertPacket(3000, 5, false, true, kVideoFrameDelta);
 
   EXPECT_EQ(VCM_FRAME_NOT_READY, vcm_->Decode(0));
-  ASSERT_EQ(VCM_OK, vcm_->Process());
+  vcm_->Process();
 
   clock_->AdvanceTimeMilliseconds(10);
 
   EXPECT_EQ(VCM_FRAME_NOT_READY, vcm_->Decode(0));
-  ASSERT_EQ(VCM_OK, vcm_->Process());
+  vcm_->Process();
 }
 
 TEST_F(VCMRobustnessTest, TestModeNoneWithErrors) {
@@ -195,25 +195,25 @@ TEST_F(VCMRobustnessTest, TestModeNoneWithErrors) {
   InsertPacket(0, 1, false, false, kVideoFrameKey);
   InsertPacket(0, 2, false, true, kVideoFrameKey);
   EXPECT_EQ(VCM_OK, vcm_->Decode(33));  // Decode timestamp 0.
-  EXPECT_EQ(VCM_OK, vcm_->Process());   // Expect no NACK list.
+  vcm_->Process();
 
   clock_->AdvanceTimeMilliseconds(33);
   InsertPacket(3000, 3, true, false, kVideoFrameDelta);
   // Packet 4 missing
   InsertPacket(3000, 5, false, true, kVideoFrameDelta);
   EXPECT_EQ(VCM_FRAME_NOT_READY, vcm_->Decode(0));
-  EXPECT_EQ(VCM_OK, vcm_->Process());  // Expect no NACK list.
+  vcm_->Process();
 
   clock_->AdvanceTimeMilliseconds(33);
   InsertPacket(6000, 6, true, false, kVideoFrameDelta);
   InsertPacket(6000, 7, false, false, kVideoFrameDelta);
   InsertPacket(6000, 8, false, true, kVideoFrameDelta);
   EXPECT_EQ(VCM_OK, vcm_->Decode(0));  // Decode timestamp 3000 incomplete.
-  EXPECT_EQ(VCM_OK, vcm_->Process());  // Expect no NACK list.
+  vcm_->Process();
 
   clock_->AdvanceTimeMilliseconds(10);
   EXPECT_EQ(VCM_OK, vcm_->Decode(23));  // Decode timestamp 6000 complete.
-  EXPECT_EQ(VCM_OK, vcm_->Process());   // Expect no NACK list.
+  vcm_->Process();
 
   clock_->AdvanceTimeMilliseconds(23);
   InsertPacket(3000, 4, false, false, kVideoFrameDelta);

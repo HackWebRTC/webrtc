@@ -35,7 +35,7 @@ class RembBweSender : public BweSender {
   void GiveFeedback(const FeedbackPacket& feedback) override;
   void OnPacketsSent(const Packets& packets) override {}
   int64_t TimeUntilNextProcess() override;
-  int Process() override;
+  void Process() override;
 
  protected:
   rtc::scoped_ptr<BitrateController> bitrate_controller_;

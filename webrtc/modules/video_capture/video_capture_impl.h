@@ -79,7 +79,7 @@ public:
 
     // Module handling
     virtual int64_t TimeUntilNextProcess();
-    virtual int32_t Process();
+    virtual void Process();
 
     // Implement VideoCaptureExternal
     // |capture_time| must be specified in NTP time format in milliseconds.

@@ -74,9 +74,7 @@ class VcmPayloadSinkFactory::VcmPayloadSink : public PayloadSinkInterface,
 
   bool Process() {
     if (vcm_->TimeUntilNextProcess() <= 0) {
-      if (vcm_->Process() < 0) {
-        return false;
-      }
+      vcm_->Process();
     }
     return true;
   }

@@ -28,7 +28,7 @@ using ::testing::SetArgPointee;
 class MockModule : public Module {
  public:
   MOCK_METHOD0(TimeUntilNextProcess, int64_t());
-  MOCK_METHOD0(Process, int32_t());
+  MOCK_METHOD0(Process, void());
   MOCK_METHOD1(ProcessThreadAttached, void(ProcessThread*));
 };
 
@@ -77,8 +77,8 @@ TEST(ProcessThreadImpl, ProcessCall) {
   MockModule module;
   EXPECT_CALL(module, TimeUntilNextProcess()).WillRepeatedly(Return(0));
   EXPECT_CALL(module, Process())
-      .WillOnce(DoAll(SetEvent(event.get()), Return(0)))
-      .WillRepeatedly(Return(0));
+      .WillOnce(DoAll(SetEvent(event.get()), Return()))
+      .WillRepeatedly(Return());
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
 
   thread.RegisterModule(&module);
@@ -97,8 +97,8 @@ TEST(ProcessThreadImpl, ProcessCall2) {
   MockModule module;
   EXPECT_CALL(module, TimeUntilNextProcess()).WillRepeatedly(Return(0));
   EXPECT_CALL(module, Process())
-      .WillOnce(DoAll(SetEvent(event.get()), Return(0)))
-      .WillRepeatedly(Return(0));
+      .WillOnce(DoAll(SetEvent(event.get()), Return()))
+      .WillRepeatedly(Return());
 
   thread.RegisterModule(&module);
 
@@ -122,8 +122,8 @@ TEST(ProcessThreadImpl, Deregister) {
   EXPECT_CALL(module, Process())
       .WillOnce(DoAll(SetEvent(event.get()),
                       Increment(&process_count),
-                      Return(0)))
-      .WillRepeatedly(DoAll(Increment(&process_count), Return(0)));
+                      Return()))
+      .WillRepeatedly(DoAll(Increment(&process_count), Return()));
 
   thread.RegisterModule(&module);
 
@@ -163,8 +163,8 @@ void ProcessCallAfterAFewMs(int64_t milliseconds) {
   EXPECT_CALL(module, Process())
       .WillOnce(DoAll(SetTimestamp(&called_time),
                       SetEvent(event.get()),
-                      Return(0)))
-      .WillRepeatedly(Return(0));
+                      Return()))
+      .WillRepeatedly(Return());
 
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
   thread.RegisterModule(&module);
@@ -225,7 +225,7 @@ TEST(ProcessThreadImpl, DISABLED_Process50Times) {
       .WillRepeatedly(Return(20));
   EXPECT_CALL(module, Process())
       .WillRepeatedly(DoAll(Increment(&callback_count),
-                            Return(0)));
+                            Return()));
 
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
   thread.RegisterModule(&module);
@@ -269,10 +269,9 @@ TEST(ProcessThreadImpl, WakeUp) {
                       Return(1000)))
       .WillOnce(Return(1000));
   EXPECT_CALL(module, Process())
-      .WillOnce(DoAll(SetTimestamp(&called_time),
-                      SetEvent(called.get()),
-                      Return(0)))
-      .WillRepeatedly(Return(0));
+      .WillOnce(
+          DoAll(SetTimestamp(&called_time), SetEvent(called.get()), Return()))
+      .WillRepeatedly(Return());
 
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
   thread.RegisterModule(&module);
