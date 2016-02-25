@@ -82,6 +82,31 @@ TEST_F(RemoteEstimatorProxyTest, SendsSinglePacketFeedback) {
   Process();
 }
 
+TEST_F(RemoteEstimatorProxyTest, DuplicatedPackets) {
+  IncomingPacket(kBaseSeq, kBaseTimeMs);
+  IncomingPacket(kBaseSeq, kBaseTimeMs + 1000);
+
+  EXPECT_CALL(router_, SendFeedback(_))
+      .Times(1)
+      .WillOnce(Invoke([this](rtcp::TransportFeedback* packet) {
+        packet->Build();
+        EXPECT_EQ(kBaseSeq, packet->GetBaseSequence());
+        EXPECT_EQ(kMediaSsrc, packet->GetMediaSourceSsrc());
+
+        std::vector<rtcp::TransportFeedback::StatusSymbol> status_vec =
+            packet->GetStatusVector();
+        EXPECT_EQ(1u, status_vec.size());
+        EXPECT_EQ(rtcp::TransportFeedback::StatusSymbol::kReceivedSmallDelta,
+                  status_vec[0]);
+        std::vector<int64_t> delta_vec = packet->GetReceiveDeltasUs();
+        EXPECT_EQ(1u, delta_vec.size());
+        EXPECT_EQ(kBaseTimeMs, (packet->GetBaseTimeUs() + delta_vec[0]) / 1000);
+        return true;
+      }));
+
+  Process();
+}
+
 TEST_F(RemoteEstimatorProxyTest, SendsFeedbackWithVaryingDeltas) {
   IncomingPacket(kBaseSeq, kBaseTimeMs);
   IncomingPacket(kBaseSeq + 1, kBaseTimeMs + kMaxSmallDeltaMs);

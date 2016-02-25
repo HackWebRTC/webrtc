@@ -106,7 +106,9 @@ void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
     window_start_seq_ = seq;
   }
 
-  RTC_DCHECK(packet_arrival_times_.end() == packet_arrival_times_.find(seq));
+  // We are only interested in the first time a packet is received.
+  if (packet_arrival_times_.find(seq) != packet_arrival_times_.end())
+    return;
 
   packet_arrival_times_[seq] = arrival_time;
 }
