@@ -123,7 +123,6 @@ uint16_t PacketRouter::AllocateSequenceNumber() {
 }
 
 bool PacketRouter::SendFeedback(rtcp::TransportFeedback* packet) {
-  RTC_DCHECK(pacer_thread_checker_.CalledOnValidThread());
   rtc::CritScope cs(&modules_crit_);
   if (::webrtc::SendFeedback(packet, &recv_rtp_modules_))
     return true;
