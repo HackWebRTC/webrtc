@@ -12,7 +12,7 @@
 
 #include "webrtc/pc/channel.h"
 
-#include "webrtc/audio/audio_sink.h"
+#include "webrtc/audio_sink.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"

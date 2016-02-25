@@ -99,6 +99,7 @@ source_set("voice_engine") {
   deps = [
     "..:rtc_event_log",
     "..:webrtc_common",
+    "../base:rtc_base_approved",
     "../common_audio",
     "../modules/audio_coding",
     "../modules/audio_conference_mixer",

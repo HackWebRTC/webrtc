@@ -60,9 +60,12 @@ source_set("video") {
   deps = [
     "..:rtc_event_log",
     "..:webrtc_common",
+    "../base:rtc_base_approved",
     "../common_video",
     "../modules/bitrate_controller",
+    "../modules/congestion_controller",
     "../modules/pacing",
+    "../modules/remote_bitrate_estimator",
     "../modules/rtp_rtcp",
     "../modules/utility",
     "../modules/video_capture:video_capture_module",

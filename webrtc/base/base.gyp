@@ -94,6 +94,7 @@
         'event_tracer.h',
         'exp_filter.cc',
         'exp_filter.h',
+        'format_macros.h',
         'logging.cc',
         'logging.h',
         'md5.cc',
