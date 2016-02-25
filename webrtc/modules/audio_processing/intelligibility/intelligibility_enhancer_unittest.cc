@@ -186,16 +186,11 @@ static_assert(arraysize(kTestCenterFreqs) == arraysize(kTestFilterBank),
 
 // Target output for gain solving test. Generated with matlab.
 const size_t kTestStartFreq = 12;  // Lowest integral frequency for ERBs.
-const float kTestZeroVar[] = {
-    1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, 0.f, 0.f,
-    0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f,
-    0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0};
-static_assert(arraysize(kTestCenterFreqs) == arraysize(kTestZeroVar),
-              "Power test data badly initialized.");
+const float kTestZeroVar = 1.f;
 const float kTestNonZeroVarLambdaTop[] = {
-    1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, 0.f, 0.f,
+    1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, 0.f,
     0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f,
-    0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0};
+    0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
 static_assert(arraysize(kTestCenterFreqs) ==
                   arraysize(kTestNonZeroVarLambdaTop),
               "Power test data badly initialized.");
@@ -280,7 +275,7 @@ TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
   }
   enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
   for (size_t i = 0; i < enh_->bank_size_; i++) {
-    EXPECT_NEAR(kTestZeroVar[i], sols[i], kMaxTestError);
+    EXPECT_NEAR(kTestZeroVar, sols[i], kMaxTestError);
   }
   for (size_t i = 0; i < enh_->bank_size_; i++) {
     enh_->filtered_clear_pow_[i] = static_cast<float>(i + 1);
@@ -293,7 +288,7 @@ TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
   lambda = -1.f;
   enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
   for (size_t i = 0; i < enh_->bank_size_; i++) {
-    EXPECT_NEAR(kTestZeroVar[i], sols[i], kMaxTestError);
+    EXPECT_NEAR(kTestNonZeroVarLambdaTop[i], sols[i], kMaxTestError);
   }
 }
 

@@ -30,7 +30,7 @@ const int kChunkSizeMs = 10;  // Size provided by APM.
 const float kClipFreqKhz = 0.2f;
 const float kKbdAlpha = 1.5f;
 const float kLambdaBot = -1.0f;      // Extreme values in bisection
-const float kLambdaTop = -10e-18f;  // search for lamda.
+const float kLambdaTop = -1e-5f;      // search for lamda.
 const float kVoiceProbabilityThreshold = 0.02f;
 // Number of chunks after voice activity which is still considered speech.
 const size_t kSpeechOffsetDelay = 80;
@@ -164,15 +164,13 @@ void IntelligibilityEnhancer::ProcessClearBlock(
   const float power_bot =
       DotProduct(gains_eq_.get(), filtered_clear_pow_.get(), bank_size_);
   if (power_target >= power_bot && power_target <= power_top) {
-    SolveForLambda(power_target, power_bot, power_top);
+    SolveForLambda(power_target);
     UpdateErbGains();
   }  // Else experiencing power underflow, so do nothing.
   gain_applier_.Apply(in_block, out_block);
 }
 
-void IntelligibilityEnhancer::SolveForLambda(float power_target,
-                                             float power_bot,
-                                             float power_top) {
+void IntelligibilityEnhancer::SolveForLambda(float power_target) {
   const float kConvergeThresh = 0.001f;  // TODO(ekmeyerson): Find best values
   const int kMaxIters = 100;             // for these, based on experiments.
 
@@ -183,7 +181,7 @@ void IntelligibilityEnhancer::SolveForLambda(float power_target,
   float power_ratio = 2.f;  // Ratio of achieved power to target power.
   int iters = 0;
   while (std::fabs(power_ratio - 1.f) > kConvergeThresh && iters <= kMaxIters) {
-    const float lambda = lambda_bot + (lambda_top - lambda_bot) / 2.f;
+    const float lambda = (lambda_bot + lambda_top) / 2.f;
     SolveForGainsGivenLambda(lambda, start_freq_, gains_eq_.get());
     const float power =
         DotProduct(gains_eq_.get(), filtered_clear_pow_.get(), bank_size_);
@@ -286,7 +284,8 @@ std::vector<std::vector<float>> IntelligibilityEnhancer::CreateErbBank(
 void IntelligibilityEnhancer::SolveForGainsGivenLambda(float lambda,
                                                        size_t start_freq,
                                                        float* sols) {
-  bool quadratic = (kRho < 1.f);
+  const float kMinPower = 1e-5f;
+
   const float* pow_x0 = filtered_clear_pow_.get();
   const float* pow_n0 = filtered_noise_pow_.get();
 
@@ -295,20 +294,24 @@ void IntelligibilityEnhancer::SolveForGainsGivenLambda(float lambda,
   }
 
   // Analytic solution for optimal gains. See paper for derivation.
-  for (size_t n = start_freq - 1; n < bank_size_; ++n) {
-    float alpha0, beta0, gamma0;
-    gamma0 = 0.5f * kRho * pow_x0[n] * pow_n0[n] +
-             lambda * pow_x0[n] * pow_n0[n] * pow_n0[n];
-    beta0 = lambda * pow_x0[n] * (2 - kRho) * pow_x0[n] * pow_n0[n];
-    if (quadratic) {
-      alpha0 = lambda * pow_x0[n] * (1 - kRho) * pow_x0[n] * pow_x0[n];
-      sols[n] =
-          (-beta0 - sqrtf(beta0 * beta0 - 4 * alpha0 * gamma0)) /
-          (2 * alpha0 + std::numeric_limits<float>::epsilon());
+  for (size_t n = start_freq; n < bank_size_; ++n) {
+    if (pow_x0[n] < kMinPower || pow_n0[n] < kMinPower) {
+      sols[n] = 1.f;
     } else {
-      sols[n] = -gamma0 / beta0;
+      const float gamma0 = 0.5f * kRho * pow_x0[n] * pow_n0[n] +
+                           lambda * pow_x0[n] * pow_n0[n] * pow_n0[n];
+      const float beta0 =
+          lambda * pow_x0[n] * (2.f - kRho) * pow_x0[n] * pow_n0[n];
+      const float alpha0 =
+          lambda * pow_x0[n] * (1.f - kRho) * pow_x0[n] * pow_x0[n];
+      RTC_DCHECK_LT(alpha0, 0.f);
+      // The quadratic equation should always have real roots, but to guard
+      // against numerical errors we limit it to a minimum of zero.
+      sols[n] = std::max(
+          0.f, (-beta0 - std::sqrt(std::max(
+                             0.f, beta0 * beta0 - 4.f * alpha0 * gamma0))) /
+                   (2.f * alpha0));
     }
-    sols[n] = fmax(0, sols[n]);
   }
 }
 

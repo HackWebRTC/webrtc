@@ -67,7 +67,7 @@ class IntelligibilityEnhancer {
                          std::complex<float>* out_block);
 
   // Bisection search for optimal |lambda|.
-  void SolveForLambda(float power_target, float power_bot, float power_top);
+  void SolveForLambda(float power_target);
 
   // Transforms freq gains to ERB gains.
   void UpdateErbGains();
