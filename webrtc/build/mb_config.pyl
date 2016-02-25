@@ -55,7 +55,7 @@
     },
 
     'device': {
-      'gn': 'ios_enable_code_signing=false',
+      'gn_args': 'ios_enable_code_signing=false',
       'gyp_defines': 'chromium_ios_signing=0',
     },
 
