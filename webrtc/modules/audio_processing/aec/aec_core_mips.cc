@@ -651,13 +651,13 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
   float* p_hNl;
   float* p_efw0;
   float* p_efw1;
-  float* p_WebRtcAec_wC;
+  const float* p_WebRtcAec_wC;
   float temp1, temp2, temp3, temp4;
 
   p_hNl = &hNl[0];
   p_efw0 = &efw[0][0];
   p_efw1 = &efw[1][0];
-  p_WebRtcAec_wC = reinterpret_cast<float*>(&WebRtcAec_weightCurve[0]);
+  p_WebRtcAec_wC = &WebRtcAec_weightCurve[0];
 
   for (i = 0; i < PART_LEN1; i++) {
     // Weight subbands
