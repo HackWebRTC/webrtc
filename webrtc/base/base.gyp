@@ -195,6 +195,8 @@
         'callback.h',
         'common.cc',
         'common.h',
+        'copyonwritebuffer.cc',
+        'copyonwritebuffer.h',
         'crc32.cc',
         'crc32.h',
         'cryptstring.cc',
