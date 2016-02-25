@@ -126,7 +126,6 @@ static_library("rtc_base_approved") {
     "event_tracer.h",
     "exp_filter.cc",
     "exp_filter.h",
-    "format_macros.h",
     "md5.cc",
     "md5.h",
     "md5digest.cc",

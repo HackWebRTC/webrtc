@@ -167,12 +167,10 @@ config("common_config") {
 
 source_set("webrtc") {
   sources = [
-    "audio_send_stream.h",
-    "audio_state.h",
     "call.h",
-    "video_decoder.h",
-    "video_encoder.h",
-    "video_frame.h",
+    "config.h",
+    "frame_callback.h",
+    "transport.h",
   ]
 
   defines = []
@@ -230,20 +228,12 @@ if (!build_with_chromium) {
 
 source_set("webrtc_common") {
   sources = [
-    "audio_receive_stream.h",
-    "audio_sink.h",
     "common_types.cc",
     "common_types.h",
     "config.cc",
     "config.h",
     "engine_configurations.h",
-    "frame_callback.h",
-    "stream.h",
-    "transport.h",
     "typedefs.h",
-    "video_receive_stream.h",
-    "video_renderer.h",
-    "video_send_stream.h",
   ]
 
   configs += [ ":common_config" ]

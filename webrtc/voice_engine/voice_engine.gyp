@@ -15,7 +15,6 @@
       'target_name': 'voice_engine',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         '<(webrtc_root)/modules/modules.gyp:audio_coding_module',

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_SINK_H_
-#define WEBRTC_AUDIO_SINK_H_
+#ifndef WEBRTC_AUDIO_AUDIO_SINK_H_
+#define WEBRTC_AUDIO_AUDIO_SINK_H_
 
 #if defined(WEBRTC_POSIX) && !defined(__STDC_FORMAT_MACROS)
 // Avoid conflict with format_macros.h.
@@ -50,4 +50,4 @@ class AudioSinkInterface {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_SINK_H_
+#endif  // WEBRTC_AUDIO_AUDIO_SINK_H_

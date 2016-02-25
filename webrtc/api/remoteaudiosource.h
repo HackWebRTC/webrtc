@@ -16,7 +16,7 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/notifier.h"
-#include "webrtc/audio_sink.h"
+#include "webrtc/audio/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/media/base/audiorenderer.h"
 
