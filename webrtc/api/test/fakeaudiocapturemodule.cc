@@ -85,8 +85,9 @@ int64_t FakeAudioCaptureModule::TimeUntilNextProcess() {
   return kAdmMaxIdleTimeProcess - elapsed_time;
 }
 
-void FakeAudioCaptureModule::Process() {
+int32_t FakeAudioCaptureModule::Process() {
   last_process_time_ms_ = rtc::Time();
+  return 0;
 }
 
 int32_t FakeAudioCaptureModule::ActiveAudioLayer(

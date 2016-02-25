@@ -45,7 +45,7 @@ class BitrateControllerImpl : public BitrateController {
   void SetEventLog(RtcEventLog* event_log) override;
 
   int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  int32_t Process() override;
 
  private:
   class RtcpBandwidthObserverImpl;

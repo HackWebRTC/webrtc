@@ -40,7 +40,7 @@ class ViESyncModule : public Module {
 
   // Implements Module.
   int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  int32_t Process() override;
 
  private:
   rtc::CriticalSection data_cs_;

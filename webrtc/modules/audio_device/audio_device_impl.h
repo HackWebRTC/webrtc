@@ -45,7 +45,7 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   virtual ~AudioDeviceModuleImpl();
 
   int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  int32_t Process() override;
 
   // Factory methods (resource allocation/deallocation)
   static AudioDeviceModule* Create(

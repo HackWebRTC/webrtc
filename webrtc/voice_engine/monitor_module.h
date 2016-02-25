@@ -42,7 +42,7 @@ public:
 public:	// module
  int64_t TimeUntilNextProcess() override;
 
- void Process() override;
+ int32_t Process() override;
 
 private:
     rtc::CriticalSection _callbackCritSect;

@@ -63,7 +63,9 @@ VideoReceiver::~VideoReceiver() {
 #endif
 }
 
-void VideoReceiver::Process() {
+int32_t VideoReceiver::Process() {
+  int32_t returnValue = VCM_OK;
+
   // Receive-side statistics
   if (_receiveStatsTimer.TimeUntilProcess() == 0) {
     _receiveStatsTimer.Processed();
@@ -106,8 +108,12 @@ void VideoReceiver::Process() {
       CriticalSectionScoped cs(process_crit_sect_.get());
       request_key_frame = _scheduleKeyRequest && _frameTypeCallback != NULL;
     }
-    if (request_key_frame)
-      RequestKeyFrame();
+    if (request_key_frame) {
+      const int32_t ret = RequestKeyFrame();
+      if (ret != VCM_OK && returnValue == VCM_OK) {
+        returnValue = ret;
+      }
+    }
   }
 
   // Packet retransmission requests
@@ -129,6 +135,9 @@ void VideoReceiver::Process() {
       int32_t ret = VCM_OK;
       if (request_key_frame) {
         ret = RequestKeyFrame();
+        if (ret != VCM_OK && returnValue == VCM_OK) {
+          returnValue = ret;
+        }
       }
       if (ret == VCM_OK && !nackList.empty()) {
         CriticalSectionScoped cs(process_crit_sect_.get());
@@ -138,6 +147,8 @@ void VideoReceiver::Process() {
       }
     }
   }
+
+  return returnValue;
 }
 
 int64_t VideoReceiver::TimeUntilNextProcess() {

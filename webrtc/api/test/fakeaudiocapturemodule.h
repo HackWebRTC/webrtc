@@ -56,7 +56,7 @@ class FakeAudioCaptureModule
   // nothing and return success. If a function is not expected to be called by
   // PeerConnection an assertion is triggered if it is in fact called.
   int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  int32_t Process() override;
 
   int32_t ActiveAudioLayer(AudioLayer* audio_layer) const override;
 

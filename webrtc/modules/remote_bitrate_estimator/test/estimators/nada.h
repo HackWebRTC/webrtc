@@ -71,7 +71,7 @@ class NadaBweSender : public BweSender {
   void GiveFeedback(const FeedbackPacket& feedback) override;
   void OnPacketsSent(const Packets& packets) override {}
   int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  int Process() override;
   void AcceleratedRampUp(const NadaFeedback& fb);
   void AcceleratedRampDown(const NadaFeedback& fb);
   void GradualRateUpdate(const NadaFeedback& fb,

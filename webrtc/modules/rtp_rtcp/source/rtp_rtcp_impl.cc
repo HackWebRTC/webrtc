@@ -118,7 +118,7 @@ int64_t ModuleRtpRtcpImpl::TimeUntilNextProcess() {
 }
 
 // Process any pending tasks such as timeouts (non time critical events).
-void ModuleRtpRtcpImpl::Process() {
+int32_t ModuleRtpRtcpImpl::Process() {
   const int64_t now = clock_->TimeInMilliseconds();
   last_process_time_ = now;
 
@@ -202,6 +202,7 @@ void ModuleRtpRtcpImpl::Process() {
     // A receiver has timed out
     rtcp_receiver_.UpdateTMMBR();
   }
+  return 0;
 }
 
 void ModuleRtpRtcpImpl::SetRtxSendStatus(int mode) {

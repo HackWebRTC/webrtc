@@ -57,7 +57,7 @@ MonitorModule::TimeUntilNextProcess()
     return kAverageProcessUpdateTimeMs - (now - _lastProcessTime);
 }
 
-void
+int32_t
 MonitorModule::Process()
 {
     _lastProcessTime = TickTime::MillisecondTimestamp();
@@ -66,6 +66,7 @@ MonitorModule::Process()
     {
         _observerPtr->OnPeriodicProcess();
     }
+    return 0;
 }
 
 }  // namespace voe

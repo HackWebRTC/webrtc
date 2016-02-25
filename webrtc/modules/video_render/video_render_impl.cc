@@ -119,7 +119,11 @@ int64_t ModuleVideoRenderImpl::TimeUntilNextProcess()
     // Not used
     return 50;
 }
-void ModuleVideoRenderImpl::Process() {}
+int32_t ModuleVideoRenderImpl::Process()
+{
+    // Not used
+    return 0;
+}
 
 void*
 ModuleVideoRenderImpl::Window()

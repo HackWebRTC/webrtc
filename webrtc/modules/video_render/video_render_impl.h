@@ -35,7 +35,7 @@ public:
     virtual ~ModuleVideoRenderImpl();
 
     virtual int64_t TimeUntilNextProcess();
-    virtual void Process();
+    virtual int32_t Process();
 
     /*
      *   Returns the render window

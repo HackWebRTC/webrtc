@@ -90,7 +90,7 @@ class OveruseFrameDetector : public Module {
 
   // Implements Module.
   int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  int32_t Process() override;
 
  private:
   class SendProcessingUsage;

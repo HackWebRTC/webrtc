@@ -189,7 +189,7 @@ int64_t AudioConferenceMixerImpl::TimeUntilNextProcess() {
     return timeUntilNextProcess;
 }
 
-void AudioConferenceMixerImpl::Process() {
+int32_t AudioConferenceMixerImpl::Process() {
     size_t remainingParticipantsAllowedToMix =
         kMaximumAmountOfMixedParticipants;
     {
@@ -222,7 +222,7 @@ void AudioConferenceMixerImpl::Process() {
         if(lowFreq <= 0) {
             CriticalSectionScoped cs(_crit.get());
             _processCalls--;
-            return;
+            return 0;
         } else {
             switch(lowFreq) {
             case 8000:
@@ -250,7 +250,7 @@ void AudioConferenceMixerImpl::Process() {
 
                 CriticalSectionScoped cs(_crit.get());
                 _processCalls--;
-                return;
+                return -1;
             }
         }
 
@@ -267,9 +267,10 @@ void AudioConferenceMixerImpl::Process() {
         WEBRTC_TRACE(kTraceMemory, kTraceAudioMixerServer, _id,
                      "failed PopMemory() call");
         assert(false);
-        return;
+        return -1;
     }
 
+    int retval = 0;
     {
         CriticalSectionScoped cs(_crit.get());
 
@@ -303,7 +304,8 @@ void AudioConferenceMixerImpl::Process() {
             mixedAudio->Mute();
         } else {
             // Only call the limiter if we have something to mix.
-            LimitMixedAudio(mixedAudio);
+            if(!LimitMixedAudio(mixedAudio))
+                retval = -1;
         }
     }
 
@@ -328,7 +330,7 @@ void AudioConferenceMixerImpl::Process() {
         CriticalSectionScoped cs(_crit.get());
         _processCalls--;
     }
-    return;
+    return retval;
 }
 
 int32_t AudioConferenceMixerImpl::RegisterMixedStreamCallback(

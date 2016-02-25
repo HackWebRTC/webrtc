@@ -112,7 +112,7 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   void SetMaxReorderingThreshold(int max_reordering_threshold) override;
 
   // Implement Module.
-  void Process() override;
+  int32_t Process() override;
   int64_t TimeUntilNextProcess() override;
 
   void RegisterRtcpStatisticsCallback(

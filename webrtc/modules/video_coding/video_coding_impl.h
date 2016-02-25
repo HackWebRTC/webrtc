@@ -93,7 +93,7 @@ class VideoSender {
   bool VideoSuspended() const;
 
   int64_t TimeUntilNextProcess();
-  void Process();
+  int32_t Process();
 
  private:
   void SetEncoderParameters(EncoderParameters params)
@@ -172,7 +172,7 @@ class VideoReceiver {
   int32_t SetVideoProtection(VCMVideoProtection videoProtection, bool enable);
 
   int64_t TimeUntilNextProcess();
-  void Process();
+  int32_t Process();
 
   void RegisterPreDecodeImageCallback(EncodedImageCallback* observer);
   void TriggerDecoderShutdown();

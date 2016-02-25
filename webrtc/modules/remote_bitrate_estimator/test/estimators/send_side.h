@@ -31,7 +31,7 @@ class FullBweSender : public BweSender, public RemoteBitrateObserver {
   void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                uint32_t bitrate) override;
   int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  int Process() override;
 
  protected:
   rtc::scoped_ptr<BitrateController> bitrate_controller_;

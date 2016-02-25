@@ -26,7 +26,7 @@ public:
     MediaFileImpl(const int32_t id);
     ~MediaFileImpl();
 
-    void Process() override;
+    int32_t Process() override;
     int64_t TimeUntilNextProcess() override;
 
     // MediaFile functions

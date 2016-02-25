@@ -47,7 +47,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override {}
   void SetMinBitrate(int min_bitrate_bps) override {}
   int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  int32_t Process() override;
 
   static const int kDefaultProcessIntervalMs;
   static const int kBackWindowMs;

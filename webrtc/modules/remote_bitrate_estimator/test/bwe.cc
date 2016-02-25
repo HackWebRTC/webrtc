@@ -67,7 +67,7 @@ class NullBweSender : public BweSender {
   int64_t TimeUntilNextProcess() override {
     return std::numeric_limits<int64_t>::max();
   }
-  void Process() override {}
+  int Process() override { return 0; }
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NullBweSender);

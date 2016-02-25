@@ -222,12 +222,12 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
         .Times(3)
         .WillRepeatedly(Return(true));
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-    send_bucket_->Process();
+    EXPECT_EQ(0, send_bucket_->Process());
   }
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  send_bucket_->Process();
+  EXPECT_EQ(0, send_bucket_->Process());
   SendAndExpectPacket(PacedSender::kNormalPriority,
                       ssrc,
                       sequence_number++,
@@ -290,12 +290,12 @@ TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
           .WillRepeatedly(Return(true));
     }
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-    send_bucket_->Process();
+    EXPECT_EQ(0, send_bucket_->Process());
   }
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  send_bucket_->Process();
+  EXPECT_EQ(0, send_bucket_->Process());
   SendAndExpectPacket(PacedSender::kNormalPriority,
                       ssrc,
                       sequence_number++,
@@ -373,7 +373,7 @@ TEST_F(PacedSenderTest, Padding) {
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  send_bucket_->Process();
+  EXPECT_EQ(0, send_bucket_->Process());
 
   // 5 milliseconds later we have enough budget to send some padding.
   EXPECT_CALL(callback_, TimeToSendPadding(250)).Times(1).
@@ -381,7 +381,7 @@ TEST_F(PacedSenderTest, Padding) {
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  send_bucket_->Process();
+  EXPECT_EQ(0, send_bucket_->Process());
 }
 
 TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
@@ -486,7 +486,7 @@ TEST_F(PacedSenderTest, Priority) {
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  send_bucket_->Process();
+  EXPECT_EQ(0, send_bucket_->Process());
 
   EXPECT_CALL(callback_,
               TimeToSendPacket(
@@ -497,7 +497,7 @@ TEST_F(PacedSenderTest, Priority) {
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  send_bucket_->Process();
+  EXPECT_EQ(0, send_bucket_->Process());
 }
 
 TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
@@ -587,7 +587,7 @@ TEST_F(PacedSenderTest, Pause) {
   for (int i = 0; i < 10; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-    send_bucket_->Process();
+    EXPECT_EQ(0, send_bucket_->Process());
   }
   // Expect high prio packets to come out first followed by all packets in the
   // way they were added.
@@ -602,7 +602,7 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  send_bucket_->Process();
+  EXPECT_EQ(0, send_bucket_->Process());
 
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }

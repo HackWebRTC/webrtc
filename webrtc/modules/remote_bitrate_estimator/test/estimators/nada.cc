@@ -238,7 +238,8 @@ int64_t NadaBweSender::TimeUntilNextProcess() {
   return 100;
 }
 
-void NadaBweSender::Process() {
+int NadaBweSender::Process() {
+  return 0;
 }
 
 void NadaBweSender::AcceleratedRampUp(const NadaFeedback& fb) {
