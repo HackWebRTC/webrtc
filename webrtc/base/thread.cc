@@ -353,8 +353,7 @@ void Thread::Send(MessageHandler* phandler, uint32_t id, MessageData* pdata) {
   }
 
   // Wait for a reply
-
-  ss_->WakeUp();
+  WakeUpSocketServer();
 
   bool waited = false;
   crit_.Enter();
