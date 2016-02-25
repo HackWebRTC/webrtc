@@ -18,17 +18,21 @@
 #import "webrtc/api/objc/RTCVideoTrack+Private.h"
 #import "webrtc/base/objc/NSString+StdString.h"
 
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
+
 @implementation RTCMediaStream {
   NSMutableArray *_audioTracks;
   NSMutableArray *_videoTracks;
   rtc::scoped_refptr<webrtc::MediaStreamInterface> _nativeMediaStream;
 }
 
-- (NSArray<RTCAudioTrack *> *)audioTracks {
+- (NSArray *)audioTracks {
+// - (NSArray<RTCAudioTrack *> *)audioTracks {
   return [_audioTracks copy];
 }
 
-- (NSArray<RTCVideoTrack *> *)videoTracks {
+- (NSArray *)videoTracks {
+// - (NSArray<RTCVideoTrack *> *)videoTracks {
   return [_videoTracks copy];
 }
 

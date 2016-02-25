@@ -11,6 +11,7 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
 
 /** This does not currently conform to the spec. */
 @interface RTCStatsReport : NSObject
@@ -25,7 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSString *statsId;
 
 /** A dictionary holding the actual stats. */
-@property(nonatomic, readonly) NSDictionary<NSString *, NSString *> *values;
+@property(nonatomic, readonly) NSDictionary *values;
+// @property(nonatomic, readonly) NSDictionary<NSString *, NSString *> *values;
 
 - (instancetype)init NS_UNAVAILABLE;
 

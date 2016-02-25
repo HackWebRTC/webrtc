@@ -14,19 +14,22 @@
 #import "webrtc/base/objc/NSString+StdString.h"
 
 @implementation RTCIceServer
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
 
 @synthesize urlStrings = _urlStrings;
 @synthesize username = _username;
 @synthesize credential = _credential;
 
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings {
+- (instancetype)initWithURLStrings:(NSArray *)urlStrings {
+// - (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings {
   NSParameterAssert(urlStrings.count);
   return [self initWithURLStrings:urlStrings
                          username:nil
                        credential:nil];
 }
 
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
+- (instancetype)initWithURLStrings:(NSArray *)urlStrings
+// - (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
                           username:(NSString *)username
                         credential:(NSString *)credential {
   NSParameterAssert(urlStrings.count);

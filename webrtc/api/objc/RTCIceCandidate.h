@@ -11,6 +11,7 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
 
 @interface RTCIceCandidate : NSObject
 
@@ -27,16 +28,16 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSInteger sdpMLineIndex;
 
 /** The SDP string for this candidate. */
-@property(nonatomic, readonly) NSString *sdp;
+@property(nonatomic, readonly, nonnull) NSString *sdp;
 
-- (instancetype)init NS_UNAVAILABLE;
+- (nonnull instancetype)init NS_UNAVAILABLE;
 
 /**
  * Initialize an RTCIceCandidate from SDP.
  */
-- (instancetype)initWithSdp:(NSString *)sdp
-              sdpMLineIndex:(NSInteger)sdpMLineIndex
-                     sdpMid:(nullable NSString *)sdpMid
+- (nonnull instancetype)initWithSdp:(nonnull NSString *)sdp
+                      sdpMLineIndex:(NSInteger)sdpMLineIndex
+                             sdpMid:(nullable NSString *)sdpMid
     NS_DESIGNATED_INITIALIZER;
 
 @end

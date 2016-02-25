@@ -13,6 +13,8 @@
 #import "webrtc/api/objc/RTCMediaConstraints+Private.h"
 #import "webrtc/base/objc/NSString+StdString.h"
 
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
+
 namespace webrtc {
 
 MediaConstraints::~MediaConstraints() {}
@@ -38,14 +40,18 @@ MediaConstraints::GetOptional() const {
 
 
 @implementation RTCMediaConstraints {
-  NSDictionary<NSString *, NSString *> *_mandatory;
-  NSDictionary<NSString *, NSString *> *_optional;
+  NSDictionary *_mandatory;
+  // NSDictionary<NSString *, NSString *> *_mandatory;
+  NSDictionary *_optional;
+  // NSDictionary<NSString *, NSString *> *_optional;
 }
 
 - (instancetype)initWithMandatoryConstraints:
-    (NSDictionary<NSString *, NSString *> *)mandatory
+    (NSDictionary *)mandatory
+    // (NSDictionary<NSString *, NSString *> *)mandatory
                          optionalConstraints:
-    (NSDictionary<NSString *, NSString *> *)optional {
+    (NSDictionary *)optional {
+    // (NSDictionary<NSString *, NSString *> *)optional {
   if (self = [super init]) {
     _mandatory = [[NSDictionary alloc] initWithDictionary:mandatory
                                                 copyItems:YES];
@@ -76,15 +82,17 @@ MediaConstraints::GetOptional() const {
 
 + (webrtc::MediaConstraintsInterface::Constraints)
     nativeConstraintsForConstraints:
-        (NSDictionary<NSString *, NSString *> *)constraints {
+        (NSDictionary *)constraints {
+        // (NSDictionary<NSString *, NSString *> *)constraints {
   webrtc::MediaConstraintsInterface::Constraints nativeConstraints;
   for (NSString *key in constraints) {
     NSAssert([key isKindOfClass:[NSString class]],
              @"%@ is not an NSString.", key);
-    NSAssert([constraints[key] isKindOfClass:[NSString class]],
-             @"%@ is not an NSString.", constraints[key]);
+    NSString *value = [constraints objectForKey:key];
+    NSAssert([value isKindOfClass:[NSString class]],
+             @"%@ is not an NSString.", value);
     nativeConstraints.push_back(webrtc::MediaConstraintsInterface::Constraint(
-        key.stdString, constraints[key].stdString));
+        key.stdString, value.stdString));
   }
   return nativeConstraints;
 }

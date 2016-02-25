@@ -12,6 +12,8 @@
 
 @class RTCIceServer;
 
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
+
 /**
  * Represents the ice transport policy. This exposes the same states in C++,
  * which include one more state than what exists in the W3C spec.
@@ -53,7 +55,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RTCConfiguration : NSObject
 
 /** An array of Ice Servers available to be used by ICE. */
-@property(nonatomic, copy) NSArray<RTCIceServer *> *iceServers;
+@property(nonatomic, copy, nonnull) NSArray *iceServers;
+// @property(nonatomic, copy) NSArray<RTCIceServer *> *iceServers;
 
 /** Which candidates the ICE agent is allowed to use. The W3C calls it
  * |iceTransportPolicy|, while in C++ it is called |type|. */
@@ -72,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
 /** Key type used to generate SSL identity. Default is ECDSA. */
 @property(nonatomic, assign) RTCEncryptionKeyType keyType;
 
-- (instancetype)init NS_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)init NS_DESIGNATED_INITIALIZER;
 
 @end
 

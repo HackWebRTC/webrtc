@@ -137,11 +137,14 @@
         },
       ],  # targets
     }],  # OS=="android"
-    ['OS=="ios"', {
+    ['OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7")', {
       'targets': [
         {
           'target_name': 'rtc_api_objc_tests',
           'type': 'executable',
+          'includes': [
+            '../build/objc_common.gypi',
+          ],
           'dependencies': [
             '<(webrtc_root)/api/api.gyp:rtc_api_objc',
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
@@ -155,9 +158,6 @@
             'objctests/RTCSessionDescriptionTest.mm',
           ],
           'xcode_settings': {
-            'CLANG_ENABLE_OBJC_ARC': 'YES',
-            'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'YES',
-            'GCC_PREFIX_HEADER': 'objc/WebRTC-Prefix.pch',
             # |-ObjC| flag needed to make sure category method implementations
             # are included:
             # https://developer.apple.com/library/mac/qa/qa1490/_index.html

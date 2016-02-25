@@ -11,17 +11,23 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
 
 @interface RTCMediaConstraints : NSObject
 
-- (instancetype)init NS_UNAVAILABLE;
+- (nonnull instancetype)init NS_UNAVAILABLE;
 
 /** Initialize with mandatory and/or optional constraints. */
-- (instancetype)initWithMandatoryConstraints:
-    (nullable NSDictionary<NSString *, NSString *> *)mandatory
-                         optionalConstraints:
-    (nullable NSDictionary<NSString *, NSString *> *)optional
+- (nonnull instancetype)initWithMandatoryConstraints:
+    (nullable NSDictionary *)mandatory
+                                 optionalConstraints:
+    (nullable NSDictionary *)optional
     NS_DESIGNATED_INITIALIZER;
+// - (instancetype)initWithMandatoryConstraints:
+//     (nullable NSDictionary<NSString *, NSString *> *)mandatory
+//                          optionalConstraints:
+//     (nullable NSDictionary<NSString *, NSString *> *)optional
+//     NS_DESIGNATED_INITIALIZER;
 
 @end
 

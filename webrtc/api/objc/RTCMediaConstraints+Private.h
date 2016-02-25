@@ -13,6 +13,8 @@
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/base/scoped_ptr.h"
 
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
+
 namespace webrtc {
 
 class MediaConstraints : public MediaConstraintsInterface {
@@ -46,7 +48,8 @@ NS_ASSUME_NONNULL_BEGIN
 /** Return a native Constraints object representing these constraints */
 + (webrtc::MediaConstraintsInterface::Constraints)
     nativeConstraintsForConstraints:
-        (NSDictionary<NSString *, NSString *> *)constraints;
+        (NSDictionary *)constraints;
+        // (NSDictionary<NSString *, NSString *> *)constraints;
 
 @end
 

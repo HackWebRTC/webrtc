@@ -47,7 +47,7 @@
   EXPECT_EQ(constraints.count, nativeConstraints.size());
 
   for (NSString *key in constraints) {
-    NSString *value = constraints[key];
+    NSString *value = [constraints objectForKey:key];
 
     std::string nativeValue;
     bool found = nativeConstraints.FindFirst(key.stdString, &nativeValue);

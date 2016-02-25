@@ -22,8 +22,9 @@
 @class RTCStatsReport;
 
 NS_ASSUME_NONNULL_BEGIN
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
 
-extern NSString * const kRTCPeerConnectionErrorDomain;
+extern NSString * _Nonnull const kRTCPeerConnectionErrorDomain;
 extern int const kRTCSessionDescriptionErrorCode;
 
 /** Represents the signaling state of the peer connection. */
@@ -66,35 +67,36 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
 @protocol RTCPeerConnectionDelegate <NSObject>
 
 /** Called when the SignalingState changed. */
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
+- (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection
     didChangeSignalingState:(RTCSignalingState)stateChanged;
 
 /** Called when media is received on a new stream from remote peer. */
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-          didAddStream:(RTCMediaStream *)stream;
+- (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection
+          didAddStream:(nonnull RTCMediaStream *)stream;
 
 /** Called when a remote peer closes a stream. */
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-       didRemoveStream:(RTCMediaStream *)stream;
+- (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection
+       didRemoveStream:(nonnull RTCMediaStream *)stream;
 
 /** Called when negotiation is needed, for example ICE has restarted. */
-- (void)peerConnectionShouldNegotiate:(RTCPeerConnection *)peerConnection;
+- (void)peerConnectionShouldNegotiate:
+    (nonnull RTCPeerConnection *)peerConnection;
 
 /** Called any time the IceConnectionState changes. */
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
+- (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection
     didChangeIceConnectionState:(RTCIceConnectionState)newState;
 
 /** Called any time the IceGatheringState changes. */
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
+- (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection
     didChangeIceGatheringState:(RTCIceGatheringState)newState;
 
 /** New ice candidate has been found. */
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-    didGenerateIceCandidate:(RTCIceCandidate *)candidate;
+- (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection
+    didGenerateIceCandidate:(nonnull RTCIceCandidate *)candidate;
 
 /** New data channel has been opened. */
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-    didOpenDataChannel:(RTCDataChannel *)dataChannel;
+- (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection
+    didOpenDataChannel:(nonnull RTCDataChannel *)dataChannel;
 
 @end
 
@@ -104,8 +106,8 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
 /** The object that will be notifed about events such as state changes and
  *  streams being added or removed.
  */
-@property(nonatomic, weak) id<RTCPeerConnectionDelegate> delegate;
-@property(nonatomic, readonly) NSArray *localStreams;
+@property(nonatomic, weak, nullable) id<RTCPeerConnectionDelegate> delegate;
+@property(nonatomic, readonly, nonnull) NSArray *localStreams;
 @property(nonatomic, readonly, nullable)
     RTCSessionDescription *localDescription;
 @property(nonatomic, readonly, nullable)
@@ -114,54 +116,62 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
 @property(nonatomic, readonly) RTCIceConnectionState iceConnectionState;
 @property(nonatomic, readonly) RTCIceGatheringState iceGatheringState;
 
-- (instancetype)init NS_UNAVAILABLE;
+- (nonnull instancetype)init NS_UNAVAILABLE;
 
 /** Initialize an RTCPeerConnection with a configuration, constraints, and
  *  delegate.
  */
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
-                  configuration:(RTCConfiguration *)configuration
-                    constraints:(RTCMediaConstraints *)constraints
-                       delegate:(id<RTCPeerConnectionDelegate>)delegate
+- (nonnull instancetype)initWithFactory:
+    (nonnull RTCPeerConnectionFactory *)factory
+                          configuration:
+    (nonnull RTCConfiguration *)configuration
+                            constraints:
+    (nonnull RTCMediaConstraints *)constraints
+                               delegate:
+    (nullable id<RTCPeerConnectionDelegate>)delegate
     NS_DESIGNATED_INITIALIZER;
 
 /** Terminate all media and close the transport. */
 - (void)close;
 
 /** Provide a remote candidate to the ICE Agent. */
-- (void)addIceCandidate:(RTCIceCandidate *)candidate;
+- (void)addIceCandidate:(nonnull RTCIceCandidate *)candidate;
 
 /** Add a new media stream to be sent on this peer connection. */
-- (void)addStream:(RTCMediaStream *)stream;
+- (void)addStream:(nonnull RTCMediaStream *)stream;
 
 /** Remove the given media stream from this peer connection. */
-- (void)removeStream:(RTCMediaStream *)stream;
+- (void)removeStream:(nonnull RTCMediaStream *)stream;
 
 /** Generate an SDP offer. */
-- (void)offerForConstraints:(RTCMediaConstraints *)constraints
-          completionHandler:(void (^)(RTCSessionDescription *sdp,
-                                      NSError *error))completionHandler;
+- (void)offerForConstraints:(nonnull RTCMediaConstraints *)constraints
+          completionHandler:(nullable void (^)
+    (RTCSessionDescription * _Nullable sdp,
+     NSError * _Nullable error))completionHandler;
 
 /** Generate an SDP answer. */
-- (void)answerForConstraints:(RTCMediaConstraints *)constraints
-           completionHandler:(void (^)(RTCSessionDescription *sdp,
-                                       NSError *error))completionHandler;
+- (void)answerForConstraints:(nonnull RTCMediaConstraints *)constraints
+           completionHandler:(nullable void (^)
+    (RTCSessionDescription * _Nullable sdp,
+     NSError * _Nullable error))completionHandler;
 
 /** Apply the supplied RTCSessionDescription as the local description. */
-- (void)setLocalDescription:(RTCSessionDescription *)sdp
-          completionHandler:(void (^)(NSError *error))completionHandler;
+- (void)setLocalDescription:(nonnull RTCSessionDescription *)sdp
+          completionHandler:
+    (nullable void (^)(NSError * _Nullable error))completionHandler;
 
 /** Apply the supplied RTCSessionDescription as the remote description. */
-- (void)setRemoteDescription:(RTCSessionDescription *)sdp
-           completionHandler:(void (^)(NSError *error))completionHandler;
+- (void)setRemoteDescription:(nonnull RTCSessionDescription *)sdp
+           completionHandler:
+    (nullable void (^)(NSError * _Nullable error))completionHandler;
 
 @end
 
 @interface RTCPeerConnection (DataChannel)
 
 /** Create a new data channel with the given label and configuration. */
-- (RTCDataChannel *)dataChannelForLabel:(NSString *)label
-    configuration:(RTCDataChannelConfiguration *)configuration;
+- (nonnull RTCDataChannel *)dataChannelForLabel:(nonnull NSString *)label
+    configuration:(nonnull RTCDataChannelConfiguration *)configuration;
 
 @end
 
@@ -171,10 +181,11 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
  *  statistics are gathered for all tracks.
  */
 - (void)statsForTrack:
-    (nullable RTCMediaStreamTrack *)mediaStreamTrack
+    (nonnull RTCMediaStreamTrack *)mediaStreamTrack
      statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel
     completionHandler:
-    (void (^)(NSArray<RTCStatsReport *> *stats))completionHandler;
+    (nullable void (^)(NSArray * _Nonnull stats))completionHandler;
+    // (nullable void (^)(NSArray<RTCStatsReport *> *stats))completionHandler;
 
 @end
 

@@ -11,11 +11,13 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
 
 @interface RTCIceServer : NSObject
 
 /** URI(s) for this server represented as NSStrings. */
-@property(nonatomic, copy, readonly) NSArray<NSString *> *urlStrings;
+@property(nonatomic, copy, readonly, nonnull) NSArray *urlStrings;
+// @property(nonatomic, copy, readonly) NSArray<NSString *> *urlStrings;
 
 /** Username to use if this RTCIceServer object is a TURN server. */
 @property(nonatomic, copy, readonly, nullable) NSString *username;
@@ -23,18 +25,20 @@ NS_ASSUME_NONNULL_BEGIN
 /** Credential to use if this RTCIceServer object is a TURN server. */
 @property(nonatomic, copy, readonly, nullable) NSString *credential;
 
-- (instancetype)init NS_UNAVAILABLE;
+- (nonnull instancetype)init NS_UNAVAILABLE;
 
 /** Convenience initializer for a server with no authentication (e.g. STUN). */
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings;
+- (nonnull instancetype)initWithURLStrings:(nonnull NSArray *)urlStrings;
+// - (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings;
 
 /**
  * Initialize an RTCIceServer with its associated URLs, optional username,
  * optional credential, and credentialType.
  */
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
-                          username:(nullable NSString *)username
-                        credential:(nullable NSString *)credential
+- (nonnull instancetype)initWithURLStrings:(nonnull NSArray *)urlStrings
+// - (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
+                                  username:(nullable NSString *)username
+                                credential:(nullable NSString *)credential
     NS_DESIGNATED_INITIALIZER;
 
 @end

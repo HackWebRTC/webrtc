@@ -16,6 +16,8 @@
 #import "webrtc/base/objc/NSString+StdString.h"
 #import "webrtc/base/objc/RTCLogging.h"
 
+// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
+
 @implementation RTCStatsReport
 
 @synthesize timestamp = _timestamp;
@@ -50,9 +52,8 @@
           valuePair.second->ToString()];
 
       // Not expecting duplicate keys.
-      RTC_DCHECK(values[key]);
-
-      values[key] = value;
+      RTC_DCHECK(![values objectForKey:key]);
+      [values setObject:value forKey:key];
     }
     _values = values;
   }
