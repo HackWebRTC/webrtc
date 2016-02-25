@@ -126,7 +126,13 @@ TEST(VideoCommonTest, TestComputeScaleWithLowFps) {
 }
 
 // Same as TestComputeScale but with 15 fps instead of 5 fps.
-TEST(VideoCommonTest, TestComputeScaleWithHighFps) {
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5487
+#ifdef UNDEFINED_SANITIZER
+#define MAYBE_TestComputeScaleWithHighFps DISABLED_TestComputeScaleWithHighFps
+#else
+#define MAYBE_TestComputeScaleWithHighFps TestComputeScaleWithHighFps
+#endif
+TEST(VideoCommonTest, MAYBE_TestComputeScaleWithHighFps) {
   int scaled_width, scaled_height;
 
   // Request small enough but high fps. Expect 1/2 size.

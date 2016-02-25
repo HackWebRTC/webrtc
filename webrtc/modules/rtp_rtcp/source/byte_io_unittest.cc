@@ -140,14 +140,26 @@ TEST_F(ByteIoTest, Test24SBitBigEndian) {
   TestWrite<int32_t, ByteWriter<int32_t, 3>::WriteBigEndian, 3>(true);
 }
 
-TEST_F(ByteIoTest, Test32SBitBigEndian) {
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5490
+#ifdef UNDEFINED_SANITIZER
+#define MAYBE_Test32SBitBigEndian DISABLED_Test32SBitBigEndian
+#else
+#define MAYBE_Test32SBitBigEndian Test32SBitBigEndian
+#endif
+TEST_F(ByteIoTest, MAYBE_Test32SBitBigEndian) {
   TestRead<int32_t, ByteReader<int32_t>::ReadBigEndian,
       sizeof(int32_t)>(true);
   TestWrite<int32_t, ByteWriter<int32_t>::WriteBigEndian,
       sizeof(int32_t)>(true);
 }
 
-TEST_F(ByteIoTest, Test64SBitBigEndian) {
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5490
+#ifdef UNDEFINED_SANITIZER
+#define MAYBE_Test64SBitBigEndian DISABLED_Test64SBitBigEndian
+#else
+#define MAYBE_Test64SBitBigEndian Test64SBitBigEndian
+#endif
+TEST_F(ByteIoTest, MAYBE_Test64SBitBigEndian) {
   TestRead<int64_t, ByteReader<int64_t>::ReadBigEndian,
       sizeof(int64_t)>(true);
   TestWrite<int64_t, ByteWriter<int64_t>::WriteBigEndian,
@@ -192,14 +204,26 @@ TEST_F(ByteIoTest, Test24SBitLittleEndian) {
   TestWrite<int32_t, ByteWriter<int32_t, 3>::WriteLittleEndian, 3>(false);
 }
 
-TEST_F(ByteIoTest, Test32SBitLittleEndian) {
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5490
+#ifdef UNDEFINED_SANITIZER
+#define MAYBE_Test32SBitLittleEndian DISABLED_Test32SBitLittleEndian
+#else
+#define MAYBE_Test32SBitLittleEndian Test32SBitLittleEndian
+#endif
+TEST_F(ByteIoTest, MAYBE_Test32SBitLittleEndian) {
   TestRead<int32_t, ByteReader<int32_t>::ReadLittleEndian,
       sizeof(int32_t)>(false);
   TestWrite<int32_t, ByteWriter<int32_t>::WriteLittleEndian,
       sizeof(int32_t)>(false);
 }
 
-TEST_F(ByteIoTest, Test64SBitLittleEndian) {
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5490
+#ifdef UNDEFINED_SANITIZER
+#define MAYBE_Test64SBitLittleEndian DISABLED_Test64SBitLittleEndian
+#else
+#define MAYBE_Test64SBitLittleEndian Test64SBitLittleEndian
+#endif
+TEST_F(ByteIoTest, MAYBE_Test64SBitLittleEndian) {
   TestRead<int64_t, ByteReader<int64_t>::ReadLittleEndian,
       sizeof(int64_t)>(false);
   TestWrite<int64_t, ByteWriter<int64_t>::WriteLittleEndian,

@@ -88,7 +88,13 @@ TEST(BandwidthSmootherTest, TestSampleTooFewSamples) {
   EXPECT_EQ(kBandwidthSample, mon.get_bandwidth_estimation());
 }
 
-TEST(BandwidthSmootherTest, TestSampleRollover) {
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5491
+#ifdef UNDEFINED_SANITIZER
+#define MAYBE_TestSampleRollover DISABLED_TestSampleRollover
+#else
+#define MAYBE_TestSampleRollover TestSampleRollover
+#endif
+TEST(BandwidthSmootherTest, MAYBE_TestSampleRollover) {
   const int kHugeBandwidth = 2000000000;  // > INT_MAX/1.1
   BandwidthSmoother mon(kHugeBandwidth,
                         kTimeBetweenIncrease,

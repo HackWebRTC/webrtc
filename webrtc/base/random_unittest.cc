@@ -198,7 +198,13 @@ TEST(RandomNumberGeneratorTest, UniformUnsignedInterval) {
   BucketTestUnsignedInterval(1000, 1000000, 0, 2147483999, 4, &prng);
 }
 
-TEST(RandomNumberGeneratorTest, UniformSignedInterval) {
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5491
+#ifdef UNDEFINED_SANITIZER
+#define MAYBE_UniformSignedInterval DISABLED_UniformSignedInterval
+#else
+#define MAYBE_UniformSignedInterval UniformSignedInterval
+#endif
+TEST(RandomNumberGeneratorTest, MAYBE_UniformSignedInterval) {
   Random prng(66260695729ull);
   BucketTestSignedInterval(2, 100000, 0, 1, 3, &prng);
   BucketTestSignedInterval(7, 100000, -2, 4, 3, &prng);
