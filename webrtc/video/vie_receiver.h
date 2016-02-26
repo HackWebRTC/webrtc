@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_VIE_RECEIVER_H_
 
 #include <list>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
@@ -64,10 +65,7 @@ class ViEReceiver : public RtpData {
 
   void RegisterRtpRtcpModules(const std::vector<RtpRtcp*>& rtp_modules);
 
-  bool EnableReceiveTimestampOffset(int id);
-  bool EnableReceiveAbsoluteSendTime(int id);
-  bool EnableReceiveVideoRotation(int id);
-  bool EnableReceiveTransportSequenceNumber(int id);
+  void EnableReceiveRtpHeaderExtension(const std::string& extension, int id);
 
   void StartReceive();
   void StopReceive();
@@ -117,9 +115,6 @@ class ViEReceiver : public RtpData {
   bool receiving_;
   uint8_t restored_packet_[IP_PACKET_SIZE];
   bool restored_packet_in_use_;
-  bool receiving_ast_enabled_;
-  bool receiving_cvo_enabled_;
-  bool receiving_tsn_enabled_;
   int64_t last_packet_log_ms_;
 };
 

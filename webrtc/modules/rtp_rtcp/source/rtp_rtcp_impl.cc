@@ -13,10 +13,12 @@
 #include <string.h>
 
 #include <set>
+#include <string>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
+#include "webrtc/config.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 #ifdef _WIN32
@@ -25,6 +27,21 @@
 #endif
 
 namespace webrtc {
+
+RTPExtensionType StringToRtpExtensionType(const std::string& extension) {
+  if (extension == RtpExtension::kTOffset)
+    return kRtpExtensionTransmissionTimeOffset;
+  if (extension == RtpExtension::kAudioLevel)
+    return kRtpExtensionAudioLevel;
+  if (extension == RtpExtension::kAbsSendTime)
+    return kRtpExtensionAbsoluteSendTime;
+  if (extension == RtpExtension::kVideoRotation)
+    return kRtpExtensionVideoRotation;
+  if (extension == RtpExtension::kTransportSequenceNumber)
+    return kRtpExtensionTransportSequenceNumber;
+  RTC_NOTREACHED() << "Looking up unsupported RTP extension.";
+  return kRtpExtensionNone;
+}
 
 RtpRtcp::Configuration::Configuration()
     : audio(false),

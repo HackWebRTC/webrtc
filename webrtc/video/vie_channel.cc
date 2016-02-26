@@ -377,47 +377,6 @@ int ViEChannel::GetRequiredNackListSize(int target_delay_ms) {
   return target_delay_ms * 40 * 30 / 1000;
 }
 
-int ViEChannel::EnableSendTimestampOffset(int id) {
-  // Enable the extension.
-  int error = 0;
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    error |= rtp_rtcp->RegisterSendRtpHeaderExtension(
-        kRtpExtensionTransmissionTimeOffset, id);
-  }
-  return error;
-}
-
-int ViEChannel::EnableSendAbsoluteSendTime(int id) {
-  // Enable the extension.
-  int error = 0;
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    error |= rtp_rtcp->RegisterSendRtpHeaderExtension(
-        kRtpExtensionAbsoluteSendTime, id);
-  }
-  return error;
-}
-
-int ViEChannel::EnableSendVideoRotation(int id) {
-  // Enable the extension.
-  int error = 0;
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    error |= rtp_rtcp->RegisterSendRtpHeaderExtension(
-        kRtpExtensionVideoRotation, id);
-  }
-  return error;
-}
-
-int ViEChannel::EnableSendTransportSequenceNumber(int id) {
-  RTC_DCHECK(sender_);
-  // Enable the extension.
-  int error = 0;
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    error |= rtp_rtcp->RegisterSendRtpHeaderExtension(
-        kRtpExtensionTransportSequenceNumber, id);
-  }
-  return error;
-}
-
 RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) const {
   RTC_DCHECK(!rtp_rtcp_modules_[0]->Sending());
   RtpState rtp_state;

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/config.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
@@ -52,9 +53,6 @@ ViEReceiver::ViEReceiver(VideoCodingModule* module_vcm,
       ntp_estimator_(new RemoteNtpTimeEstimator(clock_)),
       receiving_(false),
       restored_packet_in_use_(false),
-      receiving_ast_enabled_(false),
-      receiving_cvo_enabled_(false),
-      receiving_tsn_enabled_(false),
       last_packet_log_ms_(-1) {}
 
 ViEReceiver::~ViEReceiver() {
@@ -156,39 +154,11 @@ void ViEReceiver::RegisterRtpRtcpModules(
       std::vector<RtpRtcp*>(rtp_modules.begin() + 1, rtp_modules.end());
 }
 
-bool ViEReceiver::EnableReceiveTimestampOffset(int id) {
-  return rtp_header_parser_->RegisterRtpHeaderExtension(
-      kRtpExtensionTransmissionTimeOffset, id);
-}
-
-bool ViEReceiver::EnableReceiveAbsoluteSendTime(int id) {
-  if (rtp_header_parser_->RegisterRtpHeaderExtension(
-      kRtpExtensionAbsoluteSendTime, id)) {
-    receiving_ast_enabled_ = true;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool ViEReceiver::EnableReceiveVideoRotation(int id) {
-  if (rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionVideoRotation, id)) {
-    receiving_cvo_enabled_ = true;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool ViEReceiver::EnableReceiveTransportSequenceNumber(int id) {
-  if (rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionTransportSequenceNumber, id)) {
-    receiving_tsn_enabled_ = true;
-    return true;
-  } else {
-    return false;
-  }
+void ViEReceiver::EnableReceiveRtpHeaderExtension(const std::string& extension,
+                                                  int id) {
+  RTC_DCHECK(RtpExtension::IsSupportedForVideo(extension));
+  RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
+      StringToRtpExtensionType(extension), id));
 }
 
 int32_t ViEReceiver::OnReceivedPayloadData(const uint8_t* payload_data,

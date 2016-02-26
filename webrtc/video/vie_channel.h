@@ -88,10 +88,6 @@ class ViEChannel : public VCMFrameTypeCallback,
                          bool enable_fec,
                          int payload_type_red,
                          int payload_type_fec);
-  int EnableSendTimestampOffset(int id);
-  int EnableSendAbsoluteSendTime(int id);
-  int EnableSendVideoRotation(int id);
-  int EnableSendTransportSequenceNumber(int id);
 
   RtpState GetRtpStateForSsrc(uint32_t ssrc) const;
 

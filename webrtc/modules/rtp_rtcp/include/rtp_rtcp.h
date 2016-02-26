@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_
 
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -25,6 +26,8 @@ class RemoteBitrateEstimator;
 class RtpReceiver;
 class Transport;
 class RtcEventLog;
+
+RTPExtensionType StringToRtpExtensionType(const std::string& extension);
 
 namespace rtcp {
 class TransportFeedback;

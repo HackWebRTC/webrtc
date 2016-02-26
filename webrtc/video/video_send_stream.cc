@@ -22,6 +22,7 @@
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/video_capture_input.h"
@@ -228,16 +229,10 @@ VideoSendStream::VideoSendStream(
     // One-byte-extension local identifiers are in the range 1-14 inclusive.
     RTC_DCHECK_GE(id, 1);
     RTC_DCHECK_LE(id, 14);
-    if (extension == RtpExtension::kTOffset) {
-      RTC_CHECK_EQ(0, vie_channel_.EnableSendTimestampOffset(id));
-    } else if (extension == RtpExtension::kAbsSendTime) {
-      RTC_CHECK_EQ(0, vie_channel_.EnableSendAbsoluteSendTime(id));
-    } else if (extension == RtpExtension::kVideoRotation) {
-      RTC_CHECK_EQ(0, vie_channel_.EnableSendVideoRotation(id));
-    } else if (extension == RtpExtension::kTransportSequenceNumber) {
-      RTC_CHECK_EQ(0, vie_channel_.EnableSendTransportSequenceNumber(id));
-    } else {
-      RTC_NOTREACHED() << "Registering unsupported RTP extension.";
+    RTC_DCHECK(RtpExtension::IsSupportedForVideo(extension));
+    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+      RTC_CHECK_EQ(0, rtp_rtcp->RegisterSendRtpHeaderExtension(
+                          StringToRtpExtensionType(extension), id));
     }
   }
 
