@@ -170,7 +170,12 @@ int GetProcessorCount() {
 }
 
 bool GetLowPowerModeEnabled() {
-  return [NSProcessInfo processInfo].lowPowerModeEnabled;
+  NSProcessInfo* info = [NSProcessInfo processInfo];
+  // lowPoweredModeEnabled is only available on iOS9+.
+  if ([info respondsToSelector:@selector(lowPoweredModeEnabled)]) {
+    return info.lowPowerModeEnabled;
+  }
+  return false;
 }
 
 }  // namespace ios
