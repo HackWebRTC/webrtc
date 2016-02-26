@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/audio/audio_sink.h"
+#include "webrtc/audio_sink.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/audiorenderer.h"

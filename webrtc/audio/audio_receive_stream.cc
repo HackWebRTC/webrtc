@@ -13,7 +13,7 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/audio/audio_sink.h"
+#include "webrtc/audio_sink.h"
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/checks.h"
