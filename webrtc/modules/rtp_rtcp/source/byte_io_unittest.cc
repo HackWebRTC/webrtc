@@ -26,12 +26,36 @@ class ByteIoTest : public ::testing::Test {
   // Method to create a test value that is not the same when byte reversed.
   template <typename T>
   T CreateTestValue(bool negative, uint8_t num_bytes) {
+    // Examples of output:
+    // T = int32_t, negative = false, num_bytes = 4: 0x00010203
+    // T = int32_t, negative = true, num_bytes = 4: 0xFFFEFDFC
+    // T = int32_t, negative = false, num_bytes = 3: 0x000102
+    // * T = int32_t, negative = true, num_bytes = 3: 0xFFFEFD
+
     T val = 0;
     for (uint8_t i = 0; i != num_bytes; ++i) {
       val = (val << 8) + (negative ? (0xFF - i) : (i + 1));
     }
-    if (negative && std::numeric_limits<T>::is_signed) {
-      val |= static_cast<T>(-1) << (8 * num_bytes);
+
+    // This loop will create a sign extend mask if num_bytes if necessary.
+    // For the last example (marked * above), the number needs to be sign
+    // extended to be a valid int32_t. The sign extend mask is 0xFF000000.
+    // Comments for each step with this example below.
+    if (std::numeric_limits<T>::is_signed && negative &&
+        num_bytes < sizeof(T)) {
+      // Start with mask = 0xFFFFFFFF.
+      T mask = static_cast<T>(-1);
+      // Create a temporary for the lowest byte (0x000000FF).
+      const T neg_byte = static_cast<T>(0xFF);
+      for (int i = 0; i < num_bytes; ++i) {
+        // And the inverse of the temporary and the mask:
+        // 0xFFFFFFFF & 0xFFFFFF00 = 0xFFFFFF00.
+        // 0xFFFFFF00 & 0xFFFF00FF = 0xFFFF0000.
+        // 0xFFFF0000 & 0xFF00FFFF = 0xFF000000.
+        mask &= ~(neg_byte << (i * 8));
+      }
+      // Add the sign extension mask to the actual value.
+      val |= mask;
     }
     return val;
   }
@@ -140,26 +164,14 @@ TEST_F(ByteIoTest, Test24SBitBigEndian) {
   TestWrite<int32_t, ByteWriter<int32_t, 3>::WriteBigEndian, 3>(true);
 }
 
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5490
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_Test32SBitBigEndian DISABLED_Test32SBitBigEndian
-#else
-#define MAYBE_Test32SBitBigEndian Test32SBitBigEndian
-#endif
-TEST_F(ByteIoTest, MAYBE_Test32SBitBigEndian) {
+TEST_F(ByteIoTest, Test32SBitBigEndian) {
   TestRead<int32_t, ByteReader<int32_t>::ReadBigEndian,
       sizeof(int32_t)>(true);
   TestWrite<int32_t, ByteWriter<int32_t>::WriteBigEndian,
       sizeof(int32_t)>(true);
 }
 
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5490
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_Test64SBitBigEndian DISABLED_Test64SBitBigEndian
-#else
-#define MAYBE_Test64SBitBigEndian Test64SBitBigEndian
-#endif
-TEST_F(ByteIoTest, MAYBE_Test64SBitBigEndian) {
+TEST_F(ByteIoTest, Test64SBitBigEndian) {
   TestRead<int64_t, ByteReader<int64_t>::ReadBigEndian,
       sizeof(int64_t)>(true);
   TestWrite<int64_t, ByteWriter<int64_t>::WriteBigEndian,
@@ -204,26 +216,14 @@ TEST_F(ByteIoTest, Test24SBitLittleEndian) {
   TestWrite<int32_t, ByteWriter<int32_t, 3>::WriteLittleEndian, 3>(false);
 }
 
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5490
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_Test32SBitLittleEndian DISABLED_Test32SBitLittleEndian
-#else
-#define MAYBE_Test32SBitLittleEndian Test32SBitLittleEndian
-#endif
-TEST_F(ByteIoTest, MAYBE_Test32SBitLittleEndian) {
+TEST_F(ByteIoTest, Test32SBitLittleEndian) {
   TestRead<int32_t, ByteReader<int32_t>::ReadLittleEndian,
       sizeof(int32_t)>(false);
   TestWrite<int32_t, ByteWriter<int32_t>::WriteLittleEndian,
       sizeof(int32_t)>(false);
 }
 
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5490
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_Test64SBitLittleEndian DISABLED_Test64SBitLittleEndian
-#else
-#define MAYBE_Test64SBitLittleEndian Test64SBitLittleEndian
-#endif
-TEST_F(ByteIoTest, MAYBE_Test64SBitLittleEndian) {
+TEST_F(ByteIoTest, Test64SBitLittleEndian) {
   TestRead<int64_t, ByteReader<int64_t>::ReadLittleEndian,
       sizeof(int64_t)>(false);
   TestWrite<int64_t, ByteWriter<int64_t>::WriteLittleEndian,
