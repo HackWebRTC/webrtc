@@ -198,6 +198,62 @@ bool CaptureManager::StopVideoCapture(VideoCapturer* video_capturer,
   return true;
 }
 
+bool CaptureManager::RestartVideoCapture(
+    VideoCapturer* video_capturer,
+    const VideoFormat& previous_format,
+    const VideoFormat& desired_format,
+    CaptureManager::RestartOptions options) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (!IsCapturerRegistered(video_capturer)) {
+    LOG(LS_ERROR) << "RestartVideoCapture: video_capturer is not registered.";
+    return false;
+  }
+  // Start the new format first. This keeps the capturer running.
+  if (!StartVideoCapture(video_capturer, desired_format)) {
+    LOG(LS_ERROR) << "RestartVideoCapture: unable to start video capture with "
+        "desired_format=" << desired_format.ToString();
+    return false;
+  }
+  // Stop the old format.
+  if (!StopVideoCapture(video_capturer, previous_format)) {
+    LOG(LS_ERROR) << "RestartVideoCapture: unable to stop video capture with "
+        "previous_format=" << previous_format.ToString();
+    // Undo the start request we just performed.
+    StopVideoCapture(video_capturer, desired_format);
+    return false;
+  }
+
+  switch (options) {
+    case kForceRestart: {
+      VideoCapturerState* capture_state = GetCaptureState(video_capturer);
+      ASSERT(capture_state && capture_state->start_count() > 0);
+      // Try a restart using the new best resolution.
+      VideoFormat highest_asked_format =
+          capture_state->GetHighestFormat(video_capturer);
+      VideoFormat capture_format;
+      if (video_capturer->GetBestCaptureFormat(highest_asked_format,
+                                               &capture_format)) {
+        if (!video_capturer->Restart(capture_format)) {
+          LOG(LS_ERROR) << "RestartVideoCapture: Restart failed.";
+        }
+      } else {
+        LOG(LS_WARNING)
+            << "RestartVideoCapture: Couldn't find a best capture format for "
+            << highest_asked_format.ToString();
+      }
+      break;
+    }
+    case kRequestRestart:
+      // TODO(ryanpetrie): Support restart requests. Should this
+      // to-be-implemented logic be used for {Start,Stop}VideoCapture as well?
+      break;
+    default:
+      LOG(LS_ERROR) << "Unknown/unimplemented RestartOption";
+      break;
+  }
+  return true;
+}
+
 void CaptureManager::AddVideoSink(VideoCapturer* video_capturer,
                                   rtc::VideoSinkInterface<VideoFrame>* sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());

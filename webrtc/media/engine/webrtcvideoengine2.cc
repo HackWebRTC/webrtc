@@ -1980,12 +1980,14 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
     info.adapt_reason = CoordinatedVideoAdapter::ADAPTREASON_NONE;
 
     if (capturer_ != NULL) {
-      VideoFormat last_captured_frame_format;
-      capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
-                          &info.capturer_frame_time,
-                          &last_captured_frame_format);
-      info.input_frame_width = last_captured_frame_format.width;
-      info.input_frame_height = last_captured_frame_format.height;
+      if (!capturer_->IsMuted()) {
+        VideoFormat last_captured_frame_format;
+        capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
+                            &info.capturer_frame_time,
+                            &last_captured_frame_format);
+        info.input_frame_width = last_captured_frame_format.width;
+        info.input_frame_height = last_captured_frame_format.height;
+      }
       if (capturer_->video_adapter() != nullptr) {
         info.adapt_changes += capturer_->video_adapter()->adaptation_changes();
         info.adapt_reason = capturer_->video_adapter()->adapt_reason();

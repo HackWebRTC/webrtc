@@ -26,6 +26,7 @@ namespace {
 const int kMsCallbackWait = 500;
 // For HD only the height matters.
 const int kMinHdHeight = 720;
+const uint32_t kTimeout = 5000U;
 
 }  // namespace
 
@@ -74,6 +75,90 @@ TEST_F(VideoCapturerTest, CaptureState) {
   EXPECT_EQ(2, num_state_changes());
 }
 
+TEST_F(VideoCapturerTest, TestRestart) {
+  EXPECT_EQ(cricket::CS_RUNNING, capturer_.Start(cricket::VideoFormat(
+      640,
+      480,
+      cricket::VideoFormat::FpsToInterval(30),
+      cricket::FOURCC_I420)));
+  EXPECT_TRUE(capturer_.IsRunning());
+  EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
+  EXPECT_EQ(1, num_state_changes());
+  EXPECT_TRUE(capturer_.Restart(cricket::VideoFormat(
+      320,
+      240,
+      cricket::VideoFormat::FpsToInterval(30),
+      cricket::FOURCC_I420)));
+  EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
+  EXPECT_TRUE(capturer_.IsRunning());
+  EXPECT_GE(1, num_state_changes());
+  capturer_.Stop();
+  rtc::Thread::Current()->ProcessMessages(100);
+  EXPECT_FALSE(capturer_.IsRunning());
+}
+
+TEST_F(VideoCapturerTest, TestStartingWithRestart) {
+  EXPECT_FALSE(capturer_.IsRunning());
+  EXPECT_TRUE(capturer_.Restart(cricket::VideoFormat(
+      640,
+      480,
+      cricket::VideoFormat::FpsToInterval(30),
+      cricket::FOURCC_I420)));
+  EXPECT_TRUE(capturer_.IsRunning());
+  EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
+}
+
+TEST_F(VideoCapturerTest, TestRestartWithSameFormat) {
+  cricket::VideoFormat format(640, 480,
+                              cricket::VideoFormat::FpsToInterval(30),
+                              cricket::FOURCC_I420);
+  EXPECT_EQ(cricket::CS_RUNNING, capturer_.Start(format));
+  EXPECT_TRUE(capturer_.IsRunning());
+  EXPECT_EQ_WAIT(cricket::CS_RUNNING, capture_state(), kMsCallbackWait);
+  EXPECT_EQ(1, num_state_changes());
+  EXPECT_TRUE(capturer_.Restart(format));
+  EXPECT_EQ(cricket::CS_RUNNING, capture_state());
+  EXPECT_TRUE(capturer_.IsRunning());
+  EXPECT_EQ(1, num_state_changes());
+}
+
+TEST_F(VideoCapturerTest, CameraOffOnMute) {
+  EXPECT_EQ(cricket::CS_RUNNING, capturer_.Start(cricket::VideoFormat(
+      640,
+      480,
+      cricket::VideoFormat::FpsToInterval(30),
+      cricket::FOURCC_I420)));
+  EXPECT_TRUE(capturer_.IsRunning());
+  EXPECT_EQ(0, renderer_.num_rendered_frames());
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(1, renderer_.num_rendered_frames());
+  EXPECT_FALSE(capturer_.IsMuted());
+
+  // Mute the camera and expect black output frame.
+  capturer_.MuteToBlackThenPause(true);
+  EXPECT_TRUE(capturer_.IsMuted());
+  for (int i = 0; i < 31; ++i) {
+    EXPECT_TRUE(capturer_.CaptureFrame());
+    EXPECT_TRUE(renderer_.black_frame());
+  }
+  EXPECT_EQ(32, renderer_.num_rendered_frames());
+  EXPECT_EQ_WAIT(cricket::CS_PAUSED,
+                 capturer_.capture_state(), kTimeout);
+
+  // Verify that the camera is off.
+  EXPECT_FALSE(capturer_.CaptureFrame());
+  EXPECT_EQ(32, renderer_.num_rendered_frames());
+
+  // Unmute the camera and expect non-black output frame.
+  capturer_.MuteToBlackThenPause(false);
+  EXPECT_FALSE(capturer_.IsMuted());
+  EXPECT_EQ_WAIT(cricket::CS_RUNNING,
+                 capturer_.capture_state(), kTimeout);
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_FALSE(renderer_.black_frame());
+  EXPECT_EQ(33, renderer_.num_rendered_frames());
+}
+
 TEST_F(VideoCapturerTest, ScreencastScaledOddWidth) {
   capturer_.SetScreencast(true);
 
@@ -111,6 +196,8 @@ TEST_F(VideoCapturerTest, TestRotationAppliedBySource) {
   capturer_.ResetSupportedFormats(formats);
 
   // capturer_ should compensate rotation as default.
+  capturer_.UpdateAspectRatio(400, 200);
+
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer_.Start(cricket::VideoFormat(
                 kWidth, kHeight, cricket::VideoFormat::FpsToInterval(30),
@@ -162,6 +249,8 @@ TEST_F(VideoCapturerTest, TestRotationAppliedBySink) {
   wants.rotation_applied = false;
   capturer_.AddOrUpdateSink(&renderer_, wants);
 
+  capturer_.UpdateAspectRatio(400, 200);
+
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer_.Start(cricket::VideoFormat(
                 kWidth, kHeight, cricket::VideoFormat::FpsToInterval(30),
@@ -210,6 +299,8 @@ TEST_F(VideoCapturerTest, TestRotationAppliedBySourceWhenDifferentWants) {
   // capturer_ should not compensate rotation.
   wants.rotation_applied = false;
   capturer_.AddOrUpdateSink(&renderer_, wants);
+
+  capturer_.UpdateAspectRatio(400, 200);
 
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer_.Start(cricket::VideoFormat(

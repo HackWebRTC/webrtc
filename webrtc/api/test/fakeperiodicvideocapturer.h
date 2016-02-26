@@ -19,8 +19,7 @@
 
 namespace webrtc {
 
-class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer,
-                                  public rtc::MessageHandler {
+class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer {
  public:
   FakePeriodicVideoCapturer() {
     std::vector<cricket::VideoFormat> formats;
@@ -56,6 +55,8 @@ class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer,
             GetCaptureFormat()->interval / rtc::kNumNanosecsPerMillisec),
             this, MSG_CREATEFRAME);
         }
+    } else {
+      FakeVideoCapturer::OnMessage(msg);
     }
   }
 

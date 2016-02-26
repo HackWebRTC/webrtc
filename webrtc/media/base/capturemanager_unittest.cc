@@ -160,3 +160,41 @@ TEST_F(CaptureManagerTest, MultipleStartStops) {
   EXPECT_FALSE(capture_manager_.StopVideoCapture(&video_capturer_,
                                                  format_vga_));
 }
+
+TEST_F(CaptureManagerTest, TestForceRestart) {
+  EXPECT_TRUE(capture_manager_.StartVideoCapture(&video_capturer_,
+                                                 format_qvga_));
+  capture_manager_.AddVideoSink(&video_capturer_, &video_renderer_);
+  EXPECT_EQ_WAIT(1, callback_count(), kMsCallbackWait);
+  EXPECT_TRUE(video_capturer_.CaptureFrame());
+  EXPECT_EQ(1, NumFramesRendered());
+  EXPECT_TRUE(WasRenderedResolution(format_qvga_));
+  // Now restart with vga.
+  EXPECT_TRUE(capture_manager_.RestartVideoCapture(
+      &video_capturer_, format_qvga_, format_vga_,
+      cricket::CaptureManager::kForceRestart));
+  EXPECT_TRUE(video_capturer_.CaptureFrame());
+  EXPECT_EQ(2, NumFramesRendered());
+  EXPECT_TRUE(WasRenderedResolution(format_vga_));
+  EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_,
+                                                format_vga_));
+}
+
+TEST_F(CaptureManagerTest, TestRequestRestart) {
+  EXPECT_TRUE(capture_manager_.StartVideoCapture(&video_capturer_,
+                                                 format_vga_));
+  capture_manager_.AddVideoSink(&video_capturer_, &video_renderer_);
+  EXPECT_EQ_WAIT(1, callback_count(), kMsCallbackWait);
+  EXPECT_TRUE(video_capturer_.CaptureFrame());
+  EXPECT_EQ(1, NumFramesRendered());
+  EXPECT_TRUE(WasRenderedResolution(format_vga_));
+  // Now request restart with qvga.
+  EXPECT_TRUE(capture_manager_.RestartVideoCapture(
+      &video_capturer_, format_vga_, format_qvga_,
+      cricket::CaptureManager::kRequestRestart));
+  EXPECT_TRUE(video_capturer_.CaptureFrame());
+  EXPECT_EQ(2, NumFramesRendered());
+  EXPECT_TRUE(WasRenderedResolution(format_vga_));
+  EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_,
+                                                format_qvga_));
+}

@@ -455,11 +455,31 @@ bool ChannelManager::StartVideoCapture(
            capture_manager_.get(), capturer, video_format));
 }
 
+bool ChannelManager::MuteToBlackThenPause(
+    VideoCapturer* video_capturer, bool muted) {
+  if (!initialized_) {
+    return false;
+  }
+  worker_thread_->Invoke<void>(
+      Bind(&VideoCapturer::MuteToBlackThenPause, video_capturer, muted));
+  return true;
+}
+
 bool ChannelManager::StopVideoCapture(
     VideoCapturer* capturer, const VideoFormat& video_format) {
   return initialized_ && worker_thread_->Invoke<bool>(
       Bind(&CaptureManager::StopVideoCapture,
            capture_manager_.get(), capturer, video_format));
+}
+
+bool ChannelManager::RestartVideoCapture(
+    VideoCapturer* video_capturer,
+    const VideoFormat& previous_format,
+    const VideoFormat& desired_format,
+    CaptureManager::RestartOptions options) {
+  return initialized_ && worker_thread_->Invoke<bool>(
+      Bind(&CaptureManager::RestartVideoCapture, capture_manager_.get(),
+           video_capturer, previous_format, desired_format, options));
 }
 
 void ChannelManager::AddVideoSink(

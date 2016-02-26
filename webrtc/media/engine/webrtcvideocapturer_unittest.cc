@@ -127,7 +127,7 @@ TEST_F(WebRtcVideoCapturerTest, TestCaptureVcm) {
 
 TEST_F(WebRtcVideoCapturerTest, TestCaptureWithoutInit) {
   cricket::VideoFormat format;
-  EXPECT_EQ(cricket::CS_FAILED, capturer_->Start(format));
+  EXPECT_EQ(cricket::CS_NO_DEVICE, capturer_->Start(format));
   EXPECT_TRUE(capturer_->GetCaptureFormat() == NULL);
   EXPECT_FALSE(capturer_->IsRunning());
 }
