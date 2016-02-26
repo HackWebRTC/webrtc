@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <algorithm>
+#include <memory>
 
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/fileutils.h"
@@ -265,7 +266,7 @@ bool LoadPlanarYuvTestImage(const std::string& prefix,
   std::stringstream ss;
   ss << prefix << "." << width << "x" << height << "_P420.yuv";
 
-  rtc::scoped_ptr<rtc::FileStream> stream(
+  std::unique_ptr<rtc::FileStream> stream(
       rtc::Filesystem::OpenFile(rtc::Pathname(
           GetTestFilePath(ss.str())), "rb"));
   if (!stream) {

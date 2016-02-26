@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MEDIA_DEVICES_FAKEDEVICEMANAGER_H_
 #define WEBRTC_MEDIA_DEVICES_FAKEDEVICEMANAGER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/window.h"
 #include "webrtc/base/windowpicker.h"
 #include "webrtc/media/base/fakevideocapturer.h"
@@ -213,7 +213,7 @@ class FakeDeviceManager : public DeviceManagerInterface {
   std::vector<Device> output_devices_;
   std::vector<Device> vidcap_devices_;
   std::map<std::string, VideoFormat> max_formats_;
-  rtc::scoped_ptr<
+  std::unique_ptr<
     ScreenCapturerFactory> screen_capturer_factory_;
 };
 

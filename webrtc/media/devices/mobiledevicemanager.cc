@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/arraysize.h"
 #include "webrtc/media/devices/devicemanager.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
@@ -31,7 +33,7 @@ MobileDeviceManager::~MobileDeviceManager() {}
 
 bool MobileDeviceManager::GetVideoCaptureDevices(std::vector<Device>* devs) {
   devs->clear();
-  rtc::scoped_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
+  std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
       webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
   if (!info)
     return false;

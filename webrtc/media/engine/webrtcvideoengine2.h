@@ -12,12 +12,12 @@
 #define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOENGINE2_H_
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/videosinkinterface.h"
@@ -126,7 +126,7 @@ class WebRtcVideoEngine2 {
 
   WebRtcVideoDecoderFactory* external_decoder_factory_;
   WebRtcVideoEncoderFactory* external_encoder_factory_;
-  rtc::scoped_ptr<WebRtcVideoEncoderFactory> simulcast_encoder_factory_;
+  std::unique_ptr<WebRtcVideoEncoderFactory> simulcast_encoder_factory_;
 };
 
 class WebRtcVideoChannel2 : public VideoMediaChannel,

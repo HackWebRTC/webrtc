@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/media/devices/deviceinfo.h"
 
 #include "webrtc/base/common.h"  // for ASSERT
@@ -77,7 +79,7 @@ class ScopedUdevEnumerate {
 
 bool GetUsbProperty(const Device& device, const char* property_name,
                     std::string* property) {
-  rtc::scoped_ptr<ScopedLibUdev> libudev_context(ScopedLibUdev::Create());
+  std::unique_ptr<ScopedLibUdev> libudev_context(ScopedLibUdev::Create());
   if (!libudev_context) {
     return false;
   }

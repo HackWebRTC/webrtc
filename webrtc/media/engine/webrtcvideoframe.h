@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOFRAME_H_
 #define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOFRAME_H_
 
+#include <memory>
+
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -113,7 +115,7 @@ class WebRtcVideoFrame : public VideoFrame {
 
   // This is mutable as the calculation is expensive but once calculated, it
   // remains const.
-  mutable rtc::scoped_ptr<VideoFrame> rotated_frame_;
+  mutable std::unique_ptr<VideoFrame> rotated_frame_;
 };
 
 }  // namespace cricket

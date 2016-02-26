@@ -10,6 +10,8 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "webrtc/media/base/videoframe_unittest.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
 #include "webrtc/media/engine/webrtcvideoframefactory.h"
@@ -68,7 +70,7 @@ class WebRtcVideoFrameFactoryTest
     InitFrame(webrtc::kVideoRotation_270);
     const cricket::CapturedFrame& captured_frame = get_captured_frame();
     // Create the new frame from the CapturedFrame.
-    rtc::scoped_ptr<cricket::VideoFrame> frame;
+    std::unique_ptr<cricket::VideoFrame> frame;
     int new_width = captured_frame.width / 2;
     int new_height = captured_frame.height / 2;
     frame.reset(factory.CreateAliasedFrame(&captured_frame, new_width,
@@ -94,7 +96,7 @@ class WebRtcVideoFrameFactoryTest
 
  private:
   cricket::CapturedFrame captured_frame_;
-  rtc::scoped_ptr<uint8_t[]> captured_frame_buffer_;
+  std::unique_ptr<uint8_t[]> captured_frame_buffer_;
   cricket::WebRtcVideoFrameFactory factory_;
 };
 

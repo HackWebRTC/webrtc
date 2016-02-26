@@ -1310,9 +1310,9 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     return config_.voe_channel_id;
   }
 
-  void SetRawAudioSink(rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
+  void SetRawAudioSink(std::unique_ptr<webrtc::AudioSinkInterface> sink) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    stream_->SetSink(rtc::ScopedToUnique(std::move(sink)));
+    stream_->SetSink(std::move(sink));
   }
 
  private:
@@ -2236,7 +2236,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
     default_recv_ssrc_ = ssrc;
     SetOutputVolume(default_recv_ssrc_, default_recv_volume_);
     if (default_sink_) {
-      rtc::scoped_ptr<webrtc::AudioSinkInterface> proxy_sink(
+      std::unique_ptr<webrtc::AudioSinkInterface> proxy_sink(
           new ProxySink(default_sink_.get()));
       SetRawAudioSink(default_recv_ssrc_, std::move(proxy_sink));
     }
@@ -2466,13 +2466,13 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
 
 void WebRtcVoiceMediaChannel::SetRawAudioSink(
     uint32_t ssrc,
-    rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
+    std::unique_ptr<webrtc::AudioSinkInterface> sink) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::SetRawAudioSink: ssrc:" << ssrc
                   << " " << (sink ? "(ptr)" : "NULL");
   if (ssrc == 0) {
     if (default_recv_ssrc_ != -1) {
-      rtc::scoped_ptr<webrtc::AudioSinkInterface> proxy_sink(
+      std::unique_ptr<webrtc::AudioSinkInterface> proxy_sink(
           sink ? new ProxySink(sink.get()) : nullptr);
       SetRawAudioSink(default_recv_ssrc_, std::move(proxy_sink));
     }

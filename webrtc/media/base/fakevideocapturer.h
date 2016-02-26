@@ -13,6 +13,7 @@
 
 #include <string.h>
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/timeutils.h"
@@ -99,7 +100,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     frame.time_stamp = initial_unix_timestamp_ + next_timestamp_;
     next_timestamp_ += timestamp_interval;
 
-    rtc::scoped_ptr<char[]> data(new char[size]);
+    std::unique_ptr<char[]> data(new char[size]);
     frame.data = data.get();
     // Copy something non-zero into the buffer so Validate wont complain that
     // the frame is all duplicate.

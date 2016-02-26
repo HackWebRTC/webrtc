@@ -33,7 +33,7 @@ namespace {
 bool SetRawAudioSink_w(VoiceMediaChannel* channel,
                        uint32_t ssrc,
                        rtc::scoped_ptr<webrtc::AudioSinkInterface>* sink) {
-  channel->SetRawAudioSink(ssrc, std::move(*sink));
+  channel->SetRawAudioSink(ssrc, rtc::ScopedToUnique(std::move(*sink)));
   return true;
 }
 }  // namespace

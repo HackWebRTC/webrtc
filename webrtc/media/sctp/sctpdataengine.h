@@ -25,7 +25,6 @@ enum PreservedErrno {
 }  // namespace cricket
 
 #include "webrtc/base/buffer.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/mediaengine.h"

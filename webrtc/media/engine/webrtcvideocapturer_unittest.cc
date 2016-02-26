@@ -11,7 +11,10 @@
 #ifdef HAVE_WEBRTC_VIDEO
 
 #include <stdio.h>
+
+#include <memory>
 #include <vector>
+
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
@@ -46,7 +49,7 @@ class WebRtcVideoCapturerTest : public testing::Test {
 
  protected:
   FakeWebRtcVcmFactory* factory_;  // owned by capturer_
-  rtc::scoped_ptr<cricket::WebRtcVideoCapturer> capturer_;
+  std::unique_ptr<cricket::WebRtcVideoCapturer> capturer_;
   cricket::VideoCapturerListener listener_;
 };
 

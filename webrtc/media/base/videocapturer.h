@@ -14,6 +14,7 @@
 #define WEBRTC_MEDIA_BASE_VIDEOCAPTURER_H_
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -22,7 +23,6 @@
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/rollingaccumulator.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timing.h"
@@ -342,10 +342,10 @@ class VideoCapturer : public sigslot::has_slots<>,
   rtc::Thread* thread_;
   std::string id_;
   CaptureState capture_state_;
-  rtc::scoped_ptr<VideoFrameFactory> frame_factory_;
-  rtc::scoped_ptr<VideoFormat> capture_format_;
+  std::unique_ptr<VideoFrameFactory> frame_factory_;
+  std::unique_ptr<VideoFormat> capture_format_;
   std::vector<VideoFormat> supported_formats_;
-  rtc::scoped_ptr<VideoFormat> max_format_;
+  std::unique_ptr<VideoFormat> max_format_;
   std::vector<VideoFormat> filtered_supported_formats_;
 
   int ratio_w_;  // View resolution. e.g. 1280 x 720.

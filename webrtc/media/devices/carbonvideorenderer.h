@@ -14,10 +14,11 @@
 #ifndef WEBRTC_MEDIA_DEVICES_CARBONVIDEORENDERER_H_
 #define WEBRTC_MEDIA_DEVICES_CARBONVIDEORENDERER_H_
 
+#include <memory>
+
 #include <Carbon/Carbon.h>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/videorenderer.h"
 
 namespace cricket {
@@ -42,7 +43,7 @@ class CarbonVideoRenderer : public VideoRenderer {
   static OSStatus DrawEventHandler(EventHandlerCallRef handler,
                                    EventRef event,
                                    void* data);
-  rtc::scoped_ptr<uint8_t[]> image_;
+  std::unique_ptr<uint8_t[]> image_;
   rtc::CriticalSection image_crit_;
   int image_width_;
   int image_height_;

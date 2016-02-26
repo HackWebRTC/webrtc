@@ -13,6 +13,7 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -332,7 +333,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
 
   virtual void SetRawAudioSink(
       uint32_t ssrc,
-      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) {
+      std::unique_ptr<webrtc::AudioSinkInterface> sink) {
     sink_ = std::move(sink);
   }
 
@@ -408,7 +409,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   int time_since_last_typing_;
   AudioOptions options_;
   std::map<uint32_t, VoiceChannelAudioSink*> local_renderers_;
-  rtc::scoped_ptr<webrtc::AudioSinkInterface> sink_;
+  std::unique_ptr<webrtc::AudioSinkInterface> sink_;
 };
 
 // A helper function to compare the FakeVoiceMediaChannel::DtmfInfo.

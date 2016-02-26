@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MEDIA_BASE_VIDEOFRAMEFACTORY_H_
 #define WEBRTC_MEDIA_BASE_VIDEOFRAMEFACTORY_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/media/base/videoframe.h"
 
 namespace cricket {
@@ -53,7 +54,7 @@ class VideoFrameFactory {
  private:
   // An internal frame buffer to avoid reallocations. It is mutable because it
   // does not affect behaviour, only performance.
-  mutable rtc::scoped_ptr<VideoFrame> output_frame_;
+  mutable std::unique_ptr<VideoFrame> output_frame_;
 };
 
 }  // namespace cricket

@@ -11,6 +11,9 @@
 #include "webrtc/media/devices/linuxdevicemanager.h"
 
 #include <unistd.h>
+
+#include <memory>
+
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/linux.h"
 #include "webrtc/base/logging.h"
@@ -118,7 +121,7 @@ enum MetaType { M2_4, M2_6, NONE };
 
 static void ScanDeviceDirectory(const std::string& devdir,
                                 std::vector<Device>* devices) {
-  rtc::scoped_ptr<rtc::DirectoryIterator> directoryIterator(
+  std::unique_ptr<rtc::DirectoryIterator> directoryIterator(
       rtc::Filesystem::IterateDirectory());
 
   if (directoryIterator->Iterate(rtc::Pathname(devdir))) {
@@ -138,7 +141,7 @@ static void ScanDeviceDirectory(const std::string& devdir,
 static std::string GetVideoDeviceNameK2_6(const std::string& device_meta_path) {
   std::string device_name;
 
-  rtc::scoped_ptr<rtc::FileStream> device_meta_stream(
+  std::unique_ptr<rtc::FileStream> device_meta_stream(
       rtc::Filesystem::OpenFile(device_meta_path, "r"));
 
   if (device_meta_stream) {
@@ -227,7 +230,7 @@ static void ScanV4L2Devices(std::vector<Device>* devices) {
   MetaType meta;
   std::string metadata_dir;
 
-  rtc::scoped_ptr<rtc::DirectoryIterator> directoryIterator(
+  std::unique_ptr<rtc::DirectoryIterator> directoryIterator(
       rtc::Filesystem::IterateDirectory());
 
   // Try and guess kernel version

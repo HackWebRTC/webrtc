@@ -14,7 +14,6 @@
 
 #include "webrtc/media/devices/gdivideorenderer.h"
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/win32window.h"
 #include "webrtc/media/base/videocommon.h"
@@ -83,8 +82,8 @@ class GdiVideoRenderer::VideoWindow : public rtc::Win32Window {
   void OnRenderFrame(const VideoFrame* frame);
 
   BITMAPINFO bmi_;
-  rtc::scoped_ptr<uint8_t[]> image_;
-  rtc::scoped_ptr<WindowThread> window_thread_;
+  std::unique_ptr<uint8_t[]> image_;
+  std::unique_ptr<WindowThread> window_thread_;
   // The initial position of the window.
   int initial_x_;
   int initial_y_;

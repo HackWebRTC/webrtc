@@ -14,6 +14,8 @@
 #include <objbase.h>
 #include "webrtc/base/win32.h"
 #endif
+
+#include <memory>
 #include <string>
 
 #include "webrtc/base/arraysize.h"
@@ -21,7 +23,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/pathutils.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/windowpickerfactory.h"
 #include "webrtc/media/base/fakevideocapturer.h"
@@ -37,7 +38,6 @@
 
 using rtc::Pathname;
 using rtc::FileTimeType;
-using rtc::scoped_ptr;
 using cricket::Device;
 using cricket::DeviceManager;
 using cricket::DeviceManagerFactory;
@@ -89,13 +89,13 @@ class DeviceManagerTestFake : public testing::Test {
   }
 
  protected:
-  scoped_ptr<DeviceManagerInterface> dm_;
+  std::unique_ptr<DeviceManagerInterface> dm_;
 };
 
 
 // Test that we startup/shutdown properly.
 TEST(DeviceManagerTest, StartupShutdown) {
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   EXPECT_TRUE(dm->Init());
   dm->Terminate();
 }
@@ -103,7 +103,7 @@ TEST(DeviceManagerTest, StartupShutdown) {
 // Test CoInitEx behavior
 #ifdef WIN32
 TEST(DeviceManagerTest, CoInitialize) {
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   std::vector<Device> devices;
   // Ensure that calls to video device work if COM is not yet initialized.
   EXPECT_TRUE(dm->Init());
@@ -133,7 +133,7 @@ TEST(DeviceManagerTest, CoInitialize) {
 
 // Test enumerating devices (although we may not find any).
 TEST(DeviceManagerTest, GetDevices) {
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   std::vector<Device> audio_ins, audio_outs, video_ins;
   std::vector<cricket::Device> video_in_devs;
   cricket::Device def_video;
@@ -151,7 +151,7 @@ TEST(DeviceManagerTest, GetDevices) {
 
 // Test that we return correct ids for default and bogus devices.
 TEST(DeviceManagerTest, GetAudioDeviceIds) {
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   Device device;
   EXPECT_TRUE(dm->Init());
   EXPECT_TRUE(dm->GetAudioInputDevice(
@@ -166,7 +166,7 @@ TEST(DeviceManagerTest, GetAudioDeviceIds) {
 
 // Test that we get the video capture device by name properly.
 TEST(DeviceManagerTest, GetVideoDeviceIds) {
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   Device device;
   EXPECT_TRUE(dm->Init());
   EXPECT_FALSE(dm->GetVideoCaptureDevice("_NOT A REAL DEVICE_", &device));
@@ -186,7 +186,7 @@ TEST(DeviceManagerTest, GetVideoDeviceIds) {
 
 TEST(DeviceManagerTest, VerifyDevicesListsAreCleared) {
   const std::string imaginary("_NOT A REAL DEVICE_");
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   std::vector<Device> audio_ins, audio_outs, video_ins;
   audio_ins.push_back(Device(imaginary, imaginary));
   audio_outs.push_back(Device(imaginary, imaginary));
@@ -291,7 +291,7 @@ TEST(DeviceManagerTest, GetVideoCaptureDevices_K2_6) {
                                       "Video Device 2"));
   rtc::FilesystemScope fs(new rtc::FakeFileSystem(files));
 
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   std::vector<Device> video_ins;
   EXPECT_TRUE(dm->Init());
   EXPECT_TRUE(dm->GetVideoCaptureDevices(&video_ins));
@@ -320,7 +320,7 @@ TEST(DeviceManagerTest, GetVideoCaptureDevices_K2_4) {
           "param1: value1\nname:   Video Device 2\n param2: value2\n"));
   rtc::FilesystemScope fs(new rtc::FakeFileSystem(files));
 
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   std::vector<Device> video_ins;
   EXPECT_TRUE(dm->Init());
   EXPECT_TRUE(dm->GetVideoCaptureDevices(&video_ins));
@@ -341,7 +341,7 @@ TEST(DeviceManagerTest, GetVideoCaptureDevices_KUnknown) {
   files.push_back(rtc::FakeFileSystem::File("/dev/video5", ""));
   rtc::FilesystemScope fs(new rtc::FakeFileSystem(files));
 
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   std::vector<Device> video_ins;
   EXPECT_TRUE(dm->Init());
   EXPECT_TRUE(dm->GetVideoCaptureDevices(&video_ins));
@@ -359,7 +359,7 @@ TEST(DeviceManagerTest, GetWindows) {
                  << "current configuration.";
     return;
   }
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   dm->SetScreenCapturerFactory(new FakeScreenCapturerFactory());
   std::vector<rtc::WindowDescription> descriptions;
   EXPECT_TRUE(dm->Init());
@@ -368,7 +368,7 @@ TEST(DeviceManagerTest, GetWindows) {
                  << "windows to capture.";
     return;
   }
-  scoped_ptr<cricket::VideoCapturer> capturer(dm->CreateScreenCapturer(
+  std::unique_ptr<cricket::VideoCapturer> capturer(dm->CreateScreenCapturer(
       cricket::ScreencastId(descriptions.front().id())));
   EXPECT_FALSE(capturer.get() == NULL);
   // TODO(hellner): creating a window capturer and immediately deleting it
@@ -383,7 +383,7 @@ TEST(DeviceManagerTest, GetDesktops) {
                  << "current configuration.";
     return;
   }
-  scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
+  std::unique_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
   dm->SetScreenCapturerFactory(new FakeScreenCapturerFactory());
   std::vector<rtc::DesktopDescription> descriptions;
   EXPECT_TRUE(dm->Init());
@@ -392,7 +392,7 @@ TEST(DeviceManagerTest, GetDesktops) {
                  << "desktops to capture.";
     return;
   }
-  scoped_ptr<cricket::VideoCapturer> capturer(dm->CreateScreenCapturer(
+  std::unique_ptr<cricket::VideoCapturer> capturer(dm->CreateScreenCapturer(
       cricket::ScreencastId(descriptions.front().id())));
   EXPECT_FALSE(capturer.get() == NULL);
 }
@@ -401,7 +401,7 @@ TEST(DeviceManagerTest, GetDesktops) {
 TEST_F(DeviceManagerTestFake, CaptureConstraintsWhitelisted) {
   const Device device("white", "white_id");
   dm_->SetVideoCaptureDeviceMaxFormat(device.name, kHdFormat);
-  scoped_ptr<cricket::VideoCapturer> capturer(
+  std::unique_ptr<cricket::VideoCapturer> capturer(
       dm_->CreateVideoCapturer(device));
   cricket::VideoFormat best_format;
   capturer->set_enable_camera_list(true);
@@ -411,7 +411,7 @@ TEST_F(DeviceManagerTestFake, CaptureConstraintsWhitelisted) {
 
 TEST_F(DeviceManagerTestFake, CaptureConstraintsNotWhitelisted) {
   const Device device("regular", "regular_id");
-  scoped_ptr<cricket::VideoCapturer> capturer(
+  std::unique_ptr<cricket::VideoCapturer> capturer(
       dm_->CreateVideoCapturer(device));
   cricket::VideoFormat best_format;
   capturer->set_enable_camera_list(true);
@@ -423,7 +423,7 @@ TEST_F(DeviceManagerTestFake, CaptureConstraintsUnWhitelisted) {
   const Device device("un_white", "un_white_id");
   dm_->SetVideoCaptureDeviceMaxFormat(device.name, kHdFormat);
   dm_->ClearVideoCaptureDeviceMaxFormat(device.name);
-  scoped_ptr<cricket::VideoCapturer> capturer(
+  std::unique_ptr<cricket::VideoCapturer> capturer(
       dm_->CreateVideoCapturer(device));
   cricket::VideoFormat best_format;
   capturer->set_enable_camera_list(true);
@@ -434,7 +434,7 @@ TEST_F(DeviceManagerTestFake, CaptureConstraintsUnWhitelisted) {
 TEST_F(DeviceManagerTestFake, CaptureConstraintsWildcard) {
   const Device device("any_device", "any_device");
   dm_->SetVideoCaptureDeviceMaxFormat("*", kHdFormat);
-  scoped_ptr<cricket::VideoCapturer> capturer(
+  std::unique_ptr<cricket::VideoCapturer> capturer(
       dm_->CreateVideoCapturer(device));
   cricket::VideoFormat best_format;
   capturer->set_enable_camera_list(true);

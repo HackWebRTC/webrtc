@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -21,7 +23,6 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/constants.h"
@@ -63,7 +64,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
   // an SCTP packet.
   virtual void OnMessage(rtc::Message* msg) {
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::OnMessage";
-    rtc::scoped_ptr<rtc::Buffer> buffer(
+    std::unique_ptr<rtc::Buffer> buffer(
         static_cast<rtc::TypedMessageData<rtc::Buffer*>*>(
             msg->pdata)->data());
     if (dest_) {
@@ -313,13 +314,13 @@ class SctpDataMediaChannelTest : public testing::Test,
   int channel1_ready_to_send_count() { return chan1_ready_to_send_count_; }
   int channel2_ready_to_send_count() { return chan2_ready_to_send_count_; }
  private:
-  rtc::scoped_ptr<cricket::SctpDataEngine> engine_;
-  rtc::scoped_ptr<SctpFakeNetworkInterface> net1_;
-  rtc::scoped_ptr<SctpFakeNetworkInterface> net2_;
-  rtc::scoped_ptr<SctpFakeDataReceiver> recv1_;
-  rtc::scoped_ptr<SctpFakeDataReceiver> recv2_;
-  rtc::scoped_ptr<cricket::SctpDataMediaChannel> chan1_;
-  rtc::scoped_ptr<cricket::SctpDataMediaChannel> chan2_;
+  std::unique_ptr<cricket::SctpDataEngine> engine_;
+  std::unique_ptr<SctpFakeNetworkInterface> net1_;
+  std::unique_ptr<SctpFakeNetworkInterface> net2_;
+  std::unique_ptr<SctpFakeDataReceiver> recv1_;
+  std::unique_ptr<SctpFakeDataReceiver> recv2_;
+  std::unique_ptr<cricket::SctpDataMediaChannel> chan1_;
+  std::unique_ptr<cricket::SctpDataMediaChannel> chan2_;
 
   int chan1_ready_to_send_count_;
   int chan2_ready_to_send_count_;

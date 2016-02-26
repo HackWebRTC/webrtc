@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MEDIA_BASE_HYBRIDDATAENGINE_H_
 #define WEBRTC_MEDIA_BASE_HYBRIDDATAENGINE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/mediaengine.h"
@@ -49,8 +49,8 @@ class HybridDataEngine : public DataEngineInterface {
   virtual const std::vector<DataCodec>& data_codecs() { return codecs_; }
 
  private:
-  rtc::scoped_ptr<DataEngineInterface> first_;
-  rtc::scoped_ptr<DataEngineInterface> second_;
+  std::unique_ptr<DataEngineInterface> first_;
+  std::unique_ptr<DataEngineInterface> second_;
   std::vector<DataCodec> codecs_;
 };
 

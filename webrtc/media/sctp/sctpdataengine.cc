@@ -12,6 +12,8 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -1020,13 +1022,13 @@ bool SctpDataMediaChannel::SendQueuedStreamResets() {
 void SctpDataMediaChannel::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
     case MSG_SCTPINBOUNDPACKET: {
-      rtc::scoped_ptr<InboundPacketMessage> pdata(
+      std::unique_ptr<InboundPacketMessage> pdata(
           static_cast<InboundPacketMessage*>(msg->pdata));
       OnInboundPacketFromSctpToChannel(pdata->data().get());
       break;
     }
     case MSG_SCTPOUTBOUNDPACKET: {
-      rtc::scoped_ptr<OutboundPacketMessage> pdata(
+      std::unique_ptr<OutboundPacketMessage> pdata(
           static_cast<OutboundPacketMessage*>(msg->pdata));
       OnPacketFromSctpToNetwork(pdata->data().get());
       break;

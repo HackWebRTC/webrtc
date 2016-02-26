@@ -10,6 +10,8 @@
 
 #include "webrtc/media/devices/macdevicemanager.h"
 
+#include <memory>
+
 #include <CoreAudio/CoreAudio.h>
 #include <QuickTime/QuickTime.h>
 
@@ -102,7 +104,7 @@ static bool GetAudioDeviceIDs(bool input,
   }
 
   size_t num_devices = propsize / sizeof(AudioDeviceID);
-  rtc::scoped_ptr<AudioDeviceID[]> device_ids(
+  std::unique_ptr<AudioDeviceID[]> device_ids(
       new AudioDeviceID[num_devices]);
 
   err = AudioHardwareGetProperty(kAudioHardwarePropertyDevices,

@@ -44,7 +44,8 @@ class scoped_voe_engine {
   webrtc::VoiceEngine* ptr;
 };
 
-// scoped_ptr class to handle obtaining and releasing WebRTC interface pointers
+// unique_ptr-like class to handle obtaining and releasing WebRTC interface
+// pointers.
 template<class T>
 class scoped_voe_ptr {
  public:

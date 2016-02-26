@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/pc/channel.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/byteorder.h"
@@ -2782,10 +2784,10 @@ TEST_F(WebRtcVoiceEngineTestFake, InitDoesNotOverwriteDefaultAgcConfig) {
 
 TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(SetupEngineWithSendStream());
-  rtc::scoped_ptr<cricket::WebRtcVoiceMediaChannel> channel1(
+  std::unique_ptr<cricket::WebRtcVoiceMediaChannel> channel1(
       static_cast<cricket::WebRtcVoiceMediaChannel*>(engine_.CreateChannel(
           &call_, cricket::MediaConfig(), cricket::AudioOptions())));
-  rtc::scoped_ptr<cricket::WebRtcVoiceMediaChannel> channel2(
+  std::unique_ptr<cricket::WebRtcVoiceMediaChannel> channel2(
       static_cast<cricket::WebRtcVoiceMediaChannel*>(engine_.CreateChannel(
           &call_, cricket::MediaConfig(), cricket::AudioOptions())));
 
@@ -2885,7 +2887,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   EXPECT_TRUE(SetupEngineWithSendStream());
   cricket::FakeNetworkInterface network_interface;
   cricket::MediaConfig config;
-  rtc::scoped_ptr<cricket::VoiceMediaChannel> channel;
+  std::unique_ptr<cricket::VoiceMediaChannel> channel;
 
   channel.reset(engine_.CreateChannel(&call_, config, cricket::AudioOptions()));
   channel->SetInterface(&network_interface);
@@ -3113,8 +3115,8 @@ TEST_F(WebRtcVoiceEngineTestFake, AssociateChannelResetUponDeleteChannnel) {
 
 TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSink) {
   EXPECT_TRUE(SetupEngine());
-  rtc::scoped_ptr<FakeAudioSink> fake_sink_1(new FakeAudioSink());
-  rtc::scoped_ptr<FakeAudioSink> fake_sink_2(new FakeAudioSink());
+  std::unique_ptr<FakeAudioSink> fake_sink_1(new FakeAudioSink());
+  std::unique_ptr<FakeAudioSink> fake_sink_2(new FakeAudioSink());
 
   // Setting the sink before a recv stream exists should do nothing.
   channel_->SetRawAudioSink(kSsrc1, std::move(fake_sink_1));
@@ -3133,8 +3135,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSink) {
 
 TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSinkDefaultRecvStream) {
   EXPECT_TRUE(SetupEngine());
-  rtc::scoped_ptr<FakeAudioSink> fake_sink_1(new FakeAudioSink());
-  rtc::scoped_ptr<FakeAudioSink> fake_sink_2(new FakeAudioSink());
+  std::unique_ptr<FakeAudioSink> fake_sink_1(new FakeAudioSink());
+  std::unique_ptr<FakeAudioSink> fake_sink_2(new FakeAudioSink());
 
   // Should be able to set a default sink even when no stream exists.
   channel_->SetRawAudioSink(0, std::move(fake_sink_1));
@@ -3161,7 +3163,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSinkDefaultRecvStream) {
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   cricket::WebRtcVoiceEngine engine;
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  rtc::scoped_ptr<webrtc::Call> call(
+  std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config()));
   cricket::VoiceMediaChannel* channel = engine.CreateChannel(
       call.get(), cricket::MediaConfig(), cricket::AudioOptions());
@@ -3263,7 +3265,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
   cricket::WebRtcVoiceEngine engine;
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  rtc::scoped_ptr<webrtc::Call> call(
+  std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config()));
 
   cricket::VoiceMediaChannel* channels[32];
@@ -3289,7 +3291,7 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
 TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   cricket::WebRtcVoiceEngine engine;
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  rtc::scoped_ptr<webrtc::Call> call(
+  std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config()));
   cricket::WebRtcVoiceMediaChannel channel(&engine, cricket::MediaConfig(),
                                            cricket::AudioOptions(), call.get());

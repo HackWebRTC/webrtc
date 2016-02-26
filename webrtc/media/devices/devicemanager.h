@@ -12,10 +12,10 @@
 #define WEBRTC_MEDIA_DEVICES_DEVICEMANAGER_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/window.h"
@@ -178,13 +178,13 @@ class DeviceManager : public DeviceManagerInterface {
       const char* const exclusion_list[]);
 
   bool initialized_;
-  rtc::scoped_ptr<
+  std::unique_ptr<
     VideoDeviceCapturerFactory> video_device_capturer_factory_;
-  rtc::scoped_ptr<
+  std::unique_ptr<
     ScreenCapturerFactory> screen_capturer_factory_;
   std::map<std::string, VideoFormat> max_formats_;
-  rtc::scoped_ptr<DeviceWatcher> watcher_;
-  rtc::scoped_ptr<rtc::WindowPicker> window_picker_;
+  std::unique_ptr<DeviceWatcher> watcher_;
+  std::unique_ptr<rtc::WindowPicker> window_picker_;
 };
 
 }  // namespace cricket

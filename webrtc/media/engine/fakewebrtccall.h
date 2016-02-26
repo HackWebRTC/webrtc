@@ -96,7 +96,7 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   webrtc::AudioReceiveStream::Config config_;
   webrtc::AudioReceiveStream::Stats stats_;
   int received_packets_;
-  rtc::scoped_ptr<webrtc::AudioSinkInterface> sink_;
+  std::unique_ptr<webrtc::AudioSinkInterface> sink_;
 };
 
 class FakeVideoSendStream final : public webrtc::VideoSendStream,

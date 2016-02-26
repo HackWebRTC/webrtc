@@ -14,8 +14,9 @@
 #ifndef WEBRTC_MEDIA_DEVICES_GTKVIDEORENDERER_H_
 #define WEBRTC_MEDIA_DEVICES_GTKVIDEORENDERER_H_
 
+#include <memory>
+
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/videorenderer.h"
 
 typedef struct _GtkWidget GtkWidget;  // forward declaration, defined in gtk.h
@@ -41,7 +42,7 @@ class GtkVideoRenderer : public VideoRenderer {
   // Check if the window has been closed.
   bool IsClosed() const;
 
-  rtc::scoped_ptr<uint8_t[]> image_;
+  std::unique_ptr<uint8_t[]> image_;
   GtkWidget* window_;
   GtkWidget* draw_area_;
   // The initial position of the window.

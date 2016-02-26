@@ -11,6 +11,8 @@
 // If we don't have a WebRtcVideoFrame, just skip all of these tests.
 #if defined(HAVE_WEBRTC_VIDEO)
 #include <limits.h>  // For INT_MAX
+
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -132,9 +134,9 @@ class VideoAdapterTest : public testing::Test {
     EXPECT_EQ(height, stats.adapted_height);
   }
 
-  rtc::scoped_ptr<FakeVideoCapturer> capturer_;
-  rtc::scoped_ptr<VideoAdapter> adapter_;
-  rtc::scoped_ptr<VideoCapturerListener> listener_;
+  std::unique_ptr<FakeVideoCapturer> capturer_;
+  std::unique_ptr<VideoAdapter> adapter_;
+  std::unique_ptr<VideoCapturerListener> listener_;
   VideoFormat capture_format_;
 };
 

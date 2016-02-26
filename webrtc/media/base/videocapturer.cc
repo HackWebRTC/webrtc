@@ -168,7 +168,7 @@ bool VideoCapturer::Pause(bool pause) {
       return false;
     }
     LOG(LS_INFO) << "Pausing a camera.";
-    rtc::scoped_ptr<VideoFormat> capture_format_when_paused(
+    std::unique_ptr<VideoFormat> capture_format_when_paused(
         capture_format_ ? new VideoFormat(*capture_format_) : NULL);
     Stop();
     SetCaptureState(CS_PAUSED);
@@ -351,7 +351,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   }
 
   // Use a temporary buffer to scale
-  rtc::scoped_ptr<uint8_t[]> scale_buffer;
+  std::unique_ptr<uint8_t[]> scale_buffer;
 
   if (IsScreencast()) {
     int scaled_width, scaled_height;
@@ -400,7 +400,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   // TODO(fbarchard): Avoid scale and convert if muted.
   // Temporary buffer is scoped here so it will persist until i420_frame.Init()
   // makes a copy of the frame, converting to I420.
-  rtc::scoped_ptr<uint8_t[]> temp_buffer;
+  std::unique_ptr<uint8_t[]> temp_buffer;
   // YUY2 can be scaled vertically using an ARGB scaler.  Aspect ratio is only
   // a problem on OSX.  OSX always converts webcams to YUY2 or UYVY.
   bool can_scale =
@@ -512,7 +512,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  rtc::scoped_ptr<VideoFrame> adapted_frame(
+  std::unique_ptr<VideoFrame> adapted_frame(
       frame_factory_->CreateAliasedFrame(captured_frame,
                                          cropped_width, cropped_height,
                                          adapted_width, adapted_height));
@@ -550,7 +550,7 @@ void VideoCapturer::SetCaptureState(CaptureState state) {
 void VideoCapturer::OnMessage(rtc::Message* message) {
   switch (message->message_id) {
     case MSG_STATE_CHANGE: {
-      rtc::scoped_ptr<StateChangeParams> p(
+      std::unique_ptr<StateChangeParams> p(
           static_cast<StateChangeParams*>(message->pdata));
       SignalStateChange(this, p->data());
       break;

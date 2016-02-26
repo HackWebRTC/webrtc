@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/media/engine/webrtcvideocapturer.h"
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 
@@ -16,7 +17,7 @@ namespace cricket {
 
 VideoCapturer* WebRtcVideoDeviceCapturerFactory::Create(const Device& device) {
 #ifdef HAVE_WEBRTC_VIDEO
-  rtc::scoped_ptr<WebRtcVideoCapturer> capturer(
+  std::unique_ptr<WebRtcVideoCapturer> capturer(
       new WebRtcVideoCapturer());
   if (!capturer->Init(device)) {
     return nullptr;

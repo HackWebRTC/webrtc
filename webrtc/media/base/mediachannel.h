@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
 #define WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -924,7 +925,7 @@ class VoiceMediaChannel : public MediaChannel {
 
   virtual void SetRawAudioSink(
       uint32_t ssrc,
-      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) = 0;
+      std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
 };
 
 struct VideoSendParameters : RtpSendParameters<VideoCodec, VideoOptions> {

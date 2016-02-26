@@ -11,12 +11,12 @@
 #ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOCAPTURER_H_
 #define WEBRTC_MEDIA_ENGINE_WEBRTCVIDEOCAPTURER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/messagehandler.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
@@ -75,13 +75,13 @@ class WebRtcVideoCapturer : public VideoCapturer,
   // to follow the same contract.
   void SignalFrameCapturedOnStartThread(const webrtc::VideoFrame& frame);
 
-  rtc::scoped_ptr<WebRtcVcmFactoryInterface> factory_;
+  std::unique_ptr<WebRtcVcmFactoryInterface> factory_;
   webrtc::VideoCaptureModule* module_;
   int captured_frames_;
   std::vector<uint8_t> capture_buffer_;
   rtc::Thread* start_thread_;  // Set in Start(), unset in Stop();
 
-  rtc::scoped_ptr<rtc::AsyncInvoker> async_invoker_;
+  std::unique_ptr<rtc::AsyncInvoker> async_invoker_;
 };
 
 struct WebRtcCapturedFrame : public CapturedFrame {

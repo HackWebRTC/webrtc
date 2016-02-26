@@ -21,7 +21,7 @@ VideoFrame* VideoFrameFactory::CreateAliasedFrame(
     int cropped_input_height,
     int output_width,
     int output_height) const {
-  rtc::scoped_ptr<VideoFrame> cropped_input_frame(CreateAliasedFrame(
+  std::unique_ptr<VideoFrame> cropped_input_frame(CreateAliasedFrame(
       input_frame, cropped_input_width, cropped_input_height));
   if (!cropped_input_frame)
     return nullptr;

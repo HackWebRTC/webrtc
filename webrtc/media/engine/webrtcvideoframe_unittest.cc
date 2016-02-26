@@ -10,6 +10,8 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "webrtc/media/base/videoframe_unittest.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
 #include "webrtc/test/fake_texture_frame.h"
@@ -51,7 +53,7 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     captured_frame.height = frame_height;
     captured_frame.data_size = (frame_width * frame_height) +
         ((frame_width + 1) / 2) * ((frame_height + 1) / 2) * 2;
-    rtc::scoped_ptr<uint8_t[]> captured_frame_buffer(
+    std::unique_ptr<uint8_t[]> captured_frame_buffer(
         new uint8_t[captured_frame.data_size]);
     // Initialize memory to satisfy DrMemory tests.
     memset(captured_frame_buffer.get(), 0, captured_frame.data_size);
@@ -300,7 +302,7 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
 TEST_F(WebRtcVideoFrameTest, ApplyRotationToFrame) {
   WebRtcVideoTestFrame applied0;
   EXPECT_TRUE(IsNull(applied0));
-  rtc::scoped_ptr<rtc::MemoryStream> ms(CreateYuvSample(kWidth, kHeight, 12));
+  std::unique_ptr<rtc::MemoryStream> ms(CreateYuvSample(kWidth, kHeight, 12));
   EXPECT_TRUE(
       LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight, &applied0));
 

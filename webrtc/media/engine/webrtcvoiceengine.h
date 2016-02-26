@@ -12,12 +12,12 @@
 #define WEBRTC_MEDIA_ENGINE_WEBRTCVOICEENGINE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/audio_state.h"
 #include "webrtc/base/buffer.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
@@ -113,7 +113,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   rtc::ThreadChecker worker_thread_checker_;
 
   // The primary instance of WebRtc VoiceEngine.
-  rtc::scoped_ptr<VoEWrapper> voe_wrapper_;
+  std::unique_ptr<VoEWrapper> voe_wrapper_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   // The external audio device manager
   webrtc::AudioDeviceModule* adm_ = nullptr;
@@ -188,7 +188,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
   void SetRawAudioSink(
       uint32_t ssrc,
-      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) override;
+      std::unique_ptr<webrtc::AudioSinkInterface> sink) override;
 
   // implements Transport interface
   bool SendRtp(const uint8_t* data,
@@ -240,7 +240,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   WebRtcVoiceEngine* const engine_ = nullptr;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
-  rtc::scoped_ptr<webrtc::CodecInst> send_codec_;
+  std::unique_ptr<webrtc::CodecInst> send_codec_;
   bool send_bitrate_setting_ = false;
   int send_bitrate_bps_ = 0;
   AudioOptions options_;
@@ -258,7 +258,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   // Volume for unsignalled stream, which may be set before the stream exists.
   double default_recv_volume_ = 1.0;
   // Sink for unsignalled stream, which may be set before the stream exists.
-  rtc::scoped_ptr<webrtc::AudioSinkInterface> default_sink_;
+  std::unique_ptr<webrtc::AudioSinkInterface> default_sink_;
   // Default SSRC to use for RTCP receiver reports in case of no signaled
   // send streams. See: https://code.google.com/p/webrtc/issues/detail?id=4740
   // and https://code.google.com/p/chromium/issues/detail?id=547661

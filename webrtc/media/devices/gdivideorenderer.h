@@ -14,9 +14,10 @@
 
 #ifndef WEBRTC_MEDIA_DEVICES_GDIVIDEORENDERER_H_
 #define WEBRTC_MEDIA_DEVICES_GDIVIDEORENDERER_H_
-
 #ifdef WIN32
-#include "webrtc/base/scoped_ptr.h"
+
+#include <memory>
+
 #include "webrtc/media/base/videorenderer.h"
 
 namespace cricket {
@@ -34,7 +35,7 @@ class GdiVideoRenderer : public VideoRenderer {
 
  private:
   class VideoWindow;  // forward declaration, defined in the .cc file
-  rtc::scoped_ptr<VideoWindow> window_;
+  std::unique_ptr<VideoWindow> window_;
   // The initial position of the window.
   int initial_x_;
   int initial_y_;

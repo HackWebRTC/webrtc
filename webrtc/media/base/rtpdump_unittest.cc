@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/bytebuffer.h"
@@ -61,7 +62,7 @@ TEST(RtpDumpTest, ReadRtpDumpFile) {
   RtpDumpPacket packet;
   rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
-  rtc::scoped_ptr<RtpDumpReader> reader;
+  std::unique_ptr<RtpDumpReader> reader;
 
   // Write a RTP packet to the stream, which is a valid RTP dump. Next, we will
   // change the first line to make the RTP dump valid or invalid.
