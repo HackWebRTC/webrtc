@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 
@@ -56,10 +57,13 @@ AsyncTCPSocketBase::AsyncTCPSocketBase(AsyncSocket* socket, bool listen,
       inpos_(0),
       outsize_(max_packet_size),
       outpos_(0) {
-  inbuf_ = new char[insize_];
-  outbuf_ = new char[outsize_];
+  if (!listen_) {
+    // Listening sockets don't send/receive data, so they don't need buffers.
+    inbuf_.reset(new char[insize_]);
+    outbuf_.reset(new char[outsize_]);
+  }
 
-  ASSERT(socket_.get() != NULL);
+  RTC_DCHECK(socket_.get() != NULL);
   socket_->SignalConnectEvent.connect(
       this, &AsyncTCPSocketBase::OnConnectEvent);
   socket_->SignalReadEvent.connect(this, &AsyncTCPSocketBase::OnReadEvent);
@@ -73,10 +77,7 @@ AsyncTCPSocketBase::AsyncTCPSocketBase(AsyncSocket* socket, bool listen,
   }
 }
 
-AsyncTCPSocketBase::~AsyncTCPSocketBase() {
-  delete [] inbuf_;
-  delete [] outbuf_;
-}
+AsyncTCPSocketBase::~AsyncTCPSocketBase() {}
 
 SocketAddress AsyncTCPSocketBase::GetLocalAddress() const {
   return socket_->GetLocalAddress();
@@ -103,7 +104,7 @@ AsyncTCPSocket::State AsyncTCPSocketBase::GetState() const {
     case Socket::CS_CONNECTED:
       return STATE_CONNECTED;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       return STATE_CLOSED;
   }
 }
@@ -131,7 +132,7 @@ int AsyncTCPSocketBase::SendTo(const void *pv, size_t cb,
   if (addr == remote_address)
     return Send(pv, cb, options);
   // Remote address may be empty if there is a sudden network change.
-  ASSERT(remote_address.IsNil());
+  RTC_DCHECK(remote_address.IsNil());
   socket_->SetError(ENOTCONN);
   return -1;
 }
@@ -142,32 +143,35 @@ int AsyncTCPSocketBase::SendRaw(const void * pv, size_t cb) {
     return -1;
   }
 
-  memcpy(outbuf_ + outpos_, pv, cb);
+  RTC_DCHECK(outbuf_.get());
+  memcpy(outbuf_.get() + outpos_, pv, cb);
   outpos_ += cb;
 
   return FlushOutBuffer();
 }
 
 int AsyncTCPSocketBase::FlushOutBuffer() {
-  int res = socket_->Send(outbuf_, outpos_);
+  RTC_DCHECK(outbuf_.get());
+  int res = socket_->Send(outbuf_.get(), outpos_);
   if (res <= 0) {
     return res;
   }
   if (static_cast<size_t>(res) <= outpos_) {
     outpos_ -= res;
   } else {
-    ASSERT(false);
+    RTC_NOTREACHED();
     return -1;
   }
   if (outpos_ > 0) {
-    memmove(outbuf_, outbuf_ + res, outpos_);
+    memmove(outbuf_.get(), outbuf_.get() + res, outpos_);
   }
   return res;
 }
 
 void AsyncTCPSocketBase::AppendToOutBuffer(const void* pv, size_t cb) {
-  ASSERT(outpos_ + cb < outsize_);
-  memcpy(outbuf_ + outpos_, pv, cb);
+  RTC_DCHECK(outpos_ + cb < outsize_);
+  RTC_DCHECK(outbuf_.get());
+  memcpy(outbuf_.get() + outpos_, pv, cb);
   outpos_ += cb;
 }
 
@@ -176,7 +180,7 @@ void AsyncTCPSocketBase::OnConnectEvent(AsyncSocket* socket) {
 }
 
 void AsyncTCPSocketBase::OnReadEvent(AsyncSocket* socket) {
-  ASSERT(socket_.get() == socket);
+  RTC_DCHECK(socket_.get() == socket);
 
   if (listen_) {
     rtc::SocketAddress address;
@@ -193,7 +197,8 @@ void AsyncTCPSocketBase::OnReadEvent(AsyncSocket* socket) {
     // Prime a read event in case data is waiting.
     new_socket->SignalReadEvent(new_socket);
   } else {
-    int len = socket_->Recv(inbuf_ + inpos_, insize_ - inpos_);
+    RTC_DCHECK(inbuf_.get());
+    int len = socket_->Recv(inbuf_.get() + inpos_, insize_ - inpos_);
     if (len < 0) {
       // TODO: Do something better like forwarding the error to the user.
       if (!socket_->IsBlocking()) {
@@ -204,18 +209,18 @@ void AsyncTCPSocketBase::OnReadEvent(AsyncSocket* socket) {
 
     inpos_ += len;
 
-    ProcessInput(inbuf_, &inpos_);
+    ProcessInput(inbuf_.get(), &inpos_);
 
     if (inpos_ >= insize_) {
       LOG(LS_ERROR) << "input buffer overflow";
-      ASSERT(false);
+      RTC_NOTREACHED();
       inpos_ = 0;
     }
   }
 }
 
 void AsyncTCPSocketBase::OnWriteEvent(AsyncSocket* socket) {
-  ASSERT(socket_.get() == socket);
+  RTC_DCHECK(socket_.get() == socket);
 
   if (outpos_ > 0) {
     FlushOutBuffer();
