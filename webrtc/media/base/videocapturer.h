@@ -20,12 +20,11 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/base/messagehandler.h"
 #include "webrtc/base/rollingaccumulator.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
 #include "webrtc/base/timing.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videoadapter.h"
 #include "webrtc/media/base/videobroadcaster.h"
@@ -37,8 +36,6 @@
 namespace cricket {
 
 // Current state of the capturer.
-// TODO(hellner): CS_NO_DEVICE is an error code not a capture state. Separate
-//                error codes and states.
 enum CaptureState {
   CS_STOPPED,    // The capturer has been stopped or hasn't started yet.
   CS_STARTING,   // The capturer is in the process of starting. Note, it may
@@ -47,7 +44,6 @@ enum CaptureState {
                  // capturing.
   CS_PAUSED,     // The capturer has been paused.
   CS_FAILED,     // The capturer failed to start.
-  CS_NO_DEVICE,  // The capturer has no device and consequently failed to start.
 };
 
 class VideoFrame;
@@ -91,13 +87,13 @@ struct CapturedFrame {
 // The captured frames may need to be adapted (for example, cropping).
 // Video adaptation is built into and enabled by default. After a frame has
 // been captured from the device, it is sent to the video adapter, then out to
-// the encoder.
+// the sinks.
 //
 // Programming model:
 //   Create an object of a subclass of VideoCapturer
 //   Initialize
 //   SignalStateChange.connect()
-//   SignalFrameCaptured.connect()
+//   AddOrUpdateSink()
 //   Find the capture format for Start() by either calling GetSupportedFormats()
 //   and selecting one of the supported or calling GetBestCaptureFormat().
 //   video_adapter()->OnOutputFormatRequest(desired_encoding_format)
@@ -111,13 +107,10 @@ struct CapturedFrame {
 //   thread safe.
 //
 class VideoCapturer : public sigslot::has_slots<>,
-                      public rtc::MessageHandler,
                       public rtc::VideoSourceInterface<cricket::VideoFrame> {
  public:
-  // All signals are marshalled to |thread| or the creating thread if
-  // none is provided.
   VideoCapturer();
-  explicit VideoCapturer(rtc::Thread* thread);
+
   virtual ~VideoCapturer() {}
 
   // Gets the id of the underlying device, which is available after the capturer
@@ -163,12 +156,6 @@ class VideoCapturer : public sigslot::has_slots<>,
   //   CS_FAILED:    if the capturer failes to start..
   //   CS_NO_DEVICE: if the capturer has no device and fails to start.
   virtual CaptureState Start(const VideoFormat& capture_format) = 0;
-  // Sets the desired aspect ratio. If the capturer is capturing at another
-  // aspect ratio it will crop the width or the height so that asked for
-  // aspect ratio is acheived. Note that ratio_w and ratio_h do not need to be
-  // relatively prime.
-  void UpdateAspectRatio(int ratio_w, int ratio_h);
-  void ClearAspectRatio();
 
   // Get the current capture format, which is set by the Start() call.
   // Note that the width and height of the captured frames may differ from the
@@ -178,23 +165,10 @@ class VideoCapturer : public sigslot::has_slots<>,
     return capture_format_.get();
   }
 
-  // Pause the video capturer.
-  virtual bool Pause(bool paused);
   // Stop the video capturer.
   virtual void Stop() = 0;
   // Check if the video capturer is running.
   virtual bool IsRunning() = 0;
-  // Restart the video capturer with the new |capture_format|.
-  // Default implementation stops and starts the capturer.
-  virtual bool Restart(const VideoFormat& capture_format);
-  // TODO(thorcarpenter): This behavior of keeping the camera open just to emit
-  // black frames is a total hack and should be fixed.
-  // When muting, produce black frames then pause the camera.
-  // When unmuting, start the camera. Camera starts unmuted.
-  virtual bool MuteToBlackThenPause(bool muted);
-  virtual bool IsMuted() const {
-    return muted_;
-  }
   CaptureState capture_state() const {
     return capture_state_;
   }
@@ -217,14 +191,6 @@ class VideoCapturer : public sigslot::has_slots<>,
   }
   bool enable_camera_list() {
     return enable_camera_list_;
-  }
-
-  // Enable scaling to ensure square pixels.
-  void set_square_pixel_aspect_ratio(bool square_pixel_aspect_ratio) {
-    square_pixel_aspect_ratio_ = square_pixel_aspect_ratio;
-  }
-  bool square_pixel_aspect_ratio() {
-    return square_pixel_aspect_ratio_;
   }
 
   // Signal all capture state changes that are not a direct result of calling
@@ -288,9 +254,6 @@ class VideoCapturer : public sigslot::has_slots<>,
 
   void SetCaptureState(CaptureState state);
 
-  // Marshals SignalStateChange onto thread_.
-  void OnMessage(rtc::Message* message) override;
-
   // subclasses override this virtual method to provide a vector of fourccs, in
   // order of preference, that are expected by the media engine.
   virtual bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) = 0;
@@ -339,7 +302,7 @@ class VideoCapturer : public sigslot::has_slots<>,
       const rtc::RollingAccumulator<T>& data,
       VariableInfo<T>* stats);
 
-  rtc::Thread* thread_;
+  rtc::ThreadChecker thread_checker_;
   std::string id_;
   CaptureState capture_state_;
   rtc::scoped_ptr<VideoFrameFactory> frame_factory_;
@@ -354,8 +317,6 @@ class VideoCapturer : public sigslot::has_slots<>,
   bool square_pixel_aspect_ratio_;  // Enable scaling to square pixels.
   int scaled_width_;  // Current output size from ComputeScale.
   int scaled_height_;
-  bool muted_;
-  int black_frame_count_down_;
 
   rtc::VideoBroadcaster broadcaster_;
   bool enable_video_adapter_;

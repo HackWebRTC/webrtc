@@ -152,7 +152,7 @@ void AndroidVideoCapturer::Stop() {
 
   delegate_->Stop();
   current_state_ = cricket::CS_STOPPED;
-  SignalStateChange(this, current_state_);
+  SetCaptureState(current_state_);
 }
 
 bool AndroidVideoCapturer::IsRunning() {
@@ -173,11 +173,7 @@ void AndroidVideoCapturer::OnCapturerStarted(bool success) {
   if (new_state == current_state_)
     return;
   current_state_ = new_state;
-
-  // TODO(perkj): SetCaptureState can not be used since it posts to |thread_|.
-  // But |thread_ | is currently just the thread that happened to create the
-  // cricket::VideoCapturer.
-  SignalStateChange(this, new_state);
+  SetCaptureState(new_state);
 }
 
 void AndroidVideoCapturer::OnIncomingFrame(

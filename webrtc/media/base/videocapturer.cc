@@ -19,34 +19,18 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/systeminfo.h"
 #include "webrtc/media/base/videoframefactory.h"
-
-#if defined(HAVE_WEBRTC_VIDEO)
 #include "webrtc/media/engine/webrtcvideoframe.h"
 #include "webrtc/media/engine/webrtcvideoframefactory.h"
-#endif  // HAVE_WEBRTC_VIDEO
 
 namespace cricket {
 
 namespace {
-
-// TODO(thorcarpenter): This is a BIG hack to flush the system with black
-// frames. Frontends should coordinate to update the video state of a muted
-// user. When all frontends to this consider removing the black frame business.
-const int kNumBlackFramesOnMute = 30;
-
-// MessageHandler constants.
-enum {
-  MSG_DO_PAUSE = 0,
-  MSG_DO_UNPAUSE,
-  MSG_STATE_CHANGE
-};
 
 static const int64_t kMaxDistance = ~(static_cast<int64_t>(1) << 63);
 #ifdef WEBRTC_LINUX
 static const int kYU12Penalty = 16;  // Needs to be higher than MJPG index.
 #endif
 static const int kDefaultScreencastFps = 5;
-typedef rtc::TypedMessageData<CaptureState> StateChangeParams;
 
 // Limit stats data collections to ~20 seconds of 30fps data before dropping
 // old data in case stats aren't reset for long periods of time.
@@ -81,23 +65,16 @@ bool CapturedFrame::GetDataSize(uint32_t* size) const {
 // Implementation of class VideoCapturer
 /////////////////////////////////////////////////////////////////////
 VideoCapturer::VideoCapturer()
-    : thread_(rtc::Thread::Current()),
-      adapt_frame_drops_data_(kMaxAccumulatorSize),
+    : adapt_frame_drops_data_(kMaxAccumulatorSize),
       frame_time_data_(kMaxAccumulatorSize),
       apply_rotation_(true) {
-  Construct();
-}
-
-VideoCapturer::VideoCapturer(rtc::Thread* thread)
-    : thread_(thread),
-      adapt_frame_drops_data_(kMaxAccumulatorSize),
-      frame_time_data_(kMaxAccumulatorSize),
-      apply_rotation_(true) {
+  thread_checker_.DetachFromThread();
   Construct();
 }
 
 void VideoCapturer::Construct() {
-  ClearAspectRatio();
+  ratio_w_ = 0;
+  ratio_h_ = 0;
   enable_camera_list_ = false;
   square_pixel_aspect_ratio_ = false;
   capture_state_ = CS_STOPPED;
@@ -108,19 +85,15 @@ void VideoCapturer::Construct() {
   SignalVideoFrame.connect(this, &VideoCapturer::OnFrame);
   scaled_width_ = 0;
   scaled_height_ = 0;
-  muted_ = false;
-  black_frame_count_down_ = kNumBlackFramesOnMute;
   enable_video_adapter_ = true;
   adapt_frame_drops_ = 0;
   previous_frame_time_ = 0.0;
-#ifdef HAVE_WEBRTC_VIDEO
   // There are lots of video capturers out there that don't call
   // set_frame_factory.  We can either go change all of them, or we
   // can set this default.
   // TODO(pthatcher): Remove this hack and require the frame factory
   // to be passed in the constructor.
   set_frame_factory(new WebRtcVideoFrameFactory());
-#endif
 }
 
 const std::vector<VideoFormat>* VideoCapturer::GetSupportedFormats() const {
@@ -128,6 +101,7 @@ const std::vector<VideoFormat>* VideoCapturer::GetSupportedFormats() const {
 }
 
 bool VideoCapturer::StartCapturing(const VideoFormat& capture_format) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   previous_frame_time_ = frame_length_time_reporter_.TimerNow();
   CaptureState result = Start(capture_format);
   const bool success = (result == CS_RUNNING) || (result == CS_STARTING);
@@ -140,104 +114,18 @@ bool VideoCapturer::StartCapturing(const VideoFormat& capture_format) {
   return true;
 }
 
-void VideoCapturer::UpdateAspectRatio(int ratio_w, int ratio_h) {
-  if (ratio_w == 0 || ratio_h == 0) {
-    LOG(LS_WARNING) << "UpdateAspectRatio ignored invalid ratio: "
-                    << ratio_w << "x" << ratio_h;
-    return;
-  }
-  ratio_w_ = ratio_w;
-  ratio_h_ = ratio_h;
-}
-
-void VideoCapturer::ClearAspectRatio() {
-  ratio_w_ = 0;
-  ratio_h_ = 0;
-}
-
-// Override this to have more control of how your device is started/stopped.
-bool VideoCapturer::Pause(bool pause) {
-  if (pause) {
-    if (capture_state() == CS_PAUSED) {
-      return true;
-    }
-    bool is_running = capture_state() == CS_STARTING ||
-        capture_state() == CS_RUNNING;
-    if (!is_running) {
-      LOG(LS_ERROR) << "Cannot pause a stopped camera.";
-      return false;
-    }
-    LOG(LS_INFO) << "Pausing a camera.";
-    rtc::scoped_ptr<VideoFormat> capture_format_when_paused(
-        capture_format_ ? new VideoFormat(*capture_format_) : NULL);
-    Stop();
-    SetCaptureState(CS_PAUSED);
-    // If you override this function be sure to restore the capture format
-    // after calling Stop().
-    SetCaptureFormat(capture_format_when_paused.get());
-  } else {  // Unpause.
-    if (capture_state() != CS_PAUSED) {
-      LOG(LS_WARNING) << "Cannot unpause a camera that hasn't been paused.";
-      return false;
-    }
-    if (!capture_format_) {
-      LOG(LS_ERROR) << "Missing capture_format_, cannot unpause a camera.";
-      return false;
-    }
-    if (muted_) {
-      LOG(LS_WARNING) << "Camera cannot be unpaused while muted.";
-      return false;
-    }
-    LOG(LS_INFO) << "Unpausing a camera.";
-    if (!Start(*capture_format_)) {
-      LOG(LS_ERROR) << "Camera failed to start when unpausing.";
-      return false;
-    }
-  }
-  return true;
-}
-
-bool VideoCapturer::Restart(const VideoFormat& capture_format) {
-  if (!IsRunning()) {
-    return StartCapturing(capture_format);
-  }
-
-  if (GetCaptureFormat() != NULL && *GetCaptureFormat() == capture_format) {
-    // The reqested format is the same; nothing to do.
-    return true;
-  }
-
-  Stop();
-  return StartCapturing(capture_format);
-}
-
-bool VideoCapturer::MuteToBlackThenPause(bool muted) {
-  if (muted == IsMuted()) {
-    return true;
-  }
-
-  LOG(LS_INFO) << (muted ? "Muting" : "Unmuting") << " this video capturer.";
-  muted_ = muted;  // Do this before calling Pause().
-  if (muted) {
-    // Reset black frame count down.
-    black_frame_count_down_ = kNumBlackFramesOnMute;
-    // Following frames will be overritten with black, then the camera will be
-    // paused.
-    return true;
-  }
-  // Start the camera.
-  thread_->Clear(this, MSG_DO_PAUSE);
-  return Pause(false);
-}
-
 void VideoCapturer::SetSupportedFormats(
     const std::vector<VideoFormat>& formats) {
+  // This method is OK to call during initialization on a separate thread.
+  RTC_DCHECK(capture_state_ == CS_STOPPED ||
+             thread_checker_.CalledOnValidThread());
   supported_formats_ = formats;
   UpdateFilteredSupportedFormats();
 }
 
 bool VideoCapturer::GetBestCaptureFormat(const VideoFormat& format,
                                          VideoFormat* best_format) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   // TODO(fbarchard): Directly support max_format.
   UpdateFilteredSupportedFormats();
   const std::vector<VideoFormat>* supported_formats = GetSupportedFormats();
@@ -276,6 +164,7 @@ bool VideoCapturer::GetBestCaptureFormat(const VideoFormat& format,
 }
 
 void VideoCapturer::ConstrainSupportedFormats(const VideoFormat& max_format) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   max_format_.reset(new VideoFormat(max_format));
   LOG(LS_VERBOSE) << " ConstrainSupportedFormats " << max_format.ToString();
   UpdateFilteredSupportedFormats();
@@ -319,17 +208,20 @@ void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,
 
 void VideoCapturer::RemoveSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   broadcaster_.RemoveSink(sink);
 }
 
 void VideoCapturer::AddOrUpdateSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   broadcaster_.AddOrUpdateSink(sink, wants);
   OnSinkWantsChanged(broadcaster_.wants());
 }
 
 void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   apply_rotation_ = wants.rotation_applied;
   if (frame_factory_) {
     frame_factory_->SetApplyRotation(apply_rotation_);
@@ -338,37 +230,28 @@ void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
 
 void VideoCapturer::OnFrameCaptured(VideoCapturer*,
                                     const CapturedFrame* captured_frame) {
-  if (muted_) {
-    if (black_frame_count_down_ == 0) {
-      thread_->Post(this, MSG_DO_PAUSE, NULL);
-    } else {
-      --black_frame_count_down_;
-    }
-  }
-
   if (!broadcaster_.frame_wanted()) {
     return;
   }
 
   // Use a temporary buffer to scale
   rtc::scoped_ptr<uint8_t[]> scale_buffer;
-
   if (IsScreencast()) {
     int scaled_width, scaled_height;
-    int desired_screencast_fps = capture_format_.get() ?
-      VideoFormat::IntervalToFps(capture_format_->interval) :
-      kDefaultScreencastFps;
+    int desired_screencast_fps =
+        capture_format_.get()
+            ? VideoFormat::IntervalToFps(capture_format_->interval)
+            : kDefaultScreencastFps;
     ComputeScale(captured_frame->width, captured_frame->height,
                  desired_screencast_fps, &scaled_width, &scaled_height);
 
     if (FOURCC_ARGB == captured_frame->fourcc &&
         (scaled_width != captured_frame->width ||
-        scaled_height != captured_frame->height)) {
+         scaled_height != captured_frame->height)) {
       if (scaled_width != scaled_width_ || scaled_height != scaled_height_) {
-        LOG(LS_INFO) << "Scaling Screencast from "
-                     << captured_frame->width << "x"
-                     << captured_frame->height << " to "
-                     << scaled_width << "x" << scaled_height;
+        LOG(LS_INFO) << "Scaling Screencast from " << captured_frame->width
+                     << "x" << captured_frame->height << " to " << scaled_width
+                     << "x" << scaled_height;
         scaled_width_ = scaled_width;
         scaled_height_ = scaled_height;
       }
@@ -397,7 +280,6 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   const int kArgbBpp = 4;
   // TODO(fbarchard): Make a helper function to adjust pixels to square.
   // TODO(fbarchard): Hook up experiment to scaling.
-  // TODO(fbarchard): Avoid scale and convert if muted.
   // Temporary buffer is scoped here so it will persist until i420_frame.Init()
   // makes a copy of the frame, converting to I420.
   rtc::scoped_ptr<uint8_t[]> temp_buffer;
@@ -525,10 +407,6 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  if (muted_) {
-    // TODO(pthatcher): Use frame_factory_->CreateBlackFrame() instead.
-    adapted_frame->SetToBlack();
-  }
   SignalVideoFrame(this, adapted_frame.get());
   UpdateStats(captured_frame);
 }
@@ -538,35 +416,13 @@ void VideoCapturer::OnFrame(VideoCapturer* capturer, const VideoFrame* frame) {
 }
 
 void VideoCapturer::SetCaptureState(CaptureState state) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (state == capture_state_) {
     // Don't trigger a state changed callback if the state hasn't changed.
     return;
   }
-  StateChangeParams* state_params = new StateChangeParams(state);
   capture_state_ = state;
-  thread_->Post(this, MSG_STATE_CHANGE, state_params);
-}
-
-void VideoCapturer::OnMessage(rtc::Message* message) {
-  switch (message->message_id) {
-    case MSG_STATE_CHANGE: {
-      rtc::scoped_ptr<StateChangeParams> p(
-          static_cast<StateChangeParams*>(message->pdata));
-      SignalStateChange(this, p->data());
-      break;
-    }
-    case MSG_DO_PAUSE: {
-      Pause(true);
-      break;
-    }
-    case MSG_DO_UNPAUSE: {
-      Pause(false);
-      break;
-    }
-    default: {
-      ASSERT(false);
-    }
-  }
+  SignalStateChange(this, capture_state_);
 }
 
 // Get the distance between the supported and desired formats.
@@ -578,6 +434,7 @@ void VideoCapturer::OnMessage(rtc::Message* message) {
 //                otherwise, we use preference.
 int64_t VideoCapturer::GetFormatDistance(const VideoFormat& desired,
                                          const VideoFormat& supported) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   int64_t distance = kMaxDistance;
 
   // Check fourcc.
@@ -688,6 +545,7 @@ void VideoCapturer::UpdateFilteredSupportedFormats() {
 }
 
 bool VideoCapturer::ShouldFilterFormat(const VideoFormat& format) const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!enable_camera_list_) {
     return false;
   }

@@ -129,9 +129,6 @@ class ChannelManager : public rtc::MessageHandler,
   // formats a a pseudo-handle.
   bool StartVideoCapture(VideoCapturer* video_capturer,
                          const VideoFormat& video_format);
-  // When muting, produce black frames then pause the camera.
-  // When unmuting, start the camera. Camera starts unmuted.
-  bool MuteToBlackThenPause(VideoCapturer* video_capturer, bool muted);
   bool StopVideoCapture(VideoCapturer* video_capturer,
                         const VideoFormat& video_format);
   bool RestartVideoCapture(VideoCapturer* video_capturer,
