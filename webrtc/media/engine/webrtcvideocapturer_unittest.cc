@@ -90,7 +90,7 @@ TEST_F(WebRtcVideoCapturerTest, TestCapture) {
   ASSERT_TRUE(capturer_->GetCaptureFormat() != NULL);
   EXPECT_EQ(format, *capturer_->GetCaptureFormat());
   EXPECT_EQ_WAIT(cricket::CS_RUNNING, listener_.last_capture_state(), 1000);
-  EXPECT_TRUE(factory_->modules[0]->SendFrame(640, 480));
+  factory_->modules[0]->SendFrame(640, 480);
   EXPECT_TRUE_WAIT(listener_.frame_count() > 0, 5000);
   EXPECT_EQ(capturer_->GetCaptureFormat()->fourcc, listener_.frame_fourcc());
   EXPECT_EQ(640, listener_.frame_width());
@@ -117,7 +117,7 @@ TEST_F(WebRtcVideoCapturerTest, TestCaptureVcm) {
   ASSERT_TRUE(capturer_->GetCaptureFormat() != NULL);
   EXPECT_EQ(format, *capturer_->GetCaptureFormat());
   EXPECT_EQ_WAIT(cricket::CS_RUNNING, listener_.last_capture_state(), 1000);
-  EXPECT_TRUE(factory_->modules[0]->SendFrame(640, 480));
+  factory_->modules[0]->SendFrame(640, 480);
   EXPECT_TRUE_WAIT(listener_.frame_count() > 0, 5000);
   EXPECT_EQ(capturer_->GetCaptureFormat()->fourcc, listener_.frame_fourcc());
   EXPECT_EQ(640, listener_.frame_width());

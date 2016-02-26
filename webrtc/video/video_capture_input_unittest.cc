@@ -290,7 +290,7 @@ VideoFrame* CreateVideoFrame(uint8_t data) {
   uint8_t buffer[kSizeY];
   memset(buffer, data, kSizeY);
   frame->CreateFrame(buffer, buffer, buffer, width, height, width, width / 2,
-                     width / 2);
+                     width / 2, kVideoRotation_0);
   frame->set_render_time_ms(data);
   return frame;
 }

@@ -27,56 +27,39 @@ class VideoFrame {
              int64_t render_time_ms,
              VideoRotation rotation);
 
-  // TODO(pbos): Make all create/copy functions void, they should not be able to
-  // fail (which should be RTC_DCHECK/CHECKed instead).
-
   // CreateEmptyFrame: Sets frame dimensions and allocates buffers based
   // on set dimensions - height and plane stride.
   // If required size is bigger than the allocated one, new buffers of adequate
   // size will be allocated.
-  // Return value: 0 on success, -1 on error.
-  int CreateEmptyFrame(int width,
-                       int height,
-                       int stride_y,
-                       int stride_u,
-                       int stride_v);
+  void CreateEmptyFrame(int width,
+                        int height,
+                        int stride_y,
+                        int stride_u,
+                        int stride_v);
 
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
-  // Return value: 0 on success, -1 on error.
-  int CreateFrame(const uint8_t* buffer_y,
-                  const uint8_t* buffer_u,
-                  const uint8_t* buffer_v,
-                  int width,
-                  int height,
-                  int stride_y,
-                  int stride_u,
-                  int stride_v);
-
-  // TODO(guoweis): remove the previous CreateFrame when chromium has this code.
-  int CreateFrame(const uint8_t* buffer_y,
-                  const uint8_t* buffer_u,
-                  const uint8_t* buffer_v,
-                  int width,
-                  int height,
-                  int stride_y,
-                  int stride_u,
-                  int stride_v,
-                  VideoRotation rotation);
+  void CreateFrame(const uint8_t* buffer_y,
+                   const uint8_t* buffer_u,
+                   const uint8_t* buffer_v,
+                   int width,
+                   int height,
+                   int stride_y,
+                   int stride_u,
+                   int stride_v,
+                   VideoRotation rotation);
 
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
   // |buffer| must be a packed I420 buffer.
-  // Return value: 0 on success, -1 on error.
-  int CreateFrame(const uint8_t* buffer,
+  void CreateFrame(const uint8_t* buffer,
                   int width,
                   int height,
                   VideoRotation rotation);
 
   // Deep copy frame: If required size is bigger than allocated one, new
   // buffers of adequate size will be allocated.
-  // Return value: 0 on success, -1 on error.
-  int CopyFrame(const VideoFrame& videoFrame);
+  void CopyFrame(const VideoFrame& videoFrame);
 
   // Creates a shallow copy of |videoFrame|, i.e, the this object will retain a
   // reference to the video buffer also retained by |videoFrame|.
@@ -157,8 +140,6 @@ class VideoFrame {
   // Convert native-handle frame to memory-backed I420 frame. Should not be
   // called on a non-native-handle frame.
   VideoFrame ConvertNativeToI420Frame() const;
-
-  bool EqualsFrame(const VideoFrame& frame) const;
 
  private:
   // An opaque reference counted handle that stores the pixel data.

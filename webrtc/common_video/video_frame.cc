@@ -23,20 +23,6 @@ namespace webrtc {
 // to optimized bitstream readers. See avcodec_decode_video2.
 const size_t EncodedImage::kBufferPaddingBytesH264 = 8;
 
-bool EqualPlane(const uint8_t* data1,
-                const uint8_t* data2,
-                int stride,
-                int width,
-                int height) {
-  for (int y = 0; y < height; ++y) {
-    if (memcmp(data1, data2, width) != 0)
-      return false;
-    data1 += stride;
-    data2 += stride;
-  }
-  return true;
-}
-
 int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
   if (type == kYPlane)
     return plane_stride * image_height;
@@ -60,11 +46,11 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
       rotation_(rotation) {
 }
 
-int VideoFrame::CreateEmptyFrame(int width,
-                                 int height,
-                                 int stride_y,
-                                 int stride_u,
-                                 int stride_v) {
+void VideoFrame::CreateEmptyFrame(int width,
+                                  int height,
+                                  int stride_y,
+                                  int stride_u,
+                                  int stride_v) {
   const int half_width = (width + 1) / 2;
   RTC_DCHECK_GT(width, 0);
   RTC_DCHECK_GT(height, 0);
@@ -84,36 +70,23 @@ int VideoFrame::CreateEmptyFrame(int width,
       width == video_frame_buffer_->width() &&
       height == video_frame_buffer_->height() && stride_y == stride(kYPlane) &&
       stride_u == stride(kUPlane) && stride_v == stride(kVPlane)) {
-    return 0;
+    return;
   }
 
   // Need to allocate new buffer.
   video_frame_buffer_ = new rtc::RefCountedObject<I420Buffer>(
       width, height, stride_y, stride_u, stride_v);
-  return 0;
 }
 
-int VideoFrame::CreateFrame(const uint8_t* buffer_y,
-                            const uint8_t* buffer_u,
-                            const uint8_t* buffer_v,
-                            int width,
-                            int height,
-                            int stride_y,
-                            int stride_u,
-                            int stride_v) {
-  return CreateFrame(buffer_y, buffer_u, buffer_v, width, height, stride_y,
-                     stride_u, stride_v, kVideoRotation_0);
-}
-
-int VideoFrame::CreateFrame(const uint8_t* buffer_y,
-                            const uint8_t* buffer_u,
-                            const uint8_t* buffer_v,
-                            int width,
-                            int height,
-                            int stride_y,
-                            int stride_u,
-                            int stride_v,
-                            VideoRotation rotation) {
+void VideoFrame::CreateFrame(const uint8_t* buffer_y,
+                             const uint8_t* buffer_u,
+                             const uint8_t* buffer_v,
+                             int width,
+                             int height,
+                             int stride_y,
+                             int stride_u,
+                             int stride_v,
+                             VideoRotation rotation) {
   const int half_height = (height + 1) / 2;
   const int expected_size_y = height * stride_y;
   const int expected_size_u = half_height * stride_u;
@@ -123,24 +96,23 @@ int VideoFrame::CreateFrame(const uint8_t* buffer_y,
   memcpy(buffer(kUPlane), buffer_u, expected_size_u);
   memcpy(buffer(kVPlane), buffer_v, expected_size_v);
   rotation_ = rotation;
-  return 0;
 }
 
-int VideoFrame::CreateFrame(const uint8_t* buffer,
-                            int width,
-                            int height,
-                            VideoRotation rotation) {
+void VideoFrame::CreateFrame(const uint8_t* buffer,
+                             int width,
+                             int height,
+                             VideoRotation rotation) {
   const int stride_y = width;
   const int stride_uv = (width + 1) / 2;
 
   const uint8_t* buffer_y = buffer;
   const uint8_t* buffer_u = buffer_y + stride_y * height;
   const uint8_t* buffer_v = buffer_u + stride_uv * ((height + 1) / 2);
-  return CreateFrame(buffer_y, buffer_u, buffer_v, width, height, stride_y,
-                     stride_uv, stride_uv, rotation);
+  CreateFrame(buffer_y, buffer_u, buffer_v, width, height, stride_y,
+              stride_uv, stride_uv, rotation);
 }
 
-int VideoFrame::CopyFrame(const VideoFrame& videoFrame) {
+void VideoFrame::CopyFrame(const VideoFrame& videoFrame) {
   if (videoFrame.IsZeroSize()) {
     video_frame_buffer_ = nullptr;
   } else if (videoFrame.native_handle()) {
@@ -149,14 +121,14 @@ int VideoFrame::CopyFrame(const VideoFrame& videoFrame) {
     CreateFrame(videoFrame.buffer(kYPlane), videoFrame.buffer(kUPlane),
                 videoFrame.buffer(kVPlane), videoFrame.width(),
                 videoFrame.height(), videoFrame.stride(kYPlane),
-                videoFrame.stride(kUPlane), videoFrame.stride(kVPlane));
+                videoFrame.stride(kUPlane), videoFrame.stride(kVPlane),
+                kVideoRotation_0);
   }
 
   timestamp_ = videoFrame.timestamp_;
   ntp_time_ms_ = videoFrame.ntp_time_ms_;
   render_time_ms_ = videoFrame.render_time_ms_;
   rotation_ = videoFrame.rotation_;
-  return 0;
 }
 
 void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
@@ -224,26 +196,6 @@ VideoFrame VideoFrame::ConvertNativeToI420Frame() const {
   frame.ShallowCopy(*this);
   frame.set_video_frame_buffer(video_frame_buffer_->NativeToI420Buffer());
   return frame;
-}
-
-bool VideoFrame::EqualsFrame(const VideoFrame& frame) const {
-  if (width() != frame.width() || height() != frame.height() ||
-      stride(kYPlane) != frame.stride(kYPlane) ||
-      stride(kUPlane) != frame.stride(kUPlane) ||
-      stride(kVPlane) != frame.stride(kVPlane) ||
-      timestamp() != frame.timestamp() ||
-      ntp_time_ms() != frame.ntp_time_ms() ||
-      render_time_ms() != frame.render_time_ms()) {
-    return false;
-  }
-  const int half_width = (width() + 1) / 2;
-  const int half_height = (height() + 1) / 2;
-  return EqualPlane(buffer(kYPlane), frame.buffer(kYPlane),
-                    stride(kYPlane), width(), height()) &&
-         EqualPlane(buffer(kUPlane), frame.buffer(kUPlane),
-                    stride(kUPlane), half_width, half_height) &&
-         EqualPlane(buffer(kVPlane), frame.buffer(kVPlane),
-                    stride(kVPlane), half_width, half_height);
 }
 
 size_t EncodedImage::GetBufferPaddingBytes(VideoCodecType codec_type) {

@@ -160,7 +160,7 @@
             '<(webrtc_root)/modules/video_coding/codecs/vp8/vp8.gyp:webrtc_vp8',
             '<(webrtc_root)/modules/video_coding/codecs/vp9/vp9.gyp:webrtc_vp9',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/test.gyp:fake_video_frames',
+            '<(webrtc_root)/test/test.gyp:video_test_common',
             '<(webrtc_root)/test/test.gyp:rtp_test_utils',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(webrtc_root)/test/webrtc_test_common.gyp:webrtc_test_common',

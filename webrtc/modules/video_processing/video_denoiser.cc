@@ -70,7 +70,7 @@ void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
     height_ = frame.height();
     denoised_frame->CreateFrame(frame.buffer(kYPlane), frame.buffer(kUPlane),
                                 frame.buffer(kVPlane), width_, height_,
-                                stride_y, stride_u, stride_v);
+                                stride_y, stride_u, stride_v, kVideoRotation_0);
     // Setting time parameters to the output frame.
     denoised_frame->set_timestamp(frame.timestamp());
     denoised_frame->set_render_time_ms(frame.render_time_ms());
