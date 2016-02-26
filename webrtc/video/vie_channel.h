@@ -313,7 +313,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   // RtpRtcp modules, declared last as they use other members on construction.
   const std::vector<RtpRtcp*> rtp_rtcp_modules_;
-  size_t num_active_rtp_rtcp_modules_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

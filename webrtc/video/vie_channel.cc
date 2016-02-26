@@ -120,8 +120,7 @@ ViEChannel::ViEChannel(Transport* transport,
                                &send_bitrate_observer_,
                                &send_frame_count_observer_,
                                &send_side_delay_observer_,
-                               max_rtp_streams)),
-      num_active_rtp_rtcp_modules_(1) {
+                               max_rtp_streams)) {
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_modules_[0]);
   if (sender_) {
     RTC_DCHECK(send_payload_router_);
@@ -138,15 +137,16 @@ int32_t ViEChannel::Init() {
   module_process_thread_->RegisterModule(vie_receiver_.GetReceiveStatistics());
 
   // RTP/RTCP initialization.
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     module_process_thread_->RegisterModule(rtp_rtcp);
+    packet_router_->AddRtpModule(rtp_rtcp);
+  }
 
   rtp_rtcp_modules_[0]->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
   if (paced_sender_) {
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
       rtp_rtcp->SetStorePacketsStatus(true, kMinSendSidePacketHistorySize);
   }
-  packet_router_->AddRtpModule(rtp_rtcp_modules_[0]);
   if (sender_) {
     send_payload_router_->SetSendingRtpModules(1);
     RTC_DCHECK(!send_payload_router_->active());
@@ -170,9 +170,8 @@ ViEChannel::~ViEChannel() {
   if (sender_) {
     send_payload_router_->SetSendingRtpModules(0);
   }
-  for (size_t i = 0; i < num_active_rtp_rtcp_modules_; ++i)
-    packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i]);
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    packet_router_->RemoveRtpModule(rtp_rtcp);
     module_process_thread_->DeRegisterModule(rtp_rtcp);
     delete rtp_rtcp;
   }
@@ -250,13 +249,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   size_t num_active_modules = video_codec.numberOfSimulcastStreams > 0
                                    ? video_codec.numberOfSimulcastStreams
                                    : 1;
-  size_t num_prev_active_modules;
-  {
-    // Cache which modules are active so StartSend can know which ones to start.
-    rtc::CritScope lock(&crit_);
-    num_prev_active_modules = num_active_rtp_rtcp_modules_;
-    num_active_rtp_rtcp_modules_ = num_active_modules;
-  }
   for (size_t i = 0; i < num_active_modules; ++i)
     registered_modules.push_back(rtp_rtcp_modules_[i]);
 
@@ -269,12 +261,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
 
   send_payload_router_->set_active(is_sending);
 
-  // Deregister previously registered modules.
-  for (size_t i = num_active_modules; i < num_prev_active_modules; ++i)
-    packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i]);
-  // Register new active modules.
-  for (size_t i = num_prev_active_modules; i < num_active_modules; ++i)
-    packet_router_->AddRtpModule(rtp_rtcp_modules_[i]);
   return 0;
 }
 
