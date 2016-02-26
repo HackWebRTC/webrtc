@@ -48,32 +48,23 @@ class SurfaceTextureHelper {
         int oesTextureId, float[] transformMatrix, long timestampNs);
   }
 
-  public static SurfaceTextureHelper create(EglBase.Context sharedContext) {
-    return create(sharedContext, null);
-  }
-
   /**
-   * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|. If
-   * |handler| is non-null, the callback will be executed on that handler's thread. If |handler| is
-   * null, a dedicated private thread is created for the callbacks.
+   * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|. A dedicated
+   * thread and handler is created for handling the SurfaceTexture.
    */
-  public static SurfaceTextureHelper create(final EglBase.Context sharedContext,
-      final Handler handler) {
-    final Handler finalHandler;
-    if (handler != null) {
-      finalHandler = handler;
-    } else {
-      final HandlerThread thread = new HandlerThread(TAG);
-      thread.start();
-      finalHandler = new Handler(thread.getLooper());
-    }
+  public static SurfaceTextureHelper create(final EglBase.Context sharedContext) {
+    final HandlerThread thread = new HandlerThread(TAG);
+    thread.start();
+    final Handler handler = new Handler(thread.getLooper());
+
     // The onFrameAvailable() callback will be executed on the SurfaceTexture ctor thread. See:
     // http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.1.1_r1/android/graphics/SurfaceTexture.java#195.
     // Therefore, in order to control the callback thread on API lvl < 21, the SurfaceTextureHelper
     // is constructed on the |handler| thread.
-    return ThreadUtils.invokeUninterruptibly(finalHandler, new Callable<SurfaceTextureHelper>() {
-      @Override public SurfaceTextureHelper call() {
-        return new SurfaceTextureHelper(sharedContext, finalHandler, (handler == null));
+    return ThreadUtils.invokeUninterruptibly(handler, new Callable<SurfaceTextureHelper>() {
+      @Override
+      public SurfaceTextureHelper call() {
+        return new SurfaceTextureHelper(sharedContext, handler);
       }
     });
   }
@@ -291,7 +282,6 @@ class SurfaceTextureHelper {
   }
 
   private final Handler handler;
-  private boolean isOwningThread;
   private final EglBase eglBase;
   private final SurfaceTexture surfaceTexture;
   private final int oesTextureId;
@@ -303,13 +293,11 @@ class SurfaceTextureHelper {
   private volatile boolean isTextureInUse = false;
   private boolean isQuitting = false;
 
-  private SurfaceTextureHelper(EglBase.Context sharedContext,
-      Handler handler, boolean isOwningThread) {
+  private SurfaceTextureHelper(EglBase.Context sharedContext, Handler handler) {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("SurfaceTextureHelper must be created on the handler thread");
     }
     this.handler = handler;
-    this.isOwningThread = isOwningThread;
 
     eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PIXEL_BUFFER);
     eglBase.createDummyPbufferSurface();
@@ -358,6 +346,14 @@ class SurfaceTextureHelper {
   }
 
   /**
+   * Retrieve the handler that calls onTextureFrameAvailable(). This handler is valid until
+   * disconnect() is called.
+   */
+  public Handler getHandler() {
+    return handler;
+  }
+
+  /**
    * Call this function to signal that you are done with the frame received in
    * onTextureFrameAvailable(). Only one texture frame can be in flight at once, so you must call
    * this function in order to receive a new frame.
@@ -380,14 +376,11 @@ class SurfaceTextureHelper {
   }
 
   /**
-   * Call disconnect() to stop receiving frames. Resources are released when the texture frame has
-   * been returned by a call to returnTextureFrame(). You are guaranteed to not receive any more
-   * onTextureFrameAvailable() after this function returns.
+   * Call disconnect() to stop receiving frames. OpenGL resources are released and the handler is
+   * stopped when the texture frame has been returned by a call to returnTextureFrame(). You are
+   * guaranteed to not receive any more onTextureFrameAvailable() after this function returns.
    */
   public void disconnect() {
-    if (!isOwningThread) {
-      throw new IllegalStateException("Must call disconnect(handler).");
-    }
     if (handler.getLooper().getThread() == Thread.currentThread()) {
       isQuitting = true;
       if (!isTextureInUse) {
@@ -406,20 +399,6 @@ class SurfaceTextureHelper {
       }
     });
     ThreadUtils.awaitUninterruptibly(barrier);
-  }
-
-  /**
-   * Call disconnect() to stop receiving frames and quit the looper used by |handler|.
-   * Resources are released when the texture frame has been returned by a call to
-   * returnTextureFrame(). You are guaranteed to not receive any more
-   * onTextureFrameAvailable() after this function returns.
-   */
-  public void disconnect(Handler handler) {
-    if (this.handler != handler) {
-      throw new IllegalStateException("Wrong handler.");
-    }
-    isOwningThread = true;
-    disconnect();
   }
 
   public void textureToYUV(ByteBuffer buf,

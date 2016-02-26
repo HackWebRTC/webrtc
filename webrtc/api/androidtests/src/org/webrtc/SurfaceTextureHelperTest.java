@@ -11,8 +11,6 @@ package org.webrtc;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.MediumTest;
@@ -269,78 +267,6 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create(null);
     surfaceTextureHelper.disconnect();
-  }
-
-  /**
-   * Test use SurfaceTextureHelper on a separate thread. A uniform texture frame is created and
-   * received on a thread separate from the test thread.
-   */
-  @MediumTest
-  public static void testFrameOnSeparateThread() throws InterruptedException {
-    final HandlerThread thread = new HandlerThread("SurfaceTextureHelperTestThread");
-    thread.start();
-    final Handler handler = new Handler(thread.getLooper());
-
-    // Create SurfaceTextureHelper and listener.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(null, handler);
-    // Create a mock listener and expect frames to be delivered on |thread|.
-    final MockTextureListener listener = new MockTextureListener(thread);
-    surfaceTextureHelper.setListener(listener);
-
-    // Create resources for stubbing an OES texture producer. |eglOesBase| has the
-    // SurfaceTexture in |surfaceTextureHelper| as the target EGLSurface.
-    final EglBase eglOesBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
-    eglOesBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
-    eglOesBase.makeCurrent();
-    // Draw a frame onto the SurfaceTexture.
-    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-    // swapBuffers() will ultimately trigger onTextureFrameAvailable().
-    eglOesBase.swapBuffers();
-    eglOesBase.release();
-
-    // Wait for an OES texture to arrive.
-    listener.waitForNewFrame();
-
-    // Return the frame from this thread.
-    surfaceTextureHelper.returnTextureFrame();
-    surfaceTextureHelper.disconnect(handler);
-  }
-
-  /**
-   * Test use SurfaceTextureHelper on a separate thread. A uniform texture frame is created and
-   * received on a thread separate from the test thread and returned after disconnect.
-   */
-  @MediumTest
-  public static void testLateReturnFrameOnSeparateThread() throws InterruptedException {
-    final HandlerThread thread = new HandlerThread("SurfaceTextureHelperTestThread");
-    thread.start();
-    final Handler handler = new Handler(thread.getLooper());
-
-    // Create SurfaceTextureHelper and listener.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(null, handler);
-    // Create a mock listener and expect frames to be delivered on |thread|.
-    final MockTextureListener listener = new MockTextureListener(thread);
-    surfaceTextureHelper.setListener(listener);
-
-    // Create resources for stubbing an OES texture producer. |eglOesBase| has the
-    // SurfaceTexture in |surfaceTextureHelper| as the target EGLSurface.
-    final EglBase eglOesBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
-    eglOesBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
-    eglOesBase.makeCurrent();
-    // Draw a frame onto the SurfaceTexture.
-    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-    // swapBuffers() will ultimately trigger onTextureFrameAvailable().
-    eglOesBase.swapBuffers();
-    eglOesBase.release();
-
-    // Wait for an OES texture to arrive.
-    listener.waitForNewFrame();
-
-    surfaceTextureHelper.disconnect(handler);
-
-    surfaceTextureHelper.returnTextureFrame();
   }
 
   @MediumTest

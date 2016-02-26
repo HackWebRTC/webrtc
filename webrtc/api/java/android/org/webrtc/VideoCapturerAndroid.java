@@ -12,7 +12,6 @@ package org.webrtc;
 
 import android.content.Context;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.view.Surface;
 import android.view.WindowManager;
@@ -53,7 +52,7 @@ public class VideoCapturerAndroid implements
   private final static int CAMERA_FREEZE_REPORT_TIMOUT_MS = 6000;
 
   private android.hardware.Camera camera;  // Only non-null while capturing.
-  private HandlerThread cameraThread;
+  private Thread cameraThread;
   private final Handler cameraThreadHandler;
   private Context applicationContext;
   // Synchronization lock for |id|.
@@ -302,12 +301,11 @@ public class VideoCapturerAndroid implements
       EglBase.Context sharedContext) {
     this.id = cameraId;
     this.eventsHandler = eventsHandler;
-    cameraThread = new HandlerThread(TAG);
-    cameraThread.start();
-    cameraThreadHandler = new Handler(cameraThread.getLooper());
     isCapturingToTexture = (sharedContext != null);
     cameraStatistics = new CameraStatistics();
-    surfaceHelper = SurfaceTextureHelper.create(sharedContext, cameraThreadHandler);
+    surfaceHelper = SurfaceTextureHelper.create(sharedContext);
+    cameraThreadHandler = surfaceHelper.getHandler();
+    cameraThread = cameraThreadHandler.getLooper().getThread();
     if (isCapturingToTexture) {
       surfaceHelper.setListener(this);
     }
@@ -354,11 +352,11 @@ public class VideoCapturerAndroid implements
         }
       }
     });
-    surfaceHelper.disconnect(cameraThreadHandler);
+    surfaceHelper.disconnect();
     cameraThread = null;
   }
 
-  // Used for testing purposes to check if release() has been called.
+  // Used for testing purposes to check if dispose() has been called.
   public boolean isDisposed() {
     return (cameraThread == null);
   }
