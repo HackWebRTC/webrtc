@@ -215,6 +215,7 @@ VideoSendStream::VideoSendStream(
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(remb_);
 
+  payload_router_.Init(rtp_rtcp_modules_);
   RTC_CHECK(vie_encoder_.Init());
   encoder_feedback_.Init(config_.rtp.ssrcs, &vie_encoder_);
   RTC_CHECK(vie_channel_.Init() == 0);
@@ -274,6 +275,9 @@ VideoSendStream::VideoSendStream(
     rtp_rtcp->RegisterRtcpStatisticsCallback(&stats_proxy_);
     rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(&stats_proxy_);
     rtp_rtcp->SetMaxTransferUnit(mtu);
+    rtp_rtcp->RegisterVideoSendPayload(
+        config_.encoder_settings.payload_type,
+        config_.encoder_settings.payload_name.c_str());
   }
 
   RTC_DCHECK(config.encoder_settings.encoder != nullptr);

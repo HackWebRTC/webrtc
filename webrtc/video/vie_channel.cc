@@ -148,8 +148,7 @@ int32_t ViEChannel::Init() {
   }
   packet_router_->AddRtpModule(rtp_rtcp_modules_[0]);
   if (sender_) {
-    send_payload_router_->SetSendingRtpModules(
-        std::vector<RtpRtcp*>(1, rtp_rtcp_modules_[0]));
+    send_payload_router_->SetSendingRtpModules(1);
     RTC_DCHECK(!send_payload_router_->active());
   } else {
     if (vcm_->RegisterReceiveCallback(this) != 0) {
@@ -169,7 +168,7 @@ ViEChannel::~ViEChannel() {
   module_process_thread_->DeRegisterModule(
       vie_receiver_.GetReceiveStatistics());
   if (sender_) {
-    send_payload_router_->SetSendingRtpModules(std::vector<RtpRtcp*>());
+    send_payload_router_->SetSendingRtpModules(0);
   }
   for (size_t i = 0; i < num_active_rtp_rtcp_modules_; ++i)
     packet_router_->RemoveRtpModule(rtp_rtcp_modules_[i]);
@@ -244,12 +243,10 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   // The first layer is always active, so the first module can be checked for
   // sending status.
   bool is_sending = rtp_rtcp_modules_[0]->Sending();
-  bool router_was_active = send_payload_router_->active();
   send_payload_router_->set_active(false);
-  send_payload_router_->SetSendingRtpModules(std::vector<RtpRtcp*>());
+  send_payload_router_->SetSendingRtpModules(0);
 
   std::vector<RtpRtcp*> registered_modules;
-  std::vector<RtpRtcp*> deregistered_modules;
   size_t num_active_modules = video_codec.numberOfSimulcastStreams > 0
                                    ? video_codec.numberOfSimulcastStreams
                                    : 1;
@@ -263,34 +260,14 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   for (size_t i = 0; i < num_active_modules; ++i)
     registered_modules.push_back(rtp_rtcp_modules_[i]);
 
-  for (size_t i = num_active_modules; i < rtp_rtcp_modules_.size(); ++i)
-    deregistered_modules.push_back(rtp_rtcp_modules_[i]);
-
-  // Disable inactive modules.
-  for (RtpRtcp* rtp_rtcp : deregistered_modules) {
-    rtp_rtcp->SetSendingStatus(false);
-    rtp_rtcp->SetSendingMediaStatus(false);
-  }
-
-  // Configure active modules.
-  for (RtpRtcp* rtp_rtcp : registered_modules) {
-    rtp_rtcp->DeRegisterSendPayload(video_codec.plType);
-    if (rtp_rtcp->RegisterSendPayload(video_codec) != 0) {
-      return -1;
-    }
-    rtp_rtcp->SetSendingStatus(is_sending);
-    rtp_rtcp->SetSendingMediaStatus(is_sending);
-  }
-
   // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
   // modules can be deleted after this step.
   vie_receiver_.RegisterRtpRtcpModules(registered_modules);
 
   // Update the packet and payload routers with the sending RtpRtcp modules.
-  send_payload_router_->SetSendingRtpModules(registered_modules);
+  send_payload_router_->SetSendingRtpModules(num_active_modules);
 
-  if (router_was_active)
-    send_payload_router_->set_active(true);
+  send_payload_router_->set_active(is_sending);
 
   // Deregister previously registered modules.
   for (size_t i = num_active_modules; i < num_prev_active_modules; ++i)
@@ -418,35 +395,27 @@ void ViEChannel::RegisterSendBitrateObserver(
 }
 
 int32_t ViEChannel::StartSend() {
-  rtc::CritScope lock(&crit_);
-
   if (rtp_rtcp_modules_[0]->Sending())
     return -1;
 
-  for (size_t i = 0; i < num_active_rtp_rtcp_modules_; ++i) {
-    RtpRtcp* rtp_rtcp = rtp_rtcp_modules_[i];
-    // Only have senders send media.
-    rtp_rtcp->SetSendingMediaStatus(sender_);
-    rtp_rtcp->SetSendingStatus(true);
-  }
-  if (sender_)
+  if (!sender_) {
+    rtp_rtcp_modules_[0]->SetSendingStatus(true);
+  } else {
     send_payload_router_->set_active(true);
+  }
   return 0;
 }
 
 int32_t ViEChannel::StopSend() {
-  if (sender_)
-    send_payload_router_->set_active(false);
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->SetSendingMediaStatus(false);
-
-  if (!rtp_rtcp_modules_[0]->Sending()) {
+  if (!rtp_rtcp_modules_[0]->Sending())
     return -1;
+
+  if (!sender_) {
+    rtp_rtcp_modules_[0]->SetSendingStatus(false);
+  } else {
+    send_payload_router_->set_active(false);
   }
 
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    rtp_rtcp->SetSendingStatus(false);
-  }
   return 0;
 }
 

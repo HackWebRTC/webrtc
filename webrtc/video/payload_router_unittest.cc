@@ -34,7 +34,8 @@ TEST_F(PayloadRouterTest, SendOnOneModule) {
   MockRtpRtcp rtp;
   std::vector<RtpRtcp*> modules(1, &rtp);
 
-  payload_router_->SetSendingRtpModules(modules);
+  payload_router_->Init(modules);
+  payload_router_->SetSendingRtpModules(modules.size());
 
   uint8_t payload = 'a';
   FrameType frame_type = kVideoFrameKey;
@@ -67,8 +68,7 @@ TEST_F(PayloadRouterTest, SendOnOneModule) {
   EXPECT_TRUE(payload_router_->RoutePayload(frame_type, payload_type, 0, 0,
                                             &payload, 1, NULL, NULL));
 
-  modules.clear();
-  payload_router_->SetSendingRtpModules(modules);
+  payload_router_->SetSendingRtpModules(0);
   EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1, NULL,
                                     NULL))
       .Times(0);
@@ -83,7 +83,8 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
 
-  payload_router_->SetSendingRtpModules(modules);
+  payload_router_->Init(modules);
+  payload_router_->SetSendingRtpModules(modules.size());
 
   uint8_t payload_1 = 'a';
   FrameType frame_type_1 = kVideoFrameKey;
@@ -125,12 +126,13 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
                                              &payload_2, 1, NULL, &rtp_hdr_2));
 
   // Invalid simulcast index.
+  payload_router_->SetSendingRtpModules(1);
   payload_router_->set_active(true);
   EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
-  rtp_hdr_1.simulcastIdx = 2;
+  rtp_hdr_1.simulcastIdx = 1;
   EXPECT_FALSE(payload_router_->RoutePayload(frame_type_1, payload_type_1, 0, 0,
                                              &payload_1, 1, NULL, &rtp_hdr_1));
 }
@@ -147,7 +149,8 @@ TEST_F(PayloadRouterTest, MaxPayloadLength) {
   std::vector<RtpRtcp*> modules;
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
-  payload_router_->SetSendingRtpModules(modules);
+  payload_router_->Init(modules);
+  payload_router_->SetSendingRtpModules(modules.size());
 
   // Modules return a higher length than the default value.
   EXPECT_CALL(rtp_1, MaxDataPayloadLength())
@@ -175,7 +178,8 @@ TEST_F(PayloadRouterTest, SetTargetSendBitrates) {
   std::vector<RtpRtcp*> modules;
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
-  payload_router_->SetSendingRtpModules(modules);
+  payload_router_->Init(modules);
+  payload_router_->SetSendingRtpModules(modules.size());
 
   const uint32_t bitrate_1 = 10000;
   const uint32_t bitrate_2 = 76543;
@@ -189,18 +193,9 @@ TEST_F(PayloadRouterTest, SetTargetSendBitrates) {
 
   bitrates.resize(1);
   EXPECT_CALL(rtp_1, SetTargetSendBitrate(bitrate_1))
-      .Times(0);
-  EXPECT_CALL(rtp_2, SetTargetSendBitrate(bitrate_2))
-      .Times(0);
-  payload_router_->SetTargetSendBitrates(bitrates);
-
-  bitrates.resize(3);
-  bitrates[1] = bitrate_2;
-  bitrates[2] = bitrate_1 + bitrate_2;
-  EXPECT_CALL(rtp_1, SetTargetSendBitrate(bitrate_1))
       .Times(1);
   EXPECT_CALL(rtp_2, SetTargetSendBitrate(bitrate_2))
-      .Times(1);
+      .Times(0);
   payload_router_->SetTargetSendBitrates(bitrates);
 }
 }  // namespace webrtc

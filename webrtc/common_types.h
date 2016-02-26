@@ -37,7 +37,7 @@
 #define NULL 0
 #endif
 
-#define RTP_PAYLOAD_NAME_SIZE 32
+#define RTP_PAYLOAD_NAME_SIZE 32u
 
 #if defined(WEBRTC_WIN) || defined(WIN32)
 // Compares two strings without regard to case.

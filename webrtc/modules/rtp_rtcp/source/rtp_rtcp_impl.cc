@@ -118,8 +118,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       rtt_stats_(configuration.rtt_stats),
       critical_section_rtt_(CriticalSectionWrapper::CreateCriticalSection()),
       rtt_ms_(0) {
-  send_video_codec_.codecType = kVideoCodecUnknown;
-
   // Make sure that RTCP objects are aware of our SSRC.
   uint32_t SSRC = rtp_sender_.SSRC();
   rtcp_sender_.SetSSRC(SSRC);
@@ -269,9 +267,14 @@ int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
 }
 
 int32_t ModuleRtpRtcpImpl::RegisterSendPayload(const VideoCodec& video_codec) {
-  send_video_codec_ = video_codec;
   return rtp_sender_.RegisterPayload(video_codec.plName, video_codec.plType,
                                      90000, 0, 0);
+}
+
+void ModuleRtpRtcpImpl::RegisterVideoSendPayload(int payload_type,
+                                                 const char* payload_name) {
+  RTC_CHECK_EQ(
+      0, rtp_sender_.RegisterPayload(payload_name, payload_type, 90000, 0, 0));
 }
 
 int32_t ModuleRtpRtcpImpl::DeRegisterSendPayload(const int8_t payload_type) {

@@ -17,7 +17,7 @@
 namespace webrtc {
 
 PayloadRouter::PayloadRouter()
-    : active_(false) {}
+    : active_(false), num_sending_modules_(0) {}
 
 PayloadRouter::~PayloadRouter() {}
 
@@ -26,20 +26,42 @@ size_t PayloadRouter::DefaultMaxPayloadLength() {
   return IP_PACKET_SIZE - kIpUdpSrtpLength;
 }
 
-void PayloadRouter::SetSendingRtpModules(
+void PayloadRouter::Init(
     const std::vector<RtpRtcp*>& rtp_modules) {
-  rtc::CritScope lock(&crit_);
+  RTC_DCHECK(rtp_modules_.empty());
   rtp_modules_ = rtp_modules;
 }
 
 void PayloadRouter::set_active(bool active) {
   rtc::CritScope lock(&crit_);
+  if (active_ == active)
+    return;
   active_ = active;
+  UpdateModuleSendingState();
 }
 
 bool PayloadRouter::active() {
   rtc::CritScope lock(&crit_);
   return active_ && !rtp_modules_.empty();
+}
+
+void PayloadRouter::SetSendingRtpModules(size_t num_sending_modules) {
+  RTC_DCHECK_LE(num_sending_modules, rtp_modules_.size());
+  rtc::CritScope lock(&crit_);
+  num_sending_modules_ = num_sending_modules;
+  UpdateModuleSendingState();
+}
+
+void PayloadRouter::UpdateModuleSendingState() {
+  for (size_t i = 0; i < num_sending_modules_; ++i) {
+    rtp_modules_[i]->SetSendingStatus(active_);
+    rtp_modules_[i]->SetSendingMediaStatus(active_);
+  }
+  // Disable inactive modules.
+  for (size_t i = num_sending_modules_; i < rtp_modules_.size(); ++i) {
+    rtp_modules_[i]->SetSendingStatus(false);
+    rtp_modules_[i]->SetSendingMediaStatus(false);
+  }
 }
 
 bool PayloadRouter::RoutePayload(FrameType frame_type,
@@ -51,18 +73,19 @@ bool PayloadRouter::RoutePayload(FrameType frame_type,
                                  const RTPFragmentationHeader* fragmentation,
                                  const RTPVideoHeader* rtp_video_hdr) {
   rtc::CritScope lock(&crit_);
-  if (!active_ || rtp_modules_.empty())
-    return false;
-
-  // The simulcast index might actually be larger than the number of modules in
-  // case the encoder was processing a frame during a codec reconfig.
-  if (rtp_video_hdr != NULL &&
-      rtp_video_hdr->simulcastIdx >= rtp_modules_.size())
+  RTC_DCHECK(!rtp_modules_.empty());
+  if (!active_ || num_sending_modules_ == 0)
     return false;
 
   int stream_idx = 0;
-  if (rtp_video_hdr != NULL)
+  if (rtp_video_hdr) {
+    RTC_DCHECK_LT(rtp_video_hdr->simulcastIdx, rtp_modules_.size());
+    // The simulcast index might actually be larger than the number of modules
+    // in case the encoder was processing a frame during a codec reconfig.
+    if (rtp_video_hdr->simulcastIdx >= num_sending_modules_)
+      return false;
     stream_idx = rtp_video_hdr->simulcastIdx;
+  }
   return rtp_modules_[stream_idx]->SendOutgoingData(
       frame_type, payload_type, time_stamp, capture_time_ms, payload_data,
       payload_length, fragmentation, rtp_video_hdr) == 0 ? true : false;
@@ -71,21 +94,17 @@ bool PayloadRouter::RoutePayload(FrameType frame_type,
 void PayloadRouter::SetTargetSendBitrates(
     const std::vector<uint32_t>& stream_bitrates) {
   rtc::CritScope lock(&crit_);
-  if (stream_bitrates.size() < rtp_modules_.size()) {
-    // There can be a size mis-match during codec reconfiguration.
-    return;
-  }
-  int idx = 0;
-  for (auto* rtp_module : rtp_modules_) {
-    rtp_module->SetTargetSendBitrate(stream_bitrates[idx++]);
+  RTC_DCHECK_LE(stream_bitrates.size(), rtp_modules_.size());
+  for (size_t i = 0; i < stream_bitrates.size(); ++i) {
+    rtp_modules_[i]->SetTargetSendBitrate(stream_bitrates[i]);
   }
 }
 
 size_t PayloadRouter::MaxPayloadLength() const {
   size_t min_payload_length = DefaultMaxPayloadLength();
   rtc::CritScope lock(&crit_);
-  for (auto* rtp_module : rtp_modules_) {
-    size_t module_payload_length = rtp_module->MaxDataPayloadLength();
+  for (size_t i = 0; i < num_sending_modules_; ++i) {
+    size_t module_payload_length = rtp_modules_[i]->MaxDataPayloadLength();
     if (module_payload_length < min_payload_length)
       min_payload_length = module_payload_length;
   }

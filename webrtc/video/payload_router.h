@@ -36,7 +36,9 @@ class PayloadRouter {
   static size_t DefaultMaxPayloadLength();
 
   // Rtp modules are assumed to be sorted in simulcast index order.
-  void SetSendingRtpModules(const std::vector<RtpRtcp*>& rtp_modules);
+  void Init(const std::vector<RtpRtcp*>& rtp_modules);
+
+  void SetSendingRtpModules(size_t num_sending_modules);
 
   // PayloadRouter will only route packets if being active, all packets will be
   // dropped otherwise.
@@ -62,19 +64,15 @@ class PayloadRouter {
   // and RTP headers.
   size_t MaxPayloadLength() const;
 
-  void AddRef() { ++ref_count_; }
-  void Release() { if (--ref_count_ == 0) { delete this; } }
-
  private:
-  // TODO(mflodman): When the new video API has launched, remove crit_ and
-  // assume rtp_modules_ will never change during a call.
+  void UpdateModuleSendingState() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  // TODO(pbos): Set once and for all on construction and make const.
+  std::vector<RtpRtcp*> rtp_modules_;
+
   rtc::CriticalSection crit_;
-
-  // Active sending RTP modules, in layer order.
-  std::vector<RtpRtcp*> rtp_modules_ GUARDED_BY(crit_);
   bool active_ GUARDED_BY(crit_);
-
-  Atomic32 ref_count_;
+  size_t num_sending_modules_ GUARDED_BY(crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
 };

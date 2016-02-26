@@ -304,7 +304,7 @@ int32_t RTPSender::RegisterPayload(
     uint32_t frequency,
     size_t channels,
     uint32_t rate) {
-  assert(payload_name);
+  RTC_DCHECK_LT(strlen(payload_name), RTP_PAYLOAD_NAME_SIZE);
   rtc::CritScope lock(&send_critsect_);
 
   std::map<int8_t, RtpUtility::Payload*>::iterator it =

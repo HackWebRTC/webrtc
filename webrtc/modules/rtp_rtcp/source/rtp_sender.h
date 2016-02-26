@@ -114,10 +114,11 @@ class RTPSender : public RTPSenderInterface {
   // Includes size of RTP and FEC headers.
   size_t MaxDataPayloadLength() const override;
 
-  int32_t RegisterPayload(
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payload_type, const uint32_t frequency,
-      const size_t channels, const uint32_t rate);
+  int32_t RegisterPayload(const char* payload_name,
+                          const int8_t payload_type,
+                          const uint32_t frequency,
+                          const size_t channels,
+                          const uint32_t rate);
 
   int32_t DeRegisterSendPayload(const int8_t payload_type);
 

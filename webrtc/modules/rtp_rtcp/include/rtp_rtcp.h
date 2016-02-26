@@ -168,6 +168,9 @@ class RtpRtcp : public Module {
     virtual int32_t RegisterSendPayload(
         const VideoCodec& videoCodec) = 0;
 
+    virtual void RegisterVideoSendPayload(int payload_type,
+                                          const char* payload_name) = 0;
+
     /*
     *   Unregister a send payload
     *

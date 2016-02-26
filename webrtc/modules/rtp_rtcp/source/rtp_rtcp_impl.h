@@ -51,6 +51,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   int32_t RegisterSendPayload(const VideoCodec& video_codec) override;
 
+  void RegisterVideoSendPayload(int payload_type,
+                                const char* payload_name) override;
+
   int32_t DeRegisterSendPayload(int8_t payload_type) override;
 
   int8_t SendPayloadType() const;
@@ -369,7 +372,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   uint32_t nack_last_time_sent_full_prev_;
   uint16_t nack_last_seq_number_sent_;
 
-  VideoCodec send_video_codec_;
   KeyFrameRequestMethod key_frame_req_method_;
 
   RemoteBitrateEstimator* remote_bitrate_;
