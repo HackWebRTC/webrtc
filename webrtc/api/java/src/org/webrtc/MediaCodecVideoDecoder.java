@@ -41,6 +41,7 @@ public class MediaCodecVideoDecoder {
   // possibly to minimize the amount of translation work necessary.
 
   private static final String TAG = "MediaCodecVideoDecoder";
+  private static final long MAX_DECODE_TIME_MS = 200;
 
   // Tracks webrtc::VideoCodecType.
   public enum VideoCodecType {
@@ -594,13 +595,19 @@ public class MediaCodecVideoDecoder {
         default:
           hasDecodedFirstFrame = true;
           TimeStamps timeStamps = decodeStartTimeMs.remove();
+          long decodeTimeMs = SystemClock.elapsedRealtime() - timeStamps.decodeStartTimeMs;
+          if (decodeTimeMs > MAX_DECODE_TIME_MS) {
+            Logging.e(TAG, "Very high decode time: " + decodeTimeMs + "ms."
+                + " Might be caused by resuming H264 decoding after a pause.");
+            decodeTimeMs = MAX_DECODE_TIME_MS;
+          }
           return new DecodedOutputBuffer(result,
               info.offset,
               info.size,
               TimeUnit.MICROSECONDS.toMillis(info.presentationTimeUs),
               timeStamps.timeStampMs,
               timeStamps.ntpTimeStampMs,
-              SystemClock.elapsedRealtime() - timeStamps.decodeStartTimeMs,
+              decodeTimeMs,
               SystemClock.elapsedRealtime());
         }
     }
