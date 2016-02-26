@@ -33,12 +33,15 @@ std::string VideoTrack::kind() const {
   return kVideoKind;
 }
 
-void VideoTrack::AddRenderer(VideoRendererInterface* renderer) {
-  renderers_.AddRenderer(renderer);
+void VideoTrack::AddOrUpdateSink(
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+    const rtc::VideoSinkWants& wants) {
+  renderers_.AddOrUpdateSink(sink, wants);
 }
 
-void VideoTrack::RemoveRenderer(VideoRendererInterface* renderer) {
-  renderers_.RemoveRenderer(renderer);
+void VideoTrack::RemoveSink(
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+  renderers_.RemoveSink(sink);
 }
 
 rtc::VideoSinkInterface<cricket::VideoFrame>* VideoTrack::GetSink() {
@@ -51,7 +54,8 @@ bool VideoTrack::set_enabled(bool enable) {
 }
 
 rtc::scoped_refptr<VideoTrack> VideoTrack::Create(
-    const std::string& id, VideoSourceInterface* source) {
+    const std::string& id,
+    VideoSourceInterface* source) {
   rtc::RefCountedObject<VideoTrack>* track =
       new rtc::RefCountedObject<VideoTrack>(id, source);
   return track;

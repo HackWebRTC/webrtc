@@ -19,17 +19,21 @@ VideoTrackRenderers::VideoTrackRenderers() : enabled_(true) {
 VideoTrackRenderers::~VideoTrackRenderers() {
 }
 
-void VideoTrackRenderers::AddRenderer(VideoRendererInterface* renderer) {
-  if (!renderer) {
-    return;
-  }
+void VideoTrackRenderers::AddOrUpdateSink(
+    VideoSinkInterface<cricket::VideoFrame>* sink,
+    const rtc::VideoSinkWants& wants) {
+  // TODO(nisse): Currently ignores wants. We should somehow use
+  // VideoBroadcaster, but we need to sort out its threading issues
+  // first.
   rtc::CritScope cs(&critical_section_);
-  renderers_.insert(renderer);
+  if (std::find(sinks_.begin(), sinks_.end(), sink) == sinks_.end())
+    sinks_.push_back(sink);
 }
 
-void VideoTrackRenderers::RemoveRenderer(VideoRendererInterface* renderer) {
+void VideoTrackRenderers::RemoveSink(
+    VideoSinkInterface<cricket::VideoFrame>* sink) {
   rtc::CritScope cs(&critical_section_);
-  renderers_.erase(renderer);
+  sinks_.erase(std::remove(sinks_.begin(), sinks_.end(), sink), sinks_.end());
 }
 
 void VideoTrackRenderers::SetEnabled(bool enable) {
@@ -41,7 +45,7 @@ bool VideoTrackRenderers::RenderFrame(const cricket::VideoFrame* frame) {
   {
     rtc::CritScope cs(&critical_section_);
     if (enabled_) {
-      RenderFrameToRenderers(frame);
+      RenderFrameToSinks(*frame);
       return true;
     }
   }
@@ -64,17 +68,16 @@ bool VideoTrackRenderers::RenderFrame(const cricket::VideoFrame* frame) {
     // enabled while we generated the black frame. I think the
     // enabled-ness ought to be applied at the track output, and hence
     // an enabled track shouldn't send any blacked out frames.
-    RenderFrameToRenderers(enabled_ ? frame : &black);
+    RenderFrameToSinks(enabled_ ? *frame : black);
 
     return true;
   }
 }
 
 // Called with critical_section_ already locked
-void VideoTrackRenderers::RenderFrameToRenderers(
-    const cricket::VideoFrame* frame) {
-  for (VideoRendererInterface* renderer : renderers_) {
-    renderer->RenderFrame(frame);
+void VideoTrackRenderers::RenderFrameToSinks(const cricket::VideoFrame& frame) {
+  for (auto sink : sinks_) {
+    sink->OnFrame(frame);
   }
 }
 

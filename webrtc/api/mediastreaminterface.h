@@ -24,6 +24,7 @@
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/media/base/videosinkinterface.h"
+#include "webrtc/media/base/videosourceinterface.h"
 
 namespace cricket {
 
@@ -121,12 +122,30 @@ class VideoRendererInterface
 
 class VideoSourceInterface;
 
-class VideoTrackInterface : public MediaStreamTrackInterface {
+class VideoTrackInterface
+    : public MediaStreamTrackInterface,
+      public rtc::VideoSourceInterface<cricket::VideoFrame> {
  public:
-  // Register a renderer that will render all frames received on this track.
-  virtual void AddRenderer(VideoRendererInterface* renderer) = 0;
-  // Deregister a renderer.
-  virtual void RemoveRenderer(VideoRendererInterface* renderer) = 0;
+  // Make an unqualified VideoSourceInterface resolve to
+  // webrtc::VideoSourceInterface, not our base class
+  // rtc::VideoSourceInterface<cricket::VideoFrame>.
+  using VideoSourceInterface = webrtc::VideoSourceInterface;
+
+  // AddRenderer and RemoveRenderer are for backwards compatibility
+  // only. They are obsoleted by the methods of
+  // rtc::VideoSourceInterface.
+  virtual void AddRenderer(VideoRendererInterface* renderer) {
+    AddOrUpdateSink(renderer, rtc::VideoSinkWants());
+  }
+  virtual void RemoveRenderer(VideoRendererInterface* renderer) {
+    RemoveSink(renderer);
+  }
+
+  // Register a video sink for this track.
+  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override{};
+  void RemoveSink(
+      rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override{};
 
   virtual VideoSourceInterface* GetSource() const = 0;
 

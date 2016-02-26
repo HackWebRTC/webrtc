@@ -16,18 +16,43 @@
 
 namespace webrtc {
 
-class FakeVideoTrackRenderer : public VideoRendererInterface {
+class FakeVideoTrackRenderer
+    : public rtc::VideoSinkInterface<cricket::VideoFrame> {
  public:
   FakeVideoTrackRenderer(VideoTrackInterface* video_track)
-      : video_track_(video_track), last_frame_(NULL) {
-    video_track_->AddRenderer(this);
+      : video_track_(video_track) {
+    video_track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
   }
-  ~FakeVideoTrackRenderer() {
-    video_track_->RemoveRenderer(this);
+  ~FakeVideoTrackRenderer() { video_track_->RemoveSink(this); }
+
+  virtual void OnFrame(const cricket::VideoFrame& video_frame) override {
+    fake_renderer_.RenderFrame(&video_frame);
   }
 
+  int errors() const { return fake_renderer_.errors(); }
+  int width() const { return fake_renderer_.width(); }
+  int height() const { return fake_renderer_.height(); }
+  bool black_frame() const { return fake_renderer_.black_frame(); }
+
+  int num_rendered_frames() const {
+    return fake_renderer_.num_rendered_frames();
+  }
+
+ private:
+  cricket::FakeVideoRenderer fake_renderer_;
+  rtc::scoped_refptr<VideoTrackInterface> video_track_;
+};
+
+// Similar class, testing the deprecated AddRenderer/RemoveRenderer methods.
+class FakeVideoTrackRendererOld : public VideoRendererInterface {
+ public:
+  FakeVideoTrackRendererOld(VideoTrackInterface* video_track)
+      : video_track_(video_track) {
+    video_track_->AddRenderer(this);
+  }
+  ~FakeVideoTrackRendererOld() { video_track_->RemoveRenderer(this); }
+
   virtual void RenderFrame(const cricket::VideoFrame* video_frame) override {
-    last_frame_ = const_cast<cricket::VideoFrame*>(video_frame);
     fake_renderer_.RenderFrame(video_frame);
   }
 
@@ -39,14 +64,10 @@ class FakeVideoTrackRenderer : public VideoRendererInterface {
   int num_rendered_frames() const {
     return fake_renderer_.num_rendered_frames();
   }
-  const cricket::VideoFrame* last_frame() const { return last_frame_; }
 
  private:
   cricket::FakeVideoRenderer fake_renderer_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
-
-  // Weak reference for frame pointer comparison only.
-  cricket::VideoFrame* last_frame_;
 };
 
 }  // namespace webrtc

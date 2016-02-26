@@ -48,6 +48,11 @@ BEGIN_PROXY_MAP(VideoTrack)
 
   PROXY_METHOD1(void, AddRenderer, VideoRendererInterface*)
   PROXY_METHOD1(void, RemoveRenderer, VideoRendererInterface*)
+  PROXY_METHOD2(void,
+                AddOrUpdateSink,
+                rtc::VideoSinkInterface<cricket::VideoFrame>*,
+                const rtc::VideoSinkWants&)
+  PROXY_METHOD1(void, RemoveSink, rtc::VideoSinkInterface<cricket::VideoFrame>*)
   PROXY_CONSTMETHOD0(VideoSourceInterface*, GetSource)
   PROXY_METHOD0(rtc::VideoSinkInterface<cricket::VideoFrame>*, GetSink)
 

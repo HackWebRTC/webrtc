@@ -22,11 +22,13 @@ namespace webrtc {
 
 class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
  public:
-  static rtc::scoped_refptr<VideoTrack> Create(
-      const std::string& label, VideoSourceInterface* source);
+  static rtc::scoped_refptr<VideoTrack> Create(const std::string& label,
+                                               VideoSourceInterface* source);
 
-  virtual void AddRenderer(VideoRendererInterface* renderer);
-  virtual void RemoveRenderer(VideoRendererInterface* renderer);
+  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override;
+  void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
+
   virtual VideoSourceInterface* GetSource() const {
     return video_source_.get();
   }

@@ -21,6 +21,7 @@
 #include "webrtc/pc/channelmanager.h"
 
 using webrtc::FakeVideoTrackRenderer;
+using webrtc::FakeVideoTrackRendererOld;
 using webrtc::VideoSource;
 using webrtc::VideoTrack;
 using webrtc::VideoTrackInterface;
@@ -59,6 +60,47 @@ TEST_F(VideoTrackTest, RenderVideo) {
   // FakeVideoTrackRenderer register itself to |video_track_|
   rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_1(
       new FakeVideoTrackRenderer(video_track_.get()));
+
+  rtc::VideoSinkInterface<cricket::VideoFrame>* renderer_input =
+      video_track_->GetSink();
+  ASSERT_FALSE(renderer_input == NULL);
+
+  cricket::WebRtcVideoFrame frame;
+  frame.InitToBlack(123, 123, 0);
+  renderer_input->OnFrame(frame);
+  EXPECT_EQ(1, renderer_1->num_rendered_frames());
+
+  EXPECT_EQ(123, renderer_1->width());
+  EXPECT_EQ(123, renderer_1->height());
+
+  // FakeVideoTrackRenderer register itself to |video_track_|
+  rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_2(
+      new FakeVideoTrackRenderer(video_track_.get()));
+
+  renderer_input->OnFrame(frame);
+
+  EXPECT_EQ(123, renderer_1->width());
+  EXPECT_EQ(123, renderer_1->height());
+  EXPECT_EQ(123, renderer_2->width());
+  EXPECT_EQ(123, renderer_2->height());
+
+  EXPECT_EQ(2, renderer_1->num_rendered_frames());
+  EXPECT_EQ(1, renderer_2->num_rendered_frames());
+
+  video_track_->RemoveSink(renderer_1.get());
+  renderer_input->OnFrame(frame);
+
+  EXPECT_EQ(2, renderer_1->num_rendered_frames());
+  EXPECT_EQ(2, renderer_2->num_rendered_frames());
+}
+
+// Test adding renderers to a video track and render to them by
+// providing frames to the source. Uses the old VideoTrack interface
+// with AddRenderer and RemoveRenderer.
+TEST_F(VideoTrackTest, RenderVideoOld) {
+  // FakeVideoTrackRenderer register itself to |video_track_|
+  rtc::scoped_ptr<FakeVideoTrackRendererOld> renderer_1(
+      new FakeVideoTrackRendererOld(video_track_.get()));
 
   rtc::VideoSinkInterface<cricket::VideoFrame>* renderer_input =
       video_track_->GetSink();

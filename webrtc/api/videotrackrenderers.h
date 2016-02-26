@@ -25,7 +25,9 @@ namespace webrtc {
 // Each VideoTrack owns a VideoTrackRenderers instance.
 // The class is thread safe. Rendering to the added VideoRendererInterfaces is
 // done on the same thread as the cricket::VideoRenderer.
-class VideoTrackRenderers : public cricket::VideoRenderer {
+class VideoTrackRenderers
+    : public cricket::VideoRenderer,
+      public rtc::VideoSourceInterface<cricket::VideoFrame> {
  public:
   VideoTrackRenderers();
   ~VideoTrackRenderers();
@@ -34,18 +36,18 @@ class VideoTrackRenderers : public cricket::VideoRenderer {
   // incoming frames are replaced by black frames.
   virtual bool RenderFrame(const cricket::VideoFrame* frame);
 
-  void AddRenderer(VideoRendererInterface* renderer);
-  void RemoveRenderer(VideoRendererInterface* renderer);
+  void AddOrUpdateSink(VideoSinkInterface<cricket::VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override;
+  void RemoveSink(VideoSinkInterface<cricket::VideoFrame>* sink) override;
   void SetEnabled(bool enable);
 
  private:
   // Pass the frame on to to each registered renderer. Requires
   // critical_section_ already locked.
-  void RenderFrameToRenderers(const cricket::VideoFrame* frame);
+  void RenderFrameToSinks(const cricket::VideoFrame& frame);
 
   bool enabled_;
-  std::set<VideoRendererInterface*> renderers_;
-
+  std::vector<VideoSinkInterface<cricket::VideoFrame>*> sinks_;
   rtc::CriticalSection critical_section_;  // Protects the above variables
 };
 
