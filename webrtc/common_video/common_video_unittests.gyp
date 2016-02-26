@@ -17,7 +17,7 @@
          '<(DEPTH)/testing/gtest.gyp:gtest',
          '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
          '<(webrtc_root)/test/test.gyp:test_support_main',
-         '<(webrtc_root)/test/test.gyp:video_test_common',
+         '<(webrtc_root)/test/test.gyp:fake_video_frames',
       ],
       'sources': [
         'i420_buffer_pool_unittest.cc',

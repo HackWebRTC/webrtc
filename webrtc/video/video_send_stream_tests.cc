@@ -1298,7 +1298,7 @@ VideoFrame CreateVideoFrame(int width, int height, uint8_t data) {
   memset(buffer.get(), data, kSizeY);
   VideoFrame frame;
   frame.CreateFrame(buffer.get(), buffer.get(), buffer.get(), width, height,
-                    width, width / 2, width / 2, kVideoRotation_0);
+                    width, width / 2, width / 2);
   frame.set_timestamp(data);
   frame.set_render_time_ms(data);
   return frame;

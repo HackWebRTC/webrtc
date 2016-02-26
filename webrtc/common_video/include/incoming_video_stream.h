@@ -56,10 +56,10 @@ class IncomingVideoStream : public VideoRenderCallback {
   uint32_t StreamId() const;
   uint32_t IncomingRate() const;
 
-  void SetStartImage(const VideoFrame& video_frame);
+  int32_t SetStartImage(const VideoFrame& video_frame);
 
-  void SetTimeoutImage(const VideoFrame& video_frame,
-                       const uint32_t timeout);
+  int32_t SetTimeoutImage(const VideoFrame& video_frame,
+                          const uint32_t timeout);
 
   int32_t SetExpectedRenderDelay(int32_t delay_ms);
 

@@ -217,8 +217,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
         kTargetWidth, kTargetHeight,
         current_source_frame_->stride(PlaneType::kYPlane),
         current_source_frame_->stride(PlaneType::kUPlane),
-        current_source_frame_->stride(PlaneType::kVPlane),
-        kVideoRotation_0);
+        current_source_frame_->stride(PlaneType::kVPlane));
   }
 
   Clock* const clock_;

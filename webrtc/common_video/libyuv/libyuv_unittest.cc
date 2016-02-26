@@ -111,14 +111,13 @@ void TestLibYuv::SetUp() {
 
   EXPECT_EQ(frame_length_,
             fread(orig_buffer_.get(), 1, frame_length_, source_file_));
-  orig_frame_.CreateFrame(orig_buffer_.get(),
-                          orig_buffer_.get() + size_y_,
-                          orig_buffer_.get() +
-                          size_y_ + size_uv_,
-                          width_, height_,
-                          width_, (width_ + 1) / 2,
-                          (width_ + 1) / 2,
-                          kVideoRotation_0);
+  EXPECT_EQ(0, orig_frame_.CreateFrame(orig_buffer_.get(),
+                                       orig_buffer_.get() + size_y_,
+                                       orig_buffer_.get() +
+                                       size_y_ + size_uv_,
+                                       width_, height_,
+                                       width_, (width_ + 1) / 2,
+                                       (width_ + 1) / 2));
 }
 
 void TestLibYuv::TearDown() {
@@ -143,9 +142,9 @@ TEST_F(TestLibYuv, ConvertTest) {
   double psnr = 0.0;
 
   VideoFrame res_i420_frame;
-  res_i420_frame.CreateEmptyFrame(width_, height_, width_,
+  EXPECT_EQ(0, res_i420_frame.CreateEmptyFrame(width_, height_, width_,
                                                (width_ + 1) / 2,
-                                               (width_ + 1) / 2);
+                                               (width_ + 1) / 2));
   printf("\nConvert #%d I420 <-> I420 \n", j);
   rtc::scoped_ptr<uint8_t[]> out_i420_buffer(new uint8_t[frame_length_]);
   EXPECT_EQ(0, ConvertFromI420(orig_frame_, kI420, 0,
@@ -203,8 +202,7 @@ TEST_F(TestLibYuv, ConvertTest) {
                          outYV120Buffer.get() + size_y_,
                          outYV120Buffer.get() + size_y_ + size_uv_,
                          width_, height_,
-                         width_, (width_ + 1) / 2, (width_ + 1) / 2,
-                         kVideoRotation_0);
+                         width_, (width_ + 1) / 2, (width_ + 1) / 2);
   EXPECT_EQ(0, ConvertFromYV12(yv12_frame, kI420, 0, res_i420_buffer.get()));
   if (fwrite(res_i420_buffer.get(), 1, frame_length_, output_file) !=
       frame_length_) {
@@ -283,8 +281,8 @@ TEST_F(TestLibYuv, ConvertAlignedFrame) {
   int stride_y = 0;
   int stride_uv = 0;
   Calc16ByteAlignedStride(width_, &stride_y, &stride_uv);
-  res_i420_frame.CreateEmptyFrame(width_, height_,
-                                  stride_y, stride_uv, stride_uv);
+  EXPECT_EQ(0, res_i420_frame.CreateEmptyFrame(width_, height_,
+                                               stride_y, stride_uv, stride_uv));
   rtc::scoped_ptr<uint8_t[]> out_i420_buffer(new uint8_t[frame_length_]);
   EXPECT_EQ(0, ConvertFromI420(orig_frame_, kI420, 0,
                                out_i420_buffer.get()));
@@ -308,18 +306,18 @@ TEST_F(TestLibYuv, RotateTest) {
   int stride_y;
   int stride_uv;
   Calc16ByteAlignedStride(rotated_width, &stride_y, &stride_uv);
-  rotated_res_i420_frame.CreateEmptyFrame(rotated_width,
-                                          rotated_height,
-                                          stride_y,
-                                          stride_uv,
-                                          stride_uv);
+  EXPECT_EQ(0, rotated_res_i420_frame.CreateEmptyFrame(rotated_width,
+                                                       rotated_height,
+                                                       stride_y,
+                                                       stride_uv,
+                                                       stride_uv));
   EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer_.get(), 0, 0, width_, height_,
                              0, kVideoRotation_90, &rotated_res_i420_frame));
   EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer_.get(), 0, 0, width_, height_,
                              0, kVideoRotation_270, &rotated_res_i420_frame));
-  rotated_res_i420_frame.CreateEmptyFrame(width_, height_,
-                                          width_, (width_ + 1) / 2,
-                                          (width_ + 1) / 2);
+  EXPECT_EQ(0, rotated_res_i420_frame.CreateEmptyFrame(width_, height_,
+                                                       width_, (width_ + 1) / 2,
+                                                       (width_ + 1) / 2));
   EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer_.get(), 0, 0, width_, height_,
                              0, kVideoRotation_180, &rotated_res_i420_frame));
 }

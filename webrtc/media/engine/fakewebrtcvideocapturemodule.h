@@ -90,14 +90,17 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
     return 0;
   }
 
-  void SendFrame(int w, int h) {
-    if (!running_) return;
+  bool SendFrame(int w, int h) {
+    if (!running_) return false;
     webrtc::VideoFrame sample;
     // Setting stride based on width.
-    sample.CreateEmptyFrame(w, h, w, (w + 1) / 2, (w + 1) / 2);
+    if (sample.CreateEmptyFrame(w, h, w, (w + 1) / 2, (w + 1) / 2) < 0) {
+      return false;
+    }
     if (callback_) {
       callback_->OnIncomingCapturedFrame(id_, sample);
     }
+    return true;
   }
 
   const webrtc::VideoCaptureCapability& cap() const {

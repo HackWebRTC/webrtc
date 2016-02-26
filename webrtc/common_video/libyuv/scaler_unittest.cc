@@ -104,8 +104,7 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
                           orig_buffer.get() + size_y_,
                           orig_buffer.get() + size_y_ + size_uv_,
                           width_, height_,
-                          width_, half_width_, half_width_,
-                          kVideoRotation_0);
+                          width_, half_width_, half_width_);
   EXPECT_EQ(0, test_scaler_.Scale(test_frame_, &test_frame2));
   EXPECT_GT(width_ * height_, test_frame2.allocated_size(kYPlane));
   EXPECT_GT(size_uv_, test_frame2.allocated_size(kUPlane));
@@ -373,8 +372,7 @@ void TestScaler::ScaleSequence(ScaleMethod method,
                             frame_buffer.get() + size_y + size_uv,
                             src_width, src_height,
                             src_width, (src_width + 1) / 2,
-                            (src_width + 1) / 2,
-                            kVideoRotation_0);
+                            (src_width + 1) / 2);
 
     start_clock = TickTime::MillisecondTimestamp();
     EXPECT_EQ(0, test_scaler_.Scale(input_frame, &output_frame));

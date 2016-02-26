@@ -278,10 +278,16 @@ int32_t VideoCaptureImpl::IncomingFrame(
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
-        _captureFrame.CreateEmptyFrame(target_width,
-                                       abs(target_height),
-                                       stride_y,
-                                       stride_uv, stride_uv);
+        int ret = _captureFrame.CreateEmptyFrame(target_width,
+                                                 abs(target_height),
+                                                 stride_y,
+                                                 stride_uv, stride_uv);
+        if (ret < 0)
+        {
+            LOG(LS_ERROR) << "Failed to create empty frame, this should only "
+                             "happen due to bad parameters.";
+            return -1;
+        }
         const int conversionResult = ConvertToI420(
             commonVideoType, videoFrame, 0, 0,  // No cropping
             width, height, videoFrameLength,

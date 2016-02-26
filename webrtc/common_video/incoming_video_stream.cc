@@ -90,16 +90,16 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
   return 0;
 }
 
-void IncomingVideoStream::SetStartImage(const VideoFrame& video_frame) {
+int32_t IncomingVideoStream::SetStartImage(const VideoFrame& video_frame) {
   rtc::CritScope csS(&thread_critsect_);
-  start_image_.CopyFrame(video_frame);
+  return start_image_.CopyFrame(video_frame);
 }
 
-void IncomingVideoStream::SetTimeoutImage(const VideoFrame& video_frame,
-                                          const uint32_t timeout) {
+int32_t IncomingVideoStream::SetTimeoutImage(const VideoFrame& video_frame,
+                                             const uint32_t timeout) {
   rtc::CritScope csS(&thread_critsect_);
   timeout_time_ = timeout;
-  timeout_image_.CopyFrame(video_frame);
+  return timeout_image_.CopyFrame(video_frame);
 }
 
 void IncomingVideoStream::SetRenderCallback(

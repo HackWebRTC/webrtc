@@ -62,15 +62,13 @@
       ],  # conditions.
     },
     {
-      'target_name': 'video_test_common',
+      'target_name': 'fake_video_frames',
       'type': 'static_library',
       'sources': [
         'fake_texture_frame.cc',
         'fake_texture_frame.h',
         'frame_generator.cc',
         'frame_generator.h',
-        'frame_utils.cc',
-        'frame_utils.h',
       ],
       'dependencies': [
         '<(webrtc_root)/common_video/common_video.gyp:common_video',

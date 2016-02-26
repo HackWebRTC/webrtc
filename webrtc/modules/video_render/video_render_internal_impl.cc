@@ -791,8 +791,7 @@ int32_t ModuleVideoRenderImpl::SetStartImage(const uint32_t streamId,
         return -1;
     }
     assert (item->second != NULL);
-    item->second->SetStartImage(videoFrame);
-    return 0;
+    return item->second->SetStartImage(videoFrame);
 
 }
 
@@ -818,8 +817,7 @@ int32_t ModuleVideoRenderImpl::SetTimeoutImage(const uint32_t streamId,
         return -1;
     }
     assert(item->second != NULL);
-    item->second->SetTimeoutImage(videoFrame, timeout);
-    return 0;
+    return item->second->SetTimeoutImage(videoFrame, timeout);
 }
 
 }  // namespace webrtc
