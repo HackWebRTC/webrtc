@@ -6,3 +6,5 @@ per-file *.gyp=*
 per-file *.gypi=*
 
 per-file BUILD.gn=kjellander@webrtc.org
+
+per-file *video*.h=pbos@webrtc.org
