@@ -392,13 +392,13 @@ static void GenerateDitherQ7(int16_t *bufQ7,
       seed = WEBRTC_SPL_UMUL(seed, 196314165) + 907633515;
 
       /* fixed-point dither sample between -64 and 64 (Q7) */
-      dither1_Q7 = (int16_t)(((int32_t)seed + 16777216) >> 25);
+      dither1_Q7 = (int16_t)(((int32_t)(seed + 16777216)) >> 25);
 
       /* new random unsigned int32_t */
       seed = WEBRTC_SPL_UMUL(seed, 196314165) + 907633515;
 
       /* fixed-point dither sample between -64 and 64 */
-      dither2_Q7 = (int16_t)((seed + 16777216) >> 25);
+      dither2_Q7 = (int16_t)(((int32_t)(seed + 16777216)) >> 25);
 
       shft = (int16_t)(WEBRTC_SPL_RSHIFT_U32(seed, 25) & 15);
       if (shft < 5)
@@ -432,7 +432,7 @@ static void GenerateDitherQ7(int16_t *bufQ7,
       seed = WEBRTC_SPL_UMUL(seed, 196314165) + 907633515;
 
       /* fixed-point dither sample between -64 and 64 */
-      dither1_Q7 = (int16_t)(((int32_t)seed + 16777216) >> 25);
+      dither1_Q7 = (int16_t)(((int32_t)(seed + 16777216)) >> 25);
 
       /* dither sample is placed in either even or odd index */
       shft = (int16_t)(WEBRTC_SPL_RSHIFT_U32(seed, 25) & 1);     /* either 0 or 1 */
