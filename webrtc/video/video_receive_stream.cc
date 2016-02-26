@@ -230,13 +230,13 @@ VideoReceiveStream::VideoReceiveStream(
     RTC_DCHECK_GE(id, 1);
     RTC_DCHECK_LE(id, 14);
     if (extension == RtpExtension::kTOffset) {
-      RTC_CHECK(vie_receiver_->SetReceiveTimestampOffsetStatus(true, id));
+      RTC_CHECK(vie_receiver_->EnableReceiveTimestampOffset(id));
     } else if (extension == RtpExtension::kAbsSendTime) {
-      RTC_CHECK(vie_receiver_->SetReceiveAbsoluteSendTimeStatus(true, id));
+      RTC_CHECK(vie_receiver_->EnableReceiveAbsoluteSendTime(id));
     } else if (extension == RtpExtension::kVideoRotation) {
-      RTC_CHECK(vie_receiver_->SetReceiveVideoRotationStatus(true, id));
+      RTC_CHECK(vie_receiver_->EnableReceiveVideoRotation(id));
     } else if (extension == RtpExtension::kTransportSequenceNumber) {
-      RTC_CHECK(vie_receiver_->SetReceiveTransportSequenceNumber(true, id));
+      RTC_CHECK(vie_receiver_->EnableReceiveTransportSequenceNumber(id));
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }

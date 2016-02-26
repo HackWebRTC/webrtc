@@ -64,10 +64,10 @@ class ViEReceiver : public RtpData {
 
   void RegisterRtpRtcpModules(const std::vector<RtpRtcp*>& rtp_modules);
 
-  bool SetReceiveTimestampOffsetStatus(bool enable, int id);
-  bool SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
-  bool SetReceiveVideoRotationStatus(bool enable, int id);
-  bool SetReceiveTransportSequenceNumber(bool enable, int id);
+  bool EnableReceiveTimestampOffset(int id);
+  bool EnableReceiveAbsoluteSendTime(int id);
+  bool EnableReceiveVideoRotation(int id);
+  bool EnableReceiveTransportSequenceNumber(int id);
 
   void StartReceive();
   void StopReceive();

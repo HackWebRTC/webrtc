@@ -377,14 +377,7 @@ int ViEChannel::GetRequiredNackListSize(int target_delay_ms) {
   return target_delay_ms * 40 * 30 / 1000;
 }
 
-int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
-  // Disable any previous registrations of this extension to avoid errors.
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    rtp_rtcp->DeregisterSendRtpHeaderExtension(
-        kRtpExtensionTransmissionTimeOffset);
-  }
-  if (!enable)
-    return 0;
+int ViEChannel::EnableSendTimestampOffset(int id) {
   // Enable the extension.
   int error = 0;
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -394,12 +387,7 @@ int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
   return error;
 }
 
-int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
-  // Disable any previous registrations of this extension to avoid errors.
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->DeregisterSendRtpHeaderExtension(kRtpExtensionAbsoluteSendTime);
-  if (!enable)
-    return 0;
+int ViEChannel::EnableSendAbsoluteSendTime(int id) {
   // Enable the extension.
   int error = 0;
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -409,12 +397,7 @@ int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
   return error;
 }
 
-int ViEChannel::SetSendVideoRotationStatus(bool enable, int id) {
-  // Disable any previous registrations of this extension to avoid errors.
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->DeregisterSendRtpHeaderExtension(kRtpExtensionVideoRotation);
-  if (!enable)
-    return 0;
+int ViEChannel::EnableSendVideoRotation(int id) {
   // Enable the extension.
   int error = 0;
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -424,15 +407,8 @@ int ViEChannel::SetSendVideoRotationStatus(bool enable, int id) {
   return error;
 }
 
-int ViEChannel::SetSendTransportSequenceNumber(bool enable, int id) {
+int ViEChannel::EnableSendTransportSequenceNumber(int id) {
   RTC_DCHECK(sender_);
-  // Disable any previous registrations of this extension to avoid errors.
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    rtp_rtcp->DeregisterSendRtpHeaderExtension(
-        kRtpExtensionTransportSequenceNumber);
-  }
-  if (!enable)
-    return 0;
   // Enable the extension.
   int error = 0;
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {

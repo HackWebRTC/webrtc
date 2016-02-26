@@ -156,61 +156,38 @@ void ViEReceiver::RegisterRtpRtcpModules(
       std::vector<RtpRtcp*>(rtp_modules.begin() + 1, rtp_modules.end());
 }
 
-bool ViEReceiver::SetReceiveTimestampOffsetStatus(bool enable, int id) {
-  if (enable) {
-    return rtp_header_parser_->RegisterRtpHeaderExtension(
-        kRtpExtensionTransmissionTimeOffset, id);
+bool ViEReceiver::EnableReceiveTimestampOffset(int id) {
+  return rtp_header_parser_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, id);
+}
+
+bool ViEReceiver::EnableReceiveAbsoluteSendTime(int id) {
+  if (rtp_header_parser_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, id)) {
+    receiving_ast_enabled_ = true;
+    return true;
   } else {
-    return rtp_header_parser_->DeregisterRtpHeaderExtension(
-        kRtpExtensionTransmissionTimeOffset);
+    return false;
   }
 }
 
-bool ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
-  if (enable) {
-    if (rtp_header_parser_->RegisterRtpHeaderExtension(
-        kRtpExtensionAbsoluteSendTime, id)) {
-      receiving_ast_enabled_ = true;
-      return true;
-    } else {
-      return false;
-    }
+bool ViEReceiver::EnableReceiveVideoRotation(int id) {
+  if (rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionVideoRotation, id)) {
+    receiving_cvo_enabled_ = true;
+    return true;
   } else {
-    receiving_ast_enabled_ = false;
-    return rtp_header_parser_->DeregisterRtpHeaderExtension(
-        kRtpExtensionAbsoluteSendTime);
+    return false;
   }
 }
 
-bool ViEReceiver::SetReceiveVideoRotationStatus(bool enable, int id) {
-  if (enable) {
-    if (rtp_header_parser_->RegisterRtpHeaderExtension(
-            kRtpExtensionVideoRotation, id)) {
-      receiving_cvo_enabled_ = true;
-      return true;
-    } else {
-      return false;
-    }
+bool ViEReceiver::EnableReceiveTransportSequenceNumber(int id) {
+  if (rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionTransportSequenceNumber, id)) {
+    receiving_tsn_enabled_ = true;
+    return true;
   } else {
-    receiving_cvo_enabled_ = false;
-    return rtp_header_parser_->DeregisterRtpHeaderExtension(
-        kRtpExtensionVideoRotation);
-  }
-}
-
-bool ViEReceiver::SetReceiveTransportSequenceNumber(bool enable, int id) {
-  if (enable) {
-    if (rtp_header_parser_->RegisterRtpHeaderExtension(
-            kRtpExtensionTransportSequenceNumber, id)) {
-      receiving_tsn_enabled_ = true;
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    receiving_tsn_enabled_ = false;
-    return rtp_header_parser_->DeregisterRtpHeaderExtension(
-        kRtpExtensionTransportSequenceNumber);
+    return false;
   }
 }
 

@@ -229,13 +229,13 @@ VideoSendStream::VideoSendStream(
     RTC_DCHECK_GE(id, 1);
     RTC_DCHECK_LE(id, 14);
     if (extension == RtpExtension::kTOffset) {
-      RTC_CHECK_EQ(0, vie_channel_.SetSendTimestampOffsetStatus(true, id));
+      RTC_CHECK_EQ(0, vie_channel_.EnableSendTimestampOffset(id));
     } else if (extension == RtpExtension::kAbsSendTime) {
-      RTC_CHECK_EQ(0, vie_channel_.SetSendAbsoluteSendTimeStatus(true, id));
+      RTC_CHECK_EQ(0, vie_channel_.EnableSendAbsoluteSendTime(id));
     } else if (extension == RtpExtension::kVideoRotation) {
-      RTC_CHECK_EQ(0, vie_channel_.SetSendVideoRotationStatus(true, id));
+      RTC_CHECK_EQ(0, vie_channel_.EnableSendVideoRotation(id));
     } else if (extension == RtpExtension::kTransportSequenceNumber) {
-      RTC_CHECK_EQ(0, vie_channel_.SetSendTransportSequenceNumber(true, id));
+      RTC_CHECK_EQ(0, vie_channel_.EnableSendTransportSequenceNumber(id));
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";
     }
