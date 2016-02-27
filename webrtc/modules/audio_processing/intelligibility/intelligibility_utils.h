@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_UTILS_H_
 
 #include <complex>
-#include <memory>
 #include <vector>
 
 namespace webrtc {
@@ -55,13 +54,13 @@ class GainApplier {
              std::complex<float>* out_block);
 
   // Return the current target gain set. Modify this array to set the targets.
-  float* target() const { return target_.get(); }
+  float* target() { return target_.data(); }
 
  private:
   const size_t num_freqs_;
   const float relative_change_limit_;
-  std::unique_ptr<float[]> target_;
-  std::unique_ptr<float[]> current_;
+  std::vector<float> target_;
+  std::vector<float> current_;
 };
 
 }  // namespace intelligibility

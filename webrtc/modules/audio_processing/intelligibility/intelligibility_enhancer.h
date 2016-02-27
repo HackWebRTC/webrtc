@@ -27,7 +27,7 @@ namespace webrtc {
 // frequency bin to enhance speech against the noise background.
 // Details of the model and algorithm can be found in the original paper:
 // http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6882788
-class IntelligibilityEnhancer {
+class IntelligibilityEnhancer : public LappedTransform::Callback {
  public:
   IntelligibilityEnhancer(int sample_rate_hz, size_t num_render_channels);
 
@@ -40,31 +40,18 @@ class IntelligibilityEnhancer {
                           size_t num_channels);
   bool active() const;
 
+ protected:
+  // All in frequency domain, receives input |in_block|, applies
+  // intelligibility enhancement, and writes result to |out_block|.
+  void ProcessAudioBlock(const std::complex<float>* const* in_block,
+                         size_t in_channels,
+                         size_t frames,
+                         size_t out_channels,
+                         std::complex<float>* const* out_block) override;
+
  private:
-  // Provides access point to the frequency domain.
-  class TransformCallback : public LappedTransform::Callback {
-   public:
-    TransformCallback(IntelligibilityEnhancer* parent);
-
-    // All in frequency domain, receives input |in_block|, applies
-    // intelligibility enhancement, and writes result to |out_block|.
-    void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                           size_t in_channels,
-                           size_t frames,
-                           size_t out_channels,
-                           std::complex<float>* const* out_block) override;
-
-   private:
-    IntelligibilityEnhancer* parent_;
-  };
-  friend class TransformCallback;
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestErbCreation);
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestSolveForGains);
-
-  // Updates power computation and analysis with |in_block_|,
-  // and writes modified speech to |out_block|.
-  void ProcessClearBlock(const std::complex<float>* in_block,
-                         std::complex<float>* out_block);
 
   // Bisection search for optimal |lambda|.
   void SolveForLambda(float power_target);
@@ -94,21 +81,16 @@ class IntelligibilityEnhancer {
   intelligibility::PowerEstimator<std::complex<float>> clear_power_estimator_;
   std::unique_ptr<intelligibility::PowerEstimator<float>>
       noise_power_estimator_;
-  std::unique_ptr<float[]> filtered_clear_pow_;
-  std::unique_ptr<float[]> filtered_noise_pow_;
-  std::unique_ptr<float[]> center_freqs_;
+  std::vector<float> filtered_clear_pow_;
+  std::vector<float> filtered_noise_pow_;
+  std::vector<float> center_freqs_;
   std::vector<std::vector<float>> capture_filter_bank_;
   std::vector<std::vector<float>> render_filter_bank_;
   size_t start_freq_;
 
-  std::unique_ptr<float[]> gains_eq_;  // Pre-filter modified gains.
+  std::vector<float> gains_eq_;  // Pre-filter modified gains.
   intelligibility::GainApplier gain_applier_;
 
-  // Destination buffers used to reassemble blocked chunks before overwriting
-  // the original input array with modifications.
-  ChannelBuffer<float> temp_render_out_buffer_;
-
-  TransformCallback render_callback_;
   std::unique_ptr<LappedTransform> render_mangler_;
 
   VoiceActivityDetector vad_;

@@ -8,17 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//
-//  Command line tool for speech intelligibility enhancement. Provides for
-//  running and testing intelligibility_enhancer as an independent process.
-//  Use --help for options.
-//
-
-#include <sys/stat.h>
-
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
@@ -40,62 +33,45 @@ void void_main(int argc, char* argv[]) {
       "\n\nInput files must be little-endian 16-bit signed raw PCM.\n");
   google::ParseCommandLineFlags(&argc, &argv, true);
 
-  // Load settings and wav input.
-  struct stat in_stat, noise_stat;
-  ASSERT_EQ(stat(FLAGS_clear_file.c_str(), &in_stat), 0)
-      << "Empty speech file.";
-  ASSERT_EQ(stat(FLAGS_noise_file.c_str(), &noise_stat), 0)
-      << "Empty noise file.";
-
-  const size_t samples = std::min(in_stat.st_size, noise_stat.st_size) / 2;
-
   WavReader in_file(FLAGS_clear_file);
-  std::vector<float> in_fpcm(samples);
-  in_file.ReadSamples(samples, &in_fpcm[0]);
-  FloatS16ToFloat(&in_fpcm[0], samples, &in_fpcm[0]);
-
   WavReader noise_file(FLAGS_noise_file);
-  std::vector<float> noise_fpcm(samples);
-  noise_file.ReadSamples(samples, &noise_fpcm[0]);
-  FloatS16ToFloat(&noise_fpcm[0], samples, &noise_fpcm[0]);
-
-  // Run intelligibility enhancement.
+  WavWriter out_file(FLAGS_out_file, in_file.sample_rate(),
+                     in_file.num_channels());
   IntelligibilityEnhancer enh(in_file.sample_rate(), in_file.num_channels());
   rtc::CriticalSection crit;
   NoiseSuppressionImpl ns(&crit);
   ns.Initialize(noise_file.num_channels(), noise_file.sample_rate());
   ns.Enable(true);
-
-  // Mirror real time APM chunk size. Duplicates chunk_length_ in
-  // IntelligibilityEnhancer.
-  size_t fragment_size = in_file.sample_rate() / 100;
-  AudioBuffer capture_audio(fragment_size, noise_file.num_channels(),
-                            fragment_size, noise_file.num_channels(),
-                            fragment_size);
-  StreamConfig stream_config(in_file.sample_rate(), noise_file.num_channels());
-
-  // Slice the input into smaller chunks, as the APM would do, and feed them
-  // through the enhancer.
-  float* clear_cursor = &in_fpcm[0];
-  float* noise_cursor = &noise_fpcm[0];
-
-  for (size_t i = 0; i < samples; i += fragment_size) {
-    capture_audio.CopyFrom(&noise_cursor, stream_config);
+  const size_t in_samples = noise_file.sample_rate() / 100;
+  const size_t noise_samples = noise_file.sample_rate() / 100;
+  std::vector<float> in(in_samples * in_file.num_channels());
+  std::vector<float> noise(noise_samples * noise_file.num_channels());
+  ChannelBuffer<float> in_buf(in_samples, in_file.num_channels());
+  ChannelBuffer<float> noise_buf(noise_samples, noise_file.num_channels());
+  AudioBuffer capture_audio(noise_samples, noise_file.num_channels(),
+                            noise_samples, noise_file.num_channels(),
+                            noise_samples);
+  StreamConfig stream_config(noise_file.sample_rate(),
+                             noise_file.num_channels());
+  while (in_file.ReadSamples(in.size(), in.data()) == in.size() &&
+         noise_file.ReadSamples(noise.size(), noise.data()) == noise.size()) {
+    FloatS16ToFloat(in.data(), in.size(), in.data());
+    FloatS16ToFloat(noise.data(), noise.size(), noise.data());
+    Deinterleave(in.data(), in_buf.num_frames(), in_buf.num_channels(),
+                 in_buf.channels());
+    Deinterleave(noise.data(), noise_buf.num_frames(), noise_buf.num_channels(),
+                 noise_buf.channels());
+    capture_audio.CopyFrom(noise_buf.channels(), stream_config);
     ns.AnalyzeCaptureAudio(&capture_audio);
     ns.ProcessCaptureAudio(&capture_audio);
     enh.SetCaptureNoiseEstimate(ns.NoiseEstimate());
-    enh.ProcessRenderAudio(&clear_cursor, in_file.sample_rate(),
+    enh.ProcessRenderAudio(in_buf.channels(), in_file.sample_rate(),
                            in_file.num_channels());
-    clear_cursor += fragment_size;
-    noise_cursor += fragment_size;
+    Interleave(in_buf.channels(), in_buf.num_frames(), in_buf.num_channels(),
+               in.data());
+    FloatToFloatS16(in.data(), in.size(), in.data());
+    out_file.WriteSamples(in.data(), in.size());
   }
-
-  FloatToFloatS16(&in_fpcm[0], samples, &in_fpcm[0]);
-
-  WavWriter out_file(FLAGS_out_file,
-                     in_file.sample_rate(),
-                     in_file.num_channels());
-  out_file.WriteSamples(&in_fpcm[0], samples);
 }
 
 }  // namespace

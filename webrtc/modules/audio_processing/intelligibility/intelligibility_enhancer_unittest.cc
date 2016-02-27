@@ -213,8 +213,8 @@ class IntelligibilityEnhancerTest : public ::testing::Test {
 
   bool CheckUpdate() {
     enh_.reset(new IntelligibilityEnhancer(kSampleRate, kNumChannels));
-    float* clear_cursor = &clear_data_[0];
-    float* noise_cursor = &noise_data_[0];
+    float* clear_cursor = clear_data_.data();
+    float* noise_cursor = noise_data_.data();
     for (int i = 0; i < kSamples; i += kFragmentSize) {
       enh_->ProcessRenderAudio(&clear_cursor, kSampleRate, kNumChannels);
       clear_cursor += kFragmentSize;
@@ -273,7 +273,7 @@ TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
     enh_->filtered_clear_pow_[i] = 0.f;
     enh_->filtered_noise_pow_[i] = 0.f;
   }
-  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
+  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, sols.data());
   for (size_t i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestZeroVar, sols[i], kMaxTestError);
   }
@@ -281,12 +281,12 @@ TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
     enh_->filtered_clear_pow_[i] = static_cast<float>(i + 1);
     enh_->filtered_noise_pow_[i] = static_cast<float>(enh_->bank_size_ - i);
   }
-  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
+  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, sols.data());
   for (size_t i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestNonZeroVarLambdaTop[i], sols[i], kMaxTestError);
   }
   lambda = -1.f;
-  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, &sols[0]);
+  enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, sols.data());
   for (size_t i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestNonZeroVarLambdaTop[i], sols[i], kMaxTestError);
   }

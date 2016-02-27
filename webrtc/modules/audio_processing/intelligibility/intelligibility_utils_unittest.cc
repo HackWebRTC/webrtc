@@ -43,9 +43,9 @@ TEST(IntelligibilityUtilsTest, TestPowerEstimator) {
   EXPECT_EQ(0, power_estimator.power()[0]);
 
   // Makes sure Step is doing something.
-  power_estimator.Step(&test_data[0][0]);
+  power_estimator.Step(test_data[0].data());
   for (size_t i = 1; i < kSamples; ++i) {
-    power_estimator.Step(&test_data[i][0]);
+    power_estimator.Step(test_data[i].data());
     for (size_t j = 0; j < kFreqs; ++j) {
       EXPECT_GE(power_estimator.power()[j], 0.f);
       EXPECT_LE(power_estimator.power()[j], 1.f);
@@ -64,7 +64,7 @@ TEST(IntelligibilityUtilsTest, TestGainApplier) {
   std::vector<std::vector<std::complex<float>>> out_data(
       GenerateTestData(kFreqs, kSamples));
   for (size_t i = 0; i < kSamples; ++i) {
-    gain_applier.Apply(&in_data[i][0], &out_data[i][0]);
+    gain_applier.Apply(in_data[i].data(), out_data[i].data());
     for (size_t j = 0; j < kFreqs; ++j) {
       EXPECT_GT(out_data[i][j].real(), 0.f);
       EXPECT_LT(out_data[i][j].real(), 1.f);
