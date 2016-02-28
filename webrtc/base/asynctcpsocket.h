@@ -12,6 +12,7 @@
 #define WEBRTC_BASE_ASYNCTCPSOCKET_H_
 
 #include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketfactory.h"
 
@@ -59,8 +60,8 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
   void AppendToOutBuffer(const void* pv, size_t cb);
 
   // Helper methods for |outpos_|.
-  bool IsOutBufferEmpty() const { return outpos_ == 0; }
-  void ClearOutBuffer() { outpos_ = 0; }
+  bool IsOutBufferEmpty() const { return outbuf_.size() == 0; }
+  void ClearOutBuffer() { outbuf_.Clear(); }
 
  private:
   // Called by the underlying socket
@@ -72,8 +73,9 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
   scoped_ptr<AsyncSocket> socket_;
   bool listen_;
   scoped_ptr<char[]> inbuf_;
-  scoped_ptr<char[]> outbuf_;
-  size_t insize_, inpos_, outsize_, outpos_;
+  Buffer outbuf_;
+  size_t insize_, inpos_;
+  size_t max_outsize_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncTCPSocketBase);
 };

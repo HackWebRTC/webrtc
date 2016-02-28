@@ -55,12 +55,10 @@ AsyncTCPSocketBase::AsyncTCPSocketBase(AsyncSocket* socket, bool listen,
       listen_(listen),
       insize_(max_packet_size),
       inpos_(0),
-      outsize_(max_packet_size),
-      outpos_(0) {
+      max_outsize_(max_packet_size) {
   if (!listen_) {
     // Listening sockets don't send/receive data, so they don't need buffers.
     inbuf_.reset(new char[insize_]);
-    outbuf_.reset(new char[outsize_]);
   }
 
   RTC_DCHECK(socket_.get() != NULL);
@@ -138,41 +136,39 @@ int AsyncTCPSocketBase::SendTo(const void *pv, size_t cb,
 }
 
 int AsyncTCPSocketBase::SendRaw(const void * pv, size_t cb) {
-  if (outpos_ + cb > outsize_) {
+  if (outbuf_.size() + cb > max_outsize_) {
     socket_->SetError(EMSGSIZE);
     return -1;
   }
 
-  RTC_DCHECK(outbuf_.get());
-  memcpy(outbuf_.get() + outpos_, pv, cb);
-  outpos_ += cb;
+  RTC_DCHECK(!listen_);
+  outbuf_.AppendData(static_cast<const uint8_t*>(pv), cb);
 
   return FlushOutBuffer();
 }
 
 int AsyncTCPSocketBase::FlushOutBuffer() {
-  RTC_DCHECK(outbuf_.get());
-  int res = socket_->Send(outbuf_.get(), outpos_);
+  RTC_DCHECK(!listen_);
+  int res = socket_->Send(outbuf_.data(), outbuf_.size());
   if (res <= 0) {
     return res;
   }
-  if (static_cast<size_t>(res) <= outpos_) {
-    outpos_ -= res;
-  } else {
+  if (static_cast<size_t>(res) > outbuf_.size()) {
     RTC_NOTREACHED();
     return -1;
   }
-  if (outpos_ > 0) {
-    memmove(outbuf_.get(), outbuf_.get() + res, outpos_);
+  size_t new_size = outbuf_.size() - res;
+  if (new_size > 0) {
+    memmove(outbuf_.data(), outbuf_.data() + res, new_size);
   }
+  outbuf_.SetSize(new_size);
   return res;
 }
 
 void AsyncTCPSocketBase::AppendToOutBuffer(const void* pv, size_t cb) {
-  RTC_DCHECK(outpos_ + cb < outsize_);
-  RTC_DCHECK(outbuf_.get());
-  memcpy(outbuf_.get() + outpos_, pv, cb);
-  outpos_ += cb;
+  RTC_DCHECK(outbuf_.size() + cb <= max_outsize_);
+  RTC_DCHECK(!listen_);
+  outbuf_.AppendData(static_cast<const uint8_t*>(pv), cb);
 }
 
 void AsyncTCPSocketBase::OnConnectEvent(AsyncSocket* socket) {
@@ -222,11 +218,11 @@ void AsyncTCPSocketBase::OnReadEvent(AsyncSocket* socket) {
 void AsyncTCPSocketBase::OnWriteEvent(AsyncSocket* socket) {
   RTC_DCHECK(socket_.get() == socket);
 
-  if (outpos_ > 0) {
+  if (outbuf_.size() > 0) {
     FlushOutBuffer();
   }
 
-  if (outpos_ == 0) {
+  if (outbuf_.size() == 0) {
     SignalReadyToSend(this);
   }
 }
