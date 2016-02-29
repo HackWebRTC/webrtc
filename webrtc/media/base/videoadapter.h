@@ -13,6 +13,7 @@
 
 #include "webrtc/base/common.h"  // For ASSERT
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/videocommon.h"
 
@@ -139,6 +140,9 @@ class CoordinatedVideoAdapter
   void OnEncoderResolutionRequest(int width, int height, AdaptRequest request);
   // Handle the resolution request for CPU overuse.
   void OnCpuResolutionRequest(AdaptRequest request);
+  void OnCpuResolutionRequest(rtc::Optional<int> max_pixel_count,
+                              rtc::Optional<int> max_pixel_count_step_up);
+
   // Handle the CPU load provided by a CPU monitor.
   void OnCpuLoadUpdated(int current_cpus, int max_cpus,
                         float process_load, float system_load);

@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
@@ -129,9 +130,7 @@ class WebRtcVideoEngine2 {
   std::unique_ptr<WebRtcVideoEncoderFactory> simulcast_encoder_factory_;
 };
 
-class WebRtcVideoChannel2 : public VideoMediaChannel,
-                            public webrtc::Transport,
-                            public webrtc::LoadObserver {
+class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
  public:
   WebRtcVideoChannel2(webrtc::Call* call,
                       const MediaConfig& config,
@@ -167,8 +166,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override;
   void SetInterface(NetworkInterface* iface) override;
-
-  void OnLoadUpdate(Load load) override;
 
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
@@ -230,13 +227,15 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
   // Wrapper for the sender part, this is where the capturer is connected and
   // frames are then converted from cricket frames to webrtc frames.
   class WebRtcVideoSendStream
-      : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+      : public rtc::VideoSinkInterface<cricket::VideoFrame>,
+        public webrtc::LoadObserver {
    public:
     WebRtcVideoSendStream(
         webrtc::Call* call,
         const StreamParams& sp,
         const webrtc::VideoSendStream::Config& config,
         WebRtcVideoEncoderFactory* external_encoder_factory,
+        bool enable_cpu_overuse_detection,
         int max_bitrate_bps,
         const rtc::Optional<VideoCodecSettings>& codec_settings,
         const std::vector<webrtc::RtpExtension>& rtp_extensions,
@@ -254,6 +253,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
 
     void Start();
     void Stop();
+
+    // Implements webrtc::LoadObserver.
+    void OnLoadUpdate(Load load) override;
 
     const std::vector<uint32_t>& GetSsrcs() const;
     VideoSenderInfo GetVideoSenderInfo();
@@ -341,10 +343,20 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
     void SetDimensions(int width, int height, bool is_screencast)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
+    rtc::ThreadChecker thread_checker_;
+    rtc::AsyncInvoker invoker_;
+    rtc::Thread* worker_thread_;
     const std::vector<uint32_t> ssrcs_;
     const std::vector<SsrcGroup> ssrc_groups_;
     webrtc::Call* const call_;
     rtc::VideoSinkWants sink_wants_;
+    // Counter used for deciding if the video resolution is currently
+    // restricted by CPU usage. It is reset if |capturer_| is changed.
+    int cpu_restricted_counter_;
+    // Total number of times resolution as been requested to be changed due to
+    // CPU adaptation.
+    int number_of_cpu_adapt_changes_;
+    VideoCapturer* capturer_;
     WebRtcVideoEncoderFactory* const external_encoder_factory_
         GUARDED_BY(lock_);
 
@@ -358,10 +370,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
     webrtc::VideoRotation last_rotation_ GUARDED_BY(lock_) =
         webrtc::kVideoRotation_0;
 
-    VideoCapturer* capturer_ GUARDED_BY(lock_);
+    bool capturer_is_screencast_ GUARDED_BY(lock_);
     bool sending_ GUARDED_BY(lock_);
     bool muted_ GUARDED_BY(lock_);
-    int old_adapt_changes_ GUARDED_BY(lock_);
 
     // The timestamp of the first frame received
     // Used to generate the timestamps of subsequent frames
@@ -490,12 +501,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel,
 
   const bool signal_cpu_adaptation_;
   const bool disable_prerenderer_smoothing_;
-
-  // Separate list of set capturers used to signal CPU adaptation. These should
-  // not be locked while calling methods that take other locks to prevent
-  // lock-order inversions.
-  rtc::CriticalSection capturer_crit_;
-  std::map<uint32_t, VideoCapturer*> capturers_ GUARDED_BY(capturer_crit_);
 
   rtc::CriticalSection stream_crit_;
   // Using primary-ssrc (first ssrc) as key.

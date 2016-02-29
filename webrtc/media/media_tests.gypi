@@ -85,6 +85,7 @@
         'base/streamparams_unittest.cc',
         'base/turnutils_unittest.cc',
         'base/videoadapter_unittest.cc',
+        'base/videobroadcaster_unittest.cc',
         'base/videocapturer_unittest.cc',
         'base/videocommon_unittest.cc',
         'base/videoengine_unittest.h',

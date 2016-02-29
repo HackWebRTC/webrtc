@@ -314,6 +314,7 @@ static int GetMaxDefaultVideoBitrateKbps(int width, int height) {
     return 2500;
   }
 }
+
 }  // namespace
 
 // Constants defined in webrtc/media/engine/constants.h
@@ -1000,12 +1001,10 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
     send_ssrcs_.insert(used_ssrc);
 
   webrtc::VideoSendStream::Config config(this);
-  config.overuse_callback = this;
-
-  WebRtcVideoSendStream* stream =
-      new WebRtcVideoSendStream(call_, sp, config, external_encoder_factory_,
-                                bitrate_config_.max_bitrate_bps, send_codec_,
-                                send_rtp_extensions_, send_params_);
+  WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
+      call_, sp, config, external_encoder_factory_, signal_cpu_adaptation_,
+      bitrate_config_.max_bitrate_bps, send_codec_, send_rtp_extensions_,
+      send_params_);
 
   uint32_t ssrc = sp.first_ssrc();
   RTC_DCHECK(ssrc != 0);
@@ -1283,10 +1282,6 @@ bool WebRtcVideoChannel2::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
       return false;
     }
   }
-  {
-    rtc::CritScope lock(&capturer_crit_);
-    capturers_[ssrc] = capturer;
-  }
   return true;
 }
 
@@ -1412,26 +1407,6 @@ void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
                           kVideoRtpBufferSize);
 }
 
-void WebRtcVideoChannel2::OnLoadUpdate(Load load) {
-  // OnLoadUpdate can not take any locks that are held while creating streams
-  // etc. Doing so establishes lock-order inversions between the webrtc process
-  // thread on stream creation and locks such as stream_crit_ while calling out.
-  rtc::CritScope stream_lock(&capturer_crit_);
-  if (!signal_cpu_adaptation_)
-    return;
-  // Do not adapt resolution for screen content as this will likely result in
-  // blurry and unreadable text.
-  for (auto& kv : capturers_) {
-    if (kv.second != nullptr
-        && !kv.second->IsScreencast()
-        && kv.second->video_adapter() != nullptr) {
-      kv.second->video_adapter()->OnCpuResolutionRequest(
-          load == kOveruse ? CoordinatedVideoAdapter::DOWNGRADE
-                           : CoordinatedVideoAdapter::UPGRADE);
-    }
-  }
-}
-
 bool WebRtcVideoChannel2::SendRtp(const uint8_t* data,
                                   size_t len,
                                   const webrtc::PacketOptions& options) {
@@ -1495,24 +1470,28 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     const StreamParams& sp,
     const webrtc::VideoSendStream::Config& config,
     WebRtcVideoEncoderFactory* external_encoder_factory,
+    bool enable_cpu_overuse_detection,
     int max_bitrate_bps,
     const rtc::Optional<VideoCodecSettings>& codec_settings,
     const std::vector<webrtc::RtpExtension>& rtp_extensions,
     // TODO(deadbeef): Don't duplicate information between send_params,
     // rtp_extensions, options, etc.
     const VideoSendParameters& send_params)
-    : ssrcs_(sp.ssrcs),
+    : worker_thread_(rtc::Thread::Current()),
+      ssrcs_(sp.ssrcs),
       ssrc_groups_(sp.ssrc_groups),
       call_(call),
+      cpu_restricted_counter_(0),
+      number_of_cpu_adapt_changes_(0),
+      capturer_(nullptr),
       external_encoder_factory_(external_encoder_factory),
-      stream_(NULL),
+      stream_(nullptr),
       parameters_(config, send_params.options, max_bitrate_bps, codec_settings),
       pending_encoder_reconfiguration_(false),
-      allocated_encoder_(NULL, webrtc::kVideoCodecUnknown, false),
-      capturer_(NULL),
+      allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
+      capturer_is_screencast_(false),
       sending_(false),
       muted_(false),
-      old_adapt_changes_(0),
       first_frame_timestamp_ms_(0),
       last_frame_timestamp_ms_(0) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
@@ -1526,6 +1505,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
   parameters_.config.rtp.rtcp_mode = send_params.rtcp.reduced_size
                                          ? webrtc::RtcpMode::kReducedSize
                                          : webrtc::RtcpMode::kCompound;
+  parameters_.config.overuse_callback =
+      enable_cpu_overuse_detection ? this : nullptr;
 
   if (codec_settings) {
     SetCodecAndOptions(*codec_settings, parameters_.options);
@@ -1589,7 +1570,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   video_frame.set_render_time_ms(last_frame_timestamp_ms_);
   // Reconfigure codec if necessary.
   SetDimensions(video_frame.width(), video_frame.height(),
-                capturer_->IsScreencast());
+                capturer_is_screencast_);
   last_rotation_ = video_frame.rotation();
 
   stream_->Input()->IncomingCapturedFrame(video_frame);
@@ -1598,6 +1579,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
     VideoCapturer* capturer) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::SetCapturer");
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!DisconnectCapturer() && capturer == NULL) {
     return false;
   }
@@ -1630,10 +1612,10 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
       capturer_ = NULL;
       return true;
     }
-
-    capturer_ = capturer;
-    capturer_->AddOrUpdateSink(this, sink_wants_);
+    capturer_is_screencast_ = capturer->IsScreencast();
   }
+  capturer_ = capturer;
+  capturer_->AddOrUpdateSink(this, sink_wants_);
   return true;
 }
 
@@ -1643,20 +1625,18 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::MuteStream(bool mute) {
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
-  cricket::VideoCapturer* capturer;
-  {
-    rtc::CritScope cs(&lock_);
-    if (capturer_ == NULL)
-      return false;
-
-    if (capturer_->video_adapter() != nullptr)
-      old_adapt_changes_ += capturer_->video_adapter()->adaptation_changes();
-
-    capturer = capturer_;
-    capturer_ = NULL;
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (capturer_ == NULL) {
+    return false;
   }
-  capturer->RemoveSink(this);
 
+  capturer_->RemoveSink(this);
+  capturer_ = NULL;
+  // Reset |cpu_restricted_counter_| if the capturer is changed. It is not
+  // possible to know if the video resolution is restricted by CPU usage after
+  // the capturer is changed since the next capturer might be screen capture
+  // with another resolution and frame rate.
+  cpu_restricted_counter_ = 0;
   return true;
 }
 
@@ -1822,8 +1802,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
     } else {
       parameters_.options = *params.options;
     }
-  }
-  else if (params.conference_mode && parameters_.codec_settings) {
+  } else if (params.conference_mode && parameters_.codec_settings) {
     SetCodecAndOptions(*parameters_.codec_settings, parameters_.options);
     return;
   }
@@ -1950,10 +1929,66 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::Stop() {
   sending_ = false;
 }
 
+void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
+  if (worker_thread_ != rtc::Thread::Current()) {
+    invoker_.AsyncInvoke<void>(
+        worker_thread_,
+        rtc::Bind(&WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate,
+                  this, load));
+    return;
+  }
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  LOG(LS_INFO) << "OnLoadUpdate " << load;
+  if (!capturer_) {
+    return;
+  }
+  {
+    rtc::CritScope cs(&lock_);
+    // Do not adapt resolution for screen content as this will likely result in
+    // blurry and unreadable text.
+    if (capturer_is_screencast_)
+      return;
+
+    rtc::Optional<int> max_pixel_count;
+    rtc::Optional<int> max_pixel_count_step_up;
+    if (load == kOveruse) {
+        max_pixel_count = rtc::Optional<int>(
+            (last_dimensions_.height * last_dimensions_.width) / 2);
+      // Increase |number_of_cpu_adapt_changes_| if
+      // sink_wants_.max_pixel_count will be changed since
+      // last time |capturer_->AddOrUpdateSink| was called. That is, this will
+      // result in a new request for the capturer to change resolution.
+      if (!sink_wants_.max_pixel_count ||
+          *sink_wants_.max_pixel_count > *max_pixel_count) {
+        ++number_of_cpu_adapt_changes_;
+        ++cpu_restricted_counter_;
+      }
+    } else {
+      RTC_DCHECK(load == kUnderuse);
+      max_pixel_count_step_up = rtc::Optional<int>(last_dimensions_.height *
+                                                   last_dimensions_.width);
+      // Increase |number_of_cpu_adapt_changes_| if
+      // sink_wants_.max_pixel_count_step_up will be changed since
+      // last time |capturer_->AddOrUpdateSink| was called. That is, this will
+      // result in a new request for the capturer to change resolution.
+      if (sink_wants_.max_pixel_count ||
+          (sink_wants_.max_pixel_count_step_up &&
+           *sink_wants_.max_pixel_count_step_up < *max_pixel_count_step_up)) {
+        ++number_of_cpu_adapt_changes_;
+        --cpu_restricted_counter_;
+      }
+    }
+    sink_wants_.max_pixel_count = max_pixel_count;
+    sink_wants_.max_pixel_count_step_up = max_pixel_count_step_up;
+  }
+  capturer_->AddOrUpdateSink(this, sink_wants_);
+}
+
 VideoSenderInfo
 WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
   VideoSenderInfo info;
   webrtc::VideoSendStream::Stats stats;
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   {
     rtc::CritScope cs(&lock_);
     for (uint32_t ssrc : parameters_.config.rtp.ssrcs)
@@ -1975,23 +2010,20 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
       return info;
 
     stats = stream_->GetStats();
+  }
+  info.adapt_changes = number_of_cpu_adapt_changes_;
+  info.adapt_reason = cpu_restricted_counter_ <= 0
+                          ? CoordinatedVideoAdapter::ADAPTREASON_NONE
+                          : CoordinatedVideoAdapter::ADAPTREASON_CPU;
 
-    info.adapt_changes = old_adapt_changes_;
-    info.adapt_reason = CoordinatedVideoAdapter::ADAPTREASON_NONE;
-
-    if (capturer_ != NULL) {
-      if (!capturer_->IsMuted()) {
-        VideoFormat last_captured_frame_format;
-        capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
-                            &info.capturer_frame_time,
-                            &last_captured_frame_format);
-        info.input_frame_width = last_captured_frame_format.width;
-        info.input_frame_height = last_captured_frame_format.height;
-      }
-      if (capturer_->video_adapter() != nullptr) {
-        info.adapt_changes += capturer_->video_adapter()->adaptation_changes();
-        info.adapt_reason = capturer_->video_adapter()->adapt_reason();
-      }
+  if (capturer_) {
+    if (!capturer_->IsMuted()) {
+      VideoFormat last_captured_frame_format;
+      capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
+                          &info.capturer_frame_time,
+                          &last_captured_frame_format);
+      info.input_frame_width = last_captured_frame_format.width;
+      info.input_frame_height = last_captured_frame_format.height;
     }
   }
 

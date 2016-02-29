@@ -246,11 +246,6 @@ class VideoCapturer : public sigslot::has_slots<>,
     enable_video_adapter_ = enable_video_adapter;
   }
 
-  CoordinatedVideoAdapter* video_adapter() { return &video_adapter_; }
-  const CoordinatedVideoAdapter* video_adapter() const {
-    return &video_adapter_;
-  }
-
   // Takes ownership.
   void set_frame_factory(VideoFrameFactory* frame_factory);
 
@@ -285,6 +280,8 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Callback attached to SignalVideoFrame.
   // TODO(perkj): Remove once SignalVideoFrame is removed.
   void OnFrame(VideoCapturer* capturer, const VideoFrame* frame);
+
+  CoordinatedVideoAdapter* video_adapter() { return &video_adapter_; }
 
   void SetCaptureState(CaptureState state);
 

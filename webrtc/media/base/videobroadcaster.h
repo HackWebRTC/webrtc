@@ -47,11 +47,11 @@ class VideoBroadcaster : public VideoSourceInterface<cricket::VideoFrame>,
     VideoSinkWants wants;
   };
   SinkPair* FindSinkPair(const VideoSinkInterface<cricket::VideoFrame>* sink);
+  void UpdateWants();
 
   ThreadChecker thread_checker_;
 
   VideoSinkWants current_wants_;
-
   std::vector<SinkPair> sinks_;
 };
 

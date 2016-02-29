@@ -1491,10 +1491,13 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   EXPECT_EQ(0, encoder_config.min_transmit_bitrate_bps)
       << "Non-screenshare shouldn't use min-transmit bitrate.";
 
-  capturer.SetScreencast(true);
-  EXPECT_TRUE(capturer.CaptureFrame());
-
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, nullptr));
+  // Removing a capturer triggers a black frame to be sent.
   EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
+  capturer.SetScreencast(true);
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
 
   // Verify screencast settings.
   encoder_config = send_stream->GetEncoderConfig();
@@ -1625,7 +1628,9 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   EXPECT_TRUE(vp8_settings.frameDroppingOn);
 
   // In screen-share mode, denoising is forced off and simulcast disabled.
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
   capturer.SetScreencast(true);
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
   EXPECT_TRUE(capturer.CaptureFrame());
   stream = SetDenoisingOption(parameters, false);
 
@@ -1704,7 +1709,10 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
   EXPECT_TRUE(vp9_settings.frameDroppingOn);
 
   // In screen-share mode, denoising is forced off.
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, nullptr));
   capturer.SetScreencast(true);
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+
   EXPECT_TRUE(capturer.CaptureFrame());
   stream = SetDenoisingOption(parameters, false);
 
@@ -1732,6 +1740,73 @@ TEST_F(WebRtcVideoChannel2Test, DoesNotAdaptOnOveruseWhenDisabled) {
 
 TEST_F(WebRtcVideoChannel2Test, DoesNotAdaptOnOveruseWhenScreensharing) {
   TestCpuAdaptation(true, true);
+}
+
+TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
+  cricket::VideoCodec codec = kVp8Codec720p;
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(codec);
+
+  MediaConfig media_config = MediaConfig();
+  channel_.reset(
+      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  ASSERT_TRUE(channel_->SetSendParameters(parameters));
+
+  AddSendStream();
+
+  cricket::FakeVideoCapturer capturer;
+  capturer.SetScreencast(false);
+  ASSERT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  ASSERT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  ASSERT_TRUE(channel_->SetSend(true));
+
+  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
+  FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
+  webrtc::LoadObserver* overuse_callback =
+      send_stream->GetConfig().overuse_callback;
+  ASSERT_TRUE(overuse_callback != NULL);
+
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1280, send_stream->GetLastWidth());
+  EXPECT_EQ(720, send_stream->GetLastHeight());
+
+  // Trigger overuse.
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
+  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
+  EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
+
+  // Trigger overuse again.
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
+  EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1280 * 2 / 4, send_stream->GetLastWidth());
+  EXPECT_EQ(720 * 2 / 4, send_stream->GetLastHeight());
+
+  // Change input resolution.
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
+  EXPECT_EQ(4, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1284 / 2, send_stream->GetLastWidth());
+  EXPECT_EQ(724 / 2, send_stream->GetLastHeight());
+
+  // Trigger underuse which should go back up in resolution.
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
+  EXPECT_EQ(5, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1284 * 3 / 4, send_stream->GetLastWidth());
+  EXPECT_EQ(724 * 3 / 4, send_stream->GetLastHeight());
+
+  // Trigger underuse which should go back up in resolution.
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
+  EXPECT_EQ(6, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1284, send_stream->GetLastWidth());
+  EXPECT_EQ(724, send_stream->GetLastHeight());
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
 }
 
 void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
@@ -1764,25 +1839,41 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
   webrtc::LoadObserver* overuse_callback =
       send_stream->GetConfig().overuse_callback;
+
+  if (!enable_overuse) {
+    ASSERT_TRUE(overuse_callback == NULL);
+
+    EXPECT_TRUE(capturer.CaptureFrame());
+    EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
+
+    EXPECT_EQ(codec.width, send_stream->GetLastWidth());
+    EXPECT_EQ(codec.height, send_stream->GetLastHeight());
+
+    EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+    return;
+  }
+
   ASSERT_TRUE(overuse_callback != NULL);
+  EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
 
   EXPECT_TRUE(capturer.CaptureFrame());
-  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
 
-  if (enable_overuse && !is_screenshare) {
-    EXPECT_LT(send_stream->GetLastWidth(), codec.width);
-    EXPECT_LT(send_stream->GetLastHeight(), codec.height);
-  } else {
+  if (is_screenshare) {
+    // Do not adapt screen share.
     EXPECT_EQ(codec.width, send_stream->GetLastWidth());
     EXPECT_EQ(codec.height, send_stream->GetLastHeight());
+  } else {
+    EXPECT_LT(send_stream->GetLastWidth(), codec.width);
+    EXPECT_LT(send_stream->GetLastHeight(), codec.height);
   }
 
   // Trigger underuse which should go back to normal resolution.
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
   EXPECT_TRUE(capturer.CaptureFrame());
-
-  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
 
   EXPECT_EQ(codec.width, send_stream->GetLastWidth());
   EXPECT_EQ(codec.height, send_stream->GetLastHeight());

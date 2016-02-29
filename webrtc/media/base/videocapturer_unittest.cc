@@ -327,6 +327,71 @@ TEST_F(VideoCapturerTest, TestRotationAppliedBySourceWhenDifferentWants) {
   EXPECT_EQ(webrtc::kVideoRotation_0, renderer2.rotation());
 }
 
+TEST_F(VideoCapturerTest, SinkWantsMaxPixelAndMaxPixelCountStepUp) {
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer_.Start(cricket::VideoFormat(
+                1280, 720, cricket::VideoFormat::FpsToInterval(30),
+                cricket::FOURCC_I420)));
+  EXPECT_TRUE(capturer_.IsRunning());
+
+  EXPECT_EQ(0, renderer_.num_rendered_frames());
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(1, renderer_.num_rendered_frames());
+  EXPECT_EQ(1280, renderer_.width());
+  EXPECT_EQ(720, renderer_.height());
+
+  // Request a lower resolution.
+  rtc::VideoSinkWants wants;
+  wants.max_pixel_count = rtc::Optional<int>(1280 * 720 / 2);
+  capturer_.AddOrUpdateSink(&renderer_, wants);
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(2, renderer_.num_rendered_frames());
+  EXPECT_EQ(960, renderer_.width());
+  EXPECT_EQ(540, renderer_.height());
+
+  // Request a lower resolution.
+  wants.max_pixel_count =
+      rtc::Optional<int>(renderer_.width() * renderer_.height() / 2);
+  capturer_.AddOrUpdateSink(&renderer_, wants);
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(3, renderer_.num_rendered_frames());
+  EXPECT_EQ(640, renderer_.width());
+  EXPECT_EQ(360, renderer_.height());
+
+  // Adding a new renderer should not affect resolution.
+  cricket::FakeVideoRenderer renderer2;
+  capturer_.AddOrUpdateSink(&renderer2, rtc::VideoSinkWants());
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(4, renderer_.num_rendered_frames());
+  EXPECT_EQ(640, renderer_.width());
+  EXPECT_EQ(360, renderer_.height());
+  EXPECT_EQ(1, renderer2.num_rendered_frames());
+  EXPECT_EQ(640, renderer2.width());
+  EXPECT_EQ(360, renderer2.height());
+
+  // Request higher resolution.
+  wants.max_pixel_count_step_up = wants.max_pixel_count;
+  wants.max_pixel_count = rtc::Optional<int>();
+  capturer_.AddOrUpdateSink(&renderer_, wants);
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(5, renderer_.num_rendered_frames());
+  EXPECT_EQ(960, renderer_.width());
+  EXPECT_EQ(540, renderer_.height());
+  EXPECT_EQ(2, renderer2.num_rendered_frames());
+  EXPECT_EQ(960, renderer2.width());
+  EXPECT_EQ(540, renderer2.height());
+
+  // Updating with no wants should not affect resolution.
+  capturer_.AddOrUpdateSink(&renderer2, rtc::VideoSinkWants());
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(6, renderer_.num_rendered_frames());
+  EXPECT_EQ(960, renderer_.width());
+  EXPECT_EQ(540, renderer_.height());
+  EXPECT_EQ(3, renderer2.num_rendered_frames());
+  EXPECT_EQ(960, renderer2.width());
+  EXPECT_EQ(540, renderer2.height());
+}
+
 TEST_F(VideoCapturerTest, ScreencastScaledSuperLarge) {
   capturer_.SetScreencast(true);
 

@@ -320,6 +320,7 @@ void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,
 void VideoCapturer::RemoveSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
   broadcaster_.RemoveSink(sink);
+  OnSinkWantsChanged(broadcaster_.wants());
 }
 
 void VideoCapturer::AddOrUpdateSink(
@@ -333,6 +334,11 @@ void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
   apply_rotation_ = wants.rotation_applied;
   if (frame_factory_) {
     frame_factory_->SetApplyRotation(apply_rotation_);
+  }
+
+  if (video_adapter()) {
+    video_adapter()->OnCpuResolutionRequest(wants.max_pixel_count,
+                                            wants.max_pixel_count_step_up);
   }
 }
 

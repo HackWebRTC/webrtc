@@ -495,12 +495,28 @@ void CoordinatedVideoAdapter::OnEncoderResolutionRequest(
                << " To: " << new_width << "x" << new_height;
 }
 
+void CoordinatedVideoAdapter::OnCpuResolutionRequest(
+    rtc::Optional<int> max_pixel_count,
+    rtc::Optional<int> max_pixel_count_step_up) {
+  rtc::CritScope cs(&request_critical_section_);
+  // TODO(perkj): We should support taking larger steps up and down and
+  // actually look at the values set in max_pixel_count and
+  // max_pixel_count_step_up.
+  if (max_pixel_count && *max_pixel_count < GetOutputNumPixels()) {
+    OnCpuResolutionRequest(DOWNGRADE);
+  } else if (max_pixel_count_step_up &&
+             *max_pixel_count_step_up >= GetOutputNumPixels()) {
+    OnCpuResolutionRequest(UPGRADE);
+  }
+}
+
 // A Bandwidth GD request for new resolution
 void CoordinatedVideoAdapter::OnCpuResolutionRequest(AdaptRequest request) {
   rtc::CritScope cs(&request_critical_section_);
   if (!cpu_adaptation_) {
     return;
   }
+
   // Update how many times we have downgraded due to the cpu load.
   switch (request) {
     case DOWNGRADE:

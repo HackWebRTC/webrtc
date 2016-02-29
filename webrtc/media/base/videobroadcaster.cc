@@ -10,6 +10,8 @@
 
 #include "webrtc/media/base/videobroadcaster.h"
 
+#include <limits>
+
 #include "webrtc/base/checks.h"
 
 namespace rtc {
@@ -30,12 +32,7 @@ void VideoBroadcaster::AddOrUpdateSink(
   } else {
     sink_pair->wants = wants;
   }
-
-  // Rotation must be applied by the source if one sink wants it.
-  current_wants_.rotation_applied = false;
-  for (auto& sink_pair : sinks_) {
-    current_wants_.rotation_applied |= sink_pair.wants.rotation_applied;
-  }
+  UpdateWants();
 }
 
 void VideoBroadcaster::RemoveSink(
@@ -49,6 +46,7 @@ void VideoBroadcaster::RemoveSink(
                                 return sink_pair.sink == sink;
                               }),
                sinks_.end());
+  UpdateWants();
 }
 
 bool VideoBroadcaster::frame_wanted() const {
@@ -77,6 +75,38 @@ VideoBroadcaster::SinkPair* VideoBroadcaster::FindSinkPair(
     return &*sink_pair_it;
   }
   return nullptr;
+}
+
+void VideoBroadcaster::UpdateWants() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
+  VideoSinkWants wants;
+  wants.rotation_applied = false;
+  for (auto& sink : sinks_) {
+    // wants.rotation_applied == ANY(sink.wants.rotation_applied)
+    if (sink.wants.rotation_applied) {
+      wants.rotation_applied = true;
+    }
+    // wants.max_pixel_count == MIN(sink.wants.max_pixel_count)
+    if (sink.wants.max_pixel_count &&
+        (!wants.max_pixel_count ||
+         (*sink.wants.max_pixel_count < *wants.max_pixel_count))) {
+      wants.max_pixel_count = sink.wants.max_pixel_count;
+    }
+    // wants.max_pixel_count_step_up == MIN(sink.wants.max_pixel_count_step_up)
+    if (sink.wants.max_pixel_count_step_up &&
+        (!wants.max_pixel_count_step_up ||
+         (*sink.wants.max_pixel_count_step_up <
+          *wants.max_pixel_count_step_up))) {
+      wants.max_pixel_count_step_up = sink.wants.max_pixel_count_step_up;
+    }
+  }
+
+  if (wants.max_pixel_count && wants.max_pixel_count_step_up &&
+      *wants.max_pixel_count_step_up >= *wants.max_pixel_count) {
+    wants.max_pixel_count_step_up = Optional<int>();
+  }
+  current_wants_ = wants;
 }
 
 }  // namespace rtc
