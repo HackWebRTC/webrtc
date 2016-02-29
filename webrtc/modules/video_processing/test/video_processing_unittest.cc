@@ -69,8 +69,8 @@ void VideoProcessingTest::SetUp() {
   vp_ = VideoProcessing::Create();
   ASSERT_TRUE(vp_ != NULL);
 
-  ASSERT_EQ(0, video_frame_.CreateEmptyFrame(width_, height_, width_,
-                                             half_width_, half_width_));
+  video_frame_.CreateEmptyFrame(width_, height_, width_,
+                                half_width_, half_width_);
   // Clear video frame so DrMemory/Valgrind will allow reads of the buffer.
   memset(video_frame_.buffer(kYPlane), 0, video_frame_.allocated_size(kYPlane));
   memset(video_frame_.buffer(kUPlane), 0, video_frame_.allocated_size(kUPlane));
@@ -142,7 +142,7 @@ TEST_F(VideoProcessingTest, IdenticalResultsAfterReset) {
                              0, kVideoRotation_0, &video_frame_));
   vp_->GetFrameStats(video_frame_, &stats);
   EXPECT_GT(stats.num_pixels, 0u);
-  ASSERT_EQ(0, video_frame2.CopyFrame(video_frame_));
+  video_frame2.CopyFrame(video_frame_);
   ASSERT_EQ(0, vp_->Deflickering(&video_frame_, &stats));
 
   // Retrieve frame stats again in case Deflickering() has zeroed them.

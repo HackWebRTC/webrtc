@@ -14,6 +14,7 @@
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/test/video_processing_unittest.h"
 #include "webrtc/modules/video_processing/video_denoiser.h"
+#include "webrtc/test/frame_utils.h"
 
 namespace webrtc {
 
@@ -148,7 +149,7 @@ TEST_F(VideoProcessingTest, Denoiser) {
     denoiser_sse_neon.DenoiseFrame(video_frame_, &denoised_frame_sse_neon);
 
     // Denoising results should be the same for C and SSE/NEON denoiser.
-    ASSERT_EQ(true, denoised_frame_c.EqualsFrame(denoised_frame_sse_neon));
+    ASSERT_TRUE(test::FramesEqual(denoised_frame_c, denoised_frame_sse_neon));
   }
   ASSERT_NE(0, feof(source_file_)) << "Error reading source file";
 }
