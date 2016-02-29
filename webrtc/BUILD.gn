@@ -228,6 +228,7 @@ if (!build_with_chromium) {
 
 source_set("webrtc_common") {
   sources = [
+    "audio_sink.h",
     "common_types.cc",
     "common_types.h",
     "config.cc",

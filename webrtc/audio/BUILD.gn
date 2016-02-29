@@ -14,7 +14,6 @@ source_set("audio") {
     "audio_receive_stream.h",
     "audio_send_stream.cc",
     "audio_send_stream.h",
-    "audio_sink.h",
     "audio_state.cc",
     "audio_state.h",
     "conversion.h",
