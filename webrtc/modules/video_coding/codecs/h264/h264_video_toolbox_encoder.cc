@@ -13,13 +13,13 @@
 
 #if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "libyuv/convert_from.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -43,7 +43,7 @@ std::string CFStringToString(const CFStringRef cf_string) {
       CFStringGetMaximumSizeForEncoding(CFStringGetLength(cf_string),
                                         kCFStringEncodingUTF8) +
       1;
-  rtc::scoped_ptr<char[]> buffer(new char[buffer_size]);
+  std::unique_ptr<char[]> buffer(new char[buffer_size]);
   if (CFStringGetCString(cf_string, buffer.get(), buffer_size,
                          kCFStringEncodingUTF8)) {
     // Copy over the characters.
@@ -177,7 +177,7 @@ void VTCompressionOutputCallback(void* encoder,
                                  OSStatus status,
                                  VTEncodeInfoFlags info_flags,
                                  CMSampleBufferRef sample_buffer) {
-  rtc::scoped_ptr<FrameEncodeParams> encode_params(
+  std::unique_ptr<FrameEncodeParams> encode_params(
       reinterpret_cast<FrameEncodeParams*>(params));
   encode_params->encoder->OnEncodedFrame(
       status, info_flags, sample_buffer, encode_params->codec_specific_info,
@@ -277,7 +277,7 @@ int H264VideoToolboxEncoder::Encode(
     CFTypeRef values[] = {kCFBooleanTrue};
     frame_properties = internal::CreateCFDictionary(keys, values, 1);
   }
-  rtc::scoped_ptr<internal::FrameEncodeParams> encode_params;
+  std::unique_ptr<internal::FrameEncodeParams> encode_params;
   encode_params.reset(new internal::FrameEncodeParams(
       this, codec_specific_info, width_, height_, input_image.render_time_ms(),
       input_image.timestamp()));
@@ -462,11 +462,16 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
 
   // Convert the sample buffer into a buffer suitable for RTP packetization.
   // TODO(tkchin): Allocate buffers through a pool.
-  rtc::scoped_ptr<rtc::Buffer> buffer(new rtc::Buffer());
-  rtc::scoped_ptr<webrtc::RTPFragmentationHeader> header;
-  if (!H264CMSampleBufferToAnnexBBuffer(sample_buffer, is_keyframe,
-                                        buffer.get(), header.accept())) {
-    return;
+  std::unique_ptr<rtc::Buffer> buffer(new rtc::Buffer());
+  std::unique_ptr<webrtc::RTPFragmentationHeader> header;
+  {
+    webrtc::RTPFragmentationHeader* header_raw;
+    bool result = H264CMSampleBufferToAnnexBBuffer(sample_buffer, is_keyframe,
+                                                   buffer.get(), &header_raw);
+    header.reset(header_raw);
+    if (!result) {
+      return;
+    }
   }
   webrtc::EncodedImage frame(buffer->data(), buffer->size(), buffer->size());
   frame._encodedWidth = width;

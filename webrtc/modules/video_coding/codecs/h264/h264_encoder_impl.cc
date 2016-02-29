@@ -81,7 +81,7 @@ static FrameType EVideoFrameType_to_FrameType(EVideoFrameType type) {
 // is updated to point to each fragment, with offsets and lengths set as to
 // exclude the start codes.
 static void RtpFragmentize(EncodedImage* encoded_image,
-                           rtc::scoped_ptr<uint8_t[]>* encoded_image_buffer,
+                           std::unique_ptr<uint8_t[]>* encoded_image_buffer,
                            const VideoFrame& frame,
                            SFrameBSInfo* info,
                            RTPFragmentationHeader* frag_header) {

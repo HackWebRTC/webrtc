@@ -13,6 +13,7 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -103,7 +104,7 @@ class Vp9SsMap {
 
 class VCMJitterBuffer {
  public:
-  VCMJitterBuffer(Clock* clock, rtc::scoped_ptr<EventWrapper> event);
+  VCMJitterBuffer(Clock* clock, std::unique_ptr<EventWrapper> event);
 
   ~VCMJitterBuffer();
 
@@ -325,7 +326,7 @@ class VCMJitterBuffer {
   bool running_;
   CriticalSectionWrapper* crit_sect_;
   // Event to signal when we have a frame ready for decoder.
-  rtc::scoped_ptr<EventWrapper> frame_event_;
+  std::unique_ptr<EventWrapper> frame_event_;
   // Number of allocated frames.
   int max_number_of_frames_;
   UnorderedFrameList free_frames_ GUARDED_BY(crit_sect_);

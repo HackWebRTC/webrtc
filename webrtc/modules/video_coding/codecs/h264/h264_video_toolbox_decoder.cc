@@ -13,6 +13,8 @@
 
 #if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
 
+#include <memory>
+
 #include "libyuv/convert.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -85,7 +87,7 @@ void VTDecompressionOutputCallback(void* decoder,
                                    CVImageBufferRef image_buffer,
                                    CMTime timestamp,
                                    CMTime duration) {
-  rtc::scoped_ptr<FrameDecodeParams> decode_params(
+  std::unique_ptr<FrameDecodeParams> decode_params(
       reinterpret_cast<FrameDecodeParams*>(params));
   if (status != noErr) {
     LOG(LS_ERROR) << "Failed to decode frame. Status: " << status;
@@ -142,7 +144,7 @@ int H264VideoToolboxDecoder::Decode(
   }
   VTDecodeFrameFlags decode_flags =
       kVTDecodeFrame_EnableAsynchronousDecompression;
-  rtc::scoped_ptr<internal::FrameDecodeParams> frame_decode_params;
+  std::unique_ptr<internal::FrameDecodeParams> frame_decode_params;
   frame_decode_params.reset(
       new internal::FrameDecodeParams(callback_, input_image._timeStamp));
   OSStatus status = VTDecompressionSessionDecodeFrame(

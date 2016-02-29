@@ -12,8 +12,8 @@
 #define WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPTIMIZATION_H_
 
 #include <list>
+#include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/media_opt_util.h"
@@ -134,7 +134,7 @@ class MediaOptimization {
   uint32_t SentFrameRateInternal() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Protect all members.
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  std::unique_ptr<CriticalSectionWrapper> crit_sect_;
 
   Clock* clock_ GUARDED_BY(crit_sect_);
   int32_t max_bit_rate_ GUARDED_BY(crit_sect_);
@@ -142,8 +142,8 @@ class MediaOptimization {
   uint16_t codec_width_ GUARDED_BY(crit_sect_);
   uint16_t codec_height_ GUARDED_BY(crit_sect_);
   float user_frame_rate_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<FrameDropper> frame_dropper_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<VCMLossProtectionLogic> loss_prot_logic_
+  std::unique_ptr<FrameDropper> frame_dropper_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<VCMLossProtectionLogic> loss_prot_logic_
       GUARDED_BY(crit_sect_);
   uint8_t fraction_lost_ GUARDED_BY(crit_sect_);
   uint32_t send_statistics_[4] GUARDED_BY(crit_sect_);
@@ -158,8 +158,8 @@ class MediaOptimization {
   uint32_t avg_sent_framerate_ GUARDED_BY(crit_sect_);
   uint32_t key_frame_cnt_ GUARDED_BY(crit_sect_);
   uint32_t delta_frame_cnt_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<VCMContentMetricsProcessing> content_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<VCMQmResolution> qm_resolution_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<VCMContentMetricsProcessing> content_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<VCMQmResolution> qm_resolution_ GUARDED_BY(crit_sect_);
   int64_t last_qm_update_time_ GUARDED_BY(crit_sect_);
   int64_t last_change_time_ GUARDED_BY(crit_sect_);  // Content/user triggered.
   int num_layers_ GUARDED_BY(crit_sect_);

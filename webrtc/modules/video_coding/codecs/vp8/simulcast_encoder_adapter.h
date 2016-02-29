@@ -12,10 +12,10 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_ENCODER_ADAPTER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_ENCODER_ADAPTER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 
 namespace webrtc {
@@ -110,8 +110,8 @@ class SimulcastEncoderAdapter : public VP8Encoder {
 
   bool Initialized() const;
 
-  rtc::scoped_ptr<VideoEncoderFactory> factory_;
-  rtc::scoped_ptr<TemporalLayersFactory> screensharing_tl_factory_;
+  std::unique_ptr<VideoEncoderFactory> factory_;
+  std::unique_ptr<TemporalLayersFactory> screensharing_tl_factory_;
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;

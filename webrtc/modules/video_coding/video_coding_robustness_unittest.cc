@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
@@ -69,13 +71,13 @@ class VCMRobustnessTest : public ::testing::Test {
     ASSERT_EQ(VCM_OK, vcm_->IncomingPacket(payload, kPayloadLen, rtp_info));
   }
 
-  rtc::scoped_ptr<VideoCodingModule> vcm_;
+  std::unique_ptr<VideoCodingModule> vcm_;
   VideoCodec video_codec_;
   MockVCMFrameTypeCallback frame_type_callback_;
   MockPacketRequestCallback request_callback_;
   NiceMock<MockVideoDecoder> decoder_;
   NiceMock<MockVideoDecoder> decoderCopy_;
-  rtc::scoped_ptr<SimulatedClock> clock_;
+  std::unique_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
 };
 

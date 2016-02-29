@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/modules/video_coding/jitter_buffer.h"
@@ -35,8 +36,8 @@ class VCMReceiver {
   // that of VCMReceiver itself.
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
-              rtc::scoped_ptr<EventWrapper> receiver_event,
-              rtc::scoped_ptr<EventWrapper> jitter_buffer_event);
+              std::unique_ptr<EventWrapper> receiver_event,
+              std::unique_ptr<EventWrapper> jitter_buffer_event);
 
   ~VCMReceiver();
 
@@ -83,7 +84,7 @@ class VCMReceiver {
   Clock* const clock_;
   VCMJitterBuffer jitter_buffer_;
   VCMTiming* timing_;
-  rtc::scoped_ptr<EventWrapper> render_wait_event_;
+  std::unique_ptr<EventWrapper> render_wait_event_;
   int max_video_delay_ms_;
 };
 

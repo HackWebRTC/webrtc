@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/utility/mock/mock_frame_dropper.h"
@@ -105,7 +105,7 @@ class ScreenshareLayerTest : public ::testing::Test {
   int min_qp_;
   int max_qp_;
   int frame_size_;
-  rtc::scoped_ptr<ScreenshareLayers> layers_;
+  std::unique_ptr<ScreenshareLayers> layers_;
 };
 
 TEST_F(ScreenshareLayerTest, 1Layer) {

@@ -10,9 +10,10 @@
 
 #include <stdio.h>
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
@@ -41,7 +42,7 @@ class Vp8UnitTestEncodeCompleteCallback : public webrtc::EncodedImageCallback {
 
  private:
   EncodedImage* const encoded_frame_;
-  rtc::scoped_ptr<uint8_t[]> frame_buffer_;
+  std::unique_ptr<uint8_t[]> frame_buffer_;
   bool encode_complete_;
 };
 
@@ -181,13 +182,13 @@ class TestVp8Impl : public ::testing::Test {
   const int kWidth = 172;
   const int kHeight = 144;
 
-  rtc::scoped_ptr<Vp8UnitTestEncodeCompleteCallback> encode_complete_callback_;
-  rtc::scoped_ptr<Vp8UnitTestDecodeCompleteCallback> decode_complete_callback_;
-  rtc::scoped_ptr<uint8_t[]> source_buffer_;
+  std::unique_ptr<Vp8UnitTestEncodeCompleteCallback> encode_complete_callback_;
+  std::unique_ptr<Vp8UnitTestDecodeCompleteCallback> decode_complete_callback_;
+  std::unique_ptr<uint8_t[]> source_buffer_;
   FILE* source_file_;
   VideoFrame input_frame_;
-  rtc::scoped_ptr<VideoEncoder> encoder_;
-  rtc::scoped_ptr<VideoDecoder> decoder_;
+  std::unique_ptr<VideoEncoder> encoder_;
+  std::unique_ptr<VideoDecoder> decoder_;
   EncodedImage encoded_frame_;
   VideoFrame decoded_frame_;
   size_t length_source_frame_;

@@ -65,7 +65,7 @@ class EncodedImageCallbackWrapper : public EncodedImageCallback {
   }
 
  private:
-  rtc::scoped_ptr<CriticalSectionWrapper> cs_;
+  std::unique_ptr<CriticalSectionWrapper> cs_;
   EncodedImageCallback* callback_ GUARDED_BY(cs_);
 };
 
@@ -283,7 +283,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   EncodedImageCallbackWrapper post_encode_callback_;
   vcm::VideoSender sender_;
   vcm::VideoReceiver receiver_;
-  rtc::scoped_ptr<EventFactory> own_event_factory_;
+  std::unique_ptr<EventFactory> own_event_factory_;
 };
 }  // namespace
 

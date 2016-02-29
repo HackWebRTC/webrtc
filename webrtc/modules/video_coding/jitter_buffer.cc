@@ -215,7 +215,7 @@ void Vp9SsMap::UpdateFrames(FrameList* frames) {
 }
 
 VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
-                                 rtc::scoped_ptr<EventWrapper> event)
+                                 std::unique_ptr<EventWrapper> event)
     : clock_(clock),
       running_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),

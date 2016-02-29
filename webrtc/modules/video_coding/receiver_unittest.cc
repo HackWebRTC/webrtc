@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <list>
+#include <memory>
 #include <queue>
 #include <vector>
 
@@ -84,11 +85,11 @@ class TestVCMReceiver : public ::testing::Test {
     return true;
   }
 
-  rtc::scoped_ptr<SimulatedClock> clock_;
+  std::unique_ptr<SimulatedClock> clock_;
   VCMTiming timing_;
   NullEventFactory event_factory_;
   VCMReceiver receiver_;
-  rtc::scoped_ptr<StreamGenerator> stream_generator_;
+  std::unique_ptr<StreamGenerator> stream_generator_;
 };
 
 TEST_F(TestVCMReceiver, RenderBufferSize_AllComplete) {
@@ -449,8 +450,8 @@ class VCMReceiverTimingTest : public ::testing::Test {
         receiver_(
             &timing_,
             &clock_,
-            rtc::scoped_ptr<EventWrapper>(new FrameInjectEvent(&clock_, false)),
-            rtc::scoped_ptr<EventWrapper>(
+            std::unique_ptr<EventWrapper>(new FrameInjectEvent(&clock_, false)),
+            std::unique_ptr<EventWrapper>(
                 new FrameInjectEvent(&clock_, true))) {}
 
   virtual void SetUp() { receiver_.Reset(); }

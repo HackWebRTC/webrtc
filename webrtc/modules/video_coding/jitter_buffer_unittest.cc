@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include <list>
+#include <memory>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
@@ -190,7 +191,7 @@ class TestBasicJitterBuffer : public ::testing::Test {
     clock_.reset(new SimulatedClock(0));
     jitter_buffer_.reset(new VCMJitterBuffer(
         clock_.get(),
-        rtc::scoped_ptr<EventWrapper>(event_factory_.CreateEvent())));
+        std::unique_ptr<EventWrapper>(event_factory_.CreateEvent())));
     jitter_buffer_->Start();
     seq_num_ = 1234;
     timestamp_ = 0;
@@ -273,10 +274,10 @@ class TestBasicJitterBuffer : public ::testing::Test {
   uint32_t timestamp_;
   int size_;
   uint8_t data_[1500];
-  rtc::scoped_ptr<VCMPacket> packet_;
-  rtc::scoped_ptr<SimulatedClock> clock_;
+  std::unique_ptr<VCMPacket> packet_;
+  std::unique_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
-  rtc::scoped_ptr<VCMJitterBuffer> jitter_buffer_;
+  std::unique_ptr<VCMJitterBuffer> jitter_buffer_;
 };
 
 class TestRunningJitterBuffer : public ::testing::Test {
@@ -289,7 +290,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
     oldest_packet_to_nack_ = 250;
     jitter_buffer_ = new VCMJitterBuffer(
         clock_.get(),
-        rtc::scoped_ptr<EventWrapper>(event_factory_.CreateEvent()));
+        std::unique_ptr<EventWrapper>(event_factory_.CreateEvent()));
     stream_generator_ = new StreamGenerator(0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_, oldest_packet_to_nack_,
@@ -380,7 +381,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
 
   VCMJitterBuffer* jitter_buffer_;
   StreamGenerator* stream_generator_;
-  rtc::scoped_ptr<SimulatedClock> clock_;
+  std::unique_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
   size_t max_nack_list_size_;
   int oldest_packet_to_nack_;

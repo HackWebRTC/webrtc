@@ -18,7 +18,6 @@
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;

@@ -14,6 +14,7 @@
 #if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
 
 #include <CoreFoundation/CoreFoundation.h>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -139,7 +140,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
   }
   RTC_DCHECK_EQ(bytes_remaining, (size_t)0);
 
-  rtc::scoped_ptr<webrtc::RTPFragmentationHeader> header;
+  std::unique_ptr<webrtc::RTPFragmentationHeader> header;
   header.reset(new webrtc::RTPFragmentationHeader());
   header->VerifyAndAllocateFragmentationHeader(frag_offsets.size());
   RTC_DCHECK_EQ(frag_lengths.size(), frag_offsets.size());

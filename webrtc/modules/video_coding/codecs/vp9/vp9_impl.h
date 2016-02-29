@@ -12,6 +12,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_VP9_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_VP9_IMPL_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
@@ -128,7 +129,7 @@ class VP9EncoderImpl : public VP9Encoder {
   int64_t frames_encoded_;
   uint8_t num_ref_pics_[kMaxVp9NumberOfSpatialLayers];
   uint8_t p_diff_[kMaxVp9NumberOfSpatialLayers][kMaxVp9RefPics];
-  rtc::scoped_ptr<ScreenshareLayersVP9> spatial_layer_;
+  std::unique_ptr<ScreenshareLayersVP9> spatial_layer_;
 };
 
 class VP9DecoderImpl : public VP9Decoder {

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
@@ -340,8 +341,8 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
   }
 
  protected:
-  rtc::scoped_ptr<TestSimulcastEncoderAdapterFakeHelper> helper_;
-  rtc::scoped_ptr<VP8Encoder> adapter_;
+  std::unique_ptr<TestSimulcastEncoderAdapterFakeHelper> helper_;
+  std::unique_ptr<VP8Encoder> adapter_;
   VideoCodec codec_;
   int last_encoded_image_width_;
   int last_encoded_image_height_;

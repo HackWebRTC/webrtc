@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/mock/mock_vcm_callbacks.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
@@ -75,7 +75,7 @@ class TestVideoReceiver : public ::testing::Test {
   NiceMock<MockVideoDecoder> decoder_;
   NiceMock<MockPacketRequestCallback> packet_request_callback_;
 
-  rtc::scoped_ptr<VideoReceiver> receiver_;
+  std::unique_ptr<VideoReceiver> receiver_;
 };
 
 TEST_F(TestVideoReceiver, PaddingOnlyFrames) {

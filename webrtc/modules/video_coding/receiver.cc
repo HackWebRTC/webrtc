@@ -32,14 +32,14 @@ VCMReceiver::VCMReceiver(VCMTiming* timing,
                          EventFactory* event_factory)
     : VCMReceiver(timing,
                   clock,
-                  rtc::scoped_ptr<EventWrapper>(event_factory->CreateEvent()),
-                  rtc::scoped_ptr<EventWrapper>(event_factory->CreateEvent())) {
+                  std::unique_ptr<EventWrapper>(event_factory->CreateEvent()),
+                  std::unique_ptr<EventWrapper>(event_factory->CreateEvent())) {
 }
 
 VCMReceiver::VCMReceiver(VCMTiming* timing,
                          Clock* clock,
-                         rtc::scoped_ptr<EventWrapper> receiver_event,
-                         rtc::scoped_ptr<EventWrapper> jitter_buffer_event)
+                         std::unique_ptr<EventWrapper> receiver_event,
+                         std::unique_ptr<EventWrapper> jitter_buffer_event)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       clock_(clock),
       jitter_buffer_(clock_, std::move(jitter_buffer_event)),

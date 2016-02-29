@@ -27,8 +27,8 @@ class VcmPayloadSinkFactory::VcmPayloadSink : public PayloadSinkInterface,
  public:
   VcmPayloadSink(VcmPayloadSinkFactory* factory,
                  RtpStreamInterface* stream,
-                 rtc::scoped_ptr<VideoCodingModule>* vcm,
-                 rtc::scoped_ptr<FileOutputFrameReceiver>* frame_receiver)
+                 std::unique_ptr<VideoCodingModule>* vcm,
+                 std::unique_ptr<FileOutputFrameReceiver>* frame_receiver)
       : factory_(factory), stream_(stream), vcm_(), frame_receiver_() {
     assert(factory);
     assert(stream);
@@ -87,8 +87,8 @@ class VcmPayloadSinkFactory::VcmPayloadSink : public PayloadSinkInterface,
  private:
   VcmPayloadSinkFactory* factory_;
   RtpStreamInterface* stream_;
-  rtc::scoped_ptr<VideoCodingModule> vcm_;
-  rtc::scoped_ptr<FileOutputFrameReceiver> frame_receiver_;
+  std::unique_ptr<VideoCodingModule> vcm_;
+  std::unique_ptr<FileOutputFrameReceiver> frame_receiver_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(VcmPayloadSink);
 };
@@ -124,7 +124,7 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
   assert(stream);
   CriticalSectionScoped cs(crit_sect_.get());
 
-  rtc::scoped_ptr<VideoCodingModule> vcm(
+  std::unique_ptr<VideoCodingModule> vcm(
       VideoCodingModule::Create(clock_, null_event_factory_.get()));
   if (vcm.get() == NULL) {
     return NULL;
@@ -149,9 +149,9 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
   vcm->SetMinimumPlayoutDelay(min_playout_delay_ms_);
   vcm->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);
 
-  rtc::scoped_ptr<FileOutputFrameReceiver> frame_receiver(
+  std::unique_ptr<FileOutputFrameReceiver> frame_receiver(
       new FileOutputFrameReceiver(base_out_filename_, stream->ssrc()));
-  rtc::scoped_ptr<VcmPayloadSink> sink(
+  std::unique_ptr<VcmPayloadSink> sink(
       new VcmPayloadSink(this, stream, &vcm, &frame_receiver));
 
   sinks_.push_back(sink.get());

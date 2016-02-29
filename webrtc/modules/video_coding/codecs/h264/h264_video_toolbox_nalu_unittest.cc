@@ -9,6 +9,8 @@
  *
  */
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/arraysize.h"
@@ -90,7 +92,7 @@ TEST(AnnexBBufferReaderTest, TestReadMultipleNalus) {
 TEST(AvccBufferWriterTest, TestEmptyOutputBuffer) {
   const uint8_t expected_buffer[] = {0x00};
   const size_t buffer_size = 1;
-  rtc::scoped_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
+  std::unique_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
   memset(buffer.get(), 0, buffer_size);
   AvccBufferWriter writer(buffer.get(), 0);
   EXPECT_EQ(0u, writer.BytesRemaining());
@@ -104,7 +106,7 @@ TEST(AvccBufferWriterTest, TestWriteSingleNalu) {
       0x00, 0x00, 0x00, 0x03, 0xAA, 0xBB, 0xCC,
   };
   const size_t buffer_size = arraysize(NALU_TEST_DATA_0) + 4;
-  rtc::scoped_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
+  std::unique_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
   AvccBufferWriter writer(buffer.get(), buffer_size);
   EXPECT_EQ(buffer_size, writer.BytesRemaining());
   EXPECT_TRUE(writer.WriteNalu(NALU_TEST_DATA_0, arraysize(NALU_TEST_DATA_0)));
@@ -123,7 +125,7 @@ TEST(AvccBufferWriterTest, TestWriteMultipleNalus) {
   // clang-format on
   const size_t buffer_size =
       arraysize(NALU_TEST_DATA_0) + arraysize(NALU_TEST_DATA_1) + 8;
-  rtc::scoped_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
+  std::unique_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
   AvccBufferWriter writer(buffer.get(), buffer_size);
   EXPECT_EQ(buffer_size, writer.BytesRemaining());
   EXPECT_TRUE(writer.WriteNalu(NALU_TEST_DATA_0, arraysize(NALU_TEST_DATA_0)));
@@ -138,7 +140,7 @@ TEST(AvccBufferWriterTest, TestWriteMultipleNalus) {
 TEST(AvccBufferWriterTest, TestOverflow) {
   const uint8_t expected_buffer[] = {0x00, 0x00, 0x00};
   const size_t buffer_size = arraysize(NALU_TEST_DATA_0);
-  rtc::scoped_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
+  std::unique_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
   memset(buffer.get(), 0, buffer_size);
   AvccBufferWriter writer(buffer.get(), buffer_size);
   EXPECT_EQ(buffer_size, writer.BytesRemaining());

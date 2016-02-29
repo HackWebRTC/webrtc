@@ -13,6 +13,7 @@
 
 #include "webrtc/modules/video_coding/include/video_coding.h"
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/thread_annotations.h"
@@ -101,7 +102,7 @@ class VideoSender {
 
   Clock* const clock_;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
+  std::unique_ptr<CriticalSectionWrapper> process_crit_sect_;
   rtc::CriticalSection encoder_crit_;
   VCMGenericEncoder* _encoder;
   VCMEncodedFrameCallback _encodedFrameCallback GUARDED_BY(encoder_crit_);
@@ -185,7 +186,7 @@ class VideoReceiver {
 
  private:
   Clock* const clock_;
-  rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
+  std::unique_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _receiveCritSect;
   VCMTiming _timing;
   VCMReceiver _receiver;

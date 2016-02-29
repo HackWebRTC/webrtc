@@ -13,8 +13,8 @@
 #include <stdio.h>
 
 #include <map>
+#include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
@@ -62,7 +62,7 @@ class RawRtpPacket {
   uint16_t seq_num() const { return seq_num_; }
 
  private:
-  rtc::scoped_ptr<uint8_t[]> data_;
+  std::unique_ptr<uint8_t[]> data_;
   size_t length_;
   int64_t resend_time_ms_;
   uint32_t ssrc_;
@@ -177,7 +177,7 @@ class LostPackets {
   typedef RtpPacketList::iterator RtpPacketIterator;
   typedef RtpPacketList::const_iterator ConstRtpPacketIterator;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  std::unique_ptr<CriticalSectionWrapper> crit_sect_;
   FILE* debug_file_;
   int loss_count_;
   RtpPacketList packets_;
@@ -210,7 +210,7 @@ class SsrcHandlers {
     }
     DEBUG_LOG1("Registering handler for ssrc=%08x", ssrc);
 
-    rtc::scoped_ptr<Handler> handler(
+    std::unique_ptr<Handler> handler(
         new Handler(ssrc, payload_types_, lost_packets));
     handler->payload_sink_.reset(payload_sink_factory_->Create(handler.get()));
     if (handler->payload_sink_.get() == NULL) {
@@ -292,10 +292,10 @@ class SsrcHandlers {
     virtual uint32_t ssrc() const { return ssrc_; }
     virtual const PayloadTypes& payload_types() const { return payload_types_; }
 
-    rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-    rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-    rtc::scoped_ptr<RtpReceiver> rtp_module_;
-    rtc::scoped_ptr<PayloadSinkInterface> payload_sink_;
+    std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
+    std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+    std::unique_ptr<RtpReceiver> rtp_module_;
+    std::unique_ptr<PayloadSinkInterface> payload_sink_;
 
    private:
     uint32_t ssrc_;
@@ -320,7 +320,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
   RtpPlayerImpl(PayloadSinkFactoryInterface* payload_sink_factory,
                 const PayloadTypes& payload_types,
                 Clock* clock,
-                rtc::scoped_ptr<test::RtpFileReader>* packet_source,
+                std::unique_ptr<test::RtpFileReader>* packet_source,
                 float loss_rate,
                 int64_t rtt_ms,
                 bool reordering)
@@ -419,7 +419,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
     assert(data);
     assert(length > 0);
 
-    rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser(
+    std::unique_ptr<RtpHeaderParser> rtp_header_parser(
         RtpHeaderParser::Create());
     if (!rtp_header_parser->IsRtcp(data, length)) {
       RTPHeader header;
@@ -448,7 +448,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
 
   SsrcHandlers ssrc_handlers_;
   Clock* clock_;
-  rtc::scoped_ptr<test::RtpFileReader> packet_source_;
+  std::unique_ptr<test::RtpFileReader> packet_source_;
   test::RtpPacket next_packet_;
   uint32_t next_rtp_time_;
   bool first_packet_;
@@ -460,7 +460,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
   uint32_t no_loss_startup_;
   bool end_of_file_;
   bool reordering_;
-  rtc::scoped_ptr<RawRtpPacket> reorder_buffer_;
+  std::unique_ptr<RawRtpPacket> reorder_buffer_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtpPlayerImpl);
 };
@@ -472,7 +472,7 @@ RtpPlayerInterface* Create(const std::string& input_filename,
                            float loss_rate,
                            int64_t rtt_ms,
                            bool reordering) {
-  rtc::scoped_ptr<test::RtpFileReader> packet_source(
+  std::unique_ptr<test::RtpFileReader> packet_source(
       test::RtpFileReader::Create(test::RtpFileReader::kRtpDump,
                                   input_filename));
   if (packet_source.get() == NULL) {
@@ -483,7 +483,7 @@ RtpPlayerInterface* Create(const std::string& input_filename,
     }
   }
 
-  rtc::scoped_ptr<RtpPlayerImpl> impl(
+  std::unique_ptr<RtpPlayerImpl> impl(
       new RtpPlayerImpl(payload_sink_factory, payload_types, clock,
                         &packet_source, loss_rate, rtt_ms, reordering));
   return impl.release();

@@ -14,9 +14,9 @@
 
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 
 class ISVCEncoder;
 
@@ -65,7 +65,7 @@ class H264EncoderImpl : public H264Encoder {
   VideoCodec codec_settings_;
 
   EncodedImage encoded_image_;
-  rtc::scoped_ptr<uint8_t[]> encoded_image_buffer_;
+  std::unique_ptr<uint8_t[]> encoded_image_buffer_;
   EncodedImageCallback* encoded_image_callback_;
 
   bool has_reported_init_;

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
@@ -83,7 +83,7 @@ class EmptyFrameGenerator : public FrameGenerator {
  private:
   const int width_;
   const int height_;
-  rtc::scoped_ptr<VideoFrame> frame_;
+  std::unique_ptr<VideoFrame> frame_;
 };
 
 class PacketizationCallback : public VCMPacketizationCallback {
@@ -193,9 +193,9 @@ class TestVideoSender : public ::testing::Test {
   PacketizationCallback packetization_callback_;
   MockEncodedImageCallback post_encode_callback_;
   // Used by subclassing tests, need to outlive sender_.
-  rtc::scoped_ptr<VideoEncoder> encoder_;
-  rtc::scoped_ptr<VideoSender> sender_;
-  rtc::scoped_ptr<FrameGenerator> generator_;
+  std::unique_ptr<VideoEncoder> encoder_;
+  std::unique_ptr<VideoSender> sender_;
+  std::unique_ptr<FrameGenerator> generator_;
 };
 
 class TestVideoSenderWithMockEncoder : public TestVideoSender {
