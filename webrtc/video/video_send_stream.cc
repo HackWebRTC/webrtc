@@ -489,7 +489,6 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   RTC_DCHECK_GE(config.min_transmit_bitrate_bps, 0);
   vie_encoder_.SetMinTransmitBitrate(config.min_transmit_bitrate_bps / 1000);
 
-  encoder_config_ = config;
   return true;
 }
 

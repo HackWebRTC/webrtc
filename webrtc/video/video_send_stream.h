@@ -81,7 +81,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   SendStatisticsProxy stats_proxy_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoSendStream::Config config_;
-  VideoEncoderConfig encoder_config_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   ProcessThread* const module_process_thread_;
