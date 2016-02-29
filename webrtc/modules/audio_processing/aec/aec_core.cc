@@ -689,11 +689,12 @@ static void UpdateMetrics(AecCore* aec) {
       // ERLE
 
       // subtract noise power
-      suppressedEcho = aec->nlpoutlevel.averagelevel -
-          safety * aec->nlpoutlevel.minlevel;
+      suppressedEcho = 2 * (aec->nlpoutlevel.averagelevel -
+                            safety * aec->nlpoutlevel.minlevel);
 
       dtmp = 10 * static_cast<float>(log10(aec->nearlevel.averagelevel /
-          aec->nlpoutlevel.averagelevel + 1e-10f));
+                                           (2 * aec->nlpoutlevel.averagelevel) +
+                                           1e-10f));
       dtmp2 = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
 
       dtmp = dtmp2;
@@ -1138,6 +1139,16 @@ static void EchoSuppression(AecCore* aec,
   // Inverse error fft.
   ScaledInverseFft(efw, fft, 2.0f, 1);
 
+  // TODO(bjornv): Investigate how to take the windowing below into account if
+  // needed.
+  if (aec->metricsMode == 1) {
+    // Note that we have a scaling by two in the time domain |eBuf|.
+    // In addition the time domain signal is windowed before transformation,
+    // losing half the energy on the average. We take care of the first
+    // scaling only in UpdateMetrics().
+    UpdateLevel(&aec->nlpoutlevel, CalculatePower(fft, PART_LEN2));
+  }
+
   // Overlap and add to obtain output.
   for (i = 0; i < PART_LEN; i++) {
     output[i] = (fft[i] * WebRtcAec_sqrtHanning[i] +
@@ -1347,7 +1358,6 @@ static void ProcessBlock(AecCore* aec) {
   EchoSuppression(aec, farend_ptr, echo_subtractor_output, output, outputH_ptr);
 
   if (aec->metricsMode == 1) {
-    UpdateLevel(&aec->nlpoutlevel, CalculatePower(output, PART_LEN));
     UpdateMetrics(aec);
   }
 
