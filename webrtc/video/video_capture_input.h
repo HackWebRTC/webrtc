@@ -23,6 +23,7 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
+#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_send_stream.h"
 
@@ -68,6 +69,7 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
   volatile int stop_;
 
   VideoFrame captured_frame_ GUARDED_BY(crit_);
+  Clock* const clock_;
   // Used to make sure incoming time stamp is increasing for every frame.
   int64_t last_captured_timestamp_;
   // Delta used for translating between NTP and internal timestamps.

@@ -17,8 +17,6 @@
 #include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/vie_encoder.h"
@@ -36,10 +34,13 @@ VideoCaptureInput::VideoCaptureInput(VideoCaptureCallback* frame_callback,
       encoder_thread_(EncoderThreadFunction, this, "EncoderThread"),
       capture_event_(false, false),
       stop_(0),
+      // TODO(danilchap): Pass clock from outside to ensure it is same clock
+      // rtcp module use to calculate offset since last frame captured
+      // to estimate rtp timestamp for SenderReport.
+      clock_(Clock::GetRealTimeClock()),
       last_captured_timestamp_(0),
-      delta_ntp_internal_ms_(
-          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -
-          TickTime::MillisecondTimestamp()),
+      delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
+                             clock_->TimeInMilliseconds()),
       overuse_detector_(overuse_detector) {
   encoder_thread_.Start();
   encoder_thread_.SetPriority(rtc::kHighPriority);
@@ -62,18 +63,20 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
 
   VideoFrame incoming_frame = video_frame;
 
-  if (incoming_frame.ntp_time_ms() != 0) {
-    // If a NTP time stamp is set, this is the time stamp we will use.
-    incoming_frame.set_render_time_ms(incoming_frame.ntp_time_ms() -
-                                      delta_ntp_internal_ms_);
-  } else {  // NTP time stamp not set.
-    int64_t render_time = incoming_frame.render_time_ms() != 0
-                              ? incoming_frame.render_time_ms()
-                              : TickTime::MillisecondTimestamp();
+  // Local time in webrtc time base.
+  int64_t current_time = clock_->TimeInMilliseconds();
+  incoming_frame.set_render_time_ms(current_time);
 
-    incoming_frame.set_render_time_ms(render_time);
-    incoming_frame.set_ntp_time_ms(render_time + delta_ntp_internal_ms_);
+  // Capture time may come from clock with an offset and drift from clock_.
+  int64_t capture_ntp_time_ms;
+  if (video_frame.ntp_time_ms() != 0) {
+    capture_ntp_time_ms = video_frame.ntp_time_ms();
+  } else if (video_frame.render_time_ms() != 0) {
+    capture_ntp_time_ms = video_frame.render_time_ms() + delta_ntp_internal_ms_;
+  } else {
+    capture_ntp_time_ms = current_time + delta_ntp_internal_ms_;
   }
+  incoming_frame.set_ntp_time_ms(capture_ntp_time_ms);
 
   // Convert NTP time, in ms, to RTP timestamp.
   const int kMsToRtpTimestamp = 90;

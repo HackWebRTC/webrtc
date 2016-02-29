@@ -383,9 +383,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   VoiceEngine::Delete(voice_engine);
 }
 
-// TODO(danilchap): Reenable after adding support for frame capture clock
-// that is not in sync with local TickTime clock.
-TEST_F(CallPerfTest, DISABLED_PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {
   TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
                      DriftingClock::PercentsFaster(10.0f),
                      DriftingClock::kNoDrift, DriftingClock::kNoDrift);

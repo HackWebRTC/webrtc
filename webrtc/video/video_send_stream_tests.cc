@@ -1257,7 +1257,6 @@ void ExpectEqualTextureFrames(const VideoFrame& frame1,
   EXPECT_EQ(frame1.native_handle(), frame2.native_handle());
   EXPECT_EQ(frame1.width(), frame2.width());
   EXPECT_EQ(frame1.height(), frame2.height());
-  EXPECT_EQ(frame1.render_time_ms(), frame2.render_time_ms());
 }
 
 void ExpectEqualBufferFrames(const VideoFrame& frame1,
@@ -1267,7 +1266,6 @@ void ExpectEqualBufferFrames(const VideoFrame& frame1,
   EXPECT_EQ(frame1.stride(kYPlane), frame2.stride(kYPlane));
   EXPECT_EQ(frame1.stride(kUPlane), frame2.stride(kUPlane));
   EXPECT_EQ(frame1.stride(kVPlane), frame2.stride(kVPlane));
-  EXPECT_EQ(frame1.render_time_ms(), frame2.render_time_ms());
   ASSERT_EQ(frame1.allocated_size(kYPlane), frame2.allocated_size(kYPlane));
   EXPECT_EQ(0,
             memcmp(frame1.buffer(kYPlane),

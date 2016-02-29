@@ -249,8 +249,7 @@ bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
 bool EqualTextureFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
   return ((frame1.native_handle() == frame2.native_handle()) &&
           (frame1.width() == frame2.width()) &&
-          (frame1.height() == frame2.height()) &&
-          (frame1.render_time_ms() == frame2.render_time_ms()));
+          (frame1.height() == frame2.height()));
 }
 
 bool EqualBufferFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
@@ -259,7 +258,6 @@ bool EqualBufferFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
           (frame1.stride(kYPlane) == frame2.stride(kYPlane)) &&
           (frame1.stride(kUPlane) == frame2.stride(kUPlane)) &&
           (frame1.stride(kVPlane) == frame2.stride(kVPlane)) &&
-          (frame1.render_time_ms() == frame2.render_time_ms()) &&
           (frame1.allocated_size(kYPlane) == frame2.allocated_size(kYPlane)) &&
           (frame1.allocated_size(kUPlane) == frame2.allocated_size(kUPlane)) &&
           (frame1.allocated_size(kVPlane) == frame2.allocated_size(kVPlane)) &&
