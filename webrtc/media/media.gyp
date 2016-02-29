@@ -77,9 +77,6 @@
         'base/yuvframegenerator.cc',
         'base/yuvframegenerator.h',
         'devices/deviceinfo.h',
-        'devices/devicemanager.cc',
-        'devices/devicemanager.h',
-        'devices/dummydevicemanager.h',
         'devices/videorendererfactory.h',
         'engine/nullwebrtcvideoengine.h',
         'engine/simulcast.cc',
@@ -124,6 +121,17 @@
         4389,  # signed/unsigned mismatch.
       ],
       'conditions': [
+        ['include_internal_device_management==1', {
+          'sources': [
+            'devices/devicemanager.cc',
+            'devices/devicemanager.h',
+          ],
+        }, {
+          'sources': [
+            'devices/dummydevicemanager.cc',
+            'devices/dummydevicemanager.h',
+          ],
+        }],
         ['build_libyuv==1', {
           'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',],
         }],
@@ -158,7 +166,7 @@
             '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
           ],
         }],
-        ['OS=="linux"', {
+        ['OS=="linux" and include_internal_device_management==1', {
           'sources': [
             'devices/libudevsymboltable.cc',
             'devices/libudevsymboltable.h',
@@ -168,17 +176,6 @@
             'devices/v4llookup.cc',
             'devices/v4llookup.h',
           ],
-          'conditions': [
-            ['use_gtk==1', {
-              'sources': [
-                'devices/gtkvideorenderer.cc',
-                'devices/gtkvideorenderer.h',
-              ],
-              'cflags': [
-                '<!@(pkg-config --cflags gobject-2.0 gthread-2.0 gtk+-2.0)',
-              ],
-            }],
-          ],
           'include_dirs': [
             'third_party/libudev'
           ],
@@ -186,13 +183,19 @@
             '-lrt',
           ],
         }],
+        ['OS=="linux" and use_gtk==1', {
+          'sources': [
+            'devices/gtkvideorenderer.cc',
+            'devices/gtkvideorenderer.h',
+          ],
+          'cflags': [
+            '<!@(pkg-config --cflags gobject-2.0 gthread-2.0 gtk+-2.0)',
+          ],
+        }],
         ['OS=="win"', {
           'sources': [
             'devices/gdivideorenderer.cc',
             'devices/gdivideorenderer.h',
-            'devices/win32deviceinfo.cc',
-            'devices/win32devicemanager.cc',
-            'devices/win32devicemanager.h',
           ],
           'msvs_settings': {
             'VCLibrarianTool': {
@@ -200,36 +203,34 @@
                 'd3d9.lib',
                 'gdi32.lib',
                 'strmiids.lib',
+              ],
+            },
+          },
+        }],
+        ['OS=="win" and include_internal_device_management==1', {
+          'sources': [
+            'devices/win32deviceinfo.cc',
+            'devices/win32devicemanager.cc',
+            'devices/win32devicemanager.h',
+          ],
+          'msvs_settings': {
+            'VCLibrarianTool': {
+              'AdditionalDependencies': [
                 'winmm.lib',
               ],
             },
           },
         }],
-        ['OS=="mac"', {
+        ['OS=="mac" and include_internal_device_management==1', {
           'sources': [
             'devices/macdeviceinfo.cc',
             'devices/macdevicemanager.cc',
             'devices/macdevicemanager.h',
             'devices/macdevicemanagermm.mm',
           ],
-          'conditions': [
-            ['target_arch=="ia32"', {
-              'sources': [
-                'devices/carbonvideorenderer.cc',
-                'devices/carbonvideorenderer.h',
-              ],
-              'link_settings': {
-                'xcode_settings': {
-                  'OTHER_LDFLAGS': [
-                    '-framework Carbon',
-                  ],
-                },
-              },
-            }],
-          ],
           'xcode_settings': {
             'WARNING_CFLAGS': [
-              # TODO(ronghuawu): Update macdevicemanager.cc to stop using
+              # TODO(perkj): Update macdevicemanager.cc to stop using
               # deprecated functions and remove this flag.
               '-Wno-deprecated-declarations',
             ],
@@ -251,7 +252,20 @@
             },
           },
         }],
-        ['OS=="ios"', {
+        ['OS=="mac" and target_arch=="ia32"', {
+          'sources': [
+            'devices/carbonvideorenderer.cc',
+            'devices/carbonvideorenderer.h',
+          ],
+          'link_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                '-framework Carbon',
+              ],
+            },
+          },
+        }],
+        ['OS=="ios" and include_internal_device_management==1', {
           'sources': [
             'devices/mobiledevicemanager.cc',
           ],
@@ -276,7 +290,7 @@
             'CARBON_DEPRECATED=YES',
           ],
         }],
-        ['OS=="android"', {
+        ['OS=="android" and include_internal_device_management==1', {
           'sources': [
             'devices/mobiledevicemanager.cc',
           ],

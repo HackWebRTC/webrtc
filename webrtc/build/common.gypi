@@ -181,6 +181,9 @@
         # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
 
+        # Exclude device management code since Chromium has its own.
+        'include_internal_device_management%': 0,
+
         # Remove tests for Chromium to avoid slowing down GYP generation.
         'include_tests%': 0,
         'restrict_webrtc_logging%': 1,
@@ -193,6 +196,7 @@
 
         'include_pulse_audio%': 1,
         'include_internal_audio_device%': 1,
+        'include_internal_device_management%': 1,
         'include_tests%': 1,
         'restrict_webrtc_logging%': 0,
       }],
