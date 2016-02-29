@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TALK_SESSION_MEDIA_CHANNELMANAGER_H_
-#define TALK_SESSION_MEDIA_CHANNELMANAGER_H_
+#ifndef WEBRTC_PC_CHANNELMANAGER_H_
+#define WEBRTC_PC_CHANNELMANAGER_H_
 
 #include <string>
 #include <vector>
@@ -129,9 +129,6 @@ class ChannelManager : public rtc::MessageHandler,
   // formats a a pseudo-handle.
   bool StartVideoCapture(VideoCapturer* video_capturer,
                          const VideoFormat& video_format);
-  // When muting, produce black frames then pause the camera.
-  // When unmuting, start the camera. Camera starts unmuted.
-  bool MuteToBlackThenPause(VideoCapturer* video_capturer, bool muted);
   bool StopVideoCapture(VideoCapturer* video_capturer,
                         const VideoFormat& video_format);
   bool RestartVideoCapture(VideoCapturer* video_capturer,
@@ -221,4 +218,4 @@ class ChannelManager : public rtc::MessageHandler,
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_CHANNELMANAGER_H_
+#endif  // WEBRTC_PC_CHANNELMANAGER_H_

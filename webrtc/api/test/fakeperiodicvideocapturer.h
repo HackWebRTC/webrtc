@@ -14,12 +14,15 @@
 #ifndef WEBRTC_API_TEST_FAKEPERIODICVIDEOCAPTURER_H_
 #define WEBRTC_API_TEST_FAKEPERIODICVIDEOCAPTURER_H_
 
+#include <vector>
+
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 
 namespace webrtc {
 
-class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer {
+class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer,
+                                  public rtc::MessageHandler {
  public:
   FakePeriodicVideoCapturer() {
     std::vector<cricket::VideoFormat> formats;
@@ -34,7 +37,7 @@ class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer {
     formats.push_back(cricket::VideoFormat(160, 120,
         cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
     ResetSupportedFormats(formats);
-  };
+  }
 
   virtual cricket::CaptureState Start(const cricket::VideoFormat& format) {
     cricket::CaptureState state = FakeVideoCapturer::Start(format);
@@ -55,8 +58,6 @@ class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer {
             GetCaptureFormat()->interval / rtc::kNumNanosecsPerMillisec),
             this, MSG_CREATEFRAME);
         }
-    } else {
-      FakeVideoCapturer::OnMessage(msg);
     }
   }
 

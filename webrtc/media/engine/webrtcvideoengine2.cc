@@ -2017,14 +2017,12 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
                           : CoordinatedVideoAdapter::ADAPTREASON_CPU;
 
   if (capturer_) {
-    if (!capturer_->IsMuted()) {
       VideoFormat last_captured_frame_format;
       capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
                           &info.capturer_frame_time,
                           &last_captured_frame_format);
       info.input_frame_width = last_captured_frame_format.width;
       info.input_frame_height = last_captured_frame_format.height;
-    }
   }
 
   // Get bandwidth limitation info from stream_->GetStats().

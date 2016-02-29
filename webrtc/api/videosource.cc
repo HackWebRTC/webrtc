@@ -11,6 +11,7 @@
 #include "webrtc/api/videosource.h"
 
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #include "webrtc/api/mediaconstraintsinterface.h"
@@ -55,7 +56,6 @@ GetReadyState(cricket::CaptureState state) {
     case cricket::CS_RUNNING:
       return MediaSourceInterface::kLive;
     case cricket::CS_FAILED:
-    case cricket::CS_NO_DEVICE:
     case cricket::CS_STOPPED:
       return MediaSourceInterface::kEnded;
     case cricket::CS_PAUSED:
@@ -403,7 +403,7 @@ void VideoSource::RemoveSink(
 // This signal is triggered for all video capturers. Not only the one we are
 // interested in.
 void VideoSource::OnStateChange(cricket::VideoCapturer* capturer,
-                                     cricket::CaptureState capture_state) {
+                                cricket::CaptureState capture_state) {
   if (capturer == video_capturer_.get()) {
     SetState(GetReadyState(capture_state));
   }

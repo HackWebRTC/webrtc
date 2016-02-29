@@ -262,7 +262,7 @@ void WebRtcVideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
 CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
   if (!module_) {
     LOG(LS_ERROR) << "The capturer has not been initialized";
-    return CS_NO_DEVICE;
+    return CS_FAILED;
   }
   if (start_thread_) {
     LOG(LS_ERROR) << "The capturer is already running";
