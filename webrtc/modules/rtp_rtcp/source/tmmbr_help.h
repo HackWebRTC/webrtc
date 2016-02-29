@@ -12,34 +12,29 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_TMMBR_HELP_H_
 
 #include <vector>
-
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class TMMBRSet
+class TMMBRSet : public std::vector<rtcp::TmmbItem>
 {
 public:
-    TMMBRSet();
-    ~TMMBRSet();
-
     void VerifyAndAllocateSet(uint32_t minimumSize);
     void VerifyAndAllocateSetKeepingData(uint32_t minimumSize);
     // Number of valid data items in set.
-    uint32_t lengthOfSet() const { return _lengthOfSet; }
+    uint32_t lengthOfSet() const { return size(); }
     // Presently allocated max size of set.
-    uint32_t sizeOfSet() const { return _sizeOfSet; }
-    void clearSet() {
-      _lengthOfSet = 0;
-    }
+    uint32_t sizeOfSet() const { return capacity(); }
+    void clearSet() { clear(); }
     uint32_t Tmmbr(int i) const {
-      return _data.at(i).tmmbr;
+      return (*this)[i].bitrate_bps() / 1000;
     }
     uint32_t PacketOH(int i) const {
-      return _data.at(i).packet_oh;
+      return (*this)[i].packet_overhead();
     }
     uint32_t Ssrc(int i) const {
-      return _data.at(i).ssrc;
+      return (*this)[i].ssrc();
     }
     void SetEntry(unsigned int i,
                   uint32_t tmmbrSet,
@@ -58,21 +53,6 @@ public:
 
     // Set entry data to zero, but keep it in table.
     void ClearEntry(uint32_t idx);
-
- private:
-    class SetElement {
-      public:
-        SetElement() : tmmbr(0), packet_oh(0), ssrc(0) {}
-        uint32_t tmmbr;
-        uint32_t packet_oh;
-        uint32_t ssrc;
-    };
-
-    std::vector<SetElement> _data;
-    // Number of places allocated.
-    uint32_t    _sizeOfSet;
-    // NUmber of places currently in use.
-    uint32_t    _lengthOfSet;
 };
 
 class TMMBRHelp
