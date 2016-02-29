@@ -279,4 +279,43 @@ TEST(BufferTest, TestMutableLambdaSetAppend) {
   }
 }
 
+TEST(BufferTest, TestBracketRead) {
+  Buffer buf(kTestData, 7);
+  EXPECT_EQ(buf.size(), 7u);
+  EXPECT_EQ(buf.capacity(), 7u);
+  EXPECT_NE(buf.data(), nullptr);
+
+  for (size_t i = 0; i != 7u; ++i) {
+    EXPECT_EQ(buf[i], kTestData[i]);
+  }
+}
+
+TEST(BufferTest, TestBracketReadConst) {
+  Buffer buf(kTestData, 7);
+  EXPECT_EQ(buf.size(), 7u);
+  EXPECT_EQ(buf.capacity(), 7u);
+  EXPECT_NE(buf.data(), nullptr);
+
+  const Buffer& cbuf = buf;
+
+  for (size_t i = 0; i != 7u; ++i) {
+    EXPECT_EQ(cbuf[i], kTestData[i]);
+  }
+}
+
+TEST(BufferTest, TestBracketWrite) {
+  Buffer buf(7);
+  EXPECT_EQ(buf.size(), 7u);
+  EXPECT_EQ(buf.capacity(), 7u);
+  EXPECT_NE(buf.data(), nullptr);
+
+  for (size_t i = 0; i != 7u; ++i) {
+    buf[i] = kTestData[i];
+  }
+
+  for (size_t i = 0; i != 7u; ++i) {
+    EXPECT_EQ(buf[i], kTestData[i]);
+  }
+}
+
 }  // namespace rtc

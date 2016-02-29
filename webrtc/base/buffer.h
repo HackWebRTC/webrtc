@@ -124,6 +124,16 @@ class Buffer {
 
   bool operator!=(const Buffer& buf) const { return !(*this == buf); }
 
+  uint8_t& operator[](size_t index) {
+    RTC_DCHECK_LT(index, size_);
+    return data()[index];
+  }
+
+  uint8_t operator[](size_t index) const {
+    RTC_DCHECK_LT(index, size_);
+    return data()[index];
+  }
+
   // The SetData functions replace the contents of the buffer. They accept the
   // same input types as the constructors.
   template <typename T, typename internal::ByteType<T>::t = 0>
