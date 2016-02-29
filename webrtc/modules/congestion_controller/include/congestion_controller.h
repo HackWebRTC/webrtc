@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
 
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/pacing/packet_router.h"
@@ -69,7 +68,6 @@ class CongestionController : public CallStatsObserver, public Module {
 
  private:
   Clock* const clock_;
-  rtc::ThreadChecker config_thread_checker_;
   const rtc::scoped_ptr<PacedSender> pacer_;
   const rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   const rtc::scoped_ptr<BitrateController> bitrate_controller_;
