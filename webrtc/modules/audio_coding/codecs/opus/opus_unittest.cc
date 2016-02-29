@@ -208,7 +208,12 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
   const int kCheckTimeMs = 4000;
 
 #if defined(OPUS_FIXED_POINT)
-  const uint16_t kOutputValueBound = 20;
+  // Fixed-point Opus generates a random (comfort) noise, which has a less
+  // predictable value bound than its floating-point Opus. This value depends on
+  // input signal, and the time window for checking the output values (between
+  // |kCheckTimeMs| and |kRunTimeMs|).
+  const uint16_t kOutputValueBound = 30;
+
 #else
   const uint16_t kOutputValueBound = 2;
 #endif
