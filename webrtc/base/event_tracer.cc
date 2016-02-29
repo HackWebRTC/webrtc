@@ -139,6 +139,7 @@ class EventLogger final {
   }
 
   void Start(FILE* file, bool owned) {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
     RTC_DCHECK(file);
     RTC_DCHECK(!output_file_);
     output_file_ = file;
@@ -158,9 +159,12 @@ class EventLogger final {
 
     // Finally start, everything should be set up now.
     logging_thread_.Start();
+    TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Start");
   }
 
   void Stop() {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Stop");
     // Try to stop. Abort if we're not currently logging.
     if (rtc::AtomicOps::CompareAndSwap(&g_event_logging_active, 1, 0) == 0)
       return;
