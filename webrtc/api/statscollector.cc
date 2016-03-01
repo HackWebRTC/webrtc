@@ -462,6 +462,8 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
   }
   stats_gathering_started_ = time_now;
 
+  // TODO(pthatcher): Merge PeerConnection and WebRtcSession so there is no
+  // pc_->session().
   if (pc_->session()) {
     // TODO(tommi): All of these hop over to the worker thread to fetch
     // information.  We could use an AsyncInvoker to run all of these and post

@@ -648,6 +648,7 @@ void WebRtcSession::Close() {
   ASSERT(!voice_channel_);
   ASSERT(!video_channel_);
   ASSERT(!data_channel_);
+  media_controller_->Close();
 }
 
 cricket::BaseChannel* WebRtcSession::GetChannel(

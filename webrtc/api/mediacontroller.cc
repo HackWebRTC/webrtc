@@ -25,50 +25,55 @@ const int kMaxBandwidthBps = 2000000;
 class MediaController : public webrtc::MediaControllerInterface,
                         public sigslot::has_slots<> {
  public:
-  MediaController(const cricket::MediaConfig& config,
+  MediaController(const cricket::MediaConfig& media_config,
                   rtc::Thread* worker_thread,
                   cricket::ChannelManager* channel_manager)
       : worker_thread_(worker_thread),
-        config_(config),
+        media_config_(media_config),
         channel_manager_(channel_manager) {
-    RTC_DCHECK(nullptr != worker_thread);
+    RTC_DCHECK(worker_thread);
     worker_thread_->Invoke<void>(
         rtc::Bind(&MediaController::Construct_w, this,
                   channel_manager_->media_engine()));
   }
   ~MediaController() override {
-    worker_thread_->Invoke<void>(rtc::Bind(&MediaController::Destruct_w, this));
+    Close();
   }
 
+  // webrtc::MediaControllerInterface implementation.
+  void Close() override {
+    worker_thread_->Invoke<void>(rtc::Bind(&MediaController::Close_w, this));
+  }
   webrtc::Call* call_w() override {
     RTC_DCHECK(worker_thread_->IsCurrent());
+    if (!call_) {
+      call_.reset(webrtc::Call::Create(call_config_));
+    }
     return call_.get();
   }
-
   cricket::ChannelManager* channel_manager() const override {
     return channel_manager_;
   }
-  const cricket::MediaConfig& config() const override { return config_; }
+  const cricket::MediaConfig& config() const override { return media_config_; }
 
  private:
   void Construct_w(cricket::MediaEngineInterface* media_engine) {
     RTC_DCHECK(worker_thread_->IsCurrent());
     RTC_DCHECK(media_engine);
-    webrtc::Call::Config config;
-    config.audio_state = media_engine->GetAudioState();
-    config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
-    config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
-    config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
-    call_.reset(webrtc::Call::Create(config));
+    call_config_.audio_state = media_engine->GetAudioState();
+    call_config_.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
+    call_config_.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
+    call_config_.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
   }
-  void Destruct_w() {
+  void Close_w() {
     RTC_DCHECK(worker_thread_->IsCurrent());
     call_.reset();
   }
 
   rtc::Thread* const worker_thread_;
-  const cricket::MediaConfig config_;
+  const cricket::MediaConfig media_config_;
   cricket::ChannelManager* const channel_manager_;
+  webrtc::Call::Config call_config_;
   rtc::scoped_ptr<webrtc::Call> call_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MediaController);

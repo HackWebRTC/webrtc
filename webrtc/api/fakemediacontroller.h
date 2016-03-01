@@ -26,6 +26,7 @@ class FakeMediaController : public webrtc::MediaControllerInterface {
     RTC_DCHECK(nullptr != call_);
   }
   ~FakeMediaController() override {}
+  void Close() override {}
   webrtc::Call* call_w() override { return call_; }
   cricket::ChannelManager* channel_manager() const override {
     return channel_manager_;

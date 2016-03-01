@@ -32,6 +32,7 @@ class MediaControllerInterface {
       cricket::ChannelManager* channel_manager);
 
   virtual ~MediaControllerInterface() {}
+  virtual void Close() = 0;
   virtual webrtc::Call* call_w() = 0;
   virtual cricket::ChannelManager* channel_manager() const = 0;
   virtual const cricket::MediaConfig& config() const = 0;
