@@ -110,7 +110,7 @@ const char kRtpVideoRotation6BitsHeaderExtensionForTesting[] =
 
 const int kRtpTransportSequenceNumberHeaderExtensionDefaultId = 5;
 const char kRtpTransportSequenceNumberHeaderExtension[] =
-    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions";
+    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
 
 const char kVp8CodecName[] = "VP8";
 const char kVp9CodecName[] = "VP9";

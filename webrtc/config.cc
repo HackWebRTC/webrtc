@@ -37,7 +37,7 @@ const char* RtpExtension::kVideoRotation = "urn:3gpp:video-orientation";
 const char* RtpExtension::kAudioLevel =
     "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
 const char* RtpExtension::kTransportSequenceNumber =
-    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions";
+    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
 
 bool RtpExtension::IsSupportedForAudio(const std::string& name) {
   return name == webrtc::RtpExtension::kAbsSendTime ||
