@@ -10,6 +10,7 @@
 #ifndef WEBRTC_VIDEO_VIDEO_QUALITY_TEST_H_
 #define WEBRTC_VIDEO_VIDEO_QUALITY_TEST_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -103,10 +104,10 @@ class VideoQualityTest : public test::CallTest {
   void SetupScreenshare();
 
   // We need a more general capturer than the FrameGeneratorCapturer.
-  rtc::scoped_ptr<test::VideoCapturer> capturer_;
-  rtc::scoped_ptr<test::TraceToStderr> trace_to_stderr_;
-  rtc::scoped_ptr<test::FrameGenerator> frame_generator_;
-  rtc::scoped_ptr<VideoEncoder> encoder_;
+  std::unique_ptr<test::VideoCapturer> capturer_;
+  std::unique_ptr<test::TraceToStderr> trace_to_stderr_;
+  std::unique_ptr<test::FrameGenerator> frame_generator_;
+  std::unique_ptr<VideoEncoder> encoder_;
   VideoCodecUnion codec_settings_;
   Clock* const clock_;
 

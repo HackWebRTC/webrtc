@@ -21,7 +21,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -1039,7 +1038,7 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
   params_ = params;
   CheckParams();
 
-  rtc::scoped_ptr<test::VideoRenderer> local_preview(
+  std::unique_ptr<test::VideoRenderer> local_preview(
       test::VideoRenderer::Create("Local Preview", params_.common.width,
                                   params_.common.height));
   size_t stream_id = params_.ss.selected_stream;
@@ -1050,7 +1049,7 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
     title += " - Stream #" + s.str();
   }
 
-  rtc::scoped_ptr<test::VideoRenderer> loopback_video(
+  std::unique_ptr<test::VideoRenderer> loopback_video(
       test::VideoRenderer::Create(title.c_str(),
                                   params_.ss.streams[stream_id].width,
                                   params_.ss.streams[stream_id].height));
@@ -1059,7 +1058,7 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
   // match the full stack tests.
   Call::Config call_config;
   call_config.bitrate_config = params_.common.call_bitrate_config;
-  rtc::scoped_ptr<Call> call(Call::Create(call_config));
+  std::unique_ptr<Call> call(Call::Create(call_config));
 
   test::LayerFilteringTransport transport(
       params.pipe, call.get(), kPayloadTypeVP8, kPayloadTypeVP9,

@@ -12,10 +12,10 @@
 #define WEBRTC_VIDEO_CALL_STATS_H_
 
 #include <list>
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -64,7 +64,7 @@ class CallStats : public Module {
   // Protecting all members.
   rtc::CriticalSection crit_;
   // Observer receiving statistics updates.
-  rtc::scoped_ptr<RtcpRttStats> rtcp_rtt_stats_;
+  std::unique_ptr<RtcpRttStats> rtcp_rtt_stats_;
   // The last time 'Process' resulted in statistic update.
   int64_t last_process_time_;
   // The last RTT in the statistics update (zero if there is no valid estimate).

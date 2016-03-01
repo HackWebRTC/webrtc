@@ -11,10 +11,10 @@
 #ifndef WEBRTC_VIDEO_VIE_ENCODER_H_
 #define WEBRTC_VIDEO_VIE_ENCODER_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call/bitrate_allocator.h"
@@ -139,12 +139,12 @@ class ViEEncoder : public VideoEncoderRateObserver,
   const uint32_t number_of_cores_;
   const std::vector<uint32_t> ssrcs_;
 
-  const rtc::scoped_ptr<VideoProcessing> vp_;
-  const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
-  const rtc::scoped_ptr<VideoCodingModule> vcm_;
+  const std::unique_ptr<VideoProcessing> vp_;
+  const std::unique_ptr<QMVideoSettingsCallback> qm_callback_;
+  const std::unique_ptr<VideoCodingModule> vcm_;
 
   rtc::CriticalSection data_cs_;
-  rtc::scoped_ptr<BitrateObserver> bitrate_observer_;
+  std::unique_ptr<BitrateObserver> bitrate_observer_;
 
   SendStatisticsProxy* const stats_proxy_;
   I420FrameCallback* const pre_encode_callback_;

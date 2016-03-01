@@ -12,12 +12,12 @@
 #define WEBRTC_VIDEO_SEND_STATISTICS_PROXY_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/base/ratetracker.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -174,7 +174,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     const VideoSendStream::Stats start_stats_;
   };
 
-  rtc::scoped_ptr<UmaSamplesContainer> uma_container_ GUARDED_BY(crit_);
+  std::unique_ptr<UmaSamplesContainer> uma_container_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

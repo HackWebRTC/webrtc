@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/video/overuse_frame_detector.h"
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video_frame.h"
 
@@ -121,9 +122,9 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   int UsagePercent() { return metrics_.encode_usage_percent; }
 
   CpuOveruseOptions options_;
-  rtc::scoped_ptr<SimulatedClock> clock_;
-  rtc::scoped_ptr<MockCpuOveruseObserver> observer_;
-  rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
+  std::unique_ptr<SimulatedClock> clock_;
+  std::unique_ptr<MockCpuOveruseObserver> observer_;
+  std::unique_ptr<OveruseFrameDetector> overuse_detector_;
   CpuOveruseMetrics metrics_;
 };
 

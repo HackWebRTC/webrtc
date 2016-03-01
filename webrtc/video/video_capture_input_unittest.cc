@@ -9,12 +9,12 @@
  */
 #include "webrtc/video/video_capture_input.h"
 
+#include <memory>
 #include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/event.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/scoped_vector.h"
 #include "webrtc/test/fake_texture_frame.h"
@@ -82,12 +82,12 @@ class VideoCaptureInputTest : public ::testing::Test {
 
   SendStatisticsProxy stats_proxy_;
 
-  rtc::scoped_ptr<MockVideoCaptureCallback> mock_frame_callback_;
+  std::unique_ptr<MockVideoCaptureCallback> mock_frame_callback_;
 
-  rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
+  std::unique_ptr<OveruseFrameDetector> overuse_detector_;
 
   // Used to send input capture frames to VideoCaptureInput.
-  rtc::scoped_ptr<internal::VideoCaptureInput> input_;
+  std::unique_ptr<internal::VideoCaptureInput> input_;
 
   // Input capture frames of VideoCaptureInput.
   ScopedVector<VideoFrame> input_frames_;

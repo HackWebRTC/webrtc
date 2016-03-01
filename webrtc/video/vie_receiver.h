@@ -12,10 +12,10 @@
 #define WEBRTC_VIDEO_VIE_RECEIVER_H_
 
 #include <list>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
@@ -100,17 +100,17 @@ class ViEReceiver : public RtpData {
 
   rtc::CriticalSection receive_cs_;
   Clock* clock_;
-  rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
-  const rtc::scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
-  rtc::scoped_ptr<FecReceiver> fec_receiver_;
+  std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
+  std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  std::unique_ptr<RtpReceiver> rtp_receiver_;
+  const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
+  std::unique_ptr<FecReceiver> fec_receiver_;
   RtpRtcp* rtp_rtcp_;
   std::vector<RtpRtcp*> rtp_rtcp_simulcast_;
   VideoCodingModule* vcm_;
   RemoteBitrateEstimator* remote_bitrate_estimator_;
 
-  rtc::scoped_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
+  std::unique_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
 
   bool receiving_;
   uint8_t restored_packet_[IP_PACKET_SIZE];

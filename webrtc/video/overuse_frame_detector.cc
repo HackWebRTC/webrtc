@@ -166,8 +166,8 @@ class OveruseFrameDetector::SendProcessingUsage {
   const float kMaxSampleDiffMs;
   uint64_t count_;
   const CpuOveruseOptions options_;
-  rtc::scoped_ptr<rtc::ExpFilter> filtered_processing_ms_;
-  rtc::scoped_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
+  std::unique_ptr<rtc::ExpFilter> filtered_processing_ms_;
+  std::unique_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
 };
 
 OveruseFrameDetector::OveruseFrameDetector(

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <list>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -17,7 +18,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
@@ -173,7 +173,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
 
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
-  rtc::scoped_ptr<test::FrameGenerator> frame_generator(
+  std::unique_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(kWidth, kHeight));
   video_send_stream_->Input()->IncomingCapturedFrame(
       *frame_generator->NextFrame());
@@ -220,7 +220,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   CreateVideoStreams();
   Start();
 
-  rtc::scoped_ptr<test::FrameGenerator> frame_generator(
+  std::unique_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(
           video_encoder_config_.streams[0].width,
           video_encoder_config_.streams[0].height));
@@ -282,8 +282,8 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
     bool IsTextureSupported() const override { return false; }
 
    private:
-    rtc::scoped_ptr<webrtc::VideoEncoder> encoder_;
-    rtc::scoped_ptr<webrtc::VideoDecoder> decoder_;
+    std::unique_ptr<webrtc::VideoEncoder> encoder_;
+    std::unique_ptr<webrtc::VideoDecoder> decoder_;
     int frame_counter_;
   } test;
 
@@ -338,8 +338,8 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
     bool IsTextureSupported() const override { return false; }
 
    private:
-    rtc::scoped_ptr<webrtc::VideoEncoder> encoder_;
-    rtc::scoped_ptr<webrtc::VideoDecoder> decoder_;
+    std::unique_ptr<webrtc::VideoEncoder> encoder_;
+    std::unique_ptr<webrtc::VideoDecoder> decoder_;
     int frame_counter_;
   } test;
 
@@ -816,7 +816,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
     const int payload_type_;
     const uint32_t retransmission_ssrc_;
     const int retransmission_payload_type_;
-    rtc::scoped_ptr<VideoEncoder> encoder_;
+    std::unique_ptr<VideoEncoder> encoder_;
     const std::string payload_name_;
     int marker_bits_observed_;
     uint32_t retransmitted_timestamp_ GUARDED_BY(&crit_);
@@ -908,7 +908,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
   CreateSendConfig(1, 0, &sender_transport);
-  rtc::scoped_ptr<VideoEncoder> encoder(
+  std::unique_ptr<VideoEncoder> encoder(
       VideoEncoder::Create(VideoEncoder::kVp8));
   video_send_config_.encoder_settings.encoder = encoder.get();
   video_send_config_.encoder_settings.payload_name = "VP8";
@@ -926,7 +926,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
 
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
-  rtc::scoped_ptr<test::FrameGenerator> frame_generator(
+  std::unique_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(kWidth / 2, kHeight / 2));
   video_send_stream_->Input()->IncomingCapturedFrame(
       *frame_generator->NextFrame());
@@ -1213,16 +1213,16 @@ class MultiStreamTest {
   virtual ~MultiStreamTest() {}
 
   void RunTest() {
-    rtc::scoped_ptr<Call> sender_call(Call::Create(Call::Config()));
-    rtc::scoped_ptr<Call> receiver_call(Call::Create(Call::Config()));
-    rtc::scoped_ptr<test::DirectTransport> sender_transport(
+    std::unique_ptr<Call> sender_call(Call::Create(Call::Config()));
+    std::unique_ptr<Call> receiver_call(Call::Create(Call::Config()));
+    std::unique_ptr<test::DirectTransport> sender_transport(
         CreateSendTransport(sender_call.get()));
-    rtc::scoped_ptr<test::DirectTransport> receiver_transport(
+    std::unique_ptr<test::DirectTransport> receiver_transport(
         CreateReceiveTransport(receiver_call.get()));
     sender_transport->SetReceiver(receiver_call->Receiver());
     receiver_transport->SetReceiver(sender_call->Receiver());
 
-    rtc::scoped_ptr<VideoEncoder> encoders[kNumStreams];
+    std::unique_ptr<VideoEncoder> encoders[kNumStreams];
     for (size_t i = 0; i < kNumStreams; ++i)
       encoders[i].reset(VideoEncoder::Create(VideoEncoder::kVp8));
 
@@ -1374,7 +1374,7 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
     }
 
    private:
-    rtc::scoped_ptr<VideoOutputObserver> observers_[kNumStreams];
+    std::unique_ptr<VideoOutputObserver> observers_[kNumStreams];
   } tester;
 
   tester.RunTest();
@@ -1492,7 +1492,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
 
     rtc::CriticalSection lock_;
     rtc::Event done_;
-    rtc::scoped_ptr<RtpHeaderParser> parser_;
+    std::unique_ptr<RtpHeaderParser> parser_;
     SequenceNumberUnwrapper unwrapper_;
     std::set<int64_t> received_packed_ids_;
     std::set<uint32_t> streams_observed_;
@@ -1706,7 +1706,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
     }
 
    private:
-    rtc::scoped_ptr<uint8_t[]> buffer_;
+    std::unique_ptr<uint8_t[]> buffer_;
     size_t length_;
     FrameType frame_type_;
     rtc::Event called_;
@@ -1730,7 +1730,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   CreateVideoStreams();
   Start();
 
-  rtc::scoped_ptr<test::FrameGenerator> frame_generator(
+  std::unique_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(
           video_encoder_config_.streams[0].width,
           video_encoder_config_.streams[0].height));
@@ -1960,7 +1960,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
     Clock* const clock_;
     uint32_t sender_ssrc_;
     int remb_bitrate_bps_;
-    rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
+    std::unique_ptr<RtpRtcp> rtp_rtcp_;
     test::PacketTransport* receive_transport_;
     rtc::Event event_;
     rtc::PlatformThread poller_thread_;
@@ -1986,7 +1986,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
       if (++sent_rtp_packets_ == kPacketNumberToDrop) {
-        rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
         RTPHeader header;
         EXPECT_TRUE(parser->Parse(packet, length, &header));
         dropped_rtp_packet_ = header.sequenceNumber;
@@ -2162,7 +2162,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
     const bool use_rtx_;
     const bool use_red_;
     const bool screenshare_;
-    const rtc::scoped_ptr<VideoEncoder> vp8_encoder_;
+    const std::unique_ptr<VideoEncoder> vp8_encoder_;
     Call* sender_call_;
     Call* receiver_call_;
     int64_t start_runtime_ms_;

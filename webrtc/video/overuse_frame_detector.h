@@ -12,11 +12,11 @@
 #define WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
 
 #include <list>
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
@@ -154,7 +154,7 @@ class OveruseFrameDetector : public Module {
 
   // TODO(asapersson): Can these be regular members (avoid separate heap
   // allocs)?
-  const rtc::scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
+  const std::unique_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
   std::list<FrameTiming> frame_timing_ GUARDED_BY(crit_);
 
   rtc::ThreadChecker processing_thread_;

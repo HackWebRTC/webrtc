@@ -12,6 +12,7 @@
 #include "webrtc/video/send_statistics_proxy.h"
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -94,7 +95,7 @@ class SendStatisticsProxyTest : public ::testing::Test {
   }
 
   SimulatedClock fake_clock_;
-  rtc::scoped_ptr<SendStatisticsProxy> statistics_proxy_;
+  std::unique_ptr<SendStatisticsProxy> statistics_proxy_;
   VideoSendStream::Config config_;
   int avg_delay_ms_;
   int max_delay_ms_;

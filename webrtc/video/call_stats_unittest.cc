@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
@@ -39,7 +40,7 @@ class CallStatsTest : public ::testing::Test {
  protected:
   virtual void SetUp() { call_stats_.reset(new CallStats(&fake_clock_)); }
   SimulatedClock fake_clock_;
-  rtc::scoped_ptr<CallStats> call_stats_;
+  std::unique_ptr<CallStats> call_stats_;
 };
 
 TEST_F(CallStatsTest, AddAndTriggerCallback) {

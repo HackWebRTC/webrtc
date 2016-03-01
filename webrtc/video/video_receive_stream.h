@@ -11,9 +11,9 @@
 #ifndef WEBRTC_VIDEO_VIDEO_RECEIVE_STREAM_H_
 #define WEBRTC_VIDEO_VIDEO_RECEIVE_STREAM_H_
 
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
@@ -95,7 +95,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   CallStats* const call_stats_;
   VieRemb* const remb_;
 
-  rtc::scoped_ptr<VideoCodingModule> vcm_;
+  std::unique_ptr<VideoCodingModule> vcm_;
   IncomingVideoStream incoming_video_stream_;
   ReceiveStatisticsProxy stats_proxy_;
   ViEChannel vie_channel_;

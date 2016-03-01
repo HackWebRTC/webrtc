@@ -13,11 +13,11 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -284,13 +284,13 @@ class ViEChannel : public VCMFrameTypeCallback,
   rtc::CriticalSection crit_;
 
   // Owned modules/classes.
-  rtc::scoped_ptr<ViEChannelProtectionCallback> vcm_protection_callback_;
+  std::unique_ptr<ViEChannelProtectionCallback> vcm_protection_callback_;
 
   VideoCodingModule* const vcm_;
   ViEReceiver vie_receiver_;
 
   // Helper to report call statistics.
-  rtc::scoped_ptr<ChannelStatsObserver> stats_observer_;
+  std::unique_ptr<ChannelStatsObserver> stats_observer_;
 
   // Not owned.
   ReceiveStatisticsProxy* receive_stats_callback_ GUARDED_BY(crit_);
@@ -301,7 +301,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   PacedSender* const paced_sender_;
   PacketRouter* const packet_router_;
 
-  const rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+  const std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   TransportFeedbackObserver* const transport_feedback_observer_;
 
   int max_nack_reordering_threshold_;

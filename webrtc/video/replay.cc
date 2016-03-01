@@ -11,13 +11,13 @@
 #include <stdio.h>
 
 #include <map>
+#include <memory>
 #include <sstream>
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -209,12 +209,12 @@ class DecoderBitstreamFileWriter : public EncodedFrameObserver {
 };
 
 void RtpReplay() {
-  rtc::scoped_ptr<test::VideoRenderer> playback_video(
+  std::unique_ptr<test::VideoRenderer> playback_video(
       test::VideoRenderer::Create("Playback Video", 640, 480));
   FileRenderPassthrough file_passthrough(flags::OutBase(),
                                          playback_video.get());
 
-  rtc::scoped_ptr<Call> call(Call::Create(Call::Config()));
+  std::unique_ptr<Call> call(Call::Create(Call::Config()));
 
   test::NullTransport transport;
   VideoReceiveStream::Config receive_config(&transport);
@@ -237,7 +237,7 @@ void RtpReplay() {
   encoder_settings.payload_name = flags::Codec();
   encoder_settings.payload_type = flags::PayloadType();
   VideoReceiveStream::Decoder decoder;
-  rtc::scoped_ptr<DecoderBitstreamFileWriter> bitstream_writer;
+  std::unique_ptr<DecoderBitstreamFileWriter> bitstream_writer;
   if (!flags::DecoderBitstreamFilename().empty()) {
     bitstream_writer.reset(new DecoderBitstreamFileWriter(
         flags::DecoderBitstreamFilename().c_str()));
@@ -255,7 +255,7 @@ void RtpReplay() {
   VideoReceiveStream* receive_stream =
       call->CreateVideoReceiveStream(receive_config);
 
-  rtc::scoped_ptr<test::RtpFileReader> rtp_reader(test::RtpFileReader::Create(
+  std::unique_ptr<test::RtpFileReader> rtp_reader(test::RtpFileReader::Create(
       test::RtpFileReader::kRtpDump, flags::InputFile()));
   if (rtp_reader.get() == nullptr) {
     rtp_reader.reset(test::RtpFileReader::Create(test::RtpFileReader::kPcap,
@@ -290,7 +290,7 @@ void RtpReplay() {
         break;
       case PacketReceiver::DELIVERY_UNKNOWN_SSRC: {
         RTPHeader header;
-        rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
         parser->Parse(packet.data, packet.length, &header);
         if (unknown_packets[header.ssrc] == 0)
           fprintf(stderr, "Unknown SSRC: %u!\n", header.ssrc);

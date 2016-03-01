@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/video/payload_router.h"
@@ -27,7 +28,7 @@ class PayloadRouterTest : public ::testing::Test {
   virtual void SetUp() {
     payload_router_.reset(new PayloadRouter());
   }
-  rtc::scoped_ptr<PayloadRouter> payload_router_;
+  std::unique_ptr<PayloadRouter> payload_router_;
 };
 
 TEST_F(PayloadRouterTest, SendOnOneModule) {
