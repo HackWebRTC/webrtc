@@ -2246,20 +2246,19 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "EncodeTimeInMs"));
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.DecodeTimeInMs"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.BitrateSentInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "BitrateSentInKbps"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.BitrateReceivedInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.MediaBitrateSentInKbps"));
+  EXPECT_EQ(1,
+            test::NumHistogramSamples(video_prefix + "MediaBitrateSentInKbps"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.MediaBitrateReceivedInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.PaddingBitrateSentInKbps"));
+  EXPECT_EQ(
+      1, test::NumHistogramSamples(video_prefix + "PaddingBitrateSentInKbps"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.PaddingBitrateReceivedInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.RetransmittedBitrateSentInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix +
+                                         "RetransmittedBitrateSentInKbps"));
   EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.RetransmittedBitrateReceivedInKbps"));
 

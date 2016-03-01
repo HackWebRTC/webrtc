@@ -169,6 +169,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     rtc::RateTracker input_frame_rate_tracker_;
     rtc::RateTracker sent_frame_rate_tracker_;
     int64_t first_rtcp_stats_time_ms_;
+    int64_t first_rtp_stats_time_ms_;
     ReportBlockStats report_block_stats_;
     const VideoSendStream::Stats start_stats_;
   };

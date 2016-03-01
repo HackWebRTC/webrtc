@@ -200,8 +200,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Compute NACK list parameters for the buffering mode.
   int GetRequiredNackListSize(int target_delay_ms);
 
-  void UpdateHistograms();
-
   // ViEChannel exposes methods that allow to modify observers and callbacks
   // to be modified. Such an API-style is cumbersome to implement and maintain
   // at all the levels when comparing to only setting them at construction. As

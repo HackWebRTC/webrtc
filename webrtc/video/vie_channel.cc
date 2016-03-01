@@ -163,7 +163,6 @@ int32_t ViEChannel::Init() {
 }
 
 ViEChannel::~ViEChannel() {
-  UpdateHistograms();
   // Make sure we don't get more callbacks from the RTP module.
   module_process_thread_->DeRegisterModule(
       vie_receiver_.GetReceiveStatistics());
@@ -174,52 +173,6 @@ ViEChannel::~ViEChannel() {
     packet_router_->RemoveRtpModule(rtp_rtcp);
     module_process_thread_->DeRegisterModule(rtp_rtcp);
     delete rtp_rtcp;
-  }
-}
-
-void ViEChannel::UpdateHistograms() {
-  if (sender_) {
-    StreamDataCounters rtp;
-    StreamDataCounters rtx;
-    GetSendStreamDataCounters(&rtp, &rtx);
-    StreamDataCounters rtp_rtx = rtp;
-    rtp_rtx.Add(rtx);
-    int64_t elapsed_sec = rtp_rtx.TimeSinceFirstPacketInMs(
-                              Clock::GetRealTimeClock()->TimeInMilliseconds()) /
-                          1000;
-    if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
-      RTC_HISTOGRAM_COUNTS_100000(
-          "WebRTC.Video.BitrateSentInKbps",
-          static_cast<int>(rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
-                           1000));
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.MediaBitrateSentInKbps",
-          static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000));
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.PaddingBitrateSentInKbps",
-          static_cast<int>(rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec /
-                           1000));
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.RetransmittedBitrateSentInKbps",
-          static_cast<int>(rtp_rtx.retransmitted.TotalBytes() * 8 /
-                           elapsed_sec / 1000));
-      if (rtp_rtcp_modules_[0]->RtxSendStatus() != kRtxOff) {
-        RTC_HISTOGRAM_COUNTS_10000(
-            "WebRTC.Video.RtxBitrateSentInKbps",
-            static_cast<int>(rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
-                             1000));
-      }
-      bool fec_enabled = false;
-      uint8_t pltype_red;
-      uint8_t pltype_fec;
-      rtp_rtcp_modules_[0]->GenericFECStatus(&fec_enabled, &pltype_red,
-                                             &pltype_fec);
-      if (fec_enabled) {
-        RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FecBitrateSentInKbps",
-                                   static_cast<int>(rtp_rtx.fec.TotalBytes() *
-                                                    8 / elapsed_sec / 1000));
-      }
-    }
   }
 }
 
