@@ -1017,10 +1017,16 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
                                         bool expect_created_receive_stream);
 
   FakeVideoSendStream* SetDenoisingOption(
-      const cricket::VideoSendParameters& parameters, bool enabled) {
+      const cricket::VideoSendParameters& parameters,
+      cricket::FakeVideoCapturer* capturer,
+      bool enabled) {
     cricket::VideoSendParameters params = parameters;
     params.options.video_noise_reduction = rtc::Optional<bool>(enabled);
+    // TODO(nisse): Switch to using SetOptions?
     channel_->SetSendParameters(params);
+    // Options only take effect on the next frame.
+    EXPECT_TRUE(capturer->CaptureFrame());
+
     return fake_call_->GetVideoSendStreams().back();
   }
 
@@ -1554,19 +1560,25 @@ TEST_F(WebRtcVideoChannel2Test, SuspendBelowMinBitrateDisabledByDefault) {
   EXPECT_FALSE(stream->GetConfig().suspend_below_min_bitrate);
 }
 
-TEST_F(WebRtcVideoChannel2Test, SetOptionsWithSuspendBelowMinBitrate) {
-  send_parameters_.options.suspend_below_min_bitrate =
-      rtc::Optional<bool>(true);
+TEST_F(WebRtcVideoChannel2Test, SetMediaConfigSuspendBelowMinBitrate) {
+  MediaConfig media_config = MediaConfig();
+  media_config.video.suspend_below_min_bitrate = true;
+
+  channel_.reset(
+      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+
   channel_->SetSendParameters(send_parameters_);
 
   FakeVideoSendStream* stream = AddSendStream();
   EXPECT_TRUE(stream->GetConfig().suspend_below_min_bitrate);
 
-  send_parameters_.options.suspend_below_min_bitrate =
-      rtc::Optional<bool>(false);
+  media_config.video.suspend_below_min_bitrate = false;
+  channel_.reset(
+      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+
   channel_->SetSendParameters(send_parameters_);
 
-  stream = fake_call_->GetVideoSendStreams()[0];
+  stream = AddSendStream();
   EXPECT_FALSE(stream->GetConfig().suspend_below_min_bitrate);
 }
 
@@ -1601,14 +1613,14 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   EXPECT_TRUE(vp8_settings.denoisingOn)
       << "VP8 denoising should be on by default.";
 
-  stream = SetDenoisingOption(parameters, false);
+  stream = SetDenoisingOption(parameters, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_FALSE(vp8_settings.denoisingOn);
   EXPECT_TRUE(vp8_settings.automaticResizeOn);
   EXPECT_TRUE(vp8_settings.frameDroppingOn);
 
-  stream = SetDenoisingOption(parameters, true);
+  stream = SetDenoisingOption(parameters, &capturer, true);
 
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_TRUE(vp8_settings.denoisingOn);
@@ -1632,7 +1644,7 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   capturer.SetScreencast(true);
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
   EXPECT_TRUE(capturer.CaptureFrame());
-  stream = SetDenoisingOption(parameters, false);
+  stream = SetDenoisingOption(parameters, &capturer, false);
 
   EXPECT_EQ(1, stream->GetVideoStreams().size());
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
@@ -1641,7 +1653,7 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   EXPECT_FALSE(vp8_settings.automaticResizeOn);
   EXPECT_FALSE(vp8_settings.frameDroppingOn);
 
-  stream = SetDenoisingOption(parameters, true);
+  stream = SetDenoisingOption(parameters, &capturer, true);
 
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_FALSE(vp8_settings.denoisingOn);
@@ -1695,14 +1707,14 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
   EXPECT_FALSE(vp9_settings.denoisingOn)
       << "VP9 denoising should be off by default.";
 
-  stream = SetDenoisingOption(parameters, false);
+  stream = SetDenoisingOption(parameters, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
   // Frame dropping always on for real time video.
   EXPECT_TRUE(vp9_settings.frameDroppingOn);
 
-  stream = SetDenoisingOption(parameters, true);
+  stream = SetDenoisingOption(parameters, &capturer, true);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_TRUE(vp9_settings.denoisingOn);
@@ -1714,14 +1726,14 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
 
   EXPECT_TRUE(capturer.CaptureFrame());
-  stream = SetDenoisingOption(parameters, false);
+  stream = SetDenoisingOption(parameters, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
   // Frame dropping always off for screen sharing.
   EXPECT_FALSE(vp9_settings.frameDroppingOn);
 
-  stream = SetDenoisingOption(parameters, false);
+  stream = SetDenoisingOption(parameters, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
@@ -1817,7 +1829,7 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
 
   MediaConfig media_config = MediaConfig();
   if (!enable_overuse) {
-    media_config.enable_cpu_overuse_detection = false;
+    media_config.video.enable_cpu_overuse_detection = false;
   }
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));

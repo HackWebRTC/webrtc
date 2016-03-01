@@ -615,15 +615,20 @@ bool PeerConnection::Initialize(
   // We rely on default values when constraints aren't found.
   cricket::MediaConfig media_config;
 
-  media_config.disable_prerenderer_smoothing =
+  media_config.video.disable_prerenderer_smoothing =
       configuration.disable_prerenderer_smoothing;
 
   // Find DSCP constraint.
   FindConstraint(constraints, MediaConstraintsInterface::kEnableDscp,
                  &media_config.enable_dscp, NULL);
-  // Find constraints for cpu overuse detection.
+  // Find constraint for cpu overuse detection.
   FindConstraint(constraints, MediaConstraintsInterface::kCpuOveruseDetection,
-                 &media_config.enable_cpu_overuse_detection, NULL);
+                 &media_config.video.enable_cpu_overuse_detection, NULL);
+
+  // Find Suspend Below Min Bitrate constraint.
+  FindConstraint(constraints,
+                 MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
+                 &media_config.video.suspend_below_min_bitrate, NULL);
 
   media_controller_.reset(factory_->CreateMediaController(media_config));
 

@@ -333,8 +333,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void DestroyVideoEncoder(AllocatedEncoder* encoder)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
-    void SetCodecAndOptions(const VideoCodecSettings& codec,
-                            const VideoOptions& options)
+    void SetCodec(const VideoCodecSettings& codec)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void RecreateWebRtcStream() EXCLUSIVE_LOCKS_REQUIRED(lock_);
     webrtc::VideoEncoderConfig CreateVideoEncoderConfig(
@@ -499,8 +498,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   DefaultUnsignalledSsrcHandler default_unsignalled_ssrc_handler_;
   UnsignalledSsrcHandler* const unsignalled_ssrc_handler_;
 
-  const bool signal_cpu_adaptation_;
-  const bool disable_prerenderer_smoothing_;
+  const MediaConfig::Video video_config_;
 
   rtc::CriticalSection stream_crit_;
   // Using primary-ssrc (first ssrc) as key.

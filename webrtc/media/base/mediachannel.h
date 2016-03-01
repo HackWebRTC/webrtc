@@ -87,30 +87,38 @@ struct MediaConfig {
   // PeerConnection constraint 'googDscp'.
   bool enable_dscp = false;
 
-  // Video-specific config
+  // Video-specific config.
+  struct Video {
+    // Enable WebRTC CPU Overuse Detection. This flag comes from the
+    // PeerConnection constraint 'googCpuOveruseDetection' and is
+    // checked in WebRtcVideoChannel2::OnLoadUpdate, where it's passed
+    // to VideoCapturer::video_adapter()->OnCpuResolutionRequest.
+    bool enable_cpu_overuse_detection = true;
 
-  // Enable WebRTC CPU Overuse Detection. This flag comes from the
-  // PeerConnection constraint 'googCpuOveruseDetection' and is
-  // checked in WebRtcVideoChannel2::OnLoadUpdate, where it's passed
-  // to VideoCapturer::video_adapter()->OnCpuResolutionRequest.
-  bool enable_cpu_overuse_detection = true;
+    // Enable WebRTC suspension of video. No video frames will be sent
+    // when the bitrate is below the configured minimum bitrate. This
+    // flag comes from the PeerConnection constraint
+    // 'googSuspendBelowMinBitrate', and WebRtcVideoChannel2 copies it
+    // to VideoSendStream::Config::suspend_below_min_bitrate.
+    bool suspend_below_min_bitrate = false;
 
-  // Set to true if the renderer has an algorithm of frame selection.
-  // If the value is true, then WebRTC will hand over a frame as soon as
-  // possible without delay, and rendering smoothness is completely the duty
-  // of the renderer;
-  // If the value is false, then WebRTC is responsible to delay frame release
-  // in order to increase rendering smoothness.
-  //
-  // This flag comes from PeerConnection's RtcConfiguration, but is
-  // currently only set by the command line flag
-  // 'disable-rtc-smoothness-algorithm'.
-  // WebRtcVideoChannel2::AddRecvStream copies it to the created
-  // WebRtcVideoReceiveStream, where it is returned by the
-  // SmoothsRenderedFrames method. This method is used by the
-  // VideoReceiveStream, where the value is passed on to the
-  // IncomingVideoStream constructor.
-  bool disable_prerenderer_smoothing = false;
+    // Set to true if the renderer has an algorithm of frame selection.
+    // If the value is true, then WebRTC will hand over a frame as soon as
+    // possible without delay, and rendering smoothness is completely the duty
+    // of the renderer;
+    // If the value is false, then WebRTC is responsible to delay frame release
+    // in order to increase rendering smoothness.
+    //
+    // This flag comes from PeerConnection's RtcConfiguration, but is
+    // currently only set by the command line flag
+    // 'disable-rtc-smoothness-algorithm'.
+    // WebRtcVideoChannel2::AddRecvStream copies it to the created
+    // WebRtcVideoReceiveStream, where it is returned by the
+    // SmoothsRenderedFrames method. This method is used by the
+    // VideoReceiveStream, where the value is passed on to the
+    // IncomingVideoStream constructor.
+    bool disable_prerenderer_smoothing = false;
+  } video;
 };
 
 // Options that can be applied to a VoiceMediaChannel or a VoiceMediaEngine.
@@ -249,13 +257,11 @@ struct AudioOptions {
 struct VideoOptions {
   void SetAll(const VideoOptions& change) {
     SetFrom(&video_noise_reduction, change.video_noise_reduction);
-    SetFrom(&suspend_below_min_bitrate, change.suspend_below_min_bitrate);
     SetFrom(&screencast_min_bitrate_kbps, change.screencast_min_bitrate_kbps);
   }
 
   bool operator==(const VideoOptions& o) const {
     return video_noise_reduction == o.video_noise_reduction &&
-           suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
            screencast_min_bitrate_kbps == o.screencast_min_bitrate_kbps;
   }
 
@@ -263,8 +269,6 @@ struct VideoOptions {
     std::ostringstream ost;
     ost << "VideoOptions {";
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
-    ost << ToStringIfSet("suspend below min bitrate",
-                         suspend_below_min_bitrate);
     ost << ToStringIfSet("screencast min bitrate kbps",
                          screencast_min_bitrate_kbps);
     ost << "}";
@@ -275,12 +279,6 @@ struct VideoOptions {
   // constraint 'googNoiseReduction', and WebRtcVideoEngine2 passes it
   // on to the codec options. Disabled by default.
   rtc::Optional<bool> video_noise_reduction;
-  // Enable WebRTC suspension of video. No video frames will be sent
-  // when the bitrate is below the configured minimum bitrate. This
-  // flag comes from the PeerConnection constraint
-  // 'googSuspendBelowMinBitrate', and WebRtcVideoChannel2 copies it
-  // to VideoSendStream::Config::suspend_below_min_bitrate.
-  rtc::Optional<bool> suspend_below_min_bitrate;
   // Force screencast to use a minimum bitrate. This flag comes from
   // the PeerConnection constraint 'googScreencastMinBitrate'. It is
   // copied to the encoder config by WebRtcVideoChannel2.

@@ -597,15 +597,6 @@ bool WebRtcSession::Initialize(
     }
   }
 
-  // Find Suspend Below Min Bitrate constraint.
-  if (FindConstraint(
-          constraints,
-          MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
-          &value,
-          NULL)) {
-    video_options_.suspend_below_min_bitrate = rtc::Optional<bool>(value);
-  }
-
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kScreencastMinBitrate,
       &video_options_.screencast_min_bitrate_kbps);

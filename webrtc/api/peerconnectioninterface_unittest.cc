@@ -2383,8 +2383,9 @@ TEST_F(PeerConnectionMediaConfigTest, TestDefaults) {
       TestCreatePeerConnection(config, &constraints);
 
   EXPECT_FALSE(media_config.enable_dscp);
-  EXPECT_TRUE(media_config.enable_cpu_overuse_detection);
-  EXPECT_FALSE(media_config.disable_prerenderer_smoothing);
+  EXPECT_TRUE(media_config.video.enable_cpu_overuse_detection);
+  EXPECT_FALSE(media_config.video.disable_prerenderer_smoothing);
+  EXPECT_FALSE(media_config.video.suspend_below_min_bitrate);
 }
 
 // This test verifies the DSCP constraint is recognized and passed to
@@ -2411,7 +2412,7 @@ TEST_F(PeerConnectionMediaConfigTest, TestCpuOveruseConstraintFalse) {
   const cricket::MediaConfig media_config =
       TestCreatePeerConnection(config, &constraints);
 
-  EXPECT_FALSE(media_config.enable_cpu_overuse_detection);
+  EXPECT_FALSE(media_config.video.enable_cpu_overuse_detection);
 }
 
 // This test verifies that the disable_prerenderer_smoothing flag is
@@ -2424,7 +2425,23 @@ TEST_F(PeerConnectionMediaConfigTest, TestDisablePrerendererSmoothingTrue) {
   const cricket::MediaConfig& media_config =
       TestCreatePeerConnection(config, &constraints);
 
-  EXPECT_TRUE(media_config.disable_prerenderer_smoothing);
+  EXPECT_TRUE(media_config.video.disable_prerenderer_smoothing);
+}
+
+// This test verifies the suspend below min bitrate constraint is
+// recognized and passed to the CreateMediaController call.
+TEST_F(PeerConnectionMediaConfigTest,
+       TestSuspendBelowMinBitrateConstraintTrue) {
+  PeerConnectionInterface::RTCConfiguration config;
+  FakeConstraints constraints;
+
+  constraints.AddOptional(
+      webrtc::MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
+      true);
+  const cricket::MediaConfig media_config =
+      TestCreatePeerConnection(config, &constraints);
+
+  EXPECT_TRUE(media_config.video.suspend_below_min_bitrate);
 }
 
 // The following tests verify that session options are created correctly.

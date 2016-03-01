@@ -612,8 +612,7 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
     : VideoMediaChannel(config),
       call_(call),
       unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
-      signal_cpu_adaptation_(config.enable_cpu_overuse_detection),
-      disable_prerenderer_smoothing_(config.disable_prerenderer_smoothing),
+      video_config_(config.video),
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -1001,10 +1000,12 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
     send_ssrcs_.insert(used_ssrc);
 
   webrtc::VideoSendStream::Config config(this);
-  WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
-      call_, sp, config, external_encoder_factory_, signal_cpu_adaptation_,
-      bitrate_config_.max_bitrate_bps, send_codec_, send_rtp_extensions_,
-      send_params_);
+  config.suspend_below_min_bitrate = video_config_.suspend_below_min_bitrate;
+  WebRtcVideoSendStream* stream =
+      new WebRtcVideoSendStream(call_, sp, config, external_encoder_factory_,
+                                video_config_.enable_cpu_overuse_detection,
+                                bitrate_config_.max_bitrate_bps, send_codec_,
+                                send_rtp_extensions_, send_params_);
 
   uint32_t ssrc = sp.first_ssrc();
   RTC_DCHECK(ssrc != 0);
@@ -1132,7 +1133,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, config, external_decoder_factory_, default_stream,
-      recv_codecs_, disable_prerenderer_smoothing_);
+      recv_codecs_, video_config_.disable_prerenderer_smoothing);
 
   return true;
 }
@@ -1509,7 +1510,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       enable_cpu_overuse_detection ? this : nullptr;
 
   if (codec_settings) {
-    SetCodecAndOptions(*codec_settings, parameters_.options);
+    SetCodec(*codec_settings);
   }
 }
 
@@ -1648,13 +1649,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetSsrcs() const {
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetOptions(
     const VideoOptions& options) {
   rtc::CritScope cs(&lock_);
-  if (parameters_.codec_settings) {
-    LOG(LS_INFO) << "SetCodecAndOptions because of SetOptions; options="
-                 << options.ToString();
-    SetCodecAndOptions(*parameters_.codec_settings, options);
-  } else {
-    parameters_.options = options;
-  }
+  parameters_.options.SetAll(options);
+  // Reconfigure encoder settings on the next frame or stream
+  // recreation.
+  pending_encoder_reconfiguration_ = true;
 }
 
 webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {
@@ -1711,9 +1709,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::DestroyVideoEncoder(
   delete encoder->encoder;
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
-    const VideoCodecSettings& codec_settings,
-    const VideoOptions& options) {
+void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
+    const VideoCodecSettings& codec_settings) {
   parameters_.encoder_config =
       CreateVideoEncoderConfig(last_dimensions_, codec_settings.codec);
   RTC_DCHECK(!parameters_.encoder_config.streams.empty());
@@ -1744,16 +1741,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
   parameters_.config.rtp.nack.rtp_history_ms =
       HasNack(codec_settings.codec) ? kNackHistoryMs : 0;
 
-  parameters_.config.suspend_below_min_bitrate =
-      options.suspend_below_min_bitrate.value_or(false);
-
   parameters_.codec_settings =
       rtc::Optional<WebRtcVideoChannel2::VideoCodecSettings>(codec_settings);
-  parameters_.options = options;
-
-  LOG(LS_INFO)
-      << "RecreateWebRtcStream (send) because of SetCodecAndOptions; options="
-      << options.ToString();
   RecreateWebRtcStream();
   if (allocated_encoder_.encoder != new_encoder.encoder) {
     DestroyVideoEncoder(&allocated_encoder_);
@@ -1789,21 +1778,15 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
   if (params.conference_mode) {
     parameters_.conference_mode = *params.conference_mode;
   }
+  if (params.options)
+    SetOptions(*params.options);
+
   // Set codecs and options.
   if (params.codec) {
-    SetCodecAndOptions(*params.codec,
-                       params.options ? *params.options : parameters_.options);
+    SetCodec(*params.codec);
     return;
-  } else if (params.options) {
-    // Reconfigure if codecs are already set.
-    if (parameters_.codec_settings) {
-      SetCodecAndOptions(*parameters_.codec_settings, *params.options);
-      return;
-    } else {
-      parameters_.options = *params.options;
-    }
   } else if (params.conference_mode && parameters_.codec_settings) {
-    SetCodecAndOptions(*parameters_.codec_settings, parameters_.options);
+    SetCodec(*parameters_.codec_settings);
     return;
   }
   if (recreate_stream) {

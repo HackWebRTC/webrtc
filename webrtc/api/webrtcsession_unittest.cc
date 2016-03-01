@@ -4116,24 +4116,6 @@ TEST_F(WebRtcSessionTest, TestSetRemoteOfferFailIfDtlsDisabledAndNoCrypto) {
                                        offer);
 }
 
-TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
-  constraints_.reset(new FakeConstraints());
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
-      true);
-  Init();
-  SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer();
-
-  SetLocalDescriptionWithoutError(offer);
-
-  video_channel_ = media_engine_->GetVideoChannel(0);
-
-  ASSERT_TRUE(video_channel_ != NULL);
-  const cricket::VideoOptions& video_options = video_channel_->options();
-  EXPECT_EQ(rtc::Optional<bool>(true), video_options.suspend_below_min_bitrate);
-}
-
 TEST_F(WebRtcSessionTest, TestCombinedAudioVideoBweConstraint) {
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
