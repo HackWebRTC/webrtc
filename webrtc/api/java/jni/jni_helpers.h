@@ -72,8 +72,7 @@ jint GetIntField(JNIEnv* jni, jobject object, jfieldID id);
 
 bool GetBooleanField(JNIEnv* jni, jobject object, jfieldID id);
 
-// Java references to "null" can only be distinguished as such in C++ by
-// creating a local reference, so this helper wraps that logic.
+// Returns true if |obj| == null in Java.
 bool IsNull(JNIEnv* jni, jobject obj);
 
 // Given a UTF-8 encoded |native| string return a new (UTF-16) jstring.

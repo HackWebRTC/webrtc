@@ -202,11 +202,8 @@ bool GetBooleanField(JNIEnv* jni, jobject object, jfieldID id) {
   return b;
 }
 
-// Java references to "null" can only be distinguished as such in C++ by
-// creating a local reference, so this helper wraps that logic.
 bool IsNull(JNIEnv* jni, jobject obj) {
-  ScopedLocalRefFrame local_ref_frame(jni);
-  return jni->NewLocalRef(obj) == NULL;
+  return jni->IsSameObject(obj, nullptr);
 }
 
 // Given a UTF-8 encoded |native| string return a new (UTF-16) jstring.
