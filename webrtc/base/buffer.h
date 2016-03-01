@@ -11,7 +11,6 @@
 #ifndef WEBRTC_BASE_BUFFER_H_
 #define WEBRTC_BASE_BUFFER_H_
 
-#include <cassert>
 #include <cstring>
 #include <memory>
 #include <utility>
@@ -81,23 +80,23 @@ class Buffer {
   // but you may also use .data<int8_t>() and .data<char>().
   template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
   const T* data() const {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     return reinterpret_cast<T*>(data_.get());
   }
 
   template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
   T* data() {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     return reinterpret_cast<T*>(data_.get());
   }
 
   size_t size() const {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     return size_;
   }
 
   size_t capacity() const {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     return capacity_;
   }
 
@@ -108,8 +107,8 @@ class Buffer {
   }
 
   Buffer& operator=(Buffer&& buf) {
-    assert(IsConsistent());
-    assert(buf.IsConsistent());
+    RTC_DCHECK(IsConsistent());
+    RTC_DCHECK(buf.IsConsistent());
     size_ = buf.size_;
     capacity_ = buf.capacity_;
     data_ = std::move(buf.data_);
@@ -118,7 +117,7 @@ class Buffer {
   }
 
   bool operator==(const Buffer& buf) const {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     return size_ == buf.size() && memcmp(data_.get(), buf.data(), size_) == 0;
   }
 
@@ -138,7 +137,7 @@ class Buffer {
   // same input types as the constructors.
   template <typename T, typename internal::ByteType<T>::t = 0>
   void SetData(const T* data, size_t size) {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     size_ = 0;
     AppendData(data, size);
   }
@@ -169,12 +168,12 @@ class Buffer {
   // the same input types as the constructors.
   template <typename T, typename internal::ByteType<T>::t = 0>
   void AppendData(const T* data, size_t size) {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     const size_t new_size = size_ + size;
     EnsureCapacity(new_size);
     std::memcpy(data_.get() + size_, data, size);
     size_ = new_size;
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
   }
 
   template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
@@ -220,14 +219,14 @@ class Buffer {
   // further reallocation. (Of course, this operation might need to reallocate
   // the buffer.)
   void EnsureCapacity(size_t capacity) {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     if (capacity <= capacity_)
       return;
     std::unique_ptr<uint8_t[]> new_data(new uint8_t[capacity]);
     std::memcpy(new_data.get(), data_.get(), size_);
     data_ = std::move(new_data);
     capacity_ = capacity;
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
   }
 
   // b.Pass() does the same thing as std::move(b).
@@ -235,7 +234,7 @@ class Buffer {
   RTC_DEPRECATED Buffer&& Pass() { return DEPRECATED_Pass(); }
 
   Buffer&& DEPRECATED_Pass() {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     return std::move(*this);
   }
 
@@ -243,7 +242,7 @@ class Buffer {
   // buffer has been moved from.
   void Clear() {
     size_ = 0;
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
   }
 
   // Swaps two buffers. Also works for buffers that have been moved from.
