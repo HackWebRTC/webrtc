@@ -357,12 +357,6 @@ def _UploadCL(dry_run, rietveld_email=None):
     _RunCommand(cmd, extra_env={'EDITOR': 'true'})
 
 
-def _LaunchTrybots(dry_run, skip_try):
-  logging.info('Sending tryjobs...')
-  if not dry_run and not skip_try:
-    _RunCommand(['git', 'cl', 'try'])
-
-
 def _SendToCQ(dry_run, skip_cq):
   logging.info('Sending the CL to the CQ...')
   if not dry_run and not skip_cq:
@@ -388,8 +382,6 @@ def main():
   p.add_argument('--allow-reverse', action='store_true', default=False,
                  help=('Allow rolling back in time (disabled by default but '
                        'may be useful to be able do to manually).'))
-  p.add_argument('-s', '--skip-try', action='store_true', default=False,
-                 help='Skip sending tryjobs (default: %(default)s)')
   p.add_argument('--skip-cq', action='store_true', default=False,
                  help='Skip sending the CL to the CQ (default: %(default)s)')
   p.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -446,7 +438,6 @@ def main():
   UpdateDeps(deps_filename, current_cr_rev, new_cr_rev)
   _LocalCommit(commit_msg, opts.dry_run)
   _UploadCL(opts.dry_run, opts.rietveld_email)
-  _LaunchTrybots(opts.dry_run, opts.skip_try)
   _SendToCQ(opts.dry_run, opts.skip_cq)
   return 0
 
