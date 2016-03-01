@@ -42,10 +42,10 @@ class RentACodecTestF : public ::testing::Test {
                        uint32_t expected_timestamp,
                        int expected_payload_type,
                        int expected_send_even_if_empty) {
-    uint8_t out[kPacketSizeSamples];
+    rtc::Buffer out;
     AudioEncoder::EncodedInfo encoded_info;
     encoded_info =
-        encoder_->Encode(timestamp_, kZeroData, kPacketSizeSamples, out);
+        encoder_->Encode(timestamp_, kZeroData, &out);
     timestamp_ += kDataLengthSamples;
     EXPECT_TRUE(encoded_info.redundant.empty());
     EXPECT_EQ(expected_out_length, encoded_info.encoded_bytes);
@@ -115,7 +115,7 @@ TEST(RentACodecTest, ExternalEncoder) {
   EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&param));
   const int kPacketSizeSamples = kSampleRateHz / 100;
   int16_t audio[kPacketSizeSamples] = {0};
-  uint8_t encoded[kPacketSizeSamples];
+  rtc::Buffer encoded;
   AudioEncoder::EncodedInfo info;
 
   {
@@ -123,19 +123,19 @@ TEST(RentACodecTest, ExternalEncoder) {
     info.encoded_timestamp = 0;
     EXPECT_CALL(external_encoder,
                 EncodeInternal(0, rtc::ArrayView<const int16_t>(audio),
-                               arraysize(encoded), encoded))
+                               &encoded))
         .WillOnce(Return(info));
     EXPECT_CALL(external_encoder, Mark("A"));
     EXPECT_CALL(external_encoder, Mark("B"));
     info.encoded_timestamp = 2;
     EXPECT_CALL(external_encoder,
                 EncodeInternal(2, rtc::ArrayView<const int16_t>(audio),
-                               arraysize(encoded), encoded))
+                               &encoded))
         .WillOnce(Return(info));
     EXPECT_CALL(external_encoder, Die());
   }
 
-  info = external_encoder.Encode(0, audio, arraysize(encoded), encoded);
+  info = external_encoder.Encode(0, audio, &encoded);
   EXPECT_EQ(0u, info.encoded_timestamp);
   external_encoder.Mark("A");
 
@@ -147,13 +147,13 @@ TEST(RentACodecTest, ExternalEncoder) {
   EXPECT_EQ(param.speech_encoder, rac.RentEncoderStack(&param));
 
   // Don't expect any more calls to the external encoder.
-  info = param.speech_encoder->Encode(1, audio, arraysize(encoded), encoded);
+  info = param.speech_encoder->Encode(1, audio, &encoded);
   external_encoder.Mark("B");
 
   // Change back to external encoder again.
   param.speech_encoder = &external_encoder;
   EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&param));
-  info = external_encoder.Encode(2, audio, arraysize(encoded), encoded);
+  info = external_encoder.Encode(2, audio, &encoded);
   EXPECT_EQ(2u, info.encoded_timestamp);
 }
 

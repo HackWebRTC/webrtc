@@ -167,6 +167,7 @@
             '<(webrtc_root)/tools/tools.gyp:agc_test_utils',
           ],
           'sources': [
+            'audio_coding/codecs/audio_encoder_unittest.cc',
             'audio_coding/codecs/cng/audio_encoder_cng_unittest.cc',
             'audio_coding/acm2/acm_receiver_unittest_oldapi.cc',
             'audio_coding/acm2/audio_coding_module_unittest_oldapi.cc',
@@ -185,6 +186,7 @@
             'audio_coding/codecs/opus/audio_encoder_opus_unittest.cc',
             'audio_coding/codecs/opus/opus_unittest.cc',
             'audio_coding/codecs/red/audio_encoder_copy_red_unittest.cc',
+            'audio_coding/codecs/mock/mock_audio_encoder.cc',
             'audio_coding/neteq/audio_classifier_unittest.cc',
             'audio_coding/neteq/audio_multi_vector_unittest.cc',
             'audio_coding/neteq/audio_vector_unittest.cc',

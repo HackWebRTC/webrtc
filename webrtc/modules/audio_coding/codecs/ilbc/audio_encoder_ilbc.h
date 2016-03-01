@@ -21,6 +21,8 @@ struct CodecInst;
 
 class AudioEncoderIlbc final : public AudioEncoder {
  public:
+  using AudioEncoder::EncodeInternal;
+
   struct Config {
     bool IsOk() const;
 
@@ -42,8 +44,7 @@ class AudioEncoderIlbc final : public AudioEncoder {
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              rtc::ArrayView<const int16_t> audio,
-                             size_t max_encoded_bytes,
-                             uint8_t* encoded) override;
+                             rtc::Buffer* encoded) override;
   void Reset() override;
 
  private:

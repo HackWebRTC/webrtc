@@ -80,8 +80,7 @@ int AudioEncoderPcm::GetTargetBitrate() const {
 AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
+    rtc::Buffer* encoded) {
   if (speech_buffer_.empty()) {
     first_timestamp_in_buffer_ = rtp_timestamp;
   }
@@ -90,12 +89,16 @@ AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
     return EncodedInfo();
   }
   RTC_CHECK_EQ(speech_buffer_.size(), full_frame_samples_);
-  RTC_CHECK_GE(max_encoded_bytes, full_frame_samples_);
   EncodedInfo info;
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;
   info.encoded_bytes =
-      EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
+      encoded->AppendData(MaxEncodedBytes(),
+                          [&] (rtc::ArrayView<uint8_t> encoded) {
+                            return EncodeCall(&speech_buffer_[0],
+                                              full_frame_samples_,
+                                              encoded.data());
+                          });
   speech_buffer_.clear();
   return info;
 }

@@ -100,10 +100,8 @@ class AudioDecoderTest : public ::testing::Test {
             webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"),
             32000),
         codec_input_rate_hz_(32000),  // Legacy default value.
-        encoded_(NULL),
         frame_size_(0),
         data_length_(0),
-        encoded_bytes_(0),
         channels_(1),
         payload_type_(17),
         decoder_(NULL) {}
@@ -115,8 +113,6 @@ class AudioDecoderTest : public ::testing::Test {
       codec_input_rate_hz_ = audio_encoder_->SampleRateHz();
     // Create arrays.
     ASSERT_GT(data_length_, 0u) << "The test must set data_length_ > 0";
-    // Longest encoded data is produced by PCM16b with 2 bytes per sample.
-    encoded_ = new uint8_t[data_length_ * 2];
     // Logging to view input and output in Matlab.
     // Use 'gyp -Denable_data_logging=1' to enable logging.
     DataLog::CreateLog();
@@ -128,9 +124,6 @@ class AudioDecoderTest : public ::testing::Test {
   virtual void TearDown() {
     delete decoder_;
     decoder_ = NULL;
-    // Delete arrays.
-    delete [] encoded_;
-    encoded_ = NULL;
     // Close log.
     DataLog::ReturnLog();
   }
@@ -141,15 +134,15 @@ class AudioDecoderTest : public ::testing::Test {
   // implementations are gone.
   virtual int EncodeFrame(const int16_t* input,
                           size_t input_len_samples,
-                          uint8_t* output) {
-    encoded_info_.encoded_bytes = 0;
+                          rtc::Buffer* output) {
+    AudioEncoder::EncodedInfo encoded_info;
     const size_t samples_per_10ms = audio_encoder_->SampleRateHz() / 100;
     RTC_CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
                  input_len_samples);
     std::unique_ptr<int16_t[]> interleaved_input(
         new int16_t[channels_ * samples_per_10ms]);
     for (size_t i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
-      EXPECT_EQ(0u, encoded_info_.encoded_bytes);
+      EXPECT_EQ(0u, encoded_info.encoded_bytes);
 
       // Duplicate the mono input signal to however many channels the test
       // wants.
@@ -157,15 +150,15 @@ class AudioDecoderTest : public ::testing::Test {
                                                  samples_per_10ms, channels_,
                                                  interleaved_input.get());
 
-      encoded_info_ = audio_encoder_->Encode(
+      encoded_info = audio_encoder_->Encode(
           0, rtc::ArrayView<const int16_t>(interleaved_input.get(),
                                            audio_encoder_->NumChannels() *
                                                audio_encoder_->SampleRateHz() /
                                                100),
-          data_length_ * 2, output);
+          output);
     }
-    EXPECT_EQ(payload_type_, encoded_info_.payload_type);
-    return static_cast<int>(encoded_info_.encoded_bytes);
+    EXPECT_EQ(payload_type_, encoded_info.payload_type);
+    return static_cast<int>(encoded_info.encoded_bytes);
   }
 
   // Encodes and decodes audio. The absolute difference between the input and
@@ -179,7 +172,8 @@ class AudioDecoderTest : public ::testing::Test {
     ASSERT_GE(channel_diff_tolerance, 0) <<
         "Test must define a channel_diff_tolerance >= 0";
     size_t processed_samples = 0u;
-    encoded_bytes_ = 0u;
+    rtc::Buffer encoded;
+    size_t encoded_bytes = 0u;
     InitEncoder();
     std::vector<int16_t> input;
     std::vector<int16_t> decoded;
@@ -191,23 +185,23 @@ class AudioDecoderTest : public ::testing::Test {
       ASSERT_TRUE(input_audio_.Read(
           frame_size_, codec_input_rate_hz_, &input[processed_samples]));
       size_t enc_len = EncodeFrame(
-          &input[processed_samples], frame_size_, &encoded_[encoded_bytes_]);
+          &input[processed_samples], frame_size_, &encoded);
       // Make sure that frame_size_ * channels_ samples are allocated and free.
       decoded.resize((processed_samples + frame_size_) * channels_, 0);
       AudioDecoder::SpeechType speech_type;
       size_t dec_len = decoder_->Decode(
-          &encoded_[encoded_bytes_], enc_len, codec_input_rate_hz_,
+          &encoded.data()[encoded_bytes], enc_len, codec_input_rate_hz_,
           frame_size_ * channels_ * sizeof(int16_t),
           &decoded[processed_samples * channels_], &speech_type);
       EXPECT_EQ(frame_size_ * channels_, dec_len);
-      encoded_bytes_ += enc_len;
+      encoded_bytes += enc_len;
       processed_samples += frame_size_;
     }
     // For some codecs it doesn't make sense to check expected number of bytes,
     // since the number can vary for different platforms. Opus and iSAC are
     // such codecs. In this case expected_bytes is set to 0.
     if (expected_bytes) {
-      EXPECT_EQ(expected_bytes, encoded_bytes_);
+      EXPECT_EQ(expected_bytes, encoded_bytes);
     }
     CompareInputOutput(
         input, decoded, processed_samples, channels_, tolerance, delay);
@@ -226,12 +220,13 @@ class AudioDecoderTest : public ::testing::Test {
     std::unique_ptr<int16_t[]> input(new int16_t[frame_size_]);
     ASSERT_TRUE(
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
-    size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
+    rtc::Buffer encoded;
+    size_t enc_len = EncodeFrame(input.get(), frame_size_, &encoded);
     size_t dec_len;
     AudioDecoder::SpeechType speech_type1, speech_type2;
     decoder_->Reset();
     std::unique_ptr<int16_t[]> output1(new int16_t[frame_size_ * channels_]);
-    dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
+    dec_len = decoder_->Decode(encoded.data(), enc_len, codec_input_rate_hz_,
                                frame_size_ * channels_ * sizeof(int16_t),
                                output1.get(), &speech_type1);
     ASSERT_LE(dec_len, frame_size_ * channels_);
@@ -239,7 +234,7 @@ class AudioDecoderTest : public ::testing::Test {
     // Re-init decoder and decode again.
     decoder_->Reset();
     std::unique_ptr<int16_t[]> output2(new int16_t[frame_size_ * channels_]);
-    dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
+    dec_len = decoder_->Decode(encoded.data(), enc_len, codec_input_rate_hz_,
                                frame_size_ * channels_ * sizeof(int16_t),
                                output2.get(), &speech_type2);
     ASSERT_LE(dec_len, frame_size_ * channels_);
@@ -256,11 +251,13 @@ class AudioDecoderTest : public ::testing::Test {
     std::unique_ptr<int16_t[]> input(new int16_t[frame_size_]);
     ASSERT_TRUE(
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
-    size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
+    rtc::Buffer encoded;
+    size_t enc_len = EncodeFrame(input.get(), frame_size_, &encoded);
     AudioDecoder::SpeechType speech_type;
     decoder_->Reset();
     std::unique_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
-    size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
+    size_t dec_len = decoder_->Decode(encoded.data(), enc_len,
+                                      codec_input_rate_hz_,
                                       frame_size_ * channels_ * sizeof(int16_t),
                                       output.get(), &speech_type);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
@@ -273,13 +270,10 @@ class AudioDecoderTest : public ::testing::Test {
 
   test::ResampleInputAudioFile input_audio_;
   int codec_input_rate_hz_;
-  uint8_t* encoded_;
   size_t frame_size_;
   size_t data_length_;
-  size_t encoded_bytes_;
   size_t channels_;
   const int payload_type_;
-  AudioEncoder::EncodedInfo encoded_info_;
   AudioDecoder* decoder_;
   std::unique_ptr<AudioEncoder> audio_encoder_;
 };
@@ -348,11 +342,13 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
     std::unique_ptr<int16_t[]> input(new int16_t[frame_size_]);
     ASSERT_TRUE(
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
-    size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
+    rtc::Buffer encoded;
+    size_t enc_len = EncodeFrame(input.get(), frame_size_, &encoded);
     AudioDecoder::SpeechType speech_type;
     decoder_->Reset();
     std::unique_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
-    size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
+    size_t dec_len = decoder_->Decode(encoded.data(), enc_len,
+                                      codec_input_rate_hz_,
                                       frame_size_ * channels_ * sizeof(int16_t),
                                       output.get(), &speech_type);
     EXPECT_EQ(frame_size_, dec_len);

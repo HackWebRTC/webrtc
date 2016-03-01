@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "webrtc/base/array_view.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/deprecation.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -85,21 +87,40 @@ class AudioEncoder {
 
   // Accepts one 10 ms block of input audio (i.e., SampleRateHz() / 100 *
   // NumChannels() samples). Multi-channel audio must be sample-interleaved.
-  // The encoder produces zero or more bytes of output in |encoded| and
-  // returns additional encoding information.
-  // The caller is responsible for making sure that |max_encoded_bytes| is
-  // not smaller than the number of bytes actually produced by the encoder.
-  // Encode() checks some preconditions, calls EncodeInternal() which does the
-  // actual work, and then checks some postconditions.
+  // The encoder appends zero or more bytes of output to |encoded| and returns
+  // additional encoding information.  Encode() checks some preconditions, calls
+  // EncodeInternal() which does the actual work, and then checks some
+  // postconditions.
   EncodedInfo Encode(uint32_t rtp_timestamp,
                      rtc::ArrayView<const int16_t> audio,
-                     size_t max_encoded_bytes,
-                     uint8_t* encoded);
+                     rtc::Buffer* encoded);
 
-  virtual EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                                     rtc::ArrayView<const int16_t> audio,
-                                     size_t max_encoded_bytes,
-                                     uint8_t* encoded) = 0;
+  // Deprecated interface to Encode (remove eventually, bug 5591). May incur a
+  // copy. The encoder produces zero or more bytes of output in |encoded| and
+  // returns additional encoding information.  The caller is responsible for
+  // making sure that |max_encoded_bytes| is not smaller than the number of
+  // bytes actually produced by the encoder.
+  RTC_DEPRECATED EncodedInfo Encode(uint32_t rtp_timestamp,
+                                    rtc::ArrayView<const int16_t> audio,
+                                    size_t max_encoded_bytes,
+                                    uint8_t* encoded);
+
+  EncodedInfo DEPRECATED_Encode(uint32_t rtp_timestamp,
+                                rtc::ArrayView<const int16_t> audio,
+                                size_t max_encoded_bytes,
+                                uint8_t* encoded);
+
+  // Deprecated interface of EncodeInternal (also bug 5591). May incur a copy.
+  // Subclasses implement this to perform the actual encoding. Called by
+  // Encode(). By default, this is implemented as a call to the newer
+  // EncodeInternal() that accepts an rtc::Buffer instead of a raw pointer.
+  // That version is protected, so see below. At least one of the two
+  // interfaces of EncodeInternal _must_ be implemented by a subclass.
+  virtual EncodedInfo EncodeInternal(
+      uint32_t rtp_timestamp,
+      rtc::ArrayView<const int16_t> audio,
+      size_t max_encoded_bytes,
+      uint8_t* encoded);
 
   // Resets the encoder to its starting state, discarding any input that has
   // been fed to the encoder but not yet emitted in a packet.
@@ -138,6 +159,16 @@ class AudioEncoder {
   // encoder is free to adjust or disregard the given bitrate (the default
   // implementation does the latter).
   virtual void SetTargetBitrate(int target_bps);
+
+ protected:
+  // Subclasses implement this to perform the actual encoding. Called by
+  // Encode(). For compatibility reasons, this is implemented by default as a
+  // call to the older version of EncodeInternal(). At least one of the two
+  // interfaces of EncodeInternal _must_ be implemented by a subclass.
+  // Preferably this one.
+  virtual EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                                     rtc::ArrayView<const int16_t> audio,
+                                     rtc::Buffer* encoded);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_H_

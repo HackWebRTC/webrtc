@@ -60,8 +60,7 @@ class NetEqPcmuQualityTest : public NetEqQualityTest {
 
   int EncodeBlock(int16_t* in_data,
                   size_t block_size_samples,
-                  uint8_t* payload,
-                  size_t max_bytes) override {
+                  rtc::Buffer* payload, size_t max_bytes) override {
     const size_t kFrameSizeSamples = 80;  // Samples per 10 ms.
     size_t encoded_samples = 0;
     uint32_t dummy_timestamp = 0;
@@ -70,7 +69,7 @@ class NetEqPcmuQualityTest : public NetEqQualityTest {
       info = encoder_->Encode(dummy_timestamp,
                               rtc::ArrayView<const int16_t>(
                                   in_data + encoded_samples, kFrameSizeSamples),
-                              max_bytes, payload);
+                              payload);
       encoded_samples += kFrameSizeSamples;
     } while (info.encoded_bytes == 0);
     return rtc::checked_cast<int>(info.encoded_bytes);

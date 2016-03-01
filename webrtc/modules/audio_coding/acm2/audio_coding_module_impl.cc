@@ -145,13 +145,14 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   last_rtp_timestamp_ = rtp_timestamp;
   first_frame_ = false;
 
-  encode_buffer_.SetSize(encoder_stack_->MaxEncodedBytes());
+  // Clear the buffer before reuse - encoded data will get appended.
+  encode_buffer_.Clear();
   encoded_info = encoder_stack_->Encode(
       rtp_timestamp, rtc::ArrayView<const int16_t>(
                          input_data.audio, input_data.audio_channel *
                                                input_data.length_per_channel),
-      encode_buffer_.size(), encode_buffer_.data());
-  encode_buffer_.SetSize(encoded_info.encoded_bytes);
+      &encode_buffer_);
+
   bitrate_logger_.MaybeLog(encoder_stack_->GetTargetBitrate() / 1000);
   if (encode_buffer_.size() == 0 && !encoded_info.send_even_if_empty) {
     // Not enough data.

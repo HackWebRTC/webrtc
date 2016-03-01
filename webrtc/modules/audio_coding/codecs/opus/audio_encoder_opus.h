@@ -23,6 +23,8 @@ struct CodecInst;
 
 class AudioEncoderOpus final : public AudioEncoder {
  public:
+  using AudioEncoder::EncodeInternal;
+
   enum ApplicationMode {
     kVoip = 0,
     kAudio = 1,
@@ -61,11 +63,6 @@ class AudioEncoderOpus final : public AudioEncoder {
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
 
-  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             rtc::ArrayView<const int16_t> audio,
-                             size_t max_encoded_bytes,
-                             uint8_t* encoded) override;
-
   void Reset() override;
   bool SetFec(bool enable) override;
 
@@ -83,6 +80,11 @@ class AudioEncoderOpus final : public AudioEncoder {
   double packet_loss_rate() const { return packet_loss_rate_; }
   ApplicationMode application() const { return config_.application; }
   bool dtx_enabled() const { return config_.dtx_enabled; }
+
+protected:
+  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                             rtc::ArrayView<const int16_t> audio,
+                             rtc::Buffer* encoded) override;
 
  private:
   size_t Num10msFramesPerPacket() const;

@@ -30,6 +30,8 @@ class Vad;
 
 class AudioEncoderCng final : public AudioEncoder {
  public:
+  using AudioEncoder::EncodeInternal;
+
   struct Config {
     bool IsOk() const;
 
@@ -59,8 +61,7 @@ class AudioEncoderCng final : public AudioEncoder {
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              rtc::ArrayView<const int16_t> audio,
-                             size_t max_encoded_bytes,
-                             uint8_t* encoded) override;
+                             rtc::Buffer* encoded) override;
   void Reset() override;
   bool SetFec(bool enable) override;
   bool SetDtx(bool enable) override;
@@ -71,11 +72,9 @@ class AudioEncoderCng final : public AudioEncoder {
 
  private:
   EncodedInfo EncodePassive(size_t frames_to_encode,
-                            size_t max_encoded_bytes,
-                            uint8_t* encoded);
+                            rtc::Buffer* encoded);
   EncodedInfo EncodeActive(size_t frames_to_encode,
-                           size_t max_encoded_bytes,
-                           uint8_t* encoded);
+                           rtc::Buffer* encoded);
   size_t SamplesPer10msFrame() const;
 
   AudioEncoder* speech_encoder_;

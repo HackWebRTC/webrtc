@@ -77,7 +77,7 @@ class NetEqQualityTest : public ::testing::Test {
   // 2. save the bit stream to |payload| of |max_bytes| bytes in size,
   // 3. returns the length of the payload (in bytes),
   virtual int EncodeBlock(int16_t* in_data, size_t block_size_samples,
-                          uint8_t* payload, size_t max_bytes) = 0;
+                          rtc::Buffer* payload, size_t max_bytes) = 0;
 
   // PacketLost(...) determines weather a packet sent at an indicated time gets
   // lost or not.
@@ -128,7 +128,7 @@ class NetEqQualityTest : public ::testing::Test {
   std::unique_ptr<LossModel> loss_model_;
 
   std::unique_ptr<int16_t[]> in_data_;
-  std::unique_ptr<uint8_t[]> payload_;
+  rtc::Buffer payload_;
   std::unique_ptr<int16_t[]> out_data_;
   WebRtcRTPHeader rtp_header_;
 

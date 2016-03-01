@@ -100,10 +100,7 @@ int AudioEncoderCng::GetTargetBitrate() const {
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
-  RTC_CHECK_GE(max_encoded_bytes,
-               static_cast<size_t>(num_cng_coefficients_ + 1));
+    rtc::Buffer* encoded) {
   const size_t samples_per_10ms_frame = SamplesPer10msFrame();
   RTC_CHECK_EQ(speech_buffer_.size(),
                rtp_timestamps_.size() * samples_per_10ms_frame);
@@ -145,12 +142,12 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
   EncodedInfo info;
   switch (activity) {
     case Vad::kPassive: {
-      info = EncodePassive(frames_to_encode, max_encoded_bytes, encoded);
+      info = EncodePassive(frames_to_encode, encoded);
       last_frame_active_ = false;
       break;
     }
     case Vad::kActive: {
-      info = EncodeActive(frames_to_encode, max_encoded_bytes, encoded);
+      info = EncodeActive(frames_to_encode, encoded);
       last_frame_active_ = true;
       break;
     }
@@ -204,31 +201,37 @@ void AudioEncoderCng::SetTargetBitrate(int bits_per_second) {
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
     size_t frames_to_encode,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
+    rtc::Buffer* encoded) {
   bool force_sid = last_frame_active_;
   bool output_produced = false;
   const size_t samples_per_10ms_frame = SamplesPer10msFrame();
-  RTC_CHECK_GE(max_encoded_bytes, frames_to_encode * samples_per_10ms_frame);
+  const size_t bytes_to_encode = frames_to_encode * samples_per_10ms_frame;
   AudioEncoder::EncodedInfo info;
-  for (size_t i = 0; i < frames_to_encode; ++i) {
-    // It's important not to pass &info.encoded_bytes directly to
-    // WebRtcCng_Encode(), since later loop iterations may return zero in that
-    // value, in which case we don't want to overwrite any value from an earlier
-    // iteration.
-    size_t encoded_bytes_tmp = 0;
-    RTC_CHECK_GE(WebRtcCng_Encode(cng_inst_.get(),
-                                  &speech_buffer_[i * samples_per_10ms_frame],
-                                  samples_per_10ms_frame, encoded,
-                                  &encoded_bytes_tmp, force_sid),
-                 0);
-    if (encoded_bytes_tmp > 0) {
-      RTC_CHECK(!output_produced);
-      info.encoded_bytes = encoded_bytes_tmp;
-      output_produced = true;
-      force_sid = false;
-    }
-  }
+
+  encoded->AppendData(bytes_to_encode, [&] (rtc::ArrayView<uint8_t> encoded) {
+      for (size_t i = 0; i < frames_to_encode; ++i) {
+        // It's important not to pass &info.encoded_bytes directly to
+        // WebRtcCng_Encode(), since later loop iterations may return zero in
+        // that value, in which case we don't want to overwrite any value from
+        // an earlier iteration.
+        size_t encoded_bytes_tmp = 0;
+        RTC_CHECK_GE(
+            WebRtcCng_Encode(cng_inst_.get(),
+                             &speech_buffer_[i * samples_per_10ms_frame],
+                             samples_per_10ms_frame, encoded.data(),
+                             &encoded_bytes_tmp, force_sid),
+            0);
+        if (encoded_bytes_tmp > 0) {
+          RTC_CHECK(!output_produced);
+          info.encoded_bytes = encoded_bytes_tmp;
+          output_produced = true;
+          force_sid = false;
+        }
+      }
+
+      return info.encoded_bytes;
+    });
+
   info.encoded_timestamp = rtp_timestamps_.front();
   info.payload_type = cng_payload_type_;
   info.send_even_if_empty = true;
@@ -238,8 +241,7 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodeActive(
     size_t frames_to_encode,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
+    rtc::Buffer* encoded) {
   const size_t samples_per_10ms_frame = SamplesPer10msFrame();
   AudioEncoder::EncodedInfo info;
   for (size_t i = 0; i < frames_to_encode; ++i) {
@@ -248,7 +250,7 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeActive(
                                 rtc::ArrayView<const int16_t>(
                                     &speech_buffer_[i * samples_per_10ms_frame],
                                     samples_per_10ms_frame),
-                                max_encoded_bytes, encoded);
+                                encoded);
     if (i + 1 == frames_to_encode) {
       RTC_CHECK_GT(info.encoded_bytes, 0u) << "Encoder didn't deliver data.";
     } else {

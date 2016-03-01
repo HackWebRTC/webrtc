@@ -774,8 +774,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   bool CbReceiveImpl() {
     SleepMs(1);
-    const size_t max_encoded_bytes = isac_encoder_->MaxEncodedBytes();
-    std::unique_ptr<uint8_t[]> encoded(new uint8_t[max_encoded_bytes]);
+    rtc::Buffer encoded;
     AudioEncoder::EncodedInfo info;
     {
       rtc::CritScope lock(&crit_sect_);
@@ -790,7 +789,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
       while (info.encoded_bytes == 0) {
         info =
             isac_encoder_->Encode(input_timestamp, audio_loop_.GetNextBlock(),
-                                  max_encoded_bytes, encoded.get());
+                                  &encoded);
         input_timestamp += 160;  // 10 ms at 16 kHz.
       }
       EXPECT_EQ(rtp_header_.header.timestamp + kPacketSizeSamples,
@@ -801,7 +800,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     // Now we're not holding the crit sect when calling ACM.
 
     // Insert into ACM.
-    EXPECT_EQ(0, acm_->IncomingPacket(encoded.get(), info.encoded_bytes,
+    EXPECT_EQ(0, acm_->IncomingPacket(encoded.data(), info.encoded_bytes,
                                       rtp_header_));
 
     // Pull audio.
@@ -1633,9 +1632,6 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   MockAudioEncoder mock_encoder;
   // Set expectations on the mock encoder and also delegate the calls to the
   // real encoder.
-  EXPECT_CALL(mock_encoder, MaxEncodedBytes())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::MaxEncodedBytes));
   EXPECT_CALL(mock_encoder, SampleRateHz())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::SampleRateHz));
@@ -1652,9 +1648,14 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   EXPECT_CALL(mock_encoder, GetTargetBitrate())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::GetTargetBitrate));
-  EXPECT_CALL(mock_encoder, EncodeInternal(_, _, _, _))
+  EXPECT_CALL(mock_encoder, EncodeInternal(_, _, _))
       .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::EncodeInternal));
+      .WillRepeatedly(Invoke(&encoder,
+                             static_cast<
+                             AudioEncoder::EncodedInfo(AudioEncoder::*)(
+                                 uint32_t,
+                                 rtc::ArrayView<const int16_t>,
+                                 rtc::Buffer*)>(&AudioEncoderPcmU::Encode)));
   EXPECT_CALL(mock_encoder, SetFec(_))
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::SetFec));
