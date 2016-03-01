@@ -37,15 +37,6 @@ const int64_t kMaxIntervalTimeMs = 30;
 // TODO(sprang): Move at least PacketQueue and MediaBudget out to separate
 // files, so that we can more easily test them.
 
-// Note about the -1 enqueue times below:
-// This is a temporary hack to avoid crashes when the real-time clock is
-// adjusted backwards, which can happen on Android when the phone syncs the
-// clock to the network. See this bug:
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5452
-// We can't just comment out the DCHECK either, as that would lead to the sum
-// being wrong. Instead we just ignore packets from the past when we calculate
-// the average queue time.
-
 namespace webrtc {
 namespace paced_sender {
 struct Packet {
@@ -61,8 +52,7 @@ struct Packet {
         ssrc(ssrc),
         sequence_number(seq_number),
         capture_time_ms(capture_time_ms),
-        // TODO(sprang): Remove -1 option once we can guarantee monotonic clock.
-        enqueue_time_ms(enqueue_time_ms),  // -1 = not valid; don't count.
+        enqueue_time_ms(enqueue_time_ms),
         bytes(length_in_bytes),
         retransmission(retransmission),
         enqueue_order(enqueue_order) {}
@@ -111,16 +101,13 @@ class PacketQueue {
     if (!AddToDupeSet(packet))
       return;
 
-    if (packet.enqueue_time_ms >= time_last_updated_)
-      UpdateQueueTime(packet.enqueue_time_ms);
+    UpdateQueueTime(packet.enqueue_time_ms);
 
     // Store packet in list, use pointers in priority queue for cheaper moves.
     // Packets have a handle to its own iterator in the list, for easy removal
     // when popping from queue.
     packet_list_.push_front(packet);
     std::list<Packet>::iterator it = packet_list_.begin();
-    if (packet.enqueue_time_ms < time_last_updated_)
-      it->enqueue_time_ms = -1;
     it->this_it = it;          // Handle for direct removal from list.
     prio_queue_.push(&(*it));  // Pointer into list.
     bytes_ += packet.bytes;
@@ -137,8 +124,7 @@ class PacketQueue {
   void FinalizePop(const Packet& packet) {
     RemoveFromDupeSet(packet);
     bytes_ -= packet.bytes;
-    if (packet.enqueue_time_ms != -1)
-      queue_time_sum_ -= (time_last_updated_ - packet.enqueue_time_ms);
+    queue_time_sum_ -= (time_last_updated_ - packet.enqueue_time_ms);
     packet_list_.erase(packet.this_it);
     RTC_DCHECK_EQ(packet_list_.size(), prio_queue_.size());
     if (packet_list_.empty())
@@ -152,18 +138,14 @@ class PacketQueue {
   uint64_t SizeInBytes() const { return bytes_; }
 
   int64_t OldestEnqueueTimeMs() const {
-    for (auto it = packet_list_.rbegin(); it != packet_list_.rend(); ++it) {
-      if (it->enqueue_time_ms != -1)
-        return it->enqueue_time_ms;
-    }
-    return 0;
+    auto it = packet_list_.rbegin();
+    if (it == packet_list_.rend())
+      return 0;
+    return it->enqueue_time_ms;
   }
 
   void UpdateQueueTime(int64_t timestamp_ms) {
-    // TODO(sprang): Remove this condition and reinstate a DCHECK once we have
-    // made sure all clocks are monotonic.
-    if (timestamp_ms < time_last_updated_)
-      return;
+    RTC_DCHECK_GE(timestamp_ms, time_last_updated_);
     int64_t delta = timestamp_ms - time_last_updated_;
     // Use packet packet_list_.size() not prio_queue_.size() here, as there
     // might be an outstanding element popped from prio_queue_ currently in the
