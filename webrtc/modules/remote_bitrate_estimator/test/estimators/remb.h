@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_REMB_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_REMB_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -38,8 +39,8 @@ class RembBweSender : public BweSender {
   void Process() override;
 
  protected:
-  rtc::scoped_ptr<BitrateController> bitrate_controller_;
-  rtc::scoped_ptr<RtcpBandwidthObserver> feedback_observer_;
+  std::unique_ptr<BitrateController> bitrate_controller_;
+  std::unique_ptr<RtcpBandwidthObserver> feedback_observer_;
 
  private:
   Clock* clock_;
@@ -68,10 +69,10 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
   std::string estimate_log_prefix_;
   bool plot_estimate_;
   SimulatedClock clock_;
-  rtc::scoped_ptr<ReceiveStatistics> recv_stats_;
+  std::unique_ptr<ReceiveStatistics> recv_stats_;
   int64_t latest_estimate_bps_;
   int64_t last_feedback_ms_;
-  rtc::scoped_ptr<RemoteBitrateEstimator> estimator_;
+  std::unique_ptr<RemoteBitrateEstimator> estimator_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RembReceiver);
 };

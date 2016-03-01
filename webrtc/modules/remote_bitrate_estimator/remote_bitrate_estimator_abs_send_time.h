@@ -13,12 +13,12 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/rate_statistics.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -120,7 +120,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
 
   rtc::ThreadChecker network_thread_;
   RemoteBitrateObserver* const observer_;
-  rtc::scoped_ptr<InterArrival> inter_arrival_;
+  std::unique_ptr<InterArrival> inter_arrival_;
   OveruseEstimator estimator_;
   OveruseDetector detector_;
   RateStatistics incoming_bitrate_;

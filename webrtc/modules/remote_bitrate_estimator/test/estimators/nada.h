@@ -19,6 +19,7 @@
 
 #include <list>
 #include <map>
+#include <memory>
 
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
@@ -50,7 +51,7 @@ class NadaBweReceiver : public BweReceiver {
  private:
   SimulatedClock clock_;
   int64_t last_feedback_ms_;
-  rtc::scoped_ptr<ReceiveStatistics> recv_stats_;
+  std::unique_ptr<ReceiveStatistics> recv_stats_;
   int64_t baseline_delay_ms_;  // Referred as d_f.
   int64_t delay_signal_ms_;    // Referred as d_n.
   int64_t last_congestion_signal_ms_;

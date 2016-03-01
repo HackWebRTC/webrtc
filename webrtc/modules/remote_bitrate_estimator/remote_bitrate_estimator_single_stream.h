@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_BITRATE_ESTIMATOR_SINGLE_STREAM_H_
 
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/rate_statistics.h"
@@ -54,9 +55,9 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   Clock* clock_;
   SsrcOveruseEstimatorMap overuse_detectors_ GUARDED_BY(crit_sect_.get());
   RateStatistics incoming_bitrate_ GUARDED_BY(crit_sect_.get());
-  rtc::scoped_ptr<AimdRateControl> remote_rate_ GUARDED_BY(crit_sect_.get());
+  std::unique_ptr<AimdRateControl> remote_rate_ GUARDED_BY(crit_sect_.get());
   RemoteBitrateObserver* observer_ GUARDED_BY(crit_sect_.get());
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  std::unique_ptr<CriticalSectionWrapper> crit_sect_;
   int64_t last_process_time_;
   int64_t process_interval_ms_ GUARDED_BY(crit_sect_.get());
 

@@ -11,11 +11,11 @@
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/nada.h"
 
 #include <algorithm>
+#include <memory>
 #include <numeric>
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -314,7 +314,7 @@ TEST_F(NadaSenderSideTest, VeryHighBandwith) {
 }
 
 TEST_F(NadaReceiverSideTest, FeedbackInitialCases) {
-  rtc::scoped_ptr<NadaFeedback> nada_feedback(
+  std::unique_ptr<NadaFeedback> nada_feedback(
       static_cast<NadaFeedback*>(nada_receiver_.GetFeedback(0)));
   EXPECT_EQ(nada_feedback, nullptr);
 
@@ -342,7 +342,7 @@ TEST_F(NadaReceiverSideTest, FeedbackEmptyQueues) {
   }
 
   // Baseline delay will be equal kOneWayDelayMs.
-  rtc::scoped_ptr<NadaFeedback> nada_feedback(
+  std::unique_ptr<NadaFeedback> nada_feedback(
       static_cast<NadaFeedback*>(nada_receiver_.GetFeedback(500)));
   EXPECT_EQ(nada_feedback->exp_smoothed_delay_ms(), 0L);
   EXPECT_EQ(nada_feedback->est_queuing_delay_signal_ms(), 0L);
@@ -378,7 +378,7 @@ TEST_F(NadaReceiverSideTest, FeedbackIncreasingDelay) {
     const MediaPacket media_packet(kFlowId, send_time_us, 0, sequence_number);
     nada_receiver_.ReceivePacket(arrival_time_ms, media_packet);
 
-    rtc::scoped_ptr<NadaFeedback> nada_feedback(static_cast<NadaFeedback*>(
+    std::unique_ptr<NadaFeedback> nada_feedback(static_cast<NadaFeedback*>(
         nada_receiver_.GetFeedback(arrival_time_ms)));
     EXPECT_EQ(nada_feedback->exp_smoothed_delay_ms(),
               exp_smoothed_delays_ms[i]);
@@ -447,7 +447,7 @@ TEST_F(NadaReceiverSideTest, FeedbackWarpedDelay) {
     const MediaPacket media_packet(kFlowId, send_time_us, 0, sequence_number);
     nada_receiver_.ReceivePacket(arrival_time_ms, media_packet);
 
-    rtc::scoped_ptr<NadaFeedback> nada_feedback(static_cast<NadaFeedback*>(
+    std::unique_ptr<NadaFeedback> nada_feedback(static_cast<NadaFeedback*>(
         nada_receiver_.GetFeedback(arrival_time_ms)));
     EXPECT_EQ(nada_feedback->exp_smoothed_delay_ms(),
               exp_smoothed_delays_ms[i]);

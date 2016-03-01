@@ -13,11 +13,11 @@
 
 #include <list>
 #include <limits>
+#include <memory>
 #include <set>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
@@ -91,7 +91,7 @@ class VideoSender : public PacketSender, public BitrateObserver {
                                          Packets* generated);
 
   VideoSource* source_;
-  rtc::scoped_ptr<BweSender> bwe_;
+  std::unique_ptr<BweSender> bwe_;
   int64_t start_of_run_ms_;
   std::list<Module*> modules_;
 

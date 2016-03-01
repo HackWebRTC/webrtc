@@ -9,13 +9,13 @@
  */
 
 #include <limits>
+#include <memory>
 #include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
@@ -107,7 +107,7 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   SimulatedClock clock_;
   MockRemoteBitrateEstimator* bitrate_estimator_;
   MockBitrateControllerAdapter bitrate_controller_;
-  rtc::scoped_ptr<TransportFeedbackAdapter> adapter_;
+  std::unique_ptr<TransportFeedbackAdapter> adapter_;
 
   uint32_t receiver_estimated_bitrate_;
 };
@@ -198,7 +198,7 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
     OnSentPacket(packet);
 
   for (size_t i = 0; i < packets.size(); ++i) {
-    rtc::scoped_ptr<rtcp::TransportFeedback> feedback(
+    std::unique_ptr<rtcp::TransportFeedback> feedback(
         new rtcp::TransportFeedback());
     feedback->WithBase(packets[i].sequence_number,
                        packets[i].arrival_time_ms * 1000);
@@ -207,8 +207,8 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
         packets[i].sequence_number, packets[i].arrival_time_ms * 1000));
 
     rtc::Buffer raw_packet = feedback->Build();
-    feedback = rtcp::TransportFeedback::ParseFrom(raw_packet.data(),
-                                                  raw_packet.size());
+    feedback = rtc::ScopedToUnique(rtcp::TransportFeedback::ParseFrom(
+        raw_packet.data(), raw_packet.size()));
 
     std::vector<PacketInfo> expected_packets;
     expected_packets.push_back(packets[i]);
@@ -263,7 +263,7 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   OnSentPacket(info);
 
   // Create expected feedback and send into adapter.
-  rtc::scoped_ptr<rtcp::TransportFeedback> feedback(
+  std::unique_ptr<rtcp::TransportFeedback> feedback(
       new rtcp::TransportFeedback());
   feedback->WithBase(sent_packets[0].sequence_number,
                      sent_packets[0].arrival_time_ms * 1000);
@@ -276,8 +276,8 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
                                             info.arrival_time_ms * 1000));
 
   rtc::Buffer raw_packet = feedback->Build();
-  feedback = rtcp::TransportFeedback::ParseFrom(raw_packet.data(),
-                                                raw_packet.size());
+  feedback = rtc::ScopedToUnique(
+      rtcp::TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size()));
 
   std::vector<PacketInfo> received_feedback;
 
@@ -297,8 +297,8 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   EXPECT_TRUE(feedback->WithReceivedPacket(info.sequence_number,
                                            info.arrival_time_ms * 1000));
   raw_packet = feedback->Build();
-  feedback = rtcp::TransportFeedback::ParseFrom(raw_packet.data(),
-                                                raw_packet.size());
+  feedback = rtc::ScopedToUnique(
+      rtcp::TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size()));
 
   EXPECT_TRUE(feedback.get() != nullptr);
   EXPECT_CALL(*bitrate_estimator_, IncomingPacketFeedbackVector(_))

@@ -10,8 +10,9 @@
 
 #include <stdio.h>
 
+#include <memory>
+
 #include "webrtc/base/format_macros.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/tools/bwe_rtp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -48,9 +49,9 @@ int main(int argc, char** argv) {
                                   &parser, &estimator, &estimator_used)) {
     return -1;
   }
-  rtc::scoped_ptr<webrtc::test::RtpFileReader> rtp_reader(reader);
-  rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(parser);
-  rtc::scoped_ptr<webrtc::RemoteBitrateEstimator> rbe(estimator);
+  std::unique_ptr<webrtc::test::RtpFileReader> rtp_reader(reader);
+  std::unique_ptr<webrtc::RtpHeaderParser> rtp_parser(parser);
+  std::unique_ptr<webrtc::RemoteBitrateEstimator> rbe(estimator);
 
   // Process the file.
   int packet_counter = 0;

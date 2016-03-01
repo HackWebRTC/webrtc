@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
 
@@ -199,8 +200,8 @@ class InterArrivalTest : public ::testing::Test {
     EXPECT_EQ(expected_packet_size_delta, delta_packet_size);
   }
 
-  rtc::scoped_ptr<InterArrival> inter_arrival_rtp_;
-  rtc::scoped_ptr<InterArrival> inter_arrival_ast_;
+  std::unique_ptr<InterArrival> inter_arrival_rtp_;
+  std::unique_ptr<InterArrival> inter_arrival_ast_;
 };
 
 TEST_F(InterArrivalTest, FirstPacket) {

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TRANSPORT_FEEDBACK_ADAPTER_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TRANSPORT_FEEDBACK_ADAPTER_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
@@ -54,7 +55,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   rtc::CriticalSection lock_;
   SendTimeHistory send_time_history_ GUARDED_BY(&lock_);
   BitrateController* bitrate_controller_;
-  rtc::scoped_ptr<RemoteBitrateEstimator> bitrate_estimator_;
+  std::unique_ptr<RemoteBitrateEstimator> bitrate_estimator_;
   Clock* const clock_;
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;

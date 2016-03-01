@@ -13,12 +13,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
 
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/random.h"
 #include "webrtc/base/rate_statistics.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
@@ -114,9 +114,9 @@ class OveruseDetectorTest : public ::testing::Test {
   int64_t receive_time_ms_;
   uint32_t rtp_timestamp_;
   OverUseDetectorOptions options_;
-  rtc::scoped_ptr<OveruseDetector> overuse_detector_;
-  rtc::scoped_ptr<OveruseEstimator> overuse_estimator_;
-  rtc::scoped_ptr<InterArrival> inter_arrival_;
+  std::unique_ptr<OveruseDetector> overuse_detector_;
+  std::unique_ptr<OveruseEstimator> overuse_estimator_;
+  std::unique_ptr<InterArrival> inter_arrival_;
   Random random_;
 };
 

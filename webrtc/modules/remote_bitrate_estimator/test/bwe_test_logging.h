@@ -120,11 +120,11 @@
 #else  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 
 #include <map>
+#include <memory>
 #include <stack>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 
 #define BWE_TEST_LOGGING_GLOBAL_CONTEXT(name) \
@@ -310,7 +310,7 @@ class Logging {
   void PopState();
 
   static Logging g_Logging;
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  std::unique_ptr<CriticalSectionWrapper> crit_sect_;
   ThreadMap thread_map_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Logging);

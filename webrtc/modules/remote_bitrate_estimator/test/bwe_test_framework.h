@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <list>
+#include <memory>
 #include <numeric>
 #include <set>
 #include <sstream>
@@ -25,7 +26,6 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/random.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/pacing/paced_sender.h"
@@ -345,7 +345,7 @@ class ChokeFilter : public PacketProcessor {
  private:
   uint32_t capacity_kbps_;
   int64_t last_send_time_us_;
-  rtc::scoped_ptr<DelayCapHelper> delay_cap_helper_;
+  std::unique_ptr<DelayCapHelper> delay_cap_helper_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ChokeFilter);
 };
@@ -379,9 +379,9 @@ class TraceBasedDeliveryFilter : public PacketProcessor {
   TimeList delivery_times_us_;
   TimeList::const_iterator next_delivery_it_;
   int64_t local_time_us_;
-  rtc::scoped_ptr<RateCounter> rate_counter_;
+  std::unique_ptr<RateCounter> rate_counter_;
   std::string name_;
-  rtc::scoped_ptr<DelayCapHelper> delay_cap_helper_;
+  std::unique_ptr<DelayCapHelper> delay_cap_helper_;
   Stats<double> packets_per_second_stats_;
   Stats<double> kbps_stats_;
 
