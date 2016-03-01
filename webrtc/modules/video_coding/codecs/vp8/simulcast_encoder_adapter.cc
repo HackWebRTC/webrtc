@@ -17,6 +17,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace {
 
@@ -102,7 +103,8 @@ struct ScreenshareTemporalLayersFactory : webrtc::TemporalLayersFactory {
 
   virtual webrtc::TemporalLayers* Create(int num_temporal_layers,
                                          uint8_t initial_tl0_pic_idx) const {
-    return new webrtc::ScreenshareLayers(num_temporal_layers, rand());
+    return new webrtc::ScreenshareLayers(num_temporal_layers, rand(),
+                                         webrtc::Clock::GetRealTimeClock());
   }
 
   mutable webrtc::FrameDropper tl0_frame_dropper_;

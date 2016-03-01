@@ -28,6 +28,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
@@ -328,8 +329,8 @@ void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
   if (num_streams == 1) {
     if (codec.mode == kScreensharing) {
       // Special mode when screensharing on a single stream.
-      temporal_layers_.push_back(
-          new ScreenshareLayers(num_temporal_layers, rand()));
+      temporal_layers_.push_back(new ScreenshareLayers(
+          num_temporal_layers, rand(), webrtc::Clock::GetRealTimeClock()));
     } else {
       temporal_layers_.push_back(
           tl_factory->Create(num_temporal_layers, rand()));

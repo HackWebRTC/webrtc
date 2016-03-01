@@ -21,6 +21,7 @@
 namespace webrtc {
 
 struct CodecSpecificInfoVP8;
+class Clock;
 
 class ScreenshareLayers : public TemporalLayers {
  public:
@@ -30,8 +31,10 @@ class ScreenshareLayers : public TemporalLayers {
   static const int kTl1Flags;
   static const int kTl1SyncFlags;
 
-  ScreenshareLayers(int num_temporal_layers, uint8_t initial_tl0_pic_idx);
-  virtual ~ScreenshareLayers() {}
+  ScreenshareLayers(int num_temporal_layers,
+                    uint8_t initial_tl0_pic_idx,
+                    Clock* clock);
+  virtual ~ScreenshareLayers();
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
@@ -57,6 +60,8 @@ class ScreenshareLayers : public TemporalLayers {
 
  private:
   bool TimeToSync(int64_t timestamp) const;
+
+  Clock* const clock_;
 
   int number_of_temporal_layers_;
   bool last_base_layer_sync_;
@@ -93,6 +98,20 @@ class ScreenshareLayers : public TemporalLayers {
 
     void UpdateDebt(int64_t delta_ms);
   } layers_[kMaxNumTemporalLayers];
+
+  void UpdateHistograms();
+  // Data for histogram statistics.
+  struct Stats {
+    int64_t first_frame_time_ms_ = -1;
+    int64_t num_tl0_frames_ = 0;
+    int64_t num_tl1_frames_ = 0;
+    int64_t num_dropped_frames_ = 0;
+    int64_t num_overshoots_ = 0;
+    int64_t tl0_qp_sum_ = 0;
+    int64_t tl1_qp_sum_ = 0;
+    int64_t tl0_target_bitrate_sum_ = 0;
+    int64_t tl1_target_bitrate_sum_ = 0;
+  } stats_;
 };
 }  // namespace webrtc
 

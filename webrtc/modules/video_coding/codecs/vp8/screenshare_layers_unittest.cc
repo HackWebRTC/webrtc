@@ -17,6 +17,9 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/utility/mock/mock_frame_dropper.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/metrics.h"
+#include "webrtc/test/histogram.h"
 
 using ::testing::_;
 using ::testing::NiceMock;
@@ -35,8 +38,11 @@ const int kMaxSyncPeriodSeconds = 10;
 
 class ScreenshareLayerTest : public ::testing::Test {
  protected:
-  ScreenshareLayerTest() : min_qp_(2), max_qp_(kDefaultQp), frame_size_(-1) {}
+  ScreenshareLayerTest()
+      : min_qp_(2), max_qp_(kDefaultQp), frame_size_(-1), clock_(1) {}
   virtual ~ScreenshareLayerTest() {}
+
+  void SetUp() override { layers_.reset(new ScreenshareLayers(2, 0, &clock_)); }
 
   void EncodeFrame(uint32_t timestamp,
                    bool base_sync,
@@ -105,11 +111,12 @@ class ScreenshareLayerTest : public ::testing::Test {
   int min_qp_;
   int max_qp_;
   int frame_size_;
+  SimulatedClock clock_;
   std::unique_ptr<ScreenshareLayers> layers_;
 };
 
 TEST_F(ScreenshareLayerTest, 1Layer) {
-  layers_.reset(new ScreenshareLayers(1, 0));
+  layers_.reset(new ScreenshareLayers(1, 0, &clock_));
   ConfigureBitrates();
   int flags = 0;
   uint32_t timestamp = 0;
@@ -135,7 +142,6 @@ TEST_F(ScreenshareLayerTest, 1Layer) {
 }
 
 TEST_F(ScreenshareLayerTest, 2Layer) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   ConfigureBitrates();
   int flags = 0;
   uint32_t timestamp = 0;
@@ -185,7 +191,6 @@ TEST_F(ScreenshareLayerTest, 2Layer) {
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersPeriodicSync) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   ConfigureBitrates();
   int flags = 0;
   uint32_t timestamp = 0;
@@ -206,7 +211,6 @@ TEST_F(ScreenshareLayerTest, 2LayersPeriodicSync) {
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersSyncAfterTimeout) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   ConfigureBitrates();
   uint32_t timestamp = 0;
   CodecSpecificInfoVP8 vp8_info;
@@ -234,7 +238,6 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAfterTimeout) {
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersSyncAfterSimilarQP) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   ConfigureBitrates();
   uint32_t timestamp = 0;
   CodecSpecificInfoVP8 vp8_info;
@@ -284,7 +287,6 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAfterSimilarQP) {
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersToggling) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   ConfigureBitrates();
   int flags = 0;
   CodecSpecificInfoVP8 vp8_info;
@@ -312,7 +314,6 @@ TEST_F(ScreenshareLayerTest, 2LayersToggling) {
 }
 
 TEST_F(ScreenshareLayerTest, AllFitsLayer0) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   ConfigureBitrates();
   frame_size_ = ((kDefaultTl0BitrateKbps * 1000) / 8) / kFrameRate;
 
@@ -329,7 +330,6 @@ TEST_F(ScreenshareLayerTest, AllFitsLayer0) {
 }
 
 TEST_F(ScreenshareLayerTest, TooHighBitrate) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   ConfigureBitrates();
   frame_size_ = 2 * ((kDefaultTl1BitrateKbps * 1000) / 8) / kFrameRate;
   int flags = 0;
@@ -365,8 +365,6 @@ TEST_F(ScreenshareLayerTest, TooHighBitrate) {
 }
 
 TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
-  layers_.reset(new ScreenshareLayers(2, 0));
-
   vpx_codec_enc_cfg_t cfg;
   layers_->ConfigureBitrates(100, 1000, 5, &cfg);
 
@@ -376,7 +374,6 @@ TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
 }
 
 TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   vpx_codec_enc_cfg_t cfg;
   layers_->ConfigureBitrates(100, 450, 5, &cfg);
 
@@ -386,7 +383,6 @@ TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
 }
 
 TEST_F(ScreenshareLayerTest, TargetBitrateBelowTL0) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   vpx_codec_enc_cfg_t cfg;
   layers_->ConfigureBitrates(100, 100, 5, &cfg);
 
@@ -394,7 +390,6 @@ TEST_F(ScreenshareLayerTest, TargetBitrateBelowTL0) {
 }
 
 TEST_F(ScreenshareLayerTest, EncoderDrop) {
-  layers_.reset(new ScreenshareLayers(2, 0));
   ConfigureBitrates();
   CodecSpecificInfoVP8 vp8_info;
   vpx_codec_enc_cfg_t cfg;
@@ -444,6 +439,91 @@ TEST_F(ScreenshareLayerTest, EncoderDrop) {
   layers_->PopulateCodecSpecific(false, &vp8_info, timestamp);
   EXPECT_EQ(cfg.rc_max_quantizer, static_cast<unsigned int>(kDefaultQp));
   layers_->FrameEncoded(frame_size_, timestamp, kDefaultQp);
+}
+
+TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
+  ConfigureBitrates();
+  vpx_codec_enc_cfg_t cfg;
+  cfg.rc_max_quantizer = kDefaultQp;
+  bool trigger_drop = false;
+  bool dropped_frame = false;
+  bool overshoot = false;
+  const int kTl0Qp = 35;
+  const int kTl1Qp = 30;
+  for (int64_t timestamp = 0;
+       timestamp < kTimestampDelta5Fps * 5 * metrics::kMinRunTimeInSeconds;
+       timestamp += kTimestampDelta5Fps) {
+    int flags = layers_->EncodeFlags(timestamp);
+    if (flags != -1)
+      layers_->UpdateConfiguration(&cfg);
+
+    if (timestamp >= kTimestampDelta5Fps * 5 && !overshoot && flags != -1) {
+      // Simulate one overshoot.
+      layers_->FrameEncoded(0, timestamp, 0);
+      overshoot = true;
+      flags = layers_->EncodeFlags(timestamp);
+    }
+
+    if (flags == ScreenshareLayers::kTl0Flags) {
+      if (timestamp >= kTimestampDelta5Fps * 20 && !trigger_drop) {
+        // Simulate a too large frame, to cause frame drop.
+        layers_->FrameEncoded(frame_size_ * 5, timestamp, kTl0Qp);
+        trigger_drop = true;
+      } else {
+        layers_->FrameEncoded(frame_size_, timestamp, kTl0Qp);
+      }
+    } else if (flags == ScreenshareLayers::kTl1Flags ||
+               flags == ScreenshareLayers::kTl1SyncFlags) {
+      layers_->FrameEncoded(frame_size_, timestamp, kTl1Qp);
+    } else if (flags == -1) {
+      dropped_frame = true;
+    } else {
+      RTC_NOTREACHED() << "Unexpected flags";
+    }
+    clock_.AdvanceTimeMilliseconds(1000 / 5);
+  }
+
+  EXPECT_TRUE(overshoot);
+  EXPECT_TRUE(dropped_frame);
+
+  layers_.reset();  // Histograms are reported on destruction.
+
+  EXPECT_EQ(1, test::NumHistogramSamples(
+                   "WebRTC.Video.Screenshare.Layer0.FrameRate"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+                   "WebRTC.Video.Screenshare.Layer1.FrameRate"));
+  EXPECT_EQ(
+      1, test::NumHistogramSamples("WebRTC.Video.Screenshare.FramesPerDrop"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+                   "WebRTC.Video.Screenshare.FramesPerOvershoot"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Screenshare.Layer0.Qp"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Screenshare.Layer1.Qp"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+                   "WebRTC.Video.Screenshare.Layer0.TargetBitrate"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+                   "WebRTC.Video.Screenshare.Layer1.TargetBitrate"));
+
+  EXPECT_GT(
+      test::LastHistogramSample("WebRTC.Video.Screenshare.Layer0.FrameRate"),
+      1);
+  EXPECT_GT(
+      test::LastHistogramSample("WebRTC.Video.Screenshare.Layer1.FrameRate"),
+      1);
+  EXPECT_GT(test::LastHistogramSample("WebRTC.Video.Screenshare.FramesPerDrop"),
+            1);
+  EXPECT_GT(
+      test::LastHistogramSample("WebRTC.Video.Screenshare.FramesPerOvershoot"),
+      1);
+  EXPECT_EQ(kTl0Qp,
+            test::LastHistogramSample("WebRTC.Video.Screenshare.Layer0.Qp"));
+  EXPECT_EQ(kTl1Qp,
+            test::LastHistogramSample("WebRTC.Video.Screenshare.Layer1.Qp"));
+  EXPECT_EQ(kDefaultTl0BitrateKbps,
+            test::LastHistogramSample(
+                "WebRTC.Video.Screenshare.Layer0.TargetBitrate"));
+  EXPECT_EQ(kDefaultTl1BitrateKbps,
+            test::LastHistogramSample(
+                "WebRTC.Video.Screenshare.Layer1.TargetBitrate"));
 }
 
 }  // namespace webrtc
