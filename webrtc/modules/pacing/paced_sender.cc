@@ -431,13 +431,15 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
                                                    packet.retransmission);
   critsect_->Enter();
 
-  // TODO(holmer): High priority packets should only be accounted for if we are
-  // allocating bandwidth for audio.
-  if (success && packet.priority != kHighPriority) {
-    // Update media bytes sent.
+  if (success) {
     prober_->PacketSent(clock_->TimeInMilliseconds(), packet.bytes);
-    media_budget_->UseBudget(packet.bytes);
-    padding_budget_->UseBudget(packet.bytes);
+    // TODO(holmer): High priority packets should only be accounted for if we
+    // are allocating bandwidth for audio.
+    if (packet.priority != kHighPriority) {
+      // Update media bytes sent.
+      media_budget_->UseBudget(packet.bytes);
+      padding_budget_->UseBudget(packet.bytes);
+    }
   }
 
   return success;
