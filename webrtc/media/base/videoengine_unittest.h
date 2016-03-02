@@ -560,7 +560,6 @@ class VideoMediaChannelTest : public testing::Test,
     cricket::FakeVideoRenderer renderer2;
     std::unique_ptr<cricket::FakeVideoCapturer> capturer(
         CreateFakeVideoCapturer());
-    capturer->SetScreencast(true);
     const int kTestWidth = 160;
     const int kTestHeight = 120;
     cricket::VideoFormat format(kTestWidth, kTestHeight,
@@ -771,7 +770,14 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
     std::unique_ptr<cricket::FakeVideoCapturer> capturer(
         CreateFakeVideoCapturer());
-    capturer->SetScreencast(true);
+
+    // TODO(nisse): This testcase fails if we don't configure
+    // screencast. It's unclear why, I see nothing obvious in this
+    // test which is related to screencast logic.
+    cricket::VideoOptions video_options;
+    video_options.is_screencast = rtc::Optional<bool>(true);
+    channel_->SetVideoSend(kSsrc, true, &video_options);
+
     cricket::VideoFormat format(480, 360,
                                 cricket::VideoFormat::FpsToInterval(30),
                                 cricket::FOURCC_I420);
@@ -868,7 +874,6 @@ class VideoMediaChannelTest : public testing::Test,
         cricket::StreamParams::CreateLegacy(1)));
     std::unique_ptr<cricket::FakeVideoCapturer> capturer1(
         CreateFakeVideoCapturer());
-    capturer1->SetScreencast(true);
     EXPECT_EQ(cricket::CS_RUNNING, capturer1->Start(capture_format));
     // Set up additional stream 2.
     cricket::FakeVideoRenderer renderer2;
@@ -880,7 +885,6 @@ class VideoMediaChannelTest : public testing::Test,
         cricket::StreamParams::CreateLegacy(2)));
     std::unique_ptr<cricket::FakeVideoCapturer> capturer2(
         CreateFakeVideoCapturer());
-    capturer2->SetScreencast(true);
     EXPECT_EQ(cricket::CS_RUNNING, capturer2->Start(capture_format));
     // State for all the streams.
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
@@ -936,7 +940,6 @@ class VideoMediaChannelTest : public testing::Test,
     // (update the test when this changes).
     std::unique_ptr<cricket::FakeVideoCapturer> capturer(
         CreateFakeVideoCapturer());
-    capturer->SetScreencast(true);
     const std::vector<cricket::VideoFormat>* formats =
         capturer->GetSupportedFormats();
     cricket::VideoFormat capture_format = (*formats)[0];

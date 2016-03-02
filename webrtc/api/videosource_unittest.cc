@@ -42,7 +42,9 @@ const int kMaxWaitMs = 100;
 // file.
 class TestVideoCapturer : public cricket::FakeVideoCapturer {
  public:
-  TestVideoCapturer() : test_without_formats_(false) {
+  TestVideoCapturer(bool is_screencast)
+      : FakeVideoCapturer(is_screencast),
+        test_without_formats_(false) {
     std::vector<cricket::VideoFormat> formats;
     formats.push_back(cricket::VideoFormat(1280, 720,
         cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
@@ -110,11 +112,17 @@ class StateObserver : public ObserverInterface {
 class VideoSourceTest : public testing::Test {
  protected:
   VideoSourceTest()
-      : capturer_cleanup_(new TestVideoCapturer()),
-        capturer_(capturer_cleanup_.get()),
-        channel_manager_(new cricket::ChannelManager(
+      : channel_manager_(new cricket::ChannelManager(
           new cricket::FakeMediaEngine(), rtc::Thread::Current())) {
+    InitCapturer(false);
   }
+  void InitCapturer(bool is_screencast) {
+    capturer_cleanup_ = rtc::scoped_ptr<TestVideoCapturer>(
+        new TestVideoCapturer(is_screencast));
+    capturer_ = capturer_cleanup_.get();
+  }
+
+  void InitScreencast() { InitCapturer(true); }
 
   void SetUp() {
     ASSERT_TRUE(channel_manager_->Init());
@@ -473,8 +481,8 @@ TEST_F(VideoSourceTest, MixedOptionsAndConstraints) {
 // Tests that the source starts video with the default resolution for
 // screencast if no constraint is set.
 TEST_F(VideoSourceTest, ScreencastResolutionNoConstraint) {
+  InitScreencast();
   capturer_->TestWithoutCameraFormats();
-  capturer_->SetScreencast(true);
 
   CreateVideoSource();
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
@@ -493,8 +501,8 @@ TEST_F(VideoSourceTest, ScreencastResolutionWithConstraint) {
   constraints.AddMandatory(MediaConstraintsInterface::kMaxWidth, 480);
   constraints.AddMandatory(MediaConstraintsInterface::kMaxHeight, 270);
 
+  InitScreencast();
   capturer_->TestWithoutCameraFormats();
-  capturer_->SetScreencast(true);
 
   CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),

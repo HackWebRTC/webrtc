@@ -359,6 +359,7 @@ void VideoSource::Initialize(
     return;
   }
   options_.SetAll(options);
+  options_.is_screencast = rtc::Optional<bool>(video_capturer_->IsScreencast());
 
   format_ = GetBestCaptureFormat(formats);
   // Start the camera with our best guess.

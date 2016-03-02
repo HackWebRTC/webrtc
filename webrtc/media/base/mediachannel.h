@@ -258,11 +258,13 @@ struct VideoOptions {
   void SetAll(const VideoOptions& change) {
     SetFrom(&video_noise_reduction, change.video_noise_reduction);
     SetFrom(&screencast_min_bitrate_kbps, change.screencast_min_bitrate_kbps);
+    SetFrom(&is_screencast, change.is_screencast);
   }
 
   bool operator==(const VideoOptions& o) const {
     return video_noise_reduction == o.video_noise_reduction &&
-           screencast_min_bitrate_kbps == o.screencast_min_bitrate_kbps;
+           screencast_min_bitrate_kbps == o.screencast_min_bitrate_kbps &&
+           is_screencast == o.is_screencast;
   }
 
   std::string ToString() const {
@@ -271,6 +273,7 @@ struct VideoOptions {
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
     ost << ToStringIfSet("screencast min bitrate kbps",
                          screencast_min_bitrate_kbps);
+    ost << ToStringIfSet("is_screencast ", is_screencast);
     ost << "}";
     return ost.str();
   }
@@ -283,6 +286,11 @@ struct VideoOptions {
   // the PeerConnection constraint 'googScreencastMinBitrate'. It is
   // copied to the encoder config by WebRtcVideoChannel2.
   rtc::Optional<int> screencast_min_bitrate_kbps;
+  // Set by screencast sources. Implies selection of encoding settings
+  // suitable for screencast. Most likely not the right way to do
+  // things, e.g., screencast of a text document and screencast of a
+  // youtube video have different needs.
+  rtc::Optional<bool> is_screencast;
 
  private:
   template <typename T>

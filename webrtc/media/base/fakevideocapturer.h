@@ -29,11 +29,11 @@ namespace cricket {
 // Fake video capturer that allows the test to manually pump in frames.
 class FakeVideoCapturer : public cricket::VideoCapturer {
  public:
-  FakeVideoCapturer()
+  FakeVideoCapturer(bool is_screencast)
       : running_(false),
         initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
         next_timestamp_(rtc::kNumNanosecsPerMillisec),
-        is_screencast_(false),
+        is_screencast_(is_screencast),
         rotation_(webrtc::kVideoRotation_0) {
 #ifdef HAVE_WEBRTC_VIDEO
     set_frame_factory(new cricket::WebRtcVideoFrameFactory());
@@ -52,6 +52,8 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
         cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_I420));
     ResetSupportedFormats(formats);
   }
+  FakeVideoCapturer() : FakeVideoCapturer(false) {}
+
   ~FakeVideoCapturer() {
     SignalDestroyed(this);
   }
@@ -136,9 +138,6 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     SetCaptureState(cricket::CS_STOPPED);
   }
   virtual bool IsRunning() { return running_; }
-  void SetScreencast(bool is_screencast) {
-    is_screencast_ = is_screencast;
-  }
   virtual bool IsScreencast() const { return is_screencast_; }
   bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
     fourccs->push_back(cricket::FOURCC_I420);
@@ -156,7 +155,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
   bool running_;
   int64_t initial_unix_timestamp_;
   int64_t next_timestamp_;
-  bool is_screencast_;
+  const bool is_screencast_;
   webrtc::VideoRotation rotation_;
 };
 

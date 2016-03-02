@@ -411,9 +411,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoStreams(
 }
 
 void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
-    const VideoCodec& codec,
-    const VideoOptions& options,
-    bool is_screencast) {
+    const VideoCodec& codec) {
+  bool is_screencast = parameters_.options.is_screencast.value_or(false);
   // No automatic resizing when using simulcast or screencast.
   bool automatic_resize =
       !is_screencast && parameters_.config.rtp.ssrcs.size() == 1;
@@ -424,8 +423,8 @@ void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     denoising = false;
   } else {
     // Use codec default if video_noise_reduction is unset.
-    codec_default_denoising = !options.video_noise_reduction;
-    denoising = options.video_noise_reduction.value_or(false);
+    codec_default_denoising = !parameters_.options.video_noise_reduction;
+    denoising = parameters_.options.video_noise_reduction.value_or(false);
   }
 
   if (CodecNamesEq(codec.name, kH264CodecName)) {
@@ -1490,7 +1489,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       parameters_(config, send_params.options, max_bitrate_bps, codec_settings),
       pending_encoder_reconfiguration_(false),
       allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
-      capturer_is_screencast_(false),
       sending_(false),
       muted_(false),
       first_frame_timestamp_ms_(0),
@@ -1570,8 +1568,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   last_frame_timestamp_ms_ = first_frame_timestamp_ms_ + frame_delta_ms;
   video_frame.set_render_time_ms(last_frame_timestamp_ms_);
   // Reconfigure codec if necessary.
-  SetDimensions(video_frame.width(), video_frame.height(),
-                capturer_is_screencast_);
+  SetDimensions(video_frame.width(), video_frame.height());
   last_rotation_ = video_frame.rotation();
 
   stream_->Input()->IncomingCapturedFrame(video_frame);
@@ -1613,7 +1610,6 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
       capturer_ = NULL;
       return true;
     }
-    capturer_is_screencast_ = capturer->IsScreencast();
   }
   capturer_ = capturer;
   capturer_->AddOrUpdateSink(this, sink_wants_);
@@ -1649,6 +1645,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetSsrcs() const {
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetOptions(
     const VideoOptions& options) {
   rtc::CritScope cs(&lock_);
+
   parameters_.options.SetAll(options);
   // Reconfigure encoder settings on the next frame or stream
   // recreation.
@@ -1743,6 +1740,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
 
   parameters_.codec_settings =
       rtc::Optional<WebRtcVideoChannel2::VideoCodecSettings>(codec_settings);
+
+  LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetCodec.";
   RecreateWebRtcStream();
   if (allocated_encoder_.encoder != new_encoder.encoder) {
     DestroyVideoEncoder(&allocated_encoder_);
@@ -1800,7 +1799,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     const Dimensions& dimensions,
     const VideoCodec& codec) const {
   webrtc::VideoEncoderConfig encoder_config;
-  if (dimensions.is_screencast) {
+  bool is_screencast = parameters_.options.is_screencast.value_or(false);
+  if (is_screencast) {
     encoder_config.min_transmit_bitrate_bps =
         1000 * parameters_.options.screencast_min_bitrate_kbps.value_or(0);
     encoder_config.content_type =
@@ -1814,7 +1814,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   // Restrict dimensions according to codec max.
   int width = dimensions.width;
   int height = dimensions.height;
-  if (!dimensions.is_screencast) {
+  if (!is_screencast) {
     if (codec.width < width)
       width = codec.width;
     if (codec.height < height)
@@ -1829,7 +1829,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   // number of negotiated ssrcs. But if the codec is blacklisted for simulcast
   // or a screencast, only configure a single stream.
   size_t stream_count = parameters_.config.rtp.ssrcs.size();
-  if (IsCodecBlacklistedForSimulcast(codec.name) || dimensions.is_screencast) {
+  if (IsCodecBlacklistedForSimulcast(codec.name) || is_screencast) {
     stream_count = 1;
   }
 
@@ -1838,7 +1838,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
                          parameters_.max_bitrate_bps, stream_count);
 
   // Conference mode screencast uses 2 temporal layers split at 100kbit.
-  if (parameters_.conference_mode && dimensions.is_screencast &&
+  if (parameters_.conference_mode && is_screencast &&
       encoder_config.streams.size() == 1) {
     ScreenshareLayerConfig config = ScreenshareLayerConfig::GetDefault();
 
@@ -1857,20 +1857,15 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
     int width,
-    int height,
-    bool is_screencast) {
+    int height) {
   if (last_dimensions_.width == width && last_dimensions_.height == height &&
-      last_dimensions_.is_screencast == is_screencast &&
       !pending_encoder_reconfiguration_) {
     // Configured using the same parameters, do not reconfigure.
     return;
   }
-  LOG(LS_INFO) << "SetDimensions: " << width << "x" << height
-               << (is_screencast ? " (screencast)" : " (not screencast)");
 
   last_dimensions_.width = width;
   last_dimensions_.height = height;
-  last_dimensions_.is_screencast = is_screencast;
 
   RTC_DCHECK(!parameters_.encoder_config.streams.empty());
 
@@ -1881,7 +1876,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
       CreateVideoEncoderConfig(last_dimensions_, codec_settings.codec);
 
   encoder_config.encoder_specific_settings = ConfigureVideoEncoderSettings(
-      codec_settings.codec, parameters_.options, is_screencast);
+      codec_settings.codec);
 
   bool stream_reconfigured = stream_->ReconfigureVideoEncoder(encoder_config);
 
@@ -1889,8 +1884,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
   pending_encoder_reconfiguration_ = false;
 
   if (!stream_reconfigured) {
-    LOG(LS_WARNING) << "Failed to reconfigure video encoder for dimensions: "
-                    << width << "x" << height;
     return;
   }
 
@@ -1921,15 +1914,19 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
     return;
   }
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  LOG(LS_INFO) << "OnLoadUpdate " << load;
   if (!capturer_) {
     return;
   }
   {
     rtc::CritScope cs(&lock_);
+    LOG(LS_INFO) << "OnLoadUpdate " << load << ", is_screencast: "
+                 << (parameters_.options.is_screencast
+                         ? (*parameters_.options.is_screencast ? "true"
+                                                               : "false")
+                         : "unset");
     // Do not adapt resolution for screen content as this will likely result in
     // blurry and unreadable text.
-    if (capturer_is_screencast_)
+    if (parameters_.options.is_screencast.value_or(false))
       return;
 
     rtc::Optional<int> max_pixel_count;
@@ -2080,11 +2077,12 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   }
 
   RTC_CHECK(parameters_.codec_settings);
+  RTC_DCHECK_EQ((parameters_.encoder_config.content_type ==
+                 webrtc::VideoEncoderConfig::ContentType::kScreen),
+                parameters_.options.is_screencast.value_or(false))
+      << "encoder content type inconsistent with screencast option";
   parameters_.encoder_config.encoder_specific_settings =
-      ConfigureVideoEncoderSettings(
-          parameters_.codec_settings->codec, parameters_.options,
-          parameters_.encoder_config.content_type ==
-              webrtc::VideoEncoderConfig::ContentType::kScreen);
+      ConfigureVideoEncoderSettings(parameters_.codec_settings->codec);
 
   webrtc::VideoSendStream::Config config = parameters_.config;
   if (!config.rtp.rtx.ssrcs.empty() && config.rtp.rtx.payload_type == -1) {

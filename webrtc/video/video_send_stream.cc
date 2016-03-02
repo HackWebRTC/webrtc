@@ -475,9 +475,12 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   RTC_DCHECK_GT(streams[0].max_framerate, 0);
   video_codec.maxFramerate = streams[0].max_framerate;
 
-  if (!SetSendCodec(video_codec))
+  if (!SetSendCodec(video_codec)) {
+    LOG(LS_WARNING) << "(Re)configureVideoEncoder: SetSendCodec failed "
+                       "for config: "
+                    << config.ToString();
     return false;
-
+  }
   // Clear stats for disabled layers.
   for (size_t i = video_codec.numberOfSimulcastStreams;
        i < config_.rtp.ssrcs.size(); ++i) {

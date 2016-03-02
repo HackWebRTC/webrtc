@@ -301,10 +301,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
       // the first frame to know that you gave a bad codec parameter could make
       // debugging hard).
       // TODO(pbos): Consider setting up encoders lazily.
-      Dimensions() : width(176), height(144), is_screencast(false) {}
+      Dimensions() : width(176), height(144) {}
       int width;
       int height;
-      bool is_screencast;
     };
 
     union VideoEncoderSettings {
@@ -324,9 +323,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         int max_bitrate_bps,
         size_t num_streams);
 
-    void* ConfigureVideoEncoderSettings(const VideoCodec& codec,
-                                        const VideoOptions& options,
-                                        bool is_screencast)
+    void* ConfigureVideoEncoderSettings(const VideoCodec& codec)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec)
@@ -339,7 +336,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     webrtc::VideoEncoderConfig CreateVideoEncoderConfig(
         const Dimensions& dimensions,
         const VideoCodec& codec) const EXCLUSIVE_LOCKS_REQUIRED(lock_);
-    void SetDimensions(int width, int height, bool is_screencast)
+    void SetDimensions(int width, int height)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     rtc::ThreadChecker thread_checker_;
@@ -369,7 +366,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     webrtc::VideoRotation last_rotation_ GUARDED_BY(lock_) =
         webrtc::kVideoRotation_0;
 
-    bool capturer_is_screencast_ GUARDED_BY(lock_);
     bool sending_ GUARDED_BY(lock_);
     bool muted_ GUARDED_BY(lock_);
 
