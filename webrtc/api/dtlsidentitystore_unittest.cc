@@ -85,7 +85,9 @@ class DtlsIdentityStoreTest : public testing::Test {
 TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessRSA) {
   EXPECT_TRUE_WAIT(store_->HasFreeIdentityForTesting(rtc::KT_RSA), kTimeoutMs);
 
-  store_->RequestIdentity(rtc::KT_RSA, observer_.get());
+  store_->RequestIdentity(rtc::KeyParams(rtc::KT_RSA),
+                          rtc::Optional<uint64_t>(),
+                          observer_.get());
   EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
 
   EXPECT_TRUE_WAIT(store_->HasFreeIdentityForTesting(rtc::KT_RSA), kTimeoutMs);
@@ -93,7 +95,9 @@ TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessRSA) {
   observer_->Reset();
 
   // Verifies that the callback is async when a free identity is ready.
-  store_->RequestIdentity(rtc::KT_RSA, observer_.get());
+  store_->RequestIdentity(rtc::KeyParams(rtc::KT_RSA),
+                          rtc::Optional<uint64_t>(),
+                          observer_.get());
   EXPECT_FALSE(observer_->call_back_called());
   EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
 }
@@ -102,13 +106,17 @@ TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessECDSA) {
   // Since store currently does not preemptively generate free ECDSA identities
   // we do not invoke HasFreeIdentityForTesting between requests.
 
-  store_->RequestIdentity(rtc::KT_ECDSA, observer_.get());
+  store_->RequestIdentity(rtc::KeyParams(rtc::KT_ECDSA),
+                          rtc::Optional<uint64_t>(),
+                          observer_.get());
   EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
 
   observer_->Reset();
 
   // Verifies that the callback is async when a free identity is ready.
-  store_->RequestIdentity(rtc::KT_ECDSA, observer_.get());
+  store_->RequestIdentity(rtc::KeyParams(rtc::KT_ECDSA),
+                          rtc::Optional<uint64_t>(),
+                          observer_.get());
   EXPECT_FALSE(observer_->call_back_called());
   EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
 }
@@ -116,7 +124,9 @@ TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessECDSA) {
 TEST_F(DtlsIdentityStoreTest, DeleteStoreEarlyNoCrashRSA) {
   EXPECT_FALSE(store_->HasFreeIdentityForTesting(rtc::KT_RSA));
 
-  store_->RequestIdentity(rtc::KT_RSA, observer_.get());
+  store_->RequestIdentity(rtc::KeyParams(rtc::KT_RSA),
+                          rtc::Optional<uint64_t>(),
+                          observer_.get());
   store_.reset();
 
   worker_thread_->Stop();
@@ -126,7 +136,9 @@ TEST_F(DtlsIdentityStoreTest, DeleteStoreEarlyNoCrashRSA) {
 TEST_F(DtlsIdentityStoreTest, DeleteStoreEarlyNoCrashECDSA) {
   EXPECT_FALSE(store_->HasFreeIdentityForTesting(rtc::KT_ECDSA));
 
-  store_->RequestIdentity(rtc::KT_ECDSA, observer_.get());
+  store_->RequestIdentity(rtc::KeyParams(rtc::KT_ECDSA),
+                          rtc::Optional<uint64_t>(),
+                          observer_.get());
   store_.reset();
 
   worker_thread_->Stop();

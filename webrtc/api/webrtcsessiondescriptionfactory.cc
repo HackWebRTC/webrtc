@@ -188,13 +188,15 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
   identity_request_observer_->SignalCertificateReady.connect(
       this, &WebRtcSessionDescriptionFactory::SetCertificate);
 
-  rtc::KeyType key_type = rtc::KT_DEFAULT;
+  rtc::KeyParams key_params = rtc::KeyParams();
   LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sending DTLS identity request (key "
-                  << "type: " << key_type << ").";
+                  << "type: " << key_params.type() << ").";
 
   // Request identity. This happens asynchronously, so the caller will have a
   // chance to connect to SignalIdentityReady.
-  dtls_identity_store_->RequestIdentity(key_type, identity_request_observer_);
+  dtls_identity_store_->RequestIdentity(key_params,
+                                        rtc::Optional<uint64_t>(),
+                                        identity_request_observer_);
 }
 
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(

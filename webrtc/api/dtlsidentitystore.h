@@ -17,6 +17,7 @@
 
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -56,23 +57,24 @@ class DtlsIdentityStoreInterface {
 
   // The |observer| will be called when the requested identity is ready, or when
   // identity generation fails.
-  // TODO(torbjorng,hbos): The following RequestIdentity is about to be removed,
-  // see below todo.
-  virtual void RequestIdentity(
-      rtc::KeyType key_type,
-      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
-    // Add default parameterization.
-    RequestIdentity(rtc::KeyParams(key_type), observer);
-  }
-  // TODO(torbjorng,hbos): Parameterized key types! The following
-  // RequestIdentity should replace the old one that takes rtc::KeyType. When
-  // the new one is implemented by Chromium and WebRTC the old one should be
-  // removed. crbug.com/544902, webrtc:5092.
+  // TODO(torbjorng,hbos): There are currently two versions of RequestIdentity,
+  // with default implementation to call the other version of itself (so that a
+  // call can be made regardless of which version has been overridden). The 1st
+  // version exists because it is currently implemented in chromium. The 2nd
+  // version will become the one and only RequestIdentity as soon as chromium
+  // implements the correct version. crbug.com/544902, webrtc:5092.
   virtual void RequestIdentity(
       rtc::KeyParams key_params,
       const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
-    // Drop parameterization.
-    RequestIdentity(key_params.type(), observer);
+    // Add default ("null") expiration.
+    RequestIdentity(key_params, rtc::Optional<uint64_t>(), observer);
+  }
+  virtual void RequestIdentity(
+      rtc::KeyParams key_params,
+      rtc::Optional<uint64_t> expires,
+      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
+    // Drop |expires|.
+    RequestIdentity(key_params, observer);
   }
 };
 
@@ -89,7 +91,8 @@ class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
 
   // DtlsIdentityStoreInterface override;
   void RequestIdentity(
-      rtc::KeyType key_type,
+      rtc::KeyParams key_params,
+      rtc::Optional<uint64_t> expires,
       const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) override;
 
   // rtc::MessageHandler override;
