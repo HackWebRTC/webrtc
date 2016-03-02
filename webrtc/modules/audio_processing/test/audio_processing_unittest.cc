@@ -204,10 +204,10 @@ int16_t MaxAudioFrame(const AudioFrame& frame) {
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
 void TestStats(const AudioProcessing::Statistic& test,
                const audioproc::Test::Statistic& reference) {
-  EXPECT_NEAR(reference.instant(), test.instant, 1);
-  EXPECT_EQ(reference.average(), test.average);
-  EXPECT_EQ(reference.maximum(), test.maximum);
-  EXPECT_NEAR(reference.minimum(), test.minimum, 1);
+  EXPECT_NEAR(reference.instant(), test.instant, 2);
+  EXPECT_NEAR(reference.average(), test.average, 2);
+  EXPECT_NEAR(reference.maximum(), test.maximum, 3);
+  EXPECT_NEAR(reference.minimum(), test.minimum, 2);
 }
 
 void WriteStatsMessage(const AudioProcessing::Statistic& output,
