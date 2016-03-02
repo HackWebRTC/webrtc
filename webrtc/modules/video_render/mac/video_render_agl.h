@@ -29,6 +29,7 @@
 #include <OpenGL/glu.h>
 #include <list>
 #include <map>
+#include <memory>
 
 class VideoRenderAGL;
 
@@ -142,8 +143,8 @@ class VideoRenderAGL {
   bool _fullScreen;
   int _id;
   webrtc::CriticalSectionWrapper& _renderCritSec;
-  // TODO(pbos): Remove scoped_ptr and use PlatformThread directly.
-  rtc::scoped_ptr<rtc::PlatformThread> _screenUpdateThread;
+  // TODO(pbos): Remove unique_ptr and use PlatformThread directly.
+  std::unique_ptr<rtc::PlatformThread> _screenUpdateThread;
   webrtc::EventWrapper* _screenUpdateEvent;
   bool _isHIViewRef;
   AGLContext _aglContext;

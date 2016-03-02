@@ -14,6 +14,7 @@
 #include <jni.h>
 
 #include <map>
+#include <memory>
 
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_render/i_video_render.h"
@@ -144,8 +145,8 @@ class VideoRenderAndroid: IVideoRender {
   EventWrapper& _javaRenderEvent;
   int64_t _lastJavaRenderEvent;
   JNIEnv* _javaRenderJniEnv; // JNIEnv for the java render thread.
-  // TODO(pbos): Remove scoped_ptr and use the member directly.
-  rtc::scoped_ptr<rtc::PlatformThread> _javaRenderThread;
+  // TODO(pbos): Remove unique_ptr and use the member directly.
+  std::unique_ptr<rtc::PlatformThread> _javaRenderThread;
 };
 
 }  // namespace webrtc

@@ -10,6 +10,8 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/test/video_processing_unittest.h"
@@ -19,8 +21,8 @@
 namespace webrtc {
 
 TEST_F(VideoProcessingTest, CopyMem) {
-  rtc::scoped_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false));
-  rtc::scoped_ptr<DenoiserFilter> df_sse_neon(DenoiserFilter::Create(true));
+  std::unique_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false));
+  std::unique_ptr<DenoiserFilter> df_sse_neon(DenoiserFilter::Create(true));
   uint8_t src[16 * 16], dst[16 * 16];
   for (int i = 0; i < 16; ++i) {
     for (int j = 0; j < 16; ++j) {
@@ -46,8 +48,8 @@ TEST_F(VideoProcessingTest, CopyMem) {
 }
 
 TEST_F(VideoProcessingTest, Variance) {
-  rtc::scoped_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false));
-  rtc::scoped_ptr<DenoiserFilter> df_sse_neon(DenoiserFilter::Create(true));
+  std::unique_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false));
+  std::unique_ptr<DenoiserFilter> df_sse_neon(DenoiserFilter::Create(true));
   uint8_t src[16 * 16], dst[16 * 16];
   uint32_t sum = 0, sse = 0, var;
   for (int i = 0; i < 16; ++i) {
@@ -69,8 +71,8 @@ TEST_F(VideoProcessingTest, Variance) {
 }
 
 TEST_F(VideoProcessingTest, MbDenoise) {
-  rtc::scoped_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false));
-  rtc::scoped_ptr<DenoiserFilter> df_sse_neon(DenoiserFilter::Create(true));
+  std::unique_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false));
+  std::unique_ptr<DenoiserFilter> df_sse_neon(DenoiserFilter::Create(true));
   uint8_t running_src[16 * 16], src[16 * 16], dst[16 * 16], dst_ref[16 * 16];
 
   // Test case: |diff| <= |3 + shift_inc1|
@@ -138,7 +140,7 @@ TEST_F(VideoProcessingTest, Denoiser) {
   VideoFrame denoised_frame_c;
   VideoFrame denoised_frame_sse_neon;
 
-  rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
          frame_length_) {
     // Using ConvertToI420 to add stride to the image.

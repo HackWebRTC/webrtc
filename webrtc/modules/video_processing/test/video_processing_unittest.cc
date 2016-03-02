@@ -12,6 +12,7 @@
 
 #include <gflags/gflags.h>
 
+#include <memory>
 #include <string>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -116,7 +117,7 @@ TEST_F(VideoProcessingTest, HandleBadStats) {
 #endif
   VideoProcessing::FrameStats stats;
   vp_->ClearFrameStats(&stats);
-  rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_,
             fread(video_buffer.get(), 1, frame_length_, source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
@@ -135,7 +136,7 @@ TEST_F(VideoProcessingTest, IdenticalResultsAfterReset) {
   VideoFrame video_frame2;
   VideoProcessing::FrameStats stats;
   // Only testing non-static functions here.
-  rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_,
             fread(video_buffer.get(), 1, frame_length_, source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
@@ -171,7 +172,7 @@ TEST_F(VideoProcessingTest, FrameStats) {
 #endif
   VideoProcessing::FrameStats stats;
   vp_->ClearFrameStats(&stats);
-  rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_,
             fread(video_buffer.get(), 1, frame_length_, source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
@@ -235,7 +236,7 @@ TEST_F(VideoProcessingTest, Resampler) {
   vp_->EnableTemporalDecimation(false);
 
   // Reading test frame
-  rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_,
             fread(video_buffer.get(), 1, frame_length_, source_file_));
   // Using ConvertToI420 to add stride to the image.

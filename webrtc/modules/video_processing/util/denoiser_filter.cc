@@ -21,9 +21,9 @@ const int kMotionMagnitudeThreshold = 8 * 3;
 const int kSumDiffThreshold = 16 * 16 * 2;
 const int kSumDiffThresholdHigh = 600;
 
-rtc::scoped_ptr<DenoiserFilter> DenoiserFilter::Create(
+std::unique_ptr<DenoiserFilter> DenoiserFilter::Create(
     bool runtime_cpu_detection) {
-  rtc::scoped_ptr<DenoiserFilter> filter;
+  std::unique_ptr<DenoiserFilter> filter;
 
   if (runtime_cpu_detection) {
 // If we know the minimum architecture at compile time, avoid CPU detection.

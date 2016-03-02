@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/content_analysis.h"
@@ -28,7 +30,7 @@ TEST_F(VideoProcessingTest, ContentAnalysis) {
   ca__c.Initialize(width_, height_);
   ca__sse.Initialize(width_, height_);
 
-  rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
          frame_length_) {
     // Using ConvertToI420 to add stride to the image.

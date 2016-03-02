@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <memory>
+
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/test/video_processing_unittest.h"
@@ -46,7 +48,7 @@ TEST_F(VideoProcessingTest, Deflickering) {
       << "Could not open output file: " << output_file << "\n";
 
   printf("\nRun time [us / frame]:\n");
-  rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   for (uint32_t run_idx = 0; run_idx < NumRuns; run_idx++) {
     TickTime t0;
     TickTime t1;

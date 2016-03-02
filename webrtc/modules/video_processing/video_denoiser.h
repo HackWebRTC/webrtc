@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_DENOISER_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_DENOISER_H_
 
+#include <memory>
+
 #include "webrtc/modules/video_processing/util/denoiser_filter.h"
 #include "webrtc/modules/video_processing/util/skin_detection.h"
 
@@ -29,8 +31,8 @@ class VideoDenoiser {
                          uint8_t* y_dst);
   int width_;
   int height_;
-  rtc::scoped_ptr<DenoiseMetrics[]> metrics_;
-  rtc::scoped_ptr<DenoiserFilter> filter_;
+  std::unique_ptr<DenoiseMetrics[]> metrics_;
+  std::unique_ptr<DenoiserFilter> filter_;
 };
 
 }  // namespace webrtc

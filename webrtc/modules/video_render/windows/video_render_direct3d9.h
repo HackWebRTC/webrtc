@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_WINDOWS_VIDEO_RENDER_DIRECT3D9_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_WINDOWS_VIDEO_RENDER_DIRECT3D9_H_
 
+#include <memory>
+
 #include "webrtc/modules/video_render/windows/i_video_render_win.h"
 
 #include <d3d9.h>
@@ -203,8 +205,8 @@ private:
 
     CriticalSectionWrapper& _refD3DCritsect;
     Trace* _trace;
-    // TODO(pbos): Remove scoped_ptr and use PlatformThread directly.
-    rtc::scoped_ptr<rtc::PlatformThread> _screenUpdateThread;
+    // TODO(pbos): Remove unique_ptr and use PlatformThread directly.
+    std::unique_ptr<rtc::PlatformThread> _screenUpdateThread;
     EventTimerWrapper* _screenUpdateEvent;
 
     HWND _hWnd;

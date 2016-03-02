@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/test/video_processing_unittest.h"
@@ -23,7 +25,7 @@ TEST_F(VideoProcessingTest, MAYBE_BrightnessDetection) {
   uint32_t frameNum = 0;
   int32_t brightnessWarning = 0;
   uint32_t warningCount = 0;
-  rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
          frame_length_) {
     EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,

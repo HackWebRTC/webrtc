@@ -21,6 +21,7 @@
 #include <QuickTime/QuickTime.h>
 #include <list>
 #include <map>
+#include <memory>
 
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
@@ -169,8 +170,8 @@ private: // variables
     bool _fullScreen;
     int _id;
     CriticalSectionWrapper& _nsglContextCritSec;
-    // TODO(pbos): Remove scoped_ptr and use PlatformThread directly.
-    rtc::scoped_ptr<rtc::PlatformThread> _screenUpdateThread;
+    // TODO(pbos): Remove unique_ptr and use PlatformThread directly.
+    std::unique_ptr<rtc::PlatformThread> _screenUpdateThread;
     EventTimerWrapper* _screenUpdateEvent;
     NSOpenGLContext* _nsglContext;
     NSOpenGLContext* _nsglFullScreenContext;

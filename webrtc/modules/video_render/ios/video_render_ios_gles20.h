@@ -13,9 +13,9 @@
 
 #include <list>
 #include <map>
+#include <memory>
 
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_render/ios/video_render_ios_channel.h"
 #include "webrtc/modules/video_render/ios/video_render_ios_view.h"
 
@@ -62,10 +62,10 @@ class VideoRenderIosGles20 {
   int SwapAndDisplayBuffers();
 
  private:
-  rtc::scoped_ptr<CriticalSectionWrapper> gles_crit_sec_;
+  std::unique_ptr<CriticalSectionWrapper> gles_crit_sec_;
   EventTimerWrapper* screen_update_event_;
-  // TODO(pbos): Remove scoped_ptr and use member directly.
-  rtc::scoped_ptr<rtc::PlatformThread> screen_update_thread_;
+  // TODO(pbos): Remove unique_ptr and use member directly.
+  std::unique_ptr<rtc::PlatformThread> screen_update_thread_;
 
   VideoRenderIosView* view_;
   Rect window_rect_;

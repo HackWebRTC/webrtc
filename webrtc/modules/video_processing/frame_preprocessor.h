@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_FRAME_PREPROCESSOR_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/content_analysis.h"
 #include "webrtc/modules/video_processing/spatial_resampler.h"
@@ -74,7 +75,7 @@ class VPMFramePreprocessor {
   VPMSpatialResampler* spatial_resampler_;
   VPMContentAnalysis* ca_;
   VPMVideoDecimator* vd_;
-  rtc::scoped_ptr<VideoDenoiser> denoiser_;
+  std::unique_ptr<VideoDenoiser> denoiser_;
   bool enable_ca_;
   uint32_t frame_cnt_;
 };

@@ -12,6 +12,8 @@
 #error "This file requires ARC support."
 #endif
 
+#include <memory>
+
 #include "webrtc/modules/video_render/ios/video_render_ios_view.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
@@ -19,7 +21,7 @@ using namespace webrtc;
 
 @implementation VideoRenderIosView {
   EAGLContext* _context;
-  rtc::scoped_ptr<webrtc::OpenGles20> _gles_renderer20;
+  std::unique_ptr<webrtc::OpenGles20> _gles_renderer20;
   int _frameBufferWidth;
   int _frameBufferHeight;
   unsigned int _defaultFrameBuffer;
