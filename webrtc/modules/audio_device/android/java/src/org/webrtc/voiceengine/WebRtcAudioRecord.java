@@ -18,13 +18,11 @@ import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
-import android.os.Build;
 import android.os.Process;
-import android.os.SystemClock;
 
 import org.webrtc.Logging;
 
-class  WebRtcAudioRecord {
+public class  WebRtcAudioRecord {
   private static final boolean DEBUG = false;
 
   private static final String TAG = "WebRtcAudioRecord";
@@ -54,6 +52,9 @@ class  WebRtcAudioRecord {
   private AudioRecord audioRecord = null;
   private AudioRecordThread audioThread = null;
 
+  private static volatile boolean microphoneMute = false;
+  private byte[] emptyBytes;
+
   /**
    * Audio thread which keeps calling ByteBuffer.read() waiting for audio
    * to be recorded. Feeds recorded data to the native counterpart as a
@@ -78,6 +79,10 @@ class  WebRtcAudioRecord {
       while (keepAlive) {
         int bytesRead = audioRecord.read(byteBuffer, byteBuffer.capacity());
         if (bytesRead == byteBuffer.capacity()) {
+          if (microphoneMute) {
+            byteBuffer.clear();
+            byteBuffer.put(emptyBytes);
+          }
           nativeDataIsRecorded(bytesRead, nativeAudioRecord);
         } else {
           Logging.e(TAG,"AudioRecord.read failed: " + bytesRead);
@@ -166,6 +171,7 @@ class  WebRtcAudioRecord {
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
     Logging.d(TAG, "byteBuffer.capacity: " + byteBuffer.capacity());
+    emptyBytes = new byte[byteBuffer.capacity()];
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the
     // the native class cache the address to the memory once.
@@ -272,4 +278,10 @@ class  WebRtcAudioRecord {
       ByteBuffer byteBuffer, long nativeAudioRecord);
 
   private native void nativeDataIsRecorded(int bytes, long nativeAudioRecord);
+
+  // TODO(glaznev): remove this API once SW mic mute can use AudioTrack.setEnabled().
+  public static void setMicrophoneMute(boolean mute) {
+    Logging.w(TAG,"setMicrophoneMute API will be deprecated soon.");
+    microphoneMute = mute;
+  }
 }
