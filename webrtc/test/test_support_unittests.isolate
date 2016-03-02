@@ -7,6 +7,18 @@
 # be found in the AUTHORS file in the root of the source tree.
 {
   'conditions': [
+    ['OS=="linux" or OS=="mac" or OS=="win" or OS=="android"', {
+      'variables': {
+        'files': [
+          '<(DEPTH)/resources/video_coding/frame-ethernet-ii.pcap',
+          '<(DEPTH)/resources/video_coding/frame-loopback.pcap',
+          '<(DEPTH)/resources/video_coding/pltype103.rtp',
+          '<(DEPTH)/resources/video_coding/pltype103_header_only.rtp',
+          '<(DEPTH)/resources/video_coding/ssrcs-2.pcap',
+          '<(DEPTH)/resources/video_coding/ssrcs-3.pcap',
+        ],
+      },
+    }],
     ['OS=="linux" or OS=="mac" or OS=="win"', {
       'variables': {
         'command': [

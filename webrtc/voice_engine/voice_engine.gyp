@@ -182,8 +182,8 @@
                 '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
                 '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
                 '<(webrtc_root)/test/test.gyp:channel_transport',
+                '<(webrtc_root)/test/test.gyp:test_common',
                 '<(webrtc_root)/test/test.gyp:test_support',
-                '<(webrtc_root)/test/webrtc_test_common.gyp:webrtc_test_common',
                 '<(webrtc_root)/webrtc.gyp:rtc_event_log',
                ],
               'sources': [

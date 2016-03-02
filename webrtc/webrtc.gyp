@@ -100,7 +100,6 @@
             'system_wrappers/system_wrappers_tests.gyp:*',
             'test/metrics.gyp:*',
             'test/test.gyp:*',
-            'test/webrtc_test_common.gyp:*',
             'webrtc_tests',
           ],
         }],
