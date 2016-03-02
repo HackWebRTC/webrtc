@@ -46,11 +46,8 @@ public:
 
     void SetSsrcs(uint32_t main_ssrc,
                   const std::set<uint32_t>& registered_ssrcs);
-    void SetRelaySSRC(uint32_t ssrc);
     void SetRemoteSSRC(uint32_t ssrc);
     uint32_t RemoteSSRC() const;
-
-    uint32_t RelaySSRC() const;
 
     int32_t IncomingRTCPPacket(
         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
@@ -302,8 +299,6 @@ protected:
       GUARDED_BY(_criticalSectionRTCPReceiver);
   ReceivedInfoMap _receivedInfoMap;
   std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> _receivedCnameMap;
-
-  uint32_t _packetTimeOutMS;
 
   // The last time we received an RTCP RR.
   int64_t _lastReceivedRrMs;

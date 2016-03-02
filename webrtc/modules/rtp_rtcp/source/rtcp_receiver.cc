@@ -68,7 +68,6 @@ RTCPReceiver::RTCPReceiver(
       _lastReceivedXRNTPfrac(0),
       xr_rr_rtt_ms_(0),
       _receivedInfoMap(),
-      _packetTimeOutMS(0),
       _lastReceivedRrMs(0),
       _lastIncreasedSequenceNumberMs(0),
       stats_callback_(NULL),

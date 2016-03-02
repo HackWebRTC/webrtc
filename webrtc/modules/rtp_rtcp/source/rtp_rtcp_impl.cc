@@ -108,8 +108,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       last_bitrate_process_time_(configuration.clock->TimeInMilliseconds()),
       last_rtt_process_time_(configuration.clock->TimeInMilliseconds()),
       packet_overhead_(28),                     // IPV4 UDP.
-      padding_index_(static_cast<size_t>(-1)),  // Start padding at first child.
-      nack_method_(kNackOff),
       nack_last_time_sent_full_(0),
       nack_last_time_sent_full_prev_(0),
       nack_last_seq_number_sent_(0),
@@ -899,10 +897,6 @@ void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
   *video_rate = rtp_sender_.VideoBitrateSent();
   *fec_rate = rtp_sender_.FecOverheadRate();
   *nack_rate = rtp_sender_.NackOverheadRate();
-}
-
-void ModuleRtpRtcpImpl::OnRequestIntraFrame() {
-  RequestKeyFrame();
 }
 
 void ModuleRtpRtcpImpl::OnRequestSendReport() {
