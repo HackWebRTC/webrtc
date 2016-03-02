@@ -17,10 +17,8 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
-#include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
@@ -37,20 +35,17 @@ ViEReceiver::ViEReceiver(VideoCodingModule* module_vcm,
                          RemoteBitrateEstimator* remote_bitrate_estimator,
                          RtpFeedback* rtp_feedback)
     : clock_(Clock::GetRealTimeClock()),
-      rtp_header_parser_(RtpHeaderParser::Create()),
-      rtp_payload_registry_(
-          new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false))),
-      rtp_receiver_(
-          RtpReceiver::CreateVideoReceiver(clock_,
-                                           this,
-                                           rtp_feedback,
-                                           rtp_payload_registry_.get())),
-      rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
-      fec_receiver_(FecReceiver::Create(this)),
-      rtp_rtcp_(NULL),
       vcm_(module_vcm),
       remote_bitrate_estimator_(remote_bitrate_estimator),
-      ntp_estimator_(new RemoteNtpTimeEstimator(clock_)),
+      ntp_estimator_(clock_),
+      rtp_payload_registry_(RTPPayloadStrategy::CreateStrategy(false)),
+      rtp_header_parser_(RtpHeaderParser::Create()),
+      rtp_receiver_(RtpReceiver::CreateVideoReceiver(clock_,
+                                                     this,
+                                                     rtp_feedback,
+                                                     &rtp_payload_registry_)),
+      rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
+      fec_receiver_(FecReceiver::Create(this)),
       receiving_(false),
       restored_packet_in_use_(false),
       last_packet_log_ms_(-1) {}
@@ -75,23 +70,15 @@ void ViEReceiver::UpdateHistograms() {
 
 bool ViEReceiver::SetReceiveCodec(const VideoCodec& video_codec) {
   int8_t old_pltype = -1;
-  if (rtp_payload_registry_->ReceivePayloadType(video_codec.plName,
-                                                kVideoPayloadTypeFrequency,
-                                                0,
-                                                video_codec.maxBitrate,
-                                                &old_pltype) != -1) {
-    rtp_payload_registry_->DeRegisterReceivePayload(old_pltype);
+  if (rtp_payload_registry_.ReceivePayloadType(
+          video_codec.plName, kVideoPayloadTypeFrequency, 0,
+          video_codec.maxBitrate, &old_pltype) != -1) {
+    rtp_payload_registry_.DeRegisterReceivePayload(old_pltype);
   }
 
-  return RegisterPayload(video_codec);
-}
-
-bool ViEReceiver::RegisterPayload(const VideoCodec& video_codec) {
-  return rtp_receiver_->RegisterReceivePayload(video_codec.plName,
-                                               video_codec.plType,
-                                               kVideoPayloadTypeFrequency,
-                                               0,
-                                               video_codec.maxBitrate) == 0;
+  return rtp_receiver_->RegisterReceivePayload(
+             video_codec.plName, video_codec.plType, kVideoPayloadTypeFrequency,
+             0, 0) == 0;
 }
 
 void ViEReceiver::SetNackStatus(bool enable,
@@ -108,24 +95,24 @@ void ViEReceiver::SetNackStatus(bool enable,
 
 void ViEReceiver::SetRtxPayloadType(int payload_type,
                                     int associated_payload_type) {
-  rtp_payload_registry_->SetRtxPayloadType(payload_type,
-                                           associated_payload_type);
+  rtp_payload_registry_.SetRtxPayloadType(payload_type,
+                                          associated_payload_type);
 }
 
 void ViEReceiver::SetUseRtxPayloadMappingOnRestore(bool val) {
-  rtp_payload_registry_->set_use_rtx_payload_mapping_on_restore(val);
+  rtp_payload_registry_.set_use_rtx_payload_mapping_on_restore(val);
 }
 
 void ViEReceiver::SetRtxSsrc(uint32_t ssrc) {
-  rtp_payload_registry_->SetRtxSsrc(ssrc);
+  rtp_payload_registry_.SetRtxSsrc(ssrc);
 }
 
 bool ViEReceiver::GetRtxSsrc(uint32_t* ssrc) const {
-  return rtp_payload_registry_->GetRtxSsrc(ssrc);
+  return rtp_payload_registry_.GetRtxSsrc(ssrc);
 }
 
 bool ViEReceiver::IsFecEnabled() const {
-  return rtp_payload_registry_->ulpfec_payload_type() > -1;
+  return rtp_payload_registry_.ulpfec_payload_type() > -1;
 }
 
 uint32_t ViEReceiver::GetRemoteSsrc() const {
@@ -136,22 +123,12 @@ int ViEReceiver::GetCsrcs(uint32_t* csrcs) const {
   return rtp_receiver_->CSRCs(csrcs);
 }
 
-void ViEReceiver::SetRtpRtcpModule(RtpRtcp* module) {
-  rtp_rtcp_ = module;
+void ViEReceiver::Init(const std::vector<RtpRtcp*>& modules) {
+  rtp_rtcp_ = modules;
 }
 
 RtpReceiver* ViEReceiver::GetRtpReceiver() const {
   return rtp_receiver_.get();
-}
-
-void ViEReceiver::RegisterRtpRtcpModules(
-    const std::vector<RtpRtcp*>& rtp_modules) {
-  rtc::CritScope lock(&receive_cs_);
-  // Only change the "simulcast" modules, the base module can be accessed
-  // without a lock whereas the simulcast modules require locking as they can be
-  // changed in runtime.
-  rtp_rtcp_simulcast_ =
-      std::vector<RtpRtcp*>(rtp_modules.begin() + 1, rtp_modules.end());
 }
 
 void ViEReceiver::EnableReceiveRtpHeaderExtension(const std::string& extension,
@@ -167,7 +144,7 @@ int32_t ViEReceiver::OnReceivedPayloadData(const uint8_t* payload_data,
   RTC_DCHECK(vcm_);
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
-      ntp_estimator_->Estimate(rtp_header->header.timestamp);
+      ntp_estimator_.Estimate(rtp_header->header.timestamp);
   if (vcm_->IncomingPacket(payload_data,
                            payload_size,
                            rtp_header_with_ntp) != 0) {
@@ -235,7 +212,7 @@ bool ViEReceiver::DeliverRtp(const uint8_t* rtp_packet,
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
   bool in_order = IsPacketInOrder(header);
-  rtp_payload_registry_->SetIncomingPayloadType(header);
+  rtp_payload_registry_.SetIncomingPayloadType(header);
   bool ret = ReceivePacket(rtp_packet, rtp_packet_length, header, in_order);
   // Update receive statistics after ReceivePacket.
   // Receive statistics will be reset if the payload type changes (make sure
@@ -249,15 +226,15 @@ bool ViEReceiver::ReceivePacket(const uint8_t* packet,
                                 size_t packet_length,
                                 const RTPHeader& header,
                                 bool in_order) {
-  if (rtp_payload_registry_->IsEncapsulated(header)) {
+  if (rtp_payload_registry_.IsEncapsulated(header)) {
     return ParseAndHandleEncapsulatingHeader(packet, packet_length, header);
   }
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
   size_t payload_length = packet_length - header.headerLength;
   PayloadUnion payload_specific;
-  if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
-                                                  &payload_specific)) {
+  if (!rtp_payload_registry_.GetPayloadSpecifics(header.payloadType,
+                                                 &payload_specific)) {
     return false;
   }
   return rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
@@ -267,8 +244,8 @@ bool ViEReceiver::ReceivePacket(const uint8_t* packet,
 bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
                                                     size_t packet_length,
                                                     const RTPHeader& header) {
-  if (rtp_payload_registry_->IsRed(header)) {
-    int8_t ulpfec_pt = rtp_payload_registry_->ulpfec_payload_type();
+  if (rtp_payload_registry_.IsRed(header)) {
+    int8_t ulpfec_pt = rtp_payload_registry_.ulpfec_payload_type();
     if (packet[header.headerLength] == ulpfec_pt) {
       rtp_receive_statistics_->FecPacketReceived(header, packet_length);
       // Notify vcm about received FEC packets to avoid NACKing these packets.
@@ -279,7 +256,7 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
       return false;
     }
     return fec_receiver_->ProcessReceivedFec() == 0;
-  } else if (rtp_payload_registry_->IsRtx(header)) {
+  } else if (rtp_payload_registry_.IsRtx(header)) {
     if (header.headerLength + header.paddingLength == packet_length) {
       // This is an empty packet and should be silently dropped before trying to
       // parse the RTX header.
@@ -295,7 +272,7 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
       LOG(LS_WARNING) << "Multiple RTX headers detected, dropping packet.";
       return false;
     }
-    if (!rtp_payload_registry_->RestoreOriginalPacket(
+    if (!rtp_payload_registry_.RestoreOriginalPacket(
             restored_packet_, packet, &packet_length, rtp_receiver_->SSRC(),
             header)) {
       LOG(LS_WARNING) << "Incoming RTX packet: Invalid RTP header ssrc: "
@@ -313,7 +290,7 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
 
 void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
   int8_t last_media_payload_type =
-      rtp_payload_registry_->last_received_media_payload_type();
+      rtp_payload_registry_.last_received_media_payload_type();
   if (last_media_payload_type < 0) {
     LOG(LS_WARNING) << "Failed to get last media payload type.";
     return;
@@ -324,8 +301,8 @@ void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
   rtp_header.header.payloadType = last_media_payload_type;
   rtp_header.header.paddingLength = 0;
   PayloadUnion payload_specific;
-  if (!rtp_payload_registry_->GetPayloadSpecifics(last_media_payload_type,
-                                                  &payload_specific)) {
+  if (!rtp_payload_registry_.GetPayloadSpecifics(last_media_payload_type,
+                                                 &payload_specific)) {
     LOG(LS_WARNING) << "Failed to get payload specifics.";
     return;
   }
@@ -340,23 +317,20 @@ void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
 
 bool ViEReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
                               size_t rtcp_packet_length) {
+  // Should be set by owner at construction time.
+  RTC_DCHECK(!rtp_rtcp_.empty());
   {
     rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {
       return false;
     }
+  }
 
-    for (RtpRtcp* rtp_rtcp : rtp_rtcp_simulcast_)
-      rtp_rtcp->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
-  }
-  assert(rtp_rtcp_);  // Should be set by owner at construction time.
-  int ret = rtp_rtcp_->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
-  if (ret != 0) {
-    return false;
-  }
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_)
+    rtp_rtcp->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
 
   int64_t rtt = 0;
-  rtp_rtcp_->RTT(rtp_receiver_->SSRC(), &rtt, NULL, NULL, NULL);
+  rtp_rtcp_[0]->RTT(rtp_receiver_->SSRC(), &rtt, NULL, NULL, NULL);
   if (rtt == 0) {
     // Waiting for valid rtt.
     return true;
@@ -364,12 +338,12 @@ bool ViEReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (0 != rtp_rtcp_->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
-                                &rtp_timestamp)) {
+  if (rtp_rtcp_[0]->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
+                              &rtp_timestamp) != 0) {
     // Waiting for RTCP.
     return true;
   }
-  ntp_estimator_->UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
+  ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
 
   return true;
 }
@@ -399,7 +373,7 @@ bool ViEReceiver::IsPacketInOrder(const RTPHeader& header) const {
 bool ViEReceiver::IsPacketRetransmitted(const RTPHeader& header,
                                         bool in_order) const {
   // Retransmissions are handled separately if RTX is enabled.
-  if (rtp_payload_registry_->RtxEnabled())
+  if (rtp_payload_registry_.RtxEnabled())
     return false;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(header.ssrc);
@@ -407,7 +381,7 @@ bool ViEReceiver::IsPacketRetransmitted(const RTPHeader& header,
     return false;
   // Check if this is a retransmission.
   int64_t min_rtt = 0;
-  rtp_rtcp_->RTT(rtp_receiver_->SSRC(), NULL, NULL, &min_rtt, NULL);
+  rtp_rtcp_[0]->RTT(rtp_receiver_->SSRC(), NULL, NULL, &min_rtt, NULL);
   return !in_order &&
       statistician->IsRetransmitOfOldPacket(header, min_rtt);
 }

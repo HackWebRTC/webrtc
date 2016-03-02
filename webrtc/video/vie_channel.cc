@@ -121,7 +121,7 @@ ViEChannel::ViEChannel(Transport* transport,
                                &send_frame_count_observer_,
                                &send_side_delay_observer_,
                                max_rtp_streams)) {
-  vie_receiver_.SetRtpRtcpModule(rtp_rtcp_modules_[0]);
+  vie_receiver_.Init(rtp_rtcp_modules_);
   if (sender_) {
     RTC_DCHECK(send_payload_router_);
     RTC_DCHECK(!vcm_);
@@ -198,16 +198,9 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   send_payload_router_->set_active(false);
   send_payload_router_->SetSendingRtpModules(0);
 
-  std::vector<RtpRtcp*> registered_modules;
   size_t num_active_modules = video_codec.numberOfSimulcastStreams > 0
                                    ? video_codec.numberOfSimulcastStreams
                                    : 1;
-  for (size_t i = 0; i < num_active_modules; ++i)
-    registered_modules.push_back(rtp_rtcp_modules_[i]);
-
-  // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
-  // modules can be deleted after this step.
-  vie_receiver_.RegisterRtpRtcpModules(registered_modules);
 
   // Update the packet and payload routers with the sending RtpRtcp modules.
   send_payload_router_->SetSendingRtpModules(num_active_modules);

@@ -19,6 +19,8 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
+#include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
@@ -42,7 +44,6 @@ class ViEReceiver : public RtpData {
   ~ViEReceiver();
 
   bool SetReceiveCodec(const VideoCodec& video_codec);
-  bool RegisterPayload(const VideoCodec& video_codec);
 
   void SetNackStatus(bool enable, int max_nack_reordering_threshold);
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
@@ -59,11 +60,9 @@ class ViEReceiver : public RtpData {
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;
 
-  void SetRtpRtcpModule(RtpRtcp* module);
+  void Init(const std::vector<RtpRtcp*>& modules);
 
   RtpReceiver* GetRtpReceiver() const;
-
-  void RegisterRtpRtcpModules(const std::vector<RtpRtcp*>& rtp_modules);
 
   void EnableReceiveRtpHeaderExtension(const std::string& extension, int id);
 
@@ -98,24 +97,26 @@ class ViEReceiver : public RtpData {
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   void UpdateHistograms();
 
-  rtc::CriticalSection receive_cs_;
-  Clock* clock_;
-  std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
-  std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  std::unique_ptr<RtpReceiver> rtp_receiver_;
+  Clock* const clock_;
+  VideoCodingModule* const vcm_;
+  RemoteBitrateEstimator* const remote_bitrate_estimator_;
+
+  // TODO(pbos): Make const and set on construction.
+  std::vector<RtpRtcp*> rtp_rtcp_;
+
+  RemoteNtpTimeEstimator ntp_estimator_;
+  RTPPayloadRegistry rtp_payload_registry_;
+
+  const std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
+  const std::unique_ptr<RtpReceiver> rtp_receiver_;
   const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   std::unique_ptr<FecReceiver> fec_receiver_;
-  RtpRtcp* rtp_rtcp_;
-  std::vector<RtpRtcp*> rtp_rtcp_simulcast_;
-  VideoCodingModule* vcm_;
-  RemoteBitrateEstimator* remote_bitrate_estimator_;
 
-  std::unique_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
-
-  bool receiving_;
-  uint8_t restored_packet_[IP_PACKET_SIZE];
-  bool restored_packet_in_use_;
-  int64_t last_packet_log_ms_;
+  rtc::CriticalSection receive_cs_;
+  bool receiving_ GUARDED_BY(receive_cs_);
+  uint8_t restored_packet_[IP_PACKET_SIZE] GUARDED_BY(receive_cs_);
+  bool restored_packet_in_use_ GUARDED_BY(receive_cs_);
+  int64_t last_packet_log_ms_ GUARDED_BY(receive_cs_);
 };
 
 }  // namespace webrtc
