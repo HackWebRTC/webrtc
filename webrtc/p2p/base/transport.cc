@@ -13,7 +13,7 @@
 #include "webrtc/p2p/base/transport.h"
 
 #include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/bind.h"

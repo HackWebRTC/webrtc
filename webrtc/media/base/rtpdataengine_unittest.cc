@@ -16,8 +16,8 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/timing.h"
-#include "webrtc/media/base/constants.h"
 #include "webrtc/media/base/fakenetworkinterface.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtpdataengine.h"
 #include "webrtc/media/base/rtputils.h"
 

@@ -25,8 +25,8 @@
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/media/base/constants.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
 
 enum {

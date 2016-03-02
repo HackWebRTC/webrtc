@@ -16,8 +16,8 @@
 #include <vector>
 
 #include "webrtc/base/timing.h"
-#include "webrtc/media/base/constants.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/mediaengine.h"
 
 namespace cricket {

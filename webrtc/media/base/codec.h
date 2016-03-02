@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
 
 namespace cricket {
 

@@ -18,7 +18,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/pc/mediasession.h"
 

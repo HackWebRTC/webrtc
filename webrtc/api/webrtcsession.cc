@@ -31,7 +31,7 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/call.h"
-#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/transportchannel.h"

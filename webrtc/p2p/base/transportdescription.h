@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslfingerprint.h"
 

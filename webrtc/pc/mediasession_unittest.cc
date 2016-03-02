@@ -17,7 +17,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/testutils.h"
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/p2p/base/transportinfo.h"
 #include "webrtc/pc/mediasession.h"

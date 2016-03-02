@@ -34,7 +34,7 @@
 #include "webrtc/common.h"
 #include "webrtc/media/base/audioframe.h"
 #include "webrtc/media/base/audiorenderer.h"
-#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvoe.h"

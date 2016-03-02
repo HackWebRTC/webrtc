@@ -19,7 +19,7 @@
 #include <sstream>
 #include <string>
 
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/network.h"

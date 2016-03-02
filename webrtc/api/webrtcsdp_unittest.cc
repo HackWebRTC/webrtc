@@ -24,8 +24,8 @@
 #include "webrtc/base/sslfingerprint.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
-#include "webrtc/media/base/constants.h"
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/pc/mediasession.h"
 
 using cricket::AudioCodec;

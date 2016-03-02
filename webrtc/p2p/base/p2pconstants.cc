@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 
 #include <string>
 
@@ -32,8 +32,8 @@ const size_t ICE_PWD_MIN_LENGTH = 22;
 const size_t ICE_UFRAG_MAX_LENGTH = 255;
 const size_t ICE_PWD_MAX_LENGTH = 256;
 
-// TODO: This is media-specific, so might belong
-// somewhere like media/base/constants.h
+// This is media-specific, so might belong
+// somewhere like media/base/mediaconstants.h
 const int ICE_CANDIDATE_COMPONENT_RTP = 1;
 const int ICE_CANDIDATE_COMPONENT_RTCP = 2;
 const int ICE_CANDIDATE_COMPONENT_DEFAULT = 1;

@@ -16,7 +16,7 @@
 #include "webrtc/base/ratelimiter.h"
 #include "webrtc/base/timing.h"
 #include "webrtc/media/base/codec.h"
-#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/base/streamparams.h"
 

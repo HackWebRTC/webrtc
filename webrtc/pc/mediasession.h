@@ -20,9 +20,9 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/codec.h"
-#include "webrtc/media/base/constants.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/mediaengine.h"  // For DataChannelType
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/p2p/base/sessiondescription.h"

@@ -15,7 +15,7 @@
 
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/base/videoframe.h"
 

@@ -20,7 +20,7 @@
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/p2p/base/transportchannel.h"
 #include "webrtc/pc/channelmanager.h"

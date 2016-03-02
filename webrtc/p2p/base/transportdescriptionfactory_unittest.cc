@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/base/fakesslidentity.h"

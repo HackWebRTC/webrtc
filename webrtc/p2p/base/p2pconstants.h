@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_CONSTANTS_H_
-#define WEBRTC_P2P_BASE_CONSTANTS_H_
+#ifndef WEBRTC_P2P_BASE_P2PCONSTANTS_H_
+#define WEBRTC_P2P_BASE_P2PCONSTANTS_H_
 
 #include <string>
 
@@ -50,4 +50,4 @@ extern const char CONNECTIONROLE_HOLDCONN_STR[];
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_CONSTANTS_H_
+#endif  // WEBRTC_P2P_BASE_P2PCONSTANTS_H_

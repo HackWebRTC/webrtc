@@ -19,9 +19,9 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
-#include "webrtc/media/base/constants.h"
 #include "webrtc/media/base/cryptoparams.h"
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/srtpfilter.h"
 

@@ -24,7 +24,7 @@
 #include "webrtc/base/socket.h"
 #include "webrtc/base/window.h"
 #include "webrtc/media/base/codec.h"
-#include "webrtc/media/base/constants.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/base/videosinkinterface.h"
 // TODO(juberti): re-evaluate this include

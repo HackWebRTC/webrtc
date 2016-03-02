@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MEDIA_BASE_CONSTANTS_H_
-#define WEBRTC_MEDIA_BASE_CONSTANTS_H_
+#ifndef WEBRTC_MEDIA_BASE_MEDIACONSTANTS_H_
+#define WEBRTC_MEDIA_BASE_MEDIACONSTANTS_H_
 
 #include <string>
 
@@ -164,4 +164,4 @@ extern const int kDefaultVideoMaxHeight;
 extern const int kDefaultVideoMaxFramerate;
 }  // namespace cricket
 
-#endif  // WEBRTC_MEDIA_BASE_CONSTANTS_H_
+#endif  // WEBRTC_MEDIA_BASE_MEDIACONSTANTS_H_

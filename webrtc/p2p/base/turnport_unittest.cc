@@ -12,7 +12,7 @@
 #endif
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/tcpport.h"
 #include "webrtc/p2p/base/testturnserver.h"
