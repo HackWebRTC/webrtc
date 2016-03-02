@@ -112,6 +112,9 @@ void WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
       source_desc->candidates(mediasection_index);
   const IceCandidateCollection* dest_candidates =
       dest_desc->candidates(mediasection_index);
+  if (!source_candidates || !dest_candidates) {
+    return;
+  }
   for (size_t n = 0; n < source_candidates->count(); ++n) {
     const IceCandidateInterface* new_candidate = source_candidates->at(n);
     if (!dest_candidates->HasCandidate(new_candidate)) {
