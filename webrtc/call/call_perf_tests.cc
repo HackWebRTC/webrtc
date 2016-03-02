@@ -765,7 +765,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
           << "Timed out before receiving an initial high bitrate.";
       encoder_config_.streams[0].width *= 2;
       encoder_config_.streams[0].height *= 2;
-      EXPECT_TRUE(send_stream_->ReconfigureVideoEncoder(encoder_config_));
+      send_stream_->ReconfigureVideoEncoder(encoder_config_);
       EXPECT_TRUE(Wait())
           << "Timed out while waiting for a couple of high bitrate estimates "
              "after reconfiguring the send stream.";

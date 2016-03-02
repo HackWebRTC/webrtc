@@ -131,7 +131,7 @@ class FakeVideoSendStream final : public webrtc::VideoSendStream,
 
   // webrtc::VideoSendStream implementation.
   webrtc::VideoSendStream::Stats GetStats() override;
-  bool ReconfigureVideoEncoder(
+  void ReconfigureVideoEncoder(
       const webrtc::VideoEncoderConfig& config) override;
   webrtc::VideoCaptureInput* Input() override;
 

@@ -62,7 +62,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   // webrtc::VideoSendStream implementation.
   VideoCaptureInput* Input() override;
-  bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) override;
+  void ReconfigureVideoEncoder(const VideoEncoderConfig& config) override;
   Stats GetStats() override;
 
   // webrtc::CpuOveruseObserver implementation.
@@ -75,7 +75,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   int GetPaddingNeededBps() const;
 
  private:
-  bool SetSendCodec(VideoCodec video_codec);
   void ConfigureSsrcs();
 
   SendStatisticsProxy stats_proxy_;

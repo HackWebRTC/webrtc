@@ -288,7 +288,7 @@ VideoSendStream::VideoSendStream(
                       config.encoder_settings.payload_type,
                       config.encoder_settings.internal_source));
 
-  RTC_CHECK(ReconfigureVideoEncoder(encoder_config));
+  ReconfigureVideoEncoder(encoder_config);
 
   vie_channel_.RegisterSendSideDelayObserver(&stats_proxy_);
 
@@ -351,11 +351,12 @@ void VideoSendStream::Stop() {
   vie_receiver_->StopReceive();
 }
 
-bool VideoSendStream::ReconfigureVideoEncoder(
+void VideoSendStream::ReconfigureVideoEncoder(
     const VideoEncoderConfig& config) {
   TRACE_EVENT0("webrtc", "VideoSendStream::(Re)configureVideoEncoder");
   LOG(LS_INFO) << "(Re)configureVideoEncoder: " << config.ToString();
   const std::vector<VideoStream>& streams = config.streams;
+  static const int kEncoderMinBitrateKbps = 30;
   RTC_DCHECK(!streams.empty());
   RTC_DCHECK_GE(config_.rtp.ssrcs.size(), streams.size());
 
@@ -427,6 +428,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   video_codec.numberOfSimulcastStreams =
       static_cast<unsigned char>(streams.size());
   video_codec.minBitrate = streams[0].min_bitrate_bps / 1000;
+  if (video_codec.minBitrate < kEncoderMinBitrateKbps)
+    video_codec.minBitrate = kEncoderMinBitrateKbps;
   RTC_DCHECK_LE(streams.size(), static_cast<size_t>(kMaxSimulcastStreams));
   if (video_codec.codecType == kVideoCodecVP9) {
     // If the vector is empty, bitrates will be configured automatically.
@@ -471,19 +474,20 @@ bool VideoSendStream::ReconfigureVideoEncoder(
                                  static_cast<unsigned int>(streams[i].max_qp));
   }
 
-  // Set to zero to not update the bitrate controller from ViEEncoder, as
-  // the bitrate controller is already set from Call.
-  video_codec.startBitrate = 0;
+  if (video_codec.maxBitrate == 0) {
+    // Unset max bitrate -> cap to one bit per pixel.
+    video_codec.maxBitrate =
+        (video_codec.width * video_codec.height * video_codec.maxFramerate) /
+        1000;
+  }
+  if (video_codec.maxBitrate < kEncoderMinBitrateKbps)
+    video_codec.maxBitrate = kEncoderMinBitrateKbps;
 
   RTC_DCHECK_GT(streams[0].max_framerate, 0);
   video_codec.maxFramerate = streams[0].max_framerate;
 
-  if (!SetSendCodec(video_codec)) {
-    LOG(LS_WARNING) << "(Re)configureVideoEncoder: SetSendCodec failed "
-                       "for config: "
-                    << config.ToString();
-    return false;
-  }
+  vie_encoder_.SetEncoder(video_codec);
+
   // Clear stats for disabled layers.
   for (size_t i = video_codec.numberOfSimulcastStreams;
        i < config_.rtp.ssrcs.size(); ++i) {
@@ -494,8 +498,6 @@ bool VideoSendStream::ReconfigureVideoEncoder(
 
   RTC_DCHECK_GE(config.min_transmit_bitrate_bps, 0);
   vie_encoder_.SetMinTransmitBitrate(config.min_transmit_bitrate_bps / 1000);
-
-  return true;
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
@@ -592,39 +594,6 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
 
 int VideoSendStream::GetPaddingNeededBps() const {
   return vie_encoder_.GetPaddingNeededBps();
-}
-
-bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {
-  static const int kEncoderMinBitrate = 30;
-  if (video_codec.maxBitrate == 0) {
-    // Unset max bitrate -> cap to one bit per pixel.
-    video_codec.maxBitrate =
-        (video_codec.width * video_codec.height * video_codec.maxFramerate) /
-        1000;
-  }
-
-  if (video_codec.minBitrate < kEncoderMinBitrate)
-    video_codec.minBitrate = kEncoderMinBitrate;
-  if (video_codec.maxBitrate < kEncoderMinBitrate)
-    video_codec.maxBitrate = kEncoderMinBitrate;
-
-  // Stop the media flow while reconfiguring.
-  vie_encoder_.Pause();
-
-  if (vie_encoder_.SetEncoder(video_codec) != 0) {
-    LOG(LS_ERROR) << "Failed to set encoder.";
-    return false;
-  }
-
-  size_t num_streams = video_codec.numberOfSimulcastStreams > 0
-                           ? video_codec.numberOfSimulcastStreams
-                           : 1;
-  payload_router_.SetSendingRtpModules(num_streams);
-
-  // Restart the media flow
-  vie_encoder_.Restart();
-
-  return true;
 }
 }  // namespace internal
 }  // namespace webrtc

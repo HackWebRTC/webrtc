@@ -1881,14 +1881,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
   encoder_config.encoder_specific_settings = ConfigureVideoEncoderSettings(
       codec_settings.codec);
 
-  bool stream_reconfigured = stream_->ReconfigureVideoEncoder(encoder_config);
+  stream_->ReconfigureVideoEncoder(encoder_config);
 
   encoder_config.encoder_specific_settings = NULL;
   pending_encoder_reconfiguration_ = false;
-
-  if (!stream_reconfigured) {
-    return;
-  }
 
   parameters_.encoder_config = encoder_config;
 }

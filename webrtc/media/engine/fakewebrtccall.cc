@@ -159,7 +159,7 @@ webrtc::VideoSendStream::Stats FakeVideoSendStream::GetStats() {
   return stats_;
 }
 
-bool FakeVideoSendStream::ReconfigureVideoEncoder(
+void FakeVideoSendStream::ReconfigureVideoEncoder(
     const webrtc::VideoEncoderConfig& config) {
   encoder_config_ = config;
   if (config.encoder_specific_settings != NULL) {
@@ -175,7 +175,6 @@ bool FakeVideoSendStream::ReconfigureVideoEncoder(
     }
   }
   codec_settings_set_ = config.encoder_specific_settings != NULL;
-  return true;
 }
 
 webrtc::VideoCaptureInput* FakeVideoSendStream::Input() {

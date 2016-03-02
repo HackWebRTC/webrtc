@@ -194,20 +194,19 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
   }
   return 0;
 }
-
-int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
+void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   RTC_DCHECK(send_payload_router_ != NULL);
   // Setting target width and height for VPM.
-  if (vp_->SetTargetResolution(video_codec.width, video_codec.height,
-                               video_codec.maxFramerate) != VPM_OK) {
-    return -1;
-  }
+  RTC_CHECK_EQ(VPM_OK,
+               vp_->SetTargetResolution(video_codec.width, video_codec.height,
+                                        video_codec.maxFramerate));
 
   // Cache codec before calling AddBitrateObserver (which calls OnNetworkChanged
   // that makes use of the number of simulcast streams configured).
   {
     rtc::CritScope lock(&data_cs_);
     encoder_config_ = video_codec;
+    encoder_paused_ = true;
   }
 
   // Add a bitrate observer to the allocator and update the start, max and
@@ -220,12 +219,19 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   modified_video_codec.startBitrate = allocated_bitrate_bps / 1000;
 
   size_t max_data_payload_length = send_payload_router_->MaxPayloadLength();
-  if (vcm_->RegisterSendCodec(&modified_video_codec, number_of_cores_,
-                              static_cast<uint32_t>(max_data_payload_length)) !=
-      VCM_OK) {
-    return -1;
+  bool success = vcm_->RegisterSendCodec(
+                     &modified_video_codec, number_of_cores_,
+                     static_cast<uint32_t>(max_data_payload_length)) == VCM_OK;
+  if (!success) {
+    LOG(LS_ERROR) << "Failed to configure encoder.";
+    RTC_DCHECK(success);
   }
-  return 0;
+
+  send_payload_router_->SetSendingRtpModules(
+      video_codec.numberOfSimulcastStreams);
+
+  // Restart the media flow
+  Restart();
 }
 
 int ViEEncoder::GetPaddingNeededBps() const {

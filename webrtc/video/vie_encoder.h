@@ -78,7 +78,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
                                   uint8_t pl_type,
                                   bool internal_source);
   int32_t DeRegisterExternalEncoder(uint8_t pl_type);
-  int32_t SetEncoder(const VideoCodec& video_codec);
+  void SetEncoder(const VideoCodec& video_codec);
 
   // Implementing VideoCaptureCallback.
   void DeliverFrame(VideoFrame video_frame) override;

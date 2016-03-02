@@ -173,7 +173,7 @@ class VideoSendStream : public SendStream {
   // Set which streams to send. Must have at least as many SSRCs as configured
   // in the config. Encoder settings are passed on to the encoder instance along
   // with the VideoStream settings.
-  virtual bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
+  virtual void ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
 
   virtual Stats GetStats() = 0;
 };
