@@ -333,18 +333,21 @@ VideoCaptureInput* VideoSendStream::Input() {
 }
 
 void VideoSendStream::Start() {
+  if (payload_router_.active())
+    return;
   vie_encoder_.Pause();
-  if (vie_channel_.StartSend() == 0) {
-    // Was not already started, trigger a keyframe.
-    vie_encoder_.SendKeyFrame();
-  }
+  payload_router_.set_active(true);
+  // Was not already started, trigger a keyframe.
+  vie_encoder_.SendKeyFrame();
   vie_encoder_.Restart();
   vie_receiver_->StartReceive();
 }
 
 void VideoSendStream::Stop() {
+  if (!payload_router_.active())
+    return;
   // TODO(pbos): Make sure the encoder stops here.
-  vie_channel_.StopSend();
+  payload_router_.set_active(false);
   vie_receiver_->StopReceive();
 }
 
@@ -613,10 +616,10 @@ bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {
     return false;
   }
 
-  if (vie_channel_.SetSendCodec(video_codec, false) != 0) {
-    LOG(LS_ERROR) << "Failed to set send codec.";
-    return false;
-  }
+  size_t num_streams = video_codec.numberOfSimulcastStreams > 0
+                           ? video_codec.numberOfSimulcastStreams
+                           : 1;
+  payload_router_.SetSendingRtpModules(num_streams);
 
   // Restart the media flow
   vie_encoder_.Restart();

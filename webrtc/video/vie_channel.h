@@ -80,10 +80,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   int32_t Init();
 
-  // Sets the encoder to use for the channel. |new_stream| indicates the encoder
-  // type has changed and we should start a new RTP stream.
-  int32_t SetSendCodec(const VideoCodec& video_codec, bool new_stream = true);
-
   void SetProtectionMode(bool enable_nack,
                          bool enable_fec,
                          int payload_type_red,
@@ -108,9 +104,6 @@ class ViEChannel : public VCMFrameTypeCallback,
                               const uint32_t rate) override;
   void OnIncomingSSRCChanged(const uint32_t ssrc) override;
   void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override;
-
-  int32_t StartSend();
-  int32_t StopSend();
 
   // Gets the modules used by the channel.
   const std::vector<RtpRtcp*>& rtp_rtcp() const;

@@ -176,40 +176,6 @@ ViEChannel::~ViEChannel() {
   }
 }
 
-int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
-                                 bool new_stream) {
-  RTC_DCHECK(sender_);
-  if (video_codec.codecType == kVideoCodecRED ||
-      video_codec.codecType == kVideoCodecULPFEC) {
-    LOG_F(LS_ERROR) << "Not a valid send codec " << video_codec.codecType;
-    return -1;
-  }
-  if (kMaxSimulcastStreams < video_codec.numberOfSimulcastStreams) {
-    LOG_F(LS_ERROR) << "Incorrect config "
-                    << video_codec.numberOfSimulcastStreams;
-    return -1;
-  }
-  // Update the RTP module with the settings.
-  // Stop and Start the RTP module -> trigger new SSRC, if an SSRC hasn't been
-  // set explicitly.
-  // The first layer is always active, so the first module can be checked for
-  // sending status.
-  bool is_sending = rtp_rtcp_modules_[0]->Sending();
-  send_payload_router_->set_active(false);
-  send_payload_router_->SetSendingRtpModules(0);
-
-  size_t num_active_modules = video_codec.numberOfSimulcastStreams > 0
-                                   ? video_codec.numberOfSimulcastStreams
-                                   : 1;
-
-  // Update the packet and payload routers with the sending RtpRtcp modules.
-  send_payload_router_->SetSendingRtpModules(num_active_modules);
-
-  send_payload_router_->set_active(is_sending);
-
-  return 0;
-}
-
 void ViEChannel::SetProtectionMode(bool enable_nack,
                                    bool enable_fec,
                                    int payload_type_red,
@@ -324,31 +290,6 @@ void ViEChannel::RegisterSendSideDelayObserver(
 void ViEChannel::RegisterSendBitrateObserver(
     BitrateStatisticsObserver* observer) {
   send_bitrate_observer_.Set(observer);
-}
-
-int32_t ViEChannel::StartSend() {
-  if (rtp_rtcp_modules_[0]->Sending())
-    return -1;
-
-  if (!sender_) {
-    rtp_rtcp_modules_[0]->SetSendingStatus(true);
-  } else {
-    send_payload_router_->set_active(true);
-  }
-  return 0;
-}
-
-int32_t ViEChannel::StopSend() {
-  if (!rtp_rtcp_modules_[0]->Sending())
-    return -1;
-
-  if (!sender_) {
-    rtp_rtcp_modules_[0]->SetSendingStatus(false);
-  } else {
-    send_payload_router_->set_active(false);
-  }
-
-  return 0;
 }
 
 const std::vector<RtpRtcp*>& ViEChannel::rtp_rtcp() const {
