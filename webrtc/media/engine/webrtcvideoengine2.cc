@@ -1507,6 +1507,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
   parameters_.config.overuse_callback =
       enable_cpu_overuse_detection ? this : nullptr;
 
+  sink_wants_.rotation_applied = !ContainsHeaderExtension(
+      rtp_extensions, kRtpVideoRotationHeaderExtension);
+
   if (codec_settings) {
     SetCodec(*codec_settings);
   }

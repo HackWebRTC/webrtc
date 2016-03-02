@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifdef HAVE_WEBRTC_VIDEO
-
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -251,6 +249,32 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeCapturer) {
   parameters.extensions.clear();
   EXPECT_TRUE(channel->SetSendParameters(parameters));
   EXPECT_TRUE(capturer.GetApplyRotation());
+}
+
+TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeAddSendStream) {
+  // Allocate the capturer first to prevent early destruction before channel's
+  // dtor is called.
+  cricket::FakeVideoCapturer capturer;
+
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(kVp8Codec);
+
+  std::unique_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, parameters.codecs));
+  // Add CVO extension.
+  const int id = 1;
+  parameters.extensions.push_back(
+      cricket::RtpHeaderExtension(kRtpVideoRotationHeaderExtension, id));
+  EXPECT_TRUE(channel->SetSendParameters(parameters));
+  EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(kSsrc)));
+
+  // Set capturer.
+  EXPECT_TRUE(channel->SetCapturer(kSsrc, &capturer));
+
+  // Verify capturer has turned off applying rotation.
+  EXPECT_FALSE(capturer.GetApplyRotation());
 }
 
 TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
@@ -3235,4 +3259,3 @@ TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWithOddSizeInSimulcast) {
 }
 }  // namespace cricket
 
-#endif  // HAVE_WEBRTC_VIDEO
