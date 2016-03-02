@@ -13,7 +13,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/bind.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/fake_texture_frame.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/video_frame.h"

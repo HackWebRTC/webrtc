@@ -14,6 +14,7 @@
 #include <stdio.h>
 
 #include <algorithm>  // min_element, max_element
+#include <memory>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/video_frame.h"
@@ -111,8 +112,8 @@ int CalculateMetrics(VideoMetricsType video_metrics_type,
   const size_t frame_length = 3 * width * height >> 1;
   VideoFrame ref_frame;
   VideoFrame test_frame;
-  rtc::scoped_ptr<uint8_t[]> ref_buffer(new uint8_t[frame_length]);
-  rtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[frame_length]);
+  std::unique_ptr<uint8_t[]> ref_buffer(new uint8_t[frame_length]);
+  std::unique_ptr<uint8_t[]> test_buffer(new uint8_t[frame_length]);
 
   // Set decoded image parameters.
   int half_width = (width + 1) / 2;

@@ -11,9 +11,10 @@
 #ifndef WEBRTC_COMMON_VIDEO_INCLUDE_INCOMING_VIDEO_STREAM_H_
 #define WEBRTC_COMMON_VIDEO_INCLUDE_INCOMING_VIDEO_STREAM_H_
 
+#include <memory>
+
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_video/video_render_frames.h"
 
@@ -82,14 +83,14 @@ class IncomingVideoStream : public VideoRenderCallback {
   rtc::CriticalSection buffer_critsect_;
   // TODO(pbos): Make plain member and stop resetting this thread, just
   // start/stoping it is enough.
-  rtc::scoped_ptr<rtc::PlatformThread> incoming_render_thread_
+  std::unique_ptr<rtc::PlatformThread> incoming_render_thread_
       GUARDED_BY(thread_critsect_);
-  rtc::scoped_ptr<EventTimerWrapper> deliver_buffer_event_;
+  std::unique_ptr<EventTimerWrapper> deliver_buffer_event_;
 
   bool running_ GUARDED_BY(stream_critsect_);
   VideoRenderCallback* external_callback_ GUARDED_BY(thread_critsect_);
   VideoRenderCallback* render_callback_ GUARDED_BY(thread_critsect_);
-  const rtc::scoped_ptr<VideoRenderFrames> render_buffers_
+  const std::unique_ptr<VideoRenderFrames> render_buffers_
       GUARDED_BY(buffer_critsect_);
 
   uint32_t incoming_rate_ GUARDED_BY(stream_critsect_);

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VIDEO_DECODER_H_
 #define WEBRTC_VIDEO_DECODER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -116,7 +117,7 @@ class VideoDecoderSoftwareFallbackWrapper : public webrtc::VideoDecoder {
   VideoCodec codec_settings_;
   int32_t number_of_cores_;
   std::string fallback_implementation_name_;
-  rtc::scoped_ptr<VideoDecoder> fallback_decoder_;
+  std::unique_ptr<VideoDecoder> fallback_decoder_;
   DecodedImageCallback* callback_;
 };
 

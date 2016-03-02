@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VIDEO_ENCODER_H_
 #define WEBRTC_VIDEO_ENCODER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -177,7 +178,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   const EncoderType encoder_type_;
   webrtc::VideoEncoder* const encoder_;
 
-  rtc::scoped_ptr<webrtc::VideoEncoder> fallback_encoder_;
+  std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;
   std::string fallback_implementation_name_;
   EncodedImageCallback* callback_;
 };

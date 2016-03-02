@@ -11,6 +11,8 @@
 #include <math.h>
 #include <string.h>
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_video/libyuv/include/scaler.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
@@ -98,7 +100,7 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
                                 kI420, kI420,
                                 kScalePoint));
   VideoFrame test_frame2;
-  rtc::scoped_ptr<uint8_t[]> orig_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> orig_buffer(new uint8_t[frame_length_]);
   EXPECT_GT(fread(orig_buffer.get(), 1, frame_length_, source_file_), 0U);
   test_frame_.CreateFrame(orig_buffer.get(),
                           orig_buffer.get() + size_y_,
@@ -358,7 +360,7 @@ void TestScaler::ScaleSequence(ScaleMethod method,
   total_clock = 0;
   int frame_count = 0;
   size_t src_required_size = CalcBufferSize(kI420, src_width, src_height);
-  rtc::scoped_ptr<uint8_t[]> frame_buffer(new uint8_t[src_required_size]);
+  std::unique_ptr<uint8_t[]> frame_buffer(new uint8_t[src_required_size]);
   int size_y = src_width * src_height;
   int size_uv = ((src_width + 1) / 2) * ((src_height + 1) / 2);
 

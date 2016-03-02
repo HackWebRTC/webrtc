@@ -11,6 +11,7 @@
 #include "webrtc/test/linux/glx_renderer.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
