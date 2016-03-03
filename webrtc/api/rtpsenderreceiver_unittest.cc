@@ -83,16 +83,17 @@ class FakeVideoSource : public Notifier<VideoSourceInterface> {
   static rtc::scoped_refptr<FakeVideoSource> Create(bool remote) {
     return new rtc::RefCountedObject<FakeVideoSource>(remote);
   }
-  virtual cricket::VideoCapturer* GetVideoCapturer() { return &fake_capturer_; }
-  virtual void Stop() {}
-  virtual void Restart() {}
-  virtual void AddSink(rtc::VideoSinkInterface<cricket::VideoFrame>* output) {}
-  virtual void RemoveSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* output) {}
-  virtual SourceState state() const { return state_; }
-  virtual bool remote() const { return remote_; }
-  virtual const cricket::VideoOptions* options() const { return &options_; }
-  virtual cricket::VideoRenderer* FrameInput() { return NULL; }
+  cricket::VideoCapturer* GetVideoCapturer() { return &fake_capturer_; }
+  void Stop() override {}
+  void Restart() override {}
+  void AddOrUpdateSink(
+      rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+      const rtc::VideoSinkWants& wants) override {}
+  void RemoveSink(
+      rtc::VideoSinkInterface<cricket::VideoFrame>* output) override {}
+  SourceState state() const override { return state_; }
+  bool remote() const override { return remote_; }
+  const cricket::VideoOptions* options() const override { return &options_; }
 
  protected:
   explicit FakeVideoSource(bool remote) : state_(kLive), remote_(remote) {}

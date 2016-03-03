@@ -394,13 +394,12 @@ void VideoSource::Restart() {
   started_ = true;
 }
 
-void VideoSource::AddSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* output) {
-  // TODO(perkj): Use fake rtc::VideoSinkWants for now. This will change once
-  // webrtc::VideoSourceInterface inherit rtc::VideoSourceInterface.
+void VideoSource::AddOrUpdateSink(
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+    const rtc::VideoSinkWants& wants) {
   worker_thread_->Invoke<void>(
       rtc::Bind(&cricket::VideoCapturer::AddOrUpdateSink,
-                video_capturer_.get(), output, rtc::VideoSinkWants()));
+                video_capturer_.get(), sink, wants));
 }
 
 void VideoSource::RemoveSink(

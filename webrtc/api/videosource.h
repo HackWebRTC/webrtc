@@ -30,13 +30,6 @@
 // The state is set depending on the result of starting the capturer.
 // If the constraint can't be met or the capturer fails to start, the state
 // transition to kEnded, otherwise it transitions to kLive.
-
-namespace cricket {
-
-class ChannelManager;
-
-}  // namespace cricket
-
 namespace webrtc {
 
 class MediaConstraintsInterface;
@@ -66,10 +59,9 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   void Stop() override;
   void Restart() override;
 
-  // |output| will be served video frames as long as the underlying capturer
-  // is running video frames.
-  virtual void AddSink(rtc::VideoSinkInterface<cricket::VideoFrame>* output);
-  virtual void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* output);
+  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override;
+  void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
 
  protected:
   VideoSource(rtc::Thread* worker_thread,

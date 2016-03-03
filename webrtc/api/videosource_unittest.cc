@@ -137,7 +137,7 @@ class VideoSourceTest : public testing::Test {
 
     state_observer_.reset(new StateObserver(source_));
     source_->RegisterObserver(state_observer_.get());
-    source_->AddSink(&renderer_);
+    source_->AddOrUpdateSink(&renderer_, rtc::VideoSinkWants());
   }
 
   rtc::scoped_ptr<TestVideoCapturer> capturer_cleanup_;
@@ -200,7 +200,7 @@ TEST_F(VideoSourceTest, StartStopRemote) {
 
   state_observer_.reset(new StateObserver(source_));
   source_->RegisterObserver(state_observer_.get());
-  source_->AddSink(&renderer_);
+  source_->AddOrUpdateSink(&renderer_, rtc::VideoSinkWants());
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);

@@ -21,7 +21,7 @@ VideoTrack::VideoTrack(const std::string& label,
     : MediaStreamTrack<VideoTrackInterface>(label),
       video_source_(video_source) {
   if (video_source_)
-    video_source_->AddSink(&renderers_);
+    video_source_->AddOrUpdateSink(&renderers_, rtc::VideoSinkWants());
 }
 
 VideoTrack::~VideoTrack() {

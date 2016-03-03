@@ -13,7 +13,7 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/videorenderer.h"
+#include "webrtc/media/base/videosourceinterface.h"
 
 namespace webrtc {
 
@@ -21,30 +21,27 @@ namespace webrtc {
 // The same source can be used in multiple VideoTracks.
 // The methods are only supposed to be called by the PeerConnection
 // implementation.
-class VideoSourceInterface : public MediaSourceInterface {
+class VideoSourceInterface :
+    public MediaSourceInterface,
+    public rtc::VideoSourceInterface<cricket::VideoFrame> {
  public:
   // Get access to the source implementation of cricket::VideoCapturer.
   // This can be used for receiving frames and state notifications.
   // But it should not be used for starting or stopping capturing.
   virtual cricket::VideoCapturer* GetVideoCapturer() = 0;
 
-  // Stop the video capturer.
   virtual void Stop() = 0;
   virtual void Restart() = 0;
 
-  // Adds |output| to the source to receive frames.
-  virtual void AddSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* output) = 0;
-  virtual void RemoveSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* output) = 0;
   virtual const cricket::VideoOptions* options() const = 0;
-  // TODO(nisse): Dummy implementation. Delete as soon as chrome's
-  // MockVideoSource is updated.
-  virtual cricket::VideoRenderer* FrameInput() { return nullptr; }
 
  protected:
   virtual ~VideoSourceInterface() {}
 };
+
+// TODO(perkj): Rename webrtc::VideoSourceInterface to
+// webrtc::VideoTrackSourceInterface
+using VideoTrackSourceInterface = VideoSourceInterface;
 
 }  // namespace webrtc
 
