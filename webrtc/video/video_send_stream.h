@@ -75,6 +75,9 @@ class VideoSendStream : public webrtc::VideoSendStream,
   int GetPaddingNeededBps() const;
 
  private:
+  static bool EncoderThreadFunction(void* obj);
+  void EncoderProcess();
+
   void ConfigureSsrcs();
 
   SendStatisticsProxy stats_proxy_;
@@ -86,6 +89,10 @@ class VideoSendStream : public webrtc::VideoSendStream,
   CallStats* const call_stats_;
   CongestionController* const congestion_controller_;
   VieRemb* const remb_;
+
+  rtc::PlatformThread encoder_thread_;
+  rtc::Event encoder_wakeup_event_;
+  volatile int stop_encoder_thread_;
 
   OveruseFrameDetector overuse_detector_;
   PayloadRouter payload_router_;

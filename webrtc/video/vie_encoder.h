@@ -24,7 +24,6 @@
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video/video_capture_input.h"
 
 namespace webrtc {
 
@@ -41,11 +40,11 @@ class SendStatisticsProxy;
 class ViEBitrateObserver;
 class ViEEffectFilter;
 class VideoCodingModule;
+class VideoEncoder;
 
 class ViEEncoder : public VideoEncoderRateObserver,
                    public VCMPacketizationCallback,
-                   public VCMSendStatisticsCallback,
-                   public VideoCaptureCallback {
+                   public VCMSendStatisticsCallback {
  public:
   friend class ViEBitrateObserver;
 
@@ -80,9 +79,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
   int32_t DeRegisterExternalEncoder(uint8_t pl_type);
   void SetEncoder(const VideoCodec& video_codec, int min_transmit_bitrate_bps);
 
-  // Implementing VideoCaptureCallback.
-  void DeliverFrame(VideoFrame video_frame) override;
-
+  void EncodeVideoFrame(const VideoFrame& video_frame);
   void SendKeyFrame();
 
   uint32_t LastObservedBitrateBps() const;

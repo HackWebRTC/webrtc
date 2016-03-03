@@ -171,6 +171,9 @@ VideoSendStream::VideoSendStream(
       call_stats_(call_stats),
       congestion_controller_(congestion_controller),
       remb_(remb),
+      encoder_thread_(EncoderThreadFunction, this, "EncoderThread"),
+      encoder_wakeup_event_(false, false),
+      stop_encoder_thread_(0),
       overuse_detector_(
           Clock::GetRealTimeClock(),
           GetCpuOveruseOptions(config.encoder_settings.full_overuse_time),
@@ -203,7 +206,7 @@ VideoSendStream::VideoSendStream(
                    bitrate_allocator),
       vcm_(vie_encoder_.vcm()),
       rtp_rtcp_modules_(vie_channel_.rtp_rtcp()),
-      input_(&vie_encoder_,
+      input_(&encoder_wakeup_event_,
              config_.local_renderer,
              &stats_proxy_,
              &overuse_detector_) {
@@ -303,11 +306,19 @@ VideoSendStream::VideoSendStream(
   vie_channel_.RegisterSendFrameCountObserver(&stats_proxy_);
 
   module_process_thread_->RegisterModule(&overuse_detector_);
+
+  encoder_thread_.Start();
+  encoder_thread_.SetPriority(rtc::kHighPriority);
 }
 
 VideoSendStream::~VideoSendStream() {
   LOG(LS_INFO) << "~VideoSendStream: " << config_.ToString();
   Stop();
+
+  // Stop the encoder thread permanently.
+  rtc::AtomicOps::ReleaseStore(&stop_encoder_thread_, 1);
+  encoder_wakeup_event_.Set();
+  encoder_thread_.Stop();
 
   module_process_thread_->DeRegisterModule(&overuse_detector_);
   vie_channel_.RegisterSendFrameCountObserver(nullptr);
@@ -349,6 +360,24 @@ void VideoSendStream::Stop() {
   // TODO(pbos): Make sure the encoder stops here.
   payload_router_.set_active(false);
   vie_receiver_->StopReceive();
+}
+
+bool VideoSendStream::EncoderThreadFunction(void* obj) {
+  static_cast<VideoSendStream*>(obj)->EncoderProcess();
+  // We're done, return false to abort.
+  return false;
+}
+
+void VideoSendStream::EncoderProcess() {
+  while (true) {
+    encoder_wakeup_event_.Wait(rtc::Event::kForever);
+    if (rtc::AtomicOps::AcquireLoad(&stop_encoder_thread_))
+      return;
+
+    VideoFrame frame;
+    if (input_.GetVideoFrame(&frame))
+      vie_encoder_.EncodeVideoFrame(frame);
+  }
 }
 
 void VideoSendStream::ReconfigureVideoEncoder(

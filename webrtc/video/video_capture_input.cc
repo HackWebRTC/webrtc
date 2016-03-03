@@ -24,16 +24,13 @@
 namespace webrtc {
 
 namespace internal {
-VideoCaptureInput::VideoCaptureInput(VideoCaptureCallback* frame_callback,
+VideoCaptureInput::VideoCaptureInput(rtc::Event* capture_event,
                                      VideoRenderer* local_renderer,
                                      SendStatisticsProxy* stats_proxy,
                                      OveruseFrameDetector* overuse_detector)
-    : frame_callback_(frame_callback),
-      local_renderer_(local_renderer),
+    : local_renderer_(local_renderer),
       stats_proxy_(stats_proxy),
-      encoder_thread_(EncoderThreadFunction, this, "EncoderThread"),
-      capture_event_(false, false),
-      stop_(0),
+      capture_event_(capture_event),
       // TODO(danilchap): Pass clock from outside to ensure it is same clock
       // rtcp module use to calculate offset since last frame captured
       // to estimate rtp timestamp for SenderReport.
@@ -41,16 +38,9 @@ VideoCaptureInput::VideoCaptureInput(VideoCaptureCallback* frame_callback,
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
                              clock_->TimeInMilliseconds()),
-      overuse_detector_(overuse_detector) {
-  encoder_thread_.Start();
-  encoder_thread_.SetPriority(rtc::kHighPriority);
-}
+      overuse_detector_(overuse_detector) {}
 
 VideoCaptureInput::~VideoCaptureInput() {
-  // Stop the thread.
-  rtc::AtomicOps::ReleaseStore(&stop_, 1);
-  capture_event_.Set();
-  encoder_thread_.Stop();
 }
 
 void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
@@ -101,31 +91,16 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
 
-  capture_event_.Set();
+  capture_event_->Set();
 }
 
-bool VideoCaptureInput::EncoderThreadFunction(void* obj) {
-  return static_cast<VideoCaptureInput*>(obj)->EncoderProcess();
-}
+bool VideoCaptureInput::GetVideoFrame(VideoFrame* video_frame) {
+  rtc::CritScope lock(&crit_);
+  if (captured_frame_.IsZeroSize())
+    return false;
 
-bool VideoCaptureInput::EncoderProcess() {
-  static const int kThreadWaitTimeMs = 100;
-  if (capture_event_.Wait(kThreadWaitTimeMs)) {
-    if (rtc::AtomicOps::AcquireLoad(&stop_))
-      return false;
-
-    VideoFrame deliver_frame;
-    {
-      rtc::CritScope lock(&crit_);
-      if (!captured_frame_.IsZeroSize()) {
-        deliver_frame = captured_frame_;
-        captured_frame_.Reset();
-      }
-    }
-    if (!deliver_frame.IsZeroSize()) {
-      frame_callback_->DeliverFrame(deliver_frame);
-    }
-  }
+  *video_frame = captured_frame_;
+  captured_frame_.Reset();
   return true;
 }
 

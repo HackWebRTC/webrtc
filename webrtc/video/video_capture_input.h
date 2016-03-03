@@ -34,17 +34,10 @@ class OveruseFrameDetector;
 class SendStatisticsProxy;
 class VideoRenderer;
 
-class VideoCaptureCallback {
- public:
-  virtual ~VideoCaptureCallback() {}
-
-  virtual void DeliverFrame(VideoFrame video_frame) = 0;
-};
-
 namespace internal {
 class VideoCaptureInput : public webrtc::VideoCaptureInput {
  public:
-  VideoCaptureInput(VideoCaptureCallback* frame_callback,
+  VideoCaptureInput(rtc::Event* capture_event,
                     VideoRenderer* local_renderer,
                     SendStatisticsProxy* send_stats_proxy,
                     OveruseFrameDetector* overuse_detector);
@@ -52,21 +45,14 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
 
   void IncomingCapturedFrame(const VideoFrame& video_frame) override;
 
- private:
-  // Thread functions for deliver captured frames to receivers.
-  static bool EncoderThreadFunction(void* obj);
-  bool EncoderProcess();
+  bool GetVideoFrame(VideoFrame* frame);
 
+ private:
   rtc::CriticalSection crit_;
 
-  VideoCaptureCallback* const frame_callback_;
   VideoRenderer* const local_renderer_;
   SendStatisticsProxy* const stats_proxy_;
-
-  rtc::PlatformThread encoder_thread_;
-  rtc::Event capture_event_;
-
-  volatile int stop_;
+  rtc::Event* const capture_event_;
 
   VideoFrame captured_frame_ GUARDED_BY(crit_);
   Clock* const clock_;

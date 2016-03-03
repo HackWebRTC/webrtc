@@ -12,7 +12,6 @@
 #include <memory>
 #include <vector>
 
-#include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/event.h"
 #include "webrtc/system_wrappers/include/ref_count.h"
@@ -20,21 +19,10 @@
 #include "webrtc/test/fake_texture_frame.h"
 #include "webrtc/video/send_statistics_proxy.h"
 
-using ::testing::_;
-using ::testing::Invoke;
-using ::testing::NiceMock;
-using ::testing::Return;
-using ::testing::WithArg;
-
 // If an output frame does not arrive in 500ms, the test will fail.
 #define FRAME_TIMEOUT_MS 500
 
 namespace webrtc {
-
-class MockVideoCaptureCallback : public VideoCaptureCallback {
- public:
-  MOCK_METHOD1(DeliverFrame, void(VideoFrame video_frame));
-};
 
 bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2);
 bool EqualTextureFrames(const VideoFrame& frame1, const VideoFrame& frame2);
@@ -49,40 +37,34 @@ class VideoCaptureInputTest : public ::testing::Test {
       : stats_proxy_(Clock::GetRealTimeClock(),
                      webrtc::VideoSendStream::Config(nullptr),
                      webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo),
-        mock_frame_callback_(new NiceMock<MockVideoCaptureCallback>),
-        output_frame_event_(false, false) {}
+        capture_event_(false, false) {}
 
   virtual void SetUp() {
-    EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_))
-        .WillRepeatedly(
-            WithArg<0>(Invoke(this, &VideoCaptureInputTest::AddOutputFrame)));
-
     overuse_detector_.reset(
         new OveruseFrameDetector(Clock::GetRealTimeClock(), CpuOveruseOptions(),
                                  nullptr, nullptr, &stats_proxy_));
-    input_.reset(new internal::VideoCaptureInput(mock_frame_callback_.get(),
-                                                 nullptr, &stats_proxy_,
-                                                 overuse_detector_.get()));
+    input_.reset(new internal::VideoCaptureInput(
+        &capture_event_, nullptr, &stats_proxy_, overuse_detector_.get()));
   }
 
   void AddInputFrame(VideoFrame* frame) {
     input_->IncomingCapturedFrame(*frame);
   }
 
-  void AddOutputFrame(const VideoFrame& frame) {
-    if (frame.native_handle() == NULL)
-      output_frame_ybuffers_.push_back(frame.buffer(kYPlane));
-    output_frames_.push_back(new VideoFrame(frame));
-    output_frame_event_.Set();
-  }
-
   void WaitOutputFrame() {
-    EXPECT_TRUE(output_frame_event_.Wait(FRAME_TIMEOUT_MS));
+    EXPECT_TRUE(capture_event_.Wait(FRAME_TIMEOUT_MS));
+    VideoFrame frame;
+    EXPECT_TRUE(input_->GetVideoFrame(&frame));
+    if (!frame.native_handle()) {
+      output_frame_ybuffers_.push_back(
+          static_cast<const VideoFrame*>(&frame)->buffer(kYPlane));
+    }
+    output_frames_.push_back(new VideoFrame(frame));
   }
 
   SendStatisticsProxy stats_proxy_;
 
-  std::unique_ptr<MockVideoCaptureCallback> mock_frame_callback_;
+  rtc::Event capture_event_;
 
   std::unique_ptr<OveruseFrameDetector> overuse_detector_;
 
@@ -91,9 +73,6 @@ class VideoCaptureInputTest : public ::testing::Test {
 
   // Input capture frames of VideoCaptureInput.
   ScopedVector<VideoFrame> input_frames_;
-
-  // Indicate an output frame has arrived.
-  rtc::Event output_frame_event_;
 
   // Output delivered frames of VideoCaptureInput.
   ScopedVector<VideoFrame> output_frames_;
@@ -164,12 +143,12 @@ TEST_F(VideoCaptureInputTest, DropsFramesWithSameOrOldNtpTimestamp) {
 
   // Repeat frame with the same NTP timestamp should drop.
   AddInputFrame(input_frames_[0]);
-  EXPECT_FALSE(output_frame_event_.Wait(FRAME_TIMEOUT_MS));
+  EXPECT_FALSE(capture_event_.Wait(FRAME_TIMEOUT_MS));
 
   // As should frames with a decreased NTP timestamp.
   input_frames_[0]->set_ntp_time_ms(input_frames_[0]->ntp_time_ms() - 1);
   AddInputFrame(input_frames_[0]);
-  EXPECT_FALSE(output_frame_event_.Wait(FRAME_TIMEOUT_MS));
+  EXPECT_FALSE(capture_event_.Wait(FRAME_TIMEOUT_MS));
 
   // But delivering with an increased NTP timestamp should succeed.
   input_frames_[0]->set_ntp_time_ms(4711);

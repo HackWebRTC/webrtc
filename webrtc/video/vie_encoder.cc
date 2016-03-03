@@ -344,7 +344,7 @@ void ViEEncoder::TraceFrameDropEnd() {
   encoder_paused_and_dropped_frame_ = false;
 }
 
-void ViEEncoder::DeliverFrame(VideoFrame video_frame) {
+void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
   if (!send_payload_router_->active()) {
     // We've paused or we have no channels attached, don't waste resources on
     // encoding.
