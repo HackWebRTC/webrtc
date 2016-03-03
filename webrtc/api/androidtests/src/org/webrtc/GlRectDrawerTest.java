@@ -256,7 +256,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
         eglBase.getEglBaseContext(), surfaceTextureHelper.getSurfaceTexture(), WIDTH, HEIGHT);
     final SurfaceTextureHelperTest.MockTextureListener listener =
         new SurfaceTextureHelperTest.MockTextureListener();
-    surfaceTextureHelper.setListener(listener);
+    surfaceTextureHelper.startListening(listener);
 
     // Create RGB byte buffer plane with random content.
     final ByteBuffer rgbPlane = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 3);
@@ -284,7 +284,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     drawer.release();
     surfaceTextureHelper.returnTextureFrame();
     oesProducer.release();
-    surfaceTextureHelper.disconnect();
+    surfaceTextureHelper.dispose();
     eglBase.release();
   }
 }

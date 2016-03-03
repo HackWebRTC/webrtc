@@ -306,9 +306,6 @@ public class VideoCapturerAndroid implements
     surfaceHelper = SurfaceTextureHelper.create(sharedContext);
     cameraThreadHandler = surfaceHelper.getHandler();
     cameraThread = cameraThreadHandler.getLooper().getThread();
-    if (isCapturingToTexture) {
-      surfaceHelper.setListener(this);
-    }
     Logging.d(TAG, "VideoCapturerAndroid isCapturingToTexture : " + isCapturingToTexture);
   }
 
@@ -352,7 +349,7 @@ public class VideoCapturerAndroid implements
         }
       }
     });
-    surfaceHelper.disconnect();
+    surfaceHelper.dispose();
     cameraThread = null;
   }
 
@@ -436,6 +433,9 @@ public class VideoCapturerAndroid implements
       camera.setErrorCallback(cameraErrorCallback);
       startPreviewOnCameraThread(width, height, framerate);
       frameObserver.onCapturerStarted(true);
+      if (isCapturingToTexture) {
+        surfaceHelper.startListening(this);
+      }
 
       // Start camera observer.
       cameraThreadHandler.postDelayed(cameraObserver, CAMERA_OBSERVER_PERIOD_MS);
@@ -544,6 +544,8 @@ public class VideoCapturerAndroid implements
     final CountDownLatch barrier = new CountDownLatch(1);
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
+          // Make sure onTextureFrameAvailable() is not called anymore.
+          surfaceHelper.stopListening();
           stopCaptureOnCameraThread();
           barrier.countDown();
         }
@@ -669,12 +671,10 @@ public class VideoCapturerAndroid implements
   @Override
   public void onTextureFrameAvailable(
       int oesTextureId, float[] transformMatrix, long timestampNs) {
-    checkIsOnCameraThread();
     if (camera == null) {
-      // Camera is stopped, we need to return the buffer immediately.
-      surfaceHelper.returnTextureFrame();
-      return;
+      throw new RuntimeException("onTextureFrameAvailable() called after stopCapture().");
     }
+    checkIsOnCameraThread();
     if (dropNextFrame)  {
       surfaceHelper.returnTextureFrame();
       dropNextFrame = false;

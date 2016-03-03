@@ -17,6 +17,7 @@ import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 
 public final class SurfaceTextureHelperTest extends ActivityTestCase {
   /**
@@ -104,7 +105,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create(eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
-    surfaceTextureHelper.setListener(listener);
+    surfaceTextureHelper.startListening(listener);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
 
     // Create resources for stubbing an OES texture producer. |eglOesBase| has the SurfaceTexture in
@@ -150,12 +151,12 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     }
 
     drawer.release();
-    surfaceTextureHelper.disconnect();
+    surfaceTextureHelper.dispose();
     eglBase.release();
   }
 
   /**
-   * Test disconnecting the SurfaceTextureHelper while holding a pending texture frame. The pending
+   * Test disposing the SurfaceTextureHelper while holding a pending texture frame. The pending
    * texture frame should still be valid, and this is tested by drawing the texture frame to a pixel
    * buffer and reading it back with glReadPixels().
    */
@@ -171,7 +172,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create(eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
-    surfaceTextureHelper.setListener(listener);
+    surfaceTextureHelper.startListening(listener);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
 
     // Create resources for stubbing an OES texture producer. |eglOesBase| has the SurfaceTexture in
@@ -196,7 +197,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     // Wait for OES texture frame.
     listener.waitForNewFrame();
     // Diconnect while holding the frame.
-    surfaceTextureHelper.disconnect();
+    surfaceTextureHelper.dispose();
 
     // Draw the pending texture frame onto the pixel buffer.
     eglBase.makeCurrent();
@@ -217,21 +218,21 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
       assertEquals(rgbaData.get() & 0xFF, blue);
       assertEquals(rgbaData.get() & 0xFF, 255);
     }
-    // Late frame return after everything has been disconnected and released.
+    // Late frame return after everything has been disposed and released.
     surfaceTextureHelper.returnTextureFrame();
   }
 
   /**
-   * Test disconnecting the SurfaceTextureHelper, but keep trying to produce more texture frames. No
+   * Test disposing the SurfaceTextureHelper, but keep trying to produce more texture frames. No
    * frames should be delivered to the listener.
    */
   @MediumTest
-  public static void testDisconnect() throws InterruptedException {
+  public static void testDispose() throws InterruptedException {
     // Create SurfaceTextureHelper and listener.
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create(null);
     final MockTextureListener listener = new MockTextureListener();
-    surfaceTextureHelper.setListener(listener);
+    surfaceTextureHelper.startListening(listener);
     // Create EglBase with the SurfaceTexture as target EGLSurface.
     final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
     eglBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
@@ -245,13 +246,13 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     listener.waitForNewFrame();
     surfaceTextureHelper.returnTextureFrame();
 
-    // Disconnect - we should not receive any textures after this.
-    surfaceTextureHelper.disconnect();
+    // Dispose - we should not receive any textures after this.
+    surfaceTextureHelper.dispose();
 
     // Draw one frame.
     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
     eglBase.swapBuffers();
-    // swapBuffers() should not trigger onTextureFrameAvailable() because we are disconnected.
+    // swapBuffers() should not trigger onTextureFrameAvailable() because disposed has been called.
     // Assert that no OES texture was delivered.
     assertFalse(listener.waitForNewFrame(500));
 
@@ -259,14 +260,125 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   }
 
   /**
-   * Test disconnecting the SurfaceTextureHelper immediately after is has been setup to use a
+   * Test disposing the SurfaceTextureHelper immediately after is has been setup to use a
    * shared context. No frames should be delivered to the listener.
    */
   @SmallTest
-  public static void testDisconnectImmediately() {
+  public static void testDisposeImmediately() {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create(null);
-    surfaceTextureHelper.disconnect();
+    surfaceTextureHelper.dispose();
+  }
+
+  // Helper method to call stopListening() on correct thread.
+  private static void stopListeningOnHandlerThread(final SurfaceTextureHelper surfaceTextureHelper)
+      throws InterruptedException {
+    final CountDownLatch barrier = new CountDownLatch(1);
+    surfaceTextureHelper.getHandler().post(new Runnable() {
+      @Override
+      public void run() {
+        surfaceTextureHelper.stopListening();
+        barrier.countDown();
+      }
+    });
+    barrier.await();
+  }
+
+  /**
+   * Call stopListening(), but keep trying to produce more texture frames. No frames should be
+   * delivered to the listener.
+   */
+  @MediumTest
+  public static void testStopListening() throws InterruptedException {
+    // Create SurfaceTextureHelper and listener.
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null);
+    final MockTextureListener listener = new MockTextureListener();
+    surfaceTextureHelper.startListening(listener);
+    // Create EglBase with the SurfaceTexture as target EGLSurface.
+    final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
+    eglBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
+    eglBase.makeCurrent();
+    // Assert no frame has been received yet.
+    assertFalse(listener.waitForNewFrame(1));
+    // Draw and wait for one frame.
+    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+    // swapBuffers() will ultimately trigger onTextureFrameAvailable().
+    eglBase.swapBuffers();
+    listener.waitForNewFrame();
+    surfaceTextureHelper.returnTextureFrame();
+
+    // Stop listening - we should not receive any textures after this.
+    stopListeningOnHandlerThread(surfaceTextureHelper);
+
+    // Draw one frame.
+    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+    eglBase.swapBuffers();
+    // swapBuffers() should not trigger onTextureFrameAvailable() because disposed has been called.
+    // Assert that no OES texture was delivered.
+    assertFalse(listener.waitForNewFrame(500));
+
+    surfaceTextureHelper.dispose();
+    eglBase.release();
+  }
+
+  /**
+   * Test stopListening() immediately after the SurfaceTextureHelper has been setup.
+   */
+  @SmallTest
+  public static void testStopListeningImmediately() throws InterruptedException {
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null);
+    final MockTextureListener listener = new MockTextureListener();
+    surfaceTextureHelper.startListening(listener);
+    stopListeningOnHandlerThread(surfaceTextureHelper);
+    surfaceTextureHelper.dispose();
+  }
+
+  /**
+   * Test calling startListening() with a new listener after stopListening() has been called.
+   */
+  @MediumTest
+  public static void testRestartListeningWithNewListener() throws InterruptedException {
+    // Create SurfaceTextureHelper and listener.
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null);
+    final MockTextureListener listener1 = new MockTextureListener();
+    surfaceTextureHelper.startListening(listener1);
+    // Create EglBase with the SurfaceTexture as target EGLSurface.
+    final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
+    eglBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
+    eglBase.makeCurrent();
+    // Assert no frame has been received yet.
+    assertFalse(listener1.waitForNewFrame(1));
+    // Draw and wait for one frame.
+    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+    // swapBuffers() will ultimately trigger onTextureFrameAvailable().
+    eglBase.swapBuffers();
+    listener1.waitForNewFrame();
+    surfaceTextureHelper.returnTextureFrame();
+
+    // Stop listening - |listener1| should not receive any textures after this.
+    stopListeningOnHandlerThread(surfaceTextureHelper);
+
+    // Connect different listener.
+    final MockTextureListener listener2 = new MockTextureListener();
+    surfaceTextureHelper.startListening(listener2);
+    // Assert no frame has been received yet.
+    assertFalse(listener2.waitForNewFrame(1));
+
+    // Draw one frame.
+    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+    eglBase.swapBuffers();
+
+    // Check that |listener2| received the frame, and not |listener1|.
+    listener2.waitForNewFrame();
+    assertFalse(listener1.waitForNewFrame(1));
+
+    surfaceTextureHelper.returnTextureFrame();
+
+    surfaceTextureHelper.dispose();
+    eglBase.release();
   }
 
   @MediumTest
@@ -280,7 +392,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create(eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
-    surfaceTextureHelper.setListener(listener);
+    surfaceTextureHelper.startListening(listener);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
 
     // Create resources for stubbing an OES texture producer. |eglBase| has the SurfaceTexture in
@@ -342,7 +454,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
       }
     }
 
-    surfaceTextureHelper.disconnect();
+    surfaceTextureHelper.dispose();
     eglBase.release();
   }
 }

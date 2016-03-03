@@ -28,8 +28,8 @@ import java.util.concurrent.TimeUnit;
  * Helper class to create and synchronize access to a SurfaceTexture. The caller will get notified
  * of new frames in onTextureFrameAvailable(), and should call returnTextureFrame() when done with
  * the frame. Only one texture frame can be in flight at once, so returnTextureFrame() must be
- * called in order to receive a new frame. Call disconnect() to stop receiveing new frames and
- * release all resources.
+ * called in order to receive a new frame. Call stopListening() to stop receiveing new frames. Call
+ * dispose to release all resources once the texture frame is returned.
  * Note that there is a C++ counter part of this class that optionally can be used. It is used for
  * wrapping texture frames into webrtc::VideoFrames and also handles calling returnTextureFrame()
  * when the webrtc::VideoFrame is no longer used.
@@ -287,6 +287,7 @@ class SurfaceTextureHelper {
   private final int oesTextureId;
   private YuvConverter yuvConverter;
 
+  // These variables are only accessed from the |handler| thread.
   private OnTextureFrameAvailableListener listener;
   // The possible states of this class.
   private boolean hasPendingTexture = false;
@@ -305,6 +306,13 @@ class SurfaceTextureHelper {
 
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     surfaceTexture = new SurfaceTexture(oesTextureId);
+    surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+      @Override
+      public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        hasPendingTexture = true;
+        tryDeliverTextureFrame();
+      }
+    });
   }
 
   private YuvConverter getYuvConverter() {
@@ -320,21 +328,33 @@ class SurfaceTextureHelper {
   }
 
   /**
-   *  Start to stream textures to the given |listener|.
-   *  A Listener can only be set once.
+   * Start to stream textures to the given |listener|. If you need to change listener, you need to
+   * call stopListening() first.
    */
-  public void setListener(OnTextureFrameAvailableListener listener) {
+  public void startListening(final OnTextureFrameAvailableListener listener) {
     if (this.listener != null) {
       throw new IllegalStateException("SurfaceTextureHelper listener has already been set.");
     }
-    this.listener = listener;
-    surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+    handler.post(new Runnable() {
       @Override
-      public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        hasPendingTexture = true;
+      public void run() {
+        SurfaceTextureHelper.this.listener = listener;
+        // May alredy have a pending frame - try delivering it.
         tryDeliverTextureFrame();
       }
     });
+  }
+
+  /**
+   * Stop listening. The listener set in startListening() is guaranteded to not receive any more
+   * onTextureFrameAvailable() callbacks after this function returns. This function must be called
+   * on the getHandler() thread.
+   */
+  public void stopListening() {
+    if (handler.getLooper().getThread() != Thread.currentThread()) {
+      throw new IllegalStateException("Wrong thread.");
+    }
+    this.listener = null;
   }
 
   /**
@@ -347,7 +367,7 @@ class SurfaceTextureHelper {
 
   /**
    * Retrieve the handler that calls onTextureFrameAvailable(). This handler is valid until
-   * disconnect() is called.
+   * dispose() is called.
    */
   public Handler getHandler() {
     return handler;
@@ -380,7 +400,7 @@ class SurfaceTextureHelper {
    * stopped when the texture frame has been returned by a call to returnTextureFrame(). You are
    * guaranteed to not receive any more onTextureFrameAvailable() after this function returns.
    */
-  public void disconnect() {
+  public void dispose() {
     if (handler.getLooper().getThread() == Thread.currentThread()) {
       isQuitting = true;
       if (!isTextureInUse) {
@@ -413,7 +433,7 @@ class SurfaceTextureHelper {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("Wrong thread.");
     }
-    if (isQuitting || !hasPendingTexture || isTextureInUse) {
+    if (isQuitting || !hasPendingTexture || isTextureInUse || listener == null) {
       return;
     }
     isTextureInUse = true;

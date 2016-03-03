@@ -469,7 +469,7 @@ public class MediaCodecVideoDecoder {
 
     public TextureListener(SurfaceTextureHelper surfaceTextureHelper) {
       this.surfaceTextureHelper = surfaceTextureHelper;
-      surfaceTextureHelper.setListener(this);
+      surfaceTextureHelper.startListening(this);
     }
 
     public void addBufferToRender(DecodedOutputBuffer buffer) {
@@ -525,10 +525,10 @@ public class MediaCodecVideoDecoder {
     }
 
     public void release() {
-      // SurfaceTextureHelper.disconnect() will block until any onTextureFrameAvailable() in
-      // progress is done. Therefore, the call to disconnect() must be outside any synchronized
+      // SurfaceTextureHelper.dispose() will block until any onTextureFrameAvailable() in
+      // progress is done. Therefore, the call to dispose() must be outside any synchronized
       // statement that is also used in the onTextureFrameAvailable() above to avoid deadlocks.
-      surfaceTextureHelper.disconnect();
+      surfaceTextureHelper.dispose();
       synchronized (newFrameLock) {
         if (renderedBuffer != null) {
           surfaceTextureHelper.returnTextureFrame();
