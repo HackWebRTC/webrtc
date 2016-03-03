@@ -120,7 +120,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       bitrate_allocator_(bitrate_allocator),
       time_of_last_frame_activity_ms_(0),
       encoder_config_(),
-      min_transmit_bitrate_kbps_(0),
+      min_transmit_bitrate_bps_(0),
       last_observed_bitrate_bps_(0),
       network_is_transmitting_(true),
       encoder_paused_(false),
@@ -194,7 +194,8 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
   }
   return 0;
 }
-void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
+void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
+                            int min_transmit_bitrate_bps) {
   RTC_DCHECK(send_payload_router_ != NULL);
   // Setting target width and height for VPM.
   RTC_CHECK_EQ(VPM_OK,
@@ -207,6 +208,7 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
     rtc::CritScope lock(&data_cs_);
     encoder_config_ = video_codec;
     encoder_paused_ = true;
+    min_transmit_bitrate_bps_ = min_transmit_bitrate_bps;
   }
 
   // Add a bitrate observer to the allocator and update the start, max and
@@ -232,6 +234,26 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
 
   // Restart the media flow
   Restart();
+  if (stats_proxy_) {
+    // Clear stats for disabled layers.
+    for (size_t i = video_codec.numberOfSimulcastStreams; i < ssrcs_.size();
+         ++i) {
+      stats_proxy_->OnInactiveSsrc(ssrcs_[i]);
+    }
+    VideoEncoderConfig::ContentType content_type;
+    switch (video_codec.mode) {
+      case kRealtimeVideo:
+        content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
+        break;
+      case kScreensharing:
+        content_type = VideoEncoderConfig::ContentType::kScreen;
+        break;
+      default:
+        RTC_NOTREACHED();
+        break;
+    }
+    stats_proxy_->SetContentType(content_type);
+  }
 }
 
 int ViEEncoder::GetPaddingNeededBps() const {
@@ -242,11 +264,11 @@ int ViEEncoder::GetPaddingNeededBps() const {
   {
     rtc::CritScope lock(&data_cs_);
     bool send_padding = encoder_config_.numberOfSimulcastStreams > 1 ||
-                        video_suspended_ || min_transmit_bitrate_kbps_ > 0;
+                        video_suspended_ || min_transmit_bitrate_bps_ > 0;
     if (!send_padding)
       return 0;
     time_of_last_frame_activity_ms = time_of_last_frame_activity_ms_;
-    min_transmit_bitrate_bps = 1000 * min_transmit_bitrate_kbps_;
+    min_transmit_bitrate_bps = min_transmit_bitrate_bps_;
     bitrate_bps = last_observed_bitrate_bps_;
     send_codec = encoder_config_;
   }
@@ -486,12 +508,6 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
     return;
   }
   RTC_NOTREACHED() << "Should not receive keyframe requests on unknown SSRCs.";
-}
-
-void ViEEncoder::SetMinTransmitBitrate(int min_transmit_bitrate_kbps) {
-  assert(min_transmit_bitrate_kbps >= 0);
-  rtc::CritScope lock(&data_cs_);
-  min_transmit_bitrate_kbps_ = min_transmit_bitrate_kbps;
 }
 
 // Called from ViEBitrateObserver.

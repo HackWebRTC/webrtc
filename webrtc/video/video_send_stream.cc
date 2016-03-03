@@ -359,6 +359,7 @@ void VideoSendStream::ReconfigureVideoEncoder(
   static const int kEncoderMinBitrateKbps = 30;
   RTC_DCHECK(!streams.empty());
   RTC_DCHECK_GE(config_.rtp.ssrcs.size(), streams.size());
+  RTC_DCHECK_GE(config.min_transmit_bitrate_bps, 0);
 
   VideoCodec video_codec;
   memset(&video_codec, 0, sizeof(video_codec));
@@ -486,18 +487,7 @@ void VideoSendStream::ReconfigureVideoEncoder(
   RTC_DCHECK_GT(streams[0].max_framerate, 0);
   video_codec.maxFramerate = streams[0].max_framerate;
 
-  vie_encoder_.SetEncoder(video_codec);
-
-  // Clear stats for disabled layers.
-  for (size_t i = video_codec.numberOfSimulcastStreams;
-       i < config_.rtp.ssrcs.size(); ++i) {
-    stats_proxy_.OnInactiveSsrc(config_.rtp.ssrcs[i]);
-  }
-
-  stats_proxy_.SetContentType(config.content_type);
-
-  RTC_DCHECK_GE(config.min_transmit_bitrate_bps, 0);
-  vie_encoder_.SetMinTransmitBitrate(config.min_transmit_bitrate_bps / 1000);
+  vie_encoder_.SetEncoder(video_codec, config.min_transmit_bitrate_bps);
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {

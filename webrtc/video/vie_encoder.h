@@ -78,7 +78,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
                                   uint8_t pl_type,
                                   bool internal_source);
   int32_t DeRegisterExternalEncoder(uint8_t pl_type);
-  void SetEncoder(const VideoCodec& video_codec);
+  void SetEncoder(const VideoCodec& video_codec, int min_transmit_bitrate_bps);
 
   // Implementing VideoCaptureCallback.
   void DeliverFrame(VideoFrame video_frame) override;
@@ -111,8 +111,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   virtual void OnReceivedIntraFrameRequest(uint32_t ssrc);
   virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id);
   virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id);
-
-  void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
 
   // Lets the sender suspend video when the rate drops below
   // |threshold_bps|, and turns back on when the rate goes back up above
@@ -158,7 +156,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
   // padding.
   int64_t time_of_last_frame_activity_ms_ GUARDED_BY(data_cs_);
   VideoCodec encoder_config_ GUARDED_BY(data_cs_);
-  int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
+  int min_transmit_bitrate_bps_ GUARDED_BY(data_cs_);
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
   bool network_is_transmitting_ GUARDED_BY(data_cs_);
   bool encoder_paused_ GUARDED_BY(data_cs_);
