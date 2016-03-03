@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
@@ -29,6 +31,11 @@ typedef uint16_t PacketLength;
 static const size_t kPacketLenSize = sizeof(PacketLength);
 
 static const size_t kBufSize = kMaxPacketSize + kPacketLenSize;
+
+// The input buffer will be resized so that at least kMinimumRecvSize bytes can
+// be received (but it will not grow above the maximum size passed to the
+// constructor).
+static const size_t kMinimumRecvSize = 128;
 
 static const int kListenBacklog = 5;
 
@@ -53,12 +60,11 @@ AsyncTCPSocketBase::AsyncTCPSocketBase(AsyncSocket* socket, bool listen,
                                        size_t max_packet_size)
     : socket_(socket),
       listen_(listen),
-      insize_(max_packet_size),
-      inpos_(0),
+      max_insize_(max_packet_size),
       max_outsize_(max_packet_size) {
   if (!listen_) {
     // Listening sockets don't send/receive data, so they don't need buffers.
-    inbuf_.reset(new char[insize_]);
+    inbuf_.EnsureCapacity(kMinimumRecvSize);
   }
 
   RTC_DCHECK(socket_.get() != NULL);
@@ -182,7 +188,7 @@ void AsyncTCPSocketBase::OnReadEvent(AsyncSocket* socket) {
     rtc::SocketAddress address;
     rtc::AsyncSocket* new_socket = socket->Accept(&address);
     if (!new_socket) {
-      // TODO: Do something better like forwarding the error
+      // TODO(stefan): Do something better like forwarding the error
       // to the user.
       LOG(LS_ERROR) << "TCP accept failed with error " << socket_->GetError();
       return;
@@ -193,24 +199,44 @@ void AsyncTCPSocketBase::OnReadEvent(AsyncSocket* socket) {
     // Prime a read event in case data is waiting.
     new_socket->SignalReadEvent(new_socket);
   } else {
-    RTC_DCHECK(inbuf_.get());
-    int len = socket_->Recv(inbuf_.get() + inpos_, insize_ - inpos_);
-    if (len < 0) {
-      // TODO: Do something better like forwarding the error to the user.
-      if (!socket_->IsBlocking()) {
-        LOG(LS_ERROR) << "Recv() returned error: " << socket_->GetError();
+    size_t total_recv = 0;
+    while (true) {
+      size_t free_size = inbuf_.capacity() - inbuf_.size();
+      if (free_size < kMinimumRecvSize && inbuf_.capacity() < max_insize_) {
+        inbuf_.EnsureCapacity(std::min(max_insize_, inbuf_.capacity() * 2));
+        free_size = inbuf_.capacity() - inbuf_.size();
       }
+
+      int len = socket_->Recv(inbuf_.data() + inbuf_.size(), free_size);
+      if (len < 0) {
+        // TODO(stefan): Do something better like forwarding the error to the
+        // user.
+        if (!socket_->IsBlocking()) {
+          LOG(LS_ERROR) << "Recv() returned error: " << socket_->GetError();
+        }
+        break;
+      }
+
+      total_recv += len;
+      inbuf_.SetSize(inbuf_.size() + len);
+      if (!len || static_cast<size_t>(len) < free_size) {
+        break;
+      }
+    }
+
+    if (!total_recv) {
       return;
     }
 
-    inpos_ += len;
+    size_t size = inbuf_.size();
+    ProcessInput(inbuf_.data<char>(), &size);
 
-    ProcessInput(inbuf_.get(), &inpos_);
-
-    if (inpos_ >= insize_) {
+    if (size > inbuf_.size()) {
       LOG(LS_ERROR) << "input buffer overflow";
       RTC_NOTREACHED();
-      inpos_ = 0;
+      inbuf_.Clear();
+    } else {
+      inbuf_.SetSize(size);
     }
   }
 }

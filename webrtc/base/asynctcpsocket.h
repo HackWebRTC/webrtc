@@ -72,9 +72,9 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
 
   scoped_ptr<AsyncSocket> socket_;
   bool listen_;
-  scoped_ptr<char[]> inbuf_;
+  Buffer inbuf_;
   Buffer outbuf_;
-  size_t insize_, inpos_;
+  size_t max_insize_;
   size_t max_outsize_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncTCPSocketBase);
