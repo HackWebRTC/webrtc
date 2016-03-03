@@ -203,7 +203,7 @@
       ['OS=="ios"', {
         'build_libjpeg%': 0,
       }],
-      ['target_arch=="arm" or target_arch=="arm64"', {
+      ['target_arch=="arm" or target_arch=="arm64" or target_arch=="mipsel"', {
         'prefer_fixed_point%': 1,
       }],
       ['(target_arch=="arm" and (arm_neon==1 or arm_neon_optional==1)) or target_arch=="arm64"', {
@@ -499,4 +499,3 @@
     },
   }, # target_defaults
 }
-
