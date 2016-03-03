@@ -262,14 +262,17 @@ static void LogDeviceInfo() {
   LOG(LS_INFO) << "LogDeviceInfo";
   @autoreleasepool {
     LOG(LS_INFO) << " system name: " << ios::GetSystemName();
-    LOG(LS_INFO) << " system version: " << ios::GetSystemVersion();
+    LOG(LS_INFO) << " system version 1(2): " << ios::GetSystemVersionAsString();
+    LOG(LS_INFO) << " system version 2(2): " << ios::GetSystemVersion();
     LOG(LS_INFO) << " device type: " << ios::GetDeviceType();
     LOG(LS_INFO) << " device name: " << ios::GetDeviceName();
     LOG(LS_INFO) << " process name: " << ios::GetProcessName();
     LOG(LS_INFO) << " process ID: " << ios::GetProcessID();
     LOG(LS_INFO) << " OS version: " << ios::GetOSVersionString();
     LOG(LS_INFO) << " processing cores: " << ios::GetProcessorCount();
+#if defined(__IPHONE_9_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
     LOG(LS_INFO) << " low power mode: " << ios::GetLowPowerModeEnabled();
+#endif
   }
 }
 #endif  // !defined(NDEBUG)

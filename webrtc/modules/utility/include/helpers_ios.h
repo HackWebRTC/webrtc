@@ -37,11 +37,12 @@ std::string GetAudioSessionCategory();
 // Returns the current name of the operating system.
 std::string GetSystemName();
 
-// Returns the current version of the operating system.
-std::string GetSystemVersion();
+// Returns the current version of the operating system as a string.
+std::string GetSystemVersionAsString();
 
-// Returns the version of the operating system as a floating point value.
-float GetSystemVersionAsFloat();
+// Returns the version of the operating system in double representation.
+// Uses a cached value of the system version.
+double GetSystemVersion();
 
 // Returns the device type.
 // Examples: ”iPhone” and ”iPod touch”.
