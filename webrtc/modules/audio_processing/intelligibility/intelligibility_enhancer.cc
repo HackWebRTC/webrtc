@@ -42,7 +42,7 @@ const float kRho = 0.0004f;  // Default production and interpretation SNR.
 float DotProduct(const float* a, const float* b, size_t length) {
   float ret = 0.f;
   for (size_t i = 0; i < length; ++i) {
-    ret = fmaf(a[i], b[i], ret);
+    ret += a[i] * b[i];
   }
   return ret;
 }
@@ -180,7 +180,7 @@ void IntelligibilityEnhancer::UpdateErbGains() {
   for (size_t i = 0; i < freqs_; ++i) {
     gains[i] = 0.f;
     for (size_t j = 0; j < bank_size_; ++j) {
-      gains[i] = fmaf(render_filter_bank_[j][i], gains_eq_[j], gains[i]);
+      gains[i] += render_filter_bank_[j][i] * gains_eq_[j];
     }
   }
 }
