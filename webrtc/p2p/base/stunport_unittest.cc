@@ -31,6 +31,8 @@ static const SocketAddress kBadHostnameAddr("not-a-real-hostname", 5000);
 static const int kTimeoutMs = 10000;
 // stun prio = 100 << 24 | 30 (IPV4) << 8 | 256 - 0
 static const uint32_t kStunCandidatePriority = 1677729535;
+static const int kInfiniteLifetime = -1;
+static const int kHighCostPortKeepaliveLifetimeMs = 2 * 60 * 1000;
 
 // Tests connecting a StunPort to a fake STUN server (cricket::StunServer)
 // TODO: Use a VirtualSocketServer here. We have to use a
@@ -44,16 +46,22 @@ class StunPortTest : public testing::Test,
         ss_scope_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
-        stun_server_1_(cricket::TestStunServer::Create(
-          rtc::Thread::Current(), kStunAddr1)),
-        stun_server_2_(cricket::TestStunServer::Create(
-          rtc::Thread::Current(), kStunAddr2)),
-        done_(false), error_(false), stun_keepalive_delay_(0) {
-  }
+        stun_server_1_(cricket::TestStunServer::Create(rtc::Thread::Current(),
+                                                       kStunAddr1)),
+        stun_server_2_(cricket::TestStunServer::Create(rtc::Thread::Current(),
+                                                       kStunAddr2)),
+        done_(false),
+        error_(false),
+        stun_keepalive_delay_(0),
+        stun_keepalive_lifetime_(-1) {}
 
-  const cricket::Port* port() const { return stun_port_.get(); }
+  cricket::UDPPort* port() const { return stun_port_.get(); }
   bool done() const { return done_; }
   bool error() const { return error_; }
+
+  void SetNetworkType(rtc::AdapterType adapter_type) {
+    network_.set_type(adapter_type);
+  }
 
   void CreateStunPort(const rtc::SocketAddress& server_addr) {
     ServerAddresses stun_servers;
@@ -67,6 +75,11 @@ class StunPortTest : public testing::Test,
         kLocalAddr.ipaddr(), 0, 0, rtc::CreateRandomString(16),
         rtc::CreateRandomString(22), stun_servers, std::string()));
     stun_port_->set_stun_keepalive_delay(stun_keepalive_delay_);
+    // If |stun_keepalive_lifetime_| is negative, let the stun port
+    // choose its lifetime from the network type.
+    if (stun_keepalive_lifetime_ >= 0) {
+      stun_port_->set_stun_keepalive_lifetime(stun_keepalive_lifetime_);
+    }
     stun_port_->SignalPortComplete.connect(this,
         &StunPortTest::OnPortComplete);
     stun_port_->SignalPortError.connect(this,
@@ -130,6 +143,10 @@ class StunPortTest : public testing::Test,
     stun_keepalive_delay_ = delay;
   }
 
+  void SetKeepaliveLifetime(int lifetime) {
+    stun_keepalive_lifetime_ = lifetime;
+  }
+
   cricket::TestStunServer* stun_server_1() {
     return stun_server_1_.get();
   }
@@ -150,6 +167,7 @@ class StunPortTest : public testing::Test,
   bool done_;
   bool error_;
   int stun_keepalive_delay_;
+  int stun_keepalive_lifetime_;
 };
 
 // Test that we can create a STUN port
@@ -284,4 +302,54 @@ TEST_F(StunPortTest, TestTwoCandidatesWithTwoStunServersAcrossNat) {
   EXPECT_EQ(2U, port()->Candidates().size());
   EXPECT_EQ(port()->Candidates()[0].relay_protocol(), "");
   EXPECT_EQ(port()->Candidates()[1].relay_protocol(), "");
+}
+
+// Test that the stun_keepalive_lifetime is set correctly based on the network
+// type on a STUN port.
+TEST_F(StunPortTest, TestStunPortGetStunKeepaliveLifetime) {
+  // Lifetime for the default network type is |kInfiniteLifetime|.
+  CreateStunPort(kStunAddr1);
+  EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
+
+  // Lifetime for the cellular network is |kHighCostPortKeepaliveLifetimeMs|
+  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
+  CreateStunPort(kStunAddr2);
+  EXPECT_EQ(kHighCostPortKeepaliveLifetimeMs,
+            port()->stun_keepalive_lifetime());
+}
+
+// Test that the stun_keepalive_lifetime is set correctly based on the network
+// type on a shared STUN port (UDPPort).
+TEST_F(StunPortTest, TestUdpPortGetStunKeepaliveLifetime) {
+  // Lifetime for the default network type is |kInfiniteLifetime|.
+  CreateSharedStunPort(kStunAddr1);
+  EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
+
+  // Lifetime for the cellular network is |kHighCostPortKeepaliveLifetimeMs|
+  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
+  CreateSharedStunPort(kStunAddr2);
+  EXPECT_EQ(kHighCostPortKeepaliveLifetimeMs,
+            port()->stun_keepalive_lifetime());
+}
+
+// Test that STUN binding requests will be stopped shortly if the keep-alive
+// lifetime is short.
+TEST_F(StunPortTest, TestStunBindingRequestShortLifetime) {
+  SetKeepaliveDelay(101);
+  SetKeepaliveLifetime(100);
+  CreateStunPort(kStunAddr1);
+  PrepareAddress();
+  EXPECT_TRUE_WAIT(done(), kTimeoutMs);
+  EXPECT_TRUE_WAIT(!port()->HasPendingRequest(cricket::STUN_BINDING_REQUEST),
+                   2000);
+}
+
+// Test that by default, the STUN binding requests will last for a long time.
+TEST_F(StunPortTest, TestStunBindingRequestLongLifetime) {
+  SetKeepaliveDelay(101);
+  CreateStunPort(kStunAddr1);
+  PrepareAddress();
+  EXPECT_TRUE_WAIT(done(), kTimeoutMs);
+  rtc::Thread::Current()->ProcessMessages(1000);
+  EXPECT_TRUE(port()->HasPendingRequest(cricket::STUN_BINDING_REQUEST));
 }

@@ -63,6 +63,16 @@ void StunRequestManager::Flush(int msg_type) {
   }
 }
 
+bool StunRequestManager::HasRequest(int msg_type) {
+  for (const auto kv : requests_) {
+    StunRequest* request = kv.second;
+    if (msg_type == kAllRequests || msg_type == request->type()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void StunRequestManager::Remove(StunRequest* request) {
   ASSERT(request->manager() == this);
   RequestMap::iterator iter = requests_.find(request->id());

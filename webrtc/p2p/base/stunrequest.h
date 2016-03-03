@@ -39,6 +39,10 @@ class StunRequestManager {
   // Only for testing.
   void Flush(int msg_type);
 
+  // Returns true if at least one request with |msg_type| is scheduled for
+  // transmission. For testing only.
+  bool HasRequest(int msg_type);
+
   // Removes a stun request that was added previously.  This will happen
   // automatically when a request succeeds, fails, or times out.
   void Remove(StunRequest* request);

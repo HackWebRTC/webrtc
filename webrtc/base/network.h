@@ -337,6 +337,8 @@ class Network {
   void set_ignored(bool ignored) { ignored_ = ignored; }
 
   AdapterType type() const { return type_; }
+  void set_type(AdapterType type) { type_ = type; }
+
   int preference() const { return preference_; }
   void set_preference(int preference) { preference_ = preference; }
 

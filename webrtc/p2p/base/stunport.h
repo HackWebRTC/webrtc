@@ -106,6 +106,16 @@ class UDPPort : public Port {
     return stun_keepalive_delay_;
   }
 
+  // Visible for testing.
+  int stun_keepalive_lifetime() const { return stun_keepalive_lifetime_; }
+  void set_stun_keepalive_lifetime(int lifetime) {
+    stun_keepalive_lifetime_ = lifetime;
+  }
+  // Returns true if there is a pending request with type |msg_type|.
+  bool HasPendingRequest(int msg_type) {
+    return requests_.HasRequest(msg_type);
+  }
+
  protected:
   UDPPort(rtc::Thread* thread,
           rtc::PacketSocketFactory* factory,
@@ -217,6 +227,7 @@ class UDPPort : public Port {
   rtc::scoped_ptr<AddressResolver> resolver_;
   bool ready_;
   int stun_keepalive_delay_;
+  int stun_keepalive_lifetime_;
 
   // This is true by default and false when
   // PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE is specified.
