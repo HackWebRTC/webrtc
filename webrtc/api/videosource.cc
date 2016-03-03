@@ -16,7 +16,6 @@
 
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/base/arraysize.h"
-#include "webrtc/pc/channelmanager.h"
 
 using cricket::CaptureState;
 using webrtc::MediaConstraintsInterface;
@@ -25,12 +24,6 @@ using webrtc::MediaSourceInterface;
 namespace {
 
 const double kRoundingTruncation = 0.0005;
-
-enum {
-  MSG_VIDEOCAPTURESTATECONNECT,
-  MSG_VIDEOCAPTURESTATEDISCONNECT,
-  MSG_VIDEOCAPTURESTATECHANGE,
-};
 
 // Default resolution. If no constraint is specified, this is the resolution we
 // will use.
@@ -282,39 +275,40 @@ bool ExtractVideoOptions(const MediaConstraintsInterface* all_constraints,
 namespace webrtc {
 
 rtc::scoped_refptr<VideoSource> VideoSource::Create(
-    cricket::ChannelManager* channel_manager,
+    rtc::Thread* worker_thread,
     cricket::VideoCapturer* capturer,
     const webrtc::MediaConstraintsInterface* constraints,
     bool remote) {
-  ASSERT(channel_manager != NULL);
-  ASSERT(capturer != NULL);
+  RTC_DCHECK(worker_thread != NULL);
+  RTC_DCHECK(capturer != NULL);
   rtc::scoped_refptr<VideoSource> source(new rtc::RefCountedObject<VideoSource>(
-      channel_manager, capturer, remote));
+      worker_thread, capturer, remote));
   source->Initialize(constraints);
   return source;
 }
 
-VideoSource::VideoSource(cricket::ChannelManager* channel_manager,
+VideoSource::VideoSource(rtc::Thread* worker_thread,
                          cricket::VideoCapturer* capturer,
                          bool remote)
-    : channel_manager_(channel_manager),
+    : signaling_thread_(rtc::Thread::Current()),
+      worker_thread_(worker_thread),
       video_capturer_(capturer),
+      started_(false),
       state_(kInitializing),
       remote_(remote) {
-  channel_manager_->SignalVideoCaptureStateChange.connect(
+  video_capturer_->SignalStateChange.connect(
       this, &VideoSource::OnStateChange);
 }
 
 VideoSource::~VideoSource() {
-  channel_manager_->StopVideoCapture(video_capturer_.get(), format_);
-  channel_manager_->SignalVideoCaptureStateChange.disconnect(this);
+  video_capturer_->SignalStateChange.disconnect(this);
+  Stop();
 }
 
 void VideoSource::Initialize(
     const webrtc::MediaConstraintsInterface* constraints) {
-
   std::vector<cricket::VideoFormat> formats =
-      channel_manager_->GetSupportedFormats(video_capturer_.get());
+      *video_capturer_->GetSupportedFormats();
   if (formats.empty()) {
     if (video_capturer_->IsScreencast()) {
       // The screen capturer can accept any resolution and we will derive the
@@ -367,52 +361,71 @@ void VideoSource::Initialize(
   // the camera doesn't produce frames with the correct format? Or will
   // cricket::VideCapturer be able to re-scale / crop to the requested
   // resolution?
-  if (!channel_manager_->StartVideoCapture(video_capturer_.get(), format_)) {
+  if (!worker_thread_->Invoke<bool>(
+      rtc::Bind(&cricket::VideoCapturer::StartCapturing,
+                video_capturer_.get(), format_))) {
     SetState(kEnded);
     return;
   }
+  started_ = true;
   // Initialize hasn't succeeded until a successful state change has occurred.
 }
 
 void VideoSource::Stop() {
-  channel_manager_->StopVideoCapture(video_capturer_.get(), format_);
+  if (!started_) {
+    return;
+  }
+  started_ = false;
+  worker_thread_->Invoke<void>(
+      rtc::Bind(&cricket::VideoCapturer::Stop,
+                video_capturer_.get()));
 }
 
 void VideoSource::Restart() {
-  if (!channel_manager_->StartVideoCapture(video_capturer_.get(), format_)) {
+  if (started_) {
+    return;
+  }
+  if (!worker_thread_->Invoke<bool>(
+      rtc::Bind(&cricket::VideoCapturer::StartCapturing,
+                video_capturer_.get(), format_))) {
     SetState(kEnded);
     return;
   }
-  for (auto* sink : sinks_) {
-    channel_manager_->AddVideoSink(video_capturer_.get(), sink);
-  }
+  started_ = true;
 }
 
 void VideoSource::AddSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* output) {
-  sinks_.push_back(output);
-  channel_manager_->AddVideoSink(video_capturer_.get(), output);
+  // TODO(perkj): Use fake rtc::VideoSinkWants for now. This will change once
+  // webrtc::VideoSourceInterface inherit rtc::VideoSourceInterface.
+  worker_thread_->Invoke<void>(
+      rtc::Bind(&cricket::VideoCapturer::AddOrUpdateSink,
+                video_capturer_.get(), output, rtc::VideoSinkWants()));
 }
 
 void VideoSource::RemoveSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* output) {
-  sinks_.remove(output);
-  channel_manager_->RemoveVideoSink(video_capturer_.get(), output);
+  worker_thread_->Invoke<void>(
+        rtc::Bind(&cricket::VideoCapturer::RemoveSink,
+                  video_capturer_.get(), output));
 }
 
-// OnStateChange listens to the ChannelManager::SignalVideoCaptureStateChange.
-// This signal is triggered for all video capturers. Not only the one we are
-// interested in.
+// OnStateChange listens to the cricket::VideoCapturer::SignalStateChange.
 void VideoSource::OnStateChange(cricket::VideoCapturer* capturer,
                                 cricket::CaptureState capture_state) {
+  if (rtc::Thread::Current() != signaling_thread_) {
+    invoker_.AsyncInvoke<void>(
+        signaling_thread_, rtc::Bind(&VideoSource::OnStateChange, this,
+                                     capturer, capture_state));
+    return;
+  }
+
   if (capturer == video_capturer_.get()) {
     SetState(GetReadyState(capture_state));
   }
 }
 
 void VideoSource::SetState(SourceState new_state) {
-  // TODO(hbos): Temporarily disabled VERIFY due to webrtc:4776.
-  // if (VERIFY(state_ != new_state)) {
   if (state_ != new_state) {
     state_ = new_state;
     FireOnChanged();

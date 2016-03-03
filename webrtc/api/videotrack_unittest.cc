@@ -39,18 +39,13 @@ class VideoTrackTest : public testing::Test {
  public:
   VideoTrackTest() {
     static const char kVideoTrackId[] = "track_id";
-
-    channel_manager_.reset(new cricket::ChannelManager(
-        new cricket::FakeMediaEngine(), rtc::Thread::Current()));
-    EXPECT_TRUE(channel_manager_->Init());
     video_track_ = VideoTrack::Create(
         kVideoTrackId,
-        VideoSource::Create(channel_manager_.get(),
+        VideoSource::Create(rtc::Thread::Current(),
                             new webrtc::RemoteVideoCapturer(), NULL, true));
   }
 
  protected:
-  rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
 };
 

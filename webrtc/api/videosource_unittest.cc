@@ -19,7 +19,6 @@
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
-#include "webrtc/pc/channelmanager.h"
 
 using webrtc::FakeConstraints;
 using webrtc::VideoSource;
@@ -111,9 +110,7 @@ class StateObserver : public ObserverInterface {
 
 class VideoSourceTest : public testing::Test {
  protected:
-  VideoSourceTest()
-      : channel_manager_(new cricket::ChannelManager(
-          new cricket::FakeMediaEngine(), rtc::Thread::Current())) {
+  VideoSourceTest() {
     InitCapturer(false);
   }
   void InitCapturer(bool is_screencast) {
@@ -124,10 +121,6 @@ class VideoSourceTest : public testing::Test {
 
   void InitScreencast() { InitCapturer(true); }
 
-  void SetUp() {
-    ASSERT_TRUE(channel_manager_->Init());
-  }
-
   void CreateVideoSource() {
     CreateVideoSource(NULL);
   }
@@ -136,7 +129,7 @@ class VideoSourceTest : public testing::Test {
       const webrtc::MediaConstraintsInterface* constraints) {
     // VideoSource take ownership of |capturer_|
     source_ =
-        VideoSource::Create(channel_manager_.get(), capturer_cleanup_.release(),
+        VideoSource::Create(rtc::Thread::Current(), capturer_cleanup_.release(),
                             constraints, false);
 
     ASSERT_TRUE(source_.get() != NULL);
@@ -150,7 +143,6 @@ class VideoSourceTest : public testing::Test {
   rtc::scoped_ptr<TestVideoCapturer> capturer_cleanup_;
   TestVideoCapturer* capturer_;
   cricket::FakeVideoRenderer renderer_;
-  rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
   rtc::scoped_ptr<StateObserver> state_observer_;
   rtc::scoped_refptr<VideoSource> source_;
 };
@@ -200,7 +192,7 @@ TEST_F(VideoSourceTest, StopRestart) {
 // Test start stop with a remote VideoSource - the video source that has a
 // RemoteVideoCapturer and takes video frames from FrameInput.
 TEST_F(VideoSourceTest, StartStopRemote) {
-  source_ = VideoSource::Create(channel_manager_.get(),
+  source_ = VideoSource::Create(rtc::Thread::Current(),
                                 new webrtc::RemoteVideoCapturer(), NULL, true);
 
   ASSERT_TRUE(source_.get() != NULL);

@@ -17,6 +17,7 @@
 #include "webrtc/api/notifier.h"
 #include "webrtc/api/videosourceinterface.h"
 #include "webrtc/api/videotrackrenderers.h"
+#include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/videosinkinterface.h"
@@ -48,7 +49,7 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   // |constraints| can be NULL and in that case the camera is opened using a
   // default resolution.
   static rtc::scoped_refptr<VideoSource> Create(
-      cricket::ChannelManager* channel_manager,
+      rtc::Thread* worker_thread,
       cricket::VideoCapturer* capturer,
       const webrtc::MediaConstraintsInterface* constraints,
       bool remote);
@@ -71,7 +72,7 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   virtual void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* output);
 
  protected:
-  VideoSource(cricket::ChannelManager* channel_manager,
+  VideoSource(rtc::Thread* worker_thread,
               cricket::VideoCapturer* capturer,
               bool remote);
   virtual ~VideoSource();
@@ -82,11 +83,12 @@ class VideoSource : public Notifier<VideoSourceInterface>,
                      cricket::CaptureState capture_state);
   void SetState(SourceState new_state);
 
-  cricket::ChannelManager* channel_manager_;
+  rtc::Thread* signaling_thread_;
+  rtc::Thread* worker_thread_;
+  rtc::AsyncInvoker invoker_;
   rtc::scoped_ptr<cricket::VideoCapturer> video_capturer_;
+  bool started_;
   rtc::scoped_ptr<cricket::VideoRenderer> frame_input_;
-
-  std::list<rtc::VideoSinkInterface<cricket::VideoFrame>*> sinks_;
 
   cricket::VideoFormat format_;
   cricket::VideoOptions options_;

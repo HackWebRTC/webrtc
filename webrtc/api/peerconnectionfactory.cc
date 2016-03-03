@@ -205,7 +205,7 @@ PeerConnectionFactory::CreateVideoSource(
     const MediaConstraintsInterface* constraints) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoSource> source(VideoSource::Create(
-      channel_manager_.get(), capturer, constraints, false));
+      worker_thread_, capturer, constraints, false));
   return VideoSourceProxy::Create(signaling_thread_, source);
 }
 

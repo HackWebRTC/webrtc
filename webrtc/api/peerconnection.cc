@@ -382,9 +382,9 @@ namespace webrtc {
 class RemoteMediaStreamFactory {
  public:
   explicit RemoteMediaStreamFactory(rtc::Thread* signaling_thread,
-                                    cricket::ChannelManager* channel_manager)
+                                    rtc::Thread* worker_thread)
       : signaling_thread_(signaling_thread),
-        channel_manager_(channel_manager) {}
+        worker_thread_(worker_thread) {}
 
   rtc::scoped_refptr<MediaStreamInterface> CreateMediaStream(
       const std::string& stream_label) {
@@ -404,7 +404,7 @@ class RemoteMediaStreamFactory {
                                      const std::string& track_id) {
     return AddTrack<VideoTrackInterface, VideoTrack, VideoTrackProxy>(
         stream, track_id,
-        VideoSource::Create(channel_manager_, new RemoteVideoCapturer(),
+        VideoSource::Create(worker_thread_, new RemoteVideoCapturer(),
                             nullptr, true)
             .get());
   }
@@ -424,7 +424,7 @@ class RemoteMediaStreamFactory {
   }
 
   rtc::Thread* signaling_thread_;
-  cricket::ChannelManager* channel_manager_;
+  rtc::Thread* worker_thread_;
 };
 
 bool ConvertRtcOptionsForOffer(
@@ -633,7 +633,7 @@ bool PeerConnection::Initialize(
   media_controller_.reset(factory_->CreateMediaController(media_config));
 
   remote_stream_factory_.reset(new RemoteMediaStreamFactory(
-      factory_->signaling_thread(), media_controller_->channel_manager()));
+      factory_->signaling_thread(), factory_->worker_thread()));
 
   session_.reset(
       new WebRtcSession(media_controller_.get(), factory_->signaling_thread(),
