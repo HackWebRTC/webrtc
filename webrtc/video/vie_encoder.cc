@@ -240,7 +240,8 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
          ++i) {
       stats_proxy_->OnInactiveSsrc(ssrcs_[i]);
     }
-    VideoEncoderConfig::ContentType content_type = kRealtimeVideo;
+    VideoEncoderConfig::ContentType content_type =
+        VideoEncoderConfig::ContentType::kRealtimeVideo;
     switch (video_codec.mode) {
       case kRealtimeVideo:
         content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
