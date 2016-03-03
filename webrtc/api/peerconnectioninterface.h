@@ -242,6 +242,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     ContinualGatheringPolicy continual_gathering_policy;
     std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
     bool disable_prerenderer_smoothing;
+    bool prioritize_most_likely_ice_candidate_pairs;
     RTCConfiguration()
         : type(kAll),
           bundle_policy(kBundlePolicyBalanced),
@@ -252,7 +253,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
           ice_connection_receiving_timeout(kUndefined),
           ice_backup_candidate_pair_ping_interval(kUndefined),
           continual_gathering_policy(GATHER_ONCE),
-          disable_prerenderer_smoothing(false) {}
+          disable_prerenderer_smoothing(false),
+          prioritize_most_likely_ice_candidate_pairs(false) {}
   };
 
   struct RTCOfferAnswerOptions {

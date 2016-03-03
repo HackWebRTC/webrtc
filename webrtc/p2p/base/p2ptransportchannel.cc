@@ -31,6 +31,15 @@ enum { MSG_SORT = 1, MSG_CHECK_AND_PING };
 // The minimum improvement in RTT that justifies a switch.
 static const double kMinImprovement = 10;
 
+bool IsRelayRelay(cricket::Connection* conn) {
+  return conn->local_candidate().type() == cricket::RELAY_PORT_TYPE &&
+         conn->remote_candidate().type() == cricket::RELAY_PORT_TYPE;
+}
+
+bool IsUdp(cricket::Connection* conn) {
+  return conn->local_candidate().relay_protocol() == cricket::UDP_PROTOCOL_NAME;
+}
+
 cricket::PortInterface::CandidateOrigin GetOrigin(cricket::PortInterface* port,
                                          cricket::PortInterface* origin_port) {
   if (!origin_port)
@@ -237,8 +246,11 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       tiebreaker_(0),
       gathering_state_(kIceGatheringNew),
       check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
-      receiving_timeout_(MIN_CHECK_RECEIVING_DELAY * 50),
-      backup_connection_ping_interval_(0) {
+      config_(MIN_CHECK_RECEIVING_DELAY * 50 /* receiving_timeout */,
+              0 /* backup_connection_ping_interval */,
+              false /* gather_continually */,
+              false /* prioritize_most_likely_candidate_pairs */,
+              MAX_CURRENT_STRONG_DELAY /* most_strong_delay */) {
   uint32_t weak_ping_delay = ::strtoul(
       webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
       nullptr, 10);
@@ -277,8 +289,9 @@ void P2PTransportChannel::AddAllocatorSession(PortAllocatorSession* session) {
 
 void P2PTransportChannel::AddConnection(Connection* connection) {
   connections_.push_back(connection);
+  unpinged_connections_.insert(connection);
   connection->set_remote_ice_mode(remote_ice_mode_);
-  connection->set_receiving_timeout(receiving_timeout_);
+  connection->set_receiving_timeout(config_.receiving_timeout_ms);
   connection->SignalReadPacket.connect(
       this, &P2PTransportChannel::OnReadPacket);
   connection->SignalReadyToSend.connect(
@@ -388,29 +401,45 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
 }
 
 void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
-  gather_continually_ = config.gather_continually;
-  LOG(LS_INFO) << "Set gather_continually to " << gather_continually_;
+  config_.gather_continually = config.gather_continually;
+  LOG(LS_INFO) << "Set gather_continually to " << config_.gather_continually;
 
   if (config.backup_connection_ping_interval >= 0 &&
-      backup_connection_ping_interval_ !=
+      config_.backup_connection_ping_interval !=
           config.backup_connection_ping_interval) {
-    backup_connection_ping_interval_ = config.backup_connection_ping_interval;
+    config_.backup_connection_ping_interval =
+        config.backup_connection_ping_interval;
     LOG(LS_INFO) << "Set backup connection ping interval to "
-                 << backup_connection_ping_interval_ << " milliseconds.";
+                 << config_.backup_connection_ping_interval << " milliseconds.";
   }
 
   if (config.receiving_timeout_ms >= 0 &&
-      receiving_timeout_ != config.receiving_timeout_ms) {
-    receiving_timeout_ = config.receiving_timeout_ms;
+      config_.receiving_timeout_ms != config.receiving_timeout_ms) {
+    config_.receiving_timeout_ms = config.receiving_timeout_ms;
     check_receiving_delay_ =
-        std::max(MIN_CHECK_RECEIVING_DELAY, receiving_timeout_ / 10);
+        std::max(MIN_CHECK_RECEIVING_DELAY, config_.receiving_timeout_ms / 10);
 
     for (Connection* connection : connections_) {
-      connection->set_receiving_timeout(receiving_timeout_);
+      connection->set_receiving_timeout(config_.receiving_timeout_ms);
     }
-    LOG(LS_INFO) << "Set ICE receiving timeout to " << receiving_timeout_
-                 << " milliseconds";
+    LOG(LS_INFO) << "Set ICE receiving timeout to "
+                 << config_.receiving_timeout_ms << " milliseconds";
   }
+
+  config_.prioritize_most_likely_candidate_pairs =
+      config.prioritize_most_likely_candidate_pairs;
+  LOG(LS_INFO) << "Set ping most likely connection to "
+               << config_.prioritize_most_likely_candidate_pairs;
+
+  if (config.max_strong_delay >= 0 &&
+      config_.max_strong_delay != config.max_strong_delay) {
+    config_.max_strong_delay = config.max_strong_delay;
+    LOG(LS_INFO) << "Set max strong delay to " << config_.max_strong_delay;
+  }
+}
+
+const IceConfig& P2PTransportChannel::config() const {
+  return config_;
 }
 
 // Go into the state of processing candidates, and running in general
@@ -629,8 +658,8 @@ void P2PTransportChannel::OnUnknownAddress(
     }
   }
 
-  Connection* connection = port->CreateConnection(
-      remote_candidate, cricket::PortInterface::ORIGIN_THIS_PORT);
+  Connection* connection =
+      port->CreateConnection(remote_candidate, PortInterface::ORIGIN_THIS_PORT);
   if (!connection) {
     ASSERT(false);
     port->SendBindingErrorResponse(stun_msg, address, STUN_ERROR_SERVER_ERROR,
@@ -807,7 +836,7 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
 
     // Don't create connection if this is a candidate we received in a
     // message and we are not allowed to make outgoing connections.
-    if (origin == cricket::PortInterface::ORIGIN_MESSAGE && incoming_only_)
+    if (origin == PortInterface::ORIGIN_MESSAGE && incoming_only_)
       return false;
 
     connection = port->CreateConnection(remote_candidate, origin);
@@ -823,8 +852,7 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
   return true;
 }
 
-bool P2PTransportChannel::FindConnection(
-    cricket::Connection* connection) const {
+bool P2PTransportChannel::FindConnection(Connection* connection) const {
   std::vector<Connection*>::const_iterator citer =
       std::find(connections_.begin(), connections_.end(), connection);
   return citer != connections_.end();
@@ -1154,7 +1182,7 @@ void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
     }
     // If gathering continually, keep the last session running so that it
     // will gather candidates if the networks change.
-    if (gather_continually_ && session == allocator_sessions_.back()) {
+    if (config_.gather_continually && session == allocator_sessions_.back()) {
       session->ClearGettingPorts();
       break;
     }
@@ -1223,6 +1251,7 @@ void P2PTransportChannel::OnCheckAndPing() {
     Connection* conn = FindNextPingableConnection();
     if (conn) {
       PingConnection(conn);
+      MarkConnectionPinged(conn);
     }
   }
   int check_delay = std::min(ping_delay, check_receiving_delay_);
@@ -1264,7 +1293,7 @@ bool P2PTransportChannel::IsPingable(Connection* conn, uint32_t now) {
   // or not, but backup connections are pinged at a slower rate.
   if (IsBackupConnection(conn)) {
     return (now >= conn->last_ping_response_received() +
-                       backup_connection_ping_interval_);
+                       config_.backup_connection_ping_interval);
   }
   return conn->active();
 }
@@ -1277,42 +1306,21 @@ bool P2PTransportChannel::IsPingable(Connection* conn, uint32_t now) {
 // target to become writable instead. See the big comment in CompareConnections.
 Connection* P2PTransportChannel::FindNextPingableConnection() {
   uint32_t now = rtc::Time();
+  Connection* conn_to_ping = nullptr;
   if (best_connection_ && best_connection_->connected() &&
       best_connection_->writable() &&
-      (best_connection_->last_ping_sent() + MAX_CURRENT_STRONG_DELAY <= now)) {
-    return best_connection_;
+      (best_connection_->last_ping_sent() + config_.max_strong_delay <= now)) {
+    conn_to_ping = best_connection_;
+  } else {
+    conn_to_ping = FindConnectionToPing(now);
   }
+  return conn_to_ping;
+}
 
-  // First, find "triggered checks".  We ping first those connections
-  // that have received a ping but have not sent a ping since receiving
-  // it (last_received_ping > last_sent_ping).  But we shouldn't do
-  // triggered checks if the connection is already writable.
-  Connection* oldest_needing_triggered_check = nullptr;
-  Connection* oldest = nullptr;
-  for (Connection* conn : connections_) {
-    if (!IsPingable(conn, now)) {
-      continue;
-    }
-    bool needs_triggered_check =
-        (!conn->writable() &&
-         conn->last_ping_received() > conn->last_ping_sent());
-    if (needs_triggered_check &&
-        (!oldest_needing_triggered_check ||
-         (conn->last_ping_received() <
-          oldest_needing_triggered_check->last_ping_received()))) {
-      oldest_needing_triggered_check = conn;
-    }
-    if (!oldest || (conn->last_ping_sent() < oldest->last_ping_sent())) {
-      oldest = conn;
-    }
+void P2PTransportChannel::MarkConnectionPinged(Connection* conn) {
+  if (conn && pinged_connections_.insert(conn).second) {
+    unpinged_connections_.erase(conn);
   }
-
-  if (oldest_needing_triggered_check) {
-    LOG(LS_INFO) << "Selecting connection for triggered check: " <<
-        oldest_needing_triggered_check->ToString();
-    return oldest_needing_triggered_check;
-  }
-  return oldest;
 }
 
 // Apart from sending ping from |conn| this method also updates
@@ -1382,6 +1390,8 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   std::vector<Connection*>::iterator iter =
       std::find(connections_.begin(), connections_.end(), connection);
   ASSERT(iter != connections_.end());
+  pinged_connections_.erase(*iter);
+  unpinged_connections_.erase(*iter);
   connections_.erase(iter);
 
   LOG_J(LS_INFO, this) << "Removed connection ("
@@ -1426,7 +1436,7 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
 void P2PTransportChannel::OnPortNetworkInactive(PortInterface* port) {
   // If it does not gather continually, the port will be removed from the list
   // when ICE restarts.
-  if (!gather_continually_) {
+  if (!config_.gather_continually) {
     return;
   }
   auto it = std::find(ports_.begin(), ports_.end(), port);
@@ -1472,6 +1482,123 @@ void P2PTransportChannel::OnReadyToSend(Connection* connection) {
   if (connection == best_connection_ && writable()) {
     SignalReadyToSend(this);
   }
+}
+
+// Find "triggered checks".  We ping first those connections that have
+// received a ping but have not sent a ping since receiving it
+// (last_received_ping > last_sent_ping).  But we shouldn't do
+// triggered checks if the connection is already writable.
+Connection* P2PTransportChannel::FindOldestConnectionNeedingTriggeredCheck(
+    uint32_t now) {
+  Connection* oldest_needing_triggered_check = nullptr;
+  for (auto conn : connections_) {
+    if (!IsPingable(conn, now)) {
+      continue;
+    }
+    bool needs_triggered_check =
+        (!conn->writable() &&
+         conn->last_ping_received() > conn->last_ping_sent());
+    if (needs_triggered_check &&
+        (!oldest_needing_triggered_check ||
+         (conn->last_ping_received() <
+          oldest_needing_triggered_check->last_ping_received()))) {
+      oldest_needing_triggered_check = conn;
+    }
+  }
+
+  if (oldest_needing_triggered_check) {
+    LOG(LS_INFO) << "Selecting connection for triggered check: "
+                 << oldest_needing_triggered_check->ToString();
+  }
+  return oldest_needing_triggered_check;
+}
+
+Connection* P2PTransportChannel::FindConnectionToPing(uint32_t now) {
+  RTC_CHECK(connections_.size() ==
+            pinged_connections_.size() + unpinged_connections_.size());
+
+  // If there is nothing pingable in the |unpinged_connections_|, copy
+  // over from |pinged_connections_|. We do this here such that the
+  // new connection will take precedence.
+  if (std::find_if(unpinged_connections_.begin(), unpinged_connections_.end(),
+                   [this, now](Connection* conn) {
+                     return this->IsPingable(conn, now);
+                   }) == unpinged_connections_.end()) {
+    unpinged_connections_.insert(pinged_connections_.begin(),
+                                 pinged_connections_.end());
+    pinged_connections_.clear();
+  }
+
+  Connection* conn_to_ping = FindOldestConnectionNeedingTriggeredCheck(now);
+  if (conn_to_ping) {
+    return conn_to_ping;
+  }
+
+  for (Connection* conn : unpinged_connections_) {
+    if (!IsPingable(conn, now)) {
+      continue;
+    }
+    if (!conn_to_ping ||
+        SelectMostPingableConnection(conn_to_ping, conn) == conn) {
+      conn_to_ping = conn;
+    }
+  }
+  return conn_to_ping;
+}
+
+Connection* P2PTransportChannel::MostLikelyToWork(Connection* conn1,
+                                                  Connection* conn2) {
+  bool rr1 = IsRelayRelay(conn1);
+  bool rr2 = IsRelayRelay(conn2);
+  if (rr1 && !rr2) {
+    return conn1;
+  } else if (rr2 && !rr1) {
+    return conn2;
+  } else if (rr1 && rr2) {
+    bool udp1 = IsUdp(conn1);
+    bool udp2 = IsUdp(conn2);
+    if (udp1 && !udp2) {
+      return conn1;
+    } else if (udp2 && udp1) {
+      return conn2;
+    }
+  }
+  return nullptr;
+}
+
+Connection* P2PTransportChannel::LeastRecentlyPinged(Connection* conn1,
+                                                     Connection* conn2) {
+  if (conn1->last_ping_sent() < conn2->last_ping_sent()) {
+    return conn1;
+  }
+  if (conn1->last_ping_sent() > conn2->last_ping_sent()) {
+    return conn2;
+  }
+  return nullptr;
+}
+
+Connection* P2PTransportChannel::SelectMostPingableConnection(
+    Connection* conn1,
+    Connection* conn2) {
+  RTC_DCHECK(conn1 != conn2);
+  if (config_.prioritize_most_likely_candidate_pairs) {
+    Connection* most_likely_to_work_conn = MostLikelyToWork(conn1, conn2);
+    if (most_likely_to_work_conn) {
+      return most_likely_to_work_conn;
+    }
+  }
+
+  Connection* least_recently_pinged_conn = LeastRecentlyPinged(conn1, conn2);
+  if (least_recently_pinged_conn) {
+    return least_recently_pinged_conn;
+  }
+
+  // During the initial state when nothing has been pinged yet, return the first
+  // one in the ordered |connections_|.
+  return *(std::find_if(connections_.begin(), connections_.end(),
+                        [conn1, conn2](Connection* conn) {
+                          return conn == conn1 || conn == conn2;
+                        }));
 }
 
 }  // namespace cricket

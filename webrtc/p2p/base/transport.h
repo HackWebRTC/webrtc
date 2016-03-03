@@ -147,6 +147,28 @@ struct IceConfig {
   int backup_connection_ping_interval = -1;
   // If true, the most recent port allocator session will keep on running.
   bool gather_continually = false;
+
+  // Whether we should prioritize Relay/Relay candidate when nothing
+  // is writable yet.
+  bool prioritize_most_likely_candidate_pairs = false;
+
+  // If the current best connection is both writable and receiving,
+  // then we will also try hard to make sure it is pinged at this rate
+  // (Default value is a little less than 2 * STRONG_PING_DELAY).
+  int max_strong_delay = -1;
+
+  IceConfig() {}
+  IceConfig(int receiving_timeout,
+            int backup_connection_ping_interval,
+            bool gather_continually,
+            bool prioritize_most_likely_candidate_pairs,
+            int max_strong_delay)
+      : receiving_timeout_ms(receiving_timeout),
+        backup_connection_ping_interval(backup_connection_ping_interval),
+        gather_continually(gather_continually),
+        prioritize_most_likely_candidate_pairs(
+            prioritize_most_likely_candidate_pairs),
+        max_strong_delay(max_strong_delay) {}
 };
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);

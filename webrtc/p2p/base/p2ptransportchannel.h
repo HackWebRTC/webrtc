@@ -21,6 +21,7 @@
 #define WEBRTC_P2P_BASE_P2PTRANSPORTCHANNEL_H_
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include "webrtc/p2p/base/candidate.h"
@@ -94,6 +95,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Sets the receiving timeout and gather_continually.
   // This also sets the check_receiving_delay proportionally.
   void SetIceConfig(const IceConfig& config) override;
+  const IceConfig& config() const;
 
   // From TransportChannel:
   int SendPacket(const char* data,
@@ -164,7 +166,7 @@ class P2PTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  int receiving_timeout() const { return receiving_timeout_; }
+  int receiving_timeout() const { return config_.receiving_timeout_ms; }
   int check_receiving_delay() const { return check_receiving_delay_; }
 
   // Helper method used only in unittest.
@@ -172,6 +174,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // Public for unit tests.
   Connection* FindNextPingableConnection();
+  void MarkConnectionPinged(Connection* conn);
 
   // Public for unit tests.
   const std::vector<Connection*>& connections() const { return connections_; }
@@ -250,6 +253,18 @@ class P2PTransportChannel : public TransportChannelImpl,
   Connection* best_nominated_connection() const;
   bool IsBackupConnection(Connection* conn) const;
 
+  Connection* FindConnectionToPing(uint32_t now);
+  Connection* FindOldestConnectionNeedingTriggeredCheck(uint32_t now);
+  // Between |conn1| and |conn2|, this function returns the one which should
+  // be pinged first.
+  Connection* SelectMostPingableConnection(Connection* conn1,
+                                           Connection* conn2);
+  // Select the connection which is Relay/Relay. If both of them are,
+  // UDP relay protocol takes precedence.
+  Connection* MostLikelyToWork(Connection* conn1, Connection* conn2);
+  // Compare the last_ping_sent time and return the one least recently pinged.
+  Connection* LeastRecentlyPinged(Connection* conn1, Connection* conn2);
+
   // Returns the latest remote ICE parameters or nullptr if there are no remote
   // ICE parameters yet.
   IceParameters* remote_ice() {
@@ -274,8 +289,18 @@ class P2PTransportChannel : public TransportChannelImpl,
   int error_;
   std::vector<PortAllocatorSession*> allocator_sessions_;
   std::vector<PortInterface *> ports_;
+
+  // |connections_| is a sorted list with the first one always be the
+  // |best_connection_| when it's not nullptr. The combination of
+  // |pinged_connections_| and |unpinged_connections_| has the same
+  // connections as |connections_|. These 2 sets maintain whether a
+  // connection should be pinged next or not.
   std::vector<Connection *> connections_;
+  std::set<Connection*> pinged_connections_;
+  std::set<Connection*> unpinged_connections_;
+
   Connection* best_connection_;
+
   // Connection selected by the controlling agent. This should be used only
   // at controlled side when protocol type is RFC5245.
   Connection* pending_best_connection_;
@@ -293,12 +318,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   IceGatheringState gathering_state_;
 
   int check_receiving_delay_;
-  int receiving_timeout_;
-  int backup_connection_ping_interval_;
   uint32_t last_ping_sent_ms_ = 0;
-  bool gather_continually_ = false;
   int weak_ping_delay_ = WEAK_PING_DELAY;
   TransportChannelState state_ = TransportChannelState::STATE_INIT;
+  IceConfig config_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };
