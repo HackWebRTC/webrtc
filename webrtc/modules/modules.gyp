@@ -436,6 +436,9 @@
               'sources': [
                 'audio_processing/audio_processing_impl_locking_unittest.cc',
                 'audio_processing/audio_processing_impl_unittest.cc',
+                'audio_processing/high_pass_filter_bitexactness_unittest.cc',
+                'audio_processing/test/audio_buffer_tools.cc',
+                'audio_processing/test/audio_buffer_tools.h',
                 'audio_processing/test/audio_processing_unittest.cc',
                 'audio_processing/test/debug_dump_test.cc',
                 'audio_processing/test/test_utils.h',
