@@ -116,6 +116,8 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
                                   audio->split_bands_const_f(j)[kBand0To8kHz],
                                   (audio->split_bands_const_f(j)[kBand0To8kHz] +
                                    audio->num_frames_per_band()));
+
+      handle_index++;
     }
   }
 
