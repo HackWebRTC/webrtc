@@ -25,9 +25,7 @@ extern "C" {
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 }
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
-extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_resampler.h"
-}
 #include "webrtc/modules/audio_processing/aec/echo_cancellation_internal.h"
 #include "webrtc/typedefs.h"
 

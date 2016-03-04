@@ -43,7 +43,7 @@ void* WebRtcAec_CreateResampler() {
 }
 
 int WebRtcAec_InitResampler(void* resampInst, int deviceSampleRateHz) {
-  AecResampler* obj = (AecResampler*)resampInst;
+  AecResampler* obj = static_cast<AecResampler*>(resampInst);
   memset(obj->buffer, 0, sizeof(obj->buffer));
   obj->position = 0.0;
 
@@ -56,7 +56,7 @@ int WebRtcAec_InitResampler(void* resampInst, int deviceSampleRateHz) {
 }
 
 void WebRtcAec_FreeResampler(void* resampInst) {
-  AecResampler* obj = (AecResampler*)resampInst;
+  AecResampler* obj = static_cast<AecResampler*>(resampInst);
   free(obj);
 }
 
@@ -66,7 +66,7 @@ void WebRtcAec_ResampleLinear(void* resampInst,
                               float skew,
                               float* outspeech,
                               size_t* size_out) {
-  AecResampler* obj = (AecResampler*)resampInst;
+  AecResampler* obj = static_cast<AecResampler*>(resampInst);
 
   float* y;
   float be, tnew;
@@ -98,7 +98,7 @@ void WebRtcAec_ResampleLinear(void* resampInst,
     mm++;
 
     tnew = be * mm + obj->position;
-    tn = (int)tnew;
+    tn = static_cast<int>(tnew);
   }
 
   *size_out = mm;
@@ -110,7 +110,7 @@ void WebRtcAec_ResampleLinear(void* resampInst,
 }
 
 int WebRtcAec_GetSkew(void* resampInst, int rawSkew, float* skewEst) {
-  AecResampler* obj = (AecResampler*)resampInst;
+  AecResampler* obj = static_cast<AecResampler*>(resampInst);
   int err = 0;
 
   if (obj->skewDataIndex < kEstimateLengthFrames) {
@@ -132,8 +132,8 @@ int EstimateSkew(const int* rawSkew,
                  int size,
                  int deviceSampleRateHz,
                  float* skewEst) {
-  const int absLimitOuter = (int)(0.04f * deviceSampleRateHz);
-  const int absLimitInner = (int)(0.0025f * deviceSampleRateHz);
+  const int absLimitOuter = static_cast<int>(0.04f * deviceSampleRateHz);
+  const int absLimitInner = static_cast<int>(0.0025f * deviceSampleRateHz);
   int i = 0;
   int n = 0;
   float rawAvg = 0;
@@ -172,8 +172,8 @@ int EstimateSkew(const int* rawSkew,
   }
   assert(n > 0);
   rawAbsDev /= n;
-  upperLimit = (int)(rawAvg + 5 * rawAbsDev + 1);  // +1 for ceiling.
-  lowerLimit = (int)(rawAvg - 5 * rawAbsDev - 1);  // -1 for floor.
+  upperLimit = static_cast<int>(rawAvg + 5 * rawAbsDev + 1);  // +1 for ceiling.
+  lowerLimit = static_cast<int>(rawAvg - 5 * rawAbsDev - 1);  // -1 for floor.
 
   n = 0;
   for (i = 0; i < size; i++) {
