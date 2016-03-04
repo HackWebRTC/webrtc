@@ -20,8 +20,14 @@ VideoTrack::VideoTrack(const std::string& label,
                        VideoSourceInterface* video_source)
     : MediaStreamTrack<VideoTrackInterface>(label),
       video_source_(video_source) {
+  // TODO(perkj): Sinks should register directly to the source so that
+  // VideoSinkWants can be applied correctly per sink. For now, |renderers_|
+  // must be able to apply rotation. Note that this is only actual renderers,
+  // not sinks that connect directly to cricket::VideoCapture.
+  rtc::VideoSinkWants wants;
+  wants.rotation_applied = false;
   if (video_source_)
-    video_source_->AddOrUpdateSink(&renderers_, rtc::VideoSinkWants());
+    video_source_->AddOrUpdateSink(&renderers_, wants);
 }
 
 VideoTrack::~VideoTrack() {
