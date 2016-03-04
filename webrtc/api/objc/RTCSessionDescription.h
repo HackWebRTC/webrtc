@@ -36,6 +36,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithType:(RTCSdpType)type sdp:(NSString *)sdp
     NS_DESIGNATED_INITIALIZER;
 
++ (NSString *)stringForType:(RTCSdpType)type;
+
++ (RTCSdpType)typeForString:(NSString *)string;
+
 @end
 
 NS_ASSUME_NONNULL_END

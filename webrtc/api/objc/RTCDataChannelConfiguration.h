@@ -15,24 +15,24 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RTCDataChannelConfiguration : NSObject
 
 /** Set to YES if ordered delivery is required. */
-@property(nonatomic) BOOL isOrdered;
+@property(nonatomic, assign) BOOL isOrdered;
 
 /**
  * Max period in milliseconds in which retransmissions will be sent. After this
  * time, no more retransmissions will be sent. -1 if unset.
  */
-@property(nonatomic) int maxPacketLifeTime;
+@property(nonatomic, assign) int maxPacketLifeTime;
 
 /** The max number of retransmissions. -1 if unset. */
-@property(nonatomic) int maxRetransmits;
+@property(nonatomic, assign) int maxRetransmits;
 
 /** Set to YES if the channel has been externally negotiated and we do not send
  * an in-band signalling in the form of an "open" message.
  */
-@property(nonatomic) BOOL isNegotiated;
+@property(nonatomic, assign) BOOL isNegotiated;
 
 /** The stream id, or SID, for SCTP data channels. -1 if unset. */
-@property(nonatomic) int streamId;
+@property(nonatomic, assign) int streamId;
 
 /** Set by the application and opaque to the WebRTC implementation. */
 @property(nonatomic) NSString *protocol;

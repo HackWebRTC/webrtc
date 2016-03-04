@@ -181,7 +181,7 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
  *  statistics are gathered for all tracks.
  */
 - (void)statsForTrack:
-    (nonnull RTCMediaStreamTrack *)mediaStreamTrack
+    (nullable RTCMediaStreamTrack *)mediaStreamTrack
      statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel
     completionHandler:
     (nullable void (^)(NSArray * _Nonnull stats))completionHandler;

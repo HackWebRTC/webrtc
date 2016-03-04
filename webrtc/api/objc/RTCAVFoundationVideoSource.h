@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RTCAVFoundationVideoSource : RTCVideoSource
 
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
-                    constraints:(RTCMediaConstraints *)constraints;
+                    constraints:(nullable RTCMediaConstraints *)constraints;
 
 /** Switches the camera being used (either front or back). */
 @property(nonatomic, assign) BOOL useBackCamera;

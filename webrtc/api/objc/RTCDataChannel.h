@@ -93,7 +93,7 @@ typedef NS_ENUM(NSInteger, RTCDataChannelState) {
 @property(nonatomic, readonly) BOOL isNegotiated;
 
 /** The identifier for this data channel. */
-@property(nonatomic, readonly) int id;
+@property(nonatomic, readonly) int channelId;
 
 /** The state of the data channel. */
 @property(nonatomic, readonly) RTCDataChannelState readyState;

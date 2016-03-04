@@ -50,7 +50,7 @@
 
 #pragma mark - Private
 
-- (webrtc::PeerConnectionInterface::IceServer)iceServer {
+- (webrtc::PeerConnectionInterface::IceServer)nativeServer {
   __block webrtc::PeerConnectionInterface::IceServer iceServer;
 
   iceServer.username = [NSString stdStringForString:_username];

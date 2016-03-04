@@ -33,21 +33,19 @@
   rtc::scoped_refptr<webrtc::VideoTrackInterface> track =
       factory.nativeFactory->CreateVideoTrack(nativeId,
                                               source.nativeVideoSource);
-  return [self initWithNativeTrack:track type:RTCMediaStreamTrackTypeVideo];
+  if ([self initWithNativeTrack:track type:RTCMediaStreamTrackTypeVideo]) {
+    _source = source;
+  }
+  return self;
 }
 
-- (instancetype)initWithNativeMediaTrack:
+- (instancetype)initWithNativeTrack:
     (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeMediaTrack
-                                    type:(RTCMediaStreamTrackType)type {
+                               type:(RTCMediaStreamTrackType)type {
   NSParameterAssert(nativeMediaTrack);
   NSParameterAssert(type == RTCMediaStreamTrackTypeVideo);
   if (self = [super initWithNativeTrack:nativeMediaTrack type:type]) {
     _adapters = [NSMutableArray array];
-    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
-        self.nativeVideoTrack->GetSource();
-    if (source) {
-      _source = [[RTCVideoSource alloc] initWithNativeVideoSource:source.get()];
-    }
   }
   return self;
 }
@@ -56,6 +54,17 @@
   for (RTCVideoRendererAdapter *adapter in _adapters) {
     self.nativeVideoTrack->RemoveRenderer(adapter.nativeVideoRenderer);
   }
+}
+
+- (RTCVideoSource *)source {
+  if (!_source) {
+    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
+        self.nativeVideoTrack->GetSource();
+    if (source) {
+      _source = [[RTCVideoSource alloc] initWithNativeVideoSource:source.get()];
+    }
+  }
+  return _source;
 }
 
 - (void)addRenderer:(id<RTCVideoRenderer>)renderer {
@@ -74,7 +83,6 @@
 }
 
 - (void)removeRenderer:(id<RTCVideoRenderer>)renderer {
-  RTCVideoRendererAdapter *adapter;
   __block NSUInteger indexToRemove = NSNotFound;
   [_adapters enumerateObjectsUsingBlock:^(RTCVideoRendererAdapter *adapter,
                                           NSUInteger idx,
@@ -87,7 +95,9 @@
   if (indexToRemove == NSNotFound) {
     return;
   }
-  self.nativeVideoTrack->RemoveRenderer(adapter.nativeVideoRenderer);
+  RTCVideoRendererAdapter *adapterToRemove =
+      [_adapters objectAtIndex:indexToRemove];
+  self.nativeVideoTrack->RemoveRenderer(adapterToRemove.nativeVideoRenderer);
   [_adapters removeObjectAtIndex:indexToRemove];
 }
 

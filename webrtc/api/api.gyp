@@ -192,6 +192,13 @@
             'objc/RTCVideoTrack.h',
             'objc/RTCVideoTrack.mm',
           ],
+          # TODO(hjon): Make this compile without linking to libstdc++
+          # See https://bugs.chromium.org/p/webrtc/issues/detail?id=5593
+          'link_settings': {
+            'libraries': [
+              '-lstdc++',
+            ],
+          },
           'conditions': [
             ['OS=="ios"', {
               'sources': [

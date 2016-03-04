@@ -70,7 +70,7 @@
   webrtc::PeerConnectionInterface::RTCConfiguration nativeConfig;
 
   for (RTCIceServer *iceServer in _iceServers) {
-    nativeConfig.servers.push_back(iceServer.iceServer);
+    nativeConfig.servers.push_back(iceServer.nativeServer);
   }
   nativeConfig.type =
       [[self class] nativeTransportsTypeForTransportPolicy:_iceTransportPolicy];

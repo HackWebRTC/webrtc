@@ -21,6 +21,16 @@
 @synthesize type = _type;
 @synthesize sdp = _sdp;
 
++ (NSString *)stringForType:(RTCSdpType)type {
+  std::string string = [[self class] stdStringForType:type];
+  return [NSString stringForStdString:string];
+}
+
++ (RTCSdpType)typeForString:(NSString *)string {
+  std::string typeString = string.stdString;
+  return [[self class] typeForStdString:typeString];
+}
+
 - (instancetype)initWithType:(RTCSdpType)type sdp:(NSString *)sdp {
   NSParameterAssert(sdp.length);
   if (self = [super init]) {
@@ -31,8 +41,8 @@
 }
 
 - (NSString *)description {
-  return [NSString stringWithFormat:@"RTCSessionDescription:\n%s\n%@",
-                                    [[self class] stringForType:_type].c_str(),
+  return [NSString stringWithFormat:@"RTCSessionDescription:\n%@\n%@",
+                                    [[self class] stringForType:_type],
                                     _sdp];
 }
 
@@ -42,7 +52,7 @@
   webrtc::SdpParseError error;
 
   webrtc::SessionDescriptionInterface *description =
-      webrtc::CreateSessionDescription([[self class] stringForType:_type],
+      webrtc::CreateSessionDescription([[self class] stdStringForType:_type],
                                        _sdp.stdString,
                                        &error);
 
@@ -60,13 +70,13 @@
   NSParameterAssert(nativeDescription);
   std::string sdp;
   nativeDescription->ToString(&sdp);
-  RTCSdpType type = [[self class] typeForString:nativeDescription->type()];
+  RTCSdpType type = [[self class] typeForStdString:nativeDescription->type()];
 
   return [self initWithType:type
                         sdp:[NSString stringForStdString:sdp]];
 }
 
-+ (std::string)stringForType:(RTCSdpType)type {
++ (std::string)stdStringForType:(RTCSdpType)type {
   switch (type) {
     case RTCSdpTypeOffer:
       return webrtc::SessionDescriptionInterface::kOffer;
@@ -77,7 +87,7 @@
   }
 }
 
-+ (RTCSdpType)typeForString:(const std::string &)string {
++ (RTCSdpType)typeForStdString:(const std::string &)string {
   if (string == webrtc::SessionDescriptionInterface::kOffer) {
     return RTCSdpTypeOffer;
   } else if (string == webrtc::SessionDescriptionInterface::kPrAnswer) {

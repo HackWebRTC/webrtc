@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  * This is needed to pass to the underlying C++ APIs.
  */
 @property(nonatomic, readonly)
-    webrtc::PeerConnectionInterface::IceServer iceServer;
+    webrtc::PeerConnectionInterface::IceServer nativeServer;
 
 /** Initialize an RTCIceServer from a native IceServer. */
 - (instancetype)initWithNativeServer:

@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setSize:(CGSize)size;
 
 /** The frame to be displayed. */
-- (void)renderFrame:(RTCVideoFrame *)frame;
+- (void)renderFrame:(nullable RTCVideoFrame *)frame;
 
 @end
 

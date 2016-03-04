@@ -10,9 +10,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 /**
  * Initialize and clean up the SSL library. Failure is fatal. These call the
  * corresponding functions in webrtc/base/ssladapter.h.
  */
-BOOL RTCInitializeSSL();
-BOOL RTCCleanupSSL();
+RTC_EXPORT BOOL RTCInitializeSSL();
+RTC_EXPORT BOOL RTCCleanupSSL();

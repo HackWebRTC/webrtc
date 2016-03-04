@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSString *trackId;
 
 /** The enabled state of the track. */
-@property(nonatomic) BOOL isEnabled;
+@property(nonatomic, assign) BOOL isEnabled;
 
 /** The state of the track. */
 @property(nonatomic, readonly) RTCMediaStreamTrackState readyState;

@@ -36,7 +36,7 @@
       description.nativeDescription;
 
   EXPECT_EQ(RTCSdpTypeAnswer,
-      [RTCSessionDescription typeForString:nativeDescription->type()]);
+      [RTCSessionDescription typeForStdString:nativeDescription->type()]);
 
   std::string sdp;
   nativeDescription->ToString(&sdp);
@@ -55,7 +55,7 @@
       [[RTCSessionDescription alloc] initWithNativeDescription:
       nativeDescription];
   EXPECT_EQ(webrtc::SessionDescriptionInterface::kAnswer,
-      [RTCSessionDescription stringForType:description.type]);
+      [RTCSessionDescription stdStringForType:description.type]);
   EXPECT_TRUE([[self sdp] isEqualToString:description.sdp]);
 }
 

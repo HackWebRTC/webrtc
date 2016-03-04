@@ -123,7 +123,7 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
   return _nativDataChannel->negotiated();
 }
 
-- (int)id {
+- (int)channelId {
   return _nativDataChannel->id();
 }
 
@@ -161,7 +161,7 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
 
 - (NSString *)description {
   return [NSString stringWithFormat:@"RTCDataChannel:\n%ld\n%@\n%@",
-                                    (long)self.id,
+                                    (long)self.channelId,
                                     self.label,
                                     [[self class]
                                         stringForState:self.readyState]];

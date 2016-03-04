@@ -199,11 +199,11 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
     _observer.reset(new webrtc::PeerConnectionDelegateAdapter(self));
     webrtc::PeerConnectionInterface::RTCConfiguration config =
         configuration.nativeConfiguration;
-    webrtc::MediaConstraints *nativeConstraints =
-        constraints.nativeConstraints.get();
+    rtc::scoped_ptr<webrtc::MediaConstraints> nativeConstraints =
+        constraints.nativeConstraints;
     _peerConnection =
         factory.nativeFactory->CreatePeerConnection(config,
-                                                    nativeConstraints,
+                                                    nativeConstraints.get(),
                                                     nullptr,
                                                     nullptr,
                                                     _observer.get());
@@ -259,7 +259,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
 }
 
 - (void)addStream:(RTCMediaStream *)stream {
-  if (_peerConnection->AddStream(stream.nativeMediaStream)) {
+  if (!_peerConnection->AddStream(stream.nativeMediaStream)) {
     RTCLogError(@"Failed to add stream: %@", stream);
     return;
   }
