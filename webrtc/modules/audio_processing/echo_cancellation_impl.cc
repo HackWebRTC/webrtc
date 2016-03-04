@@ -421,6 +421,14 @@ int EchoCancellationImpl::Initialize() {
   return AudioProcessing::kNoError;
 }
 
+int EchoCancellationImpl::GetSystemDelayInSamples() const {
+  rtc::CritScope cs(crit_capture_);
+  RTC_DCHECK(is_component_enabled());
+  // Report the delay for the first AEC component.
+  return WebRtcAec_system_delay(
+      WebRtcAec_aec_core(static_cast<Handle*>(handle(0))));
+}
+
 void EchoCancellationImpl::AllocateRenderQueue() {
   const size_t new_render_queue_element_max_size = std::max<size_t>(
       static_cast<size_t>(1),

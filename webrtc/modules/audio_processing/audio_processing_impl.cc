@@ -1288,10 +1288,12 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
     capture_.last_stream_delay_ms = capture_nonlocked_.stream_delay_ms;
 
     // Detect a jump in AEC system delay and log the difference.
-    const int frames_per_ms =
+    const int samples_per_ms =
         rtc::CheckedDivExact(capture_nonlocked_.split_rate, 1000);
+    RTC_DCHECK_LT(0, samples_per_ms);
     const int aec_system_delay_ms =
-        WebRtcAec_system_delay(echo_cancellation()->aec_core()) / frames_per_ms;
+        public_submodules_->echo_cancellation->GetSystemDelayInSamples() /
+        samples_per_ms;
     const int diff_aec_system_delay_ms =
         aec_system_delay_ms - capture_.last_aec_system_delay_ms;
     if (diff_aec_system_delay_ms > kMinDiffDelayMs &&

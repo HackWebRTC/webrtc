@@ -50,6 +50,9 @@ class EchoCancellationImpl : public EchoCancellation,
   // Called holding the capture lock.
   void ReadQueuedRenderData();
 
+  // Returns the system delay of the first AEC component.
+  int GetSystemDelayInSamples() const;
+
  private:
   // EchoCancellation implementation.
   int Enable(bool enable) override;
