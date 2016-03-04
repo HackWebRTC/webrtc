@@ -211,11 +211,6 @@ class AcmReceiver {
   int RemoveAllCodecs();
 
   //
-  // Set ID.
-  //
-  void set_id(int id);  // TODO(turajs): can be inline.
-
-  //
   // Gets the RTP timestamp of the last sample delivered by GetAudio().
   // Returns true if the RTP timestamp is valid, otherwise false.
   //
@@ -282,7 +277,6 @@ class AcmReceiver {
   uint32_t NowInTimestamp(int decoder_sampling_rate) const;
 
   rtc::CriticalSection crit_sect_;
-  int id_;  // TODO(henrik.lundin) Make const.
   const Decoder* last_audio_decoder_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity previous_audio_activity_ GUARDED_BY(crit_sect_);
   ACMResampler resampler_ GUARDED_BY(crit_sect_);

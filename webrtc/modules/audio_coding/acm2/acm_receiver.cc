@@ -118,8 +118,7 @@ bool IsCng(int codec_id) {
 }  // namespace
 
 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
-    : id_(config.id),
-      last_audio_decoder_(nullptr),
+    : last_audio_decoder_(nullptr),
       previous_audio_activity_(AudioFrame::kVadPassive),
       audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
       last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
@@ -417,11 +416,6 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
   }
   decoders_.erase(it);
   return 0;
-}
-
-void AcmReceiver::set_id(int id) {
-  rtc::CritScope lock(&crit_sect_);
-  id_ = id;
 }
 
 bool AcmReceiver::GetPlayoutTimestamp(uint32_t* timestamp) {
