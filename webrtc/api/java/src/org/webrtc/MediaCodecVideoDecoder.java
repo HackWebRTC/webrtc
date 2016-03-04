@@ -239,12 +239,14 @@ public class MediaCodecVideoDecoder {
 
   // Pass null in |surfaceTextureHelper| to configure the codec for ByteBuffer output.
   private boolean initDecode(
-      VideoCodecType type, int width, int height, SurfaceTextureHelper surfaceTextureHelper) {
+      VideoCodecType type, int width, int height,
+      SurfaceTextureHelper surfaceTextureHelper) {
     if (mediaCodecThread != null) {
-      throw new RuntimeException("Forgot to release()?");
+      throw new RuntimeException("initDecode: Forgot to release()?");
     }
-    useSurface = (surfaceTextureHelper != null);
+
     String mime = null;
+    useSurface = (surfaceTextureHelper != null);
     String[] supportedCodecPrefixes = null;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
@@ -256,15 +258,17 @@ public class MediaCodecVideoDecoder {
       mime = H264_MIME_TYPE;
       supportedCodecPrefixes = supportedH264HwCodecPrefixes;
     } else {
-      throw new RuntimeException("Non supported codec " + type);
+      throw new RuntimeException("initDecode: Non-supported codec " + type);
     }
     DecoderProperties properties = findDecoder(mime, supportedCodecPrefixes);
     if (properties == null) {
       throw new RuntimeException("Cannot find HW decoder for " + type);
     }
+
     Logging.d(TAG, "Java initDecode: " + type + " : "+ width + " x " + height +
         ". Color: 0x" + Integer.toHexString(properties.colorFormat) +
         ". Use Surface: " + useSurface);
+
     runningInstance = this; // Decoder is now running and can be queried for stack traces.
     mediaCodecThread = Thread.currentThread();
     try {
@@ -283,14 +287,14 @@ public class MediaCodecVideoDecoder {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       }
       Logging.d(TAG, "  Format: " + format);
-      mediaCodec =
-          MediaCodecVideoEncoder.createByCodecName(properties.codecName);
+      mediaCodec = MediaCodecVideoEncoder.createByCodecName(properties.codecName);
       if (mediaCodec == null) {
         Logging.e(TAG, "Can not create media decoder");
         return false;
       }
       mediaCodec.configure(format, surface, null, 0);
       mediaCodec.start();
+
       colorFormat = properties.colorFormat;
       outputBuffers = mediaCodec.getOutputBuffers();
       inputBuffers = mediaCodec.getInputBuffers();
@@ -305,6 +309,24 @@ public class MediaCodecVideoDecoder {
       Logging.e(TAG, "initDecode failed", e);
       return false;
     }
+  }
+
+  // Resets the decoder so it can start decoding frames with new resolution.
+  // Flushes MediaCodec and clears decoder output buffers.
+  private void reset(int width, int height) {
+    if (mediaCodecThread == null || mediaCodec == null) {
+      throw new RuntimeException("Incorrect reset call for non-initialized decoder.");
+    }
+    Logging.d(TAG, "Java reset: " + width + " x " + height);
+
+    mediaCodec.flush();
+
+    this.width = width;
+    this.height = height;
+    decodeStartTimeMs.clear();
+    dequeuedSurfaceOutputBuffers.clear();
+    hasDecodedFirstFrame = false;
+    droppedFrames = 0;
   }
 
   private void release() {

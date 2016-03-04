@@ -40,6 +40,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private static final int WAIT_TIMEOUT = 7000;
   private static final int CAMERA_SWITCH_ATTEMPTS = 3;
   private static final int VIDEO_RESTART_ATTEMPTS = 3;
+  private static final int CAPTURE_FORMAT_CHANGE_ATTEMPTS = 3;
   private static final int VIDEO_RESTART_TIMEOUT = 500;
   private static final int EXPECTED_VIDEO_FRAMES = 10;
   private static final String VIDEO_CODEC_VP8 = "VP8";
@@ -48,6 +49,12 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private static final int AUDIO_RUN_TIMEOUT = 1000;
   private static final String LOCAL_RENDERER_NAME = "Local renderer";
   private static final String REMOTE_RENDERER_NAME = "Remote renderer";
+
+  private static final int MAX_VIDEO_FPS = 30;
+  private static final int WIDTH_VGA = 640;
+  private static final int HEIGHT_VGA = 480;
+  private static final int WIDTH_QVGA = 320;
+  private static final int HEIGHT_QVGA = 240;
 
   // The peer connection client is assumed to be thread safe in itself; the
   // reference is written by the test thread and read by worker threads.
@@ -551,4 +558,55 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
     Log.d(TAG, "testVideoSourceRestart done.");
   }
+
+  // Checks if capture format can be changed on fly and decoder can be reset properly.
+  public void testCaptureFormatChange() throws InterruptedException {
+    Log.d(TAG, "testCaptureFormatChange");
+    loopback = true;
+
+    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
+    MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
+
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, createParametersForVideoCall(VIDEO_CODEC_VP8, false), null);
+
+    // Wait for local SDP, rename it to answer and set as remote SDP.
+    assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
+    SessionDescription remoteSdp = new SessionDescription(
+        SessionDescription.Type.fromCanonicalForm("answer"),
+        localSdp.description);
+    pcClient.setRemoteDescription(remoteSdp);
+
+    // Wait for ICE connection.
+    assertTrue("ICE connection failure.", waitForIceConnected(ICE_CONNECTION_WAIT_TIMEOUT));
+
+    // Check that local and remote video frames were rendered.
+    assertTrue("Local video frames were not rendered before camera resolution change.",
+        localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    assertTrue("Remote video frames were not rendered before camera resolution change.",
+        remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+
+    // Change capture output format a few times.
+    for (int i = 0; i < 2 * CAPTURE_FORMAT_CHANGE_ATTEMPTS; i++) {
+      if (i % 2 == 0) {
+        pcClient.changeCaptureFormat(WIDTH_VGA, HEIGHT_VGA, MAX_VIDEO_FPS);
+      } else {
+        pcClient.changeCaptureFormat(WIDTH_QVGA, HEIGHT_QVGA, MAX_VIDEO_FPS);
+      }
+
+      // Reset video renders and check that local and remote video frames
+      // were rendered after capture format change.
+      localRenderer.reset(EXPECTED_VIDEO_FRAMES);
+      remoteRenderer.reset(EXPECTED_VIDEO_FRAMES);
+      assertTrue("Local video frames were not rendered after capture format change.",
+          localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+      assertTrue("Remote video frames were not rendered after capture format change.",
+          remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    }
+
+    pcClient.close();
+    assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
+    Log.d(TAG, "testCaptureFormatChange done.");
+  }
+
 }
