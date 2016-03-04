@@ -14,6 +14,7 @@
 
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/localaudiosource.h"
+#include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/mediastream.h"
 #include "webrtc/api/mediastreamproxy.h"
 #include "webrtc/api/mediastreamtrackproxy.h"
@@ -199,6 +200,14 @@ PeerConnectionFactory::CreateAudioSource(
   return source;
 }
 
+rtc::scoped_refptr<AudioSourceInterface>
+PeerConnectionFactory::CreateAudioSource(const cricket::AudioOptions& options) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  rtc::scoped_refptr<LocalAudioSource> source(
+      LocalAudioSource::Create(options_, &options));
+  return source;
+}
+
 rtc::scoped_refptr<VideoSourceInterface>
 PeerConnectionFactory::CreateVideoSource(
     cricket::VideoCapturer* capturer,
@@ -206,6 +215,14 @@ PeerConnectionFactory::CreateVideoSource(
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoSource> source(VideoSource::Create(
       worker_thread_, capturer, constraints, false));
+  return VideoSourceProxy::Create(signaling_thread_, source);
+}
+
+rtc::scoped_refptr<VideoSourceInterface>
+PeerConnectionFactory::CreateVideoSource(cricket::VideoCapturer* capturer) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  rtc::scoped_refptr<VideoSource> source(
+      VideoSource::Create(worker_thread_, capturer, false));
   return VideoSourceProxy::Create(signaling_thread_, source);
 }
 
@@ -232,8 +249,24 @@ void PeerConnectionFactory::StopRtcEventLog() {
 
 rtc::scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactory::CreatePeerConnection(
-    const PeerConnectionInterface::RTCConfiguration& configuration,
+    const PeerConnectionInterface::RTCConfiguration& configuration_in,
     const MediaConstraintsInterface* constraints,
+    rtc::scoped_ptr<cricket::PortAllocator> allocator,
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    PeerConnectionObserver* observer) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+
+  // We merge constraints and configuration into a single configuration.
+  PeerConnectionInterface::RTCConfiguration configuration = configuration_in;
+  CopyConstraintsIntoRtcConfiguration(constraints, &configuration);
+
+  return CreatePeerConnection(configuration, std::move(allocator),
+                              std::move(dtls_identity_store), observer);
+}
+
+rtc::scoped_refptr<PeerConnectionInterface>
+PeerConnectionFactory::CreatePeerConnection(
+    const PeerConnectionInterface::RTCConfiguration& configuration,
     rtc::scoped_ptr<cricket::PortAllocator> allocator,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
@@ -255,7 +288,24 @@ PeerConnectionFactory::CreatePeerConnection(
 
   rtc::scoped_refptr<PeerConnection> pc(
       new rtc::RefCountedObject<PeerConnection>(this));
-  if (!pc->Initialize(configuration, constraints, std::move(allocator),
+  // We rely on default values when constraints aren't found.
+  cricket::MediaConfig media_config;
+
+  media_config.video.disable_prerenderer_smoothing =
+      configuration.disable_prerenderer_smoothing;
+  if (configuration.enable_dscp) {
+    media_config.enable_dscp = *(configuration.enable_dscp);
+  }
+  if (configuration.cpu_overuse_detection) {
+    media_config.video.enable_cpu_overuse_detection =
+        *(configuration.cpu_overuse_detection);
+  }
+  if (configuration.suspend_below_min_bitrate) {
+    media_config.video.suspend_below_min_bitrate =
+        *(configuration.suspend_below_min_bitrate);
+  }
+
+  if (!pc->Initialize(media_config, configuration, std::move(allocator),
                       std::move(dtls_identity_store), observer)) {
     return nullptr;
   }

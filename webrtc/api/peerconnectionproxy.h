@@ -50,6 +50,14 @@ BEGIN_PROXY_MAP(PeerConnection)
                 const MediaConstraintsInterface*)
   PROXY_METHOD2(void, CreateAnswer, CreateSessionDescriptionObserver*,
                 const MediaConstraintsInterface*)
+  PROXY_METHOD2(void,
+                CreateOffer,
+                CreateSessionDescriptionObserver*,
+                const RTCOfferAnswerOptions&)
+  PROXY_METHOD2(void,
+                CreateAnswer,
+                CreateSessionDescriptionObserver*,
+                const RTCOfferAnswerOptions&)
   PROXY_METHOD2(void, SetLocalDescription, SetSessionDescriptionObserver*,
                 SessionDescriptionInterface*)
   PROXY_METHOD2(void, SetRemoteDescription, SetSessionDescriptionObserver*,

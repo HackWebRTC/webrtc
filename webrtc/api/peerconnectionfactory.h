@@ -38,9 +38,16 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
     options_ = options;
   }
 
+  // Deprecated, use version without constraints.
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
+      rtc::scoped_ptr<cricket::PortAllocator> allocator,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      PeerConnectionObserver* observer) override;
+
+  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
       rtc::scoped_ptr<cricket::PortAllocator> allocator,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer) override;
@@ -50,9 +57,18 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   rtc::scoped_refptr<MediaStreamInterface>
       CreateLocalMediaStream(const std::string& label) override;
 
+  virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
+      const cricket::AudioOptions& options) override;
+  // Deprecated, use version without constraints.
   rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const MediaConstraintsInterface* constraints) override;
 
+  virtual rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
+      cricket::VideoCapturer* capturer) override;
+  // This version supports filtering on width, height and frame rate.
+  // For the "constraints=null" case, use the version without constraints.
+  // TODO(hta): Design a version without MediaConstraintsInterface.
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=5617
   rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer,
       const MediaConstraintsInterface* constraints) override;

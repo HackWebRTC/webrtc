@@ -10,6 +10,7 @@
 
 #include "webrtc/api/mediaconstraintsinterface.h"
 
+#include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/stringencode.h"
 
 namespace webrtc {
@@ -118,14 +119,98 @@ bool FindConstraint(const MediaConstraintsInterface* constraints,
     return false;
   }
   if (constraints->GetMandatory().FindFirst(key, &string_value)) {
-    if (mandatory_constraints)
+    if (mandatory_constraints) {
       ++*mandatory_constraints;
+    }
     return rtc::FromString(string_value, value);
   }
   if (constraints->GetOptional().FindFirst(key, &string_value)) {
     return rtc::FromString(string_value, value);
   }
   return false;
+}
+
+// As above, but for integers.
+bool FindConstraint(const MediaConstraintsInterface* constraints,
+                    const std::string& key,
+                    int* value,
+                    size_t* mandatory_constraints) {
+  std::string string_value;
+  if (!constraints) {
+    return false;
+  }
+  if (constraints->GetMandatory().FindFirst(key, &string_value)) {
+    if (mandatory_constraints) {
+      ++*mandatory_constraints;
+    }
+    return rtc::FromString(string_value, value);
+  }
+  if (constraints->GetOptional().FindFirst(key, &string_value)) {
+    return rtc::FromString(string_value, value);
+  }
+  return false;
+}
+
+void ConstraintToOptionalBool(const MediaConstraintsInterface* constraints,
+                              const std::string& key,
+                              rtc::Optional<bool>* value_out) {
+  bool value;
+  bool present = FindConstraint(constraints, key, &value, nullptr);
+  if (present) {
+    *value_out = rtc::Optional<bool>(value);
+  }
+}
+
+void ConstraintToOptionalInt(const MediaConstraintsInterface* constraints,
+                             const std::string& key,
+                             rtc::Optional<int>* value_out) {
+  int value;
+  bool present = FindConstraint(constraints, key, &value, nullptr);
+  if (present) {
+    *value_out = rtc::Optional<int>(value);
+  }
+}
+
+void CopyConstraintsIntoRtcConfiguration(
+    const MediaConstraintsInterface* constraints,
+    PeerConnectionInterface::RTCConfiguration* configuration) {
+  // Copy info from constraints into configuration, if present.
+  if (!constraints) {
+    return;
+  }
+
+  bool value;
+  if (FindConstraint(constraints, MediaConstraintsInterface::kEnableIPv6,
+                     &value, nullptr)) {
+    if (!value) {
+      configuration->disable_ipv6 = true;
+    }
+  }
+  ConstraintToOptionalBool(constraints, MediaConstraintsInterface::kEnableDscp,
+                           &configuration->enable_dscp);
+  ConstraintToOptionalBool(constraints,
+                           MediaConstraintsInterface::kCpuOveruseDetection,
+                           &configuration->cpu_overuse_detection);
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kEnableRtpDataChannels, &value,
+                     NULL) &&
+      value) {
+    configuration->enable_rtp_data_channel = true;
+  }
+  // Find Suspend Below Min Bitrate constraint.
+  ConstraintToOptionalBool(
+      constraints,
+      MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
+      &configuration->suspend_below_min_bitrate);
+  ConstraintToOptionalInt(constraints,
+                          MediaConstraintsInterface::kScreencastMinBitrate,
+                          &configuration->screencast_min_bitrate);
+  ConstraintToOptionalBool(constraints,
+                           MediaConstraintsInterface::kCombinedAudioVideoBwe,
+                           &configuration->combined_audio_video_bwe);
+  ConstraintToOptionalBool(constraints,
+                           MediaConstraintsInterface::kEnableDtlsSrtp,
+                           &configuration->enable_dtls_srtp);
 }
 
 }  // namespace webrtc

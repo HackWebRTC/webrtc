@@ -427,7 +427,7 @@ class RemoteMediaStreamFactory {
   rtc::Thread* worker_thread_;
 };
 
-bool ConvertRtcOptionsForOffer(
+bool ExtractMediaSessionOptions(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
     cricket::MediaSessionOptions* session_options) {
   typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
@@ -565,8 +565,8 @@ PeerConnection::~PeerConnection() {
 }
 
 bool PeerConnection::Initialize(
+    const cricket::MediaConfig& media_config,
     const PeerConnectionInterface::RTCConfiguration& configuration,
-    const MediaConstraintsInterface* constraints,
     rtc::scoped_ptr<cricket::PortAllocator> allocator,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
@@ -591,13 +591,10 @@ bool PeerConnection::Initialize(
   int portallocator_flags = port_allocator_->flags();
   portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                          cricket::PORTALLOCATOR_ENABLE_IPV6;
-  bool value;
-  // If IPv6 flag was specified, we'll not override it by experiment.
-  if (FindConstraint(constraints, MediaConstraintsInterface::kEnableIPv6,
-                     &value, nullptr)) {
-    if (!value) {
-      portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
-    }
+  // If the disable-IPv6 flag was specified, we'll not override it
+  // by experiment.
+  if (configuration.disable_ipv6) {
+    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
              "Disabled") {
     portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
@@ -612,24 +609,6 @@ bool PeerConnection::Initialize(
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
 
-  // We rely on default values when constraints aren't found.
-  cricket::MediaConfig media_config;
-
-  media_config.video.disable_prerenderer_smoothing =
-      configuration.disable_prerenderer_smoothing;
-
-  // Find DSCP constraint.
-  FindConstraint(constraints, MediaConstraintsInterface::kEnableDscp,
-                 &media_config.enable_dscp, NULL);
-  // Find constraint for cpu overuse detection.
-  FindConstraint(constraints, MediaConstraintsInterface::kCpuOveruseDetection,
-                 &media_config.video.enable_cpu_overuse_detection, NULL);
-
-  // Find Suspend Below Min Bitrate constraint.
-  FindConstraint(constraints,
-                 MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
-                 &media_config.video.suspend_below_min_bitrate, NULL);
-
   media_controller_.reset(factory_->CreateMediaController(media_config));
 
   remote_stream_factory_.reset(new RemoteMediaStreamFactory(
@@ -641,8 +620,8 @@ bool PeerConnection::Initialize(
   stats_.reset(new StatsCollector(this));
 
   // Initialize the WebRtcSession. It creates transport channels etc.
-  if (!session_->Initialize(factory_->options(), constraints,
-                            std::move(dtls_identity_store), configuration)) {
+  if (!session_->Initialize(factory_->options(), std::move(dtls_identity_store),
+                            configuration)) {
     return false;
   }
 
@@ -1006,7 +985,26 @@ void PeerConnection::CreateAnswer(
     return;
   }
 
-  session_->CreateAnswer(observer, constraints, session_options);
+  session_->CreateAnswer(observer, session_options);
+}
+
+void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
+                                  const RTCOfferAnswerOptions& options) {
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
+  if (!VERIFY(observer != nullptr)) {
+    LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
+    return;
+  }
+
+  cricket::MediaSessionOptions session_options;
+  if (!GetOptionsForAnswer(options, &session_options)) {
+    std::string error = "CreateAnswer called with invalid options.";
+    LOG(LS_ERROR) << error;
+    PostCreateSessionDescriptionFailure(observer, error);
+    return;
+  }
+
+  session_->CreateAnswer(observer, session_options);
 }
 
 void PeerConnection::SetLocalDescription(
@@ -1510,7 +1508,7 @@ bool PeerConnection::GetOptionsForOffer(
           cricket::TransportOptions();
     }
   }
-  if (!ConvertRtcOptionsForOffer(rtc_options, session_options)) {
+  if (!ExtractMediaSessionOptions(rtc_options, session_options)) {
     return false;
   }
 
@@ -1538,11 +1536,8 @@ bool PeerConnection::GetOptionsForOffer(
   return true;
 }
 
-bool PeerConnection::GetOptionsForAnswer(
-    const MediaConstraintsInterface* constraints,
+void PeerConnection::FinishOptionsForAnswer(
     cricket::MediaSessionOptions* session_options) {
-  session_options->recv_audio = false;
-  session_options->recv_video = false;
   // TODO(deadbeef): Once we have transceivers, enumerate them here instead of
   // ContentInfos.
   if (session_->remote_description()) {
@@ -1553,10 +1548,6 @@ bool PeerConnection::GetOptionsForAnswer(
           cricket::TransportOptions();
     }
   }
-  if (!ParseConstraintsForAnswer(constraints, session_options)) {
-    return false;
-  }
-
   AddSendStreams(session_options, senders_, rtp_data_channels_);
   session_options->bundle_enabled =
       session_options->bundle_enabled &&
@@ -1569,6 +1560,29 @@ bool PeerConnection::GetOptionsForAnswer(
   if (session_->data_channel_type() == cricket::DCT_SCTP) {
     session_options->data_channel_type = cricket::DCT_SCTP;
   }
+}
+
+bool PeerConnection::GetOptionsForAnswer(
+    const MediaConstraintsInterface* constraints,
+    cricket::MediaSessionOptions* session_options) {
+  session_options->recv_audio = false;
+  session_options->recv_video = false;
+  if (!ParseConstraintsForAnswer(constraints, session_options)) {
+    return false;
+  }
+  FinishOptionsForAnswer(session_options);
+  return true;
+}
+
+bool PeerConnection::GetOptionsForAnswer(
+    const RTCOfferAnswerOptions& options,
+    cricket::MediaSessionOptions* session_options) {
+  session_options->recv_audio = false;
+  session_options->recv_video = false;
+  if (!ExtractMediaSessionOptions(options, session_options)) {
+    return false;
+  }
+  FinishOptionsForAnswer(session_options);
   return true;
 }
 

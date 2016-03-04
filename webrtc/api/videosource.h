@@ -47,6 +47,13 @@ class VideoSource : public Notifier<VideoSourceInterface>,
       const webrtc::MediaConstraintsInterface* constraints,
       bool remote);
 
+  // Note that the non-constraints version does not have the ability to
+  // select configuration based on width, height, aspect ratio or frame rate.
+  static rtc::scoped_refptr<VideoSource> Create(
+      rtc::Thread* worker_thread,
+      cricket::VideoCapturer* capturer,
+      bool remote);
+
   SourceState state() const override { return state_; }
   bool remote() const override { return remote_; }
 

@@ -19,7 +19,6 @@
 
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/sctputils.h"
 #include "webrtc/api/webrtcsessiondescriptionfactory.h"
@@ -422,25 +421,6 @@ static std::string MakeTdErrorString(const std::string& desc) {
   return MakeErrorString(kPushDownTDFailed, desc);
 }
 
-// Set |option| to the highest-priority value of |key| in the optional
-// constraints if the key is found and has a valid value.
-template <typename T>
-static void SetOptionFromOptionalConstraint(
-    const MediaConstraintsInterface* constraints,
-    const std::string& key,
-    rtc::Optional<T>* option) {
-  if (!constraints) {
-    return;
-  }
-  std::string string_value;
-  T value;
-  if (constraints->GetOptional().FindFirst(key, &string_value)) {
-    if (rtc::FromString(string_value, &value)) {
-      *option = rtc::Optional<T>(value);
-    }
-  }
-}
-
 uint32_t ConvertIceTransportTypeToCandidateFilter(
     PeerConnectionInterface::IceTransportsType type) {
   switch (type) {
@@ -546,7 +526,6 @@ WebRtcSession::~WebRtcSession() {
 
 bool WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
-    const MediaConstraintsInterface* constraints,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
   bundle_policy_ = rtc_configuration.bundle_policy;
@@ -564,46 +543,33 @@ bool WebRtcSession::Initialize(
 
   SetIceConfig(ParseIceConfig(rtc_configuration));
 
-  // TODO(perkj): Take |constraints| into consideration. Return false if not all
-  // mandatory constraints can be fulfilled. Note that |constraints|
-  // can be null.
-  bool value;
-
   if (options.disable_encryption) {
     dtls_enabled_ = false;
   } else {
     // Enable DTLS by default if we have an identity store or a certificate.
     dtls_enabled_ = (dtls_identity_store || certificate);
-    // |constraints| can override the default |dtls_enabled_| value.
-    if (FindConstraint(constraints, MediaConstraintsInterface::kEnableDtlsSrtp,
-                       &value, nullptr)) {
-      dtls_enabled_ = value;
+    // |rtc_configuration| can override the default |dtls_enabled_| value.
+    if (rtc_configuration.enable_dtls_srtp) {
+      dtls_enabled_ = *(rtc_configuration.enable_dtls_srtp);
     }
   }
 
   // Enable creation of RTP data channels if the kEnableRtpDataChannels is set.
   // It takes precendence over the disable_sctp_data_channels
   // PeerConnectionFactoryInterface::Options.
-  if (FindConstraint(
-      constraints, MediaConstraintsInterface::kEnableRtpDataChannels,
-      &value, NULL) && value) {
-    LOG(LS_INFO) << "Allowing RTP data engine.";
+  if (rtc_configuration.enable_rtp_data_channel) {
     data_channel_type_ = cricket::DCT_RTP;
   } else {
     // DTLS has to be enabled to use SCTP.
     if (!options.disable_sctp_data_channels && dtls_enabled_) {
-      LOG(LS_INFO) << "Allowing SCTP data engine.";
       data_channel_type_ = cricket::DCT_SCTP;
     }
   }
 
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kScreencastMinBitrate,
-      &video_options_.screencast_min_bitrate_kbps);
-
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCombinedAudioVideoBwe,
-      &audio_options_.combined_audio_video_bwe);
+  video_options_.screencast_min_bitrate_kbps =
+      rtc_configuration.screencast_min_bitrate;
+  audio_options_.combined_audio_video_bwe =
+      rtc_configuration.combined_audio_video_bwe;
 
   audio_options_.audio_jitter_buffer_max_packets =
       rtc::Optional<int>(rtc_configuration.audio_jitter_buffer_max_packets);
@@ -698,10 +664,8 @@ void WebRtcSession::CreateOffer(
 
 void WebRtcSession::CreateAnswer(
     CreateSessionDescriptionObserver* observer,
-    const MediaConstraintsInterface* constraints,
     const cricket::MediaSessionOptions& session_options) {
-  webrtc_session_desc_factory_->CreateAnswer(observer, constraints,
-                                             session_options);
+  webrtc_session_desc_factory_->CreateAnswer(observer, session_options);
 }
 
 bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,

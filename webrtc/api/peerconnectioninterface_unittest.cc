@@ -2454,11 +2454,11 @@ TEST(CreateSessionOptionsTest, GetOptionsForOfferWithInvalidAudioOption) {
   rtc_options.offer_to_receive_audio = RTCOfferAnswerOptions::kUndefined - 1;
 
   cricket::MediaSessionOptions options;
-  EXPECT_FALSE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_FALSE(ExtractMediaSessionOptions(rtc_options, &options));
 
   rtc_options.offer_to_receive_audio =
       RTCOfferAnswerOptions::kMaxOfferToReceiveMedia + 1;
-  EXPECT_FALSE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_FALSE(ExtractMediaSessionOptions(rtc_options, &options));
 }
 
 TEST(CreateSessionOptionsTest, GetOptionsForOfferWithInvalidVideoOption) {
@@ -2466,11 +2466,11 @@ TEST(CreateSessionOptionsTest, GetOptionsForOfferWithInvalidVideoOption) {
   rtc_options.offer_to_receive_video = RTCOfferAnswerOptions::kUndefined - 1;
 
   cricket::MediaSessionOptions options;
-  EXPECT_FALSE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_FALSE(ExtractMediaSessionOptions(rtc_options, &options));
 
   rtc_options.offer_to_receive_video =
       RTCOfferAnswerOptions::kMaxOfferToReceiveMedia + 1;
-  EXPECT_FALSE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_FALSE(ExtractMediaSessionOptions(rtc_options, &options));
 }
 
 // Test that a MediaSessionOptions is created for an offer if
@@ -2481,7 +2481,7 @@ TEST(CreateSessionOptionsTest, GetMediaSessionOptionsForOfferWithAudioVideo) {
   rtc_options.offer_to_receive_video = 1;
 
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(rtc_options, &options));
   EXPECT_TRUE(options.has_audio());
   EXPECT_TRUE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
@@ -2494,7 +2494,7 @@ TEST(CreateSessionOptionsTest, GetMediaSessionOptionsForOfferWithAudio) {
   rtc_options.offer_to_receive_audio = 1;
 
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(rtc_options, &options));
   EXPECT_TRUE(options.has_audio());
   EXPECT_FALSE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
@@ -2508,7 +2508,7 @@ TEST(CreateSessionOptionsTest, GetDefaultMediaSessionOptionsForOffer) {
   cricket::MediaSessionOptions options;
   options.transport_options["audio"] = cricket::TransportOptions();
   options.transport_options["video"] = cricket::TransportOptions();
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(rtc_options, &options));
   EXPECT_TRUE(options.has_audio());
   EXPECT_FALSE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
@@ -2525,7 +2525,7 @@ TEST(CreateSessionOptionsTest, GetMediaSessionOptionsForOfferWithVideo) {
   rtc_options.offer_to_receive_video = 1;
 
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(rtc_options, &options));
   EXPECT_FALSE(options.has_audio());
   EXPECT_TRUE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
@@ -2541,7 +2541,7 @@ TEST(CreateSessionOptionsTest,
   rtc_options.use_rtp_mux = false;
 
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(rtc_options, &options));
   EXPECT_TRUE(options.has_audio());
   EXPECT_TRUE(options.has_video());
   EXPECT_FALSE(options.bundle_enabled);
@@ -2557,12 +2557,12 @@ TEST(CreateSessionOptionsTest, GetMediaSessionOptionsForOfferWithIceRestart) {
   cricket::MediaSessionOptions options;
   options.transport_options["audio"] = cricket::TransportOptions();
   options.transport_options["video"] = cricket::TransportOptions();
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(rtc_options, &options));
   EXPECT_TRUE(options.transport_options["audio"].ice_restart);
   EXPECT_TRUE(options.transport_options["video"].ice_restart);
 
   rtc_options = RTCOfferAnswerOptions();
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_options, &options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(rtc_options, &options));
   EXPECT_FALSE(options.transport_options["audio"].ice_restart);
   EXPECT_FALSE(options.transport_options["video"].ice_restart);
 }
@@ -2584,7 +2584,7 @@ TEST(CreateSessionOptionsTest, MediaConstraintsInAnswer) {
   RTCOfferAnswerOptions rtc_offer_options;
 
   cricket::MediaSessionOptions offer_options;
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(rtc_offer_options, &offer_options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(rtc_offer_options, &offer_options));
   EXPECT_TRUE(offer_options.has_audio());
   EXPECT_FALSE(offer_options.has_video());
 
@@ -2593,8 +2593,8 @@ TEST(CreateSessionOptionsTest, MediaConstraintsInAnswer) {
   updated_rtc_offer_options.offer_to_receive_video = 1;
 
   cricket::MediaSessionOptions updated_offer_options;
-  EXPECT_TRUE(ConvertRtcOptionsForOffer(updated_rtc_offer_options,
-                                        &updated_offer_options));
+  EXPECT_TRUE(ExtractMediaSessionOptions(updated_rtc_offer_options,
+                                         &updated_offer_options));
   EXPECT_TRUE(updated_offer_options.has_audio());
   EXPECT_TRUE(updated_offer_options.has_video());
 

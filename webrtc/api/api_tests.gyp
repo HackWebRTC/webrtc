@@ -37,6 +37,7 @@
         'fakemetricsobserver.h',
         'jsepsessiondescription_unittest.cc',
         'localaudiosource_unittest.cc',
+	'mediaconstraintsinterface_unittest.cc',
         'mediastream_unittest.cc',
         'peerconnection_unittest.cc',
         'peerconnectionendtoend_unittest.cc',

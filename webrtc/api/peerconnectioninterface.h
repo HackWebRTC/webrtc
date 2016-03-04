@@ -243,6 +243,17 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
     bool disable_prerenderer_smoothing;
     bool prioritize_most_likely_ice_candidate_pairs;
+    // Flags corresponding to values set by constraint flags.
+    // rtc::Optional flags can be "missing", in which case the webrtc
+    // default applies.
+    bool disable_ipv6;
+    rtc::Optional<bool> enable_dscp;
+    bool enable_rtp_data_channel;
+    rtc::Optional<bool> cpu_overuse_detection;
+    rtc::Optional<bool> suspend_below_min_bitrate;
+    rtc::Optional<int> screencast_min_bitrate;
+    rtc::Optional<bool> combined_audio_video_bwe;
+    rtc::Optional<bool> enable_dtls_srtp;
     RTCConfiguration()
         : type(kAll),
           bundle_policy(kBundlePolicyBalanced),
@@ -254,7 +265,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
           ice_backup_candidate_pair_ping_interval(kUndefined),
           continual_gathering_policy(GATHER_ONCE),
           disable_prerenderer_smoothing(false),
-          prioritize_most_likely_ice_candidate_pairs(false) {}
+          prioritize_most_likely_ice_candidate_pairs(false),
+          disable_ipv6(false),
+          enable_rtp_data_channel(false) {}
   };
 
   struct RTCOfferAnswerOptions {
@@ -382,7 +395,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Create an answer to an offer.
   // The CreateSessionDescriptionObserver callback will be called when done.
   virtual void CreateAnswer(CreateSessionDescriptionObserver* observer,
-                            const MediaConstraintsInterface* constraints) = 0;
+                            const RTCOfferAnswerOptions& options) {}
+  // Deprecated - use version above.
+  // TODO(hta): Remove and remove default implementations when all callers
+  // are updated.
+  virtual void CreateAnswer(CreateSessionDescriptionObserver* observer,
+                            const MediaConstraintsInterface* constraints) {}
+
   // Sets the local session description.
   // JsepInterface takes the ownership of |desc| even if it fails.
   // The |observer| callback will be called when done.
@@ -400,6 +419,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
                          const MediaConstraintsInterface* constraints) {
     return false;
   }
+  virtual bool UpdateIce(const IceServers& configuration) { return false; }
   // Sets the PeerConnection's global configuration to |config|.
   // Any changes to STUN/TURN servers or ICE candidate policy will affect the
   // next gathering phase, and cause the next call to createOffer to generate
@@ -526,17 +546,31 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer) = 0;
 
+  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      rtc::scoped_ptr<cricket::PortAllocator> allocator,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      PeerConnectionObserver* observer) = 0;
+
   virtual rtc::scoped_refptr<MediaStreamInterface>
       CreateLocalMediaStream(const std::string& label) = 0;
 
   // Creates a AudioSourceInterface.
   // |constraints| decides audio processing settings but can be NULL.
   virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
+      const cricket::AudioOptions& options) = 0;
+  // Deprecated - use version above.
+  virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const MediaConstraintsInterface* constraints) = 0;
 
   // Creates a VideoSourceInterface. The new source take ownership of
-  // |capturer|. |constraints| decides video resolution and frame rate but can
+  // |capturer|.
+  virtual rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
+      cricket::VideoCapturer* capturer) = 0;
+  // A video source creator that allows selection of resolution and frame rate.
+  // |constraints| decides video resolution and frame rate but can
   // be NULL.
+  // In the NULL case, use the version above.
   virtual rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer,
       const MediaConstraintsInterface* constraints) = 0;

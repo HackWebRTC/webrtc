@@ -106,7 +106,6 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
       const PeerConnectionInterface::RTCOfferAnswerOptions& options,
       const cricket::MediaSessionOptions& session_options);
   void CreateAnswer(CreateSessionDescriptionObserver* observer,
-                    const MediaConstraintsInterface* constraints,
                     const cricket::MediaSessionOptions& session_options);
 
   void SetSdesPolicy(cricket::SecurePolicy secure_policy);

@@ -96,3 +96,18 @@ TEST(LocalAudioSourceTest, InvalidMandatory) {
   EXPECT_EQ(MediaSourceInterface::kLive, source->state());
   EXPECT_EQ(rtc::Optional<bool>(false), source->options().highpass_filter);
 }
+
+TEST(LocalAudioSourceTest, InitWithAudioOptions) {
+  cricket::AudioOptions audio_options;
+  audio_options.highpass_filter = rtc::Optional<bool>(true);
+  rtc::scoped_refptr<LocalAudioSource> source = LocalAudioSource::Create(
+      PeerConnectionFactoryInterface::Options(), &audio_options);
+  EXPECT_EQ(rtc::Optional<bool>(true), source->options().highpass_filter);
+}
+
+TEST(LocalAudioSourceTest, InitWithNoOptions) {
+  rtc::scoped_refptr<LocalAudioSource> source =
+      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
+                               (cricket::AudioOptions*)nullptr);
+  EXPECT_EQ(rtc::Optional<bool>(), source->options().highpass_filter);
+}

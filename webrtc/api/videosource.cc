@@ -287,6 +287,13 @@ rtc::scoped_refptr<VideoSource> VideoSource::Create(
   return source;
 }
 
+rtc::scoped_refptr<VideoSource> VideoSource::Create(
+    rtc::Thread* worker_thread,
+    cricket::VideoCapturer* capturer,
+    bool remote) {
+  return Create(worker_thread, capturer, nullptr, remote);
+}
+
 VideoSource::VideoSource(rtc::Thread* worker_thread,
                          cricket::VideoCapturer* capturer,
                          bool remote)
