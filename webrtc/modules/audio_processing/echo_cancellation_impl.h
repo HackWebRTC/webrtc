@@ -13,7 +13,6 @@
 
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -23,7 +22,8 @@ namespace webrtc {
 
 class AudioBuffer;
 
-class EchoCancellationImpl : public EchoCancellation {
+class EchoCancellationImpl : public EchoCancellation,
+                             public ProcessingComponent {
  public:
   EchoCancellationImpl(const AudioProcessing* apm,
                        rtc::CriticalSection* crit_render,
@@ -39,8 +39,9 @@ class EchoCancellationImpl : public EchoCancellation {
   SuppressionLevel suppression_level() const override;
   bool is_drift_compensation_enabled() const override;
 
-  void Initialize();
-  void SetExtraOptions(const Config& config);
+  // ProcessingComponent implementation.
+  int Initialize() override;
+  void SetExtraOptions(const Config& config) override;
   bool is_delay_agnostic_enabled() const;
   bool is_extended_filter_enabled() const;
   bool is_next_generation_aec_enabled() const;
@@ -53,8 +54,6 @@ class EchoCancellationImpl : public EchoCancellation {
   int GetSystemDelayInSamples() const;
 
  private:
-  class Canceller;
-
   // EchoCancellation implementation.
   int Enable(bool enable) override;
   int enable_drift_compensation(bool enable) override;
@@ -73,10 +72,15 @@ class EchoCancellationImpl : public EchoCancellation {
 
   struct AecCore* aec_core() const override;
 
-  size_t num_handles_required() const;
+  // ProcessingComponent implementation.
+  void* CreateHandle() const override;
+  int InitializeHandle(void* handle) const override;
+  int ConfigureHandle(void* handle) const override;
+  void DestroyHandle(void* handle) const override;
+  size_t num_handles_required() const override;
+  int GetHandleError(void* handle) const override;
 
   void AllocateRenderQueue();
-  int Configure();
 
   // Not guarded as its public API is thread safe.
   const AudioProcessing* apm_;
@@ -84,7 +88,6 @@ class EchoCancellationImpl : public EchoCancellation {
   rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection* const crit_capture_;
 
-  bool enabled_ = false;
   bool drift_compensation_enabled_ GUARDED_BY(crit_capture_);
   bool metrics_enabled_ GUARDED_BY(crit_capture_);
   SuppressionLevel suppression_level_ GUARDED_BY(crit_capture_);
@@ -104,9 +107,6 @@ class EchoCancellationImpl : public EchoCancellation {
   // Lock protection not needed.
   std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
       render_signal_queue_;
-
-  std::vector<std::unique_ptr<Canceller>> cancellers_;
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoCancellationImpl);
 };
 
 }  // namespace webrtc
