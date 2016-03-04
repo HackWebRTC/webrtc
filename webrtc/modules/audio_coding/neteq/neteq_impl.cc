@@ -148,13 +148,13 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
   return kOK;
 }
 
-int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
-                        size_t* samples_per_channel, size_t* num_channels,
-                        NetEqOutputType* type) {
+int NetEqImpl::GetAudio(AudioFrame* audio_frame, NetEqOutputType* type) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   rtc::CritScope lock(&crit_sect_);
-  int error = GetAudioInternal(max_length, output_audio, samples_per_channel,
-                               num_channels);
+  int error = GetAudioInternal(audio_frame);
+  RTC_DCHECK_EQ(
+      audio_frame->sample_rate_hz_,
+      rtc::checked_cast<int>(audio_frame->samples_per_channel_ * 100));
   if (error != 0) {
     error_code_ = error;
     return kFail;
@@ -162,8 +162,7 @@ int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
   if (type) {
     *type = LastOutputType();
   }
-  last_output_sample_rate_hz_ =
-      rtc::checked_cast<int>(*samples_per_channel * 100);
+  last_output_sample_rate_hz_ = audio_frame->sample_rate_hz_;
   RTC_DCHECK(last_output_sample_rate_hz_ == 8000 ||
              last_output_sample_rate_hz_ == 16000 ||
              last_output_sample_rate_hz_ == 32000 ||
@@ -739,10 +738,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   return 0;
 }
 
-int NetEqImpl::GetAudioInternal(size_t max_length,
-                                int16_t* output,
-                                size_t* samples_per_channel,
-                                size_t* num_channels) {
+int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame) {
   PacketList packet_list;
   DtmfEvent dtmf_event;
   Operations operation;
@@ -857,16 +853,18 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
   // Extract data from |sync_buffer_| to |output|.
   size_t num_output_samples_per_channel = output_size_samples_;
   size_t num_output_samples = output_size_samples_ * sync_buffer_->Channels();
-  if (num_output_samples > max_length) {
-    LOG(LS_WARNING) << "Output array is too short. " << max_length << " < " <<
-        output_size_samples_ << " * " << sync_buffer_->Channels();
-    num_output_samples = max_length;
-    num_output_samples_per_channel = max_length / sync_buffer_->Channels();
+  if (num_output_samples > AudioFrame::kMaxDataSizeSamples) {
+    LOG(LS_WARNING) << "Output array is too short. "
+                    << AudioFrame::kMaxDataSizeSamples << " < "
+                    << output_size_samples_ << " * "
+                    << sync_buffer_->Channels();
+    num_output_samples = AudioFrame::kMaxDataSizeSamples;
+    num_output_samples_per_channel =
+        AudioFrame::kMaxDataSizeSamples / sync_buffer_->Channels();
   }
-  const size_t samples_from_sync =
-      sync_buffer_->GetNextAudioInterleaved(num_output_samples_per_channel,
-                                            output);
-  *num_channels = sync_buffer_->Channels();
+  sync_buffer_->GetNextAudioInterleaved(num_output_samples_per_channel,
+                                        audio_frame);
+  audio_frame->sample_rate_hz_ = fs_hz_;
   if (sync_buffer_->FutureLength() < expand_->overlap_length()) {
     // The sync buffer should always contain |overlap_length| samples, but now
     // too many samples have been extracted. Reinstall the |overlap_length|
@@ -877,22 +875,22 @@ int NetEqImpl::GetAudioInternal(size_t max_length,
     sync_buffer_->set_next_index(sync_buffer_->next_index() -
                                  missing_lookahead_samples);
   }
-  if (samples_from_sync != output_size_samples_) {
-    LOG(LS_ERROR) << "samples_from_sync (" << samples_from_sync
+  if (audio_frame->samples_per_channel_ != output_size_samples_) {
+    LOG(LS_ERROR) << "audio_frame->samples_per_channel_ ("
+                  << audio_frame->samples_per_channel_
                   << ") != output_size_samples_ (" << output_size_samples_
                   << ")";
     // TODO(minyue): treatment of under-run, filling zeros
-    memset(output, 0, num_output_samples * sizeof(int16_t));
-    *samples_per_channel = output_size_samples_;
+    memset(audio_frame->data_, 0, num_output_samples * sizeof(int16_t));
     return kSampleUnderrun;
   }
-  *samples_per_channel = output_size_samples_;
 
   // Should always have overlap samples left in the |sync_buffer_|.
   RTC_DCHECK_GE(sync_buffer_->FutureLength(), expand_->overlap_length());
 
   if (play_dtmf) {
-    return_value = DtmfOverdub(dtmf_event, sync_buffer_->Channels(), output);
+    return_value =
+        DtmfOverdub(dtmf_event, sync_buffer_->Channels(), audio_frame->data_);
   }
 
   // Update the background noise parameters if last operation wrote data

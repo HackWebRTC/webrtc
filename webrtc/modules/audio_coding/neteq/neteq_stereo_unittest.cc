@@ -20,6 +20,7 @@
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -69,7 +70,6 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
     input_multi_channel_ = new int16_t[frame_size_samples_ * num_channels_];
     encoded_multi_channel_ = new uint8_t[frame_size_samples_ * 2 *
                                          num_channels_];
-    output_multi_channel_ = new int16_t[kMaxBlockSize * num_channels_];
   }
 
   ~NetEqStereoTest() {
@@ -79,7 +79,6 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
     delete [] encoded_;
     delete [] input_multi_channel_;
     delete [] encoded_multi_channel_;
-    delete [] output_multi_channel_;
   }
 
   virtual void SetUp() {
@@ -164,8 +163,9 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
   virtual void VerifyOutput(size_t num_samples) {
     for (size_t i = 0; i < num_samples; ++i) {
       for (size_t j = 0; j < num_channels_; ++j) {
-        ASSERT_EQ(output_[i], output_multi_channel_[i * num_channels_ + j]) <<
-            "Diff in sample " << i << ", channel " << j << ".";
+        ASSERT_EQ(output_.data_[i],
+                  output_multi_channel_.data_[i * num_channels_ + j])
+            << "Diff in sample " << i << ", channel " << j << ".";
       }
     }
   }
@@ -213,22 +213,15 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
       }
       NetEqOutputType output_type;
       // Get audio from mono instance.
-      size_t samples_per_channel;
-      size_t num_channels;
-      EXPECT_EQ(NetEq::kOK,
-                neteq_mono_->GetAudio(kMaxBlockSize, output_,
-                                      &samples_per_channel, &num_channels,
-                                      &output_type));
-      EXPECT_EQ(1u, num_channels);
-      EXPECT_EQ(output_size_samples_, samples_per_channel);
+      EXPECT_EQ(NetEq::kOK, neteq_mono_->GetAudio(&output_, &output_type));
+      EXPECT_EQ(1u, output_.num_channels_);
+      EXPECT_EQ(output_size_samples_, output_.samples_per_channel_);
       // Get audio from multi-channel instance.
       ASSERT_EQ(NetEq::kOK,
-                neteq_->GetAudio(kMaxBlockSize * num_channels_,
-                                 output_multi_channel_,
-                                 &samples_per_channel, &num_channels,
-                                 &output_type));
-      EXPECT_EQ(num_channels_, num_channels);
-      EXPECT_EQ(output_size_samples_, samples_per_channel);
+                neteq_->GetAudio(&output_multi_channel_, &output_type));
+      EXPECT_EQ(num_channels_, output_multi_channel_.num_channels_);
+      EXPECT_EQ(output_size_samples_,
+                output_multi_channel_.samples_per_channel_);
       std::ostringstream ss;
       ss << "Lap number " << k << ".";
       SCOPED_TRACE(ss.str());  // Print out the parameter values on failure.
@@ -253,8 +246,8 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
   int16_t* input_multi_channel_;
   uint8_t* encoded_;
   uint8_t* encoded_multi_channel_;
-  int16_t output_[kMaxBlockSize];
-  int16_t* output_multi_channel_;
+  AudioFrame output_;
+  AudioFrame output_multi_channel_;
   WebRtcRTPHeader rtp_header_mono_;
   WebRtcRTPHeader rtp_header_;
   size_t payload_size_bytes_;
@@ -360,14 +353,16 @@ class NetEqStereoTestLosses : public NetEqStereoTest {
   // TODO(hlundin): NetEq is not giving bitexact results for these cases.
   virtual void VerifyOutput(size_t num_samples) {
     for (size_t i = 0; i < num_samples; ++i) {
-      auto first_channel_sample = output_multi_channel_[i * num_channels_];
+      auto first_channel_sample =
+          output_multi_channel_.data_[i * num_channels_];
       for (size_t j = 0; j < num_channels_; ++j) {
         const int kErrorMargin = 200;
-        EXPECT_NEAR(output_[i], output_multi_channel_[i * num_channels_ + j],
+        EXPECT_NEAR(output_.data_[i],
+                    output_multi_channel_.data_[i * num_channels_ + j],
                     kErrorMargin)
             << "Diff in sample " << i << ", channel " << j << ".";
         EXPECT_EQ(first_channel_sample,
-                  output_multi_channel_[i * num_channels_ + j]);
+                  output_multi_channel_.data_[i * num_channels_ + j]);
       }
     }
   }

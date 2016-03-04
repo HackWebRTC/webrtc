@@ -43,23 +43,14 @@ void NetEqExternalDecoderTest::InsertPacket(
             neteq_->InsertPacket(rtp_header, payload, receive_timestamp));
 }
 
-size_t NetEqExternalDecoderTest::GetOutputAudio(size_t max_length,
-                                                int16_t* output,
-                                                NetEqOutputType* output_type) {
+void NetEqExternalDecoderTest::GetOutputAudio(AudioFrame* output,
+                                              NetEqOutputType* output_type) {
   // Get audio from regular instance.
-  size_t samples_per_channel;
-  size_t num_channels;
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(max_length,
-                             output,
-                             &samples_per_channel,
-                             &num_channels,
-                             output_type));
-  EXPECT_EQ(channels_, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(output, output_type));
+  EXPECT_EQ(channels_, output->num_channels_);
   EXPECT_EQ(static_cast<size_t>(kOutputLengthMs * sample_rate_hz_ / 1000),
-            samples_per_channel);
+            output->samples_per_channel_);
   EXPECT_EQ(sample_rate_hz_, neteq_->last_output_sample_rate_hz());
-  return samples_per_channel;
 }
 
 }  // namespace test

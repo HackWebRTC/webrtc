@@ -280,9 +280,6 @@ class AcmReceiver {
   const Decoder* last_audio_decoder_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity previous_audio_activity_ GUARDED_BY(crit_sect_);
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
-  // Used in GetAudio, declared as member to avoid allocating every 10ms.
-  // TODO(henrik.lundin) Stack-allocate in GetAudio instead?
-  std::unique_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
   std::unique_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
   NetEq* neteq_;

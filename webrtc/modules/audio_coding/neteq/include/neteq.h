@@ -23,6 +23,7 @@
 namespace webrtc {
 
 // Forward declarations.
+class AudioFrame;
 struct WebRtcRTPHeader;
 
 struct NetEqNetworkStatistics {
@@ -163,16 +164,12 @@ class NetEq {
                                uint32_t receive_timestamp) = 0;
 
   // Instructs NetEq to deliver 10 ms of audio data. The data is written to
-  // |output_audio|, which can hold (at least) |max_length| elements.
-  // The number of channels that were written to the output is provided in
-  // the output variable |num_channels|, and each channel contains
-  // |samples_per_channel| elements. If more than one channel is written,
-  // the samples are interleaved.
+  // |audio_frame|. All data in |audio_frame| is wiped; |data_|, |interleaved_|,
+  // |num_channels_|, and |samples_per_channel_| are updated upon success. If
+  // an error is returned, some fields may not have been updated.
   // The speech type is written to |type|, if |type| is not NULL.
   // Returns kOK on success, or kFail in case of an error.
-  virtual int GetAudio(size_t max_length, int16_t* output_audio,
-                       size_t* samples_per_channel, size_t* num_channels,
-                       NetEqOutputType* type) = 0;
+  virtual int GetAudio(AudioFrame* audio_frame, NetEqOutputType* type) = 0;
 
   // Associates |rtp_payload_type| with |codec| and |codec_name|, and stores the
   // information in the codec database. Returns 0 on success, -1 on failure.

@@ -382,8 +382,6 @@ size_t ReplacePayload(webrtc::test::InputAudioFile* replacement_audio_file,
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  static const int kMaxChannels = 5;
-  static const size_t kMaxSamplesPerMs = 48000 / 1000;
   static const int kOutputBlockSizeMs = 10;
 
   std::string program_name = argv[0];
@@ -606,26 +604,19 @@ int main(int argc, char* argv[]) {
 
     // Check if it is time to get output audio.
     while (time_now_ms >= next_output_time_ms && output_event_available) {
-      static const size_t kOutDataLen =
-          kOutputBlockSizeMs * kMaxSamplesPerMs * kMaxChannels;
-      int16_t out_data[kOutDataLen];
-      size_t num_channels;
-      size_t samples_per_channel;
-      int error = neteq->GetAudio(kOutDataLen, out_data, &samples_per_channel,
-                                   &num_channels, NULL);
+      webrtc::AudioFrame out_frame;
+      int error = neteq->GetAudio(&out_frame, NULL);
       if (error != NetEq::kOK) {
         std::cerr << "GetAudio returned error code " <<
             neteq->LastError() << std::endl;
       } else {
-        // Calculate sample rate from output size.
-        sample_rate_hz = rtc::checked_cast<int>(
-            1000 * samples_per_channel / kOutputBlockSizeMs);
+        sample_rate_hz = out_frame.sample_rate_hz_;
       }
 
       // Write to file.
       // TODO(hlundin): Make writing to file optional.
-      size_t write_len = samples_per_channel * num_channels;
-      if (!output->WriteArray(out_data, write_len)) {
+      if (!output->WriteArray(out_frame.data_, out_frame.samples_per_channel_ *
+                                                   out_frame.num_channels_)) {
         std::cerr << "Error while writing to file" << std::endl;
         webrtc::Trace::ReturnTrace();
         exit(1);

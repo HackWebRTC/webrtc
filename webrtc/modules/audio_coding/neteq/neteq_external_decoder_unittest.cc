@@ -17,6 +17,7 @@
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -188,25 +189,19 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
 
   void GetAndVerifyOutput() override {
     NetEqOutputType output_type;
-    size_t samples_per_channel;
-    size_t num_channels;
     // Get audio from internal decoder instance.
     EXPECT_EQ(NetEq::kOK,
-              neteq_internal_->GetAudio(kMaxBlockSize,
-                                        output_internal_,
-                                        &samples_per_channel,
-                                        &num_channels,
-                                        &output_type));
-    EXPECT_EQ(1u, num_channels);
+              neteq_internal_->GetAudio(&output_internal_, &output_type));
+    EXPECT_EQ(1u, output_internal_.num_channels_);
     EXPECT_EQ(static_cast<size_t>(kOutputLengthMs * sample_rate_hz_ / 1000),
-              samples_per_channel);
+              output_internal_.samples_per_channel_);
 
     // Get audio from external decoder instance.
-    samples_per_channel = GetOutputAudio(kMaxBlockSize, output_, &output_type);
+    GetOutputAudio(&output_, &output_type);
 
-    for (size_t i = 0; i < samples_per_channel; ++i) {
-      ASSERT_EQ(output_[i], output_internal_[i]) <<
-          "Diff in sample " << i << ".";
+    for (size_t i = 0; i < output_.samples_per_channel_; ++i) {
+      ASSERT_EQ(output_.data_[i], output_internal_.data_[i])
+          << "Diff in sample " << i << ".";
     }
   }
 
@@ -227,8 +222,8 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
  private:
   int sample_rate_hz_;
   std::unique_ptr<NetEq> neteq_internal_;
-  int16_t output_internal_[kMaxBlockSize];
-  int16_t output_[kMaxBlockSize];
+  AudioFrame output_internal_;
+  AudioFrame output_;
 };
 
 TEST_F(NetEqExternalVsInternalDecoderTest, RunTest) {
@@ -291,9 +286,9 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
   }
 
   void GetAndVerifyOutput() override {
-    size_t num_samples;
+    AudioFrame output;
     NetEqOutputType output_type;
-    num_samples = GetOutputAudio(kMaxBlockSize, output_, &output_type);
+    GetOutputAudio(&output, &output_type);
     UpdateState(output_type);
 
     if (test_state_ == kExpandPhase || test_state_ == kFadedExpandPhase) {
@@ -301,8 +296,9 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
       return;
     }
 
-    for (size_t i = 0; i < num_samples; ++i) {
-      if (output_[i] != 0)
+    ASSERT_EQ(1u, output.num_channels_);
+    for (size_t i = 0; i < output.samples_per_channel_; ++i) {
+      if (output.data_[i] != 0)
         return;
     }
     EXPECT_TRUE(false)
@@ -321,9 +317,6 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
   }
 
   TestStates test_state_;
-
- private:
-  int16_t output_[kMaxBlockSize];
 };
 
 TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRange) {

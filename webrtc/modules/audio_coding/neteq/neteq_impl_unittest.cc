@@ -28,6 +28,7 @@
 #include "webrtc/modules/audio_coding/neteq/preemptive_expand.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -464,16 +465,11 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
 
   // Pull audio once.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
-  int16_t output[kMaxOutputSize];
-  size_t samples_per_channel;
-  size_t num_channels;
+  AudioFrame output;
   NetEqOutputType type;
-  EXPECT_EQ(
-      NetEq::kOK,
-      neteq_->GetAudio(
-          kMaxOutputSize, output, &samples_per_channel, &num_channels, &type));
-  ASSERT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputNormal, type);
 
   // Start with a simple check that the fake decoder is behaving as expected.
@@ -485,7 +481,8 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // timestamp should match the playout timestamp.
   uint32_t timestamp = 0;
   EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
-  EXPECT_EQ(rtp_header.header.timestamp + output[samples_per_channel - 1],
+  EXPECT_EQ(rtp_header.header.timestamp +
+                output.data_[output.samples_per_channel_ - 1],
             timestamp);
 
   // Check the timestamp for the last value in the sync buffer. This should
@@ -497,8 +494,9 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
 
   // Check that the number of samples still to play from the sync buffer add
   // up with what was already played out.
-  EXPECT_EQ(kPayloadLengthSamples - output[samples_per_channel - 1],
-            sync_buffer->FutureLength());
+  EXPECT_EQ(
+      kPayloadLengthSamples - output.data_[output.samples_per_channel_ - 1],
+      sync_buffer->FutureLength());
 }
 
 TEST_F(NetEqImplTest, ReorderedPacket) {
@@ -543,16 +541,11 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
 
   // Pull audio once.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
-  int16_t output[kMaxOutputSize];
-  size_t samples_per_channel;
-  size_t num_channels;
+  AudioFrame output;
   NetEqOutputType type;
-  EXPECT_EQ(
-      NetEq::kOK,
-      neteq_->GetAudio(
-          kMaxOutputSize, output, &samples_per_channel, &num_channels, &type));
-  ASSERT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputNormal, type);
 
   // Insert two more packets. The first one is out of order, and is already too
@@ -578,12 +571,9 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
                       Return(kPayloadLengthSamples)));
 
   // Pull audio once.
-  EXPECT_EQ(
-      NetEq::kOK,
-      neteq_->GetAudio(
-          kMaxOutputSize, output, &samples_per_channel, &num_channels, &type));
-  ASSERT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputNormal, type);
 
   // Now check the packet buffer, and make sure it is empty, since the
@@ -620,16 +610,12 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
 
   // Pull audio once.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
-  int16_t output[kMaxOutputSize];
-  size_t samples_per_channel;
-  size_t num_channels;
+  AudioFrame output;
   NetEqOutputType type;
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
-  ASSERT_LE(samples_per_channel, kMaxOutputSize);
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  ASSERT_LE(output.samples_per_channel_, kMaxOutputSize);
+  EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputPLC, type);
 
   // Register the payload type.
@@ -647,12 +633,10 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
 
   // Pull audio repeatedly and make sure we get normal output, that is not PLC.
   for (size_t i = 0; i < 3; ++i) {
-    EXPECT_EQ(NetEq::kOK,
-              neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                               &num_channels, &type));
-    ASSERT_LE(samples_per_channel, kMaxOutputSize);
-    EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-    EXPECT_EQ(1u, num_channels);
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+    ASSERT_LE(output.samples_per_channel_, kMaxOutputSize);
+    EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+    EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(kOutputNormal, type)
         << "NetEq did not decode the packets as expected.";
   }
@@ -732,9 +716,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
             neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
 
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateKhz);
-  int16_t output[kMaxOutputSize];
-  size_t samples_per_channel;
-  size_t num_channels;
+  AudioFrame output;
   uint32_t timestamp;
   uint32_t last_timestamp;
   NetEqOutputType type;
@@ -752,19 +734,15 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
       50 * kSampleRateKhz, 10 * kSampleRateKhz
   };
 
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
   EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&last_timestamp));
 
   for (size_t i = 1; i < 6; ++i) {
-    ASSERT_EQ(kMaxOutputSize, samples_per_channel);
-    EXPECT_EQ(1u, num_channels);
+    ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
+    EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(expected_type[i - 1], type);
     EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
-    EXPECT_EQ(NetEq::kOK,
-              neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                               &num_channels, &type));
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
     EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
     EXPECT_EQ(timestamp, last_timestamp + expected_timestamp_increment[i]);
     last_timestamp = timestamp;
@@ -778,12 +756,10 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
             neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
 
   for (size_t i = 6; i < 8; ++i) {
-    ASSERT_EQ(kMaxOutputSize, samples_per_channel);
-    EXPECT_EQ(1u, num_channels);
+    ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
+    EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(expected_type[i - 1], type);
-    EXPECT_EQ(NetEq::kOK,
-              neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                               &num_channels, &type));
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
     EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
     EXPECT_EQ(timestamp, last_timestamp + expected_timestamp_increment[i]);
     last_timestamp = timestamp;
@@ -871,24 +847,23 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   EXPECT_EQ(NetEq::kOK,
             neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
 
-  const size_t kMaxOutputSize = 10 * kSampleRateHz / 1000 * kChannels;
-  int16_t output[kMaxOutputSize];
-  size_t samples_per_channel;
-  size_t num_channels;
+  AudioFrame output;
   NetEqOutputType type;
-
-  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(kMaxOutputSize, output,
-                                           &samples_per_channel, &num_channels,
-                                           &type));
+  // First call to GetAudio will try to decode the "faulty" packet.
+  // Expect kFail return value...
+  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output, &type));
+  // ... and kOtherDecoderError error code.
   EXPECT_EQ(NetEq::kOtherDecoderError, neteq_->LastError());
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel * kChannels);
-  EXPECT_EQ(kChannels, num_channels);
+  // Output size and number of channels should be correct.
+  const size_t kExpectedOutputSize = 10 * (kSampleRateHz / 1000) * kChannels;
+  EXPECT_EQ(kExpectedOutputSize, output.samples_per_channel_ * kChannels);
+  EXPECT_EQ(kChannels, output.num_channels_);
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(kMaxOutputSize, output,
-                                         &samples_per_channel, &num_channels,
-                                         &type));
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel * kChannels);
-  EXPECT_EQ(kChannels, num_channels);
+  // Second call to GetAudio will decode the packet that is ok. No errors are
+  // expected.
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  EXPECT_EQ(kExpectedOutputSize, output.samples_per_channel_ * kChannels);
+  EXPECT_EQ(kChannels, output.num_channels_);
 }
 
 // This test inserts packets until the buffer is flushed. After that, it asks
@@ -978,15 +953,11 @@ TEST_F(NetEqImplTest, DecodedPayloadTooShort) {
 
   // Pull audio once.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
-  int16_t output[kMaxOutputSize];
-  size_t samples_per_channel;
-  size_t num_channels;
+  AudioFrame output;
   NetEqOutputType type;
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
-  ASSERT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputNormal, type);
 
   EXPECT_CALL(mock_decoder, Die());
@@ -1075,43 +1046,33 @@ TEST_F(NetEqImplTest, DecodingError) {
 
   // Pull audio.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
-  int16_t output[kMaxOutputSize];
-  size_t samples_per_channel;
-  size_t num_channels;
+  AudioFrame output;
   NetEqOutputType type;
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputNormal, type);
 
   // Pull audio again. Decoder fails.
-  EXPECT_EQ(NetEq::kFail,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
+  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output, &type));
   EXPECT_EQ(NetEq::kDecoderErrorCode, neteq_->LastError());
   EXPECT_EQ(kDecoderErrorCode, neteq_->LastDecoderError());
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   // TODO(minyue): should NetEq better give kOutputPLC, since it is actually an
   // expansion.
   EXPECT_EQ(kOutputNormal, type);
 
   // Pull audio again, should continue an expansion.
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputPLC, type);
 
   // Pull audio again, should behave normal.
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputNormal, type);
 
   EXPECT_CALL(mock_decoder, Die());
@@ -1196,35 +1157,27 @@ TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
 
   // Pull audio.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
-  int16_t output[kMaxOutputSize];
-  size_t samples_per_channel;
-  size_t num_channels;
+  AudioFrame output;
   NetEqOutputType type;
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputCNG, type);
 
   // Pull audio again. Decoder fails.
-  EXPECT_EQ(NetEq::kFail,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
+  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output, &type));
   EXPECT_EQ(NetEq::kDecoderErrorCode, neteq_->LastError());
   EXPECT_EQ(kDecoderErrorCode, neteq_->LastDecoderError());
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   // TODO(minyue): should NetEq better give kOutputPLC, since it is actually an
   // expansion.
   EXPECT_EQ(kOutputCNG, type);
 
   // Pull audio again, should resume codec CNG.
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
-                             &num_channels, &type));
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(1u, num_channels);
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &type));
+  EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(kOutputCNG, type);
 
   EXPECT_CALL(mock_decoder, Die());
