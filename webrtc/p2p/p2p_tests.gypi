@@ -41,6 +41,7 @@
             'sources': [
               'quic/quicconnectionhelper_unittest.cc',
               'quic/quicsession_unittest.cc',
+              'quic/quictransportchannel_unittest.cc',
               'quic/reliablequicstream_unittest.cc',
             ],
           }],

@@ -107,6 +107,8 @@
             'quic/quicconnectionhelper.h',
             'quic/quicsession.cc',
             'quic/quicsession.h',
+            'quic/quictransportchannel.cc',
+            'quic/quictransportchannel.h',
             'quic/reliablequicstream.cc',
             'quic/reliablequicstream.h',
           ],
