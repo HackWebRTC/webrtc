@@ -34,6 +34,7 @@ import textwrap
 DIRECTORIES = [
   'build',
   'buildtools',
+  'mojo',  # TODO(kjellander): Remove, see webrtc:5629.
   'testing',
   'third_party/binutils',
   'third_party/boringssl',
@@ -48,7 +49,7 @@ DIRECTORIES = [
   'third_party/libjpeg_turbo',
   'third_party/libsrtp',
   'third_party/libudev',
-  'third_party/libvpx_new',
+  'third_party/libvpx',
   'third_party/libyuv',
   'third_party/llvm-build',
   'third_party/lss',

@@ -112,7 +112,7 @@
     'have_dbus_glib%': 0,
 
     # Make it possible to provide custom locations for some libraries.
-    'libvpx_dir%': '<(DEPTH)/third_party/libvpx_new',
+    'libvpx_dir%': '<(DEPTH)/third_party/libvpx',
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
     'opus_dir%': '<(opus_dir)',
 
