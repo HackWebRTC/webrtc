@@ -114,7 +114,7 @@ int AudioEncoderIsacT<T>::GetTargetBitrate() const {
 }
 
 template <typename T>
-AudioEncoder::EncodedInfo AudioEncoderIsacT<T>::EncodeInternal(
+AudioEncoder::EncodedInfo AudioEncoderIsacT<T>::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
     rtc::Buffer* encoded) {

@@ -89,7 +89,7 @@ int AudioEncoderIlbc::GetTargetBitrate() const {
   }
 }
 
-AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
+AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
     rtc::Buffer* encoded) {

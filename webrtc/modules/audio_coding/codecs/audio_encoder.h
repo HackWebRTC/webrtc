@@ -89,7 +89,7 @@ class AudioEncoder {
   // NumChannels() samples). Multi-channel audio must be sample-interleaved.
   // The encoder appends zero or more bytes of output to |encoded| and returns
   // additional encoding information.  Encode() checks some preconditions, calls
-  // EncodeInternal() which does the actual work, and then checks some
+  // EncodeImpl() which does the actual work, and then checks some
   // postconditions.
   EncodedInfo Encode(uint32_t rtp_timestamp,
                      rtc::ArrayView<const int16_t> audio,
@@ -110,12 +110,12 @@ class AudioEncoder {
                                 size_t max_encoded_bytes,
                                 uint8_t* encoded);
 
-  // Deprecated interface of EncodeInternal (also bug 5591). May incur a copy.
+  // Deprecated interface EncodeInternal (see bug 5591). May incur a copy.
   // Subclasses implement this to perform the actual encoding. Called by
   // Encode(). By default, this is implemented as a call to the newer
-  // EncodeInternal() that accepts an rtc::Buffer instead of a raw pointer.
-  // That version is protected, so see below. At least one of the two
-  // interfaces of EncodeInternal _must_ be implemented by a subclass.
+  // EncodeImpl() that accepts an rtc::Buffer instead of a raw pointer.
+  // That version is protected, so see below. At least one of EncodeInternal
+  // or EncodeImpl _must_ be implemented by a subclass.
   virtual EncodedInfo EncodeInternal(
       uint32_t rtp_timestamp,
       rtc::ArrayView<const int16_t> audio,
@@ -163,12 +163,12 @@ class AudioEncoder {
  protected:
   // Subclasses implement this to perform the actual encoding. Called by
   // Encode(). For compatibility reasons, this is implemented by default as a
-  // call to the older version of EncodeInternal(). At least one of the two
-  // interfaces of EncodeInternal _must_ be implemented by a subclass.
-  // Preferably this one.
-  virtual EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                                     rtc::ArrayView<const int16_t> audio,
-                                     rtc::Buffer* encoded);
+  // call to the older interface EncodeInternal(). At least one of
+  // EncodeInternal or EncodeImpl _must_ be implemented by a
+  // subclass. Preferably this one.
+  virtual EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
+                                 rtc::ArrayView<const int16_t> audio,
+                                 rtc::Buffer* encoded);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_H_

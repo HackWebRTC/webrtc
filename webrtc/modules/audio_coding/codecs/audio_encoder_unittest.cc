@@ -37,7 +37,7 @@ TEST(AudioEncoderTest, EncodeInternalRedirectsOk) {
   EXPECT_CALL(old_impl, EncodeInternal(_, _, _, _)).WillOnce(
       Invoke(MockAudioEncoderDeprecated::CopyEncoding(payload)));
 
-  EXPECT_CALL(new_impl, EncodeInternal(_, _, _)).WillOnce(
+  EXPECT_CALL(new_impl, EncodeImpl(_, _, _)).WillOnce(
       Invoke(MockAudioEncoder::CopyEncoding(payload)));
 
   int16_t audio[80];

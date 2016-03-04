@@ -24,8 +24,6 @@ namespace webrtc {
 // into one packet.
 class AudioEncoderCopyRed final : public AudioEncoder {
  public:
-  using AudioEncoder::EncodeInternal;
-
   struct Config {
    public:
     int payload_type;
@@ -53,9 +51,9 @@ class AudioEncoderCopyRed final : public AudioEncoder {
   void SetTargetBitrate(int target_bps) override;
 
 protected:
-  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             rtc::ArrayView<const int16_t> audio,
-                             rtc::Buffer* encoded) override;
+  EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
+                         rtc::ArrayView<const int16_t> audio,
+                         rtc::Buffer* encoded) override;
 
  private:
   AudioEncoder* speech_encoder_;

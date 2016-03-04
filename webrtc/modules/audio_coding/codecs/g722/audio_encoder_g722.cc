@@ -97,7 +97,7 @@ void AudioEncoderG722::Reset() {
     RTC_CHECK_EQ(0, WebRtcG722_EncoderInit(encoders_[i].encoder));
 }
 
-AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
+AudioEncoder::EncodedInfo AudioEncoderG722::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
     rtc::Buffer* encoded) {

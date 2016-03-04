@@ -23,8 +23,6 @@ struct CodecInst;
 
 class AudioEncoderOpus final : public AudioEncoder {
  public:
-  using AudioEncoder::EncodeInternal;
-
   enum ApplicationMode {
     kVoip = 0,
     kAudio = 1,
@@ -82,9 +80,9 @@ class AudioEncoderOpus final : public AudioEncoder {
   bool dtx_enabled() const { return config_.dtx_enabled; }
 
 protected:
-  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             rtc::ArrayView<const int16_t> audio,
-                             rtc::Buffer* encoded) override;
+  EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
+                         rtc::ArrayView<const int16_t> audio,
+                         rtc::Buffer* encoded) override;
 
  private:
   size_t Num10msFramesPerPacket() const;

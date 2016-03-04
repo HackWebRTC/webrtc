@@ -77,7 +77,7 @@ int AudioEncoderPcm::GetTargetBitrate() const {
       8 * BytesPerSample() * SampleRateHz() * NumChannels());
 }
 
-AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
+AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
     rtc::Buffer* encoded) {

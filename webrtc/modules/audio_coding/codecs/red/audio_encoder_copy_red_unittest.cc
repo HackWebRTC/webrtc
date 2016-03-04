@@ -115,12 +115,12 @@ TEST_F(AudioEncoderCopyRedTest, CheckProjectedPacketLossRatePropagation) {
 // encoder.
 TEST_F(AudioEncoderCopyRedTest, CheckImmediateEncode) {
   // Interleaving the EXPECT_CALL sequence with expectations on the MockFunction
-  // check ensures that exactly one call to EncodeInternal happens in each
+  // check ensures that exactly one call to EncodeImpl happens in each
   // Encode call.
   InSequence s;
   MockFunction<void(int check_point_id)> check;
   for (int i = 1; i <= 6; ++i) {
-    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _))
+    EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
         .WillRepeatedly(Return(AudioEncoder::EncodedInfo()));
     EXPECT_CALL(check, Call(i));
     Encode();
@@ -134,7 +134,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
   static const size_t kEncodedSize = 17;
   {
     InSequence s;
-    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _))
+    EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
         .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(kEncodedSize)))
         .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(0)))
         .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(kEncodedSize)));
@@ -165,7 +165,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
   static const int kNumPackets = 10;
   InSequence s;
   for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
-    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _))
+    EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
         .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(encode_size)));
   }
 
@@ -191,7 +191,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckTimestamps) {
   info.encoded_bytes = 17;
   info.encoded_timestamp = timestamp_;
 
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _))
+  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
       .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
 
   // First call is a special case, since it does not include a secondary
@@ -202,7 +202,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckTimestamps) {
   uint32_t secondary_timestamp = primary_timestamp;
   primary_timestamp = timestamp_;
   info.encoded_timestamp = timestamp_;
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _))
+  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
       .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
 
   Encode();
@@ -221,7 +221,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloads) {
   for (uint8_t i = 0; i < kPayloadLenBytes; ++i) {
     payload[i] = i;
   }
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _))
+  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
       .WillRepeatedly(Invoke(MockAudioEncoder::CopyEncoding(payload)));
 
   // First call is a special case, since it does not include a secondary
@@ -257,7 +257,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
   AudioEncoder::EncodedInfo info;
   info.encoded_bytes = 17;
   info.payload_type = primary_payload_type;
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _))
+  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
       .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
 
   // First call is a special case, since it does not include a secondary
@@ -269,7 +269,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
 
   const int secondary_payload_type = red_payload_type_ + 2;
   info.payload_type = secondary_payload_type;
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _))
+  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
       .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
 
   Encode();

@@ -23,8 +23,6 @@ struct CodecInst;
 
 class AudioEncoderG722 final : public AudioEncoder {
  public:
-  using AudioEncoder::EncodeInternal;
-
   struct Config {
     bool IsOk() const;
 
@@ -47,9 +45,9 @@ class AudioEncoderG722 final : public AudioEncoder {
   void Reset() override;
 
 protected:
-  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             rtc::ArrayView<const int16_t> audio,
-                             rtc::Buffer* encoded) override;
+  EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
+                         rtc::ArrayView<const int16_t> audio,
+                         rtc::Buffer* encoded) override;
 
  private:
   // The encoder state for one channel.

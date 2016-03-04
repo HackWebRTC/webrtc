@@ -32,7 +32,7 @@ AudioEncoder::EncodedInfo AudioEncoder::Encode(
                static_cast<size_t>(NumChannels() * SampleRateHz() / 100));
 
   const size_t old_size = encoded->size();
-  EncodedInfo info = EncodeInternal(rtp_timestamp, audio, encoded);
+  EncodedInfo info = EncodeImpl(rtp_timestamp, audio, encoded);
   RTC_CHECK_EQ(encoded->size() - old_size, info.encoded_bytes);
   return info;
 }
@@ -59,7 +59,7 @@ AudioEncoder::EncodedInfo AudioEncoder::DEPRECATED_Encode(
   return info;
 }
 
-AudioEncoder::EncodedInfo AudioEncoder::EncodeInternal(
+AudioEncoder::EncodedInfo AudioEncoder::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
     rtc::Buffer* encoded)
@@ -80,7 +80,7 @@ AudioEncoder::EncodedInfo AudioEncoder::EncodeInternal(
     uint8_t* encoded)
 {
   rtc::Buffer temp_buffer;
-  EncodedInfo info = EncodeInternal(rtp_timestamp, audio, &temp_buffer);
+  EncodedInfo info = EncodeImpl(rtp_timestamp, audio, &temp_buffer);
   RTC_DCHECK_LE(temp_buffer.size(), max_encoded_bytes);
   std::memcpy(encoded, temp_buffer.data(), info.encoded_bytes);
   return info;

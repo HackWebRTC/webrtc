@@ -19,8 +19,6 @@ struct CodecInst;
 
 class AudioEncoderPcm16B final : public AudioEncoderPcm {
  public:
-  using AudioEncoder::EncodeInternal;
-
   struct Config : public AudioEncoderPcm::Config {
    public:
     Config() : AudioEncoderPcm::Config(107), sample_rate_hz(8000) {}

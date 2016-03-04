@@ -182,7 +182,7 @@ void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
   RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.bitrate_bps));
 }
 
-AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
+AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
     rtc::Buffer* encoded) {

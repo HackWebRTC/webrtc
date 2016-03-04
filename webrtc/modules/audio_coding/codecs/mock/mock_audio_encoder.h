@@ -43,10 +43,8 @@ class MockAudioEncoderBase : public AudioEncoder {
 
 class MockAudioEncoder final : public MockAudioEncoderBase {
  public:
-  using AudioEncoder::EncodeInternal;
-
   // Note, we explicitly chose not to create a mock for the Encode method.
-  MOCK_METHOD3(EncodeInternal,
+  MOCK_METHOD3(EncodeImpl,
                EncodedInfo(uint32_t timestamp,
                            rtc::ArrayView<const int16_t> audio,
                            rtc::Buffer* encoded));
@@ -96,8 +94,6 @@ class MockAudioEncoder final : public MockAudioEncoderBase {
 
 class MockAudioEncoderDeprecated final : public MockAudioEncoderBase {
  public:
-  using AudioEncoder::EncodeInternal;
-
   // Note, we explicitly chose not to create a mock for the Encode method.
   MOCK_METHOD4(EncodeInternal,
                EncodedInfo(uint32_t timestamp,

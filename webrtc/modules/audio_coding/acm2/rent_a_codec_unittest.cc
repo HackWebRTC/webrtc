@@ -122,14 +122,14 @@ TEST(RentACodecTest, ExternalEncoder) {
     ::testing::InSequence s;
     info.encoded_timestamp = 0;
     EXPECT_CALL(external_encoder,
-                EncodeInternal(0, rtc::ArrayView<const int16_t>(audio),
+                EncodeImpl(0, rtc::ArrayView<const int16_t>(audio),
                                &encoded))
         .WillOnce(Return(info));
     EXPECT_CALL(external_encoder, Mark("A"));
     EXPECT_CALL(external_encoder, Mark("B"));
     info.encoded_timestamp = 2;
     EXPECT_CALL(external_encoder,
-                EncodeInternal(2, rtc::ArrayView<const int16_t>(audio),
+                EncodeImpl(2, rtc::ArrayView<const int16_t>(audio),
                                &encoded))
         .WillOnce(Return(info));
     EXPECT_CALL(external_encoder, Die());
