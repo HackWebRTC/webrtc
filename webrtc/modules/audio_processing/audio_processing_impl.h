@@ -196,6 +196,8 @@ class AudioProcessingImpl : public AudioProcessing {
       EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeVoiceDetection()
       EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeEchoCanceller()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   int InitializeLocked(const ProcessingConfig& config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
 
