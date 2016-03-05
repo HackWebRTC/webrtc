@@ -59,11 +59,38 @@ static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
 static const size_t kMaxNumFramesToBuffer = 100;
 }  // namespace
 
+class EchoCancellationImpl::Canceller {
+ public:
+  explicit Canceller(int sample_rate_hz) {
+    state_ = WebRtcAec_Create();
+    RTC_DCHECK(state_);
+  }
+
+  ~Canceller() {
+    RTC_CHECK(state_);
+    WebRtcAec_Free(state_);
+  }
+
+  Handle* state() { return state_; }
+
+  void Initialize(int sample_rate_hz) {
+    // TODO(ajm): Drift compensation is disabled in practice. If restored, it
+    // should be managed internally and not depend on the hardware sample rate.
+    // For now, just hardcode a 48 kHz value.
+    const int error = WebRtcAec_Init(state_, sample_rate_hz, 48000);
+    RTC_DCHECK_EQ(0, error);
+  }
+
+ private:
+  Handle* state_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Canceller);
+};
+
 EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
                                            rtc::CriticalSection* crit_render,
                                            rtc::CriticalSection* crit_capture)
-    : ProcessingComponent(),
-      apm_(apm),
+    : apm_(apm),
       crit_render_(crit_render),
       crit_capture_(crit_capture),
       drift_compensation_enabled_(false),
@@ -86,12 +113,14 @@ EchoCancellationImpl::~EchoCancellationImpl() {}
 
 int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
   rtc::CritScope cs_render(crit_render_);
-  if (!is_component_enabled()) {
+  if (!enabled_) {
     return AudioProcessing::kNoError;
   }
 
-  assert(audio->num_frames_per_band() <= 160);
-  assert(audio->num_channels() == apm_->num_reverse_channels());
+  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_EQ(audio->num_channels(), apm_->num_reverse_channels());
+  RTC_DCHECK_GE(cancellers_.size(),
+                apm_->num_output_channels() * audio->num_channels());
 
   int err = AudioProcessing::kNoError;
 
@@ -100,9 +129,9 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
   render_queue_buffer_.clear();
   for (size_t i = 0; i < apm_->num_output_channels(); i++) {
     for (size_t j = 0; j < audio->num_channels(); j++) {
-      Handle* my_handle = static_cast<Handle*>(handle(handle_index));
+      Handle* my_handle = cancellers_[handle_index++]->state();
       // Retrieve any error code produced by the buffering of the farend
-      // signal
+      // signal.
       err = WebRtcAec_GetBufferFarendError(
           my_handle, audio->split_bands_const_f(j)[kBand0To8kHz],
           audio->num_frames_per_band());
@@ -116,8 +145,6 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
                                   audio->split_bands_const_f(j)[kBand0To8kHz],
                                   (audio->split_bands_const_f(j)[kBand0To8kHz] +
                                    audio->num_frames_per_band()));
-
-      handle_index++;
     }
   }
 
@@ -137,7 +164,7 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
 // a queue. All the data chunks are buffered into the farend signal of the AEC.
 void EchoCancellationImpl::ReadQueuedRenderData() {
   rtc::CritScope cs_capture(crit_capture_);
-  if (!is_component_enabled()) {
+  if (!enabled_) {
     return;
   }
 
@@ -149,12 +176,11 @@ void EchoCancellationImpl::ReadQueuedRenderData() {
         (apm_->num_output_channels() * apm_->num_reverse_channels());
     for (size_t i = 0; i < apm_->num_output_channels(); i++) {
       for (size_t j = 0; j < apm_->num_reverse_channels(); j++) {
-        Handle* my_handle = static_cast<Handle*>(handle(handle_index));
+        Handle* my_handle = cancellers_[handle_index++]->state();
         WebRtcAec_BufferFarend(my_handle, &capture_queue_buffer_[buffer_index],
                                num_frames_per_band);
 
         buffer_index += num_frames_per_band;
-        handle_index++;
       }
     }
   }
@@ -162,7 +188,7 @@ void EchoCancellationImpl::ReadQueuedRenderData() {
 
 int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   rtc::CritScope cs_capture(crit_capture_);
-  if (!is_component_enabled()) {
+  if (!enabled_) {
     return AudioProcessing::kNoError;
   }
 
@@ -174,8 +200,8 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
-  assert(audio->num_frames_per_band() <= 160);
-  assert(audio->num_channels() == apm_->num_proc_channels());
+  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_EQ(audio->num_channels(), apm_->num_proc_channels());
 
   int err = AudioProcessing::kNoError;
 
@@ -184,7 +210,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   stream_has_echo_ = false;
   for (size_t i = 0; i < audio->num_channels(); i++) {
     for (size_t j = 0; j < apm_->num_reverse_channels(); j++) {
-      Handle* my_handle = handle(handle_index);
+      Handle* my_handle = cancellers_[handle_index++]->state();
       err = WebRtcAec_Process(my_handle, audio->split_bands_const_f(i),
                               audio->num_bands(), audio->split_bands_f(i),
                               audio->num_frames_per_band(),
@@ -207,8 +233,6 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       if (status == 1) {
         stream_has_echo_ = true;
       }
-
-      handle_index++;
     }
   }
 
@@ -227,12 +251,18 @@ int EchoCancellationImpl::Enable(bool enable) {
     return AudioProcessing::kBadParameterError;
   }
 
-  return EnableComponent(enable);
+  if (enable && !enabled_) {
+    enabled_ = enable;  // Must be set before Initialize() is called.
+    Initialize();
+  } else {
+    enabled_ = enable;
+  }
+  return AudioProcessing::kNoError;
 }
 
 bool EchoCancellationImpl::is_enabled() const {
   rtc::CritScope cs(crit_capture_);
-  return is_component_enabled();
+  return enabled_;
 }
 
 int EchoCancellationImpl::set_suppression_level(SuppressionLevel level) {
@@ -297,7 +327,7 @@ int EchoCancellationImpl::GetMetrics(Metrics* metrics) {
     return AudioProcessing::kNullPointerError;
   }
 
-  if (!is_component_enabled() || !metrics_enabled_) {
+  if (!enabled_ || !metrics_enabled_) {
     return AudioProcessing::kNotEnabledError;
   }
 
@@ -305,7 +335,7 @@ int EchoCancellationImpl::GetMetrics(Metrics* metrics) {
   memset(&my_metrics, 0, sizeof(my_metrics));
   memset(metrics, 0, sizeof(Metrics));
 
-  Handle* my_handle = static_cast<Handle*>(handle(0));
+  Handle* my_handle = cancellers_[0]->state();
   int err = WebRtcAec_GetMetrics(my_handle, &my_metrics);
   if (err != AudioProcessing::kNoError) {
     return MapError(err);
@@ -384,11 +414,11 @@ int EchoCancellationImpl::GetDelayMetrics(int* median, int* std,
     return AudioProcessing::kNullPointerError;
   }
 
-  if (!is_component_enabled() || !delay_logging_enabled_) {
+  if (!enabled_ || !delay_logging_enabled_) {
     return AudioProcessing::kNotEnabledError;
   }
 
-  Handle* my_handle = static_cast<Handle*>(handle(0));
+  Handle* my_handle = cancellers_[0]->state();
   const int err =
       WebRtcAec_GetDelayMetrics(my_handle, median, std, fraction_poor_delays);
   if (err != AudioProcessing::kNoError) {
@@ -400,33 +430,45 @@ int EchoCancellationImpl::GetDelayMetrics(int* median, int* std,
 
 struct AecCore* EchoCancellationImpl::aec_core() const {
   rtc::CritScope cs(crit_capture_);
-  if (!is_component_enabled()) {
+  if (!enabled_) {
     return NULL;
   }
-  Handle* my_handle = static_cast<Handle*>(handle(0));
+  Handle* my_handle = cancellers_[0]->state();
   return WebRtcAec_aec_core(my_handle);
 }
 
-int EchoCancellationImpl::Initialize() {
-  int err = ProcessingComponent::Initialize();
-  {
-    rtc::CritScope cs(crit_capture_);
-    if (err != AudioProcessing::kNoError || !is_component_enabled()) {
-      return err;
+void EchoCancellationImpl::Initialize() {
+  rtc::CritScope cs_render(crit_render_);
+  rtc::CritScope cs_capture(crit_capture_);
+  if (!enabled_) {
+    return;
+  }
+  const int sample_rate_hz = apm_->proc_sample_rate_hz();
+
+  if (num_handles_required() > cancellers_.size()) {
+    const size_t cancellers_old_size = cancellers_.size();
+    cancellers_.resize(num_handles_required());
+
+    for (size_t i = cancellers_old_size; i < cancellers_.size(); ++i) {
+      cancellers_[i].reset(new Canceller(sample_rate_hz));
     }
   }
 
-  AllocateRenderQueue();
+  for (size_t i = 0; i < cancellers_.size(); ++i) {
+    cancellers_[i]->Initialize(sample_rate_hz);
+  }
 
-  return AudioProcessing::kNoError;
+  Configure();
+
+  AllocateRenderQueue();
 }
 
 int EchoCancellationImpl::GetSystemDelayInSamples() const {
   rtc::CritScope cs(crit_capture_);
-  RTC_DCHECK(is_component_enabled());
+  RTC_DCHECK(enabled_);
   // Report the delay for the first AEC component.
   return WebRtcAec_system_delay(
-      WebRtcAec_aec_core(static_cast<Handle*>(handle(0))));
+      WebRtcAec_aec_core(cancellers_[0]->state()));
 }
 
 void EchoCancellationImpl::AllocateRenderQueue() {
@@ -466,45 +508,30 @@ void EchoCancellationImpl::SetExtraOptions(const Config& config) {
   Configure();
 }
 
-void* EchoCancellationImpl::CreateHandle() const {
-  return WebRtcAec_Create();
-}
-
-void EchoCancellationImpl::DestroyHandle(void* handle) const {
-  assert(handle != NULL);
-  WebRtcAec_Free(static_cast<Handle*>(handle));
-}
-
-int EchoCancellationImpl::InitializeHandle(void* handle) const {
-  // Not locked as it only relies on APM public API which is threadsafe.
-
-  assert(handle != NULL);
-  // TODO(ajm): Drift compensation is disabled in practice. If restored, it
-  // should be managed internally and not depend on the hardware sample rate.
-  // For now, just hardcode a 48 kHz value.
-  return WebRtcAec_Init(static_cast<Handle*>(handle),
-                        apm_->proc_sample_rate_hz(), 48000);
-}
-
-int EchoCancellationImpl::ConfigureHandle(void* handle) const {
+int EchoCancellationImpl::Configure() {
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
-  assert(handle != NULL);
   AecConfig config;
   config.metricsMode = metrics_enabled_;
   config.nlpMode = MapSetting(suppression_level_);
   config.skewMode = drift_compensation_enabled_;
   config.delay_logging = delay_logging_enabled_;
-  WebRtcAec_enable_extended_filter(
-      WebRtcAec_aec_core(static_cast<Handle*>(handle)),
-      extended_filter_enabled_ ? 1 : 0);
-  WebRtcAec_enable_delay_agnostic(
-      WebRtcAec_aec_core(static_cast<Handle*>(handle)),
-      delay_agnostic_enabled_ ? 1 : 0);
-  WebRtcAec_enable_next_generation_aec(
-      WebRtcAec_aec_core(static_cast<Handle*>(handle)),
-      next_generation_aec_enabled_ ? 1 : 0);
-  return WebRtcAec_set_config(static_cast<Handle*>(handle), config);
+
+  int error = AudioProcessing::kNoError;
+  for (size_t i = 0; i < cancellers_.size(); i++) {
+    Handle* my_handle = cancellers_[i]->state();
+    WebRtcAec_enable_extended_filter(WebRtcAec_aec_core(my_handle),
+                                     extended_filter_enabled_ ? 1 : 0);
+    WebRtcAec_enable_delay_agnostic(WebRtcAec_aec_core(my_handle),
+                                    delay_agnostic_enabled_ ? 1 : 0);
+    WebRtcAec_enable_next_generation_aec(WebRtcAec_aec_core(my_handle),
+                                         next_generation_aec_enabled_ ? 1 : 0);
+    const int handle_error = WebRtcAec_set_config(my_handle, config);
+    if (handle_error != AudioProcessing::kNoError) {
+      error = AudioProcessing::kNoError;
+    }
+  }
+  return error;
 }
 
 size_t EchoCancellationImpl::num_handles_required() const {
@@ -512,9 +539,4 @@ size_t EchoCancellationImpl::num_handles_required() const {
   return apm_->num_output_channels() * apm_->num_reverse_channels();
 }
 
-int EchoCancellationImpl::GetHandleError(void* handle) const {
-  // Not locked as it does not rely on anything in the state.
-  assert(handle != NULL);
-  return AudioProcessing::kUnspecifiedError;
-}
 }  // namespace webrtc
