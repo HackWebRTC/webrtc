@@ -102,6 +102,7 @@
         'md5.h',
         'md5digest.cc',
         'md5digest.h',
+        'mod_ops.h',
         'optional.h',
         'platform_file.cc',
         'platform_file.h',
