@@ -25,6 +25,8 @@ extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 }
 
+namespace webrtc {
+
 __inline static float MulRe(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bRe - aIm * bIm;
 }
@@ -742,3 +744,4 @@ void WebRtcAec_InitAec_SSE2(void) {
   WebRtcAec_PartitionDelay = PartitionDelaySSE2;
   WebRtcAec_WindowData = WindowDataSSE2;
 }
+}  // namespace webrtc

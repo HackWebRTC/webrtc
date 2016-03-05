@@ -40,6 +40,8 @@ extern "C" {
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
 
+namespace webrtc {
+
 // Buffer size (samples)
 static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.
 
@@ -1901,3 +1903,4 @@ void WebRtcAec_SetSystemDelay(AecCore* self, int delay) {
   assert(delay >= 0);
   self->system_delay = delay;
 }
+}  // namespace webrtc

@@ -15,6 +15,8 @@
 
 #include "webrtc/typedefs.h"
 
+namespace webrtc {
+
 // Errors
 #define AEC_UNSPECIFIED_ERROR 12000
 #define AEC_UNSUPPORTED_FUNCTION_ERROR 12001
@@ -233,5 +235,7 @@ int WebRtcAec_GetDelayMetrics(void* handle,
 //  - AecCore pointer           : NULL for error.
 //
 struct AecCore* WebRtcAec_aec_core(void* handle);
+
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_H_

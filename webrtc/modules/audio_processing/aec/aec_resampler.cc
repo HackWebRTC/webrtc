@@ -21,6 +21,8 @@
 
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 
+namespace webrtc {
+
 enum { kEstimateLengthFrames = 400 };
 
 typedef struct {
@@ -202,3 +204,4 @@ int EstimateSkew(const int* rawSkew,
   *skewEst = skew;
   return 0;
 }
+}  // namespace webrtc

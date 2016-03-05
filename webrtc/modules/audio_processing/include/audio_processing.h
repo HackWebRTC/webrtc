@@ -25,9 +25,9 @@
 #include "webrtc/modules/audio_processing/beamformer/array_util.h"
 #include "webrtc/typedefs.h"
 
-struct AecCore;
-
 namespace webrtc {
+
+struct AecCore;
 
 class AudioFrame;
 

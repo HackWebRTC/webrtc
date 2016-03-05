@@ -21,11 +21,19 @@
 #define ALIGN16_END __attribute__((aligned(16)))
 #endif
 
+#ifdef __cplusplus
+namespace webrtc {
+#endif
+
 extern ALIGN16_BEG const float ALIGN16_END WebRtcAec_sqrtHanning[65];
 extern ALIGN16_BEG const float ALIGN16_END WebRtcAec_weightCurve[65];
 extern ALIGN16_BEG const float ALIGN16_END WebRtcAec_overDriveCurve[65];
 extern const float WebRtcAec_kExtendedSmoothingCoefficients[2][2];
 extern const float WebRtcAec_kNormalSmoothingCoefficients[2][2];
 extern const float WebRtcAec_kMinFarendPSD;
+
+#ifdef __cplusplus
+}  // namespace webrtc
+#endif
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_COMMON_H_

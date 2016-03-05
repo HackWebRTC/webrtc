@@ -16,6 +16,8 @@ extern "C" {
 }
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 
+namespace webrtc {
+
 typedef struct {
   int delayCtr;
   int sampFreq;
@@ -63,5 +65,7 @@ typedef struct {
 
   AecCore* aec;
 } Aec;
+
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_INTERNAL_H_

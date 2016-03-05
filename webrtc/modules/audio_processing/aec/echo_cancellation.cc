@@ -29,6 +29,8 @@ extern "C" {
 #include "webrtc/modules/audio_processing/aec/echo_cancellation_internal.h"
 #include "webrtc/typedefs.h"
 
+namespace webrtc {
+
 // Measured delays [ms]
 // Device                Chrome  GTP
 // MacBook Air           10
@@ -881,3 +883,4 @@ static void EstBufDelayExtended(Aec* self) {
     self->knownDelay = WEBRTC_SPL_MAX((int)self->filtDelay - 256, 0);
   }
 }
+}  // namespace webrtc

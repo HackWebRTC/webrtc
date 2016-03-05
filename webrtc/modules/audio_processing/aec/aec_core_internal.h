@@ -19,6 +19,8 @@ extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/typedefs.h"
 
+namespace webrtc {
+
 // Number of partitions for the extended filter mode. The first one is an enum
 // to be used in array declarations, as it represents the maximum filter length.
 enum { kExtendedNumPartitions = 32 };
@@ -226,5 +228,7 @@ extern WebRtcAecStoreAsComplex WebRtcAec_StoreAsComplex;
 
 typedef void (*WebRtcAecWindowData)(float* x_windowed, const float* x);
 extern WebRtcAecWindowData WebRtcAec_WindowData;
+
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_

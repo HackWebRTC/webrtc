@@ -19,6 +19,8 @@
 
 #include "webrtc/typedefs.h"
 
+namespace webrtc {
+
 #define FRAME_LEN 80
 #define PART_LEN 64               // Length of partition
 #define PART_LEN1 (PART_LEN + 1)  // Unique fft coefficients
@@ -131,5 +133,7 @@ int WebRtcAec_system_delay(AecCore* self);
 // improperly, there can be a performance regression.  So it should be used with
 // care.
 void WebRtcAec_SetSystemDelay(AecCore* self, int delay);
+
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_H_

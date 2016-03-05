@@ -24,6 +24,8 @@ extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 }
 
+namespace webrtc {
+
 extern const float WebRtcAec_weightCurve[65];
 extern const float WebRtcAec_overDriveCurve[65];
 
@@ -781,3 +783,4 @@ void WebRtcAec_InitAec_mips(void) {
   WebRtcAec_ComfortNoise = WebRtcAec_ComfortNoise_mips;
   WebRtcAec_OverdriveAndSuppress = WebRtcAec_OverdriveAndSuppress_mips;
 }
+}  // namespace webrtc
