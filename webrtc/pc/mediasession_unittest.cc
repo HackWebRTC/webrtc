@@ -1654,6 +1654,48 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_EQ(new_h264_pl_type, pt_referenced_by_rtx);
 }
 
+// Create an updated offer with RTX after creating an answer to an offer
+// without RTX, and with different default payload types.
+// Verify that the added RTX codec references the correct payload type.
+TEST_F(MediaSessionDescriptionFactoryTest,
+       RespondentCreatesOfferWithRtxAfterCreatingAnswerWithoutRtx) {
+  MediaSessionOptions opts;
+  opts.recv_video = true;
+  opts.recv_audio = true;
+
+  std::vector<VideoCodec> f2_codecs = MAKE_VECTOR(kVideoCodecs2);
+  // This creates rtx for H264 with the payload type |f2_| uses.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, kVideoCodecs2[0].id), &f2_codecs);
+  f2_.set_video_codecs(f2_codecs);
+
+  rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, nullptr));
+  ASSERT_TRUE(offer.get() != nullptr);
+  rtc::scoped_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), opts, nullptr));
+
+  const VideoContentDescription* vcd =
+      GetFirstVideoContentDescription(answer.get());
+
+  std::vector<VideoCodec> expected_codecs = MAKE_VECTOR(kVideoCodecsAnswer);
+  EXPECT_EQ(expected_codecs, vcd->codecs());
+
+  // Now, ensure that the RTX codec is created correctly when |f2_| creates an
+  // updated offer, even though the default payload types are different from
+  // those of |f1_|.
+  rtc::scoped_ptr<SessionDescription> updated_offer(
+      f2_.CreateOffer(opts, answer.get()));
+  ASSERT_TRUE(updated_offer);
+
+  const VideoContentDescription* updated_vcd =
+      GetFirstVideoContentDescription(updated_offer.get());
+
+  // New offer should attempt to add H263, and RTX for H264.
+  expected_codecs.push_back(kVideoCodecs2[1]);
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, kVideoCodecs1[1].id),
+              &expected_codecs);
+  EXPECT_EQ(expected_codecs, updated_vcd->codecs());
+}
+
 // Test that RTX is ignored when there is no associated payload type parameter.
 TEST_F(MediaSessionDescriptionFactoryTest, RtxWithoutApt) {
   MediaSessionOptions opts;
@@ -1759,6 +1801,41 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id),
               &expected_codecs);
 
+  EXPECT_EQ(expected_codecs, vcd->codecs());
+}
+
+// Test that after one RTX codec has been negotiated, a new offer can attempt
+// to add another.
+TEST_F(MediaSessionDescriptionFactoryTest, AddSecondRtxInNewOffer) {
+  MediaSessionOptions opts;
+  opts.recv_video = true;
+  opts.recv_audio = false;
+  std::vector<VideoCodec> f1_codecs = MAKE_VECTOR(kVideoCodecs1);
+  // This creates RTX for H264 for the offerer.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id), &f1_codecs);
+  f1_.set_video_codecs(f1_codecs);
+
+  rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, nullptr));
+  ASSERT_TRUE(offer);
+  const VideoContentDescription* vcd =
+      GetFirstVideoContentDescription(offer.get());
+
+  std::vector<VideoCodec> expected_codecs = MAKE_VECTOR(kVideoCodecs1);
+  AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id),
+              &expected_codecs);
+  EXPECT_EQ(expected_codecs, vcd->codecs());
+
+  // Now, attempt to add RTX for H264-SVC.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, kVideoCodecs1[0].id), &f1_codecs);
+  f1_.set_video_codecs(f1_codecs);
+
+  rtc::scoped_ptr<SessionDescription> updated_offer(
+      f1_.CreateOffer(opts, offer.get()));
+  ASSERT_TRUE(updated_offer);
+  vcd = GetFirstVideoContentDescription(updated_offer.get());
+
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, kVideoCodecs1[0].id),
+              &expected_codecs);
   EXPECT_EQ(expected_codecs, vcd->codecs());
 }
 

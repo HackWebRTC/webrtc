@@ -10,6 +10,7 @@
 
 #include "webrtc/pc/mediasession.h"
 
+#include <algorithm>  // For std::find_if.
 #include <functional>
 #include <map>
 #include <set>
@@ -810,57 +811,57 @@ template <class C>
 static void NegotiateCodecs(const std::vector<C>& local_codecs,
                             const std::vector<C>& offered_codecs,
                             std::vector<C>* negotiated_codecs) {
-  typename std::vector<C>::const_iterator ours;
-  for (ours = local_codecs.begin();
-       ours != local_codecs.end(); ++ours) {
-    typename std::vector<C>::const_iterator theirs;
-    for (theirs = offered_codecs.begin();
-         theirs != offered_codecs.end(); ++theirs) {
-      if (ours->Matches(*theirs)) {
-        C negotiated = *ours;
-        negotiated.IntersectFeedbackParams(*theirs);
-        if (IsRtxCodec(negotiated)) {
-          std::string offered_apt_value;
-          std::string local_apt_value;
-          if (!ours->GetParam(kCodecParamAssociatedPayloadType,
-                              &local_apt_value) ||
-              !theirs->GetParam(kCodecParamAssociatedPayloadType,
-                                &offered_apt_value)) {
-            LOG(LS_WARNING) << "RTX missing associated payload type.";
-            continue;
-          }
-          // Only negotiate RTX if kCodecParamAssociatedPayloadType has been
-          // set in local and remote codecs, and they match.
-          if (!ReferencedCodecsMatch(local_codecs, local_apt_value,
-                                     offered_codecs, offered_apt_value)) {
-            LOG(LS_WARNING) << "RTX associated codecs don't match.";
-            continue;
-          }
-          negotiated.SetParam(kCodecParamAssociatedPayloadType,
-                              offered_apt_value);
-        }
-
-        negotiated.id = theirs->id;
-        // RFC3264: Although the answerer MAY list the formats in their desired
-        // order of preference, it is RECOMMENDED that unless there is a
-        // specific reason, the answerer list formats in the same relative order
-        // they were present in the offer.
-        negotiated.preference = theirs->preference;
-        negotiated_codecs->push_back(negotiated);
+  for (const C& ours : local_codecs) {
+    C theirs;
+    if (FindMatchingCodec(local_codecs, offered_codecs, ours, &theirs)) {
+      C negotiated = ours;
+      negotiated.IntersectFeedbackParams(theirs);
+      if (IsRtxCodec(negotiated)) {
+        std::string offered_apt_value;
+        theirs.GetParam(kCodecParamAssociatedPayloadType, &offered_apt_value);
+        // FindMatchingCodec shouldn't return something with no apt value.
+        RTC_DCHECK(!offered_apt_value.empty());
+        negotiated.SetParam(kCodecParamAssociatedPayloadType,
+                            offered_apt_value);
       }
+      negotiated.id = theirs.id;
+      // RFC3264: Although the answerer MAY list the formats in their desired
+      // order of preference, it is RECOMMENDED that unless there is a
+      // specific reason, the answerer list formats in the same relative order
+      // they were present in the offer.
+      negotiated.preference = theirs.preference;
+      negotiated_codecs->push_back(negotiated);
     }
   }
 }
 
+// Finds a codec in |codecs2| that matches |codec_to_match|, which is
+// a member of |codecs1|. If |codec_to_match| is an RTX codec, both
+// the codecs themselves and their associated codecs must match.
 template <class C>
-static bool FindMatchingCodec(const std::vector<C>& codecs,
+static bool FindMatchingCodec(const std::vector<C>& codecs1,
+                              const std::vector<C>& codecs2,
                               const C& codec_to_match,
                               C* found_codec) {
-  for (typename std::vector<C>::const_iterator it = codecs.begin();
-       it  != codecs.end(); ++it) {
-    if (it->Matches(codec_to_match)) {
-      if (found_codec != NULL) {
-        *found_codec= *it;
+  for (const C& potential_match : codecs2) {
+    if (potential_match.Matches(codec_to_match)) {
+      if (IsRtxCodec(codec_to_match)) {
+        std::string apt_value_1;
+        std::string apt_value_2;
+        if (!codec_to_match.GetParam(kCodecParamAssociatedPayloadType,
+                                     &apt_value_1) ||
+            !potential_match.GetParam(kCodecParamAssociatedPayloadType,
+                                      &apt_value_2)) {
+          LOG(LS_WARNING) << "RTX missing associated payload type.";
+          continue;
+        }
+        if (!ReferencedCodecsMatch(codecs1, apt_value_1, codecs2,
+                                   apt_value_2)) {
+          continue;
+        }
+      }
+      if (found_codec) {
+        *found_codec = potential_match;
       }
       return true;
     }
@@ -877,49 +878,64 @@ static void FindCodecsToOffer(
     std::vector<C>* offered_codecs,
     UsedPayloadTypes* used_pltypes) {
 
-  typedef std::map<int, C> RtxCodecReferences;
-  RtxCodecReferences new_rtx_codecs;
-
-  // Find all new RTX codecs.
-  for (typename std::vector<C>::const_iterator it = reference_codecs.begin();
-       it != reference_codecs.end(); ++it) {
-    if (!FindMatchingCodec<C>(*offered_codecs, *it, NULL) && IsRtxCodec(*it)) {
-      C rtx_codec = *it;
-      int referenced_pl_type =
-          rtc::FromString<int>(0,
-              rtx_codec.params[kCodecParamAssociatedPayloadType]);
-      new_rtx_codecs.insert(std::pair<int, C>(referenced_pl_type,
-                                              rtx_codec));
-    }
-  }
-
   // Add all new codecs that are not RTX codecs.
-  for (typename std::vector<C>::const_iterator it = reference_codecs.begin();
-       it != reference_codecs.end(); ++it) {
-    if (!FindMatchingCodec<C>(*offered_codecs, *it, NULL) && !IsRtxCodec(*it)) {
-      C codec = *it;
-      int original_payload_id = codec.id;
+  for (const C& reference_codec : reference_codecs) {
+    if (!IsRtxCodec(reference_codec) &&
+        !FindMatchingCodec<C>(reference_codecs, *offered_codecs,
+                              reference_codec, nullptr)) {
+      C codec = reference_codec;
       used_pltypes->FindAndSetIdUsed(&codec);
       offered_codecs->push_back(codec);
-
-      // If this codec is referenced by a new RTX codec, update the reference
-      // in the RTX codec with the new payload type.
-      typename RtxCodecReferences::iterator rtx_it =
-          new_rtx_codecs.find(original_payload_id);
-      if (rtx_it != new_rtx_codecs.end()) {
-        C& rtx_codec = rtx_it->second;
-        rtx_codec.params[kCodecParamAssociatedPayloadType] =
-            rtc::ToString(codec.id);
-      }
     }
   }
 
   // Add all new RTX codecs.
-  for (typename RtxCodecReferences::iterator it = new_rtx_codecs.begin();
-       it != new_rtx_codecs.end(); ++it) {
-    C& rtx_codec = it->second;
-    used_pltypes->FindAndSetIdUsed(&rtx_codec);
-    offered_codecs->push_back(rtx_codec);
+  for (const C& reference_codec : reference_codecs) {
+    if (IsRtxCodec(reference_codec) &&
+        !FindMatchingCodec<C>(reference_codecs, *offered_codecs,
+                              reference_codec, nullptr)) {
+      C rtx_codec = reference_codec;
+
+      std::string associated_pt_str;
+      if (!rtx_codec.GetParam(kCodecParamAssociatedPayloadType,
+                              &associated_pt_str)) {
+        LOG(LS_WARNING) << "RTX codec " << rtx_codec.name
+                        << " is missing an associated payload type.";
+        continue;
+      }
+
+      int associated_pt;
+      if (!rtc::FromString(associated_pt_str, &associated_pt)) {
+        LOG(LS_WARNING) << "Couldn't convert payload type " << associated_pt_str
+                        << " of RTX codec " << rtx_codec.name
+                        << " to an integer.";
+        continue;
+      }
+
+      // Find the associated reference codec for the reference RTX codec.
+      C associated_codec;
+      if (!FindCodecById(reference_codecs, associated_pt, &associated_codec)) {
+        LOG(LS_WARNING) << "Couldn't find associated codec with payload type "
+                        << associated_pt << " for RTX codec " << rtx_codec.name
+                        << ".";
+        continue;
+      }
+
+      // Find a codec in the offered list that matches the reference codec.
+      // Its payload type may be different than the reference codec.
+      C matching_codec;
+      if (!FindMatchingCodec<C>(reference_codecs, *offered_codecs,
+                               associated_codec, &matching_codec)) {
+        LOG(LS_WARNING) << "Couldn't find matching " << associated_codec.name
+                        << " codec.";
+        continue;
+      }
+
+      rtx_codec.params[kCodecParamAssociatedPayloadType] =
+          rtc::ToString(matching_codec.id);
+      used_pltypes->FindAndSetIdUsed(&rtx_codec);
+      offered_codecs->push_back(rtx_codec);
+    }
   }
 }
 
