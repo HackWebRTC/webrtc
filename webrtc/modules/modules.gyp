@@ -377,6 +377,7 @@
             'video_coding/qm_select_unittest.cc',
             'video_coding/test/stream_generator.cc',
             'video_coding/test/stream_generator.h',
+            'video_coding/utility/frame_dropper_unittest.cc',
             'video_coding/utility/quality_scaler_unittest.cc',
             'video_processing/test/brightness_detection_test.cc',
             'video_processing/test/content_metrics_test.cc',
