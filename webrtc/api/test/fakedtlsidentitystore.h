@@ -96,14 +96,15 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
   void use_alternate_key() { key_index_ = 1; }
 
   void RequestIdentity(
-      rtc::KeyParams key_params,
-      rtc::Optional<uint64_t> expires,
+      const rtc::KeyParams& key_params,
+      const rtc::Optional<uint64_t>& expires_ms,
       const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>&
           observer) override {
     // TODO(hbos): Should be able to generate KT_ECDSA too.
     RTC_DCHECK((key_params.type() == rtc::KT_RSA &&
                 key_params.rsa_params().mod_size == 1024 &&
-                key_params.rsa_params().pub_exp == 0x10001) ||
+                key_params.rsa_params().pub_exp == 0x10001 &&
+                !expires_ms) ||
                should_fail_);
     MessageData* msg = new MessageData(
         rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>(observer));

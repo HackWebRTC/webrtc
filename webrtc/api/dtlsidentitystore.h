@@ -70,8 +70,8 @@ class DtlsIdentityStoreInterface {
     RequestIdentity(key_params, rtc::Optional<uint64_t>(), observer);
   }
   virtual void RequestIdentity(
-      rtc::KeyParams key_params,
-      rtc::Optional<uint64_t> expires,
+      const rtc::KeyParams& key_params,
+      const rtc::Optional<uint64_t>& expires_ms,
       const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
     // Drop |expires|.
     RequestIdentity(key_params, observer);
@@ -91,8 +91,8 @@ class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
 
   // DtlsIdentityStoreInterface override;
   void RequestIdentity(
-      rtc::KeyParams key_params,
-      rtc::Optional<uint64_t> expires,
+      const rtc::KeyParams& key_params,
+      const rtc::Optional<uint64_t>& expires_ms,
       const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) override;
 
   // rtc::MessageHandler override;

@@ -122,13 +122,13 @@ DtlsIdentityStoreImpl::~DtlsIdentityStoreImpl() {
 }
 
 void DtlsIdentityStoreImpl::RequestIdentity(
-    rtc::KeyParams key_params,
-    rtc::Optional<uint64_t> expires,
+    const rtc::KeyParams& key_params,
+    const rtc::Optional<uint64_t>& expires_ms,
     const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   RTC_DCHECK(observer);
 
-  // Dropping parameterization and |expires|.
+  // Dropping parameterization and |expires_ms|.
   // TODO(hbos,torbjorng): Use parameterizaton/expiration. webrtc:5092.
   GenerateIdentity(key_params.type(), observer);
 }

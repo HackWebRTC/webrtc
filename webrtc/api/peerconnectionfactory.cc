@@ -46,11 +46,11 @@ class DtlsIdentityStoreWrapper : public DtlsIdentityStoreInterface {
   }
 
   void RequestIdentity(
-      rtc::KeyParams key_params,
-      rtc::Optional<uint64_t> expires,
+      const rtc::KeyParams& key_params,
+      const rtc::Optional<uint64_t>& expires_ms,
       const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>&
           observer) override {
-    store_->RequestIdentity(key_params, expires, observer);
+    store_->RequestIdentity(key_params, expires_ms, observer);
   }
 
  private:
