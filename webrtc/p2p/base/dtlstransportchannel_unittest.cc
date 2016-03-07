@@ -632,7 +632,8 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsNotOffered) {
 }
 
 // Create two channels with DTLS 1.0 and check ciphers.
-TEST_F(DtlsTransportChannelTest, TestDtls12None) {
+// Disabled due to new BoringSSLL version, see  webrtc:5634
+TEST_F(DtlsTransportChannelTest, DISABLED_TestDtls12None) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -650,7 +651,8 @@ TEST_F(DtlsTransportChannelTest, TestDtls12Both) {
 }
 
 // Create two channels with DTLS 1.0 / DTLS 1.2 and check ciphers.
-TEST_F(DtlsTransportChannelTest, TestDtls12Client1) {
+// Disabled due to new BoringSSLL version, see  webrtc:5634
+TEST_F(DtlsTransportChannelTest, DISABLED_TestDtls12Client1) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
@@ -659,7 +661,8 @@ TEST_F(DtlsTransportChannelTest, TestDtls12Client1) {
 }
 
 // Create two channels with DTLS 1.2 / DTLS 1.0 and check ciphers.
-TEST_F(DtlsTransportChannelTest, TestDtls12Client2) {
+// Disabled due to new BoringSSLL version, see  webrtc:5634
+TEST_F(DtlsTransportChannelTest, DISABLED_TestDtls12Client2) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
