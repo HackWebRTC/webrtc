@@ -10,6 +10,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
 #define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_CVO_H_
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/rotation.h"
 
 namespace webrtc {
@@ -29,7 +30,7 @@ inline uint8_t ConvertVideoRotationToCVOByte(VideoRotation rotation) {
     case kVideoRotation_270:
       return 3;
   }
-  assert(false);
+  RTC_NOTREACHED();
   return 0;
 }
 
@@ -41,11 +42,10 @@ inline VideoRotation ConvertCVOByteToVideoRotation(uint8_t rotation) {
       return kVideoRotation_90;
     case 2:
       return kVideoRotation_180;
-      break;
     case 3:
       return kVideoRotation_270;
     default:
-      assert(false);
+      RTC_NOTREACHED();
       return kVideoRotation_0;
   }
 }
