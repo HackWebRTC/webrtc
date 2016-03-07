@@ -134,10 +134,10 @@ class TransportControllerTest : public testing::Test,
     channel2->SetConnectionCount(1);
   }
 
-  cricket::IceConfig CreateIceConfig(int receiving_timeout_ms,
+  cricket::IceConfig CreateIceConfig(int receiving_timeout,
                                      bool gather_continually) {
     cricket::IceConfig config;
-    config.receiving_timeout_ms = receiving_timeout_ms;
+    config.receiving_timeout = receiving_timeout;
     config.gather_continually = gather_continually;
     return config;
   }

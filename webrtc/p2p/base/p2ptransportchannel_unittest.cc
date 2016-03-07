@@ -102,11 +102,11 @@ enum {
   MSG_CANDIDATE
 };
 
-static cricket::IceConfig CreateIceConfig(int receiving_timeout_ms,
+static cricket::IceConfig CreateIceConfig(int receiving_timeout,
                                           bool gather_continually,
                                           int backup_ping_interval = -1) {
   cricket::IceConfig config;
-  config.receiving_timeout_ms = receiving_timeout_ms;
+  config.receiving_timeout = receiving_timeout;
   config.gather_continually = gather_continually;
   config.backup_connection_ping_interval = backup_ping_interval;
   return config;
@@ -2084,13 +2084,13 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   cricket::P2PTransportChannel ch("receiving state change", 1, &pa);
   PrepareChannel(&ch);
-  // Default receiving timeout and checking receiving delay should not be too
+  // Default receiving timeout and checking receiving interval should not be too
   // small.
   EXPECT_LE(1000, ch.receiving_timeout());
-  EXPECT_LE(200, ch.check_receiving_delay());
+  EXPECT_LE(200, ch.check_receiving_interval());
   ch.SetIceConfig(CreateIceConfig(500, false));
   EXPECT_EQ(500, ch.receiving_timeout());
-  EXPECT_EQ(50, ch.check_receiving_delay());
+  EXPECT_EQ(50, ch.check_receiving_interval());
   ch.Connect();
   ch.MaybeStartGathering();
   ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
@@ -2492,13 +2492,13 @@ class P2PTransportChannelMostLikelyToWorkFirstTest
 
   cricket::P2PTransportChannel& StartTransportChannel(
       bool prioritize_most_likely_to_work,
-      uint32_t max_strong_delay) {
+      int max_strong_interval) {
     channel_.reset(
         new cricket::P2PTransportChannel("checks", 1, nullptr, allocator()));
     cricket::IceConfig config = channel_->config();
     config.prioritize_most_likely_candidate_pairs =
         prioritize_most_likely_to_work;
-    config.max_strong_delay = max_strong_delay;
+    config.max_strong_interval = max_strong_interval;
     channel_->SetIceConfig(config);
     PrepareChannel(channel_.get());
     channel_->Connect();
@@ -2546,9 +2546,9 @@ class P2PTransportChannelMostLikelyToWorkFirstTest
 // we have a best connection.
 TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
        TestRelayRelayFirstWhenNothingPingedYet) {
-  const uint32_t max_strong_delay = 100;
+  const int max_strong_interval = 100;
   cricket::P2PTransportChannel& ch =
-      StartTransportChannel(true, max_strong_delay);
+      StartTransportChannel(true, max_strong_interval);
   EXPECT_TRUE_WAIT(ch.ports().size() == 2, 5000);
   EXPECT_EQ(ch.ports()[0]->Type(), cricket::LOCAL_PORT_TYPE);
   EXPECT_EQ(ch.ports()[1]->Type(), cricket::RELAY_PORT_TYPE);
@@ -2579,10 +2579,10 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   conn3->ReceivedPing();
 
   // Verify that conn3 will be the "best connection" since it is readable and
-  // writable. After |MAX_CURRENT_STRONG_DELAY|, it should be the next pingable
-  // connection.
+  // writable. After |MAX_CURRENT_STRONG_INTERVAL|, it should be the next
+  // pingable connection.
   EXPECT_TRUE_WAIT(conn3 == ch.best_connection(), 5000);
-  WAIT(false, max_strong_delay + 100);
+  WAIT(false, max_strong_interval + 100);
   conn3->ReceivedPingResponse();
   ASSERT_TRUE(conn3->writable());
   EXPECT_EQ(conn3, FindNextPingableConnectionAndPingIt(&ch));

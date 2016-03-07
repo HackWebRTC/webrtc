@@ -34,7 +34,7 @@
 
 namespace cricket {
 
-extern const uint32_t WEAK_PING_DELAY;
+extern const int WEAK_PING_INTERVAL;
 
 struct IceParameters {
   std::string ufrag;
@@ -92,8 +92,10 @@ class P2PTransportChannel : public TransportChannelImpl,
     return gathering_state_;
   }
   void AddRemoteCandidate(const Candidate& candidate) override;
-  // Sets the receiving timeout and gather_continually.
-  // This also sets the check_receiving_delay proportionally.
+  // Sets the parameters in IceConfig. We do not set them blindly. Instead, we
+  // only update the parameter if it is considered set in |config|. For example,
+  // a negative value of receiving_timeout will be considered "not set" and we
+  // will not use it to update the respective parameter in |config_|.
   void SetIceConfig(const IceConfig& config) override;
   const IceConfig& config() const;
 
@@ -166,8 +168,8 @@ class P2PTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  int receiving_timeout() const { return config_.receiving_timeout_ms; }
-  int check_receiving_delay() const { return check_receiving_delay_; }
+  int receiving_timeout() const { return config_.receiving_timeout; }
+  int check_receiving_interval() const { return check_receiving_interval_; }
 
   // Helper method used only in unittest.
   rtc::DiffServCodePoint DefaultDscpValue() const;
@@ -317,9 +319,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   uint64_t tiebreaker_;
   IceGatheringState gathering_state_;
 
-  int check_receiving_delay_;
+  int check_receiving_interval_;
   uint32_t last_ping_sent_ms_ = 0;
-  int weak_ping_delay_ = WEAK_PING_DELAY;
+  int weak_ping_interval_ = WEAK_PING_INTERVAL;
   TransportChannelState state_ = TransportChannelState::STATE_INIT;
   IceConfig config_;
 

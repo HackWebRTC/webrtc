@@ -1123,7 +1123,7 @@ bool WebRtcSession::SetIceTransports(
 cricket::IceConfig WebRtcSession::ParseIceConfig(
     const PeerConnectionInterface::RTCConfiguration& config) const {
   cricket::IceConfig ice_config;
-  ice_config.receiving_timeout_ms = config.ice_connection_receiving_timeout;
+  ice_config.receiving_timeout = config.ice_connection_receiving_timeout;
   ice_config.prioritize_most_likely_candidate_pairs =
       config.prioritize_most_likely_ice_candidate_pairs;
   ice_config.backup_connection_ping_interval =

@@ -180,7 +180,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   void SetReceiving(bool receiving) { set_receiving(receiving); }
 
   void SetIceConfig(const IceConfig& config) override {
-    receiving_timeout_ = config.receiving_timeout_ms;
+    receiving_timeout_ = config.receiving_timeout;
     gather_continually_ = config.gather_continually;
   }
 

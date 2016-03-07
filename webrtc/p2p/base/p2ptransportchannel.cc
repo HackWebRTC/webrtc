@@ -208,21 +208,20 @@ namespace cricket {
 // we don't want to degrade the quality on a modem.  These numbers should work
 // well on a 28.8K modem, which is the slowest connection on which the voice
 // quality is reasonable at all.
-static const uint32_t PING_PACKET_SIZE = 60 * 8;
-// TODO(honghaiz): Change the word DELAY to INTERVAL whenever appropriate.
-// STRONG_PING_DELAY (480ms) is applied when the best connection is both
+static const int PING_PACKET_SIZE = 60 * 8;
+// STRONG_PING_INTERVAL (480ms) is applied when the best connection is both
 // writable and receiving.
-static const uint32_t STRONG_PING_DELAY = 1000 * PING_PACKET_SIZE / 1000;
-// WEAK_PING_DELAY (48ms) is applied when the best connection is either not
+static const int STRONG_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 1000;
+// WEAK_PING_INTERVAL (48ms) is applied when the best connection is either not
 // writable or not receiving.
-const uint32_t WEAK_PING_DELAY = 1000 * PING_PACKET_SIZE / 10000;
+const int WEAK_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 10000;
 
 // If the current best connection is both writable and receiving, then we will
 // also try hard to make sure it is pinged at this rate (a little less than
-// 2 * STRONG_PING_DELAY).
-static const uint32_t MAX_CURRENT_STRONG_DELAY = 900;
+// 2 * STRONG_PING_INTERVAL).
+static const int MAX_CURRENT_STRONG_INTERVAL = 900;  // ms
 
-static const int MIN_CHECK_RECEIVING_DELAY = 50;  // ms
+static const int MIN_CHECK_RECEIVING_INTERVAL = 50;  // ms
 
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
@@ -245,17 +244,17 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
       gathering_state_(kIceGatheringNew),
-      check_receiving_delay_(MIN_CHECK_RECEIVING_DELAY * 5),
-      config_(MIN_CHECK_RECEIVING_DELAY * 50 /* receiving_timeout */,
+      check_receiving_interval_(MIN_CHECK_RECEIVING_INTERVAL * 5),
+      config_(MIN_CHECK_RECEIVING_INTERVAL * 50 /* receiving_timeout */,
               0 /* backup_connection_ping_interval */,
               false /* gather_continually */,
               false /* prioritize_most_likely_candidate_pairs */,
-              MAX_CURRENT_STRONG_DELAY /* most_strong_delay */) {
-  uint32_t weak_ping_delay = ::strtoul(
+              MAX_CURRENT_STRONG_INTERVAL /* max_strong_interval */) {
+  uint32_t weak_ping_interval = ::strtoul(
       webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
       nullptr, 10);
-  if (weak_ping_delay) {
-    weak_ping_delay_ =  weak_ping_delay;
+  if (weak_ping_interval) {
+    weak_ping_interval_ = static_cast<int>(weak_ping_interval);
   }
 }
 
@@ -291,7 +290,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
   connections_.push_back(connection);
   unpinged_connections_.insert(connection);
   connection->set_remote_ice_mode(remote_ice_mode_);
-  connection->set_receiving_timeout(config_.receiving_timeout_ms);
+  connection->set_receiving_timeout(config_.receiving_timeout);
   connection->SignalReadPacket.connect(
       this, &P2PTransportChannel::OnReadPacket);
   connection->SignalReadyToSend.connect(
@@ -413,17 +412,17 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
                  << config_.backup_connection_ping_interval << " milliseconds.";
   }
 
-  if (config.receiving_timeout_ms >= 0 &&
-      config_.receiving_timeout_ms != config.receiving_timeout_ms) {
-    config_.receiving_timeout_ms = config.receiving_timeout_ms;
-    check_receiving_delay_ =
-        std::max(MIN_CHECK_RECEIVING_DELAY, config_.receiving_timeout_ms / 10);
+  if (config.receiving_timeout >= 0 &&
+      config_.receiving_timeout != config.receiving_timeout) {
+    config_.receiving_timeout = config.receiving_timeout;
+    check_receiving_interval_ =
+        std::max(MIN_CHECK_RECEIVING_INTERVAL, config_.receiving_timeout / 10);
 
     for (Connection* connection : connections_) {
-      connection->set_receiving_timeout(config_.receiving_timeout_ms);
+      connection->set_receiving_timeout(config_.receiving_timeout);
     }
-    LOG(LS_INFO) << "Set ICE receiving timeout to "
-                 << config_.receiving_timeout_ms << " milliseconds";
+    LOG(LS_INFO) << "Set ICE receiving timeout to " << config_.receiving_timeout
+                 << " milliseconds";
   }
 
   config_.prioritize_most_likely_candidate_pairs =
@@ -431,10 +430,11 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   LOG(LS_INFO) << "Set ping most likely connection to "
                << config_.prioritize_most_likely_candidate_pairs;
 
-  if (config.max_strong_delay >= 0 &&
-      config_.max_strong_delay != config.max_strong_delay) {
-    config_.max_strong_delay = config.max_strong_delay;
-    LOG(LS_INFO) << "Set max strong delay to " << config_.max_strong_delay;
+  if (config.max_strong_interval >= 0 &&
+      config_.max_strong_interval != config.max_strong_interval) {
+    config_.max_strong_interval = config.max_strong_interval;
+    LOG(LS_INFO) << "Set max strong interval to "
+                 << config_.max_strong_interval;
   }
 }
 
@@ -1245,17 +1245,17 @@ void P2PTransportChannel::OnCheckAndPing() {
   // which ones are pingable).
   UpdateConnectionStates();
   // When the best connection is either not receiving or not writable,
-  // switch to weak ping delay.
-  int ping_delay = weak() ? weak_ping_delay_ : STRONG_PING_DELAY;
-  if (rtc::Time() >= last_ping_sent_ms_ + ping_delay) {
+  // switch to weak ping interval.
+  int ping_interval = weak() ? weak_ping_interval_ : STRONG_PING_INTERVAL;
+  if (rtc::Time() >= last_ping_sent_ms_ + ping_interval) {
     Connection* conn = FindNextPingableConnection();
     if (conn) {
       PingConnection(conn);
       MarkConnectionPinged(conn);
     }
   }
-  int check_delay = std::min(ping_delay, check_receiving_delay_);
-  thread()->PostDelayed(check_delay, this, MSG_CHECK_AND_PING);
+  int delay = std::min(ping_interval, check_receiving_interval_);
+  thread()->PostDelayed(delay, this, MSG_CHECK_AND_PING);
 }
 
 // A connection is considered a backup connection if the channel state
@@ -1300,16 +1300,18 @@ bool P2PTransportChannel::IsPingable(Connection* conn, uint32_t now) {
 
 // Returns the next pingable connection to ping.  This will be the oldest
 // pingable connection unless we have a connected, writable connection that is
-// past the maximum acceptable ping delay. When reconnecting a TCP connection,
-// the best connection is disconnected, although still WRITABLE while
-// reconnecting. The newly created connection should be selected as the ping
-// target to become writable instead. See the big comment in CompareConnections.
+// past the maximum acceptable ping interval. When reconnecting a TCP
+// connection, the best connection is disconnected, although still WRITABLE
+// while reconnecting. The newly created connection should be selected as the
+// ping target to become writable instead. See the big comment in
+// CompareConnections.
 Connection* P2PTransportChannel::FindNextPingableConnection() {
   uint32_t now = rtc::Time();
   Connection* conn_to_ping = nullptr;
   if (best_connection_ && best_connection_->connected() &&
       best_connection_->writable() &&
-      (best_connection_->last_ping_sent() + config_.max_strong_delay <= now)) {
+      (best_connection_->last_ping_sent() + config_.max_strong_interval <=
+       now)) {
     conn_to_ping = best_connection_;
   } else {
     conn_to_ping = FindConnectionToPing(now);
