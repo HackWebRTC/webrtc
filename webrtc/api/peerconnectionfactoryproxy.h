@@ -50,14 +50,17 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
   PROXY_METHOD1(rtc::scoped_refptr<AudioSourceInterface>,
                 CreateAudioSource,
                 const cricket::AudioOptions&)
-  PROXY_METHOD2(rtc::scoped_refptr<VideoSourceInterface>,
-                CreateVideoSource, cricket::VideoCapturer*,
+  PROXY_METHOD2(rtc::scoped_refptr<VideoTrackSourceInterface>,
+                CreateVideoSource,
+                cricket::VideoCapturer*,
                 const MediaConstraintsInterface*)
-  PROXY_METHOD1(rtc::scoped_refptr<VideoSourceInterface>,
+  PROXY_METHOD1(rtc::scoped_refptr<VideoTrackSourceInterface>,
                 CreateVideoSource,
                 cricket::VideoCapturer*)
   PROXY_METHOD2(rtc::scoped_refptr<VideoTrackInterface>,
-                CreateVideoTrack, const std::string&,  VideoSourceInterface*)
+                CreateVideoTrack,
+                const std::string&,
+                VideoTrackSourceInterface*)
   PROXY_METHOD2(rtc::scoped_refptr<AudioTrackInterface>,
                 CreateAudioTrack, const std::string&,  AudioSourceInterface*)
   PROXY_METHOD2(bool, StartAecDump, rtc::PlatformFile, int64_t)

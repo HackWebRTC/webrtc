@@ -63,19 +63,19 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const MediaConstraintsInterface* constraints) override;
 
-  virtual rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
+  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer) override;
   // This version supports filtering on width, height and frame rate.
   // For the "constraints=null" case, use the version without constraints.
   // TODO(hta): Design a version without MediaConstraintsInterface.
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=5617
-  rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
+  rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer,
       const MediaConstraintsInterface* constraints) override;
 
-  rtc::scoped_refptr<VideoTrackInterface>
-      CreateVideoTrack(const std::string& id,
-                       VideoSourceInterface* video_source) override;
+  rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
+      const std::string& id,
+      VideoTrackSourceInterface* video_source) override;
 
   rtc::scoped_refptr<AudioTrackInterface>
       CreateAudioTrack(const std::string& id,

@@ -37,8 +37,8 @@
 
 @implementation RTCVideoSource (Internal)
 
-- (rtc::scoped_refptr<webrtc::VideoSourceInterface>)videoSource {
-  return static_cast<webrtc::VideoSourceInterface*>(self.mediaSource.get());
+- (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)videoSource {
+  return static_cast<webrtc::VideoTrackSourceInterface *>(self.mediaSource.get());
 }
 
 @end

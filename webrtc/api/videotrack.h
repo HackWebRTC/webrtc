@@ -22,14 +22,15 @@ namespace webrtc {
 
 class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
  public:
-  static rtc::scoped_refptr<VideoTrack> Create(const std::string& label,
-                                               VideoSourceInterface* source);
+  static rtc::scoped_refptr<VideoTrack> Create(
+      const std::string& label,
+      VideoTrackSourceInterface* source);
 
   void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
 
-  virtual VideoSourceInterface* GetSource() const {
+  virtual VideoTrackSourceInterface* GetSource() const {
     return video_source_.get();
   }
   rtc::VideoSinkInterface<cricket::VideoFrame>* GetSink() override;
@@ -37,12 +38,12 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
   virtual std::string kind() const;
 
  protected:
-  VideoTrack(const std::string& id, VideoSourceInterface* video_source);
+  VideoTrack(const std::string& id, VideoTrackSourceInterface* video_source);
   ~VideoTrack();
 
  private:
   VideoTrackRenderers renderers_;
-  rtc::scoped_refptr<VideoSourceInterface> video_source_;
+  rtc::scoped_refptr<VideoTrackSourceInterface> video_source_;
 };
 
 }  // namespace webrtc

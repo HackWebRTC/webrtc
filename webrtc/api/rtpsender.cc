@@ -268,7 +268,7 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
 
   // Update video provider.
   if (can_send_track()) {
-    VideoSourceInterface* source = track_->GetSource();
+    VideoTrackSourceInterface* source = track_->GetSource();
     // TODO(deadbeef): If SetTrack is called with a disabled track, and the
     // previous track was enabled, this could cause a frame from the new track
     // to slip out. Really, what we need is for SetCaptureDevice and
@@ -296,7 +296,7 @@ void VideoRtpSender::SetSsrc(uint32_t ssrc) {
   }
   ssrc_ = ssrc;
   if (can_send_track()) {
-    VideoSourceInterface* source = track_->GetSource();
+    VideoTrackSourceInterface* source = track_->GetSource();
     provider_->SetCaptureDevice(ssrc_,
                                 source ? source->GetVideoCapturer() : nullptr);
     SetVideoSend();
@@ -321,7 +321,7 @@ void VideoRtpSender::Stop() {
 void VideoRtpSender::SetVideoSend() {
   RTC_DCHECK(!stopped_ && can_send_track());
   const cricket::VideoOptions* options = nullptr;
-  VideoSourceInterface* source = track_->GetSource();
+  VideoTrackSourceInterface* source = track_->GetSource();
   if (track_->enabled() && source) {
     options = source->options();
   }

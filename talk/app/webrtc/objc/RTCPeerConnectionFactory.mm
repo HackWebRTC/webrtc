@@ -125,9 +125,8 @@
   if (!capturer) {
     return nil;
   }
-  rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
-      self.nativeFactory->CreateVideoSource([capturer takeNativeCapturer],
-                                            constraints.constraints);
+  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
+      self.nativeFactory->CreateVideoSource([capturer takeNativeCapturer], constraints.constraints);
   return [[RTCVideoSource alloc] initWithMediaSource:source];
 }
 

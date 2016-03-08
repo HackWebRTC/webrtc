@@ -31,7 +31,7 @@
 
 @interface RTCVideoSource (Internal)
 
-@property(nonatomic, assign, readonly)
-    rtc::scoped_refptr<webrtc::VideoSourceInterface>videoSource;
+@property(nonatomic, assign, readonly) rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
+    videoSource;
 
 @end

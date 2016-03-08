@@ -13,7 +13,7 @@
 #import "webrtc/api/objc/RTCVideoSource+Private.h"
 
 @implementation RTCVideoSource {
-  rtc::scoped_refptr<webrtc::VideoSourceInterface> _nativeVideoSource;
+  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> _nativeVideoSource;
 }
 
 - (RTCSourceState)state {
@@ -27,12 +27,12 @@
 
 #pragma mark - Private
 
-- (rtc::scoped_refptr<webrtc::VideoSourceInterface>)nativeVideoSource {
+- (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)nativeVideoSource {
   return _nativeVideoSource;
 }
 
 - (instancetype)initWithNativeVideoSource:
-    (rtc::scoped_refptr<webrtc::VideoSourceInterface>)nativeVideoSource {
+    (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)nativeVideoSource {
   NSParameterAssert(nativeVideoSource);
   if (self = [super init]) {
     _nativeVideoSource = nativeVideoSource;

@@ -19,7 +19,7 @@
 #include "webrtc/api/rtpreceiver.h"
 #include "webrtc/api/rtpsender.h"
 #include "webrtc/api/streamcollection.h"
-#include "webrtc/api/videosource.h"
+#include "webrtc/api/videocapturertracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/media/base/fakevideocapturer.h"
@@ -78,7 +78,7 @@ class MockVideoProvider : public VideoProviderInterface {
                     const cricket::VideoOptions* options));
 };
 
-class FakeVideoSource : public Notifier<VideoSourceInterface> {
+class FakeVideoSource : public Notifier<VideoTrackSourceInterface> {
  public:
   static rtc::scoped_refptr<FakeVideoSource> Create(bool remote) {
     return new rtc::RefCountedObject<FakeVideoSource>(remote);
@@ -113,7 +113,7 @@ class RtpSenderReceiverTest : public testing::Test {
   }
 
   void AddVideoTrack(bool remote) {
-    rtc::scoped_refptr<VideoSourceInterface> source(
+    rtc::scoped_refptr<VideoTrackSourceInterface> source(
         FakeVideoSource::Create(remote));
     video_track_ = VideoTrack::Create(kVideoTrackId, source);
     EXPECT_TRUE(stream_->AddTrack(video_track_));

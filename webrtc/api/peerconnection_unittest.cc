@@ -403,7 +403,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     cricket::FakeVideoCapturer* fake_capturer =
         new webrtc::FakePeriodicVideoCapturer();
     video_capturers_.push_back(fake_capturer);
-    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
+    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
         peer_connection_factory_->CreateVideoSource(fake_capturer,
                                                     &source_constraints);
     std::string label = stream_label + kVideoTrackLabelBase;

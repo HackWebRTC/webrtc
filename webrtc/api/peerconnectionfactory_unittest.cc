@@ -34,7 +34,7 @@ using webrtc::MediaStreamInterface;
 using webrtc::PeerConnectionFactoryInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionObserver;
-using webrtc::VideoSourceInterface;
+using webrtc::VideoTrackSourceInterface;
 using webrtc::VideoTrackInterface;
 
 namespace {
@@ -332,7 +332,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
 TEST_F(PeerConnectionFactoryTest, LocalRendering) {
   cricket::FakeVideoCapturer* capturer = new cricket::FakeVideoCapturer();
   // The source take ownership of |capturer|.
-  rtc::scoped_refptr<VideoSourceInterface> source(
+  rtc::scoped_refptr<VideoTrackSourceInterface> source(
       factory_->CreateVideoSource(capturer, NULL));
   ASSERT_TRUE(source.get() != NULL);
   rtc::scoped_refptr<VideoTrackInterface> track(

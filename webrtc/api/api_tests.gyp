@@ -59,7 +59,7 @@
         'test/peerconnectiontestwrapper.h',
         'test/peerconnectiontestwrapper.cc',
         'test/testsdpstrings.h',
-        'videosource_unittest.cc',
+        'videocapturertracksource_unittest.cc',
         'videotrack_unittest.cc',
         'webrtcsdp_unittest.cc',
         'webrtcsession_unittest.cc',

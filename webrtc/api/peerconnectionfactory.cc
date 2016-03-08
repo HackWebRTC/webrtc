@@ -21,7 +21,7 @@
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/api/peerconnectionfactoryproxy.h"
 #include "webrtc/api/peerconnectionproxy.h"
-#include "webrtc/api/videosource.h"
+#include "webrtc/api/videocapturertracksource.h"
 #include "webrtc/api/videosourceproxy.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/bind.h"
@@ -208,22 +208,23 @@ PeerConnectionFactory::CreateAudioSource(const cricket::AudioOptions& options) {
   return source;
 }
 
-rtc::scoped_refptr<VideoSourceInterface>
+rtc::scoped_refptr<VideoTrackSourceInterface>
 PeerConnectionFactory::CreateVideoSource(
     cricket::VideoCapturer* capturer,
     const MediaConstraintsInterface* constraints) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  rtc::scoped_refptr<VideoSource> source(VideoSource::Create(
-      worker_thread_, capturer, constraints, false));
-  return VideoSourceProxy::Create(signaling_thread_, source);
+  rtc::scoped_refptr<VideoTrackSourceInterface> source(
+      VideoCapturerTrackSource::Create(worker_thread_, capturer, constraints,
+                                       false));
+  return VideoTrackSourceProxy::Create(signaling_thread_, source);
 }
 
-rtc::scoped_refptr<VideoSourceInterface>
+rtc::scoped_refptr<VideoTrackSourceInterface>
 PeerConnectionFactory::CreateVideoSource(cricket::VideoCapturer* capturer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  rtc::scoped_refptr<VideoSource> source(
-      VideoSource::Create(worker_thread_, capturer, false));
-  return VideoSourceProxy::Create(signaling_thread_, source);
+  rtc::scoped_refptr<VideoTrackSourceInterface> source(
+      VideoCapturerTrackSource::Create(worker_thread_, capturer, false));
+  return VideoTrackSourceProxy::Create(signaling_thread_, source);
 }
 
 bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file,
@@ -319,10 +320,9 @@ PeerConnectionFactory::CreateLocalMediaStream(const std::string& label) {
                                   MediaStream::Create(label));
 }
 
-rtc::scoped_refptr<VideoTrackInterface>
-PeerConnectionFactory::CreateVideoTrack(
+rtc::scoped_refptr<VideoTrackInterface> PeerConnectionFactory::CreateVideoTrack(
     const std::string& id,
-    VideoSourceInterface* source) {
+    VideoTrackSourceInterface* source) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoTrackInterface> track(
       VideoTrack::Create(id, source));

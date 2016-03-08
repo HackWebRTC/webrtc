@@ -12,7 +12,7 @@
 
 #include "webrtc/api/remotevideocapturer.h"
 #include "webrtc/api/test/fakevideotrackrenderer.h"
-#include "webrtc/api/videosource.h"
+#include "webrtc/api/videocapturertracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -22,7 +22,7 @@
 
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::FakeVideoTrackRendererOld;
-using webrtc::VideoSource;
+using webrtc::VideoCapturerTrackSource;
 using webrtc::VideoTrack;
 using webrtc::VideoTrackInterface;
 
@@ -40,9 +40,9 @@ class VideoTrackTest : public testing::Test {
   VideoTrackTest() {
     static const char kVideoTrackId[] = "track_id";
     video_track_ = VideoTrack::Create(
-        kVideoTrackId,
-        VideoSource::Create(rtc::Thread::Current(),
-                            new webrtc::RemoteVideoCapturer(), NULL, true));
+        kVideoTrackId, VideoCapturerTrackSource::Create(
+                           rtc::Thread::Current(),
+                           new webrtc::RemoteVideoCapturer(), NULL, true));
   }
 
  protected:

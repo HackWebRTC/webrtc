@@ -58,7 +58,7 @@
 
 - (RTCVideoSource *)source {
   if (!_source) {
-    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
+    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
         self.nativeVideoTrack->GetSource();
     if (source) {
       _source = [[RTCVideoSource alloc] initWithNativeVideoSource:source.get()];

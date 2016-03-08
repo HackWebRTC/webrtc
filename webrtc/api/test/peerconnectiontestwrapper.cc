@@ -267,7 +267,7 @@ rtc::scoped_refptr<webrtc::MediaStreamInterface>
     FakeConstraints constraints = video_constraints;
     constraints.SetMandatoryMaxFrameRate(10);
 
-    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
+    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
         peer_connection_factory_->CreateVideoSource(
             new webrtc::FakePeriodicVideoCapturer(), &constraints);
     std::string videotrack_label = label + kVideoTrackLabelBase;

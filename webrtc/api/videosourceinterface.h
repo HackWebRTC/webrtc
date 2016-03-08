@@ -12,37 +12,7 @@
 #define WEBRTC_API_VIDEOSOURCEINTERFACE_H_
 
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/videosourceinterface.h"
 
-namespace webrtc {
-
-// VideoSourceInterface is a reference counted source used for VideoTracks.
-// The same source can be used in multiple VideoTracks.
-// The methods are only supposed to be called by the PeerConnection
-// implementation.
-class VideoSourceInterface :
-    public MediaSourceInterface,
-    public rtc::VideoSourceInterface<cricket::VideoFrame> {
- public:
-  // Get access to the source implementation of cricket::VideoCapturer.
-  // This can be used for receiving frames and state notifications.
-  // But it should not be used for starting or stopping capturing.
-  virtual cricket::VideoCapturer* GetVideoCapturer() = 0;
-
-  virtual void Stop() = 0;
-  virtual void Restart() = 0;
-
-  virtual const cricket::VideoOptions* options() const = 0;
-
- protected:
-  virtual ~VideoSourceInterface() {}
-};
-
-// TODO(perkj): Rename webrtc::VideoSourceInterface to
-// webrtc::VideoTrackSourceInterface
-using VideoTrackSourceInterface = VideoSourceInterface;
-
-}  // namespace webrtc
+// TODO(perkj): Remove this file once Chrome build files doesn't depend on it.
 
 #endif  // WEBRTC_API_VIDEOSOURCEINTERFACE_H_

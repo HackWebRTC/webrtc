@@ -17,7 +17,7 @@ namespace webrtc {
 const char MediaStreamTrackInterface::kVideoKind[] = "video";
 
 VideoTrack::VideoTrack(const std::string& label,
-                       VideoSourceInterface* video_source)
+                       VideoTrackSourceInterface* video_source)
     : MediaStreamTrack<VideoTrackInterface>(label),
       video_source_(video_source) {
   // TODO(perkj): Sinks should register directly to the source so that
@@ -61,7 +61,7 @@ bool VideoTrack::set_enabled(bool enable) {
 
 rtc::scoped_refptr<VideoTrack> VideoTrack::Create(
     const std::string& id,
-    VideoSourceInterface* source) {
+    VideoTrackSourceInterface* source) {
   rtc::RefCountedObject<VideoTrack>* track =
       new rtc::RefCountedObject<VideoTrack>(id, source);
   return track;

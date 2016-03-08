@@ -107,7 +107,7 @@ using webrtc::StatsObserver;
 using webrtc::StatsReport;
 using webrtc::StatsReports;
 using webrtc::VideoRendererInterface;
-using webrtc::VideoSourceInterface;
+using webrtc::VideoTrackSourceInterface;
 using webrtc::VideoTrackInterface;
 using webrtc::VideoTrackVector;
 using webrtc::kVideoCodecVP8;
@@ -1225,13 +1225,13 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)(
           jni, j_video_capturer, j_surface_texture_helper);
   rtc::scoped_ptr<cricket::VideoCapturer> capturer(
       new webrtc::AndroidVideoCapturer(delegate));
-  // Create a webrtc::VideoSourceInterface from the cricket::VideoCapturer,
+  // Create a webrtc::VideoTrackSourceInterface from the cricket::VideoCapturer,
   // native factory and constraints.
   scoped_ptr<ConstraintsWrapper> constraints(
       new ConstraintsWrapper(jni, j_constraints));
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  rtc::scoped_refptr<VideoSourceInterface> source(
+  rtc::scoped_refptr<VideoTrackSourceInterface> source(
       factory->CreateVideoSource(capturer.release(), constraints.get()));
   return (jlong)source.release();
 }
@@ -1241,10 +1241,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoTrack)(
     jlong native_source) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  rtc::scoped_refptr<VideoTrackInterface> track(
-      factory->CreateVideoTrack(
-          JavaToStdString(jni, id),
-          reinterpret_cast<VideoSourceInterface*>(native_source)));
+  rtc::scoped_refptr<VideoTrackInterface> track(factory->CreateVideoTrack(
+      JavaToStdString(jni, id),
+      reinterpret_cast<VideoTrackSourceInterface*>(native_source)));
   return (jlong)track.release();
 }
 
@@ -1887,12 +1886,12 @@ JOW(void, VideoRenderer_nativeCopyPlane)(
 }
 
 JOW(void, VideoSource_stop)(JNIEnv* jni, jclass, jlong j_p) {
-  reinterpret_cast<VideoSourceInterface*>(j_p)->Stop();
+  reinterpret_cast<VideoTrackSourceInterface*>(j_p)->Stop();
 }
 
 JOW(void, VideoSource_restart)(
     JNIEnv* jni, jclass, jlong j_p_source, jlong j_p_format) {
-  reinterpret_cast<VideoSourceInterface*>(j_p_source)->Restart();
+  reinterpret_cast<VideoTrackSourceInterface*>(j_p_source)->Restart();
 }
 
 JOW(jstring, MediaStreamTrack_nativeId)(JNIEnv* jni, jclass, jlong j_p) {

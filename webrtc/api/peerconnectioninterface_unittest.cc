@@ -27,7 +27,7 @@
 #include "webrtc/api/test/fakedtlsidentitystore.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
 #include "webrtc/api/test/testsdpstrings.h"
-#include "webrtc/api/videosource.h"
+#include "webrtc/api/videocapturertracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -262,7 +262,7 @@ using webrtc::SdpParseError;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollection;
 using webrtc::StreamCollectionInterface;
-using webrtc::VideoSourceInterface;
+using webrtc::VideoTrackSourceInterface;
 using webrtc::VideoTrack;
 using webrtc::VideoTrackInterface;
 
@@ -597,7 +597,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     // Create a local stream.
     scoped_refptr<MediaStreamInterface> stream(
         pc_factory_->CreateLocalMediaStream(label));
-    scoped_refptr<VideoSourceInterface> video_source(
+    scoped_refptr<VideoTrackSourceInterface> video_source(
         pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer(), NULL));
     scoped_refptr<VideoTrackInterface> video_track(
         pc_factory_->CreateVideoTrack(label + "v0", video_source));

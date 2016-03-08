@@ -29,7 +29,7 @@
 #include "webrtc/api/rtpreceiver.h"
 #include "webrtc/api/rtpsender.h"
 #include "webrtc/api/streamcollection.h"
-#include "webrtc/api/videosource.h"
+#include "webrtc/api/videocapturertracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/logging.h"
@@ -404,8 +404,8 @@ class RemoteMediaStreamFactory {
                                      const std::string& track_id) {
     return AddTrack<VideoTrackInterface, VideoTrack, VideoTrackProxy>(
         stream, track_id,
-        VideoSource::Create(worker_thread_, new RemoteVideoCapturer(),
-                            nullptr, true)
+        VideoCapturerTrackSource::Create(
+            worker_thread_, new RemoteVideoCapturer(), nullptr, true)
             .get());
   }
 

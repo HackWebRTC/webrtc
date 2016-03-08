@@ -63,7 +63,7 @@
     (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack {
   if (self = [super initWithMediaTrack:mediaTrack]) {
     [self configure];
-    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
+    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
         self.nativeVideoTrack->GetSource();
     if (source) {
       _source = [[RTCVideoSource alloc] initWithMediaSource:source.get()];

@@ -563,23 +563,23 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const MediaConstraintsInterface* constraints) = 0;
 
-  // Creates a VideoSourceInterface. The new source take ownership of
+  // Creates a VideoTrackSourceInterface. The new source take ownership of
   // |capturer|.
-  virtual rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
+  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer) = 0;
   // A video source creator that allows selection of resolution and frame rate.
   // |constraints| decides video resolution and frame rate but can
   // be NULL.
   // In the NULL case, use the version above.
-  virtual rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
+  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer,
       const MediaConstraintsInterface* constraints) = 0;
 
   // Creates a new local VideoTrack. The same |source| can be used in several
   // tracks.
-  virtual rtc::scoped_refptr<VideoTrackInterface>
-      CreateVideoTrack(const std::string& label,
-                       VideoSourceInterface* source) = 0;
+  virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
+      const std::string& label,
+      VideoTrackSourceInterface* source) = 0;
 
   // Creates an new AudioTrack. At the moment |source| can be NULL.
   virtual rtc::scoped_refptr<AudioTrackInterface>

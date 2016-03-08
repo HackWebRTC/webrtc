@@ -23,6 +23,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
 
@@ -120,17 +121,34 @@ class VideoRendererInterface
   virtual ~VideoRendererInterface() {}
 };
 
-class VideoSourceInterface;
+// VideoTrackSourceInterface is a reference counted source used for VideoTracks.
+// The same source can be used in multiple VideoTracks.
+class VideoTrackSourceInterface
+    : public MediaSourceInterface,
+      public rtc::VideoSourceInterface<cricket::VideoFrame> {
+ public:
+  // Get access to the source implementation of cricket::VideoCapturer.
+  // This can be used for receiving frames and state notifications.
+  // But it should not be used for starting or stopping capturing.
+  // TODO(perkj): We are currently trying to replace all internal use of
+  // cricket::VideoCapturer with rtc::VideoSourceInterface. Once that
+  // refactoring is done,
+  // remove this method.
+  virtual cricket::VideoCapturer* GetVideoCapturer() = 0;
+
+  virtual void Stop() = 0;
+  virtual void Restart() = 0;
+
+  virtual const cricket::VideoOptions* options() const = 0;
+
+ protected:
+  virtual ~VideoTrackSourceInterface() {}
+};
 
 class VideoTrackInterface
     : public MediaStreamTrackInterface,
       public rtc::VideoSourceInterface<cricket::VideoFrame> {
  public:
-  // Make an unqualified VideoSourceInterface resolve to
-  // webrtc::VideoSourceInterface, not our base class
-  // rtc::VideoSourceInterface<cricket::VideoFrame>.
-  using VideoSourceInterface = webrtc::VideoSourceInterface;
-
   // AddRenderer and RemoveRenderer are for backwards compatibility
   // only. They are obsoleted by the methods of
   // rtc::VideoSourceInterface.
@@ -147,7 +165,7 @@ class VideoTrackInterface
   void RemoveSink(
       rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override{};
 
-  virtual VideoSourceInterface* GetSource() const = 0;
+  virtual VideoTrackSourceInterface* GetSource() const = 0;
 
   // Return the track input sink. I.e., frames sent to this sink are
   // propagated to all renderers registered with the track. The
