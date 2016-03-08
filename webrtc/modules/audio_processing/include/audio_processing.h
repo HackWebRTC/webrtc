@@ -73,10 +73,10 @@ struct ExtendedFilter {
 // standard methods for echo removal in the AEC. This configuration only applies
 // to EchoCancellation and not EchoControlMobile. It can be set in the
 // constructor or using AudioProcessing::SetExtraOptions().
-struct NextGenerationAec {
-  NextGenerationAec() : enabled(false) {}
-  explicit NextGenerationAec(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kNextGenerationAec;
+struct EchoCanceller3 {
+  EchoCanceller3() : enabled(false) {}
+  explicit EchoCanceller3(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kEchoCanceller3;
   bool enabled;
 };
 

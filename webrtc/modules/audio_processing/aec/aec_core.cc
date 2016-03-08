@@ -1439,7 +1439,7 @@ AecCore* WebRtcAec_CreateAec() {
   WebRtc_set_lookahead(aec->delay_estimator, kLookaheadBlocks);
 #endif
   aec->extended_filter_enabled = 0;
-  aec->next_generation_aec_enabled = 0;
+  aec->aec3_enabled = 0;
 
   // Assembly optimization
   WebRtcAec_FilterFar = FilterFar;
@@ -1873,14 +1873,13 @@ int WebRtcAec_delay_agnostic_enabled(AecCore* self) {
   return self->delay_agnostic_enabled;
 }
 
-void WebRtcAec_enable_next_generation_aec(AecCore* self, int enable) {
-  self->next_generation_aec_enabled = (enable != 0);
+void WebRtcAec_enable_aec3(AecCore* self, int enable) {
+  self->aec3_enabled = (enable != 0);
 }
 
-int WebRtcAec_next_generation_aec_enabled(AecCore* self) {
-  assert(self->next_generation_aec_enabled == 0 ||
-         self->next_generation_aec_enabled == 1);
-  return self->next_generation_aec_enabled;
+int WebRtcAec_aec3_enabled(AecCore* self) {
+  assert(self->aec3_enabled == 0 || self->aec3_enabled == 1);
+  return self->aec3_enabled;
 }
 
 

@@ -150,7 +150,7 @@ struct AecCore {
   // 1 = extended filter mode enabled, 0 = disabled.
   int extended_filter_enabled;
   // 1 = next generation aec mode enabled, 0 = disabled.
-  int next_generation_aec_enabled;
+  int aec3_enabled;
 
   // Runtime selection of number of filter partitions.
   int num_partitions;
