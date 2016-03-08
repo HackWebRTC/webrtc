@@ -389,7 +389,7 @@ int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
         video_frame,
         video_frame.render_time_ms() - clock_->TimeInMilliseconds());
 
-  stats_proxy_.OnRenderedFrame(video_frame.width(), video_frame.height());
+  stats_proxy_.OnRenderedFrame(video_frame);
 
   return 0;
 }

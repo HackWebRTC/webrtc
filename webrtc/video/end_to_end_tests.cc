@@ -2145,6 +2145,8 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
         (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].payload_type =
             kSendRtxPayloadType;
       }
+      // RTT needed for RemoteNtpTimeEstimator for the receive stream.
+      (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report = true;
       encoder_config->content_type =
           screenshare_ ? VideoEncoderConfig::ContentType::kScreen
                        : VideoEncoderConfig::ContentType::kRealtimeVideo;

@@ -161,9 +161,6 @@ void ReceiveStatisticsProxy::OnDecoderTiming(int decode_ms,
   stats_.min_playout_delay_ms = min_playout_delay_ms;
   stats_.render_delay_ms = render_delay_ms;
   decode_time_counter_.Add(decode_ms);
-  // Network delay (rtt/2) + target_delay_ms (jitter delay + decode time +
-  // render delay).
-  delay_counter_.Add(target_delay_ms + rtt_ms / 2);
 }
 
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
@@ -220,7 +217,9 @@ void ReceiveStatisticsProxy::OnDecodedFrame() {
   stats_.decode_frame_rate = decode_fps_estimator_.Rate(now);
 }
 
-void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
+void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
+  int width = frame.width();
+  int height = frame.height();
   RTC_DCHECK_GT(width, 0);
   RTC_DCHECK_GT(height, 0);
   uint64_t now = clock_->TimeInMilliseconds();
@@ -232,6 +231,12 @@ void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
   render_height_counter_.Add(height);
   render_fps_tracker_.AddSamples(1);
   render_pixel_tracker_.AddSamples(sqrt(width * height));
+
+  if (frame.ntp_time_ms() > 0) {
+    int64_t delay_ms = clock_->CurrentNtpInMilliseconds() - frame.ntp_time_ms();
+    if (delay_ms >= 0)
+      delay_counter_.Add(delay_ms);
+  }
 }
 
 void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,
