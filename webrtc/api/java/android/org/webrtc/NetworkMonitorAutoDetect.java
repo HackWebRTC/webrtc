@@ -156,8 +156,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
     private void onNetworkChanged(Network network) {
       NetworkInformation networkInformation = connectivityManagerDelegate.networkToInfo(network);
-      if (networkInformation.type != ConnectionType.CONNECTION_UNKNOWN
-          && networkInformation.type != ConnectionType.CONNECTION_NONE) {
+      if (networkInformation != null) {
         observer.onNetworkConnect(networkInformation);
       }
     }
@@ -234,8 +233,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       ArrayList<NetworkInformation> netInfoList = new ArrayList<NetworkInformation>();
       for (Network network : getAllNetworks()) {
         NetworkInformation info = networkToInfo(network);
-        if (info.name != null && info.type != ConnectionType.CONNECTION_NONE
-            && info.type != ConnectionType.CONNECTION_UNKNOWN) {
+        if (info != null) {
           netInfoList.add(info);
         }
       }
@@ -285,10 +283,27 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     @SuppressLint("NewApi")
     private NetworkInformation networkToInfo(Network network) {
       LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
+      int networkId = networkToNetId(network);
+      if (linkProperties.getInterfaceName() == null) {
+        Logging.w(TAG, "Null interface name for network id " + networkId);
+        return null;
+      }
+
+      ConnectionType connectionType = getConnectionType(getNetworkState(network));
+      if (connectionType == ConnectionType.CONNECTION_UNKNOWN
+          || connectionType == ConnectionType.CONNECTION_NONE) {
+        // This may not be an error. The OS may signal a network event with connection type
+        // NONE when the network disconnects. But in some devices, the OS may incorrectly
+        // report an UNKNOWN connection type. In either case, it won't benefit to send down
+        // a network event with this connection type.
+        Logging.d(TAG, "Network with id " + networkId + " has connection type " + connectionType);
+        return null;
+      }
+
       NetworkInformation networkInformation = new NetworkInformation(
           linkProperties.getInterfaceName(),
-          getConnectionType(getNetworkState(network)),
-          networkToNetId(network),
+          connectionType,
+          networkId,
           getIPAddresses(linkProperties));
       return networkInformation;
     }
