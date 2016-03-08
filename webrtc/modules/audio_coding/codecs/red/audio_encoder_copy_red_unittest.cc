@@ -33,28 +33,26 @@ static const size_t kMaxNumSamples = 48 * 10 * 2;  // 10 ms @ 48 kHz stereo.
 class AudioEncoderCopyRedTest : public ::testing::Test {
  protected:
   AudioEncoderCopyRedTest()
-      : timestamp_(4711),
+      : mock_encoder_(new MockAudioEncoder),
+        timestamp_(4711),
         sample_rate_hz_(16000),
         num_audio_samples_10ms(sample_rate_hz_ / 100),
         red_payload_type_(200) {
     AudioEncoderCopyRed::Config config;
     config.payload_type = red_payload_type_;
-    config.speech_encoder = &mock_encoder_;
-    red_.reset(new AudioEncoderCopyRed(config));
+    config.speech_encoder = std::unique_ptr<AudioEncoder>(mock_encoder_);
+    red_.reset(new AudioEncoderCopyRed(std::move(config)));
     memset(audio_, 0, sizeof(audio_));
-    EXPECT_CALL(mock_encoder_, NumChannels()).WillRepeatedly(Return(1U));
-    EXPECT_CALL(mock_encoder_, SampleRateHz())
+    EXPECT_CALL(*mock_encoder_, NumChannels()).WillRepeatedly(Return(1U));
+    EXPECT_CALL(*mock_encoder_, SampleRateHz())
         .WillRepeatedly(Return(sample_rate_hz_));
-    EXPECT_CALL(mock_encoder_, MaxEncodedBytes())
+    EXPECT_CALL(*mock_encoder_, MaxEncodedBytes())
         .WillRepeatedly(Return(kMockMaxEncodedBytes));
   }
 
   void TearDown() override {
+    EXPECT_CALL(*mock_encoder_, Die()).Times(1);
     red_.reset();
-    // Don't expect the red_ object to delete the AudioEncoder object. But it
-    // will be deleted with the test fixture. This is why we explicitly delete
-    // the red_ object above, and set expectations on mock_encoder_ afterwards.
-    EXPECT_CALL(mock_encoder_, Die()).Times(1);
   }
 
   void Encode() {
@@ -67,7 +65,7 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
     timestamp_ += num_audio_samples_10ms;
   }
 
-  MockAudioEncoder mock_encoder_;
+  MockAudioEncoder* mock_encoder_;
   std::unique_ptr<AudioEncoderCopyRed> red_;
   uint32_t timestamp_;
   int16_t audio_[kMaxNumSamples];
@@ -82,32 +80,33 @@ TEST_F(AudioEncoderCopyRedTest, CreateAndDestroy) {
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckSampleRatePropagation) {
-  EXPECT_CALL(mock_encoder_, SampleRateHz()).WillOnce(Return(17));
+  EXPECT_CALL(*mock_encoder_, SampleRateHz()).WillOnce(Return(17));
   EXPECT_EQ(17, red_->SampleRateHz());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckNumChannelsPropagation) {
-  EXPECT_CALL(mock_encoder_, NumChannels()).WillOnce(Return(17U));
+  EXPECT_CALL(*mock_encoder_, NumChannels()).WillOnce(Return(17U));
   EXPECT_EQ(17U, red_->NumChannels());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckFrameSizePropagation) {
-  EXPECT_CALL(mock_encoder_, Num10MsFramesInNextPacket()).WillOnce(Return(17U));
+  EXPECT_CALL(*mock_encoder_, Num10MsFramesInNextPacket())
+      .WillOnce(Return(17U));
   EXPECT_EQ(17U, red_->Num10MsFramesInNextPacket());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckMaxFrameSizePropagation) {
-  EXPECT_CALL(mock_encoder_, Max10MsFramesInAPacket()).WillOnce(Return(17U));
+  EXPECT_CALL(*mock_encoder_, Max10MsFramesInAPacket()).WillOnce(Return(17U));
   EXPECT_EQ(17U, red_->Max10MsFramesInAPacket());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckSetBitratePropagation) {
-  EXPECT_CALL(mock_encoder_, SetTargetBitrate(4711));
+  EXPECT_CALL(*mock_encoder_, SetTargetBitrate(4711));
   red_->SetTargetBitrate(4711);
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckProjectedPacketLossRatePropagation) {
-  EXPECT_CALL(mock_encoder_, SetProjectedPacketLossRate(0.5));
+  EXPECT_CALL(*mock_encoder_, SetProjectedPacketLossRate(0.5));
   red_->SetProjectedPacketLossRate(0.5);
 }
 
@@ -120,7 +119,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckImmediateEncode) {
   InSequence s;
   MockFunction<void(int check_point_id)> check;
   for (int i = 1; i <= 6; ++i) {
-    EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
+    EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
         .WillRepeatedly(Return(AudioEncoder::EncodedInfo()));
     EXPECT_CALL(check, Call(i));
     Encode();
@@ -134,7 +133,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
   static const size_t kEncodedSize = 17;
   {
     InSequence s;
-    EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
+    EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
         .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(kEncodedSize)))
         .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(0)))
         .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(kEncodedSize)));
@@ -165,7 +164,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
   static const int kNumPackets = 10;
   InSequence s;
   for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
-    EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
+    EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
         .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(encode_size)));
   }
 
@@ -191,7 +190,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckTimestamps) {
   info.encoded_bytes = 17;
   info.encoded_timestamp = timestamp_;
 
-  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
       .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
 
   // First call is a special case, since it does not include a secondary
@@ -202,7 +201,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckTimestamps) {
   uint32_t secondary_timestamp = primary_timestamp;
   primary_timestamp = timestamp_;
   info.encoded_timestamp = timestamp_;
-  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
       .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
 
   Encode();
@@ -221,7 +220,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloads) {
   for (uint8_t i = 0; i < kPayloadLenBytes; ++i) {
     payload[i] = i;
   }
-  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
       .WillRepeatedly(Invoke(MockAudioEncoder::CopyEncoding(payload)));
 
   // First call is a special case, since it does not include a secondary
@@ -257,7 +256,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
   AudioEncoder::EncodedInfo info;
   info.encoded_bytes = 17;
   info.payload_type = primary_payload_type;
-  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
       .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
 
   // First call is a special case, since it does not include a secondary
@@ -269,7 +268,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
 
   const int secondary_payload_type = red_payload_type_ + 2;
   info.payload_type = secondary_payload_type;
-  EXPECT_CALL(mock_encoder_, EncodeImpl(_, _, _))
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
       .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
 
   Encode();
@@ -299,7 +298,7 @@ TEST_F(AudioEncoderCopyRedDeathTest, NullSpeechEncoder) {
   AudioEncoderCopyRed* red = NULL;
   AudioEncoderCopyRed::Config config;
   config.speech_encoder = NULL;
-  EXPECT_DEATH(red = new AudioEncoderCopyRed(config),
+  EXPECT_DEATH(red = new AudioEncoderCopyRed(std::move(config)),
                "Speech encoder not provided.");
   // The delete operation is needed to avoid leak reports from memcheck.
   delete red;

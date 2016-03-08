@@ -19,22 +19,29 @@ namespace acm2 {
 using ::testing::Return;
 
 namespace {
+
 const int kDataLengthSamples = 80;
 const int kPacketSizeSamples = 2 * kDataLengthSamples;
 const int16_t kZeroData[kDataLengthSamples] = {0};
 const CodecInst kDefaultCodecInst = {0, "pcmu", 8000, kPacketSizeSamples,
                                      1, 64000};
 const int kCngPt = 13;
+
+class Marker final {
+ public:
+  MOCK_METHOD1(Mark, void(std::string desc));
+};
+
 }  // namespace
 
 class RentACodecTestF : public ::testing::Test {
  protected:
   void CreateCodec() {
-    speech_encoder_ = rent_a_codec_.RentEncoder(kDefaultCodecInst);
-    ASSERT_TRUE(speech_encoder_);
+    auto speech_encoder = rent_a_codec_.RentEncoder(kDefaultCodecInst);
+    ASSERT_TRUE(speech_encoder);
     RentACodec::StackParameters param;
     param.use_cng = true;
-    param.speech_encoder = speech_encoder_;
+    param.speech_encoder = std::move(speech_encoder);
     encoder_ = rent_a_codec_.RentEncoderStack(&param);
   }
 
@@ -58,8 +65,7 @@ class RentACodecTestF : public ::testing::Test {
   }
 
   RentACodec rent_a_codec_;
-  AudioEncoder* speech_encoder_ = nullptr;
-  AudioEncoder* encoder_ = nullptr;
+  std::unique_ptr<AudioEncoder> encoder_;
   uint32_t timestamp_ = 0;
 };
 
@@ -103,87 +109,91 @@ TEST_F(RentACodecTestF, VerifyCngFrames) {
 
 TEST(RentACodecTest, ExternalEncoder) {
   const int kSampleRateHz = 8000;
-  MockAudioEncoder external_encoder;
-  EXPECT_CALL(external_encoder, SampleRateHz())
+  auto* external_encoder = new MockAudioEncoder;
+  EXPECT_CALL(*external_encoder, SampleRateHz())
       .WillRepeatedly(Return(kSampleRateHz));
-  EXPECT_CALL(external_encoder, NumChannels()).WillRepeatedly(Return(1));
-  EXPECT_CALL(external_encoder, SetFec(false)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*external_encoder, NumChannels()).WillRepeatedly(Return(1));
+  EXPECT_CALL(*external_encoder, SetFec(false)).WillRepeatedly(Return(true));
 
   RentACodec rac;
   RentACodec::StackParameters param;
-  param.speech_encoder = &external_encoder;
-  EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&param));
+  param.speech_encoder = std::unique_ptr<AudioEncoder>(external_encoder);
+  std::unique_ptr<AudioEncoder> encoder_stack = rac.RentEncoderStack(&param);
+  EXPECT_EQ(external_encoder, encoder_stack.get());
   const int kPacketSizeSamples = kSampleRateHz / 100;
   int16_t audio[kPacketSizeSamples] = {0};
   rtc::Buffer encoded;
   AudioEncoder::EncodedInfo info;
 
+  Marker marker;
   {
     ::testing::InSequence s;
     info.encoded_timestamp = 0;
-    EXPECT_CALL(external_encoder,
-                EncodeImpl(0, rtc::ArrayView<const int16_t>(audio),
-                               &encoded))
+    EXPECT_CALL(
+        *external_encoder,
+        EncodeImpl(0, rtc::ArrayView<const int16_t>(audio), &encoded))
         .WillOnce(Return(info));
-    EXPECT_CALL(external_encoder, Mark("A"));
-    EXPECT_CALL(external_encoder, Mark("B"));
-    info.encoded_timestamp = 2;
-    EXPECT_CALL(external_encoder,
-                EncodeImpl(2, rtc::ArrayView<const int16_t>(audio),
-                               &encoded))
-        .WillOnce(Return(info));
-    EXPECT_CALL(external_encoder, Die());
+    EXPECT_CALL(marker, Mark("A"));
+    EXPECT_CALL(marker, Mark("B"));
+    EXPECT_CALL(*external_encoder, Die());
+    EXPECT_CALL(marker, Mark("C"));
   }
 
-  info = external_encoder.Encode(0, audio, &encoded);
+  info = encoder_stack->Encode(0, audio, &encoded);
   EXPECT_EQ(0u, info.encoded_timestamp);
-  external_encoder.Mark("A");
+  marker.Mark("A");
 
   // Change to internal encoder.
   CodecInst codec_inst = kDefaultCodecInst;
   codec_inst.pacsize = kPacketSizeSamples;
   param.speech_encoder = rac.RentEncoder(codec_inst);
   ASSERT_TRUE(param.speech_encoder);
-  EXPECT_EQ(param.speech_encoder, rac.RentEncoderStack(&param));
+  AudioEncoder* enc = param.speech_encoder.get();
+  std::unique_ptr<AudioEncoder> stack = rac.RentEncoderStack(&param);
+  EXPECT_EQ(enc, stack.get());
 
   // Don't expect any more calls to the external encoder.
-  info = param.speech_encoder->Encode(1, audio, &encoded);
-  external_encoder.Mark("B");
-
-  // Change back to external encoder again.
-  param.speech_encoder = &external_encoder;
-  EXPECT_EQ(&external_encoder, rac.RentEncoderStack(&param));
-  info = external_encoder.Encode(2, audio, &encoded);
-  EXPECT_EQ(2u, info.encoded_timestamp);
+  info = stack->Encode(1, audio, &encoded);
+  marker.Mark("B");
+  encoder_stack.reset();
+  marker.Mark("C");
 }
 
 // Verify that the speech encoder's Reset method is called when CNG or RED
 // (or both) are switched on, but not when they're switched off.
 void TestCngAndRedResetSpeechEncoder(bool use_cng, bool use_red) {
-  MockAudioEncoder speech_encoder;
-  EXPECT_CALL(speech_encoder, NumChannels()).WillRepeatedly(Return(1));
-  EXPECT_CALL(speech_encoder, Max10MsFramesInAPacket())
-      .WillRepeatedly(Return(2));
-  EXPECT_CALL(speech_encoder, SampleRateHz()).WillRepeatedly(Return(8000));
-  EXPECT_CALL(speech_encoder, SetFec(false)).WillRepeatedly(Return(true));
+  auto make_enc = [] {
+    auto speech_encoder =
+        std::unique_ptr<MockAudioEncoder>(new MockAudioEncoder);
+    EXPECT_CALL(*speech_encoder, NumChannels()).WillRepeatedly(Return(1));
+    EXPECT_CALL(*speech_encoder, Max10MsFramesInAPacket())
+        .WillRepeatedly(Return(2));
+    EXPECT_CALL(*speech_encoder, SampleRateHz()).WillRepeatedly(Return(8000));
+    EXPECT_CALL(*speech_encoder, SetFec(false)).WillRepeatedly(Return(true));
+    return speech_encoder;
+  };
+  auto speech_encoder1 = make_enc();
+  auto speech_encoder2 = make_enc();
+  Marker marker;
   {
     ::testing::InSequence s;
-    EXPECT_CALL(speech_encoder, Mark("disabled"));
-    EXPECT_CALL(speech_encoder, Mark("enabled"));
+    EXPECT_CALL(marker, Mark("disabled"));
+    EXPECT_CALL(*speech_encoder1, Die());
+    EXPECT_CALL(marker, Mark("enabled"));
     if (use_cng || use_red)
-      EXPECT_CALL(speech_encoder, Reset());
-    EXPECT_CALL(speech_encoder, Die());
+      EXPECT_CALL(*speech_encoder2, Reset());
+    EXPECT_CALL(*speech_encoder2, Die());
   }
 
   RentACodec::StackParameters param1, param2;
-  param1.speech_encoder = &speech_encoder;
-  param2.speech_encoder = &speech_encoder;
+  param1.speech_encoder = std::move(speech_encoder1);
+  param2.speech_encoder = std::move(speech_encoder2);
   param2.use_cng = use_cng;
   param2.use_red = use_red;
-  speech_encoder.Mark("disabled");
+  marker.Mark("disabled");
   RentACodec rac;
   rac.RentEncoderStack(&param1);
-  speech_encoder.Mark("enabled");
+  marker.Mark("enabled");
   rac.RentEncoderStack(&param2);
 }
 

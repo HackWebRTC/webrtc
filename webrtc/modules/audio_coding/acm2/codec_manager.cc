@@ -113,7 +113,7 @@ bool CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   }
 
   send_codec_inst_ = rtc::Optional<CodecInst>(send_codec);
-  codec_stack_params_.speech_encoder = nullptr;  // Caller must recreate it.
+  codec_stack_params_.speech_encoder.reset();  // Caller must recreate it.
   return true;
 }
 

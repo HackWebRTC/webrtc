@@ -31,12 +31,14 @@ class Vad;
 class AudioEncoderCng final : public AudioEncoder {
  public:
   struct Config {
+    Config();
+    Config(Config&&);
+    ~Config();
     bool IsOk() const;
 
     size_t num_channels = 1;
     int payload_type = 13;
-    // Caller keeps ownership of the AudioEncoder object.
-    AudioEncoder* speech_encoder = nullptr;
+    std::unique_ptr<AudioEncoder> speech_encoder;
     Vad::Aggressiveness vad_mode = Vad::kVadNormal;
     int sid_frame_interval_ms = 100;
     int num_cng_coefficients = 8;
@@ -47,7 +49,7 @@ class AudioEncoderCng final : public AudioEncoder {
     Vad* vad = nullptr;
   };
 
-  explicit AudioEncoderCng(const Config& config);
+  explicit AudioEncoderCng(Config&& config);
   ~AudioEncoderCng() override;
 
   size_t MaxEncodedBytes() const override;
@@ -75,7 +77,7 @@ class AudioEncoderCng final : public AudioEncoder {
                            rtc::Buffer* encoded);
   size_t SamplesPer10msFrame() const;
 
-  AudioEncoder* speech_encoder_;
+  std::unique_ptr<AudioEncoder> speech_encoder_;
   const int cng_payload_type_;
   const int num_cng_coefficients_;
   const int sid_frame_interval_ms_;

@@ -197,15 +197,15 @@ class RentACodec {
   ~RentACodec();
 
   // Creates and returns an audio encoder built to the given specification.
-  // Returns null in case of error. The returned encoder is live until the next
-  // successful call to this function, or until the Rent-A-Codec is destroyed.
-  AudioEncoder* RentEncoder(const CodecInst& codec_inst);
+  // Returns null in case of error.
+  std::unique_ptr<AudioEncoder> RentEncoder(const CodecInst& codec_inst);
 
   struct StackParameters {
     StackParameters();
     ~StackParameters();
 
-    AudioEncoder* speech_encoder = nullptr;
+    std::unique_ptr<AudioEncoder> speech_encoder;
+
     bool use_codec_fec = false;
     bool use_red = false;
     bool use_cng = false;
@@ -218,10 +218,9 @@ class RentACodec {
 
   // Creates and returns an audio encoder stack constructed to the given
   // specification. If the specification isn't compatible with the encoder, it
-  // will be changed to match (things will be switched off). The returned
-  // encoder is live until the next successful call to this function, or until
-  // the Rent-A-Codec is destroyed.
-  AudioEncoder* RentEncoderStack(StackParameters* param);
+  // will be changed to match (things will be switched off). The speech encoder
+  // will be stolen.
+  std::unique_ptr<AudioEncoder> RentEncoderStack(StackParameters* param);
 
   // Creates and returns an iSAC decoder, which will remain live until the
   // Rent-A-Codec is destroyed. Subsequent calls will simply return the same

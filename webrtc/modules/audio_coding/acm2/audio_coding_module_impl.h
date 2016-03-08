@@ -30,6 +30,8 @@ class AudioCodingImpl;
 
 namespace acm2 {
 
+struct EncoderFactory;
+
 class AudioCodingModuleImpl final : public AudioCodingModule {
  public:
   friend webrtc::AudioCodingImpl;
@@ -249,16 +251,12 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
   ChangeLogger bitrate_logger_ GUARDED_BY(acm_crit_sect_);
 
-  struct EncoderFactory {
-    CodecManager codec_manager;
-    RentACodec rent_a_codec;
-  };
   std::unique_ptr<EncoderFactory> encoder_factory_ GUARDED_BY(acm_crit_sect_);
 
   // Current encoder stack, either obtained from
   // encoder_factory_->rent_a_codec.RentEncoderStack or provided by a call to
   // RegisterEncoder.
-  AudioEncoder* encoder_stack_ GUARDED_BY(acm_crit_sect_);
+  std::unique_ptr<AudioEncoder> encoder_stack_ GUARDED_BY(acm_crit_sect_);
 
   // This is to keep track of CN instances where we can send DTMFs.
   uint8_t previous_pltype_ GUARDED_BY(acm_crit_sect_);

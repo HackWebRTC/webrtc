@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_RED_AUDIO_ENCODER_COPY_RED_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_RED_AUDIO_ENCODER_COPY_RED_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/buffer.h"
@@ -25,13 +26,14 @@ namespace webrtc {
 class AudioEncoderCopyRed final : public AudioEncoder {
  public:
   struct Config {
-   public:
+    Config();
+    Config(Config&&);
+    ~Config();
     int payload_type;
-    AudioEncoder* speech_encoder;
+    std::unique_ptr<AudioEncoder> speech_encoder;
   };
 
-  // Caller keeps ownership of the AudioEncoder object.
-  explicit AudioEncoderCopyRed(const Config& config);
+  explicit AudioEncoderCopyRed(Config&& config);
 
   ~AudioEncoderCopyRed() override;
 
@@ -56,7 +58,7 @@ protected:
                          rtc::Buffer* encoded) override;
 
  private:
-  AudioEncoder* speech_encoder_;
+  std::unique_ptr<AudioEncoder> speech_encoder_;
   int red_payload_type_;
   rtc::Buffer secondary_encoded_;
   EncodedInfoLeaf secondary_info_;

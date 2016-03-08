@@ -37,36 +37,32 @@ std::unique_ptr<MockAudioEncoder> CreateMockEncoder() {
 TEST(CodecManagerTest, ExternalEncoderFec) {
   auto enc0 = CreateMockEncoder();
   auto enc1 = CreateMockEncoder();
+  auto enc2 = CreateMockEncoder();
   {
     ::testing::InSequence s;
     EXPECT_CALL(*enc0, SetFec(false)).WillOnce(Return(true));
-    EXPECT_CALL(*enc0, Mark("A"));
-    EXPECT_CALL(*enc0, SetFec(true)).WillOnce(Return(true));
     EXPECT_CALL(*enc1, SetFec(true)).WillOnce(Return(true));
-    EXPECT_CALL(*enc1, SetFec(false)).WillOnce(Return(true));
-    EXPECT_CALL(*enc0, Mark("B"));
-    EXPECT_CALL(*enc0, SetFec(false)).WillOnce(Return(true));
+    EXPECT_CALL(*enc2, SetFec(true)).WillOnce(Return(false));
   }
 
   CodecManager cm;
   RentACodec rac;
+
+  // use_codec_fec starts out false.
   EXPECT_FALSE(cm.GetStackParams()->use_codec_fec);
-  cm.GetStackParams()->speech_encoder = enc0.get();
+  cm.GetStackParams()->speech_encoder = std::move(enc0);
   EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
   EXPECT_FALSE(cm.GetStackParams()->use_codec_fec);
-  enc0->Mark("A");
+
+  // Set it to true.
   EXPECT_EQ(true, cm.SetCodecFEC(true));
-  EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
   EXPECT_TRUE(cm.GetStackParams()->use_codec_fec);
-  cm.GetStackParams()->speech_encoder = enc1.get();
+  cm.GetStackParams()->speech_encoder = std::move(enc1);
   EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
   EXPECT_TRUE(cm.GetStackParams()->use_codec_fec);
 
-  EXPECT_EQ(true, cm.SetCodecFEC(false));
-  EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
-  enc0->Mark("B");
-  EXPECT_FALSE(cm.GetStackParams()->use_codec_fec);
-  cm.GetStackParams()->speech_encoder = enc0.get();
+  // Switch to a codec that doesn't support it.
+  cm.GetStackParams()->speech_encoder = std::move(enc2);
   EXPECT_TRUE(rac.RentEncoderStack(cm.GetStackParams()));
   EXPECT_FALSE(cm.GetStackParams()->use_codec_fec);
 }

@@ -12,12 +12,23 @@
 
 #include <string.h>
 
+#include <utility>
+
 #include "webrtc/base/checks.h"
 
 namespace webrtc {
 
-AudioEncoderCopyRed::AudioEncoderCopyRed(const Config& config)
-    : speech_encoder_(config.speech_encoder),
+AudioEncoderCopyRed::Config::Config() = default;
+
+// TODO(kwiberg): =default this when Visual Studio learns to handle it.
+AudioEncoderCopyRed::Config::Config(Config&& c)
+    : payload_type(c.payload_type),
+      speech_encoder(std::move(c.speech_encoder)) {}
+
+AudioEncoderCopyRed::Config::~Config() = default;
+
+AudioEncoderCopyRed::AudioEncoderCopyRed(Config&& config)
+    : speech_encoder_(std::move(config.speech_encoder)),
       red_payload_type_(config.payload_type) {
   RTC_CHECK(speech_encoder_) << "Speech encoder not provided.";
 }

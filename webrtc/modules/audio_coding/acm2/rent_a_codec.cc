@@ -179,25 +179,28 @@ std::unique_ptr<AudioEncoder> CreateEncoder(const CodecInst& speech_inst,
   return std::unique_ptr<AudioEncoder>();
 }
 
-std::unique_ptr<AudioEncoder> CreateRedEncoder(AudioEncoder* encoder,
-                                               int red_payload_type) {
+std::unique_ptr<AudioEncoder> CreateRedEncoder(
+    std::unique_ptr<AudioEncoder> encoder,
+    int red_payload_type) {
 #ifdef WEBRTC_CODEC_RED
   AudioEncoderCopyRed::Config config;
   config.payload_type = red_payload_type;
-  config.speech_encoder = encoder;
-  return std::unique_ptr<AudioEncoder>(new AudioEncoderCopyRed(config));
+  config.speech_encoder = std::move(encoder);
+  return std::unique_ptr<AudioEncoder>(
+      new AudioEncoderCopyRed(std::move(config)));
 #else
   return std::unique_ptr<AudioEncoder>();
 #endif
 }
 
-std::unique_ptr<AudioEncoder> CreateCngEncoder(AudioEncoder* encoder,
-                                               int payload_type,
-                                               ACMVADMode vad_mode) {
+std::unique_ptr<AudioEncoder> CreateCngEncoder(
+    std::unique_ptr<AudioEncoder> encoder,
+    int payload_type,
+    ACMVADMode vad_mode) {
   AudioEncoderCng::Config config;
   config.num_channels = encoder->NumChannels();
   config.payload_type = payload_type;
-  config.speech_encoder = encoder;
+  config.speech_encoder = std::move(encoder);
   switch (vad_mode) {
     case VADNormal:
       config.vad_mode = Vad::kVadNormal;
@@ -214,7 +217,7 @@ std::unique_ptr<AudioEncoder> CreateCngEncoder(AudioEncoder* encoder,
     default:
       FATAL();
   }
-  return std::unique_ptr<AudioEncoder>(new AudioEncoderCng(config));
+  return std::unique_ptr<AudioEncoder>(new AudioEncoderCng(std::move(config)));
 }
 
 std::unique_ptr<AudioDecoder> CreateIsacDecoder(
@@ -234,13 +237,9 @@ std::unique_ptr<AudioDecoder> CreateIsacDecoder(
 RentACodec::RentACodec() = default;
 RentACodec::~RentACodec() = default;
 
-AudioEncoder* RentACodec::RentEncoder(const CodecInst& codec_inst) {
-  std::unique_ptr<AudioEncoder> enc =
-      CreateEncoder(codec_inst, &isac_bandwidth_info_);
-  if (!enc)
-    return nullptr;
-  speech_encoder_ = std::move(enc);
-  return speech_encoder_.get();
+std::unique_ptr<AudioEncoder> RentACodec::RentEncoder(
+    const CodecInst& codec_inst) {
+  return CreateEncoder(codec_inst, &isac_bandwidth_info_);
 }
 
 RentACodec::StackParameters::StackParameters() {
@@ -253,7 +252,8 @@ RentACodec::StackParameters::StackParameters() {
 
 RentACodec::StackParameters::~StackParameters() = default;
 
-AudioEncoder* RentACodec::RentEncoderStack(StackParameters* param) {
+std::unique_ptr<AudioEncoder> RentACodec::RentEncoderStack(
+    StackParameters* param) {
   RTC_DCHECK(param->speech_encoder);
 
   if (param->use_codec_fec) {
@@ -282,19 +282,14 @@ AudioEncoder* RentACodec::RentEncoderStack(StackParameters* param) {
     // reset the latter to ensure its buffer is empty.
     param->speech_encoder->Reset();
   }
-  AudioEncoder* encoder_stack = param->speech_encoder;
+  std::unique_ptr<AudioEncoder> encoder_stack =
+      std::move(param->speech_encoder);
   if (param->use_red) {
-    red_encoder_ = CreateRedEncoder(encoder_stack, *red_pt);
-    if (red_encoder_)
-      encoder_stack = red_encoder_.get();
-  } else {
-    red_encoder_.reset();
+    encoder_stack = CreateRedEncoder(std::move(encoder_stack), *red_pt);
   }
   if (param->use_cng) {
-    cng_encoder_ = CreateCngEncoder(encoder_stack, *cng_pt, param->vad_mode);
-    encoder_stack = cng_encoder_.get();
-  } else {
-    cng_encoder_.reset();
+    encoder_stack =
+        CreateCngEncoder(std::move(encoder_stack), *cng_pt, param->vad_mode);
   }
   return encoder_stack;
 }

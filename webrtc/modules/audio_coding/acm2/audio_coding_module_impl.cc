@@ -31,6 +31,12 @@ namespace webrtc {
 
 namespace acm2 {
 
+struct EncoderFactory {
+  AudioEncoder* external_speech_encoder = nullptr;
+  CodecManager codec_manager;
+  RentACodec rent_a_codec;
+};
+
 namespace {
 
 // TODO(turajs): the same functionality is used in NetEq. If both classes
@@ -90,6 +96,79 @@ void ConvertEncodedInfoToFragmentationHeader(
     frag->fragmentationPlType[i] = info.redundant[i].payload_type;
   }
 }
+
+// Wraps a raw AudioEncoder pointer. The idea is that you can put one of these
+// in a unique_ptr, to protect the contained raw pointer from being deleted
+// when the unique_ptr expires. (This is of course a bad idea in general, but
+// backwards compatibility.)
+class RawAudioEncoderWrapper final : public AudioEncoder {
+ public:
+  RawAudioEncoderWrapper(AudioEncoder* enc) : enc_(enc) {}
+  size_t MaxEncodedBytes() const override { return enc_->MaxEncodedBytes(); }
+  int SampleRateHz() const override { return enc_->SampleRateHz(); }
+  size_t NumChannels() const override { return enc_->NumChannels(); }
+  int RtpTimestampRateHz() const override { return enc_->RtpTimestampRateHz(); }
+  size_t Num10MsFramesInNextPacket() const override {
+    return enc_->Num10MsFramesInNextPacket();
+  }
+  size_t Max10MsFramesInAPacket() const override {
+    return enc_->Max10MsFramesInAPacket();
+  }
+  int GetTargetBitrate() const override { return enc_->GetTargetBitrate(); }
+  EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
+                         rtc::ArrayView<const int16_t> audio,
+                         rtc::Buffer* encoded) override {
+    return enc_->Encode(rtp_timestamp, audio, encoded);
+  }
+  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                             rtc::ArrayView<const int16_t> audio,
+                             size_t max_encoded_bytes,
+                             uint8_t* encoded) override {
+    return enc_->EncodeInternal(rtp_timestamp, audio, max_encoded_bytes,
+                                encoded);
+  }
+  void Reset() override { return enc_->Reset(); }
+  bool SetFec(bool enable) override { return enc_->SetFec(enable); }
+  bool SetDtx(bool enable) override { return enc_->SetDtx(enable); }
+  bool SetApplication(Application application) override {
+    return enc_->SetApplication(application);
+  }
+  void SetMaxPlaybackRate(int frequency_hz) override {
+    return enc_->SetMaxPlaybackRate(frequency_hz);
+  }
+  void SetProjectedPacketLossRate(double fraction) override {
+    return enc_->SetProjectedPacketLossRate(fraction);
+  }
+  void SetTargetBitrate(int target_bps) override {
+    return enc_->SetTargetBitrate(target_bps);
+  }
+
+ private:
+  AudioEncoder* enc_;
+};
+
+// Return false on error.
+bool CreateSpeechEncoderIfNecessary(EncoderFactory* ef) {
+  auto* sp = ef->codec_manager.GetStackParams();
+  if (sp->speech_encoder) {
+    // Do nothing; we already have a speech encoder.
+  } else if (ef->codec_manager.GetCodecInst()) {
+    RTC_DCHECK(!ef->external_speech_encoder);
+    // We have no speech encoder, but we have a specification for making one.
+    std::unique_ptr<AudioEncoder> enc =
+        ef->rent_a_codec.RentEncoder(*ef->codec_manager.GetCodecInst());
+    if (!enc)
+      return false;  // Encoder spec was bad.
+    sp->speech_encoder = std::move(enc);
+  } else if (ef->external_speech_encoder) {
+    RTC_DCHECK(!ef->codec_manager.GetCodecInst());
+    // We have an external speech encoder.
+    sp->speech_encoder = std::unique_ptr<AudioEncoder>(
+        new RawAudioEncoderWrapper(ef->external_speech_encoder));
+  }
+  return true;
+}
+
 }  // namespace
 
 void AudioCodingModuleImpl::ChangeLogger::MaybeLog(int value) {
@@ -200,15 +279,13 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
   if (!encoder_factory_->codec_manager.RegisterEncoder(send_codec)) {
     return -1;
   }
-  auto* sp = encoder_factory_->codec_manager.GetStackParams();
-  if (!sp->speech_encoder && encoder_factory_->codec_manager.GetCodecInst()) {
-    // We have no speech encoder, but we have a specification for making one.
-    AudioEncoder* enc = encoder_factory_->rent_a_codec.RentEncoder(
-        *encoder_factory_->codec_manager.GetCodecInst());
-    if (!enc)
-      return -1;
-    sp->speech_encoder = enc;
+  if (encoder_factory_->codec_manager.GetCodecInst()) {
+    encoder_factory_->external_speech_encoder = nullptr;
   }
+  if (!CreateSpeechEncoderIfNecessary(encoder_factory_.get())) {
+    return -1;
+  }
+  auto* sp = encoder_factory_->codec_manager.GetStackParams();
   if (sp->speech_encoder)
     encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
   return 0;
@@ -217,8 +294,11 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
 void AudioCodingModuleImpl::RegisterExternalSendCodec(
     AudioEncoder* external_speech_encoder) {
   rtc::CritScope lock(&acm_crit_sect_);
+  encoder_factory_->codec_manager.UnsetCodecInst();
+  encoder_factory_->external_speech_encoder = external_speech_encoder;
+  RTC_CHECK(CreateSpeechEncoderIfNecessary(encoder_factory_.get()));
   auto* sp = encoder_factory_->codec_manager.GetStackParams();
-  sp->speech_encoder = external_speech_encoder;
+  RTC_CHECK(sp->speech_encoder);
   encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
 }
 
@@ -229,9 +309,11 @@ rtc::Optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
   if (ci) {
     return rtc::Optional<CodecInst>(*ci);
   }
-  auto* enc = encoder_factory_->codec_manager.GetStackParams()->speech_encoder;
+  CreateSpeechEncoderIfNecessary(encoder_factory_.get());
+  const std::unique_ptr<AudioEncoder>& enc =
+      encoder_factory_->codec_manager.GetStackParams()->speech_encoder;
   if (enc) {
-    return rtc::Optional<CodecInst>(CodecManager::ForgeCodecInst(enc));
+    return rtc::Optional<CodecInst>(CodecManager::ForgeCodecInst(enc.get()));
   }
   return rtc::Optional<CodecInst>();
 }
@@ -451,6 +533,7 @@ bool AudioCodingModuleImpl::REDStatus() const {
 int AudioCodingModuleImpl::SetREDStatus(bool enable_red) {
 #ifdef WEBRTC_CODEC_RED
   rtc::CritScope lock(&acm_crit_sect_);
+  CreateSpeechEncoderIfNecessary(encoder_factory_.get());
   if (!encoder_factory_->codec_manager.SetCopyRed(enable_red)) {
     return -1;
   }
@@ -476,6 +559,7 @@ bool AudioCodingModuleImpl::CodecFEC() const {
 
 int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
   rtc::CritScope lock(&acm_crit_sect_);
+  CreateSpeechEncoderIfNecessary(encoder_factory_.get());
   if (!encoder_factory_->codec_manager.SetCodecFEC(enable_codec_fec)) {
     return -1;
   }
@@ -507,6 +591,7 @@ int AudioCodingModuleImpl::SetVAD(bool enable_dtx,
   // Note: |enable_vad| is not used; VAD is enabled based on the DTX setting.
   RTC_DCHECK_EQ(enable_dtx, enable_vad);
   rtc::CritScope lock(&acm_crit_sect_);
+  CreateSpeechEncoderIfNecessary(encoder_factory_.get());
   if (!encoder_factory_->codec_manager.SetVAD(enable_dtx, mode)) {
     return -1;
   }

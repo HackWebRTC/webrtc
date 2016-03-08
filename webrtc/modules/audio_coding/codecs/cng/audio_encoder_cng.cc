@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <memory>
 #include <limits>
+#include <utility>
 
 namespace webrtc {
 
@@ -35,6 +36,20 @@ std::unique_ptr<CNG_enc_inst, CngInstDeleter> CreateCngInst(
 
 }  // namespace
 
+AudioEncoderCng::Config::Config() = default;
+
+// TODO(kwiberg): =default this when Visual Studio learns to handle it.
+AudioEncoderCng::Config::Config(Config&& c)
+    : num_channels(c.num_channels),
+      payload_type(c.payload_type),
+      speech_encoder(std::move(c.speech_encoder)),
+      vad_mode(c.vad_mode),
+      sid_frame_interval_ms(c.sid_frame_interval_ms),
+      num_cng_coefficients(c.num_cng_coefficients),
+      vad(c.vad) {}
+
+AudioEncoderCng::Config::~Config() = default;
+
 bool AudioEncoderCng::Config::IsOk() const {
   if (num_channels != 1)
     return false;
@@ -51,15 +66,16 @@ bool AudioEncoderCng::Config::IsOk() const {
   return true;
 }
 
-AudioEncoderCng::AudioEncoderCng(const Config& config)
-    : speech_encoder_(config.speech_encoder),
+AudioEncoderCng::AudioEncoderCng(Config&& config)
+    : speech_encoder_(
+          ([&] { RTC_CHECK(config.IsOk()) << "Invalid configuration."; }(),
+           std::move(config.speech_encoder))),
       cng_payload_type_(config.payload_type),
       num_cng_coefficients_(config.num_cng_coefficients),
       sid_frame_interval_ms_(config.sid_frame_interval_ms),
       last_frame_active_(true),
       vad_(config.vad ? std::unique_ptr<Vad>(config.vad)
                       : CreateVad(config.vad_mode)) {
-  RTC_CHECK(config.IsOk()) << "Invalid configuration.";
   cng_inst_ = CreateCngInst(SampleRateHz(), sid_frame_interval_ms_,
                             num_cng_coefficients_);
 }
