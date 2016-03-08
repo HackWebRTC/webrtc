@@ -62,6 +62,10 @@
         {
           'target_name': 'webrtc_h264_video_toolbox',
           'type': 'static_library',
+          'includes': [ '../../../../build/objc_common.gypi' ],
+          'dependencies': [
+            '<(webrtc_root)/base/base.gyp:rtc_base_objc',
+          ],
           'link_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [

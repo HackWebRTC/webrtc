@@ -649,6 +649,8 @@ if (is_ios) {
       "objc/RTCSSLAdapter.mm",
       "objc/RTCTracing.h",
       "objc/RTCTracing.mm",
+      "objc/RTCUIApplication.h",
+      "objc/RTCUIApplication.mm",
     ]
   }
 }

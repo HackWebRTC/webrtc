@@ -53,6 +53,8 @@
               'sources': [
                 'objc/RTCCameraPreviewView.h',
                 'objc/RTCCameraPreviewView.m',
+                'objc/RTCUIApplication.h',
+                'objc/RTCUIApplication.mm',
               ],
               'all_dependent_settings': {
                 'xcode_settings': {

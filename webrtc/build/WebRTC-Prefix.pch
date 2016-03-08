@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#ifdef __OBJC__
+
 #if !defined(__has_feature) || !__has_feature(objc_arc)
 #error "This file requires ARC support."
 #endif
@@ -19,8 +21,6 @@
 // The following nonnull macros were introduced in OSX SDK 10.10.3. However,
 // the bots appear to be running something older. We define them here if they
 // aren't already defined in NSObjCRuntime.h
-#ifdef __OBJC__
-
 #include <Foundation/NSObjCRuntime.h>
 
 #if !defined(NS_ASSUME_NONNULL_BEGIN)
@@ -31,4 +31,4 @@
 #define NS_ASSUME_NONNULL_END
 #endif
 
-#endif
+#endif  // __OBJC__

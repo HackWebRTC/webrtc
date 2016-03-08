@@ -44,6 +44,18 @@ bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
                                       CMVideoFormatDescriptionRef video_format,
                                       CMSampleBufferRef* out_sample_buffer);
 
+// Returns true if the type of the first NALU in the supplied Annex B buffer is
+// the SPS type.
+bool H264AnnexBBufferHasVideoFormatDescription(const uint8_t* annexb_buffer,
+                                               size_t annexb_buffer_size);
+
+// Returns a video format description created from the sps/pps information in
+// the Annex B buffer. If there is no such information, nullptr is returned.
+// The caller is responsible for releasing the description.
+CMVideoFormatDescriptionRef CreateVideoFormatDescription(
+    const uint8_t* annexb_buffer,
+    size_t annexb_buffer_size);
+
 // Helper class for reading NALUs from an RTP Annex B buffer.
 class AnnexBBufferReader final {
  public:

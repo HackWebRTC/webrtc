@@ -16,10 +16,43 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
 
+#if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
+
 namespace webrtc {
 
 static const uint8_t NALU_TEST_DATA_0[] = {0xAA, 0xBB, 0xCC};
 static const uint8_t NALU_TEST_DATA_1[] = {0xDE, 0xAD, 0xBE, 0xEF};
+
+TEST(H264VideoToolboxNaluTest, TestHasVideoFormatDescription) {
+  const uint8_t sps_buffer[] = {0x00, 0x00, 0x00, 0x01, 0x27};
+  EXPECT_TRUE(H264AnnexBBufferHasVideoFormatDescription(sps_buffer,
+                                                        arraysize(sps_buffer)));
+  const uint8_t other_buffer[] = {0x00, 0x00, 0x00, 0x01, 0x28};
+  EXPECT_FALSE(H264AnnexBBufferHasVideoFormatDescription(
+      other_buffer, arraysize(other_buffer)));
+}
+
+TEST(H264VideoToolboxNaluTest, TestCreateVideoFormatDescription) {
+  const uint8_t sps_pps_buffer[] = {
+    // SPS nalu.
+    0x00, 0x00, 0x00, 0x01,
+    0x27, 0x42, 0x00, 0x1E, 0xAB, 0x40, 0xF0, 0x28, 0xD3, 0x70, 0x20, 0x20,
+    0x20, 0x20,
+    // PPS nalu.
+    0x00, 0x00, 0x00, 0x01,
+    0x28, 0xCE, 0x3C, 0x30
+  };
+  CMVideoFormatDescriptionRef description =
+      CreateVideoFormatDescription(sps_pps_buffer, arraysize(sps_pps_buffer));
+  EXPECT_TRUE(description);
+  if (description) {
+    CFRelease(description);
+    description = nullptr;
+  }
+  const uint8_t other_buffer[] = {0x00, 0x00, 0x00, 0x01, 0x28};
+  EXPECT_FALSE(CreateVideoFormatDescription(other_buffer,
+                                            arraysize(other_buffer)));
+}
 
 TEST(AnnexBBufferReaderTest, TestReadEmptyInput) {
   const uint8_t annex_b_test_data[] = {0x00};
@@ -151,3 +184,5 @@ TEST(AvccBufferWriterTest, TestOverflow) {
 }
 
 }  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_TOOLBOX_SUPPORTED

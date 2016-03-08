@@ -20,6 +20,9 @@
 #include "libyuv/convert_from.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#if defined(WEBRTC_IOS)
+#include "webrtc/base/objc/RTCUIApplication.h"
+#endif
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -238,10 +241,31 @@ int H264VideoToolboxEncoder::Encode(
   if (!callback_ || !compression_session_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-
+#if defined(WEBRTC_IOS)
+  if (!RTCIsUIApplicationActive()) {
+    // Ignore all encode requests when app isn't active. In this state, the
+    // hardware encoder has been invalidated by the OS.
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
+#endif
   // Get a pixel buffer from the pool and copy frame data over.
   CVPixelBufferPoolRef pixel_buffer_pool =
       VTCompressionSessionGetPixelBufferPool(compression_session_);
+#if defined(WEBRTC_IOS)
+  if (!pixel_buffer_pool) {
+    // Kind of a hack. On backgrounding, the compression session seems to get
+    // invalidated, which causes this pool call to fail when the application
+    // is foregrounded and frames are being sent for encoding again.
+    // Resetting the session when this happens fixes the issue.
+    ResetCompressionSession();
+    pixel_buffer_pool =
+        VTCompressionSessionGetPixelBufferPool(compression_session_);
+  }
+#endif
+  if (!pixel_buffer_pool) {
+    LOG(LS_ERROR) << "Failed to get pixel buffer pool.";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   CVPixelBufferRef pixel_buffer = nullptr;
   CVReturn ret = CVPixelBufferPoolCreatePixelBuffer(nullptr, pixel_buffer_pool,
                                                     &pixel_buffer);
@@ -285,7 +309,7 @@ int H264VideoToolboxEncoder::Encode(
   // Update the bitrate if needed.
   SetBitrateBps(bitrate_adjuster_.GetAdjustedBitrateBps());
 
-  VTCompressionSessionEncodeFrame(
+  OSStatus status = VTCompressionSessionEncodeFrame(
       compression_session_, pixel_buffer, presentation_time_stamp,
       kCMTimeInvalid, frame_properties, encode_params.release(), nullptr);
   if (frame_properties) {
@@ -293,6 +317,10 @@ int H264VideoToolboxEncoder::Encode(
   }
   if (pixel_buffer) {
     CVBufferRelease(pixel_buffer);
+  }
+  if (status != noErr) {
+    LOG(LS_ERROR) << "Failed to encode frame with code: " << status;
+    return WEBRTC_VIDEO_CODEC_ERROR;
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
