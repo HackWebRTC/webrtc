@@ -875,11 +875,6 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
       frame->sample_rate_hz_ != kSampleRate48kHz) {
     return kBadSampleRateError;
   }
-  // This interface does not tolerate different forward and reverse rates.
-  if (frame->sample_rate_hz_ !=
-      formats_.api_format.input_stream().sample_rate_hz()) {
-    return kBadSampleRateError;
-  }
 
   if (frame->num_channels_ <= 0) {
     return kBadNumberChannelsError;

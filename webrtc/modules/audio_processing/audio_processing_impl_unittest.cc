@@ -65,12 +65,10 @@ TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
   frame.num_channels_ = 2;
   EXPECT_NOERR(mock.AnalyzeReverseStream(&frame));
 
-  // A new sample rate passed to AnalyzeReverseStream should be an error and
-  // not cause an init.
+  // A new sample rate passed to AnalyzeReverseStream should cause an init.
   SetFrameSampleRate(&frame, 16000);
-  EXPECT_CALL(mock, InitializeLocked())
-      .Times(0);
-  EXPECT_EQ(mock.kBadSampleRateError, mock.AnalyzeReverseStream(&frame));
+  EXPECT_CALL(mock, InitializeLocked()).Times(1);
+  EXPECT_NOERR(mock.AnalyzeReverseStream(&frame));
 }
 
 }  // namespace webrtc
