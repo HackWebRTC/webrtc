@@ -105,7 +105,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
 
     // Get output audio, but don't do anything with it.
     AudioFrame out_frame;
-    int error = neteq->GetAudio(&out_frame, NULL);
+    int error = neteq->GetAudio(&out_frame);
     if (error != NetEq::kOK)
       return -1;
 

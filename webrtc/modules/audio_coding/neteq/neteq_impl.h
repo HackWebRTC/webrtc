@@ -57,6 +57,14 @@ struct PreemptiveExpandFactory;
 
 class NetEqImpl : public webrtc::NetEq {
  public:
+  enum class OutputType {
+    kNormalSpeech,
+    kPLC,
+    kCNG,
+    kPLCCNG,
+    kVadPassive
+  };
+
   // Creates a new NetEqImpl object. The object will assume ownership of all
   // injected dependencies, and will delete them when done.
   NetEqImpl(const NetEq::Config& config,
@@ -96,7 +104,7 @@ class NetEqImpl : public webrtc::NetEq {
   int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
                        uint32_t receive_timestamp) override;
 
-  int GetAudio(AudioFrame* audio_frame, NetEqOutputType* type) override;
+  int GetAudio(AudioFrame* audio_frame) override;
 
   int RegisterPayloadType(NetEqDecoder codec,
                           const std::string& codec_name,
@@ -310,7 +318,7 @@ class NetEqImpl : public webrtc::NetEq {
 
   // Returns the output type for the audio produced by the latest call to
   // GetAudio().
-  NetEqOutputType LastOutputType() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  OutputType LastOutputType() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Updates Expand and Merge.
   virtual void UpdatePlcComponents(int fs_hz, size_t channels)

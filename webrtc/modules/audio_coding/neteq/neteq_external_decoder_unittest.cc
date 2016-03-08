@@ -188,16 +188,14 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
   }
 
   void GetAndVerifyOutput() override {
-    NetEqOutputType output_type;
     // Get audio from internal decoder instance.
-    EXPECT_EQ(NetEq::kOK,
-              neteq_internal_->GetAudio(&output_internal_, &output_type));
+    EXPECT_EQ(NetEq::kOK, neteq_internal_->GetAudio(&output_internal_));
     EXPECT_EQ(1u, output_internal_.num_channels_);
     EXPECT_EQ(static_cast<size_t>(kOutputLengthMs * sample_rate_hz_ / 1000),
               output_internal_.samples_per_channel_);
 
     // Get audio from external decoder instance.
-    GetOutputAudio(&output_, &output_type);
+    GetOutputAudio(&output_);
 
     for (size_t i = 0; i < output_.samples_per_channel_; ++i) {
       ASSERT_EQ(output_.data_[i], output_internal_.data_[i])
@@ -251,30 +249,30 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
         .WillRepeatedly(Return(false));
   }
 
-  virtual void UpdateState(NetEqOutputType output_type) {
+  virtual void UpdateState(AudioFrame::SpeechType output_type) {
     switch (test_state_) {
       case kInitialPhase: {
-        if (output_type == kOutputNormal) {
+        if (output_type == AudioFrame::kNormalSpeech) {
           test_state_ = kNormalPhase;
         }
         break;
       }
       case kNormalPhase: {
-        if (output_type == kOutputPLC) {
+        if (output_type == AudioFrame::kPLC) {
           test_state_ = kExpandPhase;
         }
         break;
       }
       case kExpandPhase: {
-        if (output_type == kOutputPLCtoCNG) {
+        if (output_type == AudioFrame::kPLCCNG) {
           test_state_ = kFadedExpandPhase;
-        } else if (output_type == kOutputNormal) {
+        } else if (output_type == AudioFrame::kNormalSpeech) {
           test_state_ = kRecovered;
         }
         break;
       }
       case kFadedExpandPhase: {
-        if (output_type == kOutputNormal) {
+        if (output_type == AudioFrame::kNormalSpeech) {
           test_state_ = kRecovered;
         }
         break;
@@ -287,9 +285,8 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
 
   void GetAndVerifyOutput() override {
     AudioFrame output;
-    NetEqOutputType output_type;
-    GetOutputAudio(&output, &output_type);
-    UpdateState(output_type);
+    GetOutputAudio(&output);
+    UpdateState(output.speech_type_);
 
     if (test_state_ == kExpandPhase || test_state_ == kFadedExpandPhase) {
       // Don't verify the output in this phase of the test.
@@ -369,22 +366,22 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRangeAndWrap) {
 
 class ShortTimestampJumpTest : public LargeTimestampJumpTest {
  protected:
-  void UpdateState(NetEqOutputType output_type) override {
+  void UpdateState(AudioFrame::SpeechType output_type) override {
     switch (test_state_) {
       case kInitialPhase: {
-        if (output_type == kOutputNormal) {
+        if (output_type == AudioFrame::kNormalSpeech) {
           test_state_ = kNormalPhase;
         }
         break;
       }
       case kNormalPhase: {
-        if (output_type == kOutputPLC) {
+        if (output_type == AudioFrame::kPLC) {
           test_state_ = kExpandPhase;
         }
         break;
       }
       case kExpandPhase: {
-        if (output_type == kOutputNormal) {
+        if (output_type == AudioFrame::kNormalSpeech) {
           test_state_ = kRecovered;
         }
         break;

@@ -137,8 +137,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   // Accessing members, take the lock.
   rtc::CritScope lock(&crit_sect_);
 
-  enum NetEqOutputType type;
-  if (neteq_->GetAudio(audio_frame, &type) != NetEq::kOK) {
+  if (neteq_->GetAudio(audio_frame) != NetEq::kOK) {
     LOG(LERROR) << "AcmReceiver::GetAudio - NetEq Failed.";
     return -1;
   }

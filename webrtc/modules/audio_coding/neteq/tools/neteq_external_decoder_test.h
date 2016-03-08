@@ -43,7 +43,7 @@ class NetEqExternalDecoderTest {
                             uint32_t receive_timestamp);
 
   // Get 10 ms of audio data.
-  void GetOutputAudio(AudioFrame* output, NetEqOutputType* output_type);
+  void GetOutputAudio(AudioFrame* output);
 
   NetEq* neteq() { return neteq_.get(); }
 

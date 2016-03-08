@@ -605,7 +605,7 @@ int main(int argc, char* argv[]) {
     // Check if it is time to get output audio.
     while (time_now_ms >= next_output_time_ms && output_event_available) {
       webrtc::AudioFrame out_frame;
-      int error = neteq->GetAudio(&out_frame, NULL);
+      int error = neteq->GetAudio(&out_frame);
       if (error != NetEq::kOK) {
         std::cerr << "GetAudio returned error code " <<
             neteq->LastError() << std::endl;

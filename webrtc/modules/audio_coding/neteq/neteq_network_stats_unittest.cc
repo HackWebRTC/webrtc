@@ -177,7 +177,6 @@ struct NetEqNetworkStatsCheck {
   }
 
   void RunTest(int num_loops, NetEqNetworkStatsCheck expects) {
-    NetEqOutputType output_type;
     uint32_t time_now;
     uint32_t next_send_time;
 
@@ -195,7 +194,7 @@ struct NetEqNetworkStatsCheck {
           InsertPacket(rtp_header_, payload_, next_send_time);
         }
       }
-      GetOutputAudio(&output_frame_, &output_type);
+      GetOutputAudio(&output_frame_);
       time_now += kOutputLengthMs;
     }
     CheckNetworkStatistics(expects);

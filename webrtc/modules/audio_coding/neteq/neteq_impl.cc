@@ -150,33 +150,33 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
 
 namespace {
 void SetAudioFrameActivityAndType(bool vad_enabled,
-                                  NetEqOutputType type,
+                                  NetEqImpl::OutputType type,
                                   AudioFrame::VADActivity last_vad_activity,
                                   AudioFrame* audio_frame) {
   switch (type) {
-    case kOutputNormal: {
+    case NetEqImpl::OutputType::kNormalSpeech: {
       audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
       audio_frame->vad_activity_ = AudioFrame::kVadActive;
       break;
     }
-    case kOutputVADPassive: {
+    case NetEqImpl::OutputType::kVadPassive: {
       // This should only be reached if the VAD is enabled.
       RTC_DCHECK(vad_enabled);
       audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
       audio_frame->vad_activity_ = AudioFrame::kVadPassive;
       break;
     }
-    case kOutputCNG: {
+    case NetEqImpl::OutputType::kCNG: {
       audio_frame->speech_type_ = AudioFrame::kCNG;
       audio_frame->vad_activity_ = AudioFrame::kVadPassive;
       break;
     }
-    case kOutputPLC: {
+    case NetEqImpl::OutputType::kPLC: {
       audio_frame->speech_type_ = AudioFrame::kPLC;
       audio_frame->vad_activity_ = last_vad_activity;
       break;
     }
-    case kOutputPLCtoCNG: {
+    case NetEqImpl::OutputType::kPLCCNG: {
       audio_frame->speech_type_ = AudioFrame::kPLCCNG;
       audio_frame->vad_activity_ = AudioFrame::kVadPassive;
       break;
@@ -191,7 +191,7 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
 }
 }
 
-int NetEqImpl::GetAudio(AudioFrame* audio_frame, NetEqOutputType* type) {
+int NetEqImpl::GetAudio(AudioFrame* audio_frame) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   rtc::CritScope lock(&crit_sect_);
   int error = GetAudioInternal(audio_frame);
@@ -201,9 +201,6 @@ int NetEqImpl::GetAudio(AudioFrame* audio_frame, NetEqOutputType* type) {
   if (error != 0) {
     error_code_ = error;
     return kFail;
-  }
-  if (type) {
-    *type = LastOutputType();
   }
   SetAudioFrameActivityAndType(vad_->enabled(), LastOutputType(),
                                last_vad_activity_, audio_frame);
@@ -2068,20 +2065,20 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   decision_logic_->SetSampleRate(fs_hz_, output_size_samples_);
 }
 
-NetEqOutputType NetEqImpl::LastOutputType() {
+NetEqImpl::OutputType NetEqImpl::LastOutputType() {
   assert(vad_.get());
   assert(expand_.get());
   if (last_mode_ == kModeCodecInternalCng || last_mode_ == kModeRfc3389Cng) {
-    return kOutputCNG;
+    return OutputType::kCNG;
   } else if (last_mode_ == kModeExpand && expand_->MuteFactor(0) == 0) {
     // Expand mode has faded down to background noise only (very long expand).
-    return kOutputPLCtoCNG;
+    return OutputType::kPLCCNG;
   } else if (last_mode_ == kModeExpand) {
-    return kOutputPLC;
+    return OutputType::kPLC;
   } else if (vad_->running() && !vad_->active_speech()) {
-    return kOutputVADPassive;
+    return OutputType::kVadPassive;
   } else {
-    return kOutputNormal;
+    return OutputType::kNormalSpeech;
   }
 }
 

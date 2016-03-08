@@ -391,7 +391,7 @@ int NetEqQualityTest::Transmit() {
 }
 
 int NetEqQualityTest::DecodeBlock() {
-  int ret = neteq_->GetAudio(&out_frame_, NULL);
+  int ret = neteq_->GetAudio(&out_frame_);
 
   if (ret != NetEq::kOK) {
     return -1;

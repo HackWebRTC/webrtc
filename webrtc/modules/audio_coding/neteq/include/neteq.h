@@ -54,14 +54,6 @@ struct NetEqNetworkStatistics {
   int max_waiting_time_ms;
 };
 
-enum NetEqOutputType {
-  kOutputNormal,
-  kOutputPLC,
-  kOutputCNG,
-  kOutputPLCtoCNG,
-  kOutputVADPassive
-};
-
 enum NetEqPlayoutMode {
   kPlayoutOn,
   kPlayoutOff,
@@ -165,11 +157,11 @@ class NetEq {
 
   // Instructs NetEq to deliver 10 ms of audio data. The data is written to
   // |audio_frame|. All data in |audio_frame| is wiped; |data_|, |interleaved_|,
-  // |num_channels_|, and |samples_per_channel_| are updated upon success. If
-  // an error is returned, some fields may not have been updated.
-  // The speech type is written to |type|, if |type| is not NULL.
+  // |num_channels_|, |samples_per_channel_|, |speech_type_|, and
+  // |vad_activity_| are updated upon success. If an error is returned, some
+  // fields may not have been updated.
   // Returns kOK on success, or kFail in case of an error.
-  virtual int GetAudio(AudioFrame* audio_frame, NetEqOutputType* type) = 0;
+  virtual int GetAudio(AudioFrame* audio_frame) = 0;
 
   // Associates |rtp_payload_type| with |codec| and |codec_name|, and stores the
   // information in the codec database. Returns 0 on success, -1 on failure.
