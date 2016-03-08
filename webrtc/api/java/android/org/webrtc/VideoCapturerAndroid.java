@@ -544,8 +544,6 @@ public class VideoCapturerAndroid implements
     final CountDownLatch barrier = new CountDownLatch(1);
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
-          // Make sure onTextureFrameAvailable() is not called anymore.
-          surfaceHelper.stopListening();
           stopCaptureOnCameraThread();
           barrier.countDown();
         }
@@ -566,6 +564,8 @@ public class VideoCapturerAndroid implements
       return;
     }
 
+    // Make sure onTextureFrameAvailable() is not called anymore.
+    surfaceHelper.stopListening();
     cameraThreadHandler.removeCallbacks(cameraObserver);
     cameraStatistics.getAndResetFrameCount();
     Logging.d(TAG, "Stop preview.");
