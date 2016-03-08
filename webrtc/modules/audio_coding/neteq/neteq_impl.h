@@ -379,6 +379,8 @@ class NetEqImpl : public webrtc::NetEq {
   bool enable_fast_accelerate_ GUARDED_BY(crit_sect_);
   std::unique_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
   bool nack_enabled_ GUARDED_BY(crit_sect_);
+  AudioFrame::VADActivity last_vad_activity_ GUARDED_BY(crit_sect_) =
+      AudioFrame::kVadPassive;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);

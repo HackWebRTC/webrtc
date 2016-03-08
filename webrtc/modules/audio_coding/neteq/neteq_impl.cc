@@ -148,6 +148,49 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
   return kOK;
 }
 
+namespace {
+void SetAudioFrameActivityAndType(bool vad_enabled,
+                                  NetEqOutputType type,
+                                  AudioFrame::VADActivity last_vad_activity,
+                                  AudioFrame* audio_frame) {
+  switch (type) {
+    case kOutputNormal: {
+      audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
+      audio_frame->vad_activity_ = AudioFrame::kVadActive;
+      break;
+    }
+    case kOutputVADPassive: {
+      // This should only be reached if the VAD is enabled.
+      RTC_DCHECK(vad_enabled);
+      audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
+      audio_frame->vad_activity_ = AudioFrame::kVadPassive;
+      break;
+    }
+    case kOutputCNG: {
+      audio_frame->speech_type_ = AudioFrame::kCNG;
+      audio_frame->vad_activity_ = AudioFrame::kVadPassive;
+      break;
+    }
+    case kOutputPLC: {
+      audio_frame->speech_type_ = AudioFrame::kPLC;
+      audio_frame->vad_activity_ = last_vad_activity;
+      break;
+    }
+    case kOutputPLCtoCNG: {
+      audio_frame->speech_type_ = AudioFrame::kPLCCNG;
+      audio_frame->vad_activity_ = AudioFrame::kVadPassive;
+      break;
+    }
+    default:
+      RTC_NOTREACHED();
+  }
+  if (!vad_enabled) {
+    // Always set kVadUnknown when receive VAD is inactive.
+    audio_frame->vad_activity_ = AudioFrame::kVadUnknown;
+  }
+}
+}
+
 int NetEqImpl::GetAudio(AudioFrame* audio_frame, NetEqOutputType* type) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   rtc::CritScope lock(&crit_sect_);
@@ -162,6 +205,9 @@ int NetEqImpl::GetAudio(AudioFrame* audio_frame, NetEqOutputType* type) {
   if (type) {
     *type = LastOutputType();
   }
+  SetAudioFrameActivityAndType(vad_->enabled(), LastOutputType(),
+                               last_vad_activity_, audio_frame);
+  last_vad_activity_ = audio_frame->vad_activity_;
   last_output_sample_rate_hz_ = audio_frame->sample_rate_hz_;
   RTC_DCHECK(last_output_sample_rate_hz_ == 8000 ||
              last_output_sample_rate_hz_ == 16000 ||

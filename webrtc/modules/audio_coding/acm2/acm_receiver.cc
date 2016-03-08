@@ -35,77 +35,6 @@ namespace acm2 {
 
 namespace {
 
-// |vad_activity_| field of |audio_frame| is set to |previous_audio_activity_|
-// before the call to this function.
-void SetAudioFrameActivityAndType(bool vad_enabled,
-                                  NetEqOutputType type,
-                                  AudioFrame* audio_frame) {
-  if (vad_enabled) {
-    switch (type) {
-      case kOutputNormal: {
-        audio_frame->vad_activity_ = AudioFrame::kVadActive;
-        audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
-        break;
-      }
-      case kOutputVADPassive: {
-        audio_frame->vad_activity_ = AudioFrame::kVadPassive;
-        audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
-        break;
-      }
-      case kOutputCNG: {
-        audio_frame->vad_activity_ = AudioFrame::kVadPassive;
-        audio_frame->speech_type_ = AudioFrame::kCNG;
-        break;
-      }
-      case kOutputPLC: {
-        // Don't change |audio_frame->vad_activity_|, it should be the same as
-        // |previous_audio_activity_|.
-        audio_frame->speech_type_ = AudioFrame::kPLC;
-        break;
-      }
-      case kOutputPLCtoCNG: {
-        audio_frame->vad_activity_ = AudioFrame::kVadPassive;
-        audio_frame->speech_type_ = AudioFrame::kPLCCNG;
-        break;
-      }
-      default:
-        assert(false);
-    }
-  } else {
-    // Always return kVadUnknown when receive VAD is inactive
-    audio_frame->vad_activity_ = AudioFrame::kVadUnknown;
-    switch (type) {
-      case kOutputNormal: {
-        audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
-        break;
-      }
-      case kOutputCNG: {
-        audio_frame->speech_type_ = AudioFrame::kCNG;
-        break;
-      }
-      case kOutputPLC: {
-        audio_frame->speech_type_ = AudioFrame::kPLC;
-        break;
-      }
-      case kOutputPLCtoCNG: {
-        audio_frame->speech_type_ = AudioFrame::kPLCCNG;
-        break;
-      }
-      case kOutputVADPassive: {
-        // Normally, we should no get any VAD decision if post-decoding VAD is
-        // not active. However, if post-decoding VAD has been active then
-        // disabled, we might be here for couple of frames.
-        audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
-        LOG(WARNING) << "Post-decoding VAD is disabled but output is "
-            << "labeled VAD-passive";
-        break;
-      }
-      default:
-        assert(false);
-    }
-  }
-}
-
 // Is the given codec a CNG codec?
 // TODO(kwiberg): Move to RentACodec.
 bool IsCng(int codec_id) {
@@ -120,10 +49,8 @@ bool IsCng(int codec_id) {
 
 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
     : last_audio_decoder_(nullptr),
-      previous_audio_activity_(AudioFrame::kVadPassive),
       last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
       neteq_(NetEq::Create(config.neteq_config)),
-      vad_enabled_(config.neteq_config.enable_post_decode_vad),
       clock_(config.clock),
       resampled_last_output_frame_(true) {
   assert(clock_);
@@ -264,10 +191,6 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
          sizeof(int16_t) * audio_frame->samples_per_channel_ *
              audio_frame->num_channels_);
 
-  // Should set |vad_activity| before calling SetAudioFrameActivityAndType().
-  audio_frame->vad_activity_ = previous_audio_activity_;
-  SetAudioFrameActivityAndType(vad_enabled_, type, audio_frame);
-  previous_audio_activity_ = audio_frame->vad_activity_;
   call_stats_.DecodedByNetEq(audio_frame->speech_type_);
 
   // Computes the RTP timestamp of the first sample in |audio_frame| from
@@ -349,18 +272,6 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   decoder.sample_rate_hz = sample_rate_hz;
   decoders_[payload_type] = decoder;
   return 0;
-}
-
-void AcmReceiver::EnableVad() {
-  neteq_->EnableVad();
-  rtc::CritScope lock(&crit_sect_);
-  vad_enabled_ = true;
-}
-
-void AcmReceiver::DisableVad() {
-  neteq_->DisableVad();
-  rtc::CritScope lock(&crit_sect_);
-  vad_enabled_ = false;
 }
 
 void AcmReceiver::FlushBuffers() {

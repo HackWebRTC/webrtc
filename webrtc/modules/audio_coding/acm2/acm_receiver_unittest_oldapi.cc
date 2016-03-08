@@ -58,14 +58,13 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
         packet_sent_(false),
         last_packet_send_timestamp_(timestamp_),
         last_frame_type_(kEmptyFrame) {
-    AudioCodingModule::Config config;
-    acm_.reset(new AudioCodingModuleImpl(config));
-    receiver_.reset(new AcmReceiver(config));
   }
 
   ~AcmReceiverTestOldApi() {}
 
   void SetUp() override {
+    acm_.reset(new AudioCodingModuleImpl(config_));
+    receiver_.reset(new AcmReceiver(config_));
     ASSERT_TRUE(receiver_.get() != NULL);
     ASSERT_TRUE(acm_.get() != NULL);
     codecs_ = RentACodec::Database();
@@ -153,6 +152,7 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     return 0;
   }
 
+  AudioCodingModule::Config config_;
   std::unique_ptr<AcmReceiver> receiver_;
   rtc::ArrayView<const CodecInst> codecs_;
   std::unique_ptr<AudioCodingModule> acm_;
@@ -295,8 +295,7 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_SampleRate) {
 #define MAYBE_PostdecodingVad PostdecodingVad
 #endif
 TEST_F(AcmReceiverTestOldApi, MAYBE_PostdecodingVad) {
-  receiver_->EnableVad();
-  EXPECT_TRUE(receiver_->vad_enabled());
+  EXPECT_TRUE(config_.neteq_config.enable_post_decode_vad);
   const CodecIdInst codec(RentACodec::CodecId::kPCM16Bwb);
   ASSERT_EQ(
       0, receiver_->AddCodec(codec.id, codec.inst.pltype, codec.inst.channels,
@@ -310,10 +309,29 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_PostdecodingVad) {
       ASSERT_EQ(0, receiver_->GetAudio(codec.inst.plfreq, &frame));
   }
   EXPECT_EQ(AudioFrame::kVadPassive, frame.vad_activity_);
+}
 
-  receiver_->DisableVad();
-  EXPECT_FALSE(receiver_->vad_enabled());
+class AcmReceiverTestPostDecodeVadPassiveOldApi : public AcmReceiverTestOldApi {
+ protected:
+  AcmReceiverTestPostDecodeVadPassiveOldApi() {
+    config_.neteq_config.enable_post_decode_vad = false;
+  }
+};
 
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_PostdecodingVad DISABLED_PostdecodingVad
+#else
+#define MAYBE_PostdecodingVad PostdecodingVad
+#endif
+TEST_F(AcmReceiverTestPostDecodeVadPassiveOldApi, MAYBE_PostdecodingVad) {
+  EXPECT_FALSE(config_.neteq_config.enable_post_decode_vad);
+  const CodecIdInst codec(RentACodec::CodecId::kPCM16Bwb);
+  ASSERT_EQ(
+      0, receiver_->AddCodec(codec.id, codec.inst.pltype, codec.inst.channels,
+                             codec.inst.plfreq, nullptr, ""));
+  const int kNumPackets = 5;
+  const int num_10ms_frames = codec.inst.pacsize / (codec.inst.plfreq / 100);
+  AudioFrame frame;
   for (int n = 0; n < kNumPackets; ++n) {
     InsertOnePacketOfSilence(codec.id);
     for (int k = 0; k < num_10ms_frames; ++k)
