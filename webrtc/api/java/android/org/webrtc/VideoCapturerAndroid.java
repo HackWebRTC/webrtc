@@ -49,7 +49,7 @@ public class VideoCapturerAndroid implements
     SurfaceTextureHelper.OnTextureFrameAvailableListener {
   private final static String TAG = "VideoCapturerAndroid";
   private final static int CAMERA_OBSERVER_PERIOD_MS = 2000;
-  private final static int CAMERA_FREEZE_REPORT_TIMOUT_MS = 6000;
+  private final static int CAMERA_FREEZE_REPORT_TIMOUT_MS = 4000;
 
   private android.hardware.Camera camera;  // Only non-null while capturing.
   private Thread cameraThread;
@@ -118,7 +118,7 @@ public class VideoCapturerAndroid implements
       Logging.d(TAG, "Camera fps: " + cameraFps +".");
       if (cameraFramesCount == 0) {
         ++freezePeriodCount;
-        if (CAMERA_OBSERVER_PERIOD_MS * freezePeriodCount > CAMERA_FREEZE_REPORT_TIMOUT_MS
+        if (CAMERA_OBSERVER_PERIOD_MS * freezePeriodCount >= CAMERA_FREEZE_REPORT_TIMOUT_MS
             && eventsHandler != null) {
           Logging.e(TAG, "Camera freezed.");
           if (surfaceHelper.isTextureInUse()) {
