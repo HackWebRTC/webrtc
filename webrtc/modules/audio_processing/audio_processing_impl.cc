@@ -112,8 +112,12 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
 const int AudioProcessing::kNativeSampleRatesHz[] = {
     AudioProcessing::kSampleRate8kHz,
     AudioProcessing::kSampleRate16kHz,
+#ifdef WEBRTC_ARCH_ARM_FAMILY
+    AudioProcessing::kSampleRate32kHz};
+#else
     AudioProcessing::kSampleRate32kHz,
     AudioProcessing::kSampleRate48kHz};
+#endif  // WEBRTC_ARCH_ARM_FAMILY
 const size_t AudioProcessing::kNumNativeSampleRates =
     arraysize(AudioProcessing::kNativeSampleRatesHz);
 const int AudioProcessing::kMaxNativeSampleRateHz = AudioProcessing::
