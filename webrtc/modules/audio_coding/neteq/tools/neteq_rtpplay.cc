@@ -25,7 +25,7 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/numerics/safe_conversions.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"

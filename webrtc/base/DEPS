@@ -1,0 +1,8 @@
+include_rules = [
+  "-base",
+  "+json",
+  "+testing",
+  "+third_party/jsoncpp",
+  "+webrtc",
+  "+webrtc/base",
+]

@@ -116,8 +116,6 @@
         'ratetracker.cc',
         'ratetracker.h',
         'refcount.h',
-        'safe_conversions.h',
-        'safe_conversions_impl.h',
         'scoped_ptr.h',
         'scoped_ref_ptr.h',
         'stringencode.cc',
@@ -160,6 +158,7 @@
       'dependencies': [
         '<(webrtc_root)/common.gyp:webrtc_common',
         'rtc_base_approved',
+        'safe_numerics',
       ],
       'export_dependent_settings': [
         'rtc_base_approved',
@@ -500,8 +499,6 @@
             'proxyserver.h',
             'referencecountedsingletonfactory.h',
             'rollingaccumulator.h',
-            'safe_conversions.h',
-            'safe_conversions_impl.h',
             'scopedptrcollection.h',
             'sec_buffer.h',
             'sslconfig.h',
@@ -750,6 +747,20 @@
       'type': 'static_library',
       'sources': [
         'gtest_prod_util.h',
+      ],
+    },
+    {
+      # GN version: webrtc/base:safe_numerics
+      'target_name': 'safe_numerics',
+      'type': 'static_library',
+      'dependencies': [
+        'rtc_base_approved',
+      ],
+      'sources': [
+        'numerics/safe_conversions.h',
+        'numerics/safe_conversions_impl.h',
+        'numerics/safe_math.h',
+        'numerics/safe_math_impl.h',
       ],
     },
   ],

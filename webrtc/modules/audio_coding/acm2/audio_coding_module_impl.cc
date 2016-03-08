@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/numerics/safe_conversions.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/acm2/acm_common_defs.h"

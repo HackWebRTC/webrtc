@@ -13,7 +13,7 @@
 #include "webrtc/modules/audio_coding/neteq/expand.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/numerics/safe_conversions.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/random_vector.h"
