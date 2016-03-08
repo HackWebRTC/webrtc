@@ -1334,9 +1334,9 @@ bool VoiceChannel::Init() {
 bool VoiceChannel::SetAudioSend(uint32_t ssrc,
                                 bool enable,
                                 const AudioOptions* options,
-                                AudioRenderer* renderer) {
+                                AudioSource* source) {
   return InvokeOnWorker(Bind(&VoiceMediaChannel::SetAudioSend, media_channel(),
-                             ssrc, enable, options, renderer));
+                             ssrc, enable, options, source));
 }
 
 // TODO(juberti): Handle early media the right way. We should get an explicit
@@ -1454,10 +1454,7 @@ void VoiceChannel::ChangeState() {
   // Send outgoing data if we're the active call, we have the remote content,
   // and we have had some form of connectivity.
   bool send = IsReadyToSend();
-  SendFlags send_flag = send ? SEND_MICROPHONE : SEND_NOTHING;
-  if (!media_channel()->SetSend(send_flag)) {
-    LOG(LS_ERROR) << "Failed to SetSend " << send_flag << " on voice channel";
-  }
+  media_channel()->SetSend(send);
 
   LOG(LS_INFO) << "Changing voice state, recv=" << recv << " send=" << send;
 }

@@ -36,7 +36,7 @@ void LocalAudioSinkAdapter::OnData(const void* audio_data,
   }
 }
 
-void LocalAudioSinkAdapter::SetSink(cricket::AudioRenderer::Sink* sink) {
+void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
   rtc::CritScope lock(&lock_);
   ASSERT(!sink || !sink_);
   sink_ = sink;
@@ -194,9 +194,9 @@ void AudioRtpSender::SetAudioSend() {
   }
 #endif
 
-  cricket::AudioRenderer* renderer = sink_adapter_.get();
-  ASSERT(renderer != nullptr);
-  provider_->SetAudioSend(ssrc_, track_->enabled(), options, renderer);
+  cricket::AudioSource* source = sink_adapter_.get();
+  ASSERT(source != nullptr);
+  provider_->SetAudioSend(ssrc_, track_->enabled(), options, source);
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,

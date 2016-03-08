@@ -17,7 +17,7 @@
 
 namespace cricket {
 
-class AudioRenderer;
+class AudioSource;
 class VideoCapturer;
 class VideoFrame;
 class VideoRenderer;
@@ -49,7 +49,7 @@ class AudioProviderInterface {
   virtual void SetAudioSend(uint32_t ssrc,
                             bool enable,
                             const cricket::AudioOptions& options,
-                            cricket::AudioRenderer* renderer) = 0;
+                            cricket::AudioSource* source) = 0;
 
   // Sets the audio playout volume of a remote audio track with |ssrc|.
   // |volume| is in the range of [0, 10].

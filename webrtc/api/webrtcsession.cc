@@ -1180,13 +1180,13 @@ void WebRtcSession::SetAudioPlayout(uint32_t ssrc, bool enable) {
 void WebRtcSession::SetAudioSend(uint32_t ssrc,
                                  bool enable,
                                  const cricket::AudioOptions& options,
-                                 cricket::AudioRenderer* renderer) {
+                                 cricket::AudioSource* source) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
     LOG(LS_ERROR) << "SetAudioSend: No audio channel exists.";
     return;
   }
-  if (!voice_channel_->SetAudioSend(ssrc, enable, &options, renderer)) {
+  if (!voice_channel_->SetAudioSend(ssrc, enable, &options, source)) {
     LOG(LS_ERROR) << "SetAudioSend: ssrc is incorrect: " << ssrc;
   }
 }

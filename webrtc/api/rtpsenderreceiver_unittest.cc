@@ -50,7 +50,7 @@ class MockAudioProvider : public AudioProviderInterface {
                void(uint32_t ssrc,
                     bool enable,
                     const cricket::AudioOptions& options,
-                    cricket::AudioRenderer* renderer));
+                    cricket::AudioSource* source));
   MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32_t ssrc, double volume));
 
   void SetRawAudioSink(uint32_t,

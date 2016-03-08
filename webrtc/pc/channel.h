@@ -336,7 +336,7 @@ class VoiceChannel : public BaseChannel {
   bool SetAudioSend(uint32_t ssrc,
                     bool enable,
                     const AudioOptions* options,
-                    AudioRenderer* renderer);
+                    AudioSource* source);
 
   // downcasts a MediaChannel
   virtual VoiceMediaChannel* media_channel() const {

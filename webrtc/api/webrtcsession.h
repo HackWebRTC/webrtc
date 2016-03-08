@@ -232,7 +232,7 @@ class WebRtcSession : public AudioProviderInterface,
   void SetAudioSend(uint32_t ssrc,
                     bool enable,
                     const cricket::AudioOptions& options,
-                    cricket::AudioRenderer* renderer) override;
+                    cricket::AudioSource* source) override;
   void SetAudioPlayoutVolume(uint32_t ssrc, double volume) override;
   void SetRawAudioSink(uint32_t ssrc,
                        rtc::scoped_ptr<AudioSinkInterface> sink) override;

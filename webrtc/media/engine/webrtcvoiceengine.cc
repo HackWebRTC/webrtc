@@ -33,7 +33,7 @@
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
 #include "webrtc/media/base/audioframe.h"
-#include "webrtc/media/base/audiorenderer.h"
+#include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
@@ -1138,7 +1138,7 @@ int WebRtcVoiceEngine::CreateVoEChannel() {
 }
 
 class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
-    : public AudioRenderer::Sink {
+    : public AudioSource::Sink {
  public:
   WebRtcAudioSendStream(int ch, webrtc::AudioTransport* voe_audio_transport,
                         uint32_t ssrc, const std::string& c_name,
@@ -1160,7 +1160,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
 
   ~WebRtcAudioSendStream() override {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    Stop();
+    ClearSource();
     call_->DestroyAudioSendStream(stream_);
   }
 
@@ -1184,39 +1184,47 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     return stream_->SendTelephoneEvent(payload_type, event, duration_ms);
   }
 
+  void SetSend(bool send) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    send_ = send;
+    UpdateSendState();
+  }
+
   webrtc::AudioSendStream::Stats GetStats() const {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
     return stream_->GetStats();
   }
 
-  // Starts the rendering by setting a sink to the renderer to get data
-  // callback.
+  // Starts the sending by setting ourselves as a sink to the AudioSource to
+  // get data callbacks.
   // This method is called on the libjingle worker thread.
   // TODO(xians): Make sure Start() is called only once.
-  void Start(AudioRenderer* renderer) {
+  void SetSource(AudioSource* source) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RTC_DCHECK(renderer);
-    if (renderer_) {
-      RTC_DCHECK(renderer_ == renderer);
+    RTC_DCHECK(source);
+    if (source_) {
+      RTC_DCHECK(source_ == source);
       return;
     }
-    renderer->SetSink(this);
-    renderer_ = renderer;
+    source->SetSink(this);
+    source_ = source;
+    UpdateSendState();
   }
 
-  // Stops rendering by setting the sink of the renderer to nullptr. No data
+  // Stops sending by setting the sink of the AudioSource to nullptr. No data
   // callback will be received after this method.
   // This method is called on the libjingle worker thread.
-  void Stop() {
+  void ClearSource() {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    if (renderer_) {
-      renderer_->SetSink(nullptr);
-      renderer_ = nullptr;
+    if (source_) {
+      source_->SetSink(nullptr);
+      source_ = nullptr;
     }
+    UpdateSendState();
   }
 
-  // AudioRenderer::Sink implementation.
+  // AudioSource::Sink implementation.
   // This method is called on the audio thread.
   void OnData(const void* audio_data,
               int bits_per_sample,
@@ -1234,13 +1242,14 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
                                  number_of_frames);
   }
 
-  // Callback from the |renderer_| when it is going away. In case Start() has
+  // Callback from the |source_| when it is going away. In case Start() has
   // never been called, this callback won't be triggered.
   void OnClose() override {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    // Set |renderer_| to nullptr to make sure no more callback will get into
-    // the renderer.
-    renderer_ = nullptr;
+    // Set |source_| to nullptr to make sure no more callback will get into
+    // the source.
+    source_ = nullptr;
+    UpdateSendState();
   }
 
   // Accessor to the VoE channel ID.
@@ -1250,6 +1259,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   }
 
  private:
+  void UpdateSendState() {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(stream_);
+    if (send_ && source_ != nullptr) {
+      stream_->Start();
+    } else {  // !send || source_ = nullptr
+      stream_->Stop();
+    }
+  }
+
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker audio_capture_thread_checker_;
   webrtc::AudioTransport* const voe_audio_transport_ = nullptr;
@@ -1259,10 +1278,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   // configuration changes.
   webrtc::AudioSendStream* stream_ = nullptr;
 
-  // Raw pointer to AudioRenderer owned by LocalAudioTrackHandler.
+  // Raw pointer to AudioSource owned by LocalAudioTrackHandler.
   // PeerConnection will make sure invalidating the pointer before the object
   // goes away.
-  AudioRenderer* renderer_ = nullptr;
+  AudioSource* source_ = nullptr;
+  bool send_ = false;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioSendStream);
 };
@@ -1827,68 +1847,32 @@ bool WebRtcVoiceMediaChannel::ChangePlayout(bool playout) {
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetSend(SendFlags send) {
-  desired_send_ = send;
-  if (!send_streams_.empty()) {
-    return ChangeSend(desired_send_);
-  }
-  return true;
-}
-
-bool WebRtcVoiceMediaChannel::PauseSend() {
-  return ChangeSend(SEND_NOTHING);
-}
-
-bool WebRtcVoiceMediaChannel::ResumeSend() {
-  return ChangeSend(desired_send_);
-}
-
-bool WebRtcVoiceMediaChannel::ChangeSend(SendFlags send) {
+void WebRtcVoiceMediaChannel::SetSend(bool send) {
   if (send_ == send) {
-    return true;
+    return;
   }
 
   // Apply channel specific options when channel is enabled for sending.
-  if (send == SEND_MICROPHONE) {
+  if (send) {
     engine()->ApplyOptions(options_);
   }
 
   // Change the settings on each send channel.
-  for (const auto& ch : send_streams_) {
-    if (!ChangeSend(ch.second->channel(), send)) {
-      return false;
-    }
+  for (auto& kv : send_streams_) {
+    kv.second->SetSend(send);
   }
 
   send_ = send;
-  return true;
-}
-
-bool WebRtcVoiceMediaChannel::ChangeSend(int channel, SendFlags send) {
-  if (send == SEND_MICROPHONE) {
-    if (engine()->voe()->base()->StartSend(channel) == -1) {
-      LOG_RTCERR1(StartSend, channel);
-      return false;
-    }
-  } else {  // SEND_NOTHING
-    RTC_DCHECK(send == SEND_NOTHING);
-    if (engine()->voe()->base()->StopSend(channel) == -1) {
-      LOG_RTCERR1(StopSend, channel);
-      return false;
-    }
-  }
-
-  return true;
 }
 
 bool WebRtcVoiceMediaChannel::SetAudioSend(uint32_t ssrc,
                                            bool enable,
                                            const AudioOptions* options,
-                                           AudioRenderer* renderer) {
+                                           AudioSource* source) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   // TODO(solenberg): The state change should be fully rolled back if any one of
   //                  these calls fail.
-  if (!SetLocalRenderer(ssrc, renderer)) {
+  if (!SetLocalSource(ssrc, source)) {
     return false;
   }
   if (!MuteStream(ssrc, !enable)) {
@@ -1975,7 +1959,8 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
     }
   }
 
-  return ChangeSend(channel, desired_send_);
+  send_streams_[ssrc]->SetSend(send_);
+  return true;
 }
 
 bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
@@ -1989,10 +1974,10 @@ bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
     return false;
   }
 
-  int channel = it->second->channel();
-  ChangeSend(channel, SEND_NOTHING);
+  it->second->SetSend(false);
 
   // Clean up and delete the send stream+channel.
+  int channel = it->second->channel();
   LOG(LS_INFO) << "Removing audio send stream " << ssrc
                << " with VoiceEngine channel #" << channel << ".";
   delete it->second;
@@ -2001,7 +1986,7 @@ bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
     return false;
   }
   if (send_streams_.empty()) {
-    ChangeSend(SEND_NOTHING);
+    SetSend(false);
   }
   return true;
 }
@@ -2110,13 +2095,13 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   return DeleteVoEChannel(channel);
 }
 
-bool WebRtcVoiceMediaChannel::SetLocalRenderer(uint32_t ssrc,
-                                               AudioRenderer* renderer) {
+bool WebRtcVoiceMediaChannel::SetLocalSource(uint32_t ssrc,
+                                             AudioSource* source) {
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
-    if (renderer) {
-      // Return an error if trying to set a valid renderer with an invalid ssrc.
-      LOG(LS_ERROR) << "SetLocalRenderer failed with ssrc "<< ssrc;
+    if (source) {
+      // Return an error if trying to set a valid source with an invalid ssrc.
+      LOG(LS_ERROR) << "SetLocalSource failed with ssrc " << ssrc;
       return false;
     }
 
@@ -2124,10 +2109,10 @@ bool WebRtcVoiceMediaChannel::SetLocalRenderer(uint32_t ssrc,
     return true;
   }
 
-  if (renderer) {
-    it->second->Start(renderer);
+  if (source) {
+    it->second->SetSource(source);
   } else {
-    it->second->Stop();
+    it->second->ClearSource();
   }
 
   return true;
@@ -2445,8 +2430,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     sinfo.echo_delay_std_ms = stats.echo_delay_std_ms;
     sinfo.echo_return_loss = stats.echo_return_loss;
     sinfo.echo_return_loss_enhancement = stats.echo_return_loss_enhancement;
-    sinfo.typing_noise_detected =
-        (send_ == SEND_NOTHING ? false : stats.typing_noise_detected);
+    sinfo.typing_noise_detected = (send_ ? stats.typing_noise_detected : false);
     info->senders.push_back(sinfo);
   }
 

@@ -44,11 +44,12 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
   const webrtc::AudioSendStream::Config& GetConfig() const;
   void SetStats(const webrtc::AudioSendStream::Stats& stats);
   TelephoneEvent GetLatestTelephoneEvent() const;
+  bool IsSending() const { return sending_; }
 
  private:
   // webrtc::SendStream implementation.
-  void Start() override {}
-  void Stop() override {}
+  void Start() override { sending_ = true; }
+  void Stop() override { sending_ = false; }
   void SignalNetworkState(webrtc::NetworkState state) override {}
   bool DeliverRtcp(const uint8_t* packet, size_t length) override {
     return true;
@@ -62,6 +63,7 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
   TelephoneEvent latest_telephone_event_;
   webrtc::AudioSendStream::Config config_;
   webrtc::AudioSendStream::Stats stats_;
+  bool sending_ = false;
 };
 
 class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {

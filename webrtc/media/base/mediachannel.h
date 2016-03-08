@@ -42,7 +42,7 @@ class AudioSinkInterface;
 
 namespace cricket {
 
-class AudioRenderer;
+class AudioSource;
 class ScreencastId;
 class VideoCapturer;
 class VideoFrame;
@@ -446,11 +446,6 @@ class MediaChannel : public sigslot::has_slots<> {
   // of network_interface_ object.
   rtc::CriticalSection network_interface_crit_;
   NetworkInterface* network_interface_;
-};
-
-enum SendFlags {
-  SEND_NOTHING,
-  SEND_MICROPHONE
 };
 
 // The stats information is structured as follows:
@@ -901,12 +896,12 @@ class VoiceMediaChannel : public MediaChannel {
   // Starts or stops playout of received audio.
   virtual bool SetPlayout(bool playout) = 0;
   // Starts or stops sending (and potentially capture) of local audio.
-  virtual bool SetSend(SendFlags flag) = 0;
+  virtual void SetSend(bool send) = 0;
   // Configure stream for sending.
   virtual bool SetAudioSend(uint32_t ssrc,
                             bool enable,
                             const AudioOptions* options,
-                            AudioRenderer* renderer) = 0;
+                            AudioSource* source) = 0;
   // Gets current energy levels for all incoming streams.
   virtual bool GetActiveStreams(AudioInfo::StreamList* actives) = 0;
   // Get the current energy level of the stream sent to the speaker.

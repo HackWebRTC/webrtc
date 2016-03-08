@@ -21,7 +21,7 @@
 #include "webrtc/audio_sink.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/stringutils.h"
-#include "webrtc/media/base/audiorenderer.h"
+#include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/base/streamparams.h"
@@ -253,14 +253,12 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     set_playout(playout);
     return true;
   }
-  virtual bool SetSend(SendFlags flag) {
-    return set_sending(flag != SEND_NOTHING);
-  }
+  virtual void SetSend(bool send) { set_sending(send); }
   virtual bool SetAudioSend(uint32_t ssrc,
                             bool enable,
                             const AudioOptions* options,
-                            AudioRenderer* renderer) {
-    if (!SetLocalRenderer(ssrc, renderer)) {
+                            AudioSource* source) {
+    if (!SetLocalSource(ssrc, source)) {
       return false;
     }
     if (!RtpHelper<VoiceMediaChannel>::MuteStream(ssrc, !enable)) {
@@ -338,15 +336,14 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   }
 
  private:
-  class VoiceChannelAudioSink : public AudioRenderer::Sink {
+  class VoiceChannelAudioSink : public AudioSource::Sink {
    public:
-    explicit VoiceChannelAudioSink(AudioRenderer* renderer)
-        : renderer_(renderer) {
-      renderer_->SetSink(this);
+    explicit VoiceChannelAudioSink(AudioSource* source) : source_(source) {
+      source_->SetSink(this);
     }
     virtual ~VoiceChannelAudioSink() {
-      if (renderer_) {
-        renderer_->SetSink(NULL);
+      if (source_) {
+        source_->SetSink(nullptr);
       }
     }
     void OnData(const void* audio_data,
@@ -354,11 +351,11 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
                 int sample_rate,
                 size_t number_of_channels,
                 size_t number_of_frames) override {}
-    void OnClose() override { renderer_ = NULL; }
-    AudioRenderer* renderer() const { return renderer_; }
+    void OnClose() override { source_ = nullptr; }
+    AudioSource* source() const { return source_; }
 
    private:
-    AudioRenderer* renderer_;
+    AudioSource* source_;
   };
 
   bool SetRecvCodecs(const std::vector<AudioCodec>& codecs) {
@@ -383,19 +380,19 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     options_.SetAll(options);
     return true;
   }
-  bool SetLocalRenderer(uint32_t ssrc, AudioRenderer* renderer) {
-    auto it = local_renderers_.find(ssrc);
-    if (renderer) {
-      if (it != local_renderers_.end()) {
-        ASSERT(it->second->renderer() == renderer);
+  bool SetLocalSource(uint32_t ssrc, AudioSource* source) {
+    auto it = local_sinks_.find(ssrc);
+    if (source) {
+      if (it != local_sinks_.end()) {
+        ASSERT(it->second->source() == source);
       } else {
-        local_renderers_.insert(std::make_pair(
-            ssrc, new VoiceChannelAudioSink(renderer)));
+        local_sinks_.insert(
+            std::make_pair(ssrc, new VoiceChannelAudioSink(source)));
       }
     } else {
-      if (it != local_renderers_.end()) {
+      if (it != local_sinks_.end()) {
         delete it->second;
-        local_renderers_.erase(it);
+        local_sinks_.erase(it);
       }
     }
     return true;
@@ -408,7 +405,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   std::vector<DtmfInfo> dtmf_info_queue_;
   int time_since_last_typing_;
   AudioOptions options_;
-  std::map<uint32_t, VoiceChannelAudioSink*> local_renderers_;
+  std::map<uint32_t, VoiceChannelAudioSink*> local_sinks_;
   std::unique_ptr<webrtc::AudioSinkInterface> sink_;
 };
 

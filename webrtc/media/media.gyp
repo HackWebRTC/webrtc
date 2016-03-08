@@ -32,7 +32,7 @@
       },
       'sources': [
         'base/audioframe.h',
-        'base/audiorenderer.h',
+        'base/audiosource.h',
         'base/capturemanager.cc',
         'base/capturemanager.h',
         'base/codec.cc',

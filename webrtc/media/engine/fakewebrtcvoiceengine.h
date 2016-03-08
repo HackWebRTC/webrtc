@@ -130,7 +130,6 @@ class FakeWebRtcVoiceEngine
   struct Channel {
     explicit Channel()
         : external_transport(false),
-          send(false),
           playout(false),
           volume_scale(1.0),
           vad(false),
@@ -151,7 +150,6 @@ class FakeWebRtcVoiceEngine
       memset(&send_codec, 0, sizeof(send_codec));
     }
     bool external_transport;
-    bool send;
     bool playout;
     float volume_scale;
     bool vad;
@@ -193,7 +191,6 @@ class FakeWebRtcVoiceEngine
         agc_mode_(webrtc::kAgcDefault),
         observer_(NULL),
         playout_fail_channel_(-1),
-        send_fail_channel_(-1),
         recording_sample_rate_(-1),
         playout_sample_rate_(-1) {
     memset(&agc_config_, 0, sizeof(agc_config_));
@@ -212,9 +209,6 @@ class FakeWebRtcVoiceEngine
   }
   bool GetPlayout(int channel) {
     return channels_[channel]->playout;
-  }
-  bool GetSend(int channel) {
-    return channels_[channel]->send;
   }
   bool GetVAD(int channel) {
     return channels_[channel]->vad;
@@ -267,9 +261,6 @@ class FakeWebRtcVoiceEngine
   }
   void set_playout_fail_channel(int channel) {
     playout_fail_channel_ = channel;
-  }
-  void set_send_fail_channel(int channel) {
-    send_fail_channel_ = channel;
   }
   void set_fail_create_channel(bool fail_create_channel) {
     fail_create_channel_ = fail_create_channel;
@@ -347,28 +338,14 @@ class FakeWebRtcVoiceEngine
       return -1;
     }
   }
-  WEBRTC_FUNC(StartSend, (int channel)) {
-    if (send_fail_channel_ != channel) {
-      WEBRTC_CHECK_CHANNEL(channel);
-      channels_[channel]->send = true;
-      return 0;
-    } else {
-      // When send_fail_channel_ == channel, fail the StartSend on this
-      // channel.
-      return -1;
-    }
-  }
+  WEBRTC_STUB(StartSend, (int channel));
   WEBRTC_STUB(StopReceive, (int channel));
   WEBRTC_FUNC(StopPlayout, (int channel)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->playout = false;
     return 0;
   }
-  WEBRTC_FUNC(StopSend, (int channel)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->send = false;
-    return 0;
-  }
+  WEBRTC_STUB(StopSend, (int channel));
   WEBRTC_STUB(GetVersion, (char version[1024]));
   WEBRTC_STUB(LastError, ());
   WEBRTC_FUNC(AssociateSendChannel, (int channel,
@@ -797,7 +774,6 @@ class FakeWebRtcVoiceEngine
   webrtc::AgcConfig agc_config_;
   webrtc::VoiceEngineObserver* observer_;
   int playout_fail_channel_;
-  int send_fail_channel_;
   int recording_sample_rate_;
   int playout_sample_rate_;
   FakeAudioProcessing audio_processing_;

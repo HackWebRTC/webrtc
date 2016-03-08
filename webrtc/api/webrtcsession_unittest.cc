@@ -294,19 +294,20 @@ class WebRtcSessionCreateSDPObserverForTest
   State state_;
 };
 
-class FakeAudioRenderer : public cricket::AudioRenderer {
+class FakeAudioSource : public cricket::AudioSource {
  public:
-  FakeAudioRenderer() : sink_(NULL) {}
-  virtual ~FakeAudioRenderer() {
+  FakeAudioSource() : sink_(NULL) {}
+  virtual ~FakeAudioSource() {
     if (sink_)
       sink_->OnClose();
   }
 
   void SetSink(Sink* sink) override { sink_ = sink; }
 
-  cricket::AudioRenderer::Sink* sink() const { return sink_; }
+  const cricket::AudioSource::Sink* sink() const { return sink_; }
+
  private:
-  cricket::AudioRenderer::Sink* sink_;
+  cricket::AudioSource::Sink* sink_;
 };
 
 class WebRtcSessionTest
@@ -3337,20 +3338,20 @@ TEST_F(WebRtcSessionTest, SetAudioSend) {
   cricket::AudioOptions options;
   options.echo_cancellation = rtc::Optional<bool>(true);
 
-  rtc::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
-  session_->SetAudioSend(send_ssrc, false, options, renderer.get());
+  rtc::scoped_ptr<FakeAudioSource> source(new FakeAudioSource());
+  session_->SetAudioSend(send_ssrc, false, options, source.get());
   EXPECT_TRUE(channel->IsStreamMuted(send_ssrc));
   EXPECT_EQ(rtc::Optional<bool>(), channel->options().echo_cancellation);
-  EXPECT_TRUE(renderer->sink() != NULL);
+  EXPECT_TRUE(source->sink() != nullptr);
 
-  // This will trigger SetSink(NULL) to the |renderer|.
-  session_->SetAudioSend(send_ssrc, true, options, NULL);
+  // This will trigger SetSink(nullptr) to the |source|.
+  session_->SetAudioSend(send_ssrc, true, options, nullptr);
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
   EXPECT_EQ(rtc::Optional<bool>(true), channel->options().echo_cancellation);
-  EXPECT_TRUE(renderer->sink() == NULL);
+  EXPECT_TRUE(source->sink() == nullptr);
 }
 
-TEST_F(WebRtcSessionTest, AudioRendererForLocalStream) {
+TEST_F(WebRtcSessionTest, AudioSourceForLocalStream) {
   Init();
   SendAudioVideoStream1();
   CreateAndSetRemoteOfferAndLocalAnswer();
@@ -3359,18 +3360,18 @@ TEST_F(WebRtcSessionTest, AudioRendererForLocalStream) {
   ASSERT_EQ(1u, channel->send_streams().size());
   uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
 
-  rtc::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
+  rtc::scoped_ptr<FakeAudioSource> source(new FakeAudioSource());
   cricket::AudioOptions options;
-  session_->SetAudioSend(send_ssrc, true, options, renderer.get());
-  EXPECT_TRUE(renderer->sink() != NULL);
+  session_->SetAudioSend(send_ssrc, true, options, source.get());
+  EXPECT_TRUE(source->sink() != nullptr);
 
-  // Delete the |renderer| and it will trigger OnClose() to the sink, and this
-  // will invalidate the |renderer_| pointer in the sink and prevent getting a
-  // SetSink(NULL) callback afterwards.
-  renderer.reset();
+  // Delete the |source| and it will trigger OnClose() to the sink, and this
+  // will invalidate the |source_| pointer in the sink and prevent getting a
+  // SetSink(nullptr) callback afterwards.
+  source.reset();
 
-  // This will trigger SetSink(NULL) if no OnClose() callback.
-  session_->SetAudioSend(send_ssrc, true, options, NULL);
+  // This will trigger SetSink(nullptr) if no OnClose() callback.
+  session_->SetAudioSend(send_ssrc, true, options, nullptr);
 }
 
 TEST_F(WebRtcSessionTest, SetVideoPlayout) {

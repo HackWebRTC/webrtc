@@ -97,10 +97,20 @@ AudioSendStream::~AudioSendStream() {
 
 void AudioSendStream::Start() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  ScopedVoEInterface<VoEBase> base(voice_engine());
+  int error = base->StartSend(config_.voe_channel_id);
+  if (error != 0) {
+    LOG(LS_ERROR) << "AudioSendStream::Start failed with error: " << error;
+  }
 }
 
 void AudioSendStream::Stop() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  ScopedVoEInterface<VoEBase> base(voice_engine());
+  int error = base->StopSend(config_.voe_channel_id);
+  if (error != 0) {
+    LOG(LS_ERROR) << "AudioSendStream::Stop failed with error: " << error;
+  }
 }
 
 void AudioSendStream::SignalNetworkState(NetworkState state) {

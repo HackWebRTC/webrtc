@@ -31,7 +31,7 @@
 namespace cricket {
 
 class AudioDeviceModule;
-class AudioRenderer;
+class AudioSource;
 class VoEWrapper;
 class WebRtcVoiceMediaChannel;
 
@@ -155,13 +155,13 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool SetPlayout(bool playout) override;
   bool PausePlayout();
   bool ResumePlayout();
-  bool SetSend(SendFlags send) override;
+  void SetSend(bool send) override;
   bool PauseSend();
   bool ResumeSend();
   bool SetAudioSend(uint32_t ssrc,
                     bool enable,
                     const AudioOptions* options,
-                    AudioRenderer* renderer) override;
+                    AudioSource* source) override;
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
@@ -218,7 +218,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   void SetNack(int channel, bool nack_enabled);
   bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
   bool SetMaxSendBandwidth(int bps);
-  bool SetLocalRenderer(uint32_t ssrc, AudioRenderer* renderer);
+  bool SetLocalSource(uint32_t ssrc, AudioSource* source);
   bool MuteStream(uint32_t ssrc, bool mute);
 
   WebRtcVoiceEngine* engine() { return engine_; }
@@ -226,8 +226,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   int GetOutputLevel(int channel);
   bool SetPlayout(int channel, bool playout);
   bool ChangePlayout(bool playout);
-  bool ChangeSend(SendFlags send);
-  bool ChangeSend(int channel, SendFlags send);
   int CreateVoEChannel();
   bool DeleteVoEChannel(int channel);
   bool IsDefaultRecvStream(uint32_t ssrc) {
@@ -249,8 +247,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool desired_playout_ = false;
   bool recv_transport_cc_enabled_ = false;
   bool playout_ = false;
-  SendFlags desired_send_ = SEND_NOTHING;
-  SendFlags send_ = SEND_NOTHING;
+  bool send_ = false;
   webrtc::Call* const call_ = nullptr;
 
   // SSRC of unsignalled receive stream, or -1 if there isn't one.
