@@ -40,7 +40,6 @@ bool SetRawAudioSink_w(VoiceMediaChannel* channel,
 
 enum {
   MSG_EARLYMEDIATIMEOUT = 1,
-  MSG_SCREENCASTWINDOWEVENT,
   MSG_RTPPACKET,
   MSG_RTCPPACKET,
   MSG_CHANNEL_ERROR,
@@ -64,13 +63,6 @@ static void SafeSetError(const std::string& message, std::string* error_desc) {
 struct PacketMessageData : public rtc::MessageData {
   rtc::Buffer packet;
   rtc::PacketOptions options;
-};
-
-struct ScreencastEventMessageData : public rtc::MessageData {
-  ScreencastEventMessageData(uint32_t s, rtc::WindowEvent we)
-      : ssrc(s), event(we) {}
-  uint32_t ssrc;
-  rtc::WindowEvent event;
 };
 
 struct VoiceChannelErrorMessageData : public rtc::MessageData {
@@ -1632,8 +1624,7 @@ VideoChannel::VideoChannel(rtc::Thread* thread,
                   media_channel,
                   transport_controller,
                   content_name,
-                  rtcp),
-      previous_we_(rtc::WE_CLOSE) {}
+                  rtcp) {}
 
 bool VideoChannel::Init() {
   if (!BaseChannel::Init()) {
@@ -1643,17 +1634,6 @@ bool VideoChannel::Init() {
 }
 
 VideoChannel::~VideoChannel() {
-  std::vector<uint32_t> screencast_ssrcs;
-  ScreencastMap::iterator iter;
-  while (!screencast_capturers_.empty()) {
-    if (!RemoveScreencast(screencast_capturers_.begin()->first)) {
-      LOG(LS_ERROR) << "Unable to delete screencast with ssrc "
-                    << screencast_capturers_.begin()->first;
-      ASSERT(false);
-      break;
-    }
-  }
-
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
@@ -1668,22 +1648,9 @@ bool VideoChannel::SetSink(uint32_t ssrc,
   return true;
 }
 
-bool VideoChannel::AddScreencast(uint32_t ssrc, VideoCapturer* capturer) {
-  return worker_thread()->Invoke<bool>(Bind(
-      &VideoChannel::AddScreencast_w, this, ssrc, capturer));
-}
-
 bool VideoChannel::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
   return InvokeOnWorker(Bind(&VideoMediaChannel::SetCapturer,
                              media_channel(), ssrc, capturer));
-}
-
-bool VideoChannel::RemoveScreencast(uint32_t ssrc) {
-  return InvokeOnWorker(Bind(&VideoChannel::RemoveScreencast_w, this, ssrc));
-}
-
-bool VideoChannel::IsScreencasting() {
-  return InvokeOnWorker(Bind(&VideoChannel::IsScreencasting_w, this));
 }
 
 bool VideoChannel::SetVideoSend(uint32_t ssrc,
@@ -1825,45 +1792,8 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   return true;
 }
 
-bool VideoChannel::AddScreencast_w(uint32_t ssrc, VideoCapturer* capturer) {
-  if (screencast_capturers_.find(ssrc) != screencast_capturers_.end()) {
-    return false;
-  }
-  capturer->SignalStateChange.connect(this, &VideoChannel::OnStateChange);
-  screencast_capturers_[ssrc] = capturer;
-  return true;
-}
-
-bool VideoChannel::RemoveScreencast_w(uint32_t ssrc) {
-  ScreencastMap::iterator iter = screencast_capturers_.find(ssrc);
-  if (iter  == screencast_capturers_.end()) {
-    return false;
-  }
-  // Clean up VideoCapturer.
-  delete iter->second;
-  screencast_capturers_.erase(iter);
-  return true;
-}
-
-bool VideoChannel::IsScreencasting_w() const {
-  return !screencast_capturers_.empty();
-}
-
-void VideoChannel::OnScreencastWindowEvent_s(uint32_t ssrc,
-                                             rtc::WindowEvent we) {
-  ASSERT(signaling_thread() == rtc::Thread::Current());
-  SignalScreencastWindowEvent(ssrc, we);
-}
-
 void VideoChannel::OnMessage(rtc::Message *pmsg) {
   switch (pmsg->message_id) {
-    case MSG_SCREENCASTWINDOWEVENT: {
-      const ScreencastEventMessageData* data =
-          static_cast<ScreencastEventMessageData*>(pmsg->pdata);
-      OnScreencastWindowEvent_s(data->ssrc, data->event);
-      delete data;
-      break;
-    }
     case MSG_CHANNEL_ERROR: {
       const VideoChannelErrorMessageData* data =
           static_cast<VideoChannelErrorMessageData*>(pmsg->pdata);
@@ -1887,48 +1817,6 @@ void VideoChannel::OnMediaMonitorUpdate(
     VideoMediaChannel* media_channel, const VideoMediaInfo &info) {
   ASSERT(media_channel == this->media_channel());
   SignalMediaMonitor(this, info);
-}
-
-void VideoChannel::OnScreencastWindowEvent(uint32_t ssrc,
-                                           rtc::WindowEvent event) {
-  ScreencastEventMessageData* pdata =
-      new ScreencastEventMessageData(ssrc, event);
-  signaling_thread()->Post(this, MSG_SCREENCASTWINDOWEVENT, pdata);
-}
-
-void VideoChannel::OnStateChange(VideoCapturer* capturer, CaptureState ev) {
-  // Map capturer events to window events. In the future we may want to simply
-  // pass these events up directly.
-  rtc::WindowEvent we;
-  if (ev == CS_STOPPED) {
-    we = rtc::WE_CLOSE;
-  } else if (ev == CS_PAUSED) {
-    we = rtc::WE_MINIMIZE;
-  } else if (ev == CS_RUNNING && previous_we_ == rtc::WE_MINIMIZE) {
-    we = rtc::WE_RESTORE;
-  } else {
-    return;
-  }
-  previous_we_ = we;
-
-  uint32_t ssrc = 0;
-  if (!GetLocalSsrc(capturer, &ssrc)) {
-    return;
-  }
-
-  OnScreencastWindowEvent(ssrc, we);
-}
-
-bool VideoChannel::GetLocalSsrc(const VideoCapturer* capturer, uint32_t* ssrc) {
-  *ssrc = 0;
-  for (ScreencastMap::iterator iter = screencast_capturers_.begin();
-       iter != screencast_capturers_.end(); ++iter) {
-    if (iter->second == capturer) {
-      *ssrc = iter->first;
-      return true;
-    }
-  }
-  return false;
 }
 
 void VideoChannel::GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const {

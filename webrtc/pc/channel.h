@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TALK_SESSION_MEDIA_CHANNEL_H_
-#define TALK_SESSION_MEDIA_CHANNEL_H_
+#ifndef WEBRTC_PC_CHANNEL_H_
+#define WEBRTC_PC_CHANNEL_H_
 
 #include <map>
 #include <set>
@@ -439,16 +439,7 @@ class VideoChannel : public BaseChannel {
   }
 
   bool SetSink(uint32_t ssrc, rtc::VideoSinkInterface<VideoFrame>* sink);
-
-  // TODO(pthatcher): Refactor to use a "capture id" instead of an
-  // ssrc here as the "key".
-  // Passes ownership of the capturer to the channel.
-  bool AddScreencast(uint32_t ssrc, VideoCapturer* capturer);
   bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer);
-  bool RemoveScreencast(uint32_t ssrc);
-  // True if we've added a screencast.  Doesn't matter if the capturer
-  // has been started or not.
-  bool IsScreencasting();
   // Get statistics about the current media session.
   bool GetStats(VideoMediaInfo* stats);
 
@@ -458,13 +449,10 @@ class VideoChannel : public BaseChannel {
   void StartMediaMonitor(int cms);
   void StopMediaMonitor();
   sigslot::signal2<VideoChannel*, const VideoMediaInfo&> SignalMediaMonitor;
-  sigslot::signal2<uint32_t, rtc::WindowEvent> SignalScreencastWindowEvent;
 
   bool SetVideoSend(uint32_t ssrc, bool enable, const VideoOptions* options);
 
  private:
-  typedef std::map<uint32_t, VideoCapturer*> ScreencastMap;
-
   // overrides from BaseChannel
   virtual void ChangeState();
   virtual const ContentInfo* GetFirstContent(const SessionDescription* sdesc);
@@ -474,11 +462,6 @@ class VideoChannel : public BaseChannel {
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
                                   ContentAction action,
                                   std::string* error_desc);
-
-  bool AddScreencast_w(uint32_t ssrc, VideoCapturer* capturer);
-  bool RemoveScreencast_w(uint32_t ssrc);
-  void OnScreencastWindowEvent_s(uint32_t ssrc, rtc::WindowEvent we);
-  bool IsScreencasting_w() const;
   bool GetStats_w(VideoMediaInfo* stats);
 
   virtual void OnMessage(rtc::Message* pmsg);
@@ -487,14 +470,8 @@ class VideoChannel : public BaseChannel {
       ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
       VideoMediaChannel* media_channel, const VideoMediaInfo& info);
-  virtual void OnScreencastWindowEvent(uint32_t ssrc, rtc::WindowEvent event);
-  virtual void OnStateChange(VideoCapturer* capturer, CaptureState ev);
-  bool GetLocalSsrc(const VideoCapturer* capturer, uint32_t* ssrc);
 
-  ScreencastMap screencast_capturers_;
   rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;
-
-  rtc::WindowEvent previous_we_;
 
   // Last VideoSendParameters sent down to the media_channel() via
   // SetSendParameters.
@@ -626,4 +603,4 @@ class DataChannel : public BaseChannel {
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_CHANNEL_H_
+#endif  // WEBRTC_PC_CHANNEL_H_

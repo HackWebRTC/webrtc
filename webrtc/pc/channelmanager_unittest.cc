@@ -12,7 +12,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/media/base/fakecapturemanager.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/testutils.h"
@@ -38,10 +37,8 @@ class ChannelManagerTest : public testing::Test {
   ChannelManagerTest()
       : fme_(new cricket::FakeMediaEngine()),
         fdme_(new cricket::FakeDataEngine()),
-        fcm_(new cricket::FakeCaptureManager()),
         cm_(new cricket::ChannelManager(fme_,
                                         fdme_,
-                                        fcm_,
                                         rtc::Thread::Current())),
         fake_call_(webrtc::Call::Config()),
         fake_mc_(cm_, &fake_call_),
@@ -57,7 +54,6 @@ class ChannelManagerTest : public testing::Test {
     delete transport_controller_;
     delete cm_;
     cm_ = NULL;
-    fcm_ = NULL;
     fdme_ = NULL;
     fme_ = NULL;
   }
@@ -65,7 +61,6 @@ class ChannelManagerTest : public testing::Test {
   rtc::Thread worker_;
   cricket::FakeMediaEngine* fme_;
   cricket::FakeDataEngine* fdme_;
-  cricket::FakeCaptureManager* fcm_;
   cricket::ChannelManager* cm_;
   cricket::FakeCall fake_call_;
   cricket::FakeMediaController fake_mc_;

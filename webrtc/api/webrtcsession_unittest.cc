@@ -18,8 +18,6 @@
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/api/sctputils.h"
-#include "webrtc/api/streamcollection.h"
-#include "webrtc/api/streamcollection.h"
 #include "webrtc/api/test/fakedtlsidentitystore.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/api/webrtcsession.h"
@@ -323,7 +321,6 @@ class WebRtcSessionTest
         channel_manager_(
             new cricket::ChannelManager(media_engine_,
                                         data_engine_,
-                                        new cricket::CaptureManager(),
                                         rtc::Thread::Current())),
         fake_call_(webrtc::Call::Config()),
         media_controller_(

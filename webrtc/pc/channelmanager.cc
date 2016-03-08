@@ -20,15 +20,12 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/media/base/capturemanager.h"
 #include "webrtc/media/base/device.h"
 #include "webrtc/media/base/hybriddataengine.h"
 #include "webrtc/media/base/rtpdataengine.h"
-#include "webrtc/media/base/videocapturer.h"
 #ifdef HAVE_SCTP
 #include "webrtc/media/sctp/sctpdataengine.h"
 #endif
@@ -36,21 +33,10 @@
 
 namespace cricket {
 
-enum {
-  MSG_VIDEOCAPTURESTATE = 1,
-};
 
 using rtc::Bind;
 
 static const int kNotSetOutputVolume = -1;
-
-struct CaptureStateParams : public rtc::MessageData {
-  CaptureStateParams(cricket::VideoCapturer* c, cricket::CaptureState s)
-      : capturer(c),
-        state(s) {}
-  cricket::VideoCapturer* capturer;
-  cricket::CaptureState state;
-};
 
 static DataEngineInterface* ConstructDataEngine() {
 #ifdef HAVE_SCTP
@@ -62,35 +48,28 @@ static DataEngineInterface* ConstructDataEngine() {
 
 ChannelManager::ChannelManager(MediaEngineInterface* me,
                                DataEngineInterface* dme,
-                               CaptureManager* cm,
                                rtc::Thread* worker_thread) {
-  Construct(me, dme, cm, worker_thread);
+  Construct(me, dme, worker_thread);
 }
 
 ChannelManager::ChannelManager(MediaEngineInterface* me,
                                rtc::Thread* worker_thread) {
   Construct(me,
             ConstructDataEngine(),
-            new CaptureManager(),
             worker_thread);
 }
 
 void ChannelManager::Construct(MediaEngineInterface* me,
                                DataEngineInterface* dme,
-                               CaptureManager* cm,
                                rtc::Thread* worker_thread) {
   media_engine_.reset(me);
   data_media_engine_.reset(dme);
-  capture_manager_.reset(cm);
   initialized_ = false;
   main_thread_ = rtc::Thread::Current();
   worker_thread_ = worker_thread;
   audio_output_volume_ = kNotSetOutputVolume;
   capturing_ = false;
   enable_rtx_ = false;
-
-  capture_manager_->SignalCapturerStateChange.connect(
-      this, &ChannelManager::OnVideoCaptureStateChange);
 }
 
 ChannelManager::~ChannelManager() {
@@ -103,8 +82,8 @@ ChannelManager::~ChannelManager() {
     // shutdown.
     ShutdownSrtp();
   }
-  // Some deletes need to be on the worker thread for thread safe destruction,
-  // this includes the media engine and capture manager.
+  // The media engine needs to be deleted on the worker thread for thread safe
+  // destruction,
   worker_thread_->Invoke<void>(Bind(
       &ChannelManager::DestructorDeletes_w, this));
 }
@@ -214,7 +193,6 @@ void ChannelManager::Terminate() {
 void ChannelManager::DestructorDeletes_w() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   media_engine_.reset(NULL);
-  capture_manager_.reset(NULL);
 }
 
 void ChannelManager::Terminate_w() {
@@ -427,92 +405,6 @@ bool ChannelManager::SetOutputVolume(int level) {
   return ret;
 }
 
-std::vector<cricket::VideoFormat> ChannelManager::GetSupportedFormats(
-    VideoCapturer* capturer) const {
-  ASSERT(capturer != NULL);
-  std::vector<VideoFormat> formats;
-  worker_thread_->Invoke<void>(rtc::Bind(&ChannelManager::GetSupportedFormats_w,
-                                         this, capturer, &formats));
-  return formats;
-}
-
-void ChannelManager::GetSupportedFormats_w(
-    VideoCapturer* capturer,
-    std::vector<cricket::VideoFormat>* out_formats) const {
-  const std::vector<VideoFormat>* formats = capturer->GetSupportedFormats();
-  if (formats != NULL)
-    *out_formats = *formats;
-}
-
-// The following are done in the new "CaptureManager" style that
-// all local video capturers, processors, and managers should move
-// to.
-// TODO(pthatcher): Add more of the CaptureManager interface.
-bool ChannelManager::StartVideoCapture(
-    VideoCapturer* capturer, const VideoFormat& video_format) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&CaptureManager::StartVideoCapture,
-           capture_manager_.get(), capturer, video_format));
-}
-
-bool ChannelManager::StopVideoCapture(
-    VideoCapturer* capturer, const VideoFormat& video_format) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&CaptureManager::StopVideoCapture,
-           capture_manager_.get(), capturer, video_format));
-}
-
-void ChannelManager::AddVideoSink(
-    VideoCapturer* capturer, rtc::VideoSinkInterface<VideoFrame>* sink) {
-  if (initialized_)
-    worker_thread_->Invoke<void>(
-        Bind(&CaptureManager::AddVideoSink,
-             capture_manager_.get(), capturer, sink));
-}
-
-void ChannelManager::RemoveVideoSink(
-    VideoCapturer* capturer, rtc::VideoSinkInterface<VideoFrame>* sink) {
-  if (initialized_)
-    worker_thread_->Invoke<void>(
-        Bind(&CaptureManager::RemoveVideoSink,
-             capture_manager_.get(), capturer, sink));
-}
-
-bool ChannelManager::IsScreencastRunning() const {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&ChannelManager::IsScreencastRunning_w, this));
-}
-
-bool ChannelManager::IsScreencastRunning_w() const {
-  VideoChannels::const_iterator it = video_channels_.begin();
-  for ( ; it != video_channels_.end(); ++it) {
-    if ((*it) && (*it)->IsScreencasting()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void ChannelManager::OnVideoCaptureStateChange(VideoCapturer* capturer,
-                                               CaptureState result) {
-  // TODO(whyuan): Check capturer and signal failure only for camera video, not
-  // screencast.
-  capturing_ = result == CS_RUNNING;
-  main_thread_->Post(this, MSG_VIDEOCAPTURESTATE,
-                     new CaptureStateParams(capturer, result));
-}
-
-void ChannelManager::OnMessage(rtc::Message* message) {
-  switch (message->message_id) {
-    case MSG_VIDEOCAPTURESTATE: {
-      CaptureStateParams* data =
-          static_cast<CaptureStateParams*>(message->pdata);
-      SignalVideoCaptureStateChange(data->capturer, data->state);
-      delete data;
-      break;
-    }
-  }
-}
 
 bool ChannelManager::StartAecDump(rtc::PlatformFile file,
                                   int64_t max_size_bytes) {

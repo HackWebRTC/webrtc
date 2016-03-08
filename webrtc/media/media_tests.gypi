@@ -44,7 +44,6 @@
          '<(DEPTH)/testing/gtest',
        ],
       'sources': [
-        'base/fakecapturemanager.h',
         'base/fakemediaengine.h',
         'base/fakenetworkinterface.h',
         'base/fakertp.h',
@@ -77,7 +76,6 @@
         'rtc_unittest_main',
       ],
       'sources': [
-        'base/capturemanager_unittest.cc',
         'base/codec_unittest.cc',
         'base/rtpdataengine_unittest.cc',
         'base/rtpdump_unittest.cc',

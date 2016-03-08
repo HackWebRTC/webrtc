@@ -14,11 +14,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/fileutils.h"
-#include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/media/base/capturemanager.h"
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/pc/voicechannel.h"
 
@@ -37,15 +34,13 @@ class VoiceChannel;
 // voice or just video channels.
 // ChannelManager also allows the application to discover what devices it has
 // using device manager.
-class ChannelManager : public rtc::MessageHandler,
-                       public sigslot::has_slots<> {
+class ChannelManager {
  public:
   // For testing purposes. Allows the media engine and data media
   // engine and dev manager to be mocks.  The ChannelManager takes
   // ownership of these objects.
   ChannelManager(MediaEngineInterface* me,
                  DataEngineInterface* dme,
-                 CaptureManager* cm,
                  rtc::Thread* worker);
   // Same as above, but gives an easier default DataEngine.
   ChannelManager(MediaEngineInterface* me,
@@ -119,29 +114,6 @@ class ChannelManager : public rtc::MessageHandler,
   // Starts/stops the local microphone and enables polling of the input level.
   bool capturing() const { return capturing_; }
 
-  // Gets capturer's supported formats in a thread safe manner
-  std::vector<cricket::VideoFormat> GetSupportedFormats(
-      VideoCapturer* capturer) const;
-  // The following are done in the new "CaptureManager" style that
-  // all local video capturers, processors, and managers should move to.
-  // TODO(pthatcher): Make methods nicer by having start return a handle that
-  // can be used for stop and restart, rather than needing to pass around
-  // formats a a pseudo-handle.
-  bool StartVideoCapture(VideoCapturer* video_capturer,
-                         const VideoFormat& video_format);
-  bool StopVideoCapture(VideoCapturer* video_capturer,
-                        const VideoFormat& video_format);
-  bool RestartVideoCapture(VideoCapturer* video_capturer,
-                           const VideoFormat& previous_format,
-                           const VideoFormat& desired_format,
-                           CaptureManager::RestartOptions options);
-
-  virtual void AddVideoSink(VideoCapturer* video_capturer,
-                            rtc::VideoSinkInterface<VideoFrame>* sink);
-  virtual void RemoveVideoSink(VideoCapturer* video_capturer,
-                               rtc::VideoSinkInterface<VideoFrame>* sink);
-  bool IsScreencastRunning() const;
-
   // The operations below occur on the main thread.
 
   // Starts AEC dump using existing file, with a specified maximum file size in
@@ -158,8 +130,6 @@ class ChannelManager : public rtc::MessageHandler,
   // Stops logging RtcEventLog.
   void StopRtcEventLog();
 
-  sigslot::signal2<VideoCapturer*, CaptureState> SignalVideoCaptureStateChange;
-
  private:
   typedef std::vector<VoiceChannel*> VoiceChannels;
   typedef std::vector<VideoChannel*> VideoChannels;
@@ -167,7 +137,6 @@ class ChannelManager : public rtc::MessageHandler,
 
   void Construct(MediaEngineInterface* me,
                  DataEngineInterface* dme,
-                 CaptureManager* cm,
                  rtc::Thread* worker_thread);
   bool InitMediaEngine_w();
   void DestructorDeletes_w();
@@ -191,17 +160,9 @@ class ChannelManager : public rtc::MessageHandler,
                                    bool rtcp,
                                    DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);
-  void OnVideoCaptureStateChange(VideoCapturer* capturer,
-                                 CaptureState result);
-  void GetSupportedFormats_w(
-      VideoCapturer* capturer,
-      std::vector<cricket::VideoFormat>* out_formats) const;
-  bool IsScreencastRunning_w() const;
-  virtual void OnMessage(rtc::Message *message);
 
   rtc::scoped_ptr<MediaEngineInterface> media_engine_;
   rtc::scoped_ptr<DataEngineInterface> data_media_engine_;
-  rtc::scoped_ptr<CaptureManager> capture_manager_;
   bool initialized_;
   rtc::Thread* main_thread_;
   rtc::Thread* worker_thread_;

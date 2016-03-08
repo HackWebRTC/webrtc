@@ -2256,36 +2256,6 @@ TEST_F(VideoChannelTest, TestStreams) {
   Base::TestStreams();
 }
 
-TEST_F(VideoChannelTest, TestScreencastEvents) {
-  const int kTimeoutMs = 500;
-  TestInit();
-  cricket::ScreencastEventCatcher catcher;
-  channel1_->SignalScreencastWindowEvent.connect(
-      &catcher,
-      &cricket::ScreencastEventCatcher::OnEvent);
-
-  rtc::scoped_ptr<cricket::FakeScreenCapturerFactory>
-      screen_capturer_factory(new cricket::FakeScreenCapturerFactory());
-  cricket::VideoCapturer* screen_capturer = screen_capturer_factory->Create(
-      ScreencastId(WindowId(0)));
-  ASSERT_TRUE(screen_capturer != NULL);
-
-  EXPECT_TRUE(channel1_->AddScreencast(0, screen_capturer));
-  EXPECT_EQ_WAIT(cricket::CS_STOPPED, screen_capturer_factory->capture_state(),
-                 kTimeoutMs);
-
-  screen_capturer->SignalStateChange(screen_capturer, cricket::CS_PAUSED);
-  EXPECT_EQ_WAIT(rtc::WE_MINIMIZE, catcher.event(), kTimeoutMs);
-
-  screen_capturer->SignalStateChange(screen_capturer, cricket::CS_RUNNING);
-  EXPECT_EQ_WAIT(rtc::WE_RESTORE, catcher.event(), kTimeoutMs);
-
-  screen_capturer->SignalStateChange(screen_capturer, cricket::CS_STOPPED);
-  EXPECT_EQ_WAIT(rtc::WE_CLOSE, catcher.event(), kTimeoutMs);
-
-  EXPECT_TRUE(channel1_->RemoveScreencast(0));
-}
-
 TEST_F(VideoChannelTest, TestUpdateStreamsInLocalContent) {
   Base::TestUpdateStreamsInLocalContent();
 }
