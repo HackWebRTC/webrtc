@@ -19,8 +19,6 @@
 
 namespace webrtc {
 
-typedef void Handle;
-
 namespace {
 int16_t MapSetting(EchoCancellation::SuppressionLevel level) {
   switch (level) {
@@ -61,7 +59,7 @@ static const size_t kMaxNumFramesToBuffer = 100;
 
 class EchoCancellationImpl::Canceller {
  public:
-  explicit Canceller(int sample_rate_hz) {
+  Canceller() {
     state_ = WebRtcAec_Create();
     RTC_DCHECK(state_);
   }
@@ -71,7 +69,7 @@ class EchoCancellationImpl::Canceller {
     WebRtcAec_Free(state_);
   }
 
-  Handle* state() { return state_; }
+  void* state() { return state_; }
 
   void Initialize(int sample_rate_hz) {
     // TODO(ajm): Drift compensation is disabled in practice. If restored, it
@@ -82,9 +80,7 @@ class EchoCancellationImpl::Canceller {
   }
 
  private:
-  Handle* state_;
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Canceller);
+  void* state_;
 };
 
 EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
@@ -129,11 +125,11 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
   render_queue_buffer_.clear();
   for (size_t i = 0; i < apm_->num_output_channels(); i++) {
     for (size_t j = 0; j < audio->num_channels(); j++) {
-      Handle* my_handle = cancellers_[handle_index++]->state();
       // Retrieve any error code produced by the buffering of the farend
       // signal.
       err = WebRtcAec_GetBufferFarendError(
-          my_handle, audio->split_bands_const_f(j)[kBand0To8kHz],
+          cancellers_[handle_index++]->state(),
+          audio->split_bands_const_f(j)[kBand0To8kHz],
           audio->num_frames_per_band());
 
       if (err != AudioProcessing::kNoError) {
@@ -176,8 +172,8 @@ void EchoCancellationImpl::ReadQueuedRenderData() {
         (apm_->num_output_channels() * apm_->num_reverse_channels());
     for (size_t i = 0; i < apm_->num_output_channels(); i++) {
       for (size_t j = 0; j < apm_->num_reverse_channels(); j++) {
-        Handle* my_handle = cancellers_[handle_index++]->state();
-        WebRtcAec_BufferFarend(my_handle, &capture_queue_buffer_[buffer_index],
+        WebRtcAec_BufferFarend(cancellers_[handle_index++]->state(),
+                               &capture_queue_buffer_[buffer_index],
                                num_frames_per_band);
 
         buffer_index += num_frames_per_band;
@@ -210,9 +206,9 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   stream_has_echo_ = false;
   for (size_t i = 0; i < audio->num_channels(); i++) {
     for (size_t j = 0; j < apm_->num_reverse_channels(); j++) {
-      Handle* my_handle = cancellers_[handle_index++]->state();
-      err = WebRtcAec_Process(my_handle, audio->split_bands_const_f(i),
-                              audio->num_bands(), audio->split_bands_f(i),
+      err = WebRtcAec_Process(cancellers_[handle_index]->state(),
+                              audio->split_bands_const_f(i), audio->num_bands(),
+                              audio->split_bands_f(i),
                               audio->num_frames_per_band(),
                               apm_->stream_delay_ms(), stream_drift_samples_);
 
@@ -225,7 +221,8 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       }
 
       int status = 0;
-      err = WebRtcAec_get_echo_status(my_handle, &status);
+      err = WebRtcAec_get_echo_status(cancellers_[handle_index]->state(),
+                                      &status);
       if (err != AudioProcessing::kNoError) {
         return MapError(err);
       }
@@ -233,6 +230,8 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       if (status == 1) {
         stream_has_echo_ = true;
       }
+
+      handle_index++;
     }
   }
 
@@ -335,8 +334,7 @@ int EchoCancellationImpl::GetMetrics(Metrics* metrics) {
   memset(&my_metrics, 0, sizeof(my_metrics));
   memset(metrics, 0, sizeof(Metrics));
 
-  Handle* my_handle = cancellers_[0]->state();
-  int err = WebRtcAec_GetMetrics(my_handle, &my_metrics);
+  const int err = WebRtcAec_GetMetrics(cancellers_[0]->state(), &my_metrics);
   if (err != AudioProcessing::kNoError) {
     return MapError(err);
   }
@@ -418,9 +416,8 @@ int EchoCancellationImpl::GetDelayMetrics(int* median, int* std,
     return AudioProcessing::kNotEnabledError;
   }
 
-  Handle* my_handle = cancellers_[0]->state();
-  const int err =
-      WebRtcAec_GetDelayMetrics(my_handle, median, std, fraction_poor_delays);
+  const int err = WebRtcAec_GetDelayMetrics(cancellers_[0]->state(), median,
+                                            std, fraction_poor_delays);
   if (err != AudioProcessing::kNoError) {
     return MapError(err);
   }
@@ -433,8 +430,7 @@ struct AecCore* EchoCancellationImpl::aec_core() const {
   if (!enabled_) {
     return NULL;
   }
-  Handle* my_handle = cancellers_[0]->state();
-  return WebRtcAec_aec_core(my_handle);
+  return WebRtcAec_aec_core(cancellers_[0]->state());
 }
 
 void EchoCancellationImpl::Initialize() {
@@ -443,19 +439,19 @@ void EchoCancellationImpl::Initialize() {
   if (!enabled_) {
     return;
   }
-  const int sample_rate_hz = apm_->proc_sample_rate_hz();
 
   if (num_handles_required() > cancellers_.size()) {
     const size_t cancellers_old_size = cancellers_.size();
     cancellers_.resize(num_handles_required());
 
     for (size_t i = cancellers_old_size; i < cancellers_.size(); ++i) {
-      cancellers_[i].reset(new Canceller(sample_rate_hz));
+      cancellers_[i].reset(new Canceller());
     }
   }
 
-  for (size_t i = 0; i < cancellers_.size(); ++i) {
-    cancellers_[i]->Initialize(sample_rate_hz);
+  const int sample_rate_hz = apm_->proc_sample_rate_hz();
+  for (auto& canceller : cancellers_) {
+    canceller->Initialize(sample_rate_hz);
   }
 
   Configure();
@@ -518,14 +514,14 @@ int EchoCancellationImpl::Configure() {
   config.delay_logging = delay_logging_enabled_;
 
   int error = AudioProcessing::kNoError;
-  for (size_t i = 0; i < cancellers_.size(); i++) {
-    Handle* my_handle = cancellers_[i]->state();
-    WebRtcAec_enable_extended_filter(WebRtcAec_aec_core(my_handle),
+  for (auto& canceller : cancellers_) {
+    WebRtcAec_enable_extended_filter(WebRtcAec_aec_core(canceller->state()),
                                      extended_filter_enabled_ ? 1 : 0);
-    WebRtcAec_enable_delay_agnostic(WebRtcAec_aec_core(my_handle),
+    WebRtcAec_enable_delay_agnostic(WebRtcAec_aec_core(canceller->state()),
                                     delay_agnostic_enabled_ ? 1 : 0);
-    WebRtcAec_enable_aec3(WebRtcAec_aec_core(my_handle), aec3_enabled_ ? 1 : 0);
-    const int handle_error = WebRtcAec_set_config(my_handle, config);
+    WebRtcAec_enable_aec3(WebRtcAec_aec_core(canceller->state()),
+                          aec3_enabled_ ? 1 : 0);
+    const int handle_error = WebRtcAec_set_config(canceller->state(), config);
     if (handle_error != AudioProcessing::kNoError) {
       error = AudioProcessing::kNoError;
     }
