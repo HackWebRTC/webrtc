@@ -189,7 +189,7 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
     audio_frame->vad_activity_ = AudioFrame::kVadUnknown;
   }
 }
-}
+}  // namespace
 
 int NetEqImpl::GetAudio(AudioFrame* audio_frame) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
