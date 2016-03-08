@@ -1218,6 +1218,7 @@ bool WebRtcVideoChannel2::SetSink(uint32_t ssrc,
 }
 
 bool WebRtcVideoChannel2::GetStats(VideoMediaInfo* info) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::GetStats");
   info->Clear();
   FillSenderStats(info);
   FillReceiverStats(info);

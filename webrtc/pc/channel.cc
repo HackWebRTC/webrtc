@@ -169,6 +169,7 @@ BaseChannel::BaseChannel(rtc::Thread* thread,
 }
 
 BaseChannel::~BaseChannel() {
+  TRACE_EVENT0("webrtc", "BaseChannel::~BaseChannel");
   ASSERT(worker_thread_ == rtc::Thread::Current());
   Deinit();
   StopConnectionMonitor();
@@ -1006,6 +1007,7 @@ bool BaseChannel::SetSrtp_w(const std::vector<CryptoParams>& cryptos,
                             ContentAction action,
                             ContentSource src,
                             std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "BaseChannel::SetSrtp_w");
   if (action == CA_UPDATE) {
     // no crypto params.
     return true;
@@ -1317,6 +1319,7 @@ VoiceChannel::VoiceChannel(rtc::Thread* thread,
       received_media_(false) {}
 
 VoiceChannel::~VoiceChannel() {
+  TRACE_EVENT0("webrtc", "VoiceChannel::~VoiceChannel");
   StopAudioMonitor();
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
@@ -1631,6 +1634,7 @@ bool VideoChannel::Init() {
 }
 
 VideoChannel::~VideoChannel() {
+  TRACE_EVENT0("webrtc", "VideoChannel::~VideoChannel");
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
@@ -1834,6 +1838,7 @@ DataChannel::DataChannel(rtc::Thread* thread,
       ready_to_send_data_(false) {}
 
 DataChannel::~DataChannel() {
+  TRACE_EVENT0("webrtc", "DataChannel::~DataChannel");
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();

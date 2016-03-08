@@ -30,6 +30,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
 #include "webrtc/media/base/audioframe.h"
@@ -1395,6 +1396,7 @@ rtc::DiffServCodePoint WebRtcVoiceMediaChannel::PreferredDscp() const {
 
 bool WebRtcVoiceMediaChannel::SetSendParameters(
     const AudioSendParameters& params) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetSendParameters");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendParameters: "
                << params.ToString();
@@ -1426,6 +1428,7 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
 
 bool WebRtcVoiceMediaChannel::SetRecvParameters(
     const AudioRecvParameters& params) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetRecvParameters");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetRecvParameters: "
                << params.ToString();
@@ -1831,6 +1834,7 @@ bool WebRtcVoiceMediaChannel::ResumePlayout() {
 }
 
 bool WebRtcVoiceMediaChannel::ChangePlayout(bool playout) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::ChangePlayout");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (playout_ == playout) {
     return true;
@@ -1848,6 +1852,7 @@ bool WebRtcVoiceMediaChannel::ChangePlayout(bool playout) {
 }
 
 void WebRtcVoiceMediaChannel::SetSend(bool send) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetSend");
   if (send_ == send) {
     return;
   }
@@ -1910,6 +1915,7 @@ bool WebRtcVoiceMediaChannel::DeleteVoEChannel(int channel) {
 }
 
 bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::AddSendStream");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "AddSendStream: " << sp.ToString();
 
@@ -1964,6 +1970,7 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
 }
 
 bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::RemoveSendStream");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "RemoveSendStream: " << ssrc;
 
@@ -1992,6 +1999,7 @@ bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
 }
 
 bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::AddRecvStream");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "AddRecvStream: " << sp.ToString();
 
@@ -2069,6 +2077,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
 }
 
 bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::RemoveRecvStream");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "RemoveRecvStream: " << ssrc;
 
@@ -2407,6 +2416,7 @@ bool WebRtcVoiceMediaChannel::SetSendBitrateInternal(int bps) {
 }
 
 bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::GetStats");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(info);
 
