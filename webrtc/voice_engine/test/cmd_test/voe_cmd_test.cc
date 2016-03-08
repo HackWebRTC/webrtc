@@ -30,7 +30,6 @@
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_dtmf.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_file.h"
@@ -57,7 +56,6 @@ VoiceEngine* m_voe = NULL;
 VoEBase* base1 = NULL;
 VoECodec* codec = NULL;
 VoEVolumeControl* volume = NULL;
-VoEDtmf* dtmf = NULL;
 VoERTP_RTCP* rtp_rtcp = NULL;
 VoEAudioProcessing* apm = NULL;
 VoENetwork* netw = NULL;
@@ -131,7 +129,6 @@ int main(int argc, char** argv) {
   codec = VoECodec::GetInterface(m_voe);
   apm = VoEAudioProcessing::GetInterface(m_voe);
   volume = VoEVolumeControl::GetInterface(m_voe);
-  dtmf = VoEDtmf::GetInterface(m_voe);
   rtp_rtcp = VoERTP_RTCP::GetInterface(m_voe);
   netw = VoENetwork::GetInterface(m_voe);
   file = VoEFile::GetInterface(m_voe);
@@ -189,9 +186,6 @@ int main(int argc, char** argv) {
 
   if (volume)
     volume->Release();
-
-  if (dtmf)
-    dtmf->Release();
 
   if (rtp_rtcp)
     rtp_rtcp->Release();

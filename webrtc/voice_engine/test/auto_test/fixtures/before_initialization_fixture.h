@@ -19,7 +19,6 @@
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_dtmf.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_file.h"
@@ -58,7 +57,6 @@ class BeforeInitializationFixture : public testing::Test {
   webrtc::VoEBase*            voe_base_;
   webrtc::VoECodec*           voe_codec_;
   webrtc::VoEVolumeControl*   voe_volume_control_;
-  webrtc::VoEDtmf*            voe_dtmf_;
   webrtc::VoERTP_RTCP*        voe_rtp_rtcp_;
   webrtc::VoEAudioProcessing* voe_apm_;
   webrtc::VoENetwork*         voe_network_;

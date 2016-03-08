@@ -23,7 +23,6 @@
 #define _TEST_RTP_RTCP_
 #define _TEST_HARDWARE_
 #define _TEST_CODEC_
-#define _TEST_DTMF_
 #define _TEST_VOLUME_
 #define _TEST_AUDIO_PROCESSING_
 #define _TEST_FILE_
@@ -51,9 +50,6 @@
 #endif
 #ifndef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
 #undef _TEST_VOLUME_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_DTMF_API
-#undef _TEST_DTMF_
 #endif
 #ifndef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
 #undef _TEST_RTP_RTCP_

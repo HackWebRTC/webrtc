@@ -34,11 +34,6 @@
 #include "webrtc/voice_engine/shared_data.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
-#ifdef WEBRTC_DTMF_DETECTION
-// TelephoneEventDetectionMethods, TelephoneEventObserver
-#include "webrtc/voice_engine/include/voe_dtmf.h"
-#endif
-
 namespace rtc {
 
 class TimestampWrapAroundHandler;

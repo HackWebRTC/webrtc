@@ -42,8 +42,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Base\n");
   if (_codec)
     TEST_LOG("  Codec\n");
-  if (_dtmf)
-    TEST_LOG("  Dtmf\n");
   if (_externalMedia)
     TEST_LOG("  ExternalMedia\n");
   if (_file)
@@ -68,8 +66,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Base\n");
   if (!_codec)
     TEST_LOG("  Codec\n");
-  if (!_dtmf)
-    TEST_LOG("  Dtmf\n");
   if (!_externalMedia)
     TEST_LOG("  ExternamMedia\n");
   if (!_file)
@@ -96,7 +92,6 @@ VoETestManager::VoETestManager()
       voice_engine_(NULL),
       voe_base_(0),
       voe_codec_(0),
-      voe_dtmf_(0),
       voe_xmedia_(0),
       voe_file_(0),
       voe_hardware_(0),
@@ -131,7 +126,6 @@ void VoETestManager::GetInterfaces() {
     voe_base_ = VoEBase::GetInterface(voice_engine_);
     voe_codec_ = VoECodec::GetInterface(voice_engine_);
     voe_volume_control_ = VoEVolumeControl::GetInterface(voice_engine_);
-    voe_dtmf_ = VoEDtmf::GetInterface(voice_engine_);
     voe_rtp_rtcp_ = VoERTP_RTCP::GetInterface(voice_engine_);
     voe_apm_ = VoEAudioProcessing::GetInterface(voice_engine_);
     voe_network_ = VoENetwork::GetInterface(voice_engine_);
@@ -174,10 +168,6 @@ int VoETestManager::ReleaseInterfaces() {
   if (voe_volume_control_) {
     voe_volume_control_->Release();
     voe_volume_control_ = NULL;
-  }
-  if (voe_dtmf_) {
-    voe_dtmf_->Release();
-    voe_dtmf_ = NULL;
   }
   if (voe_rtp_rtcp_) {
     voe_rtp_rtcp_->Release();

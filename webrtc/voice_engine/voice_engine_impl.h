@@ -23,9 +23,6 @@
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
 #include "webrtc/voice_engine/voe_codec_impl.h"
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_DTMF_API
-#include "webrtc/voice_engine/voe_dtmf_impl.h"
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
 #include "webrtc/voice_engine/voe_external_media_impl.h"
 #endif
@@ -62,9 +59,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
                         public VoECodecImpl,
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_DTMF_API
-                        public VoEDtmfImpl,
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
                         public VoEExternalMediaImpl,
 #endif
@@ -96,9 +90,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
         VoECodecImpl(this),
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_DTMF_API
-        VoEDtmfImpl(this),
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
         VoEExternalMediaImpl(this),

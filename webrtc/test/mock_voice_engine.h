@@ -143,22 +143,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD2(SetOpusDtx, int(int channel, bool enable_dtx));
   MOCK_METHOD0(GetEventLog, RtcEventLog*());
 
-  // VoEDtmf
-  MOCK_METHOD5(SendTelephoneEvent,
-               int(int channel,
-                   int eventCode,
-                   bool outOfBand,
-                   int lengthMs,
-                   int attenuationDb));
-  MOCK_METHOD2(SetSendTelephoneEventPayloadType,
-               int(int channel, unsigned char type));
-  MOCK_METHOD2(GetSendTelephoneEventPayloadType,
-               int(int channel, unsigned char& type));
-  MOCK_METHOD2(SetDtmfFeedbackStatus, int(bool enable, bool directFeedback));
-  MOCK_METHOD2(GetDtmfFeedbackStatus, int(bool& enabled, bool& directFeedback));
-  MOCK_METHOD3(PlayDtmfTone,
-               int(int eventCode, int lengthMs, int attenuationDb));
-
   // VoEExternalMedia
   MOCK_METHOD3(RegisterExternalMediaProcessing,
                int(int channel,
