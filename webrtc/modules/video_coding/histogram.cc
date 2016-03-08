@@ -25,7 +25,6 @@ Histogram::Histogram(size_t num_buckets, size_t max_num_values) {
 }
 
 void Histogram::Add(size_t value) {
-  RTC_DCHECK_GE(value, 0u);
   value = std::min<size_t>(value, buckets_.size() - 1);
   if (index_ < values_.size()) {
     --buckets_[values_[index_]];
