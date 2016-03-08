@@ -211,10 +211,13 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   int GetSendChannelId(uint32_t ssrc) const;
 
  private:
-  bool SetSendCodecs(const std::vector<AudioCodec>& codecs);
   bool SetOptions(const AudioOptions& options);
-  bool SetMaxSendBandwidth(int bps);
   bool SetRecvCodecs(const std::vector<AudioCodec>& codecs);
+  bool SetSendCodecs(const std::vector<AudioCodec>& codecs);
+  bool SetSendCodecs(int channel);
+  void SetNack(int channel, bool nack_enabled);
+  bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
+  bool SetMaxSendBandwidth(int bps);
   bool SetLocalRenderer(uint32_t ssrc, AudioRenderer* renderer);
   bool MuteStream(uint32_t ssrc, bool mute);
 
@@ -222,8 +225,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
   int GetOutputLevel(int channel);
   bool SetPlayout(int channel, bool playout);
-  void SetNack(int channel, bool nack_enabled);
-  bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
   bool ChangePlayout(bool playout);
   bool ChangeSend(SendFlags send);
   bool ChangeSend(int channel, SendFlags send);
@@ -232,22 +233,21 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool IsDefaultRecvStream(uint32_t ssrc) {
     return default_recv_ssrc_ == static_cast<int64_t>(ssrc);
   }
-  bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
   bool SetSendBitrateInternal(int bps);
+  bool HasSendCodec() const {
+    return send_codec_spec_.codec_inst.pltype != -1;
+  }
 
   rtc::ThreadChecker worker_thread_checker_;
 
   WebRtcVoiceEngine* const engine_ = nullptr;
   std::vector<AudioCodec> recv_codecs_;
-  std::vector<AudioCodec> send_codecs_;
-  std::unique_ptr<webrtc::CodecInst> send_codec_;
   bool send_bitrate_setting_ = false;
   int send_bitrate_bps_ = 0;
   AudioOptions options_;
   rtc::Optional<int> dtmf_payload_type_;
   bool desired_playout_ = false;
-  bool nack_enabled_ = false;
-  bool transport_cc_enabled_ = false;
+  bool recv_transport_cc_enabled_ = false;
   bool playout_ = false;
   SendFlags desired_send_ = SEND_NOTHING;
   SendFlags send_ = SEND_NOTHING;
@@ -271,6 +271,23 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   class WebRtcAudioReceiveStream;
   std::map<uint32_t, WebRtcAudioReceiveStream*> recv_streams_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
+
+  struct SendCodecSpec {
+    SendCodecSpec() {
+      webrtc::CodecInst empty_inst = {0};
+      codec_inst = empty_inst;
+      codec_inst.pltype = -1;
+    }
+    bool nack_enabled = false;
+    bool transport_cc_enabled = false;
+    bool enable_codec_fec = false;
+    bool enable_opus_dtx = false;
+    int opus_max_playback_rate = 0;
+    int red_payload_type = -1;
+    int cng_payload_type = -1;
+    int cng_plfreq = -1;
+    webrtc::CodecInst codec_inst;
+  } send_codec_spec_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceMediaChannel);
 };
