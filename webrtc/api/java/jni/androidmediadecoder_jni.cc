@@ -767,6 +767,12 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       ALOGE << "Insufficient output buffer size: " << output_buffer_size;
       return false;
     }
+    if (output_buffer_size < stride * height * 3 / 2 &&
+        slice_height == height && stride > width) {
+      // Some codecs (Exynos) incorrectly report stride information for
+      // output byte buffer, so actual stride value need to be corrected.
+      stride = output_buffer_size * 2 / (height * 3);
+    }
     jobjectArray output_buffers = reinterpret_cast<jobjectArray>(GetObjectField(
         jni, *j_media_codec_video_decoder_, j_output_buffers_field_));
     jobject output_buffer =
