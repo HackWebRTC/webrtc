@@ -200,4 +200,12 @@ std::vector<float> NoiseSuppressionImpl::NoiseEstimate() {
   return noise_estimate;
 }
 
+size_t NoiseSuppressionImpl::num_noise_bins() {
+#if defined(WEBRTC_NS_FLOAT)
+  return WebRtcNs_num_freq();
+#elif defined(WEBRTC_NS_FIXED)
+  return WebRtcNsx_num_freq();
+#endif
+}
+
 }  // namespace webrtc

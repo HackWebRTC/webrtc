@@ -201,6 +201,7 @@ const int kSamples = 1000;
 const int kSampleRate = 4000;
 const int kNumChannels = 1;
 const int kFragmentSize = kSampleRate / 100;
+const size_t kNumNoiseBins = 129;
 
 }  // namespace
 
@@ -208,11 +209,13 @@ class IntelligibilityEnhancerTest : public ::testing::Test {
  protected:
   IntelligibilityEnhancerTest()
       : clear_data_(kSamples), noise_data_(kSamples), orig_data_(kSamples) {
-    enh_.reset(new IntelligibilityEnhancer(kSampleRate, kNumChannels));
+    enh_.reset(
+        new IntelligibilityEnhancer(kSampleRate, kNumChannels, kNumNoiseBins));
   }
 
   bool CheckUpdate() {
-    enh_.reset(new IntelligibilityEnhancer(kSampleRate, kNumChannels));
+    enh_.reset(
+        new IntelligibilityEnhancer(kSampleRate, kNumChannels, kNumNoiseBins));
     float* clear_cursor = clear_data_.data();
     float* noise_cursor = noise_data_.data();
     for (int i = 0; i < kSamples; i += kFragmentSize) {

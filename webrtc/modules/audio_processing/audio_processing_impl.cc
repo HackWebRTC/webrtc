@@ -920,10 +920,6 @@ int AudioProcessingImpl::ProcessReverseStreamLocked() {
   }
 
   if (constants_.intelligibility_enabled) {
-    // Currently run in single-threaded mode when the intelligibility
-    // enhancer is activated.
-    // TODO(peah): Fix to be properly multi-threaded.
-    rtc::CritScope cs(&crit_capture_);
     public_submodules_->intelligibility_enhancer->ProcessRenderAudio(
         ra->split_channels_f(kBand0To8kHz), capture_nonlocked_.split_rate,
         ra->num_channels());
@@ -1235,7 +1231,8 @@ void AudioProcessingImpl::InitializeIntelligibility() {
   if (constants_.intelligibility_enabled) {
     public_submodules_->intelligibility_enhancer.reset(
         new IntelligibilityEnhancer(capture_nonlocked_.split_rate,
-                                    render_.render_audio->num_channels()));
+                                    render_.render_audio->num_channels(),
+                                    NoiseSuppressionImpl::num_noise_bins()));
   }
 }
 

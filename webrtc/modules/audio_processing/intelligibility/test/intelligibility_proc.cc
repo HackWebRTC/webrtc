@@ -37,9 +37,10 @@ void void_main(int argc, char* argv[]) {
   WavReader noise_file(FLAGS_noise_file);
   WavWriter out_file(FLAGS_out_file, in_file.sample_rate(),
                      in_file.num_channels());
-  IntelligibilityEnhancer enh(in_file.sample_rate(), in_file.num_channels());
   rtc::CriticalSection crit;
   NoiseSuppressionImpl ns(&crit);
+  IntelligibilityEnhancer enh(in_file.sample_rate(), in_file.num_channels(),
+                              NoiseSuppressionImpl::num_noise_bins());
   ns.Initialize(noise_file.num_channels(), noise_file.sample_rate());
   ns.Enable(true);
   const size_t in_samples = noise_file.sample_rate() / 100;

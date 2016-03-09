@@ -39,6 +39,7 @@ class NoiseSuppressionImpl : public NoiseSuppression {
   Level level() const override;
   float speech_probability() const override;
   std::vector<float> NoiseEstimate() override;
+  static size_t num_noise_bins();
 
  private:
   class Suppressor;

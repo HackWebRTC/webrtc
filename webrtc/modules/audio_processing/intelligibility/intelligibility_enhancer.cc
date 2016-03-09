@@ -61,25 +61,31 @@ void MapToErbBands(const float* pow,
 }  // namespace
 
 IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
-                                                 size_t num_render_channels)
+                                                 size_t num_render_channels,
+                                                 size_t num_noise_bins)
     : freqs_(RealFourier::ComplexLength(
           RealFourier::FftOrder(sample_rate_hz * kWindowSizeMs / 1000))),
+      num_noise_bins_(num_noise_bins),
       chunk_length_(static_cast<size_t>(sample_rate_hz * kChunkSizeMs / 1000)),
       bank_size_(GetBankSize(sample_rate_hz, kErbResolution)),
       sample_rate_hz_(sample_rate_hz),
       num_render_channels_(num_render_channels),
       clear_power_estimator_(freqs_, kDecayRate),
-      noise_power_estimator_(
-          new intelligibility::PowerEstimator<float>(freqs_, kDecayRate)),
+      noise_power_estimator_(num_noise_bins, kDecayRate),
       filtered_clear_pow_(bank_size_, 0.f),
-      filtered_noise_pow_(bank_size_, 0.f),
+      filtered_noise_pow_(num_noise_bins, 0.f),
       center_freqs_(bank_size_),
+      capture_filter_bank_(CreateErbBank(num_noise_bins)),
       render_filter_bank_(CreateErbBank(freqs_)),
       gains_eq_(bank_size_),
       gain_applier_(freqs_, kMaxRelativeGainChange),
       audio_s16_(chunk_length_),
       chunks_since_voice_(kSpeechOffsetDelay),
-      is_speech_(false) {
+      is_speech_(false),
+      noise_estimation_buffer_(num_noise_bins),
+      noise_estimation_queue_(kMaxNumNoiseEstimatesToBuffer,
+                              std::vector<float>(num_noise_bins),
+                              RenderQueueItemVerifier<float>(num_noise_bins)) {
   RTC_DCHECK_LE(kRho, 1.f);
 
   const size_t erb_index = static_cast<size_t>(
@@ -98,13 +104,11 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
 
 void IntelligibilityEnhancer::SetCaptureNoiseEstimate(
     std::vector<float> noise) {
-  if (capture_filter_bank_.size() != bank_size_ ||
-      capture_filter_bank_[0].size() != noise.size()) {
-    capture_filter_bank_ = CreateErbBank(noise.size());
-    noise_power_estimator_.reset(
-        new intelligibility::PowerEstimator<float>(noise.size(), kDecayRate));
-  }
-  noise_power_estimator_->Step(noise.data());
+  RTC_DCHECK_EQ(noise.size(), num_noise_bins_);
+  // Disregarding return value since buffer overflow is acceptable, because it
+  // is not critical to get each noise estimate.
+  if (noise_estimation_queue_.Insert(&noise)) {
+  };
 }
 
 void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
@@ -112,6 +116,9 @@ void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
                                                  size_t num_channels) {
   RTC_CHECK_EQ(sample_rate_hz_, sample_rate_hz);
   RTC_CHECK_EQ(num_render_channels_, num_channels);
+  while (noise_estimation_queue_.Remove(&noise_estimation_buffer_)) {
+    noise_power_estimator_.Step(noise_estimation_buffer_.data());
+  }
   is_speech_ = IsSpeech(audio[0]);
   render_mangler_->ProcessChunk(audio, audio);
 }
@@ -127,7 +134,7 @@ void IntelligibilityEnhancer::ProcessAudioBlock(
     clear_power_estimator_.Step(in_block[0]);
   }
   const std::vector<float>& clear_power = clear_power_estimator_.power();
-  const std::vector<float>& noise_power = noise_power_estimator_->power();
+  const std::vector<float>& noise_power = noise_power_estimator_.power();
   MapToErbBands(clear_power.data(), render_filter_bank_,
                 filtered_clear_pow_.data());
   MapToErbBands(noise_power.data(), capture_filter_bank_,
