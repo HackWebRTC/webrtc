@@ -120,8 +120,9 @@ class VideoAnalyzer : public PacketReceiver,
     parser.Parse(&header);
     {
       rtc::CritScope lock(&crit_);
-      int64_t timestamp = wrap_handler_.Unwrap(header.timestamp);
-      recv_times_[timestamp - rtp_timestamp_delta_] =
+      int64_t timestamp =
+          wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
+      recv_times_[timestamp] =
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
     }
 
@@ -191,11 +192,12 @@ class VideoAnalyzer : public PacketReceiver,
                    int time_to_render_ms) override {
     int64_t render_time_ms =
         Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
-    uint32_t send_timestamp = video_frame.timestamp() - rtp_timestamp_delta_;
 
     rtc::CritScope lock(&crit_);
+    uint32_t send_timestamp =
+        wrap_handler_.Unwrap(video_frame.timestamp() - rtp_timestamp_delta_);
 
-    while (frames_.front().timestamp() < send_timestamp) {
+    while (wrap_handler_.Unwrap(frames_.front().timestamp()) < send_timestamp) {
       AddFrameComparison(frames_.front(), last_rendered_frame_, true,
                          render_time_ms);
       frames_.pop_front();
@@ -204,13 +206,14 @@ class VideoAnalyzer : public PacketReceiver,
     VideoFrame reference_frame = frames_.front();
     frames_.pop_front();
     assert(!reference_frame.IsZeroSize());
-    if (send_timestamp == reference_frame.timestamp() - 1) {
+    int64_t reference_timestamp =
+        wrap_handler_.Unwrap(reference_frame.timestamp());
+    if (send_timestamp == reference_timestamp - 1) {
       // TODO(ivica): Make this work for > 2 streams.
       // Look at RTPSender::BuildRTPHeader.
       ++send_timestamp;
     }
-    EXPECT_EQ(reference_frame.timestamp(), send_timestamp);
-    assert(reference_frame.timestamp() == send_timestamp);
+    ASSERT_EQ(reference_timestamp, send_timestamp);
 
     AddFrameComparison(reference_frame, video_frame, false, render_time_ms);
 
