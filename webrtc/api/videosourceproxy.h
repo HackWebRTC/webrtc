@@ -26,12 +26,13 @@ PROXY_CONSTMETHOD0(bool, remote)
 PROXY_METHOD0(cricket::VideoCapturer*, GetVideoCapturer)
 PROXY_METHOD0(void, Stop)
 PROXY_METHOD0(void, Restart)
+PROXY_CONSTMETHOD0(bool, is_screencast)
+PROXY_CONSTMETHOD0(bool, needs_denoising)
 PROXY_METHOD2(void,
               AddOrUpdateSink,
               rtc::VideoSinkInterface<cricket::VideoFrame>*,
               const rtc::VideoSinkWants&)
 PROXY_METHOD1(void, RemoveSink, rtc::VideoSinkInterface<cricket::VideoFrame>*)
-PROXY_CONSTMETHOD0(const cricket::VideoOptions*, options)
 PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
 PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
 END_PROXY()

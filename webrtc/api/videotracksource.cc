@@ -10,5 +10,41 @@
 
 #include "webrtc/api/videotracksource.h"
 
-// TODO(perkj): This file is added to prepare for splitting VideoSource
-// into two parts, VideoCapturerTrackSource that will inherit VideoTrackSource.
+#include <string>
+
+#include "webrtc/base/bind.h"
+
+namespace webrtc {
+
+VideoTrackSource::VideoTrackSource(
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source,
+    rtc::Thread* worker_thread,
+    bool remote)
+    : source_(source),
+      worker_thread_(worker_thread),
+      state_(kInitializing),
+      remote_(remote) {}
+
+void VideoTrackSource::SetState(SourceState new_state) {
+  if (state_ != new_state) {
+    state_ = new_state;
+    FireOnChanged();
+  }
+}
+
+void VideoTrackSource::AddOrUpdateSink(
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+    const rtc::VideoSinkWants& wants) {
+  worker_thread_->Invoke<void>(rtc::Bind(
+      &rtc::VideoSourceInterface<cricket::VideoFrame>::AddOrUpdateSink, source_,
+      sink, wants));
+}
+
+void VideoTrackSource::RemoveSink(
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+  worker_thread_->Invoke<void>(
+      rtc::Bind(&rtc::VideoSourceInterface<cricket::VideoFrame>::RemoveSink,
+                source_, sink));
+}
+
+}  //  namespace webrtc

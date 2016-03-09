@@ -242,29 +242,14 @@ const cricket::VideoFormat& GetBestCaptureFormat(
 // Return false if the key is mandatory, and the value is invalid.
 bool ExtractOption(const MediaConstraintsInterface* all_constraints,
                    const std::string& key,
-                   rtc::Optional<bool>* option) {
+                   bool* option) {
   size_t mandatory = 0;
-  bool value;
-  if (FindConstraint(all_constraints, key, &value, &mandatory)) {
-    *option = rtc::Optional<bool>(value);
+  *option = false;
+  if (FindConstraint(all_constraints, key, option, &mandatory)) {
     return true;
   }
 
   return mandatory == 0;
-}
-
-// Search |all_constraints| for known video options.  Apply all options that are
-// found with valid values, and return false if any mandatory video option was
-// found with an invalid value.
-bool ExtractVideoOptions(const MediaConstraintsInterface* all_constraints,
-                         cricket::VideoOptions* options) {
-  bool all_valid = true;
-
-  all_valid &=
-      ExtractOption(all_constraints, MediaConstraintsInterface::kNoiseReduction,
-                    &(options->video_noise_reduction));
-
-  return all_valid;
 }
 
 }  // anonymous namespace
@@ -302,12 +287,11 @@ VideoCapturerTrackSource::VideoCapturerTrackSource(
     rtc::Thread* worker_thread,
     cricket::VideoCapturer* capturer,
     bool remote)
-    : signaling_thread_(rtc::Thread::Current()),
-      worker_thread_(worker_thread),
+    : VideoTrackSource(capturer, worker_thread, remote),
+      signaling_thread_(rtc::Thread::Current()),
       video_capturer_(capturer),
       started_(false),
-      state_(kInitializing),
-      remote_(remote) {
+      needs_denoising_(false) {
   video_capturer_->SignalStateChange.connect(
       this, &VideoCapturerTrackSource::OnStateChange);
 }
@@ -358,22 +342,17 @@ void VideoCapturerTrackSource::Initialize(
     return;
   }
 
-  cricket::VideoOptions options;
-  if (!ExtractVideoOptions(constraints, &options)) {
-    LOG(LS_WARNING) << "Could not satisfy mandatory options.";
+  if (!ExtractOption(constraints, MediaConstraintsInterface::kNoiseReduction,
+                     &needs_denoising_)) {
+    LOG(LS_WARNING) << "Invalid mandatory value for"
+                    << MediaConstraintsInterface::kNoiseReduction;
     SetState(kEnded);
     return;
   }
-  options_.SetAll(options);
-  options_.is_screencast = rtc::Optional<bool>(video_capturer_->IsScreencast());
 
   format_ = GetBestCaptureFormat(formats);
   // Start the camera with our best guess.
-  // TODO(perkj): Should we try again with another format it it turns out that
-  // the camera doesn't produce frames with the correct format? Or will
-  // cricket::VideCapturer be able to re-scale / crop to the requested
-  // resolution?
-  if (!worker_thread_->Invoke<bool>(
+  if (!worker_thread()->Invoke<bool>(
           rtc::Bind(&cricket::VideoCapturer::StartCapturing,
                     video_capturer_.get(), format_))) {
     SetState(kEnded);
@@ -388,7 +367,7 @@ void VideoCapturerTrackSource::Stop() {
     return;
   }
   started_ = false;
-  worker_thread_->Invoke<void>(
+  worker_thread()->Invoke<void>(
       rtc::Bind(&cricket::VideoCapturer::Stop, video_capturer_.get()));
 }
 
@@ -396,27 +375,13 @@ void VideoCapturerTrackSource::Restart() {
   if (started_) {
     return;
   }
-  if (!worker_thread_->Invoke<bool>(
+  if (!worker_thread()->Invoke<bool>(
           rtc::Bind(&cricket::VideoCapturer::StartCapturing,
                     video_capturer_.get(), format_))) {
     SetState(kEnded);
     return;
   }
   started_ = true;
-}
-
-void VideoCapturerTrackSource::AddOrUpdateSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
-    const rtc::VideoSinkWants& wants) {
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&cricket::VideoCapturer::AddOrUpdateSink, video_capturer_.get(),
-                sink, wants));
-}
-
-void VideoCapturerTrackSource::RemoveSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* output) {
-  worker_thread_->Invoke<void>(rtc::Bind(&cricket::VideoCapturer::RemoveSink,
-                                         video_capturer_.get(), output));
 }
 
 // OnStateChange listens to the cricket::VideoCapturer::SignalStateChange.
@@ -432,13 +397,6 @@ void VideoCapturerTrackSource::OnStateChange(
 
   if (capturer == video_capturer_.get()) {
     SetState(GetReadyState(capture_state));
-  }
-}
-
-void VideoCapturerTrackSource::SetState(SourceState new_state) {
-  if (state_ != new_state) {
-    state_ = new_state;
-    FireOnChanged();
   }
 }
 

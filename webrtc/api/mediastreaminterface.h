@@ -139,7 +139,17 @@ class VideoTrackSourceInterface
   virtual void Stop() = 0;
   virtual void Restart() = 0;
 
-  virtual const cricket::VideoOptions* options() const = 0;
+  // Indicates that parameters suitable for screencasts should be automatically
+  // applied to RtpSenders.
+  // TODO(perkj): Remove these once all known applications have moved to
+  // explicitly setting suitable parameters for screencasts and dont' need this
+  // implicit behavior.
+  virtual bool is_screencast() const = 0;
+
+  // Indicates that the encoder should denoise the video before encoding it.
+  // TODO(perkj): Remove this once denoising is done by the source, and not by
+  // the encoder.
+  virtual bool needs_denoising() const = 0;
 
  protected:
   virtual ~VideoTrackSourceInterface() {}

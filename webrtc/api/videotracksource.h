@@ -11,7 +11,45 @@
 #ifndef WEBRTC_API_VIDEOTRACKSOURCE_H_
 #define WEBRTC_API_VIDEOTRACKSOURCE_H_
 
-// TODO(perkj): This file is added to prepare for splitting VideoSource
-// into two parts, VideoCapturerTrackSource that will inherit VideoTrackSource.
+#include "webrtc/api/notifier.h"
+#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/videosinkinterface.h"
+
+// VideoTrackSource implements VideoTrackSourceInterface.
+namespace webrtc {
+
+class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
+ public:
+  VideoTrackSource(rtc::VideoSourceInterface<cricket::VideoFrame>* source,
+                   rtc::Thread* worker_thread,
+                   bool remote);
+
+  void SetState(SourceState new_state);
+  SourceState state() const override { return state_; }
+  bool remote() const override { return remote_; }
+
+  void Stop() override{};
+  void Restart() override{};
+
+  virtual bool is_screencast() const { return false; };
+  virtual bool needs_denoising() const { return false; };
+
+  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override;
+  void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
+
+ protected:
+  rtc::Thread* worker_thread() { return worker_thread_; }
+
+ private:
+  rtc::VideoSourceInterface<cricket::VideoFrame>* source_;
+  rtc::Thread* worker_thread_;
+  cricket::VideoOptions options_;
+  SourceState state_;
+  const bool remote_;
+};
+
+}  // namespace webrtc
 
 #endif  //  WEBRTC_API_VIDEOTRACKSOURCE_H_

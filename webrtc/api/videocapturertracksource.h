@@ -11,16 +11,11 @@
 #ifndef WEBRTC_API_VIDEOCAPTURERTRACKSOURCE_H_
 #define WEBRTC_API_VIDEOCAPTURERTRACKSOURCE_H_
 
-#include <list>
-
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/notifier.h"
-#include "webrtc/api/videosourceinterface.h"
-#include "webrtc/api/videotrackrenderers.h"
+#include "webrtc/api/videotracksource.h"
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
-#include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
 
@@ -34,7 +29,7 @@ namespace webrtc {
 
 class MediaConstraintsInterface;
 
-class VideoCapturerTrackSource : public Notifier<VideoTrackSourceInterface>,
+class VideoCapturerTrackSource : public VideoTrackSource,
                                  public sigslot::has_slots<> {
  public:
   // Creates an instance of VideoCapturerTrackSource.
@@ -52,21 +47,17 @@ class VideoCapturerTrackSource : public Notifier<VideoTrackSourceInterface>,
       cricket::VideoCapturer* capturer,
       bool remote);
 
-  SourceState state() const override { return state_; }
-  bool remote() const override { return remote_; }
-
-  virtual const cricket::VideoOptions* options() const { return &options_; }
-
-  virtual cricket::VideoCapturer* GetVideoCapturer() {
+  cricket::VideoCapturer* GetVideoCapturer() override {
     return video_capturer_.get();
   }
 
+  bool is_screencast() const override {
+    return video_capturer_->IsScreencast();
+  }
+  bool needs_denoising() const override { return needs_denoising_; }
+
   void Stop() override;
   void Restart() override;
-
-  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override;
-  void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
 
  protected:
   VideoCapturerTrackSource(rtc::Thread* worker_thread,
@@ -78,19 +69,13 @@ class VideoCapturerTrackSource : public Notifier<VideoTrackSourceInterface>,
  private:
   void OnStateChange(cricket::VideoCapturer* capturer,
                      cricket::CaptureState capture_state);
-  void SetState(SourceState new_state);
 
   rtc::Thread* signaling_thread_;
-  rtc::Thread* worker_thread_;
   rtc::AsyncInvoker invoker_;
   rtc::scoped_ptr<cricket::VideoCapturer> video_capturer_;
   bool started_;
-  rtc::scoped_ptr<cricket::VideoRenderer> frame_input_;
-
   cricket::VideoFormat format_;
-  cricket::VideoOptions options_;
-  SourceState state_;
-  const bool remote_;
+  bool needs_denoising_;
 };
 
 }  // namespace webrtc

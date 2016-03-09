@@ -320,12 +320,14 @@ void VideoRtpSender::Stop() {
 
 void VideoRtpSender::SetVideoSend() {
   RTC_DCHECK(!stopped_ && can_send_track());
-  const cricket::VideoOptions* options = nullptr;
+  cricket::VideoOptions options;
   VideoTrackSourceInterface* source = track_->GetSource();
-  if (track_->enabled() && source) {
-    options = source->options();
+  if (source) {
+    options.is_screencast = rtc::Optional<bool>(source->is_screencast());
+    options.video_noise_reduction =
+        rtc::Optional<bool>(source->needs_denoising());
   }
-  provider_->SetVideoSend(ssrc_, track_->enabled(), options);
+  provider_->SetVideoSend(ssrc_, track_->enabled(), &options);
 }
 
 }  // namespace webrtc

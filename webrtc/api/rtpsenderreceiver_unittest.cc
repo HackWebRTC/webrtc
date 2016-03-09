@@ -19,7 +19,7 @@
 #include "webrtc/api/rtpreceiver.h"
 #include "webrtc/api/rtpsender.h"
 #include "webrtc/api/streamcollection.h"
-#include "webrtc/api/videocapturertracksource.h"
+#include "webrtc/api/videotracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/media/base/fakevideocapturer.h"
@@ -78,32 +78,20 @@ class MockVideoProvider : public VideoProviderInterface {
                     const cricket::VideoOptions* options));
 };
 
-class FakeVideoSource : public Notifier<VideoTrackSourceInterface> {
+class FakeVideoTrackSource : public VideoTrackSource {
  public:
-  static rtc::scoped_refptr<FakeVideoSource> Create(bool remote) {
-    return new rtc::RefCountedObject<FakeVideoSource>(remote);
+  static rtc::scoped_refptr<FakeVideoTrackSource> Create(bool remote) {
+    return new rtc::RefCountedObject<FakeVideoTrackSource>(remote);
   }
   cricket::VideoCapturer* GetVideoCapturer() { return &fake_capturer_; }
-  void Stop() override {}
-  void Restart() override {}
-  void AddOrUpdateSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
-      const rtc::VideoSinkWants& wants) override {}
-  void RemoveSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* output) override {}
-  SourceState state() const override { return state_; }
-  bool remote() const override { return remote_; }
-  const cricket::VideoOptions* options() const override { return &options_; }
 
  protected:
-  explicit FakeVideoSource(bool remote) : state_(kLive), remote_(remote) {}
-  ~FakeVideoSource() {}
+  explicit FakeVideoTrackSource(bool remote)
+      : VideoTrackSource(&fake_capturer_, rtc::Thread::Current(), remote) {}
+  ~FakeVideoTrackSource() {}
 
  private:
   cricket::FakeVideoCapturer fake_capturer_;
-  SourceState state_;
-  bool remote_;
-  cricket::VideoOptions options_;
 };
 
 class RtpSenderReceiverTest : public testing::Test {
@@ -114,7 +102,7 @@ class RtpSenderReceiverTest : public testing::Test {
 
   void AddVideoTrack(bool remote) {
     rtc::scoped_refptr<VideoTrackSourceInterface> source(
-        FakeVideoSource::Create(remote));
+        FakeVideoTrackSource::Create(remote));
     video_track_ = VideoTrack::Create(kVideoTrackId, source);
     EXPECT_TRUE(stream_->AddTrack(video_track_));
   }
