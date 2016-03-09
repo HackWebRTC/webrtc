@@ -143,15 +143,14 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     public void onLosing(Network network, int maxMsToLive) {
       // Tell the network is going to lose in MaxMsToLive milliseconds.
       // We may use this signal later.
-      Logging.d(TAG, "Network with handle " + networkToNetId(network) +
-                " is about to lose in " + maxMsToLive + "ms");
+      Logging.d(TAG,
+                "Network " + network.toString() + " is about to lose in " + maxMsToLive + "ms");
     }
 
     @Override
     public void onLost(Network network) {
-      int handle = networkToNetId(network);
-      Logging.d(TAG, "Network with handle " + handle + " is disconnected");
-      observer.onNetworkDisconnect(handle);
+      Logging.d(TAG, "Network " + network.toString() + " is disconnected");
+      observer.onNetworkDisconnect(networkToNetId(network));
     }
 
     private void onNetworkChanged(Network network) {
@@ -283,9 +282,13 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     @SuppressLint("NewApi")
     private NetworkInformation networkToInfo(Network network) {
       LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
-      int networkId = networkToNetId(network);
+      // getLinkProperties will return null if the network is unknown.
+      if (linkProperties == null) {
+        Logging.w(TAG, "Detected unknown network: " + network.toString());
+        return null;
+      }
       if (linkProperties.getInterfaceName() == null) {
-        Logging.w(TAG, "Null interface name for network id " + networkId);
+        Logging.w(TAG, "Null interface name for network " + network.toString());
         return null;
       }
 
@@ -296,14 +299,14 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
         // NONE when the network disconnects. But in some devices, the OS may incorrectly
         // report an UNKNOWN connection type. In either case, it won't benefit to send down
         // a network event with this connection type.
-        Logging.d(TAG, "Network with id " + networkId + " has connection type " + connectionType);
+        Logging.d(TAG, "Network " + network.toString() + " has connection type " + connectionType);
         return null;
       }
 
       NetworkInformation networkInformation = new NetworkInformation(
           linkProperties.getInterfaceName(),
           connectionType,
-          networkId,
+          networkToNetId(network),
           getIPAddresses(linkProperties));
       return networkInformation;
     }
