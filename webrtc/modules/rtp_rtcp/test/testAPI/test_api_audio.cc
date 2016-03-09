@@ -322,7 +322,7 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
         (voice_codec.rate < 0) ? 0 : voice_codec.rate));
 
   // Start DTMF test.
-  uint32_t timeStamp = 160;
+  int timeStamp = 160;
 
   // Send a DTMF tone using RFC 2833 (4733).
   for (int i = 0; i < 16; i++) {

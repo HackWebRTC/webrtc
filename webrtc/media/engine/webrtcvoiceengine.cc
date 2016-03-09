@@ -1178,8 +1178,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_CHECK(stream_);
   }
 
-  bool SendTelephoneEvent(int payload_type, uint8_t event,
-                          uint32_t duration_ms) {
+  bool SendTelephoneEvent(int payload_type, int event, int duration_ms) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
     return stream_->SendTelephoneEvent(payload_type, event, duration_ms);

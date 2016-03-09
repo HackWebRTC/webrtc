@@ -25,8 +25,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/file_player.h"
 #include "webrtc/modules/utility/include/file_recorder.h"
-#include "webrtc/voice_engine/dtmf_inband.h"
-#include "webrtc/voice_engine/dtmf_inband_queue.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/level_indicator.h"
@@ -296,17 +294,9 @@ class Channel
   // VoEVideoSyncExtended
   int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
 
-  // VoEDtmf
-  int SendTelephoneEventOutband(unsigned char eventCode,
-                                int lengthMs,
-                                int attenuationDb,
-                                bool playDtmfEvent);
-  int SendTelephoneEventInband(unsigned char eventCode,
-                               int lengthMs,
-                               int attenuationDb,
-                               bool playDtmfEvent);
-  int SetSendTelephoneEventPayloadType(unsigned char type);
-  int GetSendTelephoneEventPayloadType(unsigned char& type);
+  // DTMF
+  int SendTelephoneEventOutband(int event, int duration_ms);
+  int SetSendTelephoneEventPayloadType(int payload_type);
 
   // VoEAudioProcessingImpl
   int UpdateRxVadDetection(AudioFrame& audioFrame);
@@ -464,7 +454,6 @@ class Channel
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   int ResendPackets(const uint16_t* sequence_numbers, int length);
-  int InsertInbandDtmfTone();
   int32_t MixOrReplaceAudioWithFile(int mixingFrequency);
   int32_t MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency);
   void UpdatePlayoutTimestamp(bool rtcp);
@@ -510,13 +499,10 @@ class Channel
   int _outputFilePlayerId;
   int _outputFileRecorderId;
   bool _outputFileRecording;
-  DtmfInbandQueue _inbandDtmfQueue;
-  DtmfInband _inbandDtmfGenerator;
   bool _outputExternalMedia;
   VoEMediaProcess* _inputExternalMediaCallbackPtr;
   VoEMediaProcess* _outputExternalMediaCallbackPtr;
   uint32_t _timeStamp;
-  uint8_t _sendTelephoneEventPayloadType;
 
   RemoteNtpTimeEstimator ntp_estimator_ GUARDED_BY(ts_stats_lock_);
 
@@ -560,9 +546,6 @@ class Channel
   float _panLeft;
   float _panRight;
   float _outputGain;
-  // VoEDtmf
-  bool _playOutbandDtmfEvent;
-  bool _playInbandDtmfEvent;
   // VoeRTP_RTCP
   uint32_t _lastLocalTimeStamp;
   int8_t _lastPayloadType;
