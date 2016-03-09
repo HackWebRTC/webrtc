@@ -125,8 +125,8 @@ bool AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return false;
 }
 
-bool AudioSendStream::SendTelephoneEvent(int payload_type, int event,
-                                         int duration_ms) {
+bool AudioSendStream::SendTelephoneEvent(int payload_type, uint8_t event,
+                                         uint32_t duration_ms) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return channel_proxy_->SetSendTelephoneEventPayloadType(payload_type) &&
          channel_proxy_->SendTelephoneEventOutband(event, duration_ms);

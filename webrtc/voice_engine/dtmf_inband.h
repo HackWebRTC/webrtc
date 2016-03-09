@@ -17,9 +17,6 @@
 
 namespace webrtc {
 
-// TODO(solenberg): Used as a DTMF tone generator in voe::OutputMixer. Pull out
-//                  the one in NetEq and use that instead? We don't need several
-//                  implemenations of this.
 class DtmfInband
 {
 public:

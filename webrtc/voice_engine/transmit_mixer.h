@@ -75,6 +75,9 @@ public:
 
     int32_t StopSend();
 
+    // VoEDtmf
+    void UpdateMuteMicrophoneTime(uint32_t lengthMs);
+
     // VoEExternalMedia
     int RegisterExternalMediaProcessing(VoEMediaProcess* object,
                                         ProcessingTypes type);
@@ -223,6 +226,7 @@ private:
     VoEMediaProcess* external_postproc_ptr_;
     VoEMediaProcess* external_preproc_ptr_;
     bool _mute;
+    int32_t _remainingMuteMicTimeMs;
     bool stereo_codec_;
     bool swap_stereo_channels_;
 };

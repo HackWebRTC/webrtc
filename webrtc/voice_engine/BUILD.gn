@@ -18,6 +18,8 @@ source_set("voice_engine") {
     "channel_proxy.h",
     "dtmf_inband.cc",
     "dtmf_inband.h",
+    "dtmf_inband_queue.cc",
+    "dtmf_inband_queue.h",
     "include/voe_audio_processing.h",
     "include/voe_base.h",
     "include/voe_codec.h",
