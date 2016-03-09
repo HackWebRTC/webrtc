@@ -16,15 +16,12 @@
 #import "webrtc/api/objc/RTCStatsReport+Private.h"
 #import "webrtc/base/objc/NSString+StdString.h"
 
-// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
-
 namespace webrtc {
 
 class StatsObserverAdapter : public StatsObserver {
  public:
   StatsObserverAdapter(void (^completionHandler)
-      (NSArray *stats)) {
-      // (NSArray<RTCStatsReport *> *stats)) {
+      (NSArray<RTCStatsReport *> *stats)) {
     completion_handler_ = completionHandler;
   }
 
@@ -45,8 +42,7 @@ class StatsObserverAdapter : public StatsObserver {
   }
 
  private:
-  void (^completion_handler_)(NSArray *stats);
-  // void (^completion_handler_)(NSArray<RTCStatsReport *> *stats);
+  void (^completion_handler_)(NSArray<RTCStatsReport *> *stats);
 };
 }  // namespace webrtc
 
@@ -55,8 +51,7 @@ class StatsObserverAdapter : public StatsObserver {
 - (void)statsForTrack:(RTCMediaStreamTrack *)mediaStreamTrack
      statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel
     completionHandler:
-    (void (^)(NSArray *stats))completionHandler {
-    // (void (^)(NSArray<RTCStatsReport *> *stats))completionHandler {
+    (void (^)(NSArray<RTCStatsReport *> *stats))completionHandler {
   rtc::scoped_refptr<webrtc::StatsObserverAdapter> observer(
       new rtc::RefCountedObject<webrtc::StatsObserverAdapter>
           (completionHandler));

@@ -11,7 +11,6 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
-// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
 
 @class RTCAudioTrack;
 @class RTCPeerConnectionFactory;
@@ -20,12 +19,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RTCMediaStream : NSObject
 
 /** The audio tracks in this stream. */
-@property(nonatomic, strong, readonly) NSArray *audioTracks;
-// @property(nonatomic, strong, readonly) NSArray<RTCAudioTrack *> *audioTracks;
+@property(nonatomic, strong, readonly) NSArray<RTCAudioTrack *> *audioTracks;
 
 /** The video tracks in this stream. */
-@property(nonatomic, strong, readonly) NSArray *videoTracks;
-// @property(nonatomic, strong, readonly) NSArray<RTCVideoTrack *> *videoTracks;
+@property(nonatomic, strong, readonly) NSArray<RTCVideoTrack *> *videoTracks;
 
 /** An identifier for this media stream. */
 @property(nonatomic, readonly) NSString *streamId;

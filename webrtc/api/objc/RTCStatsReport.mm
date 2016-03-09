@@ -16,8 +16,6 @@
 #import "webrtc/base/objc/NSString+StdString.h"
 #import "webrtc/base/objc/RTCLogging.h"
 
-// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
-
 @implementation RTCStatsReport
 
 @synthesize timestamp = _timestamp;

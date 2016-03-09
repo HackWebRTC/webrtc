@@ -11,7 +11,6 @@
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
-// TODO(hjon): Update nullability types. See http://crbug/webrtc/5592
 
 @interface RTCVideoFrame : NSObject
 
@@ -31,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) int32_t uPitch;
 @property(nonatomic, readonly) int32_t vPitch;
 
-- (nonnull instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 
 @end
 
