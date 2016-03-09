@@ -122,7 +122,6 @@ const size_t AudioProcessing::kNumNativeSampleRates =
     arraysize(AudioProcessing::kNativeSampleRatesHz);
 const int AudioProcessing::kMaxNativeSampleRateHz = AudioProcessing::
     kNativeSampleRatesHz[AudioProcessing::kNumNativeSampleRates - 1];
-const int AudioProcessing::kMaxAECMSampleRateHz = kSampleRate16kHz;
 
 AudioProcessing* AudioProcessing::Create() {
   Config config;
@@ -369,7 +368,7 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 
   formats_.api_format = config;
 
-  // We process at the closest native rate >= min(input rate, output rate)...
+  // We process at the closest native rate >= min(input rate, output rate).
   const int min_proc_rate =
       std::min(formats_.api_format.input_stream().sample_rate_hz(),
                formats_.api_format.output_stream().sample_rate_hz());
@@ -379,11 +378,6 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
     if (fwd_proc_rate >= min_proc_rate) {
       break;
     }
-  }
-  // ...with one exception.
-  if (public_submodules_->echo_control_mobile->is_enabled() &&
-      min_proc_rate > kMaxAECMSampleRateHz) {
-    fwd_proc_rate = kMaxAECMSampleRateHz;
   }
 
   capture_nonlocked_.fwd_proc_format = StreamConfig(fwd_proc_rate);
@@ -618,12 +612,6 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
       frame->sample_rate_hz_ != kSampleRate32kHz &&
       frame->sample_rate_hz_ != kSampleRate48kHz) {
     return kBadSampleRateError;
-  }
-
-  if (public_submodules_->echo_control_mobile->is_enabled() &&
-      frame->sample_rate_hz_ > kMaxAECMSampleRateHz) {
-    LOG(LS_ERROR) << "AECM only supports 16 or 8 kHz sample rates";
-    return kUnsupportedComponentError;
   }
 
   ProcessingConfig processing_config;

@@ -54,12 +54,7 @@ bool write_ref_data = false;
 const google::protobuf::int32 kChannels[] = {1, 2};
 const int kSampleRates[] = {8000, 16000, 32000, 48000};
 
-#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
-// AECM doesn't support super-wb.
-const int kProcessSampleRates[] = {8000, 16000};
-#elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
 const int kProcessSampleRates[] = {8000, 16000, 32000, 48000};
-#endif
 
 enum StreamDirection { kForward = 0, kReverse };
 
@@ -435,11 +430,7 @@ void ApmTest::SetUp() {
   frame_ = new AudioFrame();
   revframe_ = new AudioFrame();
 
-#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
-  Init(16000, 16000, 16000, 2, 2, 2, false);
-#else
   Init(32000, 32000, 32000, 2, 2, 2, false);
-#endif
 }
 
 void ApmTest::TearDown() {
@@ -1039,18 +1030,6 @@ TEST_F(ApmTest, DISABLED_EchoCancellationReportsCorrectDelays) {
 }
 
 TEST_F(ApmTest, EchoControlMobile) {
-  // AECM won't use super-wideband.
-  SetFrameSampleRate(frame_, 32000);
-  EXPECT_NOERR(apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kBadSampleRateError,
-            apm_->echo_control_mobile()->Enable(true));
-  SetFrameSampleRate(frame_, 16000);
-  EXPECT_NOERR(apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->echo_control_mobile()->Enable(true));
-  SetFrameSampleRate(frame_, 32000);
-  EXPECT_EQ(apm_->kUnsupportedComponentError, apm_->ProcessStream(frame_));
-
   // Turn AECM on (and AEC off)
   Init(16000, 16000, 16000, 2, 2, 2, false);
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
@@ -1974,6 +1953,7 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
                                         num_input_channels);
 
     int analog_level = 127;
+    size_t num_bad_chunks = 0;
     while (ReadFrame(far_file_, revframe_, revfloat_cb_.get()) &&
            ReadFrame(near_file_, frame_, float_cb_.get())) {
       frame_->vad_activity_ = AudioFrame::kVadUnknown;
@@ -2012,18 +1992,13 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
         float snr = ComputeSNR(output_int16.channels()[j],
                                output_cb.channels()[j],
                                samples_per_channel, &variance);
-  #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
-        // There are a few chunks in the fixed-point profile that give low SNR.
-        // Listening confirmed the difference is acceptable.
-        const float kVarianceThreshold = 150;
-        const float kSNRThreshold = 10;
-  #else
+
         const float kVarianceThreshold = 20;
         const float kSNRThreshold = 20;
-  #endif
+
         // Skip frames with low energy.
-        if (sqrt(variance) > kVarianceThreshold) {
-          EXPECT_LT(kSNRThreshold, snr);
+        if (sqrt(variance) > kVarianceThreshold && snr < kSNRThreshold) {
+          ++num_bad_chunks;
         }
       }
 
@@ -2039,6 +2014,16 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
       // Reset in case of downmixing.
       frame_->num_channels_ = static_cast<size_t>(test->num_input_channels());
     }
+
+#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
+    const size_t kMaxNumBadChunks = 0;
+#elif defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
+    // There are a few chunks in the fixed-point profile that give low SNR.
+    // Listening confirmed the difference is acceptable.
+    const size_t kMaxNumBadChunks = 60;
+#endif
+    EXPECT_LE(num_bad_chunks, kMaxNumBadChunks);
+
     rewind(far_file_);
     rewind(near_file_);
   }
@@ -2560,11 +2545,6 @@ TEST_P(AudioProcessingTest, Formats) {
       } else {
         ref_rate = 8000;
       }
-#ifdef WEBRTC_AUDIOPROC_FIXED_PROFILE
-      if (file_direction == kForward) {
-        ref_rate = std::min(ref_rate, 16000);
-      }
-#endif
       FILE* out_file = fopen(
           OutputFilePath("out", input_rate_, output_rate_, reverse_input_rate_,
                          reverse_output_rate_, cf[i].num_input,
@@ -2716,12 +2696,12 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(
     CommonFormats,
     AudioProcessingTest,
-    testing::Values(std::tr1::make_tuple(48000, 48000, 48000, 48000, 20, 0),
-                    std::tr1::make_tuple(48000, 48000, 32000, 48000, 20, 30),
-                    std::tr1::make_tuple(48000, 48000, 16000, 48000, 20, 20),
-                    std::tr1::make_tuple(48000, 44100, 48000, 44100, 15, 20),
-                    std::tr1::make_tuple(48000, 44100, 32000, 44100, 15, 15),
-                    std::tr1::make_tuple(48000, 44100, 16000, 44100, 15, 15),
+    testing::Values(std::tr1::make_tuple(48000, 48000, 48000, 48000, 0, 0),
+                    std::tr1::make_tuple(48000, 48000, 32000, 48000, 40, 30),
+                    std::tr1::make_tuple(48000, 48000, 16000, 48000, 40, 20),
+                    std::tr1::make_tuple(48000, 44100, 48000, 44100, 25, 20),
+                    std::tr1::make_tuple(48000, 44100, 32000, 44100, 25, 15),
+                    std::tr1::make_tuple(48000, 44100, 16000, 44100, 25, 15),
                     std::tr1::make_tuple(48000, 32000, 48000, 32000, 20, 35),
                     std::tr1::make_tuple(48000, 32000, 32000, 32000, 20, 0),
                     std::tr1::make_tuple(48000, 32000, 16000, 32000, 20, 20),
@@ -2729,9 +2709,9 @@ INSTANTIATE_TEST_CASE_P(
                     std::tr1::make_tuple(48000, 16000, 32000, 16000, 20, 20),
                     std::tr1::make_tuple(48000, 16000, 16000, 16000, 20, 0),
 
-                    std::tr1::make_tuple(44100, 48000, 48000, 48000, 20, 0),
-                    std::tr1::make_tuple(44100, 48000, 32000, 48000, 20, 30),
-                    std::tr1::make_tuple(44100, 48000, 16000, 48000, 20, 20),
+                    std::tr1::make_tuple(44100, 48000, 48000, 48000, 15, 0),
+                    std::tr1::make_tuple(44100, 48000, 32000, 48000, 15, 30),
+                    std::tr1::make_tuple(44100, 48000, 16000, 48000, 15, 20),
                     std::tr1::make_tuple(44100, 44100, 48000, 44100, 15, 20),
                     std::tr1::make_tuple(44100, 44100, 32000, 44100, 15, 15),
                     std::tr1::make_tuple(44100, 44100, 16000, 44100, 15, 15),
@@ -2742,15 +2722,15 @@ INSTANTIATE_TEST_CASE_P(
                     std::tr1::make_tuple(44100, 16000, 32000, 16000, 20, 20),
                     std::tr1::make_tuple(44100, 16000, 16000, 16000, 20, 0),
 
-                    std::tr1::make_tuple(32000, 48000, 48000, 48000, 20, 0),
-                    std::tr1::make_tuple(32000, 48000, 32000, 48000, 20, 30),
-                    std::tr1::make_tuple(32000, 48000, 16000, 48000, 20, 20),
-                    std::tr1::make_tuple(32000, 44100, 48000, 44100, 15, 20),
-                    std::tr1::make_tuple(32000, 44100, 32000, 44100, 15, 15),
-                    std::tr1::make_tuple(32000, 44100, 16000, 44100, 15, 15),
-                    std::tr1::make_tuple(32000, 32000, 48000, 32000, 20, 35),
-                    std::tr1::make_tuple(32000, 32000, 32000, 32000, 20, 0),
-                    std::tr1::make_tuple(32000, 32000, 16000, 32000, 20, 20),
+                    std::tr1::make_tuple(32000, 48000, 48000, 48000, 35, 0),
+                    std::tr1::make_tuple(32000, 48000, 32000, 48000, 65, 30),
+                    std::tr1::make_tuple(32000, 48000, 16000, 48000, 40, 20),
+                    std::tr1::make_tuple(32000, 44100, 48000, 44100, 20, 20),
+                    std::tr1::make_tuple(32000, 44100, 32000, 44100, 20, 15),
+                    std::tr1::make_tuple(32000, 44100, 16000, 44100, 20, 15),
+                    std::tr1::make_tuple(32000, 32000, 48000, 32000, 35, 35),
+                    std::tr1::make_tuple(32000, 32000, 32000, 32000, 0, 0),
+                    std::tr1::make_tuple(32000, 32000, 16000, 32000, 40, 20),
                     std::tr1::make_tuple(32000, 16000, 48000, 16000, 20, 20),
                     std::tr1::make_tuple(32000, 16000, 32000, 16000, 20, 20),
                     std::tr1::make_tuple(32000, 16000, 16000, 16000, 20, 0),

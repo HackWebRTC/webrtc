@@ -206,6 +206,12 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 
       handle_index++;
     }
+    for (size_t band = 1u; band < audio->num_bands(); ++band) {
+      memset(audio->split_bands(i)[band],
+             0,
+             audio->num_frames_per_band() *
+                 sizeof(audio->split_bands(i)[band][0]));
+    }
   }
 
   return AudioProcessing::kNoError;
@@ -313,8 +319,8 @@ int EchoControlMobileImpl::Initialize() {
     }
   }
 
-  if (apm_->proc_sample_rate_hz() > AudioProcessing::kSampleRate16kHz) {
-    LOG(LS_ERROR) << "AECM only supports 16 kHz or lower sample rates";
+  if (apm_->proc_split_sample_rate_hz() > AudioProcessing::kSampleRate16kHz) {
+    LOG(LS_ERROR) << "AECM only supports 16 kHz or lower split sample rates";
     return AudioProcessing::kBadSampleRateError;
   }
 
@@ -370,7 +376,7 @@ int EchoControlMobileImpl::InitializeHandle(void* handle) const {
   rtc::CritScope cs_capture(crit_capture_);
   assert(handle != NULL);
   Handle* my_handle = static_cast<Handle*>(handle);
-  if (WebRtcAecm_Init(my_handle, apm_->proc_sample_rate_hz()) != 0) {
+  if (WebRtcAecm_Init(my_handle, apm_->proc_split_sample_rate_hz()) != 0) {
     return GetHandleError(my_handle);
   }
   if (external_echo_path_ != NULL) {
