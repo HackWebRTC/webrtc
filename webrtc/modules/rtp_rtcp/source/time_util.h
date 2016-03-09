@@ -39,11 +39,9 @@ inline uint32_t CompactNtp(NtpTime ntp) {
   return (ntp.seconds() << 16) | (ntp.fractions() >> 16);
 }
 // Converts interval between compact ntp timestamps to milliseconds.
-// This interval can be upto ~18.2 hours (2^16 seconds).
-inline uint32_t CompactNtpIntervalToMs(uint32_t compact_ntp_interval) {
-  uint64_t value = static_cast<uint64_t>(compact_ntp_interval);
-  return (value * 1000 + (1 << 15)) >> 16;
-}
+// This interval can be up to ~9.1 hours (2^15 seconds).
+// Values close to 2^16 seconds consider negative and result in minimum rtt = 1.
+int64_t CompactNtpRttToMs(uint32_t compact_ntp_interval);
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_

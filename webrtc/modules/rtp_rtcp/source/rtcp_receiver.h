@@ -77,6 +77,7 @@ public:
 
     int32_t SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
 
+    void SetRtcpXrRrtrStatus(bool enable);
     bool GetAndResetXrRrRtt(int64_t* rtt_ms);
 
     // get statistics
@@ -292,6 +293,7 @@ protected:
   uint32_t _lastReceivedXRNTPsecs;
   uint32_t _lastReceivedXRNTPfrac;
   // Estimated rtt, zero when there is no valid estimate.
+  bool xr_rrtr_status_ GUARDED_BY(_criticalSectionRTCPReceiver);
   int64_t xr_rr_rtt_ms_;
 
   // Received report blocks.

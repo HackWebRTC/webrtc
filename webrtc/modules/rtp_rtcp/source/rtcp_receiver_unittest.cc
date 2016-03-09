@@ -184,9 +184,9 @@ TEST_F(RtcpReceiverTest, InjectSrPacketCalculatesRTT) {
   Random r(0x0123456789abcdef);
   const uint32_t kSenderSsrc = r.Rand(0x00000001u, 0xfffffffeu);
   const uint32_t kRemoteSsrc = r.Rand(0x00000001u, 0xfffffffeu);
-  const int64_t kRttMs = r.Rand(1, 18 * 3600 * 1000);
-  const uint32_t kDelayNtp = r.Rand<uint32_t>();
-  const uint32_t kDelayMs = CompactNtpIntervalToMs(kDelayNtp);
+  const int64_t kRttMs = r.Rand(1, 9 * 3600 * 1000);
+  const uint32_t kDelayNtp = r.Rand(0, 0x7fffffff);
+  const int64_t kDelayMs = CompactNtpRttToMs(kDelayNtp);
 
   rtcp_receiver_->SetRemoteSSRC(kSenderSsrc);
   std::set<uint32_t> ssrcs;
@@ -214,6 +214,42 @@ TEST_F(RtcpReceiverTest, InjectSrPacketCalculatesRTT) {
   EXPECT_EQ(
       0, rtcp_receiver_->RTT(kSenderSsrc, &rtt_ms, nullptr, nullptr, nullptr));
   EXPECT_NEAR(kRttMs, rtt_ms, 1);
+}
+
+TEST_F(RtcpReceiverTest, InjectSrPacketCalculatesNegativeRTTAsOne) {
+  Random r(0x0123456789abcdef);
+  const uint32_t kSenderSsrc = r.Rand(0x00000001u, 0xfffffffeu);
+  const uint32_t kRemoteSsrc = r.Rand(0x00000001u, 0xfffffffeu);
+  const int64_t kRttMs = r.Rand(-3600 * 1000, -1);
+  const uint32_t kDelayNtp = r.Rand(0, 0x7fffffff);
+  const int64_t kDelayMs = CompactNtpRttToMs(kDelayNtp);
+
+  rtcp_receiver_->SetRemoteSSRC(kSenderSsrc);
+  std::set<uint32_t> ssrcs;
+  ssrcs.insert(kRemoteSsrc);
+  rtcp_receiver_->SetSsrcs(kRemoteSsrc, ssrcs);
+
+  int64_t rtt_ms = 0;
+  EXPECT_EQ(
+      -1, rtcp_receiver_->RTT(kSenderSsrc, &rtt_ms, nullptr, nullptr, nullptr));
+
+  uint32_t sent_ntp = CompactNtp(NtpTime(system_clock_));
+  system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
+
+  rtcp::SenderReport sr;
+  sr.From(kSenderSsrc);
+  rtcp::ReportBlock block;
+  block.To(kRemoteSsrc);
+  block.WithLastSr(sent_ntp);
+  block.WithDelayLastSr(kDelayNtp);
+  sr.WithReportBlock(block);
+
+  rtc::Buffer packet = sr.Build();
+  EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
+
+  EXPECT_EQ(
+      0, rtcp_receiver_->RTT(kSenderSsrc, &rtt_ms, nullptr, nullptr, nullptr));
+  EXPECT_EQ(1, rtt_ms);
 }
 
 TEST_F(RtcpReceiverTest, InjectRrPacket) {
@@ -790,12 +826,13 @@ TEST_F(RtcpReceiverTest, TestXrRrRttInitiallyFalse) {
   EXPECT_FALSE(rtcp_receiver_->GetAndResetXrRrRtt(&rtt_ms));
 }
 
-TEST_F(RtcpReceiverTest, RttCalculatedAfterXrDlrr) {
+TEST_F(RtcpReceiverTest, XrDlrrCalculatesRtt) {
   Random rand(0x0123456789abcdef);
   const uint32_t kSourceSsrc = rand.Rand(0x00000001u, 0xfffffffeu);
-  const uint32_t kRttMs = rand.Rand(1, 18 * 3600 * 1000);
-  const uint32_t kDelayNtp = rand.Rand<uint32_t>();
-  const uint32_t kDelayMs = CompactNtpIntervalToMs(kDelayNtp);
+  const int64_t kRttMs = rand.Rand(1, 9 * 3600 * 1000);
+  const uint32_t kDelayNtp = rand.Rand(0, 0x7fffffff);
+  const int64_t kDelayMs = CompactNtpRttToMs(kDelayNtp);
+  rtcp_receiver_->SetRtcpXrRrtrStatus(true);
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kSourceSsrc);
   rtcp_receiver_->SetSsrcs(kSourceSsrc, ssrcs);
@@ -814,6 +851,33 @@ TEST_F(RtcpReceiverTest, RttCalculatedAfterXrDlrr) {
   int64_t rtt_ms = 0;
   EXPECT_TRUE(rtcp_receiver_->GetAndResetXrRrRtt(&rtt_ms));
   EXPECT_NEAR(kRttMs, rtt_ms, 1);
+}
+
+TEST_F(RtcpReceiverTest, XrDlrrCalculatesNegativeRttAsOne) {
+  Random rand(0x0123456789abcdef);
+  const uint32_t kSourceSsrc = rand.Rand(0x00000001u, 0xfffffffeu);
+  const int64_t kRttMs = rand.Rand(-3600 * 1000, -1);
+  const uint32_t kDelayNtp = rand.Rand(0, 0x7fffffff);
+  const int64_t kDelayMs = CompactNtpRttToMs(kDelayNtp);
+  rtcp_receiver_->SetRtcpXrRrtrStatus(true);
+  std::set<uint32_t> ssrcs;
+  ssrcs.insert(kSourceSsrc);
+  rtcp_receiver_->SetSsrcs(kSourceSsrc, ssrcs);
+  NtpTime now(system_clock_);
+  uint32_t sent_ntp = CompactNtp(now);
+  system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
+
+  rtcp::Dlrr dlrr;
+  dlrr.WithDlrrItem(kSourceSsrc, sent_ntp, kDelayNtp);
+  rtcp::ExtendedReports xr;
+  xr.From(0x2345);
+  xr.WithDlrr(dlrr);
+  rtc::Buffer packet = xr.Build();
+  EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
+
+  int64_t rtt_ms = 0;
+  EXPECT_TRUE(rtcp_receiver_->GetAndResetXrRrRtt(&rtt_ms));
+  EXPECT_EQ(1, rtt_ms);
 }
 
 TEST_F(RtcpReceiverTest, LastReceivedXrReferenceTimeInfoInitiallyFalse) {

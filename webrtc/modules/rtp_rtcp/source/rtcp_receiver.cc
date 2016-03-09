@@ -13,8 +13,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include <algorithm>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
@@ -66,6 +64,7 @@ RTCPReceiver::RTCPReceiver(
       _lastReceivedSRNTPfrac(0),
       _lastReceivedXRNTPsecs(0),
       _lastReceivedXRNTPfrac(0),
+      xr_rrtr_status_(false),
       xr_rr_rtt_ms_(0),
       _receivedInfoMap(),
       _lastReceivedRrMs(0),
@@ -189,6 +188,11 @@ int32_t RTCPReceiver::RTT(uint32_t remoteSSRC,
     *maxRTT = reportBlock->maxRTT;
   }
   return 0;
+}
+
+void RTCPReceiver::SetRtcpXrRrtrStatus(bool enable) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  xr_rrtr_status_ = enable;
 }
 
 bool RTCPReceiver::GetAndResetXrRrRtt(int64_t* rtt_ms) {
@@ -520,10 +524,13 @@ void RTCPReceiver::HandleReportBlock(
     reportBlock->remoteMaxJitter = rtcpPacket.ReportBlockItem.Jitter;
   }
 
+  int64_t rtt = 0;
   uint32_t send_time = rtcpPacket.ReportBlockItem.LastSR;
-  uint32_t rtt = 0;
-
-  if (send_time > 0) {
+  // RFC3550, section 6.4.1, LSR field discription states:
+  // If no SR has been received yet, the field is set to zero.
+  // Receiver rtp_rtcp module is not expected to calculate rtt using
+  // Sender Reports even if it accidentally can.
+  if (!receiver_only_ && send_time != 0) {
     uint32_t delay = rtcpPacket.ReportBlockItem.DelayLastSR;
     // Local NTP time.
     uint32_t receive_time = CompactNtp(NtpTime(*_clock));
@@ -531,8 +538,7 @@ void RTCPReceiver::HandleReportBlock(
     // RTT in 1/(2^16) seconds.
     uint32_t rtt_ntp = receive_time - delay - send_time;
     // Convert to 1/1000 seconds (milliseconds).
-    uint32_t rtt_ms = CompactNtpIntervalToMs(rtt_ntp);
-    rtt = std::max<uint32_t>(rtt_ms, 1);
+    rtt = CompactNtpRttToMs(rtt_ntp);
     if (rtt > reportBlock->maxRTT) {
       // Store max RTT.
       reportBlock->maxRTT = rtt;
@@ -916,9 +922,13 @@ void RTCPReceiver::HandleXrDlrrReportBlockItem(
 
   rtcpPacketInformation.xr_dlrr_item = true;
 
+  // Caller should explicitly enable rtt calculation using extended reports.
+  if (!xr_rrtr_status_)
+    return;
+
   // The send_time and delay_rr fields are in units of 1/2^16 sec.
   uint32_t send_time = packet.XRDLRRReportBlockItem.LastRR;
-  // RFC3411, section 4.5, LRR field discription states:
+  // RFC3611, section 4.5, LRR field discription states:
   // If no such block has been received, the field is set to zero.
   if (send_time == 0)
     return;
@@ -927,8 +937,7 @@ void RTCPReceiver::HandleXrDlrrReportBlockItem(
   uint32_t now = CompactNtp(NtpTime(*_clock));
 
   uint32_t rtt_ntp = now - delay_rr - send_time;
-  uint32_t rtt_ms = CompactNtpIntervalToMs(rtt_ntp);
-  xr_rr_rtt_ms_ = std::max<uint32_t>(rtt_ms, 1);
+  xr_rr_rtt_ms_ = CompactNtpRttToMs(rtt_ntp);
 
   rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrDlrrReportBlock;
 }

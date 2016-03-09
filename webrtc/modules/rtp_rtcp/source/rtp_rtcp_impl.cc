@@ -586,7 +586,8 @@ int32_t ModuleRtpRtcpImpl::SetRTCPVoIPMetrics(
 }
 
 void ModuleRtpRtcpImpl::SetRtcpXrRrtrStatus(bool enable) {
-  return rtcp_sender_.SendRtcpXrReceiverReferenceTime(enable);
+  rtcp_receiver_.SetRtcpXrRrtrStatus(enable);
+  rtcp_sender_.SendRtcpXrReceiverReferenceTime(enable);
 }
 
 bool ModuleRtpRtcpImpl::RtcpXrRrtrStatus() const {
