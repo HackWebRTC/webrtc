@@ -212,11 +212,6 @@ static const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
 const int kWildcardPayloadType = -1;
 
 struct SsrcInfo {
-  SsrcInfo()
-      : stream_id(kDefaultMsid),
-        // TODO(ronghuawu): What should we do if the track id doesn't appear?
-        // Create random string (which will be used as track label later)?
-        track_id(rtc::CreateRandomString(8)) {}
   uint32_t ssrc_id;
   std::string cname;
   std::string stream_id;
@@ -573,30 +568,47 @@ static bool GetPayloadTypeFromString(const std::string& line,
       cricket::IsValidRtpPayloadType(*payload_type);
 }
 
+// |msid_stream_id| and |msid_track_id| represent the stream/track ID from the
+// "a=msid" attribute, if it exists. They are empty if the attribute does not
+// exist.
 void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
+                               const std::string& msid_stream_id,
+                               const std::string& msid_track_id,
                                StreamParamsVec* tracks) {
   ASSERT(tracks != NULL);
+  ASSERT(msid_stream_id.empty() == msid_track_id.empty());
   for (SsrcInfoVec::const_iterator ssrc_info = ssrc_infos.begin();
        ssrc_info != ssrc_infos.end(); ++ssrc_info) {
     if (ssrc_info->cname.empty()) {
       continue;
     }
 
-    std::string sync_label;
+    std::string stream_id;
     std::string track_id;
-    if (ssrc_info->stream_id == kDefaultMsid && !ssrc_info->mslabel.empty()) {
+    if (ssrc_info->stream_id.empty() && !ssrc_info->mslabel.empty()) {
       // If there's no msid and there's mslabel, we consider this is a sdp from
       // a older version of client that doesn't support msid.
       // In that case, we use the mslabel and label to construct the track.
-      sync_label = ssrc_info->mslabel;
+      stream_id = ssrc_info->mslabel;
       track_id = ssrc_info->label;
+    } else if (ssrc_info->stream_id.empty() && !msid_stream_id.empty()) {
+      // If there's no msid in the SSRC attributes, but there's a global one
+      // (from a=msid), use that. This is the case with unified plan SDP.
+      stream_id = msid_stream_id;
+      track_id = msid_track_id;
     } else {
-      sync_label = ssrc_info->stream_id;
+      stream_id = ssrc_info->stream_id;
       track_id = ssrc_info->track_id;
     }
-    if (sync_label.empty() || track_id.empty()) {
-      ASSERT(false);
-      continue;
+    // If a stream/track ID wasn't populated from the SSRC attributes OR the
+    // msid attribute, use default/random values.
+    if (stream_id.empty()) {
+      stream_id = kDefaultMsid;
+    }
+    if (track_id.empty()) {
+      // TODO(ronghuawu): What should we do if the track id doesn't appear?
+      // Create random string (which will be used as track label later)?
+      track_id = rtc::CreateRandomString(8);
     }
 
     StreamParamsVec::iterator track = tracks->begin();
@@ -612,7 +624,7 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
     }
     track->add_ssrc(ssrc_info->ssrc_id);
     track->cname = ssrc_info->cname;
-    track->sync_label = sync_label;
+    track->sync_label = stream_id;
     track->id = track_id;
   }
 }
@@ -2670,19 +2682,11 @@ bool ParseContent(const std::string& message,
     }
   }
 
-  // Found an msid attribute.
-  // Setting the stream_id/track_id will cause only one StreamParams
-  // to be created in CreateTracksFromSsrcInfos, containing all the SSRCs from
-  // the m= section.
-  if (!stream_id.empty() && !track_id.empty()) {
-    for (SsrcInfo& ssrc_info : ssrc_infos) {
-      ssrc_info.stream_id = stream_id;
-      ssrc_info.track_id = track_id;
-    }
-  }
-
   // Create tracks from the |ssrc_infos|.
-  CreateTracksFromSsrcInfos(ssrc_infos, &tracks);
+  // If the stream_id/track_id for all SSRCS are identical, one StreamParams
+  // will be created in CreateTracksFromSsrcInfos, containing all the SSRCs from
+  // the m= section.
+  CreateTracksFromSsrcInfos(ssrc_infos, stream_id, track_id, &tracks);
 
   // Add the ssrc group to the track.
   for (SsrcGroupVec::iterator ssrc_group = ssrc_groups.begin();
