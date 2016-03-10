@@ -518,7 +518,7 @@ class WebRtcSessionTest
   void GetOptionsForOffer(
       const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
       cricket::MediaSessionOptions* session_options) {
-    ASSERT_TRUE(ExtractMediaSessionOptions(rtc_options, session_options));
+    ASSERT_TRUE(ExtractMediaSessionOptions(rtc_options, true, session_options));
 
     AddStreamsToOptions(session_options);
     if (rtc_options.offer_to_receive_audio ==

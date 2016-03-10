@@ -417,6 +417,7 @@ class RemoteMediaStreamFactory {
 
 bool ExtractMediaSessionOptions(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
+    bool is_offer,
     cricket::MediaSessionOptions* session_options) {
   typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
   if (!IsValidOfferToReceiveMedia(rtc_options.offer_to_receive_audio) ||
@@ -424,11 +425,20 @@ bool ExtractMediaSessionOptions(
     return false;
   }
 
+  // If constraints don't prevent us, we always accept video.
   if (rtc_options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
     session_options->recv_audio = (rtc_options.offer_to_receive_audio > 0);
+  } else {
+    session_options->recv_audio = true;
   }
+  // For offers, we only offer video if we have it or it's forced by options.
+  // For answers, we will always accept video (if offered).
   if (rtc_options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
     session_options->recv_video = (rtc_options.offer_to_receive_video > 0);
+  } else if (is_offer) {
+    session_options->recv_video = false;
+  } else {
+    session_options->recv_video = true;
   }
 
   session_options->vad_enabled = rtc_options.voice_activity_detection;
@@ -1497,7 +1507,7 @@ bool PeerConnection::GetOptionsForOffer(
           cricket::TransportOptions();
     }
   }
-  if (!ExtractMediaSessionOptions(rtc_options, session_options)) {
+  if (!ExtractMediaSessionOptions(rtc_options, true, session_options)) {
     return false;
   }
 
@@ -1568,7 +1578,7 @@ bool PeerConnection::GetOptionsForAnswer(
     cricket::MediaSessionOptions* session_options) {
   session_options->recv_audio = false;
   session_options->recv_video = false;
-  if (!ExtractMediaSessionOptions(options, session_options)) {
+  if (!ExtractMediaSessionOptions(options, false, session_options)) {
     return false;
   }
   FinishOptionsForAnswer(session_options);

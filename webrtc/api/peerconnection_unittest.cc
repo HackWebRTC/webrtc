@@ -155,9 +155,11 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const std::string& id,
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
-      rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
+      rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store,
+      bool prefer_constraint_apis) {
     PeerConnectionTestClient* client(new PeerConnectionTestClient(id));
-    if (!client->Init(constraints, options, std::move(dtls_identity_store))) {
+    if (!client->Init(constraints, options, std::move(dtls_identity_store),
+                      prefer_constraint_apis)) {
       delete client;
       return nullptr;
     }
@@ -172,8 +174,19 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
                                               : nullptr);
 
-    return CreateClientWithDtlsIdentityStore(id, constraints, options,
-                                             std::move(dtls_identity_store));
+    return CreateClientWithDtlsIdentityStore(
+        id, constraints, options, std::move(dtls_identity_store), true);
+  }
+
+  static PeerConnectionTestClient* CreateClientPreferNoConstraints(
+      const std::string& id,
+      const PeerConnectionFactory::Options* options) {
+    rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store(
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
+                                              : nullptr);
+
+    return CreateClientWithDtlsIdentityStore(
+        id, nullptr, options, std::move(dtls_identity_store), false);
   }
 
   ~PeerConnectionTestClient() {
@@ -336,7 +349,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   }
 
   void IceRestart() {
-    session_description_constraints_.SetMandatoryIceRestart(true);
+    offer_answer_constraints_.SetMandatoryIceRestart(true);
+    offer_answer_options_.ice_restart = true;
     SetExpectIceRestart(true);
   }
 
@@ -356,13 +370,15 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   void SetReceiveAudio(bool audio) {
     if (audio && can_receive_audio())
       return;
-    session_description_constraints_.SetMandatoryReceiveAudio(audio);
+    offer_answer_constraints_.SetMandatoryReceiveAudio(audio);
+    offer_answer_options_.offer_to_receive_audio = audio ? 1 : 0;
   }
 
   void SetReceiveVideo(bool video) {
     if (video && can_receive_video())
       return;
-    session_description_constraints_.SetMandatoryReceiveVideo(video);
+    offer_answer_constraints_.SetMandatoryReceiveVideo(video);
+    offer_answer_options_.offer_to_receive_video = video ? 1 : 0;
   }
 
   void RemoveMsidFromReceivedSdp(bool remove) { remove_msid_ = remove; }
@@ -373,22 +389,34 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   bool can_receive_audio() {
     bool value;
-    if (webrtc::FindConstraint(&session_description_constraints_,
-                               MediaConstraintsInterface::kOfferToReceiveAudio,
-                               &value, nullptr)) {
-      return value;
+    if (prefer_constraint_apis_) {
+      if (webrtc::FindConstraint(
+              &offer_answer_constraints_,
+              MediaConstraintsInterface::kOfferToReceiveAudio, &value,
+              nullptr)) {
+        return value;
+      }
+      return true;
     }
-    return true;
+    return offer_answer_options_.offer_to_receive_audio > 0 ||
+           offer_answer_options_.offer_to_receive_audio ==
+               PeerConnectionInterface::RTCOfferAnswerOptions::kUndefined;
   }
 
   bool can_receive_video() {
     bool value;
-    if (webrtc::FindConstraint(&session_description_constraints_,
-                               MediaConstraintsInterface::kOfferToReceiveVideo,
-                               &value, nullptr)) {
-      return value;
+    if (prefer_constraint_apis_) {
+      if (webrtc::FindConstraint(
+              &offer_answer_constraints_,
+              MediaConstraintsInterface::kOfferToReceiveVideo, &value,
+              nullptr)) {
+        return value;
+      }
+      return true;
     }
-    return true;
+    return offer_answer_options_.offer_to_receive_video > 0 ||
+           offer_answer_options_.offer_to_receive_video ==
+               PeerConnectionInterface::RTCOfferAnswerOptions::kUndefined;
   }
 
   void OnDataChannel(DataChannelInterface* data_channel) override {
@@ -745,9 +773,15 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   bool Init(
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
-      rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
+      rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store,
+      bool prefer_constraint_apis) {
     EXPECT_TRUE(!peer_connection_);
     EXPECT_TRUE(!peer_connection_factory_);
+    if (!prefer_constraint_apis) {
+      EXPECT_TRUE(!constraints);
+    }
+    prefer_constraint_apis_ = prefer_constraint_apis;
+
     rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
         new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
     fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
@@ -819,10 +853,18 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     rtc::scoped_refptr<MockCreateSessionDescriptionObserver>
         observer(new rtc::RefCountedObject<
             MockCreateSessionDescriptionObserver>());
-    if (offer) {
-      pc()->CreateOffer(observer, &session_description_constraints_);
+    if (prefer_constraint_apis_) {
+      if (offer) {
+        pc()->CreateOffer(observer, &offer_answer_constraints_);
+      } else {
+        pc()->CreateAnswer(observer, &offer_answer_constraints_);
+      }
     } else {
-      pc()->CreateAnswer(observer, &session_description_constraints_);
+      if (offer) {
+        pc()->CreateOffer(observer, offer_answer_options_);
+      } else {
+        pc()->CreateAnswer(observer, offer_answer_options_);
+      }
     }
     EXPECT_EQ_WAIT(true, observer->called(), kMaxWaitMs);
     *desc = observer->release_desc();
@@ -895,6 +937,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
 
+  bool prefer_constraint_apis_ = true;
   bool auto_add_stream_ = true;
 
   typedef std::pair<std::string, std::string> IceUfragPwdPair;
@@ -923,7 +966,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   // them, if required.
   std::vector<cricket::VideoCapturer*> video_capturers_;
 
-  webrtc::FakeConstraints session_description_constraints_;
+  webrtc::FakeConstraints offer_answer_constraints_;
+  PeerConnectionInterface::RTCOfferAnswerOptions offer_answer_options_;
   bool remove_msid_ = false;  // True if MSID should be removed in received SDP.
   bool remove_bundle_ =
       false;  // True if bundle should be removed in received SDP.
@@ -1031,6 +1075,22 @@ class P2PTestConductor : public testing::Test {
                          MediaConstraintsInterface* recv_constraints) {
     return CreateTestClients(init_constraints, nullptr, recv_constraints,
                              nullptr);
+  }
+
+  bool CreateTestClientsThatPreferNoConstraints() {
+    initiating_client_.reset(
+        PeerConnectionTestClient::CreateClientPreferNoConstraints("Caller: ",
+                                                                  nullptr));
+    receiving_client_.reset(
+        PeerConnectionTestClient::CreateClientPreferNoConstraints("Callee: ",
+                                                                  nullptr));
+    if (!initiating_client_ || !receiving_client_) {
+      return false;
+    }
+    // Remember the choice for possible later resets of the clients.
+    prefer_constraint_apis_ = false;
+    SetSignalingReceivers();
+    return true;
   }
 
   void SetSignalingReceivers() {
@@ -1141,7 +1201,7 @@ class P2PTestConductor : public testing::Test {
     // Make sure the new client is using a different certificate.
     return PeerConnectionTestClient::CreateClientWithDtlsIdentityStore(
         "New Peer: ", &setup_constraints, nullptr,
-        std::move(dtls_identity_store));
+        std::move(dtls_identity_store), prefer_constraint_apis_);
   }
 
   void SendRtpData(webrtc::DataChannelInterface* dc, const std::string& data) {
@@ -1186,6 +1246,7 @@ class P2PTestConductor : public testing::Test {
   rtc::SocketServerScope ss_scope_;
   rtc::scoped_ptr<PeerConnectionTestClient> initiating_client_;
   rtc::scoped_ptr<PeerConnectionTestClient> receiving_client_;
+  bool prefer_constraint_apis_ = true;
 };
 
 // Disable for TSan v2, see
@@ -1248,6 +1309,12 @@ TEST_F(P2PTestConductor, LocalP2PTestDtls) {
 // responder.
 TEST_F(P2PTestConductor, OneWayMediaCall) {
   ASSERT_TRUE(CreateTestClients());
+  receiving_client()->set_auto_add_stream(false);
+  LocalP2PTest();
+}
+
+TEST_F(P2PTestConductor, OneWayMediaCallWithoutConstraints) {
+  ASSERT_TRUE(CreateTestClientsThatPreferNoConstraints());
   receiving_client()->set_auto_add_stream(false);
   LocalP2PTest();
 }

@@ -35,6 +35,7 @@ class VideoRtpReceiver;
 // them to be populated from |rtc_options|.
 bool ExtractMediaSessionOptions(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
+    bool is_offer,
     cricket::MediaSessionOptions* session_options);
 
 // Populates |session_options| from |constraints|, and returns true if all
