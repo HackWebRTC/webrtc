@@ -248,6 +248,10 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
       _peerConnection->ice_gathering_state()];
 }
 
+- (BOOL)setConfiguration:(RTCConfiguration *)configuration {
+  return _peerConnection->SetConfiguration(configuration.nativeConfiguration);
+}
+
 - (void)close {
   _peerConnection->Close();
 }

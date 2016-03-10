@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSString *type;
 
 /** The identifier for this object. */
-@property(nonatomic, readonly) NSString *statsId;
+@property(nonatomic, readonly) NSString *reportId;
 
 /** A dictionary holding the actual stats. */
 @property(nonatomic, readonly) NSDictionary<NSString *, NSString *> *values;

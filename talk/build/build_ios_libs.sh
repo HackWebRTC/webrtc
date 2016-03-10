@@ -73,7 +73,8 @@ function build_webrtc {
   else
     FLAVOR="${FLAVOR}-iphonesimulator"
   fi
-  export GYP_DEFINES="OS=ios target_arch=${TARGET_ARCH} clang_xcode=1"
+  export GYP_DEFINES="OS=ios target_arch=${TARGET_ARCH} use_objc_h264=1 \
+clang_xcode=1"
   export GYP_GENERATORS="ninja"
   export GYP_GENERATOR_FLAGS="output_dir=${OUTPUT_DIR}"
   webrtc/build/gyp_webrtc talk/build/merge_ios_libs.gyp

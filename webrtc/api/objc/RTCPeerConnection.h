@@ -129,6 +129,14 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
     (nullable id<RTCPeerConnectionDelegate>)delegate
     NS_DESIGNATED_INITIALIZER;
 
+/** Sets the PeerConnection's global configuration to |configuration|.
+ *  Any changes to STUN/TURN servers or ICE candidate policy will affect the
+ *  next gathering phase, and cause the next call to createOffer to generate
+ *  new ICE credentials. Note that the BUNDLE and RTCP-multiplexing policies
+ *  cannot be changed with this method.
+ */
+- (BOOL)setConfiguration:(RTCConfiguration *)configuration;
+
 /** Terminate all media and close the transport. */
 - (void)close;
 
