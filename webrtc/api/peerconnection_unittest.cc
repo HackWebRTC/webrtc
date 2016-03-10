@@ -74,6 +74,8 @@ using webrtc::PeerConnectionFactory;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollectionInterface;
 
+namespace {
+
 static const int kMaxWaitMs = 10000;
 // Disable for TSan v2, see
 // https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
@@ -110,6 +112,26 @@ static void RemoveLinesFromSdp(const std::string& line_start,
     size_t end_ssrc = sdp->find(kSdpLineEnd, ssrc_pos);
     sdp->erase(ssrc_pos, end_ssrc - ssrc_pos + strlen(kSdpLineEnd));
   }
+}
+
+bool StreamsHaveAudioTrack(StreamCollectionInterface* streams) {
+  for (size_t idx = 0; idx < streams->count(); idx++) {
+    auto stream = streams->at(idx);
+    if (stream->GetAudioTracks().size() > 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool StreamsHaveVideoTrack(StreamCollectionInterface* streams) {
+  for (size_t idx = 0; idx < streams->count(); idx++) {
+    auto stream = streams->at(idx);
+    if (stream->GetVideoTracks().size() > 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 class SignalingMessageReceiver {
@@ -415,7 +437,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     return data_observer_.get();
   }
 
-  webrtc::PeerConnectionInterface* pc() { return peer_connection_.get(); }
+  webrtc::PeerConnectionInterface* pc() const { return peer_connection_.get(); }
 
   void StopVideoCapturers() {
     for (std::vector<cricket::VideoCapturer*>::iterator it =
@@ -440,7 +462,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       if (decoders.empty()) {
         return number_of_frames <= 0;
       }
-
+      // Note - this checks that EACH decoder has the requisite number
+      // of frames. The video_frames_received() function sums them.
       for (FakeWebRtcVideoDecoder* decoder : decoders) {
         if (number_of_frames > decoder->GetNumFramesReceived()) {
           return false;
@@ -660,7 +683,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     return pc()->remote_streams()->count();
   }
 
-  StreamCollectionInterface* remote_streams() {
+  StreamCollectionInterface* remote_streams() const {
     if (!pc()) {
       ADD_FAILURE();
       return nullptr;
@@ -675,6 +698,10 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     }
     return pc()->local_streams();
   }
+
+  bool HasLocalAudioTrack() { return StreamsHaveAudioTrack(local_streams()); }
+
+  bool HasLocalVideoTrack() { return StreamsHaveVideoTrack(local_streams()); }
 
   webrtc::PeerConnectionInterface::SignalingState signaling_state() {
     return pc()->signaling_state();
@@ -919,22 +946,34 @@ class P2PTestConductor : public testing::Test {
            receiving_client_->SessionActive();
   }
 
-  // Return true if the number of frames provided have been received or it is
-  // known that that will never occur (e.g. no frames will be sent or
-  // captured).
-  bool FramesNotPending(int audio_frames_to_receive,
-                        int video_frames_to_receive) {
-    return VideoFramesReceivedCheck(video_frames_to_receive) &&
-        AudioFramesReceivedCheck(audio_frames_to_receive);
+  // Return true if the number of frames provided have been received
+  // on the video and audio tracks provided.
+  bool FramesHaveArrived(int audio_frames_to_receive,
+                         int video_frames_to_receive) {
+    bool all_good = true;
+    if (initiating_client_->HasLocalAudioTrack() &&
+        receiving_client_->can_receive_audio()) {
+      all_good &=
+          receiving_client_->AudioFramesReceivedCheck(audio_frames_to_receive);
+    }
+    if (initiating_client_->HasLocalVideoTrack() &&
+        receiving_client_->can_receive_video()) {
+      all_good &=
+          receiving_client_->VideoFramesReceivedCheck(video_frames_to_receive);
+    }
+    if (receiving_client_->HasLocalAudioTrack() &&
+        initiating_client_->can_receive_audio()) {
+      all_good &=
+          initiating_client_->AudioFramesReceivedCheck(audio_frames_to_receive);
+    }
+    if (receiving_client_->HasLocalVideoTrack() &&
+        initiating_client_->can_receive_video()) {
+      all_good &=
+          initiating_client_->VideoFramesReceivedCheck(video_frames_to_receive);
+    }
+    return all_good;
   }
-  bool AudioFramesReceivedCheck(int frames_received) {
-    return initiating_client_->AudioFramesReceivedCheck(frames_received) &&
-        receiving_client_->AudioFramesReceivedCheck(frames_received);
-  }
-  bool VideoFramesReceivedCheck(int frames_received) {
-    return initiating_client_->VideoFramesReceivedCheck(frames_received) &&
-        receiving_client_->VideoFramesReceivedCheck(frames_received);
-  }
+
   void VerifyDtmf() {
     initiating_client_->VerifyDtmf();
     receiving_client_->VerifyDtmf();
@@ -1039,51 +1078,43 @@ class P2PTestConductor : public testing::Test {
     VerifySessionDescriptions();
 
     int audio_frame_count = kEndAudioFrameCount;
-    // TODO(ronghuawu): Add test to cover the case of sendonly and recvonly.
-    if (!initiating_client_->can_receive_audio() ||
-        !receiving_client_->can_receive_audio()) {
-      audio_frame_count = -1;
-    }
     int video_frame_count = kEndVideoFrameCount;
-    if (!initiating_client_->can_receive_video() ||
-        !receiving_client_->can_receive_video()) {
-      video_frame_count = -1;
+    // TODO(ronghuawu): Add test to cover the case of sendonly and recvonly.
+
+    if ((!initiating_client_->can_receive_audio() &&
+         !initiating_client_->can_receive_video()) ||
+        (!receiving_client_->can_receive_audio() &&
+         !receiving_client_->can_receive_video())) {
+      // Neither audio nor video will flow, so connections won't be
+      // established. There's nothing more to check.
+      // TODO(hta): Check connection if there's a data channel.
+      return;
     }
 
-    if (audio_frame_count != -1 || video_frame_count != -1) {
-      // Audio or video is expected to flow, so both clients should reach the
-      // Connected state, and the offerer (ICE controller) should proceed to
-      // Completed.
-      // Note: These tests have been observed to fail under heavy load at
-      // shorter timeouts, so they may be flaky.
-      EXPECT_EQ_WAIT(
-          webrtc::PeerConnectionInterface::kIceConnectionCompleted,
-          initiating_client_->ice_connection_state(),
-          kMaxWaitForFramesMs);
-      EXPECT_EQ_WAIT(
-          webrtc::PeerConnectionInterface::kIceConnectionConnected,
-          receiving_client_->ice_connection_state(),
-          kMaxWaitForFramesMs);
-    }
+    // Audio or video is expected to flow, so both clients should reach the
+    // Connected state, and the offerer (ICE controller) should proceed to
+    // Completed.
+    // Note: These tests have been observed to fail under heavy load at
+    // shorter timeouts, so they may be flaky.
+    EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
+                   initiating_client_->ice_connection_state(),
+                   kMaxWaitForFramesMs);
+    EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
+                   receiving_client_->ice_connection_state(),
+                   kMaxWaitForFramesMs);
 
-    if (initiating_client_->can_receive_audio() ||
-        initiating_client_->can_receive_video()) {
-      // The initiating client can receive media, so it must produce candidates
-      // that will serve as destinations for that media.
-      // TODO(bemasc): Understand why the state is not already Complete here, as
-      // seems to be the case for the receiving client. This may indicate a bug
-      // in the ICE gathering system.
-      EXPECT_NE(webrtc::PeerConnectionInterface::kIceGatheringNew,
-                initiating_client_->ice_gathering_state());
-    }
-    if (receiving_client_->can_receive_audio() ||
-        receiving_client_->can_receive_video()) {
-      EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceGatheringComplete,
-                     receiving_client_->ice_gathering_state(),
-                     kMaxWaitForFramesMs);
-    }
+    // The ICE gathering state should end up in kIceGatheringComplete,
+    // but there's a bug that prevents this at the moment, and the state
+    // machine is being updated by the WEBRTC WG.
+    // TODO(hta): Update this check when spec revisions finish.
+    EXPECT_NE(webrtc::PeerConnectionInterface::kIceGatheringNew,
+              initiating_client_->ice_gathering_state());
+    EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceGatheringComplete,
+                   receiving_client_->ice_gathering_state(),
+                   kMaxWaitForFramesMs);
 
-    EXPECT_TRUE_WAIT(FramesNotPending(audio_frame_count, video_frame_count),
+    // Check that the expected number of frames have arrived.
+    EXPECT_TRUE_WAIT(FramesHaveArrived(audio_frame_count, video_frame_count),
                      kMaxWaitForFramesMs);
   }
 
@@ -1211,6 +1242,14 @@ TEST_F(P2PTestConductor, DISABLED_LocalP2PTest1280By720) {
 // DTLS key agreement. As a result, DTLS is negotiated and used for transport.
 TEST_F(P2PTestConductor, LocalP2PTestDtls) {
   SetupAndVerifyDtlsCall();
+}
+
+// This test sets up an one-way call, with media only from initiator to
+// responder.
+TEST_F(P2PTestConductor, OneWayMediaCall) {
+  ASSERT_TRUE(CreateTestClients());
+  receiving_client()->set_auto_add_stream(false);
+  LocalP2PTest();
 }
 
 // This test sets up a audio call initially and then upgrades to audio/video,
@@ -1819,7 +1858,7 @@ TEST_F(P2PTestConductor, EarlyWarmupTest) {
       audio_sender->SetTrack(initializing_client()->CreateLocalAudioTrack("")));
   EXPECT_TRUE(
       video_sender->SetTrack(initializing_client()->CreateLocalVideoTrack("")));
-  EXPECT_TRUE_WAIT(FramesNotPending(kEndAudioFrameCount, kEndVideoFrameCount),
+  EXPECT_TRUE_WAIT(FramesHaveArrived(kEndAudioFrameCount, kEndVideoFrameCount),
                    kMaxWaitForFramesMs);
 }
 
@@ -2013,3 +2052,5 @@ TEST_F(IceServerParsingTest, TurnServerPrioritiesUnique) {
 }
 
 #endif // if !defined(THREAD_SANITIZER)
+
+}  // namespace
