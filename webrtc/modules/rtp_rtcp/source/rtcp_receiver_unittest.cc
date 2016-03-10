@@ -157,6 +157,13 @@ TEST_F(RtcpReceiverTest, BrokenPacketIsIgnored) {
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
+TEST_F(RtcpReceiverTest, InvalidFeedbackPacketIsIgnored) {
+  // Too short feedback packet.
+  const uint8_t bad_packet[] = {0x80, RTCPUtility::PT_RTPFB, 0, 0};
+  EXPECT_EQ(0, InjectRtcpPacket(bad_packet, sizeof(bad_packet)));
+  EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
+}
+
 TEST_F(RtcpReceiverTest, InjectSrPacket) {
   const uint32_t kSenderSsrc = 0x10203;
   rtcp::SenderReport sr;

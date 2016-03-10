@@ -230,6 +230,7 @@ RTCPUtility::RTCPParserV2::IterateTopLevel()
         {
           if (!ParseFBCommon(header)) {
             // Nothing supported found, continue to next block!
+            EndCurrentBlock();
             break;
           }
           return;
