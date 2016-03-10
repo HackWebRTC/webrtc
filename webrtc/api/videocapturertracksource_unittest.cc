@@ -182,27 +182,6 @@ TEST_F(VideoCapturerTrackSourceTest, StopRestart) {
   source_->Stop();
 }
 
-// Test start stop with a remote VideoSource - the video source that has a
-// RemoteVideoCapturer and takes video frames from FrameInput.
-TEST_F(VideoCapturerTrackSourceTest, StartStopRemote) {
-  source_ = VideoCapturerTrackSource::Create(
-      rtc::Thread::Current(), new webrtc::RemoteVideoCapturer(), NULL, true);
-
-  ASSERT_TRUE(source_.get() != NULL);
-  EXPECT_TRUE(NULL != source_->GetVideoCapturer());
-
-  state_observer_.reset(new StateObserver(source_));
-  source_->RegisterObserver(state_observer_.get());
-  source_->AddOrUpdateSink(&renderer_, rtc::VideoSinkWants());
-
-  EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
-                 kMaxWaitMs);
-
-  source_->GetVideoCapturer()->Stop();
-  EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
-                 kMaxWaitMs);
-}
-
 // Test that a VideoSource transition to kEnded if the capture device
 // fails.
 TEST_F(VideoCapturerTrackSourceTest, CameraFailed) {

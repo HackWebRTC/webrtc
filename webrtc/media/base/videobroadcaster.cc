@@ -25,6 +25,7 @@ void VideoBroadcaster::AddOrUpdateSink(
     const VideoSinkWants& wants) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(sink != nullptr);
+  rtc::CritScope cs(&sinks_and_wants_lock_);
 
   SinkPair* sink_pair = FindSinkPair(sink);
   if (!sink_pair) {
@@ -39,8 +40,8 @@ void VideoBroadcaster::RemoveSink(
     VideoSinkInterface<cricket::VideoFrame>* sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(sink != nullptr);
+  rtc::CritScope cs(&sinks_and_wants_lock_);
   RTC_DCHECK(FindSinkPair(sink));
-
   sinks_.erase(std::remove_if(sinks_.begin(), sinks_.end(),
                               [sink](const SinkPair& sink_pair) {
                                 return sink_pair.sink == sink;
@@ -51,16 +52,18 @@ void VideoBroadcaster::RemoveSink(
 
 bool VideoBroadcaster::frame_wanted() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  rtc::CritScope cs(&sinks_and_wants_lock_);
   return !sinks_.empty();
 }
 
 VideoSinkWants VideoBroadcaster::wants() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  rtc::CritScope cs(&sinks_and_wants_lock_);
   return current_wants_;
 }
 
 void VideoBroadcaster::OnFrame(const cricket::VideoFrame& frame) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  rtc::CritScope cs(&sinks_and_wants_lock_);
   for (auto& sink_pair : sinks_) {
     sink_pair.sink->OnFrame(frame);
   }

@@ -32,9 +32,16 @@ void VideoTrackSource::SetState(SourceState new_state) {
   }
 }
 
+void VideoTrackSource::OnSourceDestroyed() {
+  source_ = nullptr;
+}
+
 void VideoTrackSource::AddOrUpdateSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
+  if (!source_) {
+    return;
+  }
   worker_thread_->Invoke<void>(rtc::Bind(
       &rtc::VideoSourceInterface<cricket::VideoFrame>::AddOrUpdateSink, source_,
       sink, wants));
@@ -42,6 +49,9 @@ void VideoTrackSource::AddOrUpdateSink(
 
 void VideoTrackSource::RemoveSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+  if (!source_) {
+    return;
+  }
   worker_thread_->Invoke<void>(
       rtc::Bind(&rtc::VideoSourceInterface<cricket::VideoFrame>::RemoveSink,
                 source_, sink));

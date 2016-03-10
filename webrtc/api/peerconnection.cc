@@ -381,10 +381,8 @@ namespace webrtc {
 // Factory class for creating remote MediaStreams and MediaStreamTracks.
 class RemoteMediaStreamFactory {
  public:
-  explicit RemoteMediaStreamFactory(rtc::Thread* signaling_thread,
-                                    rtc::Thread* worker_thread)
-      : signaling_thread_(signaling_thread),
-        worker_thread_(worker_thread) {}
+  explicit RemoteMediaStreamFactory(rtc::Thread* signaling_thread)
+      : signaling_thread_(signaling_thread) {}
 
   rtc::scoped_refptr<MediaStreamInterface> CreateMediaStream(
       const std::string& stream_label) {
@@ -398,15 +396,6 @@ class RemoteMediaStreamFactory {
                                      const std::string& track_id) {
     return AddTrack<AudioTrackInterface, AudioTrack, AudioTrackProxy>(
         stream, track_id, RemoteAudioSource::Create(ssrc, provider));
-  }
-
-  VideoTrackInterface* AddVideoTrack(webrtc::MediaStreamInterface* stream,
-                                     const std::string& track_id) {
-    return AddTrack<VideoTrackInterface, VideoTrack, VideoTrackProxy>(
-        stream, track_id,
-        VideoCapturerTrackSource::Create(
-            worker_thread_, new RemoteVideoCapturer(), nullptr, true)
-            .get());
   }
 
  private:
@@ -424,7 +413,6 @@ class RemoteMediaStreamFactory {
   }
 
   rtc::Thread* signaling_thread_;
-  rtc::Thread* worker_thread_;
 };
 
 bool ExtractMediaSessionOptions(
@@ -611,8 +599,8 @@ bool PeerConnection::Initialize(
 
   media_controller_.reset(factory_->CreateMediaController(media_config));
 
-  remote_stream_factory_.reset(new RemoteMediaStreamFactory(
-      factory_->signaling_thread(), factory_->worker_thread()));
+  remote_stream_factory_.reset(
+      new RemoteMediaStreamFactory(factory_->signaling_thread()));
 
   session_.reset(
       new WebRtcSession(media_controller_.get(), factory_->signaling_thread(),
@@ -1325,11 +1313,12 @@ void PeerConnection::CreateAudioReceiver(MediaStreamInterface* stream,
 }
 
 void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
-                                         VideoTrackInterface* video_track,
+                                         const std::string& track_id,
                                          uint32_t ssrc) {
-  receivers_.push_back(RtpReceiverProxy::Create(
-      signaling_thread(),
-      new VideoRtpReceiver(video_track, ssrc, session_.get())));
+  VideoRtpReceiver* video_receiver = new VideoRtpReceiver(
+      stream, track_id, factory_->worker_thread(), ssrc, session_.get());
+  receivers_.push_back(
+      RtpReceiverProxy::Create(signaling_thread(), video_receiver));
 }
 
 // TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote
@@ -1677,9 +1666,7 @@ void PeerConnection::OnRemoteTrackSeen(const std::string& stream_label,
         ssrc, session_.get(), stream, track_id);
     CreateAudioReceiver(stream, audio_track, ssrc);
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
-    VideoTrackInterface* video_track =
-        remote_stream_factory_->AddVideoTrack(stream, track_id);
-    CreateVideoReceiver(stream, video_track, ssrc);
+    CreateVideoReceiver(stream, track_id, ssrc);
   } else {
     RTC_DCHECK(false && "Invalid media type");
   }
@@ -1702,8 +1689,9 @@ void PeerConnection::OnRemoteTrackRemoved(const std::string& stream_label,
     rtc::scoped_refptr<VideoTrackInterface> video_track =
         stream->FindVideoTrack(track_id);
     if (video_track) {
-      video_track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
       stream->RemoveTrack(video_track);
+      // Stopping or destroying a VideoRtpReceiver will end the
+      // VideoRtpReceiver::track().
       DestroyVideoReceiver(stream, video_track);
     }
   } else {

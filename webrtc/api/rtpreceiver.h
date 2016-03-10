@@ -19,7 +19,9 @@
 
 #include "webrtc/api/mediastreamprovider.h"
 #include "webrtc/api/rtpreceiverinterface.h"
+#include "webrtc/api/videotracksource.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/media/base/videobroadcaster.h"
 
 namespace webrtc {
 
@@ -60,11 +62,17 @@ class AudioRtpReceiver : public ObserverInterface,
 
 class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInterface> {
  public:
-  VideoRtpReceiver(VideoTrackInterface* track,
+  VideoRtpReceiver(MediaStreamInterface* stream,
+                   const std::string& track_id,
+                   rtc::Thread* worker_thread,
                    uint32_t ssrc,
                    VideoProviderInterface* provider);
 
   virtual ~VideoRtpReceiver();
+
+  rtc::scoped_refptr<VideoTrackInterface> video_track() const {
+    return track_.get();
+  }
 
   // RtpReceiverInterface implementation
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
@@ -77,9 +85,16 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInterface> {
 
  private:
   std::string id_;
-  rtc::scoped_refptr<VideoTrackInterface> track_;
   uint32_t ssrc_;
   VideoProviderInterface* provider_;
+  // |broadcaster_| is needed since the decoder can only handle one sink.
+  // It might be better if the decoder can handle multiple sinks and consider
+  // the VideoSinkWants.
+  rtc::VideoBroadcaster broadcaster_;
+  // |source_| is held here to be able to change the state of the source when
+  // the VideoRtpReceiver is stopped.
+  rtc::scoped_refptr<VideoTrackSource> source_;
+  rtc::scoped_refptr<VideoTrackInterface> track_;
 };
 
 }  // namespace webrtc

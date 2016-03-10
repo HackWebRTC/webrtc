@@ -1616,6 +1616,8 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
     }
   }
   capturer_ = capturer;
+  // |capturer_->AddOrUpdateSink| may not be called while holding |lock_| since
+  // that might cause a lock order inversion.
   capturer_->AddOrUpdateSink(this, sink_wants_);
   return true;
 }
@@ -1631,6 +1633,8 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
     return false;
   }
 
+  // |capturer_->RemoveSink| may not be called while holding |lock_| since
+  // that might cause a lock order inversion.
   capturer_->RemoveSink(this);
   capturer_ = NULL;
   // Reset |cpu_restricted_counter_| if the capturer is changed. It is not
@@ -1755,46 +1759,54 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
     const ChangedSendParameters& params) {
-  rtc::CritScope cs(&lock_);
-  // |recreate_stream| means construction-time parameters have changed and the
-  // sending stream needs to be reset with the new config.
-  bool recreate_stream = false;
-  if (params.rtcp_mode) {
-    parameters_.config.rtp.rtcp_mode = *params.rtcp_mode;
-    recreate_stream = true;
-  }
+  {
+    rtc::CritScope cs(&lock_);
+    // |recreate_stream| means construction-time parameters have changed and the
+    // sending stream needs to be reset with the new config.
+    bool recreate_stream = false;
+    if (params.rtcp_mode) {
+      parameters_.config.rtp.rtcp_mode = *params.rtcp_mode;
+      recreate_stream = true;
+    }
+    if (params.rtp_header_extensions) {
+      parameters_.config.rtp.extensions = *params.rtp_header_extensions;
+      recreate_stream = true;
+    }
+    if (params.max_bandwidth_bps) {
+      // Max bitrate has changed, reconfigure encoder settings on the next frame
+      // or stream recreation.
+      parameters_.max_bitrate_bps = *params.max_bandwidth_bps;
+      pending_encoder_reconfiguration_ = true;
+    }
+    if (params.conference_mode) {
+      parameters_.conference_mode = *params.conference_mode;
+    }
+    if (params.options)
+      SetOptions(*params.options);
+
+    // Set codecs and options.
+    if (params.codec) {
+      SetCodec(*params.codec);
+      return;
+    } else if (params.conference_mode && parameters_.codec_settings) {
+      SetCodec(*parameters_.codec_settings);
+      return;
+    }
+    if (recreate_stream) {
+      LOG(LS_INFO)
+          << "RecreateWebRtcStream (send) because of SetSendParameters";
+      RecreateWebRtcStream();
+    }
+  } // release |lock_|
+
+  // |capturer_->AddOrUpdateSink| may not be called while holding |lock_| since
+  // that might cause a lock order inversion.
   if (params.rtp_header_extensions) {
-    parameters_.config.rtp.extensions = *params.rtp_header_extensions;
     sink_wants_.rotation_applied = !ContainsHeaderExtension(
         *params.rtp_header_extensions, kRtpVideoRotationHeaderExtension);
     if (capturer_) {
       capturer_->AddOrUpdateSink(this, sink_wants_);
     }
-    recreate_stream = true;
-  }
-  if (params.max_bandwidth_bps) {
-    // Max bitrate has changed, reconfigure encoder settings on the next frame
-    // or stream recreation.
-    parameters_.max_bitrate_bps = *params.max_bandwidth_bps;
-    pending_encoder_reconfiguration_ = true;
-  }
-  if (params.conference_mode) {
-    parameters_.conference_mode = *params.conference_mode;
-  }
-  if (params.options)
-    SetOptions(*params.options);
-
-  // Set codecs and options.
-  if (params.codec) {
-    SetCodec(*params.codec);
-    return;
-  } else if (params.conference_mode && parameters_.codec_settings) {
-    SetCodec(*parameters_.codec_settings);
-    return;
-  }
-  if (recreate_stream) {
-    LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetSendParameters";
-    RecreateWebRtcStream();
   }
 }
 
@@ -1961,6 +1973,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
     sink_wants_.max_pixel_count = max_pixel_count;
     sink_wants_.max_pixel_count_step_up = max_pixel_count_step_up;
   }
+  // |capturer_->AddOrUpdateSink| may not be called while holding |lock_| since
+  // that might cause a lock order inversion.
   capturer_->AddOrUpdateSink(this, sink_wants_);
 }
 

@@ -50,10 +50,6 @@ void VideoTrack::RemoveSink(
   renderers_.RemoveSink(sink);
 }
 
-rtc::VideoSinkInterface<cricket::VideoFrame>* VideoTrack::GetSink() {
-  return &renderers_;
-}
-
 bool VideoTrack::set_enabled(bool enable) {
   renderers_.SetEnabled(enable);
   return MediaStreamTrack<VideoTrackInterface>::set_enabled(enable);

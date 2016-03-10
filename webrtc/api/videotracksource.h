@@ -24,20 +24,26 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
   VideoTrackSource(rtc::VideoSourceInterface<cricket::VideoFrame>* source,
                    rtc::Thread* worker_thread,
                    bool remote);
-
   void SetState(SourceState new_state);
+  // OnSourceDestroyed clears this instance pointer to |source_|. It is useful
+  // when the underlying rtc::VideoSourceInterface is destroyed before the
+  // reference counted VideoTrackSource.
+  void OnSourceDestroyed();
+
   SourceState state() const override { return state_; }
   bool remote() const override { return remote_; }
 
   void Stop() override{};
   void Restart() override{};
 
-  virtual bool is_screencast() const { return false; };
-  virtual bool needs_denoising() const { return false; };
+  virtual bool is_screencast() const { return false; }
+  virtual bool needs_denoising() const { return false; }
 
   void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
+
+  cricket::VideoCapturer* GetVideoCapturer() override { return nullptr; }
 
  protected:
   rtc::Thread* worker_thread() { return worker_thread_; }

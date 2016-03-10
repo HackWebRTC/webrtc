@@ -10,7 +10,8 @@
 
 #include "webrtc/api/rtpreceiver.h"
 
-#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/mediastreamtrackproxy.h"
+#include "webrtc/api/videotrack.h"
 
 namespace webrtc {
 
@@ -65,11 +66,27 @@ void AudioRtpReceiver::Reconfigure() {
   provider_->SetAudioPlayout(ssrc_, track_->enabled());
 }
 
-VideoRtpReceiver::VideoRtpReceiver(VideoTrackInterface* track,
+VideoRtpReceiver::VideoRtpReceiver(MediaStreamInterface* stream,
+                                   const std::string& track_id,
+                                   rtc::Thread* worker_thread,
                                    uint32_t ssrc,
                                    VideoProviderInterface* provider)
-    : id_(track->id()), track_(track), ssrc_(ssrc), provider_(provider) {
-  provider_->SetVideoPlayout(ssrc_, true, track_->GetSink());
+    : id_(track_id),
+      ssrc_(ssrc),
+      provider_(provider),
+      source_(new RefCountedObject<VideoTrackSource>(&broadcaster_,
+                                                     worker_thread,
+                                                     true /* remote */)),
+      track_(VideoTrackProxy::Create(
+          rtc::Thread::Current(),
+          VideoTrack::Create(track_id, source_.get()))) {
+  source_->SetState(MediaSourceInterface::kLive);
+  // TODO(perkj): It should be enough to set the source state. All tracks
+  // belonging to the same source should get its state from the source.
+  // I.e. if a track has been cloned from a remote source.
+  track_->set_state(webrtc::MediaStreamTrackInterface::kLive);
+  provider_->SetVideoPlayout(ssrc_, true, &broadcaster_);
+  stream->AddTrack(track_);
 }
 
 VideoRtpReceiver::~VideoRtpReceiver() {
@@ -83,6 +100,11 @@ void VideoRtpReceiver::Stop() {
   if (!provider_) {
     return;
   }
+  source_->SetState(MediaSourceInterface::kEnded);
+  source_->OnSourceDestroyed();
+  // TODO(perkj): It should be enough to set the source state. All tracks
+  // belonging to the same source should get its state from the source.
+  track_->set_state(MediaStreamTrackInterface::kEnded);
   provider_->SetVideoPlayout(ssrc_, false, nullptr);
   provider_ = nullptr;
 }

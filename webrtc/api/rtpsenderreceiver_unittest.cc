@@ -150,12 +150,11 @@ class RtpSenderReceiverTest : public testing::Test {
   }
 
   void CreateVideoRtpReceiver() {
-    AddVideoTrack(true);
-    EXPECT_CALL(video_provider_,
-                SetVideoPlayout(kVideoSsrc, true,
-                                video_track_->GetSink()));
-    video_rtp_receiver_ = new VideoRtpReceiver(stream_->GetVideoTracks()[0],
-                                               kVideoSsrc, &video_provider_);
+    EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, true, _));
+    video_rtp_receiver_ =
+        new VideoRtpReceiver(stream_, kVideoTrackId, rtc::Thread::Current(),
+                             kVideoSsrc, &video_provider_);
+    video_track_ = video_rtp_receiver_->video_track();
   }
 
   void DestroyAudioRtpReceiver() {
@@ -242,6 +241,20 @@ TEST_F(RtpSenderReceiverTest, LocalVideoTrackDisable) {
   video_track_->set_enabled(true);
 
   DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, RemoteVideoTrackState) {
+  CreateVideoRtpReceiver();
+
+  EXPECT_EQ(webrtc::MediaStreamTrackInterface::kLive, video_track_->state());
+  EXPECT_EQ(webrtc::MediaSourceInterface::kLive,
+            video_track_->GetSource()->state());
+
+  DestroyVideoRtpReceiver();
+
+  EXPECT_EQ(webrtc::MediaStreamTrackInterface::kEnded, video_track_->state());
+  EXPECT_EQ(webrtc::MediaSourceInterface::kEnded,
+            video_track_->GetSource()->state());
 }
 
 TEST_F(RtpSenderReceiverTest, RemoteVideoTrackDisable) {

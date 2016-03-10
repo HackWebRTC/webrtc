@@ -11,38 +11,6 @@
 #ifndef WEBRTC_API_REMOTEVIDEOCAPTURER_H_
 #define WEBRTC_API_REMOTEVIDEOCAPTURER_H_
 
-#include <vector>
-
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/media/base/videocapturer.h"
-#include "webrtc/media/base/videorenderer.h"
-
-namespace webrtc {
-
-// RemoteVideoCapturer implements a simple cricket::VideoCapturer which
-// gets decoded remote video frames from media channel.
-// It's used as the remote video source's VideoCapturer so that the remote video
-// can be used as a cricket::VideoCapturer and in that way a remote video stream
-// can implement the MediaStreamSourceInterface.
-class RemoteVideoCapturer : public cricket::VideoCapturer {
- public:
-  RemoteVideoCapturer();
-  virtual ~RemoteVideoCapturer();
-
-  // cricket::VideoCapturer implementation.
-  cricket::CaptureState Start(
-      const cricket::VideoFormat& capture_format) override;
-  void Stop() override;
-  bool IsRunning() override;
-  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override;
-  bool GetBestCaptureFormat(const cricket::VideoFormat& desired,
-                            cricket::VideoFormat* best_format) override;
-  bool IsScreencast() const override;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(RemoteVideoCapturer);
-};
-
-}  // namespace webrtc
+// TODO(perkj): Remove this file once Chrome gyp file doesn't depend on it.
 
 #endif  // WEBRTC_API_REMOTEVIDEOCAPTURER_H_

@@ -27,6 +27,7 @@ namespace webrtc {
 
 class MediaStreamObserver;
 class RemoteMediaStreamFactory;
+class VideoRtpReceiver;
 
 // Populates |session_options| from |rtc_options|, and returns true if options
 // are valid.
@@ -167,8 +168,9 @@ class PeerConnection : public PeerConnectionInterface,
   void CreateAudioReceiver(MediaStreamInterface* stream,
                            AudioTrackInterface* audio_track,
                            uint32_t ssrc);
+
   void CreateVideoReceiver(MediaStreamInterface* stream,
-                           VideoTrackInterface* video_track,
+                           const std::string& track_id,
                            uint32_t ssrc);
   void DestroyAudioReceiver(MediaStreamInterface* stream,
                             AudioTrackInterface* audio_track);
