@@ -75,6 +75,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   // Main loop.
   webrtc::Clock* clock = webrtc::Clock::GetRealTimeClock();
   int64_t start_time_ms = clock->TimeInMilliseconds();
+  AudioFrame out_frame;
   while (time_now_ms < runtime_ms) {
     while (packet_input_time_ms <= time_now_ms) {
       // Drop every N packets, where N = FLAGS_lossrate.
@@ -104,7 +105,6 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
     }
 
     // Get output audio, but don't do anything with it.
-    AudioFrame out_frame;
     int error = neteq->GetAudio(&out_frame);
     if (error != NetEq::kOK)
       return -1;

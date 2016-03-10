@@ -541,6 +541,8 @@ class AudioFrame {
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioFrame);
 };
 
+// TODO(henrik.lundin) Can we remove the call to data_()?
+// See https://bugs.chromium.org/p/webrtc/issues/detail?id=5647.
 inline AudioFrame::AudioFrame()
     : data_() {
   Reset();
