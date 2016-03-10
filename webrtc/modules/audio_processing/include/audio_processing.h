@@ -508,6 +508,7 @@ class AudioProcessing {
   static const int kNativeSampleRatesHz[];
   static const size_t kNumNativeSampleRates;
   static const int kMaxNativeSampleRateHz;
+  static const int kMaxAECMSampleRateHz;
 
   static const int kChunkSizeMs = 10;
 };
