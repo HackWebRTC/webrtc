@@ -583,7 +583,7 @@ void RemoteBitrateEstimatorTest::TestWrappingHelper(
   absolute_send_time = AddAbsSendTime(absolute_send_time,
                                       AbsSendTime(silence_time_s, 1));
   bitrate_estimator_->Process();
-  for (size_t i = 0; i < 100; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
     IncomingPacket(kDefaultSsrc, 1000, clock_.TimeInMilliseconds(), timestamp,
                    absolute_send_time, true);
     timestamp += kFrameIntervalMs;

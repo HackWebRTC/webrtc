@@ -142,8 +142,10 @@ void OveruseDetector::UpdateThreshold(double modified_offset, int64_t now_ms) {
   }
 
   const double k = fabs(modified_offset) < threshold_ ? k_down_ : k_up_;
+  const int64_t kMaxTimeDeltaMs = 100;
+  int64_t time_delta_ms = std::min(now_ms - last_update_ms_, kMaxTimeDeltaMs);
   threshold_ +=
-      k * (fabs(modified_offset) - threshold_) * (now_ms - last_update_ms_);
+      k * (fabs(modified_offset) - threshold_) * time_delta_ms;
 
   const double kMinThreshold = 6;
   const double kMaxThreshold = 600;

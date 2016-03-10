@@ -39,11 +39,11 @@ TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, RateIncreaseRtpTimestamps) {
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropOneStream) {
-  CapacityDropTestHelper(1, false, 700);
+  CapacityDropTestHelper(1, false, 633);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropOneStreamWrap) {
-  CapacityDropTestHelper(1, true, 700);
+  CapacityDropTestHelper(1, true, 633);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropTwoStreamsWrap) {
@@ -55,7 +55,7 @@ TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropThreeStreamsWrap) {
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropThirteenStreamsWrap) {
-  CapacityDropTestHelper(13, true, 700);
+  CapacityDropTestHelper(13, true, 667);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropNineteenStreamsWrap) {
