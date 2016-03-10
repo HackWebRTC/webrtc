@@ -80,13 +80,10 @@ static bool LayoutHasKeyboard(AudioProcessing::ChannelLayout layout) {
 static_assert(AudioProcessing::kNoError == 0, "kNoError must be zero");
 
 struct AudioProcessingImpl::ApmPublicSubmodules {
-  ApmPublicSubmodules()
-      : echo_cancellation(nullptr),
-        echo_control_mobile(nullptr),
-        gain_control(nullptr) {}
+  ApmPublicSubmodules() : gain_control(nullptr) {}
   // Accessed externally of APM without any lock acquired.
   std::unique_ptr<EchoCancellationImpl> echo_cancellation;
-  EchoControlMobileImpl* echo_control_mobile;
+  std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
   GainControlImpl* gain_control;
   std::unique_ptr<HighPassFilterImpl> high_pass_filter;
   std::unique_ptr<LevelEstimatorImpl> level_estimator;
@@ -174,8 +171,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
 
     public_submodules_->echo_cancellation.reset(
         new EchoCancellationImpl(this, &crit_render_, &crit_capture_));
-    public_submodules_->echo_control_mobile =
-        new EchoControlMobileImpl(this, &crit_render_, &crit_capture_);
+    public_submodules_->echo_control_mobile.reset(
+        new EchoControlMobileImpl(this, &crit_render_, &crit_capture_));
     public_submodules_->gain_control =
         new GainControlImpl(this, &crit_capture_, &crit_capture_);
     public_submodules_->high_pass_filter.reset(
@@ -189,8 +186,6 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
     public_submodules_->gain_control_for_experimental_agc.reset(
         new GainControlForExperimentalAgc(public_submodules_->gain_control,
                                           &crit_capture_));
-    private_submodules_->component_list.push_back(
-        public_submodules_->echo_control_mobile);
     private_submodules_->component_list.push_back(
         public_submodules_->gain_control);
   }
@@ -324,6 +319,7 @@ int AudioProcessingImpl::InitializeLocked() {
   }
 
   InitializeEchoCanceller();
+  InitializeEchoControlMobile();
   InitializeExperimentalAgc();
   InitializeTransient();
   InitializeBeamformer();
@@ -1088,7 +1084,7 @@ EchoCancellation* AudioProcessingImpl::echo_cancellation() const {
 EchoControlMobile* AudioProcessingImpl::echo_control_mobile() const {
   // Adding a lock here has no effect as it allows any access to the submodule
   // from the returned pointer.
-  return public_submodules_->echo_control_mobile;
+  return public_submodules_->echo_control_mobile.get();
 }
 
 GainControl* AudioProcessingImpl::gain_control() const {
@@ -1130,7 +1126,8 @@ bool AudioProcessingImpl::is_data_processed() const {
   if (capture_nonlocked_.beamformer_enabled ||
       public_submodules_->high_pass_filter->is_enabled() ||
       public_submodules_->noise_suppression->is_enabled() ||
-      public_submodules_->echo_cancellation->is_enabled()) {
+      public_submodules_->echo_cancellation->is_enabled() ||
+      public_submodules_->echo_control_mobile->is_enabled()) {
     return true;
   }
 
@@ -1248,6 +1245,10 @@ void AudioProcessingImpl::InitializeNoiseSuppression() {
 
 void AudioProcessingImpl::InitializeEchoCanceller() {
   public_submodules_->echo_cancellation->Initialize();
+}
+
+void AudioProcessingImpl::InitializeEchoControlMobile() {
+  public_submodules_->echo_control_mobile->Initialize();
 }
 
 void AudioProcessingImpl::InitializeLevelEstimator() {

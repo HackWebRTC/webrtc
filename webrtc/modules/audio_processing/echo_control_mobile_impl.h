@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -22,8 +23,7 @@ namespace webrtc {
 
 class AudioBuffer;
 
-class EchoControlMobileImpl : public EchoControlMobile,
-                              public ProcessingComponent {
+class EchoControlMobileImpl : public EchoControlMobile {
  public:
   EchoControlMobileImpl(const AudioProcessing* apm,
                         rtc::CriticalSection* crit_render,
@@ -39,13 +39,14 @@ class EchoControlMobileImpl : public EchoControlMobile,
   RoutingMode routing_mode() const override;
   bool is_comfort_noise_enabled() const override;
 
-  // ProcessingComponent implementation.
-  int Initialize() override;
+  void Initialize();
 
   // Reads render side data that has been queued on the render call.
   void ReadQueuedRenderData();
 
  private:
+  class Canceller;
+
   // EchoControlMobile implementation.
   int Enable(bool enable) override;
   int set_routing_mode(RoutingMode mode) override;
@@ -53,22 +54,18 @@ class EchoControlMobileImpl : public EchoControlMobile,
   int SetEchoPath(const void* echo_path, size_t size_bytes) override;
   int GetEchoPath(void* echo_path, size_t size_bytes) const override;
 
-  // ProcessingComponent implementation.
-  // Called holding both the render and capture locks.
-  void* CreateHandle() const override;
-  int InitializeHandle(void* handle) const override;
-  int ConfigureHandle(void* handle) const override;
-  void DestroyHandle(void* handle) const override;
-  size_t num_handles_required() const override;
-  int GetHandleError(void* handle) const override;
+  size_t num_handles_required() const;
 
   void AllocateRenderQueue();
+  int Configure();
 
   // Not guarded as its public API is thread safe.
   const AudioProcessing* apm_;
 
   rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection* const crit_capture_;
+
+  bool enabled_ = false;
 
   RoutingMode routing_mode_ GUARDED_BY(crit_capture_);
   bool comfort_noise_enabled_ GUARDED_BY(crit_capture_);
@@ -85,6 +82,9 @@ class EchoControlMobileImpl : public EchoControlMobile,
   std::unique_ptr<
       SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
       render_signal_queue_;
+
+  std::vector<std::unique_ptr<Canceller>> cancellers_;
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoControlMobileImpl);
 };
 }  // namespace webrtc
 
