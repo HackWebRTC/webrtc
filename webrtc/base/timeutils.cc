@@ -193,17 +193,25 @@ int32_t TimeDiff(uint32_t later, uint32_t earlier) {
 }
 
 TimestampWrapAroundHandler::TimestampWrapAroundHandler()
-    : last_ts_(0), num_wrap_(0) {}
+    : last_ts_(0), num_wrap_(-1) {}
 
 int64_t TimestampWrapAroundHandler::Unwrap(uint32_t ts) {
-  if (ts < last_ts_) {
-    if (last_ts_ > 0xf0000000 && ts < 0x0fffffff) {
-      ++num_wrap_;
-    }
+  if (num_wrap_ == -1) {
+    last_ts_ = ts;
+    num_wrap_ = 0;
+    return ts;
   }
+
+  if (ts < last_ts_) {
+    if (last_ts_ >= 0xf0000000 && ts < 0x0fffffff)
+      ++num_wrap_;
+  } else if ((ts - last_ts_) > 0xf0000000) {
+    // Backwards wrap. Unwrap with last wrap count and don't update last_ts_.
+    return ts + ((num_wrap_ - 1) << 32);
+  }
+
   last_ts_ = ts;
-  int64_t unwrapped_ts = ts + (num_wrap_ << 32);
-  return unwrapped_ts;
+  return ts + (num_wrap_ << 32);
 }
 
 int64_t TmToSeconds(const std::tm& tm) {

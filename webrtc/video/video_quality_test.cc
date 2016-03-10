@@ -161,13 +161,13 @@ class VideoAnalyzer : public PacketReceiver,
     bool result = transport_->SendRtp(packet, length, options);
     {
       rtc::CritScope lock(&crit_);
-      int64_t timestamp = wrap_handler_.Unwrap(header.timestamp);
 
       if (rtp_timestamp_delta_ == 0) {
-        rtp_timestamp_delta_ = timestamp - first_send_frame_.timestamp();
+        rtp_timestamp_delta_ = header.timestamp - first_send_frame_.timestamp();
         first_send_frame_.Reset();
       }
-      timestamp -= rtp_timestamp_delta_;
+      int64_t timestamp =
+          wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
       send_times_[timestamp] = current_time;
       if (!transport_->DiscardedLastPacket() &&
           header.ssrc == ssrc_to_analyze_) {

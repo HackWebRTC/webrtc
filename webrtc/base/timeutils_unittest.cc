@@ -153,18 +153,48 @@ class TimestampWrapAroundHandlerTest : public testing::Test {
 };
 
 TEST_F(TimestampWrapAroundHandlerTest, Unwrap) {
-  uint32_t ts = 0xfffffff2;
-  int64_t unwrapped_ts = ts;
-  EXPECT_EQ(ts, wraparound_handler_.Unwrap(ts));
+  // Start value.
+  int64_t ts = 2;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  // Wrap backwards.
+  ts = -2;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  // Forward to 2 again.
   ts = 2;
-  unwrapped_ts += 0x10;
-  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
-  ts = 0xfffffff2;
-  unwrapped_ts += 0xfffffff0;
-  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
-  ts = 0;
-  unwrapped_ts += 0xe;
-  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  // Max positive skip ahead, until max value (0xffffffff).
+  for (uint32_t i = 0; i <= 0xf; ++i) {
+    ts = (i << 28) + 0x0fffffff;
+    EXPECT_EQ(
+        ts, wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+  }
+
+  // Wrap around.
+  ts += 2;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  // Max wrap backward...
+  ts -= 0x0fffffff;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  // ...and back again.
+  ts += 0x0fffffff;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+}
+
+TEST_F(TimestampWrapAroundHandlerTest, NoNegativeStart) {
+  int64_t ts = 0xfffffff0;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
 }
 
 class TmToSeconds : public testing::Test {
