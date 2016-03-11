@@ -132,6 +132,8 @@ class PeerConnection : public PeerConnectionInterface,
   bool SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& config) override;
   bool AddIceCandidate(const IceCandidateInterface* candidate) override;
+  bool RemoveIceCandidates(
+      const std::vector<cricket::Candidate>& candidates) override;
 
   void RegisterUMAObserver(UMAObserver* observer) override;
 
@@ -187,6 +189,8 @@ class PeerConnection : public PeerConnectionInterface,
   void OnIceConnectionChange(IceConnectionState new_state) override;
   void OnIceGatheringChange(IceGatheringState new_state) override;
   void OnIceCandidate(const IceCandidateInterface* candidate) override;
+  void OnIceCandidatesRemoved(
+      const std::vector<cricket::Candidate>& candidates) override;
   void OnIceConnectionReceivingChange(bool receiving) override;
 
   // Signals from WebRtcSession.

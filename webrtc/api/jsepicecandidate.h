@@ -70,6 +70,9 @@ class JsepCandidateCollection : public IceCandidateCollection {
   virtual const IceCandidateInterface* at(size_t index) const {
     return candidates_[index];
   }
+  // Removes the candidate that has a matching address and protocol.
+  // Returns the number of candidates that were removed.
+  size_t remove(const cricket::Candidate& candidate);
 
  private:
   std::vector<JsepIceCandidate*> candidates_;

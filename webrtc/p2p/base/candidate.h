@@ -169,6 +169,12 @@ class Candidate {
     tcptype_ = tcptype;
   }
 
+  // The name of the transport channel of this candidate.
+  const std::string& transport_name() const { return transport_name_; }
+  void set_transport_name(const std::string& transport_name) {
+    transport_name_ = transport_name;
+  }
+
   // Determines whether this candidate is equivalent to the given one.
   bool IsEquivalent(const Candidate& c) const {
     // We ignore the network name, since that is just debug information, and
@@ -179,6 +185,13 @@ class Candidate {
            (password_ == c.password_) && (type_ == c.type_) &&
            (generation_ == c.generation_) && (foundation_ == c.foundation_) &&
            (related_address_ == c.related_address_);
+  }
+
+  // Determines whether this candidate can be considered equivalent to the
+  // given one when looking for a matching candidate to remove.
+  bool MatchesForRemoval(const Candidate& c) const {
+    return component_ == c.component_ && protocol_ == c.protocol_ &&
+           address_ == c.address_;
   }
 
   std::string ToString() const {
@@ -222,10 +235,10 @@ class Candidate {
     std::ostringstream ost;
     std::string address = sensitive ? address_.ToSensitiveString() :
                                       address_.ToString();
-    ost << "Cand[" << foundation_ << ":" << component_ << ":" << protocol_
-        << ":" << priority_ << ":" << address << ":" << type_ << ":"
-        << related_address_ << ":" << username_ << ":" << password_ << ":"
-        << network_cost_ << "]";
+    ost << "Cand[" << transport_name_ << ":" << foundation_ << ":" << component_
+        << ":" << protocol_ << ":" << priority_ << ":" << address << ":"
+        << type_ << ":" << related_address_ << ":" << username_ << ":"
+        << password_ << ":" << network_cost_ << "]";
     return ost.str();
   }
 
@@ -245,6 +258,7 @@ class Candidate {
   rtc::SocketAddress related_address_;
   std::string tcptype_;
   uint32_t network_cost_ = 0;
+  std::string transport_name_;
 };
 
 // Used during parsing and writing to map component to channel name

@@ -92,6 +92,7 @@ class P2PTransportChannel : public TransportChannelImpl,
     return gathering_state_;
   }
   void AddRemoteCandidate(const Candidate& candidate) override;
+  void RemoveRemoteCandidate(const Candidate& candidate) override;
   // Sets the parameters in IceConfig. We do not set them blindly. Instead, we
   // only update the parameter if it is considered set in |config|. For example,
   // a negative value of receiving_timeout will be considered "not set" and we

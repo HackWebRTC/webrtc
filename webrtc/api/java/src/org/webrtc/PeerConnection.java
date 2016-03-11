@@ -58,6 +58,9 @@ public class PeerConnection {
     /** Triggered when a new ICE candidate has been found. */
     public void onIceCandidate(IceCandidate candidate);
 
+    /** Triggered when some ICE candidates have been removed. */
+    public void onIceCandidatesRemoved(IceCandidate[] candidates);
+
     /** Triggered when media is received on a new stream from remote peer. */
     public void onAddStream(MediaStream stream);
 
@@ -193,6 +196,10 @@ public class PeerConnection {
         candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
   }
 
+  public boolean removeIceCandidates(final IceCandidate[] candidates) {
+    return nativeRemoveIceCandidates(candidates);
+  }
+
   public boolean addStream(MediaStream stream) {
     boolean ret = nativeAddLocalStream(stream.nativeStream);
     if (!ret) {
@@ -272,6 +279,8 @@ public class PeerConnection {
 
   private native boolean nativeAddIceCandidate(
       String sdpMid, int sdpMLineIndex, String iceCandidateSdp);
+
+  private native boolean nativeRemoveIceCandidates(final IceCandidate[] candidates);
 
   private native boolean nativeAddLocalStream(long nativeStream);
 

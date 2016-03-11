@@ -216,6 +216,9 @@ class FakeTransportChannel : public TransportChannelImpl,
   void AddRemoteCandidate(const Candidate& candidate) override {
     remote_candidates_.push_back(candidate);
   }
+
+  void RemoveRemoteCandidate(const Candidate& candidate) override {}
+
   const Candidates& remote_candidates() const { return remote_candidates_; }
 
   void OnMessage(rtc::Message* msg) override {

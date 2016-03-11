@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/p2p/base/candidate.h"
@@ -74,6 +75,7 @@ class TransportController : public sigslot::has_slots<>,
   bool AddRemoteCandidates(const std::string& transport_name,
                            const Candidates& candidates,
                            std::string* err);
+  bool RemoveRemoteCandidates(const Candidates& candidates, std::string* err);
   bool ReadyForRemoteCandidates(const std::string& transport_name);
   bool GetStats(const std::string& transport_name, TransportStats* stats);
 
@@ -107,6 +109,8 @@ class TransportController : public sigslot::has_slots<>,
   // (transport_name, candidates)
   sigslot::signal2<const std::string&, const Candidates&>
       SignalCandidatesGathered;
+
+  sigslot::signal1<const Candidates&> SignalCandidatesRemoved;
 
   // for unit test
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate_for_testing();
@@ -176,6 +180,7 @@ class TransportController : public sigslot::has_slots<>,
   bool AddRemoteCandidates_w(const std::string& transport_name,
                              const Candidates& candidates,
                              std::string* err);
+  bool RemoveRemoteCandidates_w(const Candidates& candidates, std::string* err);
   bool ReadyForRemoteCandidates_w(const std::string& transport_name);
   bool GetStats_w(const std::string& transport_name, TransportStats* stats);
 
@@ -185,6 +190,9 @@ class TransportController : public sigslot::has_slots<>,
   void OnChannelGatheringState_w(TransportChannelImpl* channel);
   void OnChannelCandidateGathered_w(TransportChannelImpl* channel,
                                     const Candidate& candidate);
+  void OnChannelCandidatesRemoved(const Candidates& candidates);
+  void OnChannelCandidatesRemoved_w(TransportChannelImpl* channel,
+                                    const Candidates& candidates);
   void OnChannelRoleConflict_w(TransportChannelImpl* channel);
   void OnChannelConnectionRemoved_w(TransportChannelImpl* channel);
 
@@ -212,6 +220,7 @@ class TransportController : public sigslot::has_slots<>,
   bool ice_role_switch_ = false;
   uint64_t ice_tiebreaker_ = rtc::CreateRandomId64();
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
+  rtc::AsyncInvoker invoker_;
 };
 
 }  // namespace cricket

@@ -25,6 +25,7 @@
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/pc/mediasession.h"
 
@@ -80,6 +81,10 @@ class IceObserver {
       PeerConnectionInterface::IceGatheringState new_state) {}
   // New Ice candidate have been found.
   virtual void OnIceCandidate(const IceCandidateInterface* candidate) = 0;
+
+  // Some local ICE candidates have been removed.
+  virtual void OnIceCandidatesRemoved(
+      const std::vector<cricket::Candidate>& candidates) = 0;
 
   // Called whenever the state changes between receiving and not receiving.
   virtual void OnIceConnectionReceivingChange(bool receiving) {}
@@ -204,6 +209,9 @@ class WebRtcSession : public AudioProviderInterface,
   bool SetRemoteDescription(SessionDescriptionInterface* desc,
                             std::string* err_desc);
   bool ProcessIceMessage(const IceCandidateInterface* ice_candidate);
+
+  bool RemoveRemoteIceCandidates(
+      const std::vector<cricket::Candidate>& candidates);
 
   bool SetIceTransports(PeerConnectionInterface::IceTransportsType type);
 
@@ -431,7 +439,9 @@ class WebRtcSession : public AudioProviderInterface,
   void OnTransportControllerGatheringState(cricket::IceGatheringState state);
   void OnTransportControllerCandidatesGathered(
       const std::string& transport_name,
-      const cricket::Candidates& candidates);
+      const std::vector<cricket::Candidate>& candidates);
+  void OnTransportControllerCandidatesRemoved(
+      const std::vector<cricket::Candidate>& candidates);
 
   std::string GetSessionErrorMsg();
 

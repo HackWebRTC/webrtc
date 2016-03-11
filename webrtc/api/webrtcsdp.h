@@ -22,8 +22,11 @@
 
 #include <string>
 
-namespace webrtc {
+namespace cricket {
+class Candidate;
+}  // namespace cricket
 
+namespace webrtc {
 class IceCandidateInterface;
 class JsepIceCandidate;
 class JsepSessionDescription;
@@ -41,6 +44,10 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc,
 // Serializes the passed in IceCandidateInterface to a SDP string.
 // candidate - The candidate to be serialized.
 std::string SdpSerializeCandidate(const IceCandidateInterface& candidate);
+
+// Serializes a cricket Candidate.
+// candidate - The candidate to be serialized.
+std::string SdpSerializeCandidate(const cricket::Candidate& candidate);
 
 // Deserializes the passed in SDP string to a JsepSessionDescription.
 // message - SDP string to be Deserialized.
@@ -61,6 +68,20 @@ bool SdpDeserialize(const std::string& message,
 bool SdpDeserializeCandidate(const std::string& message,
                              JsepIceCandidate* candidate,
                              SdpParseError* error);
+
+// Deserializes the passed in SDP string to a cricket Candidate.
+// The first line must be a=candidate line and only the first line will be
+// parsed.
+// transport_name - The transport name (MID) of the candidate.
+// message - The SDP string to be deserialized.
+// candidate - The cricket Candidate from the SDP string.
+// error - The detail error information when parsing fails.
+// return - true on success, false on failure.
+bool SdpDeserializeCandidate(const std::string& transport_name,
+                             const std::string& message,
+                             cricket::Candidate* candidate,
+                             SdpParseError* error);
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_API_WEBRTCSDP_H_

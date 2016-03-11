@@ -56,6 +56,7 @@
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/webrtcsdp.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event_tracer.h"
@@ -195,13 +196,24 @@ class PCOJava : public PeerConnectionObserver {
         "<init>", "(Ljava/lang/String;ILjava/lang/String;)V");
     jstring j_mid = JavaStringFromStdString(jni(), candidate->sdp_mid());
     jstring j_sdp = JavaStringFromStdString(jni(), sdp);
-    jobject j_candidate = jni()->NewObject(
-        candidate_class, ctor, j_mid, candidate->sdp_mline_index(), j_sdp);
+    jobject j_candidate = jni()->NewObject(candidate_class, ctor, j_mid,
+                                           candidate->sdp_mline_index(), j_sdp);
     CHECK_EXCEPTION(jni()) << "error during NewObject";
     jmethodID m = GetMethodID(jni(), *j_observer_class_,
                               "onIceCandidate", "(Lorg/webrtc/IceCandidate;)V");
     jni()->CallVoidMethod(*j_observer_global_, m, j_candidate);
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  }
+
+  void OnIceCandidatesRemoved(
+      const std::vector<cricket::Candidate>& candidates) {
+    ScopedLocalRefFrame local_ref_frame(jni());
+    jobjectArray candidates_array = ToJavaCandidateArray(jni(), candidates);
+    jmethodID m =
+        GetMethodID(jni(), *j_observer_class_, "onIceCandidatesRemoved",
+                    "([Lorg/webrtc/IceCandidate;)V");
+    jni()->CallVoidMethod(*j_observer_global_, m, candidates_array);
+    CHECK_EXCEPTION(jni()) << "Error during CallVoidMethod";
   }
 
   void OnSignalingChange(
@@ -369,6 +381,36 @@ class PCOJava : public PeerConnectionObserver {
         j_stream, GetMethodID(jni(), *j_media_stream_class_, "dispose", "()V"));
     CHECK_EXCEPTION(jni()) << "error during MediaStream.dispose()";
     DeleteGlobalRef(jni(), j_stream);
+  }
+
+  jobject ToJavaCandidate(JNIEnv* jni,
+                          jclass* candidate_class,
+                          const cricket::Candidate& candidate) {
+    std::string sdp = webrtc::SdpSerializeCandidate(candidate);
+    RTC_CHECK(!sdp.empty()) << "got an empty ICE candidate";
+    jmethodID ctor = GetMethodID(jni, *candidate_class, "<init>",
+                                 "(Ljava/lang/String;ILjava/lang/String;)V");
+    jstring j_mid = JavaStringFromStdString(jni, candidate.transport_name());
+    jstring j_sdp = JavaStringFromStdString(jni, sdp);
+    // sdp_mline_index is not used, pass an invalid value -1.
+    jobject j_candidate =
+        jni->NewObject(*candidate_class, ctor, j_mid, -1, j_sdp);
+    CHECK_EXCEPTION(jni) << "error during Java Candidate NewObject";
+    return j_candidate;
+  }
+
+  jobjectArray ToJavaCandidateArray(
+      JNIEnv* jni,
+      const std::vector<cricket::Candidate>& candidates) {
+    jclass candidate_class = FindClass(jni, "org/webrtc/IceCandidate");
+    jobjectArray java_candidates =
+        jni->NewObjectArray(candidates.size(), candidate_class, NULL);
+    int i = 0;
+    for (const cricket::Candidate& candidate : candidates) {
+      jobject j_candidate = ToJavaCandidate(jni, &candidate_class, candidate);
+      jni->SetObjectArrayElement(java_candidates, i++, j_candidate);
+    }
+    return java_candidates;
   }
 
   JNIEnv* jni() {
@@ -1721,6 +1763,35 @@ JOW(jboolean, PeerConnection_nativeAddIceCandidate)(
   scoped_ptr<IceCandidateInterface> candidate(
       webrtc::CreateIceCandidate(sdp_mid, j_sdp_mline_index, sdp, NULL));
   return ExtractNativePC(jni, j_pc)->AddIceCandidate(candidate.get());
+}
+
+static cricket::Candidate GetCandidateFromJava(JNIEnv* jni,
+                                               jobject j_candidate) {
+  jclass j_candidate_class = GetObjectClass(jni, j_candidate);
+  jfieldID j_sdp_mid_id =
+      GetFieldID(jni, j_candidate_class, "sdpMid", "Ljava/lang/String;");
+  std::string sdp_mid =
+      JavaToStdString(jni, GetStringField(jni, j_candidate, j_sdp_mid_id));
+  jfieldID j_sdp_id =
+      GetFieldID(jni, j_candidate_class, "sdp", "Ljava/lang/String;");
+  std::string sdp =
+      JavaToStdString(jni, GetStringField(jni, j_candidate, j_sdp_id));
+  cricket::Candidate candidate;
+  if (!webrtc::SdpDeserializeCandidate(sdp_mid, sdp, &candidate, NULL)) {
+    LOG(LS_ERROR) << "SdpDescrializeCandidate failed with sdp " << sdp;
+  }
+  return candidate;
+}
+
+JOW(jboolean, PeerConnection_nativeRemoveIceCandidates)
+(JNIEnv* jni, jobject j_pc, jobjectArray j_candidates) {
+  std::vector<cricket::Candidate> candidates;
+  size_t num_candidates = jni->GetArrayLength(j_candidates);
+  for (size_t i = 0; i < num_candidates; ++i) {
+    jobject j_candidate = jni->GetObjectArrayElement(j_candidates, i);
+    candidates.push_back(GetCandidateFromJava(jni, j_candidate));
+  }
+  return ExtractNativePC(jni, j_pc)->RemoveIceCandidates(candidates);
 }
 
 JOW(jboolean, PeerConnection_nativeAddLocalStream)(

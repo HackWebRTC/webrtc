@@ -79,4 +79,17 @@ bool JsepCandidateCollection::HasCandidate(
   return ret;
 }
 
+size_t JsepCandidateCollection::remove(const cricket::Candidate& candidate) {
+  auto iter = std::find_if(candidates_.begin(), candidates_.end(),
+                           [candidate](JsepIceCandidate* c) {
+                             return candidate.MatchesForRemoval(c->candidate());
+                           });
+  if (iter != candidates_.end()) {
+    delete *iter;
+    candidates_.erase(iter);
+    return 1;
+  }
+  return 0;
+}
+
 }  // namespace webrtc
