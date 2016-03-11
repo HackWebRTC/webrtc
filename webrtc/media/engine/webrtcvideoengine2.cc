@@ -1550,11 +1550,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
     return;
   }
 
-  // Not sending, abort early to prevent expensive reconfigurations while
-  // setting up codecs etc.
-  if (!sending_)
-    return;
-
   if (muted_) {
     // Create a black frame to transmit instead.
     CreateBlackFrame(&video_frame,
@@ -1574,6 +1569,13 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   // Reconfigure codec if necessary.
   SetDimensions(video_frame.width(), video_frame.height());
   last_rotation_ = video_frame.rotation();
+
+  // Not sending, abort after reconfiguration. Reconfiguration should still
+  // occur to permit sending this input as quickly as possible once we start
+  // sending (without having to reconfigure then).
+  if (!sending_) {
+    return;
+  }
 
   stream_->Input()->IncomingCapturedFrame(video_frame);
 }

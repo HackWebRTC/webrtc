@@ -1484,6 +1484,40 @@ TEST_F(WebRtcVideoChannel2Test, NackCanBeEnabledAndDisabled) {
   EXPECT_GT(send_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
 }
 
+// This test verifies that new frame sizes reconfigures encoders even though not
+// (yet) sending. The purpose of this is to permit encoding as quickly as
+// possible once we start sending. Likely the frames being input are from the
+// same source that will be sent later, which just means that we're ready
+// earlier.
+TEST_F(WebRtcVideoChannel2Test, ReconfiguresEncodersWhenNotSending) {
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(kVp8Codec720p);
+  ASSERT_TRUE(channel_->SetSendParameters(parameters));
+  channel_->SetSend(false);
+
+  FakeVideoSendStream* stream = AddSendStream();
+
+  // No frames entered, using default dimensions.
+  std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
+  EXPECT_EQ(176u, streams[0].width);
+  EXPECT_EQ(144u, streams[0].height);
+
+  cricket::FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  // Frame entered, should be reconfigured to new dimensions.
+  streams = stream->GetVideoStreams();
+  EXPECT_EQ(kVp8Codec720p.width, streams[0].width);
+  EXPECT_EQ(kVp8Codec720p.height, streams[0].height);
+  // No frames should have been actually put in there though.
+  EXPECT_EQ(0, stream->GetNumberOfSwappedFrames());
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+}
+
 TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   static const int kScreenshareMinBitrateKbps = 800;
   cricket::VideoCodec codec = kVp8Codec360p;
