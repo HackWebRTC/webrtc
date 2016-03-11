@@ -41,7 +41,7 @@ uint32_t BitrateAllocator::OnNetworkChanged(uint32_t bitrate,
   uint32_t allocated_bitrate_bps = 0;
   ObserverBitrateMap allocation = AllocateBitrates();
   for (const auto& kv : allocation) {
-    kv.first->OnNetworkChanged(kv.second, last_fraction_loss_, last_rtt_);
+    kv.first->OnBitrateUpdated(kv.second, last_fraction_loss_, last_rtt_);
     allocated_bitrate_bps += kv.second;
   }
   return allocated_bitrate_bps;
@@ -60,9 +60,9 @@ BitrateAllocator::ObserverBitrateMap BitrateAllocator::AllocateBitrates() {
     return NormalRateAllocation(last_bitrate_bps_, sum_min_bitrates);
 }
 
-int BitrateAllocator::AddBitrateObserver(BitrateObserver* observer,
-                                         uint32_t min_bitrate_bps,
-                                         uint32_t max_bitrate_bps) {
+int BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
+                                  uint32_t min_bitrate_bps,
+                                  uint32_t max_bitrate_bps) {
   rtc::CritScope lock(&crit_sect_);
 
   BitrateObserverConfList::iterator it =
@@ -87,14 +87,14 @@ int BitrateAllocator::AddBitrateObserver(BitrateObserver* observer,
   ObserverBitrateMap allocation = AllocateBitrates();
   int new_observer_bitrate_bps = 0;
   for (auto& kv : allocation) {
-    kv.first->OnNetworkChanged(kv.second, last_fraction_loss_, last_rtt_);
+    kv.first->OnBitrateUpdated(kv.second, last_fraction_loss_, last_rtt_);
     if (kv.first == observer)
       new_observer_bitrate_bps = kv.second;
   }
   return new_observer_bitrate_bps;
 }
 
-void BitrateAllocator::RemoveBitrateObserver(BitrateObserver* observer) {
+void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
   rtc::CritScope lock(&crit_sect_);
   BitrateObserverConfList::iterator it =
       FindObserverConfigurationPair(observer);
@@ -118,7 +118,7 @@ void BitrateAllocator::GetMinMaxBitrateSumBps(int* min_bitrate_sum_bps,
 
 BitrateAllocator::BitrateObserverConfList::iterator
 BitrateAllocator::FindObserverConfigurationPair(
-    const BitrateObserver* observer) {
+    const BitrateAllocatorObserver* observer) {
   for (auto it = bitrate_observers_.begin(); it != bitrate_observers_.end();
        ++it) {
     if (it->first == observer)

@@ -17,11 +17,9 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/common_video/include/video_image.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/frame_callback.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -80,22 +78,6 @@ class QMVideoSettingsCallback : public VCMQMSettingsCallback {
   VideoProcessing* vp_;
 };
 
-class ViEBitrateObserver : public BitrateObserver {
- public:
-  explicit ViEBitrateObserver(ViEEncoder* owner)
-      : owner_(owner) {
-  }
-  virtual ~ViEBitrateObserver() {}
-  // Implements BitrateObserver.
-  virtual void OnNetworkChanged(uint32_t bitrate_bps,
-                                uint8_t fraction_lost,
-                                int64_t rtt) {
-    owner_->OnNetworkChanged(bitrate_bps, fraction_lost, rtt);
-  }
- private:
-  ViEEncoder* owner_;
-};
-
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        const std::vector<uint32_t>& ssrcs,
                        ProcessThread* module_process_thread,
@@ -103,8 +85,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        I420FrameCallback* pre_encode_callback,
                        OveruseFrameDetector* overuse_detector,
                        PacedSender* pacer,
-                       PayloadRouter* payload_router,
-                       BitrateAllocator* bitrate_allocator)
+                       PayloadRouter* payload_router)
     : number_of_cores_(number_of_cores),
       ssrcs_(ssrcs),
       vp_(VideoProcessing::Create()),
@@ -117,7 +98,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       overuse_detector_(overuse_detector),
       pacer_(pacer),
       send_payload_router_(payload_router),
-      bitrate_allocator_(bitrate_allocator),
       time_of_last_frame_activity_ms_(0),
       encoder_config_(),
       min_transmit_bitrate_bps_(0),
@@ -132,7 +112,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       has_received_rpsi_(false),
       picture_id_rpsi_(0),
       video_suspended_(false) {
-  bitrate_observer_.reset(new ViEBitrateObserver(this));
   module_process_thread_->RegisterModule(vcm_.get());
 }
 
@@ -157,8 +136,6 @@ VideoCodingModule* ViEEncoder::vcm() const {
 
 ViEEncoder::~ViEEncoder() {
   module_process_thread_->DeRegisterModule(vcm_.get());
-  if (bitrate_allocator_)
-    bitrate_allocator_->RemoveBitrateObserver(bitrate_observer_.get());
 }
 
 void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
@@ -202,7 +179,7 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
                vp_->SetTargetResolution(video_codec.width, video_codec.height,
                                         video_codec.maxFramerate));
 
-  // Cache codec before calling AddBitrateObserver (which calls OnNetworkChanged
+  // Cache codec before calling AddBitrateObserver (which calls OnBitrateUpdated
   // that makes use of the number of simulcast streams configured).
   {
     rtc::CritScope lock(&data_cs_);
@@ -211,18 +188,9 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
     min_transmit_bitrate_bps_ = min_transmit_bitrate_bps;
   }
 
-  // Add a bitrate observer to the allocator and update the start, max and
-  // min bitrates of the bitrate controller as needed.
-  int allocated_bitrate_bps = bitrate_allocator_->AddBitrateObserver(
-      bitrate_observer_.get(), video_codec.minBitrate * 1000,
-      video_codec.maxBitrate * 1000);
-
-  webrtc::VideoCodec modified_video_codec = video_codec;
-  modified_video_codec.startBitrate = allocated_bitrate_bps / 1000;
-
   size_t max_data_payload_length = send_payload_router_->MaxPayloadLength();
   bool success = vcm_->RegisterSendCodec(
-                     &modified_video_codec, number_of_cores_,
+                     &video_codec, number_of_cores_,
                      static_cast<uint32_t>(max_data_payload_length)) == VCM_OK;
   if (!success) {
     LOG(LS_ERROR) << "Failed to configure encoder.";
@@ -511,11 +479,10 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   RTC_NOTREACHED() << "Should not receive keyframe requests on unknown SSRCs.";
 }
 
-// Called from ViEBitrateObserver.
-void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
+void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
                                   uint8_t fraction_lost,
                                   int64_t round_trip_time_ms) {
-  LOG(LS_VERBOSE) << "OnNetworkChanged, bitrate" << bitrate_bps
+  LOG(LS_VERBOSE) << "OnBitrateUpdated, bitrate" << bitrate_bps
                   << " packet loss " << static_cast<int>(fraction_lost)
                   << " rtt " << round_trip_time_ms;
   RTC_DCHECK(send_payload_router_ != NULL);
@@ -544,11 +511,6 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
                << " for ssrc " << ssrcs_[0];
   if (stats_proxy_)
     stats_proxy_->OnSuspendChange(video_is_suspended);
-}
-
-void ViEEncoder::SuspendBelowMinBitrate() {
-  vcm_->SuspendBelowMinBitrate();
-  bitrate_allocator_->EnforceMinBitrate(false);
 }
 
 void ViEEncoder::RegisterPostEncodeImageCallback(

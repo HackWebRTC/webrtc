@@ -17,7 +17,6 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/common_types.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -27,8 +26,6 @@
 
 namespace webrtc {
 
-class BitrateAllocator;
-class BitrateObserver;
 class Config;
 class EncodedImageCallback;
 class OveruseFrameDetector;
@@ -55,8 +52,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
              I420FrameCallback* pre_encode_callback,
              OveruseFrameDetector* overuse_detector,
              PacedSender* pacer,
-             PayloadRouter* payload_router,
-             BitrateAllocator* bitrate_allocator);
+             PayloadRouter* payload_router);
   ~ViEEncoder();
 
   bool Init();
@@ -109,20 +105,13 @@ class ViEEncoder : public VideoEncoderRateObserver,
   virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id);
   virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id);
 
-  // Lets the sender suspend video when the rate drops below
-  // |threshold_bps|, and turns back on when the rate goes back up above
-  // |threshold_bps| + |window_bps|.
-  void SuspendBelowMinBitrate();
-
   // New-style callbacks, used by VideoSendStream.
   void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback);
 
   int GetPaddingNeededBps() const;
 
- protected:
-  // Called by BitrateObserver.
-  void OnNetworkChanged(uint32_t bitrate_bps,
+  void OnBitrateUpdated(uint32_t bitrate_bps,
                         uint8_t fraction_lost,
                         int64_t round_trip_time_ms);
 
@@ -139,14 +128,12 @@ class ViEEncoder : public VideoEncoderRateObserver,
   const std::unique_ptr<VideoCodingModule> vcm_;
 
   rtc::CriticalSection data_cs_;
-  std::unique_ptr<BitrateObserver> bitrate_observer_;
 
   SendStatisticsProxy* const stats_proxy_;
   I420FrameCallback* const pre_encode_callback_;
   OveruseFrameDetector* const overuse_detector_;
   PacedSender* const pacer_;
   PayloadRouter* const send_payload_router_;
-  BitrateAllocator* const bitrate_allocator_;
 
   // The time we last received an input frame or encoded frame. This is used to
   // track when video is stopped long enough that we also want to stop sending

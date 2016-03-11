@@ -394,7 +394,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // the call has already started.
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), call_stats_.get(),
-      congestion_controller_.get(), &remb_, bitrate_allocator_.get(), config,
+      congestion_controller_.get(), bitrate_allocator_.get(), &remb_, config,
       encoder_config, suspended_video_send_ssrcs_);
 
   if (!network_enabled_)

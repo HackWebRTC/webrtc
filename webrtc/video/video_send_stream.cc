@@ -156,8 +156,8 @@ VideoSendStream::VideoSendStream(
     ProcessThread* module_process_thread,
     CallStats* call_stats,
     CongestionController* congestion_controller,
-    VieRemb* remb,
     BitrateAllocator* bitrate_allocator,
+    VieRemb* remb,
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs)
@@ -170,6 +170,7 @@ VideoSendStream::VideoSendStream(
       module_process_thread_(module_process_thread),
       call_stats_(call_stats),
       congestion_controller_(congestion_controller),
+      bitrate_allocator_(bitrate_allocator),
       remb_(remb),
       encoder_thread_(EncoderThreadFunction, this, "EncoderThread"),
       encoder_wakeup_event_(false, false),
@@ -202,8 +203,7 @@ VideoSendStream::VideoSendStream(
                    config.pre_encode_callback,
                    &overuse_detector_,
                    congestion_controller_->pacer(),
-                   &payload_router_,
-                   bitrate_allocator),
+                   &payload_router_),
       vcm_(vie_encoder_.vcm()),
       rtp_rtcp_modules_(vie_channel_.rtp_rtcp()),
       input_(&encoder_wakeup_event_,
@@ -298,8 +298,10 @@ VideoSendStream::VideoSendStream(
   if (config_.post_encode_callback)
     vie_encoder_.RegisterPostEncodeImageCallback(&encoded_frame_proxy_);
 
-  if (config_.suspend_below_min_bitrate)
-    vie_encoder_.SuspendBelowMinBitrate();
+  if (config_.suspend_below_min_bitrate) {
+    vcm_->SuspendBelowMinBitrate();
+    bitrate_allocator_->EnforceMinBitrate(false);
+  }
 
   vie_channel_.RegisterRtcpPacketTypeCounterObserver(&stats_proxy_);
   vie_channel_.RegisterSendBitrateObserver(&stats_proxy_);
@@ -313,6 +315,8 @@ VideoSendStream::VideoSendStream(
 
 VideoSendStream::~VideoSendStream() {
   LOG(LS_INFO) << "~VideoSendStream: " << config_.ToString();
+
+  bitrate_allocator_->RemoveObserver(this);
   Stop();
 
   // Stop the encoder thread permanently.
@@ -516,6 +520,10 @@ void VideoSendStream::ReconfigureVideoEncoder(
   RTC_DCHECK_GT(streams[0].max_framerate, 0);
   video_codec.maxFramerate = streams[0].max_framerate;
 
+  video_codec.startBitrate =
+      bitrate_allocator_->AddObserver(this,
+                                      video_codec.minBitrate * 1000,
+                                      video_codec.maxBitrate * 1000) / 1000;
   vie_encoder_.SetEncoder(video_codec, config.min_transmit_bitrate_bps);
 }
 
@@ -614,5 +622,12 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
 int VideoSendStream::GetPaddingNeededBps() const {
   return vie_encoder_.GetPaddingNeededBps();
 }
+
+void VideoSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
+                                       uint8_t fraction_loss,
+                                       int64_t rtt) {
+  vie_encoder_.OnBitrateUpdated(bitrate_bps, fraction_loss, rtt);
+}
+
 }  // namespace internal
 }  // namespace webrtc
