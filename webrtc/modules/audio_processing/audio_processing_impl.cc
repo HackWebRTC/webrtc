@@ -80,11 +80,11 @@ static bool LayoutHasKeyboard(AudioProcessing::ChannelLayout layout) {
 static_assert(AudioProcessing::kNoError == 0, "kNoError must be zero");
 
 struct AudioProcessingImpl::ApmPublicSubmodules {
-  ApmPublicSubmodules() : gain_control(nullptr) {}
+  ApmPublicSubmodules() {}
   // Accessed externally of APM without any lock acquired.
   std::unique_ptr<EchoCancellationImpl> echo_cancellation;
   std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
-  GainControlImpl* gain_control;
+  std::unique_ptr<GainControlImpl> gain_control;
   std::unique_ptr<HighPassFilterImpl> high_pass_filter;
   std::unique_ptr<LevelEstimatorImpl> level_estimator;
   std::unique_ptr<NoiseSuppressionImpl> noise_suppression;
@@ -173,8 +173,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
         new EchoCancellationImpl(this, &crit_render_, &crit_capture_));
     public_submodules_->echo_control_mobile.reset(
         new EchoControlMobileImpl(this, &crit_render_, &crit_capture_));
-    public_submodules_->gain_control =
-        new GainControlImpl(this, &crit_capture_, &crit_capture_);
+    public_submodules_->gain_control.reset(
+        new GainControlImpl(this, &crit_capture_, &crit_capture_));
     public_submodules_->high_pass_filter.reset(
         new HighPassFilterImpl(&crit_capture_));
     public_submodules_->level_estimator.reset(
@@ -184,10 +184,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
     public_submodules_->voice_detection.reset(
         new VoiceDetectionImpl(&crit_capture_));
     public_submodules_->gain_control_for_experimental_agc.reset(
-        new GainControlForExperimentalAgc(public_submodules_->gain_control,
-                                          &crit_capture_));
-    private_submodules_->component_list.push_back(
-        public_submodules_->gain_control);
+        new GainControlForExperimentalAgc(
+            public_submodules_->gain_control.get(), &crit_capture_));
   }
 
   SetExtraOptions(config);
@@ -318,6 +316,7 @@ int AudioProcessingImpl::InitializeLocked() {
     }
   }
 
+  InitializeGainController();
   InitializeEchoCanceller();
   InitializeEchoControlMobile();
   InitializeExperimentalAgc();
@@ -1093,7 +1092,7 @@ GainControl* AudioProcessingImpl::gain_control() const {
   if (constants_.use_experimental_agc) {
     return public_submodules_->gain_control_for_experimental_agc.get();
   }
-  return public_submodules_->gain_control;
+  return public_submodules_->gain_control.get();
 }
 
 HighPassFilter* AudioProcessingImpl::high_pass_filter() const {
@@ -1127,7 +1126,8 @@ bool AudioProcessingImpl::is_data_processed() const {
       public_submodules_->high_pass_filter->is_enabled() ||
       public_submodules_->noise_suppression->is_enabled() ||
       public_submodules_->echo_cancellation->is_enabled() ||
-      public_submodules_->echo_control_mobile->is_enabled()) {
+      public_submodules_->echo_control_mobile->is_enabled() ||
+      public_submodules_->gain_control->is_enabled()) {
     return true;
   }
 
@@ -1191,7 +1191,7 @@ void AudioProcessingImpl::InitializeExperimentalAgc() {
   if (constants_.use_experimental_agc) {
     if (!private_submodules_->agc_manager.get()) {
       private_submodules_->agc_manager.reset(new AgcManagerDirect(
-          public_submodules_->gain_control,
+          public_submodules_->gain_control.get(),
           public_submodules_->gain_control_for_experimental_agc.get(),
           constants_.agc_startup_min_volume));
     }
@@ -1245,6 +1245,10 @@ void AudioProcessingImpl::InitializeNoiseSuppression() {
 
 void AudioProcessingImpl::InitializeEchoCanceller() {
   public_submodules_->echo_cancellation->Initialize();
+}
+
+void AudioProcessingImpl::InitializeGainController() {
+  public_submodules_->gain_control->Initialize();
 }
 
 void AudioProcessingImpl::InitializeEchoControlMobile() {
