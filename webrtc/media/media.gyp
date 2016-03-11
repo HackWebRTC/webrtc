@@ -74,6 +74,8 @@
         'base/videoframefactory.cc',
         'base/videoframefactory.h',
         'base/videorenderer.h',
+        'base/videosourcebase.cc',
+        'base/videosourcebase.h',
         'base/yuvframegenerator.cc',
         'base/yuvframegenerator.h',
         'devices/deviceinfo.h',
