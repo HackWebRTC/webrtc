@@ -39,8 +39,8 @@ FakeAudioSendStream::TelephoneEvent
   return latest_telephone_event_;
 }
 
-bool FakeAudioSendStream::SendTelephoneEvent(int payload_type, uint8_t event,
-                                             uint32_t duration_ms) {
+bool FakeAudioSendStream::SendTelephoneEvent(int payload_type, int event,
+                                             int duration_ms) {
   latest_telephone_event_.payload_type = payload_type;
   latest_telephone_event_.event_code = event;
   latest_telephone_event_.duration_ms = duration_ms;

@@ -297,10 +297,7 @@ class Channel
   int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
 
   // VoEDtmf
-  int SendTelephoneEventOutband(unsigned char eventCode,
-                                int lengthMs,
-                                int attenuationDb,
-                                bool playDtmfEvent);
+  int SendTelephoneEventOutband(int event, int duration_ms);
   int SendTelephoneEventInband(unsigned char eventCode,
                                int lengthMs,
                                int attenuationDb,

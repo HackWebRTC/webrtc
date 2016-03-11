@@ -68,7 +68,7 @@ class ChannelProxy {
   virtual uint32_t GetDelayEstimate() const;
 
   virtual bool SetSendTelephoneEventPayloadType(int payload_type);
-  virtual bool SendTelephoneEventOutband(uint8_t event, uint32_t duration_ms);
+  virtual bool SendTelephoneEventOutband(int event, int duration_ms);
 
   virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink);
 

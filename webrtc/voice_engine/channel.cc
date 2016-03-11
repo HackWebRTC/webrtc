@@ -47,6 +47,8 @@
 namespace webrtc {
 namespace voe {
 
+const int kTelephoneEventAttenuationdB = 10;
+
 class TransportFeedbackProxy : public TransportFeedbackObserver {
  public:
   TransportFeedbackProxy() : feedback_observer_(nullptr) {
@@ -2212,21 +2214,21 @@ int Channel::GetChannelOutputVolumeScaling(float& scaling) const {
   return 0;
 }
 
-int Channel::SendTelephoneEventOutband(unsigned char eventCode,
-                                       int lengthMs,
-                                       int attenuationDb,
-                                       bool playDtmfEvent) {
+int Channel::SendTelephoneEventOutband(int event, int duration_ms) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SendTelephoneEventOutband(..., playDtmfEvent=%d)",
-               playDtmfEvent);
+               "Channel::SendTelephoneEventOutband(...)");
+  RTC_DCHECK_LE(0, event);
+  RTC_DCHECK_GE(255, event);
+  RTC_DCHECK_LE(0, duration_ms);
+  RTC_DCHECK_GE(65535, duration_ms);
   if (!Sending()) {
     return -1;
   }
 
-  _playOutbandDtmfEvent = playDtmfEvent;
+  _playOutbandDtmfEvent = false;
 
-  if (_rtpRtcpModule->SendTelephoneEventOutband(eventCode, lengthMs,
-                                                attenuationDb) != 0) {
+  if (_rtpRtcpModule->SendTelephoneEventOutband(
+      event, duration_ms, kTelephoneEventAttenuationdB) != 0) {
     _engineStatisticsPtr->SetLastError(
         VE_SEND_DTMF_FAILED, kTraceWarning,
         "SendTelephoneEventOutband() failed to send event");

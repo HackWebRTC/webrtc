@@ -43,8 +43,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_CONST_METHOD0(GetSpeechOutputLevelFullRange, int32_t());
   MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
   MOCK_METHOD1(SetSendTelephoneEventPayloadType, bool(int payload_type));
-  MOCK_METHOD2(SendTelephoneEventOutband, bool(uint8_t event,
-                                               uint32_t duration_ms));
+  MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));
 };
 }  // namespace test
 }  // namespace webrtc

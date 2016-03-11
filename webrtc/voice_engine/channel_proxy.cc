@@ -148,11 +148,9 @@ bool ChannelProxy::SetSendTelephoneEventPayloadType(int payload_type) {
   return channel()->SetSendTelephoneEventPayloadType(payload_type) == 0;
 }
 
-bool ChannelProxy::SendTelephoneEventOutband(uint8_t event,
-                                             uint32_t duration_ms) {
+bool ChannelProxy::SendTelephoneEventOutband(int event, int duration_ms) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return
-      channel()->SendTelephoneEventOutband(event, duration_ms, 10, false) == 0;
+  return channel()->SendTelephoneEventOutband(event, duration_ms) == 0;
 }
 
 void ChannelProxy::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
