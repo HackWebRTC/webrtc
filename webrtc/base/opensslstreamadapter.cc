@@ -147,51 +147,6 @@ static const SslCipherMapEntry kSslCipherMap[] = {
 #pragma warning(disable : 4310)
 #endif  // defined(_MSC_VER)
 
-// Default cipher used between OpenSSL/BoringSSL stream adapters.
-// This needs to be updated when the default of the SSL library changes.
-// static_cast<uint16_t> causes build warnings on windows platform.
-static int kDefaultSslCipher10 =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_WITH_AES_256_CBC_SHA);
-static int kDefaultSslEcCipher10 =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_WITH_AES_256_CBC_SHA);
-#ifdef OPENSSL_IS_BORINGSSL
-static int kDefaultSslCipher12 =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256);
-static int kDefaultSslEcCipher12 =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256);
-// Fallback cipher for DTLS 1.2 if hardware-accelerated AES-GCM is unavailable.
-
-#ifdef TLS1_CK_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
-// This ciphersuite was added in boringssl 13414b3a..., changing the fallback
-// ciphersuite.  For compatibility during a transitional period, support old
-// boringssl versions.  TODO(torbjorng): Remove this.
-static int kDefaultSslCipher12NoAesGcm =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256);
-#else
-static int kDefaultSslCipher12NoAesGcm =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_CHACHA20_POLY1305_OLD);
-#endif
-
-#ifdef TLS1_CK_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
-// This ciphersuite was added in boringssl 13414b3a..., changing the fallback
-// ciphersuite.  For compatibility during a transitional period, support old
-// boringssl versions.  TODO(torbjorng): Remove this.
-static int kDefaultSslEcCipher12NoAesGcm =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256);
-#else
-static int kDefaultSslEcCipher12NoAesGcm =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_CHACHA20_POLY1305_OLD);
-#endif
-
-#else  // !OPENSSL_IS_BORINGSSL
-// OpenSSL sorts differently than BoringSSL, so the default cipher doesn't
-// change between TLS 1.0 and TLS 1.2 with the current setup.
-static int kDefaultSslCipher12 =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_RSA_WITH_AES_256_CBC_SHA);
-static int kDefaultSslEcCipher12 =
-    static_cast<uint16_t>(TLS1_CK_ECDHE_ECDSA_WITH_AES_256_CBC_SHA);
-#endif  // OPENSSL_IS_BORINGSSL
-
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif  // defined(_MSC_VER)
@@ -402,6 +357,28 @@ bool OpenSSLStreamAdapter::GetSslCipherSuite(int* cipher_suite) {
 
   *cipher_suite = static_cast<uint16_t>(SSL_CIPHER_get_id(current_cipher));
   return true;
+}
+
+int OpenSSLStreamAdapter::GetSslVersion() const {
+  if (state_ != SSL_CONNECTED)
+    return -1;
+
+  int ssl_version = SSL_version(ssl_);
+  if (ssl_mode_ == SSL_MODE_DTLS) {
+    if (ssl_version == DTLS1_VERSION)
+      return SSL_PROTOCOL_DTLS_10;
+    else if (ssl_version == DTLS1_2_VERSION)
+      return SSL_PROTOCOL_DTLS_12;
+  } else {
+    if (ssl_version == TLS1_VERSION)
+      return SSL_PROTOCOL_TLS_10;
+    else if (ssl_version == TLS1_1_VERSION)
+      return SSL_PROTOCOL_TLS_11;
+    else if (ssl_version == TLS1_2_VERSION)
+      return SSL_PROTOCOL_TLS_12;
+  }
+
+  return -1;
 }
 
 // Key Extractor interface
@@ -1147,46 +1124,71 @@ bool OpenSSLStreamAdapter::HaveExporter() {
 #endif
 }
 
-int OpenSSLStreamAdapter::GetDefaultSslCipherForTest(SSLProtocolVersion version,
-                                                     KeyType key_type) {
+#define CDEF(X) \
+  { static_cast<uint16_t>(TLS1_CK_##X & 0xffff), "TLS_" #X }
+
+struct cipher_list {
+  uint16_t cipher;
+  const char* cipher_str;
+};
+
+// TODO(torbjorng): Perhaps add more cipher suites to these lists.
+static const cipher_list OK_RSA_ciphers[] = {
+  CDEF(ECDHE_RSA_WITH_AES_128_CBC_SHA),
+  CDEF(ECDHE_RSA_WITH_AES_256_CBC_SHA),
+  CDEF(ECDHE_RSA_WITH_AES_128_GCM_SHA256),
+#ifdef TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA256
+  CDEF(ECDHE_RSA_WITH_AES_256_GCM_SHA256),
+#endif
+  CDEF(ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256),
+};
+
+static const cipher_list OK_ECDSA_ciphers[] = {
+  CDEF(ECDHE_ECDSA_WITH_AES_128_CBC_SHA),
+  CDEF(ECDHE_ECDSA_WITH_AES_256_CBC_SHA),
+  CDEF(ECDHE_ECDSA_WITH_AES_128_GCM_SHA256),
+#ifdef TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA256
+  CDEF(ECDHE_ECDSA_WITH_AES_256_GCM_SHA256),
+#endif
+  CDEF(ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256),
+};
+#undef CDEF
+
+bool OpenSSLStreamAdapter::IsAcceptableCipher(int cipher, KeyType key_type) {
   if (key_type == KT_RSA) {
-    switch (version) {
-      case SSL_PROTOCOL_TLS_10:
-      case SSL_PROTOCOL_TLS_11:
-        return kDefaultSslCipher10;
-      case SSL_PROTOCOL_TLS_12:
-      default:
-#ifdef OPENSSL_IS_BORINGSSL
-        if (EVP_has_aes_hardware()) {
-          return kDefaultSslCipher12;
-        } else {
-          return kDefaultSslCipher12NoAesGcm;
-        }
-#else  // !OPENSSL_IS_BORINGSSL
-        return kDefaultSslCipher12;
-#endif
+    for (const cipher_list& c : OK_RSA_ciphers) {
+      if (cipher == c.cipher)
+        return true;
     }
-  } else if (key_type == KT_ECDSA) {
-    switch (version) {
-      case SSL_PROTOCOL_TLS_10:
-      case SSL_PROTOCOL_TLS_11:
-        return kDefaultSslEcCipher10;
-      case SSL_PROTOCOL_TLS_12:
-      default:
-#ifdef OPENSSL_IS_BORINGSSL
-        if (EVP_has_aes_hardware()) {
-          return kDefaultSslEcCipher12;
-        } else {
-          return kDefaultSslEcCipher12NoAesGcm;
-        }
-#else  // !OPENSSL_IS_BORINGSSL
-        return kDefaultSslEcCipher12;
-#endif
-    }
-  } else {
-    RTC_NOTREACHED();
-    return kDefaultSslEcCipher12;
   }
+
+  if (key_type == KT_ECDSA) {
+    for (const cipher_list& c : OK_ECDSA_ciphers) {
+      if (cipher == c.cipher)
+        return true;
+    }
+  }
+
+  return false;
+}
+
+bool OpenSSLStreamAdapter::IsAcceptableCipher(const std::string& cipher,
+                                              KeyType key_type) {
+  if (key_type == KT_RSA) {
+    for (const cipher_list& c : OK_RSA_ciphers) {
+      if (cipher == c.cipher_str)
+        return true;
+    }
+  }
+
+  if (key_type == KT_ECDSA) {
+    for (const cipher_list& c : OK_ECDSA_ciphers) {
+      if (cipher == c.cipher_str)
+        return true;
+    }
+  }
+
+  return false;
 }
 
 }  // namespace rtc

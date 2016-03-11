@@ -1542,8 +1542,7 @@ TEST_F(P2PTestConductor, GetBytesSentStats) {
 }
 
 // Test that DTLS 1.0 is used if both sides only support DTLS 1.0.
-// Disabled due to new BoringSSLL version, see  webrtc:5634
-TEST_F(P2PTestConductor, DISABLED_GetDtls12None) {
+TEST_F(P2PTestConductor, GetDtls12None) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_10;
   PeerConnectionFactory::Options recv_options;
@@ -1555,16 +1554,10 @@ TEST_F(P2PTestConductor, DISABLED_GetDtls12None) {
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
   LocalP2PTest();
 
-  EXPECT_EQ_WAIT(rtc::SSLStreamAdapter::SslCipherSuiteToName(
-                     rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-                         rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)),
-                 initializing_client()->GetDtlsCipherStats(),
-                 kMaxWaitForStatsMs);
-  EXPECT_EQ(1, init_observer->GetEnumCounter(
-                   webrtc::kEnumCounterAudioSslCipher,
-                   rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-                       rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)));
-
+  EXPECT_TRUE_WAIT(
+      rtc::SSLStreamAdapter::IsAcceptableCipher(
+          initializing_client()->GetDtlsCipherStats(), rtc::KT_DEFAULT),
+      kMaxWaitForStatsMs);
   EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(kDefaultSrtpCryptoSuite),
                  initializing_client()->GetSrtpCipherStats(),
                  kMaxWaitForStatsMs);
@@ -1586,16 +1579,10 @@ TEST_F(P2PTestConductor, GetDtls12Both) {
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
   LocalP2PTest();
 
-  EXPECT_EQ_WAIT(rtc::SSLStreamAdapter::SslCipherSuiteToName(
-                     rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-                         rtc::SSL_PROTOCOL_DTLS_12, rtc::KT_DEFAULT)),
-                 initializing_client()->GetDtlsCipherStats(),
-                 kMaxWaitForStatsMs);
-  EXPECT_EQ(1, init_observer->GetEnumCounter(
-                   webrtc::kEnumCounterAudioSslCipher,
-                   rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-                       rtc::SSL_PROTOCOL_DTLS_12, rtc::KT_DEFAULT)));
-
+  EXPECT_TRUE_WAIT(
+      rtc::SSLStreamAdapter::IsAcceptableCipher(
+          initializing_client()->GetDtlsCipherStats(), rtc::KT_DEFAULT),
+      kMaxWaitForStatsMs);
   EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(kDefaultSrtpCryptoSuite),
                  initializing_client()->GetSrtpCipherStats(),
                  kMaxWaitForStatsMs);
@@ -1606,8 +1593,7 @@ TEST_F(P2PTestConductor, GetDtls12Both) {
 
 // Test that DTLS 1.0 is used if the initator supports DTLS 1.2 and the
 // received supports 1.0.
-// Disabled due to new BoringSSLL version, see  webrtc:5634
-TEST_F(P2PTestConductor, DISABLED_GetDtls12Init) {
+TEST_F(P2PTestConductor, GetDtls12Init) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   PeerConnectionFactory::Options recv_options;
@@ -1619,16 +1605,10 @@ TEST_F(P2PTestConductor, DISABLED_GetDtls12Init) {
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
   LocalP2PTest();
 
-  EXPECT_EQ_WAIT(rtc::SSLStreamAdapter::SslCipherSuiteToName(
-                     rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-                         rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)),
-                 initializing_client()->GetDtlsCipherStats(),
-                 kMaxWaitForStatsMs);
-  EXPECT_EQ(1, init_observer->GetEnumCounter(
-                   webrtc::kEnumCounterAudioSslCipher,
-                   rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-                       rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)));
-
+  EXPECT_TRUE_WAIT(
+      rtc::SSLStreamAdapter::IsAcceptableCipher(
+          initializing_client()->GetDtlsCipherStats(), rtc::KT_DEFAULT),
+      kMaxWaitForStatsMs);
   EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(kDefaultSrtpCryptoSuite),
                  initializing_client()->GetSrtpCipherStats(),
                  kMaxWaitForStatsMs);
@@ -1639,8 +1619,7 @@ TEST_F(P2PTestConductor, DISABLED_GetDtls12Init) {
 
 // Test that DTLS 1.0 is used if the initator supports DTLS 1.0 and the
 // received supports 1.2.
-// Disabled due to new BoringSSLL version, see  webrtc:5634
-TEST_F(P2PTestConductor, DISABLED_GetDtls12Recv) {
+TEST_F(P2PTestConductor, GetDtls12Recv) {
   PeerConnectionFactory::Options init_options;
   init_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_10;
   PeerConnectionFactory::Options recv_options;
@@ -1652,16 +1631,10 @@ TEST_F(P2PTestConductor, DISABLED_GetDtls12Recv) {
   initializing_client()->pc()->RegisterUMAObserver(init_observer);
   LocalP2PTest();
 
-  EXPECT_EQ_WAIT(rtc::SSLStreamAdapter::SslCipherSuiteToName(
-                     rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-                         rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)),
-                 initializing_client()->GetDtlsCipherStats(),
-                 kMaxWaitForStatsMs);
-  EXPECT_EQ(1, init_observer->GetEnumCounter(
-                   webrtc::kEnumCounterAudioSslCipher,
-                   rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-                       rtc::SSL_PROTOCOL_DTLS_10, rtc::KT_DEFAULT)));
-
+  EXPECT_TRUE_WAIT(
+      rtc::SSLStreamAdapter::IsAcceptableCipher(
+          initializing_client()->GetDtlsCipherStats(), rtc::KT_DEFAULT),
+      kMaxWaitForStatsMs);
   EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(kDefaultSrtpCryptoSuite),
                  initializing_client()->GetSrtpCipherStats(),
                  kMaxWaitForStatsMs);

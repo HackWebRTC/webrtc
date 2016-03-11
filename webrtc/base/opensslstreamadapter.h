@@ -92,6 +92,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   bool GetSslCipherSuite(int* cipher) override;
 
+  int GetSslVersion() const override;
+
   // Key Extractor interface
   bool ExportKeyingMaterial(const std::string& label,
                             const uint8_t* context,
@@ -109,9 +111,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
 
-  // TODO(guoweis): Move this away from a static class method.
-  static int GetDefaultSslCipherForTest(SSLProtocolVersion version,
-                                        KeyType key_type);
+  static bool IsAcceptableCipher(int cipher, KeyType key_type);
+  static bool IsAcceptableCipher(const std::string& cipher, KeyType key_type);
 
  protected:
   void OnEvent(StreamInterface* stream, int events, int err) override;

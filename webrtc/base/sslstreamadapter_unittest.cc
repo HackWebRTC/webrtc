@@ -488,6 +488,13 @@ class SSLStreamAdapterTestBase : public testing::Test,
       return server_ssl_->GetSslCipherSuite(retval);
   }
 
+  int GetSslVersion(bool client) {
+    if (client)
+      return client_ssl_->GetSslVersion();
+    else
+      return server_ssl_->GetSslVersion();
+  }
+
   bool ExportKeyingMaterial(const char *label,
                             const unsigned char *context,
                             size_t context_len,
@@ -1066,8 +1073,7 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
 
 // Test getting the used DTLS ciphers.
 // DTLS 1.2 enabled for neither client nor server -> DTLS 1.0 will be used.
-// Disabled due to new BoringSSLL version, see  webrtc:5634
-TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestGetSslCipherSuite) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuite) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
@@ -1077,11 +1083,12 @@ TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestGetSslCipherSuite) {
   int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(true));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(false));
+
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
-      server_cipher);
+  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
+      server_cipher, ::testing::get<1>(GetParam()).type()));
 }
 
 // Test getting the used DTLS 1.2 ciphers.
@@ -1096,16 +1103,16 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Both) {
   int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(true));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(false));
+
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-          rtc::SSL_PROTOCOL_DTLS_12, ::testing::get<1>(GetParam()).type()),
-      server_cipher);
+  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
+      server_cipher, ::testing::get<1>(GetParam()).type()));
 }
 
 // DTLS 1.2 enabled for client only -> DTLS 1.0 will be used.
-// Disabled due to new BoringSSLL version, see  webrtc:5634
-TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestGetSslCipherSuiteDtls12Client) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Client) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
@@ -1115,16 +1122,16 @@ TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestGetSslCipherSuiteDtls12Client) {
   int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(true));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(false));
+
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
-      server_cipher);
+  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
+      server_cipher, ::testing::get<1>(GetParam()).type()));
 }
 
 // DTLS 1.2 enabled for server only -> DTLS 1.0 will be used.
-// Disabled due to new BoringSSLL version, see  webrtc:5634
-TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestGetSslCipherSuiteDtls12Server) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Server) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
@@ -1134,11 +1141,12 @@ TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestGetSslCipherSuiteDtls12Server) {
   int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(true));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(false));
+
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(
-      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
-          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
-      server_cipher);
+  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
+      server_cipher, ::testing::get<1>(GetParam()).type()));
 }
 
 // The RSA keysizes here might look strange, why not include the RFC's size

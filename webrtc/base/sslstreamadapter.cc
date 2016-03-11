@@ -86,11 +86,13 @@ bool SSLStreamAdapter::HaveDtlsSrtp() {
 bool SSLStreamAdapter::HaveExporter() {
   return OpenSSLStreamAdapter::HaveExporter();
 }
-int SSLStreamAdapter::GetDefaultSslCipherForTest(SSLProtocolVersion version,
-                                                 KeyType key_type) {
-  return OpenSSLStreamAdapter::GetDefaultSslCipherForTest(version, key_type);
+bool SSLStreamAdapter::IsAcceptableCipher(int cipher, KeyType key_type) {
+  return OpenSSLStreamAdapter::IsAcceptableCipher(cipher, key_type);
 }
-
+bool SSLStreamAdapter::IsAcceptableCipher(const std::string& cipher,
+                                          KeyType key_type) {
+  return OpenSSLStreamAdapter::IsAcceptableCipher(cipher, key_type);
+}
 std::string SSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
   return OpenSSLStreamAdapter::SslCipherSuiteToName(cipher_suite);
 }
