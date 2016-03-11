@@ -18,7 +18,6 @@
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/deprecation.h"
 
 namespace rtc {
 
@@ -227,15 +226,6 @@ class Buffer {
     data_ = std::move(new_data);
     capacity_ = capacity;
     RTC_DCHECK(IsConsistent());
-  }
-
-  // b.Pass() does the same thing as std::move(b).
-  // Deprecated; remove in March 2016 (bug 5373).
-  RTC_DEPRECATED Buffer&& Pass() { return DEPRECATED_Pass(); }
-
-  Buffer&& DEPRECATED_Pass() {
-    RTC_DCHECK(IsConsistent());
-    return std::move(*this);
   }
 
   // Resets the buffer to zero size without altering capacity. Works even if the
