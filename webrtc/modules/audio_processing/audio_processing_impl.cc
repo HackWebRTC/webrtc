@@ -33,7 +33,6 @@
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 #include "webrtc/modules/audio_processing/level_estimator_impl.h"
 #include "webrtc/modules/audio_processing/noise_suppression_impl.h"
-#include "webrtc/modules/audio_processing/processing_component.h"
 #include "webrtc/modules/audio_processing/transient/transient_suppressor.h"
 #include "webrtc/modules/audio_processing/voice_detection_impl.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -101,7 +100,6 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   explicit ApmPrivateSubmodules(Beamformer<float>* beamformer)
       : beamformer(beamformer) {}
   // Accessed internally from capture or during initialization
-  std::list<ProcessingComponent*> component_list;
   std::unique_ptr<Beamformer<float>> beamformer;
   std::unique_ptr<AgcManagerDirect> agc_manager;
 };
@@ -197,13 +195,6 @@ AudioProcessingImpl::~AudioProcessingImpl() {
   private_submodules_->agc_manager.reset();
   // Depends on gain_control_.
   public_submodules_->gain_control_for_experimental_agc.reset();
-  while (!private_submodules_->component_list.empty()) {
-    ProcessingComponent* component =
-        private_submodules_->component_list.front();
-    component->Destroy();
-    delete component;
-    private_submodules_->component_list.pop_front();
-  }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->Open()) {
@@ -308,14 +299,6 @@ int AudioProcessingImpl::InitializeLocked() {
                       fwd_audio_buffer_channels,
                       formats_.api_format.output_stream().num_frames()));
 
-  // Initialize all components.
-  for (auto item : private_submodules_->component_list) {
-    int err = item->Initialize();
-    if (err != kNoError) {
-      return err;
-    }
-  }
-
   InitializeGainController();
   InitializeEchoCanceller();
   InitializeEchoControlMobile();
@@ -416,9 +399,6 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
   // Run in a single-threaded manner when setting the extra options.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
-  for (auto item : private_submodules_->component_list) {
-    item->SetExtraOptions(config);
-  }
 
   public_submodules_->echo_cancellation->SetExtraOptions(config);
 
@@ -1129,13 +1109,6 @@ bool AudioProcessingImpl::is_data_processed() const {
       public_submodules_->echo_control_mobile->is_enabled() ||
       public_submodules_->gain_control->is_enabled()) {
     return true;
-  }
-
-  // All of the private submodules modify the data.
-  for (auto item : private_submodules_->component_list) {
-    if (item->is_component_enabled()) {
-      return true;
-    }
   }
 
   // The capture data is otherwise unchanged.
