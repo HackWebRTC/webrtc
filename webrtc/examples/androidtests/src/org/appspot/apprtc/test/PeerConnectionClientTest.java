@@ -150,11 +150,6 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   }
 
   @Override
-  public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
-    // TODO(honghaiz): Add this for tests.
-  }
-
-  @Override
   public void onIceConnected() {
     Log.d(TAG, "ICE Connected");
     synchronized(iceConnectedEvent) {

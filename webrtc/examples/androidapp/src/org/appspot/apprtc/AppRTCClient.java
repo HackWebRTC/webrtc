@@ -59,11 +59,6 @@ public interface AppRTCClient {
   public void sendLocalIceCandidate(final IceCandidate candidate);
 
   /**
-   * Send removed ICE candidates to the other participant.
-   */
-  public void sendLocalIceCandidateRemovals(final IceCandidate[] candidates);
-
-  /**
    * Disconnect from room.
    */
   public void disconnectFromRoom();
@@ -116,11 +111,6 @@ public interface AppRTCClient {
      * Callback fired once remote Ice candidate is received.
      */
     public void onRemoteIceCandidate(final IceCandidate candidate);
-
-    /**
-     * Callback fired once remote Ice candidate removals are received.
-     */
-    public void onRemoteIceCandidatesRemoved(final IceCandidate[] candidates);
 
     /**
      * Callback fired once channel is closed.

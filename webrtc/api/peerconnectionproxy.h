@@ -66,9 +66,6 @@ BEGIN_PROXY_MAP(PeerConnection)
                 SetConfiguration,
                 const PeerConnectionInterface::RTCConfiguration&);
   PROXY_METHOD1(bool, AddIceCandidate, const IceCandidateInterface*)
-  PROXY_METHOD1(bool,
-                RemoveIceCandidates,
-                const std::vector<cricket::Candidate>&);
   PROXY_METHOD1(void, RegisterUMAObserver, UMAObserver*)
   PROXY_METHOD0(SignalingState, signaling_state)
   PROXY_METHOD0(IceState, ice_state)

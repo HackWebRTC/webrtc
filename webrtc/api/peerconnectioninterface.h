@@ -439,12 +439,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // take the ownership of the |candidate|.
   virtual bool AddIceCandidate(const IceCandidateInterface* candidate) = 0;
 
-  // Removes a group of remote candidates from the ICE agent.
-  virtual bool RemoveIceCandidates(
-      const std::vector<cricket::Candidate>& candidates) {
-    return false;
-  }
-
   virtual void RegisterUMAObserver(UMAObserver* observer) = 0;
 
   // Returns the current SignalingState.
@@ -500,12 +494,6 @@ class PeerConnectionObserver {
 
   // New Ice candidate have been found.
   virtual void OnIceCandidate(const IceCandidateInterface* candidate) = 0;
-
-  // Ice candidates have been removed.
-  // TODO(honghaiz): Make this a pure virtual method when all its subclasses
-  // implement it.
-  virtual void OnIceCandidatesRemoved(
-      const std::vector<cricket::Candidate>& candidates) {}
 
   // Called when the ICE connection receiving status changes.
   virtual void OnIceConnectionReceivingChange(bool receiving) {}

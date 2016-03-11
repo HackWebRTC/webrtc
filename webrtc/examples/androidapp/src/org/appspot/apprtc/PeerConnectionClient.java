@@ -184,11 +184,6 @@ public class PeerConnectionClient {
     public void onIceCandidate(final IceCandidate candidate);
 
     /**
-     * Callback fired once local ICE candidates are removed.
-     */
-    public void onIceCandidatesRemoved(final IceCandidate[] candidates);
-
-    /**
      * Callback fired once connection is established (IceConnectionState is
      * CONNECTED).
      */
@@ -660,21 +655,6 @@ public class PeerConnectionClient {
     });
   }
 
-  public void removeRemoteIceCandidates(final IceCandidate[] candidates) {
-    executor.execute(new Runnable() {
-      @Override
-      public void run() {
-        if (peerConnection == null || isError) {
-          return;
-        }
-        // Drain the queued remote candidates if there is any so that
-        // they are processed in the proper order.
-        drainCandidates();
-        peerConnection.removeIceCandidates(candidates);
-      }
-    });
-  }
-
   public void setRemoteDescription(final SessionDescription sdp) {
     executor.execute(new Runnable() {
       @Override
@@ -939,16 +919,6 @@ public class PeerConnectionClient {
         @Override
         public void run() {
           events.onIceCandidate(candidate);
-        }
-      });
-    }
-
-    @Override
-    public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
-      executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          events.onIceCandidatesRemoved(candidates);
         }
       });
     }

@@ -501,8 +501,6 @@ WebRtcSession::WebRtcSession(webrtc::MediaControllerInterface* media_controller,
       this, &WebRtcSession::OnTransportControllerGatheringState);
   transport_controller_->SignalCandidatesGathered.connect(
       this, &WebRtcSession::OnTransportControllerCandidatesGathered);
-  transport_controller_->SignalCandidatesRemoved.connect(
-      this, &WebRtcSession::OnTransportControllerCandidatesRemoved);
 }
 
 WebRtcSession::~WebRtcSession() {
@@ -1088,7 +1086,7 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
   if (!remote_desc_) {
     LOG(LS_ERROR) << "ProcessIceMessage: ICE candidates can't be added "
                   << "without any remote session description.";
-    return false;
+     return false;
   }
 
   if (!candidate) {
@@ -1114,35 +1112,6 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
     LOG(LS_INFO) << "ProcessIceMessage: Not ready to use candidate.";
     return true;
   }
-}
-
-bool WebRtcSession::RemoveRemoteIceCandidates(
-    const std::vector<cricket::Candidate>& candidates) {
-  if (!remote_desc_) {
-    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: ICE candidates can't be "
-                  << "removed without any remote session description.";
-    return false;
-  }
-
-  if (candidates.empty()) {
-    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: candidates are empty.";
-    return false;
-  }
-
-  size_t number_removed = remote_desc_->RemoveCandidates(candidates);
-  if (number_removed != candidates.size()) {
-    LOG(LS_ERROR) << "RemoveRemoteIceCandidates: Failed to remove candidates. "
-                  << "Requested " << candidates.size() << " but only "
-                  << number_removed << " are removed.";
-  }
-
-  // Remove the candidates from the transport controller.
-  std::string error;
-  bool res = transport_controller_->RemoveRemoteCandidates(candidates, &error);
-  if (!res && !error.empty()) {
-    LOG(LS_ERROR) << "Error when removing remote candidates: " << error;
-  }
-  return true;
 }
 
 bool WebRtcSession::SetIceTransports(
@@ -1554,27 +1523,6 @@ void WebRtcSession::OnTransportControllerCandidatesGathered(
   }
 }
 
-void WebRtcSession::OnTransportControllerCandidatesRemoved(
-    const std::vector<cricket::Candidate>& candidates) {
-  ASSERT(signaling_thread()->IsCurrent());
-  // Sanity check.
-  for (const cricket::Candidate& candidate : candidates) {
-    if (candidate.transport_name().empty()) {
-      LOG(LS_ERROR) << "OnTransportControllerCandidatesRemoved: "
-                    << "empty content name in candidate "
-                    << candidate.ToString();
-      return;
-    }
-  }
-
-  if (local_desc_) {
-    local_desc_->RemoveCandidates(candidates);
-  }
-  if (ice_observer_) {
-    ice_observer_->OnIceCandidatesRemoved(candidates);
-  }
-}
-
 // Enabling voice and video channel.
 void WebRtcSession::EnableChannels() {
   if (voice_channel_ && !voice_channel_->enabled())
@@ -1634,11 +1582,14 @@ bool WebRtcSession::UseCandidatesInSessionDescription(
   return ret;
 }
 
-bool WebRtcSession::UseCandidate(const IceCandidateInterface* candidate) {
+bool WebRtcSession::UseCandidate(
+    const IceCandidateInterface* candidate) {
+
   size_t mediacontent_index = static_cast<size_t>(candidate->sdp_mline_index());
   size_t remote_content_size = remote_desc_->description()->contents().size();
   if (mediacontent_index >= remote_content_size) {
-    LOG(LS_ERROR) << "UseCandidate: Invalid candidate media index.";
+    LOG(LS_ERROR)
+        << "UseRemoteCandidateInSession: Invalid candidate media index.";
     return false;
   }
 
@@ -1979,8 +1930,8 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
   size_t remote_content_size =
       current_remote_desc->description()->contents().size();
   if (mediacontent_index >= remote_content_size) {
-    LOG(LS_ERROR) << "ReadyToUseRemoteCandidate: Invalid candidate media index "
-                  << mediacontent_index;
+    LOG(LS_ERROR)
+        << "ReadyToUseRemoteCandidate: Invalid candidate media index.";
 
     *valid = false;
     return false;

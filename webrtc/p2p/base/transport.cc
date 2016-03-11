@@ -294,22 +294,6 @@ bool Transport::VerifyCandidate(const Candidate& cand, std::string* error) {
     }
   }
 
-  if (!HasChannel(cand.component())) {
-    *error = "Candidate has an unknown component: " + cand.ToString() +
-             " for content: " + name();
-    return false;
-  }
-
-  return true;
-}
-
-bool Transport::VerifyCandidates(const Candidates& candidates,
-                                 std::string* error) {
-  for (const Candidate& candidate : candidates) {
-    if (!VerifyCandidate(candidate, error)) {
-      return false;
-    }
-  }
   return true;
 }
 
@@ -334,32 +318,22 @@ bool Transport::GetStats(TransportStats* stats) {
 bool Transport::AddRemoteCandidates(const std::vector<Candidate>& candidates,
                                     std::string* error) {
   ASSERT(!channels_destroyed_);
-  // Verify each candidate before passing down to the transport layer.
-  if (!VerifyCandidates(candidates, error)) {
-    return false;
+  // Verify each candidate before passing down to transport layer.
+  for (const Candidate& cand : candidates) {
+    if (!VerifyCandidate(cand, error)) {
+      return false;
+    }
+    if (!HasChannel(cand.component())) {
+      *error = "Candidate has unknown component: " + cand.ToString() +
+               " for content: " + name();
+      return false;
+    }
   }
 
   for (const Candidate& candidate : candidates) {
     TransportChannelImpl* channel = GetChannel(candidate.component());
     if (channel != nullptr) {
       channel->AddRemoteCandidate(candidate);
-    }
-  }
-  return true;
-}
-
-bool Transport::RemoveRemoteCandidates(const std::vector<Candidate>& candidates,
-                                       std::string* error) {
-  ASSERT(!channels_destroyed_);
-  // Verify each candidate before passing down to the transport layer.
-  if (!VerifyCandidates(candidates, error)) {
-    return false;
-  }
-
-  for (const Candidate& candidate : candidates) {
-    TransportChannelImpl* channel = GetChannel(candidate.component());
-    if (channel != nullptr) {
-      channel->RemoveRemoteCandidate(candidate);
     }
   }
   return true;

@@ -98,7 +98,9 @@ static const char* kIcePwd[4] = {"TESTICEPWD00000000000000",
 static const uint64_t kTiebreaker1 = 11111;
 static const uint64_t kTiebreaker2 = 22222;
 
-enum { MSG_ADD_CANDIDATES, MSG_REMOVE_CANDIDATES };
+enum {
+  MSG_CANDIDATE
+};
 
 static cricket::IceConfig CreateIceConfig(int receiving_timeout,
                                           bool gather_continually,
@@ -214,14 +216,12 @@ class P2PTransportChannelTestBase : public testing::Test,
     rtc::scoped_ptr<cricket::P2PTransportChannel> ch_;
   };
 
-  struct CandidatesData : public rtc::MessageData {
-    CandidatesData(cricket::TransportChannel* ch, const cricket::Candidate& c)
-        : channel(ch), candidates(1, c) {}
-    CandidatesData(cricket::TransportChannel* ch,
-                   const std::vector<cricket::Candidate>& cc)
-        : channel(ch), candidates(cc) {}
+  struct CandidateData : public rtc::MessageData {
+    CandidateData(cricket::TransportChannel* ch, const cricket::Candidate& c)
+        : channel(ch), candidate(c) {
+    }
     cricket::TransportChannel* channel;
-    cricket::Candidates candidates;
+    cricket::Candidate candidate;
   };
 
   struct Endpoint {
@@ -262,7 +262,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     uint64_t tiebreaker_;
     bool role_conflict_;
     bool save_candidates_;
-    std::vector<CandidatesData*> saved_candidates_;
+    std::vector<CandidateData*> saved_candidates_;
   };
 
   ChannelData* GetChannelData(cricket::TransportChannel* channel) {
@@ -310,9 +310,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     cricket::P2PTransportChannel* channel = new cricket::P2PTransportChannel(
         "test content name", component, GetAllocator(endpoint));
     channel->SignalCandidateGathered.connect(
-        this, &P2PTransportChannelTestBase::OnCandidateGathered);
-    channel->SignalCandidatesRemoved.connect(
-        this, &P2PTransportChannelTestBase::OnCandidatesRemoved);
+        this, &P2PTransportChannelTestBase::OnCandidate);
     channel->SignalReadPacket.connect(
         this, &P2PTransportChannelTestBase::OnReadPacket);
     channel->SignalRoleConflict.connect(
@@ -647,15 +645,15 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   // We pass the candidates directly to the other side.
-  void OnCandidateGathered(cricket::TransportChannelImpl* ch,
-                           const cricket::Candidate& c) {
+  void OnCandidate(cricket::TransportChannelImpl* ch,
+                   const cricket::Candidate& c) {
     if (force_relay_ && c.type() != cricket::RELAY_PORT_TYPE)
       return;
 
     if (GetEndpoint(ch)->save_candidates_) {
-      GetEndpoint(ch)->saved_candidates_.push_back(new CandidatesData(ch, c));
+      GetEndpoint(ch)->saved_candidates_.push_back(new CandidateData(ch, c));
     } else {
-      main_->Post(this, MSG_ADD_CANDIDATES, new CandidatesData(ch, c));
+      main_->Post(this, MSG_CANDIDATE, new CandidateData(ch, c));
     }
   }
 
@@ -663,35 +661,26 @@ class P2PTransportChannelTestBase : public testing::Test,
     GetEndpoint(endpoint)->save_candidates_ = true;
   }
 
-  void OnCandidatesRemoved(cricket::TransportChannelImpl* ch,
-                           const std::vector<cricket::Candidate>& candidates) {
-    // Candidate removals are not paused.
-    CandidatesData* candidates_data = new CandidatesData(ch, candidates);
-    main_->Post(this, MSG_REMOVE_CANDIDATES, candidates_data);
-  }
-
   // Tcp candidate verification has to be done when they are generated.
   void VerifySavedTcpCandidates(int endpoint, const std::string& tcptype) {
     for (auto& data : GetEndpoint(endpoint)->saved_candidates_) {
-      for (auto& candidate : data->candidates) {
-        EXPECT_EQ(candidate.protocol(), cricket::TCP_PROTOCOL_NAME);
-        EXPECT_EQ(candidate.tcptype(), tcptype);
-        if (candidate.tcptype() == cricket::TCPTYPE_ACTIVE_STR) {
-          EXPECT_EQ(candidate.address().port(), cricket::DISCARD_PORT);
-        } else if (candidate.tcptype() == cricket::TCPTYPE_PASSIVE_STR) {
-          EXPECT_NE(candidate.address().port(), cricket::DISCARD_PORT);
-        } else {
-          FAIL() << "Unknown tcptype: " << candidate.tcptype();
-        }
+      EXPECT_EQ(data->candidate.protocol(), cricket::TCP_PROTOCOL_NAME);
+      EXPECT_EQ(data->candidate.tcptype(), tcptype);
+      if (data->candidate.tcptype() == cricket::TCPTYPE_ACTIVE_STR) {
+        EXPECT_EQ(data->candidate.address().port(), cricket::DISCARD_PORT);
+      } else if (data->candidate.tcptype() == cricket::TCPTYPE_PASSIVE_STR) {
+        EXPECT_NE(data->candidate.address().port(), cricket::DISCARD_PORT);
+      } else {
+        FAIL() << "Unknown tcptype: " << data->candidate.tcptype();
       }
     }
   }
 
   void ResumeCandidates(int endpoint) {
     Endpoint* ed = GetEndpoint(endpoint);
-    std::vector<CandidatesData*>::iterator it = ed->saved_candidates_.begin();
+    std::vector<CandidateData*>::iterator it = ed->saved_candidates_.begin();
     for (; it != ed->saved_candidates_.end(); ++it) {
-      main_->Post(this, MSG_ADD_CANDIDATES, *it);
+      main_->Post(this, MSG_CANDIDATE, *it);
     }
     ed->saved_candidates_.clear();
     ed->save_candidates_ = false;
@@ -699,29 +688,18 @@ class P2PTransportChannelTestBase : public testing::Test,
 
   void OnMessage(rtc::Message* msg) {
     switch (msg->message_id) {
-      case MSG_ADD_CANDIDATES: {
-        rtc::scoped_ptr<CandidatesData> data(
-            static_cast<CandidatesData*>(msg->pdata));
+      case MSG_CANDIDATE: {
+        rtc::scoped_ptr<CandidateData> data(
+            static_cast<CandidateData*>(msg->pdata));
         cricket::P2PTransportChannel* rch = GetRemoteChannel(data->channel);
-        for (auto& c : data->candidates) {
-          if (clear_remote_candidates_ufrag_pwd_) {
-            c.set_username("");
-            c.set_password("");
-          }
-          LOG(LS_INFO) << "Candidate(" << data->channel->component() << "->"
-                       << rch->component() << "): " << c.ToString();
-          rch->AddRemoteCandidate(c);
+        cricket::Candidate c = data->candidate;
+        if (clear_remote_candidates_ufrag_pwd_) {
+          c.set_username("");
+          c.set_password("");
         }
-        break;
-      }
-      case MSG_REMOVE_CANDIDATES: {
-        rtc::scoped_ptr<CandidatesData> data(
-            static_cast<CandidatesData*>(msg->pdata));
-        cricket::P2PTransportChannel* rch = GetRemoteChannel(data->channel);
-        for (cricket::Candidate& c : data->candidates) {
-          LOG(LS_INFO) << "Removed remote candidate " << c.ToString();
-          rch->RemoveRemoteCandidate(c);
-        }
+        LOG(LS_INFO) << "Candidate(" << data->channel->component() << "->"
+                     << rch->component() << "): " << c.ToString();
+        rch->AddRemoteCandidate(c);
         break;
       }
     }
@@ -1794,10 +1772,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
                  ep2_ch1()->GetState(), 1000);
 }
 
-// Tests that when a network interface becomes inactive, if and only if
-// Continual Gathering is enabled, the ports associated with that network
-// will be removed from the port list of the channel, and the respective
-// remote candidates on the other participant will be removed eventually.
+// Tests that when a network interface becomes inactive, the ports associated
+// with that network will be removed from the port list of the channel if
+// and only if Continual Gathering is enabled.
 TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
@@ -1816,20 +1793,14 @@ TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
   // Endpoint 1 enabled continual gathering; the port will be removed
   // when the interface is removed.
   RemoveAddress(0, kPublicAddrs[0]);
-  EXPECT_TRUE(ep1_ch1()->ports().empty());
-  // The remote candidates will be removed eventually.
-  EXPECT_TRUE_WAIT(ep2_ch1()->remote_candidates().empty(), 1000);
+  EXPECT_EQ(0U, ep1_ch1()->ports().size());
 
   size_t num_ports = ep2_ch1()->ports().size();
   EXPECT_LE(1U, num_ports);
-  size_t num_remote_candidates = ep1_ch1()->remote_candidates().size();
   // Endpoint 2 did not enable continual gathering; the port will not be removed
-  // when the interface is removed and neither the remote candidates on the
-  // other participant.
+  // when the interface is removed.
   RemoveAddress(1, kPublicAddrs[1]);
-  rtc::Thread::Current()->ProcessMessages(500);
   EXPECT_EQ(num_ports, ep2_ch1()->ports().size());
-  EXPECT_EQ(num_remote_candidates, ep1_ch1()->remote_candidates().size());
 }
 
 /*

@@ -189,18 +189,11 @@ class MockIceObserver : public webrtc::IceObserver {
     EXPECT_NE(PeerConnectionInterface::kIceGatheringNew, ice_gathering_state_);
   }
 
-  // Some local candidates are removed.
-  void OnIceCandidatesRemoved(
-      const std::vector<cricket::Candidate>& candidates) {
-    num_candidates_removed_ += candidates.size();
-  }
-
   bool oncandidatesready_;
   std::vector<cricket::Candidate> mline_0_candidates_;
   std::vector<cricket::Candidate> mline_1_candidates_;
   PeerConnectionInterface::IceConnectionState ice_connection_state_;
   PeerConnectionInterface::IceGatheringState ice_gathering_state_;
-  size_t num_candidates_removed_ = 0;
 };
 
 class WebRtcSessionForTest : public webrtc::WebRtcSession {
@@ -364,9 +357,6 @@ class WebRtcSessionTest
 
   void AddInterface(const SocketAddress& addr) {
     network_manager_.AddInterface(addr);
-  }
-  void RemoveInterface(const SocketAddress& addr) {
-    network_manager_.RemoveInterface(addr);
   }
 
   // If |dtls_identity_store| != null or |rtc_configuration| contains
@@ -2116,14 +2106,12 @@ TEST_F(WebRtcSessionTest, TestSetRemoteAnswerWithoutOffer) {
       "Called in wrong state: STATE_INIT", answer);
 }
 
-// Tests that the remote candidates are added and removed successfully.
-TEST_F(WebRtcSessionTest, TestAddAndRemoveRemoteCandidates) {
+TEST_F(WebRtcSessionTest, TestAddRemoteCandidate) {
   Init();
   SendAudioVideoStream1();
 
-  cricket::Candidate candidate(1, "udp", rtc::SocketAddress("1.1.1.1", 5000), 0,
-                               "", "", "host", 0, "");
-  candidate.set_transport_name("audio");
+  cricket::Candidate candidate;
+  candidate.set_component(1);
   JsepIceCandidate ice_candidate1(kMediaContentName0, 0, candidate);
 
   // Fail since we have not set a remote description.
@@ -2141,7 +2129,6 @@ TEST_F(WebRtcSessionTest, TestAddAndRemoveRemoteCandidates) {
 
   EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate1));
   candidate.set_component(2);
-  candidate.set_address(rtc::SocketAddress("2.2.2.2", 6000));
   JsepIceCandidate ice_candidate2(kMediaContentName0, 0, candidate);
   EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate2));
 
@@ -2167,16 +2154,9 @@ TEST_F(WebRtcSessionTest, TestAddAndRemoveRemoteCandidates) {
 
   JsepIceCandidate bad_ice_candidate("bad content name", 99, candidate);
   EXPECT_FALSE(session_->ProcessIceMessage(&bad_ice_candidate));
-
-  // Remove candidate1 and candidate2
-  std::vector<cricket::Candidate> remote_candidates;
-  remote_candidates.push_back(ice_candidate1.candidate());
-  remote_candidates.push_back(ice_candidate2.candidate());
-  EXPECT_TRUE(session_->RemoveRemoteIceCandidates(remote_candidates));
-  EXPECT_EQ(0u, candidates->count());
 }
 
-// Tests that a remote candidate is added to the remote session description and
+// Test that a remote candidate is added to the remote session description and
 // that it is retained if the remote session description is changed.
 TEST_F(WebRtcSessionTest, TestRemoteCandidatesAddedToSessionDescription) {
   Init();
@@ -2229,11 +2209,8 @@ TEST_F(WebRtcSessionTest, TestRemoteCandidatesAddedToSessionDescription) {
 }
 
 // Test that local candidates are added to the local session description and
-// that they are retained if the local session description is changed. And if
-// continual gathering is enabled, they are removed from the local session
-// description when the network is down.
-TEST_F(WebRtcSessionTest,
-       TestLocalCandidatesAddedAndRemovedIfGatherContinually) {
+// that they are retained if the local session description is changed.
+TEST_F(WebRtcSessionTest, TestLocalCandidatesAddedToSessionDescription) {
   AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
   Init();
   SendAudioVideoStream1();
@@ -2266,43 +2243,6 @@ TEST_F(WebRtcSessionTest,
   candidates = local_desc->candidates(1);
   ASSERT_TRUE(candidates != NULL);
   EXPECT_EQ(0u, candidates->count());
-
-  candidates = local_desc->candidates(kMediaContentIndex0);
-  size_t num_local_candidates = candidates->count();
-  // Enable Continual Gathering
-  session_->SetIceConfig(cricket::IceConfig(-1, -1, true, false, -1));
-  // Bring down the network interface to trigger candidate removals.
-  RemoveInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  // Verify that all local candidates are removed.
-  EXPECT_EQ(0, observer_.num_candidates_removed_);
-  EXPECT_EQ_WAIT(num_local_candidates, observer_.num_candidates_removed_,
-                 kIceCandidatesTimeout);
-  EXPECT_EQ_WAIT(0u, candidates->count(), kIceCandidatesTimeout);
-}
-
-// Tests that if continual gathering is disabled, local candidates won't be
-// removed when the interface is turned down.
-TEST_F(WebRtcSessionTest, TestLocalCandidatesNotRemovedIfNotGatherContinually) {
-  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  Init();
-  SendAudioVideoStream1();
-  CreateAndSetRemoteOfferAndLocalAnswer();
-
-  const SessionDescriptionInterface* local_desc = session_->local_description();
-  const IceCandidateCollection* candidates =
-      local_desc->candidates(kMediaContentIndex0);
-  ASSERT_TRUE(candidates != NULL);
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
-
-  size_t num_local_candidates = candidates->count();
-  EXPECT_LT(0u, num_local_candidates);
-  // By default, Continual Gathering is disabled.
-  // Bring down the network interface.
-  RemoveInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  // Verify that the local candidates are not removed.
-  rtc::Thread::Current()->ProcessMessages(1000);
-  EXPECT_EQ(0, observer_.num_candidates_removed_);
-  EXPECT_EQ(num_local_candidates, candidates->count());
 }
 
 // Test that we can set a remote session description with remote candidates.

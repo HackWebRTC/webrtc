@@ -113,8 +113,6 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       this, &DtlsTransportChannelWrapper::OnGatheringState);
   channel_->SignalCandidateGathered.connect(
       this, &DtlsTransportChannelWrapper::OnCandidateGathered);
-  channel_->SignalCandidatesRemoved.connect(
-      this, &DtlsTransportChannelWrapper::OnCandidatesRemoved);
   channel_->SignalRoleConflict.connect(this,
       &DtlsTransportChannelWrapper::OnRoleConflict);
   channel_->SignalRouteChange.connect(this,
@@ -613,13 +611,6 @@ void DtlsTransportChannelWrapper::OnCandidateGathered(
     const Candidate& c) {
   ASSERT(channel == channel_);
   SignalCandidateGathered(this, c);
-}
-
-void DtlsTransportChannelWrapper::OnCandidatesRemoved(
-    TransportChannelImpl* channel,
-    const Candidates& candidates) {
-  ASSERT(channel == channel_);
-  SignalCandidatesRemoved(this, candidates);
 }
 
 void DtlsTransportChannelWrapper::OnRoleConflict(

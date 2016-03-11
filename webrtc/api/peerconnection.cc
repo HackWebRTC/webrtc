@@ -1205,12 +1205,6 @@ bool PeerConnection::AddIceCandidate(
   return session_->ProcessIceMessage(ice_candidate);
 }
 
-bool PeerConnection::RemoveIceCandidates(
-    const std::vector<cricket::Candidate>& candidates) {
-  TRACE_EVENT0("webrtc", "PeerConnection::RemoveIceCandidates");
-  return session_->RemoveRemoteIceCandidates(candidates);
-}
-
 void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
   TRACE_EVENT0("webrtc", "PeerConnection::RegisterUmaObserver");
   uma_observer_ = observer;
@@ -1388,12 +1382,6 @@ void PeerConnection::OnIceGatheringChange(
 void PeerConnection::OnIceCandidate(const IceCandidateInterface* candidate) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
   observer_->OnIceCandidate(candidate);
-}
-
-void PeerConnection::OnIceCandidatesRemoved(
-    const std::vector<cricket::Candidate>& candidates) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
-  observer_->OnIceCandidatesRemoved(candidates);
 }
 
 void PeerConnection::OnIceConnectionReceivingChange(bool receiving) {

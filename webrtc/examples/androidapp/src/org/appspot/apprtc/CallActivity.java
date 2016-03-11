@@ -558,24 +558,11 @@ public class CallActivity extends Activity
       @Override
       public void run() {
         if (peerConnectionClient == null) {
-          Log.e(TAG, "Received ICE candidate for a non-initialized peer connection.");
+          Log.e(TAG,
+              "Received ICE candidate for non-initilized peer connection.");
           return;
         }
         peerConnectionClient.addRemoteIceCandidate(candidate);
-      }
-    });
-  }
-
-  @Override
-  public void onRemoteIceCandidatesRemoved(final IceCandidate[] candidates) {
-    runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        if (peerConnectionClient == null) {
-          Log.e(TAG, "Received ICE candidate removals for a non-initialized peer connection.");
-          return;
-        }
-        peerConnectionClient.removeRemoteIceCandidates(candidates);
       }
     });
   }
@@ -625,18 +612,6 @@ public class CallActivity extends Activity
       public void run() {
         if (appRtcClient != null) {
           appRtcClient.sendLocalIceCandidate(candidate);
-        }
-      }
-    });
-  }
-
-  @Override
-  public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
-    runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        if (appRtcClient != null) {
-          appRtcClient.sendLocalIceCandidateRemovals(candidates);
         }
       }
     });
