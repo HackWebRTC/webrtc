@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
@@ -1533,13 +1535,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, 0);
 
     std::string err;
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc1(
+    std::unique_ptr<cricket::SessionDescription> sdesc1(
         CreateSessionDescriptionWithStream(1));
     EXPECT_TRUE(channel1_->PushdownLocalDescription(
         sdesc1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
 
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc2(
+    std::unique_ptr<cricket::SessionDescription> sdesc2(
         CreateSessionDescriptionWithStream(2));
     EXPECT_TRUE(channel1_->PushdownLocalDescription(
         sdesc2.get(), cricket::CA_OFFER, &err));
@@ -1551,13 +1553,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, 0);
 
     std::string err;
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc1(
+    std::unique_ptr<cricket::SessionDescription> sdesc1(
         CreateSessionDescriptionWithStream(1));
     EXPECT_TRUE(channel1_->PushdownRemoteDescription(
         sdesc1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc2(
+    std::unique_ptr<cricket::SessionDescription> sdesc2(
         CreateSessionDescriptionWithStream(2));
     EXPECT_TRUE(channel1_->PushdownRemoteDescription(
         sdesc2.get(), cricket::CA_OFFER, &err));
@@ -1570,14 +1572,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     std::string err;
     // Receive offer
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc1(
+    std::unique_ptr<cricket::SessionDescription> sdesc1(
         CreateSessionDescriptionWithStream(1));
     EXPECT_TRUE(channel1_->PushdownRemoteDescription(
         sdesc1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
     // Send PR answer
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc2(
+    std::unique_ptr<cricket::SessionDescription> sdesc2(
         CreateSessionDescriptionWithStream(2));
     EXPECT_TRUE(channel1_->PushdownLocalDescription(
         sdesc2.get(), cricket::CA_PRANSWER, &err));
@@ -1585,7 +1587,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(media_channel1_->HasSendStream(2));
 
     // Send answer
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc3(
+    std::unique_ptr<cricket::SessionDescription> sdesc3(
         CreateSessionDescriptionWithStream(3));
     EXPECT_TRUE(channel1_->PushdownLocalDescription(
         sdesc3.get(), cricket::CA_ANSWER, &err));
@@ -1599,14 +1601,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     std::string err;
     // Send offer
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc1(
+    std::unique_ptr<cricket::SessionDescription> sdesc1(
         CreateSessionDescriptionWithStream(1));
     EXPECT_TRUE(channel1_->PushdownLocalDescription(
         sdesc1.get(), cricket::CA_OFFER, &err));
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
 
     // Receive PR answer
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc2(
+    std::unique_ptr<cricket::SessionDescription> sdesc2(
         CreateSessionDescriptionWithStream(2));
     EXPECT_TRUE(channel1_->PushdownRemoteDescription(
         sdesc2.get(), cricket::CA_PRANSWER, &err));
@@ -1614,7 +1616,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(media_channel1_->HasRecvStream(2));
 
     // Receive answer
-    rtc::scoped_ptr<cricket::SessionDescription> sdesc3(
+    std::unique_ptr<cricket::SessionDescription> sdesc3(
         CreateSessionDescriptionWithStream(3));
     EXPECT_TRUE(channel1_->PushdownRemoteDescription(
         sdesc3.get(), cricket::CA_ANSWER, &err));
@@ -1777,8 +1779,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // The media channels are owned by the voice channel objects below.
   typename T::MediaChannel* media_channel1_;
   typename T::MediaChannel* media_channel2_;
-  rtc::scoped_ptr<typename T::Channel> channel1_;
-  rtc::scoped_ptr<typename T::Channel> channel2_;
+  std::unique_ptr<typename T::Channel> channel1_;
+  std::unique_ptr<typename T::Channel> channel2_;
   typename T::Content local_media_content1_;
   typename T::Content local_media_content2_;
   typename T::Content remote_media_content1_;

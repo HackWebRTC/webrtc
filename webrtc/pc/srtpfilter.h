@@ -13,12 +13,12 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/media/base/cryptoparams.h"
@@ -167,10 +167,10 @@ class SrtpFilter {
   State state_;
   uint32_t signal_silent_time_in_ms_;
   std::vector<CryptoParams> offer_params_;
-  rtc::scoped_ptr<SrtpSession> send_session_;
-  rtc::scoped_ptr<SrtpSession> recv_session_;
-  rtc::scoped_ptr<SrtpSession> send_rtcp_session_;
-  rtc::scoped_ptr<SrtpSession> recv_rtcp_session_;
+  std::unique_ptr<SrtpSession> send_session_;
+  std::unique_ptr<SrtpSession> recv_session_;
+  std::unique_ptr<SrtpSession> send_rtcp_session_;
+  std::unique_ptr<SrtpSession> recv_rtcp_session_;
   CryptoParams applied_send_params_;
   CryptoParams applied_recv_params_;
 };
@@ -229,7 +229,7 @@ class SrtpSession {
   srtp_ctx_t* session_;
   int rtp_auth_tag_len_;
   int rtcp_auth_tag_len_;
-  rtc::scoped_ptr<SrtpStat> srtp_stat_;
+  std::unique_ptr<SrtpStat> srtp_stat_;
   static bool inited_;
   static rtc::GlobalLockPod lock_;
   int last_send_seq_num_;

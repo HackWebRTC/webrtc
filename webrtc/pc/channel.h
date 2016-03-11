@@ -12,6 +12,7 @@
 #define WEBRTC_PC_CHANNEL_H_
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
@@ -304,7 +305,7 @@ class BaseChannel
   SrtpFilter srtp_filter_;
   RtcpMuxFilter rtcp_mux_filter_;
   BundleFilter bundle_filter_;
-  rtc::scoped_ptr<ConnectionMonitor> connection_monitor_;
+  std::unique_ptr<ConnectionMonitor> connection_monitor_;
   bool enabled_;
   bool writable_;
   bool rtp_ready_to_send_;
@@ -359,7 +360,7 @@ class VoiceChannel : public BaseChannel {
   bool InsertDtmf(uint32_t ssrc, int event_code, int duration);
   bool SetOutputVolume(uint32_t ssrc, double volume);
   void SetRawAudioSink(uint32_t ssrc,
-                       rtc::scoped_ptr<webrtc::AudioSinkInterface> sink);
+                       std::unique_ptr<webrtc::AudioSinkInterface> sink);
 
   // Get statistics about the current media session.
   bool GetStats(VoiceMediaInfo* stats);
@@ -411,8 +412,8 @@ class VoiceChannel : public BaseChannel {
   static const int kEarlyMediaTimeout = 1000;
   MediaEngineInterface* media_engine_;
   bool received_media_;
-  rtc::scoped_ptr<VoiceMediaMonitor> media_monitor_;
-  rtc::scoped_ptr<AudioMonitor> audio_monitor_;
+  std::unique_ptr<VoiceMediaMonitor> media_monitor_;
+  std::unique_ptr<AudioMonitor> audio_monitor_;
 
   // Last AudioSendParameters sent down to the media_channel() via
   // SetSendParameters.
@@ -471,7 +472,7 @@ class VideoChannel : public BaseChannel {
   virtual void OnMediaMonitorUpdate(
       VideoMediaChannel* media_channel, const VideoMediaInfo& info);
 
-  rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;
+  std::unique_ptr<VideoMediaMonitor> media_monitor_;
 
   // Last VideoSendParameters sent down to the media_channel() via
   // SetSendParameters.
@@ -587,7 +588,7 @@ class DataChannel : public BaseChannel {
   void OnDataChannelReadyToSend(bool writable);
   void OnStreamClosedRemotely(uint32_t sid);
 
-  rtc::scoped_ptr<DataMediaMonitor> media_monitor_;
+  std::unique_ptr<DataMediaMonitor> media_monitor_;
   // TODO(pthatcher): Make a separate SctpDataChannel and
   // RtpDataChannel instead of using this.
   DataChannelType data_channel_type_;

@@ -13,12 +13,12 @@
 #include <algorithm>  // For std::find_if.
 #include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <utility>
 
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/mediaconstants.h"
@@ -49,7 +49,6 @@ void GetSupportedCryptoSuiteNames(void (*func)(std::vector<int>*),
 
 namespace cricket {
 
-using rtc::scoped_ptr;
 
 // RTP Profile names
 // http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xml
@@ -1263,7 +1262,7 @@ MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
 SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
     const MediaSessionOptions& options,
     const SessionDescription* current_description) const {
-  scoped_ptr<SessionDescription> offer(new SessionDescription());
+  std::unique_ptr<SessionDescription> offer(new SessionDescription());
 
   StreamParamsVec current_streams;
   GetCurrentStreamParams(current_description, &current_streams);
@@ -1372,7 +1371,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
   // The answer contains the intersection of the codecs in the offer with the
   // codecs we support, ordered by our local preference. As indicated by
   // XEP-0167, we retain the same payload ids from the offer in the answer.
-  scoped_ptr<SessionDescription> answer(new SessionDescription());
+  std::unique_ptr<SessionDescription> answer(new SessionDescription());
 
   StreamParamsVec current_streams;
   GetCurrentStreamParams(current_description, &current_streams);
@@ -1520,7 +1519,7 @@ bool MediaSessionDescriptionFactory::AddTransportOffer(
      return false;
   const TransportDescription* current_tdesc =
       GetTransportDescription(content_name, current_desc);
-  rtc::scoped_ptr<TransportDescription> new_tdesc(
+  std::unique_ptr<TransportDescription> new_tdesc(
       transport_desc_factory_->CreateOffer(transport_options, current_tdesc));
   bool ret = (new_tdesc.get() != NULL &&
       offer_desc->AddTransportInfo(TransportInfo(content_name, *new_tdesc)));
@@ -1576,7 +1575,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
       IsDtlsActive(content_name, current_description) ? cricket::SEC_DISABLED
                                                       : secure();
 
-  scoped_ptr<AudioContentDescription> audio(new AudioContentDescription());
+  std::unique_ptr<AudioContentDescription> audio(new AudioContentDescription());
   std::vector<std::string> crypto_suites;
   GetSupportedAudioCryptoSuiteNames(&crypto_suites);
   if (!CreateMediaContentOffer(
@@ -1636,7 +1635,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
       IsDtlsActive(content_name, current_description) ? cricket::SEC_DISABLED
                                                       : secure();
 
-  scoped_ptr<VideoContentDescription> video(new VideoContentDescription());
+  std::unique_ptr<VideoContentDescription> video(new VideoContentDescription());
   std::vector<std::string> crypto_suites;
   GetSupportedVideoCryptoSuiteNames(&crypto_suites);
   if (!CreateMediaContentOffer(
@@ -1689,7 +1688,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     SessionDescription* desc) const {
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
 
-  scoped_ptr<DataContentDescription> data(new DataContentDescription());
+  std::unique_ptr<DataContentDescription> data(new DataContentDescription());
   bool is_sctp = (options.data_channel_type == DCT_SCTP);
 
   FilterDataCodecs(data_codecs, is_sctp);
@@ -1753,7 +1752,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     SessionDescription* answer) const {
   const ContentInfo* audio_content = GetFirstAudioContent(offer);
 
-  scoped_ptr<TransportDescription> audio_transport(CreateTransportAnswer(
+  std::unique_ptr<TransportDescription> audio_transport(CreateTransportAnswer(
       audio_content->name, offer,
       GetTransportOptions(options, audio_content->name), current_description));
   if (!audio_transport) {
@@ -1767,7 +1766,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
 
   bool bundle_enabled =
       offer->HasGroup(GROUP_TYPE_BUNDLE) && options.bundle_enabled;
-  scoped_ptr<AudioContentDescription> audio_answer(
+  std::unique_ptr<AudioContentDescription> audio_answer(
       new AudioContentDescription());
   // Do not require or create SDES cryptos if DTLS is used.
   cricket::SecurePolicy sdes_policy =
@@ -1811,14 +1810,14 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
   const ContentInfo* video_content = GetFirstVideoContent(offer);
-  scoped_ptr<TransportDescription> video_transport(CreateTransportAnswer(
+  std::unique_ptr<TransportDescription> video_transport(CreateTransportAnswer(
       video_content->name, offer,
       GetTransportOptions(options, video_content->name), current_description));
   if (!video_transport) {
     return false;
   }
 
-  scoped_ptr<VideoContentDescription> video_answer(
+  std::unique_ptr<VideoContentDescription> video_answer(
       new VideoContentDescription());
   // Do not require or create SDES cryptos if DTLS is used.
   cricket::SecurePolicy sdes_policy =
@@ -1866,7 +1865,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
   const ContentInfo* data_content = GetFirstDataContent(offer);
-  scoped_ptr<TransportDescription> data_transport(CreateTransportAnswer(
+  std::unique_ptr<TransportDescription> data_transport(CreateTransportAnswer(
       data_content->name, offer,
       GetTransportOptions(options, data_content->name), current_description));
   if (!data_transport) {
@@ -1876,7 +1875,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
   std::vector<DataCodec> data_codecs(data_codecs_);
   FilterDataCodecs(&data_codecs, is_sctp);
 
-  scoped_ptr<DataContentDescription> data_answer(
+  std::unique_ptr<DataContentDescription> data_answer(
       new DataContentDescription());
   // Do not require or create SDES cryptos if DTLS is used.
   cricket::SecurePolicy sdes_policy =

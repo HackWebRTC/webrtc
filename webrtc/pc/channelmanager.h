@@ -11,6 +11,7 @@
 #ifndef WEBRTC_PC_CHANNELMANAGER_H_
 #define WEBRTC_PC_CHANNELMANAGER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -161,8 +162,8 @@ class ChannelManager {
                                    DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);
 
-  rtc::scoped_ptr<MediaEngineInterface> media_engine_;
-  rtc::scoped_ptr<DataEngineInterface> data_media_engine_;
+  std::unique_ptr<MediaEngineInterface> media_engine_;
+  std::unique_ptr<DataEngineInterface> data_media_engine_;
   bool initialized_;
   rtc::Thread* main_thread_;
   rtc::Thread* worker_thread_;

@@ -15,7 +15,6 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/flags.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/testutils.h"
 
 #if defined(_MSC_VER)
@@ -26,7 +25,6 @@
 
 using cricket::LoadPlanarYuvTestImage;
 using cricket::DumpPlanarYuvTestImage;
-using rtc::scoped_ptr;
 
 DEFINE_bool(yuvscaler_dump, false,
     "whether to write out scaled images for inspection");
@@ -84,11 +82,11 @@ class YuvScalerTest : public testing::Test {
     *error = 0.;
     size_t isize = I420_SIZE(iw, ih);
     size_t osize = I420_SIZE(ow, oh);
-    scoped_ptr<uint8_t[]> ibuffer(
+    std::unique_ptr<uint8_t[]> ibuffer(
         new uint8_t[isize + kAlignment + memoffset]());
-    scoped_ptr<uint8_t[]> obuffer(
+    std::unique_ptr<uint8_t[]> obuffer(
         new uint8_t[osize + kAlignment + memoffset]());
-    scoped_ptr<uint8_t[]> xbuffer(
+    std::unique_ptr<uint8_t[]> xbuffer(
         new uint8_t[osize + kAlignment + memoffset]());
 
     uint8_t* ibuf = ALIGNP(ibuffer.get(), kAlignment) + memoffset;
@@ -192,8 +190,10 @@ TEST_F(YuvScalerTest, TestOffset16_10Copy) {
   const int iw = 640, ih = 360;
   const int ow = 640, oh = 480;
   const int offset = (480 - 360) / 2;
-  scoped_ptr<uint8_t[]> ibuffer(new uint8_t[I420_SIZE(iw, ih) + kAlignment]);
-  scoped_ptr<uint8_t[]> obuffer(new uint8_t[I420_SIZE(ow, oh) + kAlignment]);
+  std::unique_ptr<uint8_t[]> ibuffer(
+      new uint8_t[I420_SIZE(iw, ih) + kAlignment]);
+  std::unique_ptr<uint8_t[]> obuffer(
+      new uint8_t[I420_SIZE(ow, oh) + kAlignment]);
 
   uint8_t* ibuf = ALIGNP(ibuffer.get(), kAlignment);
   uint8_t* obuf = ALIGNP(obuffer.get(), kAlignment);

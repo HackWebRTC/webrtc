@@ -1210,7 +1210,7 @@ void WebRtcSession::SetRawAudioSink(uint32_t ssrc,
   if (!voice_channel_)
     return;
 
-  voice_channel_->SetRawAudioSink(ssrc, std::move(sink));
+  voice_channel_->SetRawAudioSink(ssrc, rtc::ScopedToUnique(std::move(sink)));
 }
 
 bool WebRtcSession::SetCaptureDevice(uint32_t ssrc,
