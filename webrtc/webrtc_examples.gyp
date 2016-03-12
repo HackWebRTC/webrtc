@@ -9,64 +9,64 @@
   'includes': [
     '../talk/build/common.gypi',
   ],
-  'targets': [
-    {
-      'target_name': 'relayserver',
-      'type': 'executable',
-      'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_base',
-        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
-      ],
-      'sources': [
-        'examples/relayserver/relayserver_main.cc',
-      ],
-    },  # target relayserver
-    {
-      'target_name': 'stunserver',
-      'type': 'executable',
-      'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_base',
-        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
-      ],
-      'sources': [
-        'examples/stunserver/stunserver_main.cc',
-      ],
-    },  # target stunserver
-    {
-      'target_name': 'turnserver',
-      'type': 'executable',
-      'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_base',
-        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
-      ],
-      'sources': [
-        'examples/turnserver/turnserver_main.cc',
-      ],
-    },  # target turnserver
-    {
-      'target_name': 'peerconnection_server',
-      'type': 'executable',
-      'sources': [
-        'examples/peerconnection/server/data_socket.cc',
-        'examples/peerconnection/server/data_socket.h',
-        'examples/peerconnection/server/main.cc',
-        'examples/peerconnection/server/peer_channel.cc',
-        'examples/peerconnection/server/peer_channel.h',
-        'examples/peerconnection/server/utils.cc',
-        'examples/peerconnection/server/utils.h',
-      ],
-      'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_base',
-        '<(webrtc_root)/common.gyp:webrtc_common',
-      ],
-      # TODO(ronghuawu): crbug.com/167187 fix size_t to int truncations.
-      'msvs_disabled_warnings': [ 4309, ],
-    }, # target peerconnection_server
-  ],
+
   'conditions': [
     ['OS=="linux" or OS=="win"', {
       'targets': [
         {
+         'target_name': 'relayserver',
+         'type': 'executable',
+         'dependencies': [
+           '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+           '<(webrtc_root)/pc/pc.gyp:rtc_pc',
+         ],
+         'sources': [
+           'examples/relayserver/relayserver_main.cc',
+         ],
+       },  # target relayserver
+       {
+         'target_name': 'stunserver',
+         'type': 'executable',
+         'dependencies': [
+           '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+           '<(webrtc_root)/pc/pc.gyp:rtc_pc',
+         ],
+         'sources': [
+           'examples/stunserver/stunserver_main.cc',
+         ],
+       },  # target stunserver
+       {
+         'target_name': 'turnserver',
+         'type': 'executable',
+         'dependencies': [
+           '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+           '<(webrtc_root)/pc/pc.gyp:rtc_pc',
+         ],
+         'sources': [
+           'examples/turnserver/turnserver_main.cc',
+         ],
+       },  # target turnserver
+       {
+         'target_name': 'peerconnection_server',
+         'type': 'executable',
+         'sources': [
+           'examples/peerconnection/server/data_socket.cc',
+           'examples/peerconnection/server/data_socket.h',
+           'examples/peerconnection/server/main.cc',
+           'examples/peerconnection/server/peer_channel.cc',
+           'examples/peerconnection/server/peer_channel.h',
+           'examples/peerconnection/server/utils.cc',
+           'examples/peerconnection/server/utils.h',
+         ],
+         'dependencies': [
+           '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+           '<(webrtc_root)/common.gyp:webrtc_common',
+           '<(webrtc_root)/tools/internal_tools.gyp:command_line_parser',
+         ],
+         # TODO(ronghuawu): crbug.com/167187 fix size_t to int truncations.
+         'msvs_disabled_warnings': [ 4309, ],
+       }, # target peerconnection_server
+       {
           'target_name': 'peerconnection_client',
           'type': 'executable',
           'sources': [
