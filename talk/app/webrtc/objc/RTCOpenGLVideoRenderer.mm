@@ -33,7 +33,7 @@
 
 #include <string.h>
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
 
 #if TARGET_OS_IPHONE
 #import <OpenGLES/ES3/gl.h>
@@ -184,7 +184,7 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   GLint _vSampler;
   // Used to create a non-padded plane for GPU upload when we receive padded
   // frames.
-  rtc::scoped_ptr<uint8_t[]> _planeBuffer;
+  std::unique_ptr<uint8_t[]> _planeBuffer;
 }
 
 + (void)initialize {

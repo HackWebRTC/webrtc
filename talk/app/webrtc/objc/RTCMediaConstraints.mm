@@ -33,13 +33,13 @@
 
 #import "RTCPair.h"
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
 
 // TODO(hughv):  Add accessors for mandatory and optional constraints.
 // TODO(hughv):  Add description.
 
 @implementation RTCMediaConstraints {
-  rtc::scoped_ptr<webrtc::RTCMediaConstraintsNative> _constraints;
+  std::unique_ptr<webrtc::RTCMediaConstraintsNative> _constraints;
   webrtc::MediaConstraintsInterface::Constraints _mandatory;
   webrtc::MediaConstraintsInterface::Constraints _optional;
 }

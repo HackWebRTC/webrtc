@@ -32,6 +32,8 @@
 #import "RTCI420Frame+Internal.h"
 #import "RTCVideoRendererAdapter.h"
 
+#include <memory>
+
 namespace webrtc {
 
 class RTCVideoRendererNativeAdapter : public VideoRendererInterface {
@@ -60,7 +62,7 @@ class RTCVideoRendererNativeAdapter : public VideoRendererInterface {
 
 @implementation RTCVideoRendererAdapter {
   id<RTCVideoRenderer> _videoRenderer;
-  rtc::scoped_ptr<webrtc::RTCVideoRendererNativeAdapter> _adapter;
+  std::unique_ptr<webrtc::RTCVideoRendererNativeAdapter> _adapter;
 }
 
 - (instancetype)initWithVideoRenderer:(id<RTCVideoRenderer>)videoRenderer {

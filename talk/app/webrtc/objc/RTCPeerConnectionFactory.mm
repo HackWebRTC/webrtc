@@ -31,6 +31,7 @@
 
 #import "RTCPeerConnectionFactory+Internal.h"
 
+#include <memory>
 #include <vector>
 
 #import "RTCAudioTrack+Internal.h"
@@ -55,8 +56,8 @@
 #include "webrtc/base/ssladapter.h"
 
 @implementation RTCPeerConnectionFactory {
-  rtc::scoped_ptr<rtc::Thread> _signalingThread;
-  rtc::scoped_ptr<rtc::Thread> _workerThread;
+  std::unique_ptr<rtc::Thread> _signalingThread;
+  std::unique_ptr<rtc::Thread> _workerThread;
 }
 
 @synthesize nativeFactory = _nativeFactory;

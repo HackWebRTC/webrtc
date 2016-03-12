@@ -31,16 +31,18 @@
 
 #import "RTCVideoCapturer+Internal.h"
 
+#include <memory>
+
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/devices/devicemanager.h"
 
 @implementation RTCVideoCapturer {
-  rtc::scoped_ptr<cricket::VideoCapturer> _capturer;
+  std::unique_ptr<cricket::VideoCapturer> _capturer;
 }
 
 + (RTCVideoCapturer*)capturerWithDeviceName:(NSString*)deviceName {
   const std::string& device_name = std::string([deviceName UTF8String]);
-  rtc::scoped_ptr<cricket::DeviceManagerInterface> device_manager(
+  std::unique_ptr<cricket::DeviceManagerInterface> device_manager(
       cricket::DeviceManagerFactory::Create());
   bool initialized = device_manager->Init();
   NSAssert(initialized, @"DeviceManager::Init() failed");
@@ -49,7 +51,7 @@
     LOG(LS_ERROR) << "GetVideoCaptureDevice failed";
     return 0;
   }
-  rtc::scoped_ptr<cricket::VideoCapturer> capturer(
+  std::unique_ptr<cricket::VideoCapturer> capturer(
       device_manager->CreateVideoCapturer(device));
   RTCVideoCapturer* rtcCapturer =
       [[RTCVideoCapturer alloc] initWithCapturer:capturer.release()];

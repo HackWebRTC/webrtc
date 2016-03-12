@@ -32,6 +32,8 @@
 #import "RTCEnumConverter.h"
 #import "RTCMediaStreamTrack+Internal.h"
 
+#include <memory>
+
 namespace webrtc {
 
 class RTCMediaStreamTrackObserver : public ObserverInterface {
@@ -49,7 +51,7 @@ class RTCMediaStreamTrackObserver : public ObserverInterface {
 
 @implementation RTCMediaStreamTrack {
   rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> _mediaTrack;
-  rtc::scoped_ptr<webrtc::RTCMediaStreamTrackObserver> _observer;
+  std::unique_ptr<webrtc::RTCMediaStreamTrackObserver> _observer;
 }
 
 @synthesize label;

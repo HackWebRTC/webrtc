@@ -45,6 +45,8 @@
 #import "RTCStatsDelegate.h"
 #import "RTCStatsReport+Internal.h"
 
+#include <memory>
+
 #include "webrtc/api/jsep.h"
 
 NSString* const kRTCSessionDescriptionDelegateErrorDomain = @"RTCSDPError";
@@ -141,12 +143,12 @@ class RTCStatsObserver : public StatsObserver {
 
 @implementation RTCPeerConnection {
   NSMutableArray* _localStreams;
-  rtc::scoped_ptr<webrtc::RTCPeerConnectionObserver> _observer;
+  std::unique_ptr<webrtc::RTCPeerConnectionObserver> _observer;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
 }
 
 - (BOOL)addICECandidate:(RTCICECandidate*)candidate {
-  rtc::scoped_ptr<const webrtc::IceCandidateInterface> iceCandidate(
+  std::unique_ptr<const webrtc::IceCandidateInterface> iceCandidate(
       candidate.candidate);
   return self.peerConnection->AddIceCandidate(iceCandidate.get());
 }

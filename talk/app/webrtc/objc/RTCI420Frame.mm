@@ -27,11 +27,12 @@
 
 #import "RTCI420Frame.h"
 
+#include <memory>
+
 #include "webrtc/media/base/videoframe.h"
-#include "webrtc/base/scoped_ptr.h"
 
 @implementation RTCI420Frame {
-  rtc::scoped_ptr<cricket::VideoFrame> _videoFrame;
+  std::unique_ptr<cricket::VideoFrame> _videoFrame;
 }
 
 - (NSUInteger)width {

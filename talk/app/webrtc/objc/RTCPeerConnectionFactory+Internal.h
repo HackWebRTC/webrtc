@@ -28,7 +28,6 @@
 #import "RTCPeerConnectionFactory.h"
 
 #include "webrtc/api/peerconnectionfactory.h"
-#include "webrtc/base/scoped_ptr.h"
 
 @interface RTCPeerConnectionFactory ()
 
