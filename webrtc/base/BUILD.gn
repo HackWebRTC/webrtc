@@ -141,6 +141,8 @@ static_library("rtc_base_approved") {
     "rate_statistics.cc",
     "rate_statistics.h",
     "refcount.h",
+    "safe_conversions.h",
+    "safe_conversions_impl.h",
     "scoped_ptr.h",
     "scoped_ref_ptr.h",
     "stringencode.cc",
@@ -179,6 +181,10 @@ static_library("rtc_base") {
   cflags = []
   cflags_cc = []
   libs = []
+  deps = []
+  public_deps = [
+    ":rtc_base_approved",
+  ]
 
   configs += [
     "..:common_config",
@@ -191,13 +197,6 @@ static_library("rtc_base") {
   ]
 
   defines = [ "LOGGING=1" ]
-
-  deps = [
-    ":safe_numerics",
-  ]
-  public_deps = [
-    ":rtc_base_approved",
-  ]
 
   sources = [
     "arraysize.h",
@@ -658,18 +657,5 @@ if (is_ios) {
 source_set("gtest_prod") {
   sources = [
     "gtest_prod_util.h",
-  ]
-}
-
-# GYP version: webrtc/base/base.gyp:safe_numerics
-source_set("safe_numerics") {
-  deps = [
-    ":rtc_base_approved",
-  ]
-  sources = [
-    "numerics/safe_conversions.h",
-    "numerics/safe_conversions_impl.h",
-    "numerics/safe_math.h",
-    "numerics/safe_math_impl.h",
   ]
 }

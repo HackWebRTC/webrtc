@@ -11,7 +11,7 @@
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/numerics/safe_conversions.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 

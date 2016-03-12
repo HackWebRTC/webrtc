@@ -15,7 +15,7 @@
 #include <algorithm>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/numerics/safe_conversions.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/audio_coding/neteq/decision_logic.h"
 #include "webrtc/modules/audio_coding/neteq/delay_manager.h"
 #include "webrtc/system_wrappers/include/metrics.h"

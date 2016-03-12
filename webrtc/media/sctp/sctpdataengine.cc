@@ -22,7 +22,7 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/numerics/safe_conversions.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"

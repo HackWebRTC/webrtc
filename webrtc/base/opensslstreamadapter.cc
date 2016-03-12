@@ -27,7 +27,7 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/numerics/safe_conversions.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/openssl.h"
 #include "webrtc/base/openssladapter.h"

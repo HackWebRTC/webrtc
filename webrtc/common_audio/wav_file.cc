@@ -16,7 +16,7 @@
 #include <sstream>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/numerics/safe_conversions.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/wav_header.h"
 
