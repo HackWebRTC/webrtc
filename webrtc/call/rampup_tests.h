@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "webrtc/base/event.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/test/call_test.h"
 

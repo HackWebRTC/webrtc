@@ -11,10 +11,10 @@
 #ifndef WEBRTC_CALL_RTC_EVENT_LOG_H_
 #define WEBRTC_CALL_RTC_EVENT_LOG_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/platform_file.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -36,7 +36,7 @@ class RtcEventLog {
  public:
   virtual ~RtcEventLog() {}
 
-  static rtc::scoped_ptr<RtcEventLog> Create();
+  static std::unique_ptr<RtcEventLog> Create();
 
   // Sets the time that events are stored in the internal event buffer
   // before the user calls StartLogging.  The default is 10 000 000 us = 10 s

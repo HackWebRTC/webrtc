@@ -105,8 +105,8 @@ class RtcEventLogImpl final : public RtcEventLog {
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   rtc::CriticalSection crit_;
-  rtc::scoped_ptr<FileWrapper> file_ GUARDED_BY(crit_) =
-      rtc::scoped_ptr<FileWrapper>(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> file_ GUARDED_BY(crit_) =
+      std::unique_ptr<FileWrapper>(FileWrapper::Create());
   rtc::PlatformFile platform_file_ GUARDED_BY(crit_) =
       rtc::kInvalidPlatformFileValue;
   rtclog::EventStream stream_ GUARDED_BY(crit_);
@@ -501,7 +501,7 @@ bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,
                                    rtclog::EventStream* result) {
   char tmp_buffer[1024];
   int bytes_read = 0;
-  rtc::scoped_ptr<FileWrapper> dump_file(FileWrapper::Create());
+  std::unique_ptr<FileWrapper> dump_file(FileWrapper::Create());
   if (dump_file->OpenFile(file_name.c_str(), true) != 0) {
     return false;
   }
@@ -516,8 +516,8 @@ bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,
 #endif  // ENABLE_RTC_EVENT_LOG
 
 // RtcEventLog member functions.
-rtc::scoped_ptr<RtcEventLog> RtcEventLog::Create() {
-  return rtc::scoped_ptr<RtcEventLog>(new RtcEventLogImpl());
+std::unique_ptr<RtcEventLog> RtcEventLog::Create() {
+  return std::unique_ptr<RtcEventLog>(new RtcEventLogImpl());
 }
 
 }  // namespace webrtc

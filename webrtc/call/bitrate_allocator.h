@@ -11,12 +11,13 @@
 #ifndef WEBRTC_CALL_BITRATE_ALLOCATOR_H_
 #define WEBRTC_CALL_BITRATE_ALLOCATOR_H_
 
+#include <stdint.h>
+
 #include <list>
 #include <map>
 #include <utility>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 
 namespace webrtc {

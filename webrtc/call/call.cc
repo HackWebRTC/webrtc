@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "webrtc/audio/audio_receive_stream.h"
@@ -19,7 +20,6 @@
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/trace_event.h"
@@ -120,16 +120,16 @@ class Call : public webrtc::Call, public PacketReceiver,
   Clock* const clock_;
 
   const int num_cpu_cores_;
-  const rtc::scoped_ptr<ProcessThread> module_process_thread_;
-  const rtc::scoped_ptr<ProcessThread> pacer_thread_;
-  const rtc::scoped_ptr<CallStats> call_stats_;
-  const rtc::scoped_ptr<BitrateAllocator> bitrate_allocator_;
+  const std::unique_ptr<ProcessThread> module_process_thread_;
+  const std::unique_ptr<ProcessThread> pacer_thread_;
+  const std::unique_ptr<CallStats> call_stats_;
+  const std::unique_ptr<BitrateAllocator> bitrate_allocator_;
   Call::Config config_;
   rtc::ThreadChecker configuration_thread_checker_;
 
   bool network_enabled_;
 
-  rtc::scoped_ptr<RWLockWrapper> receive_crit_;
+  std::unique_ptr<RWLockWrapper> receive_crit_;
   // Audio and Video receive streams are owned by the client that creates them.
   std::map<uint32_t, AudioReceiveStream*> audio_receive_ssrcs_
       GUARDED_BY(receive_crit_);
@@ -140,7 +140,7 @@ class Call : public webrtc::Call, public PacketReceiver,
   std::map<std::string, AudioReceiveStream*> sync_stream_mapping_
       GUARDED_BY(receive_crit_);
 
-  rtc::scoped_ptr<RWLockWrapper> send_crit_;
+  std::unique_ptr<RWLockWrapper> send_crit_;
   // Audio and Video send streams are owned by the client that creates them.
   std::map<uint32_t, AudioSendStream*> audio_send_ssrcs_ GUARDED_BY(send_crit_);
   std::map<uint32_t, VideoSendStream*> video_send_ssrcs_ GUARDED_BY(send_crit_);
@@ -168,7 +168,7 @@ class Call : public webrtc::Call, public PacketReceiver,
   int64_t num_bitrate_updates_ GUARDED_BY(&bitrate_crit_);
 
   VieRemb remb_;
-  const rtc::scoped_ptr<CongestionController> congestion_controller_;
+  const std::unique_ptr<CongestionController> congestion_controller_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -183,8 +183,9 @@ namespace internal {
 Call::Call(const Call::Config& config)
     : clock_(Clock::GetRealTimeClock()),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
-      module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
-      pacer_thread_(ProcessThread::Create("PacerThread")),
+      module_process_thread_(
+          rtc::ScopedToUnique(ProcessThread::Create("ModuleProcessThread"))),
+      pacer_thread_(rtc::ScopedToUnique(ProcessThread::Create("PacerThread"))),
       call_stats_(new CallStats(clock_)),
       bitrate_allocator_(new BitrateAllocator()),
       config_(config),

@@ -10,6 +10,7 @@
 
 #ifdef ENABLE_RTC_EVENT_LOG
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,7 +19,6 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/random.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
@@ -473,7 +473,7 @@ void LogSessionAndReadBack(size_t rtp_count,
   // When log_dumper goes out of scope, it causes the log file to be flushed
   // to disk.
   {
-    rtc::scoped_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+    std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
     log_dumper->LogVideoReceiveStreamConfig(receiver_config);
     log_dumper->LogVideoSendStreamConfig(sender_config);
     size_t rtcp_index = 1;
@@ -639,7 +639,7 @@ void DropOldEvents(uint32_t extensions_bitvector,
 
   // The log file will be flushed to disk when the log_dumper goes out of scope.
   {
-    rtc::scoped_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+    std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
     // Reduce the time old events are stored to 50 ms.
     log_dumper->SetBufferDuration(50000);
     log_dumper->LogVideoReceiveStreamConfig(receiver_config);

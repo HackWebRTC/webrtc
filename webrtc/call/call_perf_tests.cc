@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <algorithm>
+#include <memory>
 #include <sstream>
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
@@ -235,7 +235,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
    private:
     int channel_;
     VoENetwork* voe_network_;
-    rtc::scoped_ptr<RtpHeaderParser> parser_;
+    std::unique_ptr<RtpHeaderParser> parser_;
   };
 
   VoiceEngine* voice_engine = VoiceEngine::Create();

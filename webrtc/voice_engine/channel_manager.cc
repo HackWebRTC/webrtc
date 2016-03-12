@@ -49,7 +49,7 @@ ChannelManager::ChannelManager(uint32_t instance_id, const Config& config)
     : instance_id_(instance_id),
       last_channel_id_(-1),
       config_(config),
-      event_log_(rtc::ScopedToUnique(RtcEventLog::Create())) {}
+      event_log_(RtcEventLog::Create()) {}
 
 ChannelOwner ChannelManager::CreateChannel() {
   return CreateChannelInternal(config_);

@@ -9,12 +9,12 @@
  */
 
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/test/rtp_file_writer.h"
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  rtc::scoped_ptr<webrtc::test::RtpFileWriter> rtp_writer(
+  std::unique_ptr<webrtc::test::RtpFileWriter> rtp_writer(
       webrtc::test::RtpFileWriter::Create(
           webrtc::test::RtpFileWriter::FileFormat::kRtpDump, output_file));
 

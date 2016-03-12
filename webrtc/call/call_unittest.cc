@@ -9,6 +9,7 @@
  */
 
 #include <list>
+#include <memory>
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -31,7 +32,7 @@ struct CallHelper {
 
  private:
   testing::NiceMock<webrtc::test::MockVoiceEngine> voice_engine_;
-  rtc::scoped_ptr<webrtc::Call> call_;
+  std::unique_ptr<webrtc::Call> call_;
 };
 }  // namespace
 

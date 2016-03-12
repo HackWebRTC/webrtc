@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/test/call_test.h"
@@ -29,7 +31,7 @@ class PacketInjectionTest : public test::CallTest {
                              const uint8_t* packet,
                              size_t length);
 
-  rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
+  std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
 };
 
 void PacketInjectionTest::InjectIncorrectPacket(CodecType codec_type,

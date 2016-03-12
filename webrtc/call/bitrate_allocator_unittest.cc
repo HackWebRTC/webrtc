@@ -9,6 +9,7 @@
  */
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -41,7 +42,7 @@ class BitrateAllocatorTest : public ::testing::Test {
   }
   ~BitrateAllocatorTest() {}
 
-  rtc::scoped_ptr<BitrateAllocator> allocator_;
+  std::unique_ptr<BitrateAllocator> allocator_;
 };
 
 TEST_F(BitrateAllocatorTest, UpdatingBitrateObserver) {
@@ -105,7 +106,7 @@ class BitrateAllocatorTestNoEnforceMin : public ::testing::Test {
   }
   ~BitrateAllocatorTestNoEnforceMin() {}
 
-  rtc::scoped_ptr<BitrateAllocator> allocator_;
+  std::unique_ptr<BitrateAllocator> allocator_;
 };
 
 // The following three tests verify that the EnforceMinBitrate() method works
