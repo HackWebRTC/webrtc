@@ -219,7 +219,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   int SetSelectiveRetransmissions(uint8_t settings) override;
 
   // Send a Negative acknowledgment packet.
+  // TODO(philipel): Deprecate SendNACK and use SendNack instead.
   int32_t SendNACK(const uint16_t* nack_list, uint16_t size) override;
+
+  void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
 
   // Store the sent packets, needed to answer to a negative acknowledgment
   // requests.

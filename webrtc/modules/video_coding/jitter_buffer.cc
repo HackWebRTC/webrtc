@@ -12,6 +12,7 @@
 #include <assert.h>
 
 #include <algorithm>
+#include <limits>
 #include <utility>
 
 #include "webrtc/base/checks.h"
@@ -28,10 +29,10 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
-
 // Interval for updating SS data.
 static const uint32_t kSsCleanupIntervalSec = 60;
 
@@ -214,8 +215,24 @@ void Vp9SsMap::UpdateFrames(FrameList* frames) {
   }
 }
 
+static NackModule*
+MaybeCreateNackModule(Clock* clock,
+                      NackSender* nack_sender,
+                      KeyFrameRequestSender* keyframe_request_sender) {
+if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled") {
+    // Only create a nack module if a nack sender is available.
+    if (nack_sender) {
+      RTC_DCHECK(keyframe_request_sender);
+      return new NackModule(clock, nack_sender, keyframe_request_sender);
+    }
+  }
+  return nullptr;
+}
+
 VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
-                                 std::unique_ptr<EventWrapper> event)
+                                 std::unique_ptr<EventWrapper> event,
+                                 NackSender* nack_sender,
+                                 KeyFrameRequestSender* keyframe_request_sender)
     : clock_(clock),
       running_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -249,7 +266,10 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       max_incomplete_time_ms_(0),
       decode_error_mode_(kNoErrors),
       average_packets_per_frame_(0.0f),
-      frame_counter_(0) {
+      frame_counter_(0),
+      nack_module_(MaybeCreateNackModule(clock,
+                                         nack_sender,
+                                         keyframe_request_sender)) {
   for (int i = 0; i < kStartNumberOfFrames; i++)
     free_frames_.push_back(new VCMFrameBuffer());
 }
@@ -329,6 +349,8 @@ void VCMJitterBuffer::Stop() {
   UpdateHistograms();
   running_ = false;
   last_decoded_state_.Reset();
+  if (nack_module_)
+    nack_module_->Stop();
 
   // Make sure all frames are free and reset.
   for (FrameList::iterator it = decodable_frames_.begin();
@@ -369,6 +391,8 @@ void VCMJitterBuffer::Flush() {
   waiting_for_completion_.latest_packet_time = -1;
   first_packet_since_reset_ = true;
   missing_sequence_numbers_.clear();
+  if (nack_module_)
+    nack_module_->Clear();
 }
 
 // Get received key and delta frames
@@ -605,6 +629,8 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
   if ((*frame).IsSessionComplete())
     UpdateAveragePacketsPerFrame(frame->NumPackets());
 
+  if (nack_module_)
+    nack_module_->ClearUpTo(frame->GetHighSeqNum());
   return frame;
 }
 
@@ -664,6 +690,9 @@ int64_t VCMJitterBuffer::LastPacketTime(const VCMEncodedFrame* frame,
 VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
                                                  bool* retransmitted) {
   CriticalSectionScoped cs(crit_sect_);
+
+  if (nack_module_)
+    nack_module_->OnReceivedPacket(packet);
 
   ++num_packets_;
   if (num_packets_ == 1) {
@@ -927,6 +956,8 @@ void VCMJitterBuffer::UpdateRtt(int64_t rtt_ms) {
   CriticalSectionScoped cs(crit_sect_);
   rtt_ms_ = rtt_ms;
   jitter_estimate_.UpdateRtt(rtt_ms);
+  if (nack_module_)
+    nack_module_->UpdateRtt(rtt_ms);
 }
 
 void VCMJitterBuffer::SetNackMode(VCMNackMode mode,
@@ -1046,6 +1077,14 @@ std::vector<uint16_t> VCMJitterBuffer::GetNackList(bool* request_key_frame) {
       }
     }
   }
+  // The experiment is running, the nack module will send Nacks.
+  // The reason we allow the major part of the GetNackList function to
+  // run even if we are running the experiment is because this
+  // function is also used to signal that the jitter buffer wants to
+  // request a keyframe.
+  if (nack_module_)
+    return std::vector<uint16_t>();
+
   std::vector<uint16_t> nack_list(missing_sequence_numbers_.begin(),
                                   missing_sequence_numbers_.end());
   return nack_list;
@@ -1342,5 +1381,16 @@ bool VCMJitterBuffer::WaitForRetransmissions() {
     return false;
   }
   return true;
+}
+
+int64_t VCMJitterBuffer::TimeUntilNextProcess() {
+  if (nack_module_)
+    return nack_module_->TimeUntilNextProcess();
+  return std::numeric_limits<int64_t>::max();
+}
+
+void VCMJitterBuffer::Process() {
+  if (nack_module_)
+    nack_module_->Process();
 }
 }  // namespace webrtc

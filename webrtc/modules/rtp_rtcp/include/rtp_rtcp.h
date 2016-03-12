@@ -18,6 +18,7 @@
 
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 
 namespace webrtc {
 // Forward declarations.
@@ -534,7 +535,15 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
+    // TODO(philipel): Deprecate this and start using SendNack instead,
+    //                 mostly because we want a function that actually send
+    //                 NACK for the specified packets.
     virtual int32_t SendNACK(const uint16_t* nackList, uint16_t size) = 0;
+
+    /*
+    *   Send NACK for the packets specified.
+    */
+    virtual void SendNack(const std::vector<uint16_t>& sequence_numbers) = 0;
 
     /*
     *   Store the sent packets, needed to answer to a Negative acknowledgement

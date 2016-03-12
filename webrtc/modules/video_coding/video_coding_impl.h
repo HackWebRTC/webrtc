@@ -129,7 +129,10 @@ class VideoReceiver {
  public:
   typedef VideoCodingModule::ReceiverRobustness ReceiverRobustness;
 
-  VideoReceiver(Clock* clock, EventFactory* event_factory);
+  VideoReceiver(Clock* clock,
+                EventFactory* event_factory,
+                NackSender* nack_sender = nullptr,
+                KeyFrameRequestSender* keyframe_request_sender = nullptr);
   ~VideoReceiver();
 
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,

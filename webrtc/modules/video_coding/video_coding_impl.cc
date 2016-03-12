@@ -75,13 +75,18 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                         EventFactory* event_factory,
                         bool owns_event_factory,
                         VideoEncoderRateObserver* encoder_rate_observer,
-                        VCMQMSettingsCallback* qm_settings_callback)
+                        VCMQMSettingsCallback* qm_settings_callback,
+                        NackSender* nack_sender,
+                        KeyFrameRequestSender* keyframe_request_sender)
       : VideoCodingModule(),
         sender_(clock,
                 &post_encode_callback_,
                 encoder_rate_observer,
                 qm_settings_callback),
-        receiver_(clock, event_factory),
+        receiver_(clock,
+                  event_factory,
+                  nack_sender,
+                  keyframe_request_sender),
         own_event_factory_(owns_event_factory ? event_factory : NULL) {}
 
   virtual ~VideoCodingModuleImpl() { own_event_factory_.reset(); }
@@ -291,20 +296,51 @@ void VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
   VCMCodecDataBase::Codec(codecType, codec);
 }
 
+// Create method for current interface, will be removed when the
+// new jitter buffer is in place.
 VideoCodingModule* VideoCodingModule::Create(
     Clock* clock,
     VideoEncoderRateObserver* encoder_rate_observer,
     VCMQMSettingsCallback* qm_settings_callback) {
-  return new VideoCodingModuleImpl(clock, new EventFactoryImpl, true,
-                                   encoder_rate_observer, qm_settings_callback);
+  return VideoCodingModule::Create(clock, encoder_rate_observer,
+                                   qm_settings_callback,
+                                   nullptr,   // NackSender
+                                   nullptr);  // KeyframeRequestSender
 }
 
+// Create method for the new jitter buffer.
+VideoCodingModule* VideoCodingModule::Create(
+    Clock* clock,
+    VideoEncoderRateObserver* encoder_rate_observer,
+    VCMQMSettingsCallback* qm_settings_callback,
+    NackSender* nack_sender,
+    KeyFrameRequestSender* keyframe_request_sender) {
+  return new VideoCodingModuleImpl(clock, new EventFactoryImpl, true,
+                                   encoder_rate_observer, qm_settings_callback,
+                                   nack_sender,
+                                   keyframe_request_sender);
+}
+
+// Create method for current interface, will be removed when the
+// new jitter buffer is in place.
 VideoCodingModule* VideoCodingModule::Create(Clock* clock,
                                              EventFactory* event_factory) {
+  return VideoCodingModule::Create(clock, event_factory,
+                                   nullptr,   // NackSender
+                                   nullptr);  // KeyframeRequestSender
+}
+
+// Create method for the new jitter buffer.
+VideoCodingModule* VideoCodingModule::Create(
+    Clock* clock,
+    EventFactory* event_factory,
+    NackSender* nack_sender,
+    KeyFrameRequestSender* keyframe_request_sender) {
   assert(clock);
   assert(event_factory);
   return new VideoCodingModuleImpl(clock, event_factory, false, nullptr,
-                                   nullptr);
+                                   nullptr, nack_sender,
+                                   keyframe_request_sender);
 }
 
 }  // namespace webrtc

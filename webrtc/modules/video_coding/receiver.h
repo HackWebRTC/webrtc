@@ -28,16 +28,36 @@ class VCMEncodedFrame;
 
 class VCMReceiver {
  public:
+  // Constructor for current interface, will be removed when the
+  // new jitter buffer is in place.
   VCMReceiver(VCMTiming* timing, Clock* clock, EventFactory* event_factory);
+
+  // Create method for the new jitter buffer.
+  VCMReceiver(VCMTiming* timing,
+              Clock* clock,
+              EventFactory* event_factory,
+              NackSender* nack_sender,
+              KeyFrameRequestSender* keyframe_request_sender);
 
   // Using this constructor, you can specify a different event factory for the
   // jitter buffer. Useful for unit tests when you want to simulate incoming
   // packets, in which case the jitter buffer's wait event is different from
   // that of VCMReceiver itself.
+  //
+  // Constructor for current interface, will be removed when the
+  // new jitter buffer is in place.
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
               std::unique_ptr<EventWrapper> receiver_event,
               std::unique_ptr<EventWrapper> jitter_buffer_event);
+
+  // Create method for the new jitter buffer.
+  VCMReceiver(VCMTiming* timing,
+              Clock* clock,
+              std::unique_ptr<EventWrapper> receiver_event,
+              std::unique_ptr<EventWrapper> jitter_buffer_event,
+              NackSender* nack_sender,
+              KeyFrameRequestSender* keyframe_request_sender);
 
   ~VCMReceiver();
 
@@ -78,6 +98,9 @@ class VCMReceiver {
   void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
   void TriggerDecoderShutdown();
+
+  int64_t TimeUntilNextProcess();
+  void Process();
 
  private:
   CriticalSectionWrapper* crit_sect_;

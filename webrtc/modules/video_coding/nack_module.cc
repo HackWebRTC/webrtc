@@ -118,6 +118,12 @@ void NackModule::UpdateRtt(int64_t rtt_ms) {
   rtt_ms_ = rtt_ms;
 }
 
+void NackModule::Clear() {
+  rtc::CritScope lock(&crit_);
+  nack_list_.clear();
+  keyframe_list_.clear();
+}
+
 void NackModule::Stop() {
   rtc::CritScope lock(&crit_);
   running_ = false;

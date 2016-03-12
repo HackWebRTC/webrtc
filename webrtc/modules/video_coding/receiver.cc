@@ -30,19 +30,49 @@ enum { kMaxReceiverDelayMs = 10000 };
 VCMReceiver::VCMReceiver(VCMTiming* timing,
                          Clock* clock,
                          EventFactory* event_factory)
+    : VCMReceiver::VCMReceiver(timing,
+                               clock,
+                               event_factory,
+                               nullptr,  // NackSender
+                               nullptr)  // KeyframeRequestSender
+{}
+
+VCMReceiver::VCMReceiver(VCMTiming* timing,
+                         Clock* clock,
+                         EventFactory* event_factory,
+                         NackSender* nack_sender,
+                         KeyFrameRequestSender* keyframe_request_sender)
     : VCMReceiver(timing,
                   clock,
                   std::unique_ptr<EventWrapper>(event_factory->CreateEvent()),
-                  std::unique_ptr<EventWrapper>(event_factory->CreateEvent())) {
-}
+                  std::unique_ptr<EventWrapper>(event_factory->CreateEvent()),
+                  nack_sender,
+                  keyframe_request_sender) {}
 
 VCMReceiver::VCMReceiver(VCMTiming* timing,
                          Clock* clock,
                          std::unique_ptr<EventWrapper> receiver_event,
                          std::unique_ptr<EventWrapper> jitter_buffer_event)
+    : VCMReceiver::VCMReceiver(timing,
+                               clock,
+                               std::move(receiver_event),
+                               std::move(jitter_buffer_event),
+                               nullptr,  // NackSender
+                               nullptr)  // KeyframeRequestSender
+{}
+
+VCMReceiver::VCMReceiver(VCMTiming* timing,
+                         Clock* clock,
+                         std::unique_ptr<EventWrapper> receiver_event,
+                         std::unique_ptr<EventWrapper> jitter_buffer_event,
+                         NackSender* nack_sender,
+                         KeyFrameRequestSender* keyframe_request_sender)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       clock_(clock),
-      jitter_buffer_(clock_, std::move(jitter_buffer_event)),
+      jitter_buffer_(clock_,
+                     std::move(jitter_buffer_event),
+                     nack_sender,
+                     keyframe_request_sender),
       timing_(timing),
       render_wait_event_(std::move(receiver_event)),
       max_video_delay_ms_(kMaxVideoDelayMs) {
@@ -65,6 +95,14 @@ void VCMReceiver::Reset() {
 
 void VCMReceiver::UpdateRtt(int64_t rtt) {
   jitter_buffer_.UpdateRtt(rtt);
+}
+
+int64_t VCMReceiver::TimeUntilNextProcess() {
+  return jitter_buffer_.TimeUntilNextProcess();
+}
+
+void VCMReceiver::Process() {
+  jitter_buffer_.Process();
 }
 
 int32_t VCMReceiver::InsertPacket(const VCMPacket& packet,

@@ -35,6 +35,7 @@ class NackModule : public Module {
   void OnReceivedPacket(const VCMPacket& packet);
   void ClearUpTo(uint16_t seq_num);
   void UpdateRtt(int64_t rtt_ms);
+  void Clear();
   void Stop();
 
   // Module implementation

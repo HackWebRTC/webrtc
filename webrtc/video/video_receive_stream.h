@@ -40,7 +40,9 @@ namespace internal {
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public I420FrameCallback,
                            public VideoRenderCallback,
-                           public EncodedImageCallback {
+                           public EncodedImageCallback,
+                           public NackSender,
+                           public KeyFrameRequestSender {
  public:
   VideoReceiveStream(int num_cpu_cores,
                      CongestionController* congestion_controller,
@@ -78,6 +80,12 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   const Config& config() const { return config_; }
 
   void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id);
+
+  // NackSender
+  void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
+
+  // KeyFrameRequestSender
+  void RequestKeyFrame() override;
 
  private:
   static bool DecodeThreadFunction(void* ptr);

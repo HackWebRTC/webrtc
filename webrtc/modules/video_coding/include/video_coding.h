@@ -73,7 +73,20 @@ class VideoCodingModule : public Module {
       VideoEncoderRateObserver* encoder_rate_observer,
       VCMQMSettingsCallback* qm_settings_callback);
 
+  static VideoCodingModule* Create(
+      Clock* clock,
+      VideoEncoderRateObserver* encoder_rate_observer,
+      VCMQMSettingsCallback* qm_settings_callback,
+      NackSender* nack_sender,
+      KeyFrameRequestSender* keyframe_request_sender);
+
   static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
+
+  static VideoCodingModule* Create(
+      Clock* clock,
+      EventFactory* event_factory,
+      NackSender* nack_sender,
+      KeyFrameRequestSender* keyframe_request_sender);
 
   // Get supported codec settings using codec type
   //

@@ -159,7 +159,11 @@ VideoReceiveStream::VideoReceiveStream(
       congestion_controller_(congestion_controller),
       call_stats_(call_stats),
       remb_(remb),
-      vcm_(VideoCodingModule::Create(clock_, nullptr, nullptr)),
+      vcm_(VideoCodingModule::Create(clock_,
+                                     nullptr,
+                                     nullptr,
+                                     this,
+                                     this)),
       incoming_video_stream_(
           0,
           config.renderer ? config.renderer->SmoothsRenderedFrames() : false),
@@ -422,6 +426,15 @@ bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
 void VideoReceiveStream::Decode() {
   static const int kMaxDecodeWaitTimeMs = 50;
   vcm_->Decode(kMaxDecodeWaitTimeMs);
+}
+
+void VideoReceiveStream::SendNack(
+    const std::vector<uint16_t>& sequence_numbers) {
+  rtp_rtcp_->SendNack(sequence_numbers);
+}
+
+void VideoReceiveStream::RequestKeyFrame() {
+  rtp_rtcp_->RequestKeyFrame();
 }
 
 }  // namespace internal

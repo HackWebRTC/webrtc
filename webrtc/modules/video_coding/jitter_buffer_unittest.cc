@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <string.h>
+#include <string>
 
 #include <list>
 #include <memory>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/media_opt_util.h"
@@ -21,7 +22,9 @@
 #include "webrtc/modules/video_coding/test/stream_generator.h"
 #include "webrtc/modules/video_coding/test/test_util.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
+#include "webrtc/test/field_trial.h"
 #include "webrtc/test/histogram.h"
 
 namespace webrtc {
@@ -185,13 +188,40 @@ TEST_F(Vp9SsMapTest, UpdatePacket) {
   EXPECT_EQ(2, packet_.codecSpecificHeader.codecHeader.VP9.pid_diff[1]);
 }
 
-class TestBasicJitterBuffer : public ::testing::Test {
+class ProcessThreadMock : public ProcessThread {
+ public:
+  MOCK_METHOD0(Start, void());
+  MOCK_METHOD0(Stop, void());
+  MOCK_METHOD1(WakeUp, void(Module* module));
+  MOCK_METHOD1(RegisterModule, void(Module* module));
+  MOCK_METHOD1(DeRegisterModule, void(Module* module));
+  void PostTask(rtc::scoped_ptr<ProcessTask> task) {}
+};
+
+class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
+                              public NackSender,
+                              public KeyFrameRequestSender {
+ public:
+  void SendNack(const std::vector<uint16_t>& sequence_numbers) override {
+    nack_sent_.insert(nack_sent_.end(), sequence_numbers.begin(),
+                      sequence_numbers.end());
+  }
+
+  void RequestKeyFrame() override { ++keyframe_requests_; }
+
+  ::testing::NiceMock<ProcessThreadMock> process_thread_mock_;
+  std::vector<uint16_t> nack_sent_;
+  int keyframe_requests_;
+
  protected:
+  TestBasicJitterBuffer() : scoped_field_trial_(GetParam()) {}
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(0));
     jitter_buffer_.reset(new VCMJitterBuffer(
         clock_.get(),
-        std::unique_ptr<EventWrapper>(event_factory_.CreateEvent())));
+        std::unique_ptr<EventWrapper>(event_factory_.CreateEvent()),
+        this,
+        this));
     jitter_buffer_->Start();
     seq_num_ = 1234;
     timestamp_ = 0;
@@ -278,9 +308,30 @@ class TestBasicJitterBuffer : public ::testing::Test {
   std::unique_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
   std::unique_ptr<VCMJitterBuffer> jitter_buffer_;
+  test::ScopedFieldTrials scoped_field_trial_;
 };
 
-class TestRunningJitterBuffer : public ::testing::Test {
+INSTANTIATE_TEST_CASE_P(
+    TestWithNackModule,
+    TestBasicJitterBuffer,
+    ::testing::Values("WebRTC-NewVideoJitterBuffer/Enabled/",
+                      "WebRTC-NewVideoJitterBuffer/Disabled/"));
+
+class TestRunningJitterBuffer : public ::testing::TestWithParam<std::string>,
+                                public NackSender,
+                                public KeyFrameRequestSender {
+ public:
+  void SendNack(const std::vector<uint16_t>& sequence_numbers) {
+    nack_sent_.insert(nack_sent_.end(), sequence_numbers.begin(),
+                      sequence_numbers.end());
+  }
+
+  void RequestKeyFrame() { ++keyframe_requests_; }
+
+  ::testing::NiceMock<ProcessThreadMock> process_thread_mock_;
+  std::vector<uint16_t> nack_sent_;
+  int keyframe_requests_;
+
  protected:
   enum { kDataBufferSize = 10 };
 
@@ -290,7 +341,8 @@ class TestRunningJitterBuffer : public ::testing::Test {
     oldest_packet_to_nack_ = 250;
     jitter_buffer_ = new VCMJitterBuffer(
         clock_.get(),
-        std::unique_ptr<EventWrapper>(event_factory_.CreateEvent()));
+        std::unique_ptr<EventWrapper>(event_factory_.CreateEvent()),
+        this, this);
     stream_generator_ = new StreamGenerator(0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_, oldest_packet_to_nack_,
@@ -390,15 +442,24 @@ class TestRunningJitterBuffer : public ::testing::Test {
 
 class TestJitterBufferNack : public TestRunningJitterBuffer {
  protected:
+  TestJitterBufferNack() : scoped_field_trial_(GetParam()) {}
   virtual void SetUp() {
     TestRunningJitterBuffer::SetUp();
     jitter_buffer_->SetNackMode(kNack, -1, -1);
   }
 
   virtual void TearDown() { TestRunningJitterBuffer::TearDown(); }
+
+  test::ScopedFieldTrials scoped_field_trial_;
 };
 
-TEST_F(TestBasicJitterBuffer, StopRunning) {
+INSTANTIATE_TEST_CASE_P(
+    TestWithNackModule,
+    TestJitterBufferNack,
+    ::testing::Values("WebRTC-NewVideoJitterBuffer/Enabled/",
+                      "WebRTC-NewVideoJitterBuffer/Disabled/"));
+
+TEST_P(TestBasicJitterBuffer, StopRunning) {
   jitter_buffer_->Stop();
   EXPECT_TRUE(NULL == DecodeCompleteFrame());
   EXPECT_TRUE(NULL == DecodeIncompleteFrame());
@@ -418,7 +479,7 @@ TEST_F(TestBasicJitterBuffer, StopRunning) {
   EXPECT_TRUE(NULL == DecodeIncompleteFrame());
 }
 
-TEST_F(TestBasicJitterBuffer, SinglePacketFrame) {
+TEST_P(TestBasicJitterBuffer, SinglePacketFrame) {
   // Always start with a complete key frame when not allowing errors.
   jitter_buffer_->SetDecodeErrorMode(kNoErrors);
   packet_->frameType = kVideoFrameKey;
@@ -436,7 +497,7 @@ TEST_F(TestBasicJitterBuffer, SinglePacketFrame) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, VerifyHistogramStats) {
+TEST_P(TestBasicJitterBuffer, VerifyHistogramStats) {
   test::ClearHistograms();
   // Always start with a complete key frame when not allowing errors.
   jitter_buffer_->SetDecodeErrorMode(kNoErrors);
@@ -478,7 +539,7 @@ TEST_F(TestBasicJitterBuffer, VerifyHistogramStats) {
       1, test::NumHistogramSamples("WebRTC.Video.KeyFramesReceivedInPermille"));
 }
 
-TEST_F(TestBasicJitterBuffer, DualPacketFrame) {
+TEST_P(TestBasicJitterBuffer, DualPacketFrame) {
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
   packet_->markerBit = false;
@@ -505,7 +566,7 @@ TEST_F(TestBasicJitterBuffer, DualPacketFrame) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, 100PacketKeyFrame) {
+TEST_P(TestBasicJitterBuffer, 100PacketKeyFrame) {
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
   packet_->markerBit = false;
@@ -548,7 +609,7 @@ TEST_F(TestBasicJitterBuffer, 100PacketKeyFrame) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, 100PacketDeltaFrame) {
+TEST_P(TestBasicJitterBuffer, 100PacketDeltaFrame) {
   // Always start with a complete key frame.
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
@@ -604,7 +665,7 @@ TEST_F(TestBasicJitterBuffer, 100PacketDeltaFrame) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, PacketReorderingReverseOrder) {
+TEST_P(TestBasicJitterBuffer, PacketReorderingReverseOrder) {
   // Insert the "first" packet last.
   seq_num_ += 100;
   packet_->frameType = kVideoFrameKey;
@@ -651,7 +712,7 @@ TEST_F(TestBasicJitterBuffer, PacketReorderingReverseOrder) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, FrameReordering2Frames2PacketsEach) {
+TEST_P(TestBasicJitterBuffer, FrameReordering2Frames2PacketsEach) {
   packet_->frameType = kVideoFrameDelta;
   packet_->isFirstPacket = true;
   packet_->markerBit = false;
@@ -711,7 +772,7 @@ TEST_F(TestBasicJitterBuffer, FrameReordering2Frames2PacketsEach) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, TestReorderingWithPadding) {
+TEST_P(TestBasicJitterBuffer, TestReorderingWithPadding) {
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
   packet_->markerBit = true;
@@ -768,7 +829,7 @@ TEST_F(TestBasicJitterBuffer, TestReorderingWithPadding) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, DuplicatePackets) {
+TEST_P(TestBasicJitterBuffer, DuplicatePackets) {
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
   packet_->markerBit = false;
@@ -811,7 +872,7 @@ TEST_F(TestBasicJitterBuffer, DuplicatePackets) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, DuplicatePreviousDeltaFramePacket) {
+TEST_P(TestBasicJitterBuffer, DuplicatePreviousDeltaFramePacket) {
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
   packet_->markerBit = true;
@@ -863,7 +924,7 @@ TEST_F(TestBasicJitterBuffer, DuplicatePreviousDeltaFramePacket) {
   }
 }
 
-TEST_F(TestBasicJitterBuffer, TestSkipForwardVp9) {
+TEST_P(TestBasicJitterBuffer, TestSkipForwardVp9) {
   // Verify that JB skips forward to next base layer frame.
   //  -------------------------------------------------
   // | 65485 | 65486 | 65487 | 65488 | 65489 | ...
@@ -916,7 +977,7 @@ TEST_F(TestBasicJitterBuffer, TestSkipForwardVp9) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_3TlLayers) {
+TEST_P(TestBasicJitterBuffer, ReorderedVp9SsData_3TlLayers) {
   // Verify that frames are updated with SS data when SS packet is reordered.
   //  --------------------------------
   // | 65486 | 65487 | 65485 |...
@@ -990,7 +1051,7 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_3TlLayers) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
+TEST_P(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   // Verify that frames are updated with SS data when SS packet is reordered.
   //  -----------------------------------------
   // | 65486  | 65487  | 65485  | 65484  |...
@@ -1074,7 +1135,7 @@ TEST_F(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, H264InsertStartCode) {
+TEST_P(TestBasicJitterBuffer, H264InsertStartCode) {
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
   packet_->markerBit = false;
@@ -1106,7 +1167,7 @@ TEST_F(TestBasicJitterBuffer, H264InsertStartCode) {
 }
 
 // Test threshold conditions of decodable state.
-TEST_F(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsThresholdCheck) {
+TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsThresholdCheck) {
   jitter_buffer_->SetDecodeErrorMode(kSelectiveErrors);
   // Always start with a key frame. Use 10 packets to test Decodable State
   // boundaries.
@@ -1192,7 +1253,7 @@ TEST_F(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsThresholdCheck) {
 }
 
 // Make sure first packet is present before a frame can be decoded.
-TEST_F(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsIncompleteKey) {
+TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsIncompleteKey) {
   jitter_buffer_->SetDecodeErrorMode(kSelectiveErrors);
   // Always start with a key frame.
   packet_->frameType = kVideoFrameKey;
@@ -1256,7 +1317,7 @@ TEST_F(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsIncompleteKey) {
 }
 
 // Make sure first packet is present before a frame can be decoded.
-TEST_F(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsMissingFirstPacket) {
+TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsMissingFirstPacket) {
   jitter_buffer_->SetDecodeErrorMode(kSelectiveErrors);
   // Always start with a key frame.
   packet_->frameType = kVideoFrameKey;
@@ -1318,7 +1379,7 @@ TEST_F(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsMissingFirstPacket) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, DiscontinuousStreamWhenDecodingWithErrors) {
+TEST_P(TestBasicJitterBuffer, DiscontinuousStreamWhenDecodingWithErrors) {
   // Will use one packet per frame.
   jitter_buffer_->SetDecodeErrorMode(kWithErrors);
   packet_->frameType = kVideoFrameKey;
@@ -1361,7 +1422,7 @@ TEST_F(TestBasicJitterBuffer, DiscontinuousStreamWhenDecodingWithErrors) {
   EXPECT_EQ(packet_->timestamp - 33 * 90, next_timestamp);
 }
 
-TEST_F(TestBasicJitterBuffer, PacketLoss) {
+TEST_P(TestBasicJitterBuffer, PacketLoss) {
   // Verify missing packets statistics and not decodable packets statistics.
   // Insert 10 frames consisting of 4 packets and remove one from all of them.
   // The last packet is an empty (non-media) packet.
@@ -1462,7 +1523,7 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
   EXPECT_EQ(3, jitter_buffer_->num_discarded_packets());
 }
 
-TEST_F(TestBasicJitterBuffer, DeltaFrame100PacketsWithSeqNumWrap) {
+TEST_P(TestBasicJitterBuffer, DeltaFrame100PacketsWithSeqNumWrap) {
   seq_num_ = 0xfff0;
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
@@ -1511,7 +1572,7 @@ TEST_F(TestBasicJitterBuffer, DeltaFrame100PacketsWithSeqNumWrap) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, PacketReorderingReverseWithNegSeqNumWrap) {
+TEST_P(TestBasicJitterBuffer, PacketReorderingReverseWithNegSeqNumWrap) {
   // Insert "first" packet last seqnum.
   seq_num_ = 10;
   packet_->frameType = kVideoFrameKey;
@@ -1560,7 +1621,7 @@ TEST_F(TestBasicJitterBuffer, PacketReorderingReverseWithNegSeqNumWrap) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, TestInsertOldFrame) {
+TEST_P(TestBasicJitterBuffer, TestInsertOldFrame) {
   //   -------      -------
   //  |   2   |    |   1   |
   //   -------      -------
@@ -1594,7 +1655,7 @@ TEST_F(TestBasicJitterBuffer, TestInsertOldFrame) {
   EXPECT_EQ(kOldPacket, jitter_buffer_->InsertPacket(*packet_, &retransmitted));
 }
 
-TEST_F(TestBasicJitterBuffer, TestInsertOldFrameWithSeqNumWrap) {
+TEST_P(TestBasicJitterBuffer, TestInsertOldFrameWithSeqNumWrap) {
   //   -------      -------
   //  |   2   |    |   1   |
   //   -------      -------
@@ -1633,7 +1694,7 @@ TEST_F(TestBasicJitterBuffer, TestInsertOldFrameWithSeqNumWrap) {
   EXPECT_EQ(kOldPacket, jitter_buffer_->InsertPacket(*packet_, &retransmitted));
 }
 
-TEST_F(TestBasicJitterBuffer, TimestampWrap) {
+TEST_P(TestBasicJitterBuffer, TimestampWrap) {
   //  ---------------     ---------------
   // |   1   |   2   |   |   3   |   4   |
   //  ---------------     ---------------
@@ -1693,7 +1754,7 @@ TEST_F(TestBasicJitterBuffer, TimestampWrap) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, 2FrameWithTimestampWrap) {
+TEST_P(TestBasicJitterBuffer, 2FrameWithTimestampWrap) {
   //   -------          -------
   //  |   1   |        |   2   |
   //   -------          -------
@@ -1735,7 +1796,7 @@ TEST_F(TestBasicJitterBuffer, 2FrameWithTimestampWrap) {
   jitter_buffer_->ReleaseFrame(frame_out2);
 }
 
-TEST_F(TestBasicJitterBuffer, Insert2FramesReOrderedWithTimestampWrap) {
+TEST_P(TestBasicJitterBuffer, Insert2FramesReOrderedWithTimestampWrap) {
   //   -------          -------
   //  |   2   |        |   1   |
   //   -------          -------
@@ -1778,7 +1839,7 @@ TEST_F(TestBasicJitterBuffer, Insert2FramesReOrderedWithTimestampWrap) {
   jitter_buffer_->ReleaseFrame(frame_out2);
 }
 
-TEST_F(TestBasicJitterBuffer, DeltaFrameWithMoreThanMaxNumberOfPackets) {
+TEST_P(TestBasicJitterBuffer, DeltaFrameWithMoreThanMaxNumberOfPackets) {
   int loop = 0;
   bool firstPacket = true;
   bool retransmitted = false;
@@ -1813,7 +1874,7 @@ TEST_F(TestBasicJitterBuffer, DeltaFrameWithMoreThanMaxNumberOfPackets) {
   EXPECT_TRUE(NULL == DecodeCompleteFrame());
 }
 
-TEST_F(TestBasicJitterBuffer, ExceedNumOfFrameWithSeqNumWrap) {
+TEST_P(TestBasicJitterBuffer, ExceedNumOfFrameWithSeqNumWrap) {
   // TEST fill JB with more than max number of frame (50 delta frames +
   // 51 key frames) with wrap in seq_num_
   //
@@ -1873,7 +1934,7 @@ TEST_F(TestBasicJitterBuffer, ExceedNumOfFrameWithSeqNumWrap) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, EmptyLastFrame) {
+TEST_P(TestBasicJitterBuffer, EmptyLastFrame) {
   jitter_buffer_->SetDecodeErrorMode(kWithErrors);
   seq_num_ = 3;
   // Insert one empty packet per frame, should never return the last timestamp
@@ -1899,7 +1960,7 @@ TEST_F(TestBasicJitterBuffer, EmptyLastFrame) {
   }
 }
 
-TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
+TEST_P(TestBasicJitterBuffer, H264IncompleteNalu) {
   jitter_buffer_->SetNackMode(kNoNack, -1, -1);
   jitter_buffer_->SetDecodeErrorMode(kWithErrors);
   ++seq_num_;
@@ -2080,7 +2141,7 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
-TEST_F(TestBasicJitterBuffer, NextFrameWhenIncomplete) {
+TEST_P(TestBasicJitterBuffer, NextFrameWhenIncomplete) {
   // Test that a we cannot get incomplete frames from the JB if we haven't
   // received the marker bit, unless we have received a packet from a later
   // timestamp.
@@ -2257,7 +2318,7 @@ TEST_F(TestRunningJitterBuffer, TwoPacketsNonContinuous) {
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, EmptyPackets) {
+TEST_P(TestJitterBufferNack, EmptyPackets) {
   // Make sure empty packets doesn't clog the jitter buffer.
   jitter_buffer_->SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
   EXPECT_GE(InsertFrames(kMaxNumberOfFrames, kEmptyFrame), kNoError);
@@ -2265,7 +2326,7 @@ TEST_F(TestJitterBufferNack, EmptyPackets) {
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, NackTooOldPackets) {
+TEST_P(TestJitterBufferNack, NackTooOldPackets) {
   // Insert a key frame and decode it.
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -2298,7 +2359,7 @@ TEST_F(TestJitterBufferNack, NackTooOldPackets) {
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, NackLargeJitterBuffer) {
+TEST_P(TestJitterBufferNack, NackLargeJitterBuffer) {
   // Insert a key frame and decode it.
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -2317,7 +2378,7 @@ TEST_F(TestJitterBufferNack, NackLargeJitterBuffer) {
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, NackListFull) {
+TEST_P(TestJitterBufferNack, NackListFull) {
   // Insert a key frame and decode it.
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -2350,7 +2411,7 @@ TEST_F(TestJitterBufferNack, NackListFull) {
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, NoNackListReturnedBeforeFirstDecode) {
+TEST_P(TestJitterBufferNack, NoNackListReturnedBeforeFirstDecode) {
   DropFrame(10);
   // Insert a frame and try to generate a NACK list. Shouldn't get one.
   EXPECT_GE(InsertFrame(kVideoFrameDelta), kNoError);
@@ -2362,7 +2423,7 @@ TEST_F(TestJitterBufferNack, NoNackListReturnedBeforeFirstDecode) {
   EXPECT_TRUE(request_key_frame);
 }
 
-TEST_F(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
+TEST_P(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
   stream_generator_->Init(0, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
   stream_generator_->GenerateFrame(kVideoFrameDelta, 2, 0,
@@ -2372,10 +2433,13 @@ TEST_F(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
   EXPECT_TRUE(DecodeCompleteFrame());
   bool extended = false;
   std::vector<uint16_t> nack_list = jitter_buffer_->GetNackList(&extended);
-  EXPECT_EQ(1u, nack_list.size());
+  if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled")
+    EXPECT_EQ(1u, nack_sent_.size());
+  else
+    EXPECT_EQ(1u, nack_list.size());
 }
 
-TEST_F(TestJitterBufferNack, VerifyRetransmittedFlag) {
+TEST_P(TestJitterBufferNack, VerifyRetransmittedFlag) {
   stream_generator_->Init(0, clock_->TimeInMilliseconds());
   stream_generator_->GenerateFrame(kVideoFrameKey, 3, 0,
                                    clock_->TimeInMilliseconds());
@@ -2391,16 +2455,23 @@ TEST_F(TestJitterBufferNack, VerifyRetransmittedFlag) {
   EXPECT_FALSE(DecodeCompleteFrame());
   bool extended = false;
   std::vector<uint16_t> nack_list = jitter_buffer_->GetNackList(&extended);
-  EXPECT_EQ(1u, nack_list.size());
+  uint16_t seq_num;
+  if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled") {
+    EXPECT_EQ(1u, nack_sent_.size());
+    seq_num = nack_sent_[0];
+  } else {
+    EXPECT_EQ(1u, nack_list.size());
+    seq_num = nack_list[0];
+  }
   stream_generator_->PopPacket(&packet, 0);
-  EXPECT_EQ(packet.seqNum, nack_list[0]);
+  EXPECT_EQ(packet.seqNum, seq_num);
   EXPECT_EQ(kCompleteSession,
             jitter_buffer_->InsertPacket(packet, &retransmitted));
   EXPECT_TRUE(retransmitted);
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
+TEST_P(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
   stream_generator_->Init(0, clock_->TimeInMilliseconds());
   stream_generator_->GenerateFrame(kVideoFrameKey, 3, 0,
                                    clock_->TimeInMilliseconds());
@@ -2410,13 +2481,20 @@ TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
   EXPECT_FALSE(DecodeCompleteFrame());
   bool extended = false;
   std::vector<uint16_t> nack_list = jitter_buffer_->GetNackList(&extended);
-  EXPECT_EQ(1u, nack_list.size());
+  uint16_t seq_num;
+  if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled") {
+    ASSERT_EQ(1u, nack_sent_.size());
+    seq_num = nack_sent_[0];
+  } else {
+    ASSERT_EQ(1u, nack_list.size());
+    seq_num = nack_list[0];
+  }
   VCMPacket packet;
   stream_generator_->GetPacket(&packet, 0);
-  EXPECT_EQ(packet.seqNum, nack_list[0]);
+  EXPECT_EQ(packet.seqNum, seq_num);
 }
 
-TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrameSecondInQueue) {
+TEST_P(TestJitterBufferNack, UseNackToRecoverFirstKeyFrameSecondInQueue) {
   VCMPacket packet;
   stream_generator_->Init(0, clock_->TimeInMilliseconds());
   // First frame is delta.
@@ -2435,12 +2513,19 @@ TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrameSecondInQueue) {
   EXPECT_FALSE(DecodeCompleteFrame());
   bool extended = false;
   std::vector<uint16_t> nack_list = jitter_buffer_->GetNackList(&extended);
-  EXPECT_EQ(1u, nack_list.size());
+  uint16_t seq_num;
+  if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled") {
+    ASSERT_EQ(2u, nack_sent_.size());
+    seq_num = nack_sent_[1];
+  } else {
+    ASSERT_EQ(1u, nack_list.size());
+    seq_num = nack_list[0];
+  }
   stream_generator_->GetPacket(&packet, 0);
-  EXPECT_EQ(packet.seqNum, nack_list[0]);
+  EXPECT_EQ(packet.seqNum, seq_num);
 }
 
-TEST_F(TestJitterBufferNack, NormalOperation) {
+TEST_P(TestJitterBufferNack, NormalOperation) {
   EXPECT_EQ(kNack, jitter_buffer_->nack_mode());
   jitter_buffer_->SetDecodeErrorMode(kWithErrors);
 
@@ -2468,16 +2553,20 @@ TEST_F(TestJitterBufferNack, NormalOperation) {
   EXPECT_FALSE(DecodeCompleteFrame());
   EXPECT_FALSE(DecodeIncompleteFrame());
   bool request_key_frame = false;
+
+  // Verify the NACK list.
   std::vector<uint16_t> nack_list =
       jitter_buffer_->GetNackList(&request_key_frame);
-  // Verify the NACK list.
   const size_t kExpectedNackSize = 9;
-  ASSERT_EQ(kExpectedNackSize, nack_list.size());
+  if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled")
+    ASSERT_EQ(kExpectedNackSize, nack_sent_.size());
+  else
+    ASSERT_EQ(kExpectedNackSize, nack_list.size());
   for (size_t i = 0; i < nack_list.size(); ++i)
     EXPECT_EQ((1 + i) * 10, nack_list[i]);
 }
 
-TEST_F(TestJitterBufferNack, NormalOperationWrap) {
+TEST_P(TestJitterBufferNack, NormalOperationWrap) {
   bool request_key_frame = false;
   //  -------   ------------------------------------------------------------
   // | 65532 | | 65533 | 65534 | 65535 | x | 1 | .. | 9 | x | 11 |.....| 96 |
@@ -2506,12 +2595,18 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap) {
   std::vector<uint16_t> nack_list = jitter_buffer_->GetNackList(&extended);
   // Verify the NACK list.
   const size_t kExpectedNackSize = 10;
-  ASSERT_EQ(kExpectedNackSize, nack_list.size());
-  for (size_t i = 0; i < nack_list.size(); ++i)
-    EXPECT_EQ(i * 10, nack_list[i]);
+  if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled") {
+    ASSERT_EQ(kExpectedNackSize, nack_sent_.size());
+    for (size_t i = 0; i < nack_sent_.size(); ++i)
+      EXPECT_EQ(i * 10, nack_sent_[i]);
+  } else {
+    ASSERT_EQ(kExpectedNackSize, nack_list.size());
+    for (size_t i = 0; i < nack_list.size(); ++i)
+      EXPECT_EQ(i * 10, nack_list[i]);
+  }
 }
 
-TEST_F(TestJitterBufferNack, NormalOperationWrap2) {
+TEST_P(TestJitterBufferNack, NormalOperationWrap2) {
   bool request_key_frame = false;
   //  -----------------------------------
   // | 65532 | 65533 | 65534 | x | 0 | 1 |
@@ -2539,11 +2634,16 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap2) {
   bool extended = false;
   std::vector<uint16_t> nack_list = jitter_buffer_->GetNackList(&extended);
   // Verify the NACK list.
-  ASSERT_EQ(1u, nack_list.size());
-  EXPECT_EQ(65535, nack_list[0]);
+  if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled") {
+    ASSERT_EQ(1u, nack_sent_.size());
+    EXPECT_EQ(65535, nack_sent_[0]);
+  } else {
+    ASSERT_EQ(1u, nack_list.size());
+    EXPECT_EQ(65535, nack_list[0]);
+  }
 }
 
-TEST_F(TestJitterBufferNack, ResetByFutureKeyFrameDoesntError) {
+TEST_P(TestJitterBufferNack, ResetByFutureKeyFrameDoesntError) {
   stream_generator_->Init(0, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
   EXPECT_TRUE(DecodeCompleteFrame());

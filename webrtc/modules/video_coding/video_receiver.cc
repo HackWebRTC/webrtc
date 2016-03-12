@@ -25,12 +25,19 @@
 namespace webrtc {
 namespace vcm {
 
-VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
+VideoReceiver::VideoReceiver(Clock* clock,
+                             EventFactory* event_factory,
+                             NackSender* nack_sender,
+                             KeyFrameRequestSender* keyframe_request_sender)
     : clock_(clock),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _timing(clock_),
-      _receiver(&_timing, clock_, event_factory),
+      _receiver(&_timing,
+                clock_,
+                event_factory,
+                nack_sender,
+                keyframe_request_sender),
       _decodedFrameCallback(&_timing, clock_),
       _frameTypeCallback(NULL),
       _receiveStatsCallback(NULL),
@@ -110,6 +117,10 @@ void VideoReceiver::Process() {
       RequestKeyFrame();
   }
 
+  if (_receiver.TimeUntilNextProcess() == 0) {
+    _receiver.Process();
+  }
+
   // Packet retransmission requests
   // TODO(holmer): Add API for changing Process interval and make sure it's
   // disabled when NACK is off.
@@ -150,6 +161,8 @@ int64_t VideoReceiver::TimeUntilNextProcess() {
   }
   timeUntilNextProcess =
       VCM_MIN(timeUntilNextProcess, _keyRequestTimer.TimeUntilProcess());
+  timeUntilNextProcess =
+      VCM_MIN(timeUntilNextProcess, _receiver.TimeUntilNextProcess());
 
   return timeUntilNextProcess;
 }
