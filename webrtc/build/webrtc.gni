@@ -12,8 +12,6 @@ import("//build/config/mips.gni")
 import("//build_overrides/webrtc.gni")
 
 declare_args() {
-  build_with_libjingle = true
-
   # Disable this to avoid building the Opus audio codec.
   rtc_include_opus = true
 
@@ -58,13 +56,8 @@ declare_args() {
   # https://gcc.gnu.org/wiki/LinkTimeOptimization
   rtc_use_lto = false
 
-  if (build_with_libjingle) {
-    rtc_include_tests = false
-    rtc_restrict_logging = true
-  } else {
-    rtc_include_tests = true
-    rtc_restrict_logging = false
-  }
+  rtc_include_tests = false
+  rtc_restrict_logging = true
 
   if (is_ios) {
     rtc_build_libjpeg = false

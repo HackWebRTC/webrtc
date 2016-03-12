@@ -11,9 +11,7 @@ Prerequisites:
 - Set up webrtc-related $GYP_DEFINES; example shell functions that set
   up for building for iOS-device, iOS-simulator, and Mac (resp) are:
 function wrbase() {
-  cd /path/to/webrtc/trunk
-  export GYP_DEFINES="build_with_libjingle=1 build_with_chromium=0"
-  export GYP_GENERATORS="ninja"
+  cd /path/to/webrtc/src
 }
 
 function wrios() {
