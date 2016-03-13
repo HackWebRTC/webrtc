@@ -16,6 +16,8 @@ typedef NS_ENUM(NSInteger, RTCDispatcherQueueType) {
   // Used for starting/stopping AVCaptureSession, and assigning
   // capture session to AVCaptureVideoPreviewLayer.
   RTCDispatcherTypeCaptureSession,
+  // Used for operations on AVAudioSession.
+  RTCDispatcherTypeAudioSession,
 };
 
 /** Dispatcher that asynchronously dispatches blocks to a specific

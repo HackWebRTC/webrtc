@@ -11,6 +11,7 @@
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/criticalsection.h"
 
 #import "webrtc/base/objc/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
@@ -22,15 +23,15 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
 // TODO(tkchin): Consider more granular locking. We're not expecting a lot of
 // lock contention so coarse locks should be fine for now.
 @implementation RTCAudioSession {
+  rtc::CriticalSection _crit;
   AVAudioSession *_session;
   NSHashTable *_delegates;
   NSInteger _activationCount;
+  NSInteger _lockRecursionCount;
   BOOL _isActive;
-  BOOL _isLocked;
 }
 
 @synthesize session = _session;
-@synthesize lock = _lock;
 
 + (instancetype)sharedInstance {
   static dispatch_once_t onceToken;
@@ -45,7 +46,7 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
   if (self = [super init]) {
     _session = [AVAudioSession sharedInstance];
     _delegates = [NSHashTable weakObjectsHashTable];
-    _lock = [[NSRecursiveLock alloc] init];
+
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     [center addObserver:self
                selector:@selector(handleInterruptionNotification:)
@@ -86,7 +87,7 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
 
 - (BOOL)isLocked {
   @synchronized(self) {
-    return _isLocked;
+    return _lockRecursionCount > 0;
   }
 }
 
@@ -103,24 +104,23 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
 }
 
 - (void)lockForConfiguration {
-  [_lock lock];
+  _crit.Enter();
   @synchronized(self) {
-    _isLocked = YES;
+    ++_lockRecursionCount;
   }
 }
 
 - (void)unlockForConfiguration {
   // Don't let threads other than the one that called lockForConfiguration
   // unlock.
-  if ([_lock tryLock]) {
+  if (_crit.TryEnter()) {
     @synchronized(self) {
-      _isLocked = NO;
+      --_lockRecursionCount;
     }
     // One unlock for the tryLock, and another one to actually unlock. If this
-    // was called without anyone calling lock, the underlying NSRecursiveLock
-    // should spit out an error.
-    [_lock unlock];
-    [_lock unlock];
+    // was called without anyone calling lock, we will hit an assertion.
+    _crit.Leave();
+    _crit.Leave();
   }
 }
 

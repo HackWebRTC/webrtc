@@ -472,9 +472,13 @@
               ],
             }],
             ['OS=="ios"', {
+              'includes': [
+                '../build/objc_common.gypi',
+              ],
               'sources': [
                 'video_coding/codecs/h264/h264_video_toolbox_nalu_unittest.cc',
                 'audio_device/ios/audio_device_unittest_ios.cc',
+                'audio_device/ios/objc/RTCAudioSessionTest.mm',
               ],
               # This needs to be kept in sync with modules_unittests.isolate.
               'mac_bundle_resources': [

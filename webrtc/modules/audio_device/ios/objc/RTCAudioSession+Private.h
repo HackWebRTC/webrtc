@@ -14,9 +14,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RTCAudioSession ()
 
-/** The lock that guards access to AVAudioSession methods. */
-@property(nonatomic, strong) NSRecursiveLock *lock;
-
 /** The delegates. */
 @property(nonatomic, readonly) NSSet *delegates;
 

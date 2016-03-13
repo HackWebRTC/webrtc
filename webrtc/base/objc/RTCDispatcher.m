@@ -10,15 +10,17 @@
 
 #import "RTCDispatcher.h"
 
+static dispatch_queue_t kAudioSessionQueue = nil;
 static dispatch_queue_t kCaptureSessionQueue = nil;
 
-@implementation RTCDispatcher {
-  dispatch_queue_t _captureSessionQueue;
-}
+@implementation RTCDispatcher
 
 + (void)initialize {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
+    kAudioSessionQueue = dispatch_queue_create(
+        "org.webrtc.RTCDispatcherAudioSession",
+        DISPATCH_QUEUE_SERIAL);
     kCaptureSessionQueue = dispatch_queue_create(
         "org.webrtc.RTCDispatcherCaptureSession",
         DISPATCH_QUEUE_SERIAL);
@@ -39,6 +41,8 @@ static dispatch_queue_t kCaptureSessionQueue = nil;
       return dispatch_get_main_queue();
     case RTCDispatcherTypeCaptureSession:
       return kCaptureSessionQueue;
+    case RTCDispatcherTypeAudioSession:
+      return kAudioSessionQueue;
   }
 }
 

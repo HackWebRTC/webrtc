@@ -10,6 +10,9 @@
 
 #import "ARDVideoCallViewController.h"
 
+#import "webrtc/base/objc/RTCDispatcher.h"
+#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
+
 #import "RTCAVFoundationVideoSource.h"
 #import "RTCLogging.h"
 
@@ -27,6 +30,7 @@
   ARDAppClient *_client;
   RTCVideoTrack *_remoteVideoTrack;
   RTCVideoTrack *_localVideoTrack;
+  AVAudioSessionPortOverride _portOverride;
 }
 
 @synthesize videoCallView = _videoCallView;
@@ -115,6 +119,26 @@
   // TODO(tkchin): Rate limit this so you can't tap continously on it.
   // Probably through an animation.
   [self switchCamera];
+}
+
+- (void)videoCallViewDidChangeRoute:(ARDVideoCallView *)view {
+  AVAudioSessionPortOverride override = AVAudioSessionPortOverrideNone;
+  if (_portOverride == AVAudioSessionPortOverrideNone) {
+    override = AVAudioSessionPortOverrideSpeaker;
+  }
+  [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeAudioSession
+                               block:^{
+    RTCAudioSession *session = [RTCAudioSession sharedInstance];
+    [session lockForConfiguration];
+    NSError *error = nil;
+    if ([session overrideOutputAudioPort:override error:&error]) {
+      _portOverride = override;
+    } else {
+      RTCLogError(@"Error overriding output port: %@",
+                  error.localizedDescription);
+    }
+    [session unlockForConfiguration];
+  }];
 }
 
 - (void)videoCallViewDidEnableStats:(ARDVideoCallView *)view {

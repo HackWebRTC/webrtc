@@ -23,6 +23,7 @@ static CGFloat const kStatusBarHeight = 20;
 @end
 
 @implementation ARDVideoCallView {
+  UIButton *_routeChangeButton;
   UIButton *_cameraSwitchButton;
   UIButton *_hangupButton;
   CGSize _remoteVideoSize;
@@ -48,12 +49,23 @@ static CGFloat const kStatusBarHeight = 20;
     _statsView.hidden = YES;
     [self addSubview:_statsView];
 
+    _routeChangeButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _routeChangeButton.backgroundColor = [UIColor whiteColor];
+    _routeChangeButton.layer.cornerRadius = kButtonSize / 2;
+    _routeChangeButton.layer.masksToBounds = YES;
+    UIImage *image = [UIImage imageNamed:@"ic_surround_sound_black_24dp.png"];
+    [_routeChangeButton setImage:image forState:UIControlStateNormal];
+    [_routeChangeButton addTarget:self
+                           action:@selector(onRouteChange:)
+                 forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:_routeChangeButton];
+
     // TODO(tkchin): don't display this if we can't actually do camera switch.
     _cameraSwitchButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _cameraSwitchButton.backgroundColor = [UIColor whiteColor];
     _cameraSwitchButton.layer.cornerRadius = kButtonSize / 2;
     _cameraSwitchButton.layer.masksToBounds = YES;
-    UIImage *image = [UIImage imageNamed:@"ic_switch_video_black_24dp.png"];
+    image = [UIImage imageNamed:@"ic_switch_video_black_24dp.png"];
     [_cameraSwitchButton setImage:image forState:UIControlStateNormal];
     [_cameraSwitchButton addTarget:self
                       action:@selector(onCameraSwitch:)
@@ -140,6 +152,12 @@ static CGFloat const kStatusBarHeight = 20;
       CGRectGetMaxX(cameraSwitchFrame) + kButtonPadding;
   _cameraSwitchButton.frame = cameraSwitchFrame;
 
+  // Place route button to the right of camera button.
+  CGRect routeChangeFrame = _cameraSwitchButton.frame;
+  routeChangeFrame.origin.x =
+      CGRectGetMaxX(routeChangeFrame) + kButtonPadding;
+  _routeChangeButton.frame = routeChangeFrame;
+
   [_statusLabel sizeToFit];
   _statusLabel.center =
       CGPointMake(CGRectGetMidX(bounds), CGRectGetMidY(bounds));
@@ -158,6 +176,10 @@ static CGFloat const kStatusBarHeight = 20;
 
 - (void)onCameraSwitch:(id)sender {
   [_delegate videoCallViewDidSwitchCamera:self];
+}
+
+- (void)onRouteChange:(id)sender {
+  [_delegate videoCallViewDidChangeRoute:self];
 }
 
 - (void)onHangup:(id)sender {
