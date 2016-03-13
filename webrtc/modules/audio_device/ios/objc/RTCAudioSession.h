@@ -14,9 +14,13 @@
 NS_ASSUME_NONNULL_BEGIN
 
 extern NSString * const kRTCAudioSessionErrorDomain;
+/** Method that requires lock was called without lock. */
 extern NSInteger const kRTCAudioSessionErrorLockRequired;
+/** Unknown configuration error occurred. */
+extern NSInteger const kRTCAudioSessionErrorConfiguration;
 
 @class RTCAudioSession;
+@class RTCAudioSessionConfiguration;
 
 // Surfaces AVAudioSession events. WebRTC will listen directly for notifications
 // from AVAudioSession and handle them before calling these delegate methods,
@@ -40,6 +44,18 @@ extern NSInteger const kRTCAudioSessionErrorLockRequired;
 
 /** Called when AVAudioSession media server restarts. */
 - (void)audioSessionMediaServicesWereReset:(RTCAudioSession *)session;
+
+/** Called when WebRTC needs to take over audio. Applications should call
+ *  -[RTCAudioSession configure] to allow WebRTC to play and record audio.
+ *  TODO(tkchin): Implement this behavior in RTCAudioSession.
+ */
+- (void)audioSessionShouldConfigure:(RTCAudioSession *)session;
+
+/** Called when WebRTC no longer requires audio. Applications should restore
+ *  their audio state at this point.
+ *  TODO(tkchin): Implement this behavior in RTCAudioSession.
+ */
+- (void)audioSessionShouldUnconfigure:(RTCAudioSession *)session;
 
 // TODO(tkchin): Maybe handle SilenceSecondaryAudioHintNotification.
 
@@ -67,6 +83,14 @@ extern NSInteger const kRTCAudioSessionErrorLockRequired;
 @property(nonatomic, readonly) BOOL isActive;
 /** Whether RTCAudioSession is currently locked for configuration. */
 @property(nonatomic, readonly) BOOL isLocked;
+
+/** If YES, WebRTC will not initialize the audio unit automatically when an
+ *  audio track is ready for playout or recording. Instead, applications should
+ *  listen to the delegate method |audioSessionShouldConfigure| and configure
+ *  the session manually. This should be set before making WebRTC media calls.
+ *  TODO(tkchin): Implement behavior. Currently this just stores a BOOL.
+ */
+@property(nonatomic, assign) BOOL shouldDelayAudioConfiguration;
 
 // Proxy properties.
 @property(readonly) NSString *category;
@@ -147,6 +171,25 @@ extern NSInteger const kRTCAudioSessionErrorLockRequired;
                      error:(NSError **)outError;
 - (BOOL)setOutputDataSource:(AVAudioSessionDataSourceDescription *)dataSource
                       error:(NSError **)outError;
+
+@end
+
+@interface RTCAudioSession (Configuration)
+
+/** Applies the configuration to the current session. Attempts to set all
+ *  properties even if previous ones fail. Only the last error will be
+ *  returned. Also calls setActive with |active|.
+ *  |lockForConfiguration| must be called first.
+ */
+- (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration
+                  active:(BOOL)active
+                   error:(NSError **)outError;
+
+/** Configure the audio session for WebRTC. On failure, we will attempt to
+ *  restore the previously used audio session configuration.
+ *  |lockForConfiguration| must be called first.
+ */
+- (BOOL)configureWebRTCSession:(NSError **)outError;
 
 @end
 

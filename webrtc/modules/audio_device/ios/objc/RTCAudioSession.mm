@@ -18,6 +18,7 @@
 
 NSString * const kRTCAudioSessionErrorDomain = @"org.webrtc.RTCAudioSession";
 NSInteger const kRTCAudioSessionErrorLockRequired = -1;
+NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 
 // This class needs to be thread-safe because it is accessed from many threads.
 // TODO(tkchin): Consider more granular locking. We're not expecting a lot of
@@ -29,6 +30,7 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
   NSInteger _activationCount;
   NSInteger _lockRecursionCount;
   BOOL _isActive;
+  BOOL _shouldDelayAudioConfiguration;
 }
 
 @synthesize session = _session;
@@ -88,6 +90,21 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
 - (BOOL)isLocked {
   @synchronized(self) {
     return _lockRecursionCount > 0;
+  }
+}
+
+- (void)setShouldDelayAudioConfiguration:(BOOL)shouldDelayAudioConfiguration {
+  @synchronized(self) {
+    if (_shouldDelayAudioConfiguration == shouldDelayAudioConfiguration) {
+      return;
+    }
+    _shouldDelayAudioConfiguration = shouldDelayAudioConfiguration;
+  }
+}
+
+- (BOOL)shouldDelayAudioConfiguration {
+  @synchronized(self) {
+    return _shouldDelayAudioConfiguration;
   }
 }
 
@@ -250,7 +267,8 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
       [self incrementActivationCount];
     }
   } else {
-    RTCLogError(@"Failed to setActive:%d. Error: %@", active, error);
+    RTCLogError(@"Failed to setActive:%d. Error: %@",
+                active, error.localizedDescription);
   }
   // Decrement activation count on deactivation whether or not it succeeded.
   if (!active) {
@@ -441,18 +459,6 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
   return error;
 }
 
-- (BOOL)checkLock:(NSError **)outError {
-  // Check ivar instead of trying to acquire lock so that we won't accidentally
-  // acquire lock if it hasn't already been called.
-  if (!self.isLocked) {
-    if (outError) {
-      *outError = [RTCAudioSession lockError];
-    }
-    return NO;
-  }
-  return YES;
-}
-
 - (NSSet *)delegates {
   @synchronized(self) {
     return _delegates.setRepresentation;
@@ -477,6 +483,18 @@ NSInteger const kRTCAudioSessionErrorLockRequired = -1;
   @synchronized(self) {
     return --_activationCount;
   }
+}
+
+- (BOOL)checkLock:(NSError **)outError {
+  // Check ivar instead of trying to acquire lock so that we won't accidentally
+  // acquire lock if it hasn't already been called.
+  if (!self.isLocked) {
+    if (outError) {
+      *outError = [RTCAudioSession lockError];
+    }
+    return NO;
+  }
+  return YES;
 }
 
 - (void)updateAudioSessionAfterEvent {

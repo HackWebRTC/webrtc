@@ -22,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(nonatomic, readonly) NSInteger activationCount;
 
+- (BOOL)checkLock:(NSError **)outError;
+
 @end
 
 NS_ASSUME_NONNULL_END

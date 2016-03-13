@@ -173,9 +173,12 @@
                 'ios/audio_device_ios.h',
                 'ios/audio_device_ios.mm',
                 'ios/audio_device_not_implemented_ios.mm',
+                'ios/objc/RTCAudioSession+Configuration.mm',
                 'ios/objc/RTCAudioSession+Private.h',
                 'ios/objc/RTCAudioSession.h',
                 'ios/objc/RTCAudioSession.mm',
+                'ios/objc/RTCAudioSessionConfiguration.h',
+                'ios/objc/RTCAudioSessionConfiguration.m',
               ],
               'xcode_settings': {
                 'CLANG_ENABLE_OBJC_ARC': 'YES',

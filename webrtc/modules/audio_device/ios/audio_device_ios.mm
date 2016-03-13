@@ -25,7 +25,9 @@
 #include "webrtc/modules/audio_device/fine_audio_buffer.h"
 #include "webrtc/modules/utility/include/helpers_ios.h"
 
+#import "webrtc/base/objc/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
+#import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 
 namespace webrtc {
 
@@ -48,38 +50,7 @@ namespace webrtc {
     }                                          \
   } while (0)
 
-// Preferred hardware sample rate (unit is in Hertz). The client sample rate
-// will be set to this value as well to avoid resampling the the audio unit's
-// format converter. Note that, some devices, e.g. BT headsets, only supports
-// 8000Hz as native sample rate.
-const double kHighPerformanceSampleRate = 48000.0;
-// A lower sample rate will be used for devices with only one core
-// (e.g. iPhone 4). The goal is to reduce the CPU load of the application.
-const double kLowComplexitySampleRate = 16000.0;
-// Use a hardware I/O buffer size (unit is in seconds) that matches the 10ms
-// size used by WebRTC. The exact actual size will differ between devices.
-// Example: using 48kHz on iPhone 6 results in a native buffer size of
-// ~10.6667ms or 512 audio frames per buffer. The FineAudioBuffer instance will
-// take care of any buffering required to convert between native buffers and
-// buffers used by WebRTC. It is beneficial for the performance if the native
-// size is as close to 10ms as possible since it results in "clean" callback
-// sequence without bursts of callbacks back to back.
-const double kHighPerformanceIOBufferDuration = 0.01;
-// Use a larger buffer size on devices with only one core (e.g. iPhone 4).
-// It will result in a lower CPU consumption at the cost of a larger latency.
-// The size of 60ms is based on instrumentation that shows a significant
-// reduction in CPU load compared with 10ms on low-end devices.
-// TODO(henrika): monitor this size and determine if it should be modified.
-const double kLowComplexityIOBufferDuration = 0.06;
-// Try to use mono to save resources. Also avoids channel format conversion
-// in the I/O audio unit. Initial tests have shown that it is possible to use
-// mono natively for built-in microphones and for BT headsets but not for
-// wired headsets. Wired headsets only support stereo as native channel format
-// but it is a low cost operation to do a format conversion to mono in the
-// audio unit. Hence, we will not hit a RTC_CHECK in
-// VerifyAudioParametersForActiveAudioSession() for a mismatch between the
-// preferred number of channels and the actual number of channels.
-const int kPreferredNumberOfChannels = 1;
+
 // Number of bytes per audio sample for 16-bit signed integer representation.
 const UInt32 kBytesPerSample = 2;
 // Hardcoded delay estimates based on real measurements.
@@ -94,149 +65,6 @@ const UInt16 kFixedRecordDelayEstimate = 30;
 const int kMaxNumberOfAudioUnitInitializeAttempts = 5;
 
 using ios::CheckAndLogError;
-
-// Return the preferred sample rate given number of CPU cores. Use highest
-// possible if the CPU has more than one core.
-static double GetPreferredSampleRate() {
-  return (ios::GetProcessorCount() > 1) ? kHighPerformanceSampleRate
-                                        : kLowComplexitySampleRate;
-}
-
-// Return the preferred I/O buffer size given number of CPU cores. Use smallest
-// possible if the CPU has more than one core.
-static double GetPreferredIOBufferDuration() {
-  return (ios::GetProcessorCount() > 1) ? kHighPerformanceIOBufferDuration
-                                        : kLowComplexityIOBufferDuration;
-}
-
-// Verifies that the current audio session supports input audio and that the
-// required category and mode are enabled.
-static bool VerifyAudioSession(RTCAudioSession* session) {
-  LOG(LS_INFO) << "VerifyAudioSession";
-  // Ensure that the device currently supports audio input.
-  if (!session.inputAvailable) {
-    LOG(LS_ERROR) << "No audio input path is available!";
-    return false;
-  }
-
-  // Ensure that the required category and mode are actually activated.
-  if (![session.category isEqualToString:AVAudioSessionCategoryPlayAndRecord]) {
-    LOG(LS_ERROR)
-        << "Failed to set category to AVAudioSessionCategoryPlayAndRecord";
-    return false;
-  }
-  if (![session.mode isEqualToString:AVAudioSessionModeVoiceChat]) {
-    LOG(LS_ERROR) << "Failed to set mode to AVAudioSessionModeVoiceChat";
-    return false;
-  }
-  return true;
-}
-
-// Activates an audio session suitable for full duplex VoIP sessions when
-// |activate| is true. Also sets the preferred sample rate and IO buffer
-// duration. Deactivates an active audio session if |activate| is set to false.
-static bool ActivateAudioSession(RTCAudioSession* session, bool activate) {
-  LOG(LS_INFO) << "ActivateAudioSession(" << activate << ")";
-
-  NSError* error = nil;
-  BOOL success = NO;
-
-  [session lockForConfiguration];
-  if (!activate) {
-    success = [session setActive:NO
-                           error:&error];
-    [session unlockForConfiguration];
-    return CheckAndLogError(success, error);
-  }
-
-  // Go ahead and active our own audio session since |activate| is true.
-  // Use a category which supports simultaneous recording and playback.
-  // By default, using this category implies that our app’s audio is
-  // nonmixable, hence activating the session will interrupt any other
-  // audio sessions which are also nonmixable.
-  if (session.category != AVAudioSessionCategoryPlayAndRecord) {
-    error = nil;
-    success = [session setCategory:AVAudioSessionCategoryPlayAndRecord
-                       withOptions:AVAudioSessionCategoryOptionAllowBluetooth
-                             error:&error];
-    RTC_DCHECK(CheckAndLogError(success, error));
-  }
-
-  // Specify mode for two-way voice communication (e.g. VoIP).
-  if (session.mode != AVAudioSessionModeVoiceChat) {
-    error = nil;
-    success = [session setMode:AVAudioSessionModeVoiceChat error:&error];
-    RTC_DCHECK(CheckAndLogError(success, error));
-  }
-
-  // Set the session's sample rate or the hardware sample rate.
-  // It is essential that we use the same sample rate as stream format
-  // to ensure that the I/O unit does not have to do sample rate conversion.
-  error = nil;
-  success =
-      [session setPreferredSampleRate:GetPreferredSampleRate() error:&error];
-  RTC_DCHECK(CheckAndLogError(success, error));
-
-  // Set the preferred audio I/O buffer duration, in seconds.
-  error = nil;
-  success = [session setPreferredIOBufferDuration:GetPreferredIOBufferDuration()
-                                            error:&error];
-  RTC_DCHECK(CheckAndLogError(success, error));
-
-  // Activate the audio session. Activation can fail if another active audio
-  // session (e.g. phone call) has higher priority than ours.
-  error = nil;
-  success = [session setActive:YES error:&error];
-  if (!CheckAndLogError(success, error)) {
-    [session unlockForConfiguration];
-    return false;
-  }
-
-  // Ensure that the active audio session has the correct category and mode.
-  if (!VerifyAudioSession(session)) {
-    LOG(LS_ERROR) << "Failed to verify audio session category and mode";
-    [session unlockForConfiguration];
-    return false;
-  }
-
-  // Try to set the preferred number of hardware audio channels. These calls
-  // must be done after setting the audio session’s category and mode and
-  // activating the session.
-  // We try to use mono in both directions to save resources and format
-  // conversions in the audio unit. Some devices does only support stereo;
-  // e.g. wired headset on iPhone 6.
-  // TODO(henrika): add support for stereo if needed.
-  error = nil;
-  success =
-      [session setPreferredInputNumberOfChannels:kPreferredNumberOfChannels
-                                           error:&error];
-  RTC_DCHECK(CheckAndLogError(success, error));
-  error = nil;
-  success =
-      [session setPreferredOutputNumberOfChannels:kPreferredNumberOfChannels
-                                            error:&error];
-  RTC_DCHECK(CheckAndLogError(success, error));
-  [session unlockForConfiguration];
-  return true;
-}
-
-// An application can create more than one ADM and start audio streaming
-// for all of them. It is essential that we only activate the app's audio
-// session once (for the first one) and deactivate it once (for the last).
-static bool ActivateAudioSession() {
-  LOGI() << "ActivateAudioSession";
-  RTCAudioSession* session = [RTCAudioSession sharedInstance];
-  return ActivateAudioSession(session, true);
-}
-
-// If more than one object is using the audio session, ensure that only the
-// last object deactivates. Apple recommends: "activate your audio session
-// only as needed and deactivate it when you are not using audio".
-static bool DeactivateAudioSession() {
-  LOGI() << "DeactivateAudioSession";
-  RTCAudioSession* session = [RTCAudioSession sharedInstance];
-  return ActivateAudioSession(session, false);
-}
 
 #if !defined(NDEBUG)
 // Helper method for printing out an AudioStreamBasicDescription structure.
@@ -313,13 +141,15 @@ int32_t AudioDeviceIOS::Init() {
   LogDeviceInfo();
 #endif
   // Store the preferred sample rate and preferred number of channels already
-  // here. They have not been set and confirmed yet since ActivateAudioSession()
+  // here. They have not been set and confirmed yet since configureForWebRTC
   // is not called until audio is about to start. However, it makes sense to
   // store the parameters now and then verify at a later stage.
-  playout_parameters_.reset(GetPreferredSampleRate(),
-                            kPreferredNumberOfChannels);
-  record_parameters_.reset(GetPreferredSampleRate(),
-                           kPreferredNumberOfChannels);
+  RTCAudioSessionConfiguration* config =
+      [RTCAudioSessionConfiguration webRTCConfiguration];
+  playout_parameters_.reset(config.sampleRate,
+                            config.outputNumberOfChannels);
+  record_parameters_.reset(config.sampleRate,
+                           config.inputNumberOfChannels);
   // Ensure that the audio device buffer (ADB) knows about the internal audio
   // parameters. Note that, even if we are unable to get a mono audio session,
   // we will always tell the I/O audio unit to do a channel format conversion
@@ -673,7 +503,9 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   // hardware sample rate but continue and use the non-ideal sample rate after
   // reinitializing the audio parameters. Most BT headsets only support 8kHz or
   // 16kHz.
-  if (session.sampleRate != GetPreferredSampleRate()) {
+  RTCAudioSessionConfiguration* webRTCConfig =
+      [RTCAudioSessionConfiguration webRTCConfiguration];
+  if (session.sampleRate != webRTCConfig.sampleRate) {
     LOG(LS_WARNING) << "Unable to set the preferred sample rate";
   }
 
@@ -791,7 +623,7 @@ bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
   UInt32 size = sizeof(application_format);
   RTC_DCHECK_EQ(playout_parameters_.sample_rate(),
                 record_parameters_.sample_rate());
-  RTC_DCHECK_EQ(1, kPreferredNumberOfChannels);
+  RTC_DCHECK_EQ(1, kRTCAudioSessionPreferredNumberOfChannels);
   application_format.mSampleRate = playout_parameters_.sample_rate();
   application_format.mFormatID = kAudioFormatLinearPCM;
   application_format.mFormatFlags =
@@ -799,7 +631,8 @@ bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
   application_format.mBytesPerPacket = kBytesPerSample;
   application_format.mFramesPerPacket = 1;  // uncompressed
   application_format.mBytesPerFrame = kBytesPerSample;
-  application_format.mChannelsPerFrame = kPreferredNumberOfChannels;
+  application_format.mChannelsPerFrame =
+      kRTCAudioSessionPreferredNumberOfChannels;
   application_format.mBitsPerChannel = 8 * kBytesPerSample;
   // Store the new format.
   application_format_ = application_format;
@@ -937,16 +770,16 @@ bool AudioDeviceIOS::RestartAudioUnitWithNewFormat(float sample_rate) {
 
 bool AudioDeviceIOS::InitPlayOrRecord() {
   LOGI() << "InitPlayOrRecord";
-  // Activate the audio session if not already activated.
-  if (!ActivateAudioSession()) {
-    return false;
-  }
 
-  // Ensure that the active audio session has the correct category and mode.
+  // Use the correct audio session configuration for WebRTC.
+  // This will attempt to activate the audio session.
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
-  if (!VerifyAudioSession(session)) {
-    DeactivateAudioSession();
-    LOG(LS_ERROR) << "Failed to verify audio session category and mode";
+  [session lockForConfiguration];
+  NSError* error = nil;
+  if (![session configureWebRTCSession:&error]) {
+    RTCLogError(@"Failed to configure WebRTC session: %@",
+                error.localizedDescription);
+    [session unlockForConfiguration];
     return false;
   }
 
@@ -958,11 +791,11 @@ bool AudioDeviceIOS::InitPlayOrRecord() {
 
   // Create, setup and initialize a new Voice-Processing I/O unit.
   if (!SetupAndInitializeVoiceProcessingAudioUnit()) {
-    // Reduce usage count for the audio session and possibly deactivate it if
-    // this object is the only user.
-    DeactivateAudioSession();
+    [session setActive:NO error:nil];
+    [session unlockForConfiguration];
     return false;
   }
+  [session unlockForConfiguration];
   return true;
 }
 
@@ -987,7 +820,10 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
 
   // All I/O should be stopped or paused prior to deactivating the audio
   // session, hence we deactivate as last action.
-  DeactivateAudioSession();
+  RTCAudioSession* session = [RTCAudioSession sharedInstance];
+  [session lockForConfiguration];
+  [session setActive:NO error:nil];
+  [session unlockForConfiguration];
 }
 
 void AudioDeviceIOS::DisposeAudioUnit() {
