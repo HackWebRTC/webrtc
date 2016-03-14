@@ -416,3 +416,23 @@
    fun:_ZN12_GLOBAL__N_118StatsCollectorTest22TestCertificateReportsERKN3rtc18FakeSSLCertificateERKSt6vectorISsSaISsEES4_S9_
    fun:_ZN12_GLOBAL__N_156StatsCollectorTest_ChainedCertificateReportsCreated_Test8TestBodyEv
 }
+{
+   bug_5651
+   Memcheck:Unaddressable
+   fun:silk_NLSF_encode
+   fun:silk_process_NLSFs
+   fun:silk_process_NLSFs_FLP
+   fun:silk_find_pred_coefs_FLP
+   fun:silk_encode_frame_FLP
+   fun:silk_Encode
+   fun:opus_encode_native
+   fun:opus_encode
+   fun:WebRtcOpus_Encode
+   fun:_ZZN6webrtc16AudioEncoderOpus10EncodeImplEjN3rtc9ArrayViewIKsEEPNS1_6BufferEENK3$_0clENS2_IhEE
+   fun:_ZN3rtc6Buffer10AppendDataIhZN6webrtc16AudioEncoderOpus10EncodeImplEjNS_9ArrayViewIKsEEPS0_E3$_0Li0EEEmmOT0_
+   fun:_ZN6webrtc16AudioEncoderOpus10EncodeImplEjN3rtc9ArrayViewIKsEEPNS1_6BufferE
+   fun:_ZN6webrtc12AudioEncoder6EncodeEjN3rtc9ArrayViewIKsEEPNS1_6BufferE
+   fun:_ZN6webrtc16AudioDecoderTest11EncodeFrameEPKsmPN3rtc6BufferE
+   fun:_ZN6webrtc16AudioDecoderTest16EncodeDecodeTestEmidii
+   fun:_ZN6webrtc38AudioDecoderOpusTest_EncodeDecode_Test8TestBodyEv
+}
