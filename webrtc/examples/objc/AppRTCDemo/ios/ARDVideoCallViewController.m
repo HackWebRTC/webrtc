@@ -188,8 +188,6 @@
   if ([source isKindOfClass:[RTCAVFoundationVideoSource class]]) {
     RTCAVFoundationVideoSource* avSource = (RTCAVFoundationVideoSource*)source;
     avSource.useBackCamera = !avSource.useBackCamera;
-    _videoCallView.localVideoView.transform = avSource.useBackCamera ?
-        CGAffineTransformIdentity : CGAffineTransformMakeScale(-1, 1);
   }
 }
 
