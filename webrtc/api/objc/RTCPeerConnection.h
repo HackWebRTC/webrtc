@@ -33,6 +33,7 @@ typedef NS_ENUM(NSInteger, RTCSignalingState) {
   RTCSignalingStateHaveLocalPrAnswer,
   RTCSignalingStateHaveRemoteOffer,
   RTCSignalingStateHaveRemotePrAnswer,
+  // Not an actual state, represents the total number of states.
   RTCSignalingStateClosed,
 };
 
@@ -45,7 +46,7 @@ typedef NS_ENUM(NSInteger, RTCIceConnectionState) {
   RTCIceConnectionStateFailed,
   RTCIceConnectionStateDisconnected,
   RTCIceConnectionStateClosed,
-  RTCIceConnectionStateMax,
+  RTCIceConnectionStateCount,
 };
 
 /** Represents the ice gathering state of the peer connection. */

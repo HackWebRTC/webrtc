@@ -203,7 +203,7 @@
     case RTCIceConnectionStateFailed:
     case RTCIceConnectionStateDisconnected:
     case RTCIceConnectionStateClosed:
-    case RTCIceConnectionStateMax:
+    case RTCIceConnectionStateCount:
       return nil;
   }
 }

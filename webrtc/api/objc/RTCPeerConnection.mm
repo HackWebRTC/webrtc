@@ -383,7 +383,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
       return webrtc::PeerConnectionInterface::kIceConnectionDisconnected;
     case RTCIceConnectionStateClosed:
       return webrtc::PeerConnectionInterface::kIceConnectionClosed;
-    case RTCIceConnectionStateMax:
+    case RTCIceConnectionStateCount:
       return webrtc::PeerConnectionInterface::kIceConnectionMax;
   }
 }
@@ -406,7 +406,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
     case webrtc::PeerConnectionInterface::kIceConnectionClosed:
       return RTCIceConnectionStateClosed;
     case webrtc::PeerConnectionInterface::kIceConnectionMax:
-      return RTCIceConnectionStateMax;
+      return RTCIceConnectionStateCount;
   }
 }
 
@@ -426,8 +426,8 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
       return @"DISCONNECTED";
     case RTCIceConnectionStateClosed:
       return @"CLOSED";
-    case RTCIceConnectionStateMax:
-      return @"MAX";
+    case RTCIceConnectionStateCount:
+      return @"COUNT";
   }
 }
 
