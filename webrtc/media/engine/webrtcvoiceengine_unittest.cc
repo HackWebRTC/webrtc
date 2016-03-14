@@ -1661,6 +1661,27 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsDTMFOnTop) {
   EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 
+// Test that payload type range is limited for telephone-event codec.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsDTMFPayloadTypeOutOfRange) {
+  EXPECT_TRUE(SetupEngineWithSendStream());
+  cricket::AudioSendParameters parameters;
+  parameters.codecs.push_back(kTelephoneEventCodec);
+  parameters.codecs.push_back(kIsacCodec);
+  parameters.codecs[0].id = 0;  // DTMF
+  parameters.codecs[1].id = 96;
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  EXPECT_TRUE(channel_->CanInsertDtmf());
+  parameters.codecs[0].id = 128;  // DTMF
+  EXPECT_FALSE(channel_->SetSendParameters(parameters));
+  EXPECT_FALSE(channel_->CanInsertDtmf());
+  parameters.codecs[0].id = 127;
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  EXPECT_TRUE(channel_->CanInsertDtmf());
+  parameters.codecs[0].id = -1;  // DTMF
+  EXPECT_FALSE(channel_->SetSendParameters(parameters));
+  EXPECT_FALSE(channel_->CanInsertDtmf());
+}
+
 // Test that we can set send codecs even with CN codec as the first
 // one on the list.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNOnTop) {

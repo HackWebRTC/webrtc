@@ -99,6 +99,9 @@ const int kMaxTelephoneEventCode = 255;
 const int kMinTelephoneEventDuration = 100;
 const int kMaxTelephoneEventDuration = 60000;   // Actual limit is 2^16
 
+const int kMinPayloadType = 0;
+const int kMaxPayloadType = 127;
+
 class ProxySink : public webrtc::AudioSinkInterface {
  public:
   ProxySink(AudioSinkInterface* sink) : sink_(sink) { RTC_DCHECK(sink); }
@@ -1549,12 +1552,16 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   // TODO(solenberg): Validate input - that payload types don't overlap, are
   //                  within range, filter out codecs we don't support,
-  //                  redundant codecs etc.
+  //                  redundant codecs etc - the same way it is done for
+  //                  RtpHeaderExtensions.
 
   // Find the DTMF telephone event "codec" payload type.
   dtmf_payload_type_ = rtc::Optional<int>();
   for (const AudioCodec& codec : codecs) {
     if (IsCodec(codec, kDtmfCodecName)) {
+      if (codec.id < kMinPayloadType || codec.id > kMaxPayloadType) {
+        return false;
+      }
       dtmf_payload_type_ = rtc::Optional<int>(codec.id);
       break;
     }

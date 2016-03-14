@@ -361,7 +361,7 @@ void Channel::OnPlayTelephoneEvent(uint8_t event,
                " volume=%u)",
                event, lengthMs, volume);
 
-  if (!_playOutbandDtmfEvent || (event > 15)) {
+  if (!_playOutbandDtmfEvent || event > 15) {
     // Ignore callback since feedback is disabled or event is not a
     // Dtmf tone event.
     return;
@@ -2227,18 +2227,14 @@ int Channel::SendTelephoneEventOutband(int event, int duration_ms) {
   return 0;
 }
 
-int Channel::SetSendTelephoneEventPayloadType(unsigned char type) {
+int Channel::SetSendTelephoneEventPayloadType(int payload_type) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetSendTelephoneEventPayloadType()");
-  if (type > 127) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_ARGUMENT, kTraceError,
-        "SetSendTelephoneEventPayloadType() invalid type");
-    return -1;
-  }
-  CodecInst codec = {};
+  RTC_DCHECK_LE(0, payload_type);
+  RTC_DCHECK_GE(127, payload_type);
+  CodecInst codec = {0};
   codec.plfreq = 8000;
-  codec.pltype = type;
+  codec.pltype = payload_type;
   memcpy(codec.plname, "telephone-event", 16);
   if (_rtpRtcpModule->RegisterSendPayload(codec) != 0) {
     _rtpRtcpModule->DeRegisterSendPayload(codec.pltype);

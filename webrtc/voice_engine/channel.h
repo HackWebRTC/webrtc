@@ -294,9 +294,9 @@ class Channel
   // VoEVideoSyncExtended
   int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
 
-  // VoEDtmf
+  // DTMF
   int SendTelephoneEventOutband(int event, int duration_ms);
-  int SetSendTelephoneEventPayloadType(unsigned char type);
+  int SetSendTelephoneEventPayloadType(int payload_type);
 
   // VoEAudioProcessingImpl
   int UpdateRxVadDetection(AudioFrame& audioFrame);
