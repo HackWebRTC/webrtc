@@ -93,7 +93,6 @@ OutputMixer::Create(OutputMixer*& mixer, uint32_t instanceId)
 OutputMixer::OutputMixer(uint32_t instanceId) :
     _mixerModule(*AudioConferenceMixer::Create(instanceId)),
     _audioLevel(),
-    _dtmfGenerator(instanceId),
     _instanceId(instanceId),
     _externalMediaCallbackPtr(NULL),
     _externalMedia(false),
@@ -112,8 +111,6 @@ OutputMixer::OutputMixer(uint32_t instanceId) :
                      "OutputMixer::OutputMixer() failed to register mixer"
                      "callbacks");
     }
-
-    _dtmfGenerator.Init();
 }
 
 void
@@ -189,21 +186,6 @@ int OutputMixer::DeRegisterExternalMediaProcessing()
     _externalMedia = false;
     _externalMediaCallbackPtr = NULL;
 
-    return 0;
-}
-
-int OutputMixer::PlayDtmfTone(uint8_t eventCode, int lengthMs,
-                              int attenuationDb)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "OutputMixer::PlayDtmfTone()");
-    if (_dtmfGenerator.AddTone(eventCode, lengthMs, attenuationDb) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(VE_STILL_PLAYING_PREV_DTMF,
-                                           kTraceError,
-                                           "OutputMixer::PlayDtmfTone()");
-        return -1;
-    }
     return 0;
 }
 
@@ -492,12 +474,6 @@ OutputMixer::DoOperationsOnCombinedSignal(bool feed_data_to_apm)
         _mixingFrequencyHz = _audioFrame.sample_rate_hz_;
     }
 
-    // --- Insert inband Dtmf tone
-    if (_dtmfGenerator.IsAddingTone())
-    {
-        InsertInbandDtmfTone();
-    }
-
     // Scale left and/or right channel(s) if balance is active
     if (_panLeft != 1.0 || _panRight != 1.0)
     {
@@ -554,54 +530,5 @@ OutputMixer::DoOperationsOnCombinedSignal(bool feed_data_to_apm)
 
     return 0;
 }
-
-// ----------------------------------------------------------------------------
-//                             Private methods
-// ----------------------------------------------------------------------------
-
-int
-OutputMixer::InsertInbandDtmfTone()
-{
-    uint16_t sampleRate(0);
-    _dtmfGenerator.GetSampleRate(sampleRate);
-    if (sampleRate != _audioFrame.sample_rate_hz_)
-    {
-        // Update sample rate of Dtmf tone since the mixing frequency changed.
-        _dtmfGenerator.SetSampleRate(
-            (uint16_t)(_audioFrame.sample_rate_hz_));
-        // Reset the tone to be added taking the new sample rate into account.
-        _dtmfGenerator.ResetTone();
-    }
-
-    int16_t toneBuffer[320];
-    uint16_t toneSamples(0);
-    if (_dtmfGenerator.Get10msTone(toneBuffer, toneSamples) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                     "OutputMixer::InsertInbandDtmfTone() inserting Dtmf"
-                     "tone failed");
-        return -1;
-    }
-
-    // replace mixed audio with Dtmf tone
-    if (_audioFrame.num_channels_ == 1)
-    {
-        // mono
-        memcpy(_audioFrame.data_, toneBuffer, sizeof(int16_t)
-            * toneSamples);
-    } else
-    {
-        // stereo
-        for (size_t i = 0; i < _audioFrame.samples_per_channel_; i++)
-        {
-            _audioFrame.data_[2 * i] = toneBuffer[i];
-            _audioFrame.data_[2 * i + 1] = 0;
-        }
-    }
-    assert(_audioFrame.samples_per_channel_ == toneSamples);
-
-    return 0;
-}
-
 }  // namespace voe
 }  // namespace webrtc

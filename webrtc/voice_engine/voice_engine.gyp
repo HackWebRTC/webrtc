@@ -52,8 +52,6 @@
         'channel_manager.h',
         'channel_proxy.cc',
         'channel_proxy.h',
-        'dtmf_inband.cc',
-        'dtmf_inband.h',
         'level_indicator.cc',
         'level_indicator.h',
         'monitor_module.cc',
