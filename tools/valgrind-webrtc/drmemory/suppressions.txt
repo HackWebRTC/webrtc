@@ -650,3 +650,48 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3490 (4)
 *!testing::internal::EqHelper<>::Compare<>
 *!rtc::AsyncWriteTest_TestWrite_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+INVALID HEAP ARGUMENT
+name=https://bugs.chromium.org/p/webrtc/issues/detail?id=5653 (1)
+drmemorylib.dll!replace_free
+...
+ucrtbased.dll!setlocale
+MSVCP140D.dll!std::_Locinfo::_Locinfo_ctor
+MSVCP140D.dll!std::_Locinfo::_Locinfo
+...
+KERNEL32.dll!BaseThreadInitThunk
+
+INVALID HEAP ARGUMENT
+name=https://bugs.chromium.org/p/webrtc/issues/detail?id=5653 (2)
+drmemorylib.dll!replace_free
+...
+ucrtbased.dll!setlocale
+MSVCP140D.dll!std::_Locinfo::_Locinfo_ctor
+MSVCP140D.dll!std::_Locinfo::_Locinfo
+...
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+INVALID HEAP ARGUMENT
+name=https://bugs.chromium.org/p/webrtc/issues/detail?id=5653 (3)
+drmemorylib.dll!replace_free
+...
+ucrtbased.dll!setlocale
+MSVCP140D.dll!std::_Locinfo::_Locinfo_ctor
+MSVCP140D.dll!std::_Locinfo::_Locinfo
+...
+*!main
+
+UNINITIALIZED READ
+name=https://bugs.chromium.org/p/webrtc/issues/detail?id=5653 (4)
+ucrtbased.dll!umask_s
+...
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://bugs.chromium.org/p/webrtc/issues/detail?id=5653 (5)
+system call NtWriteFile parameter #5
+KERNELBASE.dll!WriteFile
+KERNEL32.dll!WriteFile
+ucrtbased.dll!umask_s
+...
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
