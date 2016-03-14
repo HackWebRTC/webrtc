@@ -40,10 +40,6 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/utility.h"
 
-#if defined(_WIN32)
-#include <Qos.h>
-#endif
-
 namespace webrtc {
 namespace voe {
 
@@ -763,14 +759,11 @@ Channel::Channel(int32_t channelId,
       _outputFilePlayerId(VoEModuleId(instanceId, channelId) + 1025),
       _outputFileRecorderId(VoEModuleId(instanceId, channelId) + 1026),
       _outputFileRecording(false),
-      _inbandDtmfQueue(VoEModuleId(instanceId, channelId)),
-      _inbandDtmfGenerator(VoEModuleId(instanceId, channelId)),
       _outputExternalMedia(false),
       _inputExternalMediaCallbackPtr(NULL),
       _outputExternalMediaCallbackPtr(NULL),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
-      _sendTelephoneEventPayloadType(106),
       ntp_estimator_(Clock::GetRealTimeClock()),
       jitter_buffer_playout_timestamp_(0),
       playout_timestamp_rtp_(0),
@@ -799,7 +792,6 @@ Channel::Channel(int32_t channelId,
       _panRight(1.0f),
       _outputGain(1.0f),
       _playOutbandDtmfEvent(false),
-      _playInbandDtmfEvent(false),
       _lastLocalTimeStamp(0),
       _lastPayloadType(0),
       _includeAudioLevelIndication(false),
@@ -832,8 +824,6 @@ Channel::Channel(int32_t channelId,
       config.Get<NetEqFastAccelerate>().enabled;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
-  _inbandDtmfQueue.ResetDtmf();
-  _inbandDtmfGenerator.Init();
   _outputAudioLevel.Clear();
 
   RtpRtcp::Configuration configuration;
@@ -2237,20 +2227,6 @@ int Channel::SendTelephoneEventOutband(int event, int duration_ms) {
   return 0;
 }
 
-int Channel::SendTelephoneEventInband(unsigned char eventCode,
-                                      int lengthMs,
-                                      int attenuationDb,
-                                      bool playDtmfEvent) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SendTelephoneEventInband(..., playDtmfEvent=%d)",
-               playDtmfEvent);
-
-  _playInbandDtmfEvent = playDtmfEvent;
-  _inbandDtmfQueue.AddDtmf(eventCode, lengthMs, attenuationDb);
-
-  return 0;
-}
-
 int Channel::SetSendTelephoneEventPayloadType(unsigned char type) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetSendTelephoneEventPayloadType()");
@@ -2274,12 +2250,6 @@ int Channel::SetSendTelephoneEventPayloadType(unsigned char type) {
       return -1;
     }
   }
-  _sendTelephoneEventPayloadType = type;
-  return 0;
-}
-
-int Channel::GetSendTelephoneEventPayloadType(unsigned char& type) {
-  type = _sendTelephoneEventPayloadType;
   return 0;
 }
 
@@ -3029,8 +2999,6 @@ uint32_t Channel::PrepareEncodeAndSend(int mixingFrequency) {
     }
   }
 
-  InsertInbandDtmfTone();
-
   if (_includeAudioLevelIndication) {
     size_t length =
         _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
@@ -3347,64 +3315,6 @@ int32_t Channel::MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency) {
     return -1;
   }
 
-  return 0;
-}
-
-int Channel::InsertInbandDtmfTone() {
-  // Check if we should start a new tone.
-  if (_inbandDtmfQueue.PendingDtmf() && !_inbandDtmfGenerator.IsAddingTone() &&
-      _inbandDtmfGenerator.DelaySinceLastTone() >
-          kMinTelephoneEventSeparationMs) {
-    int8_t eventCode(0);
-    uint16_t lengthMs(0);
-    uint8_t attenuationDb(0);
-
-    eventCode = _inbandDtmfQueue.NextDtmf(&lengthMs, &attenuationDb);
-    _inbandDtmfGenerator.AddTone(eventCode, lengthMs, attenuationDb);
-    if (_playInbandDtmfEvent) {
-      // Add tone to output mixer using a reduced length to minimize
-      // risk of echo.
-      _outputMixerPtr->PlayDtmfTone(eventCode, lengthMs - 80, attenuationDb);
-    }
-  }
-
-  if (_inbandDtmfGenerator.IsAddingTone()) {
-    uint16_t frequency(0);
-    _inbandDtmfGenerator.GetSampleRate(frequency);
-
-    if (frequency != _audioFrame.sample_rate_hz_) {
-      // Update sample rate of Dtmf tone since the mixing frequency
-      // has changed.
-      _inbandDtmfGenerator.SetSampleRate(
-          (uint16_t)(_audioFrame.sample_rate_hz_));
-      // Reset the tone to be added taking the new sample rate into
-      // account.
-      _inbandDtmfGenerator.ResetTone();
-    }
-
-    int16_t toneBuffer[320];
-    uint16_t toneSamples(0);
-    // Get 10ms tone segment and set time since last tone to zero
-    if (_inbandDtmfGenerator.Get10msTone(toneBuffer, toneSamples) == -1) {
-      WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                   "Channel::EncodeAndSend() inserting Dtmf failed");
-      return -1;
-    }
-
-    // Replace mixed audio with DTMF tone.
-    for (size_t sample = 0; sample < _audioFrame.samples_per_channel_;
-         sample++) {
-      for (size_t channel = 0; channel < _audioFrame.num_channels_; channel++) {
-        const size_t index = sample * _audioFrame.num_channels_ + channel;
-        _audioFrame.data_[index] = toneBuffer[sample];
-      }
-    }
-
-    assert(_audioFrame.samples_per_channel_ == toneSamples);
-  } else {
-    // Add 10ms to "delay-since-last-tone" counter
-    _inbandDtmfGenerator.UpdateDelaySinceLastTone();
-  }
   return 0;
 }
 

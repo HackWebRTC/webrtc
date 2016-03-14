@@ -54,8 +54,6 @@
         'channel_proxy.h',
         'dtmf_inband.cc',
         'dtmf_inband.h',
-        'dtmf_inband_queue.cc',
-        'dtmf_inband_queue.h',
         'level_indicator.cc',
         'level_indicator.h',
         'monitor_module.cc',

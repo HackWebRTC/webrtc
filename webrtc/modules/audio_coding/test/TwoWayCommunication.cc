@@ -50,14 +50,6 @@ TwoWayCommunication::~TwoWayCommunication() {
   delete _channel_B2A;
   delete _channelRef_A2B;
   delete _channelRef_B2A;
-#ifdef WEBRTC_DTMF_DETECTION
-  if (_dtmfDetectorA != NULL) {
-    delete _dtmfDetectorA;
-  }
-  if (_dtmfDetectorB != NULL) {
-    delete _dtmfDetectorB;
-  }
-#endif
   _inFileA.Close();
   _inFileB.Close();
   _outFileA.Close();
