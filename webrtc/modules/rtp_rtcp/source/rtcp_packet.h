@@ -12,17 +12,11 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 
-#include <vector>
-
 #include "webrtc/base/buffer.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace rtcp {
-
-static const int kCommonFbFmtLength = 12;
-
 // Class for building RTCP packets.
 //
 //  Example:
@@ -45,15 +39,14 @@ static const int kCommonFbFmtLength = 12;
 //  rtc::Buffer packet = fir.Build();      // Returns a RawPacket holding
 //                                         // the built rtcp packet.
 //
-//  rr.Append(&fir);                       // Builds a compound RTCP packet with
-//  rtc::Buffer packet = rr.Build();       // a receiver report, report block
-//                                         // and fir message.
+//  CompoundPacket compound;               // Builds a compound RTCP packet with
+//  compound.Append(&rr);                  // a receiver report, report block
+//  compound.Append(&fir);                 // and fir message.
+//  rtc::Buffer packet = compound.Build();
 
 class RtcpPacket {
  public:
   virtual ~RtcpPacket() {}
-
-  void Append(RtcpPacket* packet);
 
   // Callback used to signal that an RTCP packet is ready. Note that this may
   // not contain all data in this RtcpPacket; if a packet cannot fit in
@@ -71,26 +64,29 @@ class RtcpPacket {
   // used, will cause assertion error if fragmentation occurs.
   rtc::Buffer Build() const;
 
-  // Returns true if all calls to Create succeeded. A buffer of size
+  // Returns true if call to Create succeeded. A buffer of size
   // IP_PACKET_SIZE will be allocated and reused between calls to callback.
   bool Build(PacketReadyCallback* callback) const;
 
-  // Returns true if all calls to Create succeeded. Provided buffer reference
+  // Returns true if call to Create succeeded. Provided buffer reference
   // will be used for all calls to callback.
   bool BuildExternalBuffer(uint8_t* buffer,
                            size_t max_length,
                            PacketReadyCallback* callback) const;
 
-  // Size of this packet in bytes (including headers, excluding nested packets).
+  // Size of this packet in bytes (including headers).
   virtual size_t BlockLength() const = 0;
 
- protected:
-  RtcpPacket() {}
-
+  // Creates packet in the given buffer at the given position.
+  // Calls PacketReadyCallback::OnPacketReady if remaining buffer is too small
+  // and assume buffer can be reused after OnPacketReady returns.
   virtual bool Create(uint8_t* packet,
                       size_t* index,
                       size_t max_length,
                       PacketReadyCallback* callback) const = 0;
+
+ protected:
+  RtcpPacket() {}
 
   static void CreateHeader(uint8_t count_or_format,
                            uint8_t packet_type,
@@ -105,13 +101,6 @@ class RtcpPacket {
   size_t HeaderLength() const;
 
   static const size_t kHeaderLength = 4;
-  std::vector<RtcpPacket*> appended_packets_;
-
- private:
-  bool CreateAndAddAppended(uint8_t* packet,
-                            size_t* index,
-                            size_t max_length,
-                            PacketReadyCallback* callback) const;
 };
 }  // namespace rtcp
 }  // namespace webrtc

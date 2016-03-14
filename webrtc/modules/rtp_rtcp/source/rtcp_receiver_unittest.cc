@@ -22,6 +22,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/compound_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/fir.h"
@@ -1003,8 +1004,10 @@ TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
 
   rtcp::SenderReport sr;
   sr.From(kSenderSsrc);
-  sr.Append(&tmmbr);
-  rtc::Buffer packet = sr.Build();
+  rtcp::CompoundPacket compound;
+  compound.Append(&sr);
+  compound.Append(&tmmbr);
+  rtc::Buffer packet = compound.Build();
   EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
 
   EXPECT_EQ(1, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
@@ -1026,8 +1029,10 @@ TEST_F(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
 
   rtcp::SenderReport sr;
   sr.From(kSenderSsrc);
-  sr.Append(&tmmbr);
-  rtc::Buffer packet = sr.Build();
+  rtcp::CompoundPacket compound;
+  compound.Append(&sr);
+  compound.Append(&tmmbr);
+  rtc::Buffer packet = compound.Build();
 
   std::set<uint32_t> ssrcs;
   ssrcs.insert(kMediaFlowSsrc);
@@ -1049,8 +1054,10 @@ TEST_F(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
 
   rtcp::SenderReport sr;
   sr.From(kSenderSsrc);
-  sr.Append(&tmmbr);
-  rtc::Buffer packet = sr.Build();
+  rtcp::CompoundPacket compound;
+  compound.Append(&sr);
+  compound.Append(&tmmbr);
+  rtc::Buffer packet = compound.Build();
 
   EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
   EXPECT_EQ(0, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
@@ -1072,8 +1079,10 @@ TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
 
     rtcp::SenderReport sr;
     sr.From(ssrc);
-    sr.Append(&tmmbr);
-    rtc::Buffer packet = sr.Build();
+    rtcp::CompoundPacket compound;
+    compound.Append(&sr);
+    compound.Append(&tmmbr);
+    rtc::Buffer packet = compound.Build();
     EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
     // 5 seconds between each packet.
     system_clock_.AdvanceTimeMilliseconds(5000);
@@ -1209,9 +1218,10 @@ TEST_F(RtcpReceiverTest, HandlesInvalidTransportFeedback) {
   rtcp::Remb remb;
   remb.From(kSourceSsrc);
   remb.WithBitrateBps(kBitrateBps);
-  packet.Append(&remb);
-
-  rtc::Buffer built_packet = packet.Build();
+  rtcp::CompoundPacket compound;
+  compound.Append(&packet);
+  compound.Append(&remb);
+  rtc::Buffer built_packet = compound.Build();
 
   // Modify the TransportFeedback packet so that it is invalid.
   const size_t kStatusCountOffset = 14;

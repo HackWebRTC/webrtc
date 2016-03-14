@@ -33,15 +33,17 @@ const uint32_t kRemoteSsrc = 0x23456789;
 const uint8_t kSeqNo = 13;
 
 TEST(RtcpCompoundPacketTest, AppendPacket) {
+  CompoundPacket compound;
   Fir fir;
   fir.WithRequestTo(kRemoteSsrc, kSeqNo);
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
   EXPECT_TRUE(rr.WithReportBlock(rb));
-  rr.Append(&fir);
+  compound.Append(&rr);
+  compound.Append(&fir);
 
-  rtc::Buffer packet = rr.Build();
+  rtc::Buffer packet = compound.Build();
   RtcpPacketParser parser;
   parser.Parse(packet.data(), packet.size());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
@@ -50,20 +52,9 @@ TEST(RtcpCompoundPacketTest, AppendPacket) {
   EXPECT_EQ(1, parser.fir()->num_packets());
 }
 
-TEST(RtcpCompoundPacketTest, AppendPacketOnEmpty) {
-  CompoundPacket empty;
-  ReceiverReport rr;
-  rr.From(kSenderSsrc);
-  empty.Append(&rr);
-
-  rtc::Buffer packet = empty.Build();
-  RtcpPacketParser parser;
-  parser.Parse(packet.data(), packet.size());
-  EXPECT_EQ(1, parser.receiver_report()->num_packets());
-  EXPECT_EQ(0, parser.report_block()->num_packets());
-}
-
 TEST(RtcpCompoundPacketTest, AppendPacketWithOwnAppendedPacket) {
+  CompoundPacket root;
+  CompoundPacket leaf;
   Fir fir;
   fir.WithRequestTo(kRemoteSsrc, kSeqNo);
   Bye bye;
@@ -71,13 +62,15 @@ TEST(RtcpCompoundPacketTest, AppendPacketWithOwnAppendedPacket) {
 
   ReceiverReport rr;
   EXPECT_TRUE(rr.WithReportBlock(rb));
-  rr.Append(&fir);
+  leaf.Append(&rr);
+  leaf.Append(&fir);
 
   SenderReport sr;
-  sr.Append(&bye);
-  sr.Append(&rr);
+  root.Append(&sr);
+  root.Append(&bye);
+  root.Append(&leaf);
 
-  rtc::Buffer packet = sr.Build();
+  rtc::Buffer packet = root.Build();
   RtcpPacketParser parser;
   parser.Parse(packet.data(), packet.size());
   EXPECT_EQ(1, parser.sender_report()->num_packets());
@@ -88,13 +81,15 @@ TEST(RtcpCompoundPacketTest, AppendPacketWithOwnAppendedPacket) {
 }
 
 TEST(RtcpCompoundPacketTest, BuildWithInputBuffer) {
+  CompoundPacket compound;
   Fir fir;
   fir.WithRequestTo(kRemoteSsrc, kSeqNo);
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
   EXPECT_TRUE(rr.WithReportBlock(rb));
-  rr.Append(&fir);
+  compound.Append(&rr);
+  compound.Append(&fir);
 
   const size_t kRrLength = 8;
   const size_t kReportBlockLength = 24;
@@ -115,18 +110,20 @@ TEST(RtcpCompoundPacketTest, BuildWithInputBuffer) {
   } verifier;
   const size_t kBufferSize = kRrLength + kReportBlockLength + kFirLength;
   uint8_t buffer[kBufferSize];
-  EXPECT_TRUE(rr.BuildExternalBuffer(buffer, kBufferSize, &verifier));
+  EXPECT_TRUE(compound.BuildExternalBuffer(buffer, kBufferSize, &verifier));
   EXPECT_EQ(1, verifier.packets_created_);
 }
 
 TEST(RtcpCompoundPacketTest, BuildWithTooSmallBuffer_FragmentedSend) {
+  CompoundPacket compound;
   Fir fir;
   fir.WithRequestTo(kRemoteSsrc, kSeqNo);
   ReportBlock rb;
   ReceiverReport rr;
   rr.From(kSenderSsrc);
   EXPECT_TRUE(rr.WithReportBlock(rb));
-  rr.Append(&fir);
+  compound.Append(&rr);
+  compound.Append(&fir);
 
   const size_t kRrLength = 8;
   const size_t kReportBlockLength = 24;
@@ -157,7 +154,7 @@ TEST(RtcpCompoundPacketTest, BuildWithTooSmallBuffer_FragmentedSend) {
   } verifier;
   const size_t kBufferSize = kRrLength + kReportBlockLength;
   uint8_t buffer[kBufferSize];
-  EXPECT_TRUE(rr.BuildExternalBuffer(buffer, kBufferSize, &verifier));
+  EXPECT_TRUE(compound.BuildExternalBuffer(buffer, kBufferSize, &verifier));
   EXPECT_EQ(2, verifier.packets_created_);
 }
 

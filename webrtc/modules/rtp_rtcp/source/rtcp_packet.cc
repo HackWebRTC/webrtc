@@ -26,11 +26,6 @@ void AssignUWord16(uint8_t* buffer, size_t* offset, uint16_t value) {
 }
 }  // namespace
 
-void RtcpPacket::Append(RtcpPacket* packet) {
-  assert(packet);
-  appended_packets_.push_back(packet);
-}
-
 rtc::Buffer RtcpPacket::Build() const {
   size_t length = 0;
   rtc::Buffer packet(IP_PACKET_SIZE);
@@ -50,7 +45,7 @@ rtc::Buffer RtcpPacket::Build() const {
     bool called_;
     rtc::Buffer* const packet_;
   } verifier(&packet);
-  CreateAndAddAppended(packet.data(), &length, packet.capacity(), &verifier);
+  Create(packet.data(), &length, packet.capacity(), &verifier);
   OnBufferFull(packet.data(), &length, &verifier);
   return packet;
 }
@@ -64,22 +59,9 @@ bool RtcpPacket::BuildExternalBuffer(uint8_t* buffer,
                                      size_t max_length,
                                      PacketReadyCallback* callback) const {
   size_t index = 0;
-  if (!CreateAndAddAppended(buffer, &index, max_length, callback))
+  if (!Create(buffer, &index, max_length, callback))
     return false;
   return OnBufferFull(buffer, &index, callback);
-}
-
-bool RtcpPacket::CreateAndAddAppended(uint8_t* packet,
-                                      size_t* index,
-                                      size_t max_length,
-                                      PacketReadyCallback* callback) const {
-  if (!Create(packet, index, max_length, callback))
-    return false;
-  for (RtcpPacket* appended : appended_packets_) {
-    if (!appended->CreateAndAddAppended(packet, index, max_length, callback))
-      return false;
-  }
-  return true;
 }
 
 bool RtcpPacket::OnBufferFull(uint8_t* packet,
