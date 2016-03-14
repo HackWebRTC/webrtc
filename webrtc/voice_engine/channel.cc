@@ -360,18 +360,6 @@ void Channel::OnPlayTelephoneEvent(uint8_t event,
                "Channel::OnPlayTelephoneEvent(event=%u, lengthMs=%u,"
                " volume=%u)",
                event, lengthMs, volume);
-
-  if (!_playOutbandDtmfEvent || event > 15) {
-    // Ignore callback since feedback is disabled or event is not a
-    // Dtmf tone event.
-    return;
-  }
-
-  assert(_outputMixerPtr != NULL);
-
-  // Start playing out the Dtmf tone (if playout is enabled).
-  // Reduce length of tone with 80ms to the reduce risk of echo.
-  _outputMixerPtr->PlayDtmfTone(event, lengthMs - 80, volume);
 }
 
 void Channel::OnIncomingSSRCChanged(uint32_t ssrc) {
@@ -791,7 +779,6 @@ Channel::Channel(int32_t channelId,
       _panLeft(1.0f),
       _panRight(1.0f),
       _outputGain(1.0f),
-      _playOutbandDtmfEvent(false),
       _lastLocalTimeStamp(0),
       _lastPayloadType(0),
       _includeAudioLevelIndication(false),
@@ -2214,8 +2201,6 @@ int Channel::SendTelephoneEventOutband(int event, int duration_ms) {
   if (!Sending()) {
     return -1;
   }
-
-  _playOutbandDtmfEvent = false;
 
   if (_rtpRtcpModule->SendTelephoneEventOutband(
       event, duration_ms, kTelephoneEventAttenuationdB) != 0) {

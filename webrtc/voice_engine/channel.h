@@ -546,8 +546,6 @@ class Channel
   float _panLeft;
   float _panRight;
   float _outputGain;
-  // VoEDtmf
-  bool _playOutbandDtmfEvent;
   // VoeRTP_RTCP
   uint32_t _lastLocalTimeStamp;
   int8_t _lastPayloadType;
