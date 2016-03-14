@@ -11,9 +11,10 @@
 #import "APPRTCViewController.h"
 
 #import <AVFoundation/AVFoundation.h>
+#import "webrtc/api/objc/RTCNSGLVideoView.h"
+#import "webrtc/api/objc/RTCVideoTrack.h"
+
 #import "ARDAppClient.h"
-#import "RTCNSGLVideoView.h"
-#import "RTCVideoTrack.h"
 
 static NSUInteger const kContentWidth = 1280;
 static NSUInteger const kContentHeight = 720;
@@ -250,7 +251,7 @@ static NSUInteger const kLogViewHeight = 280;
 }
 
 - (void)appClient:(ARDAppClient *)client
-    didChangeConnectionState:(RTCICEConnectionState)state {
+    didChangeConnectionState:(RTCIceConnectionState)state {
 }
 
 - (void)appClient:(ARDAppClient *)client

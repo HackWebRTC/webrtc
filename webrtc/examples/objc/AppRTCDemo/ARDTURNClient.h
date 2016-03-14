@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+@class RTCIceServer;
+
 @protocol ARDTURNClient <NSObject>
 
 // Returns TURN server urls if successful.

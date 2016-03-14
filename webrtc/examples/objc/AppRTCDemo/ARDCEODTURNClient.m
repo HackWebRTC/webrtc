@@ -11,7 +11,7 @@
 #import "ARDCEODTURNClient.h"
 
 #import "ARDUtilities.h"
-#import "RTCICEServer+JSON.h"
+#import "RTCIceServer+JSON.h"
 
 // TODO(tkchin): move this to a configuration object.
 static NSString *kTURNOriginURLString = @"https://apprtc.appspot.com";
@@ -44,11 +44,11 @@ static NSInteger kARDCEODTURNClientErrorBadResponse = -1;
                                       NSError *error) {
     NSArray *turnServers = [NSArray array];
     if (error) {
-      completionHandler(turnServers, error);
+      completionHandler(nil, error);
       return;
     }
     NSDictionary *dict = [NSDictionary dictionaryWithJSONData:data];
-    turnServers = [RTCICEServer serversFromCEODJSONDictionary:dict];
+    turnServers = @[ [RTCIceServer serverFromCEODJSONDictionary:dict] ];
     if (!turnServers) {
       NSError *responseError =
           [[NSError alloc] initWithDomain:kARDCEODTURNClientErrorDomain

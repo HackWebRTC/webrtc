@@ -13,8 +13,8 @@
 #import "webrtc/base/objc/RTCDispatcher.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
-#import "RTCAVFoundationVideoSource.h"
-#import "RTCLogging.h"
+#import "webrtc/api/objc/RTCAVFoundationVideoSource.h"
+#import "webrtc/base/objc/RTCLogging.h"
 
 #import "ARDAppClient.h"
 #import "ARDVideoCallView.h"
@@ -51,7 +51,7 @@
   _videoCallView = [[ARDVideoCallView alloc] initWithFrame:CGRectZero];
   _videoCallView.delegate = self;
   _videoCallView.statusLabel.text =
-      [self statusTextForState:RTCICEConnectionNew];
+      [self statusTextForState:RTCIceConnectionStateNew];
   self.view = _videoCallView;
 }
 
@@ -74,8 +74,8 @@
 }
 
 - (void)appClient:(ARDAppClient *)client
-    didChangeConnectionState:(RTCICEConnectionState)state {
-  RTCLog(@"ICE state changed: %d", state);
+    didChangeConnectionState:(RTCIceConnectionState)state {
+  RTCLog(@"ICE state changed: %ld", (long)state);
   __weak ARDVideoCallViewController *weakSelf = self;
   dispatch_async(dispatch_get_main_queue(), ^{
     ARDVideoCallViewController *strongSelf = weakSelf;
@@ -193,17 +193,17 @@
   }
 }
 
-- (NSString *)statusTextForState:(RTCICEConnectionState)state {
+- (NSString *)statusTextForState:(RTCIceConnectionState)state {
   switch (state) {
-    case RTCICEConnectionNew:
-    case RTCICEConnectionChecking:
+    case RTCIceConnectionStateNew:
+    case RTCIceConnectionStateChecking:
       return @"Connecting...";
-    case RTCICEConnectionConnected:
-    case RTCICEConnectionCompleted:
-    case RTCICEConnectionFailed:
-    case RTCICEConnectionDisconnected:
-    case RTCICEConnectionClosed:
-    case RTCICEConnectionMax:
+    case RTCIceConnectionStateConnected:
+    case RTCIceConnectionStateCompleted:
+    case RTCIceConnectionStateFailed:
+    case RTCIceConnectionStateDisconnected:
+    case RTCIceConnectionStateClosed:
+    case RTCIceConnectionStateMax:
       return nil;
   }
 }

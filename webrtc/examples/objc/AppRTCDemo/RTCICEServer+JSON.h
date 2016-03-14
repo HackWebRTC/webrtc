@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCICEServer.h"
+#import "webrtc/api/objc/RTCIceServer.h"
 
-@interface RTCICEServer (JSON)
+@interface RTCIceServer (JSON)
 
-+ (RTCICEServer *)serverFromJSONDictionary:(NSDictionary *)dictionary;
++ (RTCIceServer *)serverFromJSONDictionary:(NSDictionary *)dictionary;
 // CEOD provides different JSON, and this parses that.
-+ (NSArray *)serversFromCEODJSONDictionary:(NSDictionary *)dictionary;
++ (RTCIceServer *)serverFromCEODJSONDictionary:(NSDictionary *)dictionary;
 
 @end

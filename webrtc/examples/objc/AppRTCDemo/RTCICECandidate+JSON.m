@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCICECandidate+JSON.h"
+#import "RTCIceCandidate+JSON.h"
 
-#import "RTCLogging.h"
+#import "webrtc/base/objc/RTCLogging.h"
 
 static NSString const *kRTCICECandidateTypeKey = @"type";
 static NSString const *kRTCICECandidateTypeValue = @"candidate";
@@ -18,14 +18,16 @@ static NSString const *kRTCICECandidateMidKey = @"id";
 static NSString const *kRTCICECandidateMLineIndexKey = @"label";
 static NSString const *kRTCICECandidateSdpKey = @"candidate";
 
-@implementation RTCICECandidate (JSON)
+@implementation RTCIceCandidate (JSON)
 
-+ (RTCICECandidate *)candidateFromJSONDictionary:(NSDictionary *)dictionary {
++ (RTCIceCandidate *)candidateFromJSONDictionary:(NSDictionary *)dictionary {
   NSString *mid = dictionary[kRTCICECandidateMidKey];
   NSString *sdp = dictionary[kRTCICECandidateSdpKey];
   NSNumber *num = dictionary[kRTCICECandidateMLineIndexKey];
   NSInteger mLineIndex = [num integerValue];
-  return [[RTCICECandidate alloc] initWithMid:mid index:mLineIndex sdp:sdp];
+  return [[RTCIceCandidate alloc] initWithSdp:sdp
+                                sdpMLineIndex:mLineIndex
+                                       sdpMid:mid];
 }
 
 - (NSData *)JSONData {

@@ -12,16 +12,16 @@
 
 #if defined(WEBRTC_IOS)
 #import "webrtc/base/objc/RTCTracing.h"
-#import "RTCAVFoundationVideoSource.h"
+#import "webrtc/api/objc/RTCAVFoundationVideoSource.h"
 #endif
-#import "RTCFileLogger.h"
-#import "RTCICEServer.h"
-#import "RTCLogging.h"
-#import "RTCMediaConstraints.h"
-#import "RTCMediaStream.h"
-#import "RTCPair.h"
-#import "RTCPeerConnectionInterface.h"
-#import "RTCVideoCapturer.h"
+#import "webrtc/api/objc/RTCAudioTrack.h"
+#import "webrtc/api/objc/RTCConfiguration.h"
+#import "webrtc/api/objc/RTCIceServer.h"
+#import "webrtc/api/objc/RTCMediaConstraints.h"
+#import "webrtc/api/objc/RTCMediaStream.h"
+#import "webrtc/api/objc/RTCPeerConnectionFactory.h"
+#import "webrtc/base/objc/RTCFileLogger.h"
+#import "webrtc/base/objc/RTCLogging.h"
 
 #import "ARDAppEngineClient.h"
 #import "ARDCEODTURNClient.h"
@@ -31,7 +31,7 @@
 #import "ARDSignalingMessage.h"
 #import "ARDUtilities.h"
 #import "ARDWebSocketChannel.h"
-#import "RTCICECandidate+JSON.h"
+#import "RTCIceCandidate+JSON.h"
 #import "RTCSessionDescription+JSON.h"
 
 static NSString * const kARDDefaultSTUNServerUrl =
@@ -188,9 +188,14 @@ static BOOL const kARDAppClientEnableTracing = NO;
                                                   repeats:YES
                                              timerHandler:^{
       ARDAppClient *strongSelf = weakSelf;
-      [strongSelf.peerConnection getStatsWithDelegate:strongSelf
-                                     mediaStreamTrack:nil
-                                     statsOutputLevel:RTCStatsOutputLevelDebug];
+      [strongSelf.peerConnection statsForTrack:nil
+                              statsOutputLevel:RTCStatsOutputLevelDebug
+                             completionHandler:^(NSArray *stats) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          ARDAppClient *strongSelf = weakSelf;
+          [strongSelf.delegate appClient:strongSelf didGetStats:stats];
+        });
+      }];
     }];
   } else {
     [_statsTimer invalidate];
@@ -352,12 +357,12 @@ static BOOL const kARDAppClientEnableTracing = NO;
 // dispatched back to main queue as needed.
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
-    signalingStateChanged:(RTCSignalingState)stateChanged {
-  RTCLog(@"Signaling state changed: %d", stateChanged);
+    didChangeSignalingState:(RTCSignalingState)stateChanged {
+  RTCLog(@"Signaling state changed: %ld", (long)stateChanged);
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
-           addedStream:(RTCMediaStream *)stream {
+          didAddStream:(RTCMediaStream *)stream {
   dispatch_async(dispatch_get_main_queue(), ^{
     RTCLog(@"Received %lu video tracks and %lu audio tracks",
         (unsigned long)stream.videoTracks.count,
@@ -370,30 +375,29 @@ static BOOL const kARDAppClientEnableTracing = NO;
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
-        removedStream:(RTCMediaStream *)stream {
+       didRemoveStream:(RTCMediaStream *)stream {
   RTCLog(@"Stream was removed.");
 }
 
-- (void)peerConnectionOnRenegotiationNeeded:
-    (RTCPeerConnection *)peerConnection {
+- (void)peerConnectionShouldNegotiate:(RTCPeerConnection *)peerConnection {
   RTCLog(@"WARNING: Renegotiation needed but unimplemented.");
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
-    iceConnectionChanged:(RTCICEConnectionState)newState {
-  RTCLog(@"ICE state changed: %d", newState);
+    didChangeIceConnectionState:(RTCIceConnectionState)newState {
+  RTCLog(@"ICE state changed: %ld", (long)newState);
   dispatch_async(dispatch_get_main_queue(), ^{
     [_delegate appClient:self didChangeConnectionState:newState];
   });
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
-    iceGatheringChanged:(RTCICEGatheringState)newState {
-  RTCLog(@"ICE gathering state changed: %d", newState);
+    didChangeIceGatheringState:(RTCIceGatheringState)newState {
+  RTCLog(@"ICE gathering state changed: %ld", (long)newState);
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
-       gotICECandidate:(RTCICECandidate *)candidate {
+    didGenerateIceCandidate:(RTCIceCandidate *)candidate {
   dispatch_async(dispatch_get_main_queue(), ^{
     ARDICECandidateMessage *message =
         [[ARDICECandidateMessage alloc] initWithCandidate:candidate];
@@ -403,15 +407,6 @@ static BOOL const kARDAppClientEnableTracing = NO;
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didOpenDataChannel:(RTCDataChannel *)dataChannel {
-}
-
-#pragma mark - RTCStatsDelegate
-
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-           didGetStats:(NSArray *)stats {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [_delegate appClient:self didGetStats:stats];
-  });
 }
 
 #pragma mark - RTCSessionDescriptionDelegate
@@ -439,8 +434,13 @@ static BOOL const kARDAppClientEnableTracing = NO;
     RTCSessionDescription *sdpPreferringH264 =
         [ARDSDPUtils descriptionForDescription:sdp
                            preferredVideoCodec:@"H264"];
-    [_peerConnection setLocalDescriptionWithDelegate:self
-                                  sessionDescription:sdpPreferringH264];
+    __weak ARDAppClient *weakSelf = self;
+    [_peerConnection setLocalDescription:sdpPreferringH264
+                       completionHandler:^(NSError *error) {
+      ARDAppClient *strongSelf = weakSelf;
+      [strongSelf peerConnection:strongSelf.peerConnection
+          didSetSessionDescriptionWithError:error];
+    }];
     ARDSessionDescriptionMessage *message =
         [[ARDSessionDescriptionMessage alloc]
             initWithDescription:sdpPreferringH264];
@@ -468,9 +468,15 @@ static BOOL const kARDAppClientEnableTracing = NO;
     // an answer and set the local description.
     if (!_isInitiator && !_peerConnection.localDescription) {
       RTCMediaConstraints *constraints = [self defaultAnswerConstraints];
-      [_peerConnection createAnswerWithDelegate:self
-                                    constraints:constraints];
-
+      __weak ARDAppClient *weakSelf = self;
+      [_peerConnection answerForConstraints:constraints
+                          completionHandler:^(RTCSessionDescription *sdp,
+                                              NSError *error) {
+        ARDAppClient *strongSelf = weakSelf;
+        [strongSelf peerConnection:strongSelf.peerConnection
+            didCreateSessionDescription:sdp
+                                  error:error];
+      }];
     }
   });
 }
@@ -496,16 +502,24 @@ static BOOL const kARDAppClientEnableTracing = NO;
   RTCMediaConstraints *constraints = [self defaultPeerConnectionConstraints];
   RTCConfiguration *config = [[RTCConfiguration alloc] init];
   config.iceServers = _iceServers;
-  _peerConnection = [_factory peerConnectionWithConfiguration:config
-                                                  constraints:constraints
-                                                     delegate:self];
+  _peerConnection = [[RTCPeerConnection alloc] initWithFactory:_factory
+                                                 configuration:config
+                                                   constraints:constraints
+                                                      delegate:self];
   // Create AV media stream and add it to the peer connection.
   RTCMediaStream *localStream = [self createLocalMediaStream];
   [_peerConnection addStream:localStream];
   if (_isInitiator) {
     // Send offer.
-    [_peerConnection createOfferWithDelegate:self
-                                 constraints:[self defaultOfferConstraints]];
+    __weak ARDAppClient *weakSelf = self;
+    [_peerConnection offerForConstraints:[self defaultOfferConstraints]
+                       completionHandler:^(RTCSessionDescription *sdp,
+                                           NSError *error) {
+      ARDAppClient *strongSelf = weakSelf;
+      [strongSelf peerConnection:strongSelf.peerConnection
+          didCreateSessionDescription:sdp
+                                error:error];
+    }];
   } else {
     // Check if we've received an offer.
     [self drainMessageQueueIfReady];
@@ -541,14 +555,19 @@ static BOOL const kARDAppClientEnableTracing = NO;
       RTCSessionDescription *sdpPreferringH264 =
           [ARDSDPUtils descriptionForDescription:description
                              preferredVideoCodec:@"H264"];
-      [_peerConnection setRemoteDescriptionWithDelegate:self
-                                     sessionDescription:sdpPreferringH264];
+      __weak ARDAppClient *weakSelf = self;
+      [_peerConnection setRemoteDescription:sdpPreferringH264
+                          completionHandler:^(NSError *error) {
+        ARDAppClient *strongSelf = weakSelf;
+        [strongSelf peerConnection:strongSelf.peerConnection
+            didSetSessionDescriptionWithError:error];
+      }];
       break;
     }
     case kARDSignalingMessageTypeCandidate: {
       ARDICECandidateMessage *candidateMessage =
           (ARDICECandidateMessage *)message;
-      [_peerConnection addICECandidate:candidateMessage.candidate];
+      [_peerConnection addIceCandidate:candidateMessage.candidate];
       break;
     }
     case kARDSignalingMessageTypeBye:
@@ -589,13 +608,17 @@ static BOOL const kARDAppClientEnableTracing = NO;
 }
 
 - (RTCMediaStream *)createLocalMediaStream {
-  RTCMediaStream* localStream = [_factory mediaStreamWithLabel:@"ARDAMS"];
-  RTCVideoTrack* localVideoTrack = [self createLocalVideoTrack];
+  RTCMediaStream *localStream =
+      [[RTCMediaStream alloc] initWithFactory:_factory streamId:@"ARDAMS"];
+  RTCVideoTrack *localVideoTrack = [self createLocalVideoTrack];
   if (localVideoTrack) {
     [localStream addVideoTrack:localVideoTrack];
     [_delegate appClient:self didReceiveLocalVideoTrack:localVideoTrack];
   }
-  [localStream addAudioTrack:[_factory audioTrackWithID:@"ARDAMSa0"]];
+  RTCAudioTrack *localAudioTrack =
+        [[RTCAudioTrack alloc] initWithFactory:_factory
+                                       trackId:@"ARDAMSa0"];
+  [localStream addAudioTrack:localAudioTrack];
   return localStream;
 }
 
@@ -661,10 +684,10 @@ static BOOL const kARDAppClientEnableTracing = NO;
 }
 
 - (RTCMediaConstraints *)defaultOfferConstraints {
-  NSArray *mandatoryConstraints = @[
-      [[RTCPair alloc] initWithKey:@"OfferToReceiveAudio" value:@"true"],
-      [[RTCPair alloc] initWithKey:@"OfferToReceiveVideo" value:@"true"]
-  ];
+  NSDictionary *mandatoryConstraints = @{
+    @"OfferToReceiveAudio" : @"true",
+    @"OfferToReceiveVideo" : @"true"
+  };
   RTCMediaConstraints* constraints =
       [[RTCMediaConstraints alloc]
           initWithMandatoryConstraints:mandatoryConstraints
@@ -677,9 +700,7 @@ static BOOL const kARDAppClientEnableTracing = NO;
     return _defaultPeerConnectionConstraints;
   }
   NSString *value = _isLoopback ? @"false" : @"true";
-  NSArray *optionalConstraints = @[
-      [[RTCPair alloc] initWithKey:@"DtlsSrtpKeyAgreement" value:value]
-  ];
+  NSDictionary *optionalConstraints = @{ @"DtlsSrtpKeyAgreement" : value };
   RTCMediaConstraints* constraints =
       [[RTCMediaConstraints alloc]
           initWithMandatoryConstraints:nil
@@ -687,11 +708,10 @@ static BOOL const kARDAppClientEnableTracing = NO;
   return constraints;
 }
 
-- (RTCICEServer *)defaultSTUNServer {
-  NSURL *defaultSTUNServerURL = [NSURL URLWithString:kARDDefaultSTUNServerUrl];
-  return [[RTCICEServer alloc] initWithURI:defaultSTUNServerURL
-                                  username:@""
-                                  password:@""];
+- (RTCIceServer *)defaultSTUNServer {
+  return [[RTCIceServer alloc] initWithURLStrings:@[kARDDefaultSTUNServerUrl]
+                                         username:@""
+                                       credential:@""];
 }
 
 #pragma mark - Errors

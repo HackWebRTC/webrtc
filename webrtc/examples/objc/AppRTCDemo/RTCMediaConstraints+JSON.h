@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCMediaConstraints.h"
+#import "webrtc/api/objc/RTCMediaConstraints.h"
 
 @interface RTCMediaConstraints (JSON)
 

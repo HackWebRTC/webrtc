@@ -154,8 +154,8 @@
           'target_name': 'apprtc_common',
           'type': 'static_library',
           'dependencies': [
+            '<(webrtc_root)/base/base.gyp:rtc_base_objc',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
-            '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [
             'examples/objc/AppRTCDemo/common/ARDUtilities.h',
@@ -186,6 +186,9 @@
               },
             }],
           ],
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+          },
           'link_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [
@@ -198,9 +201,9 @@
           'target_name': 'apprtc_signaling',
           'type': 'static_library',
           'dependencies': [
+            '<(webrtc_root)/api/api.gyp:rtc_api_objc',
+            '<(webrtc_root)/base/base.gyp:rtc_base_objc',
             'apprtc_common',
-            'base/base.gyp:rtc_base_objc',
-            '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
             'socketrocket',
           ],
           'sources': [
@@ -230,10 +233,10 @@
             'examples/objc/AppRTCDemo/ARDTURNClient.h',
             'examples/objc/AppRTCDemo/ARDWebSocketChannel.h',
             'examples/objc/AppRTCDemo/ARDWebSocketChannel.m',
-            'examples/objc/AppRTCDemo/RTCICECandidate+JSON.h',
-            'examples/objc/AppRTCDemo/RTCICECandidate+JSON.m',
-            'examples/objc/AppRTCDemo/RTCICEServer+JSON.h',
-            'examples/objc/AppRTCDemo/RTCICEServer+JSON.m',
+            'examples/objc/AppRTCDemo/RTCIceCandidate+JSON.h',
+            'examples/objc/AppRTCDemo/RTCIceCandidate+JSON.m',
+            'examples/objc/AppRTCDemo/RTCIceServer+JSON.h',
+            'examples/objc/AppRTCDemo/RTCIceServer+JSON.m',
             'examples/objc/AppRTCDemo/RTCMediaConstraints+JSON.h',
             'examples/objc/AppRTCDemo/RTCMediaConstraints+JSON.m',
             'examples/objc/AppRTCDemo/RTCSessionDescription+JSON.h',
@@ -248,8 +251,7 @@
             ],
           },
           'export_dependent_settings': [
-            'base/base.gyp:rtc_base_objc',
-            '../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
+            '<(webrtc_root)/api/api.gyp:rtc_api_objc',
           ],
           'conditions': [
             ['OS=="ios"', {
@@ -268,6 +270,9 @@
               },
             }],
           ],
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+          },
         },
         {
           'target_name': 'AppRTCDemo',
@@ -347,6 +352,9 @@
               ],
             }],
           ],
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+          },
         },  # target AppRTCDemo
         {
           # TODO(tkchin): move this into the real third party location and

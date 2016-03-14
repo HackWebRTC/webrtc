@@ -10,8 +10,6 @@
 
 #import "RTCMediaConstraints+JSON.h"
 
-#import "RTCPair.h"
-
 static NSString const *kRTCMediaConstraintsMandatoryKey = @"mandatory";
 
 @implementation RTCMediaConstraints (JSON)
@@ -19,12 +17,11 @@ static NSString const *kRTCMediaConstraintsMandatoryKey = @"mandatory";
 + (RTCMediaConstraints *)constraintsFromJSONDictionary:
     (NSDictionary *)dictionary {
   NSDictionary *mandatory = dictionary[kRTCMediaConstraintsMandatoryKey];
-  NSMutableArray *mandatoryContraints =
-      [NSMutableArray arrayWithCapacity:[mandatory count]];
+  NSMutableDictionary *mandatoryContraints =
+      [NSMutableDictionary dictionaryWithCapacity:[mandatory count]];
   [mandatory enumerateKeysAndObjectsUsingBlock:^(
       id key, id obj, BOOL *stop) {
-    [mandatoryContraints addObject:[[RTCPair alloc] initWithKey:key
-                                                          value:obj]];
+    mandatoryContraints[key] = obj;
   }];
   // TODO(tkchin): figure out json formats for optional constraints.
   RTCMediaConstraints *constraints =

@@ -10,17 +10,16 @@
 
 #import "ARDAppClient.h"
 
+#import "webrtc/api/objc/RTCPeerConnection.h"
+
 #import "ARDRoomServerClient.h"
 #import "ARDSignalingChannel.h"
 #import "ARDTURNClient.h"
-#import "RTCPeerConnection.h"
-#import "RTCPeerConnectionDelegate.h"
-#import "RTCPeerConnectionFactory.h"
-#import "RTCSessionDescriptionDelegate.h"
-#import "RTCStatsDelegate.h"
+
+@class RTCPeerConnectionFactory;
 
 @interface ARDAppClient () <ARDSignalingChannelDelegate,
-  RTCPeerConnectionDelegate, RTCSessionDescriptionDelegate, RTCStatsDelegate>
+  RTCPeerConnectionDelegate>
 
 // All properties should only be mutated from the main queue.
 @property(nonatomic, strong) id<ARDRoomServerClient> roomServerClient;

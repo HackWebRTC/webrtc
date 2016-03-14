@@ -10,8 +10,8 @@
 
 #import <UIKit/UIKit.h>
 
+#import "webrtc/api/objc/RTCEAGLVideoView.h"
 #import "webrtc/base/objc/RTCCameraPreviewView.h"
-#import "RTCEAGLVideoView.h"
 
 #import "ARDStatsView.h"
 
