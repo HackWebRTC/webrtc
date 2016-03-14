@@ -1212,17 +1212,12 @@ JOW(jlong, PeerConnectionFactory_nativeCreateLocalMediaStream)(
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)(
-    JNIEnv* jni, jclass, jlong native_factory, jobject j_video_capturer,
-    jobject j_constraints) {
+    JNIEnv* jni, jclass, jlong native_factory, jobject j_egl_context,
+    jobject j_video_capturer, jobject j_constraints) {
   // Create a cricket::VideoCapturer from |j_video_capturer|.
-  jobject j_surface_texture_helper = jni->CallObjectMethod(
-      j_video_capturer,
-      GetMethodID(jni, FindClass(jni, "org/webrtc/VideoCapturer"),
-                  "getSurfaceTextureHelper",
-                  "()Lorg/webrtc/SurfaceTextureHelper;"));
   rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
       new rtc::RefCountedObject<AndroidVideoCapturerJni>(
-          jni, j_video_capturer, j_surface_texture_helper);
+          jni, j_video_capturer, j_egl_context);
   rtc::scoped_ptr<cricket::VideoCapturer> capturer(
       new webrtc::AndroidVideoCapturer(delegate));
   // Create a webrtc::VideoTrackSourceInterface from the cricket::VideoCapturer,

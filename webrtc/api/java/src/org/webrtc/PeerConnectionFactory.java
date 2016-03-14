@@ -114,8 +114,10 @@ public class PeerConnectionFactory {
   // manually after this.
   public VideoSource createVideoSource(
       VideoCapturer capturer, MediaConstraints constraints) {
-    return new VideoSource(nativeCreateVideoSource(
-        nativeFactory, capturer, constraints));
+    final EglBase.Context eglContext =
+        localEglbase == null ? null : localEglbase.getEglBaseContext();
+    return new VideoSource(nativeCreateVideoSource(nativeFactory,
+        eglContext, capturer, constraints));
   }
 
   public VideoTrack createVideoTrack(String id, VideoSource source) {
@@ -239,7 +241,8 @@ public class PeerConnectionFactory {
       long nativeFactory, String label);
 
   private static native long nativeCreateVideoSource(
-      long nativeFactory, VideoCapturer videoCapturer, MediaConstraints constraints);
+      long nativeFactory, EglBase.Context eglContext, VideoCapturer videoCapturer,
+      MediaConstraints constraints);
 
   private static native long nativeCreateVideoTrack(
       long nativeFactory, String id, long nativeVideoSource);

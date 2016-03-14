@@ -81,7 +81,7 @@ public class VideoCapturerAndroid implements
   private static final int NUMBER_OF_CAPTURE_BUFFERS = 3;
   private final Set<byte[]> queuedBuffers = new HashSet<byte[]>();
   private final boolean isCapturingToTexture;
-  final SurfaceTextureHelper surfaceHelper; // Package visible for testing purposes.
+  private SurfaceTextureHelper surfaceHelper;
   // The camera API can output one old frame after the camera has been switched or the resolution
   // has been changed. This flag is used for dropping the first frame after camera restart.
   private boolean dropNextFrame = false;
@@ -187,16 +187,22 @@ public class VideoCapturerAndroid implements
 
   public static VideoCapturerAndroid create(String name,
       CameraEventsHandler eventsHandler) {
-    return VideoCapturerAndroid.create(name, eventsHandler, null);
+    return VideoCapturerAndroid.create(name, eventsHandler, false /* captureToTexture */);
+  }
+
+  // Deprecated. Use create() function below instead.
+  public static VideoCapturerAndroid create(String name,
+      CameraEventsHandler eventsHandler, EglBase.Context sharedEglContext) {
+    return create(name, eventsHandler, (sharedEglContext != null) /* captureToTexture */);
   }
 
   public static VideoCapturerAndroid create(String name,
-      CameraEventsHandler eventsHandler, EglBase.Context sharedEglContext) {
+      CameraEventsHandler eventsHandler, boolean captureToTexture) {
     final int cameraId = lookupDeviceName(name);
     if (cameraId == -1) {
       return null;
     }
-    return new VideoCapturerAndroid(cameraId, eventsHandler, sharedEglContext);
+    return new VideoCapturerAndroid(cameraId, eventsHandler, captureToTexture);
   }
 
   public void printStackTrace() {
@@ -297,18 +303,12 @@ public class VideoCapturerAndroid implements
     return isCapturingToTexture;
   }
 
-  @Override
-  public SurfaceTextureHelper getSurfaceTextureHelper() {
-    return surfaceHelper;
-  }
-
   private VideoCapturerAndroid(int cameraId, CameraEventsHandler eventsHandler,
-      EglBase.Context sharedContext) {
+      boolean captureToTexture) {
     this.id = cameraId;
     this.eventsHandler = eventsHandler;
-    isCapturingToTexture = (sharedContext != null);
+    isCapturingToTexture = captureToTexture;
     cameraStatistics = new CameraStatistics();
-    surfaceHelper = SurfaceTextureHelper.create(sharedContext);
     Logging.d(TAG, "VideoCapturerAndroid isCapturingToTexture : " + isCapturingToTexture);
   }
 
@@ -361,7 +361,6 @@ public class VideoCapturerAndroid implements
         throw new IllegalStateException("dispose() called while camera is running");
       }
     }
-    surfaceHelper.dispose();
     isDisposed = true;
   }
 
@@ -375,8 +374,12 @@ public class VideoCapturerAndroid implements
   @Override
   public void startCapture(
       final int width, final int height, final int framerate,
-      final Context applicationContext, final CapturerObserver frameObserver) {
+      final SurfaceTextureHelper surfaceTextureHelper, final Context applicationContext,
+      final CapturerObserver frameObserver) {
     Logging.d(TAG, "startCapture requested: " + width + "x" + height + "@" + framerate);
+    if (surfaceTextureHelper == null) {
+      throw new IllegalArgumentException("surfaceTextureHelper not set.");
+    }
     if (applicationContext == null) {
       throw new IllegalArgumentException("applicationContext not set.");
     }
@@ -387,7 +390,8 @@ public class VideoCapturerAndroid implements
       if (this.cameraThreadHandler != null) {
         throw new RuntimeException("Camera has already been started.");
       }
-      this.cameraThreadHandler = surfaceHelper.getHandler();
+      this.cameraThreadHandler = surfaceTextureHelper.getHandler();
+      this.surfaceHelper = surfaceTextureHelper;
       final boolean didPost = maybePostOnCameraThread(new Runnable() {
         @Override
         public void run() {
@@ -579,6 +583,7 @@ public class VideoCapturerAndroid implements
           // Remove all pending Runnables posted from |this|.
           cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
           cameraThreadHandler = null;
+          surfaceHelper = null;
         }
         barrier.countDown();
       }

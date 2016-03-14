@@ -83,16 +83,29 @@ public interface VideoCapturer {
         int width, int height, int framerate);
   }
 
+
+  /**
+   * Returns a list with all the formats this VideoCapturer supports.
+   */
   List<CameraEnumerationAndroid.CaptureFormat> getSupportedFormats();
 
-  SurfaceTextureHelper getSurfaceTextureHelper();
-
+  /**
+   * Start capturing frames in a format that is as close as possible to |width| x |height| and
+   * |framerate|. If the VideoCapturer wants to deliver texture frames, it should do this by
+   * rendering on the SurfaceTexture in |surfaceTextureHelper|, register itself as a listener,
+   * and forward the texture frames to CapturerObserver.onTextureFrameCaptured().
+   */
   void startCapture(
-      final int width, final int height, final int framerate,
-      final Context applicationContext, final CapturerObserver frameObserver);
+      int width, int height, int framerate, SurfaceTextureHelper surfaceTextureHelper,
+      Context applicationContext, CapturerObserver frameObserver);
 
-  // Blocks until capture is stopped.
+  /**
+   * Stop capturing. This function should block until capture is actually stopped.
+   */
   void stopCapture() throws InterruptedException;
 
+  /**
+   * Perform any final cleanup here. No more capturing will be done after this call.
+   */
   void dispose();
 }

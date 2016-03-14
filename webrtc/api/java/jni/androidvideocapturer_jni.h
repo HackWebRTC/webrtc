@@ -34,7 +34,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
 
   AndroidVideoCapturerJni(JNIEnv* jni,
                           jobject j_video_capturer,
-                          jobject j_surface_texture_helper);
+                          jobject j_egl_context);
 
   void Start(int width, int height, int framerate,
              webrtc::AndroidVideoCapturer* capturer) override;

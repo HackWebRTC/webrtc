@@ -343,19 +343,9 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
 
   ResetVariables();
 
-  jobject java_surface_texture_helper_ = nullptr;
   if (use_surface_) {
-    java_surface_texture_helper_ = jni->CallStaticObjectMethod(
-        FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
-        GetStaticMethodID(jni,
-                          FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
-                          "create",
-                          "(Lorg/webrtc/EglBase$Context;)"
-                          "Lorg/webrtc/SurfaceTextureHelper;"),
-        render_egl_context_);
-    RTC_CHECK(java_surface_texture_helper_ != nullptr);
     surface_texture_helper_ = new rtc::RefCountedObject<SurfaceTextureHelper>(
-        jni, java_surface_texture_helper_);
+        jni, render_egl_context_);
   }
 
   jobject j_video_codec_enum = JavaEnumFromIndexAndClassName(
@@ -366,7 +356,8 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
       j_video_codec_enum,
       codec_.width,
       codec_.height,
-      java_surface_texture_helper_);
+      use_surface_ ? surface_texture_helper_->GetJavaSurfaceTextureHelper()
+                   : nullptr);
 
   if (CheckException(jni) || !success) {
     ALOGE << "Codec initialization error - fallback to SW codec.";

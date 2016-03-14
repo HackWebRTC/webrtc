@@ -18,8 +18,15 @@
 namespace webrtc_jni {
 
 SurfaceTextureHelper::SurfaceTextureHelper(
-    JNIEnv* jni, jobject surface_texture_helper)
-  : j_surface_texture_helper_(jni, surface_texture_helper),
+    JNIEnv* jni, jobject j_egl_context)
+  : j_surface_texture_helper_(jni, jni->CallStaticObjectMethod(
+        FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
+        GetStaticMethodID(jni,
+                          FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
+                          "create",
+                          "(Lorg/webrtc/EglBase$Context;)"
+                          "Lorg/webrtc/SurfaceTextureHelper;"),
+        j_egl_context)),
     j_return_texture_method_(
         GetMethodID(jni,
                     FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
@@ -29,6 +36,10 @@ SurfaceTextureHelper::SurfaceTextureHelper(
 }
 
 SurfaceTextureHelper::~SurfaceTextureHelper() {
+}
+
+jobject SurfaceTextureHelper::GetJavaSurfaceTextureHelper() const {
+  return *j_surface_texture_helper_;
 }
 
 void SurfaceTextureHelper::ReturnTextureFrame() const {

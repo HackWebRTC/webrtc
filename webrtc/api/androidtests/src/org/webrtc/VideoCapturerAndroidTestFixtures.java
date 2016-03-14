@@ -286,17 +286,20 @@ public class VideoCapturerAndroidTestFixtures {
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
 
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null /* sharedContext */);
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
-        appContext, observer);
+        surfaceTextureHelper, appContext, observer);
     // Make sure camera is started and first frame is received and then stop it.
     assertTrue(observer.WaitForCapturerToStart());
     observer.WaitForNextCapturedFrame();
     capturer.stopCapture();
     if (capturer.isCapturingToTexture()) {
-      capturer.surfaceHelper.returnTextureFrame();
+      surfaceTextureHelper.returnTextureFrame();
     }
     release(capturer);
+    surfaceTextureHelper.dispose();
 
     assertTrue(events.onCameraOpeningCalled);
     assertTrue(events.onFirstFrameAvailableCalled);
@@ -307,14 +310,16 @@ public class VideoCapturerAndroidTestFixtures {
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
 
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null /* sharedContext */);
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
-        appContext, observer);
+        surfaceTextureHelper, appContext, observer);
     // Make sure camera is started and then stop it.
     assertTrue(observer.WaitForCapturerToStart());
     capturer.stopCapture();
     if (capturer.isCapturingToTexture()) {
-      capturer.surfaceHelper.returnTextureFrame();
+      surfaceTextureHelper.returnTextureFrame();
     }
 
     // We can't change |capturer| at this point, but we should not crash.
@@ -323,6 +328,7 @@ public class VideoCapturerAndroidTestFixtures {
     capturer.changeCaptureFormat(640, 480, 15);
 
     release(capturer);
+    surfaceTextureHelper.dispose();
   }
 
   static public void stopRestartVideoSource(VideoCapturerAndroid capturer)
@@ -350,13 +356,15 @@ public class VideoCapturerAndroidTestFixtures {
 
   static public void startStopWithDifferentResolutions(VideoCapturerAndroid capturer,
       Context appContext) throws InterruptedException {
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null /* sharedContext */);
     FakeCapturerObserver observer = new FakeCapturerObserver();
     List<CaptureFormat> formats = capturer.getSupportedFormats();
 
     for(int i = 0; i < 3 ; ++i) {
       CameraEnumerationAndroid.CaptureFormat format = formats.get(i);
       capturer.startCapture(format.width, format.height, format.maxFramerate,
-          appContext, observer);
+          surfaceTextureHelper, appContext, observer);
       assertTrue(observer.WaitForCapturerToStart());
       observer.WaitForNextCapturedFrame();
 
@@ -378,10 +386,11 @@ public class VideoCapturerAndroidTestFixtures {
       }
       capturer.stopCapture();
       if (capturer.isCapturingToTexture()) {
-        capturer.surfaceHelper.returnTextureFrame();
+        surfaceTextureHelper.returnTextureFrame();
       }
     }
     release(capturer);
+    surfaceTextureHelper.dispose();
   }
 
   static void waitUntilIdle(VideoCapturerAndroid capturer) throws InterruptedException {
@@ -400,9 +409,11 @@ public class VideoCapturerAndroidTestFixtures {
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
     Camera camera = Camera.open(capturer.getCurrentCameraId());
 
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null /* sharedContext */);
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
-        appContext, observer);
+        surfaceTextureHelper, appContext, observer);
 
     if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
       // The first opened camera client will be evicted.
@@ -414,6 +425,7 @@ public class VideoCapturerAndroidTestFixtures {
 
     release(capturer);
     camera.release();
+    surfaceTextureHelper.dispose();
   }
 
   static public void startWhileCameraIsAlreadyOpenAndCloseCamera(
@@ -422,9 +434,11 @@ public class VideoCapturerAndroidTestFixtures {
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
     Camera camera = Camera.open(capturer.getCurrentCameraId());
 
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null /* sharedContext */);
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
-        appContext, observer);
+        surfaceTextureHelper, appContext, observer);
     waitUntilIdle(capturer);
 
     camera.release();
@@ -434,9 +448,10 @@ public class VideoCapturerAndroidTestFixtures {
     observer.WaitForNextCapturedFrame();
     capturer.stopCapture();
     if (capturer.isCapturingToTexture()) {
-      capturer.surfaceHelper.returnTextureFrame();
+      surfaceTextureHelper.returnTextureFrame();
     }
     release(capturer);
+    surfaceTextureHelper.dispose();
   }
 
   static public void startWhileCameraIsAlreadyOpenAndStop(
@@ -445,22 +460,27 @@ public class VideoCapturerAndroidTestFixtures {
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
     Camera camera = Camera.open(capturer.getCurrentCameraId());
 
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null /* sharedContext */);
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
-        appContext, observer);
+        surfaceTextureHelper, appContext, observer);
     capturer.stopCapture();
     release(capturer);
     camera.release();
+    surfaceTextureHelper.dispose();
   }
 
   static public void returnBufferLate(VideoCapturerAndroid capturer,
       Context appContext) throws InterruptedException {
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null /* sharedContext */);
     FakeCapturerObserver observer = new FakeCapturerObserver();
 
     List<CaptureFormat> formats = capturer.getSupportedFormats();
     CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
     capturer.startCapture(format.width, format.height, format.maxFramerate,
-        appContext, observer);
+        surfaceTextureHelper, appContext, observer);
     assertTrue(observer.WaitForCapturerToStart());
 
     observer.WaitForNextCapturedFrame();
@@ -470,10 +490,10 @@ public class VideoCapturerAndroidTestFixtures {
 
     format = formats.get(1);
     capturer.startCapture(format.width, format.height, format.maxFramerate,
-        appContext, observer);
+        surfaceTextureHelper, appContext, observer);
     observer.WaitForCapturerToStart();
     if (capturer.isCapturingToTexture()) {
-      capturer.surfaceHelper.returnTextureFrame();
+      surfaceTextureHelper.returnTextureFrame();
     }
 
     observer.WaitForNextCapturedFrame();
@@ -482,10 +502,11 @@ public class VideoCapturerAndroidTestFixtures {
     listOftimestamps = observer.getCopyAndResetListOftimeStamps();
     assertTrue(listOftimestamps.size() >= 1);
     if (capturer.isCapturingToTexture()) {
-      capturer.surfaceHelper.returnTextureFrame();
+      surfaceTextureHelper.returnTextureFrame();
     }
 
     release(capturer);
+    surfaceTextureHelper.dispose();
   }
 
   static public void returnBufferLateEndToEnd(VideoCapturerAndroid capturer)
@@ -529,9 +550,11 @@ public class VideoCapturerAndroidTestFixtures {
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
 
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null /* sharedContext */);
     final FakeCapturerObserver observer = new FakeCapturerObserver();
     capturer.startCapture(format.width, format.height, format.maxFramerate,
-        appContext, observer);
+        surfaceTextureHelper, appContext, observer);
     // Make sure camera is started.
     assertTrue(observer.WaitForCapturerToStart());
     // Since we don't return the buffer, we should get a starvation message if we are
@@ -541,10 +564,11 @@ public class VideoCapturerAndroidTestFixtures {
 
     capturer.stopCapture();
     if (capturer.isCapturingToTexture()) {
-      capturer.surfaceHelper.returnTextureFrame();
+      surfaceTextureHelper.returnTextureFrame();
     }
 
     release(capturer);
+    surfaceTextureHelper.dispose();
   }
 
   static public void scaleCameraOutput(VideoCapturerAndroid capturer) throws InterruptedException {
