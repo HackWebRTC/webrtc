@@ -94,11 +94,14 @@ static NSString const *kARDSignalingMessageTypeKey = @"type";
   switch (sdpType) {
     case RTCSdpTypeOffer:
       messageType = kARDSignalingMessageTypeOffer;
+      break;
     case RTCSdpTypeAnswer:
       messageType = kARDSignalingMessageTypeAnswer;
+      break;
     case RTCSdpTypePrAnswer:
       NSAssert(NO, @"Unexpected type: %@",
           [RTCSessionDescription stringForType:sdpType]);
+      break;
   }
   if (self = [super initWithType:messageType]) {
     _sessionDescription = description;
