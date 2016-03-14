@@ -258,11 +258,8 @@ class Transport : public sigslot::has_slots<> {
   // Called when one or more candidates are ready from the remote peer.
   bool AddRemoteCandidates(const std::vector<Candidate>& candidates,
                            std::string* error);
-
-  // If candidate is not acceptable, returns false and sets error.
-  // Call this before calling OnRemoteCandidates.
-  virtual bool VerifyCandidate(const Candidate& candidate,
-                               std::string* error);
+  bool RemoveRemoteCandidates(const std::vector<Candidate>& candidates,
+                              std::string* error);
 
   virtual bool GetSslRole(rtc::SSLRole* ssl_role) const { return false; }
 
@@ -316,6 +313,11 @@ class Transport : public sigslot::has_slots<> {
       std::string* error_desc);
 
  private:
+  // If a candidate is not acceptable, returns false and sets error.
+  // Call this before calling OnRemoteCandidates.
+  bool VerifyCandidate(const Candidate& candidate, std::string* error);
+  bool VerifyCandidates(const Candidates& candidates, std::string* error);
+
   // Candidate component => TransportChannelImpl*
   typedef std::map<int, TransportChannelImpl*> ChannelMap;
 

@@ -20,8 +20,8 @@
 #include "webrtc/base/refcount.h"
 
 namespace cricket {
-class SessionDescription;
 class Candidate;
+class SessionDescription;
 }  // namespace cricket
 
 namespace webrtc {
@@ -95,6 +95,11 @@ class SessionDescriptionInterface {
   // Returns false if the session description does not have a media section that
   // corresponds to the |candidate| label.
   virtual bool AddCandidate(const IceCandidateInterface* candidate) = 0;
+  // Removes the candidates from the description.
+  // Returns the number of candidates removed.
+  virtual size_t RemoveCandidates(
+      const std::vector<cricket::Candidate>& candidates) { return 0; }
+
   // Returns the number of m- lines in the session description.
   virtual size_t number_of_mediasections() const = 0;
   // Returns a collection of all candidates that belong to a certain m-line

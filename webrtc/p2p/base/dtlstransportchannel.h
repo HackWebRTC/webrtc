@@ -186,6 +186,9 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void AddRemoteCandidate(const Candidate& candidate) override {
     channel_->AddRemoteCandidate(candidate);
   }
+  void RemoveRemoteCandidate(const Candidate& candidate) override {
+    channel_->RemoveRemoteCandidate(candidate);
+  }
 
   void SetIceConfig(const IceConfig& config) override {
     channel_->SetIceConfig(config);
@@ -209,6 +212,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool HandleDtlsPacket(const char* data, size_t size);
   void OnGatheringState(TransportChannelImpl* channel);
   void OnCandidateGathered(TransportChannelImpl* channel, const Candidate& c);
+  void OnCandidatesRemoved(TransportChannelImpl* channel,
+                           const Candidates& candidates);
   void OnRoleConflict(TransportChannelImpl* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
   void OnConnectionRemoved(TransportChannelImpl* channel);

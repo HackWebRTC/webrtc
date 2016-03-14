@@ -154,8 +154,7 @@ static const char kValueConference[] = "conference";
 // Candidate
 static const char kCandidateHost[] = "host";
 static const char kCandidateSrflx[] = "srflx";
-// TODO: How to map the prflx with circket candidate type
-// static const char kCandidatePrflx[] = "prflx";
+static const char kCandidatePrflx[] = "prflx";
 static const char kCandidateRelay[] = "relay";
 static const char kTcpCandidateType[] = "tcptype";
 
@@ -871,11 +870,14 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc,
 
 // Serializes the passed in IceCandidateInterface to a SDP string.
 // candidate - The candidate to be serialized.
-std::string SdpSerializeCandidate(
-    const IceCandidateInterface& candidate) {
+std::string SdpSerializeCandidate(const IceCandidateInterface& candidate) {
+  return SdpSerializeCandidate(candidate.candidate());
+}
+
+// Serializes a cricket Candidate.
+std::string SdpSerializeCandidate(const cricket::Candidate& candidate) {
   std::string message;
-  std::vector<cricket::Candidate> candidates;
-  candidates.push_back(candidate.candidate());
+  std::vector<cricket::Candidate> candidates(1, candidate);
   BuildCandidate(candidates, true, &message);
   // From WebRTC draft section 4.8.1.1 candidate-attribute will be
   // just candidate:<candidate> not a=candidate:<blah>CRLF
@@ -935,6 +937,18 @@ bool SdpDeserializeCandidate(const std::string& message,
     return false;
   }
   jcandidate->SetCandidate(candidate);
+  return true;
+}
+
+bool SdpDeserializeCandidate(const std::string& transport_name,
+                             const std::string& message,
+                             cricket::Candidate* candidate,
+                             SdpParseError* error) {
+  ASSERT(candidate != nullptr);
+  if (!ParseCandidate(message, candidate, error, true)) {
+    return false;
+  }
+  candidate->set_transport_name(transport_name);
   return true;
 }
 
@@ -1026,6 +1040,8 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
     candidate_type = cricket::STUN_PORT_TYPE;
   } else if (type == kCandidateRelay) {
     candidate_type = cricket::RELAY_PORT_TYPE;
+  } else if (type == kCandidatePrflx) {
+    candidate_type = cricket::PRFLX_PORT_TYPE;
   } else {
     return ParseFailed(first_line, "Unsupported candidate type.", error);
   }
@@ -1761,6 +1777,9 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
       type = kCandidateSrflx;
     } else if (it->type() == cricket::RELAY_PORT_TYPE) {
       type = kCandidateRelay;
+    } else if (it->type() == cricket::PRFLX_PORT_TYPE) {
+      type = kCandidatePrflx;
+      // Peer reflexive candidate may be signaled for being removed.
     } else {
       ASSERT(false);
       // Never write out candidates if we don't know the type.

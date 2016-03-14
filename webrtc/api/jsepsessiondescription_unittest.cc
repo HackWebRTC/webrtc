@@ -109,7 +109,7 @@ TEST_F(JsepSessionDescriptionTest, CheckSessionDescription) {
   EXPECT_EQ(2u, jsep_desc_->number_of_mediasections());
 }
 
-// Test that we can add a candidate to a session description.
+// Test that we can add a candidate to a session description without MID.
 TEST_F(JsepSessionDescriptionTest, AddCandidateWithoutMid) {
   JsepIceCandidate jsep_candidate("", 0, candidate_);
   EXPECT_TRUE(jsep_desc_->AddCandidate(&jsep_candidate));
@@ -125,9 +125,12 @@ TEST_F(JsepSessionDescriptionTest, AddCandidateWithoutMid) {
   EXPECT_EQ(0u, jsep_desc_->candidates(1)->count());
 }
 
-TEST_F(JsepSessionDescriptionTest, AddCandidateWithMid) {
+// Test that we can add and remove candidates to a session description with
+// MID. Removing candidates requires MID (transport_name).
+TEST_F(JsepSessionDescriptionTest, AddAndRemoveCandidatesWithMid) {
   // mid and m-line index don't match, in this case mid is preferred.
-  JsepIceCandidate jsep_candidate("video", 0, candidate_);
+  std::string mid = "video";
+  JsepIceCandidate jsep_candidate(mid, 0, candidate_);
   EXPECT_TRUE(jsep_desc_->AddCandidate(&jsep_candidate));
   EXPECT_EQ(0u, jsep_desc_->candidates(0)->count());
   const IceCandidateCollection* ice_candidates = jsep_desc_->candidates(1);
@@ -140,6 +143,12 @@ TEST_F(JsepSessionDescriptionTest, AddCandidateWithMid) {
   EXPECT_TRUE(ice_candidate->candidate().IsEquivalent(candidate_));
   // The mline index should have been updated according to mid.
   EXPECT_EQ(1, ice_candidate->sdp_mline_index());
+
+  std::vector<cricket::Candidate> candidates(1, candidate_);
+  candidates[0].set_transport_name(mid);
+  EXPECT_EQ(1u, jsep_desc_->RemoveCandidates(candidates));
+  EXPECT_EQ(0u, jsep_desc_->candidates(0)->count());
+  EXPECT_EQ(0u, jsep_desc_->candidates(1)->count());
 }
 
 TEST_F(JsepSessionDescriptionTest, AddCandidateAlreadyHasUfrag) {

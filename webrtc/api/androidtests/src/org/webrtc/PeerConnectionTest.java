@@ -109,6 +109,9 @@ public class PeerConnectionTest extends ActivityTestCase {
       }
     }
 
+    @Override
+    public void onIceCandidatesRemoved(IceCandidate[] candidates) {}
+
     public synchronized void setExpectedResolution(int width, int height) {
       expectedWidth = width;
       expectedHeight = height;

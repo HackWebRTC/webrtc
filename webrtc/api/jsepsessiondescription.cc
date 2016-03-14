@@ -137,6 +137,20 @@ bool JsepSessionDescription::AddCandidate(
   return true;
 }
 
+size_t JsepSessionDescription::RemoveCandidates(
+    const std::vector<cricket::Candidate>& candidates) {
+  size_t num_removed = 0;
+  for (auto& candidate : candidates) {
+    int mediasection_index = GetMediasectionIndex(candidate);
+    if (mediasection_index < 0) {
+      // Not found.
+      continue;
+    }
+    num_removed += candidate_collection_[mediasection_index].remove(candidate);
+  }
+  return num_removed;
+}
+
 size_t JsepSessionDescription::number_of_mediasections() const {
   if (!description_)
     return 0;
@@ -182,6 +196,18 @@ bool JsepSessionDescription::GetMediasectionIndex(
     }
   }
   return true;
+}
+
+int JsepSessionDescription::GetMediasectionIndex(
+    const cricket::Candidate& candidate) {
+  // Find the description with a matching transport name of the candidate.
+  const std::string& transport_name = candidate.transport_name();
+  for (size_t i = 0; i < description_->contents().size(); ++i) {
+    if (transport_name == description_->contents().at(i).name) {
+      return static_cast<int>(i);
+    }
+  }
+  return -1;
 }
 
 }  // namespace webrtc

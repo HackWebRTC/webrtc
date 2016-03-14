@@ -19,6 +19,7 @@
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/p2p/base/candidate.h"
 
 namespace cricket {
 class SessionDescription;
@@ -57,6 +58,8 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   // Allow changing the type. Used for testing.
   void set_type(const std::string& type) { type_ = type; }
   virtual bool AddCandidate(const IceCandidateInterface* candidate);
+  virtual size_t RemoveCandidates(
+      const std::vector<cricket::Candidate>& candidates);
   virtual size_t number_of_mediasections() const;
   virtual const IceCandidateCollection* candidates(
       size_t mediasection_index) const;
@@ -80,6 +83,7 @@ class JsepSessionDescription : public SessionDescriptionInterface {
 
   bool GetMediasectionIndex(const IceCandidateInterface* candidate,
                             size_t* index);
+  int GetMediasectionIndex(const cricket::Candidate& candidate);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepSessionDescription);
 };

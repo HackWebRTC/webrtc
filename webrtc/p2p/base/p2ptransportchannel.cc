@@ -761,6 +761,19 @@ void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
   SortConnections();
 }
 
+void P2PTransportChannel::RemoveRemoteCandidate(
+    const Candidate& cand_to_remove) {
+  auto iter =
+      std::remove_if(remote_candidates_.begin(), remote_candidates_.end(),
+                     [cand_to_remove](const Candidate& candidate) {
+                       return cand_to_remove.MatchesForRemoval(candidate);
+                     });
+  if (iter != remote_candidates_.end()) {
+    LOG(LS_VERBOSE) << "Removed remote candidate " << cand_to_remove.ToString();
+    remote_candidates_.erase(iter, remote_candidates_.end());
+  }
+}
+
 // Creates connections from all of the ports that we care about to the given
 // remote candidate.  The return value is true if we created a connection from
 // the origin port.
@@ -1449,7 +1462,11 @@ void P2PTransportChannel::OnPortNetworkInactive(PortInterface* port) {
   ports_.erase(it);
   LOG(INFO) << "Removed port due to inactive networks: " << ports_.size()
             << " remaining";
-  // TODO(honghaiz): Signal candidate removals to the remote side.
+  std::vector<Candidate> candidates = port->Candidates();
+  for (Candidate& candidate : candidates) {
+    candidate.set_transport_name(transport_name());
+  }
+  SignalCandidatesRemoved(this, candidates);
 }
 
 // We data is available, let listeners know
