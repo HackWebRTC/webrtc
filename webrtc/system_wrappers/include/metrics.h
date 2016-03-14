@@ -86,18 +86,6 @@
 #define RTC_HISTOGRAM_COUNTS_SPARSE_100(name, sample) \
   RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 100, 50)
 
-#define RTC_HISTOGRAM_COUNTS_SPARSE_200(name, sample) \
-  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 200, 50)
-
-#define RTC_HISTOGRAM_COUNTS_SPARSE_1000(name, sample) \
-  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 1000, 50)
-
-#define RTC_HISTOGRAM_COUNTS_SPARSE_10000(name, sample) \
-  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 10000, 50)
-
-#define RTC_HISTOGRAM_COUNTS_SPARSE_100000(name, sample) \
-  RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, 1, 100000, 50)
-
 #define RTC_HISTOGRAM_COUNTS_SPARSE(name, sample, min, max, bucket_count) \
   RTC_HISTOGRAM_COMMON_BLOCK_SLOW(name, sample, \
       webrtc::metrics::HistogramFactoryGetCounts(name, min, max, bucket_count))
@@ -106,21 +94,10 @@
 #define RTC_HISTOGRAM_PERCENTAGE(name, sample) \
   RTC_HISTOGRAM_ENUMERATION(name, sample, 101)
 
-// Deprecated.
-// TODO(asapersson): Remove.
-#define RTC_HISTOGRAM_PERCENTAGE_SPARSE(name, sample) \
-  RTC_HISTOGRAM_ENUMERATION_SPARSE(name, sample, 101)
-
 // Histogram for enumerators (evenly spaced buckets).
 // |boundary| should be above the max enumerator sample.
 #define RTC_HISTOGRAM_ENUMERATION(name, sample, boundary) \
   RTC_HISTOGRAM_COMMON_BLOCK(name, sample, \
-      webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))
-
-// Deprecated.
-// TODO(asapersson): Remove.
-#define RTC_HISTOGRAM_ENUMERATION_SPARSE(name, sample, boundary) \
-  RTC_HISTOGRAM_COMMON_BLOCK_SLOW(name, sample, \
       webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))
 
 // The name of the histogram should not vary.
