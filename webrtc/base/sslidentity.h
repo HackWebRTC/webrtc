@@ -19,6 +19,7 @@
 
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/messagedigest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timeutils.h"
 
 namespace rtc {
@@ -50,9 +51,9 @@ class SSLCertificate {
   // Caller is responsible for freeing the returned object.
   virtual SSLCertificate* GetReference() const = 0;
 
-  // Provides the cert chain, or returns false.  The caller owns the chain.
-  // The chain includes a copy of each certificate, excluding the leaf.
-  virtual bool GetChain(SSLCertChain** chain) const = 0;
+  // Provides the cert chain, or null. The chain includes a copy of each
+  // certificate, excluding the leaf.
+  virtual rtc::scoped_ptr<SSLCertChain> GetChain() const = 0;
 
   // Returns a PEM encoded string representation of the certificate.
   virtual std::string ToPEMString() const = 0;

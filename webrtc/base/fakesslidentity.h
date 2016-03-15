@@ -68,14 +68,14 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
                                        digest, size);
     return (*length != 0);
   }
-  virtual bool GetChain(SSLCertChain** chain) const {
+  virtual rtc::scoped_ptr<SSLCertChain> GetChain() const {
     if (certs_.empty())
-      return false;
+      return nullptr;
     std::vector<SSLCertificate*> new_certs(certs_.size());
     std::transform(certs_.begin(), certs_.end(), new_certs.begin(), DupCert);
-    *chain = new SSLCertChain(new_certs);
+    rtc::scoped_ptr<SSLCertChain> chain(new SSLCertChain(new_certs));
     std::for_each(new_certs.begin(), new_certs.end(), DeleteCert);
-    return true;
+    return chain;
   }
 
  private:

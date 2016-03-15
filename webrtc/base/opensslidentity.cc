@@ -280,11 +280,11 @@ bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
   return true;
 }
 
-bool OpenSSLCertificate::GetChain(SSLCertChain** chain) const {
+rtc::scoped_ptr<SSLCertChain> OpenSSLCertificate::GetChain() const {
   // Chains are not yet supported when using OpenSSL.
   // OpenSSLStreamAdapter::SSLVerifyCallback currently requires the remote
   // certificate to be self-signed.
-  return false;
+  return nullptr;
 }
 
 bool OpenSSLCertificate::ComputeDigest(const std::string& algorithm,

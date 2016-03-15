@@ -575,8 +575,8 @@ StatsReport* StatsCollector::AddCertificateReports(
   RTC_DCHECK(cert != NULL);
 
   StatsReport* issuer = nullptr;
-  rtc::scoped_ptr<rtc::SSLCertChain> chain;
-  if (cert->GetChain(chain.accept())) {
+  rtc::scoped_ptr<rtc::SSLCertChain> chain = cert->GetChain();
+  if (chain) {
     // This loop runs in reverse, i.e. from root to leaf, so that each
     // certificate's issuer's report ID is known before the child certificate's
     // report is generated.  The root certificate does not have an issuer ID

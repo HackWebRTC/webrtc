@@ -1056,8 +1056,7 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
   ASSERT_NE(kCERT_PEM, client_peer_string);
 
   // It must not have a chain, because the test certs are self-signed.
-  rtc::SSLCertChain* client_peer_chain;
-  ASSERT_FALSE(client_peer_cert->GetChain(&client_peer_chain));
+  ASSERT_FALSE(client_peer_cert->GetChain());
 
   // The server should have a peer certificate after the handshake.
   ASSERT_TRUE(GetPeerCertificate(false, server_peer_cert.accept()));
@@ -1067,8 +1066,7 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
   ASSERT_EQ(kCERT_PEM, server_peer_cert->ToPEMString());
 
   // It must not have a chain, because the test certs are self-signed.
-  rtc::SSLCertChain* server_peer_chain;
-  ASSERT_FALSE(server_peer_cert->GetChain(&server_peer_chain));
+  ASSERT_FALSE(server_peer_cert->GetChain());
 }
 
 // Test getting the used DTLS ciphers.

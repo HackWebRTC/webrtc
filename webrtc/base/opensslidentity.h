@@ -85,7 +85,7 @@ class OpenSSLCertificate : public SSLCertificate {
                             size_t* length);
 
   bool GetSignatureDigestAlgorithm(std::string* algorithm) const override;
-  bool GetChain(SSLCertChain** chain) const override;
+  rtc::scoped_ptr<SSLCertChain> GetChain() const override;
 
   int64_t CertificateExpirationTime() const override;
 
