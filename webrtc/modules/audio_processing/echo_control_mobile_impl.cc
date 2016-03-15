@@ -64,6 +64,20 @@ size_t EchoControlMobile::echo_path_size_bytes() {
   return WebRtcAecm_echo_path_size_bytes();
 }
 
+struct EchoControlMobileImpl::StreamProperties {
+  StreamProperties() = delete;
+  StreamProperties(int sample_rate_hz,
+                   size_t num_reverse_channels,
+                   size_t num_output_channels)
+      : sample_rate_hz(sample_rate_hz),
+        num_reverse_channels(num_reverse_channels),
+        num_output_channels(num_output_channels) {}
+
+  int sample_rate_hz;
+  size_t num_reverse_channels;
+  size_t num_output_channels;
+};
+
 class EchoControlMobileImpl::Canceller {
  public:
   Canceller() {
@@ -99,17 +113,14 @@ class EchoControlMobileImpl::Canceller {
   RTC_DISALLOW_COPY_AND_ASSIGN(Canceller);
 };
 
-EchoControlMobileImpl::EchoControlMobileImpl(const AudioProcessing* apm,
-                                             rtc::CriticalSection* crit_render,
+EchoControlMobileImpl::EchoControlMobileImpl(rtc::CriticalSection* crit_render,
                                              rtc::CriticalSection* crit_capture)
-    : apm_(apm),
-      crit_render_(crit_render),
+    : crit_render_(crit_render),
       crit_capture_(crit_capture),
       routing_mode_(kSpeakerphone),
       comfort_noise_enabled_(true),
       external_echo_path_(NULL),
       render_queue_element_max_size_(0) {
-  RTC_DCHECK(apm);
   RTC_DCHECK(crit_render);
   RTC_DCHECK(crit_capture);
 }
@@ -127,10 +138,12 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
     return AudioProcessing::kNoError;
   }
 
+  RTC_DCHECK(stream_properties_);
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(), apm_->num_reverse_channels());
-  RTC_DCHECK_GE(cancellers_.size(),
-                apm_->num_output_channels() * audio->num_channels());
+  RTC_DCHECK_EQ(audio->num_channels(),
+                stream_properties_->num_reverse_channels);
+  RTC_DCHECK_GE(cancellers_.size(), stream_properties_->num_output_channels *
+                                        audio->num_channels());
 
   int err = AudioProcessing::kNoError;
   // The ordering convention must be followed to pass to the correct AECM.
@@ -170,6 +183,7 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
 // a queue. All the data chunks are buffered into the farend signal of the AEC.
 void EchoControlMobileImpl::ReadQueuedRenderData() {
   rtc::CritScope cs_capture(crit_capture_);
+  RTC_DCHECK(stream_properties_);
 
   if (!enabled_) {
     return;
@@ -177,9 +191,9 @@ void EchoControlMobileImpl::ReadQueuedRenderData() {
 
   while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
     size_t buffer_index = 0;
-    size_t num_frames_per_band =
-        capture_queue_buffer_.size() /
-        (apm_->num_output_channels() * apm_->num_reverse_channels());
+    size_t num_frames_per_band = capture_queue_buffer_.size() /
+                                 (stream_properties_->num_output_channels *
+                                  stream_properties_->num_reverse_channels);
 
     for (auto& canceller : cancellers_) {
       WebRtcAecm_BufferFarend(canceller->state(),
@@ -191,20 +205,18 @@ void EchoControlMobileImpl::ReadQueuedRenderData() {
   }
 }
 
-int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
+int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio,
+                                               int stream_delay_ms) {
   rtc::CritScope cs_capture(crit_capture_);
   if (!enabled_) {
     return AudioProcessing::kNoError;
   }
 
-  if (!apm_->was_stream_delay_set()) {
-    return AudioProcessing::kStreamParameterNotSetError;
-  }
-
+  RTC_DCHECK(stream_properties_);
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(), apm_->num_output_channels());
-  RTC_DCHECK_GE(cancellers_.size(),
-                apm_->num_reverse_channels() * audio->num_channels());
+  RTC_DCHECK_EQ(audio->num_channels(), stream_properties_->num_output_channels);
+  RTC_DCHECK_GE(cancellers_.size(), stream_properties_->num_reverse_channels *
+                                        audio->num_channels());
 
   int err = AudioProcessing::kNoError;
 
@@ -219,11 +231,11 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       noisy = clean;
       clean = NULL;
     }
-    for (size_t render = 0; render < apm_->num_reverse_channels(); ++render) {
+    for (size_t render = 0; render < stream_properties_->num_reverse_channels;
+         ++render) {
       err = WebRtcAecm_Process(cancellers_[handle_index]->state(), noisy, clean,
                                audio->split_bands(capture)[kBand0To8kHz],
-                               audio->num_frames_per_band(),
-                               apm_->stream_delay_ms());
+                               audio->num_frames_per_band(), stream_delay_ms);
 
       if (err != AudioProcessing::kNoError) {
         return MapError(err);
@@ -239,20 +251,21 @@ int EchoControlMobileImpl::Enable(bool enable) {
   // Ensure AEC and AECM are not both enabled.
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
-  // The is_enabled call is safe from a deadlock perspective
-  // as both locks are allready held in the correct order.
-  if (enable && apm_->echo_cancellation()->is_enabled()) {
-    return AudioProcessing::kBadParameterError;
-  }
+  RTC_DCHECK(stream_properties_);
 
   if (enable &&
-      apm_->proc_sample_rate_hz() > AudioProcessing::kSampleRate16kHz) {
+      stream_properties_->sample_rate_hz > AudioProcessing::kSampleRate16kHz) {
     return AudioProcessing::kBadSampleRateError;
   }
 
   if (enable && !enabled_) {
     enabled_ = enable;  // Must be set before Initialize() is called.
-    Initialize();
+
+    // TODO(peah): Simplify once the Enable function has been removed from
+    // the public APM API.
+    Initialize(stream_properties_->sample_rate_hz,
+               stream_properties_->num_reverse_channels,
+               stream_properties_->num_output_channels);
   } else {
     enabled_ = enable;
   }
@@ -314,7 +327,12 @@ int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
     memcpy(external_echo_path_, echo_path, size_bytes);
   }
 
-  Initialize();
+  // TODO(peah): Simplify once the Enable function has been removed from
+  // the public APM API.
+  RTC_DCHECK(stream_properties_);
+  Initialize(stream_properties_->sample_rate_hz,
+             stream_properties_->num_reverse_channels,
+             stream_properties_->num_output_channels);
   return AudioProcessing::kNoError;
 }
 
@@ -342,18 +360,23 @@ int EchoControlMobileImpl::GetEchoPath(void* echo_path,
   return AudioProcessing::kNoError;
 }
 
-void EchoControlMobileImpl::Initialize() {
+void EchoControlMobileImpl::Initialize(int sample_rate_hz,
+                                       size_t num_reverse_channels,
+                                       size_t num_output_channels) {
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
+
+  stream_properties_.reset(new StreamProperties(
+      sample_rate_hz, num_reverse_channels, num_output_channels));
+
   if (!enabled_) {
     return;
   }
 
-  if (apm_->proc_sample_rate_hz() > AudioProcessing::kSampleRate16kHz) {
+  if (stream_properties_->sample_rate_hz > AudioProcessing::kSampleRate16kHz) {
     LOG(LS_ERROR) << "AECM only supports 16 kHz or lower sample rates";
   }
 
-  int sample_rate_hz = apm_->proc_sample_rate_hz();
   cancellers_.resize(num_handles_required());
   for (auto& canceller : cancellers_) {
     if (!canceller) {
@@ -412,7 +435,8 @@ int EchoControlMobileImpl::Configure() {
 }
 
 size_t EchoControlMobileImpl::num_handles_required() const {
-  // Not locked as it only relies on APM public API which is threadsafe.
-  return apm_->num_output_channels() * apm_->num_reverse_channels();
+  RTC_DCHECK(stream_properties_);
+  return stream_properties_->num_output_channels *
+         stream_properties_->num_reverse_channels;
 }
 }  // namespace webrtc

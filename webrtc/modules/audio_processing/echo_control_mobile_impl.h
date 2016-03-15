@@ -25,27 +25,29 @@ class AudioBuffer;
 
 class EchoControlMobileImpl : public EchoControlMobile {
  public:
-  EchoControlMobileImpl(const AudioProcessing* apm,
-                        rtc::CriticalSection* crit_render,
+  EchoControlMobileImpl(rtc::CriticalSection* crit_render,
                         rtc::CriticalSection* crit_capture);
 
   virtual ~EchoControlMobileImpl();
 
   int ProcessRenderAudio(const AudioBuffer* audio);
-  int ProcessCaptureAudio(AudioBuffer* audio);
+  int ProcessCaptureAudio(AudioBuffer* audio, int stream_delay_ms);
 
   // EchoControlMobile implementation.
   bool is_enabled() const override;
   RoutingMode routing_mode() const override;
   bool is_comfort_noise_enabled() const override;
 
-  void Initialize();
+  void Initialize(int sample_rate_hz,
+                  size_t num_reverse_channels,
+                  size_t num_output_channels);
 
   // Reads render side data that has been queued on the render call.
   void ReadQueuedRenderData();
 
  private:
   class Canceller;
+  struct StreamProperties;
 
   // EchoControlMobile implementation.
   int Enable(bool enable) override;
@@ -58,9 +60,6 @@ class EchoControlMobileImpl : public EchoControlMobile {
 
   void AllocateRenderQueue();
   int Configure();
-
-  // Not guarded as its public API is thread safe.
-  const AudioProcessing* apm_;
 
   rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection* const crit_capture_;
@@ -84,6 +83,8 @@ class EchoControlMobileImpl : public EchoControlMobile {
       render_signal_queue_;
 
   std::vector<std::unique_ptr<Canceller>> cancellers_;
+  std::unique_ptr<StreamProperties> stream_properties_;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoControlMobileImpl);
 };
 }  // namespace webrtc

@@ -170,7 +170,7 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
     public_submodules_->echo_cancellation.reset(
         new EchoCancellationImpl(this, &crit_render_, &crit_capture_));
     public_submodules_->echo_control_mobile.reset(
-        new EchoControlMobileImpl(this, &crit_render_, &crit_capture_));
+        new EchoControlMobileImpl(&crit_render_, &crit_capture_));
     public_submodules_->gain_control.reset(
         new GainControlImpl(&crit_capture_, &crit_capture_));
     public_submodules_->high_pass_filter.reset(
@@ -706,8 +706,17 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     public_submodules_->intelligibility_enhancer->SetCaptureNoiseEstimate(
         public_submodules_->noise_suppression->NoiseEstimate());
   }
-  RETURN_ON_ERR(
-      public_submodules_->echo_control_mobile->ProcessCaptureAudio(ca));
+
+  // Ensure that the stream delay was set before the call to the
+  // AECM ProcessCaptureAudio function.
+  if (public_submodules_->echo_control_mobile->is_enabled() &&
+      !was_stream_delay_set()) {
+    return AudioProcessing::kStreamParameterNotSetError;
+  }
+
+  RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
+      ca, stream_delay_ms()));
+
   public_submodules_->voice_detection->ProcessCaptureAudio(ca);
 
   if (constants_.use_experimental_agc &&
@@ -1227,7 +1236,8 @@ void AudioProcessingImpl::InitializeGainController() {
 }
 
 void AudioProcessingImpl::InitializeEchoControlMobile() {
-  public_submodules_->echo_control_mobile->Initialize();
+  public_submodules_->echo_control_mobile->Initialize(
+      proc_sample_rate_hz(), num_reverse_channels(), num_output_channels());
 }
 
 void AudioProcessingImpl::InitializeLevelEstimator() {
