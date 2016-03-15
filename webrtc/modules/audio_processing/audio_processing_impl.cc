@@ -168,7 +168,7 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
     rtc::CritScope cs_capture(&crit_capture_);
 
     public_submodules_->echo_cancellation.reset(
-        new EchoCancellationImpl(this, &crit_render_, &crit_capture_));
+        new EchoCancellationImpl(&crit_render_, &crit_capture_));
     public_submodules_->echo_control_mobile.reset(
         new EchoControlMobileImpl(&crit_render_, &crit_capture_));
     public_submodules_->gain_control.reset(
@@ -658,6 +658,12 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 }
 
 int AudioProcessingImpl::ProcessStreamLocked() {
+  // Ensure that not both the AEC and AECM are active at the same time.
+  // TODO(peah): Simplify once the public API Enable functions for these
+  // are moved to APM.
+  RTC_DCHECK(!(public_submodules_->echo_cancellation->is_enabled() &&
+               public_submodules_->echo_control_mobile->is_enabled()));
+
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->Open()) {
     audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
@@ -694,7 +700,16 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   public_submodules_->high_pass_filter->ProcessCaptureAudio(ca);
   RETURN_ON_ERR(public_submodules_->gain_control->AnalyzeCaptureAudio(ca));
   public_submodules_->noise_suppression->AnalyzeCaptureAudio(ca);
-  RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessCaptureAudio(ca));
+
+  // Ensure that the stream delay was set before the call to the
+  // AEC ProcessCaptureAudio function.
+  if (public_submodules_->echo_cancellation->is_enabled() &&
+      !was_stream_delay_set()) {
+    return AudioProcessing::kStreamParameterNotSetError;
+  }
+
+  RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessCaptureAudio(
+      ca, stream_delay_ms()));
 
   if (public_submodules_->echo_control_mobile->is_enabled() &&
       public_submodules_->noise_suppression->is_enabled()) {
@@ -1227,7 +1242,9 @@ void AudioProcessingImpl::InitializeNoiseSuppression() {
 }
 
 void AudioProcessingImpl::InitializeEchoCanceller() {
-  public_submodules_->echo_cancellation->Initialize();
+  public_submodules_->echo_cancellation->Initialize(
+      proc_sample_rate_hz(), num_reverse_channels(), num_output_channels(),
+      num_proc_channels());
 }
 
 void AudioProcessingImpl::InitializeGainController() {

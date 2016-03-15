@@ -25,13 +25,12 @@ class AudioBuffer;
 
 class EchoCancellationImpl : public EchoCancellation {
  public:
-  EchoCancellationImpl(const AudioProcessing* apm,
-                       rtc::CriticalSection* crit_render,
+  EchoCancellationImpl(rtc::CriticalSection* crit_render,
                        rtc::CriticalSection* crit_capture);
   virtual ~EchoCancellationImpl();
 
   int ProcessRenderAudio(const AudioBuffer* audio);
-  int ProcessCaptureAudio(AudioBuffer* audio);
+  int ProcessCaptureAudio(AudioBuffer* audio, int stream_delay_ms);
 
   // EchoCancellation implementation.
   bool is_enabled() const override;
@@ -39,7 +38,10 @@ class EchoCancellationImpl : public EchoCancellation {
   SuppressionLevel suppression_level() const override;
   bool is_drift_compensation_enabled() const override;
 
-  void Initialize();
+  void Initialize(int sample_rate_hz,
+                  size_t num_reverse_channels_,
+                  size_t num_output_channels_,
+                  size_t num_proc_channels_);
   void SetExtraOptions(const Config& config);
   bool is_delay_agnostic_enabled() const;
   bool is_extended_filter_enabled() const;
@@ -54,6 +56,7 @@ class EchoCancellationImpl : public EchoCancellation {
 
  private:
   class Canceller;
+  struct StreamProperties;
 
   // EchoCancellation implementation.
   int Enable(bool enable) override;
@@ -73,13 +76,10 @@ class EchoCancellationImpl : public EchoCancellation {
 
   struct AecCore* aec_core() const override;
 
-  size_t num_handles_required() const;
+  size_t NumCancellersRequired() const;
 
   void AllocateRenderQueue();
   int Configure();
-
-  // Not guarded as its public API is thread safe.
-  const AudioProcessing* apm_;
 
   rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection* const crit_capture_;
@@ -106,6 +106,8 @@ class EchoCancellationImpl : public EchoCancellation {
       render_signal_queue_;
 
   std::vector<std::unique_ptr<Canceller>> cancellers_;
+  std::unique_ptr<StreamProperties> stream_properties_;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoCancellationImpl);
 };
 

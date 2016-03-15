@@ -57,6 +57,23 @@ static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
 static const size_t kMaxNumFramesToBuffer = 100;
 }  // namespace
 
+struct EchoCancellationImpl::StreamProperties {
+  StreamProperties() = delete;
+  StreamProperties(int sample_rate_hz,
+                   size_t num_reverse_channels,
+                   size_t num_output_channels,
+                   size_t num_proc_channels)
+      : sample_rate_hz(sample_rate_hz),
+        num_reverse_channels(num_reverse_channels),
+        num_output_channels(num_output_channels),
+        num_proc_channels(num_proc_channels) {}
+
+  const int sample_rate_hz;
+  const size_t num_reverse_channels;
+  const size_t num_output_channels;
+  const size_t num_proc_channels;
+};
+
 class EchoCancellationImpl::Canceller {
  public:
   Canceller() {
@@ -83,11 +100,9 @@ class EchoCancellationImpl::Canceller {
   void* state_;
 };
 
-EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
-                                           rtc::CriticalSection* crit_render,
+EchoCancellationImpl::EchoCancellationImpl(rtc::CriticalSection* crit_render,
                                            rtc::CriticalSection* crit_capture)
-    : apm_(apm),
-      crit_render_(crit_render),
+    : crit_render_(crit_render),
       crit_capture_(crit_capture),
       drift_compensation_enabled_(false),
       metrics_enabled_(false),
@@ -100,7 +115,6 @@ EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
       delay_agnostic_enabled_(false),
       aec3_enabled_(false),
       render_queue_element_max_size_(0) {
-  RTC_DCHECK(apm);
   RTC_DCHECK(crit_render);
   RTC_DCHECK(crit_capture);
 }
@@ -113,17 +127,19 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
     return AudioProcessing::kNoError;
   }
 
+  RTC_DCHECK(stream_properties_);
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(), apm_->num_reverse_channels());
-  RTC_DCHECK_GE(cancellers_.size(),
-                apm_->num_output_channels() * audio->num_channels());
+  RTC_DCHECK_EQ(audio->num_channels(),
+                stream_properties_->num_reverse_channels);
+  RTC_DCHECK_GE(cancellers_.size(), stream_properties_->num_output_channels *
+                                        audio->num_channels());
 
   int err = AudioProcessing::kNoError;
 
   // The ordering convention must be followed to pass to the correct AEC.
   size_t handle_index = 0;
   render_queue_buffer_.clear();
-  for (size_t i = 0; i < apm_->num_output_channels(); i++) {
+  for (size_t i = 0; i < stream_properties_->num_output_channels; i++) {
     for (size_t j = 0; j < audio->num_channels(); j++) {
       // Retrieve any error code produced by the buffering of the farend
       // signal.
@@ -164,14 +180,16 @@ void EchoCancellationImpl::ReadQueuedRenderData() {
     return;
   }
 
+  RTC_DCHECK(stream_properties_);
   while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
     size_t handle_index = 0;
     size_t buffer_index = 0;
     const size_t num_frames_per_band =
         capture_queue_buffer_.size() /
-        (apm_->num_output_channels() * apm_->num_reverse_channels());
-    for (size_t i = 0; i < apm_->num_output_channels(); i++) {
-      for (size_t j = 0; j < apm_->num_reverse_channels(); j++) {
+        (stream_properties_->num_output_channels *
+         stream_properties_->num_reverse_channels);
+    for (size_t i = 0; i < stream_properties_->num_output_channels; i++) {
+      for (size_t j = 0; j < stream_properties_->num_reverse_channels; j++) {
         WebRtcAec_BufferFarend(cancellers_[handle_index++]->state(),
                                &capture_queue_buffer_[buffer_index],
                                num_frames_per_band);
@@ -182,22 +200,20 @@ void EchoCancellationImpl::ReadQueuedRenderData() {
   }
 }
 
-int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
+int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio,
+                                              int stream_delay_ms) {
   rtc::CritScope cs_capture(crit_capture_);
   if (!enabled_) {
     return AudioProcessing::kNoError;
-  }
-
-  if (!apm_->was_stream_delay_set()) {
-    return AudioProcessing::kStreamParameterNotSetError;
   }
 
   if (drift_compensation_enabled_ && !was_stream_drift_set_) {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
+  RTC_DCHECK(stream_properties_);
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(), apm_->num_proc_channels());
+  RTC_DCHECK_EQ(audio->num_channels(), stream_properties_->num_proc_channels);
 
   int err = AudioProcessing::kNoError;
 
@@ -205,12 +221,11 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   size_t handle_index = 0;
   stream_has_echo_ = false;
   for (size_t i = 0; i < audio->num_channels(); i++) {
-    for (size_t j = 0; j < apm_->num_reverse_channels(); j++) {
-      err = WebRtcAec_Process(cancellers_[handle_index]->state(),
-                              audio->split_bands_const_f(i), audio->num_bands(),
-                              audio->split_bands_f(i),
-                              audio->num_frames_per_band(),
-                              apm_->stream_delay_ms(), stream_drift_samples_);
+    for (size_t j = 0; j < stream_properties_->num_reverse_channels; j++) {
+      err = WebRtcAec_Process(
+          cancellers_[handle_index]->state(), audio->split_bands_const_f(i),
+          audio->num_bands(), audio->split_bands_f(i),
+          audio->num_frames_per_band(), stream_delay_ms, stream_drift_samples_);
 
       if (err != AudioProcessing::kNoError) {
         err = MapError(err);
@@ -243,16 +258,17 @@ int EchoCancellationImpl::Enable(bool enable) {
   // Run in a single-threaded manner.
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
-  // Ensure AEC and AECM are not both enabled.
-  // The is_enabled call is safe from a deadlock perspective
-  // as both locks are already held in the correct order.
-  if (enable && apm_->echo_control_mobile()->is_enabled()) {
-    return AudioProcessing::kBadParameterError;
-  }
 
   if (enable && !enabled_) {
     enabled_ = enable;  // Must be set before Initialize() is called.
-    Initialize();
+
+    // TODO(peah): Simplify once the Enable function has been removed from
+    // the public APM API.
+    RTC_DCHECK(stream_properties_);
+    Initialize(stream_properties_->sample_rate_hz,
+               stream_properties_->num_reverse_channels,
+               stream_properties_->num_output_channels,
+               stream_properties_->num_proc_channels);
   } else {
     enabled_ = enable;
   }
@@ -433,23 +449,30 @@ struct AecCore* EchoCancellationImpl::aec_core() const {
   return WebRtcAec_aec_core(cancellers_[0]->state());
 }
 
-void EchoCancellationImpl::Initialize() {
+void EchoCancellationImpl::Initialize(int sample_rate_hz,
+                                      size_t num_reverse_channels,
+                                      size_t num_output_channels,
+                                      size_t num_proc_channels) {
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
+
+  stream_properties_.reset(
+      new StreamProperties(sample_rate_hz, num_reverse_channels,
+                           num_output_channels, num_proc_channels));
+
   if (!enabled_) {
     return;
   }
 
-  if (num_handles_required() > cancellers_.size()) {
+  if (NumCancellersRequired() > cancellers_.size()) {
     const size_t cancellers_old_size = cancellers_.size();
-    cancellers_.resize(num_handles_required());
+    cancellers_.resize(NumCancellersRequired());
 
     for (size_t i = cancellers_old_size; i < cancellers_.size(); ++i) {
       cancellers_[i].reset(new Canceller());
     }
   }
 
-  const int sample_rate_hz = apm_->proc_sample_rate_hz();
   for (auto& canceller : cancellers_) {
     canceller->Initialize(sample_rate_hz);
   }
@@ -470,7 +493,7 @@ int EchoCancellationImpl::GetSystemDelayInSamples() const {
 void EchoCancellationImpl::AllocateRenderQueue() {
   const size_t new_render_queue_element_max_size = std::max<size_t>(
       static_cast<size_t>(1),
-      kMaxAllowedValuesOfSamplesPerFrame * num_handles_required());
+      kMaxAllowedValuesOfSamplesPerFrame * NumCancellersRequired());
 
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
@@ -529,9 +552,10 @@ int EchoCancellationImpl::Configure() {
   return error;
 }
 
-size_t EchoCancellationImpl::num_handles_required() const {
-  // Not locked as it only relies on APM public API which is threadsafe.
-  return apm_->num_output_channels() * apm_->num_reverse_channels();
+size_t EchoCancellationImpl::NumCancellersRequired() const {
+  RTC_DCHECK(stream_properties_);
+  return stream_properties_->num_output_channels *
+         stream_properties_->num_reverse_channels;
 }
 
 }  // namespace webrtc
