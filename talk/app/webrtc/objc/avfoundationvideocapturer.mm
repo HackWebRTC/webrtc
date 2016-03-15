@@ -34,6 +34,7 @@
 #import <UIKit/UIKit.h>
 
 #import "webrtc/base/objc/RTCDispatcher.h"
+#import "webrtc/base/objc/RTCLogging.h"
 
 // TODO(tkchin): support other formats.
 static NSString* const kDefaultPreset = AVCaptureSessionPreset640x480;
@@ -52,6 +53,7 @@ static cricket::VideoFormat const kDefaultFormat =
 
 @property(nonatomic, readonly) AVCaptureSession* captureSession;
 @property(nonatomic, readonly) BOOL isRunning;
+@property(nonatomic, readonly) BOOL canUseBackCamera;
 @property(nonatomic, assign) BOOL useBackCamera;  // Defaults to NO.
 
 // We keep a pointer back to AVFoundationVideoCapturer to make callbacks on it
@@ -105,8 +107,17 @@ static cricket::VideoFormat const kDefaultFormat =
   _capturer = nullptr;
 }
 
+- (BOOL)canUseBackCamera {
+  return _backDeviceInput != nil;
+}
+
 - (void)setUseBackCamera:(BOOL)useBackCamera {
   if (_useBackCamera == useBackCamera) {
+    return;
+  }
+  if (!self.canUseBackCamera) {
+    RTCLog(@"No rear-facing camera exists or it cannot be used;"
+           "not switching.");
     return;
   }
   _useBackCamera = useBackCamera;
@@ -203,9 +214,14 @@ static cricket::VideoFormat const kDefaultFormat =
       frontCaptureDevice = captureDevice;
     }
   }
-  if (!frontCaptureDevice || !backCaptureDevice) {
-    NSLog(@"Failed to get capture devices.");
+  if (!frontCaptureDevice) {
+    RTCLog(@"Failed to get front capture device.");
     return NO;
+  }
+  if (!backCaptureDevice) {
+    RTCLog(@"Failed to get back capture device");
+    // Don't return NO here because devices exist (16GB 5th generation iPod
+    // Touch) that don't have a rear-facing camera.
   }
 
   // Set up the session inputs.
@@ -218,18 +234,21 @@ static cricket::VideoFormat const kDefaultFormat =
           error.localizedDescription);
     return NO;
   }
-  _backDeviceInput =
-      [AVCaptureDeviceInput deviceInputWithDevice:backCaptureDevice
-                                            error:&error];
-  if (!_backDeviceInput) {
-    NSLog(@"Failed to get capture device input: %@",
-          error.localizedDescription);
-    return NO;
+  if (backCaptureDevice) {
+    error = nil;
+    _backDeviceInput =
+        [AVCaptureDeviceInput deviceInputWithDevice:backCaptureDevice
+                                              error:&error];
+    if (error) {
+      RTCLog(@"Failed to get capture device input: %@",
+            error.localizedDescription);
+      _backDeviceInput = nil;
+    }
   }
 
   // Add the inputs.
   if (![_captureSession canAddInput:_frontDeviceInput] ||
-      ![_captureSession canAddInput:_backDeviceInput]) {
+      (_backDeviceInput && ![_captureSession canAddInput:_backDeviceInput])) {
     NSLog(@"Session does not support capture inputs.");
     return NO;
   }
@@ -351,6 +370,10 @@ bool AVFoundationVideoCapturer::IsRunning() {
 
 AVCaptureSession* AVFoundationVideoCapturer::GetCaptureSession() {
   return _capturer.captureSession;
+}
+
+bool AVFoundationVideoCapturer::CanUseBackCamera() const {
+  return _capturer.canUseBackCamera;
 }
 
 void AVFoundationVideoCapturer::SetUseBackCamera(bool useBackCamera) {

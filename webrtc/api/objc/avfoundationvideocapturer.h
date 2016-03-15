@@ -40,6 +40,12 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer {
   /** Returns the active capture session. */
   AVCaptureSession* GetCaptureSession();
 
+  /**
+   * Returns whether the rear-facing camera can be used.
+   * e.g. It can't be used because it doesn't exist.
+   */
+  bool CanUseBackCamera() const;
+
   /** Switches the camera being used (either front or back). */
   void SetUseBackCamera(bool useBackCamera);
   bool GetUseBackCamera() const;

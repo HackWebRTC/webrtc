@@ -28,6 +28,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
                     constraints:(nullable RTCMediaConstraints *)constraints;
 
+/** Returns whether rear-facing camera is available for use. */
+@property(nonatomic, readonly) BOOL canUseBackCamera;
+
 /** Switches the camera being used (either front or back). */
 @property(nonatomic, assign) BOOL useBackCamera;
 

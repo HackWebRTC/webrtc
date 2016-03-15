@@ -46,6 +46,10 @@
   return [super initWithMediaSource:source];
 }
 
+- (BOOL)canUseBackCamera {
+  return self.capturer->CanUseBackCamera();
+}
+
 - (BOOL)useBackCamera {
   return self.capturer->GetUseBackCamera();
 }
