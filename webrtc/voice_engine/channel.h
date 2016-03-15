@@ -156,7 +156,6 @@ class Channel
       public FileCallback,  // receiving notification from file player &
                             // recorder
       public Transport,
-      public RtpAudioFeedback,
       public AudioPacketizationCallback,  // receive encoded packets from the
                                           // ACM
       public ACMVADCallback,              // receive voice activity from the ACM
@@ -384,11 +383,6 @@ class Channel
                               uint32_t rate) override;
   void OnIncomingSSRCChanged(uint32_t ssrc) override;
   void OnIncomingCSRCChanged(uint32_t CSRC, bool added) override;
-
-  // From RtpAudioFeedback in the RTP/RTCP module
-  void OnPlayTelephoneEvent(uint8_t event,
-                            uint16_t lengthMs,
-                            uint8_t volume) override;
 
   // From Transport (called by the RTP/RTCP module)
   bool SendRtp(const uint8_t* data,

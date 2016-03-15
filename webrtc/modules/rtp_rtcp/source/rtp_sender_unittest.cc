@@ -141,7 +141,7 @@ class RtpSenderTest : public ::testing::Test {
   void SetUp() override { SetUpRtpSender(true); }
 
   void SetUpRtpSender(bool pacer) {
-    rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_, nullptr,
+    rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_,
                                     pacer ? &mock_paced_sender_ : nullptr,
                                     &seq_num_allocator_, nullptr, nullptr,
                                     nullptr, nullptr, &mock_rtc_event_log_));
@@ -954,7 +954,7 @@ TEST_F(RtpSenderTest, SendPadding) {
 TEST_F(RtpSenderTest, SendRedundantPayloads) {
   MockTransport transport;
   rtp_sender_.reset(new RTPSender(
-      false, &fake_clock_, &transport, nullptr, &mock_paced_sender_, nullptr,
+      false, &fake_clock_, &transport, &mock_paced_sender_, nullptr,
       nullptr, nullptr, nullptr, nullptr, &mock_rtc_event_log_));
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
@@ -1096,7 +1096,7 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
     FrameCounts frame_counts_;
   } callback;
 
-  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_, nullptr,
+  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_,
                                   &mock_paced_sender_, nullptr, nullptr,
                                   nullptr, &callback, nullptr, nullptr));
 
@@ -1152,7 +1152,7 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
     BitrateStatistics total_stats_;
     BitrateStatistics retransmit_stats_;
   } callback;
-  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_, nullptr,
+  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_,
                                   nullptr, nullptr, nullptr, &callback, nullptr,
                                   nullptr, nullptr));
 
@@ -1205,7 +1205,7 @@ class RtpSenderAudioTest : public RtpSenderTest {
 
   void SetUp() override {
     payload_ = kAudioPayload;
-    rtp_sender_.reset(new RTPSender(true, &fake_clock_, &transport_, nullptr,
+    rtp_sender_.reset(new RTPSender(true, &fake_clock_, &transport_,
                                     nullptr, nullptr, nullptr, nullptr, nullptr,
                                     nullptr, nullptr));
     rtp_sender_->SetSequenceNumber(kSeqNum);

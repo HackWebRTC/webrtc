@@ -21,12 +21,9 @@ namespace webrtc {
 
 static const int kDtmfFrequencyHz = 8000;
 
-RTPSenderAudio::RTPSenderAudio(Clock* clock,
-                               RTPSender* rtpSender,
-                               RtpAudioFeedback* audio_feedback)
+RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtpSender)
     : _clock(clock),
       _rtpSender(rtpSender),
-      _audioFeedback(audio_feedback),
       _sendAudioCritsect(CriticalSectionWrapper::CreateCriticalSection()),
       _packetSizeSamples(160),
       _dtmfEventIsOn(false),
@@ -158,7 +155,6 @@ int32_t RTPSenderAudio::SendAudio(FrameType frameType,
   // TODO(pwestin) Breakup function in smaller functions.
   size_t payloadSize = dataSize;
   size_t maxPayloadLength = _rtpSender->MaxPayloadLength();
-  bool dtmfToneStarted = false;
   uint16_t dtmfLengthMS = 0;
   uint8_t key = 0;
   int red_payload_type;
@@ -185,14 +181,9 @@ int32_t RTPSenderAudio::SendAudio(FrameType frameType,
         _dtmfEventFirstPacketSent = false;
         _dtmfKey = key;
         _dtmfLengthSamples = (kDtmfFrequencyHz / 1000) * dtmfLengthMS;
-        dtmfToneStarted = true;
         _dtmfEventIsOn = true;
       }
     }
-  }
-  if (dtmfToneStarted) {
-    if (_audioFeedback)
-      _audioFeedback->OnPlayTelephoneEvent(key, dtmfLengthMS, _dtmfLevel);
   }
 
   // A source MAY send events and coded audio packets for the same time

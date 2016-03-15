@@ -21,9 +21,7 @@
 namespace webrtc {
 class RTPSenderAudio : public DTMFqueue {
  public:
-  RTPSenderAudio(Clock* clock,
-                 RTPSender* rtpSender,
-                 RtpAudioFeedback* audio_feedback);
+  RTPSenderAudio(Clock* clock, RTPSender* rtpSender);
   virtual ~RTPSenderAudio();
 
   int32_t RegisterAudioPayload(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
@@ -73,7 +71,6 @@ class RTPSenderAudio : public DTMFqueue {
  private:
   Clock* const _clock;
   RTPSender* const _rtpSender;
-  RtpAudioFeedback* const _audioFeedback;
 
   rtc::scoped_ptr<CriticalSectionWrapper> _sendAudioCritsect;
 

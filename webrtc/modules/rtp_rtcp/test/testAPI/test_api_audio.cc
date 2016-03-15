@@ -106,7 +106,6 @@ class RtpRtcpAudioTest : public ::testing::Test {
     configuration.clock = &fake_clock;
     configuration.receive_statistics = receive_statistics1_.get();
     configuration.outgoing_transport = transport1;
-    configuration.audio_messages = audioFeedback;
 
     module1 = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_receiver1_.reset(RtpReceiver::CreateAudioReceiver(
@@ -115,7 +114,6 @@ class RtpRtcpAudioTest : public ::testing::Test {
 
     configuration.receive_statistics = receive_statistics2_.get();
     configuration.outgoing_transport = transport2;
-    configuration.audio_messages = audioFeedback;
 
     module2 = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_receiver2_.reset(RtpReceiver::CreateAudioReceiver(

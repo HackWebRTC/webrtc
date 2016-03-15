@@ -353,15 +353,6 @@ bool Channel::SendRtcp(const uint8_t* data, size_t len) {
   return true;
 }
 
-void Channel::OnPlayTelephoneEvent(uint8_t event,
-                                   uint16_t lengthMs,
-                                   uint8_t volume) {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::OnPlayTelephoneEvent(event=%u, lengthMs=%u,"
-               " volume=%u)",
-               event, lengthMs, volume);
-}
-
 void Channel::OnIncomingSSRCChanged(uint32_t ssrc) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::OnIncomingSSRCChanged(SSRC=%d)", ssrc);
@@ -731,7 +722,7 @@ Channel::Channel(int32_t channelId,
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
       rtp_receiver_(
           RtpReceiver::CreateAudioReceiver(Clock::GetRealTimeClock(),
-                                           this,
+                                           nullptr,
                                            this,
                                            this,
                                            rtp_payload_registry_.get())),
@@ -816,7 +807,6 @@ Channel::Channel(int32_t channelId,
   RtpRtcp::Configuration configuration;
   configuration.audio = true;
   configuration.outgoing_transport = this;
-  configuration.audio_messages = this;
   configuration.receive_statistics = rtp_receive_statistics_.get();
   configuration.bandwidth_callback = rtcp_observer_.get();
   if (pacing_enabled_) {
@@ -2201,7 +2191,6 @@ int Channel::SendTelephoneEventOutband(int event, int duration_ms) {
   if (!Sending()) {
     return -1;
   }
-
   if (_rtpRtcpModule->SendTelephoneEventOutband(
       event, duration_ms, kTelephoneEventAttenuationdB) != 0) {
     _engineStatisticsPtr->SetLastError(

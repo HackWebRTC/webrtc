@@ -308,7 +308,6 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
   RTPSender rtp_sender(false,     // bool audio
                        clock,     // Clock* clock
                        nullptr,   // Transport*
-                       nullptr,   // RtpAudioFeedback*
                        nullptr,   // PacedSender*
                        nullptr,   // PacketRouter*
                        nullptr,   // SendTimeObserver*

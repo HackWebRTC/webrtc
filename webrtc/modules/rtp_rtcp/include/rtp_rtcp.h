@@ -55,8 +55,6 @@ class RtpRtcp : public Module {
     *  intra_frame_callback - Called when the receiver request a intra frame.
     *  bandwidth_callback   - Called when we receive a changed estimate from
     *                         the receiver of out stream.
-    *  audio_messages       - Telephone events. May not be NULL; default
-    *                         callback will do nothing.
     *  remote_bitrate_estimator - Estimates the bandwidth available for a set of
     *                             streams from the same client.
     *  paced_sender             - Spread any bursts of packets into smaller
@@ -72,7 +70,6 @@ class RtpRtcp : public Module {
     TransportFeedbackObserver* transport_feedback_callback;
     RtcpRttStats* rtt_stats;
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer;
-    RtpAudioFeedback* audio_messages;
     RemoteBitrateEstimator* remote_bitrate_estimator;
     RtpPacketSender* paced_sender;
     TransportSequenceNumberAllocator* transport_sequence_number_allocator;

@@ -90,7 +90,6 @@ class RTPSender : public RTPSenderInterface {
   RTPSender(bool audio,
             Clock* clock,
             Transport* transport,
-            RtpAudioFeedback* audio_feedback,
             RtpPacketSender* paced_sender,
             TransportSequenceNumberAllocator* sequence_number_allocator,
             TransportFeedbackObserver* transport_feedback_callback,
