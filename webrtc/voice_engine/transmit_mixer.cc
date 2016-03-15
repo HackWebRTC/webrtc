@@ -1125,11 +1125,6 @@ void TransmitMixer::GenerateAudioFrame(const int16_t* audio,
       break;
     }
   }
-  if (audioproc_->echo_control_mobile()->is_enabled()) {
-    // AECM only supports 8 and 16 kHz.
-    _audioFrame.sample_rate_hz_ = std::min(
-        _audioFrame.sample_rate_hz_, AudioProcessing::kMaxAECMSampleRateHz);
-  }
   _audioFrame.num_channels_ = std::min(num_channels, num_codec_channels);
   RemixAndResample(audio, samples_per_channel, num_channels, sample_rate_hz,
                    &resampler_, &_audioFrame);

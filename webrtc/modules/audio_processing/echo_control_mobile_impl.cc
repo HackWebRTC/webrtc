@@ -243,6 +243,12 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio,
 
       ++handle_index;
     }
+    for (size_t band = 1u; band < audio->num_bands(); ++band) {
+      memset(audio->split_bands(capture)[band],
+             0,
+             audio->num_frames_per_band() *
+                 sizeof(audio->split_bands(capture)[band][0]));
+    }
   }
   return AudioProcessing::kNoError;
 }
