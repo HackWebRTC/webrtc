@@ -10,12 +10,11 @@
 
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
+#include <vector>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface RTCAudioSession ()
-
-/** The delegates. */
-@property(nonatomic, readonly) NSSet *delegates;
 
 /** Number of times setActive:YES has succeeded without a balanced call to
  *  setActive:NO.
@@ -23,6 +22,23 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSInteger activationCount;
 
 - (BOOL)checkLock:(NSError **)outError;
+
+/** Adds the delegate to the list of delegates, and places it at the front of
+ *  the list. This delegate will be notified before other delegates of
+ *  audio events.
+ */
+- (void)pushDelegate:(id<RTCAudioSessionDelegate>)delegate;
+
+// Properties and methods for tests.
+@property(nonatomic, readonly)
+    std::vector<__weak id<RTCAudioSessionDelegate> > delegates;
+- (void)notifyDidBeginInterruption;
+- (void)notifyDidEndInterruptionWithShouldResumeSession:
+    (BOOL)shouldResumeSession;
+- (void)notifyDidChangeRouteWithReason:(AVAudioSessionRouteChangeReason)reason
+    previousRoute:(AVAudioSessionRouteDescription *)previousRoute;
+- (void)notifyMediaServicesWereLost;
+- (void)notifyMediaServicesWereReset;
 
 @end
 

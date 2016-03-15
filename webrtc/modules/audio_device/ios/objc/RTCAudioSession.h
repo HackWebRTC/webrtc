@@ -122,10 +122,7 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 /** Default constructor. Do not call init. */
 + (instancetype)sharedInstance;
 
-/** Adds a delegate, which is held weakly. Even though it's held weakly, callers
- *  should still call |removeDelegate| when it's no longer required to ensure
- *  proper dealloc. This is due to internal use of an NSHashTable.
- */
+/** Adds a delegate, which is held weakly. */
 - (void)addDelegate:(id<RTCAudioSessionDelegate>)delegate;
 /** Removes an added delegate. */
 - (void)removeDelegate:(id<RTCAudioSessionDelegate>)delegate;

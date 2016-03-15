@@ -481,6 +481,9 @@
                 'audio_device/ios/audio_device_unittest_ios.cc',
                 'audio_device/ios/objc/RTCAudioSessionTest.mm',
               ],
+              'xcode_settings': {
+                'OTHER_LDFLAGS': ['-ObjC'],
+              },
               # This needs to be kept in sync with modules_unittests.isolate.
               'mac_bundle_resources': [
                 '<(DEPTH)/data/audio_processing/output_data_float.pb',

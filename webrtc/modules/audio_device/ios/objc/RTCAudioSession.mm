@@ -12,6 +12,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/modules/audio_device/ios/audio_device_ios.h"
 
 #import "webrtc/base/objc/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
@@ -26,7 +27,6 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 @implementation RTCAudioSession {
   rtc::CriticalSection _crit;
   AVAudioSession *_session;
-  NSHashTable *_delegates;
   NSInteger _activationCount;
   NSInteger _lockRecursionCount;
   BOOL _isActive;
@@ -34,6 +34,7 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 }
 
 @synthesize session = _session;
+@synthesize delegates = _delegates;
 
 + (instancetype)sharedInstance {
   static dispatch_once_t onceToken;
@@ -47,7 +48,6 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 - (instancetype)init {
   if (self = [super init]) {
     _session = [AVAudioSession sharedInstance];
-    _delegates = [NSHashTable weakObjectsHashTable];
 
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     [center addObserver:self
@@ -109,14 +109,24 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 }
 
 - (void)addDelegate:(id<RTCAudioSessionDelegate>)delegate {
+  if (!delegate) {
+    return;
+  }
   @synchronized(self) {
-    [_delegates addObject:delegate];
+    _delegates.push_back(delegate);
+    [self removeZeroedDelegates];
   }
 }
 
 - (void)removeDelegate:(id<RTCAudioSessionDelegate>)delegate {
+  if (!delegate) {
+    return;
+  }
   @synchronized(self) {
-    [_delegates removeObject:delegate];
+    _delegates.erase(std::remove(_delegates.begin(),
+                                 _delegates.end(),
+                                 delegate));
+    [self removeZeroedDelegates];
   }
 }
 
@@ -227,6 +237,8 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   return self.session.IOBufferDuration;
 }
 
+// TODO(tkchin): Simplify the amount of locking happening here. Likely that we
+// can just do atomic increments / decrements.
 - (BOOL)setActive:(BOOL)active
             error:(NSError **)outError {
   if (![self checkLock:outError]) {
@@ -459,9 +471,26 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   return error;
 }
 
-- (NSSet *)delegates {
+- (std::vector<__weak id<RTCAudioSessionDelegate> >)delegates {
   @synchronized(self) {
-    return _delegates.setRepresentation;
+    // Note: this returns a copy.
+    return _delegates;
+  }
+}
+
+- (void)pushDelegate:(id<RTCAudioSessionDelegate>)delegate {
+  @synchronized(self) {
+    _delegates.insert(_delegates.begin(), delegate);
+  }
+}
+
+- (void)removeZeroedDelegates {
+  @synchronized(self) {
+    for (auto it = _delegates.begin(); it != _delegates.end(); ++it) {
+      if (!*it) {
+        _delegates.erase(it);
+      }
+    }
   }
 }
 
@@ -513,14 +542,14 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 }
 
 - (void)notifyDidBeginInterruption {
-  for (id<RTCAudioSessionDelegate> delegate in self.delegates) {
+  for (auto delegate : self.delegates) {
     [delegate audioSessionDidBeginInterruption:self];
   }
 }
 
 - (void)notifyDidEndInterruptionWithShouldResumeSession:
     (BOOL)shouldResumeSession {
-  for (id<RTCAudioSessionDelegate> delegate in self.delegates) {
+  for (auto delegate : self.delegates) {
     [delegate audioSessionDidEndInterruption:self
                          shouldResumeSession:shouldResumeSession];
   }
@@ -529,7 +558,7 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 
 - (void)notifyDidChangeRouteWithReason:(AVAudioSessionRouteChangeReason)reason
     previousRoute:(AVAudioSessionRouteDescription *)previousRoute {
-  for (id<RTCAudioSessionDelegate> delegate in self.delegates) {
+  for (auto delegate : self.delegates) {
     [delegate audioSessionDidChangeRoute:self
                                   reason:reason
                            previousRoute:previousRoute];
@@ -537,13 +566,13 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 }
 
 - (void)notifyMediaServicesWereLost {
-  for (id<RTCAudioSessionDelegate> delegate in self.delegates) {
+  for (auto delegate : self.delegates) {
     [delegate audioSessionMediaServicesWereLost:self];
   }
 }
 
 - (void)notifyMediaServicesWereReset {
-  for (id<RTCAudioSessionDelegate> delegate in self.delegates) {
+  for (auto delegate : self.delegates) {
     [delegate audioSessionMediaServicesWereReset:self];
   }
 }

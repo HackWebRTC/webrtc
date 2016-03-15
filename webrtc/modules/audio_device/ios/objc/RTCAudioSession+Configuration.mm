@@ -49,7 +49,8 @@
     }
   }
 
-  if (self.sampleRate != configuration.sampleRate) {
+  // self.sampleRate is accurate only if the audio session is active.
+  if (!self.isActive || self.sampleRate != configuration.sampleRate) {
     NSError *sampleRateError = nil;
     if (![self setPreferredSampleRate:configuration.sampleRate
                                 error:&sampleRateError]) {
@@ -59,7 +60,9 @@
     }
   }
 
-  if (self.IOBufferDuration != configuration.ioBufferDuration) {
+  // self.IOBufferDuration is accurate only if the audio session is active.
+  if (!self.isActive ||
+      self.IOBufferDuration != configuration.ioBufferDuration) {
     NSError *bufferDurationError = nil;
     if (![self setPreferredIOBufferDuration:configuration.ioBufferDuration
                                       error:&bufferDurationError]) {

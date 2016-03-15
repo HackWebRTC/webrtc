@@ -15,8 +15,14 @@
 
 #include <AudioUnit/AudioUnit.h>
 
+#include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/objc/RTCMacros.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/modules/audio_device/ios/audio_session_observer.h"
+
+RTC_FWD_DECL_OBJC_CLASS(RTCAudioSessionDelegateAdapter);
 
 namespace webrtc {
 
@@ -35,7 +41,8 @@ class FineAudioBuffer;
 // Recorded audio will be delivered on a real-time internal I/O thread in the
 // audio unit. The audio unit will also ask for audio data to play out on this
 // same thread.
-class AudioDeviceIOS : public AudioDeviceGeneric {
+class AudioDeviceIOS : public AudioDeviceGeneric,
+                       public AudioSessionObserver {
  public:
   AudioDeviceIOS();
   ~AudioDeviceIOS();
@@ -151,15 +158,20 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   void ClearRecordingWarning() override {}
   void ClearRecordingError() override {}
 
+  // AudioSessionObserver methods. May be called from any thread.
+  void OnInterruptionBegin() override;
+  void OnInterruptionEnd() override;
+  void OnValidRouteChange() override;
+
  private:
+  // Called by the relevant AudioSessionObserver methods on |thread_|.
+  void HandleInterruptionBegin();
+  void HandleInterruptionEnd();
+  void HandleValidRouteChange();
+
   // Uses current |playout_parameters_| and |record_parameters_| to inform the
   // audio device buffer (ADB) about our internal audio parameters.
   void UpdateAudioDeviceBuffer();
-
-  // Registers observers for the AVAudioSessionRouteChangeNotification and
-  // AVAudioSessionInterruptionNotification notifications.
-  void RegisterNotificationObservers();
-  void UnregisterNotificationObservers();
 
   // Since the preferred audio parameters are only hints to the OS, the actual
   // values may be different once the AVAudioSession has been activated.
@@ -218,6 +230,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // Ensures that methods are called from the same thread as this object is
   // created on.
   rtc::ThreadChecker thread_checker_;
+  // Thread that this object is created on.
+  rtc::Thread* thread_;
+  // Invoker used to execute methods on thread_.
+  std::unique_ptr<rtc::AsyncInvoker> async_invoker_;
 
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
   // AudioDeviceModuleImpl class and called by AudioDeviceModuleImpl::Create().
@@ -286,9 +302,11 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   // Set to true after successful call to InitPlayout(), false otherwise.
   bool play_is_initialized_;
 
+  // Set to true if audio session is interrupted, false otherwise.
+  bool is_interrupted_;
+
   // Audio interruption observer instance.
-  void* audio_interruption_observer_;
-  void* route_change_observer_;
+  RTCAudioSessionDelegateAdapter* audio_session_observer_;
 
   // Contains the audio data format specification for a stream of audio.
   AudioStreamBasicDescription application_format_;
