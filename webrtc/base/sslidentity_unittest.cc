@@ -392,12 +392,16 @@ class SSLIdentityExpirationTest : public testing::Test {
     for (int i = 0; i < times; i++) {
       // We limit the time to < 2^31 here, i.e., we stay before 2038, since else
       // we hit time offset limitations in OpenSSL on some 32-bit systems.
-      time_t now = time(NULL);
-      time_t lifetime = rtc::CreateRandomId() % (0x80000000 - now);
+      time_t time_before_generation = time(nullptr);
+      time_t lifetime =
+          rtc::CreateRandomId() % (0x80000000 - time_before_generation);
       rtc::KeyParams key_params = rtc::KeyParams::ECDSA(rtc::EC_NIST_P256);
       SSLIdentity* identity =
           rtc::SSLIdentity::Generate("", key_params, lifetime);
-      EXPECT_EQ(now + lifetime,
+      time_t time_after_generation = time(nullptr);
+      EXPECT_LE(time_before_generation + lifetime,
+                identity->certificate().CertificateExpirationTime());
+      EXPECT_GE(time_after_generation + lifetime,
                 identity->certificate().CertificateExpirationTime());
       delete identity;
     }
