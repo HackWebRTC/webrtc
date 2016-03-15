@@ -27,16 +27,15 @@ class AudioBuffer;
 
 class GainControlImpl : public GainControl {
  public:
-  GainControlImpl(const AudioProcessing* apm,
-                  rtc::CriticalSection* crit_render,
+  GainControlImpl(rtc::CriticalSection* crit_render,
                   rtc::CriticalSection* crit_capture);
   ~GainControlImpl() override;
 
   int ProcessRenderAudio(AudioBuffer* audio);
   int AnalyzeCaptureAudio(AudioBuffer* audio);
-  int ProcessCaptureAudio(AudioBuffer* audio);
+  int ProcessCaptureAudio(AudioBuffer* audio, bool stream_has_echo);
 
-  void Initialize();
+  void Initialize(size_t num_proc_channels, int sample_rate_hz);
 
   // GainControl implementation.
   bool is_enabled() const override;
@@ -64,13 +63,8 @@ class GainControlImpl : public GainControl {
   int analog_level_maximum() const override;
   bool stream_is_saturated() const override;
 
-  size_t num_handles_required() const;
-
   void AllocateRenderQueue();
   int Configure();
-
-  // Not guarded as its public API is thread safe.
-  const AudioProcessing* apm_;
 
   rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection* const crit_capture_;
@@ -98,6 +92,9 @@ class GainControlImpl : public GainControl {
       render_signal_queue_;
 
   std::vector<std::unique_ptr<GainController>> gain_controllers_;
+
+  rtc::Optional<size_t> num_proc_channels_ GUARDED_BY(crit_capture_);
+  rtc::Optional<int> sample_rate_hz_ GUARDED_BY(crit_capture_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(GainControlImpl);
 };

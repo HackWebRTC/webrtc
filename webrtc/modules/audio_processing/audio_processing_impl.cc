@@ -172,7 +172,7 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
     public_submodules_->echo_control_mobile.reset(
         new EchoControlMobileImpl(this, &crit_render_, &crit_capture_));
     public_submodules_->gain_control.reset(
-        new GainControlImpl(this, &crit_capture_, &crit_capture_));
+        new GainControlImpl(&crit_capture_, &crit_capture_));
     public_submodules_->high_pass_filter.reset(
         new HighPassFilterImpl(&crit_capture_));
     public_submodules_->level_estimator.reset(
@@ -718,7 +718,8 @@ int AudioProcessingImpl::ProcessStreamLocked() {
         ca->split_bands_const(0)[kBand0To8kHz], ca->num_frames_per_band(),
         capture_nonlocked_.split_rate);
   }
-  RETURN_ON_ERR(public_submodules_->gain_control->ProcessCaptureAudio(ca));
+  RETURN_ON_ERR(public_submodules_->gain_control->ProcessCaptureAudio(
+      ca, echo_cancellation()->stream_has_echo()));
 
   if (synthesis_needed(data_processed)) {
     ca->MergeFrequencyBands();
@@ -1221,7 +1222,8 @@ void AudioProcessingImpl::InitializeEchoCanceller() {
 }
 
 void AudioProcessingImpl::InitializeGainController() {
-  public_submodules_->gain_control->Initialize();
+  public_submodules_->gain_control->Initialize(num_proc_channels(),
+                                               proc_sample_rate_hz());
 }
 
 void AudioProcessingImpl::InitializeEchoControlMobile() {

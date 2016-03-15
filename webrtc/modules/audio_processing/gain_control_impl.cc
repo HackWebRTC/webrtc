@@ -90,11 +90,9 @@ class GainControlImpl::GainController {
   RTC_DISALLOW_COPY_AND_ASSIGN(GainController);
 };
 
-GainControlImpl::GainControlImpl(const AudioProcessing* apm,
-                                 rtc::CriticalSection* crit_render,
+GainControlImpl::GainControlImpl(rtc::CriticalSection* crit_render,
                                  rtc::CriticalSection* crit_capture)
-    : apm_(apm),
-      crit_render_(crit_render),
+    : crit_render_(crit_render),
       crit_capture_(crit_capture),
       mode_(kAdaptiveAnalog),
       minimum_capture_level_(0),
@@ -106,7 +104,6 @@ GainControlImpl::GainControlImpl(const AudioProcessing* apm,
       was_analog_level_set_(false),
       stream_is_saturated_(false),
       render_queue_element_max_size_(0) {
-  RTC_DCHECK(apm);
   RTC_DCHECK(crit_render);
   RTC_DCHECK(crit_capture);
 }
@@ -159,8 +156,10 @@ void GainControlImpl::ReadQueuedRenderData() {
 
   while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
     size_t buffer_index = 0;
+    RTC_DCHECK(num_proc_channels_);
+    RTC_DCHECK_LT(0ul, *num_proc_channels_);
     const size_t num_frames_per_band =
-        capture_queue_buffer_.size() / num_handles_required();
+        capture_queue_buffer_.size() / (*num_proc_channels_);
     for (auto& gain_controller : gain_controllers_) {
       WebRtcAgc_AddFarend(gain_controller->state(),
                           &capture_queue_buffer_[buffer_index],
@@ -178,9 +177,10 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
     return AudioProcessing::kNoError;
   }
 
+  RTC_DCHECK(num_proc_channels_);
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(), num_handles_required());
-  RTC_DCHECK_LE(num_handles_required(), gain_controllers_.size());
+  RTC_DCHECK_EQ(audio->num_channels(), *num_proc_channels_);
+  RTC_DCHECK_LE(*num_proc_channels_, gain_controllers_.size());
 
   if (mode_ == kAdaptiveAnalog) {
     int capture_channel = 0;
@@ -216,7 +216,8 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
   return AudioProcessing::kNoError;
 }
 
-int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
+int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio,
+                                         bool stream_has_echo) {
   rtc::CritScope cs(crit_capture_);
 
   if (!enabled_) {
@@ -227,8 +228,9 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
+  RTC_DCHECK(num_proc_channels_);
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(), num_handles_required());
+  RTC_DCHECK_EQ(audio->num_channels(), *num_proc_channels_);
 
   stream_is_saturated_ = false;
   int capture_channel = 0;
@@ -243,7 +245,7 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
         audio->num_bands(), audio->num_frames_per_band(),
         audio->split_bands(capture_channel),
         gain_controller->get_capture_level(), &capture_level_out,
-        apm_->echo_cancellation()->stream_has_echo(), &saturation_warning);
+        stream_has_echo, &saturation_warning);
 
     if (err != AudioProcessing::kNoError) {
       return AudioProcessing::kUnspecifiedError;
@@ -257,6 +259,7 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
     ++capture_channel;
   }
 
+  RTC_DCHECK_LT(0ul, *num_proc_channels_);
   if (mode_ == kAdaptiveAnalog) {
     // Take the analog level to be the average across the handles.
     analog_capture_level_ = 0;
@@ -264,7 +267,7 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       analog_capture_level_ += gain_controller->get_capture_level();
     }
 
-    analog_capture_level_ /= num_handles_required();
+    analog_capture_level_ /= (*num_proc_channels_);
   }
 
   was_analog_level_set_ = false;
@@ -297,7 +300,10 @@ int GainControlImpl::Enable(bool enable) {
   rtc::CritScope cs_capture(crit_capture_);
   if (enable && !enabled_) {
     enabled_ = enable;  // Must be set before Initialize() is called.
-    Initialize();
+
+    RTC_DCHECK(num_proc_channels_);
+    RTC_DCHECK(sample_rate_hz_);
+    Initialize(*num_proc_channels_, *sample_rate_hz_);
   } else {
     enabled_ = enable;
   }
@@ -317,7 +323,9 @@ int GainControlImpl::set_mode(Mode mode) {
   }
 
   mode_ = mode;
-  Initialize();
+  RTC_DCHECK(num_proc_channels_);
+  RTC_DCHECK(sample_rate_hz_);
+  Initialize(*num_proc_channels_, *sample_rate_hz_);
   return AudioProcessing::kNoError;
 }
 
@@ -344,7 +352,9 @@ int GainControlImpl::set_analog_level_limits(int minimum,
   minimum_capture_level_ = minimum;
   maximum_capture_level_ = maximum;
 
-  Initialize();
+  RTC_DCHECK(num_proc_channels_);
+  RTC_DCHECK(sample_rate_hz_);
+  Initialize(*num_proc_channels_, *sample_rate_hz_);
   return AudioProcessing::kNoError;
 }
 
@@ -408,21 +418,24 @@ bool GainControlImpl::is_limiter_enabled() const {
   return limiter_enabled_;
 }
 
-void GainControlImpl::Initialize() {
+void GainControlImpl::Initialize(size_t num_proc_channels, int sample_rate_hz) {
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
+
+  num_proc_channels_ = rtc::Optional<size_t>(num_proc_channels);
+  sample_rate_hz_ = rtc::Optional<int>(sample_rate_hz);
+
   if (!enabled_) {
     return;
   }
 
-  int sample_rate_hz = apm_->proc_sample_rate_hz();
-  gain_controllers_.resize(num_handles_required());
+  gain_controllers_.resize(*num_proc_channels_);
   for (auto& gain_controller : gain_controllers_) {
     if (!gain_controller) {
       gain_controller.reset(new GainController());
     }
     gain_controller->Initialize(minimum_capture_level_, maximum_capture_level_,
-                                mode_, sample_rate_hz, analog_capture_level_);
+                                mode_, *sample_rate_hz_, analog_capture_level_);
   }
 
   Configure();
@@ -431,12 +444,13 @@ void GainControlImpl::Initialize() {
 }
 
 void GainControlImpl::AllocateRenderQueue() {
-  const size_t new_render_queue_element_max_size = std::max<size_t>(
-      static_cast<size_t>(1),
-      kMaxAllowedValuesOfSamplesPerFrame * num_handles_required());
-
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
+
+  RTC_DCHECK(num_proc_channels_);
+  const size_t new_render_queue_element_max_size = std::max<size_t>(
+      static_cast<size_t>(1),
+      kMaxAllowedValuesOfSamplesPerFrame * (*num_proc_channels_));
 
   if (render_queue_element_max_size_ < new_render_queue_element_max_size) {
     render_queue_element_max_size_ = new_render_queue_element_max_size;
@@ -476,10 +490,5 @@ int GainControlImpl::Configure() {
     }
   }
   return error;
-}
-
-size_t GainControlImpl::num_handles_required() const {
-  // Not locked as it only relies on APM public API which is threadsafe.
-  return apm_->num_proc_channels();
 }
 }  // namespace webrtc
