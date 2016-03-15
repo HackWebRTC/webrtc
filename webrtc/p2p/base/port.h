@@ -332,9 +332,11 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // with this port's username fragment, msg will contain the parsed STUN
   // message.  Otherwise, the function may send a STUN response internally.
   // remote_username contains the remote fragment of the STUN username.
-  bool GetStunMessage(const char* data, size_t size,
+  bool GetStunMessage(const char* data,
+                      size_t size,
                       const rtc::SocketAddress& addr,
-                      IceMessage** out_msg, std::string* out_username);
+                      rtc::scoped_ptr<IceMessage>* out_msg,
+                      std::string* out_username);
 
   // Checks if the address in addr is compatible with the port's ip.
   bool IsCompatibleAddress(const rtc::SocketAddress& addr);

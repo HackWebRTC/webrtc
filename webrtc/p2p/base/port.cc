@@ -288,7 +288,7 @@ void Port::OnReadPacket(
   // send back a proper binding response.
   rtc::scoped_ptr<IceMessage> msg;
   std::string remote_username;
-  if (!GetStunMessage(data, size, addr, msg.accept(), &remote_username)) {
+  if (!GetStunMessage(data, size, addr, &msg, &remote_username)) {
     LOG_J(LS_ERROR, this) << "Received non-STUN packet from unknown address ("
                           << addr.ToSensitiveString() << ")";
   } else if (!msg) {
@@ -330,15 +330,16 @@ size_t Port::AddPrflxCandidate(const Candidate& local) {
   return (candidates_.size() - 1);
 }
 
-bool Port::GetStunMessage(const char* data, size_t size,
+bool Port::GetStunMessage(const char* data,
+                          size_t size,
                           const rtc::SocketAddress& addr,
-                          IceMessage** out_msg, std::string* out_username) {
+                          rtc::scoped_ptr<IceMessage>* out_msg,
+                          std::string* out_username) {
   // NOTE: This could clearly be optimized to avoid allocating any memory.
   //       However, at the data rates we'll be looking at on the client side,
   //       this probably isn't worth worrying about.
   ASSERT(out_msg != NULL);
   ASSERT(out_username != NULL);
-  *out_msg = NULL;
   out_username->clear();
 
   // Don't bother parsing the packet if we can tell it's not STUN.
@@ -422,7 +423,7 @@ bool Port::GetStunMessage(const char* data, size_t size,
   }
 
   // Return the STUN message found.
-  *out_msg = stun_msg.release();
+  *out_msg = std::move(stun_msg);
   return true;
 }
 
@@ -902,7 +903,7 @@ void Connection::OnReadPacket(
   rtc::scoped_ptr<IceMessage> msg;
   std::string remote_ufrag;
   const rtc::SocketAddress& addr(remote_candidate_.address());
-  if (!port_->GetStunMessage(data, size, addr, msg.accept(), &remote_ufrag)) {
+  if (!port_->GetStunMessage(data, size, addr, &msg, &remote_ufrag)) {
     // The packet did not parse as a valid STUN message
     // This is a data packet, pass it along.
     set_receiving(true);
