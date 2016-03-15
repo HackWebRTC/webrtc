@@ -384,6 +384,10 @@ void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {
 
 int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
                                     const VideoFrame& video_frame) {
+  int64_t sync_offset_ms;
+  if (vie_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms))
+    stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms);
+
   // TODO(pbos): Wire up config_.render->IsTextureSupported() and convert if not
   // supported. Or provide methods for converting a texture frame in
   // VideoFrame.

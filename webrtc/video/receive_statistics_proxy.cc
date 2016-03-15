@@ -59,6 +59,10 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedWidthInPixels", width);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.ReceivedHeightInPixels", height);
   }
+  int sync_offset_ms = sync_offset_counter_.Avg(kMinRequiredSamples);
+  if (sync_offset_ms != -1)
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.AVSyncOffsetInMs", sync_offset_ms);
+
   int qp = qp_counters_.vp8.Avg(kMinRequiredSamples);
   if (qp != -1)
     RTC_HISTOGRAM_COUNTS_200("WebRTC.Video.Decoded.Vp8.Qp", qp);
@@ -237,6 +241,12 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
     if (delay_ms >= 0)
       delay_counter_.Add(delay_ms);
   }
+}
+
+void ReceiveStatisticsProxy::OnSyncOffsetUpdated(int64_t sync_offset_ms) {
+  rtc::CritScope lock(&crit_);
+  sync_offset_counter_.Add(std::abs(sync_offset_ms));
+  stats_.sync_offset_ms = sync_offset_ms;
 }
 
 void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,

@@ -7,7 +7,9 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -33,6 +35,7 @@
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/frame_generator_capturer.h"
+#include "webrtc/test/histogram.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
@@ -71,100 +74,35 @@ class CallPerfTest : public test::CallTest {
                           int run_time_ms);
 };
 
-class SyncRtcpObserver : public test::RtpRtcpObserver {
- public:
-  SyncRtcpObserver() : test::RtpRtcpObserver(CallPerfTest::kLongTimeoutMs) {}
-
-  Action OnSendRtcp(const uint8_t* packet, size_t length) override {
-    RTCPUtility::RTCPParserV2 parser(packet, length, true);
-    EXPECT_TRUE(parser.IsValid());
-
-    for (RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-         packet_type != RTCPUtility::RTCPPacketTypes::kInvalid;
-         packet_type = parser.Iterate()) {
-      if (packet_type == RTCPUtility::RTCPPacketTypes::kSr) {
-        const RTCPUtility::RTCPPacket& packet = parser.Packet();
-        RtcpMeasurement ntp_rtp_pair(
-            packet.SR.NTPMostSignificant,
-            packet.SR.NTPLeastSignificant,
-            packet.SR.RTPTimestamp);
-        StoreNtpRtpPair(ntp_rtp_pair);
-      }
-    }
-    return SEND_PACKET;
-  }
-
-  int64_t RtpTimestampToNtp(uint32_t timestamp) const {
-    rtc::CritScope lock(&crit_);
-    int64_t timestamp_in_ms = -1;
-    if (ntp_rtp_pairs_.size() == 2) {
-      // TODO(stefan): We can't EXPECT_TRUE on this call due to a bug in the
-      // RTCP sender where it sends RTCP SR before any RTP packets, which leads
-      // to a bogus NTP/RTP mapping.
-      RtpToNtpMs(timestamp, ntp_rtp_pairs_, &timestamp_in_ms);
-      return timestamp_in_ms;
-    }
-    return -1;
-  }
-
- private:
-  void StoreNtpRtpPair(RtcpMeasurement ntp_rtp_pair) {
-    rtc::CritScope lock(&crit_);
-    for (RtcpList::iterator it = ntp_rtp_pairs_.begin();
-         it != ntp_rtp_pairs_.end();
-         ++it) {
-      if (ntp_rtp_pair.ntp_secs == it->ntp_secs &&
-          ntp_rtp_pair.ntp_frac == it->ntp_frac) {
-        // This RTCP has already been added to the list.
-        return;
-      }
-    }
-    // We need two RTCP SR reports to map between RTP and NTP. More than two
-    // will not improve the mapping.
-    if (ntp_rtp_pairs_.size() == 2) {
-      ntp_rtp_pairs_.pop_back();
-    }
-    ntp_rtp_pairs_.push_front(ntp_rtp_pair);
-  }
-
-  rtc::CriticalSection crit_;
-  RtcpList ntp_rtp_pairs_ GUARDED_BY(crit_);
-};
-
-class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
+class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
+                                 public VideoRenderer {
   static const int kInSyncThresholdMs = 50;
   static const int kStartupTimeMs = 2000;
   static const int kMinRunTimeMs = 30000;
 
  public:
-  VideoRtcpAndSyncObserver(Clock* clock,
-                           int voe_channel,
-                           VoEVideoSync* voe_sync,
-                           SyncRtcpObserver* audio_observer)
-      : clock_(clock),
-        voe_channel_(voe_channel),
-        voe_sync_(voe_sync),
-        audio_observer_(audio_observer),
+  explicit VideoRtcpAndSyncObserver(Clock* clock)
+      : test::RtpRtcpObserver(CallPerfTest::kLongTimeoutMs),
+        clock_(clock),
         creation_time_ms_(clock_->TimeInMilliseconds()),
-        first_time_in_sync_(-1) {}
+        first_time_in_sync_(-1),
+        receive_stream_(nullptr) {}
 
   void RenderFrame(const VideoFrame& video_frame,
                    int time_to_render_ms) override {
+    VideoReceiveStream::Stats stats;
+    {
+      rtc::CritScope lock(&crit_);
+      if (receive_stream_)
+        stats = receive_stream_->GetStats();
+    }
+    if (stats.sync_offset_ms == std::numeric_limits<int>::max())
+      return;
+
     int64_t now_ms = clock_->TimeInMilliseconds();
-    uint32_t playout_timestamp = 0;
-    if (voe_sync_->GetPlayoutTimestamp(voe_channel_, playout_timestamp) != 0)
-      return;
-    int64_t latest_audio_ntp =
-        audio_observer_->RtpTimestampToNtp(playout_timestamp);
-    int64_t latest_video_ntp = RtpTimestampToNtp(video_frame.timestamp());
-    if (latest_audio_ntp < 0 || latest_video_ntp < 0)
-      return;
-    int time_until_render_ms =
-        std::max(0, static_cast<int>(video_frame.render_time_ms() - now_ms));
-    latest_video_ntp += time_until_render_ms;
-    int64_t stream_offset = latest_audio_ntp - latest_video_ntp;
+
     std::stringstream ss;
-    ss << stream_offset;
+    ss << stats.sync_offset_ms;
     webrtc::test::PrintResult("stream_offset",
                               "",
                               "synchronization",
@@ -176,7 +114,7 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
     // estimated as being synchronized. We don't want to trigger on those.
     if (time_since_creation < kStartupTimeMs)
       return;
-    if (std::abs(latest_audio_ntp - latest_video_ntp) < kInSyncThresholdMs) {
+    if (std::abs(stats.sync_offset_ms) < kInSyncThresholdMs) {
       if (first_time_in_sync_ == -1) {
         first_time_in_sync_ = now_ms;
         webrtc::test::PrintResult("sync_convergence_time",
@@ -193,13 +131,17 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
 
   bool IsTextureSupported() const override { return false; }
 
+  void set_receive_stream(VideoReceiveStream* receive_stream) {
+    rtc::CritScope lock(&crit_);
+    receive_stream_ = receive_stream;
+  }
+
  private:
   Clock* const clock_;
-  const int voe_channel_;
-  VoEVideoSync* const voe_sync_;
-  SyncRtcpObserver* const audio_observer_;
   const int64_t creation_time_ms_;
   int64_t first_time_in_sync_;
+  rtc::CriticalSection crit_;
+  VideoReceiveStream* receive_stream_ GUARDED_BY(crit_);
 };
 
 void CallPerfTest::TestAudioVideoSync(FecMode fec,
@@ -238,11 +180,11 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     std::unique_ptr<RtpHeaderParser> parser_;
   };
 
+  test::ClearHistograms();
   VoiceEngine* voice_engine = VoiceEngine::Create();
   VoEBase* voe_base = VoEBase::GetInterface(voice_engine);
   VoECodec* voe_codec = VoECodec::GetInterface(voice_engine);
   VoENetwork* voe_network = VoENetwork::GetInterface(voice_engine);
-  VoEVideoSync* voe_sync = VoEVideoSync::GetInterface(voice_engine);
   const std::string audio_filename =
       test::ResourcePath("voice_engine/audio_long16", "pcm");
   ASSERT_STRNE("", audio_filename.c_str());
@@ -253,8 +195,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   voe_config.Set<VoicePacing>(new VoicePacing(true));
   int send_channel_id = voe_base->CreateChannel(voe_config);
   int recv_channel_id = voe_base->CreateChannel();
-
-  SyncRtcpObserver audio_observer;
 
   AudioState::Config send_audio_state_config;
   send_audio_state_config.voice_engine = voice_engine;
@@ -267,14 +207,16 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   AudioPacketReceiver voe_send_packet_receiver(send_channel_id, voe_network);
   AudioPacketReceiver voe_recv_packet_receiver(recv_channel_id, voe_network);
 
+  VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock());
+
   FakeNetworkPipe::Config net_config;
   net_config.queue_delay_ms = 500;
   net_config.loss_percent = 5;
   test::PacketTransport audio_send_transport(
-      nullptr, &audio_observer, test::PacketTransport::kSender, net_config);
+      nullptr, &observer, test::PacketTransport::kSender, net_config);
   audio_send_transport.SetReceiver(&voe_recv_packet_receiver);
   test::PacketTransport audio_receive_transport(
-      nullptr, &audio_observer, test::PacketTransport::kReceiver, net_config);
+      nullptr, &observer, test::PacketTransport::kReceiver, net_config);
   audio_receive_transport.SetReceiver(&voe_send_packet_receiver);
 
   internal::TransportAdapter send_transport_adapter(&audio_send_transport);
@@ -286,9 +228,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   recv_transport_adapter.Enable();
   EXPECT_EQ(0, voe_network->RegisterExternalTransport(recv_channel_id,
                                                       recv_transport_adapter));
-
-  VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock(), recv_channel_id,
-                                    voe_sync, &audio_observer);
 
   test::PacketTransport sync_send_transport(sender_call_.get(), &observer,
                                             test::PacketTransport::kSender,
@@ -341,7 +280,8 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     audio_receive_stream =
         receiver_call_->CreateAudioReceiveStream(audio_recv_config);
   }
-
+  EXPECT_EQ(1u, video_receive_streams_.size());
+  observer.set_receive_stream(video_receive_streams_[0]);
   DriftingClock drifting_clock(clock_, video_ntp_speed);
   CreateFrameGeneratorCapturerWithDrift(&drifting_clock, video_rtp_speed);
 
@@ -376,11 +316,12 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   voe_base->Release();
   voe_codec->Release();
   voe_network->Release();
-  voe_sync->Release();
 
   DestroyCalls();
 
   VoiceEngine::Delete(voice_engine);
+
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.AVSyncOffsetInMs"));
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {

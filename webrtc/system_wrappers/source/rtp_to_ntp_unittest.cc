@@ -12,6 +12,10 @@
 #include "webrtc/system_wrappers/include/rtp_to_ntp.h"
 
 namespace webrtc {
+namespace {
+const uint32_t kOneMsInNtpFrac = 4294967;
+const uint32_t kTimestampTicksPerMs = 90;
+}  // namespace
 
 TEST(WrapAroundTests, NoWrap) {
   EXPECT_EQ(0, CheckForWrapArounds(0xFFFFFFFF, 0xFFFFFFFE));
@@ -38,8 +42,6 @@ TEST(WrapAroundTests, OldRtcpWrapped) {
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 0;
   uint32_t timestamp = 0;
-  const uint32_t kOneMsInNtpFrac = 4294967;
-  const uint32_t kTimestampTicksPerMs = 90;
   rtcp.push_front(RtcpMeasurement(ntp_sec, ntp_frac, timestamp));
   ntp_frac += kOneMsInNtpFrac;
   timestamp -= kTimestampTicksPerMs;
@@ -57,8 +59,6 @@ TEST(WrapAroundTests, NewRtcpWrapped) {
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 0;
   uint32_t timestamp = 0xFFFFFFFF;
-  const uint32_t kOneMsInNtpFrac = 4294967;
-  const uint32_t kTimestampTicksPerMs = 90;
   rtcp.push_front(RtcpMeasurement(ntp_sec, ntp_frac, timestamp));
   ntp_frac += kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
@@ -71,8 +71,6 @@ TEST(WrapAroundTests, NewRtcpWrapped) {
 }
 
 TEST(WrapAroundTests, RtpWrapped) {
-  const uint32_t kOneMsInNtpFrac = 4294967;
-  const uint32_t kTimestampTicksPerMs = 90;
   RtcpList rtcp;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 0;
@@ -91,8 +89,6 @@ TEST(WrapAroundTests, RtpWrapped) {
 }
 
 TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
-  const uint32_t kOneMsInNtpFrac = 4294967;
-  const uint32_t kTimestampTicksPerMs = 90;
   RtcpList rtcp;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 0;
@@ -108,8 +104,6 @@ TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
 }
 
 TEST(WrapAroundTests, OldRtp_NewRtcpWrapped) {
-  const uint32_t kOneMsInNtpFrac = 4294967;
-  const uint32_t kTimestampTicksPerMs = 90;
   RtcpList rtcp;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 0;
@@ -128,8 +122,6 @@ TEST(WrapAroundTests, OldRtp_NewRtcpWrapped) {
 }
 
 TEST(WrapAroundTests, OldRtp_OldRtcpWrapped) {
-  const uint32_t kOneMsInNtpFrac = 4294967;
-  const uint32_t kTimestampTicksPerMs = 90;
   RtcpList rtcp;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 0;

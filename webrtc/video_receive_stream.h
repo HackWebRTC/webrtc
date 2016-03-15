@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VIDEO_RECEIVE_STREAM_H_
 #define WEBRTC_VIDEO_RECEIVE_STREAM_H_
 
+#include <limits>
 #include <map>
 #include <string>
 #include <vector>
@@ -65,6 +66,8 @@ class VideoReceiveStream : public ReceiveStream {
 
     int total_bitrate_bps = 0;
     int discarded_packets = 0;
+
+    int sync_offset_ms = std::numeric_limits<int>::max();
 
     uint32_t ssrc = 0;
     std::string c_name;

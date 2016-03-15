@@ -60,10 +60,6 @@ bool StreamSynchronization::ComputeRelativeDelay(
     const Measurements& video_measurement,
     int* relative_delay_ms) {
   assert(relative_delay_ms);
-  if (audio_measurement.rtcp.size() < 2 || video_measurement.rtcp.size() < 2) {
-    // We need two RTCP SR reports per stream to do synchronization.
-    return false;
-  }
   int64_t audio_last_capture_time_ms;
   if (!RtpToNtpMs(audio_measurement.latest_timestamp,
                   audio_measurement.rtcp,

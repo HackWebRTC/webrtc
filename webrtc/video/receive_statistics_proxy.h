@@ -46,6 +46,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   void OnDecodedFrame();
   void OnRenderedFrame(const VideoFrame& frame);
+  void OnSyncOffsetUpdated(int64_t sync_offset_ms);
   void OnIncomingPayloadType(int payload_type);
   void OnDecoderImplementationName(const char* implementation_name);
   void OnIncomingRate(unsigned int framerate, unsigned int bitrate_bps);
@@ -106,6 +107,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   rtc::RateTracker render_pixel_tracker_ GUARDED_BY(crit_);
   SampleCounter render_width_counter_ GUARDED_BY(crit_);
   SampleCounter render_height_counter_ GUARDED_BY(crit_);
+  SampleCounter sync_offset_counter_ GUARDED_BY(crit_);
   SampleCounter decode_time_counter_ GUARDED_BY(crit_);
   SampleCounter delay_counter_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
