@@ -158,7 +158,8 @@ final class EglBase10 extends EglBase {
     int[] surfaceAttribs = {EGL10.EGL_WIDTH, width, EGL10.EGL_HEIGHT, height, EGL10.EGL_NONE};
     eglSurface = egl.eglCreatePbufferSurface(eglDisplay, eglConfig, surfaceAttribs);
     if (eglSurface == EGL10.EGL_NO_SURFACE) {
-      throw new RuntimeException("Failed to create pixel buffer surface");
+      throw new RuntimeException(
+          "Failed to create pixel buffer surface with size: " + width + "x" + height);
     }
   }
 

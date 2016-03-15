@@ -150,7 +150,10 @@ public class ThreadUtils {
         try {
           result.value = callable.call();
         } catch (Exception e) {
-          throw new RuntimeException("Callable threw exception: " + e);
+          final RuntimeException runtimeException =
+              new RuntimeException("Callable threw exception: " + e);
+          runtimeException.setStackTrace(e.getStackTrace());
+          throw runtimeException;
         }
         barrier.countDown();
       }
