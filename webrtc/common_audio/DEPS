@@ -1,5 +1,0 @@
-include_rules = [
-  "+third_party/openmax_dl",
-  "+webrtc/base",
-  "+webrtc/system_wrappers",
-]
