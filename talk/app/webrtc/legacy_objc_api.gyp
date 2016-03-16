@@ -178,6 +178,7 @@
                 'xcode_settings': {
                   'OTHER_LDFLAGS': [
                     '-framework Cocoa',
+                    '-framework OpenGL',
                   ],
                 },
               },

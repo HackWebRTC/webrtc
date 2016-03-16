@@ -236,6 +236,13 @@
                 'objc/RTCNSGLVideoView.h',
                 'objc/RTCNSGLVideoView.m',
               ],
+              'link_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework OpenGL',
+                  ],
+                },
+              },
             }],
           ],
         }

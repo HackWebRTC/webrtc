@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "webrtc/media/base/testutils.h"
-#include "webrtc/media/engine/fakewebrtcdeviceinfo.h"
 #include "webrtc/media/engine/webrtcvideocapturer.h"
 
 class FakeWebRtcVcmFactory;

@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/media/engine/fakewebrtcdeviceinfo.h"
 #include "webrtc/media/engine/fakewebrtcvideocapturemodule.h"
 #include "webrtc/media/engine/webrtcvideocapturer.h"
 

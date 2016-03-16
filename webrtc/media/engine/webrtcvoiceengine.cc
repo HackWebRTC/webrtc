@@ -61,7 +61,7 @@ const int kElevatedTraceFilter = kDefaultTraceFilter | webrtc::kTraceStateInfo |
 // -1 or 0 to select the default device.
 #ifdef WIN32
 const int kDefaultAudioDeviceId = -1;
-#else
+#elif !defined(WEBRTC_IOS)
 const int kDefaultAudioDeviceId = 0;
 #endif
 

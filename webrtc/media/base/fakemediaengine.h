@@ -750,11 +750,6 @@ class FakeVideoEngine : public FakeBaseEngine {
   const std::vector<VideoCodec>& codecs() const { return codecs_; }
   void SetCodecs(const std::vector<VideoCodec> codecs) { codecs_ = codecs; }
 
-  bool SetCaptureDevice(const Device* device) {
-    in_device_ = (device) ? device->name : "";
-    options_changed_ = true;
-    return true;
-  }
   bool SetCapture(bool capture) {
     capture_ = capture;
     return true;
@@ -763,7 +758,6 @@ class FakeVideoEngine : public FakeBaseEngine {
  private:
   std::vector<FakeVideoMediaChannel*> channels_;
   std::vector<VideoCodec> codecs_;
-  std::string in_device_;
   bool capture_;
   VideoOptions options_;
 

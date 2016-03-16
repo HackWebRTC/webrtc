@@ -78,7 +78,6 @@
         'base/videosourcebase.h',
         'base/yuvframegenerator.cc',
         'base/yuvframegenerator.h',
-        'devices/deviceinfo.h',
         'devices/videorendererfactory.h',
         'engine/nullwebrtcvideoengine.h',
         'engine/simulcast.cc',
@@ -123,17 +122,6 @@
         4389,  # signed/unsigned mismatch.
       ],
       'conditions': [
-        ['include_internal_device_management==1', {
-          'sources': [
-            'devices/devicemanager.cc',
-            'devices/devicemanager.h',
-          ],
-        }, {
-          'sources': [
-            'devices/dummydevicemanager.cc',
-            'devices/dummydevicemanager.h',
-          ],
-        }],
         ['build_libyuv==1', {
           'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',],
         }],
@@ -172,9 +160,6 @@
           'sources': [
             'devices/libudevsymboltable.cc',
             'devices/libudevsymboltable.h',
-            'devices/linuxdeviceinfo.cc',
-            'devices/linuxdevicemanager.cc',
-            'devices/linuxdevicemanager.h',
             'devices/v4llookup.cc',
             'devices/v4llookup.h',
           ],
@@ -209,51 +194,6 @@
             },
           },
         }],
-        ['OS=="win" and include_internal_device_management==1', {
-          'sources': [
-            'devices/win32deviceinfo.cc',
-            'devices/win32devicemanager.cc',
-            'devices/win32devicemanager.h',
-          ],
-          'msvs_settings': {
-            'VCLibrarianTool': {
-              'AdditionalDependencies': [
-                'winmm.lib',
-              ],
-            },
-          },
-        }],
-        ['OS=="mac" and include_internal_device_management==1', {
-          'sources': [
-            'devices/macdeviceinfo.cc',
-            'devices/macdevicemanager.cc',
-            'devices/macdevicemanager.h',
-            'devices/macdevicemanagermm.mm',
-          ],
-          'xcode_settings': {
-            'WARNING_CFLAGS': [
-              # TODO(perkj): Update macdevicemanager.cc to stop using
-              # deprecated functions and remove this flag.
-              '-Wno-deprecated-declarations',
-            ],
-            # Disable partial availability warning to prevent errors
-            # in macdevicemanagermm.mm using AVFoundation.
-            # https://code.google.com/p/webrtc/issues/detail?id=4695
-            'WARNING_CFLAGS!': ['-Wpartial-availability'],
-          },
-          'link_settings': {
-            'xcode_settings': {
-              'OTHER_LDFLAGS': [
-                '-weak_framework AVFoundation',
-                '-framework Cocoa',
-                '-framework CoreAudio',
-                '-framework CoreVideo',
-                '-framework OpenGL',
-                '-framework QTKit',
-              ],
-            },
-          },
-        }],
         ['OS=="mac" and target_arch=="ia32"', {
           'sources': [
             'devices/carbonvideorenderer.cc',
@@ -267,34 +207,9 @@
             },
           },
         }],
-        ['OS=="ios" and include_internal_device_management==1', {
-          'sources': [
-            'devices/mobiledevicemanager.cc',
-          ],
-          'include_dirs': [
-            # TODO(sjlee) Remove when vp8 is building for iOS.  vp8 pulls in
-            # libjpeg which pulls in libyuv which currently disabled.
-            '../../third_party/libyuv/include',
-          ],
-          # TODO(kjellander): Make the code compile without disabling these.
-          # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
-          'cflags': [
-            '-Wno-unused-const-variable',
-          ],
-          'xcode_settings': {
-            'WARNING_CFLAGS': [
-              '-Wno-unused-const-variable',
-            ],
-          },
-        }],
         ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
           'defines': [
             'CARBON_DEPRECATED=YES',
-          ],
-        }],
-        ['OS=="android" and include_internal_device_management==1', {
-          'sources': [
-            'devices/mobiledevicemanager.cc',
           ],
         }],
       ],

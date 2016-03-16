@@ -30,7 +30,6 @@
 #include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/base/videoframefactory.h"
-#include "webrtc/media/devices/devicemanager.h"
 
 
 namespace cricket {
