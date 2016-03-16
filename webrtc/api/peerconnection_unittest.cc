@@ -196,7 +196,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   void Negotiate(bool audio, bool video) {
     rtc::scoped_ptr<SessionDescriptionInterface> offer;
-    ASSERT_TRUE(DoCreateOffer(offer.use()));
+    ASSERT_TRUE(DoCreateOffer(&offer));
 
     if (offer->description()->GetContentByName("audio")) {
       offer->description()->GetContentByName("audio")->rejected = !audio;
@@ -831,7 +831,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         webrtc::CreateSessionDescription("offer", msg, nullptr));
     EXPECT_TRUE(DoSetRemoteDescription(desc.release()));
     rtc::scoped_ptr<SessionDescriptionInterface> answer;
-    EXPECT_TRUE(DoCreateAnswer(answer.use()));
+    EXPECT_TRUE(DoCreateAnswer(&answer));
     std::string sdp;
     EXPECT_TRUE(answer->ToString(&sdp));
     EXPECT_TRUE(DoSetLocalDescription(answer.release()));
@@ -848,7 +848,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     EXPECT_TRUE(DoSetRemoteDescription(desc.release()));
   }
 
-  bool DoCreateOfferAnswer(SessionDescriptionInterface** desc,
+  bool DoCreateOfferAnswer(rtc::scoped_ptr<SessionDescriptionInterface>* desc,
                            bool offer) {
     rtc::scoped_refptr<MockCreateSessionDescriptionObserver>
         observer(new rtc::RefCountedObject<
@@ -867,18 +867,18 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       }
     }
     EXPECT_EQ_WAIT(true, observer->called(), kMaxWaitMs);
-    *desc = observer->release_desc();
+    desc->reset(observer->release_desc());
     if (observer->result() && ExpectIceRestart()) {
       EXPECT_EQ(0u, (*desc)->candidates(0)->count());
     }
     return observer->result();
   }
 
-  bool DoCreateOffer(SessionDescriptionInterface** desc) {
+  bool DoCreateOffer(rtc::scoped_ptr<SessionDescriptionInterface>* desc) {
     return DoCreateOfferAnswer(desc, true);
   }
 
-  bool DoCreateAnswer(SessionDescriptionInterface** desc) {
+  bool DoCreateAnswer(rtc::scoped_ptr<SessionDescriptionInterface>* desc) {
     return DoCreateOfferAnswer(desc, false);
   }
 
