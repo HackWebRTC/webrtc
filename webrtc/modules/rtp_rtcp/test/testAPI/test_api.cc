@@ -97,7 +97,7 @@ class RtpRtcpAPITest : public ::testing::Test {
     rtp_payload_registry_.reset(new RTPPayloadRegistry(
             RTPPayloadStrategy::CreateStrategy(true)));
     rtp_receiver_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock_, NULL, NULL, NULL, rtp_payload_registry_.get()));
+        &fake_clock_, NULL, NULL, rtp_payload_registry_.get()));
   }
 
   rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;

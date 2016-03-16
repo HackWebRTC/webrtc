@@ -34,33 +34,26 @@ RtpReceiver* RtpReceiver::CreateVideoReceiver(
   if (!incoming_messages_callback)
     incoming_messages_callback = NullObjectRtpFeedback();
   return new RtpReceiverImpl(
-      clock, NullObjectRtpAudioFeedback(), incoming_messages_callback,
-      rtp_payload_registry,
+      clock, incoming_messages_callback, rtp_payload_registry,
       RTPReceiverStrategy::CreateVideoStrategy(incoming_payload_callback));
 }
 
 RtpReceiver* RtpReceiver::CreateAudioReceiver(
     Clock* clock,
-    RtpAudioFeedback* incoming_audio_feedback,
     RtpData* incoming_payload_callback,
     RtpFeedback* incoming_messages_callback,
     RTPPayloadRegistry* rtp_payload_registry) {
-  if (!incoming_audio_feedback)
-    incoming_audio_feedback = NullObjectRtpAudioFeedback();
   if (!incoming_payload_callback)
     incoming_payload_callback = NullObjectRtpData();
   if (!incoming_messages_callback)
     incoming_messages_callback = NullObjectRtpFeedback();
   return new RtpReceiverImpl(
-      clock, incoming_audio_feedback, incoming_messages_callback,
-      rtp_payload_registry,
-      RTPReceiverStrategy::CreateAudioStrategy(incoming_payload_callback,
-                                               incoming_audio_feedback));
+      clock, incoming_messages_callback, rtp_payload_registry,
+      RTPReceiverStrategy::CreateAudioStrategy(incoming_payload_callback));
 }
 
 RtpReceiverImpl::RtpReceiverImpl(
     Clock* clock,
-    RtpAudioFeedback* incoming_audio_messages_callback,
     RtpFeedback* incoming_messages_callback,
     RTPPayloadRegistry* rtp_payload_registry,
     RTPReceiverStrategy* rtp_media_receiver)
@@ -79,7 +72,6 @@ RtpReceiverImpl::RtpReceiverImpl(
       last_received_frame_time_ms_(-1),
       last_received_sequence_number_(0),
       nack_method_(kNackOff) {
-  assert(incoming_audio_messages_callback);
   assert(incoming_messages_callback);
 
   memset(current_remote_csrc_, 0, sizeof(current_remote_csrc_));

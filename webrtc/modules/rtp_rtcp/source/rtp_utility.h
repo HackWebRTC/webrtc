@@ -26,7 +26,6 @@ const uint8_t kRtpMarkerBitMask = 0x80;
 
 RtpData* NullObjectRtpData();
 RtpFeedback* NullObjectRtpFeedback();
-RtpAudioFeedback* NullObjectRtpAudioFeedback();
 ReceiveStatistics* NullObjectReceiveStatistics();
 
 namespace RtpUtility {

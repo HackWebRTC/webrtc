@@ -217,16 +217,6 @@ class RtpFeedback {
   virtual void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) = 0;
 };
 
-class RtpAudioFeedback {
- public:
-  virtual void OnPlayTelephoneEvent(const uint8_t event,
-                                    const uint16_t lengthMs,
-                                    const uint8_t volume) = 0;
-
- protected:
-  virtual ~RtpAudioFeedback() {}
-};
-
 class RtcpIntraFrameObserver {
  public:
   virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) = 0;
@@ -355,16 +345,6 @@ class NullRtpData : public RtpData {
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override {
     return true;
   }
-};
-
-// Null object version of RtpAudioFeedback.
-class NullRtpAudioFeedback : public RtpAudioFeedback {
- public:
-  virtual ~NullRtpAudioFeedback() {}
-
-  void OnPlayTelephoneEvent(const uint8_t event,
-                            const uint16_t lengthMs,
-                            const uint8_t volume) override {}
 };
 
 // Statistics about packet loss for a single directional connection. All values

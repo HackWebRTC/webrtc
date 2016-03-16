@@ -45,7 +45,6 @@ class RtpReceiver {
   // Creates an audio-enabled RTP receiver.
   static RtpReceiver* CreateAudioReceiver(
       Clock* clock,
-      RtpAudioFeedback* incoming_audio_feedback,
       RtpData* incoming_payload_callback,
       RtpFeedback* incoming_messages_callback,
       RTPPayloadRegistry* rtp_payload_registry);
