@@ -842,8 +842,22 @@ struct RtpParameters {
   RtcpParameters rtcp;
 };
 
-template <class Codec, class Options>
+template <class Codec>
 struct RtpSendParameters : RtpParameters<Codec> {
+  std::string ToString() const override {
+    std::ostringstream ost;
+    ost << "{";
+    ost << "codecs: " << VectorToString(this->codecs) << ", ";
+    ost << "extensions: " << VectorToString(this->extensions) << ", ";
+    ost << "max_bandwidth_bps: " << max_bandwidth_bps << ", ";
+    ost << "}";
+    return ost.str();
+  }
+
+  int max_bandwidth_bps = -1;
+};
+
+struct AudioSendParameters : RtpSendParameters<AudioCodec> {
   std::string ToString() const override {
     std::ostringstream ost;
     ost << "{";
@@ -855,11 +869,7 @@ struct RtpSendParameters : RtpParameters<Codec> {
     return ost.str();
   }
 
-  int max_bandwidth_bps = -1;
-  Options options;
-};
-
-struct AudioSendParameters : RtpSendParameters<AudioCodec, AudioOptions> {
+  AudioOptions options;
 };
 
 struct AudioRecvParameters : RtpParameters<AudioCodec> {
@@ -929,7 +939,7 @@ class VoiceMediaChannel : public MediaChannel {
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
 };
 
-struct VideoSendParameters : RtpSendParameters<VideoCodec, VideoOptions> {
+struct VideoSendParameters : RtpSendParameters<VideoCodec> {
   // Use conference mode? This flag comes from the remote
   // description's SDP line 'a=x-google-flag:conference', copied over
   // by VideoChannel::SetRemoteContent_w, and ultimately used by
@@ -1050,13 +1060,7 @@ struct SendDataParams {
 
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
 
-struct DataOptions {
-  std::string ToString() const {
-    return "{}";
-  }
-};
-
-struct DataSendParameters : RtpSendParameters<DataCodec, DataOptions> {
+struct DataSendParameters : RtpSendParameters<DataCodec> {
   std::string ToString() const {
     std::ostringstream ost;
     // Options and extensions aren't used.

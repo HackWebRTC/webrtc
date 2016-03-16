@@ -190,7 +190,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     rtc::Optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
     rtc::Optional<int> max_bandwidth_bps;
     rtc::Optional<bool> conference_mode;
-    rtc::Optional<VideoOptions> options;
     rtc::Optional<webrtc::RtcpMode> rtcp_mode;
   };
 
@@ -234,6 +233,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         webrtc::Call* call,
         const StreamParams& sp,
         const webrtc::VideoSendStream::Config& config,
+        const VideoOptions& options,
         WebRtcVideoEncoderFactory* external_encoder_factory,
         bool enable_cpu_overuse_detection,
         int max_bitrate_bps,
@@ -516,6 +516,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   // TODO(deadbeef): Don't duplicate information between
   // send_params/recv_params, rtp_extensions, options, etc.
   VideoSendParameters send_params_;
+  VideoOptions default_send_options_;
   VideoRecvParameters recv_params_;
 };
 

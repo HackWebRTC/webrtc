@@ -613,10 +613,9 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
       unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
       video_config_(config.video),
       external_encoder_factory_(external_encoder_factory),
-      external_decoder_factory_(external_decoder_factory) {
+      external_decoder_factory_(external_decoder_factory),
+      default_send_options_(options) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
-  send_params_.options = options;
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
@@ -740,15 +739,6 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
         rtc::Optional<bool>(params.conference_mode);
   }
 
-  // Handle options.
-  // TODO(pbos): Require VideoSendParameters to contain a full set of options
-  // and check if params.options != options_ instead of applying a delta.
-  VideoOptions new_options = send_params_.options;
-  new_options.SetAll(params.options);
-  if (!(new_options == send_params_.options)) {
-    changed_params->options = rtc::Optional<VideoOptions>(new_options);
-  }
-
   // Handle RTCP mode.
   if (params.rtcp.reduced_size != send_params_.rtcp.reduced_size) {
     changed_params->rtcp_mode = rtc::Optional<webrtc::RtcpMode>(
@@ -806,9 +796,6 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   if (bitrate_config_changed) {
     call_->SetBitrateConfig(bitrate_config_);
   }
-
-  if (changed_params.options)
-    send_params_.options.SetAll(*changed_params.options);
 
   {
     rtc::CritScope stream_lock(&stream_crit_);
@@ -1000,11 +987,11 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
 
   webrtc::VideoSendStream::Config config(this);
   config.suspend_below_min_bitrate = video_config_.suspend_below_min_bitrate;
-  WebRtcVideoSendStream* stream =
-      new WebRtcVideoSendStream(call_, sp, config, external_encoder_factory_,
-                                video_config_.enable_cpu_overuse_detection,
-                                bitrate_config_.max_bitrate_bps, send_codec_,
-                                send_rtp_extensions_, send_params_);
+  WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
+      call_, sp, config, default_send_options_, external_encoder_factory_,
+      video_config_.enable_cpu_overuse_detection,
+      bitrate_config_.max_bitrate_bps, send_codec_, send_rtp_extensions_,
+      send_params_);
 
   uint32_t ssrc = sp.first_ssrc();
   RTC_DCHECK(ssrc != 0);
@@ -1470,6 +1457,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     webrtc::Call* call,
     const StreamParams& sp,
     const webrtc::VideoSendStream::Config& config,
+    const VideoOptions& options,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     bool enable_cpu_overuse_detection,
     int max_bitrate_bps,
@@ -1487,7 +1475,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       capturer_(nullptr),
       external_encoder_factory_(external_encoder_factory),
       stream_(nullptr),
-      parameters_(config, send_params.options, max_bitrate_bps, codec_settings),
+      parameters_(config, options, max_bitrate_bps, codec_settings),
       pending_encoder_reconfiguration_(false),
       allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
       sending_(false),
@@ -1783,8 +1771,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
     if (params.conference_mode) {
       parameters_.conference_mode = *params.conference_mode;
     }
-    if (params.options)
-      SetOptions(*params.options);
 
     // Set codecs and options.
     if (params.codec) {

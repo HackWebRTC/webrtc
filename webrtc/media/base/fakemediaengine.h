@@ -441,8 +441,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   virtual bool SetSendParameters(const VideoSendParameters& params) {
     return (SetSendCodecs(params.codecs) &&
             SetSendRtpHeaderExtensions(params.extensions) &&
-            SetMaxSendBandwidth(params.max_bandwidth_bps) &&
-            SetOptions(params.options));
+            SetMaxSendBandwidth(params.max_bandwidth_bps));
   }
 
   virtual bool SetRecvParameters(const VideoRecvParameters& params) {
@@ -542,6 +541,10 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   VideoOptions options_;
   int max_bps_;
 };
+
+// Dummy option class, needed for the DataTraits abstraction in
+// channel_unittest.c.
+class DataOptions {};
 
 class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
  public:

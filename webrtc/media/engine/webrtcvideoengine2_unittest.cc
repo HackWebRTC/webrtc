@@ -1048,13 +1048,12 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
                                         bool expect_created_receive_stream);
 
   FakeVideoSendStream* SetDenoisingOption(
-      const cricket::VideoSendParameters& parameters,
+      uint32_t ssrc,
       cricket::FakeVideoCapturer* capturer,
       bool enabled) {
-    cricket::VideoSendParameters params = parameters;
-    params.options.video_noise_reduction = rtc::Optional<bool>(enabled);
-    // TODO(nisse): Switch to using SetOptions?
-    channel_->SetSendParameters(params);
+    cricket::VideoOptions options;
+    options.video_noise_reduction = rtc::Optional<bool>(enabled);
+    channel_->SetVideoSend(ssrc, true, &options);
     // Options only take effect on the next frame.
     EXPECT_TRUE(capturer->CaptureFrame());
 
@@ -1530,11 +1529,13 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   cricket::VideoCodec codec = kVp8Codec360p;
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(codec);
-  parameters.options.screencast_min_bitrate_kbps =
-      rtc::Optional<int>(kScreenshareMinBitrateKbps);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-
   AddSendStream();
+
+  VideoOptions min_bitrate_options;
+  min_bitrate_options.screencast_min_bitrate_kbps =
+      rtc::Optional<int>(kScreenshareMinBitrateKbps);
+  channel_->SetVideoSend(last_ssrc_, true, &min_bitrate_options);
 
   cricket::FakeVideoCapturer capturer;
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
@@ -1565,8 +1566,9 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   // Removing a capturer triggers a black frame to be sent.
   EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
-  parameters.options.is_screencast = rtc::Optional<bool>(true);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  VideoOptions screencast_options;
+  screencast_options.is_screencast = rtc::Optional<bool>(true);
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &screencast_options));
   EXPECT_TRUE(capturer.CaptureFrame());
   // Send stream not recreated after option change.
   ASSERT_EQ(send_stream, fake_call_->GetVideoSendStreams().front());
@@ -1642,11 +1644,12 @@ TEST_F(WebRtcVideoChannel2Test,
   static const int kConferenceScreencastTemporalBitrateBps =
       ScreenshareLayerConfig::GetDefault().tl0_bitrate_kbps * 1000;
   send_parameters_.conference_mode = true;
-  send_parameters_.options.is_screencast = rtc::Optional<bool>(true);
   channel_->SetSendParameters(send_parameters_);
 
   AddSendStream();
-
+  VideoOptions options;
+  options.is_screencast = rtc::Optional<bool>(true);
+  channel_->SetVideoSend(last_ssrc_, true, &options);
   cricket::FakeVideoCapturer capturer;
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
   cricket::VideoFormat capture_format_hd =
@@ -1730,14 +1733,14 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   EXPECT_TRUE(vp8_settings.denoisingOn)
       << "VP8 denoising should be on by default.";
 
-  stream = SetDenoisingOption(parameters, &capturer, false);
+  stream = SetDenoisingOption(last_ssrc_, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_FALSE(vp8_settings.denoisingOn);
   EXPECT_TRUE(vp8_settings.automaticResizeOn);
   EXPECT_TRUE(vp8_settings.frameDroppingOn);
 
-  stream = SetDenoisingOption(parameters, &capturer, true);
+  stream = SetDenoisingOption(last_ssrc_, &capturer, true);
 
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_TRUE(vp8_settings.denoisingOn);
@@ -1757,10 +1760,11 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   EXPECT_TRUE(vp8_settings.frameDroppingOn);
 
   // In screen-share mode, denoising is forced off and simulcast disabled.
-  parameters.options.is_screencast = rtc::Optional<bool>(true);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  VideoOptions options;
+  options.is_screencast = rtc::Optional<bool>(true);
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options));
 
-  stream = SetDenoisingOption(parameters, &capturer, false);
+  stream = SetDenoisingOption(last_ssrc_, &capturer, false);
 
   EXPECT_EQ(1, stream->GetVideoStreams().size());
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
@@ -1769,7 +1773,7 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   EXPECT_FALSE(vp8_settings.automaticResizeOn);
   EXPECT_FALSE(vp8_settings.frameDroppingOn);
 
-  stream = SetDenoisingOption(parameters, &capturer, true);
+  stream = SetDenoisingOption(last_ssrc_, &capturer, true);
 
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_FALSE(vp8_settings.denoisingOn);
@@ -1822,31 +1826,32 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
   EXPECT_FALSE(vp9_settings.denoisingOn)
       << "VP9 denoising should be off by default.";
 
-  stream = SetDenoisingOption(parameters, &capturer, false);
+  stream = SetDenoisingOption(last_ssrc_, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
   // Frame dropping always on for real time video.
   EXPECT_TRUE(vp9_settings.frameDroppingOn);
 
-  stream = SetDenoisingOption(parameters, &capturer, true);
+  stream = SetDenoisingOption(last_ssrc_, &capturer, true);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_TRUE(vp9_settings.denoisingOn);
   EXPECT_TRUE(vp9_settings.frameDroppingOn);
 
   // In screen-share mode, denoising is forced off.
-  parameters.options.is_screencast = rtc::Optional<bool>(true);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  VideoOptions options;
+  options.is_screencast = rtc::Optional<bool>(true);
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options));
 
-  stream = SetDenoisingOption(parameters, &capturer, false);
+  stream = SetDenoisingOption(last_ssrc_, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
   // Frame dropping always off for screen sharing.
   EXPECT_FALSE(vp9_settings.frameDroppingOn);
 
-  stream = SetDenoisingOption(parameters, &capturer, false);
+  stream = SetDenoisingOption(last_ssrc_, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
@@ -1946,10 +1951,13 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
 
-  parameters.options.is_screencast = rtc::Optional<bool>(is_screenshare);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
   AddSendStream();
+
+  VideoOptions options;
+  options.is_screencast = rtc::Optional<bool>(is_screenshare);
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options));
 
   cricket::FakeVideoCapturer capturer;
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
@@ -3299,4 +3307,3 @@ TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWithOddSizeInSimulcast) {
   VerifySimulcastSettings(codec, 2, 2);
 }
 }  // namespace cricket
-

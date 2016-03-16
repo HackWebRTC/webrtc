@@ -133,10 +133,10 @@ void RtpParametersFromMediaDescription(
   params->rtcp.reduced_size = desc->rtcp_reduced_size();
 }
 
-template <class Codec, class Options>
+template <class Codec>
 void RtpSendParametersFromMediaDescription(
     const MediaContentDescriptionImpl<Codec>* desc,
-    RtpSendParameters<Codec, Options>* send_params) {
+    RtpSendParameters<Codec>* send_params) {
   RtpParametersFromMediaDescription(desc, send_params);
   send_params->max_bandwidth_bps = desc->bandwidth();
 }
