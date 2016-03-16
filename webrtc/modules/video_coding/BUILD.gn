@@ -50,8 +50,6 @@ source_set("video_coding") {
     "nack_module.h",
     "packet.cc",
     "packet.h",
-    "percentile_filter.cc",
-    "percentile_filter.h",
     "qm_select.cc",
     "qm_select.h",
     "qm_select_data.h",

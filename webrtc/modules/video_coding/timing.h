@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_TIMING_H_
 #define WEBRTC_MODULES_VIDEO_CODING_TIMING_H_
 
-#include <memory>
-
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_coding/codec_timer.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -96,7 +94,7 @@ class VCMTiming {
   enum { kDelayMaxChangeMsPerS = 100 };
 
  protected:
-  int64_t RequiredDecodeTimeMs() const
+  int32_t MaxDecodeTimeMs(FrameType frame_type = kVideoFrameDelta) const
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   int64_t RenderTimeMsInternal(uint32_t frame_timestamp, int64_t now_ms) const
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
@@ -109,7 +107,7 @@ class VCMTiming {
   Clock* const clock_;
   bool master_ GUARDED_BY(crit_sect_);
   TimestampExtrapolator* ts_extrapolator_ GUARDED_BY(crit_sect_);
-  std::unique_ptr<VCMCodecTimer> codec_timer_ GUARDED_BY(crit_sect_);
+  VCMCodecTimer codec_timer_ GUARDED_BY(crit_sect_);
   uint32_t render_delay_ms_ GUARDED_BY(crit_sect_);
   uint32_t min_playout_delay_ms_ GUARDED_BY(crit_sect_);
   uint32_t jitter_delay_ms_ GUARDED_BY(crit_sect_);

@@ -369,7 +369,6 @@
             'video_coding/jitter_estimator_tests.cc',
             'video_coding/media_optimization_unittest.cc',
             'video_coding/nack_module_unittest.cc',
-            'video_coding/percentile_filter_unittest.cc',
             'video_coding/receiver_unittest.cc',
             'video_coding/session_info_unittest.cc',
             'video_coding/timing_unittest.cc',

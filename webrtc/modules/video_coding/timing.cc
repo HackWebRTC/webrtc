@@ -25,7 +25,7 @@ VCMTiming::VCMTiming(Clock* clock, VCMTiming* master_timing)
       clock_(clock),
       master_(false),
       ts_extrapolator_(),
-      codec_timer_(new VCMCodecTimer()),
+      codec_timer_(),
       render_delay_ms_(kDefaultRenderDelayMs),
       min_playout_delay_ms_(0),
       jitter_delay_ms_(0),
@@ -78,7 +78,7 @@ void VCMTiming::UpdateHistograms() const {
 void VCMTiming::Reset() {
   CriticalSectionScoped cs(crit_sect_);
   ts_extrapolator_->Reset(clock_->TimeInMilliseconds());
-  codec_timer_.reset(new VCMCodecTimer());
+  codec_timer_.Reset();
   render_delay_ms_ = kDefaultRenderDelayMs;
   min_playout_delay_ms_ = 0;
   jitter_delay_ms_ = 0;
@@ -88,7 +88,7 @@ void VCMTiming::Reset() {
 
 void VCMTiming::ResetDecodeTime() {
   CriticalSectionScoped lock(crit_sect_);
-  codec_timer_.reset(new VCMCodecTimer());
+  codec_timer_.Reset();
 }
 
 void VCMTiming::set_render_delay(uint32_t render_delay_ms) {
@@ -156,9 +156,8 @@ void VCMTiming::UpdateCurrentDelay(int64_t render_time_ms,
                                    int64_t actual_decode_time_ms) {
   CriticalSectionScoped cs(crit_sect_);
   uint32_t target_delay_ms = TargetDelayInternal();
-  int64_t delayed_ms =
-      actual_decode_time_ms -
-      (render_time_ms - RequiredDecodeTimeMs() - render_delay_ms_);
+  int64_t delayed_ms = actual_decode_time_ms -
+                       (render_time_ms - MaxDecodeTimeMs() - render_delay_ms_);
   if (delayed_ms < 0) {
     return;
   }
@@ -174,7 +173,7 @@ int32_t VCMTiming::StopDecodeTimer(uint32_t time_stamp,
                                    int64_t now_ms,
                                    int64_t render_time_ms) {
   CriticalSectionScoped cs(crit_sect_);
-  codec_timer_->AddTiming(decode_time_ms, now_ms);
+  codec_timer_.MaxFilter(decode_time_ms, now_ms);
   assert(decode_time_ms >= 0);
   last_decode_ms_ = decode_time_ms;
 
@@ -217,8 +216,9 @@ int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,
 }
 
 // Must be called from inside a critical section.
-int64_t VCMTiming::RequiredDecodeTimeMs() const {
-  const int64_t decode_time_ms = codec_timer_->RequiredDecodeTimeMs();
+int32_t VCMTiming::MaxDecodeTimeMs(
+    FrameType frame_type /*= kVideoFrameDelta*/) const {
+  const int32_t decode_time_ms = codec_timer_.RequiredDecodeTimeMs(frame_type);
   assert(decode_time_ms >= 0);
   return decode_time_ms;
 }
@@ -228,7 +228,7 @@ uint32_t VCMTiming::MaxWaitingTime(int64_t render_time_ms,
   CriticalSectionScoped cs(crit_sect_);
 
   const int64_t max_wait_time_ms =
-      render_time_ms - now_ms - RequiredDecodeTimeMs() - render_delay_ms_;
+      render_time_ms - now_ms - MaxDecodeTimeMs() - render_delay_ms_;
 
   if (max_wait_time_ms < 0) {
     return 0;
@@ -239,18 +239,18 @@ uint32_t VCMTiming::MaxWaitingTime(int64_t render_time_ms,
 bool VCMTiming::EnoughTimeToDecode(
     uint32_t available_processing_time_ms) const {
   CriticalSectionScoped cs(crit_sect_);
-  int64_t required_decode_time_ms = RequiredDecodeTimeMs();
-  if (required_decode_time_ms < 0) {
+  int32_t max_decode_time_ms = MaxDecodeTimeMs();
+  if (max_decode_time_ms < 0) {
     // Haven't decoded any frames yet, try decoding one to get an estimate
     // of the decode time.
     return true;
-  } else if (required_decode_time_ms == 0) {
+  } else if (max_decode_time_ms == 0) {
     // Decode time is less than 1, set to 1 for now since
     // we don't have any better precision. Count ticks later?
-    required_decode_time_ms = 1;
+    max_decode_time_ms = 1;
   }
-  return static_cast<int64_t>(available_processing_time_ms) -
-             required_decode_time_ms >
+  return static_cast<int32_t>(available_processing_time_ms) -
+             max_decode_time_ms >
          0;
 }
 
@@ -261,9 +261,7 @@ uint32_t VCMTiming::TargetVideoDelay() const {
 
 uint32_t VCMTiming::TargetDelayInternal() const {
   return std::max(min_playout_delay_ms_,
-                  jitter_delay_ms_ +
-                      static_cast<uint32_t>(RequiredDecodeTimeMs()) +
-                      render_delay_ms_);
+                  jitter_delay_ms_ + MaxDecodeTimeMs() + render_delay_ms_);
 }
 
 void VCMTiming::GetTimings(int* decode_ms,
@@ -275,7 +273,7 @@ void VCMTiming::GetTimings(int* decode_ms,
                            int* render_delay_ms) const {
   CriticalSectionScoped cs(crit_sect_);
   *decode_ms = last_decode_ms_;
-  *max_decode_ms = static_cast<int>(RequiredDecodeTimeMs());
+  *max_decode_ms = MaxDecodeTimeMs();
   *current_delay_ms = current_delay_ms_;
   *target_delay_ms = TargetDelayInternal();
   *jitter_buffer_ms = jitter_delay_ms_;
