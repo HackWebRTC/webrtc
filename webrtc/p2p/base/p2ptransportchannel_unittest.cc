@@ -504,7 +504,8 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   void Test(const Result& expected) {
-    int32_t connect_start = rtc::Time(), connect_time;
+    int64_t connect_start = rtc::Time64();
+    int64_t connect_time;
 
     // Create the channels and wait for them to connect.
     CreateChannels(1);
@@ -516,7 +517,7 @@ class P2PTransportChannelTestBase : public testing::Test,
                             ep2_ch1()->writable(),
                             expected.connect_wait,
                             1000);
-    connect_time = rtc::TimeSince(connect_start);
+    connect_time = rtc::Time64() - connect_start;
     if (connect_time < expected.connect_wait) {
       LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
     } else {
@@ -528,8 +529,9 @@ class P2PTransportChannelTestBase : public testing::Test,
     // This may take up to 2 seconds.
     if (ep1_ch1()->best_connection() &&
         ep2_ch1()->best_connection()) {
-      int32_t converge_start = rtc::Time(), converge_time;
-      int converge_wait = 2000;
+      int64_t converge_start = rtc::Time64();
+      int64_t converge_time;
+      int64_t converge_wait = 2000;
       EXPECT_TRUE_WAIT_MARGIN(CheckCandidate1(expected), converge_wait,
                               converge_wait);
       // Also do EXPECT_EQ on each part so that failures are more verbose.
@@ -545,7 +547,7 @@ class P2PTransportChannelTestBase : public testing::Test,
       // For verbose
       ExpectCandidate2(expected);
 
-      converge_time = rtc::TimeSince(converge_start);
+      converge_time = rtc::Time64() - converge_start;
       if (converge_time < converge_wait) {
         LOG(LS_INFO) << "Converge time: " << converge_time << " ms";
       } else {
@@ -1771,7 +1773,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
   ASSERT_EQ(2U, connections.size());
   cricket::Connection* backup_conn = connections[1];
   EXPECT_TRUE_WAIT(backup_conn->writable(), 3000);
-  uint32_t last_ping_response_ms = backup_conn->last_ping_response_received();
+  int64_t last_ping_response_ms = backup_conn->last_ping_response_received();
   EXPECT_TRUE_WAIT(
       last_ping_response_ms < backup_conn->last_ping_response_received(), 5000);
   int time_elapsed =

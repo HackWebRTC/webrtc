@@ -243,7 +243,7 @@ class TurnPort : public Port {
   void DestroyEntry(TurnEntry* entry);
   // Destroys the entry only if |timestamp| matches the destruction timestamp
   // in |entry|.
-  void DestroyEntryIfNotCancelled(TurnEntry* entry, uint32_t timestamp);
+  void DestroyEntryIfNotCancelled(TurnEntry* entry, int64_t timestamp);
   void ScheduleEntryDestruction(TurnEntry* entry);
   void CancelEntryDestruction(TurnEntry* entry);
   void OnConnectionDestroyed(Connection* conn);

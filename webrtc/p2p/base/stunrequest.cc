@@ -191,8 +191,8 @@ const StunMessage* StunRequest::msg() const {
   return msg_;
 }
 
-uint32_t StunRequest::Elapsed() const {
-  return rtc::TimeSince(tstamp_);
+int StunRequest::Elapsed() const {
+  return static_cast<int>(rtc::Time64() - tstamp_);
 }
 
 
@@ -211,7 +211,7 @@ void StunRequest::OnMessage(rtc::Message* pmsg) {
     return;
   }
 
-  tstamp_ = rtc::Time();
+  tstamp_ = rtc::Time64();
 
   rtc::ByteBuffer buf;
   msg_->Write(&buf);

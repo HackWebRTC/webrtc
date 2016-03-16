@@ -145,8 +145,8 @@ class TurnEntry : public sigslot::has_slots<> {
   const rtc::SocketAddress& address() const { return ext_addr_; }
   BindState state() const { return state_; }
 
-  uint32_t destruction_timestamp() { return destruction_timestamp_; }
-  void set_destruction_timestamp(uint32_t destruction_timestamp) {
+  int64_t destruction_timestamp() { return destruction_timestamp_; }
+  void set_destruction_timestamp(int64_t destruction_timestamp) {
     destruction_timestamp_ = destruction_timestamp;
   }
 
@@ -176,7 +176,7 @@ class TurnEntry : public sigslot::has_slots<> {
   // It is also used as an ID of the event scheduling. When the destruction
   // event actually fires, the TurnEntry will be destroyed only if the
   // timestamp here matches the one in the firing event.
-  uint32_t destruction_timestamp_ = 0;
+  int64_t destruction_timestamp_ = 0;
 };
 
 TurnPort::TurnPort(rtc::Thread* thread,
@@ -990,8 +990,7 @@ void TurnPort::DestroyEntry(TurnEntry* entry) {
   delete entry;
 }
 
-void TurnPort::DestroyEntryIfNotCancelled(TurnEntry* entry,
-                                          uint32_t timestamp) {
+void TurnPort::DestroyEntryIfNotCancelled(TurnEntry* entry, int64_t timestamp) {
   if (!EntryExists(entry)) {
     return;
   }
@@ -1012,7 +1011,7 @@ void TurnPort::OnConnectionDestroyed(Connection* conn) {
 
 void TurnPort::ScheduleEntryDestruction(TurnEntry* entry) {
   ASSERT(entry->destruction_timestamp() == 0);
-  uint32_t timestamp = rtc::Time();
+  int64_t timestamp = rtc::Time64();
   entry->set_destruction_timestamp(timestamp);
   invoker_.AsyncInvokeDelayed<void>(
       thread(),

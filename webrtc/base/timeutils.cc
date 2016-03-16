@@ -80,8 +80,12 @@ uint64_t TimeNanos() {
   return ticks;
 }
 
-uint32_t Time() {
+uint32_t Time32() {
   return static_cast<uint32_t>(TimeNanos() / kNumNanosecsPerMillisec);
+}
+
+int64_t Time64() {
+  return static_cast<int64_t>(TimeNanos() / kNumNanosecsPerMillisec);
 }
 
 uint64_t TimeMicros() {
@@ -190,6 +194,10 @@ int32_t TimeDiff(uint32_t later, uint32_t earlier) {
     }
   }
 #endif
+}
+
+int64_t TimeDiff64(int64_t later, int64_t earlier) {
+  return later - earlier;
 }
 
 TimestampWrapAroundHandler::TimestampWrapAroundHandler()

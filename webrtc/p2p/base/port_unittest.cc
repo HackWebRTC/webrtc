@@ -266,7 +266,7 @@ class TestChannel : public sigslot::has_slots<> {
   void Ping() {
     Ping(0);
   }
-  void Ping(uint32_t now) { conn_->Ping(now); }
+  void Ping(int64_t now) { conn_->Ping(now); }
   void Stop() {
     if (conn_) {
       conn_->Destroy();
@@ -1261,9 +1261,9 @@ TEST_F(PortTest, TestConnectionDead) {
   ASSERT_EQ_WAIT(1, ch2.complete_count(), kTimeout);
 
   // Test case that the connection has never received anything.
-  uint32_t before_created = rtc::Time();
+  int64_t before_created = rtc::Time64();
   ch1.CreateConnection(GetCandidate(port2));
-  uint32_t after_created = rtc::Time();
+  int64_t after_created = rtc::Time64();
   Connection* conn = ch1.conn();
   ASSERT(conn != nullptr);
   // It is not dead if it is after MIN_CONNECTION_LIFETIME but not pruned.
@@ -1284,9 +1284,9 @@ TEST_F(PortTest, TestConnectionDead) {
   ch1.CreateConnection(GetCandidate(port2));
   conn = ch1.conn();
   ASSERT(conn != nullptr);
-  uint32_t before_last_receiving = rtc::Time();
+  int64_t before_last_receiving = rtc::Time64();
   conn->ReceivedPing();
-  uint32_t after_last_receiving = rtc::Time();
+  int64_t after_last_receiving = rtc::Time64();
   // The connection will be dead after DEAD_CONNECTION_RECEIVE_TIMEOUT
   conn->UpdateState(
       before_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT - 1);
@@ -2033,13 +2033,13 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
                       rtc::PacketTime());
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   EXPECT_EQ(STUN_BINDING_RESPONSE, lport->last_stun_msg()->type());
-  uint32_t last_ping_received1 = lconn->last_ping_received();
+  int64_t last_ping_received1 = lconn->last_ping_received();
 
   // Adding a delay of 100ms.
   rtc::Thread::Current()->ProcessMessages(100);
   // Pinging lconn using stun indication message.
   lconn->OnReadPacket(buf->Data(), buf->Length(), rtc::PacketTime());
-  uint32_t last_ping_received2 = lconn->last_ping_received();
+  int64_t last_ping_received2 = lconn->last_ping_received();
   EXPECT_GT(last_ping_received2, last_ping_received1);
 }
 
@@ -2313,7 +2313,7 @@ TEST_F(PortTest, TestWritableState) {
   for (uint32_t i = 1; i <= CONNECTION_WRITE_CONNECT_FAILURES; ++i) {
     ch1.Ping(i);
   }
-  uint32_t unreliable_timeout_delay = CONNECTION_WRITE_CONNECT_TIMEOUT + 500u;
+  int unreliable_timeout_delay = CONNECTION_WRITE_CONNECT_TIMEOUT + 500;
   ch1.conn()->UpdateState(unreliable_timeout_delay);
   EXPECT_EQ(Connection::STATE_WRITE_UNRELIABLE, ch1.conn()->write_state());
 

@@ -32,15 +32,15 @@ namespace {
 inline bool TooManyFailures(
     const std::vector<cricket::Connection::SentPing>& pings_since_last_response,
     uint32_t maximum_failures,
-    uint32_t rtt_estimate,
-    uint32_t now) {
+    int rtt_estimate,
+    int64_t now) {
   // If we haven't sent that many pings, then we can't have failed that many.
   if (pings_since_last_response.size() < maximum_failures)
     return false;
 
   // Check if the window in which we would expect a response to the ping has
   // already elapsed.
-  uint32_t expected_response_time =
+  int64_t expected_response_time =
       pings_since_last_response[maximum_failures - 1].sent_time + rtt_estimate;
   return now > expected_response_time;
 }
@@ -48,8 +48,8 @@ inline bool TooManyFailures(
 // Determines whether we have gone too long without seeing any response.
 inline bool TooLongWithoutResponse(
     const std::vector<cricket::Connection::SentPing>& pings_since_last_response,
-    uint32_t maximum_time,
-    uint32_t now) {
+    int64_t maximum_time,
+    int64_t now) {
   if (pings_since_last_response.size() == 0)
     return false;
 
@@ -59,15 +59,15 @@ inline bool TooLongWithoutResponse(
 
 // We will restrict RTT estimates (when used for determining state) to be
 // within a reasonable range.
-const uint32_t MINIMUM_RTT = 100;   // 0.1 seconds
-const uint32_t MAXIMUM_RTT = 3000;  // 3 seconds
+const int MINIMUM_RTT = 100;   // 0.1 seconds
+const int MAXIMUM_RTT = 3000;  // 3 seconds
 
 // When we don't have any RTT data, we have to pick something reasonable.  We
 // use a large value just in case the connection is really slow.
-const uint32_t DEFAULT_RTT = MAXIMUM_RTT;
+const int DEFAULT_RTT = MAXIMUM_RTT;
 
 // Computes our estimate of the RTT given the current estimate.
-inline uint32_t ConservativeRTTEstimate(uint32_t rtt) {
+inline int ConservativeRTTEstimate(int rtt) {
   return std::max(MINIMUM_RTT, std::min(MAXIMUM_RTT, 2 * rtt));
 }
 
@@ -806,7 +806,7 @@ Connection::Connection(Port* port,
       reported_(false),
       state_(STATE_WAITING),
       receiving_timeout_(WEAK_CONNECTION_RECEIVE_TIMEOUT),
-      time_created_ms_(rtc::Time()) {
+      time_created_ms_(rtc::Time64()) {
   // All of our connections start in WAITING state.
   // TODO(mallinath) - Start connections from STATE_FROZEN.
   // Wire up to send stun packets
@@ -907,7 +907,7 @@ void Connection::OnReadPacket(
     // The packet did not parse as a valid STUN message
     // This is a data packet, pass it along.
     set_receiving(true);
-    last_data_received_ = rtc::Time();
+    last_data_received_ = rtc::Time64();
     recv_rate_tracker_.AddSamples(size);
     SignalReadPacket(this, data, size, packet_time);
 
@@ -1045,8 +1045,8 @@ void Connection::PrintPingsSinceLastResponse(std::string* s, size_t max) {
   *s = oss.str();
 }
 
-void Connection::UpdateState(uint32_t now) {
-  uint32_t rtt = ConservativeRTTEstimate(rtt_);
+void Connection::UpdateState(int64_t now) {
+  int rtt = ConservativeRTTEstimate(rtt_);
 
   if (LOG_CHECK_LEVEL(LS_VERBOSE)) {
     std::string pings;
@@ -1102,7 +1102,7 @@ void Connection::UpdateState(uint32_t now) {
   }
 
   // Check the receiving state.
-  uint32_t last_recv_time = last_received();
+  int64_t last_recv_time = last_received();
   bool receiving = now <= last_recv_time + receiving_timeout_;
   set_receiving(receiving);
   if (dead(now)) {
@@ -1110,7 +1110,7 @@ void Connection::UpdateState(uint32_t now) {
   }
 }
 
-void Connection::Ping(uint32_t now) {
+void Connection::Ping(int64_t now) {
   last_ping_sent_ = now;
   ConnectionRequest *req = new ConnectionRequest(this);
   pings_since_last_response_.push_back(SentPing(req->id(), now));
@@ -1122,7 +1122,7 @@ void Connection::Ping(uint32_t now) {
 
 void Connection::ReceivedPing() {
   set_receiving(true);
-  last_ping_received_ = rtc::Time();
+  last_ping_received_ = rtc::Time64();
 }
 
 void Connection::ReceivedPingResponse() {
@@ -1135,10 +1135,10 @@ void Connection::ReceivedPingResponse() {
   set_write_state(STATE_WRITABLE);
   set_state(STATE_SUCCEEDED);
   pings_since_last_response_.clear();
-  last_ping_response_received_ = rtc::Time();
+  last_ping_response_received_ = rtc::Time64();
 }
 
-bool Connection::dead(uint32_t now) const {
+bool Connection::dead(int64_t now) const {
   if (last_received() > 0) {
     // If it has ever received anything, we keep it alive until it hasn't
     // received anything for DEAD_CONNECTION_RECEIVE_TIMEOUT. This covers the
@@ -1231,7 +1231,7 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
   // connection.
   rtc::LoggingSeverity sev = !writable() ? rtc::LS_INFO : rtc::LS_VERBOSE;
 
-  uint32_t rtt = request->Elapsed();
+  int rtt = request->Elapsed();
 
   ReceivedPingResponse();
 
@@ -1331,7 +1331,7 @@ void Connection::OnMessage(rtc::Message *pmsg) {
   delete this;
 }
 
-uint32_t Connection::last_received() const {
+int64_t Connection::last_received() const {
   return std::max(last_data_received_,
              std::max(last_ping_received_, last_ping_response_received_));
 }

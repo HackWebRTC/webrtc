@@ -35,7 +35,7 @@ class StunBindingRequest : public StunRequest {
  public:
   StunBindingRequest(UDPPort* port,
                      const rtc::SocketAddress& addr,
-                     uint32_t start_time,
+                     int64_t start_time,
                      int lifetime)
       : port_(port),
         server_addr_(addr),
@@ -65,7 +65,7 @@ class StunBindingRequest : public StunRequest {
     }
 
     // The keep-alive requests will be stopped after its lifetime has passed.
-    if (WithinLifetime(rtc::Time())) {
+    if (WithinLifetime(rtc::Time64())) {
       port_->requests_.SendDelayed(
           new StunBindingRequest(port_, server_addr_, start_time_, lifetime_),
           port_->stun_keepalive_delay());
@@ -85,9 +85,9 @@ class StunBindingRequest : public StunRequest {
 
     port_->OnStunBindingOrResolveRequestFailed(server_addr_);
 
-    uint32_t now = rtc::Time();
+    int64_t now = rtc::Time64();
     if (WithinLifetime(now) &&
-        rtc::TimeDiff(now, start_time_) < RETRY_TIMEOUT) {
+        rtc::TimeDiff64(now, start_time_) < RETRY_TIMEOUT) {
       port_->requests_.SendDelayed(
           new StunBindingRequest(port_, server_addr_, start_time_, lifetime_),
           port_->stun_keepalive_delay());
@@ -104,13 +104,13 @@ class StunBindingRequest : public StunRequest {
  private:
   // Returns true if |now| is within the lifetime of the request (a negative
   // lifetime means infinite).
-  bool WithinLifetime(uint32_t now) const {
-    return lifetime_ < 0 || rtc::TimeDiff(now, start_time_) <= lifetime_;
+  bool WithinLifetime(int64_t now) const {
+    return lifetime_ < 0 || rtc::TimeDiff64(now, start_time_) <= lifetime_;
   }
   UDPPort* port_;
   const rtc::SocketAddress server_addr_;
 
-  uint32_t start_time_;
+  int64_t start_time_;
   // The time duration for which this request will be rescheduled.
   int lifetime_;
 };
@@ -411,7 +411,7 @@ void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
   } else if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {
     // Check if |server_addr_| is compatible with the port's ip.
     if (IsCompatibleAddress(stun_addr)) {
-      requests_.Send(new StunBindingRequest(this, stun_addr, rtc::Time(),
+      requests_.Send(new StunBindingRequest(this, stun_addr, rtc::Time64(),
                                             stun_keepalive_lifetime_));
     } else {
       // Since we can't send stun messages to the server, we should mark this

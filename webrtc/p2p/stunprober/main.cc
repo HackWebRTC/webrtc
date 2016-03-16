@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
   }
 
   rtc::InitializeSSL();
-  rtc::InitRandom(rtc::Time());
+  rtc::InitRandom(rtc::Time32());
   rtc::Thread* thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
   rtc::scoped_ptr<rtc::BasicPacketSocketFactory> socket_factory(
       new rtc::BasicPacketSocketFactory());

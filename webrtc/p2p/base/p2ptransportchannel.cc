@@ -1027,7 +1027,7 @@ rtc::DiffServCodePoint P2PTransportChannel::DefaultDscpValue() const {
 
 // Monitor connection states.
 void P2PTransportChannel::UpdateConnectionStates() {
-  uint32_t now = rtc::Time();
+  int64_t now = rtc::Time64();
 
   // We need to copy the list of connections since some may delete themselves
   // when we call UpdateState.
@@ -1260,7 +1260,7 @@ void P2PTransportChannel::OnCheckAndPing() {
   // When the best connection is either not receiving or not writable,
   // switch to weak ping interval.
   int ping_interval = weak() ? weak_ping_interval_ : STRONG_PING_INTERVAL;
-  if (rtc::Time() >= last_ping_sent_ms_ + ping_interval) {
+  if (rtc::Time64() >= last_ping_sent_ms_ + ping_interval) {
     Connection* conn = FindNextPingableConnection();
     if (conn) {
       PingConnection(conn);
@@ -1281,7 +1281,7 @@ bool P2PTransportChannel::IsBackupConnection(Connection* conn) const {
 // Is the connection in a state for us to even consider pinging the other side?
 // We consider a connection pingable even if it's not connected because that's
 // how a TCP connection is kicked into reconnecting on the active side.
-bool P2PTransportChannel::IsPingable(Connection* conn, uint32_t now) {
+bool P2PTransportChannel::IsPingable(Connection* conn, int64_t now) {
   const Candidate& remote = conn->remote_candidate();
   // We should never get this far with an empty remote ufrag.
   ASSERT(!remote.username().empty());
@@ -1319,7 +1319,7 @@ bool P2PTransportChannel::IsPingable(Connection* conn, uint32_t now) {
 // ping target to become writable instead. See the big comment in
 // CompareConnections.
 Connection* P2PTransportChannel::FindNextPingableConnection() {
-  uint32_t now = rtc::Time();
+  int64_t now = rtc::Time64();
   Connection* conn_to_ping = nullptr;
   if (best_connection_ && best_connection_->connected() &&
       best_connection_->writable() &&
@@ -1360,7 +1360,7 @@ void P2PTransportChannel::PingConnection(Connection* conn) {
     use_candidate = best_connection_->writable();
   }
   conn->set_use_candidate_attr(use_candidate);
-  last_ping_sent_ms_ = rtc::Time();
+  last_ping_sent_ms_ = rtc::Time64();
   conn->Ping(last_ping_sent_ms_);
 }
 
@@ -1508,7 +1508,7 @@ void P2PTransportChannel::OnReadyToSend(Connection* connection) {
 // (last_received_ping > last_sent_ping).  But we shouldn't do
 // triggered checks if the connection is already writable.
 Connection* P2PTransportChannel::FindOldestConnectionNeedingTriggeredCheck(
-    uint32_t now) {
+    int64_t now) {
   Connection* oldest_needing_triggered_check = nullptr;
   for (auto conn : connections_) {
     if (!IsPingable(conn, now)) {
@@ -1532,7 +1532,7 @@ Connection* P2PTransportChannel::FindOldestConnectionNeedingTriggeredCheck(
   return oldest_needing_triggered_check;
 }
 
-Connection* P2PTransportChannel::FindConnectionToPing(uint32_t now) {
+Connection* P2PTransportChannel::FindConnectionToPing(int64_t now) {
   RTC_CHECK(connections_.size() ==
             pinged_connections_.size() + unpinged_connections_.size());
 

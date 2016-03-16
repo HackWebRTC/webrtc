@@ -220,7 +220,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool IsDuplicateRemoteCandidate(const Candidate& candidate);
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
-  bool IsPingable(Connection* conn, uint32_t now);
+  bool IsPingable(Connection* conn, int64_t now);
   void PingConnection(Connection* conn);
   void AddAllocatorSession(PortAllocatorSession* session);
   void AddConnection(Connection* connection);
@@ -256,8 +256,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   Connection* best_nominated_connection() const;
   bool IsBackupConnection(Connection* conn) const;
 
-  Connection* FindConnectionToPing(uint32_t now);
-  Connection* FindOldestConnectionNeedingTriggeredCheck(uint32_t now);
+  Connection* FindConnectionToPing(int64_t now);
+  Connection* FindOldestConnectionNeedingTriggeredCheck(int64_t now);
   // Between |conn1| and |conn2|, this function returns the one which should
   // be pinged first.
   Connection* SelectMostPingableConnection(Connection* conn1,
@@ -321,7 +321,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   IceGatheringState gathering_state_;
 
   int check_receiving_interval_;
-  uint32_t last_ping_sent_ms_ = 0;
+  int64_t last_ping_sent_ms_ = 0;
   int weak_ping_interval_ = WEAK_PING_INTERVAL;
   TransportChannelState state_ = TransportChannelState::STATE_INIT;
   IceConfig config_;

@@ -205,7 +205,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     } else {
       rtc::Thread::Current()->Send(this, 0, packet);
     }
-    rtc::SentPacket sent_packet(options.packet_id, rtc::Time());
+    rtc::SentPacket sent_packet(options.packet_id, rtc::Time64());
     SignalSentPacket(this, sent_packet);
     return static_cast<int>(len);
   }

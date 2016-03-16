@@ -52,26 +52,26 @@ extern const char TCPTYPE_SIMOPEN_STR[];
 
 // The minimum time we will wait before destroying a connection after creating
 // it.
-const uint32_t MIN_CONNECTION_LIFETIME = 10 * 1000;  // 10 seconds.
+static const int MIN_CONNECTION_LIFETIME = 10 * 1000;  // 10 seconds.
 
 // A connection will be declared dead if it has not received anything for this
 // long.
-const uint32_t DEAD_CONNECTION_RECEIVE_TIMEOUT = 30 * 1000;  // 30 seconds.
+static const int DEAD_CONNECTION_RECEIVE_TIMEOUT = 30 * 1000;  // 30 seconds.
 
 // The timeout duration when a connection does not receive anything.
-const uint32_t WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;  // 2.5 seconds
+static const int WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;  // 2.5 seconds
 
 // The length of time we wait before timing out writability on a connection.
-const uint32_t CONNECTION_WRITE_TIMEOUT = 15 * 1000;  // 15 seconds
+static const int CONNECTION_WRITE_TIMEOUT = 15 * 1000;  // 15 seconds
 
 // The length of time we wait before we become unwritable.
-const uint32_t CONNECTION_WRITE_CONNECT_TIMEOUT = 5 * 1000;  // 5 seconds
-
-// The number of pings that must fail to respond before we become unwritable.
-const uint32_t CONNECTION_WRITE_CONNECT_FAILURES = 5;
+static const int CONNECTION_WRITE_CONNECT_TIMEOUT = 5 * 1000;  // 5 seconds
 
 // This is the length of time that we wait for a ping response to come back.
-const int CONNECTION_RESPONSE_TIMEOUT = 5 * 1000;   // 5 seconds
+static const int CONNECTION_RESPONSE_TIMEOUT = 5 * 1000;  // 5 seconds
+
+// The number of pings that must fail to respond before we become unwritable.
+static const uint32_t CONNECTION_WRITE_CONNECT_FAILURES = 5;
 
 enum RelayType {
   RELAY_GTURN,   // Legacy google relay service.
@@ -414,11 +414,11 @@ class Connection : public rtc::MessageHandler,
     public sigslot::has_slots<> {
  public:
   struct SentPing {
-    SentPing(const std::string id, uint32_t sent_time)
+    SentPing(const std::string id, int64_t sent_time)
         : id(id), sent_time(sent_time) {}
 
     std::string id;
-    uint32_t sent_time;
+    int64_t sent_time;
   };
 
   // States are from RFC 5245. http://tools.ietf.org/html/rfc5245#section-5.7.4
@@ -463,10 +463,10 @@ class Connection : public rtc::MessageHandler,
     return write_state_ != STATE_WRITE_TIMEOUT;
   }
   // A connection is dead if it can be safely deleted.
-  bool dead(uint32_t now) const;
+  bool dead(int64_t now) const;
 
   // Estimate of the round-trip time over this connection.
-  uint32_t rtt() const { return rtt_; }
+  int rtt() const { return rtt_; }
 
   size_t sent_total_bytes();
   size_t sent_bytes_second();
@@ -520,7 +520,7 @@ class Connection : public rtc::MessageHandler,
     remote_ice_mode_ = mode;
   }
 
-  void set_receiving_timeout(uint32_t receiving_timeout_ms) {
+  void set_receiving_timeout(int64_t receiving_timeout_ms) {
     receiving_timeout_ = receiving_timeout_ms;
   }
 
@@ -532,19 +532,19 @@ class Connection : public rtc::MessageHandler,
 
   // Checks that the state of this connection is up-to-date.  The argument is
   // the current time, which is compared against various timeouts.
-  void UpdateState(uint32_t now);
+  void UpdateState(int64_t now);
 
   // Called when this connection should try checking writability again.
-  uint32_t last_ping_sent() const { return last_ping_sent_; }
-  void Ping(uint32_t now);
+  int64_t last_ping_sent() const { return last_ping_sent_; }
+  void Ping(int64_t now);
   void ReceivedPingResponse();
-  uint32_t last_ping_response_received() const {
+  int64_t last_ping_response_received() const {
     return last_ping_response_received_;
   }
 
   // Called whenever a valid ping is received on this connection.  This is
   // public because the connection intercepts the first ping for us.
-  uint32_t last_ping_received() const { return last_ping_received_; }
+  int64_t last_ping_received() const { return last_ping_received_; }
   void ReceivedPing();
   // Handles the binding request; sends a response if this is a valid request.
   void HandleBindingRequest(IceMessage* msg);
@@ -584,7 +584,7 @@ class Connection : public rtc::MessageHandler,
 
   // Returns the last received time of any data, stun request, or stun
   // response in milliseconds
-  uint32_t last_received() const;
+  int64_t last_received() const;
 
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
@@ -628,12 +628,12 @@ class Connection : public rtc::MessageHandler,
   bool nominated_;
   IceMode remote_ice_mode_;
   StunRequestManager requests_;
-  uint32_t rtt_;
-  uint32_t last_ping_sent_;      // last time we sent a ping to the other side
-  uint32_t last_ping_received_;  // last time we received a ping from the other
-                                 // side
-  uint32_t last_data_received_;
-  uint32_t last_ping_response_received_;
+  int rtt_;
+  int64_t last_ping_sent_;      // last time we sent a ping to the other side
+  int64_t last_ping_received_;  // last time we received a ping from the other
+                                // side
+  int64_t last_data_received_;
+  int64_t last_ping_response_received_;
   std::vector<SentPing> pings_since_last_response_;
 
   rtc::RateTracker recv_rate_tracker_;
@@ -648,8 +648,8 @@ class Connection : public rtc::MessageHandler,
   bool reported_;
   State state_;
   // Time duration to switch from receiving to not receiving.
-  uint32_t receiving_timeout_;
-  uint32_t time_created_ms_;
+  int receiving_timeout_;
+  int64_t time_created_ms_;
 
   friend class Port;
   friend class ConnectionRequest;

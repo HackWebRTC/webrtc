@@ -200,13 +200,13 @@ class TurnServer : public sigslot::has_slots<> {
   void SetExternalSocketFactory(rtc::PacketSocketFactory* factory,
                                 const rtc::SocketAddress& address);
   // For testing only.
-  std::string SetTimestampForNextNonce(uint32_t timestamp) {
+  std::string SetTimestampForNextNonce(int64_t timestamp) {
     ts_for_next_nonce_ = timestamp;
     return GenerateNonce(timestamp);
   }
 
  private:
-  std::string GenerateNonce(uint32_t now) const;
+  std::string GenerateNonce(int64_t now) const;
   void OnInternalPacket(rtc::AsyncPacketSocket* socket, const char* data,
                         size_t size, const rtc::SocketAddress& address,
                         const rtc::PacketTime& packet_time);
@@ -277,7 +277,7 @@ class TurnServer : public sigslot::has_slots<> {
 
   // For testing only. If this is non-zero, the next NONCE will be generated
   // from this value, and it will be reset to 0 after generating the NONCE.
-  uint32_t ts_for_next_nonce_ = 0;
+  int64_t ts_for_next_nonce_ = 0;
 
   friend class TurnServerAllocation;
 };
