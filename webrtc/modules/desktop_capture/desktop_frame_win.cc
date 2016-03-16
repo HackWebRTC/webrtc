@@ -19,7 +19,7 @@ namespace webrtc {
 DesktopFrameWin::DesktopFrameWin(DesktopSize size,
                                  int stride,
                                  uint8_t* data,
-                                 rtc::scoped_ptr<SharedMemory> shared_memory,
+                                 std::unique_ptr<SharedMemory> shared_memory,
                                  HBITMAP bitmap)
     : DesktopFrame(size, stride, data, shared_memory.get()),
       bitmap_(bitmap),
@@ -46,10 +46,11 @@ DesktopFrameWin* DesktopFrameWin::Create(
   bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
   bmi.bmiHeader.biSizeImage = bytes_per_row * size.height();
 
-  rtc::scoped_ptr<SharedMemory> shared_memory;
+  std::unique_ptr<SharedMemory> shared_memory;
   HANDLE section_handle = nullptr;
   if (shared_memory_factory) {
-    shared_memory = shared_memory_factory->CreateSharedMemory(buffer_size);
+    shared_memory = rtc::ScopedToUnique(
+        shared_memory_factory->CreateSharedMemory(buffer_size));
     if (shared_memory)
       section_handle = shared_memory->handle();
   }

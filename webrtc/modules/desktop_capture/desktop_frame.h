@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/shared_memory.h"
@@ -88,7 +89,7 @@ class DesktopFrame {
   DesktopRegion updated_region_;
   DesktopVector dpi_;
   int64_t capture_time_ms_;
-  rtc::scoped_ptr<DesktopRegion> shape_;
+  std::unique_ptr<DesktopRegion> shape_;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
@@ -110,7 +111,7 @@ class BasicDesktopFrame : public DesktopFrame {
 // A DesktopFrame that stores data in shared memory.
 class SharedMemoryDesktopFrame : public DesktopFrame {
  public:
-  static rtc::scoped_ptr<DesktopFrame> Create(
+  static std::unique_ptr<DesktopFrame> Create(
       DesktopSize size,
       SharedMemoryFactory* shared_memory_factory);
 
@@ -121,7 +122,7 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
                            SharedMemory* shared_memory);
   SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
-                           rtc::scoped_ptr<SharedMemory> shared_memory);
+                           std::unique_ptr<SharedMemory> shared_memory);
   ~SharedMemoryDesktopFrame() override;
 
  private:

@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/modules/desktop_capture/window_capturer.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
@@ -33,8 +34,8 @@ class WindowCapturerTest : public testing::Test,
   void OnCaptureCompleted(DesktopFrame* frame) override { frame_.reset(frame); }
 
  protected:
-  rtc::scoped_ptr<WindowCapturer> capturer_;
-  rtc::scoped_ptr<DesktopFrame> frame_;
+  std::unique_ptr<WindowCapturer> capturer_;
+  std::unique_ptr<DesktopFrame> frame_;
 };
 
 // Verify that we can enumerate windows.

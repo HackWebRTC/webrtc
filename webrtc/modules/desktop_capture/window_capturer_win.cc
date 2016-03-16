@@ -12,7 +12,8 @@
 
 #include <assert.h>
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/win32.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
@@ -204,7 +205,7 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     return;
   }
 
-  rtc::scoped_ptr<DesktopFrameWin> frame(
+  std::unique_ptr<DesktopFrameWin> frame(
       DesktopFrameWin::Create(cropped_rect.size(), NULL, window_dc));
   if (!frame.get()) {
     ReleaseDC(window_, window_dc);

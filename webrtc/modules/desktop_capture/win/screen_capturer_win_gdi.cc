@@ -45,7 +45,7 @@ class CallbackSharedMemoryFactory : public SharedMemoryFactory {
   ~CallbackSharedMemoryFactory() override {}
 
   rtc::scoped_ptr<SharedMemory> CreateSharedMemory(size_t size) override {
-    return rtc_make_scoped_ptr(callback_->CreateSharedMemory(size));
+    return rtc::scoped_ptr<SharedMemory>(callback_->CreateSharedMemory(size));
   }
 
  private:
@@ -90,7 +90,8 @@ ScreenCapturerWinGdi::~ScreenCapturerWinGdi() {
 
 void ScreenCapturerWinGdi::SetSharedMemoryFactory(
     rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) {
-  shared_memory_factory_ = std::move(shared_memory_factory);
+  shared_memory_factory_ =
+      rtc::ScopedToUnique(std::move(shared_memory_factory));
 }
 
 void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
@@ -184,7 +185,7 @@ void ScreenCapturerWinGdi::Start(Callback* callback) {
 void ScreenCapturerWinGdi::PrepareCaptureResources() {
   // Switch to the desktop receiving user input if different from the current
   // one.
-  rtc::scoped_ptr<Desktop> input_desktop(Desktop::GetInputDesktop());
+  std::unique_ptr<Desktop> input_desktop(Desktop::GetInputDesktop());
   if (input_desktop.get() != NULL && !desktop_.IsSame(*input_desktop)) {
     // Release GDI resources otherwise SetThreadDesktop will fail.
     if (desktop_dc_) {
@@ -262,7 +263,7 @@ bool ScreenCapturerWinGdi::CaptureImage() {
     assert(desktop_dc_ != NULL);
     assert(memory_dc_ != NULL);
 
-    rtc::scoped_ptr<DesktopFrame> buffer(DesktopFrameWin::Create(
+    std::unique_ptr<DesktopFrame> buffer(DesktopFrameWin::Create(
         size, shared_memory_factory_.get(), desktop_dc_));
     if (!buffer.get())
       return false;

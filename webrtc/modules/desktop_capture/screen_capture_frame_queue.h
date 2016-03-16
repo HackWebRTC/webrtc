@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURE_FRAME_QUEUE_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURE_FRAME_QUEUE_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/typedefs.h"
 
@@ -64,7 +65,7 @@ class ScreenCaptureFrameQueue {
   int current_;
 
   static const int kQueueLength = 2;
-  rtc::scoped_ptr<SharedDesktopFrame> frames_[kQueueLength];
+  std::unique_ptr<SharedDesktopFrame> frames_[kQueueLength];
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCaptureFrameQueue);
 };

@@ -10,7 +10,8 @@
 
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {
@@ -39,7 +40,7 @@ class SharedDesktopFrame::Core {
   virtual ~Core() {}
 
   Atomic32 ref_count_;
-  rtc::scoped_ptr<DesktopFrame> frame_;
+  std::unique_ptr<DesktopFrame> frame_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Core);
 };

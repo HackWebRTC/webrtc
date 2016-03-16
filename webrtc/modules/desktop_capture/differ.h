@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DIFFER_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_DIFFER_H_
 
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 
 namespace webrtc {
@@ -74,7 +74,7 @@ class Differ {
   int bytes_per_row_;
 
   // Diff information for each block in the image.
-  rtc::scoped_ptr<bool[]> diff_info_;
+  std::unique_ptr<bool[]> diff_info_;
 
   // Dimensions and total size of diff info array.
   int diff_info_width_;

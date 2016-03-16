@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_CROPPING_WINDOW_CAPTURER_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_CROPPING_WINDOW_CAPTURER_H_
 
+#include <memory>
+
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
@@ -63,8 +65,8 @@ class CroppingWindowCapturer : public WindowCapturer,
  private:
   DesktopCaptureOptions options_;
   DesktopCapturer::Callback* callback_;
-  rtc::scoped_ptr<WindowCapturer> window_capturer_;
-  rtc::scoped_ptr<ScreenCapturer> screen_capturer_;
+  std::unique_ptr<WindowCapturer> window_capturer_;
+  std::unique_ptr<ScreenCapturer> screen_capturer_;
   WindowId selected_window_;
   WindowId excluded_window_;
 };

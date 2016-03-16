@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/differ.h"
 #include "webrtc/modules/desktop_capture/differ_block.h"
 
@@ -188,7 +189,7 @@ class DifferTest : public testing::Test {
   }
 
   // The differ class we're testing.
-  rtc::scoped_ptr<Differ> differ_;
+  std::unique_ptr<Differ> differ_;
 
   // Screen/buffer info.
   int width_;
@@ -200,8 +201,8 @@ class DifferTest : public testing::Test {
   int buffer_size_;
 
   // Previous and current screen buffers.
-  rtc::scoped_ptr<uint8_t[]> prev_;
-  rtc::scoped_ptr<uint8_t[]> curr_;
+  std::unique_ptr<uint8_t[]> prev_;
+  std::unique_ptr<uint8_t[]> curr_;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(DifferTest);

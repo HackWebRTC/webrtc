@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 
 #include "testing/gmock/include/gmock/gmock.h"
@@ -34,7 +36,7 @@ class ScreenCapturerTest : public testing::Test {
   }
 
  protected:
-  rtc::scoped_ptr<ScreenCapturer> capturer_;
+  std::unique_ptr<ScreenCapturer> capturer_;
   MockScreenCapturerCallback callback_;
 };
 
@@ -58,7 +60,8 @@ class FakeSharedMemoryFactory : public SharedMemoryFactory {
   ~FakeSharedMemoryFactory() override {}
 
   rtc::scoped_ptr<SharedMemory> CreateSharedMemory(size_t size) override {
-    return rtc_make_scoped_ptr(new FakeSharedMemory(new char[size], size));
+    return rtc::scoped_ptr<SharedMemory>(
+        new FakeSharedMemory(new char[size], size));
   }
 
  private:
@@ -114,7 +117,7 @@ TEST_F(ScreenCapturerTest, UseSharedBuffers) {
 
   capturer_->Start(&callback_);
   capturer_->SetSharedMemoryFactory(
-      rtc_make_scoped_ptr(new FakeSharedMemoryFactory()));
+      rtc::scoped_ptr<SharedMemoryFactory>(new FakeSharedMemoryFactory()));
   capturer_->Capture(DesktopRegion());
 
   ASSERT_TRUE(frame);

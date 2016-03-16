@@ -11,12 +11,14 @@
 #include "webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
 
 #include <assert.h>
+
+#include <memory>
+
 #include <ApplicationServices/ApplicationServices.h>
 #include <Cocoa/Cocoa.h>
 #include <CoreFoundation/CoreFoundation.h>
 
 #include "webrtc/base/macutils.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
@@ -52,7 +54,7 @@ class MouseCursorMonitorMac : public MouseCursorMonitor {
   ScreenId screen_id_;
   Callback* callback_;
   Mode mode_;
-  rtc::scoped_ptr<MouseCursor> last_cursor_;
+  std::unique_ptr<MouseCursor> last_cursor_;
   rtc::scoped_refptr<FullScreenChromeWindowDetector>
       full_screen_chrome_window_detector_;
 };
@@ -268,14 +270,14 @@ void MouseCursorMonitorMac::CaptureImage() {
 
   // Create a MouseCursor that describes the cursor and pass it to
   // the client.
-  rtc::scoped_ptr<DesktopFrame> image(
+  std::unique_ptr<DesktopFrame> image(
       new BasicDesktopFrame(DesktopSize(size.width(), size.height())));
   memcpy(image->data(), src_data,
          size.width() * size.height() * DesktopFrame::kBytesPerPixel);
 
   CFRelease(image_data_ref);
 
-  rtc::scoped_ptr<MouseCursor> cursor(
+  std::unique_ptr<MouseCursor> cursor(
       new MouseCursor(image.release(), hotspot));
   last_cursor_.reset(MouseCursor::CopyOf(*cursor));
 

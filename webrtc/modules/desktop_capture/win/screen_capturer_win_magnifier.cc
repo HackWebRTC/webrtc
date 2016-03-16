@@ -38,7 +38,7 @@ static LPCTSTR kMagnifierWindowName = L"MagnifierWindow";
 Atomic32 ScreenCapturerWinMagnifier::tls_index_(TLS_OUT_OF_INDEXES);
 
 ScreenCapturerWinMagnifier::ScreenCapturerWinMagnifier(
-    rtc::scoped_ptr<ScreenCapturer> fallback_capturer)
+    std::unique_ptr<ScreenCapturer> fallback_capturer)
     : fallback_capturer_(std::move(fallback_capturer)),
       fallback_capturer_started_(false),
       callback_(NULL),
@@ -83,7 +83,8 @@ void ScreenCapturerWinMagnifier::Start(Callback* callback) {
 
 void ScreenCapturerWinMagnifier::SetSharedMemoryFactory(
     rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) {
-  shared_memory_factory_ = std::move(shared_memory_factory);
+  shared_memory_factory_ =
+      rtc::ScopedToUnique(std::move(shared_memory_factory));
 }
 
 void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
@@ -101,7 +102,7 @@ void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
   }
   // Switch to the desktop receiving user input if different from the current
   // one.
-  rtc::scoped_ptr<Desktop> input_desktop(Desktop::GetInputDesktop());
+  std::unique_ptr<Desktop> input_desktop(Desktop::GetInputDesktop());
   if (input_desktop.get() != NULL && !desktop_.IsSame(*input_desktop)) {
     // Release GDI resources otherwise SetThreadDesktop will fail.
     if (desktop_dc_) {
@@ -427,11 +428,11 @@ void ScreenCapturerWinMagnifier::CreateCurrentFrameIfNecessary(
   // Note that we can't reallocate other buffers at this point, since the caller
   // may still be reading from them.
   if (!queue_.current_frame() || !queue_.current_frame()->size().equals(size)) {
-    rtc::scoped_ptr<DesktopFrame> frame =
+    std::unique_ptr<DesktopFrame> frame =
         shared_memory_factory_
             ? SharedMemoryDesktopFrame::Create(size,
                                                shared_memory_factory_.get())
-            : rtc::scoped_ptr<DesktopFrame>(new BasicDesktopFrame(size));
+            : std::unique_ptr<DesktopFrame>(new BasicDesktopFrame(size));
     queue_.ReplaceCurrentFrame(frame.release());
   }
 }

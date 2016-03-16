@@ -12,10 +12,10 @@
 
 #include <ApplicationServices/ApplicationServices.h>
 
+#include <memory>
 #include <ostream>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
@@ -40,13 +40,13 @@ class ScreenCapturerMacTest : public testing::Test {
  protected:
   void SetUp() override { capturer_.reset(ScreenCapturer::Create()); }
 
-  rtc::scoped_ptr<ScreenCapturer> capturer_;
+  std::unique_ptr<ScreenCapturer> capturer_;
   MockScreenCapturerCallback callback_;
 };
 
 void ScreenCapturerMacTest::CaptureDoneCallback1(
     DesktopFrame* frame) {
-  rtc::scoped_ptr<DesktopFrame> owned_frame(frame);
+  std::unique_ptr<DesktopFrame> owned_frame(frame);
 
   MacDesktopConfiguration config = MacDesktopConfiguration::GetCurrent(
       MacDesktopConfiguration::BottomLeftOrigin);
@@ -58,7 +58,7 @@ void ScreenCapturerMacTest::CaptureDoneCallback1(
 
 void ScreenCapturerMacTest::CaptureDoneCallback2(
     DesktopFrame* frame) {
-  rtc::scoped_ptr<DesktopFrame> owned_frame(frame);
+  std::unique_ptr<DesktopFrame> owned_frame(frame);
 
   MacDesktopConfiguration config = MacDesktopConfiguration::GetCurrent(
       MacDesktopConfiguration::BottomLeftOrigin);

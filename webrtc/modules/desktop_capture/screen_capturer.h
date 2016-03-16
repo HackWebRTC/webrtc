@@ -13,7 +13,6 @@
 
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_types.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/typedefs.h"

@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_AND_CURSOR_COMPOSER_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_AND_CURSOR_COMPOSER_H_
 
+#include <memory>
+
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
@@ -47,12 +49,12 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
                              const DesktopVector& position) override;
 
-  rtc::scoped_ptr<DesktopCapturer> desktop_capturer_;
-  rtc::scoped_ptr<MouseCursorMonitor> mouse_monitor_;
+  std::unique_ptr<DesktopCapturer> desktop_capturer_;
+  std::unique_ptr<MouseCursorMonitor> mouse_monitor_;
 
   DesktopCapturer::Callback* callback_;
 
-  rtc::scoped_ptr<MouseCursor> cursor_;
+  std::unique_ptr<MouseCursor> cursor_;
   MouseCursorMonitor::CursorState cursor_state_;
   DesktopVector cursor_position_;
 

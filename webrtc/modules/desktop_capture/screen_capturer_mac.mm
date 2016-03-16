@@ -11,6 +11,8 @@
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 
 #include <stddef.h>
+
+#include <memory>
 #include <set>
 
 #include <ApplicationServices/ApplicationServices.h>
@@ -21,7 +23,6 @@
 #include <OpenGL/OpenGL.h>
 
 #include "webrtc/base/macutils.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
@@ -301,7 +302,7 @@ class InvertedDesktopFrame : public DesktopFrame {
   virtual ~InvertedDesktopFrame() {}
 
  private:
-  rtc::scoped_ptr<DesktopFrame> original_frame_;
+  std::unique_ptr<DesktopFrame> original_frame_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(InvertedDesktopFrame);
 };
@@ -957,7 +958,7 @@ void ScreenCapturerMac::ScreenUpdateMoveCallback(
 }
 
 DesktopFrame* ScreenCapturerMac::CreateFrame() {
-  rtc::scoped_ptr<DesktopFrame> frame(
+  std::unique_ptr<DesktopFrame> frame(
       new BasicDesktopFrame(screen_pixel_bounds_.size()));
 
   frame->set_dpi(DesktopVector(kStandardDPI * dip_to_pixel_scale_,
@@ -972,7 +973,7 @@ ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   if (!options.configuration_monitor())
     return NULL;
 
-  rtc::scoped_ptr<ScreenCapturerMac> capturer(
+  std::unique_ptr<ScreenCapturerMac> capturer(
       new ScreenCapturerMac(options.configuration_monitor()));
   if (!capturer->Init())
     capturer.reset();

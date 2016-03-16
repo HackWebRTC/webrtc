@@ -12,6 +12,8 @@
 
 #include <assert.h>
 
+#include <memory>
+
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/modules/desktop_capture/win/cursor.h"
@@ -93,7 +95,7 @@ void MouseCursorMonitorWin::Capture() {
   if (last_cursor_ != cursor_info.hCursor) {
     last_cursor_ = cursor_info.hCursor;
     // Note that |cursor_info.hCursor| does not need to be freed.
-    rtc::scoped_ptr<MouseCursor> cursor(
+    std::unique_ptr<MouseCursor> cursor(
         CreateMouseCursorFromHCursor(desktop_dc_, cursor_info.hCursor));
     if (cursor.get())
       callback_->OnMouseCursor(cursor.release());

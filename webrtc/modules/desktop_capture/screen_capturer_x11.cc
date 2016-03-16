@@ -11,6 +11,8 @@
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 
 #include <string.h>
+
+#include <memory>
 #include <set>
 
 #include <X11/extensions/Xdamage.h>
@@ -19,7 +21,6 @@
 #include <X11/Xutil.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/differ.h"
@@ -112,7 +113,7 @@ class ScreenCapturerLinux : public ScreenCapturer,
   DesktopRegion last_invalid_region_;
 
   // |Differ| for use when polling for changes.
-  rtc::scoped_ptr<Differ> differ_;
+  std::unique_ptr<Differ> differ_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerLinux);
 };
@@ -253,7 +254,7 @@ void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
   // Note that we can't reallocate other buffers at this point, since the caller
   // may still be reading from them.
   if (!queue_.current_frame()) {
-    rtc::scoped_ptr<DesktopFrame> frame(
+    std::unique_ptr<DesktopFrame> frame(
         new BasicDesktopFrame(x_server_pixel_buffer_.window_size()));
     queue_.ReplaceCurrentFrame(frame.release());
   }
@@ -435,7 +436,7 @@ ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   if (!options.x_display())
     return NULL;
 
-  rtc::scoped_ptr<ScreenCapturerLinux> capturer(new ScreenCapturerLinux());
+  std::unique_ptr<ScreenCapturerLinux> capturer(new ScreenCapturerLinux());
   if (!capturer->Init(options))
     capturer.reset();
   return capturer.release();

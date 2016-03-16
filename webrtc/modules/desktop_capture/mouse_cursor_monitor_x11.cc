@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
 
 #include <X11/extensions/Xfixes.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
@@ -84,7 +85,7 @@ class MouseCursorMonitorX11 : public MouseCursorMonitor,
   int xfixes_event_base_;
   int xfixes_error_base_;
 
-  rtc::scoped_ptr<MouseCursor> cursor_shape_;
+  std::unique_ptr<MouseCursor> cursor_shape_;
 };
 
 MouseCursorMonitorX11::MouseCursorMonitorX11(
@@ -190,7 +191,7 @@ void MouseCursorMonitorX11::CaptureCursor() {
        return;
    }
 
-   rtc::scoped_ptr<DesktopFrame> image(
+   std::unique_ptr<DesktopFrame> image(
        new BasicDesktopFrame(DesktopSize(img->width, img->height)));
 
   // Xlib stores 32-bit data in longs, even if longs are 64-bits long.
