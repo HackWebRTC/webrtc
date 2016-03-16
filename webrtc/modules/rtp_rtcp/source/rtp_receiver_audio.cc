@@ -20,11 +20,13 @@
 
 namespace webrtc {
 RTPReceiverStrategy* RTPReceiverStrategy::CreateAudioStrategy(
-    RtpData* data_callback) {
-  return new RTPReceiverAudio(data_callback);
+    RtpData* data_callback,
+    RtpAudioFeedback* incoming_messages_callback) {
+  return new RTPReceiverAudio(data_callback, incoming_messages_callback);
 }
 
-RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
+RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback,
+                                   RtpAudioFeedback* incoming_messages_callback)
     : RTPReceiverStrategy(data_callback),
       TelephoneEventHandler(),
       last_received_frequency_(8000),
@@ -38,7 +40,8 @@ RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
       g722_payload_type_(-1),
       last_received_g722_(false),
       num_energy_(0),
-      current_remote_energy_() {
+      current_remote_energy_(),
+      cb_audio_feedback_(incoming_messages_callback) {
   last_payload_.Audio.channels = 1;
   memset(current_remote_energy_, 0, sizeof(current_remote_energy_));
 }

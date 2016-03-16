@@ -722,6 +722,7 @@ Channel::Channel(int32_t channelId,
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
       rtp_receiver_(
           RtpReceiver::CreateAudioReceiver(Clock::GetRealTimeClock(),
+                                           nullptr,
                                            this,
                                            this,
                                            rtp_payload_registry_.get())),

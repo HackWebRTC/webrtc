@@ -28,7 +28,8 @@ class CriticalSectionWrapper;
 class RTPReceiverAudio : public RTPReceiverStrategy,
                          public TelephoneEventHandler {
  public:
-  explicit RTPReceiverAudio(RtpData* data_callback);
+  RTPReceiverAudio(RtpData* data_callback,
+                   RtpAudioFeedback* incoming_messages_callback);
   virtual ~RTPReceiverAudio() {}
 
   // The following three methods implement the TelephoneEventHandler interface.
@@ -118,6 +119,8 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
 
   uint8_t num_energy_;
   uint8_t current_remote_energy_[kRtpCsrcSize];
+
+  RtpAudioFeedback* cb_audio_feedback_;
 };
 }  // namespace webrtc
 
