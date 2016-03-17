@@ -44,20 +44,14 @@ bool InitializeSSL(VerificationCallback callback) {
   return OpenSSLAdapter::InitializeSSL(callback);
 }
 
-bool InitializeSSLThread() {
-  return OpenSSLAdapter::InitializeSSLThread();
-}
-
-bool CleanupSSL() {
-  return OpenSSLAdapter::CleanupSSL();
-}
-
 #else  // !SSL_USE_OPENSSL
 
 bool InitializeSSL(VerificationCallback callback) {
   return true;
 }
 
+#endif  // SSL_USE_OPENSSL
+
 bool InitializeSSLThread() {
   return true;
 }
@@ -65,8 +59,6 @@ bool InitializeSSLThread() {
 bool CleanupSSL() {
   return true;
 }
-
-#endif  // SSL_USE_OPENSSL
 
 ///////////////////////////////////////////////////////////////////////////////
 

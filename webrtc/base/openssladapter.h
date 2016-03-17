@@ -27,8 +27,6 @@ namespace rtc {
 class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
 public:
   static bool InitializeSSL(VerificationCallback callback);
-  static bool InitializeSSLThread();
-  static bool CleanupSSL();
 
   OpenSSLAdapter(AsyncSocket* socket);
   ~OpenSSLAdapter() override;
