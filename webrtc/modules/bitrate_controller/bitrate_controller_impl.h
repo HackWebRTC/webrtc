@@ -21,7 +21,6 @@
 #include <utility>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 
 namespace webrtc {

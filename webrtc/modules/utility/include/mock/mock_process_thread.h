@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_UTILITY_INCLUDE_MOCK_MOCK_PROCESS_THREAD_H_
 #define WEBRTC_MODULES_UTILITY_INCLUDE_MOCK_MOCK_PROCESS_THREAD_H_
 
+#include <memory>
+
 #include "webrtc/modules/utility/include/process_thread.h"
 
 #include "testing/gmock/include/gmock/gmock.h"

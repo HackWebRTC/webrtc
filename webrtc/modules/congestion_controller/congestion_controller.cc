@@ -11,6 +11,7 @@
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -123,8 +124,8 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
   RemoteBitrateObserver* observer_;
   Clock* const clock_;
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
-  rtc::scoped_ptr<RemoteBitrateEstimator> rbe_;
+  std::unique_ptr<CriticalSectionWrapper> crit_sect_;
+  std::unique_ptr<RemoteBitrateEstimator> rbe_;
   bool using_absolute_send_time_;
   uint32_t packets_since_absolute_send_time_;
   int min_bitrate_bps_;

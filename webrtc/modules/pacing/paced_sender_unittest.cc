@@ -9,6 +9,7 @@
  */
 
 #include <list>
+#include <memory>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -134,7 +135,7 @@ class PacedSenderTest : public ::testing::Test {
 
   SimulatedClock clock_;
   MockPacedSenderCallback callback_;
-  rtc::scoped_ptr<PacedSender> send_bucket_;
+  std::unique_ptr<PacedSender> send_bucket_;
 };
 
 TEST_F(PacedSenderTest, QueuePacket) {

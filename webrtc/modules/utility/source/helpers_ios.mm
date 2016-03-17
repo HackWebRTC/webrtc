@@ -15,9 +15,10 @@
 #import <sys/sysctl.h>
 #import <UIKit/UIKit.h>
 
+#include <memory>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/utility/include/helpers_ios.h"
 
 namespace webrtc {
@@ -152,7 +153,7 @@ std::string GetDeviceType() {
 std::string GetDeviceName() {
   size_t size;
   sysctlbyname("hw.machine", NULL, &size, NULL, 0);
-  rtc::scoped_ptr<char[]> machine;
+  std::unique_ptr<char[]> machine;
   machine.reset(new char[size]);
   sysctlbyname("hw.machine", machine.get(), &size, NULL, 0);
   return std::string(LookUpRealName(machine.get()));

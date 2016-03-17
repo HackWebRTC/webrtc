@@ -13,8 +13,8 @@
 
 #include <list>
 #include <map>
+#include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/source/memory_pool.h"
@@ -142,8 +142,8 @@ private:
 
     bool LimitMixedAudio(AudioFrame* mixedAudio) const;
 
-    rtc::scoped_ptr<CriticalSectionWrapper> _crit;
-    rtc::scoped_ptr<CriticalSectionWrapper> _cbCrit;
+    std::unique_ptr<CriticalSectionWrapper> _crit;
+    std::unique_ptr<CriticalSectionWrapper> _cbCrit;
 
     int32_t _id;
 
@@ -179,7 +179,7 @@ private:
     int16_t _processCalls;
 
     // Used for inhibiting saturation in mixing.
-    rtc::scoped_ptr<AudioProcessing> _limiter;
+    std::unique_ptr<AudioProcessing> _limiter;
 };
 }  // namespace webrtc
 

@@ -12,9 +12,9 @@
 #define WEBRTC_MODULES_PACING_PACED_SENDER_H_
 
 #include <list>
+#include <memory>
 #include <set>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -136,20 +136,20 @@ class PacedSender : public Module, public RtpPacketSender {
   Clock* const clock_;
   Callback* const callback_;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
+  std::unique_ptr<CriticalSectionWrapper> critsect_;
   bool paused_ GUARDED_BY(critsect_);
   bool probing_enabled_;
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
-  rtc::scoped_ptr<paced_sender::IntervalBudget> media_budget_
+  std::unique_ptr<paced_sender::IntervalBudget> media_budget_
       GUARDED_BY(critsect_);
   // This is the padding budget, keeping track of how many bits of padding we're
   // allowed to send out during the current interval. This budget will be
   // utilized when there's no media to send.
-  rtc::scoped_ptr<paced_sender::IntervalBudget> padding_budget_
+  std::unique_ptr<paced_sender::IntervalBudget> padding_budget_
       GUARDED_BY(critsect_);
 
-  rtc::scoped_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
+  std::unique_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
   // Actual configured bitrates (media_budget_ may temporarily be higher in
   // order to meet pace time constraint).
   int bitrate_bps_ GUARDED_BY(critsect_);
@@ -157,7 +157,7 @@ class PacedSender : public Module, public RtpPacketSender {
 
   int64_t time_last_update_us_ GUARDED_BY(critsect_);
 
-  rtc::scoped_ptr<paced_sender::PacketQueue> packets_ GUARDED_BY(critsect_);
+  std::unique_ptr<paced_sender::PacketQueue> packets_ GUARDED_BY(critsect_);
   uint64_t packet_counter_;
 };
 }  // namespace webrtc

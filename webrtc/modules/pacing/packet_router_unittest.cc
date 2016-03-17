@@ -9,6 +9,7 @@
  */
 
 #include <list>
+#include <memory>
 
 #include "webrtc/base/checks.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -17,7 +18,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/base/scoped_ptr.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;
@@ -30,7 +30,7 @@ class PacketRouterTest : public ::testing::Test {
  public:
   PacketRouterTest() : packet_router_(new PacketRouter()) {}
  protected:
-  const rtc::scoped_ptr<PacketRouter> packet_router_;
+  const std::unique_ptr<PacketRouter> packet_router_;
 };
 
 TEST_F(PacketRouterTest, TimeToSendPacket) {

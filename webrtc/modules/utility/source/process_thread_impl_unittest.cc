@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <utility>
 
 #include "testing/gmock/include/gmock/gmock.h"
@@ -72,7 +73,7 @@ TEST(ProcessThreadImpl, ProcessCall) {
   ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
-  rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
+  std::unique_ptr<EventWrapper> event(EventWrapper::Create());
 
   MockModule module;
   EXPECT_CALL(module, TimeUntilNextProcess()).WillRepeatedly(Return(0));
@@ -92,7 +93,7 @@ TEST(ProcessThreadImpl, ProcessCall) {
 // call to Start().
 TEST(ProcessThreadImpl, ProcessCall2) {
   ProcessThreadImpl thread("ProcessThread");
-  rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
+  std::unique_ptr<EventWrapper> event(EventWrapper::Create());
 
   MockModule module;
   EXPECT_CALL(module, TimeUntilNextProcess()).WillRepeatedly(Return(0));
@@ -114,7 +115,7 @@ TEST(ProcessThreadImpl, ProcessCall2) {
 // After unregistration, we should not receive any further callbacks.
 TEST(ProcessThreadImpl, Deregister) {
   ProcessThreadImpl thread("ProcessThread");
-  rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
+  std::unique_ptr<EventWrapper> event(EventWrapper::Create());
 
   int process_count = 0;
   MockModule module;
@@ -151,7 +152,7 @@ void ProcessCallAfterAFewMs(int64_t milliseconds) {
   ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
-  rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
+  std::unique_ptr<EventWrapper> event(EventWrapper::Create());
 
   MockModule module;
   int64_t start_time = 0;
@@ -216,7 +217,7 @@ TEST(ProcessThreadImpl, DISABLED_Process50Times) {
   ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
-  rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
+  std::unique_ptr<EventWrapper> event(EventWrapper::Create());
 
   MockModule module;
   int callback_count = 0;
@@ -249,8 +250,8 @@ TEST(ProcessThreadImpl, WakeUp) {
   ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
-  rtc::scoped_ptr<EventWrapper> started(EventWrapper::Create());
-  rtc::scoped_ptr<EventWrapper> called(EventWrapper::Create());
+  std::unique_ptr<EventWrapper> started(EventWrapper::Create());
+  std::unique_ptr<EventWrapper> called(EventWrapper::Create());
 
   MockModule module;
   int64_t start_time;
@@ -293,10 +294,10 @@ TEST(ProcessThreadImpl, WakeUp) {
 // thread.
 TEST(ProcessThreadImpl, PostTask) {
   ProcessThreadImpl thread("ProcessThread");
-  rtc::scoped_ptr<EventWrapper> task_ran(EventWrapper::Create());
-  rtc::scoped_ptr<RaiseEventTask> task(new RaiseEventTask(task_ran.get()));
+  std::unique_ptr<EventWrapper> task_ran(EventWrapper::Create());
+  std::unique_ptr<RaiseEventTask> task(new RaiseEventTask(task_ran.get()));
   thread.Start();
-  thread.PostTask(std::move(task));
+  thread.PostTask(rtc::UniqueToScoped(std::move(task)));
   EXPECT_EQ(kEventSignaled, task_ran->Wait(100));
   thread.Stop();
 }
