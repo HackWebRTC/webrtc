@@ -11,8 +11,8 @@
 #ifndef WEBRTC_API_VIDEOTRACKSOURCE_H_
 #define WEBRTC_API_VIDEOTRACKSOURCE_H_
 
-#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/notifier.h"
+#include "webrtc/api/videosourceinterface.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videosinkinterface.h"
 

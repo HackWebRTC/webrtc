@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "webrtc/api/mediastreamtrack.h"
+#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/videotrackrenderers.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/videosourcebase.h"

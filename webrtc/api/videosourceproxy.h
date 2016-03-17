@@ -12,7 +12,7 @@
 #define WEBRTC_API_VIDEOSOURCEPROXY_H_
 
 #include "webrtc/api/proxy.h"
-#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/videosourceinterface.h"
 
 namespace webrtc {
 

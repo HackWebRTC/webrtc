@@ -27,7 +27,7 @@
 
 #import "RTCVideoCapturer.h"
 
-#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/videosourceinterface.h"
 
 @interface RTCVideoCapturer (Internal)
 

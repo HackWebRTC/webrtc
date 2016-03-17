@@ -18,6 +18,7 @@
 #endif
 #include "webrtc/api/test/fakedtlsidentitystore.h"
 #include "webrtc/api/test/fakevideotrackrenderer.h"
+#include "webrtc/api/videosourceinterface.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"

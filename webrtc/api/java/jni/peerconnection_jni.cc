@@ -55,6 +55,7 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
+#include "webrtc/api/videosourceinterface.h"
 #include "webrtc/api/webrtcsdp.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"

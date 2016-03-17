@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/remotevideocapturer.h"
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/api/videocapturertracksource.h"
 #include "webrtc/base/gunit.h"
