@@ -97,6 +97,9 @@ class AudioRtpSender : public ObserverInterface,
 
   void Stop() override;
 
+  RtpParameters GetParameters() const;
+  bool SetParameters(const RtpParameters& parameters);
+
  private:
   bool can_send_track() const { return track_ && ssrc_; }
   // Helper function to construct options for
@@ -157,6 +160,9 @@ class VideoRtpSender : public ObserverInterface,
   std::string stream_id() const override { return stream_id_; }
 
   void Stop() override;
+
+  RtpParameters GetParameters() const;
+  bool SetParameters(const RtpParameters& parameters);
 
  private:
   bool can_send_track() const { return track_ && ssrc_; }

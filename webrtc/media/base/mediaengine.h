@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "webrtc/audio_state.h"
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/media/base/codec.h"
@@ -203,6 +204,8 @@ class DataEngineInterface {
   virtual DataMediaChannel* CreateChannel(DataChannelType type) = 0;
   virtual const std::vector<DataCodec>& data_codecs() = 0;
 };
+
+webrtc::RtpParameters CreateRtpParametersWithOneEncoding();
 
 }  // namespace cricket
 

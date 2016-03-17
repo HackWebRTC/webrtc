@@ -1080,6 +1080,38 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     return AddSendStream(CreateSimStreamParams("cname", ssrcs));
   }
 
+  int GetMaxEncoderBitrate(cricket::FakeVideoCapturer& capturer) {
+    EXPECT_TRUE(capturer.CaptureFrame());
+
+    std::vector<FakeVideoSendStream*> streams =
+        fake_call_->GetVideoSendStreams();
+    EXPECT_TRUE(streams.size() > 0);
+    FakeVideoSendStream* stream = streams[streams.size() - 1];
+
+    webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig();
+    EXPECT_EQ(1, encoder_config.streams.size());
+    return encoder_config.streams[0].max_bitrate_bps;
+  }
+
+  void SetAndExpectMaxBitrate(cricket::FakeVideoCapturer& capturer,
+                              int global_max,
+                              int stream_max,
+                              int expected_encoder_bitrate) {
+    VideoSendParameters limited_send_params = send_parameters_;
+    limited_send_params.max_bandwidth_bps = global_max;
+    EXPECT_TRUE(channel_->SetSendParameters(limited_send_params));
+    webrtc::RtpParameters parameters = channel_->GetRtpParameters(last_ssrc_);
+    EXPECT_EQ(1UL, parameters.encodings.size());
+    parameters.encodings[0].max_bitrate_bps = stream_max;
+    EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, parameters));
+    // Read back the parameteres and verify they have the correct value
+    parameters = channel_->GetRtpParameters(last_ssrc_);
+    EXPECT_EQ(1UL, parameters.encodings.size());
+    EXPECT_EQ(stream_max, parameters.encodings[0].max_bitrate_bps);
+    // Verify that the new value propagated down to the encoder
+    EXPECT_EQ(expected_encoder_bitrate, GetMaxEncoderBitrate(capturer));
+  }
+
   std::unique_ptr<FakeCall> fake_call_;
   std::unique_ptr<VideoMediaChannel> channel_;
   cricket::VideoSendParameters send_parameters_;
@@ -3111,6 +3143,66 @@ TEST_F(WebRtcVideoChannel2Test, UlpfecPacketDoesntCreateUnsignalledStream) {
 
 TEST_F(WebRtcVideoChannel2Test, RedRtxPacketDoesntCreateUnsignalledStream) {
   TestReceiveUnsignalledSsrcPacket(kRedRtxPayloadType, false);
+}
+
+TEST_F(WebRtcVideoChannel2Test, CanSentMaxBitrateForExistingStream) {
+  AddSendStream();
+
+  cricket::FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  cricket::VideoFormat capture_format_hd =
+      capturer.GetSupportedFormats()->front();
+  EXPECT_EQ(1280, capture_format_hd.width);
+  EXPECT_EQ(720, capture_format_hd.height);
+  EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(capture_format_hd));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  int default_encoder_bitrate = GetMaxEncoderBitrate(capturer);
+  EXPECT_TRUE(default_encoder_bitrate > 1000);
+
+  // TODO(skvlad): Resolve the inconsistency between the interpretation
+  // of the global bitrate limit for audio and video:
+  // - Audio: max_bandwidth_bps = 0 - fail the operation,
+  //          max_bandwidth_bps = -1 - remove the bandwidth limit
+  // - Video: max_bandwidth_bps = 0 - remove the bandwidth limit,
+  //          max_bandwidth_bps = -1 - do not change the previously set
+  //                                   limit.
+
+  SetAndExpectMaxBitrate(capturer, 1000, 0, 1000);
+  SetAndExpectMaxBitrate(capturer, 1000, 800, 800);
+  SetAndExpectMaxBitrate(capturer, 600, 800, 600);
+  SetAndExpectMaxBitrate(capturer, 0, 800, 800);
+  SetAndExpectMaxBitrate(capturer, 0, 0, default_encoder_bitrate);
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+}
+
+TEST_F(WebRtcVideoChannel2Test, CannotSetMaxBitrateForNonexistentStream) {
+  webrtc::RtpParameters nonexistent_parameters =
+      channel_->GetRtpParameters(last_ssrc_);
+  EXPECT_EQ(0, nonexistent_parameters.encodings.size());
+
+  nonexistent_parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_FALSE(channel_->SetRtpParameters(last_ssrc_, nonexistent_parameters));
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+       CannotSetRtpParametersWithIncorrectNumberOfEncodings) {
+  // This test verifies that setting RtpParameters succeeds only if
+  // the structure contains exactly one encoding.
+  // TODO(skvlad): Update this test when we strat supporting setting parameters
+  // for each encoding individually.
+
+  AddSendStream();
+  // Setting RtpParameters with no encoding is expected to fail.
+  webrtc::RtpParameters parameters;
+  EXPECT_FALSE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  // Setting RtpParameters with exactly one encoding should succeed.
+  parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  // Two or more encodings should result in failure.
+  parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_FALSE(channel_->SetRtpParameters(last_ssrc_, parameters));
 }
 
 void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(

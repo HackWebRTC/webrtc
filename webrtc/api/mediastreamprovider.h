@@ -11,6 +11,7 @@
 #ifndef WEBRTC_API_MEDIASTREAMPROVIDER_H_
 #define WEBRTC_API_MEDIASTREAMPROVIDER_H_
 
+#include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/videosinkinterface.h"
@@ -62,6 +63,10 @@ class AudioProviderInterface {
       uint32_t ssrc,
       rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) = 0;
 
+  virtual RtpParameters GetAudioRtpParameters(uint32_t ssrc) const = 0;
+  virtual bool SetAudioRtpParameters(uint32_t ssrc,
+                                     const RtpParameters& parameters) = 0;
+
  protected:
   virtual ~AudioProviderInterface() {}
 };
@@ -81,6 +86,10 @@ class VideoProviderInterface {
   virtual void SetVideoSend(uint32_t ssrc,
                             bool enable,
                             const cricket::VideoOptions* options) = 0;
+
+  virtual RtpParameters GetVideoRtpParameters(uint32_t ssrc) const = 0;
+  virtual bool SetVideoRtpParameters(uint32_t ssrc,
+                                     const RtpParameters& parameters) = 0;
 
  protected:
   virtual ~VideoProviderInterface() {}

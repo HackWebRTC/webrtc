@@ -301,6 +301,7 @@
         'remoteaudiosource.h',
         'remotevideocapturer.cc',
         'remotevideocapturer.h',
+        'rtpparameters.h',
         'rtpreceiver.cc',
         'rtpreceiver.h',
         'rtpreceiverinterface.h',

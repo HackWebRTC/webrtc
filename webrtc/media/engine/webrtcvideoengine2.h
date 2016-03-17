@@ -145,6 +145,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
   bool SetSendParameters(const VideoSendParameters& params) override;
   bool SetRecvParameters(const VideoRecvParameters& params) override;
+  webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const override;
+  bool SetRtpParameters(uint32_t ssrc,
+                        const webrtc::RtpParameters& parameters) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
   bool SetSend(bool send) override;
   bool SetVideoSend(uint32_t ssrc,
@@ -245,6 +248,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     void SetOptions(const VideoOptions& options);
     // TODO(pbos): Move logic from SetOptions into this method.
     void SetSendParameters(const ChangedSendParameters& send_params);
+    bool SetRtpParameters(const webrtc::RtpParameters& parameters);
 
     void OnFrame(const cricket::VideoFrame& frame) override;
     bool SetCapturer(VideoCapturer* capturer);
@@ -253,6 +257,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     void Start();
     void Stop();
+
+    webrtc::RtpParameters rtp_parameters() const { return rtp_parameters_; }
 
     // Implements webrtc::LoadObserver.
     void OnLoadUpdate(Load load) override;
@@ -338,6 +344,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         const VideoCodec& codec) const EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void SetDimensions(int width, int height)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
+    bool ValidateRtpParameters(const webrtc::RtpParameters& parameters);
 
     rtc::ThreadChecker thread_checker_;
     rtc::AsyncInvoker invoker_;
@@ -358,7 +365,15 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     rtc::CriticalSection lock_;
     webrtc::VideoSendStream* stream_ GUARDED_BY(lock_);
+    // Contains settings that are the same for all streams in the MediaChannel,
+    // such as codecs, header extensions, and the global bitrate limit for the
+    // entire channel.
     VideoSendStreamParameters parameters_ GUARDED_BY(lock_);
+    // Contains settings that are unique for each stream, such as max_bitrate.
+    // TODO(skvlad): Move ssrcs_ and ssrc_groups_ into rtp_parameters_.
+    // TODO(skvlad): Combine parameters_ and rtp_parameters_ once we have only
+    // one stream per MediaChannel.
+    webrtc::RtpParameters rtp_parameters_;
     bool pending_encoder_reconfiguration_ GUARDED_BY(lock_);
     VideoEncoderSettings encoder_settings_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);

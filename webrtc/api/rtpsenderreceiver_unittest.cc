@@ -27,6 +27,7 @@
 
 using ::testing::_;
 using ::testing::Exactly;
+using ::testing::Return;
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoTrackId[] = "video_1";
@@ -52,6 +53,9 @@ class MockAudioProvider : public AudioProviderInterface {
                     const cricket::AudioOptions& options,
                     cricket::AudioSource* source));
   MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32_t ssrc, double volume));
+  MOCK_CONST_METHOD1(GetAudioRtpParameters, RtpParameters(uint32_t ssrc));
+  MOCK_METHOD2(SetAudioRtpParameters,
+               bool(uint32_t ssrc, const RtpParameters&));
 
   void SetRawAudioSink(uint32_t,
                        rtc::scoped_ptr<AudioSinkInterface> sink) override {
@@ -76,6 +80,10 @@ class MockVideoProvider : public VideoProviderInterface {
                void(uint32_t ssrc,
                     bool enable,
                     const cricket::VideoOptions* options));
+
+  MOCK_CONST_METHOD1(GetVideoRtpParameters, RtpParameters(uint32_t ssrc));
+  MOCK_METHOD2(SetVideoRtpParameters,
+               bool(uint32_t ssrc, const RtpParameters&));
 };
 
 class FakeVideoTrackSource : public VideoTrackSource {
@@ -495,6 +503,32 @@ TEST_F(RtpSenderReceiverTest, VideoSenderSsrcChanged) {
   // Calls expected from destructor.
   EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc2, nullptr)).Times(1);
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc2, false, _)).Times(1);
+}
+
+TEST_F(RtpSenderReceiverTest, AudioSenderCanSetParameters) {
+  CreateAudioRtpSender();
+
+  EXPECT_CALL(audio_provider_, GetAudioRtpParameters(kAudioSsrc))
+      .WillOnce(Return(RtpParameters()));
+  EXPECT_CALL(audio_provider_, SetAudioRtpParameters(kAudioSsrc, _))
+      .WillOnce(Return(true));
+  RtpParameters params = audio_rtp_sender_->GetParameters();
+  EXPECT_TRUE(audio_rtp_sender_->SetParameters(params));
+
+  DestroyAudioRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, VideoSenderCanSetParameters) {
+  CreateVideoRtpSender();
+
+  EXPECT_CALL(video_provider_, GetVideoRtpParameters(kVideoSsrc))
+      .WillOnce(Return(RtpParameters()));
+  EXPECT_CALL(video_provider_, SetVideoRtpParameters(kVideoSsrc, _))
+      .WillOnce(Return(true));
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params));
+
+  DestroyVideoRtpSender();
 }
 
 }  // namespace webrtc

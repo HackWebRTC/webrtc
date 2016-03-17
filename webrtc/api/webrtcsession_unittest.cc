@@ -3385,6 +3385,25 @@ TEST_F(WebRtcSessionTest, SetAudioPlayout) {
   EXPECT_EQ(1, volume);
 }
 
+TEST_F(WebRtcSessionTest, AudioMaxSendBitrateNotImplemented) {
+  // This test verifies that RtpParameters for audio RtpSenders cannot be
+  // changed.
+  // TODO(skvlad): Update the test after adding support for bitrate limiting in
+  // WebRtcAudioSendStream.
+
+  Init();
+  SendAudioVideoStream1();
+  CreateAndSetRemoteOfferAndLocalAnswer();
+  cricket::FakeVoiceMediaChannel* channel = media_engine_->GetVoiceChannel(0);
+  ASSERT_TRUE(channel != NULL);
+  uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
+  webrtc::RtpParameters params = session_->GetAudioRtpParameters(send_ssrc);
+
+  EXPECT_EQ(0, params.encodings.size());
+  params.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_FALSE(session_->SetAudioRtpParameters(send_ssrc, params));
+}
+
 TEST_F(WebRtcSessionTest, SetAudioSend) {
   Init();
   SendAudioVideoStream1();
@@ -3449,6 +3468,34 @@ TEST_F(WebRtcSessionTest, SetVideoPlayout) {
   EXPECT_TRUE(channel->sinks().begin()->second == &renderer);
   session_->SetVideoPlayout(receive_ssrc, false, &renderer);
   EXPECT_TRUE(channel->sinks().begin()->second == NULL);
+}
+
+TEST_F(WebRtcSessionTest, SetVideoMaxSendBitrate) {
+  Init();
+  SendAudioVideoStream1();
+  CreateAndSetRemoteOfferAndLocalAnswer();
+  cricket::FakeVideoMediaChannel* channel = media_engine_->GetVideoChannel(0);
+  ASSERT_TRUE(channel != NULL);
+  uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
+  EXPECT_EQ(-1, channel->max_bps());
+  webrtc::RtpParameters params = session_->GetVideoRtpParameters(send_ssrc);
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(-1, params.encodings[0].max_bitrate_bps);
+  params.encodings[0].max_bitrate_bps = 1000;
+  EXPECT_TRUE(session_->SetVideoRtpParameters(send_ssrc, params));
+
+  // Read back the parameters and verify they have been changed.
+  params = session_->GetVideoRtpParameters(send_ssrc);
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+
+  // Verify that the video channel received the new parameters.
+  params = channel->GetRtpParameters(send_ssrc);
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+
+  // Verify that the global bitrate limit has not been changed.
+  EXPECT_EQ(-1, channel->max_bps());
 }
 
 TEST_F(WebRtcSessionTest, SetVideoSend) {

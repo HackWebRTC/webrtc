@@ -96,9 +96,14 @@ template <class Base> class RtpHelper : public Base {
       return false;
     }
     send_streams_.push_back(sp);
+    rtp_parameters_[sp.first_ssrc()] = CreateRtpParametersWithOneEncoding();
     return true;
   }
   virtual bool RemoveSendStream(uint32_t ssrc) {
+    auto parameters_iterator = rtp_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_parameters_.end()) {
+      rtp_parameters_.erase(parameters_iterator);
+    }
     return RemoveStreamBySsrc(&send_streams_, ssrc);
   }
   virtual bool AddRecvStream(const StreamParams& sp) {
@@ -112,6 +117,26 @@ template <class Base> class RtpHelper : public Base {
   virtual bool RemoveRecvStream(uint32_t ssrc) {
     return RemoveStreamBySsrc(&receive_streams_, ssrc);
   }
+
+  virtual webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const {
+    auto parameters_iterator = rtp_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_parameters_.end()) {
+      return parameters_iterator->second;
+    }
+    return webrtc::RtpParameters();
+  }
+  virtual bool SetRtpParameters(uint32_t ssrc,
+                                const webrtc::RtpParameters& parameters) {
+    auto parameters_iterator = rtp_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_parameters_.end()) {
+      parameters_iterator->second = parameters;
+      return true;
+    }
+    // Replicate the behavior of the real media channel: return false
+    // when setting parameters for unknown SSRCs.
+    return false;
+  }
+
   bool IsStreamMuted(uint32_t ssrc) const {
     bool ret = muted_streams_.find(ssrc) != muted_streams_.end();
     // If |ssrc = 0| check if the first send stream is muted.
@@ -204,6 +229,7 @@ template <class Base> class RtpHelper : public Base {
   std::vector<StreamParams> send_streams_;
   std::vector<StreamParams> receive_streams_;
   std::set<uint32_t> muted_streams_;
+  std::map<uint32_t, webrtc::RtpParameters> rtp_parameters_;
   bool fail_set_send_codecs_;
   bool fail_set_recv_codecs_;
   uint32_t send_ssrc_;
@@ -224,8 +250,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   };
   explicit FakeVoiceMediaChannel(FakeVoiceEngine* engine,
                                  const AudioOptions& options)
-      : engine_(engine),
-        time_since_last_typing_(-1) {
+      : engine_(engine), time_since_last_typing_(-1), max_bps_(-1) {
     output_scalings_[0] = 1.0;  // For default channel.
     SetOptions(options);
   }
@@ -237,7 +262,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     return dtmf_info_queue_;
   }
   const AudioOptions& options() const { return options_; }
-
+  int max_bps() const { return max_bps_; }
   virtual bool SetSendParameters(const AudioSendParameters& params) {
     return (SetSendCodecs(params.codecs) &&
             SetSendRtpHeaderExtensions(params.extensions) &&
@@ -249,6 +274,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     return (SetRecvCodecs(params.codecs) &&
             SetRecvRtpHeaderExtensions(params.extensions));
   }
+
   virtual bool SetPlayout(bool playout) {
     set_playout(playout);
     return true;
@@ -374,7 +400,10 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     send_codecs_ = codecs;
     return true;
   }
-  bool SetMaxSendBandwidth(int bps) { return true; }
+  bool SetMaxSendBandwidth(int bps) {
+    max_bps_ = bps;
+    return true;
+  }
   bool SetOptions(const AudioOptions& options) {
     // Does a "merge" of current options and set options.
     options_.SetAll(options);
@@ -407,6 +436,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   AudioOptions options_;
   std::map<uint32_t, VoiceChannelAudioSink*> local_sinks_;
   std::unique_ptr<webrtc::AudioSinkInterface> sink_;
+  int max_bps_;
 };
 
 // A helper function to compare the FakeVoiceMediaChannel::DtmfInfo.
@@ -443,7 +473,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
             SetSendRtpHeaderExtensions(params.extensions) &&
             SetMaxSendBandwidth(params.max_bandwidth_bps));
   }
-
   virtual bool SetRecvParameters(const VideoRecvParameters& params) {
     return (SetRecvCodecs(params.codecs) &&
             SetRecvRtpHeaderExtensions(params.extensions));

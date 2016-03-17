@@ -818,6 +818,32 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   send_params_ = params;
   return true;
 }
+webrtc::RtpParameters WebRtcVideoChannel2::GetRtpParameters(
+    uint32_t ssrc) const {
+  rtc::CritScope stream_lock(&stream_crit_);
+  auto it = send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
+    LOG(LS_WARNING) << "Attempting to get RTP parameters for stream with ssrc "
+                    << ssrc << " which doesn't exist.";
+    return webrtc::RtpParameters();
+  }
+
+  return it->second->rtp_parameters();
+}
+
+bool WebRtcVideoChannel2::SetRtpParameters(
+    uint32_t ssrc,
+    const webrtc::RtpParameters& parameters) {
+  rtc::CritScope stream_lock(&stream_crit_);
+  auto it = send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
+    LOG(LS_ERROR) << "Attempting to set RTP parameters for stream with ssrc "
+                  << ssrc << " which doesn't exist.";
+    return false;
+  }
+
+  return it->second->SetRtpParameters(parameters);
+}
 
 bool WebRtcVideoChannel2::GetChangedRecvParameters(
     const VideoRecvParameters& params,
@@ -1476,6 +1502,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       external_encoder_factory_(external_encoder_factory),
       stream_(nullptr),
       parameters_(config, options, max_bitrate_bps, codec_settings),
+      rtp_parameters_(CreateRtpParametersWithOneEncoding()),
       pending_encoder_reconfiguration_(false),
       allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
       sending_(false),
@@ -1763,8 +1790,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
       recreate_stream = true;
     }
     if (params.max_bandwidth_bps) {
-      // Max bitrate has changed, reconfigure encoder settings on the next frame
-      // or stream recreation.
       parameters_.max_bitrate_bps = *params.max_bandwidth_bps;
       pending_encoder_reconfiguration_ = true;
     }
@@ -1796,6 +1821,31 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
       capturer_->AddOrUpdateSink(this, sink_wants_);
     }
   }
+}
+
+bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpParameters(
+    const webrtc::RtpParameters& new_parameters) {
+  if (!ValidateRtpParameters(new_parameters)) {
+    return false;
+  }
+
+  rtc::CritScope cs(&lock_);
+  if (new_parameters.encodings[0].max_bitrate_bps !=
+      rtp_parameters_.encodings[0].max_bitrate_bps) {
+    pending_encoder_reconfiguration_ = true;
+  }
+  rtp_parameters_ = new_parameters;
+  return true;
+}
+
+bool WebRtcVideoChannel2::WebRtcVideoSendStream::ValidateRtpParameters(
+    const webrtc::RtpParameters& rtp_parameters) {
+  if (rtp_parameters.encodings.size() != 1) {
+    LOG(LS_ERROR)
+        << "Attempted to set RtpParameters without exactly one encoding";
+    return false;
+  }
+  return true;
 }
 
 webrtc::VideoEncoderConfig
@@ -1837,9 +1887,11 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     stream_count = 1;
   }
 
-  encoder_config.streams =
-      CreateVideoStreams(clamped_codec, parameters_.options,
-                         parameters_.max_bitrate_bps, stream_count);
+  int stream_max_bitrate =
+      MinPositive(rtp_parameters_.encodings[0].max_bitrate_bps,
+                  parameters_.max_bitrate_bps);
+  encoder_config.streams = CreateVideoStreams(
+      clamped_codec, parameters_.options, stream_max_bitrate, stream_count);
 
   // Conference mode screencast uses 2 temporal layers split at 100kbit.
   if (parameters_.conference_mode && is_screencast &&

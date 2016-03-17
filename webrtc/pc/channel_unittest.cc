@@ -1769,6 +1769,53 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_FALSE(media_channel1_->ready_to_send());
   }
 
+  bool SetRemoteContentWithBitrateLimit(int remote_limit) {
+    typename T::Content content;
+    CreateContent(0, kPcmuCodec, kH264Codec, &content);
+    content.set_bandwidth(remote_limit);
+    return channel1_->SetRemoteContent(&content, CA_OFFER, NULL);
+  }
+
+  webrtc::RtpParameters BitrateLimitedParameters(int limit) {
+    webrtc::RtpParameters parameters;
+    webrtc::RtpEncodingParameters encoding;
+    encoding.max_bitrate_bps = limit;
+    parameters.encodings.push_back(encoding);
+    return parameters;
+  }
+
+  void VerifyMaxBitrate(const webrtc::RtpParameters& parameters,
+                        int expected_bitrate) {
+    EXPECT_EQ(1UL, parameters.encodings.size());
+    EXPECT_EQ(expected_bitrate, parameters.encodings[0].max_bitrate_bps);
+  }
+
+  void DefaultMaxBitrateIsUnlimited() {
+    CreateChannels(0, 0);
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(&local_media_content1_, CA_OFFER, NULL));
+    EXPECT_EQ(media_channel1_->max_bps(), -1);
+    VerifyMaxBitrate(media_channel1_->GetRtpParameters(kSsrc1), -1);
+  }
+
+  void CanChangeMaxBitrate() {
+    CreateChannels(0, 0);
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(&local_media_content1_, CA_OFFER, NULL));
+
+    EXPECT_TRUE(
+        channel1_->SetRtpParameters(kSsrc1, BitrateLimitedParameters(1000)));
+    VerifyMaxBitrate(channel1_->GetRtpParameters(kSsrc1), 1000);
+    VerifyMaxBitrate(media_channel1_->GetRtpParameters(kSsrc1), 1000);
+    EXPECT_EQ(-1, media_channel1_->max_bps());
+
+    EXPECT_TRUE(
+        channel1_->SetRtpParameters(kSsrc1, BitrateLimitedParameters(-1)));
+    VerifyMaxBitrate(channel1_->GetRtpParameters(kSsrc1), -1);
+    VerifyMaxBitrate(media_channel1_->GetRtpParameters(kSsrc1), -1);
+    EXPECT_EQ(-1, media_channel1_->max_bps());
+  }
+
  protected:
   // TODO(pbos): Remove playout from all media channels and let renderers mute
   // themselves.
@@ -2229,6 +2276,26 @@ TEST_F(VoiceChannelTest, SendBundleToBundleWithRtcpMuxSecure) {
   Base::SendBundleToBundle(kAudioPts, arraysize(kAudioPts), true, true);
 }
 
+TEST_F(VoiceChannelTest, GetRtpParametersIsNotImplemented) {
+  // These tests verify that the Get/SetRtpParameters methods for VoiceChannel
+  // always fail as they are not implemented.
+  // TODO(skvlad): Replace with full tests when support for bitrate limiting
+  // for audio RtpSenders is added.
+  CreateChannels(0, 0);
+  EXPECT_TRUE(
+      channel1_->SetLocalContent(&local_media_content1_, CA_OFFER, NULL));
+  webrtc::RtpParameters voice_parameters = channel1_->GetRtpParameters(kSsrc1);
+  EXPECT_EQ(0UL, voice_parameters.encodings.size());
+}
+
+TEST_F(VoiceChannelTest, SetRtpParametersIsNotImplemented) {
+  CreateChannels(0, 0);
+  EXPECT_TRUE(
+      channel1_->SetLocalContent(&local_media_content1_, CA_OFFER, NULL));
+  EXPECT_FALSE(
+      channel1_->SetRtpParameters(kSsrc1, BitrateLimitedParameters(1000)));
+}
+
 // VideoChannelTest
 TEST_F(VideoChannelTest, TestInit) {
   Base::TestInit();
@@ -2455,6 +2522,14 @@ TEST_F(VideoChannelTest, TestOnReadyToSend) {
 
 TEST_F(VideoChannelTest, TestOnReadyToSendWithRtcpMux) {
   Base::TestOnReadyToSendWithRtcpMux();
+}
+
+TEST_F(VideoChannelTest, DefaultMaxBitrateIsUnlimited) {
+  Base::DefaultMaxBitrateIsUnlimited();
+}
+
+TEST_F(VideoChannelTest, CanChangeMaxBitrate) {
+  Base::CanChangeMaxBitrate();
 }
 
 // DataChannelTest

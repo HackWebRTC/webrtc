@@ -245,6 +245,10 @@ class WebRtcSession : public AudioProviderInterface,
   void SetRawAudioSink(uint32_t ssrc,
                        rtc::scoped_ptr<AudioSinkInterface> sink) override;
 
+  RtpParameters GetAudioRtpParameters(uint32_t ssrc) const override;
+  bool SetAudioRtpParameters(uint32_t ssrc,
+                             const RtpParameters& parameters) override;
+
   // Implements VideoMediaProviderInterface.
   bool SetCaptureDevice(uint32_t ssrc, cricket::VideoCapturer* camera) override;
   void SetVideoPlayout(
@@ -254,6 +258,10 @@ class WebRtcSession : public AudioProviderInterface,
   void SetVideoSend(uint32_t ssrc,
                     bool enable,
                     const cricket::VideoOptions* options) override;
+
+  RtpParameters GetVideoRtpParameters(uint32_t ssrc) const override;
+  bool SetVideoRtpParameters(uint32_t ssrc,
+                             const RtpParameters& parameters) override;
 
   // Implements DtmfProviderInterface.
   virtual bool CanInsertDtmf(const std::string& track_id);

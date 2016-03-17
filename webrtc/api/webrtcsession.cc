@@ -1244,6 +1244,23 @@ void WebRtcSession::SetRawAudioSink(uint32_t ssrc,
   voice_channel_->SetRawAudioSink(ssrc, rtc::ScopedToUnique(std::move(sink)));
 }
 
+RtpParameters WebRtcSession::GetAudioRtpParameters(uint32_t ssrc) const {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (voice_channel_) {
+    return voice_channel_->GetRtpParameters(ssrc);
+  }
+  return RtpParameters();
+}
+
+bool WebRtcSession::SetAudioRtpParameters(uint32_t ssrc,
+                                          const RtpParameters& parameters) {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (!voice_channel_) {
+    return false;
+  }
+  return voice_channel_->SetRtpParameters(ssrc, parameters);
+}
+
 bool WebRtcSession::SetCaptureDevice(uint32_t ssrc,
                                      cricket::VideoCapturer* camera) {
   ASSERT(signaling_thread()->IsCurrent());
@@ -1295,6 +1312,23 @@ void WebRtcSession::SetVideoSend(uint32_t ssrc,
     // been deleted.
     ASSERT(enable == false);
   }
+}
+
+RtpParameters WebRtcSession::GetVideoRtpParameters(uint32_t ssrc) const {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (video_channel_) {
+    return video_channel_->GetRtpParameters(ssrc);
+  }
+  return RtpParameters();
+}
+
+bool WebRtcSession::SetVideoRtpParameters(uint32_t ssrc,
+                                          const RtpParameters& parameters) {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (!video_channel_) {
+    return false;
+  }
+  return video_channel_->SetRtpParameters(ssrc, parameters);
 }
 
 bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {

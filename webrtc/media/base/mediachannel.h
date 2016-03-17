@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/dscp.h"
@@ -77,6 +78,17 @@ static std::string VectorToString(const std::vector<T>& vals) {
     }
     ost << "]";
     return ost.str();
+}
+
+template <typename T>
+static T MinPositive(T a, T b) {
+  if (a <= 0) {
+    return b;
+  }
+  if (b <= 0) {
+    return a;
+  }
+  return std::min(a, b);
 }
 
 // Construction-time settings, passed to
@@ -975,6 +987,9 @@ class VideoMediaChannel : public MediaChannel {
 
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
   virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
+  virtual webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const = 0;
+  virtual bool SetRtpParameters(uint32_t ssrc,
+                                const webrtc::RtpParameters& parameters) = 0;
   // Gets the currently set codecs/payload types to be used for outgoing media.
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
   // Starts or stops transmission (and potentially capture) of local video.

@@ -199,6 +199,14 @@ void AudioRtpSender::SetAudioSend() {
   provider_->SetAudioSend(ssrc_, track_->enabled(), options, source);
 }
 
+RtpParameters AudioRtpSender::GetParameters() const {
+  return provider_->GetAudioRtpParameters(ssrc_);
+}
+
+bool AudioRtpSender::SetParameters(const RtpParameters& parameters) {
+  return provider_->SetAudioRtpParameters(ssrc_, parameters);
+}
+
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
                                const std::string& stream_id,
                                VideoProviderInterface* provider)
@@ -328,6 +336,14 @@ void VideoRtpSender::SetVideoSend() {
         rtc::Optional<bool>(source->needs_denoising());
   }
   provider_->SetVideoSend(ssrc_, track_->enabled(), &options);
+}
+
+RtpParameters VideoRtpSender::GetParameters() const {
+  return provider_->GetVideoRtpParameters(ssrc_);
+}
+
+bool VideoRtpSender::SetParameters(const RtpParameters& parameters) {
+  return provider_->SetVideoRtpParameters(ssrc_, parameters);
 }
 
 }  // namespace webrtc

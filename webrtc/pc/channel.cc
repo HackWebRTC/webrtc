@@ -1384,6 +1384,30 @@ void VoiceChannel::SetRawAudioSink(
   InvokeOnWorker(Bind(&SetRawAudioSink_w, media_channel(), ssrc, &sink));
 }
 
+webrtc::RtpParameters VoiceChannel::GetRtpParameters(uint32_t ssrc) const {
+  return worker_thread()->Invoke<webrtc::RtpParameters>(
+      Bind(&VoiceChannel::GetRtpParameters_w, this, ssrc));
+}
+
+webrtc::RtpParameters VoiceChannel::GetRtpParameters_w(uint32_t ssrc) const {
+  // Not yet implemented.
+  // TODO(skvlad): Add support for limiting send bitrate for audio channels.
+  return webrtc::RtpParameters();
+}
+
+bool VoiceChannel::SetRtpParameters(uint32_t ssrc,
+                                    const webrtc::RtpParameters& parameters) {
+  return InvokeOnWorker(
+      Bind(&VoiceChannel::SetRtpParameters_w, this, ssrc, parameters));
+}
+
+bool VoiceChannel::SetRtpParameters_w(uint32_t ssrc,
+                                      webrtc::RtpParameters parameters) {
+  // Not yet implemented.
+  // TODO(skvlad): Add support for limiting send bitrate for audio channels.
+  return false;
+}
+
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
   return InvokeOnWorker(Bind(&VoiceMediaChannel::GetStats,
                              media_channel(), stats));
@@ -1536,7 +1560,9 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   if (audio->agc_minus_10db()) {
     send_params.options.adjust_agc_delta = rtc::Optional<int>(kAgcMinus10db);
   }
-  if (!media_channel()->SetSendParameters(send_params)) {
+
+  bool parameters_applied = media_channel()->SetSendParameters(send_params);
+  if (!parameters_applied) {
     SafeSetError("Failed to set remote audio description send parameters.",
                  error_desc);
     return false;
@@ -1661,6 +1687,25 @@ bool VideoChannel::SetVideoSend(uint32_t ssrc,
                              ssrc, mute, options));
 }
 
+webrtc::RtpParameters VideoChannel::GetRtpParameters(uint32_t ssrc) const {
+  return worker_thread()->Invoke<webrtc::RtpParameters>(
+      Bind(&VideoChannel::GetRtpParameters_w, this, ssrc));
+}
+
+webrtc::RtpParameters VideoChannel::GetRtpParameters_w(uint32_t ssrc) const {
+  return media_channel()->GetRtpParameters(ssrc);
+}
+
+bool VideoChannel::SetRtpParameters(uint32_t ssrc,
+                                    const webrtc::RtpParameters& parameters) {
+  return InvokeOnWorker(
+      Bind(&VideoChannel::SetRtpParameters_w, this, ssrc, parameters));
+}
+
+bool VideoChannel::SetRtpParameters_w(uint32_t ssrc,
+                                      webrtc::RtpParameters parameters) {
+  return media_channel()->SetRtpParameters(ssrc, parameters);
+}
 void VideoChannel::ChangeState() {
   // Send outgoing data if we're the active call, we have the remote content,
   // and we have had some form of connectivity.
@@ -1768,7 +1813,10 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   if (video->conference_mode()) {
     send_params.conference_mode = true;
   }
-  if (!media_channel()->SetSendParameters(send_params)) {
+
+  bool parameters_applied = media_channel()->SetSendParameters(send_params);
+
+  if (!parameters_applied) {
     SafeSetError("Failed to set remote video description send parameters.",
                  error_desc);
     return false;

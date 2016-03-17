@@ -35,3 +35,14 @@ MediaEngineFactory::MediaEngineCreateFunction
 };  // namespace cricket
 
 #endif  // DISABLE_MEDIA_ENGINE_FACTORY
+
+namespace cricket {
+
+webrtc::RtpParameters CreateRtpParametersWithOneEncoding() {
+  webrtc::RtpParameters parameters;
+  webrtc::RtpEncodingParameters encoding;
+  parameters.encodings.push_back(encoding);
+  return parameters;
+}
+
+};  // namespace cricket
