@@ -11,7 +11,6 @@
 package org.webrtc;
 
 import static java.lang.Math.abs;
-import static java.lang.Math.ceil;
 import android.graphics.ImageFormat;
 
 import org.webrtc.Logging;

@@ -21,12 +21,8 @@ import org.webrtc.Logging;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +46,7 @@ public class VideoCapturerAndroid implements
   private final static String TAG = "VideoCapturerAndroid";
   private final static int CAMERA_OBSERVER_PERIOD_MS = 2000;
   private final static int CAMERA_FREEZE_REPORT_TIMOUT_MS = 4000;
+  private static final int CAMERA_STOP_TIMEOUT_MS = 7000;
 
   private boolean isDisposed = false;
   private android.hardware.Camera camera;  // Only non-null while capturing.
@@ -502,6 +499,11 @@ public class VideoCapturerAndroid implements
 
     // Find closest supported format for |width| x |height| @ |framerate|.
     final android.hardware.Camera.Parameters parameters = camera.getParameters();
+    for (int[] fpsRange : parameters.getSupportedPreviewFpsRange()) {
+      Logging.d(TAG, "Available fps range: " +
+          fpsRange[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX] + ":" +
+          fpsRange[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+    }
     final int[] range = CameraEnumerationAndroid.getFramerateRange(parameters, framerate * 1000);
     final android.hardware.Camera.Size previewSize =
         CameraEnumerationAndroid.getClosestSupportedSize(
@@ -592,7 +594,13 @@ public class VideoCapturerAndroid implements
       Logging.e(TAG, "Calling stopCapture() for already stopped camera.");
       return;
     }
-    barrier.await();
+    if (!barrier.await(CAMERA_STOP_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+      Logging.e(TAG, "Camera stop timeout");
+      printStackTrace();
+      if (eventsHandler != null) {
+        eventsHandler.onCameraError("Camera stop timeout");
+      }
+    }
     Logging.d(TAG, "stopCapture done");
   }
 
@@ -616,6 +624,7 @@ public class VideoCapturerAndroid implements
     if (eventsHandler != null) {
       eventsHandler.onCameraClosed();
     }
+    Logging.d(TAG, "stopCaptureOnCameraThread done");
   }
 
   private void switchCameraOnCameraThread() {
