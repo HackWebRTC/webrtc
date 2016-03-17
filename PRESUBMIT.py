@@ -27,7 +27,6 @@ CPPLINT_DIRS = [
   'webrtc/modules/rtp_rtcp',
   'webrtc/modules/video_coding',
   'webrtc/modules/video_processing',
-  'webrtc/sound',
   'webrtc/tools',
   'webrtc/video',
 ]
@@ -226,7 +225,6 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
         'base_tests.gyp',
         'desktop_capture.gypi',
         'p2p.gyp',
-        'sound.gyp',
         'webrtc_test_common.gyp',
         'webrtc_tests.gypi',
     )

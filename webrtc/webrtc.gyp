@@ -9,7 +9,6 @@
   'variables': {
     'webrtc_all_dependencies': [
       'base/base.gyp:*',
-      'sound/sound.gyp:*',
       'common.gyp:*',
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
@@ -42,7 +41,6 @@
         'media/media_tests.gypi',
         'p2p/p2p_tests.gypi',
         'pc/pc_tests.gypi',
-        'sound/sound_tests.gypi',
         'webrtc_tests.gypi',
       ],
     }],
