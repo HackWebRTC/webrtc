@@ -10,7 +10,7 @@
 
 #import "RTCVideoSource.h"
 
-#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

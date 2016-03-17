@@ -25,7 +25,6 @@
 #include "webrtc/api/mediastreamproxy.h"
 #include "webrtc/api/mediastreamtrackproxy.h"
 #include "webrtc/api/remoteaudiosource.h"
-#include "webrtc/api/remotevideocapturer.h"
 #include "webrtc/api/rtpreceiver.h"
 #include "webrtc/api/rtpsender.h"
 #include "webrtc/api/streamcollection.h"

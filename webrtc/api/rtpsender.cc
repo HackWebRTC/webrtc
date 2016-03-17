@@ -11,7 +11,7 @@
 #include "webrtc/api/rtpsender.h"
 
 #include "webrtc/api/localaudiosource.h"
-#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/base/helpers.h"
 
 namespace webrtc {
