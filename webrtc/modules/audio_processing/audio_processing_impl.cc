@@ -58,6 +58,21 @@
   } while (0)
 
 namespace webrtc {
+
+const int AudioProcessing::kNativeSampleRatesHz[] = {
+    AudioProcessing::kSampleRate8kHz,
+    AudioProcessing::kSampleRate16kHz,
+#ifdef WEBRTC_ARCH_ARM_FAMILY
+    AudioProcessing::kSampleRate32kHz};
+#else
+    AudioProcessing::kSampleRate32kHz,
+    AudioProcessing::kSampleRate48kHz};
+#endif  // WEBRTC_ARCH_ARM_FAMILY
+const size_t AudioProcessing::kNumNativeSampleRates =
+    arraysize(AudioProcessing::kNativeSampleRatesHz);
+const int AudioProcessing::kMaxNativeSampleRateHz = AudioProcessing::
+    kNativeSampleRatesHz[AudioProcessing::kNumNativeSampleRates - 1];
+
 namespace {
 
 static bool LayoutHasKeyboard(AudioProcessing::ChannelLayout layout) {
@@ -73,6 +88,21 @@ static bool LayoutHasKeyboard(AudioProcessing::ChannelLayout layout) {
   assert(false);
   return false;
 }
+
+bool is_multi_band(int sample_rate_hz) {
+  return sample_rate_hz == AudioProcessing::kSampleRate32kHz ||
+         sample_rate_hz == AudioProcessing::kSampleRate48kHz;
+}
+
+int ClosestNativeRate(int min_proc_rate) {
+  for (int rate : AudioProcessing::kNativeSampleRatesHz) {
+    if (rate >= min_proc_rate) {
+      return rate;
+    }
+  }
+  return AudioProcessing::kMaxNativeSampleRateHz;
+}
+
 }  // namespace
 
 // Throughout webrtc, it's assumed that success is represented by zero.
@@ -103,20 +133,6 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<Beamformer<float>> beamformer;
   std::unique_ptr<AgcManagerDirect> agc_manager;
 };
-
-const int AudioProcessing::kNativeSampleRatesHz[] = {
-    AudioProcessing::kSampleRate8kHz,
-    AudioProcessing::kSampleRate16kHz,
-#ifdef WEBRTC_ARCH_ARM_FAMILY
-    AudioProcessing::kSampleRate32kHz};
-#else
-    AudioProcessing::kSampleRate32kHz,
-    AudioProcessing::kSampleRate48kHz};
-#endif  // WEBRTC_ARCH_ARM_FAMILY
-const size_t AudioProcessing::kNumNativeSampleRates =
-    arraysize(AudioProcessing::kNativeSampleRatesHz);
-const int AudioProcessing::kMaxNativeSampleRateHz = AudioProcessing::
-    kNativeSampleRatesHz[AudioProcessing::kNumNativeSampleRates - 1];
 
 AudioProcessing* AudioProcessing::Create() {
   Config config;
@@ -346,32 +362,19 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 
   formats_.api_format = config;
 
-  // We process at the closest native rate >= min(input rate, output rate).
-  const int min_proc_rate =
-      std::min(formats_.api_format.input_stream().sample_rate_hz(),
-               formats_.api_format.output_stream().sample_rate_hz());
-  int fwd_proc_rate;
-  for (size_t i = 0; i < kNumNativeSampleRates; ++i) {
-    fwd_proc_rate = kNativeSampleRatesHz[i];
-    if (fwd_proc_rate >= min_proc_rate) {
-      break;
-    }
-  }
+  capture_nonlocked_.fwd_proc_format = StreamConfig(ClosestNativeRate(std::min(
+      formats_.api_format.input_stream().sample_rate_hz(),
+      formats_.api_format.output_stream().sample_rate_hz())));
 
-  capture_nonlocked_.fwd_proc_format = StreamConfig(fwd_proc_rate);
-
-  // We normally process the reverse stream at 16 kHz. Unless...
-  int rev_proc_rate = kSampleRate16kHz;
+  int rev_proc_rate = ClosestNativeRate(std::min(
+      formats_.api_format.reverse_input_stream().sample_rate_hz(),
+      formats_.api_format.reverse_output_stream().sample_rate_hz()));
+  // If the forward sample rate is 8 kHz, the reverse stream is also processed
+  // at this rate.
   if (capture_nonlocked_.fwd_proc_format.sample_rate_hz() == kSampleRate8kHz) {
-    // ...the forward stream is at 8 kHz.
     rev_proc_rate = kSampleRate8kHz;
   } else {
-    if (formats_.api_format.reverse_input_stream().sample_rate_hz() ==
-        kSampleRate32kHz) {
-      // ...or the input is at 32 kHz, in which case we use the splitting
-      // filter rather than the resampler.
-      rev_proc_rate = kSampleRate32kHz;
-    }
+    rev_proc_rate = std::max(rev_proc_rate, static_cast<int>(kSampleRate16kHz));
   }
 
   // Always downmix the reverse stream to mono for analysis. This has been
@@ -627,8 +630,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 
   capture_.capture_audio->DeinterleaveFrom(frame);
   RETURN_ON_ERR(ProcessStreamLocked());
-  capture_.capture_audio->InterleaveTo(frame,
-                                       output_copy_needed(is_data_processed()));
+  capture_.capture_audio->InterleaveTo(frame, output_copy_needed());
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->Open()) {
@@ -674,8 +676,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
         capture_nonlocked_.fwd_proc_format.num_frames());
   }
 
-  bool data_processed = is_data_processed();
-  if (analysis_needed(data_processed)) {
+  if (fwd_analysis_needed()) {
     ca->SplitIntoFrequencyBands();
   }
 
@@ -733,7 +734,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   RETURN_ON_ERR(public_submodules_->gain_control->ProcessCaptureAudio(
       ca, echo_cancellation()->stream_has_echo()));
 
-  if (synthesis_needed(data_processed)) {
+  if (fwd_synthesis_needed()) {
     ca->MergeFrequencyBands();
   }
 
@@ -903,7 +904,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
 
 int AudioProcessingImpl::ProcessReverseStreamLocked() {
   AudioBuffer* ra = render_.render_audio.get();  // For brevity.
-  if (formats_.rev_proc_format.sample_rate_hz() == kSampleRate32kHz) {
+  if (rev_analysis_needed()) {
     ra->SplitIntoFrequencyBands();
   }
 
@@ -920,8 +921,7 @@ int AudioProcessingImpl::ProcessReverseStreamLocked() {
     RETURN_ON_ERR(public_submodules_->gain_control->ProcessRenderAudio(ra));
   }
 
-  if (formats_.rev_proc_format.sample_rate_hz() == kSampleRate32kHz &&
-      is_rev_processed()) {
+  if (rev_synthesis_needed()) {
     ra->MergeFrequencyBands();
   }
 
@@ -1128,31 +1128,26 @@ bool AudioProcessingImpl::is_data_processed() const {
   return false;
 }
 
-bool AudioProcessingImpl::output_copy_needed(bool is_data_processed) const {
+bool AudioProcessingImpl::output_copy_needed() const {
   // Check if we've upmixed or downmixed the audio.
   return ((formats_.api_format.output_stream().num_channels() !=
            formats_.api_format.input_stream().num_channels()) ||
-          is_data_processed || capture_.transient_suppressor_enabled);
+          is_data_processed() || capture_.transient_suppressor_enabled);
 }
 
-bool AudioProcessingImpl::synthesis_needed(bool is_data_processed) const {
-  return (is_data_processed &&
-          (capture_nonlocked_.fwd_proc_format.sample_rate_hz() ==
-               kSampleRate32kHz ||
-           capture_nonlocked_.fwd_proc_format.sample_rate_hz() ==
-               kSampleRate48kHz));
+bool AudioProcessingImpl::fwd_synthesis_needed() const {
+  return (is_data_processed() &&
+          is_multi_band(capture_nonlocked_.fwd_proc_format.sample_rate_hz()));
 }
 
-bool AudioProcessingImpl::analysis_needed(bool is_data_processed) const {
-  if (!is_data_processed &&
+bool AudioProcessingImpl::fwd_analysis_needed() const {
+  if (!is_data_processed() &&
       !public_submodules_->voice_detection->is_enabled() &&
       !capture_.transient_suppressor_enabled) {
     // Only public_submodules_->level_estimator is enabled.
     return false;
-  } else if (capture_nonlocked_.fwd_proc_format.sample_rate_hz() ==
-                 kSampleRate32kHz ||
-             capture_nonlocked_.fwd_proc_format.sample_rate_hz() ==
-                 kSampleRate48kHz) {
+  } else if (is_multi_band(
+                 capture_nonlocked_.fwd_proc_format.sample_rate_hz())) {
     // Something besides public_submodules_->level_estimator is enabled, and we
     // have super-wb.
     return true;
@@ -1162,6 +1157,15 @@ bool AudioProcessingImpl::analysis_needed(bool is_data_processed) const {
 
 bool AudioProcessingImpl::is_rev_processed() const {
   return constants_.intelligibility_enabled;
+}
+
+bool AudioProcessingImpl::rev_synthesis_needed() const {
+  return (is_rev_processed() &&
+          is_multi_band(formats_.rev_proc_format.sample_rate_hz()));
+}
+
+bool AudioProcessingImpl::rev_analysis_needed() const {
+  return is_multi_band(formats_.rev_proc_format.sample_rate_hz());
 }
 
 bool AudioProcessingImpl::render_check_rev_conversion_needed() const {
