@@ -21,11 +21,8 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/base/rollingaccumulator.h"
 #include "webrtc/base/sigslot.h"
-#include "webrtc/base/timing.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videoadapter.h"
 #include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/media/base/videocommon.h"
@@ -221,13 +218,9 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Takes ownership.
   void set_frame_factory(VideoFrameFactory* frame_factory);
 
-  // Gets statistics for tracked variables recorded since the last call to
-  // GetStats.  Note that calling GetStats resets any gathered data so it
-  // should be called only periodically to log statistics.
-  void GetStats(VariableInfo<int>* adapt_drop_stats,
-                VariableInfo<int>* effect_drop_stats,
-                VariableInfo<double>* frame_time_stats,
-                VideoFormat* last_captured_frame_format);
+  // TODO(nisse): Rename function? Or pass the frame format before
+  // adaptation in some other way.
+  void GetStats(VideoFormat* last_captured_frame_format);
 
   // Implements VideoSourceInterface
   void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
@@ -298,13 +291,6 @@ class VideoCapturer : public sigslot::has_slots<>,
 
   void UpdateStats(const CapturedFrame* captured_frame);
 
-  // Helper function to save statistics on the current data from a
-  // RollingAccumulator into stats.
-  template<class T>
-  static void GetVariableSnapshot(
-      const rtc::RollingAccumulator<T>& data,
-      VariableInfo<T>* stats);
-
   rtc::ThreadChecker thread_checker_;
   std::string id_;
   CaptureState capture_state_;
@@ -325,13 +311,8 @@ class VideoCapturer : public sigslot::has_slots<>,
   bool enable_video_adapter_;
   CoordinatedVideoAdapter video_adapter_;
 
-  rtc::Timing frame_length_time_reporter_;
   rtc::CriticalSection frame_stats_crit_;
 
-  int adapt_frame_drops_;
-  rtc::RollingAccumulator<int> adapt_frame_drops_data_;
-  double previous_frame_time_;
-  rtc::RollingAccumulator<double> frame_time_data_;
   // The captured frame format before potential adapation.
   VideoFormat last_captured_frame_format_;
 

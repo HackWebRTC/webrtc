@@ -32,10 +32,6 @@ static const int kYU12Penalty = 16;  // Needs to be higher than MJPG index.
 #endif
 static const int kDefaultScreencastFps = 5;
 
-// Limit stats data collections to ~20 seconds of 30fps data before dropping
-// old data in case stats aren't reset for long periods of time.
-static const size_t kMaxAccumulatorSize = 600;
-
 }  // namespace
 
 /////////////////////////////////////////////////////////////////////
@@ -64,10 +60,7 @@ bool CapturedFrame::GetDataSize(uint32_t* size) const {
 /////////////////////////////////////////////////////////////////////
 // Implementation of class VideoCapturer
 /////////////////////////////////////////////////////////////////////
-VideoCapturer::VideoCapturer()
-    : adapt_frame_drops_data_(kMaxAccumulatorSize),
-      frame_time_data_(kMaxAccumulatorSize),
-      apply_rotation_(true) {
+VideoCapturer::VideoCapturer() : apply_rotation_(true) {
   thread_checker_.DetachFromThread();
   Construct();
 }
@@ -86,8 +79,6 @@ void VideoCapturer::Construct() {
   scaled_width_ = 0;
   scaled_height_ = 0;
   enable_video_adapter_ = true;
-  adapt_frame_drops_ = 0;
-  previous_frame_time_ = 0.0;
   // There are lots of video capturers out there that don't call
   // set_frame_factory.  We can either go change all of them, or we
   // can set this default.
@@ -102,7 +93,6 @@ const std::vector<VideoFormat>* VideoCapturer::GetSupportedFormats() const {
 
 bool VideoCapturer::StartCapturing(const VideoFormat& capture_format) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  previous_frame_time_ = frame_length_time_reporter_.TimerNow();
   CaptureState result = Start(capture_format);
   const bool success = (result == CS_RUNNING) || (result == CS_STARTING);
   if (!success) {
@@ -193,17 +183,9 @@ void VideoCapturer::set_frame_factory(VideoFrameFactory* frame_factory) {
   }
 }
 
-void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,
-                             VariableInfo<int>* effect_drops_stats,
-                             VariableInfo<double>* frame_time_stats,
-                             VideoFormat* last_captured_frame_format) {
+void VideoCapturer::GetStats(VideoFormat* last_captured_frame_format) {
   rtc::CritScope cs(&frame_stats_crit_);
-  GetVariableSnapshot(adapt_frame_drops_data_, adapt_drops_stats);
-  GetVariableSnapshot(frame_time_data_, frame_time_stats);
   *last_captured_frame_format = last_captured_frame_format_;
-
-  adapt_frame_drops_data_.Reset();
-  frame_time_data_.Reset();
 }
 
 void VideoCapturer::RemoveSink(
@@ -388,7 +370,6 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
         video_adapter_.AdaptFrameResolution(cropped_width, cropped_height);
     if (adapted_format.IsSize0x0()) {
       // VideoAdapter dropped the frame.
-      ++adapt_frame_drops_;
       return;
     }
     adapted_width = adapted_format.width;
@@ -568,24 +549,6 @@ void VideoCapturer::UpdateStats(const CapturedFrame* captured_frame) {
   // TODO(ronghuawu): Useful to report interval as well?
   last_captured_frame_format_.interval = 0;
   last_captured_frame_format_.fourcc = captured_frame->fourcc;
-
-  double time_now = frame_length_time_reporter_.TimerNow();
-  if (previous_frame_time_ != 0.0) {
-    adapt_frame_drops_data_.AddSample(adapt_frame_drops_);
-    frame_time_data_.AddSample(time_now - previous_frame_time_);
-  }
-  previous_frame_time_ = time_now;
-  adapt_frame_drops_ = 0;
-}
-
-template<class T>
-void VideoCapturer::GetVariableSnapshot(
-    const rtc::RollingAccumulator<T>& data,
-    VariableInfo<T>* stats) {
-  stats->max_val = data.ComputeMax();
-  stats->mean = data.ComputeMean();
-  stats->min_val = data.ComputeMin();
-  stats->variance = data.ComputeVariance();
 }
 
 }  // namespace cricket

@@ -11,6 +11,7 @@
 #include "webrtc/api/objc/avfoundationvideocapturer.h"
 
 #include "webrtc/base/bind.h"
+#include "webrtc/base/thread.h"
 
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>

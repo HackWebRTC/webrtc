@@ -532,20 +532,6 @@ struct MediaSenderInfo {
   std::vector<SsrcReceiverInfo> remote_stats;
 };
 
-template<class T>
-struct VariableInfo {
-  VariableInfo()
-      : min_val(),
-        mean(0.0),
-        max_val(),
-        variance(0.0) {
-  }
-  T min_val;
-  double mean;
-  T max_val;
-  double variance;
-};
-
 struct MediaReceiverInfo {
   MediaReceiverInfo()
       : bytes_rcvd(0),
@@ -700,9 +686,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int adapt_changes;
   int avg_encode_ms;
   int encode_usage_percent;
-  VariableInfo<int> adapt_frame_drops;
-  VariableInfo<int> effects_frame_drops;
-  VariableInfo<double> capturer_frame_time;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {

@@ -2052,9 +2052,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
 
   if (capturer_) {
       VideoFormat last_captured_frame_format;
-      capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
-                          &info.capturer_frame_time,
-                          &last_captured_frame_format);
+      capturer_->GetStats(&last_captured_frame_format);
       info.input_frame_width = last_captured_frame_format.width;
       info.input_frame_height = last_captured_frame_format.height;
   }

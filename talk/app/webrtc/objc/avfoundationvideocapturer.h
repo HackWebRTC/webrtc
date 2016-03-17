@@ -35,6 +35,10 @@
 
 @class RTCAVFoundationVideoCapturerInternal;
 
+namespace rtc {
+class Thread;
+} // namespace rtc
+
 namespace webrtc {
 
 class AVFoundationVideoCapturer : public cricket::VideoCapturer {
