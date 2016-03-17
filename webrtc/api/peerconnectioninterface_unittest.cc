@@ -1666,10 +1666,16 @@ TEST_F(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
   EXPECT_EQ(DataChannelInterface::kClosed, offer_channel->state());
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_ReceiveFireFoxOffer DISABLED_ReceiveFireFoxOffer
+#else
+#define MAYBE_ReceiveFireFoxOffer ReceiveFireFoxOffer
+#endif
 // Test that we can create a session description from an SDP string from
 // FireFox, use it as a remote session description, generate an answer and use
 // the answer as a local description.
-TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
+TEST_F(PeerConnectionInterfaceTest, MAYBE_ReceiveFireFoxOffer) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -2033,6 +2039,14 @@ TEST_F(PeerConnectionInterfaceTest, RecvonlyDescriptionDoesntCreateStream) {
   EXPECT_EQ(0u, observer_.remote_streams()->count());
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_SdpWithoutMsidCreatesDefaultStream \
+  DISABLED_SdpWithoutMsidCreatesDefaultStream
+#else
+#define MAYBE_SdpWithoutMsidCreatesDefaultStream \
+  SdpWithoutMsidCreatesDefaultStream
+#endif
 // This tests that a default MediaStream is created if a remote session
 // description doesn't contain any streams and no MSID support.
 // It also tests that the default stream is updated if a video m-line is added
@@ -2063,10 +2077,18 @@ TEST_F(PeerConnectionInterfaceTest, SdpWithoutMsidCreatesDefaultStream) {
             remote_stream->GetVideoTracks()[0]->state());
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_SendOnlySdpWithoutMsidCreatesDefaultStream \
+  DISABLED_SendOnlySdpWithoutMsidCreatesDefaultStream
+#else
+#define MAYBE_SendOnlySdpWithoutMsidCreatesDefaultStream \
+  SendOnlySdpWithoutMsidCreatesDefaultStream
+#endif
 // This tests that a default MediaStream is created if a remote session
 // description doesn't contain any streams and media direction is send only.
 TEST_F(PeerConnectionInterfaceTest,
-       SendOnlySdpWithoutMsidCreatesDefaultStream) {
+       MAYBE_SendOnlySdpWithoutMsidCreatesDefaultStream) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2098,11 +2120,19 @@ TEST_F(PeerConnectionInterfaceTest, RemoveAlreadyGoneRemoteStream) {
   // No crash is a pass.
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_SdpWithoutMsidAndStreamsCreatesDefaultStream \
+  DISABLED_SdpWithoutMsidAndStreamsCreatesDefaultStream
+#else
+#define MAYBE_SdpWithoutMsidAndStreamsCreatesDefaultStream \
+  SdpWithoutMsidAndStreamsCreatesDefaultStream
+#endif
 // This tests that a default MediaStream is created if the remote session
 // description doesn't contain any streams and don't contain an indication if
 // MSID is supported.
 TEST_F(PeerConnectionInterfaceTest,
-       SdpWithoutMsidAndStreamsCreatesDefaultStream) {
+       MAYBE_SdpWithoutMsidAndStreamsCreatesDefaultStream) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2115,9 +2145,17 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_EQ(1u, remote_stream->GetVideoTracks().size());
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_SdpWithMsidDontCreatesDefaultStream \
+  DISABLED_SdpWithMsidDontCreatesDefaultStream
+#else
+#define MAYBE_SdpWithMsidDontCreatesDefaultStream \
+  SdpWithMsidDontCreatesDefaultStream
+#endif
 // This tests that a default MediaStream is not created if the remote session
 // description doesn't contain any streams but does support MSID.
-TEST_F(PeerConnectionInterfaceTest, SdpWithMsidDontCreatesDefaultStream) {
+TEST_F(PeerConnectionInterfaceTest, MAYBE_SdpWithMsidDontCreatesDefaultStream) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2126,6 +2164,14 @@ TEST_F(PeerConnectionInterfaceTest, SdpWithMsidDontCreatesDefaultStream) {
   EXPECT_EQ(0u, observer_.remote_streams()->count());
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_DefaultTracksNotDestroyedAndRecreated \
+  DISABLED_DefaultTracksNotDestroyedAndRecreated
+#else
+#define MAYBE_DefaultTracksNotDestroyedAndRecreated \
+  DefaultTracksNotDestroyedAndRecreated
+#endif
 // This tests that when setting a new description, the old default tracks are
 // not destroyed and recreated.
 // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5250
@@ -2164,11 +2210,17 @@ TEST_F(PeerConnectionInterfaceTest, VerifyDefaultStreamIsNotCreated) {
   EXPECT_EQ(0u, observer_.remote_streams()->count());
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_LocalDescriptionChanged DISABLED_LocalDescriptionChanged
+#else
+#define MAYBE_LocalDescriptionChanged LocalDescriptionChanged
+#endif
 // This tests that an RtpSender is created when the local description is set
 // after adding a local stream.
 // TODO(deadbeef): This test and the one below it need to be updated when
 // an RtpSender's lifetime isn't determined by when a local description is set.
-TEST_F(PeerConnectionInterfaceTest, LocalDescriptionChanged) {
+TEST_F(PeerConnectionInterfaceTest, MAYBE_LocalDescriptionChanged) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2204,10 +2256,18 @@ TEST_F(PeerConnectionInterfaceTest, LocalDescriptionChanged) {
   EXPECT_FALSE(ContainsSender(senders, kVideoTracks[1]));
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_AddLocalStreamAfterLocalDescriptionChanged \
+  DISABLED_AddLocalStreamAfterLocalDescriptionChanged
+#else
+#define MAYBE_AddLocalStreamAfterLocalDescriptionChanged \
+  AddLocalStreamAfterLocalDescriptionChanged
+#endif
 // This tests that an RtpSender is created when the local description is set
 // before adding a local stream.
 TEST_F(PeerConnectionInterfaceTest,
-       AddLocalStreamAfterLocalDescriptionChanged) {
+       MAYBE_AddLocalStreamAfterLocalDescriptionChanged) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2233,10 +2293,18 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(ContainsSender(senders, kVideoTracks[1]));
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_ChangeSsrcOnTrackInLocalSessionDescription \
+  DISABLED_ChangeSsrcOnTrackInLocalSessionDescription
+#else
+#define MAYBE_ChangeSsrcOnTrackInLocalSessionDescription \
+  ChangeSsrcOnTrackInLocalSessionDescription
+#endif
 // This tests that the expected behavior occurs if the SSRC on a local track is
 // changed when SetLocalDescription is called.
 TEST_F(PeerConnectionInterfaceTest,
-       ChangeSsrcOnTrackInLocalSessionDescription) {
+       MAYBE_ChangeSsrcOnTrackInLocalSessionDescription) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2280,9 +2348,18 @@ TEST_F(PeerConnectionInterfaceTest,
   // changed.
 }
 
+// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
+#if defined(WIN) && defined(_DEBUG)
+#define MAYBE_SignalSameTracksInSeparateMediaStream \
+  DISABLED_SignalSameTracksInSeparateMediaStream
+#else
+#define MAYBE_SignalSameTracksInSeparateMediaStream \
+  SignalSameTracksInSeparateMediaStream
+#endif
 // This tests that the expected behavior occurs if a new session description is
 // set with the same tracks, but on a different MediaStream.
-TEST_F(PeerConnectionInterfaceTest, SignalSameTracksInSeparateMediaStream) {
+TEST_F(PeerConnectionInterfaceTest,
+       MAYBE_SignalSameTracksInSeparateMediaStream) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
