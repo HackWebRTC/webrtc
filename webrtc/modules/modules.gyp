@@ -444,6 +444,8 @@
                 'audio_processing/test/audio_buffer_tools.cc',
                 'audio_processing/test/audio_buffer_tools.h',
                 'audio_processing/test/audio_processing_unittest.cc',
+                'audio_processing/test/debug_dump_replayer.cc',
+                'audio_processing/test/debug_dump_replayer.h',
                 'audio_processing/test/debug_dump_test.cc',
                 'audio_processing/test/test_utils.h',
               ],
