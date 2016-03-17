@@ -293,6 +293,19 @@ class SurfaceTextureHelper {
   private boolean hasPendingTexture = false;
   private volatile boolean isTextureInUse = false;
   private boolean isQuitting = false;
+  // |pendingListener| is set in setListener() and the runnable is posted to the handler thread.
+  // setListener() is not allowed to be called again before stopListening(), so this is thread safe.
+  private OnTextureFrameAvailableListener pendingListener;
+  final Runnable setListenerRunnable = new Runnable() {
+    @Override
+    public void run() {
+      Logging.d(TAG, "Setting listener to " + pendingListener);
+      listener = pendingListener;
+      pendingListener = null;
+      // May alredy have a pending frame - try delivering it.
+      tryDeliverTextureFrame();
+    }
+  };
 
   private SurfaceTextureHelper(EglBase.Context sharedContext, Handler handler) {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
@@ -332,17 +345,11 @@ class SurfaceTextureHelper {
    * call stopListening() first.
    */
   public void startListening(final OnTextureFrameAvailableListener listener) {
-    if (this.listener != null) {
+    if (this.listener != null || this.pendingListener != null) {
       throw new IllegalStateException("SurfaceTextureHelper listener has already been set.");
     }
-    handler.post(new Runnable() {
-      @Override
-      public void run() {
-        SurfaceTextureHelper.this.listener = listener;
-        // May alredy have a pending frame - try delivering it.
-        tryDeliverTextureFrame();
-      }
-    });
+    this.pendingListener = listener;
+    handler.post(setListenerRunnable);
   }
 
   /**
@@ -354,7 +361,10 @@ class SurfaceTextureHelper {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("Wrong thread.");
     }
+    Logging.d(TAG, "stopListening()");
+    handler.removeCallbacks(setListenerRunnable);
     this.listener = null;
+    this.pendingListener = null;
   }
 
   /**
@@ -401,6 +411,7 @@ class SurfaceTextureHelper {
    * guaranteed to not receive any more onTextureFrameAvailable() after this function returns.
    */
   public void dispose() {
+    Logging.d(TAG, "dispose()");
     if (handler.getLooper().getThread() == Thread.currentThread()) {
       isQuitting = true;
       if (!isTextureInUse) {

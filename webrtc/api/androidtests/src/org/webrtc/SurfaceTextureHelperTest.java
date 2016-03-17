@@ -273,15 +273,12 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   // Helper method to call stopListening() on correct thread.
   private static void stopListeningOnHandlerThread(final SurfaceTextureHelper surfaceTextureHelper)
       throws InterruptedException {
-    final CountDownLatch barrier = new CountDownLatch(1);
-    surfaceTextureHelper.getHandler().post(new Runnable() {
+    ThreadUtils.invokeUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
       @Override
       public void run() {
         surfaceTextureHelper.stopListening();
-        barrier.countDown();
       }
     });
-    barrier.await();
   }
 
   /**
@@ -332,6 +329,45 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
     stopListeningOnHandlerThread(surfaceTextureHelper);
+    surfaceTextureHelper.dispose();
+  }
+
+  /**
+   * Test stopListening() immediately after the SurfaceTextureHelper has been setup on the handler
+   * thread.
+   */
+  @SmallTest
+  public static void testStopListeningImmediatelyOnHandlerThread() throws InterruptedException {
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(null);
+    final MockTextureListener listener = new MockTextureListener();
+
+    final CountDownLatch stopListeningBarrier = new CountDownLatch(1);
+    final CountDownLatch stopListeningBarrierDone = new CountDownLatch(1);
+    // Start by posting to the handler thread to keep it occupied.
+    surfaceTextureHelper.getHandler().post(new Runnable() {
+      @Override
+      public void run() {
+        ThreadUtils.awaitUninterruptibly(stopListeningBarrier);
+        surfaceTextureHelper.stopListening();
+        stopListeningBarrierDone.countDown();
+      }
+    });
+
+    // startListening() is asynchronous and will post to the occupied handler thread.
+    surfaceTextureHelper.startListening(listener);
+    // Wait for stopListening() to be called on the handler thread.
+    stopListeningBarrier.countDown();
+    stopListeningBarrierDone.await();
+    // Wait until handler thread is idle to try to catch late startListening() call.
+    ThreadUtils.invokeUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
+      @Override
+      public void run() {}
+    });
+    // Previous startListening() call should never have taken place and it should be ok to call it
+    // again.
+    surfaceTextureHelper.startListening(listener);
+
     surfaceTextureHelper.dispose();
   }
 
