@@ -419,12 +419,6 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
 #endif  // WEBRTC_ANDROID_PLATFORM_BUILD
 }
 
-int AudioProcessingImpl::input_sample_rate_hz() const {
-  // Accessed from outside APM, hence a lock is needed.
-  rtc::CritScope cs(&crit_capture_);
-  return formats_.api_format.input_stream().sample_rate_hz();
-}
-
 int AudioProcessingImpl::proc_sample_rate_hz() const {
   // Used as callback from submodules, hence locking is not allowed.
   return capture_nonlocked_.fwd_proc_format.sample_rate_hz();
@@ -842,8 +836,8 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
 
 int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
   TRACE_EVENT0("webrtc", "AudioProcessing::ProcessReverseStream_AudioFrame");
-  RETURN_ON_ERR(AnalyzeReverseStream(frame));
   rtc::CritScope cs(&crit_render_);
+  RETURN_ON_ERR(AnalyzeReverseStream(frame));
   if (is_rev_processed()) {
     render_.render_audio->InterleaveTo(frame, true);
   }

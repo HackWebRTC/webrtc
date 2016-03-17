@@ -296,10 +296,6 @@ class AudioProcessing {
   // ensures the options are applied immediately.
   virtual void SetExtraOptions(const Config& config) = 0;
 
-  // TODO(peah): Remove after voice engine no longer requires it to resample
-  // the reverse stream to the forward rate.
-  virtual int input_sample_rate_hz() const = 0;
-
   // TODO(ajm): Only intended for internal use. Make private and friend the
   // necessary classes?
   virtual int proc_sample_rate_hz() const = 0;
@@ -367,8 +363,7 @@ class AudioProcessing {
   // chances are you don't need to use it.
   //
   // The |sample_rate_hz_|, |num_channels_|, and |samples_per_channel_|
-  // members of |frame| must be valid. |sample_rate_hz_| must correspond to
-  // |input_sample_rate_hz()|
+  // members of |frame| must be valid.
   //
   // TODO(ajm): add const to input; requires an implementation fix.
   // DEPRECATED: Use |ProcessReverseStream| instead.
