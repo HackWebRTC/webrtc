@@ -23,25 +23,6 @@ deps_os = {
   },
 }
 
-# Define rules for which include paths are allowed in our source.
-include_rules = [
-  # Base is only used to build Android APK tests and may not be referenced by
-  # WebRTC production code.
-  '-base',
-  '-chromium',
-  '+external/webrtc/webrtc',  # Android platform build.
-  '+gflags',
-  '+libyuv',
-  '+net',
-  '+talk',
-  '+testing',
-  '+third_party',
-  '+unicode',
-  '+usrsctplib',
-  '+webrtc',
-  '+vpx',
-]
-
 hooks = [
   {
     # Check for legacy named top-level dir (named 'trunk').
