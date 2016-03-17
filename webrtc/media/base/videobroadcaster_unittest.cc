@@ -9,31 +9,21 @@
  */
 
 #include "webrtc/base/gunit.h"
+#include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
 
 using rtc::VideoBroadcaster;
 using rtc::VideoSinkWants;
+using cricket::FakeVideoRenderer;
 using cricket::WebRtcVideoFrame;
 
-namespace {
-
-class TestSink : public rtc::VideoSinkInterface<cricket::VideoFrame> {
- public:
-  void OnFrame(const cricket::VideoFrame& frame) override {
-    ++number_of_rendered_frames_;
-  }
-
-  int number_of_rendered_frames_ = 0;
-};
-
-}  // namespace
 
 TEST(VideoBroadcasterTest, frame_wanted) {
   VideoBroadcaster broadcaster;
   EXPECT_FALSE(broadcaster.frame_wanted());
 
-  TestSink sink;
+  FakeVideoRenderer sink;
   broadcaster.AddOrUpdateSink(&sink, rtc::VideoSinkWants());
   EXPECT_TRUE(broadcaster.frame_wanted());
 
@@ -44,40 +34,40 @@ TEST(VideoBroadcasterTest, frame_wanted) {
 TEST(VideoBroadcasterTest, OnFrame) {
   VideoBroadcaster broadcaster;
 
-  TestSink sink1;
-  TestSink sink2;
+  FakeVideoRenderer sink1;
+  FakeVideoRenderer sink2;
   broadcaster.AddOrUpdateSink(&sink1, rtc::VideoSinkWants());
   broadcaster.AddOrUpdateSink(&sink2, rtc::VideoSinkWants());
 
   WebRtcVideoFrame frame;
 
   broadcaster.OnFrame(frame);
-  EXPECT_EQ(1, sink1.number_of_rendered_frames_);
-  EXPECT_EQ(1, sink2.number_of_rendered_frames_);
+  EXPECT_EQ(1, sink1.num_rendered_frames());
+  EXPECT_EQ(1, sink2.num_rendered_frames());
 
   broadcaster.RemoveSink(&sink1);
   broadcaster.OnFrame(frame);
-  EXPECT_EQ(1, sink1.number_of_rendered_frames_);
-  EXPECT_EQ(2, sink2.number_of_rendered_frames_);
+  EXPECT_EQ(1, sink1.num_rendered_frames());
+  EXPECT_EQ(2, sink2.num_rendered_frames());
 
   broadcaster.AddOrUpdateSink(&sink1, rtc::VideoSinkWants());
   broadcaster.OnFrame(frame);
-  EXPECT_EQ(2, sink1.number_of_rendered_frames_);
-  EXPECT_EQ(3, sink2.number_of_rendered_frames_);
+  EXPECT_EQ(2, sink1.num_rendered_frames());
+  EXPECT_EQ(3, sink2.num_rendered_frames());
 }
 
 TEST(VideoBroadcasterTest, AppliesRotationIfAnySinkWantsRotationApplied) {
   VideoBroadcaster broadcaster;
   EXPECT_TRUE(broadcaster.wants().rotation_applied);
 
-  TestSink sink1;
+  FakeVideoRenderer sink1;
   VideoSinkWants wants1;
   wants1.rotation_applied = false;
 
   broadcaster.AddOrUpdateSink(&sink1, wants1);
   EXPECT_FALSE(broadcaster.wants().rotation_applied);
 
-  TestSink sink2;
+  FakeVideoRenderer sink2;
   VideoSinkWants wants2;
   wants2.rotation_applied = true;
 
@@ -92,14 +82,14 @@ TEST(VideoBroadcasterTest, AppliesMinOfSinkWantsMaxPixelCount) {
   VideoBroadcaster broadcaster;
   EXPECT_TRUE(!broadcaster.wants().max_pixel_count);
 
-  TestSink sink1;
+  FakeVideoRenderer sink1;
   VideoSinkWants wants1;
   wants1.max_pixel_count = rtc::Optional<int>(1280 * 720);
 
   broadcaster.AddOrUpdateSink(&sink1, wants1);
   EXPECT_EQ(1280 * 720, *broadcaster.wants().max_pixel_count);
 
-  TestSink sink2;
+  FakeVideoRenderer sink2;
   VideoSinkWants wants2;
   wants2.max_pixel_count = rtc::Optional<int>(640 * 360);
   broadcaster.AddOrUpdateSink(&sink2, wants2);
@@ -113,14 +103,14 @@ TEST(VideoBroadcasterTest, AppliesMinOfSinkWantsMaxPixelCountStepUp) {
   VideoBroadcaster broadcaster;
   EXPECT_TRUE(!broadcaster.wants().max_pixel_count_step_up);
 
-  TestSink sink1;
+  FakeVideoRenderer sink1;
   VideoSinkWants wants1;
   wants1.max_pixel_count_step_up = rtc::Optional<int>(1280 * 720);
 
   broadcaster.AddOrUpdateSink(&sink1, wants1);
   EXPECT_EQ(1280 * 720, *broadcaster.wants().max_pixel_count_step_up);
 
-  TestSink sink2;
+  FakeVideoRenderer sink2;
   VideoSinkWants wants2;
   wants2.max_pixel_count_step_up = rtc::Optional<int>(640 * 360);
   broadcaster.AddOrUpdateSink(&sink2, wants2);
@@ -128,4 +118,45 @@ TEST(VideoBroadcasterTest, AppliesMinOfSinkWantsMaxPixelCountStepUp) {
 
   broadcaster.RemoveSink(&sink2);
   EXPECT_EQ(1280 * 720, *broadcaster.wants().max_pixel_count_step_up);
+}
+
+TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
+  VideoBroadcaster broadcaster;
+  EXPECT_TRUE(!broadcaster.wants().black_frames);
+
+  FakeVideoRenderer sink1;
+  VideoSinkWants wants1;
+  wants1.black_frames = true;
+  broadcaster.AddOrUpdateSink(&sink1, wants1);
+
+  FakeVideoRenderer sink2;
+  VideoSinkWants wants2;
+  wants1.black_frames = false;
+  broadcaster.AddOrUpdateSink(&sink2, wants2);
+
+  cricket::WebRtcVideoFrame frame1;
+  frame1.InitToBlack(100, 200, 10 /*ts*/);
+  // Make it not all-black
+  frame1.GetUPlane()[0] = 0;
+  broadcaster.OnFrame(frame1);
+  EXPECT_TRUE(sink1.black_frame());
+  EXPECT_EQ(10, sink1.timestamp());
+  EXPECT_FALSE(sink2.black_frame());
+  EXPECT_EQ(10, sink2.timestamp());
+
+  // Switch the sink wants.
+  wants1.black_frames = false;
+  broadcaster.AddOrUpdateSink(&sink1, wants1);
+  wants2.black_frames = true;
+  broadcaster.AddOrUpdateSink(&sink2, wants2);
+
+  cricket::WebRtcVideoFrame frame2;
+  frame2.InitToBlack(100, 200, 30 /*ts*/);
+  // Make it not all-black
+  frame2.GetUPlane()[0] = 0;
+  broadcaster.OnFrame(frame2);
+  EXPECT_FALSE(sink1.black_frame());
+  EXPECT_EQ(30, sink1.timestamp());
+  EXPECT_TRUE(sink2.black_frame());
+  EXPECT_EQ(30, sink2.timestamp());
 }

@@ -26,13 +26,7 @@ void VideoBroadcaster::AddOrUpdateSink(
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(sink != nullptr);
   rtc::CritScope cs(&sinks_and_wants_lock_);
-
-  SinkPair* sink_pair = FindSinkPair(sink);
-  if (!sink_pair) {
-    sinks_.push_back(SinkPair(sink, wants));
-  } else {
-    sink_pair->wants = wants;
-  }
+  VideoSourceBase::AddOrUpdateSink(sink, wants);
   UpdateWants();
 }
 
@@ -41,19 +35,14 @@ void VideoBroadcaster::RemoveSink(
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(sink != nullptr);
   rtc::CritScope cs(&sinks_and_wants_lock_);
-  RTC_DCHECK(FindSinkPair(sink));
-  sinks_.erase(std::remove_if(sinks_.begin(), sinks_.end(),
-                              [sink](const SinkPair& sink_pair) {
-                                return sink_pair.sink == sink;
-                              }),
-               sinks_.end());
+  VideoSourceBase::RemoveSink(sink);
   UpdateWants();
 }
 
 bool VideoBroadcaster::frame_wanted() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   rtc::CritScope cs(&sinks_and_wants_lock_);
-  return !sinks_.empty();
+  return !sink_pairs().empty();
 }
 
 VideoSinkWants VideoBroadcaster::wants() const {
@@ -64,20 +53,13 @@ VideoSinkWants VideoBroadcaster::wants() const {
 
 void VideoBroadcaster::OnFrame(const cricket::VideoFrame& frame) {
   rtc::CritScope cs(&sinks_and_wants_lock_);
-  for (auto& sink_pair : sinks_) {
-    sink_pair.sink->OnFrame(frame);
+  for (auto& sink_pair : sink_pairs()) {
+    if (sink_pair.wants.black_frames) {
+      sink_pair.sink->OnFrame(GetBlackFrame(frame));
+    } else {
+      sink_pair.sink->OnFrame(frame);
+    }
   }
-}
-
-VideoBroadcaster::SinkPair* VideoBroadcaster::FindSinkPair(
-    const VideoSinkInterface<cricket::VideoFrame>* sink) {
-  auto sink_pair_it = std::find_if(
-      sinks_.begin(), sinks_.end(),
-      [sink](const SinkPair& sink_pair) { return sink_pair.sink == sink; });
-  if (sink_pair_it != sinks_.end()) {
-    return &*sink_pair_it;
-  }
-  return nullptr;
 }
 
 void VideoBroadcaster::UpdateWants() {
@@ -85,7 +67,7 @@ void VideoBroadcaster::UpdateWants() {
 
   VideoSinkWants wants;
   wants.rotation_applied = false;
-  for (auto& sink : sinks_) {
+  for (auto& sink : sink_pairs()) {
     // wants.rotation_applied == ANY(sink.wants.rotation_applied)
     if (sink.wants.rotation_applied) {
       wants.rotation_applied = true;
@@ -110,6 +92,23 @@ void VideoBroadcaster::UpdateWants() {
     wants.max_pixel_count_step_up = Optional<int>();
   }
   current_wants_ = wants;
+}
+
+const cricket::VideoFrame& VideoBroadcaster::GetBlackFrame(
+    const cricket::VideoFrame& frame) {
+  if (black_frame_ && black_frame_->GetWidth() == frame.GetWidth() &&
+      black_frame_->GetHeight() == frame.GetHeight() &&
+      black_frame_->GetVideoRotation() == frame.GetVideoRotation()) {
+    black_frame_->SetTimeStamp(frame.GetTimeStamp());
+    return *black_frame_;
+  }
+  black_frame_.reset(new cricket::WebRtcVideoFrame(
+      new rtc::RefCountedObject<webrtc::I420Buffer>(
+          static_cast<int>(frame.GetWidth()),
+          static_cast<int>(frame.GetHeight())),
+      frame.GetTimeStamp(), frame.GetVideoRotation()));
+  black_frame_->SetToBlack();
+  return *black_frame_;
 }
 
 }  // namespace rtc

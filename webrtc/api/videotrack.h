@@ -12,15 +12,19 @@
 #define WEBRTC_API_VIDEOTRACK_H_
 
 #include <string>
+#include <vector>
 
 #include "webrtc/api/mediastreamtrack.h"
 #include "webrtc/api/videosourceinterface.h"
 #include "webrtc/api/videotrackrenderers.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/thread_checker.h"
+#include "webrtc/media/base/videosourcebase.h"
 
 namespace webrtc {
 
-class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
+class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
+                   public rtc::VideoSourceBase {
  public:
   static rtc::scoped_refptr<VideoTrack> Create(
       const std::string& label,
@@ -41,7 +45,7 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
   ~VideoTrack();
 
  private:
-  VideoTrackRenderers renderers_;
+  rtc::ThreadChecker thread_checker_;
   rtc::scoped_refptr<VideoTrackSourceInterface> video_source_;
 };
 

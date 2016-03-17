@@ -10,4 +10,50 @@
 
 #include "webrtc/media/base/videosourcebase.h"
 
-// TODO(perkj): Add implementation.
+#include "webrtc/base/checks.h"
+
+namespace rtc {
+
+VideoSourceBase::VideoSourceBase() {
+  thread_checker_.DetachFromThread();
+}
+
+void VideoSourceBase::AddOrUpdateSink(
+    VideoSinkInterface<cricket::VideoFrame>* sink,
+    const VideoSinkWants& wants) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(sink != nullptr);
+
+  SinkPair* sink_pair = FindSinkPair(sink);
+  if (!sink_pair) {
+    sinks_.push_back(SinkPair(sink, wants));
+  } else {
+    sink_pair->wants = wants;
+  }
+}
+
+void VideoSourceBase::RemoveSink(
+    VideoSinkInterface<cricket::VideoFrame>* sink) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(sink != nullptr);
+  RTC_DCHECK(FindSinkPair(sink));
+  sinks_.erase(std::remove_if(sinks_.begin(), sinks_.end(),
+                              [sink](const SinkPair& sink_pair) {
+                                return sink_pair.sink == sink;
+                              }),
+               sinks_.end());
+}
+
+VideoSourceBase::SinkPair* VideoSourceBase::FindSinkPair(
+    const VideoSinkInterface<cricket::VideoFrame>* sink) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  auto sink_pair_it = std::find_if(
+      sinks_.begin(), sinks_.end(),
+      [sink](const SinkPair& sink_pair) { return sink_pair.sink == sink; });
+  if (sink_pair_it != sinks_.end()) {
+    return &*sink_pair_it;
+  }
+  return nullptr;
+}
+
+}  // namespace rtc

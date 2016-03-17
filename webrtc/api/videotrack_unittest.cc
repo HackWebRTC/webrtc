@@ -61,9 +61,8 @@ TEST_F(VideoTrackTest, RenderVideo) {
   EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(1, renderer_2->num_rendered_frames());
 
-  video_track_->RemoveSink(renderer_1.get());
+  renderer_1.reset(nullptr);
   capturer_.CaptureFrame();
-  EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(2, renderer_2->num_rendered_frames());
 }
 
@@ -86,9 +85,8 @@ TEST_F(VideoTrackTest, RenderVideoOld) {
   EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(1, renderer_2->num_rendered_frames());
 
-  video_track_->RemoveRenderer(renderer_1.get());
+  renderer_1.reset(nullptr);
   capturer_.CaptureFrame();
-  EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(2, renderer_2->num_rendered_frames());
 }
 

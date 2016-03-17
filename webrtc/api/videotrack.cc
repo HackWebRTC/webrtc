@@ -20,19 +20,9 @@ VideoTrack::VideoTrack(const std::string& label,
                        VideoTrackSourceInterface* video_source)
     : MediaStreamTrack<VideoTrackInterface>(label),
       video_source_(video_source) {
-  // TODO(perkj): Sinks should register directly to the source so that
-  // VideoSinkWants can be applied correctly per sink. For now, |renderers_|
-  // must be able to apply rotation. Note that this is only actual renderers,
-  // not sinks that connect directly to cricket::VideoCapture.
-  rtc::VideoSinkWants wants;
-  wants.rotation_applied = false;
-  if (video_source_)
-    video_source_->AddOrUpdateSink(&renderers_, wants);
 }
 
 VideoTrack::~VideoTrack() {
-  if (video_source_)
-    video_source_->RemoveSink(&renderers_);
 }
 
 std::string VideoTrack::kind() const {
@@ -42,16 +32,27 @@ std::string VideoTrack::kind() const {
 void VideoTrack::AddOrUpdateSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
-  renderers_.AddOrUpdateSink(sink, wants);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  VideoSourceBase::AddOrUpdateSink(sink, wants);
+  rtc::VideoSinkWants modified_wants = wants;
+  modified_wants.black_frames = !enabled();
+  video_source_->AddOrUpdateSink(sink, modified_wants);
 }
 
 void VideoTrack::RemoveSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
-  renderers_.RemoveSink(sink);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  VideoSourceBase::RemoveSink(sink);
+  video_source_->RemoveSink(sink);
 }
 
 bool VideoTrack::set_enabled(bool enable) {
-  renderers_.SetEnabled(enable);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  for (auto& sink_pair : sink_pairs()) {
+    rtc::VideoSinkWants modified_wants = sink_pair.wants;
+    modified_wants.black_frames = !enable;
+    video_source_->AddOrUpdateSink(sink_pair.sink, modified_wants);
+  }
   return MediaStreamTrack<VideoTrackInterface>::set_enabled(enable);
 }
 

@@ -25,9 +25,10 @@ class FakeVideoRenderer : public VideoRenderer {
       : errors_(0),
         width_(0),
         height_(0),
+        rotation_(webrtc::kVideoRotation_0),
+        timestamp_(0),
         num_rendered_frames_(0),
-        black_frame_(false) {
-  }
+        black_frame_(false) {}
 
   virtual bool RenderFrame(const VideoFrame* frame) {
     rtc::CritScope cs(&crit_);
@@ -44,6 +45,7 @@ class FakeVideoRenderer : public VideoRenderer {
     width_ = static_cast<int>(frame->GetWidth());
     height_ = static_cast<int>(frame->GetHeight());
     rotation_ = frame->GetVideoRotation();
+    timestamp_ = frame->GetTimeStamp();
     SignalRenderFrame(frame);
     return true;
   }
@@ -60,6 +62,11 @@ class FakeVideoRenderer : public VideoRenderer {
   int rotation() const {
     rtc::CritScope cs(&crit_);
     return rotation_;
+  }
+
+  int64_t timestamp() const {
+    rtc::CritScope cs(&crit_);
+    return timestamp_;
   }
   int num_rendered_frames() const {
     rtc::CritScope cs(&crit_);
@@ -129,6 +136,7 @@ class FakeVideoRenderer : public VideoRenderer {
   int width_;
   int height_;
   webrtc::VideoRotation rotation_;
+  int64_t timestamp_;
   int num_rendered_frames_;
   bool black_frame_;
   rtc::CriticalSection crit_;

@@ -321,8 +321,6 @@
         'videosourceproxy.h',
         'videotrack.cc',
         'videotrack.h',
-        'videotrackrenderers.cc',
-        'videotrackrenderers.h',
         'videotracksource.cc',
         'videotracksource.h',
         'webrtcsdp.cc',

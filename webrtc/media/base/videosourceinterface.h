@@ -23,6 +23,9 @@ struct VideoSinkWants {
   // By default, the rotation is applied by the source.
   bool rotation_applied = true;
 
+  // Tells the source that the sink only wants black frames.
+  bool black_frames = false;
+
   // Tells the source the maximum number of pixels the sink wants.
   rtc::Optional<int> max_pixel_count;
   // Like |max_pixel_count| but relative to the given value. The source is

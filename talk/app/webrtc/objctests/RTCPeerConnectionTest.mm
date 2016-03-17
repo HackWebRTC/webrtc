@@ -90,14 +90,18 @@ const NSTimeInterval kRTCPeerConnectionTestTimeout = 20;
                                 videoTrackID:(NSString*)videoTrackID
                                 audioTrackID:(NSString*)audioTrackID {
   RTCMediaStream* localMediaStream = [factory mediaStreamWithLabel:streamLabel];
-  RTCVideoTrack* videoTrack =
-      [factory videoTrackWithID:videoTrackID source:videoSource];
-  RTCFakeRenderer* videoRenderer = [[RTCFakeRenderer alloc] init];
-  [videoTrack addRenderer:videoRenderer];
-  [localMediaStream addVideoTrack:videoTrack];
-  // Test that removal/re-add works.
-  [localMediaStream removeVideoTrack:videoTrack];
-  [localMediaStream addVideoTrack:videoTrack];
+  // TODO(zeke): Fix this test to create a fake video capturer so that a track
+  // can be created.
+  if (videoSource) {
+    RTCVideoTrack* videoTrack =
+        [factory videoTrackWithID:videoTrackID source:videoSource];
+    RTCFakeRenderer* videoRenderer = [[RTCFakeRenderer alloc] init];
+    [videoTrack addRenderer:videoRenderer];
+    [localMediaStream addVideoTrack:videoTrack];
+    // Test that removal/re-add works.
+    [localMediaStream removeVideoTrack:videoTrack];
+    [localMediaStream addVideoTrack:videoTrack];
+  }
   RTCAudioTrack* audioTrack = [factory audioTrackWithID:audioTrackID];
   [localMediaStream addAudioTrack:audioTrack];
   [pc addStream:localMediaStream];

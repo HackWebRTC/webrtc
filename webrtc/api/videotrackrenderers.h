@@ -11,46 +11,6 @@
 #ifndef WEBRTC_API_VIDEOTRACKRENDERERS_H_
 #define WEBRTC_API_VIDEOTRACKRENDERERS_H_
 
-#include <set>
-
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/media/base/videorenderer.h"
-
-namespace webrtc {
-
-// Class used for rendering cricket::VideoFrames to multiple renderers of type
-// VideoRendererInterface.
-// Each VideoTrack owns a VideoTrackRenderers instance.
-// The class is thread safe. Rendering to the added VideoRendererInterfaces is
-// done on the same thread as the cricket::VideoRenderer.
-class VideoTrackRenderers
-    : public cricket::VideoRenderer,
-      public rtc::VideoSourceInterface<cricket::VideoFrame> {
- public:
-  VideoTrackRenderers();
-  ~VideoTrackRenderers();
-
-  // Implements cricket::VideoRenderer. If the track is disabled,
-  // incoming frames are replaced by black frames.
-  virtual bool RenderFrame(const cricket::VideoFrame* frame);
-
-  void AddOrUpdateSink(VideoSinkInterface<cricket::VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override;
-  void RemoveSink(VideoSinkInterface<cricket::VideoFrame>* sink) override;
-  void SetEnabled(bool enable);
-
- private:
-  // Pass the frame on to to each registered renderer. Requires
-  // critical_section_ already locked.
-  void RenderFrameToSinks(const cricket::VideoFrame& frame);
-
-  bool enabled_;
-  std::vector<VideoSinkInterface<cricket::VideoFrame>*> sinks_;
-  rtc::CriticalSection critical_section_;  // Protects the above variables
-};
-
-}  // namespace webrtc
+// TODO(perkj): Remove this file once Chrome builds doesnt depend on it.
 
 #endif  // WEBRTC_API_VIDEOTRACKRENDERERS_H_
