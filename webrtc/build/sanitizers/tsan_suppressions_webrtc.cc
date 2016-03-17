@@ -92,11 +92,6 @@ char kTSanDefaultSuppressions[] =
 // https://code.google.com/p/libyuv/issues/detail?id=508
 "race:InitCpuFlags\n"
 
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5524
-"race:AudioChannelTest_SendSrtpToSrtpOnThread_Test::TestBody\n"
-"race:VideoChannelTest_SendSrtpToSrtpOnThread_Test::TestBody\n"
-"race:DataChannelTest_SendSrtpToSrtpOnThread_Test::TestBody\n"
-
 // End of suppressions.
 ;  // Please keep this semicolon.
 

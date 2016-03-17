@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
@@ -410,28 +411,64 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   class CallThread : public rtc::SignalThread {
    public:
     typedef bool (ChannelTest<T>::*Method)();
-    CallThread(ChannelTest<T>* obj, Method method, bool* result)
+    CallThread(ChannelTest<T>* obj, Method method, bool* result = nullptr)
         : obj_(obj),
           method_(method),
-          result_(result) {
-      *result = false;
+          result_(false),
+          result_ptr_(result) {
+      if (result_ptr_)
+        *result_ptr_ = false;
     }
-    virtual void DoWork() {
-      bool result = (*obj_.*method_)();
-      if (result_) {
-        *result_ = result;
+
+    ~CallThread() {
+      if (result_ptr_) {
+        rtc::CritScope cs(&result_lock_);
+        *result_ptr_ = result_;
       }
     }
+
+    virtual void DoWork() {
+      SetResult((*obj_.*method_)());
+    }
+
+    bool result() {
+      rtc::CritScope cs(&result_lock_);
+      return result_;
+    }
+
    private:
+    void SetResult(const bool& result) {
+      rtc::CritScope cs(&result_lock_);
+      result_ = result;
+    }
+
     ChannelTest<T>* obj_;
     Method method_;
-    bool* result_;
+    rtc::CriticalSection result_lock_;
+    bool result_ GUARDED_BY(result_lock_);
+    bool* result_ptr_;
   };
-  void CallOnThread(typename CallThread::Method method, bool* result) {
-    CallThread* thread = new CallThread(this, method, result);
-    thread->Start();
-    thread->Release();
-  }
+
+  // Will manage the lifetime of a CallThread, making sure it's
+  // destroyed before this object goes out of scope.
+  class ScopedCallThread {
+   public:
+    using Method = typename CallThread::Method;
+
+    ScopedCallThread(ChannelTest<T>* obj, Method method)
+        : thread_(new CallThread(obj, method)) {
+      thread_->Start();
+    }
+
+    ~ScopedCallThread() {
+      thread_->Destroy(true);
+    }
+
+    bool result() const { return thread_->result(); }
+
+   private:
+    CallThread* thread_;
+  };
 
   void CallOnThreadAndWaitForDone(typename CallThread::Method method,
                                   bool* result) {
@@ -1328,48 +1365,46 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Test that we properly send RTP without SRTP from a thread.
   void SendRtpToRtpOnThread() {
-    bool sent_rtp1, sent_rtp2, sent_rtcp1, sent_rtcp2;
     CreateChannels(RTCP, RTCP);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    CallOnThread(&ChannelTest<T>::SendRtp1, &sent_rtp1);
-    CallOnThread(&ChannelTest<T>::SendRtp2, &sent_rtp2);
-    CallOnThread(&ChannelTest<T>::SendRtcp1, &sent_rtcp1);
-    CallOnThread(&ChannelTest<T>::SendRtcp2, &sent_rtcp2);
+    ScopedCallThread send_rtp1(this, &ChannelTest<T>::SendRtp1);
+    ScopedCallThread send_rtp2(this, &ChannelTest<T>::SendRtp2);
+    ScopedCallThread send_rtcp1(this, &ChannelTest<T>::SendRtcp1);
+    ScopedCallThread send_rtcp2(this, &ChannelTest<T>::SendRtcp2);
     EXPECT_TRUE_WAIT(CheckRtp1(), 1000);
     EXPECT_TRUE_WAIT(CheckRtp2(), 1000);
-    EXPECT_TRUE_WAIT(sent_rtp1, 1000);
-    EXPECT_TRUE_WAIT(sent_rtp2, 1000);
+    EXPECT_TRUE_WAIT(send_rtp1.result(), 1000);
+    EXPECT_TRUE_WAIT(send_rtp2.result(), 1000);
     EXPECT_TRUE(CheckNoRtp1());
     EXPECT_TRUE(CheckNoRtp2());
     EXPECT_TRUE_WAIT(CheckRtcp1(), 1000);
     EXPECT_TRUE_WAIT(CheckRtcp2(), 1000);
-    EXPECT_TRUE_WAIT(sent_rtcp1, 1000);
-    EXPECT_TRUE_WAIT(sent_rtcp2, 1000);
+    EXPECT_TRUE_WAIT(send_rtcp1.result(), 1000);
+    EXPECT_TRUE_WAIT(send_rtcp2.result(), 1000);
     EXPECT_TRUE(CheckNoRtcp1());
     EXPECT_TRUE(CheckNoRtcp2());
   }
 
   // Test that we properly send SRTP with RTCP from a thread.
   void SendSrtpToSrtpOnThread() {
-    bool sent_rtp1, sent_rtp2, sent_rtcp1, sent_rtcp2;
     CreateChannels(RTCP | SECURE, RTCP | SECURE);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    CallOnThread(&ChannelTest<T>::SendRtp1, &sent_rtp1);
-    CallOnThread(&ChannelTest<T>::SendRtp2, &sent_rtp2);
-    CallOnThread(&ChannelTest<T>::SendRtcp1, &sent_rtcp1);
-    CallOnThread(&ChannelTest<T>::SendRtcp2, &sent_rtcp2);
+    ScopedCallThread send_rtp1(this, &ChannelTest<T>::SendRtp1);
+    ScopedCallThread send_rtp2(this, &ChannelTest<T>::SendRtp2);
+    ScopedCallThread send_rtcp1(this, &ChannelTest<T>::SendRtcp1);
+    ScopedCallThread send_rtcp2(this, &ChannelTest<T>::SendRtcp2);
     EXPECT_TRUE_WAIT(CheckRtp1(), 1000);
     EXPECT_TRUE_WAIT(CheckRtp2(), 1000);
-    EXPECT_TRUE_WAIT(sent_rtp1, 1000);
-    EXPECT_TRUE_WAIT(sent_rtp2, 1000);
+    EXPECT_TRUE_WAIT(send_rtp1.result(), 1000);
+    EXPECT_TRUE_WAIT(send_rtp2.result(), 1000);
     EXPECT_TRUE(CheckNoRtp1());
     EXPECT_TRUE(CheckNoRtp2());
     EXPECT_TRUE_WAIT(CheckRtcp1(), 1000);
     EXPECT_TRUE_WAIT(CheckRtcp2(), 1000);
-    EXPECT_TRUE_WAIT(sent_rtcp1, 1000);
-    EXPECT_TRUE_WAIT(sent_rtcp2, 1000);
+    EXPECT_TRUE_WAIT(send_rtcp1.result(), 1000);
+    EXPECT_TRUE_WAIT(send_rtcp2.result(), 1000);
     EXPECT_TRUE(CheckNoRtcp1());
     EXPECT_TRUE(CheckNoRtcp2());
   }
@@ -1627,7 +1662,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   void TestFlushRtcp() {
     bool send_rtcp1;
-
     CreateChannels(RTCP, RTCP);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
