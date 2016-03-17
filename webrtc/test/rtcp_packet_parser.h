@@ -16,11 +16,32 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {
+// Parse RTCP packet of given type. Assumes RTCP header is valid and that there
+// is excatly one packet of correct type in the buffer.
+template <typename Packet>
+bool ParseSinglePacket(const uint8_t* buffer, size_t size, Packet* packet) {
+  rtcp::CommonHeader header;
+  RTC_CHECK(header.Parse(buffer, size));
+  RTC_CHECK_EQ(static_cast<ptrdiff_t>(size), header.NextPacket() - buffer);
+  return packet->Parse(header);
+}
+// Same function, but takes raw buffer as single argument instead of pair.
+template <size_t N, typename Packet>
+bool ParseSinglePacket(const uint8_t(&buffer)[N], Packet* packet) {
+  return ParseSinglePacket(buffer, N, packet);
+}
+template <typename Packet>
+bool ParseSinglePacket(const rtc::Buffer& buffer, Packet* packet) {
+  return ParseSinglePacket(buffer.data(), buffer.size(), packet);
+}
 
 class RtcpPacketParser;
 
