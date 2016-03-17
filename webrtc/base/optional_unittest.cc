@@ -28,14 +28,14 @@ namespace {
 // constructor) or given as an argument (explicit constructor).
 class Logger {
  public:
-  Logger() : id_(next_id_++), origin_(id_) { Log("default constructor"); }
-  explicit Logger(int origin) : id_(next_id_++), origin_(origin) {
+  Logger() : id_(g_next_id++), origin_(id_) { Log("default constructor"); }
+  explicit Logger(int origin) : id_(g_next_id++), origin_(origin) {
     Log("explicit constructor");
   }
-  Logger(const Logger& other) : id_(next_id_++), origin_(other.origin_) {
+  Logger(const Logger& other) : id_(g_next_id++), origin_(other.origin_) {
     LogFrom("copy constructor", other);
   }
-  Logger(Logger&& other) : id_(next_id_++), origin_(other.origin_) {
+  Logger(Logger&& other) : id_(g_next_id++), origin_(other.origin_) {
     LogFrom("move constructor", other);
   }
   ~Logger() { Log("destructor"); }
@@ -66,37 +66,37 @@ class Logger {
   void Foo() const { Log("Foo() const"); }
   static rtc::scoped_ptr<std::vector<std::string>> Setup() {
     auto s = rtc_make_scoped_ptr(new std::vector<std::string>);
-    Logger::log_ = s.get();
-    Logger::next_id_ = 0;
+    g_log = s.get();
+    g_next_id = 0;
     return s;
   }
 
  private:
   int id_;
   int origin_;
-  static std::vector<std::string>* log_;
-  static int next_id_;
+  static std::vector<std::string>* g_log;
+  static int g_next_id;
   void Log(const char* msg) const {
     std::ostringstream oss;
     oss << id_ << ':' << origin_ << ". " << msg;
-    log_->push_back(oss.str());
+    g_log->push_back(oss.str());
   }
   void LogFrom(const char* msg, const Logger& other) const {
     std::ostringstream oss;
     oss << id_ << ':' << origin_ << ". " << msg << " (from " << other.id_ << ':'
         << other.origin_ << ")";
-    log_->push_back(oss.str());
+    g_log->push_back(oss.str());
   }
   static void Log2(const char* msg, const Logger& a, const Logger& b) {
     std::ostringstream oss;
     oss << msg << ' ' << a.id_ << ':' << a.origin_ << ", " << b.id_ << ':'
         << b.origin_;
-    log_->push_back(oss.str());
+    g_log->push_back(oss.str());
   }
 };
 
-std::vector<std::string>* Logger::log_ = nullptr;
-int Logger::next_id_ = 0;
+std::vector<std::string>* Logger::g_log = nullptr;
+int Logger::g_next_id = 0;
 
 // Append all the other args to the vector pointed to by the first arg.
 template <typename T>
