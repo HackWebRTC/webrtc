@@ -182,6 +182,8 @@
                 'ios/objc/RTCAudioSessionConfiguration.m',
                 'ios/objc/RTCAudioSessionDelegateAdapter.h',
                 'ios/objc/RTCAudioSessionDelegateAdapter.mm',
+                'ios/voice_processing_audio_unit.h',
+                'ios/voice_processing_audio_unit.mm',
               ],
               'xcode_settings': {
                 'CLANG_ENABLE_OBJC_ARC': 'YES',

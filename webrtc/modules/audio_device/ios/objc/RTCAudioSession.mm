@@ -75,6 +75,24 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
+- (NSString *)description {
+  NSString *format =
+      @"RTCAudioSession: {\n"
+       "  isActive: %d\n"
+       "  sampleRate: %.2f\n"
+       "  IOBufferDuration: %f\n"
+       "  outputNumberOfChannels: %ld\n"
+       "  inputNumberOfChannels: %ld\n"
+       "  outputLatency: %f\n"
+       "  inputLatency: %f\n"
+       "}";
+  NSString *description = [NSString stringWithFormat:format,
+      self.isActive, self.sampleRate, self.IOBufferDuration,
+      self.outputNumberOfChannels, self.inputNumberOfChannels,
+      self.outputLatency, self.inputLatency];
+  return description;
+}
+
 - (void)setIsActive:(BOOL)isActive {
   @synchronized(self) {
     _isActive = isActive;

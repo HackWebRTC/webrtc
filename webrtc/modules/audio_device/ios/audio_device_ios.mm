@@ -55,40 +55,15 @@ namespace webrtc {
   } while (0)
 
 
-// Number of bytes per audio sample for 16-bit signed integer representation.
-const UInt32 kBytesPerSample = 2;
 // Hardcoded delay estimates based on real measurements.
 // TODO(henrika): these value is not used in combination with built-in AEC.
 // Can most likely be removed.
 const UInt16 kFixedPlayoutDelayEstimate = 30;
 const UInt16 kFixedRecordDelayEstimate = 30;
-// Calls to AudioUnitInitialize() can fail if called back-to-back on different
-// ADM instances. A fall-back solution is to allow multiple sequential calls
-// with as small delay between each. This factor sets the max number of allowed
-// initialization attempts.
-const int kMaxNumberOfAudioUnitInitializeAttempts = 5;
 
 using ios::CheckAndLogError;
 
 #if !defined(NDEBUG)
-// Helper method for printing out an AudioStreamBasicDescription structure.
-static void LogABSD(AudioStreamBasicDescription absd) {
-  char formatIDString[5];
-  UInt32 formatID = CFSwapInt32HostToBig(absd.mFormatID);
-  bcopy(&formatID, formatIDString, 4);
-  formatIDString[4] = '\0';
-  LOG(LS_INFO) << "LogABSD";
-  LOG(LS_INFO) << " sample rate: " << absd.mSampleRate;
-  LOG(LS_INFO) << " format ID: " << formatIDString;
-  LOG(LS_INFO) << " format flags: " << std::hex << absd.mFormatFlags;
-  LOG(LS_INFO) << " bytes per packet: " << absd.mBytesPerPacket;
-  LOG(LS_INFO) << " frames per packet: " << absd.mFramesPerPacket;
-  LOG(LS_INFO) << " bytes per frame: " << absd.mBytesPerFrame;
-  LOG(LS_INFO) << " channels per packet: " << absd.mChannelsPerFrame;
-  LOG(LS_INFO) << " bits per channel: " << absd.mBitsPerChannel;
-  LOG(LS_INFO) << " reserved: " << absd.mReserved;
-}
-
 // Helper method that logs essential device information strings.
 static void LogDeviceInfo() {
   LOG(LS_INFO) << "LogDeviceInfo";
@@ -110,15 +85,15 @@ static void LogDeviceInfo() {
 #endif  // !defined(NDEBUG)
 
 AudioDeviceIOS::AudioDeviceIOS()
-  : async_invoker_(new rtc::AsyncInvoker()),
-    audio_device_buffer_(nullptr),
-    vpio_unit_(nullptr),
-    recording_(0),
-    playing_(0),
-    initialized_(false),
-    rec_is_initialized_(false),
-    play_is_initialized_(false),
-    is_interrupted_(false) {
+    : async_invoker_(new rtc::AsyncInvoker()),
+      audio_device_buffer_(nullptr),
+      audio_unit_(nullptr),
+      recording_(0),
+      playing_(0),
+      initialized_(false),
+      rec_is_initialized_(false),
+      play_is_initialized_(false),
+      is_interrupted_(false) {
   LOGI() << "ctor" << ios::GetCurrentThreadDescription();
   thread_ = rtc::Thread::Current();
   audio_session_observer_ =
@@ -218,10 +193,8 @@ int32_t AudioDeviceIOS::StartPlayout() {
   RTC_DCHECK(!playing_);
   fine_audio_buffer_->ResetPlayout();
   if (!recording_) {
-    OSStatus result = AudioOutputUnitStart(vpio_unit_);
-    if (result != noErr) {
-      LOG_F(LS_ERROR) << "AudioOutputUnitStart failed for StartPlayout: "
-                      << result;
+    if (!audio_unit_->Start()) {
+      RTCLogError(@"StartPlayout failed to start audio unit.");
       return -1;
     }
     LOG(LS_INFO) << "Voice-Processing I/O audio unit is now started";
@@ -251,10 +224,8 @@ int32_t AudioDeviceIOS::StartRecording() {
   RTC_DCHECK(!recording_);
   fine_audio_buffer_->ResetRecord();
   if (!playing_) {
-    OSStatus result = AudioOutputUnitStart(vpio_unit_);
-    if (result != noErr) {
-      LOG_F(LS_ERROR) << "AudioOutputUnitStart failed for StartRecording: "
-                      << result;
+    if (!audio_unit_->Start()) {
+      RTCLogError(@"StartRecording failed to start audio unit.");
       return -1;
     }
     LOG(LS_INFO) << "Voice-Processing I/O audio unit is now started";
@@ -376,19 +347,103 @@ void AudioDeviceIOS::OnValidRouteChange() {
       rtc::Bind(&webrtc::AudioDeviceIOS::HandleValidRouteChange, this));
 }
 
+OSStatus AudioDeviceIOS::OnDeliverRecordedData(
+    AudioUnitRenderActionFlags* flags,
+    const AudioTimeStamp* time_stamp,
+    UInt32 bus_number,
+    UInt32 num_frames,
+    AudioBufferList* /* io_data */) {
+  OSStatus result = noErr;
+  // Simply return if recording is not enabled.
+  if (!rtc::AtomicOps::AcquireLoad(&recording_))
+    return result;
+
+  size_t frames_per_buffer = record_parameters_.frames_per_buffer();
+  if (num_frames != frames_per_buffer) {
+    // We have seen short bursts (1-2 frames) where |in_number_frames| changes.
+    // Add a log to keep track of longer sequences if that should ever happen.
+    // Also return since calling AudioUnitRender in this state will only result
+    // in kAudio_ParamError (-50) anyhow.
+    RTCLogWarning(@"Expected %u frames but got %u",
+                  static_cast<unsigned int>(frames_per_buffer),
+                  static_cast<unsigned int>(num_frames));
+    return result;
+  }
+
+  // Obtain the recorded audio samples by initiating a rendering cycle.
+  // Since it happens on the input bus, the |io_data| parameter is a reference
+  // to the preallocated audio buffer list that the audio unit renders into.
+  // We can make the audio unit provide a buffer instead in io_data, but we
+  // currently just use our own.
+  // TODO(henrika): should error handling be improved?
+  AudioBufferList* io_data = &audio_record_buffer_list_;
+  result =
+      audio_unit_->Render(flags, time_stamp, bus_number, num_frames, io_data);
+  if (result != noErr) {
+    RTCLogError(@"Failed to render audio.");
+    return result;
+  }
+
+  // Get a pointer to the recorded audio and send it to the WebRTC ADB.
+  // Use the FineAudioBuffer instance to convert between native buffer size
+  // and the 10ms buffer size used by WebRTC.
+  AudioBuffer* audio_buffer = &io_data->mBuffers[0];
+  const size_t size_in_bytes = audio_buffer->mDataByteSize;
+  RTC_CHECK_EQ(size_in_bytes / VoiceProcessingAudioUnit::kBytesPerSample,
+               num_frames);
+  int8_t* data = static_cast<int8_t*>(audio_buffer->mData);
+  fine_audio_buffer_->DeliverRecordedData(data, size_in_bytes,
+                                          kFixedPlayoutDelayEstimate,
+                                          kFixedRecordDelayEstimate);
+  return noErr;
+}
+
+OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
+                                          const AudioTimeStamp* time_stamp,
+                                          UInt32 bus_number,
+                                          UInt32 num_frames,
+                                          AudioBufferList* io_data) {
+  // Verify 16-bit, noninterleaved mono PCM signal format.
+  RTC_DCHECK_EQ(1u, io_data->mNumberBuffers);
+  AudioBuffer* audio_buffer = &io_data->mBuffers[0];
+  RTC_DCHECK_EQ(1u, audio_buffer->mNumberChannels);
+  // Get pointer to internal audio buffer to which new audio data shall be
+  // written.
+  const size_t size_in_bytes = audio_buffer->mDataByteSize;
+  RTC_CHECK_EQ(size_in_bytes / VoiceProcessingAudioUnit::kBytesPerSample,
+               num_frames);
+  int8_t* destination = reinterpret_cast<int8_t*>(audio_buffer->mData);
+  // Produce silence and give audio unit a hint about it if playout is not
+  // activated.
+  if (!rtc::AtomicOps::AcquireLoad(&playing_)) {
+    *flags |= kAudioUnitRenderAction_OutputIsSilence;
+    memset(destination, 0, size_in_bytes);
+    return noErr;
+  }
+  // Read decoded 16-bit PCM samples from WebRTC (using a size that matches
+  // the native I/O audio unit) to a preallocated intermediate buffer and
+  // copy the result to the audio buffer in the |io_data| destination.
+  int8_t* source = playout_audio_buffer_.get();
+  fine_audio_buffer_->GetPlayoutData(source);
+  memcpy(destination, source, size_in_bytes);
+  return noErr;
+}
+
 void AudioDeviceIOS::HandleInterruptionBegin() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTCLog(@"Stopping the audio unit due to interruption begin.");
-  LOG_IF_ERROR(AudioOutputUnitStop(vpio_unit_),
-               "Failed to stop the the Voice-Processing I/O unit");
+  if (!audio_unit_->Stop()) {
+    RTCLogError(@"Failed to stop the audio unit.");
+  }
   is_interrupted_ = true;
 }
 
 void AudioDeviceIOS::HandleInterruptionEnd() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTCLog(@"Starting the audio unit due to interruption end.");
-  LOG_IF_ERROR(AudioOutputUnitStart(vpio_unit_),
-               "Failed to start the the Voice-Processing I/O unit");
+  if (!audio_unit_->Start()) {
+    RTCLogError(@"Failed to start the audio unit.");
+  }
   is_interrupted_ = false;
 }
 
@@ -408,7 +463,7 @@ void AudioDeviceIOS::HandleValidRouteChange() {
   if (current_sample_rate != session_sample_rate) {
     RTCLog(@"Route changed caused sample rate to change from %f to %f. "
            "Restarting audio unit.", current_sample_rate, session_sample_rate);
-    if (!RestartAudioUnitWithNewFormat(session_sample_rate)) {
+    if (!RestartAudioUnit(session_sample_rate)) {
       RTCLogError(@"Audio restart failed.");
     }
   }
@@ -433,12 +488,7 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
   double sample_rate = session.sampleRate;
   NSTimeInterval io_buffer_duration = session.IOBufferDuration;
-  LOG(LS_INFO) << " sample rate: " << sample_rate;
-  LOG(LS_INFO) << " IO buffer duration: " << io_buffer_duration;
-  LOG(LS_INFO) << " output channels: " << session.outputNumberOfChannels;
-  LOG(LS_INFO) << " input channels: " << session.inputNumberOfChannels;
-  LOG(LS_INFO) << " output latency: " << session.outputLatency;
-  LOG(LS_INFO) << " input latency: " << session.inputLatency;
+  RTCLog(@"%@", session);
 
   // Log a warning message for the case when we are unable to set the preferred
   // hardware sample rate but continue and use the non-ideal sample rate after
@@ -501,211 +551,52 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   audio_buffer->mData = record_audio_buffer_.get();
 }
 
-bool AudioDeviceIOS::SetupAndInitializeVoiceProcessingAudioUnit() {
-  LOGI() << "SetupAndInitializeVoiceProcessingAudioUnit";
-  RTC_DCHECK(!vpio_unit_) << "VoiceProcessingIO audio unit already exists";
-  // Create an audio component description to identify the Voice-Processing
-  // I/O audio unit.
-  AudioComponentDescription vpio_unit_description;
-  vpio_unit_description.componentType = kAudioUnitType_Output;
-  vpio_unit_description.componentSubType = kAudioUnitSubType_VoiceProcessingIO;
-  vpio_unit_description.componentManufacturer = kAudioUnitManufacturer_Apple;
-  vpio_unit_description.componentFlags = 0;
-  vpio_unit_description.componentFlagsMask = 0;
+bool AudioDeviceIOS::CreateAudioUnit() {
+  RTC_DCHECK(!audio_unit_);
 
-  // Obtain an audio unit instance given the description.
-  AudioComponent found_vpio_unit_ref =
-      AudioComponentFindNext(nullptr, &vpio_unit_description);
-
-  // Create a Voice-Processing IO audio unit.
-  OSStatus result = noErr;
-  result = AudioComponentInstanceNew(found_vpio_unit_ref, &vpio_unit_);
-  if (result != noErr) {
-    vpio_unit_ = nullptr;
-    LOG(LS_ERROR) << "AudioComponentInstanceNew failed: " << result;
+  audio_unit_.reset(new VoiceProcessingAudioUnit(this));
+  if (!audio_unit_->Init()) {
+    audio_unit_.reset();
     return false;
   }
 
-  // A VP I/O unit's bus 1 connects to input hardware (microphone). Enable
-  // input on the input scope of the input element.
-  AudioUnitElement input_bus = 1;
-  UInt32 enable_input = 1;
-  result = AudioUnitSetProperty(vpio_unit_, kAudioOutputUnitProperty_EnableIO,
-                                kAudioUnitScope_Input, input_bus, &enable_input,
-                                sizeof(enable_input));
-  if (result != noErr) {
-    DisposeAudioUnit();
-    LOG(LS_ERROR) << "Failed to enable input on input scope of input element: "
-                  << result;
-    return false;
-  }
-
-  // A VP I/O unit's bus 0 connects to output hardware (speaker). Enable
-  // output on the output scope of the output element.
-  AudioUnitElement output_bus = 0;
-  UInt32 enable_output = 1;
-  result = AudioUnitSetProperty(vpio_unit_, kAudioOutputUnitProperty_EnableIO,
-                                kAudioUnitScope_Output, output_bus,
-                                &enable_output, sizeof(enable_output));
-  if (result != noErr) {
-    DisposeAudioUnit();
-    LOG(LS_ERROR)
-        << "Failed to enable output on output scope of output element: "
-        << result;
-    return false;
-  }
-
-  // Set the application formats for input and output:
-  // - use same format in both directions
-  // - avoid resampling in the I/O unit by using the hardware sample rate
-  // - linear PCM => noncompressed audio data format with one frame per packet
-  // - no need to specify interleaving since only mono is supported
-  AudioStreamBasicDescription application_format = {0};
-  UInt32 size = sizeof(application_format);
-  RTC_DCHECK_EQ(playout_parameters_.sample_rate(),
-                record_parameters_.sample_rate());
-  RTC_DCHECK_EQ(1, kRTCAudioSessionPreferredNumberOfChannels);
-  application_format.mSampleRate = playout_parameters_.sample_rate();
-  application_format.mFormatID = kAudioFormatLinearPCM;
-  application_format.mFormatFlags =
-      kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
-  application_format.mBytesPerPacket = kBytesPerSample;
-  application_format.mFramesPerPacket = 1;  // uncompressed
-  application_format.mBytesPerFrame = kBytesPerSample;
-  application_format.mChannelsPerFrame =
-      kRTCAudioSessionPreferredNumberOfChannels;
-  application_format.mBitsPerChannel = 8 * kBytesPerSample;
-  // Store the new format.
-  application_format_ = application_format;
-#if !defined(NDEBUG)
-  LogABSD(application_format_);
-#endif
-
-  // Set the application format on the output scope of the input element/bus.
-  result = AudioUnitSetProperty(vpio_unit_, kAudioUnitProperty_StreamFormat,
-                                kAudioUnitScope_Output, input_bus,
-                                &application_format, size);
-  if (result != noErr) {
-    DisposeAudioUnit();
-    LOG(LS_ERROR)
-        << "Failed to set application format on output scope of input bus: "
-        << result;
-    return false;
-  }
-
-  // Set the application format on the input scope of the output element/bus.
-  result = AudioUnitSetProperty(vpio_unit_, kAudioUnitProperty_StreamFormat,
-                                kAudioUnitScope_Input, output_bus,
-                                &application_format, size);
-  if (result != noErr) {
-    DisposeAudioUnit();
-    LOG(LS_ERROR)
-        << "Failed to set application format on input scope of output bus: "
-        << result;
-    return false;
-  }
-
-  // Specify the callback function that provides audio samples to the audio
-  // unit.
-  AURenderCallbackStruct render_callback;
-  render_callback.inputProc = GetPlayoutData;
-  render_callback.inputProcRefCon = this;
-  result = AudioUnitSetProperty(
-      vpio_unit_, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input,
-      output_bus, &render_callback, sizeof(render_callback));
-  if (result != noErr) {
-    DisposeAudioUnit();
-    LOG(LS_ERROR) << "Failed to specify the render callback on the output bus: "
-                  << result;
-    return false;
-  }
-
-  // Disable AU buffer allocation for the recorder, we allocate our own.
-  // TODO(henrika): not sure that it actually saves resource to make this call.
-  UInt32 flag = 0;
-  result = AudioUnitSetProperty(
-      vpio_unit_, kAudioUnitProperty_ShouldAllocateBuffer,
-      kAudioUnitScope_Output, input_bus, &flag, sizeof(flag));
-  if (result != noErr) {
-    DisposeAudioUnit();
-    LOG(LS_ERROR) << "Failed to disable buffer allocation on the input bus: "
-                  << result;
-  }
-
-  // Specify the callback to be called by the I/O thread to us when input audio
-  // is available. The recorded samples can then be obtained by calling the
-  // AudioUnitRender() method.
-  AURenderCallbackStruct input_callback;
-  input_callback.inputProc = RecordedDataIsAvailable;
-  input_callback.inputProcRefCon = this;
-  result = AudioUnitSetProperty(vpio_unit_,
-                                kAudioOutputUnitProperty_SetInputCallback,
-                                kAudioUnitScope_Global, input_bus,
-                                &input_callback, sizeof(input_callback));
-  if (result != noErr) {
-    DisposeAudioUnit();
-    LOG(LS_ERROR) << "Failed to specify the input callback on the input bus: "
-                  << result;
-  }
-
-  // Initialize the Voice-Processing I/O unit instance.
-  // Calls to AudioUnitInitialize() can fail if called back-to-back on
-  // different ADM instances. The error message in this case is -66635 which is
-  // undocumented. Tests have shown that calling AudioUnitInitialize a second
-  // time, after a short sleep, avoids this issue.
-  // See webrtc:5166 for details.
-  int failed_initalize_attempts = 0;
-  result = AudioUnitInitialize(vpio_unit_);
-  while (result != noErr) {
-    LOG(LS_ERROR) << "Failed to initialize the Voice-Processing I/O unit: "
-                  << result;
-    ++failed_initalize_attempts;
-    if (failed_initalize_attempts == kMaxNumberOfAudioUnitInitializeAttempts) {
-      // Max number of initialization attempts exceeded, hence abort.
-      LOG(LS_WARNING) << "Too many initialization attempts";
-      DisposeAudioUnit();
-      return false;
-    }
-    LOG(LS_INFO) << "pause 100ms and try audio unit initialization again...";
-    [NSThread sleepForTimeInterval:0.1f];
-    result = AudioUnitInitialize(vpio_unit_);
-  }
-  LOG(LS_INFO) << "Voice-Processing I/O unit is now initialized";
   return true;
 }
 
-bool AudioDeviceIOS::RestartAudioUnitWithNewFormat(float sample_rate) {
-  LOGI() << "RestartAudioUnitWithNewFormat(sample_rate=" << sample_rate << ")";
+bool AudioDeviceIOS::RestartAudioUnit(float sample_rate) {
+  RTCLog(@"Restarting audio unit with new sample rate: %f", sample_rate);
+
   // Stop the active audio unit.
-  LOG_AND_RETURN_IF_ERROR(AudioOutputUnitStop(vpio_unit_),
-                          "Failed to stop the the Voice-Processing I/O unit");
+  if (!audio_unit_->Stop()) {
+    RTCLogError(@"Failed to stop the audio unit.");
+    return false;
+  }
 
   // The stream format is about to be changed and it requires that we first
   // uninitialize it to deallocate its resources.
-  LOG_AND_RETURN_IF_ERROR(
-      AudioUnitUninitialize(vpio_unit_),
-      "Failed to uninitialize the the Voice-Processing I/O unit");
+  if (!audio_unit_->Uninitialize()) {
+    RTCLogError(@"Failed to uninitialize the audio unit.");
+    return false;
+  }
 
   // Allocate new buffers given the new stream format.
   SetupAudioBuffersForActiveAudioSession();
 
-  // Update the existing application format using the new sample rate.
-  application_format_.mSampleRate = playout_parameters_.sample_rate();
-  UInt32 size = sizeof(application_format_);
-  AudioUnitSetProperty(vpio_unit_, kAudioUnitProperty_StreamFormat,
-                       kAudioUnitScope_Output, 1, &application_format_, size);
-  AudioUnitSetProperty(vpio_unit_, kAudioUnitProperty_StreamFormat,
-                       kAudioUnitScope_Input, 0, &application_format_, size);
+  // Initialize the audio unit again with the new sample rate.
+  RTC_DCHECK_EQ(playout_parameters_.sample_rate(), sample_rate);
+  if (!audio_unit_->Initialize(sample_rate)) {
+    RTCLogError(@"Failed to initialize the audio unit with sample rate: %f",
+                sample_rate);
+    return false;
+  }
 
-  // Prepare the audio unit to render audio again.
-  LOG_AND_RETURN_IF_ERROR(AudioUnitInitialize(vpio_unit_),
-                          "Failed to initialize the Voice-Processing I/O unit");
-  LOG(LS_INFO) << "Voice-Processing I/O unit is now reinitialized";
+  // Restart the audio unit.
+  if (!audio_unit_->Start()) {
+    RTCLogError(@"Failed to start audio unit.");
+    return false;
+  }
+  RTCLog(@"Successfully restarted audio unit.");
 
-  // Start rendering audio using the new format.
-  LOG_AND_RETURN_IF_ERROR(AudioOutputUnitStart(vpio_unit_),
-                          "Failed to start the Voice-Processing I/O unit");
-  LOG(LS_INFO) << "Voice-Processing I/O unit is now restarted";
   return true;
 }
 
@@ -731,29 +622,26 @@ bool AudioDeviceIOS::InitPlayOrRecord() {
   SetupAudioBuffersForActiveAudioSession();
 
   // Create, setup and initialize a new Voice-Processing I/O unit.
-  if (!SetupAndInitializeVoiceProcessingAudioUnit()) {
+  // TODO(tkchin): Delay the initialization when needed.
+  if (!CreateAudioUnit() ||
+      !audio_unit_->Initialize(playout_parameters_.sample_rate())) {
     [session setActive:NO error:nil];
     [session unlockForConfiguration];
     return false;
   }
   [session unlockForConfiguration];
+
   return true;
 }
 
 void AudioDeviceIOS::ShutdownPlayOrRecord() {
   LOGI() << "ShutdownPlayOrRecord";
+
   // Close and delete the voice-processing I/O unit.
-  OSStatus result = -1;
-  if (nullptr != vpio_unit_) {
-    result = AudioOutputUnitStop(vpio_unit_);
-    if (result != noErr) {
-      LOG_F(LS_ERROR) << "AudioOutputUnitStop failed: " << result;
-    }
-    result = AudioUnitUninitialize(vpio_unit_);
-    if (result != noErr) {
-      LOG_F(LS_ERROR) << "AudioUnitUninitialize failed: " << result;
-    }
-    DisposeAudioUnit();
+  if (audio_unit_) {
+    audio_unit_->Stop();
+    audio_unit_->Uninitialize();
+    audio_unit_.reset();
   }
 
   // Remove audio session notification observers.
@@ -765,114 +653,6 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
   [session lockForConfiguration];
   [session setActive:NO error:nil];
   [session unlockForConfiguration];
-}
-
-void AudioDeviceIOS::DisposeAudioUnit() {
-  if (nullptr == vpio_unit_)
-    return;
-  OSStatus result = AudioComponentInstanceDispose(vpio_unit_);
-  if (result != noErr) {
-    LOG(LS_ERROR) << "AudioComponentInstanceDispose failed:" << result;
-  }
-  vpio_unit_ = nullptr;
-}
-
-OSStatus AudioDeviceIOS::RecordedDataIsAvailable(
-    void* in_ref_con,
-    AudioUnitRenderActionFlags* io_action_flags,
-    const AudioTimeStamp* in_time_stamp,
-    UInt32 in_bus_number,
-    UInt32 in_number_frames,
-    AudioBufferList* io_data) {
-  RTC_DCHECK_EQ(1u, in_bus_number);
-  RTC_DCHECK(
-      !io_data);  // no buffer should be allocated for input at this stage
-  AudioDeviceIOS* audio_device_ios = static_cast<AudioDeviceIOS*>(in_ref_con);
-  return audio_device_ios->OnRecordedDataIsAvailable(
-      io_action_flags, in_time_stamp, in_bus_number, in_number_frames);
-}
-
-OSStatus AudioDeviceIOS::OnRecordedDataIsAvailable(
-    AudioUnitRenderActionFlags* io_action_flags,
-    const AudioTimeStamp* in_time_stamp,
-    UInt32 in_bus_number,
-    UInt32 in_number_frames) {
-  OSStatus result = noErr;
-  // Simply return if recording is not enabled.
-  if (!rtc::AtomicOps::AcquireLoad(&recording_))
-    return result;
-  if (in_number_frames != record_parameters_.frames_per_buffer()) {
-    // We have seen short bursts (1-2 frames) where |in_number_frames| changes.
-    // Add a log to keep track of longer sequences if that should ever happen.
-    // Also return since calling AudioUnitRender in this state will only result
-    // in kAudio_ParamError (-50) anyhow.
-    LOG(LS_WARNING) << "in_number_frames (" << in_number_frames
-                    << ") != " << record_parameters_.frames_per_buffer();
-    return noErr;
-  }
-  // Obtain the recorded audio samples by initiating a rendering cycle.
-  // Since it happens on the input bus, the |io_data| parameter is a reference
-  // to the preallocated audio buffer list that the audio unit renders into.
-  // TODO(henrika): should error handling be improved?
-  AudioBufferList* io_data = &audio_record_buffer_list_;
-  result = AudioUnitRender(vpio_unit_, io_action_flags, in_time_stamp,
-                           in_bus_number, in_number_frames, io_data);
-  if (result != noErr) {
-    LOG_F(LS_ERROR) << "AudioUnitRender failed: " << result;
-    return result;
-  }
-  // Get a pointer to the recorded audio and send it to the WebRTC ADB.
-  // Use the FineAudioBuffer instance to convert between native buffer size
-  // and the 10ms buffer size used by WebRTC.
-  const UInt32 data_size_in_bytes = io_data->mBuffers[0].mDataByteSize;
-  RTC_CHECK_EQ(data_size_in_bytes / kBytesPerSample, in_number_frames);
-  SInt8* data = static_cast<SInt8*>(io_data->mBuffers[0].mData);
-  fine_audio_buffer_->DeliverRecordedData(data, data_size_in_bytes,
-                                          kFixedPlayoutDelayEstimate,
-                                          kFixedRecordDelayEstimate);
-  return noErr;
-}
-
-OSStatus AudioDeviceIOS::GetPlayoutData(
-    void* in_ref_con,
-    AudioUnitRenderActionFlags* io_action_flags,
-    const AudioTimeStamp* in_time_stamp,
-    UInt32 in_bus_number,
-    UInt32 in_number_frames,
-    AudioBufferList* io_data) {
-  RTC_DCHECK_EQ(0u, in_bus_number);
-  RTC_DCHECK(io_data);
-  AudioDeviceIOS* audio_device_ios = static_cast<AudioDeviceIOS*>(in_ref_con);
-  return audio_device_ios->OnGetPlayoutData(io_action_flags, in_number_frames,
-                                            io_data);
-}
-
-OSStatus AudioDeviceIOS::OnGetPlayoutData(
-    AudioUnitRenderActionFlags* io_action_flags,
-    UInt32 in_number_frames,
-    AudioBufferList* io_data) {
-  // Verify 16-bit, noninterleaved mono PCM signal format.
-  RTC_DCHECK_EQ(1u, io_data->mNumberBuffers);
-  RTC_DCHECK_EQ(1u, io_data->mBuffers[0].mNumberChannels);
-  // Get pointer to internal audio buffer to which new audio data shall be
-  // written.
-  const UInt32 dataSizeInBytes = io_data->mBuffers[0].mDataByteSize;
-  RTC_CHECK_EQ(dataSizeInBytes / kBytesPerSample, in_number_frames);
-  SInt8* destination = static_cast<SInt8*>(io_data->mBuffers[0].mData);
-  // Produce silence and give audio unit a hint about it if playout is not
-  // activated.
-  if (!rtc::AtomicOps::AcquireLoad(&playing_)) {
-    *io_action_flags |= kAudioUnitRenderAction_OutputIsSilence;
-    memset(destination, 0, dataSizeInBytes);
-    return noErr;
-  }
-  // Read decoded 16-bit PCM samples from WebRTC (using a size that matches
-  // the native I/O audio unit) to a preallocated intermediate buffer and
-  // copy the result to the audio buffer in the |io_data| destination.
-  SInt8* source = playout_audio_buffer_.get();
-  fine_audio_buffer_->GetPlayoutData(source);
-  memcpy(destination, source, dataSizeInBytes);
-  return noErr;
 }
 
 }  // namespace webrtc

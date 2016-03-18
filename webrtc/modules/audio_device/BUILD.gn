@@ -144,6 +144,8 @@ source_set("audio_device") {
         "ios/objc/RTCAudioSessionConfiguration.m",
         "ios/objc/RTCAudioSessionDelegateAdapter.h",
         "ios/objc/RTCAudioSessionDelegateAdapter.mm",
+        "ios/voice_processing_audio_unit.h",
+        "ios/voice_processing_audio_unit.mm",
       ]
       cflags += [ "-fobjc-arc" ]  # CLANG_ENABLE_OBJC_ARC = YES.
       libs = [

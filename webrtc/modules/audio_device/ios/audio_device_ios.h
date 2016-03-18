@@ -13,14 +13,13 @@
 
 #include <memory>
 
-#include <AudioUnit/AudioUnit.h>
-
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/objc/RTCMacros.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/ios/audio_session_observer.h"
+#include "webrtc/modules/audio_device/ios/voice_processing_audio_unit.h"
 
 RTC_FWD_DECL_OBJC_CLASS(RTCAudioSessionDelegateAdapter);
 
@@ -42,7 +41,8 @@ class FineAudioBuffer;
 // audio unit. The audio unit will also ask for audio data to play out on this
 // same thread.
 class AudioDeviceIOS : public AudioDeviceGeneric,
-                       public AudioSessionObserver {
+                       public AudioSessionObserver,
+                       public VoiceProcessingAudioUnitObserver {
  public:
   AudioDeviceIOS();
   ~AudioDeviceIOS();
@@ -163,6 +163,18 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   void OnInterruptionEnd() override;
   void OnValidRouteChange() override;
 
+  // VoiceProcessingAudioUnitObserver methods.
+  OSStatus OnDeliverRecordedData(AudioUnitRenderActionFlags* flags,
+                                 const AudioTimeStamp* time_stamp,
+                                 UInt32 bus_number,
+                                 UInt32 num_frames,
+                                 AudioBufferList* io_data) override;
+  OSStatus OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
+                            const AudioTimeStamp* time_stamp,
+                            UInt32 bus_number,
+                            UInt32 num_frames,
+                            AudioBufferList* io_data) override;
+
  private:
   // Called by the relevant AudioSessionObserver methods on |thread_|.
   void HandleInterruptionBegin();
@@ -180,15 +192,12 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   // defines |playout_parameters_| and |record_parameters_|.
   void SetupAudioBuffersForActiveAudioSession();
 
-  // Creates a Voice-Processing I/O unit and configures it for full-duplex
-  // audio. The selected stream format is selected to avoid internal resampling
-  // and to match the 10ms callback rate for WebRTC as well as possible.
-  // This method also initializes the created audio unit.
-  bool SetupAndInitializeVoiceProcessingAudioUnit();
+  // Creates the audio unit.
+  bool CreateAudioUnit();
 
   // Restarts active audio streams using a new sample rate. Required when e.g.
   // a BT headset is enabled or disabled.
-  bool RestartAudioUnitWithNewFormat(float sample_rate);
+  bool RestartAudioUnit(float sample_rate);
 
   // Activates our audio session, creates and initializes the voice-processing
   // audio unit and verifies that we got the preferred native audio parameters.
@@ -196,36 +205,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   // Closes and deletes the voice-processing I/O unit.
   void ShutdownPlayOrRecord();
-
-  // Helper method for destroying the existing audio unit.
-  void DisposeAudioUnit();
-
-  // Callback function called on a real-time priority I/O thread from the audio
-  // unit. This method is used to signal that recorded audio is available.
-  static OSStatus RecordedDataIsAvailable(
-      void* in_ref_con,
-      AudioUnitRenderActionFlags* io_action_flags,
-      const AudioTimeStamp* time_stamp,
-      UInt32 in_bus_number,
-      UInt32 in_number_frames,
-      AudioBufferList* io_data);
-  OSStatus OnRecordedDataIsAvailable(
-      AudioUnitRenderActionFlags* io_action_flags,
-      const AudioTimeStamp* time_stamp,
-      UInt32 in_bus_number,
-      UInt32 in_number_frames);
-
-  // Callback function called on a real-time priority I/O thread from the audio
-  // unit. This method is used to provide audio samples to the audio unit.
-  static OSStatus GetPlayoutData(void* in_ref_con,
-                                 AudioUnitRenderActionFlags* io_action_flags,
-                                 const AudioTimeStamp* time_stamp,
-                                 UInt32 in_bus_number,
-                                 UInt32 in_number_frames,
-                                 AudioBufferList* io_data);
-  OSStatus OnGetPlayoutData(AudioUnitRenderActionFlags* io_action_flags,
-                            UInt32 in_number_frames,
-                            AudioBufferList* io_data);
 
   // Ensures that methods are called from the same thread as this object is
   // created on.
@@ -252,12 +231,8 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
 
-  // The Voice-Processing I/O unit has the same characteristics as the
-  // Remote I/O unit (supports full duplex low-latency audio input and output)
-  // and adds AEC for for two-way duplex communication. It also adds AGC,
-  // adjustment of voice-processing quality, and muting. Hence, ideal for
-  // VoIP applications.
-  AudioUnit vpio_unit_;
+  // The AudioUnit used to play and record audio.
+  std::unique_ptr<VoiceProcessingAudioUnit> audio_unit_;
 
   // FineAudioBuffer takes an AudioDeviceBuffer which delivers audio data
   // in chunks of 10ms. It then allows for this data to be pulled in
@@ -277,7 +252,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   // Extra audio buffer to be used by the playout side for rendering audio.
   // The buffer size is given by FineAudioBuffer::RequiredBufferSizeBytes().
-  std::unique_ptr<SInt8[]> playout_audio_buffer_;
+  std::unique_ptr<int8_t[]> playout_audio_buffer_;
 
   // Provides a mechanism for encapsulating one or more buffers of audio data.
   // Only used on the recording side.
@@ -285,7 +260,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   // Temporary storage for recorded data. AudioUnitRender() renders into this
   // array as soon as a frame of the desired buffer size has been recorded.
-  std::unique_ptr<SInt8[]> record_audio_buffer_;
+  std::unique_ptr<int8_t[]> record_audio_buffer_;
 
   // Set to 1 when recording is active and 0 otherwise.
   volatile int recording_;
