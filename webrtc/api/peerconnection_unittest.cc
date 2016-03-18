@@ -1779,7 +1779,7 @@ TEST_F(P2PTestConductor, AddDataChannelAfterRenegotiation) {
 // negotiation is completed without error.
 #ifdef HAVE_SCTP
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_CreateOfferWithSctpDataChannel \
   DISABLED_CreateOfferWithSctpDataChannel
 #else

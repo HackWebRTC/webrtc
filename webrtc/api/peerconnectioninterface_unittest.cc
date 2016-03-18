@@ -1667,7 +1667,7 @@ TEST_F(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_ReceiveFireFoxOffer DISABLED_ReceiveFireFoxOffer
 #else
 #define MAYBE_ReceiveFireFoxOffer ReceiveFireFoxOffer
@@ -2040,7 +2040,7 @@ TEST_F(PeerConnectionInterfaceTest, RecvonlyDescriptionDoesntCreateStream) {
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_SdpWithoutMsidCreatesDefaultStream \
   DISABLED_SdpWithoutMsidCreatesDefaultStream
 #else
@@ -2051,7 +2051,7 @@ TEST_F(PeerConnectionInterfaceTest, RecvonlyDescriptionDoesntCreateStream) {
 // description doesn't contain any streams and no MSID support.
 // It also tests that the default stream is updated if a video m-line is added
 // in a subsequent session description.
-TEST_F(PeerConnectionInterfaceTest, SdpWithoutMsidCreatesDefaultStream) {
+TEST_F(PeerConnectionInterfaceTest, MAYBE_SdpWithoutMsidCreatesDefaultStream) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2078,7 +2078,7 @@ TEST_F(PeerConnectionInterfaceTest, SdpWithoutMsidCreatesDefaultStream) {
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_SendOnlySdpWithoutMsidCreatesDefaultStream \
   DISABLED_SendOnlySdpWithoutMsidCreatesDefaultStream
 #else
@@ -2121,7 +2121,7 @@ TEST_F(PeerConnectionInterfaceTest, RemoveAlreadyGoneRemoteStream) {
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_SdpWithoutMsidAndStreamsCreatesDefaultStream \
   DISABLED_SdpWithoutMsidAndStreamsCreatesDefaultStream
 #else
@@ -2146,7 +2146,7 @@ TEST_F(PeerConnectionInterfaceTest,
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_SdpWithMsidDontCreatesDefaultStream \
   DISABLED_SdpWithMsidDontCreatesDefaultStream
 #else
@@ -2165,7 +2165,7 @@ TEST_F(PeerConnectionInterfaceTest, MAYBE_SdpWithMsidDontCreatesDefaultStream) {
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_DefaultTracksNotDestroyedAndRecreated \
   DISABLED_DefaultTracksNotDestroyedAndRecreated
 #else
@@ -2175,7 +2175,8 @@ TEST_F(PeerConnectionInterfaceTest, MAYBE_SdpWithMsidDontCreatesDefaultStream) {
 // This tests that when setting a new description, the old default tracks are
 // not destroyed and recreated.
 // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5250
-TEST_F(PeerConnectionInterfaceTest, DefaultTracksNotDestroyedAndRecreated) {
+TEST_F(PeerConnectionInterfaceTest,
+       MAYBE_DefaultTracksNotDestroyedAndRecreated) {
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
@@ -2211,7 +2212,7 @@ TEST_F(PeerConnectionInterfaceTest, VerifyDefaultStreamIsNotCreated) {
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_LocalDescriptionChanged DISABLED_LocalDescriptionChanged
 #else
 #define MAYBE_LocalDescriptionChanged LocalDescriptionChanged
@@ -2257,7 +2258,7 @@ TEST_F(PeerConnectionInterfaceTest, MAYBE_LocalDescriptionChanged) {
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_AddLocalStreamAfterLocalDescriptionChanged \
   DISABLED_AddLocalStreamAfterLocalDescriptionChanged
 #else
@@ -2294,7 +2295,7 @@ TEST_F(PeerConnectionInterfaceTest,
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_ChangeSsrcOnTrackInLocalSessionDescription \
   DISABLED_ChangeSsrcOnTrackInLocalSessionDescription
 #else
@@ -2349,7 +2350,7 @@ TEST_F(PeerConnectionInterfaceTest,
 }
 
 // Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WIN) && defined(_DEBUG)
+#if defined(WEBRTC_WIN) && defined(_DEBUG)
 #define MAYBE_SignalSameTracksInSeparateMediaStream \
   DISABLED_SignalSameTracksInSeparateMediaStream
 #else
