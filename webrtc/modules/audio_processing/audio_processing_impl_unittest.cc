@@ -48,7 +48,7 @@ TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
   EXPECT_CALL(mock, InitializeLocked())
       .Times(0);
   EXPECT_NOERR(mock.ProcessStream(&frame));
-  EXPECT_NOERR(mock.AnalyzeReverseStream(&frame));
+  EXPECT_NOERR(mock.ProcessReverseStream(&frame));
 
   // New sample rate. (Only impacts ProcessStream).
   SetFrameSampleRate(&frame, 32000);
@@ -63,12 +63,12 @@ TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
   EXPECT_NOERR(mock.ProcessStream(&frame));
   // ProcessStream sets num_channels_ == num_output_channels.
   frame.num_channels_ = 2;
-  EXPECT_NOERR(mock.AnalyzeReverseStream(&frame));
+  EXPECT_NOERR(mock.ProcessReverseStream(&frame));
 
-  // A new sample rate passed to AnalyzeReverseStream should cause an init.
+  // A new sample rate passed to ProcessReverseStream should cause an init.
   SetFrameSampleRate(&frame, 16000);
   EXPECT_CALL(mock, InitializeLocked()).Times(1);
-  EXPECT_NOERR(mock.AnalyzeReverseStream(&frame));
+  EXPECT_NOERR(mock.ProcessReverseStream(&frame));
 }
 
 }  // namespace webrtc

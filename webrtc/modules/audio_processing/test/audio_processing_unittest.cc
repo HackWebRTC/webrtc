@@ -589,7 +589,7 @@ int ApmTest::ProcessStreamChooser(Format format) {
 
 int ApmTest::AnalyzeReverseStreamChooser(Format format) {
   if (format == kIntFormat) {
-    return apm_->AnalyzeReverseStream(revframe_);
+    return apm_->ProcessReverseStream(revframe_);
   }
   return apm_->AnalyzeReverseStream(
       revfloat_cb_->channels(),
@@ -645,7 +645,7 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
       process_frame = &tmp_frame;
       process_frame->CopyFrom(*frame);
     }
-    EXPECT_EQ(apm_->kNoError, apm_->AnalyzeReverseStream(reverse_frame));
+    EXPECT_EQ(apm_->kNoError, apm_->ProcessReverseStream(reverse_frame));
     EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(system_delay_ms));
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(process_frame));
     frame = frame_queue.front();
@@ -815,7 +815,7 @@ void ApmTest::TestChangingChannelsInt16Interface(
     AudioProcessing::Error expected_return) {
   frame_->num_channels_ = num_channels;
   EXPECT_EQ(expected_return, apm_->ProcessStream(frame_));
-  EXPECT_EQ(expected_return, apm_->AnalyzeReverseStream(frame_));
+  EXPECT_EQ(expected_return, apm_->ProcessReverseStream(frame_));
 }
 
 void ApmTest::TestChangingForwardChannels(
@@ -1594,7 +1594,7 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
     while (ReadFrame(far_file_, revframe_) && ReadFrame(near_file_, frame_)) {
       CopyLeftToRightChannel(revframe_->data_, revframe_->samples_per_channel_);
 
-      ASSERT_EQ(kNoErr, apm_->AnalyzeReverseStream(revframe_));
+      ASSERT_EQ(kNoErr, apm_->ProcessReverseStream(revframe_));
 
       CopyLeftToRightChannel(frame_->data_, frame_->samples_per_channel_);
       frame_->vad_activity_ = AudioFrame::kVadUnknown;
@@ -1869,7 +1869,7 @@ TEST_F(ApmTest, DebugDump) {
 
   EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(filename.c_str(), -1));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kNoError, apm_->AnalyzeReverseStream(revframe_));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessReverseStream(revframe_));
   EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
 
   // Verify the file has been written.
@@ -1903,7 +1903,7 @@ TEST_F(ApmTest, DebugDumpFromFileHandle) {
   EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
 
   EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(fid, -1));
-  EXPECT_EQ(apm_->kNoError, apm_->AnalyzeReverseStream(revframe_));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessReverseStream(revframe_));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
 
@@ -1963,7 +1963,7 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
            ReadFrame(near_file_, frame_, float_cb_.get())) {
       frame_->vad_activity_ = AudioFrame::kVadUnknown;
 
-      EXPECT_NOERR(apm_->AnalyzeReverseStream(revframe_));
+      EXPECT_NOERR(apm_->ProcessReverseStream(revframe_));
       EXPECT_NOERR(fapm->AnalyzeReverseStream(
           revfloat_cb_->channels(),
           samples_per_channel,
@@ -2103,7 +2103,7 @@ TEST_F(ApmTest, Process) {
     float ns_speech_prob_average = 0.0f;
 
     while (ReadFrame(far_file_, revframe_) && ReadFrame(near_file_, frame_)) {
-      EXPECT_EQ(apm_->kNoError, apm_->AnalyzeReverseStream(revframe_));
+      EXPECT_EQ(apm_->kNoError, apm_->ProcessReverseStream(revframe_));
 
       frame_->vad_activity_ = AudioFrame::kVadUnknown;
 

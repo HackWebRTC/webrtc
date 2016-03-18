@@ -166,11 +166,11 @@ struct Intelligibility {
 //
 // APM operates on two audio streams on a frame-by-frame basis. Frames of the
 // primary stream, on which all processing is applied, are passed to
-// |ProcessStream()|. Frames of the reverse direction stream, which are used for
-// analysis by some components, are passed to |AnalyzeReverseStream()|. On the
-// client-side, this will typically be the near-end (capture) and far-end
-// (render) streams, respectively. APM should be placed in the signal chain as
-// close to the audio hardware abstraction layer (HAL) as possible.
+// |ProcessStream()|. Frames of the reverse direction stream are passed to
+// |ProcessReverseStream()|. On the client-side, this will typically be the
+// near-end (capture) and far-end (render) streams, respectively. APM should be
+// placed in the signal chain as close to the audio hardware abstraction layer
+// (HAL) as possible.
 //
 // On the server-side, the reverse stream will normally not be used, with
 // processing occurring on each incoming stream.
@@ -214,7 +214,7 @@ struct Intelligibility {
 // // Start a voice call...
 //
 // // ... Render frame arrives bound for the audio HAL ...
-// apm->AnalyzeReverseStream(render_frame);
+// apm->ProcessReverseStream(render_frame);
 //
 // // ... Capture frame arrives from the audio HAL ...
 // // Call required set_stream_ functions.
@@ -267,7 +267,7 @@ class AudioProcessing {
   //
   // It is also not necessary to call if the audio parameters (sample
   // rate and number of channels) have changed. Passing updated parameters
-  // directly to |ProcessStream()| and |AnalyzeReverseStream()| is permissible.
+  // directly to |ProcessStream()| and |ProcessReverseStream()| is permissible.
   // If the parameters are known at init-time though, they may be provided.
   virtual int Initialize() = 0;
 
@@ -352,11 +352,11 @@ class AudioProcessing {
                             const StreamConfig& output_config,
                             float* const* dest) = 0;
 
-  // Analyzes a 10 ms |frame| of the reverse direction audio stream. The frame
-  // will not be modified. On the client-side, this is the far-end (or to be
+  // Processes a 10 ms |frame| of the reverse direction audio stream. The frame
+  // may be modified. On the client-side, this is the far-end (or to be
   // rendered) audio.
   //
-  // It is only necessary to provide this if echo processing is enabled, as the
+  // It is necessary to provide this if echo processing is enabled, as the
   // reverse stream forms the echo reference signal. It is recommended, but not
   // necessary, to provide if gain control is enabled. On the server-side this
   // typically will not be used. If you're not sure what to pass in here,
@@ -364,14 +364,6 @@ class AudioProcessing {
   //
   // The |sample_rate_hz_|, |num_channels_|, and |samples_per_channel_|
   // members of |frame| must be valid.
-  //
-  // TODO(ajm): add const to input; requires an implementation fix.
-  // DEPRECATED: Use |ProcessReverseStream| instead.
-  // TODO(ekm): Remove once all users have updated to |ProcessReverseStream|.
-  virtual int AnalyzeReverseStream(AudioFrame* frame) = 0;
-
-  // Same as |AnalyzeReverseStream|, but may modify |frame| if intelligibility
-  // is enabled.
   virtual int ProcessReverseStream(AudioFrame* frame) = 0;
 
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element
@@ -391,12 +383,12 @@ class AudioProcessing {
 
   // This must be called if and only if echo processing is enabled.
   //
-  // Sets the |delay| in ms between AnalyzeReverseStream() receiving a far-end
+  // Sets the |delay| in ms between ProcessReverseStream() receiving a far-end
   // frame and ProcessStream() receiving a near-end frame containing the
   // corresponding echo. On the client-side this can be expressed as
   //   delay = (t_render - t_analyze) + (t_process - t_capture)
   // where,
-  //   - t_analyze is the time a frame is passed to AnalyzeReverseStream() and
+  //   - t_analyze is the time a frame is passed to ProcessReverseStream() and
   //     t_render is the time the first sample of the same frame is rendered by
   //     the audio hardware.
   //   - t_capture is the time the first sample of a frame is captured by the

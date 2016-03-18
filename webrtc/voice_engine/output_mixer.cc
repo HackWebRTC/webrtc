@@ -494,7 +494,7 @@ OutputMixer::DoOperationsOnCombinedSignal(bool feed_data_to_apm)
     if (feed_data_to_apm) {
       if (_audioProcessingModulePtr->ProcessReverseStream(&_audioFrame) != 0) {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                     "AudioProcessingModule::AnalyzeReverseStream() => error");
+                     "AudioProcessingModule::ProcessReverseStream() => error");
         RTC_DCHECK(false);
       }
     }

@@ -35,8 +35,7 @@ class AudioProcessingImplLockTest;
 enum class RenderApiImpl {
   ProcessReverseStreamImpl1,
   ProcessReverseStreamImpl2,
-  AnalyzeReverseStreamImpl1,
-  AnalyzeReverseStreamImpl2
+  AnalyzeReverseStreamImpl
 };
 
 // Type of the capture thread APM API call to use in the test.
@@ -150,7 +149,7 @@ struct TestConfig {
       // Create test config for the first processing API function set.
       test_configs.push_back(test_config);
       test_config.render_api_function =
-          RenderApiImpl::AnalyzeReverseStreamImpl2;
+          RenderApiImpl::AnalyzeReverseStreamImpl;
       test_config.capture_api_function = CaptureApiImpl::ProcessStreamImpl3;
       test_configs.push_back(test_config);
     }
@@ -172,15 +171,13 @@ struct TestConfig {
       const AllowedApiCallCombinations api_calls[] = {
           {RenderApiImpl::ProcessReverseStreamImpl1,
            CaptureApiImpl::ProcessStreamImpl1},
-          {RenderApiImpl::AnalyzeReverseStreamImpl1,
-           CaptureApiImpl::ProcessStreamImpl1},
           {RenderApiImpl::ProcessReverseStreamImpl2,
            CaptureApiImpl::ProcessStreamImpl2},
           {RenderApiImpl::ProcessReverseStreamImpl2,
            CaptureApiImpl::ProcessStreamImpl3},
-          {RenderApiImpl::AnalyzeReverseStreamImpl2,
+          {RenderApiImpl::AnalyzeReverseStreamImpl,
            CaptureApiImpl::ProcessStreamImpl2},
-          {RenderApiImpl::AnalyzeReverseStreamImpl2,
+          {RenderApiImpl::AnalyzeReverseStreamImpl,
            CaptureApiImpl::ProcessStreamImpl3}};
       std::vector<TestConfig> out;
       for (auto api_call : api_calls) {
@@ -941,8 +938,6 @@ void RenderProcessor::PrepareFrame() {
   // Restrict to a common fixed sample rate if the AudioFrame interface is
   // used.
   if ((test_config_->render_api_function ==
-       RenderApiImpl::AnalyzeReverseStreamImpl1) ||
-      (test_config_->render_api_function ==
        RenderApiImpl::ProcessReverseStreamImpl1) ||
       (test_config_->aec_type !=
        AecType::BasicWebRtcAecSettingsWithAecMobile)) {
@@ -1003,10 +998,7 @@ void RenderProcessor::CallApmRenderSide() {
           &frame_data_.input_frame[0], frame_data_.input_stream_config,
           frame_data_.output_stream_config, &frame_data_.output_frame[0]);
       break;
-    case RenderApiImpl::AnalyzeReverseStreamImpl1:
-      result = apm_->AnalyzeReverseStream(&frame_data_.frame);
-      break;
-    case RenderApiImpl::AnalyzeReverseStreamImpl2:
+    case RenderApiImpl::AnalyzeReverseStreamImpl:
       result = apm_->AnalyzeReverseStream(
           &frame_data_.input_frame[0], frame_data_.input_samples_per_channel,
           frame_data_.input_sample_rate_hz, frame_data_.input_channel_layout);

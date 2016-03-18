@@ -837,17 +837,6 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
 int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
   TRACE_EVENT0("webrtc", "AudioProcessing::ProcessReverseStream_AudioFrame");
   rtc::CritScope cs(&crit_render_);
-  RETURN_ON_ERR(AnalyzeReverseStream(frame));
-  if (is_rev_processed()) {
-    render_.render_audio->InterleaveTo(frame, true);
-  }
-
-  return kNoError;
-}
-
-int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
-  TRACE_EVENT0("webrtc", "AudioProcessing::AnalyzeReverseStream_AudioFrame");
-  rtc::CritScope cs(&crit_render_);
   if (frame == nullptr) {
     return kNullPointerError;
   }
@@ -893,7 +882,11 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   }
 #endif
   render_.render_audio->DeinterleaveFrom(frame);
-  return ProcessReverseStreamLocked();
+  RETURN_ON_ERR(ProcessReverseStreamLocked());
+  if (is_rev_processed()) {
+    render_.render_audio->InterleaveTo(frame, true);
+  }
+  return kNoError;
 }
 
 int AudioProcessingImpl::ProcessReverseStreamLocked() {

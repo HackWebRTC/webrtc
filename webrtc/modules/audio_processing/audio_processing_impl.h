@@ -86,7 +86,6 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Render-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the render lock.
-  int AnalyzeReverseStream(AudioFrame* frame) override;
   int ProcessReverseStream(AudioFrame* frame) override;
   int AnalyzeReverseStream(const float* const* data,
                            size_t samples_per_channel,

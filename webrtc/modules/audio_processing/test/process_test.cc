@@ -677,7 +677,7 @@ void void_main(int argc, char* argv[]) {
 
         if (msg.has_data()) {
           ASSERT_EQ(apm->kNoError,
-                    apm->AnalyzeReverseStream(&far_frame));
+                    apm->ProcessReverseStream(&far_frame));
         } else {
           ASSERT_EQ(apm->kNoError,
                     apm->AnalyzeReverseStream(
@@ -925,7 +925,7 @@ void void_main(int argc, char* argv[]) {
         }
 
         ASSERT_EQ(apm->kNoError,
-                  apm->AnalyzeReverseStream(&far_frame));
+                  apm->ProcessReverseStream(&far_frame));
 
         if (perf_testing) {
           t1 = TickTime::Now();
