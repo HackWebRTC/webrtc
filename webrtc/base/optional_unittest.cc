@@ -65,7 +65,7 @@ class Logger {
   void Foo() { Log("Foo()"); }
   void Foo() const { Log("Foo() const"); }
   static rtc::scoped_ptr<std::vector<std::string>> Setup() {
-    auto s = rtc_make_scoped_ptr(new std::vector<std::string>);
+    rtc::scoped_ptr<std::vector<std::string>> s(new std::vector<std::string>);
     g_log = s.get();
     g_next_id = 0;
     return s;

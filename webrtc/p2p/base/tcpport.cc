@@ -382,7 +382,7 @@ void TCPConnection::OnConnectionRequestResponse(ConnectionRequest* req,
 }
 
 void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
-  ASSERT(socket == socket_);
+  ASSERT(socket == socket_.get());
   // Do not use this connection if the socket bound to a different address than
   // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
   // given a binding address, and the platform is expected to pick the
@@ -412,7 +412,7 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
 }
 
 void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
-  ASSERT(socket == socket_);
+  ASSERT(socket == socket_.get());
   LOG_J(LS_INFO, this) << "Connection closed with error " << error;
 
   // Guard against the condition where IPC socket will call OnClose for every
@@ -471,12 +471,12 @@ void TCPConnection::OnReadPacket(
   rtc::AsyncPacketSocket* socket, const char* data, size_t size,
   const rtc::SocketAddress& remote_addr,
   const rtc::PacketTime& packet_time) {
-  ASSERT(socket == socket_);
+  ASSERT(socket == socket_.get());
   Connection::OnReadPacket(data, size, packet_time);
 }
 
 void TCPConnection::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
-  ASSERT(socket == socket_);
+  ASSERT(socket == socket_.get());
   Connection::OnReadyToSend();
 }
 

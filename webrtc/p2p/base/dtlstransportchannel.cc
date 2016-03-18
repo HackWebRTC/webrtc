@@ -234,7 +234,7 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
   remote_fingerprint_value_ = std::move(remote_fingerprint_value);
   remote_fingerprint_algorithm_ = digest_alg;
 
-  bool reconnect = dtls_;
+  bool reconnect = (dtls_ != nullptr);
 
   if (!SetupDtls()) {
     set_dtls_state(DTLS_TRANSPORT_FAILED);

@@ -268,7 +268,6 @@ void HttpListenServer::StopListening() {
 
 void HttpListenServer::OnReadEvent(AsyncSocket* socket) {
   ASSERT(socket == listener_.get());
-  ASSERT(listener_);
   AsyncSocket* incoming = listener_->Accept(NULL);
   if (incoming) {
     StreamInterface* stream = new SocketStream(incoming);
