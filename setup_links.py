@@ -48,7 +48,6 @@ DIRECTORIES = [
   'third_party/libjpeg',
   'third_party/libjpeg_turbo',
   'third_party/libsrtp',
-  'third_party/libudev',
   'third_party/libvpx',
   'third_party/libyuv',
   'third_party/llvm-build',

@@ -155,20 +155,6 @@
             '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
           ],
         }],
-        ['OS=="linux" and include_internal_device_management==1', {
-          'sources': [
-            'devices/libudevsymboltable.cc',
-            'devices/libudevsymboltable.h',
-            'devices/v4llookup.cc',
-            'devices/v4llookup.h',
-          ],
-          'include_dirs': [
-            'third_party/libudev'
-          ],
-          'libraries': [
-            '-lrt',
-          ],
-        }],
         ['OS=="linux" and use_gtk==1', {
           'sources': [
             'devices/gtkvideorenderer.cc',

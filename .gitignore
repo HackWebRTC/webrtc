@@ -106,7 +106,6 @@
 /third_party/libsrtp
 /third_party/libvpx
 /third_party/libxml
-/third_party/libudev
 /third_party/libyuv
 /third_party/llvm
 /third_party/llvm-build
