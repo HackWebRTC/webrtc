@@ -118,6 +118,12 @@ class VideoAnalyzer : public PacketReceiver,
                                const uint8_t* packet,
                                size_t length,
                                const PacketTime& packet_time) override {
+    // Ignore timestamps of RTCP packets. They're not synchronized with
+    // RTP packet timestamps and so they would confuse wrap_handler_.
+    if (RtpHeaderParser::IsRtcp(packet, length)) {
+      return receiver_->DeliverPacket(media_type, packet, length, packet_time);
+    }
+
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
     parser.Parse(&header);
@@ -205,7 +211,7 @@ class VideoAnalyzer : public PacketReceiver,
         Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
 
     rtc::CritScope lock(&crit_);
-    uint32_t send_timestamp =
+    int64_t send_timestamp =
         wrap_handler_.Unwrap(video_frame.timestamp() - rtp_timestamp_delta_);
 
     while (wrap_handler_.Unwrap(frames_.front().timestamp()) < send_timestamp) {
