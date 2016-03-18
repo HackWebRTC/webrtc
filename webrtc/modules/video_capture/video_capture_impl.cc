@@ -155,7 +155,7 @@ VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
       _captureCallBack(NULL),
       _lastProcessFrameCount(TickTime::Now()),
       _rotateFrame(kVideoRotation_0),
-      apply_rotation_(true) {
+      apply_rotation_(false) {
     _requestedCapability.width = kDefaultWidth;
     _requestedCapability.height = kDefaultHeight;
     _requestedCapability.maxFPS = 30;
