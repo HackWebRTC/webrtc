@@ -20,8 +20,8 @@ namespace rtc {
 // should have when it is delivered to a certain sink.
 struct VideoSinkWants {
   // Tells the source whether the sink wants frames with rotation applied.
-  // By default, any rotation must be applied by the sink.
-  bool rotation_applied = false;
+  // By default, the rotation is applied by the source.
+  bool rotation_applied = true;
 
   // Tells the source that the sink only wants black frames.
   bool black_frames = false;

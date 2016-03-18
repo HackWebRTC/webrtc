@@ -116,10 +116,6 @@ TEST_F(VideoCapturerTest, TestRotationAppliedBySource) {
                                          cricket::FOURCC_I420));
 
   capturer_->ResetSupportedFormats(formats);
-  rtc::VideoSinkWants wants;
-  // |capturer_| should compensate rotation.
-  wants.rotation_applied = true;
-  capturer_->AddOrUpdateSink(&renderer_, wants);
 
   // capturer_ should compensate rotation as default.
   EXPECT_EQ(cricket::CS_RUNNING,
@@ -158,7 +154,7 @@ TEST_F(VideoCapturerTest, TestRotationAppliedBySource) {
   EXPECT_EQ(webrtc::kVideoRotation_0, renderer_.rotation());
 }
 
-TEST_F(VideoCapturerTest, TestRotationAppliedBySinkByDefault) {
+TEST_F(VideoCapturerTest, TestRotationAppliedBySink) {
   int kWidth = 800;
   int kHeight = 400;
 
@@ -168,6 +164,10 @@ TEST_F(VideoCapturerTest, TestRotationAppliedBySinkByDefault) {
                                          cricket::FOURCC_I420));
 
   capturer_->ResetSupportedFormats(formats);
+  rtc::VideoSinkWants wants;
+  // capturer_ should not compensate rotation.
+  wants.rotation_applied = false;
+  capturer_->AddOrUpdateSink(&renderer_, wants);
 
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer_->Start(cricket::VideoFormat(

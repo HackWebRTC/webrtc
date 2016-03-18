@@ -24,7 +24,7 @@ class VideoFrame;
 // depending on the subclass of VideoFrameFactory.
 class VideoFrameFactory {
  public:
-  VideoFrameFactory() : apply_rotation_(false) {}
+  VideoFrameFactory() : apply_rotation_(true) {}
   virtual ~VideoFrameFactory() {}
 
   // The returned frame aliases the aliased_frame if the input color

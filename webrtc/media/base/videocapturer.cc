@@ -60,7 +60,7 @@ bool CapturedFrame::GetDataSize(uint32_t* size) const {
 /////////////////////////////////////////////////////////////////////
 // Implementation of class VideoCapturer
 /////////////////////////////////////////////////////////////////////
-VideoCapturer::VideoCapturer() : apply_rotation_(false) {
+VideoCapturer::VideoCapturer() : apply_rotation_(true) {
   thread_checker_.DetachFromThread();
   Construct();
 }
