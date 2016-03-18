@@ -497,16 +497,12 @@ int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(const uint16_t mtu) {
 }
 
 RtcpMode ModuleRtpRtcpImpl::RTCP() const {
-  if (rtcp_sender_.Status() != RtcpMode::kOff) {
-    return rtcp_receiver_.Status();
-  }
-  return RtcpMode::kOff;
+  return rtcp_sender_.Status();
 }
 
 // Configure RTCP status i.e on/off.
 void ModuleRtpRtcpImpl::SetRTCPStatus(const RtcpMode method) {
   rtcp_sender_.SetRTCPStatus(method);
-  rtcp_receiver_.SetRTCPStatus(method);
 }
 
 int32_t ModuleRtpRtcpImpl::SetCNAME(const char* c_name) {

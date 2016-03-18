@@ -2575,8 +2575,10 @@ TEST_F(WebRtcVideoChannel2Test, TestSetRecvRtcpReducedSize) {
   EXPECT_EQ(webrtc::RtcpMode::kCompound, stream1->GetConfig().rtp.rtcp_mode);
 
   // Now enable reduced size mode.
-  recv_parameters_.rtcp.reduced_size = true;
-  EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
+  // TODO(deadbeef): Once "recv_parameters" becomes "receiver_parameters",
+  // the reduced_size flag should come from that.
+  send_parameters_.rtcp.reduced_size = true;
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   stream1 = fake_call_->GetVideoReceiveStreams()[0];
   EXPECT_EQ(webrtc::RtcpMode::kReducedSize, stream1->GetConfig().rtp.rtcp_mode);
 

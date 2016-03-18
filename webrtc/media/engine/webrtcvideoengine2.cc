@@ -802,16 +802,18 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
     for (auto& kv : send_streams_) {
       kv.second->SetSendParameters(changed_params);
     }
-    if (changed_params.codec) {
-      // Update receive feedback parameters from new codec.
+    if (changed_params.codec || changed_params.rtcp_mode) {
+      // Update receive feedback parameters from new codec or RTCP mode.
       LOG(LS_INFO)
           << "SetFeedbackOptions on all the receive streams because the send "
-             "codec has changed.";
+             "codec or RTCP mode has changed.";
       for (auto& kv : receive_streams_) {
         RTC_DCHECK(kv.second != nullptr);
-        kv.second->SetFeedbackParameters(HasNack(send_codec_->codec),
-                                         HasRemb(send_codec_->codec),
-                                         HasTransportCc(send_codec_->codec));
+        kv.second->SetFeedbackParameters(
+            HasNack(send_codec_->codec), HasRemb(send_codec_->codec),
+            HasTransportCc(send_codec_->codec),
+            params.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
+                                     : webrtc::RtcpMode::kCompound);
       }
     }
   }
@@ -880,13 +882,6 @@ bool WebRtcVideoChannel2::GetChangedRecvParameters(
   if (filtered_extensions != recv_rtp_extensions_) {
     changed_params->rtp_header_extensions =
         rtc::Optional<std::vector<webrtc::RtpExtension>>(filtered_extensions);
-  }
-
-  // Handle RTCP mode.
-  if (params.rtcp.reduced_size != recv_params_.rtcp.reduced_size) {
-    changed_params->rtcp_mode = rtc::Optional<webrtc::RtcpMode>(
-        params.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
-                                 : webrtc::RtcpMode::kCompound);
   }
 
   return true;
@@ -1159,7 +1154,12 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
   config->rtp.local_ssrc = rtcp_receiver_report_ssrc_;
 
   config->rtp.extensions = recv_rtp_extensions_;
-  config->rtp.rtcp_mode = recv_params_.rtcp.reduced_size
+  // Whether or not the receive stream sends reduced size RTCP is determined
+  // by the send params.
+  // TODO(deadbeef): Once we change "send_params" to "sender_params" and
+  // "recv_params" to "receiver_params", we should get this out of
+  // receiver_params_.
+  config->rtp.rtcp_mode = send_params_.rtcp.reduced_size
                               ? webrtc::RtcpMode::kReducedSize
                               : webrtc::RtcpMode::kCompound;
 
@@ -2294,11 +2294,13 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetLocalSsrc(
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFeedbackParameters(
     bool nack_enabled,
     bool remb_enabled,
-    bool transport_cc_enabled) {
+    bool transport_cc_enabled,
+    webrtc::RtcpMode rtcp_mode) {
   int nack_history_ms = nack_enabled ? kNackHistoryMs : 0;
   if (config_.rtp.nack.rtp_history_ms == nack_history_ms &&
       config_.rtp.remb == remb_enabled &&
-      config_.rtp.transport_cc == transport_cc_enabled) {
+      config_.rtp.transport_cc == transport_cc_enabled &&
+      config_.rtp.rtcp_mode == rtcp_mode) {
     LOG(LS_INFO)
         << "Ignoring call to SetFeedbackParameters because parameters are "
            "unchanged; nack="
@@ -2309,6 +2311,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFeedbackParameters(
   config_.rtp.remb = remb_enabled;
   config_.rtp.nack.rtp_history_ms = nack_history_ms;
   config_.rtp.transport_cc = transport_cc_enabled;
+  config_.rtp.rtcp_mode = rtcp_mode;
   LOG(LS_INFO)
       << "RecreateWebRtcStream (recv) because of SetFeedbackParameters; nack="
       << nack_enabled << ", remb=" << remb_enabled
@@ -2326,10 +2329,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvParameters(
   }
   if (params.rtp_header_extensions) {
     config_.rtp.extensions = *params.rtp_header_extensions;
-    needs_recreation = true;
-  }
-  if (params.rtcp_mode) {
-    config_.rtp.rtcp_mode = *params.rtcp_mode;
     needs_recreation = true;
   }
   if (needs_recreation) {

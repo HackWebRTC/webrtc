@@ -69,6 +69,9 @@ std::string VideoSendStream::Config::Rtp::ToString() const {
       ss << ", ";
   }
   ss << ']';
+  ss << ", rtcp_mode: "
+     << (rtcp_mode == RtcpMode::kCompound ? "RtcpMode::kCompound"
+                                          : "RtcpMode::kReducedSize");
   ss << ", max_packet_size: " << max_packet_size;
   ss << ", extensions: [";
   for (size_t i = 0; i < extensions.size(); ++i) {

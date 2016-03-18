@@ -837,6 +837,8 @@ struct RtpParameters {
   RtcpParameters rtcp;
 };
 
+// TODO(deadbeef): Rename to RtpSenderParameters, since they're intended to
+// encapsulate all the parameters needed for an RtpSender.
 template <class Codec>
 struct RtpSendParameters : RtpParameters<Codec> {
   std::string ToString() const override {
@@ -934,6 +936,8 @@ class VoiceMediaChannel : public MediaChannel {
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
 };
 
+// TODO(deadbeef): Rename to VideoSenderParameters, since they're intended to
+// encapsulate all the parameters needed for a video RtpSender.
 struct VideoSendParameters : RtpSendParameters<VideoCodec> {
   // Use conference mode? This flag comes from the remote
   // description's SDP line 'a=x-google-flag:conference', copied over
@@ -944,6 +948,8 @@ struct VideoSendParameters : RtpSendParameters<VideoCodec> {
   bool conference_mode = false;
 };
 
+// TODO(deadbeef): Rename to VideoReceiverParameters, since they're intended to
+// encapsulate all the parameters needed for a video RtpReceiver.
 struct VideoRecvParameters : RtpParameters<VideoCodec> {
 };
 

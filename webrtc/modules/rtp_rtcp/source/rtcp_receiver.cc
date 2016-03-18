@@ -47,7 +47,6 @@ RTCPReceiver::RTCPReceiver(
     : TMMBRHelp(),
       _clock(clock),
       receiver_only_(receiver_only),
-      _method(RtcpMode::kOff),
       _lastReceived(0),
       _rtpRtcp(*owner),
       _criticalSectionFeedbacks(
@@ -101,16 +100,6 @@ RTCPReceiver::~RTCPReceiver() {
     delete first->second;
     _receivedCnameMap.erase(first);
   }
-}
-
-RtcpMode RTCPReceiver::Status() const {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-  return _method;
-}
-
-void RTCPReceiver::SetRTCPStatus(RtcpMode method) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-  _method = method;
 }
 
 int64_t RTCPReceiver::LastReceived() {

@@ -200,7 +200,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // These optionals are unset if not changed.
     rtc::Optional<std::vector<VideoCodecSettings>> codec_settings;
     rtc::Optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
-    rtc::Optional<webrtc::RtcpMode> rtcp_mode;
   };
 
   bool GetChangedSendParameters(const VideoSendParameters& params,
@@ -411,9 +410,11 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     const std::vector<uint32_t>& GetSsrcs() const;
 
     void SetLocalSsrc(uint32_t local_ssrc);
+    // TODO(deadbeef): Move these feedback parameters into the recv parameters.
     void SetFeedbackParameters(bool nack_enabled,
                                bool remb_enabled,
-                               bool transport_cc_enabled);
+                               bool transport_cc_enabled,
+                               webrtc::RtcpMode rtcp_mode);
     void SetRecvParameters(const ChangedRecvParameters& recv_params);
 
     void RenderFrame(const webrtc::VideoFrame& frame,
