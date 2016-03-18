@@ -112,14 +112,9 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     EXPECT_TRUE(height == capability_.height || height == capability_.width);
     EXPECT_TRUE(width == capability_.width || width == capability_.height);
 #else
-    if (rotate_frame_ == webrtc::kVideoRotation_90 ||
-        rotate_frame_ == webrtc::kVideoRotation_270) {
-      EXPECT_EQ(width, capability_.height);
-      EXPECT_EQ(height, capability_.width);
-    } else {
-      EXPECT_EQ(height, capability_.height);
-      EXPECT_EQ(width, capability_.width);
-    }
+    EXPECT_EQ(height, capability_.height);
+    EXPECT_EQ(width, capability_.width);
+    EXPECT_EQ(rotate_frame_, videoFrame.rotation());
 #endif
     // RenderTimstamp should be the time now.
     EXPECT_TRUE(

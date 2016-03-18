@@ -58,7 +58,7 @@ TEST(VideoBroadcasterTest, OnFrame) {
 
 TEST(VideoBroadcasterTest, AppliesRotationIfAnySinkWantsRotationApplied) {
   VideoBroadcaster broadcaster;
-  EXPECT_TRUE(broadcaster.wants().rotation_applied);
+  EXPECT_FALSE(broadcaster.wants().rotation_applied);
 
   FakeVideoRenderer sink1;
   VideoSinkWants wants1;
