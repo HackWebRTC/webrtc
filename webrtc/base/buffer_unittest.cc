@@ -64,6 +64,23 @@ TEST(BufferTest, TestConstructArray) {
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 16));
 }
 
+TEST(BufferTest, TestConstructCopy) {
+  Buffer buf1(kTestData), buf2(buf1);
+  EXPECT_EQ(buf2.size(), 16u);
+  EXPECT_EQ(buf2.capacity(), 16u);
+  EXPECT_EQ(0, memcmp(buf2.data(), kTestData, 16));
+  EXPECT_NE(buf1.data(), buf2.data());
+  EXPECT_EQ(buf1, buf2);
+}
+
+TEST(BufferTest, TestAssign) {
+  Buffer buf1, buf2(kTestData, sizeof(kTestData), 256);
+  EXPECT_NE(buf1, buf2);
+  buf1 = buf2;
+  EXPECT_EQ(buf1, buf2);
+  EXPECT_NE(buf1.data(), buf2.data());
+}
+
 TEST(BufferTest, TestSetData) {
   Buffer buf(kTestData + 4, 7);
   buf.SetData(kTestData, 9);

@@ -179,9 +179,9 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool CanInsertDtmf() override;
   bool InsertDtmf(uint32_t ssrc, int event, int duration) override;
 
-  void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  void OnPacketReceived(rtc::Buffer* packet,
                         const rtc::PacketTime& packet_time) override;
-  void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+  void OnRtcpReceived(rtc::Buffer* packet,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override {}
   bool GetStats(VoiceMediaInfo* info) override;
@@ -194,14 +194,16 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool SendRtp(const uint8_t* data,
                size_t len,
                const webrtc::PacketOptions& options) override {
-    rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     rtc::PacketOptions rtc_options;
     rtc_options.packet_id = options.packet_id;
     return VoiceMediaChannel::SendPacket(&packet, rtc_options);
   }
 
   bool SendRtcp(const uint8_t* data, size_t len) override {
-    rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return VoiceMediaChannel::SendRtcp(&packet, rtc::PacketOptions());
   }
 

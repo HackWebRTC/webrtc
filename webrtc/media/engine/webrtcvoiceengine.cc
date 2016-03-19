@@ -2237,11 +2237,11 @@ bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc, int event,
 }
 
 void WebRtcVoiceMediaChannel::OnPacketReceived(
-    rtc::CopyOnWriteBuffer* packet, const rtc::PacketTime& packet_time) {
+    rtc::Buffer* packet, const rtc::PacketTime& packet_time) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
   uint32_t ssrc = 0;
-  if (!GetRtpSsrc(packet->cdata(), packet->size(), &ssrc)) {
+  if (!GetRtpSsrc(packet->data(), packet->size(), &ssrc)) {
     return;
   }
 
@@ -2269,7 +2269,8 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
                                               packet_time.not_before);
   webrtc::PacketReceiver::DeliveryStatus delivery_result =
       call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
-          packet->cdata(), packet->size(), webrtc_packet_time);
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
+          webrtc_packet_time);
   if (webrtc::PacketReceiver::DELIVERY_OK != delivery_result) {
     // If the SSRC is unknown here, route it to the default channel, if we have
     // one. See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5208
@@ -2287,25 +2288,26 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
 
   // Pass it off to the decoder.
   engine()->voe()->network()->ReceivedRTPPacket(
-      channel, packet->cdata(), packet->size(), webrtc_packet_time);
+      channel, packet->data(), packet->size(), webrtc_packet_time);
 }
 
 void WebRtcVoiceMediaChannel::OnRtcpReceived(
-    rtc::CopyOnWriteBuffer* packet, const rtc::PacketTime& packet_time) {
+    rtc::Buffer* packet, const rtc::PacketTime& packet_time) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
   // Forward packet to Call as well.
   const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
                                               packet_time.not_before);
   call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
-      packet->cdata(), packet->size(), webrtc_packet_time);
+      reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
+      webrtc_packet_time);
 
   // Sending channels need all RTCP packets with feedback information.
   // Even sender reports can contain attached report blocks.
   // Receiving channels need sender reports in order to create
   // correct receiver reports.
   int type = 0;
-  if (!GetRtcpType(packet->cdata(), packet->size(), &type)) {
+  if (!GetRtcpType(packet->data(), packet->size(), &type)) {
     LOG(LS_WARNING) << "Failed to parse type from received RTCP packet";
     return;
   }
@@ -2313,13 +2315,13 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
   // If it is a sender report, find the receive channel that is listening.
   if (type == kRtcpTypeSR) {
     uint32_t ssrc = 0;
-    if (!GetRtcpSsrc(packet->cdata(), packet->size(), &ssrc)) {
+    if (!GetRtcpSsrc(packet->data(), packet->size(), &ssrc)) {
       return;
     }
     int recv_channel_id = GetReceiveChannelId(ssrc);
     if (recv_channel_id != -1) {
       engine()->voe()->network()->ReceivedRTCPPacket(
-          recv_channel_id, packet->cdata(), packet->size());
+          recv_channel_id, packet->data(), packet->size());
     }
   }
 
@@ -2328,7 +2330,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
   // will filter out RR internally.
   for (const auto& ch : send_streams_) {
     engine()->voe()->network()->ReceivedRTCPPacket(
-        ch.second->channel(), packet->cdata(), packet->size());
+        ch.second->channel(), packet->data(), packet->size());
   }
 }
 

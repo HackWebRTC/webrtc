@@ -4054,7 +4054,7 @@ TEST_P(WebRtcSessionTest, TestSctpDataChannelOpenMessage) {
 
   webrtc::DataChannelInit config;
   config.id = 1;
-  rtc::CopyOnWriteBuffer payload;
+  rtc::Buffer payload;
   webrtc::WriteDataChannelOpenMessage("a", config, &payload);
   cricket::ReceiveDataParams params;
   params.ssrc = config.id;

@@ -893,7 +893,7 @@ JOW(jboolean, DataChannel_sendNative)(JNIEnv* jni, jobject j_dc,
                                       jbyteArray data, jboolean binary) {
   jbyte* bytes = jni->GetByteArrayElements(data, NULL);
   bool ret = ExtractNativeDC(jni, j_dc)->Send(DataBuffer(
-      rtc::CopyOnWriteBuffer(bytes, jni->GetArrayLength(data)),
+      rtc::Buffer(bytes, jni->GetArrayLength(data)),
       binary));
   jni->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
   return ret;

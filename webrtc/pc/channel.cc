@@ -14,9 +14,9 @@
 
 #include "webrtc/audio_sink.h"
 #include "webrtc/base/bind.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
-#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
@@ -61,7 +61,7 @@ static void SafeSetError(const std::string& message, std::string* error_desc) {
 }
 
 struct PacketMessageData : public rtc::MessageData {
-  rtc::CopyOnWriteBuffer packet;
+  rtc::Buffer packet;
   rtc::PacketOptions options;
 };
 
@@ -93,7 +93,7 @@ static const char* PacketType(bool rtcp) {
   return (!rtcp) ? "RTP" : "RTCP";
 }
 
-static bool ValidPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) {
+static bool ValidPacket(bool rtcp, const rtc::Buffer* packet) {
   // Check the packet size. We could check the header too if needed.
   return (packet &&
           packet->size() >= (!rtcp ? kMinRtpPacketLen : kMinRtcpPacketLen) &&
@@ -435,12 +435,12 @@ bool BaseChannel::IsReadyToSend() const {
          (srtp_filter_.IsActive() || !ShouldSetupDtlsSrtp());
 }
 
-bool BaseChannel::SendPacket(rtc::CopyOnWriteBuffer* packet,
+bool BaseChannel::SendPacket(rtc::Buffer* packet,
                              const rtc::PacketOptions& options) {
   return SendPacket(false, packet, options);
 }
 
-bool BaseChannel::SendRtcp(rtc::CopyOnWriteBuffer* packet,
+bool BaseChannel::SendRtcp(rtc::Buffer* packet,
                            const rtc::PacketOptions& options) {
   return SendPacket(true, packet, options);
 }
@@ -479,7 +479,7 @@ void BaseChannel::OnChannelRead(TransportChannel* channel,
   // When using RTCP multiplexing we might get RTCP packets on the RTP
   // transport. We feed RTP traffic into the demuxer to determine if it is RTCP.
   bool rtcp = PacketIsRtcp(channel, data, len);
-  rtc::CopyOnWriteBuffer packet(data, len);
+  rtc::Buffer packet(data, len);
   HandlePacket(rtcp, &packet, packet_time);
 }
 
@@ -529,7 +529,7 @@ bool BaseChannel::PacketIsRtcp(const TransportChannel* channel,
 }
 
 bool BaseChannel::SendPacket(bool rtcp,
-                             rtc::CopyOnWriteBuffer* packet,
+                             rtc::Buffer* packet,
                              const rtc::PacketOptions& options) {
   // SendPacket gets called from MediaEngine, typically on an encoder thread.
   // If the thread is not our worker thread, we will post to our worker
@@ -650,7 +650,7 @@ bool BaseChannel::SendPacket(bool rtcp,
   return true;
 }
 
-bool BaseChannel::WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) {
+bool BaseChannel::WantsPacket(bool rtcp, rtc::Buffer* packet) {
   // Protect ourselves against crazy data.
   if (!ValidPacket(rtcp, packet)) {
     LOG(LS_ERROR) << "Dropping incoming " << content_name_ << " "
@@ -663,10 +663,10 @@ bool BaseChannel::WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) {
     return true;
   }
   // Check whether we handle this payload.
-  return bundle_filter_.DemuxPacket(packet->data(), packet->size());
+  return bundle_filter_.DemuxPacket(packet->data<uint8_t>(), packet->size());
 }
 
-void BaseChannel::HandlePacket(bool rtcp, rtc::CopyOnWriteBuffer* packet,
+void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
                                const rtc::PacketTime& packet_time) {
   if (!WantsPacket(rtcp, packet)) {
     return;
@@ -1908,7 +1908,7 @@ bool DataChannel::Init() {
 }
 
 bool DataChannel::SendData(const SendDataParams& params,
-                           const rtc::CopyOnWriteBuffer& payload,
+                           const rtc::Buffer& payload,
                            SendDataResult* result) {
   return InvokeOnWorker(Bind(&DataMediaChannel::SendData,
                              media_channel(), params, payload, result));
@@ -1919,7 +1919,7 @@ const ContentInfo* DataChannel::GetFirstContent(
   return GetFirstDataContent(sdesc);
 }
 
-bool DataChannel::WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) {
+bool DataChannel::WantsPacket(bool rtcp, rtc::Buffer* packet) {
   if (data_channel_type_ == DCT_SCTP) {
     // TODO(pthatcher): Do this in a more robust way by checking for
     // SCTP or DTLS.

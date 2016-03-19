@@ -93,14 +93,14 @@ class RtpDataMediaChannel : public DataMediaChannel {
     receiving_ = receive;
     return true;
   }
-  virtual void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnPacketReceived(rtc::Buffer* packet,
                                 const rtc::PacketTime& packet_time);
-  virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
                               const rtc::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
   virtual bool SendData(
     const SendDataParams& params,
-    const rtc::CopyOnWriteBuffer& payload,
+    const rtc::Buffer& payload,
     SendDataResult* result);
 
  private:

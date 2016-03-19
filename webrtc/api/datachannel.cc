@@ -324,7 +324,7 @@ void DataChannel::OnMessage(rtc::Message* msg) {
 
 void DataChannel::OnDataReceived(cricket::DataChannel* channel,
                                  const cricket::ReceiveDataParams& params,
-                                 const rtc::CopyOnWriteBuffer& payload) {
+                                 const rtc::Buffer& payload) {
   uint32_t expected_ssrc =
       (data_channel_type_ == cricket::DCT_RTP) ? receive_ssrc_ : config_.id;
   if (params.ssrc != expected_ssrc) {
@@ -422,11 +422,11 @@ void DataChannel::UpdateState() {
         }
         if (connected_to_provider_) {
           if (handshake_state_ == kHandshakeShouldSendOpen) {
-            rtc::CopyOnWriteBuffer payload;
+            rtc::Buffer payload;
             WriteDataChannelOpenMessage(label_, config_, &payload);
             SendControlMessage(payload);
           } else if (handshake_state_ == kHandshakeShouldSendAck) {
-            rtc::CopyOnWriteBuffer payload;
+            rtc::Buffer payload;
             WriteDataChannelOpenAckMessage(&payload);
             SendControlMessage(payload);
           }
@@ -595,11 +595,11 @@ void DataChannel::SendQueuedControlMessages() {
   }
 }
 
-void DataChannel::QueueControlMessage(const rtc::CopyOnWriteBuffer& buffer) {
+void DataChannel::QueueControlMessage(const rtc::Buffer& buffer) {
   queued_control_data_.Push(new DataBuffer(buffer, true));
 }
 
-bool DataChannel::SendControlMessage(const rtc::CopyOnWriteBuffer& buffer) {
+bool DataChannel::SendControlMessage(const rtc::Buffer& buffer) {
   bool is_open_message = handshake_state_ == kHandshakeShouldSendOpen;
 
   ASSERT(data_channel_type_ == cricket::DCT_SCTP &&

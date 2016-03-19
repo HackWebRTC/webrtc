@@ -24,7 +24,7 @@ enum PreservedErrno {
 };
 }  // namespace cricket
 
-#include "webrtc/base/copyonwritebuffer.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/mediaengine.h"
@@ -144,10 +144,10 @@ class SctpDataMediaChannel : public DataMediaChannel,
   // sctp that will then post the network interface by OnMessage).
   // Returns true iff successful data somewhere on the send-queue/network.
   virtual bool SendData(const SendDataParams& params,
-                        const rtc::CopyOnWriteBuffer& payload,
+                        const rtc::Buffer& payload,
                         SendDataResult* result = NULL);
   // A packet is received from the network interface. Posted to OnMessage.
-  virtual void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnPacketReceived(rtc::Buffer* packet,
                                 const rtc::PacketTime& packet_time);
 
   // Exposed to allow Post call from c-callbacks.
@@ -155,7 +155,7 @@ class SctpDataMediaChannel : public DataMediaChannel,
 
   // Many of these things are unused by SCTP, but are needed to fulfill
   // the MediaChannel interface.
-  virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
                               const rtc::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
 
@@ -192,12 +192,12 @@ class SctpDataMediaChannel : public DataMediaChannel,
   bool ResetStream(uint32_t ssrc);
 
   // Called by OnMessage to send packet on the network.
-  void OnPacketFromSctpToNetwork(rtc::CopyOnWriteBuffer* buffer);
+  void OnPacketFromSctpToNetwork(rtc::Buffer* buffer);
   // Called by OnMessage to decide what to do with the packet.
   void OnInboundPacketFromSctpToChannel(SctpInboundPacket* packet);
   void OnDataFromSctpToChannel(const ReceiveDataParams& params,
-                               const rtc::CopyOnWriteBuffer& buffer);
-  void OnNotificationFromSctp(const rtc::CopyOnWriteBuffer& buffer);
+                               rtc::Buffer* buffer);
+  void OnNotificationFromSctp(rtc::Buffer* buffer);
   void OnNotificationAssocChange(const sctp_assoc_change& change);
 
   void OnStreamResetEvent(const struct sctp_stream_reset_event* evt);

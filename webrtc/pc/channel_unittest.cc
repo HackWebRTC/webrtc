@@ -2769,7 +2769,7 @@ TEST_F(DataChannelTest, TestSendData) {
   unsigned char data[] = {
     'f', 'o', 'o'
   };
-  rtc::CopyOnWriteBuffer payload(data, 3);
+  rtc::Buffer payload(data, 3);
   cricket::SendDataResult result;
   ASSERT_TRUE(media_channel1_->SendData(params, payload, &result));
   EXPECT_EQ(params.ssrc,

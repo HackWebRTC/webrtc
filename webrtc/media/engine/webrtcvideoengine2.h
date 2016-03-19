@@ -163,9 +163,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   bool GetStats(VideoMediaInfo* info) override;
   bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) override;
 
-  void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  void OnPacketReceived(rtc::Buffer* packet,
                         const rtc::PacketTime& packet_time) override;
-  void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+  void OnRtcpReceived(rtc::Buffer* packet,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override;
   void SetInterface(NetworkInterface* iface) override;

@@ -191,10 +191,10 @@ class BaseChannel
   void FlushRtcpMessages();
 
   // NetworkInterface implementation, called by MediaEngine
-  bool SendPacket(rtc::CopyOnWriteBuffer* packet,
-                  const rtc::PacketOptions& options) override;
-  bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
-                const rtc::PacketOptions& options) override;
+  bool SendPacket(rtc::Buffer* packet,
+                          const rtc::PacketOptions& options) override;
+  bool SendRtcp(rtc::Buffer* packet, const rtc::PacketOptions& options)
+      override;
 
   // From TransportChannel
   void OnWritableState(TransportChannel* channel);
@@ -210,10 +210,10 @@ class BaseChannel
   bool PacketIsRtcp(const TransportChannel* channel, const char* data,
                     size_t len);
   bool SendPacket(bool rtcp,
-                  rtc::CopyOnWriteBuffer* packet,
+                  rtc::Buffer* packet,
                   const rtc::PacketOptions& options);
-  virtual bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet);
-  void HandlePacket(bool rtcp, rtc::CopyOnWriteBuffer* packet,
+  virtual bool WantsPacket(bool rtcp, rtc::Buffer* packet);
+  void HandlePacket(bool rtcp, rtc::Buffer* packet,
                     const rtc::PacketTime& packet_time);
 
   void EnableMedia_w();
@@ -502,7 +502,7 @@ class DataChannel : public BaseChannel {
   bool Init();
 
   virtual bool SendData(const SendDataParams& params,
-                        const rtc::CopyOnWriteBuffer& payload,
+                        const rtc::Buffer& payload,
                         SendDataResult* result);
 
   void StartMediaMonitor(int cms);
@@ -516,8 +516,8 @@ class DataChannel : public BaseChannel {
   sigslot::signal2<DataChannel*, const DataMediaInfo&> SignalMediaMonitor;
   sigslot::signal2<DataChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;
-  sigslot::signal3<DataChannel*, const ReceiveDataParams&,
-      const rtc::CopyOnWriteBuffer&> SignalDataReceived;
+  sigslot::signal3<DataChannel*, const ReceiveDataParams&, const rtc::Buffer&>
+      SignalDataReceived;
   // Signal for notifying when the channel becomes ready to send data.
   // That occurs when the channel is enabled, the transport is writable,
   // both local and remote descriptions are set, and the channel is unblocked.
@@ -534,7 +534,7 @@ class DataChannel : public BaseChannel {
  private:
   struct SendDataMessageData : public rtc::MessageData {
     SendDataMessageData(const SendDataParams& params,
-                        const rtc::CopyOnWriteBuffer* payload,
+                        const rtc::Buffer* payload,
                         SendDataResult* result)
         : params(params),
           payload(payload),
@@ -543,7 +543,7 @@ class DataChannel : public BaseChannel {
     }
 
     const SendDataParams& params;
-    const rtc::CopyOnWriteBuffer* payload;
+    const rtc::Buffer* payload;
     SendDataResult* result;
     bool succeeded;
   };
@@ -558,7 +558,7 @@ class DataChannel : public BaseChannel {
           payload(data, len) {
     }
     const ReceiveDataParams params;
-    const rtc::CopyOnWriteBuffer payload;
+    const rtc::Buffer payload;
   };
 
   typedef rtc::TypedMessageData<bool> DataChannelReadyToSendMessageData;
@@ -581,7 +581,7 @@ class DataChannel : public BaseChannel {
                                   ContentAction action,
                                   std::string* error_desc);
   virtual void ChangeState();
-  virtual bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet);
+  virtual bool WantsPacket(bool rtcp, rtc::Buffer* packet);
 
   virtual void OnMessage(rtc::Message* pmsg);
   virtual void GetSrtpCryptoSuites(std::vector<int>* crypto_suites) const;

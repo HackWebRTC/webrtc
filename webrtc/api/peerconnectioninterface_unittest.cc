@@ -1400,7 +1400,7 @@ TEST_F(PeerConnectionInterfaceTest, TestSendBinaryOnRtpDataChannel) {
   EXPECT_EQ(DataChannelInterface::kOpen, data1->state());
   EXPECT_EQ(DataChannelInterface::kOpen, data2->state());
 
-  rtc::CopyOnWriteBuffer buffer("test", 4);
+  rtc::Buffer buffer("test", 4);
   EXPECT_FALSE(data1->Send(DataBuffer(buffer, true)));
 }
 

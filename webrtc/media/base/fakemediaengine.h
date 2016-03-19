@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "webrtc/audio_sink.h"
-#include "webrtc/base/copyonwritebuffer.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaengine.h"
@@ -58,13 +58,13 @@ template <class Base> class RtpHelper : public Base {
     if (!sending_) {
       return false;
     }
-    rtc::CopyOnWriteBuffer packet(reinterpret_cast<const uint8_t*>(data), len,
-                                  kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return Base::SendPacket(&packet, options);
   }
   bool SendRtcp(const void* data, int len) {
-    rtc::CopyOnWriteBuffer packet(reinterpret_cast<const uint8_t*>(data), len,
-                                  kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return Base::SendRtcp(&packet, rtc::PacketOptions());
   }
 
@@ -205,11 +205,11 @@ template <class Base> class RtpHelper : public Base {
     send_extensions_ = extensions;
     return true;
   }
-  virtual void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnPacketReceived(rtc::Buffer* packet,
                                 const rtc::PacketTime& packet_time) {
     rtp_packets_.push_back(std::string(packet->data<char>(), packet->size()));
   }
-  virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
                               const rtc::PacketTime& packet_time) {
     rtcp_packets_.push_back(std::string(packet->data<char>(), packet->size()));
   }
@@ -609,7 +609,7 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
   }
 
   virtual bool SendData(const SendDataParams& params,
-                        const rtc::CopyOnWriteBuffer& payload,
+                        const rtc::Buffer& payload,
                         SendDataResult* result) {
     if (send_blocked_) {
       *result = SDR_BLOCK;

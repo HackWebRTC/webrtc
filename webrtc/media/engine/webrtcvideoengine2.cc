@@ -14,7 +14,7 @@
 #include <set>
 #include <string>
 
-#include "webrtc/base/copyonwritebuffer.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
@@ -1300,14 +1300,14 @@ bool WebRtcVideoChannel2::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
 }
 
 void WebRtcVideoChannel2::OnPacketReceived(
-    rtc::CopyOnWriteBuffer* packet,
+    rtc::Buffer* packet,
     const rtc::PacketTime& packet_time) {
   const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
                                               packet_time.not_before);
   const webrtc::PacketReceiver::DeliveryStatus delivery_result =
       call_->Receiver()->DeliverPacket(
           webrtc::MediaType::VIDEO,
-          packet->cdata(), packet->size(),
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
           webrtc_packet_time);
   switch (delivery_result) {
     case webrtc::PacketReceiver::DELIVERY_OK:
@@ -1319,12 +1319,12 @@ void WebRtcVideoChannel2::OnPacketReceived(
   }
 
   uint32_t ssrc = 0;
-  if (!GetRtpSsrc(packet->cdata(), packet->size(), &ssrc)) {
+  if (!GetRtpSsrc(packet->data(), packet->size(), &ssrc)) {
     return;
   }
 
   int payload_type = 0;
-  if (!GetRtpPayloadType(packet->cdata(), packet->size(), &payload_type)) {
+  if (!GetRtpPayloadType(packet->data(), packet->size(), &payload_type)) {
     return;
   }
 
@@ -1350,7 +1350,7 @@ void WebRtcVideoChannel2::OnPacketReceived(
 
   if (call_->Receiver()->DeliverPacket(
           webrtc::MediaType::VIDEO,
-          packet->cdata(), packet->size(),
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
           webrtc_packet_time) != webrtc::PacketReceiver::DELIVERY_OK) {
     LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
     return;
@@ -1358,7 +1358,7 @@ void WebRtcVideoChannel2::OnPacketReceived(
 }
 
 void WebRtcVideoChannel2::OnRtcpReceived(
-    rtc::CopyOnWriteBuffer* packet,
+    rtc::Buffer* packet,
     const rtc::PacketTime& packet_time) {
   const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
                                               packet_time.not_before);
@@ -1368,7 +1368,7 @@ void WebRtcVideoChannel2::OnRtcpReceived(
   // logging failures spam the log).
   call_->Receiver()->DeliverPacket(
       webrtc::MediaType::VIDEO,
-      packet->cdata(), packet->size(),
+      reinterpret_cast<const uint8_t*>(packet->data()), packet->size(),
       webrtc_packet_time);
 }
 
@@ -1424,14 +1424,14 @@ void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
 bool WebRtcVideoChannel2::SendRtp(const uint8_t* data,
                                   size_t len,
                                   const webrtc::PacketOptions& options) {
-  rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
   rtc::PacketOptions rtc_options;
   rtc_options.packet_id = options.packet_id;
   return MediaChannel::SendPacket(&packet, rtc_options);
 }
 
 bool WebRtcVideoChannel2::SendRtcp(const uint8_t* data, size_t len) {
-  rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
   return MediaChannel::SendRtcp(&packet, rtc::PacketOptions());
 }
 

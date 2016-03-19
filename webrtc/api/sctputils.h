@@ -16,26 +16,26 @@
 #include "webrtc/api/datachannelinterface.h"
 
 namespace rtc {
-class CopyOnWriteBuffer;
+class Buffer;
 }  // namespace rtc
 
 namespace webrtc {
 struct DataChannelInit;
 
 // Read the message type and return true if it's an OPEN message.
-bool IsOpenMessage(const rtc::CopyOnWriteBuffer& payload);
+bool IsOpenMessage(const rtc::Buffer& payload);
 
-bool ParseDataChannelOpenMessage(const rtc::CopyOnWriteBuffer& payload,
+bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
                                  std::string* label,
                                  DataChannelInit* config);
 
-bool ParseDataChannelOpenAckMessage(const rtc::CopyOnWriteBuffer& payload);
+bool ParseDataChannelOpenAckMessage(const rtc::Buffer& payload);
 
 bool WriteDataChannelOpenMessage(const std::string& label,
                                  const DataChannelInit& config,
-                                 rtc::CopyOnWriteBuffer* payload);
+                                 rtc::Buffer* payload);
 
-void WriteDataChannelOpenAckMessage(rtc::CopyOnWriteBuffer* payload);
+void WriteDataChannelOpenAckMessage(rtc::Buffer* payload);
 }  // namespace webrtc
 
 #endif  // WEBRTC_API_SCTPUTILS_H_
