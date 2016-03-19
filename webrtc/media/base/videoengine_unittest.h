@@ -258,28 +258,29 @@ class VideoMediaChannelTest : public testing::Test,
   int NumSentSsrcs() {
     return network_interface_.NumSentSsrcs();
   }
-  const rtc::Buffer* GetRtpPacket(int index) {
+  const rtc::CopyOnWriteBuffer* GetRtpPacket(int index) {
     return network_interface_.GetRtpPacket(index);
   }
   int NumRtcpPackets() {
     return network_interface_.NumRtcpPackets();
   }
-  const rtc::Buffer* GetRtcpPacket(int index) {
+  const rtc::CopyOnWriteBuffer* GetRtcpPacket(int index) {
     return network_interface_.GetRtcpPacket(index);
   }
-  static int GetPayloadType(const rtc::Buffer* p) {
+  static int GetPayloadType(const rtc::CopyOnWriteBuffer* p) {
     int pt = -1;
     ParseRtpPacket(p, NULL, &pt, NULL, NULL, NULL, NULL);
     return pt;
   }
-  static bool ParseRtpPacket(const rtc::Buffer* p,
+  static bool ParseRtpPacket(const rtc::CopyOnWriteBuffer* p,
                              bool* x,
                              int* pt,
                              int* seqnum,
                              uint32_t* tstamp,
                              uint32_t* ssrc,
                              std::string* payload) {
-    rtc::ByteBuffer buf(*p);
+    // TODO(jbauch): avoid copying the buffer data into the ByteBuffer
+    rtc::ByteBuffer buf(p->data<char>(), p->size());
     uint8_t u08 = 0;
     uint16_t u16 = 0;
     uint32_t u32 = 0;
@@ -338,8 +339,9 @@ class VideoMediaChannelTest : public testing::Test,
   bool CountRtcpFir(int start_index, int stop_index, int* fir_count) {
     int count = 0;
     for (int i = start_index; i < stop_index; ++i) {
-      std::unique_ptr<const rtc::Buffer> p(GetRtcpPacket(i));
-      rtc::ByteBuffer buf(*p);
+      std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtcpPacket(i));
+      // TODO(jbauch): avoid copying the buffer data into the ByteBuffer
+      rtc::ByteBuffer buf(p->data<char>(), p->size());
       size_t total_len = 0;
       // The packet may be a compound RTCP packet.
       while (total_len < p->size()) {
@@ -403,7 +405,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(SendFrame());
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
-    std::unique_ptr<const rtc::Buffer> p(GetRtpPacket(0));
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
     EXPECT_EQ(codec.id, GetPayloadType(p.get()));
   }
   // Tests that we can send and receive frames.
@@ -414,7 +416,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0, renderer_.num_rendered_frames());
     EXPECT_TRUE(SendFrame());
     EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
-    std::unique_ptr<const rtc::Buffer> p(GetRtpPacket(0));
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
     EXPECT_EQ(codec.id, GetPayloadType(p.get()));
   }
   void SendReceiveManyAndGetStats(const cricket::VideoCodec& codec,
@@ -429,7 +431,7 @@ class VideoMediaChannelTest : public testing::Test,
         EXPECT_FRAME_WAIT(frame + i * fps, codec.width, codec.height, kTimeout);
       }
     }
-    std::unique_ptr<const rtc::Buffer> p(GetRtpPacket(0));
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
     EXPECT_EQ(codec.id, GetPayloadType(p.get()));
   }
 
@@ -622,7 +624,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SendFrame());
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
     uint32_t ssrc = 0;
-    std::unique_ptr<const rtc::Buffer> p(GetRtpPacket(0));
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(kSsrc, ssrc);
     // Packets are being paced out, so these can mismatch between the first and
@@ -645,7 +647,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(WaitAndSendFrame(0));
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
     uint32_t ssrc = 0;
-    std::unique_ptr<const rtc::Buffer> p(GetRtpPacket(0));
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(999u, ssrc);
     // Packets are being paced out, so these can mismatch between the first and
@@ -662,7 +664,7 @@ class VideoMediaChannelTest : public testing::Test,
     uint8_t data1[] = {
         0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-    rtc::Buffer packet1(data1, sizeof(data1));
+    rtc::CopyOnWriteBuffer packet1(data1, sizeof(data1));
     rtc::SetBE32(packet1.data() + 8, kSsrc);
     channel_->SetSink(kDefaultReceiveSsrc, NULL);
     EXPECT_TRUE(SetDefaultCodec());
@@ -695,7 +697,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_GT(NumRtpPackets(), 0);
     uint32_t ssrc = 0;
     size_t last_packet = NumRtpPackets() - 1;
-    std::unique_ptr<const rtc::Buffer>
+    std::unique_ptr<const rtc::CopyOnWriteBuffer>
         p(GetRtpPacket(static_cast<int>(last_packet)));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(kSsrc, ssrc);
@@ -745,7 +747,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer2, 1, DefaultCodec().width, DefaultCodec().height, kTimeout);
 
-    std::unique_ptr<const rtc::Buffer> p(GetRtpPacket(0));
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
     EXPECT_EQ(DefaultCodec().id, GetPayloadType(p.get()));
     EXPECT_EQ(DefaultCodec().width, renderer1.width());
     EXPECT_EQ(DefaultCodec().height, renderer1.height());
@@ -1010,7 +1012,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(WaitAndSendFrame(30));  // Should be rendered.
     frame_count += 2;
     EXPECT_FRAME_WAIT(frame_count, codec.width, codec.height, kTimeout);
-    std::unique_ptr<const rtc::Buffer> p(GetRtpPacket(0));
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
     EXPECT_EQ(codec.id, GetPayloadType(p.get()));
 
     // The channel requires 15 fps.

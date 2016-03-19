@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/bind.h"
-#include "webrtc/base/buffer.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
@@ -47,13 +47,11 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
 
  protected:
   // Called to send raw packet down the wire (e.g. SCTP an packet).
-  virtual bool SendPacket(rtc::Buffer* packet,
+  virtual bool SendPacket(rtc::CopyOnWriteBuffer* packet,
                           const rtc::PacketOptions& options) {
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::SendPacket";
 
-    // TODO(ldixon): Can/should we use Buffer.TransferTo here?
-    // Note: this assignment does a deep copy of data from packet.
-    rtc::Buffer* buffer = new rtc::Buffer(packet->data(), packet->size());
+    rtc::CopyOnWriteBuffer* buffer = new rtc::CopyOnWriteBuffer(*packet);
     thread_->Post(this, MSG_PACKET, rtc::WrapMessageData(buffer));
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::SendPacket, Posted message.";
     return true;
@@ -64,8 +62,8 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
   // an SCTP packet.
   virtual void OnMessage(rtc::Message* msg) {
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::OnMessage";
-    std::unique_ptr<rtc::Buffer> buffer(
-        static_cast<rtc::TypedMessageData<rtc::Buffer*>*>(
+    std::unique_ptr<rtc::CopyOnWriteBuffer> buffer(
+        static_cast<rtc::TypedMessageData<rtc::CopyOnWriteBuffer*>*>(
             msg->pdata)->data());
     if (dest_) {
       dest_->OnPacketReceived(buffer.get(), rtc::PacketTime());
@@ -76,7 +74,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
   // Unsupported functions required to exist by NetworkInterface.
   // TODO(ldixon): Refactor parent NetworkInterface class so these are not
   // required. They are RTC specific and should be in an appropriate subclass.
-  virtual bool SendRtcp(rtc::Buffer* packet,
+  virtual bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketOptions& options) {
     LOG(LS_WARNING) << "Unsupported: SctpFakeNetworkInterface::SendRtcp.";
     return false;
@@ -283,7 +281,7 @@ class SctpDataMediaChannelTest : public testing::Test,
     cricket::SendDataParams params;
     params.ssrc = ssrc;
 
-    return chan->SendData(params, rtc::Buffer(
+    return chan->SendData(params, rtc::CopyOnWriteBuffer(
         &msg[0], msg.length()), result);
   }
 
@@ -402,7 +400,7 @@ TEST_F(SctpDataMediaChannelTest, SendDataBlocked) {
 
   for (size_t i = 0; i < 100; ++i) {
     channel1()->SendData(
-        params, rtc::Buffer(&buffer[0], buffer.size()), &result);
+        params, rtc::CopyOnWriteBuffer(&buffer[0], buffer.size()), &result);
     if (result == cricket::SDR_BLOCK)
       break;
   }

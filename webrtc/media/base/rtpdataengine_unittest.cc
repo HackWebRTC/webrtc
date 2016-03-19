@@ -11,7 +11,7 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/buffer.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/ssladapter.h"
@@ -124,7 +124,7 @@ class RtpDataMediaChannelTest : public testing::Test {
 
   std::string GetSentData(int index) {
     // Assume RTP header of length 12
-    std::unique_ptr<const rtc::Buffer> packet(
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> packet(
         iface_->GetRtpPacket(index));
     if (packet->size() > 12) {
       return std::string(packet->data<char>() + 12, packet->size() - 12);
@@ -134,7 +134,7 @@ class RtpDataMediaChannelTest : public testing::Test {
   }
 
   cricket::RtpHeader GetSentDataHeader(int index) {
-    std::unique_ptr<const rtc::Buffer> packet(
+    std::unique_ptr<const rtc::CopyOnWriteBuffer> packet(
         iface_->GetRtpPacket(index));
     cricket::RtpHeader header;
     GetRtpHeader(packet->data(), packet->size(), &header);
@@ -220,7 +220,7 @@ TEST_F(RtpDataMediaChannelTest, SendData) {
   cricket::SendDataParams params;
   params.ssrc = 42;
   unsigned char data[] = "food";
-  rtc::Buffer payload(data, 4);
+  rtc::CopyOnWriteBuffer payload(data, 4);
   unsigned char padded_data[] = {
     0x00, 0x00, 0x00, 0x00,
     'f', 'o', 'o', 'd',
@@ -257,7 +257,7 @@ TEST_F(RtpDataMediaChannelTest, SendData) {
   // Length too large;
   std::string x10000(10000, 'x');
   EXPECT_FALSE(dmc->SendData(
-      params, rtc::Buffer(x10000.data(), x10000.length()), &result));
+      params, rtc::CopyOnWriteBuffer(x10000.data(), x10000.length()), &result));
   EXPECT_EQ(cricket::SDR_ERROR, result);
   EXPECT_FALSE(HasSentData(0));
 
@@ -325,7 +325,7 @@ TEST_F(RtpDataMediaChannelTest, SendDataMultipleClocks) {
   params2.ssrc = 42;
 
   unsigned char data[] = "foo";
-  rtc::Buffer payload(data, 3);
+  rtc::CopyOnWriteBuffer payload(data, 3);
   cricket::SendDataResult result;
 
   EXPECT_TRUE(dmc1->SendData(params1, payload, &result));
@@ -372,7 +372,7 @@ TEST_F(RtpDataMediaChannelTest, SendDataRate) {
   cricket::SendDataParams params;
   params.ssrc = 42;
   unsigned char data[] = "food";
-  rtc::Buffer payload(data, 4);
+  rtc::CopyOnWriteBuffer payload(data, 4);
   cricket::SendDataResult result;
 
   // With rtp overhead of 32 bytes, each one of our packets is 36
@@ -410,7 +410,7 @@ TEST_F(RtpDataMediaChannelTest, ReceiveData) {
     0x00, 0x00, 0x00, 0x00,
     'a', 'b', 'c', 'd', 'e'
   };
-  rtc::Buffer packet(data, sizeof(data));
+  rtc::CopyOnWriteBuffer packet(data, sizeof(data));
 
   std::unique_ptr<cricket::RtpDataMediaChannel> dmc(CreateChannel());
 
@@ -450,7 +450,7 @@ TEST_F(RtpDataMediaChannelTest, InvalidRtpPackets) {
   unsigned char data[] = {
     0x80, 0x65, 0x00, 0x02
   };
-  rtc::Buffer packet(data, sizeof(data));
+  rtc::CopyOnWriteBuffer packet(data, sizeof(data));
 
   std::unique_ptr<cricket::RtpDataMediaChannel> dmc(CreateChannel());
 

@@ -271,7 +271,7 @@ class WebRtcSession : public AudioProviderInterface,
 
   // Implements DataChannelProviderInterface.
   bool SendData(const cricket::SendDataParams& params,
-                const rtc::Buffer& payload,
+                const rtc::CopyOnWriteBuffer& payload,
                 cricket::SendDataResult* result) override;
   bool ConnectDataChannel(DataChannel* webrtc_data_channel) override;
   void DisconnectDataChannel(DataChannel* webrtc_data_channel) override;
@@ -413,7 +413,7 @@ class WebRtcSession : public AudioProviderInterface,
   // messages.
   void OnDataChannelMessageReceived(cricket::DataChannel* channel,
                                     const cricket::ReceiveDataParams& params,
-                                    const rtc::Buffer& payload);
+                                    const rtc::CopyOnWriteBuffer& payload);
 
   std::string BadStateErrMsg(State state);
   void SetIceConnectionState(PeerConnectionInterface::IceConnectionState state);
