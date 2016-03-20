@@ -13,7 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/api/videosourceinterface.h"
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"

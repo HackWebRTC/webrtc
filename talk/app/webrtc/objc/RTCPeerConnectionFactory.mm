@@ -50,7 +50,6 @@
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/videosourceinterface.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"

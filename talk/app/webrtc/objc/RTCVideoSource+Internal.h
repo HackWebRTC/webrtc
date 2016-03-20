@@ -27,7 +27,7 @@
 
 #import "RTCVideoSource.h"
 
-#include "webrtc/api/videosourceinterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 
 @interface RTCVideoSource (Internal)
 

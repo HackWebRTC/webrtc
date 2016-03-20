@@ -32,8 +32,6 @@
       'sources': [
         'base/audioframe.h',
         'base/audiosource.h',
-        'base/capturemanager.cc',
-        'base/capturemanager.h',
         'base/codec.cc',
         'base/codec.h',
         'base/cpuid.cc',

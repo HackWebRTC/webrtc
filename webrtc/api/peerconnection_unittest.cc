@@ -29,7 +29,6 @@
 #include "webrtc/api/test/fakeperiodicvideocapturer.h"
 #include "webrtc/api/test/fakevideotrackrenderer.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
-#include "webrtc/api/videosourceinterface.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/scoped_ptr.h"
