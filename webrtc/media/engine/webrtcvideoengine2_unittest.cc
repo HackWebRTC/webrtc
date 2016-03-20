@@ -282,8 +282,10 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
 
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
   encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP9, "VP9");
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
+  parameters.codecs.push_back(kVp9Codec);
 
   std::unique_ptr<VideoMediaChannel> channel(
       SetUpForExternalEncoderFactory(&encoder_factory, parameters.codecs));
@@ -292,10 +294,15 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
   // Set capturer.
   EXPECT_TRUE(channel->SetCapturer(kSsrc, &capturer));
 
+  // Verify capturer has turned on applying rotation.
+  EXPECT_TRUE(capturer.GetApplyRotation());
+
   // Add CVO extension.
   const int id = 1;
   parameters.extensions.push_back(
       cricket::RtpHeaderExtension(kRtpVideoRotationHeaderExtension, id));
+  // Also remove the first codec to trigger a codec change as well.
+  parameters.codecs.erase(parameters.codecs.begin());
   EXPECT_TRUE(channel->SetSendParameters(parameters));
 
   // Verify capturer has turned off applying rotation.

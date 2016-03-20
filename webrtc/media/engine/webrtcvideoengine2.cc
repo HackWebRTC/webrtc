@@ -1800,10 +1800,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
     // Set codecs and options.
     if (params.codec) {
       SetCodec(*params.codec);
-      return;
+      recreate_stream = false;  // SetCodec has already recreated the stream.
     } else if (params.conference_mode && parameters_.codec_settings) {
       SetCodec(*parameters_.codec_settings);
-      return;
+      recreate_stream = false;  // SetCodec has already recreated the stream.
     }
     if (recreate_stream) {
       LOG(LS_INFO)

@@ -59,7 +59,7 @@ class FakeVideoRenderer : public VideoRenderer {
     rtc::CritScope cs(&crit_);
     return height_;
   }
-  int rotation() const {
+  webrtc::VideoRotation rotation() const {
     rtc::CritScope cs(&crit_);
     return rotation_;
   }

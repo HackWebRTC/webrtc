@@ -32,6 +32,7 @@ class FakeVideoTrackRenderer
   int errors() const { return fake_renderer_.errors(); }
   int width() const { return fake_renderer_.width(); }
   int height() const { return fake_renderer_.height(); }
+  webrtc::VideoRotation rotation() const { return fake_renderer_.rotation(); }
   bool black_frame() const { return fake_renderer_.black_frame(); }
 
   int num_rendered_frames() const {

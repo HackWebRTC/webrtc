@@ -387,6 +387,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   void RemoveBundleFromReceivedSdp(bool remove) { remove_bundle_ = remove; }
 
+  void RemoveCvoFromReceivedSdp(bool remove) { remove_cvo_ = remove; }
+
   bool can_receive_audio() {
     bool value;
     if (prefer_constraint_apis_) {
@@ -452,12 +454,19 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
     cricket::FakeVideoCapturer* fake_capturer =
         new webrtc::FakePeriodicVideoCapturer();
+    fake_capturer->SetRotation(capture_rotation_);
     video_capturers_.push_back(fake_capturer);
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
         peer_connection_factory_->CreateVideoSource(fake_capturer,
                                                     &source_constraints);
     std::string label = stream_label + kVideoTrackLabelBase;
-    return peer_connection_factory_->CreateVideoTrack(label, source);
+
+    rtc::scoped_refptr<webrtc::VideoTrackInterface> track(
+        peer_connection_factory_->CreateVideoTrack(label, source));
+    if (!local_video_renderer_) {
+      local_video_renderer_.reset(new webrtc::FakeVideoTrackRenderer(track));
+    }
+    return track;
   }
 
   DataChannelInterface* data_channel() { return data_channel_; }
@@ -468,11 +477,14 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   webrtc::PeerConnectionInterface* pc() const { return peer_connection_.get(); }
 
   void StopVideoCapturers() {
-    for (std::vector<cricket::VideoCapturer*>::iterator it =
-             video_capturers_.begin();
-         it != video_capturers_.end(); ++it) {
-      (*it)->Stop();
+    for (auto* capturer : video_capturers_) {
+      capturer->Stop();
     }
+  }
+
+  void SetCaptureRotation(webrtc::VideoRotation rotation) {
+    ASSERT_TRUE(video_capturers_.empty());
+    capture_rotation_ = rotation;
   }
 
   bool AudioFramesReceivedCheck(int number_of_frames) const {
@@ -705,6 +717,21 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         fake_video_renderers_.begin()->second->height();
   }
 
+  webrtc::VideoRotation rendered_rotation() {
+    EXPECT_FALSE(fake_video_renderers_.empty());
+    return fake_video_renderers_.empty()
+               ? webrtc::kVideoRotation_0
+               : fake_video_renderers_.begin()->second->rotation();
+  }
+
+  int local_rendered_width() {
+    return local_video_renderer_ ? local_video_renderer_->width() : 1;
+  }
+
+  int local_rendered_height() {
+    return local_video_renderer_ ? local_video_renderer_->height() : 1;
+  }
+
   size_t number_of_remote_streams() {
     if (!pc())
       return 0;
@@ -929,6 +956,10 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const char kSdpSdesCryptoAttribute[] = "a=crypto";
       RemoveLinesFromSdp(kSdpSdesCryptoAttribute, sdp);
     }
+    if (remove_cvo_) {
+      const char kSdpCvoExtenstion[] = "urn:3gpp:video-orientation";
+      RemoveLinesFromSdp(kSdpCvoExtenstion, sdp);
+    }
   }
 
   std::string id_;
@@ -964,7 +995,10 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   // Store references to the video capturers we've created, so that we can stop
   // them, if required.
-  std::vector<cricket::VideoCapturer*> video_capturers_;
+  std::vector<cricket::FakeVideoCapturer*> video_capturers_;
+  webrtc::VideoRotation capture_rotation_ = webrtc::kVideoRotation_0;
+  // |local_video_renderer_| attached to the first created local video track.
+  rtc::scoped_ptr<webrtc::FakeVideoTrackRenderer> local_video_renderer_;
 
   webrtc::FakeConstraints offer_answer_constraints_;
   PeerConnectionInterface::RTCOfferAnswerOptions offer_answer_options_;
@@ -973,6 +1007,9 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       false;  // True if bundle should be removed in received SDP.
   bool remove_sdes_ =
       false;  // True if a=crypto should be removed in received SDP.
+  // |remove_cvo_| is true if extension urn:3gpp:video-orientation should be
+  // removed in the received SDP.
+  bool remove_cvo_ = false;
 
   rtc::scoped_refptr<DataChannelInterface> data_channel_;
   rtc::scoped_ptr<MockDataChannelObserver> data_observer_;
@@ -1047,10 +1084,22 @@ class P2PTestConductor : public testing::Test {
   }
 
   void VerifyRenderedSize(int width, int height) {
+    VerifyRenderedSize(width, height, webrtc::kVideoRotation_0);
+  }
+
+  void VerifyRenderedSize(int width,
+                          int height,
+                          webrtc::VideoRotation rotation) {
     EXPECT_EQ(width, receiving_client()->rendered_width());
     EXPECT_EQ(height, receiving_client()->rendered_height());
+    EXPECT_EQ(rotation, receiving_client()->rendered_rotation());
     EXPECT_EQ(width, initializing_client()->rendered_width());
     EXPECT_EQ(height, initializing_client()->rendered_height());
+    EXPECT_EQ(rotation, initializing_client()->rendered_rotation());
+
+    // Verify size of the local preview.
+    EXPECT_EQ(width, initializing_client()->local_rendered_width());
+    EXPECT_EQ(height, initializing_client()->local_rendered_height());
   }
 
   void VerifySessionDescriptions() {
@@ -1117,6 +1166,11 @@ class P2PTestConductor : public testing::Test {
                            const webrtc::FakeConstraints& recv_constraints) {
     initiating_client_->SetVideoConstraints(init_constraints);
     receiving_client_->SetVideoConstraints(recv_constraints);
+  }
+
+  void SetCaptureRotation(webrtc::VideoRotation rotation) {
+    initiating_client_->SetCaptureRotation(rotation);
+    receiving_client_->SetCaptureRotation(rotation);
   }
 
   void EnableVideoDecoderFactory() {
@@ -1387,6 +1441,21 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCaller) {
   initializing_client()->IceRestart();
   LocalP2PTest();
   VerifyRenderedSize(640, 480);
+}
+
+TEST_F(P2PTestConductor, LocalP2PTestCVO) {
+  ASSERT_TRUE(CreateTestClients());
+  SetCaptureRotation(webrtc::kVideoRotation_90);
+  LocalP2PTest();
+  VerifyRenderedSize(640, 480, webrtc::kVideoRotation_90);
+}
+
+TEST_F(P2PTestConductor, LocalP2PTestReceiverDoesntSupportCVO) {
+  ASSERT_TRUE(CreateTestClients());
+  SetCaptureRotation(webrtc::kVideoRotation_90);
+  receiving_client()->RemoveCvoFromReceivedSdp(true);
+  LocalP2PTest();
+  VerifyRenderedSize(480, 640, webrtc::kVideoRotation_0);
 }
 
 // This test sets up a call between two endpoints that are configured to use
