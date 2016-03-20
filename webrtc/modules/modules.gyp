@@ -443,6 +443,7 @@
                 'audio_processing/high_pass_filter_bitexactness_unittest.cc',
                 'audio_processing/level_estimator_bitexactness_unittest.cc',
                 'audio_processing/noise_suppression_bitexactness_unittest.cc',
+                'audio_processing/voice_detection_unittest.cc',
                 'audio_processing/test/audio_buffer_tools.cc',
                 'audio_processing/test/audio_buffer_tools.h',
                 'audio_processing/test/audio_processing_unittest.cc',
