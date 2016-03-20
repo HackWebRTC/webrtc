@@ -441,6 +441,7 @@
                 'audio_processing/audio_processing_impl_locking_unittest.cc',
                 'audio_processing/audio_processing_impl_unittest.cc',
                 'audio_processing/high_pass_filter_bitexactness_unittest.cc',
+                'audio_processing/level_estimator_bitexactness_unittest.cc',
                 'audio_processing/noise_suppression_bitexactness_unittest.cc',
                 'audio_processing/test/audio_buffer_tools.cc',
                 'audio_processing/test/audio_buffer_tools.h',
