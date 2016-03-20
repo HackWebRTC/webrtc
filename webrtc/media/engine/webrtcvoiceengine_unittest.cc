@@ -113,7 +113,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_FALSE(call_.GetAudioSendStream(kSsrc1));
   }
   void DeliverPacket(const void* data, int len) {
-    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len);
+    rtc::CopyOnWriteBuffer packet(reinterpret_cast<const uint8_t*>(data), len);
     channel_->OnPacketReceived(&packet, rtc::PacketTime());
   }
   void TearDown() override {
@@ -3081,14 +3081,14 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
 TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   // Test that packets are forwarded to the Call when configured accordingly.
   const uint32_t kAudioSsrc = 1;
-  rtc::Buffer kPcmuPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  rtc::CopyOnWriteBuffer kPcmuPacket(kPcmuFrame, sizeof(kPcmuFrame));
   static const unsigned char kRtcp[] = {
     0x80, 0xc9, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02,
     0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
-  rtc::Buffer kRtcpPacket(kRtcp, sizeof(kRtcp));
+  rtc::CopyOnWriteBuffer kRtcpPacket(kRtcp, sizeof(kRtcp));
 
   EXPECT_TRUE(SetupEngineWithSendStream());
   cricket::WebRtcVoiceMediaChannel* media_channel =

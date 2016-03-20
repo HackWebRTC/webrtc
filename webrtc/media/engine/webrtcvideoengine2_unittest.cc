@@ -2959,7 +2959,7 @@ TEST_F(WebRtcVideoChannel2Test, DefaultReceiveStreamReconfiguresToUseRtx) {
   uint8_t data[kDataLength];
   memset(data, 0, sizeof(data));
   rtc::SetBE32(&data[8], ssrcs[0]);
-  rtc::Buffer packet(data, kDataLength);
+  rtc::CopyOnWriteBuffer packet(data, kDataLength);
   rtc::PacketTime packet_time;
   channel_->OnPacketReceived(&packet, packet_time);
 
@@ -3112,7 +3112,7 @@ void WebRtcVideoChannel2Test::TestReceiveUnsignalledSsrcPacket(
 
   rtc::Set8(data, 1, payload_type);
   rtc::SetBE32(&data[8], kIncomingUnsignalledSsrc);
-  rtc::Buffer packet(data, kDataLength);
+  rtc::CopyOnWriteBuffer packet(data, kDataLength);
   rtc::PacketTime packet_time;
   channel_->OnPacketReceived(&packet, packet_time);
 

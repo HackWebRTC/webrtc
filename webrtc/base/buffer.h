@@ -49,7 +49,6 @@ struct ByteType {
 class Buffer {
  public:
   Buffer();                   // An empty buffer.
-  Buffer(const Buffer& buf);  // Copy size and contents of an existing buffer.
   Buffer(Buffer&& buf);       // Move contents from an existing buffer.
 
   // Construct a buffer with the specified number of uninitialized bytes.
@@ -97,12 +96,6 @@ class Buffer {
   size_t capacity() const {
     RTC_DCHECK(IsConsistent());
     return capacity_;
-  }
-
-  Buffer& operator=(const Buffer& buf) {
-    if (&buf != this)
-      SetData(buf.data(), buf.size());
-    return *this;
   }
 
   Buffer& operator=(Buffer&& buf) {
@@ -270,6 +263,8 @@ class Buffer {
   size_t size_;
   size_t capacity_;
   std::unique_ptr<uint8_t[]> data_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(Buffer);
 };
 
 }  // namespace rtc

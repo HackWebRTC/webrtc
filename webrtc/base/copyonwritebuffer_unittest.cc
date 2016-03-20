@@ -41,6 +41,13 @@ void EnsureBuffersDontShareData(const CopyOnWriteBuffer& buf1,
   EXPECT_NE(data1, data2);
 }
 
+TEST(CopyOnWriteBufferTest, TestCreateEmptyData) {
+  CopyOnWriteBuffer buf(static_cast<const uint8_t*>(nullptr), 0);
+  EXPECT_EQ(buf.size(), 0u);
+  EXPECT_EQ(buf.capacity(), 0u);
+  EXPECT_EQ(buf.data(), nullptr);
+}
+
 TEST(CopyOnWriteBufferTest, TestMoveConstruct) {
   CopyOnWriteBuffer buf1(kTestData, 3, 10);
   size_t buf1_size = buf1.size();
@@ -125,6 +132,21 @@ TEST(CopyOnWriteBufferTest, TestSetData) {
   EnsureBuffersDontShareData(buf1, buf3);
   const int8_t exp[] = {'f', 'o', 'o', 0x0};
   EXPECT_EQ(buf3, CopyOnWriteBuffer(exp));
+
+  buf2.SetData(static_cast<const uint8_t*>(nullptr), 0u);
+  EnsureBuffersDontShareData(buf1, buf2);
+  EXPECT_EQ(buf1.size(), 3u);
+  EXPECT_EQ(buf1.capacity(), 10u);
+  EXPECT_EQ(buf2.size(), 0u);
+  EXPECT_EQ(buf2.capacity(), 0u);
+}
+
+TEST(CopyOnWriteBufferTest, TestSetDataEmpty) {
+  CopyOnWriteBuffer buf;
+  buf.SetData(static_cast<const uint8_t*>(nullptr), 0u);
+  EXPECT_EQ(buf.size(), 0u);
+  EXPECT_EQ(buf.capacity(), 0u);
+  EXPECT_EQ(buf.data(), nullptr);
 }
 
 TEST(CopyOnWriteBufferTest, TestEnsureCapacity) {
@@ -194,6 +216,45 @@ TEST(CopyOnWriteBufferTest, TestConstDataAccessor) {
   EXPECT_NE(data1, cdata1);
   // Therefore buf2 was no longer sharing data and was not cloned.
   EXPECT_EQ(data2, cdata1);
+}
+
+TEST(CopyOnWriteBufferTest, TestBacketRead) {
+  CopyOnWriteBuffer buf1(kTestData, 3, 10);
+  CopyOnWriteBuffer buf2(buf1);
+
+  EnsureBuffersShareData(buf1, buf2);
+  // Non-const reads clone the data if shared.
+  for (size_t i = 0; i != 3u; ++i) {
+    EXPECT_EQ(buf1[i], kTestData[i]);
+  }
+  EnsureBuffersDontShareData(buf1, buf2);
+}
+
+TEST(CopyOnWriteBufferTest, TestBacketReadConst) {
+  CopyOnWriteBuffer buf1(kTestData, 3, 10);
+  CopyOnWriteBuffer buf2(buf1);
+
+  EnsureBuffersShareData(buf1, buf2);
+  const CopyOnWriteBuffer& cbuf1 = buf1;
+  for (size_t i = 0; i != 3u; ++i) {
+    EXPECT_EQ(cbuf1[i], kTestData[i]);
+  }
+  EnsureBuffersShareData(buf1, buf2);
+}
+
+TEST(CopyOnWriteBufferTest, TestBacketWrite) {
+  CopyOnWriteBuffer buf1(kTestData, 3, 10);
+  CopyOnWriteBuffer buf2(buf1);
+
+  EnsureBuffersShareData(buf1, buf2);
+  for (size_t i = 0; i != 3u; ++i) {
+    buf1[i] = kTestData[i] + 1;
+  }
+  EXPECT_EQ(buf1.size(), 3u);
+  EXPECT_EQ(buf1.capacity(), 10u);
+  EXPECT_EQ(buf2.size(), 3u);
+  EXPECT_EQ(buf2.capacity(), 10u);
+  EXPECT_EQ(0, memcmp(buf2.cdata(), kTestData, 3));
 }
 
 }  // namespace rtc

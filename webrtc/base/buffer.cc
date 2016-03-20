@@ -19,9 +19,6 @@ Buffer::Buffer() : size_(0), capacity_(0), data_(nullptr) {
   RTC_DCHECK(IsConsistent());
 }
 
-Buffer::Buffer(const Buffer& buf) : Buffer(buf.data(), buf.size()) {
-}
-
 Buffer::Buffer(Buffer&& buf)
     : size_(buf.size()),
       capacity_(buf.capacity()),

@@ -31,7 +31,7 @@ class DataChannelProviderInterface {
  public:
   // Sends the data to the transport.
   virtual bool SendData(const cricket::SendDataParams& params,
-                        const rtc::Buffer& payload,
+                        const rtc::CopyOnWriteBuffer& payload,
                         cricket::SendDataResult* result) = 0;
   // Connects to the transport signals.
   virtual bool ConnectDataChannel(DataChannel* data_channel) = 0;
@@ -143,7 +143,7 @@ class DataChannel : public DataChannelInterface,
   // Sigslots from cricket::DataChannel
   void OnDataReceived(cricket::DataChannel* channel,
                       const cricket::ReceiveDataParams& params,
-                      const rtc::Buffer& payload);
+                      const rtc::CopyOnWriteBuffer& payload);
   void OnStreamClosedRemotely(uint32_t sid);
 
   // The remote peer request that this channel should be closed.
@@ -236,8 +236,8 @@ class DataChannel : public DataChannelInterface,
   bool QueueSendDataMessage(const DataBuffer& buffer);
 
   void SendQueuedControlMessages();
-  void QueueControlMessage(const rtc::Buffer& buffer);
-  bool SendControlMessage(const rtc::Buffer& buffer);
+  void QueueControlMessage(const rtc::CopyOnWriteBuffer& buffer);
+  bool SendControlMessage(const rtc::CopyOnWriteBuffer& buffer);
 
   std::string label_;
   InternalDataChannelInit config_;

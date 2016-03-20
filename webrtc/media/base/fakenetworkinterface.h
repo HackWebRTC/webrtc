@@ -14,8 +14,8 @@
 #include <map>
 #include <vector>
 
-#include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/messagehandler.h"
@@ -84,12 +84,12 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   }
 
   // Note: callers are responsible for deleting the returned buffer.
-  const rtc::Buffer* GetRtpPacket(int index) {
+  const rtc::CopyOnWriteBuffer* GetRtpPacket(int index) {
     rtc::CritScope cs(&crit_);
     if (index >= NumRtpPackets()) {
       return NULL;
     }
-    return new rtc::Buffer(rtp_packets_[index]);
+    return new rtc::CopyOnWriteBuffer(rtp_packets_[index]);
   }
 
   int NumRtcpPackets() {
@@ -98,12 +98,12 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   }
 
   // Note: callers are responsible for deleting the returned buffer.
-  const rtc::Buffer* GetRtcpPacket(int index) {
+  const rtc::CopyOnWriteBuffer* GetRtcpPacket(int index) {
     rtc::CritScope cs(&crit_);
     if (index >= NumRtcpPackets()) {
       return NULL;
     }
-    return new rtc::Buffer(rtcp_packets_[index]);
+    return new rtc::CopyOnWriteBuffer(rtcp_packets_[index]);
   }
 
   int sendbuf_size() const { return sendbuf_size_; }
@@ -111,7 +111,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   rtc::DiffServCodePoint dscp() const { return dscp_; }
 
  protected:
-  virtual bool SendPacket(rtc::Buffer* packet,
+  virtual bool SendPacket(rtc::CopyOnWriteBuffer* packet,
                           const rtc::PacketOptions& options) {
     rtc::CritScope cs(&crit_);
 
@@ -123,13 +123,12 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
 
     rtp_packets_.push_back(*packet);
     if (conf_) {
-      rtc::Buffer buffer_copy(*packet);
       for (size_t i = 0; i < conf_sent_ssrcs_.size(); ++i) {
-        if (!SetRtpSsrc(buffer_copy.data(), buffer_copy.size(),
+        if (!SetRtpSsrc(packet->data(), packet->size(),
                         conf_sent_ssrcs_[i])) {
           return false;
         }
-        PostMessage(ST_RTP, buffer_copy);
+        PostMessage(ST_RTP, *packet);
       }
     } else {
       PostMessage(ST_RTP, *packet);
@@ -137,7 +136,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     return true;
   }
 
-  virtual bool SendRtcp(rtc::Buffer* packet,
+  virtual bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketOptions& options) {
     rtc::CritScope cs(&crit_);
     rtcp_packets_.push_back(*packet);
@@ -160,13 +159,13 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     return 0;
   }
 
-  void PostMessage(int id, const rtc::Buffer& packet) {
+  void PostMessage(int id, const rtc::CopyOnWriteBuffer& packet) {
     thread_->Post(this, id, rtc::WrapMessageData(packet));
   }
 
   virtual void OnMessage(rtc::Message* msg) {
-    rtc::TypedMessageData<rtc::Buffer>* msg_data =
-        static_cast<rtc::TypedMessageData<rtc::Buffer>*>(
+    rtc::TypedMessageData<rtc::CopyOnWriteBuffer>* msg_data =
+        static_cast<rtc::TypedMessageData<rtc::CopyOnWriteBuffer>*>(
             msg->pdata);
     if (dest_) {
       if (msg->message_id == ST_RTP) {
@@ -216,8 +215,8 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   // Map to track packet-number that needs to be dropped per ssrc.
   std::map<uint32_t, std::set<uint32_t> > drop_map_;
   rtc::CriticalSection crit_;
-  std::vector<rtc::Buffer> rtp_packets_;
-  std::vector<rtc::Buffer> rtcp_packets_;
+  std::vector<rtc::CopyOnWriteBuffer> rtp_packets_;
+  std::vector<rtc::CopyOnWriteBuffer> rtcp_packets_;
   int sendbuf_size_;
   int recvbuf_size_;
   rtc::DiffServCodePoint dscp_;

@@ -1374,7 +1374,7 @@ sigslot::signal0<>* WebRtcSession::GetOnDestroyedSignal() {
 }
 
 bool WebRtcSession::SendData(const cricket::SendDataParams& params,
-                             const rtc::Buffer& payload,
+                             const rtc::CopyOnWriteBuffer& payload,
                              cricket::SendDataResult* result) {
   if (!data_channel_) {
     LOG(LS_ERROR) << "SendData called when data_channel_ is NULL.";
@@ -1854,7 +1854,7 @@ void WebRtcSession::OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp) {
 void WebRtcSession::OnDataChannelMessageReceived(
     cricket::DataChannel* channel,
     const cricket::ReceiveDataParams& params,
-    const rtc::Buffer& payload) {
+    const rtc::CopyOnWriteBuffer& payload) {
   RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
   if (params.type == cricket::DMT_CONTROL && IsOpenMessage(payload)) {
     // Received OPEN message; parse and signal that a new data channel should

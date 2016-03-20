@@ -14,7 +14,7 @@
 #include <string>
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/buffer.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/sslidentity.h"
 
 namespace rtc {
@@ -44,7 +44,7 @@ struct SSLFingerprint {
   std::string ToString();
 
   std::string algorithm;
-  rtc::Buffer digest;
+  rtc::CopyOnWriteBuffer digest;
 };
 
 }  // namespace rtc

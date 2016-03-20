@@ -17,8 +17,8 @@
 #include <string>
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/refcount.h"
 
 
@@ -50,7 +50,7 @@ struct DataChannelInit {
 };
 
 struct DataBuffer {
-  DataBuffer(const rtc::Buffer& data, bool binary)
+  DataBuffer(const rtc::CopyOnWriteBuffer& data, bool binary)
       : data(data),
         binary(binary) {
   }
@@ -61,7 +61,7 @@ struct DataBuffer {
   }
   size_t size() const { return data.size(); }
 
-  rtc::Buffer data;
+  rtc::CopyOnWriteBuffer data;
   // Indicates if the received data contains UTF-8 or binary data.
   // Note that the upper layers are left to verify the UTF-8 encoding.
   // TODO(jiayl): prefer to use an enum instead of a bool.

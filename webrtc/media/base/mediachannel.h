@@ -17,7 +17,7 @@
 
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/buffer.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
@@ -356,9 +356,9 @@ class MediaChannel : public sigslot::has_slots<> {
   class NetworkInterface {
    public:
     enum SocketType { ST_RTP, ST_RTCP };
-    virtual bool SendPacket(rtc::Buffer* packet,
+    virtual bool SendPacket(rtc::CopyOnWriteBuffer* packet,
                             const rtc::PacketOptions& options) = 0;
-    virtual bool SendRtcp(rtc::Buffer* packet,
+    virtual bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
                           const rtc::PacketOptions& options) = 0;
     virtual int SetOption(SocketType type, rtc::Socket::Option opt,
                           int option) = 0;
@@ -380,10 +380,10 @@ class MediaChannel : public sigslot::has_slots<> {
     return rtc::DSCP_DEFAULT;
   }
   // Called when a RTP packet is received.
-  virtual void OnPacketReceived(rtc::Buffer* packet,
+  virtual void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
                                 const rtc::PacketTime& packet_time) = 0;
   // Called when a RTCP packet is received.
-  virtual void OnRtcpReceived(rtc::Buffer* packet,
+  virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
                               const rtc::PacketTime& packet_time) = 0;
   // Called when the socket's ability to send has changed.
   virtual void OnReadyToSend(bool ready) = 0;
@@ -408,11 +408,13 @@ class MediaChannel : public sigslot::has_slots<> {
   }
 
   // Base method to send packet using NetworkInterface.
-  bool SendPacket(rtc::Buffer* packet, const rtc::PacketOptions& options) {
+  bool SendPacket(rtc::CopyOnWriteBuffer* packet,
+                  const rtc::PacketOptions& options) {
     return DoSendPacket(packet, false, options);
   }
 
-  bool SendRtcp(rtc::Buffer* packet, const rtc::PacketOptions& options) {
+  bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
+                const rtc::PacketOptions& options) {
     return DoSendPacket(packet, true, options);
   }
 
@@ -441,7 +443,7 @@ class MediaChannel : public sigslot::has_slots<> {
     return ret;
   }
 
-  bool DoSendPacket(rtc::Buffer* packet,
+  bool DoSendPacket(rtc::CopyOnWriteBuffer* packet,
                     bool rtcp,
                     const rtc::PacketOptions& options) {
     rtc::CritScope cs(&network_interface_crit_);
@@ -1104,7 +1106,7 @@ class DataMediaChannel : public MediaChannel {
 
   virtual bool SendData(
       const SendDataParams& params,
-      const rtc::Buffer& payload,
+      const rtc::CopyOnWriteBuffer& payload,
       SendDataResult* result = NULL) = 0;
   // Signals when data is received (params, data, len)
   sigslot::signal3<const ReceiveDataParams&,
