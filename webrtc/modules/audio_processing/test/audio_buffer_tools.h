@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_AUDIO_BUFFER_TOOLS_H_
 
 #include <vector>
+#include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
@@ -20,13 +21,13 @@ namespace test {
 
 // Copies a vector into an audiobuffer.
 void CopyVectorToAudioBuffer(const StreamConfig& stream_config,
-                             const std::vector<float>& source,
+                             rtc::ArrayView<const float> source,
                              AudioBuffer* destination);
 
 // Extracts a vector from an audiobuffer.
-std::vector<float> ExtractVectorFromAudioBuffer(
-    const StreamConfig& stream_config,
-    AudioBuffer* source);
+void ExtractVectorFromAudioBuffer(const StreamConfig& stream_config,
+                                  AudioBuffer* source,
+                                  std::vector<float>* destination);
 
 }  // namespace test
 }  // namespace webrtc

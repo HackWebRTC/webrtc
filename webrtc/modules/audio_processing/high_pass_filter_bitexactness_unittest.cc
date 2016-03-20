@@ -14,52 +14,11 @@
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/high_pass_filter_impl.h"
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
+#include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
 
 namespace webrtc {
 namespace {
 
-// Test to see whether two vectors are identical and report any
-// differences.
-::testing::AssertionResult AssertVectorsNotEqual(
-    const char* m_expr,
-    const char* n_expr,
-    const std::vector<float>& output,
-    const std::vector<float>& reference) {
-  // Compare the output in the reference in a soft manner.
-  bool equal = true;
-  const float threshold = 1.0f / 32768.0f;
-  for (size_t k = 0; k < reference.size(); ++k) {
-    if (fabs(output[k] - reference[k]) > threshold) {
-      equal = false;
-      break;
-    }
-  }
-
-  // If the vectors are deemed not to be similar, return a report of the
-  // difference.
-  if (!equal) {
-    // Lambda function that produces a formatted string with the data in the
-    // vector.
-    auto print_vector_in_c_format = [](std::vector<float> v,
-                                       size_t num_values_to_print) {
-      std::string s = "{ ";
-      for (size_t k = 0; k < num_values_to_print; ++k) {
-        s += std::to_string(v[k]) + "f";
-        s += (k < (num_values_to_print - 1)) ? ", " : "";
-      }
-      return s + " }";
-    };
-
-    return ::testing::AssertionFailure()
-           << "Actual: " << print_vector_in_c_format(output, reference.size())
-           << std::endl
-           << std::endl
-           << "Expected: "
-           << print_vector_in_c_format(reference, reference.size())
-           << std::endl;
-  }
-  return ::testing::AssertionSuccess();
-}
 
 // Process one frame of data and produce the output.
 std::vector<float> ProcessOneFrame(const std::vector<float>& frame_input,
@@ -72,8 +31,9 @@ std::vector<float> ProcessOneFrame(const std::vector<float>& frame_input,
 
   test::CopyVectorToAudioBuffer(stream_config, frame_input, &audio_buffer);
   high_pass_filter->ProcessCaptureAudio(&audio_buffer);
-  std::vector<float> frame_output =
-      test::ExtractVectorFromAudioBuffer(stream_config, &audio_buffer);
+  std::vector<float> frame_output;
+  test::ExtractVectorFromAudioBuffer(stream_config, &audio_buffer,
+                                     &frame_output);
   return frame_output;
 }
 
@@ -122,7 +82,9 @@ void RunBitexactnessTest(int sample_rate,
             reference_frame_length);
   }
 
-  EXPECT_PRED_FORMAT2(AssertVectorsNotEqual, output_to_verify, reference);
+  const float kTolerance = 1.0f / 32768.0f;
+  EXPECT_TRUE(test::BitExactFrame(reference_frame_length, num_channels,
+                                  reference, output_to_verify, kTolerance));
 }
 
 // Method for forming a vector out of an array.

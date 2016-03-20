@@ -10,10 +10,12 @@
 
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 
+#include <string.h>
+
 namespace webrtc {
 namespace test {
 
-void SetupFrame(StreamConfig stream_config,
+void SetupFrame(const StreamConfig& stream_config,
                 std::vector<float*>* frame,
                 std::vector<float>* frame_samples) {
   frame_samples->resize(stream_config.num_channels() *
@@ -25,30 +27,28 @@ void SetupFrame(StreamConfig stream_config,
 }
 
 void CopyVectorToAudioBuffer(const StreamConfig& stream_config,
-                             const std::vector<float>& source,
+                             rtc::ArrayView<const float> source,
                              AudioBuffer* destination) {
   std::vector<float*> input;
   std::vector<float> input_samples;
 
   SetupFrame(stream_config, &input, &input_samples);
 
-  RTC_DCHECK_EQ(input_samples.size(), source.size());
-  input_samples = source;
+  RTC_CHECK_EQ(input_samples.size(), source.size());
+  memcpy(input_samples.data(), source.data(),
+         source.size() * sizeof(source[0]));
 
   destination->CopyFrom(&input[0], stream_config);
 }
 
-std::vector<float> ExtractVectorFromAudioBuffer(
-    const StreamConfig& stream_config,
-    AudioBuffer* source) {
+void ExtractVectorFromAudioBuffer(const StreamConfig& stream_config,
+                                  AudioBuffer* source,
+                                  std::vector<float>* destination) {
   std::vector<float*> output;
-  std::vector<float> output_samples;
 
-  SetupFrame(stream_config, &output, &output_samples);
+  SetupFrame(stream_config, &output, destination);
 
   source->CopyTo(stream_config, &output[0]);
-
-  return output_samples;
 }
 
 }  // namespace test
