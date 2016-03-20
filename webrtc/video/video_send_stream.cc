@@ -452,13 +452,16 @@ VideoSendStream::VideoSendStream(
 VideoSendStream::~VideoSendStream() {
   LOG(LS_INFO) << "~VideoSendStream: " << config_.ToString();
 
-  bitrate_allocator_->RemoveObserver(this);
   Stop();
 
   // Stop the encoder thread permanently.
   rtc::AtomicOps::ReleaseStore(&stop_encoder_thread_, 1);
   encoder_wakeup_event_.Set();
   encoder_thread_.Stop();
+
+  // This needs to happen after stopping the encoder thread,
+  // since the encoder thread calls AddObserver.
+  bitrate_allocator_->RemoveObserver(this);
 
   module_process_thread_->DeRegisterModule(&overuse_detector_);
   vie_channel_.RegisterSendFrameCountObserver(nullptr);
