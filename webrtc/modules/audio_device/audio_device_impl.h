@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 
@@ -48,7 +49,7 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   void Process() override;
 
   // Factory methods (resource allocation/deallocation)
-  static AudioDeviceModule* Create(
+  static rtc::scoped_refptr<AudioDeviceModule> Create(
       const int32_t id,
       const AudioLayer audioLayer = kPlatformDefaultAudio);
 

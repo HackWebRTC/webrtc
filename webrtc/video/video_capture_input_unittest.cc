@@ -14,7 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/event.h"
-#include "webrtc/system_wrappers/include/ref_count.h"
+#include "webrtc/base/refcount.h"
 #include "webrtc/system_wrappers/include/scoped_vector.h"
 #include "webrtc/test/fake_texture_frame.h"
 #include "webrtc/video/send_statistics_proxy.h"

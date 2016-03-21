@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 
+#include "webrtc/base/refcount.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -19,22 +20,17 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/logging.h"
-#include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
-namespace webrtc
-{
-
-namespace videocapturemodule
-{
-VideoCaptureModule* VideoCaptureImpl::Create(
+namespace webrtc {
+namespace videocapturemodule {
+rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
     const int32_t id,
-    VideoCaptureExternal*& externalCapture)
-{
-    RefCountImpl<VideoCaptureImpl>* implementation =
-        new RefCountImpl<VideoCaptureImpl>(id);
-    externalCapture = implementation;
-    return implementation;
+    VideoCaptureExternal*& externalCapture) {
+  rtc::scoped_refptr<VideoCaptureImpl> implementation(
+      new rtc::RefCountedObject<VideoCaptureImpl>(id));
+  externalCapture = implementation.get();
+  return implementation;
 }
 
 const char* VideoCaptureImpl::CurrentDeviceName() const

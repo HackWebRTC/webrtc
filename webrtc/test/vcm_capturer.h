@@ -11,6 +11,7 @@
 #define WEBRTC_TEST_VCM_CAPTURER_H_
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_capture/video_capture.h"
@@ -41,7 +42,7 @@ class VcmCapturer : public VideoCapturer, public VideoCaptureDataCallback {
 
   rtc::CriticalSection crit_;
   bool started_ GUARDED_BY(crit_);
-  VideoCaptureModule* vcm_;
+  rtc::scoped_refptr<VideoCaptureModule> vcm_;
   VideoCaptureCapability capability_;
 };
 }  // test

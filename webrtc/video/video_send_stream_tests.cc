@@ -28,7 +28,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
-#include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/configurable_frame_size_encoder.h"

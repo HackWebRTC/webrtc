@@ -20,7 +20,6 @@
 //v4l includes
 #include <linux/videodev2.h>
 
-#include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 
@@ -31,14 +30,7 @@ namespace videocapturemodule
 VideoCaptureModule::DeviceInfo*
 VideoCaptureImpl::CreateDeviceInfo(const int32_t id)
 {
-    videocapturemodule::DeviceInfoLinux *deviceInfo =
-                    new videocapturemodule::DeviceInfoLinux(id);
-    if (!deviceInfo)
-    {
-        deviceInfo = NULL;
-    }
-
-    return deviceInfo;
+    return new videocapturemodule::DeviceInfoLinux(id);
 }
 
 DeviceInfoLinux::DeviceInfoLinux(const int32_t id)

@@ -27,7 +27,6 @@ static_library("system_wrappers") {
     "include/fix_interlocked_exchange_pointer_win.h",
     "include/logging.h",
     "include/metrics.h",
-    "include/ref_count.h",
     "include/rtp_to_ntp.h",
     "include/rw_lock_wrapper.h",
     "include/scoped_vector.h",

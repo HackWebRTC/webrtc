@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/utility/include/process_thread.h"
@@ -38,8 +39,9 @@ public:
     uint32_t instance_id() const { return _instanceId; }
     Statistics& statistics() { return _engineStatistics; }
     ChannelManager& channel_manager() { return _channelManager; }
-    AudioDeviceModule* audio_device() { return _audioDevicePtr; }
-    void set_audio_device(AudioDeviceModule* audio_device);
+    AudioDeviceModule* audio_device() { return _audioDevicePtr.get(); }
+    void set_audio_device(
+        const rtc::scoped_refptr<AudioDeviceModule>& audio_device);
     AudioProcessing* audio_processing() { return audioproc_.get(); }
     void set_audio_processing(AudioProcessing* audio_processing);
     TransmitMixer* transmit_mixer() { return _transmitMixerPtr; }
@@ -67,7 +69,7 @@ protected:
     rtc::CriticalSection _apiCritPtr;
     ChannelManager _channelManager;
     Statistics _engineStatistics;
-    AudioDeviceModule* _audioDevicePtr;
+    rtc::scoped_refptr<AudioDeviceModule> _audioDevicePtr;
     OutputMixer* _outputMixerPtr;
     TransmitMixer* _transmitMixerPtr;
     std::unique_ptr<AudioProcessing> audioproc_;

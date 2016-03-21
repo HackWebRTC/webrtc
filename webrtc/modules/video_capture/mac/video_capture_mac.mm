@@ -15,10 +15,11 @@
 
 #include <QuickTime/QuickTime.h>
 
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/video_capture/device_info_impl.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
-#include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 // 10.4 support must be decided runtime. We will just decide which framework to
@@ -109,25 +110,23 @@ bool CheckQTVersion()
  *                             version buffer
  */
 
-VideoCaptureModule* VideoCaptureImpl::Create(
-    const int32_t id, const char* deviceUniqueIdUTF8)
-{
-
-    if (webrtc::videocapturemodule::CheckOSVersion() == false)
-    {
+rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+    const int32_t id,
+    const char* deviceUniqueIdUTF8) {
+    if (!CheckOSVersion()) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, id,
                      "OS version is too old. Could not create video capture "
                      "module. Returning NULL");
-        return NULL;
+        return nullptr;
     }
 
 #if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    if (webrtc::videocapturemodule::CheckQTVersion() == false)
+    if (!CheckQTVersion())
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, id,
                      "QuickTime version is too old. Could not create video "
                      "capture module. Returning NULL");
-        return NULL;
+        return nullptr;
     }
 
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, id,
@@ -135,17 +134,8 @@ VideoCaptureModule* VideoCaptureImpl::Create(
                  "QuickTime framework to capture video",
                  __FILE__, __LINE__);
 
-    RefCountImpl<videocapturemodule::VideoCaptureMacQuickTime>*
-        newCaptureModule =
-            new RefCountImpl<videocapturemodule::VideoCaptureMacQuickTime>(id);
-
-    if (!newCaptureModule)
-    {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCapture, id,
-                     "could not Create for unique device %s, !newCaptureModule",
-                     deviceUniqueIdUTF8);
-        return NULL;
-    }
+    rtc::scoped_refptr<VideoCaptureMacQuickTime> newCaptureModule(
+        new rtc::RefCountedObject<VideoCaptureMacQuickTime>(id));
 
     if (newCaptureModule->Init(id, deviceUniqueIdUTF8) != 0)
     {
@@ -153,8 +143,7 @@ VideoCaptureModule* VideoCaptureImpl::Create(
                      "could not Create for unique device %s, "
                      "newCaptureModule->Init()!=0",
                      deviceUniqueIdUTF8);
-        delete newCaptureModule;
-        return NULL;
+        return nullptr;
     }
 
     // Successfully created VideoCaptureMacQuicktime. Return it
@@ -169,23 +158,15 @@ VideoCaptureModule* VideoCaptureImpl::Create(
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, id,
                  "Using QTKit framework to capture video", id);
 
-    RefCountImpl<videocapturemodule::VideoCaptureMacQTKit>* newCaptureModule =
-        new RefCountImpl<videocapturemodule::VideoCaptureMacQTKit>(id);
+    rtc::scoped_refptr<VideoCaptureMacQTKit> newCaptureModule(
+        new rtc::RefCountedObject<VideoCaptureMacQTKit>(id));
 
-    if(!newCaptureModule)
-    {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCapture, id,
-                     "could not Create for unique device %s, !newCaptureModule",
-                     deviceUniqueIdUTF8);
-        return NULL;
-    }
     if(newCaptureModule->Init(id, deviceUniqueIdUTF8) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCapture, id,
                      "could not Create for unique device %s, "
                      "newCaptureModule->Init()!=0", deviceUniqueIdUTF8);
-        delete newCaptureModule;
-        return NULL;
+        return nullptr;
     }
 
     // Successfully created VideoCaptureMacQuicktime. Return it

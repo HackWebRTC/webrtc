@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/refcount.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
-#include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
 #include <assert.h>
@@ -65,13 +65,7 @@
     };                              \
 }
 
-namespace webrtc
-{
-
-AudioDeviceModule* CreateAudioDeviceModule(
-    int32_t id, AudioDeviceModule::AudioLayer audioLayer) {
-  return AudioDeviceModuleImpl::Create(id, audioLayer);
-}
+namespace webrtc {
 
 // ============================================================================
 //                                   Static methods
@@ -81,33 +75,30 @@ AudioDeviceModule* CreateAudioDeviceModule(
 //  AudioDeviceModule::Create()
 // ----------------------------------------------------------------------------
 
-AudioDeviceModule* AudioDeviceModuleImpl::Create(const int32_t id,
-                                                 const AudioLayer audioLayer)
-{
+rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModuleImpl::Create(
+    const int32_t id,
+    const AudioLayer audioLayer) {
     // Create the generic ref counted (platform independent) implementation.
-    RefCountImpl<AudioDeviceModuleImpl>* audioDevice =
-        new RefCountImpl<AudioDeviceModuleImpl>(id, audioLayer);
+    rtc::scoped_refptr<AudioDeviceModuleImpl> audioDevice(
+        new rtc::RefCountedObject<AudioDeviceModuleImpl>(id, audioLayer));
 
     // Ensure that the current platform is supported.
     if (audioDevice->CheckPlatform() == -1)
     {
-        delete audioDevice;
-        return NULL;
+        return nullptr;
     }
 
     // Create the platform-dependent implementation.
     if (audioDevice->CreatePlatformSpecificObjects() == -1)
     {
-        delete audioDevice;
-        return NULL;
+        return nullptr;
     }
 
     // Ensure that the generic audio buffer can communicate with the
     // platform-specific parts.
     if (audioDevice->AttachAudioBuffer() == -1)
     {
-        delete audioDevice;
-        return NULL;
+        return nullptr;
     }
 
     WebRtcSpl_Init();

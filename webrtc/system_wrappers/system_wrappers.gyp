@@ -35,7 +35,6 @@
         'include/logging.h',
         'include/metrics.h',
         'include/ntp_time.h',
-        'include/ref_count.h',
         'include/rtp_to_ntp.h',
         'include/rw_lock_wrapper.h',
         'include/scoped_vector.h',

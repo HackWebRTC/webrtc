@@ -12,16 +12,18 @@
 #error "This file requires ARC support."
 #endif
 
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
 #include "webrtc/modules/video_capture/ios/rtc_video_capture_ios_objc.h"
-#include "webrtc/system_wrappers/include/ref_count.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 using namespace webrtc;
 using namespace videocapturemodule;
 
-VideoCaptureModule* VideoCaptureImpl::Create(const int32_t capture_id,
-                                             const char* deviceUniqueIdUTF8) {
+rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+    const int32_t capture_id,
+    const char* deviceUniqueIdUTF8) {
   return VideoCaptureIos::Create(capture_id, deviceUniqueIdUTF8);
 }
 
@@ -40,18 +42,19 @@ VideoCaptureIos::~VideoCaptureIos() {
   }
 }
 
-VideoCaptureModule* VideoCaptureIos::Create(const int32_t capture_id,
-                                            const char* deviceUniqueIdUTF8) {
+rtc::scoped_refptr<VideoCaptureModule> VideoCaptureIos::Create(
+    const int32_t capture_id,
+    const char* deviceUniqueIdUTF8) {
   if (!deviceUniqueIdUTF8[0]) {
     return NULL;
   }
 
-  RefCountImpl<VideoCaptureIos>* capture_module =
-      new RefCountImpl<VideoCaptureIos>(capture_id);
+  rtc::scoped_refptr<VideoCaptureIos> capture_module(
+      new rtc::RefCountedObject<VideoCaptureIos>(capture_id));
 
   const int32_t name_length = strlen(deviceUniqueIdUTF8);
   if (name_length > kVideoCaptureUniqueNameLength)
-    return NULL;
+    return nullptr;
 
   capture_module->_deviceUniqueId = new char[name_length + 1];
   strncpy(capture_module->_deviceUniqueId, deviceUniqueIdUTF8, name_length + 1);
@@ -61,13 +64,13 @@ VideoCaptureModule* VideoCaptureIos::Create(const int32_t capture_id,
       [[RTCVideoCaptureIosObjC alloc] initWithOwner:capture_module
                                           captureId:capture_module->id_];
   if (!capture_module->capture_device_) {
-    return NULL;
+    return nullptr;
   }
 
   if (![capture_module->capture_device_ setCaptureDeviceByUniqueId:[
               [NSString alloc] initWithCString:deviceUniqueIdUTF8
                                       encoding:NSUTF8StringEncoding]]) {
-    return NULL;
+    return nullptr;
   }
   return capture_module;
 }
