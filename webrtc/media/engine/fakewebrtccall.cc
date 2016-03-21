@@ -202,9 +202,8 @@ bool FakeVideoReceiveStream::IsReceiving() const {
   return receiving_;
 }
 
-void FakeVideoReceiveStream::InjectFrame(const webrtc::VideoFrame& frame,
-                                         int time_to_render_ms) {
-  config_.renderer->RenderFrame(frame, time_to_render_ms);
+void FakeVideoReceiveStream::InjectFrame(const webrtc::VideoFrame& frame) {
+  config_.renderer->OnFrame(frame);
 }
 
 webrtc::VideoReceiveStream::Stats FakeVideoReceiveStream::GetStats() const {

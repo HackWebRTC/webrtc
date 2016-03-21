@@ -2358,9 +2358,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders(
   allocated_decoders->clear();
 }
 
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
-    const webrtc::VideoFrame& frame,
-    int time_to_render_ms) {
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::OnFrame(
+    const webrtc::VideoFrame& frame) {
   rtc::CritScope crit(&sink_lock_);
 
   if (first_frame_timestamp_ < 0)
@@ -2385,10 +2384,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
       frame.video_frame_buffer(),
       frame.render_time_ms() * rtc::kNumNanosecsPerMillisec, frame.rotation());
   sink_->OnFrame(render_frame);
-}
-
-bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsTextureSupported() const {
-  return true;
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::SmoothsRenderedFrames()

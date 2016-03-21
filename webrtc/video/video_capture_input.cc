@@ -47,7 +47,7 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   // TODO(pbos): Remove local rendering, it should be handled by the client code
   // if required.
   if (local_renderer_)
-    local_renderer_->RenderFrame(video_frame, 0);
+    local_renderer_->OnFrame(video_frame);
 
   stats_proxy_->OnIncomingFrame(video_frame.width(), video_frame.height());
 

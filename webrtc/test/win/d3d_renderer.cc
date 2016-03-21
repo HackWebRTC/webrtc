@@ -191,8 +191,7 @@ void D3dRenderer::Resize(size_t width, size_t height) {
   vertex_buffer_->Unlock();
 }
 
-void D3dRenderer::RenderFrame(const webrtc::VideoFrame& frame,
-                              int /*render_delay_ms*/) {
+void D3dRenderer::OnFrame(const webrtc::VideoFrame& frame) {
   if (static_cast<size_t>(frame.width()) != width_ ||
       static_cast<size_t>(frame.height()) != height_) {
     Resize(static_cast<size_t>(frame.width()),

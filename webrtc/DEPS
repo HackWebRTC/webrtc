@@ -44,4 +44,7 @@ specific_include_rules = {
   "video_frame\.h": [
     "+webrtc/common_video",
   ],
+  "video_renderer\.h": [
+    "+webrtc/media/base",
+  ],
 }

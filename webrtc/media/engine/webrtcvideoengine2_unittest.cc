@@ -2068,7 +2068,7 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeCorrectly) {
   video_frame.set_timestamp(kInitialTimestamp);
   // Initial NTP time is not available on the first frame, but should still be
   // able to be estimated.
-  stream->InjectFrame(video_frame, 0);
+  stream->InjectFrame(video_frame);
 
   EXPECT_EQ(1, renderer.num_rendered_frames());
 
@@ -2077,7 +2077,7 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeCorrectly) {
   // here.
   video_frame.set_timestamp(kFrameOffsetMs * 90 - 1);
   video_frame.set_ntp_time_ms(kInitialNtpTimeMs + kFrameOffsetMs);
-  stream->InjectFrame(video_frame, 0);
+  stream->InjectFrame(video_frame);
 
   EXPECT_EQ(2, renderer.num_rendered_frames());
 

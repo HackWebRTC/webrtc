@@ -127,12 +127,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
    public:
     Renderer() : event_(false, false) {}
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int /*time_to_render_ms*/) override {
-      event_.Set();
-    }
-
-    bool IsTextureSupported() const override { return false; }
+    void OnFrame(const VideoFrame& video_frame) override { event_.Set(); }
 
     bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
 
@@ -195,11 +190,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
    public:
     Renderer() : event_(false, false) {}
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int /*time_to_render_ms*/) override {
-      event_.Set();
-    }
-    bool IsTextureSupported() const override { return false; }
+    void OnFrame(const VideoFrame& video_frame) override { event_.Set(); }
 
     bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
 
@@ -272,14 +263,11 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
       (*receive_configs)[0].decoders[0].decoder = decoder_.get();
     }
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int time_to_render_ms) override {
+    void OnFrame(const VideoFrame& video_frame) override {
       const int kRequiredFrames = 500;
       if (++frame_counter_ == kRequiredFrames)
         observation_complete_.Set();
     }
-
-    bool IsTextureSupported() const override { return false; }
 
    private:
     std::unique_ptr<webrtc::VideoEncoder> encoder_;
@@ -328,14 +316,11 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
       (*receive_configs)[0].decoders[0].decoder = decoder_.get();
     }
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int time_to_render_ms) override {
+    void OnFrame(const VideoFrame& video_frame) override {
       const int kRequiredFrames = 500;
       if (++frame_counter_ == kRequiredFrames)
         observation_complete_.Set();
     }
-
-    bool IsTextureSupported() const override { return false; }
 
    private:
     std::unique_ptr<webrtc::VideoEncoder> encoder_;
@@ -521,16 +506,13 @@ TEST_F(EndToEndTest, CanReceiveFec) {
       return SEND_PACKET;
     }
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int time_to_render_ms) override {
+    void OnFrame(const VideoFrame& video_frame) override {
       rtc::CritScope lock(&crit_);
       // Rendering frame with timestamp of packet that was dropped -> FEC
       // protection worked.
       if (protected_timestamps_.count(video_frame.timestamp()) != 0)
         observation_complete_.Set();
     }
-
-    bool IsTextureSupported() const override { return false; }
 
     enum {
       kFirstPacket,
@@ -850,15 +832,12 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
    public:
     Renderer() : event_(false, false) {}
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int /*time_to_render_ms*/) override {
+    void OnFrame(const VideoFrame& video_frame) override {
       EXPECT_EQ(0, *video_frame.buffer(kYPlane))
           << "Rendered frame should have zero luma which is applied by the "
              "pre-render callback.";
       event_.Set();
     }
-
-    bool IsTextureSupported() const override { return false; }
 
     bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
     rtc::Event event_;
@@ -997,8 +976,7 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
       return SEND_PACKET;
     }
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int time_to_render_ms) override {
+    void OnFrame(const VideoFrame& video_frame) override {
       rtc::CritScope lock(&crit_);
       if (received_pli_ &&
           video_frame.timestamp() > highest_dropped_timestamp_) {
@@ -1007,8 +985,6 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
       if (!received_pli_)
         frames_to_drop_ = kPacketsToDrop;
     }
-
-    bool IsTextureSupported() const override { return false; }
 
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
@@ -1323,8 +1299,7 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
           frame_generator_(frame_generator),
           done_(false, false) {}
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int time_to_render_ms) override {
+    void OnFrame(const VideoFrame& video_frame) override {
       EXPECT_EQ(settings_.width, video_frame.width());
       EXPECT_EQ(settings_.height, video_frame.height());
       (*frame_generator_)->Stop();
@@ -1332,8 +1307,6 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
     }
 
     uint32_t Ssrc() { return ssrc_; }
-
-    bool IsTextureSupported() const override { return false; }
 
     bool Wait() { return done_.Wait(kDefaultTimeoutMs); }
 

@@ -88,8 +88,7 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
         first_time_in_sync_(-1),
         receive_stream_(nullptr) {}
 
-  void RenderFrame(const VideoFrame& video_frame,
-                   int time_to_render_ms) override {
+  void OnFrame(const VideoFrame& video_frame) override {
     VideoReceiveStream::Stats stats;
     {
       rtc::CritScope lock(&crit_);
@@ -128,8 +127,6 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
         observation_complete_.Set();
     }
   }
-
-  bool IsTextureSupported() const override { return false; }
 
   void set_receive_stream(VideoReceiveStream* receive_stream) {
     rtc::CritScope lock(&crit_);
@@ -377,8 +374,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
           nullptr, this, test::PacketTransport::kReceiver, net_config_);
     }
 
-    void RenderFrame(const VideoFrame& video_frame,
-                     int time_to_render_ms) override {
+    void OnFrame(const VideoFrame& video_frame) override {
       rtc::CritScope lock(&crit_);
       if (video_frame.ntp_time_ms() <= 0) {
         // Haven't got enough RTCP SR in order to calculate the capture ntp
@@ -416,8 +412,6 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
           "capture_ntp_time", "", "real - estimated", ss.str(), "ms", true);
       EXPECT_TRUE(std::abs(time_offset_ms) < threshold_ms_);
     }
-
-    bool IsTextureSupported() const override { return false; }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) {
       rtc::CritScope lock(&crit_);

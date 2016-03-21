@@ -152,10 +152,9 @@ class FileRenderPassthrough : public VideoRenderer {
   }
 
  private:
-  void RenderFrame(const VideoFrame& video_frame,
-                   int time_to_render_ms) override {
+  void OnFrame(const VideoFrame& video_frame) override {
     if (renderer_ != nullptr)
-      renderer_->RenderFrame(video_frame, time_to_render_ms);
+      renderer_->OnFrame(video_frame);
     if (basename_.empty())
       return;
     if (last_width_ != video_frame.width() ||
@@ -181,8 +180,6 @@ class FileRenderPassthrough : public VideoRenderer {
       return;
     PrintVideoFrame(video_frame, file_);
   }
-
-  bool IsTextureSupported() const override { return false; }
 
   const std::string basename_;
   VideoRenderer* const renderer_;

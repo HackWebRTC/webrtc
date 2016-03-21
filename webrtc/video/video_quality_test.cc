@@ -205,8 +205,7 @@ class VideoAnalyzer : public PacketReceiver,
       encoded_frame_size_.AddSample(frame.length_);
   }
 
-  void RenderFrame(const VideoFrame& video_frame,
-                   int time_to_render_ms) override {
+  void OnFrame(const VideoFrame& video_frame) override {
     int64_t render_time_ms =
         Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
 
@@ -245,8 +244,6 @@ class VideoAnalyzer : public PacketReceiver,
 
     last_rendered_frame_ = video_frame;
   }
-
-  bool IsTextureSupported() const override { return false; }
 
   void Wait() {
     // Frame comparisons can be very expensive. Wait for test to be done, but

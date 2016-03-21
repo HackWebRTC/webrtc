@@ -417,9 +417,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
                                webrtc::RtcpMode rtcp_mode);
     void SetRecvParameters(const ChangedRecvParameters& recv_params);
 
-    void RenderFrame(const webrtc::VideoFrame& frame,
-                     int time_to_render_ms) override;
-    bool IsTextureSupported() const override;
+    void OnFrame(const webrtc::VideoFrame& frame) override;
     bool SmoothsRenderedFrames() const override;
     bool IsDefaultStream() const;
 

@@ -159,7 +159,7 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
 
   bool IsReceiving() const;
 
-  void InjectFrame(const webrtc::VideoFrame& frame, int time_to_render_ms);
+  void InjectFrame(const webrtc::VideoFrame& frame);
 
   void SetStats(const webrtc::VideoReceiveStream::Stats& stats);
 
