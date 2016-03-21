@@ -14,6 +14,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -24,6 +26,7 @@ public class LooperExecutor extends Thread implements Executor {
   // Object used to signal that looper thread has started and Handler instance
   // associated with looper thread has been allocated.
   private final Object looperStartedEvent = new Object();
+  private final List<Runnable> scheduledPeriodicRunnables = new LinkedList<Runnable>();
   private Handler handler = null;
   private boolean running = false;
   private long threadId;
@@ -77,6 +80,41 @@ public class LooperExecutor extends Thread implements Executor {
   // Checks if current thread is a looper thread.
   public boolean checkOnLooperThread() {
     return (Thread.currentThread().getId() == threadId);
+  }
+
+  public synchronized void scheduleAtFixedRate(final Runnable command, final long periodMillis) {
+    if (!running) {
+      Log.w(TAG, "Trying to schedule task for non running executor");
+      return;
+    }
+    Runnable runnable = new Runnable() {
+      @Override
+      public void run() {
+        if (running) {
+          command.run();
+          if (!handler.postDelayed(this, periodMillis)) {
+            Log.e(TAG, "Failed to post a delayed runnable in the chain.");
+          }
+        }
+      }
+    };
+    scheduledPeriodicRunnables.add(runnable);
+    if (!handler.postDelayed(runnable, periodMillis)) {
+      Log.e(TAG, "Failed to post a delayed runnable.");
+    }
+  }
+
+  public synchronized void cancelScheduledTasks() {
+    if (!running) {
+      Log.w(TAG, "Trying to cancel schedule tasks for non running executor");
+      return;
+    }
+
+    // Stop scheduled periodic tasks.
+    for (Runnable r : scheduledPeriodicRunnables) {
+      handler.removeCallbacks(r);
+    }
+    scheduledPeriodicRunnables.clear();
   }
 
   @Override

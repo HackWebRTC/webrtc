@@ -929,6 +929,7 @@ public class PeerConnectionClient {
           + isError);
       return;
     }
+    Log.d(TAG, "changeCaptureFormat: " + width + "x" + height + "@" + framerate);
     videoCapturer.onOutputFormatRequest(width, height, framerate);
   }
 

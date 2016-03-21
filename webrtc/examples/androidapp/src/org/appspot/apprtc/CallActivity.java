@@ -134,8 +134,10 @@ public class CallActivity extends Activity
   private long callStartedTimeMs = 0;
 
   // Controls
-  CallFragment callFragment;
-  HudFragment hudFragment;
+  private CallFragment callFragment;
+  private HudFragment hudFragment;
+  private CpuMonitor cpuMonitor;
+
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -242,6 +244,10 @@ public class CallActivity extends Activity
     roomConnectionParameters = new RoomConnectionParameters(
         roomUri.toString(), roomId, loopback);
 
+    // Create CPU monitor
+    cpuMonitor = new CpuMonitor(this);
+    hudFragment.setCpuMonitor(cpuMonitor);
+
     // Send intent arguments to fragments.
     callFragment.setArguments(intent.getExtras());
     hudFragment.setArguments(intent.getExtras());
@@ -280,6 +286,7 @@ public class CallActivity extends Activity
     if (peerConnectionClient != null) {
       peerConnectionClient.stopVideoSource();
     }
+    cpuMonitor.pause();
   }
 
   @Override
@@ -289,6 +296,7 @@ public class CallActivity extends Activity
     if (peerConnectionClient != null) {
       peerConnectionClient.startVideoSource();
     }
+    cpuMonitor.resume();
   }
 
   @Override
@@ -299,6 +307,7 @@ public class CallActivity extends Activity
     }
     activityRunning = false;
     rootEglBase.release();
+    cpuMonitor.release();
     super.onDestroy();
   }
 
