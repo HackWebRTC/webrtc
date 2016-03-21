@@ -190,11 +190,13 @@ static_library("rtc_base") {
 
   configs += [
     "..:common_config",
+    ":openssl_config",
     ":rtc_base_config",
   ]
 
   public_configs = [
     "..:common_inherited_config",
+    ":openssl_config",
     ":rtc_base_config",
   ]
 
@@ -485,7 +487,6 @@ static_library("rtc_base") {
   }
 
   if (use_openssl) {
-    public_configs += [ ":openssl_config" ]
     if (rtc_build_ssl) {
       deps += [ "//third_party/boringssl" ]
     } else {
