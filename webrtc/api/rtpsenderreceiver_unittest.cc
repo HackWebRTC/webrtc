@@ -19,10 +19,10 @@
 #include "webrtc/api/rtpreceiver.h"
 #include "webrtc/api/rtpsender.h"
 #include "webrtc/api/streamcollection.h"
+#include "webrtc/api/test/fakevideotracksource.h"
 #include "webrtc/api/videotracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/mediachannel.h"
 
 using ::testing::_;
@@ -86,31 +86,15 @@ class MockVideoProvider : public VideoProviderInterface {
                bool(uint32_t ssrc, const RtpParameters&));
 };
 
-class FakeVideoTrackSource : public VideoTrackSource {
- public:
-  static rtc::scoped_refptr<FakeVideoTrackSource> Create(bool remote) {
-    return new rtc::RefCountedObject<FakeVideoTrackSource>(remote);
-  }
-  cricket::VideoCapturer* GetVideoCapturer() { return &fake_capturer_; }
-
- protected:
-  explicit FakeVideoTrackSource(bool remote)
-      : VideoTrackSource(&fake_capturer_, rtc::Thread::Current(), remote) {}
-  ~FakeVideoTrackSource() {}
-
- private:
-  cricket::FakeVideoCapturer fake_capturer_;
-};
-
 class RtpSenderReceiverTest : public testing::Test {
  public:
   virtual void SetUp() {
     stream_ = MediaStream::Create(kStreamLabel1);
   }
 
-  void AddVideoTrack(bool remote) {
+  void AddVideoTrack() {
     rtc::scoped_refptr<VideoTrackSourceInterface> source(
-        FakeVideoTrackSource::Create(remote));
+        FakeVideoTrackSource::Create());
     video_track_ = VideoTrack::Create(kVideoTrackId, source);
     EXPECT_TRUE(stream_->AddTrack(video_track_));
   }
@@ -126,7 +110,7 @@ class RtpSenderReceiverTest : public testing::Test {
   }
 
   void CreateVideoRtpSender() {
-    AddVideoTrack(false);
+    AddVideoTrack();
     EXPECT_CALL(video_provider_,
                 SetCaptureDevice(
                     kVideoSsrc, video_track_->GetSource()->GetVideoCapturer()));
@@ -356,7 +340,7 @@ TEST_F(RtpSenderReceiverTest, AudioSenderEarlyWarmupTrackThenSsrc) {
 // Test that a video sender calls the expected methods on the provider once
 // it has a track and SSRC, when the SSRC is set first.
 TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupSsrcThenTrack) {
-  AddVideoTrack(false);
+  AddVideoTrack();
   rtc::scoped_refptr<VideoRtpSender> sender =
       new VideoRtpSender(&video_provider_);
   sender->SetSsrc(kVideoSsrc);
@@ -374,7 +358,7 @@ TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupSsrcThenTrack) {
 // Test that a video sender calls the expected methods on the provider once
 // it has a track and SSRC, when the SSRC is set last.
 TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupTrackThenSsrc) {
-  AddVideoTrack(false);
+  AddVideoTrack();
   rtc::scoped_refptr<VideoRtpSender> sender =
       new VideoRtpSender(&video_provider_);
   sender->SetTrack(video_track_);
@@ -410,7 +394,7 @@ TEST_F(RtpSenderReceiverTest, AudioSenderSsrcSetToZero) {
 // Test that the sender is disconnected from the provider when its SSRC is
 // set to 0.
 TEST_F(RtpSenderReceiverTest, VideoSenderSsrcSetToZero) {
-  AddVideoTrack(false);
+  AddVideoTrack();
   EXPECT_CALL(video_provider_,
               SetCaptureDevice(kVideoSsrc,
                                video_track_->GetSource()->GetVideoCapturer()));
@@ -446,7 +430,7 @@ TEST_F(RtpSenderReceiverTest, AudioSenderTrackSetToNull) {
 }
 
 TEST_F(RtpSenderReceiverTest, VideoSenderTrackSetToNull) {
-  AddVideoTrack(false);
+  AddVideoTrack();
   EXPECT_CALL(video_provider_,
               SetCaptureDevice(kVideoSsrc,
                                video_track_->GetSource()->GetVideoCapturer()));
@@ -466,7 +450,7 @@ TEST_F(RtpSenderReceiverTest, VideoSenderTrackSetToNull) {
 }
 
 TEST_F(RtpSenderReceiverTest, AudioSenderSsrcChanged) {
-  AddVideoTrack(false);
+  AddVideoTrack();
   rtc::scoped_refptr<AudioTrackInterface> track =
       AudioTrack::Create(kAudioTrackId, nullptr);
   EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
@@ -483,7 +467,7 @@ TEST_F(RtpSenderReceiverTest, AudioSenderSsrcChanged) {
 }
 
 TEST_F(RtpSenderReceiverTest, VideoSenderSsrcChanged) {
-  AddVideoTrack(false);
+  AddVideoTrack();
   EXPECT_CALL(video_provider_,
               SetCaptureDevice(kVideoSsrc,
                                video_track_->GetSource()->GetVideoCapturer()));

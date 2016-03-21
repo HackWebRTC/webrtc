@@ -22,6 +22,7 @@
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/api/peerconnectionfactory.h"
 #include "webrtc/api/test/fakedatachannelprovider.h"
+#include "webrtc/api/test/fakevideotracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/fakesslidentity.h"
@@ -523,7 +524,8 @@ class StatsCollectorTest : public testing::Test {
   // Adds a outgoing video track with a given SSRC into the stats.
   void AddOutgoingVideoTrackStats() {
     stream_ = webrtc::MediaStream::Create("streamlabel");
-    track_= webrtc::VideoTrack::Create(kLocalTrackId, NULL);
+    track_ = webrtc::VideoTrack::Create(kLocalTrackId,
+                                        webrtc::FakeVideoTrackSource::Create());
     stream_->AddTrack(track_);
     EXPECT_CALL(session_, GetLocalTrackIdBySsrc(kSsrcOfTrack, _))
         .WillRepeatedly(DoAll(SetArgPointee<1>(kLocalTrackId), Return(true)));
@@ -532,7 +534,8 @@ class StatsCollectorTest : public testing::Test {
   // Adds a incoming video track with a given SSRC into the stats.
   void AddIncomingVideoTrackStats() {
     stream_ = webrtc::MediaStream::Create("streamlabel");
-    track_= webrtc::VideoTrack::Create(kRemoteTrackId, NULL);
+    track_ = webrtc::VideoTrack::Create(kRemoteTrackId,
+                                        webrtc::FakeVideoTrackSource::Create());
     stream_->AddTrack(track_);
     EXPECT_CALL(session_, GetRemoteTrackIdBySsrc(kSsrcOfTrack, _))
         .WillRepeatedly(DoAll(SetArgPointee<1>(kRemoteTrackId), Return(true)));

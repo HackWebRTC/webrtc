@@ -25,6 +25,7 @@
 #endif
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/api/test/fakedtlsidentitystore.h"
+#include "webrtc/api/test/fakevideotracksource.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
 #include "webrtc/api/test/testsdpstrings.h"
 #include "webrtc/api/videocapturertracksource.h"
@@ -341,7 +342,8 @@ rtc::scoped_refptr<StreamCollection> CreateStreamCollection(
 
     // Add a local video track.
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-        webrtc::VideoTrack::Create(kVideoTracks[i], nullptr));
+        webrtc::VideoTrack::Create(kVideoTracks[i],
+                                   webrtc::FakeVideoTrackSource::Create()));
     stream->AddTrack(video_track);
 
     local_collection->AddStream(stream);
@@ -630,7 +632,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
             audio_track_label, static_cast<AudioSourceInterface*>(NULL)));
     stream->AddTrack(audio_track.get());
     scoped_refptr<VideoTrackInterface> video_track(
-        pc_factory_->CreateVideoTrack(video_track_label, NULL));
+        pc_factory_->CreateVideoTrack(
+            video_track_label,
+            pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
     stream->AddTrack(video_track.get());
     EXPECT_TRUE(pc_->AddStream(stream));
     EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
@@ -899,7 +903,8 @@ class PeerConnectionInterfaceTest : public testing::Test {
   void AddVideoTrack(const std::string& track_id,
                      MediaStreamInterface* stream) {
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-        webrtc::VideoTrack::Create(track_id, nullptr));
+        webrtc::VideoTrack::Create(track_id,
+                                   webrtc::FakeVideoTrackSource::Create()));
     ASSERT_TRUE(stream->AddTrack(video_track));
   }
 
@@ -1010,8 +1015,9 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
   stream_list.push_back(stream.get());
   scoped_refptr<AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  scoped_refptr<VideoTrackInterface> video_track(
-      pc_factory_->CreateVideoTrack("video_track", nullptr));
+  scoped_refptr<VideoTrackInterface> video_track(pc_factory_->CreateVideoTrack(
+      "video_track",
+      pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
   auto audio_sender = pc_->AddTrack(audio_track, stream_list);
   auto video_sender = pc_->AddTrack(video_track, stream_list);
   EXPECT_EQ(kStreamLabel1, audio_sender->stream_id());
@@ -1077,8 +1083,9 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackWithoutStream) {
   // Create a dummy stream, so tracks share a stream label.
   scoped_refptr<AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  scoped_refptr<VideoTrackInterface> video_track(
-      pc_factory_->CreateVideoTrack("video_track", nullptr));
+  scoped_refptr<VideoTrackInterface> video_track(pc_factory_->CreateVideoTrack(
+      "video_track",
+      pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
   auto audio_sender =
       pc_->AddTrack(audio_track, std::vector<MediaStreamInterface*>());
   auto video_sender =
@@ -1237,8 +1244,9 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackAfterAddStream) {
   MediaStreamInterface* stream = pc_->local_streams()->at(0);
 
   // Add video track to the audio-only stream.
-  scoped_refptr<VideoTrackInterface> video_track(
-      pc_factory_->CreateVideoTrack("video_label", nullptr));
+  scoped_refptr<VideoTrackInterface> video_track(pc_factory_->CreateVideoTrack(
+      "video_label",
+      pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
   stream->AddTrack(video_track.get());
 
   scoped_ptr<SessionDescriptionInterface> offer;
@@ -2429,7 +2437,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
 class PeerConnectionMediaConfigTest : public testing::Test {
  protected:
   void SetUp() override {
-    pcf_= new rtc::RefCountedObject<PeerConnectionFactoryForTest>();
+    pcf_ = new rtc::RefCountedObject<PeerConnectionFactoryForTest>();
     pcf_->Initialize();
   }
   const cricket::MediaConfig& TestCreatePeerConnection(
