@@ -10,6 +10,7 @@
 
 #include "webrtc/media/engine/webrtcvideoengine2.h"
 
+#include <stdio.h>
 #include <algorithm>
 #include <set>
 #include <string>
@@ -315,6 +316,44 @@ static int GetMaxDefaultVideoBitrateKbps(int width, int height) {
   }
 }
 
+bool GetVp9LayersFromFieldTrialGroup(int* num_spatial_layers,
+                                     int* num_temporal_layers) {
+  std::string group = webrtc::field_trial::FindFullName("WebRTC-SupportVP9SVC");
+  if (group.empty())
+    return false;
+
+  if (sscanf(group.c_str(), "EnabledByFlag_%dSL%dTL", num_spatial_layers,
+             num_temporal_layers) != 2) {
+    return false;
+  }
+  const int kMaxSpatialLayers = 3;
+  if (*num_spatial_layers > kMaxSpatialLayers || *num_spatial_layers < 1)
+    return false;
+
+  const int kMaxTemporalLayers = 3;
+  if (*num_temporal_layers > kMaxTemporalLayers || *num_temporal_layers < 1)
+    return false;
+
+  return true;
+}
+
+int GetDefaultVp9SpatialLayers() {
+  int num_sl;
+  int num_tl;
+  if (GetVp9LayersFromFieldTrialGroup(&num_sl, &num_tl)) {
+    return num_sl;
+  }
+  return 1;
+}
+
+int GetDefaultVp9TemporalLayers() {
+  int num_sl;
+  int num_tl;
+  if (GetVp9LayersFromFieldTrialGroup(&num_sl, &num_tl)) {
+    return num_tl;
+  }
+  return 1;
+}
 }  // namespace
 
 // Constants defined in webrtc/media/engine/constants.h
@@ -443,6 +482,14 @@ void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
   }
   if (CodecNamesEq(codec.name, kVp9CodecName)) {
     encoder_settings_.vp9 = webrtc::VideoEncoder::GetDefaultVp9Settings();
+    if (is_screencast) {
+      // TODO(asapersson): Set to 2 for now since there is a DCHECK in
+      // VideoSendStream::ReconfigureVideoEncoder.
+      encoder_settings_.vp9.numberOfSpatialLayers = 2;
+    } else {
+      encoder_settings_.vp9.numberOfSpatialLayers =
+          GetDefaultVp9SpatialLayers();
+    }
     // VP9 denoising is disabled by default.
     encoder_settings_.vp9.denoisingOn =
         codec_default_denoising ? false : denoising;
@@ -1907,6 +1954,11 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     encoder_config.streams[0].temporal_layer_thresholds_bps.clear();
     encoder_config.streams[0].temporal_layer_thresholds_bps.push_back(
         config.tl0_bitrate_kbps * 1000);
+  }
+  if (CodecNamesEq(codec.name, kVp9CodecName) && !is_screencast &&
+      encoder_config.streams.size() == 1) {
+    encoder_config.streams[0].temporal_layer_thresholds_bps.resize(
+        GetDefaultVp9TemporalLayers() - 1);
   }
   return encoder_config;
 }

@@ -166,9 +166,17 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
     if (config_.encoder_settings.payload_name == "VP8") {
       vpx_settings_.vp8 = *reinterpret_cast<const webrtc::VideoCodecVP8*>(
                               config.encoder_specific_settings);
+      if (!config.streams.empty()) {
+        vpx_settings_.vp8.numberOfTemporalLayers = static_cast<unsigned char>(
+            config.streams.back().temporal_layer_thresholds_bps.size() + 1);
+      }
     } else if (config_.encoder_settings.payload_name == "VP9") {
       vpx_settings_.vp9 = *reinterpret_cast<const webrtc::VideoCodecVP9*>(
                               config.encoder_specific_settings);
+      if (!config.streams.empty()) {
+        vpx_settings_.vp9.numberOfTemporalLayers = static_cast<unsigned char>(
+            config.streams.back().temporal_layer_thresholds_bps.size() + 1);
+      }
     } else {
       ADD_FAILURE() << "Unsupported encoder payload: "
                     << config_.encoder_settings.payload_name;

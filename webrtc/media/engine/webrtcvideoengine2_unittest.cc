@@ -1824,7 +1824,9 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
 
 class Vp9SettingsTest : public WebRtcVideoChannel2Test {
  public:
-  Vp9SettingsTest() : WebRtcVideoChannel2Test() {
+  Vp9SettingsTest() : Vp9SettingsTest("") {}
+  explicit Vp9SettingsTest(const char* field_trials)
+      : WebRtcVideoChannel2Test(field_trials) {
     encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP9, "VP9");
   }
   virtual ~Vp9SettingsTest() {}
@@ -1897,6 +1899,72 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
   EXPECT_FALSE(vp9_settings.frameDroppingOn);
 
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+}
+
+class Vp9SettingsTestWithFieldTrial : public Vp9SettingsTest {
+ public:
+  Vp9SettingsTestWithFieldTrial(const char* field_trials)
+      : Vp9SettingsTest(field_trials) {}
+
+ protected:
+  void VerifySettings(int num_spatial_layers, int num_temporal_layers) {
+    cricket::VideoSendParameters parameters;
+    parameters.codecs.push_back(kVp9Codec);
+    ASSERT_TRUE(channel_->SetSendParameters(parameters));
+
+    FakeVideoSendStream* stream = SetUpSimulcast(false, false);
+
+    cricket::FakeVideoCapturer capturer;
+    EXPECT_EQ(cricket::CS_RUNNING,
+              capturer.Start(capturer.GetSupportedFormats()->front()));
+    EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+    channel_->SetSend(true);
+
+    EXPECT_TRUE(capturer.CaptureFrame());
+
+    webrtc::VideoCodecVP9 vp9_settings;
+    ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
+    EXPECT_EQ(num_spatial_layers, vp9_settings.numberOfSpatialLayers);
+    EXPECT_EQ(num_temporal_layers, vp9_settings.numberOfTemporalLayers);
+
+    EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+  }
+};
+
+class Vp9SettingsTestWithNoFlag : public Vp9SettingsTestWithFieldTrial {
+ public:
+  Vp9SettingsTestWithNoFlag() : Vp9SettingsTestWithFieldTrial("") {}
+};
+
+TEST_F(Vp9SettingsTestWithNoFlag, VerifySettings) {
+  const int kNumSpatialLayers = 1;
+  const int kNumTemporalLayers = 1;
+  VerifySettings(kNumSpatialLayers, kNumTemporalLayers);
+}
+
+class Vp9SettingsTestWithInvalidFlag : public Vp9SettingsTestWithFieldTrial {
+ public:
+  Vp9SettingsTestWithInvalidFlag()
+      : Vp9SettingsTestWithFieldTrial("WebRTC-SupportVP9SVC/Default/") {}
+};
+
+TEST_F(Vp9SettingsTestWithInvalidFlag, VerifySettings) {
+  const int kNumSpatialLayers = 1;
+  const int kNumTemporalLayers = 1;
+  VerifySettings(kNumSpatialLayers, kNumTemporalLayers);
+}
+
+class Vp9SettingsTestWith2SL3TLFlag : public Vp9SettingsTestWithFieldTrial {
+ public:
+  Vp9SettingsTestWith2SL3TLFlag()
+      : Vp9SettingsTestWithFieldTrial(
+            "WebRTC-SupportVP9SVC/EnabledByFlag_2SL3TL/") {}
+};
+
+TEST_F(Vp9SettingsTestWith2SL3TLFlag, VerifySettings) {
+  const int kNumSpatialLayers = 2;
+  const int kNumTemporalLayers = 3;
+  VerifySettings(kNumSpatialLayers, kNumTemporalLayers);
 }
 
 TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruse) {
