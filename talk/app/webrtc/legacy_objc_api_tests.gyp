@@ -35,7 +35,7 @@
         {
           'target_name': 'libjingle_peerconnection_objc_test',
           'type': 'executable',
-          'includes': [ '../../build/objc_app.gypi' ],
+          'includes': [ '../../../webrtc/build/ios/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
@@ -67,7 +67,7 @@
         {
           'target_name': 'apprtc_signaling_gunit_test',
           'type': 'executable',
-          'includes': [ '../../build/objc_app.gypi' ],
+          'includes': [ '../../../webrtc/build/ios/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',

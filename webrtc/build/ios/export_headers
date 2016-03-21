@@ -41,7 +41,7 @@ def ExportHeaders(include_base_dir, use_legacy_headers):
   include_path = os.path.join(include_base_dir, include_dir_name)
 
   script_path = sys.path[0]
-  webrtc_base_path = os.path.join(script_path, '../..')
+  webrtc_base_path = os.path.join(script_path, '../../..')
 
   header_dirs = HEADER_DIRS
   include_headers = HEADER_INCLUDES
