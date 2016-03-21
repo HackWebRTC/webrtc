@@ -100,6 +100,8 @@ const double kRTCAudioSessionLowComplexityIOBufferDuration = 0.06;
   RTCAudioSession *session = [RTCAudioSession sharedInstance];
   RTCAudioSessionConfiguration *config =
       [[RTCAudioSessionConfiguration alloc] init];
+  config.category = session.category;
+  config.categoryOptions = session.categoryOptions;
   config.mode = session.mode;
   config.sampleRate = session.sampleRate;
   config.ioBufferDuration = session.IOBufferDuration;

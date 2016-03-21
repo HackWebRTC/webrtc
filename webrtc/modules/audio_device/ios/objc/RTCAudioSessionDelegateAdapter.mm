@@ -76,4 +76,8 @@
 - (void)audioSessionShouldUnconfigure:(RTCAudioSession *)session {
 }
 
+- (void)audioSessionDidConfigure:(RTCAudioSession *)session {
+  _observer->OnConfiguredForWebRTC();
+}
+
 @end

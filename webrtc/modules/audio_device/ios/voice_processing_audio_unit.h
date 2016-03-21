@@ -49,6 +49,16 @@ class VoiceProcessingAudioUnit {
   ~VoiceProcessingAudioUnit();
 
   // TODO(tkchin): enum for state and state checking.
+  enum State : int32_t {
+    // Init() should be called.
+    kInitRequired,
+    // Audio unit created but not initialized.
+    kUninitialized,
+    // Initialized but not started. Equivalent to stopped.
+    kInitialized,
+    // Initialized and started.
+    kStarted,
+  };
 
   // Number of bytes per audio sample for 16-bit signed integer representation.
   static const UInt32 kBytesPerSample;
@@ -59,6 +69,8 @@ class VoiceProcessingAudioUnit {
   // and to match the 10ms callback rate for WebRTC as well as possible.
   // Does not intialize the audio unit.
   bool Init();
+
+  VoiceProcessingAudioUnit::State GetState() const;
 
   // Initializes the underlying audio unit with the given sample rate.
   bool Initialize(Float64 sample_rate);
@@ -118,6 +130,7 @@ class VoiceProcessingAudioUnit {
 
   VoiceProcessingAudioUnitObserver* observer_;
   AudioUnit vpio_unit_;
+  VoiceProcessingAudioUnit::State state_;
 };
 }  // namespace webrtc
 

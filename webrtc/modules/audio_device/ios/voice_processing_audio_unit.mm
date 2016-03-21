@@ -56,7 +56,7 @@ static const AudioUnitElement kOutputBus = 0;
 
 VoiceProcessingAudioUnit::VoiceProcessingAudioUnit(
     VoiceProcessingAudioUnitObserver* observer)
-    : observer_(observer), vpio_unit_(nullptr) {
+    : observer_(observer), vpio_unit_(nullptr), state_(kInitRequired) {
   RTC_DCHECK(observer);
 }
 
@@ -67,7 +67,7 @@ VoiceProcessingAudioUnit::~VoiceProcessingAudioUnit() {
 const UInt32 VoiceProcessingAudioUnit::kBytesPerSample = 2;
 
 bool VoiceProcessingAudioUnit::Init() {
-  RTC_DCHECK(!vpio_unit_) << "Already called Init().";
+  RTC_DCHECK_EQ(state_, kInitRequired);
 
   // Create an audio component description to identify the Voice Processing
   // I/O audio unit.
@@ -165,11 +165,16 @@ bool VoiceProcessingAudioUnit::Init() {
     return false;
   }
 
+  state_ = kUninitialized;
   return true;
 }
 
+VoiceProcessingAudioUnit::State VoiceProcessingAudioUnit::GetState() const {
+  return state_;
+}
+
 bool VoiceProcessingAudioUnit::Initialize(Float64 sample_rate) {
-  RTC_DCHECK(vpio_unit_) << "Init() not called.";
+  RTC_DCHECK_GE(state_, kUninitialized);
   RTCLog(@"Initializing audio unit.");
 
   OSStatus result = noErr;
@@ -224,11 +229,12 @@ bool VoiceProcessingAudioUnit::Initialize(Float64 sample_rate) {
     result = AudioUnitInitialize(vpio_unit_);
   }
   RTCLog(@"Voice Processing I/O unit is now initialized.");
+  state_ = kInitialized;
   return true;
 }
 
 bool VoiceProcessingAudioUnit::Start() {
-  RTC_DCHECK(vpio_unit_) << "Init() not called.";
+  RTC_DCHECK_GE(state_, kUninitialized);
   RTCLog(@"Starting audio unit.");
 
   OSStatus result = AudioOutputUnitStart(vpio_unit_);
@@ -236,11 +242,12 @@ bool VoiceProcessingAudioUnit::Start() {
     RTCLogError(@"Failed to start audio unit. Error=%ld", (long)result);
     return false;
   }
+  state_ = kStarted;
   return true;
 }
 
 bool VoiceProcessingAudioUnit::Stop() {
-  RTC_DCHECK(vpio_unit_) << "Init() not called.";
+  RTC_DCHECK_GE(state_, kUninitialized);
   RTCLog(@"Stopping audio unit.");
 
   OSStatus result = AudioOutputUnitStop(vpio_unit_);
@@ -248,11 +255,12 @@ bool VoiceProcessingAudioUnit::Stop() {
     RTCLogError(@"Failed to stop audio unit. Error=%ld", (long)result);
     return false;
   }
+  state_ = kInitialized;
   return true;
 }
 
 bool VoiceProcessingAudioUnit::Uninitialize() {
-  RTC_DCHECK(vpio_unit_) << "Init() not called.";
+  RTC_DCHECK_GE(state_, kUninitialized);
   RTCLog(@"Unintializing audio unit.");
 
   OSStatus result = AudioUnitUninitialize(vpio_unit_);
@@ -347,6 +355,18 @@ AudioStreamBasicDescription VoiceProcessingAudioUnit::GetFormat(
 
 void VoiceProcessingAudioUnit::DisposeAudioUnit() {
   if (vpio_unit_) {
+    switch (state_) {
+      case kStarted:
+        Stop();
+        // Fall through.
+      case kInitialized:
+        Uninitialize();
+        break;
+      case kUninitialized:
+      case kInitRequired:
+        break;
+    }
+
     OSStatus result = AudioComponentInstanceDispose(vpio_unit_);
     if (result != noErr) {
       RTCLogError(@"AudioComponentInstanceDispose failed. Error=%ld.",

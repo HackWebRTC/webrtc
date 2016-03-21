@@ -162,6 +162,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   void OnInterruptionBegin() override;
   void OnInterruptionEnd() override;
   void OnValidRouteChange() override;
+  void OnConfiguredForWebRTC() override;
 
   // VoiceProcessingAudioUnitObserver methods.
   OSStatus OnDeliverRecordedData(AudioUnitRenderActionFlags* flags,
@@ -180,6 +181,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   void HandleInterruptionBegin();
   void HandleInterruptionEnd();
   void HandleValidRouteChange();
+  void HandleConfiguredForWebRTC();
 
   // Uses current |playout_parameters_| and |record_parameters_| to inform the
   // audio device buffer (ADB) about our internal audio parameters.
@@ -282,9 +284,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   // Audio interruption observer instance.
   RTCAudioSessionDelegateAdapter* audio_session_observer_;
-
-  // Contains the audio data format specification for a stream of audio.
-  AudioStreamBasicDescription application_format_;
 };
 
 }  // namespace webrtc

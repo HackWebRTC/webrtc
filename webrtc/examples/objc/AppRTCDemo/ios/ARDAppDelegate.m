@@ -43,12 +43,6 @@
   return YES;
 }
 
-- (void)applicationWillResignActive:(UIApplication *)application {
-  ARDMainViewController *viewController =
-      (ARDMainViewController *)_window.rootViewController;
-  [viewController applicationWillResignActive:application];
-}
-
 - (void)applicationWillTerminate:(UIApplication *)application {
   RTCShutdownInternalTracer();
   RTCCleanupSSL();

@@ -191,8 +191,11 @@ int32_t AudioDeviceIOS::StartPlayout() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(play_is_initialized_);
   RTC_DCHECK(!playing_);
-  fine_audio_buffer_->ResetPlayout();
-  if (!recording_) {
+  if (fine_audio_buffer_) {
+    fine_audio_buffer_->ResetPlayout();
+  }
+  if (!recording_ &&
+      audio_unit_->GetState() == VoiceProcessingAudioUnit::kInitialized) {
     if (!audio_unit_->Start()) {
       RTCLogError(@"StartPlayout failed to start audio unit.");
       return -1;
@@ -222,8 +225,11 @@ int32_t AudioDeviceIOS::StartRecording() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(rec_is_initialized_);
   RTC_DCHECK(!recording_);
-  fine_audio_buffer_->ResetRecord();
-  if (!playing_) {
+  if (fine_audio_buffer_) {
+    fine_audio_buffer_->ResetRecord();
+  }
+  if (!playing_ &&
+      audio_unit_->GetState() == VoiceProcessingAudioUnit::kInitialized) {
     if (!audio_unit_->Start()) {
       RTCLogError(@"StartRecording failed to start audio unit.");
       return -1;
@@ -347,6 +353,18 @@ void AudioDeviceIOS::OnValidRouteChange() {
       rtc::Bind(&webrtc::AudioDeviceIOS::HandleValidRouteChange, this));
 }
 
+void AudioDeviceIOS::OnConfiguredForWebRTC() {
+  RTC_DCHECK(async_invoker_);
+  RTC_DCHECK(thread_);
+  if (thread_->IsCurrent()) {
+    HandleValidRouteChange();
+    return;
+  }
+  async_invoker_->AsyncInvoke<void>(
+      thread_,
+      rtc::Bind(&webrtc::AudioDeviceIOS::HandleConfiguredForWebRTC, this));
+}
+
 OSStatus AudioDeviceIOS::OnDeliverRecordedData(
     AudioUnitRenderActionFlags* flags,
     const AudioTimeStamp* time_stamp,
@@ -431,6 +449,7 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
 
 void AudioDeviceIOS::HandleInterruptionBegin() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   RTCLog(@"Stopping the audio unit due to interruption begin.");
   if (!audio_unit_->Stop()) {
     RTCLogError(@"Failed to stop the audio unit.");
@@ -440,6 +459,7 @@ void AudioDeviceIOS::HandleInterruptionBegin() {
 
 void AudioDeviceIOS::HandleInterruptionEnd() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   RTCLog(@"Starting the audio unit due to interruption end.");
   if (!audio_unit_->Start()) {
     RTCLogError(@"Failed to start the audio unit.");
@@ -466,6 +486,39 @@ void AudioDeviceIOS::HandleValidRouteChange() {
     if (!RestartAudioUnit(session_sample_rate)) {
       RTCLogError(@"Audio restart failed.");
     }
+  }
+}
+
+void AudioDeviceIOS::HandleConfiguredForWebRTC() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
+  // If we're not initialized we don't need to do anything. Audio unit will
+  // be initialized on initialization.
+  if (!rec_is_initialized_ && !play_is_initialized_)
+    return;
+
+  // If we're initialized, we must have an audio unit.
+  RTC_DCHECK(audio_unit_);
+
+  // Use configured audio session's settings to set up audio device buffer.
+  // TODO(tkchin): Use RTCAudioSessionConfiguration to pick up settings and
+  // pass it along.
+  SetupAudioBuffersForActiveAudioSession();
+
+  // Initialize the audio unit. This will affect any existing audio playback.
+  if (!audio_unit_->Initialize(playout_parameters_.sample_rate())) {
+    RTCLogError(@"Failed to initialize audio unit after configuration.");
+    return;
+  }
+
+  // If we haven't started playing or recording there's nothing more to do.
+  if (!playing_ && !recording_)
+    return;
+
+  // We are in a play or record state, start the audio unit.
+  if (!audio_unit_->Start()) {
+    RTCLogError(@"Failed to start audio unit after configuration.");
+    return;
   }
 }
 
@@ -603,32 +656,35 @@ bool AudioDeviceIOS::RestartAudioUnit(float sample_rate) {
 bool AudioDeviceIOS::InitPlayOrRecord() {
   LOGI() << "InitPlayOrRecord";
 
-  // Use the correct audio session configuration for WebRTC.
-  // This will attempt to activate the audio session.
-  RTCAudioSession* session = [RTCAudioSession sharedInstance];
-  [session lockForConfiguration];
-  NSError* error = nil;
-  if (![session configureWebRTCSession:&error]) {
-    RTCLogError(@"Failed to configure WebRTC session: %@",
-                error.localizedDescription);
-    [session unlockForConfiguration];
+  if (!CreateAudioUnit()) {
     return false;
   }
 
-  // Start observing audio session interruptions and route changes.
+  RTCAudioSession* session = [RTCAudioSession sharedInstance];
+  // Subscribe to audio session events.
   [session pushDelegate:audio_session_observer_];
 
-  // Ensure that we got what what we asked for in our active audio session.
-  SetupAudioBuffersForActiveAudioSession();
-
-  // Create, setup and initialize a new Voice-Processing I/O unit.
-  // TODO(tkchin): Delay the initialization when needed.
-  if (!CreateAudioUnit() ||
-      !audio_unit_->Initialize(playout_parameters_.sample_rate())) {
-    [session setActive:NO error:nil];
+  // Lock the session to make configuration changes.
+  [session lockForConfiguration];
+  NSError* error = nil;
+  if (![session beginWebRTCSession:&error]) {
     [session unlockForConfiguration];
+    RTCLogError(@"Failed to begin WebRTC session: %@",
+                error.localizedDescription);
     return false;
   }
+
+  // If we are already configured properly, we can initialize the audio unit.
+  if (session.isConfiguredForWebRTC) {
+    [session unlockForConfiguration];
+    SetupAudioBuffersForActiveAudioSession();
+    // Audio session has been marked ready for WebRTC so we can initialize the
+    // audio unit now.
+    audio_unit_->Initialize(playout_parameters_.sample_rate());
+    return true;
+  }
+
+  // Release the lock.
   [session unlockForConfiguration];
 
   return true;
@@ -639,8 +695,6 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
 
   // Close and delete the voice-processing I/O unit.
   if (audio_unit_) {
-    audio_unit_->Stop();
-    audio_unit_->Uninitialize();
     audio_unit_.reset();
   }
 
@@ -651,7 +705,7 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
   // All I/O should be stopped or paused prior to deactivating the audio
   // session, hence we deactivate as last action.
   [session lockForConfiguration];
-  [session setActive:NO error:nil];
+  [session endWebRTCSession:nil];
   [session unlockForConfiguration];
 }
 

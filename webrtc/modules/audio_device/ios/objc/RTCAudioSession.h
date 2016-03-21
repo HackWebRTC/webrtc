@@ -27,44 +27,66 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 // at which point applications can perform additional processing if required.
 @protocol RTCAudioSessionDelegate <NSObject>
 
-/** Called when AVAudioSession starts an interruption event. */
+@optional
+/** Called on a system notification thread when AVAudioSession starts an
+ *  interruption event.
+ */
 - (void)audioSessionDidBeginInterruption:(RTCAudioSession *)session;
 
-/** Called when AVAudioSession ends an interruption event. */
+/** Called on a system notification thread when AVAudioSession ends an
+ *  interruption event.
+ */
 - (void)audioSessionDidEndInterruption:(RTCAudioSession *)session
                    shouldResumeSession:(BOOL)shouldResumeSession;
 
-/** Called when AVAudioSession changes the route. */
+/** Called on a system notification thread when AVAudioSession changes the
+ *  route.
+ */
 - (void)audioSessionDidChangeRoute:(RTCAudioSession *)session
            reason:(AVAudioSessionRouteChangeReason)reason
     previousRoute:(AVAudioSessionRouteDescription *)previousRoute;
 
-/** Called when AVAudioSession media server terminates. */
+/** Called on a system notification thread when AVAudioSession media server
+ *  terminates.
+ */
 - (void)audioSessionMediaServicesWereLost:(RTCAudioSession *)session;
 
-/** Called when AVAudioSession media server restarts. */
+/** Called on a system notification thread when AVAudioSession media server
+ *  restarts.
+ */
 - (void)audioSessionMediaServicesWereReset:(RTCAudioSession *)session;
 
-/** Called when WebRTC needs to take over audio. Applications should call
- *  -[RTCAudioSession configure] to allow WebRTC to play and record audio.
- *  TODO(tkchin): Implement this behavior in RTCAudioSession.
+// TODO(tkchin): Maybe handle SilenceSecondaryAudioHintNotification.
+
+/** Called on a WebRTC thread when WebRTC needs to take over audio. Applications
+ *  should call -[RTCAudioSession configureWebRTCSession] to allow WebRTC to
+ *  play and record audio. Will only occur if shouldDelayAudioConfiguration is
+ *  set to YES.
  */
 - (void)audioSessionShouldConfigure:(RTCAudioSession *)session;
 
-/** Called when WebRTC no longer requires audio. Applications should restore
- *  their audio state at this point.
- *  TODO(tkchin): Implement this behavior in RTCAudioSession.
+/** Called on a WebRTC thread when WebRTC no longer requires audio. Applications
+ *  should call -[RTCAudioSession unconfigureWebRTCSession] to restore their
+ *  audio session settings. Will only occur if shouldDelayAudioConfiguration is
+ *  set to YES.
  */
 - (void)audioSessionShouldUnconfigure:(RTCAudioSession *)session;
 
-// TODO(tkchin): Maybe handle SilenceSecondaryAudioHintNotification.
+/** Called on a WebRTC thread when WebRTC has configured the audio session for
+ *  WebRTC audio.
+ */
+- (void)audioSessionDidConfigure:(RTCAudioSession *)session;
+
+/** Called on a WebRTC thread when WebRTC has unconfigured the audio session for
+ *  WebRTC audio.
+ */
+- (void)audioSessionDidUnconfigure:(RTCAudioSession *)session;
 
 @end
 
 /** Proxy class for AVAudioSession that adds a locking mechanism similar to
  *  AVCaptureDevice. This is used to that interleaving configurations between
- *  WebRTC and the application layer are avoided. Only setter methods are
- *  currently proxied. Getters can be accessed directly off AVAudioSession.
+ *  WebRTC and the application layer are avoided.
  *
  *  RTCAudioSession also coordinates activation so that the audio session is
  *  activated only once. See |setActive:error:|.
@@ -87,8 +109,8 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 /** If YES, WebRTC will not initialize the audio unit automatically when an
  *  audio track is ready for playout or recording. Instead, applications should
  *  listen to the delegate method |audioSessionShouldConfigure| and configure
- *  the session manually. This should be set before making WebRTC media calls.
- *  TODO(tkchin): Implement behavior. Currently this just stores a BOOL.
+ *  the session manually. This should be set before making WebRTC media calls
+ *  and should not be changed while a call is active.
  */
 @property(nonatomic, assign) BOOL shouldDelayAudioConfiguration;
 
@@ -119,8 +141,9 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 @property(readonly) NSTimeInterval outputLatency;
 @property(readonly) NSTimeInterval IOBufferDuration;
 
-/** Default constructor. Do not call init. */
+/** Default constructor. */
 + (instancetype)sharedInstance;
+- (instancetype)init NS_UNAVAILABLE;
 
 /** Adds a delegate, which is held weakly. */
 - (void)addDelegate:(id<RTCAudioSessionDelegate>)delegate;
@@ -173,6 +196,12 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 
 @interface RTCAudioSession (Configuration)
 
+/** Whether or not |configureWebRTCSession| has been called without a balanced
+ *  call to |unconfigureWebRTCSession|. This is not an indication of whether the
+ *  audio session has the right settings.
+ */
+@property(readonly) BOOL isConfiguredForWebRTC;
+
 /** Applies the configuration to the current session. Attempts to set all
  *  properties even if previous ones fail. Only the last error will be
  *  returned. Also calls setActive with |active|.
@@ -182,11 +211,21 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
                   active:(BOOL)active
                    error:(NSError **)outError;
 
-/** Configure the audio session for WebRTC. On failure, we will attempt to
- *  restore the previously used audio session configuration.
+/** Configure the audio session for WebRTC. This call will fail if the session
+ *  is already configured. On other failures, we will attempt to restore the
+ *  previously used audio session configuration.
  *  |lockForConfiguration| must be called first.
+ *  Successful calls to configureWebRTCSession must be matched by calls to
+ *  |unconfigureWebRTCSession|.
  */
 - (BOOL)configureWebRTCSession:(NSError **)outError;
+
+/** Unconfigures the session for WebRTC. This will attempt to restore the
+ *  audio session to the settings used before |configureWebRTCSession| was
+ *  called.
+ *  |lockForConfiguration| must be called first.
+ */
+- (BOOL)unconfigureWebRTCSession:(NSError **)outError;
 
 @end
 

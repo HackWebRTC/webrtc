@@ -10,6 +10,7 @@
 
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
@@ -27,20 +28,22 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 @implementation RTCAudioSession {
   rtc::CriticalSection _crit;
   AVAudioSession *_session;
-  NSInteger _activationCount;
-  NSInteger _lockRecursionCount;
+  volatile int _activationCount;
+  volatile int _lockRecursionCount;
+  volatile int _webRTCSessionCount;
   BOOL _isActive;
   BOOL _shouldDelayAudioConfiguration;
 }
 
 @synthesize session = _session;
 @synthesize delegates = _delegates;
+@synthesize savedConfiguration = _savedConfiguration;
 
 + (instancetype)sharedInstance {
   static dispatch_once_t onceToken;
   static RTCAudioSession *sharedInstance = nil;
   dispatch_once(&onceToken, ^{
-    sharedInstance = [[RTCAudioSession alloc] init];
+    sharedInstance = [[self alloc] init];
   });
   return sharedInstance;
 }
@@ -106,13 +109,13 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 }
 
 - (BOOL)isLocked {
-  @synchronized(self) {
-    return _lockRecursionCount > 0;
-  }
+  return _lockRecursionCount > 0;
 }
 
 - (void)setShouldDelayAudioConfiguration:(BOOL)shouldDelayAudioConfiguration {
   @synchronized(self) {
+    // No one should be changing this while an audio device is active.
+    RTC_DCHECK(!self.isConfiguredForWebRTC);
     if (_shouldDelayAudioConfiguration == shouldDelayAudioConfiguration) {
       return;
     }
@@ -126,6 +129,7 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   }
 }
 
+// TODO(tkchin): Check for duplicates.
 - (void)addDelegate:(id<RTCAudioSessionDelegate>)delegate {
   if (!delegate) {
     return;
@@ -150,18 +154,14 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 
 - (void)lockForConfiguration {
   _crit.Enter();
-  @synchronized(self) {
-    ++_lockRecursionCount;
-  }
+  rtc::AtomicOps::Increment(&_lockRecursionCount);
 }
 
 - (void)unlockForConfiguration {
   // Don't let threads other than the one that called lockForConfiguration
   // unlock.
   if (_crit.TryEnter()) {
-    @synchronized(self) {
-      --_lockRecursionCount;
-    }
+    rtc::AtomicOps::Decrement(&_lockRecursionCount);
     // One unlock for the tryLock, and another one to actually unlock. If this
     // was called without anyone calling lock, we will hit an assertion.
     _crit.Leave();
@@ -262,7 +262,7 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   if (![self checkLock:outError]) {
     return NO;
   }
-  NSInteger activationCount = self.activationCount;
+  int activationCount = _activationCount;
   if (!active && activationCount == 0) {
     RTCLogWarning(@"Attempting to deactivate without prior activation.");
   }
@@ -304,7 +304,7 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   if (!active) {
     [self decrementActivationCount];
   }
-  RTCLog(@"Number of current activations: %ld", (long)self.activationCount);
+  RTCLog(@"Number of current activations: %d", _activationCount);
   return success;
 }
 
@@ -496,6 +496,22 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   }
 }
 
+- (void)setSavedConfiguration:(RTCAudioSessionConfiguration *)configuration {
+  @synchronized(self) {
+    if (_savedConfiguration == configuration) {
+      return;
+    }
+    _savedConfiguration = configuration;
+  }
+}
+
+- (RTCAudioSessionConfiguration *)savedConfiguration {
+  @synchronized(self) {
+    return _savedConfiguration;
+  }
+}
+
+// TODO(tkchin): check for duplicates.
 - (void)pushDelegate:(id<RTCAudioSessionDelegate>)delegate {
   @synchronized(self) {
     _delegates.insert(_delegates.begin(), delegate);
@@ -512,24 +528,22 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   }
 }
 
-- (NSInteger)activationCount {
-  @synchronized(self) {
-    return _activationCount;
-  }
+- (int)activationCount {
+  return _activationCount;
 }
 
-- (NSInteger)incrementActivationCount {
+- (int)incrementActivationCount {
   RTCLog(@"Incrementing activation count.");
-  @synchronized(self) {
-    return ++_activationCount;
-  }
+  return rtc::AtomicOps::Increment(&_activationCount);
 }
 
 - (NSInteger)decrementActivationCount {
   RTCLog(@"Decrementing activation count.");
-  @synchronized(self) {
-    return --_activationCount;
-  }
+  return rtc::AtomicOps::Decrement(&_activationCount);
+}
+
+- (int)webRTCSessionCount {
+  return _webRTCSessionCount;
 }
 
 - (BOOL)checkLock:(NSError **)outError {
@@ -542,6 +556,99 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
     return NO;
   }
   return YES;
+}
+
+- (BOOL)beginWebRTCSession:(NSError **)outError {
+  if (outError) {
+    *outError = nil;
+  }
+  if (![self checkLock:outError]) {
+    return NO;
+  }
+  NSInteger sessionCount = rtc::AtomicOps::Increment(&_webRTCSessionCount);
+  if (sessionCount > 1) {
+    // Should already be configured.
+    RTC_DCHECK(self.isConfiguredForWebRTC);
+    return YES;
+  }
+
+  // Only perform configuration steps once. Application might have already
+  // configured the session.
+  if (self.isConfiguredForWebRTC) {
+    // Nothing more to do, already configured.
+    return YES;
+  }
+
+  // If application has prevented automatic configuration, return here and wait
+  // for application to call configureWebRTCSession.
+  if (self.shouldDelayAudioConfiguration) {
+    [self notifyShouldConfigure];
+    return YES;
+  }
+
+  // Configure audio session.
+  NSError *error = nil;
+  if (![self configureWebRTCSession:&error]) {
+    RTCLogError(@"Error configuring audio session: %@",
+                error.localizedDescription);
+    if (outError) {
+      *outError = error;
+    }
+    return NO;
+  }
+
+  return YES;
+}
+
+- (BOOL)endWebRTCSession:(NSError **)outError {
+  if (outError) {
+    *outError = nil;
+  }
+  if (![self checkLock:outError]) {
+    return NO;
+  }
+  int sessionCount = rtc::AtomicOps::Decrement(&_webRTCSessionCount);
+  RTC_DCHECK_GE(sessionCount, 0);
+  if (sessionCount != 0) {
+    // Should still be configured.
+    RTC_DCHECK(self.isConfiguredForWebRTC);
+    return YES;
+  }
+
+  // Only unconfigure if application has not done it.
+  if (!self.isConfiguredForWebRTC) {
+    // Nothing more to do, already unconfigured.
+    return YES;
+  }
+
+  // If application has prevented automatic configuration, return here and wait
+  // for application to call unconfigureWebRTCSession.
+  if (self.shouldDelayAudioConfiguration) {
+    [self notifyShouldUnconfigure];
+    return YES;
+  }
+
+  // Unconfigure audio session.
+  NSError *error = nil;
+  if (![self unconfigureWebRTCSession:&error]) {
+    RTCLogError(@"Error unconfiguring audio session: %@",
+                error.localizedDescription);
+    if (outError) {
+      *outError = error;
+    }
+    return NO;
+  }
+
+  return YES;
+}
+
+- (NSError *)configurationErrorWithDescription:(NSString *)description {
+  NSDictionary* userInfo = @{
+    NSLocalizedDescriptionKey: description,
+  };
+  return [[NSError alloc] initWithDomain:kRTCAudioSessionErrorDomain
+                                    code:kRTCAudioSessionErrorConfiguration
+                                userInfo:userInfo];
 }
 
 - (void)updateAudioSessionAfterEvent {
@@ -561,37 +668,87 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 
 - (void)notifyDidBeginInterruption {
   for (auto delegate : self.delegates) {
-    [delegate audioSessionDidBeginInterruption:self];
+    SEL sel = @selector(audioSessionDidBeginInterruption:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionDidBeginInterruption:self];
+    }
   }
 }
 
 - (void)notifyDidEndInterruptionWithShouldResumeSession:
     (BOOL)shouldResumeSession {
   for (auto delegate : self.delegates) {
-    [delegate audioSessionDidEndInterruption:self
-                         shouldResumeSession:shouldResumeSession];
+    SEL sel = @selector(audioSessionDidEndInterruption:shouldResumeSession:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionDidEndInterruption:self
+                           shouldResumeSession:shouldResumeSession];
+    }
   }
-
 }
 
 - (void)notifyDidChangeRouteWithReason:(AVAudioSessionRouteChangeReason)reason
     previousRoute:(AVAudioSessionRouteDescription *)previousRoute {
   for (auto delegate : self.delegates) {
-    [delegate audioSessionDidChangeRoute:self
-                                  reason:reason
-                           previousRoute:previousRoute];
+    SEL sel = @selector(audioSessionDidChangeRoute:reason:previousRoute:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionDidChangeRoute:self
+                                    reason:reason
+                             previousRoute:previousRoute];
+    }
   }
 }
 
 - (void)notifyMediaServicesWereLost {
   for (auto delegate : self.delegates) {
-    [delegate audioSessionMediaServicesWereLost:self];
+    SEL sel = @selector(audioSessionMediaServicesWereLost:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionMediaServicesWereLost:self];
+    }
   }
 }
 
 - (void)notifyMediaServicesWereReset {
   for (auto delegate : self.delegates) {
-    [delegate audioSessionMediaServicesWereReset:self];
+    SEL sel = @selector(audioSessionMediaServicesWereReset:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionMediaServicesWereReset:self];
+    }
+  }
+}
+
+- (void)notifyShouldConfigure {
+  for (auto delegate : self.delegates) {
+    SEL sel = @selector(audioSessionShouldConfigure:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionShouldConfigure:self];
+    }
+  }
+}
+
+- (void)notifyShouldUnconfigure {
+  for (auto delegate : self.delegates) {
+    SEL sel = @selector(audioSessionShouldUnconfigure:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionShouldUnconfigure:self];
+    }
+  }
+}
+
+- (void)notifyDidConfigure {
+  for (auto delegate : self.delegates) {
+    SEL sel = @selector(audioSessionDidConfigure:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionDidConfigure:self];
+    }
+  }
+}
+
+- (void)notifyDidUnconfigure {
+  for (auto delegate : self.delegates) {
+    SEL sel = @selector(audioSessionDidUnconfigure:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSessionDidUnconfigure:self];
+    }
   }
 }
 

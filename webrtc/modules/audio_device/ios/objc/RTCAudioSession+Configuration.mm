@@ -16,9 +16,17 @@
 
 @implementation RTCAudioSession (Configuration)
 
+- (BOOL)isConfiguredForWebRTC {
+  return self.savedConfiguration != nil;
+}
+
 - (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration
                   active:(BOOL)active
                    error:(NSError **)outError {
+  NSParameterAssert(configuration);
+  if (outError) {
+    *outError = nil;
+  }
   if (![self checkLock:outError]) {
     return NO;
   }
@@ -37,6 +45,8 @@
       RTCLogError(@"Failed to set category: %@",
                   categoryError.localizedDescription);
       error = categoryError;
+    } else {
+      RTCLog(@"Set category to: %@", configuration.category);
     }
   }
 
@@ -46,6 +56,8 @@
       RTCLogError(@"Failed to set mode: %@",
                   modeError.localizedDescription);
       error = modeError;
+    } else {
+      RTCLog(@"Set mode to: %@", configuration.mode);
     }
   }
 
@@ -57,6 +69,9 @@
       RTCLogError(@"Failed to set preferred sample rate: %@",
                   sampleRateError.localizedDescription);
       error = sampleRateError;
+    } else {
+      RTCLog(@"Set preferred sample rate to: %.2f",
+             configuration.sampleRate);
     }
   }
 
@@ -69,6 +84,9 @@
       RTCLogError(@"Failed to set preferred IO buffer duration: %@",
                   bufferDurationError.localizedDescription);
       error = bufferDurationError;
+    } else {
+      RTCLog(@"Set preferred IO buffer duration to: %f",
+             configuration.ioBufferDuration);
     }
   }
 
@@ -79,7 +97,9 @@
     error = activeError;
   }
 
-  if (self.isActive) {
+  if (self.isActive &&
+      // TODO(tkchin): Figure out which category/mode numChannels is valid for.
+      [self.mode isEqualToString:AVAudioSessionModeVoiceChat]) {
     // Try to set the preferred number of hardware audio channels. These calls
     // must be done after setting the audio session’s category and mode and
     // activating the session.
@@ -91,6 +111,9 @@
        RTCLogError(@"Failed to set preferred input number of channels: %@",
                    inputChannelsError.localizedDescription);
        error = inputChannelsError;
+      } else {
+        RTCLog(@"Set input number of channels to: %ld",
+               (long)inputNumberOfChannels);
       }
     }
     NSInteger outputNumberOfChannels = configuration.outputNumberOfChannels;
@@ -101,6 +124,9 @@
         RTCLogError(@"Failed to set preferred output number of channels: %@",
                     outputChannelsError.localizedDescription);
         error = outputChannelsError;
+      } else {
+        RTCLog(@"Set output number of channels to: %ld",
+               (long)outputNumberOfChannels);
       }
     }
   }
@@ -113,74 +139,81 @@
 }
 
 - (BOOL)configureWebRTCSession:(NSError **)outError {
+  if (outError) {
+    *outError = nil;
+  }
   if (![self checkLock:outError]) {
     return NO;
   }
   RTCLog(@"Configuring audio session for WebRTC.");
 
+  if (self.isConfiguredForWebRTC) {
+    RTCLogError(@"Already configured.");
+    if (outError) {
+      *outError =
+          [self configurationErrorWithDescription:@"Already configured."];
+    }
+    return NO;
+  }
+
+  // Configure the AVAudioSession and activate it.
   // Provide an error even if there isn't one so we can log it.
-  BOOL hasSucceeded = YES;
   NSError *error = nil;
   RTCAudioSessionConfiguration *currentConfig =
       [RTCAudioSessionConfiguration currentConfiguration];
   RTCAudioSessionConfiguration *webRTCConfig =
       [RTCAudioSessionConfiguration webRTCConfiguration];
+  self.savedConfiguration = currentConfig;
   if (![self setConfiguration:webRTCConfig active:YES error:&error]) {
     RTCLogError(@"Failed to set WebRTC audio configuration: %@",
                 error.localizedDescription);
-    // Attempt to restore previous state.
-    [self setConfiguration:currentConfig active:NO error:nil];
-    hasSucceeded = NO;
-  } else if (![self isConfiguredForWebRTC]) {
-    // Ensure that the active audio session has the correct category and mode.
-    // This should never happen - this means that we succeeded earlier but
-    // somehow the settings didn't apply.
-    RTCLogError(@"Failed to configure audio session.");
-    // Attempt to restore previous state.
-    [self setConfiguration:currentConfig active:NO error:nil];
-    error =
-        [[NSError alloc] initWithDomain:kRTCAudioSessionErrorDomain
-                                   code:kRTCAudioSessionErrorConfiguration
-                               userInfo:nil];
-    hasSucceeded = NO;
+    [self unconfigureWebRTCSession:nil];
+    if (outError) {
+      *outError = error;
+    }
+    return NO;
   }
 
-  if (outError) {
-    *outError = error;
-  }
-
-  return hasSucceeded;
-}
-
-#pragma mark - Private
-
-- (BOOL)isConfiguredForWebRTC {
   // Ensure that the device currently supports audio input.
+  // TODO(tkchin): Figure out if this is really necessary.
   if (!self.inputAvailable) {
     RTCLogError(@"No audio input path is available!");
+    [self unconfigureWebRTCSession:nil];
+    if (outError) {
+      *outError = [self configurationErrorWithDescription:@"No input path."];
+    }
     return NO;
   }
 
-  // Only check a minimal list of requirements for whether we have
-  // what we want.
-  RTCAudioSessionConfiguration *currentConfig =
-      [RTCAudioSessionConfiguration currentConfiguration];
-  RTCAudioSessionConfiguration *webRTCConfig =
-      [RTCAudioSessionConfiguration webRTCConfiguration];
+  // Give delegates a chance to process the event. In particular, the audio
+  // devices listening to this event will initialize their audio units.
+  [self notifyDidConfigure];
 
-  if (![currentConfig.category isEqualToString:webRTCConfig.category]) {
-    RTCLog(@"Current category %@ does not match %@",
-           currentConfig.category,
-           webRTCConfig.category);
+  return YES;
+}
+
+- (BOOL)unconfigureWebRTCSession:(NSError **)outError {
+  if (outError) {
+    *outError = nil;
+  }
+  if (![self checkLock:outError]) {
+    return NO;
+  }
+  RTCLog(@"Unconfiguring audio session for WebRTC.");
+
+  if (!self.isConfiguredForWebRTC) {
+    RTCLogError(@"Already unconfigured.");
+    if (outError) {
+      *outError =
+          [self configurationErrorWithDescription:@"Already unconfigured."];
+    }
     return NO;
   }
 
-  if (![currentConfig.mode isEqualToString:webRTCConfig.mode]) {
-    RTCLog(@"Current mode %@ does not match %@",
-           currentConfig.mode,
-           webRTCConfig.mode);
-    return NO;
-  }
+  [self setConfiguration:self.savedConfiguration active:NO error:outError];
+  self.savedConfiguration = nil;
+
+  [self notifyDidUnconfigure];
 
   return YES;
 }
