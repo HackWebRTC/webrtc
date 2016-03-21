@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** The data channel's |bufferedAmount| changed. */
 - (void)dataChannel:(RTCDataChannel *)dataChannel
-    didChangeBufferedAmount:(NSUInteger)amount;
+    didChangeBufferedAmount:(uint64_t)amount;
 
 @end
 

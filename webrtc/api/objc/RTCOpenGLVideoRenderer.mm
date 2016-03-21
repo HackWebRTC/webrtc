@@ -148,7 +148,7 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   NSOpenGLContext *_context;
 #endif
   BOOL _isInitialized;
-  NSUInteger _currentTextureSet;
+  GLint _currentTextureSet;
   // Handles for OpenGL constructs.
   GLuint _textures[kNumTextures];
   GLuint _program;
@@ -313,10 +313,10 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
       frame.chromaHeight == _lastDrawnFrame.chromaHeight) {
     return YES;
   }
-  GLsizei lumaWidth = frame.width;
-  GLsizei lumaHeight = frame.height;
-  GLsizei chromaWidth = frame.chromaWidth;
-  GLsizei chromaHeight = frame.chromaHeight;
+  GLsizei lumaWidth = static_cast<GLsizei>(frame.width);
+  GLsizei lumaHeight = static_cast<GLsizei>(frame.height);
+  GLsizei chromaWidth = static_cast<GLsizei>(frame.chromaWidth);
+  GLsizei chromaHeight = static_cast<GLsizei>(frame.chromaHeight);
   for (GLint i = 0; i < kNumTextureSets; i++) {
     glActiveTexture(GL_TEXTURE0 + i * 3);
     glTexImage2D(GL_TEXTURE_2D,
@@ -361,11 +361,11 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
 
 - (void)uploadPlane:(const uint8_t *)plane
             sampler:(GLint)sampler
-             offset:(NSUInteger)offset
+             offset:(GLint)offset
               width:(size_t)width
              height:(size_t)height
              stride:(int32_t)stride {
-  glActiveTexture(GL_TEXTURE0 + offset);
+  glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + offset));
   // When setting texture sampler uniforms, the texture index is used not
   // the texture handle.
   glUniform1i(sampler, offset);
@@ -382,8 +382,8 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
       glTexImage2D(GL_TEXTURE_2D,
                    0,
                    RTC_PIXEL_FORMAT,
-                   width,
-                   height,
+                   static_cast<GLsizei>(width),
+                   static_cast<GLsizei>(height),
                    0,
                    RTC_PIXEL_FORMAT,
                    GL_UNSIGNED_BYTE,
@@ -403,8 +403,8 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   glTexImage2D(GL_TEXTURE_2D,
                0,
                RTC_PIXEL_FORMAT,
-               width,
-               height,
+               static_cast<GLsizei>(width),
+               static_cast<GLsizei>(height),
                0,
                RTC_PIXEL_FORMAT,
                GL_UNSIGNED_BYTE,
@@ -412,7 +412,7 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
 }
 
 - (BOOL)updateTextureDataForFrame:(RTCVideoFrame *)frame {
-  NSUInteger textureOffset = _currentTextureSet * 3;
+  GLint textureOffset = _currentTextureSet * 3;
   NSAssert(textureOffset + 3 <= kNumTextures, @"invalid offset");
 
   [self uploadPlane:frame.yPlane

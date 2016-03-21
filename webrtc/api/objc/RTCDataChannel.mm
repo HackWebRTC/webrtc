@@ -34,8 +34,8 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
 
   void OnBufferedAmountChange(uint64_t previousAmount) override {
     id<RTCDataChannelDelegate> delegate = channel_.delegate;
-    if ([delegate
-            respondsToSelector:@selector(channel:didChangeBufferedAmount:)]) {
+    SEL sel = @selector(dataChannel:didChangeBufferedAmount:);
+    if ([delegate respondsToSelector:sel]) {
       [delegate dataChannel:channel_ didChangeBufferedAmount:previousAmount];
     }
   }

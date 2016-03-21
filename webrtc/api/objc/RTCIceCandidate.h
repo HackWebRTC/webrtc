@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  * The index (starting at zero) of the media description this candidate is
  * associated with in the SDP.
  */
-@property(nonatomic, readonly) NSInteger sdpMLineIndex;
+@property(nonatomic, readonly) int sdpMLineIndex;
 
 /** The SDP string for this candidate. */
 @property(nonatomic, readonly) NSString *sdp;
@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Initialize an RTCIceCandidate from SDP.
  */
 - (instancetype)initWithSdp:(NSString *)sdp
-              sdpMLineIndex:(NSInteger)sdpMLineIndex
+              sdpMLineIndex:(int)sdpMLineIndex
                      sdpMid:(nullable NSString *)sdpMid
     NS_DESIGNATED_INITIALIZER;
 
