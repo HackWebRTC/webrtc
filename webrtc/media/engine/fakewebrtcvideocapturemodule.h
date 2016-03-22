@@ -28,6 +28,7 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
         running_(false),
         delay_(0) {
   }
+  ~FakeWebRtcVideoCaptureModule();
   int64_t TimeUntilNextProcess() override { return 0; }
   void Process() override {}
   void RegisterCaptureDataCallback(
@@ -83,11 +84,6 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
       const webrtc::VideoCodec& codec) override {
     return NULL;  // not implemented
   }
-  int32_t AddRef() const override { return 0; }
-  int32_t Release() const override {
-    delete this;
-    return 0;
-  }
 
   void SendFrame(int w, int h) {
     if (!running_) return;
@@ -104,9 +100,6 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
   }
 
  private:
-  // Ref-counted, use Release() instead.
-  ~FakeWebRtcVideoCaptureModule();
-
   FakeWebRtcVcmFactory* factory_;
   int id_;
   webrtc::VideoCaptureDataCallback* callback_;

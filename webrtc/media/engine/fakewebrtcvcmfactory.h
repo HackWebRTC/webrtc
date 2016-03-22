@@ -21,11 +21,13 @@
 // WebRtcVideoCapturer.
 class FakeWebRtcVcmFactory : public cricket::WebRtcVcmFactoryInterface {
  public:
-  virtual webrtc::VideoCaptureModule* Create(int module_id,
-                                             const char* device_id) {
+  virtual rtc::scoped_refptr<webrtc::VideoCaptureModule> Create(
+      int module_id,
+      const char* device_id) {
     if (!device_info.GetDeviceById(device_id)) return NULL;
-    FakeWebRtcVideoCaptureModule* module =
-        new FakeWebRtcVideoCaptureModule(this, module_id);
+    rtc::scoped_refptr<FakeWebRtcVideoCaptureModule> module(
+        new rtc::RefCountedObject<FakeWebRtcVideoCaptureModule>(this,
+                                                                module_id));
     modules.push_back(module);
     return module;
   }
@@ -38,7 +40,7 @@ class FakeWebRtcVcmFactory : public cricket::WebRtcVcmFactoryInterface {
     std::remove(modules.begin(), modules.end(), module);
   }
   FakeWebRtcDeviceInfo device_info;
-  std::vector<FakeWebRtcVideoCaptureModule*> modules;
+  std::vector<rtc::scoped_refptr<FakeWebRtcVideoCaptureModule>> modules;
 };
 
 FakeWebRtcVideoCaptureModule::~FakeWebRtcVideoCaptureModule() {
