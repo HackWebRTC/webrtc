@@ -568,12 +568,12 @@ static float CalculatePower(const float* in, size_t num_samples) {
   return energy / num_samples;
 }
 
-static void UpdateLevel(PowerLevel* level, float energy) {
-  level->sfrsum += energy;
+static void UpdateLevel(PowerLevel* level, float power) {
+  level->sfrsum += power;
   level->sfrcounter++;
 
   if (level->sfrcounter > subCountLen) {
-    level->framelevel = level->sfrsum / (subCountLen * PART_LEN);
+    level->framelevel = level->sfrsum / subCountLen;
     level->sfrsum = 0;
     level->sfrcounter = 0;
     if (level->framelevel > 0) {
@@ -600,11 +600,7 @@ static void UpdateMetrics(AecCore* aec) {
   const float actThresholdClean = 40.0f;
   const float safety = 0.99995f;
 
-  // To make noisePower consistent with the legacy code, a factor of
-  // 2.0f / PART_LEN2 is applied to noisyPower, since the legacy code uses
-  // the energy of a frame as the audio levels, while the new code uses a
-  // a per-sample energy (i.e., power).
-  const float noisyPower = 300000.0f * 2.0f / PART_LEN2;
+  const float noisyPower = 300000.0f;
 
   float actThreshold;
   float echo, suppressedEcho;
