@@ -3269,7 +3269,7 @@ TEST_F(WebRtcVideoChannel2Test,
        CannotSetRtpParametersWithIncorrectNumberOfEncodings) {
   // This test verifies that setting RtpParameters succeeds only if
   // the structure contains exactly one encoding.
-  // TODO(skvlad): Update this test when we strat supporting setting parameters
+  // TODO(skvlad): Update this test when we start supporting setting parameters
   // for each encoding individually.
 
   AddSendStream();
@@ -3282,6 +3282,29 @@ TEST_F(WebRtcVideoChannel2Test,
   // Two or more encodings should result in failure.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
   EXPECT_FALSE(channel_->SetRtpParameters(last_ssrc_, parameters));
+}
+
+// Test that a stream will not be sending if its encoding is made
+// inactive through SetRtpParameters.
+// TODO(deadbeef): Update this test when we start supporting setting parameters
+// for each encoding individually.
+TEST_F(WebRtcVideoChannel2Test, SetRtpParametersEncodingsActive) {
+  FakeVideoSendStream* stream = AddSendStream();
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_TRUE(stream->IsSending());
+
+  // Get current parameters and change "active" to false.
+  webrtc::RtpParameters parameters = channel_->GetRtpParameters(last_ssrc_);
+  ASSERT_EQ(1u, parameters.encodings.size());
+  ASSERT_TRUE(parameters.encodings[0].active);
+  parameters.encodings[0].active = false;
+  EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  EXPECT_FALSE(stream->IsSending());
+
+  // Now change it back to active and verify we resume sending.
+  parameters.encodings[0].active = true;
+  EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  EXPECT_TRUE(stream->IsSending());
 }
 
 void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(

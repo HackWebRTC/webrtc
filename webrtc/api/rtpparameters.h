@@ -18,6 +18,7 @@ namespace webrtc {
 // These structures are defined as part of the RtpSender interface.
 // See http://w3c.github.io/webrtc-pc/#rtcrtpsender-interface for details.
 struct RtpEncodingParameters {
+  bool active = true;
   int max_bitrate_bps = -1;
 };
 

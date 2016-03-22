@@ -248,16 +248,14 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // TODO(pbos): Move logic from SetOptions into this method.
     void SetSendParameters(const ChangedSendParameters& send_params);
     bool SetRtpParameters(const webrtc::RtpParameters& parameters);
+    webrtc::RtpParameters GetRtpParameters() const;
 
     void OnFrame(const cricket::VideoFrame& frame) override;
     bool SetCapturer(VideoCapturer* capturer);
     void MuteStream(bool mute);
     bool DisconnectCapturer();
 
-    void Start();
-    void Stop();
-
-    webrtc::RtpParameters rtp_parameters() const { return rtp_parameters_; }
+    void SetSend(bool send);
 
     // Implements webrtc::LoadObserver.
     void OnLoadUpdate(Load load) override;
@@ -345,6 +343,10 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
     bool ValidateRtpParameters(const webrtc::RtpParameters& parameters);
 
+    // Calls Start or Stop according to whether or not |sending_| is true,
+    // and whether or not the encoding in |rtp_parameters_| is active.
+    void UpdateSendState() EXCLUSIVE_LOCKS_REQUIRED(lock_);
+
     rtc::ThreadChecker thread_checker_;
     rtc::AsyncInvoker invoker_;
     rtc::Thread* worker_thread_;
@@ -372,7 +374,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // TODO(skvlad): Move ssrcs_ and ssrc_groups_ into rtp_parameters_.
     // TODO(skvlad): Combine parameters_ and rtp_parameters_ once we have only
     // one stream per MediaChannel.
-    webrtc::RtpParameters rtp_parameters_;
+    webrtc::RtpParameters rtp_parameters_ GUARDED_BY(lock_);
     bool pending_encoder_reconfiguration_ GUARDED_BY(lock_);
     VideoEncoderSettings encoder_settings_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
@@ -481,9 +483,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
                size_t len,
                const webrtc::PacketOptions& options) override;
   bool SendRtcp(const uint8_t* data, size_t len) override;
-
-  void StartAllSendStreams();
-  void StopAllSendStreams();
 
   static std::vector<VideoCodecSettings> MapCodecs(
       const std::vector<VideoCodec>& codecs);

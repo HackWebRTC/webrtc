@@ -877,7 +877,7 @@ webrtc::RtpParameters WebRtcVideoChannel2::GetRtpParameters(
     return webrtc::RtpParameters();
   }
 
-  return it->second->rtp_parameters();
+  return it->second->GetRtpParameters();
 }
 
 bool WebRtcVideoChannel2::SetRtpParameters(
@@ -990,10 +990,11 @@ bool WebRtcVideoChannel2::SetSend(bool send) {
     LOG(LS_ERROR) << "SetSend(true) called before setting codec.";
     return false;
   }
-  if (send) {
-    StartAllSendStreams();
-  } else {
-    StopAllSendStreams();
+  {
+    rtc::CritScope stream_lock(&stream_crit_);
+    for (const auto& kv : send_streams_) {
+      kv.second->SetSend(send);
+    }
   }
   sending_ = send;
   return true;
@@ -1076,7 +1077,7 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
     default_send_ssrc_ = ssrc;
   }
   if (sending_) {
-    stream->Start();
+    stream->SetSend(true);
   }
 
   return true;
@@ -1484,24 +1485,6 @@ bool WebRtcVideoChannel2::SendRtcp(const uint8_t* data, size_t len) {
   return MediaChannel::SendRtcp(&packet, rtc::PacketOptions());
 }
 
-void WebRtcVideoChannel2::StartAllSendStreams() {
-  rtc::CritScope stream_lock(&stream_crit_);
-  for (std::map<uint32_t, WebRtcVideoSendStream*>::iterator it =
-           send_streams_.begin();
-       it != send_streams_.end(); ++it) {
-    it->second->Start();
-  }
-}
-
-void WebRtcVideoChannel2::StopAllSendStreams() {
-  rtc::CritScope stream_lock(&stream_crit_);
-  for (std::map<uint32_t, WebRtcVideoSendStream*>::iterator it =
-           send_streams_.begin();
-       it != send_streams_.end(); ++it) {
-    it->second->Stop();
-  }
-}
-
 WebRtcVideoChannel2::WebRtcVideoSendStream::VideoSendStreamParameters::
     VideoSendStreamParameters(
         const webrtc::VideoSendStream::Config& config,
@@ -1884,7 +1867,15 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpParameters(
     pending_encoder_reconfiguration_ = true;
   }
   rtp_parameters_ = new_parameters;
+  // Encoding may have been activated/deactivated.
+  UpdateSendState();
   return true;
+}
+
+webrtc::RtpParameters
+WebRtcVideoChannel2::WebRtcVideoSendStream::GetRtpParameters() const {
+  rtc::CritScope cs(&lock_);
+  return rtp_parameters_;
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::ValidateRtpParameters(
@@ -1895,6 +1886,19 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::ValidateRtpParameters(
     return false;
   }
   return true;
+}
+
+void WebRtcVideoChannel2::WebRtcVideoSendStream::UpdateSendState() {
+  // TODO(deadbeef): Need to handle more than one encoding in the future.
+  RTC_DCHECK(rtp_parameters_.encodings.size() == 1u);
+  if (sending_ && rtp_parameters_.encodings[0].active) {
+    RTC_DCHECK(stream_ != nullptr);
+    stream_->Start();
+  } else {
+    if (stream_ != nullptr) {
+      stream_->Stop();
+    }
+  }
 }
 
 webrtc::VideoEncoderConfig
@@ -1996,19 +2000,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
   parameters_.encoder_config = encoder_config;
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::Start() {
+void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSend(bool send) {
   rtc::CritScope cs(&lock_);
-  RTC_DCHECK(stream_ != NULL);
-  stream_->Start();
-  sending_ = true;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoSendStream::Stop() {
-  rtc::CritScope cs(&lock_);
-  if (stream_ != NULL) {
-    stream_->Stop();
-  }
-  sending_ = false;
+  sending_ = send;
+  UpdateSendState();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
