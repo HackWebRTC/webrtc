@@ -502,10 +502,9 @@ static BOOL const kARDAppClientEnableTracing = NO;
   RTCMediaConstraints *constraints = [self defaultPeerConnectionConstraints];
   RTCConfiguration *config = [[RTCConfiguration alloc] init];
   config.iceServers = _iceServers;
-  _peerConnection = [[RTCPeerConnection alloc] initWithFactory:_factory
-                                                 configuration:config
-                                                   constraints:constraints
-                                                      delegate:self];
+  _peerConnection = [_factory peerConnectionWithConfiguration:config
+                                                  constraints:constraints
+                                                     delegate:self];
   // Create AV media stream and add it to the peer connection.
   RTCMediaStream *localStream = [self createLocalMediaStream];
   [_peerConnection addStream:localStream];
@@ -608,16 +607,14 @@ static BOOL const kARDAppClientEnableTracing = NO;
 }
 
 - (RTCMediaStream *)createLocalMediaStream {
-  RTCMediaStream *localStream =
-      [[RTCMediaStream alloc] initWithFactory:_factory streamId:@"ARDAMS"];
+  RTCMediaStream *localStream = [_factory mediaStreamWithStreamId:@"ARDAMS"];
   RTCVideoTrack *localVideoTrack = [self createLocalVideoTrack];
   if (localVideoTrack) {
     [localStream addVideoTrack:localVideoTrack];
     [_delegate appClient:self didReceiveLocalVideoTrack:localVideoTrack];
   }
   RTCAudioTrack *localAudioTrack =
-        [[RTCAudioTrack alloc] initWithFactory:_factory
-                                       trackId:@"ARDAMSa0"];
+      [_factory audioTrackWithTrackId:@"ARDAMSa0"];
   [localStream addAudioTrack:localAudioTrack];
   return localStream;
 }
@@ -634,12 +631,10 @@ static BOOL const kARDAppClientEnableTracing = NO;
     RTCMediaConstraints *mediaConstraints =
         [self defaultMediaStreamConstraints];
     RTCAVFoundationVideoSource *source =
-        [[RTCAVFoundationVideoSource alloc] initWithFactory:_factory
-                                                constraints:mediaConstraints];
+        [_factory avFoundationVideoSourceWithConstraints:mediaConstraints];
     localVideoTrack =
-        [[RTCVideoTrack alloc] initWithFactory:_factory
-                                        source:source
-                                       trackId:@"ARDAMSv0"];
+        [_factory videoTrackWithSource:source
+                               trackId:@"ARDAMSv0"];
   }
 #endif
   return localVideoTrack;

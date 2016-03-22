@@ -10,7 +10,16 @@
 
 #import "RTCPeerConnectionFactory.h"
 
+#if defined(WEBRTC_IOS)
+#import "webrtc/api/objc/RTCAVFoundationVideoSource+Private.h"
+#endif
+#import "webrtc/api/objc/RTCAudioTrack+Private.h"
+#import "webrtc/api/objc/RTCMediaStream+Private.h"
+#import "webrtc/api/objc/RTCPeerConnection+Private.h"
 #import "webrtc/api/objc/RTCPeerConnectionFactory+Private.h"
+#import "webrtc/api/objc/RTCVideoSource+Private.h"
+#import "webrtc/api/objc/RTCVideoTrack+Private.h"
+#import "webrtc/base/objc/NSString+StdString.h"
 
 @implementation RTCPeerConnectionFactory {
   rtc::scoped_ptr<rtc::Thread> _signalingThread;
@@ -33,6 +42,43 @@
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
   }
   return self;
+}
+
+#if defined(WEBRTC_IOS)
+- (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
+    (nullable RTCMediaConstraints *)constraints {
+  return [[RTCAVFoundationVideoSource alloc] initWithFactory:self
+                                                 constraints:constraints];
+}
+#endif
+
+- (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId {
+  return [[RTCAudioTrack alloc] initWithFactory:self
+                                        trackId:trackId];
+}
+
+- (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source
+                                trackId:(NSString *)trackId {
+  return [[RTCVideoTrack alloc] initWithFactory:self
+                                         source:source
+                                        trackId:trackId];
+}
+
+- (RTCMediaStream *)mediaStreamWithStreamId:(NSString *)streamId {
+  return [[RTCMediaStream alloc] initWithFactory:self
+                                        streamId:streamId];
+}
+
+- (RTCPeerConnection *)peerConnectionWithConfiguration:
+    (RTCConfiguration *)configuration
+                                           constraints:
+    (RTCMediaConstraints *)constraints
+                                              delegate:
+    (nullable id<RTCPeerConnectionDelegate>)delegate {
+  return [[RTCPeerConnection alloc] initWithFactory:self
+                                      configuration:configuration
+                                        constraints:constraints
+                                           delegate:delegate];
 }
 
 @end

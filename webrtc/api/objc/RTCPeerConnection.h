@@ -117,19 +117,6 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
 
 - (instancetype)init NS_UNAVAILABLE;
 
-/** Initialize an RTCPeerConnection with a configuration, constraints, and
- *  delegate.
- */
-- (instancetype)initWithFactory:
-    (RTCPeerConnectionFactory *)factory
-                  configuration:
-    (RTCConfiguration *)configuration
-                    constraints:
-    (RTCMediaConstraints *)constraints
-                       delegate:
-    (nullable id<RTCPeerConnectionDelegate>)delegate
-    NS_DESIGNATED_INITIALIZER;
-
 /** Sets the PeerConnection's global configuration to |configuration|.
  *  Any changes to STUN/TURN servers or ICE candidate policy will affect the
  *  next gathering phase, and cause the next call to createOffer to generate

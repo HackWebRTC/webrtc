@@ -18,6 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property(nonatomic, readonly) webrtc::AVFoundationVideoCapturer *capturer;
 
+/** Initialize an RTCAVFoundationVideoSource with constraints. */
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+                    constraints:(nullable RTCMediaConstraints *)constraints;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -29,10 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-/** Initialize an RTCMediaStream with an id. */
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
-                       streamId:(NSString *)streamId;
-
 /** Adds the given audio track to this media stream. */
 - (void)addAudioTrack:(RTCAudioTrack *)audioTrack;
 

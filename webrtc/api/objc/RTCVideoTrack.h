@@ -23,11 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-/** Initialize an RTCVideoTrack with its source and an id. */
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
-                         source:(RTCVideoSource *)source
-                        trackId:(NSString *)trackId;
-
 /** Register a renderer that will render all frames received on this track. */
 - (void)addRenderer:(id<RTCVideoRenderer>)renderer;
 
