@@ -14,7 +14,6 @@
 #include <functional>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/rate_statistics.h"
 
 namespace webrtc {
