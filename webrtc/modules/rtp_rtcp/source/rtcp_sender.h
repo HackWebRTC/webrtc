@@ -12,13 +12,14 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_SENDER_H_
 
 #include <map>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/random.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -27,7 +28,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
@@ -162,38 +162,38 @@ class RTCPSender {
                       StreamStatistician* statistician)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildSR(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildSR(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildRR(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildRR(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildSDES(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildSDES(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildPLI(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildPLI(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildREMB(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildREMB(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildTMMBR(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildTMMBR(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildTMMBN(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildTMMBN(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildAPP(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildAPP(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildVoIPMetric(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildVoIPMetric(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildBYE(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildBYE(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildFIR(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildFIR(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildSLI(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildSLI(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildRPSI(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildRPSI(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildNACK(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildNACK(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildReceiverReferenceTime(
+  std::unique_ptr<rtcp::RtcpPacket> BuildReceiverReferenceTime(
       const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<rtcp::RtcpPacket> BuildDlrr(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildDlrr(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
  private:
@@ -205,7 +205,7 @@ class RTCPSender {
   RtcEventLog* const event_log_;
   Transport* const transport_;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> critical_section_rtcp_sender_;
+  rtc::CriticalSection critical_section_rtcp_sender_;
   bool using_nack_ GUARDED_BY(critical_section_rtcp_sender_);
   bool sending_ GUARDED_BY(critical_section_rtcp_sender_);
   bool remb_enabled_ GUARDED_BY(critical_section_rtcp_sender_);
@@ -244,7 +244,7 @@ class RTCPSender {
   // APP
   uint8_t app_sub_type_ GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t app_name_ GUARDED_BY(critical_section_rtcp_sender_);
-  rtc::scoped_ptr<uint8_t[]> app_data_
+  std::unique_ptr<uint8_t[]> app_data_
       GUARDED_BY(critical_section_rtcp_sender_);
   uint16_t app_length_ GUARDED_BY(critical_section_rtcp_sender_);
 
@@ -282,7 +282,7 @@ class RTCPSender {
 
   std::set<ReportFlag> report_flags_ GUARDED_BY(critical_section_rtcp_sender_);
 
-  typedef rtc::scoped_ptr<rtcp::RtcpPacket> (RTCPSender::*BuilderFunc)(
+  typedef std::unique_ptr<rtcp::RtcpPacket> (RTCPSender::*BuilderFunc)(
       const RtcpContext&);
   std::map<RTCPPacketType, BuilderFunc> builders_;
 
