@@ -43,7 +43,6 @@ static const int kPayloadTypeVP9 = 124;
 
 class VideoAnalyzer : public PacketReceiver,
                       public Transport,
-                      public I420FrameCallback,
                       public VideoRenderer,
                       public VideoCaptureInput,
                       public EncodedFrameObserver {
@@ -69,8 +68,6 @@ class VideoAnalyzer : public PacketReceiver,
         frames_recorded_(0),
         frames_processed_(0),
         dropped_frames_(0),
-        dropped_frames_before_first_encode_(0),
-        dropped_frames_before_rendering_(0),
         last_render_time_(0),
         rtp_timestamp_delta_(0),
         avg_psnr_threshold_(avg_psnr_threshold),
@@ -146,24 +143,16 @@ class VideoAnalyzer : public PacketReceiver,
   void IncomingCapturedFrame(const VideoFrame& video_frame) override {
     VideoFrame copy = video_frame;
     copy.set_timestamp(copy.ntp_time_ms() * 90);
+
     {
       rtc::CritScope lock(&crit_);
+      if (first_send_frame_.IsZeroSize() && rtp_timestamp_delta_ == 0)
+        first_send_frame_ = copy;
+
       frames_.push_back(copy);
     }
 
     input_->IncomingCapturedFrame(video_frame);
-  }
-
-  void FrameCallback(VideoFrame* video_frame) {
-    rtc::CritScope lock(&crit_);
-    if (first_send_frame_.IsZeroSize() && rtp_timestamp_delta_ == 0) {
-      while (frames_.front().timestamp() != video_frame->timestamp()) {
-        ++dropped_frames_before_first_encode_;
-        frames_.pop_front();
-        RTC_CHECK(!frames_.empty());
-      }
-      first_send_frame_ = *video_frame;
-    }
   }
 
   bool SendRtp(const uint8_t* packet,
@@ -179,7 +168,7 @@ class VideoAnalyzer : public PacketReceiver,
     {
       rtc::CritScope lock(&crit_);
 
-      if (!first_send_frame_.IsZeroSize()) {
+      if (rtp_timestamp_delta_ == 0) {
         rtp_timestamp_delta_ = header.timestamp - first_send_frame_.timestamp();
         first_send_frame_.Reset();
       }
@@ -214,18 +203,9 @@ class VideoAnalyzer : public PacketReceiver,
         wrap_handler_.Unwrap(video_frame.timestamp() - rtp_timestamp_delta_);
 
     while (wrap_handler_.Unwrap(frames_.front().timestamp()) < send_timestamp) {
-      if (last_rendered_frame_.IsZeroSize()) {
-        // No previous frame rendered, this one was dropped after sending but
-        // before rendering.
-        ++dropped_frames_before_rendering_;
-        frames_.pop_front();
-        RTC_CHECK(!frames_.empty());
-        continue;
-      }
       AddFrameComparison(frames_.front(), last_rendered_frame_, true,
                          render_time_ms);
       frames_.pop_front();
-      RTC_DCHECK(!frames_.empty());
     }
 
     VideoFrame reference_frame = frames_.front();
@@ -375,7 +355,6 @@ class VideoAnalyzer : public PacketReceiver,
                           bool dropped,
                           int64_t render_time_ms)
       EXCLUSIVE_LOCKS_REQUIRED(crit_) {
-    RTC_DCHECK(!render.IsZeroSize());
     int64_t reference_timestamp = wrap_handler_.Unwrap(reference.timestamp());
     int64_t send_time_ms = send_times_[reference_timestamp];
     send_times_.erase(reference_timestamp);
@@ -508,6 +487,8 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("psnr", psnr_, " dB");
     PrintResult("ssim", ssim_, " score");
     PrintResult("sender_time", sender_time_, " ms");
+    printf("RESULT dropped_frames: %s = %d frames\n", test_label_.c_str(),
+           dropped_frames_);
     PrintResult("receiver_time", receiver_time_, " ms");
     PrintResult("total_delay_incl_network", end_to_end_, " ms");
     PrintResult("time_between_rendered_frames", rendered_delta_, " ms");
@@ -516,13 +497,6 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("encode_time", encode_time_ms, " ms");
     PrintResult("encode_usage_percent", encode_usage_percent, " percent");
     PrintResult("media_bitrate", media_bitrate_bps, " bps");
-
-    printf("RESULT dropped_frames: %s = %d frames\n", test_label_.c_str(),
-           dropped_frames_);
-    printf("RESULT dropped_frames_before_first_encode: %s = %d frames\n",
-           test_label_.c_str(), dropped_frames_before_first_encode_);
-    printf("RESULT dropped_frames_before_rendering: %s = %d frames\n",
-           test_label_.c_str(), dropped_frames_before_rendering_);
 
     EXPECT_GT(psnr_.Mean(), avg_psnr_threshold_);
     EXPECT_GT(ssim_.Mean(), avg_ssim_threshold_);
@@ -638,8 +612,6 @@ class VideoAnalyzer : public PacketReceiver,
   int frames_recorded_;
   int frames_processed_;
   int dropped_frames_;
-  int dropped_frames_before_first_encode_;
-  int dropped_frames_before_rendering_;
   int64_t last_render_time_;
   uint32_t rtp_timestamp_delta_;
 
@@ -1033,7 +1005,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
   SetupCommon(&analyzer, &recv_transport);
   video_receive_configs_[params_.ss.selected_stream].renderer = &analyzer;
-  video_send_config_.pre_encode_callback = &analyzer;
   for (auto& config : video_receive_configs_)
     config.pre_decode_callback = &analyzer;
   RTC_DCHECK(!video_send_config_.post_encode_callback);

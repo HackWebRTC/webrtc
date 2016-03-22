@@ -347,7 +347,6 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
 
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
-  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(1));
   ASSERT_EQ(1u, encoder_factory.encoders().size());
   EXPECT_TRUE(channel->SetSend(true));
 
@@ -356,13 +355,11 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
   EXPECT_TRUE(capturer.CaptureFrame());
-  // Sending one frame will have reallocated the encoder since input size
-  // changes from a small default to the actual frame width/height. Wait for
-  // that to happen then for the frame to be sent.
-  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(2));
   EXPECT_TRUE_WAIT(encoder_factory.encoders()[0]->GetNumEncodedFrames() > 0,
                    kTimeout);
 
+  // Sending one frame will have reallocated the encoder since input size
+  // changes from a small default to the actual frame width/height.
   int num_created_encoders = encoder_factory.GetNumCreatedEncoders();
   EXPECT_EQ(num_created_encoders, 2);
 
@@ -593,13 +590,12 @@ TEST_F(WebRtcVideoEngine2Test, UsesSimulcastAdapterForVp8Factories) {
             capturer.Start(capturer.GetSupportedFormats()->front()));
   EXPECT_TRUE(capturer.CaptureFrame());
 
-  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(2));
+  EXPECT_GT(encoder_factory.encoders().size(), 1u);
 
   // Verify that encoders are configured for simulcast through adapter
   // (increasing resolution and only configured to send one stream each).
   int prev_width = -1;
   for (size_t i = 0; i < encoder_factory.encoders().size(); ++i) {
-    ASSERT_TRUE(encoder_factory.encoders()[i]->WaitForInitEncode());
     webrtc::VideoCodec codec_settings =
         encoder_factory.encoders()[i]->GetCodecSettings();
     EXPECT_EQ(0, codec_settings.numberOfSimulcastStreams);
@@ -675,8 +671,7 @@ TEST_F(WebRtcVideoEngine2Test,
             capturer.Start(capturer.GetSupportedFormats()->front()));
   EXPECT_TRUE(capturer.CaptureFrame());
 
-  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(2));
-  ASSERT_TRUE(encoder_factory.encoders()[0]->WaitForInitEncode());
+  ASSERT_GT(encoder_factory.encoders().size(), 1u);
   EXPECT_EQ(webrtc::kVideoCodecVP8,
             encoder_factory.encoders()[0]->GetCodecSettings().codecType);
 
@@ -700,7 +695,6 @@ TEST_F(WebRtcVideoEngine2Test,
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
   ASSERT_EQ(1u, encoder_factory.encoders().size());
-  ASSERT_TRUE(encoder_factory.encoders()[0]->WaitForInitEncode());
   EXPECT_EQ(webrtc::kVideoCodecH264,
             encoder_factory.encoders()[0]->GetCodecSettings().codecType);
 
@@ -732,7 +726,6 @@ TEST_F(WebRtcVideoEngine2Test, SimulcastDisabledForH264) {
 
   ASSERT_EQ(1u, encoder_factory.encoders().size());
   FakeWebRtcVideoEncoder* encoder = encoder_factory.encoders()[0];
-  ASSERT_TRUE(encoder_factory.encoders()[0]->WaitForInitEncode());
   EXPECT_EQ(webrtc::kVideoCodecH264, encoder->GetCodecSettings().codecType);
   EXPECT_EQ(1u, encoder->GetCodecSettings().numberOfSimulcastStreams);
   EXPECT_TRUE(channel->SetCapturer(ssrcs[0], nullptr));
