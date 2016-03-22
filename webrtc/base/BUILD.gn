@@ -521,6 +521,8 @@ static_library("rtc_base") {
     all_dependent_configs = [ ":ios_config" ]
 
     sources += [
+      "maccocoathreadhelper.h",
+      "maccocoathreadhelper.mm",
       "macconversion.cc",
       "macconversion.h",
     ]
