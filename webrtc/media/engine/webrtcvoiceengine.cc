@@ -2419,6 +2419,14 @@ bool WebRtcVoiceMediaChannel::SetSendBitrateInternal(int bps) {
   }
 }
 
+void WebRtcVoiceMediaChannel::OnReadyToSend(bool ready) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  LOG(LS_VERBOSE) << "OnReadyToSend: " << (ready ? "Ready." : "Not ready.");
+  call_->SignalChannelNetworkState(
+      webrtc::MediaType::AUDIO,
+      ready ? webrtc::kNetworkUp : webrtc::kNetworkDown);
+}
+
 bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::GetStats");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());

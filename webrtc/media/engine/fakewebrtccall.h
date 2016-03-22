@@ -200,7 +200,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   const FakeAudioReceiveStream* GetAudioReceiveStream(uint32_t ssrc);
 
   rtc::SentPacket last_sent_packet() const { return last_sent_packet_; }
-  webrtc::NetworkState GetNetworkState() const;
+  webrtc::NetworkState GetNetworkState(webrtc::MediaType media) const;
   int GetNumCreatedSendStreams() const;
   int GetNumCreatedReceiveStreams() const;
   void SetStats(const webrtc::Call::Stats& stats);
@@ -235,11 +235,13 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
 
   void SetBitrateConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
-  void SignalNetworkState(webrtc::NetworkState state) override;
+  void SignalChannelNetworkState(webrtc::MediaType media,
+                                 webrtc::NetworkState state) override;
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
   webrtc::Call::Config config_;
-  webrtc::NetworkState network_state_;
+  webrtc::NetworkState audio_network_state_;
+  webrtc::NetworkState video_network_state_;
   rtc::SentPacket last_sent_packet_;
   webrtc::Call::Stats stats_;
   std::vector<FakeVideoSendStream*> video_send_streams_;

@@ -76,6 +76,35 @@ class EndToEndTest : public test::CallTest {
     }
   };
 
+  class RequiredTransport : public Transport {
+   public:
+    RequiredTransport(bool rtp_required, bool rtcp_required)
+        : need_rtp_(rtp_required), need_rtcp_(rtcp_required) {}
+    ~RequiredTransport() {
+      if (need_rtp_) {
+        ADD_FAILURE() << "Expected RTP packet not sent.";
+      }
+      if (need_rtcp_) {
+        ADD_FAILURE() << "Expected RTCP packet not sent.";
+      }
+    }
+
+   private:
+    bool SendRtp(const uint8_t* packet,
+                 size_t length,
+                 const PacketOptions& options) override {
+      need_rtp_ = false;
+      return true;
+    }
+
+    bool SendRtcp(const uint8_t* packet, size_t length) override {
+      need_rtcp_ = false;
+      return true;
+    }
+    bool need_rtp_;
+    bool need_rtcp_;
+  };
+
   void DecodesRetransmittedFrame(bool enable_rtx, bool enable_red);
   void ReceivesPliAndRecovers(int rtp_history_ms);
   void RespectsRtcpMode(RtcpMode rtcp_mode);
@@ -83,6 +112,13 @@ class EndToEndTest : public test::CallTest {
   void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
   void TestRtpStatePreservation(bool use_rtx);
   void VerifyHistogramStats(bool use_rtx, bool use_red, bool screenshare);
+  void VerifyNewVideoSendStreamsRespectNetworkState(
+      MediaType network_to_bring_down,
+      VideoEncoder* encoder,
+      Transport* transport);
+  void VerifyNewVideoReceiveStreamsRespectNetworkState(
+      MediaType network_to_bring_down,
+      Transport* transport);
 };
 
 TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
@@ -3193,8 +3229,16 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       // Wait for packets from both sender/receiver.
       WaitForPacketsOrSilence(false, false);
 
+      // Sender-side network down for audio; there should be no effect on video
+      sender_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkDown);
+      WaitForPacketsOrSilence(false, false);
+
+      // Receiver-side network down for audio; no change expected
+      receiver_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkDown);
+      WaitForPacketsOrSilence(false, false);
+
       // Sender-side network down.
-      sender_call_->SignalNetworkState(kNetworkDown);
+      sender_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkDown);
       {
         rtc::CritScope lock(&test_crit_);
         // After network goes down we shouldn't be encoding more frames.
@@ -3204,7 +3248,13 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       WaitForPacketsOrSilence(true, false);
 
       // Receiver-side network down.
-      receiver_call_->SignalNetworkState(kNetworkDown);
+      receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkDown);
+      WaitForPacketsOrSilence(true, true);
+
+      // Network up for audio for both sides; video is still not expected to
+      // start
+      sender_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
+      receiver_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
       WaitForPacketsOrSilence(true, true);
 
       // Network back up again for both.
@@ -3214,9 +3264,13 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
         // network.
         sender_state_ = kNetworkUp;
       }
-      sender_call_->SignalNetworkState(kNetworkUp);
-      receiver_call_->SignalNetworkState(kNetworkUp);
+      sender_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+      receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
       WaitForPacketsOrSilence(false, false);
+
+      // TODO(skvlad): add tests to verify that the audio streams are stopped
+      // when the network goes down for audio once the workaround in
+      // paced_sender.cc is removed.
     }
 
     int32_t Encode(const VideoFrame& input_image,
@@ -3267,7 +3321,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
             sender_done = true;
           }
         } else {
-          if (sender_rtp_ > initial_sender_rtp)
+          if (sender_rtp_ > initial_sender_rtp + kNumAcceptedDowntimeRtp)
             sender_done = true;
         }
         if (receiver_down) {
@@ -3279,7 +3333,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
             receiver_done = true;
           }
         } else {
-          if (receiver_rtcp_ > initial_receiver_rtcp)
+          if (receiver_rtcp_ > initial_receiver_rtcp + kNumAcceptedDowntimeRtcp)
             receiver_done = true;
         }
       }
@@ -3338,26 +3392,15 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
   DestroyStreams();
 }
 
-TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
-  class UnusedEncoder : public test::FakeEncoder {
-   public:
-     UnusedEncoder() : FakeEncoder(Clock::GetRealTimeClock()) {}
-     int32_t Encode(const VideoFrame& input_image,
-                    const CodecSpecificInfo* codec_specific_info,
-                    const std::vector<FrameType>* frame_types) override {
-      ADD_FAILURE() << "Unexpected frame encode.";
-      return test::FakeEncoder::Encode(
-          input_image, codec_specific_info, frame_types);
-    }
-  };
-
+void EndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
+    MediaType network_to_bring_down,
+    VideoEncoder* encoder,
+    Transport* transport) {
   CreateSenderCall(Call::Config());
-  sender_call_->SignalNetworkState(kNetworkDown);
+  sender_call_->SignalChannelNetworkState(network_to_bring_down, kNetworkDown);
 
-  UnusedTransport transport;
-  CreateSendConfig(1, 0, &transport);
-  UnusedEncoder unused_encoder;
-  video_send_config_.encoder_settings.encoder = &unused_encoder;
+  CreateSendConfig(1, 0, transport);
+  video_send_config_.encoder_settings.encoder = encoder;
   CreateVideoStreams();
   CreateFrameGeneratorCapturer();
 
@@ -3368,15 +3411,17 @@ TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
   DestroyStreams();
 }
 
-TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
+void EndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
+    MediaType network_to_bring_down,
+    Transport* transport) {
   CreateCalls(Call::Config(), Call::Config());
-  receiver_call_->SignalNetworkState(kNetworkDown);
+  receiver_call_->SignalChannelNetworkState(network_to_bring_down,
+                                            kNetworkDown);
 
   test::DirectTransport sender_transport(sender_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
   CreateSendConfig(1, 0, &sender_transport);
-  UnusedTransport transport;
-  CreateMatchingReceiveConfigs(&transport);
+  CreateMatchingReceiveConfigs(transport);
   CreateVideoStreams();
   CreateFrameGeneratorCapturer();
 
@@ -3387,6 +3432,63 @@ TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
   sender_transport.StopSending();
 
   DestroyStreams();
+}
+
+TEST_F(EndToEndTest, NewVideoSendStreamsRespectVideoNetworkDown) {
+  class UnusedEncoder : public test::FakeEncoder {
+   public:
+    UnusedEncoder() : FakeEncoder(Clock::GetRealTimeClock()) {}
+    int32_t Encode(const VideoFrame& input_image,
+                   const CodecSpecificInfo* codec_specific_info,
+                   const std::vector<FrameType>* frame_types) override {
+      ADD_FAILURE() << "Unexpected frame encode.";
+      return test::FakeEncoder::Encode(input_image, codec_specific_info,
+                                       frame_types);
+    }
+  };
+
+  UnusedEncoder unused_encoder;
+  UnusedTransport unused_transport;
+  VerifyNewVideoSendStreamsRespectNetworkState(
+      MediaType::VIDEO, &unused_encoder, &unused_transport);
+}
+
+TEST_F(EndToEndTest, NewVideoSendStreamsIgnoreAudioNetworkDown) {
+  class RequiredEncoder : public test::FakeEncoder {
+   public:
+    RequiredEncoder()
+        : FakeEncoder(Clock::GetRealTimeClock()), encoded_frame_(false) {}
+    ~RequiredEncoder() {
+      if (!encoded_frame_) {
+        ADD_FAILURE() << "Didn't encode an expected frame";
+      }
+    }
+    int32_t Encode(const VideoFrame& input_image,
+                   const CodecSpecificInfo* codec_specific_info,
+                   const std::vector<FrameType>* frame_types) override {
+      encoded_frame_ = true;
+      return test::FakeEncoder::Encode(input_image, codec_specific_info,
+                                       frame_types);
+    }
+
+   private:
+    bool encoded_frame_;
+  };
+
+  RequiredTransport required_transport(true /*rtp*/, false /*rtcp*/);
+  RequiredEncoder required_encoder;
+  VerifyNewVideoSendStreamsRespectNetworkState(
+      MediaType::AUDIO, &required_encoder, &required_transport);
+}
+
+TEST_F(EndToEndTest, NewVideoReceiveStreamsRespectVideoNetworkDown) {
+  UnusedTransport transport;
+  VerifyNewVideoReceiveStreamsRespectNetworkState(MediaType::VIDEO, &transport);
+}
+
+TEST_F(EndToEndTest, NewVideoReceiveStreamsIgnoreAudioNetworkDown) {
+  RequiredTransport transport(false /*rtp*/, true /*rtcp*/);
+  VerifyNewVideoReceiveStreamsRespectNetworkState(MediaType::AUDIO, &transport);
 }
 
 void VerifyEmptyNackConfig(const NackConfig& config) {

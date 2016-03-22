@@ -233,7 +233,8 @@ void FakeVideoReceiveStream::SetStats(
 
 FakeCall::FakeCall(const webrtc::Call::Config& config)
     : config_(config),
-      network_state_(webrtc::kNetworkUp),
+      audio_network_state_(webrtc::kNetworkUp),
+      video_network_state_(webrtc::kNetworkUp),
       num_created_send_streams_(0),
       num_created_receive_streams_(0) {}
 
@@ -282,8 +283,22 @@ const FakeAudioReceiveStream* FakeCall::GetAudioReceiveStream(uint32_t ssrc) {
   return nullptr;
 }
 
-webrtc::NetworkState FakeCall::GetNetworkState() const {
-  return network_state_;
+webrtc::NetworkState FakeCall::GetNetworkState(webrtc::MediaType media) const {
+  switch (media) {
+    case webrtc::MediaType::AUDIO:
+      return audio_network_state_;
+    case webrtc::MediaType::VIDEO:
+      return video_network_state_;
+    case webrtc::MediaType::DATA:
+    case webrtc::MediaType::ANY:
+      ADD_FAILURE() << "GetNetworkState called with unknown parameter.";
+      return webrtc::kNetworkDown;
+  }
+  // Even though all the values for the enum class are listed above,the compiler
+  // will emit a warning as the method may be called with a value outside of the
+  // valid enum range, unless this case is also handled.
+  ADD_FAILURE() << "GetNetworkState called with unknown parameter.";
+  return webrtc::kNetworkDown;
 }
 
 webrtc::AudioSendStream* FakeCall::CreateAudioSendStream(
@@ -299,7 +314,7 @@ void FakeCall::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
                       audio_send_streams_.end(),
                       static_cast<FakeAudioSendStream*>(send_stream));
   if (it == audio_send_streams_.end()) {
-    ADD_FAILURE() << "DestroyAudioSendStream called with unknown paramter.";
+    ADD_FAILURE() << "DestroyAudioSendStream called with unknown parameter.";
   } else {
     delete *it;
     audio_send_streams_.erase(it);
@@ -319,7 +334,7 @@ void FakeCall::DestroyAudioReceiveStream(
                       audio_receive_streams_.end(),
                       static_cast<FakeAudioReceiveStream*>(receive_stream));
   if (it == audio_receive_streams_.end()) {
-    ADD_FAILURE() << "DestroyAudioReceiveStream called with unknown paramter.";
+    ADD_FAILURE() << "DestroyAudioReceiveStream called with unknown parameter.";
   } else {
     delete *it;
     audio_receive_streams_.erase(it);
@@ -341,7 +356,7 @@ void FakeCall::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
                       video_send_streams_.end(),
                       static_cast<FakeVideoSendStream*>(send_stream));
   if (it == video_send_streams_.end()) {
-    ADD_FAILURE() << "DestroyVideoSendStream called with unknown paramter.";
+    ADD_FAILURE() << "DestroyVideoSendStream called with unknown parameter.";
   } else {
     delete *it;
     video_send_streams_.erase(it);
@@ -361,7 +376,7 @@ void FakeCall::DestroyVideoReceiveStream(
                       video_receive_streams_.end(),
                       static_cast<FakeVideoReceiveStream*>(receive_stream));
   if (it == video_receive_streams_.end()) {
-    ADD_FAILURE() << "DestroyVideoReceiveStream called with unknown paramter.";
+    ADD_FAILURE() << "DestroyVideoReceiveStream called with unknown parameter.";
   } else {
     delete *it;
     video_receive_streams_.erase(it);
@@ -422,8 +437,20 @@ void FakeCall::SetBitrateConfig(
   config_.bitrate_config = bitrate_config;
 }
 
-void FakeCall::SignalNetworkState(webrtc::NetworkState state) {
-  network_state_ = state;
+void FakeCall::SignalChannelNetworkState(webrtc::MediaType media,
+                                         webrtc::NetworkState state) {
+  switch (media) {
+    case webrtc::MediaType::AUDIO:
+      audio_network_state_ = state;
+      break;
+    case webrtc::MediaType::VIDEO:
+      video_network_state_ = state;
+      break;
+    case webrtc::MediaType::DATA:
+    case webrtc::MediaType::ANY:
+      ADD_FAILURE()
+          << "SignalChannelNetworkState called with unknown parameter.";
+  }
 }
 
 void FakeCall::OnSentPacket(const rtc::SentPacket& sent_packet) {

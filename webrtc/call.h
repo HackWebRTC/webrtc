@@ -133,7 +133,12 @@ class Call {
   // implemented.
   virtual void SetBitrateConfig(
       const Config::BitrateConfig& bitrate_config) = 0;
-  virtual void SignalNetworkState(NetworkState state) = 0;
+
+  // TODO(skvlad): When the unbundled case with multiple streams for the same
+  // media type going over different networks is supported, track the state
+  // for each stream separately. Right now it's global per media type.
+  virtual void SignalChannelNetworkState(MediaType media,
+                                         NetworkState state) = 0;
 
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
 

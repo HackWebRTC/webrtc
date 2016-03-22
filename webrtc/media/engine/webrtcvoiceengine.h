@@ -183,7 +183,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
                         const rtc::PacketTime& packet_time) override;
   void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
                       const rtc::PacketTime& packet_time) override;
-  void OnReadyToSend(bool ready) override {}
+  void OnReadyToSend(bool ready) override;
   bool GetStats(VoiceMediaInfo* info) override;
 
   void SetRawAudioSink(

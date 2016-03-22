@@ -3193,6 +3193,29 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSinkDefaultRecvStream) {
   EXPECT_NE(nullptr, GetRecvStream(0x01).sink());
 }
 
+// Test that, just like the video channel, the voice channel communicates the
+// network state to the call.
+TEST_F(WebRtcVoiceEngineTestFake, OnReadyToSendSignalsNetworkState) {
+  EXPECT_TRUE(SetupEngine());
+
+  EXPECT_EQ(webrtc::kNetworkUp,
+            call_.GetNetworkState(webrtc::MediaType::AUDIO));
+  EXPECT_EQ(webrtc::kNetworkUp,
+            call_.GetNetworkState(webrtc::MediaType::VIDEO));
+
+  channel_->OnReadyToSend(false);
+  EXPECT_EQ(webrtc::kNetworkDown,
+            call_.GetNetworkState(webrtc::MediaType::AUDIO));
+  EXPECT_EQ(webrtc::kNetworkUp,
+            call_.GetNetworkState(webrtc::MediaType::VIDEO));
+
+  channel_->OnReadyToSend(true);
+  EXPECT_EQ(webrtc::kNetworkUp,
+            call_.GetNetworkState(webrtc::MediaType::AUDIO));
+  EXPECT_EQ(webrtc::kNetworkUp,
+            call_.GetNetworkState(webrtc::MediaType::VIDEO));
+}
+
 // Tests that the library initializes and shuts down properly.
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   cricket::WebRtcVoiceEngine engine;

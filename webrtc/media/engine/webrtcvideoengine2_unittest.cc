@@ -2656,13 +2656,22 @@ TEST_F(WebRtcVideoChannel2Test, TestSetRecvRtcpReducedSize) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
-  EXPECT_EQ(webrtc::kNetworkUp, fake_call_->GetNetworkState());
+  EXPECT_EQ(webrtc::kNetworkUp,
+            fake_call_->GetNetworkState(webrtc::MediaType::VIDEO));
+  EXPECT_EQ(webrtc::kNetworkUp,
+            fake_call_->GetNetworkState(webrtc::MediaType::AUDIO));
 
   channel_->OnReadyToSend(false);
-  EXPECT_EQ(webrtc::kNetworkDown, fake_call_->GetNetworkState());
+  EXPECT_EQ(webrtc::kNetworkDown,
+            fake_call_->GetNetworkState(webrtc::MediaType::VIDEO));
+  EXPECT_EQ(webrtc::kNetworkUp,
+            fake_call_->GetNetworkState(webrtc::MediaType::AUDIO));
 
   channel_->OnReadyToSend(true);
-  EXPECT_EQ(webrtc::kNetworkUp, fake_call_->GetNetworkState());
+  EXPECT_EQ(webrtc::kNetworkUp,
+            fake_call_->GetNetworkState(webrtc::MediaType::VIDEO));
+  EXPECT_EQ(webrtc::kNetworkUp,
+            fake_call_->GetNetworkState(webrtc::MediaType::AUDIO));
 }
 
 TEST_F(WebRtcVideoChannel2Test, GetStatsReportsSentCodecName) {

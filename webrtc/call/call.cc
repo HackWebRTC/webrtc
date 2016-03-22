@@ -86,7 +86,8 @@ class Call : public webrtc::Call, public PacketReceiver,
 
   void SetBitrateConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
-  void SignalNetworkState(NetworkState state) override;
+
+  void SignalChannelNetworkState(MediaType media, NetworkState state) override;
 
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
@@ -116,6 +117,7 @@ class Call : public webrtc::Call, public PacketReceiver,
 
   void UpdateSendHistograms() EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
   void UpdateReceiveHistograms();
+  void UpdateAggregateNetworkState();
 
   Clock* const clock_;
 
@@ -127,7 +129,8 @@ class Call : public webrtc::Call, public PacketReceiver,
   Call::Config config_;
   rtc::ThreadChecker configuration_thread_checker_;
 
-  bool network_enabled_;
+  NetworkState audio_network_state_;
+  NetworkState video_network_state_;
 
   std::unique_ptr<RWLockWrapper> receive_crit_;
   // Audio and Video receive streams are owned by the client that creates them.
@@ -189,7 +192,8 @@ Call::Call(const Call::Config& config)
       call_stats_(new CallStats(clock_)),
       bitrate_allocator_(new BitrateAllocator()),
       config_(config),
-      network_enabled_(true),
+      audio_network_state_(kNetworkUp),
+      video_network_state_(kNetworkUp),
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
       received_video_bytes_(0),
@@ -317,14 +321,14 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioSendStream* send_stream = new AudioSendStream(
       config, config_.audio_state, congestion_controller_.get());
-  if (!network_enabled_)
-    send_stream->SignalNetworkState(kNetworkDown);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
                audio_send_ssrcs_.end());
     audio_send_ssrcs_[config.rtp.ssrc] = send_stream;
   }
+  send_stream->SignalNetworkState(audio_network_state_);
+  UpdateAggregateNetworkState();
   return send_stream;
 }
 
@@ -343,6 +347,7 @@ void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
         audio_send_stream->config().rtp.ssrc);
     RTC_DCHECK(num_deleted == 1);
   }
+  UpdateAggregateNetworkState();
   delete audio_send_stream;
 }
 
@@ -359,6 +364,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     audio_receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
     ConfigureSync(config.sync_group);
   }
+  receive_stream->SignalNetworkState(audio_network_state_);
+  UpdateAggregateNetworkState();
   return receive_stream;
 }
 
@@ -382,6 +389,7 @@ void Call::DestroyAudioReceiveStream(
       ConfigureSync(sync_group);
     }
   }
+  UpdateAggregateNetworkState();
   delete audio_receive_stream;
 }
 
@@ -397,20 +405,18 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), call_stats_.get(),
       congestion_controller_.get(), bitrate_allocator_.get(), &remb_, config,
       encoder_config, suspended_video_send_ssrcs_);
-
-  if (!network_enabled_)
-    send_stream->SignalNetworkState(kNetworkDown);
-
-  WriteLockScoped write_lock(*send_crit_);
-  for (uint32_t ssrc : config.rtp.ssrcs) {
-    RTC_DCHECK(video_send_ssrcs_.find(ssrc) == video_send_ssrcs_.end());
-    video_send_ssrcs_[ssrc] = send_stream;
+  {
+    WriteLockScoped write_lock(*send_crit_);
+    for (uint32_t ssrc : config.rtp.ssrcs) {
+      RTC_DCHECK(video_send_ssrcs_.find(ssrc) == video_send_ssrcs_.end());
+      video_send_ssrcs_[ssrc] = send_stream;
+    }
+    video_send_streams_.insert(send_stream);
   }
-  video_send_streams_.insert(send_stream);
-
+  send_stream->SignalNetworkState(video_network_state_);
+  UpdateAggregateNetworkState();
   if (event_log_)
     event_log_->LogVideoSendStreamConfig(config);
-
   return send_stream;
 }
 
@@ -445,6 +451,7 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
     suspended_video_send_ssrcs_[it->first] = it->second;
   }
 
+  UpdateAggregateNetworkState();
   delete send_stream_impl;
 }
 
@@ -455,26 +462,24 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       num_cpu_cores_, congestion_controller_.get(), config, voice_engine(),
       module_process_thread_.get(), call_stats_.get(), &remb_);
+  {
+    WriteLockScoped write_lock(*receive_crit_);
+    RTC_DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
+               video_receive_ssrcs_.end());
+    video_receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
+    // TODO(pbos): Configure different RTX payloads per receive payload.
+    VideoReceiveStream::Config::Rtp::RtxMap::const_iterator it =
+        config.rtp.rtx.begin();
+    if (it != config.rtp.rtx.end())
+      video_receive_ssrcs_[it->second.ssrc] = receive_stream;
+    video_receive_streams_.insert(receive_stream);
 
-  WriteLockScoped write_lock(*receive_crit_);
-  RTC_DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
-             video_receive_ssrcs_.end());
-  video_receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
-  // TODO(pbos): Configure different RTX payloads per receive payload.
-  VideoReceiveStream::Config::Rtp::RtxMap::const_iterator it =
-      config.rtp.rtx.begin();
-  if (it != config.rtp.rtx.end())
-    video_receive_ssrcs_[it->second.ssrc] = receive_stream;
-  video_receive_streams_.insert(receive_stream);
-
-  ConfigureSync(config.sync_group);
-
-  if (!network_enabled_)
-    receive_stream->SignalNetworkState(kNetworkDown);
-
+    ConfigureSync(config.sync_group);
+  }
+  receive_stream->SignalNetworkState(video_network_state_);
+  UpdateAggregateNetworkState();
   if (event_log_)
     event_log_->LogVideoReceiveStreamConfig(config);
-
   return receive_stream;
 }
 
@@ -503,6 +508,7 @@ void Call::DestroyVideoReceiveStream(
     RTC_CHECK(receive_stream_impl != nullptr);
     ConfigureSync(receive_stream_impl->config().sync_group);
   }
+  UpdateAggregateNetworkState();
   delete receive_stream_impl;
 }
 
@@ -549,25 +555,72 @@ void Call::SetBitrateConfig(
                                          bitrate_config.max_bitrate_bps);
 }
 
-void Call::SignalNetworkState(NetworkState state) {
+void Call::SignalChannelNetworkState(MediaType media, NetworkState state) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  network_enabled_ = state == kNetworkUp;
-  congestion_controller_->SignalNetworkState(state);
+  switch (media) {
+    case MediaType::AUDIO:
+      audio_network_state_ = state;
+      break;
+    case MediaType::VIDEO:
+      video_network_state_ = state;
+      break;
+    case MediaType::ANY:
+    case MediaType::DATA:
+      RTC_NOTREACHED();
+      break;
+  }
+
+  UpdateAggregateNetworkState();
   {
-    ReadLockScoped write_lock(*send_crit_);
+    ReadLockScoped read_lock(*send_crit_);
     for (auto& kv : audio_send_ssrcs_) {
-      kv.second->SignalNetworkState(state);
+      kv.second->SignalNetworkState(audio_network_state_);
     }
     for (auto& kv : video_send_ssrcs_) {
-      kv.second->SignalNetworkState(state);
+      kv.second->SignalNetworkState(video_network_state_);
     }
   }
   {
-    ReadLockScoped write_lock(*receive_crit_);
+    ReadLockScoped read_lock(*receive_crit_);
+    for (auto& kv : audio_receive_ssrcs_) {
+      kv.second->SignalNetworkState(audio_network_state_);
+    }
     for (auto& kv : video_receive_ssrcs_) {
-      kv.second->SignalNetworkState(state);
+      kv.second->SignalNetworkState(video_network_state_);
     }
   }
+}
+
+void Call::UpdateAggregateNetworkState() {
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+
+  bool have_audio = false;
+  bool have_video = false;
+  {
+    ReadLockScoped read_lock(*send_crit_);
+    if (audio_send_ssrcs_.size() > 0)
+      have_audio = true;
+    if (video_send_ssrcs_.size() > 0)
+      have_video = true;
+  }
+  {
+    ReadLockScoped read_lock(*receive_crit_);
+    if (audio_receive_ssrcs_.size() > 0)
+      have_audio = true;
+    if (video_receive_ssrcs_.size() > 0)
+      have_video = true;
+  }
+
+  NetworkState aggregate_state = kNetworkDown;
+  if ((have_video && video_network_state_ == kNetworkUp) ||
+      (have_audio && audio_network_state_ == kNetworkUp)) {
+    aggregate_state = kNetworkUp;
+  }
+
+  LOG(LS_INFO) << "UpdateAggregateNetworkState: aggregate_state="
+               << (aggregate_state == kNetworkUp ? "up" : "down");
+
+  congestion_controller_->SignalNetworkState(aggregate_state);
 }
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
