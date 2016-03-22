@@ -44,6 +44,7 @@ class QualityScaler {
 
  private:
   void AdjustScale(bool up);
+  void UpdateTargetResolution(int frame_width, int frame_height);
   void ClearSamples();
 
   Scaler scaler_;

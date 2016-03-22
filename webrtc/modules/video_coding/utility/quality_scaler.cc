@@ -40,6 +40,9 @@ void QualityScaler::Init(int low_qp_threshold,
   low_qp_threshold_ = low_qp_threshold;
   high_qp_threshold_ = high_qp_threshold;
   use_framerate_reduction_ = use_framerate_reduction;
+  downscale_shift_ = 0;
+  const int init_width = width;
+  const int init_height = height;
   // TODO(glaznev): Investigate using thresholds for other resolutions
   // or threshold tables.
   if (initial_bitrate_kbps > 0 &&
@@ -51,8 +54,7 @@ void QualityScaler::Init(int low_qp_threshold,
       height /= 2;
     }
   }
-  res_.width = width;
-  res_.height = height;
+  UpdateTargetResolution(init_width, init_height);
   target_framerate_ = -1;
 }
 
@@ -81,8 +83,6 @@ void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
   // Should be set through InitEncode -> Should be set by now.
   assert(low_qp_threshold_ >= 0);
   assert(num_samples_ > 0);
-  res_.width = frame.width();
-  res_.height = frame.height();
 
   // Update scale factor.
   int avg_drop = 0;
@@ -117,15 +117,7 @@ void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
       AdjustScale(true);
     }
   }
-
-  assert(downscale_shift_ >= 0);
-  for (int shift = downscale_shift_;
-       shift > 0 && (res_.width / 2 >= min_width_) &&
-       (res_.height / 2 >= min_height_);
-       --shift) {
-    res_.width /= 2;
-    res_.height /= 2;
-  }
+  UpdateTargetResolution(frame.width(), frame.height());
 }
 
 QualityScaler::Resolution QualityScaler::GetScaledResolution() const {
@@ -151,6 +143,19 @@ const VideoFrame& QualityScaler::GetScaledFrame(const VideoFrame& frame) {
   scaled_frame_.set_render_time_ms(frame.render_time_ms());
 
   return scaled_frame_;
+}
+
+void QualityScaler::UpdateTargetResolution(int frame_width, int frame_height) {
+  assert(downscale_shift_ >= 0);
+  res_.width = frame_width;
+  res_.height = frame_height;
+  for (int shift = downscale_shift_;
+       shift > 0 && (res_.width / 2 >= min_width_) &&
+       (res_.height / 2 >= min_height_);
+       --shift) {
+    res_.width /= 2;
+    res_.height /= 2;
+  }
 }
 
 void QualityScaler::ClearSamples() {
