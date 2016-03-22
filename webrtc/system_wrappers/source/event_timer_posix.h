@@ -37,11 +37,14 @@ class EventTimerPosix : public EventTimerWrapper {
   bool StopTimer() override;
 
  private:
+  friend class EventTimerPosixTest;
+
   static bool Run(void* obj);
   bool Process();
-  EventTypeWrapper Wait(timespec* end_at);
+  EventTypeWrapper Wait(timespec* end_at, bool reset_state);
 
- private:
+  virtual rtc::PlatformThread* CreateThread();
+
   pthread_cond_t  cond_;
   pthread_mutex_t mutex_;
   bool event_set_;
@@ -52,8 +55,9 @@ class EventTimerPosix : public EventTimerWrapper {
   timespec       created_at_;
 
   bool          periodic_;
-  unsigned long time_;  // In ms
+  unsigned long time_ms_;
   unsigned long count_;
+  bool is_stopping_;
 };
 
 }  // namespace webrtc

@@ -30,6 +30,7 @@
         'source/data_log_helpers_unittest.cc',
         'source/data_log_c_helpers_unittest.c',
         'source/data_log_c_helpers_unittest.h',
+        'source/event_timer_posix_unittest.cc',
         'source/metrics_unittest.cc',
         'source/ntp_time_unittest.cc',
         'source/rtp_to_ntp_unittest.cc',
