@@ -36,7 +36,6 @@ TEST_F(TestModOps, Add) {
 }
 
 TEST_F(TestModOps, AddLarge) {
-  // NOLINTNEXTLINE
   const unsigned long D = ulmax - 10ul;  // NOLINT
   unsigned long l = D - 1ul;             // NOLINT
   ASSERT_EQ(D - 2ul, Add<D>(l, l));
@@ -107,96 +106,35 @@ TEST_F(TestModOps, ReverseDiff) {
   }
 }
 
-TEST_F(TestModOps, AheadOrAt) {
-  uint8_t x = 0;
-  uint8_t y = 0;
-  ASSERT_TRUE(AheadOrAt(x, y));
-  ++x;
-  ASSERT_TRUE(AheadOrAt(x, y));
-  ASSERT_FALSE(AheadOrAt(y, x));
-  for (int i = 0; i < 256; ++i) {
-    ASSERT_TRUE(AheadOrAt(x, y));
-    ++x;
-    ++y;
+TEST_F(TestModOps, MinDiff) {
+  for (uint16_t i = 0; i < 256; ++i) {
+    ASSERT_EQ(0, MinDiff<uint8_t>(i, i));
+    ASSERT_EQ(1, MinDiff<uint8_t>(i - 1, i));
+    ASSERT_EQ(1, MinDiff<uint8_t>(i + 1, i));
   }
 
-  x = 128;
-  y = 0;
-  ASSERT_TRUE(AheadOrAt(x, y));
-  ASSERT_FALSE(AheadOrAt(y, x));
+  for (uint8_t i = 0; i < 128; ++i)
+    ASSERT_EQ(i, MinDiff<uint8_t>(0, i));
 
-  x = 129;
-  ASSERT_FALSE(AheadOrAt(x, y));
-  ASSERT_TRUE(AheadOrAt(y, x));
-  ASSERT_TRUE(AheadOrAt<uint16_t>(x, y));
-  ASSERT_FALSE(AheadOrAt<uint16_t>(y, x));
+  for (uint8_t i = 0; i < 128; ++i)
+    ASSERT_EQ(128 - i, MinDiff<uint8_t>(0, 128 + i));
 }
 
-TEST_F(TestModOps, AheadOf) {
-  uint8_t x = 0;
-  uint8_t y = 0;
-  ASSERT_FALSE(AheadOf(x, y));
-  ++x;
-  ASSERT_TRUE(AheadOf(x, y));
-  ASSERT_FALSE(AheadOf(y, x));
-  for (int i = 0; i < 256; ++i) {
-    ASSERT_TRUE(AheadOf(x, y));
-    ++x;
-    ++y;
-  }
+TEST_F(TestModOps, MinDiffWitDivisor) {
+  ASSERT_EQ(5u, (MinDiff<uint8_t, 11>(0, 5)));
+  ASSERT_EQ(5u, (MinDiff<uint8_t, 11>(0, 6)));
+  ASSERT_EQ(5u, (MinDiff<uint8_t, 11>(5, 0)));
+  ASSERT_EQ(5u, (MinDiff<uint8_t, 11>(6, 0)));
 
-  x = 128;
-  y = 0;
-  for (int i = 0; i < 128; ++i) {
-    ASSERT_TRUE(AheadOf(x, y));
-    ASSERT_FALSE(AheadOf(y, x));
-    x++;
-    y++;
-  }
+  const uint16_t D = 4711;
 
-  for (int i = 0; i < 128; ++i) {
-    ASSERT_FALSE(AheadOf(x, y));
-    ASSERT_TRUE(AheadOf(y, x));
-    x++;
-    y++;
-  }
+  for (uint16_t i = 0; i < D / 2; ++i)
+    ASSERT_EQ(i, (MinDiff<uint16_t, D>(0, i)));
 
-  x = 129;
-  y = 0;
-  ASSERT_FALSE(AheadOf(x, y));
-  ASSERT_TRUE(AheadOf(y, x));
-  ASSERT_TRUE(AheadOf<uint16_t>(x, y));
-  ASSERT_FALSE(AheadOf<uint16_t>(y, x));
-}
+  ASSERT_EQ(D / 2, (MinDiff<uint16_t, D>(0, D / 2)));
 
-TEST_F(TestModOps, ForwardDiffWithDivisor) {
-  const uint8_t kDivisor = 211;
-
-  for (uint8_t i = 0; i < kDivisor - 1; ++i) {
-    ASSERT_EQ(0, (ForwardDiff<uint8_t, kDivisor>(i, i)));
-    ASSERT_EQ(1, (ForwardDiff<uint8_t, kDivisor>(i, i + 1)));
-    ASSERT_EQ(kDivisor - 1, (ForwardDiff<uint8_t, kDivisor>(i + 1, i)));
-  }
-
-  for (uint8_t i = 1; i < kDivisor; ++i) {
-    ASSERT_EQ(i, (ForwardDiff<uint8_t, kDivisor>(0, i)));
-    ASSERT_EQ(kDivisor - i, (ForwardDiff<uint8_t, kDivisor>(i, 0)));
-  }
-}
-
-TEST_F(TestModOps, ReverseDiffWithDivisor) {
-  const uint8_t kDivisor = 241;
-
-  for (uint8_t i = 0; i < kDivisor - 1; ++i) {
-    ASSERT_EQ(0, (ReverseDiff<uint8_t, kDivisor>(i, i)));
-    ASSERT_EQ(kDivisor - 1, (ReverseDiff<uint8_t, kDivisor>(i, i + 1)));
-    ASSERT_EQ(1, (ReverseDiff<uint8_t, kDivisor>(i + 1, i)));
-  }
-
-  for (uint8_t i = 1; i < kDivisor; ++i) {
-    ASSERT_EQ(kDivisor - i, (ReverseDiff<uint8_t, kDivisor>(0, i)));
-    ASSERT_EQ(i, (ReverseDiff<uint8_t, kDivisor>(i, 0)));
-  }
+  for (uint16_t i = 0; i < D / 2; ++i)
+    ASSERT_EQ(D / 2 - i, (MinDiff<uint16_t, D>(0, D / 2 - i)));
 }
 
 }  // namespace webrtc

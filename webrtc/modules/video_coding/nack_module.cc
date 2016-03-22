@@ -15,7 +15,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/mod_ops.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 
 namespace webrtc {

@@ -371,6 +371,7 @@
             'video_coding/nack_module_unittest.cc',
             'video_coding/receiver_unittest.cc',
             'video_coding/session_info_unittest.cc',
+            'video_coding/sequence_number_util_unittest.cc',
             'video_coding/timing_unittest.cc',
             'video_coding/video_coding_robustness_unittest.cc',
             'video_coding/video_receiver_unittest.cc',

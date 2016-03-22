@@ -15,7 +15,6 @@
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/nack_module.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/base/mod_ops.h"
 
 namespace webrtc {
 class TestNackModule : public ::testing::Test,

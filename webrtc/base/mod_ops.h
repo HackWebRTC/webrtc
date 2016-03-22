@@ -113,26 +113,21 @@ inline T ReverseDiff(T a, T b) {
   return a - b;
 }
 
-// Test if the sequence number a is ahead or at sequence number b.
-// If the two sequence numbers are at max distance from each other
-// then the sequence number with highest value is considered to
-// be ahead.
-template <typename T>
-inline bool AheadOrAt(T a, T b) {
+// Calculates the minimum distance between to wrapping numbers.
+//
+// The minimum distance is defined as min(ForwardDiff(a, b), ReverseDiff(a, b))
+template <typename T, T M>
+inline T MinDiff(T a, T b) {
   static_assert(std::is_unsigned<T>::value,
                 "Type must be an unsigned integer.");
-  const T maxDist = std::numeric_limits<T>::max() / 2 + T(1);
-  if (a - b == maxDist)
-    return b < a;
-  return ForwardDiff(b, a) < maxDist;
+  return std::min(ForwardDiff<T, M>(a, b), ReverseDiff<T, M>(a, b));
 }
 
-// Test if sequence number a is ahead of sequence number b.
 template <typename T>
-inline bool AheadOf(T a, T b) {
+inline T MinDiff(T a, T b) {
   static_assert(std::is_unsigned<T>::value,
                 "Type must be an unsigned integer.");
-  return a != b && AheadOrAt(a, b);
+  return std::min(ForwardDiff(a, b), ReverseDiff(a, b));
 }
 
 }  // namespace webrtc
