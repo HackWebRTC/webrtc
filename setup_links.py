@@ -64,6 +64,7 @@ DIRECTORIES = [
   'third_party/usrsctp',
   'third_party/yasm',
   'third_party/zlib',
+  'third_party/WebKit',  # TODO(kjellander): Remove, see webrtc:5629.
   'tools/clang',
   'tools/generate_library_loader',
   'tools/generate_stubs',
