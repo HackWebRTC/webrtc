@@ -21,7 +21,7 @@
 #include "webrtc/frame_callback.h"
 #include "webrtc/stream.h"
 #include "webrtc/transport.h"
-#include "webrtc/video_renderer.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace webrtc {
 
@@ -145,12 +145,16 @@ class VideoReceiveStream : public ReceiveStream {
 
     // VideoRenderer will be called for each decoded frame. 'nullptr' disables
     // rendering of this stream.
-    VideoRenderer* renderer = nullptr;
+    rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
 
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than the ideal render time.
     // Only valid if 'renderer' is set.
     int render_delay_ms = 10;
+
+    // If set, pass frames on to the renderer as soon as they are
+    // available.
+    bool disable_prerenderer_smoothing = false;
 
     // Identifier for an A/V synchronization group. Empty string to disable.
     // TODO(pbos): Synchronize streams in a sync group, not just video streams

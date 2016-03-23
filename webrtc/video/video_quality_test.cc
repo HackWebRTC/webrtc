@@ -43,7 +43,7 @@ static const int kPayloadTypeVP9 = 124;
 
 class VideoAnalyzer : public PacketReceiver,
                       public Transport,
-                      public VideoRenderer,
+                      public rtc::VideoSinkInterface<VideoFrame>,
                       public VideoCaptureInput,
                       public EncodedFrameObserver {
  public:

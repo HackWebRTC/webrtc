@@ -1184,10 +1184,12 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   config.rtp.remb = send_codec_ ? HasRemb(send_codec_->codec) : false;
   config.rtp.transport_cc =
       send_codec_ ? HasTransportCc(send_codec_->codec) : false;
+  config.disable_prerenderer_smoothing =
+      video_config_.disable_prerenderer_smoothing;
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, config, external_decoder_factory_, default_stream,
-      recv_codecs_, video_config_.disable_prerenderer_smoothing);
+      recv_codecs_);
 
   return true;
 }
@@ -2206,8 +2208,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     const webrtc::VideoReceiveStream::Config& config,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
-    const std::vector<VideoCodecSettings>& recv_codecs,
-    bool disable_prerenderer_smoothing)
+    const std::vector<VideoCodecSettings>& recv_codecs)
     : call_(call),
       ssrcs_(sp.ssrcs),
       ssrc_groups_(sp.ssrc_groups),
@@ -2215,7 +2216,6 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       default_stream_(default_stream),
       config_(config),
       external_decoder_factory_(external_decoder_factory),
-      disable_prerenderer_smoothing_(disable_prerenderer_smoothing),
       sink_(NULL),
       last_width_(-1),
       last_height_(-1),
@@ -2432,11 +2432,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::OnFrame(
       frame.video_frame_buffer(),
       frame.render_time_ms() * rtc::kNumNanosecsPerMillisec, frame.rotation());
   sink_->OnFrame(render_frame);
-}
-
-bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::SmoothsRenderedFrames()
-    const {
-  return disable_prerenderer_smoothing_;
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsDefaultStream() const {

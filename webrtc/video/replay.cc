@@ -136,9 +136,10 @@ static std::string Codec() { return static_cast<std::string>(FLAGS_codec); }
 
 static const uint32_t kReceiverLocalSsrc = 0x123456;
 
-class FileRenderPassthrough : public VideoRenderer {
+class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
  public:
-  FileRenderPassthrough(const std::string& basename, VideoRenderer* renderer)
+  FileRenderPassthrough(const std::string& basename,
+                        rtc::VideoSinkInterface<VideoFrame>* renderer)
       : basename_(basename),
         renderer_(renderer),
         file_(nullptr),
@@ -182,7 +183,7 @@ class FileRenderPassthrough : public VideoRenderer {
   }
 
   const std::string basename_;
-  VideoRenderer* const renderer_;
+  rtc::VideoSinkInterface<VideoFrame>* const renderer_;
   FILE* file_;
   size_t count_;
   int last_width_;

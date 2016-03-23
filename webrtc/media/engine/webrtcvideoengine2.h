@@ -31,7 +31,6 @@
 #include "webrtc/transport.h"
 #include "webrtc/video_frame.h"
 #include "webrtc/video_receive_stream.h"
-#include "webrtc/video_renderer.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -396,8 +395,10 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
   // Wrapper for the receiver part, contains configs etc. that are needed to
   // reconstruct the underlying VideoReceiveStream. Also serves as a wrapper
-  // between webrtc::VideoRenderer and cricket::VideoRenderer.
-  class WebRtcVideoReceiveStream : public webrtc::VideoRenderer {
+  // between rtc::VideoSinkInterface<webrtc::VideoFrame> and
+  // rtc::VideoSinkInterface<cricket::VideoFrame>.
+  class WebRtcVideoReceiveStream
+      : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
    public:
     WebRtcVideoReceiveStream(
         webrtc::Call* call,
@@ -405,8 +406,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         const webrtc::VideoReceiveStream::Config& config,
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
-        const std::vector<VideoCodecSettings>& recv_codecs,
-        bool disable_prerenderer_smoothing);
+        const std::vector<VideoCodecSettings>& recv_codecs);
     ~WebRtcVideoReceiveStream();
 
     const std::vector<uint32_t>& GetSsrcs() const;
@@ -420,7 +420,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     void SetRecvParameters(const ChangedRecvParameters& recv_params);
 
     void OnFrame(const webrtc::VideoFrame& frame) override;
-    bool SmoothsRenderedFrames() const override;
     bool IsDefaultStream() const;
 
     void SetSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink);
@@ -460,8 +459,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     WebRtcVideoDecoderFactory* const external_decoder_factory_;
     std::vector<AllocatedDecoder> allocated_decoders_;
-
-    const bool disable_prerenderer_smoothing_;
 
     rtc::CriticalSection sink_lock_;
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink_ GUARDED_BY(sink_lock_);

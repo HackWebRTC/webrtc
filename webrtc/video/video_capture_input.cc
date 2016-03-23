@@ -24,10 +24,11 @@
 namespace webrtc {
 
 namespace internal {
-VideoCaptureInput::VideoCaptureInput(rtc::Event* capture_event,
-                                     VideoRenderer* local_renderer,
-                                     SendStatisticsProxy* stats_proxy,
-                                     OveruseFrameDetector* overuse_detector)
+VideoCaptureInput::VideoCaptureInput(
+    rtc::Event* capture_event,
+    rtc::VideoSinkInterface<VideoFrame>* local_renderer,
+    SendStatisticsProxy* stats_proxy,
+    OveruseFrameDetector* overuse_detector)
     : local_renderer_(local_renderer),
       stats_proxy_(stats_proxy),
       capture_event_(capture_event),

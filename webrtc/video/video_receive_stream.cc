@@ -164,9 +164,7 @@ VideoReceiveStream::VideoReceiveStream(
                                      nullptr,
                                      this,
                                      this)),
-      incoming_video_stream_(
-          0,
-          config.renderer ? config.renderer->SmoothsRenderedFrames() : false),
+      incoming_video_stream_(0, config.disable_prerenderer_smoothing),
       stats_proxy_(config_, clock_),
       vie_channel_(&transport_adapter_,
                    process_thread,

@@ -75,7 +75,7 @@ class CallPerfTest : public test::CallTest {
 };
 
 class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
-                                 public VideoRenderer {
+                                 public rtc::VideoSinkInterface<VideoFrame> {
   static const int kInSyncThresholdMs = 50;
   static const int kStartupTimeMs = 2000;
   static const int kMinRunTimeMs = 30000;
@@ -346,7 +346,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
                                       int start_time_ms,
                                       int run_time_ms) {
   class CaptureNtpTimeObserver : public test::EndToEndTest,
-                                 public VideoRenderer {
+                                 public rtc::VideoSinkInterface<VideoFrame> {
    public:
     CaptureNtpTimeObserver(const FakeNetworkPipe::Config& net_config,
                            int threshold_ms,

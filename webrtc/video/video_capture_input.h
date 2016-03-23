@@ -32,13 +32,12 @@ namespace webrtc {
 class Config;
 class OveruseFrameDetector;
 class SendStatisticsProxy;
-class VideoRenderer;
 
 namespace internal {
 class VideoCaptureInput : public webrtc::VideoCaptureInput {
  public:
   VideoCaptureInput(rtc::Event* capture_event,
-                    VideoRenderer* local_renderer,
+                    rtc::VideoSinkInterface<VideoFrame>* local_renderer,
                     SendStatisticsProxy* send_stats_proxy,
                     OveruseFrameDetector* overuse_detector);
   ~VideoCaptureInput();
@@ -50,7 +49,7 @@ class VideoCaptureInput : public webrtc::VideoCaptureInput {
  private:
   rtc::CriticalSection crit_;
 
-  VideoRenderer* const local_renderer_;
+  rtc::VideoSinkInterface<VideoFrame>* const local_renderer_;
   SendStatisticsProxy* const stats_proxy_;
   rtc::Event* const capture_event_;
 

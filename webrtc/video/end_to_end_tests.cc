@@ -159,7 +159,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   // frames in the queue.
   static const int kDelayRenderCallbackMs = 1000;
 
-  class Renderer : public VideoRenderer {
+  class Renderer : public rtc::VideoSinkInterface<VideoFrame> {
    public:
     Renderer() : event_(false, false) {}
 
@@ -222,7 +222,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
 }
 
 TEST_F(EndToEndTest, TransmitsFirstFrame) {
-  class Renderer : public VideoRenderer {
+  class Renderer : public rtc::VideoSinkInterface<VideoFrame> {
    public:
     Renderer() : event_(false, false) {}
 
@@ -266,7 +266,8 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
 }
 
 TEST_F(EndToEndTest, SendsAndReceivesVP9) {
-  class VP9Observer : public test::EndToEndTest, public VideoRenderer {
+  class VP9Observer : public test::EndToEndTest,
+                      public rtc::VideoSinkInterface<VideoFrame> {
    public:
     VP9Observer()
         : EndToEndTest(2 * kDefaultTimeoutMs),
@@ -317,7 +318,8 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
 #if defined(WEBRTC_END_TO_END_H264_TESTS)
 
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
-  class H264Observer : public test::EndToEndTest, public VideoRenderer {
+  class H264Observer : public test::EndToEndTest,
+                       public rtc::VideoSinkInterface<VideoFrame> {
    public:
     H264Observer()
         : EndToEndTest(2 * kDefaultTimeoutMs),
@@ -488,7 +490,8 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
 }
 
 TEST_F(EndToEndTest, CanReceiveFec) {
-  class FecRenderObserver : public test::EndToEndTest, public VideoRenderer {
+  class FecRenderObserver : public test::EndToEndTest,
+                            public rtc::VideoSinkInterface<VideoFrame> {
    public:
     FecRenderObserver()
         : EndToEndTest(kDefaultTimeoutMs), state_(kFirstPacket) {}
@@ -864,7 +867,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   static const int kWidth = 320;
   static const int kHeight = 240;
 
-  class Renderer : public VideoRenderer {
+  class Renderer : public rtc::VideoSinkInterface<VideoFrame> {
    public:
     Renderer() : event_(false, false) {}
 
@@ -964,7 +967,8 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
 void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
   static const int kPacketsToDrop = 1;
 
-  class PliObserver : public test::EndToEndTest, public VideoRenderer {
+  class PliObserver : public test::EndToEndTest,
+                      public rtc::VideoSinkInterface<VideoFrame> {
    public:
     explicit PliObserver(int rtp_history_ms)
         : EndToEndTest(kLongTimeoutMs),
@@ -1325,7 +1329,7 @@ class MultiStreamTest {
 // Each renderer verifies that it receives the expected resolution, and as soon
 // as every renderer has received a frame, the test finishes.
 TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
-  class VideoOutputObserver : public VideoRenderer {
+  class VideoOutputObserver : public rtc::VideoSinkInterface<VideoFrame> {
    public:
     VideoOutputObserver(const MultiStreamTest::CodecSettings& settings,
                         uint32_t ssrc,

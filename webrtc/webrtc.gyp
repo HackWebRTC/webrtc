@@ -116,7 +116,6 @@
         'stream.h',
         'transport.h',
         'video_receive_stream.h',
-        'video_renderer.h',
         'video_send_stream.h',
 
         '<@(webrtc_audio_sources)',

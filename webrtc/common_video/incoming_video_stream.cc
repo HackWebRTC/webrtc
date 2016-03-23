@@ -28,7 +28,6 @@
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/video_renderer.h"
 
 namespace webrtc {
 

@@ -24,7 +24,6 @@
 #include "webrtc/video/report_block_stats.h"
 #include "webrtc/video/vie_channel.h"
 #include "webrtc/video_receive_stream.h"
-#include "webrtc/video_renderer.h"
 
 namespace webrtc {
 

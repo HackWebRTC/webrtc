@@ -19,7 +19,7 @@
 #include "webrtc/frame_callback.h"
 #include "webrtc/stream.h"
 #include "webrtc/transport.h"
-#include "webrtc/video_renderer.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace webrtc {
 
@@ -149,7 +149,7 @@ class VideoSendStream : public SendStream {
 
     // Renderer for local preview. The local renderer will be called even if
     // sending hasn't started. 'nullptr' disables local rendering.
-    VideoRenderer* local_renderer = nullptr;
+    rtc::VideoSinkInterface<VideoFrame>* local_renderer = nullptr;
 
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than expected render time.
