@@ -17,6 +17,7 @@ import android.util.Log;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.util.LooperExecutor;
+import org.webrtc.AudioTrack;
 import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.DataChannel;
 import org.webrtc.EglBase;
@@ -124,6 +125,9 @@ public class PeerConnectionClient {
   private boolean renderVideo;
   private VideoTrack localVideoTrack;
   private VideoTrack remoteVideoTrack;
+  // enableAudio is set to true if audio should be sent.
+  private boolean enableAudio;
+  private AudioTrack localAudioTrack;
 
   /**
    * Peer connection parameters.
@@ -252,6 +256,8 @@ public class PeerConnectionClient {
     renderVideo = true;
     localVideoTrack = null;
     remoteVideoTrack = null;
+    enableAudio = true;
+    localAudioTrack = null;
     statsTimer = new Timer();
 
     executor.execute(new Runnable() {
@@ -492,9 +498,7 @@ public class PeerConnectionClient {
       mediaStream.addTrack(createVideoTrack(videoCapturer));
     }
 
-    mediaStream.addTrack(factory.createAudioTrack(
-        AUDIO_TRACK_ID,
-        factory.createAudioSource(audioConstraints)));
+    mediaStream.addTrack(createAudioTrack());
     peerConnection.addStream(mediaStream);
 
     if (peerConnectionParameters.aecDump) {
@@ -603,6 +607,18 @@ public class PeerConnectionClient {
     } else {
       statsTimer.cancel();
     }
+  }
+
+  public void setAudioEnabled(final boolean enable) {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        enableAudio = enable;
+        if (localAudioTrack != null) {
+          localAudioTrack.setEnabled(enableAudio);
+        }
+      }
+    });
   }
 
   public void setVideoEnabled(final boolean enable) {
@@ -747,6 +763,14 @@ public class PeerConnectionClient {
         }
       }
     });
+  }
+
+  private AudioTrack createAudioTrack() {
+    localAudioTrack = factory.createAudioTrack(
+        AUDIO_TRACK_ID,
+        factory.createAudioSource(audioConstraints));
+    localAudioTrack.setEnabled(enableAudio);
+    return localAudioTrack;
   }
 
   private VideoTrack createVideoTrack(VideoCapturerAndroid capturer) {

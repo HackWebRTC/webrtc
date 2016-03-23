@@ -132,6 +132,7 @@ public class CallActivity extends Activity
   private boolean isError;
   private boolean callControlFragmentVisible = true;
   private long callStartedTimeMs = 0;
+  private boolean micEnabled = true;
 
   // Controls
   private CallFragment callFragment;
@@ -335,6 +336,15 @@ public class CallActivity extends Activity
     if (peerConnectionClient != null) {
       peerConnectionClient.changeCaptureFormat(width, height, framerate);
     }
+  }
+
+  @Override
+  public boolean onToggleMic() {
+    if (peerConnectionClient != null) {
+      micEnabled = !micEnabled;
+      peerConnectionClient.setAudioEnabled(micEnabled);
+    }
+    return micEnabled;
   }
 
   // Helper functions.
