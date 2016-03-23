@@ -141,6 +141,12 @@
     # Enabling this may break interop with Android clients that support H264.
     'use_objc_h264%': 0,
 
+    # Enable this to prevent extern symbols from being hidden on iOS builds.
+    # The chromium settings we inherit hide symbols by default on Release
+    # builds. We want our symbols to be visible when distributing WebRTC via
+    # static libraries to avoid linker warnings.
+    'ios_override_visibility%': 0,
+
     # Determines whether QUIC code will be built.
     'use_quic%': 0,
 
@@ -379,6 +385,12 @@
           'WEBRTC_MAC',
           'WEBRTC_IOS',
         ],
+      }],
+      ['OS=="ios" and ios_override_visibility==1', {
+        'xcode_settings': {
+          'GCC_INLINES_ARE_PRIVATE_EXTERN': 'NO',
+          'GCC_SYMBOLS_PRIVATE_EXTERN': 'NO',
+        }
       }],
       ['OS=="ios" and use_objc_h264==1', {
         'defines': [
