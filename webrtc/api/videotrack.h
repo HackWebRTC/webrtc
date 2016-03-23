@@ -22,7 +22,8 @@
 namespace webrtc {
 
 class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
-                   public rtc::VideoSourceBase {
+                   public rtc::VideoSourceBase,
+                   public ObserverInterface {
  public:
   static rtc::scoped_refptr<VideoTrack> Create(
       const std::string& label,
@@ -43,6 +44,9 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
   ~VideoTrack();
 
  private:
+  // Implements ObserverInterface. Observes |video_source_| state.
+  void OnChanged() override;
+
   rtc::ThreadChecker thread_checker_;
   rtc::scoped_refptr<VideoTrackSourceInterface> video_source_;
 };

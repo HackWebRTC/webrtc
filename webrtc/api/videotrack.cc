@@ -20,9 +20,11 @@ VideoTrack::VideoTrack(const std::string& label,
                        VideoTrackSourceInterface* video_source)
     : MediaStreamTrack<VideoTrackInterface>(label),
       video_source_(video_source) {
+  video_source_->RegisterObserver(this);
 }
 
 VideoTrack::~VideoTrack() {
+  video_source_->UnregisterObserver(this);
 }
 
 std::string VideoTrack::kind() const {
@@ -54,6 +56,15 @@ bool VideoTrack::set_enabled(bool enable) {
     video_source_->AddOrUpdateSink(sink_pair.sink, modified_wants);
   }
   return MediaStreamTrack<VideoTrackInterface>::set_enabled(enable);
+}
+
+void VideoTrack::OnChanged() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (video_source_->state() == MediaSourceInterface::kEnded) {
+    set_state(kEnded);
+  } else {
+    set_state(kLive);
+  }
 }
 
 rtc::scoped_refptr<VideoTrack> VideoTrack::Create(

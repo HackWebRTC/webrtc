@@ -111,28 +111,20 @@
 + (webrtc::MediaStreamTrackInterface::TrackState)
     convertTrackStateToNative:(RTCTrackState)state {
   switch (state) {
-    case RTCTrackStateInitializing:
-      return webrtc::MediaStreamTrackInterface::kInitializing;
     case RTCTrackStateLive:
       return webrtc::MediaStreamTrackInterface::kLive;
     case RTCTrackStateEnded:
       return webrtc::MediaStreamTrackInterface::kEnded;
-    case RTCTrackStateFailed:
-      return webrtc::MediaStreamTrackInterface::kFailed;
   }
 }
 
 + (RTCTrackState)convertTrackStateToObjC:
     (webrtc::MediaStreamTrackInterface::TrackState)nativeState {
   switch (nativeState) {
-    case webrtc::MediaStreamTrackInterface::kInitializing:
-      return RTCTrackStateInitializing;
     case webrtc::MediaStreamTrackInterface::kLive:
       return RTCTrackStateLive;
     case webrtc::MediaStreamTrackInterface::kEnded:
       return RTCTrackStateEnded;
-    case webrtc::MediaStreamTrackInterface::kFailed:
-      return RTCTrackStateFailed;
   }
 }
 

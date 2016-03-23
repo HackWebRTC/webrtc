@@ -65,27 +65,11 @@ void AudioTrack::RemoveSink(AudioTrackSinkInterface* sink) {
 
 void AudioTrack::OnChanged() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (state() == kFailed)
-    return;  // We can't recover from this state (do we ever set it?).
-
-  TrackState new_state = kInitializing;
-
-  // |audio_source_| must be non-null if we ever get here.
-  switch (audio_source_->state()) {
-    case MediaSourceInterface::kLive:
-    case MediaSourceInterface::kMuted:
-      new_state = kLive;
-      break;
-    case MediaSourceInterface::kEnded:
-      new_state = kEnded;
-      break;
-    case MediaSourceInterface::kInitializing:
-    default:
-      // use kInitializing.
-      break;
+  if (audio_source_->state() == MediaSourceInterface::kEnded) {
+    set_state(kEnded);
+  } else {
+    set_state(kLive);
   }
-
-  set_state(new_state);
 }
 
 }  // namespace webrtc

@@ -80,10 +80,8 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
                                   public NotifierInterface {
  public:
   enum TrackState {
-    kInitializing,  // Track is beeing negotiated.
-    kLive = 1,  // Track alive
-    kEnded = 2,  // Track have ended
-    kFailed = 3,  // Track negotiation failed.
+    kLive,
+    kEnded,
   };
 
   static const char kAudioKind[];

@@ -21,19 +21,19 @@
 
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::FakeVideoTrackRendererOld;
+using webrtc::MediaSourceInterface;
+using webrtc::MediaStreamTrackInterface;
 using webrtc::VideoTrackSource;
 using webrtc::VideoTrack;
 using webrtc::VideoTrackInterface;
-
 
 class VideoTrackTest : public testing::Test {
  public:
   VideoTrackTest() {
     static const char kVideoTrackId[] = "track_id";
-    video_track_ = VideoTrack::Create(
-        kVideoTrackId,
-        new rtc::RefCountedObject<VideoTrackSource>(
-            &capturer_, rtc::Thread::Current(), true /* remote */));
+    video_track_source_ = new rtc::RefCountedObject<VideoTrackSource>(
+        &capturer_, rtc::Thread::Current(), true /* remote */);
+    video_track_ = VideoTrack::Create(kVideoTrackId, video_track_source_);
     capturer_.Start(
         cricket::VideoFormat(640, 480, cricket::VideoFormat::FpsToInterval(30),
                              cricket::FOURCC_I420));
@@ -41,8 +41,16 @@ class VideoTrackTest : public testing::Test {
 
  protected:
   cricket::FakeVideoCapturer capturer_;
+  rtc::scoped_refptr<VideoTrackSource> video_track_source_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
 };
+
+// Test changing the source state also changes the track state.
+TEST_F(VideoTrackTest, SourceStateChangeTrackState) {
+  EXPECT_EQ(MediaStreamTrackInterface::kLive, video_track_->state());
+  video_track_source_->SetState(MediaSourceInterface::kEnded);
+  EXPECT_EQ(MediaStreamTrackInterface::kEnded, video_track_->state());
+}
 
 // Test adding renderers to a video track and render to them by providing
 // frames to the source.

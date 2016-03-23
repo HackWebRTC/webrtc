@@ -60,12 +60,12 @@ class MediaStreamTest: public testing::Test {
     video_track_ =
         VideoTrack::Create(kVideoTrackId, FakeVideoTrackSource::Create());
     ASSERT_TRUE(video_track_.get() != NULL);
-    EXPECT_EQ(MediaStreamTrackInterface::kInitializing, video_track_->state());
+    EXPECT_EQ(MediaStreamTrackInterface::kLive, video_track_->state());
 
     audio_track_ = AudioTrack::Create(kAudioTrackId, NULL);
 
     ASSERT_TRUE(audio_track_.get() != NULL);
-    EXPECT_EQ(MediaStreamTrackInterface::kInitializing, audio_track_->state());
+    EXPECT_EQ(MediaStreamTrackInterface::kLive, audio_track_->state());
 
     EXPECT_TRUE(stream_->AddTrack(video_track_));
     EXPECT_FALSE(stream_->AddTrack(video_track_));
@@ -83,8 +83,8 @@ class MediaStreamTest: public testing::Test {
 
     EXPECT_CALL(observer, OnChanged())
         .Times(Exactly(1));
-    track->set_state(MediaStreamTrackInterface::kLive);
-    EXPECT_EQ(MediaStreamTrackInterface::kLive, track->state());
+    track->set_state(MediaStreamTrackInterface::kEnded);
+    EXPECT_EQ(MediaStreamTrackInterface::kEnded, track->state());
   }
 
   scoped_refptr<MediaStreamInterface> stream_;

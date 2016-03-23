@@ -13,9 +13,7 @@ package org.webrtc;
 /** Java wrapper for a C++ MediaStreamTrackInterface. */
 public class MediaStreamTrack {
   /** Tracks MediaStreamTrackInterface.TrackState */
-  public enum State {
-    INITIALIZING, LIVE, ENDED, FAILED
-  }
+  public enum State { LIVE, ENDED }
 
   final long nativeTrack;
 

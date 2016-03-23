@@ -81,10 +81,6 @@ VideoRtpReceiver::VideoRtpReceiver(MediaStreamInterface* stream,
           rtc::Thread::Current(),
           VideoTrack::Create(track_id, source_.get()))) {
   source_->SetState(MediaSourceInterface::kLive);
-  // TODO(perkj): It should be enough to set the source state. All tracks
-  // belonging to the same source should get its state from the source.
-  // I.e. if a track has been cloned from a remote source.
-  track_->set_state(webrtc::MediaStreamTrackInterface::kLive);
   provider_->SetVideoPlayout(ssrc_, true, &broadcaster_);
   stream->AddTrack(track_);
 }
@@ -102,9 +98,6 @@ void VideoRtpReceiver::Stop() {
   }
   source_->SetState(MediaSourceInterface::kEnded);
   source_->OnSourceDestroyed();
-  // TODO(perkj): It should be enough to set the source state. All tracks
-  // belonging to the same source should get its state from the source.
-  track_->set_state(MediaStreamTrackInterface::kEnded);
   provider_->SetVideoPlayout(ssrc_, false, nullptr);
   provider_ = nullptr;
 }

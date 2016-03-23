@@ -48,10 +48,7 @@ class MediaStreamTrack : public Notifier<T> {
 
  protected:
   explicit MediaStreamTrack(const std::string& id)
-      : enabled_(true),
-        id_(id),
-        state_(MediaStreamTrackInterface::kInitializing) {
-  }
+      : enabled_(true), id_(id), state_(MediaStreamTrackInterface::kLive) {}
 
  private:
   bool enabled_;
