@@ -64,16 +64,11 @@ CreatePeerConnectionFactory() {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>());
 
-
-  // Call Initialize synchronously but make sure its executed on
-  // |signaling_thread|.
-  MethodCall0<PeerConnectionFactory, bool> call(
-      pc_factory.get(),
-      &PeerConnectionFactory::Initialize);
-  bool result =  call.Marshal(pc_factory->signaling_thread());
-
-  if (!result) {
-    return NULL;
+  RTC_CHECK(rtc::Thread::Current() == pc_factory->signaling_thread());
+  // The signaling thread is the current thread so we can
+  // safely call Initialize directly.
+  if (!pc_factory->Initialize()) {
+    return nullptr;
   }
   return PeerConnectionFactoryProxy::Create(pc_factory->signaling_thread(),
                                             pc_factory);
@@ -101,7 +96,7 @@ CreatePeerConnectionFactory(
   bool result =  call.Marshal(signaling_thread);
 
   if (!result) {
-    return NULL;
+    return nullptr;
   }
   return PeerConnectionFactoryProxy::Create(signaling_thread, pc_factory);
 }

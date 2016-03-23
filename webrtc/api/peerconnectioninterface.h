@@ -634,12 +634,25 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 };
 
 // Create a new instance of PeerConnectionFactoryInterface.
+//
+// This method relies on the thread it's called on as the "signaling thread"
+// for the PeerConnectionFactory it creates.
+//
+// As such, if the current thread is not already running an rtc::Thread message
+// loop, an application using this method must eventually either call
+// rtc::Thread::Current()->Run(), or call
+// rtc::Thread::Current()->ProcessMessages() within the application's own
+// message loop.
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory();
 
 // Create a new instance of PeerConnectionFactoryInterface.
-// Ownership of |factory|, |default_adm|, and optionally |encoder_factory| and
-// |decoder_factory| transferred to the returned factory.
+//
+// |worker_thread| and |signaling_thread| are the only mandatory
+// parameters.
+//
+// If non-null, ownership of |default_adm|, |encoder_factory| and
+// |decoder_factory| are transferred to the returned factory.
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory(
     rtc::Thread* worker_thread,
