@@ -12,9 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#if defined(WEBRTC_IOS)
 @class RTCAVFoundationVideoSource;
-#endif
 @class RTCAudioTrack;
 @class RTCConfiguration;
 @class RTCMediaConstraints;
@@ -28,11 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
-#if defined(WEBRTC_IOS)
 /** Initialize an RTCAVFoundationVideoSource with constraints. */
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints;
-#endif
 
 /** Initialize an RTCAudioTrack with an id. */
 - (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId;

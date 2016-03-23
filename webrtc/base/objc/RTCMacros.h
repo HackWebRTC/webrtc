@@ -23,4 +23,4 @@
 #define RTC_FWD_DECL_OBJC_CLASS(classname) typedef struct objc_object classname
 #endif
 
-#endif // WEBRTC_BASE_OBJC_RTC_MACROS_H_
+#endif  // WEBRTC_BASE_OBJC_RTC_MACROS_H_

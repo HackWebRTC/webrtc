@@ -44,13 +44,16 @@
   return self;
 }
 
-#if defined(WEBRTC_IOS)
+
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints {
+#if defined(WEBRTC_IOS)
   return [[RTCAVFoundationVideoSource alloc] initWithFactory:self
                                                  constraints:constraints];
-}
+#else
+  return nil;
 #endif
+}
 
 - (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId {
   return [[RTCAudioTrack alloc] initWithFactory:self
