@@ -296,7 +296,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   void set_candidate_filter(uint32_t candidate_filter) {
     candidate_filter_ = candidate_filter;
   }
-  int32_t network_cost() const { return network_cost_; }
+  int16_t network_cost() const { return network_cost_; }
 
  protected:
   enum {
@@ -403,7 +403,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // A virtual cost perceived by the user, usually based on the network type
   // (WiFi. vs. Cellular). It takes precedence over the priority when
   // comparing two connections.
-  uint32_t network_cost_;
+  uint16_t network_cost_;
 
   friend class Connection;
 };

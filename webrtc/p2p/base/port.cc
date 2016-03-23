@@ -242,25 +242,17 @@ void Port::AddAddress(const rtc::SocketAddress& address,
     ASSERT(!tcptype.empty());
   }
 
-  Candidate c;
-  c.set_id(rtc::CreateRandomString(8));
-  c.set_component(component_);
-  c.set_type(type);
-  c.set_protocol(protocol);
+  std::string foundation =
+      ComputeFoundation(type, protocol, relay_protocol, base_address);
+  Candidate c(component_, protocol, address, 0U, username_fragment(), password_,
+              type, generation_, foundation, network_->id(), network_cost_);
+  c.set_priority(
+      c.GetPriority(type_preference, network_->preference(), relay_preference));
   c.set_relay_protocol(relay_protocol);
   c.set_tcptype(tcptype);
-  c.set_address(address);
-  c.set_priority(c.GetPriority(type_preference, network_->preference(),
-                               relay_preference));
-  c.set_username(username_fragment());
-  c.set_password(password_);
   c.set_network_name(network_->name());
   c.set_network_type(network_->type());
-  c.set_network_cost(network_cost_);
-  c.set_generation(generation_);
   c.set_related_address(related_address);
-  c.set_foundation(
-      ComputeFoundation(type, protocol, relay_protocol, base_address));
   candidates_.push_back(c);
   SignalCandidateReady(this, c);
 
@@ -705,11 +697,10 @@ class ConnectionRequest : public StunRequest {
           static_cast<uint32_t>(connection_->pings_since_last_response_.size() -
                                 1)));
     }
-    uint32_t network_cost = connection_->port()->network_cost();
-    if (network_cost > 0) {
-      request->AddAttribute(
-          new StunUInt32Attribute(STUN_ATTR_NETWORK_COST, network_cost));
-    }
+    uint32_t network_info = connection_->port()->Network()->id();
+    network_info = (network_info << 16) | connection_->port()->network_cost();
+    request->AddAttribute(
+        new StunUInt32Attribute(STUN_ATTR_NETWORK_INFO, network_info));
 
     // Adding ICE_CONTROLLED or ICE_CONTROLLING attribute based on the role.
     if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLING) {
@@ -1412,11 +1403,12 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   new_local_candidate.set_password(local_candidate().password());
   new_local_candidate.set_network_name(local_candidate().network_name());
   new_local_candidate.set_network_type(local_candidate().network_type());
-  new_local_candidate.set_network_cost(local_candidate().network_cost());
   new_local_candidate.set_related_address(local_candidate().address());
   new_local_candidate.set_foundation(ComputeFoundation(
       PRFLX_PORT_TYPE, local_candidate().protocol(),
       local_candidate().relay_protocol(), local_candidate().address()));
+  new_local_candidate.set_network_id(local_candidate().network_id());
+  new_local_candidate.set_network_cost(local_candidate().network_cost());
 
   // Change the local candidate of this Connection to the new prflx candidate.
   local_candidate_index_ = port_->AddPrflxCandidate(new_local_candidate);

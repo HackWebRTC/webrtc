@@ -173,6 +173,11 @@ class NetworkManagerBase : public NetworkManager {
 
   IPAddress default_local_ipv4_address_;
   IPAddress default_local_ipv6_address_;
+  // We use 16 bits to save the bandwidth consumption when sending the network
+  // id over the Internet. It is OK that the 16-bit integer overflows to get a
+  // network id 0 because we only compare the network ids in the old and the new
+  // best connections in the transport channel.
+  uint16_t next_available_network_id_ = 1;
 };
 
 // Basic implementation of the NetworkManager interface that gets list
@@ -339,6 +344,11 @@ class Network {
   AdapterType type() const { return type_; }
   void set_type(AdapterType type) { type_ = type; }
 
+  // A unique id assigned by the network manager, which may be signaled
+  // to the remote side in the candidate.
+  uint16_t id() const { return id_; }
+  void set_id(uint16_t id) { id_ = id; }
+
   int preference() const { return preference_; }
   void set_preference(int preference) { preference_ = preference; }
 
@@ -372,6 +382,7 @@ class Network {
   AdapterType type_;
   int preference_;
   bool active_ = true;
+  uint16_t id_ = 0;
 
   friend class NetworkManager;
 };

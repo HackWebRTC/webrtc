@@ -614,25 +614,30 @@ void P2PTransportChannel::OnUnknownAddress(
     }
     int remote_candidate_priority = priority_attr->value();
 
-    const StunUInt32Attribute* cost_attr =
-        stun_msg->GetUInt32(STUN_ATTR_NETWORK_COST);
-    uint32_t network_cost = (cost_attr) ? cost_attr->value() : 0;
+    uint16_t network_id = 0;
+    uint16_t network_cost = 0;
+    const StunUInt32Attribute* network_attr =
+        stun_msg->GetUInt32(STUN_ATTR_NETWORK_INFO);
+    if (network_attr) {
+      uint32_t network_info = network_attr->value();
+      network_id = static_cast<uint16_t>(network_info >> 16);
+      network_cost = static_cast<uint16_t>(network_info);
+    }
 
     // RFC 5245
     // If the source transport address of the request does not match any
     // existing remote candidates, it represents a new peer reflexive remote
     // candidate.
-    remote_candidate = Candidate(component(), ProtoToString(proto), address, 0,
-                                 remote_username, remote_password,
-                                 PRFLX_PORT_TYPE, remote_generation, "");
+    remote_candidate = Candidate(
+        component(), ProtoToString(proto), address, remote_candidate_priority,
+        remote_username, remote_password, PRFLX_PORT_TYPE, remote_generation,
+        "", network_id, network_cost);
 
     // From RFC 5245, section-7.2.1.3:
     // The foundation of the candidate is set to an arbitrary value, different
     // from the foundation for all other remote candidates.
     remote_candidate.set_foundation(
         rtc::ToString<uint32_t>(rtc::ComputeCrc32(remote_candidate.id())));
-    remote_candidate.set_priority(remote_candidate_priority);
-    remote_candidate.set_network_cost(network_cost);
   }
 
   // RFC5245, the agent constructs a pair whose local candidate is equal to

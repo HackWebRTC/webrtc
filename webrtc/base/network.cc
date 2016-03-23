@@ -286,6 +286,7 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
       // This network is new. Place it in the network map.
       merged_list.push_back(net);
       networks_map_[key] = net;
+      net->set_id(next_available_network_id_++);
       // Also, we might have accumulated IPAddresses from the first
       // step, set it here.
       net->SetIPs(kv.second.ips, true);

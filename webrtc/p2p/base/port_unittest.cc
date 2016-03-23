@@ -559,6 +559,10 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     }
   }
 
+  void SetNetworkType(rtc::AdapterType adapter_type) {
+    network_.set_type(adapter_type);
+  }
+
   void TestCrossFamilyPorts(int type);
 
   void ExpectPortsCanConnect(bool can_connect, Port* p1, Port* p2);
@@ -1755,6 +1759,51 @@ TEST_F(PortTest, TestUseCandidateAttribute) {
   const StunByteStringAttribute* use_candidate_attr = msg->GetByteString(
       STUN_ATTR_USE_CANDIDATE);
   ASSERT_TRUE(use_candidate_attr != NULL);
+}
+
+TEST_F(PortTest, TestNetworkInfoAttribute) {
+  rtc::scoped_ptr<TestPort> lport(
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
+  // Set the network type for rport to be cellular so its cost will be 999.
+  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
+  rtc::scoped_ptr<TestPort> rport(
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
+  lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  lport->SetIceTiebreaker(kTiebreaker1);
+  rport->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  rport->SetIceTiebreaker(kTiebreaker2);
+
+  uint16_t lnetwork_id = 9;
+  lport->Network()->set_id(lnetwork_id);
+  // Send a fake ping from lport to rport.
+  lport->PrepareAddress();
+  rport->PrepareAddress();
+  Connection* lconn =
+      lport->CreateConnection(rport->Candidates()[0], Port::ORIGIN_MESSAGE);
+  lconn->Ping(0);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  IceMessage* msg = lport->last_stun_msg();
+  const StunUInt32Attribute* network_info_attr =
+      msg->GetUInt32(STUN_ATTR_NETWORK_INFO);
+  ASSERT_TRUE(network_info_attr != NULL);
+  uint32_t network_info = network_info_attr->value();
+  EXPECT_EQ(lnetwork_id, network_info >> 16);
+  // Default network cost is 0.
+  EXPECT_EQ(0U, network_info & 0xFFFF);
+
+  // Send a fake ping from rport to lport.
+  uint16_t rnetwork_id = 8;
+  rport->Network()->set_id(rnetwork_id);
+  Connection* rconn =
+      rport->CreateConnection(lport->Candidates()[0], Port::ORIGIN_MESSAGE);
+  rconn->Ping(0);
+  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, 1000);
+  msg = rport->last_stun_msg();
+  network_info_attr = msg->GetUInt32(STUN_ATTR_NETWORK_INFO);
+  ASSERT_TRUE(network_info_attr != NULL);
+  network_info = network_info_attr->value();
+  EXPECT_EQ(rnetwork_id, network_info >> 16);
+  EXPECT_EQ(cricket::kMaxNetworkCost, network_info & 0xFFFF);
 }
 
 // Test handling STUN messages.

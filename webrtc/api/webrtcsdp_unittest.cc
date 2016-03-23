@@ -2058,6 +2058,19 @@ TEST_F(WebRtcSdpTest, SerializeCandidates) {
                                          candidate_with_ufrag));
   message = webrtc::SdpSerializeCandidate(*jcandidate_);
   EXPECT_EQ(std::string(kRawCandidate) + " ufrag ABC", message);
+
+  Candidate candidate_with_network_info(candidates_.front());
+  candidate_with_network_info.set_network_id(1);
+  jcandidate_.reset(new JsepIceCandidate(std::string("audio"), 0,
+                                         candidate_with_network_info));
+  message = webrtc::SdpSerializeCandidate(*jcandidate_);
+  EXPECT_EQ(std::string(kRawCandidate) + " network-id 1", message);
+  candidate_with_network_info.set_network_cost(999);
+  jcandidate_.reset(new JsepIceCandidate(std::string("audio"), 0,
+                                         candidate_with_network_info));
+  message = webrtc::SdpSerializeCandidate(*jcandidate_);
+  EXPECT_EQ(std::string(kRawCandidate) + " network-id 1 network-cost 999",
+            message);
 }
 
 // TODO(mallinath) : Enable this test once WebRTCSdp capable of parsing
@@ -2325,6 +2338,7 @@ TEST_F(WebRtcSdpTest, DeserializeCandidate) {
   EXPECT_EQ(kDummyMid, jcandidate.sdp_mid());
   EXPECT_EQ(kDummyIndex, jcandidate.sdp_mline_index());
   EXPECT_TRUE(jcandidate.candidate().IsEquivalent(jcandidate_->candidate()));
+  EXPECT_EQ(0, jcandidate.candidate().network_cost());
 
   // Candidate line without generation extension.
   sdp = kSdpOneCandidate;
@@ -2335,6 +2349,22 @@ TEST_F(WebRtcSdpTest, DeserializeCandidate) {
   Candidate expected = jcandidate_->candidate();
   expected.set_generation(0);
   EXPECT_TRUE(jcandidate.candidate().IsEquivalent(expected));
+
+  // Candidate with network id and/or cost.
+  sdp = kSdpOneCandidate;
+  Replace(" generation 2", " generation 2 network-id 2", &sdp);
+  EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
+  EXPECT_EQ(kDummyMid, jcandidate.sdp_mid());
+  EXPECT_EQ(kDummyIndex, jcandidate.sdp_mline_index());
+  expected = jcandidate_->candidate();
+  expected.set_network_id(2);
+  EXPECT_TRUE(jcandidate.candidate().IsEquivalent(expected));
+  EXPECT_EQ(0, jcandidate.candidate().network_cost());
+  // Add network cost
+  Replace(" network-id 2", " network-id 2 network-cost 9", &sdp);
+  EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
+  EXPECT_TRUE(jcandidate.candidate().IsEquivalent(expected));
+  EXPECT_EQ(9, jcandidate.candidate().network_cost());
 
   sdp = kSdpTcpActiveCandidate;
   EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));

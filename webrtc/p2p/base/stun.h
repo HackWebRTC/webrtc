@@ -606,7 +606,9 @@ enum IceAttributeType {
   STUN_ATTR_USE_CANDIDATE = 0x0025,    // No content, Length = 0
   STUN_ATTR_ICE_CONTROLLED = 0x8029,   // UInt64
   STUN_ATTR_ICE_CONTROLLING = 0x802A,  // UInt64
-  STUN_ATTR_NETWORK_COST = 0xC057      // UInt32
+  // UInt32. The higher 16 bits are the network ID. The lower 16 bits are the
+  // network cost.
+  STUN_ATTR_NETWORK_INFO = 0xC057
 };
 
 // RFC 5245-defined errors.
@@ -621,7 +623,7 @@ class IceMessage : public StunMessage {
   virtual StunAttributeValueType GetAttributeValueType(int type) const {
     switch (type) {
       case STUN_ATTR_PRIORITY:
-      case STUN_ATTR_NETWORK_COST:
+      case STUN_ATTR_NETWORK_INFO:
         return STUN_VALUE_UINT32;
       case STUN_ATTR_USE_CANDIDATE:   return STUN_VALUE_BYTE_STRING;
       case STUN_ATTR_ICE_CONTROLLED:  return STUN_VALUE_UINT64;
