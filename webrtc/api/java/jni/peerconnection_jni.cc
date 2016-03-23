@@ -66,7 +66,6 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/videocapturer.h"
-#include "webrtc/media/base/videorenderer.h"
 #include "webrtc/media/devices/videorendererfactory.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"

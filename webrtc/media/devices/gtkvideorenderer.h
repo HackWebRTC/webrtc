@@ -17,24 +17,24 @@
 #include <memory>
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/media/base/videorenderer.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 typedef struct _GtkWidget GtkWidget;  // forward declaration, defined in gtk.h
 
 namespace cricket {
 
-class GtkVideoRenderer : public VideoRenderer {
+class VideoFrame;
+
+class GtkVideoRenderer : public rtc::VideoSinkInterface<VideoFrame> {
  public:
   GtkVideoRenderer(int x, int y);
   virtual ~GtkVideoRenderer();
 
-  // Implementation of pure virtual methods of VideoRenderer.
-  // These two methods may be executed in different threads.
-  // SetSize is called before RenderFrame.
-  virtual bool SetSize(int width, int height, int reserved);
-  virtual bool RenderFrame(const VideoFrame* frame);
+  // Implementation of VideoSinkInterface.
+  void OnFrame(const VideoFrame& frame) override;
 
  private:
+  bool SetSize(int width, int height);
   // Initialize the attributes when the first frame arrives.
   bool Initialize(int width, int height);
   // Pump the Gtk event loop until there are no events left.

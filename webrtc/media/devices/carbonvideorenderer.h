@@ -19,25 +19,24 @@
 #include <Carbon/Carbon.h>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/media/base/videorenderer.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace cricket {
 
-class CarbonVideoRenderer : public VideoRenderer {
+class CarbonVideoRenderer
+    : public rtc::VideoSinkInterface<cricket::VideoFrame> {
  public:
   CarbonVideoRenderer(int x, int y);
   virtual ~CarbonVideoRenderer();
 
-  // Implementation of pure virtual methods of VideoRenderer.
-  // These two methods may be executed in different threads.
-  // SetSize is called before RenderFrame.
-  virtual bool SetSize(int width, int height, int reserved);
-  virtual bool RenderFrame(const VideoFrame* frame);
+  // Implementation of VideoSinkInterface.
+  void OnFrame(const VideoFrame& frame) override;
 
   // Needs to be called on the main thread.
   bool Initialize();
 
  private:
+  bool SetSize(int width, int height);
   bool DrawFrame();
 
   static OSStatus DrawEventHandler(EventHandlerCallRef handler,

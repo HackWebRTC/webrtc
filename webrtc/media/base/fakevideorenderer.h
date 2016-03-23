@@ -14,12 +14,12 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/videoframe.h"
-#include "webrtc/media/base/videorenderer.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace cricket {
 
 // Faked video renderer that has a callback for actions on rendering.
-class FakeVideoRenderer : public VideoRenderer {
+class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
  public:
   FakeVideoRenderer()
       : errors_(0),
@@ -30,24 +30,18 @@ class FakeVideoRenderer : public VideoRenderer {
         num_rendered_frames_(0),
         black_frame_(false) {}
 
-  virtual bool RenderFrame(const VideoFrame* frame) {
+  virtual void OnFrame(const VideoFrame& frame) {
     rtc::CritScope cs(&crit_);
     // TODO(zhurunz) Check with VP8 team to see if we can remove this
     // tolerance on Y values.
-    black_frame_ = CheckFrameColorYuv(6, 48, 128, 128, 128, 128, frame);
+    black_frame_ = CheckFrameColorYuv(6, 48, 128, 128, 128, 128, &frame);
     // Treat unexpected frame size as error.
-    if (!frame) {
-      LOG(LS_WARNING) << "RenderFrame expected non-null frame.";
-      ++errors_;
-      return false;
-    }
     ++num_rendered_frames_;
-    width_ = static_cast<int>(frame->GetWidth());
-    height_ = static_cast<int>(frame->GetHeight());
-    rotation_ = frame->GetVideoRotation();
-    timestamp_ = frame->GetTimeStamp();
-    SignalRenderFrame(frame);
-    return true;
+    width_ = static_cast<int>(frame.GetWidth());
+    height_ = static_cast<int>(frame.GetHeight());
+    rotation_ = frame.GetVideoRotation();
+    timestamp_ = frame.GetTimeStamp();
+    SignalRenderFrame(&frame);
   }
 
   int errors() const { return errors_; }

@@ -92,7 +92,7 @@ bool CarbonVideoRenderer::DrawFrame() {
   return true;
 }
 
-bool CarbonVideoRenderer::SetSize(int width, int height, int reserved) {
+bool CarbonVideoRenderer::SetSize(int width, int height) {
   if (width != image_width_ || height != image_height_) {
     // Grab the image lock while changing its size.
     rtc::CritScope cs(&image_crit_);
@@ -104,10 +104,7 @@ bool CarbonVideoRenderer::SetSize(int width, int height, int reserved) {
   return true;
 }
 
-bool CarbonVideoRenderer::RenderFrame(const VideoFrame* video_frame) {
-  if (!video_frame) {
-    return false;
-  }
+void CarbonVideoRenderer::OnFrame(const VideoFrame& video_frame) {
   {
     const VideoFrame* frame = video_frame->GetCopyWithRotationApplied();
 

@@ -26,7 +26,7 @@ class FakeVideoTrackRenderer
   ~FakeVideoTrackRenderer() { video_track_->RemoveSink(this); }
 
   virtual void OnFrame(const cricket::VideoFrame& video_frame) override {
-    fake_renderer_.RenderFrame(&video_frame);
+    fake_renderer_.OnFrame(video_frame);
   }
 
   int errors() const { return fake_renderer_.errors(); }

@@ -70,7 +70,6 @@
         'base/videoframe.h',
         'base/videoframefactory.cc',
         'base/videoframefactory.h',
-        'base/videorenderer.h',
         'base/videosourcebase.cc',
         'base/videosourcebase.h',
         'base/yuvframegenerator.cc',

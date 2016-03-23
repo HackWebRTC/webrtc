@@ -18,20 +18,19 @@
 
 #include <memory>
 
-#include "webrtc/media/base/videorenderer.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace cricket {
 
-class GdiVideoRenderer : public VideoRenderer {
+class VideoFrame;
+
+class GdiVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
  public:
   GdiVideoRenderer(int x, int y);
   virtual ~GdiVideoRenderer();
 
-  // Implementation of pure virtual methods of VideoRenderer.
-  // These two methods may be executed in different threads.
-  // SetSize is called before RenderFrame.
-  virtual bool SetSize(int width, int height, int reserved);
-  virtual bool RenderFrame(const VideoFrame* frame);
+  // Implementation of VideoSinkInterface
+  void OnFrame(const VideoFrame& frame) override;
 
  private:
   class VideoWindow;  // forward declaration, defined in the .cc file

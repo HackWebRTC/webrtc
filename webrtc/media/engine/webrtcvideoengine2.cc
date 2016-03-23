@@ -22,7 +22,6 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"
 #include "webrtc/media/base/videocapturer.h"
-#include "webrtc/media/base/videorenderer.h"
 #include "webrtc/media/engine/constants.h"
 #include "webrtc/media/engine/simulcast.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"

@@ -14,7 +14,7 @@
 #ifndef WEBRTC_MEDIA_DEVICES_VIDEORENDERERFACTORY_H_
 #define WEBRTC_MEDIA_DEVICES_VIDEORENDERERFACTORY_H_
 
-#include "webrtc/media/base/videorenderer.h"
+#include "webrtc/media/base/videosinkinterface.h"
 #if defined(WEBRTC_LINUX) && defined(HAVE_GTK)
 #include "webrtc/media/devices/gtkvideorenderer.h"
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && !defined(CARBON_DEPRECATED)
@@ -27,7 +27,9 @@ namespace cricket {
 
 class VideoRendererFactory {
  public:
-  static VideoRenderer* CreateGuiVideoRenderer(int x, int y) {
+  static rtc::VideoSinkInterface<cricket::VideoFrame>* CreateGuiVideoRenderer(
+      int x,
+      int y) {
   #if defined(WEBRTC_LINUX) && defined(HAVE_GTK)
     return new GtkVideoRenderer(x, y);
   #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && \

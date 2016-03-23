@@ -59,7 +59,7 @@ GtkVideoRenderer::~GtkVideoRenderer() {
   // implicitly destroyed by the above.
 }
 
-bool GtkVideoRenderer::SetSize(int width, int height, int reserved) {
+bool GtkVideoRenderer::SetSize(int width, int height) {
   ScopedGdkLock lock;
 
   // If the dimension is the same, no-op.
@@ -80,16 +80,12 @@ bool GtkVideoRenderer::SetSize(int width, int height, int reserved) {
   return true;
 }
 
-bool GtkVideoRenderer::RenderFrame(const VideoFrame* video_frame) {
-  if (!video_frame) {
-    return false;
-  }
-
-  const VideoFrame* frame = video_frame->GetCopyWithRotationApplied();
+void GtkVideoRenderer::OnFrame(const VideoFrame& video_frame) {
+  const VideoFrame* frame = video_frame.GetCopyWithRotationApplied();
 
   // Need to set size as the frame might be rotated.
-  if (!SetSize(frame->GetWidth(), frame->GetHeight(), 0)) {
-    return false;
+  if (!SetSize(frame->GetWidth(), frame->GetHeight())) {
+    return;
   }
 
   // convert I420 frame to ABGR format, which is accepted by GTK
@@ -101,7 +97,7 @@ bool GtkVideoRenderer::RenderFrame(const VideoFrame* video_frame) {
   ScopedGdkLock lock;
 
   if (IsClosed()) {
-    return false;
+    return;
   }
 
   // draw the ABGR image
@@ -117,7 +113,6 @@ bool GtkVideoRenderer::RenderFrame(const VideoFrame* video_frame) {
 
   // Run the Gtk main loop to refresh the window.
   Pump();
-  return true;
 }
 
 bool GtkVideoRenderer::Initialize(int width, int height) {

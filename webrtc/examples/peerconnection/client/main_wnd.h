@@ -21,7 +21,6 @@
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/base/videoframe.h"
-#include "webrtc/media/base/videorenderer.h"
 
 class MainWndCallback {
  public:
