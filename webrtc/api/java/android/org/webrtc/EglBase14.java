@@ -38,10 +38,13 @@ public final class EglBase14 extends EglBase {
 
   // EGL 1.4 is supported from API 17. But EGLExt that is used for setting presentation
   // time stamp on a surface is supported from 18 so we require 18.
+  // Currently EGL 1.4 support is disabled for all devices, since it causes deadlock
+  // in Android view rendering on some devices.
+  // TODO(magjed,glaznev) - investigate if it can be re-enabled back.
   public static boolean isEGL14Supported() {
-    Logging.d(TAG, "SDK version: " + CURRENT_SDK_VERSION
-        + ". isEGL14Supported: " + (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION));
-    return (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION);
+    Logging.d(TAG, "SDK version: " + CURRENT_SDK_VERSION +
+        ". isEGL14Supported: forced to false.");
+    return false;
   }
 
   public static class Context extends EglBase.Context {
