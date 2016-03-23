@@ -13,7 +13,7 @@ package org.webrtc;
 import java.nio.ByteBuffer;
 
 /**
- * Java version of VideoRendererInterface.  In addition to allowing clients to
+ * Java version of VideoSinkInterface.  In addition to allowing clients to
  * define their own rendering behavior (by passing in a Callbacks object), this
  * class also provides a createGui() method for creating a GUI-rendering window
  * on various platforms.
@@ -106,7 +106,7 @@ public class VideoRenderer {
   public static native void nativeCopyPlane(ByteBuffer src, int width,
       int height, int srcStride, ByteBuffer dst, int dstStride);
 
-  /** The real meat of VideoRendererInterface. */
+  /** The real meat of VideoSinkInterface. */
   public static interface Callbacks {
     // |frame| might have pending rotation and implementation of Callbacks
     // should handle that by applying rotation during rendering. The callee

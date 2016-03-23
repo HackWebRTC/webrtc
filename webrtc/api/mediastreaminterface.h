@@ -99,26 +99,6 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
   virtual ~MediaStreamTrackInterface() {}
 };
 
-// Interface for rendering VideoFrames from a VideoTrack
-class VideoRendererInterface
-    : public rtc::VideoSinkInterface<cricket::VideoFrame> {
- public:
-  // |frame| may have pending rotation. For clients which can't apply rotation,
-  // |frame|->GetCopyWithRotationApplied() will return a frame that has the
-  // rotation applied.
-  virtual void RenderFrame(const cricket::VideoFrame* frame) = 0;
-  // Intended to replace RenderFrame.
-  void OnFrame(const cricket::VideoFrame& frame) override {
-    RenderFrame(&frame);
-  }
-
- protected:
-  // The destructor is protected to prevent deletion via the interface.
-  // This is so that we allow reference counted classes, where the destructor
-  // should never be public, to implement the interface.
-  virtual ~VideoRendererInterface() {}
-};
-
 // VideoTrackSourceInterface is a reference counted source used for VideoTracks.
 // The same source can be used in multiple VideoTracks.
 class VideoTrackSourceInterface
@@ -157,16 +137,6 @@ class VideoTrackInterface
     : public MediaStreamTrackInterface,
       public rtc::VideoSourceInterface<cricket::VideoFrame> {
  public:
-  // AddRenderer and RemoveRenderer are for backwards compatibility
-  // only. They are obsoleted by the methods of
-  // rtc::VideoSourceInterface.
-  virtual void AddRenderer(VideoRendererInterface* renderer) {
-    AddOrUpdateSink(renderer, rtc::VideoSinkWants());
-  }
-  virtual void RemoveRenderer(VideoRendererInterface* renderer) {
-    RemoveSink(renderer);
-  }
-
   // Register a video sink for this track.
   void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override{};

@@ -31,7 +31,7 @@ import javax.microedition.khronos.egl.EGLContext;
  * renderFrame() is asynchronous to avoid blocking the calling thread.
  * This class is thread safe and handles access from potentially four different threads:
  * Interaction from the main app in init, release, setMirror, and setScalingtype.
- * Interaction from C++ webrtc::VideoRendererInterface in renderFrame and canApplyRotation.
+ * Interaction from C++ rtc::VideoSinkInterface in renderFrame.
  * Interaction from the Activity lifecycle in surfaceCreated, surfaceChanged, and surfaceDestroyed.
  * Interaction with the layout framework in onMeasure and onSizeChanged.
  */

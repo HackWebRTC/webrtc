@@ -20,7 +20,6 @@
 #include "webrtc/media/engine/webrtcvideoframe.h"
 
 using webrtc::FakeVideoTrackRenderer;
-using webrtc::FakeVideoTrackRendererOld;
 using webrtc::MediaSourceInterface;
 using webrtc::MediaStreamTrackInterface;
 using webrtc::VideoTrackSource;
@@ -65,30 +64,6 @@ TEST_F(VideoTrackTest, RenderVideo) {
   // FakeVideoTrackRenderer register itself to |video_track_|
   rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_2(
       new FakeVideoTrackRenderer(video_track_.get()));
-  capturer_.CaptureFrame();
-  EXPECT_EQ(2, renderer_1->num_rendered_frames());
-  EXPECT_EQ(1, renderer_2->num_rendered_frames());
-
-  renderer_1.reset(nullptr);
-  capturer_.CaptureFrame();
-  EXPECT_EQ(2, renderer_2->num_rendered_frames());
-}
-
-// Test adding renderers to a video track and render to them by
-// providing frames to the source. Uses the old VideoTrack interface
-// with AddRenderer and RemoveRenderer.
-TEST_F(VideoTrackTest, RenderVideoOld) {
-  // FakeVideoTrackRenderer register itself to |video_track_|
-  rtc::scoped_ptr<FakeVideoTrackRendererOld> renderer_1(
-      new FakeVideoTrackRendererOld(video_track_.get()));
-
-  capturer_.CaptureFrame();
-  EXPECT_EQ(1, renderer_1->num_rendered_frames());
-
-  // FakeVideoTrackRenderer register itself to |video_track_|
-  rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_2(
-      new FakeVideoTrackRenderer(video_track_.get()));
-
   capturer_.CaptureFrame();
   EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(1, renderer_2->num_rendered_frames());

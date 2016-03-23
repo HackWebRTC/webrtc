@@ -106,7 +106,6 @@ using webrtc::SetSessionDescriptionObserver;
 using webrtc::StatsObserver;
 using webrtc::StatsReport;
 using webrtc::StatsReports;
-using webrtc::VideoRendererInterface;
 using webrtc::VideoTrackSourceInterface;
 using webrtc::VideoTrackInterface;
 using webrtc::VideoTrackVector;
@@ -731,32 +730,10 @@ class StatsObserverWrapper : public StatsObserver {
   const jmethodID j_value_ctor_;
 };
 
-// Adapter presenting a cricket::VideoRenderer as a
-// webrtc::VideoRendererInterface.
-class VideoRendererWrapper : public VideoRendererInterface {
- public:
-  static VideoRendererWrapper* Create(cricket::VideoRenderer* renderer) {
-    if (renderer)
-      return new VideoRendererWrapper(renderer);
-    return NULL;
-  }
-
-  virtual ~VideoRendererWrapper() {}
-
-  void RenderFrame(const cricket::VideoFrame* video_frame) override {
-    ScopedLocalRefFrame local_ref_frame(AttachCurrentThreadIfNeeded());
-    renderer_->RenderFrame(video_frame->GetCopyWithRotationApplied());
-  }
-
- private:
-  explicit VideoRendererWrapper(cricket::VideoRenderer* renderer)
-      : renderer_(renderer) {}
-  scoped_ptr<cricket::VideoRenderer> renderer_;
-};
-
-// Wrapper dispatching webrtc::VideoRendererInterface to a Java VideoRenderer
+// Wrapper dispatching rtc::VideoSinkInterface to a Java VideoRenderer
 // instance.
-class JavaVideoRendererWrapper : public VideoRendererInterface {
+class JavaVideoRendererWrapper
+    : public rtc::VideoSinkInterface<cricket::VideoFrame> {
  public:
   JavaVideoRendererWrapper(JNIEnv* jni, jobject j_callbacks)
       : j_callbacks_(jni, j_callbacks),
@@ -776,11 +753,11 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
 
   virtual ~JavaVideoRendererWrapper() {}
 
-  void RenderFrame(const cricket::VideoFrame* video_frame) override {
+  void OnFrame(const cricket::VideoFrame& video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jobject j_frame = (video_frame->GetNativeHandle() != nullptr)
-                          ? CricketToJavaTextureFrame(video_frame)
-                          : CricketToJavaI420Frame(video_frame);
+    jobject j_frame = (video_frame.GetNativeHandle() != nullptr)
+                          ? CricketToJavaTextureFrame(&video_frame)
+                          : CricketToJavaI420Frame(&video_frame);
     // |j_callbacks_| is responsible for releasing |j_frame| with
     // VideoRenderer.renderFrameDone().
     jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
@@ -1997,15 +1974,20 @@ JOW(jboolean, MediaStreamTrack_nativeSetEnabled)(
 JOW(void, VideoTrack_nativeAddRenderer)(
     JNIEnv* jni, jclass,
     jlong j_video_track_pointer, jlong j_renderer_pointer) {
-  reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)->AddRenderer(
-      reinterpret_cast<VideoRendererInterface*>(j_renderer_pointer));
+  reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)
+      ->AddOrUpdateSink(
+          reinterpret_cast<rtc::VideoSinkInterface<cricket::VideoFrame>*>(
+              j_renderer_pointer),
+          rtc::VideoSinkWants());
 }
 
 JOW(void, VideoTrack_nativeRemoveRenderer)(
     JNIEnv* jni, jclass,
     jlong j_video_track_pointer, jlong j_renderer_pointer) {
-  reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)->RemoveRenderer(
-      reinterpret_cast<VideoRendererInterface*>(j_renderer_pointer));
+  reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)
+      ->RemoveSink(
+          reinterpret_cast<rtc::VideoSinkInterface<cricket::VideoFrame>*>(
+              j_renderer_pointer));
 }
 
 JOW(jlong, CallSessionFileRotatingLogSink_nativeAddSink)(

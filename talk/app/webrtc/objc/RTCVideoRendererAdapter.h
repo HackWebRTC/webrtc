@@ -33,7 +33,7 @@
 
 @property(nonatomic, readonly) id<RTCVideoRenderer> videoRenderer;
 @property(nonatomic, readonly)
-    webrtc::VideoRendererInterface* nativeVideoRenderer;
+    rtc::VideoSinkInterface<cricket::VideoFrame> *nativeVideoRenderer;
 
 - (instancetype)initWithVideoRenderer:(id<RTCVideoRenderer>)videoRenderer;
 

@@ -78,7 +78,7 @@
 
 - (void)dealloc {
   for (RTCVideoRendererAdapter *adapter in _adapters) {
-    self.nativeVideoTrack->RemoveRenderer(adapter.nativeVideoRenderer);
+    self.nativeVideoTrack->RemoveSink(adapter.nativeVideoRenderer);
   }
 }
 
@@ -91,7 +91,8 @@
   RTCVideoRendererAdapter* adapter =
       [[RTCVideoRendererAdapter alloc] initWithVideoRenderer:renderer];
   [_adapters addObject:adapter];
-  self.nativeVideoTrack->AddRenderer(adapter.nativeVideoRenderer);
+  self.nativeVideoTrack->AddOrUpdateSink(adapter.nativeVideoRenderer,
+                                         rtc::VideoSinkWants());
 }
 
 - (void)removeRenderer:(id<RTCVideoRenderer>)renderer {
@@ -107,7 +108,7 @@
   if (indexToRemove == NSNotFound) {
     return;
   }
-  self.nativeVideoTrack->RemoveRenderer(adapter.nativeVideoRenderer);
+  self.nativeVideoTrack->RemoveSink(adapter.nativeVideoRenderer);
   [_adapters removeObjectAtIndex:indexToRemove];
 }
 

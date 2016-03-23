@@ -46,8 +46,6 @@ BEGIN_PROXY_MAP(VideoTrack)
   PROXY_METHOD1(bool, set_enabled, bool)
   PROXY_METHOD1(bool, set_state, TrackState)
 
-  PROXY_METHOD1(void, AddRenderer, VideoRendererInterface*)
-  PROXY_METHOD1(void, RemoveRenderer, VideoRendererInterface*)
   PROXY_METHOD2(void,
                 AddOrUpdateSink,
                 rtc::VideoSinkInterface<cricket::VideoFrame>*,

@@ -77,9 +77,8 @@ class GtkMainWnd : public MainWindow {
                   webrtc::VideoTrackInterface* track_to_render);
     virtual ~VideoRenderer();
 
-    // VideoRendererInterface implementation
-    virtual void SetSize(int width, int height);
-    virtual void OnFrame(const cricket::VideoFrame& frame);
+    // VideoSinkInterface implementation
+    void OnFrame(const cricket::VideoFrame& frame) override;
 
     const uint8_t* image() const { return image_.get(); }
 
@@ -92,6 +91,7 @@ class GtkMainWnd : public MainWindow {
     }
 
    protected:
+    void SetSize(int width, int height);
     rtc::scoped_ptr<uint8_t[]> image_;
     int width_;
     int height_;

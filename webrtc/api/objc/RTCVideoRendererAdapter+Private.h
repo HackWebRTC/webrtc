@@ -26,12 +26,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) id<RTCVideoRenderer> videoRenderer;
 
 /**
- * The native VideoRendererInterface surface exposed by this adapter. Calls made
+ * The native VideoSinkInterface surface exposed by this adapter. Calls made
  * to this interface will be adapted and passed to the RTCVideoRenderer supplied
  * during construction. This pointer is unsafe and owned by this class.
  */
 @property(nonatomic, readonly)
-    webrtc::VideoRendererInterface *nativeVideoRenderer;
+    rtc::VideoSinkInterface<cricket::VideoFrame> *nativeVideoRenderer;
 
 /** Initialize an RTCVideoRendererAdapter with an RTCVideoRenderer. */
 - (instancetype)initWithNativeRenderer:(id<RTCVideoRenderer>)videoRenderer

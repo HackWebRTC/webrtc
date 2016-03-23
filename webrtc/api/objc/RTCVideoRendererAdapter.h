@@ -13,8 +13,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /*
- * Creates a webrtc::VideoRendererInterface surface for an RTCVideoRenderer. The
- * webrtc::VideoRendererInterface is used by WebRTC rendering code - this
+ * Creates a rtc::VideoSinkInterface surface for an RTCVideoRenderer. The
+ * rtc::VideoSinkInterface is used by WebRTC rendering code - this
  * adapter adapts calls made to that interface to the RTCVideoRenderer supplied
  * during construction.
  */
