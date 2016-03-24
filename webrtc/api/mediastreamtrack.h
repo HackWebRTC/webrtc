@@ -25,12 +25,12 @@ class MediaStreamTrack : public Notifier<T> {
  public:
   typedef typename T::TrackState TypedTrackState;
 
-  virtual std::string id() const { return id_; }
-  virtual MediaStreamTrackInterface::TrackState state() const {
+  std::string id() const override { return id_; }
+  MediaStreamTrackInterface::TrackState state() const override {
     return state_;
   }
-  virtual bool enabled() const { return enabled_; }
-  virtual bool set_enabled(bool enable) {
+  bool enabled() const override { return enabled_; }
+  bool set_enabled(bool enable) override {
     bool fire_on_change = (enable != enabled_);
     enabled_ = enable;
     if (fire_on_change) {
@@ -38,17 +38,18 @@ class MediaStreamTrack : public Notifier<T> {
     }
     return fire_on_change;
   }
-  virtual bool set_state(MediaStreamTrackInterface::TrackState new_state) {
+
+ protected:
+  explicit MediaStreamTrack(const std::string& id)
+      : enabled_(true), id_(id), state_(MediaStreamTrackInterface::kLive) {}
+
+  bool set_state(MediaStreamTrackInterface::TrackState new_state) {
     bool fire_on_change = (state_ != new_state);
     state_ = new_state;
     if (fire_on_change)
       Notifier<T>::FireOnChanged();
     return true;
   }
-
- protected:
-  explicit MediaStreamTrack(const std::string& id)
-      : enabled_(true), id_(id), state_(MediaStreamTrackInterface::kLive) {}
 
  private:
   bool enabled_;

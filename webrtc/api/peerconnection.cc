@@ -377,43 +377,6 @@ void AddSendStreams(
 
 namespace webrtc {
 
-// Factory class for creating remote MediaStreams and MediaStreamTracks.
-class RemoteMediaStreamFactory {
- public:
-  explicit RemoteMediaStreamFactory(rtc::Thread* signaling_thread)
-      : signaling_thread_(signaling_thread) {}
-
-  rtc::scoped_refptr<MediaStreamInterface> CreateMediaStream(
-      const std::string& stream_label) {
-    return MediaStreamProxy::Create(signaling_thread_,
-                                    MediaStream::Create(stream_label));
-  }
-
-  AudioTrackInterface* AddAudioTrack(uint32_t ssrc,
-                                     AudioProviderInterface* provider,
-                                     webrtc::MediaStreamInterface* stream,
-                                     const std::string& track_id) {
-    return AddTrack<AudioTrackInterface, AudioTrack, AudioTrackProxy>(
-        stream, track_id, RemoteAudioSource::Create(ssrc, provider));
-  }
-
- private:
-  template <typename TI, typename T, typename TP, typename S>
-  TI* AddTrack(MediaStreamInterface* stream,
-               const std::string& track_id,
-               const S& source) {
-    rtc::scoped_refptr<TI> track(
-        TP::Create(signaling_thread_, T::Create(track_id, source)));
-    track->set_state(webrtc::MediaStreamTrackInterface::kLive);
-    if (stream->AddTrack(track)) {
-      return track;
-    }
-    return nullptr;
-  }
-
-  rtc::Thread* signaling_thread_;
-};
-
 bool ExtractMediaSessionOptions(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
     bool is_offer,
@@ -607,9 +570,6 @@ bool PeerConnection::Initialize(
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
 
   media_controller_.reset(factory_->CreateMediaController(media_config));
-
-  remote_stream_factory_.reset(
-      new RemoteMediaStreamFactory(factory_->signaling_thread()));
 
   session_.reset(
       new WebRtcSession(media_controller_.get(), factory_->signaling_thread(),
@@ -1320,29 +1280,28 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
 }
 
 void PeerConnection::CreateAudioReceiver(MediaStreamInterface* stream,
-                                         AudioTrackInterface* audio_track,
+                                         const std::string& track_id,
                                          uint32_t ssrc) {
   receivers_.push_back(RtpReceiverProxy::Create(
       signaling_thread(),
-      new AudioRtpReceiver(audio_track, ssrc, session_.get())));
+      new AudioRtpReceiver(stream, track_id, ssrc, session_.get())));
 }
 
 void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
                                          const std::string& track_id,
                                          uint32_t ssrc) {
-  VideoRtpReceiver* video_receiver = new VideoRtpReceiver(
-      stream, track_id, factory_->worker_thread(), ssrc, session_.get());
-  receivers_.push_back(
-      RtpReceiverProxy::Create(signaling_thread(), video_receiver));
+  receivers_.push_back(RtpReceiverProxy::Create(
+      signaling_thread(),
+      new VideoRtpReceiver(stream, track_id, factory_->worker_thread(), ssrc,
+                           session_.get())));
 }
 
 // TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote
 // description.
-void PeerConnection::DestroyAudioReceiver(MediaStreamInterface* stream,
-                                          AudioTrackInterface* audio_track) {
-  auto it = FindReceiverForTrack(audio_track);
+void PeerConnection::DestroyReceiver(const std::string& track_id) {
+  auto it = FindReceiverForTrack(track_id);
   if (it == receivers_.end()) {
-    LOG(LS_WARNING) << "RtpReceiver for track with id " << audio_track->id()
+    LOG(LS_WARNING) << "RtpReceiver for track with id " << track_id
                     << " doesn't exist.";
   } else {
     (*it)->Stop();
@@ -1350,15 +1309,16 @@ void PeerConnection::DestroyAudioReceiver(MediaStreamInterface* stream,
   }
 }
 
-void PeerConnection::DestroyVideoReceiver(MediaStreamInterface* stream,
-                                          VideoTrackInterface* video_track) {
-  auto it = FindReceiverForTrack(video_track);
-  if (it == receivers_.end()) {
-    LOG(LS_WARNING) << "RtpReceiver for track with id " << video_track->id()
-                    << " doesn't exist.";
-  } else {
-    (*it)->Stop();
-    receivers_.erase(it);
+void PeerConnection::StopReceivers(cricket::MediaType media_type) {
+  TrackInfos* current_tracks = GetRemoteTracks(media_type);
+  for (const auto& track_info : *current_tracks) {
+    auto it = FindReceiverForTrack(track_info.track_id);
+    if (it == receivers_.end()) {
+      LOG(LS_WARNING) << "RtpReceiver for track with id " << track_info.track_id
+                      << " doesn't exist.";
+    } else {
+      (*it)->Stop();
+    }
   }
 }
 
@@ -1639,7 +1599,8 @@ void PeerConnection::UpdateRemoteStreamsList(
         remote_streams_->find(stream_label);
     if (!stream) {
       // This is a new MediaStream. Create a new remote MediaStream.
-      stream = remote_stream_factory_->CreateMediaStream(stream_label);
+      stream = MediaStreamProxy::Create(rtc::Thread::Current(),
+                                        MediaStream::Create(stream_label));
       remote_streams_->AddStream(stream);
       new_streams->AddStream(stream);
     }
@@ -1658,8 +1619,8 @@ void PeerConnection::UpdateRemoteStreamsList(
         remote_streams_->find(kDefaultStreamLabel);
     if (!default_stream) {
       // Create the new default MediaStream.
-      default_stream =
-          remote_stream_factory_->CreateMediaStream(kDefaultStreamLabel);
+      default_stream = MediaStreamProxy::Create(
+          rtc::Thread::Current(), MediaStream::Create(kDefaultStreamLabel));
       remote_streams_->AddStream(default_stream);
       new_streams->AddStream(default_stream);
     }
@@ -1683,9 +1644,7 @@ void PeerConnection::OnRemoteTrackSeen(const std::string& stream_label,
   MediaStreamInterface* stream = remote_streams_->find(stream_label);
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-    AudioTrackInterface* audio_track = remote_stream_factory_->AddAudioTrack(
-        ssrc, session_.get(), stream, track_id);
-    CreateAudioReceiver(stream, audio_track, ssrc);
+    CreateAudioReceiver(stream, track_id, ssrc);
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     CreateVideoReceiver(stream, track_id, ssrc);
   } else {
@@ -1699,21 +1658,24 @@ void PeerConnection::OnRemoteTrackRemoved(const std::string& stream_label,
   MediaStreamInterface* stream = remote_streams_->find(stream_label);
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
+    // When the MediaEngine audio channel is destroyed, the RemoteAudioSource
+    // will be notified which will end the AudioRtpReceiver::track().
+    DestroyReceiver(track_id);
     rtc::scoped_refptr<AudioTrackInterface> audio_track =
         stream->FindAudioTrack(track_id);
     if (audio_track) {
-      audio_track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
       stream->RemoveTrack(audio_track);
-      DestroyAudioReceiver(stream, audio_track);
     }
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
+    // Stopping or destroying a VideoRtpReceiver will end the
+    // VideoRtpReceiver::track().
+    DestroyReceiver(track_id);
     rtc::scoped_refptr<VideoTrackInterface> video_track =
         stream->FindVideoTrack(track_id);
     if (video_track) {
+      // There's no guarantee the track is still available, e.g. the track may
+      // have been removed from the stream by an application.
       stream->RemoveTrack(video_track);
-      // Stopping or destroying a VideoRtpReceiver will end the
-      // VideoRtpReceiver::track().
-      DestroyVideoReceiver(stream, video_track);
     }
   } else {
     ASSERT(false && "Invalid media type");
@@ -1732,31 +1694,6 @@ void PeerConnection::UpdateEndedRemoteMediaStreams() {
   for (const auto& stream : streams_to_remove) {
     remote_streams_->RemoveStream(stream);
     observer_->OnRemoveStream(stream);
-  }
-}
-
-void PeerConnection::EndRemoteTracks(cricket::MediaType media_type) {
-  TrackInfos* current_tracks = GetRemoteTracks(media_type);
-  for (TrackInfos::iterator track_it = current_tracks->begin();
-       track_it != current_tracks->end(); ++track_it) {
-    const TrackInfo& info = *track_it;
-    MediaStreamInterface* stream = remote_streams_->find(info.stream_label);
-    if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-      AudioTrackInterface* track = stream->FindAudioTrack(info.track_id);
-      // There's no guarantee the track is still available, e.g. the track may
-      // have been removed from the stream by javascript.
-      if (track) {
-        track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
-      }
-    }
-    if (media_type == cricket::MEDIA_TYPE_VIDEO) {
-      VideoTrackInterface* track = stream->FindVideoTrack(info.track_id);
-      // There's no guarantee the track is still available, e.g. the track may
-      // have been removed from the stream by javascript.
-      if (track) {
-        track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
-      }
-    }
   }
 }
 
@@ -2019,11 +1956,11 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
 }
 
 void PeerConnection::OnVoiceChannelDestroyed() {
-  EndRemoteTracks(cricket::MEDIA_TYPE_AUDIO);
+  StopReceivers(cricket::MEDIA_TYPE_AUDIO);
 }
 
 void PeerConnection::OnVideoChannelDestroyed() {
-  EndRemoteTracks(cricket::MEDIA_TYPE_VIDEO);
+  StopReceivers(cricket::MEDIA_TYPE_VIDEO);
 }
 
 void PeerConnection::OnDataChannelCreated() {
@@ -2081,11 +2018,11 @@ PeerConnection::FindSenderForTrack(MediaStreamTrackInterface* track) {
 }
 
 std::vector<rtc::scoped_refptr<RtpReceiverInterface>>::iterator
-PeerConnection::FindReceiverForTrack(MediaStreamTrackInterface* track) {
+PeerConnection::FindReceiverForTrack(const std::string& track_id) {
   return std::find_if(
       receivers_.begin(), receivers_.end(),
-      [track](const rtc::scoped_refptr<RtpReceiverInterface>& receiver) {
-        return receiver->track() == track;
+      [track_id](const rtc::scoped_refptr<RtpReceiverInterface>& receiver) {
+        return receiver->id() == track_id;
       });
 }
 

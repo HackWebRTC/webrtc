@@ -80,11 +80,6 @@ class MediaStreamTest: public testing::Test {
         .Times(Exactly(1));
     track->set_enabled(false);
     EXPECT_FALSE(track->enabled());
-
-    EXPECT_CALL(observer, OnChanged())
-        .Times(Exactly(1));
-    track->set_state(MediaStreamTrackInterface::kEnded);
-    EXPECT_EQ(MediaStreamTrackInterface::kEnded, track->state());
   }
 
   scoped_refptr<MediaStreamInterface> stream_;

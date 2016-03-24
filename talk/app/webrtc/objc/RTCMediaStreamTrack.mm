@@ -92,11 +92,6 @@ class RTCMediaStreamTrackObserver : public ObserverInterface {
   return [RTCEnumConverter convertTrackStateToObjC:self.mediaTrack->state()];
 }
 
-- (BOOL)setState:(RTCTrackState)state {
-  return self.mediaTrack->set_state(
-      [RTCEnumConverter convertTrackStateToNative:state]);
-}
-
 @end
 
 @implementation RTCMediaStreamTrack (Internal)

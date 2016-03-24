@@ -137,8 +137,9 @@ class RtpSenderReceiverTest : public testing::Test {
         kAudioTrackId, RemoteAudioSource::Create(kAudioSsrc, NULL));
     EXPECT_TRUE(stream_->AddTrack(audio_track_));
     EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
-    audio_rtp_receiver_ = new AudioRtpReceiver(stream_->GetAudioTracks()[0],
+    audio_rtp_receiver_ = new AudioRtpReceiver(stream_, kAudioTrackId,
                                                kAudioSsrc, &audio_provider_);
+    audio_track_ = audio_rtp_receiver_->audio_track();
   }
 
   void CreateVideoRtpReceiver() {

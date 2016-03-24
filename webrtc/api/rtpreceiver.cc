@@ -11,22 +11,28 @@
 #include "webrtc/api/rtpreceiver.h"
 
 #include "webrtc/api/mediastreamtrackproxy.h"
+#include "webrtc/api/audiotrack.h"
 #include "webrtc/api/videotrack.h"
 
 namespace webrtc {
 
-AudioRtpReceiver::AudioRtpReceiver(AudioTrackInterface* track,
+AudioRtpReceiver::AudioRtpReceiver(MediaStreamInterface* stream,
+                                   const std::string& track_id,
                                    uint32_t ssrc,
                                    AudioProviderInterface* provider)
-    : id_(track->id()),
-      track_(track),
+    : id_(track_id),
       ssrc_(ssrc),
       provider_(provider),
-      cached_track_enabled_(track->enabled()) {
+      track_(AudioTrackProxy::Create(
+          rtc::Thread::Current(),
+          AudioTrack::Create(track_id,
+                             RemoteAudioSource::Create(ssrc, provider)))),
+      cached_track_enabled_(track_->enabled()) {
   RTC_DCHECK(track_->GetSource()->remote());
   track_->RegisterObserver(this);
   track_->GetSource()->RegisterAudioObserver(this);
   Reconfigure();
+  stream->AddTrack(track_);
 }
 
 AudioRtpReceiver::~AudioRtpReceiver() {

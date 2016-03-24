@@ -1956,14 +1956,6 @@ JOW(jobject, MediaStreamTrack_nativeState)(JNIEnv* jni, jclass, jlong j_p) {
       reinterpret_cast<MediaStreamTrackInterface*>(j_p)->state());
 }
 
-JOW(jboolean, MediaStreamTrack_nativeSetState)(
-    JNIEnv* jni, jclass, jlong j_p, jint j_new_state) {
-  MediaStreamTrackInterface::TrackState new_state =
-      (MediaStreamTrackInterface::TrackState)j_new_state;
-  return reinterpret_cast<MediaStreamTrackInterface*>(j_p)
-      ->set_state(new_state);
-}
-
 JOW(jboolean, MediaStreamTrack_nativeSetEnabled)(
     JNIEnv* jni, jclass, jlong j_p, jboolean enabled) {
   return reinterpret_cast<MediaStreamTrackInterface*>(j_p)

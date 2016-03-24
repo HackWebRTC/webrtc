@@ -11,6 +11,7 @@
 #include <string>
 #include <utility>
 
+#include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediastream.h"
@@ -240,6 +241,7 @@ static const char kSdpStringMs1Video1[] =
 
 using rtc::scoped_ptr;
 using rtc::scoped_refptr;
+using ::testing::Exactly;
 using webrtc::AudioSourceInterface;
 using webrtc::AudioTrack;
 using webrtc::AudioTrackInterface;
@@ -255,6 +257,8 @@ using webrtc::MockCreateSessionDescriptionObserver;
 using webrtc::MockDataChannelObserver;
 using webrtc::MockSetSessionDescriptionObserver;
 using webrtc::MockStatsObserver;
+using webrtc::NotifierInterface;
+using webrtc::ObserverInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionObserver;
 using webrtc::RtpReceiverInterface;
@@ -386,6 +390,29 @@ bool CompareStreamCollections(StreamCollectionInterface* s1,
   }
   return true;
 }
+
+// Helper class to test Observer.
+class MockTrackObserver : public ObserverInterface {
+ public:
+  explicit MockTrackObserver(NotifierInterface* notifier)
+      : notifier_(notifier) {
+    notifier_->RegisterObserver(this);
+  }
+
+  ~MockTrackObserver() { Unregister(); }
+
+  void Unregister() {
+    if (notifier_) {
+      notifier_->UnregisterObserver(this);
+      notifier_ = nullptr;
+    }
+  }
+
+  MOCK_METHOD0(OnChanged, void());
+
+ private:
+  NotifierInterface* notifier_;
+};
 
 class MockPeerConnectionObserver : public PeerConnectionObserver {
  public:
@@ -1843,8 +1870,9 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
           pc_->remote_streams()->at(0);
   EXPECT_EQ(MediaStreamTrackInterface::kEnded,
             remote_stream->GetVideoTracks()[0]->state());
-  EXPECT_EQ(MediaStreamTrackInterface::kEnded,
-            remote_stream->GetAudioTracks()[0]->state());
+  // Audio source state changes are posted.
+  EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
+                 remote_stream->GetAudioTracks()[0]->state(), 1);
 }
 
 // Test that PeerConnection methods fails gracefully after
@@ -1949,13 +1977,28 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(DoSetRemoteDescription(desc_ms1_two_tracks.release()));
   EXPECT_TRUE(CompareStreamCollections(observer_.remote_streams(),
                                        reference_collection_));
+  scoped_refptr<AudioTrackInterface> audio_track2 =
+      observer_.remote_streams()->at(0)->GetAudioTracks()[1];
+  EXPECT_EQ(webrtc::MediaStreamTrackInterface::kLive, audio_track2->state());
+  scoped_refptr<VideoTrackInterface> video_track2 =
+      observer_.remote_streams()->at(0)->GetVideoTracks()[1];
+  EXPECT_EQ(webrtc::MediaStreamTrackInterface::kLive, video_track2->state());
 
   // Remove the extra audio and video tracks.
   rtc::scoped_ptr<SessionDescriptionInterface> desc_ms2 =
       CreateSessionDescriptionAndReference(1, 1);
+  MockTrackObserver audio_track_observer(audio_track2);
+  MockTrackObserver video_track_observer(video_track2);
+
+  EXPECT_CALL(audio_track_observer, OnChanged()).Times(Exactly(1));
+  EXPECT_CALL(video_track_observer, OnChanged()).Times(Exactly(1));
   EXPECT_TRUE(DoSetRemoteDescription(desc_ms2.release()));
   EXPECT_TRUE(CompareStreamCollections(observer_.remote_streams(),
                                        reference_collection_));
+  // Audio source state changes are posted.
+  EXPECT_EQ_WAIT(webrtc::MediaStreamTrackInterface::kEnded,
+                 audio_track2->state(), 1);
+  EXPECT_EQ(webrtc::MediaStreamTrackInterface::kEnded, video_track2->state());
 }
 
 // This tests that remote tracks are ended if a local session description is set
@@ -2001,7 +2044,9 @@ TEST_F(PeerConnectionInterfaceTest, RejectMediaContent) {
   audio_info->rejected = true;
   EXPECT_TRUE(DoSetLocalDescription(local_offer.release()));
   EXPECT_EQ(webrtc::MediaStreamTrackInterface::kEnded, remote_video->state());
-  EXPECT_EQ(webrtc::MediaStreamTrackInterface::kEnded, remote_audio->state());
+  // Audio source state changes are posted.
+  EXPECT_EQ_WAIT(webrtc::MediaStreamTrackInterface::kEnded,
+                 remote_audio->state(), 1);
 }
 
 // This tests that we won't crash if the remote track has been removed outside

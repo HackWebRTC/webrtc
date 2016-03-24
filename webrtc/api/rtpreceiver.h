@@ -19,6 +19,7 @@
 
 #include "webrtc/api/mediastreamprovider.h"
 #include "webrtc/api/rtpreceiverinterface.h"
+#include "webrtc/api/remoteaudiosource.h"
 #include "webrtc/api/videotracksource.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/media/base/videobroadcaster.h"
@@ -29,7 +30,8 @@ class AudioRtpReceiver : public ObserverInterface,
                          public AudioSourceInterface::AudioObserver,
                          public rtc::RefCountedObject<RtpReceiverInterface> {
  public:
-  AudioRtpReceiver(AudioTrackInterface* track,
+  AudioRtpReceiver(MediaStreamInterface* stream,
+                   const std::string& track_id,
                    uint32_t ssrc,
                    AudioProviderInterface* provider);
 
@@ -40,6 +42,10 @@ class AudioRtpReceiver : public ObserverInterface,
 
   // AudioSourceInterface::AudioObserver implementation
   void OnSetVolume(double volume) override;
+
+  rtc::scoped_refptr<AudioTrackInterface> audio_track() const {
+    return track_.get();
+  }
 
   // RtpReceiverInterface implementation
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
@@ -54,9 +60,9 @@ class AudioRtpReceiver : public ObserverInterface,
   void Reconfigure();
 
   const std::string id_;
-  const rtc::scoped_refptr<AudioTrackInterface> track_;
   const uint32_t ssrc_;
   AudioProviderInterface* provider_;  // Set to null in Stop().
+  const rtc::scoped_refptr<AudioTrackInterface> track_;
   bool cached_track_enabled_;
 };
 

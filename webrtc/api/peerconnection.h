@@ -12,6 +12,8 @@
 #define WEBRTC_API_PEERCONNECTION_H_
 
 #include <string>
+#include <map>
+#include <vector>
 
 #include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/peerconnectionfactory.h"
@@ -26,7 +28,6 @@
 namespace webrtc {
 
 class MediaStreamObserver;
-class RemoteMediaStreamFactory;
 class VideoRtpReceiver;
 
 // Populates |session_options| from |rtc_options|, and returns true if options
@@ -143,7 +144,7 @@ class PeerConnection : public PeerConnectionInterface,
   virtual const std::vector<rtc::scoped_refptr<DataChannel>>&
   sctp_data_channels() const {
     return sctp_data_channels_;
-  };
+  }
 
  protected:
   ~PeerConnection() override;
@@ -169,16 +170,14 @@ class PeerConnection : public PeerConnectionInterface,
   void OnMessage(rtc::Message* msg) override;
 
   void CreateAudioReceiver(MediaStreamInterface* stream,
-                           AudioTrackInterface* audio_track,
+                           const std::string& track_id,
                            uint32_t ssrc);
 
   void CreateVideoReceiver(MediaStreamInterface* stream,
                            const std::string& track_id,
                            uint32_t ssrc);
-  void DestroyAudioReceiver(MediaStreamInterface* stream,
-                            AudioTrackInterface* audio_track);
-  void DestroyVideoReceiver(MediaStreamInterface* stream,
-                            VideoTrackInterface* video_track);
+  void StopReceivers(cricket::MediaType media_type);
+  void DestroyReceiver(const std::string& track_id);
   void DestroyAudioSender(MediaStreamInterface* stream,
                           AudioTrackInterface* audio_track,
                           uint32_t ssrc);
@@ -278,10 +277,6 @@ class PeerConnection : public PeerConnectionInterface,
   // exist.
   void UpdateEndedRemoteMediaStreams();
 
-  // Set the MediaStreamTrackInterface::TrackState to |kEnded| on all remote
-  // tracks of type |media_type|.
-  void EndRemoteTracks(cricket::MediaType media_type);
-
   // Loops through the vector of |streams| and finds added and removed
   // StreamParams since last time this method was called.
   // For each new or removed StreamParam, OnLocalTrackSeen or
@@ -344,7 +339,7 @@ class PeerConnection : public PeerConnectionInterface,
   std::vector<rtc::scoped_refptr<RtpSenderInterface>>::iterator
   FindSenderForTrack(MediaStreamTrackInterface* track);
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>>::iterator
-  FindReceiverForTrack(MediaStreamTrackInterface* track);
+  FindReceiverForTrack(const std::string& track_id);
 
   TrackInfos* GetRemoteTracks(cricket::MediaType media_type);
   TrackInfos* GetLocalTracks(cricket::MediaType media_type);
@@ -394,7 +389,6 @@ class PeerConnection : public PeerConnectionInterface,
   std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_to_free_;
 
   bool remote_peer_supports_msid_ = false;
-  rtc::scoped_ptr<RemoteMediaStreamFactory> remote_stream_factory_;
 
   std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders_;
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers_;

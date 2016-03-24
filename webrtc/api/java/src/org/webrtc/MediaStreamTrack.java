@@ -41,10 +41,6 @@ public class MediaStreamTrack {
     return nativeState(nativeTrack);
   }
 
-  public boolean setState(State newState) {
-    return nativeSetState(nativeTrack, newState.ordinal());
-  }
-
   public void dispose() {
     free(nativeTrack);
   }
@@ -59,9 +55,6 @@ public class MediaStreamTrack {
       long nativeTrack, boolean enabled);
 
   private static native State nativeState(long nativeTrack);
-
-  private static native boolean nativeSetState(
-      long nativeTrack, int newState);
 
   private static native void free(long nativeTrack);
 }

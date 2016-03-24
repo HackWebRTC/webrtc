@@ -30,10 +30,7 @@ BEGIN_PROXY_MAP(AudioTrack)
   PROXY_METHOD1(bool, GetSignalLevel, int*)
   PROXY_METHOD0(rtc::scoped_refptr<AudioProcessorInterface>,
                 GetAudioProcessor)
-
   PROXY_METHOD1(bool, set_enabled, bool)
-  PROXY_METHOD1(bool, set_state, TrackState)
-
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
   PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
 END_PROXY()
@@ -44,8 +41,6 @@ BEGIN_PROXY_MAP(VideoTrack)
   PROXY_CONSTMETHOD0(TrackState, state)
   PROXY_CONSTMETHOD0(bool, enabled)
   PROXY_METHOD1(bool, set_enabled, bool)
-  PROXY_METHOD1(bool, set_state, TrackState)
-
   PROXY_METHOD2(void,
                 AddOrUpdateSink,
                 rtc::VideoSinkInterface<cricket::VideoFrame>*,
