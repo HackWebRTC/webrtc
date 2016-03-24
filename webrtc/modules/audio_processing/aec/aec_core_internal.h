@@ -17,6 +17,7 @@ extern "C" {
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
+#include "webrtc/modules/audio_processing/utility/block_mean_calculator.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -40,16 +41,16 @@ static const float kExtendedMu = 0.4f;
 static const float kExtendedErrorThreshold = 1.0e-6f;
 
 typedef struct PowerLevel {
-  float sfrsum;
-  int sfrcounter;
-  float framelevel;
-  float frsum;
-  int frcounter;
+  PowerLevel();
+
+  BlockMeanCalculator framelevel;
+  BlockMeanCalculator averagelevel;
   float minlevel;
-  float averagelevel;
 } PowerLevel;
 
 struct AecCore {
+  AecCore();
+
   int farBufWritePos, farBufReadPos;
 
   int knownDelay;

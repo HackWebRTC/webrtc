@@ -118,6 +118,8 @@
         'transient/wpd_tree.h',
         'typing_detection.cc',
         'typing_detection.h',
+        'utility/block_mean_calculator.cc',
+        'utility/block_mean_calculator.h',
         'utility/delay_estimator.c',
         'utility/delay_estimator.h',
         'utility/delay_estimator_internal.h',

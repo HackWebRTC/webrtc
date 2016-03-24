@@ -258,6 +258,7 @@
             'audio_processing/transient/transient_suppressor_unittest.cc',
             'audio_processing/transient/wpd_node_unittest.cc',
             'audio_processing/transient/wpd_tree_unittest.cc',
+            'audio_processing/utility/block_mean_calculator_unittest.cc',
             'audio_processing/utility/delay_estimator_unittest.cc',
             'audio_processing/vad/gmm_unittest.cc',
             'audio_processing/vad/pitch_based_vad_unittest.cc',

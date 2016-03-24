@@ -46,8 +46,8 @@ namespace webrtc {
 static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.
 
 // Metrics
-static const int subCountLen = 4;
-static const int countLen = 50;
+static const size_t kSubCountLen = 4;
+static const size_t kCountLen = 50;
 static const int kDelayMetricsAggregationWindow = 1250;  // 5 seconds at 16 kHz.
 
 // Quantities to control H band scaling for SWB input
@@ -149,6 +149,17 @@ __inline static float MulRe(float aRe, float aIm, float bRe, float bIm) {
 __inline static float MulIm(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bIm + aIm * bRe;
 }
+
+PowerLevel::PowerLevel()
+// TODO(minyue): Due to a legacy bug, |framelevel| and |averagelevel| use a
+// window, of which the length is 1 unit longer than indicated. Remove "+1"
+// when the code is refactored.
+: framelevel(kSubCountLen + 1),
+  averagelevel(kCountLen + 1) {
+}
+
+// TODO(minyue): Moving some initialization from WebRtcAec_CreateAec() to ctor.
+AecCore::AecCore() = default;
 
 static int CmpFloat(const void* a, const void* b) {
   const float* da = (const float*)a;
@@ -523,14 +534,9 @@ static void ComfortNoise(AecCore* aec,
 
 static void InitLevel(PowerLevel* level) {
   const float kBigFloat = 1E17f;
-
-  level->averagelevel = 0;
-  level->framelevel = 0;
+  level->averagelevel.Reset();
+  level->framelevel.Reset();
   level->minlevel = kBigFloat;
-  level->frsum = 0;
-  level->sfrsum = 0;
-  level->frcounter = 0;
-  level->sfrcounter = 0;
 }
 
 static void InitStats(Stats* stats) {
@@ -569,27 +575,17 @@ static float CalculatePower(const float* in, size_t num_samples) {
 }
 
 static void UpdateLevel(PowerLevel* level, float power) {
-  level->sfrsum += power;
-  level->sfrcounter++;
-
-  if (level->sfrcounter > subCountLen) {
-    level->framelevel = level->sfrsum / subCountLen;
-    level->sfrsum = 0;
-    level->sfrcounter = 0;
-    if (level->framelevel > 0) {
-      if (level->framelevel < level->minlevel) {
-        level->minlevel = level->framelevel;  // New minimum.
+  level->framelevel.AddValue(power);
+  if (level->framelevel.EndOfBlock()) {
+    const float new_frame_level = level->framelevel.GetLatestMean();
+    if (new_frame_level > 0) {
+      if (new_frame_level < level->minlevel) {
+        level->minlevel = new_frame_level;  // New minimum.
       } else {
         level->minlevel *= (1 + 0.001f);  // Small increase.
       }
     }
-    level->frcounter++;
-    level->frsum += level->framelevel;
-    if (level->frcounter > countLen) {
-      level->averagelevel = level->frsum / countLen;
-      level->frsum = 0;
-      level->frcounter = 0;
-    }
+    level->averagelevel.AddValue(new_frame_level);
   }
 }
 
@@ -609,29 +605,31 @@ static void UpdateMetrics(AecCore* aec) {
     aec->stateCounter++;
   }
 
-  if (aec->farlevel.frcounter == 0) {
+  if (aec->farlevel.averagelevel.EndOfBlock()) {
     if (aec->farlevel.minlevel < noisyPower) {
       actThreshold = actThresholdClean;
     } else {
       actThreshold = actThresholdNoisy;
     }
 
-    if ((aec->stateCounter > (0.5f * countLen * subCountLen)) &&
-        (aec->farlevel.sfrcounter == 0)
+    const float far_average_level = aec->farlevel.averagelevel.GetLatestMean();
 
-        // Estimate in active far-end segments only
-        && (aec->farlevel.averagelevel >
-            (actThreshold * aec->farlevel.minlevel))) {
+    // The last condition is to let estimation be made in active far-end
+    // segments only.
+    if ((aec->stateCounter > (0.5f * kCountLen * kSubCountLen)) &&
+        (aec->farlevel.framelevel.EndOfBlock()) &&
+        (far_average_level > (actThreshold * aec->farlevel.minlevel))) {
+
+      const float near_average_level =
+          aec->nearlevel.averagelevel.GetLatestMean();
+
       // Subtract noise power
-      echo = aec->nearlevel.averagelevel - safety * aec->nearlevel.minlevel;
+      echo = near_average_level - safety * aec->nearlevel.minlevel;
 
       // ERL
-      dtmp = 10 * static_cast<float>(log10(aec->farlevel.averagelevel /
-                                           aec->nearlevel.averagelevel +
-                                           1e-10f));
-      dtmp2 = 10 * static_cast<float>(log10(aec->farlevel.averagelevel /
-                                            echo +
-                                            1e-10f));
+      dtmp = 10 * static_cast<float>(log10(far_average_level /
+                                           near_average_level + 1e-10f));
+      dtmp2 = 10 * static_cast<float>(log10(far_average_level / echo + 1e-10f));
 
       aec->erl.instant = dtmp;
       if (dtmp > aec->erl.max) {
@@ -654,13 +652,14 @@ static void UpdateMetrics(AecCore* aec) {
       }
 
       // A_NLP
-      dtmp = 10 * static_cast<float>(log10(aec->nearlevel.averagelevel /
-                                           aec->linoutlevel.averagelevel +
-                                           1e-10f));
+      const float linout_average_level =
+          aec->linoutlevel.averagelevel.GetLatestMean();
+      dtmp = 10 * static_cast<float>(log10(near_average_level /
+                                           linout_average_level + 1e-10f));
 
       // subtract noise power
-      suppressedEcho = aec->linoutlevel.averagelevel -
-          safety * aec->linoutlevel.minlevel;
+      suppressedEcho =
+          linout_average_level - safety * aec->linoutlevel.minlevel;
 
       dtmp2 = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
 
@@ -685,13 +684,14 @@ static void UpdateMetrics(AecCore* aec) {
       }
 
       // ERLE
-
+      const float nlpout_average_level =
+          aec->nlpoutlevel.averagelevel.GetLatestMean();
       // subtract noise power
-      suppressedEcho = aec->nlpoutlevel.averagelevel -
-          safety * aec->nlpoutlevel.minlevel;
+      suppressedEcho =
+          nlpout_average_level - safety * aec->nlpoutlevel.minlevel;
 
-      dtmp = 10 * static_cast<float>(log10(aec->nearlevel.averagelevel /
-          aec->nlpoutlevel.averagelevel + 1e-10f));
+      dtmp = 10 * static_cast<float>(log10(near_average_level /
+                                           nlpout_average_level + 1e-10f));
       dtmp2 = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
 
       dtmp = dtmp2;
@@ -1361,7 +1361,7 @@ static void ProcessBlock(AecCore* aec) {
 
 AecCore* WebRtcAec_CreateAec() {
   int i;
-  AecCore* aec = reinterpret_cast<AecCore*>(malloc(sizeof(AecCore)));
+  AecCore* aec = new AecCore;
   if (!aec) {
     return NULL;
   }
@@ -1496,7 +1496,7 @@ void WebRtcAec_FreeAec(AecCore* aec) {
   WebRtc_FreeDelayEstimator(aec->delay_estimator);
   WebRtc_FreeDelayEstimatorFarend(aec->delay_estimator_farend);
 
-  free(aec);
+  delete aec;
 }
 
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
