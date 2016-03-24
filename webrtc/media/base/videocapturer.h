@@ -38,7 +38,6 @@ enum CaptureState {
                  // still fail to start.
   CS_RUNNING,    // The capturer has been started successfully and is now
                  // capturing.
-  CS_PAUSED,     // The capturer has been paused.
   CS_FAILED,     // The capturer failed to start.
 };
 
@@ -148,7 +147,6 @@ class VideoCapturer : public sigslot::has_slots<>,
   //   CS_STARTING:  The capturer is trying to start. Success or failure will
   //                 be notified via the |SignalStateChange| callback.
   //   CS_RUNNING:   if the capturer is started and capturing.
-  //   CS_PAUSED:    Will never be returned.
   //   CS_FAILED:    if the capturer failes to start..
   //   CS_NO_DEVICE: if the capturer has no device and fails to start.
   virtual CaptureState Start(const VideoFormat& capture_format) = 0;
@@ -161,13 +159,6 @@ class VideoCapturer : public sigslot::has_slots<>,
     return capture_format_.get();
   }
 
-  // Pause the video capturer.
-  // DEPRECATED
-  // TODO(perkj): Remove once Chrome remoting doesn't override this method.
-  virtual bool Pause(bool paused) {
-    RTC_NOTREACHED();
-    return false;
-  }
   // Stop the video capturer.
   virtual void Stop() = 0;
   // Check if the video capturer is running.
@@ -228,12 +219,6 @@ class VideoCapturer : public sigslot::has_slots<>,
   void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
 
  protected:
-  // Signal the captured and possibly adapted frame to downstream consumers
-  // such as the encoder.
-  // TODO(perkj): Remove once it is not used by remoting in Chrome.
-  sigslot::signal2<VideoCapturer*, const VideoFrame*,
-                    sigslot::multi_threaded_local> SignalVideoFrame;
-
   // OnSinkWantsChanged can be overridden to change the default behavior
   // when a sink changes its VideoSinkWants by calling AddOrUpdateSink.
   virtual void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
@@ -242,8 +227,9 @@ class VideoCapturer : public sigslot::has_slots<>,
   void OnFrameCaptured(VideoCapturer* video_capturer,
                        const CapturedFrame* captured_frame);
 
-  // Callback attached to SignalVideoFrame.
-  // TODO(perkj): Remove once SignalVideoFrame is removed.
+  // Called when a frame has been captured and converted to a VideoFrame.
+  // OnFrame can be called directly by an implementation that does not use
+  // SignalFrameCaptured or OnFrameCaptured.
   void OnFrame(VideoCapturer* capturer, const VideoFrame* frame);
 
   CoordinatedVideoAdapter* video_adapter() { return &video_adapter_; }

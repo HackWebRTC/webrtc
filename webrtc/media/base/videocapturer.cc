@@ -72,10 +72,6 @@ void VideoCapturer::Construct() {
   square_pixel_aspect_ratio_ = false;
   capture_state_ = CS_STOPPED;
   SignalFrameCaptured.connect(this, &VideoCapturer::OnFrameCaptured);
-  // TODO(perkj) SignalVideoFrame is used directly by Chrome remoting.
-  // Before that is refactored, SignalVideoFrame must forward frames to the
-  // |VideoBroadcaster|;
-  SignalVideoFrame.connect(this, &VideoCapturer::OnFrame);
   scaled_width_ = 0;
   scaled_height_ = 0;
   enable_video_adapter_ = true;
@@ -394,7 +390,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  SignalVideoFrame(this, adapted_frame.get());
+  OnFrame(this, adapted_frame.get());
   UpdateStats(captured_frame);
 }
 
