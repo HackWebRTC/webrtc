@@ -92,6 +92,8 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
   virtual bool enabled() const = 0;
   virtual TrackState state() const = 0;
   virtual bool set_enabled(bool enable) = 0;
+  // TODO(perkj): Remove when Chrome tests doesn't rely on this method.
+  virtual bool set_state(TrackState state) { return true;}
 
  protected:
   virtual ~MediaStreamTrackInterface() {}
