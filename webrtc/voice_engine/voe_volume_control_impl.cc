@@ -215,7 +215,7 @@ int VoEVolumeControlImpl::SetInputMute(int channel, bool enable) {
                           "SetInputMute() failed to locate channel");
     return -1;
   }
-  return channelPtr->SetMute(enable);
+  return channelPtr->SetInputMute(enable);
 }
 
 int VoEVolumeControlImpl::GetInputMute(int channel, bool& enabled) {
@@ -233,7 +233,7 @@ int VoEVolumeControlImpl::GetInputMute(int channel, bool& enabled) {
                             "SetInputMute() failed to locate channel");
       return -1;
     }
-    enabled = channelPtr->Mute();
+    enabled = channelPtr->InputMute();
   }
   return 0;
 }

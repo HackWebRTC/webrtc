@@ -269,8 +269,8 @@ class Channel
   // VoEVolumeControl
   int GetSpeechOutputLevel(uint32_t& level) const;
   int GetSpeechOutputLevelFullRange(uint32_t& level) const;
-  int SetMute(bool enable);
-  bool Mute() const;
+  int SetInputMute(bool enable);
+  bool InputMute() const;
   int SetOutputVolumePan(float left, float right);
   int GetOutputVolumePan(float& left, float& right) const;
   int SetChannelOutputVolumeScaling(float scaling);
@@ -536,10 +536,11 @@ class Channel
   bool _externalMixing;
   bool _mixFileWithMicrophone;
   // VoEVolumeControl
-  bool _mute;
-  float _panLeft;
-  float _panRight;
-  float _outputGain;
+  bool input_mute_ GUARDED_BY(volume_settings_critsect_);
+  bool previous_frame_muted_;  // Only accessed from PrepareEncodeAndSend().
+  float _panLeft GUARDED_BY(volume_settings_critsect_);
+  float _panRight GUARDED_BY(volume_settings_critsect_);
+  float _outputGain GUARDED_BY(volume_settings_critsect_);
   // VoeRTP_RTCP
   uint32_t _lastLocalTimeStamp;
   int8_t _lastPayloadType;

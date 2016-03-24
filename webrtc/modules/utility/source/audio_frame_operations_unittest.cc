@@ -12,6 +12,7 @@
 
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 namespace {
@@ -44,10 +45,39 @@ void VerifyFramesAreEqual(const AudioFrame& frame1, const AudioFrame& frame2) {
   EXPECT_EQ(frame1.num_channels_, frame2.num_channels_);
   EXPECT_EQ(frame1.samples_per_channel_,
             frame2.samples_per_channel_);
-
   for (size_t i = 0; i < frame1.samples_per_channel_ * frame1.num_channels_;
       i++) {
     EXPECT_EQ(frame1.data_[i], frame2.data_[i]);
+  }
+}
+
+void InitFrame(AudioFrame* frame, size_t channels, size_t samples_per_channel,
+               int16_t left_data, int16_t right_data) {
+  RTC_DCHECK(frame);
+  RTC_DCHECK_GE(2u, channels);
+  RTC_DCHECK_GE(AudioFrame::kMaxDataSizeSamples,
+                samples_per_channel * channels);
+  frame->samples_per_channel_ = samples_per_channel;
+  frame->num_channels_ = channels;
+  if (channels == 2) {
+    SetFrameData(frame, left_data, right_data);
+  } else if (channels == 1) {
+    SetFrameData(frame, left_data);
+  }
+}
+
+int16_t GetChannelData(const AudioFrame& frame, size_t channel, size_t index) {
+  RTC_DCHECK_LT(channel, frame.num_channels_);
+  RTC_DCHECK_LT(index, frame.samples_per_channel_);
+  return frame.data_[index * frame.num_channels_ + channel];
+}
+
+void VerifyFrameDataBounds(const AudioFrame& frame, size_t channel, int16_t max,
+                           int16_t min) {
+  for (size_t i = 0; i < frame.samples_per_channel_; ++i) {
+    int16_t s = GetChannelData(frame, channel, i);
+    EXPECT_LE(min, s);
+    EXPECT_GE(max, s);
   }
 }
 
@@ -140,15 +170,130 @@ TEST_F(AudioFrameOperationsTest, SwapStereoChannelsFailsOnMono) {
   VerifyFramesAreEqual(orig_frame, frame_);
 }
 
-TEST_F(AudioFrameOperationsTest, MuteSucceeds) {
-  SetFrameData(&frame_, 1000, 1000);
-  AudioFrameOperations::Mute(frame_);
+TEST_F(AudioFrameOperationsTest, MuteDisabled) {
+  SetFrameData(&frame_, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, false, false);
+
+  AudioFrame muted_frame;
+  muted_frame.samples_per_channel_ = 320;
+  muted_frame.num_channels_ = 2;
+  SetFrameData(&muted_frame, 1000, -1000);
+  VerifyFramesAreEqual(muted_frame, frame_);
+}
+
+TEST_F(AudioFrameOperationsTest, MuteEnabled) {
+  SetFrameData(&frame_, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, true, true);
 
   AudioFrame muted_frame;
   muted_frame.samples_per_channel_ = 320;
   muted_frame.num_channels_ = 2;
   SetFrameData(&muted_frame, 0, 0);
   VerifyFramesAreEqual(muted_frame, frame_);
+}
+
+// Verify that *beginning* to mute works for short and long (>128) frames, mono
+// and stereo. Beginning mute should yield a ramp down to zero.
+TEST_F(AudioFrameOperationsTest, MuteBeginMonoLong) {
+  InitFrame(&frame_, 1, 228, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, false, true);
+  VerifyFrameDataBounds(frame_, 0, 1000, 0);
+  EXPECT_EQ(1000, GetChannelData(frame_, 0, 99));
+  EXPECT_EQ(992, GetChannelData(frame_, 0, 100));
+  EXPECT_EQ(7, GetChannelData(frame_, 0, 226));
+  EXPECT_EQ(0, GetChannelData(frame_, 0, 227));
+}
+
+TEST_F(AudioFrameOperationsTest, MuteBeginMonoShort) {
+  InitFrame(&frame_, 1, 93, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, false, true);
+  VerifyFrameDataBounds(frame_, 0, 1000, 0);
+  EXPECT_EQ(989, GetChannelData(frame_, 0, 0));
+  EXPECT_EQ(978, GetChannelData(frame_, 0, 1));
+  EXPECT_EQ(10, GetChannelData(frame_, 0, 91));
+  EXPECT_EQ(0, GetChannelData(frame_, 0, 92));
+}
+
+TEST_F(AudioFrameOperationsTest, MuteBeginStereoLong) {
+  InitFrame(&frame_, 2, 228, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, false, true);
+  VerifyFrameDataBounds(frame_, 0, 1000, 0);
+  VerifyFrameDataBounds(frame_, 1, 0, -1000);
+  EXPECT_EQ(1000, GetChannelData(frame_, 0, 99));
+  EXPECT_EQ(-1000, GetChannelData(frame_, 1, 99));
+  EXPECT_EQ(992, GetChannelData(frame_, 0, 100));
+  EXPECT_EQ(-992, GetChannelData(frame_, 1, 100));
+  EXPECT_EQ(7, GetChannelData(frame_, 0, 226));
+  EXPECT_EQ(-7, GetChannelData(frame_, 1, 226));
+  EXPECT_EQ(0, GetChannelData(frame_, 0, 227));
+  EXPECT_EQ(0, GetChannelData(frame_, 1, 227));
+}
+
+TEST_F(AudioFrameOperationsTest, MuteBeginStereoShort) {
+  InitFrame(&frame_, 2, 93, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, false, true);
+  VerifyFrameDataBounds(frame_, 0, 1000, 0);
+  VerifyFrameDataBounds(frame_, 1, 0, -1000);
+  EXPECT_EQ(989, GetChannelData(frame_, 0, 0));
+  EXPECT_EQ(-989, GetChannelData(frame_, 1, 0));
+  EXPECT_EQ(978, GetChannelData(frame_, 0, 1));
+  EXPECT_EQ(-978, GetChannelData(frame_, 1, 1));
+  EXPECT_EQ(10, GetChannelData(frame_, 0, 91));
+  EXPECT_EQ(-10, GetChannelData(frame_, 1, 91));
+  EXPECT_EQ(0, GetChannelData(frame_, 0, 92));
+  EXPECT_EQ(0, GetChannelData(frame_, 1, 92));
+}
+
+// Verify that *ending* to mute works for short and long (>128) frames, mono
+// and stereo. Ending mute should yield a ramp up from zero.
+TEST_F(AudioFrameOperationsTest, MuteEndMonoLong) {
+  InitFrame(&frame_, 1, 228, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, true, false);
+  VerifyFrameDataBounds(frame_, 0, 1000, 0);
+  EXPECT_EQ(7, GetChannelData(frame_, 0, 0));
+  EXPECT_EQ(15, GetChannelData(frame_, 0, 1));
+  EXPECT_EQ(1000, GetChannelData(frame_, 0, 127));
+  EXPECT_EQ(1000, GetChannelData(frame_, 0, 128));
+}
+
+TEST_F(AudioFrameOperationsTest, MuteEndMonoShort) {
+  InitFrame(&frame_, 1, 93, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, true, false);
+  VerifyFrameDataBounds(frame_, 0, 1000, 0);
+  EXPECT_EQ(10, GetChannelData(frame_, 0, 0));
+  EXPECT_EQ(21, GetChannelData(frame_, 0, 1));
+  EXPECT_EQ(989, GetChannelData(frame_, 0, 91));
+  EXPECT_EQ(999, GetChannelData(frame_, 0, 92));
+}
+
+TEST_F(AudioFrameOperationsTest, MuteEndStereoLong) {
+  InitFrame(&frame_, 2, 228, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, true, false);
+  VerifyFrameDataBounds(frame_, 0, 1000, 0);
+  VerifyFrameDataBounds(frame_, 1, 0, -1000);
+  EXPECT_EQ(7, GetChannelData(frame_, 0, 0));
+  EXPECT_EQ(-7, GetChannelData(frame_, 1, 0));
+  EXPECT_EQ(15, GetChannelData(frame_, 0, 1));
+  EXPECT_EQ(-15, GetChannelData(frame_, 1, 1));
+  EXPECT_EQ(1000, GetChannelData(frame_, 0, 127));
+  EXPECT_EQ(-1000, GetChannelData(frame_, 1, 127));
+  EXPECT_EQ(1000, GetChannelData(frame_, 0, 128));
+  EXPECT_EQ(-1000, GetChannelData(frame_, 1, 128));
+}
+
+TEST_F(AudioFrameOperationsTest, MuteEndStereoShort) {
+  InitFrame(&frame_, 2, 93, 1000, -1000);
+  AudioFrameOperations::Mute(&frame_, true, false);
+  VerifyFrameDataBounds(frame_, 0, 1000, 0);
+  VerifyFrameDataBounds(frame_, 1, 0, -1000);
+  EXPECT_EQ(10, GetChannelData(frame_, 0, 0));
+  EXPECT_EQ(-10, GetChannelData(frame_, 1, 0));
+  EXPECT_EQ(21, GetChannelData(frame_, 0, 1));
+  EXPECT_EQ(-21, GetChannelData(frame_, 1, 1));
+  EXPECT_EQ(989, GetChannelData(frame_, 0, 91));
+  EXPECT_EQ(-989, GetChannelData(frame_, 1, 91));
+  EXPECT_EQ(999, GetChannelData(frame_, 0, 92));
+  EXPECT_EQ(-999, GetChannelData(frame_, 1, 92));
 }
 
 // TODO(andrew): should not allow negative scales.

@@ -482,7 +482,9 @@ struct VideoContentMetrics {
 class AudioFrame {
  public:
   // Stereo, 32 kHz, 60 ms (2 * 32 * 60)
-  static const size_t kMaxDataSizeSamples = 3840;
+  enum : size_t {
+    kMaxDataSizeSamples = 3840
+  };
 
   enum VADActivity {
     kVadActive = 0,
@@ -498,7 +500,6 @@ class AudioFrame {
   };
 
   AudioFrame();
-  virtual ~AudioFrame() {}
 
   // Resets all members to their default state (except does not modify the
   // contents of |data_|).

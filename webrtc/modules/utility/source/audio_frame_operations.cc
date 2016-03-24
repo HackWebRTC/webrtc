@@ -10,8 +10,16 @@
 
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
+namespace  {
+
+// 2.7ms @ 48kHz, 4ms @ 32kHz, 8ms @ 16kHz.
+const size_t kMuteFadeFrames = 128;
+const float kMuteFadeInc = 1.0f / kMuteFadeFrames;
+
+}  // namespace {
 
 void AudioFrameOperations::MonoToStereo(const int16_t* src_audio,
                                         size_t samples_per_channel,
@@ -69,9 +77,53 @@ void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
   }
 }
 
-void AudioFrameOperations::Mute(AudioFrame& frame) {
-  memset(frame.data_, 0, sizeof(int16_t) *
-      frame.samples_per_channel_ * frame.num_channels_);
+void AudioFrameOperations::Mute(AudioFrame* frame, bool previous_frame_muted,
+                                bool current_frame_muted) {
+  RTC_DCHECK(frame);
+  RTC_DCHECK(frame->interleaved_);
+  if (!previous_frame_muted && !current_frame_muted) {
+    // Not muted, don't touch.
+  } else if (previous_frame_muted && current_frame_muted) {
+    // Frame fully muted.
+    size_t total_samples = frame->samples_per_channel_ * frame->num_channels_;
+    RTC_DCHECK_GE(AudioFrame::kMaxDataSizeSamples, total_samples);
+    memset(frame->data_, 0, sizeof(frame->data_[0]) * total_samples);
+  } else {
+    // Limit number of samples to fade, if frame isn't long enough.
+    size_t count = kMuteFadeFrames;
+    float inc = kMuteFadeInc;
+    if (frame->samples_per_channel_ < kMuteFadeFrames) {
+      count = frame->samples_per_channel_;
+      if (count > 0) {
+        inc = 1.0f / count;
+      }
+    }
+
+    size_t start = 0;
+    size_t end = count;
+    float start_g = 0.0f;
+    if (current_frame_muted) {
+      // Fade out the last |count| samples of frame.
+      RTC_DCHECK(!previous_frame_muted);
+      start = frame->samples_per_channel_ - count;
+      end = frame->samples_per_channel_;
+      start_g = 1.0f;
+      inc = -inc;
+    } else {
+      // Fade in the first |count| samples of frame.
+      RTC_DCHECK(previous_frame_muted);
+    }
+
+    // Perform fade.
+    size_t channels = frame->num_channels_;
+    for (size_t j = 0; j < channels; ++j) {
+      float g = start_g;
+      for (size_t i = start * channels; i < end * channels; i += channels) {
+        g += inc;
+        frame->data_[i + j] *= g;
+      }
+    }
+  }
 }
 
 int AudioFrameOperations::Scale(float left, float right, AudioFrame& frame) {

@@ -359,10 +359,7 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
 #endif
 
     // --- Mute signal
-    if (_mute)
-    {
-        AudioFrameOperations::Mute(_audioFrame);
-    }
+    AudioFrameOperations::Mute(&_audioFrame, _mute, _mute);
 
     // --- Mix with file (does not affect the mixing frequency)
     if (_filePlaying)

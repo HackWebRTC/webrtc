@@ -766,7 +766,8 @@ Channel::Channel(int32_t channelId,
       _sendFrameType(0),
       _externalMixing(false),
       _mixFileWithMicrophone(false),
-      _mute(false),
+      input_mute_(false),
+      previous_frame_muted_(false),
       _panLeft(1.0f),
       _panRight(1.0f),
       _outputGain(1.0f),
@@ -2138,17 +2139,17 @@ int Channel::GetSpeechOutputLevelFullRange(uint32_t& level) const {
   return 0;
 }
 
-int Channel::SetMute(bool enable) {
+int Channel::SetInputMute(bool enable) {
   rtc::CritScope cs(&volume_settings_critsect_);
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetMute(enable=%d)", enable);
-  _mute = enable;
+  input_mute_ = enable;
   return 0;
 }
 
-bool Channel::Mute() const {
+bool Channel::InputMute() const {
   rtc::CritScope cs(&volume_settings_critsect_);
-  return _mute;
+  return input_mute_;
 }
 
 int Channel::SetOutputVolumePan(float left, float right) {
@@ -2953,10 +2954,8 @@ uint32_t Channel::PrepareEncodeAndSend(int mixingFrequency) {
     MixOrReplaceAudioWithFile(mixingFrequency);
   }
 
-  bool is_muted = Mute();  // Cache locally as Mute() takes a lock.
-  if (is_muted) {
-    AudioFrameOperations::Mute(_audioFrame);
-  }
+  bool is_muted = InputMute();  // Cache locally as InputMute() takes a lock.
+  AudioFrameOperations::Mute(&_audioFrame, previous_frame_muted_, is_muted);
 
   if (channel_state_.Get().input_external_media) {
     rtc::CritScope cs(&_callbackCritSect);
@@ -2972,12 +2971,13 @@ uint32_t Channel::PrepareEncodeAndSend(int mixingFrequency) {
   if (_includeAudioLevelIndication) {
     size_t length =
         _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
-    if (is_muted) {
+    if (is_muted && previous_frame_muted_) {
       rms_level_.ProcessMuted(length);
     } else {
       rms_level_.Process(_audioFrame.data_, length);
     }
   }
+  previous_frame_muted_ = is_muted;
 
   return 0;
 }
