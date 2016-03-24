@@ -783,15 +783,18 @@ int OpenSSLStreamAdapter::BeginSSL() {
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE |
                SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-  // Specify an ECDH group for ECDHE ciphers, otherwise they cannot be
-  // negotiated when acting as the server. Use NIST's P-256 which is commonly
-  // supported.
+#if !defined(OPENSSL_IS_BORINGSSL)
+  // Specify an ECDH group for ECDHE ciphers, otherwise OpenSSL cannot
+  // negotiate them when acting as the server. Use NIST's P-256 which is
+  // commonly supported. BoringSSL doesn't need explicit configuration and has
+  // a reasonable default set.
   EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
   if (ecdh == NULL)
     return -1;
   SSL_set_options(ssl_, SSL_OP_SINGLE_ECDH_USE);
   SSL_set_tmp_ecdh(ssl_, ecdh);
   EC_KEY_free(ecdh);
+#endif
 
   // Do the connect
   return ContinueSSL();
