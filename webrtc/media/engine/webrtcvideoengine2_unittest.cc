@@ -868,10 +868,6 @@ TEST_F(WebRtcVideoChannel2BaseTest, TwoStreamsSendAndReceive) {
   Base::TwoStreamsSendAndReceive(kVp8Codec);
 }
 
-TEST_F(WebRtcVideoChannel2BaseTest, TwoStreamsReUseFirstStream) {
-  Base::TwoStreamsReUseFirstStream(kVp8Codec);
-}
-
 class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
  public:
   WebRtcVideoChannel2Test() : WebRtcVideoChannel2Test("") {}

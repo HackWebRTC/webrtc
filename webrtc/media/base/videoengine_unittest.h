@@ -1145,41 +1145,6 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(1, renderer2_.num_rendered_frames());
   }
 
-  // Set up 2 streams where the first stream uses the default channel.
-  // Then disconnect the first stream and verify default channel becomes
-  // available.
-  // Then add a new stream with |new_ssrc|. The new stream should re-use the
-  // default channel.
-  void TwoStreamsReUseFirstStream(const cricket::VideoCodec& codec) {
-    SetUpSecondStream();
-    // Default channel used by the first stream.
-    EXPECT_EQ(kSsrc, channel_->GetDefaultSendChannelSsrc());
-    EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc));
-    EXPECT_FALSE(channel_->RemoveRecvStream(kSsrc));
-    EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
-    EXPECT_FALSE(channel_->RemoveSendStream(kSsrc));
-    // Default channel is no longer used by a stream.
-    EXPECT_EQ(0u, channel_->GetDefaultSendChannelSsrc());
-    uint32_t new_ssrc = kSsrc + 100;
-    EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(new_ssrc)));
-    // Re-use default channel.
-    EXPECT_EQ(new_ssrc, channel_->GetDefaultSendChannelSsrc());
-    EXPECT_FALSE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(new_ssrc)));
-    EXPECT_TRUE(channel_->AddRecvStream(
-        cricket::StreamParams::CreateLegacy(new_ssrc)));
-    EXPECT_TRUE(channel_->SetSink(new_ssrc, &renderer_));
-    EXPECT_FALSE(channel_->AddRecvStream(
-        cricket::StreamParams::CreateLegacy(new_ssrc)));
-
-    EXPECT_TRUE(channel_->SetCapturer(new_ssrc, video_capturer_.get()));
-
-    SendAndReceive(codec);
-    EXPECT_TRUE(channel_->RemoveSendStream(new_ssrc));
-    EXPECT_EQ(0u, channel_->GetDefaultSendChannelSsrc());
-  }
-
   const std::unique_ptr<webrtc::Call> call_;
   VideoEngineOverride<E> engine_;
   std::unique_ptr<cricket::FakeVideoCapturer> video_capturer_;

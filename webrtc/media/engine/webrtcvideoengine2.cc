@@ -665,7 +665,6 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
-  default_send_ssrc_ = 0;
   RTC_DCHECK(ValidateCodecFormats(recv_codecs));
   recv_codecs_ = FilterSupportedCodecs(MapCodecs(recv_codecs));
 }
@@ -1072,9 +1071,6 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
     for (auto& kv : receive_streams_)
       kv.second->SetLocalSsrc(ssrc);
   }
-  if (default_send_ssrc_ == 0) {
-    default_send_ssrc_ = ssrc;
-  }
   if (sending_) {
     stream->SetSend(true);
   }
@@ -1084,16 +1080,6 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
 
 bool WebRtcVideoChannel2::RemoveSendStream(uint32_t ssrc) {
   LOG(LS_INFO) << "RemoveSendStream: " << ssrc;
-
-  if (ssrc == 0) {
-    if (default_send_ssrc_ == 0) {
-      LOG(LS_ERROR) << "No default send stream active.";
-      return false;
-    }
-
-    LOG(LS_VERBOSE) << "Removing default stream: " << default_send_ssrc_;
-    ssrc = default_send_ssrc_;
-  }
 
   WebRtcVideoSendStream* removed_stream;
   {
@@ -1125,10 +1111,6 @@ bool WebRtcVideoChannel2::RemoveSendStream(uint32_t ssrc) {
   }
 
   delete removed_stream;
-
-  if (ssrc == default_send_ssrc_) {
-    default_send_ssrc_ = 0;
-  }
 
   return true;
 }

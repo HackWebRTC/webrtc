@@ -171,7 +171,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
-  uint32_t GetDefaultSendChannelSsrc() { return default_send_ssrc_; }
 
  private:
   class WebRtcVideoReceiveStream;
@@ -498,8 +497,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;
   webrtc::Call* const call_;
-
-  uint32_t default_send_ssrc_;
 
   DefaultUnsignalledSsrcHandler default_unsignalled_ssrc_handler_;
   UnsignalledSsrcHandler* const unsignalled_ssrc_handler_;
