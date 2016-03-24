@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/swap_queue.h"
+#include "webrtc/base/swap_queue.h"
 
 #include <vector>
 

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_AUDIO_SWAP_QUEUE_H_
-#define WEBRTC_COMMON_AUDIO_SWAP_QUEUE_H_
+#ifndef WEBRTC_BASE_SWAP_QUEUE_H_
+#define WEBRTC_BASE_SWAP_QUEUE_H_
 
 #include <algorithm>
 #include <utility>
@@ -207,4 +207,4 @@ class SwapQueue {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_AUDIO_SWAP_QUEUE_H_
+#endif  // WEBRTC_BASE_SWAP_QUEUE_H_

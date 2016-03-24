@@ -151,6 +151,7 @@ static_library("rtc_base_approved") {
     "stringencode.h",
     "stringutils.cc",
     "stringutils.h",
+    "swap_queue.h",
     "systeminfo.cc",
     "systeminfo.h",
     "template_util.h",

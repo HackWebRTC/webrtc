@@ -103,6 +103,7 @@
           'stream_unittest.cc',
           'stringencode_unittest.cc',
           'stringutils_unittest.cc',
+          'swap_queue_unittest.cc',
           # TODO(ronghuawu): Reenable this test.
           # 'systeminfo_unittest.cc',
           'task_unittest.cc',

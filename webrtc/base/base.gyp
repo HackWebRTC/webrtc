@@ -128,6 +128,7 @@
         'stringencode.h',
         'stringutils.cc',
         'stringutils.h',
+        'swap_queue.h',
         'systeminfo.cc',
         'systeminfo.h',
         'template_util.h',

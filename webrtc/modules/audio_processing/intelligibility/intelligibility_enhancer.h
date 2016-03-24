@@ -15,9 +15,9 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/swap_queue.h"
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/common_audio/channel_buffer.h"
-#include "webrtc/common_audio/swap_queue.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
 #include "webrtc/modules/audio_processing/render_queue_item_verifier.h"
 #include "webrtc/modules/audio_processing/vad/voice_activity_detector.h"
