@@ -40,6 +40,34 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
 
+#ifndef OPENSSL_IS_BORINGSSL
+
+// TODO: Use a nicer abstraction for mutex.
+
+#if defined(WEBRTC_WIN)
+  #define MUTEX_TYPE HANDLE
+  #define MUTEX_SETUP(x) (x) = CreateMutex(NULL, FALSE, NULL)
+  #define MUTEX_CLEANUP(x) CloseHandle(x)
+  #define MUTEX_LOCK(x) WaitForSingleObject((x), INFINITE)
+  #define MUTEX_UNLOCK(x) ReleaseMutex(x)
+  #define THREAD_ID GetCurrentThreadId()
+#elif defined(WEBRTC_POSIX)
+  #define MUTEX_TYPE pthread_mutex_t
+  #define MUTEX_SETUP(x) pthread_mutex_init(&(x), NULL)
+  #define MUTEX_CLEANUP(x) pthread_mutex_destroy(&(x))
+  #define MUTEX_LOCK(x) pthread_mutex_lock(&(x))
+  #define MUTEX_UNLOCK(x) pthread_mutex_unlock(&(x))
+  #define THREAD_ID pthread_self()
+#else
+  #error You must define mutex operations appropriate for your platform!
+#endif
+
+struct CRYPTO_dynlock_value {
+  MUTEX_TYPE mutex;
+};
+
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
+
 //////////////////////////////////////////////////////////////////////
 // SocketBIO
 //////////////////////////////////////////////////////////////////////
@@ -149,11 +177,102 @@ static long socket_ctrl(BIO* b, int cmd, long num, void* ptr) {
 
 namespace rtc {
 
+#ifndef OPENSSL_IS_BORINGSSL
+
+// This array will store all of the mutexes available to OpenSSL.
+static MUTEX_TYPE* mutex_buf = NULL;
+
+static void locking_function(int mode, int n, const char * file, int line) {
+  if (mode & CRYPTO_LOCK) {
+    MUTEX_LOCK(mutex_buf[n]);
+  } else {
+    MUTEX_UNLOCK(mutex_buf[n]);
+  }
+}
+
+static unsigned long id_function() {  // NOLINT
+  // Use old-style C cast because THREAD_ID's type varies with the platform,
+  // in some cases requiring static_cast, and in others requiring
+  // reinterpret_cast.
+  return (unsigned long)THREAD_ID; // NOLINT
+}
+
+static CRYPTO_dynlock_value* dyn_create_function(const char* file, int line) {
+  CRYPTO_dynlock_value* value = new CRYPTO_dynlock_value;
+  if (!value)
+    return NULL;
+  MUTEX_SETUP(value->mutex);
+  return value;
+}
+
+static void dyn_lock_function(int mode, CRYPTO_dynlock_value* l,
+                              const char* file, int line) {
+  if (mode & CRYPTO_LOCK) {
+    MUTEX_LOCK(l->mutex);
+  } else {
+    MUTEX_UNLOCK(l->mutex);
+  }
+}
+
+static void dyn_destroy_function(CRYPTO_dynlock_value* l,
+                                 const char* file, int line) {
+  MUTEX_CLEANUP(l->mutex);
+  delete l;
+}
+
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
+
 VerificationCallback OpenSSLAdapter::custom_verify_callback_ = NULL;
 
 bool OpenSSLAdapter::InitializeSSL(VerificationCallback callback) {
-  CRYPTO_library_init();
+  if (!InitializeSSLThread() || !SSL_library_init())
+      return false;
+#if !defined(ADDRESS_SANITIZER) || !defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
+  // Loading the error strings crashes mac_asan.  Omit this debugging aid there.
+  SSL_load_error_strings();
+#endif
+  ERR_load_BIO_strings();
+  OpenSSL_add_all_algorithms();
+  RAND_poll();
   custom_verify_callback_ = callback;
+  return true;
+}
+
+bool OpenSSLAdapter::InitializeSSLThread() {
+  // BoringSSL is doing the locking internally, so the callbacks are not used
+  // in this case (and are no-ops anyways).
+#ifndef OPENSSL_IS_BORINGSSL
+  mutex_buf = new MUTEX_TYPE[CRYPTO_num_locks()];
+  if (!mutex_buf)
+    return false;
+  for (int i = 0; i < CRYPTO_num_locks(); ++i)
+    MUTEX_SETUP(mutex_buf[i]);
+
+  // we need to cast our id_function to return an unsigned long -- pthread_t is
+  // a pointer
+  CRYPTO_set_id_callback(id_function);
+  CRYPTO_set_locking_callback(locking_function);
+  CRYPTO_set_dynlock_create_callback(dyn_create_function);
+  CRYPTO_set_dynlock_lock_callback(dyn_lock_function);
+  CRYPTO_set_dynlock_destroy_callback(dyn_destroy_function);
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
+  return true;
+}
+
+bool OpenSSLAdapter::CleanupSSL() {
+#ifndef OPENSSL_IS_BORINGSSL
+  if (!mutex_buf)
+    return false;
+  CRYPTO_set_id_callback(NULL);
+  CRYPTO_set_locking_callback(NULL);
+  CRYPTO_set_dynlock_create_callback(NULL);
+  CRYPTO_set_dynlock_lock_callback(NULL);
+  CRYPTO_set_dynlock_destroy_callback(NULL);
+  for (int i = 0; i < CRYPTO_num_locks(); ++i)
+    MUTEX_CLEANUP(mutex_buf[i]);
+  delete [] mutex_buf;
+  mutex_buf = NULL;
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
   return true;
 }
 
