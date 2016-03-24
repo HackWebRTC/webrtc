@@ -336,7 +336,6 @@ GainControl::Mode GainControlImpl::mode() const {
 
 int GainControlImpl::set_analog_level_limits(int minimum,
                                              int maximum) {
-  rtc::CritScope cs(crit_capture_);
   if (minimum < 0) {
     return AudioProcessing::kBadParameterError;
   }
@@ -349,12 +348,20 @@ int GainControlImpl::set_analog_level_limits(int minimum,
     return AudioProcessing::kBadParameterError;
   }
 
-  minimum_capture_level_ = minimum;
-  maximum_capture_level_ = maximum;
+  size_t num_proc_channels_local = 0u;
+  int sample_rate_hz_local = 0;
+  {
+    rtc::CritScope cs(crit_capture_);
 
-  RTC_DCHECK(num_proc_channels_);
-  RTC_DCHECK(sample_rate_hz_);
-  Initialize(*num_proc_channels_, *sample_rate_hz_);
+    minimum_capture_level_ = minimum;
+    maximum_capture_level_ = maximum;
+
+    RTC_DCHECK(num_proc_channels_);
+    RTC_DCHECK(sample_rate_hz_);
+    num_proc_channels_local = *num_proc_channels_;
+    sample_rate_hz_local = *sample_rate_hz_;
+  }
+  Initialize(num_proc_channels_local, sample_rate_hz_local);
   return AudioProcessing::kNoError;
 }
 
