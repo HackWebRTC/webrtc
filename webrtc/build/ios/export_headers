@@ -25,7 +25,9 @@ HEADER_INCLUDES = []
 # Individual header files that should not be exported.
 LEGACY_HEADER_EXCLUDES = ['talk/app/webrtc/objc/public/RTCNSGLVideoView.h']
 HEADER_EXCLUDES = ['webrtc/api/objc/avfoundationvideocapturer.h',
-                   'webrtc/api/objc/RTCNSGLVideoView.h']
+                   'webrtc/api/objc/RTCNSGLVideoView.h',
+                   'webrtc/base/objc/NSString+StdString.h',
+                   'webrtc/base/objc/RTCUIApplication.h',]
 
 def ExportHeaders(include_base_dir, use_legacy_headers):
   """Exports iOS header files.

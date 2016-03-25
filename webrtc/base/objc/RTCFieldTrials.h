@@ -10,6 +10,8 @@
 
 #include "webrtc/base/objc/RTCMacros.h"
 
+#import <Foundation/Foundation.h>
+
 typedef NS_OPTIONS(NSUInteger, RTCFieldTrialOptions) {
   RTCFieldTrialOptionsNone = 0,
   RTCFieldTrialOptionsSendSideBwe = 1 << 0,

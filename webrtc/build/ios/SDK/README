@@ -1,0 +1,50 @@
+We want to generate a dynamic framework for a CocoaPod. Unfortunately, using gyp-xcode generation
+for a framework currently presents some issues. To get around those issues, we chose to create a
+project with Xcode for building the framework directly.
+
+The Framework directory contains the Xcode project used to build the framework. The PodTest
+directory contains a project used to confirm that the built framework installs correctly with
+CocoaPods. The build_ios_framework.sh script needs to be run first, then `pod install` should be run
+in the same directory as the Xcode project. After installing, the PodTest.xcworkspace should be used
+instead of PodTest.xcodeproj.
+
+USAGE
+To build the framework, run the build_ios_framework.sh script. This will build static libraries for
+iOS (via the build_ios_libs.sh script), collect header files and adjust import/include statements
+for use inside the framework, build the framework using the Xcode project, merge multiple
+architectures together, and collect the framework files (the .framework itself and the .dSYM) with
+the Podspec into a common directory.
+
+DETAILS OF THE XCODE PROJECT
+The Xcode project contains relative references to the built static libraries (from
+build_ios_libs.sh), with the exception of librtc_api_objc and librtc_base_objc. The iOS source files
+from webrtc/api/objc and webrtc/base/objc are also included. NOTE: This will require updating
+if/when the built static libraries change.
+
+The flattened header files for webrtc/api/objc and webrtc/base/objc were also added to the Public
+Headers of the framework target. NOTE: This will require updating as the Obj-C API changes.
+
+Preprocessor definitions were copied from a gyp-xcode generated project.
+
+RTTI was disabled due to compiler errors and based on the setting in build/common.gypi
+(https://code.google.com/p/chromium/codesearch#chromium/src/build/common.gypi&q=rtti&sq=package:chromium&type=cs&l=5069).
+
+Bitcode is disabled for the time being.
+
+The minimum number of system frameworks were linked against based on build errors (currently
+AVFoundation, AudioToolbox, CoreMedia, VideoToolbox).
+
+The Build Products Path (SYMROOT) was changed to $SRCROOT/build so the build products are in a known
+location.
+
+The created WebRTC scheme was shared so the build_ios_framework.sh script will work on any machine
+that runs it.
+
+DEPLOYMENT_POSTPROCESSING is set to "Yes" so debug symbols will be stripped (the iOS Default for
+STRIP_INSTALLED_PRODUCT is already set to "Yes").
+
+"-ObjC" is added to OTHER_LDFLAGS to ensure category methods (in particular, those from
+RTCAudioSession+Configuration.mm) are included in the framework binary.
+
+During the build process, dSYMs will be generated for each architecture alongside each framework
+bundle. These are merged together and placed alongside the final framework product.

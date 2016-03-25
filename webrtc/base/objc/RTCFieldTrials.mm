@@ -13,7 +13,6 @@
 #include <memory>
 #include "webrtc/system_wrappers/include/field_trial_default.h"
 
-#import <Foundation/Foundation.h>
 #import "webrtc/base/objc/RTCLogging.h"
 
 static NSString * const kRTCEnableSendSideBweString =
