@@ -456,18 +456,7 @@ class ConstraintsWrapper : public MediaConstraintsInterface {
     jfieldID j_id = GetFieldID(jni,
         GetObjectClass(jni, j_constraints), field_name, "Ljava/util/List;");
     jobject j_list = GetObjectField(jni, j_constraints, j_id);
-    jmethodID j_iterator_id = GetMethodID(jni,
-        GetObjectClass(jni, j_list), "iterator", "()Ljava/util/Iterator;");
-    jobject j_iterator = jni->CallObjectMethod(j_list, j_iterator_id);
-    CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
-    jmethodID j_has_next = GetMethodID(jni,
-        GetObjectClass(jni, j_iterator), "hasNext", "()Z");
-    jmethodID j_next = GetMethodID(jni,
-        GetObjectClass(jni, j_iterator), "next", "()Ljava/lang/Object;");
-    while (jni->CallBooleanMethod(j_iterator, j_has_next)) {
-      CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
-      jobject entry = jni->CallObjectMethod(j_iterator, j_next);
-      CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
+    for (jobject entry : Iterable(jni, j_list)) {
       jmethodID get_key = GetMethodID(jni,
           GetObjectClass(jni, entry), "getKey", "()Ljava/lang/String;");
       jstring j_key = reinterpret_cast<jstring>(
@@ -481,7 +470,6 @@ class ConstraintsWrapper : public MediaConstraintsInterface {
       field->push_back(Constraint(JavaToStdString(jni, j_key),
                                   JavaToStdString(jni, j_value)));
     }
-    CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
   }
 
   Constraints mandatory_;
@@ -1464,19 +1452,7 @@ static PeerConnectionInterface::ContinualGatheringPolicy
 static void JavaIceServersToJsepIceServers(
     JNIEnv* jni, jobject j_ice_servers,
     PeerConnectionInterface::IceServers* ice_servers) {
-  jclass list_class = GetObjectClass(jni, j_ice_servers);
-  jmethodID iterator_id = GetMethodID(
-      jni, list_class, "iterator", "()Ljava/util/Iterator;");
-  jobject iterator = jni->CallObjectMethod(j_ice_servers, iterator_id);
-  CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
-  jmethodID iterator_has_next = GetMethodID(
-      jni, GetObjectClass(jni, iterator), "hasNext", "()Z");
-  jmethodID iterator_next = GetMethodID(
-      jni, GetObjectClass(jni, iterator), "next", "()Ljava/lang/Object;");
-  while (jni->CallBooleanMethod(iterator, iterator_has_next)) {
-    CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
-    jobject j_ice_server = jni->CallObjectMethod(iterator, iterator_next);
-    CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
+  for (jobject j_ice_server : Iterable(jni, j_ice_servers)) {
     jclass j_ice_server_class = GetObjectClass(jni, j_ice_server);
     jfieldID j_ice_server_uri_id =
         GetFieldID(jni, j_ice_server_class, "uri", "Ljava/lang/String;");
@@ -1496,7 +1472,6 @@ static void JavaIceServersToJsepIceServers(
     server.password = JavaToStdString(jni, password);
     ice_servers->push_back(server);
   }
-  CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
 }
 
 static void JavaRTCConfigurationToJsepRTCConfiguration(
@@ -2049,6 +2024,94 @@ JOW(jlong, RtpSender_nativeGetTrack)(JNIEnv* jni,
       reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->track()
           .release());
+}
+
+static bool JavaEncodingToJsepRtpEncodingParameters(
+    JNIEnv* jni,
+    jobject j_encodings,
+    std::vector<webrtc::RtpEncodingParameters>* encodings) {
+  const int kBitrateUnlimited = -1;
+  jclass j_encoding_parameters_class =
+      jni->FindClass("org/webrtc/RtpParameters$Encoding");
+  jfieldID bitrate_id = GetFieldID(jni, j_encoding_parameters_class,
+                                   "maxBitrateBps", "Ljava/lang/Integer;");
+  jclass j_integer_class = jni->FindClass("java/lang/Integer");
+  jmethodID int_value_id = GetMethodID(jni, j_integer_class, "intValue", "()I");
+
+  for (jobject j_encoding_parameters : Iterable(jni, j_encodings)) {
+    webrtc::RtpEncodingParameters encoding;
+    jobject j_bitrate = GetObjectField(jni, j_encoding_parameters, bitrate_id);
+    if (!IsNull(jni, j_bitrate)) {
+      int bitrate_value = jni->CallIntMethod(j_bitrate, int_value_id);
+      CHECK_EXCEPTION(jni) << "error during CallIntMethod";
+      encoding.max_bitrate_bps = bitrate_value;
+    } else {
+      encoding.max_bitrate_bps = kBitrateUnlimited;
+    }
+    encodings->push_back(encoding);
+  }
+  return true;
+}
+
+JOW(jboolean, RtpSender_nativeSetParameters)
+(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer, jobject j_parameters) {
+  if (IsNull(jni, j_parameters)) {
+    return false;
+  }
+  jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
+  jclass encoding_class = jni->FindClass("org/webrtc/RtpParameters$Encoding");
+  jfieldID encodings_id =
+      GetFieldID(jni, parameters_class, "encodings", "Ljava/util/LinkedList;");
+
+  jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
+  webrtc::RtpParameters parameters;
+  JavaEncodingToJsepRtpEncodingParameters(jni, j_encodings,
+                                          &parameters.encodings);
+  return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+      ->SetParameters(parameters);
+}
+
+JOW(jobject, RtpSender_nativeGetParameters)
+(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+  webrtc::RtpParameters parameters =
+      reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+          ->GetParameters();
+
+  jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
+  jmethodID parameters_ctor =
+      GetMethodID(jni, parameters_class, "<init>", "()V");
+  jobject j_parameters = jni->NewObject(parameters_class, parameters_ctor);
+  CHECK_EXCEPTION(jni) << "error during NewObject";
+
+  jclass encoding_class = jni->FindClass("org/webrtc/RtpParameters$Encoding");
+  jmethodID encoding_ctor = GetMethodID(jni, encoding_class, "<init>", "()V");
+  jfieldID encodings_id =
+      GetFieldID(jni, parameters_class, "encodings", "Ljava/util/LinkedList;");
+  jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
+  jmethodID add = GetMethodID(jni, GetObjectClass(jni, j_encodings), "add",
+                              "(Ljava/lang/Object;)Z");
+  jfieldID bitrate_id =
+      GetFieldID(jni, encoding_class, "maxBitrateBps", "Ljava/lang/Integer;");
+
+  jclass integer_class = jni->FindClass("java/lang/Integer");
+  jmethodID integer_ctor = GetMethodID(jni, integer_class, "<init>", "(I)V");
+
+  for (webrtc::RtpEncodingParameters encoding : parameters.encodings) {
+    jobject j_encoding_parameters =
+        jni->NewObject(encoding_class, encoding_ctor);
+    CHECK_EXCEPTION(jni) << "error during NewObject";
+    if (encoding.max_bitrate_bps > 0) {
+      jobject j_bitrate_value =
+          jni->NewObject(integer_class, integer_ctor, encoding.max_bitrate_bps);
+      CHECK_EXCEPTION(jni) << "error during NewObject";
+      jni->SetObjectField(j_encoding_parameters, bitrate_id, j_bitrate_value);
+      CHECK_EXCEPTION(jni) << "error during SetObjectField";
+    }
+    jboolean added =
+        jni->CallBooleanMethod(j_encodings, add, j_encoding_parameters);
+    CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
+  }
+  return j_parameters;
 }
 
 JOW(jstring, RtpSender_nativeId)(

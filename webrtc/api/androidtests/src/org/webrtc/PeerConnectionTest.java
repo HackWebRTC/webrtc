@@ -694,6 +694,26 @@ public class PeerConnectionTest extends ActivityTestCase {
     assertEquals(
         PeerConnection.SignalingState.STABLE, answeringPC.signalingState());
 
+    // Set a bitrate limit for the outgoing video stream for the offerer.
+    RtpSender videoSender = null;
+    for (RtpSender sender : offeringPC.getSenders()) {
+      if (sender.track().kind().equals("video")) {
+        videoSender = sender;
+      }
+    }
+    assertNotNull(videoSender);
+    RtpParameters rtpParameters = videoSender.getParameters();
+    assertNotNull(rtpParameters);
+    assertEquals(1, rtpParameters.encodings.size());
+    assertNull(rtpParameters.encodings.get(0).maxBitrateBps);
+
+    rtpParameters.encodings.get(0).maxBitrateBps = 300000;
+    assertTrue(videoSender.setParameters(rtpParameters));
+
+    // Verify that we can read back the updated value.
+    rtpParameters = videoSender.getParameters();
+    assertEquals(300000, (int) rtpParameters.encodings.get(0).maxBitrateBps);
+
     // Test send & receive UTF-8 text.
     answeringExpectations.expectMessage(
         ByteBuffer.wrap("hello!".getBytes(Charset.forName("UTF-8"))), false);

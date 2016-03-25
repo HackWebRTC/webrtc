@@ -34,10 +34,10 @@ JavaVM *GetJVM() {
 
 // Return a |JNIEnv*| usable on this thread or NULL if this thread is detached.
 JNIEnv* GetEnv() {
-  void* env = NULL;
+  void* env = nullptr;
   jint status = g_jvm->GetEnv(&env, JNI_VERSION_1_6);
-  RTC_CHECK(((env != NULL) && (status == JNI_OK)) ||
-            ((env == NULL) && (status == JNI_EDETACHED)))
+  RTC_CHECK(((env != nullptr) && (status == JNI_OK)) ||
+            ((env == nullptr) && (status == JNI_EDETACHED)))
       << "Unexpected GetEnv return: " << status << ":" << env;
   return reinterpret_cast<JNIEnv*>(env);
 }
@@ -109,12 +109,12 @@ JNIEnv* AttachCurrentThreadIfNeeded() {
   JavaVMAttachArgs args;
   args.version = JNI_VERSION_1_6;
   args.name = &name[0];
-  args.group = NULL;
+  args.group = nullptr;
   // Deal with difference in signatures between Oracle's jni.h and Android's.
 #ifdef _JAVASOFT_JNI_H_  // Oracle's jni.h violates the JNI spec!
-  void* env = NULL;
+  void* env = nullptr;
 #else
-  JNIEnv* env = NULL;
+  JNIEnv* env = nullptr;
 #endif
   RTC_CHECK(!g_jvm->AttachCurrentThread(&env, &args))
       << "Failed to attach thread";
@@ -215,7 +215,7 @@ jstring JavaStringFromStdString(JNIEnv* jni, const std::string& native) {
 
 // Given a (UTF-16) jstring return a new UTF-8 native string.
 std::string JavaToStdString(JNIEnv* jni, const jstring& j_string) {
-  const char* chars = jni->GetStringUTFChars(j_string, NULL);
+  const char* chars = jni->GetStringUTFChars(j_string, nullptr);
   CHECK_EXCEPTION(jni) << "Error during GetStringUTFChars";
   std::string str(chars, jni->GetStringUTFLength(j_string));
   CHECK_EXCEPTION(jni) << "Error during GetStringUTFLength";
@@ -269,7 +269,76 @@ ScopedLocalRefFrame::ScopedLocalRefFrame(JNIEnv* jni) : jni_(jni) {
   RTC_CHECK(!jni_->PushLocalFrame(0)) << "Failed to PushLocalFrame";
 }
 ScopedLocalRefFrame::~ScopedLocalRefFrame() {
-  jni_->PopLocalFrame(NULL);
+  jni_->PopLocalFrame(nullptr);
+}
+
+// Creates an iterator representing the end of any collection.
+Iterable::Iterator::Iterator() : iterator_(nullptr) {}
+
+// Creates an iterator pointing to the beginning of the specified collection.
+Iterable::Iterator::Iterator(JNIEnv* jni, jobject iterable) : jni_(jni) {
+  jclass j_class = GetObjectClass(jni, iterable);
+  jmethodID iterator_id =
+      GetMethodID(jni, j_class, "iterator", "()Ljava/util/Iterator;");
+  iterator_ = jni->CallObjectMethod(iterable, iterator_id);
+  CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
+  RTC_CHECK(iterator_ != nullptr);
+
+  jclass iterator_class = GetObjectClass(jni, iterator_);
+  has_next_id_ = GetMethodID(jni, iterator_class, "hasNext", "()Z");
+  next_id_ = GetMethodID(jni, iterator_class, "next", "()Ljava/lang/Object;");
+
+  // Start at the first element in the collection.
+  ++(*this);
+}
+
+// Move constructor - necessary to be able to return iterator types from
+// functions.
+Iterable::Iterator::Iterator(Iterator&& other)
+    : jni_(std::move(other.jni_)),
+      iterator_(std::move(other.iterator_)),
+      value_(std::move(other.value_)),
+      has_next_id_(std::move(other.has_next_id_)),
+      next_id_(std::move(other.next_id_)),
+      thread_checker_(std::move(other.thread_checker_)){};
+
+// Advances the iterator one step.
+Iterable::Iterator& Iterable::Iterator::operator++() {
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
+  if (AtEnd()) {
+    // Can't move past the end.
+    return *this;
+  }
+  bool has_next = jni_->CallBooleanMethod(iterator_, has_next_id_);
+  CHECK_EXCEPTION(jni_) << "error during CallBooleanMethod";
+  if (!has_next) {
+    iterator_ = nullptr;
+    value_ = nullptr;
+    return *this;
+  }
+
+  value_ = jni_->CallObjectMethod(iterator_, next_id_);
+  CHECK_EXCEPTION(jni_) << "error during CallObjectMethod";
+  return *this;
+}
+
+// Provides a way to compare the iterator with itself and with the end iterator.
+// Note: all other comparison results are undefined, just like for C++ input
+// iterators.
+bool Iterable::Iterator::operator==(const Iterable::Iterator& other) {
+  // Two different active iterators should never be compared.
+  RTC_DCHECK(this == &other || AtEnd() || other.AtEnd());
+  return AtEnd() == other.AtEnd();
+}
+
+jobject Iterable::Iterator::operator*() {
+  RTC_CHECK(!AtEnd());
+  return value_;
+}
+
+bool Iterable::Iterator::AtEnd() const {
+  RTC_CHECK(thread_checker_.CalledOnValidThread());
+  return jni_ == nullptr || IsNull(jni_, iterator_);
 }
 
 }  // namespace webrtc_jni

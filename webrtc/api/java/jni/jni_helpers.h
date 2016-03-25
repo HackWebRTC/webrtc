@@ -17,7 +17,9 @@
 #include <jni.h>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/thread_checker.h"
 
 // Abort the process if |jni| has a Java exception pending.
 // This macros uses the comma operator to execute ExceptionDescribe
@@ -120,6 +122,65 @@ class ScopedGlobalRef {
   }
  private:
   T obj_;
+};
+
+// Provides a convenient way to iterate over a Java Iterable using the
+// C++ range-for loop.
+// E.g. for (jobject value : Iterable(jni, j_iterable)) { ... }
+// Note: Since Java iterators cannot be duplicated, the iterator class is not
+// copyable to prevent creating multiple C++ iterators that refer to the same
+// Java iterator.
+class Iterable {
+ public:
+  Iterable(JNIEnv* jni, jobject iterable) : jni_(jni), iterable_(iterable) {}
+
+  class Iterator {
+   public:
+    // Creates an iterator representing the end of any collection.
+    Iterator();
+    // Creates an iterator pointing to the beginning of the specified
+    // collection.
+    Iterator(JNIEnv* jni, jobject iterable);
+
+    // Move constructor - necessary to be able to return iterator types from
+    // functions.
+    Iterator(Iterator&& other);
+
+    // Move assignment should not be used.
+    Iterator& operator=(Iterator&&) = delete;
+
+    // Advances the iterator one step.
+    Iterator& operator++();
+
+    // Provides a way to compare the iterator with itself and with the end
+    // iterator.
+    // Note: all other comparison results are undefined, just like for C++ input
+    // iterators.
+    bool operator==(const Iterator& other);
+    bool operator!=(const Iterator& other) { return !(*this == other); }
+    jobject operator*();
+
+   private:
+    bool AtEnd() const;
+
+    JNIEnv* jni_ = nullptr;
+    jobject iterator_ = nullptr;
+    jobject value_ = nullptr;
+    jmethodID has_next_id_ = nullptr;
+    jmethodID next_id_ = nullptr;
+    rtc::ThreadChecker thread_checker_;
+
+    RTC_DISALLOW_COPY_AND_ASSIGN(Iterator);
+  };
+
+  Iterable::Iterator begin() { return Iterable::Iterator(jni_, iterable_); }
+  Iterable::Iterator end() { return Iterable::Iterator(); }
+
+ private:
+  JNIEnv* jni_;
+  jobject iterable_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(Iterable);
 };
 
 }  // namespace webrtc_jni
