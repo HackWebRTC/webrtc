@@ -71,7 +71,7 @@ class IntelligibilityEnhancer : public LappedTransform::Callback {
 
   // Analytically solves quadratic for optimal gains given |lambda|.
   // Negative gains are set to 0. Stores the results in |sols|.
-  void SolveForGainsGivenLambda(float lambda, size_t start_freq, float* sols);
+  void SolveForGainsGivenLambda(double lambda, size_t start_freq, float* sols);
 
   // Returns true if the audio is speech.
   bool IsSpeech(const float* audio);

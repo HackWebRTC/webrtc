@@ -86,7 +86,9 @@ class WavFileProcessor final : public AudioFileProcessor {
   // Takes ownership of all parameters.
   WavFileProcessor(std::unique_ptr<AudioProcessing> ap,
                    std::unique_ptr<WavReader> in_file,
-                   std::unique_ptr<WavWriter> out_file);
+                   std::unique_ptr<WavWriter> out_file,
+                   std::unique_ptr<WavReader> reverse_in_file,
+                   std::unique_ptr<WavWriter> reverse_out_file);
   virtual ~WavFileProcessor() {}
 
   // Processes one chunk from the WAV input and writes to the WAV output.
@@ -101,6 +103,12 @@ class WavFileProcessor final : public AudioFileProcessor {
   const StreamConfig output_config_;
   ChannelBufferWavReader buffer_reader_;
   ChannelBufferWavWriter buffer_writer_;
+  std::unique_ptr<ChannelBuffer<float>> reverse_in_buf_;
+  std::unique_ptr<ChannelBuffer<float>> reverse_out_buf_;
+  std::unique_ptr<StreamConfig> reverse_input_config_;
+  std::unique_ptr<StreamConfig> reverse_output_config_;
+  std::unique_ptr<ChannelBufferWavReader> reverse_buffer_reader_;
+  std::unique_ptr<ChannelBufferWavWriter> reverse_buffer_writer_;
 };
 
 // Used to read from an aecdump file and write to a WavWriter.
