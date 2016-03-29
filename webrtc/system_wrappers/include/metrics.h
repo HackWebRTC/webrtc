@@ -15,6 +15,7 @@
 
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
 
 // Macros for allowing WebRTC clients (e.g. Chrome) to gather and aggregate
@@ -78,7 +79,27 @@
   RTC_HISTOGRAM_COUNTS(name, sample, 1, 100000, 50)
 
 #define RTC_HISTOGRAM_COUNTS(name, sample, min, max, bucket_count) \
-  RTC_HISTOGRAM_COMMON_BLOCK(name, sample, \
+  RTC_HISTOGRAM_COMMON_BLOCK(name, sample, false, \
+      webrtc::metrics::HistogramFactoryGetCounts(name, min, max, bucket_count))
+
+// RTC_HISTOGRAM_COUNTS with logging.
+#define RTC_LOGGED_HISTOGRAM_COUNTS_100(name, sample) \
+  RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 100, 50)
+
+#define RTC_LOGGED_HISTOGRAM_COUNTS_200(name, sample) \
+  RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 200, 50)
+
+#define RTC_LOGGED_HISTOGRAM_COUNTS_1000(name, sample) \
+  RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 1000, 50)
+
+#define RTC_LOGGED_HISTOGRAM_COUNTS_10000(name, sample) \
+  RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 10000, 50)
+
+#define RTC_LOGGED_HISTOGRAM_COUNTS_100000(name, sample) \
+  RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 100000, 50)
+
+#define RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, min, max, bucket_count) \
+  RTC_HISTOGRAM_COMMON_BLOCK(name, sample, true, \
       webrtc::metrics::HistogramFactoryGetCounts(name, min, max, bucket_count))
 
 // Deprecated.
@@ -94,17 +115,29 @@
 #define RTC_HISTOGRAM_PERCENTAGE(name, sample) \
   RTC_HISTOGRAM_ENUMERATION(name, sample, 101)
 
+// RTC_HISTOGRAM_PERCENTAGE with logging.
+#define RTC_LOGGED_HISTOGRAM_PERCENTAGE(name, sample) \
+  RTC_LOGGED_HISTOGRAM_ENUMERATION(name, sample, 101)
+
 // Histogram for enumerators (evenly spaced buckets).
 // |boundary| should be above the max enumerator sample.
 #define RTC_HISTOGRAM_ENUMERATION(name, sample, boundary) \
-  RTC_HISTOGRAM_COMMON_BLOCK(name, sample, \
+  RTC_HISTOGRAM_COMMON_BLOCK(name, sample, false, \
+      webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))
+
+// RTC_HISTOGRAM_ENUMERATION with logging.
+#define RTC_LOGGED_HISTOGRAM_ENUMERATION(name, sample, boundary) \
+  RTC_HISTOGRAM_COMMON_BLOCK(name, sample, true, \
       webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))
 
 // The name of the histogram should not vary.
 // TODO(asapersson): Consider changing string to const char*.
-#define RTC_HISTOGRAM_COMMON_BLOCK(constant_name, sample, \
+#define RTC_HISTOGRAM_COMMON_BLOCK(constant_name, sample, log, \
                                    factory_get_invocation) \
   do { \
+    if (log) { \
+      LOG(LS_INFO) << constant_name << " " << sample; \
+    } \
     static webrtc::metrics::Histogram* atomic_histogram_pointer = nullptr; \
     webrtc::metrics::Histogram* histogram_pointer = \
         rtc::AtomicOps::AcquireLoadPtr(&atomic_histogram_pointer); \
@@ -161,6 +194,35 @@
 #define RTC_HISTOGRAMS_PERCENTAGE(index, name, sample) \
   RTC_HISTOGRAMS_COMMON(index, name, sample, \
       RTC_HISTOGRAM_PERCENTAGE(name, sample))
+
+// RTC_HISTOGRAMS_COUNTS with logging.
+#define RTC_LOGGED_HISTOGRAMS_COUNTS_100(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 100, 50))
+
+#define RTC_LOGGED_HISTOGRAMS_COUNTS_200(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 200, 50))
+
+#define RTC_LOGGED_HISTOGRAMS_COUNTS_1000(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 1000, 50))
+
+#define RTC_LOGGED_HISTOGRAMS_COUNTS_10000(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 10000, 50))
+
+#define RTC_LOGGED_HISTOGRAMS_COUNTS_100000(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 100000, 50))
+
+#define RTC_LOGGED_HISTOGRAMS_ENUMERATION(index, name, sample, boundary) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_LOGGED_HISTOGRAM_ENUMERATION(name, sample, boundary))
+
+#define RTC_LOGGED_HISTOGRAMS_PERCENTAGE(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_LOGGED_HISTOGRAM_PERCENTAGE(name, sample))
 
 #define RTC_HISTOGRAMS_COMMON(index, name, sample, macro_invocation) \
   do { \

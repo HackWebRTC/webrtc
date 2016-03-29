@@ -272,12 +272,12 @@ void Call::UpdateSendHistograms() {
       estimated_send_bitrate_sum_kbits_ / num_bitrate_updates_;
   int pacer_bitrate_kbps = pacer_bitrate_sum_kbits_ / num_bitrate_updates_;
   if (send_bitrate_kbps > 0) {
-    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.EstimatedSendBitrateInKbps",
-                                send_bitrate_kbps);
+    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.EstimatedSendBitrateInKbps",
+                                       send_bitrate_kbps);
   }
   if (pacer_bitrate_kbps > 0) {
-    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.PacerBitrateInKbps",
-                                pacer_bitrate_kbps);
+    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.PacerBitrateInKbps",
+                                       pacer_bitrate_kbps);
   }
 }
 
@@ -292,18 +292,18 @@ void Call::UpdateReceiveHistograms() {
   int video_bitrate_kbps = received_video_bytes_ * 8 / elapsed_sec / 1000;
   int rtcp_bitrate_bps = received_rtcp_bytes_ * 8 / elapsed_sec;
   if (video_bitrate_kbps > 0) {
-    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.VideoBitrateReceivedInKbps",
-                                video_bitrate_kbps);
+    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.VideoBitrateReceivedInKbps",
+                                       video_bitrate_kbps);
   }
   if (audio_bitrate_kbps > 0) {
-    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.AudioBitrateReceivedInKbps",
-                                audio_bitrate_kbps);
+    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.AudioBitrateReceivedInKbps",
+                                       audio_bitrate_kbps);
   }
   if (rtcp_bitrate_bps > 0) {
-    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.RtcpBitrateReceivedInBps",
-                                rtcp_bitrate_bps);
+    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.RtcpBitrateReceivedInBps",
+                                       rtcp_bitrate_bps);
   }
-  RTC_HISTOGRAM_COUNTS_100000(
+  RTC_LOGGED_HISTOGRAM_COUNTS_100000(
       "WebRTC.Call.BitrateReceivedInKbps",
       audio_bitrate_kbps + video_bitrate_kbps + rtcp_bitrate_bps / 1000);
 }

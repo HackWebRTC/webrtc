@@ -315,14 +315,14 @@ void ScreenshareLayers::UpdateHistograms() {
         "WebRTC.Video.Screenshare.Layer1.FrameRate",
         (stats_.num_tl1_frames_ + (duration_sec / 2)) / duration_sec);
     int total_frames = stats_.num_tl0_frames_ + stats_.num_tl1_frames_;
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.Screenshare.FramesPerDrop",
-                               stats_.num_dropped_frames_ == 0
-                                   ? 0
-                                   : total_frames / stats_.num_dropped_frames_);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.Screenshare.FramesPerOvershoot",
-                               stats_.num_overshoots_ == 0
-                                   ? 0
-                                   : total_frames / stats_.num_overshoots_);
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.Screenshare.FramesPerDrop",
+        (stats_.num_dropped_frames_ == 0 ? 0 : total_frames /
+                                                   stats_.num_dropped_frames_));
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.Screenshare.FramesPerOvershoot",
+        (stats_.num_overshoots_ == 0 ? 0
+                                     : total_frames / stats_.num_overshoots_));
     if (stats_.num_tl0_frames_ > 0) {
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.Screenshare.Layer0.Qp",
                                  stats_.tl0_qp_sum_ / stats_.num_tl0_frames_);

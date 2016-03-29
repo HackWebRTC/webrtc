@@ -155,8 +155,8 @@ void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
   for (size_t i = 0; i < kNumUmaRampupMetrics; ++i) {
     if (!rampup_uma_stats_updated_[i] &&
         bitrate_kbps >= kUmaRampupMetrics[i].bitrate_kbps) {
-      RTC_HISTOGRAMS_COUNTS_100000(i, kUmaRampupMetrics[i].metric_name,
-                                   now_ms - first_report_time_ms_);
+      RTC_LOGGED_HISTOGRAMS_COUNTS_100000(i, kUmaRampupMetrics[i].metric_name,
+                                          now_ms - first_report_time_ms_);
       rampup_uma_stats_updated_[i] = true;
     }
   }
@@ -165,19 +165,19 @@ void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
   } else if (uma_update_state_ == kNoUpdate) {
     uma_update_state_ = kFirstDone;
     bitrate_at_2_seconds_kbps_ = bitrate_kbps;
-    RTC_HISTOGRAM_COUNTS("WebRTC.BWE.InitiallyLostPackets",
-                         initially_lost_packets_, 0, 100, 50);
-    RTC_HISTOGRAM_COUNTS("WebRTC.BWE.InitialRtt", static_cast<int>(rtt), 0,
-                         2000, 50);
-    RTC_HISTOGRAM_COUNTS("WebRTC.BWE.InitialBandwidthEstimate",
-                         bitrate_at_2_seconds_kbps_, 0, 2000, 50);
+    RTC_LOGGED_HISTOGRAM_COUNTS("WebRTC.BWE.InitiallyLostPackets",
+                                initially_lost_packets_, 0, 100, 50);
+    RTC_LOGGED_HISTOGRAM_COUNTS("WebRTC.BWE.InitialRtt", static_cast<int>(rtt),
+                                0, 2000, 50);
+    RTC_LOGGED_HISTOGRAM_COUNTS("WebRTC.BWE.InitialBandwidthEstimate",
+                                bitrate_at_2_seconds_kbps_, 0, 2000, 50);
   } else if (uma_update_state_ == kFirstDone &&
              now_ms - first_report_time_ms_ >= kBweConverganceTimeMs) {
     uma_update_state_ = kDone;
     int bitrate_diff_kbps =
         std::max(bitrate_at_2_seconds_kbps_ - bitrate_kbps, 0);
-    RTC_HISTOGRAM_COUNTS("WebRTC.BWE.InitialVsConvergedDiff", bitrate_diff_kbps,
-                         0, 2000, 50);
+    RTC_LOGGED_HISTOGRAM_COUNTS("WebRTC.BWE.InitialVsConvergedDiff",
+                                bitrate_diff_kbps, 0, 2000, 50);
   }
 }
 
