@@ -15,6 +15,7 @@
 #include "net/quic/quic_alarm.h"
 #include "net/quic/quic_clock.h"
 #include "net/quic/quic_connection.h"
+#include "net/quic/quic_simple_buffer_allocator.h"
 #include "webrtc/base/thread.h"
 
 namespace cricket {
@@ -25,7 +26,7 @@ class QuicAlarm : public net::QuicAlarm, public rtc::MessageHandler {
  public:
   QuicAlarm(const net::QuicClock* clock,
             rtc::Thread* thread,
-            QuicAlarm::Delegate* delegate);
+            net::QuicArenaScopedPtr<net::QuicAlarm::Delegate> delegate);
 
   ~QuicAlarm() override;
 
@@ -33,7 +34,7 @@ class QuicAlarm : public net::QuicAlarm, public rtc::MessageHandler {
   void OnMessage(rtc::Message* msg) override;
 
   // Helper method to get the delay in ms for posting task.
-  int64 GetDelay() const;
+  int64_t GetDelay() const;
 
  protected:
   // net::QuicAlarm overrides.
@@ -55,9 +56,14 @@ class QuicConnectionHelper : public net::QuicConnectionHelperInterface {
   const net::QuicClock* GetClock() const override;
   net::QuicRandom* GetRandomGenerator() override;
   QuicAlarm* CreateAlarm(net::QuicAlarm::Delegate* delegate) override;
+  net::QuicArenaScopedPtr<net::QuicAlarm> CreateAlarm(
+      net::QuicArenaScopedPtr<QuicAlarm::Delegate> delegate,
+      net::QuicConnectionArena* arena) override;
+  net::QuicBufferAllocator* GetBufferAllocator() override;
 
  private:
   net::QuicClock clock_;
+  net::SimpleBufferAllocator buffer_allocator_;
   rtc::Thread* thread_;
 };
 

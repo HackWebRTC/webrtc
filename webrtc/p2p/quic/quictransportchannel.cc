@@ -19,6 +19,7 @@
 #include "net/quic/quic_connection.h"
 #include "net/quic/quic_crypto_client_stream.h"
 #include "net/quic/quic_crypto_server_stream.h"
+#include "net/quic/quic_packet_writer.h"
 #include "net/quic/quic_protocol.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
@@ -33,7 +34,7 @@ namespace {
 // given that |channel_| only receives packets specific to this channel,
 // in which case we already know the QUIC packets have the correct destination.
 const net::QuicConnectionId kConnectionId = 0;
-const net::IPAddressNumber kConnectionIpAddress(net::kIPv4AddressSize, 0);
+const net::IPAddress kConnectionIpAddress(0, 0, 0, 0);
 const net::IPEndPoint kConnectionIpEndpoint(kConnectionIpAddress, 0);
 
 // Arbitrary server port number for net::QuicCryptoClientConfig.
@@ -73,21 +74,21 @@ class DummyProofSource : public net::ProofSource {
   ~DummyProofSource() override {}
 
   // ProofSource override.
-  bool GetProof(const net::IPAddressNumber& server_ip,
+  bool GetProof(const net::IPAddress& server_ip,
                 const std::string& hostname,
                 const std::string& server_config,
+                net::QuicVersion quic_version,
+                base::StringPiece chlo_hash,
                 bool ecdsa_ok,
-                const std::vector<std::string>** out_certs,
+                scoped_refptr<net::ProofSource::Chain>* out_chain,
                 std::string* out_signature,
                 std::string* out_leaf_cert_sct) override {
-    LOG(INFO) << "GetProof() providing dummy credentials for insecure QUIC";
-    std::vector<std::string>* certs = new std::vector<std::string>();
-    certs->push_back("Dummy cert");
-    std::string signature("Dummy signature");
-
-    *out_certs = certs;
-    *out_signature = signature;
-
+    LOG(LS_INFO) << "GetProof() providing dummy credentials for insecure QUIC";
+    std::vector<std::string> certs;
+    certs.push_back("Dummy cert");
+    *out_chain = new ProofSource::Chain(certs);
+    *out_signature = "Dummy signature";
+    *out_leaf_cert_sct = "Dummy timestamp";
     return true;
   }
 };
@@ -111,7 +112,7 @@ class InsecureProofVerifier : public net::ProofVerifier {
       std::string* error_details,
       scoped_ptr<net::ProofVerifyDetails>* verify_details,
       net::ProofVerifierCallback* callback) override {
-    LOG(INFO) << "VerifyProof() ignoring credentials and returning success";
+    LOG(LS_INFO) << "VerifyProof() ignoring credentials and returning success";
     return net::QUIC_SUCCESS;
   }
 };
@@ -157,7 +158,8 @@ QuicTransportChannel::~QuicTransportChannel() {}
 bool QuicTransportChannel::SetLocalCertificate(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
   if (!certificate) {
-    LOG_J(ERROR, this) << "No local certificate was supplied. Not doing QUIC.";
+    LOG_J(LS_ERROR, this)
+        << "No local certificate was supplied. Not doing QUIC.";
     return false;
   }
   if (!local_certificate_) {
@@ -166,11 +168,12 @@ bool QuicTransportChannel::SetLocalCertificate(
   }
   if (certificate == local_certificate_) {
     // This may happen during renegotiation.
-    LOG_J(INFO, this) << "Ignoring identical certificate";
+    LOG_J(LS_INFO, this) << "Ignoring identical certificate";
     return true;
   }
-  LOG_J(ERROR, this) << "Local certificate of the QUIC connection already set. "
-                        "Can't change the local certificate once it's active.";
+  LOG_J(LS_ERROR, this)
+      << "Local certificate of the QUIC connection already set. "
+         "Can't change the local certificate once it's active.";
   return false;
 }
 
@@ -181,14 +184,14 @@ QuicTransportChannel::GetLocalCertificate() const {
 
 bool QuicTransportChannel::SetSslRole(rtc::SSLRole role) {
   if (ssl_role_ && *ssl_role_ == role) {
-    LOG_J(WARNING, this) << "Ignoring SSL Role identical to current role.";
+    LOG_J(LS_WARNING, this) << "Ignoring SSL Role identical to current role.";
     return true;
   }
   if (quic_state_ != QUIC_TRANSPORT_CONNECTED) {
     ssl_role_ = rtc::Optional<rtc::SSLRole>(role);
     return true;
   }
-  LOG_J(ERROR, this)
+  LOG_J(LS_ERROR, this)
       << "SSL Role can't be reversed after the session is setup.";
   return false;
 }
@@ -206,7 +209,7 @@ bool QuicTransportChannel::SetRemoteFingerprint(const std::string& digest_alg,
                                                 size_t digest_len) {
   if (digest_alg.empty()) {
     RTC_DCHECK(!digest_len);
-    LOG_J(ERROR, this) << "Remote peer doesn't support digest algorithm.";
+    LOG_J(LS_ERROR, this) << "Remote peer doesn't support digest algorithm.";
     return false;
   }
   std::string remote_fingerprint_value(reinterpret_cast<const char*>(digest),
@@ -216,7 +219,8 @@ bool QuicTransportChannel::SetRemoteFingerprint(const std::string& digest_alg,
   if (remote_fingerprint_ &&
       remote_fingerprint_->value == remote_fingerprint_value &&
       remote_fingerprint_->algorithm == digest_alg) {
-    LOG_J(INFO, this) << "Ignoring identical remote fingerprint and algorithm";
+    LOG_J(LS_INFO, this)
+        << "Ignoring identical remote fingerprint and algorithm";
     return true;
   }
   remote_fingerprint_ = rtc::Optional<RemoteFingerprint>(RemoteFingerprint());
@@ -254,7 +258,7 @@ int QuicTransportChannel::SendPacket(const char* data,
   if ((flags & PF_SRTP_BYPASS) && IsRtpPacket(data, size)) {
     return channel_->SendPacket(data, size, options);
   }
-  LOG(ERROR) << "Failed to send an invalid SRTP bypass packet using QUIC.";
+  LOG(LS_ERROR) << "Failed to send an invalid SRTP bypass packet using QUIC.";
   return -1;
 }
 
@@ -266,7 +270,7 @@ int QuicTransportChannel::SendPacket(const char* data,
 void QuicTransportChannel::OnWritableState(TransportChannel* channel) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
-  LOG_J(VERBOSE, this)
+  LOG_J(LS_VERBOSE, this)
       << "QuicTransportChannel: channel writable state changed to "
       << channel_->writable();
   switch (quic_state_) {
@@ -300,7 +304,7 @@ void QuicTransportChannel::OnWritableState(TransportChannel* channel) {
 void QuicTransportChannel::OnReceivingState(TransportChannel* channel) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
-  LOG_J(VERBOSE, this)
+  LOG_J(LS_VERBOSE, this)
       << "QuicTransportChannel: channel receiving state changed to "
       << channel_->receiving();
   if (quic_state_ == QUIC_TRANSPORT_CONNECTED) {
@@ -322,7 +326,7 @@ void QuicTransportChannel::OnReadPacket(TransportChannel* channel,
     case QUIC_TRANSPORT_NEW:
       // This would occur if other peer is ready to start QUIC but this peer
       // hasn't started QUIC.
-      LOG_J(INFO, this) << "Dropping packet received before QUIC started.";
+      LOG_J(LS_INFO, this) << "Dropping packet received before QUIC started.";
       break;
     case QUIC_TRANSPORT_CONNECTING:
     case QUIC_TRANSPORT_CONNECTED:
@@ -330,13 +334,14 @@ void QuicTransportChannel::OnReadPacket(TransportChannel* channel,
       // Is this potentially a QUIC packet?
       if (IsQuicPacket(data, size)) {
         if (!HandleQuicPacket(data, size)) {
-          LOG_J(ERROR, this) << "Failed to handle QUIC packet.";
+          LOG_J(LS_ERROR, this) << "Failed to handle QUIC packet.";
           return;
         }
       } else {
         // If this is an RTP packet, signal upwards as a bypass packet.
         if (!IsRtpPacket(data, size)) {
-          LOG_J(ERROR, this) << "Received unexpected non-QUIC, non-RTP packet.";
+          LOG_J(LS_ERROR, this)
+              << "Received unexpected non-QUIC, non-RTP packet.";
           return;
         }
         SignalReadPacket(this, data, size, packet_time, PF_SRTP_BYPASS);
@@ -389,19 +394,21 @@ void QuicTransportChannel::OnConnectionRemoved(TransportChannelImpl* channel) {
 
 bool QuicTransportChannel::MaybeStartQuic() {
   if (!channel_->writable()) {
-    LOG_J(ERROR, this) << "Couldn't start QUIC handshake.";
+    LOG_J(LS_ERROR, this) << "Couldn't start QUIC handshake.";
     return false;
   }
   if (!CreateQuicSession() || !StartQuicHandshake()) {
-    LOG_J(WARNING, this) << "Underlying channel is writable but cannot start "
-                            "the QUIC handshake.";
+    LOG_J(LS_WARNING, this)
+        << "Underlying channel is writable but cannot start "
+           "the QUIC handshake.";
     return false;
   }
   // Verify connection is not closed due to QUIC bug or network failure.
   // A closed connection should not happen since |channel_| is writable.
   if (!quic_->connection()->connected()) {
-    LOG_J(ERROR, this) << "QUIC connection should not be closed if underlying "
-                          "channel is writable.";
+    LOG_J(LS_ERROR, this)
+        << "QUIC connection should not be closed if underlying "
+           "channel is writable.";
     return false;
   }
   // Indicate that |quic_| is ready to receive QUIC packets.
@@ -417,7 +424,7 @@ bool QuicTransportChannel::CreateQuicSession() {
                                      ? net::Perspective::IS_CLIENT
                                      : net::Perspective::IS_SERVER;
   bool owns_writer = false;
-  scoped_ptr<net::QuicConnection> connection(new net::QuicConnection(
+  rtc::scoped_ptr<net::QuicConnection> connection(new net::QuicConnection(
       kConnectionId, kConnectionIpEndpoint, &helper_, this, owns_writer,
       perspective, net::QuicSupportedVersions()));
   quic_.reset(new QuicSession(std::move(connection), config_));
@@ -442,7 +449,7 @@ bool QuicTransportChannel::StartQuicHandshake() {
                                         new net::ProofVerifyContext(),
                                         quic_crypto_client_config_.get(), this);
     quic_->StartClientHandshake(crypto_stream);
-    LOG_J(INFO, this) << "QuicTransportChannel: Started client handshake.";
+    LOG_J(LS_INFO, this) << "QuicTransportChannel: Started client handshake.";
   } else {
     RTC_DCHECK_EQ(*ssl_role_, rtc::SSL_SERVER);
     // Provide credentials to remote peer; owned by QuicCryptoServerConfig.
@@ -454,7 +461,8 @@ bool QuicTransportChannel::StartQuicHandshake() {
     std::string source_address_token_secret;
     if (!rtc::CreateRandomString(kInputKeyingMaterialLength,
                                  &source_address_token_secret)) {
-      LOG_J(ERROR, this) << "Error generating input keying material for HKDF.";
+      LOG_J(LS_ERROR, this)
+          << "Error generating input keying material for HKDF.";
       return false;
     }
     quic_crypto_server_config_.reset(new net::QuicCryptoServerConfig(
@@ -468,7 +476,7 @@ bool QuicTransportChannel::StartQuicHandshake() {
         new net::QuicCryptoServerStream(quic_crypto_server_config_.get(),
                                         quic_.get());
     quic_->StartServerHandshake(crypto_stream);
-    LOG_J(INFO, this) << "QuicTransportChannel: Started server handshake.";
+    LOG_J(LS_INFO, this) << "QuicTransportChannel: Started server handshake.";
   }
   return true;
 }
@@ -481,8 +489,9 @@ bool QuicTransportChannel::HandleQuicPacket(const char* data, size_t size) {
 net::WriteResult QuicTransportChannel::WritePacket(
     const char* buffer,
     size_t buf_len,
-    const net::IPAddressNumber& self_address,
-    const net::IPEndPoint& peer_address) {
+    const net::IPAddress& self_address,
+    const net::IPEndPoint& peer_address,
+    net::PerPacketOptions* options) {
   // QUIC should never call this if IsWriteBlocked, but just in case...
   if (IsWriteBlocked()) {
     return net::WriteResult(net::WRITE_STATUS_BLOCKED, EWOULDBLOCK);
@@ -514,9 +523,9 @@ void QuicTransportChannel::OnHandshakeComplete() {
 
 void QuicTransportChannel::OnConnectionClosed(net::QuicErrorCode error,
                                               bool from_peer) {
-  LOG_J(INFO, this) << "Connection closed by " << (from_peer ? "other" : "this")
-                    << " peer "
-                    << "with QUIC error " << error;
+  LOG_J(LS_INFO, this) << "Connection closed by "
+                       << (from_peer ? "other" : "this") << " peer "
+                       << "with QUIC error " << error;
   // TODO(mikescarlett): Allow the QUIC session to be reset when the connection
   // does not close due to failure.
   set_quic_state(QUIC_TRANSPORT_CLOSED);
@@ -525,13 +534,13 @@ void QuicTransportChannel::OnConnectionClosed(net::QuicErrorCode error,
 
 void QuicTransportChannel::OnProofValid(
     const net::QuicCryptoClientConfig::CachedState& cached) {
-  LOG_J(INFO, this) << "Cached proof marked valid";
+  LOG_J(LS_INFO, this) << "Cached proof marked valid";
 }
 
 void QuicTransportChannel::OnProofVerifyDetailsAvailable(
     const net::ProofVerifyDetails& verify_details) {
-  LOG_J(INFO, this) << "Proof verify details available from"
-                    << " QuicCryptoClientStream";
+  LOG_J(LS_INFO, this) << "Proof verify details available from"
+                       << " QuicCryptoClientStream";
 }
 
 bool QuicTransportChannel::HasDataToWrite() const {
@@ -544,8 +553,8 @@ void QuicTransportChannel::OnCanWrite() {
 }
 
 void QuicTransportChannel::set_quic_state(QuicTransportState state) {
-  LOG_J(VERBOSE, this) << "set_quic_state from:" << quic_state_ << " to "
-                       << state;
+  LOG_J(LS_VERBOSE, this) << "set_quic_state from:" << quic_state_ << " to "
+                          << state;
   quic_state_ = state;
 }
 

@@ -26,8 +26,9 @@ using cricket::QuicConnectionHelper;
 using cricket::ReliableQuicStream;
 
 using net::FecProtection;
-using net::IPAddressNumber;
+using net::IPAddress;
 using net::IPEndPoint;
+using net::PerPacketOptions;
 using net::Perspective;
 using net::QuicAckListenerInterface;
 using net::QuicConfig;
@@ -45,6 +46,9 @@ using net::SpdyPriority;
 
 using rtc::SR_SUCCESS;
 using rtc::SR_BLOCK;
+
+// Arbitrary number for a stream's write blocked priority.
+static const SpdyPriority kDefaultPriority = 3;
 
 // QuicSession that does not create streams and writes data from
 // ReliableQuicStream to a string.
@@ -115,8 +119,9 @@ class DummyPacketWriter : public QuicPacketWriter {
   // QuicPacketWriter overrides.
   virtual net::WriteResult WritePacket(const char* buffer,
                                        size_t buf_len,
-                                       const IPAddressNumber& self_address,
-                                       const IPEndPoint& peer_address) {
+                                       const IPAddress& self_address,
+                                       const IPEndPoint& peer_address,
+                                       PerPacketOptions* options) {
     return net::WriteResult(net::WRITE_STATUS_ERROR, 0);
   }
 
@@ -132,17 +137,6 @@ class DummyPacketWriter : public QuicPacketWriter {
   }
 };
 
-// QuicPacketWriter is not necessary, so this creates a packet writer that
-// doesn't do anything.
-class DummyPacketWriterFactory : public QuicConnection::PacketWriterFactory {
- public:
-  DummyPacketWriterFactory() {}
-
-  QuicPacketWriter* Create(QuicConnection* connection) const override {
-    return new DummyPacketWriter();
-  }
-};
-
 class ReliableQuicStreamTest : public ::testing::Test,
                                public sigslot::has_slots<> {
  public:
@@ -155,13 +149,13 @@ class ReliableQuicStreamTest : public ::testing::Test,
     QuicConnectionHelper* quic_helper =
         new QuicConnectionHelper(rtc::Thread::Current());
     Perspective perspective = Perspective::IS_SERVER;
-    net::IPAddressNumber ip(net::kIPv4AddressSize, 0);
+    net::IPAddress ip(0, 0, 0, 0);
 
-    bool owns_writer = false;
+    bool owns_writer = true;
 
     QuicConnection* connection = new QuicConnection(
-        0, IPEndPoint(ip, 0), quic_helper, DummyPacketWriterFactory(),
-        owns_writer, perspective, net::QuicSupportedVersions());
+        0, IPEndPoint(ip, 0), quic_helper, new DummyPacketWriter(), owns_writer,
+        perspective, net::QuicSupportedVersions());
 
     session_.reset(
         new MockQuicSession(connection, QuicConfig(), &write_buffer_));
@@ -170,7 +164,7 @@ class ReliableQuicStreamTest : public ::testing::Test,
         this, &ReliableQuicStreamTest::OnDataReceived);
     stream_->SignalClosed.connect(this, &ReliableQuicStreamTest::OnClosed);
 
-    session_->register_write_blocked_stream(stream_->id(), stream_->Priority());
+    session_->register_write_blocked_stream(stream_->id(), kDefaultPriority);
   }
 
   void OnDataReceived(QuicStreamId id, const char* data, size_t length) {
@@ -181,8 +175,8 @@ class ReliableQuicStreamTest : public ::testing::Test,
   void OnClosed(QuicStreamId id, QuicErrorCode err) { closed_ = true; }
 
  protected:
-  scoped_ptr<ReliableQuicStream> stream_;
-  scoped_ptr<MockQuicSession> session_;
+  rtc::scoped_ptr<ReliableQuicStream> stream_;
+  rtc::scoped_ptr<MockQuicSession> session_;
 
   // Data written by the ReliableQuicStream.
   std::string write_buffer_;

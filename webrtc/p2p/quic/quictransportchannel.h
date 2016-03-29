@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "net/quic/quic_crypto_client_stream.h"
 #include "net/quic/quic_packet_writer.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -154,6 +155,9 @@ class QuicTransportChannel : public TransportChannelImpl,
   void AddRemoteCandidate(const Candidate& candidate) override {
     channel_->AddRemoteCandidate(candidate);
   }
+  void RemoveRemoteCandidate(const Candidate& candidate) override {
+    channel_->RemoveRemoteCandidate(candidate);
+  }
   void SetIceConfig(const IceConfig& config) override {
     channel_->SetIceConfig(config);
   }
@@ -165,8 +169,9 @@ class QuicTransportChannel : public TransportChannelImpl,
   // Called from net::QuicConnection when |quic_| has packets to write.
   net::WriteResult WritePacket(const char* buffer,
                                size_t buf_len,
-                               const net::IPAddressNumber& self_address,
-                               const net::IPEndPoint& peer_address) override;
+                               const net::IPAddress& self_address,
+                               const net::IPEndPoint& peer_address,
+                               net::PerPacketOptions* options) override;
   // Whether QuicTransportChannel buffers data when unable to write. If this is
   // set to false, then net::QuicConnection buffers unsent packets.
   bool IsWriteBlockedDataBuffered() const override { return false; }

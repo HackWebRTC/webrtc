@@ -29,7 +29,6 @@ class ReliableQuicStream : public net::ReliableQuicStream,
   // ReliableQuicStream overrides.
   void OnDataAvailable() override;
   void OnClose() override;
-  net::SpdyPriority Priority() const override { return 0; }
 
   // Process decrypted data into encrypted QUIC packets, which get sent to the
   // QuicPacketWriter. rtc::SR_BLOCK is returned if the operation blocks instead

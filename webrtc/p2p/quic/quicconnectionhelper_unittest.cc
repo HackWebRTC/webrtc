@@ -12,6 +12,7 @@
 
 #include "net/quic/quic_time.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
 
 using cricket::QuicAlarm;
 using cricket::QuicConnectionHelper;
@@ -67,7 +68,10 @@ class QuicAlarmTest : public ::testing::Test {
  public:
   QuicAlarmTest()
       : delegate_(new MockAlarmDelegate()),
-        alarm_(new QuicAlarm(&clock_, rtc::Thread::Current(), delegate_)) {}
+        alarm_(new QuicAlarm(
+            &clock_,
+            rtc::Thread::Current(),
+            net::QuicArenaScopedPtr<net::QuicAlarm::Delegate>(delegate_))) {}
 
   // Make the alarm fire after the given microseconds (us). Negative values
   // imply the alarm should fire immediately.
@@ -85,7 +89,7 @@ class QuicAlarmTest : public ::testing::Test {
   // Used for setting clock time relative to alarm.
   MockClock clock_;
 
-  scoped_ptr<QuicAlarm> alarm_;
+  rtc::scoped_ptr<QuicAlarm> alarm_;
 };
 
 // Test that the alarm is fired.

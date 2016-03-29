@@ -20,7 +20,7 @@
 
 namespace cricket {
 
-QuicSession::QuicSession(scoped_ptr<net::QuicConnection> connection,
+QuicSession::QuicSession(rtc::scoped_ptr<net::QuicConnection> connection,
                          const net::QuicConfig& config)
     : net::QuicSession(connection.release(), config) {}
 
@@ -54,7 +54,7 @@ bool QuicSession::ExportKeyingMaterial(base::StringPiece label,
 void QuicSession::OnCryptoHandshakeEvent(CryptoHandshakeEvent event) {
   net::QuicSession::OnCryptoHandshakeEvent(event);
   if (event == HANDSHAKE_CONFIRMED) {
-    LOG(INFO) << "QuicSession handshake complete";
+    LOG(LS_INFO) << "QuicSession handshake complete";
     RTC_DCHECK(IsEncryptionEstablished());
     RTC_DCHECK(IsCryptoHandshakeConfirmed());
 
@@ -88,9 +88,11 @@ ReliableQuicStream* QuicSession::CreateDataStream(net::QuicStreamId id) {
   return new ReliableQuicStream(id, this);
 }
 
-void QuicSession::OnConnectionClosed(net::QuicErrorCode error, bool from_peer) {
-  net::QuicSession::OnConnectionClosed(error, from_peer);
-  SignalConnectionClosed(error, from_peer);
+void QuicSession::OnConnectionClosed(net::QuicErrorCode error,
+                                     net::ConnectionCloseSource source) {
+  net::QuicSession::OnConnectionClosed(error, source);
+  SignalConnectionClosed(error,
+                         source == net::ConnectionCloseSource::FROM_PEER);
 }
 
 bool QuicSession::OnReadPacket(const char* data, size_t data_len) {

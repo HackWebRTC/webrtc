@@ -29,7 +29,7 @@ namespace cricket {
 // reading/writing of data using QUIC packets.
 class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
  public:
-  QuicSession(scoped_ptr<net::QuicConnection> connection,
+  QuicSession(rtc::scoped_ptr<net::QuicConnection> connection,
               const net::QuicConfig& config);
   ~QuicSession() override;
 
@@ -43,9 +43,6 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
   net::QuicCryptoStream* GetCryptoStream() override {
     return crypto_stream_.get();
   }
-  // TODO(mikescarlett): Verify whether outgoing streams should be owned by
-  // caller. It appears these are deleted in the net::QuicSession destructor,
-  // but Chromium's documentation says this should not happen.
   ReliableQuicStream* CreateOutgoingDynamicStream(
       net::SpdyPriority priority) override;
 
@@ -53,7 +50,8 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
   void OnCryptoHandshakeEvent(CryptoHandshakeEvent event) override;
 
   // QuicConnectionVisitorInterface overrides.
-  void OnConnectionClosed(net::QuicErrorCode error, bool from_peer) override;
+  void OnConnectionClosed(net::QuicErrorCode error,
+                          net::ConnectionCloseSource source) override;
 
   // Exports keying material for SRTP.
   bool ExportKeyingMaterial(base::StringPiece label,
@@ -84,7 +82,7 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
   virtual ReliableQuicStream* CreateDataStream(net::QuicStreamId id);
 
  private:
-  scoped_ptr<net::QuicCryptoStream> crypto_stream_;
+  rtc::scoped_ptr<net::QuicCryptoStream> crypto_stream_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(QuicSession);
 };

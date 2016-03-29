@@ -46,7 +46,7 @@ static const char kIceUfrag[] = "TESTICEUFRAG0001";
 static const char kIcePwd[] = "TESTICEPWD00000000000001";
 
 // QUIC packet parameters.
-static const net::IPAddressNumber kIpAddress(net::kIPv4AddressSize, 0);
+static const net::IPAddress kIpAddress(0, 0, 0, 0);
 static const net::IPEndPoint kIpEndpoint(kIpAddress, 0);
 
 // Detects incoming RTP packets.
@@ -144,7 +144,7 @@ class QuicTestPeer : public sigslot::has_slots<> {
     if (!get_digest_algorithm || digest_algorithm.empty()) {
       return nullptr;
     }
-    scoped_ptr<rtc::SSLFingerprint> fingerprint(
+    rtc::scoped_ptr<rtc::SSLFingerprint> fingerprint(
         rtc::SSLFingerprint::Create(digest_algorithm, cert->identity()));
     if (digest_algorithm != rtc::DIGEST_SHA_256) {
       return nullptr;
@@ -409,7 +409,7 @@ TEST_F(QuicTransportChannelTest, QuicWritePacket) {
   peer1_.ice_channel()->SetWritable(false);
   EXPECT_TRUE(peer1_.quic_channel()->IsWriteBlocked());
   net::WriteResult write_blocked_result = peer1_.quic_channel()->WritePacket(
-      packet.data(), packet.size(), kIpAddress, kIpEndpoint);
+      packet.data(), packet.size(), kIpAddress, kIpEndpoint, nullptr);
   EXPECT_EQ(net::WRITE_STATUS_BLOCKED, write_blocked_result.status);
   EXPECT_EQ(EWOULDBLOCK, write_blocked_result.error_code);
 
@@ -418,13 +418,13 @@ TEST_F(QuicTransportChannelTest, QuicWritePacket) {
   EXPECT_FALSE(peer1_.quic_channel()->IsWriteBlocked());
   peer1_.SetWriteError(EWOULDBLOCK);
   net::WriteResult ignore_error_result = peer1_.quic_channel()->WritePacket(
-      packet.data(), packet.size(), kIpAddress, kIpEndpoint);
+      packet.data(), packet.size(), kIpAddress, kIpEndpoint, nullptr);
   EXPECT_EQ(net::WRITE_STATUS_OK, ignore_error_result.status);
   EXPECT_EQ(0, ignore_error_result.bytes_written);
 
   peer1_.SetWriteError(kNoWriteError);
   net::WriteResult no_error_result = peer1_.quic_channel()->WritePacket(
-      packet.data(), packet.size(), kIpAddress, kIpEndpoint);
+      packet.data(), packet.size(), kIpAddress, kIpEndpoint, nullptr);
   EXPECT_EQ(net::WRITE_STATUS_OK, no_error_result.status);
   EXPECT_EQ(static_cast<int>(packet.size()), no_error_result.bytes_written);
 }

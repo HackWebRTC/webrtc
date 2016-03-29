@@ -14,13 +14,21 @@ namespace cricket {
 
 QuicAlarm* QuicConnectionHelper::CreateAlarm(
     net::QuicAlarm::Delegate* delegate) {
-  return new QuicAlarm(GetClock(), thread_, delegate);
+  return new QuicAlarm(GetClock(), thread_,
+                       net::QuicArenaScopedPtr<QuicAlarm::Delegate>(delegate));
+}
+
+net::QuicArenaScopedPtr<net::QuicAlarm> QuicConnectionHelper::CreateAlarm(
+    net::QuicArenaScopedPtr<QuicAlarm::Delegate> delegate,
+    net::QuicConnectionArena* arena) {
+  return net::QuicArenaScopedPtr<QuicAlarm>(
+      new QuicAlarm(GetClock(), thread_, std::move(delegate)));
 }
 
 QuicAlarm::QuicAlarm(const net::QuicClock* clock,
                      rtc::Thread* thread,
-                     QuicAlarm::Delegate* delegate)
-    : net::QuicAlarm(delegate), clock_(clock), thread_(thread) {}
+                     net::QuicArenaScopedPtr<net::QuicAlarm::Delegate> delegate)
+    : net::QuicAlarm(std::move(delegate)), clock_(clock), thread_(thread) {}
 
 QuicAlarm::~QuicAlarm() {}
 
@@ -39,7 +47,7 @@ void QuicAlarm::OnMessage(rtc::Message* msg) {
   Fire();
 }
 
-int64 QuicAlarm::GetDelay() const {
+int64_t QuicAlarm::GetDelay() const {
   return deadline().Subtract(clock_->Now()).ToMilliseconds();
 }
 
@@ -47,7 +55,7 @@ void QuicAlarm::SetImpl() {
   DCHECK(deadline().IsInitialized());
   CancelImpl();  // Unregister if already posted.
 
-  int64 delay_ms = GetDelay();
+  int64_t delay_ms = GetDelay();
   if (delay_ms < 0) {
     delay_ms = 0;
   }
@@ -69,6 +77,10 @@ const net::QuicClock* QuicConnectionHelper::GetClock() const {
 
 net::QuicRandom* QuicConnectionHelper::GetRandomGenerator() {
   return net::QuicRandom::GetInstance();
+}
+
+net::QuicBufferAllocator* QuicConnectionHelper::GetBufferAllocator() {
+  return &buffer_allocator_;
 }
 
 }  // namespace cricket
