@@ -14,10 +14,6 @@
 #include <stddef.h>  // for NULL, size_t
 #include <stdint.h>  // for uintptr_t and (u)int_t types.
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"  // NOLINT
-#endif
-
 // Detect compiler is for x86 or x64.
 #if defined(__x86_64__) || defined(_M_X64) || \
     defined(__i386__) || defined(_M_IX86)

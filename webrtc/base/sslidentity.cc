@@ -9,10 +9,6 @@
  */
 
 // Handling of certificates and keypairs for SSLStreamAdapter's peer mode.
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif  // HAVE_CONFIG_H
-
 #include "webrtc/base/sslidentity.h"
 
 #include <ctime>

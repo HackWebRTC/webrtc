@@ -50,11 +50,6 @@
 #include "webrtc/base/winping.h"
 #include "webrtc/base/win32socketinit.h"
 
-// stm: this will tell us if we are on OSX
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #if defined(WEBRTC_POSIX)
 #include <netinet/tcp.h>  // for TCP_NODELAY
 #define IP_MTU 14 // Until this is integrated from linux/in.h to netinet/in.h

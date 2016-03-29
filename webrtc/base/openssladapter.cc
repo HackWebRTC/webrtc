@@ -27,10 +27,6 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif  // HAVE_CONFIG_H
-
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"

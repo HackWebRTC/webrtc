@@ -10,10 +10,6 @@
 
 #include "xmppsocket.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <errno.h>
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"

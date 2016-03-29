@@ -10,10 +10,6 @@
 
 #include "webrtc/media/engine/webrtcvideocapturer.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"

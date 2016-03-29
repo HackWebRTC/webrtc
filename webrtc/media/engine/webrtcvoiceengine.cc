@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef HAVE_WEBRTC_VOICE
 
 #include "webrtc/media/engine/webrtcvoiceengine.h"

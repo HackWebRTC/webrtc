@@ -46,10 +46,6 @@
 #ifndef WEBRTC_BASE_LOGGING_H_
 #define WEBRTC_BASE_LOGGING_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"  // NOLINT
-#endif
-
 #include <list>
 #include <sstream>
 #include <string>
