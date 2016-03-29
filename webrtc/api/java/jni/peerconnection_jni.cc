@@ -1338,8 +1338,7 @@ JOW(void, PeerConnectionFactory_nativeSetVideoHwAccelerationOptions)(
   MediaCodecVideoDecoderFactory* decoder_factory =
       static_cast<MediaCodecVideoDecoderFactory*>
           (owned_factory->decoder_factory());
-  if (decoder_factory &&
-      jni->IsInstanceOf(remote_egl_context, j_eglbase14_context_class)) {
+  if (decoder_factory) {
     LOG(LS_INFO) << "Set EGL context for HW decoding.";
     decoder_factory->SetEGLContext(jni, remote_egl_context);
   }
