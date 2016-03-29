@@ -1868,11 +1868,11 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
 
   scoped_refptr<MediaStreamInterface> remote_stream =
           pc_->remote_streams()->at(0);
-  EXPECT_EQ(MediaStreamTrackInterface::kEnded,
-            remote_stream->GetVideoTracks()[0]->state());
-  // Audio source state changes are posted.
+  // Track state may be updated asynchronously.
   EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
-                 remote_stream->GetAudioTracks()[0]->state(), 10);
+                 remote_stream->GetAudioTracks()[0]->state(), kTimeout);
+  EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
+                 remote_stream->GetVideoTracks()[0]->state(), kTimeout);
 }
 
 // Test that PeerConnection methods fails gracefully after
@@ -1995,10 +1995,11 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(DoSetRemoteDescription(desc_ms2.release()));
   EXPECT_TRUE(CompareStreamCollections(observer_.remote_streams(),
                                        reference_collection_));
-  // Audio source state changes are posted.
+  // Track state may be updated asynchronously.
   EXPECT_EQ_WAIT(webrtc::MediaStreamTrackInterface::kEnded,
-                 audio_track2->state(), 1);
-  EXPECT_EQ(webrtc::MediaStreamTrackInterface::kEnded, video_track2->state());
+                 audio_track2->state(), kTimeout);
+  EXPECT_EQ_WAIT(webrtc::MediaStreamTrackInterface::kEnded,
+                 video_track2->state(), kTimeout);
 }
 
 // This tests that remote tracks are ended if a local session description is set
@@ -2043,10 +2044,11 @@ TEST_F(PeerConnectionInterfaceTest, RejectMediaContent) {
   ASSERT_TRUE(audio_info != nullptr);
   audio_info->rejected = true;
   EXPECT_TRUE(DoSetLocalDescription(local_offer.release()));
-  EXPECT_EQ(webrtc::MediaStreamTrackInterface::kEnded, remote_video->state());
-  // Audio source state changes are posted.
+  // Track state may be updated asynchronously.
   EXPECT_EQ_WAIT(webrtc::MediaStreamTrackInterface::kEnded,
-                 remote_audio->state(), 1);
+                 remote_audio->state(), kTimeout);
+  EXPECT_EQ_WAIT(webrtc::MediaStreamTrackInterface::kEnded,
+                 remote_video->state(), kTimeout);
 }
 
 // This tests that we won't crash if the remote track has been removed outside
