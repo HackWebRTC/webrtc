@@ -10,41 +10,34 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 
+#include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/test/rtcp_packet_parser.h"
+
+using testing::ElementsAreArray;
+using testing::make_tuple;
 using webrtc::rtcp::ReportBlock;
 using webrtc::rtcp::SenderReport;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
+namespace {
+const uint32_t kSenderSsrc = 0x12345678;
+const uint32_t kRemoteSsrc = 0x23456789;
+const NtpTime kNtp(0x11121418, 0x22242628);
+const uint32_t kRtpTimestamp = 0x33343536;
+const uint32_t kPacketCount = 0x44454647;
+const uint32_t kOctetCount = 0x55565758;
+const uint8_t kPacket[] = {0x80,  200, 0x00, 0x06,
+                           0x12, 0x34, 0x56, 0x78,
+                           0x11, 0x12, 0x14, 0x18,
+                           0x22, 0x24, 0x26, 0x28,
+                           0x33, 0x34, 0x35, 0x36,
+                           0x44, 0x45, 0x46, 0x47,
+                           0x55, 0x56, 0x57, 0x58};
+}  // namespace
 
-class RtcpPacketSenderReportTest : public ::testing::Test {
- protected:
-  const uint32_t kSenderSsrc = 0x12345678;
-  const uint32_t kRemoteSsrc = 0x23456789;
-
-  void ParsePacket(const rtc::Buffer& packet) {
-    RtcpCommonHeader header;
-    EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
-    EXPECT_EQ(packet.size(), header.BlockSize());
-    EXPECT_TRUE(parsed_.Parse(
-        header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
-  }
-
-  // Only ParsePacket can change parsed, tests should use it in readonly mode.
-  const SenderReport& parsed() { return parsed_; }
-
- private:
-  SenderReport parsed_;
-};
-
-TEST_F(RtcpPacketSenderReportTest, WithoutReportBlocks) {
-  const NtpTime kNtp(0x11121418, 0x22242628);
-  const uint32_t kRtpTimestamp = 0x33343536;
-  const uint32_t kPacketCount = 0x44454647;
-  const uint32_t kOctetCount = 0x55565758;
-
+TEST(RtcpPacketSenderReportTest, CreateWithoutReportBlocks) {
   SenderReport sr;
   sr.From(kSenderSsrc);
   sr.WithNtp(kNtp);
@@ -52,18 +45,23 @@ TEST_F(RtcpPacketSenderReportTest, WithoutReportBlocks) {
   sr.WithPacketCount(kPacketCount);
   sr.WithOctetCount(kOctetCount);
 
-  rtc::Buffer packet = sr.Build();
-  ParsePacket(packet);
-
-  EXPECT_EQ(kSenderSsrc, parsed().sender_ssrc());
-  EXPECT_EQ(kNtp, parsed().ntp());
-  EXPECT_EQ(kRtpTimestamp, parsed().rtp_timestamp());
-  EXPECT_EQ(kPacketCount, parsed().sender_packet_count());
-  EXPECT_EQ(kOctetCount, parsed().sender_octet_count());
-  EXPECT_TRUE(parsed().report_blocks().empty());
+  rtc::Buffer raw = sr.Build();
+  EXPECT_THAT(make_tuple(raw.data(), raw.size()), ElementsAreArray(kPacket));
 }
 
-TEST_F(RtcpPacketSenderReportTest, WithOneReportBlock) {
+TEST(RtcpPacketSenderReportTest, ParseWithoutReportBlocks) {
+  SenderReport parsed;
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &parsed));
+
+  EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
+  EXPECT_EQ(kNtp, parsed.ntp());
+  EXPECT_EQ(kRtpTimestamp, parsed.rtp_timestamp());
+  EXPECT_EQ(kPacketCount, parsed.sender_packet_count());
+  EXPECT_EQ(kOctetCount, parsed.sender_octet_count());
+  EXPECT_TRUE(parsed.report_blocks().empty());
+}
+
+TEST(RtcpPacketSenderReportTest, CreateAndParseWithOneReportBlock) {
   ReportBlock rb;
   rb.To(kRemoteSsrc);
 
@@ -71,15 +69,16 @@ TEST_F(RtcpPacketSenderReportTest, WithOneReportBlock) {
   sr.From(kSenderSsrc);
   EXPECT_TRUE(sr.WithReportBlock(rb));
 
-  rtc::Buffer packet = sr.Build();
-  ParsePacket(packet);
+  rtc::Buffer raw = sr.Build();
+  SenderReport parsed;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed));
 
-  EXPECT_EQ(kSenderSsrc, parsed().sender_ssrc());
-  EXPECT_EQ(1u, parsed().report_blocks().size());
-  EXPECT_EQ(kRemoteSsrc, parsed().report_blocks()[0].source_ssrc());
+  EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
+  EXPECT_EQ(1u, parsed.report_blocks().size());
+  EXPECT_EQ(kRemoteSsrc, parsed.report_blocks()[0].source_ssrc());
 }
 
-TEST_F(RtcpPacketSenderReportTest, WithTwoReportBlocks) {
+TEST(RtcpPacketSenderReportTest, CreateAndParseWithTwoReportBlocks) {
   ReportBlock rb1;
   rb1.To(kRemoteSsrc);
   ReportBlock rb2;
@@ -90,16 +89,17 @@ TEST_F(RtcpPacketSenderReportTest, WithTwoReportBlocks) {
   EXPECT_TRUE(sr.WithReportBlock(rb1));
   EXPECT_TRUE(sr.WithReportBlock(rb2));
 
-  rtc::Buffer packet = sr.Build();
-  ParsePacket(packet);
+  rtc::Buffer raw = sr.Build();
+  SenderReport parsed;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed));
 
-  EXPECT_EQ(kSenderSsrc, parsed().sender_ssrc());
-  EXPECT_EQ(2u, parsed().report_blocks().size());
-  EXPECT_EQ(kRemoteSsrc, parsed().report_blocks()[0].source_ssrc());
-  EXPECT_EQ(kRemoteSsrc + 1, parsed().report_blocks()[1].source_ssrc());
+  EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
+  EXPECT_EQ(2u, parsed.report_blocks().size());
+  EXPECT_EQ(kRemoteSsrc, parsed.report_blocks()[0].source_ssrc());
+  EXPECT_EQ(kRemoteSsrc + 1, parsed.report_blocks()[1].source_ssrc());
 }
 
-TEST_F(RtcpPacketSenderReportTest, WithTooManyReportBlocks) {
+TEST(RtcpPacketSenderReportTest, CreateWithTooManyReportBlocks) {
   SenderReport sr;
   sr.From(kSenderSsrc);
   const size_t kMaxReportBlocks = (1 << 5) - 1;

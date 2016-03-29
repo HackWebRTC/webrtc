@@ -13,8 +13,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-
-using webrtc::RTCPUtility::RtcpCommonHeader;
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -43,17 +42,17 @@ SenderReport::SenderReport()
       sender_packet_count_(0),
       sender_octet_count_(0) {}
 
-bool SenderReport::Parse(const RtcpCommonHeader& header,
-                         const uint8_t* payload) {
-  RTC_DCHECK(header.packet_type == kPacketType);
+bool SenderReport::Parse(const CommonHeader& packet) {
+  RTC_DCHECK(packet.type() == kPacketType);
 
-  const uint8_t report_block_count = header.count_or_format;
-  if (header.payload_size_bytes <
+  const uint8_t report_block_count = packet.count();
+  if (packet.payload_size_bytes() <
       kSenderBaseLength + report_block_count * ReportBlock::kLength) {
     LOG(LS_WARNING) << "Packet is too small to contain all the data.";
     return false;
   }
   // Read SenderReport header.
+  const uint8_t* const payload = packet.payload();
   sender_ssrc_ = ByteReader<uint32_t>::ReadBigEndian(&payload[0]);
   uint32_t secs = ByteReader<uint32_t>::ReadBigEndian(&payload[4]);
   uint32_t frac = ByteReader<uint32_t>::ReadBigEndian(&payload[8]);
@@ -69,7 +68,8 @@ bool SenderReport::Parse(const RtcpCommonHeader& header,
     next_block += ReportBlock::kLength;
   }
   // Double check we didn't read beyond provided buffer.
-  RTC_DCHECK_LE(next_block, payload + header.payload_size_bytes);
+  RTC_DCHECK_EQ(next_block - payload,
+                static_cast<ptrdiff_t>(packet.payload_size_bytes()));
   return true;
 }
 

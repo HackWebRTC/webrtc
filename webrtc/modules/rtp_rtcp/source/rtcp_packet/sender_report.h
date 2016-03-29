@@ -15,22 +15,21 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
 
 class SenderReport : public RtcpPacket {
  public:
   static const uint8_t kPacketType = 200;
 
   SenderReport();
-  virtual ~SenderReport() {}
+  ~SenderReport() override {}
 
   // Parse assumes header is already parsed and validated.
-  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
-             const uint8_t* payload);  // Size of the payload is in the header.
+  bool Parse(const CommonHeader& packet);
 
   void From(uint32_t ssrc) { sender_ssrc_ = ssrc; }
   void WithNtp(NtpTime ntp) { ntp_ = ntp; }
