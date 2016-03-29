@@ -364,8 +364,6 @@
         'sslsocketfactory.h',
         'sslstreamadapter.cc',
         'sslstreamadapter.h',
-        'sslstreamadapterhelper.cc',
-        'sslstreamadapterhelper.h',
         'stream.cc',
         'stream.h',
         'task.cc',
