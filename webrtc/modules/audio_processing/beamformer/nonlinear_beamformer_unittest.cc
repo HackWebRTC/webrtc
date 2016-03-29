@@ -123,6 +123,8 @@ void RunBitExactnessTest(int sample_rate_hz,
       output_reference, capture_output, kTolerance));
 }
 
+// TODO(peah): Add bitexactness tests for scenarios with more than 2 input
+// channels.
 std::vector<Point> CreateArrayGeometry(int variant) {
   std::vector<Point> array_geometry;
   switch (variant) {
@@ -246,6 +248,9 @@ TEST(NonlinearBeamformerTest, InterfAnglesTakeAmbiguityIntoAccount) {
     EXPECT_FLOAT_EQ(3.f * bf.away_radians_ / 2.f, bf.interf_angles_radians_[1]);
   }
 }
+
+// TODO(peah): Reenable all bitexactness tests once the division-by-zero issue
+// has been resolved.
 
 // TODO(peah): Investigate why the nonlinear_beamformer.cc causes a DCHECK in
 // this setup.
