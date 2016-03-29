@@ -80,7 +80,6 @@ void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
 void AudioFrameOperations::Mute(AudioFrame* frame, bool previous_frame_muted,
                                 bool current_frame_muted) {
   RTC_DCHECK(frame);
-  RTC_DCHECK(frame->interleaved_);
   if (!previous_frame_muted && !current_frame_muted) {
     // Not muted, don't touch.
   } else if (previous_frame_muted && current_frame_muted) {
