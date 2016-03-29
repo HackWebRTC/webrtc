@@ -42,10 +42,20 @@ DEFINE_string(
     o,
     "out.wav",
     "Name of the output file to write the processed capture stream to.");
+DEFINE_string(ri, "", "Name of the render input stream file to read from.");
+DEFINE_string(
+    ro,
+    "out_reverse.wav",
+    "Name of the output file to write the processed render stream to.");
 DEFINE_int32(out_channels, 1, "Number of output channels.");
 const bool out_channels_dummy =
     google::RegisterFlagValidator(&FLAGS_out_channels, &ValidateOutChannels);
+DEFINE_int32(rev_out_channels, 1, "Number of reverse output channels.");
+const bool rev_out_channels_dummy =
+    google::RegisterFlagValidator(&FLAGS_rev_out_channels,
+                                  &ValidateOutChannels);
 DEFINE_int32(out_sample_rate, 48000, "Output sample rate in Hz.");
+DEFINE_int32(rev_out_sample_rate, 48000, "Reverse output sample rate in Hz.");
 DEFINE_string(mic_positions, "",
     "Space delimited cartesian coordinates of microphones in meters. "
     "The coordinates of each point are contiguous. "
@@ -77,8 +87,7 @@ const char kUsage[] =
     "an input capture WAV file or protobuf debug dump and writes to an output\n"
     "WAV file.\n"
     "\n"
-    "All components are disabled by default. If any bi-directional components\n"
-    "are enabled, only debug dump files are permitted.";
+    "All components are disabled by default.";
 
 }  // namespace
 
@@ -89,15 +98,6 @@ int main(int argc, char* argv[]) {
   if (!((FLAGS_i.empty()) ^ (FLAGS_dump.empty()))) {
     fprintf(stderr,
             "An input file must be specified with either -i or -dump.\n");
-    return 1;
-  }
-  if (FLAGS_dump.empty() && (FLAGS_aec || FLAGS_ie)) {
-    fprintf(stderr, "-aec and -ie require a -dump file.\n");
-    return 1;
-  }
-  if (FLAGS_ie) {
-    fprintf(stderr,
-            "FIXME(ajm): The intelligibility enhancer output is not dumped.\n");
     return 1;
   }
 
@@ -135,8 +135,24 @@ int main(int argc, char* argv[]) {
   if (FLAGS_dump.empty()) {
     auto in_file = std::unique_ptr<WavReader>(new WavReader(FLAGS_i));
     std::cout << FLAGS_i << ": " << in_file->FormatAsString() << std::endl;
-    processor.reset(new WavFileProcessor(std::move(ap), std::move(in_file),
-                                         std::move(out_file)));
+    std::unique_ptr<WavReader> reverse_in_file;
+    std::unique_ptr<WavWriter> reverse_out_file;
+    if (!FLAGS_ri.empty()) {
+      reverse_in_file.reset(new WavReader(FLAGS_ri));
+      reverse_out_file.reset(new WavWriter(
+          FLAGS_ro,
+          FLAGS_rev_out_sample_rate,
+          static_cast<size_t>(FLAGS_rev_out_channels)));
+      std::cout << FLAGS_ri << ": "
+                << reverse_in_file->FormatAsString() << std::endl;
+      std::cout << FLAGS_ro << ": "
+                << reverse_out_file->FormatAsString() << std::endl;
+    }
+    processor.reset(new WavFileProcessor(std::move(ap),
+                                         std::move(in_file),
+                                         std::move(out_file),
+                                         std::move(reverse_in_file),
+                                         std::move(reverse_out_file)));
 
   } else {
     processor.reset(new AecDumpFileProcessor(
