@@ -143,9 +143,10 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
   ASSERT(full_key_name != NULL);
 
   DWORD byte_count = 0;
-  scoped_ptr<byte[]> buffer;
+  byte* buffer_raw = nullptr;
   HRESULT hr = GetValueStaticHelper(full_key_name, value_name,
-                                    REG_BINARY, buffer.accept(), &byte_count);
+                                    REG_BINARY, &buffer_raw, &byte_count);
+  scoped_ptr<byte[]> buffer(buffer_raw);
   if (SUCCEEDED(hr)) {
     ASSERT(byte_count == sizeof(*value));
     if (byte_count == sizeof(*value)) {
@@ -162,9 +163,10 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
   ASSERT(full_key_name != NULL);
 
   DWORD byte_count = 0;
-  scoped_ptr<byte[]> buffer;
+  byte* buffer_raw = nullptr;
   HRESULT hr = GetValueStaticHelper(full_key_name, value_name,
-                                    REG_BINARY, buffer.accept(), &byte_count);
+                                    REG_BINARY, &buffer_raw, &byte_count);
+  scoped_ptr<byte[]> buffer(buffer_raw);
   if (SUCCEEDED(hr)) {
     ASSERT(byte_count == sizeof(*value));
     if (byte_count == sizeof(*value)) {
@@ -189,8 +191,9 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
   ASSERT(full_key_name != NULL);
   ASSERT(value != NULL);
 
-  scoped_ptr<wchar_t[]> buffer;
-  HRESULT hr = RegKey::GetValue(full_key_name, value_name, buffer.accept());
+  wchar_t* buffer_raw = nullptr;
+  HRESULT hr = RegKey::GetValue(full_key_name, value_name, &buffer_raw);
+  scoped_ptr<wchar_t[]> buffer(buffer_raw);
   if (SUCCEEDED(hr)) {
     value->assign(buffer.get());
   }
