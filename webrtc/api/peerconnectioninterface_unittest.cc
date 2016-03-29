@@ -1872,7 +1872,7 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
             remote_stream->GetVideoTracks()[0]->state());
   // Audio source state changes are posted.
   EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
-                 remote_stream->GetAudioTracks()[0]->state(), 1);
+                 remote_stream->GetAudioTracks()[0]->state(), 10);
 }
 
 // Test that PeerConnection methods fails gracefully after
