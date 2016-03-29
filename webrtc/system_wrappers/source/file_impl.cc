@@ -243,13 +243,12 @@ bool FileWrapperImpl::Write(const void* buf, size_t length) {
   }
 
   size_t num_bytes = fwrite(buf, 1, length, id_);
-  if (num_bytes > 0) {
-    size_in_bytes_ += num_bytes;
-    return true;
+  size_in_bytes_ += num_bytes;
+  if (num_bytes != length) {
+    CloseFileImpl();
+    return false;
   }
-
-  CloseFileImpl();
-  return false;
+  return true;
 }
 
 int FileWrapperImpl::CloseFileImpl() {
