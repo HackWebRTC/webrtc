@@ -107,7 +107,7 @@ static X509* MakeCertificate(EVP_PKEY* pkey, const SSLIdentityParams& params) {
       !BN_to_ASN1_INTEGER(serial_number, asn1_serial_number))
     goto error;
 
-  if (!X509_set_version(x509, 0L))  // version 1
+  if (!X509_set_version(x509, 2L))  // version 3
     goto error;
 
   // There are a lot of possible components for the name entries. In
