@@ -1078,11 +1078,11 @@ void OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads() {
   ScopedLocalRefFrame local_ref_frame(jni);
   jclass j_factory_class = FindClass(jni, "org/webrtc/PeerConnectionFactory");
   jmethodID m = nullptr;
-  if (Thread::Current() == worker_thread_) {
+  if (Thread::Current() == worker_thread_.get()) {
     LOG(LS_INFO) << "Worker thread JavaCallback";
     m = GetStaticMethodID(jni, j_factory_class, "onWorkerThreadReady", "()V");
   }
-  if (Thread::Current() == signaling_thread_) {
+  if (Thread::Current() == signaling_thread_.get()) {
     LOG(LS_INFO) << "Signaling thread JavaCallback";
     m = GetStaticMethodID(
         jni, j_factory_class, "onSignalingThreadReady", "()V");

@@ -463,7 +463,7 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
 }
 
 void MediaCodecVideoDecoder::CheckOnCodecThread() {
-  RTC_CHECK(codec_thread_ == ThreadManager::Instance()->CurrentThread())
+  RTC_CHECK(codec_thread_.get() == ThreadManager::Instance()->CurrentThread())
       << "Running on wrong thread!";
 }
 
