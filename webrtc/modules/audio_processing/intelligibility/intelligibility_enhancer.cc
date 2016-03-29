@@ -29,8 +29,8 @@ const int kWindowSizeMs = 16;
 const int kChunkSizeMs = 10;  // Size provided by APM.
 const float kClipFreqKhz = 0.2f;
 const float kKbdAlpha = 1.5f;
-const double kLambdaBot = -1.0 / (1 << 30);      // Extreme values in bisection
-const double kLambdaTop = -1e-5 / (1 << 30);      // search for lamda.
+const float kLambdaBot = -1.0f;      // Extreme values in bisection
+const float kLambdaTop = -1e-5f;      // search for lamda.
 const float kVoiceProbabilityThreshold = 0.02f;
 // Number of chunks after voice activity which is still considered speech.
 const size_t kSpeechOffsetDelay = 80;
@@ -162,12 +162,12 @@ void IntelligibilityEnhancer::SolveForLambda(float power_target) {
 
   const float reciprocal_power_target =
       1.f / (power_target + std::numeric_limits<float>::epsilon());
-  double lambda_bot = kLambdaBot;
-  double lambda_top = kLambdaTop;
+  float lambda_bot = kLambdaBot;
+  float lambda_top = kLambdaTop;
   float power_ratio = 2.f;  // Ratio of achieved power to target power.
   int iters = 0;
   while (std::fabs(power_ratio - 1.f) > kConvergeThresh && iters <= kMaxIters) {
-    const double lambda = (lambda_bot + lambda_top) / 2.0;
+    const float lambda = (lambda_bot + lambda_top) / 2.f;
     SolveForGainsGivenLambda(lambda, start_freq_, gains_eq_.data());
     const float power =
         DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
@@ -267,7 +267,7 @@ std::vector<std::vector<float>> IntelligibilityEnhancer::CreateErbBank(
   return filter_bank;
 }
 
-void IntelligibilityEnhancer::SolveForGainsGivenLambda(double lambda,
+void IntelligibilityEnhancer::SolveForGainsGivenLambda(float lambda,
                                                        size_t start_freq,
                                                        float* sols) {
   const float kMinPower = 1e-5f;
@@ -284,19 +284,19 @@ void IntelligibilityEnhancer::SolveForGainsGivenLambda(double lambda,
     if (pow_x0[n] < kMinPower || pow_n0[n] < kMinPower) {
       sols[n] = 1.f;
     } else {
-      const double gamma0 = 0.5 * kRho * pow_x0[n] * pow_n0[n] +
+      const float gamma0 = 0.5f * kRho * pow_x0[n] * pow_n0[n] +
                            lambda * pow_x0[n] * pow_n0[n] * pow_n0[n];
-      const double beta0 =
-          lambda * pow_x0[n] * (2.0 - kRho) * pow_x0[n] * pow_n0[n];
-      const double alpha0 =
-          lambda * pow_x0[n] * (1.0 - kRho) * pow_x0[n] * pow_x0[n];
-      RTC_DCHECK_LT(alpha0, 0.0);
+      const float beta0 =
+          lambda * pow_x0[n] * (2.f - kRho) * pow_x0[n] * pow_n0[n];
+      const float alpha0 =
+          lambda * pow_x0[n] * (1.f - kRho) * pow_x0[n] * pow_x0[n];
+      RTC_DCHECK_LT(alpha0, 0.f);
       // The quadratic equation should always have real roots, but to guard
       // against numerical errors we limit it to a minimum of zero.
       sols[n] = std::max(
-          0.0, (-beta0 - std::sqrt(std::max(
-                             0.0, beta0 * beta0 - 4.0 * alpha0 * gamma0))) /
-                   (2.0 * alpha0));
+          0.f, (-beta0 - std::sqrt(std::max(
+                             0.f, beta0 * beta0 - 4.f * alpha0 * gamma0))) /
+                   (2.f * alpha0));
     }
   }
 }
