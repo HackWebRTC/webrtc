@@ -249,9 +249,6 @@ TEST(NonlinearBeamformerTest, InterfAnglesTakeAmbiguityIntoAccount) {
   }
 }
 
-// TODO(peah): Reenable all bitexactness tests once the division-by-zero issue
-// has been resolved.
-
 // TODO(peah): Investigate why the nonlinear_beamformer.cc causes a DCHECK in
 // this setup.
 TEST(BeamformerBitExactnessTest,
@@ -264,7 +261,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo16kHz_ArrayGeometry1_TargetDirection1) {
+     Stereo16kHz_ArrayGeometry1_TargetDirection1) {
   const float kOutputReference[] = {0.000064f, 0.000211f, 0.000075f,
                                     0.000064f, 0.000211f, 0.000075f};
 
@@ -273,7 +270,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo32kHz_ArrayGeometry1_TargetDirection1) {
+     Stereo32kHz_ArrayGeometry1_TargetDirection1) {
   const float kOutputReference[] = {0.000183f, 0.000183f, 0.000183f,
                                     0.000183f, 0.000183f, 0.000183f};
 
@@ -282,7 +279,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo48kHz_ArrayGeometry1_TargetDirection1) {
+     Stereo48kHz_ArrayGeometry1_TargetDirection1) {
   const float kOutputReference[] = {0.000155f, 0.000152f, 0.000159f,
                                     0.000155f, 0.000152f, 0.000159f};
 
@@ -302,7 +299,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo16kHz_ArrayGeometry1_TargetDirection2) {
+     Stereo16kHz_ArrayGeometry1_TargetDirection2) {
   const float kOutputReference[] = {0.001144f, -0.001026f, 0.001074f,
                                     0.001144f, -0.001026f, 0.001074f};
 
@@ -311,7 +308,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo32kHz_ArrayGeometry1_TargetDirection2) {
+     Stereo32kHz_ArrayGeometry1_TargetDirection2) {
   const float kOutputReference[] = {0.000732f, -0.000397f, 0.000610f,
                                     0.000732f, -0.000397f, 0.000610f};
 
@@ -320,7 +317,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo48kHz_ArrayGeometry1_TargetDirection2) {
+     Stereo48kHz_ArrayGeometry1_TargetDirection2) {
   const float kOutputReference[] = {0.000106f, -0.000464f, 0.000188f,
                                     0.000106f, -0.000464f, 0.000188f};
 
@@ -329,7 +326,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo8kHz_ArrayGeometry2_TargetDirection2) {
+     Stereo8kHz_ArrayGeometry2_TargetDirection2) {
   const float kOutputReference[] = {-0.000649f, 0.000576f, -0.000148f,
                                     -0.000649f, 0.000576f, -0.000148f};
 
@@ -338,7 +335,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo16kHz_ArrayGeometry2_TargetDirection2) {
+     Stereo16kHz_ArrayGeometry2_TargetDirection2) {
   const float kOutputReference[] = {0.000808f, -0.000695f, 0.000739f,
                                     0.000808f, -0.000695f, 0.000739f};
 
@@ -347,7 +344,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo32kHz_ArrayGeometry2_TargetDirection2) {
+     Stereo32kHz_ArrayGeometry2_TargetDirection2) {
   const float kOutputReference[] = {0.000580f, -0.000183f, 0.000458f,
                                     0.000580f, -0.000183f, 0.000458f};
 
@@ -356,7 +353,7 @@ TEST(BeamformerBitExactnessTest,
 }
 
 TEST(BeamformerBitExactnessTest,
-     DISABLED_Stereo48kHz_ArrayGeometry2_TargetDirection2) {
+     Stereo48kHz_ArrayGeometry2_TargetDirection2) {
   const float kOutputReference[] = {0.000075f, -0.000288f, 0.000156f,
                                     0.000075f, -0.000288f, 0.000156f};
 

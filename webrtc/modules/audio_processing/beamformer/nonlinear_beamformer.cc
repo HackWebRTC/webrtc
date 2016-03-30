@@ -471,8 +471,17 @@ float NonlinearBeamformer::CalculatePostfilterMask(
     ratio = rpsiw / rpsim;
   }
 
-  return (1.f - std::min(kCutOffConstant, ratio / rmw_r)) /
-         (1.f - std::min(kCutOffConstant, ratio / ratio_rxiw_rxim));
+  float numerator = 1.f - kCutOffConstant;
+  if (rmw_r > 0.f) {
+    numerator = 1.f - std::min(kCutOffConstant, ratio / rmw_r);
+  }
+
+  float denominator = 1.f - kCutOffConstant;
+  if (ratio_rxiw_rxim > 0.f) {
+    denominator = 1.f - std::min(kCutOffConstant, ratio / ratio_rxiw_rxim);
+  }
+
+  return numerator / denominator;
 }
 
 void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
