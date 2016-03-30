@@ -1163,6 +1163,14 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
     LOG_J(LS_INFO, this) << "New best connection: "
                          << best_connection_->ToString();
     SignalRouteChange(this, best_connection_->remote_candidate());
+    // This is a temporary, but safe fix to webrtc issue 5705.
+    // TODO(honghaiz): Make all EWOULDBLOCK error routed through the transport
+    // channel so that it knows whether the media channel is allowed to
+    // send; then it will only signal ready-to-send if the media channel
+    // has been disallowed to send.
+    if (best_connection_->writable()) {
+      SignalReadyToSend(this);
+    }
   } else {
     LOG_J(LS_INFO, this) << "No best connection";
   }

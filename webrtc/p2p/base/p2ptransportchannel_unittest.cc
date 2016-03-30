@@ -1920,6 +1920,8 @@ class P2PTransportChannelPingTest : public testing::Test,
     ch->SetIceRole(cricket::ICEROLE_CONTROLLING);
     ch->SetIceCredentials(kIceUfrag[0], kIcePwd[0]);
     ch->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+    ch->SignalReadyToSend.connect(this,
+                                  &P2PTransportChannelPingTest::OnReadyToSend);
   }
 
   cricket::Candidate CreateHostCandidate(const std::string& ip,
@@ -1969,10 +1971,18 @@ class P2PTransportChannelPingTest : public testing::Test,
     return conn;
   }
 
+  void OnReadyToSend(cricket::TransportChannel* channel) {
+    channel_ready_to_send_ = true;
+  }
+
+  bool channel_ready_to_send() { return channel_ready_to_send_; }
+  void reset_channel_ready_to_send() { channel_ready_to_send_ = false; }
+
  private:
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
   rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
   rtc::SocketServerScope ss_scope_;
+  bool channel_ready_to_send_ = false;
 };
 
 TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
@@ -2162,7 +2172,8 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
 // The controlled side will select a connection as the "best connection" based
 // on priority until the controlling side nominates a connection, at which
 // point the controlled side will select that connection as the
-// "best connection".
+// "best connection". Plus, the channel will fire SignalReadyToSend if the new
+// best connection is writable.
 TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   cricket::P2PTransportChannel ch("receiving state change", 1, &pa);
@@ -2174,6 +2185,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
+  // Channel is not ready because it is not writable.
+  EXPECT_FALSE(channel_ready_to_send());
 
   // When a higher priority candidate comes in, the new connection is chosen
   // as the best connection.
@@ -2181,6 +2194,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_EQ(conn2, ch.best_connection());
+  EXPECT_FALSE(channel_ready_to_send());
 
   // If a stun request with use-candidate attribute arrives, the receiving
   // connection will be set as the best connection, even though
@@ -2196,6 +2210,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   conn3->set_nominated(true);
   conn3->SignalNominated(conn3);
   EXPECT_EQ(conn3, ch.best_connection());
+  EXPECT_TRUE(channel_ready_to_send());
 
   // Even if another higher priority candidate arrives,
   // it will not be set as the best connection because the best connection
@@ -2210,9 +2225,12 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   conn4->SignalNominated(conn4);
   // Not switched yet because conn4 is not writable.
   EXPECT_EQ(conn3, ch.best_connection());
+  reset_channel_ready_to_send();
   // The best connection switches after conn4 becomes writable.
   conn4->ReceivedPingResponse();
   EXPECT_EQ(conn4, ch.best_connection());
+  // SignalReadyToSend is fired again because conn4 is writable.
+  EXPECT_TRUE(channel_ready_to_send());
 }
 
 // The controlled side will select a connection as the "best connection" based
