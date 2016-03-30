@@ -16,9 +16,6 @@
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
 
-#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
-      defined(WEBRTC_ANDROID))
-
 namespace webrtc {
 namespace {
 
@@ -136,90 +133,157 @@ const bool kStreamHasEchoReference = false;
 }  // namespace
 
 // TODO(peah): Activate all these tests for ARM and ARM64 once the issue on the
-// Chromium ARM and ARM64 boths have been identified.
+// Chromium ARM and ARM64 boths have been identified. This is tracked in the
+// issue https://bugs.chromium.org/p/webrtc/issues/detail?id=5711.
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono8kHz_HighLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono8kHz_HighLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.006622f, -0.002747f, 0.001587f};
   RunBitexactnessTest(8000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono16kHz_HighLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono16kHz_HighLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitexactnessTest(16000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono32kHz_HighLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono32kHz_HighLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.010162f, -0.009155f, -0.008301f};
   RunBitexactnessTest(32000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono48kHz_HighLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono48kHz_HighLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.009554f, -0.009857f, -0.009868f};
   RunBitexactnessTest(48000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono16kHz_LowLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono16kHz_LowLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitexactnessTest(16000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kLowSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono16kHz_ModerateLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono16kHz_ModerateLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitexactnessTest(16000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kModerateSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono16kHz_HighLevel_NoDrift_StreamDelay10) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono16kHz_HighLevel_NoDrift_StreamDelay10) {
+#endif
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitexactnessTest(16000, 1, 10, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono16kHz_HighLevel_NoDrift_StreamDelay20) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono16kHz_HighLevel_NoDrift_StreamDelay20) {
+#endif
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitexactnessTest(16000, 1, 20, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono16kHz_HighLevel_Drift0_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono16kHz_HighLevel_Drift0_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitexactnessTest(16000, 1, 0, true, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Mono16kHz_HighLevel_Drift5_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Mono16kHz_HighLevel_Drift5_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitexactnessTest(16000, 1, 0, true, 5,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Stereo8kHz_HighLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Stereo8kHz_HighLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.027359f, -0.015823f, -0.028488f,
                                     -0.027359f, -0.015823f, -0.028488f};
   RunBitexactnessTest(8000, 2, 0, false, 0,
@@ -227,8 +291,14 @@ TEST(EchoCancellationBitExactnessTest,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Stereo16kHz_HighLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Stereo16kHz_HighLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.027298f, -0.015900f, -0.028107f,
                                     -0.027298f, -0.015900f, -0.028107f};
   RunBitexactnessTest(16000, 2, 0, false, 0,
@@ -236,8 +306,14 @@ TEST(EchoCancellationBitExactnessTest,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Stereo32kHz_HighLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Stereo32kHz_HighLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {0.004547f, -0.004456f, -0.000946f,
                                     0.004547f, -0.004456f, -0.000946f};
   RunBitexactnessTest(32000, 2, 0, false, 0,
@@ -245,8 +321,14 @@ TEST(EchoCancellationBitExactnessTest,
                       kStreamHasEchoReference, kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(EchoCancellationBitExactnessTest,
      Stereo48kHz_HighLevel_NoDrift_StreamDelay0) {
+#else
+TEST(EchoCancellationBitExactnessTest,
+     DISABLED_Stereo48kHz_HighLevel_NoDrift_StreamDelay0) {
+#endif
   const float kOutputReference[] = {-0.003500f, -0.001894f, -0.003176f,
                                     -0.003500f, -0.001894f, -0.003176f};
   RunBitexactnessTest(48000, 2, 0, false, 0,
@@ -255,5 +337,3 @@ TEST(EchoCancellationBitExactnessTest,
 }
 
 }  // namespace webrtc
-
-#endif

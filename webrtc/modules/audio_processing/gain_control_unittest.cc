@@ -16,9 +16,6 @@
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
 
-#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
-      defined(WEBRTC_ANDROID))
-
 namespace webrtc {
 namespace {
 
@@ -132,8 +129,18 @@ void RunBitExactnessTest(int sample_rate_hz,
 
 }  // namespace
 
+// TODO(peah): Activate all these tests for ARM and ARM64 once the issue on the
+// Chromium ARM and ARM64 boths have been identified. This is tracked in the
+// issue https://bugs.chromium.org/p/webrtc/issues/detail?id=5711.
+
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono8kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono8kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.006622f, -0.002747f, 0.001587f};
   RunBitExactnessTest(8000, 1, GainControl::Mode::kAdaptiveAnalog, 10, 50, 5,
@@ -141,8 +148,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono16kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono16kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitExactnessTest(16000, 1, GainControl::Mode::kAdaptiveAnalog, 10, 50, 5,
@@ -150,8 +163,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Stereo16kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Stereo16kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.027313f, -0.015900f, -0.028107f,
                                     -0.027313f, -0.015900f, -0.028107f};
@@ -160,8 +179,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono32kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono32kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.010162f, -0.009155f, -0.008301f};
   RunBitExactnessTest(32000, 1, GainControl::Mode::kAdaptiveAnalog, 10, 50, 5,
@@ -169,8 +194,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono48kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono48kHz_AdaptiveAnalog_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.010162f, -0.009155f, -0.008301f};
   RunBitExactnessTest(32000, 1, GainControl::Mode::kAdaptiveAnalog, 10, 50, 5,
@@ -178,8 +209,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono8kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono8kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.006317f, -0.002625f, 0.001495f};
   RunBitExactnessTest(8000, 1, GainControl::Mode::kAdaptiveDigital, 10, 50, 5,
@@ -187,8 +224,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono16kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono16kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.006256f, -0.004395f, -0.002777f};
   RunBitExactnessTest(16000, 1, GainControl::Mode::kAdaptiveDigital, 10, 50, 5,
@@ -196,8 +239,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Stereo16kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Stereo16kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.023956f, -0.013947f, -0.024597f,
                                     -0.023956f, -0.013947f, -0.024597f};
@@ -206,8 +255,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono32kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono32kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.009644f, -0.008728f, -0.007904f};
   RunBitExactnessTest(32000, 1, GainControl::Mode::kAdaptiveDigital, 10, 50, 5,
@@ -215,8 +270,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono48kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono48kHz_AdaptiveDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.009644f, -0.008728f, -0.007904f};
   RunBitExactnessTest(32000, 1, GainControl::Mode::kAdaptiveDigital, 10, 50, 5,
@@ -224,8 +285,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono8kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono8kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.011871f, -0.004944f, 0.002838f};
   RunBitExactnessTest(8000, 1, GainControl::Mode::kFixedDigital, 10, 50, 5,
@@ -233,8 +300,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono16kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono16kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.011780f, -0.008270f, -0.005219f};
   RunBitExactnessTest(16000, 1, GainControl::Mode::kFixedDigital, 10, 50, 5,
@@ -242,8 +315,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Stereo16kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Stereo16kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.048950f, -0.028503f, -0.050354f,
                                     -0.048950f, -0.028503f, -0.050354f};
@@ -252,8 +331,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono32kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono32kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.018188f, -0.016418f, -0.014862f};
   RunBitExactnessTest(32000, 1, GainControl::Mode::kFixedDigital, 10, 50, 5,
@@ -261,8 +346,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono48kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono48kHz_FixedDigital_Tl10_SL50_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 50;
   const float kOutputReference[] = {-0.018188f, -0.016418f, -0.014862f};
   RunBitExactnessTest(32000, 1, GainControl::Mode::kFixedDigital, 10, 50, 5,
@@ -270,8 +361,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono16kHz_AdaptiveAnalog_Tl10_SL10_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono16kHz_AdaptiveAnalog_Tl10_SL10_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 12;
   const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
   RunBitExactnessTest(16000, 1, GainControl::Mode::kAdaptiveAnalog, 10, 10, 5,
@@ -279,8 +376,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono16kHz_AdaptiveAnalog_Tl10_SL100_CG5_Lim_AL70_80) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono16kHz_AdaptiveAnalog_Tl10_SL100_CG5_Lim_AL70_80) {
+#endif
   const int kStreamAnalogLevelReference = 100;
   const float kOutputReference[] = {-0.006348f, -0.004456f, -0.002808f};
   RunBitExactnessTest(16000, 1, GainControl::Mode::kAdaptiveAnalog, 10, 100, 5,
@@ -288,8 +391,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono16kHz_AdaptiveDigital_Tl10_SL100_CG5_NoLim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono16kHz_AdaptiveDigital_Tl10_SL100_CG5_NoLim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 100;
   const float kOutputReference[] = {-0.006592f, -0.004639f, -0.002930f};
   RunBitExactnessTest(16000, 1, GainControl::Mode::kAdaptiveDigital, 10, 100, 5,
@@ -297,8 +406,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono16kHz_AdaptiveDigital_Tl40_SL100_CG5_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono16kHz_AdaptiveDigital_Tl40_SL100_CG5_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 100;
   const float kOutputReference[] = {-0.008759f, -0.006134f, -0.003876f};
   RunBitExactnessTest(16000, 1, GainControl::Mode::kAdaptiveDigital, 40, 100, 5,
@@ -306,8 +421,14 @@ TEST(GainControlBitExactnessTest,
                       kOutputReference);
 }
 
+#if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
+      defined(WEBRTC_ANDROID))
 TEST(GainControlBitExactnessTest,
      Mono16kHz_AdaptiveDigital_Tl10_SL100_CG30_Lim_AL0_100) {
+#else
+TEST(GainControlBitExactnessTest,
+     DISABLED_Mono16kHz_AdaptiveDigital_Tl10_SL100_CG30_Lim_AL0_100) {
+#endif
   const int kStreamAnalogLevelReference = 100;
   const float kOutputReference[] = {-0.006134f, -0.004303f, -0.002716f};
   RunBitExactnessTest(16000, 1, GainControl::Mode::kAdaptiveDigital, 10, 100,
@@ -316,5 +437,3 @@ TEST(GainControlBitExactnessTest,
 }
 
 }  // namespace webrtc
-
-#endif
