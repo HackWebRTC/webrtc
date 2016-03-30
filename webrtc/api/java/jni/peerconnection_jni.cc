@@ -2032,6 +2032,8 @@ static bool JavaEncodingToJsepRtpEncodingParameters(
   const int kBitrateUnlimited = -1;
   jclass j_encoding_parameters_class =
       jni->FindClass("org/webrtc/RtpParameters$Encoding");
+  jfieldID active_id =
+      GetFieldID(jni, j_encoding_parameters_class, "active", "Z");
   jfieldID bitrate_id = GetFieldID(jni, j_encoding_parameters_class,
                                    "maxBitrateBps", "Ljava/lang/Integer;");
   jclass j_integer_class = jni->FindClass("java/lang/Integer");
@@ -2039,6 +2041,7 @@ static bool JavaEncodingToJsepRtpEncodingParameters(
 
   for (jobject j_encoding_parameters : Iterable(jni, j_encodings)) {
     webrtc::RtpEncodingParameters encoding;
+    encoding.active = GetBooleanField(jni, j_encoding_parameters, active_id);
     jobject j_bitrate = GetObjectField(jni, j_encoding_parameters, bitrate_id);
     if (!IsNull(jni, j_bitrate)) {
       int bitrate_value = jni->CallIntMethod(j_bitrate, int_value_id);
@@ -2089,16 +2092,20 @@ JOW(jobject, RtpSender_nativeGetParameters)
   jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
   jmethodID add = GetMethodID(jni, GetObjectClass(jni, j_encodings), "add",
                               "(Ljava/lang/Object;)Z");
+  jfieldID active_id =
+      GetFieldID(jni, encoding_class, "active", "Z");
   jfieldID bitrate_id =
       GetFieldID(jni, encoding_class, "maxBitrateBps", "Ljava/lang/Integer;");
 
   jclass integer_class = jni->FindClass("java/lang/Integer");
   jmethodID integer_ctor = GetMethodID(jni, integer_class, "<init>", "(I)V");
 
-  for (webrtc::RtpEncodingParameters encoding : parameters.encodings) {
+  for (const webrtc::RtpEncodingParameters& encoding : parameters.encodings) {
     jobject j_encoding_parameters =
         jni->NewObject(encoding_class, encoding_ctor);
     CHECK_EXCEPTION(jni) << "error during NewObject";
+    jni->SetBooleanField(j_encoding_parameters, active_id, encoding.active);
+    CHECK_EXCEPTION(jni) << "error during SetBooleanField";
     if (encoding.max_bitrate_bps > 0) {
       jobject j_bitrate_value =
           jni->NewObject(integer_class, integer_ctor, encoding.max_bitrate_bps);

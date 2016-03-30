@@ -18,7 +18,10 @@ import java.util.LinkedList;
  * http://w3c.github.io/webrtc-pc/#rtcrtpsender-interface.
  */
 public class RtpParameters {
-  public static class Encoding { public Integer maxBitrateBps; }
+  public static class Encoding {
+    public boolean active = true;
+    public Integer maxBitrateBps;
+  }
 
   public final LinkedList<Encoding> encodings;
 
