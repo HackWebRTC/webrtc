@@ -216,7 +216,7 @@ void TurnServer::OnInternalPacket(rtc::AsyncPacketSocket* socket,
 void TurnServer::HandleStunMessage(TurnServerConnection* conn, const char* data,
                                    size_t size) {
   TurnMessage msg;
-  rtc::ByteBuffer buf(data, size);
+  rtc::ByteBufferReader buf(data, size);
   if (!msg.Read(&buf) || (buf.Length() > 0)) {
     LOG(LS_WARNING) << "Received invalid STUN message";
     return;
@@ -489,7 +489,7 @@ void TurnServer::SendErrorResponseWithAlternateServer(
 }
 
 void TurnServer::SendStun(TurnServerConnection* conn, StunMessage* msg) {
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   // Add a SOFTWARE attribute if one is set.
   if (!software_.empty()) {
     VERIFY(msg->AddAttribute(
@@ -500,7 +500,7 @@ void TurnServer::SendStun(TurnServerConnection* conn, StunMessage* msg) {
 }
 
 void TurnServer::Send(TurnServerConnection* conn,
-                      const rtc::ByteBuffer& buf) {
+                      const rtc::ByteBufferWriter& buf) {
   rtc::PacketOptions options;
   conn->socket()->SendTo(buf.Data(), buf.Length(), conn->src(), options);
 }
@@ -794,7 +794,7 @@ void TurnServerAllocation::OnExternalPacket(
   Channel* channel = FindChannel(addr);
   if (channel) {
     // There is a channel bound to this address. Send as a channel message.
-    rtc::ByteBuffer buf;
+    rtc::ByteBufferWriter buf;
     buf.WriteUInt16(channel->id());
     buf.WriteUInt16(static_cast<uint16_t>(size));
     buf.WriteBytes(data, size);

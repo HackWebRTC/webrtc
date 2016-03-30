@@ -68,9 +68,9 @@ std::vector<size_t> FindNaluStartSequences(const uint8_t* buffer,
 // TODO(pbos): Make parsing RBSP something that can be integrated into BitBuffer
 // so we don't have to copy the entire frames when only interested in the
 // headers.
-rtc::ByteBuffer* ParseRbsp(const uint8_t* bytes, size_t length) {
+rtc::ByteBufferWriter* ParseRbsp(const uint8_t* bytes, size_t length) {
   // Copied from webrtc::H264SpsParser::Parse.
-  rtc::ByteBuffer* rbsp_buffer = new rtc::ByteBuffer;
+  rtc::ByteBufferWriter* rbsp_buffer = new rtc::ByteBufferWriter();
   for (size_t i = 0; i < length;) {
     if (length - i >= 3 && bytes[i] == 0 && bytes[i + 1] == 0 &&
         bytes[i + 2] == 3) {
@@ -103,7 +103,7 @@ bool H264BitstreamParser::ParseSpsNalu(const uint8_t* sps, size_t length) {
   sps_parsed_ = false;
   // Parse out the SPS RBSP. It should be small, so it's ok that we create a
   // copy. We'll eventually write this back.
-  rtc::scoped_ptr<rtc::ByteBuffer> sps_rbsp(
+  rtc::scoped_ptr<rtc::ByteBufferWriter> sps_rbsp(
       ParseRbsp(sps + kNaluHeaderAndTypeSize, length - kNaluHeaderAndTypeSize));
   rtc::BitBuffer sps_parser(reinterpret_cast<const uint8_t*>(sps_rbsp->Data()),
                             sps_rbsp->Length());
@@ -209,7 +209,7 @@ bool H264BitstreamParser::ParsePpsNalu(const uint8_t* pps, size_t length) {
   // We're starting a new stream, so reset picture type rewriting values.
   pps_ = PpsState();
   pps_parsed_ = false;
-  rtc::scoped_ptr<rtc::ByteBuffer> buffer(
+  rtc::scoped_ptr<rtc::ByteBufferWriter> buffer(
       ParseRbsp(pps + kNaluHeaderAndTypeSize, length - kNaluHeaderAndTypeSize));
   rtc::BitBuffer parser(reinterpret_cast<const uint8_t*>(buffer->Data()),
                         buffer->Length());
@@ -317,7 +317,7 @@ bool H264BitstreamParser::ParseNonParameterSetNalu(const uint8_t* source,
   RTC_CHECK(sps_parsed_);
   RTC_CHECK(pps_parsed_);
   last_slice_qp_delta_parsed_ = false;
-  rtc::scoped_ptr<rtc::ByteBuffer> slice_rbsp(ParseRbsp(
+  rtc::scoped_ptr<rtc::ByteBufferWriter> slice_rbsp(ParseRbsp(
       source + kNaluHeaderAndTypeSize, source_length - kNaluHeaderAndTypeSize));
   rtc::BitBuffer slice_reader(
       reinterpret_cast<const uint8_t*>(slice_rbsp->Data()),

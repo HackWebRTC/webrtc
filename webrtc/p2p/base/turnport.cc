@@ -786,7 +786,7 @@ void TurnPort::OnAllocateRequestTimeout() {
 void TurnPort::HandleDataIndication(const char* data, size_t size,
                                     const rtc::PacketTime& packet_time) {
   // Read in the message, and process according to RFC5766, Section 10.4.
-  rtc::ByteBuffer buf(data, size);
+  rtc::ByteBufferReader buf(data, size);
   TurnMessage msg;
   if (!msg.Read(&buf)) {
     LOG_J(LS_WARNING, this) << "Received invalid TURN data indication";
@@ -1425,7 +1425,7 @@ void TurnEntry::SendChannelBindRequest(int delay) {
 
 int TurnEntry::Send(const void* data, size_t size, bool payload,
                     const rtc::PacketOptions& options) {
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   if (state_ != STATE_BOUND) {
     // If we haven't bound the channel yet, we have to use a Send Indication.
     TurnMessage msg;

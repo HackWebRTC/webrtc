@@ -46,7 +46,7 @@ void Send(rtc::AsyncPacketSocket* socket, const char* bytes, size_t size,
 void SendStun(const StunMessage& msg,
               rtc::AsyncPacketSocket* socket,
               const rtc::SocketAddress& addr) {
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   msg.Write(&buf);
   Send(socket, buf.Data(), buf.Length(), addr);
 }
@@ -249,7 +249,7 @@ void RelayServer::OnExternalPacket(
   // The first packet should always be a STUN / TURN packet.  If it isn't, then
   // we should just ignore this packet.
   RelayMessage msg;
-  rtc::ByteBuffer buf(bytes, size);
+  rtc::ByteBufferReader buf(bytes, size);
   if (!msg.Read(&buf)) {
     LOG(LS_WARNING) << "Dropping packet: first packet not STUN";
     return;
@@ -298,7 +298,7 @@ bool RelayServer::HandleStun(
     StunMessage* msg) {
 
   // Parse this into a stun message. Eat the message if this fails.
-  rtc::ByteBuffer buf(bytes, size);
+  rtc::ByteBufferReader buf(bytes, size);
   if (!msg->Read(&buf)) {
     return false;
   }

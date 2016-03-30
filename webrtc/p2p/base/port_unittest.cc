@@ -18,6 +18,7 @@
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/turnport.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
@@ -33,7 +34,9 @@
 #include "webrtc/base/virtualsocketserver.h"
 
 using rtc::AsyncPacketSocket;
-using rtc::ByteBuffer;
+using rtc::Buffer;
+using rtc::ByteBufferReader;
+using rtc::ByteBufferWriter;
 using rtc::NATType;
 using rtc::NAT_OPEN_CONE;
 using rtc::NAT_ADDR_RESTRICTED;
@@ -84,13 +87,14 @@ static SocketAddress GetAddress(Port* port) {
 
 static IceMessage* CopyStunMessage(const IceMessage* src) {
   IceMessage* dst = new IceMessage();
-  ByteBuffer buf;
+  ByteBufferWriter buf;
   src->Write(&buf);
-  dst->Read(&buf);
+  ByteBufferReader read_buf(buf);
+  dst->Read(&read_buf);
   return dst;
 }
 
-static bool WriteStunMessage(const StunMessage* msg, ByteBuffer* buf) {
+static bool WriteStunMessage(const StunMessage* msg, ByteBufferWriter* buf) {
   buf->Resize(0);  // clear out any existing buffer contents
   return msg->Write(buf);
 }
@@ -123,7 +127,7 @@ class TestPort : public Port {
 
   // The last StunMessage that was sent on this Port.
   // TODO: Make these const; requires changes to SendXXXXResponse.
-  ByteBuffer* last_stun_buf() { return last_stun_buf_.get(); }
+  Buffer* last_stun_buf() { return last_stun_buf_.get(); }
   IceMessage* last_stun_msg() { return last_stun_msg_.get(); }
   int last_stun_error_code() {
     int code = 0;
@@ -174,14 +178,13 @@ class TestPort : public Port {
       const rtc::PacketOptions& options, bool payload) {
     if (!payload) {
       IceMessage* msg = new IceMessage;
-      ByteBuffer* buf = new ByteBuffer(static_cast<const char*>(data), size);
-      ByteBuffer::ReadPosition pos(buf->GetReadPosition());
-      if (!msg->Read(buf)) {
+      Buffer* buf = new Buffer(static_cast<const char*>(data), size);
+      ByteBufferReader read_buf(*buf);
+      if (!msg->Read(&read_buf)) {
         delete msg;
         delete buf;
         return -1;
       }
-      buf->SetReadPosition(pos);
       last_stun_buf_.reset(buf);
       last_stun_msg_.reset(msg);
     }
@@ -209,7 +212,7 @@ class TestPort : public Port {
                     const rtc::SentPacket& sent_packet) {
     PortInterface::SignalSentPacket(sent_packet);
   }
-  rtc::scoped_ptr<ByteBuffer> last_stun_buf_;
+  rtc::scoped_ptr<Buffer> last_stun_buf_;
   rtc::scoped_ptr<IceMessage> last_stun_msg_;
   int type_preference_ = 0;
 };
@@ -1332,8 +1335,8 @@ TEST_F(PortTest, TestLoopbackCal) {
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   IceMessage* msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
-  conn->OnReadPacket(lport->last_stun_buf()->Data(),
-                     lport->last_stun_buf()->Length(),
+  conn->OnReadPacket(lport->last_stun_buf()->data<char>(),
+                     lport->last_stun_buf()->size(),
                      rtc::PacketTime());
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   msg = lport->last_stun_msg();
@@ -1365,7 +1368,7 @@ TEST_F(PortTest, TestLoopbackCal) {
   modified_req->AddFingerprint();
 
   lport->Reset();
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  rtc::scoped_ptr<ByteBufferWriter> buf(new ByteBufferWriter());
   WriteStunMessage(modified_req.get(), buf.get());
   conn1->OnReadPacket(buf->Data(), buf->Length(), rtc::PacketTime());
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
@@ -1402,8 +1405,8 @@ TEST_F(PortTest, TestIceRoleConflict) {
   IceMessage* msg = rport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   // Send rport binding request to lport.
-  lconn->OnReadPacket(rport->last_stun_buf()->Data(),
-                      rport->last_stun_buf()->Length(),
+  lconn->OnReadPacket(rport->last_stun_buf()->data<char>(),
+                      rport->last_stun_buf()->size(),
                       rtc::PacketTime());
 
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
@@ -1628,7 +1631,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_EQ("rfrag:lfrag", username_attr->GetString());
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_MESSAGE_INTEGRITY) != NULL);
   EXPECT_TRUE(StunMessage::ValidateMessageIntegrity(
-      lport->last_stun_buf()->Data(), lport->last_stun_buf()->Length(),
+      lport->last_stun_buf()->data<char>(), lport->last_stun_buf()->size(),
       "rpass"));
   const StunUInt64Attribute* ice_controlling_attr =
       msg->GetUInt64(STUN_ATTR_ICE_CONTROLLING);
@@ -1638,7 +1641,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USE_CANDIDATE) != NULL);
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != NULL);
   EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      lport->last_stun_buf()->Data(), lport->last_stun_buf()->Length()));
+      lport->last_stun_buf()->data<char>(), lport->last_stun_buf()->size()));
 
   // Request should not include ping count.
   ASSERT_TRUE(msg->GetUInt32(STUN_ATTR_RETRANSMIT_COUNT) == NULL);
@@ -1660,11 +1663,11 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_EQ(lport->Candidates()[0].address(), addr_attr->GetAddress());
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_MESSAGE_INTEGRITY) != NULL);
   EXPECT_TRUE(StunMessage::ValidateMessageIntegrity(
-      rport->last_stun_buf()->Data(), rport->last_stun_buf()->Length(),
+      rport->last_stun_buf()->data<char>(), rport->last_stun_buf()->size(),
       "rpass"));
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != NULL);
   EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      lport->last_stun_buf()->Data(), lport->last_stun_buf()->Length()));
+      lport->last_stun_buf()->data<char>(), lport->last_stun_buf()->size()));
   // No USERNAME or PRIORITY in ICE responses.
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USERNAME) == NULL);
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == NULL);
@@ -1692,11 +1695,11 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_EQ(std::string(STUN_ERROR_REASON_SERVER_ERROR), error_attr->reason());
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_MESSAGE_INTEGRITY) != NULL);
   EXPECT_TRUE(StunMessage::ValidateMessageIntegrity(
-      rport->last_stun_buf()->Data(), rport->last_stun_buf()->Length(),
+      rport->last_stun_buf()->data<char>(), rport->last_stun_buf()->size(),
       "rpass"));
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != NULL);
   EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      lport->last_stun_buf()->Data(), lport->last_stun_buf()->Length()));
+      lport->last_stun_buf()->data<char>(), lport->last_stun_buf()->size()));
   // No USERNAME with ICE.
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USERNAME) == NULL);
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == NULL);
@@ -1813,7 +1816,7 @@ TEST_F(PortTest, TestHandleStunMessage) {
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
 
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  rtc::scoped_ptr<ByteBufferWriter> buf(new ByteBufferWriter());
   rtc::SocketAddress addr(kLocalAddr1);
   std::string username;
 
@@ -1863,7 +1866,7 @@ TEST_F(PortTest, TestHandleStunMessageBadUsername) {
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
 
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  rtc::scoped_ptr<ByteBufferWriter> buf(new ByteBufferWriter());
   rtc::SocketAddress addr(kLocalAddr1);
   std::string username;
 
@@ -1932,7 +1935,7 @@ TEST_F(PortTest, TestHandleStunMessageBadMessageIntegrity) {
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
 
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  rtc::scoped_ptr<ByteBufferWriter> buf(new ByteBufferWriter());
   rtc::SocketAddress addr(kLocalAddr1);
   std::string username;
 
@@ -1973,7 +1976,7 @@ TEST_F(PortTest, TestHandleStunMessageBadFingerprint) {
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
 
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  rtc::scoped_ptr<ByteBufferWriter> buf(new ByteBufferWriter());
   rtc::SocketAddress addr(kLocalAddr1);
   std::string username;
 
@@ -2042,7 +2045,7 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
 
   // Verifying encoding and decoding STUN indication message.
   rtc::scoped_ptr<IceMessage> in_msg, out_msg;
-  rtc::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  rtc::scoped_ptr<ByteBufferWriter> buf(new ByteBufferWriter());
   rtc::SocketAddress addr(kLocalAddr1);
   std::string username;
 
@@ -2077,8 +2080,8 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
   IceMessage* msg = rport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   // Send rport binding request to lport.
-  lconn->OnReadPacket(rport->last_stun_buf()->Data(),
-                      rport->last_stun_buf()->Length(),
+  lconn->OnReadPacket(rport->last_stun_buf()->data<char>(),
+                      rport->last_stun_buf()->size(),
                       rtc::PacketTime());
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   EXPECT_EQ(STUN_BINDING_RESPONSE, lport->last_stun_msg()->type());
@@ -2464,8 +2467,8 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
       request.get(), ice_full_port->Candidates()[0].address());
 
   // Feeding the respone message from litemode to the full mode connection.
-  ch1.conn()->OnReadPacket(ice_lite_port->last_stun_buf()->Data(),
-                           ice_lite_port->last_stun_buf()->Length(),
+  ch1.conn()->OnReadPacket(ice_lite_port->last_stun_buf()->data<char>(),
+                           ice_lite_port->last_stun_buf()->size(),
                            rtc::PacketTime());
   // Verifying full mode connection becomes writable from the response.
   EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch1.conn()->write_state(),

@@ -76,12 +76,12 @@ class RelayServerTest : public testing::Test {
   }
 
   void Send1(const StunMessage* msg) {
-    rtc::ByteBuffer buf;
+    rtc::ByteBufferWriter buf;
     msg->Write(&buf);
     SendRaw1(buf.Data(), static_cast<int>(buf.Length()));
   }
   void Send2(const StunMessage* msg) {
-    rtc::ByteBuffer buf;
+    rtc::ByteBufferWriter buf;
     msg->Write(&buf);
     SendRaw2(buf.Data(), static_cast<int>(buf.Length()));
   }
@@ -120,9 +120,10 @@ class RelayServerTest : public testing::Test {
     rtc::TestClient::Packet* packet =
         client->NextPacket(rtc::TestClient::kTimeoutMs);
     if (packet) {
-      rtc::ByteBuffer buf(packet->buf, packet->size);
+      rtc::ByteBufferWriter buf(packet->buf, packet->size);
+      rtc::ByteBufferReader read_buf(buf);
       msg = new RelayMessage();
-      msg->Read(&buf);
+      msg->Read(&read_buf);
       delete packet;
     }
     return msg;
@@ -302,7 +303,7 @@ TEST_F(RelayServerTest, TestRemoteBind) {
       res->GetByteString(STUN_ATTR_DATA);
   ASSERT_TRUE(recv_data != NULL);
 
-  rtc::ByteBuffer buf(recv_data->bytes(), recv_data->length());
+  rtc::ByteBufferReader buf(recv_data->bytes(), recv_data->length());
   rtc::scoped_ptr<StunMessage> res2(new StunMessage());
   EXPECT_TRUE(res2->Read(&buf));
   EXPECT_EQ(STUN_BINDING_REQUEST, res2->type());

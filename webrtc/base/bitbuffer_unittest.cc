@@ -188,7 +188,7 @@ uint64_t GolombEncoded(uint32_t val) {
 }
 
 TEST(BitBufferTest, GolombUint32Values) {
-  ByteBuffer byteBuffer;
+  ByteBufferWriter byteBuffer;
   byteBuffer.Resize(16);
   BitBuffer buffer(reinterpret_cast<const uint8_t*>(byteBuffer.Data()),
                    byteBuffer.Capacity());

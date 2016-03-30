@@ -34,7 +34,7 @@ bool H264SpsParser::Parse() {
   // First, parse out rbsp, which is basically the source buffer minus emulation
   // bytes (the last byte of a 0x00 0x00 0x03 sequence). RBSP is defined in
   // section 7.3.1 of the H.264 standard.
-  rtc::ByteBuffer rbsp_buffer;
+  rtc::ByteBufferWriter rbsp_buffer;
   for (size_t i = 0; i < byte_length_;) {
     // Be careful about over/underflow here. byte_length_ - 3 can underflow, and
     // i + 3 can overflow, but byte_length_ - i can't, because i < byte_length_

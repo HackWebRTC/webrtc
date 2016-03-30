@@ -32,7 +32,7 @@ namespace cricket {
 // Implementation of RawRtpPacket
 /////////////////////////////////////////////////////////////////////////
 void RawRtpPacket::WriteToByteBuffer(uint32_t in_ssrc,
-                                     rtc::ByteBuffer* buf) const {
+                                     rtc::ByteBufferWriter* buf) const {
   if (!buf) return;
 
   buf->WriteUInt8(ver_to_cc);
@@ -43,7 +43,7 @@ void RawRtpPacket::WriteToByteBuffer(uint32_t in_ssrc,
   buf->WriteBytes(payload, sizeof(payload));
 }
 
-bool RawRtpPacket::ReadFromByteBuffer(rtc::ByteBuffer* buf) {
+bool RawRtpPacket::ReadFromByteBuffer(rtc::ByteBufferReader* buf) {
   if (!buf) return false;
 
   bool ret = true;
@@ -71,7 +71,7 @@ bool RawRtpPacket::SameExceptSeqNumTimestampSsrc(const RawRtpPacket& packet,
 /////////////////////////////////////////////////////////////////////////
 // Implementation of RawRtcpPacket
 /////////////////////////////////////////////////////////////////////////
-void RawRtcpPacket::WriteToByteBuffer(rtc::ByteBuffer *buf) const {
+void RawRtcpPacket::WriteToByteBuffer(rtc::ByteBufferWriter *buf) const {
   if (!buf) return;
 
   buf->WriteUInt8(ver_to_count);
@@ -80,7 +80,7 @@ void RawRtcpPacket::WriteToByteBuffer(rtc::ByteBuffer *buf) const {
   buf->WriteBytes(payload, sizeof(payload));
 }
 
-bool RawRtcpPacket::ReadFromByteBuffer(rtc::ByteBuffer* buf) {
+bool RawRtcpPacket::ReadFromByteBuffer(rtc::ByteBufferReader* buf) {
   if (!buf) return false;
 
   bool ret = true;
@@ -129,7 +129,7 @@ bool RtpTestUtility::WriteTestPackets(size_t count,
   bool result = true;
   uint32_t elapsed_time_ms = 0;
   for (size_t i = 0; i < count && result; ++i) {
-    rtc::ByteBuffer buf;
+    rtc::ByteBufferWriter buf;
     if (rtcp) {
       kTestRawRtcpPackets[i].WriteToByteBuffer(&buf);
     } else {
@@ -164,7 +164,7 @@ bool RtpTestUtility::VerifyTestPacketsFromStream(size_t count,
     prev_elapsed_time = packet.elapsed_time;
 
     // Check the RTP or RTCP packet.
-    rtc::ByteBuffer buf(reinterpret_cast<const char*>(&packet.data[0]),
+    rtc::ByteBufferReader buf(reinterpret_cast<const char*>(&packet.data[0]),
                               packet.data.size());
     if (packet.is_rtcp()) {
       // RTCP packet.
@@ -194,7 +194,7 @@ bool RtpTestUtility::VerifyPacket(const RtpDumpPacket* dump,
                                   bool header_only) {
   if (!dump || !raw) return false;
 
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   raw->WriteToByteBuffer(RtpTestUtility::kDefaultSsrc, &buf);
 
   if (header_only) {

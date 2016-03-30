@@ -20,7 +20,8 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 
-using rtc::ByteBuffer;
+using rtc::ByteBufferReader;
+using rtc::ByteBufferWriter;
 
 namespace cricket {
 
@@ -219,7 +220,7 @@ bool StunMessage::AddMessageIntegrity(const char* key,
   VERIFY(AddAttribute(msg_integrity_attr));
 
   // Calculate the HMAC for the message.
-  rtc::ByteBuffer buf;
+  ByteBufferWriter buf;
   if (!Write(&buf))
     return false;
 
@@ -280,7 +281,7 @@ bool StunMessage::AddFingerprint() {
   VERIFY(AddAttribute(fingerprint_attr));
 
   // Calculate the CRC-32 for the message and insert it.
-  rtc::ByteBuffer buf;
+  ByteBufferWriter buf;
   if (!Write(&buf))
     return false;
 
@@ -293,7 +294,7 @@ bool StunMessage::AddFingerprint() {
   return true;
 }
 
-bool StunMessage::Read(ByteBuffer* buf) {
+bool StunMessage::Read(ByteBufferReader* buf) {
   if (!buf->ReadUInt16(&type_))
     return false;
 
@@ -356,7 +357,7 @@ bool StunMessage::Read(ByteBuffer* buf) {
   return true;
 }
 
-bool StunMessage::Write(ByteBuffer* buf) const {
+bool StunMessage::Write(ByteBufferWriter* buf) const {
   buf->WriteUInt16(type_);
   buf->WriteUInt16(length_);
   if (!IsLegacy())
@@ -417,14 +418,14 @@ StunAttribute::StunAttribute(uint16_t type, uint16_t length)
     : type_(type), length_(length) {
 }
 
-void StunAttribute::ConsumePadding(rtc::ByteBuffer* buf) const {
+void StunAttribute::ConsumePadding(ByteBufferReader* buf) const {
   int remainder = length_ % 4;
   if (remainder > 0) {
     buf->Consume(4 - remainder);
   }
 }
 
-void StunAttribute::WritePadding(rtc::ByteBuffer* buf) const {
+void StunAttribute::WritePadding(ByteBufferWriter* buf) const {
   int remainder = length_ % 4;
   if (remainder > 0) {
     char zeroes[4] = {0};
@@ -495,7 +496,7 @@ StunAddressAttribute::StunAddressAttribute(uint16_t type, uint16_t length)
     : StunAttribute(type, length) {
 }
 
-bool StunAddressAttribute::Read(ByteBuffer* buf) {
+bool StunAddressAttribute::Read(ByteBufferReader* buf) {
   uint8_t dummy;
   if (!buf->ReadUInt8(&dummy))
     return false;
@@ -533,7 +534,7 @@ bool StunAddressAttribute::Read(ByteBuffer* buf) {
   return true;
 }
 
-bool StunAddressAttribute::Write(ByteBuffer* buf) const {
+bool StunAddressAttribute::Write(ByteBufferWriter* buf) const {
   StunAddressFamily address_family = family();
   if (address_family == STUN_ADDRESS_UNDEF) {
     LOG(LS_ERROR) << "Error writing address attribute: unknown family.";
@@ -604,7 +605,7 @@ rtc::IPAddress StunXorAddressAttribute::GetXoredIP() const {
   return rtc::IPAddress();
 }
 
-bool StunXorAddressAttribute::Read(ByteBuffer* buf) {
+bool StunXorAddressAttribute::Read(ByteBufferReader* buf) {
   if (!StunAddressAttribute::Read(buf))
     return false;
   uint16_t xoredport = port() ^ (kStunMagicCookie >> 16);
@@ -613,7 +614,7 @@ bool StunXorAddressAttribute::Read(ByteBuffer* buf) {
   return true;
 }
 
-bool StunXorAddressAttribute::Write(ByteBuffer* buf) const {
+bool StunXorAddressAttribute::Write(ByteBufferWriter* buf) const {
   StunAddressFamily address_family = family();
   if (address_family == STUN_ADDRESS_UNDEF) {
     LOG(LS_ERROR) << "Error writing xor-address attribute: unknown family.";
@@ -660,13 +661,13 @@ void StunUInt32Attribute::SetBit(size_t index, bool value) {
   bits_ |= value ? (1 << index) : 0;
 }
 
-bool StunUInt32Attribute::Read(ByteBuffer* buf) {
+bool StunUInt32Attribute::Read(ByteBufferReader* buf) {
   if (length() != SIZE || !buf->ReadUInt32(&bits_))
     return false;
   return true;
 }
 
-bool StunUInt32Attribute::Write(ByteBuffer* buf) const {
+bool StunUInt32Attribute::Write(ByteBufferWriter* buf) const {
   buf->WriteUInt32(bits_);
   return true;
 }
@@ -679,13 +680,13 @@ StunUInt64Attribute::StunUInt64Attribute(uint16_t type)
     : StunAttribute(type, SIZE), bits_(0) {
 }
 
-bool StunUInt64Attribute::Read(ByteBuffer* buf) {
+bool StunUInt64Attribute::Read(ByteBufferReader* buf) {
   if (length() != SIZE || !buf->ReadUInt64(&bits_))
     return false;
   return true;
 }
 
-bool StunUInt64Attribute::Write(ByteBuffer* buf) const {
+bool StunUInt64Attribute::Write(ByteBufferWriter* buf) const {
   buf->WriteUInt64(bits_);
   return true;
 }
@@ -737,7 +738,7 @@ void StunByteStringAttribute::SetByte(size_t index, uint8_t value) {
   bytes_[index] = value;
 }
 
-bool StunByteStringAttribute::Read(ByteBuffer* buf) {
+bool StunByteStringAttribute::Read(ByteBufferReader* buf) {
   bytes_ = new char[length()];
   if (!buf->ReadBytes(bytes_, length())) {
     return false;
@@ -747,7 +748,7 @@ bool StunByteStringAttribute::Read(ByteBuffer* buf) {
   return true;
 }
 
-bool StunByteStringAttribute::Write(ByteBuffer* buf) const {
+bool StunByteStringAttribute::Write(ByteBufferWriter* buf) const {
   buf->WriteBytes(bytes_, length());
   WritePadding(buf);
   return true;
@@ -788,7 +789,7 @@ void StunErrorCodeAttribute::SetReason(const std::string& reason) {
   reason_ = reason;
 }
 
-bool StunErrorCodeAttribute::Read(ByteBuffer* buf) {
+bool StunErrorCodeAttribute::Read(ByteBufferReader* buf) {
   uint32_t val;
   if (length() < MIN_SIZE || !buf->ReadUInt32(&val))
     return false;
@@ -806,7 +807,7 @@ bool StunErrorCodeAttribute::Read(ByteBuffer* buf) {
   return true;
 }
 
-bool StunErrorCodeAttribute::Write(ByteBuffer* buf) const {
+bool StunErrorCodeAttribute::Write(ByteBufferWriter* buf) const {
   buf->WriteUInt32(class_ << 8 | number_);
   buf->WriteString(reason_);
   WritePadding(buf);
@@ -839,7 +840,7 @@ void StunUInt16ListAttribute::AddType(uint16_t value) {
   SetLength(static_cast<uint16_t>(attr_types_->size() * 2));
 }
 
-bool StunUInt16ListAttribute::Read(ByteBuffer* buf) {
+bool StunUInt16ListAttribute::Read(ByteBufferReader* buf) {
   if (length() % 2)
     return false;
 
@@ -858,7 +859,7 @@ bool StunUInt16ListAttribute::Read(ByteBuffer* buf) {
   return true;
 }
 
-bool StunUInt16ListAttribute::Write(ByteBuffer* buf) const {
+bool StunUInt16ListAttribute::Write(ByteBufferWriter* buf) const {
   for (size_t i = 0; i < attr_types_->size(); ++i) {
     buf->WriteUInt16((*attr_types_)[i]);
   }

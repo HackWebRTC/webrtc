@@ -36,7 +36,7 @@ RtpDumpFileHeader::RtpDumpFileHeader(uint32_t start_ms, uint32_t s, uint16_t p)
       padding(0) {
 }
 
-void RtpDumpFileHeader::WriteToByteBuffer(rtc::ByteBuffer* buf) {
+void RtpDumpFileHeader::WriteToByteBuffer(rtc::ByteBufferWriter* buf) {
   buf->WriteUInt32(start_sec);
   buf->WriteUInt32(start_usec);
   buf->WriteUInt32(source);
@@ -113,7 +113,7 @@ rtc::StreamResult RtpDumpReader::ReadPacket(RtpDumpPacket* packet) {
   if (res != rtc::SR_SUCCESS) {
     return res;
   }
-  rtc::ByteBuffer buf(header, sizeof(header));
+  rtc::ByteBufferReader buf(header, sizeof(header));
   uint16_t dump_packet_len;
   uint16_t data_len;
   // Read the full length of the rtpdump packet, including the rtpdump header.
@@ -157,7 +157,7 @@ rtc::StreamResult RtpDumpReader::ReadFileHeader() {
   char header[RtpDumpFileHeader::kHeaderLength];
   res = stream_->ReadAll(header, sizeof(header), NULL, NULL);
   if (res == rtc::SR_SUCCESS) {
-    rtc::ByteBuffer buf(header, sizeof(header));
+    rtc::ByteBufferReader buf(header, sizeof(header));
     uint32_t start_sec;
     uint32_t start_usec;
     buf.ReadUInt32(&start_sec);
@@ -290,7 +290,7 @@ void RtpDumpLoopReader::UpdateDumpPacket(RtpDumpPacket* packet) {
     sequence += loop_count_ * rtp_seq_num_increase_;
     timestamp += loop_count_ * rtp_timestamp_increase_;
     // Write the updated sequence number and timestamp back to the RTP packet.
-    rtc::ByteBuffer buffer;
+    rtc::ByteBufferWriter buffer;
     buffer.WriteUInt16(sequence);
     buffer.WriteUInt32(timestamp);
     memcpy(&packet->data[2], buffer.Data(), buffer.Length());
@@ -326,7 +326,7 @@ rtc::StreamResult RtpDumpWriter::WriteFileHeader() {
     return res;
   }
 
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   RtpDumpFileHeader file_header(rtc::Time(), 0, 0);
   file_header.WriteToByteBuffer(&buf);
   return WriteToStream(buf.Data(), buf.Length());
@@ -355,7 +355,7 @@ rtc::StreamResult RtpDumpWriter::WritePacket(const void* data,
   }
 
   // Write the dump packet header.
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   buf.WriteUInt16(
       static_cast<uint16_t>(RtpDumpPacket::kHeaderLength + write_len));
   buf.WriteUInt16(static_cast<uint16_t>(rtcp ? 0 : data_len));

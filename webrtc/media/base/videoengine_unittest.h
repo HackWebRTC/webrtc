@@ -279,8 +279,7 @@ class VideoMediaChannelTest : public testing::Test,
                              uint32_t* tstamp,
                              uint32_t* ssrc,
                              std::string* payload) {
-    // TODO(jbauch): avoid copying the buffer data into the ByteBuffer
-    rtc::ByteBuffer buf(p->data<char>(), p->size());
+    rtc::ByteBufferReader buf(p->data<char>(), p->size());
     uint8_t u08 = 0;
     uint16_t u16 = 0;
     uint32_t u32 = 0;
@@ -340,8 +339,7 @@ class VideoMediaChannelTest : public testing::Test,
     int count = 0;
     for (int i = start_index; i < stop_index; ++i) {
       std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtcpPacket(i));
-      // TODO(jbauch): avoid copying the buffer data into the ByteBuffer
-      rtc::ByteBuffer buf(p->data<char>(), p->size());
+      rtc::ByteBufferReader buf(p->data<char>(), p->size());
       size_t total_len = 0;
       // The packet may be a compound RTCP packet.
       while (total_len < p->size()) {

@@ -14,7 +14,7 @@
 #include "webrtc/libjingle/xmpp/asyncsocket.h"
 #include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/base/asyncsocket.h"
-#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/sigslot.h"
 
 // The below define selects the SSLStreamAdapter implementation for
@@ -62,7 +62,7 @@ private:
   rtc::StreamInterface *stream_;
 #endif  // USE_SSLSTREAM
   buzz::AsyncSocket::State state_;
-  rtc::ByteBuffer buffer_;
+  rtc::Buffer buffer_;
   buzz::TlsOptions tls_;
 };
 

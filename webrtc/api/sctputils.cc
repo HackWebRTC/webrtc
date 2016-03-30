@@ -49,9 +49,7 @@ bool ParseDataChannelOpenMessage(const rtc::CopyOnWriteBuffer& payload,
   // Format defined at
   // http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-04
 
-  // TODO(jbauch): avoid copying the payload data into the ByteBuffer, see
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=5670
-  rtc::ByteBuffer buffer(payload.data<char>(), payload.size());
+  rtc::ByteBufferReader buffer(payload.data<char>(), payload.size());
   uint8_t message_type;
   if (!buffer.ReadUInt8(&message_type)) {
     LOG(LS_WARNING) << "Could not read OPEN message type.";
@@ -166,7 +164,7 @@ bool WriteDataChannelOpenMessage(const std::string& label,
     }
   }
 
-  rtc::ByteBuffer buffer(
+  rtc::ByteBufferWriter buffer(
       NULL, 20 + label.length() + config.protocol.length(),
       rtc::ByteBuffer::ORDER_NETWORK);
   // TODO(tommi): Add error handling and check resulting length.

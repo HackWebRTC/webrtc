@@ -23,7 +23,7 @@
 #include "webrtc/base/socketaddress.h"
 
 namespace rtc {
-class ByteBuffer;
+class ByteBufferWriter;
 class PacketSocketFactory;
 class Thread;
 }
@@ -246,7 +246,7 @@ class TurnServer : public sigslot::has_slots<> {
                                             const rtc::SocketAddress& addr);
 
   void SendStun(TurnServerConnection* conn, StunMessage* msg);
-  void Send(TurnServerConnection* conn, const rtc::ByteBuffer& buf);
+  void Send(TurnServerConnection* conn, const rtc::ByteBufferWriter& buf);
 
   void OnAllocationDestroyed(TurnServerAllocation* allocation);
   void DestroyInternalSocket(rtc::AsyncPacketSocket* socket);

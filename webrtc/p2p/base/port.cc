@@ -343,7 +343,7 @@ bool Port::GetStunMessage(const char* data,
   // Parse the request message.  If the packet is not a complete and correct
   // STUN message, then ignore it.
   rtc::scoped_ptr<IceMessage> stun_msg(new IceMessage());
-  rtc::ByteBuffer buf(data, size);
+  rtc::ByteBufferReader buf(data, size);
   if (!stun_msg->Read(&buf) || (buf.Length() > 0)) {
     return false;
   }
@@ -565,7 +565,7 @@ void Port::SendBindingResponse(StunMessage* request,
   response.AddFingerprint();
 
   // Send the response message.
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   response.Write(&buf);
   rtc::PacketOptions options(DefaultDscpValue());
   auto err = SendTo(buf.Data(), buf.Length(), addr, options, false);
@@ -613,7 +613,7 @@ void Port::SendBindingErrorResponse(StunMessage* request,
   response.AddFingerprint();
 
   // Send the response message.
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   response.Write(&buf);
   rtc::PacketOptions options(DefaultDscpValue());
   SendTo(buf.Data(), buf.Length(), addr, options, false);

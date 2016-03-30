@@ -39,7 +39,7 @@ class StunServerTest : public testing::Test {
     worker_.Start();
   }
   void Send(const StunMessage& msg) {
-    rtc::ByteBuffer buf;
+    rtc::ByteBufferWriter buf;
     msg.Write(&buf);
     Send(buf.Data(), static_cast<int>(buf.Length()));
   }
@@ -54,7 +54,7 @@ class StunServerTest : public testing::Test {
     rtc::TestClient::Packet* packet =
         client_->NextPacket(rtc::TestClient::kTimeoutMs);
     if (packet) {
-      rtc::ByteBuffer buf(packet->buf, packet->size);
+      rtc::ByteBufferReader buf(packet->buf, packet->size);
       msg = new StunMessage();
       msg->Read(&buf);
       delete packet;

@@ -93,7 +93,7 @@ class StunProber::Requester : public sigslot::has_slots<> {
 
   // Temporary SocketAddress and buffer for RecvFrom.
   rtc::SocketAddress addr_;
-  rtc::scoped_ptr<rtc::ByteBuffer> response_packet_;
+  rtc::scoped_ptr<rtc::ByteBufferWriter> response_packet_;
 
   std::vector<Request*> requests_;
   std::vector<rtc::SocketAddress> server_ips_;
@@ -111,7 +111,7 @@ StunProber::Requester::Requester(
     const std::vector<rtc::SocketAddress>& server_ips)
     : prober_(prober),
       socket_(socket),
-      response_packet_(new rtc::ByteBuffer(nullptr, kMaxUdpBufferSize)),
+      response_packet_(new rtc::ByteBufferWriter(nullptr, kMaxUdpBufferSize)),
       server_ips_(server_ips),
       thread_checker_(prober->thread_checker_) {
   socket_->SignalReadPacket.connect(
@@ -140,8 +140,8 @@ void StunProber::Requester::SendStunRequest() {
       rtc::CreateRandomString(cricket::kStunTransactionIdLength));
   message.SetType(cricket::STUN_BINDING_REQUEST);
 
-  rtc::scoped_ptr<rtc::ByteBuffer> request_packet(
-      new rtc::ByteBuffer(nullptr, kMaxUdpBufferSize));
+  rtc::scoped_ptr<rtc::ByteBufferWriter> request_packet(
+      new rtc::ByteBufferWriter(nullptr, kMaxUdpBufferSize));
   if (!message.Write(request_packet.get())) {
     prober_->ReportOnFinished(WRITE_FAILED);
     return;
@@ -170,7 +170,7 @@ void StunProber::Requester::SendStunRequest() {
 void StunProber::Requester::Request::ProcessResponse(const char* buf,
                                                      size_t buf_len) {
   int64_t now = rtc::Time64();
-  rtc::ByteBuffer message(buf, buf_len);
+  rtc::ByteBufferReader message(buf, buf_len);
   cricket::StunMessage stun_response;
   if (!stun_response.Read(&message)) {
     // Invalid or incomplete STUN packet.

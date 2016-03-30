@@ -77,10 +77,13 @@ void XmppSocket::OnReadEvent(rtc::AsyncSocket * socket) {
 
 void XmppSocket::OnWriteEvent(rtc::AsyncSocket * socket) {
   // Write bytes if there are any
-  while (buffer_.Length() != 0) {
-    int written = cricket_socket_->Send(buffer_.Data(), buffer_.Length());
+  while (buffer_.size() > 0) {
+    int written = cricket_socket_->Send(buffer_.data(), buffer_.size());
     if (written > 0) {
-      buffer_.Consume(written);
+      ASSERT(static_cast<size_t>(written) <= buffer_.size());
+      memmove(buffer_.data(), buffer_.data() + written,
+          buffer_.size() - written);
+      buffer_.SetSize(buffer_.size() - written);
       continue;
     }
     if (!cricket_socket_->IsBlocking())
@@ -127,11 +130,11 @@ void XmppSocket::OnEvent(rtc::StreamInterface* stream,
     SignalRead();
   if ((events & rtc::SE_WRITE)) {
     // Write bytes if there are any
-    while (buffer_.Length() != 0) {
+    while (buffer_.size() > 0) {
       rtc::StreamResult result;
       size_t written;
       int error;
-      result = stream_->Write(buffer_.Data(), buffer_.Length(),
+      result = stream_->Write(buffer_.data(), buffer_.size(),
                               &written, &error);
       if (result == rtc::SR_ERROR) {
         LOG(LS_ERROR) << "Send error: " << error;
@@ -141,7 +144,10 @@ void XmppSocket::OnEvent(rtc::StreamInterface* stream,
         return;
       ASSERT(result == rtc::SR_SUCCESS);
       ASSERT(written > 0);
-      buffer_.Shift(written);
+      ASSERT(written <= buffer_.size());
+      memmove(buffer_.data(), buffer_.data() + written,
+          buffer_.size() - written);
+      buffer_.SetSize(buffer_.size() - written);
     }
   }
   if ((events & rtc::SE_CLOSE))
@@ -187,7 +193,7 @@ bool XmppSocket::Read(char * data, size_t len, size_t* len_read) {
 }
 
 bool XmppSocket::Write(const char * data, size_t len) {
-  buffer_.WriteBytes(data, len);
+  buffer_.AppendData(data, len);
 #ifndef USE_SSLSTREAM
   OnWriteEvent(cricket_socket_);
 #else  // USE_SSLSTREAM

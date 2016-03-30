@@ -1168,7 +1168,7 @@ PseudoTcp::disableWindowScale() {
 
 void
 PseudoTcp::queueConnectMessage() {
-  rtc::ByteBuffer buf(rtc::ByteBuffer::ORDER_NETWORK);
+  rtc::ByteBufferWriter buf(rtc::ByteBuffer::ORDER_NETWORK);
 
   buf.WriteUInt8(CTL_CONNECT);
   if (m_support_wnd_scale) {
@@ -1185,7 +1185,7 @@ void PseudoTcp::parseOptions(const char* data, uint32_t len) {
 
   // See http://www.freesoft.org/CIE/Course/Section4/8.htm for
   // parsing the options list.
-  rtc::ByteBuffer buf(data, len);
+  rtc::ByteBufferReader buf(data, len);
   while (buf.Length()) {
     uint8_t kind = TCP_OPT_EOL;
     buf.ReadUInt8(&kind);

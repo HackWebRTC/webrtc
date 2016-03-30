@@ -607,7 +607,7 @@ int RelayEntry::SendTo(const void* data, size_t size,
 
   // TODO: compute the HMAC.
 
-  rtc::ByteBuffer buf;
+  rtc::ByteBufferWriter buf;
   request.Write(&buf);
 
   return SendPacket(buf.Data(), buf.Length(), options);
@@ -703,7 +703,7 @@ void RelayEntry::OnReadPacket(
     return;
   }
 
-  rtc::ByteBuffer buf(data, size);
+  rtc::ByteBufferReader buf(data, size);
   RelayMessage msg;
   if (!msg.Read(&buf)) {
     LOG(INFO) << "Incoming packet was not STUN";

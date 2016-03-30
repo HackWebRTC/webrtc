@@ -24,7 +24,8 @@
 #include "webrtc/media/base/videocommon.h"
 
 namespace rtc {
-class ByteBuffer;
+class ByteBufferReader;
+class ByteBufferWriter;
 class StreamInterface;
 }
 
@@ -45,8 +46,8 @@ class RtpDumpWriter;
 class VideoFrame;
 
 struct RawRtpPacket {
-  void WriteToByteBuffer(uint32_t in_ssrc, rtc::ByteBuffer* buf) const;
-  bool ReadFromByteBuffer(rtc::ByteBuffer* buf);
+  void WriteToByteBuffer(uint32_t in_ssrc, rtc::ByteBufferWriter* buf) const;
+  bool ReadFromByteBuffer(rtc::ByteBufferReader* buf);
   // Check if this packet is the same as the specified packet except the
   // sequence number and timestamp, which should be the same as the specified
   // parameters.
@@ -65,8 +66,8 @@ struct RawRtpPacket {
 };
 
 struct RawRtcpPacket {
-  void WriteToByteBuffer(rtc::ByteBuffer* buf) const;
-  bool ReadFromByteBuffer(rtc::ByteBuffer* buf);
+  void WriteToByteBuffer(rtc::ByteBufferWriter* buf) const;
+  bool ReadFromByteBuffer(rtc::ByteBufferReader* buf);
   bool EqualsTo(const RawRtcpPacket& packet) const;
 
   uint8_t ver_to_count;

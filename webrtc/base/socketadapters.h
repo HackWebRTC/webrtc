@@ -21,7 +21,8 @@
 namespace rtc {
 
 struct HttpAuthContext;
-class ByteBuffer;
+class ByteBufferReader;
+class ByteBufferWriter;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -193,13 +194,13 @@ class AsyncSocksProxyServerSocket : public AsyncProxyServerSocket {
 
  private:
   void ProcessInput(char* data, size_t* len) override;
-  void DirectSend(const ByteBuffer& buf);
+  void DirectSend(const ByteBufferWriter& buf);
 
-  void HandleHello(ByteBuffer* request);
+  void HandleHello(ByteBufferReader* request);
   void SendHelloReply(uint8_t method);
-  void HandleAuth(ByteBuffer* request);
+  void HandleAuth(ByteBufferReader* request);
   void SendAuthReply(uint8_t result);
-  void HandleConnect(ByteBuffer* request);
+  void HandleConnect(ByteBufferReader* request);
   void SendConnectResult(int result, const SocketAddress& addr) override;
 
   void Error(int error);

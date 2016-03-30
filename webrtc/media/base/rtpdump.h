@@ -40,7 +40,7 @@ enum RtpDumpPacketFilter {
 
 struct RtpDumpFileHeader {
   RtpDumpFileHeader(uint32_t start_ms, uint32_t s, uint16_t p);
-  void WriteToByteBuffer(rtc::ByteBuffer* buf);
+  void WriteToByteBuffer(rtc::ByteBufferWriter* buf);
 
   static const char kFirstLine[];
   static const size_t kHeaderLength = 16;
