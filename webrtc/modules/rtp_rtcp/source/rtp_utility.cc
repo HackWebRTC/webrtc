@@ -27,11 +27,6 @@ RtpFeedback* NullObjectRtpFeedback() {
   return &null_rtp_feedback;
 }
 
-RtpAudioFeedback* NullObjectRtpAudioFeedback() {
-  static NullRtpAudioFeedback null_rtp_audio_feedback;
-  return &null_rtp_audio_feedback;
-}
-
 ReceiveStatistics* NullObjectReceiveStatistics() {
   static NullReceiveStatistics null_receive_statistics;
   return &null_receive_statistics;

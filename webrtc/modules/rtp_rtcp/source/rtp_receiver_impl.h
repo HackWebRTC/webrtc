@@ -26,7 +26,6 @@ class RtpReceiverImpl : public RtpReceiver {
   // want callbacks to do nothing). This class takes ownership of the media
   // receiver but nothing else.
   RtpReceiverImpl(Clock* clock,
-                  RtpAudioFeedback* incoming_audio_messages_callback,
                   RtpFeedback* incoming_messages_callback,
                   RTPPayloadRegistry* rtp_payload_registry,
                   RTPReceiverStrategy* rtp_media_receiver);

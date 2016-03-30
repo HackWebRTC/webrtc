@@ -27,9 +27,7 @@ class TelephoneEventHandler;
 class RTPReceiverStrategy {
  public:
   static RTPReceiverStrategy* CreateVideoStrategy(RtpData* data_callback);
-  static RTPReceiverStrategy* CreateAudioStrategy(
-      RtpData* data_callback,
-      RtpAudioFeedback* incoming_messages_callback);
+  static RTPReceiverStrategy* CreateAudioStrategy(RtpData* data_callback);
 
   virtual ~RTPReceiverStrategy() {}
 

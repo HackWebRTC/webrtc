@@ -16,6 +16,7 @@
 
 namespace webrtc {
 
+class RtpAudioFeedback;
 class RTPPayloadRegistry;
 
 class TelephoneEventHandler {
@@ -43,6 +44,14 @@ class RtpReceiver {
       RTPPayloadRegistry* rtp_payload_registry);
 
   // Creates an audio-enabled RTP receiver.
+  static RtpReceiver* CreateAudioReceiver(
+      Clock* clock,
+      RtpData* incoming_payload_callback,
+      RtpFeedback* incoming_messages_callback,
+      RTPPayloadRegistry* rtp_payload_registry);
+
+  // DEPRECATED: Creates an audio-enabled RTP receiver.
+  // TODO(solenberg): Remove, after updating downstream code.
   static RtpReceiver* CreateAudioReceiver(
       Clock* clock,
       RtpAudioFeedback* incoming_audio_feedback,
