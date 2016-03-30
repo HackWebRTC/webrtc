@@ -36,6 +36,11 @@
     }],
     ['include_tests==1', {
       'includes': [
+        'libjingle/xmllite/xmllite_tests.gypi',
+        'libjingle/xmpp/xmpp_tests.gypi',
+        'media/media_tests.gypi',
+        'p2p/p2p_tests.gypi',
+        'pc/pc_tests.gypi',
         'webrtc_tests.gypi',
       ],
     }],

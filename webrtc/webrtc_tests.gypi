@@ -18,9 +18,9 @@
         'libjingle/xmpp/xmpp.gyp:rtc_xmpp',
         'p2p/p2p.gyp:rtc_p2p',
         'p2p/p2p.gyp:libstunprober',
-        'p2p/p2p.gyp:rtc_p2p_unittest',
-        'libjingle/xmllite/xmllite.gyp:rtc_xmllite_unittest',
-        'libjingle/xmpp/xmpp.gyp:rtc_xmpp_unittest',
+        'rtc_p2p_unittest',
+        'rtc_xmllite_unittest',
+        'rtc_xmpp_unittest',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
       ],
@@ -357,6 +357,32 @@
           ],
           'sources': [
             'rtc_unittests.isolate',
+          ],
+        },
+        {
+          'target_name': 'rtc_media_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            'rtc_media_unittests',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+          ],
+          'sources': [
+            'rtc_media_unittests.isolate',
+          ],
+        },
+        {
+          'target_name': 'rtc_pc_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            'rtc_pc_unittests',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+          ],
+          'sources': [
+            'rtc_pc_unittests.isolate',
           ],
         },
         {
