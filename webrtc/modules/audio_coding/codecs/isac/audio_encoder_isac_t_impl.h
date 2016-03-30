@@ -21,7 +21,7 @@ namespace webrtc {
 template <typename T>
 typename AudioEncoderIsacT<T>::Config CreateIsacConfig(
     const CodecInst& codec_inst,
-    LockedIsacBandwidthInfo* bwinfo) {
+    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo) {
   typename AudioEncoderIsacT<T>::Config config;
   config.bwinfo = bwinfo;
   config.payload_type = codec_inst.pltype;
@@ -69,8 +69,9 @@ AudioEncoderIsacT<T>::AudioEncoderIsacT(const Config& config) {
 }
 
 template <typename T>
-AudioEncoderIsacT<T>::AudioEncoderIsacT(const CodecInst& codec_inst,
-                                        LockedIsacBandwidthInfo* bwinfo)
+AudioEncoderIsacT<T>::AudioEncoderIsacT(
+    const CodecInst& codec_inst,
+    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo)
     : AudioEncoderIsacT(CreateIsacConfig<T>(codec_inst, bwinfo)) {}
 
 template <typename T>

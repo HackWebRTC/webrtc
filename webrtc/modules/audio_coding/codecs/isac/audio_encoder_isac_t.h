@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
 
@@ -30,7 +31,7 @@ class AudioEncoderIsacT final : public AudioEncoder {
   struct Config {
     bool IsOk() const;
 
-    LockedIsacBandwidthInfo* bwinfo = nullptr;
+    rtc::scoped_refptr<LockedIsacBandwidthInfo> bwinfo;
 
     int payload_type = 103;
     int sample_rate_hz = 16000;
@@ -50,8 +51,9 @@ class AudioEncoderIsacT final : public AudioEncoder {
   };
 
   explicit AudioEncoderIsacT(const Config& config);
-  explicit AudioEncoderIsacT(const CodecInst& codec_inst,
-                             LockedIsacBandwidthInfo* bwinfo);
+  explicit AudioEncoderIsacT(
+      const CodecInst& codec_inst,
+      const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo);
   ~AudioEncoderIsacT() override;
 
   size_t MaxEncodedBytes() const override;
@@ -77,7 +79,7 @@ class AudioEncoderIsacT final : public AudioEncoder {
 
   Config config_;
   typename T::instance_type* isac_state_ = nullptr;
-  LockedIsacBandwidthInfo* bwinfo_ = nullptr;
+  rtc::scoped_refptr<LockedIsacBandwidthInfo> bwinfo_;
 
   // Have we accepted input but not yet emitted it in a packet?
   bool packet_in_progress_ = false;

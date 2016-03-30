@@ -18,23 +18,16 @@
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/typedefs.h"
 
-#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
-#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
-#else
-// Dummy implementation, for when we don't have iSAC.
-namespace webrtc {
-class LockedIsacBandwidthInfo {};
-}
-#endif
-
 namespace webrtc {
 
 struct CodecInst;
+class LockedIsacBandwidthInfo;
 
 namespace acm2 {
 
@@ -229,7 +222,7 @@ class RentACodec {
   std::unique_ptr<AudioEncoder> speech_encoder_;
   std::unique_ptr<AudioEncoder> cng_encoder_;
   std::unique_ptr<AudioEncoder> red_encoder_;
-  LockedIsacBandwidthInfo isac_bandwidth_info_;
+  rtc::scoped_refptr<LockedIsacBandwidthInfo> isac_bandwidth_info_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RentACodec);
 };

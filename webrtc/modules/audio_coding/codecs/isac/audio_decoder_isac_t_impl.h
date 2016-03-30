@@ -22,7 +22,8 @@ AudioDecoderIsacT<T>::AudioDecoderIsacT()
     : AudioDecoderIsacT(nullptr) {}
 
 template <typename T>
-AudioDecoderIsacT<T>::AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo)
+AudioDecoderIsacT<T>::AudioDecoderIsacT(
+    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo)
     : bwinfo_(bwinfo), decoder_sample_rate_hz_(-1) {
   RTC_CHECK_EQ(0, T::Create(&isac_state_));
   T::DecoderInit(isac_state_);

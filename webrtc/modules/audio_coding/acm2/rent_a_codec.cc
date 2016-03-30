@@ -40,6 +40,10 @@
 #include "webrtc/modules/audio_coding/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/acm2/acm_common_defs.h"
 
+#if defined(WEBRTC_CODEC_ISACFX) || defined(WEBRTC_CODEC_ISAC)
+#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
+#endif
+
 namespace webrtc {
 namespace acm2 {
 
@@ -145,8 +149,9 @@ namespace {
 
 // Returns a new speech encoder, or null on error.
 // TODO(kwiberg): Don't handle errors here (bug 5033)
-std::unique_ptr<AudioEncoder> CreateEncoder(const CodecInst& speech_inst,
-                                            LockedIsacBandwidthInfo* bwinfo) {
+std::unique_ptr<AudioEncoder> CreateEncoder(
+    const CodecInst& speech_inst,
+    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
   if (STR_CASE_CMP(speech_inst.plname, "isac") == 0)
     return std::unique_ptr<AudioEncoder>(
@@ -221,7 +226,7 @@ std::unique_ptr<AudioEncoder> CreateCngEncoder(
 }
 
 std::unique_ptr<AudioDecoder> CreateIsacDecoder(
-    LockedIsacBandwidthInfo* bwinfo) {
+    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
   return std::unique_ptr<AudioDecoder>(new AudioDecoderIsacFix(bwinfo));
 #elif defined(WEBRTC_CODEC_ISAC)
@@ -234,12 +239,16 @@ std::unique_ptr<AudioDecoder> CreateIsacDecoder(
 
 }  // namespace
 
-RentACodec::RentACodec() = default;
+RentACodec::RentACodec() {
+#if defined(WEBRTC_CODEC_ISACFX) || defined(WEBRTC_CODEC_ISAC)
+  isac_bandwidth_info_ = new LockedIsacBandwidthInfo;
+#endif
+}
 RentACodec::~RentACodec() = default;
 
 std::unique_ptr<AudioEncoder> RentACodec::RentEncoder(
     const CodecInst& codec_inst) {
-  return CreateEncoder(codec_inst, &isac_bandwidth_info_);
+  return CreateEncoder(codec_inst, isac_bandwidth_info_);
 }
 
 RentACodec::StackParameters::StackParameters() {
@@ -295,7 +304,7 @@ std::unique_ptr<AudioEncoder> RentACodec::RentEncoderStack(
 }
 
 std::unique_ptr<AudioDecoder> RentACodec::RentIsacDecoder() {
-  return CreateIsacDecoder(&isac_bandwidth_info_);
+  return CreateIsacDecoder(isac_bandwidth_info_);
 }
 
 }  // namespace acm2

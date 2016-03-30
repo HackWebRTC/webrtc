@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
 
@@ -22,7 +23,8 @@ template <typename T>
 class AudioDecoderIsacT final : public AudioDecoder {
  public:
   AudioDecoderIsacT();
-  explicit AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo);
+  explicit AudioDecoderIsacT(
+      const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo);
   ~AudioDecoderIsacT() override;
 
   bool HasDecodePlc() const override;
@@ -43,7 +45,7 @@ class AudioDecoderIsacT final : public AudioDecoder {
 
  private:
   typename T::instance_type* isac_state_;
-  LockedIsacBandwidthInfo* bwinfo_;
+  rtc::scoped_refptr<LockedIsacBandwidthInfo> bwinfo_;
   int decoder_sample_rate_hz_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacT);
