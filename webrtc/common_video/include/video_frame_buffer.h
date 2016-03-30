@@ -81,6 +81,10 @@ class I420Buffer : public VideoFrameBuffer {
   void* native_handle() const override;
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
 
+  // Create a new buffer and copy the pixel data.
+  static rtc::scoped_refptr<I420Buffer> Copy(
+      const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+
  protected:
   ~I420Buffer() override;
 

@@ -12,6 +12,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/keep_ref_until_done.h"
+#include "libyuv/convert.h"
 
 // Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
 static const int kBufferAlignment = 64;
@@ -115,6 +116,23 @@ void* I420Buffer::native_handle() const {
 rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::NativeToI420Buffer() {
   RTC_NOTREACHED();
   return nullptr;
+}
+
+rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
+    const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
+  int width = buffer->width();
+  int height = buffer->height();
+  rtc::scoped_refptr<I420Buffer> copy =
+      new rtc::RefCountedObject<I420Buffer>(width, height);
+  RTC_CHECK(libyuv::I420Copy(buffer->data(kYPlane), buffer->stride(kYPlane),
+                             buffer->data(kUPlane), buffer->stride(kUPlane),
+                             buffer->data(kVPlane), buffer->stride(kVPlane),
+                             copy->MutableData(kYPlane), copy->stride(kYPlane),
+                             copy->MutableData(kUPlane), copy->stride(kUPlane),
+                             copy->MutableData(kVPlane), copy->stride(kVPlane),
+                             width, height) == 0);
+
+  return copy;
 }
 
 NativeHandleBuffer::NativeHandleBuffer(void* native_handle,

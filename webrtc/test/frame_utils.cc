@@ -47,5 +47,23 @@ bool FramesEqual(const webrtc::VideoFrame& f1, const webrtc::VideoFrame& f2) {
                     f1.stride(webrtc::kVPlane), half_width, half_height);
 }
 
+bool FrameBufsEqual(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& f1,
+                    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& f2) {
+  if (f1->width() != f2->width() || f1->height() != f2->height() ||
+      f1->stride(webrtc::kYPlane) != f2->stride(webrtc::kYPlane) ||
+      f1->stride(webrtc::kUPlane) != f2->stride(webrtc::kUPlane) ||
+      f1->stride(webrtc::kVPlane) != f2->stride(webrtc::kVPlane)) {
+    return false;
+  }
+  const int half_width = (f1->width() + 1) / 2;
+  const int half_height = (f1->height() + 1) / 2;
+  return EqualPlane(f1->data(webrtc::kYPlane), f2->data(webrtc::kYPlane),
+                    f1->stride(webrtc::kYPlane), f1->width(), f1->height()) &&
+         EqualPlane(f1->data(webrtc::kUPlane), f2->data(webrtc::kUPlane),
+                    f1->stride(webrtc::kUPlane), half_width, half_height) &&
+         EqualPlane(f1->data(webrtc::kVPlane), f2->data(webrtc::kVPlane),
+                    f1->stride(webrtc::kVPlane), half_width, half_height);
+}
+
 }  // namespace test
 }  // namespace webrtc

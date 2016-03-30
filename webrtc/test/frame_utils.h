@@ -11,9 +11,11 @@
 #define WEBRTC_TEST_FRAME_UTILS_H_
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc {
 class VideoFrame;
+class VideoFrameBuffer;
 namespace test {
 
 bool EqualPlane(const uint8_t* data1,
@@ -23,6 +25,9 @@ bool EqualPlane(const uint8_t* data1,
                 int height);
 
 bool FramesEqual(const webrtc::VideoFrame& f1, const webrtc::VideoFrame& f2);
+
+bool FrameBufsEqual(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& f1,
+                    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& f2);
 
 }  // namespace test
 }  // namespace webrtc

@@ -254,4 +254,14 @@ TEST(TestVideoFrame, TextureInitialValues) {
   EXPECT_EQ(20, frame.render_time_ms());
 }
 
+TEST(TestI420FrameBuffer, Copy) {
+  rtc::scoped_refptr<I420Buffer> buf1(
+      new rtc::RefCountedObject<I420Buffer>(20, 10));
+  memset(buf1->MutableData(kYPlane), 1, 200);
+  memset(buf1->MutableData(kUPlane), 2, 50);
+  memset(buf1->MutableData(kVPlane), 3, 50);
+  rtc::scoped_refptr<I420Buffer> buf2 = I420Buffer::Copy(buf1);
+  EXPECT_TRUE(test::FrameBufsEqual(buf1, buf2));
+}
+
 }  // namespace webrtc
