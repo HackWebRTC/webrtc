@@ -77,19 +77,19 @@ void RunBitexactnessTest(int sample_rate_hz,
   float speech_probability = noise_suppressor.speech_probability();
   std::vector<float> noise_estimate = noise_suppressor.NoiseEstimate();
 
-  const float kTolerance = 1.0f / 32768.0f;
+  const float kVectorElementErrorBound = 1.0f / 32768.0f;
   EXPECT_FLOAT_EQ(speech_probability_reference, speech_probability);
-  EXPECT_TRUE(test::BitExactVector(noise_estimate_reference, noise_estimate,
-                                   kTolerance));
+  EXPECT_TRUE(test::VerifyArray(noise_estimate_reference, noise_estimate,
+                                kVectorElementErrorBound));
 
   // Compare the output with the reference. Only the first values of the output
   // from last frame processed are compared in order not having to specify all
   // preceeding frames as testvectors. As the algorithm being tested has a
   // memory, testing only the last frame implicitly also tests the preceeding
   // frames.
-  EXPECT_TRUE(test::BitExactFrame(
+  EXPECT_TRUE(test::VerifyDeinterleavedArray(
       capture_config.num_frames(), capture_config.num_channels(),
-      output_reference, capture_output, kTolerance));
+      output_reference, capture_output, kVectorElementErrorBound));
 }
 
 }  // namespace

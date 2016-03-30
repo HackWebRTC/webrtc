@@ -37,17 +37,18 @@ void ReadFloatSamplesFromStereoFile(size_t samples_per_channel,
 
 // Verifies a frame against a reference and returns the results as an
 // AssertionResult.
-::testing::AssertionResult BitExactFrame(size_t samples_per_channel,
-                                         size_t num_channels,
-                                         rtc::ArrayView<const float> reference,
-                                         rtc::ArrayView<const float> output,
-                                         float tolerance);
+::testing::AssertionResult VerifyDeinterleavedArray(
+    size_t samples_per_channel,
+    size_t num_channels,
+    rtc::ArrayView<const float> reference,
+    rtc::ArrayView<const float> output,
+    float element_error_bound);
 
 // Verifies a vector against a reference and returns the results as an
 // AssertionResult.
-::testing::AssertionResult BitExactVector(rtc::ArrayView<const float> reference,
-                                          rtc::ArrayView<const float> output,
-                                          float tolerance);
+::testing::AssertionResult VerifyArray(rtc::ArrayView<const float> reference,
+                                       rtc::ArrayView<const float> output,
+                                       float element_error_bound);
 
 }  // namespace test
 }  // namespace webrtc

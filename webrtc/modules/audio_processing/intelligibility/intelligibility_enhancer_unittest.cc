@@ -299,16 +299,16 @@ void RunBitexactnessTest(int sample_rate_hz,
   test::ExtractVectorFromAudioBuffer(render_config, &render_buffer,
                                      &render_output);
 
-  const float kTolerance = 1.f / static_cast<float>(1 << 15);
+  const float kElementErrorBound = 1.f / static_cast<float>(1 << 15);
 
   // Compare the output with the reference. Only the first values of the output
   // from last frame processed are compared in order not having to specify all
   // preceeding frames as testvectors. As the algorithm being tested has a
   // memory, testing only the last frame implicitly also tests the preceeding
   // frames.
-  EXPECT_TRUE(test::BitExactFrame(render_buffer.num_frames(),
-                                  render_config.num_channels(),
-                                  output_reference, render_output, kTolerance));
+  EXPECT_TRUE(test::VerifyDeinterleavedArray(
+      render_buffer.num_frames(), render_config.num_channels(),
+      output_reference, render_output, kElementErrorBound));
 }
 
 }  // namespace

@@ -111,16 +111,16 @@ void RunBitExactnessTest(int sample_rate_hz,
   test::ExtractVectorFromAudioBuffer(capture_config, &capture_buffer,
                                      &capture_output);
 
-  const float kTolerance = 1.f / static_cast<float>(1 << 15);
+  const float kElementErrorBound = 1.f / static_cast<float>(1 << 15);
 
   // Compare the output with the reference. Only the first values of the output
   // from last frame processed are compared in order not having to specify all
   // preceeding frames as testvectors. As the algorithm being tested has a
   // memory, testing only the last frame implicitly also tests the preceeding
   // frames.
-  EXPECT_TRUE(test::BitExactFrame(
+  EXPECT_TRUE(test::VerifyDeinterleavedArray(
       capture_config.num_frames(), capture_config.num_channels(),
-      output_reference, capture_output, kTolerance));
+      output_reference, capture_output, kElementErrorBound));
 }
 
 // TODO(peah): Add bitexactness tests for scenarios with more than 2 input

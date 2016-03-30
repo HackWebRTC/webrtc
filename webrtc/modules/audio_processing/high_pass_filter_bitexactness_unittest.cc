@@ -82,9 +82,10 @@ void RunBitexactnessTest(int sample_rate,
             reference_frame_length);
   }
 
-  const float kTolerance = 1.0f / 32768.0f;
-  EXPECT_TRUE(test::BitExactFrame(reference_frame_length, num_channels,
-                                  reference, output_to_verify, kTolerance));
+  const float kElementErrorBound = 1.0f / 32768.0f;
+  EXPECT_TRUE(test::VerifyDeinterleavedArray(
+      reference_frame_length, num_channels, reference, output_to_verify,
+      kElementErrorBound));
 }
 
 // Method for forming a vector out of an array.

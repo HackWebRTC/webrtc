@@ -124,10 +124,10 @@ void RunBitExactnessTest(int sample_rate_hz,
   // preceeding frames as testvectors. As the algorithm being tested has a
   // memory, testing only the last frame implicitly also tests the preceeding
   // frames.
-  const float kTolerance = 1.0f / 32768.0f;
-  EXPECT_TRUE(test::BitExactFrame(
+  const float kElementErrorBound = 1.0f / 32768.0f;
+  EXPECT_TRUE(test::VerifyDeinterleavedArray(
       capture_config.num_frames(), capture_config.num_channels(),
-      output_reference, capture_output, kTolerance));
+      output_reference, capture_output, kElementErrorBound));
 }
 
 }  // namespace

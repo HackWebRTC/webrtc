@@ -70,11 +70,12 @@ void ReadFloatSamplesFromStereoFile(size_t samples_per_channel,
   }
 }
 
-::testing::AssertionResult BitExactFrame(size_t samples_per_channel,
-                                         size_t num_channels,
-                                         rtc::ArrayView<const float> reference,
-                                         rtc::ArrayView<const float> output,
-                                         float tolerance) {
+::testing::AssertionResult VerifyDeinterleavedArray(
+    size_t samples_per_channel,
+    size_t num_channels,
+    rtc::ArrayView<const float> reference,
+    rtc::ArrayView<const float> output,
+    float element_error_bound) {
   // Form vectors to compare the reference to. Only the first values of the
   // outputs are compared in order not having to specify all preceeding frames
   // as testvectors.
@@ -89,12 +90,12 @@ void ReadFloatSamplesFromStereoFile(size_t samples_per_channel,
                                 reference_frame_length);
   }
 
-  return BitExactVector(reference, output_to_verify, tolerance);
+  return VerifyArray(reference, output_to_verify, element_error_bound);
 }
 
-::testing::AssertionResult BitExactVector(rtc::ArrayView<const float> reference,
-                                          rtc::ArrayView<const float> output,
-                                          float tolerance) {
+::testing::AssertionResult VerifyArray(rtc::ArrayView<const float> reference,
+                                       rtc::ArrayView<const float> output,
+                                       float element_error_bound) {
   // The vectors are deemed to be bitexact only if
   // a) output have a size at least as long as the reference.
   // b) the samples in the reference are bitexact with the corresponding samples
@@ -106,7 +107,7 @@ void ReadFloatSamplesFromStereoFile(size_t samples_per_channel,
   } else {
     // Compare the first samples in the vectors.
     for (size_t k = 0; k < reference.size(); ++k) {
-      if (fabs(output[k] - reference[k]) > tolerance) {
+      if (fabs(output[k] - reference[k]) > element_error_bound) {
         equal = false;
         break;
       }
