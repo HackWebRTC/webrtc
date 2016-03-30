@@ -253,8 +253,8 @@ def CalculateChangedClang(new_cr_rev):
 
 def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
                           new_commit_pos, changed_deps_list, clang_change):
-  current_cr_rev = current_cr_rev[0:7]
-  new_cr_rev = new_cr_rev[0:7]
+  current_cr_rev = current_cr_rev[0:10]
+  new_cr_rev = new_cr_rev[0:10]
   rev_interval = '%s..%s' % (current_cr_rev, new_cr_rev)
   git_number_interval = '%s:%s' % (current_commit_pos, new_commit_pos)
 
@@ -271,8 +271,8 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
 
     for c in changed_deps_list:
       commit_msg.append('* %s: %s/+log/%s..%s' % (c.path, c.url,
-                                                  c.current_rev[0:7],
-                                                  c.new_rev[0:7]))
+                                                  c.current_rev[0:10],
+                                                  c.new_rev[0:10]))
       if 'libvpx' in c.path:
         tbr_authors += 'marpan@webrtc.org, stefan@webrtc.org, '
 
