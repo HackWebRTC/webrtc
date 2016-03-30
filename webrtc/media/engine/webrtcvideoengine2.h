@@ -19,6 +19,7 @@
 
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/networkroute.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/videosinkinterface.h"
@@ -167,6 +168,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override;
+  void OnNetworkRouteChanged(const std::string& transport_name,
+                             const NetworkRoute& network_route) override;
   void SetInterface(NetworkInterface* iface) override;
 
   // Implemented for VideoMediaChannelTest.

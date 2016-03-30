@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/packetsocketfactory.h"
 #include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/p2p/base/stun.h"
@@ -410,8 +411,9 @@ class Port : public PortInterface, public rtc::MessageHandler,
 
 // Represents a communication link between a port on the local client and a
 // port on the remote client.
-class Connection : public rtc::MessageHandler,
-    public sigslot::has_slots<> {
+class Connection : public CandidatePairInterface,
+                   public rtc::MessageHandler,
+                   public sigslot::has_slots<> {
  public:
   struct SentPing {
     SentPing(const std::string id, int64_t sent_time)
@@ -435,11 +437,11 @@ class Connection : public rtc::MessageHandler,
   Port* port() { return port_; }
   const Port* port() const { return port_; }
 
+  // Implementation of virtual methods in CandidatePairInterface.
   // Returns the description of the local port
   virtual const Candidate& local_candidate() const;
-
   // Returns the description of the remote port to which we communicate.
-  const Candidate& remote_candidate() const { return remote_candidate_; }
+  virtual const Candidate& remote_candidate() const;
 
   // Returns the pair priority.
   uint64_t priority() const;

@@ -20,6 +20,7 @@
 
 #include "webrtc/audio_sink.h"
 #include "webrtc/base/copyonwritebuffer.h"
+#include "webrtc/base/networkroute.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaengine.h"
@@ -178,6 +179,12 @@ template <class Base> class RtpHelper : public Base {
     return ready_to_send_;
   }
 
+  NetworkRoute last_network_route() const { return last_network_route_; }
+  int num_network_route_changes() const { return num_network_route_changes_; }
+  void set_num_network_route_changes(int changes) {
+    num_network_route_changes_ = changes;
+  }
+
  protected:
   bool MuteStream(uint32_t ssrc, bool mute) {
     if (!HasSendStream(ssrc) && ssrc != 0) {
@@ -216,6 +223,11 @@ template <class Base> class RtpHelper : public Base {
   virtual void OnReadyToSend(bool ready) {
     ready_to_send_ = ready;
   }
+  virtual void OnNetworkRouteChanged(const std::string& transport_name,
+                                     const NetworkRoute& network_route) {
+    last_network_route_ = network_route;
+    ++num_network_route_changes_;
+  }
   bool fail_set_send_codecs() const { return fail_set_send_codecs_; }
   bool fail_set_recv_codecs() const { return fail_set_recv_codecs_; }
 
@@ -235,6 +247,8 @@ template <class Base> class RtpHelper : public Base {
   uint32_t send_ssrc_;
   std::string rtcp_cname_;
   bool ready_to_send_;
+  NetworkRoute last_network_route_;
+  int num_network_route_changes_ = 0;
 };
 
 class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {

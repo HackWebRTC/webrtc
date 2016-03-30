@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/transportchannel.h"
 #include "webrtc/p2p/base/transportcontroller.h"
@@ -452,6 +453,24 @@ class FakeTransport : public Transport {
   rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
 };
 
+// Fake candidate pair class, which can be passed to BaseChannel for testing
+// purposes.
+class FakeCandidatePair : public CandidatePairInterface {
+ public:
+  FakeCandidatePair(const Candidate& local_candidate,
+                    const Candidate& remote_candidate)
+      : local_candidate_(local_candidate),
+        remote_candidate_(remote_candidate) {}
+  const Candidate& local_candidate() const override { return local_candidate_; }
+  const Candidate& remote_candidate() const override {
+    return remote_candidate_;
+  }
+
+ private:
+  Candidate local_candidate_;
+  Candidate remote_candidate_;
+};
+
 // Fake TransportController class, which can be passed into a BaseChannel object
 // for test purposes. Can be connected to other FakeTransportControllers via
 // Connect().
@@ -501,6 +520,18 @@ class FakeTransportController : public TransportController {
     }
     return TransportController::CreateTransportChannel_w(transport_name,
                                                          component);
+  }
+
+  FakeCandidatePair* CreateFakeCandidatePair(
+      const rtc::SocketAddress& local_address,
+      int16_t local_network_id,
+      const rtc::SocketAddress& remote_address,
+      int16_t remote_network_id) {
+    Candidate local_candidate(0, "udp", local_address, 0u, "", "", "local", 0,
+                              "foundation", local_network_id, 0);
+    Candidate remote_candidate(0, "udp", remote_address, 0u, "", "", "local", 0,
+                               "foundation", remote_network_id, 0);
+    return new FakeCandidatePair(local_candidate, remote_candidate);
   }
 
   void set_fail_channel_creation(bool fail_channel_creation) {

@@ -1410,6 +1410,13 @@ void WebRtcVideoChannel2::OnReadyToSend(bool ready) {
       ready ? webrtc::kNetworkUp : webrtc::kNetworkDown);
 }
 
+void WebRtcVideoChannel2::OnNetworkRouteChanged(
+    const std::string& transport_name,
+    const NetworkRoute& network_route) {
+  // TODO(honghaiz): uncomment this once the function in call is implemented.
+  // call_->OnNetworkRouteChanged(transport_name, network_route);
+}
+
 bool WebRtcVideoChannel2::MuteStream(uint32_t ssrc, bool mute) {
   LOG(LS_VERBOSE) << "MuteStream: " << ssrc << " -> "
                   << (mute ? "mute" : "unmute");

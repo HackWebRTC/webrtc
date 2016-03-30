@@ -813,6 +813,10 @@ const Candidate& Connection::local_candidate() const {
   return port_->Candidates()[local_candidate_index_];
 }
 
+const Candidate& Connection::remote_candidate() const {
+  return remote_candidate_;
+}
+
 uint64_t Connection::priority() const {
   uint64_t priority = 0;
   // RFC 5245 - 5.7.2.  Computing Pair Priority and Ordering Pairs

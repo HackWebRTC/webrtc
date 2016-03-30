@@ -18,6 +18,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
 #include "webrtc/p2p/base/stunport.h"   // For STUN_PORT_TYPE.
@@ -1165,6 +1166,9 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
   } else {
     LOG_J(LS_INFO, this) << "No best connection";
   }
+  // TODO(honghaiz): rename best_connection_ with selected_connection_ or
+  // selected_candidate pair_.
+  SignalSelectedCandidatePairChanged(this, best_connection_);
 }
 
 // Warning: UpdateState should eventually be called whenever a connection

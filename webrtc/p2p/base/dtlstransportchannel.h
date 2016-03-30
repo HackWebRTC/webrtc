@@ -216,6 +216,9 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
                            const Candidates& candidates);
   void OnRoleConflict(TransportChannelImpl* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
+  void OnSelectedCandidatePairChanged(
+      TransportChannel* channel,
+      CandidatePairInterface* selected_candidate_pair);
   void OnConnectionRemoved(TransportChannelImpl* channel);
   void Reconnect();
 

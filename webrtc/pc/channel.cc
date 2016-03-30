@@ -19,6 +19,7 @@
 #include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/networkroute.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
@@ -346,6 +347,8 @@ void BaseChannel::ConnectToTransportChannel(TransportChannel* tc) {
   tc->SignalReadPacket.connect(this, &BaseChannel::OnChannelRead);
   tc->SignalReadyToSend.connect(this, &BaseChannel::OnReadyToSend);
   tc->SignalDtlsState.connect(this, &BaseChannel::OnDtlsState);
+  tc->SignalSelectedCandidatePairChanged.connect(
+      this, &BaseChannel::OnSelectedCandidatePairChanged);
 }
 
 void BaseChannel::DisconnectFromTransportChannel(TransportChannel* tc) {
@@ -502,6 +505,20 @@ void BaseChannel::OnDtlsState(TransportChannel* channel,
   if (state != DTLS_TRANSPORT_CONNECTED) {
     srtp_filter_.ResetParams();
   }
+}
+
+void BaseChannel::OnSelectedCandidatePairChanged(
+    TransportChannel* channel,
+    CandidatePairInterface* selected_candidate_pair) {
+  ASSERT(channel == transport_channel_ || channel == rtcp_transport_channel_);
+  NetworkRoute network_route;
+  if (selected_candidate_pair) {
+    network_route =
+        NetworkRoute(selected_candidate_pair->local_candidate().network_id(),
+                     selected_candidate_pair->remote_candidate().network_id());
+  }
+  media_channel()->OnNetworkRouteChanged(channel->transport_name(),
+                                         network_route);
 }
 
 void BaseChannel::SetReadyToSend(bool rtcp, bool ready) {

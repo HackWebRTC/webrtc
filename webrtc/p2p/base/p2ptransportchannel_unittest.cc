@@ -317,6 +317,8 @@ class P2PTransportChannelTestBase : public testing::Test,
         this, &P2PTransportChannelTestBase::OnReadPacket);
     channel->SignalRoleConflict.connect(
         this, &P2PTransportChannelTestBase::OnRoleConflict);
+    channel->SignalSelectedCandidatePairChanged.connect(
+        this, &P2PTransportChannelTestBase::OnSelectedCandidatePairChanged);
     channel->SetIceCredentials(local_ice_ufrag, local_ice_pwd);
     if (clear_remote_candidates_ufrag_pwd_) {
       // This only needs to be set if we're clearing them from the
@@ -741,6 +743,13 @@ class P2PTransportChannelTestBase : public testing::Test,
             cricket::ICEROLE_CONTROLLED : cricket::ICEROLE_CONTROLLING;
     channel->SetIceRole(new_role);
   }
+
+  void OnSelectedCandidatePairChanged(
+      cricket::TransportChannel* channel,
+      cricket::CandidatePairInterface* candidate_pair) {
+    ++num_selected_candidate_pair_changes_;
+  }
+
   int SendData(cricket::TransportChannel* channel,
                const char* data, size_t len) {
     rtc::PacketOptions options;
@@ -794,6 +803,13 @@ class P2PTransportChannelTestBase : public testing::Test,
     force_relay_ = relay;
   }
 
+  int num_selected_candidate_pair_changes() {
+    return num_selected_candidate_pair_changes_;
+  }
+  void set_num_selected_candidate_pair_changes(int num) {
+    num_selected_candidate_pair_changes_ = num;
+  }
+
  private:
   rtc::Thread* main_;
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
@@ -808,6 +824,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   rtc::SocksProxyServer socks_server2_;
   Endpoint ep1_;
   Endpoint ep2_;
+  int num_selected_candidate_pair_changes_ = 0;
   bool clear_remote_candidates_ufrag_pwd_;
   bool force_relay_;
 };
@@ -1578,8 +1595,9 @@ TEST_F(P2PTransportChannelMultihomedTest, DISABLED_TestBasic) {
   Test(kLocalUdpToLocalUdp);
 }
 
-// Test that we can quickly switch links if an interface goes down.
-// The controlled side has two interfaces and one will die.
+// Test that we can quickly switch links if an interface goes down. This also
+// tests that when the link switches, |SignalSelectedCandidatePairChanged| will
+// be fired. The controlled side has two interfaces and one will die.
 TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   AddAddress(0, kPublicAddrs[0]);
   // Adding alternate address will make sure |kPublicAddrs| has the higher
@@ -1607,6 +1625,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
 
+  set_num_selected_candidate_pair_changes(0);
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[1]);
@@ -1627,12 +1646,15 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[1]));
   EXPECT_TRUE(
       LocalCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[1]));
+  // It should have changed twice, one on each side.
+  EXPECT_EQ(2, num_selected_candidate_pair_changes());
 
   DestroyChannels();
 }
 
-// Test that we can quickly switch links if an interface goes down.
-// The controlling side has two interfaces and one will die.
+// Test that we can quickly switch links if an interface goes down. This also
+// tests that when the link switches, |SignalSelectedCandidatePairChanged| will
+// be fired. The controlling side has two interfaces and one will die.
 TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   // Adding alternate address will make sure |kPublicAddrs| has the higher
   // priority than others. This is due to FakeNetwork::AddInterface method.
@@ -1658,6 +1680,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   cricket::IceConfig config = CreateIceConfig(1000, false);
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
+  set_num_selected_candidate_pair_changes(0);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
@@ -1679,6 +1702,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
   EXPECT_TRUE(
       RemoteCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[0]));
+  EXPECT_EQ(2, num_selected_candidate_pair_changes());
 
   DestroyChannels();
 }

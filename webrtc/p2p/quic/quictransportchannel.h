@@ -230,6 +230,9 @@ class QuicTransportChannel : public TransportChannelImpl,
   void OnCandidateGathered(TransportChannelImpl* channel, const Candidate& c);
   void OnRoleConflict(TransportChannelImpl* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
+  void OnSelectedCandidatePairChanged(
+      TransportChannel* channel,
+      CandidatePairInterface* selected_candidate_pair);
   void OnConnectionRemoved(TransportChannelImpl* channel);
 
   // Callbacks for |quic_|.

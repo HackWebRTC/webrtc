@@ -20,6 +20,7 @@
 #include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/networkroute.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
@@ -387,6 +388,9 @@ class MediaChannel : public sigslot::has_slots<> {
                               const rtc::PacketTime& packet_time) = 0;
   // Called when the socket's ability to send has changed.
   virtual void OnReadyToSend(bool ready) = 0;
+  // Called when the network route used for sending packets changed.
+  virtual void OnNetworkRouteChanged(const std::string& transport_name,
+                                     const NetworkRoute& network_route) = 0;
   // Creates a new outgoing media stream with SSRCs and CNAME as described
   // by sp.
   virtual bool AddSendStream(const StreamParams& sp) = 0;
@@ -1103,6 +1107,9 @@ class DataMediaChannel : public MediaChannel {
 
   virtual bool SetSend(bool send) = 0;
   virtual bool SetReceive(bool receive) = 0;
+
+  virtual void OnNetworkRouteChanged(const std::string& transport_name,
+                                     const NetworkRoute& network_route) {}
 
   virtual bool SendData(
       const SendDataParams& params,

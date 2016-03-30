@@ -207,6 +207,10 @@ class BaseChannel
 
   void OnDtlsState(TransportChannel* channel, DtlsTransportState state);
 
+  void OnSelectedCandidatePairChanged(
+      TransportChannel* channel,
+      CandidatePairInterface* selected_candidate_pair);
+
   bool PacketIsRtcp(const TransportChannel* channel, const char* data,
                     size_t len);
   bool SendPacket(bool rtcp,

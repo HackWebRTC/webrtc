@@ -490,6 +490,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     }
   }
 
+  cricket::CandidatePairInterface* last_selected_candidate_pair() {
+    return last_selected_candidate_pair_;
+  }
+
   void AddLegacyStreamInContent(uint32_t ssrc,
                                 int flags,
                                 typename T::Content* content) {
@@ -949,6 +953,41 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       EXPECT_TRUE(media_channel2_->playout());
     }
     EXPECT_TRUE(media_channel2_->sending());
+  }
+
+  // Tests that when the transport channel signals a candidate pair change
+  // event, the media channel will receive a call on the network route change.
+  void TestNetworkRouteChanges() {
+    CreateChannels(0, 0);
+
+    cricket::TransportChannel* transport_channel1 =
+        channel1_->transport_channel();
+    ASSERT_TRUE(transport_channel1 != nullptr);
+    typename T::MediaChannel* media_channel1 =
+        static_cast<typename T::MediaChannel*>(channel1_->media_channel());
+    ASSERT_TRUE(media_channel1 != nullptr);
+
+    media_channel1_->set_num_network_route_changes(0);
+    // The transport channel becomes disconnected.
+    transport_channel1->SignalSelectedCandidatePairChanged(transport_channel1,
+                                                           nullptr);
+    EXPECT_EQ(1, media_channel1_->num_network_route_changes());
+    EXPECT_FALSE(media_channel1->last_network_route().connected);
+
+    media_channel1_->set_num_network_route_changes(0);
+    // The transport channel becomes connected.
+    rtc::SocketAddress local_address("192.168.1.1", 1000 /* port number */);
+    rtc::SocketAddress remote_address("192.168.1.2", 2000 /* port number */);
+    uint16_t local_net_id = 1;
+    uint16_t remote_net_id = 2;
+    rtc::scoped_ptr<cricket::CandidatePairInterface> candidate_pair(
+        transport_controller1_.CreateFakeCandidatePair(
+            local_address, local_net_id, remote_address, remote_net_id));
+    transport_channel1->SignalSelectedCandidatePairChanged(
+        transport_channel1, candidate_pair.get());
+    EXPECT_EQ(1, media_channel1_->num_network_route_changes());
+    cricket::NetworkRoute expected_network_route(local_net_id, remote_net_id);
+    EXPECT_EQ(expected_network_route, media_channel1->last_network_route());
   }
 
   // Test setting up a call.
@@ -1871,6 +1910,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   std::string rtcp_packet_;
   int media_info_callbacks1_;
   int media_info_callbacks2_;
+  cricket::CandidatePairInterface* last_selected_candidate_pair_;
 };
 
 template<>
@@ -1996,7 +2036,6 @@ class VideoChannelTest
 
 
 // VoiceChannelTest
-
 TEST_F(VoiceChannelTest, TestInit) {
   Base::TestInit();
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
@@ -2067,6 +2106,10 @@ TEST_F(VoiceChannelTest, TestMuteStream) {
 
 TEST_F(VoiceChannelTest, TestMediaContentDirection) {
   Base::TestMediaContentDirection();
+}
+
+TEST_F(VoiceChannelTest, TestNetworkRouteChanges) {
+  Base::TestNetworkRouteChanges();
 }
 
 TEST_F(VoiceChannelTest, TestCallSetup) {
@@ -2397,6 +2440,10 @@ TEST_F(VideoChannelTest, TestMuteStream) {
 
 TEST_F(VideoChannelTest, TestMediaContentDirection) {
   Base::TestMediaContentDirection();
+}
+
+TEST_F(VideoChannelTest, TestNetworkRouteChanges) {
+  Base::TestNetworkRouteChanges();
 }
 
 TEST_F(VideoChannelTest, TestCallSetup) {

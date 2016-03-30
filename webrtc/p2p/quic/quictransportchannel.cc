@@ -140,6 +140,8 @@ QuicTransportChannel::QuicTransportChannel(TransportChannelImpl* channel)
                                        &QuicTransportChannel::OnRoleConflict);
   channel_->SignalRouteChange.connect(this,
                                       &QuicTransportChannel::OnRouteChange);
+  channel_->SignalSelectedCandidatePairChanged.connect(
+      this, &QuicTransportChannel::OnSelectedCandidatePairChanged);
   channel_->SignalConnectionRemoved.connect(
       this, &QuicTransportChannel::OnConnectionRemoved);
   channel_->SignalReceivingState.connect(
@@ -385,6 +387,13 @@ void QuicTransportChannel::OnRouteChange(TransportChannel* channel,
                                          const Candidate& candidate) {
   ASSERT(channel == channel_);
   SignalRouteChange(this, candidate);
+}
+
+void QuicTransportChannel::OnSelectedCandidatePairChanged(
+    TransportChannel* channel,
+    CandidatePairInterface* selected_candidate_pair) {
+  ASSERT(channel == channel_);
+  SignalSelectedCandidatePairChanged(this, selected_candidate_pair);
 }
 
 void QuicTransportChannel::OnConnectionRemoved(TransportChannelImpl* channel) {

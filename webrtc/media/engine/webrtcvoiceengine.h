@@ -18,6 +18,7 @@
 
 #include "webrtc/audio_state.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/networkroute.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
@@ -183,6 +184,8 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
                         const rtc::PacketTime& packet_time) override;
   void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
                       const rtc::PacketTime& packet_time) override;
+  void OnNetworkRouteChanged(const std::string& transport_name,
+                             const NetworkRoute& network_route) override;
   void OnReadyToSend(bool ready) override;
   bool GetStats(VoiceMediaInfo* info) override;
 
