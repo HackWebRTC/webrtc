@@ -49,6 +49,9 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   void RegisterExternalSendCodec(
       AudioEncoder* external_speech_encoder) override;
 
+  void ModifyEncoder(
+      FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) override;
+
   // Get current send codec.
   rtc::Optional<CodecInst> SendCodec() const override;
 
@@ -119,9 +122,10 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Get current playout frequency.
   int PlayoutFrequency() const override;
 
-  // Register possible receive codecs, can be called multiple times,
-  // for codecs, CNG, DTMF, RED.
   int RegisterReceiveCodec(const CodecInst& receive_codec) override;
+  int RegisterReceiveCodec(
+      const CodecInst& receive_codec,
+      FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) override;
 
   int RegisterExternalReceiveCodec(int rtp_payload_type,
                                    AudioDecoder* external_decoder,
@@ -213,6 +217,11 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
     const std::string histogram_name_;
   };
 
+  int RegisterReceiveCodecUnlocked(
+      const CodecInst& codec,
+      FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+
   int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
   int Encode(const InputData& input_data)
@@ -257,6 +266,8 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // encoder_factory_->rent_a_codec.RentEncoderStack or provided by a call to
   // RegisterEncoder.
   std::unique_ptr<AudioEncoder> encoder_stack_ GUARDED_BY(acm_crit_sect_);
+
+  std::unique_ptr<AudioDecoder> isac_decoder_ GUARDED_BY(acm_crit_sect_);
 
   // This is to keep track of CN instances where we can send DTMFs.
   uint8_t previous_pltype_ GUARDED_BY(acm_crit_sect_);

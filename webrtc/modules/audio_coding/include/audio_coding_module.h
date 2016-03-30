@@ -207,6 +207,52 @@ class AudioCodingModule {
   virtual void RegisterExternalSendCodec(
       AudioEncoder* external_speech_encoder) = 0;
 
+  // Just like std::function, FunctionView will wrap any callable and hide its
+  // actual type, exposing only its signature. But unlike std::function,
+  // FunctionView doesn't own its callable---it just points to it. Thus, it's a
+  // good choice mainly as a function argument when the callable argument will
+  // not be called again once the function has returned.
+  template <typename T>
+  class FunctionView;  // Undefined.
+
+  template <typename RetT, typename... ArgT>
+  class FunctionView<RetT(ArgT...)> final {
+   public:
+    // This constructor is implicit, so that callers won't have to convert
+    // lambdas to FunctionView<Blah(Blah, Blah)> explicitly. This is safe
+    // because FunctionView is only a reference to the real callable.
+    template <typename F>
+    FunctionView(F&& f)
+        : f_(&f), call_(Call<typename std::remove_reference<F>::type>) {}
+
+    RetT operator()(ArgT... args) const {
+      return call_(f_, std::forward<ArgT>(args)...);
+    }
+
+   private:
+    template <typename F>
+    static RetT Call(void* f, ArgT... args) {
+      return (*static_cast<F*>(f))(std::forward<ArgT>(args)...);
+    }
+    void* f_;
+    RetT (*call_)(void* f, ArgT... args);
+  };
+
+  // |modifier| is called exactly once with one argument: a pointer to the
+  // unique_ptr that holds the current encoder (which is null if there is no
+  // current encoder). For the duration of the call, |modifier| has exclusive
+  // access to the unique_ptr; it may call the encoder, steal the encoder and
+  // replace it with another encoder or with nullptr, etc.
+  virtual void ModifyEncoder(
+      FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
+
+  // Utility method for simply replacing the existing encoder with a new one.
+  void SetEncoder(std::unique_ptr<AudioEncoder> new_encoder) {
+    ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+      *encoder = std::move(new_encoder);
+    });
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // int32_t SendCodec()
   // Get parameters for the codec currently registered as send codec.
@@ -471,6 +517,13 @@ class AudioCodingModule {
   //    0 if the codec registered successfully.
   //
   virtual int RegisterReceiveCodec(const CodecInst& receive_codec) = 0;
+
+  // Register a decoder; call repeatedly to register multiple decoders. |df| is
+  // a decoder factory that returns an iSAC decoder; it will be called once if
+  // the decoder being registered is iSAC.
+  virtual int RegisterReceiveCodec(
+      const CodecInst& receive_codec,
+      FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) = 0;
 
   // Registers an external decoder. The name is only used to provide information
   // back to the caller about the decoder. Hence, the name is arbitrary, and may

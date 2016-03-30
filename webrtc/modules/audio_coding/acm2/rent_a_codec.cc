@@ -294,10 +294,8 @@ std::unique_ptr<AudioEncoder> RentACodec::RentEncoderStack(
   return encoder_stack;
 }
 
-AudioDecoder* RentACodec::RentIsacDecoder() {
-  if (!isac_decoder_)
-    isac_decoder_ = CreateIsacDecoder(&isac_bandwidth_info_);
-  return isac_decoder_.get();
+std::unique_ptr<AudioDecoder> RentACodec::RentIsacDecoder() {
+  return CreateIsacDecoder(&isac_bandwidth_info_);
 }
 
 }  // namespace acm2

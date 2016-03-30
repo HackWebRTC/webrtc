@@ -302,20 +302,41 @@ void AudioCodingModuleImpl::RegisterExternalSendCodec(
   encoder_stack_ = encoder_factory_->rent_a_codec.RentEncoderStack(sp);
 }
 
+void AudioCodingModuleImpl::ModifyEncoder(
+    FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
+  rtc::CritScope lock(&acm_crit_sect_);
+
+  // Wipe the encoder factory, so that everything that relies on it will fail.
+  // We don't want the complexity of supporting swapping back and forth.
+  if (encoder_factory_) {
+    encoder_factory_.reset();
+    RTC_CHECK(!encoder_stack_);  // Ensure we hadn't started using the factory.
+  }
+
+  modifier(&encoder_stack_);
+}
+
 // Get current send codec.
 rtc::Optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
   rtc::CritScope lock(&acm_crit_sect_);
-  auto* ci = encoder_factory_->codec_manager.GetCodecInst();
-  if (ci) {
-    return rtc::Optional<CodecInst>(*ci);
+  if (encoder_factory_) {
+    auto* ci = encoder_factory_->codec_manager.GetCodecInst();
+    if (ci) {
+      return rtc::Optional<CodecInst>(*ci);
+    }
+    CreateSpeechEncoderIfNecessary(encoder_factory_.get());
+    const std::unique_ptr<AudioEncoder>& enc =
+        encoder_factory_->codec_manager.GetStackParams()->speech_encoder;
+    if (enc) {
+      return rtc::Optional<CodecInst>(CodecManager::ForgeCodecInst(enc.get()));
+    }
+    return rtc::Optional<CodecInst>();
+  } else {
+    return encoder_stack_
+               ? rtc::Optional<CodecInst>(
+                     CodecManager::ForgeCodecInst(encoder_stack_.get()))
+               : rtc::Optional<CodecInst>();
   }
-  CreateSpeechEncoderIfNecessary(encoder_factory_.get());
-  const std::unique_ptr<AudioEncoder>& enc =
-      encoder_factory_->codec_manager.GetStackParams()->speech_encoder;
-  if (enc) {
-    return rtc::Optional<CodecInst>(CodecManager::ForgeCodecInst(enc.get()));
-  }
-  return rtc::Optional<CodecInst>();
 }
 
 // Get current send frequency.
@@ -665,10 +686,23 @@ int AudioCodingModuleImpl::PlayoutFrequency() const {
   return receiver_.last_output_sample_rate_hz();
 }
 
-// Register possible receive codecs, can be called multiple times,
-// for codecs, CNG (NB, WB and SWB), DTMF, RED.
 int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   rtc::CritScope lock(&acm_crit_sect_);
+  auto* ef = encoder_factory_.get();
+  return RegisterReceiveCodecUnlocked(
+      codec, [ef] { return ef->rent_a_codec.RentIsacDecoder(); });
+}
+
+int AudioCodingModuleImpl::RegisterReceiveCodec(
+    const CodecInst& codec,
+    FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) {
+  rtc::CritScope lock(&acm_crit_sect_);
+  return RegisterReceiveCodecUnlocked(codec, isac_factory);
+}
+
+int AudioCodingModuleImpl::RegisterReceiveCodecUnlocked(
+    const CodecInst& codec,
+    FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) {
   RTC_DCHECK(receiver_initialized_);
   if (codec.channels > 2) {
     LOG_F(LS_ERROR) << "Unsupported number of channels: " << codec.channels;
@@ -691,14 +725,15 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
     return -1;
   }
 
-  // Get |decoder| associated with |codec|. |decoder| is NULL if |codec| does
-  // not own its decoder.
-  return receiver_.AddCodec(
-      *codec_index, codec.pltype, codec.channels, codec.plfreq,
-      STR_CASE_CMP(codec.plname, "isac") == 0
-          ? encoder_factory_->rent_a_codec.RentIsacDecoder()
-          : nullptr,
-      codec.plname);
+  AudioDecoder* isac_decoder = nullptr;
+  if (STR_CASE_CMP(codec.plname, "isac") == 0) {
+    if (!isac_decoder_) {
+      isac_decoder_ = isac_factory();
+    }
+    isac_decoder = isac_decoder_.get();
+  }
+  return receiver_.AddCodec(*codec_index, codec.pltype, codec.channels,
+                            codec.plfreq, isac_decoder, codec.plname);
 }
 
 int AudioCodingModuleImpl::RegisterExternalReceiveCodec(

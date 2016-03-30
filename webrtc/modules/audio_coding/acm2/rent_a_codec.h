@@ -222,16 +222,13 @@ class RentACodec {
   // will be stolen.
   std::unique_ptr<AudioEncoder> RentEncoderStack(StackParameters* param);
 
-  // Creates and returns an iSAC decoder, which will remain live until the
-  // Rent-A-Codec is destroyed. Subsequent calls will simply return the same
-  // object.
-  AudioDecoder* RentIsacDecoder();
+  // Creates and returns an iSAC decoder.
+  std::unique_ptr<AudioDecoder> RentIsacDecoder();
 
  private:
   std::unique_ptr<AudioEncoder> speech_encoder_;
   std::unique_ptr<AudioEncoder> cng_encoder_;
   std::unique_ptr<AudioEncoder> red_encoder_;
-  std::unique_ptr<AudioDecoder> isac_decoder_;
   LockedIsacBandwidthInfo isac_bandwidth_info_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RentACodec);
