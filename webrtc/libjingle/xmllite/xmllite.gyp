@@ -42,5 +42,25 @@
         'xmlprinter.h',
       ],
     },
-  ],
+  ],  # targets
+  'conditions': [
+    ['include_tests==1', {
+      'targets' : [
+        {
+          'target_name': 'rtc_xmllite_unittest',
+          'type': 'none',
+          'direct_dependent_settings': {
+            'sources': [
+              'qname_unittest.cc',
+              'xmlbuilder_unittest.cc',
+              'xmlelement_unittest.cc',
+              'xmlnsstack_unittest.cc',
+              'xmlparser_unittest.cc',
+              'xmlprinter_unittest.cc',
+            ],
+          },
+        },  # target rtc_xmllite_unittest
+      ],  # targets
+    }],  # include_tests==1
+  ],  # conditions
 }
