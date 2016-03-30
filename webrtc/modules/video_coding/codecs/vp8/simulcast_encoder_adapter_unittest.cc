@@ -174,7 +174,15 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
     return encoder;
   }
 
-  void Destroy(VideoEncoder* encoder) override { delete encoder; }
+  void Destroy(VideoEncoder* encoder) override {
+    for (size_t i = 0; i < encoders_.size(); ++i) {
+      if (encoders_[i] == encoder) {
+        encoders_.erase(encoders_.begin() + i);
+        break;
+      }
+    }
+    delete encoder;
+  }
 
   virtual ~MockVideoEncoderFactory() {}
 
@@ -421,6 +429,14 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsImplementationName) {
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
   EXPECT_STREQ("SimulcastEncoderAdapter (codec1, codec2, codec3)",
                adapter_->ImplementationName());
+
+  // Single streams should not expose "SimulcastEncoderAdapter" in name.
+  adapter_->Release();
+  codec_.numberOfSimulcastStreams = 1;
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  adapter_->RegisterEncodeCompleteCallback(this);
+  ASSERT_EQ(1u, helper_->factory()->encoders().size());
+  EXPECT_STREQ("codec1", adapter_->ImplementationName());
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake,

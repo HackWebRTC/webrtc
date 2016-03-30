@@ -182,7 +182,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
   }
 
   int number_of_streams = NumberOfStreams(*inst);
-  bool doing_simulcast = (number_of_streams > 1);
+  const bool doing_simulcast = (number_of_streams > 1);
 
   if (doing_simulcast && !ValidSimulcastResolutions(*inst, number_of_streams)) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -230,8 +230,12 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       implementation_name += ", ";
     implementation_name += streaminfos_[i].encoder->ImplementationName();
   }
-  implementation_name_ =
-      "SimulcastEncoderAdapter (" + implementation_name + ")";
+  if (doing_simulcast) {
+    implementation_name_ =
+        "SimulcastEncoderAdapter (" + implementation_name + ")";
+  } else {
+    implementation_name_ = implementation_name;
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
