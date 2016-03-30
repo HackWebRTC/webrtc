@@ -13,8 +13,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-
-using webrtc::RTCPUtility::RtcpCommonHeader;
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -60,22 +59,23 @@ Sdes::Sdes() : block_length_(RtcpPacket::kHeaderLength) {}
 
 Sdes::~Sdes() {}
 
-bool Sdes::Parse(const RtcpCommonHeader& header, const uint8_t* payload) {
-  RTC_CHECK(header.packet_type == kPacketType);
+bool Sdes::Parse(const CommonHeader& packet) {
+  RTC_DCHECK(packet.type() == kPacketType);
 
-  uint8_t number_of_chunks = header.count_or_format;
+  uint8_t number_of_chunks = packet.count();
   std::vector<Chunk> chunks;  // Read chunk into temporary array, so that in
                               // case of an error original array would stay
                               // unchanged.
   size_t block_length = kHeaderLength;
 
-  if (header.payload_size_bytes % 4 != 0) {
-    LOG(LS_WARNING) << "Invalid payload size " << header.payload_size_bytes
+  if (packet.payload_size_bytes() % 4 != 0) {
+    LOG(LS_WARNING) << "Invalid payload size " << packet.payload_size_bytes()
                     << " bytes for a valid Sdes packet. Size should be"
                        " multiple of 4 bytes";
   }
-  const uint8_t* const payload_end = payload + header.payload_size_bytes;
-  const uint8_t* looking_at = payload;
+  const uint8_t* const payload_end =
+      packet.payload() + packet.payload_size_bytes();
+  const uint8_t* looking_at = packet.payload();
   chunks.resize(number_of_chunks);
   for (size_t i = 0; i < number_of_chunks;) {
     // Each chunk consumes at least 8 bytes.

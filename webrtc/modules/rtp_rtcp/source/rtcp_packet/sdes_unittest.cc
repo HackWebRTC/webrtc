@@ -11,10 +11,9 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
 using webrtc::rtcp::Sdes;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
@@ -24,27 +23,19 @@ const uint8_t kTerminatorTag = 0;
 const uint8_t kCnameTag = 1;
 const uint8_t kNameTag = 2;
 const uint8_t kEmailTag = 3;
-
-bool Parse(const uint8_t* buffer, size_t length, Sdes* sdes) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
-  // Check that there is exactly one RTCP packet in the buffer.
-  EXPECT_EQ(length, header.BlockSize());
-  return sdes->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
-}
 }  // namespace
 
-TEST(RtcpPacketSdesTest, WithoutChunks) {
+TEST(RtcpPacketSdesTest, CreateAndParseWithoutChunks) {
   Sdes sdes;
 
   rtc::Buffer packet = sdes.Build();
   Sdes parsed;
-  EXPECT_TRUE(Parse(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
 
   EXPECT_EQ(0u, parsed.chunks().size());
 }
 
-TEST(RtcpPacketSdesTest, WithOneChunk) {
+TEST(RtcpPacketSdesTest, CreateAndParseWithOneChunk) {
   const std::string kCname = "alice@host";
 
   Sdes sdes;
@@ -52,7 +43,7 @@ TEST(RtcpPacketSdesTest, WithOneChunk) {
 
   rtc::Buffer packet = sdes.Build();
   Sdes sdes_parsed;
-  Parse(packet.data(), packet.size(), &sdes_parsed);
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &sdes_parsed));
   const Sdes& parsed = sdes_parsed;  // Ensure accessors are const.
 
   EXPECT_EQ(1u, parsed.chunks().size());
@@ -60,7 +51,7 @@ TEST(RtcpPacketSdesTest, WithOneChunk) {
   EXPECT_EQ(kCname, parsed.chunks()[0].cname);
 }
 
-TEST(RtcpPacketSdesTest, WithMultipleChunks) {
+TEST(RtcpPacketSdesTest, CreateAndParseWithMultipleChunks) {
   Sdes sdes;
   EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 0, "a"));
   EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 1, "ab"));
@@ -71,14 +62,14 @@ TEST(RtcpPacketSdesTest, WithMultipleChunks) {
 
   rtc::Buffer packet = sdes.Build();
   Sdes parsed;
-  Parse(packet.data(), packet.size(), &parsed);
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
 
   EXPECT_EQ(6u, parsed.chunks().size());
   EXPECT_EQ(kSenderSsrc + 5, parsed.chunks()[5].ssrc);
   EXPECT_EQ("abcdef", parsed.chunks()[5].cname);
 }
 
-TEST(RtcpPacketSdesTest, WithTooManyChunks) {
+TEST(RtcpPacketSdesTest, CreateWithTooManyChunks) {
   const size_t kMaxChunks = (1 << 5) - 1;
   Sdes sdes;
   for (size_t i = 0; i < kMaxChunks; ++i) {
@@ -90,13 +81,13 @@ TEST(RtcpPacketSdesTest, WithTooManyChunks) {
   EXPECT_FALSE(sdes.WithCName(kSenderSsrc + kMaxChunks, "foo"));
 }
 
-TEST(RtcpPacketSdesTest, CnameItemWithEmptyString) {
+TEST(RtcpPacketSdesTest, CreateAndParseCnameItemWithEmptyString) {
   Sdes sdes;
   EXPECT_TRUE(sdes.WithCName(kSenderSsrc, ""));
 
   rtc::Buffer packet = sdes.Build();
   Sdes parsed;
-  Parse(packet.data(), packet.size(), &parsed);
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
 
   EXPECT_EQ(1u, parsed.chunks().size());
   EXPECT_EQ(kSenderSsrc, parsed.chunks()[0].ssrc);
@@ -116,7 +107,7 @@ TEST(RtcpPacketSdesTest, ParseSkipsNonCNameField) {
   ASSERT_EQ(kValidPacket[3] + 1u, sizeof(kValidPacket) / 4);
 
   Sdes parsed;
-  EXPECT_TRUE(Parse(kValidPacket, sizeof(kValidPacket), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(kValidPacket, &parsed));
 
   EXPECT_EQ(1u, parsed.chunks().size());
   EXPECT_EQ(kSenderSsrc, parsed.chunks()[0].ssrc);
@@ -140,7 +131,7 @@ TEST(RtcpPacketSdesTest, ParseSkipsChunksWithoutCName) {
   ASSERT_EQ(kPacket[3] + 1u, sizeof(kPacket) / 4);
 
   Sdes parsed;
-  EXPECT_TRUE(Parse(kPacket, sizeof(kPacket), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &parsed));
   ASSERT_EQ(1u, parsed.chunks().size());
   EXPECT_EQ(0x23456789u, parsed.chunks()[0].ssrc);
   EXPECT_EQ(kCname, parsed.chunks()[0].cname);
@@ -159,7 +150,7 @@ TEST(RtcpPacketSdesTest, ParseFailsWithoutChunkItemTerminator) {
   ASSERT_EQ(kInvalidPacket[3] + 1u, sizeof(kInvalidPacket) / 4);
 
   Sdes parsed;
-  EXPECT_FALSE(Parse(kInvalidPacket, sizeof(kInvalidPacket), &parsed));
+  EXPECT_FALSE(test::ParseSinglePacket(kInvalidPacket, &parsed));
 }
 
 TEST(RtcpPacketSdesTest, ParseFailsWithDamagedChunkItem) {
@@ -176,7 +167,7 @@ TEST(RtcpPacketSdesTest, ParseFailsWithDamagedChunkItem) {
   ASSERT_EQ(kInvalidPacket[3] + 1u, sizeof(kInvalidPacket) / 4);
 
   Sdes parsed;
-  EXPECT_FALSE(Parse(kInvalidPacket, sizeof(kInvalidPacket), &parsed));
+  EXPECT_FALSE(test::ParseSinglePacket(kInvalidPacket, &parsed));
 }
 
 TEST(RtcpPacketSdesTest, ParseFailsWithTooLongChunkItem) {
@@ -192,7 +183,7 @@ TEST(RtcpPacketSdesTest, ParseFailsWithTooLongChunkItem) {
   ASSERT_EQ(kInvalidPacket[3] + 1u, sizeof(kInvalidPacket) / 4);
 
   Sdes parsed;
-  EXPECT_FALSE(Parse(kInvalidPacket, sizeof(kInvalidPacket), &parsed));
+  EXPECT_FALSE(test::ParseSinglePacket(kInvalidPacket, &parsed));
 }
 
 TEST(RtcpPacketSdesTest, ParseFailsWithTwoCNames) {
@@ -208,7 +199,7 @@ TEST(RtcpPacketSdesTest, ParseFailsWithTwoCNames) {
   ASSERT_EQ(kInvalidPacket[3] + 1u, sizeof(kInvalidPacket) / 4);
 
   Sdes parsed;
-  EXPECT_FALSE(Parse(kInvalidPacket, sizeof(kInvalidPacket), &parsed));
+  EXPECT_FALSE(test::ParseSinglePacket(kInvalidPacket, &parsed));
 }
 
 TEST(RtcpPacketSdesTest, ParseFailsWithTooLittleSpaceForNextChunk) {
@@ -226,7 +217,7 @@ TEST(RtcpPacketSdesTest, ParseFailsWithTooLittleSpaceForNextChunk) {
   ASSERT_EQ(kInvalidPacket[3] + 1u, sizeof(kInvalidPacket) / 4);
 
   Sdes parsed;
-  EXPECT_FALSE(Parse(kInvalidPacket, sizeof(kInvalidPacket), &parsed));
+  EXPECT_FALSE(test::ParseSinglePacket(kInvalidPacket, &parsed));
 }
 
 TEST(RtcpPacketSdesTest, ParsedSdesCanBeReusedForBuilding) {
@@ -237,7 +228,7 @@ TEST(RtcpPacketSdesTest, ParsedSdesCanBeReusedForBuilding) {
 
   rtc::Buffer packet1 = source.Build();
   Sdes middle;
-  Parse(packet1.data(), packet1.size(), &middle);
+  test::ParseSinglePacket(packet1, &middle);
 
   EXPECT_EQ(source.BlockLength(), middle.BlockLength());
 
@@ -245,7 +236,7 @@ TEST(RtcpPacketSdesTest, ParsedSdesCanBeReusedForBuilding) {
 
   rtc::Buffer packet2 = middle.Build();
   Sdes destination;
-  Parse(packet2.data(), packet2.size(), &destination);
+  test::ParseSinglePacket(packet2, &destination);
 
   EXPECT_EQ(middle.BlockLength(), destination.BlockLength());
 
