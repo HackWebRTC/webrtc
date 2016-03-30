@@ -19,7 +19,6 @@
 namespace webrtc {
 namespace {
 
-
 // Process one frame of data and produce the output.
 std::vector<float> ProcessOneFrame(const std::vector<float>& frame_input,
                                    const StreamConfig& stream_config,
