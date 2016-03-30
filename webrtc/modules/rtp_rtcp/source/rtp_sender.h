@@ -67,7 +67,6 @@ class RTPSenderInterface {
   virtual uint16_t SequenceNumber() const = 0;
   virtual size_t MaxPayloadLength() const = 0;
   virtual size_t MaxDataPayloadLength() const = 0;
-  virtual uint16_t PacketOverHead() const = 0;
   virtual uint16_t ActualSendBitrateKbit() const = 0;
 
   virtual int32_t SendToNetwork(uint8_t* data_buffer,
@@ -146,7 +145,7 @@ class RTPSender : public RTPSenderInterface {
 
   void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
-  int32_t SetMaxPayloadLength(size_t length, uint16_t packet_over_head);
+  void SetMaxPayloadLength(size_t max_payload_length);
 
   int32_t SendOutgoingData(FrameType frame_type,
                            int8_t payload_type,
@@ -247,7 +246,6 @@ class RTPSender : public RTPSenderInterface {
   size_t RTPHeaderLength() const override;
   uint16_t AllocateSequenceNumber(uint16_t packets_to_send) override;
   size_t MaxPayloadLength() const override;
-  uint16_t PacketOverHead() const override;
 
   // Current timestamp.
   uint32_t Timestamp() const override;
@@ -437,7 +435,6 @@ class RTPSender : public RTPSenderInterface {
   bool sending_media_ GUARDED_BY(send_critsect_);
 
   size_t max_payload_length_;
-  uint16_t packet_over_head_;
 
   int8_t payload_type_ GUARDED_BY(send_critsect_);
   std::map<int8_t, RtpUtility::Payload*> payload_type_map_;

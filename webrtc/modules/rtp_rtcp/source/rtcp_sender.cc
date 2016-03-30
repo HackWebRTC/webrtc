@@ -99,8 +99,10 @@ class PacketContainer : public rtcp::CompoundPacket,
     }
   }
 
-  size_t SendPackets() {
-    rtcp::CompoundPacket::Build(this);
+  size_t SendPackets(size_t max_payload_length) {
+    RTC_DCHECK_LE(max_payload_length, static_cast<size_t>(IP_PACKET_SIZE));
+    uint8_t buffer[IP_PACKET_SIZE];
+    BuildExternalBuffer(buffer, max_payload_length, this);
     return bytes_sent_;
   }
 
@@ -169,6 +171,7 @@ RTCPSender::RTCPSender(
       tmmbr_help_(),
       tmmbr_send_(0),
       packet_oh_send_(0),
+      max_payload_length_(IP_PACKET_SIZE - 28),  // IPv4 + UDP by default.
 
       app_sub_type_(0),
       app_name_(0),
@@ -275,6 +278,10 @@ void RTCPSender::SetTMMBRStatus(bool enable) {
   } else {
     ConsumeFlag(RTCPPacketType::kRtcpTmmbr, true);
   }
+}
+
+void RTCPSender::SetMaxPayloadLength(size_t max_payload_length) {
+  max_payload_length_ = max_payload_length;
 }
 
 void RTCPSender::SetStartTimestamp(uint32_t start_timestamp) {
@@ -809,7 +816,7 @@ int32_t RTCPSender::SendCompoundRTCP(
     RTC_DCHECK(AllVolatileFlagsConsumed());
   }
 
-  size_t bytes_sent = container.SendPackets();
+  size_t bytes_sent = container.SendPackets(max_payload_length_);
   return bytes_sent == 0 ? -1 : 0;
 }
 
@@ -1030,8 +1037,9 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
     // but we can't because of an incorrect warning (C4822) in MVS 2013.
   } sender(transport_, event_log_);
 
+  RTC_DCHECK_LE(max_payload_length_, static_cast<size_t>(IP_PACKET_SIZE));
   uint8_t buffer[IP_PACKET_SIZE];
-  return packet.BuildExternalBuffer(buffer, IP_PACKET_SIZE, &sender) &&
+  return packet.BuildExternalBuffer(buffer, max_payload_length_, &sender) &&
          !sender.send_failure_;
 }
 

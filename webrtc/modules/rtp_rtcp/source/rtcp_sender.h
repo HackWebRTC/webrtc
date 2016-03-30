@@ -132,6 +132,8 @@ class RTCPSender {
 
   void SetTMMBRStatus(bool enable);
 
+  void SetMaxPayloadLength(size_t max_payload_length);
+
   int32_t SetTMMBN(const TMMBRSet* boundingSet);
 
   int32_t SetApplicationSpecificData(uint8_t subType,
@@ -240,6 +242,7 @@ class RTCPSender {
   TMMBRHelp tmmbr_help_ GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t tmmbr_send_ GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t packet_oh_send_ GUARDED_BY(critical_section_rtcp_sender_);
+  size_t max_payload_length_;
 
   // APP
   uint8_t app_sub_type_ GUARDED_BY(critical_section_rtcp_sender_);

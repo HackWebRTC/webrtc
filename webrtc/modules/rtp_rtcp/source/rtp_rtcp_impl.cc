@@ -118,6 +118,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   uint32_t SSRC = rtp_sender_.SSRC();
   rtcp_sender_.SetSSRC(SSRC);
   SetRtcpReceiverSsrcs(SSRC);
+  SetMaxTransferUnit(IP_PACKET_SIZE);
 }
 
 // Returns the number of milliseconds until the module want a worker thread
@@ -479,21 +480,22 @@ int32_t ModuleRtpRtcpImpl::SetTransportOverhead(
     // Ok same as before.
     return 0;
   }
-  // Calc diff.
-  int16_t packet_over_head_diff = packet_overhead - packet_overhead_;
 
-  // Store new.
+  size_t mtu = rtp_sender_.MaxPayloadLength() + packet_overhead_;
+  size_t max_payload_length = mtu - packet_overhead;
   packet_overhead_ = packet_overhead;
-
-  uint16_t length =
-      rtp_sender_.MaxPayloadLength() - packet_over_head_diff;
-  return rtp_sender_.SetMaxPayloadLength(length, packet_overhead_);
+  rtcp_sender_.SetMaxPayloadLength(max_payload_length);
+  rtp_sender_.SetMaxPayloadLength(max_payload_length);
+  return 0;
 }
 
-int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(const uint16_t mtu) {
-  RTC_DCHECK_LE(mtu, IP_PACKET_SIZE) << "Invalid mtu: " << mtu;
-  return rtp_sender_.SetMaxPayloadLength(mtu - packet_overhead_,
-                                         packet_overhead_);
+int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(uint16_t mtu) {
+  RTC_DCHECK_LE(mtu, IP_PACKET_SIZE) << "MTU too large: " << mtu;
+  RTC_DCHECK_GT(mtu, packet_overhead_) << "MTU too small: " << mtu;
+  size_t max_payload_length = mtu - packet_overhead_;
+  rtcp_sender_.SetMaxPayloadLength(max_payload_length);
+  rtp_sender_.SetMaxPayloadLength(max_payload_length);
+  return 0;
 }
 
 RtcpMode ModuleRtpRtcpImpl::RTCP() const {

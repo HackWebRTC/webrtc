@@ -133,7 +133,6 @@ RTPSender::RTPSender(
       transport_(transport),
       sending_media_(true),                      // Default to sending media.
       max_payload_length_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
-      packet_over_head_(28),
       payload_type_(-1),
       payload_type_map_(),
       rtp_header_extension_map_(),
@@ -375,15 +374,12 @@ int RTPSender::SendPayloadFrequency() const {
   return audio_ != NULL ? audio_->AudioFrequency() : kVideoPayloadTypeFrequency;
 }
 
-int32_t RTPSender::SetMaxPayloadLength(size_t max_payload_length,
-                                       uint16_t packet_over_head) {
+void RTPSender::SetMaxPayloadLength(size_t max_payload_length) {
   // Sanity check.
   RTC_DCHECK(max_payload_length >= 100 && max_payload_length <= IP_PACKET_SIZE)
       << "Invalid max payload length: " << max_payload_length;
   rtc::CritScope lock(&send_critsect_);
   max_payload_length_ = max_payload_length;
-  packet_over_head_ = packet_over_head;
-  return 0;
 }
 
 size_t RTPSender::MaxDataPayloadLength() const {
@@ -404,8 +400,6 @@ size_t RTPSender::MaxDataPayloadLength() const {
 size_t RTPSender::MaxPayloadLength() const {
   return max_payload_length_;
 }
-
-uint16_t RTPSender::PacketOverHead() const { return packet_over_head_; }
 
 void RTPSender::SetRtxStatus(int mode) {
   rtc::CritScope lock(&send_critsect_);
