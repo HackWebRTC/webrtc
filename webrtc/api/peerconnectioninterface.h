@@ -223,6 +223,36 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
   // TODO(hbos): Change into class with private data and public getters.
   struct RTCConfiguration {
+    // This struct is subject to reorganization, both for naming
+    // consistency, and to group settings to match where they are used
+    // in the implementation. To do that, we need getter and setter
+    // methods for all settings which are of interest to applications,
+    // Chrome in particular.
+
+    bool dscp() { return enable_dscp.value_or(false); }
+    void set_dscp(bool enable) { enable_dscp = rtc::Optional<bool>(enable); }
+
+    // TODO(nisse): The corresponding flag in MediaConfig and
+    // elsewhere should be renamed enable_cpu_adaptation.
+    bool cpu_adaptation() { return cpu_overuse_detection.value_or(true); }
+    void set_cpu_adaptation(bool enable) {
+      cpu_overuse_detection = rtc::Optional<bool>(enable);
+    }
+
+    // TODO(nisse): Currently no getter method, since it collides with
+    // the flag itself. Add when the flag is moved to MediaConfig.
+    void set_suspend_below_min_bitrate(bool enable) {
+      suspend_below_min_bitrate = rtc::Optional<bool>(enable);
+    }
+
+    // TODO(nisse): The negation in the corresponding MediaConfig
+    // attribute is inconsistent, and it should be renamed at some
+    // point.
+    bool prerenderer_smoothing() { return !disable_prerenderer_smoothing; }
+    void set_prerenderer_smoothing(bool enable) {
+      disable_prerenderer_smoothing = !enable;
+    }
+
     static const int kUndefined = -1;
     // Default maximum number of packets in the audio jitter buffer.
     static const int kAudioJitterBufferMaxPackets = 50;

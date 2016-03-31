@@ -2552,7 +2552,7 @@ TEST_F(PeerConnectionMediaConfigTest, TestDisablePrerendererSmoothingTrue) {
   PeerConnectionInterface::RTCConfiguration config;
   FakeConstraints constraints;
 
-  config.disable_prerenderer_smoothing = true;
+  config.set_prerenderer_smoothing(false);
   const cricket::MediaConfig& media_config =
       TestCreatePeerConnection(config, &constraints);
 
