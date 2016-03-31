@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_HIGH_PASS_FILTER_IMPL_H_
 
 #include <memory>
+#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"

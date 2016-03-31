@@ -216,7 +216,8 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     for (size_t i = 0; i < video_send_config_.rtp.ssrcs.size(); ++i) {
       VideoReceiveStream::Decoder decoder =
           test::CreateMatchingDecoder(video_send_config_.encoder_settings);
-      allocated_decoders_.push_back(decoder.decoder);
+      allocated_decoders_.push_back(
+          std::unique_ptr<VideoDecoder>(decoder.decoder));
       video_config.decoders.clear();
       video_config.decoders.push_back(decoder);
       video_config.rtp.remote_ssrc = video_send_config_.rtp.ssrcs[i];

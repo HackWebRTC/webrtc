@@ -334,8 +334,8 @@ void NonlinearBeamformer::InitInterfCovMats() {
   for (size_t i = 0; i < kNumFreqBins; ++i) {
     interf_cov_mats_[i].clear();
     for (size_t j = 0; j < interf_angles_radians_.size(); ++j) {
-      interf_cov_mats_[i].push_back(new ComplexMatrixF(num_input_channels_,
-                                                       num_input_channels_));
+      interf_cov_mats_[i].push_back(std::unique_ptr<ComplexMatrixF>(
+          new ComplexMatrixF(num_input_channels_, num_input_channels_)));
       ComplexMatrixF angled_cov_mat(num_input_channels_, num_input_channels_);
       CovarianceMatrixGenerator::AngledCovarianceMatrix(
           kSpeedOfSoundMeterSeconds,

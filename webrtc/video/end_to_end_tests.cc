@@ -13,6 +13,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -1246,7 +1247,7 @@ class MultiStreamTest {
     VideoReceiveStream* receive_streams[kNumStreams];
 
     test::FrameGeneratorCapturer* frame_generators[kNumStreams];
-    ScopedVector<VideoDecoder> allocated_decoders;
+    std::vector<std::unique_ptr<VideoDecoder>> allocated_decoders;
     for (size_t i = 0; i < kNumStreams; ++i) {
       uint32_t ssrc = codec_settings[i].ssrc;
       int width = codec_settings[i].width;
@@ -1277,7 +1278,8 @@ class MultiStreamTest {
       receive_config.rtp.local_ssrc = test::CallTest::kReceiverLocalVideoSsrc;
       VideoReceiveStream::Decoder decoder =
           test::CreateMatchingDecoder(send_config.encoder_settings);
-      allocated_decoders.push_back(decoder.decoder);
+      allocated_decoders.push_back(
+          std::unique_ptr<VideoDecoder>(decoder.decoder));
       receive_config.decoders.push_back(decoder);
 
       UpdateReceiveConfig(i, &receive_config);

@@ -25,7 +25,8 @@ SplittingFilter::SplittingFilter(size_t num_channels,
     two_bands_states_.resize(num_channels);
   } else if (num_bands_ == 3) {
     for (size_t i = 0; i < num_channels; ++i) {
-      three_band_filter_banks_.push_back(new ThreeBandFilterBank(num_frames));
+      three_band_filter_banks_.push_back(std::unique_ptr<ThreeBandFilterBank>(
+          new ThreeBandFilterBank(num_frames)));
     }
   }
 }

@@ -75,17 +75,15 @@ AudioBuffer::AudioBuffer(size_t input_num_frames,
 
     if (input_num_frames_ != proc_num_frames_) {
       for (size_t i = 0; i < num_proc_channels_; ++i) {
-        input_resamplers_.push_back(
-            new PushSincResampler(input_num_frames_,
-                                  proc_num_frames_));
+        input_resamplers_.push_back(std::unique_ptr<PushSincResampler>(
+            new PushSincResampler(input_num_frames_, proc_num_frames_)));
       }
     }
 
     if (output_num_frames_ != proc_num_frames_) {
       for (size_t i = 0; i < num_proc_channels_; ++i) {
-        output_resamplers_.push_back(
-            new PushSincResampler(proc_num_frames_,
-                                  output_num_frames_));
+        output_resamplers_.push_back(std::unique_ptr<PushSincResampler>(
+            new PushSincResampler(proc_num_frames_, output_num_frames_)));
       }
     }
   }

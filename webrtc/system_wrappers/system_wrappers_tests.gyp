@@ -34,7 +34,6 @@
         'source/metrics_unittest.cc',
         'source/ntp_time_unittest.cc',
         'source/rtp_to_ntp_unittest.cc',
-        'source/scoped_vector_unittest.cc',
         'source/stringize_macros_unittest.cc',
         'source/stl_util_unittest.cc',
       ],

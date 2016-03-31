@@ -23,7 +23,6 @@
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/beamformer.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
-#include "webrtc/system_wrappers/include/scoped_vector.h"
 
 namespace webrtc {
 
@@ -169,9 +168,9 @@ class NonlinearBeamformer
   ComplexMatrixF target_cov_mats_[kNumFreqBins];
   ComplexMatrixF uniform_cov_mat_[kNumFreqBins];
   // Array of length |kNumFreqBins|, Matrix of size |num_input_channels_| x
-  // |num_input_channels_|. ScopedVector has a size equal to the number of
+  // |num_input_channels_|. The vector has a size equal to the number of
   // interferer scenarios.
-  ScopedVector<ComplexMatrixF> interf_cov_mats_[kNumFreqBins];
+  std::vector<std::unique_ptr<ComplexMatrixF>> interf_cov_mats_[kNumFreqBins];
 
   // Of length |kNumFreqBins|.
   float wave_numbers_[kNumFreqBins];

@@ -37,7 +37,6 @@
         'include/ntp_time.h',
         'include/rtp_to_ntp.h',
         'include/rw_lock_wrapper.h',
-        'include/scoped_vector.h',
         'include/sleep.h',
         'include/sort.h',
         'include/static_instance.h',
