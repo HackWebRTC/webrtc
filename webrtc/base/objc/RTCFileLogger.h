@@ -11,16 +11,18 @@
 #import <Foundation/Foundation.h>
 
 typedef NS_ENUM(NSUInteger, RTCFileLoggerSeverity) {
-  kRTCFileLoggerSeverityVerbose,
-  kRTCFileLoggerSeverityInfo,
-  kRTCFileLoggerSeverityWarning,
-  kRTCFileLoggerSeverityError
+  RTCFileLoggerSeverityVerbose,
+  RTCFileLoggerSeverityInfo,
+  RTCFileLoggerSeverityWarning,
+  RTCFileLoggerSeverityError
 };
 
 typedef NS_ENUM(NSUInteger, RTCFileLoggerRotationType) {
-  kRTCFileLoggerTypeCall,
-  kRTCFileLoggerTypeApp,
+  RTCFileLoggerTypeCall,
+  RTCFileLoggerTypeApp,
 };
+
+NS_ASSUME_NONNULL_BEGIN
 
 // This class intercepts WebRTC logs and saves them to a file. The file size
 // will not exceed the given maximum bytesize. When the maximum bytesize is
@@ -67,3 +69,6 @@ typedef NS_ENUM(NSUInteger, RTCFileLoggerRotationType) {
 - (NSData *)logData;
 
 @end
+
+NS_ASSUME_NONNULL_END
+

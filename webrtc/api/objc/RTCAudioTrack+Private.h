@@ -14,6 +14,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class RTCPeerConnectionFactory;
 @interface RTCAudioTrack ()
 
 /** AudioTrackInterface created or passed in at construction. */

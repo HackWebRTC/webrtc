@@ -25,6 +25,14 @@
   _nativeDataChannelInit.ordered = isOrdered;
 }
 
+- (NSInteger)maxRetransmitTimeMs {
+  return self.maxPacketLifeTime;
+}
+
+- (void)setMaxRetransmitTimeMs:(NSInteger)maxRetransmitTimeMs {
+  self.maxPacketLifeTime = maxRetransmitTimeMs;
+}
+
 - (int)maxPacketLifeTime {
   return _nativeDataChannelInit.maxRetransmitTime;
 }
@@ -58,11 +66,19 @@
 }
 
 - (int)streamId {
-  return _nativeDataChannelInit.id;
+  return self.channelId;
 }
 
 - (void)setStreamId:(int)streamId {
-  _nativeDataChannelInit.id = streamId;
+  self.channelId = streamId;
+}
+
+- (int)channelId {
+  return _nativeDataChannelInit.id;
+}
+
+- (void)setChannelId:(int)channelId {
+  _nativeDataChannelInit.id = channelId;
 }
 
 @end

@@ -12,6 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// RTCVideoFrame is an ObjectiveC version of cricket::VideoFrame.
 @interface RTCVideoFrame : NSObject
 
 /** Width without rotation applied. */

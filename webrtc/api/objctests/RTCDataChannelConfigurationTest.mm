@@ -27,7 +27,7 @@
   int maxPacketLifeTime = 5;
   int maxRetransmits = 4;
   BOOL isNegotiated = YES;
-  int streamId = 4;
+  int channelId = 4;
   NSString *protocol = @"protocol";
 
   RTCDataChannelConfiguration *dataChannelConfig =
@@ -36,7 +36,7 @@
   dataChannelConfig.maxPacketLifeTime = maxPacketLifeTime;
   dataChannelConfig.maxRetransmits = maxRetransmits;
   dataChannelConfig.isNegotiated = isNegotiated;
-  dataChannelConfig.streamId = streamId;
+  dataChannelConfig.channelId = channelId;
   dataChannelConfig.protocol = protocol;
 
   webrtc::DataChannelInit nativeInit = dataChannelConfig.nativeDataChannelInit;
@@ -44,7 +44,7 @@
   EXPECT_EQ(maxPacketLifeTime, nativeInit.maxRetransmitTime);
   EXPECT_EQ(maxRetransmits, nativeInit.maxRetransmits);
   EXPECT_EQ(isNegotiated, nativeInit.negotiated);
-  EXPECT_EQ(streamId, nativeInit.id);
+  EXPECT_EQ(channelId, nativeInit.id);
   EXPECT_EQ(protocol.stdString, nativeInit.protocol);
 }
 

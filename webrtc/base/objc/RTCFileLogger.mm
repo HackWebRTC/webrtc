@@ -45,7 +45,7 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
                     maxFileSize:(NSUInteger)maxFileSize {
   return [self initWithDirPath:dirPath
                    maxFileSize:maxFileSize
-                  rotationType:kRTCFileLoggerTypeCall];
+                  rotationType:RTCFileLoggerTypeCall];
 }
 
 - (instancetype)initWithDirPath:(NSString *)dirPath
@@ -72,7 +72,7 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
     }
     _dirPath = dirPath;
     _maxFileSize = maxFileSize;
-    _severity = kRTCFileLoggerSeverityInfo;
+    _severity = RTCFileLoggerSeverityInfo;
   }
   return self;
 }
@@ -86,14 +86,14 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
     return;
   }
   switch (_rotationType) {
-    case kRTCFileLoggerTypeApp:
+    case RTCFileLoggerTypeApp:
       _logSink.reset(
           new rtc::FileRotatingLogSink(_dirPath.UTF8String,
                                        kRTCFileLoggerRotatingLogPrefix,
                                        _maxFileSize,
                                        _maxFileSize / 10));
       break;
-    case kRTCFileLoggerTypeCall:
+    case RTCFileLoggerTypeCall:
       _logSink.reset(
           new rtc::CallSessionFileRotatingLogSink(_dirPath.UTF8String,
                                                   _maxFileSize));
@@ -131,12 +131,12 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
   NSMutableData* logData = [NSMutableData data];
   rtc::scoped_ptr<rtc::FileRotatingStream> stream;
   switch(_rotationType) {
-    case kRTCFileLoggerTypeApp:
+    case RTCFileLoggerTypeApp:
       stream.reset(
           new rtc::FileRotatingStream(_dirPath.UTF8String,
                                       kRTCFileLoggerRotatingLogPrefix));
       break;
-    case kRTCFileLoggerTypeCall:
+    case RTCFileLoggerTypeCall:
       stream.reset(new rtc::CallSessionFileRotatingStream(_dirPath.UTF8String));
       break;
   }
@@ -161,13 +161,13 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
 
 - (rtc::LoggingSeverity)rtcSeverity {
   switch (_severity) {
-    case kRTCFileLoggerSeverityVerbose:
+    case RTCFileLoggerSeverityVerbose:
       return rtc::LS_VERBOSE;
-    case kRTCFileLoggerSeverityInfo:
+    case RTCFileLoggerSeverityInfo:
       return rtc::LS_INFO;
-    case kRTCFileLoggerSeverityWarning:
+    case RTCFileLoggerSeverityWarning:
       return rtc::LS_WARNING;
-    case kRTCFileLoggerSeverityError:
+    case RTCFileLoggerSeverityError:
       return rtc::LS_ERROR;
   }
 }

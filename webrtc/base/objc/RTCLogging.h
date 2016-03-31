@@ -12,10 +12,10 @@
 
 // Subset of rtc::LoggingSeverity.
 typedef NS_ENUM(NSInteger, RTCLoggingSeverity) {
-  kRTCLoggingSeverityVerbose,
-  kRTCLoggingSeverityInfo,
-  kRTCLoggingSeverityWarning,
-  kRTCLoggingSeverityError,
+  RTCLoggingSeverityVerbose,
+  RTCLoggingSeverityInfo,
+  RTCLoggingSeverityWarning,
+  RTCLoggingSeverityError,
 };
 
 #if defined(__cplusplus)
@@ -53,16 +53,16 @@ extern NSString* RTCFileName(const char* filePath);
   } while (false)
 
 #define RTCLogVerbose(format, ...)                                \
-  RTCLogFormat(kRTCLoggingSeverityVerbose, format, ##__VA_ARGS__) \
+  RTCLogFormat(RTCLoggingSeverityVerbose, format, ##__VA_ARGS__) \
 
 #define RTCLogInfo(format, ...)                                   \
-  RTCLogFormat(kRTCLoggingSeverityInfo, format, ##__VA_ARGS__)    \
+  RTCLogFormat(RTCLoggingSeverityInfo, format, ##__VA_ARGS__)    \
 
 #define RTCLogWarning(format, ...)                                \
-  RTCLogFormat(kRTCLoggingSeverityWarning, format, ##__VA_ARGS__) \
+  RTCLogFormat(RTCLoggingSeverityWarning, format, ##__VA_ARGS__) \
 
 #define RTCLogError(format, ...)                                  \
-  RTCLogFormat(kRTCLoggingSeverityError, format, ##__VA_ARGS__)   \
+  RTCLogFormat(RTCLoggingSeverityError, format, ##__VA_ARGS__)   \
 
 #if !defined(NDEBUG)
 #define RTCLogDebug(format, ...) RTCLogInfo(format, ##__VA_ARGS__)

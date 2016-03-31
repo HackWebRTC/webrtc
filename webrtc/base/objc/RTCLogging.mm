@@ -14,13 +14,13 @@
 
 rtc::LoggingSeverity RTCGetNativeLoggingSeverity(RTCLoggingSeverity severity) {
   switch (severity) {
-    case kRTCLoggingSeverityVerbose:
+    case RTCLoggingSeverityVerbose:
       return rtc::LS_VERBOSE;
-    case kRTCLoggingSeverityInfo:
+    case RTCLoggingSeverityInfo:
       return rtc::LS_INFO;
-    case kRTCLoggingSeverityWarning:
+    case RTCLoggingSeverityWarning:
       return rtc::LS_WARNING;
-    case kRTCLoggingSeverityError:
+    case RTCLoggingSeverityError:
       return rtc::LS_ERROR;
   }
 }

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#import <AvailabilityMacros.h>
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -16,6 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** Set to YES if ordered delivery is required. */
 @property(nonatomic, assign) BOOL isOrdered;
+
+/** Deprecated. Use maxPacketLifeTime. */
+@property(nonatomic, assign) NSInteger maxRetransmitTimeMs DEPRECATED_ATTRIBUTE;
 
 /**
  * Max period in milliseconds in which retransmissions will be sent. After this
@@ -31,8 +35,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(nonatomic, assign) BOOL isNegotiated;
 
-/** The stream id, or SID, for SCTP data channels. -1 if unset. */
-@property(nonatomic, assign) int streamId;
+/** Deprecated. Use channelId. */
+@property(nonatomic, assign) int streamId DEPRECATED_ATTRIBUTE;
+
+/** The id of the data channel. */
+@property(nonatomic, assign) int channelId;
 
 /** Set by the application and opaque to the WebRTC implementation. */
 @property(nonatomic) NSString *protocol;
