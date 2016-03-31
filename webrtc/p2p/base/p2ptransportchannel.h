@@ -326,6 +326,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   int weak_ping_interval_ = WEAK_PING_INTERVAL;
   TransportChannelState state_ = TransportChannelState::STATE_INIT;
   IceConfig config_;
+  int last_sent_packet_id_ = -1;  // -1 indicates no packet was sent before.
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

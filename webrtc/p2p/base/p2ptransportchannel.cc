@@ -983,6 +983,7 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
     return -1;
   }
 
+  last_sent_packet_id_ = options.packet_id;
   int sent = best_connection_->Send(data, len, options);
   if (sent <= 0) {
     ASSERT(sent < 0);
@@ -1176,7 +1177,8 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
   }
   // TODO(honghaiz): rename best_connection_ with selected_connection_ or
   // selected_candidate pair_.
-  SignalSelectedCandidatePairChanged(this, best_connection_);
+  SignalSelectedCandidatePairChanged(this, best_connection_,
+                                     last_sent_packet_id_);
 }
 
 // Warning: UpdateState should eventually be called whenever a connection

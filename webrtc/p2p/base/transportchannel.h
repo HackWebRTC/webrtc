@@ -155,8 +155,9 @@ class TransportChannel : public sigslot::has_slots<> {
 
   // Signalled when the current selected candidate pair has changed.
   // The first parameter is the transport channel that signals the event.
-  // The second parameter is the new selected candidate pair.
-  sigslot::signal2<TransportChannel*, CandidatePairInterface*>
+  // The second parameter is the new selected candidate pair. The third
+  // parameter is the last packet id sent on the previous candidate pair.
+  sigslot::signal3<TransportChannel*, CandidatePairInterface*, int>
       SignalSelectedCandidatePairChanged;
 
   // Invoked when the channel is being destroyed.

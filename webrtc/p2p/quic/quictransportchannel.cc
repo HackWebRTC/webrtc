@@ -391,9 +391,11 @@ void QuicTransportChannel::OnRouteChange(TransportChannel* channel,
 
 void QuicTransportChannel::OnSelectedCandidatePairChanged(
     TransportChannel* channel,
-    CandidatePairInterface* selected_candidate_pair) {
+    CandidatePairInterface* selected_candidate_pair,
+    int last_sent_packet_id) {
   ASSERT(channel == channel_);
-  SignalSelectedCandidatePairChanged(this, selected_candidate_pair);
+  SignalSelectedCandidatePairChanged(this, selected_candidate_pair,
+                                     last_sent_packet_id);
 }
 
 void QuicTransportChannel::OnConnectionRemoved(TransportChannelImpl* channel) {

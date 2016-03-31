@@ -970,7 +970,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     media_channel1_->set_num_network_route_changes(0);
     // The transport channel becomes disconnected.
     transport_channel1->SignalSelectedCandidatePairChanged(transport_channel1,
-                                                           nullptr);
+                                                           nullptr, -1);
     EXPECT_EQ(1, media_channel1_->num_network_route_changes());
     EXPECT_FALSE(media_channel1->last_network_route().connected);
 
@@ -980,14 +980,18 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     rtc::SocketAddress remote_address("192.168.1.2", 2000 /* port number */);
     uint16_t local_net_id = 1;
     uint16_t remote_net_id = 2;
+    int last_packet_id = 100;
     rtc::scoped_ptr<cricket::CandidatePairInterface> candidate_pair(
         transport_controller1_.CreateFakeCandidatePair(
             local_address, local_net_id, remote_address, remote_net_id));
     transport_channel1->SignalSelectedCandidatePairChanged(
-        transport_channel1, candidate_pair.get());
+        transport_channel1, candidate_pair.get(), last_packet_id);
     EXPECT_EQ(1, media_channel1_->num_network_route_changes());
-    cricket::NetworkRoute expected_network_route(local_net_id, remote_net_id);
+    cricket::NetworkRoute expected_network_route(local_net_id, remote_net_id,
+                                                 last_packet_id);
     EXPECT_EQ(expected_network_route, media_channel1->last_network_route());
+    EXPECT_EQ(last_packet_id,
+              media_channel1->last_network_route().last_sent_packet_id);
   }
 
   // Test setting up a call.

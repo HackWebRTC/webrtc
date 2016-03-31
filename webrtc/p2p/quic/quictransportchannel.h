@@ -232,7 +232,8 @@ class QuicTransportChannel : public TransportChannelImpl,
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
   void OnSelectedCandidatePairChanged(
       TransportChannel* channel,
-      CandidatePairInterface* selected_candidate_pair);
+      CandidatePairInterface* selected_candidate_pair,
+      int last_sent_packet_id);
   void OnConnectionRemoved(TransportChannelImpl* channel);
 
   // Callbacks for |quic_|.

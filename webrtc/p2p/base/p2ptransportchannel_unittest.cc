@@ -317,8 +317,6 @@ class P2PTransportChannelTestBase : public testing::Test,
         this, &P2PTransportChannelTestBase::OnReadPacket);
     channel->SignalRoleConflict.connect(
         this, &P2PTransportChannelTestBase::OnRoleConflict);
-    channel->SignalSelectedCandidatePairChanged.connect(
-        this, &P2PTransportChannelTestBase::OnSelectedCandidatePairChanged);
     channel->SetIceCredentials(local_ice_ufrag, local_ice_pwd);
     if (clear_remote_candidates_ufrag_pwd_) {
       // This only needs to be set if we're clearing them from the
@@ -566,7 +564,7 @@ class P2PTransportChannelTestBase : public testing::Test,
 
   void TestSendRecv(int channels) {
     for (int i = 0; i < 10; ++i) {
-    const char* data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+      const char* data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
       int len = static_cast<int>(strlen(data));
       // local_channel1 <==> remote_channel1
       EXPECT_EQ_WAIT(len, SendData(ep1_ch1(), data, len), 1000);
@@ -744,12 +742,6 @@ class P2PTransportChannelTestBase : public testing::Test,
     channel->SetIceRole(new_role);
   }
 
-  void OnSelectedCandidatePairChanged(
-      cricket::TransportChannel* channel,
-      cricket::CandidatePairInterface* candidate_pair) {
-    ++num_selected_candidate_pair_changes_;
-  }
-
   int SendData(cricket::TransportChannel* channel,
                const char* data, size_t len) {
     rtc::PacketOptions options;
@@ -803,13 +795,6 @@ class P2PTransportChannelTestBase : public testing::Test,
     force_relay_ = relay;
   }
 
-  int num_selected_candidate_pair_changes() {
-    return num_selected_candidate_pair_changes_;
-  }
-  void set_num_selected_candidate_pair_changes(int num) {
-    num_selected_candidate_pair_changes_ = num;
-  }
-
  private:
   rtc::Thread* main_;
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
@@ -824,7 +809,6 @@ class P2PTransportChannelTestBase : public testing::Test,
   rtc::SocksProxyServer socks_server2_;
   Endpoint ep1_;
   Endpoint ep2_;
-  int num_selected_candidate_pair_changes_ = 0;
   bool clear_remote_candidates_ufrag_pwd_;
   bool force_relay_;
 };
@@ -1595,9 +1579,8 @@ TEST_F(P2PTransportChannelMultihomedTest, DISABLED_TestBasic) {
   Test(kLocalUdpToLocalUdp);
 }
 
-// Test that we can quickly switch links if an interface goes down. This also
-// tests that when the link switches, |SignalSelectedCandidatePairChanged| will
-// be fired. The controlled side has two interfaces and one will die.
+// Test that we can quickly switch links if an interface goes down.
+// The controlled side has two interfaces and one will die.
 TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   AddAddress(0, kPublicAddrs[0]);
   // Adding alternate address will make sure |kPublicAddrs| has the higher
@@ -1625,7 +1608,6 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
 
-  set_num_selected_candidate_pair_changes(0);
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[1]);
@@ -1646,15 +1628,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[1]));
   EXPECT_TRUE(
       LocalCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[1]));
-  // It should have changed twice, one on each side.
-  EXPECT_EQ(2, num_selected_candidate_pair_changes());
 
   DestroyChannels();
 }
 
-// Test that we can quickly switch links if an interface goes down. This also
-// tests that when the link switches, |SignalSelectedCandidatePairChanged| will
-// be fired. The controlling side has two interfaces and one will die.
+// Test that we can quickly switch links if an interface goes down.
+// The controlling side has two interfaces and one will die.
 TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   // Adding alternate address will make sure |kPublicAddrs| has the higher
   // priority than others. This is due to FakeNetwork::AddInterface method.
@@ -1680,7 +1659,6 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   cricket::IceConfig config = CreateIceConfig(1000, false);
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
-  set_num_selected_candidate_pair_changes(0);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
@@ -1702,7 +1680,6 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
   EXPECT_TRUE(
       RemoteCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[0]));
-  EXPECT_EQ(2, num_selected_candidate_pair_changes());
 
   DestroyChannels();
 }
@@ -1920,6 +1897,8 @@ class P2PTransportChannelPingTest : public testing::Test,
     ch->SetIceRole(cricket::ICEROLE_CONTROLLING);
     ch->SetIceCredentials(kIceUfrag[0], kIcePwd[0]);
     ch->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+    ch->SignalSelectedCandidatePairChanged.connect(
+        this, &P2PTransportChannelPingTest::OnSelectedCandidatePairChanged);
     ch->SignalReadyToSend.connect(this,
                                   &P2PTransportChannelPingTest::OnReadyToSend);
   }
@@ -1971,10 +1950,31 @@ class P2PTransportChannelPingTest : public testing::Test,
     return conn;
   }
 
+  int SendData(cricket::TransportChannel& channel,
+               const char* data,
+               size_t len,
+               int packet_id) {
+    rtc::PacketOptions options;
+    options.packet_id = packet_id;
+    return channel.SendPacket(data, len, options, 0);
+  }
+
+  void OnSelectedCandidatePairChanged(
+      cricket::TransportChannel* transport_channel,
+      cricket::CandidatePairInterface* selected_candidate_pair,
+      int last_sent_packet_id) {
+    last_selected_candidate_pair_ = selected_candidate_pair;
+    last_sent_packet_id_ = last_sent_packet_id;
+  }
+
   void OnReadyToSend(cricket::TransportChannel* channel) {
     channel_ready_to_send_ = true;
   }
 
+  cricket::CandidatePairInterface* last_selected_candidate_pair() {
+    return last_selected_candidate_pair_;
+  }
+  int last_sent_packet_id() { return last_sent_packet_id_; }
   bool channel_ready_to_send() { return channel_ready_to_send_; }
   void reset_channel_ready_to_send() { channel_ready_to_send_ = false; }
 
@@ -1982,6 +1982,8 @@ class P2PTransportChannelPingTest : public testing::Test,
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
   rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
   rtc::SocketServerScope ss_scope_;
+  cricket::CandidatePairInterface* last_selected_candidate_pair_ = nullptr;
+  int last_sent_packet_id_ = -1;
   bool channel_ready_to_send_ = false;
 };
 
@@ -2172,8 +2174,9 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
 // The controlled side will select a connection as the "best connection" based
 // on priority until the controlling side nominates a connection, at which
 // point the controlled side will select that connection as the
-// "best connection". Plus, the channel will fire SignalReadyToSend if the new
-// best connection is writable.
+// "best connection". Plus, SignalSelectedCandidatePair will be fired if the
+// best connection changes and SignalReadyToSend will be fired if the new best
+// connection is writable.
 TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   cricket::P2PTransportChannel ch("receiving state change", 1, &pa);
@@ -2185,20 +2188,29 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
-  // Channel is not ready because it is not writable.
+  EXPECT_EQ(conn1, last_selected_candidate_pair());
+  EXPECT_EQ(-1, last_sent_packet_id());
+  // Channel is not ready to send because it is not writable.
   EXPECT_FALSE(channel_ready_to_send());
 
+  int last_packet_id = 0;
+  const char* data = "ABCDEFGH";
+  int len = static_cast<int>(strlen(data));
+  SendData(ch, data, len, ++last_packet_id);
   // When a higher priority candidate comes in, the new connection is chosen
   // as the best connection.
   ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 10));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_EQ(conn2, ch.best_connection());
+  EXPECT_EQ(conn2, last_selected_candidate_pair());
+  EXPECT_EQ(last_packet_id, last_sent_packet_id());
   EXPECT_FALSE(channel_ready_to_send());
 
   // If a stun request with use-candidate attribute arrives, the receiving
   // connection will be set as the best connection, even though
   // its priority is lower.
+  SendData(ch, data, len, ++last_packet_id);
   ch.AddRemoteCandidate(CreateHostCandidate("3.3.3.3", 3, 1));
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
@@ -2210,11 +2222,14 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   conn3->set_nominated(true);
   conn3->SignalNominated(conn3);
   EXPECT_EQ(conn3, ch.best_connection());
+  EXPECT_EQ(conn3, last_selected_candidate_pair());
+  EXPECT_EQ(last_packet_id, last_sent_packet_id());
   EXPECT_TRUE(channel_ready_to_send());
 
   // Even if another higher priority candidate arrives,
   // it will not be set as the best connection because the best connection
   // is nominated by the controlling side.
+  SendData(ch, data, len, ++last_packet_id);
   ch.AddRemoteCandidate(CreateHostCandidate("4.4.4.4", 4, 100));
   cricket::Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
   ASSERT_TRUE(conn4 != nullptr);
@@ -2229,6 +2244,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // The best connection switches after conn4 becomes writable.
   conn4->ReceivedPingResponse();
   EXPECT_EQ(conn4, ch.best_connection());
+  EXPECT_EQ(conn4, last_selected_candidate_pair());
+  EXPECT_EQ(last_packet_id, last_sent_packet_id());
   // SignalReadyToSend is fired again because conn4 is writable.
   EXPECT_TRUE(channel_ready_to_send());
 }
