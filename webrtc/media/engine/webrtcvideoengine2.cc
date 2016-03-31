@@ -325,7 +325,7 @@ bool GetVp9LayersFromFieldTrialGroup(int* num_spatial_layers,
              num_temporal_layers) != 2) {
     return false;
   }
-  const int kMaxSpatialLayers = 3;
+  const int kMaxSpatialLayers = 2;
   if (*num_spatial_layers > kMaxSpatialLayers || *num_spatial_layers < 1)
     return false;
 
