@@ -25,6 +25,12 @@ public abstract class EglBase {
   public static class Context {
   }
 
+  // According to the documentation, EGL can be used from multiple threads at the same time if each
+  // thread has its own EGLContext, but in practice it deadlocks on some devices when doing this.
+  // Therefore, synchronize on this global lock before calling dangerous EGL functions that might
+  // deadlock. See https://bugs.chromium.org/p/webrtc/issues/detail?id=5702 for more info.
+  public static final Object lock = new Object();
+
   // These constants are taken from EGL14.EGL_OPENGL_ES2_BIT and EGL14.EGL_CONTEXT_CLIENT_VERSION.
   // https://android.googlesource.com/platform/frameworks/base/+/master/opengl/java/android/opengl/EGL14.java
   // This is similar to how GlSurfaceView does:

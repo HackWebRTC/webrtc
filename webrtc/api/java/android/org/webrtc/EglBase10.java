@@ -220,17 +220,21 @@ final class EglBase10 extends EglBase {
     if (eglSurface == EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("No EGLSurface - can't make current");
     }
-    if (!egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-      throw new RuntimeException("eglMakeCurrent failed");
+    synchronized (EglBase.lock) {
+      if (!egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+        throw new RuntimeException("eglMakeCurrent failed");
+      }
     }
   }
 
   // Detach the current EGL context, so that it can be made current on another thread.
   @Override
   public void detachCurrent() {
-    if (!egl.eglMakeCurrent(
-        eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT)) {
-      throw new RuntimeException("eglMakeCurrent failed");
+    synchronized (EglBase.lock) {
+      if (!egl.eglMakeCurrent(
+          eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT)) {
+        throw new RuntimeException("eglDetachCurrent failed");
+      }
     }
   }
 
@@ -240,7 +244,9 @@ final class EglBase10 extends EglBase {
     if (eglSurface == EGL10.EGL_NO_SURFACE) {
       throw new RuntimeException("No EGLSurface - can't swap buffers");
     }
-    egl.eglSwapBuffers(eglDisplay, eglSurface);
+    synchronized (EglBase.lock) {
+      egl.eglSwapBuffers(eglDisplay, eglSurface);
+    }
   }
 
   // Return an EGLDisplay, or die trying.

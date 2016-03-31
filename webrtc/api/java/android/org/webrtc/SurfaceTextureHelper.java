@@ -451,8 +451,12 @@ class SurfaceTextureHelper {
     isTextureInUse = true;
     hasPendingTexture = false;
 
-    eglBase.makeCurrent();
-    surfaceTexture.updateTexImage();
+    // SurfaceTexture.updateTexImage apparently can compete and deadlock with eglSwapBuffers,
+    // as observed on Nexus 5. Therefore, synchronize it with the EGL functions.
+    // See https://bugs.chromium.org/p/webrtc/issues/detail?id=5702 for more info.
+    synchronized (EglBase.lock) {
+      surfaceTexture.updateTexImage();
+    }
 
     final float[] transformMatrix = new float[16];
     surfaceTexture.getTransformMatrix(transformMatrix);
@@ -473,7 +477,6 @@ class SurfaceTextureHelper {
       if (yuvConverter != null)
         yuvConverter.release();
     }
-    eglBase.makeCurrent();
     GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
     surfaceTexture.release();
     eglBase.release();
