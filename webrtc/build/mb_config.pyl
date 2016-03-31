@@ -128,10 +128,4 @@
       'ios64_gn_rel': 'ios_gn_release_bot_arm64_device',
     },
   },
-
-  # These lists are assumed to exist so we need them in order to be able to run
-  # the mb.py script in PRESUBMIT.py to verify our config is sane.
-  'common_dev_configs': [],
-  'private_configs': [],
-  'unsupported_configs': [],
 }
