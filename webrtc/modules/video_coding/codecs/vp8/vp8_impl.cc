@@ -1040,6 +1040,10 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
         // Report once per frame (lowest stream always sent).
         encoded_images_[encoder_idx].adapt_reason_.bw_resolutions_disabled =
             (stream_idx == 0) ? bw_resolutions_disabled : -1;
+        int qp_128 = -1;
+        vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER,
+                          &qp_128);
+        encoded_images_[encoder_idx].qp_ = qp_128;
         encoded_complete_callback_->Encoded(encoded_images_[encoder_idx],
                                             &codec_specific, &frag_info);
       } else if (codec_.mode == kScreensharing) {

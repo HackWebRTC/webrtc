@@ -193,6 +193,29 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
         kIndex, uma_prefix_ + "SendSideDelayMaxInMs", max_delay_ms);
   }
 
+  for (const auto& it : qp_counters_) {
+    int qp = it.second.vp8.Avg(kMinRequiredSamples);
+    if (qp != -1) {
+      int spatial_idx = it.first;
+      if (spatial_idx == -1) {
+        RTC_LOGGED_HISTOGRAMS_COUNTS_200(kIndex, uma_prefix_ + "Encoded.Qp.Vp8",
+                                         qp);
+      } else if (spatial_idx == 0) {
+        RTC_LOGGED_HISTOGRAMS_COUNTS_200(kIndex,
+                                         uma_prefix_ + "Encoded.Qp.Vp8.S0", qp);
+      } else if (spatial_idx == 1) {
+        RTC_LOGGED_HISTOGRAMS_COUNTS_200(kIndex,
+                                         uma_prefix_ + "Encoded.Qp.Vp8.S1", qp);
+      } else if (spatial_idx == 2) {
+        RTC_LOGGED_HISTOGRAMS_COUNTS_200(kIndex,
+                                         uma_prefix_ + "Encoded.Qp.Vp8.S2", qp);
+      } else {
+        LOG(LS_WARNING) << "QP stats not recorded for VP8 spatial idx "
+                        << spatial_idx;
+      }
+    }
+  }
+
   if (first_rtcp_stats_time_ms_ != -1) {
     int64_t elapsed_sec =
         (clock_->TimeInMilliseconds() - first_rtcp_stats_time_ms_) / 1000;
@@ -425,6 +448,13 @@ void SendStatisticsProxy::OnSendEncodedImage(
       uma_container_->bw_resolutions_disabled_counter_.Add(
           encoded_image.adapt_reason_.bw_resolutions_disabled);
     }
+  }
+
+  if (encoded_image.qp_ != -1 && rtp_video_header != nullptr &&
+      rtp_video_header->codec == kRtpVideoVp8) {
+    int spatial_idx =
+        (config_.rtp.ssrcs.size() == 1) ? -1 : static_cast<int>(simulcast_idx);
+    uma_container_->qp_counters_[spatial_idx].vp8.Add(encoded_image.qp_);
   }
 
   // TODO(asapersson): This is incorrect if simulcast layers are encoded on

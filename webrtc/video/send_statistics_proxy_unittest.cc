@@ -327,6 +327,57 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.InputWidthInPixels"));
 }
 
+TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8) {
+  test::ClearHistograms();
+  const int kMinRequiredSamples = 200;
+  const int kQpIdx0 = 21;
+  const int kQpIdx1 = 39;
+  EncodedImage encoded_image;
+
+  RTPVideoHeader rtp_video_header;
+  rtp_video_header.codec = kRtpVideoVp8;
+
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
+    rtp_video_header.simulcastIdx = 0;
+    encoded_image.qp_ = kQpIdx0;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+    rtp_video_header.simulcastIdx = 1;
+    encoded_image.qp_ = kQpIdx1;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8.S0"));
+  EXPECT_EQ(kQpIdx0,
+            test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp8.S0"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8.S1"));
+  EXPECT_EQ(kQpIdx1,
+            test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp8.S1"));
+}
+
+TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
+  VideoSendStream::Config config(nullptr);
+  config.rtp.ssrcs.push_back(kFirstSsrc);
+  statistics_proxy_.reset(new SendStatisticsProxy(
+      &fake_clock_, config, VideoEncoderConfig::ContentType::kRealtimeVideo));
+
+  test::ClearHistograms();
+  const int kMinRequiredSamples = 200;
+  const int kQpIdx0 = 21;
+  EncodedImage encoded_image;
+
+  RTPVideoHeader rtp_video_header;
+  rtp_video_header.codec = kRtpVideoVp8;
+
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
+    rtp_video_header.simulcastIdx = 0;
+    encoded_image.qp_ = kQpIdx0;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8"));
+  EXPECT_EQ(kQpIdx0, test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp8"));
+}
+
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {
   uint32_t excluded_ssrc =
       std::max(

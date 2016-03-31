@@ -125,6 +125,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     int64_t resolution_update_ms;
     int64_t bitrate_update_ms;
   };
+  struct QpCounters {
+    SampleCounter vp8;
+  };
   void PurgeOldStats() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
@@ -172,6 +175,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     int64_t first_rtp_stats_time_ms_;
     ReportBlockStats report_block_stats_;
     const VideoSendStream::Stats start_stats_;
+    std::map<int, QpCounters>
+        qp_counters_;  // QP counters mapped by spatial idx.
   };
 
   std::unique_ptr<UmaSamplesContainer> uma_container_ GUARDED_BY(crit_);
