@@ -23,6 +23,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
@@ -124,10 +125,12 @@ class VideoTrackSourceInterface
   // implicit behavior.
   virtual bool is_screencast() const = 0;
 
-  // Indicates that the encoder should denoise the video before encoding it.
+  // Indicates that the encoder should denoise video before encoding it.
+  // If it is not set, the default configuration is used which is different
+  // depending on video codec.
   // TODO(perkj): Remove this once denoising is done by the source, and not by
   // the encoder.
-  virtual bool needs_denoising() const = 0;
+  virtual rtc::Optional<bool> needs_denoising() const = 0;
 
  protected:
   virtual ~VideoTrackSourceInterface() {}

@@ -54,7 +54,9 @@ class VideoCapturerTrackSource : public VideoTrackSource,
   bool is_screencast() const override {
     return video_capturer_->IsScreencast();
   }
-  bool needs_denoising() const override { return needs_denoising_; }
+  rtc::Optional<bool> needs_denoising() const override {
+    return needs_denoising_;
+  }
 
   void Stop() override;
   void Restart() override;
@@ -75,7 +77,7 @@ class VideoCapturerTrackSource : public VideoTrackSource,
   rtc::scoped_ptr<cricket::VideoCapturer> video_capturer_;
   bool started_;
   cricket::VideoFormat format_;
-  bool needs_denoising_;
+  rtc::Optional<bool> needs_denoising_;
 };
 
 }  // namespace webrtc

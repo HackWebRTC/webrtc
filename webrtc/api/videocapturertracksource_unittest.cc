@@ -334,17 +334,17 @@ TEST_F(VideoCapturerTrackSourceTest, InvalidOptionalConstraint) {
 
 TEST_F(VideoCapturerTrackSourceTest, SetValidDenoisingConstraint) {
   FakeConstraints constraints;
-  constraints.AddMandatory(MediaConstraintsInterface::kNoiseReduction, "true");
+  constraints.AddMandatory(MediaConstraintsInterface::kNoiseReduction, "false");
 
   CreateVideoCapturerSource(&constraints);
 
-  EXPECT_TRUE(source_->needs_denoising());
+  EXPECT_EQ(rtc::Optional<bool>(false), source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, NoiseReductionConstraintNotSet) {
   FakeConstraints constraints;
   CreateVideoCapturerSource(&constraints);
-  EXPECT_FALSE(source_->needs_denoising());
+  EXPECT_EQ(rtc::Optional<bool>(), source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest,
@@ -355,7 +355,7 @@ TEST_F(VideoCapturerTrackSourceTest,
 
   CreateVideoCapturerSource(&constraints);
 
-  EXPECT_FALSE(source_->needs_denoising());
+  EXPECT_EQ(rtc::Optional<bool>(false), source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, NoiseReductionAndInvalidKeyOptional) {
@@ -367,7 +367,7 @@ TEST_F(VideoCapturerTrackSourceTest, NoiseReductionAndInvalidKeyOptional) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
-  EXPECT_TRUE(source_->needs_denoising());
+  EXPECT_EQ(rtc::Optional<bool>(true), source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, NoiseReductionAndInvalidKeyMandatory) {
@@ -379,7 +379,7 @@ TEST_F(VideoCapturerTrackSourceTest, NoiseReductionAndInvalidKeyMandatory) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);
-  EXPECT_FALSE(source_->needs_denoising());
+  EXPECT_EQ(rtc::Optional<bool>(), source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, InvalidDenoisingValueOptional) {
@@ -391,7 +391,8 @@ TEST_F(VideoCapturerTrackSourceTest, InvalidDenoisingValueOptional) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
-  EXPECT_FALSE(source_->needs_denoising());
+
+  EXPECT_EQ(rtc::Optional<bool>(), source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, InvalidDenoisingValueMandatory) {
@@ -405,7 +406,7 @@ TEST_F(VideoCapturerTrackSourceTest, InvalidDenoisingValueMandatory) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);
-  EXPECT_FALSE(source_->needs_denoising());
+  EXPECT_EQ(rtc::Optional<bool>(), source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, MixedOptionsAndConstraints) {
@@ -426,7 +427,7 @@ TEST_F(VideoCapturerTrackSourceTest, MixedOptionsAndConstraints) {
   EXPECT_EQ(288, format->height);
   EXPECT_EQ(30, format->framerate());
 
-  EXPECT_FALSE(source_->needs_denoising());
+  EXPECT_EQ(rtc::Optional<bool>(false), source_->needs_denoising());
 }
 
 // Tests that the source starts video with the default resolution for

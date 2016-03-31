@@ -37,7 +37,8 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
   void Restart() override{};
 
   virtual bool is_screencast() const { return false; }
-  virtual bool needs_denoising() const { return false; }
+  virtual rtc::Optional<bool> needs_denoising() const {
+    return rtc::Optional<bool>(); }
 
   void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;

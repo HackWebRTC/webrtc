@@ -332,8 +332,7 @@ void VideoRtpSender::SetVideoSend() {
   VideoTrackSourceInterface* source = track_->GetSource();
   if (source) {
     options.is_screencast = rtc::Optional<bool>(source->is_screencast());
-    options.video_noise_reduction =
-        rtc::Optional<bool>(source->needs_denoising());
+    options.video_noise_reduction = source->needs_denoising();
   }
   provider_->SetVideoSend(ssrc_, track_->enabled(), &options);
 }
