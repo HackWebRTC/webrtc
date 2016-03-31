@@ -127,10 +127,11 @@ static const int kRsaMinModSize = 1024;
 static const int kRsaMaxModSize = 8192;
 
 // Certificate default validity lifetime.
-static const int kDefaultCertificateLifetime = 60 * 60 * 24 * 30;  // 30 days
+static const int kDefaultCertificateLifetimeInSeconds =
+    60 * 60 * 24 * 30;  // 30 days
 // Certificate validity window.
 // This is to compensate for slightly incorrect system clocks.
-static const int kCertificateWindow = -60 * 60 * 24;
+static const int kCertificateWindowInSeconds = -60 * 60 * 24;
 
 struct RSAParams {
   unsigned int mod_size;
@@ -198,9 +199,9 @@ class SSLIdentity {
   // should be a non-negative number.
   // Returns NULL on failure.
   // Caller is responsible for freeing the returned object.
-  static SSLIdentity* Generate(const std::string& common_name,
-                               const KeyParams& key_param,
-                               time_t certificate_lifetime);
+  static SSLIdentity* GenerateWithExpiration(const std::string& common_name,
+                                             const KeyParams& key_param,
+                                             time_t certificate_lifetime);
   static SSLIdentity* Generate(const std::string& common_name,
                                const KeyParams& key_param);
   static SSLIdentity* Generate(const std::string& common_name,

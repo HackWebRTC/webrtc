@@ -101,9 +101,9 @@ class OpenSSLCertificate : public SSLCertificate {
 // them consistently.
 class OpenSSLIdentity : public SSLIdentity {
  public:
-  static OpenSSLIdentity* Generate(const std::string& common_name,
-                                   const KeyParams& key_params,
-                                   time_t certificate_lifetime);
+  static OpenSSLIdentity* GenerateWithExpiration(const std::string& common_name,
+                                                 const KeyParams& key_params,
+                                                 time_t certificate_lifetime);
   static OpenSSLIdentity* GenerateForTest(const SSLIdentityParams& params);
   static SSLIdentity* FromPEMStrings(const std::string& private_key,
                                      const std::string& certificate);

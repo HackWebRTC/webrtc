@@ -407,16 +407,18 @@ OpenSSLIdentity* OpenSSLIdentity::GenerateInternal(
   return NULL;
 }
 
-OpenSSLIdentity* OpenSSLIdentity::Generate(const std::string& common_name,
-                                           const KeyParams& key_params,
-                                           time_t certificate_lifetime) {
+OpenSSLIdentity* OpenSSLIdentity::GenerateWithExpiration(
+    const std::string& common_name,
+    const KeyParams& key_params,
+    time_t certificate_lifetime) {
   SSLIdentityParams params;
   params.key_params = key_params;
   params.common_name = common_name;
   time_t now = time(NULL);
-  params.not_before = now + kCertificateWindow;
+  params.not_before = now + kCertificateWindowInSeconds;
   params.not_after = now + certificate_lifetime;
-  RTC_DCHECK(params.not_before < params.not_after);
+  if (params.not_before > params.not_after)
+    return nullptr;
   return GenerateInternal(params);
 }
 

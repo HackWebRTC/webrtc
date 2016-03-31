@@ -156,25 +156,25 @@ SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
 }
 
 // static
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
-                                   const KeyParams& key_params,
-                                   time_t certificate_lifetime) {
-  return OpenSSLIdentity::Generate(common_name, key_params,
-                                   certificate_lifetime);
+SSLIdentity* SSLIdentity::GenerateWithExpiration(const std::string& common_name,
+                                                 const KeyParams& key_params,
+                                                 time_t certificate_lifetime) {
+  return OpenSSLIdentity::GenerateWithExpiration(common_name, key_params,
+                                                 certificate_lifetime);
 }
 
 // static
 SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
                                    const KeyParams& key_params) {
-  return OpenSSLIdentity::Generate(common_name, key_params,
-                                   kDefaultCertificateLifetime);
+  return OpenSSLIdentity::GenerateWithExpiration(
+      common_name, key_params, kDefaultCertificateLifetimeInSeconds);
 }
 
 // static
 SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
                                    KeyType key_type) {
-  return OpenSSLIdentity::Generate(common_name, KeyParams(key_type),
-                                   kDefaultCertificateLifetime);
+  return OpenSSLIdentity::GenerateWithExpiration(
+      common_name, KeyParams(key_type), kDefaultCertificateLifetimeInSeconds);
 }
 
 SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {

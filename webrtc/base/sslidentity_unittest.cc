@@ -397,7 +397,7 @@ class SSLIdentityExpirationTest : public testing::Test {
           rtc::CreateRandomId() % (0x80000000 - time_before_generation);
       rtc::KeyParams key_params = rtc::KeyParams::ECDSA(rtc::EC_NIST_P256);
       SSLIdentity* identity =
-          rtc::SSLIdentity::Generate("", key_params, lifetime);
+          rtc::SSLIdentity::GenerateWithExpiration("", key_params, lifetime);
       time_t time_after_generation = time(nullptr);
       EXPECT_LE(time_before_generation + lifetime,
                 identity->certificate().CertificateExpirationTime());
