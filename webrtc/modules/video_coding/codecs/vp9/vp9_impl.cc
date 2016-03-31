@@ -35,7 +35,7 @@ namespace webrtc {
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
 int GetCpuSpeed(int width, int height) {
-#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || defined(ANDROID)
   return 8;
 #else
   // For smaller resolutions, use lower speed setting (get some coding gain at
@@ -440,7 +440,8 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   // The number tile columns will be capped by the encoder based on image size
   // (minimum width of tile column is 256 pixels, maximum is 4096).
   vpx_codec_control(encoder_, VP9E_SET_TILE_COLUMNS, (config_->g_threads >> 1));
-#if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64)
+#if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
+  !defined(ANDROID)
   // Note denoiser is still off by default until further testing/optimization,
   // i.e., codecSpecific.VP9.denoisingOn == 0.
   vpx_codec_control(encoder_, VP9E_SET_NOISE_SENSITIVITY,
