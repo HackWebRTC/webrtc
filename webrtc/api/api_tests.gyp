@@ -17,7 +17,7 @@
         '<(webrtc_root)/api/api.gyp:libjingle_peerconnection',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         '<(webrtc_root)/common.gyp:webrtc_common',
-        '<(webrtc_root)/webrtc.gyp:rtc_unittest_main',
+        '<(webrtc_root)/media/media.gyp:rtc_unittest_main',
         '<(webrtc_root)/pc/pc.gyp:rtc_pc',
       ],
       'direct_dependent_settings': {

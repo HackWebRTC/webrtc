@@ -140,6 +140,36 @@
           ],
         }],
       ],
-    }],
+    },
+  ],  # targets
+  'conditions': [
+    ['include_tests==1', {
+      'targets' : [
+        {
+          'target_name': 'rtc_xmpp_unittest',
+          'type': 'none',
+          'direct_dependent_settings': {
+            'sources': [
+              'fakexmppclient.h',
+              'hangoutpubsubclient_unittest.cc',
+              'jid_unittest.cc',
+              'mucroomconfigtask_unittest.cc',
+              'mucroomdiscoverytask_unittest.cc',
+              'mucroomlookuptask_unittest.cc',
+              'mucroomuniquehangoutidtask_unittest.cc',
+              'pingtask_unittest.cc',
+              'pubsubclient_unittest.cc',
+              'pubsubtasks_unittest.cc',
+              'util_unittest.cc',
+              'util_unittest.h',
+              'xmppengine_unittest.cc',
+              'xmpplogintask_unittest.cc',
+              'xmppstanzaparser_unittest.cc',
+            ],
+          },
+        },  # target rtc_xmpp_unittest
+      ],  # targets
+    }],  # include_tests==1
+  ],  # conditions
 }
 
