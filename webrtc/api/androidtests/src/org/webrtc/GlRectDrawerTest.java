@@ -250,8 +250,8 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     eglBase.createPbufferSurface(WIDTH, HEIGHT);
 
     // Create resources for generating OES textures.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(eglBase.getEglBaseContext());
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, eglBase.getEglBaseContext());
     final StubOesTextureProducer oesProducer = new StubOesTextureProducer(
         eglBase.getEglBaseContext(), surfaceTextureHelper.getSurfaceTexture(), WIDTH, HEIGHT);
     final SurfaceTextureHelperTest.MockTextureListener listener =

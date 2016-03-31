@@ -52,8 +52,9 @@ class SurfaceTextureHelper {
    * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|. A dedicated
    * thread and handler is created for handling the SurfaceTexture.
    */
-  public static SurfaceTextureHelper create(final EglBase.Context sharedContext) {
-    final HandlerThread thread = new HandlerThread(TAG);
+  public static SurfaceTextureHelper create(
+      final String threadName, final EglBase.Context sharedContext) {
+    final HandlerThread thread = new HandlerThread(threadName);
     thread.start();
     final Handler handler = new Handler(thread.getLooper());
 

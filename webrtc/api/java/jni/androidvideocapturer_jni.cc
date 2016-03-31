@@ -42,7 +42,7 @@ AndroidVideoCapturerJni::AndroidVideoCapturerJni(
           FindClass(jni,
                     "org/webrtc/VideoCapturer$NativeObserver")),
       surface_texture_helper_(new rtc::RefCountedObject<SurfaceTextureHelper>(
-          jni, j_egl_context)),
+          jni, "Camera SurfaceTextureHelper", j_egl_context)),
       capturer_(nullptr) {
   LOG(LS_INFO) << "AndroidVideoCapturerJni ctor";
   thread_checker_.DetachFromThread();

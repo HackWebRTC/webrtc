@@ -102,8 +102,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final GlRectDrawer drawer = new GlRectDrawer();
 
     // Create SurfaceTextureHelper and listener.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(eglBase.getEglBaseContext());
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
@@ -169,8 +169,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     eglBase.createPbufferSurface(width, height);
 
     // Create SurfaceTextureHelper and listener.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(eglBase.getEglBaseContext());
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
@@ -229,8 +229,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   @MediumTest
   public static void testDispose() throws InterruptedException {
     // Create SurfaceTextureHelper and listener.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(null);
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, null);
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
     // Create EglBase with the SurfaceTexture as target EGLSurface.
@@ -265,8 +265,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    */
   @SmallTest
   public static void testDisposeImmediately() {
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(null);
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, null);
     surfaceTextureHelper.dispose();
   }
 
@@ -288,8 +288,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   @MediumTest
   public static void testStopListening() throws InterruptedException {
     // Create SurfaceTextureHelper and listener.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(null);
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, null);
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
     // Create EglBase with the SurfaceTexture as target EGLSurface.
@@ -324,8 +324,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    */
   @SmallTest
   public static void testStopListeningImmediately() throws InterruptedException {
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(null);
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, null);
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
     stopListeningOnHandlerThread(surfaceTextureHelper);
@@ -338,8 +338,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    */
   @SmallTest
   public static void testStopListeningImmediatelyOnHandlerThread() throws InterruptedException {
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(null);
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, null);
     final MockTextureListener listener = new MockTextureListener();
 
     final CountDownLatch stopListeningBarrier = new CountDownLatch(1);
@@ -377,8 +377,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   @MediumTest
   public static void testRestartListeningWithNewListener() throws InterruptedException {
     // Create SurfaceTextureHelper and listener.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(null);
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, null);
     final MockTextureListener listener1 = new MockTextureListener();
     surfaceTextureHelper.startListening(listener1);
     // Create EglBase with the SurfaceTexture as target EGLSurface.
@@ -425,8 +425,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     final EglBase eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
 
     // Create SurfaceTextureHelper and listener.
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(eglBase.getEglBaseContext());
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        "SurfaceTextureHelper test" /* threadName */, eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
