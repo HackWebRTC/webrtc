@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 #define WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
@@ -77,6 +78,8 @@ class ChannelProxy {
 
   rtc::ThreadChecker thread_checker_;
   ChannelOwner channel_owner_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(ChannelProxy);
 };
 }  // namespace voe
 }  // namespace webrtc

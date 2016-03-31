@@ -19,6 +19,7 @@
 #include "webrtc/audio_state.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/networkroute.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
@@ -44,12 +45,10 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // Exposed for the WVoE/MC unit test.
   static bool ToCodecInst(const AudioCodec& in, webrtc::CodecInst* out);
 
-  WebRtcVoiceEngine();
+  explicit WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm);
   // Dependency injection for testing.
-  explicit WebRtcVoiceEngine(VoEWrapper* voe_wrapper);
-  ~WebRtcVoiceEngine();
-  bool Init(rtc::Thread* worker_thread);
-  void Terminate();
+  WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm, VoEWrapper* voe_wrapper);
+  ~WebRtcVoiceEngine() override;
 
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const;
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
@@ -76,9 +75,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   VoEWrapper* voe() { return voe_wrapper_.get(); }
   int GetLastEngineError();
 
-  // Set the external ADM. This can only be called before Init.
-  bool SetAudioDeviceModule(webrtc::AudioDeviceModule* adm);
-
   // Starts AEC dump using an existing file. A maximum file size in bytes can be
   // specified. When the maximum file size is reached, logging is stopped and
   // the file is closed. If max_size_bytes is set to <= 0, no limit will be
@@ -96,8 +92,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   void StopRtcEventLog();
 
  private:
-  void Construct();
-  bool InitInternal();
   // Every option that is "set" will be applied. Every option not "set" will be
   // ignored. This allows us to selectively turn on and off different options
   // easily at any time.
@@ -113,15 +107,14 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   rtc::ThreadChecker signal_thread_checker_;
   rtc::ThreadChecker worker_thread_checker_;
 
+  // The audio device manager.
+  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm_;
   // The primary instance of WebRtc VoiceEngine.
   std::unique_ptr<VoEWrapper> voe_wrapper_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
-  // The external audio device manager
-  webrtc::AudioDeviceModule* adm_ = nullptr;
   std::vector<AudioCodec> codecs_;
   std::vector<WebRtcVoiceMediaChannel*> channels_;
   webrtc::Config voe_config_;
-  bool initialized_ = false;
   bool is_dumping_aec_ = false;
 
   webrtc::AgcConfig default_agc_config_;
@@ -133,7 +126,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   rtc::Optional<bool> delay_agnostic_aec_;
   rtc::Optional<bool> experimental_ns_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcVoiceEngine);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceEngine);
 };
 
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses
@@ -157,8 +150,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool PausePlayout();
   bool ResumePlayout();
   void SetSend(bool send) override;
-  bool PauseSend();
-  bool ResumeSend();
   bool SetAudioSend(uint32_t ssrc,
                     bool enable,
                     const AudioOptions* options,

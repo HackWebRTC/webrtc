@@ -25,6 +25,7 @@
 #include "webrtc/media/engine/fakewebrtccommon.h"
 #include "webrtc/media/engine/webrtcvoe.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
+#include "webrtc/modules/audio_device/include/fake_audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace cricket {
@@ -118,6 +119,26 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   bool experimental_ns_enabled_;
 };
 
+// TODO(solenberg): Swap this for a proper mock of the ADM.
+class FakeAudioDeviceModule : public webrtc::FakeAudioDeviceModule {
+ public:
+  ~FakeAudioDeviceModule() override {
+    RTC_DCHECK_EQ(0, ref_count_);
+  }
+  int32_t AddRef() const override {
+    ref_count_++;
+    return ref_count_;
+  }
+  int32_t Release() const override {
+    RTC_DCHECK_LT(0, ref_count_);
+    ref_count_--;
+    return ref_count_;
+  }
+
+ private:
+  mutable int32_t ref_count_ = 0;
+};
+
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
       public webrtc::VoEBase, public webrtc::VoECodec,
@@ -193,7 +214,7 @@ class FakeWebRtcVoiceEngine
         playout_sample_rate_(-1) {
     memset(&agc_config_, 0, sizeof(agc_config_));
   }
-  ~FakeWebRtcVoiceEngine() {
+  ~FakeWebRtcVoiceEngine() override {
     RTC_CHECK(channels_.empty());
   }
 
@@ -305,6 +326,9 @@ class FakeWebRtcVoiceEngine
   }
   webrtc::AudioProcessing* audio_processing() override {
     return &audio_processing_;
+  }
+  webrtc::AudioDeviceModule* audio_device_module() override {
+    return &audio_device_module_;
   }
   WEBRTC_FUNC(CreateChannel, ()) {
     webrtc::Config empty_config;
@@ -775,6 +799,7 @@ class FakeWebRtcVoiceEngine
   int recording_sample_rate_;
   int playout_sample_rate_;
   FakeAudioProcessing audio_processing_;
+  FakeAudioDeviceModule audio_device_module_;
 };
 
 }  // namespace cricket

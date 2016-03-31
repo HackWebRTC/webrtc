@@ -33,6 +33,7 @@
 #endif
 
 namespace webrtc {
+class AudioDeviceModule;
 class Call;
 }
 
@@ -54,9 +55,7 @@ class MediaEngineInterface {
 
   // Initialization
   // Starts the engine.
-  virtual bool Init(rtc::Thread* worker_thread) = 0;
-  // Shuts down the engine.
-  virtual void Terminate() = 0;
+  virtual bool Init() = 0;
   // TODO(solenberg): Remove once VoE API refactoring is done.
   virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const = 0;
 
@@ -125,15 +124,11 @@ class MediaEngineFactory {
 template<class VOICE, class VIDEO>
 class CompositeMediaEngine : public MediaEngineInterface {
  public:
+  explicit CompositeMediaEngine(webrtc::AudioDeviceModule* adm) : voice_(adm) {}
   virtual ~CompositeMediaEngine() {}
-  virtual bool Init(rtc::Thread* worker_thread) {
-    if (!voice_.Init(worker_thread))
-      return false;
+  virtual bool Init() {
     video_.Init();
     return true;
-  }
-  virtual void Terminate() {
-    voice_.Terminate();
   }
 
   virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const {

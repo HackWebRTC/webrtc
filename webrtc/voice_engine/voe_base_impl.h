@@ -33,6 +33,9 @@ class VoEBaseImpl : public VoEBase,
   AudioProcessing* audio_processing() override {
     return shared_->audio_processing();
   }
+  AudioDeviceModule* audio_device_module() override {
+    return shared_->audio_device();
+  }
   int Terminate() override;
 
   int CreateChannel() override;

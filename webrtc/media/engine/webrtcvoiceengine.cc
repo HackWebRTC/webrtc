@@ -249,7 +249,6 @@ class WebRtcVoiceCodecs final {
   // TODO(solenberg): Do this filtering once off-line, add a simple AudioCodec
   // list and add a test which verifies VoE supports the listed codecs.
   static std::vector<AudioCodec> SupportedCodecs() {
-    LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
     std::vector<AudioCodec> result;
     for (webrtc::CodecInst voe_codec : webrtc::acm2::RentACodec::Database()) {
       // Change the sample rate of G722 to 8000 to match SDP.
@@ -276,7 +275,6 @@ class WebRtcVoiceCodecs final {
             pref->payload_type, voe_codec.plname, voe_codec.plfreq,
             voe_codec.rate, voe_codec.channels,
             static_cast<int>(arraysize(kCodecPrefs)) - (pref - kCodecPrefs));
-        LOG(LS_INFO) << ToString(codec);
         if (IsCodec(codec, kIsacCodecName)) {
           // Indicate auto-bitrate in signaling.
           codec.bitrate = 0;
@@ -300,7 +298,7 @@ class WebRtcVoiceCodecs final {
         }
         result.push_back(codec);
       } else {
-        LOG(LS_WARNING) << "Unexpected codec: " << ToString(voe_codec);
+        LOG(LS_INFO) << "[Unused] " << ToString(voe_codec);
       }
     }
     // Make sure they are in local preference order.
@@ -515,74 +513,46 @@ bool WebRtcVoiceEngine::ToCodecInst(const AudioCodec& in,
   return WebRtcVoiceCodecs::ToCodecInst(in, out);
 }
 
-WebRtcVoiceEngine::WebRtcVoiceEngine()
-    : voe_wrapper_(new VoEWrapper()),
-      audio_state_(webrtc::AudioState::Create(MakeAudioStateConfig(voe()))) {
-  Construct();
+WebRtcVoiceEngine::WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm)
+    : WebRtcVoiceEngine(adm, new VoEWrapper()) {
+  audio_state_ = webrtc::AudioState::Create(MakeAudioStateConfig(voe()));
 }
 
-WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper)
-    : voe_wrapper_(voe_wrapper) {
-  Construct();
-}
-
-void WebRtcVoiceEngine::Construct() {
+WebRtcVoiceEngine::WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm,
+                                     VoEWrapper* voe_wrapper)
+    : adm_(adm), voe_wrapper_(voe_wrapper) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_VERBOSE) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
+  LOG(LS_INFO) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
+  RTC_DCHECK(voe_wrapper);
 
   signal_thread_checker_.DetachFromThread();
-  std::memset(&default_agc_config_, 0, sizeof(default_agc_config_));
-  voe_config_.Set<webrtc::VoicePacing>(new webrtc::VoicePacing(true));
-
-  webrtc::Trace::set_level_filter(kDefaultTraceFilter);
-  webrtc::Trace::SetTraceCallback(this);
 
   // Load our audio codec list.
+  LOG(LS_INFO) << "Supported codecs in order of preference:";
   codecs_ = WebRtcVoiceCodecs::SupportedCodecs();
-}
-
-WebRtcVoiceEngine::~WebRtcVoiceEngine() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_VERBOSE) << "WebRtcVoiceEngine::~WebRtcVoiceEngine";
-  if (adm_) {
-    voe_wrapper_.reset();
-    adm_->Release();
-    adm_ = NULL;
+  for (const AudioCodec& codec : codecs_) {
+    LOG(LS_INFO) << ToString(codec);
   }
-  webrtc::Trace::SetTraceCallback(nullptr);
-}
 
-bool WebRtcVoiceEngine::Init(rtc::Thread* worker_thread) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(worker_thread == rtc::Thread::Current());
-  LOG(LS_INFO) << "WebRtcVoiceEngine::Init";
-  bool res = InitInternal();
-  if (res) {
-    LOG(LS_INFO) << "WebRtcVoiceEngine::Init Done!";
-  } else {
-    LOG(LS_ERROR) << "WebRtcVoiceEngine::Init failed";
-    Terminate();
-  }
-  return res;
-}
+  voe_config_.Set<webrtc::VoicePacing>(new webrtc::VoicePacing(true));
 
-bool WebRtcVoiceEngine::InitInternal() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  // Temporarily turn logging level up for the Init call.
+  // Temporarily turn logging level up for the Init() call.
+  webrtc::Trace::SetTraceCallback(this);
   webrtc::Trace::set_level_filter(kElevatedTraceFilter);
   LOG(LS_INFO) << webrtc::VoiceEngine::GetVersionString();
-  if (voe_wrapper_->base()->Init(adm_) == -1) {
-    LOG_RTCERR0_EX(Init, voe_wrapper_->error());
-    return false;
-  }
+  RTC_CHECK_EQ(0, voe_wrapper_->base()->Init(adm_.get()));
   webrtc::Trace::set_level_filter(kDefaultTraceFilter);
+
+  // No ADM supplied? Get the default one from VoE.
+  if (!adm_) {
+    adm_ = voe_wrapper_->base()->audio_device_module();
+  }
+  RTC_DCHECK(adm_);
 
   // Save the default AGC configuration settings. This must happen before
   // calling ApplyOptions or the default will be overwritten.
-  if (voe_wrapper_->processing()->GetAgcConfig(default_agc_config_) == -1) {
-    LOG_RTCERR0(GetAgcConfig);
-    return false;
-  }
+  int error = voe_wrapper_->processing()->GetAgcConfig(default_agc_config_);
+  RTC_DCHECK_EQ(0, error);
 
   // Set default engine options.
   {
@@ -600,31 +570,19 @@ bool WebRtcVoiceEngine::InitInternal() {
     options.extended_filter_aec = rtc::Optional<bool>(false);
     options.delay_agnostic_aec = rtc::Optional<bool>(false);
     options.experimental_ns = rtc::Optional<bool>(false);
-    if (!ApplyOptions(options)) {
-      return false;
-    }
-  }
-
-  // Print our codec list again for the call diagnostic log.
-  LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
-  for (const AudioCodec& codec : codecs_) {
-    LOG(LS_INFO) << ToString(codec);
+    bool error = ApplyOptions(options);
+    RTC_DCHECK(error);
   }
 
   SetDefaultDevices();
-
-  initialized_ = true;
-  return true;
 }
 
-void WebRtcVoiceEngine::Terminate() {
+WebRtcVoiceEngine::~WebRtcVoiceEngine() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_INFO) << "WebRtcVoiceEngine::Terminate";
-  initialized_ = false;
-
+  LOG(LS_INFO) << "WebRtcVoiceEngine::~WebRtcVoiceEngine";
   StopAecDump();
-
   voe_wrapper_->base()->Terminate();
+  webrtc::Trace::SetTraceCallback(nullptr);
 }
 
 rtc::scoped_refptr<webrtc::AudioState>
@@ -643,7 +601,7 @@ VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(
 
 bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  LOG(LS_INFO) << "ApplyOptions: " << options_in.ToString();
+  LOG(LS_INFO) << "WebRtcVoiceEngine::ApplyOptions: " << options_in.ToString();
   AudioOptions options = options_in;  // The options are modified below.
 
   // kEcConference is AEC with high suppression.
@@ -1044,23 +1002,6 @@ bool WebRtcVoiceEngine::AdjustAgcLevel(int delta) {
   if (voe_wrapper_->processing()->SetAgcConfig(config) == -1) {
     LOG_RTCERR1(SetAgcConfig, config.targetLeveldBOv);
     return false;
-  }
-  return true;
-}
-
-bool WebRtcVoiceEngine::SetAudioDeviceModule(webrtc::AudioDeviceModule* adm) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  if (initialized_) {
-    LOG(LS_WARNING) << "SetAudioDeviceModule can not be called after Init.";
-    return false;
-  }
-  if (adm_) {
-    adm_->Release();
-    adm_ = NULL;
-  }
-  if (adm) {
-    adm_ = adm;
-    adm_->AddRef();
   }
   return true;
 }

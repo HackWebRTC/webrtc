@@ -30,8 +30,12 @@ class WebRtcMediaEngine2
  public:
   WebRtcMediaEngine2(webrtc::AudioDeviceModule* adm,
                      WebRtcVideoEncoderFactory* encoder_factory,
-                     WebRtcVideoDecoderFactory* decoder_factory) {
-    voice_.SetAudioDeviceModule(adm);
+                     WebRtcVideoDecoderFactory* decoder_factory)
+#ifdef HAVE_WEBRTC_VIDEO
+      : CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2>(adm) {
+#else
+      : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(adm) {
+#endif
     video_.SetExternalDecoderFactory(decoder_factory);
     video_.SetExternalEncoderFactory(encoder_factory);
   }

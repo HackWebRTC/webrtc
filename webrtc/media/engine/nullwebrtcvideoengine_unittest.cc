@@ -20,8 +20,8 @@ class WebRtcMediaEngineNullVideo
  public:
   WebRtcMediaEngineNullVideo(webrtc::AudioDeviceModule* adm,
                              WebRtcVideoEncoderFactory* encoder_factory,
-                             WebRtcVideoDecoderFactory* decoder_factory) {
-    voice_.SetAudioDeviceModule(adm);
+                             WebRtcVideoDecoderFactory* decoder_factory)
+      : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(adm) {
     video_.SetExternalDecoderFactory(decoder_factory);
     video_.SetExternalEncoderFactory(encoder_factory);
   }
@@ -31,9 +31,7 @@ class WebRtcMediaEngineNullVideo
 // required by CompositeMediaEngine.
 TEST(NullWebRtcVideoEngineTest, CheckInterface) {
   WebRtcMediaEngineNullVideo engine(nullptr, nullptr, nullptr);
-
-  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  engine.Terminate();
+  EXPECT_TRUE(engine.Init());
 }
 
 }  // namespace cricket

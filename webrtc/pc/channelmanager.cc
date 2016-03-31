@@ -174,7 +174,7 @@ bool ChannelManager::Init() {
 
 bool ChannelManager::InitMediaEngine_w() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  return (media_engine_->Init(worker_thread_));
+  return media_engine_->Init();
 }
 
 void ChannelManager::Terminate() {
@@ -200,7 +200,6 @@ void ChannelManager::Terminate_w() {
   while (!voice_channels_.empty()) {
     DestroyVoiceChannel_w(voice_channels_.back());
   }
-  media_engine_->Terminate();
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel(

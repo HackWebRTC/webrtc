@@ -102,6 +102,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
                          const char* field_trials)
       : override_field_trials_(field_trials),
         call_(webrtc::Call::Create(webrtc::Call::Config())),
+        voice_engine_(nullptr),
         engine_() {
     std::vector<VideoCodec> engine_codecs = engine_.codecs();
     RTC_DCHECK(!engine_codecs.empty());

@@ -132,6 +132,10 @@ class WEBRTC_DLLEXPORT VoEBase {
   // Returns NULL before Init() is called.
   virtual AudioProcessing* audio_processing() = 0;
 
+  // This method is WIP - DO NOT USE!
+  // Returns NULL before Init() is called.
+  virtual AudioDeviceModule* audio_device_module() = 0;
+
   // Terminates all VoiceEngine functions and releases allocated resources.
   // Returns 0.
   virtual int Terminate() = 0;
