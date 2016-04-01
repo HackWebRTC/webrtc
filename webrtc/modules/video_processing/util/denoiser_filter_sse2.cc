@@ -139,7 +139,9 @@ DenoiserDecision DenoiserFilterSSE2::MbDenoise(uint8_t* mc_running_avg_y,
                                                const uint8_t* sig,
                                                int sig_stride,
                                                uint8_t motion_magnitude,
-                                               int increase_denoising) {
+                                               int increase_denoising,
+                                               bool denoise_always) {
+  unsigned int sum_diff_thresh = 0;
   int shift_inc =
       (increase_denoising && motion_magnitude <= kMotionMagnitudeThreshold) ? 1
                                                                             : 0;
@@ -211,9 +213,12 @@ DenoiserDecision DenoiserFilterSSE2::MbDenoise(uint8_t* mc_running_avg_y,
   {
     // Compute the sum of all pixel differences of this MB.
     unsigned int abs_sum_diff = AbsSumDiff16x1(acc_diff);
-    unsigned int sum_diff_thresh = kSumDiffThreshold;
-    if (increase_denoising)
+    if (denoise_always)
+      sum_diff_thresh = INT_MAX;
+    else if (increase_denoising)
       sum_diff_thresh = kSumDiffThresholdHigh;
+    else
+      sum_diff_thresh = kSumDiffThreshold;
     if (abs_sum_diff > sum_diff_thresh) {
       // Before returning to copy the block (i.e., apply no denoising),
       // check if we can still apply some (weaker) temporal filtering to

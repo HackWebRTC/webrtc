@@ -38,7 +38,8 @@ class DenoiserFilterC : public DenoiserFilter {
                              const uint8_t* sig,
                              int sig_stride,
                              uint8_t motion_magnitude,
-                             int increase_denoising) override;
+                             int increase_denoising,
+                             bool denoise_always) override;
 };
 
 }  // namespace webrtc

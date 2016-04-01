@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
 
+#include <climits>
 #include <memory>
 
 #include "webrtc/modules/include/module_common_types.h"
@@ -23,6 +24,7 @@ extern const int kSumDiffThreshold;
 extern const int kSumDiffThresholdHigh;
 
 enum DenoiserDecision { COPY_BLOCK, FILTER_BLOCK };
+enum CpuType { CPU_NEON, CPU_NOT_NEON };
 struct DenoiseMetrics {
   uint32_t var;
   uint32_t sad;
@@ -32,7 +34,8 @@ struct DenoiseMetrics {
 
 class DenoiserFilter {
  public:
-  static std::unique_ptr<DenoiserFilter> Create(bool runtime_cpu_detection);
+  static std::unique_ptr<DenoiserFilter> Create(bool runtime_cpu_detection,
+                                                CpuType* cpu_type);
 
   virtual ~DenoiserFilter() {}
 
@@ -56,7 +59,8 @@ class DenoiserFilter {
                                      const uint8_t* sig,
                                      int sig_stride,
                                      uint8_t motion_magnitude,
-                                     int increase_denoising) = 0;
+                                     int increase_denoising,
+                                     bool denoise_always) = 0;
 };
 
 }  // namespace webrtc

@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "webrtc/modules/video_processing/util/denoiser_filter.h"
+#include "webrtc/modules/video_processing/util/noise_estimation.h"
 #include "webrtc/modules/video_processing/util/skin_detection.h"
 
 namespace webrtc {
@@ -21,18 +22,25 @@ namespace webrtc {
 class VideoDenoiser {
  public:
   explicit VideoDenoiser(bool runtime_cpu_detection);
-  void DenoiseFrame(const VideoFrame& frame, VideoFrame* denoised_frame);
+  void DenoiseFrame(const VideoFrame& frame,
+                    VideoFrame* denoised_frame,
+                    VideoFrame* denoised_frame_track,
+                    int noise_level_prev);
 
  private:
-  void TrailingReduction(int mb_rows,
-                         int mb_cols,
-                         const uint8_t* y_src,
-                         int stride_y,
-                         uint8_t* y_dst);
   int width_;
   int height_;
+  CpuType cpu_type_;
   std::unique_ptr<DenoiseMetrics[]> metrics_;
   std::unique_ptr<DenoiserFilter> filter_;
+  std::unique_ptr<NoiseEstimation> ne_;
+  std::unique_ptr<uint8_t[]> d_status_;
+#if EXPERIMENTAL
+  std::unique_ptr<uint8_t[]> d_status_tmp1_;
+  std::unique_ptr<uint8_t[]> d_status_tmp2_;
+#endif
+  std::unique_ptr<uint8_t[]> x_density_;
+  std::unique_ptr<uint8_t[]> y_density_;
 };
 
 }  // namespace webrtc

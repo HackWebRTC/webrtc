@@ -22,6 +22,7 @@ VPMFramePreprocessor::VPMFramePreprocessor()
   spatial_resampler_ = new VPMSimpleSpatialResampler();
   ca_ = new VPMContentAnalysis(true);
   vd_ = new VPMVideoDecimator();
+  EnableDenosing(false);
 }
 
 VPMFramePreprocessor::~VPMFramePreprocessor() {
@@ -115,7 +116,8 @@ const VideoFrame* VPMFramePreprocessor::PreprocessFrame(
 
   const VideoFrame* current_frame = &frame;
   if (denoiser_) {
-    denoiser_->DenoiseFrame(*current_frame, &denoised_frame_);
+    denoiser_->DenoiseFrame(*current_frame, &denoised_frame_,
+                            &denoised_frame_prev_, 0);
     current_frame = &denoised_frame_;
   }
 

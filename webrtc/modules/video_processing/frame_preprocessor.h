@@ -71,6 +71,7 @@ class VPMFramePreprocessor {
 
   VideoContentMetrics* content_metrics_;
   VideoFrame denoised_frame_;
+  VideoFrame denoised_frame_prev_;
   VideoFrame resampled_frame_;
   VPMSpatialResampler* spatial_resampler_;
   VPMContentAnalysis* ca_;

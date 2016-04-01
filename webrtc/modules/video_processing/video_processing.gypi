@@ -40,6 +40,8 @@
         'util/denoiser_filter.h',
         'util/denoiser_filter_c.cc',
         'util/denoiser_filter_c.h',
+        'util/noise_estimation.cc',
+        'util/noise_estimation.h',
         'util/skin_detection.cc',
         'util/skin_detection.h',
       ],

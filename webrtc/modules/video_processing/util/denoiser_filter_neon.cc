@@ -106,13 +106,15 @@ DenoiserDecision DenoiserFilterNEON::MbDenoise(uint8_t* mc_running_avg_y,
                                                const uint8_t* sig,
                                                int sig_stride,
                                                uint8_t motion_magnitude,
-                                               int increase_denoising) {
+                                               int increase_denoising,
+                                               bool denoise_always) {
   // If motion_magnitude is small, making the denoiser more aggressive by
   // increasing the adjustment for each level, level1 adjustment is
   // increased, the deltas stay the same.
   int shift_inc =
       (increase_denoising && motion_magnitude <= kMotionMagnitudeThreshold) ? 1
                                                                             : 0;
+  int sum_diff_thresh = 0;
   const uint8x16_t v_level1_adjustment = vmovq_n_u8(
       (motion_magnitude <= kMotionMagnitudeThreshold) ? 4 + shift_inc : 3);
   const uint8x16_t v_delta_level_1_and_2 = vdupq_n_u8(1);
@@ -192,10 +194,12 @@ DenoiserDecision DenoiserFilterNEON::MbDenoise(uint8_t* mc_running_avg_y,
     int64x1_t x = vqadd_s64(vget_high_s64(v_sum_diff_total),
                             vget_low_s64(v_sum_diff_total));
     int sum_diff = vget_lane_s32(vabs_s32(vreinterpret_s32_s64(x)), 0);
-    int sum_diff_thresh = kSumDiffThreshold;
-
-    if (increase_denoising)
+    if (denoise_always)
+      sum_diff_thresh = INT_MAX;
+    else if (increase_denoising)
       sum_diff_thresh = kSumDiffThresholdHigh;
+    else
+      sum_diff_thresh = kSumDiffThreshold;
     if (sum_diff > sum_diff_thresh) {
       // Before returning to copy the block (i.e., apply no denoising),
       // checK if we can still apply some (weaker) temporal filtering to

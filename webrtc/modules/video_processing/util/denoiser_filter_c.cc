@@ -66,7 +66,8 @@ DenoiserDecision DenoiserFilterC::MbDenoise(uint8_t* mc_running_avg_y,
                                             const uint8_t* sig,
                                             int sig_stride,
                                             uint8_t motion_magnitude,
-                                            int increase_denoising) {
+                                            int increase_denoising,
+                                            bool denoise_always) {
   int sum_diff_thresh = 0;
   int sum_diff = 0;
   int adj_val[3] = {3, 4, 6};
@@ -136,9 +137,12 @@ DenoiserDecision DenoiserFilterC::MbDenoise(uint8_t* mc_running_avg_y,
     sum_diff += col_sum[c];
   }
 
-  sum_diff_thresh = kSumDiffThreshold;
-  if (increase_denoising)
+  if (denoise_always)
+    sum_diff_thresh = INT_MAX;
+  else if (increase_denoising)
     sum_diff_thresh = kSumDiffThresholdHigh;
+  else
+    sum_diff_thresh = kSumDiffThreshold;
   if (abs(sum_diff) > sum_diff_thresh) {
     int delta = ((abs(sum_diff) - sum_diff_thresh) >> 8) + 1;
     // Only apply the adjustment for max delta up to 3.
