@@ -487,7 +487,7 @@ TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
 
 // Test frame rate and no picture alarm.
 // Flaky on Win32, see webrtc:3270.
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) || defined(WEBRTC_MAC)
 #define MAYBE_FrameRate DISABLED_FrameRate
 #else
 #define MAYBE_FrameRate FrameRate
