@@ -11,17 +11,18 @@
 #include "webrtc/api/objc/avfoundationvideocapturer.h"
 
 #include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/thread.h"
 
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import "webrtc/base/objc/RTCDispatcher.h"
+#import "webrtc/base/objc/RTCDispatcher+Private.h"
 #import "webrtc/base/objc/RTCLogging.h"
 
 // TODO(tkchin): support other formats.
-static NSString* const kDefaultPreset = AVCaptureSessionPreset640x480;
+static NSString *const kDefaultPreset = AVCaptureSessionPreset640x480;
 static cricket::VideoFormat const kDefaultFormat =
     cricket::VideoFormat(640,
                          480,
@@ -44,29 +45,38 @@ static cricket::VideoFormat const kDefaultFormat =
 // when we receive frames. This is safe because this object should be owned by
 // it.
 - (instancetype)initWithCapturer:(webrtc::AVFoundationVideoCapturer *)capturer;
-- (void)startCaptureAsync;
-- (void)stopCaptureAsync;
+
+// Starts and stops the capture session asynchronously. We cannot do this
+// synchronously without blocking a WebRTC thread.
+- (void)start;
+- (void)stop;
 
 @end
 
 @implementation RTCAVFoundationVideoCapturerInternal {
   // Keep pointers to inputs for convenience.
-  AVCaptureDeviceInput *_frontDeviceInput;
-  AVCaptureDeviceInput *_backDeviceInput;
-  AVCaptureVideoDataOutput *_videoOutput;
+  AVCaptureDeviceInput *_frontCameraInput;
+  AVCaptureDeviceInput *_backCameraInput;
+  AVCaptureVideoDataOutput *_videoDataOutput;
   // The cricket::VideoCapturer that owns this class. Should never be NULL.
   webrtc::AVFoundationVideoCapturer *_capturer;
   BOOL _orientationHasChanged;
 }
 
 @synthesize captureSession = _captureSession;
-@synthesize useBackCamera = _useBackCamera;
 @synthesize isRunning = _isRunning;
+@synthesize useBackCamera = _useBackCamera;
 
+// This is called from the thread that creates the video source, which is likely
+// the main thread.
 - (instancetype)initWithCapturer:(webrtc::AVFoundationVideoCapturer *)capturer {
-  NSParameterAssert(capturer);
+  RTC_DCHECK(capturer);
   if (self = [super init]) {
     _capturer = capturer;
+    // Create the capture session and all relevant inputs and outputs. We need
+    // to do this in init because the application may want the capture session
+    // before we start the capturer for e.g. AVCapturePreviewLayer. All objects
+    // created here are retained until dealloc and never recreated.
     if (![self setupCaptureSession]) {
       return nil;
     }
@@ -79,61 +89,80 @@ static cricket::VideoFormat const kDefaultFormat =
                         object:nil
                          queue:nil
                     usingBlock:^(NSNotification *notification) {
-      NSLog(@"Capture session error: %@", notification.userInfo);
+      RTCLogError(@"Capture session error: %@", notification.userInfo);
     }];
   }
   return self;
 }
 
 - (void)dealloc {
-  [self stopCaptureAsync];
+  RTC_DCHECK(!_isRunning);
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   _capturer = nullptr;
 }
 
+- (AVCaptureSession *)captureSession {
+  return _captureSession;
+}
+
+// Called from any thread (likely main thread).
 - (BOOL)canUseBackCamera {
-  return _backDeviceInput != nil;
+  return _backCameraInput != nil;
 }
 
+// Called from any thread (likely main thread).
+- (BOOL)useBackCamera {
+  @synchronized(self) {
+    return _useBackCamera;
+  }
+}
+
+// Called from any thread (likely main thread).
 - (void)setUseBackCamera:(BOOL)useBackCamera {
-  if (_useBackCamera == useBackCamera) {
-    return;
-  }
   if (!self.canUseBackCamera) {
-    RTCLog(@"No rear-facing camera exists or it cannot be used;"
-           "not switching.");
+    if (useBackCamera) {
+      RTCLogWarning(@"No rear-facing camera exists or it cannot be used;"
+                    "not switching.");
+    }
     return;
   }
-  _useBackCamera = useBackCamera;
-  [self updateSessionInput];
+  @synchronized(self) {
+    if (_useBackCamera == useBackCamera) {
+      return;
+    }
+    _useBackCamera = useBackCamera;
+    [self updateSessionInputForUseBackCamera:useBackCamera];
+  }
 }
 
-- (void)startCaptureAsync {
+// Called from WebRTC thread.
+- (void)start {
   if (_isRunning) {
     return;
   }
-  _orientationHasChanged = NO;
-  [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-  AVCaptureSession* session = _captureSession;
+  _isRunning = YES;
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                                block:^{
-    [session startRunning];
+    _orientationHasChanged = NO;
+    [self updateOrientation];
+    [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+    AVCaptureSession *captureSession = self.captureSession;
+    [captureSession startRunning];
   }];
-  _isRunning = YES;
 }
 
-- (void)stopCaptureAsync {
+// Called from same thread as start.
+- (void)stop {
   if (!_isRunning) {
     return;
   }
-  [_videoOutput setSampleBufferDelegate:nil queue:nullptr];
-  AVCaptureSession* session = _captureSession;
+  _isRunning = NO;
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                                block:^{
-    [session stopRunning];
+    [_videoDataOutput setSampleBufferDelegate:nil queue:nullptr];
+    [_captureSession stopRunning];
+    [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
   }];
-  [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-  _isRunning = NO;
 }
 
 #pragma mark AVCaptureVideoDataOutputSampleBufferDelegate
@@ -141,7 +170,7 @@ static cricket::VideoFormat const kDefaultFormat =
 - (void)captureOutput:(AVCaptureOutput *)captureOutput
     didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
            fromConnection:(AVCaptureConnection *)connection {
-  NSParameterAssert(captureOutput == _videoOutput);
+  NSParameterAssert(captureOutput == _videoDataOutput);
   if (!_isRunning) {
     return;
   }
@@ -150,105 +179,143 @@ static cricket::VideoFormat const kDefaultFormat =
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput
     didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer
-    fromConnection:(AVCaptureConnection *)connection {
-  NSLog(@"Dropped sample buffer.");
+         fromConnection:(AVCaptureConnection *)connection {
+  RTCLogError(@"Dropped sample buffer.");
 }
 
 #pragma mark - Private
 
 - (BOOL)setupCaptureSession {
-  _captureSession = [[AVCaptureSession alloc] init];
+  AVCaptureSession *captureSession = [[AVCaptureSession alloc] init];
 #if defined(__IPHONE_7_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_7_0
   NSString *version = [[UIDevice currentDevice] systemVersion];
   if ([version integerValue] >= 7) {
-    _captureSession.usesApplicationAudioSession = NO;
+    captureSession.usesApplicationAudioSession = NO;
   }
 #endif
-  if (![_captureSession canSetSessionPreset:kDefaultPreset]) {
-    NSLog(@"Default video capture preset unsupported.");
+  if (![captureSession canSetSessionPreset:kDefaultPreset]) {
+    RTCLogError(@"Session preset unsupported.");
     return NO;
   }
-  _captureSession.sessionPreset = kDefaultPreset;
+  captureSession.sessionPreset = kDefaultPreset;
 
-  // Make the capturer output NV12. Ideally we want I420 but that's not
-  // currently supported on iPhone / iPad.
-  _videoOutput = [[AVCaptureVideoDataOutput alloc] init];
-  _videoOutput.videoSettings = @{
-    (NSString *)kCVPixelBufferPixelFormatTypeKey :
-        @(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)
-  };
-  _videoOutput.alwaysDiscardsLateVideoFrames = NO;
-  [_videoOutput setSampleBufferDelegate:self
-                                  queue:dispatch_get_main_queue()];
-  if (![_captureSession canAddOutput:_videoOutput]) {
-    NSLog(@"Default video capture output unsupported.");
+  // Add the output.
+  AVCaptureVideoDataOutput *videoDataOutput = [self videoDataOutput];
+  if (![captureSession canAddOutput:videoDataOutput]) {
+    RTCLogError(@"Video data output unsupported.");
     return NO;
   }
-  [_captureSession addOutput:_videoOutput];
+  [captureSession addOutput:videoDataOutput];
 
-  // Find the capture devices.
-  AVCaptureDevice *frontCaptureDevice = nil;
-  AVCaptureDevice *backCaptureDevice = nil;
-  for (AVCaptureDevice *captureDevice in
-       [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
-    if (captureDevice.position == AVCaptureDevicePositionBack) {
-      backCaptureDevice = captureDevice;
-    }
-    if (captureDevice.position == AVCaptureDevicePositionFront) {
-      frontCaptureDevice = captureDevice;
-    }
-  }
-  if (!frontCaptureDevice) {
-    RTCLog(@"Failed to get front capture device.");
+  // Get the front and back cameras. If there isn't a front camera
+  // give up.
+  AVCaptureDeviceInput *frontCameraInput = [self frontCameraInput];
+  AVCaptureDeviceInput *backCameraInput = [self backCameraInput];
+  if (!frontCameraInput) {
+    RTCLogError(@"No front camera for capture session.");
     return NO;
-  }
-  if (!backCaptureDevice) {
-    RTCLog(@"Failed to get back capture device");
-    // Don't return NO here because devices exist (16GB 5th generation iPod
-    // Touch) that don't have a rear-facing camera.
-  }
-
-  // Set up the session inputs.
-  NSError *error = nil;
-  _frontDeviceInput =
-      [AVCaptureDeviceInput deviceInputWithDevice:frontCaptureDevice
-                                            error:&error];
-  if (!_frontDeviceInput) {
-    NSLog(@"Failed to get capture device input: %@",
-          error.localizedDescription);
-    return NO;
-  }
-  if (backCaptureDevice) {
-    error = nil;
-    _backDeviceInput =
-        [AVCaptureDeviceInput deviceInputWithDevice:backCaptureDevice
-                                              error:&error];
-    if (error) {
-      RTCLog(@"Failed to get capture device input: %@",
-            error.localizedDescription);
-      _backDeviceInput = nil;
-    }
   }
 
   // Add the inputs.
-  if (![_captureSession canAddInput:_frontDeviceInput] ||
-      (_backDeviceInput && ![_captureSession canAddInput:_backDeviceInput])) {
-    NSLog(@"Session does not support capture inputs.");
+  if (![captureSession canAddInput:frontCameraInput] ||
+      (backCameraInput && ![captureSession canAddInput:backCameraInput])) {
+    RTCLogError(@"Session does not support capture inputs.");
     return NO;
   }
-  [self updateSessionInput];
-
+  AVCaptureDeviceInput *input = self.useBackCamera ?
+      backCameraInput : frontCameraInput;
+  [captureSession addInput:input];
+  _captureSession = captureSession;
   return YES;
 }
 
-- (void)deviceOrientationDidChange:(NSNotification *)notification {
-  _orientationHasChanged = YES;
-  [self updateOrientation];
+- (AVCaptureVideoDataOutput *)videoDataOutput {
+  if (!_videoDataOutput) {
+    // Make the capturer output NV12. Ideally we want I420 but that's not
+    // currently supported on iPhone / iPad.
+    AVCaptureVideoDataOutput *videoDataOutput =
+        [[AVCaptureVideoDataOutput alloc] init];
+    videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
+    videoDataOutput.videoSettings = @{
+      (NSString *)kCVPixelBufferPixelFormatTypeKey :
+        @(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)
+    };
+    videoDataOutput.alwaysDiscardsLateVideoFrames = NO;
+    dispatch_queue_t queue =
+        [RTCDispatcher dispatchQueueForType:RTCDispatcherTypeCaptureSession];
+    [videoDataOutput setSampleBufferDelegate:self queue:queue];
+    _videoDataOutput = videoDataOutput;
+  }
+  return _videoDataOutput;
 }
 
+- (AVCaptureDevice *)videoCaptureDeviceForPosition:
+    (AVCaptureDevicePosition)position {
+  for (AVCaptureDevice *captureDevice in
+       [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
+    if (captureDevice.position == position) {
+      return captureDevice;
+    }
+  }
+  return nil;
+}
+
+- (AVCaptureDeviceInput *)frontCameraInput {
+  if (!_frontCameraInput) {
+    AVCaptureDevice *frontCameraDevice =
+        [self videoCaptureDeviceForPosition:AVCaptureDevicePositionFront];
+    if (!frontCameraDevice) {
+      RTCLogWarning(@"Failed to find front capture device.");
+      return nil;
+    }
+    NSError *error = nil;
+    AVCaptureDeviceInput *frontCameraInput =
+        [AVCaptureDeviceInput deviceInputWithDevice:frontCameraDevice
+                                              error:&error];
+    if (!frontCameraInput) {
+      RTCLogError(@"Failed to create front camera input: %@",
+                  error.localizedDescription);
+      return nil;
+    }
+    _frontCameraInput = frontCameraInput;
+  }
+  return _frontCameraInput;
+}
+
+- (AVCaptureDeviceInput *)backCameraInput {
+  if (!_backCameraInput) {
+    AVCaptureDevice *backCameraDevice =
+        [self videoCaptureDeviceForPosition:AVCaptureDevicePositionBack];
+    if (!backCameraDevice) {
+      RTCLogWarning(@"Failed to find front capture device.");
+      return nil;
+    }
+    NSError *error = nil;
+    AVCaptureDeviceInput *backCameraInput =
+        [AVCaptureDeviceInput deviceInputWithDevice:backCameraDevice
+                                              error:&error];
+    if (!backCameraInput) {
+      RTCLogError(@"Failed to create front camera input: %@",
+                  error.localizedDescription);
+      return nil;
+    }
+    _backCameraInput = backCameraInput;
+  }
+  return _backCameraInput;
+}
+
+- (void)deviceOrientationDidChange:(NSNotification *)notification {
+  [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
+                               block:^{
+    _orientationHasChanged = YES;
+    [self updateOrientation];
+  }];
+}
+
+// Called from capture session queue.
 - (void)updateOrientation {
   AVCaptureConnection *connection =
-      [_videoOutput connectionWithMediaType:AVMediaTypeVideo];
+      [_videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
   if (!connection.supportsVideoOrientation) {
     // TODO(tkchin): set rotation bit on frames.
     return;
@@ -278,25 +345,43 @@ static cricket::VideoFormat const kDefaultFormat =
   connection.videoOrientation = orientation;
 }
 
-- (void)updateSessionInput {
-  // Update the current session input to match what's stored in _useBackCamera.
-  [_captureSession beginConfiguration];
-  AVCaptureDeviceInput *oldInput = _backDeviceInput;
-  AVCaptureDeviceInput *newInput = _frontDeviceInput;
-  if (_useBackCamera) {
-    oldInput = _frontDeviceInput;
-    newInput = _backDeviceInput;
-  }
-  // Ok to remove this even if it's not attached. Will be no-op.
-  [_captureSession removeInput:oldInput];
-  [_captureSession addInput:newInput];
-  [self updateOrientation];
-  [_captureSession commitConfiguration];
+// Update the current session input to match what's stored in _useBackCamera.
+- (void)updateSessionInputForUseBackCamera:(BOOL)useBackCamera {
+  [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
+                               block:^{
+    [_captureSession beginConfiguration];
+    AVCaptureDeviceInput *oldInput = _backCameraInput;
+    AVCaptureDeviceInput *newInput = _frontCameraInput;
+    if (useBackCamera) {
+      oldInput = _frontCameraInput;
+      newInput = _backCameraInput;
+    }
+    if (oldInput) {
+      // Ok to remove this even if it's not attached. Will be no-op.
+      [_captureSession removeInput:oldInput];
+    }
+    if (newInput) {
+      [_captureSession addInput:newInput];
+    }
+    [self updateOrientation];
+    [_captureSession commitConfiguration];
+  }];
 }
 
 @end
 
 namespace webrtc {
+
+enum AVFoundationVideoCapturerMessageType : uint32_t {
+  kMessageTypeFrame,
+};
+
+struct AVFoundationFrame {
+  AVFoundationFrame(CVImageBufferRef buffer, int64_t time)
+    : image_buffer(buffer), capture_time(time) {}
+  CVImageBufferRef image_buffer;
+  int64_t capture_time;
+};
 
 AVFoundationVideoCapturer::AVFoundationVideoCapturer()
     : _capturer(nil), _startThread(nullptr) {
@@ -336,14 +421,14 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
   // This isn't super accurate because it takes a while for the AVCaptureSession
   // to spin up, and this call returns async.
   // TODO(tkchin): make this better.
-  [_capturer startCaptureAsync];
+  [_capturer start];
   SetCaptureState(cricket::CaptureState::CS_RUNNING);
 
   return cricket::CaptureState::CS_STARTING;
 }
 
 void AVFoundationVideoCapturer::Stop() {
-  [_capturer stopCaptureAsync];
+  [_capturer stop];
   SetCaptureFormat(NULL);
   _startThread = nullptr;
 }
@@ -376,69 +461,85 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
     return;
   }
 
-  CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-  if (imageBuffer == NULL) {
+  CVImageBufferRef image_buffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+  if (image_buffer == NULL) {
     return;
   }
 
+  // Retain the buffer and post it to the webrtc thread. It will be released
+  // after it has successfully been signaled.
+  CVBufferRetain(image_buffer);
+  AVFoundationFrame frame(image_buffer, rtc::TimeNanos());
+  _startThread->Post(this, kMessageTypeFrame,
+                     new rtc::TypedMessageData<AVFoundationFrame>(frame));
+}
+
+void AVFoundationVideoCapturer::OnMessage(rtc::Message *msg) {
+  switch (msg->message_id) {
+    case kMessageTypeFrame: {
+      rtc::TypedMessageData<AVFoundationFrame>* data =
+        static_cast<rtc::TypedMessageData<AVFoundationFrame>*>(msg->pdata);
+      const AVFoundationFrame& frame = data->data();
+      OnFrameMessage(frame.image_buffer, frame.capture_time);
+      delete data;
+      break;
+    }
+  }
+}
+
+void AVFoundationVideoCapturer::OnFrameMessage(CVImageBufferRef image_buffer,
+                                               int64_t capture_time) {
+  RTC_DCHECK(_startThread->IsCurrent());
+
   // Base address must be unlocked to access frame data.
-  CVOptionFlags lockFlags = kCVPixelBufferLock_ReadOnly;
-  CVReturn ret = CVPixelBufferLockBaseAddress(imageBuffer, lockFlags);
+  CVOptionFlags lock_flags = kCVPixelBufferLock_ReadOnly;
+  CVReturn ret = CVPixelBufferLockBaseAddress(image_buffer, lock_flags);
   if (ret != kCVReturnSuccess) {
     return;
   }
 
   static size_t const kYPlaneIndex = 0;
   static size_t const kUVPlaneIndex = 1;
-  uint8_t *yPlaneAddress =
-      (uint8_t *)CVPixelBufferGetBaseAddressOfPlane(imageBuffer, kYPlaneIndex);
-  size_t yPlaneHeight =
-      CVPixelBufferGetHeightOfPlane(imageBuffer, kYPlaneIndex);
-  size_t yPlaneWidth =
-      CVPixelBufferGetWidthOfPlane(imageBuffer, kYPlaneIndex);
-  size_t yPlaneBytesPerRow =
-      CVPixelBufferGetBytesPerRowOfPlane(imageBuffer, kYPlaneIndex);
-  size_t uvPlaneHeight =
-      CVPixelBufferGetHeightOfPlane(imageBuffer, kUVPlaneIndex);
-  size_t uvPlaneBytesPerRow =
-      CVPixelBufferGetBytesPerRowOfPlane(imageBuffer, kUVPlaneIndex);
-  size_t frameSize =
-      yPlaneBytesPerRow * yPlaneHeight + uvPlaneBytesPerRow * uvPlaneHeight;
+  uint8_t* y_plane_address =
+      static_cast<uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(image_buffer,
+                                                               kYPlaneIndex));
+  size_t y_plane_height =
+      CVPixelBufferGetHeightOfPlane(image_buffer, kYPlaneIndex);
+  size_t y_plane_width =
+      CVPixelBufferGetWidthOfPlane(image_buffer, kYPlaneIndex);
+  size_t y_plane_bytes_per_row =
+      CVPixelBufferGetBytesPerRowOfPlane(image_buffer, kYPlaneIndex);
+  size_t uv_plane_height =
+      CVPixelBufferGetHeightOfPlane(image_buffer, kUVPlaneIndex);
+  size_t uv_plane_bytes_per_row =
+      CVPixelBufferGetBytesPerRowOfPlane(image_buffer, kUVPlaneIndex);
+  size_t frame_size = y_plane_bytes_per_row * y_plane_height +
+      uv_plane_bytes_per_row * uv_plane_height;
 
   // Sanity check assumption that planar bytes are contiguous.
-  uint8_t *uvPlaneAddress =
-      (uint8_t *)CVPixelBufferGetBaseAddressOfPlane(imageBuffer, kUVPlaneIndex);
-  RTC_DCHECK(
-      uvPlaneAddress == yPlaneAddress + yPlaneHeight * yPlaneBytesPerRow);
+  uint8_t* uv_plane_address =
+      static_cast<uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(image_buffer,
+                                                               kUVPlaneIndex));
+  RTC_DCHECK(uv_plane_address ==
+             y_plane_address + y_plane_height * y_plane_bytes_per_row);
 
   // Stuff data into a cricket::CapturedFrame.
-  int64_t currentTime = rtc::TimeNanos();
   cricket::CapturedFrame frame;
-  frame.width = yPlaneWidth;
-  frame.height = yPlaneHeight;
+  frame.width = y_plane_width;
+  frame.height = y_plane_height;
   frame.pixel_width = 1;
   frame.pixel_height = 1;
   frame.fourcc = static_cast<uint32_t>(cricket::FOURCC_NV12);
-  frame.time_stamp = currentTime;
-  frame.data = yPlaneAddress;
-  frame.data_size = frameSize;
+  frame.time_stamp = capture_time;
+  frame.data = y_plane_address;
+  frame.data_size = frame_size;
 
-  if (_startThread->IsCurrent()) {
-    SignalFrameCaptured(this, &frame);
-  } else {
-    _startThread->Invoke<void>(
-        rtc::Bind(&AVFoundationVideoCapturer::SignalFrameCapturedOnStartThread,
-                  this, &frame));
-  }
-  CVPixelBufferUnlockBaseAddress(imageBuffer, lockFlags);
-}
-
-void AVFoundationVideoCapturer::SignalFrameCapturedOnStartThread(
-    const cricket::CapturedFrame *frame) {
-  RTC_DCHECK(_startThread->IsCurrent());
   // This will call a superclass method that will perform the frame conversion
   // to I420.
-  SignalFrameCaptured(this, frame);
+  SignalFrameCaptured(this, &frame);
+
+  CVPixelBufferUnlockBaseAddress(image_buffer, lock_flags);
+  CVBufferRelease(image_buffer);
 }
 
 }  // namespace webrtc

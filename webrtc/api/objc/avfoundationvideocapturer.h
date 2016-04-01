@@ -25,7 +25,8 @@ class Thread;
 
 namespace webrtc {
 
-class AVFoundationVideoCapturer : public cricket::VideoCapturer {
+class AVFoundationVideoCapturer : public cricket::VideoCapturer,
+                                  public rtc::MessageHandler {
  public:
   AVFoundationVideoCapturer();
   ~AVFoundationVideoCapturer();
@@ -41,30 +42,27 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer {
     return true;
   }
 
-  /** Returns the active capture session. */
+  // Returns the active capture session. Calls to the capture session should
+  // occur on the RTCDispatcherTypeCaptureSession queue in RTCDispatcher.
   AVCaptureSession* GetCaptureSession();
 
-  /**
-   * Returns whether the rear-facing camera can be used.
-   * e.g. It can't be used because it doesn't exist.
-   */
+  // Returns whether the rear-facing camera can be used.
+  // e.g. It can't be used because it doesn't exist.
   bool CanUseBackCamera() const;
 
-  /** Switches the camera being used (either front or back). */
+  // Switches the camera being used (either front or back).
   void SetUseBackCamera(bool useBackCamera);
   bool GetUseBackCamera() const;
 
-  /**
-   * Converts the sample buffer into a cricket::CapturedFrame and signals the
-   * frame for capture.
-   */
+  // Converts the sample buffer into a cricket::CapturedFrame and signals the
+  // frame for capture.
   void CaptureSampleBuffer(CMSampleBufferRef sampleBuffer);
 
+  // Handles messages from posts.
+  void OnMessage(rtc::Message *msg) override;
+
  private:
-  /**
-   * Used to signal frame capture on the thread that capturer was started on.
-   */
-  void SignalFrameCapturedOnStartThread(const cricket::CapturedFrame *frame);
+  void OnFrameMessage(CVImageBufferRef image_buffer, int64_t capture_time);
 
   RTCAVFoundationVideoCapturerInternal *_capturer;
   rtc::Thread *_startThread;  // Set in Start(), unset in Stop().
@@ -72,4 +70,4 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer {
 
 }  // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_OBJC_AVFOUNDATION_CAPTURER_H_
+#endif  // WEBRTC_API_OBJC_AVFOUNDATION_VIDEO_CAPTURER_H_

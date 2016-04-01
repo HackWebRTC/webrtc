@@ -10,6 +10,8 @@
 
 #import "RTCDispatcher.h"
 
+#import "RTCDispatcher+Private.h"
+
 static dispatch_queue_t kAudioSessionQueue = nil;
 static dispatch_queue_t kCaptureSessionQueue = nil;
 
