@@ -52,19 +52,6 @@ RtpReceiver* RtpReceiver::CreateAudioReceiver(
       RTPReceiverStrategy::CreateAudioStrategy(incoming_payload_callback));
 }
 
-// TODO(solenberg): Remove, after updating downstream code.
-RtpReceiver* RtpReceiver::CreateAudioReceiver(
-    Clock* clock,
-    RtpAudioFeedback* incoming_audio_feedback,
-    RtpData* incoming_payload_callback,
-    RtpFeedback* incoming_messages_callback,
-    RTPPayloadRegistry* rtp_payload_registry) {
-  return CreateAudioReceiver(clock,
-                             incoming_payload_callback,
-                             incoming_messages_callback,
-                             rtp_payload_registry);
-}
-
 RtpReceiverImpl::RtpReceiverImpl(
     Clock* clock,
     RtpFeedback* incoming_messages_callback,
