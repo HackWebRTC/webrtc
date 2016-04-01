@@ -93,7 +93,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
             43.f));
   start_freq_ = std::max(static_cast<size_t>(1), erb_index * kErbResolution);
 
-  size_t window_size = static_cast<size_t>(1 << RealFourier::FftOrder(freqs_));
+  size_t window_size = static_cast<size_t>(1) << RealFourier::FftOrder(freqs_);
   std::vector<float> kbd_window(window_size);
   WindowGenerator::KaiserBesselDerived(kKbdAlpha, window_size,
                                        kbd_window.data());
