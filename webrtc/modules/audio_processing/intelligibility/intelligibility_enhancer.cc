@@ -34,8 +34,8 @@ const float kLambdaTop = -1e-5f;      // search for lamda.
 const float kVoiceProbabilityThreshold = 0.02f;
 // Number of chunks after voice activity which is still considered speech.
 const size_t kSpeechOffsetDelay = 80;
-const float kDecayRate = 0.98f;              // Power estimation decay rate.
-const float kMaxRelativeGainChange = 0.04f;  // Maximum relative change in gain.
+const float kDecayRate = 0.994f;              // Power estimation decay rate.
+const float kMaxRelativeGainChange = 0.006f;
 const float kRho = 0.0004f;  // Default production and interpretation SNR.
 const float kPowerNormalizationFactor = 1.f / (1 << 30);
 
