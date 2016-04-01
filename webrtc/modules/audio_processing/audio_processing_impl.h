@@ -207,7 +207,7 @@ class AudioProcessingImpl : public AudioProcessing {
   // manner that are called with the render lock already acquired.
   int ProcessStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   bool output_copy_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  bool is_data_processed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  bool is_fwd_processed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   bool fwd_synthesis_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   bool fwd_analysis_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void MaybeUpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);

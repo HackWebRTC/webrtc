@@ -1099,7 +1099,7 @@ VoiceDetection* AudioProcessingImpl::voice_detection() const {
   return public_submodules_->voice_detection.get();
 }
 
-bool AudioProcessingImpl::is_data_processed() const {
+bool AudioProcessingImpl::is_fwd_processed() const {
   // The beamformer, noise suppressor and highpass filter
   // modify the data.
   if (capture_nonlocked_.beamformer_enabled ||
@@ -1119,16 +1119,16 @@ bool AudioProcessingImpl::output_copy_needed() const {
   // Check if we've upmixed or downmixed the audio.
   return ((formats_.api_format.output_stream().num_channels() !=
            formats_.api_format.input_stream().num_channels()) ||
-          is_data_processed() || capture_.transient_suppressor_enabled);
+          is_fwd_processed() || capture_.transient_suppressor_enabled);
 }
 
 bool AudioProcessingImpl::fwd_synthesis_needed() const {
-  return (is_data_processed() &&
+  return (is_fwd_processed() &&
           is_multi_band(capture_nonlocked_.fwd_proc_format.sample_rate_hz()));
 }
 
 bool AudioProcessingImpl::fwd_analysis_needed() const {
-  if (!is_data_processed() &&
+  if (!is_fwd_processed() &&
       !public_submodules_->voice_detection->is_enabled() &&
       !capture_.transient_suppressor_enabled) {
     // Only public_submodules_->level_estimator is enabled.
@@ -1152,7 +1152,11 @@ bool AudioProcessingImpl::rev_synthesis_needed() const {
 }
 
 bool AudioProcessingImpl::rev_analysis_needed() const {
-  return is_multi_band(formats_.rev_proc_format.sample_rate_hz());
+  return is_multi_band(formats_.rev_proc_format.sample_rate_hz()) &&
+         (is_rev_processed() ||
+          public_submodules_->echo_cancellation->is_enabled() ||
+          public_submodules_->echo_control_mobile->is_enabled() ||
+          public_submodules_->gain_control->is_enabled());
 }
 
 bool AudioProcessingImpl::render_check_rev_conversion_needed() const {
