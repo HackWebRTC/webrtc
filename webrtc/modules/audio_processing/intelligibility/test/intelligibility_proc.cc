@@ -56,7 +56,6 @@ void void_main(int argc, char* argv[]) {
                              noise_file.num_channels());
   while (in_file.ReadSamples(in.size(), in.data()) == in.size() &&
          noise_file.ReadSamples(noise.size(), noise.data()) == noise.size()) {
-    FloatS16ToFloat(in.data(), in.size(), in.data());
     FloatS16ToFloat(noise.data(), noise.size(), noise.data());
     Deinterleave(in.data(), in_buf.num_frames(), in_buf.num_channels(),
                  in_buf.channels());
@@ -70,7 +69,6 @@ void void_main(int argc, char* argv[]) {
                            in_file.num_channels());
     Interleave(in_buf.channels(), in_buf.num_frames(), in_buf.num_channels(),
                in.data());
-    FloatToFloatS16(in.data(), in.size(), in.data());
     out_file.WriteSamples(in.data(), in.size());
   }
 }

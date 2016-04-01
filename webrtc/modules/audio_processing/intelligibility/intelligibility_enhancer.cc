@@ -29,7 +29,7 @@ const int kWindowSizeMs = 16;
 const int kChunkSizeMs = 10;  // Size provided by APM.
 const float kClipFreqKhz = 0.2f;
 const float kKbdAlpha = 1.5f;
-const float kLambdaBot = -1.0f;      // Extreme values in bisection
+const float kLambdaBot = -1.f;      // Extreme values in bisection
 const float kLambdaTop = -1e-5f;      // search for lamda.
 const float kVoiceProbabilityThreshold = 0.02f;
 // Number of chunks after voice activity which is still considered speech.
@@ -37,6 +37,7 @@ const size_t kSpeechOffsetDelay = 80;
 const float kDecayRate = 0.98f;              // Power estimation decay rate.
 const float kMaxRelativeGainChange = 0.04f;  // Maximum relative change in gain.
 const float kRho = 0.0004f;  // Default production and interpretation SNR.
+const float kPowerNormalizationFactor = 1.f / (1 << 30);
 
 // Returns dot product of vectors |a| and |b| with size |length|.
 float DotProduct(const float* a, const float* b, size_t length) {
@@ -54,7 +55,8 @@ void MapToErbBands(const float* pow,
                    float* result) {
   for (size_t i = 0; i < filter_bank.size(); ++i) {
     RTC_DCHECK_GT(filter_bank[i].size(), 0u);
-    result[i] = DotProduct(filter_bank[i].data(), pow, filter_bank[i].size());
+    result[i] = kPowerNormalizationFactor *
+                DotProduct(filter_bank[i].data(), pow, filter_bank[i].size());
   }
 }
 
@@ -140,8 +142,8 @@ void IntelligibilityEnhancer::ProcessAudioBlock(
   MapToErbBands(noise_power.data(), capture_filter_bank_,
                 filtered_noise_pow_.data());
   SolveForGainsGivenLambda(kLambdaTop, start_freq_, gains_eq_.data());
-  const float power_target =
-      std::accumulate(clear_power.data(), clear_power.data() + freqs_, 0.f);
+  const float power_target = std::accumulate(
+      filtered_clear_pow_.data(), filtered_clear_pow_.data() + bank_size_, 0.f);
   const float power_top =
       DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
   SolveForGainsGivenLambda(kLambdaBot, start_freq_, gains_eq_.data());

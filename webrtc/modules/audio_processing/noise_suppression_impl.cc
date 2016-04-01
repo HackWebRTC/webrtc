@@ -177,23 +177,24 @@ std::vector<float> NoiseSuppressionImpl::NoiseEstimate() {
   rtc::CritScope cs(crit_);
   std::vector<float> noise_estimate;
 #if defined(WEBRTC_NS_FLOAT)
-  const float kNormalizationFactor = 1.f / (1 << 15);
+  const float kNumChannelsFraction = 1.f / suppressors_.size();
   noise_estimate.assign(WebRtcNs_num_freq(), 0.f);
   for (auto& suppressor : suppressors_) {
     const float* noise = WebRtcNs_noise_estimate(suppressor->state());
     for (size_t i = 0; i < noise_estimate.size(); ++i) {
-      noise_estimate[i] +=
-          kNormalizationFactor * noise[i] / suppressors_.size();
+      noise_estimate[i] += kNumChannelsFraction * noise[i];
     }
   }
 #elif defined(WEBRTC_NS_FIXED)
-  const float kNormalizationFactor = 1.f / (1 << 23);
   noise_estimate.assign(WebRtcNsx_num_freq(), 0.f);
   for (auto& suppressor : suppressors_) {
-    const uint32_t* noise = WebRtcNsx_noise_estimate(suppressor->state());
+    int q_noise;
+    const uint32_t* noise = WebRtcNsx_noise_estimate(suppressor->state(),
+                                                     &q_noise);
+    const float kNormalizationFactor =
+        1.f / ((1 << q_noise) * suppressors_.size());
     for (size_t i = 0; i < noise_estimate.size(); ++i) {
-      noise_estimate[i] += kNormalizationFactor *
-          static_cast<float>(noise[i]) / suppressors_.size();
+      noise_estimate[i] += kNormalizationFactor * noise[i];
     }
   }
 #endif

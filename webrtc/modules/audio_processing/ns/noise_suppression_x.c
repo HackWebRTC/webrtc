@@ -45,11 +45,14 @@ void WebRtcNsx_Process(NsxHandle* nsxInst,
                         num_bands, outFrame);
 }
 
-const uint32_t* WebRtcNsx_noise_estimate(const NsxHandle* nsxInst) {
+const uint32_t* WebRtcNsx_noise_estimate(const NsxHandle* nsxInst,
+                                         int* q_noise) {
+  *q_noise = 11;
   const NoiseSuppressionFixedC* self = (const NoiseSuppressionFixedC*)nsxInst;
   if (nsxInst == NULL || self->initFlag == 0) {
     return NULL;
   }
+  *q_noise += self->prevQNoise;
   return self->prevNoiseU32;
 }
 

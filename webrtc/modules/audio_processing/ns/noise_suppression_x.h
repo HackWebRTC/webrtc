@@ -88,12 +88,16 @@ void WebRtcNsx_Process(NsxHandle* nsxInst,
  *
  * Input
  *      - nsxInst       : NSx instance. Needs to be initiated before call.
+ *      - q_noise       : Q value of the noise estimate, which is the number of
+ *                        bits that it needs to be right-shifted to be
+ *                        normalized.
  *
  * Return value         : Pointer to the noise estimate per frequency bin.
  *                        Returns NULL if the input is a NULL pointer or an
  *                        uninitialized instance.
  */
-const uint32_t* WebRtcNsx_noise_estimate(const NsxHandle* nsxInst);
+const uint32_t* WebRtcNsx_noise_estimate(const NsxHandle* nsxInst,
+                                         int* q_noise);
 
 /* Returns the number of frequency bins, which is the length of the noise
  * estimate for example.
