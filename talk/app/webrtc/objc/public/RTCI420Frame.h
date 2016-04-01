@@ -43,8 +43,6 @@
 @property(nonatomic, readonly) NSInteger uPitch;
 @property(nonatomic, readonly) NSInteger vPitch;
 
-- (BOOL)makeExclusive;
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation
 - (id)init __attribute__((
@@ -52,4 +50,3 @@
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 @end
-

@@ -235,13 +235,11 @@ TEST_WEBRTCVIDEOFRAME(ConvertFromUYVYBuffer)
 TEST_WEBRTCVIDEOFRAME(ConvertFromUYVYBufferStride)
 TEST_WEBRTCVIDEOFRAME(ConvertFromUYVYBufferInverted)
 // TEST_WEBRTCVIDEOFRAME(ConvertToI422Buffer)
-TEST_WEBRTCVIDEOFRAME(CopyToFrame)
 // TEST_WEBRTCVIDEOFRAME(ConstructARGBBlackWhitePixel)
 
 TEST_WEBRTCVIDEOFRAME(StretchToFrame)
 TEST_WEBRTCVIDEOFRAME(Copy)
 TEST_WEBRTCVIDEOFRAME(CopyIsRef)
-TEST_WEBRTCVIDEOFRAME(MakeExclusive)
 
 // These functions test implementation-specific details.
 // Tests the Init function with different cropped size.

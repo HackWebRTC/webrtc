@@ -1807,37 +1807,6 @@ class VideoFrameTest : public testing::Test {
     EXPECT_EQ(const_source->GetVPlane(), target->GetVPlane());
   }
 
-  void MakeExclusive() {
-    std::unique_ptr<T> source(new T);
-    std::unique_ptr<cricket::VideoFrame> target;
-    ASSERT_TRUE(LoadFrameNoRepeat(source.get()));
-    target.reset(source->Copy());
-    EXPECT_TRUE(target->MakeExclusive());
-    EXPECT_TRUE(IsEqual(*source, *target, 0));
-    EXPECT_NE(target->GetYPlane(), source->GetYPlane());
-    EXPECT_NE(target->GetUPlane(), source->GetUPlane());
-    EXPECT_NE(target->GetVPlane(), source->GetVPlane());
-  }
-
-  void CopyToFrame() {
-    T source;
-    std::unique_ptr<rtc::MemoryStream> ms(
-        LoadSample(kImageFilename));
-    ASSERT_TRUE(ms.get() != NULL);
-    ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
-                          &source));
-
-    // Create the target frame by loading from a file.
-    T target;
-    ASSERT_TRUE(LoadFrameNoRepeat(&target));
-    EXPECT_FALSE(IsBlack(target));
-
-    // Stretch and check if the stretched target is black.
-    source.CopyToFrame(&target);
-
-    EXPECT_TRUE(IsEqual(source, target, 0));
-  }
-
   void StretchToFrame() {
     // Create the source frame as a black frame.
     T source;

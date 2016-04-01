@@ -88,15 +88,6 @@ class VideoFrame {
   // be shared, this function can be used to check exclusive ownership.
   virtual bool IsExclusive() const = 0;
 
-  // In case VideoFrame needs exclusive access of the frame buffer, user can
-  // call MakeExclusive() to make sure the frame buffer is exclusively
-  // accessible to the current object.  This might mean a deep copy of the frame
-  // buffer if it is currently shared by other objects.
-  virtual bool MakeExclusive() = 0;
-
-  // Writes the frame into the target VideoFrame.
-  virtual void CopyToFrame(VideoFrame* target) const;
-
   // Return a copy of frame which has its pending rotation applied. The
   // ownership of the returned frame is held by this frame.
   virtual const VideoFrame* GetCopyWithRotationApplied() const = 0;

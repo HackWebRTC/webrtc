@@ -82,10 +82,6 @@
   return _videoFrame->GetVPitch();
 }
 
-- (BOOL)makeExclusive {
-  return _videoFrame->MakeExclusive();
-}
-
 @end
 
 @implementation RTCI420Frame (Internal)

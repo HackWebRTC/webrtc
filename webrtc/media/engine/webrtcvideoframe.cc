@@ -131,30 +131,6 @@ VideoFrame* WebRtcVideoFrame::Copy() const {
   return new_frame;
 }
 
-bool WebRtcVideoFrame::MakeExclusive() {
-  RTC_DCHECK(video_frame_buffer_->native_handle() == nullptr);
-  if (IsExclusive())
-    return true;
-
-  // Not exclusive already, need to copy buffer.
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> new_buffer =
-      new rtc::RefCountedObject<webrtc::I420Buffer>(
-          video_frame_buffer_->width(), video_frame_buffer_->height(),
-          video_frame_buffer_->stride(kYPlane),
-          video_frame_buffer_->stride(kUPlane),
-          video_frame_buffer_->stride(kVPlane));
-
-  if (!CopyToPlanes(
-          new_buffer->MutableData(kYPlane), new_buffer->MutableData(kUPlane),
-          new_buffer->MutableData(kVPlane), new_buffer->stride(kYPlane),
-          new_buffer->stride(kUPlane), new_buffer->stride(kVPlane))) {
-    return false;
-  }
-
-  video_frame_buffer_ = new_buffer;
-  return true;
-}
-
 size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
                                             uint8_t* buffer,
                                             size_t size,

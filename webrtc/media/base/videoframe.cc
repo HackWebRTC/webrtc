@@ -46,16 +46,6 @@ bool VideoFrame::CopyToPlanes(uint8_t* dst_y,
                           src_width, src_height) == 0;
 }
 
-void VideoFrame::CopyToFrame(VideoFrame* dst) const {
-  if (!dst) {
-    LOG(LS_ERROR) << "NULL dst pointer.";
-    return;
-  }
-
-  CopyToPlanes(dst->GetYPlane(), dst->GetUPlane(), dst->GetVPlane(),
-               dst->GetYPitch(), dst->GetUPitch(), dst->GetVPitch());
-}
-
 size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
                                       uint8_t* buffer,
                                       size_t size,
