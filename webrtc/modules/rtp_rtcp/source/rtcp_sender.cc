@@ -208,15 +208,16 @@ RtcpMode RTCPSender::Status() const {
   return method_;
 }
 
-void RTCPSender::SetRTCPStatus(RtcpMode method) {
+void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
-  method_ = method;
 
-  if (method == RtcpMode::kOff)
-    return;
-  next_time_to_send_rtcp_ =
+  if (method_ == RtcpMode::kOff && new_method != RtcpMode::kOff) {
+    // When switching on, reschedule the next packet
+    next_time_to_send_rtcp_ =
       clock_->TimeInMilliseconds() +
       (audio_ ? RTCP_INTERVAL_AUDIO_MS / 2 : RTCP_INTERVAL_VIDEO_MS / 2);
+  }
+  method_ = new_method;
 }
 
 bool RTCPSender::Sending() const {
