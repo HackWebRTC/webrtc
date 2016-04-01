@@ -15,6 +15,7 @@
       'media/media.gyp:*',
       'modules/modules.gyp:*',
       'p2p/p2p.gyp:*',
+      'pc/pc.gyp:*',
       'system_wrappers/system_wrappers.gyp:*',
       'tools/tools.gyp:*',
       'voice_engine/voice_engine.gyp:*',
