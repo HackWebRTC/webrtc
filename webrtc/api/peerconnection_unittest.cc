@@ -1846,14 +1846,7 @@ TEST_F(P2PTestConductor, AddDataChannelAfterRenegotiation) {
 // This test sets up a Jsep call with SCTP DataChannel and verifies the
 // negotiation is completed without error.
 #ifdef HAVE_SCTP
-// Disabled on Win dbg: https://bugs.chromium.org/p/webrtc/issues/detail?id=5659
-#if defined(WEBRTC_WIN) && defined(_DEBUG)
-#define MAYBE_CreateOfferWithSctpDataChannel \
-  DISABLED_CreateOfferWithSctpDataChannel
-#else
-#define MAYBE_CreateOfferWithSctpDataChannel CreateOfferWithSctpDataChannel
-#endif
-TEST_F(P2PTestConductor, MAYBE_CreateOfferWithSctpDataChannel) {
+TEST_F(P2PTestConductor, CreateOfferWithSctpDataChannel) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;
   constraints.SetMandatory(
