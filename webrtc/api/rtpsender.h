@@ -101,6 +101,8 @@ class AudioRtpSender : public ObserverInterface,
   bool SetParameters(const RtpParameters& parameters);
 
  private:
+  // TODO(nisse): Since SSRC == 0 is technically valid, figure out
+  // some other way to test if we have a valid SSRC.
   bool can_send_track() const { return track_ && ssrc_; }
   // Helper function to construct options for
   // AudioProviderInterface::SetAudioSend.

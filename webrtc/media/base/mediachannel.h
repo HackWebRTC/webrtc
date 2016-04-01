@@ -660,8 +660,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
         firs_rcvd(0),
         plis_rcvd(0),
         nacks_rcvd(0),
-        input_frame_width(0),
-        input_frame_height(0),
         send_frame_width(0),
         send_frame_height(0),
         framerate_input(0),
@@ -680,8 +678,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int firs_rcvd;
   int plis_rcvd;
   int nacks_rcvd;
-  int input_frame_width;
-  int input_frame_height;
   int send_frame_width;
   int send_frame_height;
   int framerate_input;

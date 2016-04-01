@@ -2089,13 +2089,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
                           ? CoordinatedVideoAdapter::ADAPTREASON_NONE
                           : CoordinatedVideoAdapter::ADAPTREASON_CPU;
 
-  if (capturer_) {
-      VideoFormat last_captured_frame_format;
-      capturer_->GetStats(&last_captured_frame_format);
-      info.input_frame_width = last_captured_frame_format.width;
-      info.input_frame_height = last_captured_frame_format.height;
-  }
-
   // Get bandwidth limitation info from stream_->GetStats().
   // Input resolution (output from video_adapter) can be further scaled down or
   // higher video layer(s) can be dropped due to bitrate constraints.

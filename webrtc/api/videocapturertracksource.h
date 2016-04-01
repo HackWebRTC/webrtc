@@ -58,6 +58,8 @@ class VideoCapturerTrackSource : public VideoTrackSource,
     return needs_denoising_;
   }
 
+  bool GetStats(Stats* stats) override;
+
   void Stop() override;
   void Restart() override;
 

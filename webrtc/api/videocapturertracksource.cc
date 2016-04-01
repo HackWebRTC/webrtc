@@ -360,6 +360,11 @@ void VideoCapturerTrackSource::Initialize(
   // Initialize hasn't succeeded until a successful state change has occurred.
 }
 
+bool VideoCapturerTrackSource::GetStats(Stats* stats) {
+  return video_capturer_->GetInputSize(&stats->input_width,
+                                       &stats->input_height);
+}
+
 void VideoCapturerTrackSource::Stop() {
   if (!started_) {
     return;

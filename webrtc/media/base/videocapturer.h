@@ -209,9 +209,7 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Takes ownership.
   void set_frame_factory(VideoFrameFactory* frame_factory);
 
-  // TODO(nisse): Rename function? Or pass the frame format before
-  // adaptation in some other way.
-  void GetStats(VideoFormat* last_captured_frame_format);
+  bool GetInputSize(int* width, int* height);
 
   // Implements VideoSourceInterface
   void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
@@ -275,7 +273,7 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Returns true if format doesn't fulfill all applied restrictions.
   bool ShouldFilterFormat(const VideoFormat& format) const;
 
-  void UpdateStats(const CapturedFrame* captured_frame);
+  void UpdateInputSize(const CapturedFrame* captured_frame);
 
   rtc::ThreadChecker thread_checker_;
   std::string id_;
@@ -298,9 +296,10 @@ class VideoCapturer : public sigslot::has_slots<>,
   CoordinatedVideoAdapter video_adapter_;
 
   rtc::CriticalSection frame_stats_crit_;
-
-  // The captured frame format before potential adapation.
-  VideoFormat last_captured_frame_format_;
+  // The captured frame size before potential adapation.
+  bool input_size_valid_ GUARDED_BY(frame_stats_crit_) = false;
+  int input_width_ GUARDED_BY(frame_stats_crit_);
+  int input_height_ GUARDED_BY(frame_stats_crit_);
 
   // Whether capturer should apply rotation to the frame before signaling it.
   bool apply_rotation_;

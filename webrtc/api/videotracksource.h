@@ -40,6 +40,8 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
   virtual rtc::Optional<bool> needs_denoising() const {
     return rtc::Optional<bool>(); }
 
+  bool GetStats(Stats* stats) override { return false; }
+
   void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;

@@ -179,9 +179,15 @@ void VideoCapturer::set_frame_factory(VideoFrameFactory* frame_factory) {
   }
 }
 
-void VideoCapturer::GetStats(VideoFormat* last_captured_frame_format) {
+bool VideoCapturer::GetInputSize(int* width, int* height) {
   rtc::CritScope cs(&frame_stats_crit_);
-  *last_captured_frame_format = last_captured_frame_format_;
+  if (!input_size_valid_) {
+    return false;
+  }
+  *width = input_width_;
+  *height = input_height_;
+
+  return true;
 }
 
 void VideoCapturer::RemoveSink(
@@ -391,7 +397,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   }
 
   OnFrame(this, adapted_frame.get());
-  UpdateStats(captured_frame);
+  UpdateInputSize(captured_frame);
 }
 
 void VideoCapturer::OnFrame(VideoCapturer* capturer, const VideoFrame* frame) {
@@ -536,15 +542,13 @@ bool VideoCapturer::ShouldFilterFormat(const VideoFormat& format) const {
          format.height > max_format_->height;
 }
 
-void VideoCapturer::UpdateStats(const CapturedFrame* captured_frame) {
+void VideoCapturer::UpdateInputSize(const CapturedFrame* captured_frame) {
   // Update stats protected from fetches from different thread.
   rtc::CritScope cs(&frame_stats_crit_);
 
-  last_captured_frame_format_.width = captured_frame->width;
-  last_captured_frame_format_.height = captured_frame->height;
-  // TODO(ronghuawu): Useful to report interval as well?
-  last_captured_frame_format_.interval = 0;
-  last_captured_frame_format_.fourcc = captured_frame->fourcc;
+  input_size_valid_ = true;
+  input_width_ = captured_frame->width;
+  input_height_ = captured_frame->height;
 }
 
 }  // namespace cricket

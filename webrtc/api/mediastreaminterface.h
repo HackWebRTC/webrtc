@@ -88,6 +88,10 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
   static const char kAudioKind[];
   static const char kVideoKind[];
 
+  // The kind() method must return kAudioKind only if the object is a
+  // subclass of AudioTrackInterface, and kVideoKind only if the
+  // object is a subclass of VideoTrackInterface. It is typically used
+  // to protect a static_cast<> to the corresponding subclass.
   virtual std::string kind() const = 0;
   virtual std::string id() const = 0;
   virtual bool enabled() const = 0;
@@ -106,6 +110,11 @@ class VideoTrackSourceInterface
     : public MediaSourceInterface,
       public rtc::VideoSourceInterface<cricket::VideoFrame> {
  public:
+  struct Stats {
+    // Original size of captured frame, before video adaptation.
+    int input_width;
+    int input_height;
+  };
   // Get access to the source implementation of cricket::VideoCapturer.
   // This can be used for receiving frames and state notifications.
   // But it should not be used for starting or stopping capturing.
@@ -131,6 +140,11 @@ class VideoTrackSourceInterface
   // TODO(perkj): Remove this once denoising is done by the source, and not by
   // the encoder.
   virtual rtc::Optional<bool> needs_denoising() const = 0;
+
+  // Returns false if no stats are available, e.g, for a remote
+  // source, or a source which has not seen its first frame yet.
+  // Should avoid blocking.
+  virtual bool GetStats(Stats* stats) = 0;
 
  protected:
   virtual ~VideoTrackSourceInterface() {}

@@ -28,6 +28,7 @@ PROXY_METHOD0(void, Stop)
 PROXY_METHOD0(void, Restart)
 PROXY_CONSTMETHOD0(bool, is_screencast)
 PROXY_CONSTMETHOD0(rtc::Optional<bool>, needs_denoising)
+PROXY_METHOD1(bool, GetStats, Stats*)
 PROXY_METHOD2(void,
               AddOrUpdateSink,
               rtc::VideoSinkInterface<cricket::VideoFrame>*,

@@ -236,11 +236,9 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
     { StatsReport::kStatsValueNameEncodeUsagePercent,
       info.encode_usage_percent },
     { StatsReport::kStatsValueNameFirsReceived, info.firs_rcvd },
-    { StatsReport::kStatsValueNameFrameHeightInput, info.input_frame_height },
     { StatsReport::kStatsValueNameFrameHeightSent, info.send_frame_height },
     { StatsReport::kStatsValueNameFrameRateInput, info.framerate_input },
     { StatsReport::kStatsValueNameFrameRateSent, info.framerate_sent },
-    { StatsReport::kStatsValueNameFrameWidthInput, info.input_frame_width },
     { StatsReport::kStatsValueNameFrameWidthSent, info.send_frame_width },
     { StatsReport::kStatsValueNameNacksReceived, info.nacks_rcvd },
     { StatsReport::kStatsValueNamePacketsLost, info.packets_lost },
@@ -474,6 +472,7 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
     ExtractSessionInfo();
     ExtractVoiceInfo();
     ExtractVideoInfo(level);
+    ExtractSenderInfo();
     ExtractDataInfo();
     UpdateTrackReports();
   }
@@ -825,6 +824,39 @@ void StatsCollector::ExtractVideoInfo(
     StatsReport* report = reports_.FindOrAddNew(report_id);
     ExtractStats(
         video_info.bw_estimations[0], stats_gathering_started_, level, report);
+  }
+}
+
+void StatsCollector::ExtractSenderInfo() {
+  RTC_DCHECK(pc_->session()->signaling_thread()->IsCurrent());
+
+  for (const auto& sender : pc_->GetSenders()) {
+    // TODO(nisse): SSRC == 0 currently means none. Delete check when
+    // that is fixed.
+    if (!sender->ssrc()) {
+      continue;
+    }
+    const rtc::scoped_refptr<MediaStreamTrackInterface> track(sender->track());
+    if (!track || track->kind() != MediaStreamTrackInterface::kVideoKind) {
+      continue;
+    }
+    // Safe, because kind() == kVideoKind implies a subclass of
+    // VideoTrackInterface; see mediastreaminterface.h.
+    VideoTrackSourceInterface* source =
+        static_cast<VideoTrackInterface*>(track.get())->GetSource();
+
+    VideoTrackSourceInterface::Stats stats;
+    if (!source->GetStats(&stats)) {
+      continue;
+    }
+    const StatsReport::Id stats_id = StatsReport::NewIdWithDirection(
+        StatsReport::kStatsReportTypeSsrc,
+        rtc::ToString<uint32_t>(sender->ssrc()), StatsReport::kSend);
+    StatsReport* report = reports_.FindOrAddNew(stats_id);
+    report->AddInt(StatsReport::kStatsValueNameFrameWidthInput,
+                   stats.input_width);
+    report->AddInt(StatsReport::kStatsValueNameFrameHeightInput,
+                   stats.input_height);
   }
 }
 
