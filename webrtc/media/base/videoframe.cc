@@ -35,8 +35,8 @@ bool VideoFrame::CopyToPlanes(uint8_t* dst_y,
     LOG(LS_ERROR) << "NULL plane pointer.";
     return false;
   }
-  int32_t src_width = static_cast<int>(GetWidth());
-  int32_t src_height = static_cast<int>(GetHeight());
+  int32_t src_width = width();
+  int32_t src_height = height();
   return libyuv::I420Copy(GetYPlane(), GetYPitch(),
                           GetUPlane(), GetUPitch(),
                           GetVPlane(), GetVPitch(),
@@ -50,7 +50,7 @@ size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
                                       uint8_t* buffer,
                                       size_t size,
                                       int stride_rgb) const {
-  const size_t needed = std::abs(stride_rgb) * GetHeight();
+  const size_t needed = std::abs(stride_rgb) * static_cast<size_t>(height());
   if (size < needed) {
     LOG(LS_WARNING) << "RGB buffer is not large enough";
     return needed;
@@ -58,8 +58,7 @@ size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
 
   if (libyuv::ConvertFromI420(GetYPlane(), GetYPitch(), GetUPlane(),
                               GetUPitch(), GetVPlane(), GetVPitch(), buffer,
-                              stride_rgb, static_cast<int>(GetWidth()),
-                              static_cast<int>(GetHeight()), to_fourcc)) {
+                              stride_rgb, width(), height(), to_fourcc)) {
     LOG(LS_ERROR) << "RGB type not supported: " << to_fourcc;
     return 0;  // 0 indicates error
   }
@@ -67,14 +66,16 @@ size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
 }
 
 // TODO(fbarchard): Handle odd width/height with rounding.
+// TODO(nisse): If method is kept, switch to using int instead of
+// size_t and int32_t.
 void VideoFrame::StretchToPlanes(uint8_t* dst_y,
                                  uint8_t* dst_u,
                                  uint8_t* dst_v,
                                  int32_t dst_pitch_y,
                                  int32_t dst_pitch_u,
                                  int32_t dst_pitch_v,
-                                 size_t width,
-                                 size_t height,
+                                 size_t dst_width,
+                                 size_t dst_height,
                                  bool interpolate,
                                  bool vert_crop) const {
   if (!GetYPlane() || !GetUPlane() || !GetVPlane()) {
@@ -82,9 +83,9 @@ void VideoFrame::StretchToPlanes(uint8_t* dst_y,
     return;
   }
 
-  size_t src_width = GetWidth();
-  size_t src_height = GetHeight();
-  if (width == src_width && height == src_height) {
+  size_t src_width = width();
+  size_t src_height = height();
+  if (dst_width == src_width && dst_height == src_height) {
     CopyToPlanes(dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v);
     return;
   }
@@ -94,18 +95,18 @@ void VideoFrame::StretchToPlanes(uint8_t* dst_y,
 
   if (vert_crop) {
     // Adjust the input width:height ratio to be the same as the output ratio.
-    if (src_width * height > src_height * width) {
+    if (src_width * dst_height > src_height * dst_width) {
       // Reduce the input width, but keep size/position aligned for YuvScaler
-      src_width = ROUNDTO2(src_height * width / height);
-      int32_t iwidth_offset = ROUNDTO2((GetWidth() - src_width) / 2);
+      src_width = ROUNDTO2(src_height * dst_width / dst_height);
+      int32_t iwidth_offset = ROUNDTO2((width() - src_width) / 2);
       src_y += iwidth_offset;
       src_u += iwidth_offset / 2;
       src_v += iwidth_offset / 2;
-    } else if (src_width * height < src_height * width) {
+    } else if (src_width * dst_height < src_height * dst_width) {
       // Reduce the input height.
-      src_height = src_width * height / width;
+      src_height = src_width * dst_height / dst_width;
       int32_t iheight_offset =
-          static_cast<int32_t>((GetHeight() - src_height) >> 2);
+          static_cast<int32_t>((height() - src_height) >> 2);
       iheight_offset <<= 1;  // Ensure that iheight_offset is even.
       src_y += iheight_offset * GetYPitch();
       src_u += iheight_offset / 2 * GetUPitch();
@@ -118,7 +119,8 @@ void VideoFrame::StretchToPlanes(uint8_t* dst_y,
                 GetYPitch(), GetUPitch(), GetVPitch(),
                 static_cast<int>(src_width), static_cast<int>(src_height),
                 dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v,
-                static_cast<int>(width), static_cast<int>(height), interpolate);
+                static_cast<int>(dst_width), static_cast<int>(dst_height),
+                interpolate);
 }
 
 void VideoFrame::StretchToFrame(VideoFrame* dst,
@@ -130,7 +132,7 @@ void VideoFrame::StretchToFrame(VideoFrame* dst,
 
   StretchToPlanes(dst->GetYPlane(), dst->GetUPlane(), dst->GetVPlane(),
                   dst->GetYPitch(), dst->GetUPitch(), dst->GetVPitch(),
-                  dst->GetWidth(), dst->GetHeight(),
+                  dst->width(), dst->height(),
                   interpolate, vert_crop);
   dst->SetTimeStamp(GetTimeStamp());
   // Stretched frame should have the same rotation as the source.
@@ -153,8 +155,7 @@ bool VideoFrame::SetToBlack() {
                           GetUPlane(), GetUPitch(),
                           GetVPlane(), GetVPitch(),
                           0, 0,
-                          static_cast<int>(GetWidth()),
-                          static_cast<int>(GetHeight()),
+                          width(), height(),
                           16, 128, 128) == 0;
 }
 

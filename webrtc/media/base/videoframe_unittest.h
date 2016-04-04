@@ -399,12 +399,12 @@ class VideoFrameTest : public testing::Test {
   }
 
   static bool IsSize(const cricket::VideoFrame& frame,
-                     uint32_t width,
-                     uint32_t height) {
-    return !IsNull(frame) && frame.GetYPitch() >= static_cast<int32_t>(width) &&
-           frame.GetUPitch() >= static_cast<int32_t>(width) / 2 &&
-           frame.GetVPitch() >= static_cast<int32_t>(width) / 2 &&
-           frame.GetWidth() == width && frame.GetHeight() == height;
+                     int width,
+                     int height) {
+    return !IsNull(frame) && frame.GetYPitch() >= width &&
+           frame.GetUPitch() >= width / 2 &&
+           frame.GetVPitch() >= width / 2 &&
+           frame.width() == width && frame.height() == height;
   }
 
   static bool IsPlaneEqual(const std::string& name,
@@ -434,8 +434,8 @@ class VideoFrameTest : public testing::Test {
   }
 
   static bool IsEqual(const cricket::VideoFrame& frame,
-                      size_t width,
-                      size_t height,
+                      int width,
+                      int height,
                       int64_t time_stamp,
                       const uint8_t* y,
                       uint32_t ypitch,
@@ -444,8 +444,7 @@ class VideoFrameTest : public testing::Test {
                       const uint8_t* v,
                       uint32_t vpitch,
                       int max_error) {
-    return IsSize(frame, static_cast<uint32_t>(width),
-                  static_cast<uint32_t>(height)) &&
+    return IsSize(frame, width, height) &&
            frame.GetTimeStamp() == time_stamp &&
            IsPlaneEqual("y", frame.GetYPlane(), frame.GetYPitch(), y, ypitch,
                         static_cast<uint32_t>(width),
@@ -462,7 +461,7 @@ class VideoFrameTest : public testing::Test {
                       const cricket::VideoFrame& frame2,
                       int max_error) {
     return IsEqual(frame1,
-                   frame2.GetWidth(), frame2.GetHeight(),
+                   frame2.width(), frame2.height(),
                    frame2.GetTimeStamp(),
                    frame2.GetYPlane(), frame2.GetYPitch(),
                    frame2.GetUPlane(), frame2.GetUPitch(),
@@ -473,11 +472,11 @@ class VideoFrameTest : public testing::Test {
   static bool IsEqualWithCrop(const cricket::VideoFrame& frame1,
                               const cricket::VideoFrame& frame2,
                               int hcrop, int vcrop, int max_error) {
-    return frame1.GetWidth() <= frame2.GetWidth() &&
-           frame1.GetHeight() <= frame2.GetHeight() &&
+    return frame1.width() <= frame2.width() &&
+           frame1.height() <= frame2.height() &&
            IsEqual(frame1,
-                   frame2.GetWidth() - hcrop * 2,
-                   frame2.GetHeight() - vcrop * 2,
+                   frame2.width() - hcrop * 2,
+                   frame2.height() - vcrop * 2,
                    frame2.GetTimeStamp(),
                    frame2.GetYPlane() + vcrop * frame2.GetYPitch()
                        + hcrop,
@@ -794,8 +793,8 @@ class VideoFrameTest : public testing::Test {
                             kHeight,                                           \
                             reinterpret_cast<uint8_t*>(ms->GetBuffer()),       \
                             data_size, 0, webrtc::kVideoRotation_0));    \
-    int width_rotate = static_cast<int>(frame1.GetWidth());                    \
-    int height_rotate = static_cast<int>(frame1.GetHeight());                  \
+    int width_rotate = frame1.width();                                  \
+    int height_rotate = frame1.height();                                \
     EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 0));     \
     libyuv::I420Mirror(                                                        \
         frame2.GetYPlane(), frame2.GetYPitch(), frame2.GetUPlane(),            \
@@ -825,8 +824,8 @@ class VideoFrameTest : public testing::Test {
                             kHeight,                                           \
                             reinterpret_cast<uint8_t*>(ms->GetBuffer()),       \
                             data_size, 0, webrtc::kVideoRotation_0));    \
-    int width_rotate = static_cast<int>(frame1.GetWidth());                    \
-    int height_rotate = static_cast<int>(frame1.GetHeight());                  \
+    int width_rotate = frame1.width();                                  \
+    int height_rotate = frame1.height();                                \
     EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 0));     \
     libyuv::I420Rotate(                                                        \
         frame2.GetYPlane(), frame2.GetYPitch(), frame2.GetUPlane(),            \
@@ -951,8 +950,8 @@ class VideoFrameTest : public testing::Test {
                              sizeof(pixels5x5), 0,
                              webrtc::kVideoRotation_0));
     }
-    EXPECT_EQ(5u, frame.GetWidth());
-    EXPECT_EQ(5u, frame.GetHeight());
+    EXPECT_EQ(5, frame.width());
+    EXPECT_EQ(5, frame.height());
     EXPECT_EQ(5, frame.GetYPitch());
     EXPECT_EQ(3, frame.GetUPitch());
     EXPECT_EQ(3, frame.GetVPitch());
@@ -1396,11 +1395,11 @@ class VideoFrameTest : public testing::Test {
     // Swapp width and height if the frame is rotated 90 or 270 degrees.
     if (apply_rotation && (rotation == webrtc::kVideoRotation_90
         || rotation == webrtc::kVideoRotation_270)) {
-      EXPECT_TRUE(kHeight == frame1.GetWidth());
-      EXPECT_TRUE(kWidth == frame1.GetHeight());
+      EXPECT_TRUE(kHeight == frame1.width());
+      EXPECT_TRUE(kWidth == frame1.height());
     } else {
-      EXPECT_TRUE(kWidth == frame1.GetWidth());
-      EXPECT_TRUE(kHeight == frame1.GetHeight());
+      EXPECT_TRUE(kWidth == frame1.width());
+      EXPECT_TRUE(kHeight == frame1.height());
     }
     EXPECT_FALSE(IsBlack(frame1));
     EXPECT_FALSE(IsEqual(frame1, frame2, 0));

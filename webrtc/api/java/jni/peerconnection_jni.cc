@@ -771,16 +771,18 @@ class JavaVideoRendererWrapper
     jobject y_buffer =
         jni()->NewDirectByteBuffer(const_cast<uint8_t*>(frame->GetYPlane()),
                                    frame->GetYPitch() * frame->GetHeight());
+    size_t chroma_size =
+      ((frame->width() + 1) / 2) * ((frame->height() + 1) / 2);
     jobject u_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8_t*>(frame->GetUPlane()), frame->GetChromaSize());
+        const_cast<uint8_t*>(frame->GetUPlane()), chroma_size);
     jobject v_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8_t*>(frame->GetVPlane()), frame->GetChromaSize());
+        const_cast<uint8_t*>(frame->GetVPlane()), chroma_size);
     jni()->SetObjectArrayElement(planes, 0, y_buffer);
     jni()->SetObjectArrayElement(planes, 1, u_buffer);
     jni()->SetObjectArrayElement(planes, 2, v_buffer);
     return jni()->NewObject(
         *j_frame_class_, j_i420_frame_ctor_id_,
-        frame->GetWidth(), frame->GetHeight(),
+        frame->width(), frame->height(),
         static_cast<int>(frame->GetVideoRotation()),
         strides, planes, javaShallowCopy(frame));
   }
@@ -793,7 +795,7 @@ class JavaVideoRendererWrapper
     jni()->SetFloatArrayRegion(sampling_matrix, 0, 16, handle->sampling_matrix);
     return jni()->NewObject(
         *j_frame_class_, j_texture_frame_ctor_id_,
-        frame->GetWidth(), frame->GetHeight(),
+        frame->width(), frame->height(),
         static_cast<int>(frame->GetVideoRotation()),
         handle->oes_texture_id, sampling_matrix, javaShallowCopy(frame));
   }

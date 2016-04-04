@@ -42,8 +42,8 @@ VideoFrame* VideoFrameFactory::CreateAliasedFrame(
   // Create and stretch the output frame if it has not been created yet, is
   // still in use by others, or its size is not same as the expected.
   if (!output_frame_ || !output_frame_->IsExclusive() ||
-      output_frame_->GetWidth() != static_cast<size_t>(output_width) ||
-      output_frame_->GetHeight() != static_cast<size_t>(output_height)) {
+      output_frame_->width() != output_width ||
+      output_frame_->height() != output_height) {
     output_frame_.reset(
         cropped_input_frame->Stretch(output_width, output_height, true, true));
     if (!output_frame_) {

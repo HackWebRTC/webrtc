@@ -19,23 +19,22 @@
 }
 
 - (size_t)width {
-  return _videoFrame->GetWidth();
+  return _videoFrame->width();
 }
 
 - (size_t)height {
-  return _videoFrame->GetHeight();
+  return _videoFrame->height();
 }
 
+// TODO(nisse): chromaWidth and chromaHeight are used only in
+// RTCOpenGLVideoRenderer.mm. Update, and then delete these
+// properties.
 - (size_t)chromaWidth {
-  return _videoFrame->GetChromaWidth();
+  return (self.width + 1) / 2;
 }
 
 - (size_t)chromaHeight {
-  return _videoFrame->GetChromaHeight();
-}
-
-- (size_t)chromaSize {
-  return _videoFrame->GetChromaSize();
+  return (self.height + 1) / 2;
 }
 
 - (const uint8_t *)yPlane {

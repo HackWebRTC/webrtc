@@ -84,15 +84,16 @@ void GtkVideoRenderer::OnFrame(const VideoFrame& video_frame) {
   const VideoFrame* frame = video_frame.GetCopyWithRotationApplied();
 
   // Need to set size as the frame might be rotated.
-  if (!SetSize(frame->GetWidth(), frame->GetHeight())) {
+  if (!SetSize(frame->width(), frame->height())) {
     return;
   }
 
   // convert I420 frame to ABGR format, which is accepted by GTK
   frame->ConvertToRgbBuffer(cricket::FOURCC_ABGR,
                             image_.get(),
-                            frame->GetWidth() * frame->GetHeight() * 4,
-                            frame->GetWidth() * 4);
+                            static_cast<size_t>(frame->width()) *
+                              frame->height() * 4,
+                            frame->width() * 4);
 
   ScopedGdkLock lock;
 
@@ -105,11 +106,11 @@ void GtkVideoRenderer::OnFrame(const VideoFrame& video_frame) {
                         draw_area_->style->fg_gc[GTK_STATE_NORMAL],
                         0,
                         0,
-                        frame->GetWidth(),
-                        frame->GetHeight(),
+                        frame->width(),
+                        frame->height(),
                         GDK_RGB_DITHER_MAX,
                         image_.get(),
-                        frame->GetWidth() * 4);
+                        frame->width() * 4);
 
   // Run the Gtk main loop to refresh the window.
   Pump();

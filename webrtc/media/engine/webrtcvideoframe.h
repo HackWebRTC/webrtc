@@ -65,8 +65,9 @@ class WebRtcVideoFrame : public VideoFrame {
                      webrtc::VideoRotation rotation,
                      bool apply_rotation) override;
 
-  size_t GetWidth() const override;
-  size_t GetHeight() const override;
+  int width() const override;
+  int height() const override;
+
   const uint8_t* GetYPlane() const override;
   const uint8_t* GetUPlane() const override;
   const uint8_t* GetVPlane() const override;

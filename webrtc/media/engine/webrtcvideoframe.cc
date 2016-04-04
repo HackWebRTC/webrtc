@@ -65,11 +65,11 @@ bool WebRtcVideoFrame::InitToBlack(int w, int h,
   return SetToBlack();
 }
 
-size_t WebRtcVideoFrame::GetWidth() const {
+int WebRtcVideoFrame::width() const {
   return video_frame_buffer_ ? video_frame_buffer_->width() : 0;
 }
 
-size_t WebRtcVideoFrame::GetHeight() const {
+int WebRtcVideoFrame::height() const {
   return video_frame_buffer_ ? video_frame_buffer_->height() : 0;
 }
 
@@ -226,15 +226,15 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
     return rotated_frame_.get();
   }
 
-  int width = static_cast<int>(GetWidth());
-  int height = static_cast<int>(GetHeight());
+  int orig_width = width();
+  int orig_height = height();
 
-  int rotated_width = width;
-  int rotated_height = height;
+  int rotated_width = orig_width;
+  int rotated_height = orig_height;
   if (GetVideoRotation() == webrtc::kVideoRotation_90 ||
       GetVideoRotation() == webrtc::kVideoRotation_270) {
-    rotated_width = height;
-    rotated_height = width;
+    rotated_width = orig_height;
+    rotated_height = orig_width;
   }
 
   rotated_frame_.reset(CreateEmptyFrame(rotated_width, rotated_height,
@@ -246,7 +246,8 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
       GetYPlane(), GetYPitch(), GetUPlane(), GetUPitch(), GetVPlane(),
       GetVPitch(), rotated_frame_->GetYPlane(), rotated_frame_->GetYPitch(),
       rotated_frame_->GetUPlane(), rotated_frame_->GetUPitch(),
-      rotated_frame_->GetVPlane(), rotated_frame_->GetVPitch(), width, height,
+      rotated_frame_->GetVPlane(), rotated_frame_->GetVPitch(),
+      orig_width, orig_height,
       static_cast<libyuv::RotationMode>(GetVideoRotation()));
   if (ret == 0) {
     return rotated_frame_.get();

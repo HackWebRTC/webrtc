@@ -108,7 +108,7 @@ void CarbonVideoRenderer::OnFrame(const VideoFrame& video_frame) {
   {
     const VideoFrame* frame = video_frame->GetCopyWithRotationApplied();
 
-    if (!SetSize(frame->GetWidth(), frame->GetHeight(), 0)) {
+    if (!SetSize(frame->width(), frame->height())) {
       return false;
     }
 
@@ -116,8 +116,9 @@ void CarbonVideoRenderer::OnFrame(const VideoFrame& video_frame) {
     rtc::CritScope cs(&image_crit_);
     frame->ConvertToRgbBuffer(cricket::FOURCC_ABGR,
                               image_.get(),
-                              frame->GetWidth() * frame->GetHeight() * 4,
-                              frame->GetWidth() * 4);
+                              static_cast<size_t>(frame->width()) *
+                                frame->height() * 4,
+                              frame->width() * 4);
   }
 
   // Trigger a repaint event for the whole window.

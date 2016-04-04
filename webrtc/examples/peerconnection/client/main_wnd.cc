@@ -607,8 +607,7 @@ void MainWnd::VideoRenderer::OnFrame(
     const cricket::VideoFrame* frame =
         video_frame.GetCopyWithRotationApplied();
 
-    SetSize(static_cast<int>(frame->GetWidth()),
-            static_cast<int>(frame->GetHeight()));
+    SetSize(frame->width(), frame->height());
 
     ASSERT(image_.get() != NULL);
     frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB,

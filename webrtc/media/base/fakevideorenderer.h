@@ -37,8 +37,8 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
     black_frame_ = CheckFrameColorYuv(6, 48, 128, 128, 128, 128, &frame);
     // Treat unexpected frame size as error.
     ++num_rendered_frames_;
-    width_ = static_cast<int>(frame.GetWidth());
-    height_ = static_cast<int>(frame.GetHeight());
+    width_ = frame.width();
+    height_ = frame.height();
     rotation_ = frame.GetVideoRotation();
     timestamp_ = frame.GetTimeStamp();
     SignalRenderFrame(&frame);
@@ -86,13 +86,13 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
       return false;
     }
     // Y
-    size_t y_width = frame->GetWidth();
-    size_t y_height = frame->GetHeight();
+    int y_width = frame->width();
+    int y_height = frame->height();
     const uint8_t* y_plane = frame->GetYPlane();
     const uint8_t* y_pos = y_plane;
     int32_t y_pitch = frame->GetYPitch();
-    for (size_t i = 0; i < y_height; ++i) {
-      for (size_t j = 0; j < y_width; ++j) {
+    for (int i = 0; i < y_height; ++i) {
+      for (int j = 0; j < y_width; ++j) {
         uint8_t y_value = *(y_pos + j);
         if (y_value < y_min || y_value > y_max) {
           return false;
@@ -101,16 +101,16 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
       y_pos += y_pitch;
     }
     // U and V
-    size_t chroma_width = frame->GetChromaWidth();
-    size_t chroma_height = frame->GetChromaHeight();
+    int chroma_width = (frame->width() + 1)/2;
+    int chroma_height = (frame->height() + 1)/2;
     const uint8_t* u_plane = frame->GetUPlane();
     const uint8_t* v_plane = frame->GetVPlane();
     const uint8_t* u_pos = u_plane;
     const uint8_t* v_pos = v_plane;
     int32_t u_pitch = frame->GetUPitch();
     int32_t v_pitch = frame->GetVPitch();
-    for (size_t i = 0; i < chroma_height; ++i) {
-      for (size_t j = 0; j < chroma_width; ++j) {
+    for (int i = 0; i < chroma_height; ++i) {
+      for (int j = 0; j < chroma_width; ++j) {
         uint8_t u_value = *(u_pos + j);
         if (u_value < u_min || u_value > u_max) {
           return false;

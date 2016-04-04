@@ -46,7 +46,7 @@ class RTCVideoRendererNativeAdapter
 
   void OnFrame(const cricket::VideoFrame& videoFrame) override {
     const cricket::VideoFrame* frame = videoFrame.GetCopyWithRotationApplied();
-    CGSize currentSize = CGSizeMake(frame->GetWidth(), frame->GetHeight());
+    CGSize currentSize = CGSizeMake(frame->width(), frame->height());
     if (!CGSizeEqualToSize(_size, currentSize)) {
       _size = currentSize;
       [_adapter.videoRenderer setSize:_size];

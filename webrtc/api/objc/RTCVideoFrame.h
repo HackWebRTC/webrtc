@@ -22,7 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) size_t height;
 @property(nonatomic, readonly) size_t chromaWidth;
 @property(nonatomic, readonly) size_t chromaHeight;
-@property(nonatomic, readonly) size_t chromaSize;
 // These can return NULL if the object is not backed by a buffer.
 @property(nonatomic, readonly, nullable) const uint8_t *yPlane;
 @property(nonatomic, readonly, nullable) const uint8_t *uPlane;

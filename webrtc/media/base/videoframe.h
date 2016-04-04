@@ -45,12 +45,15 @@ class VideoFrame {
 
   // Basic accessors.
   // Note this is the width and height without rotation applied.
-  virtual size_t GetWidth() const = 0;
-  virtual size_t GetHeight() const = 0;
+  virtual int width() const = 0;
+  virtual int height() const = 0;
 
-  size_t GetChromaWidth() const { return (GetWidth() + 1) / 2; }
-  size_t GetChromaHeight() const { return (GetHeight() + 1) / 2; }
-  size_t GetChromaSize() const { return GetUPitch() * GetChromaHeight(); }
+  // Deprecated methods, for backwards compatibility.
+  // TODO(nisse): Delete when usage in Chrome and other applications
+  // have been replaced by width() and height().
+  virtual size_t GetWidth() const final { return width(); }
+  virtual size_t GetHeight() const final { return height(); }
+
   // These can return NULL if the object is not backed by a buffer.
   virtual const uint8_t* GetYPlane() const = 0;
   virtual const uint8_t* GetUPlane() const = 0;

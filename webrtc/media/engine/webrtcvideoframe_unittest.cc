@@ -75,11 +75,11 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     // height are flipped.
     if (apply_rotation && (frame_rotation == webrtc::kVideoRotation_90
         || frame_rotation == webrtc::kVideoRotation_270)) {
-      EXPECT_EQ(static_cast<size_t>(cropped_width), frame.GetHeight());
-      EXPECT_EQ(static_cast<size_t>(cropped_height), frame.GetWidth());
+      EXPECT_EQ(cropped_width, frame.height());
+      EXPECT_EQ(cropped_height, frame.width());
     } else {
-      EXPECT_EQ(static_cast<size_t>(cropped_width), frame.GetWidth());
-      EXPECT_EQ(static_cast<size_t>(cropped_height), frame.GetHeight());
+      EXPECT_EQ(cropped_width, frame.width());
+      EXPECT_EQ(cropped_height, frame.height());
     }
   }
 };
@@ -275,8 +275,8 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
           dummy_handle, 640, 480);
   cricket::WebRtcVideoFrame frame(buffer, 200, webrtc::kVideoRotation_0);
   EXPECT_EQ(dummy_handle, frame.GetNativeHandle());
-  EXPECT_EQ(640u, frame.GetWidth());
-  EXPECT_EQ(480u, frame.GetHeight());
+  EXPECT_EQ(640, frame.width());
+  EXPECT_EQ(480, frame.height());
   EXPECT_EQ(200, frame.GetTimeStamp());
   frame.SetTimeStamp(400);
   EXPECT_EQ(400, frame.GetTimeStamp());
@@ -291,8 +291,8 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
   cricket::WebRtcVideoFrame frame1(buffer, 200, webrtc::kVideoRotation_0);
   cricket::VideoFrame* frame2 = frame1.Copy();
   EXPECT_EQ(frame1.GetNativeHandle(), frame2->GetNativeHandle());
-  EXPECT_EQ(frame1.GetWidth(), frame2->GetWidth());
-  EXPECT_EQ(frame1.GetHeight(), frame2->GetHeight());
+  EXPECT_EQ(frame1.width(), frame2->width());
+  EXPECT_EQ(frame1.height(), frame2->height());
   EXPECT_EQ(frame1.GetTimeStamp(), frame2->GetTimeStamp());
   delete frame2;
 }

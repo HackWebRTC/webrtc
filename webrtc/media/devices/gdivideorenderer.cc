@@ -137,8 +137,7 @@ void GdiVideoRenderer::VideoWindow::OnFrame(const VideoFrame& video_frame) {
 
   const VideoFrame* frame = video_frame.GetCopyWithRotationApplied();
 
-  if (SetSize(static_cast<int>(frame->GetWidth()),
-              static_cast<int>(frame->GetHeight()))) {
+  if (SetSize(frame->width(), frame->height())) {
     SendMessage(handle(), kRenderFrameMsg, reinterpret_cast<WPARAM>(frame), 0);
   }
 }
@@ -244,9 +243,8 @@ GdiVideoRenderer::~GdiVideoRenderer() {}
 
 void GdiVideoRenderer::OnFrame(const VideoFrame& frame) {
   if (!window_.get()) { // Create the window for the first frame
-    window_.reset(new VideoWindow(initial_x_, initial_y_,
-                                  static_cast<int>(frame.GetWidth()),
-                                  static_cast<int>(frame.GetHeight())));
+    window_.reset(
+        new VideoWindow(initial_x_, initial_y_, frame.width(), frame.height()));
   }
   window_->OnFrame(frame);
 }

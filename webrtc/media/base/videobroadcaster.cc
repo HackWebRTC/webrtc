@@ -96,16 +96,15 @@ void VideoBroadcaster::UpdateWants() {
 
 const cricket::VideoFrame& VideoBroadcaster::GetBlackFrame(
     const cricket::VideoFrame& frame) {
-  if (black_frame_ && black_frame_->GetWidth() == frame.GetWidth() &&
-      black_frame_->GetHeight() == frame.GetHeight() &&
+  if (black_frame_ && black_frame_->width() == frame.width() &&
+      black_frame_->height() == frame.height() &&
       black_frame_->GetVideoRotation() == frame.GetVideoRotation()) {
     black_frame_->SetTimeStamp(frame.GetTimeStamp());
     return *black_frame_;
   }
   black_frame_.reset(new cricket::WebRtcVideoFrame(
       new rtc::RefCountedObject<webrtc::I420Buffer>(
-          static_cast<int>(frame.GetWidth()),
-          static_cast<int>(frame.GetHeight())),
+          frame.width(), frame.height()),
       frame.GetTimeStamp(), frame.GetVideoRotation()));
   black_frame_->SetToBlack();
   return *black_frame_;

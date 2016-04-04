@@ -203,9 +203,6 @@ void DumpPlanarArgbTestImage(const std::string& prefix,
                              int w,
                              int h);
 
-// Compare two I420 frames.
-bool VideoFrameEqual(const VideoFrame* frame0, const VideoFrame* frame1);
-
 // Checks whether |codecs| contains |codec|; checks using Codec::Matches().
 template <class C>
 bool ContainsMatchingCodec(const std::vector<C>& codecs, const C& codec) {

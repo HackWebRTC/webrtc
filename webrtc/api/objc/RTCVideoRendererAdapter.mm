@@ -26,7 +26,7 @@ class VideoRendererAdapter
   void OnFrame(const cricket::VideoFrame& nativeVideoFrame) override {
     const cricket::VideoFrame *frame =
         nativeVideoFrame.GetCopyWithRotationApplied();
-    CGSize current_size = CGSizeMake(frame->GetWidth(), frame->GetHeight());
+    CGSize current_size = CGSizeMake(frame->width(), frame->height());
     if (!CGSizeEqualToSize(size_, current_size)) {
       size_ = current_size;
       [adapter_.videoRenderer setSize:size_];

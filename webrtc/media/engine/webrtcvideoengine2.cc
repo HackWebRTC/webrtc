@@ -1590,8 +1590,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   if (muted_) {
     // Create a black frame to transmit instead.
     CreateBlackFrame(&video_frame,
-                     static_cast<int>(frame.GetWidth()),
-                     static_cast<int>(frame.GetHeight()),
+                     frame.width(),
+                     frame.height(),
                      video_frame.rotation());
   }
 

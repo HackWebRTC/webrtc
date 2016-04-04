@@ -486,8 +486,7 @@ void GtkMainWnd::VideoRenderer::OnFrame(
 
   const cricket::VideoFrame* frame = video_frame.GetCopyWithRotationApplied();
 
-  SetSize(static_cast<int>(frame->GetWidth()),
-          static_cast<int>(frame->GetHeight()));
+  SetSize(frame->width(), frame->height());
 
   int size = width_ * height_ * 4;
   // TODO(henrike): Convert directly to RGBA

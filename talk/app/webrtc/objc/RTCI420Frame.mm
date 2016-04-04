@@ -36,23 +36,22 @@
 }
 
 - (NSUInteger)width {
-  return _videoFrame->GetWidth();
+  return _videoFrame->width();
 }
 
 - (NSUInteger)height {
-  return _videoFrame->GetHeight();
+  return _videoFrame->height();
 }
 
+// TODO(nisse): chromaWidth and chromaHeight are used only in
+// RTCOpenGLVideoRenderer.mm. Update, and then delete these
+// properties.
 - (NSUInteger)chromaWidth {
-  return _videoFrame->GetChromaWidth();
+  return (self.width + 1) / 2;
 }
 
 - (NSUInteger)chromaHeight {
-  return _videoFrame->GetChromaHeight();
-}
-
-- (NSUInteger)chromaSize {
-  return _videoFrame->GetChromaSize();
+  return (self.height + 1) / 2;
 }
 
 - (const uint8_t*)yPlane {
