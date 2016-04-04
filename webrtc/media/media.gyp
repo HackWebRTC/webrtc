@@ -81,7 +81,6 @@
         'engine/webrtccommon.h',
         'engine/webrtcmediaengine.cc',
         'engine/webrtcmediaengine.h',
-        'engine/webrtcmediaengine.cc',
         'engine/webrtcvideocapturer.cc',
         'engine/webrtcvideocapturer.h',
         'engine/webrtcvideocapturerfactory.h',
