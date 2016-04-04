@@ -313,7 +313,7 @@ void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
     rtp_header.type.Video.rotation =
         ConvertCVOByteToVideoRotation(header.extension.videoRotation);
   }
-  OnReceivedPayloadData(NULL, 0, &rtp_header);
+  OnReceivedPayloadData(nullptr, 0, &rtp_header);
 }
 
 bool ViEReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
@@ -331,7 +331,7 @@ bool ViEReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
     rtp_rtcp->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
 
   int64_t rtt = 0;
-  rtp_rtcp_[0]->RTT(rtp_receiver_->SSRC(), &rtt, NULL, NULL, NULL);
+  rtp_rtcp_[0]->RTT(rtp_receiver_->SSRC(), &rtt, nullptr, nullptr, nullptr);
   if (rtt == 0) {
     // Waiting for valid rtt.
     return true;
@@ -339,7 +339,7 @@ bool ViEReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (rtp_rtcp_[0]->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
+  if (rtp_rtcp_[0]->RemoteNTP(&ntp_secs, &ntp_frac, nullptr, nullptr,
                               &rtp_timestamp) != 0) {
     // Waiting for RTCP.
     return true;
@@ -382,7 +382,7 @@ bool ViEReceiver::IsPacketRetransmitted(const RTPHeader& header,
     return false;
   // Check if this is a retransmission.
   int64_t min_rtt = 0;
-  rtp_rtcp_[0]->RTT(rtp_receiver_->SSRC(), NULL, NULL, &min_rtt, NULL);
+  rtp_rtcp_[0]->RTT(rtp_receiver_->SSRC(), nullptr, nullptr, &min_rtt, nullptr);
   return !in_order &&
       statistician->IsRetransmitOfOldPacket(header, min_rtt);
 }

@@ -103,7 +103,7 @@ ViEChannel::ViEChannel(Transport* transport,
       bandwidth_observer_(bandwidth_observer),
       transport_feedback_observer_(transport_feedback_observer),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
-      pre_render_callback_(NULL),
+      pre_render_callback_(nullptr),
       last_rtt_ms_(0),
       rtp_rtcp_modules_(
           CreateRtpRtcpModules(!sender,
@@ -315,7 +315,7 @@ CallStatsObserver* ViEChannel::GetStatsObserver() {
 int32_t ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
   rtc::CritScope lock(&crit_);
 
-  if (pre_render_callback_ != NULL)
+  if (pre_render_callback_)
     pre_render_callback_->FrameCallback(&video_frame);
 
   // TODO(pbos): Remove stream id argument.

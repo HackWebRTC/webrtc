@@ -934,9 +934,9 @@ void VideoQualityTest::CreateCapturer(VideoCaptureInput* input) {
           input, test::ResourcePath(params_.video.clip_name, "yuv"),
           params_.common.width, params_.common.height, params_.common.fps,
           clock_));
-      ASSERT_TRUE(capturer_.get() != nullptr)
-          << "Could not create capturer for " << params_.video.clip_name
-          << ".yuv. Is this resource file present?";
+      ASSERT_TRUE(capturer_) << "Could not create capturer for "
+                             << params_.video.clip_name
+                             << ".yuv. Is this resource file present?";
     }
   }
 }
@@ -952,7 +952,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   if (!params_.analyzer.graph_data_output_filename.empty()) {
     graph_data_output_file =
         fopen(params_.analyzer.graph_data_output_filename.c_str(), "w");
-    RTC_CHECK(graph_data_output_file != nullptr)
+    RTC_CHECK(graph_data_output_file)
         << "Can't open the file " << params_.analyzer.graph_data_output_filename
         << "!";
   }

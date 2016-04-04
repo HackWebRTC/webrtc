@@ -201,7 +201,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   template <class T>
   class RegisterableCallback : public T {
    public:
-    RegisterableCallback() : callback_(NULL) {}
+    RegisterableCallback() : callback_(nullptr) {}
 
     void Set(T* callback) {
       rtc::CritScope lock(&critsect_);

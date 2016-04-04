@@ -1050,7 +1050,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       RTPHeader header;
       if (!parser_->Parse(packet, length, &header))
         return DROP_PACKET;
-      RTC_DCHECK(stream_ != nullptr);
+      RTC_DCHECK(stream_);
       VideoSendStream::Stats stats = stream_->GetStats();
       if (!stats.substreams.empty()) {
         EXPECT_EQ(1u, stats.substreams.size());
@@ -1245,7 +1245,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
 }
 
 void ExpectEqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
-  if (frame1.native_handle() != nullptr || frame2.native_handle() != nullptr)
+  if (frame1.native_handle() || frame2.native_handle())
     ExpectEqualTextureFrames(frame1, frame2);
   else
     ExpectEqualBufferFrames(frame1, frame2);
@@ -1859,7 +1859,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
         encoded._frameType = (*frame_types)[i];
         encoded._encodedWidth = kEncodedResolution[i].width;
         encoded._encodedHeight = kEncodedResolution[i].height;
-        RTC_DCHECK(callback_ != nullptr);
+        RTC_DCHECK(callback_);
         if (callback_->Encoded(encoded, &specifics, nullptr) != 0)
           return -1;
       }

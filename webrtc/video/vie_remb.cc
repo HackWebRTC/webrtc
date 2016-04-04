@@ -92,7 +92,7 @@ bool VieRemb::InUse() const {
 
 void VieRemb::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                       uint32_t bitrate) {
-  RtpRtcp* sender = NULL;
+  RtpRtcp* sender = nullptr;
   {
     rtc::CritScope lock(&list_crit_);
     // If we already have an estimate, check if the new total estimate is below

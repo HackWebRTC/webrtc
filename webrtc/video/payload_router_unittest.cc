@@ -42,39 +42,39 @@ TEST_F(PayloadRouterTest, SendOnOneModule) {
   FrameType frame_type = kVideoFrameKey;
   int8_t payload_type = 96;
 
-  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1, NULL,
-                                    NULL))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(0);
   EXPECT_FALSE(payload_router_->RoutePayload(frame_type, payload_type, 0, 0,
-                                             &payload, 1, NULL, NULL));
+                                             &payload, 1, nullptr, nullptr));
 
   payload_router_->set_active(true);
-  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1, NULL,
-                                    NULL))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(1);
   EXPECT_TRUE(payload_router_->RoutePayload(frame_type, payload_type, 0, 0,
-                                            &payload, 1, NULL, NULL));
+                                            &payload, 1, nullptr, nullptr));
 
   payload_router_->set_active(false);
-  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1, NULL,
-                                    NULL))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(0);
   EXPECT_FALSE(payload_router_->RoutePayload(frame_type, payload_type, 0, 0,
-                                             &payload, 1, NULL, NULL));
+                                             &payload, 1, nullptr, nullptr));
 
   payload_router_->set_active(true);
-  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1, NULL,
-                                    NULL))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(1);
   EXPECT_TRUE(payload_router_->RoutePayload(frame_type, payload_type, 0, 0,
-                                            &payload, 1, NULL, NULL));
+                                            &payload, 1, nullptr, nullptr));
 
   payload_router_->SetSendingRtpModules(0);
-  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1, NULL,
-                                    NULL))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(0);
   EXPECT_FALSE(payload_router_->RoutePayload(frame_type, payload_type, 0, 0,
-                                             &payload, 1, NULL, NULL));
+                                             &payload, 1, nullptr, nullptr));
 }
 
 TEST_F(PayloadRouterTest, SendSimulcast) {
@@ -95,12 +95,12 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
 
   payload_router_->set_active(true);
   EXPECT_CALL(rtp_1, SendOutgoingData(frame_type_1, payload_type_1, 0, 0, _, 1,
-                                      NULL, &rtp_hdr_1))
+                                      nullptr, &rtp_hdr_1))
       .Times(1);
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
-  EXPECT_TRUE(payload_router_->RoutePayload(frame_type_1, payload_type_1, 0, 0,
-                                            &payload_1, 1, NULL, &rtp_hdr_1));
+  EXPECT_TRUE(payload_router_->RoutePayload(
+      frame_type_1, payload_type_1, 0, 0, &payload_1, 1, nullptr, &rtp_hdr_1));
 
   uint8_t payload_2 = 'b';
   FrameType frame_type_2 = kVideoFrameDelta;
@@ -108,12 +108,12 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
   RTPVideoHeader rtp_hdr_2;
   rtp_hdr_2.simulcastIdx = 1;
   EXPECT_CALL(rtp_2, SendOutgoingData(frame_type_2, payload_type_2, 0, 0, _, 1,
-                                      NULL, &rtp_hdr_2))
+                                      nullptr, &rtp_hdr_2))
       .Times(1);
   EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
-  EXPECT_TRUE(payload_router_->RoutePayload(frame_type_2, payload_type_2, 0, 0,
-                                            &payload_2, 1, NULL, &rtp_hdr_2));
+  EXPECT_TRUE(payload_router_->RoutePayload(
+      frame_type_2, payload_type_2, 0, 0, &payload_2, 1, nullptr, &rtp_hdr_2));
 
   // Inactive.
   payload_router_->set_active(false);
@@ -121,10 +121,10 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
       .Times(0);
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
-  EXPECT_FALSE(payload_router_->RoutePayload(frame_type_1, payload_type_1, 0, 0,
-                                             &payload_1, 1, NULL, &rtp_hdr_1));
-  EXPECT_FALSE(payload_router_->RoutePayload(frame_type_2, payload_type_2, 0, 0,
-                                             &payload_2, 1, NULL, &rtp_hdr_2));
+  EXPECT_FALSE(payload_router_->RoutePayload(
+      frame_type_1, payload_type_1, 0, 0, &payload_1, 1, nullptr, &rtp_hdr_1));
+  EXPECT_FALSE(payload_router_->RoutePayload(
+      frame_type_2, payload_type_2, 0, 0, &payload_2, 1, nullptr, &rtp_hdr_2));
 
   // Invalid simulcast index.
   payload_router_->SetSendingRtpModules(1);
@@ -134,8 +134,8 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
   rtp_hdr_1.simulcastIdx = 1;
-  EXPECT_FALSE(payload_router_->RoutePayload(frame_type_1, payload_type_1, 0, 0,
-                                             &payload_1, 1, NULL, &rtp_hdr_1));
+  EXPECT_FALSE(payload_router_->RoutePayload(
+      frame_type_1, payload_type_1, 0, 0, &payload_1, 1, nullptr, &rtp_hdr_1));
 }
 
 TEST_F(PayloadRouterTest, MaxPayloadLength) {

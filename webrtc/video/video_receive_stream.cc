@@ -41,7 +41,7 @@ static bool UseSendSideBwe(const VideoReceiveStream::Config& config) {
 
 std::string VideoReceiveStream::Decoder::ToString() const {
   std::stringstream ss;
-  ss << "{decoder: " << (decoder != nullptr ? "(VideoDecoder)" : "nullptr");
+  ss << "{decoder: " << (decoder ? "(VideoDecoder)" : "nullptr");
   ss << ", payload_type: " << payload_type;
   ss << ", payload_name: " << payload_name;
   ss << '}';
@@ -59,14 +59,14 @@ std::string VideoReceiveStream::Config::ToString() const {
   }
   ss << ']';
   ss << ", rtp: " << rtp.ToString();
-  ss << ", renderer: " << (renderer != nullptr ? "(renderer)" : "nullptr");
+  ss << ", renderer: " << (renderer ? "(renderer)" : "nullptr");
   ss << ", render_delay_ms: " << render_delay_ms;
   if (!sync_group.empty())
     ss << ", sync_group: " << sync_group;
   ss << ", pre_decode_callback: "
-     << (pre_decode_callback != nullptr ? "(EncodedFrameObserver)" : "nullptr");
+     << (pre_decode_callback ? "(EncodedFrameObserver)" : "nullptr");
   ss << ", pre_render_callback: "
-     << (pre_render_callback != nullptr ? "(I420FrameCallback)" : "nullptr");
+     << (pre_render_callback ? "(I420FrameCallback)" : "nullptr");
   ss << ", target_delay_ms: " << target_delay_ms;
   ss << '}';
 
@@ -345,7 +345,7 @@ void VideoReceiveStream::Stop() {
 
 void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
                                         int audio_channel_id) {
-  if (voice_engine != nullptr && audio_channel_id != -1) {
+  if (voice_engine && audio_channel_id != -1) {
     VoEVideoSync* voe_sync_interface = VoEVideoSync::GetInterface(voice_engine);
     vie_sync_.ConfigureSync(audio_channel_id, voe_sync_interface, rtp_rtcp_,
                             vie_receiver_->GetRtpReceiver());
@@ -374,7 +374,7 @@ void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {
   stats_proxy_.OnDecodedFrame();
 
   // Post processing is not supported if the frame is backed by a texture.
-  if (video_frame->native_handle() == NULL) {
+  if (!video_frame->native_handle()) {
     if (config_.pre_render_callback)
       config_.pre_render_callback->FrameCallback(video_frame);
   }
@@ -386,7 +386,7 @@ int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
   if (vie_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms))
     stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms);
 
-  if (config_.renderer != nullptr)
+  if (config_.renderer)
     config_.renderer->OnFrame(video_frame);
 
   stats_proxy_.OnRenderedFrame(video_frame);

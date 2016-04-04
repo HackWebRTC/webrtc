@@ -272,7 +272,7 @@ void ReceiveStatisticsProxy::OnDiscardedPacketsUpdated(int discarded_packets) {
 void ReceiveStatisticsProxy::OnPreDecode(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info) {
-  if (codec_specific_info == nullptr || encoded_image.qp_ == -1) {
+  if (!codec_specific_info || encoded_image.qp_ == -1) {
     return;
   }
   if (codec_specific_info->codecType == kVideoCodecVP8) {

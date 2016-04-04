@@ -223,7 +223,7 @@ TEST_F(VideoCaptureInputTest, TestTextureFrameAfterI420Frame) {
 }
 
 bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
-  if (frame1.native_handle() != NULL || frame2.native_handle() != NULL)
+  if (frame1.native_handle() || frame2.native_handle())
     return EqualTextureFrames(frame1, frame2);
   return EqualBufferFrames(frame1, frame2);
 }

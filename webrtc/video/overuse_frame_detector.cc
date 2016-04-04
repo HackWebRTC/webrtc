@@ -193,7 +193,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
       usage_(new SendProcessingUsage(options)) {
-  RTC_DCHECK(metrics_observer != nullptr);
+  RTC_DCHECK(metrics_observer);
   processing_thread_.DetachFromThread();
 }
 
@@ -341,13 +341,13 @@ void OveruseFrameDetector::Process() {
     checks_above_threshold_ = 0;
     ++num_overuse_detections_;
 
-    if (observer_ != NULL)
+    if (observer_)
       observer_->OveruseDetected();
   } else if (IsUnderusing(current_metrics, now)) {
     last_rampup_time_ms_ = now;
     in_quick_rampup_ = true;
 
-    if (observer_ != NULL)
+    if (observer_)
       observer_->NormalUsage();
   }
 

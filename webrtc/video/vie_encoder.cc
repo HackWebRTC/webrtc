@@ -166,14 +166,14 @@ int32_t ViEEncoder::RegisterExternalEncoder(webrtc::VideoEncoder* encoder,
 }
 
 int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
-  if (vcm_->RegisterExternalEncoder(NULL, pl_type) != VCM_OK) {
+  if (vcm_->RegisterExternalEncoder(nullptr, pl_type) != VCM_OK) {
     return -1;
   }
   return 0;
 }
 void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
                             int min_transmit_bitrate_bps) {
-  RTC_DCHECK(send_payload_router_ != NULL);
+  RTC_DCHECK(send_payload_router_);
   // Setting target width and height for VPM.
   RTC_CHECK_EQ(VPM_OK,
                vp_->SetTargetResolution(video_codec.width, video_codec.height,
@@ -334,7 +334,7 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
                           "Encode");
   const VideoFrame* frame_to_send = &video_frame;
   // TODO(wuchengli): support texture frames.
-  if (video_frame.native_handle() == NULL) {
+  if (!video_frame.native_handle()) {
     // Pass frame via preprocessor.
     frame_to_send = vp_->PreprocessFrame(video_frame);
     if (!frame_to_send) {
@@ -412,14 +412,14 @@ int32_t ViEEncoder::SendData(const uint8_t payload_type,
                              const EncodedImage& encoded_image,
                              const RTPFragmentationHeader* fragmentation_header,
                              const RTPVideoHeader* rtp_video_hdr) {
-  RTC_DCHECK(send_payload_router_ != NULL);
+  RTC_DCHECK(send_payload_router_);
 
   {
     rtc::CritScope lock(&data_cs_);
     time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
   }
 
-  if (stats_proxy_ != NULL)
+  if (stats_proxy_)
     stats_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
 
   bool success = send_payload_router_->RoutePayload(
@@ -485,7 +485,7 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
   LOG(LS_VERBOSE) << "OnBitrateUpdated, bitrate" << bitrate_bps
                   << " packet loss " << static_cast<int>(fraction_lost)
                   << " rtt " << round_trip_time_ms;
-  RTC_DCHECK(send_payload_router_ != NULL);
+  RTC_DCHECK(send_payload_router_);
   vcm_->SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
   bool video_is_suspended = vcm_->VideoSuspended();
   bool video_suspension_changed;

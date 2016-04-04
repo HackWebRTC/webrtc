@@ -74,7 +74,7 @@ bool VideoDecoderSoftwareFallbackWrapper::InitFallbackDecoder() {
     fallback_decoder_.reset();
     return false;
   }
-  if (callback_ != nullptr)
+  if (callback_)
     fallback_decoder_->RegisterDecodeCompleteCallback(callback_);
   fallback_implementation_name_ =
       std::string(fallback_decoder_->ImplementationName()) +

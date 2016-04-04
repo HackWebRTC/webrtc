@@ -148,19 +148,19 @@ class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
         last_height_(0) {}
 
   ~FileRenderPassthrough() {
-    if (file_ != nullptr)
+    if (file_)
       fclose(file_);
   }
 
  private:
   void OnFrame(const VideoFrame& video_frame) override {
-    if (renderer_ != nullptr)
+    if (renderer_)
       renderer_->OnFrame(video_frame);
     if (basename_.empty())
       return;
     if (last_width_ != video_frame.width() ||
         last_height_ != video_frame.height()) {
-      if (file_ != nullptr)
+      if (file_)
         fclose(file_);
       std::stringstream filename;
       filename << basename_;
@@ -169,7 +169,7 @@ class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
       filename << '_' << video_frame.width() << 'x' << video_frame.height()
                << ".yuv";
       file_ = fopen(filename.str().c_str(), "wb");
-      if (file_ == nullptr) {
+      if (!file_) {
         fprintf(stderr,
                 "Couldn't open file for writing: %s\n",
                 filename.str().c_str());
@@ -177,7 +177,7 @@ class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
     }
     last_width_ = video_frame.width();
     last_height_ = video_frame.height();
-    if (file_ == nullptr)
+    if (!file_)
       return;
     PrintVideoFrame(video_frame, file_);
   }
@@ -194,7 +194,7 @@ class DecoderBitstreamFileWriter : public EncodedFrameObserver {
  public:
   explicit DecoderBitstreamFileWriter(const char* filename)
       : file_(fopen(filename, "wb")) {
-    RTC_DCHECK(file_ != nullptr);
+    RTC_DCHECK(file_);
   }
   ~DecoderBitstreamFileWriter() { fclose(file_); }
 
@@ -255,17 +255,17 @@ void RtpReplay() {
 
   std::unique_ptr<test::RtpFileReader> rtp_reader(test::RtpFileReader::Create(
       test::RtpFileReader::kRtpDump, flags::InputFile()));
-  if (rtp_reader.get() == nullptr) {
+  if (!rtp_reader) {
     rtp_reader.reset(test::RtpFileReader::Create(test::RtpFileReader::kPcap,
                                                  flags::InputFile()));
-    if (rtp_reader.get() == nullptr) {
+    if (!rtp_reader) {
       fprintf(stderr,
               "Couldn't open input file as either a rtpdump or .pcap. Note "
               "that .pcapng is not supported.\nTrying to interpret the file as "
               "length/packet interleaved.\n");
       rtp_reader.reset(test::RtpFileReader::Create(
           test::RtpFileReader::kLengthPacketInterleaved, flags::InputFile()));
-      if (rtp_reader.get() == nullptr) {
+      if (!rtp_reader) {
         fprintf(stderr,
                 "Unable to open input file with any supported format\n");
         return;

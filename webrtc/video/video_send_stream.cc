@@ -39,7 +39,7 @@ VideoSendStream::Config::EncoderSettings::ToString() const {
   std::stringstream ss;
   ss << "{payload_name: " << payload_name;
   ss << ", payload_type: " << payload_type;
-  ss << ", encoder: " << (encoder != nullptr ? "(VideoEncoder)" : "nullptr");
+  ss << ", encoder: " << (encoder ? "(VideoEncoder)" : "nullptr");
   ss << '}';
   return ss.str();
 }
@@ -94,12 +94,11 @@ std::string VideoSendStream::Config::ToString() const {
   ss << "{encoder_settings: " << encoder_settings.ToString();
   ss << ", rtp: " << rtp.ToString();
   ss << ", pre_encode_callback: "
-     << (pre_encode_callback != nullptr ? "(I420FrameCallback)" : "nullptr");
-  ss << ", post_encode_callback: " << (post_encode_callback != nullptr
-                                           ? "(EncodedFrameObserver)"
-                                           : "nullptr");
-  ss << ", local_renderer: " << (local_renderer != nullptr ? "(VideoRenderer)"
-                                                         : "nullptr");
+     << (pre_encode_callback ? "(I420FrameCallback)" : "nullptr");
+  ss << ", post_encode_callback: "
+     << (post_encode_callback ? "(EncodedFrameObserver)" : "nullptr");
+  ss << ", local_renderer: "
+     << (local_renderer ? "(VideoRenderer)" : "nullptr");
   ss << ", render_delay_ms: " << render_delay_ms;
   ss << ", target_delay_ms: " << target_delay_ms;
   ss << ", suspend_below_min_bitrate: " << (suspend_below_min_bitrate ? "on"
@@ -286,7 +285,7 @@ VideoSendStream::VideoSendStream(
         config_.encoder_settings.payload_name.c_str());
   }
 
-  RTC_DCHECK(config.encoder_settings.encoder != nullptr);
+  RTC_DCHECK(config.encoder_settings.encoder);
   RTC_DCHECK_GE(config.encoder_settings.payload_type, 0);
   RTC_DCHECK_LE(config.encoder_settings.payload_type, 127);
   RTC_CHECK_EQ(0, vie_encoder_.RegisterExternalEncoder(
@@ -428,7 +427,7 @@ void VideoSendStream::ReconfigureVideoEncoder(
   }
 
   if (video_codec.codecType == kVideoCodecVP8) {
-    if (config.encoder_specific_settings != nullptr) {
+    if (config.encoder_specific_settings) {
       video_codec.codecSpecific.VP8 = *reinterpret_cast<const VideoCodecVP8*>(
                                           config.encoder_specific_settings);
     }
@@ -436,7 +435,7 @@ void VideoSendStream::ReconfigureVideoEncoder(
         static_cast<unsigned char>(
             streams.back().temporal_layer_thresholds_bps.size() + 1);
   } else if (video_codec.codecType == kVideoCodecVP9) {
-    if (config.encoder_specific_settings != nullptr) {
+    if (config.encoder_specific_settings) {
       video_codec.codecSpecific.VP9 = *reinterpret_cast<const VideoCodecVP9*>(
                                           config.encoder_specific_settings);
       if (video_codec.mode == kScreensharing) {
@@ -450,13 +449,13 @@ void VideoSendStream::ReconfigureVideoEncoder(
         static_cast<unsigned char>(
             streams.back().temporal_layer_thresholds_bps.size() + 1);
   } else if (video_codec.codecType == kVideoCodecH264) {
-    if (config.encoder_specific_settings != nullptr) {
+    if (config.encoder_specific_settings) {
       video_codec.codecSpecific.H264 = *reinterpret_cast<const VideoCodecH264*>(
                                            config.encoder_specific_settings);
     }
   } else {
     // TODO(pbos): Support encoder_settings codec-agnostically.
-    RTC_DCHECK(config.encoder_specific_settings == nullptr)
+    RTC_DCHECK(!config.encoder_specific_settings)
         << "Encoder-specific settings for codec type not wired up.";
   }
 

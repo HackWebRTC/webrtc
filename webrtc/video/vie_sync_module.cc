@@ -33,11 +33,8 @@ int UpdateMeasurements(StreamSynchronization::Measurements* stream,
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (0 != rtp_rtcp.RemoteNTP(&ntp_secs,
-                              &ntp_frac,
-                              NULL,
-                              NULL,
-                              &rtp_timestamp)) {
+  if (rtp_rtcp.RemoteNTP(&ntp_secs, &ntp_frac, nullptr, nullptr,
+                         &rtp_timestamp) != 0) {
     return -1;
   }
 
@@ -54,10 +51,10 @@ int UpdateMeasurements(StreamSynchronization::Measurements* stream,
 ViESyncModule::ViESyncModule(VideoCodingModule* vcm)
     : vcm_(vcm),
       clock_(Clock::GetRealTimeClock()),
-      video_receiver_(NULL),
-      video_rtp_rtcp_(NULL),
+      video_receiver_(nullptr),
+      video_rtp_rtcp_(nullptr),
       voe_channel_id_(-1),
-      voe_sync_interface_(NULL),
+      voe_sync_interface_(nullptr),
       last_sync_time_(TickTime::Now()),
       sync_() {}
 
@@ -113,10 +110,10 @@ void ViESyncModule::Process() {
   const int current_audio_delay_ms = audio_jitter_buffer_delay_ms +
       playout_buffer_delay_ms;
 
-  RtpRtcp* voice_rtp_rtcp = NULL;
-  RtpReceiver* voice_receiver = NULL;
-  if (0 != voe_sync_interface_->GetRtpRtcp(voe_channel_id_, &voice_rtp_rtcp,
-                                           &voice_receiver)) {
+  RtpRtcp* voice_rtp_rtcp = nullptr;
+  RtpReceiver* voice_receiver = nullptr;
+  if (voe_sync_interface_->GetRtpRtcp(voe_channel_id_, &voice_rtp_rtcp,
+                                      &voice_receiver) != 0) {
     return;
   }
   assert(voice_rtp_rtcp);

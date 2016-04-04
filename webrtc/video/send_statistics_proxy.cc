@@ -390,7 +390,7 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
 void SendStatisticsProxy::OnInactiveSsrc(uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == nullptr)
+  if (!stats)
     return;
 
   stats->total_bitrate_bps = 0;
@@ -407,8 +407,7 @@ void SendStatisticsProxy::OnSetRates(uint32_t bitrate_bps, int framerate) {
 void SendStatisticsProxy::OnSendEncodedImage(
     const EncodedImage& encoded_image,
     const RTPVideoHeader* rtp_video_header) {
-  size_t simulcast_idx =
-      rtp_video_header != nullptr ? rtp_video_header->simulcastIdx : 0;
+  size_t simulcast_idx = rtp_video_header ? rtp_video_header->simulcastIdx : 0;
   if (simulcast_idx >= config_.rtp.ssrcs.size()) {
     LOG(LS_ERROR) << "Encoded image outside simulcast range (" << simulcast_idx
                   << " >= " << config_.rtp.ssrcs.size() << ").";
@@ -418,7 +417,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == nullptr)
+  if (!stats)
     return;
 
   stats->width = encoded_image._encodedWidth;
@@ -450,7 +449,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
     }
   }
 
-  if (encoded_image.qp_ != -1 && rtp_video_header != nullptr &&
+  if (encoded_image.qp_ != -1 && rtp_video_header &&
       rtp_video_header->codec == kRtpVideoVp8) {
     int spatial_idx =
         (config_.rtp.ssrcs.size() == 1) ? -1 : static_cast<int>(simulcast_idx);
@@ -491,7 +490,7 @@ void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
     const RtcpPacketTypeCounter& packet_counter) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == nullptr)
+  if (!stats)
     return;
 
   stats->rtcp_packet_type_counts = packet_counter;
@@ -503,7 +502,7 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
                                             uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == nullptr)
+  if (!stats)
     return;
 
   stats->rtcp_stats = statistics;
@@ -517,8 +516,8 @@ void SendStatisticsProxy::DataCountersUpdated(
     uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  RTC_DCHECK(stats != nullptr)
-      << "DataCountersUpdated reported for unknown ssrc: " << ssrc;
+  RTC_DCHECK(stats) << "DataCountersUpdated reported for unknown ssrc: "
+                    << ssrc;
 
   stats->rtp_stats = counters;
   if (uma_container_->first_rtp_stats_time_ms_ == -1)
@@ -530,7 +529,7 @@ void SendStatisticsProxy::Notify(const BitrateStatistics& total_stats,
                                  uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == nullptr)
+  if (!stats)
     return;
 
   stats->total_bitrate_bps = total_stats.bitrate_bps;
@@ -541,7 +540,7 @@ void SendStatisticsProxy::FrameCountUpdated(const FrameCounts& frame_counts,
                                             uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == nullptr)
+  if (!stats)
     return;
 
   stats->frame_counts = frame_counts;
@@ -552,7 +551,7 @@ void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
                                                uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == nullptr)
+  if (!stats)
     return;
   stats->avg_delay_ms = avg_delay_ms;
   stats->max_delay_ms = max_delay_ms;
