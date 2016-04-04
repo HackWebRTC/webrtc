@@ -25,7 +25,6 @@
 #include "webrtc/media/engine/fakewebrtccommon.h"
 #include "webrtc/media/engine/webrtcvoe.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/modules/audio_device/include/fake_audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace cricket {
@@ -119,26 +118,6 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   bool experimental_ns_enabled_;
 };
 
-// TODO(solenberg): Swap this for a proper mock of the ADM.
-class FakeAudioDeviceModule : public webrtc::FakeAudioDeviceModule {
- public:
-  ~FakeAudioDeviceModule() override {
-    RTC_DCHECK_EQ(0, ref_count_);
-  }
-  int32_t AddRef() const override {
-    ref_count_++;
-    return ref_count_;
-  }
-  int32_t Release() const override {
-    RTC_DCHECK_LT(0, ref_count_);
-    ref_count_--;
-    return ref_count_;
-  }
-
- private:
-  mutable int32_t ref_count_ = 0;
-};
-
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
       public webrtc::VoEBase, public webrtc::VoECodec,
@@ -147,71 +126,33 @@ class FakeWebRtcVoiceEngine
       public webrtc::VoEVolumeControl {
  public:
   struct Channel {
-    explicit Channel()
-        : external_transport(false),
-          playout(false),
-          volume_scale(1.0),
-          vad(false),
-          codec_fec(false),
-          max_encoding_bandwidth(0),
-          opus_dtx(false),
-          red(false),
-          nack(false),
-          cn8_type(13),
-          cn16_type(105),
-          red_type(117),
-          nack_max_packets(0),
-          send_ssrc(0),
-          associate_send_channel(-1),
-          recv_codecs(),
-          neteq_capacity(-1),
-          neteq_fast_accelerate(false) {
+    Channel() {
       memset(&send_codec, 0, sizeof(send_codec));
     }
-    bool external_transport;
-    bool playout;
-    float volume_scale;
-    bool vad;
-    bool codec_fec;
-    int max_encoding_bandwidth;
-    bool opus_dtx;
-    bool red;
-    bool nack;
-    int cn8_type;
-    int cn16_type;
-    int red_type;
-    int nack_max_packets;
-    uint32_t send_ssrc;
-    int associate_send_channel;
+    bool external_transport = false;
+    bool playout = false;
+    float volume_scale = 1.0f;
+    bool vad = false;
+    bool codec_fec = false;
+    int max_encoding_bandwidth = 0;
+    bool opus_dtx = false;
+    bool red = false;
+    bool nack = false;
+    int cn8_type = 13;
+    int cn16_type = 105;
+    int red_type = 117;
+    int nack_max_packets = 0;
+    uint32_t send_ssrc = 0;
+    int associate_send_channel = -1;
     std::vector<webrtc::CodecInst> recv_codecs;
     webrtc::CodecInst send_codec;
     webrtc::PacketTime last_rtp_packet_time;
     std::list<std::string> packets;
-    int neteq_capacity;
-    bool neteq_fast_accelerate;
+    int neteq_capacity = -1;
+    bool neteq_fast_accelerate = false;
   };
 
-  FakeWebRtcVoiceEngine()
-      : inited_(false),
-        last_channel_(-1),
-        fail_create_channel_(false),
-        num_set_send_codecs_(0),
-        ec_enabled_(false),
-        ec_metrics_enabled_(false),
-        cng_enabled_(false),
-        ns_enabled_(false),
-        agc_enabled_(false),
-        highpass_filter_enabled_(false),
-        stereo_swapping_enabled_(false),
-        typing_detection_enabled_(false),
-        ec_mode_(webrtc::kEcDefault),
-        aecm_mode_(webrtc::kAecmSpeakerphone),
-        ns_mode_(webrtc::kNsDefault),
-        agc_mode_(webrtc::kAgcDefault),
-        observer_(NULL),
-        playout_fail_channel_(-1),
-        recording_sample_rate_(-1),
-        playout_sample_rate_(-1) {
+  FakeWebRtcVoiceEngine() {
     memset(&agc_config_, 0, sizeof(agc_config_));
   }
   ~FakeWebRtcVoiceEngine() override {
@@ -274,10 +215,6 @@ class FakeWebRtcVoiceEngine
   bool CheckNoPacket(int channel) {
     return channels_[channel]->packets.empty();
   }
-  void TriggerCallbackOnError(int channel_num, int err_code) {
-    RTC_DCHECK(observer_ != NULL);
-    observer_->CallbackOnError(channel_num, err_code);
-  }
   void set_playout_fail_channel(int channel) {
     playout_fail_channel_ = channel;
   }
@@ -309,11 +246,8 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(Release, ());
 
   // webrtc::VoEBase
-  WEBRTC_FUNC(RegisterVoiceEngineObserver, (
-      webrtc::VoiceEngineObserver& observer)) {
-    observer_ = &observer;
-    return 0;
-  }
+  WEBRTC_STUB(RegisterVoiceEngineObserver, (
+      webrtc::VoiceEngineObserver& observer));
   WEBRTC_STUB(DeRegisterVoiceEngineObserver, ());
   WEBRTC_FUNC(Init, (webrtc::AudioDeviceModule* adm,
                      webrtc::AudioProcessing* audioproc)) {
@@ -328,7 +262,7 @@ class FakeWebRtcVoiceEngine
     return &audio_processing_;
   }
   webrtc::AudioDeviceModule* audio_device_module() override {
-    return &audio_device_module_;
+    return nullptr;
   }
   WEBRTC_FUNC(CreateChannel, ()) {
     webrtc::Config empty_config;
@@ -776,30 +710,28 @@ class FakeWebRtcVoiceEngine
   }
 
  private:
-  bool inited_;
-  int last_channel_;
+  bool inited_ = false;
+  int last_channel_ = -1;
   std::map<int, Channel*> channels_;
-  bool fail_create_channel_;
-  int num_set_send_codecs_;  // how many times we call SetSendCodec().
-  bool ec_enabled_;
-  bool ec_metrics_enabled_;
-  bool cng_enabled_;
-  bool ns_enabled_;
-  bool agc_enabled_;
-  bool highpass_filter_enabled_;
-  bool stereo_swapping_enabled_;
-  bool typing_detection_enabled_;
-  webrtc::EcModes ec_mode_;
-  webrtc::AecmModes aecm_mode_;
-  webrtc::NsModes ns_mode_;
-  webrtc::AgcModes agc_mode_;
+  bool fail_create_channel_ = false;
+  int num_set_send_codecs_ = 0;  // how many times we call SetSendCodec().
+  bool ec_enabled_ = false;
+  bool ec_metrics_enabled_ = false;
+  bool cng_enabled_ = false;
+  bool ns_enabled_ = false;
+  bool agc_enabled_ = false;
+  bool highpass_filter_enabled_ = false;
+  bool stereo_swapping_enabled_ = false;
+  bool typing_detection_enabled_ = false;
+  webrtc::EcModes ec_mode_ = webrtc::kEcDefault;
+  webrtc::AecmModes aecm_mode_ = webrtc::kAecmSpeakerphone;
+  webrtc::NsModes ns_mode_ = webrtc::kNsDefault;
+  webrtc::AgcModes agc_mode_ = webrtc::kAgcDefault;
   webrtc::AgcConfig agc_config_;
-  webrtc::VoiceEngineObserver* observer_;
-  int playout_fail_channel_;
-  int recording_sample_rate_;
-  int playout_sample_rate_;
+  int playout_fail_channel_ = -1;
+  int recording_sample_rate_ = -1;
+  int playout_sample_rate_ = -1;
   FakeAudioProcessing audio_processing_;
-  FakeAudioDeviceModule audio_device_module_;
 };
 
 }  // namespace cricket

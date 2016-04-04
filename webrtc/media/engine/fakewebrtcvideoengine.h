@@ -21,7 +21,6 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/media/base/codec.h"
-#include "webrtc/media/engine/fakewebrtccommon.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"

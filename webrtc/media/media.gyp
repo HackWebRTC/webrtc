@@ -203,13 +203,14 @@
           'target_name': 'rtc_unittest_main',
           'type': 'static_library',
           'dependencies': [
+            '<(DEPTH)/testing/gmock.gyp:gmock',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
           ],
           'direct_dependent_settings': {
             'include_dirs': [
               '<(libyuv_dir)/include',
-              '<(DEPTH)/testing/gtest/include',
-              '<(DEPTH)/testing/gtest',
+              '<(DEPTH)/testing/gmock/include',
             ],
           },
           'conditions': [
