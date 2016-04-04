@@ -64,7 +64,10 @@ jfieldID GetFieldID(JNIEnv* jni, jclass c, const char* name,
 
 jclass GetObjectClass(JNIEnv* jni, jobject object);
 
+// Throws an exception if the object field is null.
 jobject GetObjectField(JNIEnv* jni, jobject object, jfieldID id);
+
+jobject GetNullableObjectField(JNIEnv* jni, jobject object, jfieldID id);
 
 jstring GetStringField(JNIEnv* jni, jobject object, jfieldID id);
 

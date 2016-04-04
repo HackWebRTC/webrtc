@@ -2044,7 +2044,8 @@ static bool JavaEncodingToJsepRtpEncodingParameters(
   for (jobject j_encoding_parameters : Iterable(jni, j_encodings)) {
     webrtc::RtpEncodingParameters encoding;
     encoding.active = GetBooleanField(jni, j_encoding_parameters, active_id);
-    jobject j_bitrate = GetObjectField(jni, j_encoding_parameters, bitrate_id);
+    jobject j_bitrate =
+        GetNullableObjectField(jni, j_encoding_parameters, bitrate_id);
     if (!IsNull(jni, j_bitrate)) {
       int bitrate_value = jni->CallIntMethod(j_bitrate, int_value_id);
       CHECK_EXCEPTION(jni) << "error during CallIntMethod";

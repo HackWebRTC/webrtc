@@ -176,7 +176,13 @@ jclass GetObjectClass(JNIEnv* jni, jobject object) {
 jobject GetObjectField(JNIEnv* jni, jobject object, jfieldID id) {
   jobject o = jni->GetObjectField(object, id);
   CHECK_EXCEPTION(jni) << "error during GetObjectField";
-  RTC_CHECK(o) << "GetObjectField returned NULL";
+  RTC_CHECK(!IsNull(jni, o)) << "GetObjectField returned NULL";
+  return o;
+}
+
+jobject GetNullableObjectField(JNIEnv* jni, jobject object, jfieldID id) {
+  jobject o = jni->GetObjectField(object, id);
+  CHECK_EXCEPTION(jni) << "error during GetObjectField";
   return o;
 }
 

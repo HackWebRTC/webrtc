@@ -20,6 +20,7 @@ import java.util.LinkedList;
 public class RtpParameters {
   public static class Encoding {
     public boolean active = true;
+    // A null value means "no maximum bitrate".
     public Integer maxBitrateBps;
   }
 
