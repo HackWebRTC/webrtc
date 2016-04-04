@@ -119,6 +119,9 @@ class FakeVideoSendStream final : public webrtc::VideoSendStream,
   int GetLastHeight() const;
   int64_t GetLastTimestamp() const;
   void SetStats(const webrtc::VideoSendStream::Stats& stats);
+  int num_encoder_reconfigurations() const {
+    return num_encoder_reconfigurations_;
+  }
 
  private:
   void IncomingCapturedFrame(const webrtc::VideoFrame& frame) override;
@@ -148,6 +151,7 @@ class FakeVideoSendStream final : public webrtc::VideoSendStream,
   int num_swapped_frames_;
   webrtc::VideoFrame last_frame_;
   webrtc::VideoSendStream::Stats stats_;
+  int num_encoder_reconfigurations_ = 0;
 };
 
 class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {

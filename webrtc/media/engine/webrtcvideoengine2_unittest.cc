@@ -1812,6 +1812,30 @@ TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
 }
 
+// Test that setting the same options doesn't result in the encoder being
+// reconfigured.
+TEST_F(WebRtcVideoChannel2Test, SetIdenticalOptionsDoesntReconfigureEncoder) {
+  VideoOptions options;
+  cricket::FakeVideoCapturer capturer;
+
+  FakeVideoSendStream* send_stream = AddSendStream();
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  // Expect 2 reconfigurations at this point, from the initial configuration
+  // and from the dimensions of the first frame.
+  EXPECT_EQ(2, send_stream->num_encoder_reconfigurations());
+
+  // Set the options one more time and expect no additional reconfigurations.
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_EQ(2, send_stream->num_encoder_reconfigurations());
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, nullptr));
+}
+
 class Vp9SettingsTest : public WebRtcVideoChannel2Test {
  public:
   Vp9SettingsTest() : Vp9SettingsTest("") {}

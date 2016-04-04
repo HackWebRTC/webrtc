@@ -1693,10 +1693,13 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetOptions(
     const VideoOptions& options) {
   rtc::CritScope cs(&lock_);
 
+  VideoOptions old_options = parameters_.options;
   parameters_.options.SetAll(options);
   // Reconfigure encoder settings on the next frame or stream
-  // recreation.
-  pending_encoder_reconfiguration_ = true;
+  // recreation if the options changed.
+  if (parameters_.options != old_options) {
+    pending_encoder_reconfiguration_ = true;
+  }
 }
 
 webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {

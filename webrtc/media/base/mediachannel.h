@@ -188,6 +188,7 @@ struct AudioOptions {
         playout_sample_rate == o.playout_sample_rate &&
         combined_audio_video_bwe == o.combined_audio_video_bwe;
   }
+  bool operator!=(const AudioOptions& o) const { return !(*this == o); }
 
   std::string ToString() const {
     std::ostringstream ost;
@@ -279,6 +280,7 @@ struct VideoOptions {
            screencast_min_bitrate_kbps == o.screencast_min_bitrate_kbps &&
            is_screencast == o.is_screencast;
   }
+  bool operator!=(const VideoOptions& o) const { return !(*this == o); }
 
   std::string ToString() const {
     std::ostringstream ost;
