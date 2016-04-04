@@ -21,11 +21,13 @@
 #if defined(WEBRTC_IOS)
 #include "webrtc/base/objc/RTCUIApplication.h"
 #endif
-#include "webrtc/common_video/include/video_frame_buffer.h"
+#include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
 #include "webrtc/video_frame.h"
 
 namespace internal {
+
+static const int64_t kMsPerSec = 1000;
 
 // Convenience function for creating a dictionary.
 inline CFDictionaryRef CreateCFDictionary(CFTypeRef* keys,
@@ -45,42 +47,6 @@ struct FrameDecodeParams {
   int64_t timestamp;
 };
 
-// On decode we receive a CVPixelBuffer, which we need to convert to a frame
-// buffer for use in the rest of WebRTC. Unfortunately this involves a frame
-// copy.
-// TODO(tkchin): Stuff CVPixelBuffer into a TextureBuffer and pass that along
-// instead once the pipeline supports it.
-rtc::scoped_refptr<webrtc::VideoFrameBuffer> VideoFrameBufferForPixelBuffer(
-    CVPixelBufferRef pixel_buffer) {
-  RTC_DCHECK(pixel_buffer);
-  RTC_DCHECK(CVPixelBufferGetPixelFormatType(pixel_buffer) ==
-             kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
-  size_t width = CVPixelBufferGetWidthOfPlane(pixel_buffer, 0);
-  size_t height = CVPixelBufferGetHeightOfPlane(pixel_buffer, 0);
-  // TODO(tkchin): Use a frame buffer pool.
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
-      new rtc::RefCountedObject<webrtc::I420Buffer>(width, height);
-  CVPixelBufferLockBaseAddress(pixel_buffer, kCVPixelBufferLock_ReadOnly);
-  const uint8_t* src_y = reinterpret_cast<const uint8_t*>(
-      CVPixelBufferGetBaseAddressOfPlane(pixel_buffer, 0));
-  int src_y_stride = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 0);
-  const uint8_t* src_uv = reinterpret_cast<const uint8_t*>(
-      CVPixelBufferGetBaseAddressOfPlane(pixel_buffer, 1));
-  int src_uv_stride = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 1);
-  int ret = libyuv::NV12ToI420(
-      src_y, src_y_stride, src_uv, src_uv_stride,
-      buffer->MutableData(webrtc::kYPlane), buffer->stride(webrtc::kYPlane),
-      buffer->MutableData(webrtc::kUPlane), buffer->stride(webrtc::kUPlane),
-      buffer->MutableData(webrtc::kVPlane), buffer->stride(webrtc::kVPlane),
-      width, height);
-  CVPixelBufferUnlockBaseAddress(pixel_buffer, kCVPixelBufferLock_ReadOnly);
-  if (ret) {
-    LOG(LS_ERROR) << "Error converting NV12 to I420: " << ret;
-    return nullptr;
-  }
-  return buffer;
-}
-
 // This is the callback function that VideoToolbox calls when decode is
 // complete.
 void VTDecompressionOutputCallback(void* decoder,
@@ -98,8 +64,9 @@ void VTDecompressionOutputCallback(void* decoder,
   }
   // TODO(tkchin): Handle CVO properly.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
-      VideoFrameBufferForPixelBuffer(image_buffer);
-  webrtc::VideoFrame decoded_frame(buffer, decode_params->timestamp, 0,
+      new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(image_buffer);
+  webrtc::VideoFrame decoded_frame(buffer, decode_params->timestamp,
+                                   CMTimeGetSeconds(timestamp) * kMsPerSec,
                                    webrtc::kVideoRotation_0);
   decode_params->callback->Decoded(decoded_frame);
 }

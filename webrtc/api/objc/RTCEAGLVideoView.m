@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCEAGLVideoView.h"
+#import "webrtc/api/objc/RTCEAGLVideoView.h"
 
 #import <GLKit/GLKit.h>
 
-#import "RTCVideoFrame.h"
-#import "RTCOpenGLVideoRenderer.h"
+#import "webrtc/api/objc/RTCOpenGLVideoRenderer.h"
+#import "webrtc/api/objc/RTCVideoFrame.h"
 
 // RTCDisplayLinkTimer wraps a CADisplayLink and is set to fire every two screen
 // refreshes, which should be 30fps. We wrap the display link in order to avoid
@@ -210,6 +210,10 @@
 }
 
 - (void)renderFrame:(RTCVideoFrame *)frame {
+  // Generate the i420 frame on video send thread instead of main thread.
+  // TODO(tkchin): Remove this once RTCEAGLVideoView supports uploading
+  // CVPixelBuffer textures.
+  [frame convertBufferIfNeeded];
   self.videoFrame = frame;
 }
 

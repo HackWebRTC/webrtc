@@ -16,6 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RTCVideoFrame ()
 
+@property(nonatomic, readonly)
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> i420Buffer;
+
 - (instancetype)initWithNativeFrame:(const cricket::VideoFrame *)nativeFrame
     NS_DESIGNATED_INITIALIZER;
 

@@ -37,6 +37,19 @@
           # Need to add a directory normally exported by libyuv.gyp.
           'include_dirs': ['<(libyuv_dir)/include',],
         }],
+        ['OS=="ios" or OS=="mac"', {
+          'sources': [
+            'corevideo_frame_buffer.cc',
+            'include/corevideo_frame_buffer.h',
+          ],
+          'link_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                '-framework CoreVideo',
+              ],
+            },
+          },
+        }],
       ],
       'sources': [
         'i420_buffer_pool.cc',

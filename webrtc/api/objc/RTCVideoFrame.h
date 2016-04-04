@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -30,7 +31,18 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) int32_t uPitch;
 @property(nonatomic, readonly) int32_t vPitch;
 
+/** Timestamp in nanoseconds. */
+@property(nonatomic, readonly) int64_t timeStamp;
+
+/** The native handle should be a pixel buffer on iOS. */
+@property(nonatomic, readonly) CVPixelBufferRef nativeHandle;
+
 - (instancetype)init NS_UNAVAILABLE;
+
+/** If the frame is backed by a CVPixelBuffer, creates a backing i420 frame.
+ *  Calling the yuv plane properties will call this method if needed.
+ */
+- (void)convertBufferIfNeeded;
 
 @end
 

@@ -44,11 +44,6 @@ using webrtc::PeerConnectionInterface;
 using webrtc::StatsReport;
 using webrtc::StatsReports;
 
-namespace {
-// This value comes from openssl/tls1.h
-const int TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA = 0xC014;
-}  // namespace
-
 namespace cricket {
 
 class ChannelManager;
@@ -56,6 +51,11 @@ class ChannelManager;
 }  // namespace cricket
 
 namespace webrtc {
+
+namespace internal {
+// This value comes from openssl/tls1.h
+static const int TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA = 0xC014;
+}  // namespace internal
 
 // Error return values
 const char kNotFound[] = "NOT FOUND";
@@ -674,7 +674,8 @@ class StatsCollectorTest : public testing::Test {
     cricket::TransportChannelStats channel_stats;
     channel_stats.component = 1;
     channel_stats.srtp_crypto_suite = rtc::SRTP_AES128_CM_SHA1_80;
-    channel_stats.ssl_cipher_suite = TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;
+    channel_stats.ssl_cipher_suite =
+        internal::TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;
 
     cricket::TransportStats transport_stats;
     transport_stats.transport_name = "audio";
@@ -740,7 +741,7 @@ class StatsCollectorTest : public testing::Test {
         ExtractStatsValue(StatsReport::kStatsReportTypeComponent, reports,
                           StatsReport::kStatsValueNameDtlsCipher);
     EXPECT_EQ(rtc::SSLStreamAdapter::SslCipherSuiteToName(
-                  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA),
+                  internal::TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA),
               dtls_cipher_suite);
     std::string srtp_crypto_suite =
         ExtractStatsValue(StatsReport::kStatsReportTypeComponent, reports,
