@@ -47,8 +47,8 @@ enum class SettingsType {
   kDefaultApmDesktopAndBeamformer,
   kDefaultApmDesktopAndIntelligibilityEnhancer,
   kAllSubmodulesTurnedOff,
-  kDefaultDesktopApmWithoutDelayAgnostic,
-  kDefaultDesktopApmWithoutExtendedFilter
+  kDefaultApmDesktopWithoutDelayAgnostic,
+  kDefaultApmDesktopWithoutExtendedFilter
 };
 
 // Variables related to the audio data and formats.
@@ -85,8 +85,8 @@ struct SimulationConfig {
 #ifndef WEBRTC_ANDROID
     const SettingsType desktop_settings[] = {
         SettingsType::kDefaultApmDesktop, SettingsType::kAllSubmodulesTurnedOff,
-        SettingsType::kDefaultDesktopApmWithoutDelayAgnostic,
-        SettingsType::kDefaultDesktopApmWithoutExtendedFilter};
+        SettingsType::kDefaultApmDesktopWithoutDelayAgnostic,
+        SettingsType::kDefaultApmDesktopWithoutExtendedFilter};
 
     const int desktop_sample_rates[] = {8000, 16000, 32000, 48000};
 
@@ -151,11 +151,11 @@ struct SimulationConfig {
       case SettingsType::kAllSubmodulesTurnedOff:
         description = "AllSubmodulesOff";
         break;
-      case SettingsType::kDefaultDesktopApmWithoutDelayAgnostic:
-        description = "DefaultDesktopApmWithoutDelayAgnostic";
+      case SettingsType::kDefaultApmDesktopWithoutDelayAgnostic:
+        description = "DefaultApmDesktopWithoutDelayAgnostic";
         break;
-      case SettingsType::kDefaultDesktopApmWithoutExtendedFilter:
-        description = "DefaultDesktopApmWithoutExtendedFilter";
+      case SettingsType::kDefaultApmDesktopWithoutExtendedFilter:
+        description = "DefaultApmDesktopWithoutExtendedFilter";
         break;
     }
     return description;
@@ -605,7 +605,7 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
         turn_off_default_apm_runtime_settings(apm_.get());
         break;
       }
-      case SettingsType::kDefaultDesktopApmWithoutDelayAgnostic: {
+      case SettingsType::kDefaultApmDesktopWithoutDelayAgnostic: {
         Config config;
         config.Set<ExtendedFilter>(new ExtendedFilter(true));
         config.Set<DelayAgnostic>(new DelayAgnostic(false));
@@ -615,7 +615,7 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
         apm_->SetExtraOptions(config);
         break;
       }
-      case SettingsType::kDefaultDesktopApmWithoutExtendedFilter: {
+      case SettingsType::kDefaultApmDesktopWithoutExtendedFilter: {
         Config config;
         config.Set<ExtendedFilter>(new ExtendedFilter(false));
         config.Set<DelayAgnostic>(new DelayAgnostic(true));
