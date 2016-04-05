@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_LAPPED_TRANSFORM_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_LAPPED_TRANSFORM_H_
+#ifndef WEBRTC_COMMON_AUDIO_LAPPED_TRANSFORM_H_
+#define WEBRTC_COMMON_AUDIO_LAPPED_TRANSFORM_H_
 
 #include <complex>
 #include <memory>
 
+#include "webrtc/common_audio/blocker.h"
 #include "webrtc/common_audio/real_fourier.h"
-#include "webrtc/modules/audio_processing/utility/blocker.h"
 #include "webrtc/system_wrappers/include/aligned_array.h"
 
 namespace webrtc {
@@ -121,4 +121,5 @@ class LappedTransform {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_LAPPED_TRANSFORM_H_
+#endif  // WEBRTC_COMMON_AUDIO_LAPPED_TRANSFORM_H_
+

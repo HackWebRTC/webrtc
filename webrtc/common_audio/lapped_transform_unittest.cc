@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/utility/lapped_transform.h"
+#include "webrtc/common_audio/lapped_transform.h"
 
 #include <algorithm>
 #include <cmath>
