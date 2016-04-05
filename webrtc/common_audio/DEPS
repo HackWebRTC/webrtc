@@ -1,5 +1,6 @@
 include_rules = [
   "+dl/sp/api",  # For openmax_dl.
   "+webrtc/base",
+  "+webrtc/modules/audio_processing",
   "+webrtc/system_wrappers",
 ]

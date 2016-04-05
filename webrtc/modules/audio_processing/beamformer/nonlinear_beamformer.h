@@ -19,11 +19,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/beamformer.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
-
+#include "webrtc/modules/audio_processing/utility/lapped_transform.h"
 namespace webrtc {
 
 // Enhances sound sources coming directly in front of a uniform linear array

@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "webrtc/common_audio/blocker.h"
+#include "webrtc/modules/audio_processing/utility/blocker.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/arraysize.h"

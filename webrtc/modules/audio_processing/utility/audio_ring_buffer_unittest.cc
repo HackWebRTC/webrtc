@@ -9,8 +9,9 @@
  */
 
 #include <memory>
+#include <tuple>
 
-#include "webrtc/common_audio/audio_ring_buffer.h"
+#include "webrtc/modules/audio_processing/utility/audio_ring_buffer.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/channel_buffer.h"

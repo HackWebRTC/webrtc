@@ -11,13 +11,14 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 
-extern "C" {
-#include "webrtc/common_audio/ring_buffer.h"
-}
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/modules/audio_processing/utility/block_mean_calculator.h"
+extern "C" {
+#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
+}
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
