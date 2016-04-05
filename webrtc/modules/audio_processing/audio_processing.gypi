@@ -131,7 +131,7 @@
         'utility/delay_estimator_wrapper.h',
         'utility/lapped_transform.cc',
         'utility/lapped_transform.h',
-        'utility/ring_buffer.c',
+        'utility/ring_buffer.cc',
         'utility/ring_buffer.h',
         'vad/common.h',
         'vad/gmm.cc',

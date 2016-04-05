@@ -12,9 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_INTERNAL_H_
 
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
-extern "C" {
 #include "webrtc/modules/audio_processing/utility/ring_buffer.h"
-}
 
 namespace webrtc {
 

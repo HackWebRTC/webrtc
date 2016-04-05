@@ -15,9 +15,7 @@
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/modules/audio_processing/utility/block_mean_calculator.h"
-extern "C" {
 #include "webrtc/modules/audio_processing/utility/ring_buffer.h"
-}
 
 #include "webrtc/typedefs.h"
 
