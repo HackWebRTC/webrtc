@@ -467,10 +467,8 @@ public class VideoCapturerAndroid implements
       error = e;
     }
     Logging.e(TAG, "startCapture failed", error);
-    if (camera != null) {
-      // Make sure the camera is released.
-      stopCaptureOnCameraThread();
-    }
+    // Make sure the camera is released.
+    stopCaptureOnCameraThread();
     synchronized (handlerLock) {
       // Remove all pending Runnables posted from |this|.
       cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
@@ -607,20 +605,28 @@ public class VideoCapturerAndroid implements
   private void stopCaptureOnCameraThread() {
     checkIsOnCameraThread();
     Logging.d(TAG, "stopCaptureOnCameraThread");
+    // Note that the camera might still not be started here if startCaptureOnCameraThread failed
+    // and we posted a retry.
 
     // Make sure onTextureFrameAvailable() is not called anymore.
-    surfaceHelper.stopListening();
+    if (surfaceHelper != null) {
+      surfaceHelper.stopListening();
+    }
     cameraThreadHandler.removeCallbacks(cameraObserver);
     cameraStatistics.getAndResetFrameCount();
     Logging.d(TAG, "Stop preview.");
-    camera.stopPreview();
-    camera.setPreviewCallbackWithBuffer(null);
+    if (camera != null) {
+      camera.stopPreview();
+      camera.setPreviewCallbackWithBuffer(null);
+    }
     queuedBuffers.clear();
     captureFormat = null;
 
     Logging.d(TAG, "Release camera.");
-    camera.release();
-    camera = null;
+    if (camera != null) {
+      camera.release();
+      camera = null;
+    }
     if (eventsHandler != null) {
       eventsHandler.onCameraClosed();
     }
