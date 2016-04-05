@@ -94,18 +94,21 @@ void RunBitexactnessTest(int sample_rate_hz,
 
 }  // namespace
 
-TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono8kHzLow) {
+TEST(NoiseSuppresionBitExactnessTest, Mono8kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.797542f, 6.488125f, 14.995160f};
+  const float kNoiseEstimateReference[] =
+      {1432.341431f, 3321.919922f, 7677.521973f};
   const float kOutputReference[] = {0.003510f, 0.004517f, 0.004669f};
 #elif defined(WEBRTC_ARCH_ARM)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.797542f, 6.488125f, 14.995160f};
+  const float kNoiseEstimateReference[] =
+      {1432.341431f, 3321.919922f, 7677.521973f};
   const float kOutputReference[] = {0.003510f, 0.004517f, 0.004669f};
 #else
   const float kSpeechProbabilityReference = 0.73421317f;
-  const float kNoiseEstimateReference[] = {0.035866f, 0.100382f, 0.229889f};
+  const float kNoiseEstimateReference[] =
+      {1175.266113f, 3289.305908f, 7532.991211f};
   const float kOutputReference[] = {0.003263f, 0.004402f, 0.004537f};
 #endif
 
@@ -114,18 +117,21 @@ TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono8kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono16kHzLow) {
+TEST(NoiseSuppresionBitExactnessTest, Mono16kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.475060f, 6.130507f, 14.030761f};
+  const float kNoiseEstimateReference[] =
+      {2534.461914f, 6277.638672f, 14367.499023f};
   const float kOutputReference[] = {0.003449f, 0.004334f, 0.004303f};
 #elif defined(WEBRTC_ARCH_ARM)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.475060f, 6.130507f, 14.030761f};
+  const float kNoiseEstimateReference[] =
+      {2534.461914f, 6277.638672f, 14367.499023f};
   const float kOutputReference[] = {0.003449f, 0.004334f, 0.004303f};
 #else
   const float kSpeechProbabilityReference = 0.71672988f;
-  const float kNoiseEstimateReference[] = {0.065653f, 0.198662f, 0.477870f};
+  const float kNoiseEstimateReference[] =
+      {2151.313965f, 6509.765137f, 15658.848633f};
   const float kOutputReference[] = {0.003574f, 0.004494f, 0.004499f};
 #endif
 
@@ -134,18 +140,21 @@ TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono16kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono32kHzLow) {
+TEST(NoiseSuppresionBitExactnessTest, Mono32kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.480526f, 6.169749f, 14.102388f};
+  const float kNoiseEstimateReference[] =
+      {2540.059082f, 6317.822754f, 14440.845703f};
   const float kOutputReference[] = {0.001679f, 0.002411f, 0.002594f};
 #elif defined(WEBRTC_ARCH_ARM)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.480526f, 6.169749f, 14.102388f};
+  const float kNoiseEstimateReference[] =
+      {2540.059082f, 6317.822754f, 14440.845703f};
   const float kOutputReference[] = {0.001679f, 0.002411f, 0.002594f};
 #else
   const float kSpeechProbabilityReference = 0.67999554f;
-  const float kNoiseEstimateReference[] = {0.065606f, 0.215971f, 0.455931f};
+  const float kNoiseEstimateReference[] =
+      {2149.780518f, 7076.936035f, 14939.945312f};
   const float kOutputReference[] = {0.001221f, 0.001984f, 0.002228f};
 #endif
 
@@ -154,18 +163,21 @@ TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono32kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono48kHzLow) {
+TEST(NoiseSuppresionBitExactnessTest, Mono48kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.504498f, 6.068024f, 13.058871f};
+  const float kNoiseEstimateReference[] =
+      {2564.605713f, 6213.656250f, 13372.284180f};
   const float kOutputReference[] = {-0.013185f, -0.012769f, -0.012023f};
 #elif defined(WEBRTC_ARCH_ARM)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.504498f, 6.068024f, 13.058871f};
+  const float kNoiseEstimateReference[] =
+      {2564.605713f, 6213.656250f, 13372.284180f};
   const float kOutputReference[] = {-0.013185f, -0.012769f, -0.012023f};
 #else
   const float kSpeechProbabilityReference = 0.70645678f;
-  const float kNoiseEstimateReference[] = {0.066186f, 0.210660f, 0.402548f};
+  const float kNoiseEstimateReference[] =
+      {2168.783203f, 6902.895508f, 13190.677734f};
   const float kOutputReference[] = {-0.013062f, -0.012657f, -0.011934f};
 #endif
 
@@ -174,20 +186,23 @@ TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono48kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, DISABLED_Stereo16kHzLow) {
+TEST(NoiseSuppresionBitExactnessTest, Stereo16kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {9.757937f, 12.392158f, 11.317673f};
+  const float kNoiseEstimateReference[] =
+      {9992.127930f, 12689.569336f, 11589.296875f};
   const float kOutputReference[] = {-0.011108f, -0.007904f, -0.012390f,
                                     -0.002441f, 0.000855f,  -0.003204f};
 #elif defined(WEBRTC_ARCH_ARM)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {10.079447f, 11.849465f, 10.667051f};
+  const float kNoiseEstimateReference[] =
+      {10321.353516f, 12133.852539f, 10923.060547f};
   const float kOutputReference[] = {-0.011108f, -0.007904f, -0.012390f,
                                     -0.002472f, 0.000916f,  -0.003235f};
 #else
   const float kSpeechProbabilityReference = 0.67230678f;
-  const float kNoiseEstimateReference[] = {0.298195f, 0.345745f, 0.320528f};
+  const float kNoiseEstimateReference[] =
+      {9771.250000f, 11329.377930f, 10503.052734f};
   const float kOutputReference[] = {-0.011459f, -0.008110f, -0.012728f,
                                     -0.002399f, 0.001018f,  -0.003189f};
 #endif
@@ -197,18 +212,21 @@ TEST(NoiseSuppresionBitExactnessTest, DISABLED_Stereo16kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono16kHzModerate) {
+TEST(NoiseSuppresionBitExactnessTest, Mono16kHzModerate) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {1.004436f, 3.711453f, 9.602631f};
+  const float kNoiseEstimateReference[] =
+      {2057.085938f, 7601.055176f, 19666.187500f};
   const float kOutputReference[] = {0.004669f, 0.005524f, 0.005432f};
 #elif defined(WEBRTC_ARCH_ARM)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {1.095946f, 3.351643f, 8.167248f};
+  const float kNoiseEstimateReference[] =
+      {2244.497803f, 6864.164062f, 16726.523438f};
   const float kOutputReference[] = {0.004669f, 0.005615f, 0.005585f};
 #else
   const float kSpeechProbabilityReference = 0.70897013f;
-  const float kNoiseEstimateReference[] = {0.066269f, 0.199999f, 0.476885f};
+  const float kNoiseEstimateReference[] =
+      {2171.490723f, 6553.567871f, 15626.562500f};
   const float kOutputReference[] = {0.004513f, 0.005590f, 0.005614f};
 #endif
 
@@ -217,18 +235,21 @@ TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono16kHzModerate) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono16kHzHigh) {
+TEST(NoiseSuppresionBitExactnessTest, Mono16kHzHigh) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {1.023022f, 3.759059f, 9.614030f};
+  const float kNoiseEstimateReference[] =
+      {2095.148193f, 7698.553711f, 19689.533203f};
   const float kOutputReference[] = {0.004639f, 0.005402f, 0.005310f};
 #elif defined(WEBRTC_ARCH_ARM)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {1.114510f, 3.410356f, 8.262188f};
+  const float kNoiseEstimateReference[] =
+      {2282.515625f, 6984.408203f, 16920.960938f};
   const float kOutputReference[] = {0.004547f, 0.005432f, 0.005402f};
 #else
   const float kSpeechProbabilityReference = 0.70106733f;
-  const float kNoiseEstimateReference[] = {0.067901f, 0.204835f, 0.481723f};
+  const float kNoiseEstimateReference[] =
+      {2224.968506f, 6712.025879f, 15785.087891f};
   const float kOutputReference[] = {0.004394f, 0.005406f, 0.005416f};
 #endif
 
@@ -237,18 +258,21 @@ TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono16kHzHigh) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, DISABLED_Mono16kHzVeryHigh) {
+TEST(NoiseSuppresionBitExactnessTest, Mono16kHzVeryHigh) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.614974f, 6.041980f, 14.029047f};
+  const float kNoiseEstimateReference[] =
+      {2677.733398f, 6186.987305f, 14365.744141f};
   const float kOutputReference[] = {0.004273f, 0.005127f, 0.005188f};
 #elif defined(WEBRTC_ARCH_ARM)
   const float kSpeechProbabilityReference = -4.0f;
-  const float kNoiseEstimateReference[] = {2.614974f, 6.041980f, 14.029047f};
+  const float kNoiseEstimateReference[] =
+      {2677.733398f, 6186.987305f, 14365.744141f};
   const float kOutputReference[] = {0.004273f, 0.005127f, 0.005188f};
 #else
   const float kSpeechProbabilityReference = 0.70281971f;
-  const float kNoiseEstimateReference[] = {0.068797f, 0.205191f, 0.481312f};
+  const float kNoiseEstimateReference[] =
+      {2254.347900f, 6723.699707f, 15771.625977f};
   const float kOutputReference[] = {0.004321f, 0.005247f, 0.005263f};
 #endif
 
