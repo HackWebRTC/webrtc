@@ -228,9 +228,16 @@ public final class EglBase14 extends EglBase {
     int[] numConfigs = new int[1];
     if (!EGL14.eglChooseConfig(
         eglDisplay, configAttributes, 0, configs, 0, configs.length, numConfigs, 0)) {
+      throw new RuntimeException("eglChooseConfig failed");
+    }
+    if (numConfigs[0] <= 0) {
       throw new RuntimeException("Unable to find any matching EGL config");
     }
-    return configs[0];
+    final EGLConfig eglConfig = configs[0];
+    if (eglConfig == null) {
+      throw new RuntimeException("eglChooseConfig returned null");
+    }
+    return eglConfig;
   }
 
   // Return an EGLConfig, or die trying.
