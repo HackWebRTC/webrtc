@@ -570,8 +570,8 @@ void WebRtcNsx_AnalysisUpdateNeon(NoiseSuppressionFixedC* inst,
   // Window data before FFT.
   int16_t* p_start_window = (int16_t*) inst->window;
   int16_t* p_start_buffer = inst->analysisBuffer;
+  int16_t* p_end_buffer = inst->analysisBuffer + inst->anaLen;
   int16_t* p_start_out = out;
-  const int16_t* p_end_out = out + inst->anaLen;
 
   // Load the first element to reduce pipeline bubble.
   int16x8_t window = vld1q_s16(p_start_window);
@@ -579,7 +579,7 @@ void WebRtcNsx_AnalysisUpdateNeon(NoiseSuppressionFixedC* inst,
   p_start_window += 8;
   p_start_buffer += 8;
 
-  while (p_start_out < p_end_out) {
+  while (p_start_buffer < p_end_buffer) {
     // Unroll loop.
     int32x4_t tmp32_low = vmull_s16(vget_low_s16(window), vget_low_s16(buffer));
     int32x4_t tmp32_high = vmull_s16(vget_high_s16(window),
@@ -595,4 +595,11 @@ void WebRtcNsx_AnalysisUpdateNeon(NoiseSuppressionFixedC* inst,
     p_start_window += 8;
     p_start_out += 8;
   }
+  int32x4_t tmp32_low = vmull_s16(vget_low_s16(window), vget_low_s16(buffer));
+  int32x4_t tmp32_high = vmull_s16(vget_high_s16(window),
+                                   vget_high_s16(buffer));
+
+  int16x4_t result_low = vrshrn_n_s32(tmp32_low, 14);
+  int16x4_t result_high = vrshrn_n_s32(tmp32_high, 14);
+  vst1q_s16(p_start_out, vcombine_s16(result_low, result_high));
 }
