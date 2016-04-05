@@ -421,9 +421,7 @@ static_library("rtc_base") {
     if (is_posix) {
       sources += [
         "latebindingsymboltable.cc",
-        "latebindingsymboltable.cc.def",
         "latebindingsymboltable.h",
-        "latebindingsymboltable.h.def",
         "posix.cc",
         "posix.h",
       ]

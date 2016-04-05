@@ -433,9 +433,7 @@
             ['os_posix==1', {
               'sources': [
                 'latebindingsymboltable.cc',
-                'latebindingsymboltable.cc.def',
                 'latebindingsymboltable.h',
-                'latebindingsymboltable.h.def',
                 'posix.cc',
                 'posix.h',
               ],
