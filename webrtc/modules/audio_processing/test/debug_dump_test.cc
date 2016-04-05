@@ -241,7 +241,7 @@ class DebugDumpTest : public ::testing::Test {
 void DebugDumpTest::VerifyDebugDump(const std::string& in_filename) {
   ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(in_filename));
 
-  if (const rtc::Optional<audioproc::Event> event =
+  while (const rtc::Optional<audioproc::Event> event =
       debug_dump_replayer_.GetNextEvent()) {
     debug_dump_replayer_.RunNextEvent();
     if (event->type() == audioproc::Event::STREAM) {
