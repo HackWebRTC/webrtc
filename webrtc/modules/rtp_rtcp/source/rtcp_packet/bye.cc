@@ -13,8 +13,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-
-using webrtc::RTCPUtility::RtcpCommonHeader;
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -33,21 +32,22 @@ namespace rtcp {
 //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 Bye::Bye() : sender_ssrc_(0) {}
 
-bool Bye::Parse(const RtcpCommonHeader& header, const uint8_t* payload) {
-  RTC_DCHECK(header.packet_type == kPacketType);
+bool Bye::Parse(const CommonHeader& packet) {
+  RTC_DCHECK(packet.type() == kPacketType);
 
-  const uint8_t src_count = header.count_or_format;
+  const uint8_t src_count = packet.count();
   // Validate packet.
-  if (header.payload_size_bytes < 4u * src_count) {
+  if (packet.payload_size_bytes() < 4u * src_count) {
     LOG(LS_WARNING)
         << "Packet is too small to contain CSRCs it promise to have.";
     return false;
   }
-  bool has_reason = (header.payload_size_bytes > 4u * src_count);
+  const uint8_t* const payload = packet.payload();
+  bool has_reason = packet.payload_size_bytes() > 4u * src_count;
   uint8_t reason_length = 0;
   if (has_reason) {
     reason_length = payload[4u * src_count];
-    if (header.payload_size_bytes - 4u * src_count < 1u + reason_length) {
+    if (packet.payload_size_bytes() - 4u * src_count < 1u + reason_length) {
       LOG(LS_WARNING) << "Invalid reason length: " << reason_length;
       return false;
     }

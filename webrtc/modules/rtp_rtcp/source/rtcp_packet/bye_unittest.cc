@@ -12,66 +12,49 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
-using ::testing::ElementsAre;
-
+using testing::ElementsAre;
 using webrtc::rtcp::Bye;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
-
 const uint32_t kSenderSsrc = 0x12345678;
 const uint32_t kCsrc1 = 0x22232425;
 const uint32_t kCsrc2 = 0x33343536;
+}  // namespace
 
-class RtcpPacketByeTest : public ::testing::Test {
- protected:
-  void BuildPacket() { packet = bye.Build(); }
-  void ParsePacket() {
-    RtcpCommonHeader header;
-    EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
-    // Check that there is exactly one RTCP packet in the buffer.
-    EXPECT_EQ(header.BlockSize(), packet.size());
-    EXPECT_TRUE(parsed_bye.Parse(
-        header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
-  }
-
+TEST(RtcpPacketByeTest, CreateAndParseWithoutReason) {
   Bye bye;
-  rtc::Buffer packet;
-  Bye parsed_bye;
-};
-
-TEST_F(RtcpPacketByeTest, Bye) {
   bye.From(kSenderSsrc);
 
-  BuildPacket();
-  ParsePacket();
+  rtc::Buffer raw = bye.Build();
+  Bye parsed_bye;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed_bye));
 
   EXPECT_EQ(kSenderSsrc, parsed_bye.sender_ssrc());
   EXPECT_TRUE(parsed_bye.csrcs().empty());
   EXPECT_TRUE(parsed_bye.reason().empty());
 }
 
-TEST_F(RtcpPacketByeTest, WithCsrcs) {
+TEST(RtcpPacketByeTest, CreateAndParseWithCsrcs) {
+  Bye bye;
   bye.From(kSenderSsrc);
   EXPECT_TRUE(bye.WithCsrc(kCsrc1));
   EXPECT_TRUE(bye.WithCsrc(kCsrc2));
   EXPECT_TRUE(bye.reason().empty());
 
-  BuildPacket();
-  EXPECT_EQ(16u, packet.size());  // Header: 4, 3xSRCs: 12, Reason: 0.
-
-  ParsePacket();
+  rtc::Buffer raw = bye.Build();
+  Bye parsed_bye;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed_bye));
 
   EXPECT_EQ(kSenderSsrc, parsed_bye.sender_ssrc());
   EXPECT_THAT(parsed_bye.csrcs(), ElementsAre(kCsrc1, kCsrc2));
   EXPECT_TRUE(parsed_bye.reason().empty());
 }
 
-TEST_F(RtcpPacketByeTest, WithCsrcsAndReason) {
+TEST(RtcpPacketByeTest, CreateAndParseWithCsrcsAndAReason) {
+  Bye bye;
   const std::string kReason = "Some Reason";
 
   bye.From(kSenderSsrc);
@@ -79,17 +62,17 @@ TEST_F(RtcpPacketByeTest, WithCsrcsAndReason) {
   EXPECT_TRUE(bye.WithCsrc(kCsrc2));
   bye.WithReason(kReason);
 
-  BuildPacket();
-  EXPECT_EQ(28u, packet.size());  // Header: 4, 3xSRCs: 12, Reason: 12.
-
-  ParsePacket();
+  rtc::Buffer raw = bye.Build();
+  Bye parsed_bye;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed_bye));
 
   EXPECT_EQ(kSenderSsrc, parsed_bye.sender_ssrc());
   EXPECT_THAT(parsed_bye.csrcs(), ElementsAre(kCsrc1, kCsrc2));
   EXPECT_EQ(kReason, parsed_bye.reason());
 }
 
-TEST_F(RtcpPacketByeTest, WithTooManyCsrcs) {
+TEST(RtcpPacketByeTest, CreateWithTooManyCsrcs) {
+  Bye bye;
   bye.From(kSenderSsrc);
   const int kMaxCsrcs = (1 << 5) - 2;  // 5 bit len, first item is sender SSRC.
   for (int i = 0; i < kMaxCsrcs; ++i) {
@@ -98,74 +81,71 @@ TEST_F(RtcpPacketByeTest, WithTooManyCsrcs) {
   EXPECT_FALSE(bye.WithCsrc(kMaxCsrcs));
 }
 
-TEST_F(RtcpPacketByeTest, WithAReason) {
+TEST(RtcpPacketByeTest, CreateAndParseWithAReason) {
+  Bye bye;
   const std::string kReason = "Some Random Reason";
 
   bye.From(kSenderSsrc);
   bye.WithReason(kReason);
 
-  BuildPacket();
-  ParsePacket();
+  rtc::Buffer raw = bye.Build();
+  Bye parsed_bye;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed_bye));
 
   EXPECT_EQ(kSenderSsrc, parsed_bye.sender_ssrc());
   EXPECT_TRUE(parsed_bye.csrcs().empty());
   EXPECT_EQ(kReason, parsed_bye.reason());
 }
 
-TEST_F(RtcpPacketByeTest, WithReasons) {
+TEST(RtcpPacketByeTest, CreateAndParseWithReasons) {
   // Test that packet creation/parsing behave with reasons of different length
   // both when it require padding and when it does not.
   for (size_t reminder = 0; reminder < 4; ++reminder) {
     const std::string kReason(4 + reminder, 'a' + reminder);
+    Bye bye;
     bye.From(kSenderSsrc);
     bye.WithReason(kReason);
 
-    BuildPacket();
-    ParsePacket();
+    rtc::Buffer raw = bye.Build();
+    Bye parsed_bye;
+    EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed_bye));
 
     EXPECT_EQ(kReason, parsed_bye.reason());
   }
 }
 
-TEST_F(RtcpPacketByeTest, ParseEmptyPacket) {
-  RtcpCommonHeader header;
-  header.packet_type = Bye::kPacketType;
-  header.count_or_format = 0;
-  header.payload_size_bytes = 0;
-  uint8_t empty_payload[1];
-
-  EXPECT_TRUE(parsed_bye.Parse(header, empty_payload + 1));
+TEST(RtcpPacketByeTest, ParseEmptyPacket) {
+  uint8_t kEmptyPacket[] = {0x80, Bye::kPacketType, 0, 0};
+  Bye parsed_bye;
+  EXPECT_TRUE(test::ParseSinglePacket(kEmptyPacket, &parsed_bye));
   EXPECT_EQ(0u, parsed_bye.sender_ssrc());
   EXPECT_TRUE(parsed_bye.csrcs().empty());
   EXPECT_TRUE(parsed_bye.reason().empty());
 }
 
-TEST_F(RtcpPacketByeTest, ParseFailOnInvalidSrcCount) {
+TEST(RtcpPacketByeTest, ParseFailOnInvalidSrcCount) {
+  Bye bye;
   bye.From(kSenderSsrc);
 
-  BuildPacket();
+  rtc::Buffer raw = bye.Build();
+  raw[0]++;  // Damage the packet: increase ssrc count by one.
 
-  RtcpCommonHeader header;
-  RtcpParseCommonHeader(packet.data(), packet.size(), &header);
-  header.count_or_format = 2;  // Lie there are 2 ssrcs, not one.
-
-  EXPECT_FALSE(parsed_bye.Parse(
-      header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
+  Bye parsed_bye;
+  EXPECT_FALSE(test::ParseSinglePacket(raw, &parsed_bye));
 }
 
-TEST_F(RtcpPacketByeTest, ParseFailOnInvalidReasonLength) {
+TEST(RtcpPacketByeTest, ParseFailOnInvalidReasonLength) {
+  Bye bye;
   bye.From(kSenderSsrc);
   bye.WithReason("18 characters long");
 
-  BuildPacket();
+  rtc::Buffer raw = bye.Build();
+  // Damage the packet: decrease payload size by 4 bytes
+  raw[3]--;
+  raw.SetSize(raw.size() - 4);
 
-  RtcpCommonHeader header;
-  RtcpParseCommonHeader(packet.data(), packet.size(), &header);
-  header.payload_size_bytes -= 4;  // Payload is usually 32bit aligned.
-
-  EXPECT_FALSE(parsed_bye.Parse(
-      header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
+  Bye parsed_bye;
+  EXPECT_FALSE(test::ParseSinglePacket(raw, &parsed_bye));
 }
 
-}  // namespace
 }  // namespace webrtc
