@@ -152,7 +152,7 @@ class WebRtcAudioTrack {
     }
   }
 
-  private void initPlayout(int sampleRate, int channels) {
+  private boolean initPlayout(int sampleRate, int channels) {
     Logging.d(TAG, "initPlayout(sampleRate=" + sampleRate + ", channels="
         + channels + ")");
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
@@ -191,17 +191,27 @@ class WebRtcAudioTrack {
                                   AudioTrack.MODE_STREAM);
     } catch (IllegalArgumentException e) {
       Logging.d(TAG, e.getMessage());
-      return;
+      return false;
     }
-    assertTrue(audioTrack.getState() == AudioTrack.STATE_INITIALIZED);
-    assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_STOPPED);
-    assertTrue(audioTrack.getStreamType() == AudioManager.STREAM_VOICE_CALL);
+
+    // It can happen that an AudioTrack is created but it was not successfully
+    // initialized upon creation. Seems to be the case e.g. when the maximum
+    // number of globally available audio tracks is exceeded.
+    if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
+      Logging.e(TAG, "Initialization of audio track failed.");
+      return false;
+    }
+    return true;
   }
 
   private boolean startPlayout() {
     Logging.d(TAG, "startPlayout");
     assertTrue(audioTrack != null);
     assertTrue(audioThread == null);
+    if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
+      Logging.e(TAG, "Audio track is not successfully initialized.");
+      return false;
+    }
     audioThread = new AudioTrackThread("AudioTrackJavaThread");
     audioThread.start();
     return true;

@@ -47,7 +47,7 @@ class AudioTrackJni {
                    std::unique_ptr<GlobalRef> audio_track);
     ~JavaAudioTrack();
 
-    void InitPlayout(int sample_rate, int channels);
+    bool InitPlayout(int sample_rate, int channels);
     bool StartPlayout();
     bool StopPlayout();
     bool SetStreamVolume(int volume);

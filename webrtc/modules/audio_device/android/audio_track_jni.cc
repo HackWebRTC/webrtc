@@ -33,7 +33,7 @@ AudioTrackJni::JavaAudioTrack::JavaAudioTrack(
     NativeRegistration* native_reg,
     std::unique_ptr<GlobalRef> audio_track)
     : audio_track_(std::move(audio_track)),
-      init_playout_(native_reg->GetMethodId("initPlayout", "(II)V")),
+      init_playout_(native_reg->GetMethodId("initPlayout", "(II)Z")),
       start_playout_(native_reg->GetMethodId("startPlayout", "()Z")),
       stop_playout_(native_reg->GetMethodId("stopPlayout", "()Z")),
       set_stream_volume_(native_reg->GetMethodId("setStreamVolume", "(I)Z")),
@@ -43,8 +43,8 @@ AudioTrackJni::JavaAudioTrack::JavaAudioTrack(
 
 AudioTrackJni::JavaAudioTrack::~JavaAudioTrack() {}
 
-void AudioTrackJni::JavaAudioTrack::InitPlayout(int sample_rate, int channels) {
-  audio_track_->CallVoidMethod(init_playout_, sample_rate, channels);
+bool AudioTrackJni::JavaAudioTrack::InitPlayout(int sample_rate, int channels) {
+  return audio_track_->CallBooleanMethod(init_playout_, sample_rate, channels);
 }
 
 bool AudioTrackJni::JavaAudioTrack::StartPlayout() {
@@ -123,8 +123,11 @@ int32_t AudioTrackJni::InitPlayout() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!playing_);
-  j_audio_track_->InitPlayout(
-      audio_parameters_.sample_rate(), audio_parameters_.channels());
+  if (!j_audio_track_->InitPlayout(
+      audio_parameters_.sample_rate(), audio_parameters_.channels())) {
+    ALOGE("InitPlayout failed!");
+    return -1;
+  }
   initialized_ = true;
   return 0;
 }
