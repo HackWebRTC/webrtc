@@ -189,9 +189,8 @@ void AndroidVideoCapturer::OnIncomingFrame(
 void AndroidVideoCapturer::OnOutputFormatRequest(
     int width, int height, int fps) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
-  const cricket::VideoFormat& current = video_adapter()->output_format();
-  cricket::VideoFormat format(
-      width, height, cricket::VideoFormat::FpsToInterval(fps), current.fourcc);
+  cricket::VideoFormat format(width, height,
+                              cricket::VideoFormat::FpsToInterval(fps), 0);
   video_adapter()->OnOutputFormatRequest(format);
 }
 

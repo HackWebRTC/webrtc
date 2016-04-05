@@ -230,7 +230,7 @@ class VideoCapturer : public sigslot::has_slots<>,
   // SignalFrameCaptured or OnFrameCaptured.
   void OnFrame(VideoCapturer* capturer, const VideoFrame* frame);
 
-  CoordinatedVideoAdapter* video_adapter() { return &video_adapter_; }
+  VideoAdapter* video_adapter() { return &video_adapter_; }
 
   void SetCaptureState(CaptureState state);
 
@@ -248,8 +248,7 @@ class VideoCapturer : public sigslot::has_slots<>,
     if (capture_format_) {
       ASSERT(capture_format_->interval > 0 &&
              "Capture format expected to have positive interval.");
-      // Video adapter really only cares about capture format interval.
-      video_adapter_.SetInputFormat(*capture_format_);
+      video_adapter_.SetExpectedInputFrameInterval(capture_format_->interval);
     }
   }
 
@@ -293,7 +292,7 @@ class VideoCapturer : public sigslot::has_slots<>,
 
   rtc::VideoBroadcaster broadcaster_;
   bool enable_video_adapter_;
-  CoordinatedVideoAdapter video_adapter_;
+  VideoAdapter video_adapter_;
 
   rtc::CriticalSection frame_stats_crit_;
   // The captured frame size before potential adapation.

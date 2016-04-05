@@ -175,6 +175,15 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
 
+  // AdaptReason is used for expressing why a WebRtcVideoSendStream request
+  // a lower input frame size than the currently configured camera input frame
+  // size. There can be more than one reason OR:ed together.
+  enum AdaptReason {
+    ADAPTREASON_NONE = 0,
+    ADAPTREASON_CPU = 1,
+    ADAPTREASON_BANDWIDTH = 2,
+  };
+
  private:
   class WebRtcVideoReceiveStream;
   struct VideoCodecSettings {

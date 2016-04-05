@@ -371,6 +371,9 @@ static const int kDefaultQpMax = 56;
 
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
+// Down grade resolution at most 2 times for CPU reasons.
+static const int kMaxCpuDowngrades = 2;
+
 std::vector<VideoCodec> DefaultVideoCodecList() {
   std::vector<VideoCodec> codecs;
   codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType,
@@ -1835,7 +1838,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
           << "RecreateWebRtcStream (send) because of SetSendParameters";
       RecreateWebRtcStream();
     }
-  } // release |lock_|
+  }  // release |lock_|
 
   // |capturer_->AddOrUpdateSink| may not be called while holding |lock_| since
   // that might cause a lock order inversion.
@@ -2026,8 +2029,14 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
     rtc::Optional<int> max_pixel_count;
     rtc::Optional<int> max_pixel_count_step_up;
     if (load == kOveruse) {
-        max_pixel_count = rtc::Optional<int>(
-            (last_dimensions_.height * last_dimensions_.width) / 2);
+      if (cpu_restricted_counter_ >= kMaxCpuDowngrades) {
+        return;
+      }
+      // The input video frame size will have a resolution with less than or
+      // equal to |max_pixel_count| depending on how the capturer can scale the
+      // input frame size.
+      max_pixel_count = rtc::Optional<int>(
+          (last_dimensions_.height * last_dimensions_.width * 3) / 5);
       // Increase |number_of_cpu_adapt_changes_| if
       // sink_wants_.max_pixel_count will be changed since
       // last time |capturer_->AddOrUpdateSink| was called. That is, this will
@@ -2039,6 +2048,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
       }
     } else {
       RTC_DCHECK(load == kUnderuse);
+      // The input video frame size will have a resolution with "one step up"
+      // pixels than |max_pixel_count_step_up| where "one step up" depends on
+      // how the capturer can scale the input frame size.
       max_pixel_count_step_up = rtc::Optional<int>(last_dimensions_.height *
                                                    last_dimensions_.width);
       // Increase |number_of_cpu_adapt_changes_| if
@@ -2088,16 +2100,15 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
     stats = stream_->GetStats();
   }
   info.adapt_changes = number_of_cpu_adapt_changes_;
-  info.adapt_reason = cpu_restricted_counter_ <= 0
-                          ? CoordinatedVideoAdapter::ADAPTREASON_NONE
-                          : CoordinatedVideoAdapter::ADAPTREASON_CPU;
+  info.adapt_reason =
+      cpu_restricted_counter_ <= 0 ? ADAPTREASON_NONE : ADAPTREASON_CPU;
 
   // Get bandwidth limitation info from stream_->GetStats().
   // Input resolution (output from video_adapter) can be further scaled down or
   // higher video layer(s) can be dropped due to bitrate constraints.
   // Note, adapt_changes only include changes from the video_adapter.
   if (stats.bw_limited_resolution)
-    info.adapt_reason |= CoordinatedVideoAdapter::ADAPTREASON_BANDWIDTH;
+    info.adapt_reason |= ADAPTREASON_BANDWIDTH;
 
   info.encoder_implementation_name = stats.encoder_implementation_name;
   info.ssrc_groups = ssrc_groups_;

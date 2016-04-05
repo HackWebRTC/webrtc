@@ -2036,25 +2036,95 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
   EXPECT_EQ(1280 * 2 / 4, send_stream->GetLastWidth());
   EXPECT_EQ(720 * 2 / 4, send_stream->GetLastHeight());
 
+  // Trigger overuse again. This should not decrease the resolution since we
+  // should only adapt the resolution down max two steps.
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
+  EXPECT_EQ(4, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1280 * 2 / 4, send_stream->GetLastWidth());
+  EXPECT_EQ(720 * 2 / 4, send_stream->GetLastHeight());
+
   // Change input resolution.
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
-  EXPECT_EQ(4, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(5, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1284 / 2, send_stream->GetLastWidth());
   EXPECT_EQ(724 / 2, send_stream->GetLastHeight());
 
   // Trigger underuse which should go back up in resolution.
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
-  EXPECT_EQ(5, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(6, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1284 * 3 / 4, send_stream->GetLastWidth());
   EXPECT_EQ(724 * 3 / 4, send_stream->GetLastHeight());
 
   // Trigger underuse which should go back up in resolution.
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
-  EXPECT_EQ(6, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(7, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1284, send_stream->GetLastWidth());
   EXPECT_EQ(724, send_stream->GetLastHeight());
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+}
+
+TEST_F(WebRtcVideoChannel2Test, PreviousAdaptationDoesNotApplyToScreenshare) {
+  cricket::VideoCodec codec = kVp8Codec720p;
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(codec);
+
+  MediaConfig media_config = MediaConfig();
+  channel_.reset(
+      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  ASSERT_TRUE(channel_->SetSendParameters(parameters));
+
+  AddSendStream();
+
+  cricket::FakeVideoCapturer capturer;
+  ASSERT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  ASSERT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  ASSERT_TRUE(channel_->SetSend(true));
+  cricket::VideoOptions camera_options;
+  channel_->SetVideoSend(last_ssrc_, true /* enable */, &camera_options);
+
+  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
+  FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
+  webrtc::LoadObserver* overuse_callback =
+      send_stream->GetConfig().overuse_callback;
+  ASSERT_TRUE(overuse_callback != NULL);
+
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1280, send_stream->GetLastWidth());
+  EXPECT_EQ(720, send_stream->GetLastHeight());
+
+  // Trigger overuse.
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
+  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
+  EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
+
+  // Switch to screen share. Expect no CPU adaptation.
+  cricket::FakeVideoCapturer screen_share(true);
+  ASSERT_EQ(cricket::CS_RUNNING,
+            screen_share.Start(screen_share.GetSupportedFormats()->front()));
+  ASSERT_TRUE(channel_->SetCapturer(last_ssrc_, &screen_share));
+  cricket::VideoOptions screenshare_options;
+  screenshare_options.is_screencast = rtc::Optional<bool>(true);
+  channel_->SetVideoSend(last_ssrc_, true /* enable */, &screenshare_options);
+  EXPECT_TRUE(screen_share.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
+  EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1284, send_stream->GetLastWidth());
+  EXPECT_EQ(724, send_stream->GetLastHeight());
+
+  // Switch back to the normal capturer. Expect the frame to be CPU adapted.
+  ASSERT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  channel_->SetVideoSend(last_ssrc_, true /* enable */, &camera_options);
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
+  EXPECT_EQ(4, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
+  EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
 
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
 }
@@ -2783,8 +2853,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(1, info.senders[0].adapt_changes);
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_CPU,
-            info.senders[0].adapt_reason);
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_CPU, info.senders[0].adapt_reason);
 
   // Trigger upgrade and verify that we adapt back up to VGA.
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
@@ -2793,7 +2862,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(2, info.senders[0].adapt_changes);
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_NONE,
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_NONE,
             info.senders[0].adapt_reason);
 
   // No capturer (no adapter). Adapt changes from old adapter should be kept.
@@ -2802,7 +2871,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(2, info.senders[0].adapt_changes);
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_NONE,
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_NONE,
             info.senders[0].adapt_reason);
 
   // Set new capturer, capture format HD.
@@ -2819,8 +2888,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(3, info.senders[0].adapt_changes);
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_CPU,
-            info.senders[0].adapt_reason);
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_CPU, info.senders[0].adapt_reason);
 
   EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
 }
@@ -2855,8 +2923,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationAndBandwidthStats) {
   cricket::VideoMediaInfo info;
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_CPU,
-            info.senders[0].adapt_reason);
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_CPU, info.senders[0].adapt_reason);
 
   // Set bandwidth limitation stats for the stream -> adapt CPU + BW.
   webrtc::VideoSendStream::Stats stats;
@@ -2865,8 +2932,8 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationAndBandwidthStats) {
   info.Clear();
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_CPU +
-            CoordinatedVideoAdapter::ADAPTREASON_BANDWIDTH,
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_CPU |
+                WebRtcVideoChannel2::ADAPTREASON_BANDWIDTH,
             info.senders[0].adapt_reason);
 
   // Trigger upgrade -> adapt BW.
@@ -2875,7 +2942,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationAndBandwidthStats) {
   info.Clear();
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_BANDWIDTH,
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_BANDWIDTH,
             info.senders[0].adapt_reason);
 
   // Reset bandwidth limitation state -> adapt NONE.
@@ -2884,7 +2951,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationAndBandwidthStats) {
   info.Clear();
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_NONE,
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_NONE,
             info.senders[0].adapt_reason);
 
   EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
@@ -2900,7 +2967,7 @@ TEST_F(WebRtcVideoChannel2Test,
   cricket::VideoMediaInfo info;
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_BANDWIDTH,
+  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_BANDWIDTH,
             info.senders[0].adapt_reason);
 }
 

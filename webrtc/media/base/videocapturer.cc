@@ -213,8 +213,8 @@ void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
   }
 
   if (video_adapter()) {
-    video_adapter()->OnCpuResolutionRequest(wants.max_pixel_count,
-                                            wants.max_pixel_count_step_up);
+    video_adapter()->OnResolutionRequest(wants.max_pixel_count,
+                                         wants.max_pixel_count_step_up);
   }
 }
 

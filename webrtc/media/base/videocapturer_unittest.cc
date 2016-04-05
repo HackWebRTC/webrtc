@@ -256,9 +256,11 @@ TEST_F(VideoCapturerTest, SinkWantsMaxPixelAndMaxPixelCountStepUp) {
   EXPECT_EQ(1280, renderer_.width());
   EXPECT_EQ(720, renderer_.height());
 
-  // Request a lower resolution.
+  // Request a lower resolution. The output resolution will have a resolution
+  // with less than or equal to |wants.max_pixel_count| depending on how the
+  // capturer can scale the input frame size.
   rtc::VideoSinkWants wants;
-  wants.max_pixel_count = rtc::Optional<int>(1280 * 720 / 2);
+  wants.max_pixel_count = rtc::Optional<int>(1280 * 720 * 3 / 5);
   capturer_->AddOrUpdateSink(&renderer_, wants);
   EXPECT_TRUE(capturer_->CaptureFrame());
   EXPECT_EQ(2, renderer_.num_rendered_frames());
@@ -267,7 +269,7 @@ TEST_F(VideoCapturerTest, SinkWantsMaxPixelAndMaxPixelCountStepUp) {
 
   // Request a lower resolution.
   wants.max_pixel_count =
-      rtc::Optional<int>(renderer_.width() * renderer_.height() / 2);
+      rtc::Optional<int>(renderer_.width() * renderer_.height() * 3 / 5);
   capturer_->AddOrUpdateSink(&renderer_, wants);
   EXPECT_TRUE(capturer_->CaptureFrame());
   EXPECT_EQ(3, renderer_.num_rendered_frames());
@@ -306,6 +308,17 @@ TEST_F(VideoCapturerTest, SinkWantsMaxPixelAndMaxPixelCountStepUp) {
   EXPECT_EQ(3, renderer2.num_rendered_frames());
   EXPECT_EQ(960, renderer2.width());
   EXPECT_EQ(540, renderer2.height());
+
+  // But resetting the wants should reset the resolution to what the camera is
+  // opened with.
+  capturer_->AddOrUpdateSink(&renderer_, rtc::VideoSinkWants());
+  EXPECT_TRUE(capturer_->CaptureFrame());
+  EXPECT_EQ(7, renderer_.num_rendered_frames());
+  EXPECT_EQ(1280, renderer_.width());
+  EXPECT_EQ(720, renderer_.height());
+  EXPECT_EQ(4, renderer2.num_rendered_frames());
+  EXPECT_EQ(1280, renderer2.width());
+  EXPECT_EQ(720, renderer2.height());
 }
 
 TEST_F(VideoCapturerTest, ScreencastScaledSuperLarge) {
