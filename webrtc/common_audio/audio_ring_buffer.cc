@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/utility/audio_ring_buffer.h"
+#include "webrtc/common_audio/audio_ring_buffer.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
+#include "webrtc/common_audio/ring_buffer.h"
 
 // This is a simple multi-channel wrapper over the ring_buffer.h C interface.
 

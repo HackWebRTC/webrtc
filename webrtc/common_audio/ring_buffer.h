@@ -11,8 +11,8 @@
 // A ring buffer to hold arbitrary data. Provides no thread safety. Unless
 // otherwise specified, functions return 0 on success and -1 on error.
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_RING_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_RING_BUFFER_H_
+#ifndef WEBRTC_COMMON_AUDIO_RING_BUFFER_H_
+#define WEBRTC_COMMON_AUDIO_RING_BUFFER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,4 +63,4 @@ size_t WebRtc_available_write(const RingBuffer* handle);
 }
 #endif
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_RING_BUFFER_H_
+#endif  // WEBRTC_COMMON_AUDIO_RING_BUFFER_H_

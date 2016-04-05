@@ -14,10 +14,10 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "webrtc/common_audio/ring_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/real_fft.h"
 #include "webrtc/modules/audio_processing/aecm/echo_control_mobile.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
-#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
 #include "webrtc/system_wrappers/include/compile_assert_c.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
@@ -768,3 +768,4 @@ static void ComfortNoise(AecmCore* aecm,
     out[i].imag = WebRtcSpl_AddSatW16(out[i].imag, uImag[i]);
   }
 }
+
