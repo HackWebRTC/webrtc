@@ -2644,8 +2644,8 @@ INSTANTIATE_TEST_CASE_P(
     CommonFormats,
     AudioProcessingTest,
     testing::Values(std::tr1::make_tuple(48000, 48000, 48000, 48000, 0, 0),
-                    std::tr1::make_tuple(48000, 48000, 32000, 48000, 35, 30),
-                    std::tr1::make_tuple(48000, 48000, 16000, 48000, 35, 20),
+                    std::tr1::make_tuple(48000, 48000, 32000, 48000, 40, 30),
+                    std::tr1::make_tuple(48000, 48000, 16000, 48000, 40, 20),
                     std::tr1::make_tuple(48000, 44100, 48000, 44100, 20, 20),
                     std::tr1::make_tuple(48000, 44100, 32000, 44100, 20, 15),
                     std::tr1::make_tuple(48000, 44100, 16000, 44100, 20, 15),
@@ -2692,7 +2692,7 @@ INSTANTIATE_TEST_CASE_P(
                     std::tr1::make_tuple(16000, 32000, 32000, 32000, 25, 0),
                     std::tr1::make_tuple(16000, 32000, 16000, 32000, 25, 20),
                     std::tr1::make_tuple(16000, 16000, 48000, 16000, 40, 20),
-                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 40, 20),
+                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 50, 20),
                     std::tr1::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 
 #elif defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
@@ -2748,7 +2748,7 @@ INSTANTIATE_TEST_CASE_P(
                     std::tr1::make_tuple(16000, 32000, 32000, 32000, 25, 0),
                     std::tr1::make_tuple(16000, 32000, 16000, 32000, 25, 20),
                     std::tr1::make_tuple(16000, 16000, 48000, 16000, 35, 20),
-                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 35, 20),
+                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 40, 20),
                     std::tr1::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 #endif
 

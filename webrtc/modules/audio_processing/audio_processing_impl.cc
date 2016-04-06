@@ -366,15 +366,18 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
       formats_.api_format.input_stream().sample_rate_hz(),
       formats_.api_format.output_stream().sample_rate_hz())));
 
-  int rev_proc_rate = ClosestNativeRate(std::min(
-      formats_.api_format.reverse_input_stream().sample_rate_hz(),
-      formats_.api_format.reverse_output_stream().sample_rate_hz()));
-  // If the forward sample rate is 8 kHz, the reverse stream is also processed
-  // at this rate.
+  // We normally process the reverse stream at 16 kHz. Unless...
+  int rev_proc_rate = kSampleRate16kHz;
   if (capture_nonlocked_.fwd_proc_format.sample_rate_hz() == kSampleRate8kHz) {
+    // ...the forward stream is at 8 kHz.
     rev_proc_rate = kSampleRate8kHz;
   } else {
-    rev_proc_rate = std::max(rev_proc_rate, static_cast<int>(kSampleRate16kHz));
+    if (formats_.api_format.reverse_input_stream().sample_rate_hz() ==
+        kSampleRate32kHz) {
+      // ...or the input is at 32 kHz, in which case we use the splitting
+      // filter rather than the resampler.
+      rev_proc_rate = kSampleRate32kHz;
+    }
   }
 
   // Always downmix the reverse stream to mono for analysis. This has been
@@ -1148,11 +1151,11 @@ bool AudioProcessingImpl::is_rev_processed() const {
 
 bool AudioProcessingImpl::rev_synthesis_needed() const {
   return (is_rev_processed() &&
-          is_multi_band(formats_.rev_proc_format.sample_rate_hz()));
+          formats_.rev_proc_format.sample_rate_hz() == kSampleRate32kHz);
 }
 
 bool AudioProcessingImpl::rev_analysis_needed() const {
-  return is_multi_band(formats_.rev_proc_format.sample_rate_hz()) &&
+  return formats_.rev_proc_format.sample_rate_hz() == kSampleRate32kHz &&
          (is_rev_processed() ||
           public_submodules_->echo_cancellation->is_enabled() ||
           public_submodules_->echo_control_mobile->is_enabled() ||
