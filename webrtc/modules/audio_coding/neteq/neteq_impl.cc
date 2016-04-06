@@ -403,9 +403,11 @@ void NetEqImpl::DisableVad() {
 
 rtc::Optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() const {
   rtc::CritScope lock(&crit_sect_);
-  if (first_packet_) {
+  if (first_packet_ || last_mode_ == kModeRfc3389Cng ||
+      last_mode_ == kModeCodecInternalCng) {
     // We don't have a valid RTP timestamp until we have decoded our first
-    // RTP packet.
+    // RTP packet. Also, the RTP timestamp is not accurate while playing CNG,
+    // which is indicated by returning an empty value.
     return rtc::Optional<uint32_t>();
   }
   return rtc::Optional<uint32_t>(

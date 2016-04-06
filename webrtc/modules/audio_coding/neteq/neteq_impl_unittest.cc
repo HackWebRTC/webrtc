@@ -666,6 +666,12 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, PacketDuration(_, kPayloadLengthBytes))
+      .WillRepeatedly(Return(kPayloadLengthSamples));
+  // Packed duration when asking the decoder for more CNG data (without a new
+  // packet).
+  EXPECT_CALL(mock_decoder, PacketDuration(nullptr, 0))
+      .WillRepeatedly(Return(kPayloadLengthSamples));
 
   // Pointee(x) verifies that first byte of the payload equals x, this makes it
   // possible to verify that the correct payload is fed to Decode().
@@ -723,8 +729,8 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   int expected_timestamp_increment[8] = {
       -1,  // will not be used.
       10 * kSampleRateKhz,
-      0, 0,  // timestamp does not increase during CNG mode.
-      0, 0,
+      -1, -1,  // timestamp will be empty during CNG mode; indicated by -1 here.
+      -1, -1,
       50 * kSampleRateKhz, 10 * kSampleRateKhz
   };
 
@@ -732,17 +738,27 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   rtc::Optional<uint32_t> last_timestamp = neteq_->GetPlayoutTimestamp();
   ASSERT_TRUE(last_timestamp);
 
+  // Lambda for verifying the timestamps.
+  auto verify_timestamp = [&last_timestamp, &expected_timestamp_increment](
+      rtc::Optional<uint32_t> ts, size_t i) {
+    if (expected_timestamp_increment[i] == -1) {
+      // Expect to get an empty timestamp value during CNG and PLC.
+      EXPECT_FALSE(ts) << "i = " << i;
+    } else {
+      ASSERT_TRUE(ts) << "i = " << i;
+      EXPECT_EQ(*ts, *last_timestamp + expected_timestamp_increment[i])
+          << "i = " << i;
+      last_timestamp = ts;
+    }
+  };
+
   for (size_t i = 1; i < 6; ++i) {
     ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
     EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(expected_type[i - 1], output.speech_type_);
-    rtc::Optional<uint32_t> timestamp = neteq_->GetPlayoutTimestamp();
-    EXPECT_TRUE(timestamp);
     EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
-    timestamp = neteq_->GetPlayoutTimestamp();
-    ASSERT_TRUE(timestamp);
-    EXPECT_EQ(*timestamp, *last_timestamp + expected_timestamp_increment[i]);
-    last_timestamp = timestamp;
+    SCOPED_TRACE("");
+    verify_timestamp(neteq_->GetPlayoutTimestamp(), i);
   }
 
   // Insert third packet, which leaves a gap from last packet.
@@ -757,10 +773,8 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
     EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(expected_type[i - 1], output.speech_type_);
     EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
-    rtc::Optional<uint32_t> timestamp = neteq_->GetPlayoutTimestamp();
-    ASSERT_TRUE(timestamp);
-    EXPECT_EQ(*timestamp, *last_timestamp + expected_timestamp_increment[i]);
-    last_timestamp = timestamp;
+    SCOPED_TRACE("");
+    verify_timestamp(neteq_->GetPlayoutTimestamp(), i);
   }
 
   // Now check the packet buffer, and make sure it is empty.
