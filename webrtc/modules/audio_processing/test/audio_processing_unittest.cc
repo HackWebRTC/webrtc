@@ -2174,7 +2174,7 @@ TEST_F(ApmTest, Process) {
       // or generate a separate android reference.
 #if defined(WEBRTC_ANDROID)
       const int kHasVoiceCountOffset = 3;
-      const int kHasVoiceCountNear = 3;
+      const int kHasVoiceCountNear = 4;
       const int kMaxOutputAverageOffset = 9;
       const int kMaxOutputAverageNear = 9;
 #else
