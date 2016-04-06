@@ -155,11 +155,10 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
       rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store,
-      bool prefer_constraint_apis,
-      rtc::Thread* worker_thread) {
+      bool prefer_constraint_apis) {
     PeerConnectionTestClient* client(new PeerConnectionTestClient(id));
     if (!client->Init(constraints, options, std::move(dtls_identity_store),
-                      prefer_constraint_apis, worker_thread)) {
+                      prefer_constraint_apis)) {
       delete client;
       return nullptr;
     }
@@ -169,28 +168,24 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   static PeerConnectionTestClient* CreateClient(
       const std::string& id,
       const MediaConstraintsInterface* constraints,
-      const PeerConnectionFactory::Options* options,
-      rtc::Thread* worker_thread) {
+      const PeerConnectionFactory::Options* options) {
     rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store(
         rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
                                               : nullptr);
 
-    return CreateClientWithDtlsIdentityStore(id, constraints, options,
-                                             std::move(dtls_identity_store),
-                                             true, worker_thread);
+    return CreateClientWithDtlsIdentityStore(
+        id, constraints, options, std::move(dtls_identity_store), true);
   }
 
   static PeerConnectionTestClient* CreateClientPreferNoConstraints(
       const std::string& id,
-      const PeerConnectionFactory::Options* options,
-      rtc::Thread* worker_thread) {
+      const PeerConnectionFactory::Options* options) {
     rtc::scoped_ptr<FakeDtlsIdentityStore> dtls_identity_store(
         rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
                                               : nullptr);
 
-    return CreateClientWithDtlsIdentityStore(id, nullptr, options,
-                                             std::move(dtls_identity_store),
-                                             false, worker_thread);
+    return CreateClientWithDtlsIdentityStore(
+        id, nullptr, options, std::move(dtls_identity_store), false);
   }
 
   ~PeerConnectionTestClient() {
@@ -805,8 +800,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
       rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store,
-      bool prefer_constraint_apis,
-      rtc::Thread* worker_thread) {
+      bool prefer_constraint_apis) {
     EXPECT_TRUE(!peer_connection_);
     EXPECT_TRUE(!peer_connection_factory_);
     if (!prefer_constraint_apis) {
@@ -815,7 +809,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     prefer_constraint_apis_ = prefer_constraint_apis;
 
     rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
-        new cricket::FakePortAllocator(worker_thread, nullptr));
+        new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
     fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
 
     if (fake_audio_capture_module_ == nullptr) {
@@ -824,8 +818,9 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     fake_video_decoder_factory_ = new FakeWebRtcVideoDecoderFactory();
     fake_video_encoder_factory_ = new FakeWebRtcVideoEncoderFactory();
     peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
-        worker_thread, rtc::Thread::Current(), fake_audio_capture_module_,
-        fake_video_encoder_factory_, fake_video_decoder_factory_);
+        rtc::Thread::Current(), rtc::Thread::Current(),
+        fake_audio_capture_module_, fake_video_encoder_factory_,
+        fake_video_decoder_factory_);
     if (!peer_connection_factory_) {
       return false;
     }
@@ -1024,9 +1019,7 @@ class P2PTestConductor : public testing::Test {
   P2PTestConductor()
       : pss_(new rtc::PhysicalSocketServer),
         ss_(new rtc::VirtualSocketServer(pss_.get())),
-        ss_scope_(ss_.get()) {
-    RTC_CHECK(worker_thread_.Start());
-  }
+        ss_scope_(ss_.get()) {}
 
   bool SessionActive() {
     return initiating_client_->SessionActive() &&
@@ -1134,11 +1127,11 @@ class P2PTestConductor : public testing::Test {
 
   bool CreateTestClientsThatPreferNoConstraints() {
     initiating_client_.reset(
-        PeerConnectionTestClient::CreateClientPreferNoConstraints(
-            "Caller: ", nullptr, &worker_thread_));
+        PeerConnectionTestClient::CreateClientPreferNoConstraints("Caller: ",
+                                                                  nullptr));
     receiving_client_.reset(
-        PeerConnectionTestClient::CreateClientPreferNoConstraints(
-            "Callee: ", nullptr, &worker_thread_));
+        PeerConnectionTestClient::CreateClientPreferNoConstraints("Callee: ",
+                                                                  nullptr));
     if (!initiating_client_ || !receiving_client_) {
       return false;
     }
@@ -1158,9 +1151,9 @@ class P2PTestConductor : public testing::Test {
                          MediaConstraintsInterface* recv_constraints,
                          PeerConnectionFactory::Options* recv_options) {
     initiating_client_.reset(PeerConnectionTestClient::CreateClient(
-        "Caller: ", init_constraints, init_options, &worker_thread_));
+        "Caller: ", init_constraints, init_options));
     receiving_client_.reset(PeerConnectionTestClient::CreateClient(
-        "Callee: ", recv_constraints, recv_options, &worker_thread_));
+        "Callee: ", recv_constraints, recv_options));
     if (!initiating_client_ || !receiving_client_) {
       return false;
     }
@@ -1261,8 +1254,7 @@ class P2PTestConductor : public testing::Test {
     // Make sure the new client is using a different certificate.
     return PeerConnectionTestClient::CreateClientWithDtlsIdentityStore(
         "New Peer: ", &setup_constraints, nullptr,
-        std::move(dtls_identity_store), prefer_constraint_apis_,
-        &worker_thread_);
+        std::move(dtls_identity_store), prefer_constraint_apis_);
   }
 
   void SendRtpData(webrtc::DataChannelInterface* dc, const std::string& data) {
@@ -1302,9 +1294,6 @@ class P2PTestConductor : public testing::Test {
   }
 
  private:
-  // |worker_thread_| is used by both |initiating_client_| and
-  // |receiving_client_|. Must be destroyed last.
-  rtc::Thread worker_thread_;
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
   rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
   rtc::SocketServerScope ss_scope_;
