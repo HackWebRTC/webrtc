@@ -195,11 +195,9 @@ class AcmReceiver {
   //
   int RemoveAllCodecs();
 
-  //
-  // Gets the RTP timestamp of the last sample delivered by GetAudio().
-  // Returns true if the RTP timestamp is valid, otherwise false.
-  //
-  bool GetPlayoutTimestamp(uint32_t* timestamp);
+  // Returns the RTP timestamp for the last sample delivered by GetAudio().
+  // The return value will be empty if no valid timestamp is available.
+  rtc::Optional<uint32_t> GetPlayoutTimestamp();
 
   //
   // Get the audio codec associated with the last non-CNG/non-DTMF received

@@ -1522,9 +1522,9 @@ void NetEqDecodingTest::DuplicateCng() {
 }
 
 uint32_t NetEqDecodingTest::PlayoutTimestamp() {
-  uint32_t playout_timestamp = 0;
-  EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&playout_timestamp));
-  return playout_timestamp;
+  rtc::Optional<uint32_t> playout_timestamp = neteq_->GetPlayoutTimestamp();
+  EXPECT_TRUE(playout_timestamp);
+  return playout_timestamp.value_or(0);
 }
 
 TEST_F(NetEqDecodingTest, DiscardDuplicateCng) { DuplicateCng(); }
@@ -1570,5 +1570,4 @@ TEST_F(NetEqDecodingTest, CngFirst) {
   // Verify speech output.
   EXPECT_EQ(AudioFrame::kNormalSpeech, out_frame_.speech_type_);
 }
-
 }  // namespace webrtc

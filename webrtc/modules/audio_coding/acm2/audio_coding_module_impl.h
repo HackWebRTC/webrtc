@@ -157,8 +157,9 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Smallest latency NetEq will maintain.
   int LeastRequiredDelayMs() const override;
 
-  // Get playout timestamp.
-  int PlayoutTimestamp(uint32_t* timestamp) override;
+  RTC_DEPRECATED int32_t PlayoutTimestamp(uint32_t* timestamp) override;
+
+  rtc::Optional<uint32_t> PlayoutTimestamp() override;
 
   // Get 10 milliseconds of raw audio data to play out, and
   // automatic resample to the requested frequency if > 0.

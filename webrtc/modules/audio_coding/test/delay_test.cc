@@ -180,7 +180,6 @@ class DelayTest {
 
     int num_frames = 0;
     int in_file_frames = 0;
-    uint32_t playout_ts;
     uint32_t received_ts;
     double average_delay = 0;
     double inst_delay_sec = 0;
@@ -209,10 +208,11 @@ class DelayTest {
       out_file_b_.Write10MsData(
           audio_frame.data_,
           audio_frame.samples_per_channel_ * audio_frame.num_channels_);
-      acm_b_->PlayoutTimestamp(&playout_ts);
       received_ts = channel_a2b_->LastInTimestamp();
-      inst_delay_sec = static_cast<uint32_t>(received_ts - playout_ts)
-          / static_cast<double>(encoding_sample_rate_hz_);
+      rtc::Optional<uint32_t> playout_timestamp = acm_b_->PlayoutTimestamp();
+      ASSERT_TRUE(playout_timestamp);
+      inst_delay_sec = static_cast<uint32_t>(received_ts - *playout_timestamp) /
+                       static_cast<double>(encoding_sample_rate_hz_);
 
       if (num_frames > 10)
         average_delay = 0.95 * average_delay + 0.05 * inst_delay_sec;

@@ -478,11 +478,11 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // The value of the last of the output samples is the same as the number of
   // samples played from the decoded packet. Thus, this number + the RTP
   // timestamp should match the playout timestamp.
-  uint32_t timestamp = 0;
-  EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
-  EXPECT_EQ(rtp_header.header.timestamp +
-                output.data_[output.samples_per_channel_ - 1],
-            timestamp);
+  // Wrap the expected value in an rtc::Optional to compare them as such.
+  EXPECT_EQ(
+      rtc::Optional<uint32_t>(rtp_header.header.timestamp +
+                              output.data_[output.samples_per_channel_ - 1]),
+      neteq_->GetPlayoutTimestamp());
 
   // Check the timestamp for the last value in the sync buffer. This should
   // be one full frame length ahead of the RTP timestamp.
@@ -714,8 +714,6 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
 
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateKhz);
   AudioFrame output;
-  uint32_t timestamp;
-  uint32_t last_timestamp;
   AudioFrame::SpeechType expected_type[8] = {
       AudioFrame::kNormalSpeech, AudioFrame::kNormalSpeech,
       AudioFrame::kCNG, AudioFrame::kCNG,
@@ -731,16 +729,19 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   };
 
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
-  EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&last_timestamp));
+  rtc::Optional<uint32_t> last_timestamp = neteq_->GetPlayoutTimestamp();
+  ASSERT_TRUE(last_timestamp);
 
   for (size_t i = 1; i < 6; ++i) {
     ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
     EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(expected_type[i - 1], output.speech_type_);
-    EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
+    rtc::Optional<uint32_t> timestamp = neteq_->GetPlayoutTimestamp();
+    EXPECT_TRUE(timestamp);
     EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
-    EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
-    EXPECT_EQ(timestamp, last_timestamp + expected_timestamp_increment[i]);
+    timestamp = neteq_->GetPlayoutTimestamp();
+    ASSERT_TRUE(timestamp);
+    EXPECT_EQ(*timestamp, *last_timestamp + expected_timestamp_increment[i]);
     last_timestamp = timestamp;
   }
 
@@ -756,8 +757,9 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
     EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(expected_type[i - 1], output.speech_type_);
     EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
-    EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
-    EXPECT_EQ(timestamp, last_timestamp + expected_timestamp_increment[i]);
+    rtc::Optional<uint32_t> timestamp = neteq_->GetPlayoutTimestamp();
+    ASSERT_TRUE(timestamp);
+    EXPECT_EQ(*timestamp, *last_timestamp + expected_timestamp_increment[i]);
     last_timestamp = timestamp;
   }
 

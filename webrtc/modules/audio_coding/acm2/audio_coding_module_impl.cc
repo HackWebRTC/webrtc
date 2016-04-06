@@ -902,8 +902,16 @@ int AudioCodingModuleImpl::DisableOpusDtx() {
   return encoder_stack_->SetDtx(false) ? 0 : -1;
 }
 
-int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
-  return receiver_.GetPlayoutTimestamp(timestamp) ? 0 : -1;
+int32_t AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
+  rtc::Optional<uint32_t> ts = PlayoutTimestamp();
+  if (!ts)
+    return -1;
+  *timestamp = *ts;
+  return 0;
+}
+
+rtc::Optional<uint32_t> AudioCodingModuleImpl::PlayoutTimestamp() {
+  return receiver_.GetPlayoutTimestamp();
 }
 
 bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {

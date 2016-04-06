@@ -160,7 +160,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Disables post-decode VAD.
   void DisableVad() override;
 
-  bool GetPlayoutTimestamp(uint32_t* timestamp) override;
+  rtc::Optional<uint32_t> GetPlayoutTimestamp() override;
 
   int last_output_sample_rate_hz() const override;
 

@@ -401,15 +401,15 @@ void NetEqImpl::DisableVad() {
   vad_->Disable();
 }
 
-bool NetEqImpl::GetPlayoutTimestamp(uint32_t* timestamp) {
+rtc::Optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() {
   rtc::CritScope lock(&crit_sect_);
   if (first_packet_) {
     // We don't have a valid RTP timestamp until we have decoded our first
     // RTP packet.
-    return false;
+    return rtc::Optional<uint32_t>();
   }
-  *timestamp = timestamp_scaler_->ToExternal(playout_timestamp_);
-  return true;
+  return rtc::Optional<uint32_t>(
+      timestamp_scaler_->ToExternal(playout_timestamp_));
 }
 
 int NetEqImpl::last_output_sample_rate_hz() const {

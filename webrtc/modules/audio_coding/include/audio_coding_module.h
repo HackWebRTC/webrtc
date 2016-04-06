@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/deprecation.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -647,7 +648,6 @@ class AudioCodingModule {
   //
   virtual int LeastRequiredDelayMs() const = 0;
 
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t PlayoutTimestamp()
   // The send timestamp of an RTP packet is associated with the decoded
   // audio of the packet in question. This function returns the timestamp of
@@ -660,8 +660,16 @@ class AudioCodingModule {
   //    0 if the output is a correct timestamp.
   //   -1 if failed to output the correct timestamp.
   //
-  // TODO(tlegrand): Change function to return the timestamp.
-  virtual int32_t PlayoutTimestamp(uint32_t* timestamp) = 0;
+  RTC_DEPRECATED virtual int32_t PlayoutTimestamp(uint32_t* timestamp) = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int32_t PlayoutTimestamp()
+  // The send timestamp of an RTP packet is associated with the decoded
+  // audio of the packet in question. This function returns the timestamp of
+  // the latest audio obtained by calling PlayoutData10ms(), or empty if no
+  // valid timestamp is available.
+  //
+  virtual rtc::Optional<uint32_t> PlayoutTimestamp() = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t PlayoutData10Ms(

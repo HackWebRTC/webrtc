@@ -666,7 +666,6 @@ void APITest::TestDelay(char side) {
   EventTimerWrapper* myEvent = EventTimerWrapper::Create();
 
   uint32_t inTimestamp = 0;
-  uint32_t outTimestamp = 0;
   double estimDelay = 0;
 
   double averageEstimDelay = 0;
@@ -688,7 +687,8 @@ void APITest::TestDelay(char side) {
   CHECK_ERROR_MT(myACM->SetMinimumPlayoutDelay(*myMinDelay));
 
   inTimestamp = myChannel->LastInTimestamp();
-  CHECK_ERROR_MT(myACM->PlayoutTimestamp(&outTimestamp));
+  rtc::Optional<uint32_t> outTimestamp = myACM->PlayoutTimestamp();
+  CHECK_ERROR_MT(outTimestamp ? 0 : -1);
 
   if (!_randomTest) {
     myEvent->StartTimer(true, 30);
@@ -698,11 +698,12 @@ void APITest::TestDelay(char side) {
       myEvent->Wait(1000);
 
       inTimestamp = myChannel->LastInTimestamp();
-      CHECK_ERROR_MT(myACM->PlayoutTimestamp(&outTimestamp));
+      outTimestamp = myACM->PlayoutTimestamp();
+      CHECK_ERROR_MT(outTimestamp ? 0 : -1);
 
       //std::cout << outTimestamp << std::endl << std::flush;
-      estimDelay = (double) ((uint32_t)(inTimestamp - outTimestamp))
-          / ((double) myACM->ReceiveFrequency() / 1000.0);
+      estimDelay = (double)((uint32_t)(inTimestamp - *outTimestamp)) /
+                   ((double)myACM->ReceiveFrequency() / 1000.0);
 
       estimDelayCB.Update(estimDelay);
 

@@ -16,6 +16,7 @@
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/typedefs.h"
@@ -243,9 +244,9 @@ class NetEq {
   // Disables post-decode VAD.
   virtual void DisableVad() = 0;
 
-  // Gets the RTP timestamp for the last sample delivered by GetAudio().
-  // Returns true if the RTP timestamp is valid, otherwise false.
-  virtual bool GetPlayoutTimestamp(uint32_t* timestamp) = 0;
+  // Returns the RTP timestamp for the last sample delivered by GetAudio().
+  // The return value will be empty if no valid timestamp is available.
+  virtual rtc::Optional<uint32_t> GetPlayoutTimestamp() = 0;
 
   // Returns the sample rate in Hz of the audio produced in the last GetAudio
   // call. If GetAudio has not been called yet, the configured sample rate

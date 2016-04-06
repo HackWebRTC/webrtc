@@ -3288,9 +3288,9 @@ int32_t Channel::MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency) {
 }
 
 void Channel::UpdatePlayoutTimestamp(bool rtcp) {
-  uint32_t playout_timestamp = 0;
+  rtc::Optional<uint32_t> playout_timestamp = audio_coding_->PlayoutTimestamp();
 
-  if (audio_coding_->PlayoutTimestamp(&playout_timestamp) == -1) {
+  if (!playout_timestamp) {
     // This can happen if this channel has not been received any RTP packet. In
     // this case, NetEq is not capable of computing playout timestamp.
     return;
@@ -3307,21 +3307,21 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
     return;
   }
 
-  jitter_buffer_playout_timestamp_ = playout_timestamp;
+  jitter_buffer_playout_timestamp_ = *playout_timestamp;
 
   // Remove the playout delay.
-  playout_timestamp -= (delay_ms * (GetPlayoutFrequency() / 1000));
+  *playout_timestamp -= (delay_ms * (GetPlayoutFrequency() / 1000));
 
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::UpdatePlayoutTimestamp() => playoutTimestamp = %lu",
-               playout_timestamp);
+               *playout_timestamp);
 
   {
     rtc::CritScope lock(&video_sync_lock_);
     if (rtcp) {
-      playout_timestamp_rtcp_ = playout_timestamp;
+      playout_timestamp_rtcp_ = *playout_timestamp;
     } else {
-      playout_timestamp_rtp_ = playout_timestamp;
+      playout_timestamp_rtp_ = *playout_timestamp;
     }
     playout_delay_ms_ = delay_ms;
   }
