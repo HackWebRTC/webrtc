@@ -166,8 +166,6 @@ TEST_WEBRTCVIDEOFRAME(ValidateI420HugeSize)
 // Re-evaluate once WebRTC switches to libyuv
 // TEST_WEBRTCVIDEOFRAME(ConstructYuy2AllSizes)
 // TEST_WEBRTCVIDEOFRAME(ConstructARGBAllSizes)
-TEST_WEBRTCVIDEOFRAME(ResetAndApplyRotation)
-TEST_WEBRTCVIDEOFRAME(ResetAndDontApplyRotation)
 TEST_WEBRTCVIDEOFRAME(ConvertToABGRBuffer)
 TEST_WEBRTCVIDEOFRAME(ConvertToABGRBufferStride)
 TEST_WEBRTCVIDEOFRAME(ConvertToABGRBufferInverted)

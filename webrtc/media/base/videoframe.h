@@ -24,25 +24,6 @@ class VideoFrame {
   VideoFrame() {}
   virtual ~VideoFrame() {}
 
-  virtual bool InitToBlack(int w, int h, int64_t time_stamp) = 0;
-
-  // Creates a frame from a raw sample with FourCC |format| and size |w| x |h|.
-  // |h| can be negative indicating a vertically flipped image.
-  // |dw| is destination width; can be less than |w| if cropping is desired.
-  // |dh| is destination height, like |dw|, but must be a positive number.
-  // Returns whether the function succeeded or failed.
-
-  virtual bool Reset(uint32_t fourcc,
-                     int w,
-                     int h,
-                     int dw,
-                     int dh,
-                     uint8_t* sample,
-                     size_t sample_size,
-                     int64_t time_stamp,
-                     webrtc::VideoRotation rotation,
-                     bool apply_rotation) = 0;
-
   // Basic accessors.
   // Note this is the width and height without rotation applied.
   virtual int width() const = 0;
