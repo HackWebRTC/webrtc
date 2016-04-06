@@ -275,6 +275,12 @@ int EchoCancellationImpl::Enable(bool enable) {
   return AudioProcessing::kNoError;
 }
 
+bool EchoCancellationImpl::is_enabled_render_side_query() const {
+  // TODO(peah): Add threadchecker.
+  rtc::CritScope cs_render(crit_render_);
+  return enabled_;
+}
+
 bool EchoCancellationImpl::is_enabled() const {
   rtc::CritScope cs(crit_capture_);
   return enabled_;

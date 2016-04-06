@@ -310,6 +310,12 @@ int GainControlImpl::Enable(bool enable) {
   return AudioProcessing::kNoError;
 }
 
+bool GainControlImpl::is_enabled_render_side_query() const {
+  // TODO(peah): Add threadchecker.
+  rtc::CritScope cs(crit_render_);
+  return enabled_;
+}
+
 bool GainControlImpl::is_enabled() const {
   rtc::CritScope cs(crit_capture_);
   return enabled_;

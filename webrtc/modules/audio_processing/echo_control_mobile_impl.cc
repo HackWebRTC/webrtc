@@ -278,6 +278,12 @@ int EchoControlMobileImpl::Enable(bool enable) {
   return AudioProcessing::kNoError;
 }
 
+bool EchoControlMobileImpl::is_enabled_render_side_query() const {
+  // TODO(peah): Add threadchecker.
+  rtc::CritScope cs_render(crit_render_);
+  return enabled_;
+}
+
 bool EchoControlMobileImpl::is_enabled() const {
   rtc::CritScope cs(crit_capture_);
   return enabled_;

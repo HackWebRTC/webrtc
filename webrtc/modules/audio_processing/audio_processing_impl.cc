@@ -1157,9 +1157,11 @@ bool AudioProcessingImpl::rev_synthesis_needed() const {
 bool AudioProcessingImpl::rev_analysis_needed() const {
   return formats_.rev_proc_format.sample_rate_hz() == kSampleRate32kHz &&
          (is_rev_processed() ||
-          public_submodules_->echo_cancellation->is_enabled() ||
-          public_submodules_->echo_control_mobile->is_enabled() ||
-          public_submodules_->gain_control->is_enabled());
+          public_submodules_->echo_cancellation
+              ->is_enabled_render_side_query() ||
+          public_submodules_->echo_control_mobile
+              ->is_enabled_render_side_query() ||
+          public_submodules_->gain_control->is_enabled_render_side_query());
 }
 
 bool AudioProcessingImpl::render_check_rev_conversion_needed() const {

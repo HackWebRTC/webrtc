@@ -48,6 +48,11 @@ class EchoCancellationImpl : public EchoCancellation {
   bool is_extended_filter_enabled() const;
   bool is_aec3_enabled() const;
 
+  // Checks whether the module is enabled. Must only be
+  // called from the render side of APM as otherwise
+  // deadlocks may occur.
+  bool is_enabled_render_side_query() const;
+
   // Reads render side data that has been queued on the render call.
   // Called holding the capture lock.
   void ReadQueuedRenderData();
