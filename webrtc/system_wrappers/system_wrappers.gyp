@@ -122,6 +122,13 @@
           'defines': [
             'WEBRTC_THREAD_RR',
           ],
+          'conditions': [
+            ['build_with_chromium==0', {
+              'dependencies': [
+                'cpu_features_webrtc.gyp:cpu_features_linux',
+              ],
+            }],
+          ],
           'link_settings': {
             'libraries': [ '-lrt', ],
           },

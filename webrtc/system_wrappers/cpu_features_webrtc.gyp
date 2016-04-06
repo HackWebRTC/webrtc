@@ -7,6 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'includes': [ '../build/common.gypi', ],
   'conditions': [
     ['OS=="android"', {
       'targets': [
@@ -18,6 +19,20 @@
           ],
           'dependencies': [
             '../../build/android/ndk.gyp:cpu_features',
+          ],
+        },
+      ],
+    }],
+    ['OS=="linux"', {
+      'targets': [
+        {
+          'target_name': 'cpu_features_linux',
+          'type': 'static_library',
+          'sources': [
+            'source/cpu_features_linux.c',
+          ],
+          'dependencies': [
+            '<(webrtc_root)/common.gyp:webrtc_common',
           ],
         },
       ],

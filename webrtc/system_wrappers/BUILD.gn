@@ -107,6 +107,10 @@ static_library("system_wrappers") {
   if (is_linux) {
     defines += [ "WEBRTC_THREAD_RR" ]
 
+    if (!build_with_chromium) {
+      deps += [ ":cpu_features_linux" ]
+    }
+
     libs += [ "rt" ]
   }
 
@@ -175,5 +179,16 @@ if (is_android) {
     deps = [
       "//third_party/android_tools:cpu_features",
     ]
+  }
+}
+
+if (is_linux) {
+  source_set("cpu_features_linux") {
+    sources = [
+      "source/cpu_features_linux.c",
+    ]
+
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
   }
 }
