@@ -590,7 +590,7 @@ static void UpdateLevel(PowerLevel* level, float power) {
 }
 
 static void UpdateMetrics(AecCore* aec) {
-  float dtmp, dtmp2;
+  float dtmp;
 
   const float actThresholdNoisy = 8.0f;
   const float actThresholdClean = 40.0f;
@@ -629,7 +629,6 @@ static void UpdateMetrics(AecCore* aec) {
       // ERL
       dtmp = 10 * static_cast<float>(log10(far_average_level /
                                            near_average_level + 1e-10f));
-      dtmp2 = 10 * static_cast<float>(log10(far_average_level / echo + 1e-10f));
 
       aec->erl.instant = dtmp;
       if (dtmp > aec->erl.max) {
@@ -661,9 +660,9 @@ static void UpdateMetrics(AecCore* aec) {
       suppressedEcho =
           linout_average_level - safety * aec->linoutlevel.minlevel;
 
-      dtmp2 = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
+      aec->aNlp.instant =
+          10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
 
-      aec->aNlp.instant = dtmp2;
       if (dtmp > aec->aNlp.max) {
         aec->aNlp.max = dtmp;
       }
@@ -689,12 +688,8 @@ static void UpdateMetrics(AecCore* aec) {
       // subtract noise power
       suppressedEcho =
           nlpout_average_level - safety * aec->nlpoutlevel.minlevel;
+      dtmp = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
 
-      dtmp = 10 * static_cast<float>(log10(near_average_level /
-                                           nlpout_average_level + 1e-10f));
-      dtmp2 = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
-
-      dtmp = dtmp2;
       aec->erle.instant = dtmp;
       if (dtmp > aec->erle.max) {
         aec->erle.max = dtmp;
