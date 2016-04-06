@@ -212,7 +212,7 @@ class RentACodec {
   // Creates and returns an audio encoder stack constructed to the given
   // specification. If the specification isn't compatible with the encoder, it
   // will be changed to match (things will be switched off). The speech encoder
-  // will be stolen.
+  // will be stolen. If the specification isn't complete, returns nullptr.
   std::unique_ptr<AudioEncoder> RentEncoderStack(StackParameters* param);
 
   // Creates and returns an iSAC decoder.

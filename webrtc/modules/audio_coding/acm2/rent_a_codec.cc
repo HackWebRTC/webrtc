@@ -263,7 +263,8 @@ RentACodec::StackParameters::~StackParameters() = default;
 
 std::unique_ptr<AudioEncoder> RentACodec::RentEncoderStack(
     StackParameters* param) {
-  RTC_DCHECK(param->speech_encoder);
+  if (!param->speech_encoder)
+    return nullptr;
 
   if (param->use_codec_fec) {
     // Switch FEC on. On failure, remember that FEC is off.

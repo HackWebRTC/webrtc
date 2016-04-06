@@ -29,23 +29,19 @@ AudioCoder::~AudioCoder()
 {
 }
 
-int32_t AudioCoder::SetEncodeCodec(const CodecInst& codecInst)
-{
-    if(_acm->RegisterSendCodec((CodecInst&)codecInst) == -1)
-    {
-        return -1;
-    }
-    return 0;
+int32_t AudioCoder::SetEncodeCodec(const CodecInst& codecInst) {
+  const bool success = codec_manager_.RegisterEncoder(codecInst) &&
+                       codec_manager_.MakeEncoder(&rent_a_codec_, _acm.get());
+  return success ? 0 : -1;
 }
 
-int32_t AudioCoder::SetDecodeCodec(const CodecInst& codecInst)
-{
-    if(_acm->RegisterReceiveCodec((CodecInst&)codecInst) == -1)
-    {
-        return -1;
-    }
-    memcpy(&_receiveCodec,&codecInst,sizeof(CodecInst));
-    return 0;
+int32_t AudioCoder::SetDecodeCodec(const CodecInst& codecInst) {
+  if (_acm->RegisterReceiveCodec(
+          codecInst, [&] { return rent_a_codec_.RentIsacDecoder(); }) == -1) {
+    return -1;
+  }
+  memcpy(&_receiveCodec, &codecInst, sizeof(CodecInst));
+  return 0;
 }
 
 int32_t AudioCoder::Decode(AudioFrame& decodedAudio,

@@ -222,13 +222,11 @@ TEST(RentACodecTest, RentEncoderError) {
   EXPECT_FALSE(rent_a_codec.RentEncoder(codec_inst));
 }
 
-#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST(RentACodecTest, RentEncoderStackWithoutSpeechEncoder) {
   RentACodec::StackParameters sp;
   EXPECT_EQ(nullptr, sp.speech_encoder);
-  EXPECT_DEATH(RentACodec().RentEncoderStack(&sp), "");
+  EXPECT_EQ(nullptr, RentACodec().RentEncoderStack(&sp));
 }
-#endif
 
 }  // namespace acm2
 }  // namespace webrtc

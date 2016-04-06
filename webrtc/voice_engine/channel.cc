@@ -43,6 +43,18 @@
 namespace webrtc {
 namespace voe {
 
+namespace {
+
+bool RegisterReceiveCodec(std::unique_ptr<AudioCodingModule>* acm,
+                          acm2::RentACodec* rac,
+                          const CodecInst& ci) {
+  const int result =
+      (*acm)->RegisterReceiveCodec(ci, [&] { return rac->RentIsacDecoder(); });
+  return result == 0;
+}
+
+}  // namespace
+
 const int kTelephoneEventAttenuationdB = 10;
 
 class TransportFeedbackProxy : public TransportFeedbackObserver {
@@ -391,7 +403,7 @@ int32_t Channel::OnInitializeDecoder(
   receiveCodec.pacsize = dummyCodec.pacsize;
 
   // Register the new codec to the ACM
-  if (audio_coding_->RegisterReceiveCodec(receiveCodec) == -1) {
+  if (!RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, receiveCodec)) {
     WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::OnInitializeDecoder() invalid codec ("
                  "pt=%d, name=%s) received - 1",
@@ -965,8 +977,8 @@ int32_t Channel::Init() {
 
     // Register default PT for outband 'telephone-event'
     if (!STR_CASE_CMP(codec.plname, "telephone-event")) {
-      if ((_rtpRtcpModule->RegisterSendPayload(codec) == -1) ||
-          (audio_coding_->RegisterReceiveCodec(codec) == -1)) {
+      if (_rtpRtcpModule->RegisterSendPayload(codec) == -1 ||
+          !RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec)) {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                      "Channel::Init() failed to register outband "
                      "'telephone-event' (%d/%d) correctly",
@@ -975,9 +987,10 @@ int32_t Channel::Init() {
     }
 
     if (!STR_CASE_CMP(codec.plname, "CN")) {
-      if ((audio_coding_->RegisterSendCodec(codec) == -1) ||
-          (audio_coding_->RegisterReceiveCodec(codec) == -1) ||
-          (_rtpRtcpModule->RegisterSendPayload(codec) == -1)) {
+      if (!codec_manager_.RegisterEncoder(codec) ||
+          !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get()) ||
+          !RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec) ||
+          _rtpRtcpModule->RegisterSendPayload(codec) == -1) {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                      "Channel::Init() failed to register CN (%d/%d) "
                      "correctly - 1",
@@ -988,7 +1001,7 @@ int32_t Channel::Init() {
     // Register RED to the receiving side of the ACM.
     // We will not receive an OnInitializeDecoder() callback for RED.
     if (!STR_CASE_CMP(codec.plname, "RED")) {
-      if (audio_coding_->RegisterReceiveCodec(codec) == -1) {
+      if (!RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec)) {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                      "Channel::Init() failed to register RED (%d/%d) "
                      "correctly",
@@ -1194,7 +1207,7 @@ int32_t Channel::DeRegisterVoiceEngineObserver() {
 }
 
 int32_t Channel::GetSendCodec(CodecInst& codec) {
-  auto send_codec = audio_coding_->SendCodec();
+  auto send_codec = codec_manager_.GetCodecInst();
   if (send_codec) {
     codec = *send_codec;
     return 0;
@@ -1210,7 +1223,8 @@ int32_t Channel::SetSendCodec(const CodecInst& codec) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetSendCodec()");
 
-  if (audio_coding_->RegisterSendCodec(codec) != 0) {
+  if (!codec_manager_.RegisterEncoder(codec) ||
+      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
     WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, _channelId),
                  "SetSendCodec() failed to register codec to ACM");
     return -1;
@@ -1257,10 +1271,9 @@ int32_t Channel::SetVADStatus(bool enableVAD,
                               bool disableDTX) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetVADStatus(mode=%d)", mode);
-  assert(!(disableDTX && enableVAD));  // disableDTX mode is deprecated.
-  // To disable VAD, DTX must be disabled too
-  disableDTX = ((enableVAD == false) ? true : disableDTX);
-  if (audio_coding_->SetVAD(!disableDTX, enableVAD, mode) != 0) {
+  RTC_DCHECK(!(disableDTX && enableVAD));  // disableDTX mode is deprecated.
+  if (!codec_manager_.SetVAD(enableVAD, mode) ||
+      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
     _engineStatisticsPtr->SetLastError(VE_AUDIO_CODING_MODULE_ERROR,
                                        kTraceError,
                                        "SetVADStatus() failed to set VAD");
@@ -1272,13 +1285,10 @@ int32_t Channel::SetVADStatus(bool enableVAD,
 int32_t Channel::GetVADStatus(bool& enabledVAD,
                               ACMVADMode& mode,
                               bool& disabledDTX) {
-  if (audio_coding_->VAD(&disabledDTX, &enabledVAD, &mode) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "GetVADStatus() failed to get VAD status");
-    return -1;
-  }
-  disabledDTX = !disabledDTX;
+  const auto* params = codec_manager_.GetStackParams();
+  enabledVAD = params->use_cng;
+  mode = params->vad_mode;
+  disabledDTX = !params->use_cng;
   return 0;
 }
 
@@ -1331,6 +1341,8 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
           codec.plname, codec.pltype, codec.plfreq, codec.channels,
           (codec.rate < 0) ? 0 : codec.rate) != 0) {
     // First attempt to register failed => de-register and try again
+    // TODO(kwiberg): Retrying is probably not necessary, since
+    // AcmReceiver::AddCodec also retries.
     rtp_receiver_->DeRegisterReceivePayload(codec.pltype);
     if (rtp_receiver_->RegisterReceivePayload(
             codec.plname, codec.pltype, codec.plfreq, codec.channels,
@@ -1341,9 +1353,9 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
       return -1;
     }
   }
-  if (audio_coding_->RegisterReceiveCodec(codec) != 0) {
+  if (!RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec)) {
     audio_coding_->UnregisterReceiveCodec(codec.pltype);
-    if (audio_coding_->RegisterReceiveCodec(codec) != 0) {
+    if (!RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec)) {
       _engineStatisticsPtr->SetLastError(
           VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
           "SetRecPayloadType() ACM registration failed - 1");
@@ -1390,7 +1402,8 @@ int32_t Channel::SetSendCNPayloadType(int type, PayloadFrequencies frequency) {
   // Modify the payload type (must be set to dynamic range)
   codec.pltype = type;
 
-  if (audio_coding_->RegisterSendCodec(codec) != 0) {
+  if (!codec_manager_.RegisterEncoder(codec) ||
+      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
         "SetSendCNPayloadType() failed to register CN to ACM");
@@ -2853,7 +2866,8 @@ int Channel::SetREDStatus(bool enable, int redPayloadtype) {
     }
   }
 
-  if (audio_coding_->SetREDStatus(enable) != 0) {
+  if (!codec_manager_.SetCopyRed(enable) ||
+      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
         "SetREDStatus() failed to set RED state in the ACM");
@@ -2863,7 +2877,7 @@ int Channel::SetREDStatus(bool enable, int redPayloadtype) {
 }
 
 int Channel::GetREDStatus(bool& enabled, int& redPayloadtype) {
-  enabled = audio_coding_->REDStatus();
+  enabled = codec_manager_.GetStackParams()->use_red;
   if (enabled) {
     int8_t payloadType = 0;
     if (_rtpRtcpModule->SendREDPayloadType(&payloadType) != 0) {
@@ -2883,7 +2897,8 @@ int Channel::SetCodecFECStatus(bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetCodecFECStatus()");
 
-  if (audio_coding_->SetCodecFEC(enable) != 0) {
+  if (!codec_manager_.SetCodecFEC(enable) ||
+      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
         "SetCodecFECStatus() failed to set FEC state");
@@ -2893,8 +2908,7 @@ int Channel::SetCodecFECStatus(bool enable) {
 }
 
 bool Channel::GetCodecFECStatus() {
-  bool enabled = audio_coding_->CodecFEC();
-  return enabled;
+  return codec_manager_.GetStackParams()->use_codec_fec;
 }
 
 void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
@@ -3442,7 +3456,8 @@ int Channel::SetRedPayloadType(int red_payload_type) {
   }
 
   codec.pltype = red_payload_type;
-  if (audio_coding_->RegisterSendCodec(codec) < 0) {
+  if (!codec_manager_.RegisterEncoder(codec) ||
+      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
         "SetRedPayloadType() RED registration in ACM module failed");

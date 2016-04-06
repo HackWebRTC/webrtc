@@ -14,6 +14,8 @@
 #include <memory>
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/acm2/codec_manager.h"
+#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/typedefs.h"
 
@@ -48,6 +50,8 @@ protected:
 
 private:
  std::unique_ptr<AudioCodingModule> _acm;
+ acm2::CodecManager codec_manager_;
+ acm2::RentACodec rent_a_codec_;
 
     CodecInst _receiveCodec;
 
