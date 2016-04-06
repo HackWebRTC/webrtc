@@ -15,6 +15,7 @@
 
 #include "webrtc/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
@@ -501,7 +502,7 @@ class Channel
   RemoteNtpTimeEstimator ntp_estimator_ GUARDED_BY(ts_stats_lock_);
 
   // Timestamp of the audio pulled from NetEq.
-  uint32_t jitter_buffer_playout_timestamp_;
+  rtc::Optional<uint32_t> jitter_buffer_playout_timestamp_;
   uint32_t playout_timestamp_rtp_ GUARDED_BY(video_sync_lock_);
   uint32_t playout_timestamp_rtcp_;
   uint32_t playout_delay_ms_ GUARDED_BY(video_sync_lock_);

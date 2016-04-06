@@ -743,7 +743,6 @@ Channel::Channel(int32_t channelId,
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
       ntp_estimator_(Clock::GetRealTimeClock()),
-      jitter_buffer_playout_timestamp_(0),
       playout_timestamp_rtp_(0),
       playout_timestamp_rtcp_(0),
       playout_delay_ms_(0),
@@ -3288,11 +3287,11 @@ int32_t Channel::MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency) {
 }
 
 void Channel::UpdatePlayoutTimestamp(bool rtcp) {
-  rtc::Optional<uint32_t> playout_timestamp = audio_coding_->PlayoutTimestamp();
+  jitter_buffer_playout_timestamp_ = audio_coding_->PlayoutTimestamp();
 
-  if (!playout_timestamp) {
-    // This can happen if this channel has not been received any RTP packet. In
-    // this case, NetEq is not capable of computing playout timestamp.
+  if (!jitter_buffer_playout_timestamp_) {
+    // This can happen if this channel has not received any RTP packets. In
+    // this case, NetEq is not capable of computing a playout timestamp.
     return;
   }
 
@@ -3307,21 +3306,22 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
     return;
   }
 
-  jitter_buffer_playout_timestamp_ = *playout_timestamp;
+  RTC_DCHECK(jitter_buffer_playout_timestamp_);
+  uint32_t playout_timestamp = *jitter_buffer_playout_timestamp_;
 
   // Remove the playout delay.
-  *playout_timestamp -= (delay_ms * (GetPlayoutFrequency() / 1000));
+  playout_timestamp -= (delay_ms * (GetPlayoutFrequency() / 1000));
 
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::UpdatePlayoutTimestamp() => playoutTimestamp = %lu",
-               *playout_timestamp);
+               playout_timestamp);
 
   {
     rtc::CritScope lock(&video_sync_lock_);
     if (rtcp) {
-      playout_timestamp_rtcp_ = *playout_timestamp;
+      playout_timestamp_rtcp_ = playout_timestamp;
     } else {
-      playout_timestamp_rtp_ = *playout_timestamp;
+      playout_timestamp_rtp_ = playout_timestamp;
     }
     playout_delay_ms_ = delay_ms;
   }
@@ -3338,17 +3338,23 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
   int rtp_receive_frequency = GetPlayoutFrequency();
 
   // |jitter_buffer_playout_timestamp_| updated in UpdatePlayoutTimestamp for
-  // every incoming packet.
-  uint32_t timestamp_diff_ms =
-      (rtp_timestamp - jitter_buffer_playout_timestamp_) /
-      (rtp_receive_frequency / 1000);
-  if (!IsNewerTimestamp(rtp_timestamp, jitter_buffer_playout_timestamp_) ||
-      timestamp_diff_ms > (2 * kVoiceEngineMaxMinPlayoutDelayMs)) {
-    // If |jitter_buffer_playout_timestamp_| is newer than the incoming RTP
-    // timestamp, the resulting difference is negative, but is set to zero.
-    // This can happen when a network glitch causes a packet to arrive late,
-    // and during long comfort noise periods with clock drift.
-    timestamp_diff_ms = 0;
+  // every incoming packet. May be empty if no valid playout timestamp is
+  // available.
+  // If |rtp_timestamp| is newer than |jitter_buffer_playout_timestamp_|, the
+  // resulting difference is positive and will be used. When the inverse is
+  // true (can happen when a network glitch causes a packet to arrive late,
+  // and during long comfort noise periods with clock drift), or when
+  // |jitter_buffer_playout_timestamp_| has no value, the difference is not
+  // changed from the initial 0.
+  uint32_t timestamp_diff_ms = 0;
+  if (jitter_buffer_playout_timestamp_ &&
+      IsNewerTimestamp(rtp_timestamp, *jitter_buffer_playout_timestamp_)) {
+    timestamp_diff_ms = (rtp_timestamp - *jitter_buffer_playout_timestamp_) /
+                        (rtp_receive_frequency / 1000);
+    if (timestamp_diff_ms > (2 * kVoiceEngineMaxMinPlayoutDelayMs)) {
+      // Diff is too large; set it to zero instead.
+      timestamp_diff_ms = 0;
+    }
   }
 
   uint16_t packet_delay_ms =
