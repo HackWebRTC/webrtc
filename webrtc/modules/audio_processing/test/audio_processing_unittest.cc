@@ -54,12 +54,7 @@ bool write_ref_data = false;
 const google::protobuf::int32 kChannels[] = {1, 2};
 const int kSampleRates[] = {8000, 16000, 32000, 48000};
 
-#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
-// Android doesn't support 48kHz.
-const int kProcessSampleRates[] = {8000, 16000, 32000};
-#elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
 const int kProcessSampleRates[] = {8000, 16000, 32000, 48000};
-#endif
 
 enum StreamDirection { kForward = 0, kReverse };
 

@@ -430,10 +430,10 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) {
   }
 
   if (frame->num_channels_ == num_channels_) {
-    Interleave(data_ptr->ibuf()->channels(), proc_num_frames_, num_channels_,
+    Interleave(data_ptr->ibuf()->channels(), output_num_frames_, num_channels_,
                frame->data_);
   } else {
-    UpmixMonoToInterleaved(data_ptr->ibuf()->channels()[0], proc_num_frames_,
+    UpmixMonoToInterleaved(data_ptr->ibuf()->channels()[0], output_num_frames_,
                            frame->num_channels_, frame->data_);
   }
 }
