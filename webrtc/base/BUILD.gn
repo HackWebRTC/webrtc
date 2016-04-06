@@ -275,15 +275,6 @@ static_library("rtc_base") {
     "networkmonitor.cc",
     "networkmonitor.h",
     "nullsocketserver.h",
-    "openssl.h",
-    "openssladapter.cc",
-    "openssladapter.h",
-    "openssldigest.cc",
-    "openssldigest.h",
-    "opensslidentity.cc",
-    "opensslidentity.h",
-    "opensslstreamadapter.cc",
-    "opensslstreamadapter.h",
     "pathutils.cc",
     "pathutils.h",
     "physicalsocketserver.cc",
@@ -472,10 +463,26 @@ static_library("rtc_base") {
     cflags_cc += [ "-Wno-non-virtual-dtor" ]
   }
 
-  if (rtc_build_ssl) {
-    deps += [ "//third_party/boringssl" ]
-  } else {
-    configs += [ "external_ssl_library" ]
+  # TODO(kjellander): The use_openssl block should really go away in order for
+  # the GN build to be similar to the GYP build. See http://crbug.com/601042 for
+  # more details.
+  if (use_openssl) {
+    if (rtc_build_ssl) {
+      deps += [ "//third_party/boringssl" ]
+    } else {
+      configs += [ "external_ssl_library" ]
+    }
+    sources += [
+      "openssl.h",
+      "openssladapter.cc",
+      "openssladapter.h",
+      "openssldigest.cc",
+      "openssldigest.h",
+      "opensslidentity.cc",
+      "opensslidentity.h",
+      "opensslstreamadapter.cc",
+      "opensslstreamadapter.h",
+    ]
   }
 
   if (is_android) {
@@ -491,6 +498,9 @@ static_library("rtc_base") {
   }
 
   if (is_ios || is_mac) {
+    if (is_ios) {
+      all_dependent_configs = [ ":ios_config" ]
+    }
     sources += [
       "maccocoathreadhelper.h",
       "maccocoathreadhelper.mm",
@@ -603,8 +613,6 @@ static_library("rtc_base") {
 }
 
 if (is_ios) {
-  all_dependent_configs = [ ":ios_config" ]
-
   source_set("rtc_base_objc") {
     deps = [
       ":rtc_base",
