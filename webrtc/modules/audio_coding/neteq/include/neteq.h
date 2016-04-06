@@ -156,8 +156,8 @@ class NetEq {
                                uint32_t receive_timestamp) = 0;
 
   // Instructs NetEq to deliver 10 ms of audio data. The data is written to
-  // |audio_frame|. All data in |audio_frame| is wiped; |data_|, |interleaved_|,
-  // |num_channels_|, |samples_per_channel_|, |speech_type_|, and
+  // |audio_frame|. All data in |audio_frame| is wiped; |data_|, |speech_type_|,
+  // |num_channels_|, |sample_rate_hz_|, |samples_per_channel_|, and
   // |vad_activity_| are updated upon success. If an error is returned, some
   // fields may not have been updated.
   // Returns kOK on success, or kFail in case of an error.
