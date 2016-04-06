@@ -86,12 +86,11 @@ bool TransportController::GetLocalCertificate(
                 transport_name, certificate));
 }
 
-bool TransportController::GetRemoteSSLCertificate(
-    const std::string& transport_name,
-    rtc::SSLCertificate** cert) {
-  return worker_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::GetRemoteSSLCertificate_w, this,
-                transport_name, cert));
+rtc::scoped_ptr<rtc::SSLCertificate>
+TransportController::GetRemoteSSLCertificate(
+    const std::string& transport_name) {
+  return worker_thread_->Invoke<rtc::scoped_ptr<rtc::SSLCertificate>>(rtc::Bind(
+      &TransportController::GetRemoteSSLCertificate_w, this, transport_name));
 }
 
 bool TransportController::SetLocalTransportDescription(
@@ -395,17 +394,17 @@ bool TransportController::GetLocalCertificate_w(
   return t->GetLocalCertificate(certificate);
 }
 
-bool TransportController::GetRemoteSSLCertificate_w(
-    const std::string& transport_name,
-    rtc::SSLCertificate** cert) {
+rtc::scoped_ptr<rtc::SSLCertificate>
+TransportController::GetRemoteSSLCertificate_w(
+    const std::string& transport_name) {
   RTC_DCHECK(worker_thread_->IsCurrent());
 
   Transport* t = GetTransport_w(transport_name);
   if (!t) {
-    return false;
+    return nullptr;
   }
 
-  return t->GetRemoteSSLCertificate(cert);
+  return t->GetRemoteSSLCertificate();
 }
 
 bool TransportController::SetLocalTransportDescription_w(

@@ -260,12 +260,11 @@ class FakeTransportChannel : public TransportChannelImpl,
     return local_cert_;
   }
 
-  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const override {
-    if (!remote_cert_)
-      return false;
-
-    *cert = remote_cert_->GetReference();
-    return true;
+  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+      const override {
+    return remote_cert_ ? rtc::scoped_ptr<rtc::SSLCertificate>(
+                              remote_cert_->GetReference())
+                        : nullptr;
   }
 
   bool ExportKeyingMaterial(const std::string& label,

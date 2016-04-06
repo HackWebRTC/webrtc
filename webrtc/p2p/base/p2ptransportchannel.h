@@ -144,8 +144,9 @@ class P2PTransportChannel : public TransportChannelImpl,
     return nullptr;
   }
 
-  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const override {
-    return false;
+  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+      const override {
+    return nullptr;
   }
 
   // Allows key material to be extracted for external encryption.

@@ -292,8 +292,8 @@ class WebRtcSession : public AudioProviderInterface,
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate);
 
   // Caller owns returned certificate
-  virtual bool GetRemoteSSLCertificate(const std::string& transport_name,
-                                       rtc::SSLCertificate** cert);
+  virtual rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+      const std::string& transport_name);
 
   cricket::DataChannelType data_channel_type() const;
 

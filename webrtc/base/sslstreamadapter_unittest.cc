@@ -474,11 +474,11 @@ class SSLStreamAdapterTestBase : public testing::Test,
       return server_ssl_->GetDtlsSrtpCryptoSuite(retval);
   }
 
-  bool GetPeerCertificate(bool client, rtc::SSLCertificate** cert) {
+  rtc::scoped_ptr<rtc::SSLCertificate> GetPeerCertificate(bool client) {
     if (client)
-      return client_ssl_->GetPeerCertificate(cert);
+      return client_ssl_->GetPeerCertificate();
     else
-      return server_ssl_->GetPeerCertificate(cert);
+      return server_ssl_->GetPeerCertificate();
   }
 
   bool GetSslCipherSuite(bool client, int* retval) {
@@ -1037,19 +1037,15 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
   MAYBE_SKIP_TEST(HaveDtls);
 
   // Peer certificates haven't been received yet.
-  rtc::scoped_ptr<rtc::SSLCertificate> client_peer_cert;
-  ASSERT_FALSE(GetPeerCertificate(true, client_peer_cert.accept()));
-  ASSERT_FALSE(client_peer_cert != NULL);
-
-  rtc::scoped_ptr<rtc::SSLCertificate> server_peer_cert;
-  ASSERT_FALSE(GetPeerCertificate(false, server_peer_cert.accept()));
-  ASSERT_FALSE(server_peer_cert != NULL);
+  ASSERT_FALSE(GetPeerCertificate(true));
+  ASSERT_FALSE(GetPeerCertificate(false));
 
   TestHandshake();
 
   // The client should have a peer certificate after the handshake.
-  ASSERT_TRUE(GetPeerCertificate(true, client_peer_cert.accept()));
-  ASSERT_TRUE(client_peer_cert != NULL);
+  rtc::scoped_ptr<rtc::SSLCertificate> client_peer_cert =
+      GetPeerCertificate(true);
+  ASSERT_TRUE(client_peer_cert);
 
   // It's not kCERT_PEM.
   std::string client_peer_string = client_peer_cert->ToPEMString();
@@ -1059,8 +1055,9 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
   ASSERT_FALSE(client_peer_cert->GetChain());
 
   // The server should have a peer certificate after the handshake.
-  ASSERT_TRUE(GetPeerCertificate(false, server_peer_cert.accept()));
-  ASSERT_TRUE(server_peer_cert != NULL);
+  rtc::scoped_ptr<rtc::SSLCertificate> server_peer_cert =
+      GetPeerCertificate(false);
+  ASSERT_TRUE(server_peer_cert);
 
   // It's kCERT_PEM
   ASSERT_EQ(kCERT_PEM, server_peer_cert->ToPEMString());

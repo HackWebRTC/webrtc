@@ -290,12 +290,11 @@ void OpenSSLStreamAdapter::SetServerRole(SSLRole role) {
   role_ = role;
 }
 
-bool OpenSSLStreamAdapter::GetPeerCertificate(SSLCertificate** cert) const {
-  if (!peer_certificate_)
-    return false;
-
-  *cert = peer_certificate_->GetReference();
-  return true;
+rtc::scoped_ptr<SSLCertificate> OpenSSLStreamAdapter::GetPeerCertificate()
+    const {
+  return peer_certificate_ ? rtc::scoped_ptr<SSLCertificate>(
+                                 peer_certificate_->GetReference())
+                           : nullptr;
 }
 
 bool OpenSSLStreamAdapter::SetPeerCertificateDigest(const std::string

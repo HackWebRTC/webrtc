@@ -154,8 +154,8 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
   // Retrieves the peer's X.509 certificate, if a connection has been
   // established. It returns the transmitted over SSL, including the entire
-  // chain. The returned certificate is owned by the caller.
-  virtual bool GetPeerCertificate(SSLCertificate** cert) const = 0;
+  // chain.
+  virtual rtc::scoped_ptr<SSLCertificate> GetPeerCertificate() const = 0;
 
   // Retrieves the IANA registration id of the cipher suite used for the
   // connection (e.g. 0x2F for "TLS_RSA_WITH_AES_128_CBC_SHA").

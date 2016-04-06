@@ -137,7 +137,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
 
   // Once DTLS has been established, this method retrieves the certificate in
   // use by the remote peer, for use in external identity verification.
-  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const override;
+  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate() const override;
 
   // Once DTLS has established (i.e., this channel is writable), this method
   // extracts the keys negotiated during the DTLS handshake, for use in external

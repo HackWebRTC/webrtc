@@ -59,8 +59,8 @@ class TransportController : public sigslot::has_slots<>,
       const std::string& transport_name,
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate);
   // Caller owns returned certificate
-  bool GetRemoteSSLCertificate(const std::string& transport_name,
-                               rtc::SSLCertificate** cert);
+  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+      const std::string& transport_name);
   bool SetLocalTransportDescription(const std::string& transport_name,
                                     const TransportDescription& tdesc,
                                     ContentAction action,
@@ -166,8 +166,8 @@ class TransportController : public sigslot::has_slots<>,
   bool GetLocalCertificate_w(
       const std::string& transport_name,
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate);
-  bool GetRemoteSSLCertificate_w(const std::string& transport_name,
-                                 rtc::SSLCertificate** cert);
+  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate_w(
+      const std::string& transport_name);
   bool SetLocalTransportDescription_w(const std::string& transport_name,
                                       const TransportDescription& tdesc,
                                       ContentAction action,

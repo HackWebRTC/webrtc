@@ -702,9 +702,10 @@ void StatsCollector::ExtractSessionInfo() {
         local_cert_report_id = r->id();
     }
 
-    rtc::scoped_ptr<rtc::SSLCertificate> cert;
-    if (pc_->session()->GetRemoteSSLCertificate(
-            transport_iter.second.transport_name, cert.accept())) {
+    rtc::scoped_ptr<rtc::SSLCertificate> cert =
+        pc_->session()->GetRemoteSSLCertificate(
+            transport_iter.second.transport_name);
+    if (cert) {
       StatsReport* r = AddCertificateReports(cert.get());
       if (r)
         remote_cert_report_id = r->id();

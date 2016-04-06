@@ -69,7 +69,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
                                 const unsigned char* digest_val,
                                 size_t digest_len) override;
 
-  bool GetPeerCertificate(SSLCertificate** cert) const override;
+  rtc::scoped_ptr<SSLCertificate> GetPeerCertificate() const override;
 
   int StartSSLWithServer(const char* server_name) override;
   int StartSSLWithPeer() override;

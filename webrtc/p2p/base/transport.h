@@ -214,7 +214,7 @@ class Transport : public sigslot::has_slots<> {
   }
 
   // Get a copy of the remote certificate in use by the specified channel.
-  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert);
+  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate();
 
   // Create, destroy, and lookup the channels of this type by their components.
   TransportChannelImpl* CreateChannel(int component);

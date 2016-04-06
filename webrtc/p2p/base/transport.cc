@@ -77,13 +77,13 @@ void Transport::SetIceRole(IceRole role) {
   }
 }
 
-bool Transport::GetRemoteSSLCertificate(rtc::SSLCertificate** cert) {
+rtc::scoped_ptr<rtc::SSLCertificate> Transport::GetRemoteSSLCertificate() {
   if (channels_.empty()) {
-    return false;
+    return nullptr;
   }
 
   auto iter = channels_.begin();
-  return iter->second->GetRemoteSSLCertificate(cert);
+  return iter->second->GetRemoteSSLCertificate();
 }
 
 void Transport::SetIceConfig(const IceConfig& config) {

@@ -250,13 +250,13 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetRemoteSSLCertificate(
-    rtc::SSLCertificate** cert) const {
+rtc::scoped_ptr<rtc::SSLCertificate>
+DtlsTransportChannelWrapper::GetRemoteSSLCertificate() const {
   if (!dtls_) {
-    return false;
+    return nullptr;
   }
 
-  return dtls_->GetPeerCertificate(cert);
+  return dtls_->GetPeerCertificate();
 }
 
 bool DtlsTransportChannelWrapper::SetupDtls() {

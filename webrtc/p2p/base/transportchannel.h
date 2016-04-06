@@ -129,8 +129,9 @@ class TransportChannel : public sigslot::has_slots<> {
   virtual rtc::scoped_refptr<rtc::RTCCertificate>
   GetLocalCertificate() const = 0;
 
-  // Gets a copy of the remote side's SSL certificate, owned by the caller.
-  virtual bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const = 0;
+  // Gets a copy of the remote side's SSL certificate.
+  virtual rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+      const = 0;
 
   // Allows key material to be extracted for external encryption.
   virtual bool ExportKeyingMaterial(const std::string& label,
