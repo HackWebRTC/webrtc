@@ -246,7 +246,7 @@ class NetEq {
 
   // Returns the RTP timestamp for the last sample delivered by GetAudio().
   // The return value will be empty if no valid timestamp is available.
-  virtual rtc::Optional<uint32_t> GetPlayoutTimestamp() = 0;
+  virtual rtc::Optional<uint32_t> GetPlayoutTimestamp() const = 0;
 
   // Returns the sample rate in Hz of the audio produced in the last GetAudio
   // call. If GetAudio has not been called yet, the configured sample rate

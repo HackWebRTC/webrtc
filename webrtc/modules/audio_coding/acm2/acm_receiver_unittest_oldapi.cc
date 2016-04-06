@@ -326,6 +326,9 @@ class AcmReceiverTestFaxModeOldApi : public AcmReceiverTestOldApi {
         rtc::CheckedDivExact(5 * output_sample_rate_hz, 8000);
 
     AudioFrame frame;
+    EXPECT_EQ(0, receiver_->GetAudio(output_sample_rate_hz, &frame));
+    // Expect timestamp = 0 before first packet is inserted.
+    EXPECT_EQ(0u, frame.timestamp_);
     for (int i = 0; i < 5; ++i) {
       InsertOnePacketOfSilence(codec.id);
       for (int k = 0; k < num_10ms_frames; ++k) {

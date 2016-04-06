@@ -401,7 +401,7 @@ void NetEqImpl::DisableVad() {
   vad_->Disable();
 }
 
-rtc::Optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() {
+rtc::Optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() const {
   rtc::CritScope lock(&crit_sect_);
   if (first_packet_) {
     // We don't have a valid RTP timestamp until we have decoded our first
@@ -966,6 +966,15 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame) {
     // Use dead reckoning to estimate the |playout_timestamp_|.
     playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
   }
+  // Set the timestamp in the audio frame to zero before the first packet has
+  // been inserted. Otherwise, subtract the frame size in samples to get the
+  // timestamp of the first sample in the frame (playout_timestamp_ is the
+  // last + 1).
+  audio_frame->timestamp_ =
+      first_packet_
+          ? 0
+          : timestamp_scaler_->ToExternal(playout_timestamp_) -
+                static_cast<uint32_t>(audio_frame->samples_per_channel_);
 
   if (decode_return_value) return decode_return_value;
   return return_value;

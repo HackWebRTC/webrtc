@@ -191,21 +191,6 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
              audio_frame->num_channels_);
 
   call_stats_.DecodedByNetEq(audio_frame->speech_type_);
-
-  // Computes the RTP timestamp of the first sample in |audio_frame| from
-  // |GetPlayoutTimestamp|, which is the timestamp of the last sample of
-  // |audio_frame|.
-  // TODO(henrik.lundin) Move setting of audio_frame->timestamp_ inside NetEq.
-  rtc::Optional<uint32_t> playout_timestamp = GetPlayoutTimestamp();
-  if (playout_timestamp) {
-    audio_frame->timestamp_ =
-        *playout_timestamp -
-        static_cast<uint32_t>(audio_frame->samples_per_channel_);
-  } else {
-    // Remain 0 until we have a valid |playout_timestamp|.
-    audio_frame->timestamp_ = 0;
-  }
-
   return 0;
 }
 
