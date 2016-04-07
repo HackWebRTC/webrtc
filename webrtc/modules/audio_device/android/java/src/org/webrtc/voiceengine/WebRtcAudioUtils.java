@@ -42,6 +42,7 @@ public final class WebRtcAudioUtils {
   private static final String[] BLACKLISTED_AEC_MODELS = new String[] {
       "D6503",      // Sony Xperia Z2 D6503
       "ONE A2005",  // OnePlus 2
+      "MotoG3",     // Moto G (3rd Generation)
   };
   private static final String[] BLACKLISTED_AGC_MODELS = new String[] {
       "Nexus 10",
