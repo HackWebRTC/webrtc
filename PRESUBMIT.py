@@ -94,6 +94,23 @@ def _VerifyNativeApiHeadersListIsValid(input_api, output_api):
         non_existing_paths)]
   return []
 
+api_change_msg = """
+You seem to be changing native API header files. Please make sure that you:
+  1. Make compatible changes that don't break existing clients.
+  2. Mark the old stuff as deprecated.
+  3. Create a timeline and plan for when the deprecated stuff will be
+     removed. (The amount of time we give users to change their code
+     should be informed by how much work it is for them. If they just
+     need to replace one name with another or something equally
+     simple, 1-2 weeks might be good; if they need to do serious work,
+     up to 3 months may be called for.)
+  4. Update/inform existing downstream code owners to stop using the
+     deprecated stuff. (Send announcements to
+     discuss-webrtc@googlegroups.com and webrtc-users@google.com.)
+  5. Remove the deprecated stuff, once the agreed-upon amount of time
+     has passed.
+Related files:
+"""
 
 def _CheckNativeApiHeaderChanges(input_api, output_api):
   """Checks to remind proper changing of native APIs."""
@@ -105,20 +122,7 @@ def _CheckNativeApiHeaderChanges(input_api, output_api):
           files.append(f)
 
   if files:
-    return [output_api.PresubmitNotifyResult(
-        'You seem to be changing native API header files. Please make sure '
-        'you:\n'
-        '  1. Make compatible changes that don\'t break existing clients.\n'
-        '  2. Mark the old APIs as deprecated.\n'
-        '  3. Create a timeline and plan for when the deprecated method will '
-        'be removed (preferably 3 months or so).\n'
-        '  4. Update/inform existing downstream code owners to stop using the '
-        'deprecated APIs: \n'
-        'send announcement to discuss-webrtc@googlegroups.com and '
-        'webrtc-users@google.com.\n'
-        '  5. (after ~3 months) remove the deprecated API.\n'
-        'Related files:',
-        files)]
+    return [output_api.PresubmitNotifyResult(api_change_msg, files)]
   return []
 
 
