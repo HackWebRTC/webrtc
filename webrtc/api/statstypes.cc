@@ -363,6 +363,8 @@ bool StatsReport::Value::bool_val() const {
 
 const char* StatsReport::Value::display_name() const {
   switch (name) {
+    case kStatsValueNameAecDivergentFilterFraction:
+      return "aecDivergentFilterFraction";
     case kStatsValueNameAudioOutputLevel:
       return "audioOutputLevel";
     case kStatsValueNameAudioInputLevel:

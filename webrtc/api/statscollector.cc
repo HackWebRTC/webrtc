@@ -937,6 +937,9 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
         report, stats.typing_noise_detected, stats.echo_return_loss,
         stats.echo_return_loss_enhancement, stats.echo_delay_median_ms,
         stats.aec_quality_min, stats.echo_delay_std_ms);
+
+    report->AddFloat(StatsReport::kStatsValueNameAecDivergentFilterFraction,
+                     stats.aec_divergent_filter_fraction);
   }
 }
 

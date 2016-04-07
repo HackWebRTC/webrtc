@@ -99,6 +99,7 @@ class StatsReport {
 
   enum StatsValueName {
     kStatsValueNameActiveConnection,
+    kStatsValueNameAecDivergentFilterFraction,
     kStatsValueNameAudioInputLevel,
     kStatsValueNameAudioOutputLevel,
     kStatsValueNameBytesReceived,
