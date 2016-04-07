@@ -35,22 +35,24 @@ BEGIN_PROXY_MAP(AudioTrack)
   PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
 END_PROXY()
 
-BEGIN_PROXY_MAP(VideoTrack)
+BEGIN_WORKER_PROXY_MAP(VideoTrack)
   PROXY_CONSTMETHOD0(std::string, kind)
   PROXY_CONSTMETHOD0(std::string, id)
   PROXY_CONSTMETHOD0(TrackState, state)
   PROXY_CONSTMETHOD0(bool, enabled)
   PROXY_METHOD1(bool, set_enabled, bool)
-  PROXY_METHOD2(void,
+  PROXY_WORKER_METHOD2(void,
                 AddOrUpdateSink,
                 rtc::VideoSinkInterface<cricket::VideoFrame>*,
                 const rtc::VideoSinkWants&)
-  PROXY_METHOD1(void, RemoveSink, rtc::VideoSinkInterface<cricket::VideoFrame>*)
+  PROXY_WORKER_METHOD1(void,
+                       RemoveSink,
+                       rtc::VideoSinkInterface<cricket::VideoFrame>*)
   PROXY_CONSTMETHOD0(VideoTrackSourceInterface*, GetSource)
 
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
   PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
-END_PROXY()
+END_WORKER_PROXY()
 
 }  // namespace webrtc
 

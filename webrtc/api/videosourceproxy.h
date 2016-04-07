@@ -20,23 +20,25 @@ namespace webrtc {
 // implementation is
 // destroyed on the signaling thread and marshals all method calls to the
 // signaling thread.
-BEGIN_PROXY_MAP(VideoTrackSource)
-PROXY_CONSTMETHOD0(SourceState, state)
-PROXY_CONSTMETHOD0(bool, remote)
-PROXY_METHOD0(cricket::VideoCapturer*, GetVideoCapturer)
-PROXY_METHOD0(void, Stop)
-PROXY_METHOD0(void, Restart)
-PROXY_CONSTMETHOD0(bool, is_screencast)
-PROXY_CONSTMETHOD0(rtc::Optional<bool>, needs_denoising)
-PROXY_METHOD1(bool, GetStats, Stats*)
-PROXY_METHOD2(void,
-              AddOrUpdateSink,
-              rtc::VideoSinkInterface<cricket::VideoFrame>*,
-              const rtc::VideoSinkWants&)
-PROXY_METHOD1(void, RemoveSink, rtc::VideoSinkInterface<cricket::VideoFrame>*)
-PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
-PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
-END_PROXY()
+BEGIN_WORKER_PROXY_MAP(VideoTrackSource)
+  PROXY_CONSTMETHOD0(SourceState, state)
+  PROXY_CONSTMETHOD0(bool, remote)
+  PROXY_METHOD0(cricket::VideoCapturer*, GetVideoCapturer)
+  PROXY_METHOD0(void, Stop)
+  PROXY_METHOD0(void, Restart)
+  PROXY_CONSTMETHOD0(bool, is_screencast)
+  PROXY_CONSTMETHOD0(rtc::Optional<bool>, needs_denoising)
+  PROXY_METHOD1(bool, GetStats, Stats*)
+  PROXY_WORKER_METHOD2(void,
+                       AddOrUpdateSink,
+                       rtc::VideoSinkInterface<cricket::VideoFrame>*,
+                       const rtc::VideoSinkWants&)
+  PROXY_WORKER_METHOD1(void,
+                       RemoveSink,
+                       rtc::VideoSinkInterface<cricket::VideoFrame>*)
+  PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
+  PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
+END_WORKER_PROXY()
 
 }  // namespace webrtc
 

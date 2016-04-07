@@ -75,6 +75,7 @@ class VideoCapturerTrackSource : public VideoTrackSource,
                      cricket::CaptureState capture_state);
 
   rtc::Thread* signaling_thread_;
+  rtc::Thread* worker_thread_;
   rtc::AsyncInvoker invoker_;
   rtc::scoped_ptr<cricket::VideoCapturer> video_capturer_;
   bool started_;

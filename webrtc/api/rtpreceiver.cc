@@ -12,6 +12,7 @@
 
 #include "webrtc/api/mediastreamtrackproxy.h"
 #include "webrtc/api/audiotrack.h"
+#include "webrtc/api/videosourceproxy.h"
 #include "webrtc/api/videotrack.h"
 
 namespace webrtc {
@@ -81,11 +82,15 @@ VideoRtpReceiver::VideoRtpReceiver(MediaStreamInterface* stream,
       ssrc_(ssrc),
       provider_(provider),
       source_(new RefCountedObject<VideoTrackSource>(&broadcaster_,
-                                                     worker_thread,
                                                      true /* remote */)),
       track_(VideoTrackProxy::Create(
           rtc::Thread::Current(),
-          VideoTrack::Create(track_id, source_.get()))) {
+          worker_thread,
+          VideoTrack::Create(
+              track_id,
+              VideoTrackSourceProxy::Create(rtc::Thread::Current(),
+                                            worker_thread,
+                                            source_)))) {
   source_->SetState(MediaSourceInterface::kLive);
   provider_->SetVideoPlayout(ssrc_, true, &broadcaster_);
   stream->AddTrack(track_);

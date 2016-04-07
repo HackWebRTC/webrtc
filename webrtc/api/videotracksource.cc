@@ -12,18 +12,14 @@
 
 #include <string>
 
-#include "webrtc/base/bind.h"
-
 namespace webrtc {
 
 VideoTrackSource::VideoTrackSource(
     rtc::VideoSourceInterface<cricket::VideoFrame>* source,
-    rtc::Thread* worker_thread,
     bool remote)
-    : source_(source),
-      worker_thread_(worker_thread),
-      state_(kInitializing),
-      remote_(remote) {}
+    : source_(source), state_(kInitializing), remote_(remote) {
+  worker_thread_checker_.DetachFromThread();
+}
 
 void VideoTrackSource::SetState(SourceState new_state) {
   if (state_ != new_state) {
@@ -39,22 +35,20 @@ void VideoTrackSource::OnSourceDestroyed() {
 void VideoTrackSource::AddOrUpdateSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (!source_) {
     return;
   }
-  worker_thread_->Invoke<void>(rtc::Bind(
-      &rtc::VideoSourceInterface<cricket::VideoFrame>::AddOrUpdateSink, source_,
-      sink, wants));
+  source_->AddOrUpdateSink(sink, wants);
 }
 
 void VideoTrackSource::RemoveSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (!source_) {
     return;
   }
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&rtc::VideoSourceInterface<cricket::VideoFrame>::RemoveSink,
-                source_, sink));
+  source_->RemoveSink(sink);
 }
 
 }  //  namespace webrtc

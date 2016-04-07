@@ -20,6 +20,7 @@ VideoTrack::VideoTrack(const std::string& label,
                        VideoTrackSourceInterface* video_source)
     : MediaStreamTrack<VideoTrackInterface>(label),
       video_source_(video_source) {
+  worker_thread_checker_.DetachFromThread();
   video_source_->RegisterObserver(this);
 }
 
@@ -31,10 +32,12 @@ std::string VideoTrack::kind() const {
   return kVideoKind;
 }
 
+// AddOrUpdateSink and RemoveSink should be called on the worker
+// thread.
 void VideoTrack::AddOrUpdateSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   VideoSourceBase::AddOrUpdateSink(sink, wants);
   rtc::VideoSinkWants modified_wants = wants;
   modified_wants.black_frames = !enabled();
@@ -43,23 +46,25 @@ void VideoTrack::AddOrUpdateSink(
 
 void VideoTrack::RemoveSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   VideoSourceBase::RemoveSink(sink);
   video_source_->RemoveSink(sink);
 }
 
 bool VideoTrack::set_enabled(bool enable) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(signaling_thread_checker_.CalledOnValidThread());
   for (auto& sink_pair : sink_pairs()) {
     rtc::VideoSinkWants modified_wants = sink_pair.wants;
     modified_wants.black_frames = !enable;
+    // video_source_ is a proxy object, marshalling the call to the
+    // worker thread.
     video_source_->AddOrUpdateSink(sink_pair.sink, modified_wants);
   }
   return MediaStreamTrack<VideoTrackInterface>::set_enabled(enable);
 }
 
 void VideoTrack::OnChanged() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(signaling_thread_checker_.CalledOnValidThread());
   if (video_source_->state() == MediaSourceInterface::kEnded) {
     set_state(kEnded);
   } else {

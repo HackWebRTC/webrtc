@@ -30,18 +30,20 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
       rtc::scoped_ptr<cricket::PortAllocator> a3,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> a4,
       PeerConnectionObserver* a5) override {
-    return owner_thread_->Invoke<rtc::scoped_refptr<PeerConnectionInterface>>(
-        rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot, this,
-                  a1, a2, a3.release(), a4.release(), a5));
+    return signaling_thread_
+        ->Invoke<rtc::scoped_refptr<PeerConnectionInterface>>(
+            rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot,
+                      this, a1, a2, a3.release(), a4.release(), a5));
   }
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& a1,
       rtc::scoped_ptr<cricket::PortAllocator> a3,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> a4,
       PeerConnectionObserver* a5) override {
-    return owner_thread_->Invoke<rtc::scoped_refptr<PeerConnectionInterface>>(
-        rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot, this,
-                  a1, a3.release(), a4.release(), a5));
+    return signaling_thread_
+        ->Invoke<rtc::scoped_refptr<PeerConnectionInterface>>(
+            rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot,
+                      this, a1, a3.release(), a4.release(), a5));
   }
   PROXY_METHOD1(rtc::scoped_refptr<MediaStreamInterface>,
                 CreateLocalMediaStream, const std::string&)

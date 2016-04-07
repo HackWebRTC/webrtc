@@ -13,6 +13,7 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/notifier.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videosinkinterface.h"
 
@@ -22,7 +23,6 @@ namespace webrtc {
 class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
  public:
   VideoTrackSource(rtc::VideoSourceInterface<cricket::VideoFrame>* source,
-                   rtc::Thread* worker_thread,
                    bool remote);
   void SetState(SourceState new_state);
   // OnSourceDestroyed clears this instance pointer to |source_|. It is useful
@@ -48,12 +48,9 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
 
   cricket::VideoCapturer* GetVideoCapturer() override { return nullptr; }
 
- protected:
-  rtc::Thread* worker_thread() { return worker_thread_; }
-
  private:
+  rtc::ThreadChecker worker_thread_checker_;
   rtc::VideoSourceInterface<cricket::VideoFrame>* source_;
-  rtc::Thread* worker_thread_;
   cricket::VideoOptions options_;
   SourceState state_;
   const bool remote_;

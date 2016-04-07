@@ -211,7 +211,8 @@ PeerConnectionFactory::CreateVideoSource(
   rtc::scoped_refptr<VideoTrackSourceInterface> source(
       VideoCapturerTrackSource::Create(worker_thread_, capturer, constraints,
                                        false));
-  return VideoTrackSourceProxy::Create(signaling_thread_, source);
+  return VideoTrackSourceProxy::Create(signaling_thread_, worker_thread_,
+                                       source);
 }
 
 rtc::scoped_refptr<VideoTrackSourceInterface>
@@ -219,7 +220,8 @@ PeerConnectionFactory::CreateVideoSource(cricket::VideoCapturer* capturer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoTrackSourceInterface> source(
       VideoCapturerTrackSource::Create(worker_thread_, capturer, false));
-  return VideoTrackSourceProxy::Create(signaling_thread_, source);
+  return VideoTrackSourceProxy::Create(signaling_thread_, worker_thread_,
+                                       source);
 }
 
 bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file,
@@ -321,7 +323,7 @@ rtc::scoped_refptr<VideoTrackInterface> PeerConnectionFactory::CreateVideoTrack(
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoTrackInterface> track(
       VideoTrack::Create(id, source));
-  return VideoTrackProxy::Create(signaling_thread_, track);
+  return VideoTrackProxy::Create(signaling_thread_, worker_thread_, track);
 }
 
 rtc::scoped_refptr<AudioTrackInterface>

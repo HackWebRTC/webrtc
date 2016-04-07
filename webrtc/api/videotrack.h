@@ -47,7 +47,8 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
   // Implements ObserverInterface. Observes |video_source_| state.
   void OnChanged() override;
 
-  rtc::ThreadChecker thread_checker_;
+  rtc::ThreadChecker signaling_thread_checker_;
+  rtc::ThreadChecker worker_thread_checker_;
   rtc::scoped_refptr<VideoTrackSourceInterface> video_source_;
 };
 

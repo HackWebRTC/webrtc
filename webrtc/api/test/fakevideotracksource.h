@@ -30,7 +30,6 @@ class FakeVideoTrackSource : public VideoTrackSource {
  protected:
   FakeVideoTrackSource()
       : VideoTrackSource(&fake_video_capturer_,
-                         rtc::Thread::Current(),
                          false /* remote */) {}
   virtual ~FakeVideoTrackSource() {}
 

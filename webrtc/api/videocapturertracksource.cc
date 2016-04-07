@@ -286,8 +286,9 @@ VideoCapturerTrackSource::VideoCapturerTrackSource(
     rtc::Thread* worker_thread,
     cricket::VideoCapturer* capturer,
     bool remote)
-    : VideoTrackSource(capturer, worker_thread, remote),
+    : VideoTrackSource(capturer, remote),
       signaling_thread_(rtc::Thread::Current()),
+      worker_thread_(worker_thread),
       video_capturer_(capturer),
       started_(false) {
   video_capturer_->SignalStateChange.connect(
@@ -350,7 +351,7 @@ void VideoCapturerTrackSource::Initialize(
 
   format_ = GetBestCaptureFormat(formats);
   // Start the camera with our best guess.
-  if (!worker_thread()->Invoke<bool>(
+  if (!worker_thread_->Invoke<bool>(
           rtc::Bind(&cricket::VideoCapturer::StartCapturing,
                     video_capturer_.get(), format_))) {
     SetState(kEnded);
@@ -370,7 +371,7 @@ void VideoCapturerTrackSource::Stop() {
     return;
   }
   started_ = false;
-  worker_thread()->Invoke<void>(
+  worker_thread_->Invoke<void>(
       rtc::Bind(&cricket::VideoCapturer::Stop, video_capturer_.get()));
 }
 
@@ -378,7 +379,7 @@ void VideoCapturerTrackSource::Restart() {
   if (started_) {
     return;
   }
-  if (!worker_thread()->Invoke<bool>(
+  if (!worker_thread_->Invoke<bool>(
           rtc::Bind(&cricket::VideoCapturer::StartCapturing,
                     video_capturer_.get(), format_))) {
     SetState(kEnded);
