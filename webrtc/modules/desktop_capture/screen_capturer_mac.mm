@@ -22,7 +22,9 @@
 #include <OpenGL/CGLMacro.h>
 #include <OpenGL/OpenGL.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/macutils.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
@@ -188,8 +190,6 @@ class ScreenCapturerMac : public ScreenCapturer {
       rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor);
   virtual ~ScreenCapturerMac();
 
-  bool Init();
-
   // Overridden from ScreenCapturer:
   void Start(Callback* callback) override;
   void Capture(const DesktopRegion& region) override;
@@ -198,6 +198,8 @@ class ScreenCapturerMac : public ScreenCapturer {
   bool SelectScreen(ScreenId id) override;
 
  private:
+  bool Initialize();
+
   void GlBlitFast(const DesktopFrame& frame,
                   const DesktopRegion& region);
   void GlBlitSlow(const DesktopFrame& frame);
@@ -228,9 +230,11 @@ class ScreenCapturerMac : public ScreenCapturer {
 
   DesktopFrame* CreateFrame();
 
-  Callback* callback_;
+  rtc::ThreadChecker thread_checker_;
 
-  CGLContextObj cgl_context_;
+  Callback* callback_ = nullptr;
+
+  CGLContextObj cgl_context_ = nullptr;
   ScopedPixelBufferObject pixel_buffer_object_;
 
   // Queue of the frames buffers.
@@ -241,13 +245,13 @@ class ScreenCapturerMac : public ScreenCapturer {
 
   // Currently selected display, or 0 if the full desktop is selected. On OS X
   // 10.6 and before, this is always 0.
-  CGDirectDisplayID current_display_;
+  CGDirectDisplayID current_display_ = 0;
 
   // The physical pixel bounds of the current screen.
   DesktopRect screen_pixel_bounds_;
 
   // The dip to physical pixel scale of the current screen.
-  float dip_to_pixel_scale_;
+  float dip_to_pixel_scale_ = 1.0f;
 
   // A thread-safe list of invalid rectangles, and the size of the most
   // recently captured screen.
@@ -260,20 +264,20 @@ class ScreenCapturerMac : public ScreenCapturer {
   rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor_;
 
   // Power management assertion to prevent the screen from sleeping.
-  IOPMAssertionID power_assertion_id_display_;
+  IOPMAssertionID power_assertion_id_display_ = kIOPMNullAssertionID;
 
   // Power management assertion to indicate that the user is active.
-  IOPMAssertionID power_assertion_id_user_;
+  IOPMAssertionID power_assertion_id_user_ = kIOPMNullAssertionID;
 
   // Dynamically link to deprecated APIs for Mac OS X 10.6 support.
-  void* app_services_library_;
-  CGDisplayBaseAddressFunc cg_display_base_address_;
-  CGDisplayBytesPerRowFunc cg_display_bytes_per_row_;
-  CGDisplayBitsPerPixelFunc cg_display_bits_per_pixel_;
-  void* opengl_library_;
-  CGLSetFullScreenFunc cgl_set_full_screen_;
+  void* app_services_library_ = nullptr;
+  CGDisplayBaseAddressFunc cg_display_base_address_ = nullptr;
+  CGDisplayBytesPerRowFunc cg_display_bytes_per_row_ = nullptr;
+  CGDisplayBitsPerPixelFunc cg_display_bits_per_pixel_ = nullptr;
+  void* opengl_library_ = nullptr;
+  CGLSetFullScreenFunc cgl_set_full_screen_ = nullptr;
 
-  CGWindowID excluded_window_;
+  CGWindowID excluded_window_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerMac);
 };
@@ -303,23 +307,15 @@ class InvertedDesktopFrame : public DesktopFrame {
 
 ScreenCapturerMac::ScreenCapturerMac(
     rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor)
-    : callback_(NULL),
-      cgl_context_(NULL),
-      current_display_(0),
-      dip_to_pixel_scale_(1.0f),
-      desktop_config_monitor_(desktop_config_monitor),
-      power_assertion_id_display_(kIOPMNullAssertionID),
-      power_assertion_id_user_(kIOPMNullAssertionID),
-      app_services_library_(NULL),
-      cg_display_base_address_(NULL),
-      cg_display_bytes_per_row_(NULL),
-      cg_display_bits_per_pixel_(NULL),
-      opengl_library_(NULL),
-      cgl_set_full_screen_(NULL),
-      excluded_window_(0) {
+    : desktop_config_monitor_(desktop_config_monitor) {
+  // ScreenCapturer can be used on a thread different from the thread on which
+  // it's created.
+  thread_checker_.DetachFromThread();
 }
 
 ScreenCapturerMac::~ScreenCapturerMac() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   if (power_assertion_id_display_ != kIOPMNullAssertionID) {
     IOPMAssertionRelease(power_assertion_id_display_);
     power_assertion_id_display_ = kIOPMNullAssertionID;
@@ -335,7 +331,7 @@ ScreenCapturerMac::~ScreenCapturerMac() {
   dlclose(opengl_library_);
 }
 
-bool ScreenCapturerMac::Init() {
+bool ScreenCapturerMac::Initialize() {
   if (!RegisterRefreshAndMoveHandlers()) {
     return false;
   }
@@ -359,10 +355,16 @@ void ScreenCapturerMac::ReleaseBuffers() {
 }
 
 void ScreenCapturerMac::Start(Callback* callback) {
-  assert(!callback_);
-  assert(callback);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!callback_);
+  RTC_DCHECK(callback);
 
   callback_ = callback;
+
+  if (!Initialize()) {
+    callback_->OnInitializationFailed();
+    return;
+  }
 
   // Create power management assertions to wake the display and prevent it from
   // going to sleep on user idle.
@@ -381,6 +383,8 @@ void ScreenCapturerMac::Start(Callback* callback) {
 }
 
 void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   TickTime capture_start_time = TickTime::Now();
 
   queue_.MoveToNextFrame();
@@ -449,11 +453,14 @@ void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {
 }
 
 void ScreenCapturerMac::SetExcludedWindow(WindowId window) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   excluded_window_ = window;
 }
 
 bool ScreenCapturerMac::GetScreenList(ScreenList* screens) {
-  assert(screens->size() == 0);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(screens->size() == 0);
+
   if (rtc::GetOSVersionName() < rtc::kMacOSLion) {
     // Single monitor cast is not supported on pre OS X 10.7.
     Screen screen;
@@ -472,6 +479,8 @@ bool ScreenCapturerMac::GetScreenList(ScreenList* screens) {
 }
 
 bool ScreenCapturerMac::SelectScreen(ScreenId id) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   if (rtc::GetOSVersionName() < rtc::kMacOSLion) {
     // Ignore the screen selection on unsupported OS.
     assert(!current_display_);
@@ -980,11 +989,7 @@ ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   if (!options.configuration_monitor())
     return NULL;
 
-  std::unique_ptr<ScreenCapturerMac> capturer(
-      new ScreenCapturerMac(options.configuration_monitor()));
-  if (!capturer->Init())
-    capturer.reset();
-  return capturer.release();
+  return new ScreenCapturerMac(options.configuration_monitor());
 }
 
 }  // namespace webrtc
