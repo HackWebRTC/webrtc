@@ -1887,13 +1887,16 @@ int WebRtcAec_echo_state(AecCore* self) {
 void WebRtcAec_GetEchoStats(AecCore* self,
                             Stats* erl,
                             Stats* erle,
-                            Stats* a_nlp) {
+                            Stats* a_nlp,
+                            float* divergent_filter_fraction) {
   assert(erl != NULL);
   assert(erle != NULL);
   assert(a_nlp != NULL);
   *erl = self->erl;
   *erle = self->erle;
   *a_nlp = self->aNlp;
+  *divergent_filter_fraction =
+      self->divergent_filter_fraction.GetLatestFraction();
 }
 
 void WebRtcAec_SetConfigCore(AecCore* self,

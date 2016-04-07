@@ -95,7 +95,8 @@ int WebRtcAec_echo_state(AecCore* self);
 void WebRtcAec_GetEchoStats(AecCore* self,
                             Stats* erl,
                             Stats* erle,
-                            Stats* a_nlp);
+                            Stats* a_nlp,
+                            float* divergent_filter_fraction);
 #ifdef WEBRTC_AEC_DEBUG_DUMP
 void* WebRtcAec_far_time_buf(AecCore* self);
 #endif

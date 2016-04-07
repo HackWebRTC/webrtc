@@ -381,6 +381,7 @@ int EchoCancellationImpl::GetMetrics(Metrics* metrics) {
   metrics->a_nlp.maximum = my_metrics.aNlp.max;
   metrics->a_nlp.minimum = my_metrics.aNlp.min;
 
+  metrics->divergent_filter_fraction = my_metrics.divergent_filter_fraction;
   return AudioProcessing::kNoError;
 }
 

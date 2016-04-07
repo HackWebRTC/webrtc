@@ -672,6 +672,10 @@ class EchoCancellation {
 
     // (Pre non-linear processing suppression) A_NLP = 10log_10(P_echo / P_a)
     AudioProcessing::Statistic a_nlp;
+
+    // Fraction of time that the AEC linear filter is divergent, in a 0.5-second
+    // non-overlapped aggregation window.
+    float divergent_filter_fraction;
   };
 
   // TODO(ajm): discuss the metrics update period.

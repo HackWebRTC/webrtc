@@ -452,7 +452,8 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
     return AEC_UNINITIALIZED_ERROR;
   }
 
-  WebRtcAec_GetEchoStats(self->aec, &erl, &erle, &a_nlp);
+  WebRtcAec_GetEchoStats(self->aec, &erl, &erle, &a_nlp,
+                         &metrics->divergent_filter_fraction);
 
   // ERL
   metrics->erl.instant = static_cast<int>(erl.instant);

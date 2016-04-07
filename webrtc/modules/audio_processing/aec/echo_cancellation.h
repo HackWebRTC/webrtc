@@ -51,6 +51,7 @@ typedef struct {
   AecLevel erl;
   AecLevel erle;
   AecLevel aNlp;
+  float divergent_filter_fraction;
 } AecMetrics;
 
 struct AecCore;
