@@ -251,10 +251,10 @@ class SurfaceTextureHelper {
 
       // Draw U
       GLES20.glViewport(0, height, uv_width, uv_height);
-      // Matrix * (1;0;0;0) / (2*width). Note that opengl uses column major order.
+      // Matrix * (1;0;0;0) / (width / 2). Note that opengl uses column major order.
       GLES20.glUniform2f(xUnitLoc,
-          transformMatrix[0] / (2.0f*width),
-          transformMatrix[1] / (2.0f*width));
+          2.0f * transformMatrix[0] / width,
+          2.0f * transformMatrix[1] / width);
       GLES20.glUniform4f(coeffsLoc, -0.169f, -0.331f, 0.499f, 0.5f);
       GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
