@@ -232,6 +232,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
 
   StorageType storage;
   bool fec_enabled;
+  bool first_frame = first_frame_sent_();
   {
     CriticalSectionScoped cs(crit_.get());
     FecProtectionParams* fec_params =
@@ -260,6 +261,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
 
   packetizer->SetPayloadData(data, payload_bytes_to_send, frag);
 
+  bool first = true;
   bool last = false;
   while (!last) {
     uint8_t dataBuffer[IP_PACKET_SIZE] = {0};
@@ -268,6 +270,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
                                 &payload_bytes_in_packet, &last)) {
       return -1;
     }
+
     // Write RTP header.
     // Set marker bit true if this is the last packet in frame.
     _rtpSender.BuildRTPheader(
@@ -309,6 +312,18 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
                       _rtpSender.SequenceNumber(), captureTimeStamp,
                       capture_time_ms, storage);
     }
+
+    if (first_frame) {
+      if (first) {
+        LOG(LS_INFO)
+            << "Sent first RTP packet of the first video frame (pre-pacer)";
+      }
+      if (last) {
+        LOG(LS_INFO)
+            << "Sent last RTP packet of the first video frame (pre-pacer)";
+      }
+    }
+    first = false;
   }
 
   TRACE_EVENT_ASYNC_END1(

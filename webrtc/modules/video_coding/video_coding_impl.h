@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/onetimeevent.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/video_coding/codec_database.h"
@@ -219,6 +220,7 @@ class VideoReceiver {
   VCMProcessTimer _retransmissionTimer;
   VCMProcessTimer _keyRequestTimer;
   QpParser qp_parser_;
+  ThreadUnsafeOneTimeEvent first_frame_received_;
 };
 
 }  // namespace vcm

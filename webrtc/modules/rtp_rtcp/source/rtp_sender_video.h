@@ -13,6 +13,7 @@
 
 #include <list>
 
+#include "webrtc/base/onetimeevent.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
@@ -116,6 +117,7 @@ class RTPSenderVideo {
   Bitrate _fecOverheadRate;
   // Bitrate used for video payload and RTP headers
   Bitrate _videoBitrate;
+  OneTimeEvent first_frame_sent_;
 };
 }  // namespace webrtc
 

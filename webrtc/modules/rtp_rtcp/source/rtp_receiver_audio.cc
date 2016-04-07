@@ -194,6 +194,10 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
            rtp_header->type.Audio.numEnergy);
   }
 
+  if (first_packet_received_()) {
+    LOG(LS_INFO) << "Received first audio RTP packet";
+  }
+
   return ParseAudioCodecSpecific(rtp_header,
                                  payload,
                                  payload_length,

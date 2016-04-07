@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_AUDIO_H_
 
 #include "webrtc/common_types.h"
+#include "webrtc/base/onetimeevent.h"
 #include "webrtc/modules/rtp_rtcp/source/dtmf_queue.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
@@ -100,6 +101,7 @@ class RTPSenderAudio : public DTMFqueue {
   // Audio level indication
   // (https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/)
   uint8_t _audioLevel_dBov GUARDED_BY(_sendAudioCritsect);
+  OneTimeEvent first_packet_sent_;
 };
 }  // namespace webrtc
 

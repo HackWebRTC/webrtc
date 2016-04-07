@@ -1282,9 +1282,13 @@ void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
   if (frame.IsSessionComplete()) {
     if (frame.FrameType() == kVideoFrameKey) {
       ++receive_statistics_.key_frames;
+      if (receive_statistics_.key_frames == 1) {
+        LOG(LS_INFO) << "Received first complete key frame";
+      }
     } else {
       ++receive_statistics_.delta_frames;
     }
+
     if (stats_callback_ != NULL)
       stats_callback_->OnFrameCountsUpdated(receive_statistics_);
   }

@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -333,6 +334,7 @@ int32_t RTPSenderAudio::SendAudio(FrameType frameType,
       memcpy(dataBuffer + rtpHeaderLength, payloadData, payloadSize);
     }
   }
+
   {
     CriticalSectionScoped cs(_sendAudioCritsect.get());
     _lastPayloadType = payloadType;
@@ -348,10 +350,14 @@ int32_t RTPSenderAudio::SendAudio(FrameType frameType,
   TRACE_EVENT_ASYNC_END2("webrtc", "Audio", captureTimeStamp, "timestamp",
                          _rtpSender->Timestamp(), "seqnum",
                          _rtpSender->SequenceNumber());
-  return _rtpSender->SendToNetwork(dataBuffer, payloadSize, rtpHeaderLength,
-                                   TickTime::MillisecondTimestamp(),
-                                   kAllowRetransmission,
-                                   RtpPacketSender::kHighPriority);
+  int32_t send_result = _rtpSender->SendToNetwork(
+      dataBuffer, payloadSize, rtpHeaderLength,
+      TickTime::MillisecondTimestamp(), kAllowRetransmission,
+      RtpPacketSender::kHighPriority);
+  if (first_packet_sent_()) {
+    LOG(LS_INFO) << "First audio RTP packet sent to pacer";
+  }
+  return send_result;
 }
 
 // Audio level magnitude and voice activity flag are set for each RTP packet

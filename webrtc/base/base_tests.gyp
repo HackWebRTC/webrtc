@@ -79,6 +79,7 @@
           'multipart_unittest.cc',
           'nat_unittest.cc',
           'network_unittest.cc',
+          'onetimeevent_unittest.cc',
           'optional_unittest.cc',
           'optionsfile_unittest.cc',
           'pathutils_unittest.cc',

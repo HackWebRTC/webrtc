@@ -13,6 +13,7 @@
 
 #include <set>
 
+#include "webrtc/base/onetimeevent.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -118,6 +119,8 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
 
   uint8_t num_energy_;
   uint8_t current_remote_energy_[kRtpCsrcSize];
+
+  ThreadUnsafeOneTimeEvent first_packet_received_;
 };
 }  // namespace webrtc
 

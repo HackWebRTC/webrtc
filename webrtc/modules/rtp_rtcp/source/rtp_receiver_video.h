@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_
 
+#include "webrtc/base/onetimeevent.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
@@ -54,6 +55,9 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
       const PayloadUnion& specific_payload) const override;
 
   void SetPacketOverHead(uint16_t packet_over_head);
+
+ private:
+  OneTimeEvent first_packet_received_;
 };
 }  // namespace webrtc
 
