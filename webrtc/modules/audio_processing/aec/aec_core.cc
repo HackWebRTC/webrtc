@@ -18,6 +18,7 @@
 #include <stdio.h>
 #endif
 
+#include <algorithm>
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>  // size_t
@@ -49,6 +50,12 @@ static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.
 static const size_t kSubCountLen = 4;
 static const size_t kCountLen = 50;
 static const int kDelayMetricsAggregationWindow = 1250;  // 5 seconds at 16 kHz.
+
+// Divergence metric is based on audio level, which gets updated every
+// |kCountLen + 1| * 10 milliseconds. Divergence metric takes the statistics of
+// |kDivergentFilterFractionAggregationWindowSize| samples. Current value
+// corresponds to 0.5 seconds at 16 kHz.
+static const int kDivergentFilterFractionAggregationWindowSize = 25;
 
 // Quantities to control H band scaling for SWB input
 static const float cnScaleHband = 0.4f;  // scale for comfort noise in H band.
@@ -150,12 +157,55 @@ __inline static float MulIm(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bIm + aIm * bRe;
 }
 
-PowerLevel::PowerLevel()
 // TODO(minyue): Due to a legacy bug, |framelevel| and |averagelevel| use a
-// window, of which the length is 1 unit longer than indicated. Remove "+1"
-// when the code is refactored.
-: framelevel(kSubCountLen + 1),
-  averagelevel(kCountLen + 1) {
+// window, of which the length is 1 unit longer than indicated. Remove "+1" when
+// the code is refactored.
+PowerLevel::PowerLevel()
+    : framelevel(kSubCountLen + 1),
+      averagelevel(kCountLen + 1) {
+}
+
+DivergentFilterFraction::DivergentFilterFraction()
+    : count_(0),
+      occurrence_(0),
+      fraction_(-1.0) {
+}
+
+void DivergentFilterFraction::Reset() {
+  Clear();
+  fraction_ = -1.0;
+}
+
+void DivergentFilterFraction::AddObservation(const PowerLevel& nearlevel,
+                                             const PowerLevel& linoutlevel,
+                                             const PowerLevel& nlpoutlevel) {
+  const float near_level = nearlevel.framelevel.GetLatestMean();
+  const float level_increase =
+      linoutlevel.framelevel.GetLatestMean() - near_level;
+  const bool output_signal_active = nlpoutlevel.framelevel.GetLatestMean() >
+          40.0 * nlpoutlevel.minlevel;
+  // Level increase should be, in principle, negative, when the filter
+  // does not diverge. Here we allow some margin (0.01 * near end level) and
+  // numerical error (1.0). We count divergence only when the AEC output
+  // signal is active.
+  if (output_signal_active &&
+      level_increase > std::max(0.01 * near_level, 1.0))
+    occurrence_++;
+  ++count_;
+  if (count_ == kDivergentFilterFractionAggregationWindowSize) {
+    fraction_ = static_cast<float>(occurrence_) /
+        kDivergentFilterFractionAggregationWindowSize;
+    Clear();
+  }
+}
+
+float DivergentFilterFraction::GetLatestFraction() const {
+  return fraction_;
+}
+
+void DivergentFilterFraction::Clear() {
+  count_ = 0;
+  occurrence_ = 0;
 }
 
 // TODO(minyue): Moving some initialization from WebRtcAec_CreateAec() to ctor.
@@ -562,6 +612,8 @@ static void InitMetrics(AecCore* self) {
   InitStats(&self->erle);
   InitStats(&self->aNlp);
   InitStats(&self->rerl);
+
+  self->divergent_filter_fraction.Reset();
 }
 
 static float CalculatePower(const float* in, size_t num_samples) {
@@ -603,6 +655,12 @@ static void UpdateMetrics(AecCore* aec) {
 
   if (aec->echoState) {  // Check if echo is likely present
     aec->stateCounter++;
+  }
+
+  if (aec->linoutlevel.framelevel.EndOfBlock()) {
+    aec->divergent_filter_fraction.AddObservation(aec->nearlevel,
+                                                  aec->linoutlevel,
+                                                  aec->nlpoutlevel);
   }
 
   if (aec->farlevel.averagelevel.EndOfBlock()) {

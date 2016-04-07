@@ -48,6 +48,31 @@ typedef struct PowerLevel {
   float minlevel;
 } PowerLevel;
 
+class DivergentFilterFraction {
+ public:
+  DivergentFilterFraction();
+
+  // Reset.
+  void Reset();
+
+  void AddObservation(const PowerLevel& nearlevel,
+                      const PowerLevel& linoutlevel,
+                      const PowerLevel& nlpoutlevel);
+
+  // Return the latest fraction.
+  float GetLatestFraction() const;
+
+ private:
+  // Clear all values added.
+  void Clear();
+
+  size_t count_;
+  size_t occurrence_;
+  float fraction_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(DivergentFilterFraction);
+};
+
 struct AecCore {
   AecCore();
 
@@ -121,6 +146,7 @@ struct AecCore {
   Stats erle;
   Stats aNlp;
   Stats rerl;
+  DivergentFilterFraction divergent_filter_fraction;
 
   // Quantities to control H band scaling for SWB input
   int freq_avg_ic;       // initial bin for averaging nlp gain
