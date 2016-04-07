@@ -29,9 +29,6 @@ static const int64_t kNumNanosecsPerMillisec =
 static const int64_t kNumNanosecsPerMicrosec =
     kNumNanosecsPerSec / kNumMicrosecsPerSec;
 
-// January 1970, in NTP milliseconds.
-static const int64_t kJan1970AsNtpMillisecs = INT64_C(2208988800000);
-
 typedef uint32_t TimeStamp;
 
 // Returns the current time in milliseconds in 32 bits.
@@ -52,16 +49,9 @@ uint64_t TimeMicros();
 // Returns the current time in nanoseconds.
 uint64_t TimeNanos();
 
-// Stores current time in *tm and microseconds in *microseconds.
-void CurrentTmTime(struct tm *tm, int *microseconds);
-
 // Returns a future timestamp, 'elapsed' milliseconds from now.
 uint32_t TimeAfter(int32_t elapsed);
 
-// Comparisons between time values, which can wrap around.
-bool TimeIsBetween(uint32_t earlier,
-                   uint32_t middle,
-                   uint32_t later);                         // Inclusive
 bool TimeIsLaterOrEqual(uint32_t earlier, uint32_t later);  // Inclusive
 bool TimeIsLater(uint32_t earlier, uint32_t later);         // Exclusive
 
@@ -91,11 +81,6 @@ inline int32_t TimeSince(uint32_t earlier) {
 // The number of milliseconds that will elapse between now and 'later'.
 inline int32_t TimeUntil(uint32_t later) {
   return TimeDiff(later, Time());
-}
-
-// Converts a unix timestamp in nanoseconds to an NTP timestamp in ms.
-inline int64_t UnixTimestampNanosecsToNtpMillisecs(int64_t unix_ts_ns) {
-  return unix_ts_ns / kNumNanosecsPerMillisec + kJan1970AsNtpMillisecs;
 }
 
 class TimestampWrapAroundHandler {

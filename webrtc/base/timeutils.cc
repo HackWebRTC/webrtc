@@ -28,8 +28,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
 
-#define EFFICIENT_IMPLEMENTATION 1
-
 namespace rtc {
 
 const uint32_t HALF = 0x80000000;
@@ -92,108 +90,24 @@ uint64_t TimeMicros() {
   return static_cast<uint64_t>(TimeNanos() / kNumNanosecsPerMicrosec);
 }
 
-#if defined(WEBRTC_WIN)
-static const uint64_t kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
-
-struct timeval {
-  long tv_sec, tv_usec;  // NOLINT
-};
-
-// Emulate POSIX gettimeofday().
-// Based on breakpad/src/third_party/glog/src/utilities.cc
-static int gettimeofday(struct timeval *tv, void *tz) {
-  // FILETIME is measured in tens of microseconds since 1601-01-01 UTC.
-  FILETIME ft;
-  GetSystemTimeAsFileTime(&ft);
-
-  LARGE_INTEGER li;
-  li.LowPart = ft.dwLowDateTime;
-  li.HighPart = ft.dwHighDateTime;
-
-  // Convert to seconds and microseconds since Unix time Epoch.
-  int64_t micros = (li.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10;
-  tv->tv_sec = static_cast<long>(micros / kNumMicrosecsPerSec);  // NOLINT
-  tv->tv_usec = static_cast<long>(micros % kNumMicrosecsPerSec); // NOLINT
-
-  return 0;
-}
-
-// Emulate POSIX gmtime_r().
-static struct tm *gmtime_r(const time_t *timep, struct tm *result) {
-  // On Windows, gmtime is thread safe.
-  struct tm *tm = gmtime(timep);  // NOLINT
-  if (tm == NULL) {
-    return NULL;
-  }
-  *result = *tm;
-  return result;
-}
-#endif  // WEBRTC_WIN
-
-void CurrentTmTime(struct tm *tm, int *microseconds) {
-  struct timeval timeval;
-  if (gettimeofday(&timeval, NULL) < 0) {
-    // Incredibly unlikely code path.
-    timeval.tv_sec = timeval.tv_usec = 0;
-  }
-  time_t secs = timeval.tv_sec;
-  gmtime_r(&secs, tm);
-  *microseconds = timeval.tv_usec;
-}
-
 uint32_t TimeAfter(int32_t elapsed) {
   RTC_DCHECK_GE(elapsed, 0);
   RTC_DCHECK_LT(static_cast<uint32_t>(elapsed), HALF);
   return Time() + elapsed;
 }
 
-bool TimeIsBetween(uint32_t earlier, uint32_t middle, uint32_t later) {
-  if (earlier <= later) {
-    return ((earlier <= middle) && (middle <= later));
-  } else {
-    return !((later < middle) && (middle < earlier));
-  }
-}
-
 bool TimeIsLaterOrEqual(uint32_t earlier, uint32_t later) {
-#if EFFICIENT_IMPLEMENTATION
   int32_t diff = later - earlier;
   return (diff >= 0 && static_cast<uint32_t>(diff) < HALF);
-#else
-  const bool later_or_equal = TimeIsBetween(earlier, later, earlier + HALF);
-  return later_or_equal;
-#endif
 }
 
 bool TimeIsLater(uint32_t earlier, uint32_t later) {
-#if EFFICIENT_IMPLEMENTATION
   int32_t diff = later - earlier;
   return (diff > 0 && static_cast<uint32_t>(diff) < HALF);
-#else
-  const bool earlier_or_equal = TimeIsBetween(later, earlier, later + HALF);
-  return !earlier_or_equal;
-#endif
 }
 
 int32_t TimeDiff(uint32_t later, uint32_t earlier) {
-#if EFFICIENT_IMPLEMENTATION
   return later - earlier;
-#else
-  const bool later_or_equal = TimeIsBetween(earlier, later, earlier + HALF);
-  if (later_or_equal) {
-    if (earlier <= later) {
-      return static_cast<long>(later - earlier);
-    } else {
-      return static_cast<long>(later + (UINT32_MAX - earlier) + 1);
-    }
-  } else {
-    if (later <= earlier) {
-      return -static_cast<long>(earlier - later);
-    } else {
-      return -static_cast<long>(earlier + (UINT32_MAX - later) + 1);
-    }
-  }
-#endif
 }
 
 int64_t TimeDiff64(int64_t later, int64_t earlier) {
