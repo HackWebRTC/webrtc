@@ -445,8 +445,16 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
     registerReceiver();
     if (connectivityManagerDelegate.supportNetworkCallback()) {
-      mobileNetworkCallback = new NetworkCallback();
-      connectivityManagerDelegate.requestMobileNetwork(mobileNetworkCallback);
+      // On Android 6.0.0, the WRITE_SETTINGS permission is necessary for
+      // requestNetwork, so it will fail. This was fixed in Android 6.0.1.
+      NetworkCallback tempNetworkCallback = new NetworkCallback();
+      try {
+        connectivityManagerDelegate.requestMobileNetwork(tempNetworkCallback);
+      } catch (java.lang.SecurityException e) {
+        Logging.w(TAG, "Unable to obtain permission to request a cellular network.");
+        tempNetworkCallback = null;
+      }
+      mobileNetworkCallback = tempNetworkCallback;
       allNetworkCallback = new SimpleNetworkCallback();
       connectivityManagerDelegate.registerNetworkCallback(allNetworkCallback);
     } else {
