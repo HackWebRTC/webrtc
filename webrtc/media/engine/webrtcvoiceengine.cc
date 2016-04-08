@@ -1081,13 +1081,16 @@ int WebRtcVoiceEngine::CreateVoEChannel() {
 class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     : public AudioSource::Sink {
  public:
-  WebRtcAudioSendStream(int ch, webrtc::AudioTransport* voe_audio_transport,
-                        uint32_t ssrc, const std::string& c_name,
+  WebRtcAudioSendStream(int ch,
+                        webrtc::AudioTransport* voe_audio_transport,
+                        uint32_t ssrc,
+                        const std::string& c_name,
                         const std::vector<webrtc::RtpExtension>& extensions,
                         webrtc::Call* call)
       : voe_audio_transport_(voe_audio_transport),
         call_(call),
-        config_(nullptr) {
+        config_(nullptr),
+        rtp_parameters_(CreateRtpParametersWithOneEncoding()) {
     RTC_DCHECK_GE(ch, 0);
     // TODO(solenberg): Once we're not using FakeWebRtcVoiceEngine anymore:
     // RTC_DCHECK(voe_audio_transport);
@@ -1198,6 +1201,15 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     return config_.voe_channel_id;
   }
 
+  const webrtc::RtpParameters& rtp_parameters() const {
+    return rtp_parameters_;
+  }
+
+  void set_rtp_parameters(const webrtc::RtpParameters& parameters) {
+    RTC_CHECK_EQ(1UL, parameters.encodings.size());
+    rtp_parameters_ = parameters;
+  }
+
  private:
   void UpdateSendState() {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
@@ -1223,6 +1235,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   // goes away.
   AudioSource* source_ = nullptr;
   bool send_ = false;
+  webrtc::RtpParameters rtp_parameters_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioSendStream);
 };
@@ -1359,7 +1372,7 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
     }
   }
 
-  if (!SetMaxSendBandwidth(params.max_bandwidth_bps)) {
+  if (!SetSendBitrate(params.max_bandwidth_bps)) {
     return false;
   }
   return SetOptions(params.options);
@@ -1389,6 +1402,51 @@ bool WebRtcVoiceMediaChannel::SetRecvParameters(
     for (auto& it : recv_streams_) {
       it.second->RecreateAudioReceiveStream(recv_rtp_extensions_);
     }
+  }
+  return true;
+}
+
+webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpParameters(
+    uint32_t ssrc) const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  auto it = send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
+    LOG(LS_WARNING) << "Attempting to get RTP parameters for stream with ssrc "
+                    << ssrc << " which doesn't exist.";
+    return webrtc::RtpParameters();
+  }
+
+  return it->second->rtp_parameters();
+}
+
+bool WebRtcVoiceMediaChannel::SetRtpParameters(
+    uint32_t ssrc,
+    const webrtc::RtpParameters& parameters) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  if (!ValidateRtpParameters(parameters)) {
+    return false;
+  }
+  auto it = send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
+    LOG(LS_WARNING) << "Attempting to set RTP parameters for stream with ssrc "
+                    << ssrc << " which doesn't exist.";
+    return false;
+  }
+
+  if (!SetChannelParameters(it->second->channel(), parameters)) {
+    LOG(LS_WARNING) << "Failed to set RtpParameters.";
+    return false;
+  }
+  it->second->set_rtp_parameters(parameters);
+  return true;
+}
+
+bool WebRtcVoiceMediaChannel::ValidateRtpParameters(
+    const webrtc::RtpParameters& rtp_parameters) {
+  if (rtp_parameters.encodings.size() != 1) {
+    LOG(LS_ERROR)
+        << "Attempted to set RtpParameters without exactly one encoding";
+    return false;
   }
   return true;
 }
@@ -1587,7 +1645,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
   // Cache the codecs in order to configure the channel created later.
   for (const auto& ch : send_streams_) {
-    if (!SetSendCodecs(ch.second->channel())) {
+    if (!SetSendCodecs(ch.second->channel(), ch.second->rtp_parameters())) {
       return false;
     }
   }
@@ -1614,7 +1672,9 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 }
 
 // Apply current codec settings to a single voe::Channel used for sending.
-bool WebRtcVoiceMediaChannel::SetSendCodecs(int channel) {
+bool WebRtcVoiceMediaChannel::SetSendCodecs(
+    int channel,
+    const webrtc::RtpParameters& rtp_parameters) {
   // Disable VAD, FEC, and RED unless we know the other side wants them.
   engine()->voe()->codec()->SetVADStatus(channel, false);
   engine()->voe()->rtp()->SetNACKStatus(channel, false, 0);
@@ -1682,10 +1742,9 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(int channel) {
       }
     }
   }
-
-  if (send_bitrate_setting_) {
-    SetSendBitrateInternal(send_bitrate_bps_);
-  }
+  // TODO(solenberg): SetSendBitrate() yields another call to SetSendCodec().
+  // Check if it is possible to fuse with the previous call in this function.
+  SetChannelParameters(channel, rtp_parameters);
 
   // Set the CN payloadtype and the VAD status.
   if (send_codec_spec_.cng_payload_type != -1) {
@@ -1880,13 +1939,14 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   // delete the channel in case failure happens below.
   webrtc::AudioTransport* audio_transport =
       engine()->voe()->base()->audio_transport();
-  send_streams_.insert(std::make_pair(ssrc, new WebRtcAudioSendStream(
-      channel, audio_transport, ssrc, sp.cname, send_rtp_extensions_, call_)));
+  WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
+      channel, audio_transport, ssrc, sp.cname, send_rtp_extensions_, call_);
+  send_streams_.insert(std::make_pair(ssrc, stream));
 
   // Set the current codecs to be used for the new channel. We need to do this
   // after adding the channel to send_channels_, because of how max bitrate is
   // currently being configured by SetSendCodec().
-  if (HasSendCodec() && !SetSendCodecs(channel)) {
+  if (HasSendCodec() && !SetSendCodecs(channel, stream->rtp_parameters())) {
     RemoveSendStream(ssrc);
     return false;
   }
@@ -2310,18 +2370,34 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
   return true;
 }
 
-// TODO(minyue): SetMaxSendBandwidth() is subject to be renamed to
-// SetMaxSendBitrate() in future.
-bool WebRtcVoiceMediaChannel::SetMaxSendBandwidth(int bps) {
-  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetMaxSendBandwidth.";
-  return SetSendBitrateInternal(bps);
+bool WebRtcVoiceMediaChannel::SetSendBitrate(int bps) {
+  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendBitrate.";
+  send_bitrate_bps_ = bps;
+
+  for (const auto& kv : send_streams_) {
+    if (!SetChannelParameters(kv.second->channel(),
+                              kv.second->rtp_parameters())) {
+      return false;
+    }
+  }
+  return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetSendBitrateInternal(int bps) {
-  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendBitrateInternal.";
+bool WebRtcVoiceMediaChannel::SetChannelParameters(
+    int channel,
+    const webrtc::RtpParameters& parameters) {
+  RTC_CHECK_EQ(1UL, parameters.encodings.size());
+  return SetSendBitrate(
+      channel,
+      MinPositive(send_bitrate_bps_, parameters.encodings[0].max_bitrate_bps));
+}
 
-  send_bitrate_setting_ = true;
-  send_bitrate_bps_ = bps;
+bool WebRtcVoiceMediaChannel::SetSendBitrate(int channel, int bps) {
+  // Bitrate is auto by default.
+  // TODO(bemasc): Fix this so that if SetMaxSendBandwidth(50) is followed by
+  // SetMaxSendBandwith(0), the second call removes the previous limit.
+  if (bps <= 0)
+    return true;
 
   if (!HasSendCodec()) {
     LOG(LS_INFO) << "The send codec has not been set up yet. "
@@ -2329,24 +2405,16 @@ bool WebRtcVoiceMediaChannel::SetSendBitrateInternal(int bps) {
     return true;
   }
 
-  // Bitrate is auto by default.
-  // TODO(bemasc): Fix this so that if SetMaxSendBandwidth(50) is followed by
-  // SetMaxSendBandwith(0), the second call removes the previous limit.
-  if (bps <= 0)
-    return true;
-
   webrtc::CodecInst codec = send_codec_spec_.codec_inst;
   bool is_multi_rate = WebRtcVoiceCodecs::IsCodecMultiRate(codec);
 
   if (is_multi_rate) {
     // If codec is multi-rate then just set the bitrate.
     codec.rate = bps;
-    for (const auto& ch : send_streams_) {
-      if (!SetSendCodec(ch.second->channel(), codec)) {
-        LOG(LS_INFO) << "Failed to set codec " << codec.plname
-                     << " to bitrate " << bps << " bps.";
-        return false;
-      }
+    if (!SetSendCodec(channel, codec)) {
+      LOG(LS_INFO) << "Failed to set codec " << codec.plname << " to bitrate "
+                   << bps << " bps.";
+      return false;
     }
     return true;
   } else {

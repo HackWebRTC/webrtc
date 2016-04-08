@@ -2357,24 +2357,12 @@ TEST_F(VoiceChannelTest, SendBundleToBundleWithRtcpMuxSecure) {
   Base::SendBundleToBundle(kAudioPts, arraysize(kAudioPts), true, true);
 }
 
-TEST_F(VoiceChannelTest, GetRtpParametersIsNotImplemented) {
-  // These tests verify that the Get/SetRtpParameters methods for VoiceChannel
-  // always fail as they are not implemented.
-  // TODO(skvlad): Replace with full tests when support for bitrate limiting
-  // for audio RtpSenders is added.
-  CreateChannels(0, 0);
-  EXPECT_TRUE(
-      channel1_->SetLocalContent(&local_media_content1_, CA_OFFER, NULL));
-  webrtc::RtpParameters voice_parameters = channel1_->GetRtpParameters(kSsrc1);
-  EXPECT_EQ(0UL, voice_parameters.encodings.size());
+TEST_F(VoiceChannelTest, DefaultMaxBitrateIsUnlimited) {
+  Base::DefaultMaxBitrateIsUnlimited();
 }
 
-TEST_F(VoiceChannelTest, SetRtpParametersIsNotImplemented) {
-  CreateChannels(0, 0);
-  EXPECT_TRUE(
-      channel1_->SetLocalContent(&local_media_content1_, CA_OFFER, NULL));
-  EXPECT_FALSE(
-      channel1_->SetRtpParameters(kSsrc1, BitrateLimitedParameters(1000)));
+TEST_F(VoiceChannelTest, CanChangeMaxBitrate) {
+  Base::CanChangeMaxBitrate();
 }
 
 // VideoChannelTest

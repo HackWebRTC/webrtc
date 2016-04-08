@@ -214,6 +214,56 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(expected_bitrate, temp_codec.rate);
   }
 
+  // Sets the per-stream maximum bitrate limit for the specified SSRC.
+  bool SetMaxBitrateForStream(int32_t ssrc, int bitrate) {
+    webrtc::RtpParameters parameters = channel_->GetRtpParameters(ssrc);
+    EXPECT_EQ(1UL, parameters.encodings.size());
+
+    parameters.encodings[0].max_bitrate_bps = bitrate;
+    return channel_->SetRtpParameters(ssrc, parameters);
+  }
+
+  bool SetGlobalMaxBitrate(const cricket::AudioCodec& codec, int bitrate) {
+    cricket::AudioSendParameters send_parameters;
+    send_parameters.codecs.push_back(codec);
+    send_parameters.max_bandwidth_bps = bitrate;
+    return channel_->SetSendParameters(send_parameters);
+  }
+
+  int GetCodecBitrate(int32_t ssrc) {
+    cricket::WebRtcVoiceMediaChannel* media_channel =
+        static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
+    int channel = media_channel->GetSendChannelId(ssrc);
+    EXPECT_NE(-1, channel);
+    webrtc::CodecInst codec;
+    EXPECT_FALSE(voe_.GetSendCodec(channel, codec));
+    return codec.rate;
+  }
+
+  void SetAndExpectMaxBitrate(const cricket::AudioCodec& codec,
+                              int global_max,
+                              int stream_max,
+                              bool expected_result,
+                              int expected_codec_bitrate) {
+    // Clear the bitrate limit from the previous test case.
+    EXPECT_TRUE(SetMaxBitrateForStream(kSsrc1, -1));
+
+    // Attempt to set the requested bitrate limits.
+    EXPECT_TRUE(SetGlobalMaxBitrate(codec, global_max));
+    EXPECT_EQ(expected_result, SetMaxBitrateForStream(kSsrc1, stream_max));
+
+    // Verify that reading back the parameters gives results
+    // consistent with the Set() result.
+    webrtc::RtpParameters resulting_parameters =
+        channel_->GetRtpParameters(kSsrc1);
+    EXPECT_EQ(1UL, resulting_parameters.encodings.size());
+    EXPECT_EQ(expected_result ? stream_max : -1,
+              resulting_parameters.encodings[0].max_bitrate_bps);
+
+    // Verify that the codec settings have the expected bitrate.
+    EXPECT_EQ(expected_codec_bitrate, GetCodecBitrate(kSsrc1));
+  }
+
   void TestSetSendRtpHeaderExtensions(const std::string& ext) {
     EXPECT_TRUE(SetupSendStream());
 
@@ -770,6 +820,88 @@ TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthCbr) {
   EXPECT_FALSE(channel_->SetSendParameters(send_parameters_));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, codec));
   EXPECT_EQ(64000, codec.rate);
+}
+
+// Test that the per-stream bitrate limit and the global
+// bitrate limit both apply.
+TEST_F(WebRtcVoiceEngineTestFake, SetMaxBitratePerStream) {
+  EXPECT_TRUE(SetupSendStream());
+
+  // opus, default bitrate == 64000.
+  SetAndExpectMaxBitrate(kOpusCodec, 0, 0, true, 64000);
+  SetAndExpectMaxBitrate(kOpusCodec, 48000, 0, true, 48000);
+  SetAndExpectMaxBitrate(kOpusCodec, 48000, 64000, true, 48000);
+  SetAndExpectMaxBitrate(kOpusCodec, 64000, 48000, true, 48000);
+
+  // CBR codecs allow both maximums to exceed the bitrate.
+  SetAndExpectMaxBitrate(kPcmuCodec, 0, 0, true, 64000);
+  SetAndExpectMaxBitrate(kPcmuCodec, 64001, 0, true, 64000);
+  SetAndExpectMaxBitrate(kPcmuCodec, 0, 64001, true, 64000);
+  SetAndExpectMaxBitrate(kPcmuCodec, 64001, 64001, true, 64000);
+
+  // CBR codecs don't allow per stream maximums to be too low.
+  SetAndExpectMaxBitrate(kPcmuCodec, 0, 63999, false, 64000);
+  SetAndExpectMaxBitrate(kPcmuCodec, 64001, 63999, false, 64000);
+}
+
+// Test that an attempt to set RtpParameters for a stream that does not exist
+// fails.
+TEST_F(WebRtcVoiceEngineTestFake, CannotSetMaxBitrateForNonexistentStream) {
+  EXPECT_TRUE(SetupChannel());
+  webrtc::RtpParameters nonexistent_parameters =
+      channel_->GetRtpParameters(kSsrc1);
+  EXPECT_EQ(0, nonexistent_parameters.encodings.size());
+
+  nonexistent_parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_FALSE(channel_->SetRtpParameters(kSsrc1, nonexistent_parameters));
+}
+
+TEST_F(WebRtcVoiceEngineTestFake,
+       CannotSetRtpParametersWithIncorrectNumberOfEncodings) {
+  // This test verifies that setting RtpParameters succeeds only if
+  // the structure contains exactly one encoding.
+  // TODO(skvlad): Update this test when we start supporting setting parameters
+  // for each encoding individually.
+
+  EXPECT_TRUE(SetupSendStream());
+  // Setting RtpParameters with no encoding is expected to fail.
+  webrtc::RtpParameters parameters;
+  EXPECT_FALSE(channel_->SetRtpParameters(kSsrc1, parameters));
+  // Setting RtpParameters with exactly one encoding should succeed.
+  parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_TRUE(channel_->SetRtpParameters(kSsrc1, parameters));
+  // Two or more encodings should result in failure.
+  parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_FALSE(channel_->SetRtpParameters(kSsrc1, parameters));
+}
+
+// Test that SetRtpParameters configures the correct encoding channel for each
+// SSRC.
+TEST_F(WebRtcVoiceEngineTestFake, RtpParametersArePerStream) {
+  SetupForMultiSendStream();
+  // Create send streams.
+  for (uint32_t ssrc : kSsrcs4) {
+    EXPECT_TRUE(
+        channel_->AddSendStream(cricket::StreamParams::CreateLegacy(ssrc)));
+  }
+  // Configure one stream to be limited by the stream config, another to be
+  // limited by the global max, and the third one with no per-stream limit
+  // (still subject to the global limit).
+  EXPECT_TRUE(SetGlobalMaxBitrate(kOpusCodec, 64000));
+  EXPECT_TRUE(SetMaxBitrateForStream(kSsrcs4[0], 48000));
+  EXPECT_TRUE(SetMaxBitrateForStream(kSsrcs4[1], 96000));
+  EXPECT_TRUE(SetMaxBitrateForStream(kSsrcs4[2], -1));
+
+  EXPECT_EQ(48000, GetCodecBitrate(kSsrcs4[0]));
+  EXPECT_EQ(64000, GetCodecBitrate(kSsrcs4[1]));
+  EXPECT_EQ(64000, GetCodecBitrate(kSsrcs4[2]));
+
+  // Remove the global cap; the streams should switch to their respective
+  // maximums (or remain unchanged if there was no other limit on them.)
+  EXPECT_TRUE(SetGlobalMaxBitrate(kOpusCodec, -1));
+  EXPECT_EQ(48000, GetCodecBitrate(kSsrcs4[0]));
+  EXPECT_EQ(96000, GetCodecBitrate(kSsrcs4[1]));
+  EXPECT_EQ(64000, GetCodecBitrate(kSsrcs4[2]));
 }
 
 // Test that we apply codecs properly.

@@ -146,6 +146,10 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
   bool SetSendParameters(const AudioSendParameters& params) override;
   bool SetRecvParameters(const AudioRecvParameters& params) override;
+  webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const override;
+  bool SetRtpParameters(uint32_t ssrc,
+                        const webrtc::RtpParameters& parameters) override;
+
   bool SetPlayout(bool playout) override;
   bool PausePlayout();
   bool ResumePlayout();
@@ -206,10 +210,9 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool SetOptions(const AudioOptions& options);
   bool SetRecvCodecs(const std::vector<AudioCodec>& codecs);
   bool SetSendCodecs(const std::vector<AudioCodec>& codecs);
-  bool SetSendCodecs(int channel);
+  bool SetSendCodecs(int channel, const webrtc::RtpParameters& rtp_parameters);
   void SetNack(int channel, bool nack_enabled);
   bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
-  bool SetMaxSendBandwidth(int bps);
   bool SetLocalSource(uint32_t ssrc, AudioSource* source);
   bool MuteStream(uint32_t ssrc, bool mute);
 
@@ -223,16 +226,19 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool IsDefaultRecvStream(uint32_t ssrc) {
     return default_recv_ssrc_ == static_cast<int64_t>(ssrc);
   }
-  bool SetSendBitrateInternal(int bps);
+  bool SetSendBitrate(int bps);
+  bool SetChannelParameters(int channel,
+                            const webrtc::RtpParameters& parameters);
+  bool SetSendBitrate(int channel, int bps);
   bool HasSendCodec() const {
     return send_codec_spec_.codec_inst.pltype != -1;
   }
+  bool ValidateRtpParameters(const webrtc::RtpParameters& parameters);
 
   rtc::ThreadChecker worker_thread_checker_;
 
   WebRtcVoiceEngine* const engine_ = nullptr;
   std::vector<AudioCodec> recv_codecs_;
-  bool send_bitrate_setting_ = false;
   int send_bitrate_bps_ = 0;
   AudioOptions options_;
   rtc::Optional<int> dtmf_payload_type_;

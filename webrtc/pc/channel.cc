@@ -1409,9 +1409,7 @@ webrtc::RtpParameters VoiceChannel::GetRtpParameters(uint32_t ssrc) const {
 }
 
 webrtc::RtpParameters VoiceChannel::GetRtpParameters_w(uint32_t ssrc) const {
-  // Not yet implemented.
-  // TODO(skvlad): Add support for limiting send bitrate for audio channels.
-  return webrtc::RtpParameters();
+  return media_channel()->GetRtpParameters(ssrc);
 }
 
 bool VoiceChannel::SetRtpParameters(uint32_t ssrc,
@@ -1422,9 +1420,7 @@ bool VoiceChannel::SetRtpParameters(uint32_t ssrc,
 
 bool VoiceChannel::SetRtpParameters_w(uint32_t ssrc,
                                       webrtc::RtpParameters parameters) {
-  // Not yet implemented.
-  // TODO(skvlad): Add support for limiting send bitrate for audio channels.
-  return false;
+  return media_channel()->SetRtpParameters(ssrc, parameters);
 }
 
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
