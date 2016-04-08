@@ -67,6 +67,9 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
   StrictMock<webrtc::test::MockAudioDeviceModule> adm;
   EXPECT_CALL(adm, AddRef()).WillOnce(Return(0));
   EXPECT_CALL(adm, Release()).WillOnce(Return(0));
+  EXPECT_CALL(adm, BuiltInAECIsAvailable()).WillOnce(Return(false));
+  EXPECT_CALL(adm, BuiltInAGCIsAvailable()).WillOnce(Return(false));
+  EXPECT_CALL(adm, BuiltInNSIsAvailable()).WillOnce(Return(false));
   cricket::FakeWebRtcVoiceEngine voe;
   EXPECT_FALSE(voe.IsInited());
   {
@@ -93,6 +96,9 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
       : call_(webrtc::Call::Config()), override_field_trials_(field_trials) {
     EXPECT_CALL(adm_, AddRef()).WillOnce(Return(0));
     EXPECT_CALL(adm_, Release()).WillOnce(Return(0));
+    EXPECT_CALL(adm_, BuiltInAECIsAvailable()).WillOnce(Return(false));
+    EXPECT_CALL(adm_, BuiltInAGCIsAvailable()).WillOnce(Return(false));
+    EXPECT_CALL(adm_, BuiltInNSIsAvailable()).WillOnce(Return(false));
     engine_.reset(new cricket::WebRtcVoiceEngine(&adm_,
                                                  new FakeVoEWrapper(&voe_)));
     send_parameters_.codecs.push_back(kPcmuCodec);
@@ -2402,6 +2408,8 @@ TEST_F(WebRtcVoiceEngineTestFake, CodianSend) {
 
 TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
   EXPECT_TRUE(SetupSendStream());
+  EXPECT_CALL(adm_,
+              BuiltInAGCIsAvailable()).Times(2).WillRepeatedly(Return(false));
   webrtc::AgcConfig agc_config;
   EXPECT_EQ(0, voe_.GetAgcConfig(agc_config));
   EXPECT_EQ(0, agc_config.targetLeveldBOv);
@@ -2426,16 +2434,12 @@ TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
 
 TEST_F(WebRtcVoiceEngineTestFake, SampleRatesViaOptions) {
   EXPECT_TRUE(SetupSendStream());
+  EXPECT_CALL(adm_, SetRecordingSampleRate(48000)).WillOnce(Return(0));
+  EXPECT_CALL(adm_, SetPlayoutSampleRate(44100)).WillOnce(Return(0));
   send_parameters_.options.recording_sample_rate =
       rtc::Optional<uint32_t>(48000);
   send_parameters_.options.playout_sample_rate = rtc::Optional<uint32_t>(44100);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-
-  unsigned int recording_sample_rate, playout_sample_rate;
-  EXPECT_EQ(0, voe_.RecordingSampleRate(&recording_sample_rate));
-  EXPECT_EQ(0, voe_.PlayoutSampleRate(&playout_sample_rate));
-  EXPECT_EQ(48000u, recording_sample_rate);
-  EXPECT_EQ(44100u, playout_sample_rate);
 }
 
 // Test that we can set the outgoing SSRC properly.
@@ -2739,7 +2743,12 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetPlayoutError) {
 
 TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(SetupSendStream());
-
+  EXPECT_CALL(adm_,
+              BuiltInAECIsAvailable()).Times(9).WillRepeatedly(Return(false));
+  EXPECT_CALL(adm_,
+              BuiltInAGCIsAvailable()).Times(4).WillRepeatedly(Return(false));
+  EXPECT_CALL(adm_,
+              BuiltInNSIsAvailable()).Times(2).WillRepeatedly(Return(false));
   bool ec_enabled;
   webrtc::EcModes ec_mode;
   webrtc::AecmModes aecm_mode;
@@ -2937,6 +2946,13 @@ TEST_F(WebRtcVoiceEngineTestFake, InitDoesNotOverwriteDefaultAgcConfig) {
 
 TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(SetupSendStream());
+  EXPECT_CALL(adm_,
+              BuiltInAECIsAvailable()).Times(9).WillRepeatedly(Return(false));
+  EXPECT_CALL(adm_,
+              BuiltInAGCIsAvailable()).Times(9).WillRepeatedly(Return(false));
+  EXPECT_CALL(adm_,
+              BuiltInNSIsAvailable()).Times(9).WillRepeatedly(Return(false));
+
   std::unique_ptr<cricket::WebRtcVoiceMediaChannel> channel1(
       static_cast<cricket::WebRtcVoiceMediaChannel*>(engine_->CreateChannel(
           &call_, cricket::MediaConfig(), cricket::AudioOptions())));

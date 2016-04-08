@@ -655,14 +655,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     // Android and in combination with Java based audio layer.
     // TODO(henrika): investigate possibility to support built-in EC also
     // in combination with Open SL ES audio.
-    const bool built_in_aec = voe_wrapper_->hw()->BuiltInAECIsAvailable();
+    const bool built_in_aec = adm()->BuiltInAECIsAvailable();
     if (built_in_aec) {
       // Built-in EC exists on this device and use_delay_agnostic_aec is not
       // overriding it. Enable/Disable it according to the echo_cancellation
       // audio option.
       const bool enable_built_in_aec =
           *options.echo_cancellation && !use_delay_agnostic_aec;
-      if (voe_wrapper_->hw()->EnableBuiltInAEC(enable_built_in_aec) == 0 &&
+      if (adm()->EnableBuiltInAEC(enable_built_in_aec) == 0 &&
           enable_built_in_aec) {
         // Disable internal software EC if built-in EC is enabled,
         // i.e., replace the software EC with the built-in EC.
@@ -694,10 +694,9 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   }
 
   if (options.auto_gain_control) {
-    const bool built_in_agc = voe_wrapper_->hw()->BuiltInAGCIsAvailable();
+    const bool built_in_agc = adm()->BuiltInAGCIsAvailable();
     if (built_in_agc) {
-      if (voe_wrapper_->hw()->EnableBuiltInAGC(*options.auto_gain_control) ==
-              0 &&
+      if (adm()->EnableBuiltInAGC(*options.auto_gain_control) == 0 &&
           *options.auto_gain_control) {
         // Disable internal software AGC if built-in AGC is enabled,
         // i.e., replace the software AGC with the built-in AGC.
@@ -741,10 +740,9 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   }
 
   if (options.noise_suppression) {
-    const bool built_in_ns = voe_wrapper_->hw()->BuiltInNSIsAvailable();
+    const bool built_in_ns = adm()->BuiltInNSIsAvailable();
     if (built_in_ns) {
-      if (voe_wrapper_->hw()->EnableBuiltInNS(*options.noise_suppression) ==
-              0 &&
+      if (adm()->EnableBuiltInNS(*options.noise_suppression) == 0 &&
           *options.noise_suppression) {
         // Disable internal software NS if built-in NS is enabled,
         // i.e., replace the software NS with the built-in NS.
@@ -848,16 +846,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.recording_sample_rate) {
     LOG(LS_INFO) << "Recording sample rate is "
                  << *options.recording_sample_rate;
-    if (voe_wrapper_->hw()->SetRecordingSampleRate(
-            *options.recording_sample_rate)) {
+    if (adm()->SetRecordingSampleRate(*options.recording_sample_rate)) {
       LOG_RTCERR1(SetRecordingSampleRate, *options.recording_sample_rate);
     }
   }
 
   if (options.playout_sample_rate) {
     LOG(LS_INFO) << "Playout sample rate is " << *options.playout_sample_rate;
-    if (voe_wrapper_->hw()->SetPlayoutSampleRate(
-            *options.playout_sample_rate)) {
+    if (adm()->SetPlayoutSampleRate(*options.playout_sample_rate)) {
       LOG_RTCERR1(SetPlayoutSampleRate, *options.playout_sample_rate);
     }
   }
@@ -1076,6 +1072,12 @@ void WebRtcVoiceEngine::StopRtcEventLog() {
 int WebRtcVoiceEngine::CreateVoEChannel() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return voe_wrapper_->base()->CreateChannel(voe_config_);
+}
+
+webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(adm_);
+  return adm_;
 }
 
 class WebRtcVoiceMediaChannel::WebRtcAudioSendStream

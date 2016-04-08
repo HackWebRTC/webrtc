@@ -456,22 +456,10 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(SetPlayoutDevice, (int));
   WEBRTC_STUB(SetAudioDeviceLayer, (webrtc::AudioLayers));
   WEBRTC_STUB(GetAudioDeviceLayer, (webrtc::AudioLayers&));
-  WEBRTC_FUNC(SetRecordingSampleRate, (unsigned int samples_per_sec)) {
-    recording_sample_rate_ = samples_per_sec;
-    return 0;
-  }
-  WEBRTC_FUNC_CONST(RecordingSampleRate, (unsigned int* samples_per_sec)) {
-    *samples_per_sec = recording_sample_rate_;
-    return 0;
-  }
-  WEBRTC_FUNC(SetPlayoutSampleRate, (unsigned int samples_per_sec)) {
-    playout_sample_rate_ = samples_per_sec;
-    return 0;
-  }
-  WEBRTC_FUNC_CONST(PlayoutSampleRate, (unsigned int* samples_per_sec)) {
-    *samples_per_sec = playout_sample_rate_;
-    return 0;
-  }
+  WEBRTC_STUB(SetRecordingSampleRate, (unsigned int samples_per_sec));
+  WEBRTC_STUB_CONST(RecordingSampleRate, (unsigned int* samples_per_sec));
+  WEBRTC_STUB(SetPlayoutSampleRate, (unsigned int samples_per_sec));
+  WEBRTC_STUB_CONST(PlayoutSampleRate, (unsigned int* samples_per_sec));
   WEBRTC_STUB(EnableBuiltInAEC, (bool enable));
   virtual bool BuiltInAECIsAvailable() const { return false; }
   WEBRTC_STUB(EnableBuiltInAGC, (bool enable));
@@ -729,8 +717,6 @@ class FakeWebRtcVoiceEngine
   webrtc::AgcModes agc_mode_ = webrtc::kAgcDefault;
   webrtc::AgcConfig agc_config_;
   int playout_fail_channel_ = -1;
-  int recording_sample_rate_ = -1;
-  int playout_sample_rate_ = -1;
   FakeAudioProcessing audio_processing_;
 };
 

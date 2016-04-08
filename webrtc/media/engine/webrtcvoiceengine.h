@@ -103,6 +103,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
 
   void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
+  webrtc::AudioDeviceModule* adm();
 
   rtc::ThreadChecker signal_thread_checker_;
   rtc::ThreadChecker worker_thread_checker_;
