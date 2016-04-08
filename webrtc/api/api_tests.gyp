@@ -131,9 +131,14 @@
             'resource_dir': 'androidtests/res',
             'native_lib_target': 'libjingle_peerconnection_so',
             'is_test_apk': 1,
+            'test_type': 'instrumentation',
+            'tested_apk_path': '',
             'never_lint': 1,
           },
-          'includes': [ '../../build/java_apk.gypi' ],
+          'includes': [
+            '../../build/java_apk.gypi',
+            '../../build/android/test_runner.gypi',
+          ],
         },
       ],  # targets
     }],  # OS=="android"

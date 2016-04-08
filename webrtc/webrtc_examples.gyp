@@ -454,8 +454,13 @@
             'apk_name': 'AppRTCDemoTest',
             'java_in_dir': 'examples/androidtests',
             'is_test_apk': 1,
+            'test_type': 'instrumentation',
+            'test_runner_path': '<(DEPTH)/webrtc/build/android/test_runner.py',
           },
-          'includes': [ '../build/java_apk.gypi' ],
+          'includes': [
+            '../build/java_apk.gypi',
+            '../build/android/test_runner.gypi',
+          ],
         },
       ],  # targets
     }],  # OS=="android"
