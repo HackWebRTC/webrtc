@@ -161,7 +161,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   bool SetSink(uint32_t ssrc,
                rtc::VideoSinkInterface<VideoFrame>* sink) override;
   bool GetStats(VideoMediaInfo* info) override;
-  bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) override;
+  void SetSource(
+      uint32_t ssrc,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override;
 
   void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketTime& packet_time) override;
@@ -217,8 +219,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   bool GetChangedRecvParameters(const VideoRecvParameters& params,
                                 ChangedRecvParameters* changed_params) const;
 
-  bool MuteStream(uint32_t ssrc, bool mute);
-
   void SetMaxSendBandwidth(int bps);
   void SetOptions(uint32_t ssrc, const VideoOptions& options);
 
@@ -235,7 +235,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   static std::string CodecSettingsVectorToString(
       const std::vector<VideoCodecSettings>& codecs);
 
-  // Wrapper for the sender part, this is where the capturer is connected and
+  // Wrapper for the sender part, this is where the source is connected and
   // frames are then converted from cricket frames to webrtc frames.
   class WebRtcVideoSendStream
       : public rtc::VideoSinkInterface<cricket::VideoFrame>,
@@ -261,9 +261,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     webrtc::RtpParameters GetRtpParameters() const;
 
     void OnFrame(const cricket::VideoFrame& frame) override;
-    bool SetCapturer(VideoCapturer* capturer);
-    void MuteStream(bool mute);
-    bool DisconnectCapturer();
+    void SetSource(rtc::VideoSourceInterface<cricket::VideoFrame>* source);
+    void DisconnectSource();
 
     void SetSend(bool send);
 
@@ -365,12 +364,12 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     webrtc::Call* const call_;
     rtc::VideoSinkWants sink_wants_;
     // Counter used for deciding if the video resolution is currently
-    // restricted by CPU usage. It is reset if |capturer_| is changed.
+    // restricted by CPU usage. It is reset if |source_| is changed.
     int cpu_restricted_counter_;
     // Total number of times resolution as been requested to be changed due to
     // CPU adaptation.
     int number_of_cpu_adapt_changes_;
-    VideoCapturer* capturer_;
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source_;
     WebRtcVideoEncoderFactory* const external_encoder_factory_
         GUARDED_BY(lock_);
 
@@ -393,14 +392,13 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         webrtc::kVideoRotation_0;
 
     bool sending_ GUARDED_BY(lock_);
-    bool muted_ GUARDED_BY(lock_);
 
     // The timestamp of the first frame received
     // Used to generate the timestamps of subsequent frames
     int64_t first_frame_timestamp_ms_ GUARDED_BY(lock_);
 
     // The timestamp of the last frame received
-    // Used to generate timestamp for the black frame when capturer is removed
+    // Used to generate timestamp for the black frame when source is removed
     int64_t last_frame_timestamp_ms_ GUARDED_BY(lock_);
   };
 

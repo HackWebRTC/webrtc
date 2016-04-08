@@ -527,12 +527,14 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     }
     return true;
   }
-  virtual bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
-    capturers_[ssrc] = capturer;
-    return true;
+  void SetSource(
+      uint32_t ssrc,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override {
+    sources_[ssrc] = source;
   }
-  bool HasCapturer(uint32_t ssrc) const {
-    return capturers_.find(ssrc) != capturers_.end();
+
+  bool HasSource(uint32_t ssrc) const {
+    return sources_.find(ssrc) != sources_.end();
   }
   virtual bool AddRecvStream(const StreamParams& sp) {
     if (!RtpHelper<VideoMediaChannel>::AddRecvStream(sp))
@@ -580,7 +582,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   std::vector<VideoCodec> recv_codecs_;
   std::vector<VideoCodec> send_codecs_;
   std::map<uint32_t, rtc::VideoSinkInterface<VideoFrame>*> sinks_;
-  std::map<uint32_t, VideoCapturer*> capturers_;
+  std::map<uint32_t, rtc::VideoSourceInterface<VideoFrame>*> sources_;
   VideoOptions options_;
   int max_bps_;
 };

@@ -34,7 +34,6 @@ namespace cricket {
 class ChannelManager;
 class DataChannel;
 class StatsReport;
-class VideoCapturer;
 class VideoChannel;
 class VoiceChannel;
 
@@ -250,7 +249,9 @@ class WebRtcSession : public AudioProviderInterface,
                              const RtpParameters& parameters) override;
 
   // Implements VideoMediaProviderInterface.
-  bool SetCaptureDevice(uint32_t ssrc, cricket::VideoCapturer* camera) override;
+  bool SetSource(
+      uint32_t ssrc,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override;
   void SetVideoPlayout(
       uint32_t ssrc,
       bool enable,

@@ -70,8 +70,9 @@ class MockAudioProvider : public AudioProviderInterface {
 class MockVideoProvider : public VideoProviderInterface {
  public:
   virtual ~MockVideoProvider() {}
-  MOCK_METHOD2(SetCaptureDevice,
-               bool(uint32_t ssrc, cricket::VideoCapturer* camera));
+  MOCK_METHOD2(SetSource,
+               bool(uint32_t ssrc,
+                    rtc::VideoSourceInterface<cricket::VideoFrame>* source));
   MOCK_METHOD3(SetVideoPlayout,
                void(uint32_t ssrc,
                     bool enable,
@@ -111,9 +112,7 @@ class RtpSenderReceiverTest : public testing::Test {
 
   void CreateVideoRtpSender() {
     AddVideoTrack();
-    EXPECT_CALL(video_provider_,
-                SetCaptureDevice(
-                    kVideoSsrc, video_track_->GetSource()->GetVideoCapturer()));
+    EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, video_track_.get()));
     EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
     video_rtp_sender_ = new VideoRtpSender(stream_->GetVideoTracks()[0],
                                            stream_->label(), &video_provider_);
@@ -127,7 +126,7 @@ class RtpSenderReceiverTest : public testing::Test {
   }
 
   void DestroyVideoRtpSender() {
-    EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, NULL)).Times(1);
+    EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, NULL)).Times(1);
     EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _)).Times(1);
     video_rtp_sender_ = nullptr;
   }
@@ -345,14 +344,12 @@ TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupSsrcThenTrack) {
   rtc::scoped_refptr<VideoRtpSender> sender =
       new VideoRtpSender(&video_provider_);
   sender->SetSsrc(kVideoSsrc);
-  EXPECT_CALL(video_provider_,
-              SetCaptureDevice(kVideoSsrc,
-                               video_track_->GetSource()->GetVideoCapturer()));
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, video_track_.get()));
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
   sender->SetTrack(video_track_);
 
   // Calls expected from destructor.
-  EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, nullptr)).Times(1);
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, nullptr)).Times(1);
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _)).Times(1);
 }
 
@@ -363,14 +360,12 @@ TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupTrackThenSsrc) {
   rtc::scoped_refptr<VideoRtpSender> sender =
       new VideoRtpSender(&video_provider_);
   sender->SetTrack(video_track_);
-  EXPECT_CALL(video_provider_,
-              SetCaptureDevice(kVideoSsrc,
-                               video_track_->GetSource()->GetVideoCapturer()));
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, video_track_.get()));
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
   sender->SetSsrc(kVideoSsrc);
 
   // Calls expected from destructor.
-  EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, nullptr)).Times(1);
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, nullptr)).Times(1);
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _)).Times(1);
 }
 
@@ -396,21 +391,19 @@ TEST_F(RtpSenderReceiverTest, AudioSenderSsrcSetToZero) {
 // set to 0.
 TEST_F(RtpSenderReceiverTest, VideoSenderSsrcSetToZero) {
   AddVideoTrack();
-  EXPECT_CALL(video_provider_,
-              SetCaptureDevice(kVideoSsrc,
-                               video_track_->GetSource()->GetVideoCapturer()));
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, video_track_.get()));
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
   rtc::scoped_refptr<VideoRtpSender> sender =
       new VideoRtpSender(video_track_, kStreamLabel1, &video_provider_);
   sender->SetSsrc(kVideoSsrc);
 
-  EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, nullptr)).Times(1);
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, nullptr)).Times(1);
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _)).Times(1);
   sender->SetSsrc(0);
 
   // Make sure it's SetSsrc that called methods on the provider, and not the
   // destructor.
-  EXPECT_CALL(video_provider_, SetCaptureDevice(_, _)).Times(0);
+  EXPECT_CALL(video_provider_, SetSource(_, _)).Times(0);
   EXPECT_CALL(video_provider_, SetVideoSend(_, _, _)).Times(0);
 }
 
@@ -432,21 +425,19 @@ TEST_F(RtpSenderReceiverTest, AudioSenderTrackSetToNull) {
 
 TEST_F(RtpSenderReceiverTest, VideoSenderTrackSetToNull) {
   AddVideoTrack();
-  EXPECT_CALL(video_provider_,
-              SetCaptureDevice(kVideoSsrc,
-                               video_track_->GetSource()->GetVideoCapturer()));
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, video_track_.get()));
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
   rtc::scoped_refptr<VideoRtpSender> sender =
       new VideoRtpSender(video_track_, kStreamLabel1, &video_provider_);
   sender->SetSsrc(kVideoSsrc);
 
-  EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, nullptr)).Times(1);
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, nullptr)).Times(1);
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _)).Times(1);
   EXPECT_TRUE(sender->SetTrack(nullptr));
 
   // Make sure it's SetTrack that called methods on the provider, and not the
   // destructor.
-  EXPECT_CALL(video_provider_, SetCaptureDevice(_, _)).Times(0);
+  EXPECT_CALL(video_provider_, SetSource(_, _)).Times(0);
   EXPECT_CALL(video_provider_, SetVideoSend(_, _, _)).Times(0);
 }
 
@@ -469,24 +460,20 @@ TEST_F(RtpSenderReceiverTest, AudioSenderSsrcChanged) {
 
 TEST_F(RtpSenderReceiverTest, VideoSenderSsrcChanged) {
   AddVideoTrack();
-  EXPECT_CALL(video_provider_,
-              SetCaptureDevice(kVideoSsrc,
-                               video_track_->GetSource()->GetVideoCapturer()));
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, video_track_.get()));
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
   rtc::scoped_refptr<VideoRtpSender> sender =
       new VideoRtpSender(video_track_, kStreamLabel1, &video_provider_);
   sender->SetSsrc(kVideoSsrc);
 
-  EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc, nullptr)).Times(1);
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, nullptr)).Times(1);
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _)).Times(1);
-  EXPECT_CALL(video_provider_,
-              SetCaptureDevice(kVideoSsrc2,
-                               video_track_->GetSource()->GetVideoCapturer()));
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc2, video_track_.get()));
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc2, true, _));
   sender->SetSsrc(kVideoSsrc2);
 
   // Calls expected from destructor.
-  EXPECT_CALL(video_provider_, SetCaptureDevice(kVideoSsrc2, nullptr)).Times(1);
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc2, nullptr)).Times(1);
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc2, false, _)).Times(1);
 }
 

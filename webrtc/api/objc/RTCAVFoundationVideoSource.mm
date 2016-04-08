@@ -14,16 +14,21 @@
 #import "webrtc/api/objc/RTCPeerConnectionFactory+Private.h"
 #import "webrtc/api/objc/RTCVideoSource+Private.h"
 
-@implementation RTCAVFoundationVideoSource
+@implementation RTCAVFoundationVideoSource {
+  webrtc::AVFoundationVideoCapturer *_capturer;
+}
 
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
                     constraints:(RTCMediaConstraints *)constraints {
   NSParameterAssert(factory);
-  rtc::scoped_ptr<webrtc::AVFoundationVideoCapturer> capturer;
-  capturer.reset(new webrtc::AVFoundationVideoCapturer());
+  // We pass ownership of the capturer to the source, but since we own
+  // the source, it should be ok to keep a raw pointer to the
+  // capturer.
+  _capturer = new webrtc::AVFoundationVideoCapturer();
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
       factory.nativeFactory->CreateVideoSource(
-          capturer.release(), constraints.nativeConstraints.get());
+          _capturer, constraints.nativeConstraints.get());
+
   return [super initWithNativeVideoSource:source];
 }
 
@@ -44,12 +49,7 @@
 }
 
 - (webrtc::AVFoundationVideoCapturer *)capturer {
-  cricket::VideoCapturer *capturer = self.nativeVideoSource->GetVideoCapturer();
-  // This should be safe because no one should have changed the underlying video
-  // source.
-  webrtc::AVFoundationVideoCapturer *foundationCapturer =
-      static_cast<webrtc::AVFoundationVideoCapturer *>(capturer);
-  return foundationCapturer;
+  return _capturer;
 }
 
 @end

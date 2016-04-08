@@ -15,13 +15,12 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/videosinkinterface.h"
+#include "webrtc/media/base/videosourceinterface.h"
 
 namespace cricket {
 
 class AudioSource;
-class VideoCapturer;
 class VideoFrame;
-class VideoRenderer;
 struct AudioOptions;
 struct VideoOptions;
 
@@ -75,8 +74,9 @@ class AudioProviderInterface {
 // of a video track connected to a certain PeerConnection.
 class VideoProviderInterface {
  public:
-  virtual bool SetCaptureDevice(uint32_t ssrc,
-                                cricket::VideoCapturer* camera) = 0;
+  virtual bool SetSource(
+      uint32_t ssrc,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) = 0;
   // Enable/disable the video playout of a remote video track with |ssrc|.
   virtual void SetVideoPlayout(
       uint32_t ssrc,

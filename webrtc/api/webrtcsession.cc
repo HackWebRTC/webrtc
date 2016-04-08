@@ -1261,8 +1261,9 @@ bool WebRtcSession::SetAudioRtpParameters(uint32_t ssrc,
   return voice_channel_->SetRtpParameters(ssrc, parameters);
 }
 
-bool WebRtcSession::SetCaptureDevice(uint32_t ssrc,
-                                     cricket::VideoCapturer* camera) {
+bool WebRtcSession::SetSource(
+    uint32_t ssrc,
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
   ASSERT(signaling_thread()->IsCurrent());
 
   if (!video_channel_) {
@@ -1271,13 +1272,7 @@ bool WebRtcSession::SetCaptureDevice(uint32_t ssrc,
     LOG(LS_WARNING) << "Video not used in this call.";
     return false;
   }
-  if (!video_channel_->SetCapturer(ssrc, camera)) {
-    // Allow that SetCapturer fail if |camera| is NULL but assert otherwise.
-    // This in the normal case when the underlying media channel has already
-    // been deleted.
-    ASSERT(camera == NULL);
-    return false;
-  }
+  video_channel_->SetSource(ssrc, source);
   return true;
 }
 

@@ -74,27 +74,6 @@ inline int TimeBetweenSend(const cricket::VideoCodec& codec) {
       rtc::kNumNanosecsPerMillisec);
 }
 
-// Fake video engine that makes it possible to test enabling and disabling
-// capturer (checking that the engine state is updated and that the capturer
-// is indeed capturing) without having to create a channel. It also makes it
-// possible to test that the media processors are indeed being called when
-// registered.
-template<class T>
-class VideoEngineOverride : public T {
- public:
-  VideoEngineOverride() : T() {
-  }
-  virtual ~VideoEngineOverride() {
-  }
-  bool is_camera_on() const { return T::GetVideoCapturer()->IsRunning(); }
-
-  void TriggerMediaFrame(uint32_t ssrc,
-                         cricket::VideoFrame* frame,
-                         bool* drop_frame) {
-    T::SignalMediaFrame(ssrc, frame, drop_frame);
-  }
-};
-
 template<class E, class C>
 class VideoMediaChannelTest : public testing::Test,
                               public sigslot::has_slots<> {
@@ -125,7 +104,7 @@ class VideoMediaChannelTest : public testing::Test,
                                 cricket::VideoFormat::FpsToInterval(30),
                                 cricket::FOURCC_I420);
     EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(format));
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, video_capturer_.get()));
+    channel_->SetSource(kSsrc, video_capturer_.get());
   }
 
   virtual cricket::FakeVideoCapturer* CreateFakeVideoCapturer() {
@@ -162,7 +141,7 @@ class VideoMediaChannelTest : public testing::Test,
                                 cricket::FOURCC_I420);
     EXPECT_EQ(cricket::CS_RUNNING, video_capturer_2_->Start(format));
 
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc + 2, video_capturer_2_.get()));
+    channel_->SetSource(kSsrc + 2, video_capturer_2_.get());
   }
   virtual void TearDown() {
     channel_.reset();
@@ -373,7 +352,7 @@ class VideoMediaChannelTest : public testing::Test,
   // Test that SetSend works.
   void SetSend() {
     EXPECT_FALSE(channel_->sending());
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, video_capturer_.get()));
+    channel_->SetSource(kSsrc, video_capturer_.get());
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
     EXPECT_FALSE(channel_->sending());
     EXPECT_TRUE(SetSend(true));
@@ -567,7 +546,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(format));
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(5678)));
-    EXPECT_TRUE(channel_->SetCapturer(5678, capturer.get()));
+    channel_->SetSource(5678, capturer.get());
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(5678)));
     EXPECT_TRUE(channel_->SetSink(5678, &renderer2));
@@ -603,7 +582,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(kTestWidth, info.senders[1].send_frame_width);
     EXPECT_EQ(kTestHeight, info.senders[1].send_frame_height);
     // The capturer must be unregistered here as it runs out of it's scope next.
-    EXPECT_TRUE(channel_->SetCapturer(5678, NULL));
+    channel_->SetSource(5678, NULL);
   }
 
   // Test that we can set the bandwidth.
@@ -640,7 +619,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetDefaultCodec());
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(999)));
-    EXPECT_TRUE(channel_->SetCapturer(999u, video_capturer_.get()));
+    channel_->SetSource(999u, video_capturer_.get());
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(WaitAndSendFrame(0));
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
@@ -706,7 +685,7 @@ class VideoMediaChannelTest : public testing::Test,
 
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(789u)));
-    EXPECT_TRUE(channel_->SetCapturer(789u, video_capturer_.get()));
+    channel_->SetSource(789u, video_capturer_.get());
     EXPECT_EQ(rtp_packets, NumRtpPackets());
     // Wait 30ms to guarantee the engine does not drop the frame.
     EXPECT_TRUE(WaitAndSendFrame(30));
@@ -789,7 +768,7 @@ class VideoMediaChannelTest : public testing::Test,
 
     int captured_frames = 1;
     for (int iterations = 0; iterations < 2; ++iterations) {
-      EXPECT_TRUE(channel_->SetCapturer(kSsrc, capturer.get()));
+      channel_->SetSource(kSsrc, capturer.get());
       rtc::Thread::Current()->ProcessMessages(time_between_send);
       EXPECT_TRUE(capturer->CaptureCustomFrame(format.width, format.height,
                                                cricket::FOURCC_I420));
@@ -804,7 +783,7 @@ class VideoMediaChannelTest : public testing::Test,
       EXPECT_EQ(format.height, renderer_.height());
       captured_frames = renderer_.num_rendered_frames() + 1;
       EXPECT_FALSE(renderer_.black_frame());
-      EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
+      channel_->SetSource(kSsrc, NULL);
       // Make sure a black frame is generated within the specified timeout.
       // The black frame should be the resolution of the previous frame to
       // prevent expensive encoder reconfigurations.
@@ -839,13 +818,12 @@ class VideoMediaChannelTest : public testing::Test,
     // tightly.
     rtc::Thread::Current()->ProcessMessages(30);
     // Remove the capturer.
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
+    channel_->SetSource(kSsrc, NULL);
     // Wait for one black frame for removing the capturer.
     EXPECT_FRAME_WAIT(2, 640, 400, kTimeout);
 
-    // No capturer was added, so this RemoveCapturer should
-    // fail.
-    EXPECT_FALSE(channel_->SetCapturer(kSsrc, NULL));
+    // No capturer was added, so this SetSource should be a NOP.
+    channel_->SetSource(kSsrc, NULL);
     rtc::Thread::Current()->ProcessMessages(300);
     // Verify no more frames were sent.
     EXPECT_EQ(2, renderer_.num_rendered_frames());
@@ -887,11 +865,11 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(cricket::CS_RUNNING, capturer2->Start(capture_format));
     // State for all the streams.
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
-    // A limitation in the lmi implementation requires that SetCapturer() is
+    // A limitation in the lmi implementation requires that SetSource() is
     // called after SetOneCodec().
     // TODO(hellner): this seems like an unnecessary constraint, fix it.
-    EXPECT_TRUE(channel_->SetCapturer(1, capturer1.get()));
-    EXPECT_TRUE(channel_->SetCapturer(2, capturer2.get()));
+    channel_->SetSource(1, capturer1.get());
+    channel_->SetSource(2, capturer2.get());
     EXPECT_TRUE(SetSend(true));
     // Test capturer associated with engine.
     const int kTestWidth = 160;
@@ -906,13 +884,13 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer2, 1, kTestWidth, kTestHeight, kTimeout);
     // Successfully remove the capturer.
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
+    channel_->SetSource(kSsrc, NULL);
     // Fail to re-remove the capturer.
-    EXPECT_FALSE(channel_->SetCapturer(kSsrc, NULL));
+    channel_->SetSource(kSsrc, NULL);
     // The capturers must be unregistered here as it runs out of it's scope
     // next.
-    EXPECT_TRUE(channel_->SetCapturer(1, NULL));
-    EXPECT_TRUE(channel_->SetCapturer(2, NULL));
+    channel_->SetSource(1, NULL);
+    channel_->SetSource(2, NULL);
   }
 
   void HighAspectHighHeightCapturer() {
@@ -945,13 +923,13 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(capture_format));
     // Capture frame to not get same frame timestamps as previous capturer.
     capturer->CaptureFrame();
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, capturer.get()));
+    channel_->SetSource(kSsrc, capturer.get());
     EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
     EXPECT_TRUE(capturer->CaptureCustomFrame(kWidth, kHeight,
                                              cricket::FOURCC_ARGB));
     EXPECT_GT_FRAME_ON_RENDERER_WAIT(
         renderer, 2, kScaledWidth, kScaledHeight, kTimeout);
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
+    channel_->SetSource(kSsrc, NULL);
   }
 
   // Tests that we can adapt video resolution with 16:10 aspect ratio properly.
@@ -1062,57 +1040,6 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_WAIT(2, codec.width / 2, codec.height / 2, kTimeout);
   }
 
-  // Tests that we can mute and unmute the channel properly.
-  void MuteStream() {
-    EXPECT_TRUE(SetDefaultCodec());
-    cricket::FakeVideoCapturer video_capturer;
-    video_capturer.Start(
-        cricket::VideoFormat(
-            640, 480,
-            cricket::VideoFormat::FpsToInterval(30),
-            cricket::FOURCC_I420));
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, &video_capturer));
-    EXPECT_TRUE(SetSend(true));
-    EXPECT_TRUE(channel_->SetSink(kDefaultReceiveSsrc, &renderer_));
-    EXPECT_EQ(0, renderer_.num_rendered_frames());
-    // Mute the channel and expect black output frame.
-    int frame_count = 0;
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
-    EXPECT_TRUE(video_capturer.CaptureFrame());
-    ++frame_count;
-    EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
-    EXPECT_TRUE(renderer_.black_frame());
-    // Unmute the channel and expect non-black output frame.
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
-    EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
-    EXPECT_TRUE(video_capturer.CaptureFrame());
-    ++frame_count;
-    EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
-    EXPECT_FALSE(renderer_.black_frame());
-    // Test that we can also Mute using the correct send stream SSRC.
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
-    EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
-    EXPECT_TRUE(video_capturer.CaptureFrame());
-    ++frame_count;
-    EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
-    EXPECT_TRUE(renderer_.black_frame());
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
-    EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
-    EXPECT_TRUE(video_capturer.CaptureFrame());
-    ++frame_count;
-    EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
-    EXPECT_FALSE(renderer_.black_frame());
-    // Test that muting an existing stream succeeds even if it's muted.
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, false, nullptr));
-    // Test that unmuting an existing stream succeeds even if it's not muted.
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
-    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr));
-    // Test that muting an invalid stream fails.
-    EXPECT_FALSE(channel_->SetVideoSend(kSsrc+1, false, nullptr));
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
-  }
-
   // Test that multiple send streams can be created and deleted properly.
   void MultipleSendStreams() {
     // Remove stream added in Setup. I.e. remove stream corresponding to default
@@ -1144,7 +1071,7 @@ class VideoMediaChannelTest : public testing::Test,
   }
 
   const std::unique_ptr<webrtc::Call> call_;
-  VideoEngineOverride<E> engine_;
+  E engine_;
   std::unique_ptr<cricket::FakeVideoCapturer> video_capturer_;
   std::unique_ptr<cricket::FakeVideoCapturer> video_capturer_2_;
   std::unique_ptr<C> channel_;

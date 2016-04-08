@@ -46,8 +46,6 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
 
-  cricket::VideoCapturer* GetVideoCapturer() override { return nullptr; }
-
  private:
   rtc::ThreadChecker worker_thread_checker_;
   rtc::VideoSourceInterface<cricket::VideoFrame>* source_;

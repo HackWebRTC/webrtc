@@ -1690,9 +1690,11 @@ bool VideoChannel::SetSink(uint32_t ssrc,
   return true;
 }
 
-bool VideoChannel::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
-  return InvokeOnWorker(Bind(&VideoMediaChannel::SetCapturer,
-                             media_channel(), ssrc, capturer));
+void VideoChannel::SetSource(
+    uint32_t ssrc,
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
+  worker_thread()->Invoke<void>(
+      Bind(&VideoMediaChannel::SetSource, media_channel(), ssrc, source));
 }
 
 bool VideoChannel::SetVideoSend(uint32_t ssrc,

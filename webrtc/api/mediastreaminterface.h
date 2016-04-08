@@ -31,7 +31,6 @@
 namespace cricket {
 
 class AudioRenderer;
-class VideoCapturer;
 class VideoRenderer;
 class VideoFrame;
 
@@ -113,14 +112,6 @@ class VideoTrackSourceInterface
     int input_width;
     int input_height;
   };
-  // Get access to the source implementation of cricket::VideoCapturer.
-  // This can be used for receiving frames and state notifications.
-  // But it should not be used for starting or stopping capturing.
-  // TODO(perkj): We are currently trying to replace all internal use of
-  // cricket::VideoCapturer with rtc::VideoSourceInterface. Once that
-  // refactoring is done,
-  // remove this method.
-  virtual cricket::VideoCapturer* GetVideoCapturer() = 0;
 
   virtual void Stop() = 0;
   virtual void Restart() = 0;

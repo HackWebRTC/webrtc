@@ -246,7 +246,7 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
 
   using webrtc::WebRtcSession::SetAudioPlayout;
   using webrtc::WebRtcSession::SetAudioSend;
-  using webrtc::WebRtcSession::SetCaptureDevice;
+  using webrtc::WebRtcSession::SetSource;
   using webrtc::WebRtcSession::SetVideoPlayout;
   using webrtc::WebRtcSession::SetVideoSend;
 

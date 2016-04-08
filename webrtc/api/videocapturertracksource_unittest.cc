@@ -126,7 +126,6 @@ class VideoCapturerTrackSourceTest : public testing::Test {
                                                constraints, false);
 
     ASSERT_TRUE(source_.get() != NULL);
-    EXPECT_EQ(capturer_, source_->GetVideoCapturer());
 
     state_observer_.reset(new StateObserver(source_));
     source_->RegisterObserver(state_observer_.get());

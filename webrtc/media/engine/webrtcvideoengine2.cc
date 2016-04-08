@@ -21,7 +21,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"
-#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/engine/constants.h"
 #include "webrtc/media/engine/simulcast.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
@@ -1001,6 +1000,9 @@ bool WebRtcVideoChannel2::SetSend(bool send) {
   return true;
 }
 
+// TODO(nisse): The enable argument was used for mute logic which has
+// been moved to VideoBroadcaster. So delete this method, and use
+// SetOptions instead.
 bool WebRtcVideoChannel2::SetVideoSend(uint32_t ssrc, bool enable,
                                        const VideoOptions* options) {
   TRACE_EVENT0("webrtc", "SetVideoSend");
@@ -1008,11 +1010,6 @@ bool WebRtcVideoChannel2::SetVideoSend(uint32_t ssrc, bool enable,
                << "options: " << (options ? options->ToString() : "nullptr")
                << ").";
 
-  // TODO(solenberg): The state change should be fully rolled back if any one of
-  //                  these calls fail.
-  if (!MuteStream(ssrc, !enable)) {
-    return false;
-  }
   if (enable && options) {
     SetOptions(ssrc, *options);
   }
@@ -1315,22 +1312,21 @@ void WebRtcVideoChannel2::FillBandwidthEstimationStats(
   video_media_info->bw_estimations.push_back(bwe_info);
 }
 
-bool WebRtcVideoChannel2::SetCapturer(uint32_t ssrc, VideoCapturer* capturer) {
-  LOG(LS_INFO) << "SetCapturer: " << ssrc << " -> "
-               << (capturer != NULL ? "(capturer)" : "NULL");
+void WebRtcVideoChannel2::SetSource(
+    uint32_t ssrc,
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
+  LOG(LS_INFO) << "SetSource: " << ssrc << " -> "
+               << (source ? "(source)" : "NULL");
   RTC_DCHECK(ssrc != 0);
-  {
-    rtc::CritScope stream_lock(&stream_crit_);
-    const auto& kv = send_streams_.find(ssrc);
-    if (kv == send_streams_.end()) {
-      LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
-      return false;
-    }
-    if (!kv->second->SetCapturer(capturer)) {
-      return false;
-    }
+
+  rtc::CritScope stream_lock(&stream_crit_);
+  const auto& kv = send_streams_.find(ssrc);
+  if (kv == send_streams_.end()) {
+    // Allow unknown ssrc only if source is null.
+    RTC_CHECK(source == nullptr);
+  } else {
+    kv->second->SetSource(source);
   }
-  return true;
 }
 
 void WebRtcVideoChannel2::OnPacketReceived(
@@ -1418,21 +1414,6 @@ void WebRtcVideoChannel2::OnNetworkRouteChanged(
     const NetworkRoute& network_route) {
   // TODO(honghaiz): uncomment this once the function in call is implemented.
   // call_->OnNetworkRouteChanged(transport_name, network_route);
-}
-
-bool WebRtcVideoChannel2::MuteStream(uint32_t ssrc, bool mute) {
-  LOG(LS_VERBOSE) << "MuteStream: " << ssrc << " -> "
-                  << (mute ? "mute" : "unmute");
-  RTC_DCHECK(ssrc != 0);
-  rtc::CritScope stream_lock(&stream_crit_);
-  const auto& kv = send_streams_.find(ssrc);
-  if (kv == send_streams_.end()) {
-    LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
-    return false;
-  }
-
-  kv->second->MuteStream(mute);
-  return true;
 }
 
 // TODO(pbos): Remove SetOptions in favor of SetSendParameters.
@@ -1523,7 +1504,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       call_(call),
       cpu_restricted_counter_(0),
       number_of_cpu_adapt_changes_(0),
-      capturer_(nullptr),
+      source_(nullptr),
       external_encoder_factory_(external_encoder_factory),
       stream_(nullptr),
       parameters_(config, options, max_bitrate_bps, codec_settings),
@@ -1531,7 +1512,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       pending_encoder_reconfiguration_(false),
       allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
       sending_(false),
-      muted_(false),
       first_frame_timestamp_ms_(0),
       last_frame_timestamp_ms_(0) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
@@ -1557,7 +1537,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
 }
 
 WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
-  DisconnectCapturer();
+  DisconnectSource();
   if (stream_ != NULL) {
     call_->DestroyVideoSendStream(stream_);
   }
@@ -1590,14 +1570,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
     return;
   }
 
-  if (muted_) {
-    // Create a black frame to transmit instead.
-    CreateBlackFrame(&video_frame,
-                     frame.width(),
-                     frame.height(),
-                     video_frame.rotation());
-  }
-
   int64_t frame_delta_ms = frame.GetTimeStamp() / rtc::kNumNanosecsPerMillisec;
   // frame->GetTimeStamp() is essentially a delta, align to webrtc time
   if (first_frame_timestamp_ms_ == 0) {
@@ -1620,13 +1592,14 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   stream_->Input()->IncomingCapturedFrame(video_frame);
 }
 
-bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
-    VideoCapturer* capturer) {
-  TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::SetCapturer");
+void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSource(
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::SetSource");
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!DisconnectCapturer() && capturer == NULL) {
-    return false;
-  }
+
+  if (!source && !source_)
+    return;
+  DisconnectSource();
 
   {
     rtc::CritScope cs(&lock_);
@@ -1635,7 +1608,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
     // new capturer may have a different timestamp delta than the previous one.
     first_frame_timestamp_ms_ = 0;
 
-    if (capturer == NULL) {
+    if (source == NULL) {
       if (stream_ != NULL) {
         LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
         webrtc::VideoFrame black_frame;
@@ -1652,39 +1625,31 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
         black_frame.set_render_time_ms(last_frame_timestamp_ms_);
         stream_->Input()->IncomingCapturedFrame(black_frame);
       }
-
-      capturer_ = NULL;
-      return true;
     }
   }
-  capturer_ = capturer;
-  // |capturer_->AddOrUpdateSink| may not be called while holding |lock_| since
+  source_ = source;
+  // |source_->AddOrUpdateSink| may not be called while holding |lock_| since
   // that might cause a lock order inversion.
-  capturer_->AddOrUpdateSink(this, sink_wants_);
-  return true;
+  if (source_) {
+    source_->AddOrUpdateSink(this, sink_wants_);
+  }
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::MuteStream(bool mute) {
-  rtc::CritScope cs(&lock_);
-  muted_ = mute;
-}
-
-bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
+void WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectSource() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (capturer_ == NULL) {
-    return false;
+  if (source_ == NULL) {
+    return;
   }
 
-  // |capturer_->RemoveSink| may not be called while holding |lock_| since
+  // |source_->RemoveSink| may not be called while holding |lock_| since
   // that might cause a lock order inversion.
-  capturer_->RemoveSink(this);
-  capturer_ = NULL;
+  source_->RemoveSink(this);
+  source_ = nullptr;
   // Reset |cpu_restricted_counter_| if the capturer is changed. It is not
   // possible to know if the video resolution is restricted by CPU usage after
   // the capturer is changed since the next capturer might be screen capture
   // with another resolution and frame rate.
   cpu_restricted_counter_ = 0;
-  return true;
 }
 
 const std::vector<uint32_t>&
@@ -1845,8 +1810,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
   if (params.rtp_header_extensions) {
     sink_wants_.rotation_applied = !ContainsHeaderExtension(
         *params.rtp_header_extensions, kRtpVideoRotationHeaderExtension);
-    if (capturer_) {
-      capturer_->AddOrUpdateSink(this, sink_wants_);
+    if (source_) {
+      source_->AddOrUpdateSink(this, sink_wants_);
     }
   }
 }
@@ -2011,7 +1976,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
     return;
   }
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!capturer_) {
+  if (!source_) {
     return;
   }
   {
@@ -2067,9 +2032,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
     sink_wants_.max_pixel_count = max_pixel_count;
     sink_wants_.max_pixel_count_step_up = max_pixel_count_step_up;
   }
-  // |capturer_->AddOrUpdateSink| may not be called while holding |lock_| since
+  // |source_->AddOrUpdateSink| may not be called while holding |lock_| since
   // that might cause a lock order inversion.
-  capturer_->AddOrUpdateSink(this, sink_wants_);
+  source_->AddOrUpdateSink(this, sink_wants_);
 }
 
 VideoSenderInfo

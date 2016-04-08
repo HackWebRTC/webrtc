@@ -47,10 +47,6 @@ class VideoCapturerTrackSource : public VideoTrackSource,
       cricket::VideoCapturer* capturer,
       bool remote);
 
-  cricket::VideoCapturer* GetVideoCapturer() override {
-    return video_capturer_.get();
-  }
-
   bool is_screencast() const override {
     return video_capturer_->IsScreencast();
   }

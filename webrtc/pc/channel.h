@@ -27,8 +27,8 @@
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videosinkinterface.h"
+#include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/p2p/client/socketmonitor.h"
 #include "webrtc/pc/audiomonitor.h"
@@ -449,7 +449,10 @@ class VideoChannel : public BaseChannel {
   }
 
   bool SetSink(uint32_t ssrc, rtc::VideoSinkInterface<VideoFrame>* sink);
-  bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer);
+  // Register a source. The |ssrc| must correspond to a registered
+  // send stream.
+  void SetSource(uint32_t ssrc,
+                 rtc::VideoSourceInterface<cricket::VideoFrame>* source);
   // Get statistics about the current media session.
   bool GetStats(VideoMediaInfo* stats);
 

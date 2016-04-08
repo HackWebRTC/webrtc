@@ -29,6 +29,7 @@
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/base/videosinkinterface.h"
+#include "webrtc/media/base/videosourceinterface.h"
 // TODO(juberti): re-evaluate this include
 #include "webrtc/pc/audiomonitor.h"
 
@@ -998,9 +999,10 @@ class VideoMediaChannel : public MediaChannel {
   // If SSRC is 0, the renderer is used for the 'default' stream.
   virtual bool SetSink(uint32_t ssrc,
                        rtc::VideoSinkInterface<cricket::VideoFrame>* sink) = 0;
-  // If |ssrc| is 0, replace the default capturer (engine capturer) with
-  // |capturer|. If |ssrc| is non zero create a new stream with |ssrc| as SSRC.
-  virtual bool SetCapturer(uint32_t ssrc, VideoCapturer* capturer) = 0;
+  // Register a source. The |ssrc| must correspond to a registered send stream.
+  virtual void SetSource(
+      uint32_t ssrc,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VideoMediaInfo* info) = 0;
 };
