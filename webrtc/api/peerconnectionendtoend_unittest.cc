@@ -17,6 +17,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
@@ -46,11 +47,12 @@ class PeerConnectionEndToEndTest
   typedef std::vector<rtc::scoped_refptr<DataChannelInterface> >
       DataChannelList;
 
-  PeerConnectionEndToEndTest()
-      : caller_(new rtc::RefCountedObject<PeerConnectionTestWrapper>(
-                    "caller")),
-        callee_(new rtc::RefCountedObject<PeerConnectionTestWrapper>(
-                    "callee")) {
+  PeerConnectionEndToEndTest() {
+    RTC_CHECK(worker_thread_.Start());
+    caller_ = new rtc::RefCountedObject<PeerConnectionTestWrapper>(
+        "caller", &worker_thread_);
+    callee_ = new rtc::RefCountedObject<PeerConnectionTestWrapper>(
+        "callee", &worker_thread_);
 #ifdef WEBRTC_ANDROID
     webrtc::InitializeAndroidObjects();
 #endif
@@ -151,6 +153,7 @@ class PeerConnectionEndToEndTest
   }
 
  protected:
+  rtc::Thread worker_thread_;
   rtc::scoped_refptr<PeerConnectionTestWrapper> caller_;
   rtc::scoped_refptr<PeerConnectionTestWrapper> callee_;
   DataChannelList caller_signaled_data_channels_;

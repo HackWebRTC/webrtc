@@ -47,15 +47,16 @@ void PeerConnectionTestWrapper::Connect(PeerConnectionTestWrapper* caller,
       caller, &PeerConnectionTestWrapper::ReceiveAnswerSdp);
 }
 
-PeerConnectionTestWrapper::PeerConnectionTestWrapper(const std::string& name)
-    : name_(name) {}
+PeerConnectionTestWrapper::PeerConnectionTestWrapper(const std::string& name,
+                                                     rtc::Thread* worker_thread)
+    : name_(name), worker_thread_(worker_thread) {}
 
 PeerConnectionTestWrapper::~PeerConnectionTestWrapper() {}
 
 bool PeerConnectionTestWrapper::CreatePc(
   const MediaConstraintsInterface* constraints) {
   rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
-      new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
+      new cricket::FakePortAllocator(worker_thread_, nullptr));
 
   fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
   if (fake_audio_capture_module_ == NULL) {
@@ -63,8 +64,8 @@ bool PeerConnectionTestWrapper::CreatePc(
   }
 
   peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
-      rtc::Thread::Current(), rtc::Thread::Current(),
-      fake_audio_capture_module_, NULL, NULL);
+      worker_thread_, rtc::Thread::Current(), fake_audio_capture_module_, NULL,
+      NULL);
   if (!peer_connection_factory_) {
     return false;
   }
