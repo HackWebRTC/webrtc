@@ -18,6 +18,7 @@
 @class RTCMediaStream;
 @class RTCMediaStreamTrack;
 @class RTCPeerConnectionFactory;
+@class RTCRtpSender;
 @class RTCSessionDescription;
 @class RTCStatsReport;
 
@@ -114,6 +115,12 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
 @property(nonatomic, readonly) RTCSignalingState signalingState;
 @property(nonatomic, readonly) RTCIceConnectionState iceConnectionState;
 @property(nonatomic, readonly) RTCIceGatheringState iceGatheringState;
+
+/** Gets all RTCRtpSenders associated with this peer connection.
+ *  Note: reading this property returns different instances of RTCRtpSender.
+ *  Use isEqual: instead of == to compare RTCRtpSender instances.
+ */
+@property(nonatomic, readonly) NSArray<RTCRtpSender *> *senders;
 
 - (instancetype)init NS_UNAVAILABLE;
 

@@ -19,6 +19,7 @@
 #import "webrtc/api/objc/RTCMediaConstraints+Private.h"
 #import "webrtc/api/objc/RTCMediaStream+Private.h"
 #import "webrtc/api/objc/RTCPeerConnectionFactory+Private.h"
+#import "webrtc/api/objc/RTCRtpSender+Private.h"
 #import "webrtc/api/objc/RTCSessionDescription+Private.h"
 #import "webrtc/api/objc/RTCStatsReport+Private.h"
 #import "webrtc/base/objc/RTCLogging.h"
@@ -309,6 +310,18 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
       new rtc::RefCountedObject<webrtc::SetSessionDescriptionObserverAdapter>(
           completionHandler));
   _peerConnection->SetRemoteDescription(observer, sdp.nativeDescription);
+}
+
+- (NSArray<RTCRtpSender *> *)senders {
+  std::vector<rtc::scoped_refptr<webrtc::RtpSenderInterface>> nativeSenders(
+      _peerConnection->GetSenders());
+  NSMutableArray *senders = [[NSMutableArray alloc] init];
+  for (const auto &nativeSender : nativeSenders) {
+    RTCRtpSender *sender =
+        [[RTCRtpSender alloc] initWithNativeRtpSender:nativeSender];
+    [senders addObject:sender];
+  }
+  return senders;
 }
 
 #pragma mark - Private

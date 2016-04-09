@@ -37,6 +37,11 @@ NS_ASSUME_NONNULL_BEGIN
                                type:(RTCMediaStreamTrackType)type
     NS_DESIGNATED_INITIALIZER;
 
+- (instancetype)initWithNativeTrack:
+    (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack;
+
+- (BOOL)isEqualToTrack:(RTCMediaStreamTrack *)track;
+
 + (webrtc::MediaStreamTrackInterface::TrackState)nativeTrackStateForState:
     (RTCMediaStreamTrackState)state;
 

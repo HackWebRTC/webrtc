@@ -47,6 +47,20 @@
                                     readyState];
 }
 
+- (BOOL)isEqual:(id)object {
+  if (self == object) {
+    return YES;
+  }
+  if (![object isMemberOfClass:[self class]]) {
+    return NO;
+  }
+  return [self isEqualToTrack:(RTCMediaStreamTrack *)object];
+}
+
+- (NSUInteger)hash {
+  return (NSUInteger)_nativeTrack.get();
+}
+
 #pragma mark - Private
 
 - (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack {
@@ -62,6 +76,29 @@
     _type = type;
   }
   return self;
+}
+
+- (instancetype)initWithNativeTrack:
+    (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack {
+  NSParameterAssert(nativeTrack);
+  if (nativeTrack->kind() ==
+      std::string(webrtc::MediaStreamTrackInterface::kAudioKind)) {
+    return [self initWithNativeTrack:nativeTrack
+                                type:RTCMediaStreamTrackTypeAudio];
+  }
+  if (nativeTrack->kind() ==
+      std::string(webrtc::MediaStreamTrackInterface::kVideoKind)) {
+    return [self initWithNativeTrack:nativeTrack
+                                type:RTCMediaStreamTrackTypeVideo];
+  }
+  return nil;
+}
+
+- (BOOL)isEqualToTrack:(RTCMediaStreamTrack *)track {
+  if (!track) {
+    return NO;
+  }
+  return _nativeTrack == track.nativeTrack;
 }
 
 + (webrtc::MediaStreamTrackInterface::TrackState)nativeTrackStateForState:
