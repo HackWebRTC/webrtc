@@ -24,8 +24,12 @@ const int TLS_NULL_WITH_NULL_NULL = 0;
 
 // Constants for SRTP profiles.
 const int SRTP_INVALID_CRYPTO_SUITE = 0;
+#ifndef SRTP_AES128_CM_SHA1_80
 const int SRTP_AES128_CM_SHA1_80 = 0x0001;
+#endif
+#ifndef SRTP_AES128_CM_SHA1_32
 const int SRTP_AES128_CM_SHA1_32 = 0x0002;
+#endif
 
 // Cipher suite to use for SRTP. Typically a 80-bit HMAC will be used, except
 // in applications (voice) where the additional bandwidth may be significant.
