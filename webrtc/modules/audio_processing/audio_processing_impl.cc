@@ -94,7 +94,7 @@ bool is_multi_band(int sample_rate_hz) {
          sample_rate_hz == AudioProcessing::kSampleRate48kHz;
 }
 
-int ClosestNativeRate(int min_proc_rate) {
+int ClosestHigherNativeRate(int min_proc_rate) {
   for (int rate : AudioProcessing::kNativeSampleRatesHz) {
     if (rate >= min_proc_rate) {
       return rate;
@@ -362,9 +362,9 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 
   formats_.api_format = config;
 
-  capture_nonlocked_.fwd_proc_format = StreamConfig(ClosestNativeRate(std::min(
-      formats_.api_format.input_stream().sample_rate_hz(),
-      formats_.api_format.output_stream().sample_rate_hz())));
+  capture_nonlocked_.fwd_proc_format = StreamConfig(ClosestHigherNativeRate(
+      std::min(formats_.api_format.input_stream().sample_rate_hz(),
+               formats_.api_format.output_stream().sample_rate_hz())));
 
   // We normally process the reverse stream at 16 kHz. Unless...
   int rev_proc_rate = kSampleRate16kHz;
