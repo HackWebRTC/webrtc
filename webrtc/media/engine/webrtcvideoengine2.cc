@@ -883,6 +883,7 @@ webrtc::RtpParameters WebRtcVideoChannel2::GetRtpParameters(
 bool WebRtcVideoChannel2::SetRtpParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRtpParameters");
   rtc::CritScope stream_lock(&stream_crit_);
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
@@ -985,6 +986,7 @@ bool WebRtcVideoChannel2::GetSendCodec(VideoCodec* codec) {
 }
 
 bool WebRtcVideoChannel2::SetSend(bool send) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetSend");
   LOG(LS_VERBOSE) << "SetSend: " << (send ? "true" : "false");
   if (send && !send_codec_) {
     LOG(LS_ERROR) << "SetSend(true) called before setting codec.";

@@ -355,6 +355,7 @@ VideoCaptureInput* VideoSendStream::Input() {
 void VideoSendStream::Start() {
   if (payload_router_.active())
     return;
+  TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Start");
   vie_encoder_.Pause();
   payload_router_.set_active(true);
   // Was not already started, trigger a keyframe.
@@ -366,6 +367,7 @@ void VideoSendStream::Start() {
 void VideoSendStream::Stop() {
   if (!payload_router_.active())
     return;
+  TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Stop");
   // TODO(pbos): Make sure the encoder stops here.
   payload_router_.set_active(false);
   vie_receiver_->StopReceive();
