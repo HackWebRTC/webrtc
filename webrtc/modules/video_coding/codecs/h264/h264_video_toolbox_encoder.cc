@@ -248,6 +248,7 @@ int H264VideoToolboxEncoder::Encode(
     return WEBRTC_VIDEO_CODEC_OK;
   }
 #endif
+  bool is_keyframe_required = false;
   // Get a pixel buffer from the pool and copy frame data over.
   CVPixelBufferPoolRef pixel_buffer_pool =
       VTCompressionSessionGetPixelBufferPool(compression_session_);
@@ -257,9 +258,11 @@ int H264VideoToolboxEncoder::Encode(
     // invalidated, which causes this pool call to fail when the application
     // is foregrounded and frames are being sent for encoding again.
     // Resetting the session when this happens fixes the issue.
+    // In addition we request a keyframe so video can recover quickly.
     ResetCompressionSession();
     pixel_buffer_pool =
         VTCompressionSessionGetPixelBufferPool(compression_session_);
+    is_keyframe_required = true;
   }
 #endif
   if (!pixel_buffer_pool) {
@@ -283,8 +286,7 @@ int H264VideoToolboxEncoder::Encode(
   }
 
   // Check if we need a keyframe.
-  bool is_keyframe_required = false;
-  if (frame_types) {
+  if (!is_keyframe_required && frame_types) {
     for (auto frame_type : *frame_types) {
       if (frame_type == kVideoFrameKey) {
         is_keyframe_required = true;
