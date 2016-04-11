@@ -12,6 +12,8 @@ message Init {
   optional int32 num_reverse_channels = 5;
   optional int32 reverse_sample_rate = 6;
   optional int32 output_sample_rate = 7;
+  optional int32 reverse_output_sample_rate = 8;
+  optional int32 num_reverse_output_channels = 9;
 }
 
 // May contain interleaved or deinterleaved data, but don't store both formats.

@@ -1392,8 +1392,10 @@ int AudioProcessingImpl::WriteInitMessage() {
       formats_.api_format.reverse_input_stream().sample_rate_hz());
   msg->set_output_sample_rate(
       formats_.api_format.output_stream().sample_rate_hz());
-  // TODO(ekmeyerson): Add reverse output fields to
-  // debug_dump_.capture.event_msg.
+  msg->set_reverse_output_sample_rate(
+      formats_.api_format.reverse_output_stream().sample_rate_hz());
+  msg->set_num_reverse_output_channels(
+      formats_.api_format.reverse_output_stream().num_channels());
 
   RETURN_ON_ERR(WriteMessageToDebugFile(debug_dump_.debug_file.get(),
                                         &debug_dump_.num_bytes_left_for_log_,
