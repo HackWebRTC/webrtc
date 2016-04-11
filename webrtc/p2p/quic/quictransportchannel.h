@@ -48,7 +48,7 @@ enum QuicTransportState {
 //       TransportChannelImpl* channel_;
 //   }
 //
-//   - Data written to SendPacket() is passed directly to |channel_| if  it is
+//   - Data written to SendPacket() is passed directly to |channel_| if it is
 //     an SRTP packet with the PF_SRTP_BYPASS flag.
 //
 //   - |quic_| passes outgoing packets to WritePacket(), which transfers them
@@ -61,8 +61,11 @@ enum QuicTransportState {
 //   - When the QUIC handshake is completed, quic_state() returns
 //     QUIC_TRANSPORT_CONNECTED and SRTP keying material can be exported.
 //
-// TODO(mikescarlett): Implement secure QUIC handshake, 0-RTT handshakes, and
-// QUIC data streams.
+//   - CreateQuicStream() creates an outgoing QUIC stream. Once the local peer
+//     sends data from this stream, the remote peer emits SignalIncomingStream
+//     with a QUIC stream of the same id to handle received data.
+//
+// TODO(mikescarlett): Implement secure QUIC handshake and 0-RTT handshakes.
 class QuicTransportChannel : public TransportChannelImpl,
                              public net::QuicPacketWriter,
                              public net::QuicCryptoClientStream::ProofHandler {
@@ -113,8 +116,9 @@ class QuicTransportChannel : public TransportChannelImpl,
                             size_t result_len) override;
   // TODO(mikescarlett): Remove this method once TransportChannel does not
   // require defining it.
-  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const override {
-    return false;
+  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+      const override {
+    return nullptr;
   }
 
   // TransportChannelImpl overrides that we forward to the wrapped transport.
@@ -206,6 +210,14 @@ class QuicTransportChannel : public TransportChannelImpl,
   void OnCanWrite();
   // Connectivity state of QuicTransportChannel.
   QuicTransportState quic_state() const { return quic_state_; }
+  // Creates a new QUIC stream that can send data.
+  ReliableQuicStream* CreateQuicStream();
+
+  // Emitted when |quic_| creates a QUIC stream to receive data from the remote
+  // peer, when the stream did not exist previously.
+  sigslot::signal1<ReliableQuicStream*> SignalIncomingStream;
+  // Emitted when the QuicTransportChannel state becomes QUIC_TRANSPORT_CLOSED.
+  sigslot::signal0<> SignalClosed;
 
  private:
   // Fingerprint of remote peer.
@@ -241,6 +253,8 @@ class QuicTransportChannel : public TransportChannelImpl,
   void OnHandshakeComplete();
   // Called when |quic_| has closed the connection.
   void OnConnectionClosed(net::QuicErrorCode error, bool from_peer);
+  // Called when |quic_| has created a new QUIC stream for incoming data.
+  void OnIncomingStream(ReliableQuicStream* stream);
 
   // Called by OnReadPacket() when a QUIC packet is received.
   bool HandleQuicPacket(const char* data, size_t size);

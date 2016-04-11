@@ -443,6 +443,8 @@ bool QuicTransportChannel::CreateQuicSession() {
       this, &QuicTransportChannel::OnHandshakeComplete);
   quic_->SignalConnectionClosed.connect(
       this, &QuicTransportChannel::OnConnectionClosed);
+  quic_->SignalIncomingStream.connect(this,
+                                      &QuicTransportChannel::OnIncomingStream);
   return true;
 }
 
@@ -541,6 +543,7 @@ void QuicTransportChannel::OnConnectionClosed(net::QuicErrorCode error,
   // does not close due to failure.
   set_quic_state(QUIC_TRANSPORT_CLOSED);
   set_writable(false);
+  SignalClosed();
 }
 
 void QuicTransportChannel::OnProofValid(
@@ -567,6 +570,18 @@ void QuicTransportChannel::set_quic_state(QuicTransportState state) {
   LOG_J(LS_VERBOSE, this) << "set_quic_state from:" << quic_state_ << " to "
                           << state;
   quic_state_ = state;
+}
+
+ReliableQuicStream* QuicTransportChannel::CreateQuicStream() {
+  if (quic_) {
+    net::SpdyPriority priority = 0;  // Priority of the QUIC stream (not used)
+    return quic_->CreateOutgoingDynamicStream(priority);
+  }
+  return nullptr;
+}
+
+void QuicTransportChannel::OnIncomingStream(ReliableQuicStream* stream) {
+  SignalIncomingStream(stream);
 }
 
 }  // namespace cricket

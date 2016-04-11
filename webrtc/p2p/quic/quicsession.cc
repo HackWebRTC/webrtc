@@ -75,7 +75,7 @@ ReliableQuicStream* QuicSession::CreateOutgoingDynamicStream(
     net::SpdyPriority priority) {
   ReliableQuicStream* stream = CreateDataStream(GetNextOutgoingStreamId());
   if (stream) {
-    ActivateStream(stream);
+    ActivateStream(stream);  // QuicSession owns the stream.
   }
   return stream;
 }

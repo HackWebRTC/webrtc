@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "net/quic/quic_session.h"
 #include "webrtc/base/checks.h"
 
 namespace cricket {
@@ -38,14 +39,26 @@ void ReliableQuicStream::OnClose() {
   SignalClosed(id(), connection_error());
 }
 
-rtc::StreamResult ReliableQuicStream::Write(const char* data, size_t len) {
+rtc::StreamResult ReliableQuicStream::Write(const char* data,
+                                            size_t len,
+                                            bool fin) {
   // Writes the data, or buffers it.
-  WriteOrBufferData(std::string(data, len), false, nullptr);
+  WriteOrBufferData(std::string(data, len), fin, nullptr);
   if (HasBufferedData()) {
     return rtc::StreamResult(rtc::SR_BLOCK);
   }
-
   return rtc::StreamResult(rtc::SR_SUCCESS);
+}
+
+void ReliableQuicStream::Close() {
+  net::ReliableQuicStream::session()->CloseStream(id());
+}
+
+void ReliableQuicStream::OnCanWrite() {
+  uint64_t prev_queued_bytes = queued_data_bytes();
+  net::ReliableQuicStream::OnCanWrite();
+  uint64_t queued_bytes_written = prev_queued_bytes - queued_data_bytes();
+  SignalQueuedBytesWritten(id(), queued_bytes_written);
 }
 
 }  // namespace cricket

@@ -23,6 +23,7 @@
 using cricket::ConnectionRole;
 using cricket::IceRole;
 using cricket::QuicTransportChannel;
+using cricket::ReliableQuicStream;
 using cricket::TransportChannel;
 using cricket::TransportDescription;
 
@@ -97,6 +98,9 @@ class QuicTestPeer : public sigslot::has_slots<> {
         quic_channel_(&ice_channel_) {
     quic_channel_.SignalReadPacket.connect(
         this, &QuicTestPeer::OnTransportChannelReadPacket);
+    quic_channel_.SignalIncomingStream.connect(this,
+                                               &QuicTestPeer::OnIncomingStream);
+    quic_channel_.SignalClosed.connect(this, &QuicTestPeer::OnClosed);
     ice_channel_.SetAsync(true);
     rtc::scoped_refptr<rtc::RTCCertificate> local_cert =
         rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
@@ -198,8 +202,12 @@ class QuicTestPeer : public sigslot::has_slots<> {
     return local_fingerprint_;
   }
 
+  ReliableQuicStream* incoming_quic_stream() { return incoming_quic_stream_; }
+
+  bool signal_closed_emitted() const { return signal_closed_emitted_; }
+
  private:
-  // QUIC channel callback.
+  // QuicTransportChannel callbacks.
   void OnTransportChannelReadPacket(TransportChannel* channel,
                                     const char* data,
                                     size_t size,
@@ -210,6 +218,10 @@ class QuicTestPeer : public sigslot::has_slots<> {
     int expected_flags = IsRtpLeadByte(data[0]) ? cricket::PF_SRTP_BYPASS : 0;
     ASSERT_EQ(expected_flags, flags);
   }
+  void OnIncomingStream(ReliableQuicStream* stream) {
+    incoming_quic_stream_ = stream;
+  }
+  void OnClosed() { signal_closed_emitted_ = true; }
 
   std::string name_;                      // Channel name.
   size_t bytes_sent_;                     // Bytes sent by QUIC channel.
@@ -217,6 +229,8 @@ class QuicTestPeer : public sigslot::has_slots<> {
   FailableTransportChannel ice_channel_;  // Simulates an ICE channel.
   QuicTransportChannel quic_channel_;     // QUIC channel to test.
   rtc::scoped_ptr<rtc::SSLFingerprint> local_fingerprint_;
+  ReliableQuicStream* incoming_quic_stream_ = nullptr;
+  bool signal_closed_emitted_ = false;
 };
 
 class QuicTransportChannelTest : public testing::Test {
@@ -485,4 +499,30 @@ TEST_F(QuicTransportChannelTest, IceReceivingBeforeConnected) {
   ASSERT_TRUE(peer1_.ice_channel()->receiving());
   ASSERT_TRUE_WAIT(quic_connected(), kTimeoutMs);
   EXPECT_TRUE(peer1_.quic_channel()->receiving());
+}
+
+// Test that when peer 1 creates an outgoing stream, peer 2 creates an incoming
+// QUIC stream with the same ID and fires OnIncomingStream.
+TEST_F(QuicTransportChannelTest, CreateOutgoingAndIncomingQuicStream) {
+  Connect();
+  EXPECT_EQ(nullptr, peer1_.quic_channel()->CreateQuicStream());
+  ASSERT_TRUE_WAIT(quic_connected(), kTimeoutMs);
+  ReliableQuicStream* stream = peer1_.quic_channel()->CreateQuicStream();
+  ASSERT_NE(nullptr, stream);
+  stream->Write("Hi", 2);
+  EXPECT_TRUE_WAIT(peer2_.incoming_quic_stream() != nullptr, kTimeoutMs);
+  EXPECT_EQ(stream->id(), peer2_.incoming_quic_stream()->id());
+}
+
+// Test that SignalClosed is emitted when the QuicConnection closes.
+TEST_F(QuicTransportChannelTest, SignalClosedEmitted) {
+  Connect();
+  ASSERT_TRUE_WAIT(quic_connected(), kTimeoutMs);
+  ASSERT_FALSE(peer1_.signal_closed_emitted());
+  ReliableQuicStream* stream = peer1_.quic_channel()->CreateQuicStream();
+  ASSERT_NE(nullptr, stream);
+  stream->CloseConnectionWithDetails(net::QuicErrorCode::QUIC_NO_ERROR,
+                                     "Closing QUIC for testing");
+  EXPECT_TRUE(peer1_.signal_closed_emitted());
+  EXPECT_TRUE_WAIT(peer2_.signal_closed_emitted(), kTimeoutMs);
 }

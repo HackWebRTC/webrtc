@@ -450,3 +450,17 @@ TEST_F(QuicSessionTest, CannotCreateDataStreamBeforeHandshake) {
   EXPECT_EQ(nullptr, server_peer_->CreateOutgoingDynamicStream(5));
   EXPECT_EQ(nullptr, client_peer_->CreateOutgoingDynamicStream(5));
 }
+
+// Test that closing a QUIC stream causes the QuicSession to remove it.
+TEST_F(QuicSessionTest, CloseQuicStream) {
+  CreateClientAndServerSessions();
+  StartHandshake(true, true);
+  ASSERT_TRUE_WAIT(client_peer_->IsCryptoHandshakeConfirmed() &&
+                       server_peer_->IsCryptoHandshakeConfirmed(),
+                   kTimeoutMs);
+  ReliableQuicStream* stream = client_peer_->CreateOutgoingDynamicStream(5);
+  ASSERT_NE(nullptr, stream);
+  EXPECT_FALSE(client_peer_->IsClosedStream(stream->id()));
+  stream->Close();
+  EXPECT_TRUE(client_peer_->IsClosedStream(stream->id()));
+}

@@ -163,6 +163,8 @@ class ReliableQuicStreamTest : public ::testing::Test,
     stream_->SignalDataReceived.connect(
         this, &ReliableQuicStreamTest::OnDataReceived);
     stream_->SignalClosed.connect(this, &ReliableQuicStreamTest::OnClosed);
+    stream_->SignalQueuedBytesWritten.connect(
+        this, &ReliableQuicStreamTest::OnQueuedBytesWritten);
 
     session_->register_write_blocked_stream(stream_->id(), kDefaultPriority);
   }
@@ -172,7 +174,11 @@ class ReliableQuicStreamTest : public ::testing::Test,
     read_buffer_.append(data, length);
   }
 
-  void OnClosed(QuicStreamId id, QuicErrorCode err) { closed_ = true; }
+  void OnClosed(QuicStreamId id, int err) { closed_ = true; }
+
+  void OnQueuedBytesWritten(QuicStreamId id, uint64_t queued_bytes_written) {
+    queued_bytes_written_ = queued_bytes_written;
+  }
 
  protected:
   rtc::scoped_ptr<ReliableQuicStream> stream_;
@@ -184,6 +190,8 @@ class ReliableQuicStreamTest : public ::testing::Test,
   std::string read_buffer_;
   // Whether the ReliableQuicStream is closed.
   bool closed_ = false;
+  // Bytes written by OnCanWrite().
+  uint64_t queued_bytes_written_;
 };
 
 // Write an entire string.
@@ -213,6 +221,7 @@ TEST_F(ReliableQuicStreamTest, BufferData) {
 
   session_->set_writable(true);
   stream_->OnCanWrite();
+  EXPECT_EQ(7ul, queued_bytes_written_);
 
   EXPECT_FALSE(stream_->HasBufferedData());
   EXPECT_EQ("Foo bar", write_buffer_);
