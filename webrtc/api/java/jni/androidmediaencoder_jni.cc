@@ -62,8 +62,6 @@ namespace webrtc_jni {
 #define MAX_ALLOWED_VIDEO_FPS 60
 // Maximum allowed frames in encoder input queue.
 #define MAX_ENCODER_Q_SIZE 2
-// Maximum allowed latency in ms.
-#define MAX_ENCODER_LATENCY_MS 70
 // Maximum amount of dropped frames caused by full encoder queue - exceeding
 // this threshold means that encoder probably got stuck and need to be reset.
 #define ENCODER_STALL_FRAMEDROP_THRESHOLD 60
@@ -642,29 +640,24 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   RTC_CHECK(frame_types->size() == 1) << "Unexpected stream count";
 
-  // Check if we accumulated too many frames in encoder input buffers
-  // or the encoder latency exceeds 70 ms and drop frame if so.
-  if (frames_in_queue_ > 0 && last_input_timestamp_ms_ >= 0) {
-    int encoder_latency_ms = last_input_timestamp_ms_ -
-        last_output_timestamp_ms_;
-    if (frames_in_queue_ > MAX_ENCODER_Q_SIZE ||
-        encoder_latency_ms > MAX_ENCODER_LATENCY_MS) {
-      ALOGD << "Drop frame - encoder is behind by " << encoder_latency_ms <<
-          " ms. Q size: " << frames_in_queue_ << ". TS: " <<
-          (int)(current_timestamp_us_ / 1000) <<  ". Fps: " << last_set_fps_ <<
-          ". Consecutive drops: " << consecutive_full_queue_frame_drops_ ;
-      current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
-      consecutive_full_queue_frame_drops_++;
-      if (consecutive_full_queue_frame_drops_ >=
-          ENCODER_STALL_FRAMEDROP_THRESHOLD) {
-        ALOGE << "Encoder got stuck. Reset.";
-        ResetCodecOnCodecThread();
-        return WEBRTC_VIDEO_CODEC_ERROR;
-      }
-      frames_dropped_media_encoder_++;
-      OnDroppedFrame();
-      return WEBRTC_VIDEO_CODEC_OK;
+  // Check if we accumulated too many frames in encoder input buffers and drop
+  // frame if so.
+  if (frames_in_queue_ > MAX_ENCODER_Q_SIZE) {
+    ALOGD << "Already " << frames_in_queue_ << " frames in the queue, dropping"
+          << ". TS: " << (int)(current_timestamp_us_ / 1000)
+          << ". Fps: " << last_set_fps_
+          << ". Consecutive drops: " << consecutive_full_queue_frame_drops_;
+    current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+    consecutive_full_queue_frame_drops_++;
+    if (consecutive_full_queue_frame_drops_ >=
+        ENCODER_STALL_FRAMEDROP_THRESHOLD) {
+      ALOGE << "Encoder got stuck. Reset.";
+      ResetCodecOnCodecThread();
+      return WEBRTC_VIDEO_CODEC_ERROR;
     }
+    frames_dropped_media_encoder_++;
+    OnDroppedFrame();
+    return WEBRTC_VIDEO_CODEC_OK;
   }
   consecutive_full_queue_frame_drops_ = 0;
 
