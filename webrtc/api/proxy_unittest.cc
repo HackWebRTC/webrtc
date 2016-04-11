@@ -12,7 +12,7 @@
 
 #include <string>
 
-#include "testing/base/public/gmock.h"
+#include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"

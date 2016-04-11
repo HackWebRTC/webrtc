@@ -43,7 +43,7 @@
         'peerconnectionendtoend_unittest.cc',
         'peerconnectionfactory_unittest.cc',
         'peerconnectioninterface_unittest.cc',
-        # 'peerconnectionproxy_unittest.cc',
+	'proxy_unittest.cc',
         'rtpsenderreceiver_unittest.cc',
         'statscollector_unittest.cc',
         'test/fakeaudiocapturemodule.cc',
