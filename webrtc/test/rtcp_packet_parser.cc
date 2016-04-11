@@ -68,7 +68,7 @@ void RtcpPacketParser::Parse(const void *data, size_t len) {
       case RTCPPacketTypes::kPsfbSliItem:
         sli_item_.Set(parser.Packet().SLIItem);
         break;
-      case RTCPPacketTypes::kPsfbRpsi:
+      case RTCPPacketTypes::kPsfbRpsiItem:
         rpsi_.Set(parser.Packet().RPSI);
         break;
       case RTCPPacketTypes::kPsfbFir:

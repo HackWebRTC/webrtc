@@ -461,6 +461,7 @@ TEST_F(RtcpSenderTest, SendRpsi) {
   feedback_state.send_payload_type = kPayloadType;
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpRpsi, 0, nullptr,
                                       false, kPictureId));
+  EXPECT_EQ(1, parser()->rpsi()->num_packets());
   EXPECT_EQ(kPayloadType, parser()->rpsi()->PayloadType());
   EXPECT_EQ(kPictureId, parser()->rpsi()->PictureId());
 }

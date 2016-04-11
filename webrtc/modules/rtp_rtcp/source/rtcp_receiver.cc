@@ -1101,8 +1101,7 @@ RTCPReceiver::HandleRPSI(RTCPUtility::RTCPParserV2& rtcpParser,
 {
     const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
     RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
-    if (pktType == RTCPPacketTypes::kPsfbRpsi) {
-        rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRpsi; // received signal that we have a confirmed reference picture
+    if (pktType == RTCPPacketTypes::kPsfbRpsiItem) {
         if(rtcpPacket.RPSI.NumberOfValidBits%8 != 0)
         {
             // to us unknown
@@ -1110,6 +1109,8 @@ RTCPReceiver::HandleRPSI(RTCPUtility::RTCPParserV2& rtcpParser,
             rtcpParser.Iterate();
             return;
         }
+        // Received signal that we have a confirmed reference picture.
+        rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRpsi;
         rtcpPacketInformation.rpsiPictureId = 0;
 
         // convert NativeBitString to rpsiPictureId

@@ -29,6 +29,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/remb.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rpsi.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sli.h"
@@ -163,6 +164,50 @@ TEST_F(RtcpReceiverTest, InvalidFeedbackPacketIsIgnored) {
   const uint8_t bad_packet[] = {0x80, RTCPUtility::PT_RTPFB, 0, 0};
   EXPECT_EQ(0, InjectRtcpPacket(bad_packet, sizeof(bad_packet)));
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
+}
+
+TEST_F(RtcpReceiverTest, RpsiWithFractionalPaddingIsIgnored) {
+  // Padding size represent fractional number of bytes.
+  const uint8_t kPaddingSizeBits = 0x0b;
+  const uint8_t bad_packet[] = {0x83, RTCPUtility::PT_PSFB, 0, 3,
+                                0x12, 0x34, 0x56, 0x78,
+                                0x98, 0x76, 0x54, 0x32,
+                                kPaddingSizeBits, 0x00, 0x00, 0x00};
+  EXPECT_EQ(0, InjectRtcpPacket(bad_packet, sizeof(bad_packet)));
+  EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
+}
+
+TEST_F(RtcpReceiverTest, RpsiWithTooLargePaddingIsIgnored) {
+  // Padding size exceeds packet size.
+  const uint8_t kPaddingSizeBits = 0xa8;
+  const uint8_t bad_packet[] = {0x83, RTCPUtility::PT_PSFB, 0, 3,
+                                0x12, 0x34, 0x56, 0x78,
+                                0x98, 0x76, 0x54, 0x32,
+                                kPaddingSizeBits, 0x00, 0x00, 0x00};
+  EXPECT_EQ(0, InjectRtcpPacket(bad_packet, sizeof(bad_packet)));
+  EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
+}
+
+// With parsing using rtcp classes this test will make no sense.
+// With current stateful parser this test was failing.
+TEST_F(RtcpReceiverTest, TwoHalfValidRpsiAreIgnored) {
+  const uint8_t bad_packet[] = {0x83, RTCPUtility::PT_PSFB, 0, 2,
+                                0x12, 0x34, 0x56, 0x78,
+                                0x98, 0x76, 0x54, 0x32,
+                                0x83, RTCPUtility::PT_PSFB, 0, 2,
+                                0x12, 0x34, 0x56, 0x78,
+                                0x98, 0x76, 0x54, 0x32};
+  EXPECT_EQ(0, InjectRtcpPacket(bad_packet, sizeof(bad_packet)));
+  EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
+}
+
+TEST_F(RtcpReceiverTest, InjectRpsiPacket) {
+  const uint64_t kPictureId = 0x123456789;
+  rtcp::Rpsi rpsi;
+  rpsi.WithPictureId(kPictureId);
+  rtc::Buffer packet = rpsi.Build();
+  EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
+  EXPECT_EQ(kRtcpRpsi, rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
 TEST_F(RtcpReceiverTest, InjectSrPacket) {

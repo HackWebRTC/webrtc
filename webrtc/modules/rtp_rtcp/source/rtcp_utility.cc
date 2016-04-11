@@ -1334,10 +1334,18 @@ bool RTCPUtility::RTCPParserV2::ParseRPSIItem() {
         return false;
     }
 
-    _packetType = RTCPPacketTypes::kPsfbRpsi;
 
     uint8_t padding_bits = *_ptrRTCPData++;
     _packet.RPSI.PayloadType = *_ptrRTCPData++;
+
+    if (padding_bits > static_cast<uint16_t>(length - 2) * 8) {
+      _state = ParseState::State_TopLevel;
+
+      EndCurrentBlock();
+      return false;
+    }
+
+    _packetType = RTCPPacketTypes::kPsfbRpsiItem;
 
     memcpy(_packet.RPSI.NativeBitString, _ptrRTCPData, length - 2);
     _ptrRTCPData += length - 2;

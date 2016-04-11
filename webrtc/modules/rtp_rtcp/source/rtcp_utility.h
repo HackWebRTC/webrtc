@@ -272,6 +272,7 @@ enum class RTCPPacketTypes {
 
   kPsfbPli,
   kPsfbRpsi,
+  kPsfbRpsiItem,
   kPsfbSli,
   kPsfbSliItem,
   kPsfbApp,
