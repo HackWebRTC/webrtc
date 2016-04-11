@@ -145,7 +145,7 @@ public class RoomParametersFetcher {
       // Request TURN servers.
       if (!isTurnPresent) {
         LinkedList<PeerConnection.IceServer> turnServers =
-            requestTurnServers(roomJson.getString("turn_url"));
+            requestTurnServers(roomJson.getString("ice_server_url"));
         for (PeerConnection.IceServer turnServer : turnServers) {
           Log.d(TAG, "TurnServer: " + turnServer);
           iceServers.add(turnServer);
@@ -172,7 +172,10 @@ public class RoomParametersFetcher {
     LinkedList<PeerConnection.IceServer> turnServers =
         new LinkedList<PeerConnection.IceServer>();
     Log.d(TAG, "Request TURN from: " + url);
-    HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+    HttpURLConnection connection =
+        (HttpURLConnection) new URL(url).openConnection();
+    connection.setDoOutput(true);
+    connection.setRequestProperty("REFERER", "https://appr.tc");
     connection.setConnectTimeout(TURN_HTTP_TIMEOUT_MS);
     connection.setReadTimeout(TURN_HTTP_TIMEOUT_MS);
     int responseCode = connection.getResponseCode();
@@ -185,12 +188,19 @@ public class RoomParametersFetcher {
     connection.disconnect();
     Log.d(TAG, "TURN response: " + response);
     JSONObject responseJSON = new JSONObject(response);
-    String username = responseJSON.getString("username");
-    String password = responseJSON.getString("password");
-    JSONArray turnUris = responseJSON.getJSONArray("uris");
-    for (int i = 0; i < turnUris.length(); i++) {
-      String uri = turnUris.getString(i);
-      turnServers.add(new PeerConnection.IceServer(uri, username, password));
+    JSONArray iceServers = responseJSON.getJSONArray("iceServers");
+    for (int i = 0; i < iceServers.length(); ++i) {
+      JSONObject server = iceServers.getJSONObject(i);
+      JSONArray turnUrls = server.getJSONArray("urls");
+      String username =
+          server.has("username") ? server.getString("username") : "";
+      String credential =
+          server.has("credential") ? server.getString("credential") : "";
+      for (int j = 0; j < turnUrls.length(); j++) {
+        String turnUrl = turnUrls.getString(j);
+        turnServers.add(new PeerConnection.IceServer(turnUrl, username,
+            credential));
+      }
     }
     return turnServers;
   }
