@@ -57,6 +57,7 @@ class ByteBufferWriter : public ByteBuffer {
   void WriteUInt24(uint32_t val);
   void WriteUInt32(uint32_t val);
   void WriteUInt64(uint64_t val);
+  void WriteUVarint(uint64_t val);
   void WriteString(const std::string& val);
   void WriteBytes(const char* val, size_t len);
 
@@ -110,6 +111,7 @@ class ByteBufferReader : public ByteBuffer {
   bool ReadUInt24(uint32_t* val);
   bool ReadUInt32(uint32_t* val);
   bool ReadUInt64(uint64_t* val);
+  bool ReadUVarint(uint64_t* val);
   bool ReadBytes(char* val, size_t len);
 
   // Appends next |len| bytes from the buffer to |val|. Returns false

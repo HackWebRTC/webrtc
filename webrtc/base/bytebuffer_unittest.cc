@@ -196,4 +196,64 @@ TEST(ByteBufferTest, TestReadWriteBuffer) {
   }
 }
 
+TEST(ByteBufferTest, TestReadWriteUVarint) {
+  ByteBufferWriter::ByteOrder orders[2] = {ByteBufferWriter::ORDER_HOST,
+                                           ByteBufferWriter::ORDER_NETWORK};
+  for (ByteBufferWriter::ByteOrder& order : orders) {
+    ByteBufferWriter write_buffer(order);
+    size_t size = 0;
+    EXPECT_EQ(size, write_buffer.Length());
+
+    write_buffer.WriteUVarint(1u);
+    ++size;
+    EXPECT_EQ(size, write_buffer.Length());
+
+    write_buffer.WriteUVarint(2u);
+    ++size;
+    EXPECT_EQ(size, write_buffer.Length());
+
+    write_buffer.WriteUVarint(27u);
+    ++size;
+    EXPECT_EQ(size, write_buffer.Length());
+
+    write_buffer.WriteUVarint(149u);
+    size += 2;
+    EXPECT_EQ(size, write_buffer.Length());
+
+    write_buffer.WriteUVarint(68719476736u);
+    size += 6;
+    EXPECT_EQ(size, write_buffer.Length());
+
+    ByteBufferReader read_buffer(write_buffer.Data(), write_buffer.Length(),
+                                 order);
+    EXPECT_EQ(size, read_buffer.Length());
+    uint64_t val1, val2, val3, val4, val5;
+
+    ASSERT_TRUE(read_buffer.ReadUVarint(&val1));
+    EXPECT_EQ(1u, val1);
+    --size;
+    EXPECT_EQ(size, read_buffer.Length());
+
+    ASSERT_TRUE(read_buffer.ReadUVarint(&val2));
+    EXPECT_EQ(2u, val2);
+    --size;
+    EXPECT_EQ(size, read_buffer.Length());
+
+    ASSERT_TRUE(read_buffer.ReadUVarint(&val3));
+    EXPECT_EQ(27u, val3);
+    --size;
+    EXPECT_EQ(size, read_buffer.Length());
+
+    ASSERT_TRUE(read_buffer.ReadUVarint(&val4));
+    EXPECT_EQ(149u, val4);
+    size -= 2;
+    EXPECT_EQ(size, read_buffer.Length());
+
+    ASSERT_TRUE(read_buffer.ReadUVarint(&val5));
+    EXPECT_EQ(68719476736u, val5);
+    size -= 6;
+    EXPECT_EQ(size, read_buffer.Length());
+  }
+}
+
 }  // namespace rtc

@@ -88,6 +88,20 @@ void ByteBufferWriter::WriteUInt64(uint64_t val) {
   WriteBytes(reinterpret_cast<const char*>(&v), 8);
 }
 
+// Serializes an unsigned varint in the format described by
+// https://developers.google.com/protocol-buffers/docs/encoding#varints
+// with the caveat that integers are 64-bit, not 128-bit.
+void ByteBufferWriter::WriteUVarint(uint64_t val) {
+  while (val >= 0x80) {
+    // Write 7 bits at a time, then set the msb to a continuation byte (msb=1).
+    char byte = static_cast<char>(val) | 0x80;
+    WriteBytes(&byte, 1);
+    val >>= 7;
+  }
+  char last_byte = static_cast<char>(val);
+  WriteBytes(&last_byte, 1);
+}
+
 void ByteBufferWriter::WriteString(const std::string& val) {
   WriteBytes(val.c_str(), val.size());
 }
@@ -218,6 +232,29 @@ bool ByteBufferReader::ReadUInt64(uint64_t* val) {
     *val = (Order() == ORDER_NETWORK) ? NetworkToHost64(v) : v;
     return true;
   }
+}
+
+bool ByteBufferReader::ReadUVarint(uint64_t* val) {
+  if (!val) {
+    return false;
+  }
+  // Integers are deserialized 7 bits at a time, with each byte having a
+  // continuation byte (msb=1) if there are more bytes to be read.
+  uint64_t v = 0;
+  for (int i = 0; i < 64; i += 7) {
+    char byte;
+    if (!ReadBytes(&byte, 1)) {
+      return false;
+    }
+    // Read the first 7 bits of the byte, then offset by bits read so far.
+    v |= (static_cast<uint64_t>(byte) & 0x7F) << i;
+    // True if the msb is not a continuation byte.
+    if (static_cast<uint64_t>(byte) < 0x80) {
+      *val = v;
+      return true;
+    }
+  }
+  return false;
 }
 
 bool ByteBufferReader::ReadString(std::string* val, size_t len) {
