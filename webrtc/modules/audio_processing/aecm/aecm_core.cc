@@ -14,12 +14,13 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/real_fft.h"
 #include "webrtc/modules/audio_processing/aecm/echo_control_mobile.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
-#include "webrtc/system_wrappers/include/compile_assert_c.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
+}
 #include "webrtc/typedefs.h"
 
 #ifdef AEC_DEBUG
@@ -208,7 +209,7 @@ StoreAdaptiveChannel WebRtcAecm_StoreAdaptiveChannel;
 ResetAdaptiveChannel WebRtcAecm_ResetAdaptiveChannel;
 
 AecmCore* WebRtcAecm_CreateCore() {
-    AecmCore* aecm = malloc(sizeof(AecmCore));
+    AecmCore* aecm = static_cast<AecmCore*>(malloc(sizeof(AecmCore)));
 
     aecm->farFrameBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
                                             sizeof(int16_t));
@@ -501,7 +502,7 @@ int WebRtcAecm_InitCore(AecmCore* const aecm, int samplingFreq) {
 
     // Assert a preprocessor definition at compile-time. It's an assumption
     // used in assembly code, so check the assembly files before any change.
-    COMPILE_ASSERT(PART_LEN % 16 == 0);
+    static_assert(PART_LEN % 16 == 0, "PART_LEN is not a multiple of 16");
 
     // Initialize function pointers.
     WebRtcAecm_CalcLinearEnergies = CalcLinearEnergiesC;

@@ -42,9 +42,9 @@
         'aec/echo_cancellation.cc',
         'aec/echo_cancellation_internal.h',
         'aec/echo_cancellation.h',
-        'aecm/aecm_core.c',
+        'aecm/aecm_core.cc',
         'aecm/aecm_core.h',
-        'aecm/echo_control_mobile.c',
+        'aecm/echo_control_mobile.cc',
         'aecm/echo_control_mobile.h',
         'agc/agc.cc',
         'agc/agc.h',
@@ -201,7 +201,7 @@
         }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
           'sources': [
-            'aecm/aecm_core_mips.c',
+            'aecm/aecm_core_mips.cc',
           ],
           'conditions': [
             ['mips_float_abi=="hard"', {
@@ -213,7 +213,7 @@
           ],
         }, {
           'sources': [
-            'aecm/aecm_core_c.c',
+            'aecm/aecm_core_c.cc',
           ],
         }],
       ],
@@ -270,7 +270,7 @@
         'sources': [
           'aec/aec_core_neon.cc',
           'aec/aec_rdft_neon.c',
-          'aecm/aecm_core_neon.c',
+          'aecm/aecm_core_neon.cc',
           'ns/nsx_core_neon.c',
         ],
       }],

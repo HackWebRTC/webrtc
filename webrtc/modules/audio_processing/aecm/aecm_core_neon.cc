@@ -18,19 +18,6 @@
 // TODO(kma): Re-write the corresponding assembly file, the offset
 // generating script and makefile, to replace these C functions.
 
-// Square root of Hanning window in Q14.
-const ALIGN8_BEG int16_t WebRtcAecm_kSqrtHanning[] ALIGN8_END = {
-  0,
-  399, 798, 1196, 1594, 1990, 2386, 2780, 3172,
-  3562, 3951, 4337, 4720, 5101, 5478, 5853, 6224,
-  6591, 6954, 7313, 7668, 8019, 8364, 8705, 9040,
-  9370, 9695, 10013, 10326, 10633, 10933, 11227, 11514,
-  11795, 12068, 12335, 12594, 12845, 13089, 13325, 13553,
-  13773, 13985, 14189, 14384, 14571, 14749, 14918, 15079,
-  15231, 15373, 15506, 15631, 15746, 15851, 15947, 16034,
-  16111, 16179, 16237, 16286, 16325, 16354, 16373, 16384
-};
-
 static inline void AddLanes(uint32_t* ptr, uint32x4_t v) {
 #if defined(WEBRTC_ARCH_ARM64)
   *(ptr) = vaddvq_u32(v);

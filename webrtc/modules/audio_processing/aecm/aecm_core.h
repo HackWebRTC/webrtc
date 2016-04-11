@@ -13,8 +13,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AECM_AECM_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AECM_AECM_CORE_H_
 
+extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+}
 #include "webrtc/modules/audio_processing/aecm/aecm_defines.h"
 #include "webrtc/typedefs.h"
 

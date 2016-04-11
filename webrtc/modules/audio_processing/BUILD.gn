@@ -32,9 +32,9 @@ source_set("audio_processing") {
     "aec/echo_cancellation.cc",
     "aec/echo_cancellation.h",
     "aec/echo_cancellation_internal.h",
-    "aecm/aecm_core.c",
+    "aecm/aecm_core.cc",
     "aecm/aecm_core.h",
-    "aecm/echo_control_mobile.c",
+    "aecm/echo_control_mobile.cc",
     "aecm/echo_control_mobile.h",
     "agc/agc.cc",
     "agc/agc.h",
@@ -196,7 +196,7 @@ source_set("audio_processing") {
   }
 
   if (current_cpu == "mipsel") {
-    sources += [ "aecm/aecm_core_mips.c" ]
+    sources += [ "aecm/aecm_core_mips.cc" ]
     if (mips_float_abi == "hard") {
       sources += [
         "aec/aec_core_mips.cc",
@@ -204,7 +204,7 @@ source_set("audio_processing") {
       ]
     }
   } else {
-    sources += [ "aecm/aecm_core_c.c" ]
+    sources += [ "aecm/aecm_core_c.cc" ]
   }
 
   if (is_win) {
@@ -258,7 +258,7 @@ if (rtc_build_with_neon) {
     sources = [
       "aec/aec_core_neon.cc",
       "aec/aec_rdft_neon.c",
-      "aecm/aecm_core_neon.c",
+      "aecm/aecm_core_neon.cc",
       "ns/nsx_core_neon.c",
     ]
 
