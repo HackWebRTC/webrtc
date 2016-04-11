@@ -147,7 +147,8 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   @synchronized(self) {
     _delegates.erase(std::remove(_delegates.begin(),
                                  _delegates.end(),
-                                 delegate));
+                                 delegate),
+                     _delegates.end());
     [self removeZeroedDelegates];
   }
 }
@@ -520,11 +521,11 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 
 - (void)removeZeroedDelegates {
   @synchronized(self) {
-    for (auto it = _delegates.begin(); it != _delegates.end(); ++it) {
-      if (!*it) {
-        _delegates.erase(it);
-      }
-    }
+    _delegates.erase(
+        std::remove_if(_delegates.begin(),
+                       _delegates.end(),
+                       [](id delegate) -> bool { return delegate == nil; }),
+        _delegates.end());
   }
 }
 

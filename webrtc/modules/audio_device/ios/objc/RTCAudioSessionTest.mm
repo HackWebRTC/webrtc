@@ -46,6 +46,28 @@
 
 @end
 
+// A delegate that adds itself to the audio session on init and removes itself
+// in its dealloc.
+@interface RTCTestRemoveOnDeallocDelegate : RTCAudioSessionTestDelegate
+@end
+
+@implementation RTCTestRemoveOnDeallocDelegate
+
+- (instancetype)init {
+  if (self = [super init]) {
+    RTCAudioSession *session = [RTCAudioSession sharedInstance];
+    [session addDelegate:self];
+  }
+  return self;
+}
+
+- (void)dealloc {
+  RTCAudioSession *session = [RTCAudioSession sharedInstance];
+  [session removeDelegate:self];
+}
+
+@end
+
 
 @interface RTCAudioSessionTest : NSObject
 
@@ -142,6 +164,18 @@
   EXPECT_TRUE(session.delegates[0]);
 }
 
+// Tests that we don't crash when removing delegates in dealloc.
+// Added as a regression test.
+- (void)testRemoveDelegateOnDealloc {
+  @autoreleasepool {
+    RTCTestRemoveOnDeallocDelegate *delegate =
+        [[RTCTestRemoveOnDeallocDelegate alloc] init];
+    EXPECT_TRUE(delegate);
+  }
+  RTCAudioSession *session = [RTCAudioSession sharedInstance];
+  EXPECT_EQ(0u, session.delegates.size());
+}
+
 @end
 
 namespace webrtc {
@@ -174,6 +208,11 @@ TEST_F(AudioSessionTest, PushDelegate) {
 TEST_F(AudioSessionTest, ZeroingWeakDelegate) {
   RTCAudioSessionTest *test = [[RTCAudioSessionTest alloc] init];
   [test testZeroingWeakDelegate];
+}
+
+TEST_F(AudioSessionTest, RemoveDelegateOnDealloc) {
+  RTCAudioSessionTest *test = [[RTCAudioSessionTest alloc] init];
+  [test testRemoveDelegateOnDealloc];
 }
 
 }  // namespace webrtc
