@@ -16,8 +16,7 @@
 
 namespace webrtc {
 
-class FakeVideoTrackRenderer
-    : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+class FakeVideoTrackRenderer : public cricket::FakeVideoRenderer {
  public:
   FakeVideoTrackRenderer(VideoTrackInterface* video_track)
       : video_track_(video_track) {
@@ -25,22 +24,7 @@ class FakeVideoTrackRenderer
   }
   ~FakeVideoTrackRenderer() { video_track_->RemoveSink(this); }
 
-  virtual void OnFrame(const cricket::VideoFrame& video_frame) override {
-    fake_renderer_.OnFrame(video_frame);
-  }
-
-  int errors() const { return fake_renderer_.errors(); }
-  int width() const { return fake_renderer_.width(); }
-  int height() const { return fake_renderer_.height(); }
-  webrtc::VideoRotation rotation() const { return fake_renderer_.rotation(); }
-  bool black_frame() const { return fake_renderer_.black_frame(); }
-
-  int num_rendered_frames() const {
-    return fake_renderer_.num_rendered_frames();
-  }
-
  private:
-  cricket::FakeVideoRenderer fake_renderer_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
 };
 
