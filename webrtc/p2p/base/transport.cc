@@ -227,21 +227,7 @@ void Transport::ConnectChannels() {
 
   connect_requested_ = true;
 
-  if (!local_description_) {
-    // TOOD(mallinath) : TransportDescription(TD) shouldn't be generated here.
-    // As Transport must know TD is offer or answer and cricket::Transport
-    // doesn't have the capability to decide it. This should be set by the
-    // Session.
-    // Session must generate local TD before remote candidates pushed when
-    // initiate request initiated by the remote.
-    LOG(LS_INFO) << "Transport::ConnectChannels: No local description has "
-                 << "been set. Will generate one.";
-    TransportDescription desc(std::vector<std::string>(),
-                              rtc::CreateRandomString(ICE_UFRAG_LENGTH),
-                              rtc::CreateRandomString(ICE_PWD_LENGTH),
-                              ICEMODE_FULL, CONNECTIONROLE_NONE, nullptr);
-    SetLocalTransportDescription(desc, CA_OFFER, nullptr);
-  }
+  RTC_DCHECK(local_description_);
 
   CallChannels(&TransportChannelImpl::Connect);
 }

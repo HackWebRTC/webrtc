@@ -553,8 +553,19 @@ class FakeTransportController : public TransportController {
   }
 
   void ConnectChannels_w() {
+    TransportDescription faketransport_desc(
+        std::vector<std::string>(),
+        rtc::CreateRandomString(cricket::ICE_UFRAG_LENGTH),
+        rtc::CreateRandomString(cricket::ICE_PWD_LENGTH), cricket::ICEMODE_FULL,
+        cricket::CONNECTIONROLE_NONE, nullptr);
     for (auto& kv : transports()) {
       FakeTransport* transport = static_cast<FakeTransport*>(kv.second);
+      // Set local transport description for FakeTransport before connecting.
+      // Otherwise, the RTC_CHECK in Transport.ConnectChannel will fail.
+      if (!transport->local_description()) {
+        transport->SetLocalTransportDescription(faketransport_desc,
+                                                cricket::CA_OFFER, nullptr);
+      }
       transport->ConnectChannels();
       transport->MaybeStartGathering();
     }

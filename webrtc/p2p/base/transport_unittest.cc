@@ -219,6 +219,14 @@ TEST_F(TransportTest, TestGetStats) {
   // Note that this tests the behavior of a FakeTransportChannel.
   ASSERT_EQ(1U, stats.channel_stats.size());
   EXPECT_EQ(1, stats.channel_stats[0].component);
+  // Set local transport description for FakeTransport before connecting.
+  TransportDescription faketransport_desc(
+      std::vector<std::string>(),
+      rtc::CreateRandomString(cricket::ICE_UFRAG_LENGTH),
+      rtc::CreateRandomString(cricket::ICE_PWD_LENGTH), cricket::ICEMODE_FULL,
+      cricket::CONNECTIONROLE_NONE, nullptr);
+  transport_->SetLocalTransportDescription(faketransport_desc,
+                                           cricket::CA_OFFER, nullptr);
   transport_->ConnectChannels();
   EXPECT_TRUE(transport_->GetStats(&stats));
   ASSERT_EQ(1U, stats.channel_stats.size());
