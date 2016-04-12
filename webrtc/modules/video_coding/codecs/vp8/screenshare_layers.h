@@ -30,6 +30,7 @@ class ScreenshareLayers : public TemporalLayers {
   static const int kTl0Flags;
   static const int kTl1Flags;
   static const int kTl1SyncFlags;
+  static const int kMaxFrameIntervalMs;
 
   ScreenshareLayers(int num_temporal_layers,
                     uint8_t initial_tl0_pic_idx,
@@ -69,6 +70,7 @@ class ScreenshareLayers : public TemporalLayers {
   int active_layer_;
   int64_t last_timestamp_;
   int64_t last_sync_timestamp_;
+  int64_t last_emitted_tl0_timestamp_;
   rtc::TimestampWrapAroundHandler time_wrap_handler_;
   int min_qp_;
   int max_qp_;

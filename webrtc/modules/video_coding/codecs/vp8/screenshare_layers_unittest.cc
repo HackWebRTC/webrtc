@@ -108,6 +108,14 @@ class ScreenshareLayerTest : public ::testing::Test {
     return 0;
   }
 
+  vpx_codec_enc_cfg_t GetConfig() {
+    vpx_codec_enc_cfg_t cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    cfg.rc_min_quantizer = 2;
+    cfg.rc_max_quantizer = kDefaultQp;
+    return cfg;
+  }
+
   int min_qp_;
   int max_qp_;
   int frame_size_;
@@ -359,13 +367,12 @@ TEST_F(ScreenshareLayerTest, TooHighBitrate) {
     }
   }
 
-  EXPECT_EQ(5, tl0_frames);
-  EXPECT_EQ(45, tl1_frames);
+  EXPECT_EQ(50, tl0_frames + tl1_frames);
   EXPECT_EQ(50, dropped_frames);
 }
 
 TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
-  vpx_codec_enc_cfg_t cfg;
+  vpx_codec_enc_cfg_t cfg = GetConfig();
   layers_->ConfigureBitrates(100, 1000, 5, &cfg);
 
   EXPECT_EQ(static_cast<unsigned int>(
@@ -374,7 +381,7 @@ TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
 }
 
 TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
-  vpx_codec_enc_cfg_t cfg;
+  vpx_codec_enc_cfg_t cfg = GetConfig();
   layers_->ConfigureBitrates(100, 450, 5, &cfg);
 
   EXPECT_EQ(static_cast<unsigned int>(
@@ -383,7 +390,7 @@ TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
 }
 
 TEST_F(ScreenshareLayerTest, TargetBitrateBelowTL0) {
-  vpx_codec_enc_cfg_t cfg;
+  vpx_codec_enc_cfg_t cfg = GetConfig();
   layers_->ConfigureBitrates(100, 100, 5, &cfg);
 
   EXPECT_EQ(100U, cfg.rc_target_bitrate);
@@ -392,8 +399,7 @@ TEST_F(ScreenshareLayerTest, TargetBitrateBelowTL0) {
 TEST_F(ScreenshareLayerTest, EncoderDrop) {
   ConfigureBitrates();
   CodecSpecificInfoVP8 vp8_info;
-  vpx_codec_enc_cfg_t cfg;
-  cfg.rc_max_quantizer = kDefaultQp;
+  vpx_codec_enc_cfg_t cfg = GetConfig();
 
   uint32_t timestamp = RunGracePeriod();
   timestamp = SkipUntilTl(0, timestamp);
@@ -441,10 +447,35 @@ TEST_F(ScreenshareLayerTest, EncoderDrop) {
   layers_->FrameEncoded(frame_size_, timestamp, kDefaultQp);
 }
 
+TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
+  const int kLowBitrateKbps = 50;
+  const int kLargeFrameSizeBytes = 100000;
+  const uint32_t kStartTimestamp = 1234;
+
+  vpx_codec_enc_cfg_t cfg = GetConfig();
+  layers_->ConfigureBitrates(kLowBitrateKbps, kLowBitrateKbps, 5, &cfg);
+
+  EXPECT_EQ(ScreenshareLayers::kTl0Flags,
+            layers_->EncodeFlags(kStartTimestamp));
+  layers_->FrameEncoded(kLargeFrameSizeBytes, kStartTimestamp, kDefaultQp);
+
+  const uint32_t kTwoSecondsLater =
+      kStartTimestamp + (ScreenshareLayers::kMaxFrameIntervalMs * 90);
+
+  // Sanity check, repayment time should exceed kMaxFrameIntervalMs.
+  ASSERT_GT(kStartTimestamp + 90 * (kLargeFrameSizeBytes * 8) / kLowBitrateKbps,
+            kStartTimestamp + (ScreenshareLayers::kMaxFrameIntervalMs * 90));
+
+  EXPECT_EQ(-1, layers_->EncodeFlags(kTwoSecondsLater));
+  // More than two seconds has passed since last frame, one should be emitted
+  // even if bitrate target is then exceeded.
+  EXPECT_EQ(ScreenshareLayers::kTl0Flags,
+            layers_->EncodeFlags(kTwoSecondsLater + 90));
+}
+
 TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
   ConfigureBitrates();
-  vpx_codec_enc_cfg_t cfg;
-  cfg.rc_max_quantizer = kDefaultQp;
+  vpx_codec_enc_cfg_t cfg = GetConfig();
   bool trigger_drop = false;
   bool dropped_frame = false;
   bool overshoot = false;

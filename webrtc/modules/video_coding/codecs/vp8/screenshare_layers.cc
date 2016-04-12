@@ -47,6 +47,10 @@ const int ScreenshareLayers::kTl1SyncFlags =
     VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_UPD_ARF |
     VP8_EFLAG_NO_UPD_LAST;
 
+// Always emit a frame with certain interval, even if bitrate targets have
+// been exceeded.
+const int ScreenshareLayers::kMaxFrameIntervalMs = 2000;
+
 ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
                                      uint8_t initial_tl0_pic_idx,
                                      Clock* clock)
@@ -57,6 +61,7 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
       active_layer_(-1),
       last_timestamp_(-1),
       last_sync_timestamp_(-1),
+      last_emitted_tl0_timestamp_(-1),
       min_qp_(-1),
       max_qp_(-1),
       max_debt_bytes_(0),
@@ -85,9 +90,15 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
 
   int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
   int flags = 0;
-
   if (active_layer_ == -1 ||
       layers_[active_layer_].state != TemporalLayer::State::kDropped) {
+    if (last_emitted_tl0_timestamp_ != -1 &&
+        (unwrapped_timestamp - last_emitted_tl0_timestamp_) / 90 >
+            kMaxFrameIntervalMs) {
+      // Too long time has passed since the last frame was emitted, cancel
+      // enough debt to allow a single frame.
+      layers_[0].debt_bytes_ = max_debt_bytes_ - 1;
+    }
     if (layers_[0].debt_bytes_ > max_debt_bytes_) {
       // Must drop TL0, encode TL1 instead.
       if (layers_[1].debt_bytes_ > max_debt_bytes_) {
@@ -104,6 +115,7 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
   switch (active_layer_) {
     case 0:
       flags = kTl0Flags;
+      last_emitted_tl0_timestamp_ = unwrapped_timestamp;
       break;
     case 1:
       if (TimeToSync(unwrapped_timestamp)) {
@@ -122,14 +134,13 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
       RTC_NOTREACHED();
   }
 
-  // Make sure both frame droppers leak out bits.
   int64_t ts_diff;
   if (last_timestamp_ == -1) {
     ts_diff = kOneSecond90Khz / (frame_rate_ <= 0 ? 5 : frame_rate_);
   } else {
     ts_diff = unwrapped_timestamp - last_timestamp_;
   }
-
+  // Make sure both frame droppers leak out bits.
   layers_[0].UpdateDebt(ts_diff / 90);
   layers_[1].UpdateDebt(ts_diff / 90);
   last_timestamp_ = timestamp;
