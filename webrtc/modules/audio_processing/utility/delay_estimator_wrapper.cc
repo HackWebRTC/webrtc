@@ -16,7 +16,6 @@
 
 #include "webrtc/modules/audio_processing/utility/delay_estimator.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_internal.h"
-#include "webrtc/system_wrappers/include/compile_assert_c.h"
 
 // Only bit |kBandFirst| through bit |kBandLast| are processed and
 // |kBandFirst| - |kBandLast| must be < 32.
@@ -144,10 +143,11 @@ void* WebRtc_CreateDelayEstimatorFarend(int spectrum_size, int history_size) {
 
   // Check if the sub band used in the delay estimation is small enough to fit
   // the binary spectra in a uint32_t.
-  COMPILE_ASSERT(kBandLast - kBandFirst < 32);
+  static_assert(kBandLast - kBandFirst < 32, "");
 
   if (spectrum_size >= kBandLast) {
-    self = malloc(sizeof(DelayEstimatorFarend));
+    self = static_cast<DelayEstimatorFarend*>(
+        malloc(sizeof(DelayEstimatorFarend)));
   }
 
   if (self != NULL) {
@@ -158,7 +158,8 @@ void* WebRtc_CreateDelayEstimatorFarend(int spectrum_size, int history_size) {
     memory_fail |= (self->binary_farend == NULL);
 
     // Allocate memory for spectrum buffers.
-    self->mean_far_spectrum = malloc(spectrum_size * sizeof(SpectrumType));
+    self->mean_far_spectrum =
+        static_cast<SpectrumType*>(malloc(spectrum_size * sizeof(SpectrumType)));
     memory_fail |= (self->mean_far_spectrum == NULL);
 
     self->spectrum_size = spectrum_size;
@@ -275,7 +276,7 @@ void* WebRtc_CreateDelayEstimator(void* farend_handle, int max_lookahead) {
   DelayEstimatorFarend* farend = (DelayEstimatorFarend*) farend_handle;
 
   if (farend_handle != NULL) {
-    self = malloc(sizeof(DelayEstimator));
+    self = static_cast<DelayEstimator*>(malloc(sizeof(DelayEstimator)));
   }
 
   if (self != NULL) {
@@ -287,8 +288,8 @@ void* WebRtc_CreateDelayEstimator(void* farend_handle, int max_lookahead) {
     memory_fail |= (self->binary_handle == NULL);
 
     // Allocate memory for spectrum buffers.
-    self->mean_near_spectrum = malloc(farend->spectrum_size *
-                                      sizeof(SpectrumType));
+    self->mean_near_spectrum = static_cast<SpectrumType*>(
+        malloc(farend->spectrum_size * sizeof(SpectrumType)));
     memory_fail |= (self->mean_near_spectrum == NULL);
 
     self->spectrum_size = farend->spectrum_size;
@@ -328,7 +329,7 @@ int WebRtc_SoftResetDelayEstimator(void* handle, int delay_shift) {
 }
 
 int WebRtc_set_history_size(void* handle, int history_size) {
-  DelayEstimator* self = handle;
+  DelayEstimator* self = static_cast<DelayEstimator*>(handle);
 
   if ((self == NULL) || (history_size <= 1)) {
     return -1;
@@ -337,7 +338,7 @@ int WebRtc_set_history_size(void* handle, int history_size) {
 }
 
 int WebRtc_history_size(const void* handle) {
-  const DelayEstimator* self = handle;
+  const DelayEstimator* self = static_cast<const DelayEstimator*>(handle);
 
   if (self == NULL) {
     return -1;
