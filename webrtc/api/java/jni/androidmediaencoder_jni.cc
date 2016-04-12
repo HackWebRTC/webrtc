@@ -380,17 +380,15 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       const int kLowQpThreshold = 32;
       const int kBadQpThreshold = 92;
       quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold, false,
-                           codec_settings->startBitrate, codec_settings->width,
-                           codec_settings->height,
-                           codec_settings->maxFramerate);
+          codec_settings->startBitrate,
+          codec_settings->width, codec_settings->height);
     } else if (codecType_ == kVideoCodecH264) {
       // H264 QP is in the range [0, 51].
       const int kLowQpThreshold = 21;
       const int kBadQpThreshold = 36;
       quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold, false,
-                           codec_settings->startBitrate, codec_settings->width,
-                           codec_settings->height,
-                           codec_settings->maxFramerate);
+          codec_settings->startBitrate,
+          codec_settings->width, codec_settings->height);
     } else {
       // When adding codec support to additional hardware codecs, also configure
       // their QP thresholds for scaling.
@@ -398,6 +396,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       scale_ = false;
     }
     quality_scaler_.SetMinResolution(kMinDimension, kMinDimension);
+    quality_scaler_.ReportFramerate(codec_settings->maxFramerate);
     QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
     init_width = std::max(res.width, kMinDimension);
     init_height = std::max(res.height, kMinDimension);

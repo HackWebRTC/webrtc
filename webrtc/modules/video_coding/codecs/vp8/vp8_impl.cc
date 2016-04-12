@@ -604,8 +604,8 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   // TODO(glaznev/sprang): consider passing codec initial bitrate to quality
   // scaler to avoid starting with HD for low initial bitrates.
   quality_scaler_.Init(codec_.qpMax / QualityScaler::kDefaultLowQpDenominator,
-                       kDisabledBadQpThreshold, false, 0, 0, 0,
-                       codec_.maxFramerate);
+                       kDisabledBadQpThreshold, false, 0, 0, 0);
+  quality_scaler_.ReportFramerate(codec_.maxFramerate);
 
   // Only apply scaling to improve for single-layer streams. The scaling metrics
   // use frame drops as a signal and is only applicable when we drop frames.

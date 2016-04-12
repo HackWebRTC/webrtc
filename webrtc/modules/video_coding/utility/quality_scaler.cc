@@ -11,11 +11,8 @@
 
 namespace webrtc {
 
-static const int kMinFps = 5;
-static const int kMeasureSecondsDownscale = 3;
-// Threshold constant used until first downscale (to permit fast rampup).
-static const int kMeasureSecondsFastUpscale = 2;
-static const int kMeasureSecondsUpscale = 5;
+static const int kMinFps = 10;
+static const int kMeasureSeconds = 5;
 static const int kFramedropPercentThreshold = 60;
 static const int kHdResolutionThreshold = 700 * 500;
 static const int kHdBitrateThresholdKbps = 500;
@@ -26,7 +23,9 @@ const int QualityScaler::kDefaultLowQpDenominator = 3;
 const int QualityScaler::kDefaultMinDownscaleDimension = 90;
 
 QualityScaler::QualityScaler()
-    : low_qp_threshold_(-1),
+    : num_samples_(0),
+      low_qp_threshold_(-1),
+      downscale_shift_(0),
       framerate_down_(false),
       min_width_(kDefaultMinDownscaleDimension),
       min_height_(kDefaultMinDownscaleDimension) {}
@@ -36,17 +35,12 @@ void QualityScaler::Init(int low_qp_threshold,
                          bool use_framerate_reduction,
                          int initial_bitrate_kbps,
                          int width,
-                         int height,
-                         int fps) {
+                         int height) {
   ClearSamples();
   low_qp_threshold_ = low_qp_threshold;
   high_qp_threshold_ = high_qp_threshold;
   use_framerate_reduction_ = use_framerate_reduction;
   downscale_shift_ = 0;
-  // Use a faster window for upscaling initially (but be more graceful later).
-  // This enables faster initial rampups without risking strong up-down
-  // behavior later.
-  measure_seconds_upscale_ = kMeasureSecondsFastUpscale;
   const int init_width = width;
   const int init_height = height;
   // TODO(glaznev): Investigate using thresholds for other resolutions
@@ -61,7 +55,6 @@ void QualityScaler::Init(int low_qp_threshold,
     }
   }
   UpdateTargetResolution(init_width, init_height);
-  ReportFramerate(fps);
   target_framerate_ = -1;
 }
 
@@ -72,14 +65,14 @@ void QualityScaler::SetMinResolution(int min_width, int min_height) {
 
 // Report framerate(fps) to estimate # of samples.
 void QualityScaler::ReportFramerate(int framerate) {
+  num_samples_ = static_cast<size_t>(
+      kMeasureSeconds * (framerate < kMinFps ? kMinFps : framerate));
   framerate_ = framerate;
-  UpdateSampleCounts();
 }
 
 void QualityScaler::ReportQP(int qp) {
   framedrop_percent_.AddSample(0);
-  average_qp_downscale_.AddSample(qp);
-  average_qp_upscale_.AddSample(qp);
+  average_qp_.AddSample(qp);
 }
 
 void QualityScaler::ReportDroppedFrame() {
@@ -89,8 +82,7 @@ void QualityScaler::ReportDroppedFrame() {
 void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
   // Should be set through InitEncode -> Should be set by now.
   assert(low_qp_threshold_ >= 0);
-  assert(num_samples_upscale_ > 0);
-  assert(num_samples_downscale_ > 0);
+  assert(num_samples_ > 0);
 
   // Update scale factor.
   int avg_drop = 0;
@@ -98,9 +90,9 @@ void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
 
   // When encoder consistently overshoots, framerate reduction and spatial
   // resizing will be triggered to get a smoother video.
-  if ((framedrop_percent_.GetAverage(num_samples_downscale_, &avg_drop) &&
+  if ((framedrop_percent_.GetAverage(num_samples_, &avg_drop) &&
        avg_drop >= kFramedropPercentThreshold) ||
-      (average_qp_downscale_.GetAverage(num_samples_downscale_, &avg_qp) &&
+      (average_qp_.GetAverage(num_samples_, &avg_qp) &&
        avg_qp > high_qp_threshold_)) {
     // Reducing frame rate before spatial resolution change.
     // Reduce frame rate only when it is above a certain number.
@@ -115,7 +107,7 @@ void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
     } else {
       AdjustScale(false);
     }
-  } else if (average_qp_upscale_.GetAverage(num_samples_upscale_, &avg_qp) &&
+  } else if (average_qp_.GetAverage(num_samples_, &avg_qp) &&
              avg_qp <= low_qp_threshold_) {
     if (use_framerate_reduction_ && framerate_down_) {
       target_framerate_ = -1;
@@ -168,26 +160,13 @@ void QualityScaler::UpdateTargetResolution(int frame_width, int frame_height) {
 
 void QualityScaler::ClearSamples() {
   framedrop_percent_.Reset();
-  average_qp_downscale_.Reset();
-  average_qp_upscale_.Reset();
-}
-
-void QualityScaler::UpdateSampleCounts() {
-  num_samples_downscale_ = static_cast<size_t>(
-      kMeasureSecondsDownscale * (framerate_ < kMinFps ? kMinFps : framerate_));
-  num_samples_upscale_ = static_cast<size_t>(
-      measure_seconds_upscale_ * (framerate_ < kMinFps ? kMinFps : framerate_));
+  average_qp_.Reset();
 }
 
 void QualityScaler::AdjustScale(bool up) {
   downscale_shift_ += up ? -1 : 1;
   if (downscale_shift_ < 0)
     downscale_shift_ = 0;
-  if (!up) {
-    // Hit first downscale, start using a slower threshold for going up.
-    measure_seconds_upscale_ = kMeasureSecondsUpscale;
-    UpdateSampleCounts();
-  }
   ClearSamples();
 }
 
