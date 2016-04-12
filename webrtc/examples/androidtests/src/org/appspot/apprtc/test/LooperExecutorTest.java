@@ -16,12 +16,14 @@ import java.util.concurrent.TimeUnit;
 import org.appspot.apprtc.util.LooperExecutor;
 
 import android.test.InstrumentationTestCase;
+import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 
 public class LooperExecutorTest extends InstrumentationTestCase {
   private static final String TAG = "LooperTest";
   private static final int WAIT_TIMEOUT = 5000;
 
+  @SmallTest
   public void testLooperExecutor() throws InterruptedException {
     Log.d(TAG, "testLooperExecutor");
     final int counter[] = new int[1];

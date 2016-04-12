@@ -31,6 +31,7 @@ import org.webrtc.VideoRenderer;
 
 import android.os.Build;
 import android.test.InstrumentationTestCase;
+import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 
 public class PeerConnectionClientTest extends InstrumentationTestCase
@@ -293,6 +294,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     }
   }
 
+  @SmallTest
   public void testSetLocalOfferMakesVideoFlowLocally()
       throws InterruptedException {
     Log.d(TAG, "testSetLocalOfferMakesVideoFlowLocally");
@@ -358,22 +360,27 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     Log.d(TAG, "testLoopback done.");
   }
 
+  @SmallTest
   public void testLoopbackAudio() throws InterruptedException {
     doLoopbackTest(createParametersForAudioCall(), false);
   }
 
+  @SmallTest
   public void testLoopbackVp8() throws InterruptedException {
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, false), false);
   }
 
-  public void DISABLED_testLoopbackVp9() throws InterruptedException {
+  //@SmallTest
+  public void testLoopbackVp9() throws InterruptedException {
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP9, false), false);
   }
 
+  @SmallTest
   public void testLoopbackH264() throws InterruptedException {
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264, false), false);
   }
 
+  @SmallTest
   public void testLoopbackVp8DecodeToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
@@ -382,7 +389,8 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, false), true);
   }
 
-  public void DISABLED_testLoopbackVp9DecodeToTexture() throws InterruptedException {
+  //@SmallTest
+  public void testLoopbackVp9DecodeToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
       return;
@@ -390,6 +398,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP9, false), true);
   }
 
+  @SmallTest
   public void testLoopbackH264DecodeToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
@@ -398,6 +407,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264, false), true);
   }
 
+  @SmallTest
   public void testLoopbackVp8CaptureToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Encode to textures is not supported. Requires SDK version 19");
@@ -415,6 +425,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   // Test that a call can be setup even if the EGL context used during initialization is
   // released before the Video codecs are created. The HW encoder and decoder is setup to use
   // textures.
+  @SmallTest
   public void testLoopbackEglContextReleasedAfterCreatingPc() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Decode to textures is not supported. Requires SDK version 19");
@@ -455,6 +466,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     Log.d(TAG, "testLoopback done.");
   }
 
+  @SmallTest
   public void testLoopbackH264CaptureToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Encode to textures is not supported. Requires KITKAT");
@@ -472,6 +484,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   // Checks if default front camera can be switched to back camera and then
   // again to front camera.
+  @SmallTest
   public void testCameraSwitch() throws InterruptedException {
     Log.d(TAG, "testCameraSwitch");
     loopback = true;
@@ -518,6 +531,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   // Checks if video source can be restarted - simulate app goes to
   // background and back to foreground.
+  @SmallTest
   public void testVideoSourceRestart() throws InterruptedException {
     Log.d(TAG, "testVideoSourceRestart");
     loopback = true;
@@ -565,6 +579,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   }
 
   // Checks if capture format can be changed on fly and decoder can be reset properly.
+  @SmallTest
   public void testCaptureFormatChange() throws InterruptedException {
     Log.d(TAG, "testCaptureFormatChange");
     loopback = true;
