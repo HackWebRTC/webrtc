@@ -179,29 +179,23 @@ void CopyConstraintsIntoRtcConfiguration(
     return;
   }
 
-  bool value;
+  bool enable_ipv6;
   if (FindConstraint(constraints, MediaConstraintsInterface::kEnableIPv6,
-                     &value, nullptr)) {
-    if (!value) {
-      configuration->disable_ipv6 = true;
-    }
+                     &enable_ipv6, nullptr)) {
+    configuration->disable_ipv6 = !enable_ipv6;
   }
-  ConstraintToOptionalBool(constraints, MediaConstraintsInterface::kEnableDscp,
-                           &configuration->enable_dscp);
-  ConstraintToOptionalBool(constraints,
-                           MediaConstraintsInterface::kCpuOveruseDetection,
-                           &configuration->cpu_overuse_detection);
-  if (FindConstraint(constraints,
-                     MediaConstraintsInterface::kEnableRtpDataChannels, &value,
-                     NULL) &&
-      value) {
-    configuration->enable_rtp_data_channel = true;
-  }
+  FindConstraint(constraints, MediaConstraintsInterface::kEnableDscp,
+                 &configuration->media_config.enable_dscp, nullptr);
+  FindConstraint(
+      constraints, MediaConstraintsInterface::kCpuOveruseDetection,
+      &configuration->media_config.video.enable_cpu_overuse_detection, nullptr);
+  FindConstraint(constraints, MediaConstraintsInterface::kEnableRtpDataChannels,
+                 &configuration->enable_rtp_data_channel, nullptr);
   // Find Suspend Below Min Bitrate constraint.
-  ConstraintToOptionalBool(
-      constraints,
-      MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
-      &configuration->suspend_below_min_bitrate);
+  FindConstraint(constraints,
+                 MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
+                 &configuration->media_config.video.suspend_below_min_bitrate,
+                 nullptr);
   ConstraintToOptionalInt(constraints,
                           MediaConstraintsInterface::kScreencastMinBitrate,
                           &configuration->screencast_min_bitrate);

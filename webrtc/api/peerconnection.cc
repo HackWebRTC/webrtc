@@ -525,7 +525,6 @@ PeerConnection::~PeerConnection() {
 }
 
 bool PeerConnection::Initialize(
-    const cricket::MediaConfig& media_config,
     const PeerConnectionInterface::RTCConfiguration& configuration,
     rtc::scoped_ptr<cricket::PortAllocator> allocator,
     rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
@@ -569,7 +568,8 @@ bool PeerConnection::Initialize(
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
 
-  media_controller_.reset(factory_->CreateMediaController(media_config));
+  media_controller_.reset(
+      factory_->CreateMediaController(configuration.media_config));
 
   session_.reset(
       new WebRtcSession(media_controller_.get(), factory_->signaling_thread(),

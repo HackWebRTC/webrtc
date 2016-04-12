@@ -70,6 +70,7 @@
 #include "webrtc/base/rtccertificate.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/media/base/mediachannel.h"
 #include "webrtc/p2p/base/portallocator.h"
 
 namespace rtc {
@@ -222,6 +223,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   };
 
   // TODO(hbos): Change into class with private data and public getters.
+  // TODO(nisse): In particular, accessing fields directly from an
+  // application is brittle, since the organization mirrors the
+  // organization of the implementation, which isn't stable. So we
+  // need getters and setters at least for fields which applications
+  // are interested in.
   struct RTCConfiguration {
     // This struct is subject to reorganization, both for naming
     // consistency, and to group settings to match where they are used
@@ -229,28 +235,33 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // methods for all settings which are of interest to applications,
     // Chrome in particular.
 
-    bool dscp() { return enable_dscp.value_or(false); }
-    void set_dscp(bool enable) { enable_dscp = rtc::Optional<bool>(enable); }
+    bool dscp() { return media_config.enable_dscp; }
+    void set_dscp(bool enable) { media_config.enable_dscp = enable; }
 
     // TODO(nisse): The corresponding flag in MediaConfig and
     // elsewhere should be renamed enable_cpu_adaptation.
-    bool cpu_adaptation() { return cpu_overuse_detection.value_or(true); }
+    bool cpu_adaptation() {
+      return media_config.video.enable_cpu_overuse_detection;
+    }
     void set_cpu_adaptation(bool enable) {
-      cpu_overuse_detection = rtc::Optional<bool>(enable);
+      media_config.video.enable_cpu_overuse_detection = enable;
     }
 
-    // TODO(nisse): Currently no getter method, since it collides with
-    // the flag itself. Add when the flag is moved to MediaConfig.
+    bool suspend_below_min_bitrate() {
+      return media_config.video.suspend_below_min_bitrate;
+    }
     void set_suspend_below_min_bitrate(bool enable) {
-      suspend_below_min_bitrate = rtc::Optional<bool>(enable);
+      media_config.video.suspend_below_min_bitrate = enable;
     }
 
     // TODO(nisse): The negation in the corresponding MediaConfig
     // attribute is inconsistent, and it should be renamed at some
     // point.
-    bool prerenderer_smoothing() { return !disable_prerenderer_smoothing; }
+    bool prerenderer_smoothing() {
+      return !media_config.video.disable_prerenderer_smoothing;
+    }
     void set_prerenderer_smoothing(bool enable) {
-      disable_prerenderer_smoothing = !enable;
+      media_config.video.disable_prerenderer_smoothing = !enable;
     }
 
     static const int kUndefined = -1;
@@ -271,16 +282,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     int ice_backup_candidate_pair_ping_interval;  // ms
     ContinualGatheringPolicy continual_gathering_policy;
     std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
-    bool disable_prerenderer_smoothing;
     bool prioritize_most_likely_ice_candidate_pairs;
+    struct cricket::MediaConfig media_config;
     // Flags corresponding to values set by constraint flags.
     // rtc::Optional flags can be "missing", in which case the webrtc
     // default applies.
     bool disable_ipv6;
-    rtc::Optional<bool> enable_dscp;
     bool enable_rtp_data_channel;
-    rtc::Optional<bool> cpu_overuse_detection;
-    rtc::Optional<bool> suspend_below_min_bitrate;
     rtc::Optional<int> screencast_min_bitrate;
     rtc::Optional<bool> combined_audio_video_bwe;
     rtc::Optional<bool> enable_dtls_srtp;
@@ -294,7 +302,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
           ice_connection_receiving_timeout(kUndefined),
           ice_backup_candidate_pair_ping_interval(kUndefined),
           continual_gathering_policy(GATHER_ONCE),
-          disable_prerenderer_smoothing(false),
           prioritize_most_likely_ice_candidate_pairs(false),
           disable_ipv6(false),
           enable_rtp_data_channel(false) {}

@@ -68,7 +68,6 @@ class PeerConnection : public PeerConnectionInterface,
   explicit PeerConnection(PeerConnectionFactory* factory);
 
   bool Initialize(
-      const cricket::MediaConfig& media_config,
       const PeerConnectionInterface::RTCConfiguration& configuration,
       rtc::scoped_ptr<cricket::PortAllocator> allocator,
       rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,

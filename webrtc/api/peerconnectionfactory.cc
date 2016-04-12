@@ -286,24 +286,8 @@ PeerConnectionFactory::CreatePeerConnection(
 
   rtc::scoped_refptr<PeerConnection> pc(
       new rtc::RefCountedObject<PeerConnection>(this));
-  // We rely on default values when constraints aren't found.
-  cricket::MediaConfig media_config;
 
-  media_config.video.disable_prerenderer_smoothing =
-      configuration.disable_prerenderer_smoothing;
-  if (configuration.enable_dscp) {
-    media_config.enable_dscp = *(configuration.enable_dscp);
-  }
-  if (configuration.cpu_overuse_detection) {
-    media_config.video.enable_cpu_overuse_detection =
-        *(configuration.cpu_overuse_detection);
-  }
-  if (configuration.suspend_below_min_bitrate) {
-    media_config.video.suspend_below_min_bitrate =
-        *(configuration.suspend_below_min_bitrate);
-  }
-
-  if (!pc->Initialize(media_config, configuration, std::move(allocator),
+  if (!pc->Initialize(configuration, std::move(allocator),
                       std::move(dtls_identity_store), observer)) {
     return nullptr;
   }

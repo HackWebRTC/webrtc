@@ -17,11 +17,24 @@ namespace webrtc {
 
 namespace {
 
+// Checks all settings touched by CopyConstraintsIntoRtcConfiguration,
+// plus audio_jitter_buffer_max_packets.
 bool Matches(const PeerConnectionInterface::RTCConfiguration& a,
              const PeerConnectionInterface::RTCConfiguration& b) {
-  return a.audio_jitter_buffer_max_packets ==
+  return a.disable_ipv6 == b.disable_ipv6 &&
+         a.audio_jitter_buffer_max_packets ==
              b.audio_jitter_buffer_max_packets &&
-         a.disable_prerenderer_smoothing == b.disable_prerenderer_smoothing;
+         a.enable_rtp_data_channel == b.enable_rtp_data_channel &&
+         a.screencast_min_bitrate == b.screencast_min_bitrate &&
+         a.combined_audio_video_bwe == b.combined_audio_video_bwe &&
+         a.enable_dtls_srtp == b.enable_dtls_srtp &&
+         a.media_config.enable_dscp == b.media_config.enable_dscp &&
+         a.media_config.video.enable_cpu_overuse_detection ==
+             b.media_config.video.enable_cpu_overuse_detection &&
+         a.media_config.video.disable_prerenderer_smoothing ==
+             b.media_config.video.disable_prerenderer_smoothing &&
+         a.media_config.video.suspend_below_min_bitrate ==
+             b.media_config.video.suspend_below_min_bitrate;
 }
 
 TEST(MediaConstraintsInterface, CopyConstraintsIntoRtcConfiguration) {
