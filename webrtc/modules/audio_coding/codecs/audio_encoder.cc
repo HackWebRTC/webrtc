@@ -37,6 +37,55 @@ AudioEncoder::EncodedInfo AudioEncoder::Encode(
   return info;
 }
 
+AudioEncoder::EncodedInfo AudioEncoder::Encode(
+    uint32_t rtp_timestamp,
+    rtc::ArrayView<const int16_t> audio,
+    size_t max_encoded_bytes,
+    uint8_t* encoded) {
+  return DEPRECATED_Encode(rtp_timestamp, audio, max_encoded_bytes, encoded);
+}
+
+AudioEncoder::EncodedInfo AudioEncoder::DEPRECATED_Encode(
+    uint32_t rtp_timestamp,
+    rtc::ArrayView<const int16_t> audio,
+    size_t max_encoded_bytes,
+    uint8_t* encoded) {
+  TRACE_EVENT0("webrtc", "AudioEncoder::Encode");
+  RTC_CHECK_EQ(audio.size(),
+               static_cast<size_t>(NumChannels() * SampleRateHz() / 100));
+  EncodedInfo info =
+      EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded);
+  RTC_CHECK_LE(info.encoded_bytes, max_encoded_bytes);
+  return info;
+}
+
+AudioEncoder::EncodedInfo AudioEncoder::EncodeImpl(
+    uint32_t rtp_timestamp,
+    rtc::ArrayView<const int16_t> audio,
+    rtc::Buffer* encoded)
+{
+  EncodedInfo info;
+  encoded->AppendData(MaxEncodedBytes(), [&] (rtc::ArrayView<uint8_t> encoded) {
+      info = EncodeInternal(rtp_timestamp, audio,
+                            encoded.size(), encoded.data());
+      return info.encoded_bytes;
+    });
+  return info;
+}
+
+AudioEncoder::EncodedInfo AudioEncoder::EncodeInternal(
+    uint32_t rtp_timestamp,
+    rtc::ArrayView<const int16_t> audio,
+    size_t max_encoded_bytes,
+    uint8_t* encoded)
+{
+  rtc::Buffer temp_buffer;
+  EncodedInfo info = EncodeImpl(rtp_timestamp, audio, &temp_buffer);
+  RTC_DCHECK_LE(temp_buffer.size(), max_encoded_bytes);
+  std::memcpy(encoded, temp_buffer.data(), info.encoded_bytes);
+  return info;
+}
+
 bool AudioEncoder::SetFec(bool enable) {
   return !enable;
 }
@@ -54,10 +103,5 @@ void AudioEncoder::SetMaxPlaybackRate(int frequency_hz) {}
 void AudioEncoder::SetProjectedPacketLossRate(double fraction) {}
 
 void AudioEncoder::SetTargetBitrate(int target_bps) {}
-
-size_t AudioEncoder::MaxEncodedBytes() const {
-  RTC_CHECK(false);
-  return 0;
-}
 
 }  // namespace webrtc

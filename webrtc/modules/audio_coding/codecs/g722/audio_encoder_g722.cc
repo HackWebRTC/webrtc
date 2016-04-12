@@ -60,6 +60,10 @@ AudioEncoderG722::AudioEncoderG722(const CodecInst& codec_inst)
 
 AudioEncoderG722::~AudioEncoderG722() = default;
 
+size_t AudioEncoderG722::MaxEncodedBytes() const {
+  return SamplesPerChannel() / 2 * num_channels_;
+}
+
 int AudioEncoderG722::SampleRateHz() const {
   return kSampleRateHz;
 }

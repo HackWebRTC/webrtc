@@ -100,6 +100,16 @@ AudioEncoderOpus::~AudioEncoderOpus() {
   RTC_CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
 }
 
+size_t AudioEncoderOpus::MaxEncodedBytes() const {
+  // Calculate the number of bytes we expect the encoder to produce,
+  // then multiply by two to give a wide margin for error.
+  const size_t bytes_per_millisecond =
+      static_cast<size_t>(config_.bitrate_bps / (1000 * 8) + 1);
+  const size_t approx_encoded_bytes =
+      Num10msFramesPerPacket() * 10 * bytes_per_millisecond;
+  return 2 * approx_encoded_bytes;
+}
+
 int AudioEncoderOpus::SampleRateHz() const {
   return kSampleRateHz;
 }
@@ -188,7 +198,7 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeImpl(
   RTC_CHECK_EQ(input_buffer_.size(),
                Num10msFramesPerPacket() * SamplesPer10msFrame());
 
-  const size_t max_encoded_bytes = ApproximateEncodedBytes();
+  const size_t max_encoded_bytes = MaxEncodedBytes();
   EncodedInfo info;
   info.encoded_bytes =
       encoded->AppendData(
@@ -219,16 +229,6 @@ size_t AudioEncoderOpus::Num10msFramesPerPacket() const {
 
 size_t AudioEncoderOpus::SamplesPer10msFrame() const {
   return rtc::CheckedDivExact(kSampleRateHz, 100) * config_.num_channels;
-}
-
-size_t AudioEncoderOpus::ApproximateEncodedBytes() const {
-  // Calculate the number of bytes we expect the encoder to produce,
-  // then multiply by two to give a wide margin for error.
-  const size_t bytes_per_millisecond =
-      static_cast<size_t>(config_.bitrate_bps / (1000 * 8) + 1);
-  const size_t approx_encoded_bytes =
-      Num10msFramesPerPacket() * 10 * bytes_per_millisecond;
-  return 2 * approx_encoded_bytes;
 }
 
 // If the given config is OK, recreate the Opus encoder instance with those

@@ -34,6 +34,7 @@ class AudioEncoderIlbc final : public AudioEncoder {
   explicit AudioEncoderIlbc(const CodecInst& codec_inst);
   ~AudioEncoderIlbc() override;
 
+  size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   size_t NumChannels() const override;
   size_t Num10MsFramesInNextPacket() const override;

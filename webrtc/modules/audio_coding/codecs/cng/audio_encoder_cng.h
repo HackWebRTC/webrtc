@@ -52,6 +52,7 @@ class AudioEncoderCng final : public AudioEncoder {
   explicit AudioEncoderCng(Config&& config);
   ~AudioEncoderCng() override;
 
+  size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   size_t NumChannels() const override;
   int RtpTimestampRateHz() const override;
