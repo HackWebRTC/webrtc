@@ -532,10 +532,9 @@ int32_t MediaCodecVideoDecoder::Decode(
     codec_.width = inputImage._encodedWidth;
     codec_.height = inputImage._encodedHeight;
     int32_t ret;
-    if (use_surface_ && codecType_ == kVideoCodecVP8) {
-      // Soft codec reset - only for VP8 and surface decoding.
-      // TODO(glaznev): try to use similar approach for H.264
-      // and buffer decoding.
+    if (use_surface_ &&
+        (codecType_ == kVideoCodecVP8 || codecType_ == kVideoCodecH264)) {
+      // Soft codec reset - only for surface decoding.
       ret = codec_thread_->Invoke<int32_t>(Bind(
           &MediaCodecVideoDecoder::ResetDecodeOnCodecThread, this));
     } else {
