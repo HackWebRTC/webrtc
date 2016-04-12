@@ -17,6 +17,9 @@
   'includes': [
     'common.gypi',
   ],
+  'variables': {
+    'shard_timeout': 900,
+  },
   'targets': [
     {
       'target_name': 'audio_decoder_unittests_apk',
@@ -207,6 +210,7 @@
         'test_suite_name': 'webrtc_perf_tests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)webrtc_perf_tests<(SHARED_LIB_SUFFIX)',
         'isolate_file': 'webrtc/webrtc_perf_tests.isolate',
+        'shard_timeout': 2700,
       },
       'dependencies': [
         '<(webrtc_root)/webrtc.gyp:webrtc_perf_tests',
