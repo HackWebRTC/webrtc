@@ -35,10 +35,6 @@ AudioEncoderCopyRed::AudioEncoderCopyRed(Config&& config)
 
 AudioEncoderCopyRed::~AudioEncoderCopyRed() = default;
 
-size_t AudioEncoderCopyRed::MaxEncodedBytes() const {
-  return 2 * speech_encoder_->MaxEncodedBytes();
-}
-
 int AudioEncoderCopyRed::SampleRateHz() const {
   return speech_encoder_->SampleRateHz();
 }

@@ -104,7 +104,6 @@ void ConvertEncodedInfoToFragmentationHeader(
 class RawAudioEncoderWrapper final : public AudioEncoder {
  public:
   RawAudioEncoderWrapper(AudioEncoder* enc) : enc_(enc) {}
-  size_t MaxEncodedBytes() const override { return enc_->MaxEncodedBytes(); }
   int SampleRateHz() const override { return enc_->SampleRateHz(); }
   size_t NumChannels() const override { return enc_->NumChannels(); }
   int RtpTimestampRateHz() const override { return enc_->RtpTimestampRateHz(); }
@@ -119,13 +118,6 @@ class RawAudioEncoderWrapper final : public AudioEncoder {
                          rtc::ArrayView<const int16_t> audio,
                          rtc::Buffer* encoded) override {
     return enc_->Encode(rtp_timestamp, audio, encoded);
-  }
-  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             rtc::ArrayView<const int16_t> audio,
-                             size_t max_encoded_bytes,
-                             uint8_t* encoded) override {
-    return enc_->EncodeInternal(rtp_timestamp, audio, max_encoded_bytes,
-                                encoded);
   }
   void Reset() override { return enc_->Reset(); }
   bool SetFec(bool enable) override { return enc_->SetFec(enable); }

@@ -167,7 +167,6 @@
             '<(webrtc_root)/tools/tools.gyp:agc_test_utils',
           ],
           'sources': [
-            'audio_coding/codecs/audio_encoder_unittest.cc',
             'audio_coding/codecs/cng/audio_encoder_cng_unittest.cc',
             'audio_coding/acm2/acm_receiver_unittest_oldapi.cc',
             'audio_coding/acm2/audio_coding_module_unittest_oldapi.cc',

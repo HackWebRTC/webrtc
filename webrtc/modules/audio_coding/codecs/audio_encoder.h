@@ -52,14 +52,6 @@ class AudioEncoder {
 
   virtual ~AudioEncoder() = default;
 
-  // Returns the maximum number of bytes that can be produced by the encoder
-  // at each Encode() call. The caller can use the return value to determine
-  // the size of the buffer that needs to be allocated. This value is allowed
-  // to depend on encoder parameters like bitrate, frame size etc., so if
-  // any of these change, the caller of Encode() is responsible for checking
-  // that the buffer is large enough by calling MaxEncodedBytes() again.
-  virtual size_t MaxEncodedBytes() const = 0;
-
   // Returns the input sample rate in Hz and the number of input channels.
   // These are constants set at instantiation time.
   virtual int SampleRateHz() const = 0;
@@ -94,33 +86,6 @@ class AudioEncoder {
   EncodedInfo Encode(uint32_t rtp_timestamp,
                      rtc::ArrayView<const int16_t> audio,
                      rtc::Buffer* encoded);
-
-  // Deprecated interface to Encode (remove eventually, bug 5591). May incur a
-  // copy. The encoder produces zero or more bytes of output in |encoded| and
-  // returns additional encoding information.  The caller is responsible for
-  // making sure that |max_encoded_bytes| is not smaller than the number of
-  // bytes actually produced by the encoder.
-  RTC_DEPRECATED EncodedInfo Encode(uint32_t rtp_timestamp,
-                                    rtc::ArrayView<const int16_t> audio,
-                                    size_t max_encoded_bytes,
-                                    uint8_t* encoded);
-
-  EncodedInfo DEPRECATED_Encode(uint32_t rtp_timestamp,
-                                rtc::ArrayView<const int16_t> audio,
-                                size_t max_encoded_bytes,
-                                uint8_t* encoded);
-
-  // Deprecated interface EncodeInternal (see bug 5591). May incur a copy.
-  // Subclasses implement this to perform the actual encoding. Called by
-  // Encode(). By default, this is implemented as a call to the newer
-  // EncodeImpl() that accepts an rtc::Buffer instead of a raw pointer.
-  // That version is protected, so see below. At least one of EncodeInternal
-  // or EncodeImpl _must_ be implemented by a subclass.
-  virtual EncodedInfo EncodeInternal(
-      uint32_t rtp_timestamp,
-      rtc::ArrayView<const int16_t> audio,
-      size_t max_encoded_bytes,
-      uint8_t* encoded);
 
   // Resets the encoder to its starting state, discarding any input that has
   // been fed to the encoder but not yet emitted in a packet.
@@ -162,13 +127,19 @@ class AudioEncoder {
 
  protected:
   // Subclasses implement this to perform the actual encoding. Called by
-  // Encode(). For compatibility reasons, this is implemented by default as a
-  // call to the older interface EncodeInternal(). At least one of
-  // EncodeInternal or EncodeImpl _must_ be implemented by a
-  // subclass. Preferably this one.
+  // Encode().
   virtual EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
                                  rtc::ArrayView<const int16_t> audio,
-                                 rtc::Buffer* encoded);
+                                 rtc::Buffer* encoded) = 0;
+
+ private:
+  // This function is deprecated. It was used to return the maximum number of
+  // bytes that can be produced by the encoder at each Encode() call.  Since the
+  // Encode interface was changed to use rtc::Buffer, this is no longer
+  // applicable. It is only kept in to avoid breaking subclasses that still have
+  // it implemented (with the override attribute). It will be removed as soon
+  // as these subclasses have been given a chance to change.
+  virtual size_t MaxEncodedBytes() const;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_H_

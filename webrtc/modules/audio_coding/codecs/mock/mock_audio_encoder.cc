@@ -49,26 +49,4 @@ AudioEncoder::EncodedInfo MockAudioEncoder::CopyEncoding::operator()(
   return info_;
 }
 
-MockAudioEncoderDeprecated::CopyEncoding::CopyEncoding(
-    AudioEncoder::EncodedInfo info,
-    rtc::ArrayView<const uint8_t> payload)
-    : info_(info), payload_(payload) { }
-
-MockAudioEncoderDeprecated::CopyEncoding::CopyEncoding(
-    rtc::ArrayView<const uint8_t> payload)
-    : payload_(payload) {
-  info_.encoded_bytes = payload_.size();
-}
-
-AudioEncoder::EncodedInfo MockAudioEncoderDeprecated::CopyEncoding::operator()(
-    uint32_t timestamp,
-    rtc::ArrayView<const int16_t> audio,
-    size_t max_bytes_encoded,
-    uint8_t* encoded) {
-  RTC_CHECK(encoded);
-  RTC_CHECK_LE(info_.encoded_bytes, payload_.size());
-  std::memcpy(encoded, payload_.data(), info_.encoded_bytes);
-  return info_;
-}
-
 }  // namespace webrtc

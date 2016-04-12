@@ -56,10 +56,6 @@ AudioEncoderIlbc::~AudioEncoderIlbc() {
   RTC_CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
 }
 
-size_t AudioEncoderIlbc::MaxEncodedBytes() const {
-  return RequiredOutputSizeBytes();
-}
-
 int AudioEncoderIlbc::SampleRateHz() const {
   return kSampleRateHz;
 }
