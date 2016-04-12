@@ -21,7 +21,6 @@
 #include <X11/Xutil.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/differ.h"
@@ -38,8 +37,11 @@ namespace {
 class ScreenCapturerLinux : public ScreenCapturer,
                             public SharedXDisplay::XEventHandler {
  public:
-  explicit ScreenCapturerLinux(const DesktopCaptureOptions& options);
+  ScreenCapturerLinux();
   virtual ~ScreenCapturerLinux();
+
+  // TODO(ajwong): Do we really want this to be synchronous?
+  bool Init(const DesktopCaptureOptions& options);
 
   // DesktopCapturer interface.
   void Start(Callback* delegate) override;
@@ -52,12 +54,10 @@ class ScreenCapturerLinux : public ScreenCapturer,
  private:
   Display* display() { return options_.x_display()->display(); }
 
-  bool Initialize();
-
-  void InitXDamage();
-
   // SharedXDisplay::XEventHandler interface.
   bool HandleXEvent(const XEvent& event) override;
+
+  void InitXDamage();
 
   // Capture screen pixels to the current buffer in the queue. In the DAMAGE
   // case, the ScreenCapturerHelper already holds the list of invalid rectangles
@@ -78,27 +78,25 @@ class ScreenCapturerLinux : public ScreenCapturer,
 
   void DeinitXlib();
 
-  rtc::ThreadChecker thread_checker_;
-
   DesktopCaptureOptions options_;
 
-  Callback* callback_ = nullptr;
+  Callback* callback_;
 
   // X11 graphics context.
-  GC gc_ = nullptr;
-  Window root_window_ = BadValue;
+  GC gc_;
+  Window root_window_;
 
   // XFixes.
-  bool has_xfixes_ = false;
-  int xfixes_event_base_ = -1;
-  int xfixes_error_base_ = -1;
+  bool has_xfixes_;
+  int xfixes_event_base_;
+  int xfixes_error_base_;
 
   // XDamage information.
-  bool use_damage_ = false;
-  Damage damage_handle_ = 0;
-  int damage_event_base_ = -1;
-  int damage_error_base_ = -1;
-  XserverRegion damage_region_ = 0;
+  bool use_damage_;
+  Damage damage_handle_;
+  int damage_event_base_;
+  int damage_error_base_;
+  XserverRegion damage_region_;
 
   // Access to the X Server's pixel buffer.
   XServerPixelBuffer x_server_pixel_buffer_;
@@ -120,16 +118,22 @@ class ScreenCapturerLinux : public ScreenCapturer,
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerLinux);
 };
 
-ScreenCapturerLinux::ScreenCapturerLinux(const DesktopCaptureOptions& options)
-    : options_(options) {
-  // ScreenCapturer can be used on a thread different from the thread on which
-  // it's created.
-  thread_checker_.DetachFromThread();
+ScreenCapturerLinux::ScreenCapturerLinux()
+    : callback_(NULL),
+      gc_(NULL),
+      root_window_(BadValue),
+      has_xfixes_(false),
+      xfixes_event_base_(-1),
+      xfixes_error_base_(-1),
+      use_damage_(false),
+      damage_handle_(0),
+      damage_event_base_(-1),
+      damage_error_base_(-1),
+      damage_region_(0) {
+  helper_.SetLogGridSize(4);
 }
 
 ScreenCapturerLinux::~ScreenCapturerLinux() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
   options_.x_display()->RemoveEventHandler(ConfigureNotify, this);
   if (use_damage_) {
     options_.x_display()->RemoveEventHandler(
@@ -138,8 +142,8 @@ ScreenCapturerLinux::~ScreenCapturerLinux() {
   DeinitXlib();
 }
 
-bool ScreenCapturerLinux::Initialize() {
-  helper_.SetLogGridSize(4);
+bool ScreenCapturerLinux::Init(const DesktopCaptureOptions& options) {
+  options_ = options;
 
   root_window_ = RootWindow(display(), DefaultScreen(display()));
   if (root_window_ == BadValue) {
@@ -194,6 +198,11 @@ void ScreenCapturerLinux::InitXDamage() {
     return;
   }
 
+  // TODO(lambroslambrou): Disable DAMAGE in situations where it is known
+  // to fail, such as when Desktop Effects are enabled, with graphics
+  // drivers (nVidia, ATI) that fail to report DAMAGE notifications
+  // properly.
+
   // Request notifications every time the screen becomes damaged.
   damage_handle_ = XDamageCreate(display(), root_window_,
                                  XDamageReportNonEmpty);
@@ -218,20 +227,13 @@ void ScreenCapturerLinux::InitXDamage() {
 }
 
 void ScreenCapturerLinux::Start(Callback* callback) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!callback_);
   RTC_DCHECK(callback);
 
   callback_ = callback;
-
-  if (!Initialize()) {
-    callback_->OnInitializationFailed();
-  }
 }
 
 void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
   TickTime capture_start_time = TickTime::Now();
 
   queue_.MoveToNextFrame();
@@ -277,9 +279,7 @@ void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
 }
 
 bool ScreenCapturerLinux::GetScreenList(ScreenList* screens) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(screens->size() == 0);
-
   // TODO(jiayl): implement screen enumeration.
   Screen default_screen;
   default_screen.id = 0;
@@ -288,14 +288,11 @@ bool ScreenCapturerLinux::GetScreenList(ScreenList* screens) {
 }
 
 bool ScreenCapturerLinux::SelectScreen(ScreenId id) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   // TODO(jiayl): implement screen selection.
   return true;
 }
 
 bool ScreenCapturerLinux::HandleXEvent(const XEvent& event) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
   if (use_damage_ && (event.type == damage_event_base_ + XDamageNotify)) {
     const XDamageNotifyEvent* damage_event =
         reinterpret_cast<const XDamageNotifyEvent*>(&event);
@@ -312,7 +309,7 @@ bool ScreenCapturerLinux::HandleXEvent(const XEvent& event) {
 
 DesktopFrame* ScreenCapturerLinux::CaptureScreen() {
   DesktopFrame* frame = queue_.current_frame()->Share();
-  RTC_DCHECK(x_server_pixel_buffer_.window_size().equals(frame->size()));
+  assert(x_server_pixel_buffer_.window_size().equals(frame->size()));
 
   // Pass the screen size to the helper, so it can clip the invalid region if it
   // expands that region to a grid.
@@ -439,7 +436,10 @@ ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   if (!options.x_display())
     return NULL;
 
-  return new ScreenCapturerLinux(options);
+  std::unique_ptr<ScreenCapturerLinux> capturer(new ScreenCapturerLinux());
+  if (!capturer->Init(options))
+    capturer.reset();
+  return capturer.release();
 }
 
 }  // namespace webrtc

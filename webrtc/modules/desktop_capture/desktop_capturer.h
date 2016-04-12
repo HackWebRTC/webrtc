@@ -33,9 +33,6 @@ class DesktopCapturer {
     // from chromium.
     virtual SharedMemory* CreateSharedMemory(size_t size) { return nullptr; }
 
-    // Called to notify that the capturer has failed to initialize.
-    virtual void OnInitializationFailed() {};
-
     // Called after a frame has been captured. Handler must take ownership of
     // |frame|. If capture has failed for any reason |frame| is set to NULL
     // (e.g. the window has been closed).
