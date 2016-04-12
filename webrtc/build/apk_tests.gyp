@@ -209,7 +209,7 @@
       'variables': {
         'test_suite_name': 'webrtc_perf_tests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)webrtc_perf_tests<(SHARED_LIB_SUFFIX)',
-        'isolate_file': 'webrtc/webrtc_perf_tests.isolate',
+        'isolate_file': '../webrtc_perf_tests.isolate',
         'shard_timeout': 2700,
       },
       'dependencies': [
@@ -225,7 +225,7 @@
       'variables': {
         'test_suite_name': 'webrtc_nonparallel_tests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)webrtc_nonparallel_tests<(SHARED_LIB_SUFFIX)',
-        'isolate_file': 'webrtc/webrtc_nonparallel_tests.isolate',
+        'isolate_file': '../webrtc_nonparallel_tests.isolate',
       },
       'dependencies': [
         '<(webrtc_root)/webrtc.gyp:webrtc_nonparallel_tests',
@@ -240,7 +240,7 @@
       'variables': {
         'test_suite_name': 'audio_codec_speed_tests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_codec_speed_tests<(SHARED_LIB_SUFFIX)',
-        'isolate_file': 'webrtc/modules/audio_codec_speed_tests.isolate',
+        'isolate_file': '../modules/audio_codec_speed_tests.isolate',
       },
       'dependencies': [
         '<(webrtc_root)/modules/modules.gyp:audio_codec_speed_tests',
