@@ -1574,15 +1574,27 @@ void WriteFmtpParameters(const cricket::CodecParameterMap& parameters,
 
 bool IsFmtpParam(const std::string& name) {
   const char* kFmtpParams[] = {
-    kCodecParamMinPTime, kCodecParamSPropStereo,
-    kCodecParamStereo, kCodecParamUseInbandFec, kCodecParamUseDtx,
-    kCodecParamStartBitrate, kCodecParamMaxBitrate, kCodecParamMinBitrate,
-    kCodecParamMaxQuantization, kCodecParamSctpProtocol, kCodecParamSctpStreams,
-    kCodecParamMaxAverageBitrate, kCodecParamMaxPlaybackRate,
-    kCodecParamAssociatedPayloadType
-  };
+      // TODO(hta): Split FMTP parameters apart from parameters in general.
+      // FMTP parameters are codec specific, not generic.
+      kCodecParamMinPTime,
+      kCodecParamSPropStereo,
+      kCodecParamStereo,
+      kCodecParamUseInbandFec,
+      kCodecParamUseDtx,
+      kCodecParamStartBitrate,
+      kCodecParamMaxBitrate,
+      kCodecParamMinBitrate,
+      kCodecParamMaxQuantization,
+      kCodecParamSctpProtocol,
+      kCodecParamSctpStreams,
+      kCodecParamMaxAverageBitrate,
+      kCodecParamMaxPlaybackRate,
+      kCodecParamAssociatedPayloadType,
+      cricket::kH264FmtpPacketizationMode,
+      cricket::kH264FmtpLevelAsymmetryAllowed,
+      cricket::kH264FmtpProfileLevelId};
   for (size_t i = 0; i < arraysize(kFmtpParams); ++i) {
-    if (_stricmp(name.c_str(), kFmtpParams[i]) == 0) {
+    if (name.compare(kFmtpParams[i]) == 0) {
       return true;
     }
   }

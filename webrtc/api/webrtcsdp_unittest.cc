@@ -25,6 +25,8 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/mediaconstants.h"
+#include "webrtc/media/engine/webrtcvideoengine2.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/pc/mediasession.h"
 
@@ -2086,6 +2088,33 @@ TEST_F(WebRtcSdpTest, SerializeTcpCandidates) {
 
   std::string message = webrtc::SdpSerializeCandidate(*jcandidate);
   EXPECT_EQ(std::string(kSdpTcpActiveCandidate), message);
+}
+
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithH264) {
+  if (!webrtc::H264Encoder::IsSupported())
+    return;
+  for (const auto& codec : cricket::DefaultVideoCodecList()) {
+    video_desc_->AddCodec(codec);
+  }
+  jdesc_.Initialize(desc_.Copy(), kSessionId, kSessionVersion);
+
+  std::string message = webrtc::SdpSerialize(jdesc_, false);
+  size_t after_pt = message.find(" H264/90000");
+  ASSERT_NE(after_pt, std::string::npos);
+  size_t before_pt = message.rfind("a=rtpmap:", after_pt);
+  ASSERT_NE(before_pt, std::string::npos);
+  before_pt += strlen("a=rtpmap:");
+  std::string pt = message.substr(before_pt, after_pt - before_pt);
+  // TODO(hta): Check if payload type |pt| occurs in the m=video line.
+  std::string to_find = "a=fmtp:" + pt + " ";
+  size_t fmtp_pos = message.find(to_find);
+  ASSERT_NE(std::string::npos, fmtp_pos) << "Failed to find " << to_find;
+  size_t fmtp_endpos = message.find("\n", fmtp_pos);
+  ASSERT_NE(std::string::npos, fmtp_endpos);
+  std::string fmtp_value = message.substr(fmtp_pos, fmtp_endpos);
+  EXPECT_NE(std::string::npos, fmtp_value.find("level-asymmetry-allowed=1"));
+  EXPECT_NE(std::string::npos, fmtp_value.find("packetization-mode=1"));
+  EXPECT_NE(std::string::npos, fmtp_value.find("profile-level-id=42e01f"));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescription) {

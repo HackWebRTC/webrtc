@@ -149,6 +149,12 @@ extern const char kVp8CodecName[];
 extern const char kVp9CodecName[];
 extern const char kH264CodecName[];
 
+// RFC 6184 RTP Payload Format for H.264 video
+extern const char kH264FmtpProfileLevelId[];
+extern const char kH264FmtpLevelAsymmetryAllowed[];
+extern const char kH264FmtpPacketizationMode[];
+extern const char kH264ProfileLevelConstrainedBaseline[];
+
 extern const int kDefaultVp8PlType;
 extern const int kDefaultVp9PlType;
 extern const int kDefaultH264PlType;

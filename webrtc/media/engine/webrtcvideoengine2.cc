@@ -386,8 +386,18 @@ std::vector<VideoCodec> DefaultVideoCodecList() {
         VideoCodec::CreateRtxCodec(kDefaultRtxVp9PlType, kDefaultVp9PlType));
   }
   if (CodecIsInternallySupported(kH264CodecName)) {
-    codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultH264PlType,
-                                                             kH264CodecName));
+    VideoCodec codec = MakeVideoCodecWithDefaultFeedbackParams(
+        kDefaultH264PlType, kH264CodecName);
+    // TODO(hta): Move all parameter generation for SDP into the codec
+    // implementation, for all codecs and parameters.
+    // TODO(hta): Move selection of profile-level-id to H.264 codec
+    // implementation.
+    // TODO(hta): Set FMTP parameters for all codecs of type H264.
+    codec.SetParam(kH264FmtpProfileLevelId,
+                   kH264ProfileLevelConstrainedBaseline);
+    codec.SetParam(kH264FmtpLevelAsymmetryAllowed, "1");
+    codec.SetParam(kH264FmtpPacketizationMode, "1");
+    codecs.push_back(codec);
     codecs.push_back(
         VideoCodec::CreateRtxCodec(kDefaultRtxH264PlType, kDefaultH264PlType));
   }
