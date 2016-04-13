@@ -38,6 +38,8 @@ const float kDecayRate = 0.994f;              // Power estimation decay rate.
 const float kMaxRelativeGainChange = 0.006f;
 const float kRho = 0.0004f;  // Default production and interpretation SNR.
 const float kPowerNormalizationFactor = 1.f / (1 << 30);
+const float kMaxActiveSNR = 128.f;  // 21dB
+const float kMinInactiveSNR = 32.f;  // 15dB
 
 // Returns dot product of vectors |a| and |b| with size |length|.
 float DotProduct(const float* a, const float* b, size_t length) {
@@ -84,6 +86,8 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
       audio_s16_(chunk_length_),
       chunks_since_voice_(kSpeechOffsetDelay),
       is_speech_(false),
+      snr_(kMaxActiveSNR),
+      is_active_(false),
       noise_estimation_buffer_(num_noise_bins),
       noise_estimation_queue_(kMaxNumNoiseEstimatesToBuffer,
                               std::vector<float>(num_noise_bins),
@@ -135,26 +139,52 @@ void IntelligibilityEnhancer::ProcessAudioBlock(
   if (is_speech_) {
     clear_power_estimator_.Step(in_block[0]);
   }
-  const std::vector<float>& clear_power = clear_power_estimator_.power();
-  const std::vector<float>& noise_power = noise_power_estimator_.power();
-  MapToErbBands(clear_power.data(), render_filter_bank_,
-                filtered_clear_pow_.data());
-  MapToErbBands(noise_power.data(), capture_filter_bank_,
-                filtered_noise_pow_.data());
-  SolveForGainsGivenLambda(kLambdaTop, start_freq_, gains_eq_.data());
-  const float power_target = std::accumulate(
-      filtered_clear_pow_.data(), filtered_clear_pow_.data() + bank_size_, 0.f);
-  const float power_top =
-      DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
-  SolveForGainsGivenLambda(kLambdaBot, start_freq_, gains_eq_.data());
-  const float power_bot =
-      DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
-  if (power_target >= power_bot && power_target <= power_top) {
-    SolveForLambda(power_target);
-    UpdateErbGains();
-  }  // Else experiencing power underflow, so do nothing.
+  SnrBasedEffectActivation();
+  if (is_active_) {
+    MapToErbBands(clear_power_estimator_.power().data(), render_filter_bank_,
+                  filtered_clear_pow_.data());
+    MapToErbBands(noise_power_estimator_.power().data(), capture_filter_bank_,
+                  filtered_noise_pow_.data());
+    SolveForGainsGivenLambda(kLambdaTop, start_freq_, gains_eq_.data());
+    const float power_target = std::accumulate(
+        filtered_clear_pow_.data(),
+        filtered_clear_pow_.data() + bank_size_,
+        0.f);
+    const float power_top =
+        DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
+    SolveForGainsGivenLambda(kLambdaBot, start_freq_, gains_eq_.data());
+    const float power_bot =
+        DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
+    if (power_target >= power_bot && power_target <= power_top) {
+      SolveForLambda(power_target);
+      UpdateErbGains();
+    }  // Else experiencing power underflow, so do nothing.
+  }
   for (size_t i = 0; i < in_channels; ++i) {
     gain_applier_.Apply(in_block[i], out_block[i]);
+  }
+}
+
+void IntelligibilityEnhancer::SnrBasedEffectActivation() {
+  const float* clear_psd = clear_power_estimator_.power().data();
+  const float* noise_psd = noise_power_estimator_.power().data();
+  const float clear_power =
+      std::accumulate(clear_psd, clear_psd + freqs_, 0.f);
+  const float noise_power =
+      std::accumulate(noise_psd, noise_psd + freqs_, 0.f);
+  snr_ = kDecayRate * snr_ + (1.f - kDecayRate) * clear_power /
+      (noise_power + std::numeric_limits<float>::epsilon());
+  if (is_active_) {
+    if (snr_ > kMaxActiveSNR) {
+      is_active_ = false;
+      // Set the target gains to unity.
+      float* gains = gain_applier_.target();
+      for (size_t i = 0; i < freqs_; ++i) {
+        gains[i] = 1.f;
+      }
+    }
+  } else {
+    is_active_ = snr_ < kMinInactiveSNR;
   }
 }
 

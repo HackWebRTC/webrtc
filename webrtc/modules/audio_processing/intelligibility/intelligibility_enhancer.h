@@ -57,6 +57,10 @@ class IntelligibilityEnhancer : public LappedTransform::Callback {
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestErbCreation);
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestSolveForGains);
 
+  // Updates the SNR estimation and enables or disables this component using a
+  // hysteresis.
+  void SnrBasedEffectActivation();
+
   // Bisection search for optimal |lambda|.
   void SolveForLambda(float power_target);
 
@@ -103,6 +107,8 @@ class IntelligibilityEnhancer : public LappedTransform::Callback {
   std::vector<int16_t> audio_s16_;
   size_t chunks_since_voice_;
   bool is_speech_;
+  float snr_;
+  bool is_active_;
 
   std::vector<float> noise_estimation_buffer_;
   SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>
