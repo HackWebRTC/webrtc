@@ -317,6 +317,19 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
   EXPECT_EQ(-1, sender_->IntraFrameRequest(-1));
 }
 
+TEST_F(TestVideoSenderWithMockEncoder, TestEncoderParametersForInternalSource) {
+  // De-register current external encoder.
+  sender_->RegisterExternalEncoder(nullptr, kUnusedPayloadType, false);
+  // Register encoder with internal capture.
+  sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, true);
+  EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
+  // Update encoder bitrate parameters. We expect that to immediately call
+  // SetRates on the encoder without waiting for AddFrame processing.
+  const uint32_t new_bitrate = settings_.startBitrate + 300;
+  EXPECT_CALL(encoder_, SetRates(new_bitrate, _)).Times(1).WillOnce(Return(0));
+  sender_->SetChannelParameters(new_bitrate * 1000, 0, 200);
+}
+
 TEST_F(TestVideoSenderWithMockEncoder, EncoderFramerateUpdatedViaProcess) {
   sender_->SetChannelParameters(settings_.startBitrate * 1000, 0, 200);
   const int64_t kRateStatsWindowMs = 2000;

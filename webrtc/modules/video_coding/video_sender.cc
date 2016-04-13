@@ -202,8 +202,24 @@ int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
 
   uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
 
-  rtc::CritScope cs(&params_crit_);
-  encoder_params_ = {target_rate, lossRate, rtt, input_frame_rate};
+  EncoderParameters encoder_params = {target_rate, lossRate, rtt,
+                                      input_frame_rate};
+  bool encoder_has_internal_source;
+  {
+    rtc::CritScope cs(&params_crit_);
+    encoder_params_ = encoder_params;
+    encoder_has_internal_source = encoder_has_internal_source_;
+  }
+
+  // For encoders with internal sources, we need to tell the encoder directly,
+  // instead of waiting for an AddVideoFrame that will never come (internal
+  // source encoders don't get input frames).
+  if (encoder_has_internal_source) {
+    rtc::CritScope cs(&encoder_crit_);
+    if (_encoder) {
+      SetEncoderParameters(encoder_params);
+    }
+  }
 
   return VCM_OK;
 }
