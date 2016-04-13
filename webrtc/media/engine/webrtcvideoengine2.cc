@@ -1524,7 +1524,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       pending_encoder_reconfiguration_(false),
       allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
       sending_(false),
-      first_frame_timestamp_ms_(0),
       last_frame_timestamp_ms_(0) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
   parameters_.conference_mode = send_params.conference_mode;
@@ -1583,12 +1582,15 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   }
 
   int64_t frame_delta_ms = frame.GetTimeStamp() / rtc::kNumNanosecsPerMillisec;
+
   // frame->GetTimeStamp() is essentially a delta, align to webrtc time
-  if (first_frame_timestamp_ms_ == 0) {
-    first_frame_timestamp_ms_ = rtc::Time() - frame_delta_ms;
+  if (!first_frame_timestamp_ms_) {
+    first_frame_timestamp_ms_ =
+        rtc::Optional<int64_t>(rtc::Time() - frame_delta_ms);
   }
 
-  last_frame_timestamp_ms_ = first_frame_timestamp_ms_ + frame_delta_ms;
+  last_frame_timestamp_ms_ = *first_frame_timestamp_ms_ + frame_delta_ms;
+
   video_frame.set_render_time_ms(last_frame_timestamp_ms_);
   // Reconfigure codec if necessary.
   SetDimensions(video_frame.width(), video_frame.height());
@@ -1618,7 +1620,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSource(
 
     // Reset timestamps to realign new incoming frames to a webrtc timestamp. A
     // new capturer may have a different timestamp delta than the previous one.
-    first_frame_timestamp_ms_ = 0;
+    first_frame_timestamp_ms_ = rtc::Optional<int64_t>();
 
     if (source == NULL) {
       if (stream_ != NULL) {
@@ -2402,8 +2404,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::OnFrame(
   last_height_ = frame.height();
 
   const WebRtcVideoFrame render_frame(
-      frame.video_frame_buffer(),
-      frame.render_time_ms() * rtc::kNumNanosecsPerMillisec, frame.rotation());
+      frame.video_frame_buffer(), frame.rotation(),
+      frame.render_time_ms() * rtc::kNumNanosecsPerMicrosec);
   sink_->OnFrame(render_frame);
 }
 
