@@ -365,8 +365,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   codec_mode_ = codec_settings->mode;
   int init_width = codec_settings->width;
   int init_height = codec_settings->height;
-  scale_ = (codecType_ != kVideoCodecVP9) && (webrtc::field_trial::FindFullName(
-        "WebRTC-MediaCodecVideoEncoder-AutomaticResize") == "Enabled");
+  scale_ = codecType_ != kVideoCodecVP9;
 
   ALOGD << "InitEncode request: " << init_width << " x " << init_height;
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");

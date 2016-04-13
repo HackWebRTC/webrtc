@@ -60,8 +60,6 @@ public class PeerConnectionClient {
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
   private static final String TAG = "PCRTCClient";
-  private static final String FIELD_TRIAL_AUTOMATIC_RESIZE =
-      "WebRTC-MediaCodecVideoEncoder-AutomaticResize/Enabled/";
   private static final String VIDEO_CODEC_VP8 = "VP8";
   private static final String VIDEO_CODEC_VP9 = "VP9";
   private static final String VIDEO_CODEC_H264 = "H264";
@@ -314,7 +312,7 @@ public class PeerConnectionClient {
     isError = false;
 
     // Initialize field trials.
-    PeerConnectionFactory.initializeFieldTrials(FIELD_TRIAL_AUTOMATIC_RESIZE);
+    PeerConnectionFactory.initializeFieldTrials("");
 
     // Check preferred video codec.
     preferredVideoCodec = VIDEO_CODEC_VP8;
