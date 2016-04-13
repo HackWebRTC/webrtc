@@ -57,7 +57,6 @@ const int JsepSessionDescription::kMaxVideoCodecHeight = 1280;
 const int JsepSessionDescription::kMaxVideoCodecWidth = 1920;
 const int JsepSessionDescription::kMaxVideoCodecHeight = 1080;
 #endif
-const int JsepSessionDescription::kDefaultVideoCodecPreference = 1;
 
 SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
                                                       const std::string& sdp,

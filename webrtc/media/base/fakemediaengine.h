@@ -702,7 +702,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
       : output_volume_(-1) {
     // Add a fake audio codec. Note that the name must not be "" as there are
     // sanity checks against that.
-    codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1, 0));
+    codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1));
   }
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const {
     return rtc::scoped_refptr<webrtc::AudioState>();
@@ -763,7 +763,7 @@ class FakeVideoEngine : public FakeBaseEngine {
   FakeVideoEngine() : capture_(false) {
     // Add a fake video codec. Note that the name must not be "" as there are
     // sanity checks against that.
-    codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0, 0));
+    codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0));
   }
   void Init() {}
   bool SetOptions(const VideoOptions& options) {

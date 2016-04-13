@@ -71,12 +71,10 @@ bool FeedbackParams::HasDuplicateEntries() const {
   return false;
 }
 
-Codec::Codec(int id, const std::string& name, int clockrate, int preference)
-    : id(id), name(name), clockrate(clockrate), preference(preference) {
-}
+Codec::Codec(int id, const std::string& name, int clockrate)
+    : id(id), name(name), clockrate(clockrate) {}
 
-Codec::Codec() : id(0), clockrate(0), preference(0) {
-}
+Codec::Codec() : id(0), clockrate(0) {}
 
 Codec::Codec(const Codec& c) = default;
 
@@ -86,7 +84,6 @@ Codec& Codec::operator=(const Codec& c) {
   this->id = c.id;  // id is reserved in objective-c
   name = c.name;
   clockrate = c.clockrate;
-  preference = c.preference;
   params = c.params;
   feedback_params = c.feedback_params;
   return *this;
@@ -94,8 +91,7 @@ Codec& Codec::operator=(const Codec& c) {
 
 bool Codec::operator==(const Codec& c) const {
   return this->id == c.id &&  // id is reserved in objective-c
-         name == c.name && clockrate == c.clockrate &&
-         preference == c.preference && params == c.params &&
+         name == c.name && clockrate == c.clockrate && params == c.params &&
          feedback_params == c.feedback_params;
 }
 
@@ -150,12 +146,8 @@ AudioCodec::AudioCodec(int id,
                        const std::string& name,
                        int clockrate,
                        int bitrate,
-                       size_t channels,
-                       int preference)
-    : Codec(id, name, clockrate, preference),
-      bitrate(bitrate),
-      channels(channels) {
-}
+                       size_t channels)
+    : Codec(id, name, clockrate), bitrate(bitrate), channels(channels) {}
 
 AudioCodec::AudioCodec() : Codec(), bitrate(0), channels(0) {
 }
@@ -193,14 +185,14 @@ bool AudioCodec::Matches(const AudioCodec& codec) const {
 std::string AudioCodec::ToString() const {
   std::ostringstream os;
   os << "AudioCodec[" << id << ":" << name << ":" << clockrate << ":" << bitrate
-     << ":" << channels << ":" << preference << "]";
+     << ":" << channels << "]";
   return os.str();
 }
 
 std::string VideoCodec::ToString() const {
   std::ostringstream os;
   os << "VideoCodec[" << id << ":" << name << ":" << width << ":" << height
-     << ":" << framerate << ":" << preference << "]";
+     << ":" << framerate << "]";
   return os.str();
 }
 
@@ -208,20 +200,17 @@ VideoCodec::VideoCodec(int id,
                        const std::string& name,
                        int width,
                        int height,
-                       int framerate,
-                       int preference)
-    : Codec(id, name, kVideoCodecClockrate, preference),
+                       int framerate)
+    : Codec(id, name, kVideoCodecClockrate),
       width(width),
       height(height),
-      framerate(framerate) {
-}
+      framerate(framerate) {}
 
 VideoCodec::VideoCodec(int id, const std::string& name)
-    : Codec(id, name, kVideoCodecClockrate, 0),
+    : Codec(id, name, kVideoCodecClockrate),
       width(0),
       height(0),
-      framerate(0) {
-}
+      framerate(0) {}
 
 VideoCodec::VideoCodec() : Codec(), width(0), height(0), framerate(0) {
   clockrate = kVideoCodecClockrate;
@@ -244,7 +233,7 @@ bool VideoCodec::operator==(const VideoCodec& c) const {
 
 VideoCodec VideoCodec::CreateRtxCodec(int rtx_payload_type,
                                       int associated_payload_type) {
-  VideoCodec rtx_codec(rtx_payload_type, kRtxCodecName, 0, 0, 0, 0);
+  VideoCodec rtx_codec(rtx_payload_type, kRtxCodecName, 0, 0, 0);
   rtx_codec.SetParam(kCodecParamAssociatedPayloadType, associated_payload_type);
   return rtx_codec;
 }
@@ -291,9 +280,8 @@ bool VideoCodec::ValidateCodecFormat() const {
   return true;
 }
 
-DataCodec::DataCodec(int id, const std::string& name, int preference)
-    : Codec(id, name, kDataCodecClockrate, preference) {
-}
+DataCodec::DataCodec(int id, const std::string& name)
+    : Codec(id, name, kDataCodecClockrate) {}
 
 DataCodec::DataCodec() : Codec() {
   clockrate = kDataCodecClockrate;

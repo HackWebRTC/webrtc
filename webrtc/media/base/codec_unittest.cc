@@ -26,7 +26,7 @@ class CodecTest : public testing::Test {
 };
 
 TEST_F(CodecTest, TestCodecOperators) {
-  Codec c0(96, "D", 1000, 0);
+  Codec c0(96, "D", 1000);
   c0.SetParam("a", 1);
 
   Codec c1 = c0;
@@ -50,35 +50,29 @@ TEST_F(CodecTest, TestCodecOperators) {
   EXPECT_TRUE(c0 != c1);
 
   c1 = c0;
-  c1.preference = 1;
-  EXPECT_TRUE(c0 != c1);
-
-  c1 = c0;
   c1.SetParam("a", 2);
   EXPECT_TRUE(c0 != c1);
 
   Codec c5;
-  Codec c6(0, "", 0, 0);
+  Codec c6(0, "", 0);
   EXPECT_TRUE(c5 == c6);
 }
 
 TEST_F(CodecTest, TestAudioCodecOperators) {
-  AudioCodec c0(96, "A", 44100, 20000, 2, 3);
-  AudioCodec c1(95, "A", 44100, 20000, 2, 3);
-  AudioCodec c2(96, "x", 44100, 20000, 2, 3);
-  AudioCodec c3(96, "A", 48000, 20000, 2, 3);
-  AudioCodec c4(96, "A", 44100, 10000, 2, 3);
-  AudioCodec c5(96, "A", 44100, 20000, 1, 3);
-  AudioCodec c6(96, "A", 44100, 20000, 2, 1);
+  AudioCodec c0(96, "A", 44100, 20000, 2);
+  AudioCodec c1(95, "A", 44100, 20000, 2);
+  AudioCodec c2(96, "x", 44100, 20000, 2);
+  AudioCodec c3(96, "A", 48000, 20000, 2);
+  AudioCodec c4(96, "A", 44100, 10000, 2);
+  AudioCodec c5(96, "A", 44100, 20000, 1);
   EXPECT_TRUE(c0 != c1);
   EXPECT_TRUE(c0 != c2);
   EXPECT_TRUE(c0 != c3);
   EXPECT_TRUE(c0 != c4);
   EXPECT_TRUE(c0 != c5);
-  EXPECT_TRUE(c0 != c6);
 
   AudioCodec c7;
-  AudioCodec c8(0, "", 0, 0, 0, 0);
+  AudioCodec c8(0, "", 0, 0, 0);
   AudioCodec c9 = c0;
   EXPECT_TRUE(c8 == c7);
   EXPECT_TRUE(c9 != c7);
@@ -103,61 +97,59 @@ TEST_F(CodecTest, TestAudioCodecOperators) {
 
 TEST_F(CodecTest, TestAudioCodecMatches) {
   // Test a codec with a static payload type.
-  AudioCodec c0(95, "A", 44100, 20000, 1, 3);
-  EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 44100, 20000, 1, 0)));
-  EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 44100, 20000, 0, 0)));
-  EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 44100, 0, 0, 0)));
-  EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 0, 0, 0, 0)));
-  EXPECT_FALSE(c0.Matches(AudioCodec(96, "", 44100, 20000, 1, 0)));
-  EXPECT_FALSE(c0.Matches(AudioCodec(95, "", 55100, 20000, 1, 0)));
-  EXPECT_FALSE(c0.Matches(AudioCodec(95, "", 44100, 30000, 1, 0)));
-  EXPECT_FALSE(c0.Matches(AudioCodec(95, "", 44100, 20000, 2, 0)));
-  EXPECT_FALSE(c0.Matches(AudioCodec(95, "", 55100, 30000, 2, 0)));
+  AudioCodec c0(95, "A", 44100, 20000, 1);
+  EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 44100, 20000, 1)));
+  EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 44100, 20000, 0)));
+  EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 44100, 0, 0)));
+  EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 0, 0, 0)));
+  EXPECT_FALSE(c0.Matches(AudioCodec(96, "", 44100, 20000, 1)));
+  EXPECT_FALSE(c0.Matches(AudioCodec(95, "", 55100, 20000, 1)));
+  EXPECT_FALSE(c0.Matches(AudioCodec(95, "", 44100, 30000, 1)));
+  EXPECT_FALSE(c0.Matches(AudioCodec(95, "", 44100, 20000, 2)));
+  EXPECT_FALSE(c0.Matches(AudioCodec(95, "", 55100, 30000, 2)));
 
   // Test a codec with a dynamic payload type.
-  AudioCodec c1(96, "A", 44100, 20000, 1, 3);
-  EXPECT_TRUE(c1.Matches(AudioCodec(96, "A", 0, 0, 0, 0)));
-  EXPECT_TRUE(c1.Matches(AudioCodec(97, "A", 0, 0, 0, 0)));
-  EXPECT_TRUE(c1.Matches(AudioCodec(96, "a", 0, 0, 0, 0)));
-  EXPECT_TRUE(c1.Matches(AudioCodec(97, "a", 0, 0, 0, 0)));
-  EXPECT_FALSE(c1.Matches(AudioCodec(95, "A", 0, 0, 0, 0)));
-  EXPECT_FALSE(c1.Matches(AudioCodec(96, "", 44100, 20000, 2, 0)));
-  EXPECT_FALSE(c1.Matches(AudioCodec(96, "A", 55100, 30000, 1, 0)));
+  AudioCodec c1(96, "A", 44100, 20000, 1);
+  EXPECT_TRUE(c1.Matches(AudioCodec(96, "A", 0, 0, 0)));
+  EXPECT_TRUE(c1.Matches(AudioCodec(97, "A", 0, 0, 0)));
+  EXPECT_TRUE(c1.Matches(AudioCodec(96, "a", 0, 0, 0)));
+  EXPECT_TRUE(c1.Matches(AudioCodec(97, "a", 0, 0, 0)));
+  EXPECT_FALSE(c1.Matches(AudioCodec(95, "A", 0, 0, 0)));
+  EXPECT_FALSE(c1.Matches(AudioCodec(96, "", 44100, 20000, 2)));
+  EXPECT_FALSE(c1.Matches(AudioCodec(96, "A", 55100, 30000, 1)));
 
   // Test a codec with a dynamic payload type, and auto bitrate.
-  AudioCodec c2(97, "A", 16000, 0, 1, 3);
+  AudioCodec c2(97, "A", 16000, 0, 1);
   // Use default bitrate.
-  EXPECT_TRUE(c2.Matches(AudioCodec(97, "A", 16000, 0, 1, 0)));
-  EXPECT_TRUE(c2.Matches(AudioCodec(97, "A", 16000, 0, 0, 0)));
+  EXPECT_TRUE(c2.Matches(AudioCodec(97, "A", 16000, 0, 1)));
+  EXPECT_TRUE(c2.Matches(AudioCodec(97, "A", 16000, 0, 0)));
   // Use explicit bitrate.
-  EXPECT_TRUE(c2.Matches(AudioCodec(97, "A", 16000, 32000, 1, 0)));
+  EXPECT_TRUE(c2.Matches(AudioCodec(97, "A", 16000, 32000, 1)));
   // Backward compatibility with clients that might send "-1" (for default).
-  EXPECT_TRUE(c2.Matches(AudioCodec(97, "A", 16000, -1, 1, 0)));
+  EXPECT_TRUE(c2.Matches(AudioCodec(97, "A", 16000, -1, 1)));
 
   // Stereo doesn't match channels = 0.
-  AudioCodec c3(96, "A", 44100, 20000, 2, 3);
-  EXPECT_TRUE(c3.Matches(AudioCodec(96, "A", 44100, 20000, 2, 3)));
-  EXPECT_FALSE(c3.Matches(AudioCodec(96, "A", 44100, 20000, 1, 3)));
-  EXPECT_FALSE(c3.Matches(AudioCodec(96, "A", 44100, 20000, 0, 3)));
+  AudioCodec c3(96, "A", 44100, 20000, 2);
+  EXPECT_TRUE(c3.Matches(AudioCodec(96, "A", 44100, 20000, 2)));
+  EXPECT_FALSE(c3.Matches(AudioCodec(96, "A", 44100, 20000, 1)));
+  EXPECT_FALSE(c3.Matches(AudioCodec(96, "A", 44100, 20000, 0)));
 }
 
 TEST_F(CodecTest, TestVideoCodecOperators) {
-  VideoCodec c0(96, "V", 320, 200, 30, 3);
-  VideoCodec c1(95, "V", 320, 200, 30, 3);
-  VideoCodec c2(96, "x", 320, 200, 30, 3);
-  VideoCodec c3(96, "V", 120, 200, 30, 3);
-  VideoCodec c4(96, "V", 320, 100, 30, 3);
-  VideoCodec c5(96, "V", 320, 200, 10, 3);
-  VideoCodec c6(96, "V", 320, 200, 30, 1);
+  VideoCodec c0(96, "V", 320, 200, 30);
+  VideoCodec c1(95, "V", 320, 200, 30);
+  VideoCodec c2(96, "x", 320, 200, 30);
+  VideoCodec c3(96, "V", 120, 200, 30);
+  VideoCodec c4(96, "V", 320, 100, 30);
+  VideoCodec c5(96, "V", 320, 200, 10);
   EXPECT_TRUE(c0 != c1);
   EXPECT_TRUE(c0 != c2);
   EXPECT_TRUE(c0 != c3);
   EXPECT_TRUE(c0 != c4);
   EXPECT_TRUE(c0 != c5);
-  EXPECT_TRUE(c0 != c6);
 
   VideoCodec c7;
-  VideoCodec c8(0, "", 0, 0, 0, 0);
+  VideoCodec c8(0, "", 0, 0, 0);
   VideoCodec c9 = c0;
   EXPECT_TRUE(c8 == c7);
   EXPECT_TRUE(c9 != c7);
@@ -182,34 +174,34 @@ TEST_F(CodecTest, TestVideoCodecOperators) {
 
 TEST_F(CodecTest, TestVideoCodecMatches) {
   // Test a codec with a static payload type.
-  VideoCodec c0(95, "V", 320, 200, 30, 3);
-  EXPECT_TRUE(c0.Matches(VideoCodec(95, "", 640, 400, 15, 0)));
-  EXPECT_FALSE(c0.Matches(VideoCodec(96, "", 320, 200, 30, 0)));
+  VideoCodec c0(95, "V", 320, 200, 30);
+  EXPECT_TRUE(c0.Matches(VideoCodec(95, "", 640, 400, 15)));
+  EXPECT_FALSE(c0.Matches(VideoCodec(96, "", 320, 200, 30)));
 
   // Test a codec with a dynamic payload type.
-  VideoCodec c1(96, "V", 320, 200, 30, 3);
-  EXPECT_TRUE(c1.Matches(VideoCodec(96, "V", 640, 400, 15, 0)));
-  EXPECT_TRUE(c1.Matches(VideoCodec(97, "V", 640, 400, 15, 0)));
-  EXPECT_TRUE(c1.Matches(VideoCodec(96, "v", 640, 400, 15, 0)));
-  EXPECT_TRUE(c1.Matches(VideoCodec(97, "v", 640, 400, 15, 0)));
-  EXPECT_FALSE(c1.Matches(VideoCodec(96, "", 320, 200, 30, 0)));
-  EXPECT_FALSE(c1.Matches(VideoCodec(95, "V", 640, 400, 15, 0)));
+  VideoCodec c1(96, "V", 320, 200, 30);
+  EXPECT_TRUE(c1.Matches(VideoCodec(96, "V", 640, 400, 15)));
+  EXPECT_TRUE(c1.Matches(VideoCodec(97, "V", 640, 400, 15)));
+  EXPECT_TRUE(c1.Matches(VideoCodec(96, "v", 640, 400, 15)));
+  EXPECT_TRUE(c1.Matches(VideoCodec(97, "v", 640, 400, 15)));
+  EXPECT_FALSE(c1.Matches(VideoCodec(96, "", 320, 200, 30)));
+  EXPECT_FALSE(c1.Matches(VideoCodec(95, "V", 640, 400, 15)));
 }
 
 TEST_F(CodecTest, TestDataCodecMatches) {
   // Test a codec with a static payload type.
-  DataCodec c0(95, "D", 0);
-  EXPECT_TRUE(c0.Matches(DataCodec(95, "", 0)));
-  EXPECT_FALSE(c0.Matches(DataCodec(96, "", 0)));
+  DataCodec c0(95, "D");
+  EXPECT_TRUE(c0.Matches(DataCodec(95, "")));
+  EXPECT_FALSE(c0.Matches(DataCodec(96, "")));
 
   // Test a codec with a dynamic payload type.
-  DataCodec c1(96, "D", 3);
-  EXPECT_TRUE(c1.Matches(DataCodec(96, "D", 0)));
-  EXPECT_TRUE(c1.Matches(DataCodec(97, "D", 0)));
-  EXPECT_TRUE(c1.Matches(DataCodec(96, "d", 0)));
-  EXPECT_TRUE(c1.Matches(DataCodec(97, "d", 0)));
-  EXPECT_FALSE(c1.Matches(DataCodec(96, "", 0)));
-  EXPECT_FALSE(c1.Matches(DataCodec(95, "D", 0)));
+  DataCodec c1(96, "D");
+  EXPECT_TRUE(c1.Matches(DataCodec(96, "D")));
+  EXPECT_TRUE(c1.Matches(DataCodec(97, "D")));
+  EXPECT_TRUE(c1.Matches(DataCodec(96, "d")));
+  EXPECT_TRUE(c1.Matches(DataCodec(97, "d")));
+  EXPECT_FALSE(c1.Matches(DataCodec(96, "")));
+  EXPECT_FALSE(c1.Matches(DataCodec(95, "D")));
 }
 
 TEST_F(CodecTest, TestSetParamGetParamAndRemoveParam) {
@@ -254,10 +246,10 @@ TEST_F(CodecTest, TestIntersectFeedbackParams) {
 
 TEST_F(CodecTest, TestGetCodecType) {
   // Codec type comparison should be case insenstive on names.
-  const VideoCodec codec(96, "V", 320, 200, 30, 3);
-  const VideoCodec rtx_codec(96, "rTx", 320, 200, 30, 3);
-  const VideoCodec ulpfec_codec(96, "ulpFeC", 320, 200, 30, 3);
-  const VideoCodec red_codec(96, "ReD", 320, 200, 30, 3);
+  const VideoCodec codec(96, "V", 320, 200, 30);
+  const VideoCodec rtx_codec(96, "rTx", 320, 200, 30);
+  const VideoCodec ulpfec_codec(96, "ulpFeC", 320, 200, 30);
+  const VideoCodec red_codec(96, "ReD", 320, 200, 30);
   EXPECT_EQ(VideoCodec::CODEC_VIDEO, codec.GetCodecType());
   EXPECT_EQ(VideoCodec::CODEC_RTX, rtx_codec.GetCodecType());
   EXPECT_EQ(VideoCodec::CODEC_ULPFEC, ulpfec_codec.GetCodecType());
@@ -275,7 +267,7 @@ TEST_F(CodecTest, TestCreateRtxCodec) {
 }
 
 TEST_F(CodecTest, TestValidateCodecFormat) {
-  const VideoCodec codec(96, "V", 320, 200, 30, 3);
+  const VideoCodec codec(96, "V", 320, 200, 30);
   ASSERT_TRUE(codec.ValidateCodecFormat());
 
   // Accept 0-127 as payload types.

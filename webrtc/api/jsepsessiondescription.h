@@ -72,7 +72,6 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   static const char kDefaultVideoCodecName[];
   static const int kMaxVideoCodecWidth;
   static const int kMaxVideoCodecHeight;
-  static const int kDefaultVideoCodecPreference;
 
  private:
   rtc::scoped_ptr<cricket::SessionDescription> description_;

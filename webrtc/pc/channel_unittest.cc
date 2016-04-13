@@ -48,12 +48,12 @@ using cricket::StreamParams;
 using cricket::TransportChannel;
 using rtc::WindowId;
 
-static const cricket::AudioCodec kPcmuCodec(0, "PCMU", 64000, 8000, 1, 0);
-static const cricket::AudioCodec kPcmaCodec(8, "PCMA", 64000, 8000, 1, 0);
-static const cricket::AudioCodec kIsacCodec(103, "ISAC", 40000, 16000, 1, 0);
-static const cricket::VideoCodec kH264Codec(97, "H264", 640, 400, 30, 0);
-static const cricket::VideoCodec kH264SvcCodec(99, "H264-SVC", 320, 200, 15, 0);
-static const cricket::DataCodec kGoogleDataCodec(101, "google-data", 0);
+static const cricket::AudioCodec kPcmuCodec(0, "PCMU", 64000, 8000, 1);
+static const cricket::AudioCodec kPcmaCodec(8, "PCMA", 64000, 8000, 1);
+static const cricket::AudioCodec kIsacCodec(103, "ISAC", 40000, 16000, 1);
+static const cricket::VideoCodec kH264Codec(97, "H264", 640, 400, 30);
+static const cricket::VideoCodec kH264SvcCodec(99, "H264-SVC", 320, 200, 15);
+static const cricket::DataCodec kGoogleDataCodec(101, "google-data");
 static const uint32_t kSsrc1 = 0x1111;
 static const uint32_t kSsrc2 = 0x2222;
 static const uint32_t kSsrc3 = 0x3333;

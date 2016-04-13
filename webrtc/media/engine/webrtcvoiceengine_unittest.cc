@@ -33,16 +33,19 @@ using testing::StrictMock;
 
 namespace {
 
-const cricket::AudioCodec kPcmuCodec(0, "PCMU", 8000, 64000, 1, 0);
-const cricket::AudioCodec kIsacCodec(103, "ISAC", 16000, 32000, 1, 0);
-const cricket::AudioCodec kOpusCodec(111, "opus", 48000, 64000, 2, 0);
-const cricket::AudioCodec kG722CodecVoE(9, "G722", 16000, 64000, 1, 0);
-const cricket::AudioCodec kG722CodecSdp(9, "G722", 8000, 64000, 1, 0);
-const cricket::AudioCodec kRedCodec(117, "red", 8000, 0, 1, 0);
-const cricket::AudioCodec kCn8000Codec(13, "CN", 8000, 0, 1, 0);
-const cricket::AudioCodec kCn16000Codec(105, "CN", 16000, 0, 1, 0);
-const cricket::AudioCodec kTelephoneEventCodec(106, "telephone-event", 8000, 0,
-                                               1, 0);
+const cricket::AudioCodec kPcmuCodec(0, "PCMU", 8000, 64000, 1);
+const cricket::AudioCodec kIsacCodec(103, "ISAC", 16000, 32000, 1);
+const cricket::AudioCodec kOpusCodec(111, "opus", 48000, 64000, 2);
+const cricket::AudioCodec kG722CodecVoE(9, "G722", 16000, 64000, 1);
+const cricket::AudioCodec kG722CodecSdp(9, "G722", 8000, 64000, 1);
+const cricket::AudioCodec kRedCodec(117, "red", 8000, 0, 1);
+const cricket::AudioCodec kCn8000Codec(13, "CN", 8000, 0, 1);
+const cricket::AudioCodec kCn16000Codec(105, "CN", 16000, 0, 1);
+const cricket::AudioCodec kTelephoneEventCodec(106,
+                                               "telephone-event",
+                                               8000,
+                                               0,
+                                               1);
 const uint32_t kSsrc1 = 0x99;
 const uint32_t kSsrc2 = 2;
 const uint32_t kSsrc3 = 3;
@@ -483,19 +486,14 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateChannel) {
 }
 
 // Tests that the list of supported codecs is created properly and ordered
-// correctly
-TEST_F(WebRtcVoiceEngineTestFake, CodecPreference) {
+// correctly (such that opus appears first).
+TEST_F(WebRtcVoiceEngineTestFake, CodecOrder) {
   const std::vector<cricket::AudioCodec>& codecs = engine_->codecs();
   ASSERT_FALSE(codecs.empty());
   EXPECT_STRCASEEQ("opus", codecs[0].name.c_str());
   EXPECT_EQ(48000, codecs[0].clockrate);
   EXPECT_EQ(2, codecs[0].channels);
   EXPECT_EQ(64000, codecs[0].bitrate);
-  int pref = codecs[0].preference;
-  for (size_t i = 1; i < codecs.size(); ++i) {
-    EXPECT_GT(pref, codecs[i].preference);
-    pref = codecs[i].preference;
-  }
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, OpusSupportsTransportCc) {
@@ -579,7 +577,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsUnsupportedCodec) {
   EXPECT_TRUE(SetupChannel());
   cricket::AudioRecvParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(cricket::AudioCodec(127, "XYZ", 32000, 0, 1, 0));
+  parameters.codecs.push_back(cricket::AudioCodec(127, "XYZ", 32000, 0, 1));
   EXPECT_FALSE(channel_->SetRecvParameters(parameters));
 }
 
@@ -3410,55 +3408,55 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
 TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   // Check codecs by name.
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "OPUS", 48000, 0, 2, 0), nullptr));
+      cricket::AudioCodec(96, "OPUS", 48000, 0, 2), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "ISAC", 16000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "ISAC", 16000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "ISAC", 32000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "ISAC", 32000, 0, 1), nullptr));
   // Check that name matching is case-insensitive.
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "ILBC", 8000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "ILBC", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "iLBC", 8000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "iLBC", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "PCMU", 8000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "PCMU", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "PCMA", 8000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "PCMA", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "G722", 8000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "G722", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "red", 8000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "red", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "CN", 32000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "CN", 32000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "CN", 16000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "CN", 16000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "CN", 8000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "CN", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "telephone-event", 8000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(96, "telephone-event", 8000, 0, 1), nullptr));
   // Check codecs with an id by id.
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(0, "", 8000, 0, 1, 0), nullptr));   // PCMU
+      cricket::AudioCodec(0, "", 8000, 0, 1), nullptr));  // PCMU
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(8, "", 8000, 0, 1, 0), nullptr));   // PCMA
+      cricket::AudioCodec(8, "", 8000, 0, 1), nullptr));  // PCMA
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(9, "", 8000, 0, 1, 0), nullptr));  // G722
+      cricket::AudioCodec(9, "", 8000, 0, 1), nullptr));  // G722
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(13, "", 8000, 0, 1, 0), nullptr));  // CN
+      cricket::AudioCodec(13, "", 8000, 0, 1), nullptr));  // CN
   // Check sample/bitrate matching.
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(0, "PCMU", 8000, 64000, 1, 0), nullptr));
+      cricket::AudioCodec(0, "PCMU", 8000, 64000, 1), nullptr));
   // Check that bad codecs fail.
   EXPECT_FALSE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(99, "ABCD", 0, 0, 1, 0), nullptr));
+      cricket::AudioCodec(99, "ABCD", 0, 0, 1), nullptr));
   EXPECT_FALSE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(88, "", 0, 0, 1, 0), nullptr));
+      cricket::AudioCodec(88, "", 0, 0, 1), nullptr));
   EXPECT_FALSE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(0, "", 0, 0, 2, 0), nullptr));
+      cricket::AudioCodec(0, "", 0, 0, 2), nullptr));
   EXPECT_FALSE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(0, "", 5000, 0, 1, 0), nullptr));
+      cricket::AudioCodec(0, "", 5000, 0, 1), nullptr));
   EXPECT_FALSE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(0, "", 0, 5000, 1, 0), nullptr));
+      cricket::AudioCodec(0, "", 0, 5000, 1), nullptr));
 
   // Verify the payload id of common audio codecs, including CN, ISAC, and G722.
   cricket::WebRtcVoiceEngine engine(nullptr);

@@ -31,16 +31,16 @@ namespace {
 static const int kDefaultQpMax = 56;
 static const int kDefaultFramerate = 30;
 
-static const cricket::VideoCodec kVp8Codec720p(100, "VP8", 1280, 720, 30, 0);
-static const cricket::VideoCodec kVp8Codec360p(100, "VP8", 640, 360, 30, 0);
-static const cricket::VideoCodec kVp8Codec270p(100, "VP8", 480, 270, 30, 0);
+static const cricket::VideoCodec kVp8Codec720p(100, "VP8", 1280, 720, 30);
+static const cricket::VideoCodec kVp8Codec360p(100, "VP8", 640, 360, 30);
+static const cricket::VideoCodec kVp8Codec270p(100, "VP8", 480, 270, 30);
 
-static const cricket::VideoCodec kVp8Codec(100, "VP8", 640, 400, 30, 0);
-static const cricket::VideoCodec kVp9Codec(101, "VP9", 640, 400, 30, 0);
-static const cricket::VideoCodec kH264Codec(102, "H264", 640, 400, 30, 0);
+static const cricket::VideoCodec kVp8Codec(100, "VP8", 640, 400, 30);
+static const cricket::VideoCodec kVp9Codec(101, "VP9", 640, 400, 30);
+static const cricket::VideoCodec kH264Codec(102, "H264", 640, 400, 30);
 
-static const cricket::VideoCodec kRedCodec(116, "red", 0, 0, 0, 0);
-static const cricket::VideoCodec kUlpfecCodec(117, "ulpfec", 0, 0, 0, 0);
+static const cricket::VideoCodec kRedCodec(116, "red", 0, 0, 0);
+static const cricket::VideoCodec kUlpfecCodec(117, "ulpfec", 0, 0, 0);
 
 static const uint8_t kRedRtxPayloadType = 125;
 
@@ -852,15 +852,15 @@ WEBRTC_BASE_TEST(SendsLowerResolutionOnSmallerFrames);
 WEBRTC_BASE_TEST(MultipleSendStreams);
 
 TEST_F(WebRtcVideoChannel2BaseTest, SendAndReceiveVp8Vga) {
-  SendAndReceive(cricket::VideoCodec(100, "VP8", 640, 400, 30, 0));
+  SendAndReceive(cricket::VideoCodec(100, "VP8", 640, 400, 30));
 }
 
 TEST_F(WebRtcVideoChannel2BaseTest, SendAndReceiveVp8Qvga) {
-  SendAndReceive(cricket::VideoCodec(100, "VP8", 320, 200, 30, 0));
+  SendAndReceive(cricket::VideoCodec(100, "VP8", 320, 200, 30));
 }
 
 TEST_F(WebRtcVideoChannel2BaseTest, SendAndReceiveVp8SvcQqvga) {
-  SendAndReceive(cricket::VideoCodec(100, "VP8", 160, 100, 30, 0));
+  SendAndReceive(cricket::VideoCodec(100, "VP8", 160, 100, 30));
 }
 
 TEST_F(WebRtcVideoChannel2BaseTest, TwoStreamsSendAndReceive) {
@@ -2278,7 +2278,7 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFec) {
 TEST_F(WebRtcVideoChannel2Test,
        SetSendCodecRejectsRtxWithoutAssociatedPayloadType) {
   cricket::VideoSendParameters parameters;
-  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0, 0);
+  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0);
   parameters.codecs.push_back(rtx_codec);
   EXPECT_FALSE(channel_->SetSendParameters(parameters))
       << "RTX codec without associated payload type should be rejected.";
@@ -2510,6 +2510,26 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsAcceptAllValidPayloadTypes) {
   }
 }
 
+// Test that setting the a different set of codecs but with an identical front
+// codec doesn't result in the stream being recreated.
+// This may happen when a subsequent negotiation includes fewer codecs, as a
+// result of one of the codecs being rejected.
+TEST_F(WebRtcVideoChannel2Test,
+       SetSendCodecsIdenticalFirstCodecDoesntRecreateStream) {
+  cricket::VideoSendParameters parameters1;
+  parameters1.codecs.push_back(kVp8Codec);
+  parameters1.codecs.push_back(kVp9Codec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters1));
+
+  AddSendStream();
+  EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
+
+  cricket::VideoSendParameters parameters2;
+  parameters2.codecs.push_back(kVp8Codec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters2));
+  EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
+}
+
 TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithOnlyVp8) {
   cricket::VideoRecvParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
@@ -2520,7 +2540,7 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithOnlyVp8) {
 TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithRtx) {
   cricket::VideoRecvParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
-  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0, 0);
+  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0);
   parameters.codecs.push_back(rtx_codec);
   EXPECT_FALSE(channel_->SetRecvParameters(parameters))
       << "RTX codec without associated payload should be rejected.";
@@ -2532,7 +2552,7 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithRtx) {
   parameters.codecs[1].SetParam("apt", kVp8Codec.id);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
-  cricket::VideoCodec rtx_codec2(97, "rtx", 0, 0, 0, 0);
+  cricket::VideoCodec rtx_codec2(97, "rtx", 0, 0, 0);
   rtx_codec2.SetParam("apt", rtx_codec.id);
   parameters.codecs.push_back(rtx_codec2);
 
@@ -2562,7 +2582,7 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsAcceptDefaultCodecs) {
 TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsRejectUnsupportedCodec) {
   cricket::VideoRecvParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
-  parameters.codecs.push_back(VideoCodec(101, "WTF3", 640, 400, 30, 0));
+  parameters.codecs.push_back(VideoCodec(101, "WTF3", 640, 400, 30));
   EXPECT_FALSE(channel_->SetRecvParameters(parameters));
 }
 
@@ -2630,10 +2650,10 @@ TEST_F(WebRtcVideoChannel2Test,
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 }
 
-// Test that setting the same codecs but with a different order and preference
+// Test that setting the same codecs but with a different order
 // doesn't result in the stream being recreated.
 TEST_F(WebRtcVideoChannel2Test,
-       SetRecvCodecsDifferentOrderAndPreferenceDoesntRecreateStream) {
+       SetRecvCodecsDifferentOrderDoesntRecreateStream) {
   cricket::VideoRecvParameters parameters1;
   parameters1.codecs.push_back(kVp8Codec);
   parameters1.codecs.push_back(kRedCodec);
@@ -2645,7 +2665,6 @@ TEST_F(WebRtcVideoChannel2Test,
   cricket::VideoRecvParameters parameters2;
   parameters2.codecs.push_back(kRedCodec);
   parameters2.codecs.push_back(kVp8Codec);
-  parameters2.codecs[1].preference += 1;
   EXPECT_TRUE(channel_->SetRecvParameters(parameters2));
   EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
 }
@@ -2830,7 +2849,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   channel_->SetSource(kSsrcs3[0], &video_capturer_vga);
   EXPECT_TRUE(video_capturer_vga.CaptureFrame());
 
-  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30);
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(send_codec);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
@@ -2903,7 +2922,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationAndBandwidthStats) {
   channel_->SetSource(kSsrcs3[0], &video_capturer_vga);
   EXPECT_TRUE(video_capturer_vga.CaptureFrame());
 
-  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30);
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(send_codec);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));

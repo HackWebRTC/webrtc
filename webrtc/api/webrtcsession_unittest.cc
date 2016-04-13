@@ -450,8 +450,8 @@ class WebRtcSessionTest
 
   void InitWithDtmfCodec() {
     // Add kTelephoneEventCodec for dtmf test.
-    const cricket::AudioCodec kTelephoneEventCodec(
-        106, "telephone-event", 8000, 0, 1, 0);
+    const cricket::AudioCodec kTelephoneEventCodec(106, "telephone-event", 8000,
+                                                   0, 1);
     std::vector<cricket::AudioCodec> codecs;
     codecs.push_back(kTelephoneEventCodec);
     media_engine_->SetAudioCodecs(codecs);
@@ -1313,8 +1313,8 @@ class WebRtcSessionTest
 
   // Adds CN codecs to FakeMediaEngine and MediaDescriptionFactory.
   void AddCNCodecs() {
-    const cricket::AudioCodec kCNCodec1(102, "CN", 8000, 0, 1, 0);
-    const cricket::AudioCodec kCNCodec2(103, "CN", 16000, 0, 1, 0);
+    const cricket::AudioCodec kCNCodec1(102, "CN", 8000, 0, 1);
+    const cricket::AudioCodec kCNCodec2(103, "CN", 16000, 0, 1);
 
     // Add kCNCodec for dtmf test.
     std::vector<cricket::AudioCodec> codecs = media_engine_->audio_codecs();;

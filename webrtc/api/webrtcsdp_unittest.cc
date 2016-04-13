@@ -1030,10 +1030,10 @@ class WebRtcSdpTest : public testing::Test {
         "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32",
         "dummy_session_params"));
     audio->set_protocol(cricket::kMediaProtocolSavpf);
-    AudioCodec opus(111, "opus", 48000, 0, 2, 3);
+    AudioCodec opus(111, "opus", 48000, 0, 2);
     audio->AddCodec(opus);
-    audio->AddCodec(AudioCodec(103, "ISAC", 16000, 32000, 1, 2));
-    audio->AddCodec(AudioCodec(104, "ISAC", 32000, 56000, 1, 1));
+    audio->AddCodec(AudioCodec(103, "ISAC", 16000, 32000, 1));
+    audio->AddCodec(AudioCodec(104, "ISAC", 32000, 56000, 1));
     return audio;
   }
 
@@ -1049,8 +1049,7 @@ class WebRtcSdpTest : public testing::Test {
         VideoCodec(120, JsepSessionDescription::kDefaultVideoCodecName,
                    JsepSessionDescription::kMaxVideoCodecWidth,
                    JsepSessionDescription::kMaxVideoCodecHeight,
-                   JsepSessionDescription::kDefaultVideoCodecFramerate,
-                   JsepSessionDescription::kDefaultVideoCodecPreference));
+                   JsepSessionDescription::kDefaultVideoCodecFramerate));
     return video;
   }
 
@@ -1400,7 +1399,7 @@ class WebRtcSdpTest : public testing::Test {
     data_desc_ = data.get();
     data_desc_->set_protocol(cricket::kMediaProtocolDtlsSctp);
     DataCodec codec(cricket::kGoogleSctpDataCodecId,
-                    cricket::kGoogleSctpDataCodecName, 0);
+                    cricket::kGoogleSctpDataCodecName);
     codec.SetParam(cricket::kCodecParamPort, kDefaultSctpPort);
     data_desc_->AddCodec(codec);
     desc_.AddContent(kDataContentName, NS_JINGLE_DRAFT_SCTP, data.release());
@@ -1413,7 +1412,7 @@ class WebRtcSdpTest : public testing::Test {
         new DataContentDescription());
     data_desc_ = data.get();
 
-    data_desc_->AddCodec(DataCodec(101, "google-data", 1));
+    data_desc_->AddCodec(DataCodec(101, "google-data"));
     StreamParams data_stream;
     data_stream.id = kDataChannelMsid;
     data_stream.cname = kDataChannelCname;
@@ -1995,8 +1994,8 @@ TEST_F(WebRtcSdpTest, SerializeWithSctpDataChannelAndNewPort) {
       jsep_desc.description()->GetContentDescriptionByName(kDataContentName));
 
   const int kNewPort = 1234;
-  cricket::DataCodec codec(
-        cricket::kGoogleSctpDataCodecId, cricket::kGoogleSctpDataCodecName, 0);
+  cricket::DataCodec codec(cricket::kGoogleSctpDataCodecId,
+                           cricket::kGoogleSctpDataCodecName);
   codec.SetParam(cricket::kCodecParamPort, kNewPort);
   dcdesc->AddOrReplaceCodec(codec);
 
@@ -2177,10 +2176,11 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutRtpmap) {
     static_cast<AudioContentDescription*>(
         jdesc.description()->GetContentDescriptionByName(cricket::CN_AUDIO));
   AudioCodecs ref_codecs;
-  // The codecs in the AudioContentDescription will be sorted by preference.
-  ref_codecs.push_back(AudioCodec(0, "PCMU", 8000, 0, 1, 3));
-  ref_codecs.push_back(AudioCodec(18, "G729", 16000, 0, 1, 2));
-  ref_codecs.push_back(AudioCodec(103, "ISAC", 16000, 32000, 1, 1));
+  // The codecs in the AudioContentDescription should be in the same order as
+  // the payload types (<fmt>s) on the m= line.
+  ref_codecs.push_back(AudioCodec(0, "PCMU", 8000, 0, 1));
+  ref_codecs.push_back(AudioCodec(18, "G729", 16000, 0, 1));
+  ref_codecs.push_back(AudioCodec(103, "ISAC", 16000, 32000, 1));
   EXPECT_EQ(ref_codecs, audio->codecs());
 }
 

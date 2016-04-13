@@ -250,31 +250,28 @@ class WebRtcVoiceCodecs final {
   // list and add a test which verifies VoE supports the listed codecs.
   static std::vector<AudioCodec> SupportedCodecs() {
     std::vector<AudioCodec> result;
-    for (webrtc::CodecInst voe_codec : webrtc::acm2::RentACodec::Database()) {
-      // Change the sample rate of G722 to 8000 to match SDP.
-      MaybeFixupG722(&voe_codec, 8000);
-      // Skip uncompressed formats.
-      if (IsCodec(voe_codec, kL16CodecName)) {
-        continue;
-      }
-
-      const CodecPref* pref = NULL;
-      for (size_t j = 0; j < arraysize(kCodecPrefs); ++j) {
-        if (IsCodec(voe_codec, kCodecPrefs[j].name) &&
-            kCodecPrefs[j].clockrate == voe_codec.plfreq &&
-            kCodecPrefs[j].channels == voe_codec.channels) {
-          pref = &kCodecPrefs[j];
-          break;
+    // Iterate first over our preferred codecs list, so that the results are
+    // added in order of preference.
+    for (size_t i = 0; i < arraysize(kCodecPrefs); ++i) {
+      const CodecPref* pref = &kCodecPrefs[i];
+      for (webrtc::CodecInst voe_codec : webrtc::acm2::RentACodec::Database()) {
+        // Change the sample rate of G722 to 8000 to match SDP.
+        MaybeFixupG722(&voe_codec, 8000);
+        // Skip uncompressed formats.
+        if (IsCodec(voe_codec, kL16CodecName)) {
+          continue;
         }
-      }
 
-      if (pref) {
-        // Use the payload type that we've configured in our pref table;
-        // use the offset in our pref table to determine the sort order.
-        AudioCodec codec(
-            pref->payload_type, voe_codec.plname, voe_codec.plfreq,
-            voe_codec.rate, voe_codec.channels,
-            static_cast<int>(arraysize(kCodecPrefs)) - (pref - kCodecPrefs));
+        if (!IsCodec(voe_codec, pref->name) ||
+            pref->clockrate != voe_codec.plfreq ||
+            pref->channels != voe_codec.channels) {
+          // Not a match.
+          continue;
+        }
+
+        AudioCodec codec(pref->payload_type, voe_codec.plname, voe_codec.plfreq,
+                         voe_codec.rate, voe_codec.channels);
+        LOG(LS_INFO) << "Adding supported codec: " << ToString(codec);
         if (IsCodec(codec, kIsacCodecName)) {
           // Indicate auto-bitrate in signaling.
           codec.bitrate = 0;
@@ -297,12 +294,8 @@ class WebRtcVoiceCodecs final {
           // when they can be set to values other than the default.
         }
         result.push_back(codec);
-      } else {
-        LOG(LS_INFO) << "[Unused] " << ToString(voe_codec);
       }
     }
-    // Make sure they are in local preference order.
-    std::sort(result.begin(), result.end(), &AudioCodec::Preferable);
     return result;
   }
 
@@ -312,7 +305,7 @@ class WebRtcVoiceCodecs final {
       // Change the sample rate of G722 to 8000 to match SDP.
       MaybeFixupG722(&voe_codec, 8000);
       AudioCodec codec(voe_codec.pltype, voe_codec.plname, voe_codec.plfreq,
-                       voe_codec.rate, voe_codec.channels, 0);
+                       voe_codec.rate, voe_codec.channels);
       bool multi_rate = IsCodecMultiRate(voe_codec);
       // Allow arbitrary rates for ISAC to be specified.
       if (multi_rate) {

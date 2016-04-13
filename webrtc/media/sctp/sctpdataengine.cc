@@ -283,7 +283,7 @@ SctpDataEngine::SctpDataEngine() {
   }
   usrsctp_engines_count++;
 
-  cricket::DataCodec codec(kGoogleSctpDataCodecId, kGoogleSctpDataCodecName, 0);
+  cricket::DataCodec codec(kGoogleSctpDataCodecId, kGoogleSctpDataCodecName);
   codec.SetParam(kCodecParamPort, kSctpDefaultPort);
   codecs_.push_back(codec);
 }

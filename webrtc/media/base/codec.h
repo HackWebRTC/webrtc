@@ -64,12 +64,11 @@ struct Codec {
   int id;
   std::string name;
   int clockrate;
-  int preference;
   CodecParameterMap params;
   FeedbackParams feedback_params;
 
   // Creates a codec with the given parameters.
-  Codec(int id, const std::string& name, int clockrate, int preference);
+  Codec(int id, const std::string& name, int clockrate);
   // Creates an empty codec.
   Codec();
   Codec(const Codec& c);
@@ -91,10 +90,6 @@ struct Codec {
 
   bool HasFeedbackParam(const FeedbackParam& param) const;
   void AddFeedbackParam(const FeedbackParam& param);
-
-  static bool Preferable(const Codec& first, const Codec& other) {
-    return first.preference > other.preference;
-  }
 
   // Filter |this| feedbacks params such that only those shared by both |this|
   // and |other| are kept.
@@ -118,8 +113,7 @@ struct AudioCodec : public Codec {
              const std::string& name,
              int clockrate,
              int bitrate,
-             size_t channels,
-             int preference);
+             size_t channels);
   // Creates an empty codec.
   AudioCodec();
   AudioCodec(const AudioCodec& c);
@@ -127,10 +121,6 @@ struct AudioCodec : public Codec {
 
   // Indicates if this codec is compatible with the specified codec.
   bool Matches(const AudioCodec& codec) const;
-
-  static bool Preferable(const AudioCodec& first, const AudioCodec& other) {
-    return first.preference > other.preference;
-  }
 
   std::string ToString() const;
 
@@ -153,17 +143,12 @@ struct VideoCodec : public Codec {
              const std::string& name,
              int width,
              int height,
-             int framerate,
-             int preference);
+             int framerate);
   VideoCodec(int id, const std::string& name);
   // Creates an empty codec.
   VideoCodec();
   VideoCodec(const VideoCodec& c);
   ~VideoCodec() = default;
-
-  static bool Preferable(const VideoCodec& first, const VideoCodec& other) {
-    return first.preference > other.preference;
-  }
 
   std::string ToString() const;
 
@@ -193,7 +178,7 @@ struct VideoCodec : public Codec {
 };
 
 struct DataCodec : public Codec {
-  DataCodec(int id, const std::string& name, int preference);
+  DataCodec(int id, const std::string& name);
   DataCodec();
   DataCodec(const DataCodec& c);
 

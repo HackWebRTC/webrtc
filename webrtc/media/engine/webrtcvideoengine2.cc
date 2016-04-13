@@ -180,7 +180,7 @@ void AddDefaultFeedbackParams(VideoCodec* codec) {
 static VideoCodec MakeVideoCodecWithDefaultFeedbackParams(int payload_type,
                                                           const char* name) {
   VideoCodec codec(payload_type, name, kDefaultVideoMaxWidth,
-                   kDefaultVideoMaxHeight, kDefaultVideoMaxFramerate, 0);
+                   kDefaultVideoMaxHeight, kDefaultVideoMaxFramerate);
   AddDefaultFeedbackParams(&codec);
   return codec;
 }
@@ -646,12 +646,9 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
     const int kExternalVideoPayloadTypeBase = 120;
     size_t payload_type = kExternalVideoPayloadTypeBase + i;
     RTC_DCHECK(payload_type < 128);
-    VideoCodec codec(static_cast<int>(payload_type),
-                     codecs[i].name,
-                     codecs[i].max_width,
-                     codecs[i].max_height,
-                     codecs[i].max_fps,
-                     0);
+    VideoCodec codec(static_cast<int>(payload_type), codecs[i].name,
+                     codecs[i].max_width, codecs[i].max_height,
+                     codecs[i].max_fps);
 
     AddDefaultFeedbackParams(&codec);
     supported_codecs.push_back(codec);
@@ -739,17 +736,7 @@ bool WebRtcVideoChannel2::ReceiveCodecsHaveChanged(
       };
   std::sort(before.begin(), before.end(), comparison);
   std::sort(after.begin(), after.end(), comparison);
-  for (size_t i = 0; i < before.size(); ++i) {
-    // For the same reason that we sort the codecs, we also ignore the
-    // preference.  We don't want a preference change on the receive
-    // side to cause recreation of the stream.
-    before[i].codec.preference = 0;
-    after[i].codec.preference = 0;
-    if (before[i] != after[i]) {
-      return true;
-    }
-  }
-  return false;
+  return before != after;
 }
 
 bool WebRtcVideoChannel2::GetChangedSendParameters(

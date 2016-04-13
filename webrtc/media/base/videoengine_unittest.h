@@ -151,7 +151,7 @@ class VideoMediaChannelTest : public testing::Test,
   }
 
   bool SetOneCodec(int pt, const char* name, int w, int h, int fr) {
-    return SetOneCodec(cricket::VideoCodec(pt, name, w, h, fr, 0));
+    return SetOneCodec(cricket::VideoCodec(pt, name, w, h, fr));
   }
   bool SetOneCodec(const cricket::VideoCodec& codec) {
     cricket::VideoFormat capture_format(codec.width, codec.height,

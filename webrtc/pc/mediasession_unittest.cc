@@ -75,53 +75,43 @@ using rtc::CS_AES_CM_128_HMAC_SHA1_32;
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
 
 static const AudioCodec kAudioCodecs1[] = {
-  AudioCodec(103, "ISAC",   16000, -1,    1, 6),
-  AudioCodec(102, "iLBC",   8000,  13300, 1, 5),
-  AudioCodec(0,   "PCMU",   8000,  64000, 1, 4),
-  AudioCodec(8,   "PCMA",   8000,  64000, 1, 3),
-  AudioCodec(117, "red",    8000,  0,     1, 2),
-  AudioCodec(107, "CN",     48000, 0,     1, 1)
-};
+    AudioCodec(103, "ISAC", 16000, -1, 1),
+    AudioCodec(102, "iLBC", 8000, 13300, 1),
+    AudioCodec(0, "PCMU", 8000, 64000, 1),
+    AudioCodec(8, "PCMA", 8000, 64000, 1),
+    AudioCodec(117, "red", 8000, 0, 1),
+    AudioCodec(107, "CN", 48000, 0, 1)};
 
 static const AudioCodec kAudioCodecs2[] = {
-  AudioCodec(126, "speex",  16000, 22000, 1, 3),
-  AudioCodec(0,   "PCMU",   8000,  64000, 1, 2),
-  AudioCodec(127, "iLBC",   8000,  13300, 1, 1),
+    AudioCodec(126, "speex", 16000, 22000, 1),
+    AudioCodec(0, "PCMU", 8000, 64000, 1),
+    AudioCodec(127, "iLBC", 8000, 13300, 1),
 };
 
 static const AudioCodec kAudioCodecsAnswer[] = {
-  AudioCodec(102, "iLBC",   8000,  13300, 1, 5),
-  AudioCodec(0,   "PCMU",   8000,  64000, 1, 4),
+    AudioCodec(102, "iLBC", 8000, 13300, 1),
+    AudioCodec(0, "PCMU", 8000, 64000, 1),
 };
 
 static const VideoCodec kVideoCodecs1[] = {
-  VideoCodec(96, "H264-SVC", 320, 200, 30, 2),
-  VideoCodec(97, "H264", 320, 200, 30, 1)
-};
+    VideoCodec(96, "H264-SVC", 320, 200, 30),
+    VideoCodec(97, "H264", 320, 200, 30)};
 
 static const VideoCodec kVideoCodecs2[] = {
-  VideoCodec(126, "H264", 320, 200, 30, 2),
-  VideoCodec(127, "H263", 320, 200, 30, 1)
-};
+    VideoCodec(126, "H264", 320, 200, 30),
+    VideoCodec(127, "H263", 320, 200, 30)};
 
 static const VideoCodec kVideoCodecsAnswer[] = {
-  VideoCodec(97, "H264", 320, 200, 30, 1)
-};
+    VideoCodec(97, "H264", 320, 200, 30)};
 
-static const DataCodec kDataCodecs1[] = {
-  DataCodec(98, "binary-data", 2),
-  DataCodec(99, "utf8-text", 1)
-};
+static const DataCodec kDataCodecs1[] = {DataCodec(98, "binary-data"),
+                                         DataCodec(99, "utf8-text")};
 
-static const DataCodec kDataCodecs2[] = {
-  DataCodec(126, "binary-data", 2),
-  DataCodec(127, "utf8-text", 1)
-};
+static const DataCodec kDataCodecs2[] = {DataCodec(126, "binary-data"),
+                                         DataCodec(127, "utf8-text")};
 
-static const DataCodec kDataCodecsAnswer[] = {
-  DataCodec(98, "binary-data", 2),
-  DataCodec(99, "utf8-text", 1)
-};
+static const DataCodec kDataCodecsAnswer[] = {DataCodec(98, "binary-data"),
+                                              DataCodec(99, "utf8-text")};
 
 static const RtpHeaderExtension kAudioRtpExtension1[] = {
   RtpHeaderExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8),
@@ -1576,11 +1566,9 @@ TEST_F(MediaSessionDescriptionFactoryTest,
 
   EXPECT_EQ(expected_codecs, vcd->codecs());
 
-  // Now, make sure we get same result, except for the preference order,
-  // if |f2_| creates an updated offer even though the default payload types
-  // are different from |f1_|.
-  expected_codecs[0].preference = f1_codecs[1].preference;
-
+  // Now, make sure we get same result (except for the order) if |f2_| creates
+  // an updated offer even though the default payload types between |f1_| and
+  // |f2_| are different.
   std::unique_ptr<SessionDescription> updated_offer(
       f2_.CreateOffer(opts, answer.get()));
   ASSERT_TRUE(updated_offer);
@@ -1700,7 +1688,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, RtxWithoutApt) {
   opts.recv_audio = false;
   std::vector<VideoCodec> f1_codecs = MAKE_VECTOR(kVideoCodecs1);
   // This creates RTX without associated payload type parameter.
-  AddRtxCodec(VideoCodec(126, cricket::kRtxCodecName, 0, 0, 0, 0), &f1_codecs);
+  AddRtxCodec(VideoCodec(126, cricket::kRtxCodecName, 0, 0, 0), &f1_codecs);
   f1_.set_video_codecs(f1_codecs);
 
   std::vector<VideoCodec> f2_codecs = MAKE_VECTOR(kVideoCodecs2);
@@ -1848,7 +1836,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, SimSsrcsGenerateMultipleRtxSsrcs) {
 
   // Use a single real codec, and then add RTX for it.
   std::vector<VideoCodec> f1_codecs;
-  f1_codecs.push_back(VideoCodec(97, "H264", 320, 200, 30, 1));
+  f1_codecs.push_back(VideoCodec(97, "H264", 320, 200, 30));
   AddRtxCodec(VideoCodec::CreateRtxCodec(125, 97), &f1_codecs);
   f1_.set_video_codecs(f1_codecs);
 

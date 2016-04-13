@@ -36,8 +36,7 @@ static const size_t kMaxSrtpHmacOverhead = 16;
 
 RtpDataEngine::RtpDataEngine() {
   data_codecs_.push_back(
-      DataCodec(kGoogleRtpDataCodecId,
-                kGoogleRtpDataCodecName, 0));
+      DataCodec(kGoogleRtpDataCodecId, kGoogleRtpDataCodecName));
   SetTiming(new rtc::Timing());
 }
 
@@ -92,7 +91,7 @@ void RtpClock::Tick(double now, int* seq_num, uint32_t* timestamp) {
 }
 
 const DataCodec* FindUnknownCodec(const std::vector<DataCodec>& codecs) {
-  DataCodec data_codec(kGoogleRtpDataCodecId, kGoogleRtpDataCodecName, 0);
+  DataCodec data_codec(kGoogleRtpDataCodecId, kGoogleRtpDataCodecName);
   std::vector<DataCodec>::const_iterator iter;
   for (iter = codecs.begin(); iter != codecs.end(); ++iter) {
     if (!iter->Matches(data_codec)) {
@@ -103,7 +102,7 @@ const DataCodec* FindUnknownCodec(const std::vector<DataCodec>& codecs) {
 }
 
 const DataCodec* FindKnownCodec(const std::vector<DataCodec>& codecs) {
-  DataCodec data_codec(kGoogleRtpDataCodecId, kGoogleRtpDataCodecName, 0);
+  DataCodec data_codec(kGoogleRtpDataCodecId, kGoogleRtpDataCodecName);
   std::vector<DataCodec>::const_iterator iter;
   for (iter = codecs.begin(); iter != codecs.end(); ++iter) {
     if (iter->Matches(data_codec)) {
