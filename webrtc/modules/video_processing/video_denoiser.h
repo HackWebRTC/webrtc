@@ -22,25 +22,55 @@ namespace webrtc {
 class VideoDenoiser {
  public:
   explicit VideoDenoiser(bool runtime_cpu_detection);
+
   void DenoiseFrame(const VideoFrame& frame,
                     VideoFrame* denoised_frame,
-                    VideoFrame* denoised_frame_track,
-                    int noise_level_prev);
+                    VideoFrame* denoised_frame_prev,
+                    bool noise_estimation_enabled);
 
  private:
+  void DenoiserReset(const VideoFrame& frame,
+                     VideoFrame* denoised_frame,
+                     VideoFrame* denoised_frame_prev);
+
+  // Check the mb position, return 1: close to the frame center (between 1/8
+  // and 7/8 of width/height), 3: close to the border (out of 1/16 and 15/16
+  // of width/height), 2: in between.
+  int PositionCheck(int mb_row, int mb_col, int noise_level);
+
+  // To reduce false detection in moving object detection (MOD).
+  void ReduceFalseDetection(const std::unique_ptr<uint8_t[]>& d_status,
+                            std::unique_ptr<uint8_t[]>* d_status_red,
+                            int noise_level);
+
+  // Return whether a block might cause trailing artifact by checking if one of
+  // its neighbor blocks is a moving edge block.
+  bool IsTrailingBlock(const std::unique_ptr<uint8_t[]>& d_status,
+                       int mb_row,
+                       int mb_col);
+
+  // Copy input blocks to dst buffer on moving object blocks (MOB).
+  void CopySrcOnMOB(const uint8_t* y_src, uint8_t* y_dst);
+
   int width_;
   int height_;
+  int mb_rows_;
+  int mb_cols_;
+  int stride_y_;
+  int stride_u_;
+  int stride_v_;
   CpuType cpu_type_;
-  std::unique_ptr<DenoiseMetrics[]> metrics_;
   std::unique_ptr<DenoiserFilter> filter_;
   std::unique_ptr<NoiseEstimation> ne_;
-  std::unique_ptr<uint8_t[]> d_status_;
-#if EXPERIMENTAL
-  std::unique_ptr<uint8_t[]> d_status_tmp1_;
-  std::unique_ptr<uint8_t[]> d_status_tmp2_;
-#endif
+  // 1 for moving edge block, 0 for static block.
+  std::unique_ptr<uint8_t[]> moving_edge_;
+  // 1 for moving object block, 0 for static block.
+  std::unique_ptr<uint8_t[]> moving_object_;
+  // x_density_ and y_density_ are used in MOD process.
   std::unique_ptr<uint8_t[]> x_density_;
   std::unique_ptr<uint8_t[]> y_density_;
+  // Save the return values by MbDenoise for each block.
+  std::unique_ptr<DenoiserDecision[]> mb_filter_decision_;
 };
 
 }  // namespace webrtc

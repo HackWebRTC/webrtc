@@ -22,10 +22,6 @@ class DenoiserFilterNEON : public DenoiserFilter {
                     int src_stride,
                     uint8_t* dst,
                     int dst_stride) override;
-  void CopyMem8x8(const uint8_t* src,
-                  int src_stride,
-                  uint8_t* dst,
-                  int dst_stride) override;
   uint32_t Variance16x8(const uint8_t* a,
                         int a_stride,
                         const uint8_t* b,
@@ -38,8 +34,7 @@ class DenoiserFilterNEON : public DenoiserFilter {
                              const uint8_t* sig,
                              int sig_stride,
                              uint8_t motion_magnitude,
-                             int increase_denoising,
-                             bool denoise_always) override;
+                             int increase_denoising) override;
 };
 
 }  // namespace webrtc

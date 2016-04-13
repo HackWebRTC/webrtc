@@ -31,17 +31,9 @@ TEST_F(VideoProcessingTest, CopyMem) {
     }
   }
 
-  memset(dst, 0, 8 * 8);
-  df_c->CopyMem8x8(src, 8, dst, 8);
-  EXPECT_EQ(0, memcmp(src, dst, 8 * 8));
-
   memset(dst, 0, 16 * 16);
   df_c->CopyMem16x16(src, 16, dst, 16);
   EXPECT_EQ(0, memcmp(src, dst, 16 * 16));
-
-  memset(dst, 0, 8 * 8);
-  df_sse_neon->CopyMem16x16(src, 8, dst, 8);
-  EXPECT_EQ(0, memcmp(src, dst, 8 * 8));
 
   memset(dst, 0, 16 * 16);
   df_sse_neon->CopyMem16x16(src, 16, dst, 16);
@@ -87,10 +79,9 @@ TEST_F(VideoProcessingTest, MbDenoise) {
     }
   }
   memset(dst, 0, 16 * 16);
-  df_c->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1, false);
+  df_c->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1);
   memset(dst_sse_neon, 0, 16 * 16);
-  df_sse_neon->MbDenoise(running_src, 16, dst_sse_neon, 16, src, 16, 0, 1,
-                         false);
+  df_sse_neon->MbDenoise(running_src, 16, dst_sse_neon, 16, src, 16, 0, 1);
   EXPECT_EQ(0, memcmp(dst, dst_sse_neon, 16 * 16));
 
   // Test case: |diff| >= |4 + shift_inc1|
@@ -101,10 +92,9 @@ TEST_F(VideoProcessingTest, MbDenoise) {
     }
   }
   memset(dst, 0, 16 * 16);
-  df_c->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1, false);
+  df_c->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1);
   memset(dst_sse_neon, 0, 16 * 16);
-  df_sse_neon->MbDenoise(running_src, 16, dst_sse_neon, 16, src, 16, 0, 1,
-                         false);
+  df_sse_neon->MbDenoise(running_src, 16, dst_sse_neon, 16, src, 16, 0, 1);
   EXPECT_EQ(0, memcmp(dst, dst_sse_neon, 16 * 16));
 
   // Test case: |diff| >= 8
@@ -115,10 +105,9 @@ TEST_F(VideoProcessingTest, MbDenoise) {
     }
   }
   memset(dst, 0, 16 * 16);
-  df_c->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1, false);
+  df_c->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1);
   memset(dst_sse_neon, 0, 16 * 16);
-  df_sse_neon->MbDenoise(running_src, 16, dst_sse_neon, 16, src, 16, 0, 1,
-                         false);
+  df_sse_neon->MbDenoise(running_src, 16, dst_sse_neon, 16, src, 16, 0, 1);
   EXPECT_EQ(0, memcmp(dst, dst_sse_neon, 16 * 16));
 
   // Test case: |diff| > 15
@@ -130,22 +119,23 @@ TEST_F(VideoProcessingTest, MbDenoise) {
   }
   memset(dst, 0, 16 * 16);
   DenoiserDecision decision =
-      df_c->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1, false);
+      df_c->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1);
   EXPECT_EQ(COPY_BLOCK, decision);
-  decision =
-      df_sse_neon->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1, false);
+  decision = df_sse_neon->MbDenoise(running_src, 16, dst, 16, src, 16, 0, 1);
   EXPECT_EQ(COPY_BLOCK, decision);
 }
 
 TEST_F(VideoProcessingTest, Denoiser) {
+  // Used in swap buffer.
+  int denoised_frame_toggle = 0;
   // Create pure C denoiser.
   VideoDenoiser denoiser_c(false);
   // Create SSE or NEON denoiser.
   VideoDenoiser denoiser_sse_neon(true);
   VideoFrame denoised_frame_c;
-  VideoFrame denoised_frame_track_c;
+  VideoFrame denoised_frame_prev_c;
   VideoFrame denoised_frame_sse_neon;
-  VideoFrame denoised_frame_track_sse_neon;
+  VideoFrame denoised_frame_prev_sse_neon;
 
   std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
@@ -154,13 +144,25 @@ TEST_F(VideoProcessingTest, Denoiser) {
     EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                                0, kVideoRotation_0, &video_frame_));
 
-    denoiser_c.DenoiseFrame(video_frame_, &denoised_frame_c,
-                            &denoised_frame_track_c, -1);
-    denoiser_sse_neon.DenoiseFrame(video_frame_, &denoised_frame_sse_neon,
-                                   &denoised_frame_track_sse_neon, -1);
-
+    VideoFrame* p_denoised_c = &denoised_frame_c;
+    VideoFrame* p_denoised_prev_c = &denoised_frame_prev_c;
+    VideoFrame* p_denoised_sse_neon = &denoised_frame_sse_neon;
+    VideoFrame* p_denoised_prev_sse_neon = &denoised_frame_prev_sse_neon;
+    // Swap the buffer to save one memcpy in DenoiseFrame.
+    if (denoised_frame_toggle) {
+      p_denoised_c = &denoised_frame_prev_c;
+      p_denoised_prev_c = &denoised_frame_c;
+      p_denoised_sse_neon = &denoised_frame_prev_sse_neon;
+      p_denoised_prev_sse_neon = &denoised_frame_sse_neon;
+    }
+    denoiser_c.DenoiseFrame(video_frame_, p_denoised_c, p_denoised_prev_c,
+                            false);
+    denoiser_sse_neon.DenoiseFrame(video_frame_, p_denoised_sse_neon,
+                                   p_denoised_prev_sse_neon, false);
+    // Invert the flag.
+    denoised_frame_toggle ^= 1;
     // Denoising results should be the same for C and SSE/NEON denoiser.
-    ASSERT_TRUE(test::FramesEqual(denoised_frame_c, denoised_frame_sse_neon));
+    ASSERT_TRUE(test::FramesEqual(*p_denoised_c, *p_denoised_sse_neon));
   }
   ASSERT_NE(0, feof(source_file_)) << "Error reading source file";
 }

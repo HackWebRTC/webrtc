@@ -25,12 +25,6 @@ extern const int kSumDiffThresholdHigh;
 
 enum DenoiserDecision { COPY_BLOCK, FILTER_BLOCK };
 enum CpuType { CPU_NEON, CPU_NOT_NEON };
-struct DenoiseMetrics {
-  uint32_t var;
-  uint32_t sad;
-  uint8_t denoise;
-  bool is_skin;
-};
 
 class DenoiserFilter {
  public:
@@ -43,10 +37,6 @@ class DenoiserFilter {
                             int src_stride,
                             uint8_t* dst,
                             int dst_stride) = 0;
-  virtual void CopyMem8x8(const uint8_t* src,
-                          int src_stride,
-                          uint8_t* dst,
-                          int dst_stride) = 0;
   virtual uint32_t Variance16x8(const uint8_t* a,
                                 int a_stride,
                                 const uint8_t* b,
@@ -59,8 +49,7 @@ class DenoiserFilter {
                                      const uint8_t* sig,
                                      int sig_stride,
                                      uint8_t motion_magnitude,
-                                     int increase_denoising,
-                                     bool denoise_always) = 0;
+                                     int increase_denoising) = 0;
 };
 
 }  // namespace webrtc

@@ -70,14 +70,14 @@ class VPMFramePreprocessor {
   enum { kSkipFrameCA = 2 };
 
   VideoContentMetrics* content_metrics_;
-  VideoFrame denoised_frame_;
-  VideoFrame denoised_frame_prev_;
+  VideoFrame denoised_frame_[2];
   VideoFrame resampled_frame_;
   VPMSpatialResampler* spatial_resampler_;
   VPMContentAnalysis* ca_;
   VPMVideoDecimator* vd_;
   std::unique_ptr<VideoDenoiser> denoiser_;
   bool enable_ca_;
+  uint8_t denoised_frame_toggle_;
   uint32_t frame_cnt_;
 };
 

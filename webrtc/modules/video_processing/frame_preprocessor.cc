@@ -23,6 +23,7 @@ VPMFramePreprocessor::VPMFramePreprocessor()
   ca_ = new VPMContentAnalysis(true);
   vd_ = new VPMVideoDecimator();
   EnableDenosing(false);
+  denoised_frame_toggle_ = 0;
 }
 
 VPMFramePreprocessor::~VPMFramePreprocessor() {
@@ -116,9 +117,18 @@ const VideoFrame* VPMFramePreprocessor::PreprocessFrame(
 
   const VideoFrame* current_frame = &frame;
   if (denoiser_) {
-    denoiser_->DenoiseFrame(*current_frame, &denoised_frame_,
-                            &denoised_frame_prev_, 0);
-    current_frame = &denoised_frame_;
+    VideoFrame* denoised_frame = &denoised_frame_[0];
+    VideoFrame* denoised_frame_prev = &denoised_frame_[1];
+    // Swap the buffer to save one memcpy in DenoiseFrame.
+    if (denoised_frame_toggle_) {
+      denoised_frame = &denoised_frame_[1];
+      denoised_frame_prev = &denoised_frame_[0];
+    }
+    // Invert the flag.
+    denoised_frame_toggle_ ^= 1;
+    denoiser_->DenoiseFrame(*current_frame, denoised_frame, denoised_frame_prev,
+                            true);
+    current_frame = denoised_frame;
   }
 
   if (spatial_resampler_->ApplyResample(current_frame->width(),
