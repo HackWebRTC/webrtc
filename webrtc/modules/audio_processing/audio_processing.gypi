@@ -35,7 +35,7 @@
         'aec/aec_core.cc',
         'aec/aec_core.h',
         'aec/aec_core_internal.h',
-        'aec/aec_rdft.c',
+        'aec/aec_rdft.cc',
         'aec/aec_rdft.h',
         'aec/aec_resampler.cc',
         'aec/aec_resampler.h',
@@ -207,7 +207,7 @@
             ['mips_float_abi=="hard"', {
               'sources': [
                 'aec/aec_core_mips.cc',
-                'aec/aec_rdft_mips.c',
+                'aec/aec_rdft_mips.cc',
               ],
             }],
           ],
@@ -246,7 +246,7 @@
           'type': 'static_library',
           'sources': [
             'aec/aec_core_sse2.cc',
-            'aec/aec_rdft_sse2.c',
+            'aec/aec_rdft_sse2.cc',
           ],
           'conditions': [
             ['os_posix==1', {
@@ -269,7 +269,7 @@
         ],
         'sources': [
           'aec/aec_core_neon.cc',
-          'aec/aec_rdft_neon.c',
+          'aec/aec_rdft_neon.cc',
           'aecm/aecm_core_neon.cc',
           'ns/nsx_core_neon.c',
         ],

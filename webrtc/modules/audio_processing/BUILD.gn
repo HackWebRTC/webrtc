@@ -25,7 +25,7 @@ source_set("audio_processing") {
     "aec/aec_core.cc",
     "aec/aec_core.h",
     "aec/aec_core_internal.h",
-    "aec/aec_rdft.c",
+    "aec/aec_rdft.cc",
     "aec/aec_rdft.h",
     "aec/aec_resampler.cc",
     "aec/aec_resampler.h",
@@ -200,7 +200,7 @@ source_set("audio_processing") {
     if (mips_float_abi == "hard") {
       sources += [
         "aec/aec_core_mips.cc",
-        "aec/aec_rdft_mips.c",
+        "aec/aec_rdft_mips.cc",
       ]
     }
   } else {
@@ -241,7 +241,7 @@ if (current_cpu == "x86" || current_cpu == "x64") {
   source_set("audio_processing_sse2") {
     sources = [
       "aec/aec_core_sse2.cc",
-      "aec/aec_rdft_sse2.c",
+      "aec/aec_rdft_sse2.cc",
     ]
 
     if (is_posix) {
@@ -257,7 +257,7 @@ if (rtc_build_with_neon) {
   source_set("audio_processing_neon") {
     sources = [
       "aec/aec_core_neon.cc",
-      "aec/aec_rdft_neon.c",
+      "aec/aec_rdft_neon.cc",
       "aecm/aecm_core_neon.cc",
       "ns/nsx_core_neon.c",
     ]

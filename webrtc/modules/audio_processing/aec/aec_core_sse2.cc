@@ -21,9 +21,7 @@ extern "C" {
 }
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
-extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
-}
 
 namespace webrtc {
 
