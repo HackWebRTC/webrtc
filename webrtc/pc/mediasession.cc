@@ -58,13 +58,6 @@ const char kMediaProtocolAvpf[] = "RTP/AVPF";
 // RFC5124
 const char kMediaProtocolDtlsSavpf[] = "UDP/TLS/RTP/SAVPF";
 
-// The accepted pattern for media protocol (JSEP Section 5.1.3)
-const std::vector<std::string> kMediaProtocols = {"RTP/SAVPF", "RTP/SAVP",
-                                                  "RTP/AVPF", "RTP/AVP"};
-const std::vector<std::string> kMediaProtocolsDtls = {
-    "UDP/TLS/RTP/SAVPF", "UDP/TLS/RTP/SAVP", "TCP/TLS/RTP/SAVPF",
-    "TCP/TLS/RTP/SAVP"};
-
 // We always generate offers with "UDP/TLS/RTP/SAVPF" when using DTLS-SRTP,
 // but we tolerate "RTP/SAVPF" in offers we receive, for compatibility.
 const char kMediaProtocolSavpf[] = "RTP/SAVPF";
@@ -1122,12 +1115,6 @@ static bool CreateMediaContentAnswer(
   return true;
 }
 
-static bool IsProtocolFound(const std::vector<std::string> protocols,
-                            const std::string& protocol) {
-  return std::find(protocols.begin(), protocols.end(), protocol) !=
-         protocols.end();
-}
-
 static bool IsMediaProtocolSupported(MediaType type,
                                      const std::string& protocol,
                                      bool secure_transport) {
@@ -1140,8 +1127,9 @@ static bool IsMediaProtocolSupported(MediaType type,
 
   // Since not all applications serialize and deserialize the media protocol,
   // we will have to accept |protocol| to be empty.
-  return protocol.empty() || IsProtocolFound(kMediaProtocols, protocol) ||
-         (IsProtocolFound(kMediaProtocolsDtls, protocol) && secure_transport);
+  return protocol == kMediaProtocolAvpf || protocol.empty() ||
+      protocol == kMediaProtocolSavpf ||
+      (protocol == kMediaProtocolDtlsSavpf && secure_transport);
 }
 
 static void SetMediaProtocol(bool secure_transport,

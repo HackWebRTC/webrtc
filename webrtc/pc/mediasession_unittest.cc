@@ -170,12 +170,6 @@ static const char kDataTrack1[] = "data_1";
 static const char kDataTrack2[] = "data_2";
 static const char kDataTrack3[] = "data_3";
 
-static const char* kMediaProtocols[] = {"RTP/AVP", "RTP/SAVP", "RTP/AVPF",
-                                        "RTP/SAVPF"};
-static const char* kMediaProtocolsDtls[] = {
-    "TCP/TLS/RTP/SAVPF", "TCP/TLS/RTP/SAVP", "UDP/TLS/RTP/SAVPF",
-    "UDP/TLS/RTP/SAVP"};
-
 static bool IsMediaContentOfType(const ContentInfo* content,
                                  MediaType media_type) {
   const MediaContentDescription* mdesc =
@@ -2385,62 +2379,3 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_EQ("video_modified", video_content->name);
   EXPECT_EQ("data_modified", data_content->name);
 }
-
-class MediaProtocolTest : public ::testing::TestWithParam<const char*> {
- public:
-  MediaProtocolTest() : f1_(&tdf1_), f2_(&tdf2_) {
-    f1_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs1));
-    f1_.set_video_codecs(MAKE_VECTOR(kVideoCodecs1));
-    f1_.set_data_codecs(MAKE_VECTOR(kDataCodecs1));
-    f2_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs2));
-    f2_.set_video_codecs(MAKE_VECTOR(kVideoCodecs2));
-    f2_.set_data_codecs(MAKE_VECTOR(kDataCodecs2));
-    f1_.set_secure(SEC_ENABLED);
-    f2_.set_secure(SEC_ENABLED);
-    tdf1_.set_certificate(rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id1"))));
-    tdf2_.set_certificate(rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id2"))));
-    tdf1_.set_secure(SEC_ENABLED);
-    tdf2_.set_secure(SEC_ENABLED);
-  }
-
- protected:
-  MediaSessionDescriptionFactory f1_;
-  MediaSessionDescriptionFactory f2_;
-  TransportDescriptionFactory tdf1_;
-  TransportDescriptionFactory tdf2_;
-};
-
-TEST_P(MediaProtocolTest, TestAudioVideoAcceptance) {
-  MediaSessionOptions opts;
-  opts.recv_video = true;
-  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, nullptr));
-  ASSERT_TRUE(offer.get() != nullptr);
-  // Set the protocol for all the contents.
-  for (auto content : offer.get()->contents()) {
-    static_cast<MediaContentDescription*>(content.description)
-        ->set_protocol(GetParam());
-  }
-  std::unique_ptr<SessionDescription> answer(
-      f2_.CreateAnswer(offer.get(), opts, nullptr));
-  const ContentInfo* ac = answer->GetContentByName("audio");
-  const ContentInfo* vc = answer->GetContentByName("video");
-  ASSERT_TRUE(ac != nullptr);
-  ASSERT_TRUE(vc != nullptr);
-  EXPECT_FALSE(ac->rejected);  // the offer is accepted
-  EXPECT_FALSE(vc->rejected);
-  const AudioContentDescription* acd =
-      static_cast<const AudioContentDescription*>(ac->description);
-  const VideoContentDescription* vcd =
-      static_cast<const VideoContentDescription*>(vc->description);
-  EXPECT_EQ(GetParam(), acd->protocol());
-  EXPECT_EQ(GetParam(), vcd->protocol());
-}
-
-INSTANTIATE_TEST_CASE_P(MediaProtocolPatternTest,
-                        MediaProtocolTest,
-                        ::testing::ValuesIn(kMediaProtocols));
-INSTANTIATE_TEST_CASE_P(MediaProtocolDtlsPatternTest,
-                        MediaProtocolTest,
-                        ::testing::ValuesIn(kMediaProtocolsDtls));
