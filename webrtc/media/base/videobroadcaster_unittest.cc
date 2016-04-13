@@ -135,14 +135,14 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   broadcaster.AddOrUpdateSink(&sink2, wants2);
 
   cricket::WebRtcVideoFrame frame1;
-  frame1.InitToBlack(100, 200, 10000 /*ts*/);
+  frame1.InitToBlack(100, 200, 10 /*ts*/);
   // Make it not all-black
   frame1.GetUPlane()[0] = 0;
   broadcaster.OnFrame(frame1);
   EXPECT_TRUE(sink1.black_frame());
-  EXPECT_EQ(10000, sink1.timestamp());
+  EXPECT_EQ(10, sink1.timestamp());
   EXPECT_FALSE(sink2.black_frame());
-  EXPECT_EQ(10000, sink2.timestamp());
+  EXPECT_EQ(10, sink2.timestamp());
 
   // Switch the sink wants.
   wants1.black_frames = false;
@@ -151,12 +151,12 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   broadcaster.AddOrUpdateSink(&sink2, wants2);
 
   cricket::WebRtcVideoFrame frame2;
-  frame2.InitToBlack(100, 200, 30000 /*ts*/);
+  frame2.InitToBlack(100, 200, 30 /*ts*/);
   // Make it not all-black
   frame2.GetUPlane()[0] = 0;
   broadcaster.OnFrame(frame2);
   EXPECT_FALSE(sink1.black_frame());
-  EXPECT_EQ(30000, sink1.timestamp());
+  EXPECT_EQ(30, sink1.timestamp());
   EXPECT_TRUE(sink2.black_frame());
-  EXPECT_EQ(30000, sink2.timestamp());
+  EXPECT_EQ(30, sink2.timestamp());
 }

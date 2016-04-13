@@ -512,8 +512,8 @@ TEST_F(WebRtcVideoEngine2Test,
   std::unique_ptr<char[]> data(new char[frame.data_size]);
   frame.data = data.get();
   memset(frame.data, 1, frame.data_size);
-  int64_t initial_timestamp = rtc::TimeNanos();
-  frame.time_stamp = initial_timestamp;
+  const int kInitialTimestamp = 123456;
+  frame.time_stamp = kInitialTimestamp;
 
   // Deliver initial frame.
   capturer1.SignalCapturedFrame(&frame);
@@ -531,7 +531,7 @@ TEST_F(WebRtcVideoEngine2Test,
   rtc::Thread::Current()->SleepMs(1);
   // Deliver with a timestamp (10 seconds) before the previous initial one,
   // these should not be related at all anymore and it should still work fine.
-  frame.time_stamp = initial_timestamp - 10 * rtc::kNumNanosecsPerSec;
+  frame.time_stamp = kInitialTimestamp - 10000;
   capturer2.SignalCapturedFrame(&frame);
 
   // New timestamp should be at least 1ms in the future and not old.

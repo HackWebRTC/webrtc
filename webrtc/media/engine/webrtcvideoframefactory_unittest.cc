@@ -29,7 +29,7 @@ class WebRtcVideoFrameFactoryTest
     captured_frame_.fourcc = cricket::FOURCC_I420;
     captured_frame_.pixel_width = 1;
     captured_frame_.pixel_height = 1;
-    captured_frame_.time_stamp = rtc::TimeNanos();
+    captured_frame_.time_stamp = 5678;
     captured_frame_.rotation = frame_rotation;
     captured_frame_.width = frame_width;
     captured_frame_.height = frame_height;

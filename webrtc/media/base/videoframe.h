@@ -57,19 +57,8 @@ class VideoFrame {
   virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer()
       const = 0;
 
-  // System monotonic clock, same timebase as rtc::TimeMicros().
-  virtual int64_t timestamp_us() const = 0;
-  virtual void set_timestamp_us(int64_t time_us) = 0;
-
-  // Deprecated methods, for backwards compatibility.
-  // TODO(nisse): Delete when usage in Chrome and other applications
-  // have been replaced.
-  virtual int64_t GetTimeStamp() const {
-    return rtc::kNumNanosecsPerMicrosec * timestamp_us();
-  }
-  virtual void SetTimeStamp(int64_t time_ns) {
-    set_timestamp_us(time_ns / rtc::kNumNanosecsPerMicrosec);
-  }
+  virtual int64_t GetTimeStamp() const = 0;
+  virtual void SetTimeStamp(int64_t time_stamp) = 0;
 
   // Indicates the rotation angle in degrees.
   virtual webrtc::VideoRotation rotation() const = 0;
@@ -148,9 +137,8 @@ class VideoFrame {
                             int32_t dst_pitch_v) const;
 
   // Creates an empty frame.
-  virtual VideoFrame* CreateEmptyFrame(int w,
-                                       int h,
-                                       int64_t timestamp_us) const = 0;
+  virtual VideoFrame *CreateEmptyFrame(int w, int h,
+                                       int64_t time_stamp) const = 0;
   virtual void set_rotation(webrtc::VideoRotation rotation) = 0;
 };
 

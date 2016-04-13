@@ -20,7 +20,6 @@ namespace {
 
 class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
  public:
-  // The ApplyRotationToFrame test needs this as a public method.
   using cricket::WebRtcVideoFrame::set_rotation;
 
   virtual VideoFrame* CreateEmptyFrame(int w,
@@ -48,7 +47,7 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     // Build the CapturedFrame.
     cricket::CapturedFrame captured_frame;
     captured_frame.fourcc = cricket::FOURCC_I420;
-    captured_frame.time_stamp = rtc::TimeNanos();
+    captured_frame.time_stamp = 5678;
     captured_frame.rotation = frame_rotation;
     captured_frame.width = frame_width;
     captured_frame.height = frame_height;
@@ -67,8 +66,7 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
                    apply_rotation));
 
     // Verify the new frame.
-    EXPECT_EQ(captured_frame.time_stamp / rtc::kNumNanosecsPerMicrosec,
-              frame.timestamp_us());
+    EXPECT_EQ(5678, frame.GetTimeStamp());
     if (apply_rotation)
       EXPECT_EQ(webrtc::kVideoRotation_0, frame.rotation());
     else
@@ -273,16 +271,13 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
   webrtc::NativeHandleBuffer* buffer =
       new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
           dummy_handle, 640, 480);
-  // Timestamp is converted from ns to us, so last three digits are lost.
-  cricket::WebRtcVideoFrame frame(buffer, 20000, webrtc::kVideoRotation_0);
+  cricket::WebRtcVideoFrame frame(buffer, 200, webrtc::kVideoRotation_0);
   EXPECT_EQ(dummy_handle, frame.GetNativeHandle());
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
-  EXPECT_EQ(20000, frame.GetTimeStamp());
-  EXPECT_EQ(20, frame.timestamp_us());
-  frame.set_timestamp_us(40);
-  EXPECT_EQ(40000, frame.GetTimeStamp());
-  EXPECT_EQ(40, frame.timestamp_us());
+  EXPECT_EQ(200, frame.GetTimeStamp());
+  frame.SetTimeStamp(400);
+  EXPECT_EQ(400, frame.GetTimeStamp());
 }
 
 TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
@@ -291,14 +286,12 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
   webrtc::NativeHandleBuffer* buffer =
       new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
           dummy_handle, 640, 480);
-  // Timestamp is converted from ns to us, so last three digits are lost.
-  cricket::WebRtcVideoFrame frame1(buffer, 20000, webrtc::kVideoRotation_0);
+  cricket::WebRtcVideoFrame frame1(buffer, 200, webrtc::kVideoRotation_0);
   cricket::VideoFrame* frame2 = frame1.Copy();
   EXPECT_EQ(frame1.GetNativeHandle(), frame2->GetNativeHandle());
   EXPECT_EQ(frame1.width(), frame2->width());
   EXPECT_EQ(frame1.height(), frame2->height());
   EXPECT_EQ(frame1.GetTimeStamp(), frame2->GetTimeStamp());
-  EXPECT_EQ(frame1.timestamp_us(), frame2->timestamp_us());
   delete frame2;
 }
 

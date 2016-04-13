@@ -99,13 +99,13 @@ const cricket::VideoFrame& VideoBroadcaster::GetBlackFrame(
   if (black_frame_ && black_frame_->width() == frame.width() &&
       black_frame_->height() == frame.height() &&
       black_frame_->rotation() == frame.rotation()) {
-    black_frame_->set_timestamp_us(frame.timestamp_us());
+    black_frame_->SetTimeStamp(frame.GetTimeStamp());
     return *black_frame_;
   }
   black_frame_.reset(new cricket::WebRtcVideoFrame(
-      new rtc::RefCountedObject<webrtc::I420Buffer>(frame.width(),
-                                                    frame.height()),
-      frame.rotation(), frame.timestamp_us()));
+      new rtc::RefCountedObject<webrtc::I420Buffer>(
+          frame.width(), frame.height()),
+      frame.GetTimeStamp(), frame.rotation()));
   black_frame_->SetToBlack();
   return *black_frame_;
 }
