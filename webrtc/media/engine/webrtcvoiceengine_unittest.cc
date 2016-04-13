@@ -2176,6 +2176,31 @@ TEST_F(WebRtcVoiceEngineTestFake, SendStateWithAndWithoutSource) {
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
 }
 
+// Test that SetSendParameters() does not alter a stream's send state.
+TEST_F(WebRtcVoiceEngineTestFake, SendStateWhenStreamsAreRecreated) {
+  EXPECT_TRUE(SetupSendStream());
+  EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
+
+  // Turn on sending.
+  channel_->SetSend(true);
+  EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
+
+  // Changing RTP header extensions will recreate the AudioSendStream.
+  send_parameters_.extensions.push_back(
+      cricket::RtpHeaderExtension(kRtpAudioLevelHeaderExtension, 12));
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
+
+  // Turn off sending.
+  channel_->SetSend(false);
+  EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
+
+  // Changing RTP header extensions will recreate the AudioSendStream.
+  send_parameters_.extensions.clear();
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
+}
+
 // Test that we can create a channel and start playing out on it.
 TEST_F(WebRtcVoiceEngineTestFake, Playout) {
   EXPECT_TRUE(SetupRecvStream());

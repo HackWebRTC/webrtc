@@ -1121,6 +1121,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_DCHECK(!stream_);
     stream_ = call_->CreateAudioSendStream(config_);
     RTC_CHECK(stream_);
+    UpdateSendState();
   }
 
   bool SendTelephoneEvent(int payload_type, int event, int duration_ms) {
