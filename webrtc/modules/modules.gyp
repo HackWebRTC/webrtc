@@ -444,6 +444,7 @@
               'sources': [
                 'audio_processing/audio_processing_impl_locking_unittest.cc',
                 'audio_processing/audio_processing_impl_unittest.cc',
+                'audio_processing/audio_processing_unittest.cc',
                 'audio_processing/echo_control_mobile_unittest.cc',
                 'audio_processing/echo_cancellation_unittest.cc',
                 'audio_processing/gain_control_unittest.cc',
@@ -453,7 +454,6 @@
                 'audio_processing/voice_detection_unittest.cc',
                 'audio_processing/test/audio_buffer_tools.cc',
                 'audio_processing/test/audio_buffer_tools.h',
-                'audio_processing/test/audio_processing_unittest.cc',
                 'audio_processing/test/bitexactness_tools.cc',
                 'audio_processing/test/bitexactness_tools.h',
                 'audio_processing/test/debug_dump_replayer.cc',
