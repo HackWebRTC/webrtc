@@ -121,7 +121,7 @@ void* WebRtcVideoFrame::GetNativeHandle() const {
 }
 
 rtc::scoped_refptr<webrtc::VideoFrameBuffer>
-WebRtcVideoFrame::GetVideoFrameBuffer() const {
+WebRtcVideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
 
@@ -213,7 +213,7 @@ void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h,
 const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
   // If the frame is not rotated, the caller should reuse this frame instead of
   // making a redundant copy.
-  if (GetVideoRotation() == webrtc::kVideoRotation_0) {
+  if (rotation() == webrtc::kVideoRotation_0) {
     return this;
   }
 
@@ -231,8 +231,8 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
 
   int rotated_width = orig_width;
   int rotated_height = orig_height;
-  if (GetVideoRotation() == webrtc::kVideoRotation_90 ||
-      GetVideoRotation() == webrtc::kVideoRotation_270) {
+  if (rotation() == webrtc::kVideoRotation_90 ||
+      rotation() == webrtc::kVideoRotation_270) {
     rotated_width = orig_height;
     rotated_height = orig_width;
   }
@@ -248,7 +248,7 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
       rotated_frame_->GetUPlane(), rotated_frame_->GetUPitch(),
       rotated_frame_->GetVPlane(), rotated_frame_->GetVPitch(),
       orig_width, orig_height,
-      static_cast<libyuv::RotationMode>(GetVideoRotation()));
+      static_cast<libyuv::RotationMode>(rotation()));
   if (ret == 0) {
     return rotated_frame_.get();
   }

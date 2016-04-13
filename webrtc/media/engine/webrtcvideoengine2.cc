@@ -1574,8 +1574,8 @@ static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
     const VideoFrame& frame) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::OnFrame");
-  webrtc::VideoFrame video_frame(frame.GetVideoFrameBuffer(), 0, 0,
-                                 frame.GetVideoRotation());
+  webrtc::VideoFrame video_frame(frame.video_frame_buffer(), 0, 0,
+                                 frame.rotation());
   rtc::CritScope cs(&lock_);
   if (stream_ == NULL) {
     // Frame input before send codecs are configured, dropping frame.

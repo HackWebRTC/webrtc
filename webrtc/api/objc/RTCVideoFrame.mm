@@ -92,10 +92,10 @@
   if (!_i420Buffer) {
     if (_videoFrame->GetNativeHandle()) {
       // Convert to I420.
-      _i420Buffer = _videoFrame->GetVideoFrameBuffer()->NativeToI420Buffer();
+      _i420Buffer = _videoFrame->video_frame_buffer()->NativeToI420Buffer();
     } else {
       // Should already be I420.
-      _i420Buffer = _videoFrame->GetVideoFrameBuffer();
+      _i420Buffer = _videoFrame->video_frame_buffer();
     }
   }
 }

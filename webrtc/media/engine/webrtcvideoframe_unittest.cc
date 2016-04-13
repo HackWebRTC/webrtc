@@ -20,7 +20,7 @@ namespace {
 
 class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
  public:
-  using cricket::WebRtcVideoFrame::SetRotation;
+  using cricket::WebRtcVideoFrame::set_rotation;
 
   virtual VideoFrame* CreateEmptyFrame(int w,
                                        int h,
@@ -68,9 +68,9 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     // Verify the new frame.
     EXPECT_EQ(5678, frame.GetTimeStamp());
     if (apply_rotation)
-      EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetVideoRotation());
+      EXPECT_EQ(webrtc::kVideoRotation_0, frame.rotation());
     else
-      EXPECT_EQ(frame_rotation, frame.GetVideoRotation());
+      EXPECT_EQ(frame_rotation, frame.rotation());
     // If |apply_rotation| and the frame rotation is 90 or 270, width and
     // height are flipped.
     if (apply_rotation && (frame_rotation == webrtc::kVideoRotation_90
@@ -303,22 +303,22 @@ TEST_F(WebRtcVideoFrameTest, ApplyRotationToFrame) {
       LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight, &applied0));
 
   // Claim that this frame needs to be rotated for 90 degree.
-  applied0.SetRotation(webrtc::kVideoRotation_90);
+  applied0.set_rotation(webrtc::kVideoRotation_90);
 
   // Apply rotation on frame 1. Output should be different from frame 1.
   WebRtcVideoTestFrame* applied90 = const_cast<WebRtcVideoTestFrame*>(
       static_cast<const WebRtcVideoTestFrame*>(
           applied0.GetCopyWithRotationApplied()));
   EXPECT_TRUE(applied90);
-  EXPECT_EQ(applied90->GetVideoRotation(), webrtc::kVideoRotation_0);
+  EXPECT_EQ(applied90->rotation(), webrtc::kVideoRotation_0);
   EXPECT_FALSE(IsEqual(applied0, *applied90, 0));
 
   // Claim the frame 2 needs to be rotated for another 270 degree. The output
   // from frame 2 rotation should be the same as frame 1.
-  applied90->SetRotation(webrtc::kVideoRotation_270);
+  applied90->set_rotation(webrtc::kVideoRotation_270);
   const cricket::VideoFrame* applied360 =
       applied90->GetCopyWithRotationApplied();
   EXPECT_TRUE(applied360);
-  EXPECT_EQ(applied360->GetVideoRotation(), webrtc::kVideoRotation_0);
+  EXPECT_EQ(applied360->rotation(), webrtc::kVideoRotation_0);
   EXPECT_TRUE(IsEqual(applied0, *applied360, 0));
 }

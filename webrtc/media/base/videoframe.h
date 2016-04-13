@@ -54,14 +54,14 @@ class VideoFrame {
 
   // Returns the underlying video frame buffer. This function is ok to call
   // multiple times, but the returned object will refer to the same memory.
-  virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
+  virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer()
       const = 0;
 
   virtual int64_t GetTimeStamp() const = 0;
   virtual void SetTimeStamp(int64_t time_stamp) = 0;
 
   // Indicates the rotation angle in degrees.
-  virtual webrtc::VideoRotation GetVideoRotation() const  = 0;
+  virtual webrtc::VideoRotation rotation() const = 0;
 
   // Make a shallow copy of the frame. The frame buffer itself is not copied.
   // Both the current and new VideoFrame will share a single reference-counted
@@ -139,7 +139,7 @@ class VideoFrame {
   // Creates an empty frame.
   virtual VideoFrame *CreateEmptyFrame(int w, int h,
                                        int64_t time_stamp) const = 0;
-  virtual void SetRotation(webrtc::VideoRotation rotation) = 0;
+  virtual void set_rotation(webrtc::VideoRotation rotation) = 0;
 };
 
 }  // namespace cricket

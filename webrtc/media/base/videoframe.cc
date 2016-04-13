@@ -136,7 +136,7 @@ void VideoFrame::StretchToFrame(VideoFrame* dst,
                   interpolate, vert_crop);
   dst->SetTimeStamp(GetTimeStamp());
   // Stretched frame should have the same rotation as the source.
-  dst->SetRotation(GetVideoRotation());
+  dst->set_rotation(rotation());
 }
 
 VideoFrame* VideoFrame::Stretch(size_t dst_width, size_t dst_height,

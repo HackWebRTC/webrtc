@@ -66,7 +66,7 @@ class WebRtcVideoFrame : public VideoFrame {
   int32_t GetUPitch() const override;
   int32_t GetVPitch() const override;
   void* GetNativeHandle() const override;
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer()
       const override;
 
   int64_t GetTimeStamp() const override { return time_stamp_ns_; }
@@ -74,9 +74,7 @@ class WebRtcVideoFrame : public VideoFrame {
     time_stamp_ns_ = time_stamp_ns;
   }
 
-  webrtc::VideoRotation GetVideoRotation() const override {
-    return rotation_;
-  }
+  webrtc::VideoRotation rotation() const override { return rotation_; }
 
   VideoFrame* Copy() const override;
   bool IsExclusive() const override;
@@ -88,7 +86,7 @@ class WebRtcVideoFrame : public VideoFrame {
   const VideoFrame* GetCopyWithRotationApplied() const override;
 
  protected:
-  void SetRotation(webrtc::VideoRotation rotation) override {
+  void set_rotation(webrtc::VideoRotation rotation) override {
     rotation_ = rotation;
   }
   // Creates a frame from a raw sample with FourCC |format| and size |w| x |h|.

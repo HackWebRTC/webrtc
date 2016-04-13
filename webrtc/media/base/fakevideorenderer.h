@@ -39,7 +39,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
     ++num_rendered_frames_;
     width_ = frame.width();
     height_ = frame.height();
-    rotation_ = frame.GetVideoRotation();
+    rotation_ = frame.rotation();
     timestamp_ = frame.GetTimeStamp();
     SignalRenderFrame(&frame);
   }

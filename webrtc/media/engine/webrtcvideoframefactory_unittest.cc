@@ -48,11 +48,11 @@ class WebRtcVideoFrameFactoryTest
                    int src_height,
                    bool apply_rotation) {
     if (!apply_rotation) {
-      EXPECT_EQ(dest_frame->GetVideoRotation(), src_rotation);
+      EXPECT_EQ(dest_frame->rotation(), src_rotation);
       EXPECT_EQ(dest_frame->width(), src_width);
       EXPECT_EQ(dest_frame->height(), src_height);
     } else {
-      EXPECT_EQ(dest_frame->GetVideoRotation(), webrtc::kVideoRotation_0);
+      EXPECT_EQ(dest_frame->rotation(), webrtc::kVideoRotation_0);
       if (src_rotation == webrtc::kVideoRotation_90 ||
           src_rotation == webrtc::kVideoRotation_270) {
         EXPECT_EQ(dest_frame->width(), src_height);

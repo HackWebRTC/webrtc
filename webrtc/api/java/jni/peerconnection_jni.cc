@@ -783,7 +783,7 @@ class JavaVideoRendererWrapper
     return jni()->NewObject(
         *j_frame_class_, j_i420_frame_ctor_id_,
         frame->width(), frame->height(),
-        static_cast<int>(frame->GetVideoRotation()),
+        static_cast<int>(frame->rotation()),
         strides, planes, javaShallowCopy(frame));
   }
 
@@ -796,7 +796,7 @@ class JavaVideoRendererWrapper
     return jni()->NewObject(
         *j_frame_class_, j_texture_frame_ctor_id_,
         frame->width(), frame->height(),
-        static_cast<int>(frame->GetVideoRotation()),
+        static_cast<int>(frame->rotation()),
         handle->oes_texture_id, sampling_matrix, javaShallowCopy(frame));
   }
 
