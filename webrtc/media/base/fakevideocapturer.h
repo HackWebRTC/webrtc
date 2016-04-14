@@ -31,7 +31,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
  public:
   FakeVideoCapturer(bool is_screencast)
       : running_(false),
-        initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
+        initial_timestamp_(rtc::TimeNanos()),
         next_timestamp_(rtc::kNumNanosecsPerMillisec),
         is_screencast_(is_screencast),
         rotation_(webrtc::kVideoRotation_0) {
@@ -99,7 +99,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     frame.height = height;
     frame.fourcc = fourcc;
     frame.data_size = size;
-    frame.time_stamp = initial_unix_timestamp_ + next_timestamp_;
+    frame.time_stamp = initial_timestamp_ + next_timestamp_;
     next_timestamp_ += timestamp_interval;
 
     std::unique_ptr<char[]> data(new char[size]);
@@ -153,7 +153,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
 
  private:
   bool running_;
-  int64_t initial_unix_timestamp_;
+  int64_t initial_timestamp_;
   int64_t next_timestamp_;
   const bool is_screencast_;
   webrtc::VideoRotation rotation_;

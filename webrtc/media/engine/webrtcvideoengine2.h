@@ -395,7 +395,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     // The timestamp of the first frame received
     // Used to generate the timestamps of subsequent frames
-    int64_t first_frame_timestamp_ms_ GUARDED_BY(lock_);
+    rtc::Optional<int64_t> first_frame_timestamp_ms_ GUARDED_BY(lock_);
 
     // The timestamp of the last frame received
     // Used to generate timestamp for the black frame when source is removed
