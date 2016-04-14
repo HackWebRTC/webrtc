@@ -164,6 +164,16 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     return GetRecvStream(ssrc).GetConfig();
   }
 
+  void SetSend(cricket::VoiceMediaChannel* channel, bool enable) {
+    ASSERT_TRUE(channel);
+    if (enable) {
+      EXPECT_CALL(adm_, RecordingIsInitialized()).WillOnce(Return(false));
+      EXPECT_CALL(adm_, Recording()).WillOnce(Return(false));
+      EXPECT_CALL(adm_, InitRecording()).WillOnce(Return(0));
+    }
+    channel->SetSend(enable);
+  }
+
   void TestInsertDtmf(uint32_t ssrc, bool caller) {
     EXPECT_TRUE(SetupChannel());
     if (caller) {
@@ -175,7 +185,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
     // Test we can only InsertDtmf when the other side supports telephone-event.
     EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-    channel_->SetSend(true);
+    SetSend(channel_, true);
     EXPECT_FALSE(channel_->CanInsertDtmf());
     EXPECT_FALSE(channel_->InsertDtmf(ssrc, 1, 111));
     send_parameters_.codecs.push_back(kTelephoneEventCodec);
@@ -2154,9 +2164,9 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvAbsoluteSendTimeHeaderExtensions) {
 TEST_F(WebRtcVoiceEngineTestFake, Send) {
   EXPECT_TRUE(SetupSendStream());
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  channel_->SetSend(true);
+  SetSend(channel_, true);
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
-  channel_->SetSend(false);
+  SetSend(channel_, false);
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
 }
 
@@ -2166,7 +2176,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SendStateWithAndWithoutSource) {
   EXPECT_TRUE(SetupSendStream());
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   EXPECT_TRUE(channel_->SetAudioSend(kSsrc1, true, nullptr, nullptr));
-  channel_->SetSend(true);
+  SetSend(channel_, true);
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
   EXPECT_TRUE(channel_->SetAudioSend(kSsrc1, true, nullptr, &fake_source_));
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
@@ -2180,7 +2190,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SendStateWhenStreamsAreRecreated) {
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
 
   // Turn on sending.
-  channel_->SetSend(true);
+  SetSend(channel_, true);
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
 
   // Changing RTP header extensions will recreate the AudioSendStream.
@@ -2190,7 +2200,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SendStateWhenStreamsAreRecreated) {
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
 
   // Turn off sending.
-  channel_->SetSend(false);
+  SetSend(channel_, false);
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
 
   // Changing RTP header extensions will recreate the AudioSendStream.
@@ -2215,7 +2225,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateAndDeleteMultipleSendStreams) {
   SetupForMultiSendStream();
 
   // Set the global state for sending.
-  channel_->SetSend(true);
+  SetSend(channel_, true);
 
   for (uint32_t ssrc : kSsrcs4) {
     EXPECT_TRUE(channel_->AddSendStream(
@@ -2286,14 +2296,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendWithMultipleSendStreams) {
   }
 
   // Set the global state for starting sending.
-  channel_->SetSend(true);
+  SetSend(channel_, true);
   for (uint32_t ssrc : kSsrcs4) {
     // Verify that we are in a sending state for all the send streams.
     EXPECT_TRUE(GetSendStream(ssrc).IsSending());
   }
 
   // Set the global state for stopping sending.
-  channel_->SetSend(false);
+  SetSend(channel_, false);
   for (uint32_t ssrc : kSsrcs4) {
     // Verify that we are in a stop state for all the send streams.
     EXPECT_FALSE(GetSendStream(ssrc).IsSending());
@@ -2372,7 +2382,7 @@ TEST_F(WebRtcVoiceEngineTestFake, PlayoutWithMultipleStreams) {
   EXPECT_TRUE(
       channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc2)));
   int channel_num2 = voe_.GetLastChannel();
-  channel_->SetSend(true);
+  SetSend(channel_, true);
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
 
   // Make sure only the new stream is played out.
@@ -2388,7 +2398,7 @@ TEST_F(WebRtcVoiceEngineTestFake, PlayoutWithMultipleStreams) {
   EXPECT_TRUE(voe_.GetPlayout(channel_num3));
 
   // Stop sending.
-  channel_->SetSend(false);
+  SetSend(channel_, false);
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
 
   // Stop playout.
@@ -2420,11 +2430,11 @@ TEST_F(WebRtcVoiceEngineTestFake, CodianSend) {
   EXPECT_EQ(0, agc_config.targetLeveldBOv);
   send_parameters_.options = options_adjust_agc;
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  channel_->SetSend(true);
+  SetSend(channel_, true);
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
   EXPECT_EQ(0, voe_.GetAgcConfig(agc_config));
   EXPECT_EQ(agc_config.targetLeveldBOv, 10);  // level was attenuated
-  channel_->SetSend(false);
+  SetSend(channel_, false);
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
   EXPECT_EQ(0, voe_.GetAgcConfig(agc_config));
 }
@@ -2499,7 +2509,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStats) {
   // Start sending - this affects some reported stats.
   {
     cricket::VoiceMediaInfo info;
-    channel_->SetSend(true);
+    SetSend(channel_, true);
     EXPECT_EQ(true, channel_->GetStats(&info));
     VerifyVoiceSenderInfo(info.senders[0], true);
   }
@@ -2755,7 +2765,7 @@ TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCallee) {
 TEST_F(WebRtcVoiceEngineTestFake, TestSetPlayoutError) {
   EXPECT_TRUE(SetupSendStream());
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  channel_->SetSend(true);
+  SetSend(channel_, true);
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(3)));
   EXPECT_TRUE(channel_->SetPlayout(true));
@@ -3036,7 +3046,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(agc_enabled);
   EXPECT_TRUE(ns_enabled);
 
-  channel1->SetSend(true);
+  SetSend(channel1.get(), true);
   voe_.GetEcStatus(ec_enabled, ec_mode);
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   voe_.GetNsStatus(ns_enabled, ns_mode);
@@ -3044,7 +3054,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(agc_enabled);
   EXPECT_FALSE(ns_enabled);
 
-  channel2->SetSend(true);
+  SetSend(channel2.get(), true);
   voe_.GetEcStatus(ec_enabled, ec_mode);
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   voe_.GetNsStatus(ns_enabled, ns_mode);

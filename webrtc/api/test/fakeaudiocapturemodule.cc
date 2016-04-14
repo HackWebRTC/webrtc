@@ -205,8 +205,7 @@ int32_t FakeAudioCaptureModule::InitRecording() {
 }
 
 bool FakeAudioCaptureModule::RecordingIsInitialized() const {
-  ASSERT(false);
-  return 0;
+  return rec_is_initialized_;
 }
 
 int32_t FakeAudioCaptureModule::StartPlayout() {

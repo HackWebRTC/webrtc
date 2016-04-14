@@ -620,11 +620,14 @@ int32_t VoEBaseImpl::StopPlayout() {
 }
 
 int32_t VoEBaseImpl::StartSend() {
-  if (!shared_->audio_device()->Recording()) {
+  if (!shared_->audio_device()->RecordingIsInitialized() &&
+      !shared_->audio_device()->Recording()) {
     if (shared_->audio_device()->InitRecording() != 0) {
       LOG_F(LS_ERROR) << "Failed to initialize recording";
       return -1;
     }
+  }
+  if (!shared_->audio_device()->Recording()) {
     if (shared_->audio_device()->StartRecording() != 0) {
       LOG_F(LS_ERROR) << "Failed to start recording";
       return -1;

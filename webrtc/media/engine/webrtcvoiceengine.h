@@ -235,6 +235,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
     return send_codec_spec_.codec_inst.pltype != -1;
   }
   bool ValidateRtpParameters(const webrtc::RtpParameters& parameters);
+  void SetupRecording();
 
   rtc::ThreadChecker worker_thread_checker_;
 
