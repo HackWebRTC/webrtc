@@ -18,7 +18,7 @@
 
 namespace webrtc {
 
-static const int kBurstDeltaThresholdMs  = 5;
+static const int kBurstDeltaThresholdMs = 5;
 
 InterArrival::InterArrival(uint32_t timestamp_group_length_ticks,
                            double timestamp_to_ms_coeff,

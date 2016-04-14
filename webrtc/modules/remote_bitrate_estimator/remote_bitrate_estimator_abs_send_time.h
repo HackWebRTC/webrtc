@@ -67,8 +67,7 @@ struct Cluster {
 
 class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
  public:
-  RemoteBitrateEstimatorAbsSendTime(RemoteBitrateObserver* observer,
-                                    Clock* clock);
+  explicit RemoteBitrateEstimatorAbsSendTime(RemoteBitrateObserver* observer);
   virtual ~RemoteBitrateEstimatorAbsSendTime() {}
 
   void IncomingPacketFeedbackVector(
@@ -121,7 +120,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   rtc::ThreadChecker network_thread_;
   RemoteBitrateObserver* const observer_;
   std::unique_ptr<InterArrival> inter_arrival_;
-  OveruseEstimator estimator_;
+  std::unique_ptr<OveruseEstimator> estimator_;
   OveruseDetector detector_;
   RateStatistics incoming_bitrate_;
   std::vector<int> recent_propagation_delta_ms_;
@@ -135,7 +134,6 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   rtc::CriticalSection crit_;
   Ssrcs ssrcs_ GUARDED_BY(&crit_);
   AimdRateControl remote_rate_ GUARDED_BY(&crit_);
-  Clock* const clock_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorAbsSendTime);
 };

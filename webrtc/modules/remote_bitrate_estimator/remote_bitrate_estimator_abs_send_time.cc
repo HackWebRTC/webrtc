@@ -14,12 +14,12 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 
@@ -79,20 +79,17 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
   }
 
   RemoteBitrateEstimatorAbsSendTime::RemoteBitrateEstimatorAbsSendTime(
-      RemoteBitrateObserver* observer,
-      Clock* clock)
+      RemoteBitrateObserver* observer)
       : observer_(observer),
         inter_arrival_(),
-        estimator_(OverUseDetectorOptions()),
+        estimator_(),
         detector_(OverUseDetectorOptions()),
         incoming_bitrate_(kBitrateWindowMs, 8000),
         total_probes_received_(0),
         first_packet_time_ms_(-1),
         last_update_ms_(-1),
-        ssrcs_(),
-        clock_(clock) {
+        ssrcs_() {
     RTC_DCHECK(observer_);
-    RTC_DCHECK(clock_);
     LOG(LS_INFO) << "RemoteBitrateEstimatorAbsSendTime: Instantiating.";
     network_thread_.DetachFromThread();
     process_thread_.DetachFromThread();
@@ -245,13 +242,13 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
   uint32_t timestamp = send_time_24bits << kAbsSendTimeInterArrivalUpshift;
   int64_t send_time_ms = static_cast<int64_t>(timestamp) * kTimestampToMs;
 
-  int64_t now_ms = clock_->TimeInMilliseconds();
+  int64_t now_ms = arrival_time_ms;
   // TODO(holmer): SSRCs are only needed for REMB, should be broken out from
   // here.
   incoming_bitrate_.Update(payload_size, now_ms);
 
   if (first_packet_time_ms_ == -1)
-    first_packet_time_ms_ = clock_->TimeInMilliseconds();
+    first_packet_time_ms_ = arrival_time_ms;
 
   uint32_t ts_delta = 0;
   int64_t t_delta = 0;
@@ -267,6 +264,8 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
     rtc::CritScope lock(&crit_);
 
     TimeoutStreams(now_ms);
+    RTC_DCHECK(inter_arrival_.get());
+    RTC_DCHECK(estimator_.get());
     ssrcs_[ssrc] = now_ms;
 
     if (was_paced &&
@@ -295,9 +294,9 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
     if (inter_arrival_->ComputeDeltas(timestamp, arrival_time_ms, payload_size,
                                       &ts_delta, &t_delta, &size_delta)) {
       double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
-      estimator_.Update(t_delta, ts_delta_ms, size_delta, detector_.State());
-      detector_.Detect(estimator_.offset(), ts_delta_ms,
-                       estimator_.num_of_deltas(), arrival_time_ms);
+      estimator_->Update(t_delta, ts_delta_ms, size_delta, detector_.State());
+      detector_.Detect(estimator_->offset(), ts_delta_ms,
+                       estimator_->num_of_deltas(), arrival_time_ms);
     }
 
     if (!update_estimate) {
@@ -319,7 +318,7 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
       // and the target bitrate is too high compared to what we are receiving.
       const RateControlInput input(detector_.State(),
                                    incoming_bitrate_.Rate(now_ms),
-                                   estimator_.var_noise());
+                                   estimator_->var_noise());
       remote_rate_.Update(&input, now_ms);
       target_bitrate_bps = remote_rate_.UpdateBandwidthEstimate(now_ms);
       update_estimate = remote_rate_.ValidEstimate();
@@ -352,6 +351,7 @@ void RemoteBitrateEstimatorAbsSendTime::TimeoutStreams(int64_t now_ms) {
     inter_arrival_.reset(
         new InterArrival((kTimestampGroupLengthMs << kInterArrivalShift) / 1000,
                          kTimestampToMs, true));
+    estimator_.reset(new OveruseEstimator(OverUseDetectorOptions()));
     // We deliberately don't reset the first_packet_time_ms_ here for now since
     // we only probe for bandwidth in the beginning of a call right now.
   }

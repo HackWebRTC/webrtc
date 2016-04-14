@@ -69,7 +69,7 @@ RembReceiver::RembReceiver(int flow_id, bool plot)
       recv_stats_(ReceiveStatistics::Create(&clock_)),
       latest_estimate_bps_(-1),
       last_feedback_ms_(-1),
-      estimator_(new RemoteBitrateEstimatorAbsSendTime(this, &clock_)) {
+      estimator_(new RemoteBitrateEstimatorAbsSendTime(this)) {
   std::stringstream ss;
   ss << "Estimate_" << flow_id_ << "#1";
   estimate_log_prefix_ = ss.str();

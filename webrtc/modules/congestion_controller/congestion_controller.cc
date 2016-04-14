@@ -115,7 +115,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   // Instantiate RBE for Time Offset or Absolute Send Time extensions.
   void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
     if (using_absolute_send_time_) {
-      rbe_.reset(new RemoteBitrateEstimatorAbsSendTime(observer_, clock_));
+      rbe_.reset(new RemoteBitrateEstimatorAbsSendTime(observer_));
     } else {
       rbe_.reset(new RemoteBitrateEstimatorSingleStream(observer_, clock_));
     }
@@ -156,8 +156,7 @@ CongestionController::CongestionController(
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps) {
   transport_feedback_adapter_.SetBitrateEstimator(
-      new RemoteBitrateEstimatorAbsSendTime(&transport_feedback_adapter_,
-                                            clock_));
+      new RemoteBitrateEstimatorAbsSendTime(&transport_feedback_adapter_));
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
 }

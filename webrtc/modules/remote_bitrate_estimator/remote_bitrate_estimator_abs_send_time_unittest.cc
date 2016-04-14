@@ -20,7 +20,7 @@ class RemoteBitrateEstimatorAbsSendTimeTest :
   RemoteBitrateEstimatorAbsSendTimeTest() {}
   virtual void SetUp() {
     bitrate_estimator_.reset(new RemoteBitrateEstimatorAbsSendTime(
-        bitrate_observer_.get(), &clock_));
+        bitrate_observer_.get()));
   }
  protected:
   RTC_DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorAbsSendTimeTest);
