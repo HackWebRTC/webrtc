@@ -25,8 +25,6 @@ static const int kHdBitrateThresholdKbps = 500;
 static const int kMinDownscaleDimension = 140;
 }  // namespace
 
-const int QualityScaler::kDefaultLowQpDenominator = 3;
-
 QualityScaler::QualityScaler()
     : low_qp_threshold_(-1), framerate_down_(false) {}
 

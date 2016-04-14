@@ -600,11 +600,11 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   rps_.Init();
   // Disable both high-QP limits and framedropping. Both are handled by libvpx
   // internally.
+  const int kLowQpThreshold = 18;
   const int kDisabledBadQpThreshold = 64;
   // TODO(glaznev/sprang): consider passing codec initial bitrate to quality
   // scaler to avoid starting with HD for low initial bitrates.
-  quality_scaler_.Init(codec_.qpMax / QualityScaler::kDefaultLowQpDenominator,
-                       kDisabledBadQpThreshold, false, 0, 0, 0,
+  quality_scaler_.Init(kLowQpThreshold, kDisabledBadQpThreshold, false, 0, 0, 0,
                        codec_.maxFramerate);
 
   // Only apply scaling to improve for single-layer streams. The scaling metrics

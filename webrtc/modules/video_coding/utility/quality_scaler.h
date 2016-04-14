@@ -17,7 +17,6 @@
 namespace webrtc {
 class QualityScaler {
  public:
-  static const int kDefaultLowQpDenominator;
   struct Resolution {
     int width;
     int height;

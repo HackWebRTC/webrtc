@@ -23,9 +23,9 @@ static const int kHeightVga = 480;
 static const int kFramerate = 30;
 static const int kLowQp = 15;
 static const int kNormalQp = 30;
+static const int kLowQpThreshold = 18;
 static const int kHighQp = 40;
-static const int kMaxQp = 56;
-static const int kDisabledBadQpThreshold = kMaxQp + 1;
+static const int kDisabledBadQpThreshold = 64;
 static const int kLowInitialBitrateKbps = 300;
 // These values need to be in sync with corresponding constants
 // in quality_scaler.cc
@@ -56,8 +56,7 @@ class QualityScalerTest : public ::testing::Test {
   QualityScalerTest() {
     input_frame_.CreateEmptyFrame(kWidth, kHeight, kWidth, kHalfWidth,
                                   kHalfWidth);
-    qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator, kHighQp, false,
-             0, 0, 0, kFramerate);
+    qs_.Init(kLowQpThreshold, kHighQp, false, 0, 0, 0, kFramerate);
     qs_.OnEncodeFrame(input_frame_);
   }
 
@@ -308,8 +307,8 @@ void QualityScalerTest::VerifyQualityAdaptation(
     int seconds_upscale,
     bool expect_spatial_resize,
     bool expect_framerate_reduction) {
-  qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator,
-           kDisabledBadQpThreshold, true, 0, 0, 0, initial_framerate);
+  qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, true, 0, 0, 0,
+           initial_framerate);
   qs_.OnEncodeFrame(input_frame_);
   int init_width = qs_.GetScaledResolution().width;
   int init_height = qs_.GetScaledResolution().height;
@@ -381,8 +380,7 @@ TEST_F(QualityScalerTest, DoesNotDownscaleBelow2xDefaultMinDimensionsHeight) {
 }
 
 TEST_F(QualityScalerTest, DownscaleToVgaOnLowInitialBitrate) {
-  qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator,
-           kDisabledBadQpThreshold, true,
+  qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, true,
            kLowInitialBitrateKbps, kWidth, kHeight, kFramerate);
   qs_.OnEncodeFrame(input_frame_);
   int init_width = qs_.GetScaledResolution().width;
@@ -393,8 +391,7 @@ TEST_F(QualityScalerTest, DownscaleToVgaOnLowInitialBitrate) {
 
 TEST_F(QualityScalerTest, DownscaleAfterMeasuredSecondsThenSlowerBackUp) {
   QualityScalerTest::Resolution initial_res;
-  qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator, kHighQp, false, 0,
-           kWidth, kHeight, kFramerate);
+  qs_.Init(kLowQpThreshold, kHighQp, false, 0, kWidth, kHeight, kFramerate);
   qs_.OnEncodeFrame(input_frame_);
   initial_res.width = qs_.GetScaledResolution().width;
   initial_res.height = qs_.GetScaledResolution().height;
@@ -433,8 +430,8 @@ TEST_F(QualityScalerTest, DownscaleAfterMeasuredSecondsThenSlowerBackUp) {
 
 TEST_F(QualityScalerTest, UpscaleQuicklyInitiallyAfterMeasuredSeconds) {
   QualityScalerTest::Resolution initial_res;
-  qs_.Init(kMaxQp / QualityScaler::kDefaultLowQpDenominator, kHighQp, false,
-           kLowInitialBitrateKbps, kWidth, kHeight, kFramerate);
+  qs_.Init(kLowQpThreshold, kHighQp, false, kLowInitialBitrateKbps, kWidth,
+           kHeight, kFramerate);
   qs_.OnEncodeFrame(input_frame_);
   initial_res.width = qs_.GetScaledResolution().width;
   initial_res.height = qs_.GetScaledResolution().height;
