@@ -129,13 +129,6 @@ void FrameDropper::Fill(size_t framesize_bytes, bool delta_frame) {
   // Change the level of the accumulator (bucket)
   accumulator_ += framesize_kbits;
   CapAccumulator();
-  LOG(LS_VERBOSE) << "FILL acc " << accumulator_ << " max " << accumulator_max_
-                  << " count " << large_frame_accumulation_count_ << " chunk "
-                  << large_frame_accumulation_chunk_size_ << " spread "
-                  << large_frame_accumulation_spread_ << " delta avg "
-                  << delta_frame_size_avg_kbits_.filtered() << " SIZE "
-                  << framesize_kbits << "key frame ratio "
-                  << key_frame_ratio_.filtered();
 }
 
 void FrameDropper::Leak(uint32_t input_framerate) {
@@ -160,10 +153,6 @@ void FrameDropper::Leak(uint32_t input_framerate) {
   if (accumulator_ < 0.0f) {
     accumulator_ = 0.0f;
   }
-  LOG(LS_VERBOSE) << "LEAK acc " << accumulator_ << " max " << accumulator_max_
-                  << " count " << large_frame_accumulation_count_ << " spread "
-                  << large_frame_accumulation_spread_ << " delta avg "
-                  << delta_frame_size_avg_kbits_.filtered();
   UpdateRatio();
 }
 
@@ -201,8 +190,6 @@ bool FrameDropper::DropFrame() {
     drop_next_ = false;
     drop_count_ = 0;
   }
-  LOG(LS_VERBOSE) << " drop_ratio_ " << drop_ratio_.filtered()
-                  << " drop_count_ " << drop_count_;
 
   if (drop_ratio_.filtered() >= 0.5f) {  // Drops per keep
     // limit is the number of frames we should drop between each kept frame
