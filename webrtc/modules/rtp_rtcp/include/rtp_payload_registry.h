@@ -13,6 +13,7 @@
 
 #include <map>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -122,7 +123,7 @@ class RTPPayloadRegistry {
   const RtpUtility::Payload* PayloadTypeToPayload(uint8_t payload_type) const;
 
   void ResetLastReceivedPayloadTypes() {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     last_received_payload_type_ = -1;
     last_received_media_payload_type_ = -1;
   }
@@ -136,34 +137,34 @@ class RTPPayloadRegistry {
   bool ReportMediaPayloadType(uint8_t media_payload_type);
 
   int8_t red_payload_type() const {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     return red_payload_type_;
   }
   int8_t ulpfec_payload_type() const {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     return ulpfec_payload_type_;
   }
   int8_t last_received_payload_type() const {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     return last_received_payload_type_;
   }
   void set_last_received_payload_type(int8_t last_received_payload_type) {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     last_received_payload_type_ = last_received_payload_type;
   }
 
   int8_t last_received_media_payload_type() const {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     return last_received_media_payload_type_;
   }
 
   bool use_rtx_payload_mapping_on_restore() const {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     return use_rtx_payload_mapping_on_restore_;
   }
 
   void set_use_rtx_payload_mapping_on_restore(bool val) {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     use_rtx_payload_mapping_on_restore_ = val;
   }
 
@@ -178,7 +179,7 @@ class RTPPayloadRegistry {
 
   bool IsRtxInternal(const RTPHeader& header) const;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::CriticalSection crit_sect_;
   RtpUtility::PayloadTypeMap payload_type_map_;
   rtc::scoped_ptr<RTPPayloadStrategy> rtp_payload_strategy_;
   int8_t  red_payload_type_;

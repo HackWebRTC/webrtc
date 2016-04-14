@@ -16,7 +16,6 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 // RFC 5109
 namespace webrtc {
@@ -26,8 +25,7 @@ FecReceiver* FecReceiver::Create(RtpData* callback) {
 }
 
 FecReceiverImpl::FecReceiverImpl(RtpData* callback)
-    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      recovered_packet_callback_(callback),
+    : recovered_packet_callback_(callback),
       fec_(new ForwardErrorCorrection()) {}
 
 FecReceiverImpl::~FecReceiverImpl() {
@@ -42,7 +40,7 @@ FecReceiverImpl::~FecReceiverImpl() {
 }
 
 FecPacketCounter FecReceiverImpl::GetPacketCounter() const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   return packet_counter_;
 }
 
@@ -77,7 +75,7 @@ FecPacketCounter FecReceiverImpl::GetPacketCounter() const {
 int32_t FecReceiverImpl::AddReceivedRedPacket(
     const RTPHeader& header, const uint8_t* incoming_rtp_packet,
     size_t packet_length, uint8_t ulpfec_payload_type) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   uint8_t REDHeaderLength = 1;
   size_t payload_data_length = packet_length - header.headerLength;
 
@@ -219,21 +217,21 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
 }
 
 int32_t FecReceiverImpl::ProcessReceivedFec() {
-  crit_sect_->Enter();
+  crit_sect_.Enter();
   if (!received_packet_list_.empty()) {
     // Send received media packet to VCM.
     if (!received_packet_list_.front()->is_fec) {
       ForwardErrorCorrection::Packet* packet =
           received_packet_list_.front()->pkt;
-      crit_sect_->Leave();
+      crit_sect_.Leave();
       if (!recovered_packet_callback_->OnRecoveredPacket(packet->data,
                                                          packet->length)) {
         return -1;
       }
-      crit_sect_->Enter();
+      crit_sect_.Enter();
     }
     if (fec_->DecodeFEC(&received_packet_list_, &recovered_packet_list_) != 0) {
-      crit_sect_->Leave();
+      crit_sect_.Leave();
       return -1;
     }
     assert(received_packet_list_.empty());
@@ -246,15 +244,15 @@ int32_t FecReceiverImpl::ProcessReceivedFec() {
       continue;
     ForwardErrorCorrection::Packet* packet = (*it)->pkt;
     ++packet_counter_.num_recovered_packets;
-    crit_sect_->Leave();
+    crit_sect_.Leave();
     if (!recovered_packet_callback_->OnRecoveredPacket(packet->data,
                                                        packet->length)) {
       return -1;
     }
-    crit_sect_->Enter();
+    crit_sect_.Enter();
     (*it)->returned = true;
   }
-  crit_sect_->Leave();
+  crit_sect_.Leave();
   return 0;
 }
 

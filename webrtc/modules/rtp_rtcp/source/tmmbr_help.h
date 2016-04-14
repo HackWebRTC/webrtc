@@ -12,8 +12,8 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_TMMBR_HELP_H_
 
 #include <vector>
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -80,7 +80,7 @@ protected:
     int32_t FindTMMBRBoundingSet(int32_t numCandidates, TMMBRSet& candidateSet);
 
 private:
-    CriticalSectionWrapper* _criticalSection;
+    rtc::CriticalSection    _criticalSection;
     TMMBRSet                _candidateSet;
     TMMBRSet                _boundingSet;
     TMMBRSet                _boundingSetToSend;

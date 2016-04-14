@@ -15,7 +15,7 @@
 
 #include <list>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/typedefs.h"
@@ -23,7 +23,6 @@
 namespace webrtc {
 
 class Clock;
-class CriticalSectionWrapper;
 
 class Bitrate {
  public:
@@ -60,7 +59,7 @@ class Bitrate {
   Clock* clock_;
 
  private:
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::CriticalSection crit_;
   uint32_t packet_rate_;
   uint32_t bitrate_;
   uint8_t bitrate_next_idx_;

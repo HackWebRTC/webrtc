@@ -16,14 +16,11 @@
 #include <algorithm>
 #include <map>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
-
-class CriticalSectionWrapper;
 
 class StreamStatisticianImpl : public StreamStatistician {
  public:
@@ -57,11 +54,11 @@ class StreamStatisticianImpl : public StreamStatistician {
   void UpdateCounters(const RTPHeader& rtp_header,
                       size_t packet_length,
                       bool retransmitted);
-  void NotifyRtpCallback() LOCKS_EXCLUDED(stream_lock_.get());
-  void NotifyRtcpCallback() LOCKS_EXCLUDED(stream_lock_.get());
+  void NotifyRtpCallback() LOCKS_EXCLUDED(stream_lock_);
+  void NotifyRtcpCallback() LOCKS_EXCLUDED(stream_lock_);
 
   Clock* clock_;
-  rtc::scoped_ptr<CriticalSectionWrapper> stream_lock_;
+  rtc::CriticalSection stream_lock_;
   Bitrate incoming_bitrate_;
   uint32_t ssrc_;
   int max_reordering_threshold_;  // In number of packets or sequence numbers.
@@ -131,7 +128,7 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   typedef std::map<uint32_t, StreamStatisticianImpl*> StatisticianImplMap;
 
   Clock* clock_;
-  rtc::scoped_ptr<CriticalSectionWrapper> receive_statistics_lock_;
+  rtc::CriticalSection receive_statistics_lock_;
   int64_t last_rate_update_ms_;
   StatisticianImplMap statisticians_;
 

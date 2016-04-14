@@ -49,13 +49,9 @@ RTCPReceiver::RTCPReceiver(
       receiver_only_(receiver_only),
       _lastReceived(0),
       _rtpRtcp(*owner),
-      _criticalSectionFeedbacks(
-          CriticalSectionWrapper::CreateCriticalSection()),
       _cbRtcpBandwidthObserver(rtcp_bandwidth_observer),
       _cbRtcpIntraFrameObserver(rtcp_intra_frame_observer),
       _cbTransportFeedbackObserver(transport_feedback_observer),
-      _criticalSectionRTCPReceiver(
-          CriticalSectionWrapper::CreateCriticalSection()),
       main_ssrc_(0),
       _remoteSSRC(0),
       _remoteSenderInfo(),
@@ -76,9 +72,6 @@ RTCPReceiver::RTCPReceiver(
 }
 
 RTCPReceiver::~RTCPReceiver() {
-  delete _criticalSectionRTCPReceiver;
-  delete _criticalSectionFeedbacks;
-
   ReportBlockMap::iterator it = _receivedReportBlockMap.begin();
   for (; it != _receivedReportBlockMap.end(); ++it) {
     ReportBlockInfoMap* info_map = &(it->second);
@@ -103,12 +96,12 @@ RTCPReceiver::~RTCPReceiver() {
 }
 
 int64_t RTCPReceiver::LastReceived() {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   return _lastReceived;
 }
 
 int64_t RTCPReceiver::LastReceivedReceiverReport() const {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   int64_t last_received_rr = -1;
   for (ReceivedInfoMap::const_iterator it = _receivedInfoMap.begin();
        it != _receivedInfoMap.end(); ++it) {
@@ -120,7 +113,7 @@ int64_t RTCPReceiver::LastReceivedReceiverReport() const {
 }
 
 void RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   // new SSRC reset old reports
   memset(&_remoteSenderInfo, 0, sizeof(_remoteSenderInfo));
@@ -131,7 +124,7 @@ void RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
 }
 
 uint32_t RTCPReceiver::RemoteSSRC() const {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   return _remoteSSRC;
 }
 
@@ -139,7 +132,7 @@ void RTCPReceiver::SetSsrcs(uint32_t main_ssrc,
                             const std::set<uint32_t>& registered_ssrcs) {
   uint32_t old_ssrc = 0;
   {
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+    rtc::CritScope lock(&_criticalSectionRTCPReceiver);
     old_ssrc = main_ssrc_;
     main_ssrc_ = main_ssrc;
     registered_ssrcs_ = registered_ssrcs;
@@ -156,7 +149,7 @@ int32_t RTCPReceiver::RTT(uint32_t remoteSSRC,
                           int64_t* avgRTT,
                           int64_t* minRTT,
                           int64_t* maxRTT) const {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   RTCPReportBlockInformation* reportBlock =
       GetReportBlockInformation(remoteSSRC, main_ssrc_);
@@ -180,13 +173,13 @@ int32_t RTCPReceiver::RTT(uint32_t remoteSSRC,
 }
 
 void RTCPReceiver::SetRtcpXrRrtrStatus(bool enable) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   xr_rrtr_status_ = enable;
 }
 
 bool RTCPReceiver::GetAndResetXrRrRtt(int64_t* rtt_ms) {
   assert(rtt_ms);
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   if (xr_rr_rtt_ms_ == 0) {
     return false;
   }
@@ -202,7 +195,7 @@ bool RTCPReceiver::NTP(uint32_t* ReceivedNTPsecs,
                        uint32_t* RTCPArrivalTimeFrac,
                        uint32_t* rtcp_timestamp) const
 {
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+    rtc::CritScope lock(&_criticalSectionRTCPReceiver);
     if(ReceivedNTPsecs)
     {
         *ReceivedNTPsecs = _remoteSenderInfo.NTPseconds; // NTP from incoming SendReport
@@ -228,7 +221,7 @@ bool RTCPReceiver::NTP(uint32_t* ReceivedNTPsecs,
 bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
     RtcpReceiveTimeInfo* info) const {
   assert(info);
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   if (_lastReceivedXRNTPsecs == 0 && _lastReceivedXRNTPfrac == 0) {
     return false;
   }
@@ -251,7 +244,7 @@ bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
 
 int32_t RTCPReceiver::SenderInfoReceived(RTCPSenderInfo* senderInfo) const {
   assert(senderInfo);
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   if (_lastReceivedSRNTPsecs == 0) {
     return -1;
   }
@@ -264,7 +257,7 @@ int32_t RTCPReceiver::SenderInfoReceived(RTCPSenderInfo* senderInfo) const {
 int32_t RTCPReceiver::StatisticsReceived(
     std::vector<RTCPReportBlock>* receiveBlocks) const {
   assert(receiveBlocks);
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   ReportBlockMap::const_iterator it = _receivedReportBlockMap.begin();
   for (; it != _receivedReportBlockMap.end(); ++it) {
     const ReportBlockInfoMap* info_map = &(it->second);
@@ -280,7 +273,7 @@ int32_t
 RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
                                  RTCPUtility::RTCPParserV2* rtcpParser)
 {
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+    rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
     _lastReceived = _clock->TimeInMilliseconds();
 
@@ -590,7 +583,7 @@ RTCPReportBlockInformation* RTCPReceiver::GetReportBlockInformation(
 
 RTCPCnameInformation*
 RTCPReceiver::CreateCnameInformation(uint32_t remoteSSRC) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   std::map<uint32_t, RTCPCnameInformation*>::iterator it =
       _receivedCnameMap.find(remoteSSRC);
@@ -606,7 +599,7 @@ RTCPReceiver::CreateCnameInformation(uint32_t remoteSSRC) {
 
 RTCPCnameInformation*
 RTCPReceiver::GetCnameInformation(uint32_t remoteSSRC) const {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   std::map<uint32_t, RTCPCnameInformation*>::const_iterator it =
       _receivedCnameMap.find(remoteSSRC);
@@ -619,7 +612,7 @@ RTCPReceiver::GetCnameInformation(uint32_t remoteSSRC) const {
 
 RTCPReceiveInformation*
 RTCPReceiver::CreateReceiveInformation(uint32_t remoteSSRC) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   std::map<uint32_t, RTCPReceiveInformation*>::iterator it =
       _receivedInfoMap.find(remoteSSRC);
@@ -634,7 +627,7 @@ RTCPReceiver::CreateReceiveInformation(uint32_t remoteSSRC) {
 
 RTCPReceiveInformation*
 RTCPReceiver::GetReceiveInformation(uint32_t remoteSSRC) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   std::map<uint32_t, RTCPReceiveInformation*>::iterator it =
       _receivedInfoMap.find(remoteSSRC);
@@ -651,7 +644,7 @@ void RTCPReceiver::UpdateReceiveInformation(
 }
 
 bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   if (_lastReceivedRrMs == 0)
     return false;
 
@@ -665,7 +658,7 @@ bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
 }
 
 bool RTCPReceiver::RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   if (_lastIncreasedSequenceNumberMs == 0)
     return false;
 
@@ -680,7 +673,7 @@ bool RTCPReceiver::RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms) {
 }
 
 bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   bool updateBoundingSet = false;
   int64_t timeNow = _clock->TimeInMilliseconds();
@@ -724,7 +717,7 @@ bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
 }
 
 int32_t RTCPReceiver::BoundingSet(bool* tmmbrOwner, TMMBRSet* boundingSetRec) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   std::map<uint32_t, RTCPReceiveInformation*>::iterator receiveInfoIt =
       _receivedInfoMap.find(_remoteSSRC);
@@ -773,7 +766,7 @@ void RTCPReceiver::HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser) {
   cnameInfo->name[RTCP_CNAME_SIZE - 1] = 0;
   strncpy(cnameInfo->name, rtcpPacket.CName.CName, RTCP_CNAME_SIZE - 1);
   {
-    CriticalSectionScoped lock(_criticalSectionFeedbacks);
+    rtc::CritScope lock(&_criticalSectionFeedbacks);
     if (stats_callback_ != NULL) {
       stats_callback_->CNameChanged(rtcpPacket.CName.CName,
                                     rtcpPacket.CName.SenderSSRC);
@@ -1283,12 +1276,12 @@ int32_t RTCPReceiver::UpdateTMMBR() {
 
 void RTCPReceiver::RegisterRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {
-  CriticalSectionScoped cs(_criticalSectionFeedbacks);
+  rtc::CritScope cs(&_criticalSectionFeedbacks);
   stats_callback_ = callback;
 }
 
 RtcpStatisticsCallback* RTCPReceiver::GetRtcpStatisticsCallback() {
-  CriticalSectionScoped cs(_criticalSectionFeedbacks);
+  rtc::CritScope cs(&_criticalSectionFeedbacks);
   return stats_callback_;
 }
 
@@ -1305,7 +1298,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
   std::set<uint32_t> registered_ssrcs;
   {
     // We don't want to hold this critsect when triggering the callbacks below.
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+    rtc::CritScope lock(&_criticalSectionRTCPReceiver);
     local_ssrc = main_ssrc_;
     registered_ssrcs = registered_ssrcs_;
   }
@@ -1378,7 +1371,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
   }
 
   if (!receiver_only_) {
-    CriticalSectionScoped cs(_criticalSectionFeedbacks);
+    rtc::CritScope cs(&_criticalSectionFeedbacks);
     if (stats_callback_) {
       for (ReportBlockList::const_iterator it =
           rtcpPacketInformation.report_blocks.begin();
@@ -1400,7 +1393,7 @@ int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
                             char cName[RTCP_CNAME_SIZE]) const {
   assert(cName);
 
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   RTCPCnameInformation* cnameInfo = GetCnameInformation(remoteSSRC);
   if (cnameInfo == NULL) {
     return -1;
@@ -1414,7 +1407,7 @@ int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
 int32_t RTCPReceiver::TMMBRReceived(uint32_t size,
                                     uint32_t accNumCandidates,
                                     TMMBRSet* candidateSet) const {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
   std::map<uint32_t, RTCPReceiveInformation*>::const_iterator
       receiveInfoIt = _receivedInfoMap.begin();

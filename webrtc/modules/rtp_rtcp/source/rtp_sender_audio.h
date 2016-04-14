@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_AUDIO_H_
 
 #include "webrtc/common_types.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/onetimeevent.h"
 #include "webrtc/modules/rtp_rtcp/source/dtmf_queue.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -73,7 +74,7 @@ class RTPSenderAudio : public DTMFqueue {
   Clock* const _clock;
   RTPSender* const _rtpSender;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> _sendAudioCritsect;
+  rtc::CriticalSection _sendAudioCritsect;
 
   uint16_t _packetSizeSamples GUARDED_BY(_sendAudioCritsect);
 

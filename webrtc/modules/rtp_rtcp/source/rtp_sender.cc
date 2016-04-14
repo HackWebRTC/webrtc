@@ -24,7 +24,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
@@ -147,7 +146,6 @@ RTPSender::RTPSender(
       nack_bitrate_(clock, bitrates_.retransmit_bitrate_observer()),
       packet_history_(clock),
       // Statistics
-      statistics_crit_(CriticalSectionWrapper::CreateCriticalSection()),
       rtp_stats_callback_(NULL),
       frame_count_observer_(frame_count_observer),
       send_side_delay_observer_(send_side_delay_observer),
@@ -166,7 +164,6 @@ RTPSender::RTPSender(
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
-      target_bitrate_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       target_bitrate_(0) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
   memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
@@ -210,12 +207,12 @@ RTPSender::~RTPSender() {
 }
 
 void RTPSender::SetTargetBitrate(uint32_t bitrate) {
-  CriticalSectionScoped cs(target_bitrate_critsect_.get());
+  rtc::CritScope cs(&target_bitrate_critsect_);
   target_bitrate_ = bitrate;
 }
 
 uint32_t RTPSender::GetTargetBitrate() {
-  CriticalSectionScoped cs(target_bitrate_critsect_.get());
+  rtc::CritScope cs(&target_bitrate_critsect_);
   return target_bitrate_;
 }
 
@@ -532,7 +529,7 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
                           payload_size, fragmentation, rtp_hdr);
   }
 
-  CriticalSectionScoped cs(statistics_crit_.get());
+  rtc::CritScope cs(&statistics_crit_);
   // Note: This is currently only counting for video.
   if (frame_type == kVideoFrameKey) {
     ++frame_counts_.key_frames;
@@ -966,7 +963,7 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
   // Get ssrc before taking statistics_crit_ to avoid possible deadlock.
   uint32_t ssrc = is_rtx ? RtxSsrc() : SSRC();
 
-  CriticalSectionScoped lock(statistics_crit_.get());
+  rtc::CritScope lock(&statistics_crit_);
   if (is_rtx) {
     counters = &rtx_rtp_stats_;
   } else {
@@ -1109,7 +1106,7 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
     ssrc = ssrc_;
   }
   {
-    CriticalSectionScoped cs(statistics_crit_.get());
+    rtc::CritScope cs(&statistics_crit_);
     // TODO(holmer): Compute this iteratively instead.
     send_delays_[now_ms] = now_ms - capture_time_ms;
     send_delays_.erase(send_delays_.begin(),
@@ -1157,7 +1154,7 @@ uint16_t RTPSender::AllocateSequenceNumber(uint16_t packets_to_send) {
 
 void RTPSender::GetDataCounters(StreamDataCounters* rtp_stats,
                                 StreamDataCounters* rtx_stats) const {
-  CriticalSectionScoped lock(statistics_crit_.get());
+  rtc::CritScope lock(&statistics_crit_);
   *rtp_stats = rtp_stats_;
   *rtx_stats = rtx_rtp_stats_;
 }
@@ -1858,12 +1855,12 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
 
 void RTPSender::RegisterRtpStatisticsCallback(
     StreamDataCountersCallback* callback) {
-  CriticalSectionScoped cs(statistics_crit_.get());
+  rtc::CritScope cs(&statistics_crit_);
   rtp_stats_callback_ = callback;
 }
 
 StreamDataCountersCallback* RTPSender::GetRtpStatisticsCallback() const {
-  CriticalSectionScoped cs(statistics_crit_.get());
+  rtc::CritScope cs(&statistics_crit_);
   return rtp_stats_callback_;
 }
 

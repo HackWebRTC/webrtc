@@ -454,7 +454,7 @@ class RTPSender : public RTPSenderInterface {
   RTPPacketHistory packet_history_;
 
   // Statistics
-  rtc::scoped_ptr<CriticalSectionWrapper> statistics_crit_;
+  rtc::CriticalSection statistics_crit_;
   SendDelayMap send_delays_ GUARDED_BY(statistics_crit_);
   FrameCounts frame_counts_ GUARDED_BY(statistics_crit_);
   StreamDataCounters rtp_stats_ GUARDED_BY(statistics_crit_);
@@ -489,7 +489,7 @@ class RTPSender : public RTPSenderInterface {
   // SetTargetBitrateKbps or GetTargetBitrateKbps. Also remember
   // that by the time the function returns there is no guarantee
   // that the target bitrate is still valid.
-  rtc::scoped_ptr<CriticalSectionWrapper> target_bitrate_critsect_;
+  rtc::CriticalSection target_bitrate_critsect_;
   uint32_t target_bitrate_ GUARDED_BY(target_bitrate_critsect_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSender);

@@ -67,8 +67,7 @@ void TMMBRSet::ClearEntry(uint32_t idx) {
 }
 
 TMMBRHelp::TMMBRHelp()
-    : _criticalSection(CriticalSectionWrapper::CreateCriticalSection()),
-      _candidateSet(),
+    : _candidateSet(),
       _boundingSet(),
       _boundingSetToSend(),
       _ptrIntersectionBoundingSet(NULL),
@@ -80,13 +79,12 @@ TMMBRHelp::~TMMBRHelp() {
   delete [] _ptrMaxPRBoundingSet;
   _ptrIntersectionBoundingSet = 0;
   _ptrMaxPRBoundingSet = 0;
-  delete _criticalSection;
 }
 
 TMMBRSet*
 TMMBRHelp::VerifyAndAllocateBoundingSet(uint32_t minimumSize)
 {
-    CriticalSectionScoped lock(_criticalSection);
+    rtc::CritScope lock(&_criticalSection);
 
     if(minimumSize > _boundingSet.capacity())
     {
@@ -110,7 +108,7 @@ TMMBRSet* TMMBRHelp::BoundingSet() {
 int32_t
 TMMBRHelp::SetTMMBRBoundingSetToSend(const TMMBRSet* boundingSetToSend)
 {
-    CriticalSectionScoped lock(_criticalSection);
+    rtc::CritScope lock(&_criticalSection);
 
     if (boundingSetToSend == NULL)
     {
@@ -134,7 +132,7 @@ TMMBRHelp::SetTMMBRBoundingSetToSend(const TMMBRSet* boundingSetToSend)
 int32_t
 TMMBRHelp::VerifyAndAllocateBoundingSetToSend(uint32_t minimumSize)
 {
-    CriticalSectionScoped lock(_criticalSection);
+    rtc::CritScope lock(&_criticalSection);
 
     _boundingSetToSend.VerifyAndAllocateSet(minimumSize);
     return 0;
@@ -143,7 +141,7 @@ TMMBRHelp::VerifyAndAllocateBoundingSetToSend(uint32_t minimumSize)
 TMMBRSet*
 TMMBRHelp::VerifyAndAllocateCandidateSet(uint32_t minimumSize)
 {
-    CriticalSectionScoped lock(_criticalSection);
+    rtc::CritScope lock(&_criticalSection);
 
     _candidateSet.VerifyAndAllocateSet(minimumSize);
     return &_candidateSet;
@@ -164,7 +162,7 @@ TMMBRHelp::BoundingSetToSend()
 int32_t
 TMMBRHelp::FindTMMBRBoundingSet(TMMBRSet*& boundingSet)
 {
-    CriticalSectionScoped lock(_criticalSection);
+    rtc::CritScope lock(&_criticalSection);
 
     // Work on local variable, will be modified
     TMMBRSet    candidateSet;
@@ -207,7 +205,7 @@ TMMBRHelp::FindTMMBRBoundingSet(TMMBRSet*& boundingSet)
 int32_t
 TMMBRHelp::FindTMMBRBoundingSet(int32_t numCandidates, TMMBRSet& candidateSet)
 {
-    CriticalSectionScoped lock(_criticalSection);
+    rtc::CritScope lock(&_criticalSection);
 
     uint32_t numBoundingSet = 0;
     VerifyAndAllocateBoundingSet(candidateSet.capacity());
@@ -412,7 +410,7 @@ TMMBRHelp::FindTMMBRBoundingSet(int32_t numCandidates, TMMBRSet& candidateSet)
 
 bool TMMBRHelp::IsOwner(const uint32_t ssrc,
                         const uint32_t length) const {
-  CriticalSectionScoped lock(_criticalSection);
+  rtc::CritScope lock(&_criticalSection);
 
   if (length == 0) {
     // Empty bounding set.
@@ -428,7 +426,7 @@ bool TMMBRHelp::IsOwner(const uint32_t ssrc,
 }
 
 bool TMMBRHelp::CalcMinBitRate( uint32_t* minBitrateKbit) const {
-  CriticalSectionScoped lock(_criticalSection);
+  rtc::CritScope lock(&_criticalSection);
 
   if (_candidateSet.size() == 0) {
     // Empty bounding set.

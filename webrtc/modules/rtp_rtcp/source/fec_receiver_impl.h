@@ -13,15 +13,13 @@
 
 // This header is included to get the nested declaration of Packet structure.
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
-class CriticalSectionWrapper;
 
 class FecReceiverImpl : public FecReceiver {
  public:
@@ -38,7 +36,7 @@ class FecReceiverImpl : public FecReceiver {
   FecPacketCounter GetPacketCounter() const override;
 
  private:
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::CriticalSection crit_sect_;
   RtpData* recovered_packet_callback_;
   ForwardErrorCorrection* fec_;
   // TODO(holmer): In the current version received_packet_list_ is never more

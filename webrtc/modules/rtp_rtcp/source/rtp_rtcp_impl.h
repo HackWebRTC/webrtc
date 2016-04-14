@@ -16,8 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/gtest_prod_util.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/packet_loss_stats.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
@@ -362,7 +362,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   PacketLossStats receive_loss_stats_;
 
   // The processed RTT from RtcpRttStats.
-  rtc::scoped_ptr<CriticalSectionWrapper> critical_section_rtt_;
+  rtc::CriticalSection critical_section_rtt_;
   int64_t rtt_ms_;
 };
 

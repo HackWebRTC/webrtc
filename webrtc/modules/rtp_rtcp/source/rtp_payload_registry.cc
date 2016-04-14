@@ -16,8 +16,7 @@
 namespace webrtc {
 
 RTPPayloadRegistry::RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy)
-    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      rtp_payload_strategy_(rtp_payload_strategy),
+    : rtp_payload_strategy_(rtp_payload_strategy),
       red_payload_type_(-1),
       ulpfec_payload_type_(-1),
       incoming_payload_type_(-1),
@@ -67,7 +66,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
 
   size_t payload_name_length = strlen(payload_name);
 
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
 
   RtpUtility::PayloadTypeMap::iterator it =
       payload_type_map_.find(payload_type);
@@ -122,7 +121,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
 
 int32_t RTPPayloadRegistry::DeRegisterReceivePayload(
     const int8_t payload_type) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   RtpUtility::PayloadTypeMap::iterator it =
       payload_type_map_.find(payload_type);
   assert(it != payload_type_map_.end());
@@ -176,7 +175,7 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(
   assert(payload_type);
   size_t payload_name_length = strlen(payload_name);
 
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
 
   RtpUtility::PayloadTypeMap::const_iterator it = payload_type_map_.begin();
 
@@ -218,12 +217,12 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(
 }
 
 bool RTPPayloadRegistry::RtxEnabled() const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   return rtx_;
 }
 
 bool RTPPayloadRegistry::IsRtx(const RTPHeader& header) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   return IsRtxInternal(header);
 }
 
@@ -264,7 +263,7 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
                                        original_sequence_number);
   ByteWriter<uint32_t>::WriteBigEndian(restored_packet + 8, original_ssrc);
 
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   if (!rtx_)
     return true;
 
@@ -290,20 +289,20 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
 }
 
 void RTPPayloadRegistry::SetRtxSsrc(uint32_t ssrc) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   ssrc_rtx_ = ssrc;
   rtx_ = true;
 }
 
 bool RTPPayloadRegistry::GetRtxSsrc(uint32_t* ssrc) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   *ssrc = ssrc_rtx_;
   return rtx_;
 }
 
 void RTPPayloadRegistry::SetRtxPayloadType(int payload_type,
                                            int associated_payload_type) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   if (payload_type < 0) {
     LOG(LS_ERROR) << "Invalid RTX payload type: " << payload_type;
     return;
@@ -315,7 +314,7 @@ void RTPPayloadRegistry::SetRtxPayloadType(int payload_type,
 }
 
 bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   return red_payload_type_ == header.payloadType;
 }
 
@@ -325,7 +324,7 @@ bool RTPPayloadRegistry::IsEncapsulated(const RTPHeader& header) const {
 
 bool RTPPayloadRegistry::GetPayloadSpecifics(uint8_t payload_type,
                                              PayloadUnion* payload) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   RtpUtility::PayloadTypeMap::const_iterator it =
       payload_type_map_.find(payload_type);
 
@@ -343,13 +342,13 @@ int RTPPayloadRegistry::GetPayloadTypeFrequency(
   if (!payload) {
     return -1;
   }
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   return rtp_payload_strategy_->GetPayloadTypeFrequency(*payload);
 }
 
 const RtpUtility::Payload* RTPPayloadRegistry::PayloadTypeToPayload(
     uint8_t payload_type) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
 
   RtpUtility::PayloadTypeMap::const_iterator it =
       payload_type_map_.find(payload_type);
@@ -363,13 +362,13 @@ const RtpUtility::Payload* RTPPayloadRegistry::PayloadTypeToPayload(
 }
 
 void RTPPayloadRegistry::SetIncomingPayloadType(const RTPHeader& header) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   if (!IsRtxInternal(header))
     incoming_payload_type_ = header.payloadType;
 }
 
 bool RTPPayloadRegistry::ReportMediaPayloadType(uint8_t media_payload_type) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   if (last_received_media_payload_type_ == media_payload_type) {
     // Media type unchanged.
     return true;

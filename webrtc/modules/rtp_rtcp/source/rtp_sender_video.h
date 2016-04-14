@@ -13,8 +13,8 @@
 
 #include <list>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/onetimeevent.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -28,7 +28,6 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
 
 class RTPSenderVideo {
  public:
@@ -98,7 +97,7 @@ class RTPSenderVideo {
   RTPSenderInterface& _rtpSender;
 
   // Should never be held when calling out of this class.
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  const rtc::CriticalSection crit_;
 
   RtpVideoCodecTypes _videoType;
   int32_t _retransmissionSettings GUARDED_BY(crit_);

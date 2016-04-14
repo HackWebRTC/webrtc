@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_DTMF_QUEUE_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_DTMF_QUEUE_H_
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -27,7 +27,7 @@ class DTMFqueue {
   void ResetDTMF();
 
  private:
-  CriticalSectionWrapper* dtmf_critsect_;
+  rtc::CriticalSection dtmf_critsect_;
   uint8_t next_empty_index_;
   uint8_t dtmf_key_[DTMF_OUTBAND_MAX];
   uint16_t dtmf_length[DTMF_OUTBAND_MAX];

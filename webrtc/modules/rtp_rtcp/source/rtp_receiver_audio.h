@@ -14,7 +14,6 @@
 #include <set>
 
 #include "webrtc/base/onetimeevent.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
@@ -22,8 +21,6 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
-class CriticalSectionWrapper;
 
 // Handles audio RTP packets. This class is thread-safe.
 class RTPReceiverAudio : public RTPReceiverStrategy,

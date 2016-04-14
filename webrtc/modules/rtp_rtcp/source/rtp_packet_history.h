@@ -15,6 +15,7 @@
 
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -23,7 +24,6 @@
 namespace webrtc {
 
 class Clock;
-class CriticalSectionWrapper;
 
 static const size_t kMaxHistoryCapacity = 9600;
 
@@ -71,19 +71,19 @@ class RTPPacketHistory {
                  uint8_t* packet,
                  size_t* packet_length,
                  int64_t* stored_time_ms) const
-      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
-  void Allocate(size_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
-  void Free() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void Allocate(size_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void Free() EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   void VerifyAndAllocatePacketLength(size_t packet_length, uint32_t start_index)
-      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   bool FindSeqNum(uint16_t sequence_number, int32_t* index) const
-      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   int FindBestFittingPacket(size_t size) const
-      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
  private:
   Clock* clock_;
-  rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
+  rtc::CriticalSection critsect_;
   bool store_ GUARDED_BY(critsect_);
   uint32_t prev_index_ GUARDED_BY(critsect_);
 

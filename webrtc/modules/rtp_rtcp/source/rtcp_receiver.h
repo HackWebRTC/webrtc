@@ -15,6 +15,7 @@
 #include <set>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
@@ -267,12 +268,12 @@ protected:
   int64_t _lastReceived;
   ModuleRtpRtcpImpl& _rtpRtcp;
 
-  CriticalSectionWrapper* _criticalSectionFeedbacks;
+  rtc::CriticalSection _criticalSectionFeedbacks;
   RtcpBandwidthObserver* const _cbRtcpBandwidthObserver;
   RtcpIntraFrameObserver* const _cbRtcpIntraFrameObserver;
   TransportFeedbackObserver* const _cbTransportFeedbackObserver;
 
-  CriticalSectionWrapper* _criticalSectionRTCPReceiver;
+  rtc::CriticalSection _criticalSectionRTCPReceiver;
   uint32_t main_ssrc_ GUARDED_BY(_criticalSectionRTCPReceiver);
   uint32_t _remoteSSRC GUARDED_BY(_criticalSectionRTCPReceiver);
   std::set<uint32_t> registered_ssrcs_ GUARDED_BY(_criticalSectionRTCPReceiver);

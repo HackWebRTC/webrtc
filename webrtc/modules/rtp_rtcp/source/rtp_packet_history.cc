@@ -21,7 +21,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -29,7 +28,6 @@ static const int kMinPacketRequestBytes = 50;
 
 RTPPacketHistory::RTPPacketHistory(Clock* clock)
     : clock_(clock),
-      critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       store_(false),
       prev_index_(0) {}
 
@@ -38,7 +36,7 @@ RTPPacketHistory::~RTPPacketHistory() {
 
 void RTPPacketHistory::SetStorePacketsStatus(bool enable,
                                              uint16_t number_to_store) {
-  CriticalSectionScoped cs(critsect_.get());
+  rtc::CritScope cs(&critsect_);
   if (enable) {
     if (store_) {
       LOG(LS_WARNING) << "Purging packet history in order to re-set status.";
@@ -70,7 +68,7 @@ void RTPPacketHistory::Free() {
 }
 
 bool RTPPacketHistory::StorePackets() const {
-  CriticalSectionScoped cs(critsect_.get());
+  rtc::CritScope cs(&critsect_);
   return store_;
 }
 
@@ -78,7 +76,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
                                        size_t packet_length,
                                        int64_t capture_time_ms,
                                        StorageType type) {
-  CriticalSectionScoped cs(critsect_.get());
+  rtc::CritScope cs(&critsect_);
   if (!store_) {
     return 0;
   }
@@ -131,7 +129,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
 }
 
 bool RTPPacketHistory::HasRTPPacket(uint16_t sequence_number) const {
-  CriticalSectionScoped cs(critsect_.get());
+  rtc::CritScope cs(&critsect_);
   if (!store_) {
     return false;
   }
@@ -150,7 +148,7 @@ bool RTPPacketHistory::HasRTPPacket(uint16_t sequence_number) const {
 }
 
 bool RTPPacketHistory::SetSent(uint16_t sequence_number) {
-  CriticalSectionScoped cs(critsect_.get());
+  rtc::CritScope cs(&critsect_);
   if (!store_) {
     return false;
   }
@@ -176,7 +174,7 @@ bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
                                                uint8_t* packet,
                                                size_t* packet_length,
                                                int64_t* stored_time_ms) {
-  CriticalSectionScoped cs(critsect_.get());
+  rtc::CritScope cs(&critsect_);
   RTC_CHECK_GE(*packet_length, static_cast<size_t>(IP_PACKET_SIZE));
   if (!store_)
     return false;
@@ -232,7 +230,7 @@ void RTPPacketHistory::GetPacket(int index,
 bool RTPPacketHistory::GetBestFittingPacket(uint8_t* packet,
                                             size_t* packet_length,
                                             int64_t* stored_time_ms) {
-  CriticalSectionScoped cs(critsect_.get());
+  rtc::CritScope cs(&critsect_);
   if (!store_)
     return false;
   int index = FindBestFittingPacket(*packet_length);
