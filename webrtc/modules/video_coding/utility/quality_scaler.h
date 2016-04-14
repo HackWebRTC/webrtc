@@ -18,7 +18,6 @@ namespace webrtc {
 class QualityScaler {
  public:
   static const int kDefaultLowQpDenominator;
-  static const int kDefaultMinDownscaleDimension;
   struct Resolution {
     int width;
     int height;
@@ -32,7 +31,6 @@ class QualityScaler {
             int width,
             int height,
             int fps);
-  void SetMinResolution(int min_width, int min_height);
   void ReportFramerate(int framerate);
   void ReportQP(int qp);
   void ReportDroppedFrame();
@@ -68,8 +66,6 @@ class QualityScaler {
   int downscale_shift_;
   int framerate_down_;
   bool use_framerate_reduction_;
-  int min_width_;
-  int min_height_;
 };
 
 }  // namespace webrtc

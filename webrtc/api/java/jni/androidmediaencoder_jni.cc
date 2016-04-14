@@ -352,7 +352,6 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     const webrtc::VideoCodec* codec_settings,
     int32_t /* number_of_cores */,
     size_t /* max_payload_size */) {
-  const int kMinDimension = 180;
   if (codec_settings == NULL) {
     ALOGE << "NULL VideoCodec instance";
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -396,10 +395,9 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       RTC_NOTREACHED() << "Unsupported codec without configured QP thresholds.";
       scale_ = false;
     }
-    quality_scaler_.SetMinResolution(kMinDimension, kMinDimension);
     QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
-    init_width = std::max(res.width, kMinDimension);
-    init_height = std::max(res.height, kMinDimension);
+    init_width = res.width;
+    init_height = res.height;
     ALOGD << "Scaled resolution: " << init_width << " x " << init_height;
   }
 

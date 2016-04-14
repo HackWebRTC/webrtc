@@ -32,6 +32,7 @@ static const int kLowInitialBitrateKbps = 300;
 static const int kMeasureSecondsDownscale = 3;
 static const int kMeasureSecondsFastUpscale = 2;
 static const int kMeasureSecondsUpscale = 5;
+static const int kMinDownscaleDimension = 140;
 }  // namespace
 
 class QualityScalerTest : public ::testing::Test {
@@ -200,7 +201,7 @@ void QualityScalerTest::ContinuouslyDownscalesByHalfDimensionsAndBackUp() {
   int min_dimension = initial_min_dimension;
   int current_shift = 0;
   // Drop all frames to force-trigger downscaling.
-  while (min_dimension >= 2 * QualityScaler::kDefaultMinDownscaleDimension) {
+  while (min_dimension >= 2 * kMinDownscaleDimension) {
     EXPECT_TRUE(TriggerScale(kScaleDown)) << "No downscale within "
                                           << kNumSeconds << " seconds.";
     qs_.OnEncodeFrame(input_frame_);
@@ -371,12 +372,12 @@ TEST_F(QualityScalerTest, ChangeSpatialSizeOnly) {
 
 TEST_F(QualityScalerTest, DoesNotDownscaleBelow2xDefaultMinDimensionsWidth) {
   DoesNotDownscaleFrameDimensions(
-      2 * QualityScaler::kDefaultMinDownscaleDimension - 1, 1000);
+      2 * kMinDownscaleDimension - 1, 1000);
 }
 
 TEST_F(QualityScalerTest, DoesNotDownscaleBelow2xDefaultMinDimensionsHeight) {
   DoesNotDownscaleFrameDimensions(
-      1000, 2 * QualityScaler::kDefaultMinDownscaleDimension - 1);
+      1000, 2 * kMinDownscaleDimension - 1);
 }
 
 TEST_F(QualityScalerTest, DownscaleToVgaOnLowInitialBitrate) {
@@ -480,36 +481,20 @@ void QualityScalerTest::DownscaleEndsAt(int input_width,
   }
 }
 
-TEST_F(QualityScalerTest, DefaultDownscalesTo160x90) {
-  DownscaleEndsAt(320, 180, 160, 90);
+TEST_F(QualityScalerTest, DownscalesTo320x180) {
+  DownscaleEndsAt(640, 360, 320, 180);
 }
 
-TEST_F(QualityScalerTest, DefaultDownscalesTo90x160) {
-  DownscaleEndsAt(180, 320, 90, 160);
+TEST_F(QualityScalerTest, DownscalesTo180x320) {
+  DownscaleEndsAt(360, 640, 180, 320);
 }
 
-TEST_F(QualityScalerTest, DefaultDownscalesFrom1280x720To160x90) {
-  DownscaleEndsAt(1280, 720, 160, 90);
+TEST_F(QualityScalerTest, DownscalesFrom1280x720To320x180) {
+  DownscaleEndsAt(1280, 720, 320, 180);
 }
 
-TEST_F(QualityScalerTest, DefaultDoesntDownscaleBelow160x90) {
-  DownscaleEndsAt(320 - 1, 180 - 1, 320 - 1, 180 - 1);
-}
-
-TEST_F(QualityScalerTest, DefaultDoesntDownscaleBelow90x160) {
-  DownscaleEndsAt(180 - 1, 320 - 1, 180 - 1, 320 - 1);
-}
-
-TEST_F(QualityScalerTest, RespectsMinResolutionWidth) {
-  // Should end at 200x100, as width can't go lower.
-  qs_.SetMinResolution(200, 10);
-  DownscaleEndsAt(1600, 800, 200, 100);
-}
-
-TEST_F(QualityScalerTest, RespectsMinResolutionHeight) {
-  // Should end at 100x200, as height can't go lower.
-  qs_.SetMinResolution(10, 200);
-  DownscaleEndsAt(800, 1600, 100, 200);
+TEST_F(QualityScalerTest, DoesntDownscaleInitialQvga) {
+  DownscaleEndsAt(320, 180, 320, 180);
 }
 
 }  // namespace webrtc

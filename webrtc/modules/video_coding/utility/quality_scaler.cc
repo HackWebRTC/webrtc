@@ -11,6 +11,7 @@
 
 namespace webrtc {
 
+namespace {
 static const int kMinFps = 5;
 static const int kMeasureSecondsDownscale = 3;
 // Threshold constant used until first downscale (to permit fast rampup).
@@ -19,17 +20,15 @@ static const int kMeasureSecondsUpscale = 5;
 static const int kFramedropPercentThreshold = 60;
 static const int kHdResolutionThreshold = 700 * 500;
 static const int kHdBitrateThresholdKbps = 500;
+// Min width/height to downscale to, set to not go below QVGA, but with some
+// margin to permit "almost-QVGA" resolutions, such as QCIF.
+static const int kMinDownscaleDimension = 140;
+}  // namespace
 
 const int QualityScaler::kDefaultLowQpDenominator = 3;
-// Note that this is the same for width and height to permit 120x90 in both
-// portrait and landscape mode.
-const int QualityScaler::kDefaultMinDownscaleDimension = 90;
 
 QualityScaler::QualityScaler()
-    : low_qp_threshold_(-1),
-      framerate_down_(false),
-      min_width_(kDefaultMinDownscaleDimension),
-      min_height_(kDefaultMinDownscaleDimension) {}
+    : low_qp_threshold_(-1), framerate_down_(false) {}
 
 void QualityScaler::Init(int low_qp_threshold,
                          int high_qp_threshold,
@@ -63,11 +62,6 @@ void QualityScaler::Init(int low_qp_threshold,
   UpdateTargetResolution(init_width, init_height);
   ReportFramerate(fps);
   target_framerate_ = -1;
-}
-
-void QualityScaler::SetMinResolution(int min_width, int min_height) {
-  min_width_ = min_width;
-  min_height_ = min_height;
 }
 
 // Report framerate(fps) to estimate # of samples.
@@ -158,8 +152,8 @@ void QualityScaler::UpdateTargetResolution(int frame_width, int frame_height) {
   res_.width = frame_width;
   res_.height = frame_height;
   for (int shift = downscale_shift_;
-       shift > 0 && (res_.width / 2 >= min_width_) &&
-       (res_.height / 2 >= min_height_);
+       shift > 0 && (res_.width / 2 >= kMinDownscaleDimension) &&
+       (res_.height / 2 >= kMinDownscaleDimension);
        --shift) {
     res_.width /= 2;
     res_.height /= 2;
