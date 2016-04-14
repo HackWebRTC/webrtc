@@ -43,7 +43,7 @@ rtc::StreamResult ReliableQuicStream::Write(const char* data,
                                             size_t len,
                                             bool fin) {
   // Writes the data, or buffers it.
-  WriteOrBufferData(std::string(data, len), fin, nullptr);
+  WriteOrBufferData(base::StringPiece(data, len), fin, nullptr);
   if (HasBufferedData()) {
     return rtc::StreamResult(rtc::SR_BLOCK);
   }
