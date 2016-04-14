@@ -119,7 +119,7 @@ int32_t WebRtcVideoFrame::GetVPitch() const {
 }
 
 bool WebRtcVideoFrame::IsExclusive() const {
-  return video_frame_buffer_->IsMutable();
+  return video_frame_buffer_->HasOneRef();
 }
 
 void* WebRtcVideoFrame::GetNativeHandle() const {

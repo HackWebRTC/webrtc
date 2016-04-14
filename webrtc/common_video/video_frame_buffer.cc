@@ -89,12 +89,8 @@ const uint8_t* I420Buffer::data(PlaneType type) const {
   }
 }
 
-bool I420Buffer::IsMutable() {
-  return HasOneRef();
-}
-
 uint8_t* I420Buffer::MutableData(PlaneType type) {
-  RTC_DCHECK(IsMutable());
+  RTC_DCHECK(HasOneRef());
   return const_cast<uint8_t*>(
       static_cast<const VideoFrameBuffer*>(this)->data(type));
 }
@@ -148,10 +144,6 @@ NativeHandleBuffer::NativeHandleBuffer(void* native_handle,
   RTC_DCHECK_GT(height, 0);
 }
 
-bool NativeHandleBuffer::IsMutable() {
-  return false;
-}
-
 int NativeHandleBuffer::width() const {
   return width_;
 }
@@ -196,11 +188,6 @@ WrappedI420Buffer::WrappedI420Buffer(int width,
 
 WrappedI420Buffer::~WrappedI420Buffer() {
   no_longer_used_cb_();
-}
-
-// Data owned by creator; never mutable.
-bool WrappedI420Buffer::IsMutable() {
-  return false;
 }
 
 int WrappedI420Buffer::width() const {

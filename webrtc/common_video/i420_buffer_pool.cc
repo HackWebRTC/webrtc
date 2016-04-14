@@ -29,11 +29,10 @@ class PooledI420Buffer : public webrtc::VideoFrameBuffer {
   const uint8_t* data(webrtc::PlaneType type) const override {
     return buffer_->data(type);
   }
-  bool IsMutable() { return HasOneRef(); }
   uint8_t* MutableData(webrtc::PlaneType type) override {
     // Make the HasOneRef() check here instead of in |buffer_|, because the pool
     // also has a reference to |buffer_|.
-    RTC_DCHECK(IsMutable());
+    RTC_DCHECK(HasOneRef());
     return const_cast<uint8_t*>(buffer_->data(type));
   }
   int stride(webrtc::PlaneType type) const override {
@@ -81,7 +80,7 @@ rtc::scoped_refptr<VideoFrameBuffer> I420BufferPool::CreateBuffer(int width,
     // CreateBuffer that has not been released yet. If the ref count is 1
     // (HasOneRef), then the list we are looping over holds the only reference
     // and it's safe to reuse.
-    if (buffer->IsMutable())
+    if (buffer->HasOneRef())
       return new rtc::RefCountedObject<PooledI420Buffer>(buffer);
   }
   // Allocate new buffer.
