@@ -55,7 +55,7 @@ TEST(TestI420BufferPool, ExclusiveOwner) {
   // Check that created buffers are exclusive so that they can be written to.
   I420BufferPool pool;
   rtc::scoped_refptr<VideoFrameBuffer> buffer = pool.CreateBuffer(16, 16);
-  EXPECT_TRUE(buffer->HasOneRef());
+  EXPECT_TRUE(buffer->IsMutable());
 }
 
 TEST(TestI420BufferPool, FrameValidAfterPoolDestruction) {
@@ -64,7 +64,7 @@ TEST(TestI420BufferPool, FrameValidAfterPoolDestruction) {
     I420BufferPool pool;
     buffer = pool.CreateBuffer(16, 16);
   }
-  EXPECT_TRUE(buffer->HasOneRef());
+  EXPECT_TRUE(buffer->IsMutable());
   EXPECT_EQ(16, buffer->width());
   EXPECT_EQ(16, buffer->height());
   // Try to trigger use-after-free errors by writing to y-plane.
