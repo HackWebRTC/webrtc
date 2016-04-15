@@ -29,7 +29,6 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
-#include "webrtc/media/base/audioframe.h"
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"

@@ -30,7 +30,6 @@
         ],
       },
       'sources': [
-        'base/audioframe.h',
         'base/audiosource.h',
         'base/codec.cc',
         'base/codec.h',
