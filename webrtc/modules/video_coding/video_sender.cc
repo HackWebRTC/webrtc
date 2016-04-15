@@ -315,7 +315,8 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
     return VCM_PARAMETER_ERROR;
   }
   VideoFrame converted_frame = videoFrame;
-  if (converted_frame.native_handle() && !_encoder->SupportsNativeHandle()) {
+  if (converted_frame.video_frame_buffer()->native_handle() &&
+      !_encoder->SupportsNativeHandle()) {
     // This module only supports software encoding.
     // TODO(pbos): Offload conversion from the encoder thread.
     converted_frame = converted_frame.ConvertNativeToI420Frame();

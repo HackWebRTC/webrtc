@@ -246,7 +246,8 @@ TEST(TestVideoFrame, TextureInitialValues) {
   EXPECT_EQ(480, frame.height());
   EXPECT_EQ(100u, frame.timestamp());
   EXPECT_EQ(10, frame.render_time_ms());
-  EXPECT_EQ(handle, frame.native_handle());
+  ASSERT_TRUE(frame.video_frame_buffer() != nullptr);
+  EXPECT_EQ(handle, frame.video_frame_buffer()->native_handle());
 
   frame.set_timestamp(200);
   EXPECT_EQ(200u, frame.timestamp());

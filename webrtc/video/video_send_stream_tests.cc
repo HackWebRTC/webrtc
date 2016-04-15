@@ -32,6 +32,7 @@
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/fake_texture_frame.h"
+#include "webrtc/test/frame_utils.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/send_statistics_proxy.h"
@@ -42,11 +43,6 @@ namespace webrtc {
 
 enum VideoFormat { kGeneric, kVP8, };
 
-void ExpectEqualFrames(const VideoFrame& frame1, const VideoFrame& frame2);
-void ExpectEqualTextureFrames(const VideoFrame& frame1,
-                              const VideoFrame& frame2);
-void ExpectEqualBufferFrames(const VideoFrame& frame1,
-                             const VideoFrame& frame2);
 void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
                              const std::vector<VideoFrame>& frames2);
 VideoFrame CreateVideoFrame(int width, int height, uint8_t data);
@@ -1244,49 +1240,13 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   DestroyStreams();
 }
 
-void ExpectEqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
-  if (frame1.native_handle() || frame2.native_handle())
-    ExpectEqualTextureFrames(frame1, frame2);
-  else
-    ExpectEqualBufferFrames(frame1, frame2);
-}
-
-void ExpectEqualTextureFrames(const VideoFrame& frame1,
-                              const VideoFrame& frame2) {
-  EXPECT_EQ(frame1.native_handle(), frame2.native_handle());
-  EXPECT_EQ(frame1.width(), frame2.width());
-  EXPECT_EQ(frame1.height(), frame2.height());
-}
-
-void ExpectEqualBufferFrames(const VideoFrame& frame1,
-                             const VideoFrame& frame2) {
-  EXPECT_EQ(frame1.width(), frame2.width());
-  EXPECT_EQ(frame1.height(), frame2.height());
-  EXPECT_EQ(frame1.stride(kYPlane), frame2.stride(kYPlane));
-  EXPECT_EQ(frame1.stride(kUPlane), frame2.stride(kUPlane));
-  EXPECT_EQ(frame1.stride(kVPlane), frame2.stride(kVPlane));
-  ASSERT_EQ(frame1.allocated_size(kYPlane), frame2.allocated_size(kYPlane));
-  EXPECT_EQ(0,
-            memcmp(frame1.buffer(kYPlane),
-                   frame2.buffer(kYPlane),
-                   frame1.allocated_size(kYPlane)));
-  ASSERT_EQ(frame1.allocated_size(kUPlane), frame2.allocated_size(kUPlane));
-  EXPECT_EQ(0,
-            memcmp(frame1.buffer(kUPlane),
-                   frame2.buffer(kUPlane),
-                   frame1.allocated_size(kUPlane)));
-  ASSERT_EQ(frame1.allocated_size(kVPlane), frame2.allocated_size(kVPlane));
-  EXPECT_EQ(0,
-            memcmp(frame1.buffer(kVPlane),
-                   frame2.buffer(kVPlane),
-                   frame1.allocated_size(kVPlane)));
-}
-
 void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
                              const std::vector<VideoFrame>& frames2) {
   EXPECT_EQ(frames1.size(), frames2.size());
   for (size_t i = 0; i < std::min(frames1.size(), frames2.size()); ++i)
-    ExpectEqualFrames(frames1[i], frames2[i]);
+    // Compare frame buffers, since we don't care about differing timestamps.
+    EXPECT_TRUE(test::FrameBufsEqual(frames1[i].video_frame_buffer(),
+                                     frames2[i].video_frame_buffer()));
 }
 
 VideoFrame CreateVideoFrame(int width, int height, uint8_t data) {

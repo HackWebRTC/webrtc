@@ -125,12 +125,8 @@ class VideoFrame {
   // Return true if underlying plane buffers are of zero size, false if not.
   bool IsZeroSize() const;
 
-  // Return the handle of the underlying video frame. This is used when the
-  // frame is backed by a texture. The object should be destroyed when it is no
-  // longer in use, so the underlying resource can be freed.
-  void* native_handle() const;
-
-  // Return the underlying buffer.
+  // Return the underlying buffer. Never nullptr for a properly
+  // initialized VideoFrame.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
 
   // Set the underlying buffer.

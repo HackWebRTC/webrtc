@@ -113,22 +113,12 @@ void VideoFrame::CreateFrame(const uint8_t* buffer,
 }
 
 void VideoFrame::CopyFrame(const VideoFrame& videoFrame) {
-  if (videoFrame.IsZeroSize()) {
-    video_frame_buffer_ = nullptr;
-  } else if (videoFrame.native_handle()) {
-    video_frame_buffer_ = videoFrame.video_frame_buffer();
-  } else {
-    CreateFrame(videoFrame.buffer(kYPlane), videoFrame.buffer(kUPlane),
-                videoFrame.buffer(kVPlane), videoFrame.width(),
-                videoFrame.height(), videoFrame.stride(kYPlane),
-                videoFrame.stride(kUPlane), videoFrame.stride(kVPlane),
-                kVideoRotation_0);
-  }
+  ShallowCopy(videoFrame);
 
-  timestamp_ = videoFrame.timestamp_;
-  ntp_time_ms_ = videoFrame.ntp_time_ms_;
-  render_time_ms_ = videoFrame.render_time_ms_;
-  rotation_ = videoFrame.rotation_;
+  // If backed by a plain memory buffer, create a new, non-shared, copy.
+  if (video_frame_buffer_ && !video_frame_buffer_->native_handle()) {
+    video_frame_buffer_ = I420Buffer::Copy(video_frame_buffer_);
+  }
 }
 
 void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
@@ -177,10 +167,6 @@ bool VideoFrame::IsZeroSize() const {
   return !video_frame_buffer_;
 }
 
-void* VideoFrame::native_handle() const {
-  return video_frame_buffer_ ? video_frame_buffer_->native_handle() : nullptr;
-}
-
 rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
@@ -191,7 +177,7 @@ void VideoFrame::set_video_frame_buffer(
 }
 
 VideoFrame VideoFrame::ConvertNativeToI420Frame() const {
-  RTC_DCHECK(native_handle());
+  RTC_DCHECK(video_frame_buffer_->native_handle());
   VideoFrame frame;
   frame.ShallowCopy(*this);
   frame.set_video_frame_buffer(video_frame_buffer_->NativeToI420Buffer());

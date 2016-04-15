@@ -666,7 +666,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
         quality_scaler_.GetScaledResolution();
     if (scaled_resolution.width != frame.width() ||
         scaled_resolution.height != frame.height()) {
-      if (frame.native_handle() != nullptr) {
+      if (frame.video_frame_buffer()->native_handle() != nullptr) {
         rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled_buffer(
             static_cast<AndroidTextureBuffer*>(
                 frame.video_frame_buffer().get())->ScaleAndRotate(
@@ -691,7 +691,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   const bool key_frame =
       frame_types->front() != webrtc::kVideoFrameDelta || send_key_frame;
   bool encode_status = true;
-  if (!input_frame.native_handle()) {
+  if (!input_frame.video_frame_buffer()->native_handle()) {
     int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_encoder_,
         j_dequeue_input_buffer_method_);
     CHECK_EXCEPTION(jni);
@@ -741,7 +741,8 @@ bool MediaCodecVideoEncoder::MaybeReconfigureEncoderOnCodecThread(
     const webrtc::VideoFrame& frame) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
 
-  const bool is_texture_frame = frame.native_handle() != nullptr;
+  const bool is_texture_frame =
+      frame.video_frame_buffer()->native_handle() != nullptr;
   const bool reconfigure_due_to_format = is_texture_frame != use_surface_;
   const bool reconfigure_due_to_size =
       frame.width() != width_ || frame.height() != height_;
@@ -802,8 +803,8 @@ bool MediaCodecVideoEncoder::EncodeTextureOnCodecThread(JNIEnv* jni,
     bool key_frame, const webrtc::VideoFrame& frame) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   RTC_CHECK(use_surface_);
-  NativeHandleImpl* handle =
-      static_cast<NativeHandleImpl*>(frame.native_handle());
+  NativeHandleImpl* handle = static_cast<NativeHandleImpl*>(
+      frame.video_frame_buffer()->native_handle());
   jfloatArray sampling_matrix = jni->NewFloatArray(16);
   jni->SetFloatArrayRegion(sampling_matrix, 0, 16, handle->sampling_matrix);
 
@@ -1256,4 +1257,3 @@ void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(
 }
 
 }  // namespace webrtc_jni
-

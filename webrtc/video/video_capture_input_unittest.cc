@@ -16,6 +16,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/test/fake_texture_frame.h"
+#include "webrtc/test/frame_utils.h"
 #include "webrtc/video/send_statistics_proxy.h"
 
 // If an output frame does not arrive in 500ms, the test will fail.
@@ -23,9 +24,6 @@
 
 namespace webrtc {
 
-bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2);
-bool EqualTextureFrames(const VideoFrame& frame1, const VideoFrame& frame2);
-bool EqualBufferFrames(const VideoFrame& frame1, const VideoFrame& frame2);
 bool EqualFramesVector(const std::vector<std::unique_ptr<VideoFrame>>& frames1,
                        const std::vector<std::unique_ptr<VideoFrame>>& frames2);
 std::unique_ptr<VideoFrame> CreateVideoFrame(uint8_t length);
@@ -54,7 +52,8 @@ class VideoCaptureInputTest : public ::testing::Test {
     EXPECT_TRUE(capture_event_.Wait(FRAME_TIMEOUT_MS));
     VideoFrame frame;
     EXPECT_TRUE(input_->GetVideoFrame(&frame));
-    if (!frame.native_handle()) {
+    ASSERT_TRUE(frame.video_frame_buffer());
+    if (!frame.video_frame_buffer()->native_handle()) {
       output_frame_ybuffers_.push_back(
           static_cast<const VideoFrame*>(&frame)->buffer(kYPlane));
     }
@@ -168,7 +167,9 @@ TEST_F(VideoCaptureInputTest, TestTextureFrames) {
                                             i + 1, webrtc::kVideoRotation_0))));
     AddInputFrame(input_frames_[i].get());
     WaitOutputFrame();
-    EXPECT_EQ(dummy_handle, output_frames_[i]->native_handle());
+    ASSERT_TRUE(output_frames_[i]->video_frame_buffer());
+    EXPECT_EQ(dummy_handle,
+              output_frames_[i]->video_frame_buffer()->native_handle());
   }
 
   EXPECT_TRUE(EqualFramesVector(input_frames_, output_frames_));
@@ -198,7 +199,9 @@ TEST_F(VideoCaptureInputTest, TestI420FrameAfterTextureFrame) {
           dummy_handle, 1, 1, 1, 1, webrtc::kVideoRotation_0))));
   AddInputFrame(input_frames_[0].get());
   WaitOutputFrame();
-  EXPECT_EQ(dummy_handle, output_frames_[0]->native_handle());
+  ASSERT_TRUE(output_frames_[0]->video_frame_buffer());
+  EXPECT_EQ(dummy_handle,
+            output_frames_[0]->video_frame_buffer()->native_handle());
 
   input_frames_.push_back(CreateVideoFrame(2));
   AddInputFrame(input_frames_[1].get());
@@ -222,43 +225,17 @@ TEST_F(VideoCaptureInputTest, TestTextureFrameAfterI420Frame) {
   EXPECT_TRUE(EqualFramesVector(input_frames_, output_frames_));
 }
 
-bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
-  if (frame1.native_handle() || frame2.native_handle())
-    return EqualTextureFrames(frame1, frame2);
-  return EqualBufferFrames(frame1, frame2);
-}
-
-bool EqualTextureFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
-  return ((frame1.native_handle() == frame2.native_handle()) &&
-          (frame1.width() == frame2.width()) &&
-          (frame1.height() == frame2.height()));
-}
-
-bool EqualBufferFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
-  return ((frame1.width() == frame2.width()) &&
-          (frame1.height() == frame2.height()) &&
-          (frame1.stride(kYPlane) == frame2.stride(kYPlane)) &&
-          (frame1.stride(kUPlane) == frame2.stride(kUPlane)) &&
-          (frame1.stride(kVPlane) == frame2.stride(kVPlane)) &&
-          (frame1.allocated_size(kYPlane) == frame2.allocated_size(kYPlane)) &&
-          (frame1.allocated_size(kUPlane) == frame2.allocated_size(kUPlane)) &&
-          (frame1.allocated_size(kVPlane) == frame2.allocated_size(kVPlane)) &&
-          (memcmp(frame1.buffer(kYPlane), frame2.buffer(kYPlane),
-                  frame1.allocated_size(kYPlane)) == 0) &&
-          (memcmp(frame1.buffer(kUPlane), frame2.buffer(kUPlane),
-                  frame1.allocated_size(kUPlane)) == 0) &&
-          (memcmp(frame1.buffer(kVPlane), frame2.buffer(kVPlane),
-                  frame1.allocated_size(kVPlane)) == 0));
-}
-
 bool EqualFramesVector(
     const std::vector<std::unique_ptr<VideoFrame>>& frames1,
     const std::vector<std::unique_ptr<VideoFrame>>& frames2) {
   if (frames1.size() != frames2.size())
     return false;
   for (size_t i = 0; i < frames1.size(); ++i) {
-    if (!EqualFrames(*frames1[i], *frames2[i]))
+    // Compare frame buffers, since we don't care about differing timestamps.
+    if (!test::FrameBufsEqual(frames1[i]->video_frame_buffer(),
+                              frames2[i]->video_frame_buffer())) {
       return false;
+    }
   }
   return true;
 }

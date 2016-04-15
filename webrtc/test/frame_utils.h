@@ -20,9 +20,18 @@ namespace test {
 
 bool EqualPlane(const uint8_t* data1,
                 const uint8_t* data2,
-                int stride,
+                int stride1,
+                int stride2,
                 int width,
                 int height);
+
+static inline bool EqualPlane(const uint8_t* data1,
+                              const uint8_t* data2,
+                              int stride,
+                              int width,
+                              int height) {
+  return EqualPlane(data1, data2, stride, stride, width, height);
+}
 
 bool FramesEqual(const webrtc::VideoFrame& f1, const webrtc::VideoFrame& f2);
 

@@ -334,7 +334,7 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
                           "Encode");
   const VideoFrame* frame_to_send = &video_frame;
   // TODO(wuchengli): support texture frames.
-  if (!video_frame.native_handle()) {
+  if (!video_frame.video_frame_buffer()->native_handle()) {
     // Pass frame via preprocessor.
     frame_to_send = vp_->PreprocessFrame(video_frame);
     if (!frame_to_send) {

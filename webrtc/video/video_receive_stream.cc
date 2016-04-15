@@ -376,7 +376,7 @@ void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {
   stats_proxy_.OnDecodedFrame();
 
   // Post processing is not supported if the frame is backed by a texture.
-  if (!video_frame->native_handle()) {
+  if (!video_frame->video_frame_buffer()->native_handle()) {
     if (config_.pre_render_callback)
       config_.pre_render_callback->FrameCallback(video_frame);
   }
