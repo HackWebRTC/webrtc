@@ -16,7 +16,7 @@
 
 namespace webrtc {
 
-BEGIN_PROXY_MAP(MediaStream)
+BEGIN_SIGNALING_PROXY_MAP(MediaStream)
   PROXY_CONSTMETHOD0(std::string, label)
   PROXY_METHOD0(AudioTrackVector, GetAudioTracks)
   PROXY_METHOD0(VideoTrackVector, GetVideoTracks)
@@ -30,7 +30,7 @@ BEGIN_PROXY_MAP(MediaStream)
   PROXY_METHOD1(bool, RemoveTrack, VideoTrackInterface*)
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
   PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
-END_PROXY()
+END_SIGNALING_PROXY()
 
 }  // namespace webrtc
 

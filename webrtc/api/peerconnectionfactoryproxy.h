@@ -20,7 +20,7 @@
 
 namespace webrtc {
 
-BEGIN_PROXY_MAP(PeerConnectionFactory)
+BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
   PROXY_METHOD1(void, SetOptions, const Options&)
   // Can't use PROXY_METHOD5 because scoped_ptr must be moved.
   // TODO(tommi,hbos): Use of templates to support scoped_ptr?
@@ -93,7 +93,7 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
     return c_->CreatePeerConnection(a1, std::move(ptr_a3), std::move(ptr_a4),
                                     a5);
   }
-  END_PROXY()
+  END_SIGNALING_PROXY()
 
 }  // namespace webrtc
 

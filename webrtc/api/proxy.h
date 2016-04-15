@@ -18,7 +18,7 @@
 //  public:
 //   std::string FooA() = 0;
 //   std::string FooB(bool arg1) const = 0;
-//   std::string FooC(bool arg1)= 0;
+//   std::string FooC(bool arg1) = 0;
 //  };
 //
 // Note that return types can not be a const reference.
@@ -30,10 +30,19 @@
 // BEGIN_PROXY_MAP(Test)
 //   PROXY_METHOD0(std::string, FooA)
 //   PROXY_CONSTMETHOD1(std::string, FooB, arg1)
-//   PROXY_METHOD1(std::string, FooC, arg1)
+//   PROXY_WORKER_METHOD1(std::string, FooC, arg1)
 // END_PROXY()
 //
-// The proxy can be created using TestProxy::Create(Thread*, TestInterface*).
+// where the first two methods are invoked on the signaling thread,
+// and the third is invoked on the worker thread.
+//
+// The proxy can be created using
+//
+//   TestProxy::Create(Thread* signaling_thread, Thread* worker_thread,
+//                     TestInterface*).
+//
+// The variant defined with BEGIN_SIGNALING_PROXY_MAP is unaware of
+// the worker thread, and invokes all methods on the signaling thread.
 
 #ifndef WEBRTC_API_PROXY_H_
 #define WEBRTC_API_PROXY_H_
@@ -295,26 +304,25 @@ class MethodCall5 : public rtc::Message,
   T5 a5_;
 };
 
-// TODO(nisse): Rename this to {BEGIN|END}_SIGNALLING_PROXY_MAP, and
-// the below to {BEGIN|END}_PROXY_MAP. Also rename the class to
-// c##SignallingProxy.
-#define BEGIN_PROXY_MAP(c)                                                \
+#define BEGIN_SIGNALING_PROXY_MAP(c)                                     \
   class c##Proxy : public c##Interface {                                  \
    protected:                                                             \
     typedef c##Interface C;                                               \
     c##Proxy(rtc::Thread* signaling_thread, C* c)                         \
       : signaling_thread_(signaling_thread), c_(c) {}                     \
     ~c##Proxy() {                                                         \
-      MethodCall0<c##Proxy, void> call(this, &c##Proxy::Release_s);       \
+      MethodCall0<c##Proxy, void> call(                                   \
+          this, &c##Proxy::Release_s);                                    \
       call.Marshal(signaling_thread_);                                    \
     }                                                                     \
                                                                           \
    public:                                                                \
     static rtc::scoped_refptr<C> Create(rtc::Thread* signaling_thread, C* c) { \
-      return new rtc::RefCountedObject<c##Proxy>(signaling_thread, c);    \
+      return new rtc::RefCountedObject<c##Proxy>(                         \
+          signaling_thread, c);                                           \
     }
 
-#define BEGIN_WORKER_PROXY_MAP(c)                                       \
+#define BEGIN_PROXY_MAP(c)                                              \
   class c##Proxy : public c##Interface {                                \
    protected:                                                           \
     typedef c##Interface C;                                             \
@@ -397,16 +405,16 @@ class MethodCall5 : public rtc::Message,
     return call.Marshal(worker_thread_);                          \
   }
 
-#define END_PROXY() \
+#define END_SIGNALING_PROXY() \
    private:\
     void Release_s() {\
       c_ = NULL;\
     }\
     mutable rtc::Thread* signaling_thread_;\
     rtc::scoped_refptr<C> c_;\
-  };\
+  };
 
-#define END_WORKER_PROXY()                           \
+#define END_PROXY()                                  \
    private:                                          \
     void Release_s() {                               \
       c_ = NULL;                                     \

@@ -38,11 +38,11 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
 };
 
 // Define proxy for RtpReceiverInterface.
-BEGIN_PROXY_MAP(RtpReceiver)
+BEGIN_SIGNALING_PROXY_MAP(RtpReceiver)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
 PROXY_CONSTMETHOD0(std::string, id)
 PROXY_METHOD0(void, Stop)
-END_PROXY()
+END_SIGNALING_PROXY()
 
 }  // namespace webrtc
 

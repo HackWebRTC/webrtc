@@ -19,7 +19,7 @@
 
 namespace webrtc {
 
-BEGIN_PROXY_MAP(AudioTrack)
+BEGIN_SIGNALING_PROXY_MAP(AudioTrack)
   PROXY_CONSTMETHOD0(std::string, kind)
   PROXY_CONSTMETHOD0(std::string, id)
   PROXY_CONSTMETHOD0(TrackState, state)
@@ -33,9 +33,9 @@ BEGIN_PROXY_MAP(AudioTrack)
   PROXY_METHOD1(bool, set_enabled, bool)
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
   PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
-END_PROXY()
+END_SIGNALING_PROXY()
 
-BEGIN_WORKER_PROXY_MAP(VideoTrack)
+BEGIN_PROXY_MAP(VideoTrack)
   PROXY_CONSTMETHOD0(std::string, kind)
   PROXY_CONSTMETHOD0(std::string, id)
   PROXY_CONSTMETHOD0(TrackState, state)
@@ -52,7 +52,7 @@ BEGIN_WORKER_PROXY_MAP(VideoTrack)
 
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
   PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
-END_WORKER_PROXY()
+END_PROXY()
 
 }  // namespace webrtc
 
