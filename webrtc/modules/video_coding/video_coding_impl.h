@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/frame_callback.h"
 #include "webrtc/base/onetimeevent.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
@@ -29,7 +30,6 @@
 #include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/modules/video_coding/utility/qp_parser.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -103,12 +103,12 @@ class VideoSender {
 
   Clock* const clock_;
 
-  std::unique_ptr<CriticalSectionWrapper> process_crit_sect_;
+  rtc::CriticalSection process_crit_;
   rtc::CriticalSection encoder_crit_;
   VCMGenericEncoder* _encoder;
   VCMEncodedFrameCallback _encodedFrameCallback GUARDED_BY(encoder_crit_);
   media_optimization::MediaOptimization _mediaOpt;
-  VCMSendStatisticsCallback* _sendStatsCallback GUARDED_BY(process_crit_sect_);
+  VCMSendStatisticsCallback* _sendStatsCallback GUARDED_BY(process_crit_);
   VCMCodecDataBase _codecDataBase GUARDED_BY(encoder_crit_);
   bool frame_dropper_enabled_ GUARDED_BY(encoder_crit_);
   VCMProcessTimer _sendStatsTimer;
@@ -132,6 +132,7 @@ class VideoReceiver {
 
   VideoReceiver(Clock* clock,
                 EventFactory* event_factory,
+                EncodedImageCallback* pre_decode_image_callback,
                 NackSender* nack_sender = nullptr,
                 KeyFrameRequestSender* keyframe_request_sender = nullptr);
   ~VideoReceiver();
@@ -179,42 +180,36 @@ class VideoReceiver {
   int64_t TimeUntilNextProcess();
   void Process();
 
-  void RegisterPreDecodeImageCallback(EncodedImageCallback* observer);
   void TriggerDecoderShutdown();
 
  protected:
   int32_t Decode(const webrtc::VCMEncodedFrame& frame)
-      EXCLUSIVE_LOCKS_REQUIRED(_receiveCritSect);
+      EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
   int32_t RequestKeyFrame();
   int32_t RequestSliceLossIndication(const uint64_t pictureID) const;
 
  private:
   Clock* const clock_;
-  std::unique_ptr<CriticalSectionWrapper> process_crit_sect_;
-  CriticalSectionWrapper* _receiveCritSect;
+  rtc::CriticalSection process_crit_;
+  rtc::CriticalSection receive_crit_;
   VCMTiming _timing;
   VCMReceiver _receiver;
   VCMDecodedFrameCallback _decodedFrameCallback;
-  VCMFrameTypeCallback* _frameTypeCallback GUARDED_BY(process_crit_sect_);
-  VCMReceiveStatisticsCallback* _receiveStatsCallback
-      GUARDED_BY(process_crit_sect_);
-  VCMDecoderTimingCallback* _decoderTimingCallback
-      GUARDED_BY(process_crit_sect_);
-  VCMPacketRequestCallback* _packetRequestCallback
-      GUARDED_BY(process_crit_sect_);
+  VCMFrameTypeCallback* _frameTypeCallback GUARDED_BY(process_crit_);
+  VCMReceiveStatisticsCallback* _receiveStatsCallback GUARDED_BY(process_crit_);
+  VCMDecoderTimingCallback* _decoderTimingCallback GUARDED_BY(process_crit_);
+  VCMPacketRequestCallback* _packetRequestCallback GUARDED_BY(process_crit_);
   VCMRenderBufferSizeCallback* render_buffer_callback_
-      GUARDED_BY(process_crit_sect_);
+      GUARDED_BY(process_crit_);
   VCMGenericDecoder* _decoder;
-#ifdef DEBUG_DECODER_BIT_STREAM
-  FILE* _bitStreamBeforeDecoder;
-#endif
-  VCMFrameBuffer _frameFromFile;
-  bool _scheduleKeyRequest GUARDED_BY(process_crit_sect_);
-  bool drop_frames_until_keyframe_ GUARDED_BY(process_crit_sect_);
-  size_t max_nack_list_size_ GUARDED_BY(process_crit_sect_);
 
-  VCMCodecDataBase _codecDataBase GUARDED_BY(_receiveCritSect);
-  EncodedImageCallback* pre_decode_image_callback_ GUARDED_BY(_receiveCritSect);
+  VCMFrameBuffer _frameFromFile;
+  bool _scheduleKeyRequest GUARDED_BY(process_crit_);
+  bool drop_frames_until_keyframe_ GUARDED_BY(process_crit_);
+  size_t max_nack_list_size_ GUARDED_BY(process_crit_);
+
+  VCMCodecDataBase _codecDataBase GUARDED_BY(receive_crit_);
+  EncodedImageCallback* pre_decode_image_callback_;
 
   VCMProcessTimer _receiveStatsTimer;
   VCMProcessTimer _retransmissionTimer;

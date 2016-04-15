@@ -427,6 +427,29 @@ int32_t ViEEncoder::SendData(const uint8_t payload_type,
       encoded_image.capture_time_ms_, encoded_image._buffer,
       encoded_image._length, fragmentation_header, rtp_video_hdr);
   overuse_detector_->FrameSent(encoded_image._timeStamp);
+
+  if (kEnableFrameRecording) {
+    int layer = rtp_video_hdr->simulcastIdx;
+    IvfFileWriter* file_writer;
+    {
+      rtc::CritScope lock(&data_cs_);
+      if (file_writers_[layer] == nullptr) {
+        std::ostringstream oss;
+        oss << "send_bitstream_ssrc";
+        for (uint32_t ssrc : ssrcs_)
+          oss << "_" << ssrc;
+        oss << "_layer" << layer << ".ivf";
+        file_writers_[layer] =
+            IvfFileWriter::Open(oss.str(), rtp_video_hdr->codec);
+      }
+      file_writer = file_writers_[layer].get();
+    }
+    if (file_writer) {
+      bool ok = file_writer->WriteFrame(encoded_image);
+      RTC_DCHECK(ok);
+    }
+  }
+
   return success ? 0 : -1;
 }
 

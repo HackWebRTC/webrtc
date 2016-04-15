@@ -14,6 +14,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
@@ -77,7 +78,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                         VideoEncoderRateObserver* encoder_rate_observer,
                         VCMQMSettingsCallback* qm_settings_callback,
                         NackSender* nack_sender,
-                        KeyFrameRequestSender* keyframe_request_sender)
+                        KeyFrameRequestSender* keyframe_request_sender,
+                        EncodedImageCallback* pre_decode_image_callback)
       : VideoCodingModule(),
         sender_(clock,
                 &post_encode_callback_,
@@ -85,6 +87,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                 qm_settings_callback),
         receiver_(clock,
                   event_factory,
+                  pre_decode_image_callback,
                   nack_sender,
                   keyframe_request_sender),
         own_event_factory_(owns_event_factory ? event_factory : NULL) {}
@@ -273,10 +276,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_.SetReceiveChannelParameters(rtt);
   }
 
-  void RegisterPreDecodeImageCallback(EncodedImageCallback* observer) override {
-    receiver_.RegisterPreDecodeImageCallback(observer);
-  }
-
   void RegisterPostEncodeImageCallback(
       EncodedImageCallback* observer) override {
     post_encode_callback_.Register(observer);
@@ -305,7 +304,8 @@ VideoCodingModule* VideoCodingModule::Create(
   return VideoCodingModule::Create(clock, encoder_rate_observer,
                                    qm_settings_callback,
                                    nullptr,   // NackSender
-                                   nullptr);  // KeyframeRequestSender
+                                   nullptr,   // KeyframeRequestSender
+                                   nullptr);  // Pre-decode image callback
 }
 
 // Create method for the new jitter buffer.
@@ -314,11 +314,12 @@ VideoCodingModule* VideoCodingModule::Create(
     VideoEncoderRateObserver* encoder_rate_observer,
     VCMQMSettingsCallback* qm_settings_callback,
     NackSender* nack_sender,
-    KeyFrameRequestSender* keyframe_request_sender) {
+    KeyFrameRequestSender* keyframe_request_sender,
+    EncodedImageCallback* pre_decode_image_callback) {
   return new VideoCodingModuleImpl(clock, new EventFactoryImpl, true,
                                    encoder_rate_observer, qm_settings_callback,
-                                   nack_sender,
-                                   keyframe_request_sender);
+                                   nack_sender, keyframe_request_sender,
+                                   pre_decode_image_callback);
 }
 
 // Create method for current interface, will be removed when the
@@ -340,7 +341,7 @@ VideoCodingModule* VideoCodingModule::Create(
   assert(event_factory);
   return new VideoCodingModuleImpl(clock, event_factory, false, nullptr,
                                    nullptr, nack_sender,
-                                   keyframe_request_sender);
+                                   keyframe_request_sender, nullptr);
 }
 
 }  // namespace webrtc

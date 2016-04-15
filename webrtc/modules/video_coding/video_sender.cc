@@ -29,7 +29,6 @@ VideoSender::VideoSender(Clock* clock,
                          VideoEncoderRateObserver* encoder_rate_observer,
                          VCMQMSettingsCallback* qm_settings_callback)
     : clock_(clock),
-      process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _encoder(nullptr),
       _encodedFrameCallback(post_encode_callback),
       _mediaOpt(clock_),
@@ -56,7 +55,7 @@ VideoSender::~VideoSender() {}
 void VideoSender::Process() {
   if (_sendStatsTimer.TimeUntilProcess() == 0) {
     _sendStatsTimer.Processed();
-    CriticalSectionScoped cs(process_crit_sect_.get());
+    rtc::CritScope cs(&process_crit_);
     if (_sendStatsCallback != nullptr) {
       uint32_t bitRate = _mediaOpt.SentBitRate();
       uint32_t frameRate = _mediaOpt.SentFrameRate();
@@ -249,7 +248,7 @@ int32_t VideoSender::RegisterTransportCallback(
 // average frame rate and bit rate.
 int32_t VideoSender::RegisterSendStatisticsCallback(
     VCMSendStatisticsCallback* sendStats) {
-  CriticalSectionScoped cs(process_crit_sect_.get());
+  rtc::CritScope cs(&process_crit_);
   _sendStatsCallback = sendStats;
   return VCM_OK;
 }

@@ -31,6 +31,7 @@ namespace webrtc {
 
 class CallStats;
 class CongestionController;
+class IvfFileWriter;
 class ProcessThread;
 class VoiceEngine;
 class VieRemb;
@@ -110,6 +111,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   ViEReceiver* const vie_receiver_;
   ViESyncModule vie_sync_;
   RtpRtcp* const rtp_rtcp_;
+
+  std::unique_ptr<IvfFileWriter> ivf_writer_;
 };
 }  // namespace internal
 }  // namespace webrtc

@@ -21,6 +21,7 @@
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/typedefs.h"
 
@@ -116,6 +117,9 @@ class ViEEncoder : public VideoEncoderRateObserver,
                         int64_t round_trip_time_ms);
 
  private:
+  static const bool kEnableFrameRecording = false;
+  static const int kMaxLayers = 3;
+
   bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
@@ -155,6 +159,8 @@ class ViEEncoder : public VideoEncoderRateObserver,
   uint64_t picture_id_rpsi_ GUARDED_BY(data_cs_);
 
   bool video_suspended_ GUARDED_BY(data_cs_);
+
+  std::unique_ptr<IvfFileWriter> file_writers_[kMaxLayers] GUARDED_BY(data_cs_);
 };
 
 }  // namespace webrtc

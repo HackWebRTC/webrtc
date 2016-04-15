@@ -21,6 +21,7 @@
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/receive_statistics_proxy.h"
@@ -28,6 +29,8 @@
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
+
+static const bool kEnableFrameRecording = false;
 
 static bool UseSendSideBwe(const VideoReceiveStream::Config& config) {
   if (!config.rtp.transport_cc)
@@ -163,6 +166,7 @@ VideoReceiveStream::VideoReceiveStream(
                                      nullptr,
                                      nullptr,
                                      this,
+                                     this,
                                      this)),
       incoming_video_stream_(0, config.disable_prerenderer_smoothing),
       stats_proxy_(config_, clock_),
@@ -290,7 +294,6 @@ VideoReceiveStream::VideoReceiveStream(
 
   vcm_->SetRenderDelay(config.render_delay_ms);
   incoming_video_stream_.SetExpectedRenderDelay(config.render_delay_ms);
-  vcm_->RegisterPreDecodeImageCallback(this);
   incoming_video_stream_.SetExternalCallback(this);
   vie_channel_.SetIncomingVideoStream(&incoming_video_stream_);
   vie_channel_.RegisterPreRenderCallback(this);
@@ -314,7 +317,6 @@ VideoReceiveStream::~VideoReceiveStream() {
     vcm_->RegisterExternalDecoder(nullptr, decoder.payload_type);
 
   vie_channel_.RegisterPreRenderCallback(nullptr);
-  vcm_->RegisterPreDecodeImageCallback(nullptr);
 
   call_stats_->DeregisterStatsObserver(vie_channel_.GetStatsObserver());
   rtp_rtcp_->SetREMBStatus(false);
@@ -406,6 +408,35 @@ int32_t VideoReceiveStream::Encoded(
     encoded_frame_proxy_.Encoded(
         encoded_image, codec_specific_info, fragmentation);
   }
+  if (kEnableFrameRecording) {
+    if (!ivf_writer_.get()) {
+      RTC_DCHECK(codec_specific_info);
+      RtpVideoCodecTypes rtp_codec_type;
+      switch (codec_specific_info->codecType) {
+        case kVideoCodecVP8:
+          rtp_codec_type = kRtpVideoVp8;
+          break;
+        case kVideoCodecVP9:
+          rtp_codec_type = kRtpVideoVp9;
+          break;
+        case kVideoCodecH264:
+          rtp_codec_type = kRtpVideoH264;
+          break;
+        default:
+          rtp_codec_type = kRtpVideoNone;
+          RTC_NOTREACHED() << "Unsupported codec "
+                           << codec_specific_info->codecType;
+      }
+      std::ostringstream oss;
+      oss << "receive_bitstream_ssrc_" << config_.rtp.remote_ssrc << ".ivf";
+      ivf_writer_ = IvfFileWriter::Open(oss.str(), rtp_codec_type);
+    }
+    if (ivf_writer_.get()) {
+      bool ok = ivf_writer_->WriteFrame(encoded_image);
+      RTC_DCHECK(ok);
+    }
+  }
+
   return 0;
 }
 

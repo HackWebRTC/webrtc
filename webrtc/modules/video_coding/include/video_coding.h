@@ -78,7 +78,8 @@ class VideoCodingModule : public Module {
       VideoEncoderRateObserver* encoder_rate_observer,
       VCMQMSettingsCallback* qm_settings_callback,
       NackSender* nack_sender,
-      KeyFrameRequestSender* keyframe_request_sender);
+      KeyFrameRequestSender* keyframe_request_sender,
+      EncodedImageCallback* pre_decode_image_callback);
 
   static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
@@ -511,8 +512,6 @@ class VideoCodingModule : public Module {
   // suspended due to bandwidth limitations; otherwise false.
   virtual bool VideoSuspended() const = 0;
 
-  virtual void RegisterPreDecodeImageCallback(
-      EncodedImageCallback* observer) = 0;
   virtual void RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) = 0;
   // Releases pending decode calls, permitting faster thread shutdown.

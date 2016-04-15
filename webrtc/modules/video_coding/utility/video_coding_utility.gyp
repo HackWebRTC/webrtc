@@ -20,6 +20,8 @@
       'sources': [
         'frame_dropper.cc',
         'frame_dropper.h',
+        'ivf_file_writer.cc',
+        'ivf_file_writer.h',
         'moving_average.h',
         'qp_parser.cc',
         'qp_parser.h',
