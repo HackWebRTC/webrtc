@@ -32,8 +32,8 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="apprtc.appspot.com"/>
-                <data android:scheme="http" android:host="apprtc.appspot.com"/>
+                <data android:scheme="https" android:host="appr.tc"/>
+                <data android:scheme="http" android:host="appr.tc"/>
             </intent-filter>
         </activity>
 

@@ -26,7 +26,7 @@ import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
 /**
- * Negotiates signaling for chatting with apprtc.appspot.com "rooms".
+ * Negotiates signaling for chatting with https://appr.tc "rooms".
  * Uses the client<->server specifics of the apprtc AppEngine webapp.
  *
  * <p>To use: create an instance of this object (registering a message handler) and
