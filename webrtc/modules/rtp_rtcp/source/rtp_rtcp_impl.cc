@@ -300,30 +300,21 @@ void ModuleRtpRtcpImpl::SetSequenceNumber(const uint16_t seq_num) {
   rtp_sender_.SetSequenceNumber(seq_num);
 }
 
-bool ModuleRtpRtcpImpl::SetRtpStateForSsrc(uint32_t ssrc,
-                                           const RtpState& rtp_state) {
-  if (rtp_sender_.SSRC() == ssrc) {
-    SetStartTimestamp(rtp_state.start_timestamp);
-    rtp_sender_.SetRtpState(rtp_state);
-    return true;
-  }
-  if (rtp_sender_.RtxSsrc() == ssrc) {
-    rtp_sender_.SetRtxRtpState(rtp_state);
-    return true;
-  }
-  return false;
+void ModuleRtpRtcpImpl::SetRtpState(const RtpState& rtp_state) {
+  SetStartTimestamp(rtp_state.start_timestamp);
+  rtp_sender_.SetRtpState(rtp_state);
 }
 
-bool ModuleRtpRtcpImpl::GetRtpStateForSsrc(uint32_t ssrc, RtpState* rtp_state) {
-  if (rtp_sender_.SSRC() == ssrc) {
-    *rtp_state = rtp_sender_.GetRtpState();
-    return true;
-  }
-  if (rtp_sender_.RtxSsrc() == ssrc) {
-    *rtp_state = rtp_sender_.GetRtxRtpState();
-    return true;
-  }
-  return false;
+void ModuleRtpRtcpImpl::SetRtxState(const RtpState& rtp_state) {
+  rtp_sender_.SetRtxRtpState(rtp_state);
+}
+
+RtpState ModuleRtpRtcpImpl::GetRtpState() const {
+  return rtp_sender_.GetRtpState();
+}
+
+RtpState ModuleRtpRtcpImpl::GetRtxState() const {
+  return rtp_sender_.GetRtxRtpState();
 }
 
 uint32_t ModuleRtpRtcpImpl::SSRC() const {

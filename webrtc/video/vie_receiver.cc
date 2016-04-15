@@ -124,8 +124,8 @@ int ViEReceiver::GetCsrcs(uint32_t* csrcs) const {
   return rtp_receiver_->CSRCs(csrcs);
 }
 
-void ViEReceiver::Init(const std::vector<RtpRtcp*>& modules) {
-  rtp_rtcp_ = modules;
+void ViEReceiver::Init(RtpRtcp* rtp_rtcp) {
+  rtp_rtcp_ = rtp_rtcp;
 }
 
 RtpReceiver* ViEReceiver::GetRtpReceiver() const {
@@ -318,8 +318,6 @@ void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
 
 bool ViEReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
                               size_t rtcp_packet_length) {
-  // Should be set by owner at construction time.
-  RTC_DCHECK(!rtp_rtcp_.empty());
   {
     rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {
@@ -327,11 +325,10 @@ bool ViEReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
     }
   }
 
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_)
-    rtp_rtcp->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
+  rtp_rtcp_->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
 
   int64_t rtt = 0;
-  rtp_rtcp_[0]->RTT(rtp_receiver_->SSRC(), &rtt, nullptr, nullptr, nullptr);
+  rtp_rtcp_->RTT(rtp_receiver_->SSRC(), &rtt, nullptr, nullptr, nullptr);
   if (rtt == 0) {
     // Waiting for valid rtt.
     return true;
@@ -339,8 +336,8 @@ bool ViEReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (rtp_rtcp_[0]->RemoteNTP(&ntp_secs, &ntp_frac, nullptr, nullptr,
-                              &rtp_timestamp) != 0) {
+  if (rtp_rtcp_->RemoteNTP(&ntp_secs, &ntp_frac, nullptr, nullptr,
+                           &rtp_timestamp) != 0) {
     // Waiting for RTCP.
     return true;
   }
@@ -382,7 +379,7 @@ bool ViEReceiver::IsPacketRetransmitted(const RTPHeader& header,
     return false;
   // Check if this is a retransmission.
   int64_t min_rtt = 0;
-  rtp_rtcp_[0]->RTT(rtp_receiver_->SSRC(), nullptr, nullptr, &min_rtt, nullptr);
+  rtp_rtcp_->RTT(rtp_receiver_->SSRC(), nullptr, nullptr, &min_rtt, nullptr);
   return !in_order &&
       statistician->IsRetransmitOfOldPacket(header, min_rtt);
 }

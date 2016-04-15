@@ -60,7 +60,7 @@ class ViEReceiver : public RtpData {
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;
 
-  void Init(const std::vector<RtpRtcp*>& modules);
+  void Init(RtpRtcp* rtp_rtcp);
 
   RtpReceiver* GetRtpReceiver() const;
 
@@ -102,7 +102,7 @@ class ViEReceiver : public RtpData {
   RemoteBitrateEstimator* const remote_bitrate_estimator_;
 
   // TODO(pbos): Make const and set on construction.
-  std::vector<RtpRtcp*> rtp_rtcp_;
+  RtpRtcp* rtp_rtcp_;  // Owned by ViEChannel
 
   RemoteNtpTimeEstimator ntp_estimator_;
   RTPPayloadRegistry rtp_payload_registry_;

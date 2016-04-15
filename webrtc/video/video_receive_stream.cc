@@ -172,21 +172,15 @@ VideoReceiveStream::VideoReceiveStream(
       stats_proxy_(config_, clock_),
       vie_channel_(&transport_adapter_,
                    process_thread,
-                   nullptr,
                    vcm_.get(),
-                   nullptr,
-                   nullptr,
-                   nullptr,
                    congestion_controller_->GetRemoteBitrateEstimator(
                        UseSendSideBwe(config_)),
                    call_stats_->rtcp_rtt_stats(),
                    congestion_controller_->pacer(),
-                   congestion_controller_->packet_router(),
-                   1,
-                   false),
+                   congestion_controller_->packet_router()),
       vie_receiver_(vie_channel_.vie_receiver()),
       vie_sync_(vcm_.get()),
-      rtp_rtcp_(vie_channel_.rtp_rtcp().front()) {
+      rtp_rtcp_(vie_channel_.rtp_rtcp()) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);

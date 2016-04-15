@@ -210,10 +210,10 @@ class RtpRtcp : public Module {
     */
     virtual void SetSequenceNumber(uint16_t seq) = 0;
 
-    // Returns true if the ssrc matched this module, false otherwise.
-    virtual bool SetRtpStateForSsrc(uint32_t ssrc,
-                                    const RtpState& rtp_state) = 0;
-    virtual bool GetRtpStateForSsrc(uint32_t ssrc, RtpState* rtp_state) = 0;
+    virtual void SetRtpState(const RtpState& rtp_state) = 0;
+    virtual void SetRtxState(const RtpState& rtp_state) = 0;
+    virtual RtpState GetRtpState() const = 0;
+    virtual RtpState GetRtxState() const = 0;
 
     /*
     *   Get SSRC

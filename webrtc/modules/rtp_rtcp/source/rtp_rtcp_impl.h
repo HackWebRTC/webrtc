@@ -75,8 +75,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Set SequenceNumber, default is a random number.
   void SetSequenceNumber(uint16_t seq) override;
 
-  bool SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state) override;
-  bool GetRtpStateForSsrc(uint32_t ssrc, RtpState* rtp_state) override;
+  void SetRtpState(const RtpState& rtp_state) override;
+  void SetRtxState(const RtpState& rtp_state) override;
+  RtpState GetRtpState() const override;
+  RtpState GetRtxState() const override;
 
   uint32_t SSRC() const override;
 

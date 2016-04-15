@@ -29,14 +29,11 @@ struct RTPVideoHeader;
 // on the simulcast layer in RTPVideoHeader.
 class PayloadRouter {
  public:
-  PayloadRouter();
+  // Rtp modules are assumed to be sorted in simulcast index order.
+  explicit PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules);
   ~PayloadRouter();
 
   static size_t DefaultMaxPayloadLength();
-
-  // Rtp modules are assumed to be sorted in simulcast index order.
-  void Init(const std::vector<RtpRtcp*>& rtp_modules);
-
   void SetSendingRtpModules(size_t num_sending_modules);
 
   // PayloadRouter will only route packets if being active, all packets will be
@@ -66,12 +63,12 @@ class PayloadRouter {
  private:
   void UpdateModuleSendingState() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // TODO(pbos): Set once and for all on construction and make const.
-  std::vector<RtpRtcp*> rtp_modules_;
-
   rtc::CriticalSection crit_;
   bool active_ GUARDED_BY(crit_);
   size_t num_sending_modules_ GUARDED_BY(crit_);
+
+  // Rtp modules are assumed to be sorted in simulcast index order. Not owned.
+  const std::vector<RtpRtcp*> rtp_modules_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
 };

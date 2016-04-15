@@ -42,7 +42,6 @@ class PayloadRouter;
 class ProcessThread;
 class ReceiveStatisticsProxy;
 class RtcpRttStats;
-class ViEChannelProtectionCallback;
 class ViERTPObserver;
 class VideoCodingModule;
 class VideoRenderCallback;
@@ -61,21 +60,14 @@ class ViEChannel : public VCMFrameTypeCallback,
                    public RtpFeedback {
  public:
   friend class ChannelStatsObserver;
-  friend class ViEChannelProtectionCallback;
 
   ViEChannel(Transport* transport,
              ProcessThread* module_process_thread,
-             PayloadRouter* send_payload_router,
              VideoCodingModule* vcm,
-             RtcpIntraFrameObserver* intra_frame_observer,
-             RtcpBandwidthObserver* bandwidth_observer,
-             TransportFeedbackObserver* transport_feedback_observer,
              RemoteBitrateEstimator* remote_bitrate_estimator,
              RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
-             PacketRouter* packet_router,
-             size_t max_rtp_streams,
-             bool sender);
+             PacketRouter* packet_router);
   ~ViEChannel();
 
   int32_t Init();
@@ -87,15 +79,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   RtpState GetRtpStateForSsrc(uint32_t ssrc) const;
 
-  // Gets send statistics for the rtp and rtx stream.
-  void GetSendStreamDataCounters(StreamDataCounters* rtp_counters,
-                                 StreamDataCounters* rtx_counters) const;
-
-  void RegisterSendSideDelayObserver(SendSideDelayObserver* observer);
-
-  // Called on any new send bitrate estimate.
-  void RegisterSendBitrateObserver(BitrateStatisticsObserver* observer);
-
   // Implements RtpFeedback.
   int32_t OnInitializeDecoder(const int8_t payload_type,
                               const char payload_name[RTP_PAYLOAD_NAME_SIZE],
@@ -105,11 +88,9 @@ class ViEChannel : public VCMFrameTypeCallback,
   void OnIncomingSSRCChanged(const uint32_t ssrc) override;
   void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override;
 
-  // Gets the modules used by the channel.
-  const std::vector<RtpRtcp*>& rtp_rtcp() const;
+  // Gets the module used by the channel.
+  RtpRtcp* rtp_rtcp() const;
   ViEReceiver* vie_receiver();
-  VCMProtectionCallback* vcm_protection_callback();
-
 
   CallStatsObserver* GetStatsObserver();
 
@@ -151,7 +132,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   void RegisterPreRenderCallback(I420FrameCallback* pre_render_callback);
 
-  void RegisterSendFrameCountObserver(FrameCountObserver* observer);
   void RegisterRtcpPacketTypeCounterObserver(
       RtcpPacketTypeCounterObserver* observer);
   void RegisterReceiveStatisticsProxy(
@@ -161,30 +141,7 @@ class ViEChannel : public VCMFrameTypeCallback,
  protected:
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms);
 
-  int ProtectionRequest(const FecProtectionParams* delta_fec_params,
-                        const FecProtectionParams* key_fec_params,
-                        uint32_t* sent_video_rate_bps,
-                        uint32_t* sent_nack_rate_bps,
-                        uint32_t* sent_fec_rate_bps);
-
  private:
-  static std::vector<RtpRtcp*> CreateRtpRtcpModules(
-      bool receiver_only,
-      ReceiveStatistics* receive_statistics,
-      Transport* outgoing_transport,
-      RtcpIntraFrameObserver* intra_frame_callback,
-      RtcpBandwidthObserver* bandwidth_callback,
-      TransportFeedbackObserver* transport_feedback_callback,
-      RtcpRttStats* rtt_stats,
-      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
-      RemoteBitrateEstimator* remote_bitrate_estimator,
-      RtpPacketSender* paced_sender,
-      TransportSequenceNumberAllocator* transport_sequence_number_allocator,
-      BitrateStatisticsObserver* send_bitrate_observer,
-      FrameCountObserver* send_frame_count_observer,
-      SendSideDelayObserver* send_side_delay_observer,
-      size_t num_modules);
-
   // Assumed to be protected.
   void StartDecodeThread();
   void StopDecodeThread();
@@ -219,41 +176,6 @@ class ViEChannel : public VCMFrameTypeCallback,
     RTC_DISALLOW_COPY_AND_ASSIGN(RegisterableCallback);
   };
 
-  class RegisterableBitrateStatisticsObserver:
-    public RegisterableCallback<BitrateStatisticsObserver> {
-    virtual void Notify(const BitrateStatistics& total_stats,
-                        const BitrateStatistics& retransmit_stats,
-                        uint32_t ssrc) {
-      rtc::CritScope lock(&critsect_);
-      if (callback_)
-        callback_->Notify(total_stats, retransmit_stats, ssrc);
-    }
-  } send_bitrate_observer_;
-
-  class RegisterableFrameCountObserver
-      : public RegisterableCallback<FrameCountObserver> {
-   public:
-    virtual void FrameCountUpdated(const FrameCounts& frame_counts,
-                                   uint32_t ssrc) {
-      rtc::CritScope lock(&critsect_);
-      if (callback_)
-        callback_->FrameCountUpdated(frame_counts, ssrc);
-    }
-
-   private:
-  } send_frame_count_observer_;
-
-  class RegisterableSendSideDelayObserver :
-      public RegisterableCallback<SendSideDelayObserver> {
-    void SendSideDelayUpdated(int avg_delay_ms,
-                              int max_delay_ms,
-                              uint32_t ssrc) override {
-      rtc::CritScope lock(&critsect_);
-      if (callback_)
-        callback_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms, ssrc);
-    }
-  } send_side_delay_observer_;
-
   class RegisterableRtcpPacketTypeCounterObserver
       : public RegisterableCallback<RtcpPacketTypeCounterObserver> {
    public:
@@ -268,16 +190,11 @@ class ViEChannel : public VCMFrameTypeCallback,
    private:
   } rtcp_packet_type_counter_observer_;
 
-  const bool sender_;
 
   ProcessThread* const module_process_thread_;
-  PayloadRouter* const send_payload_router_;
 
   // Used for all registered callbacks except rendering.
   rtc::CriticalSection crit_;
-
-  // Owned modules/classes.
-  std::unique_ptr<ViEChannelProtectionCallback> vcm_protection_callback_;
 
   VideoCodingModule* const vcm_;
   ViEReceiver vie_receiver_;
@@ -289,21 +206,17 @@ class ViEChannel : public VCMFrameTypeCallback,
   ReceiveStatisticsProxy* receive_stats_callback_ GUARDED_BY(crit_);
   FrameCounts receive_frame_counts_ GUARDED_BY(crit_);
   IncomingVideoStream* incoming_video_stream_ GUARDED_BY(crit_);
-  RtcpIntraFrameObserver* const intra_frame_observer_;
   RtcpRttStats* const rtt_stats_;
   PacedSender* const paced_sender_;
   PacketRouter* const packet_router_;
-
-  const std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
-  TransportFeedbackObserver* const transport_feedback_observer_;
 
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_ GUARDED_BY(crit_);
 
   int64_t last_rtt_ms_ GUARDED_BY(crit_);
 
-  // RtpRtcp modules, declared last as they use other members on construction.
-  const std::vector<RtpRtcp*> rtp_rtcp_modules_;
+  // RtpRtcp module, declared last as it use other members on construction.
+  const std::unique_ptr<RtpRtcp> rtp_rtcp_;
 };
 
 }  // namespace webrtc

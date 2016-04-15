@@ -31,12 +31,6 @@ class EncoderStateFeedback : public RtcpIntraFrameObserver {
   // Adds an encoder to receive feedback for a set of SSRCs.
   void Init(const std::vector<uint32_t>& ssrc, ViEEncoder* encoder);
 
-  // Removes the registered encoder. Necessary since RTP modules outlive
-  // ViEEncoder.
-  // TODO(pbos): Make sure RTP modules are not running when tearing down
-  // ViEEncoder, then remove this function.
-  void TearDown();
-
   void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
   void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) override;
   void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) override;

@@ -871,11 +871,13 @@ void RTCPSender::PrepareReport(const std::set<RTCPPacketType>& packetTypes,
         random_.Rand(minIntervalMs * 1 / 2, minIntervalMs * 3 / 2);
     next_time_to_send_rtcp_ = clock_->TimeInMilliseconds() + timeToNext;
 
-    StatisticianMap statisticians =
-        receive_statistics_->GetActiveStatisticians();
-    RTC_DCHECK(report_blocks_.empty());
-    for (auto& it : statisticians) {
-      AddReportBlock(feedback_state, it.first, it.second);
+    if (receive_statistics_) {
+      StatisticianMap statisticians =
+          receive_statistics_->GetActiveStatisticians();
+      RTC_DCHECK(report_blocks_.empty());
+      for (auto& it : statisticians) {
+        AddReportBlock(feedback_state, it.first, it.second);
+      }
     }
   }
 }

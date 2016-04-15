@@ -16,20 +16,16 @@
 
 namespace webrtc {
 
-PayloadRouter::PayloadRouter()
-    : active_(false), num_sending_modules_(0) {}
+PayloadRouter::PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules)
+    : active_(false), num_sending_modules_(1), rtp_modules_(rtp_modules) {
+  UpdateModuleSendingState();
+}
 
 PayloadRouter::~PayloadRouter() {}
 
 size_t PayloadRouter::DefaultMaxPayloadLength() {
   const size_t kIpUdpSrtpLength = 44;
   return IP_PACKET_SIZE - kIpUdpSrtpLength;
-}
-
-void PayloadRouter::Init(
-    const std::vector<RtpRtcp*>& rtp_modules) {
-  RTC_DCHECK(rtp_modules_.empty());
-  rtp_modules_ = rtp_modules;
 }
 
 void PayloadRouter::set_active(bool active) {

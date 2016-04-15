@@ -25,13 +25,6 @@ void EncoderStateFeedback::Init(const std::vector<uint32_t>& ssrcs,
   vie_encoder_ = encoder;
 }
 
-void EncoderStateFeedback::TearDown() {
-  rtc::CritScope lock(&crit_);
-  RTC_DCHECK(vie_encoder_);
-  ssrcs_.clear();
-  vie_encoder_ = nullptr;
-}
-
 bool EncoderStateFeedback::HasSsrc(uint32_t ssrc) {
   for (uint32_t registered_ssrc : ssrcs_) {
     if (registered_ssrc == ssrc)

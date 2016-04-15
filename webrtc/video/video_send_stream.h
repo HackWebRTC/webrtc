@@ -42,7 +42,8 @@ namespace internal {
 
 class VideoSendStream : public webrtc::VideoSendStream,
                         public webrtc::CpuOveruseObserver,
-                        public webrtc::BitrateAllocatorObserver {
+                        public webrtc::BitrateAllocatorObserver,
+                        public webrtc::VCMProtectionCallback {
  public:
   VideoSendStream(int num_cpu_cores,
                   ProcessThread* module_process_thread,
@@ -81,10 +82,18 @@ class VideoSendStream : public webrtc::VideoSendStream,
                         uint8_t fraction_loss,
                         int64_t rtt) override;
 
+  // Implements webrtc::VCMProtectionCallback.
+  int ProtectionRequest(const FecProtectionParams* delta_params,
+                        const FecProtectionParams* key_params,
+                        uint32_t* sent_video_rate_bps,
+                        uint32_t* sent_nack_rate_bps,
+                        uint32_t* sent_fec_rate_bps) override;
+
  private:
   static bool EncoderThreadFunction(void* obj);
   void EncoderProcess();
 
+  void ConfigureProtection();
   void ConfigureSsrcs();
 
   SendStatisticsProxy stats_proxy_;
@@ -103,16 +112,14 @@ class VideoSendStream : public webrtc::VideoSendStream,
   volatile int stop_encoder_thread_;
 
   OveruseFrameDetector overuse_detector_;
-  PayloadRouter payload_router_;
   EncoderStateFeedback encoder_feedback_;
-  ViEChannel vie_channel_;
-  ViEReceiver* const vie_receiver_;
   ViEEncoder vie_encoder_;
   VideoCodingModule* const vcm_;
-  // TODO(pbos): Move RtpRtcp ownership to VideoSendStream.
-  // RtpRtcp modules, currently owned by ViEChannel but ownership should
-  // eventually move here.
+
+  const std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+  // RtpRtcp modules, declared here as they use other members on construction.
   const std::vector<RtpRtcp*> rtp_rtcp_modules_;
+  PayloadRouter payload_router_;
   VideoCaptureInput input_;
 };
 }  // namespace internal
