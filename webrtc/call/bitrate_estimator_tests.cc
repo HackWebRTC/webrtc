@@ -302,7 +302,15 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
   EXPECT_TRUE(receiver_log_.Wait());
 }
 
-TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOFForVideo) {
+// Fails when run with ASan. See webrtc:5790.
+#if defined(ADDRESS_SANITIZER)
+#define MAYBE_SwitchesToASTThenBackToTOFForVideo \
+    DISABLED_SwitchesToASTThenBackToTOFForVideo
+#else
+#define MAYBE_SwitchesToASTThenBackToTOFForVideo \
+    SwitchesToASTThenBackToTOFForVideo
+#endif
+TEST_F(BitrateEstimatorTest, MAYBE_SwitchesToASTThenBackToTOFForVideo) {
   video_send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
   receiver_log_.PushExpectedLogLine(kSingleStreamLog);
