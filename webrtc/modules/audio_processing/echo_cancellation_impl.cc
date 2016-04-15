@@ -413,6 +413,11 @@ bool EchoCancellationImpl::is_aec3_enabled() const {
   return aec3_enabled_;
 }
 
+std::string EchoCancellationImpl::GetExperimentsDescription() {
+  rtc::CritScope cs(crit_capture_);
+  return aec3_enabled_ ? "AEC3" : "";
+}
+
 bool EchoCancellationImpl::is_extended_filter_enabled() const {
   rtc::CritScope cs(crit_capture_);
   return extended_filter_enabled_;

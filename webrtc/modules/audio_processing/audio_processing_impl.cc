@@ -1439,6 +1439,12 @@ int AudioProcessingImpl::WriteConfigMessage(bool forced) {
   config.set_transient_suppression_enabled(
       capture_.transient_suppressor_enabled);
 
+  std::string experiments_description =
+      public_submodules_->echo_cancellation->GetExperimentsDescription();
+  // TODO(peah): Add semicolon-separated concatenations of experiment
+  // descriptions for other submodules.
+  config.set_experiments_description(experiments_description);
+
   std::string serialized_config = config.SerializeAsString();
   if (!forced &&
       debug_dump_.capture.last_serialized_config == serialized_config) {

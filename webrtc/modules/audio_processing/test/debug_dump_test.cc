@@ -341,6 +341,51 @@ TEST_F(DebugDumpTest, ToggleDelayAgnosticAec) {
   VerifyDebugDump(generator.dump_file_name());
 }
 
+TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
+  Config config;
+  config.Set<EchoCanceller3>(new EchoCanceller3(true));
+  DebugDumpGenerator generator(config);
+  generator.StartRecording();
+  generator.Process(100);
+  generator.StopRecording();
+
+  DebugDumpReplayer debug_dump_replayer_;
+
+  ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
+
+  while (const rtc::Optional<audioproc::Event> event =
+             debug_dump_replayer_.GetNextEvent()) {
+    debug_dump_replayer_.RunNextEvent();
+    if (event->type() == audioproc::Event::CONFIG) {
+      const audioproc::Config* msg = &event->config();
+      EXPECT_TRUE(msg->has_experiments_description());
+      EXPECT_NE(std::string::npos, msg->experiments_description().find("AEC3"));
+    }
+  }
+}
+
+TEST_F(DebugDumpTest, VerifyEmptyExperimentalString) {
+  Config config;
+  DebugDumpGenerator generator(config);
+  generator.StartRecording();
+  generator.Process(100);
+  generator.StopRecording();
+
+  DebugDumpReplayer debug_dump_replayer_;
+
+  ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
+
+  while (const rtc::Optional<audioproc::Event> event =
+             debug_dump_replayer_.GetNextEvent()) {
+    debug_dump_replayer_.RunNextEvent();
+    if (event->type() == audioproc::Event::CONFIG) {
+      const audioproc::Config* msg = &event->config();
+      EXPECT_TRUE(msg->has_experiments_description());
+      EXPECT_EQ(0u, msg->experiments_description().size());
+    }
+  }
+}
+
 TEST_F(DebugDumpTest, ToggleAecLevel) {
   Config config;
   DebugDumpGenerator generator(config);

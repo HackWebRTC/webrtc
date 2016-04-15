@@ -47,6 +47,7 @@ class EchoCancellationImpl : public EchoCancellation {
   bool is_delay_agnostic_enabled() const;
   bool is_extended_filter_enabled() const;
   bool is_aec3_enabled() const;
+  std::string GetExperimentsDescription();
 
   // Checks whether the module is enabled. Must only be
   // called from the render side of APM as otherwise
