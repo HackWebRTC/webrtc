@@ -94,6 +94,7 @@
           'referencecountedsingletonfactory_unittest.cc',
           'rollingaccumulator_unittest.cc',
           'rtccertificate_unittests.cc',
+          'rtccertificategenerator_unittest.cc',
           'scopedptrcollection_unittest.cc',
           'sha1digest_unittest.cc',
           'sharedexclusivelock_unittest.cc',

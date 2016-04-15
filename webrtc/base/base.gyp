@@ -263,6 +263,8 @@
         'ratelimiter.h',
         'rtccertificate.cc',
         'rtccertificate.h',
+        'rtccertificategenerator.cc',
+        'rtccertificategenerator.h',
         'sha1.cc',
         'sha1.h',
         'sha1digest.cc',
