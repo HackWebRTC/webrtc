@@ -707,15 +707,10 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
   }
 }
 
-void WebRtcAec_ScaleErrorSignal_mips(int extended_filter_enabled,
-                                     float normal_mu,
-                                     float normal_error_threshold,
+void WebRtcAec_ScaleErrorSignal_mips(float mu,
+                                     float error_threshold,
                                      float x_pow[PART_LEN1],
                                      float ef[2][PART_LEN1]) {
-  const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
-  const float error_threshold = extended_filter_enabled
-                                    ? kExtendedErrorThreshold
-                                    : normal_error_threshold;
   int len = (PART_LEN1);
   float* ef0 = ef[0];
   float* ef1 = ef[1];

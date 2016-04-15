@@ -82,6 +82,7 @@ void usage() {
   printf("  --extended_filter\n");
   printf("  --no_reported_delay\n");
   printf("  --aec3\n");
+  printf("  --refined_adaptive_filter\n");
   printf("\n  -aecm    Echo control mobile\n");
   printf("  --aecm_echo_path_in_file FILE\n");
   printf("  --aecm_echo_path_out_file FILE\n");
@@ -270,6 +271,9 @@ void void_main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "--aec3") == 0) {
       config.Set<EchoCanceller3>(new EchoCanceller3(true));
+
+    } else if (strcmp(argv[i], "--refined_adaptive_filter") == 0) {
+      config.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(true));
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));

@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 }
@@ -238,15 +239,10 @@ static void FilterFar(int num_partitions,
   }
 }
 
-static void ScaleErrorSignal(int extended_filter_enabled,
-                             float normal_mu,
-                             float normal_error_threshold,
+static void ScaleErrorSignal(float mu,
+                             float error_threshold,
                              float x_pow[PART_LEN1],
                              float ef[2][PART_LEN1]) {
-  const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
-  const float error_threshold = extended_filter_enabled
-                                    ? kExtendedErrorThreshold
-                                    : normal_error_threshold;
   int i;
   float abs_ef;
   for (i = 0; i < (PART_LEN1); i++) {
@@ -936,11 +932,38 @@ static int SignalBasedDelayCorrection(AecCore* self) {
   return delay_correction;
 }
 
+static void RegressorPower(int num_partitions,
+                           int latest_added_partition,
+                           float x_fft_buf[2]
+                                          [kExtendedNumPartitions * PART_LEN1],
+                           float x_pow[PART_LEN1]) {
+  RTC_DCHECK_LT(latest_added_partition, num_partitions);
+  memset(x_pow, 0, PART_LEN1 * sizeof(x_pow[0]));
+
+  int partition = latest_added_partition;
+  int x_fft_buf_position = partition * PART_LEN1;
+  for (int i = 0; i < num_partitions; ++i) {
+    for (int bin = 0; bin < PART_LEN1; ++bin) {
+      float re = x_fft_buf[0][x_fft_buf_position];
+      float im = x_fft_buf[1][x_fft_buf_position];
+      x_pow[bin] += re * re + im * im;
+      ++x_fft_buf_position;
+    }
+
+    ++partition;
+    if (partition == num_partitions) {
+      partition = 0;
+      RTC_DCHECK_EQ(num_partitions * PART_LEN1, x_fft_buf_position);
+      x_fft_buf_position = 0;
+    }
+  }
+}
+
 static void EchoSubtraction(AecCore* aec,
                             int num_partitions,
                             int extended_filter_enabled,
-                            float normal_mu,
-                            float normal_error_threshold,
+                            float filter_step_size,
+                            float error_threshold,
                             float* x_fft,
                             int* x_fft_buf_block_pos,
                             float x_fft_buf[2]
@@ -1001,8 +1024,7 @@ static void EchoSubtraction(AecCore* aec,
                           sizeof(e_fft[0][0]) * PART_LEN1 * 2);
 
   // Scale error signal inversely with far power.
-  WebRtcAec_ScaleErrorSignal(extended_filter_enabled, normal_mu,
-                             normal_error_threshold, x_pow, e_fft);
+  WebRtcAec_ScaleErrorSignal(filter_step_size, error_threshold, x_pow, e_fft);
   WebRtcAec_FilterAdaptation(num_partitions, *x_fft_buf_block_pos, x_fft_buf,
                              e_fft, h_fft_buf);
   memcpy(echo_subtractor_output, e, sizeof(float) * PART_LEN);
@@ -1315,18 +1337,31 @@ static void ProcessBlock(AecCore* aec) {
   memcpy(fft, aec->dBuf, sizeof(float) * PART_LEN2);
   Fft(fft, df);
 
-  // Power smoothing
-  for (i = 0; i < PART_LEN1; i++) {
-    far_spectrum = (x_fft_ptr[i] * x_fft_ptr[i]) +
-                   (x_fft_ptr[PART_LEN1 + i] * x_fft_ptr[PART_LEN1 + i]);
-    aec->xPow[i] =
-        gPow[0] * aec->xPow[i] + gPow[1] * aec->num_partitions * far_spectrum;
-    // Calculate absolute spectra
-    abs_far_spectrum[i] = sqrtf(far_spectrum);
+  // Power smoothing.
+  if (aec->refined_adaptive_filter_enabled) {
+    for (i = 0; i < PART_LEN1; ++i) {
+      far_spectrum = (x_fft_ptr[i] * x_fft_ptr[i]) +
+                     (x_fft_ptr[PART_LEN1 + i] * x_fft_ptr[PART_LEN1 + i]);
+      // Calculate the magnitude spectrum.
+      abs_far_spectrum[i] = sqrtf(far_spectrum);
+    }
+    RegressorPower(aec->num_partitions, aec->xfBufBlockPos, aec->xfBuf,
+                   aec->xPow);
+  } else {
+    for (i = 0; i < PART_LEN1; ++i) {
+      far_spectrum = (x_fft_ptr[i] * x_fft_ptr[i]) +
+                     (x_fft_ptr[PART_LEN1 + i] * x_fft_ptr[PART_LEN1 + i]);
+      aec->xPow[i] =
+          gPow[0] * aec->xPow[i] + gPow[1] * aec->num_partitions * far_spectrum;
+      // Calculate the magnitude spectrum.
+      abs_far_spectrum[i] = sqrtf(far_spectrum);
+    }
+  }
 
+  for (i = 0; i < PART_LEN1; ++i) {
     near_spectrum = df[0][i] * df[0][i] + df[1][i] * df[1][i];
     aec->dPow[i] = gPow[0] * aec->dPow[i] + gPow[1] * near_spectrum;
-    // Calculate absolute spectra
+    // Calculate the magnitude spectrum.
     abs_near_spectrum[i] = sqrtf(near_spectrum);
   }
 
@@ -1379,7 +1414,7 @@ static void ProcessBlock(AecCore* aec) {
 
   // Perform echo subtraction.
   EchoSubtraction(aec, aec->num_partitions, aec->extended_filter_enabled,
-                  aec->normal_mu, aec->normal_error_threshold, &x_fft[0][0],
+                  aec->filter_step_size, aec->error_threshold, &x_fft[0][0],
                   &aec->xfBufBlockPos, aec->xfBuf, nearend_ptr, aec->xPow,
                   aec->wfBuf, echo_subtractor_output);
 
@@ -1485,6 +1520,7 @@ AecCore* WebRtcAec_CreateAec() {
 #endif
   aec->extended_filter_enabled = 0;
   aec->aec3_enabled = 0;
+  aec->refined_adaptive_filter_enabled = false;
 
   // Assembly optimization
   WebRtcAec_FilterFar = FilterFar;
@@ -1548,18 +1584,53 @@ void WebRtcAec_FreeAec(AecCore* aec) {
   delete aec;
 }
 
+static void SetAdaptiveFilterStepSize(AecCore* aec) {
+  // Extended filter adaptation parameter.
+  // TODO(ajm): No narrowband tuning yet.
+  const float kExtendedMu = 0.4f;
+
+  if (aec->refined_adaptive_filter_enabled) {
+    aec->filter_step_size = 0.05f;
+  } else {
+    if (aec->extended_filter_enabled) {
+      aec->filter_step_size = kExtendedMu;
+    } else {
+      if (aec->sampFreq == 8000) {
+        aec->filter_step_size = 0.6f;
+      } else {
+        aec->filter_step_size = 0.5f;
+      }
+    }
+  }
+}
+
+static void SetErrorThreshold(AecCore* aec) {
+  // Extended filter adaptation parameter.
+  // TODO(ajm): No narrowband tuning yet.
+  static const float kExtendedErrorThreshold = 1.0e-6f;
+
+  if (aec->extended_filter_enabled) {
+    aec->error_threshold = kExtendedErrorThreshold;
+  } else {
+    if (aec->sampFreq == 8000) {
+      aec->error_threshold = 2e-6f;
+    } else {
+      aec->error_threshold = 1.5e-6f;
+    }
+  }
+}
+
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   int i;
 
   aec->sampFreq = sampFreq;
 
+  SetAdaptiveFilterStepSize(aec);
+  SetErrorThreshold(aec);
+
   if (sampFreq == 8000) {
-    aec->normal_mu = 0.6f;
-    aec->normal_error_threshold = 2e-6f;
     aec->num_bands = 1;
   } else {
-    aec->normal_mu = 0.5f;
-    aec->normal_error_threshold = 1.5e-6f;
     aec->num_bands = (size_t)(sampFreq / 16000);
   }
 
@@ -1930,9 +2001,20 @@ int WebRtcAec_aec3_enabled(AecCore* self) {
   return self->aec3_enabled;
 }
 
+void WebRtcAec_enable_refined_adaptive_filter(AecCore* self, bool enable) {
+  self->refined_adaptive_filter_enabled = enable;
+  SetAdaptiveFilterStepSize(self);
+  SetErrorThreshold(self);
+}
+
+bool WebRtcAec_refined_adaptive_filter_enabled(const AecCore* self) {
+  return self->refined_adaptive_filter_enabled;
+}
 
 void WebRtcAec_enable_extended_filter(AecCore* self, int enable) {
   self->extended_filter_enabled = enable;
+  SetAdaptiveFilterStepSize(self);
+  SetErrorThreshold(self);
   self->num_partitions = enable ? kExtendedNumPartitions : kNormalNumPartitions;
   // Update the delay estimator with filter length.  See InitAEC() for details.
   WebRtc_set_allowed_offset(self->delay_estimator, self->num_partitions / 2);

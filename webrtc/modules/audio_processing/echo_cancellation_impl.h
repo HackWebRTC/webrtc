@@ -48,6 +48,7 @@ class EchoCancellationImpl : public EchoCancellation {
   bool is_extended_filter_enabled() const;
   bool is_aec3_enabled() const;
   std::string GetExperimentsDescription();
+  bool is_refined_adaptive_filter_enabled() const;
 
   // Checks whether the module is enabled. Must only be
   // called from the render side of APM as otherwise
@@ -102,6 +103,7 @@ class EchoCancellationImpl : public EchoCancellation {
   bool extended_filter_enabled_ GUARDED_BY(crit_capture_);
   bool delay_agnostic_enabled_ GUARDED_BY(crit_capture_);
   bool aec3_enabled_ GUARDED_BY(crit_capture_);
+  bool refined_adaptive_filter_enabled_ GUARDED_BY(crit_capture_) = false;
 
   size_t render_queue_element_max_size_ GUARDED_BY(crit_render_)
       GUARDED_BY(crit_capture_);

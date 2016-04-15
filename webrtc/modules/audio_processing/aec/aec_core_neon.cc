@@ -127,15 +127,10 @@ static float32x4_t vsqrtq_f32(float32x4_t s) {
 }
 #endif  // WEBRTC_ARCH_ARM64
 
-static void ScaleErrorSignalNEON(int extended_filter_enabled,
-                                 float normal_mu,
-                                 float normal_error_threshold,
+static void ScaleErrorSignalNEON(float mu,
+                                 float error_threshold,
                                  float x_pow[PART_LEN1],
                                  float ef[2][PART_LEN1]) {
-  const float mu = extended_filter_enabled ? kExtendedMu : normal_mu;
-  const float error_threshold = extended_filter_enabled
-                                    ? kExtendedErrorThreshold
-                                    : normal_error_threshold;
   const float32x4_t k1e_10f = vdupq_n_f32(1e-10f);
   const float32x4_t kMu = vmovq_n_f32(mu);
   const float32x4_t kThresh = vmovq_n_f32(error_threshold);

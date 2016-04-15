@@ -80,6 +80,18 @@ struct EchoCanceller3 {
   bool enabled;
 };
 
+// Enables the refined linear filter adaptation in the echo canceller.
+// This configuration only applies to EchoCancellation and not
+// EchoControlMobile. It can be set in the constructor
+// or using AudioProcessing::SetExtraOptions().
+struct RefinedAdaptiveFilter {
+  RefinedAdaptiveFilter() : enabled(false) {}
+  explicit RefinedAdaptiveFilter(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier =
+      ConfigOptionID::kAecRefinedAdaptiveFilter;
+  bool enabled;
+};
+
 // Enables delay-agnostic echo cancellation. This feature relies on internally
 // estimated delays between the process and reverse streams, thus not relying
 // on reported system delays. This configuration only applies to
