@@ -37,17 +37,7 @@ std::unique_ptr<CNG_enc_inst, CngInstDeleter> CreateCngInst(
 }  // namespace
 
 AudioEncoderCng::Config::Config() = default;
-
-// TODO(kwiberg): =default this when Visual Studio learns to handle it.
-AudioEncoderCng::Config::Config(Config&& c)
-    : num_channels(c.num_channels),
-      payload_type(c.payload_type),
-      speech_encoder(std::move(c.speech_encoder)),
-      vad_mode(c.vad_mode),
-      sid_frame_interval_ms(c.sid_frame_interval_ms),
-      num_cng_coefficients(c.num_cng_coefficients),
-      vad(c.vad) {}
-
+AudioEncoderCng::Config::Config(Config&&) = default;
 AudioEncoderCng::Config::~Config() = default;
 
 bool AudioEncoderCng::Config::IsOk() const {
