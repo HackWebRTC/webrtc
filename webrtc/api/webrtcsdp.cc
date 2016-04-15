@@ -1564,11 +1564,13 @@ void WriteFmtpParameters(const cricket::CodecParameterMap& parameters,
                          std::ostringstream* os) {
   for (cricket::CodecParameterMap::const_iterator fmtp = parameters.begin();
        fmtp != parameters.end(); ++fmtp) {
-    // Each new parameter, except the first one starts with ";" and " ".
-    if (fmtp != parameters.begin()) {
+    // Parameters are a semicolon-separated list, no spaces.
+    // The list is separated from the header by a space.
+    if (fmtp == parameters.begin()) {
+      *os << kSdpDelimiterSpace;
+    } else {
       *os << kSdpDelimiterSemicolon;
     }
-    *os << kSdpDelimiterSpace;
     WriteFmtpParameter(fmtp->first, fmtp->second, os);
   }
 }

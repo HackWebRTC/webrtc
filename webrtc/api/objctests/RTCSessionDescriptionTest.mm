@@ -81,7 +81,7 @@
            "a=sendrecv\r\n"
            "a=rtcp-mux\r\n"
            "a=rtpmap:111 opus/48000/2\r\n"
-           "a=fmtp:111 minptime=10; useinbandfec=1\r\n"
+           "a=fmtp:111 minptime=10;useinbandfec=1\r\n"
            "a=rtpmap:103 ISAC/16000\r\n"
            "a=rtpmap:9 G722/8000\r\n"
            "a=rtpmap:0 PCMU/8000\r\n"

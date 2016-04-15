@@ -2114,6 +2114,9 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithH264) {
   EXPECT_NE(std::string::npos, fmtp_value.find("level-asymmetry-allowed=1"));
   EXPECT_NE(std::string::npos, fmtp_value.find("packetization-mode=1"));
   EXPECT_NE(std::string::npos, fmtp_value.find("profile-level-id=42e01f"));
+  // Check that there are no spaces after semicolons.
+  // https://bugs.webrtc.org/5793
+  EXPECT_EQ(std::string::npos, fmtp_value.find("; "));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescription) {
