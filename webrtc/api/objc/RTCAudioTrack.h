@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCMediaStreamTrack.h"
+#import "webrtc/api/objc/RTCMediaStreamTrack.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

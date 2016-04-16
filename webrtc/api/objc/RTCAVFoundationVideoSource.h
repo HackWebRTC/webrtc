@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCVideoSource.h"
+#import "webrtc/api/objc/RTCVideoSource.h"
 
 @class AVCaptureSession;
 @class RTCMediaConstraints;

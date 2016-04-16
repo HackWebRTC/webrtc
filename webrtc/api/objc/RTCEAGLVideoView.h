@@ -11,7 +11,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import "RTCVideoRenderer.h"
+#import "webrtc/api/objc/RTCVideoRenderer.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

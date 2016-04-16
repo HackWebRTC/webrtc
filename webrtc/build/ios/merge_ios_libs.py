@@ -10,11 +10,15 @@
 
 """Script for merging generated iOS libraries."""
 
-import optparse
+import sys
+
+import argparse
 import os
 import re
 import subprocess
-import sys
+
+# Valid arch subdir names.
+VALID_ARCHS = ['arm_libs', 'arm64_libs', 'ia32_libs', 'x64_libs']
 
 
 def MergeLibs(lib_base_dir):
@@ -29,24 +33,22 @@ def MergeLibs(lib_base_dir):
   Returns:
     Exit code of libtool.
   """
-  include_dir_name = 'include'
-  output_dir_name = 'lib'
+  output_dir_name = 'fat_libs'
   archs = [arch for arch in os.listdir(lib_base_dir)
-           if arch[:1] != '.' and arch != output_dir_name
-           and arch != include_dir_name]
+           if arch in VALID_ARCHS]
   # For each arch, find (library name, libary path) for arch. We will merge
   # all libraries with the same name.
   libs = {}
-  for dirpath, _, filenames in os.walk(lib_base_dir):
-    if dirpath.endswith(output_dir_name):
+  for lib_dir in [os.path.join(lib_base_dir, arch) for arch in VALID_ARCHS]:
+    if not os.path.exists(lib_dir):
       continue
-    for filename in filenames:
-      if not filename.endswith('.a'):
-        continue
-      entry = libs.get(filename, [])
-      entry.append(os.path.join(dirpath, filename))
-      libs[filename] = entry
-
+    for dirpath, _, filenames in os.walk(lib_dir):
+      for filename in filenames:
+        if not filename.endswith('.a'):
+          continue
+        entry = libs.get(filename, [])
+        entry.append(os.path.join(dirpath, filename))
+        libs[filename] = entry
   orphaned_libs = {}
   valid_libs = {}
   for library, paths in libs.items():
@@ -69,7 +71,6 @@ def MergeLibs(lib_base_dir):
     if not found:
       base_prefix = library[:-2].split('_')[0]
       for valid_lib, valid_paths in valid_libs.items():
-        prefix = '_'.join(components)
         if valid_lib[:len(base_prefix)] == base_prefix:
           valid_paths.extend(paths)
           found = True
@@ -89,6 +90,7 @@ def MergeLibs(lib_base_dir):
   libtool_re = re.compile(r'^.*libtool:.*file: .* has no symbols$')
 
   # Merge libraries using libtool.
+  libtool_returncode = 0
   for library, paths in valid_libs.items():
     cmd_list = ['libtool', '-static', '-v', '-o',
                 os.path.join(output_dir_path, library)] + paths
@@ -99,22 +101,23 @@ def MergeLibs(lib_base_dir):
         print >>sys.stderr, line
     # Unconditionally touch the output .a file on the command line if present
     # and the command succeeded. A bit hacky.
-    if not libtoolout.returncode:
+    libtool_returncode = libtoolout.returncode
+    if not libtool_returncode:
       for i in range(len(cmd_list) - 1):
         if cmd_list[i] == '-o' and cmd_list[i+1].endswith('.a'):
           os.utime(cmd_list[i+1], None)
           break
-    else:
-      return libtoolout.returncode
-  return libtoolout.returncode
+  return libtool_returncode
 
 
 def Main():
-  parser = optparse.OptionParser()
-  _, args = parser.parse_args()
-  if len(args) != 1:
-    parser.error('Error: Exactly 1 argument required.')
-  lib_base_dir = args[0]
+  parser_description = 'Merge WebRTC libraries.'
+  parser = argparse.ArgumentParser(description=parser_description)
+  parser.add_argument('lib_base_dir',
+                      help='Directory with built libraries. ',
+                      type=str)
+  args = parser.parse_args()
+  lib_base_dir = args.lib_base_dir
   MergeLibs(lib_base_dir)
 
 if __name__ == '__main__':

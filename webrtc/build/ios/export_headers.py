@@ -11,11 +11,11 @@
 """Script for exporting iOS header files."""
 
 import errno
-import optparse
-import os
-import re
-import shutil
 import sys
+
+import argparse
+import os
+import shutil
 
 LEGACY_HEADER_DIRS = ['talk/app/webrtc/objc/public', 'webrtc/base/objc/']
 HEADER_DIRS = ['webrtc/api/objc/', 'webrtc/base/objc/',
@@ -26,12 +26,14 @@ HEADER_INCLUDES = []
 # Individual header files that should not be exported.
 LEGACY_HEADER_EXCLUDES = ['talk/app/webrtc/objc/public/RTCNSGLVideoView.h']
 HEADER_EXCLUDES = [
-  'webrtc/api/objc/avfoundationvideocapturer.h',
-  'webrtc/api/objc/RTCNSGLVideoView.h',
-  'webrtc/base/objc/NSString+StdString.h',
-  'webrtc/base/objc/RTCUIApplication.h',
-  'webrtc/modules/audio_device/ios/objc/RTCAudioSessionDelegateAdapter.h',
+    'webrtc/api/objc/avfoundationvideocapturer.h',
+    'webrtc/api/objc/RTCNSGLVideoView.h',
+    'webrtc/api/objc/RTCVideoRendererAdapter.h',
+    'webrtc/base/objc/NSString+StdString.h',
+    'webrtc/base/objc/RTCUIApplication.h',
+    'webrtc/modules/audio_device/ios/objc/RTCAudioSessionDelegateAdapter.h',
 ]
+
 
 def ExportHeaders(include_base_dir, use_legacy_headers):
   """Exports iOS header files.
@@ -41,12 +43,13 @@ def ExportHeaders(include_base_dir, use_legacy_headers):
 
   Args:
     include_base_dir: directory where the include directory should be created
+    use_legacy_headers: whether or not to export the old headers
   """
 
   include_dir_name = 'include'
   include_path = os.path.join(include_base_dir, include_dir_name)
   # Remove existing directory first in case files change.
-  if (os.path.exists(include_path)):
+  if os.path.exists(include_path):
     shutil.rmtree(include_path)
 
   script_path = sys.path[0]
@@ -82,14 +85,21 @@ def ExportHeaders(include_base_dir, use_legacy_headers):
     new_path = os.path.join(include_path, header_path)
     shutil.copy(current_path, new_path)
 
+
 def Main():
-  parser = optparse.OptionParser()
-  _, args = parser.parse_args()
-  if len(args) != 2:
-    parser.error('Error: Exactly 2 arguments required.')
-  include_base_dir = args[0]
-  use_legacy_headers = False if int(args[1]) == 0 else True
-  ExportHeaders(include_base_dir, use_legacy_headers)
+  parser_description = 'Export WebRTC ObjC API headers.'
+  parser = argparse.ArgumentParser(description=parser_description)
+  parser.add_argument('output_dir',
+                      help='Output directory to write headers to.',
+                      type=str)
+  parser.add_argument('use_legacy_headers',
+                      help='Reads the old headers instead of the current ones.',
+                      type=int)
+  args = parser.parse_args()
+  use_legacy_headers = args.use_legacy_headers != 0
+  output_dir = args.output_dir
+  ExportHeaders(output_dir, use_legacy_headers)
+
 
 if __name__ == '__main__':
   sys.exit(Main())
