@@ -12,6 +12,8 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_processing/video_denoiser.h"
 
+namespace webrtc {
+
 #if DISPLAY  // Rectangle diagnostics
 static void CopyMem8x8(const uint8_t* src,
                        int src_stride,
@@ -65,8 +67,6 @@ static void ShowRect(const std::unique_ptr<DenoiserFilter>& filter,
   }
 }
 #endif
-
-namespace webrtc {
 
 VideoDenoiser::VideoDenoiser(bool runtime_cpu_detection)
     : width_(0),

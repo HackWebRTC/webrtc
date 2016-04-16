@@ -9,6 +9,9 @@
  */
 
 #include "webrtc/modules/video_processing/util/noise_estimation.h"
+#if DISPLAY
+#include <android/log.h>
+#endif
 
 namespace webrtc {
 
@@ -50,7 +53,12 @@ void NoiseEstimation::UpdateNoiseLevel() {
           (0.65 * mb_cols_ * mb_rows_ / NOISE_SUBSAMPLE_INTERVAL) ||
       !num_noisy_block_) {
 #if DISPLAY
-    printf("Not enough samples. %d \n", num_static_block_);
+    if (cpu_type_) {
+      printf("Not enough samples. %d \n", num_static_block_);
+    } else {
+      __android_log_print(ANDROID_LOG_DEBUG, "DISPLAY",
+                          "Not enough samples. %d \n", num_static_block_);
+    }
 #endif
     noise_var_ = 0;
     noise_var_accum_ = 0;
@@ -59,9 +67,16 @@ void NoiseEstimation::UpdateNoiseLevel() {
     return;
   } else {
 #if DISPLAY
-    printf("%d %d fraction = %.3f\n", num_static_block_,
-           mb_cols_ * mb_rows_ / NOISE_SUBSAMPLE_INTERVAL,
-           percent_static_block_);
+    if (cpu_type_) {
+      printf("%d %d fraction = %.3f\n", num_static_block_,
+             mb_cols_ * mb_rows_ / NOISE_SUBSAMPLE_INTERVAL,
+             percent_static_block_);
+    } else {
+      __android_log_print(ANDROID_LOG_DEBUG, "DISPLAY",
+                          "%d %d fraction = %.3f\n", num_static_block_,
+                          mb_cols_ * mb_rows_ / NOISE_SUBSAMPLE_INTERVAL,
+                          percent_static_block_);
+    }
 #endif
     // Normalized by the number of noisy blocks.
     noise_var_ /= num_noisy_block_;
@@ -79,8 +94,14 @@ void NoiseEstimation::UpdateNoiseLevel() {
     noise_var_accum_ = (noise_var_accum_ * 15 + noise_var_) / 16;
   }
 #if DISPLAY
-  printf("noise_var_accum_ = %.1f, noise_var_ = %d.\n", noise_var_accum_,
-         noise_var_);
+  if (cpu_type_) {
+    printf("noise_var_accum_ = %.1f, noise_var_ = %d.\n", noise_var_accum_,
+           noise_var_);
+  } else {
+    __android_log_print(ANDROID_LOG_DEBUG, "DISPLAY",
+                        "noise_var_accum_ = %.1f, noise_var_ = %d.\n",
+                        noise_var_accum_, noise_var_);
+  }
 #endif
   // Reset noise_var_ for the next frame.
   noise_var_ = 0;
