@@ -959,9 +959,9 @@ static void RegressorPower(int num_partitions,
   }
 }
 
-static void EchoSubtraction(AecCore* aec,
-                            int num_partitions,
+static void EchoSubtraction(int num_partitions,
                             int extended_filter_enabled,
+                            int* extreme_filter_divergence,
                             float filter_step_size,
                             float error_threshold,
                             float* x_fft,
@@ -997,9 +997,10 @@ static void EchoSubtraction(AecCore* aec,
 
   // Conditionally reset the echo subtraction filter if the filter has diverged
   // significantly.
-  if (!aec->extended_filter_enabled && aec->extreme_filter_divergence) {
-    memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
-    aec->extreme_filter_divergence = 0;
+  if (!extended_filter_enabled && *extreme_filter_divergence) {
+    memset(h_fft_buf, 0,
+           2 * kExtendedNumPartitions * PART_LEN1 * sizeof(h_fft_buf[0][0]));
+    *extreme_filter_divergence = 0;
   }
 
   // Produce echo estimate s_fft.
@@ -1019,9 +1020,6 @@ static void EchoSubtraction(AecCore* aec,
   memset(e_extended, 0, sizeof(float) * PART_LEN);
   memcpy(e_extended + PART_LEN, e, sizeof(float) * PART_LEN);
   Fft(e_extended, e_fft);
-
-  RTC_AEC_DEBUG_RAW_WRITE(aec->e_fft_file, &e_fft[0][0],
-                          sizeof(e_fft[0][0]) * PART_LEN1 * 2);
 
   // Scale error signal inversely with far power.
   WebRtcAec_ScaleErrorSignal(filter_step_size, error_threshold, x_pow, e_fft);
@@ -1413,10 +1411,11 @@ static void ProcessBlock(AecCore* aec) {
   }
 
   // Perform echo subtraction.
-  EchoSubtraction(aec, aec->num_partitions, aec->extended_filter_enabled,
-                  aec->filter_step_size, aec->error_threshold, &x_fft[0][0],
-                  &aec->xfBufBlockPos, aec->xfBuf, nearend_ptr, aec->xPow,
-                  aec->wfBuf, echo_subtractor_output);
+  EchoSubtraction(aec->num_partitions, aec->extended_filter_enabled,
+                  &aec->extreme_filter_divergence, aec->filter_step_size,
+                  aec->error_threshold, &x_fft[0][0], &aec->xfBufBlockPos,
+                  aec->xfBuf, nearend_ptr, aec->xPow, aec->wfBuf,
+                  echo_subtractor_output);
 
   RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, echo_subtractor_output, PART_LEN);
 
