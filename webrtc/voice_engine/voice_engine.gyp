@@ -255,6 +255,27 @@
               ],
             },
           ],
+          'conditions': [
+            ['test_isolation_mode != "noop"',
+              {
+                'targets': [
+                  {
+                    'target_name': 'voice_engine_unittests_apk_run',
+                    'type': 'none',
+                    'dependencies': [
+                      '<(apk_tests_path):voice_engine_unittests_apk',
+                    ],
+                    'includes': [
+                      '../build/isolate.gypi',
+                    ],
+                    'sources': [
+                      'voice_engine_unittests_apk.isolate',
+                    ],
+                  },
+                ],
+              },
+            ],
+          ],
         }],
         ['test_isolation_mode != "noop"', {
           'targets': [

@@ -343,6 +343,66 @@
           ],
         },
       ],
+      'conditions': [
+        ['test_isolation_mode != "noop"',
+          {
+            'targets': [
+              {
+                'target_name': 'rtc_unittests_apk_run',
+                'type': 'none',
+                'dependencies': [
+                  '<(apk_tests_path):rtc_unittests_apk',
+                ],
+                'includes': [
+                  'build/isolate.gypi',
+                ],
+                'sources': [
+                  'rtc_unittests_apk.isolate',
+                ],
+              },
+              {
+                'target_name': 'video_engine_tests_apk_run',
+                'type': 'none',
+                'dependencies': [
+                  '<(apk_tests_path):video_engine_tests_apk',
+                ],
+                'includes': [
+                  'build/isolate.gypi',
+                ],
+                'sources': [
+                  'video_engine_tests_apk.isolate',
+                ],
+              },
+              {
+                'target_name': 'webrtc_perf_tests_apk_run',
+                'type': 'none',
+                'dependencies': [
+                  '<(apk_tests_path):webrtc_perf_tests_apk',
+                ],
+                'includes': [
+                  'build/isolate.gypi',
+                ],
+                'sources': [
+                  'webrtc_perf_tests_apk.isolate',
+                ],
+              },
+              {
+                'target_name': 'webrtc_nonparallel_tests_apk_run',
+                'type': 'none',
+                'dependencies': [
+                  '<(apk_tests_path):webrtc_nonparallel_tests_apk',
+                ],
+                'includes': [
+                  'build/isolate.gypi',
+                ],
+                'sources': [
+                  'webrtc_nonparallel_tests_apk.isolate',
+                ],
+              },
+            ],
+          },
+        ],
+      ],
     }],
     ['test_isolation_mode != "noop"', {
       'targets': [

@@ -140,6 +140,7 @@
 /tools/grit
 /tools/gyp
 /tools/isolate_driver.py
+/tools/luci-go
 /tools/mb
 /tools/memory
 /tools/protoc_wrapper

@@ -68,6 +68,7 @@ DIRECTORIES = [
   'tools/generate_stubs',
   'tools/gn',
   'tools/gyp',
+  'tools/luci-go',
   'tools/mb',
   'tools/memory',
   'tools/protoc_wrapper',

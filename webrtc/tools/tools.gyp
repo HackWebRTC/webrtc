@@ -189,6 +189,27 @@
               ],
             },
           ],
+          'conditions': [
+            ['test_isolation_mode != "noop"',
+              {
+                'targets': [
+                  {
+                    'target_name': 'tools_unittests_apk_run',
+                    'type': 'none',
+                    'dependencies': [
+                      '<(apk_tests_path):tools_unittests_apk',
+                    ],
+                    'includes': [
+                      '../build/isolate.gypi',
+                    ],
+                    'sources': [
+                      'tools_unittests_apk.isolate',
+                    ],
+                  },
+                ],
+              },
+            ],
+          ],
         }],
         ['test_isolation_mode != "noop"', {
           'targets': [

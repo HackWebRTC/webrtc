@@ -56,7 +56,7 @@
     },
   ],
   'conditions': [
-    ['include_tests==1 and OS=="android"', {
+    ['OS=="android"', {
       'targets': [
         {
           'target_name': 'system_wrappers_unittests_apk_target',
@@ -66,7 +66,28 @@
           ],
         },
       ],
-    }],
+      'conditions': [
+        ['test_isolation_mode != "noop"',
+          {
+            'targets': [
+              {
+                'target_name': 'system_wrappers_unittests_apk_run',
+                'type': 'none',
+                'dependencies': [
+                  '<(apk_tests_path):system_wrappers_unittests_apk',
+                ],
+                'includes': [
+                  '../build/isolate.gypi',
+                ],
+                'sources': [
+                  'system_wrappers_unittests_apk.isolate',
+                ],
+              },
+            ],
+          },
+        ],
+      ],
+    }],  # OS=="android"
     ['test_isolation_mode != "noop"', {
       'targets': [
         {

@@ -206,19 +206,6 @@
           ],
         }, # neteq_unittest_tools
       ], # targets
-      'conditions': [
-        ['OS=="android"', {
-          'targets': [
-            {
-              'target_name': 'audio_decoder_unittests_apk_target',
-              'type': 'none',
-              'dependencies': [
-                '<(apk_tests_path):audio_decoder_unittests_apk',
-              ],
-            },
-          ],
-        }],
-      ],
     }], # include_tests
   ], # conditions
 }

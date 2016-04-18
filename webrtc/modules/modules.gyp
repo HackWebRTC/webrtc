@@ -627,10 +627,17 @@
         ['OS=="android"', {
           'targets': [
             {
-              'target_name': 'modules_unittests_apk_target',
+              'target_name': 'audio_codec_speed_tests_apk_target',
               'type': 'none',
               'dependencies': [
-                '<(apk_tests_path):modules_unittests_apk',
+                '<(apk_tests_path):audio_codec_speed_tests_apk',
+              ],
+            },
+            {
+              'target_name': 'audio_decoder_unittests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):audio_decoder_unittests_apk',
               ],
             },
             {
@@ -640,8 +647,75 @@
                 '<(apk_tests_path):modules_tests_apk',
               ],
             },
+            {
+              'target_name': 'modules_unittests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):modules_unittests_apk',
+              ],
+            },
           ],
-        }],
+          'conditions': [
+            ['test_isolation_mode != "noop"',
+              {
+                'targets': [
+                  {
+                    'target_name': 'audio_codec_speed_tests_apk_run',
+                    'type': 'none',
+                    'dependencies': [
+                      '<(apk_tests_path):audio_codec_speed_tests_apk',
+                    ],
+                    'includes': [
+                      '../build/isolate.gypi',
+                    ],
+                    'sources': [
+                      'audio_codec_speed_tests_apk.isolate',
+                    ],
+                  },
+                  {
+                    'target_name': 'audio_decoder_unittests_apk_run',
+                    'type': 'none',
+                    'dependencies': [
+                      '<(apk_tests_path):audio_decoder_unittests_apk',
+                    ],
+                    'includes': [
+                      '../build/isolate.gypi',
+                    ],
+                    'sources': [
+                      'audio_decoder_unittests_apk.isolate',
+                    ],
+                  },
+                  {
+                    'target_name': 'modules_tests_apk_run',
+                    'type': 'none',
+                    'dependencies': [
+                      '<(apk_tests_path):modules_tests_apk',
+                    ],
+                    'includes': [
+                      '../build/isolate.gypi',
+                    ],
+                    'sources': [
+                      'modules_tests_apk.isolate',
+                    ],
+                  },
+                  {
+                    'target_name': 'modules_unittests_apk_run',
+                    'type': 'none',
+                    'dependencies': [
+                      '<(apk_tests_path):modules_unittests_apk',
+                    ],
+                    'includes': [
+                      '../build/isolate.gypi',
+                    ],
+                    'sources': [
+                      'modules_unittests_apk.isolate',
+                    ],
+                  },
+                ],
+              },
+            ],
+          ],
+        }],  # OS=="android"
         ['test_isolation_mode != "noop"', {
           'targets': [
             {

@@ -43,7 +43,7 @@
         'peerconnectionendtoend_unittest.cc',
         'peerconnectionfactory_unittest.cc',
         'peerconnectioninterface_unittest.cc',
-	'proxy_unittest.cc',
+        'proxy_unittest.cc',
         'rtpsenderreceiver_unittest.cc',
         'statscollector_unittest.cc',
         'test/fakeaudiocapturemodule.cc',
@@ -180,6 +180,27 @@
             '<(apk_tests_path):peerconnection_unittests_apk',
           ],
         },
+      ],
+      'conditions': [
+        ['test_isolation_mode != "noop"',
+          {
+            'targets': [
+              {
+                'target_name': 'peerconnection_unittests_apk_run',
+                'type': 'none',
+                'dependencies': [
+                  '<(apk_tests_path):peerconnection_unittests_apk',
+                ],
+                'includes': [
+                  '../build/isolate.gypi',
+                ],
+                'sources': [
+                  'peerconnection_unittests_apk.isolate',
+                ],
+              },
+            ]
+          }
+        ],
       ],
     }],  # OS=="android"
     ['test_isolation_mode != "noop"', {

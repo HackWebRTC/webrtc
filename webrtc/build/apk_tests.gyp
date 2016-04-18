@@ -22,6 +22,21 @@
   },
   'targets': [
     {
+      'target_name': 'audio_codec_speed_tests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'audio_codec_speed_tests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_codec_speed_tests<(SHARED_LIB_SUFFIX)',
+        'isolate_file': '../modules/audio_codec_speed_tests.isolate',
+      },
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:audio_codec_speed_tests',
+      ],
+      'includes': [
+        '../../build/apk_test.gypi',
+      ],
+    },
+    {
       'target_name': 'audio_decoder_unittests_apk',
       'type': 'none',
       'variables': {
@@ -67,22 +82,6 @@
       ],
     },
     {
-      'target_name': 'peerconnection_unittests_apk',
-      'type': 'none',
-      'variables': {
-        'test_suite_name': 'peerconnection_unittests',
-        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)peerconnection_unittests<(SHARED_LIB_SUFFIX)',
-        'isolate_file': '../api/peerconnection_unittests.isolate',
-      },
-      'dependencies': [
-        '<(webrtc_root)/api/api_tests.gyp:peerconnection_unittests',
-        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection_java',
-      ],
-      'includes': [
-        '../../build/apk_test.gypi',
-      ],
-    },
-    {
       'target_name': 'modules_tests_apk',
       'type': 'none',
       'variables': {
@@ -108,6 +107,22 @@
       'dependencies': [
         '<(webrtc_root)/modules/modules.gyp:modules_unittests',
         'audio_device_java',
+      ],
+      'includes': [
+        '../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'peerconnection_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'peerconnection_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)peerconnection_unittests<(SHARED_LIB_SUFFIX)',
+        'isolate_file': '../api/peerconnection_unittests.isolate',
+      },
+      'dependencies': [
+        '<(webrtc_root)/api/api_tests.gyp:peerconnection_unittests',
+        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection_java',
       ],
       'includes': [
         '../../build/apk_test.gypi',
@@ -229,21 +244,6 @@
       },
       'dependencies': [
         '<(webrtc_root)/webrtc.gyp:webrtc_nonparallel_tests',
-      ],
-      'includes': [
-        '../../build/apk_test.gypi',
-      ],
-    },
-    {
-      'target_name': 'audio_codec_speed_tests_apk',
-      'type': 'none',
-      'variables': {
-        'test_suite_name': 'audio_codec_speed_tests',
-        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_codec_speed_tests<(SHARED_LIB_SUFFIX)',
-        'isolate_file': '../modules/audio_codec_speed_tests.isolate',
-      },
-      'dependencies': [
-        '<(webrtc_root)/modules/modules.gyp:audio_codec_speed_tests',
       ],
       'includes': [
         '../../build/apk_test.gypi',
