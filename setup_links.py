@@ -94,7 +94,6 @@ if 'android' in target_os:
     'third_party/ijar',
     'third_party/jsr-305',
     'third_party/junit',
-    'third_party/libevent',
     'third_party/libxml',
     'third_party/mockito',
     'third_party/modp_b64',

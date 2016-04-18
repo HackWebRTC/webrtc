@@ -99,7 +99,6 @@
 /third_party/libc++
 /third_party/libc++-static
 /third_party/libc++abi
-/third_party/libevent
 /third_party/libFuzzer
 /third_party/libjingle
 /third_party/libjpeg
