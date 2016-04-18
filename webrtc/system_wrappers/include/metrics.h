@@ -69,6 +69,9 @@
 #define RTC_HISTOGRAM_COUNTS_200(name, sample) \
   RTC_HISTOGRAM_COUNTS(name, sample, 1, 200, 50)
 
+#define RTC_HISTOGRAM_COUNTS_500(name, sample) \
+  RTC_HISTOGRAM_COUNTS(name, sample, 1, 500, 50)
+
 #define RTC_HISTOGRAM_COUNTS_1000(name, sample) \
   RTC_HISTOGRAM_COUNTS(name, sample, 1, 1000, 50)
 
@@ -88,6 +91,9 @@
 
 #define RTC_LOGGED_HISTOGRAM_COUNTS_200(name, sample) \
   RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 200, 50)
+
+#define RTC_LOGGED_HISTOGRAM_COUNTS_500(name, sample) \
+  RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 500, 50)
 
 #define RTC_LOGGED_HISTOGRAM_COUNTS_1000(name, sample) \
   RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 1000, 50)
@@ -175,6 +181,10 @@
   RTC_HISTOGRAMS_COMMON(index, name, sample, \
       RTC_HISTOGRAM_COUNTS(name, sample, 1, 200, 50))
 
+#define RTC_HISTOGRAMS_COUNTS_500(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_HISTOGRAM_COUNTS(name, sample, 1, 500, 50))
+
 #define RTC_HISTOGRAMS_COUNTS_1000(index, name, sample) \
   RTC_HISTOGRAMS_COMMON(index, name, sample, \
       RTC_HISTOGRAM_COUNTS(name, sample, 1, 1000, 50))
@@ -203,6 +213,10 @@
 #define RTC_LOGGED_HISTOGRAMS_COUNTS_200(index, name, sample) \
   RTC_HISTOGRAMS_COMMON(index, name, sample, \
       RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 200, 50))
+
+#define RTC_LOGGED_HISTOGRAMS_COUNTS_500(index, name, sample) \
+  RTC_HISTOGRAMS_COMMON(index, name, sample, \
+      RTC_LOGGED_HISTOGRAM_COUNTS(name, sample, 1, 500, 50))
 
 #define RTC_LOGGED_HISTOGRAMS_COUNTS_1000(index, name, sample) \
   RTC_HISTOGRAMS_COMMON(index, name, sample, \

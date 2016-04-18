@@ -694,6 +694,9 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     encoded_image_.capture_time_ms_ = input_image_->render_time_ms();
     encoded_image_._encodedHeight = raw_->d_h;
     encoded_image_._encodedWidth = raw_->d_w;
+    int qp = -1;
+    vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
+    encoded_image_.qp_ = qp;
     encoded_complete_callback_->Encoded(encoded_image_, &codec_specific,
                                         &frag_info);
   }

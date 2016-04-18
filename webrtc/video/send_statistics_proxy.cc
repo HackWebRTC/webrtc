@@ -194,23 +194,43 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
   }
 
   for (const auto& it : qp_counters_) {
-    int qp = it.second.vp8.Avg(kMinRequiredSamples);
-    if (qp != -1) {
+    int qp_vp8 = it.second.vp8.Avg(kMinRequiredSamples);
+    if (qp_vp8 != -1) {
       int spatial_idx = it.first;
       if (spatial_idx == -1) {
         RTC_LOGGED_HISTOGRAMS_COUNTS_200(kIndex, uma_prefix_ + "Encoded.Qp.Vp8",
-                                         qp);
+                                         qp_vp8);
       } else if (spatial_idx == 0) {
-        RTC_LOGGED_HISTOGRAMS_COUNTS_200(kIndex,
-                                         uma_prefix_ + "Encoded.Qp.Vp8.S0", qp);
+        RTC_LOGGED_HISTOGRAMS_COUNTS_200(
+            kIndex, uma_prefix_ + "Encoded.Qp.Vp8.S0", qp_vp8);
       } else if (spatial_idx == 1) {
-        RTC_LOGGED_HISTOGRAMS_COUNTS_200(kIndex,
-                                         uma_prefix_ + "Encoded.Qp.Vp8.S1", qp);
+        RTC_LOGGED_HISTOGRAMS_COUNTS_200(
+            kIndex, uma_prefix_ + "Encoded.Qp.Vp8.S1", qp_vp8);
       } else if (spatial_idx == 2) {
-        RTC_LOGGED_HISTOGRAMS_COUNTS_200(kIndex,
-                                         uma_prefix_ + "Encoded.Qp.Vp8.S2", qp);
+        RTC_LOGGED_HISTOGRAMS_COUNTS_200(
+            kIndex, uma_prefix_ + "Encoded.Qp.Vp8.S2", qp_vp8);
       } else {
         LOG(LS_WARNING) << "QP stats not recorded for VP8 spatial idx "
+                        << spatial_idx;
+      }
+    }
+    int qp_vp9 = it.second.vp9.Avg(kMinRequiredSamples);
+    if (qp_vp9 != -1) {
+      int spatial_idx = it.first;
+      if (spatial_idx == -1) {
+        RTC_LOGGED_HISTOGRAMS_COUNTS_500(kIndex, uma_prefix_ + "Encoded.Qp.Vp9",
+                                         qp_vp9);
+      } else if (spatial_idx == 0) {
+        RTC_LOGGED_HISTOGRAMS_COUNTS_500(
+            kIndex, uma_prefix_ + "Encoded.Qp.Vp9.S0", qp_vp9);
+      } else if (spatial_idx == 1) {
+        RTC_LOGGED_HISTOGRAMS_COUNTS_500(
+            kIndex, uma_prefix_ + "Encoded.Qp.Vp9.S1", qp_vp9);
+      } else if (spatial_idx == 2) {
+        RTC_LOGGED_HISTOGRAMS_COUNTS_500(
+            kIndex, uma_prefix_ + "Encoded.Qp.Vp9.S2", qp_vp9);
+      } else {
+        LOG(LS_WARNING) << "QP stats not recorded for VP9 spatial layer "
                         << spatial_idx;
       }
     }
@@ -449,11 +469,19 @@ void SendStatisticsProxy::OnSendEncodedImage(
     }
   }
 
-  if (encoded_image.qp_ != -1 && rtp_video_header &&
-      rtp_video_header->codec == kRtpVideoVp8) {
-    int spatial_idx =
-        (config_.rtp.ssrcs.size() == 1) ? -1 : static_cast<int>(simulcast_idx);
-    uma_container_->qp_counters_[spatial_idx].vp8.Add(encoded_image.qp_);
+  if (encoded_image.qp_ != -1 && rtp_video_header) {
+    if (rtp_video_header->codec == kRtpVideoVp8) {
+      int spatial_idx = (config_.rtp.ssrcs.size() == 1)
+                            ? -1
+                            : static_cast<int>(simulcast_idx);
+      uma_container_->qp_counters_[spatial_idx].vp8.Add(encoded_image.qp_);
+    } else if (rtp_video_header->codec == kRtpVideoVp9) {
+      int spatial_idx =
+          (rtp_video_header->codecHeader.VP9.num_spatial_layers == 1)
+              ? -1
+              : rtp_video_header->codecHeader.VP9.spatial_idx;
+      uma_container_->qp_counters_[spatial_idx].vp9.Add(encoded_image.qp_);
+    }
   }
 
   // TODO(asapersson): This is incorrect if simulcast layers are encoded on

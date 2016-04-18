@@ -21,11 +21,16 @@
 #include "webrtc/test/histogram.h"
 
 namespace webrtc {
+namespace {
+const uint32_t kFirstSsrc = 17;
+const uint32_t kSecondSsrc = 42;
+const uint32_t kFirstRtxSsrc = 18;
+const uint32_t kSecondRtxSsrc = 43;
 
-static const uint32_t kFirstSsrc = 17;
-static const uint32_t kSecondSsrc = 42;
-static const uint32_t kFirstRtxSsrc = 18;
-static const uint32_t kSecondRtxSsrc = 43;
+const int kMinRequiredSamples = 200;
+const int kQpIdx0 = 21;
+const int kQpIdx1 = 39;
+}  // namespace
 
 class SendStatisticsProxyTest : public ::testing::Test {
  public:
@@ -310,7 +315,6 @@ TEST_F(SendStatisticsProxyTest, OnEncodedFrameTimeMeasured) {
 
 TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   test::ClearHistograms();
-  const int kMinRequiredSamples = 200;
   const int kWidth = 640;
   const int kHeight = 480;
 
@@ -329,11 +333,7 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
 
 TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8) {
   test::ClearHistograms();
-  const int kMinRequiredSamples = 200;
-  const int kQpIdx0 = 21;
-  const int kQpIdx1 = 39;
   EncodedImage encoded_image;
-
   RTPVideoHeader rtp_video_header;
   rtp_video_header.codec = kRtpVideoVp8;
 
@@ -361,10 +361,7 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
       &fake_clock_, config, VideoEncoderConfig::ContentType::kRealtimeVideo));
 
   test::ClearHistograms();
-  const int kMinRequiredSamples = 200;
-  const int kQpIdx0 = 21;
   EncodedImage encoded_image;
-
   RTPVideoHeader rtp_video_header;
   rtp_video_header.codec = kRtpVideoVp8;
 
@@ -376,6 +373,54 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
   statistics_proxy_.reset();
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8"));
   EXPECT_EQ(kQpIdx0, test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp8"));
+}
+
+TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9) {
+  test::ClearHistograms();
+  EncodedImage encoded_image;
+  RTPVideoHeader rtp_video_header;
+  rtp_video_header.simulcastIdx = 0;
+  rtp_video_header.codec = kRtpVideoVp9;
+  rtp_video_header.codecHeader.VP9.num_spatial_layers = 2;
+
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
+    encoded_image.qp_ = kQpIdx0;
+    rtp_video_header.codecHeader.VP9.spatial_idx = 0;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+    encoded_image.qp_ = kQpIdx1;
+    rtp_video_header.codecHeader.VP9.spatial_idx = 1;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp9.S0"));
+  EXPECT_EQ(kQpIdx0,
+            test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp9.S0"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp9.S1"));
+  EXPECT_EQ(kQpIdx1,
+            test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp9.S1"));
+}
+
+TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9OneSpatialLayer) {
+  VideoSendStream::Config config(nullptr);
+  config.rtp.ssrcs.push_back(kFirstSsrc);
+  statistics_proxy_.reset(new SendStatisticsProxy(
+      &fake_clock_, config, VideoEncoderConfig::ContentType::kRealtimeVideo));
+
+  test::ClearHistograms();
+  EncodedImage encoded_image;
+  RTPVideoHeader rtp_video_header;
+  rtp_video_header.simulcastIdx = 0;
+  rtp_video_header.codec = kRtpVideoVp9;
+  rtp_video_header.codecHeader.VP9.num_spatial_layers = 1;
+
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
+    encoded_image.qp_ = kQpIdx0;
+    rtp_video_header.codecHeader.VP9.spatial_idx = 0;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp9"));
+  EXPECT_EQ(kQpIdx0, test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp9"));
 }
 
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {
