@@ -133,10 +133,6 @@ public class VideoRenderer {
     nativeVideoRenderer = nativeWrapVideoRenderer(callbacks);
   }
 
-  private VideoRenderer(long nativeVideoRenderer) {
-    this.nativeVideoRenderer = nativeVideoRenderer;
-  }
-
   public void dispose() {
     if (nativeVideoRenderer == 0) {
       // Already disposed.
