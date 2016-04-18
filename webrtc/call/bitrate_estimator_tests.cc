@@ -302,8 +302,8 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
   EXPECT_TRUE(receiver_log_.Wait());
 }
 
-// Fails when run with ASan. See webrtc:5790.
-#if defined(ADDRESS_SANITIZER)
+// Fails when run with ASan/MSan. See webrtc:5790.
+#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
 #define MAYBE_SwitchesToASTThenBackToTOFForVideo \
     DISABLED_SwitchesToASTThenBackToTOFForVideo
 #else
