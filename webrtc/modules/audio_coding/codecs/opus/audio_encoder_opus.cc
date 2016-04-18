@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 
+#include <algorithm>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"

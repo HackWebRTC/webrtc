@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_MOCK_MOCK_AUDIO_ENCODER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_MOCK_MOCK_AUDIO_ENCODER_H_
 
+#include <string>
+
 #include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
@@ -49,11 +51,11 @@ class MockAudioEncoder : public AudioEncoder {
    public:
     // Creates a functor that will return |info| and adjust the rtc::Buffer
     // given as input to it, so it is info.encoded_bytes larger.
-    FakeEncoding(const AudioEncoder::EncodedInfo& info);
+    explicit FakeEncoding(const AudioEncoder::EncodedInfo& info);
 
     // Shorthand version of the constructor above, for when only setting
     // encoded_bytes in the EncodedInfo object matters.
-    FakeEncoding(size_t encoded_bytes);
+    explicit FakeEncoding(size_t encoded_bytes);
 
     AudioEncoder::EncodedInfo operator()(uint32_t timestamp,
                                          rtc::ArrayView<const int16_t> audio,
@@ -76,11 +78,12 @@ class MockAudioEncoder : public AudioEncoder {
     // Shorthand version of the constructor above, for when you wish to append
     // the whole payload and do not care about any EncodedInfo attribute other
     // than encoded_bytes.
-    CopyEncoding(rtc::ArrayView<const uint8_t> payload);
+    explicit CopyEncoding(rtc::ArrayView<const uint8_t> payload);
 
     AudioEncoder::EncodedInfo operator()(uint32_t timestamp,
                                          rtc::ArrayView<const int16_t> audio,
                                          rtc::Buffer* encoded);
+
    private:
     AudioEncoder::EncodedInfo info_;
     rtc::ArrayView<const uint8_t> payload_;
