@@ -10,12 +10,7 @@ import("//build/config/crypto.gni")
 import("//build/config/ui.gni")
 import("../build/webrtc.gni")
 
-# Enable OpenSSL (BoringSSL) for iOS. This is covered in webrtc/supplement.gypi
-# for the GYP build.
 import("//build_overrides/webrtc.gni")
-if (is_ios && !build_with_chromium) {
-  use_openssl = true
-}
 
 config("rtc_base_config") {
   include_dirs = [
@@ -80,11 +75,9 @@ if (is_linux && !build_with_chromium) {
   # Provides the same functionality as the //crypto:platform target, which
   # WebRTC cannot use as we don't sync src/crypto from Chromium.
   group("linux_system_ssl") {
-    if (use_openssl) {
-      deps = [
-        "//third_party/boringssl",
-      ]
-    }
+    deps = [
+      "//third_party/boringssl",
+    ]
   }
 }
 
@@ -276,6 +269,15 @@ static_library("rtc_base") {
     "networkmonitor.cc",
     "networkmonitor.h",
     "nullsocketserver.h",
+    "openssl.h",
+    "openssladapter.cc",
+    "openssladapter.h",
+    "openssldigest.cc",
+    "openssldigest.h",
+    "opensslidentity.cc",
+    "opensslidentity.h",
+    "opensslstreamadapter.cc",
+    "opensslstreamadapter.h",
     "pathutils.cc",
     "pathutils.h",
     "physicalsocketserver.cc",
@@ -466,26 +468,10 @@ static_library("rtc_base") {
     cflags_cc += [ "-Wno-non-virtual-dtor" ]
   }
 
-  # TODO(kjellander): The use_openssl block should really go away in order for
-  # the GN build to be similar to the GYP build. See http://crbug.com/601042 for
-  # more details.
-  if (use_openssl) {
-    if (rtc_build_ssl) {
-      deps += [ "//third_party/boringssl" ]
-    } else {
-      configs += [ "external_ssl_library" ]
-    }
-    sources += [
-      "openssl.h",
-      "openssladapter.cc",
-      "openssladapter.h",
-      "openssldigest.cc",
-      "openssldigest.h",
-      "opensslidentity.cc",
-      "opensslidentity.h",
-      "opensslstreamadapter.cc",
-      "opensslstreamadapter.h",
-    ]
+  if (rtc_build_ssl) {
+    deps += [ "//third_party/boringssl" ]
+  } else {
+    configs += [ "external_ssl_library" ]
   }
 
   if (is_android) {
