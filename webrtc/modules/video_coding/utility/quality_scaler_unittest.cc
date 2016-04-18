@@ -16,10 +16,8 @@ namespace webrtc {
 namespace {
 static const int kNumSeconds = 10;
 static const int kWidth = 1920;
-static const int kWidthVga = 640;
 static const int kHalfWidth = kWidth / 2;
 static const int kHeight = 1080;
-static const int kHeightVga = 480;
 static const int kFramerate = 30;
 static const int kLowQp = 15;
 static const int kNormalQp = 30;
@@ -380,13 +378,33 @@ TEST_F(QualityScalerTest, DoesNotDownscaleBelow2xDefaultMinDimensionsHeight) {
 }
 
 TEST_F(QualityScalerTest, DownscaleToVgaOnLowInitialBitrate) {
-  qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, true,
-           kLowInitialBitrateKbps, kWidth, kHeight, kFramerate);
+  static const int kWidth720p = 1280;
+  static const int kHeight720p = 720;
+  static const int kInitialBitrateKbps = 300;
+  input_frame_.CreateEmptyFrame(kWidth720p, kHeight720p, kWidth720p,
+                                kWidth720p / 2, kWidth720p / 2);
+  qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, true, kInitialBitrateKbps,
+           kWidth720p, kHeight720p, kFramerate);
   qs_.OnEncodeFrame(input_frame_);
   int init_width = qs_.GetScaledResolution().width;
   int init_height = qs_.GetScaledResolution().height;
-  EXPECT_LE(init_width, kWidthVga);
-  EXPECT_LE(init_height, kHeightVga);
+  EXPECT_EQ(640, init_width);
+  EXPECT_EQ(360, init_height);
+}
+
+TEST_F(QualityScalerTest, DownscaleToQvgaOnLowerInitialBitrate) {
+  static const int kWidth720p = 1280;
+  static const int kHeight720p = 720;
+  static const int kInitialBitrateKbps = 200;
+  input_frame_.CreateEmptyFrame(kWidth720p, kHeight720p, kWidth720p,
+                                kWidth720p / 2, kWidth720p / 2);
+  qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, true, kInitialBitrateKbps,
+           kWidth720p, kHeight720p, kFramerate);
+  qs_.OnEncodeFrame(input_frame_);
+  int init_width = qs_.GetScaledResolution().width;
+  int init_height = qs_.GetScaledResolution().height;
+  EXPECT_EQ(320, init_width);
+  EXPECT_EQ(180, init_height);
 }
 
 TEST_F(QualityScalerTest, DownscaleAfterMeasuredSecondsThenSlowerBackUp) {

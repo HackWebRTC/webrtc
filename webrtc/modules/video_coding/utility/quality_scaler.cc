@@ -18,11 +18,16 @@ static const int kMeasureSecondsFastUpscale = 2;
 static const int kMeasureSecondsUpscale = 5;
 static const int kMeasureSecondsDownscale = 5;
 static const int kFramedropPercentThreshold = 60;
-static const int kHdResolutionThreshold = 700 * 500;
-static const int kHdBitrateThresholdKbps = 500;
 // Min width/height to downscale to, set to not go below QVGA, but with some
 // margin to permit "almost-QVGA" resolutions, such as QCIF.
 static const int kMinDownscaleDimension = 140;
+// Initial resolutions corresponding to a bitrate. Aa bit above their actual
+// values to permit near-VGA and near-QVGA resolutions to use the same
+// mechanism.
+static const int kVgaBitrateThresholdKbps = 500;
+static const int kVgaNumPixels = 700 * 500;  // 640x480
+static const int kQvgaBitrateThresholdKbps = 250;
+static const int kQvgaNumPixels = 400 * 300;  // 320x240
 }  // namespace
 
 QualityScaler::QualityScaler()
@@ -46,12 +51,13 @@ void QualityScaler::Init(int low_qp_threshold,
   measure_seconds_upscale_ = kMeasureSecondsFastUpscale;
   const int init_width = width;
   const int init_height = height;
-  // TODO(glaznev): Investigate using thresholds for other resolutions
-  // or threshold tables.
-  if (initial_bitrate_kbps > 0 &&
-      initial_bitrate_kbps < kHdBitrateThresholdKbps) {
-    // Start scaling to roughly VGA.
-    while (width * height > kHdResolutionThreshold) {
+  if (initial_bitrate_kbps > 0) {
+    int init_num_pixels = width * height;
+    if (initial_bitrate_kbps < kVgaBitrateThresholdKbps)
+      init_num_pixels = kVgaNumPixels;
+    if (initial_bitrate_kbps < kQvgaBitrateThresholdKbps)
+      init_num_pixels = kQvgaNumPixels;
+    while (width * height > init_num_pixels) {
       ++downscale_shift_;
       width /= 2;
       height /= 2;
