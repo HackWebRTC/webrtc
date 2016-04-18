@@ -10,6 +10,8 @@
 
 #import "RTCVideoRendererAdapter.h"
 
+#include "webrtc/media/engine/webrtcvideoframe.h"
+
 #import "webrtc/api/objc/RTCVideoFrame+Private.h"
 #import "webrtc/api/objc/RTCVideoRendererAdapter+Private.h"
 
@@ -24,15 +26,31 @@ class VideoRendererAdapter
   }
 
   void OnFrame(const cricket::VideoFrame& nativeVideoFrame) override {
-    const cricket::VideoFrame *frame =
-        nativeVideoFrame.GetCopyWithRotationApplied();
-    CGSize current_size = CGSizeMake(frame->width(), frame->height());
+    RTCVideoFrame *videoFrame = nil;
+    // Rotation of native handles is unsupported right now. Convert to CPU
+    // I420 buffer for rotation before calling the rotation method otherwise
+    // it will hit a DCHECK.
+    if (nativeVideoFrame.rotation() != webrtc::kVideoRotation_0 &&
+        nativeVideoFrame.GetNativeHandle()) {
+      rtc::scoped_refptr<webrtc::VideoFrameBuffer> i420Buffer =
+          nativeVideoFrame.video_frame_buffer()->NativeToI420Buffer();
+      std::unique_ptr<cricket::VideoFrame> cpuFrame(
+          new cricket::WebRtcVideoFrame(i420Buffer,
+                                        nativeVideoFrame.rotation(),
+                                        nativeVideoFrame.timestamp_us()));
+      const cricket::VideoFrame *rotatedFrame =
+          cpuFrame->GetCopyWithRotationApplied();
+      videoFrame = [[RTCVideoFrame alloc] initWithNativeFrame:rotatedFrame];
+    } else {
+      const cricket::VideoFrame *rotatedFrame =
+          nativeVideoFrame.GetCopyWithRotationApplied();
+      videoFrame = [[RTCVideoFrame alloc] initWithNativeFrame:rotatedFrame];
+    }
+    CGSize current_size = CGSizeMake(videoFrame.width, videoFrame.height);
     if (!CGSizeEqualToSize(size_, current_size)) {
       size_ = current_size;
       [adapter_.videoRenderer setSize:size_];
     }
-    RTCVideoFrame *videoFrame =
-        [[RTCVideoFrame alloc] initWithNativeFrame:frame];
     [adapter_.videoRenderer renderFrame:videoFrame];
   }
 
