@@ -72,13 +72,6 @@ AudioEncoderCng::AudioEncoderCng(Config&& config)
 
 AudioEncoderCng::~AudioEncoderCng() = default;
 
-size_t AudioEncoderCng::MaxEncodedBytes() const {
-  const size_t max_encoded_bytes_active = speech_encoder_->MaxEncodedBytes();
-  const size_t max_encoded_bytes_passive =
-      rtc::CheckedDivExact(kMaxFrameSizeMs, 10) * SamplesPer10msFrame();
-  return std::max(max_encoded_bytes_active, max_encoded_bytes_passive);
-}
-
 int AudioEncoderCng::SampleRateHz() const {
   return speech_encoder_->SampleRateHz();
 }

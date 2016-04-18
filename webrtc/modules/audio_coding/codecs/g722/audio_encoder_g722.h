@@ -35,7 +35,6 @@ class AudioEncoderG722 final : public AudioEncoder {
   explicit AudioEncoderG722(const CodecInst& codec_inst);
   ~AudioEncoderG722() override;
 
-  size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   size_t NumChannels() const override;
   int RtpTimestampRateHz() const override;
@@ -44,7 +43,7 @@ class AudioEncoderG722 final : public AudioEncoder {
   int GetTargetBitrate() const override;
   void Reset() override;
 
-protected:
+ protected:
   EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
                          rtc::ArrayView<const int16_t> audio,
                          rtc::Buffer* encoded) override;

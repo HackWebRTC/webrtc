@@ -26,7 +26,6 @@ using ::testing::MockFunction;
 namespace webrtc {
 
 namespace {
-static const size_t kMockMaxEncodedBytes = 1000;
 static const size_t kMaxNumSamples = 48 * 10 * 2;  // 10 ms @ 48 kHz stereo.
 }
 
@@ -46,8 +45,6 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
     EXPECT_CALL(*mock_encoder_, NumChannels()).WillRepeatedly(Return(1U));
     EXPECT_CALL(*mock_encoder_, SampleRateHz())
         .WillRepeatedly(Return(sample_rate_hz_));
-    EXPECT_CALL(*mock_encoder_, MaxEncodedBytes())
-        .WillRepeatedly(Return(kMockMaxEncodedBytes));
   }
 
   void TearDown() override {

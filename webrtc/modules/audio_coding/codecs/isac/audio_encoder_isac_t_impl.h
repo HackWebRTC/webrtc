@@ -80,11 +80,6 @@ AudioEncoderIsacT<T>::~AudioEncoderIsacT() {
 }
 
 template <typename T>
-size_t AudioEncoderIsacT<T>::MaxEncodedBytes() const {
-  return kSufficientEncodeBufferSizeBytes;
-}
-
-template <typename T>
 int AudioEncoderIsacT<T>::SampleRateHz() const {
   return T::EncSampRate(isac_state_);
 }

@@ -54,7 +54,6 @@ class AudioEncoderOpus final : public AudioEncoder {
   explicit AudioEncoderOpus(const CodecInst& codec_inst);
   ~AudioEncoderOpus() override;
 
-  size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
   size_t NumChannels() const override;
   size_t Num10MsFramesInNextPacket() const override;
@@ -79,7 +78,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   ApplicationMode application() const { return config_.application; }
   bool dtx_enabled() const { return config_.dtx_enabled; }
 
-protected:
+ protected:
   EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
                          rtc::ArrayView<const int16_t> audio,
                          rtc::Buffer* encoded) override;
@@ -87,6 +86,7 @@ protected:
  private:
   size_t Num10msFramesPerPacket() const;
   size_t SamplesPer10msFrame() const;
+  size_t SufficientOutputBufferSize() const;
   bool RecreateEncoderInstance(const Config& config);
 
   Config config_;

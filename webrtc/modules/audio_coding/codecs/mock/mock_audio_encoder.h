@@ -18,12 +18,11 @@
 
 namespace webrtc {
 
-class MockAudioEncoderBase : public AudioEncoder {
+class MockAudioEncoder : public AudioEncoder {
  public:
-  ~MockAudioEncoderBase() override { Die(); }
+  ~MockAudioEncoder() override { Die(); }
   MOCK_METHOD0(Die, void());
   MOCK_METHOD1(Mark, void(std::string desc));
-  MOCK_CONST_METHOD0(MaxEncodedBytes, size_t());
   MOCK_CONST_METHOD0(SampleRateHz, int());
   MOCK_CONST_METHOD0(NumChannels, size_t());
   MOCK_CONST_METHOD0(RtpTimestampRateHz, int());
@@ -39,10 +38,7 @@ class MockAudioEncoderBase : public AudioEncoder {
   MOCK_METHOD1(SetTargetBitrate, void(int target_bps));
   MOCK_METHOD1(SetMaxBitrate, void(int max_bps));
   MOCK_METHOD1(SetMaxPayloadSize, void(int max_payload_size_bytes));
-};
 
-class MockAudioEncoder final : public MockAudioEncoderBase {
- public:
   // Note, we explicitly chose not to create a mock for the Encode method.
   MOCK_METHOD3(EncodeImpl,
                EncodedInfo(uint32_t timestamp,
@@ -85,36 +81,6 @@ class MockAudioEncoder final : public MockAudioEncoderBase {
     AudioEncoder::EncodedInfo operator()(uint32_t timestamp,
                                          rtc::ArrayView<const int16_t> audio,
                                          rtc::Buffer* encoded);
-   private:
-    AudioEncoder::EncodedInfo info_;
-    rtc::ArrayView<const uint8_t> payload_;
-  };
-
-};
-
-class MockAudioEncoderDeprecated final : public MockAudioEncoderBase {
- public:
-  // Note, we explicitly chose not to create a mock for the Encode method.
-  MOCK_METHOD4(EncodeInternal,
-               EncodedInfo(uint32_t timestamp,
-                           rtc::ArrayView<const int16_t> audio,
-                           size_t max_encoded_bytes,
-                           uint8_t* encoded));
-
-  // A functor like MockAudioEncoder::CopyEncoding above, but which has the
-  // deprecated Encode signature. Currently only used in one test and should be
-  // removed once that backwards compatibility is.
-  class CopyEncoding {
-   public:
-    CopyEncoding(AudioEncoder::EncodedInfo info,
-                 rtc::ArrayView<const uint8_t> payload);
-
-    CopyEncoding(rtc::ArrayView<const uint8_t> payload);
-
-    AudioEncoder::EncodedInfo operator()(uint32_t timestamp,
-                                         rtc::ArrayView<const int16_t> audio,
-                                         size_t max_bytes_encoded,
-                                         uint8_t* encoded);
    private:
     AudioEncoder::EncodedInfo info_;
     rtc::ArrayView<const uint8_t> payload_;
