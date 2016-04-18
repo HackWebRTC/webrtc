@@ -13,10 +13,10 @@ namespace webrtc {
 
 namespace {
 static const int kMinFps = 5;
-static const int kMeasureSecondsDownscale = 3;
 // Threshold constant used until first downscale (to permit fast rampup).
 static const int kMeasureSecondsFastUpscale = 2;
 static const int kMeasureSecondsUpscale = 5;
+static const int kMeasureSecondsDownscale = 5;
 static const int kFramedropPercentThreshold = 60;
 static const int kHdResolutionThreshold = 700 * 500;
 static const int kHdBitrateThresholdKbps = 500;

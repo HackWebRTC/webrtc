@@ -29,9 +29,9 @@ static const int kDisabledBadQpThreshold = 64;
 static const int kLowInitialBitrateKbps = 300;
 // These values need to be in sync with corresponding constants
 // in quality_scaler.cc
-static const int kMeasureSecondsDownscale = 3;
 static const int kMeasureSecondsFastUpscale = 2;
 static const int kMeasureSecondsUpscale = 5;
+static const int kMeasureSecondsDownscale = 5;
 static const int kMinDownscaleDimension = 140;
 }  // namespace
 

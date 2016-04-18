@@ -604,8 +604,8 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   // quality is good, but also low enough to not cause a flip-flop behavior
   // (e.g. going up in resolution shouldn't give so bad quality that we should
   // go back down).
-  const int kLowQpThreshold = 23;
-  const int kDisabledBadQpThreshold = 128;
+  const int kLowQpThreshold = 29;
+  const int kDisabledBadQpThreshold = 100;
   // TODO(glaznev/sprang): consider passing codec initial bitrate to quality
   // scaler to avoid starting with HD for low initial bitrates.
   quality_scaler_.Init(kLowQpThreshold, kDisabledBadQpThreshold, false, 0, 0, 0,
