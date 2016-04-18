@@ -82,7 +82,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        const std::vector<uint32_t>& ssrcs,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
-                       I420FrameCallback* pre_encode_callback,
+                       rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
                        OveruseFrameDetector* overuse_detector,
                        PacedSender* pacer,
                        PayloadRouter* payload_router)
@@ -343,13 +343,8 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
     }
   }
 
-  // If we haven't resampled the frame and we have a FrameCallback, we need to
-  // make a deep copy of |video_frame|.
-  VideoFrame copied_frame;
   if (pre_encode_callback_) {
-    copied_frame.CopyFrame(*frame_to_send);
-    pre_encode_callback_->FrameCallback(&copied_frame);
-    frame_to_send = &copied_frame;
+    pre_encode_callback_->OnFrame(*frame_to_send);
   }
 
   if (codec_type == webrtc::kVideoCodecVP8) {

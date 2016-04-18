@@ -864,107 +864,6 @@ TEST_F(EndToEndTest, DecodesRetransmittedFrameByRedOverRtx) {
   DecodesRetransmittedFrame(true, true);
 }
 
-TEST_F(EndToEndTest, UsesFrameCallbacks) {
-  static const int kWidth = 320;
-  static const int kHeight = 240;
-
-  class Renderer : public rtc::VideoSinkInterface<VideoFrame> {
-   public:
-    Renderer() : event_(false, false) {}
-
-    void OnFrame(const VideoFrame& video_frame) override {
-      EXPECT_EQ(0, *video_frame.buffer(kYPlane))
-          << "Rendered frame should have zero luma which is applied by the "
-             "pre-render callback.";
-      event_.Set();
-    }
-
-    bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
-    rtc::Event event_;
-  } renderer;
-
-  class TestFrameCallback : public I420FrameCallback {
-   public:
-    TestFrameCallback(int expected_luma_byte, int next_luma_byte)
-        : event_(false, false),
-          expected_luma_byte_(expected_luma_byte),
-          next_luma_byte_(next_luma_byte) {}
-
-    bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
-
-   private:
-    virtual void FrameCallback(VideoFrame* frame) {
-      EXPECT_EQ(kWidth, frame->width())
-          << "Width not as expected, callback done before resize?";
-      EXPECT_EQ(kHeight, frame->height())
-          << "Height not as expected, callback done before resize?";
-
-      // Previous luma specified, observed luma should be fairly close.
-      if (expected_luma_byte_ != -1) {
-        EXPECT_NEAR(expected_luma_byte_, *frame->buffer(kYPlane), 10);
-      }
-
-      memset(frame->buffer(kYPlane),
-             next_luma_byte_,
-             frame->allocated_size(kYPlane));
-
-      event_.Set();
-    }
-
-    rtc::Event event_;
-    int expected_luma_byte_;
-    int next_luma_byte_;
-  };
-
-  TestFrameCallback pre_encode_callback(-1, 255);  // Changes luma to 255.
-  TestFrameCallback pre_render_callback(255, 0);  // Changes luma from 255 to 0.
-
-  CreateCalls(Call::Config(), Call::Config());
-
-  test::DirectTransport sender_transport(sender_call_.get());
-  test::DirectTransport receiver_transport(receiver_call_.get());
-  sender_transport.SetReceiver(receiver_call_->Receiver());
-  receiver_transport.SetReceiver(sender_call_->Receiver());
-
-  CreateSendConfig(1, 0, &sender_transport);
-  std::unique_ptr<VideoEncoder> encoder(
-      VideoEncoder::Create(VideoEncoder::kVp8));
-  video_send_config_.encoder_settings.encoder = encoder.get();
-  video_send_config_.encoder_settings.payload_name = "VP8";
-  ASSERT_EQ(1u, video_encoder_config_.streams.size()) << "Test setup error.";
-  video_encoder_config_.streams[0].width = kWidth;
-  video_encoder_config_.streams[0].height = kHeight;
-  video_send_config_.pre_encode_callback = &pre_encode_callback;
-
-  CreateMatchingReceiveConfigs(&receiver_transport);
-  video_receive_configs_[0].pre_render_callback = &pre_render_callback;
-  video_receive_configs_[0].renderer = &renderer;
-
-  CreateVideoStreams();
-  Start();
-
-  // Create frames that are smaller than the send width/height, this is done to
-  // check that the callbacks are done after processing video.
-  std::unique_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::CreateChromaGenerator(kWidth / 2, kHeight / 2));
-  video_send_stream_->Input()->IncomingCapturedFrame(
-      *frame_generator->NextFrame());
-
-  EXPECT_TRUE(pre_encode_callback.Wait())
-      << "Timed out while waiting for pre-encode callback.";
-  EXPECT_TRUE(pre_render_callback.Wait())
-      << "Timed out while waiting for pre-render callback.";
-  EXPECT_TRUE(renderer.Wait())
-      << "Timed out while waiting for the frame to render.";
-
-  Stop();
-
-  sender_transport.StopSending();
-  receiver_transport.StopSending();
-
-  DestroyStreams();
-}
-
 void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
   static const int kPacketsToDrop = 1;
 
@@ -2571,7 +2470,8 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
 TEST_F(EndToEndTest, GetStats) {
   static const int kStartBitrateBps = 3000000;
   static const int kExpectedRenderDelayMs = 20;
-  class StatsObserver : public test::EndToEndTest, public I420FrameCallback {
+  class StatsObserver : public test::EndToEndTest,
+                        public rtc::VideoSinkInterface<VideoFrame> {
    public:
     StatsObserver()
         : EndToEndTest(kLongTimeoutMs),
@@ -2601,11 +2501,9 @@ TEST_F(EndToEndTest, GetStats) {
       return SEND_PACKET;
     }
 
-    void FrameCallback(VideoFrame* video_frame) override {
+    void OnFrame(const VideoFrame& video_frame) override {
       // Ensure that we have at least 5ms send side delay.
-      int64_t render_time = video_frame->render_time_ms();
-      if (render_time > 0)
-        video_frame->set_render_time_ms(render_time - 5);
+      SleepMs(5);
     }
 
     bool CheckReceiveStats() {

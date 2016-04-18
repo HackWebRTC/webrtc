@@ -18,7 +18,7 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
-#include "webrtc/frame_callback.h"
+#include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
@@ -50,7 +50,8 @@ class ViEEncoder : public VideoEncoderRateObserver,
              const std::vector<uint32_t>& ssrcs,
              ProcessThread* module_process_thread,
              SendStatisticsProxy* stats_proxy,
-             I420FrameCallback* pre_encode_callback,
+             // TODO(nisse): Used only for tests, delete?
+             rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
              OveruseFrameDetector* overuse_detector,
              PacedSender* pacer,
              PayloadRouter* payload_router);
@@ -134,7 +135,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
   rtc::CriticalSection data_cs_;
 
   SendStatisticsProxy* const stats_proxy_;
-  I420FrameCallback* const pre_encode_callback_;
+  rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
   OveruseFrameDetector* const overuse_detector_;
   PacedSender* const pacer_;
   PayloadRouter* const send_payload_router_;

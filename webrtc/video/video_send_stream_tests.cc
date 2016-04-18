@@ -807,7 +807,8 @@ TEST_F(VideoSendStreamTest, FragmentsVp8AccordingToMaxPacketSizeWithFec) {
 TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
   static const int kSuspendTimeFrames = 60;  // Suspend for 2 seconds @ 30 fps.
 
-  class RembObserver : public test::SendTest, public I420FrameCallback {
+  class RembObserver : public test::SendTest,
+                       public rtc::VideoSinkInterface<VideoFrame> {
    public:
     RembObserver()
         : SendTest(kDefaultTimeoutMs),
@@ -858,8 +859,8 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       return SEND_PACKET;
     }
 
-    // This method implements the I420FrameCallback.
-    void FrameCallback(VideoFrame* video_frame) override {
+    // This method implements the rtc::VideoSinkInterface
+    void OnFrame(const VideoFrame& video_frame) override {
       rtc::CritScope lock(&crit_);
       if (test_state_ == kDuringSuspend &&
           ++suspended_frame_count_ > kSuspendTimeFrames) {
@@ -1168,12 +1169,12 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
 }
 
 TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
-  class FrameObserver : public I420FrameCallback {
+  class FrameObserver : public rtc::VideoSinkInterface<VideoFrame> {
    public:
     FrameObserver() : output_frame_event_(false, false) {}
 
-    void FrameCallback(VideoFrame* video_frame) override {
-      output_frames_.push_back(*video_frame);
+    void OnFrame(const VideoFrame& video_frame) override {
+      output_frames_.push_back(video_frame);
       output_frame_event_.Set();
     }
 

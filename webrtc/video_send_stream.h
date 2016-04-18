@@ -17,6 +17,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/stream.h"
 #include "webrtc/transport.h"
 #include "webrtc/media/base/videosinkinterface.h"
@@ -139,7 +140,7 @@ class VideoSendStream : public SendStream {
 
     // Called for each I420 frame before encoding the frame. Can be used for
     // effects, snapshots etc. 'nullptr' disables the callback.
-    I420FrameCallback* pre_encode_callback = nullptr;
+    rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback = nullptr;
 
     // Called for each encoded frame, e.g. used for file storage. 'nullptr'
     // disables the callback. Also measures timing and passes the time
