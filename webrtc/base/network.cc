@@ -357,10 +357,32 @@ bool NetworkManagerBase::GetDefaultLocalAddress(int family,
     *ipaddr = default_local_ipv4_address_;
     return true;
   } else if (family == AF_INET6 && !default_local_ipv6_address_.IsNil()) {
-    *ipaddr = default_local_ipv6_address_;
+    Network* ipv6_network = GetNetworkFromAddress(default_local_ipv6_address_);
+    if (ipv6_network) {
+      // If the default ipv6 network's BestIP is different than
+      // default_local_ipv6_address_, use it instead.
+      // This is to prevent potential IP address leakage. See WebRTC bug 5376.
+      *ipaddr = ipv6_network->GetBestIP();
+    } else {
+      *ipaddr = default_local_ipv6_address_;
+    }
     return true;
   }
   return false;
+}
+
+Network* NetworkManagerBase::GetNetworkFromAddress(
+    const rtc::IPAddress& ip) const {
+  for (Network* network : networks_) {
+    const auto& ips = network->GetIPs();
+    if (std::find_if(ips.begin(), ips.end(),
+                     [ip](const InterfaceAddress& existing_ip) {
+                       return ip == static_cast<rtc::IPAddress>(existing_ip);
+                     }) != ips.end()) {
+      return network;
+    }
+  }
+  return nullptr;
 }
 
 BasicNetworkManager::BasicNetworkManager()

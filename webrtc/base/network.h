@@ -160,6 +160,8 @@ class NetworkManagerBase : public NetworkManager {
  private:
   friend class NetworkTest;
 
+  Network* GetNetworkFromAddress(const rtc::IPAddress& ip) const;
+
   EnumerationPermission enumeration_permission_;
 
   NetworkList networks_;
