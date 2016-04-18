@@ -600,8 +600,12 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   rps_.Init();
   // Disable both high-QP limits and framedropping. Both are handled by libvpx
   // internally.
-  const int kLowQpThreshold = 18;
-  const int kDisabledBadQpThreshold = 64;
+  // QP thresholds are chosen to be high enough to be hit in practice when
+  // quality is good, but also low enough to not cause a flip-flop behavior
+  // (e.g. going up in resolution shouldn't give so bad quality that we should
+  // go back down).
+  const int kLowQpThreshold = 23;
+  const int kDisabledBadQpThreshold = 128;
   // TODO(glaznev/sprang): consider passing codec initial bitrate to quality
   // scaler to avoid starting with HD for low initial bitrates.
   quality_scaler_.Init(kLowQpThreshold, kDisabledBadQpThreshold, false, 0, 0, 0,
@@ -1053,9 +1057,9 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
   }
   if (encoders_.size() == 1 && send_stream_[0]) {
     if (encoded_images_[0]._length > 0) {
-      int qp;
-      vpx_codec_control(&encoders_[0], VP8E_GET_LAST_QUANTIZER_64, &qp);
-      quality_scaler_.ReportQP(qp);
+      int qp_128;
+      vpx_codec_control(&encoders_[0], VP8E_GET_LAST_QUANTIZER, &qp_128);
+      quality_scaler_.ReportQP(qp_128);
     } else {
       quality_scaler_.ReportDroppedFrame();
     }
