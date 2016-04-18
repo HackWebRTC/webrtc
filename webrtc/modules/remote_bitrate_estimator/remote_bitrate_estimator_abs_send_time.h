@@ -130,7 +130,6 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   int64_t first_packet_time_ms_;
   int64_t last_update_ms_;
 
-  rtc::ThreadChecker process_thread_;
   rtc::CriticalSection crit_;
   Ssrcs ssrcs_ GUARDED_BY(&crit_);
   AimdRateControl remote_rate_ GUARDED_BY(&crit_);

@@ -92,7 +92,6 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
     RTC_DCHECK(observer_);
     LOG(LS_INFO) << "RemoteBitrateEstimatorAbsSendTime: Instantiating.";
     network_thread_.DetachFromThread();
-    process_thread_.DetachFromThread();
 }
 
 void RemoteBitrateEstimatorAbsSendTime::ComputeClusters(
@@ -359,7 +358,6 @@ void RemoteBitrateEstimatorAbsSendTime::TimeoutStreams(int64_t now_ms) {
 
 void RemoteBitrateEstimatorAbsSendTime::OnRttUpdate(int64_t avg_rtt_ms,
                                                     int64_t max_rtt_ms) {
-  RTC_DCHECK(process_thread_.CalledOnValidThread());
   rtc::CritScope lock(&crit_);
   remote_rate_.SetRtt(avg_rtt_ms);
 }
