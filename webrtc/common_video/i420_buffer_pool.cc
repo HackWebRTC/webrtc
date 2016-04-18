@@ -26,19 +26,28 @@ class PooledI420Buffer : public webrtc::VideoFrameBuffer {
 
   int width() const override { return buffer_->width(); }
   int height() const override { return buffer_->height(); }
-  const uint8_t* data(webrtc::PlaneType type) const override {
-    return buffer_->data(type);
-  }
+  const uint8_t* DataY() const override { return buffer_->DataY(); }
+  const uint8_t* DataU() const override { return buffer_->DataU(); }
+  const uint8_t* DataV() const override { return buffer_->DataV(); }
+
   bool IsMutable() { return HasOneRef(); }
-  uint8_t* MutableData(webrtc::PlaneType type) override {
-    // Make the HasOneRef() check here instead of in |buffer_|, because the pool
-    // also has a reference to |buffer_|.
+  // Make the IsMutable() check here instead of in |buffer_|, because the pool
+  // also has a reference to |buffer_|.
+  uint8_t* MutableDataY() override {
     RTC_DCHECK(IsMutable());
-    return const_cast<uint8_t*>(buffer_->data(type));
+    return const_cast<uint8_t*>(buffer_->DataY());
   }
-  int stride(webrtc::PlaneType type) const override {
-    return buffer_->stride(type);
+  uint8_t* MutableDataU() override {
+    RTC_DCHECK(IsMutable());
+    return const_cast<uint8_t*>(buffer_->DataU());
   }
+  uint8_t* MutableDataV() override {
+    RTC_DCHECK(IsMutable());
+    return const_cast<uint8_t*>(buffer_->DataV());
+  }
+  int StrideY() const override { return buffer_->StrideY(); }
+  int StrideU() const override { return buffer_->StrideU(); }
+  int StrideV() const override { return buffer_->StrideV(); }
   void* native_handle() const override { return nullptr; }
 
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {

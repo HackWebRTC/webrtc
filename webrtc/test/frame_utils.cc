@@ -61,14 +61,14 @@ bool FrameBufsEqual(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& f1,
   }
   const int half_width = (f1->width() + 1) / 2;
   const int half_height = (f1->height() + 1) / 2;
-  return EqualPlane(f1->data(webrtc::kYPlane), f2->data(webrtc::kYPlane),
-                    f1->stride(webrtc::kYPlane), f2->stride(webrtc::kYPlane),
+  return EqualPlane(f1->DataY(), f2->DataY(),
+                    f1->StrideY(), f2->StrideY(),
                     f1->width(), f1->height()) &&
-         EqualPlane(f1->data(webrtc::kUPlane), f2->data(webrtc::kUPlane),
-                    f1->stride(webrtc::kUPlane), f2->stride(webrtc::kUPlane),
+         EqualPlane(f1->DataU(), f2->DataU(),
+                    f1->StrideU(), f2->StrideU(),
                     half_width, half_height) &&
-         EqualPlane(f1->data(webrtc::kVPlane), f2->data(webrtc::kVPlane),
-                    f1->stride(webrtc::kVPlane), f2->stride(webrtc::kVPlane),
+         EqualPlane(f1->DataV(), f2->DataV(),
+                    f1->StrideV(), f2->StrideV(),
                     half_width, half_height);
 }
 

@@ -80,15 +80,15 @@ int WebRtcVideoFrame::height() const {
 }
 
 const uint8_t* WebRtcVideoFrame::GetYPlane() const {
-  return video_frame_buffer_ ? video_frame_buffer_->data(kYPlane) : nullptr;
+  return video_frame_buffer_ ? video_frame_buffer_->DataY() : nullptr;
 }
 
 const uint8_t* WebRtcVideoFrame::GetUPlane() const {
-  return video_frame_buffer_ ? video_frame_buffer_->data(kUPlane) : nullptr;
+  return video_frame_buffer_ ? video_frame_buffer_->DataU() : nullptr;
 }
 
 const uint8_t* WebRtcVideoFrame::GetVPlane() const {
-  return video_frame_buffer_ ? video_frame_buffer_->data(kVPlane) : nullptr;
+  return video_frame_buffer_ ? video_frame_buffer_->DataV() : nullptr;
 }
 
 uint8_t* WebRtcVideoFrame::GetYPlane() {
@@ -107,15 +107,15 @@ uint8_t* WebRtcVideoFrame::GetVPlane() {
 }
 
 int32_t WebRtcVideoFrame::GetYPitch() const {
-  return video_frame_buffer_ ? video_frame_buffer_->stride(kYPlane) : 0;
+  return video_frame_buffer_ ? video_frame_buffer_->StrideY() : 0;
 }
 
 int32_t WebRtcVideoFrame::GetUPitch() const {
-  return video_frame_buffer_ ? video_frame_buffer_->stride(kUPlane) : 0;
+  return video_frame_buffer_ ? video_frame_buffer_->StrideU() : 0;
 }
 
 int32_t WebRtcVideoFrame::GetVPitch() const {
-  return video_frame_buffer_ ? video_frame_buffer_->stride(kVPlane) : 0;
+  return video_frame_buffer_ ? video_frame_buffer_->StrideV() : 0;
 }
 
 bool WebRtcVideoFrame::IsExclusive() const {
