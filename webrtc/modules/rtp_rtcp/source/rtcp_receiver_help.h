@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 
 #include <list>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
@@ -87,7 +88,7 @@ public:
 
     uint32_t xr_originator_ssrc;
     bool xr_dlrr_item;
-    RTCPVoIPMetric*  VoIPMetric;
+    std::unique_ptr<RTCPVoIPMetric>  VoIPMetric;
 
     rtc::scoped_ptr<rtcp::TransportFeedback> transport_feedback_;
 

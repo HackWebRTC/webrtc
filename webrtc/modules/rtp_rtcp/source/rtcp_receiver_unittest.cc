@@ -136,7 +136,7 @@ class RtcpReceiverTest : public ::testing::Test {
     rtcp_packet_info_.rtp_timestamp = rtcpPacketInformation.rtp_timestamp;
     rtcp_packet_info_.xr_dlrr_item = rtcpPacketInformation.xr_dlrr_item;
     if (rtcpPacketInformation.VoIPMetric)
-      rtcp_packet_info_.AddVoIPMetric(rtcpPacketInformation.VoIPMetric);
+      rtcp_packet_info_.AddVoIPMetric(rtcpPacketInformation.VoIPMetric.get());
     rtcp_packet_info_.transport_feedback_.reset(
         rtcpPacketInformation.transport_feedback_.release());
     return 0;

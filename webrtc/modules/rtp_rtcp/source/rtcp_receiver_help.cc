@@ -42,14 +42,13 @@ RTCPPacketInformation::RTCPPacketInformation()
 RTCPPacketInformation::~RTCPPacketInformation()
 {
     delete [] applicationData;
-    delete VoIPMetric;
 }
 
 void
 RTCPPacketInformation::AddVoIPMetric(const RTCPVoIPMetric* metric)
 {
-    VoIPMetric = new RTCPVoIPMetric();
-    memcpy(VoIPMetric, metric, sizeof(RTCPVoIPMetric));
+    VoIPMetric.reset(new RTCPVoIPMetric());
+    memcpy(VoIPMetric.get(), metric, sizeof(RTCPVoIPMetric));
 }
 
 void RTCPPacketInformation::AddApplicationData(const uint8_t* data,
