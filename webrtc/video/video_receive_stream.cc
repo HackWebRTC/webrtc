@@ -385,7 +385,7 @@ int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
   if (config_.renderer)
     config_.renderer->OnFrame(video_frame);
 
-  stats_proxy_.OnRenderedFrame(video_frame);
+  stats_proxy_.OnRenderedFrame(video_frame.width(), video_frame.height());
 
   return 0;
 }

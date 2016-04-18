@@ -914,16 +914,14 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   // It may be released by libvpx during future vpx_codec_decode or
   // vpx_codec_destroy calls.
   img = vpx_codec_get_frame(decoder_, &iter);
-  int ret = ReturnFrame(img, input_image._timeStamp, input_image.ntp_time_ms_);
+  int ret = ReturnFrame(img, input_image._timeStamp);
   if (ret != 0) {
     return ret;
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
-                                uint32_t timestamp,
-                                int64_t ntp_time_ms) {
+int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
   if (img == NULL) {
     // Decoder OK and NULL image => No show frame.
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
@@ -950,7 +948,6 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
   VideoFrame decoded_image;
   decoded_image.set_video_frame_buffer(img_wrapped_buffer);
   decoded_image.set_timestamp(timestamp);
-  decoded_image.set_ntp_time_ms(ntp_time_ms);
   int ret = decode_complete_callback_->Decoded(decoded_image);
   if (ret != 0)
     return ret;
