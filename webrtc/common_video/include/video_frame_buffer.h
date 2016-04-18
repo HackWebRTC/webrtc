@@ -33,7 +33,16 @@ enum PlaneType {
 // not contain any frame metadata such as rotation, timestamp, pixel_width, etc.
 class VideoFrameBuffer : public rtc::RefCountInterface {
  public:
-  // Returns true if this buffer has a single exclusive owner.
+  // Returns true if the caller is exclusive owner, and allowed to
+  // call MutableData.
+
+  // TODO(nisse): Delete default implementation when subclasses in
+  // Chrome are updated.
+  virtual bool IsMutable() { return false; }
+
+  // Underlying refcount access, used to implement IsMutable.
+  // TODO(nisse): Demote to protected, as soon as Chrome is changed to
+  // use IsMutable.
   virtual bool HasOneRef() const = 0;
 
   // The resolution of the frame in pixels. For formats where some planes are
@@ -76,6 +85,7 @@ class I420Buffer : public VideoFrameBuffer {
   const uint8_t* data(PlaneType type) const override;
   // Non-const data access is only allowed if HasOneRef() is true to protect
   // against unexpected overwrites.
+  bool IsMutable() override;
   uint8_t* MutableData(PlaneType type) override;
   int stride(PlaneType type) const override;
   void* native_handle() const override;
@@ -110,6 +120,7 @@ class NativeHandleBuffer : public VideoFrameBuffer {
   const uint8_t* data(PlaneType type) const override;
   int stride(PlaneType type) const override;
   void* native_handle() const override;
+  bool IsMutable() override;
 
  protected:
   void* native_handle_;
@@ -130,6 +141,8 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
                     const rtc::Callback0<void>& no_longer_used);
   int width() const override;
   int height() const override;
+
+  bool IsMutable() override;
 
   const uint8_t* data(PlaneType type) const override;
 

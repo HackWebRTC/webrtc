@@ -65,7 +65,7 @@ void VideoFrame::CreateEmptyFrame(int width,
   rotation_ = kVideoRotation_0;
 
   // Check if it's safe to reuse allocation.
-  if (video_frame_buffer_ && video_frame_buffer_->HasOneRef() &&
+  if (video_frame_buffer_ && video_frame_buffer_->IsMutable() &&
       !video_frame_buffer_->native_handle() &&
       width == video_frame_buffer_->width() &&
       height == video_frame_buffer_->height() && stride_y == stride(kYPlane) &&
