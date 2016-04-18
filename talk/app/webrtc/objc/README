@@ -44,25 +44,25 @@ function wrmac() {
   export GYP_GENERATOR_FLAGS="$GYP_GENERATOR_FLAGS output_dir=out_mac"
 }
 
-- Finally, run "webrtc/build/gyp_webrtc" to generate ninja files.
+- Finally, run "webrtc/build/gyp_webrtc.py" to generate ninja files.
 
 Example of building & using the unittest & app:
 
 - To build & run the unittest (must target mac):
-  wrmac && ./webrtc/build/gyp_webrtc && \
+  wrmac && ./webrtc/build/gyp_webrtc.py && \
       ninja -C out_mac/Debug libjingle_peerconnection_objc_test && \
       ./out_mac/Debug/libjingle_peerconnection_objc_test.app/Contents/MacOS/libjingle_peerconnection_objc_test
 
 - To build & launch the sample app on OSX:
-  wrmac && ./webrtc/build/gyp_webrtc && ninja -C out_mac/Debug AppRTCDemo && \
+  wrmac && ./webrtc/build/gyp_webrtc.py && ninja -C out_mac/Debug AppRTCDemo && \
       ./out_mac/Debug/AppRTCDemo.app/Contents/MacOS/AppRTCDemo
 
 - To build & launch the sample app on the iOS simulator:
-  wrsim && ./webrtc/build/gyp_webrtc && ninja -C out_sim/Debug iossim AppRTCDemo && \
+  wrsim && ./webrtc/build/gyp_webrtc.py && ninja -C out_sim/Debug iossim AppRTCDemo && \
       ./out_sim/Debug/iossim out_sim/Debug/AppRTCDemo.app
 
 - To build & sign the sample app for an iOS device (32 bit):
-  wrios32 && ./webrtc/build/gyp_webrtc && ninja -C out_ios/Debug-iphoneos AppRTCDemo
+  wrios32 && ./webrtc/build/gyp_webrtc.py && ninja -C out_ios/Debug-iphoneos AppRTCDemo
 
 - To build & sign the sample app for an iOS device (64 bit):
-  wrios64 && ./webrtc/build/gyp_webrtc && ninja -C out_ios/Debug-iphoneos AppRTCDemo
+  wrios64 && ./webrtc/build/gyp_webrtc.py && ninja -C out_ios/Debug-iphoneos AppRTCDemo

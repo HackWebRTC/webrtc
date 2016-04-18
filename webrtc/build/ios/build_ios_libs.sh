@@ -16,7 +16,7 @@ set -e
 # Globals.
 SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 WEBRTC_BASE_DIR=${SCRIPT_DIR}/../../..
-GYP_WEBRTC_SCRIPT=${WEBRTC_BASE_DIR}/webrtc/build/gyp_webrtc
+GYP_WEBRTC_SCRIPT=${WEBRTC_BASE_DIR}/webrtc/build/gyp_webrtc.py
 EXPORT_HEADERS_SCRIPT=${SCRIPT_DIR}/export_headers.py
 MERGE_SCRIPT=${SCRIPT_DIR}/merge_ios_libs.py
 
@@ -70,7 +70,7 @@ clang_xcode=1 ios_override_visibility=1"
 
   # GYP generation requires relative path for some reason.
   pushd ${WEBRTC_BASE_DIR}
-  webrtc/build/gyp_webrtc webrtc/build/ios/merge_ios_libs.gyp
+  ${GYP_WEBRTC_SCRIPT} webrtc/build/ios/merge_ios_libs.gyp
   popd
   if [[ ${USE_LEGACY_API} -eq 1 ]]; then
     ninja -C ${ninja_output_dir}/${flavor} libjingle_peerconnection_objc_no_op
