@@ -44,6 +44,7 @@ public:
   static char DefaultFolderDelimiter();
 
   Pathname();
+  Pathname(const Pathname&);
   Pathname(const std::string& pathname);
   Pathname(const std::string& folder, const std::string& filename);
 

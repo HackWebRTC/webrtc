@@ -45,6 +45,7 @@ class AudioEncoder {
   // vector.
   struct EncodedInfo : public EncodedInfoLeaf {
     EncodedInfo();
+    EncodedInfo(const EncodedInfo&);
     ~EncodedInfo();
 
     std::vector<EncodedInfoLeaf> redundant;

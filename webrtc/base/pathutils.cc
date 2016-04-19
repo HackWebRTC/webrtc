@@ -13,7 +13,7 @@
 #include <shellapi.h>
 #include <shlobj.h>
 #include <tchar.h>
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/fileutils.h"
@@ -35,9 +35,9 @@ const char* const FOLDER_DELIMS = "/\\";
 // DEFAULT_FOLDER_DELIM is the preferred delimiter for this platform
 #if WEBRTC_WIN
 const char DEFAULT_FOLDER_DELIM = '\\';
-#else  // !WEBRTC_WIN 
+#else  // !WEBRTC_WIN
 const char DEFAULT_FOLDER_DELIM = '/';
-#endif  // !WEBRTC_WIN 
+#endif  // !WEBRTC_WIN
 
 ///////////////////////////////////////////////////////////////////////////////
 // Pathname - parsing of pathnames into components, and vice versa
@@ -54,6 +54,8 @@ char Pathname::DefaultFolderDelimiter() {
 Pathname::Pathname()
     : folder_delimiter_(DEFAULT_FOLDER_DELIM) {
 }
+
+Pathname::Pathname(const Pathname&) = default;
 
 Pathname::Pathname(const std::string& pathname)
     : folder_delimiter_(DEFAULT_FOLDER_DELIM) {

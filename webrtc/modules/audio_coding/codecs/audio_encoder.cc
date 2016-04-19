@@ -17,6 +17,8 @@ namespace webrtc {
 
 AudioEncoder::EncodedInfo::EncodedInfo() = default;
 
+AudioEncoder::EncodedInfo::EncodedInfo(const EncodedInfo&) = default;
+
 AudioEncoder::EncodedInfo::~EncodedInfo() = default;
 
 int AudioEncoder::RtpTimestampRateHz() const {
