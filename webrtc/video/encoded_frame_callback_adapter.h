@@ -11,8 +11,8 @@
 #ifndef WEBRTC_VIDEO_ENCODED_FRAME_CALLBACK_ADAPTER_H_
 #define WEBRTC_VIDEO_ENCODED_FRAME_CALLBACK_ADAPTER_H_
 
+#include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/frame_callback.h"
 
 namespace webrtc {
 namespace internal {

@@ -19,7 +19,6 @@ include_rules = [
   "+webrtc/common_types.h",
   "+webrtc/config.h",
   "+webrtc/engine_configurations.h",
-  "+webrtc/frame_callback.h",
   "+webrtc/stream.h",
   "+webrtc/transport.h",
   "+webrtc/typedefs.h",
@@ -45,9 +44,11 @@ specific_include_rules = {
     "+webrtc/common_video",
   ],
   "video_receive_stream\.h": [
+    "+webrtc/common_video/include",
     "+webrtc/media/base",
   ],
   "video_send_stream\.h": [
+    "+webrtc/common_video/include",
     "+webrtc/media/base",
   ],
 }

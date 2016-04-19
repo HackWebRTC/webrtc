@@ -15,8 +15,8 @@
 #include <string>
 
 #include "webrtc/common_types.h"
+#include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/config.h"
-#include "webrtc/frame_callback.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/stream.h"
 #include "webrtc/transport.h"

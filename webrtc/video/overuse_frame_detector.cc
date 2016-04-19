@@ -20,7 +20,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/frame_callback.h"
+#include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video_frame.h"
 

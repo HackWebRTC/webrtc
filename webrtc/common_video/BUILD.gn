@@ -18,6 +18,7 @@ config("common_video_config") {
 source_set("common_video") {
   sources = [
     "i420_buffer_pool.cc",
+    "include/frame_callback.h",
     "include/i420_buffer_pool.h",
     "include/incoming_video_stream.h",
     "include/video_frame_buffer.h",

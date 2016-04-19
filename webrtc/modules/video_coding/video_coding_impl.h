@@ -16,10 +16,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/frame_callback.h"
 #include "webrtc/base/onetimeevent.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/video_coding/codec_database.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
 #include "webrtc/modules/video_coding/generic_decoder.h"

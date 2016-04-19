@@ -108,7 +108,6 @@
         'audio_state.h',
         'call.h',
         'config.h',
-        'frame_callback.h',
         'stream.h',
         'transport.h',
         'video_receive_stream.h',

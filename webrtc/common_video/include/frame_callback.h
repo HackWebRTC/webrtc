@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_FRAME_CALLBACK_H_
-#define WEBRTC_FRAME_CALLBACK_H_
+#ifndef WEBRTC_COMMON_VIDEO_INCLUDE_FRAME_CALLBACK_H_
+#define WEBRTC_COMMON_VIDEO_INCLUDE_FRAME_CALLBACK_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -52,4 +52,4 @@ class EncodedFrameObserver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_FRAME_CALLBACK_H_
+#endif  // WEBRTC_COMMON_VIDEO_INCLUDE_FRAME_CALLBACK_H_

@@ -55,6 +55,7 @@
         'i420_buffer_pool.cc',
         'video_frame.cc',
         'incoming_video_stream.cc',
+        'include/frame_callback.h',
         'include/i420_buffer_pool.h',
         'include/incoming_video_stream.h',
         'include/video_frame_buffer.h',
