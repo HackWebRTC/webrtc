@@ -192,13 +192,6 @@ public:
                             const float left, const float top,
                             const float right, const float bottom);
 
-    virtual int32_t SetStartImage(const uint32_t streamId,
-                                  const VideoFrame& videoFrame);
-
-    virtual int32_t SetTimeoutImage(const uint32_t streamId,
-                                    const VideoFrame& videoFrame,
-                                    const uint32_t timeout);
-
 private:
     int32_t _id;
     CriticalSectionWrapper& _moduleCrit;

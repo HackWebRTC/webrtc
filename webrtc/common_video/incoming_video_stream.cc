@@ -43,12 +43,7 @@ IncomingVideoStream::IncomingVideoStream(uint32_t stream_id,
       render_buffers_(new VideoRenderFrames()),
       incoming_rate_(0),
       last_rate_calculation_time_ms_(0),
-      num_frames_since_last_calculation_(0),
-      last_render_time_ms_(0),
-      temp_frame_(),
-      start_image_(),
-      timeout_image_(),
-      timeout_time_() {}
+      num_frames_since_last_calculation_(0) {}
 
 IncomingVideoStream::~IncomingVideoStream() {
   Stop();
@@ -87,18 +82,6 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
     }
   }
   return 0;
-}
-
-void IncomingVideoStream::SetStartImage(const VideoFrame& video_frame) {
-  rtc::CritScope csS(&thread_critsect_);
-  start_image_.CopyFrame(video_frame);
-}
-
-void IncomingVideoStream::SetTimeoutImage(const VideoFrame& video_frame,
-                                          const uint32_t timeout) {
-  rtc::CritScope csS(&thread_critsect_);
-  timeout_time_ = timeout;
-  timeout_image_.CopyFrame(video_frame);
 }
 
 void IncomingVideoStream::SetRenderCallback(
@@ -226,20 +209,6 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
 void IncomingVideoStream::DeliverFrame(const VideoFrame& video_frame) {
   rtc::CritScope cs(&thread_critsect_);
   if (video_frame.IsZeroSize()) {
-    if (render_callback_) {
-      if (last_render_time_ms_ == 0 && !start_image_.IsZeroSize()) {
-        // We have not rendered anything and have a start image.
-        temp_frame_.CopyFrame(start_image_);
-        render_callback_->RenderFrame(stream_id_, temp_frame_);
-      } else if (!timeout_image_.IsZeroSize() &&
-                 last_render_time_ms_ + timeout_time_ <
-                     TickTime::MillisecondTimestamp()) {
-        // Render a timeout image.
-        temp_frame_.CopyFrame(timeout_image_);
-        render_callback_->RenderFrame(stream_id_, temp_frame_);
-      }
-    }
-
     // No frame.
     return;
   }
@@ -250,9 +219,6 @@ void IncomingVideoStream::DeliverFrame(const VideoFrame& video_frame) {
   } else if (render_callback_) {
     render_callback_->RenderFrame(stream_id_, video_frame);
   }
-
-  // We're done with this frame.
-  last_render_time_ms_ = video_frame.render_time_ms();
 }
 
 }  // namespace webrtc

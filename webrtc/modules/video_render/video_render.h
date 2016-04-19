@@ -250,19 +250,6 @@ public:
                             const uint32_t backgroundColorRef,
                             const float left, const float top,
                             const float right, const float bottom) = 0;
-
-    /*
-     * Set a start image. The image is rendered before the first image has been delivered
-     */
-    virtual int32_t SetStartImage(const uint32_t streamId,
-                                  const VideoFrame& videoFrame) = 0;
-
-    /*
-     * Set a timout image. The image is rendered if no videoframe has been delivered
-     */
-    virtual int32_t SetTimeoutImage(const uint32_t streamId,
-                                    const VideoFrame& videoFrame,
-                                    const uint32_t timeout) = 0;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_VIDEO_RENDER_H_

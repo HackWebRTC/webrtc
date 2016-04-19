@@ -57,11 +57,6 @@ class IncomingVideoStream : public VideoRenderCallback {
   uint32_t StreamId() const;
   uint32_t IncomingRate() const;
 
-  void SetStartImage(const VideoFrame& video_frame);
-
-  void SetTimeoutImage(const VideoFrame& video_frame,
-                       const uint32_t timeout);
-
   int32_t SetExpectedRenderDelay(int32_t delay_ms);
 
  protected:
@@ -96,11 +91,6 @@ class IncomingVideoStream : public VideoRenderCallback {
   uint32_t incoming_rate_ GUARDED_BY(stream_critsect_);
   int64_t last_rate_calculation_time_ms_ GUARDED_BY(stream_critsect_);
   uint16_t num_frames_since_last_calculation_ GUARDED_BY(stream_critsect_);
-  int64_t last_render_time_ms_ GUARDED_BY(thread_critsect_);
-  VideoFrame temp_frame_ GUARDED_BY(thread_critsect_);
-  VideoFrame start_image_ GUARDED_BY(thread_critsect_);
-  VideoFrame timeout_image_ GUARDED_BY(thread_critsect_);
-  uint32_t timeout_time_ GUARDED_BY(thread_critsect_);
 };
 
 }  // namespace webrtc
