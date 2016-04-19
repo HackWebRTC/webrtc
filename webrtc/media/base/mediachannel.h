@@ -392,8 +392,9 @@ class MediaChannel : public sigslot::has_slots<> {
   // Called when the socket's ability to send has changed.
   virtual void OnReadyToSend(bool ready) = 0;
   // Called when the network route used for sending packets changed.
-  virtual void OnNetworkRouteChanged(const std::string& transport_name,
-                                     const NetworkRoute& network_route) = 0;
+  virtual void OnNetworkRouteChanged(
+      const std::string& transport_name,
+      const rtc::NetworkRoute& network_route) = 0;
   // Creates a new outgoing media stream with SSRCs and CNAME as described
   // by sp.
   virtual bool AddSendStream(const StreamParams& sp) = 0;
@@ -1112,7 +1113,7 @@ class DataMediaChannel : public MediaChannel {
   virtual bool SetReceive(bool receive) = 0;
 
   virtual void OnNetworkRouteChanged(const std::string& transport_name,
-                                     const NetworkRoute& network_route) {}
+                                     const rtc::NetworkRoute& network_route) {}
 
   virtual bool SendData(
       const SendDataParams& params,

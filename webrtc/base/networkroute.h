@@ -15,7 +15,7 @@
 // the media code can rely on and the network code can implement, and both can
 // depend on that, but not depend on each other. Then, move this file to that
 // directory.
-namespace cricket {
+namespace rtc {
 
 struct NetworkRoute {
   bool connected;
@@ -47,6 +47,6 @@ struct NetworkRoute {
 
   bool operator!=(const NetworkRoute& nr) const { return !(*this == nr); }
 };
-}  // namespace cricket
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_NETWORKROUTE_H_

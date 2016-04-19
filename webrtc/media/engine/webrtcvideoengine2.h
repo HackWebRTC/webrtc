@@ -171,7 +171,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override;
   void OnNetworkRouteChanged(const std::string& transport_name,
-                             const NetworkRoute& network_route) override;
+                             const rtc::NetworkRoute& network_route) override;
   void SetInterface(NetworkInterface* iface) override;
 
   // Implemented for VideoMediaChannelTest.

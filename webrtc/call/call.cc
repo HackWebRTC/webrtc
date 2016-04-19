@@ -89,6 +89,9 @@ class Call : public webrtc::Call, public PacketReceiver,
 
   void SignalChannelNetworkState(MediaType media, NetworkState state) override;
 
+  void OnNetworkRouteChanged(const std::string& transport_name,
+                             const rtc::NetworkRoute& network_route) override;
+
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
   // Implements BitrateObserver.
@@ -102,7 +105,6 @@ class Call : public webrtc::Call, public PacketReceiver,
                             const uint8_t* packet,
                             size_t length,
                             const PacketTime& packet_time);
-
   void ConfigureSync(const std::string& sync_group)
       EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
 
@@ -169,6 +171,8 @@ class Call : public webrtc::Call, public PacketReceiver,
   int64_t estimated_send_bitrate_sum_kbits_ GUARDED_BY(&bitrate_crit_);
   int64_t pacer_bitrate_sum_kbits_ GUARDED_BY(&bitrate_crit_);
   int64_t num_bitrate_updates_ GUARDED_BY(&bitrate_crit_);
+
+  std::map<std::string, rtc::NetworkRoute> network_routes_;
 
   VieRemb remb_;
   const std::unique_ptr<CongestionController> congestion_controller_;
@@ -588,6 +592,37 @@ void Call::SignalChannelNetworkState(MediaType media, NetworkState state) {
     for (auto& kv : video_receive_ssrcs_) {
       kv.second->SignalNetworkState(video_network_state_);
     }
+  }
+}
+
+// TODO(honghaiz): Add tests for this method.
+void Call::OnNetworkRouteChanged(const std::string& transport_name,
+                                 const rtc::NetworkRoute& network_route) {
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+  // Check if the network route is connected.
+  if (!network_route.connected) {
+    LOG(LS_INFO) << "Transport " << transport_name << " is disconnected";
+    // TODO(honghaiz): Perhaps handle this in SignalChannelNetworkState and
+    // consider merging these two methods.
+    return;
+  }
+
+  // Check whether the network route has changed on each transport.
+  auto result =
+      network_routes_.insert(std::make_pair(transport_name, network_route));
+  auto kv = result.first;
+  bool inserted = result.second;
+  if (inserted) {
+    // No need to reset BWE if this is the first time the network connects.
+    return;
+  }
+  if (kv->second != network_route) {
+    kv->second = network_route;
+    LOG(LS_INFO) << "Network route changed on transport " << transport_name
+                 << ": new local network id " << network_route.local_network_id
+                 << " new remote network id "
+                 << network_route.remote_network_id;
+    // TODO(holmer): Update the BWE bitrates.
   }
 }
 

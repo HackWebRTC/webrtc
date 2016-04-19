@@ -1410,9 +1410,8 @@ void WebRtcVideoChannel2::OnReadyToSend(bool ready) {
 
 void WebRtcVideoChannel2::OnNetworkRouteChanged(
     const std::string& transport_name,
-    const NetworkRoute& network_route) {
-  // TODO(honghaiz): uncomment this once the function in call is implemented.
-  // call_->OnNetworkRouteChanged(transport_name, network_route);
+    const rtc::NetworkRoute& network_route) {
+  call_->OnNetworkRouteChanged(transport_name, network_route);
 }
 
 // TODO(pbos): Remove SetOptions in favor of SetSendParameters.

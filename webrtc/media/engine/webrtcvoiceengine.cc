@@ -2335,9 +2335,8 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
 
 void WebRtcVoiceMediaChannel::OnNetworkRouteChanged(
     const std::string& transport_name,
-    const NetworkRoute& network_route) {
-  // TODO(honghaiz): uncomment this once the function in call is implemented.
-  // call_->OnNetworkRouteChanged(transport_name, network_route);
+    const rtc::NetworkRoute& network_route) {
+  call_->OnNetworkRouteChanged(transport_name, network_route);
 }
 
 bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {

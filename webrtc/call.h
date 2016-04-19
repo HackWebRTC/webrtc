@@ -17,6 +17,7 @@
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/audio_send_stream.h"
 #include "webrtc/audio_state.h"
+#include "webrtc/base/networkroute.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -139,6 +140,10 @@ class Call {
   // for each stream separately. Right now it's global per media type.
   virtual void SignalChannelNetworkState(MediaType media,
                                          NetworkState state) = 0;
+
+  virtual void OnNetworkRouteChanged(
+      const std::string& transport_name,
+      const rtc::NetworkRoute& network_route) = 0;
 
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
 

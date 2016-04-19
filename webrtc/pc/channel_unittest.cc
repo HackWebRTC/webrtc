@@ -987,8 +987,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     transport_channel1->SignalSelectedCandidatePairChanged(
         transport_channel1, candidate_pair.get(), last_packet_id);
     EXPECT_EQ(1, media_channel1_->num_network_route_changes());
-    cricket::NetworkRoute expected_network_route(local_net_id, remote_net_id,
-                                                 last_packet_id);
+    rtc::NetworkRoute expected_network_route(local_net_id, remote_net_id,
+                                             last_packet_id);
     EXPECT_EQ(expected_network_route, media_channel1->last_network_route());
     EXPECT_EQ(last_packet_id,
               media_channel1->last_network_route().last_sent_packet_id);
