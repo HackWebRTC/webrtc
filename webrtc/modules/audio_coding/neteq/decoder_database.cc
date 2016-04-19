@@ -24,8 +24,29 @@ DecoderDatabase::DecoderDatabase()
 
 DecoderDatabase::~DecoderDatabase() {}
 
-DecoderDatabase::DecoderInfo::~DecoderInfo() {
-  if (!external) delete decoder;
+DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
+                                          const std::string& nm,
+                                          int fs,
+                                          AudioDecoder* ext_dec)
+    : codec_type(ct),
+      name(nm),
+      fs_hz(fs),
+      rtp_sample_rate_hz(fs),
+      external_decoder(ext_dec) {}
+
+DecoderDatabase::DecoderInfo::DecoderInfo(DecoderInfo&&) = default;
+DecoderDatabase::DecoderInfo::~DecoderInfo() = default;
+
+AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder() {
+  if (external_decoder) {
+    RTC_DCHECK(!decoder_);
+    return external_decoder;
+  }
+  if (!decoder_) {
+    decoder_.reset(CreateAudioDecoder(codec_type));
+  }
+  RTC_DCHECK(decoder_);
+  return decoder_.get();
 }
 
 bool DecoderDatabase::Empty() const { return decoders_.empty(); }
@@ -48,8 +69,9 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
     return kCodecNotSupported;
   }
   const int fs_hz = CodecSampleRateHz(codec_type);
-  DecoderInfo info(codec_type, name, fs_hz, NULL, false);
-  auto ret = decoders_.insert(std::make_pair(rtp_payload_type, info));
+  DecoderInfo info(codec_type, name, fs_hz, nullptr);
+  auto ret =
+      decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.
     return kDecoderExists;
@@ -75,8 +97,8 @@ int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
     return kInvalidPointer;
   }
   std::pair<DecoderMap::iterator, bool> ret;
-  DecoderInfo info(codec_type, codec_name, fs_hz, decoder, true);
-  ret = decoders_.insert(std::make_pair(rtp_payload_type, info));
+  DecoderInfo info(codec_type, codec_name, fs_hz, decoder);
+  ret = decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.
     return kDecoderExists;
@@ -132,13 +154,7 @@ AudioDecoder* DecoderDatabase::GetDecoder(uint8_t rtp_payload_type) {
     return NULL;
   }
   DecoderInfo* info = &(*it).second;
-  if (!info->decoder) {
-    // Create the decoder object.
-    AudioDecoder* decoder = CreateAudioDecoder(info->codec_type);
-    assert(decoder);  // Should not be able to have an unsupported codec here.
-    info->decoder = decoder;
-  }
-  return info->decoder;
+  return info->GetDecoder();
 }
 
 bool DecoderDatabase::IsType(uint8_t rtp_payload_type,
@@ -191,12 +207,7 @@ int DecoderDatabase::SetActiveDecoder(uint8_t rtp_payload_type,
       assert(false);
       return kDecoderNotFound;
     }
-    if (!(*it).second.external) {
-      // Delete the AudioDecoder object, unless it is an externally created
-      // decoder.
-      delete (*it).second.decoder;
-      (*it).second.decoder = NULL;
-    }
+    it->second.DropDecoder();
     *new_decoder = true;
   }
   active_decoder_ = rtp_payload_type;
@@ -226,12 +237,7 @@ int DecoderDatabase::SetActiveCngDecoder(uint8_t rtp_payload_type) {
       assert(false);
       return kDecoderNotFound;
     }
-    if (!(*it).second.external) {
-      // Delete the AudioDecoder object, unless it is an externally created
-      // decoder.
-      delete (*it).second.decoder;
-      (*it).second.decoder = NULL;
-    }
+    it->second.DropDecoder();
   }
   active_cng_decoder_ = rtp_payload_type;
   return kOK;

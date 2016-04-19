@@ -372,33 +372,33 @@ TEST(AudioPayloadSplitter, NonSplittable) {
   // codec types.
   // Use scoped pointers to avoid having to delete them later.
   std::unique_ptr<DecoderDatabase::DecoderInfo> info0(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderISAC, 16000, NULL,
-                                       false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderISAC, "", 16000,
+                                       nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(0))
       .WillRepeatedly(Return(info0.get()));
   std::unique_ptr<DecoderDatabase::DecoderInfo> info1(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderISACswb, 32000,
-                                       NULL, false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderISACswb, "", 32000,
+                                       nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(1))
       .WillRepeatedly(Return(info1.get()));
   std::unique_ptr<DecoderDatabase::DecoderInfo> info2(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderRED, 8000, NULL,
-                                       false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderRED, "", 8000,
+                                       nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(2))
       .WillRepeatedly(Return(info2.get()));
   std::unique_ptr<DecoderDatabase::DecoderInfo> info3(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderAVT, 8000, NULL,
-                                       false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderAVT, "", 8000,
+                                       nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(3))
       .WillRepeatedly(Return(info3.get()));
   std::unique_ptr<DecoderDatabase::DecoderInfo> info4(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderCNGnb, 8000, NULL,
-                                       false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderCNGnb, "", 8000,
+                                       nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(4))
       .WillRepeatedly(Return(info4.get()));
   std::unique_ptr<DecoderDatabase::DecoderInfo> info5(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderArbitrary, 8000,
-                                       NULL, false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderArbitrary, "",
+                                       8000, nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(5))
       .WillRepeatedly(Return(info5.get()));
 
@@ -536,7 +536,7 @@ TEST_P(SplitBySamplesTest, PayloadSizes) {
   // Use scoped pointers to avoid having to delete them later.
   // (Sample rate is set to 8000 Hz, but does not matter.)
   std::unique_ptr<DecoderDatabase::DecoderInfo> info(
-      new DecoderDatabase::DecoderInfo(decoder_type_, 8000, NULL, false));
+      new DecoderDatabase::DecoderInfo(decoder_type_, "", 8000, nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(kPayloadType))
       .WillRepeatedly(Return(info.get()));
 
@@ -623,8 +623,8 @@ TEST_P(SplitIlbcTest, NumFrames) {
   // codec types.
   // Use scoped pointers to avoid having to delete them later.
   std::unique_ptr<DecoderDatabase::DecoderInfo> info(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderILBC, 8000, NULL,
-                                       false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderILBC, "", 8000,
+                                       nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(kPayloadType))
       .WillRepeatedly(Return(info.get()));
 
@@ -687,8 +687,8 @@ TEST(IlbcPayloadSplitter, TooLargePayload) {
 
   MockDecoderDatabase decoder_database;
   std::unique_ptr<DecoderDatabase::DecoderInfo> info(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderILBC, 8000, NULL,
-                                       false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderILBC, "", 8000,
+                                       nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(kPayloadType))
       .WillRepeatedly(Return(info.get()));
 
@@ -719,8 +719,8 @@ TEST(IlbcPayloadSplitter, UnevenPayload) {
 
   MockDecoderDatabase decoder_database;
   std::unique_ptr<DecoderDatabase::DecoderInfo> info(
-      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderILBC, 8000, NULL,
-                                       false));
+      new DecoderDatabase::DecoderInfo(NetEqDecoder::kDecoderILBC, "", 8000,
+                                       nullptr));
   EXPECT_CALL(decoder_database, GetDecoderInfo(kPayloadType))
       .WillRepeatedly(Return(info.get()));
 

@@ -301,8 +301,8 @@ TEST_F(NetEqImplTest, InsertPacket) {
       .WillRepeatedly(Return(&mock_decoder));
   EXPECT_CALL(*mock_decoder_database_, IsComfortNoise(kPayloadType))
       .WillRepeatedly(Return(false));  // This is not CNG.
-  DecoderDatabase::DecoderInfo info;
-  info.codec_type = NetEqDecoder::kDecoderPCMu;
+  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "", 8000,
+                                    nullptr);
   EXPECT_CALL(*mock_decoder_database_, GetDecoderInfo(kPayloadType))
       .WillRepeatedly(Return(&info));
 

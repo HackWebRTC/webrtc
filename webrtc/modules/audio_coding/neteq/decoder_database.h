@@ -34,30 +34,31 @@ class DecoderDatabase {
     kInvalidPointer = -6
   };
 
-  // Struct used to store decoder info in the database.
-  struct DecoderInfo {
-    DecoderInfo() = default;
-    DecoderInfo(NetEqDecoder ct, int fs, AudioDecoder* dec, bool ext)
-        : DecoderInfo(ct, "", fs, dec, ext) {}
+  // Class that stores decoder info in the database.
+  class DecoderInfo {
+   public:
     DecoderInfo(NetEqDecoder ct,
                 const std::string& nm,
                 int fs,
-                AudioDecoder* dec,
-                bool ext)
-        : codec_type(ct),
-          name(nm),
-          fs_hz(fs),
-          rtp_sample_rate_hz(fs),
-          decoder(dec),
-          external(ext) {}
+                AudioDecoder* ext_dec);
+    DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
 
-    NetEqDecoder codec_type = NetEqDecoder::kDecoderArbitrary;
-    std::string name;
-    int fs_hz = 8000;
-    int rtp_sample_rate_hz = 8000;
-    AudioDecoder* decoder = nullptr;
-    bool external = false;
+    // Get the AudioDecoder object, creating it first if necessary.
+    AudioDecoder* GetDecoder();
+
+    // Delete the AudioDecoder object, unless it's external. (This means we can
+    // always recreate it later if we need it.)
+    void DropDecoder() { decoder_.reset(); }
+
+    const NetEqDecoder codec_type;
+    const std::string name;
+    const int fs_hz;
+    const int rtp_sample_rate_hz;
+    AudioDecoder* const external_decoder;
+
+   private:
+    std::unique_ptr<AudioDecoder> decoder_;
   };
 
   // Maximum value for 8 bits, and an invalid RTP payload type (since it is
