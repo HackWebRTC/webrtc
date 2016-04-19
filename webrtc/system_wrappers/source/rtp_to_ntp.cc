@@ -71,8 +71,9 @@ bool UpdateRtcpList(uint32_t ntp_secs,
 
   for (RtcpList::iterator it = rtcp_list->begin();
        it != rtcp_list->end(); ++it) {
-    if (measurement.ntp_secs == (*it).ntp_secs &&
-        measurement.ntp_frac == (*it).ntp_frac) {
+    if ((measurement.ntp_secs == (*it).ntp_secs &&
+         measurement.ntp_frac == (*it).ntp_frac) ||
+        (measurement.rtp_timestamp == (*it).rtp_timestamp)) {
       // This RTCP has already been added to the list.
       return true;
     }

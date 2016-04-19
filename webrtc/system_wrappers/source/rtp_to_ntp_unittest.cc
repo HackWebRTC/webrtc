@@ -135,4 +135,44 @@ TEST(WrapAroundTests, OldRtp_OldRtcpWrapped) {
   int64_t timestamp_in_ms = -1;
   EXPECT_FALSE(RtpToNtpMs(timestamp, rtcp, &timestamp_in_ms));
 }
+
+TEST(UpdateRtcpListTests, InjectRtcpSrWithEqualNtp) {
+  RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 2;
+  uint32_t timestamp = 0x12345678;
+
+  bool new_sr;
+  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(new_sr);
+
+  ++timestamp;
+  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_FALSE(new_sr);
+}
+
+TEST(UpdateRtcpListTests, InjectRtcpSrWithEqualTimestamp) {
+  RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 2;
+  uint32_t timestamp = 0x12345678;
+
+  bool new_sr;
+  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(new_sr);
+
+  ++ntp_frac;
+  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_FALSE(new_sr);
+}
+
+TEST(UpdateRtcpListTests, InjectRtcpSrWithZeroNtpFails) {
+  RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t timestamp = 0x12345678;
+
+  bool new_sr;
+  EXPECT_FALSE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+}
 };  // namespace webrtc
