@@ -372,6 +372,7 @@
       ['coverage==1 and OS=="linux"', {
         'cflags': [ '-ftest-coverage',
                     '-fprofile-arcs' ],
+        'ldflags': [ '--coverage' ],
         'link_settings': { 'libraries': [ '-lgcov' ] },
       }],
       ['os_posix==1', {
