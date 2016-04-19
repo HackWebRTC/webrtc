@@ -15,6 +15,8 @@
 #import <AppKit/NSOpenGL.h>
 #endif
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class RTCVideoFrame;
@@ -23,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 // the currently bound framebuffer. Supports OpenGL 3.2 and OpenGLES 2.0. OpenGL
 // framebuffer creation and management should be handled elsewhere using the
 // same context used to initialize this class.
+RTC_EXPORT
 @interface RTCOpenGLVideoRenderer : NSObject
 
 // The last successfully drawn frame. Used to avoid drawing frames unnecessarily

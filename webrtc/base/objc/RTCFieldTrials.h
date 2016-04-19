@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/objc/RTCMacros.h"
-
 #import <Foundation/Foundation.h>
+
+#import "webrtc/base/objc/RTCMacros.h"
 
 typedef NS_OPTIONS(NSUInteger, RTCFieldTrialOptions) {
   RTCFieldTrialOptionsNone = 0,
@@ -20,4 +20,4 @@ typedef NS_OPTIONS(NSUInteger, RTCFieldTrialOptions) {
 /** Must be called before any other call into WebRTC. See:
  *  webrtc/system_wrappers/include/field_trial_default.h
  */
-RTC_EXPORT void RTCInitFieldTrials(RTCFieldTrialOptions options);
+RTC_EXTERN void RTCInitFieldTrials(RTCFieldTrialOptions options);

@@ -11,9 +11,12 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 // RTCVideoFrame is an ObjectiveC version of cricket::VideoFrame.
+RTC_EXPORT
 @interface RTCVideoFrame : NSObject
 
 /** Width without rotation applied. */

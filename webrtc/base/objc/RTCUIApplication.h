@@ -15,7 +15,7 @@
 
 #if defined(WEBRTC_IOS)
 /** Convenience function to get UIApplicationState from C++. */
-RTC_EXPORT bool RTCIsUIApplicationActive();
+RTC_EXTERN bool RTCIsUIApplicationActive();
 #endif  // WEBRTC_IOS
 
 #endif  // WEBRTC_BASE_OBJC_RTC_UI_APPLICATION_H_

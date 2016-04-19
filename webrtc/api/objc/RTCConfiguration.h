@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 @class RTCIceServer;
 
 /**
@@ -50,6 +52,7 @@ typedef NS_ENUM(NSInteger, RTCEncryptionKeyType) {
 
 NS_ASSUME_NONNULL_BEGIN
 
+RTC_EXPORT
 @interface RTCConfiguration : NSObject
 
 /** An array of Ice Servers available to be used by ICE. */

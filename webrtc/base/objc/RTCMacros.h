@@ -11,10 +11,12 @@
 #ifndef WEBRTC_BASE_OBJC_RTC_MACROS_H_
 #define WEBRTC_BASE_OBJC_RTC_MACROS_H_
 
+#define RTC_EXPORT __attribute__((visibility("default")))
+
 #if defined(__cplusplus)
-#define RTC_EXPORT extern "C"
+#define RTC_EXTERN extern "C" RTC_EXPORT
 #else
-#define RTC_EXPORT extern
+#define RTC_EXTERN extern RTC_EXPORT
 #endif
 
 #ifdef __OBJC__

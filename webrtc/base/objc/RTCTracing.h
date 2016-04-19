@@ -12,10 +12,10 @@
 
 #import "webrtc/base/objc/RTCMacros.h"
 
-RTC_EXPORT void RTCSetupInternalTracer();
+RTC_EXTERN void RTCSetupInternalTracer();
 /** Starts capture to specified file. Must be a valid writable path.
  *  Returns YES if capture starts.
  */
-RTC_EXPORT BOOL RTCStartInternalCapture(NSString *filePath);
-RTC_EXPORT void RTCStopInternalCapture();
-RTC_EXPORT void RTCShutdownInternalTracer();
+RTC_EXTERN BOOL RTCStartInternalCapture(NSString *filePath);
+RTC_EXTERN void RTCStopInternalCapture();
+RTC_EXTERN void RTCShutdownInternalTracer();

@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 typedef NS_ENUM(NSUInteger, RTCFileLoggerSeverity) {
   RTCFileLoggerSeverityVerbose,
   RTCFileLoggerSeverityInfo,
@@ -31,6 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 // are preserved while the middle section is overwritten instead.
 // For kRTCFileLoggerTypeApp, the oldest log is overwritten.
 // This class is not threadsafe.
+RTC_EXPORT
 @interface RTCFileLogger : NSObject
 
 // The severity level to capture. The default is kRTCFileLoggerSeverityInfo.

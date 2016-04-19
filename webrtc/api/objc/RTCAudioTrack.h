@@ -9,9 +9,11 @@
  */
 
 #import "webrtc/api/objc/RTCMediaStreamTrack.h"
+#import "webrtc/base/objc/RTCMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
+RTC_EXPORT
 @interface RTCAudioTrack : RTCMediaStreamTrack
 
 - (instancetype)init NS_UNAVAILABLE;

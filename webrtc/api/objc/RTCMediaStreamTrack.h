@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 /**
  * Represents the state of the track. This exposes the same states in C++.
  */
@@ -20,6 +22,7 @@ typedef NS_ENUM(NSInteger, RTCMediaStreamTrackState) {
 
 NS_ASSUME_NONNULL_BEGIN
 
+RTC_EXPORT
 @interface RTCMediaStreamTrack : NSObject
 
 /**

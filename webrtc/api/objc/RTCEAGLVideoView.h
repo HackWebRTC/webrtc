@@ -12,10 +12,12 @@
 #import <UIKit/UIKit.h>
 
 #import "webrtc/api/objc/RTCVideoRenderer.h"
+#import "webrtc/base/objc/RTCMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class RTCEAGLVideoView;
+RTC_EXPORT
 @protocol RTCEAGLVideoViewDelegate
 
 - (void)videoView:(RTCEAGLVideoView *)videoView didChangeVideoSize:(CGSize)size;
@@ -26,6 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  * RTCEAGLVideoView is an RTCVideoRenderer which renders video frames in its
  * bounds using OpenGLES 2.0.
  */
+RTC_EXPORT
 @interface RTCEAGLVideoView : UIView <RTCVideoRenderer>
 
 @property(nonatomic, weak) id<RTCEAGLVideoViewDelegate> delegate;

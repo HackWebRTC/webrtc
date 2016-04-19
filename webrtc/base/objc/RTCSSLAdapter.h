@@ -16,5 +16,5 @@
  * Initialize and clean up the SSL library. Failure is fatal. These call the
  * corresponding functions in webrtc/base/ssladapter.h.
  */
-RTC_EXPORT BOOL RTCInitializeSSL();
-RTC_EXPORT BOOL RTCCleanupSSL();
+RTC_EXTERN BOOL RTCInitializeSSL();
+RTC_EXTERN BOOL RTCCleanupSSL();

@@ -12,9 +12,11 @@
 
 #import "webrtc/api/objc/RTCMediaStreamTrack.h"
 #import "webrtc/api/objc/RTCRtpParameters.h"
+#import "webrtc/base/objc/RTCMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
+RTC_EXPORT
 @protocol RTCRtpSender <NSObject>
 
 /** The currently active RTCRtpParameters, as defined in
@@ -36,6 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+RTC_EXPORT
 @interface RTCRtpSender : NSObject <RTCRtpSender>
 
 - (instancetype)init NS_UNAVAILABLE;

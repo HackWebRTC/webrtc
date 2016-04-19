@@ -9,6 +9,7 @@
  */
 
 #import "webrtc/api/objc/RTCVideoSource.h"
+#import "webrtc/base/objc/RTCMacros.h"
 
 @class AVCaptureSession;
 @class RTCMediaConstraints;
@@ -23,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  * guarantee its lifetime. Instead, we expose its properties through the ref
  * counted video source interface.
  */
+RTC_EXPORT
 @interface RTCAVFoundationVideoSource : RTCVideoSource
 
 - (instancetype)init NS_UNAVAILABLE;

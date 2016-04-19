@@ -10,8 +10,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
+RTC_EXPORT
 @interface RTCIceServer : NSObject
 
 /** URI(s) for this server represented as NSStrings. */

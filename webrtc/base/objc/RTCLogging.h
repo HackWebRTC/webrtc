@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 // Subset of rtc::LoggingSeverity.
 typedef NS_ENUM(NSInteger, RTCLoggingSeverity) {
   RTCLoggingSeverityVerbose,
@@ -18,24 +20,16 @@ typedef NS_ENUM(NSInteger, RTCLoggingSeverity) {
   RTCLoggingSeverityError,
 };
 
-#if defined(__cplusplus)
-extern "C" void RTCLogEx(RTCLoggingSeverity severity, NSString* log_string);
-extern "C" void RTCSetMinDebugLogLevel(RTCLoggingSeverity severity);
-extern "C" NSString* RTCFileName(const char* filePath);
-#else
-
 // Wrapper for C++ LOG(sev) macros.
 // Logs the log string to the webrtc logstream for the given severity.
-extern void RTCLogEx(RTCLoggingSeverity severity, NSString* log_string);
+RTC_EXTERN void RTCLogEx(RTCLoggingSeverity severity, NSString* log_string);
 
 // Wrapper for rtc::LogMessage::LogToDebug.
 // Sets the minimum severity to be logged to console.
-extern void RTCSetMinDebugLogLevel(RTCLoggingSeverity severity);
+RTC_EXTERN void RTCSetMinDebugLogLevel(RTCLoggingSeverity severity);
 
 // Returns the filename with the path prefix removed.
-extern NSString* RTCFileName(const char* filePath);
-
-#endif
+RTC_EXTERN NSString* RTCFileName(const char* filePath);
 
 // Some convenience macros.
 

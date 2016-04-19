@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class RTCAVFoundationVideoSource;
@@ -22,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class RTCVideoTrack;
 @protocol RTCPeerConnectionDelegate;
 
+RTC_EXPORT
 @interface RTCPeerConnectionFactory : NSObject
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;

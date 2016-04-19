@@ -10,12 +10,15 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class RTCAudioTrack;
 @class RTCPeerConnectionFactory;
 @class RTCVideoTrack;
 
+RTC_EXPORT
 @interface RTCMediaStream : NSObject
 
 /** The audio tracks in this stream. */

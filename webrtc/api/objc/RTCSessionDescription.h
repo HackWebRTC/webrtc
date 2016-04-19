@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 /**
  * Represents the session description type. This exposes the same types that are
  * in C++, which doesn't include the rollback type that is in the W3C spec.
@@ -22,6 +24,7 @@ typedef NS_ENUM(NSInteger, RTCSdpType) {
 
 NS_ASSUME_NONNULL_BEGIN
 
+RTC_EXPORT
 @interface RTCSessionDescription : NSObject
 
 /** The type of session description. */

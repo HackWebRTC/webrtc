@@ -10,12 +10,15 @@
 
 #import "webrtc/api/objc/RTCMediaStreamTrack.h"
 
+#import "webrtc/base/objc/RTCMacros.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol RTCVideoRenderer;
 @class RTCPeerConnectionFactory;
 @class RTCVideoSource;
 
+RTC_EXPORT
 @interface RTCVideoTrack : RTCMediaStreamTrack
 
 /** The video source for this video track. */
