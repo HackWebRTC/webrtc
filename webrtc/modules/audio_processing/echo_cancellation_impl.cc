@@ -415,9 +415,9 @@ bool EchoCancellationImpl::is_aec3_enabled() const {
 
 std::string EchoCancellationImpl::GetExperimentsDescription() {
   rtc::CritScope cs(crit_capture_);
-  std::string description = (aec3_enabled_ ? "AEC3" : "");
+  std::string description = (aec3_enabled_ ? "AEC3;" : "");
   if (refined_adaptive_filter_enabled_) {
-    description += ";RefinedAdaptiveFilter";
+    description += "RefinedAdaptiveFilter;";
   }
   return description;
 }
