@@ -15,6 +15,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/typedefs.h"
 
@@ -46,6 +47,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   void Start() override;
   void Stop() override;
   void ForceFrame();
+  void SetFakeRotation(VideoRotation rotation);
 
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 
@@ -68,6 +70,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   rtc::scoped_ptr<FrameGenerator> frame_generator_;
 
   int target_fps_;
+  VideoRotation fake_rotation_ = kVideoRotation_0;
 
   int64_t first_frame_capture_time_;
 };

@@ -12,6 +12,9 @@
 // androidmediacodeccommon.h to avoid build errors.
 #include "webrtc/api/java/jni/androidmediaencoder_jni.h"
 
+#include <algorithm>
+#include <list>
+
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 #include "third_party/libyuv/include/libyuv/video_common.h"
@@ -219,7 +222,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int frames_dropped_media_encoder_;  // Number of frames dropped by encoder.
   // Number of dropped frames caused by full queue.
   int consecutive_full_queue_frame_drops_;
-  int frames_in_queue_;  // Number of frames in encoder queue.
   int64_t stat_start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
   int current_bytes_;  // Encoded bytes in the current statistics interval.
@@ -227,13 +229,31 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int current_encoding_time_ms_;  // Overall encoding time in the current second
   int64_t last_input_timestamp_ms_;  // Timestamp of last received yuv frame.
   int64_t last_output_timestamp_ms_;  // Timestamp of last encoded frame.
-  std::vector<int32_t> timestamps_;  // Video frames timestamp queue.
-  std::vector<int64_t> render_times_ms_;  // Video frames render time queue.
-  std::vector<int64_t> frame_rtc_times_ms_;  // Time when video frame is sent to
-                                             // encoder input.
-  int32_t output_timestamp_;  // Last output frame timestamp from timestamps_ Q.
+
+  struct InputFrameInfo {
+    InputFrameInfo(int64_t encode_start_time,
+                   int32_t frame_timestamp,
+                   int64_t frame_render_time_ms,
+                   webrtc::VideoRotation rotation)
+        : encode_start_time(encode_start_time),
+          frame_timestamp(frame_timestamp),
+          frame_render_time_ms(frame_render_time_ms),
+          rotation(rotation) {}
+    // Time when video frame is sent to encoder input.
+    const int64_t encode_start_time;
+
+    // Input frame information.
+    const int32_t frame_timestamp;
+    const int64_t frame_render_time_ms;
+    const webrtc::VideoRotation rotation;
+  };
+  std::list<InputFrameInfo> input_frame_infos_;
+  int32_t output_timestamp_;      // Last output frame timestamp from
+                                  // |input_frame_infos_|.
   int64_t output_render_time_ms_; // Last output frame render time from
-                                  // render_times_ms_ queue.
+                                  // |input_frame_infos_|.
+  webrtc::VideoRotation output_rotation_;  // Last output frame rotation from
+                                           // |input_frame_infos_|.
   // Frame size in bytes fed to MediaCodec.
   int yuv_size_;
   // True only when between a callback_->Encoded() call return a positive value
@@ -507,7 +527,6 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   frames_encoded_ = 0;
   frames_dropped_media_encoder_ = 0;
   consecutive_full_queue_frame_drops_ = 0;
-  frames_in_queue_ = 0;
   current_timestamp_us_ = 0;
   stat_start_time_ms_ = GetCurrentTimeMs();
   current_frames_ = 0;
@@ -518,9 +537,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   last_output_timestamp_ms_ = -1;
   output_timestamp_ = 0;
   output_render_time_ms_ = 0;
-  timestamps_.clear();
-  render_times_ms_.clear();
-  frame_rtc_times_ms_.clear();
+  input_frame_infos_.clear();
   drop_next_input_frame_ = false;
   use_surface_ = use_surface;
   picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
@@ -619,11 +636,10 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       return WEBRTC_VIDEO_CODEC_ERROR;
   }
   if (frames_encoded_ < kMaxEncodedLogFrames) {
-    ALOGD << "Encoder frame in # " << (frames_received_ - 1) <<
-        ". TS: " << (int)(current_timestamp_us_ / 1000) <<
-        ". Q: " << frames_in_queue_ <<
-        ". Fps: " << last_set_fps_ <<
-        ". Kbps: " << last_set_bitrate_kbps_;
+    ALOGD << "Encoder frame in # " << (frames_received_ - 1)
+          << ". TS: " << (int)(current_timestamp_us_ / 1000)
+          << ". Q: " << input_frame_infos_.size() << ". Fps: " << last_set_fps_
+          << ". Kbps: " << last_set_bitrate_kbps_;
   }
 
   if (drop_next_input_frame_) {
@@ -639,8 +655,9 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   // Check if we accumulated too many frames in encoder input buffers and drop
   // frame if so.
-  if (frames_in_queue_ > MAX_ENCODER_Q_SIZE) {
-    ALOGD << "Already " << frames_in_queue_ << " frames in the queue, dropping"
+  if (input_frame_infos_.size() > MAX_ENCODER_Q_SIZE) {
+    ALOGD << "Already " << input_frame_infos_.size()
+          << " frames in the queue, dropping"
           << ". TS: " << (int)(current_timestamp_us_ / 1000)
           << ". Fps: " << last_set_fps_
           << ". Consecutive drops: " << consecutive_full_queue_frame_drops_;
@@ -685,9 +702,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  // Save time when input frame is sent to the encoder input.
-  frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
-
+  const int64_t time_before_calling_encode = GetCurrentTimeMs();
   const bool key_frame =
       frame_types->front() != webrtc::kVideoFrameDelta || send_key_frame;
   bool encode_status = true;
@@ -698,7 +713,6 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     if (j_input_buffer_index == -1) {
       // Video codec falls behind - no input buffer available.
       ALOGW << "Encoder drop frame - no input buffers available";
-      frame_rtc_times_ms_.erase(frame_rtc_times_ms_.begin());
       current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
       frames_dropped_media_encoder_++;
       OnDroppedFrame();
@@ -720,13 +734,14 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
+  // Save input image timestamps for later output.
+  input_frame_infos_.emplace_back(
+      time_before_calling_encode, input_frame.timestamp(),
+      input_frame.render_time_ms(), input_frame.rotation());
+
   last_input_timestamp_ms_ =
       current_timestamp_us_ / rtc::kNumMicrosecsPerMillisec;
-  frames_in_queue_++;
 
-  // Save input image timestamps for later output
-  timestamps_.push_back(input_frame.timestamp());
-  render_times_ms_.push_back(input_frame.render_time_ms());
   current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
 
   if (!DeliverPendingOutputs(jni)) {
@@ -933,14 +948,14 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     last_output_timestamp_ms_ =
         GetOutputBufferInfoPresentationTimestampUs(jni, j_output_buffer_info) /
         1000;
-    if (frames_in_queue_ > 0) {
-      output_timestamp_ = timestamps_.front();
-      timestamps_.erase(timestamps_.begin());
-      output_render_time_ms_ = render_times_ms_.front();
-      render_times_ms_.erase(render_times_ms_.begin());
-      frame_encoding_time_ms = GetCurrentTimeMs() - frame_rtc_times_ms_.front();
-      frame_rtc_times_ms_.erase(frame_rtc_times_ms_.begin());
-      frames_in_queue_--;
+    if (!input_frame_infos_.empty()) {
+      const InputFrameInfo& frame_info = input_frame_infos_.front();
+      output_timestamp_ = frame_info.frame_timestamp;
+      output_render_time_ms_ = frame_info.frame_render_time_ms;
+      output_rotation_ = frame_info.rotation;
+      frame_encoding_time_ms =
+          GetCurrentTimeMs() - frame_info.encode_start_time;
+      input_frame_infos_.pop_front();
     }
 
     // Extract payload.
@@ -969,6 +984,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       image->_encodedHeight = height_;
       image->_timeStamp = output_timestamp_;
       image->capture_time_ms_ = output_render_time_ms_;
+      image->rotation_ = output_rotation_;
       image->_frameType =
           (key_frame ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta);
       image->_completeFrame = true;

@@ -275,6 +275,10 @@ void CallTest::CreateVideoStreams() {
   }
 }
 
+void CallTest::SetFakeVideoCaptureRotation(VideoRotation rotation) {
+  frame_generator_capturer_->SetFakeRotation(rotation);
+}
+
 void CallTest::CreateAudioStreams() {
   audio_send_stream_ = sender_call_->CreateAudioSendStream(audio_send_config_);
   for (size_t i = 0; i < audio_receive_configs_.size(); ++i) {

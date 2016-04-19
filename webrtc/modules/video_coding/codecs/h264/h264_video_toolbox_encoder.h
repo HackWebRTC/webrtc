@@ -12,6 +12,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_ENCODER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_ENCODER_H_
 
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/include/bitrate_adjuster.h"
 
@@ -58,7 +59,8 @@ class H264VideoToolboxEncoder : public H264Encoder {
                       int32_t width,
                       int32_t height,
                       int64_t render_time_ms,
-                      uint32_t timestamp);
+                      uint32_t timestamp,
+                      VideoRotation rotation);
 
  private:
   int ResetCompressionSession();

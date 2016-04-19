@@ -80,6 +80,7 @@ class CallTest : public ::testing::Test {
   void Start();
   void Stop();
   void DestroyStreams();
+  void SetFakeVideoCaptureRotation(VideoRotation rotation);
 
   Clock* const clock_;
 

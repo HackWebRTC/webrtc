@@ -118,8 +118,14 @@ struct FrameEncodeParams {
                     int32_t w,
                     int32_t h,
                     int64_t rtms,
-                    uint32_t ts)
-      : encoder(e), width(w), height(h), render_time_ms(rtms), timestamp(ts) {
+                    uint32_t ts,
+                    webrtc::VideoRotation r)
+      : encoder(e),
+        width(w),
+        height(h),
+        render_time_ms(rtms),
+        timestamp(ts),
+        rotation(r) {
     if (csi) {
       codec_specific_info = *csi;
     } else {
@@ -133,6 +139,7 @@ struct FrameEncodeParams {
   int32_t height;
   int64_t render_time_ms;
   uint32_t timestamp;
+  webrtc::VideoRotation rotation;
 };
 
 // We receive I420Frames as input, but we need to feed CVPixelBuffers into the
@@ -185,7 +192,8 @@ void VTCompressionOutputCallback(void* encoder,
   encode_params->encoder->OnEncodedFrame(
       status, info_flags, sample_buffer, encode_params->codec_specific_info,
       encode_params->width, encode_params->height,
-      encode_params->render_time_ms, encode_params->timestamp);
+      encode_params->render_time_ms, encode_params->timestamp,
+      encode_params->rotation);
 }
 
 }  // namespace internal
@@ -306,7 +314,7 @@ int H264VideoToolboxEncoder::Encode(
   std::unique_ptr<internal::FrameEncodeParams> encode_params;
   encode_params.reset(new internal::FrameEncodeParams(
       this, codec_specific_info, width_, height_, input_image.render_time_ms(),
-      input_image.timestamp()));
+      input_image.timestamp(), input_image.rotation()));
 
   // Update the bitrate if needed.
   SetBitrateBps(bitrate_adjuster_.GetAdjustedBitrateBps());
@@ -471,7 +479,8 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
     int32_t width,
     int32_t height,
     int64_t render_time_ms,
-    uint32_t timestamp) {
+    uint32_t timestamp,
+    VideoRotation rotation) {
   if (status != noErr) {
     LOG(LS_ERROR) << "H264 encode failed.";
     return;
@@ -511,6 +520,7 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
       is_keyframe ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta;
   frame.capture_time_ms_ = render_time_ms;
   frame._timeStamp = timestamp;
+  frame.rotation_ = rotation;
 
   int result = callback_->Encoded(frame, &codec_specific_info, header.get());
   if (result != 0) {

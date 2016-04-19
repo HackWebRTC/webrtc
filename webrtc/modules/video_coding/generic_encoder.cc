@@ -101,7 +101,6 @@ VCMGenericEncoder::VCMGenericEncoder(
       vcm_encoded_frame_callback_(encoded_frame_callback),
       internal_source_(internal_source),
       encoder_params_({0, 0, 0, 0}),
-      rotation_(kVideoRotation_0),
       is_screenshare_(false) {}
 
 VCMGenericEncoder::~VCMGenericEncoder() {}
@@ -140,15 +139,6 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& frame,
 
   for (FrameType frame_type : frame_types)
     RTC_DCHECK(frame_type == kVideoFrameKey || frame_type == kVideoFrameDelta);
-
-  rotation_ = frame.rotation();
-
-  // Keep track of the current frame rotation and apply to the output of the
-  // encoder. There might not be exact as the encoder could have one frame delay
-  // but it should be close enough.
-  // TODO(pbos): Map from timestamp, this is racy (even if rotation_ is locked
-  // properly, which it isn't). More than one frame may be in the pipeline.
-  vcm_encoded_frame_callback_->SetRotation(rotation_);
 
   int32_t result = encoder_->Encode(frame, codec_specific, &frame_types);
 
@@ -228,7 +218,6 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
       media_opt_(nullptr),
       payload_type_(0),
       internal_source_(false),
-      rotation_(kVideoRotation_0),
       post_encode_callback_(post_encode_callback) {}
 
 VCMEncodedFrameCallback::~VCMEncodedFrameCallback() {}
@@ -254,7 +243,7 @@ int32_t VCMEncodedFrameCallback::Encoded(
   memset(&rtp_video_header, 0, sizeof(RTPVideoHeader));
   if (codec_specific)
     CopyCodecSpecific(codec_specific, &rtp_video_header);
-  rtp_video_header.rotation = rotation_;
+  rtp_video_header.rotation = encoded_image.rotation_;
 
   int32_t ret_val = send_callback_->SendData(
       payload_type_, encoded_image, fragmentation_header, &rtp_video_header);

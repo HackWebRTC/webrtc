@@ -393,6 +393,7 @@ int32_t H264EncoderImpl::Encode(
   encoded_image_._timeStamp = frame.timestamp();
   encoded_image_.ntp_time_ms_ = frame.ntp_time_ms();
   encoded_image_.capture_time_ms_ = frame.render_time_ms();
+  encoded_image_.rotation_ = frame.rotation();
   encoded_image_._frameType = EVideoFrameType_to_FrameType(info.eFrameType);
 
   // Split encoded image up into fragments. This also updates |encoded_image_|.

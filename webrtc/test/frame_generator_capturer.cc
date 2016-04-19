@@ -80,6 +80,11 @@ FrameGeneratorCapturer::~FrameGeneratorCapturer() {
   thread_.Stop();
 }
 
+void FrameGeneratorCapturer::SetFakeRotation(VideoRotation rotation) {
+  rtc::CritScope cs(&lock_);
+  fake_rotation_ = rotation;
+}
+
 bool FrameGeneratorCapturer::Init() {
   // This check is added because frame_generator_ might be file based and should
   // not crash because a file moved.
@@ -104,6 +109,7 @@ void FrameGeneratorCapturer::InsertFrame() {
     if (sending_) {
       VideoFrame* frame = frame_generator_->NextFrame();
       frame->set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
+      frame->set_rotation(fake_rotation_);
       if (first_frame_capture_time_ == -1) {
         first_frame_capture_time_ = frame->ntp_time_ms();
       }

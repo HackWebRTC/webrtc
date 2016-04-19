@@ -144,9 +144,15 @@ const VideoFrame& QualityScaler::GetScaledFrame(const VideoFrame& frame) {
   if (scaler_.Scale(frame, &scaled_frame_) != 0)
     return frame;
 
+  // TODO(perkj): Refactor the scaler to not own |scaled_frame|. VideoFrame are
+  // just thin wrappers so instead the scaler should return a
+  // rtc::scoped_refptr<VideoFrameBuffer> and a new VideoFrame be created with
+  // the meta data from |frame|. That way we would not have to set all these
+  // meta data.
   scaled_frame_.set_ntp_time_ms(frame.ntp_time_ms());
   scaled_frame_.set_timestamp(frame.timestamp());
   scaled_frame_.set_render_time_ms(frame.render_time_ms());
+  scaled_frame_.set_rotation(frame.rotation());
 
   return scaled_frame_;
 }

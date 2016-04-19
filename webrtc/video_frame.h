@@ -157,6 +157,7 @@ class EncodedImage {
   static size_t GetBufferPaddingBytes(VideoCodecType codec_type);
 
   EncodedImage() : EncodedImage(nullptr, 0, 0) {}
+
   EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _buffer(buffer), _length(length), _size(size) {}
 
@@ -182,6 +183,7 @@ class EncodedImage {
   uint8_t* _buffer;
   size_t _length;
   size_t _size;
+  VideoRotation rotation_ = kVideoRotation_0;
   bool _completeFrame = false;
   AdaptReason adapt_reason_;
   int qp_ = -1;  // Quantizer value.

@@ -48,7 +48,6 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
   void SetInternalSource(bool internal_source) {
     internal_source_ = internal_source;
   }
-  void SetRotation(VideoRotation rotation) { rotation_ = rotation; }
   void SignalLastEncoderImplementationUsed(
       const char* encoder_implementation_name);
 
@@ -57,7 +56,6 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
   media_optimization::MediaOptimization* media_opt_;
   uint8_t payload_type_;
   bool internal_source_;
-  VideoRotation rotation_;
 
   EncodedImageCallback* post_encode_callback_;
 };
@@ -96,7 +94,6 @@ class VCMGenericEncoder {
   const bool internal_source_;
   rtc::CriticalSection params_lock_;
   EncoderParameters encoder_params_ GUARDED_BY(params_lock_);
-  VideoRotation rotation_;
   bool is_screenshare_;
 };
 
