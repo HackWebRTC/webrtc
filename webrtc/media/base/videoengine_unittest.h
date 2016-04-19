@@ -1063,16 +1063,7 @@ class VideoMediaChannelTest : public testing::Test,
   void TwoStreamsSendAndReceive(const cricket::VideoCodec& codec) {
     SetUpSecondStream();
     // Test sending and receiving on first stream.
-    EXPECT_TRUE(SetOneCodec(codec));
-    EXPECT_TRUE(SetSend(true));
-    EXPECT_TRUE(channel_->SetSink(kDefaultReceiveSsrc, &renderer_));
-    EXPECT_EQ(0, renderer_.num_rendered_frames());
-    EXPECT_TRUE(SendFrame());
-    // Since multiple streams share this link we should be receiving smaller
-    // initial frames (start at QVGA since shared bitrate is 150k each).
-    EXPECT_FRAME_WAIT(1, codec.width / 2, codec.height / 2, kTimeout);
-    std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
-    EXPECT_EQ(codec.id, GetPayloadType(p.get()));
+    SendAndReceive(codec);
     // Test sending and receiving on second stream.
     EXPECT_EQ_WAIT(1, renderer2_.num_rendered_frames(), kTimeout);
     EXPECT_GT(NumRtpPackets(), 0);
