@@ -14,12 +14,17 @@
 #include <math.h>   // ceil
 #include <string.h> // memcpy
 
+#include <limits>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 namespace webrtc {
+namespace {
+constexpr uint64_t kMaxBitrateBps = std::numeric_limits<uint32_t>::max();
+}  // namespace
 
 namespace RTCPUtility {
 
@@ -1440,14 +1445,23 @@ RTCPUtility::RTCPParserV2::ParsePsfbREMBItem()
     }
 
     _packet.REMBItem.NumberOfSSRCs = *_ptrRTCPData++;
-    const uint8_t brExp = (_ptrRTCPData[0] >> 2) & 0x3F;
+    const uint8_t exp = (_ptrRTCPData[0] >> 2) & 0x3F;
 
-    uint32_t brMantissa = (_ptrRTCPData[0] & 0x03) << 16;
-    brMantissa += (_ptrRTCPData[1] << 8);
-    brMantissa += (_ptrRTCPData[2]);
+    uint64_t mantissa = (_ptrRTCPData[0] & 0x03) << 16;
+    mantissa += (_ptrRTCPData[1] << 8);
+    mantissa += (_ptrRTCPData[2]);
 
     _ptrRTCPData += 3; // Fwd read data
-    _packet.REMBItem.BitRate = (brMantissa << brExp);
+    uint64_t bitrate_bps = (mantissa << exp);
+    bool shift_overflow = exp > 0 && (mantissa >> (64 - exp)) != 0;
+    if (shift_overflow || bitrate_bps > kMaxBitrateBps) {
+      LOG(LS_ERROR) << "Unhandled remb bitrate value : " << mantissa
+                    << "*2^" << static_cast<int>(exp);
+      _state = ParseState::State_TopLevel;
+      EndCurrentBlock();
+      return false;
+    }
+    _packet.REMBItem.BitRate = bitrate_bps;
 
     const ptrdiff_t length_ssrcs = _ptrRTCPBlockEnd - _ptrRTCPData;
     if (length_ssrcs < 4 * _packet.REMBItem.NumberOfSSRCs)
@@ -1492,18 +1506,28 @@ RTCPUtility::RTCPParserV2::ParseTMMBRItem()
     _packet.TMMBRItem.SSRC += *_ptrRTCPData++ << 8;
     _packet.TMMBRItem.SSRC += *_ptrRTCPData++;
 
-    uint8_t mxtbrExp = (_ptrRTCPData[0] >> 2) & 0x3F;
+    uint8_t exp = (_ptrRTCPData[0] >> 2) & 0x3F;
 
-    uint32_t mxtbrMantissa = (_ptrRTCPData[0] & 0x03) << 15;
-    mxtbrMantissa += (_ptrRTCPData[1] << 7);
-    mxtbrMantissa += (_ptrRTCPData[2] >> 1) & 0x7F;
+    uint64_t mantissa = (_ptrRTCPData[0] & 0x03) << 15;
+    mantissa += (_ptrRTCPData[1] << 7);
+    mantissa += (_ptrRTCPData[2] >> 1) & 0x7F;
 
     uint32_t measuredOH = (_ptrRTCPData[2] & 0x01) << 8;
     measuredOH += _ptrRTCPData[3];
 
     _ptrRTCPData += 4; // Fwd read data
 
-    _packet.TMMBRItem.MaxTotalMediaBitRate = ((mxtbrMantissa << mxtbrExp) / 1000);
+    uint64_t bitrate_bps = (mantissa << exp);
+    bool shift_overflow = exp > 0 && (mantissa >> (64 - exp)) != 0;
+    if (shift_overflow || bitrate_bps > kMaxBitrateBps) {
+      LOG(LS_ERROR) << "Unhandled tmmbr bitrate value : " << mantissa
+                    << "*2^" << static_cast<int>(exp);
+      _state = ParseState::State_TopLevel;
+      EndCurrentBlock();
+      return false;
+    }
+
+    _packet.TMMBRItem.MaxTotalMediaBitRate = bitrate_bps / 1000;
     _packet.TMMBRItem.MeasuredOverhead     = measuredOH;
 
     return true;
@@ -1531,18 +1555,28 @@ RTCPUtility::RTCPParserV2::ParseTMMBNItem()
     _packet.TMMBNItem.SSRC += *_ptrRTCPData++ << 8;
     _packet.TMMBNItem.SSRC += *_ptrRTCPData++;
 
-    uint8_t mxtbrExp = (_ptrRTCPData[0] >> 2) & 0x3F;
+    uint8_t exp = (_ptrRTCPData[0] >> 2) & 0x3F;
 
-    uint32_t mxtbrMantissa = (_ptrRTCPData[0] & 0x03) << 15;
-    mxtbrMantissa += (_ptrRTCPData[1] << 7);
-    mxtbrMantissa += (_ptrRTCPData[2] >> 1) & 0x7F;
+    uint64_t mantissa = (_ptrRTCPData[0] & 0x03) << 15;
+    mantissa += (_ptrRTCPData[1] << 7);
+    mantissa += (_ptrRTCPData[2] >> 1) & 0x7F;
 
     uint32_t measuredOH = (_ptrRTCPData[2] & 0x01) << 8;
     measuredOH += _ptrRTCPData[3];
 
     _ptrRTCPData += 4; // Fwd read data
 
-    _packet.TMMBNItem.MaxTotalMediaBitRate = ((mxtbrMantissa << mxtbrExp) / 1000);
+    uint64_t bitrate_bps = (mantissa << exp);
+    bool shift_overflow = exp > 0 && (mantissa >> (64 - exp)) != 0;
+    if (shift_overflow || bitrate_bps > kMaxBitrateBps) {
+      LOG(LS_ERROR) << "Unhandled tmmbn bitrate value : " << mantissa
+                    << "*2^" << static_cast<int>(exp);
+      _state = ParseState::State_TopLevel;
+      EndCurrentBlock();
+      return false;
+    }
+
+    _packet.TMMBNItem.MaxTotalMediaBitRate = bitrate_bps / 1000;
     _packet.TMMBNItem.MeasuredOverhead     = measuredOH;
 
     return true;

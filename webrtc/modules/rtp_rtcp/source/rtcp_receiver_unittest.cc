@@ -1244,6 +1244,20 @@ TEST_F(RtcpReceiverTest, ReceivesTransportFeedback) {
   EXPECT_TRUE(rtcp_packet_info_.transport_feedback_.get() != nullptr);
 }
 
+TEST_F(RtcpReceiverTest, ReceivesRemb) {
+  const uint32_t kSenderSsrc = 0x123456;
+  const uint32_t kBitrateBps = 500000;
+  rtcp::Remb remb;
+  remb.From(kSenderSsrc);
+  remb.WithBitrateBps(kBitrateBps);
+  rtc::Buffer built_packet = remb.Build();
+
+  EXPECT_EQ(0, InjectRtcpPacket(built_packet.data(), built_packet.size()));
+
+  EXPECT_EQ(kRtcpRemb, rtcp_packet_info_.rtcpPacketTypeFlags & kRtcpRemb);
+  EXPECT_EQ(kBitrateBps, rtcp_packet_info_.receiverEstimatedMaxBitrate);
+}
+
 TEST_F(RtcpReceiverTest, HandlesInvalidTransportFeedback) {
   const uint32_t kSenderSsrc = 0x10203;
   const uint32_t kSourceSsrc = 0x123456;
@@ -1261,7 +1275,7 @@ TEST_F(RtcpReceiverTest, HandlesInvalidTransportFeedback) {
 
   static uint32_t kBitrateBps = 50000;
   rtcp::Remb remb;
-  remb.From(kSourceSsrc);
+  remb.From(kSenderSsrc);
   remb.WithBitrateBps(kBitrateBps);
   rtcp::CompoundPacket compound;
   compound.Append(&packet);
