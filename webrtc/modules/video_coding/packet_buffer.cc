@@ -207,25 +207,22 @@ void PacketBuffer::ManageFrame(std::unique_ptr<RtpFrameObject> frame) {
   VideoCodecType codec_type = data_buffer_[start_index].codec;
 
   switch (codec_type) {
-    case kVideoCodecULPFEC :
-    case kVideoCodecRED :
-    case kVideoCodecUnknown : {
+    case kVideoCodecULPFEC:
+    case kVideoCodecRED:
+    case kVideoCodecUnknown:
       RTC_NOTREACHED();
-    }
-    case kVideoCodecVP8 : {
+      break;
+    case kVideoCodecVP8:
       ManageFrameVp8(std::move(frame));
       break;
-    }
-    case kVideoCodecVP9 : {
+    case kVideoCodecVP9:
       // TODO(philipel): ManageFrameVp9(std::move(frame));
       break;
-    }
-    case kVideoCodecH264 :
-    case kVideoCodecI420 :
-    case kVideoCodecGeneric :
-    default : {
+    case kVideoCodecH264:
+    case kVideoCodecI420:
+    case kVideoCodecGeneric:
       ManageFrameGeneric(std::move(frame));
-    }
+      break;
   }
 }
 
