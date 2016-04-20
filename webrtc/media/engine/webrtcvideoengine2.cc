@@ -864,6 +864,7 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   send_params_ = params;
   return true;
 }
+
 webrtc::RtpParameters WebRtcVideoChannel2::GetRtpParameters(
     uint32_t ssrc) const {
   rtc::CritScope stream_lock(&stream_crit_);
@@ -874,7 +875,13 @@ webrtc::RtpParameters WebRtcVideoChannel2::GetRtpParameters(
     return webrtc::RtpParameters();
   }
 
-  return it->second->GetRtpParameters();
+  webrtc::RtpParameters rtp_params = it->second->GetRtpParameters();
+  // Need to add the common list of codecs to the send stream-specific
+  // RTP parameters.
+  for (const VideoCodec& codec : send_params_.codecs) {
+    rtp_params.codecs.push_back(codec.ToCodecParameters());
+  }
+  return rtp_params;
 }
 
 bool WebRtcVideoChannel2::SetRtpParameters(
@@ -889,6 +896,8 @@ bool WebRtcVideoChannel2::SetRtpParameters(
     return false;
   }
 
+  // TODO(deadbeef): Handle setting parameters with a list of codecs in a
+  // different order (which should change the send codec).
   return it->second->SetRtpParameters(parameters);
 }
 
@@ -1828,6 +1837,8 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpParameters(
     pending_encoder_reconfiguration_ = true;
   }
   rtp_parameters_ = new_parameters;
+  // Codecs are currently handled at the WebRtcVideoChannel2 level.
+  rtp_parameters_.codecs.clear();
   // Encoding may have been activated/deactivated.
   UpdateSendState();
   return true;

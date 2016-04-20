@@ -3426,6 +3426,43 @@ TEST_F(WebRtcVideoChannel2Test, SetRtpParametersEncodingsActive) {
   EXPECT_TRUE(stream->IsSending());
 }
 
+// Test that GetRtpParameters returns the currently configured codecs.
+TEST_F(WebRtcVideoChannel2Test, GetRtpParametersCodecs) {
+  AddSendStream();
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(kVp8Codec);
+  parameters.codecs.push_back(kVp9Codec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpParameters(last_ssrc_);
+  ASSERT_EQ(2u, rtp_parameters.codecs.size());
+  EXPECT_EQ(kVp8Codec.id, rtp_parameters.codecs[0].payload_type);
+  EXPECT_EQ(kVp8Codec.name, rtp_parameters.codecs[0].mime_type);
+  EXPECT_EQ(kVp8Codec.clockrate, rtp_parameters.codecs[0].clock_rate);
+  EXPECT_EQ(1, rtp_parameters.codecs[0].channels);
+  EXPECT_EQ(kVp9Codec.id, rtp_parameters.codecs[1].payload_type);
+  EXPECT_EQ(kVp9Codec.name, rtp_parameters.codecs[1].mime_type);
+  EXPECT_EQ(kVp9Codec.clockrate, rtp_parameters.codecs[1].clock_rate);
+  EXPECT_EQ(1, rtp_parameters.codecs[1].channels);
+}
+
+// Test that if we set/get parameters multiple times, we get the same results.
+TEST_F(WebRtcVideoChannel2Test, SetAndGetRtpParameters) {
+  AddSendStream();
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(kVp8Codec);
+  parameters.codecs.push_back(kVp9Codec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+
+  webrtc::RtpParameters initial_params = channel_->GetRtpParameters(last_ssrc_);
+
+  // We should be able to set the params we just got.
+  EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, initial_params));
+
+  // ... And this shouldn't change the params returned by GetRtpParameters.
+  EXPECT_EQ(initial_params, channel_->GetRtpParameters(last_ssrc_));
+}
+
 void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(
     bool receiver_first) {
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));

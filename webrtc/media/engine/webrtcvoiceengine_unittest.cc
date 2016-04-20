@@ -918,6 +918,44 @@ TEST_F(WebRtcVoiceEngineTestFake, RtpParametersArePerStream) {
   EXPECT_EQ(64000, GetCodecBitrate(kSsrcs4[2]));
 }
 
+// Test that GetRtpParameters returns the currently configured codecs.
+TEST_F(WebRtcVoiceEngineTestFake, GetRtpParametersCodecs) {
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters parameters;
+  parameters.codecs.push_back(kIsacCodec);
+  parameters.codecs.push_back(kPcmuCodec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpParameters(kSsrc1);
+  ASSERT_EQ(2u, rtp_parameters.codecs.size());
+  EXPECT_EQ(kIsacCodec.id, rtp_parameters.codecs[0].payload_type);
+  EXPECT_EQ(kIsacCodec.name, rtp_parameters.codecs[0].mime_type);
+  EXPECT_EQ(kIsacCodec.clockrate, rtp_parameters.codecs[0].clock_rate);
+  EXPECT_EQ(kIsacCodec.channels, rtp_parameters.codecs[0].channels);
+  EXPECT_EQ(kPcmuCodec.id, rtp_parameters.codecs[1].payload_type);
+  EXPECT_EQ(kPcmuCodec.name, rtp_parameters.codecs[1].mime_type);
+  EXPECT_EQ(kPcmuCodec.clockrate, rtp_parameters.codecs[1].clock_rate);
+  EXPECT_EQ(kPcmuCodec.channels, rtp_parameters.codecs[1].channels);
+}
+
+// Test that if we set/get parameters multiple times, we get the same results.
+TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpParameters) {
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters parameters;
+  parameters.codecs.push_back(kIsacCodec);
+  parameters.codecs.push_back(kPcmuCodec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+
+  webrtc::RtpParameters initial_params = channel_->GetRtpParameters(kSsrc1);
+
+  // We should be able to set the params we just got.
+  EXPECT_TRUE(channel_->SetRtpParameters(kSsrc1, initial_params));
+
+  // ... And this shouldn't change the params returned by GetRtpParameters.
+  webrtc::RtpParameters new_params = channel_->GetRtpParameters(kSsrc1);
+  EXPECT_EQ(initial_params, channel_->GetRtpParameters(kSsrc1));
+}
+
 // Test that we apply codecs properly.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_TRUE(SetupSendStream());

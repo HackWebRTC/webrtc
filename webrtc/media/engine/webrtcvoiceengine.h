@@ -240,6 +240,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   rtc::ThreadChecker worker_thread_checker_;
 
   WebRtcVoiceEngine* const engine_ = nullptr;
+  std::vector<AudioCodec> send_codecs_;
   std::vector<AudioCodec> recv_codecs_;
   int send_bitrate_bps_ = 0;
   AudioOptions options_;

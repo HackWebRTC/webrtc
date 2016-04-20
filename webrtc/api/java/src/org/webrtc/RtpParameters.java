@@ -24,9 +24,18 @@ public class RtpParameters {
     public Integer maxBitrateBps;
   }
 
+  public static class Codec {
+    int payloadType;
+    String mimeType;
+    int clockRate;
+    int channels = 1;
+  }
+
   public final LinkedList<Encoding> encodings;
+  public final LinkedList<Codec> codecs;
 
   public RtpParameters() {
     encodings = new LinkedList<Encoding>();
+    codecs = new LinkedList<Codec>();
   }
 }

@@ -142,6 +142,14 @@ void Codec::IntersectFeedbackParams(const Codec& other) {
   feedback_params.Intersect(other.feedback_params);
 }
 
+webrtc::RtpCodecParameters Codec::ToCodecParameters() const {
+  webrtc::RtpCodecParameters codec_params;
+  codec_params.payload_type = id;
+  codec_params.mime_type = name;
+  codec_params.clock_rate = clockrate;
+  return codec_params;
+}
+
 AudioCodec::AudioCodec(int id,
                        const std::string& name,
                        int clockrate,
@@ -180,6 +188,12 @@ bool AudioCodec::Matches(const AudioCodec& codec) const {
           clockrate == codec.clockrate) &&
       (codec.bitrate == 0 || bitrate <= 0 || bitrate == codec.bitrate) &&
       ((codec.channels < 2 && channels < 2) || channels == codec.channels);
+}
+
+webrtc::RtpCodecParameters AudioCodec::ToCodecParameters() const {
+  webrtc::RtpCodecParameters codec_params = Codec::ToCodecParameters();
+  codec_params.channels = channels;
+  return codec_params;
 }
 
 std::string AudioCodec::ToString() const {

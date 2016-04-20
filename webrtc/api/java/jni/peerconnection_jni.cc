@@ -2058,6 +2058,29 @@ static bool JavaEncodingToJsepRtpEncodingParameters(
   return true;
 }
 
+static bool JavaCodecToJsepRtpCodecParameters(
+    JNIEnv* jni,
+    jobject j_codecs,
+    std::vector<webrtc::RtpCodecParameters>* codecs) {
+  jclass codec_class = jni->FindClass("org/webrtc/RtpParameters$Codec");
+  jfieldID payload_type_id = GetFieldID(jni, codec_class, "payloadType", "I");
+  jfieldID mime_type_id =
+      GetFieldID(jni, codec_class, "mimeType", "Ljava/lang/String;");
+  jfieldID clock_rate_id = GetFieldID(jni, codec_class, "clockRate", "I");
+  jfieldID channels_id = GetFieldID(jni, codec_class, "channels", "I");
+
+  for (jobject j_codec : Iterable(jni, j_codecs)) {
+    webrtc::RtpCodecParameters codec;
+    codec.payload_type = GetIntField(jni, j_codec, payload_type_id);
+    codec.mime_type =
+        JavaToStdString(jni, GetStringField(jni, j_codec, mime_type_id));
+    codec.clock_rate = GetIntField(jni, j_codec, clock_rate_id);
+    codec.channels = GetIntField(jni, j_codec, channels_id);
+    codecs->push_back(codec);
+  }
+  return true;
+}
+
 JOW(jboolean, RtpSender_nativeSetParameters)
 (JNIEnv* jni, jclass, jlong j_rtp_sender_pointer, jobject j_parameters) {
   if (IsNull(jni, j_parameters)) {
@@ -2067,11 +2090,15 @@ JOW(jboolean, RtpSender_nativeSetParameters)
   jclass encoding_class = jni->FindClass("org/webrtc/RtpParameters$Encoding");
   jfieldID encodings_id =
       GetFieldID(jni, parameters_class, "encodings", "Ljava/util/LinkedList;");
+  jfieldID codecs_id =
+      GetFieldID(jni, parameters_class, "codecs", "Ljava/util/LinkedList;");
 
   jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
+  jobject j_codecs = GetObjectField(jni, j_parameters, codecs_id);
   webrtc::RtpParameters parameters;
   JavaEncodingToJsepRtpEncodingParameters(jni, j_encodings,
                                           &parameters.encodings);
+  JavaCodecToJsepRtpCodecParameters(jni, j_codecs, &parameters.codecs);
   return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
       ->SetParameters(parameters);
 }
@@ -2093,8 +2120,8 @@ JOW(jobject, RtpSender_nativeGetParameters)
   jfieldID encodings_id =
       GetFieldID(jni, parameters_class, "encodings", "Ljava/util/LinkedList;");
   jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
-  jmethodID add = GetMethodID(jni, GetObjectClass(jni, j_encodings), "add",
-                              "(Ljava/lang/Object;)Z");
+  jmethodID encodings_add = GetMethodID(jni, GetObjectClass(jni, j_encodings),
+                                        "add", "(Ljava/lang/Object;)Z");
   jfieldID active_id =
       GetFieldID(jni, encoding_class, "active", "Z");
   jfieldID bitrate_id =
@@ -2116,10 +2143,42 @@ JOW(jobject, RtpSender_nativeGetParameters)
       jni->SetObjectField(j_encoding_parameters, bitrate_id, j_bitrate_value);
       CHECK_EXCEPTION(jni) << "error during SetObjectField";
     }
-    jboolean added =
-        jni->CallBooleanMethod(j_encodings, add, j_encoding_parameters);
+    jboolean added = jni->CallBooleanMethod(j_encodings, encodings_add,
+                                            j_encoding_parameters);
     CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
+    RTC_CHECK(added);
   }
+
+  jclass codec_class = jni->FindClass("org/webrtc/RtpParameters$Codec");
+  jmethodID codec_ctor = GetMethodID(jni, codec_class, "<init>", "()V");
+  jfieldID codecs_id =
+      GetFieldID(jni, parameters_class, "codecs", "Ljava/util/LinkedList;");
+  jobject j_codecs = GetObjectField(jni, j_parameters, codecs_id);
+  jmethodID codecs_add = GetMethodID(jni, GetObjectClass(jni, j_codecs),
+                                     "add", "(Ljava/lang/Object;)Z");
+  jfieldID payload_type_id = GetFieldID(jni, codec_class, "payloadType", "I");
+  jfieldID mime_type_id =
+      GetFieldID(jni, codec_class, "mimeType", "Ljava/lang/String;");
+  jfieldID clock_rate_id = GetFieldID(jni, codec_class, "clockRate", "I");
+  jfieldID channels_id = GetFieldID(jni, codec_class, "channels", "I");
+
+  for (const webrtc::RtpCodecParameters& codec : parameters.codecs) {
+    jobject j_codec = jni->NewObject(codec_class, codec_ctor);
+    CHECK_EXCEPTION(jni) << "error during NewObject";
+    jni->SetIntField(j_codec, payload_type_id, codec.payload_type);
+    CHECK_EXCEPTION(jni) << "error during SetIntField";
+    jni->SetObjectField(j_codec, mime_type_id,
+                        JavaStringFromStdString(jni, codec.mime_type));
+    CHECK_EXCEPTION(jni) << "error during SetObjectField";
+    jni->SetIntField(j_codec, clock_rate_id, codec.clock_rate);
+    CHECK_EXCEPTION(jni) << "error during SetIntField";
+    jni->SetIntField(j_codec, channels_id, codec.channels);
+    CHECK_EXCEPTION(jni) << "error during SetIntField";
+    jboolean added = jni->CallBooleanMethod(j_codecs, codecs_add, j_codec);
+    CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
+    RTC_CHECK(added);
+  }
+
   return j_parameters;
 }
 

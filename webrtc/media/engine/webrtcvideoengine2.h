@@ -380,6 +380,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // entire channel.
     VideoSendStreamParameters parameters_ GUARDED_BY(lock_);
     // Contains settings that are unique for each stream, such as max_bitrate.
+    // Does *not* contain codecs, however.
     // TODO(skvlad): Move ssrcs_ and ssrc_groups_ into rtp_parameters_.
     // TODO(skvlad): Combine parameters_ and rtp_parameters_ once we have only
     // one stream per MediaChannel.

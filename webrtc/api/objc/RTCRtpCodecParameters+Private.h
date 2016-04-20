@@ -11,21 +11,19 @@
 #import <Foundation/Foundation.h>
 
 #import "webrtc/api/objc/RTCRtpCodecParameters.h"
-#import "webrtc/api/objc/RTCRtpEncodingParameters.h"
-#import "webrtc/base/objc/RTCMacros.h"
+
+#include "webrtc/api/rtpparameters.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-RTC_EXPORT
-@interface RTCRtpParameters : NSObject
+@interface RTCRtpCodecParameters ()
 
-/** The currently active encodings in the order of preference. */
-@property(nonatomic, copy) NSArray<RTCRtpEncodingParameters *> *encodings;
+/** Returns the equivalent native RtpCodecParameters structure. */
+@property(nonatomic, readonly) webrtc::RtpCodecParameters nativeParameters;
 
-/** The negotiated set of send codecs in order of preference. */
-@property(nonatomic, copy) NSArray<RTCRtpCodecParameters *> *codecs;
-
-- (instancetype)init NS_DESIGNATED_INITIALIZER;
+/** Initialize the object with a native RtpCodecParameters structure. */
+- (instancetype)initWithNativeParameters:
+    (const webrtc::RtpCodecParameters &)nativeParameters;
 
 @end
 

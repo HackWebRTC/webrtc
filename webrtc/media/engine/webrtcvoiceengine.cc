@@ -1411,7 +1411,13 @@ webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpParameters(
     return webrtc::RtpParameters();
   }
 
-  return it->second->rtp_parameters();
+  webrtc::RtpParameters rtp_params = it->second->rtp_parameters();
+  // Need to add the common list of codecs to the send stream-specific
+  // RTP parameters.
+  for (const AudioCodec& codec : send_codecs_) {
+    rtp_params.codecs.push_back(codec.ToCodecParameters());
+  }
+  return rtp_params;
 }
 
 bool WebRtcVoiceMediaChannel::SetRtpParameters(
@@ -1432,7 +1438,10 @@ bool WebRtcVoiceMediaChannel::SetRtpParameters(
     LOG(LS_WARNING) << "Failed to set RtpParameters.";
     return false;
   }
-  it->second->set_rtp_parameters(parameters);
+  // Codecs are handled at the WebRtcVoiceMediaChannel level.
+  webrtc::RtpParameters reduced_params = parameters;
+  reduced_params.codecs.clear();
+  it->second->set_rtp_parameters(reduced_params);
   return true;
 }
 
@@ -1663,6 +1672,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     }
   }
 
+  send_codecs_ = codecs;
   return true;
 }
 
@@ -2390,6 +2400,8 @@ bool WebRtcVoiceMediaChannel::SetChannelParameters(
     int channel,
     const webrtc::RtpParameters& parameters) {
   RTC_CHECK_EQ(1UL, parameters.encodings.size());
+  // TODO(deadbeef): Handle setting parameters with a list of codecs in a
+  // different order (which should change the send codec).
   return SetSendBitrate(
       channel,
       MinPositive(send_bitrate_bps_, parameters.encodings[0].max_bitrate_bps));

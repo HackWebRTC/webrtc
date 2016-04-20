@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/media/base/mediaconstants.h"
 
 namespace cricket {
@@ -95,6 +96,8 @@ struct Codec {
   // and |other| are kept.
   void IntersectFeedbackParams(const Codec& other);
 
+  virtual webrtc::RtpCodecParameters ToCodecParameters() const;
+
   Codec& operator=(const Codec& c);
 
   bool operator==(const Codec& c) const;
@@ -123,6 +126,8 @@ struct AudioCodec : public Codec {
   bool Matches(const AudioCodec& codec) const;
 
   std::string ToString() const;
+
+  webrtc::RtpCodecParameters ToCodecParameters() const override;
 
   AudioCodec& operator=(const AudioCodec& c);
 

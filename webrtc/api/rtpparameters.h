@@ -11,6 +11,7 @@
 #ifndef WEBRTC_API_RTPPARAMETERS_H_
 #define WEBRTC_API_RTPPARAMETERS_H_
 
+#include <string>
 #include <vector>
 
 namespace webrtc {
@@ -20,10 +21,32 @@ namespace webrtc {
 struct RtpEncodingParameters {
   bool active = true;
   int max_bitrate_bps = -1;
+
+  bool operator==(const RtpEncodingParameters& o) const {
+    return active == o.active && max_bitrate_bps == o.max_bitrate_bps;
+  }
+};
+
+struct RtpCodecParameters {
+  int payload_type;
+  std::string mime_type;
+  int clock_rate;
+  int channels = 1;
+  // TODO(deadbeef): Add sdpFmtpLine field.
+
+  bool operator==(const RtpCodecParameters& o) const {
+    return payload_type == o.payload_type && mime_type == o.mime_type &&
+           clock_rate == o.clock_rate && channels == o.channels;
+  }
 };
 
 struct RtpParameters {
   std::vector<RtpEncodingParameters> encodings;
+  std::vector<RtpCodecParameters> codecs;
+
+  bool operator==(const RtpParameters& o) const {
+    return encodings == o.encodings && codecs == o.codecs;
+  }
 };
 
 }  // namespace webrtc
