@@ -12,6 +12,11 @@
 # build/common.gypi is different for the standalone and Chromium builds. Gyp
 # doesn't permit conditional inclusion or variable expansion in include paths.
 # http://code.google.com/p/gyp/wiki/InputFormatReference#Including_Other_Files
+#
+# Local changes:
+# * Removed <(DEPTH) from include_dir due to difficulties with generated
+#   downstream code.
+
 
 # This file is meant to be included into a target to provide a rule
 # to invoke protoc in a consistent manner. For Java-targets, see
@@ -111,12 +116,10 @@
   ],
   'include_dirs': [
     '<(SHARED_INTERMEDIATE_DIR)/protoc_out',
-    '<(DEPTH)',
   ],
   'direct_dependent_settings': {
     'include_dirs': [
       '<(SHARED_INTERMEDIATE_DIR)/protoc_out',
-      '<(DEPTH)',
     ]
   },
   # This target exports a hard dependency because it generates header
