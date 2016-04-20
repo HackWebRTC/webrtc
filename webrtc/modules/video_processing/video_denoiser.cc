@@ -14,7 +14,7 @@
 
 namespace webrtc {
 
-#if DISPLAY  // Rectangle diagnostics
+#if DISPLAY || DISPLAYNEON
 static void CopyMem8x8(const uint8_t* src,
                        int src_stride,
                        uint8_t* dst,
@@ -318,7 +318,7 @@ void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
   denoised_frame->set_timestamp(frame.timestamp());
   denoised_frame->set_render_time_ms(frame.render_time_ms());
 
-#if DISPLAY  // Rectangle diagnostics
+#if DISPLAY || DISPLAYNEON
   // Show rectangular region
   ShowRect(filter_, moving_edge_, moving_object_, x_density_, y_density_, u_src,
            v_src, u_dst, v_dst, mb_rows_, mb_cols_, stride_u_, stride_v_);
