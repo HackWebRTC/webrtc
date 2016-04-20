@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "webrtc/call/bitrate_allocator.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
@@ -90,6 +91,10 @@ class VideoSendStream : public webrtc::VideoSendStream,
                         uint32_t* sent_fec_rate_bps) override;
 
  private:
+  struct EncoderSettings {
+    VideoCodec video_codec;
+    int min_transmit_bitrate_bps;
+  };
   static bool EncoderThreadFunction(void* obj);
   void EncoderProcess();
 
@@ -110,6 +115,9 @@ class VideoSendStream : public webrtc::VideoSendStream,
   rtc::PlatformThread encoder_thread_;
   rtc::Event encoder_wakeup_event_;
   volatile int stop_encoder_thread_;
+  rtc::CriticalSection encoder_settings_crit_;
+  rtc::Optional<EncoderSettings> pending_encoder_settings_
+      GUARDED_BY(encoder_settings_crit_);
 
   OveruseFrameDetector overuse_detector_;
   EncoderStateFeedback encoder_feedback_;
