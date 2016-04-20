@@ -1193,7 +1193,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   set_clear_remote_candidates_ufrag_pwd(false);
   CreateChannels(1);
   // Only have remote credentials come in for ep2, not ep1.
-  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
+  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
 
   // Pause sending ep2's candidates to ep1 until ep1 receives the peer reflexive
   // candidate.
@@ -1209,14 +1209,22 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   EXPECT_EQ(kIceUfrag[1],
             ep1_ch1()->best_connection()->remote_candidate().username());
   EXPECT_EQ("", ep1_ch1()->best_connection()->remote_candidate().password());
+  // Because we don't have ICE credentials yet, we don't know the generation.
+  EXPECT_EQ(0u, ep1_ch1()->best_connection()->remote_candidate().generation());
   EXPECT_TRUE(nullptr == ep1_ch1()->FindNextPingableConnection());
 
+  // Add two sets of remote ICE credentials, so that the ones used by the
+  // candidate will be generation 1 instead of 0.
+  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
   ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
-  ResumeCandidates(1);
-
+  // After setting the remote ICE credentials, the password and generation
+  // of the peer reflexive candidate should be updated.
   EXPECT_EQ(kIcePwd[1],
             ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_EQ(1u, ep1_ch1()->best_connection()->remote_candidate().generation());
   EXPECT_TRUE(nullptr != ep1_ch1()->FindNextPingableConnection());
+
+  ResumeCandidates(1);
 
   WAIT(ep2_ch1()->best_connection() != NULL, 2000);
   // Verify ep1's best connection is updated to use the 'local' candidate.
@@ -1237,7 +1245,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   set_clear_remote_candidates_ufrag_pwd(false);
   CreateChannels(1);
   // Only have remote credentials come in for ep2, not ep1.
-  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
+  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
   // Pause sending ep2's candidates to ep1 until ep1 receives the peer reflexive
   // candidate.
   PauseCandidates(1);
@@ -1251,14 +1259,21 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   EXPECT_EQ(kIceUfrag[1],
             ep1_ch1()->best_connection()->remote_candidate().username());
   EXPECT_EQ("", ep1_ch1()->best_connection()->remote_candidate().password());
+  // Because we don't have ICE credentials yet, we don't know the generation.
+  EXPECT_EQ(0u, ep1_ch1()->best_connection()->remote_candidate().generation());
   EXPECT_TRUE(nullptr == ep1_ch1()->FindNextPingableConnection());
 
+  // Add two sets of remote ICE credentials, so that the ones used by the
+  // candidate will be generation 1 instead of 0.
+  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
   ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
-  ResumeCandidates(1);
-
+  // After setting the remote ICE credentials, the password and generation
+  // of the peer reflexive candidate should be updated.
   EXPECT_EQ(kIcePwd[1],
             ep1_ch1()->best_connection()->remote_candidate().password());
-  EXPECT_TRUE(nullptr != ep1_ch1()->FindNextPingableConnection());
+  EXPECT_EQ(1u, ep1_ch1()->best_connection()->remote_candidate().generation());
+
+  ResumeCandidates(1);
 
   const cricket::Connection* best_connection = NULL;
   WAIT((best_connection = ep2_ch1()->best_connection()) != NULL, 2000);

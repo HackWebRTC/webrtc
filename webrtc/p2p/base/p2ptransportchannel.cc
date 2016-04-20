@@ -390,10 +390,15 @@ void P2PTransportChannel::SetRemoteIceCredentials(const std::string& ice_ufrag,
       candidate.set_password(ice_pwd);
     }
   }
-  // We need to update the credentials for any peer reflexive candidates.
+  // We need to update the credentials and generation for any peer reflexive
+  // candidates.
   for (Connection* conn : connections_) {
-    conn->MaybeSetRemoteIceCredentials(ice_ufrag, ice_pwd);
+    conn->MaybeSetRemoteIceCredentialsAndGeneration(
+        ice_ufrag, ice_pwd,
+        static_cast<int>(remote_ice_parameters_.size() - 1));
   }
+  // Updating the remote ICE candidate generation could change the sort order.
+  RequestSort();
 }
 
 void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {

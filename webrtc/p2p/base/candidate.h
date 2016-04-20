@@ -249,7 +249,8 @@ class Candidate {
     ost << "Cand[" << transport_name_ << ":" << foundation_ << ":" << component_
         << ":" << protocol_ << ":" << priority_ << ":" << address << ":"
         << type_ << ":" << related_address_ << ":" << username_ << ":"
-        << password_ << ":" << network_id_ << ":" << network_cost_ << "]";
+        << password_ << ":" << network_id_ << ":" << network_cost_ << ":"
+        << generation_ << "]";
     return ost.str();
   }
 

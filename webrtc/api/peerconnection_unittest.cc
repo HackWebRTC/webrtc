@@ -1187,10 +1187,7 @@ class P2PTestConductor : public testing::Test {
   // This test sets up a call between two parties. Both parties send static
   // frames to each other. Once the test is finished the number of sent frames
   // is compared to the number of received frames.
-  void LocalP2PTest() { LocalP2PTest(false); }
-  // TODO(perkj); Remove the flag bug5752 when
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=5752 is fixed.
-  void LocalP2PTest(bool bug5752) {
+  void LocalP2PTest() {
     if (initiating_client_->NumberOfLocalMediaStreams() == 0) {
       initiating_client_->AddMediaStream(true, true);
     }
@@ -1219,18 +1216,9 @@ class P2PTestConductor : public testing::Test {
     // Completed.
     // Note: These tests have been observed to fail under heavy load at
     // shorter timeouts, so they may be flaky.
-    if (bug5752) {
-      EXPECT_TRUE_WAIT(
-          initiating_client_->ice_connection_state() ==
-                  webrtc::PeerConnectionInterface::kIceConnectionCompleted ||
-              initiating_client_->ice_connection_state() ==
-                  webrtc::PeerConnectionInterface::kIceConnectionConnected,
-          kMaxWaitForFramesMs);
-    } else {
-      EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
-                     initiating_client_->ice_connection_state(),
-                     kMaxWaitForFramesMs);
-    }
+    EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
+                   initiating_client_->ice_connection_state(),
+                   kMaxWaitForFramesMs);
     EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
                    receiving_client_->ice_connection_state(),
                    kMaxWaitForFramesMs);
@@ -1461,9 +1449,7 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCaller) {
 
   SetSignalingReceivers();
   initializing_client()->IceRestart();
-  // TODO(perkj): Remove the flag bug5752 when
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=5752 is fixed.
-  LocalP2PTest(true /* bug5752 */);
+  LocalP2PTest();
   VerifyRenderedSize(640, 480);
 }
 
