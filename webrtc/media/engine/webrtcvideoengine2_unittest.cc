@@ -871,7 +871,14 @@ TEST_F(WebRtcVideoChannel2BaseTest, SendAndReceiveVp8SvcQqvga) {
 }
 
 TEST_F(WebRtcVideoChannel2BaseTest, TwoStreamsSendAndReceive) {
-  Base::TwoStreamsSendAndReceive(kVp8Codec);
+  // Set a high bitrate to not be downscaled by VP8 due to low initial start
+  // bitrates. This currently happens at <250k, and two streams sharing 300k
+  // initially will use QVGA instead of VGA.
+  // TODO(pbos): Set up the quality scaler so that both senders reliably start
+  // at QVGA, then verify that instead.
+  cricket::VideoCodec codec = kVp8Codec;
+  codec.params[kCodecParamStartBitrate] = "1000000";
+  Base::TwoStreamsSendAndReceive(codec);
 }
 
 class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
