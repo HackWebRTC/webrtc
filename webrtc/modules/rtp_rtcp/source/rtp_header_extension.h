@@ -70,6 +70,8 @@ struct HeaderExtension {
 
 class RtpHeaderExtensionMap {
  public:
+  static constexpr RTPExtensionType kInvalidType = kRtpExtensionNone;
+  static constexpr uint8_t kInvalidId = 0;
   RtpHeaderExtensionMap();
   ~RtpHeaderExtensionMap();
 
@@ -89,8 +91,12 @@ class RtpHeaderExtensionMap {
   bool IsRegistered(RTPExtensionType type) const;
 
   int32_t GetType(const uint8_t id, RTPExtensionType* type) const;
+  // Return kInvalidType if not found.
+  RTPExtensionType GetType(uint8_t id) const;
 
   int32_t GetId(const RTPExtensionType type, uint8_t* id) const;
+  // Return kInvalidId if not found.
+  uint8_t GetId(RTPExtensionType type) const;
 
   //
   // Methods below ignore any inactive rtp header extensions.

@@ -112,6 +112,14 @@ int32_t RtpHeaderExtensionMap::GetType(const uint8_t id,
   return 0;
 }
 
+RTPExtensionType RtpHeaderExtensionMap::GetType(uint8_t id) const {
+  auto it = extensionMap_.find(id);
+  if (it == extensionMap_.end()) {
+    return kInvalidType;
+  }
+  return it->second->type;
+}
+
 int32_t RtpHeaderExtensionMap::GetId(const RTPExtensionType type,
                                      uint8_t* id) const {
   assert(id);
@@ -127,6 +135,14 @@ int32_t RtpHeaderExtensionMap::GetId(const RTPExtensionType type,
     it++;
   }
   return -1;
+}
+
+uint8_t RtpHeaderExtensionMap::GetId(RTPExtensionType type) const {
+  for (auto kv : extensionMap_) {
+    if (kv.second->type == type)
+      return kv.first;
+  }
+  return kInvalidId;
 }
 
 size_t RtpHeaderExtensionMap::GetTotalLengthInBytes() const {
