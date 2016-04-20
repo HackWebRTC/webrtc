@@ -38,8 +38,6 @@
             'objc/RTCDispatcher.m',
             'objc/RTCFieldTrials.h',
             'objc/RTCFieldTrials.mm',
-            'objc/RTCFileLogger.h',
-            'objc/RTCFileLogger.mm',
             'objc/RTCLogging.h',
             'objc/RTCLogging.mm',
             'objc/RTCMacros.h',
@@ -63,6 +61,12 @@
                   ],
                 },
               },
+            }],
+            ['build_with_chromium==0', {
+              'sources': [
+                'objc/RTCFileLogger.h',
+                'objc/RTCFileLogger.mm',
+              ],
             }],
           ],
         }

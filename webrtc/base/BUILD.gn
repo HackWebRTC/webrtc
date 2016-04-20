@@ -619,8 +619,6 @@ if (is_ios) {
       "objc/RTCDispatcher.m",
       "objc/RTCFieldTrials.h",
       "objc/RTCFieldTrials.mm",
-      "objc/RTCFileLogger.h",
-      "objc/RTCFileLogger.mm",
       "objc/RTCLogging.h",
       "objc/RTCLogging.mm",
       "objc/RTCMacros.h",
@@ -631,6 +629,13 @@ if (is_ios) {
       "objc/RTCUIApplication.h",
       "objc/RTCUIApplication.mm",
     ]
+
+    if (!build_with_chromium) {
+      sources += [
+        "objc/RTCFileLogger.h",
+        "objc/RTCFileLogger.mm",
+      ]
+    }
   }
 }
 
