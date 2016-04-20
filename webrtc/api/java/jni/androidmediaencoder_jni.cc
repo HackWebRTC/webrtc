@@ -1042,6 +1042,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           if (webrtc::vp8::GetQp(payload, payload_size, &qp)) {
             current_acc_qp_ += qp;
             quality_scaler_.ReportQP(qp);
+            image->qp_ = qp;
           }
         }
       } else if (codecType_ == kVideoCodecH264) {
