@@ -49,7 +49,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   VideoSendStream::Stats GetStats();
 
   virtual void OnSendEncodedImage(const EncodedImage& encoded_image,
-                                  const RTPVideoHeader* rtp_video_header);
+                                  const CodecSpecificInfo* codec_info);
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
 
