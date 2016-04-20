@@ -44,7 +44,6 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
                   const RTPFragmentationHeader* fragmentation_header) override;
   int32_t SetTransportCallback(VCMPacketizationCallback* transport);
   void SetMediaOpt(media_optimization::MediaOptimization* media_opt);
-  void SetPayloadType(uint8_t payload_type) { payload_type_ = payload_type; }
   void SetInternalSource(bool internal_source) {
     internal_source_ = internal_source;
   }
@@ -54,7 +53,6 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
  private:
   VCMPacketizationCallback* send_callback_;
   media_optimization::MediaOptimization* media_opt_;
-  uint8_t payload_type_;
   bool internal_source_;
 
   EncodedImageCallback* post_encode_callback_;

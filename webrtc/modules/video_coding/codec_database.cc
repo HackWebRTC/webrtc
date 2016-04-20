@@ -238,7 +238,6 @@ bool VCMCodecDataBase::SetSendCodec(const VideoCodec* send_codec,
   memcpy(&send_codec_, &new_send_codec, sizeof(send_codec_));
 
   if (!reset_required) {
-    encoded_frame_callback_->SetPayloadType(send_codec_.plType);
     return true;
   }
 
@@ -249,7 +248,6 @@ bool VCMCodecDataBase::SetSendCodec(const VideoCodec* send_codec,
   ptr_encoder_.reset(
       new VCMGenericEncoder(external_encoder_, encoder_rate_observer_,
                             encoded_frame_callback_, internal_source_));
-  encoded_frame_callback_->SetPayloadType(send_codec_.plType);
   encoded_frame_callback_->SetInternalSource(internal_source_);
   if (ptr_encoder_->InitEncode(&send_codec_, number_of_cores_,
                                max_payload_size_) < 0) {

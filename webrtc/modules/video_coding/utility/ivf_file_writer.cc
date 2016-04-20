@@ -18,7 +18,7 @@ namespace webrtc {
 
 IvfFileWriter::IvfFileWriter(const std::string& file_name,
                              std::unique_ptr<FileWrapper> file,
-                             RtpVideoCodecTypes codec_type)
+                             VideoCodecType codec_type)
     : codec_type_(codec_type),
       num_frames_(0),
       width_(0),
@@ -34,9 +34,8 @@ IvfFileWriter::~IvfFileWriter() {
 
 const size_t kIvfHeaderSize = 32;
 
-std::unique_ptr<IvfFileWriter> IvfFileWriter::Open(
-    const std::string& file_name,
-    RtpVideoCodecTypes codec_type) {
+std::unique_ptr<IvfFileWriter> IvfFileWriter::Open(const std::string& file_name,
+                                                   VideoCodecType codec_type) {
   std::unique_ptr<IvfFileWriter> file_writer;
   std::unique_ptr<FileWrapper> file(FileWrapper::Create());
   if (file->OpenFile(file_name.c_str(), false) != 0)
@@ -65,19 +64,19 @@ bool IvfFileWriter::WriteHeader() {
   ByteWriter<uint16_t>::WriteLittleEndian(&ivf_header[6], 32);  // Header size.
 
   switch (codec_type_) {
-    case kRtpVideoVp8:
+    case kVideoCodecVP8:
       ivf_header[8] = 'V';
       ivf_header[9] = 'P';
       ivf_header[10] = '8';
       ivf_header[11] = '0';
       break;
-    case kRtpVideoVp9:
+    case kVideoCodecVP9:
       ivf_header[8] = 'V';
       ivf_header[9] = 'P';
       ivf_header[10] = '9';
       ivf_header[11] = '0';
       break;
-    case kRtpVideoH264:
+    case kVideoCodecH264:
       ivf_header[8] = 'H';
       ivf_header[9] = '2';
       ivf_header[10] = '6';

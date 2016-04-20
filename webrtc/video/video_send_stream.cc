@@ -229,14 +229,16 @@ VideoSendStream::VideoSendStream(
           this,
           config.post_encode_callback,
           &stats_proxy_),
-      vie_encoder_(num_cpu_cores,
-                   config_.rtp.ssrcs,
-                   module_process_thread_,
-                   &stats_proxy_,
-                   config.pre_encode_callback,
-                   &overuse_detector_,
-                   congestion_controller_->pacer(),
-                   &payload_router_),
+      vie_encoder_(
+          num_cpu_cores,
+          config_.rtp.ssrcs,
+          module_process_thread_,
+          &stats_proxy_,
+          config.pre_encode_callback,
+          &overuse_detector_,
+          congestion_controller_->pacer(),
+          &payload_router_,
+          config.post_encode_callback ? &encoded_frame_proxy_ : nullptr),
       vcm_(vie_encoder_.vcm()),
       bandwidth_observer_(congestion_controller_->GetBitrateController()
                               ->CreateRtcpBandwidthObserver()),
@@ -250,7 +252,7 @@ VideoSendStream::VideoSendStream(
           congestion_controller_->packet_router(),
           &stats_proxy_,
           config_.rtp.ssrcs.size())),
-      payload_router_(rtp_rtcp_modules_),
+      payload_router_(rtp_rtcp_modules_, config.encoder_settings.payload_type),
       input_(&encoder_wakeup_event_,
              config_.local_renderer,
              &stats_proxy_,
@@ -318,9 +320,6 @@ VideoSendStream::VideoSendStream(
                       config.encoder_settings.internal_source));
 
   ReconfigureVideoEncoder(encoder_config);
-
-  if (config_.post_encode_callback)
-    vie_encoder_.RegisterPostEncodeImageCallback(&encoded_frame_proxy_);
 
   if (config_.suspend_below_min_bitrate) {
     vcm_->SuspendBelowMinBitrate();

@@ -85,7 +85,8 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
                        OveruseFrameDetector* overuse_detector,
                        PacedSender* pacer,
-                       PayloadRouter* payload_router)
+                       PayloadRouter* payload_router,
+                       EncodedImageCallback* post_encode_callback)
     : number_of_cores_(number_of_cores),
       ssrcs_(ssrcs),
       vp_(VideoProcessing::Create()),
@@ -98,6 +99,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       overuse_detector_(overuse_detector),
       pacer_(pacer),
       send_payload_router_(payload_router),
+      post_encode_callback_(post_encode_callback),
       time_of_last_frame_activity_ms_(0),
       encoder_config_(),
       min_transmit_bitrate_bps_(0),
@@ -121,6 +123,10 @@ bool ViEEncoder::Init() {
   // Enable/disable content analysis: off by default for now.
   vp_->EnableContentAnalysis(false);
 
+  vcm_->RegisterPostEncodeImageCallback(this);
+
+  // TODO(perkj): Remove  |RegisterTransportCallback| as soon as we don't use
+  // VCMPacketizationCallback::OnEncoderImplementationName.
   if (vcm_->RegisterTransportCallback(this) != 0) {
     return false;
   }
@@ -403,10 +409,14 @@ void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {
     stats_proxy_->OnSetRates(bitrate_bps, framerate);
 }
 
-int32_t ViEEncoder::SendData(const uint8_t payload_type,
-                             const EncodedImage& encoded_image,
-                             const RTPFragmentationHeader* fragmentation_header,
-                             const RTPVideoHeader* rtp_video_hdr) {
+void ViEEncoder::OnEncoderImplementationName(const char* implementation_name) {
+  if (stats_proxy_)
+    stats_proxy_->OnEncoderImplementationName(implementation_name);
+}
+
+int32_t ViEEncoder::Encoded(const EncodedImage& encoded_image,
+                            const CodecSpecificInfo* codec_specific_info,
+                            const RTPFragmentationHeader* fragmentation) {
   RTC_DCHECK(send_payload_router_);
 
   {
@@ -414,17 +424,22 @@ int32_t ViEEncoder::SendData(const uint8_t payload_type,
     time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
   }
 
-  if (stats_proxy_)
-    stats_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
+  if (post_encode_callback_) {
+    post_encode_callback_->Encoded(encoded_image, codec_specific_info,
+                                   fragmentation);
+  }
 
-  bool success = send_payload_router_->RoutePayload(
-      encoded_image._frameType, payload_type, encoded_image._timeStamp,
-      encoded_image.capture_time_ms_, encoded_image._buffer,
-      encoded_image._length, fragmentation_header, rtp_video_hdr);
+  if (stats_proxy_) {
+    stats_proxy_->OnSendEncodedImage(encoded_image, codec_specific_info);
+  }
+  int success = send_payload_router_->Encoded(
+      encoded_image, codec_specific_info, fragmentation);
   overuse_detector_->FrameSent(encoded_image._timeStamp);
 
   if (kEnableFrameRecording) {
-    int layer = rtp_video_hdr->simulcastIdx;
+    int layer = codec_specific_info->codecType == kVideoCodecVP8
+                    ? codec_specific_info->codecSpecific.VP8.simulcastIdx
+                    : 0;
     IvfFileWriter* file_writer;
     {
       rtc::CritScope lock(&data_cs_);
@@ -435,7 +450,7 @@ int32_t ViEEncoder::SendData(const uint8_t payload_type,
           oss << "_" << ssrc;
         oss << "_layer" << layer << ".ivf";
         file_writers_[layer] =
-            IvfFileWriter::Open(oss.str(), rtp_video_hdr->codec);
+            IvfFileWriter::Open(oss.str(), codec_specific_info->codecType);
       }
       file_writer = file_writers_[layer].get();
     }
@@ -445,13 +460,7 @@ int32_t ViEEncoder::SendData(const uint8_t payload_type,
     }
   }
 
-  return success ? 0 : -1;
-}
-
-void ViEEncoder::OnEncoderImplementationName(
-    const char* implementation_name) {
-  if (stats_proxy_)
-    stats_proxy_->OnEncoderImplementationName(implementation_name);
+  return success;
 }
 
 int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
@@ -529,11 +538,6 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
                << " for ssrc " << ssrcs_[0];
   if (stats_proxy_)
     stats_proxy_->OnSuspendChange(video_is_suspended);
-}
-
-void ViEEncoder::RegisterPostEncodeImageCallback(
-      EncodedImageCallback* post_encode_callback) {
-  vcm_->RegisterPostEncodeImageCallback(post_encode_callback);
 }
 
 QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessing* vpm)

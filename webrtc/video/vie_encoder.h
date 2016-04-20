@@ -18,6 +18,7 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
+#include "webrtc/video_encoder.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
@@ -41,6 +42,7 @@ class VideoCodingModule;
 class VideoEncoder;
 
 class ViEEncoder : public VideoEncoderRateObserver,
+                   public EncodedImageCallback,
                    public VCMPacketizationCallback,
                    public VCMSendStatisticsCallback {
  public:
@@ -54,7 +56,8 @@ class ViEEncoder : public VideoEncoderRateObserver,
              rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
              OveruseFrameDetector* overuse_detector,
              PacedSender* pacer,
-             PayloadRouter* payload_router);
+             PayloadRouter* payload_router,
+             EncodedImageCallback* post_encode_callback);
   ~ViEEncoder();
 
   bool Init();
@@ -92,11 +95,12 @@ class ViEEncoder : public VideoEncoderRateObserver,
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
   // Implements VCMPacketizationCallback.
-  int32_t SendData(uint8_t payload_type,
-                   const EncodedImage& encoded_image,
-                   const RTPFragmentationHeader* fragmentation_header,
-                   const RTPVideoHeader* rtp_video_hdr) override;
   void OnEncoderImplementationName(const char* implementation_name) override;
+
+  // Implements EncodedImageCallback.
+  int32_t Encoded(const EncodedImage& encoded_image,
+                  const CodecSpecificInfo* codec_specific_info,
+                  const RTPFragmentationHeader* fragmentation) override;
 
   // Implements VideoSendStatisticsCallback.
   int32_t SendStatistics(const uint32_t bit_rate,
@@ -106,10 +110,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   virtual void OnReceivedIntraFrameRequest(uint32_t ssrc);
   virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id);
   virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id);
-
-  // New-style callbacks, used by VideoSendStream.
-  void RegisterPostEncodeImageCallback(
-        EncodedImageCallback* post_encode_callback);
 
   int GetPaddingNeededBps() const;
 
@@ -139,6 +139,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
   OveruseFrameDetector* const overuse_detector_;
   PacedSender* const pacer_;
   PayloadRouter* const send_payload_router_;
+  EncodedImageCallback* const post_encode_callback_;
 
   // The time we last received an input frame or encoded frame. This is used to
   // track when video is stopped long enough that we also want to stop sending
