@@ -84,10 +84,11 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
     return;
   }
 
-  captured_frame_.ShallowCopy(incoming_frame);
+  captured_frame_.reset(new VideoFrame);
+  captured_frame_->ShallowCopy(incoming_frame);
   last_captured_timestamp_ = incoming_frame.ntp_time_ms();
 
-  overuse_detector_->FrameCaptured(captured_frame_);
+  overuse_detector_->FrameCaptured(*captured_frame_);
 
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
@@ -97,11 +98,11 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
 
 bool VideoCaptureInput::GetVideoFrame(VideoFrame* video_frame) {
   rtc::CritScope lock(&crit_);
-  if (captured_frame_.IsZeroSize())
+  if (!captured_frame_)
     return false;
 
-  *video_frame = captured_frame_;
-  captured_frame_.Reset();
+  *video_frame = *captured_frame_;
+  captured_frame_.reset();
   return true;
 }
 

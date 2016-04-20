@@ -65,9 +65,6 @@ class VideoFrame {
   // reference to the video buffer also retained by |videoFrame|.
   void ShallowCopy(const VideoFrame& videoFrame);
 
-  // Release frame buffer and reset time stamps.
-  void Reset();
-
   // Get pointer to buffer per plane.
   uint8_t* buffer(PlaneType type);
   // Overloading with const.

@@ -94,17 +94,18 @@ TEST_F(VideoCaptureInputTest, DoesNotRetainHandleNorCopyBuffer) {
     rtc::Event* const event_;
   };
 
-  VideoFrame frame(
-      new rtc::RefCountedObject<TestBuffer>(&frame_destroyed_event), 1, 1,
-      kVideoRotation_0);
+  {
+    VideoFrame frame(
+        new rtc::RefCountedObject<TestBuffer>(&frame_destroyed_event), 1, 1,
+        kVideoRotation_0);
 
-  AddInputFrame(&frame);
-  WaitOutputFrame();
+    AddInputFrame(&frame);
+    WaitOutputFrame();
 
-  EXPECT_EQ(output_frames_[0]->video_frame_buffer().get(),
-            frame.video_frame_buffer().get());
-  output_frames_.clear();
-  frame.Reset();
+    EXPECT_EQ(output_frames_[0]->video_frame_buffer().get(),
+              frame.video_frame_buffer().get());
+    output_frames_.clear();
+  }
   EXPECT_TRUE(frame_destroyed_event.Wait(FRAME_TIMEOUT_MS));
 }
 

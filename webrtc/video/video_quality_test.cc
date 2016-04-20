@@ -21,6 +21,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -146,8 +147,8 @@ class VideoAnalyzer : public PacketReceiver,
 
     {
       rtc::CritScope lock(&crit_);
-      if (first_send_frame_.IsZeroSize() && rtp_timestamp_delta_ == 0)
-        first_send_frame_ = copy;
+      if (!first_send_timestamp_ && rtp_timestamp_delta_ == 0)
+        first_send_timestamp_ = rtc::Optional<uint32_t>(copy.timestamp());
 
       frames_.push_back(copy);
     }
@@ -169,8 +170,8 @@ class VideoAnalyzer : public PacketReceiver,
       rtc::CritScope lock(&crit_);
 
       if (rtp_timestamp_delta_ == 0) {
-        rtp_timestamp_delta_ = header.timestamp - first_send_frame_.timestamp();
-        first_send_frame_.Reset();
+        rtp_timestamp_delta_ = header.timestamp - *first_send_timestamp_;
+        first_send_timestamp_ = rtc::Optional<uint32_t>();
       }
       int64_t timestamp =
           wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
@@ -622,7 +623,7 @@ class VideoAnalyzer : public PacketReceiver,
   std::map<int64_t, int64_t> send_times_ GUARDED_BY(crit_);
   std::map<int64_t, int64_t> recv_times_ GUARDED_BY(crit_);
   std::map<int64_t, size_t> encoded_frame_sizes_ GUARDED_BY(crit_);
-  VideoFrame first_send_frame_ GUARDED_BY(crit_);
+  rtc::Optional<uint32_t> first_send_timestamp_ GUARDED_BY(crit_);
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
 

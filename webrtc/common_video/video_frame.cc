@@ -29,11 +29,12 @@ int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
   return plane_stride * ((image_height + 1) / 2);
 }
 
-VideoFrame::VideoFrame() {
-  // Intentionally using Reset instead of initializer list so that any missed
-  // fields in Reset will be caught by memory checkers.
-  Reset();
-}
+VideoFrame::VideoFrame()
+    : video_frame_buffer_(nullptr),
+      timestamp_(0),
+      ntp_time_ms_(0),
+      render_time_ms_(0),
+      rotation_(kVideoRotation_0) {}
 
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        uint32_t timestamp,
@@ -127,14 +128,6 @@ void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
   ntp_time_ms_ = videoFrame.ntp_time_ms_;
   render_time_ms_ = videoFrame.render_time_ms_;
   rotation_ = videoFrame.rotation_;
-}
-
-void VideoFrame::Reset() {
-  video_frame_buffer_ = nullptr;
-  timestamp_ = 0;
-  ntp_time_ms_ = 0;
-  render_time_ms_ = 0;
-  rotation_ = kVideoRotation_0;
 }
 
 uint8_t* VideoFrame::buffer(PlaneType type) {
