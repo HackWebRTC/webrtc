@@ -27,18 +27,18 @@ class IvfFileWriter {
   ~IvfFileWriter();
 
   static std::unique_ptr<IvfFileWriter> Open(const std::string& file_name,
-                                             VideoCodecType codec_type);
+                                             RtpVideoCodecTypes codec_type);
   bool WriteFrame(const EncodedImage& encoded_image);
   bool Close();
 
  private:
   IvfFileWriter(const std::string& path_name,
                 std::unique_ptr<FileWrapper> file,
-                VideoCodecType codec_type);
+                RtpVideoCodecTypes codec_type);
   bool WriteHeader();
   bool InitFromFirstFrame(const EncodedImage& encoded_image);
 
-  const VideoCodecType codec_type_;
+  const RtpVideoCodecTypes codec_type_;
   size_t num_frames_;
   uint16_t width_;
   uint16_t height_;

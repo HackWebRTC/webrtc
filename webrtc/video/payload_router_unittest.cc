@@ -14,7 +14,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/video/payload_router.h"
 
 using ::testing::_;
@@ -28,56 +27,46 @@ TEST(PayloadRouterTest, SendOnOneModule) {
   MockRtpRtcp rtp;
   std::vector<RtpRtcp*> modules(1, &rtp);
 
-  uint8_t payload = 'a';
-  int8_t payload_type = 96;
-  EncodedImage encoded_image;
-  encoded_image._timeStamp = 1;
-  encoded_image.capture_time_ms_ = 2;
-  encoded_image._frameType = kVideoFrameKey;
-  encoded_image._buffer = &payload;
-  encoded_image._length = 1;
-
-  PayloadRouter payload_router(modules, payload_type);
+  PayloadRouter payload_router(modules);
   payload_router.SetSendingRtpModules(modules.size());
 
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _))
+  uint8_t payload = 'a';
+  FrameType frame_type = kVideoFrameKey;
+  int8_t payload_type = 96;
+
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(0);
-  EXPECT_EQ(-1, payload_router.Encoded(encoded_image, nullptr, nullptr));
+  EXPECT_FALSE(payload_router.RoutePayload(frame_type, payload_type, 0, 0,
+                                           &payload, 1, nullptr, nullptr));
 
   payload_router.set_active(true);
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(1);
-  EXPECT_EQ(0, payload_router.Encoded(encoded_image, nullptr, nullptr));
+  EXPECT_TRUE(payload_router.RoutePayload(frame_type, payload_type, 0, 0,
+                                          &payload, 1, nullptr, nullptr));
 
   payload_router.set_active(false);
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(0);
-  EXPECT_EQ(-1, payload_router.Encoded(encoded_image, nullptr, nullptr));
+  EXPECT_FALSE(payload_router.RoutePayload(frame_type, payload_type, 0, 0,
+                                           &payload, 1, nullptr, nullptr));
 
   payload_router.set_active(true);
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(1);
-  EXPECT_EQ(0, payload_router.Encoded(encoded_image, nullptr, nullptr));
+  EXPECT_TRUE(payload_router.RoutePayload(frame_type, payload_type, 0, 0,
+                                          &payload, 1, nullptr, nullptr));
 
   payload_router.SetSendingRtpModules(0);
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _))
+  EXPECT_CALL(rtp, SendOutgoingData(frame_type, payload_type, 0, 0, _, 1,
+                                    nullptr, nullptr))
       .Times(0);
-  EXPECT_EQ(-1, payload_router.Encoded(encoded_image, nullptr, nullptr));
+  EXPECT_FALSE(payload_router.RoutePayload(frame_type, payload_type, 0, 0,
+                                           &payload, 1, nullptr, nullptr));
 }
 
 TEST(PayloadRouterTest, SendSimulcast) {
@@ -87,46 +76,36 @@ TEST(PayloadRouterTest, SendSimulcast) {
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
 
-  int8_t payload_type = 96;
-  uint8_t payload = 'a';
-  EncodedImage encoded_image;
-  encoded_image._timeStamp = 1;
-  encoded_image.capture_time_ms_ = 2;
-  encoded_image._frameType = kVideoFrameKey;
-  encoded_image._buffer = &payload;
-  encoded_image._length = 1;
-
-  PayloadRouter payload_router(modules, payload_type);
+  PayloadRouter payload_router(modules);
   payload_router.SetSendingRtpModules(modules.size());
 
-  CodecSpecificInfo codec_info_1;
-  memset(&codec_info_1, 0, sizeof(CodecSpecificInfo));
-  codec_info_1.codecType = kVideoCodecVP8;
-  codec_info_1.codecSpecific.VP8.simulcastIdx = 0;
+  uint8_t payload_1 = 'a';
+  FrameType frame_type_1 = kVideoFrameKey;
+  int8_t payload_type_1 = 96;
+  RTPVideoHeader rtp_hdr_1;
+  rtp_hdr_1.simulcastIdx = 0;
 
   payload_router.set_active(true);
-  EXPECT_CALL(rtp_1, SendOutgoingData(encoded_image._frameType, payload_type,
-                                      encoded_image._timeStamp,
-                                      encoded_image.capture_time_ms_, &payload,
-                                      encoded_image._length, nullptr, _))
+  EXPECT_CALL(rtp_1, SendOutgoingData(frame_type_1, payload_type_1, 0, 0, _, 1,
+                                      nullptr, &rtp_hdr_1))
       .Times(1);
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
-  EXPECT_EQ(0, payload_router.Encoded(encoded_image, &codec_info_1, nullptr));
+  EXPECT_TRUE(payload_router.RoutePayload(frame_type_1, payload_type_1, 0, 0,
+                                          &payload_1, 1, nullptr, &rtp_hdr_1));
 
-  CodecSpecificInfo codec_info_2;
-  memset(&codec_info_2, 0, sizeof(CodecSpecificInfo));
-  codec_info_2.codecType = kVideoCodecVP8;
-  codec_info_2.codecSpecific.VP8.simulcastIdx = 1;
-
-  EXPECT_CALL(rtp_2, SendOutgoingData(encoded_image._frameType, payload_type,
-                                      encoded_image._timeStamp,
-                                      encoded_image.capture_time_ms_, &payload,
-                                      encoded_image._length, nullptr, _))
+  uint8_t payload_2 = 'b';
+  FrameType frame_type_2 = kVideoFrameDelta;
+  int8_t payload_type_2 = 97;
+  RTPVideoHeader rtp_hdr_2;
+  rtp_hdr_2.simulcastIdx = 1;
+  EXPECT_CALL(rtp_2, SendOutgoingData(frame_type_2, payload_type_2, 0, 0, _, 1,
+                                      nullptr, &rtp_hdr_2))
       .Times(1);
   EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
-  EXPECT_EQ(0, payload_router.Encoded(encoded_image, &codec_info_2, nullptr));
+  EXPECT_TRUE(payload_router.RoutePayload(frame_type_2, payload_type_2, 0, 0,
+                                          &payload_2, 1, nullptr, &rtp_hdr_2));
 
   // Inactive.
   payload_router.set_active(false);
@@ -134,8 +113,10 @@ TEST(PayloadRouterTest, SendSimulcast) {
       .Times(0);
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
-  EXPECT_EQ(-1, payload_router.Encoded(encoded_image, &codec_info_1, nullptr));
-  EXPECT_EQ(-1, payload_router.Encoded(encoded_image, &codec_info_2, nullptr));
+  EXPECT_FALSE(payload_router.RoutePayload(frame_type_1, payload_type_1, 0, 0,
+                                           &payload_1, 1, nullptr, &rtp_hdr_1));
+  EXPECT_FALSE(payload_router.RoutePayload(frame_type_2, payload_type_2, 0, 0,
+                                           &payload_2, 1, nullptr, &rtp_hdr_2));
 
   // Invalid simulcast index.
   payload_router.SetSendingRtpModules(1);
@@ -144,8 +125,9 @@ TEST(PayloadRouterTest, SendSimulcast) {
       .Times(0);
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
-  codec_info_2.codecSpecific.VP8.simulcastIdx = 1;
-  EXPECT_EQ(-1, payload_router.Encoded(encoded_image, &codec_info_2, nullptr));
+  rtp_hdr_1.simulcastIdx = 1;
+  EXPECT_FALSE(payload_router.RoutePayload(frame_type_1, payload_type_1, 0, 0,
+                                           &payload_1, 1, nullptr, &rtp_hdr_1));
 }
 
 TEST(PayloadRouterTest, MaxPayloadLength) {
@@ -157,7 +139,7 @@ TEST(PayloadRouterTest, MaxPayloadLength) {
   std::vector<RtpRtcp*> modules;
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
-  PayloadRouter payload_router(modules, 42);
+  PayloadRouter payload_router(modules);
 
   EXPECT_EQ(kDefaultMaxLength, PayloadRouter::DefaultMaxPayloadLength());
   payload_router.SetSendingRtpModules(modules.size());
@@ -188,7 +170,7 @@ TEST(PayloadRouterTest, SetTargetSendBitrates) {
   std::vector<RtpRtcp*> modules;
   modules.push_back(&rtp_1);
   modules.push_back(&rtp_2);
-  PayloadRouter payload_router(modules, 42);
+  PayloadRouter payload_router(modules);
   payload_router.SetSendingRtpModules(modules.size());
 
   const uint32_t bitrate_1 = 10000;

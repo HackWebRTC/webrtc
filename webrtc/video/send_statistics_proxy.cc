@@ -17,7 +17,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -427,17 +426,8 @@ void SendStatisticsProxy::OnSetRates(uint32_t bitrate_bps, int framerate) {
 
 void SendStatisticsProxy::OnSendEncodedImage(
     const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_info) {
-  size_t simulcast_idx = 0;
-
-  if (codec_info) {
-    if (codec_info->codecType == kVideoCodecVP8) {
-      simulcast_idx = codec_info->codecSpecific.VP8.simulcastIdx;
-    } else if (codec_info->codecType == kVideoCodecGeneric) {
-      simulcast_idx = codec_info->codecSpecific.generic.simulcast_idx;
-    }
-  }
-
+    const RTPVideoHeader* rtp_video_header) {
+  size_t simulcast_idx = rtp_video_header ? rtp_video_header->simulcastIdx : 0;
   if (simulcast_idx >= config_.rtp.ssrcs.size()) {
     LOG(LS_ERROR) << "Encoded image outside simulcast range (" << simulcast_idx
                   << " >= " << config_.rtp.ssrcs.size() << ").";
@@ -479,16 +469,17 @@ void SendStatisticsProxy::OnSendEncodedImage(
     }
   }
 
-  if (encoded_image.qp_ != -1 && codec_info) {
-    if (codec_info->codecType == kVideoCodecVP8) {
+  if (encoded_image.qp_ != -1 && rtp_video_header) {
+    if (rtp_video_header->codec == kRtpVideoVp8) {
       int spatial_idx = (config_.rtp.ssrcs.size() == 1)
                             ? -1
                             : static_cast<int>(simulcast_idx);
       uma_container_->qp_counters_[spatial_idx].vp8.Add(encoded_image.qp_);
-    } else if (codec_info->codecType == kVideoCodecVP9) {
-      int spatial_idx = (codec_info->codecSpecific.VP9.num_spatial_layers == 1)
-                            ? -1
-                            : codec_info->codecSpecific.VP9.spatial_idx;
+    } else if (rtp_video_header->codec == kRtpVideoVp9) {
+      int spatial_idx =
+          (rtp_video_header->codecHeader.VP9.num_spatial_layers == 1)
+              ? -1
+              : rtp_video_header->codecHeader.VP9.spatial_idx;
       uma_container_->qp_counters_[spatial_idx].vp9.Add(encoded_image.qp_);
     }
   }

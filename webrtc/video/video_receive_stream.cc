@@ -405,10 +405,25 @@ int32_t VideoReceiveStream::Encoded(
   if (kEnableFrameRecording) {
     if (!ivf_writer_.get()) {
       RTC_DCHECK(codec_specific_info);
+      RtpVideoCodecTypes rtp_codec_type;
+      switch (codec_specific_info->codecType) {
+        case kVideoCodecVP8:
+          rtp_codec_type = kRtpVideoVp8;
+          break;
+        case kVideoCodecVP9:
+          rtp_codec_type = kRtpVideoVp9;
+          break;
+        case kVideoCodecH264:
+          rtp_codec_type = kRtpVideoH264;
+          break;
+        default:
+          rtp_codec_type = kRtpVideoNone;
+          RTC_NOTREACHED() << "Unsupported codec "
+                           << codec_specific_info->codecType;
+      }
       std::ostringstream oss;
       oss << "receive_bitstream_ssrc_" << config_.rtp.remote_ssrc << ".ivf";
-      ivf_writer_ =
-          IvfFileWriter::Open(oss.str(), codec_specific_info->codecType);
+      ivf_writer_ = IvfFileWriter::Open(oss.str(), rtp_codec_type);
     }
     if (ivf_writer_.get()) {
       bool ok = ivf_writer_->WriteFrame(encoded_image);

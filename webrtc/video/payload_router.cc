@@ -13,85 +13,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 
-namespace {
-// Map information from info into rtp.
-void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
-  RTC_DCHECK(info);
-  switch (info->codecType) {
-    case kVideoCodecVP8: {
-      rtp->codec = kRtpVideoVp8;
-      rtp->codecHeader.VP8.InitRTPVideoHeaderVP8();
-      rtp->codecHeader.VP8.pictureId = info->codecSpecific.VP8.pictureId;
-      rtp->codecHeader.VP8.nonReference = info->codecSpecific.VP8.nonReference;
-      rtp->codecHeader.VP8.temporalIdx = info->codecSpecific.VP8.temporalIdx;
-      rtp->codecHeader.VP8.layerSync = info->codecSpecific.VP8.layerSync;
-      rtp->codecHeader.VP8.tl0PicIdx = info->codecSpecific.VP8.tl0PicIdx;
-      rtp->codecHeader.VP8.keyIdx = info->codecSpecific.VP8.keyIdx;
-      rtp->simulcastIdx = info->codecSpecific.VP8.simulcastIdx;
-      return;
-    }
-    case kVideoCodecVP9: {
-      rtp->codec = kRtpVideoVp9;
-      rtp->codecHeader.VP9.InitRTPVideoHeaderVP9();
-      rtp->codecHeader.VP9.inter_pic_predicted =
-          info->codecSpecific.VP9.inter_pic_predicted;
-      rtp->codecHeader.VP9.flexible_mode =
-          info->codecSpecific.VP9.flexible_mode;
-      rtp->codecHeader.VP9.ss_data_available =
-          info->codecSpecific.VP9.ss_data_available;
-      rtp->codecHeader.VP9.picture_id = info->codecSpecific.VP9.picture_id;
-      rtp->codecHeader.VP9.tl0_pic_idx = info->codecSpecific.VP9.tl0_pic_idx;
-      rtp->codecHeader.VP9.temporal_idx = info->codecSpecific.VP9.temporal_idx;
-      rtp->codecHeader.VP9.spatial_idx = info->codecSpecific.VP9.spatial_idx;
-      rtp->codecHeader.VP9.temporal_up_switch =
-          info->codecSpecific.VP9.temporal_up_switch;
-      rtp->codecHeader.VP9.inter_layer_predicted =
-          info->codecSpecific.VP9.inter_layer_predicted;
-      rtp->codecHeader.VP9.gof_idx = info->codecSpecific.VP9.gof_idx;
-      rtp->codecHeader.VP9.num_spatial_layers =
-          info->codecSpecific.VP9.num_spatial_layers;
-
-      if (info->codecSpecific.VP9.ss_data_available) {
-        rtp->codecHeader.VP9.spatial_layer_resolution_present =
-            info->codecSpecific.VP9.spatial_layer_resolution_present;
-        if (info->codecSpecific.VP9.spatial_layer_resolution_present) {
-          for (size_t i = 0; i < info->codecSpecific.VP9.num_spatial_layers;
-               ++i) {
-            rtp->codecHeader.VP9.width[i] = info->codecSpecific.VP9.width[i];
-            rtp->codecHeader.VP9.height[i] = info->codecSpecific.VP9.height[i];
-          }
-        }
-        rtp->codecHeader.VP9.gof.CopyGofInfoVP9(info->codecSpecific.VP9.gof);
-      }
-
-      rtp->codecHeader.VP9.num_ref_pics = info->codecSpecific.VP9.num_ref_pics;
-      for (int i = 0; i < info->codecSpecific.VP9.num_ref_pics; ++i)
-        rtp->codecHeader.VP9.pid_diff[i] = info->codecSpecific.VP9.p_diff[i];
-      return;
-    }
-    case kVideoCodecH264:
-      rtp->codec = kRtpVideoH264;
-      return;
-    case kVideoCodecGeneric:
-      rtp->codec = kRtpVideoGeneric;
-      rtp->simulcastIdx = info->codecSpecific.generic.simulcast_idx;
-      return;
-    default:
-      return;
-  }
-}
-}  // namespace
-
-PayloadRouter::PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules,
-                             int payload_type)
-    : active_(false),
-      num_sending_modules_(1),
-      rtp_modules_(rtp_modules),
-      payload_type_(payload_type) {
+PayloadRouter::PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules)
+    : active_(false), num_sending_modules_(1), rtp_modules_(rtp_modules) {
   UpdateModuleSendingState();
 }
 
@@ -134,33 +60,31 @@ void PayloadRouter::UpdateModuleSendingState() {
   }
 }
 
-int32_t PayloadRouter::Encoded(const EncodedImage& encoded_image,
-                               const CodecSpecificInfo* codec_specific_info,
-                               const RTPFragmentationHeader* fragmentation) {
+bool PayloadRouter::RoutePayload(FrameType frame_type,
+                                 int8_t payload_type,
+                                 uint32_t time_stamp,
+                                 int64_t capture_time_ms,
+                                 const uint8_t* payload_data,
+                                 size_t payload_length,
+                                 const RTPFragmentationHeader* fragmentation,
+                                 const RTPVideoHeader* rtp_video_hdr) {
   rtc::CritScope lock(&crit_);
   RTC_DCHECK(!rtp_modules_.empty());
   if (!active_ || num_sending_modules_ == 0)
-    return -1;
+    return false;
 
   int stream_idx = 0;
-
-  RTPVideoHeader rtp_video_header;
-  memset(&rtp_video_header, 0, sizeof(RTPVideoHeader));
-  if (codec_specific_info)
-    CopyCodecSpecific(codec_specific_info, &rtp_video_header);
-  rtp_video_header.rotation = encoded_image.rotation_;
-
-  RTC_DCHECK_LT(rtp_video_header.simulcastIdx, rtp_modules_.size());
-  // The simulcast index might actually be larger than the number of modules
-  // in case the encoder was processing a frame during a codec reconfig.
-  if (rtp_video_header.simulcastIdx >= num_sending_modules_)
-    return -1;
-  stream_idx = rtp_video_header.simulcastIdx;
-
+  if (rtp_video_hdr) {
+    RTC_DCHECK_LT(rtp_video_hdr->simulcastIdx, rtp_modules_.size());
+    // The simulcast index might actually be larger than the number of modules
+    // in case the encoder was processing a frame during a codec reconfig.
+    if (rtp_video_hdr->simulcastIdx >= num_sending_modules_)
+      return false;
+    stream_idx = rtp_video_hdr->simulcastIdx;
+  }
   return rtp_modules_[stream_idx]->SendOutgoingData(
-      encoded_image._frameType, payload_type_, encoded_image._timeStamp,
-      encoded_image.capture_time_ms_, encoded_image._buffer,
-      encoded_image._length, fragmentation, &rtp_video_header);
+      frame_type, payload_type, time_stamp, capture_time_ms, payload_data,
+      payload_length, fragmentation, rtp_video_hdr) == 0 ? true : false;
 }
 
 void PayloadRouter::SetTargetSendBitrates(

@@ -57,11 +57,13 @@ struct VCMFrameCount {
 };
 
 // Callback class used for sending data ready to be packetized
-// Deprecated.
-// TODO(perkj): Remove once OnEncoderImplementationName is not used.
 class VCMPacketizationCallback {
  public:
-  // TODO(perkj): Refactor this. It does not belong in VCMPacketizationCallback.
+  virtual int32_t SendData(uint8_t payloadType,
+                           const EncodedImage& encoded_image,
+                           const RTPFragmentationHeader* fragmentationHeader,
+                           const RTPVideoHeader* rtpVideoHdr) = 0;
+
   virtual void OnEncoderImplementationName(const char* implementation_name) {}
 
  protected:

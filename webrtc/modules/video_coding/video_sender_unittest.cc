@@ -86,19 +86,19 @@ class EmptyFrameGenerator : public FrameGenerator {
   std::unique_ptr<VideoFrame> frame_;
 };
 
-class EncodedImageCallbackImpl : public EncodedImageCallback {
+class PacketizationCallback : public VCMPacketizationCallback {
  public:
-  explicit EncodedImageCallbackImpl(Clock* clock)
+  explicit PacketizationCallback(Clock* clock)
       : clock_(clock), start_time_ms_(clock_->TimeInMilliseconds()) {}
 
-  virtual ~EncodedImageCallbackImpl() {}
+  virtual ~PacketizationCallback() {}
 
-  int32_t Encoded(const EncodedImage& encoded_image,
-                  const CodecSpecificInfo* codec_specific_info,
-                  const RTPFragmentationHeader* fragmentation) override {
-    assert(codec_specific_info);
-    frame_data_.push_back(
-        FrameData(encoded_image._length, *codec_specific_info));
+  int32_t SendData(uint8_t payload_type,
+                   const EncodedImage& encoded_image,
+                   const RTPFragmentationHeader* fragmentation_header,
+                   const RTPVideoHeader* rtp_video_header) override {
+    assert(rtp_video_header);
+    frame_data_.push_back(FrameData(encoded_image._length, *rtp_video_header));
     return 0;
   }
 
@@ -130,12 +130,11 @@ class EncodedImageCallbackImpl : public EncodedImageCallback {
   struct FrameData {
     FrameData() {}
 
-    FrameData(size_t payload_size, const CodecSpecificInfo& codec_specific_info)
-        : payload_size(payload_size),
-          codec_specific_info(codec_specific_info) {}
+    FrameData(size_t payload_size, const RTPVideoHeader& rtp_video_header)
+        : payload_size(payload_size), rtp_video_header(rtp_video_header) {}
 
     size_t payload_size;
-    CodecSpecificInfo codec_specific_info;
+    RTPVideoHeader rtp_video_header;
   };
 
   int64_t interval_ms() {
@@ -147,9 +146,9 @@ class EncodedImageCallbackImpl : public EncodedImageCallback {
   int CountFramesWithinTemporalLayer(int temporal_layer) {
     int frames = 0;
     for (size_t i = 0; i < frame_data_.size(); ++i) {
-      EXPECT_EQ(kVideoCodecVP8, frame_data_[i].codec_specific_info.codecType);
+      EXPECT_EQ(kRtpVideoVp8, frame_data_[i].rtp_video_header.codec);
       const uint8_t temporal_idx =
-          frame_data_[i].codec_specific_info.codecSpecific.VP8.temporalIdx;
+          frame_data_[i].rtp_video_header.codecHeader.VP8.temporalIdx;
       if (temporal_idx <= temporal_layer || temporal_idx == kNoTemporalIdx)
         frames++;
     }
@@ -159,9 +158,9 @@ class EncodedImageCallbackImpl : public EncodedImageCallback {
   size_t SumPayloadBytesWithinTemporalLayer(int temporal_layer) {
     size_t payload_size = 0;
     for (size_t i = 0; i < frame_data_.size(); ++i) {
-      EXPECT_EQ(kVideoCodecVP8, frame_data_[i].codec_specific_info.codecType);
+      EXPECT_EQ(kRtpVideoVp8, frame_data_[i].rtp_video_header.codec);
       const uint8_t temporal_idx =
-          frame_data_[i].codec_specific_info.codecSpecific.VP8.temporalIdx;
+          frame_data_[i].rtp_video_header.codecHeader.VP8.temporalIdx;
       if (temporal_idx <= temporal_layer || temporal_idx == kNoTemporalIdx)
         payload_size += frame_data_[i].payload_size;
     }
@@ -177,11 +176,12 @@ class TestVideoSender : public ::testing::Test {
  protected:
   // Note: simulated clock starts at 1 seconds, since parts of webrtc use 0 as
   // a special case (e.g. frame rate in media optimization).
-  TestVideoSender() : clock_(1000), encoded_frame_callback_(&clock_) {}
+  TestVideoSender() : clock_(1000), packetization_callback_(&clock_) {}
 
   void SetUp() override {
     sender_.reset(
-        new VideoSender(&clock_, &encoded_frame_callback_, nullptr, nullptr));
+        new VideoSender(&clock_, &post_encode_callback_, nullptr, nullptr));
+    EXPECT_EQ(0, sender_->RegisterTransportCallback(&packetization_callback_));
   }
 
   void AddFrame() {
@@ -190,7 +190,8 @@ class TestVideoSender : public ::testing::Test {
   }
 
   SimulatedClock clock_;
-  EncodedImageCallbackImpl encoded_frame_callback_;
+  PacketizationCallback packetization_callback_;
+  MockEncodedImageCallback post_encode_callback_;
   // Used by subclassing tests, need to outlive sender_.
   std::unique_ptr<VideoEncoder> encoder_;
   std::unique_ptr<VideoSender> sender_;
@@ -414,6 +415,8 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
   void InsertFrames(float framerate, float seconds) {
     for (int i = 0; i < seconds * framerate; ++i) {
       clock_.AdvanceTimeMilliseconds(1000.0f / framerate);
+      EXPECT_CALL(post_encode_callback_, Encoded(_, NULL, NULL))
+          .WillOnce(Return(0));
       AddFrame();
       // SetChannelParameters needs to be called frequently to propagate
       // framerate from the media optimization into the encoder.
@@ -432,10 +435,10 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
     // It appears that this 5 seconds simulation is needed to allow
     // bitrate and framerate to stabilize.
     InsertFrames(framerate, short_simulation_interval);
-    encoded_frame_callback_.Reset();
+    packetization_callback_.Reset();
 
     InsertFrames(framerate, long_simulation_interval);
-    return encoded_frame_callback_.CalculateVp8StreamInfo();
+    return packetization_callback_.CalculateVp8StreamInfo();
   }
 
  protected:

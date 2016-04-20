@@ -1807,6 +1807,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
                    const CodecSpecificInfo* codecSpecificInfo,
                    const std::vector<FrameType>* frame_types) override {
       CodecSpecificInfo specifics;
+      memset(&specifics, 0, sizeof(specifics));
       specifics.codecType = kVideoCodecGeneric;
 
       uint8_t buffer[16] = {0};

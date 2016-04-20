@@ -79,8 +79,6 @@ class VideoSender {
                                uint8_t lossRate,
                                int64_t rtt);
 
-  // Deprecated. Use |post_encode_callback| instead.
-  // TODO(perkj): Remove once |OnEncoderImplementationName| is not used.
   int32_t RegisterTransportCallback(VCMPacketizationCallback* transport);
   int32_t RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
   int32_t RegisterProtectionCallback(VCMProtectionCallback* protection);

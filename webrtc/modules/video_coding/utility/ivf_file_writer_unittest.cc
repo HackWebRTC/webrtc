@@ -103,7 +103,7 @@ class IvfFileWriterTest : public ::testing::Test {
     }
   }
 
-  void RunBasicFileStructureTest(VideoCodecType codec_type,
+  void RunBasicFileStructureTest(RtpVideoCodecTypes codec_type,
                                  const uint8_t fourcc[4],
                                  bool use_capture_tims_ms) {
     file_writer_ = IvfFileWriter::Open(file_name_, codec_type);
@@ -135,7 +135,7 @@ class IvfFileWriterTest : public ::testing::Test {
 };
 
 TEST_F(IvfFileWriterTest, RemovesUnusedFile) {
-  file_writer_ = IvfFileWriter::Open(file_name_, kVideoCodecVP8);
+  file_writer_ = IvfFileWriter::Open(file_name_, kRtpVideoVp8);
   ASSERT_TRUE(file_writer_.get() != nullptr);
   EXPECT_TRUE(FileExists());
   EXPECT_TRUE(file_writer_->Close());
@@ -145,32 +145,32 @@ TEST_F(IvfFileWriterTest, RemovesUnusedFile) {
 
 TEST_F(IvfFileWriterTest, WritesBasicVP8FileNtpTimestamp) {
   const uint8_t fourcc[4] = {'V', 'P', '8', '0'};
-  RunBasicFileStructureTest(kVideoCodecVP8, fourcc, false);
+  RunBasicFileStructureTest(kRtpVideoVp8, fourcc, false);
 }
 
 TEST_F(IvfFileWriterTest, WritesBasicVP8FileMsTimestamp) {
   const uint8_t fourcc[4] = {'V', 'P', '8', '0'};
-  RunBasicFileStructureTest(kVideoCodecVP8, fourcc, true);
+  RunBasicFileStructureTest(kRtpVideoVp8, fourcc, true);
 }
 
 TEST_F(IvfFileWriterTest, WritesBasicVP9FileNtpTimestamp) {
   const uint8_t fourcc[4] = {'V', 'P', '9', '0'};
-  RunBasicFileStructureTest(kVideoCodecVP9, fourcc, false);
+  RunBasicFileStructureTest(kRtpVideoVp9, fourcc, false);
 }
 
 TEST_F(IvfFileWriterTest, WritesBasicVP9FileMsTimestamp) {
   const uint8_t fourcc[4] = {'V', 'P', '9', '0'};
-  RunBasicFileStructureTest(kVideoCodecVP9, fourcc, true);
+  RunBasicFileStructureTest(kRtpVideoVp9, fourcc, true);
 }
 
 TEST_F(IvfFileWriterTest, WritesBasicH264FileNtpTimestamp) {
   const uint8_t fourcc[4] = {'H', '2', '6', '4'};
-  RunBasicFileStructureTest(kVideoCodecH264, fourcc, false);
+  RunBasicFileStructureTest(kRtpVideoH264, fourcc, false);
 }
 
 TEST_F(IvfFileWriterTest, WritesBasicH264FileMsTimestamp) {
   const uint8_t fourcc[4] = {'H', '2', '6', '4'};
-  RunBasicFileStructureTest(kVideoCodecH264, fourcc, true);
+  RunBasicFileStructureTest(kRtpVideoH264, fourcc, true);
 }
 
 }  // namespace webrtc

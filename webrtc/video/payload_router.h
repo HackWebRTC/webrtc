@@ -17,7 +17,6 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
-#include "webrtc/video_encoder.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {
@@ -28,11 +27,10 @@ struct RTPVideoHeader;
 
 // PayloadRouter routes outgoing data to the correct sending RTP module, based
 // on the simulcast layer in RTPVideoHeader.
-class PayloadRouter : public EncodedImageCallback {
+class PayloadRouter {
  public:
   // Rtp modules are assumed to be sorted in simulcast index order.
-  explicit PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules,
-                         int payload_type);
+  explicit PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules);
   ~PayloadRouter();
 
   static size_t DefaultMaxPayloadLength();
@@ -43,11 +41,16 @@ class PayloadRouter : public EncodedImageCallback {
   void set_active(bool active);
   bool active();
 
-  // Implements EncodedImageCallback.
-  // Returns 0 if the packet was routed / sent, -1 otherwise.
-  int32_t Encoded(const EncodedImage& encoded_image,
-                  const CodecSpecificInfo* codec_specific_info,
-                  const RTPFragmentationHeader* fragmentation) override;
+  // Input parameters according to the signature of RtpRtcp::SendOutgoingData.
+  // Returns true if the packet was routed / sent, false otherwise.
+  bool RoutePayload(FrameType frame_type,
+                    int8_t payload_type,
+                    uint32_t time_stamp,
+                    int64_t capture_time_ms,
+                    const uint8_t* payload_data,
+                    size_t payload_size,
+                    const RTPFragmentationHeader* fragmentation,
+                    const RTPVideoHeader* rtp_video_hdr);
 
   // Configures current target bitrate per module. 'stream_bitrates' is assumed
   // to be in the same order as 'SetSendingRtpModules'.
@@ -66,7 +69,6 @@ class PayloadRouter : public EncodedImageCallback {
 
   // Rtp modules are assumed to be sorted in simulcast index order. Not owned.
   const std::vector<RtpRtcp*> rtp_modules_;
-  const int payload_type_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
 };

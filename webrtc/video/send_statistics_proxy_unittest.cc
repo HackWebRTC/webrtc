@@ -334,16 +334,16 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
 TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8) {
   test::ClearHistograms();
   EncodedImage encoded_image;
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP8;
+  RTPVideoHeader rtp_video_header;
+  rtp_video_header.codec = kRtpVideoVp8;
 
   for (int i = 0; i < kMinRequiredSamples; ++i) {
-    codec_info.codecSpecific.VP8.simulcastIdx = 0;
+    rtp_video_header.simulcastIdx = 0;
     encoded_image.qp_ = kQpIdx0;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-    codec_info.codecSpecific.VP8.simulcastIdx = 1;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+    rtp_video_header.simulcastIdx = 1;
     encoded_image.qp_ = kQpIdx1;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
   }
   statistics_proxy_.reset();
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8.S0"));
@@ -362,13 +362,13 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
 
   test::ClearHistograms();
   EncodedImage encoded_image;
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP8;
+  RTPVideoHeader rtp_video_header;
+  rtp_video_header.codec = kRtpVideoVp8;
 
   for (int i = 0; i < kMinRequiredSamples; ++i) {
-    codec_info.codecSpecific.VP8.simulcastIdx = 0;
+    rtp_video_header.simulcastIdx = 0;
     encoded_image.qp_ = kQpIdx0;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
   }
   statistics_proxy_.reset();
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8"));
@@ -378,17 +378,18 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
 TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9) {
   test::ClearHistograms();
   EncodedImage encoded_image;
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP9;
-  codec_info.codecSpecific.VP9.num_spatial_layers = 2;
+  RTPVideoHeader rtp_video_header;
+  rtp_video_header.simulcastIdx = 0;
+  rtp_video_header.codec = kRtpVideoVp9;
+  rtp_video_header.codecHeader.VP9.num_spatial_layers = 2;
 
   for (int i = 0; i < kMinRequiredSamples; ++i) {
     encoded_image.qp_ = kQpIdx0;
-    codec_info.codecSpecific.VP9.spatial_idx = 0;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+    rtp_video_header.codecHeader.VP9.spatial_idx = 0;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
     encoded_image.qp_ = kQpIdx1;
-    codec_info.codecSpecific.VP9.spatial_idx = 1;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+    rtp_video_header.codecHeader.VP9.spatial_idx = 1;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
   }
   statistics_proxy_.reset();
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp9.S0"));
@@ -407,14 +408,15 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9OneSpatialLayer) {
 
   test::ClearHistograms();
   EncodedImage encoded_image;
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP9;
-  codec_info.codecSpecific.VP9.num_spatial_layers = 1;
+  RTPVideoHeader rtp_video_header;
+  rtp_video_header.simulcastIdx = 0;
+  rtp_video_header.codec = kRtpVideoVp9;
+  rtp_video_header.codecHeader.VP9.num_spatial_layers = 1;
 
   for (int i = 0; i < kMinRequiredSamples; ++i) {
     encoded_image.qp_ = kQpIdx0;
-    codec_info.codecSpecific.VP9.spatial_idx = 0;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+    rtp_video_header.codecHeader.VP9.spatial_idx = 0;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
   }
   statistics_proxy_.reset();
   EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp9"));
@@ -456,13 +458,12 @@ TEST_F(SendStatisticsProxyTest, EncodedResolutionTimesOut) {
   encoded_image._encodedWidth = kEncodedWidth;
   encoded_image._encodedHeight = kEncodedHeight;
 
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP8;
-  codec_info.codecSpecific.VP8.simulcastIdx = 0;
+  RTPVideoHeader rtp_video_header;
 
-  statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-  codec_info.codecSpecific.VP8.simulcastIdx = 1;
-  statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+  rtp_video_header.simulcastIdx = 0;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+  rtp_video_header.simulcastIdx = 1;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(kEncodedWidth, stats.substreams[config_.rtp.ssrcs[0]].width);
@@ -484,8 +485,8 @@ TEST_F(SendStatisticsProxyTest, EncodedResolutionTimesOut) {
 
   // Report stats for second SSRC to make sure it's not outdated along with the
   // first SSRC.
-  codec_info.codecSpecific.VP8.simulcastIdx = 1;
-  statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+  rtp_video_header.simulcastIdx = 1;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
 
   // Forward 1 ms, reach timeout, substream 0 should have no resolution
   // reported, but substream 1 should.
@@ -504,13 +505,12 @@ TEST_F(SendStatisticsProxyTest, ClearsResolutionFromInactiveSsrcs) {
   encoded_image._encodedWidth = kEncodedWidth;
   encoded_image._encodedHeight = kEncodedHeight;
 
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP8;
-  codec_info.codecSpecific.VP8.simulcastIdx = 0;
+  RTPVideoHeader rtp_video_header;
 
-  statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-  codec_info.codecSpecific.VP8.simulcastIdx = 1;
-  statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+  rtp_video_header.simulcastIdx = 0;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+  rtp_video_header.simulcastIdx = 1;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
 
   statistics_proxy_->OnInactiveSsrc(config_.rtp.ssrcs[1]);
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();

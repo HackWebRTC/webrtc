@@ -31,7 +31,6 @@ class EncodedImageCallback {
   virtual ~EncodedImageCallback() {}
 
   // Callback function which is called when an image has been encoded.
-  // TODO(perkj): Change this to return void.
   virtual int32_t Encoded(const EncodedImage& encoded_image,
                           const CodecSpecificInfo* codec_specific_info,
                           const RTPFragmentationHeader* fragmentation) = 0;
