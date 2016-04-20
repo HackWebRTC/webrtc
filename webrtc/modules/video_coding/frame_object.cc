@@ -16,7 +16,6 @@ namespace webrtc {
 namespace video_coding {
 
 RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
-                               uint16_t picture_id,
                                uint16_t first_packet,
                                uint16_t last_packet)
     : packet_buffer_(packet_buffer),
@@ -27,16 +26,12 @@ RtpFrameObject::~RtpFrameObject() {
   packet_buffer_->ReturnFrame(this);
 }
 
-uint16_t RtpFrameObject::first_packet() const {
+uint16_t RtpFrameObject::first_seq_num() const {
   return first_packet_;
 }
 
-uint16_t RtpFrameObject::last_packet() const {
+uint16_t RtpFrameObject::last_seq_num() const {
   return last_packet_;
-}
-
-uint16_t RtpFrameObject::picture_id() const {
-  return picture_id_;
 }
 
 bool RtpFrameObject::GetBitstream(uint8_t* destination) const {

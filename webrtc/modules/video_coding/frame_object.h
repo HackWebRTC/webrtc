@@ -11,16 +11,25 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 #define WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 
-#include "webrtc/modules/video_coding/packet.h"
+#include <stddef.h>
+#include <stdint.h>
+
+#include <array>
 
 namespace webrtc {
 namespace video_coding {
 
 class FrameObject {
  public:
-  virtual uint16_t picture_id() const = 0;
+  static const uint8_t kMaxFrameReferences = 5;
+
   virtual bool GetBitstream(uint8_t* destination) const = 0;
   virtual ~FrameObject() {}
+
+  uint16_t picture_id;
+  size_t num_references;
+  std::array<uint16_t, kMaxFrameReferences> referencesr;
+  uint16_t references[kMaxFrameReferences];
 };
 
 class PacketBuffer;
@@ -28,18 +37,16 @@ class PacketBuffer;
 class RtpFrameObject : public FrameObject {
  public:
   RtpFrameObject(PacketBuffer* packet_buffer,
-                 uint16_t picture_id,
                  uint16_t first_packet,
                  uint16_t last_packet);
+
   ~RtpFrameObject();
-  uint16_t first_packet() const;
-  uint16_t last_packet() const;
-  uint16_t picture_id() const override;
+  uint16_t first_seq_num() const;
+  uint16_t last_seq_num() const;
   bool GetBitstream(uint8_t* destination) const override;
 
  private:
   PacketBuffer* packet_buffer_;
-  uint16_t picture_id_;
   uint16_t first_packet_;
   uint16_t last_packet_;
 };
