@@ -54,7 +54,12 @@ bool write_ref_data = false;
 const google::protobuf::int32 kChannels[] = {1, 2};
 const int kSampleRates[] = {8000, 16000, 32000, 48000};
 
+#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
+// Android doesn't support 48kHz.
+const int kProcessSampleRates[] = {8000, 16000, 32000};
+#elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
 const int kProcessSampleRates[] = {8000, 16000, 32000, 48000};
+#endif
 
 enum StreamDirection { kForward = 0, kReverse };
 
@@ -2692,7 +2697,7 @@ INSTANTIATE_TEST_CASE_P(
                     std::tr1::make_tuple(16000, 32000, 32000, 32000, 25, 0),
                     std::tr1::make_tuple(16000, 32000, 16000, 32000, 25, 20),
                     std::tr1::make_tuple(16000, 16000, 48000, 16000, 40, 20),
-                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 50, 20),
+                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 40, 20),
                     std::tr1::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 
 #elif defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
@@ -2748,7 +2753,7 @@ INSTANTIATE_TEST_CASE_P(
                     std::tr1::make_tuple(16000, 32000, 32000, 32000, 25, 0),
                     std::tr1::make_tuple(16000, 32000, 16000, 32000, 25, 20),
                     std::tr1::make_tuple(16000, 16000, 48000, 16000, 35, 20),
-                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 40, 20),
+                    std::tr1::make_tuple(16000, 16000, 32000, 16000, 35, 20),
                     std::tr1::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 #endif
 
