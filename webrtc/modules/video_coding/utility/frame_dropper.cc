@@ -73,6 +73,7 @@ void FrameDropper::Reset() {
   incoming_frame_rate_ = kDefaultIncomingFrameRate;
 
   large_frame_accumulation_count_ = 0;
+  large_frame_accumulation_chunk_size_ = 0;
   large_frame_accumulation_spread_ = 0.5 * kDefaultIncomingFrameRate;
 
   drop_next_ = false;
