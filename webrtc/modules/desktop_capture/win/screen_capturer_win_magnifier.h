@@ -22,7 +22,6 @@
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 
@@ -119,7 +118,7 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   ScreenCapturerHelper helper_;
 
   // Queue of the frames buffers.
-  ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
+  ScreenCaptureFrameQueue queue_;
 
   // Class to calculate the difference between two screen bitmaps.
   std::unique_ptr<Differ> differ_;
