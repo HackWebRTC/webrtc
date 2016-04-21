@@ -382,7 +382,7 @@ VideoSendStream::VideoSendStream(
           congestion_controller_->pacer(),
           &payload_router_,
           config.post_encode_callback ? &encoded_frame_proxy_ : nullptr),
-      vcm_(vie_encoder_.vcm()),
+      video_sender_(vie_encoder_.video_sender()),
       bandwidth_observer_(congestion_controller_->GetBitrateController()
                               ->CreateRtcpBandwidthObserver()),
       rtp_rtcp_modules_(CreateRtpRtcpModules(
@@ -417,7 +417,7 @@ VideoSendStream::VideoSendStream(
     congestion_controller_->packet_router()->AddRtpModule(rtp_rtcp);
   }
 
-  vcm_->RegisterProtectionCallback(this);
+  video_sender_->RegisterProtectionCallback(this);
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
@@ -547,7 +547,7 @@ void VideoSendStream::EncoderProcess() {
       vie_encoder_.SetEncoder(encoder_settings->video_codec,
                               encoder_settings->min_transmit_bitrate_bps);
       if (config_.suspend_below_min_bitrate) {
-        vcm_->SuspendBelowMinBitrate();
+        video_sender_->SuspendBelowMinBitrate();
         bitrate_allocator_->EnforceMinBitrate(false);
       }
       // We might've gotten new settings while configuring the encoder settings,

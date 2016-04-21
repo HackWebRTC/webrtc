@@ -51,7 +51,7 @@ class VCMProcessTimer {
   int64_t _latestMs;
 };
 
-class VideoSender {
+class VideoSender : public Module {
  public:
   typedef VideoCodingModule::SenderNackMode SenderNackMode;
 
@@ -96,8 +96,8 @@ class VideoSender {
   void SuspendBelowMinBitrate();
   bool VideoSuspended() const;
 
-  int64_t TimeUntilNextProcess();
-  void Process();
+  int64_t TimeUntilNextProcess() override;
+  void Process() override;
 
  private:
   void SetEncoderParameters(EncoderParameters params)

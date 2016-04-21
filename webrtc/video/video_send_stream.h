@@ -39,6 +39,10 @@ class ViEChannel;
 class ViEEncoder;
 class VieRemb;
 
+namespace vcm {
+class VideoSender;
+}  // namespace vcm
+
 namespace internal {
 
 class VideoSendStream : public webrtc::VideoSendStream,
@@ -122,7 +126,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   OveruseFrameDetector overuse_detector_;
   EncoderStateFeedback encoder_feedback_;
   ViEEncoder vie_encoder_;
-  VideoCodingModule* const vcm_;
+  vcm::VideoSender* const video_sender_;
 
   const std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   // RtpRtcp modules, declared here as they use other members on construction.

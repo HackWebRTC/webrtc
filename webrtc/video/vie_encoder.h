@@ -23,6 +23,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
+#include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/typedefs.h"
 
@@ -62,7 +63,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
 
   bool Init();
 
-  VideoCodingModule* vcm() const;
+  vcm::VideoSender* video_sender();
 
   void SetNetworkTransmissionState(bool is_transmitting);
 
@@ -84,11 +85,9 @@ class ViEEncoder : public VideoEncoderRateObserver,
   void SendKeyFrame();
 
   uint32_t LastObservedBitrateBps() const;
-  int CodecTargetBitrate(uint32_t* bitrate) const;
   // Loss protection. Must be called before SetEncoder() to have max packet size
   // updated according to protection.
-  // TODO(pbos): Set protection method on construction or extract vcm_ outside
-  // this class and set it on construction there.
+  // TODO(pbos): Set protection method on construction.
   void SetProtectionMethod(bool nack, bool fec);
 
   // Implements VideoEncoderRateObserver.
@@ -130,7 +129,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
 
   const std::unique_ptr<VideoProcessing> vp_;
   const std::unique_ptr<QMVideoSettingsCallback> qm_callback_;
-  const std::unique_ptr<VideoCodingModule> vcm_;
+  vcm::VideoSender video_sender_;
 
   rtc::CriticalSection data_cs_;
 
