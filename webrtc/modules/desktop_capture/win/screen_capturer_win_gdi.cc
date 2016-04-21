@@ -14,6 +14,7 @@
 
 #include <utility>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
@@ -82,6 +83,7 @@ void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
   TickTime capture_start_time = TickTime::Now();
 
   queue_.MoveToNextFrame();
+  RTC_DCHECK(!queue_.current_frame() || !queue_.current_frame()->IsShared());
 
   // Request that the system not power-down the system, or the display hardware.
   if (!SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)) {
@@ -247,9 +249,9 @@ bool ScreenCapturerWinGdi::CaptureImage() {
 
     std::unique_ptr<DesktopFrame> buffer(DesktopFrameWin::Create(
         size, shared_memory_factory_.get(), desktop_dc_));
-    if (!buffer.get())
+    if (!buffer)
       return false;
-    queue_.ReplaceCurrentFrame(buffer.release());
+    queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(buffer.release()));
   }
 
   // Select the target bitmap into the memory dc and copy the rect from desktop
