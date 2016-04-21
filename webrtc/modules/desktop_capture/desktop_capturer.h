@@ -28,11 +28,6 @@ class DesktopCapturer {
   // Interface that must be implemented by the DesktopCapturer consumers.
   class Callback {
    public:
-    // Deprecated.
-    // TODO(sergeyu): Remove this method once all references to it are removed
-    // from chromium.
-    virtual SharedMemory* CreateSharedMemory(size_t size) { return nullptr; }
-
     // Called after a frame has been captured. Handler must take ownership of
     // |frame|. If capture has failed for any reason |frame| is set to NULL
     // (e.g. the window has been closed).

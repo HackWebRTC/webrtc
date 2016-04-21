@@ -16,6 +16,7 @@
 #include <ostream>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
@@ -38,7 +39,10 @@ class ScreenCapturerMacTest : public testing::Test {
   void CaptureDoneCallback2(DesktopFrame* frame);
 
  protected:
-  void SetUp() override { capturer_.reset(ScreenCapturer::Create()); }
+  void SetUp() override {
+    capturer_.reset(
+        ScreenCapturer::Create(DesktopCaptureOptions::CreateDefault()));
+  }
 
   std::unique_ptr<ScreenCapturer> capturer_;
   MockScreenCapturerCallback callback_;

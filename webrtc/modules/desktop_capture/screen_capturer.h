@@ -48,34 +48,10 @@ class ScreenCapturer : public DesktopCapturer {
   };
   typedef std::vector<Screen> ScreenList;
 
-  // TODO(sergeyu): Remove this class once all dependencies are removed from
-  // chromium.
-  class MouseShapeObserver {
-  };
-
   virtual ~ScreenCapturer() {}
 
-  // Creates platform-specific capturer.
-  //
-  // TODO(sergeyu): Remove all Create() methods except the first one.
-  // crbug.com/172183
+  // Creates a platform-specific capturer.
   static ScreenCapturer* Create(const DesktopCaptureOptions& options);
-  static ScreenCapturer* Create();
-
-#if defined(WEBRTC_LINUX)
-  // Creates platform-specific capturer and instructs it whether it should use
-  // X DAMAGE support.
-  static ScreenCapturer* CreateWithXDamage(bool use_x_damage);
-#elif defined(WEBRTC_WIN)
-  // Creates Windows-specific capturer and instructs it whether or not to
-  // disable desktop compositing.
-  static ScreenCapturer* CreateWithDisableAero(bool disable_aero);
-#endif  // defined(WEBRTC_WIN)
-
-  // TODO(sergeyu): Remove this method once all dependencies are removed from
-  // chromium.
-  virtual void SetMouseShapeObserver(
-      MouseShapeObserver* mouse_shape_observer) {};
 
   // Get the list of screens (not containing kFullDesktopScreenId). Returns
   // false in case of a failure.

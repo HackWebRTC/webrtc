@@ -38,9 +38,6 @@ class WindowCapturer : public DesktopCapturer {
 
   static WindowCapturer* Create(const DesktopCaptureOptions& options);
 
-  // TODO(sergeyu): Remove this method. crbug.com/172183
-  static WindowCapturer* Create();
-
   virtual ~WindowCapturer() {}
 
   // Get list of windows. Returns false in case of a failure.

@@ -36,22 +36,6 @@ const UINT DWM_EC_ENABLECOMPOSITION = 1;
 
 const wchar_t kDwmapiLibraryName[] = L"dwmapi.dll";
 
-// SharedMemoryFactory that creates SharedMemory using the deprecated
-// DesktopCapturer::Callback::CreateSharedMemory().
-class CallbackSharedMemoryFactory : public SharedMemoryFactory {
- public:
-  CallbackSharedMemoryFactory(DesktopCapturer::Callback* callback)
-      : callback_(callback) {}
-  ~CallbackSharedMemoryFactory() override {}
-
-  rtc::scoped_ptr<SharedMemory> CreateSharedMemory(size_t size) override {
-    return rtc::scoped_ptr<SharedMemory>(callback_->CreateSharedMemory(size));
-  }
-
- private:
-  DesktopCapturer::Callback* callback_;
-};
-
 }  // namespace
 
 ScreenCapturerWinGdi::ScreenCapturerWinGdi(const DesktopCaptureOptions& options)
@@ -172,8 +156,6 @@ void ScreenCapturerWinGdi::Start(Callback* callback) {
   assert(callback);
 
   callback_ = callback;
-  if (!shared_memory_factory_)
-    shared_memory_factory_.reset(new CallbackSharedMemoryFactory(callback));
 
   // Vote to disable Aero composited desktop effects while capturing. Windows
   // will restore Aero automatically if the process exits. This has no effect
