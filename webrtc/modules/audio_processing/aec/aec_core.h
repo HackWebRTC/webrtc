@@ -47,8 +47,8 @@ typedef struct Stats {
   float sum;
   float hisum;
   float himean;
-  int counter;
-  int hicounter;
+  size_t counter;
+  size_t hicounter;
 } Stats;
 
 typedef struct AecCore AecCore;

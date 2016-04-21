@@ -29,6 +29,7 @@
 extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 }
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
@@ -361,6 +362,42 @@ static int PartitionDelay(const AecCore* aec) {
   return delay;
 }
 
+// Update metric with 10 * log10(numerator / denominator).
+static void UpdateLogRatioMetric(Stats* metric, float numerator,
+                                 float denominator) {
+  RTC_DCHECK(metric);
+  RTC_CHECK(numerator >= 0);
+  RTC_CHECK(denominator >= 0);
+
+  const float log_numerator = log10(numerator + 1e-10f);
+  const float log_denominator = log10(denominator + 1e-10f);
+  metric->instant = 10.0f * (log_numerator - log_denominator);
+
+  // Max.
+  if (metric->instant > metric->max)
+    metric->max = metric->instant;
+
+  // Min.
+  if (metric->instant < metric->min)
+    metric->min = metric->instant;
+
+  // Average.
+  metric->counter++;
+  // This is to protect overflow, which should almost never happen.
+  RTC_CHECK_NE(0u, metric->counter);
+  metric->sum += metric->instant;
+  metric->average = metric->sum / metric->counter;
+
+  // Upper mean.
+  if (metric->instant > metric->average) {
+    metric->hicounter++;
+    // This is to protect overflow, which should almost never happen.
+    RTC_CHECK_NE(0u, metric->hicounter);
+    metric->hisum += metric->instant;
+    metric->himean = metric->hisum / metric->hicounter;
+  }
+}
+
 // Threshold to protect against the ill-effects of a zero far-end.
 const float WebRtcAec_kMinFarendPSD = 15;
 
@@ -634,16 +671,12 @@ static void UpdateLevel(PowerLevel* level, float power) {
 }
 
 static void UpdateMetrics(AecCore* aec) {
-  float dtmp;
-
   const float actThresholdNoisy = 8.0f;
   const float actThresholdClean = 40.0f;
-  const float safety = 0.99995f;
 
   const float noisyPower = 300000.0f;
 
   float actThreshold;
-  float echo, suppressedEcho;
 
   if (aec->echoState) {  // Check if echo is likely present
     aec->stateCounter++;
@@ -670,95 +703,22 @@ static void UpdateMetrics(AecCore* aec) {
         (aec->farlevel.framelevel.EndOfBlock()) &&
         (far_average_level > (actThreshold * aec->farlevel.minlevel))) {
 
+      // ERL: error return loss.
       const float near_average_level =
           aec->nearlevel.averagelevel.GetLatestMean();
+      UpdateLogRatioMetric(&aec->erl, far_average_level, near_average_level);
 
-      // Subtract noise power
-      echo = near_average_level - safety * aec->nearlevel.minlevel;
-
-      // ERL
-      dtmp = 10 * static_cast<float>(log10(far_average_level /
-                                           near_average_level + 1e-10f));
-
-      aec->erl.instant = dtmp;
-      if (dtmp > aec->erl.max) {
-        aec->erl.max = dtmp;
-      }
-
-      if (dtmp < aec->erl.min) {
-        aec->erl.min = dtmp;
-      }
-
-      aec->erl.counter++;
-      aec->erl.sum += dtmp;
-      aec->erl.average = aec->erl.sum / aec->erl.counter;
-
-      // Upper mean
-      if (dtmp > aec->erl.average) {
-        aec->erl.hicounter++;
-        aec->erl.hisum += dtmp;
-        aec->erl.himean = aec->erl.hisum / aec->erl.hicounter;
-      }
-
-      // A_NLP
+      // A_NLP: error return loss enhanced before the nonlinear suppression.
       const float linout_average_level =
           aec->linoutlevel.averagelevel.GetLatestMean();
-      dtmp = 10 * static_cast<float>(log10(near_average_level /
-                                           linout_average_level + 1e-10f));
+      UpdateLogRatioMetric(&aec->aNlp, near_average_level,
+                           linout_average_level);
 
-      // subtract noise power
-      suppressedEcho =
-          linout_average_level - safety * aec->linoutlevel.minlevel;
-
-      aec->aNlp.instant =
-          10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
-
-      if (dtmp > aec->aNlp.max) {
-        aec->aNlp.max = dtmp;
-      }
-
-      if (dtmp < aec->aNlp.min) {
-        aec->aNlp.min = dtmp;
-      }
-
-      aec->aNlp.counter++;
-      aec->aNlp.sum += dtmp;
-      aec->aNlp.average = aec->aNlp.sum / aec->aNlp.counter;
-
-      // Upper mean
-      if (dtmp > aec->aNlp.average) {
-        aec->aNlp.hicounter++;
-        aec->aNlp.hisum += dtmp;
-        aec->aNlp.himean = aec->aNlp.hisum / aec->aNlp.hicounter;
-      }
-
-      // ERLE
+      // ERLE: error return loss enhanced.
       const float nlpout_average_level =
           aec->nlpoutlevel.averagelevel.GetLatestMean();
-      // subtract noise power
-      suppressedEcho =
-          nlpout_average_level - safety * aec->nlpoutlevel.minlevel;
-      dtmp = 10 * static_cast<float>(log10(echo / suppressedEcho + 1e-10f));
-
-      aec->erle.instant = dtmp;
-      if (dtmp > aec->erle.max) {
-        aec->erle.max = dtmp;
-      }
-
-      if (dtmp < aec->erle.min) {
-        aec->erle.min = dtmp;
-      }
-
-      aec->erle.counter++;
-      aec->erle.sum += dtmp;
-      aec->erle.average = aec->erle.sum / aec->erle.counter;
-
-      // Upper mean
-      if (dtmp > aec->erle.average) {
-        aec->erle.hicounter++;
-        aec->erle.hisum += dtmp;
-        aec->erle.himean = aec->erle.hisum / aec->erle.hicounter;
-      }
+      UpdateLogRatioMetric(&aec->erle, near_average_level,
+                           nlpout_average_level);
     }
 
     aec->stateCounter = 0;
