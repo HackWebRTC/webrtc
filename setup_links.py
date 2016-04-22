@@ -104,6 +104,11 @@ if 'android' in target_os:
     'tools/grit',
     'tools/telemetry',
   ]
+else:
+  DIRECTORIES += [
+    'base/third_party/libevent',
+  ]
+
 if 'ios' in target_os:
   DIRECTORIES.append('third_party/class-dump')
 

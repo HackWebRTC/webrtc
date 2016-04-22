@@ -1,4 +1,5 @@
 include_rules = [
+  "+base/third_party/libevent",
   "+json",
   "+third_party/jsoncpp",
   "+webrtc/system_wrappers",
