@@ -41,12 +41,14 @@ int MinBitrateKbps() {
   return static_cast<int>(FLAGS_min_bitrate);
 }
 
-DEFINE_int32(start_bitrate, 200, "Call start bitrate in kbps.");
+DEFINE_int32(start_bitrate,
+             Call::Config::kDefaultStartBitrateBps / 1000,
+             "Call start bitrate in kbps.");
 int StartBitrateKbps() {
   return static_cast<int>(FLAGS_start_bitrate);
 }
 
-DEFINE_int32(target_bitrate, 2000, "Stream target bitrate in kbps.");
+DEFINE_int32(target_bitrate, 200, "Stream target bitrate in kbps.");
 int TargetBitrateKbps() {
   return static_cast<int>(FLAGS_target_bitrate);
 }
