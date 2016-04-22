@@ -81,6 +81,7 @@
       'sources': [
         'array_view.h',
         'atomicops.h',
+        'bind.h',
         'bitbuffer.cc',
         'bitbuffer.h',
         'buffer.cc',
@@ -368,7 +369,6 @@
           'sources': [
             'bandwidthsmoother.cc',
             'bandwidthsmoother.h',
-            'bind.h',
             'callback.h',
             'fileutils_mock.h',
             'httpserver.cc',

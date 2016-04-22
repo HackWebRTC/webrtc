@@ -98,6 +98,7 @@ static_library("rtc_base_approved") {
   sources = [
     "array_view.h",
     "atomicops.h",
+    "bind.h",
     "bitbuffer.cc",
     "bitbuffer.h",
     "buffer.cc",
@@ -359,7 +360,6 @@ static_library("rtc_base") {
     sources += [
       "bandwidthsmoother.cc",
       "bandwidthsmoother.h",
-      "bind.h",
       "callback.h",
       "fileutils_mock.h",
       "httpserver.cc",
