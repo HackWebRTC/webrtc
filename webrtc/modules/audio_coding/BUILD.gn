@@ -807,6 +807,8 @@ source_set("neteq") {
     "neteq/statistics_calculator.h",
     "neteq/sync_buffer.cc",
     "neteq/sync_buffer.h",
+    "neteq/tick_timer.cc",
+    "neteq/tick_timer.h",
     "neteq/time_stretch.cc",
     "neteq/time_stretch.h",
     "neteq/timestamp_scaler.cc",

@@ -213,6 +213,7 @@
             'audio_coding/neteq/post_decode_vad_unittest.cc',
             'audio_coding/neteq/random_vector_unittest.cc',
             'audio_coding/neteq/sync_buffer_unittest.cc',
+            'audio_coding/neteq/tick_timer_unittest.cc',
             'audio_coding/neteq/timestamp_scaler_unittest.cc',
             'audio_coding/neteq/time_stretch_unittest.cc',
             'audio_coding/neteq/mock/mock_audio_decoder.h',

@@ -119,6 +119,8 @@
         'rtcp.h',
         'sync_buffer.cc',
         'sync_buffer.h',
+        'tick_timer.cc',
+        'tick_timer.h',
         'timestamp_scaler.cc',
         'timestamp_scaler.h',
         'time_stretch.cc',
