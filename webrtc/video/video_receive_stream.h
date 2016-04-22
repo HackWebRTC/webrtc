@@ -19,6 +19,7 @@
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
+#include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/receive_statistics_proxy.h"
@@ -104,7 +105,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   CallStats* const call_stats_;
   VieRemb* const remb_;
 
-  std::unique_ptr<VideoCodingModule> vcm_;
+  vcm::VideoReceiver video_receiver_;
   IncomingVideoStream incoming_video_stream_;
   ReceiveStatisticsProxy stats_proxy_;
   ViEChannel vie_channel_;

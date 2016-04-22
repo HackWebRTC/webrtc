@@ -43,9 +43,12 @@ class ProcessThread;
 class ReceiveStatisticsProxy;
 class RtcpRttStats;
 class ViERTPObserver;
-class VideoCodingModule;
 class VideoRenderCallback;
 class VoEVideoSync;
+
+namespace vcm {
+class VideoReceiver;
+}  // namespace vcm
 
 enum StreamType {
   kViEStreamTypeNormal = 0,  // Normal media stream
@@ -63,7 +66,7 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   ViEChannel(Transport* transport,
              ProcessThread* module_process_thread,
-             VideoCodingModule* vcm,
+             vcm::VideoReceiver* video_receiver,
              RemoteBitrateEstimator* remote_bitrate_estimator,
              RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
@@ -196,7 +199,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Used for all registered callbacks except rendering.
   rtc::CriticalSection crit_;
 
-  VideoCodingModule* const vcm_;
+  vcm::VideoReceiver* const video_receiver_;
   ViEReceiver vie_receiver_;
 
   // Helper to report call statistics.

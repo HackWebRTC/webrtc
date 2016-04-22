@@ -26,20 +26,23 @@ namespace webrtc {
 
 class Clock;
 class RtpRtcp;
-class VideoCodingModule;
 class VideoFrame;
 class ViEChannel;
 class VoEVideoSync;
 
+namespace vcm {
+class VideoReceiver;
+}  // namespace vcm
+
 class ViESyncModule : public Module {
  public:
-  explicit ViESyncModule(VideoCodingModule* vcm);
+  explicit ViESyncModule(vcm::VideoReceiver* vcm);
   ~ViESyncModule();
 
   void ConfigureSync(int voe_channel_id,
                      VoEVideoSync* voe_sync_interface,
                      RtpRtcp* video_rtcp_module,
-                     RtpReceiver* video_receiver);
+                     RtpReceiver* rtp_receiver);
 
   // Implements Module.
   int64_t TimeUntilNextProcess() override;
@@ -52,9 +55,9 @@ class ViESyncModule : public Module {
 
  private:
   rtc::CriticalSection data_cs_;
-  VideoCodingModule* const vcm_;
+  vcm::VideoReceiver* const video_receiver_;
   Clock* const clock_;
-  RtpReceiver* video_receiver_;
+  RtpReceiver* rtp_receiver_;
   RtpRtcp* video_rtp_rtcp_;
   int voe_channel_id_;
   VoEVideoSync* voe_sync_interface_;

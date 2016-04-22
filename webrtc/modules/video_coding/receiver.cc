@@ -42,12 +42,17 @@ VCMReceiver::VCMReceiver(VCMTiming* timing,
                          EventFactory* event_factory,
                          NackSender* nack_sender,
                          KeyFrameRequestSender* keyframe_request_sender)
-    : VCMReceiver(timing,
-                  clock,
-                  std::unique_ptr<EventWrapper>(event_factory->CreateEvent()),
-                  std::unique_ptr<EventWrapper>(event_factory->CreateEvent()),
-                  nack_sender,
-                  keyframe_request_sender) {}
+    : VCMReceiver(
+          timing,
+          clock,
+          std::unique_ptr<EventWrapper>(event_factory
+                                            ? event_factory->CreateEvent()
+                                            : EventWrapper::Create()),
+          std::unique_ptr<EventWrapper>(event_factory
+                                            ? event_factory->CreateEvent()
+                                            : EventWrapper::Create()),
+          nack_sender,
+          keyframe_request_sender) {}
 
 VCMReceiver::VCMReceiver(VCMTiming* timing,
                          Clock* clock,

@@ -39,7 +39,6 @@ class QMVideoSettingsCallback;
 class SendStatisticsProxy;
 class ViEBitrateObserver;
 class ViEEffectFilter;
-class VideoCodingModule;
 class VideoEncoder;
 
 class ViEEncoder : public VideoEncoderRateObserver,

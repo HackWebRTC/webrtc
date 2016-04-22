@@ -34,11 +34,14 @@ class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class RtpRtcp;
-class VideoCodingModule;
+
+namespace vcm {
+class VideoReceiver;
+}  // namespace vcm
 
 class ViEReceiver : public RtpData {
  public:
-  ViEReceiver(VideoCodingModule* module_vcm,
+  ViEReceiver(vcm::VideoReceiver* video_receiver,
               RemoteBitrateEstimator* remote_bitrate_estimator,
               RtpFeedback* rtp_feedback);
   ~ViEReceiver();
@@ -98,7 +101,7 @@ class ViEReceiver : public RtpData {
   void UpdateHistograms();
 
   Clock* const clock_;
-  VideoCodingModule* const vcm_;
+  vcm::VideoReceiver* const video_receiver_;
   RemoteBitrateEstimator* const remote_bitrate_estimator_;
 
   // TODO(pbos): Make const and set on construction.

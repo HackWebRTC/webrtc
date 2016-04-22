@@ -128,7 +128,7 @@ class VideoSender : public Module {
   std::vector<FrameType> next_frame_types_ GUARDED_BY(params_crit_);
 };
 
-class VideoReceiver {
+class VideoReceiver : public Module {
  public:
   typedef VideoCodingModule::ReceiverRobustness ReceiverRobustness;
 
@@ -179,8 +179,8 @@ class VideoReceiver {
   int32_t SetReceiveChannelParameters(int64_t rtt);
   int32_t SetVideoProtection(VCMVideoProtection videoProtection, bool enable);
 
-  int64_t TimeUntilNextProcess();
-  void Process();
+  int64_t TimeUntilNextProcess() override;
+  void Process() override;
 
   void TriggerDecoderShutdown();
 

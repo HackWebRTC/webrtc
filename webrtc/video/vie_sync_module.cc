@@ -15,7 +15,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/stream_synchronization.h"
 #include "webrtc/video_frame.h"
@@ -48,10 +48,10 @@ int UpdateMeasurements(StreamSynchronization::Measurements* stream,
 }
 }  // namespace
 
-ViESyncModule::ViESyncModule(VideoCodingModule* vcm)
-    : vcm_(vcm),
+ViESyncModule::ViESyncModule(vcm::VideoReceiver* video_receiver)
+    : video_receiver_(video_receiver),
       clock_(Clock::GetRealTimeClock()),
-      video_receiver_(nullptr),
+      rtp_receiver_(nullptr),
       video_rtp_rtcp_(nullptr),
       voe_channel_id_(-1),
       voe_sync_interface_(nullptr),
@@ -64,20 +64,19 @@ ViESyncModule::~ViESyncModule() {
 void ViESyncModule::ConfigureSync(int voe_channel_id,
                                   VoEVideoSync* voe_sync_interface,
                                   RtpRtcp* video_rtcp_module,
-                                  RtpReceiver* video_receiver) {
+                                  RtpReceiver* rtp_receiver) {
   if (voe_channel_id != -1)
     RTC_DCHECK(voe_sync_interface);
   rtc::CritScope lock(&data_cs_);
   // Prevent expensive no-ops.
   if (voe_channel_id_ == voe_channel_id &&
       voe_sync_interface_ == voe_sync_interface &&
-      video_receiver_ == video_receiver &&
-      video_rtp_rtcp_ == video_rtcp_module) {
+      rtp_receiver_ == rtp_receiver && video_rtp_rtcp_ == video_rtcp_module) {
     return;
   }
   voe_channel_id_ = voe_channel_id;
   voe_sync_interface_ = voe_sync_interface;
-  video_receiver_ = video_receiver;
+  rtp_receiver_ = rtp_receiver;
   video_rtp_rtcp_ = video_rtcp_module;
   sync_.reset(
       new StreamSynchronization(video_rtp_rtcp_->SSRC(), voe_channel_id));
@@ -92,7 +91,7 @@ void ViESyncModule::Process() {
   rtc::CritScope lock(&data_cs_);
   last_sync_time_ = TickTime::Now();
 
-  const int current_video_delay_ms = vcm_->Delay();
+  const int current_video_delay_ms = video_receiver_->Delay();
 
   if (voe_channel_id_ == -1) {
     return;
@@ -120,7 +119,7 @@ void ViESyncModule::Process() {
   assert(voice_receiver);
 
   if (UpdateMeasurements(&video_measurement_, *video_rtp_rtcp_,
-                         *video_receiver_) != 0) {
+                         *rtp_receiver_) != 0) {
     return;
   }
 
@@ -154,7 +153,7 @@ void ViESyncModule::Process() {
       voe_channel_id_, target_audio_delay_ms) == -1) {
     LOG(LS_ERROR) << "Error setting voice delay.";
   }
-  vcm_->SetMinimumPlayoutDelay(target_video_delay_ms);
+  video_receiver_->SetMinimumPlayoutDelay(target_video_delay_ms);
 }
 
 bool ViESyncModule::GetStreamSyncOffsetInMs(const VideoFrame& frame,

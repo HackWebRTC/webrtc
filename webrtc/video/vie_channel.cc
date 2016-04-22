@@ -25,7 +25,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/system_wrappers/include/metrics.h"
@@ -93,14 +93,14 @@ class ChannelStatsObserver : public CallStatsObserver {
 
 ViEChannel::ViEChannel(Transport* transport,
                        ProcessThread* module_process_thread,
-                       VideoCodingModule* vcm,
+                       vcm::VideoReceiver* video_receiver,
                        RemoteBitrateEstimator* remote_bitrate_estimator,
                        RtcpRttStats* rtt_stats,
                        PacedSender* paced_sender,
                        PacketRouter* packet_router)
     : module_process_thread_(module_process_thread),
-      vcm_(vcm),
-      vie_receiver_(vcm_, remote_bitrate_estimator, this),
+      video_receiver_(video_receiver),
+      vie_receiver_(video_receiver_, remote_bitrate_estimator, this),
       stats_observer_(new ChannelStatsObserver(this)),
       receive_stats_callback_(nullptr),
       incoming_video_stream_(nullptr),
@@ -118,8 +118,9 @@ ViEChannel::ViEChannel(Transport* transport,
                                     paced_sender_,
                                     packet_router_)) {
   vie_receiver_.Init(rtp_rtcp_.get());
-  RTC_DCHECK(vcm_);
-  vcm_->SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_, 0);
+  RTC_DCHECK(video_receiver_);
+  video_receiver_->SetNackSettings(kMaxNackListSize,
+                                   max_nack_reordering_threshold_, 0);
 }
 
 int32_t ViEChannel::Init() {
@@ -131,13 +132,13 @@ int32_t ViEChannel::Init() {
   packet_router_->AddRtpModule(rtp_rtcp_.get());
 
   rtp_rtcp_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
-  if (vcm_->RegisterReceiveCallback(this) != 0) {
+  if (video_receiver_->RegisterReceiveCallback(this) != 0) {
     return -1;
   }
-  vcm_->RegisterFrameTypeCallback(this);
-  vcm_->RegisterReceiveStatisticsCallback(this);
-  vcm_->RegisterDecoderTimingCallback(this);
-  vcm_->SetRenderDelay(kDefaultRenderDelayMs);
+  video_receiver_->RegisterFrameTypeCallback(this);
+  video_receiver_->RegisterReceiveStatisticsCallback(this);
+  video_receiver_->RegisterDecoderTimingCallback(this);
+  video_receiver_->SetRenderDelay(kDefaultRenderDelayMs);
 
   return 0;
 }
@@ -178,7 +179,7 @@ void ViEChannel::SetProtectionMode(bool enable_nack,
     protection_method = kProtectionNone;
   }
 
-  vcm_->SetVideoProtection(protection_method, true);
+  video_receiver_->SetVideoProtection(protection_method, true);
 
   // Set NACK.
   ProcessNACKRequest(enable_nack);
@@ -195,15 +196,15 @@ void ViEChannel::ProcessNACKRequest(const bool enable) {
     if (rtp_rtcp_->RTCP() == RtcpMode::kOff)
       return;
     vie_receiver_.SetNackStatus(true, max_nack_reordering_threshold_);
-    vcm_->RegisterPacketRequestCallback(this);
+    video_receiver_->RegisterPacketRequestCallback(this);
     // Don't introduce errors when NACK is enabled.
-    vcm_->SetDecodeErrorMode(kNoErrors);
+    video_receiver_->SetDecodeErrorMode(kNoErrors);
 
   } else {
-    vcm_->RegisterPacketRequestCallback(nullptr);
+    video_receiver_->RegisterPacketRequestCallback(nullptr);
     // When NACK is off, allow decoding with errors. Otherwise, the video
     // will freeze, and will only recover with a complete key frame.
-    vcm_->SetDecodeErrorMode(kWithErrors);
+    video_receiver_->SetDecodeErrorMode(kWithErrors);
     vie_receiver_.SetNackStatus(false, max_nack_reordering_threshold_);
   }
 }
@@ -238,10 +239,10 @@ CallStatsObserver* ViEChannel::GetStatsObserver() {
   return stats_observer_.get();
 }
 
-// Do not acquire the lock of |vcm_| in this function. Decode callback won't
-// necessarily be called from the decoding thread. The decoding thread may have
-// held the lock when calling VideoDecoder::Decode, Reset, or Release. Acquiring
-// the same lock in the path of decode callback can deadlock.
+// Do not acquire the lock of |video_receiver_| in this function. Decode
+// callback won't necessarily be called from the decoding thread. The decoding
+// thread may have held the lock when calling VideoDecoder::Decode, Reset, or
+// Release. Acquiring the same lock in the path of decode callback can deadlock.
 int32_t ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
   rtc::CritScope lock(&crit_);
 
@@ -320,7 +321,7 @@ int32_t ViEChannel::ResendPackets(const uint16_t* sequence_numbers,
 }
 
 void ViEChannel::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
-  vcm_->SetReceiveChannelParameters(max_rtt_ms);
+  video_receiver_->SetReceiveChannelParameters(max_rtt_ms);
 
   rtc::CritScope lock(&crit_);
   last_rtt_ms_ = avg_rtt_ms;

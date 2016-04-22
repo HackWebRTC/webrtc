@@ -21,7 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
@@ -31,11 +31,11 @@ namespace webrtc {
 
 static const int kPacketLogIntervalMs = 10000;
 
-ViEReceiver::ViEReceiver(VideoCodingModule* module_vcm,
+ViEReceiver::ViEReceiver(vcm::VideoReceiver* video_receiver,
                          RemoteBitrateEstimator* remote_bitrate_estimator,
                          RtpFeedback* rtp_feedback)
     : clock_(Clock::GetRealTimeClock()),
-      vcm_(module_vcm),
+      video_receiver_(video_receiver),
       remote_bitrate_estimator_(remote_bitrate_estimator),
       ntp_estimator_(clock_),
       rtp_payload_registry_(RTPPayloadStrategy::CreateStrategy(false)),
@@ -142,13 +142,12 @@ void ViEReceiver::EnableReceiveRtpHeaderExtension(const std::string& extension,
 int32_t ViEReceiver::OnReceivedPayloadData(const uint8_t* payload_data,
                                            const size_t payload_size,
                                            const WebRtcRTPHeader* rtp_header) {
-  RTC_DCHECK(vcm_);
+  RTC_DCHECK(video_receiver_);
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_.Estimate(rtp_header->header.timestamp);
-  if (vcm_->IncomingPacket(payload_data,
-                           payload_size,
-                           rtp_header_with_ntp) != 0) {
+  if (video_receiver_->IncomingPacket(payload_data, payload_size,
+                                      rtp_header_with_ntp) != 0) {
     // Check this...
     return -1;
   }
@@ -249,7 +248,8 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
     int8_t ulpfec_pt = rtp_payload_registry_.ulpfec_payload_type();
     if (packet[header.headerLength] == ulpfec_pt) {
       rtp_receive_statistics_->FecPacketReceived(header, packet_length);
-      // Notify vcm about received FEC packets to avoid NACKing these packets.
+      // Notify video_receiver about received FEC packets to avoid NACKing these
+      // packets.
       NotifyReceiverOfFecPacket(header);
     }
     if (fec_receiver_->AddReceivedRedPacket(

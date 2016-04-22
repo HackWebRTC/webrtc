@@ -73,7 +73,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
  public:
   VideoCodingModuleImpl(Clock* clock,
                         EventFactory* event_factory,
-                        bool owns_event_factory,
                         VideoEncoderRateObserver* encoder_rate_observer,
                         VCMQMSettingsCallback* qm_settings_callback,
                         NackSender* nack_sender,
@@ -88,10 +87,9 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                   event_factory,
                   pre_decode_image_callback,
                   nack_sender,
-                  keyframe_request_sender),
-        own_event_factory_(owns_event_factory ? event_factory : NULL) {}
+                  keyframe_request_sender) {}
 
-  virtual ~VideoCodingModuleImpl() { own_event_factory_.reset(); }
+  virtual ~VideoCodingModuleImpl() {}
 
   int64_t TimeUntilNextProcess() override {
     int64_t sender_time = sender_.TimeUntilNextProcess();
@@ -286,7 +284,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   EncodedImageCallbackWrapper post_encode_callback_;
   vcm::VideoSender sender_;
   vcm::VideoReceiver receiver_;
-  std::unique_ptr<EventFactory> own_event_factory_;
 };
 }  // namespace
 
@@ -315,10 +312,9 @@ VideoCodingModule* VideoCodingModule::Create(
     NackSender* nack_sender,
     KeyFrameRequestSender* keyframe_request_sender,
     EncodedImageCallback* pre_decode_image_callback) {
-  return new VideoCodingModuleImpl(clock, new EventFactoryImpl, true,
-                                   encoder_rate_observer, qm_settings_callback,
-                                   nack_sender, keyframe_request_sender,
-                                   pre_decode_image_callback);
+  return new VideoCodingModuleImpl(
+      clock, nullptr, encoder_rate_observer, qm_settings_callback, nack_sender,
+      keyframe_request_sender, pre_decode_image_callback);
 }
 
 // Create method for current interface, will be removed when the
@@ -338,9 +334,9 @@ VideoCodingModule* VideoCodingModule::Create(
     KeyFrameRequestSender* keyframe_request_sender) {
   assert(clock);
   assert(event_factory);
-  return new VideoCodingModuleImpl(clock, event_factory, false, nullptr,
-                                   nullptr, nack_sender,
-                                   keyframe_request_sender, nullptr);
+  return new VideoCodingModuleImpl(clock, event_factory, nullptr, nullptr,
+                                   nack_sender, keyframe_request_sender,
+                                   nullptr);
 }
 
 }  // namespace webrtc

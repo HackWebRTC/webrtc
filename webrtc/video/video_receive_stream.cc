@@ -162,24 +162,19 @@ VideoReceiveStream::VideoReceiveStream(
       congestion_controller_(congestion_controller),
       call_stats_(call_stats),
       remb_(remb),
-      vcm_(VideoCodingModule::Create(clock_,
-                                     nullptr,
-                                     nullptr,
-                                     this,
-                                     this,
-                                     this)),
+      video_receiver_(clock_, nullptr, this, this, this),
       incoming_video_stream_(0, config.disable_prerenderer_smoothing),
       stats_proxy_(config_, clock_),
       vie_channel_(&transport_adapter_,
                    process_thread,
-                   vcm_.get(),
+                   &video_receiver_,
                    congestion_controller_->GetRemoteBitrateEstimator(
                        UseSendSideBwe(config_)),
                    call_stats_->rtcp_rtt_stats(),
                    congestion_controller_->pacer(),
                    congestion_controller_->packet_router()),
       vie_receiver_(vie_channel_.vie_receiver()),
-      vie_sync_(vcm_.get()),
+      vie_sync_(&video_receiver_),
       rtp_rtcp_(vie_channel_.rtp_rtcp()) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
@@ -277,22 +272,23 @@ VideoReceiveStream::VideoReceiveStream(
         << "Duplicate payload type (" << decoder.payload_type
         << ") for different decoders.";
     decoder_payload_types.insert(decoder.payload_type);
-    vcm_->RegisterExternalDecoder(decoder.decoder, decoder.payload_type);
+    video_receiver_.RegisterExternalDecoder(decoder.decoder,
+                                            decoder.payload_type);
 
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
 
     RTC_CHECK(vie_receiver_->SetReceiveCodec(codec));
-    RTC_CHECK_EQ(VCM_OK,
-                 vcm_->RegisterReceiveCodec(&codec, num_cpu_cores, false));
+    RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(
+                             &codec, num_cpu_cores, false));
   }
 
-  vcm_->SetRenderDelay(config.render_delay_ms);
+  video_receiver_.SetRenderDelay(config.render_delay_ms);
   incoming_video_stream_.SetExpectedRenderDelay(config.render_delay_ms);
   incoming_video_stream_.SetExternalCallback(this);
   vie_channel_.SetIncomingVideoStream(&incoming_video_stream_);
   vie_channel_.RegisterPreRenderCallback(this);
 
-  process_thread_->RegisterModule(vcm_.get());
+  process_thread_->RegisterModule(&video_receiver_);
   process_thread_->RegisterModule(&vie_sync_);
 }
 
@@ -301,14 +297,14 @@ VideoReceiveStream::~VideoReceiveStream() {
   Stop();
 
   process_thread_->DeRegisterModule(&vie_sync_);
-  process_thread_->DeRegisterModule(vcm_.get());
+  process_thread_->DeRegisterModule(&video_receiver_);
 
   // Deregister external decoders so that they are no longer running during
   // destruction. This effectively stops the VCM since the decoder thread is
   // stopped, the VCM is deregistered and no asynchronous decoder threads are
   // running.
   for (const Decoder& decoder : config_.decoders)
-    vcm_->RegisterExternalDecoder(nullptr, decoder.payload_type);
+    video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
 
   vie_channel_.RegisterPreRenderCallback(nullptr);
 
@@ -334,7 +330,7 @@ void VideoReceiveStream::Start() {
 void VideoReceiveStream::Stop() {
   incoming_video_stream_.Stop();
   vie_receiver_->StopReceive();
-  vcm_->TriggerDecoderShutdown();
+  video_receiver_.TriggerDecoderShutdown();
   decode_thread_.Stop();
   transport_adapter_.Disable();
 }
@@ -431,7 +427,7 @@ bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
 
 void VideoReceiveStream::Decode() {
   static const int kMaxDecodeWaitTimeMs = 50;
-  vcm_->Decode(kMaxDecodeWaitTimeMs);
+  video_receiver_.Decode(kMaxDecodeWaitTimeMs);
 }
 
 void VideoReceiveStream::SendNack(
