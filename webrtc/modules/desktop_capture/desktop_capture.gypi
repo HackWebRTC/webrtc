@@ -56,7 +56,6 @@
         "mouse_cursor_monitor_mac.mm",
         "mouse_cursor_monitor_win.cc",
         "mouse_cursor_monitor_x11.cc",
-        "screen_capture_frame_queue.cc",
         "screen_capture_frame_queue.h",
         "screen_capturer.h",
         "screen_capturer_helper.cc",

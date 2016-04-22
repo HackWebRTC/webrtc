@@ -13,12 +13,12 @@
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
-#include "webrtc/typedefs.h"
+#include "webrtc/base/constructormagic.h"
+// TODO(zijiehe): These headers are not used in this file, but to avoid build
+// break in remoting/host. We should add headers in each individual files.
+#include "webrtc/modules/desktop_capture/desktop_frame.h"  // Remove
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"  // Remove
 
-namespace webrtc {
-class DesktopFrame;
-}  // namespace webrtc
 
 namespace webrtc {
 
@@ -35,28 +35,38 @@ namespace webrtc {
 // Frame consumer is expected to never hold more than kQueueLength frames
 // created by this function and it should release the earliest one before trying
 // to capture a new frame (i.e. before MoveToNextFrame() is called).
+template <typename FrameType>
 class ScreenCaptureFrameQueue {
  public:
-  ScreenCaptureFrameQueue();
-  ~ScreenCaptureFrameQueue();
+  ScreenCaptureFrameQueue() : current_(0) {}
+  ~ScreenCaptureFrameQueue() = default;
 
   // Moves to the next frame in the queue, moving the 'current' frame to become
   // the 'previous' one.
-  void MoveToNextFrame();
+  void MoveToNextFrame() {
+    current_ = (current_ + 1) % kQueueLength;
+  }
 
   // Replaces the current frame with a new one allocated by the caller. The
   // existing frame (if any) is destroyed. Takes ownership of |frame|.
-  void ReplaceCurrentFrame(DesktopFrame* frame);
+  void ReplaceCurrentFrame(FrameType* frame) {
+    frames_[current_].reset(frame);
+  }
 
   // Marks all frames obsolete and resets the previous frame pointer. No
   // frames are freed though as the caller can still access them.
-  void Reset();
+  void Reset() {
+    for (int i = 0; i < kQueueLength; i++) {
+      frames_[i].reset();
+    }
+    current_ = 0;
+  }
 
-  SharedDesktopFrame* current_frame() const {
+  FrameType* current_frame() const {
     return frames_[current_].get();
   }
 
-  SharedDesktopFrame* previous_frame() const {
+  FrameType* previous_frame() const {
     return frames_[(current_ + kQueueLength - 1) % kQueueLength].get();
   }
 
@@ -65,7 +75,7 @@ class ScreenCaptureFrameQueue {
   int current_;
 
   static const int kQueueLength = 2;
-  std::unique_ptr<SharedDesktopFrame> frames_[kQueueLength];
+  std::unique_ptr<FrameType> frames_[kQueueLength];
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCaptureFrameQueue);
 };

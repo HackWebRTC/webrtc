@@ -26,6 +26,7 @@
 #include "webrtc/modules/desktop_capture/differ.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/x11/x_server_pixel_buffer.h"
 #include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
@@ -106,7 +107,7 @@ class ScreenCapturerLinux : public ScreenCapturer,
   ScreenCapturerHelper helper_;
 
   // Queue of the frames buffers.
-  ScreenCaptureFrameQueue queue_;
+  ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
 
   // Invalid region from the previous capture. This is used to synchronize the
   // current with the last buffer used.
@@ -237,6 +238,7 @@ void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
   TickTime capture_start_time = TickTime::Now();
 
   queue_.MoveToNextFrame();
+  RTC_DCHECK(!queue_.current_frame() || !queue_.current_frame()->IsShared());
 
   // Process XEvents for XDamage and cursor shape tracking.
   options_.x_display()->ProcessPendingXEvents();
@@ -256,7 +258,7 @@ void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
   if (!queue_.current_frame()) {
     std::unique_ptr<DesktopFrame> frame(
         new BasicDesktopFrame(x_server_pixel_buffer_.window_size()));
-    queue_.ReplaceCurrentFrame(frame.release());
+    queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(frame.release()));
   }
 
   // Refresh the Differ helper used by CaptureFrame(), if needed.

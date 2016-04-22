@@ -22,6 +22,7 @@
 #include <OpenGL/CGLMacro.h>
 #include <OpenGL/OpenGL.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/macutils.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
@@ -32,6 +33,7 @@
 #include "webrtc/modules/desktop_capture/mac/scoped_pixel_buffer_object.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
@@ -234,7 +236,7 @@ class ScreenCapturerMac : public ScreenCapturer {
   ScopedPixelBufferObject pixel_buffer_object_;
 
   // Queue of the frames buffers.
-  ScreenCaptureFrameQueue queue_;
+  ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
 
   // Current display configuration.
   MacDesktopConfiguration desktop_config_;
@@ -384,6 +386,7 @@ void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {
   TickTime capture_start_time = TickTime::Now();
 
   queue_.MoveToNextFrame();
+  RTC_DCHECK(!queue_.current_frame() || !queue_.current_frame()->IsShared());
 
   desktop_config_monitor_->Lock();
   MacDesktopConfiguration new_config =
@@ -405,7 +408,7 @@ void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {
   // Note that we can't reallocate other buffers at this point, since the caller
   // may still be reading from them.
   if (!queue_.current_frame())
-    queue_.ReplaceCurrentFrame(CreateFrame());
+    queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(CreateFrame()));
 
   DesktopFrame* current_frame = queue_.current_frame();
 

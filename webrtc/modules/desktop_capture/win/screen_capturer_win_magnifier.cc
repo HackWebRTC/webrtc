@@ -433,7 +433,7 @@ void ScreenCapturerWinMagnifier::CreateCurrentFrameIfNecessary(
             ? SharedMemoryDesktopFrame::Create(size,
                                                shared_memory_factory_.get())
             : std::unique_ptr<DesktopFrame>(new BasicDesktopFrame(size));
-    queue_.ReplaceCurrentFrame(frame.release());
+    queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(frame.release()));
   }
 }
 
