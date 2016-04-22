@@ -939,32 +939,32 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
 TEST_F(AcmReceiverBitExactnessOldApi, 8kHzOutput) {
-  Run(8000, PlatformChecksum("d9334a99c7f185860028e6f08e5b7390",
-                             "946803da293ef3fa39242d3059eac491",
+  Run(8000, PlatformChecksum("f34e5c0e4dd4cd6c82b23f6ed006dad0",
+                             "67a1471049dc87e7498bc19bf130dd35",
                              "efb5a07480bad8afb184c4150f4b3f3a",
                              "51717ab374871cbfa2c6977ea2aa40f3"),
       std::vector<ExternalDecoder>());
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 16kHzOutput) {
-  Run(16000, PlatformChecksum("9ad7d5a5f3c9fac4e880a6fbfd9d3ac8",
-                              "4fc1b82404ae33511c1cdb385774b2a4",
+  Run(16000, PlatformChecksum("5066b412805f3050f65154d676006964",
+                              "887905a40d37f213b76f64296871473e",
                               "f580bfd4e5e29f0399b61b7512d4e3b4",
                               "5b2ae32c590b41d0c601179e14eaae96"),
       std::vector<ExternalDecoder>());
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 32kHzOutput) {
-  Run(32000, PlatformChecksum("08e6085ccb96494b242f0ecc4c8a2dc8",
-                              "d1f853b1e046c67c9ee186786eaf2124",
+  Run(32000, PlatformChecksum("2cb4784af507c45b9121e2315def36f2",
+                              "d2392b3247095d894a49b74a1106f281",
                               "fdf5166b98c43235978685e40e28fea6",
                               "7f620312f2fa74a10048bbb7739d4bf3"),
       std::vector<ExternalDecoder>());
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutput) {
-  Run(48000, PlatformChecksum("31343887b7ef70772df733d072b0dd00",
-                              "f6893278d75dad42ac44bff77f674b33",
+  Run(48000, PlatformChecksum("ce63f874a198621fa35398e412640fcf",
+                              "2cf0b8fe9784e8c96db307e125beb723",
                               "71f89e87ee1bad594f529d6c036289ad",
                               "b64c891e99eccc9ff45541ef67c9e9bf"),
       std::vector<ExternalDecoder>());
@@ -1021,8 +1021,8 @@ TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
   std::vector<ExternalDecoder> external_decoders;
   external_decoders.push_back(ed);
 
-  Run(48000, PlatformChecksum("31343887b7ef70772df733d072b0dd00",
-                              "f6893278d75dad42ac44bff77f674b33",
+  Run(48000, PlatformChecksum("ce63f874a198621fa35398e412640fcf",
+                              "2cf0b8fe9784e8c96db307e125beb723",
                               "71f89e87ee1bad594f529d6c036289ad",
                               "b64c891e99eccc9ff45541ef67c9e9bf"),
       external_decoders);
