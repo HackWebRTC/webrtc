@@ -1981,6 +1981,39 @@ TEST_F(P2PTestConductor, EarlyWarmupTest) {
                    kMaxWaitForFramesMs);
 }
 
+TEST_F(P2PTestConductor, ForwardVideoOnlyStream) {
+  ASSERT_TRUE(CreateTestClients());
+  // One-way stream
+  receiving_client()->set_auto_add_stream(false);
+  // Video only, audio forwarding not expected to work.
+  initializing_client()->AddMediaStream(false, true);
+  initializing_client()->Negotiate();
+
+  ASSERT_TRUE_WAIT(SessionActive(), kMaxWaitForActivationMs);
+  VerifySessionDescriptions();
+
+  ASSERT_TRUE(initializing_client()->can_receive_video());
+  ASSERT_TRUE(receiving_client()->can_receive_video());
+
+  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
+                 initializing_client()->ice_connection_state(),
+                 kMaxWaitForFramesMs);
+  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
+                 receiving_client()->ice_connection_state(),
+                 kMaxWaitForFramesMs);
+
+  ASSERT_TRUE(receiving_client()->remote_streams()->count() == 1);
+
+  // Echo the stream back.
+  receiving_client()->pc()->AddStream(
+      receiving_client()->remote_streams()->at(0));
+  receiving_client()->Negotiate();
+
+  EXPECT_TRUE_WAIT(
+      initializing_client()->VideoFramesReceivedCheck(kEndVideoFrameCount),
+      kMaxWaitForFramesMs);
+}
+
 class IceServerParsingTest : public testing::Test {
  public:
   // Convenience for parsing a single URL.
