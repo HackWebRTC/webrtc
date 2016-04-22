@@ -54,7 +54,6 @@ class DecoderDatabase {
     const NetEqDecoder codec_type;
     const std::string name;
     const int fs_hz;
-    const int rtp_sample_rate_hz;
     AudioDecoder* const external_decoder;
 
    private:

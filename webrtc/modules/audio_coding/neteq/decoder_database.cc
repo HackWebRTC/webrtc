@@ -31,7 +31,6 @@ DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
     : codec_type(ct),
       name(nm),
       fs_hz(fs),
-      rtp_sample_rate_hz(fs),
       external_decoder(ext_dec) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(DecoderInfo&&) = default;
