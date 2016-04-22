@@ -176,8 +176,7 @@ RemoteBitrateEstimatorAbsSendTime::ProcessClusters(int64_t now_ms) {
         std::min(best_it->GetSendBitrateBps(), best_it->GetRecvBitrateBps());
     // Make sure that a probe sent on a lower bitrate than our estimate can't
     // reduce the estimate.
-    if (IsBitrateImproving(probe_bitrate_bps) &&
-        probe_bitrate_bps > static_cast<int>(incoming_bitrate_.Rate(now_ms))) {
+    if (IsBitrateImproving(probe_bitrate_bps)) {
       LOG(LS_INFO) << "Probe successful, sent at "
                    << best_it->GetSendBitrateBps() << " bps, received at "
                    << best_it->GetRecvBitrateBps()

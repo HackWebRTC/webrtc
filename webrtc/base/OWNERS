@@ -15,4 +15,6 @@ per-file *.gyp=*
 per-file *.gypi=*
 
 per-file BUILD.gn=kjellander@webrtc.org
+per-file rate_statistics*=sprang@webrtc.org
+per-file rate_statistics*=stefan@webrtc.org
 

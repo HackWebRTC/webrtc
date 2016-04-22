@@ -10,7 +10,9 @@
 
 #include "webrtc/base/rate_statistics.h"
 
-#include <assert.h>
+#include <algorithm>
+
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
@@ -20,7 +22,7 @@ RateStatistics::RateStatistics(uint32_t window_size_ms, float scale)
       accumulated_count_(0),
       oldest_time_(0),
       oldest_index_(0),
-      scale_(scale / (num_buckets_ - 1)) {}
+      scale_(scale) {}
 
 RateStatistics::~RateStatistics() {}
 
@@ -42,7 +44,7 @@ void RateStatistics::Update(size_t count, int64_t now_ms) {
   EraseOld(now_ms);
 
   int now_offset = static_cast<int>(now_ms - oldest_time_);
-  assert(now_offset < num_buckets_);
+  RTC_DCHECK_LT(now_offset, num_buckets_);
   int index = oldest_index_ + now_offset;
   if (index >= num_buckets_) {
     index -= num_buckets_;
@@ -53,18 +55,20 @@ void RateStatistics::Update(size_t count, int64_t now_ms) {
 
 uint32_t RateStatistics::Rate(int64_t now_ms) {
   EraseOld(now_ms);
-  return static_cast<uint32_t>(accumulated_count_ * scale_ + 0.5f);
+  float scale =  scale_ / (now_ms - oldest_time_ + 1);
+  return static_cast<uint32_t>(accumulated_count_ * scale + 0.5f);
 }
 
 void RateStatistics::EraseOld(int64_t now_ms) {
   int64_t new_oldest_time = now_ms - num_buckets_ + 1;
   if (new_oldest_time <= oldest_time_) {
+    if (accumulated_count_ == 0)
+      oldest_time_ = now_ms;
     return;
   }
-
   while (oldest_time_ < new_oldest_time) {
     size_t count_in_oldest_bucket = buckets_[oldest_index_];
-    assert(accumulated_count_ >= count_in_oldest_bucket);
+    RTC_DCHECK_GE(accumulated_count_, count_in_oldest_bucket);
     accumulated_count_ -= count_in_oldest_bucket;
     buckets_[oldest_index_] = 0;
     if (++oldest_index_ >= num_buckets_) {
@@ -74,6 +78,7 @@ void RateStatistics::EraseOld(int64_t now_ms) {
     if (accumulated_count_ == 0) {
       // This guarantees we go through all the buckets at most once, even if
       // |new_oldest_time| is far greater than |oldest_time_|.
+      new_oldest_time = now_ms;
       break;
     }
   }

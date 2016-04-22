@@ -47,7 +47,7 @@ TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropOneStreamWrap) {
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropTwoStreamsWrap) {
-  CapacityDropTestHelper(2, true, 767);
+  CapacityDropTestHelper(2, true, 600);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropThreeStreamsWrap) {

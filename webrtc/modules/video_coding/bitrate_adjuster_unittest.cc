@@ -86,7 +86,7 @@ TEST_F(BitrateAdjusterTest, VaryingBitrates) {
   SimulateBitrateBps(actual_bitrate_bps);
   VerifyAdjustment();
   adjusted_bitrate_bps = adjuster_.GetAdjustedBitrateBps();
-  EXPECT_LT(adjusted_bitrate_bps, last_adjusted_bitrate_bps);
+  EXPECT_LE(adjusted_bitrate_bps, last_adjusted_bitrate_bps);
   last_adjusted_bitrate_bps = adjusted_bitrate_bps;
   // After two cycles we should've stabilized and hit the lower bound.
   EXPECT_EQ(GetTargetBitrateBpsPct(kMinAdjustedBitratePct),
