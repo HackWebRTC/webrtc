@@ -27,13 +27,8 @@
 
 #ifdef HAVE_SRTP
 extern "C" {
-#ifdef SRTP_RELATIVE_PATH
-#include "srtp.h"  // NOLINT
-#include "srtp_priv.h"  // NOLINT
-#else
 #include "third_party/libsrtp/srtp/include/srtp.h"
 #include "third_party/libsrtp/srtp/include/srtp_priv.h"
-#endif  // SRTP_RELATIVE_PATH
 }
 #ifdef  ENABLE_EXTERNAL_AUTH
 #include "webrtc/pc/externalhmac.h"

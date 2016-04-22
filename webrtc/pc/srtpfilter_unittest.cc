@@ -16,11 +16,7 @@
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/pc/srtpfilter.h"
 extern "C" {
-#ifdef SRTP_RELATIVE_PATH
-#include "crypto/include/err.h"
-#else
 #include "third_party/libsrtp/srtp/crypto/include/err.h"
-#endif
 }
 
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
