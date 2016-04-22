@@ -71,13 +71,13 @@ public class MediaCodecVideoEncoder {
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
   private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
   private static final String H264_MIME_TYPE = "video/avc";
-  // List of supported HW VP8 codecs.
+  // List of supported HW VP8 encoders.
   private static final String[] supportedVp8HwCodecPrefixes =
     {"OMX.qcom.", "OMX.Intel." };
-  // List of supported HW VP9 decoders.
+  // List of supported HW VP9 encoders.
   private static final String[] supportedVp9HwCodecPrefixes =
-    {"OMX.qcom."};
-  // List of supported HW H.264 codecs.
+    {"OMX.qcom.", "OMX.Exynos." };
+  // List of supported HW H.264 encoders.
   private static final String[] supportedH264HwCodecPrefixes =
     {"OMX.qcom." };
   // List of devices with poor H.264 encoder quality.
@@ -298,7 +298,7 @@ public class MediaCodecVideoEncoder {
       keyFrameIntervalSec = 100;
     } else if (type == VideoCodecType.VIDEO_CODEC_VP9) {
       mime = VP9_MIME_TYPE;
-      properties = findHwEncoder(VP9_MIME_TYPE, supportedH264HwCodecPrefixes,
+      properties = findHwEncoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes,
           useSurface ? supportedSurfaceColorList : supportedColorList);
       keyFrameIntervalSec = 100;
     } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
