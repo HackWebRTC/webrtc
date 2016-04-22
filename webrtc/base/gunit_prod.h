@@ -15,7 +15,10 @@
 // Android doesn't use gtest at all, so anything that relies on gtest should
 // check this define first.
 #define NO_GTEST
-#include "testing/gtest/include/gtest/gtest_prod.h"
+#elif defined (GTEST_RELATIVE_PATH)
+#include "gtest/gtest_prod.h"
+#else
+#include "testing/base/gunit_prod.h"
 #endif
 
 #endif  // WEBRTC_BASE_GUNIT_PROD_H_

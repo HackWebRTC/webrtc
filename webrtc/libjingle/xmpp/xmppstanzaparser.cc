@@ -13,7 +13,11 @@
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/common.h"
+#ifdef EXPAT_RELATIVE_PATH
 #include "expat.h"
+#else
+#include "third_party/expat/v2_0_1/Source/lib/expat.h"
+#endif
 
 namespace buzz {
 

@@ -64,6 +64,7 @@
     'webrtc_vp9_dir%': '<(webrtc_vp9_dir)',
     'include_ilbc%': '<(include_ilbc)',
     'include_opus%': '<(include_opus)',
+    'rtc_relative_path%': 1,
     'external_libraries%': '0',
     'json_root%': '<(DEPTH)/third_party/jsoncpp/source/include/',
     # openssl needs to be defined or gyp will complain. Is is only used when
@@ -236,6 +237,9 @@
          'cflags': [
            '<!@(pkg-config --cflags dbus-glib-1)',
          ],
+      }],
+      ['rtc_relative_path==1', {
+        'defines': ['EXPAT_RELATIVE_PATH',],
       }],
       ['os_posix==1', {
         'configurations': {

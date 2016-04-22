@@ -31,7 +31,11 @@
 
 #include "webrtc/base/basictypes.h"
 extern "C" {
+#ifdef SRTP_RELATIVE_PATH
+#include "auth.h"  // NOLINT
+#else
 #include "third_party/libsrtp/srtp/crypto/include/auth.h"
+#endif  // SRTP_RELATIVE_PATH
 }
 
 #define EXTERNAL_HMAC_SHA1 HMAC_SHA1 + 1

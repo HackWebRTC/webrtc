@@ -10,6 +10,7 @@
   'includes': ['../build/common.gypi'],
   'variables': {
     'rtc_pc_defines': [
+      'SRTP_RELATIVE_PATH',
       'HAVE_SCTP',
       'HAVE_SRTP',
     ],
