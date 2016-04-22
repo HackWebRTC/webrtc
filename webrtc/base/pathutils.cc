@@ -56,6 +56,7 @@ Pathname::Pathname()
 }
 
 Pathname::Pathname(const Pathname&) = default;
+Pathname::Pathname(Pathname&&) = default;
 
 Pathname::Pathname(const std::string& pathname)
     : folder_delimiter_(DEFAULT_FOLDER_DELIM) {
@@ -66,6 +67,9 @@ Pathname::Pathname(const std::string& folder, const std::string& filename)
     : folder_delimiter_(DEFAULT_FOLDER_DELIM) {
   SetPathname(folder, filename);
 }
+
+Pathname& Pathname::operator=(const Pathname&) = default;
+Pathname& Pathname::operator=(Pathname&&) = default;
 
 void Pathname::SetFolderDelimiter(char delimiter) {
   ASSERT(IsFolderDelimiter(delimiter));
