@@ -141,6 +141,8 @@
       'sources': [
         'call/rtc_event_log.cc',
         'call/rtc_event_log.h',
+        'call/rtc_event_log_helper_thread.cc',
+        'call/rtc_event_log_helper_thread.h',
       ],
       'conditions': [
         # If enable_protobuf is defined, we want to compile the protobuf

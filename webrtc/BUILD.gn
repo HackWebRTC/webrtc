@@ -259,6 +259,8 @@ source_set("rtc_event_log") {
   sources = [
     "call/rtc_event_log.cc",
     "call/rtc_event_log.h",
+    "call/rtc_event_log_helper_thread.cc",
+    "call/rtc_event_log_helper_thread.h",
   ]
 
   defines = []

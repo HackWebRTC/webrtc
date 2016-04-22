@@ -26,6 +26,7 @@ namespace rtclog {
 class EventStream;
 }  // namespace rtclog
 
+class Clock;
 class RtcEventLogImpl;
 
 enum class MediaType;
@@ -36,30 +37,40 @@ class RtcEventLog {
  public:
   virtual ~RtcEventLog() {}
 
-  static std::unique_ptr<RtcEventLog> Create();
+  // Factory method to create an RtcEventLog object.
+  static std::unique_ptr<RtcEventLog> Create(const Clock* clock);
 
-  // Sets the time that events are stored in the internal event buffer
-  // before the user calls StartLogging.  The default is 10 000 000 us = 10 s
-  virtual void SetBufferDuration(int64_t buffer_duration_us) = 0;
-
-  // Starts logging for the specified duration to the specified file.
-  // The logging will stop automatically after the specified duration.
+  // Starts logging a maximum of max_size_bytes bytes to the specified file.
   // If the file already exists it will be overwritten.
-  // If the file cannot be opened, the RtcEventLog will not start logging.
-  virtual void StartLogging(const std::string& file_name, int duration_ms) = 0;
+  // If max_size_bytes <= 0, logging will be active until StopLogging is called.
+  // The function has no effect and returns false if we can't start a new log
+  // e.g. because we are already logging or the file cannot be opened.
+  virtual bool StartLogging(const std::string& file_name,
+                            int64_t max_size_bytes) = 0;
 
-  // Starts logging until either the 10 minute timer runs out or the StopLogging
-  // function is called. The RtcEventLog takes ownership of the supplied
-  // rtc::PlatformFile.
-  virtual bool StartLogging(rtc::PlatformFile log_file) = 0;
+  // Same as above. The RtcEventLog takes ownership of the file if the call
+  // is successful, i.e. if it returns true.
+  virtual bool StartLogging(rtc::PlatformFile platform_file,
+                            int64_t max_size_bytes) = 0;
 
+  // Deprecated. Pass an explicit file size limit.
+  bool StartLogging(const std::string& file_name) {
+    return StartLogging(file_name, 10000000);
+  }
+
+  // Deprecated. Pass an explicit file size limit.
+  bool StartLogging(rtc::PlatformFile platform_file) {
+    return StartLogging(platform_file, 10000000);
+  }
+
+  // Stops logging to file and waits until the thread has finished.
   virtual void StopLogging() = 0;
 
-  // Logs configuration information for webrtc::VideoReceiveStream
+  // Logs configuration information for webrtc::VideoReceiveStream.
   virtual void LogVideoReceiveStreamConfig(
       const webrtc::VideoReceiveStream::Config& config) = 0;
 
-  // Logs configuration information for webrtc::VideoSendStream
+  // Logs configuration information for webrtc::VideoSendStream.
   virtual void LogVideoSendStreamConfig(
       const webrtc::VideoSendStream::Config& config) = 0;
 
@@ -76,7 +87,7 @@ class RtcEventLog {
                              const uint8_t* packet,
                              size_t length) = 0;
 
-  // Logs an audio playout event
+  // Logs an audio playout event.
   virtual void LogAudioPlayout(uint32_t ssrc) = 0;
 
   // Logs a bitrate update from the bandwidth estimator based on packet loss.
@@ -86,6 +97,11 @@ class RtcEventLog {
 
   // Reads an RtcEventLog file and returns true when reading was successful.
   // The result is stored in the given EventStream object.
+  // The order of the events in the EventStream is implementation defined.
+  // The current implementation writes a LOG_START event, then the old
+  // configurations, then the remaining events in timestamp order and finally
+  // a LOG_END event. However, this might change without further notice.
+  // TODO(terelius): Change result type to a vector?
   static bool ParseRtcEventLog(const std::string& file_name,
                                rtclog::EventStream* result);
 };

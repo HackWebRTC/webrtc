@@ -21,12 +21,11 @@ namespace webrtc {
 
 class MockRtcEventLog : public RtcEventLog {
  public:
-  MOCK_METHOD1(SetBufferDuration, void(int64_t buffer_duration_us));
+  MOCK_METHOD2(StartLogging,
+               bool(const std::string& file_name, int64_t max_size_bytes));
 
   MOCK_METHOD2(StartLogging,
-               void(const std::string& file_name, int duration_ms));
-
-  MOCK_METHOD1(StartLogging, bool(rtc::PlatformFile log_file));
+               bool(rtc::PlatformFile log_file, int64_t max_size_bytes));
 
   MOCK_METHOD0(StopLogging, void());
 

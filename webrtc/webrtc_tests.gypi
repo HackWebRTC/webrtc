@@ -161,6 +161,7 @@
         'call/bitrate_estimator_tests.cc',
         'call/call_unittest.cc',
         'call/packet_injection_tests.cc',
+        'call/ringbuffer_unittest.cc',
         'test/common_unittest.cc',
         'test/testsupport/metrics/video_metrics_unittest.cc',
         'video/call_stats_unittest.cc',
