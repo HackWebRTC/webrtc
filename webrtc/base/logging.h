@@ -51,6 +51,10 @@
 #include <string>
 #include <utility>
 
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#include <CoreServices/CoreServices.h>
+#endif
+
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
@@ -79,6 +83,11 @@ struct ConstantLabel { int value; const char * label; };
 
 const char* FindLabel(int value, const ConstantLabel entries[]);
 std::string ErrorName(int err, const ConstantLabel* err_table);
+
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+// Returns a UTF8 description from an OS X Status error.
+std::string DescriptionFromOSStatus(OSStatus err);
+#endif
 
 //////////////////////////////////////////////////////////////////////
 

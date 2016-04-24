@@ -160,8 +160,19 @@
           'sources': [
             'logging.cc',
             'logging.h',
+            'logging_mac.mm',
           ],
         }],
+        ['OS=="mac" and build_with_chromium==0', {
+          'all_dependent_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                # needed for logging_mac.mm
+                '-framework Foundation',
+              ],
+            },
+          },
+        }], # OS=="mac" and build_with_chromium==0
       ],
     },
     {
