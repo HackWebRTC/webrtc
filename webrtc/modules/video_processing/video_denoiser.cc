@@ -207,6 +207,23 @@ void VideoDenoiser::CopySrcOnMOB(const uint8_t* y_src, uint8_t* y_dst) {
   }
 }
 
+void VideoDenoiser::CopyLumaOnMargin(const uint8_t* y_src, uint8_t* y_dst) {
+  if ((mb_rows_ << 4) != height_) {
+    const uint8_t* margin_y_src = y_src + (mb_rows_ << 4) * stride_y_;
+    uint8_t* margin_y_dst = y_dst + (mb_rows_ << 4) * stride_y_;
+    memcpy(margin_y_dst, margin_y_src, (height_ - (mb_rows_ << 4)) * stride_y_);
+  }
+  if ((mb_cols_ << 4) != width_) {
+    const uint8_t* margin_y_src = y_src + (mb_cols_ << 4);
+    uint8_t* margin_y_dst = y_dst + (mb_cols_ << 4);
+    for (int i = 0; i < height_; ++i) {
+      for (int j = mb_cols_ << 4; j < width_; ++j) {
+        margin_y_dst[i * stride_y_ + j] = margin_y_src[i * stride_y_ + j];
+      }
+    }
+  }
+}
+
 void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
                                  VideoFrame* denoised_frame,
                                  VideoFrame* denoised_frame_prev,
@@ -308,6 +325,11 @@ void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
   ReduceFalseDetection(moving_edge_, &moving_object_, noise_level);
 
   CopySrcOnMOB(y_src, y_dst);
+
+  // When frame width/height not divisible by 16, copy the margin to
+  // denoised_frame.
+  if ((mb_rows_ << 4) != height_ || (mb_cols_ << 4) != width_)
+    CopyLumaOnMargin(y_src, y_dst);
 
   // TODO(jackychen): Need SSE2/NEON opt.
   // Copy u/v planes.

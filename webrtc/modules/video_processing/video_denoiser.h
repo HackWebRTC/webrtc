@@ -52,6 +52,9 @@ class VideoDenoiser {
   // Copy input blocks to dst buffer on moving object blocks (MOB).
   void CopySrcOnMOB(const uint8_t* y_src, uint8_t* y_dst);
 
+  // Copy luma margin blocks when frame width/height not divisible by 16.
+  void CopyLumaOnMargin(const uint8_t* y_src, uint8_t* y_dst);
+
   int width_;
   int height_;
   int mb_rows_;
