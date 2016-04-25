@@ -68,17 +68,8 @@ class WebRtcVideoFrame : public VideoFrame {
   int width() const override;
   int height() const override;
 
-  const uint8_t* GetYPlane() const override;
-  const uint8_t* GetUPlane() const override;
-  const uint8_t* GetVPlane() const override;
-  uint8_t* GetYPlane() override;
-  uint8_t* GetUPlane() override;
-  uint8_t* GetVPlane() override;
-  int32_t GetYPitch() const override;
-  int32_t GetUPitch() const override;
-  int32_t GetVPitch() const override;
   void* GetNativeHandle() const override;
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer()
+  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& video_frame_buffer()
       const override;
 
   /* System monotonic clock */

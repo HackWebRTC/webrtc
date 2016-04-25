@@ -55,30 +55,39 @@
 }
 
 - (const uint8_t*)yPlane {
-  const cricket::VideoFrame* const_frame = _videoFrame.get();
-  return const_frame->GetYPlane();
+  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer =
+      _videoFrame->video_frame_buffer();
+  return buffer ? buffer->DataY() : nullptr;
 }
 
 - (const uint8_t*)uPlane {
-  const cricket::VideoFrame* const_frame = _videoFrame.get();
-  return const_frame->GetUPlane();
+  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer =
+      _videoFrame->video_frame_buffer();
+  return buffer ? buffer->DataU() : nullptr;
 }
 
 - (const uint8_t*)vPlane {
-  const cricket::VideoFrame* const_frame = _videoFrame.get();
-  return const_frame->GetVPlane();
+  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer =
+      _videoFrame->video_frame_buffer();
+  return buffer ? buffer->DataV() : nullptr;
 }
 
 - (NSInteger)yPitch {
-  return _videoFrame->GetYPitch();
+  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer =
+      _videoFrame->video_frame_buffer();
+  return buffer ? buffer->StrideY() : 0;
 }
 
 - (NSInteger)uPitch {
-  return _videoFrame->GetUPitch();
+  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer =
+      _videoFrame->video_frame_buffer();
+  return buffer ? buffer->StrideU() : 0;
 }
 
 - (NSInteger)vPitch {
-  return _videoFrame->GetVPitch();
+  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer =
+      _videoFrame->video_frame_buffer();
+  return buffer ? buffer->StrideV() : 0;
 }
 
 @end

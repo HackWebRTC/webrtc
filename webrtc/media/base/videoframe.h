@@ -35,18 +35,6 @@ class VideoFrame {
   virtual size_t GetWidth() const final { return width(); }
   virtual size_t GetHeight() const final { return height(); }
 
-  // These can return NULL if the object is not backed by a buffer.
-  virtual const uint8_t* GetYPlane() const = 0;
-  virtual const uint8_t* GetUPlane() const = 0;
-  virtual const uint8_t* GetVPlane() const = 0;
-  virtual uint8_t* GetYPlane() = 0;
-  virtual uint8_t* GetUPlane() = 0;
-  virtual uint8_t* GetVPlane() = 0;
-
-  virtual int32_t GetYPitch() const = 0;
-  virtual int32_t GetUPitch() const = 0;
-  virtual int32_t GetVPitch() const = 0;
-
   // Returns the handle of the underlying video frame. This is used when the
   // frame is backed by a texture. The object should be destroyed when it is no
   // longer in use, so the underlying resource can be freed.
@@ -54,8 +42,8 @@ class VideoFrame {
 
   // Returns the underlying video frame buffer. This function is ok to call
   // multiple times, but the returned object will refer to the same memory.
-  virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer()
-      const = 0;
+  virtual const rtc::scoped_refptr<webrtc::VideoFrameBuffer>&
+  video_frame_buffer() const = 0;
 
   // System monotonic clock, same timebase as rtc::TimeMicros().
   virtual int64_t timestamp_us() const = 0;
