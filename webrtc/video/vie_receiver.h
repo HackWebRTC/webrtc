@@ -21,19 +21,23 @@
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class FecReceiver;
+class PacedSender;
+class PacketRouter;
 class RemoteNtpTimeEstimator;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
+class RtcpRttStats;
 class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
-class RtpRtcp;
+class Transport;
 
 namespace vcm {
 class VideoReceiver;
@@ -43,7 +47,11 @@ class ViEReceiver : public RtpData {
  public:
   ViEReceiver(vcm::VideoReceiver* video_receiver,
               RemoteBitrateEstimator* remote_bitrate_estimator,
-              RtpFeedback* rtp_feedback);
+              RtpFeedback* rtp_feedback,
+              Transport* transport,
+              RtcpRttStats* rtt_stats,
+              PacedSender* paced_sender,
+              PacketRouter* packet_router);
   ~ViEReceiver();
 
   bool SetReceiveCodec(const VideoCodec& video_codec);
@@ -63,11 +71,12 @@ class ViEReceiver : public RtpData {
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;
 
-  void Init(RtpRtcp* rtp_rtcp);
-
   RtpReceiver* GetRtpReceiver() const;
+  RtpRtcp* rtp_rtcp() const { return rtp_rtcp_.get(); }
 
   void EnableReceiveRtpHeaderExtension(const std::string& extension, int id);
+  void RegisterRtcpPacketTypeCounterObserver(
+      RtcpPacketTypeCounterObserver* observer);
 
   void StartReceive();
   void StopReceive();
@@ -84,6 +93,41 @@ class ViEReceiver : public RtpData {
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
   ReceiveStatistics* GetReceiveStatistics() const;
+
+  template <class T>
+  class RegisterableCallback : public T {
+   public:
+    RegisterableCallback() : callback_(nullptr) {}
+
+    void Set(T* callback) {
+      rtc::CritScope lock(&critsect_);
+      callback_ = callback;
+    }
+
+   protected:
+    // Note: this should be implemented with a RW-lock to allow simultaneous
+    // calls into the callback. However that doesn't seem to be needed for the
+    // current type of callbacks covered by this class.
+    rtc::CriticalSection critsect_;
+    T* callback_ GUARDED_BY(critsect_);
+
+   private:
+    RTC_DISALLOW_COPY_AND_ASSIGN(RegisterableCallback);
+  };
+
+  class RegisterableRtcpPacketTypeCounterObserver
+      : public RegisterableCallback<RtcpPacketTypeCounterObserver> {
+   public:
+    void RtcpPacketTypesCounterUpdated(
+        uint32_t ssrc,
+        const RtcpPacketTypeCounter& packet_counter) override {
+      rtc::CritScope lock(&critsect_);
+      if (callback_)
+        callback_->RtcpPacketTypesCounterUpdated(ssrc, packet_counter);
+    }
+
+   private:
+  } rtcp_packet_type_counter_observer_;
 
  private:
   bool ReceivePacket(const uint8_t* packet,
@@ -103,9 +147,7 @@ class ViEReceiver : public RtpData {
   Clock* const clock_;
   vcm::VideoReceiver* const video_receiver_;
   RemoteBitrateEstimator* const remote_bitrate_estimator_;
-
-  // TODO(pbos): Make const and set on construction.
-  RtpRtcp* rtp_rtcp_;  // Owned by ViEChannel
+  PacketRouter* const packet_router_;
 
   RemoteNtpTimeEstimator ntp_estimator_;
   RTPPayloadRegistry rtp_payload_registry_;
@@ -120,6 +162,8 @@ class ViEReceiver : public RtpData {
   uint8_t restored_packet_[IP_PACKET_SIZE] GUARDED_BY(receive_cs_);
   bool restored_packet_in_use_ GUARDED_BY(receive_cs_);
   int64_t last_packet_log_ms_ GUARDED_BY(receive_cs_);
+
+  const std::unique_ptr<RtpRtcp> rtp_rtcp_;
 };
 
 }  // namespace webrtc

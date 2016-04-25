@@ -75,6 +75,8 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   int32_t Init();
 
+  RtpRtcp* rtp_rtcp() const { return rtp_rtcp_; }
+
   void SetProtectionMode(bool enable_nack,
                          bool enable_fec,
                          int payload_type_red,
@@ -92,7 +94,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override;
 
   // Gets the module used by the channel.
-  RtpRtcp* rtp_rtcp() const;
   ViEReceiver* vie_receiver();
 
   CallStatsObserver* GetStatsObserver();
@@ -153,47 +154,6 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Compute NACK list parameters for the buffering mode.
   int GetRequiredNackListSize(int target_delay_ms);
 
-  // ViEChannel exposes methods that allow to modify observers and callbacks
-  // to be modified. Such an API-style is cumbersome to implement and maintain
-  // at all the levels when comparing to only setting them at construction. As
-  // so this class instantiates its children with a wrapper that can be modified
-  // at a later time.
-  template <class T>
-  class RegisterableCallback : public T {
-   public:
-    RegisterableCallback() : callback_(nullptr) {}
-
-    void Set(T* callback) {
-      rtc::CritScope lock(&critsect_);
-      callback_ = callback;
-    }
-
-   protected:
-    // Note: this should be implemented with a RW-lock to allow simultaneous
-    // calls into the callback. However that doesn't seem to be needed for the
-    // current type of callbacks covered by this class.
-    rtc::CriticalSection critsect_;
-    T* callback_ GUARDED_BY(critsect_);
-
-   private:
-    RTC_DISALLOW_COPY_AND_ASSIGN(RegisterableCallback);
-  };
-
-  class RegisterableRtcpPacketTypeCounterObserver
-      : public RegisterableCallback<RtcpPacketTypeCounterObserver> {
-   public:
-    void RtcpPacketTypesCounterUpdated(
-        uint32_t ssrc,
-        const RtcpPacketTypeCounter& packet_counter) override {
-      rtc::CritScope lock(&critsect_);
-      if (callback_)
-        callback_->RtcpPacketTypesCounterUpdated(ssrc, packet_counter);
-    }
-
-   private:
-  } rtcp_packet_type_counter_observer_;
-
-
   ProcessThread* const module_process_thread_;
 
   // Used for all registered callbacks except rendering.
@@ -201,6 +161,7 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   vcm::VideoReceiver* const video_receiver_;
   ViEReceiver vie_receiver_;
+  RtpRtcp* const rtp_rtcp_;
 
   // Helper to report call statistics.
   std::unique_ptr<ChannelStatsObserver> stats_observer_;
@@ -209,17 +170,11 @@ class ViEChannel : public VCMFrameTypeCallback,
   ReceiveStatisticsProxy* receive_stats_callback_ GUARDED_BY(crit_);
   FrameCounts receive_frame_counts_ GUARDED_BY(crit_);
   IncomingVideoStream* incoming_video_stream_ GUARDED_BY(crit_);
-  RtcpRttStats* const rtt_stats_;
-  PacedSender* const paced_sender_;
-  PacketRouter* const packet_router_;
 
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_ GUARDED_BY(crit_);
 
   int64_t last_rtt_ms_ GUARDED_BY(crit_);
-
-  // RtpRtcp module, declared last as it use other members on construction.
-  const std::unique_ptr<RtpRtcp> rtp_rtcp_;
 };
 
 }  // namespace webrtc

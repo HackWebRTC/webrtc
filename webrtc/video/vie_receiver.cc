@@ -14,6 +14,7 @@
 
 #include "webrtc/base/logging.h"
 #include "webrtc/config.h"
+#include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
@@ -29,14 +30,54 @@
 
 namespace webrtc {
 
+std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
+    ReceiveStatistics* receive_statistics,
+    Transport* outgoing_transport,
+    RtcpRttStats* rtt_stats,
+    RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
+    RemoteBitrateEstimator* remote_bitrate_estimator,
+    RtpPacketSender* paced_sender,
+    TransportSequenceNumberAllocator* transport_sequence_number_allocator) {
+  RtpRtcp::Configuration configuration;
+  configuration.audio = false;
+  configuration.receiver_only = true;
+  configuration.receive_statistics = receive_statistics;
+  configuration.outgoing_transport = outgoing_transport;
+  configuration.intra_frame_callback = nullptr;
+  configuration.rtt_stats = rtt_stats;
+  configuration.rtcp_packet_type_counter_observer =
+      rtcp_packet_type_counter_observer;
+  configuration.paced_sender = paced_sender;
+  configuration.transport_sequence_number_allocator =
+      transport_sequence_number_allocator;
+  configuration.send_bitrate_observer = nullptr;
+  configuration.send_frame_count_observer = nullptr;
+  configuration.send_side_delay_observer = nullptr;
+  configuration.bandwidth_callback = nullptr;
+  configuration.transport_feedback_callback = nullptr;
+
+  std::unique_ptr<RtpRtcp> rtp_rtcp(RtpRtcp::CreateRtpRtcp(configuration));
+  rtp_rtcp->SetSendingStatus(false);
+  rtp_rtcp->SetSendingMediaStatus(false);
+  rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
+
+  return rtp_rtcp;
+}
+
+
 static const int kPacketLogIntervalMs = 10000;
 
 ViEReceiver::ViEReceiver(vcm::VideoReceiver* video_receiver,
                          RemoteBitrateEstimator* remote_bitrate_estimator,
-                         RtpFeedback* rtp_feedback)
+                         RtpFeedback* rtp_feedback,
+                         Transport* transport,
+                         RtcpRttStats* rtt_stats,
+                         PacedSender* paced_sender,
+                         PacketRouter* packet_router)
     : clock_(Clock::GetRealTimeClock()),
       video_receiver_(video_receiver),
       remote_bitrate_estimator_(remote_bitrate_estimator),
+      packet_router_(packet_router),
       ntp_estimator_(clock_),
       rtp_payload_registry_(RTPPayloadStrategy::CreateStrategy(false)),
       rtp_header_parser_(RtpHeaderParser::Create()),
@@ -48,9 +89,20 @@ ViEReceiver::ViEReceiver(vcm::VideoReceiver* video_receiver,
       fec_receiver_(FecReceiver::Create(this)),
       receiving_(false),
       restored_packet_in_use_(false),
-      last_packet_log_ms_(-1) {}
+      last_packet_log_ms_(-1),
+      rtp_rtcp_(CreateRtpRtcpModule(rtp_receive_statistics_.get(),
+                                    transport,
+                                    rtt_stats,
+                                    &rtcp_packet_type_counter_observer_,
+                                    remote_bitrate_estimator_,
+                                    paced_sender,
+                                    packet_router)) {
+  packet_router_->AddRtpModule(rtp_rtcp_.get());
+  rtp_rtcp_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
+}
 
 ViEReceiver::~ViEReceiver() {
+  packet_router_->RemoveRtpModule(rtp_rtcp_.get());
   UpdateHistograms();
 }
 
@@ -124,10 +176,6 @@ int ViEReceiver::GetCsrcs(uint32_t* csrcs) const {
   return rtp_receiver_->CSRCs(csrcs);
 }
 
-void ViEReceiver::Init(RtpRtcp* rtp_rtcp) {
-  rtp_rtcp_ = rtp_rtcp;
-}
-
 RtpReceiver* ViEReceiver::GetRtpReceiver() const {
   return rtp_receiver_.get();
 }
@@ -138,6 +186,12 @@ void ViEReceiver::EnableReceiveRtpHeaderExtension(const std::string& extension,
   RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
       StringToRtpExtensionType(extension), id));
 }
+
+void ViEReceiver::RegisterRtcpPacketTypeCounterObserver(
+    RtcpPacketTypeCounterObserver* observer) {
+  rtcp_packet_type_counter_observer_.Set(observer);
+}
+
 
 int32_t ViEReceiver::OnReceivedPayloadData(const uint8_t* payload_data,
                                            const size_t payload_size,
