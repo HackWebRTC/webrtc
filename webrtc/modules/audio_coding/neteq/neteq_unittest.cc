@@ -514,10 +514,11 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5820
 #if !defined(WEBRTC_IOS) && defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) && \
     (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) &&    \
     defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722) &&        \
-    !defined(WEBRTC_ARCH_ARM64)
+    !defined(WEBRTC_ARCH_ARM64) && !defined(UNDEFINED_SANITIZER)
 #define MAYBE_TestBitExactness TestBitExactness
 #else
 #define MAYBE_TestBitExactness DISABLED_TestBitExactness
@@ -552,9 +553,10 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
   }
 }
 
+// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5820
 #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID) &&             \
     defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                      \
-    defined(WEBRTC_CODEC_OPUS)
+    defined(WEBRTC_CODEC_OPUS) && !defined(UNDEFINED_SANITIZER)
 #define MAYBE_TestOpusBitExactness TestOpusBitExactness
 #else
 #define MAYBE_TestOpusBitExactness DISABLED_TestOpusBitExactness
