@@ -47,34 +47,29 @@ config("openssl_config") {
   ]
 }
 
-config("ios_config") {
-  libs = [
-    "AVFoundation.framework",
-    "CFNetwork.framework",
+config("rtc_base_all_dependent_config") {
+  if (is_ios) {
+    libs = [
+      "CFNetwork.framework",
 
-    #"Foundation.framework",  # Already included in //build/config:default_libs.
-    "Security.framework",
-    "SystemConfiguration.framework",
-
-    #"UIKit.framework",  # Already included in //build/config:default_libs.
-  ]
-}
-
-config("mac_config") {
-  libs = [
-    "Cocoa.framework",
-
-    #"Foundation.framework",  # Already included in //build/config:default_libs.
-    #"IOKit.framework",  # Already included in //build/config:default_libs.
-    #"Security.framework",  # Already included in //build/config:default_libs.
-    "SystemConfiguration.framework",
-  ]
-}
-
-config("mac_x86_config") {
-  libs = [
-    #"Carbon.framework",  # Already included in //build/config:default_libs.
-  ]
+      #"Foundation.framework",  # Already in //build/config:default_libs.
+      "Security.framework",
+      "SystemConfiguration.framework",
+      "UIKit.framework",  # Already in //build/config:default_libs.
+    ]
+  }
+  if (is_mac) {
+    libs = [
+      "Cocoa.framework",
+      "Foundation.framework",
+      "IOKit.framework",
+      "Security.framework",
+      "SystemConfiguration.framework",
+    ]
+    if (current_cpu == "x86") {
+      libs = [ "Carbon.framework" ]  # Already in //build/config:default_libs.
+    }
+  }
 }
 
 if (is_linux && !build_with_chromium) {
@@ -208,6 +203,8 @@ static_library("rtc_base") {
     ":openssl_config",
     ":rtc_base_config",
   ]
+
+  all_dependent_configs = [ ":rtc_base_all_dependent_config" ]
 
   defines = [ "LOGGING=1" ]
 
@@ -495,9 +492,6 @@ static_library("rtc_base") {
   }
 
   if (is_ios || is_mac) {
-    if (is_ios) {
-      all_dependent_configs = [ ":ios_config" ]
-    }
     sources += [
       "maccocoathreadhelper.h",
       "maccocoathreadhelper.mm",
@@ -536,12 +530,6 @@ static_library("rtc_base") {
       "macutils.cc",
       "macutils.h",
     ]
-
-    all_dependent_configs = [ ":mac_config" ]
-
-    if (current_cpu == "x86") {
-      all_dependent_configs += [ ":mac_x86_config" ]
-    }
   }
 
   if (is_win) {
