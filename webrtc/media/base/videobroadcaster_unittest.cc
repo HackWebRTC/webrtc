@@ -137,7 +137,7 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   cricket::WebRtcVideoFrame frame1;
   frame1.InitToBlack(100, 200, 10000 /*ts*/);
   // Make it not all-black
-  frame1.video_frame_buffer()->MutableDataU()[0] = 0;
+  frame1.GetUPlane()[0] = 0;
   broadcaster.OnFrame(frame1);
   EXPECT_TRUE(sink1.black_frame());
   EXPECT_EQ(10000, sink1.timestamp());
@@ -153,7 +153,7 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   cricket::WebRtcVideoFrame frame2;
   frame2.InitToBlack(100, 200, 30000 /*ts*/);
   // Make it not all-black
-  frame2.video_frame_buffer()->MutableDataU()[0] = 0;
+  frame2.GetUPlane()[0] = 0;
   broadcaster.OnFrame(frame2);
   EXPECT_FALSE(sink1.black_frame());
   EXPECT_EQ(30000, sink1.timestamp());

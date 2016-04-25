@@ -31,17 +31,15 @@ bool VideoFrame::CopyToPlanes(uint8_t* dst_y,
                               int32_t dst_pitch_y,
                               int32_t dst_pitch_u,
                               int32_t dst_pitch_v) const {
-  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer =
-      video_frame_buffer();
-  if (!buffer) {
-    LOG(LS_ERROR) << "NULL video buffer.";
+  if (!GetYPlane() || !GetUPlane() || !GetVPlane()) {
+    LOG(LS_ERROR) << "NULL plane pointer.";
     return false;
   }
   int32_t src_width = width();
   int32_t src_height = height();
-  return libyuv::I420Copy(buffer->DataY(), buffer->StrideY(),
-                          buffer->DataU(), buffer->StrideU(),
-                          buffer->DataV(), buffer->StrideV(),
+  return libyuv::I420Copy(GetYPlane(), GetYPitch(),
+                          GetUPlane(), GetUPitch(),
+                          GetVPlane(), GetVPitch(),
                           dst_y, dst_pitch_y,
                           dst_u, dst_pitch_u,
                           dst_v, dst_pitch_v,
@@ -58,11 +56,9 @@ size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
     return needed;
   }
 
-  if (libyuv::ConvertFromI420(
-          video_frame_buffer()->DataY(), video_frame_buffer()->StrideY(),
-          video_frame_buffer()->DataU(), video_frame_buffer()->StrideU(),
-          video_frame_buffer()->DataV(), video_frame_buffer()->StrideV(),
-          buffer, stride_rgb, width(), height(), to_fourcc)) {
+  if (libyuv::ConvertFromI420(GetYPlane(), GetYPitch(), GetUPlane(),
+                              GetUPitch(), GetVPlane(), GetVPitch(), buffer,
+                              stride_rgb, width(), height(), to_fourcc)) {
     LOG(LS_ERROR) << "RGB type not supported: " << to_fourcc;
     return 0;  // 0 indicates error
   }
@@ -82,8 +78,8 @@ void VideoFrame::StretchToPlanes(uint8_t* dst_y,
                                  size_t dst_height,
                                  bool interpolate,
                                  bool vert_crop) const {
-  if (!video_frame_buffer()) {
-    LOG(LS_ERROR) << "NULL frame buffer.";
+  if (!GetYPlane() || !GetUPlane() || !GetVPlane()) {
+    LOG(LS_ERROR) << "NULL plane pointer.";
     return;
   }
 
@@ -93,9 +89,9 @@ void VideoFrame::StretchToPlanes(uint8_t* dst_y,
     CopyToPlanes(dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v);
     return;
   }
-  const uint8_t* src_y = video_frame_buffer()->DataY();
-  const uint8_t* src_u = video_frame_buffer()->DataU();
-  const uint8_t* src_v = video_frame_buffer()->DataV();
+  const uint8_t* src_y = GetYPlane();
+  const uint8_t* src_u = GetUPlane();
+  const uint8_t* src_v = GetVPlane();
 
   if (vert_crop) {
     // Adjust the input width:height ratio to be the same as the output ratio.
@@ -112,16 +108,15 @@ void VideoFrame::StretchToPlanes(uint8_t* dst_y,
       int32_t iheight_offset =
           static_cast<int32_t>((height() - src_height) >> 2);
       iheight_offset <<= 1;  // Ensure that iheight_offset is even.
-      src_y += iheight_offset * video_frame_buffer()->StrideY();
-      src_u += iheight_offset / 2 * video_frame_buffer()->StrideU();
-      src_v += iheight_offset / 2 * video_frame_buffer()->StrideV();
+      src_y += iheight_offset * GetYPitch();
+      src_u += iheight_offset / 2 * GetUPitch();
+      src_v += iheight_offset / 2 * GetVPitch();
     }
   }
 
   // Scale to the output I420 frame.
-  libyuv::Scale(src_y, src_u, src_v, video_frame_buffer()->StrideY(),
-                video_frame_buffer()->StrideU(),
-                video_frame_buffer()->StrideV(),
+  libyuv::Scale(src_y, src_u, src_v,
+                GetYPitch(), GetUPitch(), GetVPitch(),
                 static_cast<int>(src_width), static_cast<int>(src_height),
                 dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v,
                 static_cast<int>(dst_width), static_cast<int>(dst_height),
@@ -135,12 +130,8 @@ void VideoFrame::StretchToFrame(VideoFrame* dst,
     return;
   }
 
-  StretchToPlanes(dst->video_frame_buffer()->MutableDataY(),
-                  dst->video_frame_buffer()->MutableDataU(),
-                  dst->video_frame_buffer()->MutableDataV(),
-                  dst->video_frame_buffer()->StrideY(),
-                  dst->video_frame_buffer()->StrideU(),
-                  dst->video_frame_buffer()->StrideV(),
+  StretchToPlanes(dst->GetYPlane(), dst->GetUPlane(), dst->GetVPlane(),
+                  dst->GetYPitch(), dst->GetUPitch(), dst->GetVPitch(),
                   dst->width(), dst->height(),
                   interpolate, vert_crop);
   dst->SetTimeStamp(GetTimeStamp());
@@ -160,12 +151,9 @@ VideoFrame* VideoFrame::Stretch(size_t dst_width, size_t dst_height,
 }
 
 bool VideoFrame::SetToBlack() {
-  return libyuv::I420Rect(video_frame_buffer()->MutableDataY(),
-                          video_frame_buffer()->StrideY(),
-                          video_frame_buffer()->MutableDataU(),
-                          video_frame_buffer()->StrideU(),
-                          video_frame_buffer()->MutableDataV(),
-                          video_frame_buffer()->StrideV(),
+  return libyuv::I420Rect(GetYPlane(), GetYPitch(),
+                          GetUPlane(), GetUPitch(),
+                          GetVPlane(), GetVPitch(),
                           0, 0,
                           width(), height(),
                           16, 128, 128) == 0;

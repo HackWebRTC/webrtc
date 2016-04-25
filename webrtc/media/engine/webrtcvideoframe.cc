@@ -79,6 +79,45 @@ int WebRtcVideoFrame::height() const {
   return video_frame_buffer_ ? video_frame_buffer_->height() : 0;
 }
 
+const uint8_t* WebRtcVideoFrame::GetYPlane() const {
+  return video_frame_buffer_ ? video_frame_buffer_->DataY() : nullptr;
+}
+
+const uint8_t* WebRtcVideoFrame::GetUPlane() const {
+  return video_frame_buffer_ ? video_frame_buffer_->DataU() : nullptr;
+}
+
+const uint8_t* WebRtcVideoFrame::GetVPlane() const {
+  return video_frame_buffer_ ? video_frame_buffer_->DataV() : nullptr;
+}
+
+uint8_t* WebRtcVideoFrame::GetYPlane() {
+  return video_frame_buffer_ ? video_frame_buffer_->MutableData(kYPlane)
+                             : nullptr;
+}
+
+uint8_t* WebRtcVideoFrame::GetUPlane() {
+  return video_frame_buffer_ ? video_frame_buffer_->MutableData(kUPlane)
+                             : nullptr;
+}
+
+uint8_t* WebRtcVideoFrame::GetVPlane() {
+  return video_frame_buffer_ ? video_frame_buffer_->MutableData(kVPlane)
+                             : nullptr;
+}
+
+int32_t WebRtcVideoFrame::GetYPitch() const {
+  return video_frame_buffer_ ? video_frame_buffer_->StrideY() : 0;
+}
+
+int32_t WebRtcVideoFrame::GetUPitch() const {
+  return video_frame_buffer_ ? video_frame_buffer_->StrideU() : 0;
+}
+
+int32_t WebRtcVideoFrame::GetVPitch() const {
+  return video_frame_buffer_ ? video_frame_buffer_->StrideV() : 0;
+}
+
 bool WebRtcVideoFrame::IsExclusive() const {
   return video_frame_buffer_->IsMutable();
 }
@@ -87,7 +126,7 @@ void* WebRtcVideoFrame::GetNativeHandle() const {
   return video_frame_buffer_ ? video_frame_buffer_->native_handle() : nullptr;
 }
 
-const rtc::scoped_refptr<webrtc::VideoFrameBuffer>&
+rtc::scoped_refptr<webrtc::VideoFrameBuffer>
 WebRtcVideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
@@ -142,12 +181,9 @@ bool WebRtcVideoFrame::Reset(uint32_t format,
   int idh = (h < 0) ? -dh : dh;
   int r = libyuv::ConvertToI420(
       sample, sample_size,
-      video_frame_buffer_->MutableDataY(),
-      video_frame_buffer_->StrideY(),
-      video_frame_buffer_->MutableDataU(),
-      video_frame_buffer_->StrideU(),
-      video_frame_buffer_->MutableDataV(),
-      video_frame_buffer_->StrideV(),
+      GetYPlane(), GetYPitch(),
+      GetUPlane(), GetUPitch(),
+      GetVPlane(), GetVPitch(),
       horiz_crop, vert_crop,
       w, h,
       dw, idh,
@@ -216,15 +252,10 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
   // TODO(guoweis): Add a function in webrtc_libyuv.cc to convert from
   // VideoRotation to libyuv::RotationMode.
   int ret = libyuv::I420Rotate(
-      video_frame_buffer_->DataY(), video_frame_buffer_->StrideY(),
-      video_frame_buffer_->DataU(), video_frame_buffer_->StrideU(),
-      video_frame_buffer_->DataV(), video_frame_buffer_->StrideV(),
-      rotated_frame_->video_frame_buffer()->MutableDataY(),
-      rotated_frame_->video_frame_buffer()->StrideY(),
-      rotated_frame_->video_frame_buffer()->MutableDataU(),
-      rotated_frame_->video_frame_buffer()->StrideU(),
-      rotated_frame_->video_frame_buffer()->MutableDataV(),
-      rotated_frame_->video_frame_buffer()->StrideV(),
+      GetYPlane(), GetYPitch(), GetUPlane(), GetUPitch(), GetVPlane(),
+      GetVPitch(), rotated_frame_->GetYPlane(), rotated_frame_->GetYPitch(),
+      rotated_frame_->GetUPlane(), rotated_frame_->GetUPitch(),
+      rotated_frame_->GetVPlane(), rotated_frame_->GetVPitch(),
       orig_width, orig_height,
       static_cast<libyuv::RotationMode>(rotation()));
   if (ret == 0) {
