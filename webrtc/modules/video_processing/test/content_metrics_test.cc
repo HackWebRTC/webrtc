@@ -18,9 +18,9 @@
 namespace webrtc {
 
 #if defined(WEBRTC_IOS)
-TEST_P(VideoProcessingTest, DISABLED_ContentAnalysis) {
+TEST_F(VideoProcessingTest, DISABLED_ContentAnalysis) {
 #else
-TEST_P(VideoProcessingTest, ContentAnalysis) {
+TEST_F(VideoProcessingTest, ContentAnalysis) {
 #endif
   VPMContentAnalysis ca__c(false);
   VPMContentAnalysis ca__sse(true);

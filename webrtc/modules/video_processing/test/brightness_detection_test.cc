@@ -21,7 +21,7 @@ namespace webrtc {
 #else
 #define MAYBE_BrightnessDetection BrightnessDetection
 #endif
-TEST_P(VideoProcessingTest, MAYBE_BrightnessDetection) {
+TEST_F(VideoProcessingTest, MAYBE_BrightnessDetection) {
   uint32_t frameNum = 0;
   int32_t brightnessWarning = 0;
   uint32_t warningCount = 0;

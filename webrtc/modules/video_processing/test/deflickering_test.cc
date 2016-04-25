@@ -22,9 +22,9 @@
 namespace webrtc {
 
 #if defined(WEBRTC_IOS)
-TEST_P(VideoProcessingTest, DISABLED_Deflickering) {
+TEST_F(VideoProcessingTest, DISABLED_Deflickering) {
 #else
-TEST_P(VideoProcessingTest, Deflickering) {
+TEST_F(VideoProcessingTest, Deflickering) {
 #endif
   enum { NumRuns = 30 };
   uint32_t frameNum = 0;

@@ -20,27 +20,26 @@
 
 namespace webrtc {
 
-typedef struct {
-  std::string file_name;
-  int width;
-  int height;
-} VideoToTest;
-
-class VideoProcessingTest : public ::testing::TestWithParam<VideoToTest> {
+class VideoProcessingTest : public ::testing::Test {
  protected:
   VideoProcessingTest();
   virtual void SetUp();
   virtual void TearDown();
+  static void SetUpTestCase() {
+    Trace::CreateTrace();
+    std::string trace_file = webrtc::test::OutputPath() + "VPMTrace.txt";
+    ASSERT_EQ(0, Trace::SetTraceFile(trace_file.c_str()));
+  }
+  static void TearDownTestCase() { Trace::ReturnTrace(); }
   VideoProcessing* vp_;
   FILE* source_file_;
   VideoFrame video_frame_;
-  VideoToTest vtt_;
-  int width_;
-  int half_width_;
-  int height_;
-  int size_y_;
-  int size_uv_;
-  size_t frame_length_;
+  const int width_;
+  const int half_width_;
+  const int height_;
+  const int size_y_;
+  const int size_uv_;
+  const size_t frame_length_;
 };
 
 }  // namespace webrtc
