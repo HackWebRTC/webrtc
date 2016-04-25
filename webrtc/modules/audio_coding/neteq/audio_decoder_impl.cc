@@ -13,7 +13,6 @@
 #include <assert.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"
@@ -35,43 +34,6 @@
 #include "webrtc/modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
 
 namespace webrtc {
-
-AudioDecoderCng::AudioDecoderCng() {
-  RTC_CHECK_EQ(0, WebRtcCng_CreateDec(&dec_state_));
-  WebRtcCng_InitDec(dec_state_);
-}
-
-AudioDecoderCng::~AudioDecoderCng() {
-  WebRtcCng_FreeDec(dec_state_);
-}
-
-void AudioDecoderCng::Reset() {
-  WebRtcCng_InitDec(dec_state_);
-}
-
-int AudioDecoderCng::IncomingPacket(const uint8_t* payload,
-                                    size_t payload_len,
-                                    uint16_t rtp_sequence_number,
-                                    uint32_t rtp_timestamp,
-                                    uint32_t arrival_timestamp) {
-  return -1;
-}
-
-CNG_dec_inst* AudioDecoderCng::CngDecoderInstance() {
-  return dec_state_;
-}
-
-size_t AudioDecoderCng::Channels() const {
-  return 1;
-}
-
-int AudioDecoderCng::DecodeInternal(const uint8_t* encoded,
-                                    size_t encoded_len,
-                                    int sample_rate_hz,
-                                    int16_t* decoded,
-                                    SpeechType* speech_type) {
-  return -1;
-}
 
 bool CodecSupported(NetEqDecoder codec_type) {
   switch (codec_type) {
@@ -228,7 +190,7 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
     case NetEqDecoder::kDecoderCNGwb:
     case NetEqDecoder::kDecoderCNGswb32kHz:
     case NetEqDecoder::kDecoderCNGswb48kHz:
-      return new AudioDecoderCng;
+      RTC_CHECK(false) << "CNG should not be created like this anymore!";
     case NetEqDecoder::kDecoderRED:
     case NetEqDecoder::kDecoderAVT:
     case NetEqDecoder::kDecoderArbitrary:

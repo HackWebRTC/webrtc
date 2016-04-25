@@ -21,19 +21,6 @@ namespace {
 
 const int kMaxFrameSizeMs = 60;
 
-std::unique_ptr<CNG_enc_inst, CngInstDeleter> CreateCngInst(
-    int sample_rate_hz,
-    int sid_frame_interval_ms,
-    int num_cng_coefficients) {
-  CNG_enc_inst* ci;
-  RTC_CHECK_EQ(0, WebRtcCng_CreateEnc(&ci));
-  std::unique_ptr<CNG_enc_inst, CngInstDeleter> cng_inst(ci);
-  RTC_CHECK_EQ(0,
-               WebRtcCng_InitEnc(cng_inst.get(), sample_rate_hz,
-                                 sid_frame_interval_ms, num_cng_coefficients));
-  return cng_inst;
-}
-
 }  // namespace
 
 AudioEncoderCng::Config::Config() = default;
@@ -65,9 +52,10 @@ AudioEncoderCng::AudioEncoderCng(Config&& config)
       sid_frame_interval_ms_(config.sid_frame_interval_ms),
       last_frame_active_(true),
       vad_(config.vad ? std::unique_ptr<Vad>(config.vad)
-                      : CreateVad(config.vad_mode)) {
-  cng_inst_ = CreateCngInst(SampleRateHz(), sid_frame_interval_ms_,
-                            num_cng_coefficients_);
+           : CreateVad(config.vad_mode)),
+      cng_encoder_(new ComfortNoiseEncoder(SampleRateHz(),
+                                           sid_frame_interval_ms_,
+                                           num_cng_coefficients_)) {
 }
 
 AudioEncoderCng::~AudioEncoderCng() = default;
@@ -170,8 +158,9 @@ void AudioEncoderCng::Reset() {
   rtp_timestamps_.clear();
   last_frame_active_ = true;
   vad_->Reset();
-  cng_inst_ = CreateCngInst(SampleRateHz(), sid_frame_interval_ms_,
-                            num_cng_coefficients_);
+  cng_encoder_.reset(
+      new ComfortNoiseEncoder(SampleRateHz(), sid_frame_interval_ms_,
+                              num_cng_coefficients_));
 }
 
 bool AudioEncoderCng::SetFec(bool enable) {
@@ -204,32 +193,27 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
   bool force_sid = last_frame_active_;
   bool output_produced = false;
   const size_t samples_per_10ms_frame = SamplesPer10msFrame();
-  const size_t bytes_to_encode = frames_to_encode * samples_per_10ms_frame;
   AudioEncoder::EncodedInfo info;
 
-  encoded->AppendData(bytes_to_encode, [&] (rtc::ArrayView<uint8_t> encoded) {
-      for (size_t i = 0; i < frames_to_encode; ++i) {
-        // It's important not to pass &info.encoded_bytes directly to
-        // WebRtcCng_Encode(), since later loop iterations may return zero in
-        // that value, in which case we don't want to overwrite any value from
-        // an earlier iteration.
-        size_t encoded_bytes_tmp = 0;
-        RTC_CHECK_GE(
-            WebRtcCng_Encode(cng_inst_.get(),
-                             &speech_buffer_[i * samples_per_10ms_frame],
-                             samples_per_10ms_frame, encoded.data(),
-                             &encoded_bytes_tmp, force_sid),
-            0);
-        if (encoded_bytes_tmp > 0) {
-          RTC_CHECK(!output_produced);
-          info.encoded_bytes = encoded_bytes_tmp;
-          output_produced = true;
-          force_sid = false;
-        }
-      }
+  for (size_t i = 0; i < frames_to_encode; ++i) {
+    // It's important not to pass &info.encoded_bytes directly to
+    // WebRtcCng_Encode(), since later loop iterations may return zero in
+    // that value, in which case we don't want to overwrite any value from
+    // an earlier iteration.
+    size_t encoded_bytes_tmp =
+        cng_encoder_->Encode(
+            rtc::ArrayView<const int16_t>(
+                &speech_buffer_[i * samples_per_10ms_frame],
+                samples_per_10ms_frame),
+            force_sid, encoded);
 
-      return info.encoded_bytes;
-    });
+    if (encoded_bytes_tmp > 0) {
+      RTC_CHECK(!output_produced);
+      info.encoded_bytes = encoded_bytes_tmp;
+      output_produced = true;
+      force_sid = false;
+    }
+  }
 
   info.encoded_timestamp = rtp_timestamps_.front();
   info.payload_type = cng_payload_type_;

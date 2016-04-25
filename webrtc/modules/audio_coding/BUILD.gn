@@ -147,9 +147,7 @@ source_set("cng") {
   sources = [
     "codecs/cng/audio_encoder_cng.cc",
     "codecs/cng/audio_encoder_cng.h",
-    "codecs/cng/cng_helpfuns.c",
-    "codecs/cng/cng_helpfuns.h",
-    "codecs/cng/webrtc_cng.c",
+    "codecs/cng/webrtc_cng.cc",
     "codecs/cng/webrtc_cng.h",
   ]
 

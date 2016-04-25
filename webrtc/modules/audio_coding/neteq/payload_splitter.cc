@@ -143,8 +143,9 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
 
     // Not an FEC packet.
     AudioDecoder* decoder = decoder_database->GetDecoder(payload_type);
-    // decoder should not return NULL.
-    assert(decoder != NULL);
+    // decoder should not return NULL, except for comfort noise payloads which
+    // are handled separately.
+    assert(decoder != NULL || decoder_database->IsComfortNoise(payload_type));
     if (!decoder ||
         !decoder->PacketHasFec(packet->payload, packet->payload_length)) {
       ++it;

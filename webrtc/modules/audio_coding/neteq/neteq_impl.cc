@@ -14,6 +14,7 @@
 #include <memory.h>  // memset
 
 #include <algorithm>
+#include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -664,13 +665,15 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     }
   }
 
-  // Update bandwidth estimate, if the packet is not sync-packet.
-  if (!packet_list.empty() && !packet_list.front()->sync_packet) {
+  // Update bandwidth estimate, if the packet is not sync-packet nor comfort
+  // noise.
+  if (!packet_list.empty() && !packet_list.front()->sync_packet &&
+      !decoder_database_->IsComfortNoise(main_header.payloadType)) {
     // The list can be empty here if we got nothing but DTMF payloads.
     AudioDecoder* decoder =
         decoder_database_->GetDecoder(main_header.payloadType);
     assert(decoder);  // Should always get a valid object, since we have
-                      // already checked that the payload types are known.
+    // already checked that the payload types are known.
     decoder->IncomingPacket(packet_list.front()->payload,
                             packet_list.front()->payload_length,
                             packet_list.front()->header.sequenceNumber,
@@ -728,14 +731,18 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     const RTPHeader* rtp_header = packet_buffer_->NextRtpHeader();
     assert(rtp_header);
     int payload_type = rtp_header->payloadType;
-    AudioDecoder* decoder = decoder_database_->GetDecoder(payload_type);
-    assert(decoder);  // Payloads are already checked to be valid.
+    size_t channels = 1;
+    if (!decoder_database_->IsComfortNoise(payload_type)) {
+      AudioDecoder* decoder = decoder_database_->GetDecoder(payload_type);
+      assert(decoder);  // Payloads are already checked to be valid.
+      channels = decoder->Channels();
+    }
     const DecoderDatabase::DecoderInfo* decoder_info =
         decoder_database_->GetDecoderInfo(payload_type);
     assert(decoder_info);
     if (decoder_info->fs_hz != fs_hz_ ||
-        decoder->Channels() != algorithm_buffer_->Channels()) {
-      SetSampleRateAndChannels(decoder_info->fs_hz, decoder->Channels());
+        channels != algorithm_buffer_->Channels()) {
+      SetSampleRateAndChannels(decoder_info->fs_hz, channels);
     }
     if (nack_enabled_) {
       RTC_DCHECK(nack_);
@@ -1297,7 +1304,7 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
       decoder->Reset();
 
     // Reset comfort noise decoder.
-    AudioDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
+    ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
     if (cng_decoder)
       cng_decoder->Reset();
 
@@ -1955,7 +1962,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
           stats_.SecondaryDecodedSamples(packet_duration);
         }
       }
-    } else {
+    } else if (!decoder_database_->IsComfortNoise(packet->header.payloadType)) {
       LOG(LS_WARNING) << "Unknown payload type "
                       << static_cast<int>(packet->header.payloadType);
       assert(false);
@@ -2023,7 +2030,7 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
     mute_factor_array_[i] = 16384;  // 1.0 in Q14.
   }
 
-  AudioDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
+  ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
   if (cng_decoder)
     cng_decoder->Reset();
 

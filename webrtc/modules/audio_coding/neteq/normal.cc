@@ -16,7 +16,6 @@
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
@@ -149,12 +148,11 @@ int Normal::Process(const int16_t* input,
     int16_t cng_output[kCngLength];
     // Reset mute factor and start up fresh.
     external_mute_factor_array[0] = 16384;
-    AudioDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
+    ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
 
     if (cng_decoder) {
       // Generate long enough for 32kHz.
-      if (WebRtcCng_Generate(cng_decoder->CngDecoderInstance(), cng_output,
-                             kCngLength, 0) < 0) {
+      if (!cng_decoder->Generate(cng_output, 0)) {
         // Error returned; set return vector to all zeros.
         memset(cng_output, 0, sizeof(cng_output));
       }

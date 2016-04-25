@@ -38,8 +38,7 @@ class ComfortNoise {
         first_call_(true),
         overlap_length_(5 * fs_hz_ / 8000),
         decoder_database_(decoder_database),
-        sync_buffer_(sync_buffer),
-        internal_error_code_(0) {
+        sync_buffer_(sync_buffer) {
   }
 
   // Resets the state. Should be called before each new comfort noise period.

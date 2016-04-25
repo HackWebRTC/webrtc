@@ -82,11 +82,6 @@ bool AudioDecoder::PacketHasFec(const uint8_t* encoded,
   return false;
 }
 
-CNG_dec_inst* AudioDecoder::CngDecoderInstance() {
-  FATAL() << "Not a CNG decoder";
-  return NULL;
-}
-
 AudioDecoder::SpeechType AudioDecoder::ConvertSpeechType(int16_t type) {
   switch (type) {
     case 0:  // TODO(hlundin): Both iSAC and Opus return 0 for speech.

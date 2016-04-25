@@ -231,8 +231,8 @@ TEST(DecoderDatabase, IF_ISAC(ActiveDecoders)) {
 
   // Set active CNG codec.
   EXPECT_EQ(DecoderDatabase::kOK, db.SetActiveCngDecoder(13));
-  decoder = db.GetActiveCngDecoder();
-  ASSERT_FALSE(decoder == NULL);  // Should get a decoder here.
+  ComfortNoiseDecoder* cng = db.GetActiveCngDecoder();
+  ASSERT_FALSE(cng == NULL);  // Should get a decoder here.
 
   // Remove the active CNG decoder, and verify that the active becomes NULL.
   EXPECT_EQ(DecoderDatabase::kOK, db.Remove(13));

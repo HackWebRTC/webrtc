@@ -16,6 +16,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"  // NULL
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 #include "webrtc/typedefs.h"
@@ -142,7 +143,7 @@ class DecoderDatabase {
 
   // Returns the current active comfort noise decoder, or NULL if no active
   // comfort noise decoder exists.
-  virtual AudioDecoder* GetActiveCngDecoder();
+  virtual ComfortNoiseDecoder* GetActiveCngDecoder();
 
   // Returns kOK if all packets in |packet_list| carry payload types that are
   // registered in the database. Otherwise, returns kDecoderNotFound.
@@ -152,8 +153,9 @@ class DecoderDatabase {
   typedef std::map<uint8_t, DecoderInfo> DecoderMap;
 
   DecoderMap decoders_;
-  int active_decoder_;
-  int active_cng_decoder_;
+  int active_decoder_type_;
+  int active_cng_decoder_type_;
+  std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
 };
