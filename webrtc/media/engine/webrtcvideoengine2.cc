@@ -630,12 +630,19 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
   std::vector<VideoCodec> supported_codecs = DefaultVideoCodecList();
 
   if (external_encoder_factory_ == NULL) {
+    LOG(LS_INFO) << "Supported codecs: "
+                 << CodecVectorToString(supported_codecs);
     return supported_codecs;
   }
 
+  std::stringstream out;
   const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
       external_encoder_factory_->codecs();
   for (size_t i = 0; i < codecs.size(); ++i) {
+    out << codecs[i].name;
+    if (i != codecs.size() - 1) {
+      out << ", ";
+    }
     // Don't add internally-supported codecs twice.
     if (CodecIsInternallySupported(codecs[i].name)) {
       continue;
@@ -653,6 +660,10 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
     AddDefaultFeedbackParams(&codec);
     supported_codecs.push_back(codec);
   }
+  LOG(LS_INFO) << "Supported codecs (incl. external codecs): "
+               << CodecVectorToString(supported_codecs);
+  LOG(LS_INFO) << "Codecs supported by the external encoder factory: "
+               << out.str();
   return supported_codecs;
 }
 
