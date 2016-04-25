@@ -59,9 +59,10 @@ static void WriteProcessedFrameForVisualInspection(const VideoFrame& source,
 VideoProcessingTest::VideoProcessingTest()
     : vp_(NULL),
       source_file_(NULL),
-      width_(352),
+      vtt_(GetParam()),
+      width_(vtt_.width),
       half_width_((width_ + 1) / 2),
-      height_(288),
+      height_(vtt_.height),
       size_y_(width_ * height_),
       size_uv_(half_width_ * ((height_ + 1) / 2)),
       frame_length_(CalcBufferSize(kI420, width_, height_)) {}
@@ -69,18 +70,15 @@ VideoProcessingTest::VideoProcessingTest()
 void VideoProcessingTest::SetUp() {
   vp_ = VideoProcessing::Create();
   ASSERT_TRUE(vp_ != NULL);
-
   video_frame_.CreateEmptyFrame(width_, height_, width_,
                                 half_width_, half_width_);
   // Clear video frame so DrMemory/Valgrind will allow reads of the buffer.
   memset(video_frame_.buffer(kYPlane), 0, video_frame_.allocated_size(kYPlane));
   memset(video_frame_.buffer(kUPlane), 0, video_frame_.allocated_size(kUPlane));
   memset(video_frame_.buffer(kVPlane), 0, video_frame_.allocated_size(kVPlane));
-  const std::string video_file =
-      webrtc::test::ResourcePath("foreman_cif", "yuv");
-  source_file_ = fopen(video_file.c_str(), "rb");
+  source_file_ = fopen(vtt_.file_name.c_str(), "rb");
   ASSERT_TRUE(source_file_ != NULL)
-      << "Cannot read source file: " + video_file + "\n";
+      << "Cannot read source file: " + vtt_.file_name + "\n";
 }
 
 void VideoProcessingTest::TearDown() {
@@ -93,9 +91,9 @@ void VideoProcessingTest::TearDown() {
 }
 
 #if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_HandleNullBuffer) {
+TEST_P(VideoProcessingTest, DISABLED_HandleNullBuffer) {
 #else
-TEST_F(VideoProcessingTest, HandleNullBuffer) {
+TEST_P(VideoProcessingTest, HandleNullBuffer) {
 #endif
   // TODO(mikhal/stefan): Do we need this one?
   VideoProcessing::FrameStats stats;
@@ -111,9 +109,9 @@ TEST_F(VideoProcessingTest, HandleNullBuffer) {
 }
 
 #if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_HandleBadStats) {
+TEST_P(VideoProcessingTest, DISABLED_HandleBadStats) {
 #else
-TEST_F(VideoProcessingTest, HandleBadStats) {
+TEST_P(VideoProcessingTest, HandleBadStats) {
 #endif
   VideoProcessing::FrameStats stats;
   vp_->ClearFrameStats(&stats);
@@ -129,9 +127,9 @@ TEST_F(VideoProcessingTest, HandleBadStats) {
 }
 
 #if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_IdenticalResultsAfterReset) {
+TEST_P(VideoProcessingTest, DISABLED_IdenticalResultsAfterReset) {
 #else
-TEST_F(VideoProcessingTest, IdenticalResultsAfterReset) {
+TEST_P(VideoProcessingTest, IdenticalResultsAfterReset) {
 #endif
   VideoFrame video_frame2;
   VideoProcessing::FrameStats stats;
@@ -166,9 +164,9 @@ TEST_F(VideoProcessingTest, IdenticalResultsAfterReset) {
 }
 
 #if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_FrameStats) {
+TEST_P(VideoProcessingTest, DISABLED_FrameStats) {
 #else
-TEST_F(VideoProcessingTest, FrameStats) {
+TEST_P(VideoProcessingTest, FrameStats) {
 #endif
   VideoProcessing::FrameStats stats;
   vp_->ClearFrameStats(&stats);
@@ -195,9 +193,9 @@ TEST_F(VideoProcessingTest, FrameStats) {
 }
 
 #if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_PreprocessorLogic) {
+TEST_P(VideoProcessingTest, DISABLED_PreprocessorLogic) {
 #else
-TEST_F(VideoProcessingTest, PreprocessorLogic) {
+TEST_P(VideoProcessingTest, PreprocessorLogic) {
 #endif
   // Disable temporal sampling (frame dropping).
   vp_->EnableTemporalDecimation(false);
@@ -218,9 +216,9 @@ TEST_F(VideoProcessingTest, PreprocessorLogic) {
 }
 
 #if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_Resampler) {
+TEST_P(VideoProcessingTest, DISABLED_Resampler) {
 #else
-TEST_F(VideoProcessingTest, Resampler) {
+TEST_P(VideoProcessingTest, Resampler) {
 #endif
   enum { NumRuns = 1 };
 
@@ -306,6 +304,12 @@ TEST_F(VideoProcessingTest, Resampler) {
          static_cast<int>(total_runtime));
   printf("Min run time = %d us / frame\n\n", static_cast<int>(min_runtime));
 }
+
+INSTANTIATE_TEST_CASE_P(ForemanCif,
+                        VideoProcessingTest,
+                        ::testing::Values(VideoToTest(
+                            {webrtc::test::ResourcePath("foreman_cif", "yuv"),
+                             352, 288})));
 
 void PreprocessFrameAndVerify(const VideoFrame& source,
                               int target_width,

@@ -20,7 +20,7 @@
 
 namespace webrtc {
 
-TEST_F(VideoProcessingTest, CopyMem) {
+TEST_P(VideoProcessingTest, CopyMem) {
   std::unique_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false, nullptr));
   std::unique_ptr<DenoiserFilter> df_sse_neon(
       DenoiserFilter::Create(true, nullptr));
@@ -40,7 +40,7 @@ TEST_F(VideoProcessingTest, CopyMem) {
   EXPECT_EQ(0, memcmp(src, dst, 16 * 16));
 }
 
-TEST_F(VideoProcessingTest, Variance) {
+TEST_P(VideoProcessingTest, Variance) {
   std::unique_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false, nullptr));
   std::unique_ptr<DenoiserFilter> df_sse_neon(
       DenoiserFilter::Create(true, nullptr));
@@ -64,7 +64,7 @@ TEST_F(VideoProcessingTest, Variance) {
   EXPECT_EQ(var, df_sse_neon->Variance16x8(src, 16, dst, 16, &sse));
 }
 
-TEST_F(VideoProcessingTest, MbDenoise) {
+TEST_P(VideoProcessingTest, MbDenoise) {
   std::unique_ptr<DenoiserFilter> df_c(DenoiserFilter::Create(false, nullptr));
   std::unique_ptr<DenoiserFilter> df_sse_neon(
       DenoiserFilter::Create(true, nullptr));
@@ -125,7 +125,7 @@ TEST_F(VideoProcessingTest, MbDenoise) {
   EXPECT_EQ(COPY_BLOCK, decision);
 }
 
-TEST_F(VideoProcessingTest, Denoiser) {
+TEST_P(VideoProcessingTest, Denoiser) {
   // Used in swap buffer.
   int denoised_frame_toggle = 0;
   // Create pure C denoiser.
