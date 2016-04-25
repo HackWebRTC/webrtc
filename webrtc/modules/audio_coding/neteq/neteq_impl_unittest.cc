@@ -57,6 +57,7 @@ class NetEqImplTest : public ::testing::Test {
   NetEqImplTest()
       : neteq_(NULL),
         config_(),
+        tick_timer_(new TickTimer),
         mock_buffer_level_filter_(NULL),
         buffer_level_filter_(NULL),
         use_mock_buffer_level_filter_(true),
@@ -146,19 +147,12 @@ class NetEqImplTest : public ::testing::Test {
     PreemptiveExpandFactory* preemptive_expand_factory =
         new PreemptiveExpandFactory;
 
-    neteq_ = new NetEqImpl(config_,
-                           buffer_level_filter_,
-                           decoder_database_,
-                           delay_manager_,
-                           delay_peak_detector_,
-                           dtmf_buffer_,
-                           dtmf_tone_generator_,
-                           packet_buffer_,
-                           payload_splitter_,
-                           timestamp_scaler_,
-                           accelerate_factory,
-                           expand_factory,
-                           preemptive_expand_factory);
+    neteq_ = new NetEqImpl(
+        config_, std::unique_ptr<TickTimer>(tick_timer_), buffer_level_filter_,
+        decoder_database_, delay_manager_, delay_peak_detector_, dtmf_buffer_,
+        dtmf_tone_generator_, packet_buffer_, payload_splitter_,
+        timestamp_scaler_, accelerate_factory, expand_factory,
+        preemptive_expand_factory);
     ASSERT_TRUE(neteq_ != NULL);
   }
 
@@ -201,6 +195,7 @@ class NetEqImplTest : public ::testing::Test {
 
   NetEqImpl* neteq_;
   NetEq::Config config_;
+  TickTimer* tick_timer_;
   MockBufferLevelFilter* mock_buffer_level_filter_;
   BufferLevelFilter* buffer_level_filter_;
   bool use_mock_buffer_level_filter_;
@@ -1196,6 +1191,16 @@ TEST_F(NetEqImplTest, InitialLastOutputSampleRate) {
   config_.sample_rate_hz = 48000;
   CreateInstance();
   EXPECT_EQ(48000, neteq_->last_output_sample_rate_hz());
+}
+
+TEST_F(NetEqImplTest, TickTimerIncrement) {
+  UseNoMocks();
+  CreateInstance();
+  ASSERT_TRUE(tick_timer_);
+  EXPECT_EQ(0u, tick_timer_->ticks());
+  AudioFrame output;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  EXPECT_EQ(1u, tick_timer_->ticks());
 }
 
 }// namespace webrtc

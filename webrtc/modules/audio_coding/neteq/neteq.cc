@@ -24,6 +24,7 @@
 #include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/payload_splitter.h"
 #include "webrtc/modules/audio_coding/neteq/preemptive_expand.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
 
 namespace webrtc {
@@ -44,6 +45,7 @@ std::string NetEq::Config::ToString() const {
 // Creates all classes needed and inject them into a new NetEqImpl object.
 // Return the new object.
 NetEq* NetEq::Create(const NetEq::Config& config) {
+  std::unique_ptr<TickTimer> tick_timer(new TickTimer);
   BufferLevelFilter* buffer_level_filter = new BufferLevelFilter;
   DecoderDatabase* decoder_database = new DecoderDatabase;
   DelayPeakDetector* delay_peak_detector = new DelayPeakDetector;
@@ -59,19 +61,11 @@ NetEq* NetEq::Create(const NetEq::Config& config) {
   ExpandFactory* expand_factory = new ExpandFactory;
   PreemptiveExpandFactory* preemptive_expand_factory =
       new PreemptiveExpandFactory;
-  return new NetEqImpl(config,
-                       buffer_level_filter,
-                       decoder_database,
-                       delay_manager,
-                       delay_peak_detector,
-                       dtmf_buffer,
-                       dtmf_tone_generator,
-                       packet_buffer,
-                       payload_splitter,
-                       timestamp_scaler,
-                       accelerate_factory,
-                       expand_factory,
-                       preemptive_expand_factory);
+  return new NetEqImpl(config, std::move(tick_timer), buffer_level_filter,
+                       decoder_database, delay_manager, delay_peak_detector,
+                       dtmf_buffer, dtmf_tone_generator, packet_buffer,
+                       payload_splitter, timestamp_scaler, accelerate_factory,
+                       expand_factory, preemptive_expand_factory);
 }
 
 }  // namespace webrtc

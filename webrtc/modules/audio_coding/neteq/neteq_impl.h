@@ -24,6 +24,7 @@
 #include "webrtc/modules/audio_coding/neteq/random_vector.h"
 #include "webrtc/modules/audio_coding/neteq/rtcp.h"
 #include "webrtc/modules/audio_coding/neteq/statistics_calculator.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -68,6 +69,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Creates a new NetEqImpl object. The object will assume ownership of all
   // injected dependencies, and will delete them when done.
   NetEqImpl(const NetEq::Config& config,
+            std::unique_ptr<TickTimer> tick_timer,
             BufferLevelFilter* buffer_level_filter,
             DecoderDatabase* decoder_database,
             DelayManager* delay_manager,
@@ -328,6 +330,7 @@ class NetEqImpl : public webrtc::NetEq {
   virtual void CreateDecisionLogic() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   rtc::CriticalSection crit_sect_;
+  const std::unique_ptr<TickTimer> tick_timer_ GUARDED_BY(crit_sect_);
   const std::unique_ptr<BufferLevelFilter> buffer_level_filter_
       GUARDED_BY(crit_sect_);
   const std::unique_ptr<DecoderDatabase> decoder_database_

@@ -43,6 +43,7 @@
 #include "webrtc/modules/audio_coding/neteq/post_decode_vad.h"
 #include "webrtc/modules/audio_coding/neteq/preemptive_expand.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
 #include "webrtc/modules/include/module_common_types.h"
 
@@ -54,6 +55,7 @@
 namespace webrtc {
 
 NetEqImpl::NetEqImpl(const NetEq::Config& config,
+                     std::unique_ptr<TickTimer> tick_timer,
                      BufferLevelFilter* buffer_level_filter,
                      DecoderDatabase* decoder_database,
                      DelayManager* delay_manager,
@@ -67,7 +69,8 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
                      ExpandFactory* expand_factory,
                      PreemptiveExpandFactory* preemptive_expand_factory,
                      bool create_components)
-    : buffer_level_filter_(buffer_level_filter),
+    : tick_timer_(std::move(tick_timer)),
+      buffer_level_filter_(buffer_level_filter),
       decoder_database_(decoder_database),
       delay_manager_(delay_manager),
       delay_peak_detector_(delay_peak_detector),
@@ -795,6 +798,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame) {
   DtmfEvent dtmf_event;
   Operations operation;
   bool play_dtmf;
+  tick_timer_->Increment();
   int return_value = GetDecision(&operation, &packet_list, &dtmf_event,
                                  &play_dtmf);
   if (return_value != 0) {
