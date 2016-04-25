@@ -12,6 +12,12 @@ import("../build/webrtc.gni")
 
 import("//build_overrides/webrtc.gni")
 
+config("rtc_base_approved_all_dependent_config") {
+  if (is_mac && !build_with_chromium) {
+    libs = [ "Foundation.framework" ]  # needed for logging_mac.mm
+  }
+}
+
 config("rtc_base_config") {
   include_dirs = [
     "//third_party/jsoncpp/overrides/include",
@@ -94,6 +100,7 @@ static_library("rtc_base_approved") {
   deps = []
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
+  all_dependent_configs = [ ":rtc_base_approved_all_dependent_config" ]
 
   sources = [
     "array_view.h",

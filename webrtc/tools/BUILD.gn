@@ -47,9 +47,6 @@ executable("frame_analyzer") {
     ":command_line_parser",
     ":video_quality_analysis",
   ]
-  if (is_mac) {
-    libs = [ "Foundation.framework" ]
-  }
 }
 
 executable("rgba_to_i420_converter") {
@@ -62,9 +59,6 @@ executable("rgba_to_i420_converter") {
     ":command_line_parser",
     "../common_video",
   ]
-  if (is_mac) {
-    libs = [ "Foundation.framework" ]
-  }
 }
 
 # TODO(kjellander): Convert all of tools.gyp into GN here.
@@ -85,8 +79,5 @@ if (!build_with_chromium) {
       "../test:test_support_main",
       "//testing/gtest",
     ]
-    if (is_mac) {
-      libs = [ "Foundation.framework" ]
-    }
   }
 }
