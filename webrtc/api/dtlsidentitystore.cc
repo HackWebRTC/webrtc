@@ -108,12 +108,6 @@ DtlsIdentityStoreImpl::DtlsIdentityStoreImpl(rtc::Thread* signaling_thread,
       worker_thread_(worker_thread),
       request_info_() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  // Preemptively generate identities unless the worker thread and signaling
-  // thread are the same (only do preemptive work in the background).
-  if (worker_thread_ != signaling_thread_) {
-    // Only necessary for RSA.
-    GenerateIdentity(rtc::KT_RSA, nullptr);
-  }
 }
 
 DtlsIdentityStoreImpl::~DtlsIdentityStoreImpl() {
@@ -226,7 +220,7 @@ void DtlsIdentityStoreImpl::OnIdentityGenerated(
     if (worker_thread_ != signaling_thread_ && // Only do in background thread.
         key_type == rtc::KT_RSA &&             // Only necessary for RSA.
         !request_info_[key_type].free_identity_.get() &&
-        request_info_[key_type].request_observers_.size() <=
+        request_info_[key_type].request_observers_.size() ==
             request_info_[key_type].gen_in_progress_counts_) {
       GenerateIdentity(key_type, nullptr);
     }

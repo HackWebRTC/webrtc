@@ -83,8 +83,6 @@ class DtlsIdentityStoreTest : public testing::Test {
 };
 
 TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessRSA) {
-  EXPECT_TRUE_WAIT(store_->HasFreeIdentityForTesting(rtc::KT_RSA), kTimeoutMs);
-
   store_->RequestIdentity(rtc::KeyParams(rtc::KT_RSA),
                           rtc::Optional<uint64_t>(),
                           observer_.get());
@@ -103,13 +101,13 @@ TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessRSA) {
 }
 
 TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccessECDSA) {
-  // Since store currently does not preemptively generate free ECDSA identities
-  // we do not invoke HasFreeIdentityForTesting between requests.
-
   store_->RequestIdentity(rtc::KeyParams(rtc::KT_ECDSA),
                           rtc::Optional<uint64_t>(),
                           observer_.get());
   EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
+
+  // Since store currently does not preemptively generate free ECDSA identities
+  // we do not invoke HasFreeIdentityForTesting between requests.
 
   observer_->Reset();
 
