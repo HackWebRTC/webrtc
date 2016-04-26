@@ -11,7 +11,8 @@
 #ifndef WEBRTC_BASE_RATE_STATISTICS_H_
 #define WEBRTC_BASE_RATE_STATISTICS_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -34,7 +35,7 @@ class RateStatistics {
   // Counters are kept in buckets (circular buffer), with one bucket
   // per millisecond.
   const int num_buckets_;
-  rtc::scoped_ptr<size_t[]> buckets_;
+  std::unique_ptr<size_t[]> buckets_;
 
   // Total count recorded in buckets.
   size_t accumulated_count_;

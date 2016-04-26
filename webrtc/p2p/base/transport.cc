@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <utility>  // for std::pair
 
 #include "webrtc/p2p/base/transport.h"
@@ -77,7 +78,7 @@ void Transport::SetIceRole(IceRole role) {
   }
 }
 
-rtc::scoped_ptr<rtc::SSLCertificate> Transport::GetRemoteSSLCertificate() {
+std::unique_ptr<rtc::SSLCertificate> Transport::GetRemoteSSLCertificate() {
   if (channels_.empty()) {
     return nullptr;
   }

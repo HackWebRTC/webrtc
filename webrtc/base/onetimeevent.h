@@ -11,7 +11,6 @@
 #ifndef WEBRTC_BASE_ONETIMEEVENT_H_
 #define WEBRTC_BASE_ONETIMEEVENT_H_
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/typedefs.h"
 

@@ -11,6 +11,7 @@
 #include "webrtc/p2p/base/transportcontroller.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
@@ -86,10 +87,10 @@ bool TransportController::GetLocalCertificate(
                 transport_name, certificate));
 }
 
-rtc::scoped_ptr<rtc::SSLCertificate>
+std::unique_ptr<rtc::SSLCertificate>
 TransportController::GetRemoteSSLCertificate(
     const std::string& transport_name) {
-  return worker_thread_->Invoke<rtc::scoped_ptr<rtc::SSLCertificate>>(rtc::Bind(
+  return worker_thread_->Invoke<std::unique_ptr<rtc::SSLCertificate>>(rtc::Bind(
       &TransportController::GetRemoteSSLCertificate_w, this, transport_name));
 }
 
@@ -394,7 +395,7 @@ bool TransportController::GetLocalCertificate_w(
   return t->GetLocalCertificate(certificate);
 }
 
-rtc::scoped_ptr<rtc::SSLCertificate>
+std::unique_ptr<rtc::SSLCertificate>
 TransportController::GetRemoteSSLCertificate_w(
     const std::string& transport_name) {
   RTC_DCHECK(worker_thread_->IsCurrent());

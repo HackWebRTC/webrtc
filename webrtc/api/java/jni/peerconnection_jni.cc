@@ -40,6 +40,7 @@
 #define JNIEXPORT __attribute__((visibility("default")))
 
 #include <limits>
+#include <memory>
 #include <utility>
 
 #include "webrtc/api/androidvideocapturer.h"
@@ -1565,7 +1566,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
 
   // Create ECDSA certificate.
   if (JavaKeyTypeToNativeType(jni, j_key_type) == rtc::KT_ECDSA) {
-    scoped_ptr<rtc::SSLIdentity> ssl_identity(
+    std::unique_ptr<rtc::SSLIdentity> ssl_identity(
         rtc::SSLIdentity::Generate(webrtc::kIdentityName, rtc::KT_ECDSA));
     if (ssl_identity.get()) {
       rtc_config.certificates.push_back(

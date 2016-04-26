@@ -15,6 +15,8 @@
 #endif
 
 #include <algorithm>
+#include <memory>
+
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/diskcache.h"
@@ -123,7 +125,7 @@ StreamInterface* DiskCache::WriteResource(const std::string& id, size_t index) {
     previous_size = entry->size;
   }
 
-  scoped_ptr<FileStream> file(new FileStream);
+  std::unique_ptr<FileStream> file(new FileStream);
   if (!file->Open(filename, "wb", NULL)) {
     LOG_F(LS_ERROR) << "Couldn't create cache file";
     return NULL;
@@ -161,7 +163,7 @@ StreamInterface* DiskCache::ReadResource(const std::string& id,
   if (index >= entry->streams)
     return NULL;
 
-  scoped_ptr<FileStream> file(new FileStream);
+  std::unique_ptr<FileStream> file(new FileStream);
   if (!file->Open(IdToFilename(id, index), "rb", NULL))
     return NULL;
 

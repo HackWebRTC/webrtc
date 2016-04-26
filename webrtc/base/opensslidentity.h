@@ -14,10 +14,10 @@
 #include <openssl/evp.h>
 #include <openssl/x509.h>
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/common.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslidentity.h"
 
 typedef struct ssl_ctx_st SSL_CTX;
@@ -85,7 +85,7 @@ class OpenSSLCertificate : public SSLCertificate {
                             size_t* length);
 
   bool GetSignatureDigestAlgorithm(std::string* algorithm) const override;
-  rtc::scoped_ptr<SSLCertChain> GetChain() const override;
+  std::unique_ptr<SSLCertChain> GetChain() const override;
 
   int64_t CertificateExpirationTime() const override;
 
@@ -120,8 +120,8 @@ class OpenSSLIdentity : public SSLIdentity {
 
   static OpenSSLIdentity* GenerateInternal(const SSLIdentityParams& params);
 
-  scoped_ptr<OpenSSLKeyPair> key_pair_;
-  scoped_ptr<OpenSSLCertificate> certificate_;
+  std::unique_ptr<OpenSSLKeyPair> key_pair_;
+  std::unique_ptr<OpenSSLCertificate> certificate_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OpenSSLIdentity);
 };

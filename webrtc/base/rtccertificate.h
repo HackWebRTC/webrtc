@@ -11,9 +11,10 @@
 #ifndef WEBRTC_BASE_RTCCERTIFICATE_H_
 #define WEBRTC_BASE_RTCCERTIFICATE_H_
 
+#include <memory>
+
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sslidentity.h"
 
@@ -25,7 +26,8 @@ namespace rtc {
 class RTCCertificate : public RefCountInterface {
  public:
   // Takes ownership of |identity|.
-  static scoped_refptr<RTCCertificate> Create(scoped_ptr<SSLIdentity> identity);
+  static scoped_refptr<RTCCertificate> Create(
+      std::unique_ptr<SSLIdentity> identity);
 
   // Returns the expiration time in ms relative to epoch, 1970-01-01T00:00:00Z.
   uint64_t Expires() const;
@@ -47,7 +49,7 @@ class RTCCertificate : public RefCountInterface {
  private:
   // The SSLIdentity is the owner of the SSLCertificate. To protect our
   // ssl_certificate() we take ownership of |identity_|.
-  scoped_ptr<SSLIdentity> identity_;
+  std::unique_ptr<SSLIdentity> identity_;
 };
 
 }  // namespace rtc

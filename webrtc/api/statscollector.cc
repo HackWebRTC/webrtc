@@ -10,17 +10,15 @@
 
 #include "webrtc/api/statscollector.h"
 
+#include <memory>
 #include <utility>
 #include <vector>
 
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timing.h"
 #include "webrtc/pc/channel.h"
-
-using rtc::scoped_ptr;
 
 namespace webrtc {
 namespace {
@@ -532,7 +530,7 @@ StatsReport* StatsCollector::AddOneCertificateReport(
   if (!cert->GetSignatureDigestAlgorithm(&digest_algorithm))
     return nullptr;
 
-  rtc::scoped_ptr<rtc::SSLFingerprint> ssl_fingerprint(
+  std::unique_ptr<rtc::SSLFingerprint> ssl_fingerprint(
       rtc::SSLFingerprint::Create(digest_algorithm, cert));
 
   // SSLFingerprint::Create can fail if the algorithm returned by
@@ -574,7 +572,7 @@ StatsReport* StatsCollector::AddCertificateReports(
   RTC_DCHECK(cert != NULL);
 
   StatsReport* issuer = nullptr;
-  rtc::scoped_ptr<rtc::SSLCertChain> chain = cert->GetChain();
+  std::unique_ptr<rtc::SSLCertChain> chain = cert->GetChain();
   if (chain) {
     // This loop runs in reverse, i.e. from root to leaf, so that each
     // certificate's issuer's report ID is known before the child certificate's
@@ -702,7 +700,7 @@ void StatsCollector::ExtractSessionInfo() {
         local_cert_report_id = r->id();
     }
 
-    rtc::scoped_ptr<rtc::SSLCertificate> cert =
+    std::unique_ptr<rtc::SSLCertificate> cert =
         pc_->session()->GetRemoteSSLCertificate(
             transport_iter.second.transport_name);
     if (cert) {

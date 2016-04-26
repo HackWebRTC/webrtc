@@ -14,12 +14,12 @@
 #define WEBRTC_BASE_SSLIDENTITY_H_
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/messagedigest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timeutils.h"
 
 namespace rtc {
@@ -53,7 +53,7 @@ class SSLCertificate {
 
   // Provides the cert chain, or null. The chain includes a copy of each
   // certificate, excluding the leaf.
-  virtual rtc::scoped_ptr<SSLCertChain> GetChain() const = 0;
+  virtual std::unique_ptr<SSLCertChain> GetChain() const = 0;
 
   // Returns a PEM encoded string representation of the certificate.
   virtual std::string ToPEMString() const = 0;

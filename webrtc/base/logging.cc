@@ -42,7 +42,6 @@ static const char kLibjingle[] = "libjingle";
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"

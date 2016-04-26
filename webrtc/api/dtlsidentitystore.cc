@@ -51,7 +51,7 @@ class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
  private:
   void GenerateIdentity_w() {
     LOG(LS_INFO) << "Generating identity, using keytype " << key_type_;
-    rtc::scoped_ptr<rtc::SSLIdentity> identity(
+    std::unique_ptr<rtc::SSLIdentity> identity(
         rtc::SSLIdentity::Generate(kIdentityName, key_type_));
 
     // Posting to |this| avoids touching |store_| on threads other than
@@ -186,7 +186,8 @@ void DtlsIdentityStoreImpl::GenerateIdentity(
 }
 
 void DtlsIdentityStoreImpl::OnIdentityGenerated(
-    rtc::KeyType key_type, rtc::scoped_ptr<rtc::SSLIdentity> identity) {
+    rtc::KeyType key_type,
+    std::unique_ptr<rtc::SSLIdentity> identity) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
   RTC_DCHECK(request_info_[key_type].gen_in_progress_counts_);

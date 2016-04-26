@@ -589,17 +589,18 @@ class GuardedAsyncInvokeTest : public testing::Test {
 
 // Functor for creating an invoker.
 struct CreateInvoker {
-  CreateInvoker(scoped_ptr<GuardedAsyncInvoker>* invoker) : invoker_(invoker) {}
+  CreateInvoker(std::unique_ptr<GuardedAsyncInvoker>* invoker)
+      : invoker_(invoker) {}
   void operator()() { invoker_->reset(new GuardedAsyncInvoker()); }
-  scoped_ptr<GuardedAsyncInvoker>* invoker_;
+  std::unique_ptr<GuardedAsyncInvoker>* invoker_;
 };
 
 // Test that we can call AsyncInvoke<void>() after the thread died.
 TEST_F(GuardedAsyncInvokeTest, KillThreadFireAndForget) {
   // Create and start the thread.
-  scoped_ptr<Thread> thread(new Thread());
+  std::unique_ptr<Thread> thread(new Thread());
   thread->Start();
-  scoped_ptr<GuardedAsyncInvoker> invoker;
+  std::unique_ptr<GuardedAsyncInvoker> invoker;
   // Create the invoker on |thread|.
   thread->Invoke<void>(CreateInvoker(&invoker));
   // Kill |thread|.
@@ -615,9 +616,9 @@ TEST_F(GuardedAsyncInvokeTest, KillThreadFireAndForget) {
 // Test that we can call AsyncInvoke with callback after the thread died.
 TEST_F(GuardedAsyncInvokeTest, KillThreadWithCallback) {
   // Create and start the thread.
-  scoped_ptr<Thread> thread(new Thread());
+  std::unique_ptr<Thread> thread(new Thread());
   thread->Start();
-  scoped_ptr<GuardedAsyncInvoker> invoker;
+  std::unique_ptr<GuardedAsyncInvoker> invoker;
   // Create the invoker on |thread|.
   thread->Invoke<void>(CreateInvoker(&invoker));
   // Kill |thread|.

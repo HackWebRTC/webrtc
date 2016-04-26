@@ -12,6 +12,8 @@
 
 #include "webrtc/base/opensslidentity.h"
 
+#include <memory>
+
 // Must be included first before openssl headers.
 #include "webrtc/base/win32.h"  // NOLINT
 
@@ -280,7 +282,7 @@ bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
   return true;
 }
 
-rtc::scoped_ptr<SSLCertChain> OpenSSLCertificate::GetChain() const {
+std::unique_ptr<SSLCertChain> OpenSSLCertificate::GetChain() const {
   // Chains are not yet supported when using OpenSSL.
   // OpenSSLStreamAdapter::SSLVerifyCallback currently requires the remote
   // certificate to be self-signed.
@@ -430,7 +432,7 @@ OpenSSLIdentity* OpenSSLIdentity::GenerateForTest(
 SSLIdentity* OpenSSLIdentity::FromPEMStrings(
     const std::string& private_key,
     const std::string& certificate) {
-  scoped_ptr<OpenSSLCertificate> cert(
+  std::unique_ptr<OpenSSLCertificate> cert(
       OpenSSLCertificate::FromPEMString(certificate));
   if (!cert) {
     LOG(LS_ERROR) << "Failed to create OpenSSLCertificate from PEM string.";

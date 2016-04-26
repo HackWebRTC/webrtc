@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/gunit.h"
@@ -174,11 +175,11 @@ class SSLIdentityTest : public testing::Test {
   }
 
  private:
-  rtc::scoped_ptr<SSLIdentity> identity_rsa1_;
-  rtc::scoped_ptr<SSLIdentity> identity_rsa2_;
-  rtc::scoped_ptr<SSLIdentity> identity_ecdsa1_;
-  rtc::scoped_ptr<SSLIdentity> identity_ecdsa2_;
-  rtc::scoped_ptr<rtc::SSLCertificate> test_cert_;
+  std::unique_ptr<SSLIdentity> identity_rsa1_;
+  std::unique_ptr<SSLIdentity> identity_rsa2_;
+  std::unique_ptr<SSLIdentity> identity_ecdsa1_;
+  std::unique_ptr<SSLIdentity> identity_ecdsa2_;
+  std::unique_ptr<rtc::SSLCertificate> test_cert_;
 };
 
 TEST_F(SSLIdentityTest, FixedDigestSHA1) {
@@ -251,7 +252,7 @@ TEST_F(SSLIdentityTest, FromPEMStringsRSA) {
       "UD0A8qfhfDM+LK6rPAnCsVN0NRDY3jvd6rzix9M=\n"
       "-----END CERTIFICATE-----\n";
 
-  rtc::scoped_ptr<SSLIdentity> identity(
+  std::unique_ptr<SSLIdentity> identity(
       SSLIdentity::FromPEMStrings(kRSA_PRIVATE_KEY_PEM, kCERT_PEM));
   EXPECT_TRUE(identity);
   EXPECT_EQ(kCERT_PEM, identity->certificate().ToPEMString());
@@ -278,7 +279,7 @@ TEST_F(SSLIdentityTest, FromPEMStringsEC) {
       "GWP/PwIgJynB4AUDsPT0DWmethOXYijB5sY5UPd9DvgmiS/Mr6s=\n"
       "-----END CERTIFICATE-----\n";
 
-  rtc::scoped_ptr<SSLIdentity> identity(
+  std::unique_ptr<SSLIdentity> identity(
       SSLIdentity::FromPEMStrings(kRSA_PRIVATE_KEY_PEM, kCERT_PEM));
   EXPECT_TRUE(identity);
   EXPECT_EQ(kCERT_PEM, identity->certificate().ToPEMString());

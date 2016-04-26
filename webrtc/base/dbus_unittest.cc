@@ -10,6 +10,8 @@
 
 #ifdef HAVE_DBUS_GLIB
 
+#include <memory>
+
 #include "webrtc/base/dbus.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/thread.h"
@@ -51,7 +53,7 @@ class DBusSigFilterTest : public DBusSigFilter {
 
 TEST(DBusMonitorTest, StartStopStartStop) {
   DBusSigFilterTest filter;
-  rtc::scoped_ptr<rtc::DBusMonitor> monitor;
+  std::unique_ptr<rtc::DBusMonitor> monitor;
   monitor.reset(rtc::DBusMonitor::Create(DBUS_BUS_SYSTEM));
   if (monitor) {
     EXPECT_TRUE(monitor->AddFilter(&filter));
@@ -83,7 +85,7 @@ TEST(DBusMonitorTest, StartStopStartStop) {
 // This test is to make sure that we capture the "NameAcquired" signal.
 TEST(DBusMonitorTest, ReceivedNameAcquiredSignal) {
   DBusSigFilterTest filter;
-  rtc::scoped_ptr<rtc::DBusMonitor> monitor;
+  std::unique_ptr<rtc::DBusMonitor> monitor;
   monitor.reset(rtc::DBusMonitor::Create(DBUS_BUS_SYSTEM));
   if (monitor) {
     EXPECT_TRUE(monitor->AddFilter(&filter));
@@ -100,12 +102,12 @@ TEST(DBusMonitorTest, ReceivedNameAcquiredSignal) {
 
 TEST(DBusMonitorTest, ConcurrentMonitors) {
   DBusSigFilterTest filter1;
-  rtc::scoped_ptr<rtc::DBusMonitor> monitor1;
+  std::unique_ptr<rtc::DBusMonitor> monitor1;
   monitor1.reset(rtc::DBusMonitor::Create(DBUS_BUS_SYSTEM));
   if (monitor1) {
     EXPECT_TRUE(monitor1->AddFilter(&filter1));
     DBusSigFilterTest filter2;
-    rtc::scoped_ptr<rtc::DBusMonitor> monitor2;
+    std::unique_ptr<rtc::DBusMonitor> monitor2;
     monitor2.reset(rtc::DBusMonitor::Create(DBUS_BUS_SYSTEM));
     EXPECT_TRUE(monitor2->AddFilter(&filter2));
 
@@ -129,7 +131,7 @@ TEST(DBusMonitorTest, ConcurrentMonitors) {
 TEST(DBusMonitorTest, ConcurrentFilters) {
   DBusSigFilterTest filter1;
   DBusSigFilterTest filter2;
-  rtc::scoped_ptr<rtc::DBusMonitor> monitor;
+  std::unique_ptr<rtc::DBusMonitor> monitor;
   monitor.reset(rtc::DBusMonitor::Create(DBUS_BUS_SYSTEM));
   if (monitor) {
     EXPECT_TRUE(monitor->AddFilter(&filter1));
@@ -151,7 +153,7 @@ TEST(DBusMonitorTest, ConcurrentFilters) {
 TEST(DBusMonitorTest, NoAddFilterIfRunning) {
   DBusSigFilterTest filter1;
   DBusSigFilterTest filter2;
-  rtc::scoped_ptr<rtc::DBusMonitor> monitor;
+  std::unique_ptr<rtc::DBusMonitor> monitor;
   monitor.reset(rtc::DBusMonitor::Create(DBUS_BUS_SYSTEM));
   if (monitor) {
     EXPECT_TRUE(monitor->AddFilter(&filter1));
@@ -170,7 +172,7 @@ TEST(DBusMonitorTest, NoAddFilterIfRunning) {
 TEST(DBusMonitorTest, AddFilterAfterStop) {
   DBusSigFilterTest filter1;
   DBusSigFilterTest filter2;
-  rtc::scoped_ptr<rtc::DBusMonitor> monitor;
+  std::unique_ptr<rtc::DBusMonitor> monitor;
   monitor.reset(rtc::DBusMonitor::Create(DBUS_BUS_SYSTEM));
   if (monitor) {
     EXPECT_TRUE(monitor->AddFilter(&filter1));
@@ -194,7 +196,7 @@ TEST(DBusMonitorTest, AddFilterAfterStop) {
 
 TEST(DBusMonitorTest, StopRightAfterStart) {
   DBusSigFilterTest filter;
-  rtc::scoped_ptr<rtc::DBusMonitor> monitor;
+  std::unique_ptr<rtc::DBusMonitor> monitor;
   monitor.reset(rtc::DBusMonitor::Create(DBUS_BUS_SYSTEM));
   if (monitor) {
     EXPECT_TRUE(monitor->AddFilter(&filter));

@@ -1039,7 +1039,7 @@ bool WebRtcSession::GetLocalCertificate(
                                                     certificate);
 }
 
-rtc::scoped_ptr<rtc::SSLCertificate> WebRtcSession::GetRemoteSSLCertificate(
+std::unique_ptr<rtc::SSLCertificate> WebRtcSession::GetRemoteSSLCertificate(
     const std::string& transport_name) {
   ASSERT(signaling_thread()->IsCurrent());
   return transport_controller_->GetRemoteSSLCertificate(transport_name);

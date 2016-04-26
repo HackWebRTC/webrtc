@@ -11,9 +11,10 @@
 #ifndef WEBRTC_BASE_ASYNCTCPSOCKET_H_
 #define WEBRTC_BASE_ASYNCTCPSOCKET_H_
 
+#include <memory>
+
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/buffer.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketfactory.h"
 
 namespace rtc {
@@ -70,7 +71,7 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
   void OnWriteEvent(AsyncSocket* socket);
   void OnCloseEvent(AsyncSocket* socket, int error);
 
-  scoped_ptr<AsyncSocket> socket_;
+  std::unique_ptr<AsyncSocket> socket_;
   bool listen_;
   Buffer inbuf_;
   Buffer outbuf_;

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/socket_unittest.h"
 
 #include "webrtc/base/arraysize.h"
@@ -198,14 +200,14 @@ void SocketTest::ConnectInternal(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(ss_->CreateAsyncSocket(loopback.family(),
-                                                        SOCK_STREAM));
+  std::unique_ptr<AsyncSocket> client(
+      ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
   EXPECT_EQ(AsyncSocket::CS_CLOSED, client->GetState());
   EXPECT_PRED1(IsUnspecOrEmptyIP, client->GetLocalAddress().ipaddr());
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -229,7 +231,7 @@ void SocketTest::ConnectInternal(const IPAddress& loopback) {
 
   // Server has pending connection, accept it.
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted);
   EXPECT_FALSE(accept_addr.IsNil());
   EXPECT_EQ(accepted->GetRemoteAddress(), accept_addr);
@@ -253,12 +255,12 @@ void SocketTest::ConnectWithDnsLookupInternal(const IPAddress& loopback,
   SocketAddress accept_addr;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -278,7 +280,7 @@ void SocketTest::ConnectWithDnsLookupInternal(const IPAddress& loopback,
 
   // Server has pending connection, accept it.
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted);
   EXPECT_FALSE(accept_addr.IsNil());
   EXPECT_EQ(accepted->GetRemoteAddress(), accept_addr);
@@ -301,12 +303,12 @@ void SocketTest::ConnectFailInternal(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   // Create server, but don't listen yet.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -334,12 +336,12 @@ void SocketTest::ConnectWithDnsLookupFailInternal(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   // Create server, but don't listen yet.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -372,13 +374,13 @@ void SocketTest::ConnectWithDnsLookupFailInternal(const IPAddress& loopback) {
 
 void SocketTest::ConnectWithClosedSocketInternal(const IPAddress& loopback) {
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
 
   // Create a client and put in to CS_CLOSED state.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   EXPECT_EQ(0, client->Close());
   EXPECT_EQ(AsyncSocket::CS_CLOSED, client->GetState());
@@ -391,13 +393,13 @@ void SocketTest::ConnectWithClosedSocketInternal(const IPAddress& loopback) {
 void SocketTest::ConnectWhileNotClosedInternal(const IPAddress& loopback) {
   // Create server and listen.
   testing::StreamSink sink;
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
   // Create client, connect.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   EXPECT_EQ(0, client->Connect(SocketAddress(server->GetLocalAddress())));
   EXPECT_EQ(AsyncSocket::CS_CONNECTING, client->GetState());
@@ -408,7 +410,7 @@ void SocketTest::ConnectWhileNotClosedInternal(const IPAddress& loopback) {
   // Accept the original connection.
   SocketAddress accept_addr;
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted);
   EXPECT_FALSE(accept_addr.IsNil());
 
@@ -435,12 +437,12 @@ void SocketTest::ServerCloseDuringConnectInternal(const IPAddress& loopback) {
   testing::StreamSink sink;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -464,12 +466,12 @@ void SocketTest::ClientCloseDuringConnectInternal(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -483,7 +485,7 @@ void SocketTest::ClientCloseDuringConnectInternal(const IPAddress& loopback) {
   client->Close();
 
   // The connection should still be able to be accepted.
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted);
   sink.Monitor(accepted.get());
   EXPECT_EQ(AsyncSocket::CS_CONNECTED, accepted->GetState());
@@ -502,12 +504,12 @@ void SocketTest::ServerCloseInternal(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -518,7 +520,7 @@ void SocketTest::ServerCloseInternal(const IPAddress& loopback) {
 
   // Accept connection.
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted);
   sink.Monitor(accepted.get());
 
@@ -576,13 +578,13 @@ void SocketTest::CloseInClosedCallbackInternal(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
   client->SignalCloseEvent.connect(&closer, &SocketCloser::OnClose);
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -593,7 +595,7 @@ void SocketTest::CloseInClosedCallbackInternal(const IPAddress& loopback) {
 
   // Accept connection.
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted);
   sink.Monitor(accepted.get());
 
@@ -630,9 +632,9 @@ void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create & connect server and client sockets.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
   sink.Monitor(server.get());
@@ -642,7 +644,7 @@ void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {
   EXPECT_EQ(0, client->Connect(server->GetLocalAddress()));
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
 
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted);
   sink.Monitor(accepted.get());
   EXPECT_EQ(AsyncSocket::CS_CONNECTED, accepted->GetState());
@@ -663,7 +665,7 @@ void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {
   EXPECT_FALSE(sink.Check(accepted.get(), testing::SSE_READ));
 
   // Shouldn't signal when blocked in a thread Send, where process_io is false.
-  scoped_ptr<Thread> thread(new Thread());
+  std::unique_ptr<Thread> thread(new Thread());
   thread->Start();
   Sleeper sleeper;
   TypedMessageData<AsyncSocket*> data(client.get());
@@ -681,12 +683,12 @@ void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
   SocketAddress accept_addr;
 
   // Create receiving client.
-  scoped_ptr<AsyncSocket> receiver(
+  std::unique_ptr<AsyncSocket> receiver(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(receiver.get());
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -697,7 +699,7 @@ void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
 
   // Accept connection which will be used for sending.
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
-  scoped_ptr<AsyncSocket> sender(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> sender(server->Accept(&accept_addr));
   ASSERT_TRUE(sender);
   sink.Monitor(sender.get());
 
@@ -809,12 +811,12 @@ void SocketTest::SingleFlowControlCallbackInternal(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create client.
-  scoped_ptr<AsyncSocket> client(
+  std::unique_ptr<AsyncSocket> client(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -825,7 +827,7 @@ void SocketTest::SingleFlowControlCallbackInternal(const IPAddress& loopback) {
 
   // Accept connection.
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted);
   sink.Monitor(accepted.get());
 
@@ -887,9 +889,9 @@ void SocketTest::UdpInternal(const IPAddress& loopback) {
   delete socket;
 
   // Test send/receive behavior.
-  scoped_ptr<TestClient> client1(
+  std::unique_ptr<TestClient> client1(
       new TestClient(AsyncUDPSocket::Create(ss_, addr1)));
-  scoped_ptr<TestClient> client2(
+  std::unique_ptr<TestClient> client2(
       new TestClient(AsyncUDPSocket::Create(ss_, empty)));
 
   SocketAddress addr2;
@@ -928,10 +930,10 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
   SocketAddress test_addr(dest, 2345);
 
   // Test send
-  scoped_ptr<TestClient> client(
+  std::unique_ptr<TestClient> client(
       new TestClient(AsyncUDPSocket::Create(ss_, empty)));
   int test_packet_size = 1200;
-  rtc::scoped_ptr<char[]> test_packet(new char[test_packet_size]);
+  std::unique_ptr<char[]> test_packet(new char[test_packet_size]);
   // Init the test packet just to avoid memcheck warning.
   memset(test_packet.get(), 0, test_packet_size);
   // Set the send buffer size to the same size as the test packet to have a
@@ -965,7 +967,7 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
 }
 
 void SocketTest::GetSetOptionsInternal(const IPAddress& loopback) {
-  rtc::scoped_ptr<AsyncSocket> socket(
+  std::unique_ptr<AsyncSocket> socket(
       ss_->CreateAsyncSocket(loopback.family(), SOCK_DGRAM));
   socket->Bind(SocketAddress(loopback, 0));
 
@@ -1000,9 +1002,8 @@ void SocketTest::GetSetOptionsInternal(const IPAddress& loopback) {
   // Skip the esimate MTU test for IPv6 for now.
   if (loopback.family() != AF_INET6) {
     // Try estimating MTU.
-    rtc::scoped_ptr<AsyncSocket>
-        mtu_socket(
-            ss_->CreateAsyncSocket(loopback.family(), SOCK_DGRAM));
+    std::unique_ptr<AsyncSocket> mtu_socket(
+        ss_->CreateAsyncSocket(loopback.family(), SOCK_DGRAM));
     mtu_socket->Bind(SocketAddress(loopback, 0));
     uint16_t mtu;
     // should fail until we connect

@@ -11,8 +11,9 @@
 #ifndef WEBRTC_BASE_LINUXWINDOWPICKER_H_
 #define WEBRTC_BASE_LINUXWINDOWPICKER_H_
 
+#include <memory>
+
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/windowpicker.h"
 
 // Avoid include <X11/Xlib.h>.
@@ -44,7 +45,7 @@ class X11WindowPicker : public WindowPicker {
   uint8_t* GetDesktopThumbnail(const DesktopId& id, int width, int height);
 
  private:
-  scoped_ptr<XWindowEnumerator> enumerator_;
+  std::unique_ptr<XWindowEnumerator> enumerator_;
 };
 
 }  // namespace rtc

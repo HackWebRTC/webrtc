@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -771,7 +772,7 @@ int VirtualSocketServer::SendUdp(VirtualSocket* socket,
   VirtualSocket* recipient = LookupBinding(remote_addr);
   if (!recipient) {
     // Make a fake recipient for address family checking.
-    scoped_ptr<VirtualSocket> dummy_socket(
+    std::unique_ptr<VirtualSocket> dummy_socket(
         CreateSocketInternal(AF_INET, SOCK_DGRAM));
     dummy_socket->SetLocalAddress(remote_addr);
     if (!CanInteractWith(socket, dummy_socket.get())) {

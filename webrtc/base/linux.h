@@ -14,9 +14,9 @@
 #if defined(WEBRTC_LINUX)
 #include <string>
 #include <map>
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 
 namespace rtc {
@@ -51,7 +51,7 @@ class ConfigParser {
   virtual bool ParseLine(std::string* key, std::string* value);
 
  private:
-  scoped_ptr<StreamInterface> instream_;
+  std::unique_ptr<StreamInterface> instream_;
 };
 
 //////////////////////////////////////////////////////////////////////////////

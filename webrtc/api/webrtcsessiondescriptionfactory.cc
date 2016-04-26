@@ -82,13 +82,13 @@ void WebRtcIdentityRequestObserver::OnSuccess(
       rtc::kPemTypeRsaPrivateKey,
       reinterpret_cast<const unsigned char*>(der_private_key.data()),
       der_private_key.length());
-  rtc::scoped_ptr<rtc::SSLIdentity> identity(
+  std::unique_ptr<rtc::SSLIdentity> identity(
       rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert));
   SignalCertificateReady(rtc::RTCCertificate::Create(std::move(identity)));
 }
 
 void WebRtcIdentityRequestObserver::OnSuccess(
-    rtc::scoped_ptr<rtc::SSLIdentity> identity) {
+    std::unique_ptr<rtc::SSLIdentity> identity) {
   SignalCertificateReady(rtc::RTCCertificate::Create(std::move(identity)));
 }
 

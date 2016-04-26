@@ -15,10 +15,11 @@
 #include <shlobj.h>
 #include <tchar.h>
 
+#include <memory>
+
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/pathutils.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringutils.h"
 
@@ -95,7 +96,7 @@ bool Win32Filesystem::CreatePrivateFile(const Pathname &filename) {
                               &token_user_size);
 
   // Get the TOKEN_USER structure.
-  scoped_ptr<char[]> token_user_bytes(new char[token_user_size]);
+  std::unique_ptr<char[]> token_user_bytes(new char[token_user_size]);
   PTOKEN_USER token_user = reinterpret_cast<PTOKEN_USER>(
       token_user_bytes.get());
   memset(token_user, 0, token_user_size);
@@ -121,7 +122,7 @@ bool Win32Filesystem::CreatePrivateFile(const Pathname &filename) {
       GetLengthSid(token_user->User.Sid);
 
   // Allocate it.
-  scoped_ptr<char[]> acl_bytes(new char[acl_size]);
+  std::unique_ptr<char[]> acl_bytes(new char[acl_size]);
   PACL acl = reinterpret_cast<PACL>(acl_bytes.get());
   memset(acl, 0, acl_size);
   if (!::InitializeAcl(acl, acl_size, ACL_REVISION)) {
@@ -425,7 +426,7 @@ bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
 Pathname Win32Filesystem::GetCurrentDirectory() {
   Pathname cwd;
   int path_len = 0;
-  scoped_ptr<wchar_t[]> path;
+  std::unique_ptr<wchar_t[]> path;
   do {
     int needed = ::GetCurrentDirectory(path_len, path.get());
     if (needed == 0) {

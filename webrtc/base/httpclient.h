@@ -11,11 +11,12 @@
 #ifndef WEBRTC_BASE_HTTPCLIENT_H__
 #define WEBRTC_BASE_HTTPCLIENT_H__
 
+#include <memory>
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/httpbase.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/proxyinfo.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/socketpool.h"
@@ -172,7 +173,7 @@ private:
   size_t retries_, attempt_, redirects_;
   RedirectAction redirect_action_;
   UriForm uri_form_;
-  scoped_ptr<HttpAuthContext> context_;
+  std::unique_ptr<HttpAuthContext> context_;
   DiskCache* cache_;
   CacheState cache_state_;
   AsyncResolverInterface* resolver_;

@@ -11,7 +11,6 @@
 #include "webrtc/base/platform_thread.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 
 namespace rtc {

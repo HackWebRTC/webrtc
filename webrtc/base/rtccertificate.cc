@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/rtccertificate.h"
 
 #include "webrtc/base/checks.h"
@@ -15,7 +17,7 @@
 namespace rtc {
 
 scoped_refptr<RTCCertificate> RTCCertificate::Create(
-    scoped_ptr<SSLIdentity> identity) {
+    std::unique_ptr<SSLIdentity> identity) {
   return new RefCountedObject<RTCCertificate>(identity.release());
 }
 

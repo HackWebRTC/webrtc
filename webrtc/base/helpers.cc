@@ -11,6 +11,7 @@
 #include "webrtc/base/helpers.h"
 
 #include <limits>
+#include <memory>
 
 #if defined(FEATURE_ENABLE_SSL)
 #include "webrtc/base/sslconfig.h"
@@ -28,7 +29,6 @@
 #include "webrtc/base/base64.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timeutils.h"
 
 // Protect against max macro inclusion.
@@ -181,8 +181,8 @@ static const char kUuidDigit17[4] = {'8', '9', 'a', 'b'};
 
 // This round about way of creating a global RNG is to safe-guard against
 // indeterminant static initialization order.
-scoped_ptr<RandomGenerator>& GetGlobalRng() {
-  RTC_DEFINE_STATIC_LOCAL(scoped_ptr<RandomGenerator>, global_rng,
+std::unique_ptr<RandomGenerator>& GetGlobalRng() {
+  RTC_DEFINE_STATIC_LOCAL(std::unique_ptr<RandomGenerator>, global_rng,
                           (new SecureRandomGenerator()));
   return global_rng;
 }
@@ -223,7 +223,7 @@ bool CreateRandomString(size_t len,
                         const char* table, int table_size,
                         std::string* str) {
   str->clear();
-  scoped_ptr<uint8_t[]> bytes(new uint8_t[len]);
+  std::unique_ptr<uint8_t[]> bytes(new uint8_t[len]);
   if (!Rng().Generate(bytes.get(), len)) {
     LOG(LS_ERROR) << "Failed to generate random string!";
     return false;
@@ -250,7 +250,7 @@ bool CreateRandomString(size_t len, const std::string& table,
 // Where 'x' is a hex digit, and 'y' is 8, 9, a or b.
 std::string CreateRandomUuid() {
   std::string str;
-  scoped_ptr<uint8_t[]> bytes(new uint8_t[31]);
+  std::unique_ptr<uint8_t[]> bytes(new uint8_t[31]);
   if (!Rng().Generate(bytes.get(), 31)) {
     LOG(LS_ERROR) << "Failed to generate random string!";
     return str;

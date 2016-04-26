@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <sstream>
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/macutils.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
 
 namespace rtc {
@@ -26,7 +26,7 @@ bool ToUtf8(const CFStringRef str16, std::string* str8) {
   }
   size_t maxlen = CFStringGetMaximumSizeForEncoding(CFStringGetLength(str16),
                                                     kCFStringEncodingUTF8) + 1;
-  scoped_ptr<char[]> buffer(new char[maxlen]);
+  std::unique_ptr<char[]> buffer(new char[maxlen]);
   if (!buffer || !CFStringGetCString(str16, buffer.get(), maxlen,
                                      kCFStringEncodingUTF8)) {
     return false;

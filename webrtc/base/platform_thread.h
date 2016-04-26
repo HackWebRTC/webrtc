@@ -16,7 +16,6 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread_types.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 
 namespace rtc {

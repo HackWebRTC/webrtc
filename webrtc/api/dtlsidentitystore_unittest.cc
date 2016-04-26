@@ -10,6 +10,8 @@
 
 #include "webrtc/api/dtlsidentitystore.h"
 
+#include <memory>
+
 #include "webrtc/api/webrtcsessiondescriptionfactory.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
@@ -34,7 +36,7 @@ class MockDtlsIdentityRequestObserver :
     LOG(LS_WARNING) << "The string version of OnSuccess is called unexpectedly";
     EXPECT_TRUE(false);
   }
-  void OnSuccess(rtc::scoped_ptr<rtc::SSLIdentity> identity) override {
+  void OnSuccess(std::unique_ptr<rtc::SSLIdentity> identity) override {
     EXPECT_FALSE(call_back_called_);
     call_back_called_ = true;
     last_request_success_ = true;
@@ -77,8 +79,8 @@ class DtlsIdentityStoreTest : public testing::Test {
     rtc::CleanupSSL();
   }
 
-  rtc::scoped_ptr<rtc::Thread> worker_thread_;
-  rtc::scoped_ptr<DtlsIdentityStoreImpl> store_;
+  std::unique_ptr<rtc::Thread> worker_thread_;
+  std::unique_ptr<DtlsIdentityStoreImpl> store_;
   rtc::scoped_refptr<MockDtlsIdentityRequestObserver> observer_;
 };
 

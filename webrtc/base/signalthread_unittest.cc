@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/thread.h"
@@ -135,7 +137,7 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
 // when shutting down the process.
 TEST_F(SignalThreadTest, OwnerThreadGoesAway) {
   {
-    scoped_ptr<OwnerThread> owner(new OwnerThread(this));
+    std::unique_ptr<OwnerThread> owner(new OwnerThread(this));
     main_thread_ = owner.get();
     owner->Start();
     while (!owner->has_run()) {

@@ -13,6 +13,8 @@
 
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 
+#include <memory>
+
 #include <pthread.h>
 #include <time.h>
 
@@ -49,9 +51,9 @@ class EventTimerPosix : public EventTimerWrapper {
   pthread_mutex_t mutex_;
   bool event_set_;
 
-  // TODO(pbos): Remove scoped_ptr and use PlatformThread directly.
-  rtc::scoped_ptr<rtc::PlatformThread> timer_thread_;
-  rtc::scoped_ptr<EventTimerPosix> timer_event_;
+  // TODO(pbos): Remove unique_ptr and use PlatformThread directly.
+  std::unique_ptr<rtc::PlatformThread> timer_thread_;
+  std::unique_ptr<EventTimerPosix> timer_event_;
   timespec       created_at_;
 
   bool          periodic_;

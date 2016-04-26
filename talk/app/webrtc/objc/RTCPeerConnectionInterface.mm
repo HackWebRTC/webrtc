@@ -101,8 +101,7 @@
         rtc::SSLIdentity::Generate(webrtc::kIdentityName, rtc::KT_ECDSA));
     if (identity) {
       nativeConfig.certificates.push_back(
-          rtc::RTCCertificate::Create(
-              rtc::UniqueToScoped(std::move(identity))));
+          rtc::RTCCertificate::Create(std::move(identity)));
     } else {
       RTCLogWarning(@"Failed to generate ECDSA identity. RSA will be used.");
     }

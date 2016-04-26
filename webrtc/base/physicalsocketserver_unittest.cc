@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <signal.h>
 #include <stdarg.h>
 
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socket_unittest.h"
 #include "webrtc/base/testutils.h"
 #include "webrtc/base/thread.h"
@@ -100,7 +100,7 @@ class PhysicalSocketTest : public SocketTest {
   void ConnectInternalAcceptError(const IPAddress& loopback);
   void WritableAfterPartialWrite(const IPAddress& loopback);
 
-  rtc::scoped_ptr<FakePhysicalSocketServer> server_;
+  std::unique_ptr<FakePhysicalSocketServer> server_;
   SocketServerScope scope_;
   bool fail_accept_;
   int max_send_size_;
@@ -172,20 +172,20 @@ void PhysicalSocketTest::ConnectInternalAcceptError(const IPAddress& loopback) {
   SocketAddress accept_addr;
 
   // Create two clients.
-  scoped_ptr<AsyncSocket> client1(server_->CreateAsyncSocket(loopback.family(),
-                                                             SOCK_STREAM));
+  std::unique_ptr<AsyncSocket> client1(
+      server_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client1.get());
   EXPECT_EQ(AsyncSocket::CS_CLOSED, client1->GetState());
   EXPECT_PRED1(IsUnspecOrEmptyIP, client1->GetLocalAddress().ipaddr());
 
-  scoped_ptr<AsyncSocket> client2(server_->CreateAsyncSocket(loopback.family(),
-                                                             SOCK_STREAM));
+  std::unique_ptr<AsyncSocket> client2(
+      server_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client2.get());
   EXPECT_EQ(AsyncSocket::CS_CLOSED, client2->GetState());
   EXPECT_PRED1(IsUnspecOrEmptyIP, client2->GetLocalAddress().ipaddr());
 
   // Create server and listen.
-  scoped_ptr<AsyncSocket> server(
+  std::unique_ptr<AsyncSocket> server(
       server_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -211,7 +211,7 @@ void PhysicalSocketTest::ConnectInternalAcceptError(const IPAddress& loopback) {
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
   // Simulate "::accept" returning an error.
   SetFailAccept(true);
-  scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
   EXPECT_FALSE(accepted);
   ASSERT_TRUE(accept_addr.IsNil());
 
@@ -233,7 +233,7 @@ void PhysicalSocketTest::ConnectInternalAcceptError(const IPAddress& loopback) {
   // Server has pending connection, try to accept it (will succeed).
   EXPECT_TRUE_WAIT((sink.Check(server.get(), testing::SSE_READ)), kTimeout);
   SetFailAccept(false);
-  scoped_ptr<AsyncSocket> accepted2(server->Accept(&accept_addr));
+  std::unique_ptr<AsyncSocket> accepted2(server->Accept(&accept_addr));
   ASSERT_TRUE(accepted2);
   EXPECT_FALSE(accept_addr.IsNil());
   EXPECT_EQ(accepted2->GetRemoteAddress(), accept_addr);
@@ -515,7 +515,7 @@ class PosixSignalDeliveryTest : public testing::Test {
   static std::vector<int> signals_received_;
   static Thread *signaled_thread_;
 
-  scoped_ptr<PhysicalSocketServer> ss_;
+  std::unique_ptr<PhysicalSocketServer> ss_;
 };
 
 std::vector<int> PosixSignalDeliveryTest::signals_received_;
@@ -583,8 +583,8 @@ TEST_F(PosixSignalDeliveryTest, SignalOnDifferentThread) {
   // Start a new thread that raises it. It will have to be delivered to that
   // thread. Our implementation should safely handle it and dispatch
   // RecordSignal() on this thread.
-  scoped_ptr<Thread> thread(new Thread());
-  scoped_ptr<RaiseSigTermRunnable> runnable(new RaiseSigTermRunnable());
+  std::unique_ptr<Thread> thread(new Thread());
+  std::unique_ptr<RaiseSigTermRunnable> runnable(new RaiseSigTermRunnable());
   thread->Start(runnable.get());
   EXPECT_TRUE(ss_->Wait(1500, true));
   EXPECT_TRUE(ExpectSignal(SIGTERM));

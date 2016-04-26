@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/filerotatingstream.h"
@@ -57,13 +59,13 @@ class FileRotatingStreamTest : public ::testing::Test {
                         const size_t expected_length,
                         const std::string& dir_path,
                         const char* file_prefix) {
-    scoped_ptr<FileRotatingStream> stream;
+    std::unique_ptr<FileRotatingStream> stream;
     stream.reset(new FileRotatingStream(dir_path, file_prefix));
     ASSERT_TRUE(stream->Open());
     size_t read = 0;
     size_t stream_size = 0;
     EXPECT_TRUE(stream->GetSize(&stream_size));
-    scoped_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
     EXPECT_EQ(SR_SUCCESS,
               stream->ReadAll(buffer.get(), expected_length, &read, nullptr));
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
@@ -74,8 +76,8 @@ class FileRotatingStreamTest : public ::testing::Test {
   void VerifyFileContents(const char* expected_contents,
                           const size_t expected_length,
                           const std::string& file_path) {
-    scoped_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
-    scoped_ptr<FileStream> stream(Filesystem::OpenFile(file_path, "r"));
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
+    std::unique_ptr<FileStream> stream(Filesystem::OpenFile(file_path, "r"));
     EXPECT_TRUE(stream);
     if (!stream) {
       return;
@@ -88,7 +90,7 @@ class FileRotatingStreamTest : public ::testing::Test {
     EXPECT_EQ(file_size, expected_length);
   }
 
-  scoped_ptr<FileRotatingStream> stream_;
+  std::unique_ptr<FileRotatingStream> stream_;
   std::string dir_path_;
 };
 
@@ -114,7 +116,7 @@ TEST_F(FileRotatingStreamTest, EmptyWrite) {
   WriteAndFlush("a", 0);
 
   std::string logfile_path = stream_->GetFilePath(0);
-  scoped_ptr<FileStream> stream(Filesystem::OpenFile(logfile_path, "r"));
+  std::unique_ptr<FileStream> stream(Filesystem::OpenFile(logfile_path, "r"));
   size_t file_size = 0;
   EXPECT_TRUE(stream->GetSize(&file_size));
   EXPECT_EQ(0u, file_size);
@@ -215,13 +217,13 @@ class CallSessionFileRotatingStreamTest : public ::testing::Test {
   void VerifyStreamRead(const char* expected_contents,
                         const size_t expected_length,
                         const std::string& dir_path) {
-    scoped_ptr<CallSessionFileRotatingStream> stream(
+    std::unique_ptr<CallSessionFileRotatingStream> stream(
         new CallSessionFileRotatingStream(dir_path));
     ASSERT_TRUE(stream->Open());
     size_t read = 0;
     size_t stream_size = 0;
     EXPECT_TRUE(stream->GetSize(&stream_size));
-    scoped_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
     EXPECT_EQ(SR_SUCCESS,
               stream->ReadAll(buffer.get(), expected_length, &read, nullptr));
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
@@ -229,7 +231,7 @@ class CallSessionFileRotatingStreamTest : public ::testing::Test {
     EXPECT_EQ(stream_size, read);
   }
 
-  scoped_ptr<CallSessionFileRotatingStream> stream_;
+  std::unique_ptr<CallSessionFileRotatingStream> stream_;
   std::string dir_path_;
 };
 
@@ -266,7 +268,7 @@ TEST_F(CallSessionFileRotatingStreamTest, WriteAndReadLarge) {
 
   ASSERT_TRUE(stream_->Open());
   const size_t buffer_size = 1024 * 1024;
-  scoped_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
+  std::unique_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
   for (int i = 0; i < 8; i++) {
     memset(buffer.get(), i, buffer_size);
     EXPECT_EQ(SR_SUCCESS,
@@ -275,7 +277,7 @@ TEST_F(CallSessionFileRotatingStreamTest, WriteAndReadLarge) {
 
   stream_.reset(new CallSessionFileRotatingStream(dir_path_));
   ASSERT_TRUE(stream_->Open());
-  scoped_ptr<uint8_t[]> expected_buffer(new uint8_t[buffer_size]);
+  std::unique_ptr<uint8_t[]> expected_buffer(new uint8_t[buffer_size]);
   int expected_vals[] = {0, 1, 2, 6, 7};
   for (size_t i = 0; i < arraysize(expected_vals); ++i) {
     memset(expected_buffer.get(), expected_vals[i], buffer_size);
@@ -293,7 +295,7 @@ TEST_F(CallSessionFileRotatingStreamTest, WriteAndReadFirstHalf) {
        6 * 1024 * 1024);
   ASSERT_TRUE(stream_->Open());
   const size_t buffer_size = 1024 * 1024;
-  scoped_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
+  std::unique_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
   for (int i = 0; i < 2; i++) {
     memset(buffer.get(), i, buffer_size);
     EXPECT_EQ(SR_SUCCESS,
@@ -302,7 +304,7 @@ TEST_F(CallSessionFileRotatingStreamTest, WriteAndReadFirstHalf) {
 
   stream_.reset(new CallSessionFileRotatingStream(dir_path_));
   ASSERT_TRUE(stream_->Open());
-  scoped_ptr<uint8_t[]> expected_buffer(new uint8_t[buffer_size]);
+  std::unique_ptr<uint8_t[]> expected_buffer(new uint8_t[buffer_size]);
   int expected_vals[] = {0, 1};
   for (size_t i = 0; i < arraysize(expected_vals); ++i) {
     memset(expected_buffer.get(), expected_vals[i], buffer_size);

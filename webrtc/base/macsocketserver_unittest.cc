@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socket_unittest.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/macsocketserver.h"
@@ -98,7 +99,7 @@ class MacAsyncSocketTest : public SocketTest {
   virtual MacBaseSocketServer* CreateSocketServer() {
     return new MacCFSocketServer();
   };
-  rtc::scoped_ptr<MacBaseSocketServer> server_;
+  std::unique_ptr<MacBaseSocketServer> server_;
   SocketServerScope scope_;
 };
 

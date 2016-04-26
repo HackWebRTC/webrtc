@@ -11,6 +11,7 @@
 #ifndef WEBRTC_API_DTLSIDENTITYSTORE_H_
 #define WEBRTC_API_DTLSIDENTITYSTORE_H_
 
+#include <memory>
 #include <queue>
 #include <string>
 #include <utility>
@@ -19,7 +20,6 @@
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"
@@ -39,9 +39,9 @@ class DtlsIdentityRequestObserver : public rtc::RefCountInterface {
   // TODO(hbos): Unify the OnSuccess method once Chrome code is updated.
   virtual void OnSuccess(const std::string& der_cert,
                          const std::string& der_private_key) = 0;
-  // |identity| is a scoped_ptr because rtc::SSLIdentity is not copyable and the
+  // |identity| is a unique_ptr because rtc::SSLIdentity is not copyable and the
   // client has to get the ownership of the object to make use of it.
-  virtual void OnSuccess(rtc::scoped_ptr<rtc::SSLIdentity> identity) = 0;
+  virtual void OnSuccess(std::unique_ptr<rtc::SSLIdentity> identity) = 0;
 
  protected:
   virtual ~DtlsIdentityRequestObserver() {}
@@ -106,7 +106,7 @@ class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
       rtc::KeyType key_type,
       const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer);
   void OnIdentityGenerated(rtc::KeyType key_type,
-                           rtc::scoped_ptr<rtc::SSLIdentity> identity);
+                           std::unique_ptr<rtc::SSLIdentity> identity);
 
   class WorkerTask;
   typedef rtc::ScopedMessageData<DtlsIdentityStoreImpl::WorkerTask>
@@ -115,11 +115,11 @@ class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
   // A key type-identity pair.
   struct IdentityResult {
     IdentityResult(rtc::KeyType key_type,
-                   rtc::scoped_ptr<rtc::SSLIdentity> identity)
+                   std::unique_ptr<rtc::SSLIdentity> identity)
         : key_type_(key_type), identity_(std::move(identity)) {}
 
     rtc::KeyType key_type_;
-    rtc::scoped_ptr<rtc::SSLIdentity> identity_;
+    std::unique_ptr<rtc::SSLIdentity> identity_;
   };
 
   typedef rtc::ScopedMessageData<IdentityResult> IdentityResultMessageData;
@@ -139,7 +139,7 @@ class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
     std::queue<rtc::scoped_refptr<DtlsIdentityRequestObserver>>
         request_observers_;
     size_t gen_in_progress_counts_;
-    rtc::scoped_ptr<rtc::SSLIdentity> free_identity_;
+    std::unique_ptr<rtc::SSLIdentity> free_identity_;
   };
 
   // One RequestInfo per KeyType. Only touch on the |signaling_thread_|.

@@ -13,6 +13,7 @@
 
 #include <deque>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,6 @@
 #include "webrtc/base/ipaddress.h"
 #include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/messagehandler.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 
 #if defined(WEBRTC_POSIX)
@@ -170,8 +170,8 @@ class NetworkManagerBase : public NetworkManager {
   NetworkMap networks_map_;
   bool ipv6_enabled_;
 
-  rtc::scoped_ptr<rtc::Network> ipv4_any_address_network_;
-  rtc::scoped_ptr<rtc::Network> ipv6_any_address_network_;
+  std::unique_ptr<rtc::Network> ipv4_any_address_network_;
+  std::unique_ptr<rtc::Network> ipv6_any_address_network_;
 
   IPAddress default_local_ipv4_address_;
   IPAddress default_local_ipv6_address_;
@@ -254,7 +254,7 @@ class BasicNetworkManager : public NetworkManagerBase,
   int start_count_;
   std::vector<std::string> network_ignore_list_;
   bool ignore_non_default_routes_;
-  scoped_ptr<NetworkMonitorInterface> network_monitor_;
+  std::unique_ptr<NetworkMonitorInterface> network_monitor_;
 };
 
 // Represents a Unix-type network interface, with a name and single address.

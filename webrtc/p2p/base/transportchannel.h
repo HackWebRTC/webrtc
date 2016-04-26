@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_BASE_TRANSPORTCHANNEL_H_
 #define WEBRTC_P2P_BASE_TRANSPORTCHANNEL_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -130,7 +131,7 @@ class TransportChannel : public sigslot::has_slots<> {
   GetLocalCertificate() const = 0;
 
   // Gets a copy of the remote side's SSL certificate.
-  virtual rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+  virtual std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
       const = 0;
 
   // Allows key material to be extracted for external encryption.

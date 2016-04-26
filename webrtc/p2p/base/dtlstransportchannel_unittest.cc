@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <set>
 
 #include "webrtc/p2p/base/dtlstransport.h"
@@ -16,7 +17,6 @@
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
@@ -54,7 +54,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
         received_dtls_server_hello_(false) {}
   void CreateCertificate(rtc::KeyType key_type) {
     certificate_ =
-        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+        rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
             rtc::SSLIdentity::Generate(name_, key_type)));
   }
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate() {
@@ -122,8 +122,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
                  ConnectionRole local_role,
                  ConnectionRole remote_role,
                  int flags) {
-    rtc::scoped_ptr<rtc::SSLFingerprint> local_fingerprint;
-    rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint;
+    std::unique_ptr<rtc::SSLFingerprint> local_fingerprint;
+    std::unique_ptr<rtc::SSLFingerprint> remote_fingerprint;
     if (local_cert) {
       std::string digest_algorithm;
       ASSERT_TRUE(local_cert->ssl_certificate().GetSignatureDigestAlgorithm(
@@ -248,7 +248,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   void SendPackets(size_t channel, size_t size, size_t count, bool srtp) {
     ASSERT(channel < channels_.size());
-    rtc::scoped_ptr<char[]> packet(new char[size]);
+    std::unique_ptr<char[]> packet(new char[size]);
     size_t sent = 0;
     do {
       // Fill the packet with a known value and a sequence number to check
@@ -272,7 +272,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   int SendInvalidSrtpPacket(size_t channel, size_t size) {
     ASSERT(channel < channels_.size());
-    rtc::scoped_ptr<char[]> packet(new char[size]);
+    std::unique_ptr<char[]> packet(new char[size]);
     // Fill the packet with 0 to form an invalid SRTP packet.
     memset(packet.get(), 0, size);
 
@@ -379,7 +379,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
  private:
   std::string name_;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
-  rtc::scoped_ptr<cricket::FakeTransport> transport_;
+  std::unique_ptr<cricket::FakeTransport> transport_;
   std::vector<cricket::DtlsTransportChannelWrapper*> channels_;
   size_t packet_size_;
   std::set<int> received_;
@@ -846,8 +846,8 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
 
   rtc::scoped_refptr<rtc::RTCCertificate> certificate1;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate2;
-  rtc::scoped_ptr<rtc::SSLCertificate> remote_cert1;
-  rtc::scoped_ptr<rtc::SSLCertificate> remote_cert2;
+  std::unique_ptr<rtc::SSLCertificate> remote_cert1;
+  std::unique_ptr<rtc::SSLCertificate> remote_cert2;
 
   // After negotiation, each side has a distinct local certificate, but still no
   // remote certificate, because connection has not yet occurred.
@@ -875,12 +875,12 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
             certificate2->ssl_certificate().ToPEMString());
 
   // Each side's remote certificate is the other side's local certificate.
-  rtc::scoped_ptr<rtc::SSLCertificate> remote_cert1 =
+  std::unique_ptr<rtc::SSLCertificate> remote_cert1 =
       client1_.transport()->GetRemoteSSLCertificate();
   ASSERT_TRUE(remote_cert1);
   ASSERT_EQ(remote_cert1->ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
-  rtc::scoped_ptr<rtc::SSLCertificate> remote_cert2 =
+  std::unique_ptr<rtc::SSLCertificate> remote_cert2 =
       client2_.transport()->GetRemoteSSLCertificate();
   ASSERT_TRUE(remote_cert2);
   ASSERT_EQ(remote_cert2->ToPEMString(),

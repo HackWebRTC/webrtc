@@ -26,6 +26,7 @@
 #define WEBRTC_P2P_BASE_TRANSPORT_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "webrtc/p2p/base/candidate.h"
@@ -214,7 +215,7 @@ class Transport : public sigslot::has_slots<> {
   }
 
   // Get a copy of the remote certificate in use by the specified channel.
-  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate();
+  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate();
 
   // Create, destroy, and lookup the channels of this type by their components.
   TransportChannelImpl* CreateChannel(int component);
@@ -333,8 +334,8 @@ class Transport : public sigslot::has_slots<> {
   uint64_t tiebreaker_ = 0;
   IceMode remote_ice_mode_ = ICEMODE_FULL;
   IceConfig ice_config_;
-  rtc::scoped_ptr<TransportDescription> local_description_;
-  rtc::scoped_ptr<TransportDescription> remote_description_;
+  std::unique_ptr<TransportDescription> local_description_;
+  std::unique_ptr<TransportDescription> remote_description_;
   bool local_description_set_ = false;
   bool remote_description_set_ = false;
 

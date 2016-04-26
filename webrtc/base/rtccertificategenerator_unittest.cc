@@ -10,11 +10,12 @@
 
 #include "webrtc/base/rtccertificategenerator.h"
 
+#include <memory>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 
 namespace rtc {
@@ -59,8 +60,8 @@ class RTCCertificateGeneratorFixture : public RTCCertificateGeneratorCallback {
 
  protected:
   Thread* const signaling_thread_;
-  scoped_ptr<Thread> worker_thread_;
-  scoped_ptr<RTCCertificateGenerator> generator_;
+  std::unique_ptr<Thread> worker_thread_;
+  std::unique_ptr<RTCCertificateGenerator> generator_;
   scoped_refptr<RTCCertificate> certificate_;
   bool generate_async_completed_;
 };

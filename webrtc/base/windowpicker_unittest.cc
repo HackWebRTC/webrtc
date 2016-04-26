@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include <memory>
+
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/testutils.h"
 #include "webrtc/base/window.h"
@@ -25,7 +27,7 @@ TEST(WindowPickerTest, GetWindowList) {
     LOG(LS_INFO) << "skipping test: window capturing is not supported with "
                  << "current configuration.";
   }
-  rtc::scoped_ptr<rtc::WindowPicker> picker(
+  std::unique_ptr<rtc::WindowPicker> picker(
       rtc::WindowPickerFactory::CreateWindowPicker());
   EXPECT_TRUE(picker->Init());
   rtc::WindowDescriptionList descriptions;
@@ -40,7 +42,7 @@ TEST(WindowPickerTest, DISABLE_ON_MAC(GetDesktopList)) {
     LOG(LS_INFO) << "skipping test: window capturing is not supported with "
                  << "current configuration.";
   }
-  rtc::scoped_ptr<rtc::WindowPicker> picker(
+  std::unique_ptr<rtc::WindowPicker> picker(
       rtc::WindowPickerFactory::CreateWindowPicker());
   EXPECT_TRUE(picker->Init());
   rtc::DesktopDescriptionList descriptions;

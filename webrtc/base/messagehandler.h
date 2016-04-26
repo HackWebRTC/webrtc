@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_MESSAGEHANDLER_H_
 #define WEBRTC_BASE_MESSAGEHANDLER_H_
 
+#include <memory>
 #include <utility>
 
 #include "webrtc/base/constructormagic.h"

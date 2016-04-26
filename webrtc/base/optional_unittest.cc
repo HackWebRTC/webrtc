@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -64,8 +65,8 @@ class Logger {
   }
   void Foo() { Log("Foo()"); }
   void Foo() const { Log("Foo() const"); }
-  static rtc::scoped_ptr<std::vector<std::string>> Setup() {
-    rtc::scoped_ptr<std::vector<std::string>> s(new std::vector<std::string>);
+  static std::unique_ptr<std::vector<std::string>> Setup() {
+    std::unique_ptr<std::vector<std::string>> s(new std::vector<std::string>);
     g_log = s.get();
     g_next_id = 0;
     return s;

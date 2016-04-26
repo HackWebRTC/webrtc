@@ -11,11 +11,11 @@
 #ifndef WEBRTC_BASE_PHYSICALSOCKETSERVER_H__
 #define WEBRTC_BASE_PHYSICALSOCKETSERVER_H__
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/asyncfile.h"
 #include "webrtc/base/nethelpers.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketserver.h"
 #include "webrtc/base/criticalsection.h"
 
@@ -104,7 +104,7 @@ class PhysicalSocketServer : public SocketServer {
 #if defined(WEBRTC_POSIX)
   static bool InstallSignal(int signum, void (*handler)(int));
 
-  scoped_ptr<PosixSignalDispatcher> signal_dispatcher_;
+  std::unique_ptr<PosixSignalDispatcher> signal_dispatcher_;
 #endif
   DispatcherList dispatchers_;
   IteratorList iterators_;

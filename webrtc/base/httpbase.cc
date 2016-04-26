@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 
 #if defined(WEBRTC_WIN)
 #include "webrtc/base/win32.h"
@@ -271,9 +272,8 @@ public:
     // When the method returns, we restore the old document.  Ideally, we would
     // pass our StreamInterface* to DoReceiveLoop, but due to the callbacks
     // of HttpParser, we would still need to store the pointer temporarily.
-    scoped_ptr<StreamInterface>
-        stream(new BlockingMemoryStream(reinterpret_cast<char*>(buffer),
-                                        buffer_len));
+    std::unique_ptr<StreamInterface> stream(
+        new BlockingMemoryStream(reinterpret_cast<char*>(buffer), buffer_len));
 
     // Replace the existing document with our wrapped buffer.
     base_->data_->document.swap(stream);

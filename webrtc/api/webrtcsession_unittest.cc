@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -692,7 +693,7 @@ class WebRtcSessionTest
         rtc::ToString(rtc::CreateRandomId());
     // Confirmed to work with KT_RSA and KT_ECDSA.
     tdesc_factory_->set_certificate(
-        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+        rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
             rtc::SSLIdentity::Generate(identity_name, rtc::KT_DEFAULT))));
     tdesc_factory_->set_secure(cricket::SEC_REQUIRED);
   }

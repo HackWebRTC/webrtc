@@ -12,6 +12,7 @@
 #define WEBRTC_P2P_BASE_FAKETRANSPORTCONTROLLER_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -260,9 +261,9 @@ class FakeTransportChannel : public TransportChannelImpl,
     return local_cert_;
   }
 
-  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
       const override {
-    return remote_cert_ ? rtc::scoped_ptr<rtc::SSLCertificate>(
+    return remote_cert_ ? std::unique_ptr<rtc::SSLCertificate>(
                               remote_cert_->GetReference())
                         : nullptr;
   }

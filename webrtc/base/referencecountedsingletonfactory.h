@@ -11,10 +11,11 @@
 #ifndef WEBRTC_BASE_REFERENCECOUNTEDSINGLETONFACTORY_H_
 #define WEBRTC_BASE_REFERENCECOUNTEDSINGLETONFACTORY_H_
 
+#include <memory>
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
 
@@ -41,11 +42,11 @@ class ReferenceCountedSingletonFactory {
  protected:
   // Must be implemented in a sub-class. The sub-class may choose whether or not
   // to cache the instance across lifetimes by either reset()'ing or not
-  // reset()'ing the scoped_ptr in CleanupInstance().
+  // reset()'ing the unique_ptr in CleanupInstance().
   virtual bool SetupInstance() = 0;
   virtual void CleanupInstance() = 0;
 
-  scoped_ptr<Interface> instance_;
+  std::unique_ptr<Interface> instance_;
 
  private:
   Interface* GetInstance() {

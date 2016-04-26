@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <utility>
 
 #include "webrtc/p2p/base/dtlstransportchannel.h"
@@ -250,7 +251,7 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
   return true;
 }
 
-rtc::scoped_ptr<rtc::SSLCertificate>
+std::unique_ptr<rtc::SSLCertificate>
 DtlsTransportChannelWrapper::GetRemoteSSLCertificate() const {
   if (!dtls_) {
     return nullptr;

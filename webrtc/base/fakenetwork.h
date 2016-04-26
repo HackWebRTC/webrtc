@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_FAKENETWORK_H_
 #define WEBRTC_BASE_FAKENETWORK_H_
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -99,9 +100,9 @@ class FakeNetworkManager : public NetworkManagerBase,
         prefix_length = kFakeIPv6NetworkPrefixLength;
       }
       IPAddress prefix = TruncateIP(it->first.ipaddr(), prefix_length);
-      scoped_ptr<Network> net(new Network(it->first.hostname(),
-                                          it->first.hostname(), prefix,
-                                          prefix_length, it->second));
+      std::unique_ptr<Network> net(new Network(it->first.hostname(),
+                                               it->first.hostname(), prefix,
+                                               prefix_length, it->second));
       net->set_default_local_address_provider(this);
       net->AddIP(it->first.ipaddr());
       networks.push_back(net.release());

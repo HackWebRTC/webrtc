@@ -12,6 +12,7 @@
 
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/networkmonitor.h"
+#include <memory>
 #include <vector>
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>
@@ -108,7 +109,7 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
                                  bool include_ignored,
                                  NetworkManager::NetworkList* networks) {
     // Use the base IfAddrsConverter for test cases.
-    rtc::scoped_ptr<IfAddrsConverter> ifaddrs_converter(new IfAddrsConverter());
+    std::unique_ptr<IfAddrsConverter> ifaddrs_converter(new IfAddrsConverter());
     network_manager.ConvertIfAddrs(interfaces, ifaddrs_converter.get(),
                                    include_ignored, networks);
   }

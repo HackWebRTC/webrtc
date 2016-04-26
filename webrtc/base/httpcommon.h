@@ -12,11 +12,11 @@
 #define WEBRTC_BASE_HTTPCOMMON_H__
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/stream.h"
 
@@ -292,7 +292,7 @@ struct HttpData {
   typedef HeaderMap::iterator iterator;
 
   HttpVersion version;
-  scoped_ptr<StreamInterface> document;
+  std::unique_ptr<StreamInterface> document;
 
   HttpData();
 

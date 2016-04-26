@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -17,7 +18,6 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scopedptrcollection.h"
 #include "webrtc/base/thread.h"
 
@@ -226,8 +226,8 @@ TEST(AtomicOpsTest, Simple) {
 TEST(AtomicOpsTest, SimplePtr) {
   class Foo {};
   Foo* volatile foo = nullptr;
-  scoped_ptr<Foo> a(new Foo());
-  scoped_ptr<Foo> b(new Foo());
+  std::unique_ptr<Foo> a(new Foo());
+  std::unique_ptr<Foo> b(new Foo());
   // Reading the initial value should work as expected.
   EXPECT_TRUE(rtc::AtomicOps::AcquireLoadPtr(&foo) == nullptr);
   // Setting using compare and swap should work.

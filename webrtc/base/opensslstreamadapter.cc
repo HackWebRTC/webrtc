@@ -22,6 +22,7 @@
 #include <openssl/dtls1.h>
 #endif
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/common.h"
@@ -293,9 +294,9 @@ void OpenSSLStreamAdapter::SetServerRole(SSLRole role) {
   role_ = role;
 }
 
-rtc::scoped_ptr<SSLCertificate> OpenSSLStreamAdapter::GetPeerCertificate()
+std::unique_ptr<SSLCertificate> OpenSSLStreamAdapter::GetPeerCertificate()
     const {
-  return peer_certificate_ ? rtc::scoped_ptr<SSLCertificate>(
+  return peer_certificate_ ? std::unique_ptr<SSLCertificate>(
                                  peer_certificate_->GetReference())
                            : nullptr;
 }

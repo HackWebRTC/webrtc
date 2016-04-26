@@ -12,6 +12,7 @@
 #define WEBRTC_BASE_TESTECHOSERVER_H_
 
 #include <list>
+#include <memory>
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/sigslot.h"
@@ -63,7 +64,7 @@ class TestEchoServer : public sigslot::has_slots<> {
   }
 
   typedef std::list<AsyncTCPSocket*> ClientList;
-  scoped_ptr<AsyncSocket> server_socket_;
+  std::unique_ptr<AsyncSocket> server_socket_;
   ClientList client_sockets_;
   RTC_DISALLOW_COPY_AND_ASSIGN(TestEchoServer);
 };

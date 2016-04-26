@@ -11,6 +11,8 @@
 #ifndef WEBRTC_API_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 #define WEBRTC_API_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 
+#include <memory>
+
 #include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/messagehandler.h"
@@ -37,7 +39,7 @@ class WebRtcIdentityRequestObserver : public DtlsIdentityRequestObserver,
   void OnFailure(int error) override;
   void OnSuccess(const std::string& der_cert,
                  const std::string& der_private_key) override;
-  void OnSuccess(rtc::scoped_ptr<rtc::SSLIdentity> identity) override;
+  void OnSuccess(std::unique_ptr<rtc::SSLIdentity> identity) override;
 
   sigslot::signal1<int> SignalRequestFailed;
   sigslot::signal1<const rtc::scoped_refptr<rtc::RTCCertificate>&>

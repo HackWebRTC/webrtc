@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <utility>
 
 #include "webrtc/base/checks.h"
@@ -16,7 +17,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/rtccertificate.h"
 #include "webrtc/base/safe_conversions.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
@@ -77,7 +77,7 @@ class RTCCertificateTest : public testing::Test {
     // is fast to generate.
     params.key_params = KeyParams::ECDSA();
 
-    scoped_ptr<SSLIdentity> identity(SSLIdentity::GenerateForTest(params));
+    std::unique_ptr<SSLIdentity> identity(SSLIdentity::GenerateForTest(params));
     return RTCCertificate::Create(std::move(identity));
   }
 };
@@ -85,7 +85,7 @@ class RTCCertificateTest : public testing::Test {
 TEST_F(RTCCertificateTest, NewCertificateNotExpired) {
   // Generate a real certificate without specifying the expiration time.
   // Certificate type doesn't matter, using ECDSA because it's fast to generate.
-  scoped_ptr<SSLIdentity> identity(
+  std::unique_ptr<SSLIdentity> identity(
       SSLIdentity::Generate(kTestCertCommonName, KeyParams::ECDSA()));
   scoped_refptr<RTCCertificate> certificate =
       RTCCertificate::Create(std::move(identity));

@@ -12,7 +12,6 @@
 #define WEBRTC_BASE_NETWORKMONITOR_H_
 
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 

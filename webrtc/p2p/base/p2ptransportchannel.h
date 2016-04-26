@@ -144,7 +144,7 @@ class P2PTransportChannel : public TransportChannelImpl,
     return nullptr;
   }
 
-  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
       const override {
     return nullptr;
   }

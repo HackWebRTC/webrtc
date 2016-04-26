@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/pathutils.h"
@@ -74,7 +76,7 @@ TEST(FilesystemTest, TestCreatePrivateFile) {
   EXPECT_FALSE(Filesystem::CreatePrivateFile(path));
 
   // Verify that we have permission to open the file for reading and writing.
-  scoped_ptr<FileStream> fs(Filesystem::OpenFile(path, "wb"));
+  std::unique_ptr<FileStream> fs(Filesystem::OpenFile(path, "wb"));
   EXPECT_TRUE(fs.get() != NULL);
   // Have to close the file on Windows before it will let us delete it.
   fs.reset();

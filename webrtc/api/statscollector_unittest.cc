@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <memory>
 
 #include "webrtc/api/statscollector.h"
 
@@ -84,9 +85,9 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
                     rtc::scoped_refptr<rtc::RTCCertificate>* certificate));
 
   // Workaround for gmock's inability to cope with move-only return values.
-  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
       const std::string& transport_name) override {
-    return rtc::scoped_ptr<rtc::SSLCertificate>(
+    return std::unique_ptr<rtc::SSLCertificate>(
         GetRemoteSSLCertificate_ReturnsRawPointer(transport_name));
   }
   MOCK_METHOD1(GetRemoteSSLCertificate_ReturnsRawPointer,
@@ -694,7 +695,7 @@ class StatsCollectorTest : public testing::Test {
 
     // Fake certificate to report
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate(
-        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::FakeSSLIdentity>(
+        rtc::RTCCertificate::Create(std::unique_ptr<rtc::FakeSSLIdentity>(
             new rtc::FakeSSLIdentity(local_cert))));
 
     // Configure MockWebRtcSession

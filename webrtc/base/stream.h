@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_STREAM_H_
 #define WEBRTC_BASE_STREAM_H_
 
+#include <memory>
 #include <stdio.h>
 
 #include "webrtc/base/basictypes.h"
@@ -19,7 +20,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 
 namespace rtc {
@@ -334,7 +334,7 @@ class StreamTap : public StreamAdapterInterface {
                      int* error) override;
 
  private:
-  scoped_ptr<StreamInterface> tap_;
+  std::unique_ptr<StreamInterface> tap_;
   StreamResult tap_result_;
   int tap_error_;
   RTC_DISALLOW_COPY_AND_ASSIGN(StreamTap);
@@ -554,7 +554,7 @@ class FifoBuffer : public StreamInterface {
   // keeps the opened/closed state of the stream
   StreamState state_ GUARDED_BY(crit_);
   // the allocated buffer
-  scoped_ptr<char[]> buffer_ GUARDED_BY(crit_);
+  std::unique_ptr<char[]> buffer_ GUARDED_BY(crit_);
   // size of the allocated buffer
   size_t buffer_length_ GUARDED_BY(crit_);
   // amount of readable data in the buffer

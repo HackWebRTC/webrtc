@@ -11,6 +11,7 @@
 #ifndef WEBRTC_API_TEST_FAKEDTLSIDENTITYSERVICE_H_
 #define WEBRTC_API_TEST_FAKEDTLSIDENTITYSERVICE_H_
 
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -127,7 +128,7 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
         rtc::kPemTypeRsaPrivateKey,
         reinterpret_cast<const unsigned char*>(key.data()),
         key.length());
-    rtc::scoped_ptr<rtc::SSLIdentity> identity(
+    std::unique_ptr<rtc::SSLIdentity> identity(
         rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert));
 
     return rtc::RTCCertificate::Create(std::move(identity));

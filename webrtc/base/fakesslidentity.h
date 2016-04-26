@@ -12,6 +12,7 @@
 #define WEBRTC_BASE_FAKESSLIDENTITY_H_
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/common.h"
@@ -68,12 +69,12 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
                                        digest, size);
     return (*length != 0);
   }
-  virtual rtc::scoped_ptr<SSLCertChain> GetChain() const {
+  virtual std::unique_ptr<SSLCertChain> GetChain() const {
     if (certs_.empty())
       return nullptr;
     std::vector<SSLCertificate*> new_certs(certs_.size());
     std::transform(certs_.begin(), certs_.end(), new_certs.begin(), DupCert);
-    rtc::scoped_ptr<SSLCertChain> chain(new SSLCertChain(new_certs));
+    std::unique_ptr<SSLCertChain> chain(new SSLCertChain(new_certs));
     std::for_each(new_certs.begin(), new_certs.end(), DeleteCert);
     return chain;
   }

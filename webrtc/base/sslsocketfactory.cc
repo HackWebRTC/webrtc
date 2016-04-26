@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/autodetectproxy.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketadapters.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslsocketfactory.h"
@@ -167,7 +168,7 @@ AsyncSocket* SslSocketFactory::CreateProxySocket(const ProxyInfo& proxy,
   }
 
   if (!hostname_.empty()) {
-    rtc::scoped_ptr<SSLAdapter> ssl_adapter(SSLAdapter::Create(socket));
+    std::unique_ptr<SSLAdapter> ssl_adapter(SSLAdapter::Create(socket));
     if (!ssl_adapter) {
       LOG_F(LS_ERROR) << "SSL unavailable";
       delete socket;

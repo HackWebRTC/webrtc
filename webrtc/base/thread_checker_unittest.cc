@@ -10,11 +10,12 @@
 
 // Borrowed from Chromium's src/base/threading/thread_checker_unittest.cc.
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/base/scoped_ptr.h"
 
 // Duplicated from base/threading/thread_checker.h so that we can be
 // good citizens there and undef the macro.
@@ -91,7 +92,7 @@ class DeleteThreadCheckerClassOnThread : public Thread {
   }
 
  private:
-  scoped_ptr<ThreadCheckerClass> thread_checker_class_;
+  std::unique_ptr<ThreadCheckerClass> thread_checker_class_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DeleteThreadCheckerClassOnThread);
 };
@@ -99,7 +100,7 @@ class DeleteThreadCheckerClassOnThread : public Thread {
 }  // namespace
 
 TEST(ThreadCheckerTest, CallsAllowedOnSameThread) {
-  scoped_ptr<ThreadCheckerClass> thread_checker_class(
+  std::unique_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
   // Verify that DoStuff doesn't assert.
@@ -110,7 +111,7 @@ TEST(ThreadCheckerTest, CallsAllowedOnSameThread) {
 }
 
 TEST(ThreadCheckerTest, DestructorAllowedOnDifferentThread) {
-  scoped_ptr<ThreadCheckerClass> thread_checker_class(
+  std::unique_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
   // Verify that the destructor doesn't assert
@@ -123,7 +124,7 @@ TEST(ThreadCheckerTest, DestructorAllowedOnDifferentThread) {
 }
 
 TEST(ThreadCheckerTest, DetachFromThread) {
-  scoped_ptr<ThreadCheckerClass> thread_checker_class(
+  std::unique_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
   // Verify that DoStuff doesn't assert when called on a different thread after
@@ -138,7 +139,7 @@ TEST(ThreadCheckerTest, DetachFromThread) {
 #if GTEST_HAS_DEATH_TEST || !ENABLE_THREAD_CHECKER
 
 void ThreadCheckerClass::MethodOnDifferentThreadImpl() {
-  scoped_ptr<ThreadCheckerClass> thread_checker_class(
+  std::unique_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
   // DoStuff should assert in debug builds only when called on a
@@ -162,7 +163,7 @@ TEST(ThreadCheckerTest, MethodAllowedOnDifferentThreadInRelease) {
 #endif  // ENABLE_THREAD_CHECKER
 
 void ThreadCheckerClass::DetachThenCallFromDifferentThreadImpl() {
-  scoped_ptr<ThreadCheckerClass> thread_checker_class(
+  std::unique_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
   // DoStuff doesn't assert when called on a different thread

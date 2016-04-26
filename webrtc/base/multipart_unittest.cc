@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/pathutils.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/multipart.h"
 
 namespace rtc {
@@ -61,7 +61,7 @@ TEST(MultipartTest, TestAddAndRead) {
   EXPECT_TRUE(multipart.GetSize(&size));
   EXPECT_EQ(part_size, size);
 
-  rtc::scoped_ptr<rtc::MemoryStream> stream(
+  std::unique_ptr<rtc::MemoryStream> stream(
       new rtc::MemoryStream(kTestStreamContent));
   size_t stream_size = 0;
   EXPECT_TRUE(stream->GetSize(&stream_size));

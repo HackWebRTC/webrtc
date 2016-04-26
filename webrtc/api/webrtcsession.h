@@ -11,6 +11,7 @@
 #ifndef WEBRTC_API_WEBRTCSESSION_H_
 #define WEBRTC_API_WEBRTCSESSION_H_
 
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -293,7 +294,7 @@ class WebRtcSession : public AudioProviderInterface,
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate);
 
   // Caller owns returned certificate
-  virtual rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+  virtual std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
       const std::string& transport_name);
 
   cricket::DataChannelType data_channel_type() const;

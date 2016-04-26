@@ -13,7 +13,6 @@
 
 #include <string>
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/taskparent.h"
 

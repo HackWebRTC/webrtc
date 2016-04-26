@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/optionsfile.h"
@@ -51,7 +53,7 @@ class OptionsFileTest : public testing::Test {
     store_.reset(new OptionsFile(test_file_));
   }
 
-  rtc::scoped_ptr<OptionsFile> store_;
+  std::unique_ptr<OptionsFile> store_;
 
  private:
   std::string test_file_;

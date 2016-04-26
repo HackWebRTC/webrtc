@@ -21,9 +21,10 @@
 
 #include <shlwapi.h>
 
+#include <memory>
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
 
@@ -146,7 +147,7 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
   byte* buffer_raw = nullptr;
   HRESULT hr = GetValueStaticHelper(full_key_name, value_name,
                                     REG_BINARY, &buffer_raw, &byte_count);
-  scoped_ptr<byte[]> buffer(buffer_raw);
+  std::unique_ptr<byte[]> buffer(buffer_raw);
   if (SUCCEEDED(hr)) {
     ASSERT(byte_count == sizeof(*value));
     if (byte_count == sizeof(*value)) {
@@ -166,7 +167,7 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
   byte* buffer_raw = nullptr;
   HRESULT hr = GetValueStaticHelper(full_key_name, value_name,
                                     REG_BINARY, &buffer_raw, &byte_count);
-  scoped_ptr<byte[]> buffer(buffer_raw);
+  std::unique_ptr<byte[]> buffer(buffer_raw);
   if (SUCCEEDED(hr)) {
     ASSERT(byte_count == sizeof(*value));
     if (byte_count == sizeof(*value)) {
@@ -193,7 +194,7 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
 
   wchar_t* buffer_raw = nullptr;
   HRESULT hr = RegKey::GetValue(full_key_name, value_name, &buffer_raw);
-  scoped_ptr<wchar_t[]> buffer(buffer_raw);
+  std::unique_ptr<wchar_t[]> buffer(buffer_raw);
   if (SUCCEEDED(hr)) {
     value->assign(buffer.get());
   }

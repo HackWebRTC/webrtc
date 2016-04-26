@@ -10,6 +10,8 @@
 
 #import "RTCConfiguration.h"
 
+#include <memory>
+
 #include "webrtc/base/sslidentity.h"
 
 #import "webrtc/api/objc/RTCConfiguration+Private.h"
@@ -86,7 +88,7 @@
   nativeConfig.ice_backup_candidate_pair_ping_interval =
       _iceBackupCandidatePairPingInterval;
   if (_keyType == RTCEncryptionKeyTypeECDSA) {
-    rtc::scoped_ptr<rtc::SSLIdentity> identity(
+    std::unique_ptr<rtc::SSLIdentity> identity(
         rtc::SSLIdentity::Generate(webrtc::kIdentityName, rtc::KT_ECDSA));
     if (identity) {
       nativeConfig.certificates.push_back(

@@ -13,7 +13,6 @@
 #include "webrtc/base/taskrunner.h"
 
 #include "webrtc/base/common.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/task.h"
 #include "webrtc/base/logging.h"
 

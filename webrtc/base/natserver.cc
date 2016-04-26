@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/natsocketfactory.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/logging.h"
@@ -195,7 +197,7 @@ void NATServer::OnExternalUDPPacket(
 
   // Forward this packet to the internal address.
   // First prepend the address in a quasi-STUN format.
-  scoped_ptr<char[]> real_buf(new char[size + kNATEncodedIPv6AddressSize]);
+  std::unique_ptr<char[]> real_buf(new char[size + kNATEncodedIPv6AddressSize]);
   size_t addrlength = PackAddressForNAT(real_buf.get(),
                                         size + kNATEncodedIPv6AddressSize,
                                         remote_addr);

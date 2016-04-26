@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sharedexclusivelock.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
@@ -42,7 +43,7 @@ class SharedExclusiveTask : public MessageHandler {
   int waiting_time_in_ms() const { return waiting_time_in_ms_; }
 
  protected:
-  scoped_ptr<Thread> worker_thread_;
+  std::unique_ptr<Thread> worker_thread_;
   SharedExclusiveLock* shared_exclusive_lock_;
   int waiting_time_in_ms_;
   int* value_;
@@ -127,7 +128,7 @@ class SharedExclusiveLockTest
   }
 
  protected:
-  scoped_ptr<SharedExclusiveLock> shared_exclusive_lock_;
+  std::unique_ptr<SharedExclusiveLock> shared_exclusive_lock_;
   int value_;
 };
 

@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <vector>
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/asyncsocket.h"
@@ -371,7 +372,7 @@ private:
   void OnCloseEvent(AsyncSocket* socket, int error) {
   }
 
-  scoped_ptr<AsyncSocket> socket_;
+  std::unique_ptr<AsyncSocket> socket_;
   Buffer send_buffer_, recv_buffer_;
 };
 
@@ -414,7 +415,7 @@ class SocketTestServer : public sigslot::has_slots<> {
     clients_.push_back(new SocketTestClient(accepted));
   }
 
-  scoped_ptr<AsyncSocket> socket_;
+  std::unique_ptr<AsyncSocket> socket_;
   std::vector<SocketTestClient*> clients_;
 };
 

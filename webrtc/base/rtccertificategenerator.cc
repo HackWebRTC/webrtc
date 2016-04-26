@@ -11,6 +11,7 @@
 #include "webrtc/base/rtccertificategenerator.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/sslidentity.h"
@@ -124,7 +125,7 @@ RTCCertificateGenerator::GenerateCertificate(
   }
   if (!identity)
     return nullptr;
-  scoped_ptr<SSLIdentity> identity_sptr(identity);
+  std::unique_ptr<SSLIdentity> identity_sptr(identity);
   return RTCCertificate::Create(std::move(identity_sptr));
 }
 

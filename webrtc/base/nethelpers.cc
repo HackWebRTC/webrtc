@@ -10,6 +10,8 @@
 
 #include "webrtc/base/nethelpers.h"
 
+#include <memory>
+
 #if defined(WEBRTC_WIN)
 #include <ws2spi.h>
 #include <ws2tcpip.h>
@@ -127,7 +129,7 @@ bool HasIPv6Enabled() {
     return false;
   }
   DWORD protbuff_size = 4096;
-  scoped_ptr<char[]> protocols;
+  std::unique_ptr<char[]> protocols;
   LPWSAPROTOCOL_INFOW protocol_infos = NULL;
   int requested_protocols[2] = {AF_INET6, 0};
 
