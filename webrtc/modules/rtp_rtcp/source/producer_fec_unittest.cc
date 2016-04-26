@@ -78,7 +78,7 @@ TEST_F(ProducerFecTest, NoEmptyFecWithSeqNumGaps) {
   protected_packets.push_back({12, 3, 54, 0});
   protected_packets.push_back({21, 0, 55, 0});
   protected_packets.push_back({13, 3, 57, 1});
-  FecProtectionParams params = {117, 0, 3, kFecMaskBursty};
+  FecProtectionParams params = {117, 3, kFecMaskBursty};
   producer_->SetFecParameters(&params, 0);
   uint8_t packet[28] = {0};
   for (Packet p : protected_packets) {
@@ -111,7 +111,7 @@ TEST_F(ProducerFecTest, OneFrameFec) {
   // of packets is within |kMaxExcessOverhead|, and (2) the total number of
   // media packets for 1 frame is at least |minimum_media_packets_fec_|.
   const int kNumPackets = 4;
-  FecProtectionParams params = {15, false, 3};
+  FecProtectionParams params = {15, 3, kFecMaskRandom};
   std::list<test::RawRtpPacket*> rtp_packets;
   generator_->NewFrame(kNumPackets);
   producer_->SetFecParameters(&params, 0);  // Expecting one FEC packet.
@@ -152,7 +152,7 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
   const int kNumPackets = 2;
   const int kNumFrames = 2;
 
-  FecProtectionParams params = {15, 0, 3};
+  FecProtectionParams params = {15, 3, kFecMaskRandom};
   std::list<test::RawRtpPacket*> rtp_packets;
   producer_->SetFecParameters(&params, 0);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
