@@ -8,11 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-/*
- * This file includes unit tests for the RtpHeaderExtensionMap.
- */
-
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"

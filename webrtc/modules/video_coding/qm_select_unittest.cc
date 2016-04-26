@@ -8,11 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * This file includes unit tests the QmResolution class
- * In particular, for the selection of spatial and/or temporal down-sampling.
- */
-
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/include/module_common_types.h"

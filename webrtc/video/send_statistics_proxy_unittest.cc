@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// This file includes unit tests for SendStatisticsProxy.
 #include "webrtc/video/send_statistics_proxy.h"
 
 #include <map>

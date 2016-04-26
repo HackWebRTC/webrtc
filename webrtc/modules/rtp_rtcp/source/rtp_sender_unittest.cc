@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * This file includes unit tests for the RTPSender.
- */
-
 #include <list>
 #include <vector>
 

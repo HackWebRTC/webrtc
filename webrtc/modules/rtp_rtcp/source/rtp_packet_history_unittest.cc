@@ -6,8 +6,6 @@
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- *
- * This file includes unit tests for the RTPPacketHistory.
  */
 
 #include "testing/gtest/include/gtest/gtest.h"

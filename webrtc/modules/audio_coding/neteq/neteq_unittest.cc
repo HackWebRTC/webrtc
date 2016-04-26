@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * This file includes unit tests for NetEQ.
- */
-
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 
 #include <math.h>

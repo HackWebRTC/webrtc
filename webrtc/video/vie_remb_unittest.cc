@@ -8,9 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-// This file includes unit tests for ViERemb.
-
 #include <memory>
 #include <vector>
 

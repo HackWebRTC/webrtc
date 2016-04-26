@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-// This file includes unit tests for EncoderStateFeedback.
 #include "webrtc/video/encoder_state_feedback.h"
 
 #include "testing/gmock/include/gmock/gmock.h"
