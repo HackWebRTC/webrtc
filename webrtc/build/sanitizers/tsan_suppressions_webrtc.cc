@@ -76,9 +76,7 @@ char kTSanDefaultSuppressions[] =
 
 // Potential deadlocks detected after roll in r6516.
 // https://code.google.com/p/webrtc/issues/detail?id=3509
-"deadlock:webrtc::RTCPReceiver::SetSsrcs\n"
 "deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
-"deadlock:webrtc::vcm::VideoReceiver::RegisterPacketRequestCallback\n"
 
 // TODO(pbos): Trace events are racy due to lack of proper POD atomics.
 // https://code.google.com/p/webrtc/issues/detail?id=2497
