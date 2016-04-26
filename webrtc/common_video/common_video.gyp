@@ -52,9 +52,11 @@
         }],
       ],
       'sources': [
+        'bitrate_adjuster.cc',
         'i420_buffer_pool.cc',
         'video_frame.cc',
         'incoming_video_stream.cc',
+        'include/bitrate_adjuster.h',
         'include/frame_callback.h',
         'include/i420_buffer_pool.h',
         'include/incoming_video_stream.h',

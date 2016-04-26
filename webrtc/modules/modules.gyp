@@ -364,7 +364,6 @@
             'video_coding/codecs/vp8/simulcast_unittest.h',
             'video_coding/codecs/vp9/screenshare_layers_unittest.cc',
             'video_coding/include/mock/mock_vcm_callbacks.h',
-            'video_coding/bitrate_adjuster_unittest.cc',
             'video_coding/decoding_state_unittest.cc',
             'video_coding/histogram_unittest.cc',
             'video_coding/jitter_buffer_unittest.cc',

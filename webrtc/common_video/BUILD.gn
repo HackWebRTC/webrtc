@@ -17,7 +17,9 @@ config("common_video_config") {
 
 source_set("common_video") {
   sources = [
+    "bitrate_adjuster.cc",
     "i420_buffer_pool.cc",
+    "include/bitrate_adjuster.h",
     "include/frame_callback.h",
     "include/i420_buffer_pool.h",
     "include/incoming_video_stream.h",

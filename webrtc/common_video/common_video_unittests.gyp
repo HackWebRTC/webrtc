@@ -20,6 +20,7 @@
          '<(webrtc_root)/test/test.gyp:video_test_common',
       ],
       'sources': [
+        'bitrate_adjuster_unittest.cc',
         'i420_buffer_pool_unittest.cc',
         'i420_video_frame_unittest.cc',
         'libyuv/libyuv_unittest.cc',

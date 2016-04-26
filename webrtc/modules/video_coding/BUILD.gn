@@ -10,8 +10,6 @@ import("../../build/webrtc.gni")
 
 source_set("video_coding") {
   sources = [
-    "bitrate_adjuster.cc",
-    "bitrate_adjuster.h",
     "codec_database.cc",
     "codec_database.h",
     "codec_timer.cc",

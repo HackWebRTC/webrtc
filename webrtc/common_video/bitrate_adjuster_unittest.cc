@@ -10,7 +10,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/modules/video_coding/include/bitrate_adjuster.h"
+#include "webrtc/common_video/include/bitrate_adjuster.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {

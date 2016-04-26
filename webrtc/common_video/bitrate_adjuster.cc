@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/include/bitrate_adjuster.h"
+#include "webrtc/common_video/include/bitrate_adjuster.h"
 
 #include <cmath>
 
