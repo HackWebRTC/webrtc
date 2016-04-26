@@ -125,10 +125,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   const char* ImplementationName() const override;
 
  private:
-  // CHECK-fail if not running on |codec_thread_|.
-  void CheckOnCodecThread();
-
- private:
   // ResetCodecOnCodecThread() calls ReleaseOnCodecThread() and
   // InitEncodeOnCodecThread() in an attempt to restore the codec to an
   // operable state.  Necessary after all manner of OMX-layer errors.
@@ -158,6 +154,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
       webrtc::EncodedImageCallback* callback);
   int32_t ReleaseOnCodecThread();
   int32_t SetRatesOnCodecThread(uint32_t new_bit_rate, uint32_t frame_rate);
+  void OnDroppedFrameOnCodecThread();
 
   // Helper accessors for MediaCodecVideoEncoder$OutputBufferInfo members.
   int GetOutputBufferInfoIndex(JNIEnv* jni, jobject j_output_buffer_info);
@@ -645,7 +642,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     drop_next_input_frame_ = false;
     current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
     frames_dropped_media_encoder_++;
-    OnDroppedFrame();
+    OnDroppedFrameOnCodecThread();
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
@@ -668,7 +665,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
     frames_dropped_media_encoder_++;
-    OnDroppedFrame();
+    OnDroppedFrameOnCodecThread();
     return WEBRTC_VIDEO_CODEC_OK;
   }
   consecutive_full_queue_frame_drops_ = 0;
@@ -713,7 +710,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       ALOGW << "Encoder drop frame - no input buffers available";
       current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
       frames_dropped_media_encoder_++;
-      OnDroppedFrame();
+      OnDroppedFrameOnCodecThread();
       return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
     }
     if (j_input_buffer_index == -2) {
@@ -1169,6 +1166,15 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
 }
 
 void MediaCodecVideoEncoder::OnDroppedFrame() {
+  // Methods running on the codec thread should call OnDroppedFrameOnCodecThread
+  // directly.
+  RTC_DCHECK(!codec_thread_checker_.CalledOnValidThread());
+  codec_thread_->Invoke<void>(
+      Bind(&MediaCodecVideoEncoder::OnDroppedFrameOnCodecThread, this));
+}
+
+void MediaCodecVideoEncoder::OnDroppedFrameOnCodecThread() {
+  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   // Report dropped frame to quality_scaler_.
   if (scale_)
     quality_scaler_.ReportDroppedFrame();
