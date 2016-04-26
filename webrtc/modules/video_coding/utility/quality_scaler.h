@@ -25,7 +25,6 @@ class QualityScaler {
   QualityScaler();
   void Init(int low_qp_threshold,
             int high_qp_threshold,
-            bool use_framerate_reduction,
             int initial_bitrate_kbps,
             int width,
             int height,
@@ -33,11 +32,9 @@ class QualityScaler {
   void ReportFramerate(int framerate);
   void ReportQP(int qp);
   void ReportDroppedFrame();
-  void Reset(int framerate, int bitrate, int width, int height);
   void OnEncodeFrame(const VideoFrame& frame);
   Resolution GetScaledResolution() const;
   const VideoFrame& GetScaledFrame(const VideoFrame& frame);
-  int GetTargetFramerate() const;
   int downscale_shift() const { return downscale_shift_; }
 
  private:
@@ -56,15 +53,12 @@ class QualityScaler {
   MovingAverage<int> average_qp_downscale_;
 
   int framerate_;
-  int target_framerate_;
   int low_qp_threshold_;
   int high_qp_threshold_;
   MovingAverage<int> framedrop_percent_;
   Resolution res_;
 
   int downscale_shift_;
-  int framerate_down_;
-  bool use_framerate_reduction_;
 };
 
 }  // namespace webrtc

@@ -121,8 +121,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
 
   void OnDroppedFrame() override;
 
-  int GetTargetFramerate() override;
-
   bool SupportsNativeHandle() const override { return egl_context_ != nullptr; }
   const char* ImplementationName() const override;
 
@@ -397,7 +395,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       // 63].
       const int kLowQpThreshold = 29;
       const int kBadQpThreshold = 100;
-      quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold, false,
+      quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold,
                            codec_settings->startBitrate, codec_settings->width,
                            codec_settings->height,
                            codec_settings->maxFramerate);
@@ -405,7 +403,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       // H264 QP is in the range [0, 51].
       const int kLowQpThreshold = 24;
       const int kBadQpThreshold = 39;
-      quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold, false,
+      quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold,
                            codec_settings->startBitrate, codec_settings->width,
                            codec_settings->height,
                            codec_settings->maxFramerate);
@@ -1174,10 +1172,6 @@ void MediaCodecVideoEncoder::OnDroppedFrame() {
   // Report dropped frame to quality_scaler_.
   if (scale_)
     quality_scaler_.ReportDroppedFrame();
-}
-
-int MediaCodecVideoEncoder::GetTargetFramerate() {
-  return scale_ ? quality_scaler_.GetTargetFramerate() : -1;
 }
 
 const char* MediaCodecVideoEncoder::ImplementationName() const {

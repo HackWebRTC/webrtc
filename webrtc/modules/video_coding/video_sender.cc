@@ -339,8 +339,6 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
         next_frame_types_[i] = kVideoFrameDelta;
     }
   }
-  if (qm_settings_callback_)
-    qm_settings_callback_->SetTargetFramerate(_encoder->GetTargetFramerate());
   return VCM_OK;
 }
 

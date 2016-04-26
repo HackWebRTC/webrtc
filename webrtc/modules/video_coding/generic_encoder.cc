@@ -138,10 +138,6 @@ bool VCMGenericEncoder::SupportsNativeHandle() const {
   return encoder_->SupportsNativeHandle();
 }
 
-int VCMGenericEncoder::GetTargetFramerate() {
-  return encoder_->GetTargetFramerate();
-}
-
 VCMEncodedFrameCallback::VCMEncodedFrameCallback(
     EncodedImageCallback* post_encode_callback)
     : send_callback_(),

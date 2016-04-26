@@ -494,10 +494,6 @@ void SimulcastEncoderAdapter::OnDroppedFrame() {
   streaminfos_[0].encoder->OnDroppedFrame();
 }
 
-int SimulcastEncoderAdapter::GetTargetFramerate() {
-  return streaminfos_[0].encoder->GetTargetFramerate();
-}
-
 bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
   // We should not be calling this method before streaminfos_ are configured.
   RTC_DCHECK(!streaminfos_.empty());

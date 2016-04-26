@@ -83,7 +83,6 @@ class VCMGenericEncoder {
   bool InternalSource() const;
   void OnDroppedFrame();
   bool SupportsNativeHandle() const;
-  int GetTargetFramerate();
 
  private:
   VideoEncoder* const encoder_;

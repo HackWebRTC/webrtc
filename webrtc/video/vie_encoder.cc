@@ -71,9 +71,6 @@ class QMVideoSettingsCallback : public VCMQMSettingsCallback {
                              const uint32_t width,
                              const uint32_t height);
 
-  // Update target frame rate.
-  void SetTargetFramerate(int frame_rate);
-
  private:
   VideoProcessing* vp_;
 };
@@ -533,10 +530,6 @@ int32_t QMVideoSettingsCallback::SetVideoQMSettings(
     const uint32_t width,
     const uint32_t height) {
   return vp_->SetTargetResolution(width, height, frame_rate);
-}
-
-void QMVideoSettingsCallback::SetTargetFramerate(int frame_rate) {
-  vp_->SetTargetFramerate(frame_rate);
 }
 
 }  // namespace webrtc

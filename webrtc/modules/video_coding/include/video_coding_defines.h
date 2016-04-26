@@ -195,8 +195,6 @@ class VCMQMSettingsCallback {
                                      const uint32_t width,
                                      const uint32_t height) = 0;
 
-  virtual void SetTargetFramerate(int frame_rate) = 0;
-
  protected:
   virtual ~VCMQMSettingsCallback() {}
 };

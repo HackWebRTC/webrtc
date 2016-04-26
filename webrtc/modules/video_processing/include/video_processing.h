@@ -79,8 +79,6 @@ class VideoProcessing {
                                       uint32_t height,
                                       uint32_t frame_rate) = 0;
 
-  virtual void SetTargetFramerate(int frame_rate) = 0;
-
   virtual uint32_t GetDecimatedFrameRate() = 0;
   virtual uint32_t GetDecimatedWidth() const = 0;
   virtual uint32_t GetDecimatedHeight() const = 0;

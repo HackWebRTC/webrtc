@@ -35,7 +35,6 @@ class VideoProcessingImpl : public VideoProcessing {
   int32_t SetTargetResolution(uint32_t width,
                               uint32_t height,
                               uint32_t frame_rate) override;
-  void SetTargetFramerate(int frame_rate) override;
   uint32_t GetDecimatedFrameRate() override;
   uint32_t GetDecimatedWidth() const override;
   uint32_t GetDecimatedHeight() const override;

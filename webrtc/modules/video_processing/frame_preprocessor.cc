@@ -71,15 +71,6 @@ int32_t VPMFramePreprocessor::SetTargetResolution(uint32_t width,
   return VPM_OK;
 }
 
-void VPMFramePreprocessor::SetTargetFramerate(int frame_rate) {
-  if (frame_rate == -1) {
-    vd_->EnableTemporalDecimation(false);
-  } else {
-    vd_->EnableTemporalDecimation(true);
-    vd_->SetTargetFramerate(frame_rate);
-  }
-}
-
 void VPMFramePreprocessor::UpdateIncomingframe_rate() {
   vd_->UpdateIncomingframe_rate();
 }
