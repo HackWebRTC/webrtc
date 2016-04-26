@@ -54,107 +54,84 @@ int DeletePacketsAndReturnOk(PacketList* packet_list) {
 
 class NetEqImplTest : public ::testing::Test {
  protected:
-  NetEqImplTest()
-      : neteq_(NULL),
-        config_(),
-        tick_timer_(new TickTimer),
-        mock_buffer_level_filter_(NULL),
-        buffer_level_filter_(NULL),
-        use_mock_buffer_level_filter_(true),
-        mock_decoder_database_(NULL),
-        decoder_database_(NULL),
-        use_mock_decoder_database_(true),
-        mock_delay_peak_detector_(NULL),
-        delay_peak_detector_(NULL),
-        use_mock_delay_peak_detector_(true),
-        mock_delay_manager_(NULL),
-        delay_manager_(NULL),
-        use_mock_delay_manager_(true),
-        mock_dtmf_buffer_(NULL),
-        dtmf_buffer_(NULL),
-        use_mock_dtmf_buffer_(true),
-        mock_dtmf_tone_generator_(NULL),
-        dtmf_tone_generator_(NULL),
-        use_mock_dtmf_tone_generator_(true),
-        mock_packet_buffer_(NULL),
-        packet_buffer_(NULL),
-        use_mock_packet_buffer_(true),
-        mock_payload_splitter_(NULL),
-        payload_splitter_(NULL),
-        use_mock_payload_splitter_(true),
-        timestamp_scaler_(NULL) {
-    config_.sample_rate_hz = 8000;
-  }
+  NetEqImplTest() { config_.sample_rate_hz = 8000; }
 
   void CreateInstance() {
+    NetEqImpl::Dependencies deps(config_);
+
+    // Get a local pointer to NetEq's TickTimer object.
+    tick_timer_ = deps.tick_timer.get();
+
     if (use_mock_buffer_level_filter_) {
-      mock_buffer_level_filter_ = new MockBufferLevelFilter;
-      buffer_level_filter_ = mock_buffer_level_filter_;
-    } else {
-      buffer_level_filter_ = new BufferLevelFilter;
+      std::unique_ptr<MockBufferLevelFilter> mock(new MockBufferLevelFilter);
+      mock_buffer_level_filter_ = mock.get();
+      deps.buffer_level_filter = std::move(mock);
     }
+    buffer_level_filter_ = deps.buffer_level_filter.get();
+
     if (use_mock_decoder_database_) {
-      mock_decoder_database_ = new MockDecoderDatabase;
+      std::unique_ptr<MockDecoderDatabase> mock(new MockDecoderDatabase);
+      mock_decoder_database_ = mock.get();
       EXPECT_CALL(*mock_decoder_database_, GetActiveCngDecoder())
           .WillOnce(ReturnNull());
-      decoder_database_ = mock_decoder_database_;
-    } else {
-      decoder_database_ = new DecoderDatabase;
+      deps.decoder_database = std::move(mock);
     }
-    if (use_mock_delay_peak_detector_) {
-      mock_delay_peak_detector_ = new MockDelayPeakDetector;
-      EXPECT_CALL(*mock_delay_peak_detector_, Reset()).Times(1);
-      delay_peak_detector_ = mock_delay_peak_detector_;
-    } else {
-      delay_peak_detector_ = new DelayPeakDetector;
-    }
-    if (use_mock_delay_manager_) {
-      mock_delay_manager_ = new MockDelayManager(config_.max_packets_in_buffer,
-                                                 delay_peak_detector_);
-      EXPECT_CALL(*mock_delay_manager_, set_streaming_mode(false)).Times(1);
-      delay_manager_ = mock_delay_manager_;
-    } else {
-      delay_manager_ =
-          new DelayManager(config_.max_packets_in_buffer, delay_peak_detector_);
-    }
-    if (use_mock_dtmf_buffer_) {
-      mock_dtmf_buffer_ = new MockDtmfBuffer(config_.sample_rate_hz);
-      dtmf_buffer_ = mock_dtmf_buffer_;
-    } else {
-      dtmf_buffer_ = new DtmfBuffer(config_.sample_rate_hz);
-    }
-    if (use_mock_dtmf_tone_generator_) {
-      mock_dtmf_tone_generator_ = new MockDtmfToneGenerator;
-      dtmf_tone_generator_ = mock_dtmf_tone_generator_;
-    } else {
-      dtmf_tone_generator_ = new DtmfToneGenerator;
-    }
-    if (use_mock_packet_buffer_) {
-      mock_packet_buffer_ =
-          new MockPacketBuffer(config_.max_packets_in_buffer, tick_timer_);
-      packet_buffer_ = mock_packet_buffer_;
-    } else {
-      packet_buffer_ =
-          new PacketBuffer(config_.max_packets_in_buffer, tick_timer_);
-    }
-    if (use_mock_payload_splitter_) {
-      mock_payload_splitter_ = new MockPayloadSplitter;
-      payload_splitter_ = mock_payload_splitter_;
-    } else {
-      payload_splitter_ = new PayloadSplitter;
-    }
-    timestamp_scaler_ = new TimestampScaler(*decoder_database_);
-    AccelerateFactory* accelerate_factory = new AccelerateFactory;
-    ExpandFactory* expand_factory = new ExpandFactory;
-    PreemptiveExpandFactory* preemptive_expand_factory =
-        new PreemptiveExpandFactory;
+    decoder_database_ = deps.decoder_database.get();
 
-    neteq_ = new NetEqImpl(
-        config_, std::unique_ptr<TickTimer>(tick_timer_), buffer_level_filter_,
-        decoder_database_, delay_manager_, delay_peak_detector_, dtmf_buffer_,
-        dtmf_tone_generator_, packet_buffer_, payload_splitter_,
-        timestamp_scaler_, accelerate_factory, expand_factory,
-        preemptive_expand_factory);
+    if (use_mock_delay_peak_detector_) {
+      std::unique_ptr<MockDelayPeakDetector> mock(new MockDelayPeakDetector);
+      mock_delay_peak_detector_ = mock.get();
+      EXPECT_CALL(*mock_delay_peak_detector_, Reset()).Times(1);
+      deps.delay_peak_detector = std::move(mock);
+    }
+    delay_peak_detector_ = deps.delay_peak_detector.get();
+
+    if (use_mock_delay_manager_) {
+      std::unique_ptr<MockDelayManager> mock(new MockDelayManager(
+          config_.max_packets_in_buffer, delay_peak_detector_));
+      mock_delay_manager_ = mock.get();
+      EXPECT_CALL(*mock_delay_manager_, set_streaming_mode(false)).Times(1);
+      deps.delay_manager = std::move(mock);
+    }
+    delay_manager_ = deps.delay_manager.get();
+
+    if (use_mock_dtmf_buffer_) {
+      std::unique_ptr<MockDtmfBuffer> mock(
+          new MockDtmfBuffer(config_.sample_rate_hz));
+      mock_dtmf_buffer_ = mock.get();
+      deps.dtmf_buffer = std::move(mock);
+    }
+    dtmf_buffer_ = deps.dtmf_buffer.get();
+
+    if (use_mock_dtmf_tone_generator_) {
+      std::unique_ptr<MockDtmfToneGenerator> mock(new MockDtmfToneGenerator);
+      mock_dtmf_tone_generator_ = mock.get();
+      deps.dtmf_tone_generator = std::move(mock);
+    }
+    dtmf_tone_generator_ = deps.dtmf_tone_generator.get();
+
+    if (use_mock_packet_buffer_) {
+      std::unique_ptr<MockPacketBuffer> mock(
+          new MockPacketBuffer(config_.max_packets_in_buffer, tick_timer_));
+      mock_packet_buffer_ = mock.get();
+      deps.packet_buffer = std::move(mock);
+    } else {
+      deps.packet_buffer.reset(
+          new PacketBuffer(config_.max_packets_in_buffer, tick_timer_));
+    }
+    packet_buffer_ = deps.packet_buffer.get();
+
+    if (use_mock_payload_splitter_) {
+      std::unique_ptr<MockPayloadSplitter> mock(new MockPayloadSplitter);
+      mock_payload_splitter_ = mock.get();
+      deps.payload_splitter = std::move(mock);
+    }
+    payload_splitter_ = deps.payload_splitter.get();
+
+    deps.timestamp_scaler = std::unique_ptr<TimestampScaler>(
+        new TimestampScaler(*deps.decoder_database.get()));
+
+    neteq_.reset(new NetEqImpl(config_, std::move(deps)));
     ASSERT_TRUE(neteq_ != NULL);
   }
 
@@ -192,37 +169,35 @@ class NetEqImplTest : public ::testing::Test {
     if (use_mock_packet_buffer_) {
       EXPECT_CALL(*mock_packet_buffer_, Die()).Times(1);
     }
-    delete neteq_;
   }
 
-  NetEqImpl* neteq_;
+  std::unique_ptr<NetEqImpl> neteq_;
   NetEq::Config config_;
-  TickTimer* tick_timer_;
-  MockBufferLevelFilter* mock_buffer_level_filter_;
-  BufferLevelFilter* buffer_level_filter_;
-  bool use_mock_buffer_level_filter_;
-  MockDecoderDatabase* mock_decoder_database_;
-  DecoderDatabase* decoder_database_;
-  bool use_mock_decoder_database_;
-  MockDelayPeakDetector* mock_delay_peak_detector_;
-  DelayPeakDetector* delay_peak_detector_;
-  bool use_mock_delay_peak_detector_;
-  MockDelayManager* mock_delay_manager_;
-  DelayManager* delay_manager_;
-  bool use_mock_delay_manager_;
-  MockDtmfBuffer* mock_dtmf_buffer_;
-  DtmfBuffer* dtmf_buffer_;
-  bool use_mock_dtmf_buffer_;
-  MockDtmfToneGenerator* mock_dtmf_tone_generator_;
-  DtmfToneGenerator* dtmf_tone_generator_;
-  bool use_mock_dtmf_tone_generator_;
-  MockPacketBuffer* mock_packet_buffer_;
-  PacketBuffer* packet_buffer_;
-  bool use_mock_packet_buffer_;
-  MockPayloadSplitter* mock_payload_splitter_;
-  PayloadSplitter* payload_splitter_;
-  bool use_mock_payload_splitter_;
-  TimestampScaler* timestamp_scaler_;
+  TickTimer* tick_timer_ = nullptr;
+  MockBufferLevelFilter* mock_buffer_level_filter_ = nullptr;
+  BufferLevelFilter* buffer_level_filter_ = nullptr;
+  bool use_mock_buffer_level_filter_ = true;
+  MockDecoderDatabase* mock_decoder_database_ = nullptr;
+  DecoderDatabase* decoder_database_ = nullptr;
+  bool use_mock_decoder_database_ = true;
+  MockDelayPeakDetector* mock_delay_peak_detector_ = nullptr;
+  DelayPeakDetector* delay_peak_detector_ = nullptr;
+  bool use_mock_delay_peak_detector_ = true;
+  MockDelayManager* mock_delay_manager_ = nullptr;
+  DelayManager* delay_manager_ = nullptr;
+  bool use_mock_delay_manager_ = true;
+  MockDtmfBuffer* mock_dtmf_buffer_ = nullptr;
+  DtmfBuffer* dtmf_buffer_ = nullptr;
+  bool use_mock_dtmf_buffer_ = true;
+  MockDtmfToneGenerator* mock_dtmf_tone_generator_ = nullptr;
+  DtmfToneGenerator* dtmf_tone_generator_ = nullptr;
+  bool use_mock_dtmf_tone_generator_ = true;
+  MockPacketBuffer* mock_packet_buffer_ = nullptr;
+  PacketBuffer* packet_buffer_ = nullptr;
+  bool use_mock_packet_buffer_ = true;
+  MockPayloadSplitter* mock_payload_splitter_ = nullptr;
+  PayloadSplitter* payload_splitter_ = nullptr;
+  bool use_mock_payload_splitter_ = true;
 };
 
 
@@ -353,9 +328,6 @@ TEST_F(NetEqImplTest, InsertPacket) {
   }
 
   // Expectations for payload splitter.
-  EXPECT_CALL(*mock_payload_splitter_, SplitFec(_, _))
-      .Times(2)
-      .WillRepeatedly(Return(PayloadSplitter::kOK));
   EXPECT_CALL(*mock_payload_splitter_, SplitAudio(_, _))
       .Times(2)
       .WillRepeatedly(Return(PayloadSplitter::kOK));
@@ -521,8 +493,6 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
-  EXPECT_CALL(mock_decoder, PacketDuration(_, kPayloadLengthBytes))
-      .WillRepeatedly(Return(kPayloadLengthSamples));
   int16_t dummy_output[kPayloadLengthSamples] = {0};
   // The below expectation will make the mock decoder write
   // |kPayloadLengthSamples| zeros to the output array, and mark it as speech.

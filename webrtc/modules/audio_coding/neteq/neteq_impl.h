@@ -66,22 +66,33 @@ class NetEqImpl : public webrtc::NetEq {
     kVadPassive
   };
 
-  // Creates a new NetEqImpl object. The object will assume ownership of all
-  // injected dependencies, and will delete them when done.
+  struct Dependencies {
+    // The constructor populates the Dependencies struct with the default
+    // implementations of the objects. They can all be replaced by the user
+    // before sending the struct to the NetEqImpl constructor. However, there
+    // are dependencies between some of the classes inside the struct, so
+    // swapping out one may make it necessary to re-create another one.
+    explicit Dependencies(const NetEq::Config& config);
+    ~Dependencies();
+
+    std::unique_ptr<TickTimer> tick_timer;
+    std::unique_ptr<BufferLevelFilter> buffer_level_filter;
+    std::unique_ptr<DecoderDatabase> decoder_database;
+    std::unique_ptr<DelayPeakDetector> delay_peak_detector;
+    std::unique_ptr<DelayManager> delay_manager;
+    std::unique_ptr<DtmfBuffer> dtmf_buffer;
+    std::unique_ptr<DtmfToneGenerator> dtmf_tone_generator;
+    std::unique_ptr<PacketBuffer> packet_buffer;
+    std::unique_ptr<PayloadSplitter> payload_splitter;
+    std::unique_ptr<TimestampScaler> timestamp_scaler;
+    std::unique_ptr<AccelerateFactory> accelerate_factory;
+    std::unique_ptr<ExpandFactory> expand_factory;
+    std::unique_ptr<PreemptiveExpandFactory> preemptive_expand_factory;
+  };
+
+  // Creates a new NetEqImpl object.
   NetEqImpl(const NetEq::Config& config,
-            std::unique_ptr<TickTimer> tick_timer,
-            BufferLevelFilter* buffer_level_filter,
-            DecoderDatabase* decoder_database,
-            DelayManager* delay_manager,
-            DelayPeakDetector* delay_peak_detector,
-            DtmfBuffer* dtmf_buffer,
-            DtmfToneGenerator* dtmf_tone_generator,
-            PacketBuffer* packet_buffer,
-            PayloadSplitter* payload_splitter,
-            TimestampScaler* timestamp_scaler,
-            AccelerateFactory* accelerate_factory,
-            ExpandFactory* expand_factory,
-            PreemptiveExpandFactory* preemptive_expand_factory,
+            Dependencies&& deps,
             bool create_components = true);
 
   ~NetEqImpl() override;

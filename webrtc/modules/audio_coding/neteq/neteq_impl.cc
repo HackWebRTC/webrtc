@@ -54,35 +54,42 @@
 
 namespace webrtc {
 
+NetEqImpl::Dependencies::Dependencies(const NetEq::Config& config)
+    : tick_timer(new TickTimer),
+      buffer_level_filter(new BufferLevelFilter),
+      decoder_database(new DecoderDatabase),
+      delay_peak_detector(new DelayPeakDetector),
+      delay_manager(new DelayManager(config.max_packets_in_buffer,
+                                     delay_peak_detector.get())),
+      dtmf_buffer(new DtmfBuffer(config.sample_rate_hz)),
+      dtmf_tone_generator(new DtmfToneGenerator),
+      packet_buffer(
+          new PacketBuffer(config.max_packets_in_buffer, tick_timer.get())),
+      payload_splitter(new PayloadSplitter),
+      timestamp_scaler(new TimestampScaler(*decoder_database)),
+      accelerate_factory(new AccelerateFactory),
+      expand_factory(new ExpandFactory),
+      preemptive_expand_factory(new PreemptiveExpandFactory) {}
+
+NetEqImpl::Dependencies::~Dependencies() = default;
+
 NetEqImpl::NetEqImpl(const NetEq::Config& config,
-                     std::unique_ptr<TickTimer> tick_timer,
-                     BufferLevelFilter* buffer_level_filter,
-                     DecoderDatabase* decoder_database,
-                     DelayManager* delay_manager,
-                     DelayPeakDetector* delay_peak_detector,
-                     DtmfBuffer* dtmf_buffer,
-                     DtmfToneGenerator* dtmf_tone_generator,
-                     PacketBuffer* packet_buffer,
-                     PayloadSplitter* payload_splitter,
-                     TimestampScaler* timestamp_scaler,
-                     AccelerateFactory* accelerate_factory,
-                     ExpandFactory* expand_factory,
-                     PreemptiveExpandFactory* preemptive_expand_factory,
+                     Dependencies&& deps,
                      bool create_components)
-    : tick_timer_(std::move(tick_timer)),
-      buffer_level_filter_(buffer_level_filter),
-      decoder_database_(decoder_database),
-      delay_manager_(delay_manager),
-      delay_peak_detector_(delay_peak_detector),
-      dtmf_buffer_(dtmf_buffer),
-      dtmf_tone_generator_(dtmf_tone_generator),
-      packet_buffer_(packet_buffer),
-      payload_splitter_(payload_splitter),
-      timestamp_scaler_(timestamp_scaler),
+    : tick_timer_(std::move(deps.tick_timer)),
+      buffer_level_filter_(std::move(deps.buffer_level_filter)),
+      decoder_database_(std::move(deps.decoder_database)),
+      delay_manager_(std::move(deps.delay_manager)),
+      delay_peak_detector_(std::move(deps.delay_peak_detector)),
+      dtmf_buffer_(std::move(deps.dtmf_buffer)),
+      dtmf_tone_generator_(std::move(deps.dtmf_tone_generator)),
+      packet_buffer_(std::move(deps.packet_buffer)),
+      payload_splitter_(std::move(deps.payload_splitter)),
+      timestamp_scaler_(std::move(deps.timestamp_scaler)),
       vad_(new PostDecodeVad()),
-      expand_factory_(expand_factory),
-      accelerate_factory_(accelerate_factory),
-      preemptive_expand_factory_(preemptive_expand_factory),
+      expand_factory_(std::move(deps.expand_factory)),
+      accelerate_factory_(std::move(deps.accelerate_factory)),
+      preemptive_expand_factory_(std::move(deps.preemptive_expand_factory)),
       last_mode_(kModeNormal),
       decoded_buffer_length_(kMaxFrameSize),
       decoded_buffer_(new int16_t[decoded_buffer_length_]),
@@ -107,6 +114,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
         "Changing to 8000 Hz.";
     fs = 8000;
   }
+  delay_manager_->SetMaximumDelay(config.max_delay_ms);
   fs_hz_ = fs;
   fs_mult_ = fs / 8000;
   last_output_sample_rate_hz_ = fs;
