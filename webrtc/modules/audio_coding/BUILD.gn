@@ -121,6 +121,7 @@ source_set("audio_decoder_interface") {
   public_configs = [ "../..:common_inherited_config" ]
   deps = [
     "../..:webrtc_common",
+    "../../base:rtc_base_approved",
   ]
 }
 
@@ -133,6 +134,7 @@ source_set("audio_encoder_interface") {
   public_configs = [ "../..:common_inherited_config" ]
   deps = [
     "../..:webrtc_common",
+    "../../base:rtc_base_approved",
   ]
 }
 

@@ -15,6 +15,10 @@
         'audio_decoder.cc',
         'audio_decoder.h',
       ],
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+        '<(webrtc_root)/common.gyp:webrtc_common',
+      ],
     },
 
     {
@@ -23,6 +27,10 @@
       'sources': [
         'audio_encoder.cc',
         'audio_encoder.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+        '<(webrtc_root)/common.gyp:webrtc_common',
       ],
     },
   ],
