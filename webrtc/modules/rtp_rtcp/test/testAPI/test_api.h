@@ -11,7 +11,6 @@
 #define WEBRTC_MODULES_RTP_RTCP_TEST_TESTAPI_TEST_API_H_
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"

@@ -45,8 +45,9 @@
 
 #include <math.h>
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
 #include "webrtc/modules/rtp_rtcp/test/testFec/average_residual_loss_xor_codes.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -191,7 +192,7 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
   int RecoveredMediaPackets(int num_media_packets,
                             int num_fec_packets,
                             uint8_t* state) {
-    rtc::scoped_ptr<uint8_t[]> state_tmp(
+    std::unique_ptr<uint8_t[]> state_tmp(
         new uint8_t[num_media_packets + num_fec_packets]);
     memcpy(state_tmp.get(), state, num_media_packets + num_fec_packets);
     int num_recovered_packets = 0;
@@ -385,7 +386,7 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
   // (which containes the code size parameters/protection length).
   void ComputeMetricsForCode(CodeType code_type,
                              int code_index) {
-    rtc::scoped_ptr<double[]> prob_weight(new double[kNumLossModels]);
+    std::unique_ptr<double[]> prob_weight(new double[kNumLossModels]);
     memset(prob_weight.get() , 0, sizeof(double) * kNumLossModels);
     MetricsFecCode metrics_code;
     SetMetricsZero(&metrics_code);
@@ -393,7 +394,7 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
     int num_media_packets = code_params_[code_index].num_media_packets;
     int num_fec_packets = code_params_[code_index].num_fec_packets;
     int tot_num_packets = num_media_packets + num_fec_packets;
-    rtc::scoped_ptr<uint8_t[]> state(new uint8_t[tot_num_packets]);
+    std::unique_ptr<uint8_t[]> state(new uint8_t[tot_num_packets]);
     memset(state.get() , 0, tot_num_packets);
 
     int num_loss_configurations = static_cast<int>(pow(2.0f, tot_num_packets));

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
@@ -76,7 +77,7 @@ void ParseAndCheckPacket(const uint8_t* packet,
                          const RTPVideoHeaderVP9& expected,
                          size_t expected_hdr_length,
                          size_t expected_length) {
-  rtc::scoped_ptr<RtpDepacketizer> depacketizer(new RtpDepacketizerVp9());
+  std::unique_ptr<RtpDepacketizer> depacketizer(new RtpDepacketizerVp9());
   RtpDepacketizer::ParsedPayload parsed;
   ASSERT_TRUE(depacketizer->Parse(&parsed, packet, expected_length));
   EXPECT_EQ(kRtpVideoVp9, parsed.type.Video.codec);
@@ -127,12 +128,12 @@ class RtpPacketizerVp9Test : public ::testing::Test {
     expected_.InitRTPVideoHeaderVP9();
   }
 
-  rtc::scoped_ptr<uint8_t[]> packet_;
-  rtc::scoped_ptr<uint8_t[]> payload_;
+  std::unique_ptr<uint8_t[]> packet_;
+  std::unique_ptr<uint8_t[]> payload_;
   size_t payload_size_;
   size_t payload_pos_;
   RTPVideoHeaderVP9 expected_;
-  rtc::scoped_ptr<RtpPacketizerVp9> packetizer_;
+  std::unique_ptr<RtpPacketizerVp9> packetizer_;
 
   void Init(size_t payload_size, size_t packet_size) {
     payload_.reset(new uint8_t[payload_size]);
@@ -469,7 +470,7 @@ class RtpDepacketizerVp9Test : public ::testing::Test {
   }
 
   RTPVideoHeaderVP9 expected_;
-  rtc::scoped_ptr<RtpDepacketizer> depacketizer_;
+  std::unique_ptr<RtpDepacketizer> depacketizer_;
 };
 
 TEST_F(RtpDepacketizerVp9Test, ParseBasicHeader) {

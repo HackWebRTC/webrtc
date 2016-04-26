@@ -651,10 +651,10 @@ bool TransportFeedback::Create(uint8_t* packet,
 //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 // De-serialize packet.
-rtc::scoped_ptr<TransportFeedback> TransportFeedback::ParseFrom(
+std::unique_ptr<TransportFeedback> TransportFeedback::ParseFrom(
     const uint8_t* buffer,
     size_t length) {
-  rtc::scoped_ptr<TransportFeedback> packet(new TransportFeedback());
+  std::unique_ptr<TransportFeedback> packet(new TransportFeedback());
 
   if (length < kMinSizeBytes) {
     LOG(LS_WARNING) << "Buffer too small (" << length

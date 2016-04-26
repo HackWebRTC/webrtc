@@ -11,6 +11,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 #include <limits>
+#include <memory>
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -43,7 +44,7 @@ class FeedbackTester {
   void WithInput(const uint16_t received_seq[],
                  const int64_t received_ts[],
                  uint16_t length) {
-    rtc::scoped_ptr<int64_t[]> temp_deltas;
+    std::unique_ptr<int64_t[]> temp_deltas;
     if (received_ts == nullptr) {
       temp_deltas.reset(new int64_t[length]);
       GenerateDeltas(received_seq, length, temp_deltas.get());
@@ -136,7 +137,7 @@ class FeedbackTester {
   std::vector<int64_t> expected_deltas_;
   size_t expected_size_;
   int64_t default_delta_;
-  rtc::scoped_ptr<TransportFeedback> feedback_;
+  std::unique_ptr<TransportFeedback> feedback_;
   rtc::Buffer serialized_;
 };
 
@@ -356,7 +357,7 @@ TEST(RtcpPacketTest, TransportFeedback_Aliasing) {
 
 TEST(RtcpPacketTest, TransportFeedback_Limits) {
   // Sequence number wrap above 0x8000.
-  rtc::scoped_ptr<TransportFeedback> packet(new TransportFeedback());
+  std::unique_ptr<TransportFeedback> packet(new TransportFeedback());
   packet->WithBase(0, 0);
   EXPECT_TRUE(packet->WithReceivedPacket(0x8000, 1000));
 
@@ -446,7 +447,7 @@ TEST(RtcpPacketTest, TransportFeedback_Padding) {
       &mod_buffer[2], ByteReader<uint16_t>::ReadBigEndian(&mod_buffer[2]) +
                           ((kPaddingBytes + 3) / 4));
 
-  rtc::scoped_ptr<TransportFeedback> parsed_packet(
+  std::unique_ptr<TransportFeedback> parsed_packet(
       TransportFeedback::ParseFrom(mod_buffer, kExpectedSizeWithPadding));
   ASSERT_TRUE(parsed_packet.get() != nullptr);
   EXPECT_EQ(kExpectedSizeWords * 4, packet.size());  // Padding not included.
@@ -468,7 +469,7 @@ TEST(RtcpPacketTest, TransportFeedback_CorrectlySplitsVectorChunks) {
     feedback.WithReceivedPacket(deltas, deltas * 1000 + kLargeTimeDelta);
 
     rtc::Buffer serialized_packet = feedback.Build();
-    rtc::scoped_ptr<TransportFeedback> deserialized_packet =
+    std::unique_ptr<TransportFeedback> deserialized_packet =
         TransportFeedback::ParseFrom(serialized_packet.data(),
                                      serialized_packet.size());
     EXPECT_TRUE(deserialized_packet.get() != nullptr);

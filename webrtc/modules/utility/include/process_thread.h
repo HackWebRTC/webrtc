@@ -11,8 +11,9 @@
 #ifndef WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
 #define WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
 
+#include <memory>
+
 #include "webrtc/typedefs.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 class Module;
@@ -29,7 +30,7 @@ class ProcessThread {
  public:
   virtual ~ProcessThread();
 
-  static rtc::scoped_ptr<ProcessThread> Create(const char* thread_name);
+  static std::unique_ptr<ProcessThread> Create(const char* thread_name);
 
   // Starts the worker thread.  Must be called from the construction thread.
   virtual void Start() = 0;
@@ -50,7 +51,7 @@ class ProcessThread {
   // construction thread of the ProcessThread instance, if the task did not
   // get a chance to run (e.g. posting the task while shutting down or when
   // the thread never runs).
-  virtual void PostTask(rtc::scoped_ptr<ProcessTask> task) = 0;
+  virtual void PostTask(std::unique_ptr<ProcessTask> task) = 0;
 
   // Adds a module that will start to receive callbacks on the worker thread.
   // Can be called from any thread.

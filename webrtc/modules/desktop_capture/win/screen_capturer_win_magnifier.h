@@ -18,7 +18,6 @@
 #include <wincodec.h>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
@@ -48,7 +47,7 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   // Overridden from ScreenCapturer:
   void Start(Callback* callback) override;
   void SetSharedMemoryFactory(
-      rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) override;
+      std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void Capture(const DesktopRegion& region) override;
   bool GetScreenList(ScreenList* screens) override;
   bool SelectScreen(ScreenId id) override;

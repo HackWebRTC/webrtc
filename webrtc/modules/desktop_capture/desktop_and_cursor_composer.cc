@@ -138,7 +138,7 @@ void DesktopAndCursorComposer::Start(DesktopCapturer::Callback* callback) {
 }
 
 void DesktopAndCursorComposer::SetSharedMemoryFactory(
-    rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) {
+    std::unique_ptr<SharedMemoryFactory> shared_memory_factory) {
   desktop_capturer_->SetSharedMemoryFactory(std::move(shared_memory_factory));
 }
 

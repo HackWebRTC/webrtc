@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
@@ -72,7 +72,7 @@ void VerifyFua(size_t fua_index,
 void TestFua(size_t frame_size,
              size_t max_payload_size,
              const std::vector<size_t>& expected_sizes) {
-  rtc::scoped_ptr<uint8_t[]> frame;
+  std::unique_ptr<uint8_t[]> frame;
   frame.reset(new uint8_t[frame_size]);
   frame[0] = 0x05;  // F=0, NRI=0, Type=5.
   for (size_t i = 0; i < frame_size - kNalHeaderSize; ++i) {
@@ -82,11 +82,11 @@ void TestFua(size_t frame_size,
   fragmentation.VerifyAndAllocateFragmentationHeader(1);
   fragmentation.fragmentationOffset[0] = 0;
   fragmentation.fragmentationLength[0] = frame_size;
-  rtc::scoped_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
+  std::unique_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
       kRtpVideoH264, max_payload_size, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame.get(), frame_size, &fragmentation);
 
-  rtc::scoped_ptr<uint8_t[]> packet(new uint8_t[max_payload_size]);
+  std::unique_ptr<uint8_t[]> packet(new uint8_t[max_payload_size]);
   size_t length = 0;
   bool last = false;
   size_t offset = kNalHeaderSize;
@@ -156,7 +156,7 @@ TEST(RtpPacketizerH264Test, TestSingleNalu) {
   fragmentation.VerifyAndAllocateFragmentationHeader(1);
   fragmentation.fragmentationOffset[0] = 0;
   fragmentation.fragmentationLength[0] = sizeof(frame);
-  rtc::scoped_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizer> packetizer(
       RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, sizeof(frame), &fragmentation);
   uint8_t packet[kMaxPayloadSize] = {0};
@@ -185,7 +185,7 @@ TEST(RtpPacketizerH264Test, TestSingleNaluTwoPackets) {
   frame[fragmentation.fragmentationOffset[0]] = 0x01;
   frame[fragmentation.fragmentationOffset[1]] = 0x01;
 
-  rtc::scoped_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizer> packetizer(
       RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
@@ -222,7 +222,7 @@ TEST(RtpPacketizerH264Test, TestStapA) {
   fragmentation.fragmentationOffset[2] = 4;
   fragmentation.fragmentationLength[2] =
       kNalHeaderSize + kFrameSize - kPayloadOffset;
-  rtc::scoped_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizer> packetizer(
       RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
@@ -257,7 +257,7 @@ TEST(RtpPacketizerH264Test, TestTooSmallForStapAHeaders) {
   fragmentation.fragmentationOffset[2] = 4;
   fragmentation.fragmentationLength[2] =
       kNalHeaderSize + kFrameSize - kPayloadOffset;
-  rtc::scoped_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizer> packetizer(
       RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
@@ -305,7 +305,7 @@ TEST(RtpPacketizerH264Test, TestMixedStapA_FUA) {
       frame[nalu_offset + j] = i + j;
     }
   }
-  rtc::scoped_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizer> packetizer(
       RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize, NULL, kEmptyFrame));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
@@ -394,7 +394,7 @@ class RtpDepacketizerH264Test : public ::testing::Test {
                 ::testing::ElementsAreArray(data, length));
   }
 
-  rtc::scoped_ptr<RtpDepacketizer> depacketizer_;
+  std::unique_ptr<RtpDepacketizer> depacketizer_;
 };
 
 TEST_F(RtpDepacketizerH264Test, TestSingleNalu) {

@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TRANSPORT_FEEDBACK_H_
 
 #include <deque>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
@@ -58,7 +59,7 @@ class TransportFeedback : public RtcpPacket {
   static const uint8_t kFeedbackMessageType = 15;  // TODO(sprang): IANA reg?
   static const uint8_t kPayloadType = 205;         // RTPFB, see RFC4585.
 
-  static rtc::scoped_ptr<TransportFeedback> ParseFrom(const uint8_t* buffer,
+  static std::unique_ptr<TransportFeedback> ParseFrom(const uint8_t* buffer,
                                                       size_t length);
 
  protected:

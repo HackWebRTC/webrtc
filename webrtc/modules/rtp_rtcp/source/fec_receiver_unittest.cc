@@ -11,10 +11,10 @@
 #include <string.h>
 
 #include <list>
+#include <memory>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
@@ -92,9 +92,9 @@ class ReceiverFecTest : public ::testing::Test {
                                       uint8_t ulpfec_payload_type);
 
   MockRtpData rtp_data_callback_;
-  rtc::scoped_ptr<ForwardErrorCorrection> fec_;
-  rtc::scoped_ptr<FecReceiver> receiver_fec_;
-  rtc::scoped_ptr<FrameGenerator> generator_;
+  std::unique_ptr<ForwardErrorCorrection> fec_;
+  std::unique_ptr<FecReceiver> receiver_fec_;
+  std::unique_ptr<FrameGenerator> generator_;
 };
 
 void DeletePackets(std::list<Packet*>* packets) {
@@ -415,12 +415,12 @@ void ReceiverFecTest::SurvivesMaliciousPacket(const uint8_t* data,
                                               size_t length,
                                               uint8_t ulpfec_payload_type) {
   webrtc::RTPHeader header;
-  rtc::scoped_ptr<webrtc::RtpHeaderParser> parser(
+  std::unique_ptr<webrtc::RtpHeaderParser> parser(
       webrtc::RtpHeaderParser::Create());
   ASSERT_TRUE(parser->Parse(data, length, &header));
 
   webrtc::NullRtpData null_callback;
-  rtc::scoped_ptr<webrtc::FecReceiver> receiver_fec(
+  std::unique_ptr<webrtc::FecReceiver> receiver_fec(
       webrtc::FecReceiver::Create(&null_callback));
 
   receiver_fec->AddReceivedRedPacket(header, data, length, ulpfec_payload_type);

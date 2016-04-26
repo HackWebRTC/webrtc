@@ -9,6 +9,7 @@
  */
 
 #include <map>
+#include <memory>
 #include <set>
 
 #include "testing/gmock/include/gmock/gmock.h"
@@ -68,7 +69,7 @@ class SendTransport : public Transport,
                size_t len,
                const PacketOptions& options) override {
     RTPHeader header;
-    rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+    std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data), len, &header));
     ++rtp_packets_sent_;
     last_rtp_header_ = header;
@@ -115,10 +116,10 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
 
   RtcpPacketTypeCounter packets_sent_;
   RtcpPacketTypeCounter packets_received_;
-  rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
+  std::unique_ptr<ReceiveStatistics> receive_statistics_;
   SendTransport transport_;
   RtcpRttStatsTestImpl rtt_stats_;
-  rtc::scoped_ptr<ModuleRtpRtcpImpl> impl_;
+  std::unique_ptr<ModuleRtpRtcpImpl> impl_;
   uint32_t remote_ssrc_;
 
   void SetRemoteSsrc(uint32_t ssrc) {

@@ -10,6 +10,7 @@
 
 #include <cstring>
 #include <limits>
+#include <memory>
 
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
