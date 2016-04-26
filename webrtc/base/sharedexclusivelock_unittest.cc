@@ -18,6 +18,16 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
 
+#if defined(MEMORY_SANITIZER)
+// Flaky under MemorySanitizer, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5824
+#define MAYBE_TestSharedExclusive DISABLED_TestSharedExclusive
+#define MAYBE_TestExclusiveExclusive DISABLED_TestExclusiveExclusive
+#else
+#define MAYBE_TestSharedExclusive TestSharedExclusive
+#define MAYBE_TestExclusiveExclusive TestExclusiveExclusive
+#endif
+
 namespace rtc {
 
 static const uint32_t kMsgRead = 0;
@@ -158,7 +168,7 @@ TEST_F(SharedExclusiveLockTest, TestSharedShared) {
   EXPECT_LE(reader1.waiting_time_in_ms(), kNoWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, TestSharedExclusive) {
+TEST_F(SharedExclusiveLockTest, MAYBE_TestSharedExclusive) {
   bool done;
   WriteTask writer(shared_exclusive_lock_.get(), &value_, &done);
 
@@ -197,7 +207,7 @@ TEST_F(SharedExclusiveLockTest, TestExclusiveShared) {
   EXPECT_GE(reader.waiting_time_in_ms(), kWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, TestExclusiveExclusive) {
+TEST_F(SharedExclusiveLockTest, MAYBE_TestExclusiveExclusive) {
   bool done;
   WriteTask writer(shared_exclusive_lock_.get(), &value_, &done);
 
