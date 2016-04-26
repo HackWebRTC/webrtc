@@ -16,6 +16,7 @@
 #include <memory>
 #include <set>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 

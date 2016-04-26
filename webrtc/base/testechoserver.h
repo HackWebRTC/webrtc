@@ -14,6 +14,7 @@
 #include <list>
 #include <memory>
 #include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"

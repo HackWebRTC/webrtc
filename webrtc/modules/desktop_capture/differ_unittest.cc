@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/differ.h"
 #include "webrtc/modules/desktop_capture/differ_block.h"
 

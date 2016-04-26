@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <sstream>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/random.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
 #define WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/media/base/videocommon.h"

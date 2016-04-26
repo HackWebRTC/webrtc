@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURER_MOCK_OBJECTS_H_
 
 #include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 
 namespace webrtc {

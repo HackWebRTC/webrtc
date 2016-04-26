@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/stream.h"
 

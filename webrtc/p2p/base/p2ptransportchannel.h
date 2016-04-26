@@ -24,6 +24,8 @@
 #include <set>
 #include <string>
 #include <vector>
+
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/p2ptransport.h"

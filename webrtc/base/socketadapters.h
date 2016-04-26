@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/cryptstring.h"
 #include "webrtc/base/logging.h"
 

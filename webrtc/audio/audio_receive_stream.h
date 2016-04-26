@@ -15,6 +15,7 @@
 
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/audio_state.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 

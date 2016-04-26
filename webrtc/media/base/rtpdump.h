@@ -18,6 +18,7 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/stream.h"
 
 namespace cricket {

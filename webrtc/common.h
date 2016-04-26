@@ -14,6 +14,7 @@
 #include <map>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

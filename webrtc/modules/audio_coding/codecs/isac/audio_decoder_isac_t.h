@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"

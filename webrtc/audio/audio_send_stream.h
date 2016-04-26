@@ -15,6 +15,7 @@
 
 #include "webrtc/audio_send_stream.h"
 #include "webrtc/audio_state.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
 
 namespace webrtc {

@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"

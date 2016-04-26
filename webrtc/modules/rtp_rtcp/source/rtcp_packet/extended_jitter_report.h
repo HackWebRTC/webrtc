@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 

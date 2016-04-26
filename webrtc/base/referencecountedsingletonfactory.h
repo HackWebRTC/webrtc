@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "webrtc/base/common.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
 

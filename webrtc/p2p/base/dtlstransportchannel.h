@@ -18,6 +18,7 @@
 #include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/bufferqueue.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stream.h"
 

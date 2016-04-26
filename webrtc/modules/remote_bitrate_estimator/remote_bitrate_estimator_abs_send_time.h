@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_checker.h"

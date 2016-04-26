@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/thread.h"

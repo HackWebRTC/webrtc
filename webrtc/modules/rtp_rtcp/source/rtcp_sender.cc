@@ -13,6 +13,7 @@
 #include <string.h>  // memcpy
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"

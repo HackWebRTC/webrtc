@@ -13,6 +13,7 @@
 
 #include <vector>
 #include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 
 namespace rtc {

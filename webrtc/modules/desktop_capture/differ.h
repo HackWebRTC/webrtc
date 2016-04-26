@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 
 namespace webrtc {

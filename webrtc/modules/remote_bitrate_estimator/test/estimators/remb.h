@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 
 namespace webrtc {

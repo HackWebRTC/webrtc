@@ -14,6 +14,8 @@
 
 #include <sstream>
 
+#include "webrtc/base/constructormagic.h"
+
 namespace webrtc {
 namespace testing {
 namespace bwe {

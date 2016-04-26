@@ -14,6 +14,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/test/test_util.h"
 #include "webrtc/system_wrappers/include/clock.h"

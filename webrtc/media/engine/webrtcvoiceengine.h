@@ -18,6 +18,7 @@
 
 #include "webrtc/audio_state.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/networkroute.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stream.h"

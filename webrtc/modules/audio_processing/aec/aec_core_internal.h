@@ -14,6 +14,7 @@
 extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 }
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"

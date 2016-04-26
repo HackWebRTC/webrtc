@@ -18,6 +18,7 @@
 #include <string>
 
 #include "webrtc/base/common.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sslidentity.h"
 
 typedef struct ssl_ctx_st SSL_CTX;

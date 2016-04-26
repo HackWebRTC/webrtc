@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"

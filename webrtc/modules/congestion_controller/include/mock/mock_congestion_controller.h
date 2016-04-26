@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_MOCK_MOCK_CONGESTION_CONTROLLER_H_
 
 #include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 

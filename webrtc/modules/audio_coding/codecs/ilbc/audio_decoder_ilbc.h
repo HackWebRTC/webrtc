@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_AUDIO_DECODER_ILBC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_AUDIO_DECODER_ILBC_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 
 typedef struct iLBC_decinst_t_ IlbcDecoderInstance;

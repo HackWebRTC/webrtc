@@ -19,6 +19,7 @@
 
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 

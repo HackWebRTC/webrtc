@@ -15,6 +15,7 @@
 
 #include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/rtccertificate.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"

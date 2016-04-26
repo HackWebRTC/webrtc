@@ -19,6 +19,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/callback.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/ipaddress.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/scoped_ptr.h"

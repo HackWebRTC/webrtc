@@ -16,6 +16,7 @@
 #include <memory>
 #include <set>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/socketserver.h"

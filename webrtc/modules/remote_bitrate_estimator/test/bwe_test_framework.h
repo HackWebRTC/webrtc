@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "webrtc/base/common.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/random.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/include/module_common_types.h"

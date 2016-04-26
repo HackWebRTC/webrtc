@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"

@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"

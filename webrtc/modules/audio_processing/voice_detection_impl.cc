@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_processing/voice_detection_impl.h"
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 

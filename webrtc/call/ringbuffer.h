@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

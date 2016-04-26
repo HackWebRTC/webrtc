@@ -17,6 +17,7 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/proxy.h"
 #include "webrtc/base/common.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/refcount.h"
 

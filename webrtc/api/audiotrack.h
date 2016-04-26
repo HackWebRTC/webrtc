@@ -16,6 +16,7 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/mediastreamtrack.h"
 #include "webrtc/api/notifier.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_checker.h"

@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_APP_H_
 
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"

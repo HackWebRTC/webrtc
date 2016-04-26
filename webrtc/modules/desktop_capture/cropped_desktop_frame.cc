@@ -12,6 +12,8 @@
 
 #include "webrtc/modules/desktop_capture/cropped_desktop_frame.h"
 
+#include "webrtc/base/constructormagic.h"
+
 namespace webrtc {
 
 // A DesktopFrame that is a sub-rect of another DesktopFrame.

@@ -13,6 +13,7 @@
 #ifndef WEBRTC_BASE_MACCOCOASOCKETSERVER_H_
 #define WEBRTC_BASE_MACCOCOASOCKETSERVER_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/macsocketserver.h"
 
 #ifdef __OBJC__

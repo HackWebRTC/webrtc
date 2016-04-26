@@ -22,6 +22,7 @@
 #include "webrtc/api/mediastreamprovider.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/statstypes.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"

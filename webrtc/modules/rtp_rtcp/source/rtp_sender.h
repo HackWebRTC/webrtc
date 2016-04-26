@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/thread_annotations.h"

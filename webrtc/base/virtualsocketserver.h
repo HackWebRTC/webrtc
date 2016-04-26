@@ -16,6 +16,7 @@
 #include <deque>
 #include <map>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/socketserver.h"
 

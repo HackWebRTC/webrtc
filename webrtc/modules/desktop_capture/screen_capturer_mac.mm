@@ -23,6 +23,7 @@
 #include <OpenGL/OpenGL.h>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/macutils.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"

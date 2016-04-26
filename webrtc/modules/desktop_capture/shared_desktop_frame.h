@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 

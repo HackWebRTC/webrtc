@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/base/sigslot.h"

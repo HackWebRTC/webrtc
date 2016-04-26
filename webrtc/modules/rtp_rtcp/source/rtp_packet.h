@@ -14,6 +14,7 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {

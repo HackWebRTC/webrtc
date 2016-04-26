@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 
 namespace webrtc {

@@ -12,6 +12,7 @@
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/call.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/media/base/mediachannel.h"

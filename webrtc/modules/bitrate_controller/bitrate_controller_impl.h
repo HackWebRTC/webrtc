@@ -20,6 +20,7 @@
 #include <list>
 #include <utility>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 

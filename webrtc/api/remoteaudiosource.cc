@@ -16,6 +16,7 @@
 
 #include "webrtc/api/mediastreamprovider.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 

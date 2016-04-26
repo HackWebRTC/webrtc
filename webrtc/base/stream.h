@@ -16,6 +16,7 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagehandler.h"

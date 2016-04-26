@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_G711_AUDIO_DECODER_PCM_H_
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 
 namespace webrtc {

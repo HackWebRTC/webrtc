@@ -19,6 +19,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/nethelpers.h"
 
 namespace rtc {

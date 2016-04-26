@@ -36,6 +36,7 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/sharedexclusivelock.h"
 

@@ -14,6 +14,7 @@
 #include <queue>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 
 namespace webrtc {

@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aecm/echo_control_mobile.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/system_wrappers/include/logging.h"

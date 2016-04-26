@@ -12,6 +12,8 @@
 #define WEBRTC_P2P_BASE_P2PTRANSPORT_H_
 
 #include <string>
+
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/p2p/base/transport.h"
 
 namespace cricket {

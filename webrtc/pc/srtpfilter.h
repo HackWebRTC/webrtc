@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/sslstreamadapter.h"

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
 #define WEBRTC_MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/rtp_to_ntp.h"
 

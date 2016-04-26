@@ -19,6 +19,7 @@
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"

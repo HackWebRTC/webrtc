@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 

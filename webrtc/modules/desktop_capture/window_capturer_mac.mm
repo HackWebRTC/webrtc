@@ -15,6 +15,7 @@
 #include <Cocoa/Cocoa.h>
 #include <CoreFoundation/CoreFoundation.h>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/macutils.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"

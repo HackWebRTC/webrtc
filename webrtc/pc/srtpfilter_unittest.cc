@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/cryptoparams.h"
