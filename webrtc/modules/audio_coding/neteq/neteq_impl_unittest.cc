@@ -351,6 +351,9 @@ TEST_F(NetEqImplTest, InsertPacket) {
   }
 
   // Expectations for payload splitter.
+  EXPECT_CALL(*mock_payload_splitter_, SplitFec(_, _))
+      .Times(2)
+      .WillRepeatedly(Return(PayloadSplitter::kOK));
   EXPECT_CALL(*mock_payload_splitter_, SplitAudio(_, _))
       .Times(2)
       .WillRepeatedly(Return(PayloadSplitter::kOK));
@@ -516,6 +519,8 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, PacketDuration(_, kPayloadLengthBytes))
+      .WillRepeatedly(Return(kPayloadLengthSamples));
   int16_t dummy_output[kPayloadLengthSamples] = {0};
   // The below expectation will make the mock decoder write
   // |kPayloadLengthSamples| zeros to the output array, and mark it as speech.
