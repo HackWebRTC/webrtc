@@ -11,7 +11,6 @@
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
 
 #include <algorithm>
-#include <memory>
 #include <vector>
 
 #include "webrtc/test/null_transport.h"
@@ -42,7 +41,7 @@ bool LoopBackTransport::SendRtp(const uint8_t* data,
     }
   }
   RTPHeader header;
-  std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+  rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
   if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
     return false;
   }
@@ -101,9 +100,9 @@ class RtpRtcpAPITest : public ::testing::Test {
         &fake_clock_, NULL, NULL, rtp_payload_registry_.get()));
   }
 
-  std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  std::unique_ptr<RtpReceiver> rtp_receiver_;
-  std::unique_ptr<RtpRtcp> module_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
+  rtc::scoped_ptr<RtpRtcp> module_;
   uint32_t test_ssrc_;
   uint32_t test_timestamp_;
   uint16_t test_sequence_number_;

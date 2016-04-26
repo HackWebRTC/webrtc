@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
-
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
@@ -419,7 +417,7 @@ class RtpDepacketizerVp8Test : public ::testing::Test {
                 ::testing::ElementsAreArray(data, length));
   }
 
-  std::unique_ptr<RtpDepacketizer> depacketizer_;
+  rtc::scoped_ptr<RtpDepacketizer> depacketizer_;
 };
 
 TEST_F(RtpDepacketizerVp8Test, BasicHeader) {

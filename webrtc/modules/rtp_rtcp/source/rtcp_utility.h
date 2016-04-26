@@ -13,8 +13,7 @@
 
 #include <stddef.h> // size_t, ptrdiff_t
 
-#include <memory>
-
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/typedefs.h"
@@ -469,7 +468,7 @@ class RTCPParserV2 {
 
   RTCPPacketTypes _packetType;
   RTCPPacket _packet;
-  std::unique_ptr<webrtc::rtcp::RtcpPacket> rtcp_packet_;
+  rtc::scoped_ptr<webrtc::rtcp::RtcpPacket> rtcp_packet_;
 };
 
 class RTCPPacketIterator {

@@ -15,7 +15,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <memory>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -164,7 +163,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
 
   // -- Generate packet masks --
   // Always allocate space for a large mask.
-  std::unique_ptr<uint8_t[]> packet_mask(
+  rtc::scoped_ptr<uint8_t[]> packet_mask(
       new uint8_t[num_fec_packets * kMaskSizeLBitSet]);
   memset(packet_mask.get(), 0, num_fec_packets * num_mask_bytes);
   internal::GeneratePacketMasks(num_media_packets, num_fec_packets,

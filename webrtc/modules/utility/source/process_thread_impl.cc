@@ -36,9 +36,9 @@ int64_t GetNextCallbackTime(Module* module, int64_t time_now) {
 ProcessThread::~ProcessThread() {}
 
 // static
-std::unique_ptr<ProcessThread> ProcessThread::Create(
+rtc::scoped_ptr<ProcessThread> ProcessThread::Create(
     const char* thread_name) {
-  return std::unique_ptr<ProcessThread>(new ProcessThreadImpl(thread_name));
+  return rtc::scoped_ptr<ProcessThread>(new ProcessThreadImpl(thread_name));
 }
 
 ProcessThreadImpl::ProcessThreadImpl(const char* thread_name)
@@ -119,7 +119,7 @@ void ProcessThreadImpl::WakeUp(Module* module) {
   wake_up_->Set();
 }
 
-void ProcessThreadImpl::PostTask(std::unique_ptr<ProcessTask> task) {
+void ProcessThreadImpl::PostTask(rtc::scoped_ptr<ProcessTask> task) {
   // Allowed to be called on any thread.
   {
     rtc::CritScope lock(&lock_);

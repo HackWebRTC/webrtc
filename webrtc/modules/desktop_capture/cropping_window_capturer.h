@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 #include "webrtc/modules/desktop_capture/window_capturer.h"
@@ -31,7 +32,7 @@ class CroppingWindowCapturer : public WindowCapturer,
   // DesktopCapturer implementation.
   void Start(DesktopCapturer::Callback* callback) override;
   void SetSharedMemoryFactory(
-      std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
+      rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void Capture(const DesktopRegion& region) override;
   void SetExcludedWindow(WindowId window) override;
 

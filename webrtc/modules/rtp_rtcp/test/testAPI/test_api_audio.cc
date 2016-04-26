@@ -9,7 +9,6 @@
  */
 
 #include <algorithm>
-#include <memory>
 #include <vector>
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -136,12 +135,12 @@ class RtpRtcpAudioTest : public ::testing::Test {
 
   RtpRtcp* module1;
   RtpRtcp* module2;
-  std::unique_ptr<ReceiveStatistics> receive_statistics1_;
-  std::unique_ptr<ReceiveStatistics> receive_statistics2_;
-  std::unique_ptr<RtpReceiver> rtp_receiver1_;
-  std::unique_ptr<RtpReceiver> rtp_receiver2_;
-  std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry1_;
-  std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry2_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics1_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics2_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver1_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver2_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry1_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry2_;
   VerifyingAudioReceiver* data_receiver1;
   VerifyingAudioReceiver* data_receiver2;
   LoopBackTransport* transport1;

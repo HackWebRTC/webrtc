@@ -10,7 +10,6 @@
 
 #include <stddef.h>  // size_t
 
-#include <memory>
 #include <string>
 #include <vector>
 

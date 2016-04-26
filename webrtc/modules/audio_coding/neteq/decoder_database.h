@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DECODER_DATABASE_H_
 
 #include <map>
-#include <memory>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"

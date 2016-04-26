@@ -11,10 +11,10 @@
 #include <algorithm>
 #include <iterator>
 #include <list>
-#include <memory>
 #include <set>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -105,7 +105,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     size_t packet_length = len;
     uint8_t restored_packet[1500];
     RTPHeader header;
-    std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+    rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     if (!parser->Parse(ptr, len, &header)) {
       return false;
     }
@@ -279,11 +279,11 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
   void TearDown() override { delete rtp_rtcp_module_; }
 
-  std::unique_ptr<ReceiveStatistics> receive_statistics_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
   RTPPayloadRegistry rtp_payload_registry_;
-  std::unique_ptr<RtpReceiver> rtp_receiver_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
   RtpRtcp* rtp_rtcp_module_;
-  std::unique_ptr<TestRtpFeedback> rtp_feedback_;
+  rtc::scoped_ptr<TestRtpFeedback> rtp_feedback_;
   RtxLoopBackTransport transport_;
   VerifyingRtxReceiver receiver_;
   uint8_t payload_data[65000];

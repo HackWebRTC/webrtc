@@ -13,8 +13,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include <memory>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
@@ -76,7 +74,7 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   }
 
   // We are not allowed to hold a critical section when calling below functions.
-  std::unique_ptr<RtpDepacketizer> depacketizer(
+  rtc::scoped_ptr<RtpDepacketizer> depacketizer(
       RtpDepacketizer::Create(rtp_header->type.Video.codec));
   if (depacketizer.get() == NULL) {
     LOG(LS_ERROR) << "Failed to create depacketizer.";

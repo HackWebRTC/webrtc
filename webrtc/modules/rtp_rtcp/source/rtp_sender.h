@@ -13,7 +13,6 @@
 
 #include <list>
 #include <map>
-#include <memory>
 #include <utility>
 #include <vector>
 
@@ -424,8 +423,8 @@ class RTPSender : public RTPSenderInterface {
   Bitrate total_bitrate_sent_;
 
   const bool audio_configured_;
-  const std::unique_ptr<RTPSenderAudio> audio_;
-  const std::unique_ptr<RTPSenderVideo> video_;
+  const rtc::scoped_ptr<RTPSenderAudio> audio_;
+  const rtc::scoped_ptr<RTPSenderVideo> video_;
 
   RtpPacketSender* const paced_sender_;
   TransportSequenceNumberAllocator* const transport_sequence_number_allocator_;

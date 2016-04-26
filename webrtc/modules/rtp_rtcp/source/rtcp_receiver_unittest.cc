@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
-
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -147,7 +145,7 @@ class RtcpReceiverTest : public ::testing::Test {
   TestTransport* test_transport_;
   RTCPHelp::RTCPPacketInformation rtcp_packet_info_;
   MockRemoteBitrateObserver remote_bitrate_observer_;
-  std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
 };
 
 

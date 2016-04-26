@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
-
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/mock/mock_rtp_payload_strategy.h"
@@ -59,7 +58,7 @@ class RtpPayloadRegistryTest : public ::testing::Test {
     return returned_payload_on_heap;
   }
 
-  std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   testing::NiceMock<MockRTPPayloadStrategy>* mock_payload_strategy_;
 };
 
@@ -297,9 +296,9 @@ void TestRtxPacket(RTPPayloadRegistry* rtp_payload_registry,
   uint16_t original_sequence_number = 1234;
   uint32_t original_ssrc = 500;
 
-  std::unique_ptr<const uint8_t[]> packet(GenerateRtxPacket(
+  rtc::scoped_ptr<const uint8_t[]> packet(GenerateRtxPacket(
       header_length, payload_length, original_sequence_number));
-  std::unique_ptr<uint8_t[]> restored_packet(
+  rtc::scoped_ptr<uint8_t[]> restored_packet(
       new uint8_t[header_length + payload_length]);
   size_t length = original_length;
   bool success = rtp_payload_registry->RestoreOriginalPacket(
@@ -313,7 +312,7 @@ void TestRtxPacket(RTPPayloadRegistry* rtp_payload_registry,
   EXPECT_EQ(original_length - kRtxHeaderSize, length)
       << "The restored packet should be exactly kRtxHeaderSize smaller.";
 
-  std::unique_ptr<RtpHeaderParser> header_parser(RtpHeaderParser::Create());
+  rtc::scoped_ptr<RtpHeaderParser> header_parser(RtpHeaderParser::Create());
   RTPHeader restored_header;
   ASSERT_TRUE(
       header_parser->Parse(restored_packet.get(), length, &restored_header));

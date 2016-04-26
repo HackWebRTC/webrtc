@@ -32,7 +32,7 @@ void CroppingWindowCapturer::Start(DesktopCapturer::Callback* callback) {
 }
 
 void CroppingWindowCapturer::SetSharedMemoryFactory(
-    std::unique_ptr<SharedMemoryFactory> shared_memory_factory) {
+    rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) {
   window_capturer_->SetSharedMemoryFactory(std::move(shared_memory_factory));
 }
 

@@ -10,8 +10,6 @@
 
 #include <android/log.h>
 
-#include <memory>
-
 #include "webrtc/modules/utility/include/jvm_android.h"
 
 #include "webrtc/base/checks.h"
@@ -141,7 +139,7 @@ NativeRegistration::~NativeRegistration() {
   CHECK_EXCEPTION(jni_) << "Error during UnregisterNatives";
 }
 
-std::unique_ptr<GlobalRef> NativeRegistration::NewObject(
+rtc::scoped_ptr<GlobalRef> NativeRegistration::NewObject(
     const char* name, const char* signature, ...) {
   ALOGD("NativeRegistration::NewObject%s", GetThreadInfo().c_str());
   va_list args;
@@ -151,7 +149,7 @@ std::unique_ptr<GlobalRef> NativeRegistration::NewObject(
                                  args);
   CHECK_EXCEPTION(jni_) << "Error during NewObjectV";
   va_end(args);
-  return std::unique_ptr<GlobalRef>(new GlobalRef(jni_, obj));
+  return rtc::scoped_ptr<GlobalRef>(new GlobalRef(jni_, obj));
 }
 
 // JavaClass implementation.
@@ -183,14 +181,14 @@ JNIEnvironment::~JNIEnvironment() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 }
 
-std::unique_ptr<NativeRegistration> JNIEnvironment::RegisterNatives(
+rtc::scoped_ptr<NativeRegistration> JNIEnvironment::RegisterNatives(
     const char* name, const JNINativeMethod *methods, int num_methods) {
   ALOGD("JNIEnvironment::RegisterNatives(%s)", name);
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   jclass clazz = LookUpClass(name);
   jni_->RegisterNatives(clazz, methods, num_methods);
   CHECK_EXCEPTION(jni_) << "Error during RegisterNatives";
-  return std::unique_ptr<NativeRegistration>(
+  return rtc::scoped_ptr<NativeRegistration>(
       new NativeRegistration(jni_, clazz));
 }
 
@@ -242,7 +240,7 @@ JVM::~JVM() {
   DeleteGlobalRef(jni(), context_);
 }
 
-std::unique_ptr<JNIEnvironment> JVM::environment() {
+rtc::scoped_ptr<JNIEnvironment> JVM::environment() {
   ALOGD("JVM::environment%s", GetThreadInfo().c_str());
   // The JNIEnv is used for thread-local storage. For this reason, we cannot
   // share a JNIEnv between threads. If a piece of code has no other way to get
@@ -252,9 +250,9 @@ std::unique_ptr<JNIEnvironment> JVM::environment() {
   JNIEnv* jni = GetEnv(jvm_);
   if (!jni) {
     ALOGE("AttachCurrentThread() has not been called on this thread.");
-    return std::unique_ptr<JNIEnvironment>();
+    return rtc::scoped_ptr<JNIEnvironment>();
   }
-  return std::unique_ptr<JNIEnvironment>(new JNIEnvironment(jni));
+  return rtc::scoped_ptr<JNIEnvironment>(new JNIEnvironment(jni));
 }
 
 JavaClass JVM::GetClass(const char* name) {

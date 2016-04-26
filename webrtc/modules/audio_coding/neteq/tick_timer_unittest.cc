@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
-
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 
 #include "testing/gmock/include/gmock/gmock.h"

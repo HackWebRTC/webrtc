@@ -14,11 +14,11 @@
 #include <array>
 #include <vector>
 #include <map>
-#include <memory>
 #include <set>
 #include <queue>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"

@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
-
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/common_types.h"
@@ -76,13 +74,13 @@ class RtcpFormatRembTest : public ::testing::Test {
   OverUseDetectorOptions over_use_detector_options_;
   Clock* system_clock_;
   ModuleRtpRtcpImpl* dummy_rtp_rtcp_impl_;
-  std::unique_ptr<ReceiveStatistics> receive_statistics_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;
   TestTransport* test_transport_;
   test::NullTransport null_transport_;
   MockRemoteBitrateObserver remote_bitrate_observer_;
-  std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
 };
 
 void RtcpFormatRembTest::SetUp() {

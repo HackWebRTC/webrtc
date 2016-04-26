@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 
-#include <memory>
 #include <sstream>
 
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"

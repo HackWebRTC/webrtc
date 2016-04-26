@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <memory>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -112,7 +111,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
                                           int64_t capture_time_ms,
                                           StorageType media_packet_storage,
                                           bool protect) {
-  std::unique_ptr<RedPacket> red_packet;
+  rtc::scoped_ptr<RedPacket> red_packet;
   std::vector<RedPacket*> fec_packets;
   StorageType fec_storage = kDontRetransmit;
   uint16_t next_fec_sequence_number = 0;
@@ -225,7 +224,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     return -1;
   }
 
-  std::unique_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
+  rtc::scoped_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
       videoType, _rtpSender.MaxDataPayloadLength(),
       video_header ? &(video_header->codecHeader) : nullptr, frameType));
 

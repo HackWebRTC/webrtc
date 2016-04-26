@@ -31,7 +31,7 @@ class MockProcessThread : public ProcessThread {
   // MOCK_METHOD1 gets confused with mocking this method, so we work around it
   // by overriding the method from the interface and forwarding the call to a
   // mocked, simpler method.
-  void PostTask(std::unique_ptr<ProcessTask> task) override {
+  void PostTask(rtc::scoped_ptr<ProcessTask> task) override {
     PostTask(task.get());
   }
 };

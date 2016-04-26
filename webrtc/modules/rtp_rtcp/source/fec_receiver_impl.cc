@@ -12,9 +12,8 @@
 
 #include <assert.h>
 
-#include <memory>
-
 #include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
 
@@ -88,7 +87,7 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
   // Add to list without RED header, aka a virtual RTP packet
   // we remove the RED header
 
-  std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet(
+  rtc::scoped_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet(
       new ForwardErrorCorrection::ReceivedPacket);
   received_packet->pkt = new ForwardErrorCorrection::Packet;
 
@@ -136,7 +135,7 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
   }
   ++packet_counter_.num_packets;
 
-  std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>
+  rtc::scoped_ptr<ForwardErrorCorrection::ReceivedPacket>
       second_received_packet;
   if (blockLength > 0) {
     // handle block length, split into 2 packets
