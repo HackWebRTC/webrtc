@@ -16,6 +16,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 
 using ::testing::Return;
 using ::testing::_;
@@ -80,13 +81,15 @@ struct PacketsToInsert {
 // Start of test definitions.
 
 TEST(PacketBuffer, CreateAndDestroy) {
-  PacketBuffer* buffer = new PacketBuffer(10);  // 10 packets.
+  TickTimer tick_timer;
+  PacketBuffer* buffer = new PacketBuffer(10, &tick_timer);  // 10 packets.
   EXPECT_TRUE(buffer->Empty());
   delete buffer;
 }
 
 TEST(PacketBuffer, InsertPacket) {
-  PacketBuffer buffer(10);  // 10 packets.
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  // 10 packets.
   PacketGenerator gen(17u, 4711u, 0, 10);
 
   const int payload_len = 100;
@@ -107,7 +110,8 @@ TEST(PacketBuffer, InsertPacket) {
 
 // Test to flush buffer.
 TEST(PacketBuffer, FlushBuffer) {
-  PacketBuffer buffer(10);  // 10 packets.
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  // 10 packets.
   PacketGenerator gen(0, 0, 0, 10);
   const int payload_len = 10;
 
@@ -127,7 +131,8 @@ TEST(PacketBuffer, FlushBuffer) {
 
 // Test to fill the buffer over the limits, and verify that it flushes.
 TEST(PacketBuffer, OverfillBuffer) {
-  PacketBuffer buffer(10);  // 10 packets.
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  // 10 packets.
   PacketGenerator gen(0, 0, 0, 10);
 
   // Insert 10 small packets; should be ok.
@@ -156,7 +161,8 @@ TEST(PacketBuffer, OverfillBuffer) {
 
 // Test inserting a list of packets.
 TEST(PacketBuffer, InsertPacketList) {
-  PacketBuffer buffer(10);  // 10 packets.
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  // 10 packets.
   PacketGenerator gen(0, 0, 0, 10);
   PacketList list;
   const int payload_len = 10;
@@ -192,7 +198,8 @@ TEST(PacketBuffer, InsertPacketList) {
 // Expecting the buffer to flush.
 // TODO(hlundin): Remove this test when legacy operation is no longer needed.
 TEST(PacketBuffer, InsertPacketListChangePayloadType) {
-  PacketBuffer buffer(10);  // 10 packets.
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  // 10 packets.
   PacketGenerator gen(0, 0, 0, 10);
   PacketList list;
   const int payload_len = 10;
@@ -230,7 +237,8 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 }
 
 TEST(PacketBuffer, ExtractOrderRedundancy) {
-  PacketBuffer buffer(100);  // 100 packets.
+  TickTimer tick_timer;
+  PacketBuffer buffer(100, &tick_timer);  // 100 packets.
   const int kPackets = 18;
   const int kFrameSize = 10;
   const int kPayloadLength = 10;
@@ -289,7 +297,8 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
 }
 
 TEST(PacketBuffer, DiscardPackets) {
-  PacketBuffer buffer(100);  // 100 packets.
+  TickTimer tick_timer;
+  PacketBuffer buffer(100, &tick_timer);  // 100 packets.
   const uint16_t start_seq_no = 17;
   const uint32_t start_ts = 4711;
   const uint32_t ts_increment = 10;
@@ -318,7 +327,8 @@ TEST(PacketBuffer, DiscardPackets) {
 }
 
 TEST(PacketBuffer, Reordering) {
-  PacketBuffer buffer(100);  // 100 packets.
+  TickTimer tick_timer;
+  PacketBuffer buffer(100, &tick_timer);  // 100 packets.
   const uint16_t start_seq_no = 17;
   const uint32_t start_ts = 4711;
   const uint32_t ts_increment = 10;
@@ -373,8 +383,9 @@ TEST(PacketBuffer, Failures) {
   const uint32_t ts_increment = 10;
   int payload_len = 100;
   PacketGenerator gen(start_seq_no, start_ts, 0, ts_increment);
+  TickTimer tick_timer;
 
-  PacketBuffer* buffer = new PacketBuffer(100);  // 100 packets.
+  PacketBuffer* buffer = new PacketBuffer(100, &tick_timer);  // 100 packets.
   Packet* packet = NULL;
   EXPECT_EQ(PacketBuffer::kInvalidPacket, buffer->InsertPacket(packet));
   packet = gen.NextPacket(payload_len);
@@ -404,7 +415,7 @@ TEST(PacketBuffer, Failures) {
   // Insert packet list of three packets, where the second packet has an invalid
   // payload.  Expect first packet to be inserted, and the remaining two to be
   // discarded.
-  buffer = new PacketBuffer(100);  // 100 packets.
+  buffer = new PacketBuffer(100, &tick_timer);  // 100 packets.
   PacketList list;
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
   packet = gen.NextPacket(payload_len);

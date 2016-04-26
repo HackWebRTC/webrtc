@@ -105,6 +105,8 @@
         'statistics_calculator.h',
         'normal.cc',
         'normal.h',
+        'packet.cc',
+        'packet.h',
         'packet_buffer.cc',
         'packet_buffer.h',
         'payload_splitter.cc',

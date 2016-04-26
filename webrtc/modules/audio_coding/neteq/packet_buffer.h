@@ -17,8 +17,8 @@
 
 namespace webrtc {
 
-// Forward declaration.
 class DecoderDatabase;
+class TickTimer;
 
 // This is the actual buffer holding the packets before decoding.
 class PacketBuffer {
@@ -34,7 +34,7 @@ class PacketBuffer {
 
   // Constructor creates a buffer which can hold a maximum of
   // |max_number_of_packets| packets.
-  PacketBuffer(size_t max_number_of_packets);
+  PacketBuffer(size_t max_number_of_packets, const TickTimer* tick_timer);
 
   // Deletes all packets in the buffer before destroying the buffer.
   virtual ~PacketBuffer();
@@ -116,10 +116,6 @@ class PacketBuffer {
   virtual size_t NumSamplesInBuffer(DecoderDatabase* decoder_database,
                                     size_t last_decoded_length) const;
 
-  // Increase the waiting time counter for every packet in the buffer by |inc|.
-  // The default value for |inc| is 1.
-  virtual void IncrementWaitingTimes(int inc = 1);
-
   virtual void BufferStat(int* num_packets, int* max_num_packets) const;
 
   // Static method that properly deletes the first packet, and its payload
@@ -148,6 +144,7 @@ class PacketBuffer {
  private:
   size_t max_number_of_packets_;
   PacketList buffer_;
+  const TickTimer* tick_timer_;
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketBuffer);
 };
 

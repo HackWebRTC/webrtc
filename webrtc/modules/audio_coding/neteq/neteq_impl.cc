@@ -536,7 +536,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     packet->header.numCSRCs = 0;
     packet->payload_length = payload.size();
     packet->primary = true;
-    packet->waiting_time = 0;
+    // Waiting time will be set upon inserting the packet in the buffer.
+    RTC_DCHECK(!packet->waiting_time);
     packet->payload = new uint8_t[packet->payload_length];
     packet->sync_packet = is_sync_packet;
     if (!packet->payload) {
@@ -1002,7 +1003,6 @@ int NetEqImpl::GetDecision(Operations* operation,
   *operation = kUndefined;
 
   // Increment time counters.
-  packet_buffer_->IncrementWaitingTimes();
   stats_.IncreaseCounter(output_size_samples_, fs_hz_);
 
   assert(sync_buffer_.get());
@@ -1931,8 +1931,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
       return -1;
     }
     stats_.PacketsDiscarded(discard_count);
-    // Store waiting time in ms; packets->waiting_time is in "output blocks".
-    stats_.StoreWaitingTime(packet->waiting_time * kOutputSizeMs);
+    stats_.StoreWaitingTime(packet->waiting_time->ElapsedMs());
     assert(packet->payload_length > 0);
     packet_list->push_back(packet);  // Store packet in list.
 

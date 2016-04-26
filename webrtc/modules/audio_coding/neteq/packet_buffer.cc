@@ -19,6 +19,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 
 namespace webrtc {
 
@@ -37,8 +38,9 @@ class NewTimestampIsLarger {
   const Packet* new_packet_;
 };
 
-PacketBuffer::PacketBuffer(size_t max_number_of_packets)
-    : max_number_of_packets_(max_number_of_packets) {}
+PacketBuffer::PacketBuffer(size_t max_number_of_packets,
+                           const TickTimer* tick_timer)
+    : max_number_of_packets_(max_number_of_packets), tick_timer_(tick_timer) {}
 
 // Destructor. All packets in the buffer will be destroyed.
 PacketBuffer::~PacketBuffer() {
@@ -64,6 +66,8 @@ int PacketBuffer::InsertPacket(Packet* packet) {
   }
 
   int return_val = kOK;
+
+  packet->waiting_time = tick_timer_->GetNewStopwatch();
 
   if (buffer_.size() >= max_number_of_packets_) {
     // Buffer is full. Flush it.
@@ -266,13 +270,6 @@ size_t PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
     num_samples += last_duration;
   }
   return num_samples;
-}
-
-void PacketBuffer::IncrementWaitingTimes(int inc) {
-  PacketList::iterator it;
-  for (it = buffer_.begin(); it != buffer_.end(); ++it) {
-    (*it)->waiting_time += inc;
-  }
 }
 
 bool PacketBuffer::DeleteFirstPacket(PacketList* packet_list) {

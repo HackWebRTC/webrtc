@@ -130,10 +130,12 @@ class NetEqImplTest : public ::testing::Test {
       dtmf_tone_generator_ = new DtmfToneGenerator;
     }
     if (use_mock_packet_buffer_) {
-      mock_packet_buffer_ = new MockPacketBuffer(config_.max_packets_in_buffer);
+      mock_packet_buffer_ =
+          new MockPacketBuffer(config_.max_packets_in_buffer, tick_timer_);
       packet_buffer_ = mock_packet_buffer_;
     } else {
-      packet_buffer_ = new PacketBuffer(config_.max_packets_in_buffer);
+      packet_buffer_ =
+          new PacketBuffer(config_.max_packets_in_buffer, tick_timer_);
     }
     if (use_mock_payload_splitter_) {
       mock_payload_splitter_ = new MockPayloadSplitter;

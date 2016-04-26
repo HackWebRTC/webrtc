@@ -791,6 +791,8 @@ source_set("neteq") {
     "neteq/neteq_impl.h",
     "neteq/normal.cc",
     "neteq/normal.h",
+    "neteq/packet.cc",
+    "neteq/packet.h",
     "neteq/packet_buffer.cc",
     "neteq/packet_buffer.h",
     "neteq/payload_splitter.cc",
