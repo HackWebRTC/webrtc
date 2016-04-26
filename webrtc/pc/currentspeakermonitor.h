@@ -11,8 +11,8 @@
 // CurrentSpeakerMonitor monitors the audio levels for a session and determines
 // which participant is currently speaking.
 
-#ifndef TALK_SESSION_MEDIA_CURRENTSPEAKERMONITOR_H_
-#define TALK_SESSION_MEDIA_CURRENTSPEAKERMONITOR_H_
+#ifndef WEBRTC_PC_CURRENTSPEAKERMONITOR_H_
+#define WEBRTC_PC_CURRENTSPEAKERMONITOR_H_
 
 #include <map>
 
@@ -45,7 +45,7 @@ class AudioSourceContext {
 // It's recommended that the audio monitor be started with a 100 ms period.
 class CurrentSpeakerMonitor : public sigslot::has_slots<> {
  public:
-  CurrentSpeakerMonitor(AudioSourceContext* audio_source_context);
+  explicit CurrentSpeakerMonitor(AudioSourceContext* audio_source_context);
   ~CurrentSpeakerMonitor();
 
   void Start();
@@ -90,6 +90,6 @@ class CurrentSpeakerMonitor : public sigslot::has_slots<> {
   uint32_t min_time_between_switches_;
 };
 
-}
+}  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_CURRENTSPEAKERMONITOR_H_
+#endif  // WEBRTC_PC_CURRENTSPEAKERMONITOR_H_

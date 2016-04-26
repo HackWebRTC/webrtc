@@ -101,4 +101,4 @@ rtc::Thread *AudioMonitor::monitor_thread() {
   return monitoring_thread_;
 }
 
-}
+}  // namespace cricket

@@ -46,7 +46,7 @@ void GetSupportedCryptoSuiteNames(void (*func)(std::vector<int>*),
   }
 #endif
 }
-}
+}  // namespace
 
 namespace cricket {
 

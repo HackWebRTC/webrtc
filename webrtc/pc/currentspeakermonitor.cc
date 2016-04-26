@@ -10,6 +10,8 @@
 
 #include "webrtc/pc/currentspeakermonitor.h"
 
+#include <vector>
+
 #include "webrtc/base/logging.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/pc/audiomonitor.h"

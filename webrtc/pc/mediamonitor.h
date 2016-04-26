@@ -10,8 +10,8 @@
 
 // Class to collect statistics from a media channel
 
-#ifndef TALK_SESSION_MEDIA_MEDIAMONITOR_H_
-#define TALK_SESSION_MEDIA_MEDIAMONITOR_H_
+#ifndef WEBRTC_PC_MEDIAMONITOR_H_
+#define WEBRTC_PC_MEDIAMONITOR_H_
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslot.h"
@@ -79,4 +79,4 @@ typedef MediaMonitorT<DataMediaChannel, DataMediaInfo> DataMediaMonitor;
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_MEDIAMONITOR_H_
+#endif  // WEBRTC_PC_MEDIAMONITOR_H_

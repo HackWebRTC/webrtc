@@ -410,12 +410,12 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     opts.recv_video = true;
     std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
     ASSERT_TRUE(offer.get() != NULL);
-    ContentInfo* ac_offer= offer->GetContentByName("audio");
+    ContentInfo* ac_offer = offer->GetContentByName("audio");
     ASSERT_TRUE(ac_offer != NULL);
     AudioContentDescription* acd_offer =
         static_cast<AudioContentDescription*>(ac_offer->description);
     acd_offer->set_direction(direction_in_offer);
-    ContentInfo* vc_offer= offer->GetContentByName("video");
+    ContentInfo* vc_offer = offer->GetContentByName("video");
     ASSERT_TRUE(vc_offer != NULL);
     VideoContentDescription* vcd_offer =
         static_cast<VideoContentDescription*>(vc_offer->description);
@@ -889,7 +889,7 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   f1_.set_secure(SEC_ENABLED);
   f2_.set_secure(SEC_ENABLED);
   std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
-  ContentInfo* dc_offer= offer->GetContentByName("data");
+  ContentInfo* dc_offer = offer->GetContentByName("data");
   ASSERT_TRUE(dc_offer != NULL);
   DataContentDescription* dcd_offer =
       static_cast<DataContentDescription*>(dc_offer->description);

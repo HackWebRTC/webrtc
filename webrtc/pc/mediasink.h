@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TALK_SESSION_MEDIA_MEDIASINK_H_
-#define TALK_SESSION_MEDIA_MEDIASINK_H_
+#ifndef WEBRTC_PC_MEDIASINK_H_
+#define WEBRTC_PC_MEDIASINK_H_
 
 namespace cricket {
 
@@ -28,4 +28,4 @@ class MediaSinkInterface {
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_MEDIASINK_H_
+#endif  // WEBRTC_PC_MEDIASINK_H_

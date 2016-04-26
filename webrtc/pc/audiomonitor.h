@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TALK_SESSION_MEDIA_AUDIOMONITOR_H_
-#define TALK_SESSION_MEDIA_AUDIOMONITOR_H_
+#ifndef WEBRTC_PC_AUDIOMONITOR_H_
+#define WEBRTC_PC_AUDIOMONITOR_H_
 
 #include <vector>
+#include <utility>
+
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/port.h"
@@ -24,7 +26,7 @@ struct AudioInfo {
   int input_level;
   int output_level;
   typedef std::vector<std::pair<uint32_t, int> > StreamList;
-  StreamList active_streams; // ssrcs contributing to output_level
+  StreamList active_streams;  // ssrcs contributing to output_level
 };
 
 class AudioMonitor : public rtc::MessageHandler,
@@ -53,6 +55,6 @@ class AudioMonitor : public rtc::MessageHandler,
   bool monitoring_;
 };
 
-}
+}  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_AUDIOMONITOR_H_
+#endif  // WEBRTC_PC_AUDIOMONITOR_H_

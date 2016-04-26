@@ -10,8 +10,8 @@
 
 // Types and classes used in media session descriptions.
 
-#ifndef TALK_SESSION_MEDIA_MEDIASESSION_H_
-#define TALK_SESSION_MEDIA_MEDIASESSION_H_
+#ifndef WEBRTC_PC_MEDIASESSION_H_
+#define WEBRTC_PC_MEDIASESSION_H_
 
 #include <algorithm>
 #include <map>
@@ -544,4 +544,4 @@ void GetDefaultSrtpCryptoSuiteNames(
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_MEDIASESSION_H_
+#endif  // WEBRTC_PC_MEDIASESSION_H_

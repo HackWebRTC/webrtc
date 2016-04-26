@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TALK_SESSION_MEDIA_EXTERNAL_HMAC_H_
-#define TALK_SESSION_MEDIA_EXTERNAL_HMAC_H_
+#ifndef WEBRTC_PC_EXTERNALHMAC_H_
+#define WEBRTC_PC_EXTERNALHMAC_H_
 
 // External libsrtp HMAC auth module which implements methods defined in
 // auth_type_t.
@@ -72,4 +72,4 @@ err_status_t external_hmac_compute(ExternalHmacContext* state,
 err_status_t external_crypto_init();
 
 #endif  // defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
-#endif  // TALK_SESSION_MEDIA_EXTERNAL_HMAC_H_
+#endif  // WEBRTC_PC_EXTERNALHMAC_H_

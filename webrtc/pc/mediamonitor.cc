@@ -88,4 +88,4 @@ void MediaMonitor::PollMediaChannel() {
   worker_thread_->PostDelayed(rate_, this, MSG_MONITOR_POLL);
 }
 
-}
+}  // namespace cricket
