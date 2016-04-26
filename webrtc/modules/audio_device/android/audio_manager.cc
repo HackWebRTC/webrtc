@@ -66,7 +66,7 @@ bool AudioManager::JavaAudioManager::IsDeviceBlacklistedForOpenSLESUsage() {
 
 // AudioManager implementation
 AudioManager::AudioManager()
-    : j_environment_(rtc::ScopedToUnique(JVM::GetInstance()->environment())),
+    : j_environment_(JVM::GetInstance()->environment()),
       audio_layer_(AudioDeviceModule::kPlatformDefaultAudio),
       initialized_(false),
       hardware_aec_(false),
@@ -80,14 +80,14 @@ AudioManager::AudioManager()
       {"nativeCacheAudioParameters",
        "(IIZZZZIIJ)V",
        reinterpret_cast<void*>(&webrtc::AudioManager::CacheAudioParameters)}};
-  j_native_registration_ = rtc::ScopedToUnique(j_environment_->RegisterNatives(
-      "org/webrtc/voiceengine/WebRtcAudioManager",
-      native_methods, arraysize(native_methods)));
+  j_native_registration_ = j_environment_->RegisterNatives(
+      "org/webrtc/voiceengine/WebRtcAudioManager", native_methods,
+      arraysize(native_methods));
   j_audio_manager_.reset(new JavaAudioManager(
       j_native_registration_.get(),
-      rtc::ScopedToUnique(j_native_registration_->NewObject(
+      j_native_registration_->NewObject(
           "<init>", "(Landroid/content/Context;J)V",
-          JVM::GetInstance()->context(), PointerTojlong(this)))));
+          JVM::GetInstance()->context(), PointerTojlong(this))));
 }
 
 AudioManager::~AudioManager() {

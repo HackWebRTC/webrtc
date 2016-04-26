@@ -28,7 +28,7 @@ SharedData::SharedData(const Config& config)
       _engineStatistics(_gInstanceCounter),
       _audioDevicePtr(NULL),
       _moduleProcessThreadPtr(
-          rtc::ScopedToUnique(ProcessThread::Create("VoiceProcessThread"))) {
+          ProcessThread::Create("VoiceProcessThread")) {
     Trace::CreateTrace();
     if (OutputMixer::Create(_outputMixerPtr, _gInstanceCounter) == 0)
     {

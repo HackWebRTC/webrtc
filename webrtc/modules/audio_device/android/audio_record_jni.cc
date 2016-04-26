@@ -74,7 +74,7 @@ bool AudioRecordJni::JavaAudioRecord::EnableBuiltInNS(bool enable) {
 
 // AudioRecordJni implementation.
 AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
-    : j_environment_(rtc::ScopedToUnique(JVM::GetInstance()->environment())),
+    : j_environment_(JVM::GetInstance()->environment()),
       audio_manager_(audio_manager),
       audio_parameters_(audio_manager->GetRecordAudioParameters()),
       total_delay_in_milliseconds_(0),
@@ -93,14 +93,14 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
           &webrtc::AudioRecordJni::CacheDirectBufferAddress)},
       {"nativeDataIsRecorded", "(IJ)V",
       reinterpret_cast<void*>(&webrtc::AudioRecordJni::DataIsRecorded)}};
-  j_native_registration_ = rtc::ScopedToUnique(j_environment_->RegisterNatives(
-      "org/webrtc/voiceengine/WebRtcAudioRecord",
-      native_methods, arraysize(native_methods)));
+  j_native_registration_ = j_environment_->RegisterNatives(
+      "org/webrtc/voiceengine/WebRtcAudioRecord", native_methods,
+      arraysize(native_methods));
   j_audio_record_.reset(new JavaAudioRecord(
       j_native_registration_.get(),
-      rtc::ScopedToUnique(j_native_registration_->NewObject(
+      j_native_registration_->NewObject(
           "<init>", "(Landroid/content/Context;J)V",
-          JVM::GetInstance()->context(), PointerTojlong(this)))));
+          JVM::GetInstance()->context(), PointerTojlong(this))));
   // Detach from this thread since we want to use the checker to verify calls
   // from the Java based audio thread.
   thread_checker_java_.DetachFromThread();

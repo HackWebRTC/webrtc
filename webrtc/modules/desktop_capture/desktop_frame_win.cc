@@ -49,8 +49,7 @@ DesktopFrameWin* DesktopFrameWin::Create(
   std::unique_ptr<SharedMemory> shared_memory;
   HANDLE section_handle = nullptr;
   if (shared_memory_factory) {
-    shared_memory = rtc::ScopedToUnique(
-        shared_memory_factory->CreateSharedMemory(buffer_size));
+    shared_memory = shared_memory_factory->CreateSharedMemory(buffer_size);
     section_handle = shared_memory->handle();
   }
   void* data = nullptr;

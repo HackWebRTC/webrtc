@@ -191,9 +191,8 @@ namespace internal {
 Call::Call(const Call::Config& config)
     : clock_(Clock::GetRealTimeClock()),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
-      module_process_thread_(
-          rtc::ScopedToUnique(ProcessThread::Create("ModuleProcessThread"))),
-      pacer_thread_(rtc::ScopedToUnique(ProcessThread::Create("PacerThread"))),
+      module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
+      pacer_thread_(ProcessThread::Create("PacerThread")),
       call_stats_(new CallStats(clock_)),
       bitrate_allocator_(new BitrateAllocator()),
       config_(config),

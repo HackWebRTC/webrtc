@@ -297,7 +297,7 @@ TEST(ProcessThreadImpl, PostTask) {
   std::unique_ptr<EventWrapper> task_ran(EventWrapper::Create());
   std::unique_ptr<RaiseEventTask> task(new RaiseEventTask(task_ran.get()));
   thread.Start();
-  thread.PostTask(rtc::UniqueToScoped(std::move(task)));
+  thread.PostTask(std::move(task));
   EXPECT_EQ(kEventSignaled, task_ran->Wait(100));
   thread.Stop();
 }

@@ -142,8 +142,7 @@ class AudioDeviceAPITest: public testing::Test {
   virtual ~AudioDeviceAPITest() {}
 
   static void SetUpTestCase() {
-    process_thread_ =
-        rtc::ScopedToUnique(ProcessThread::Create("ProcessThread"));
+    process_thread_ = ProcessThread::Create("ProcessThread");
     process_thread_->Start();
 
     // Windows:

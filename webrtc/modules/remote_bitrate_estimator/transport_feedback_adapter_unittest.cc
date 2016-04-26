@@ -207,8 +207,8 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
         packets[i].sequence_number, packets[i].arrival_time_ms * 1000));
 
     rtc::Buffer raw_packet = feedback->Build();
-    feedback = rtc::ScopedToUnique(rtcp::TransportFeedback::ParseFrom(
-        raw_packet.data(), raw_packet.size()));
+    feedback = rtcp::TransportFeedback::ParseFrom(raw_packet.data(),
+                                                  raw_packet.size());
 
     std::vector<PacketInfo> expected_packets;
     expected_packets.push_back(packets[i]);
@@ -276,8 +276,8 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
                                             info.arrival_time_ms * 1000));
 
   rtc::Buffer raw_packet = feedback->Build();
-  feedback = rtc::ScopedToUnique(
-      rtcp::TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size()));
+  feedback =
+      rtcp::TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size());
 
   std::vector<PacketInfo> received_feedback;
 
@@ -297,8 +297,8 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   EXPECT_TRUE(feedback->WithReceivedPacket(info.sequence_number,
                                            info.arrival_time_ms * 1000));
   raw_packet = feedback->Build();
-  feedback = rtc::ScopedToUnique(
-      rtcp::TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size()));
+  feedback =
+      rtcp::TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size());
 
   EXPECT_TRUE(feedback.get() != nullptr);
   EXPECT_CALL(*bitrate_estimator_, IncomingPacketFeedbackVector(_))

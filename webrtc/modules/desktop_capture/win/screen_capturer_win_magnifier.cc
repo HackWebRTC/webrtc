@@ -83,8 +83,7 @@ void ScreenCapturerWinMagnifier::Start(Callback* callback) {
 
 void ScreenCapturerWinMagnifier::SetSharedMemoryFactory(
     rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) {
-  shared_memory_factory_ =
-      rtc::ScopedToUnique(std::move(shared_memory_factory));
+  shared_memory_factory_ = std::move(shared_memory_factory);
 }
 
 void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {

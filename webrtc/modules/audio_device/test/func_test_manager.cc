@@ -594,11 +594,10 @@ FuncTestManager::~FuncTestManager()
 
 int32_t FuncTestManager::Init()
 {
-    EXPECT_TRUE((_processThread = rtc::ScopedToUnique(
-                     ProcessThread::Create("ProcessThread"))) != NULL);
-    if (_processThread == NULL)
-    {
-        return -1;
+    EXPECT_TRUE((_processThread = ProcessThread::Create("ProcessThread")) !=
+                NULL);
+    if (_processThread == NULL) {
+      return -1;
     }
     _processThread->Start();
 
@@ -832,8 +831,8 @@ int32_t FuncTestManager::TestAudioLayerSelection()
         // ==================================================
         // Next, try to make fresh start with new audio layer
 
-        EXPECT_TRUE((_processThread = rtc::ScopedToUnique(
-                         ProcessThread::Create("ProcessThread"))) != NULL);
+        EXPECT_TRUE((_processThread = ProcessThread::Create("ProcessThread")) !=
+                    NULL);
         if (_processThread == NULL)
         {
             return -1;

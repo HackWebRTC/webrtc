@@ -84,8 +84,7 @@ std::unique_ptr<DesktopFrame> SharedMemoryDesktopFrame::Create(
   size_t buffer_size =
       size.width() * size.height() * DesktopFrame::kBytesPerPixel;
   std::unique_ptr<SharedMemory> shared_memory;
-  shared_memory = rtc::ScopedToUnique(
-      shared_memory_factory->CreateSharedMemory(buffer_size));
+  shared_memory = shared_memory_factory->CreateSharedMemory(buffer_size);
   if (!shared_memory)
     return nullptr;
 
