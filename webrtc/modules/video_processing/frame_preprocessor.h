@@ -57,7 +57,7 @@ class VPMFramePreprocessor {
   uint32_t GetDecimatedHeight() const;
 
   // Preprocess output:
-  void EnableDenosing(bool enable);
+  void EnableDenoising(bool enable);
   const VideoFrame* PreprocessFrame(const VideoFrame& frame);
   VideoContentMetrics* GetContentMetrics() const;
 

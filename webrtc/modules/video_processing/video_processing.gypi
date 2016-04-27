@@ -20,12 +20,8 @@
       'sources': [
         'include/video_processing.h',
         'include/video_processing_defines.h',
-        'brightness_detection.cc',
-        'brightness_detection.h',
         'content_analysis.cc',
         'content_analysis.h',
-        'deflickering.cc',
-        'deflickering.h',
         'frame_preprocessor.cc',
         'frame_preprocessor.h',
         'spatial_resampler.cc',

@@ -51,8 +51,6 @@ static void TestSize(const VideoFrame& source_frame,
                      int target_height,
                      double expected_psnr,
                      VideoProcessing* vpm);
-static bool CompareFrames(const webrtc::VideoFrame& frame1,
-                          const webrtc::VideoFrame& frame2);
 static void WriteProcessedFrameForVisualInspection(const VideoFrame& source,
                                                    const VideoFrame& processed);
 
@@ -90,108 +88,6 @@ void VideoProcessingTest::TearDown() {
   source_file_ = NULL;
   delete vp_;
   vp_ = NULL;
-}
-
-#if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_HandleNullBuffer) {
-#else
-TEST_F(VideoProcessingTest, HandleNullBuffer) {
-#endif
-  // TODO(mikhal/stefan): Do we need this one?
-  VideoProcessing::FrameStats stats;
-  // Video frame with unallocated buffer.
-  VideoFrame videoFrame;
-
-  vp_->GetFrameStats(videoFrame, &stats);
-  EXPECT_EQ(stats.num_pixels, 0u);
-
-  EXPECT_EQ(-1, vp_->Deflickering(&videoFrame, &stats));
-
-  EXPECT_EQ(-3, vp_->BrightnessDetection(videoFrame, stats));
-}
-
-#if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_HandleBadStats) {
-#else
-TEST_F(VideoProcessingTest, HandleBadStats) {
-#endif
-  VideoProcessing::FrameStats stats;
-  vp_->ClearFrameStats(&stats);
-  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-  ASSERT_EQ(frame_length_,
-            fread(video_buffer.get(), 1, frame_length_, source_file_));
-  EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
-                             0, kVideoRotation_0, &video_frame_));
-
-  EXPECT_EQ(-1, vp_->Deflickering(&video_frame_, &stats));
-
-  EXPECT_EQ(-3, vp_->BrightnessDetection(video_frame_, stats));
-}
-
-#if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_IdenticalResultsAfterReset) {
-#else
-TEST_F(VideoProcessingTest, IdenticalResultsAfterReset) {
-#endif
-  VideoFrame video_frame2;
-  VideoProcessing::FrameStats stats;
-  // Only testing non-static functions here.
-  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-  ASSERT_EQ(frame_length_,
-            fread(video_buffer.get(), 1, frame_length_, source_file_));
-  EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
-                             0, kVideoRotation_0, &video_frame_));
-  vp_->GetFrameStats(video_frame_, &stats);
-  EXPECT_GT(stats.num_pixels, 0u);
-  video_frame2.CopyFrame(video_frame_);
-  ASSERT_EQ(0, vp_->Deflickering(&video_frame_, &stats));
-
-  // Retrieve frame stats again in case Deflickering() has zeroed them.
-  vp_->GetFrameStats(video_frame2, &stats);
-  EXPECT_GT(stats.num_pixels, 0u);
-  ASSERT_EQ(0, vp_->Deflickering(&video_frame2, &stats));
-  EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
-
-  ASSERT_EQ(frame_length_,
-            fread(video_buffer.get(), 1, frame_length_, source_file_));
-  EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
-                             0, kVideoRotation_0, &video_frame_));
-  vp_->GetFrameStats(video_frame_, &stats);
-  EXPECT_GT(stats.num_pixels, 0u);
-  video_frame2.CopyFrame(video_frame_);
-  ASSERT_EQ(0, vp_->BrightnessDetection(video_frame_, stats));
-
-  ASSERT_EQ(0, vp_->BrightnessDetection(video_frame2, stats));
-  EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
-}
-
-#if defined(WEBRTC_IOS)
-TEST_F(VideoProcessingTest, DISABLED_FrameStats) {
-#else
-TEST_F(VideoProcessingTest, FrameStats) {
-#endif
-  VideoProcessing::FrameStats stats;
-  vp_->ClearFrameStats(&stats);
-  std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-  ASSERT_EQ(frame_length_,
-            fread(video_buffer.get(), 1, frame_length_, source_file_));
-  EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
-                             0, kVideoRotation_0, &video_frame_));
-
-  EXPECT_FALSE(vp_->ValidFrameStats(stats));
-  vp_->GetFrameStats(video_frame_, &stats);
-  EXPECT_GT(stats.num_pixels, 0u);
-  EXPECT_TRUE(vp_->ValidFrameStats(stats));
-
-  printf("\nFrameStats\n");
-  printf("mean: %u\nnum_pixels: %u\nsubSamplFactor: %u\nsum: %u\n\n",
-         static_cast<unsigned int>(stats.mean),
-         static_cast<unsigned int>(stats.num_pixels),
-         static_cast<unsigned int>(stats.sub_sampling_factor),
-         static_cast<unsigned int>(stats.sum));
-
-  vp_->ClearFrameStats(&stats);
-  EXPECT_FALSE(vp_->ValidFrameStats(stats));
 }
 
 #if defined(WEBRTC_IOS)
@@ -376,22 +272,6 @@ void TestSize(const VideoFrame& source_frame,
       "source which is scaled down/up to: %d %d, and back to source size \n",
       psnr, source_frame.width(), source_frame.height(), target_width,
       target_height);
-}
-
-bool CompareFrames(const webrtc::VideoFrame& frame1,
-                   const webrtc::VideoFrame& frame2) {
-  for (int plane = 0; plane < webrtc::kNumOfPlanes; plane++) {
-    webrtc::PlaneType plane_type = static_cast<webrtc::PlaneType>(plane);
-    int allocated_size1 = frame1.allocated_size(plane_type);
-    int allocated_size2 = frame2.allocated_size(plane_type);
-    if (allocated_size1 != allocated_size2)
-      return false;
-    const uint8_t* plane_buffer1 = frame1.buffer(plane_type);
-    const uint8_t* plane_buffer2 = frame2.buffer(plane_type);
-    if (memcmp(plane_buffer1, plane_buffer2, allocated_size1))
-      return false;
-  }
-  return true;
 }
 
 void WriteProcessedFrameForVisualInspection(const VideoFrame& source,

@@ -28,45 +28,8 @@ namespace webrtc {
 
 class VideoProcessing {
  public:
-  struct FrameStats {
-    uint32_t hist[256];  // Frame histogram.
-    uint32_t mean;
-    uint32_t sum;
-    uint32_t num_pixels;
-    uint32_t sub_sampling_factor;  // Sub-sampling factor, in powers of 2.
-  };
-
-  enum BrightnessWarning { kNoWarning, kDarkWarning, kBrightWarning };
-
   static VideoProcessing* Create();
   virtual ~VideoProcessing() {}
-
-  // Retrieves statistics for the input frame. This function must be used to
-  // prepare a FrameStats struct for use in certain VPM functions.
-  static void GetFrameStats(const VideoFrame& frame, FrameStats* stats);
-
-  // Checks the validity of a FrameStats struct. Currently, valid implies only
-  // that is had changed from its initialized state.
-  static bool ValidFrameStats(const FrameStats& stats);
-
-  static void ClearFrameStats(FrameStats* stats);
-
-  // Increases/decreases the luminance value. 'delta' can be in the range {}
-  static void Brighten(int delta, VideoFrame* frame);
-
-  // Detects and removes camera flicker from a video stream. Every frame from
-  // the stream must be passed in. A frame will only be altered if flicker has
-  // been detected. Has a fixed-point implementation.
-  // Frame statistics provided by GetFrameStats(). On return the stats will
-  // be reset to zero if the frame was altered. Call GetFrameStats() again
-  // if the statistics for the altered frame are required.
-  virtual int32_t Deflickering(VideoFrame* frame, FrameStats* stats) = 0;
-
-  // Detects if a video frame is excessively bright or dark. Returns a
-  // warning if this is the case. Multiple frames should be passed in before
-  // expecting a warning. Has a floating-point implementation.
-  virtual int32_t BrightnessDetection(const VideoFrame& frame,
-                                      const FrameStats& stats) = 0;
 
   // The following functions refer to the pre-processor unit within VPM. The
   // pre-processor perfoms spatial/temporal decimation and content analysis on
@@ -88,7 +51,7 @@ class VideoProcessing {
   virtual void SetInputFrameResampleMode(
       VideoFrameResampling resampling_mode) = 0;
 
-  virtual void EnableDenosing(bool enable) = 0;
+  virtual void EnableDenoising(bool enable) = 0;
   virtual const VideoFrame* PreprocessFrame(const VideoFrame& frame) = 0;
 
   virtual VideoContentMetrics* GetContentMetrics() const = 0;

@@ -22,7 +22,7 @@ VPMFramePreprocessor::VPMFramePreprocessor()
   spatial_resampler_ = new VPMSimpleSpatialResampler();
   ca_ = new VPMContentAnalysis(true);
   vd_ = new VPMVideoDecimator();
-  EnableDenosing(false);
+  EnableDenoising(false);
   denoised_frame_toggle_ = 0;
 }
 
@@ -87,7 +87,7 @@ uint32_t VPMFramePreprocessor::GetDecimatedHeight() const {
   return spatial_resampler_->TargetHeight();
 }
 
-void VPMFramePreprocessor::EnableDenosing(bool enable) {
+void VPMFramePreprocessor::EnableDenoising(bool enable) {
   if (enable) {
     denoiser_.reset(new VideoDenoiser(true));
   } else {
