@@ -71,6 +71,7 @@ source_set("video") {
     "../modules/video_capture:video_capture_module",
     "../modules/video_coding",
     "../modules/video_processing",
+    "../modules/video_render:video_render_module",
     "../system_wrappers",
     "../voice_engine",
   ]

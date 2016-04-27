@@ -57,6 +57,7 @@
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/modules/modules.gyp:video_render',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         'webrtc',
@@ -143,6 +144,7 @@
         'test/test.gyp:test_common',
         'test/test.gyp:test_renderer',
         '<(webrtc_root)/modules/modules.gyp:video_capture',
+        '<(webrtc_root)/modules/modules.gyp:video_render',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
         'webrtc',
       ],
@@ -182,6 +184,7 @@
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
         '<(webrtc_root)/modules/modules.gyp:video_capture',
+        '<(webrtc_root)/modules/modules.gyp:video_render',
         '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
         'test/metrics.gyp:metrics',

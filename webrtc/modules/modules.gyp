@@ -26,6 +26,7 @@
     'video_coding/video_coding.gypi',
     'video_capture/video_capture.gypi',
     'video_processing/video_processing.gypi',
+    'video_render/video_render.gypi',
   ],
   'conditions': [
     ['include_tests==1', {
@@ -778,6 +779,19 @@
               ],
               'sources': [
                 'modules_unittests.isolate',
+              ],
+            },
+            {
+              'target_name': 'video_render_tests_run',
+              'type': 'none',
+              'dependencies': [
+                'video_render_tests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+              ],
+              'sources': [
+                'video_render_tests.isolate',
               ],
             },
           ],

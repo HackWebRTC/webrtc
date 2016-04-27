@@ -12,6 +12,7 @@ include_rules = [
   "+webrtc/modules/video_coding",
   "+webrtc/modules/video_capture",
   "+webrtc/modules/video_processing",
+  "+webrtc/modules/video_render",
   "+webrtc/system_wrappers",
   "+webrtc/voice_engine",
 ]

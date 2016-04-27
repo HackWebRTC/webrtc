@@ -157,8 +157,6 @@
                   'OTHER_LDFLAGS': [
                     '-framework CoreGraphics',
                     '-framework GLKit',
-                    '-framework OpenGLES',
-                    '-framework QuartzCore',
                   ],
                 },
               },

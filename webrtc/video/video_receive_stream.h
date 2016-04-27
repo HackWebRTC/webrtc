@@ -18,6 +18,7 @@
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"

@@ -304,6 +304,7 @@
        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
        '<(webrtc_root)/common.gyp:webrtc_common',
        '<(webrtc_root)/modules/modules.gyp:media_file',
+       '<(webrtc_root)/modules/modules.gyp:video_render',
        '<(webrtc_root)/webrtc.gyp:webrtc',
        'rtp_test_utils',
        'test_support',

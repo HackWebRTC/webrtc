@@ -16,6 +16,7 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/vie_encoder.h"
