@@ -9,6 +9,7 @@
  */
 
 #include <list>
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -188,7 +189,7 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
 TEST_F(ProducerFecTest, BuildRedPacket) {
   generator_->NewFrame(1);
   test::RawRtpPacket* packet = generator_->NextPacket(0, 10);
-  rtc::scoped_ptr<RedPacket> red_packet(producer_->BuildRedPacket(
+  std::unique_ptr<RedPacket> red_packet(producer_->BuildRedPacket(
       packet->data, packet->length - kRtpHeaderSize, kRtpHeaderSize,
       kRedPayloadType));
   EXPECT_EQ(packet->length + 1, red_packet->length());

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -256,9 +258,9 @@ class RtcpSenderTest : public ::testing::Test {
 
   SimulatedClock clock_;
   TestTransport test_transport_;
-  rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
-  rtc::scoped_ptr<ModuleRtpRtcpImpl> rtp_rtcp_impl_;
-  rtc::scoped_ptr<RTCPSender> rtcp_sender_;
+  std::unique_ptr<ReceiveStatistics> receive_statistics_;
+  std::unique_ptr<ModuleRtpRtcpImpl> rtp_rtcp_impl_;
+  std::unique_ptr<RTCPSender> rtcp_sender_;
 };
 
 TEST_F(RtcpSenderTest, SetRtcpStatus) {

@@ -14,6 +14,7 @@
 #include <array>
 #include <vector>
 #include <map>
+#include <memory>
 #include <set>
 #include <queue>
 

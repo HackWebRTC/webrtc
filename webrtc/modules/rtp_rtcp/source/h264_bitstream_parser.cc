@@ -9,13 +9,13 @@
  */
 #include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/bitbuffer.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 namespace {
@@ -103,7 +103,7 @@ bool H264BitstreamParser::ParseSpsNalu(const uint8_t* sps, size_t length) {
   sps_parsed_ = false;
   // Parse out the SPS RBSP. It should be small, so it's ok that we create a
   // copy. We'll eventually write this back.
-  rtc::scoped_ptr<rtc::ByteBufferWriter> sps_rbsp(
+  std::unique_ptr<rtc::ByteBufferWriter> sps_rbsp(
       ParseRbsp(sps + kNaluHeaderAndTypeSize, length - kNaluHeaderAndTypeSize));
   rtc::BitBuffer sps_parser(reinterpret_cast<const uint8_t*>(sps_rbsp->Data()),
                             sps_rbsp->Length());
@@ -209,7 +209,7 @@ bool H264BitstreamParser::ParsePpsNalu(const uint8_t* pps, size_t length) {
   // We're starting a new stream, so reset picture type rewriting values.
   pps_ = PpsState();
   pps_parsed_ = false;
-  rtc::scoped_ptr<rtc::ByteBufferWriter> buffer(
+  std::unique_ptr<rtc::ByteBufferWriter> buffer(
       ParseRbsp(pps + kNaluHeaderAndTypeSize, length - kNaluHeaderAndTypeSize));
   rtc::BitBuffer parser(reinterpret_cast<const uint8_t*>(buffer->Data()),
                         buffer->Length());
@@ -317,7 +317,7 @@ bool H264BitstreamParser::ParseNonParameterSetNalu(const uint8_t* source,
   RTC_CHECK(sps_parsed_);
   RTC_CHECK(pps_parsed_);
   last_slice_qp_delta_parsed_ = false;
-  rtc::scoped_ptr<rtc::ByteBufferWriter> slice_rbsp(ParseRbsp(
+  std::unique_ptr<rtc::ByteBufferWriter> slice_rbsp(ParseRbsp(
       source + kNaluHeaderAndTypeSize, source_length - kNaluHeaderAndTypeSize));
   rtc::BitBuffer slice_reader(
       reinterpret_cast<const uint8_t*>(slice_rbsp->Data()),

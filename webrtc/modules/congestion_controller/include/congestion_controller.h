@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
 
+#include <memory>
+
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/include/module.h"
@@ -69,9 +71,9 @@ class CongestionController : public CallStatsObserver, public Module {
 
  private:
   Clock* const clock_;
-  const rtc::scoped_ptr<PacedSender> pacer_;
-  const rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
-  const rtc::scoped_ptr<BitrateController> bitrate_controller_;
+  const std::unique_ptr<PacedSender> pacer_;
+  const std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  const std::unique_ptr<BitrateController> bitrate_controller_;
   PacketRouter packet_router_;
   RemoteEstimatorProxy remote_estimator_proxy_;
   TransportFeedbackAdapter transport_feedback_adapter_;

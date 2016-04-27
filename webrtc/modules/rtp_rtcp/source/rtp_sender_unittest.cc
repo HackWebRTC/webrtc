@@ -9,12 +9,12 @@
  */
 
 #include <list>
+#include <memory>
 #include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/buffer.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -148,7 +148,7 @@ class RtpSenderTest : public ::testing::Test {
   MockRtcEventLog mock_rtc_event_log_;
   MockRtpPacketSender mock_paced_sender_;
   MockTransportSequenceNumberAllocator seq_num_allocator_;
-  rtc::scoped_ptr<RTPSender> rtp_sender_;
+  std::unique_ptr<RTPSender> rtp_sender_;
   int payload_;
   LoopbackTransportTest transport_;
   const bool kMarkerBit;
@@ -202,7 +202,7 @@ class RtpSenderVideoTest : public RtpSenderTest {
     rtp_sender_video_.reset(
         new RTPSenderVideo(&fake_clock_, rtp_sender_.get()));
   }
-  rtc::scoped_ptr<RTPSenderVideo> rtp_sender_video_;
+  std::unique_ptr<RTPSenderVideo> rtp_sender_video_;
 
   void VerifyCVOPacket(uint8_t* data,
                        size_t len,
@@ -849,7 +849,7 @@ TEST_F(RtpSenderTest, SendPadding) {
   rtp_header_len += 4;  // 4 extra bytes common to all extension headers.
 
   // Create and set up parser.
-  rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+  std::unique_ptr<webrtc::RtpHeaderParser> rtp_parser(
       webrtc::RtpHeaderParser::Create());
   ASSERT_TRUE(rtp_parser.get() != nullptr);
   rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
@@ -968,7 +968,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   rtp_sender_->SetRtxSsrc(1234);
 
   // Create and set up parser.
-  rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+  std::unique_ptr<webrtc::RtpHeaderParser> rtp_parser(
       webrtc::RtpHeaderParser::Create());
   ASSERT_TRUE(rtp_parser.get() != nullptr);
   rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
@@ -1402,7 +1402,7 @@ TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
   ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
                                              capture_time_ms + 2000, 0, nullptr,
                                              0, nullptr));
-  rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+  std::unique_ptr<webrtc::RtpHeaderParser> rtp_parser(
       webrtc::RtpHeaderParser::Create());
   ASSERT_TRUE(rtp_parser.get() != nullptr);
   webrtc::RTPHeader rtp_header;

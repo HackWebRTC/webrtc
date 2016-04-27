@@ -60,8 +60,8 @@ class FakeSharedMemoryFactory : public SharedMemoryFactory {
   FakeSharedMemoryFactory() {}
   ~FakeSharedMemoryFactory() override {}
 
-  rtc::scoped_ptr<SharedMemory> CreateSharedMemory(size_t size) override {
-    return rtc::scoped_ptr<SharedMemory>(
+  std::unique_ptr<SharedMemory> CreateSharedMemory(size_t size) override {
+    return std::unique_ptr<SharedMemory>(
         new FakeSharedMemory(new char[size], size));
   }
 
@@ -118,7 +118,7 @@ TEST_F(ScreenCapturerTest, UseSharedBuffers) {
 
   capturer_->Start(&callback_);
   capturer_->SetSharedMemoryFactory(
-      rtc::scoped_ptr<SharedMemoryFactory>(new FakeSharedMemoryFactory()));
+      std::unique_ptr<SharedMemoryFactory>(new FakeSharedMemoryFactory()));
   capturer_->Capture(DesktopRegion());
 
   ASSERT_TRUE(frame);

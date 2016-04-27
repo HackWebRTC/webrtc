@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
 
 #include <map>
+#include <memory>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -181,7 +182,7 @@ class RTPPayloadRegistry {
 
   rtc::CriticalSection crit_sect_;
   RtpUtility::PayloadTypeMap payload_type_map_;
-  rtc::scoped_ptr<RTPPayloadStrategy> rtp_payload_strategy_;
+  std::unique_ptr<RTPPayloadStrategy> rtp_payload_strategy_;
   int8_t  red_payload_type_;
   int8_t ulpfec_payload_type_;
   int8_t incoming_payload_type_;

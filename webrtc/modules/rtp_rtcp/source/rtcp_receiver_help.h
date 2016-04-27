@@ -90,7 +90,7 @@ public:
     bool xr_dlrr_item;
     std::unique_ptr<RTCPVoIPMetric>  VoIPMetric;
 
-    rtc::scoped_ptr<rtcp::TransportFeedback> transport_feedback_;
+    std::unique_ptr<rtcp::TransportFeedback> transport_feedback_;
 
 private:
     RTC_DISALLOW_COPY_AND_ASSIGN(RTCPPacketInformation);

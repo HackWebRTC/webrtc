@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_IMPL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_IMPL_H_
 
+#include <memory>
+
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
@@ -75,7 +77,7 @@ class RtpReceiverImpl : public RtpReceiver {
 
   Clock* clock_;
   RTPPayloadRegistry* rtp_payload_registry_;
-  rtc::scoped_ptr<RTPReceiverStrategy> rtp_media_receiver_;
+  std::unique_ptr<RTPReceiverStrategy> rtp_media_receiver_;
 
   RtpFeedback* cb_rtp_feedback_;
 

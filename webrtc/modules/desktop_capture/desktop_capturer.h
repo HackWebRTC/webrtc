@@ -13,6 +13,8 @@
 
 #include <stddef.h>
 
+#include <memory>
+
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_types.h"
 #include "webrtc/modules/desktop_capture/shared_memory.h"
@@ -48,7 +50,7 @@ class DesktopCapturer {
   // where Capture() is called. It will be destroyed on the same thread. Shared
   // memory is currently supported only by some DesktopCapturer implementations.
   virtual void SetSharedMemoryFactory(
-      rtc::scoped_ptr<SharedMemoryFactory> shared_memory_factory) {}
+      std::unique_ptr<SharedMemoryFactory> shared_memory_factory) {}
 
   // Captures next frame. |region| specifies region of the capture target that
   // should be fresh in the resulting frame. The frame may also include fresh
