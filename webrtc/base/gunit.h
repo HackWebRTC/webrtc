@@ -13,11 +13,7 @@
 
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
-#if defined(GTEST_RELATIVE_PATH)
 #include "testing/gtest/include/gtest/gtest.h"
-#else
-#include "testing/base/public/gunit.h"
-#endif
 
 // Wait until "ex" is true, or "timeout" expires.
 #define WAIT(ex, timeout)                                                     \
