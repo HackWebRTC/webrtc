@@ -84,6 +84,9 @@ const int kOpusBitrateFb = 32000;
 const int kOpusMinBitrate = 6000;
 const int kOpusMaxBitrate = 510000;
 
+// iSAC bitrate should be <= 56000.
+const int kIsacMaxBitrate = 56000;
+
 // Default audio dscp value.
 // See http://tools.ietf.org/html/rfc2474 for details.
 // See also http://tools.ietf.org/html/draft-jennings-rtcweb-qos-00
@@ -349,6 +352,16 @@ class WebRtcVoiceCodecs final {
     return false;
   }
 
+  static int MaxBitrateBps(const webrtc::CodecInst& codec) {
+    for (size_t i = 0; i < arraysize(kCodecPrefs); ++i) {
+      if (IsCodec(codec, kCodecPrefs[i].name) &&
+          kCodecPrefs[i].clockrate == codec.plfreq) {
+        return kCodecPrefs[i].max_bitrate_bps;
+      }
+    }
+    return 0;
+  }
+
   // If the AudioCodec param kCodecParamPTime is set, then we will set it to
   // codec pacsize if it's valid, or we will pick the next smallest value we
   // support.
@@ -419,6 +432,7 @@ class WebRtcVoiceCodecs final {
     int payload_type;
     bool is_multi_rate;
     int packet_sizes_ms[kMaxNumPacketSize];
+    int max_bitrate_bps;
   };
   // Note: keep the supported packet sizes in ascending order.
   static const CodecPref kCodecPrefs[12];
@@ -485,19 +499,19 @@ class WebRtcVoiceCodecs final {
 };
 
 const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[12] = {
-  { kOpusCodecName,   48000, 2, 111, true,  { 10, 20, 40, 60 } },
-  { kIsacCodecName,   16000, 1, 103, true,  { 30, 60 } },
-  { kIsacCodecName,   32000, 1, 104, true,  { 30 } },
-  // G722 should be advertised as 8000 Hz because of the RFC "bug".
-  { kG722CodecName,   8000,  1, 9,   false, { 10, 20, 30, 40, 50, 60 } },
-  { kIlbcCodecName,   8000,  1, 102, false, { 20, 30, 40, 60 } },
-  { kPcmuCodecName,   8000,  1, 0,   false, { 10, 20, 30, 40, 50, 60 } },
-  { kPcmaCodecName,   8000,  1, 8,   false, { 10, 20, 30, 40, 50, 60 } },
-  { kCnCodecName,     32000, 1, 106, false, { } },
-  { kCnCodecName,     16000, 1, 105, false, { } },
-  { kCnCodecName,     8000,  1, 13,  false, { } },
-  { kRedCodecName,    8000,  1, 127, false, { } },
-  { kDtmfCodecName,   8000,  1, 126, false, { } },
+    {kOpusCodecName, 48000, 2, 111, true, {10, 20, 40, 60}, kOpusMaxBitrate},
+    {kIsacCodecName, 16000, 1, 103, true, {30, 60}, kIsacMaxBitrate},
+    {kIsacCodecName, 32000, 1, 104, true, {30}, kIsacMaxBitrate},
+    // G722 should be advertised as 8000 Hz because of the RFC "bug".
+    {kG722CodecName, 8000, 1, 9, false, {10, 20, 30, 40, 50, 60}},
+    {kIlbcCodecName, 8000, 1, 102, false, {20, 30, 40, 60}},
+    {kPcmuCodecName, 8000, 1, 0, false, {10, 20, 30, 40, 50, 60}},
+    {kPcmaCodecName, 8000, 1, 8, false, {10, 20, 30, 40, 50, 60}},
+    {kCnCodecName, 32000, 1, 106, false, {}},
+    {kCnCodecName, 16000, 1, 105, false, {}},
+    {kCnCodecName, 8000, 1, 13, false, {}},
+    {kRedCodecName, 8000, 1, 127, false, {}},
+    {kDtmfCodecName, 8000, 1, 126, false, {}},
 };
 } // namespace {
 
@@ -1368,7 +1382,7 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
     }
   }
 
-  if (!SetSendBitrate(params.max_bandwidth_bps)) {
+  if (!SetMaxSendBitrate(params.max_bandwidth_bps)) {
     return false;
   }
   return SetOptions(params.options);
@@ -1748,7 +1762,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       }
     }
   }
-  // TODO(solenberg): SetSendBitrate() yields another call to SetSendCodec().
+  // TODO(solenberg): SetMaxSendBitrate() yields another call to SetSendCodec().
   // Check if it is possible to fuse with the previous call in this function.
   SetChannelParameters(channel, rtp_parameters);
 
@@ -2384,9 +2398,9 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetSendBitrate(int bps) {
-  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendBitrate.";
-  send_bitrate_bps_ = bps;
+bool WebRtcVoiceMediaChannel::SetMaxSendBitrate(int bps) {
+  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetMaxSendBitrate.";
+  max_send_bitrate_bps_ = bps;
 
   for (const auto& kv : send_streams_) {
     if (!SetChannelParameters(kv.second->channel(),
@@ -2403,17 +2417,18 @@ bool WebRtcVoiceMediaChannel::SetChannelParameters(
   RTC_CHECK_EQ(1UL, parameters.encodings.size());
   // TODO(deadbeef): Handle setting parameters with a list of codecs in a
   // different order (which should change the send codec).
-  return SetSendBitrate(
-      channel,
-      MinPositive(send_bitrate_bps_, parameters.encodings[0].max_bitrate_bps));
+  return SetMaxSendBitrate(
+      channel, MinPositive(max_send_bitrate_bps_,
+                           parameters.encodings[0].max_bitrate_bps));
 }
 
-bool WebRtcVoiceMediaChannel::SetSendBitrate(int channel, int bps) {
+bool WebRtcVoiceMediaChannel::SetMaxSendBitrate(int channel, int bps) {
   // Bitrate is auto by default.
   // TODO(bemasc): Fix this so that if SetMaxSendBandwidth(50) is followed by
   // SetMaxSendBandwith(0), the second call removes the previous limit.
-  if (bps <= 0)
+  if (bps <= 0) {
     return true;
+  }
 
   if (!HasSendCodec()) {
     LOG(LS_INFO) << "The send codec has not been set up yet. "
@@ -2426,10 +2441,13 @@ bool WebRtcVoiceMediaChannel::SetSendBitrate(int channel, int bps) {
 
   if (is_multi_rate) {
     // If codec is multi-rate then just set the bitrate.
-    codec.rate = bps;
+    int max_bitrate_bps = WebRtcVoiceCodecs::MaxBitrateBps(codec);
+    codec.rate = std::min(bps, max_bitrate_bps);
+    LOG(LS_INFO) << "Setting codec " << codec.plname << " to bitrate " << bps
+                 << " bps.";
     if (!SetSendCodec(channel, codec)) {
-      LOG(LS_INFO) << "Failed to set codec " << codec.plname << " to bitrate "
-                   << bps << " bps.";
+      LOG(LS_ERROR) << "Failed to set codec " << codec.plname << " to bitrate "
+                    << bps << " bps.";
       return false;
     }
     return true;
@@ -2438,9 +2456,9 @@ bool WebRtcVoiceMediaChannel::SetSendBitrate(int channel, int bps) {
     // then fail. If codec is not multi-rate and |bps| exceeds or equal the
     // fixed bitrate then ignore.
     if (bps < codec.rate) {
-      LOG(LS_INFO) << "Failed to set codec " << codec.plname
-                   << " to bitrate " << bps << " bps"
-                   << ", requires at least " << codec.rate << " bps.";
+      LOG(LS_ERROR) << "Failed to set codec " << codec.plname << " to bitrate "
+                    << bps << " bps"
+                    << ", requires at least " << codec.rate << " bps.";
       return false;
     }
     return true;

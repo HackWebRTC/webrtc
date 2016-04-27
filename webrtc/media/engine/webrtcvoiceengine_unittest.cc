@@ -218,10 +218,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   // |max_bitrate| is a parameter to set to SetMaxSendBandwidth().
   // |expected_result| is the expected result from SetMaxSendBandwidth().
   // |expected_bitrate| is the expected audio bitrate afterward.
-  void TestSendBandwidth(const cricket::AudioCodec& codec,
-                         int max_bitrate,
-                         bool expected_result,
-                         int expected_bitrate) {
+  void TestMaxSendBandwidth(const cricket::AudioCodec& codec,
+                            int max_bitrate,
+                            bool expected_result,
+                            int expected_bitrate) {
     cricket::AudioSendParameters parameters;
     parameters.codecs.push_back(codec);
     parameters.max_bandwidth_bps = max_bitrate;
@@ -756,13 +756,13 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthAuto) {
   // bitrate is <= 0.
 
   // ISAC, default bitrate == 32000.
-  TestSendBandwidth(kIsacCodec, 0, true, 32000);
+  TestMaxSendBandwidth(kIsacCodec, 0, true, 32000);
 
   // PCMU, default bitrate == 64000.
-  TestSendBandwidth(kPcmuCodec, -1, true, 64000);
+  TestMaxSendBandwidth(kPcmuCodec, -1, true, 64000);
 
   // opus, default bitrate == 64000.
-  TestSendBandwidth(kOpusCodec, -1, true, 64000);
+  TestMaxSendBandwidth(kOpusCodec, -1, true, 64000);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthMultiRateAsCaller) {
@@ -771,12 +771,16 @@ TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthMultiRateAsCaller) {
   // Test that the bitrate of a multi-rate codec is always the maximum.
 
   // ISAC, default bitrate == 32000.
-  TestSendBandwidth(kIsacCodec, 128000, true, 128000);
-  TestSendBandwidth(kIsacCodec, 16000, true, 16000);
+  TestMaxSendBandwidth(kIsacCodec, 40000, true, 40000);
+  TestMaxSendBandwidth(kIsacCodec, 16000, true, 16000);
+  // Rates above the max (56000) should be capped.
+  TestMaxSendBandwidth(kIsacCodec, 100000, true, 56000);
 
   // opus, default bitrate == 64000.
-  TestSendBandwidth(kOpusCodec, 96000, true, 96000);
-  TestSendBandwidth(kOpusCodec, 48000, true, 48000);
+  TestMaxSendBandwidth(kOpusCodec, 96000, true, 96000);
+  TestMaxSendBandwidth(kOpusCodec, 48000, true, 48000);
+  // Rates above the max (510000) should be capped.
+  TestMaxSendBandwidth(kOpusCodec, 600000, true, 510000);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthFixedRateAsCaller) {
@@ -786,13 +790,13 @@ TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthFixedRateAsCaller) {
   // if it's bigger than the fixed rate.
 
   // PCMU, fixed bitrate == 64000.
-  TestSendBandwidth(kPcmuCodec, 0, true, 64000);
-  TestSendBandwidth(kPcmuCodec, 1, false, 64000);
-  TestSendBandwidth(kPcmuCodec, 128000, true, 64000);
-  TestSendBandwidth(kPcmuCodec, 32000, false, 64000);
-  TestSendBandwidth(kPcmuCodec, 64000, true, 64000);
-  TestSendBandwidth(kPcmuCodec, 63999, false, 64000);
-  TestSendBandwidth(kPcmuCodec, 64001, true, 64000);
+  TestMaxSendBandwidth(kPcmuCodec, 0, true, 64000);
+  TestMaxSendBandwidth(kPcmuCodec, 1, false, 64000);
+  TestMaxSendBandwidth(kPcmuCodec, 128000, true, 64000);
+  TestMaxSendBandwidth(kPcmuCodec, 32000, false, 64000);
+  TestMaxSendBandwidth(kPcmuCodec, 64000, true, 64000);
+  TestMaxSendBandwidth(kPcmuCodec, 63999, false, 64000);
+  TestMaxSendBandwidth(kPcmuCodec, 64001, true, 64000);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthMultiRateAsCallee) {

@@ -228,10 +228,10 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool IsDefaultRecvStream(uint32_t ssrc) {
     return default_recv_ssrc_ == static_cast<int64_t>(ssrc);
   }
-  bool SetSendBitrate(int bps);
+  bool SetMaxSendBitrate(int bps);
   bool SetChannelParameters(int channel,
                             const webrtc::RtpParameters& parameters);
-  bool SetSendBitrate(int channel, int bps);
+  bool SetMaxSendBitrate(int channel, int bps);
   bool HasSendCodec() const {
     return send_codec_spec_.codec_inst.pltype != -1;
   }
@@ -243,7 +243,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   WebRtcVoiceEngine* const engine_ = nullptr;
   std::vector<AudioCodec> send_codecs_;
   std::vector<AudioCodec> recv_codecs_;
-  int send_bitrate_bps_ = 0;
+  int max_send_bitrate_bps_ = 0;
   AudioOptions options_;
   rtc::Optional<int> dtmf_payload_type_;
   bool desired_playout_ = false;
