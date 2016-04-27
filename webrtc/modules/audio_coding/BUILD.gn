@@ -760,6 +760,8 @@ source_set("neteq") {
     "neteq/buffer_level_filter.h",
     "neteq/comfort_noise.cc",
     "neteq/comfort_noise.h",
+    "neteq/cross_correlation.cc",
+    "neteq/cross_correlation.h",
     "neteq/decision_logic.cc",
     "neteq/decision_logic.h",
     "neteq/decision_logic_fax.cc",
