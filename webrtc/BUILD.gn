@@ -114,7 +114,10 @@ config("common_config") {
     }
 
     if (is_clang) {
-      cflags += [ "-Wthread-safety" ]
+      cflags += [
+        "-Wimplicit-fallthrough",
+        "-Wthread-safety",
+      ]
     }
   }
 
