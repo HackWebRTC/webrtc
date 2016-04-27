@@ -12,12 +12,12 @@
 
 #include <memory>
 
-#include "webrtc/media/base/videoframe_unittest.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
 #include "webrtc/media/engine/webrtcvideoframefactory.h"
 
-class WebRtcVideoFrameFactoryTest
-    : public VideoFrameTest<cricket::WebRtcVideoFrameFactory> {
+class WebRtcVideoFrameFactoryTest : public testing::Test {
  public:
   WebRtcVideoFrameFactoryTest() {}
 
