@@ -38,8 +38,11 @@ CPPLINT_DIRS = [
 # - build/c++11         : Rvalue ref checks are unreliable (false positives),
 #                         include file and feature blacklists are
 #                         google3-specific.
+# - whitespace/operators: Same as above (doesn't seem sufficient to eliminate
+#                         all move-related errors).
 BLACKLIST_LINT_FILTERS = [
   '-build/c++11',
+  '-whitespace/operators',
 ]
 
 # List of directories of "supported" native APIs. That means changes to headers
