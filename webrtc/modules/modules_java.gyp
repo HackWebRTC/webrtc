@@ -18,14 +18,5 @@
 
       'includes': [ '../../build/java.gypi' ],
     }, # audio_device_module_java
-    {
-      'target_name': 'video_render_module_java',
-      'type': 'none',
-      'variables': {
-        'java_in_dir': 'video_render/android/java',
-        'additional_src_dirs': [ '../base/java/src', ],
-      },
-      'includes': [ '../../build/java.gypi' ],
-    }, # video_render_module_java
   ],
 }
