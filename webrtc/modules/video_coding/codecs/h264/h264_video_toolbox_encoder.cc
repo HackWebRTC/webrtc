@@ -17,12 +17,12 @@
 #include <string>
 #include <vector>
 
+#if defined(WEBRTC_IOS)
+#include "RTCUIApplication.h"
+#endif
 #include "libyuv/convert_from.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#if defined(WEBRTC_IOS)
-#include "webrtc/base/objc/RTCUIApplication.h"
-#endif
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
 #include "webrtc/system_wrappers/include/clock.h"
 

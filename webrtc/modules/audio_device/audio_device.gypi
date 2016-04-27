@@ -167,7 +167,10 @@
             }],
             ['OS=="ios"', {
               'dependencies': [
-                '<(webrtc_root)/base/base.gyp:rtc_base_objc',
+                '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
+              ],
+              'export_dependent_settings': [
+                '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
               ],
               'sources': [
                 'ios/audio_device_ios.h',

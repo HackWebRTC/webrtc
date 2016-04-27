@@ -154,7 +154,7 @@
           'target_name': 'apprtc_common',
           'type': 'static_library',
           'dependencies': [
-            '<(webrtc_root)/base/base.gyp:rtc_base_objc',
+            '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
           ],
           'sources': [
@@ -201,8 +201,7 @@
           'target_name': 'apprtc_signaling',
           'type': 'static_library',
           'dependencies': [
-            '<(webrtc_root)/api/api.gyp:rtc_api_objc',
-            '<(webrtc_root)/base/base.gyp:rtc_base_objc',
+            '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_peerconnection_objc',
             'apprtc_common',
             'socketrocket',
           ],
@@ -251,7 +250,7 @@
             ],
           },
           'export_dependent_settings': [
-            '<(webrtc_root)/api/api.gyp:rtc_api_objc',
+            '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_peerconnection_objc',
           ],
           'conditions': [
             ['OS=="ios"', {

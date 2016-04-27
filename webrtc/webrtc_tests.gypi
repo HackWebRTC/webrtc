@@ -30,11 +30,11 @@
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
         }],
-        ['OS=="ios"', {
+        ['OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7")', {
           'dependencies': [
-            'api/api_tests.gyp:rtc_api_objc_tests',
-          ]
-        }]
+            'sdk/sdk_tests.gyp:rtc_sdk_peerconnection_objc_tests',
+          ],
+        }],
       ],
     },
     {

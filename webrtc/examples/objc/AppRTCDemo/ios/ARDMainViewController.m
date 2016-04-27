@@ -12,8 +12,8 @@
 
 #import <AVFoundation/AVFoundation.h>
 
-#import "webrtc/base/objc/RTCDispatcher.h"
-#import "webrtc/base/objc/RTCLogging.h"
+#import "WebRTC/RTCDispatcher.h"
+#import "WebRTC/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 

@@ -229,6 +229,7 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
         'base_tests.gyp',
         'desktop_capture.gypi',
         'p2p.gyp',
+        'sdk.gyp',
         'webrtc_test_common.gyp',
         'webrtc_tests.gypi',
     )

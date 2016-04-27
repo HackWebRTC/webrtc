@@ -10,7 +10,7 @@
 
 #import "ARDStatsView.h"
 
-#import "webrtc/api/objc/RTCStatsReport.h"
+#import "WebRTC/RTCStatsReport.h"
 
 #import "ARDStatsBuilder.h"
 

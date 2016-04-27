@@ -11,8 +11,9 @@
 #import "APPRTCViewController.h"
 
 #import <AVFoundation/AVFoundation.h>
-#import "webrtc/api/objc/RTCNSGLVideoView.h"
-#import "webrtc/api/objc/RTCVideoTrack.h"
+
+#import "WebRTC/RTCNSGLVideoView.h"
+#import "WebRTC/RTCVideoTrack.h"
 
 #import "ARDAppClient.h"
 

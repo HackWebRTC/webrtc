@@ -13,7 +13,7 @@
       "app": "modules_tests"
     },
     {
-      "app": "rtc_api_objc_tests"
+      "app": "rtc_sdk_peerconnection_objc_tests"
     },
     {
       "app": "rtc_pc_unittests"

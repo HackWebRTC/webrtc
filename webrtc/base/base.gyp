@@ -22,56 +22,6 @@
         }],
       ],
     }],
-    ['OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7")', {
-      'targets': [
-        {
-          'target_name': 'rtc_base_objc',
-          'type': 'static_library',
-          'includes': [ '../build/objc_common.gypi' ],
-          'dependencies': [
-            'rtc_base',
-          ],
-          'sources': [
-            'objc/NSString+StdString.h',
-            'objc/NSString+StdString.mm',
-            'objc/RTCDispatcher.h',
-            'objc/RTCDispatcher.m',
-            'objc/RTCFieldTrials.h',
-            'objc/RTCFieldTrials.mm',
-            'objc/RTCLogging.h',
-            'objc/RTCLogging.mm',
-            'objc/RTCMacros.h',
-            'objc/RTCSSLAdapter.h',
-            'objc/RTCSSLAdapter.mm',
-            'objc/RTCTracing.h',
-            'objc/RTCTracing.mm',
-          ],
-          'conditions': [
-            ['OS=="ios"', {
-              'sources': [
-                'objc/RTCCameraPreviewView.h',
-                'objc/RTCCameraPreviewView.m',
-                'objc/RTCUIApplication.h',
-                'objc/RTCUIApplication.mm',
-              ],
-              'all_dependent_settings': {
-                'xcode_settings': {
-                  'OTHER_LDFLAGS': [
-                    '-framework AVFoundation',
-                  ],
-                },
-              },
-            }],
-            ['build_with_chromium==0', {
-              'sources': [
-                'objc/RTCFileLogger.h',
-                'objc/RTCFileLogger.mm',
-              ],
-            }],
-          ],
-        }
-      ],
-    }], # OS=="ios"
   ],
   'targets': [
     {

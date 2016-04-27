@@ -11,17 +11,17 @@
 #import "ARDAppClient+Internal.h"
 
 #if defined(WEBRTC_IOS)
-#import "webrtc/base/objc/RTCTracing.h"
-#import "webrtc/api/objc/RTCAVFoundationVideoSource.h"
+#import "WebRTC/RTCAVFoundationVideoSource.h"
+#import "WebRTC/RTCTracing.h"
 #endif
-#import "webrtc/api/objc/RTCAudioTrack.h"
-#import "webrtc/api/objc/RTCConfiguration.h"
-#import "webrtc/api/objc/RTCIceServer.h"
-#import "webrtc/api/objc/RTCMediaConstraints.h"
-#import "webrtc/api/objc/RTCMediaStream.h"
-#import "webrtc/api/objc/RTCPeerConnectionFactory.h"
-#import "webrtc/base/objc/RTCFileLogger.h"
-#import "webrtc/base/objc/RTCLogging.h"
+#import "WebRTC/RTCAudioTrack.h"
+#import "WebRTC/RTCConfiguration.h"
+#import "WebRTC/RTCFileLogger.h"
+#import "WebRTC/RTCIceServer.h"
+#import "WebRTC/RTCLogging.h"
+#import "WebRTC/RTCMediaConstraints.h"
+#import "WebRTC/RTCMediaStream.h"
+#import "WebRTC/RTCPeerConnectionFactory.h"
 
 #import "ARDAppEngineClient.h"
 #import "ARDCEODTURNClient.h"
@@ -49,7 +49,7 @@ static NSInteger const kARDAppClientErrorSetSDP = -4;
 static NSInteger const kARDAppClientErrorInvalidClient = -5;
 static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
-// TODO(tkchin): Remove guard once rtc_base_objc compiles on Mac.
+// TODO(tkchin): Remove guard once rtc_sdk_common_objc compiles on Mac.
 #if defined(WEBRTC_IOS)
 // TODO(tkchin): Add this as a UI option.
 static BOOL const kARDAppClientEnableTracing = NO;

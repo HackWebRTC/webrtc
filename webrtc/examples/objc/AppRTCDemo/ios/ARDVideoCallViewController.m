@@ -10,11 +10,11 @@
 
 #import "ARDVideoCallViewController.h"
 
-#import "webrtc/base/objc/RTCDispatcher.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
-#import "webrtc/api/objc/RTCAVFoundationVideoSource.h"
-#import "webrtc/base/objc/RTCLogging.h"
+#import "WebRTC/RTCAVFoundationVideoSource.h"
+#import "WebRTC/RTCDispatcher.h"
+#import "WebRTC/RTCLogging.h"
 
 #import "ARDAppClient.h"
 #import "ARDVideoCallView.h"

@@ -4,6 +4,6 @@
 # use_frameworks!
 
 target 'PodTest' do
-pod "WebRTC", :path => "../../../../../out_ios_framework"
+pod "WebRTC", :path => "../../../../../out_ios_libs"
 end
 

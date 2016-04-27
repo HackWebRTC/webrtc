@@ -10,7 +10,7 @@
 
 {
   'variables': {
-    'objc_prefix_file': './WebRTC-Prefix.pch',
+    'objc_prefix_file': '../sdk/objc/WebRTC-Prefix.pch',
   },
   'xcode_settings': {
     'CLANG_ENABLE_OBJC_ARC': 'YES',

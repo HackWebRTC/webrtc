@@ -10,8 +10,8 @@
 
 #import "ARDSDPUtils.h"
 
-#import "webrtc/api/objc/RTCSessionDescription.h"
-#import "webrtc/base/objc/RTCLogging.h"
+#import "WebRTC/RTCLogging.h"
+#import "WebRTC/RTCSessionDescription.h"
 
 @implementation ARDSDPUtils
 

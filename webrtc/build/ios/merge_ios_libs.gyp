@@ -21,11 +21,11 @@
           'sources': ['no_op.cc',],
         },
         {
-          'target_name': 'webrtc_api_objc_no_op',
+          'target_name': 'rtc_sdk_peerconnection_objc_no_op',
           'includes': [ 'objc_app.gypi' ],
           'type': 'executable',
           'dependencies': [
-            '<(webrtc_root)/api/api.gyp:rtc_api_objc',
+            '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_peerconnection_objc',
           ],
           'sources': ['no_op.cc',],
         },

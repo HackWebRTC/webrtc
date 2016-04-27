@@ -15,7 +15,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
 
-#import "webrtc/base/objc/RTCLogging.h"
+#import "WebRTC/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
 
 NSString * const kRTCAudioSessionErrorDomain = @"org.webrtc.RTCAudioSession";

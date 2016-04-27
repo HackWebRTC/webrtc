@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "webrtc/api/objc/RTCSessionDescription.h"
+#import "WebRTC/RTCSessionDescription.h"
 
 @interface RTCSessionDescription (JSON)
 

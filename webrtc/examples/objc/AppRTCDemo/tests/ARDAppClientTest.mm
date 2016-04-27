@@ -14,9 +14,9 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/ssladapter.h"
 
-#import "webrtc/api/objc/RTCMediaConstraints.h"
-#import "webrtc/api/objc/RTCPeerConnectionFactory.h"
-#import "webrtc/api/objc/RTCSessionDescription.h"
+#import "WebRTC/RTCMediaConstraints.h"
+#import "WebRTC/RTCPeerConnectionFactory.h"
+#import "WebRTC/RTCSessionDescription.h"
 
 #import "ARDAppClient+Internal.h"
 #import "ARDJoinResponse+Internal.h"

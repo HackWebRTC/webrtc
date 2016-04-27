@@ -10,7 +10,7 @@
 
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
-#import "webrtc/base/objc/RTCLogging.h"
+#import "WebRTC/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 

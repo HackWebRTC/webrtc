@@ -35,8 +35,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import "webrtc/base/objc/RTCDispatcher+Private.h"
-#import "webrtc/base/objc/RTCLogging.h"
+#import "RTCDispatcher+Private.h"
+#import "RTCLogging.h"
 
 // TODO(tkchin): support other formats.
 static NSString *const kDefaultPreset = AVCaptureSessionPreset640x480;

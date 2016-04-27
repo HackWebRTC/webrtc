@@ -29,6 +29,7 @@ include_rules = [
   "+webrtc/video_renderer.h",
   "+webrtc/video_send_stream.h",
 
+  "+WebRTC",
   "+webrtc/base",
   "+webrtc/modules/include",
   "+webrtc/test",

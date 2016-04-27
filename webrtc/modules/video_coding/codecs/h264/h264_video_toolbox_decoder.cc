@@ -15,12 +15,12 @@
 
 #include <memory>
 
+#if defined(WEBRTC_IOS)
+#include "RTCUIApplication.h"
+#endif
 #include "libyuv/convert.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#if defined(WEBRTC_IOS)
-#include "webrtc/base/objc/RTCUIApplication.h"
-#endif
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
 #include "webrtc/video_frame.h"

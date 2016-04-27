@@ -14,7 +14,7 @@
 
 #import "APPRTCAppDelegate.h"
 
-#import "webrtc/base/objc/RTCSSLAdapter.h"
+#import "WebRTC/RTCSSLAdapter.h"
 
 #import "APPRTCViewController.h"
 

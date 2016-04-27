@@ -12,7 +12,7 @@
 
 #include "webrtc/base/checks.h"
 
-#import "webrtc/base/objc/RTCLogging.h"
+#import "WebRTC/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 
 #if !defined(NDEBUG)

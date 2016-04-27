@@ -13,8 +13,8 @@
 
 #include <memory>
 
+#include "WebRTC/RTCMacros.h"
 #include "webrtc/base/asyncinvoker.h"
-#include "webrtc/base/objc/RTCMacros.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
