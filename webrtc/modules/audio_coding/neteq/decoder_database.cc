@@ -169,14 +169,16 @@ bool DecoderDatabase::IsType(uint8_t rtp_payload_type,
 }
 
 bool DecoderDatabase::IsComfortNoise(uint8_t rtp_payload_type) const {
-  if (IsType(rtp_payload_type, NetEqDecoder::kDecoderCNGnb) ||
-      IsType(rtp_payload_type, NetEqDecoder::kDecoderCNGwb) ||
-      IsType(rtp_payload_type, NetEqDecoder::kDecoderCNGswb32kHz) ||
-      IsType(rtp_payload_type, NetEqDecoder::kDecoderCNGswb48kHz)) {
-    return true;
-  } else {
+  DecoderMap::const_iterator it = decoders_.find(rtp_payload_type);
+  if (it == decoders_.end()) {
+    // Decoder not found.
     return false;
   }
+  const auto& type = it->second.codec_type;
+  return type == NetEqDecoder::kDecoderCNGnb
+      || type == NetEqDecoder::kDecoderCNGwb
+      || type == NetEqDecoder::kDecoderCNGswb32kHz
+      || type == NetEqDecoder::kDecoderCNGswb48kHz;
 }
 
 bool DecoderDatabase::IsDtmf(uint8_t rtp_payload_type) const {
