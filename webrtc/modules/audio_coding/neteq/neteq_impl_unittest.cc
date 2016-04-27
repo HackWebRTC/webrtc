@@ -115,9 +115,6 @@ class NetEqImplTest : public ::testing::Test {
           new MockPacketBuffer(config_.max_packets_in_buffer, tick_timer_));
       mock_packet_buffer_ = mock.get();
       deps.packet_buffer = std::move(mock);
-    } else {
-      deps.packet_buffer.reset(
-          new PacketBuffer(config_.max_packets_in_buffer, tick_timer_));
     }
     packet_buffer_ = deps.packet_buffer.get();
 
