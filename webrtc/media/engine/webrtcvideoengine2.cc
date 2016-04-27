@@ -781,7 +781,7 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
   }
 
   // Handle max bitrate.
-  if (params.max_bandwidth_bps != bitrate_config_.max_bitrate_bps &&
+  if (params.max_bandwidth_bps != send_params_.max_bandwidth_bps &&
       params.max_bandwidth_bps >= 0) {
     // 0 uncaps max bitrate (-1).
     changed_params->max_bandwidth_bps = rtc::Optional<int>(
@@ -816,39 +816,38 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
     return false;
   }
 
-  bool bitrate_config_changed = false;
-
   if (changed_params.codec) {
     const VideoCodecSettings& codec_settings = *changed_params.codec;
     send_codec_ = rtc::Optional<VideoCodecSettings>(codec_settings);
-
     LOG(LS_INFO) << "Using codec: " << codec_settings.codec.ToString();
-    // TODO(holmer): Changing the codec parameters shouldn't necessarily mean
-    // that we change the min/max of bandwidth estimation. Reevaluate this.
-    bitrate_config_ = GetBitrateConfigForCodec(codec_settings.codec);
-    bitrate_config_changed = true;
   }
 
   if (changed_params.rtp_header_extensions) {
     send_rtp_extensions_ = *changed_params.rtp_header_extensions;
   }
 
-  if (changed_params.max_bandwidth_bps) {
-    // TODO(pbos): Figure out whether b=AS means max bitrate for this
-    // WebRtcVideoChannel2 (in which case we're good), or per sender (SSRC), in
-    // which case this should not set a Call::BitrateConfig but rather
-    // reconfigure all senders.
-    int max_bitrate_bps = *changed_params.max_bandwidth_bps;
-    bitrate_config_.start_bitrate_bps = -1;
-    bitrate_config_.max_bitrate_bps = max_bitrate_bps;
-    if (max_bitrate_bps > 0 &&
-        bitrate_config_.min_bitrate_bps > max_bitrate_bps) {
-      bitrate_config_.min_bitrate_bps = max_bitrate_bps;
+  if (changed_params.codec || changed_params.max_bandwidth_bps) {
+    if (send_codec_) {
+      // TODO(holmer): Changing the codec parameters shouldn't necessarily mean
+      // that we change the min/max of bandwidth estimation. Reevaluate this.
+      bitrate_config_ = GetBitrateConfigForCodec(send_codec_->codec);
+      if (!changed_params.codec) {
+        // If the codec isn't changing, set the start bitrate to -1 which means
+        // "unchanged" so that BWE isn't affected.
+        bitrate_config_.start_bitrate_bps = -1;
+      }
     }
-    bitrate_config_changed = true;
-  }
-
-  if (bitrate_config_changed) {
+    if (params.max_bandwidth_bps >= 0) {
+      // Note that max_bandwidth_bps intentionally takes priority over the
+      // bitrate config for the codec. This allows FEC to be applied above the
+      // codec target bitrate.
+      // TODO(pbos): Figure out whether b=AS means max bitrate for this
+      // WebRtcVideoChannel2 (in which case we're good), or per sender (SSRC),
+      // in which case this should not set a Call::BitrateConfig but rather
+      // reconfigure all senders.
+      bitrate_config_.max_bitrate_bps =
+          params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps;
+    }
     call_->SetBitrateConfig(bitrate_config_);
   }
 

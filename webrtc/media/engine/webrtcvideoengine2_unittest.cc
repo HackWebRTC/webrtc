@@ -2390,6 +2390,43 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectsMaxLessThanMinBitrate) {
   EXPECT_FALSE(channel_->SetSendParameters(send_parameters_));
 }
 
+// Test that when both the codec-specific bitrate params and max_bandwidth_bps
+// are present in the same send parameters, the settings are combined correctly.
+TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithBitratesAndMaxSendBandwidth) {
+  send_parameters_.codecs[0].params[kCodecParamMinBitrate] = "100";
+  send_parameters_.codecs[0].params[kCodecParamStartBitrate] = "200";
+  send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "300";
+  send_parameters_.max_bandwidth_bps = 400000;
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
+  EXPECT_EQ(200000, fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
+  // We expect max_bandwidth_bps to take priority, if set.
+  EXPECT_EQ(400000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
+
+  // Decrease max_bandwidth_bps.
+  send_parameters_.max_bandwidth_bps = 350000;
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
+  // Since the codec isn't changing, start_bitrate_bps should be -1.
+  EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
+  EXPECT_EQ(350000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
+
+  // Now try again with the values flipped around.
+  send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "400";
+  send_parameters_.max_bandwidth_bps = 300000;
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
+  EXPECT_EQ(200000, fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
+  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
+
+  // If we change the codec max, max_bandwidth_bps should still apply.
+  send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "350";
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
+  EXPECT_EQ(200000, fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
+  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
+}
+
 TEST_F(WebRtcVideoChannel2Test,
        SetMaxSendBandwidthShouldPreserveOtherBitrates) {
   SetSendCodecsShouldWorkForBitrates("100", 100000, "150", 150000, "200",
