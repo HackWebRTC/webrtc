@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
 
+#include <algorithm>
 #include <limits>
 
 #include "webrtc/base/checks.h"
@@ -25,6 +26,17 @@ const int64_t kSendTimeHistoryWindowMs = 10000;
 const int64_t kBaseTimestampScaleFactor =
     rtcp::TransportFeedback::kDeltaScaleFactor * (1 << 8);
 const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
+
+class PacketInfoComparator {
+ public:
+  inline bool operator()(const PacketInfo& lhs, const PacketInfo& rhs) {
+    if (lhs.arrival_time_ms != rhs.arrival_time_ms)
+      return lhs.arrival_time_ms < rhs.arrival_time_ms;
+    if (lhs.send_time_ms !== rhs.send_time_ms)
+      return lhs.send_time_ms < rhs.send_time_ms;
+    return lhs.sequence_number < rhs.sequence_number;
+  }
+};
 
 TransportFeedbackAdapter::TransportFeedbackAdapter(
     BitrateController* bitrate_controller,
@@ -104,6 +116,8 @@ void TransportFeedbackAdapter::OnTransportFeedback(
       }
       ++sequence_number;
     }
+    std::sort(packet_feedback_vector.begin(), packet_feedback_vector.end(),
+              PacketInfoComparator());
     RTC_DCHECK(delta_it == delta_vec.end());
     if (failed_lookups > 0) {
       LOG(LS_WARNING) << "Failed to lookup send time for " << failed_lookups
