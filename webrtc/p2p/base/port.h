@@ -12,6 +12,7 @@
 #define WEBRTC_P2P_BASE_PORT_H_
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -336,7 +337,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   bool GetStunMessage(const char* data,
                       size_t size,
                       const rtc::SocketAddress& addr,
-                      rtc::scoped_ptr<IceMessage>* out_msg,
+                      std::unique_ptr<IceMessage>* out_msg,
                       std::string* out_username);
 
   // Checks if the address in addr is compatible with the port's ip.

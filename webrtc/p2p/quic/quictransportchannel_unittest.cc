@@ -10,13 +10,13 @@
 
 #include "webrtc/p2p/quic/quictransportchannel.h"
 
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 
@@ -103,7 +103,7 @@ class QuicTestPeer : public sigslot::has_slots<> {
     quic_channel_.SignalClosed.connect(this, &QuicTestPeer::OnClosed);
     ice_channel_.SetAsync(true);
     rtc::scoped_refptr<rtc::RTCCertificate> local_cert =
-        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+        rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
             rtc::SSLIdentity::Generate(name_, rtc::KT_DEFAULT)));
     quic_channel_.SetLocalCertificate(local_cert);
     local_fingerprint_.reset(CreateFingerprint(local_cert.get()));
@@ -148,7 +148,7 @@ class QuicTestPeer : public sigslot::has_slots<> {
     if (!get_digest_algorithm || digest_algorithm.empty()) {
       return nullptr;
     }
-    rtc::scoped_ptr<rtc::SSLFingerprint> fingerprint(
+    std::unique_ptr<rtc::SSLFingerprint> fingerprint(
         rtc::SSLFingerprint::Create(digest_algorithm, cert->identity()));
     if (digest_algorithm != rtc::DIGEST_SHA_256) {
       return nullptr;
@@ -198,7 +198,7 @@ class QuicTestPeer : public sigslot::has_slots<> {
 
   QuicTransportChannel* quic_channel() { return &quic_channel_; }
 
-  rtc::scoped_ptr<rtc::SSLFingerprint>& local_fingerprint() {
+  std::unique_ptr<rtc::SSLFingerprint>& local_fingerprint() {
     return local_fingerprint_;
   }
 
@@ -228,7 +228,7 @@ class QuicTestPeer : public sigslot::has_slots<> {
   size_t bytes_received_;                 // Bytes received by QUIC channel.
   FailableTransportChannel ice_channel_;  // Simulates an ICE channel.
   QuicTransportChannel quic_channel_;     // QUIC channel to test.
-  rtc::scoped_ptr<rtc::SSLFingerprint> local_fingerprint_;
+  std::unique_ptr<rtc::SSLFingerprint> local_fingerprint_;
   ReliableQuicStream* incoming_quic_stream_ = nullptr;
   bool signal_closed_emitted_ = false;
 };
@@ -258,9 +258,9 @@ class QuicTransportChannelTest : public testing::Test {
     peer1_.quic_channel()->SetSslRole(peer1_ssl_role);
     peer2_.quic_channel()->SetSslRole(peer2_ssl_role);
 
-    rtc::scoped_ptr<rtc::SSLFingerprint>& peer1_fingerprint =
+    std::unique_ptr<rtc::SSLFingerprint>& peer1_fingerprint =
         peer1_.local_fingerprint();
-    rtc::scoped_ptr<rtc::SSLFingerprint>& peer2_fingerprint =
+    std::unique_ptr<rtc::SSLFingerprint>& peer2_fingerprint =
         peer2_.local_fingerprint();
 
     peer1_.quic_channel()->SetRemoteFingerprint(
@@ -464,7 +464,7 @@ TEST_F(QuicTransportChannelTest, QuicRoleReversalAfterQuic) {
 // Set the SSL role, then test that GetSslRole returns the same value.
 TEST_F(QuicTransportChannelTest, SetGetSslRole) {
   ASSERT_TRUE(peer1_.quic_channel()->SetSslRole(rtc::SSL_SERVER));
-  rtc::scoped_ptr<rtc::SSLRole> role(new rtc::SSLRole());
+  std::unique_ptr<rtc::SSLRole> role(new rtc::SSLRole());
   ASSERT_TRUE(peer1_.quic_channel()->GetSslRole(role.get()));
   EXPECT_EQ(rtc::SSL_SERVER, *role);
 }

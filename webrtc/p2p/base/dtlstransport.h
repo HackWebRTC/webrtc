@@ -11,6 +11,8 @@
 #ifndef WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
 #define WEBRTC_P2P_BASE_DTLSTRANSPORT_H_
 
+#include <memory>
+
 #include "webrtc/p2p/base/dtlstransportchannel.h"
 #include "webrtc/p2p/base/transport.h"
 
@@ -67,7 +69,7 @@ class DtlsTransport : public Base {
     if (local_fp) {
       // Sanity check local fingerprint.
       if (certificate_) {
-        rtc::scoped_ptr<rtc::SSLFingerprint> local_fp_tmp(
+        std::unique_ptr<rtc::SSLFingerprint> local_fp_tmp(
             rtc::SSLFingerprint::Create(local_fp->algorithm,
                                         certificate_->identity()));
         ASSERT(local_fp_tmp.get() != NULL);
@@ -242,7 +244,7 @@ class DtlsTransport : public Base {
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::SSLRole secure_role_;
   rtc::SSLProtocolVersion ssl_max_version_;
-  rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint_;
+  std::unique_ptr<rtc::SSLFingerprint> remote_fingerprint_;
 };
 
 }  // namespace cricket

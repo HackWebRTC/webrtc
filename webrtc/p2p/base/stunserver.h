@@ -11,6 +11,8 @@
 #ifndef WEBRTC_P2P_BASE_STUNSERVER_H_
 #define WEBRTC_P2P_BASE_STUNSERVER_H_
 
+#include <memory>
+
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -58,7 +60,7 @@ class StunServer : public sigslot::has_slots<> {
                            StunMessage* response) const;
 
  private:
-  rtc::scoped_ptr<rtc::AsyncUDPSocket> socket_;
+  std::unique_ptr<rtc::AsyncUDPSocket> socket_;
 };
 
 }  // namespace cricket

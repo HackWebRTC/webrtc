@@ -9,6 +9,7 @@
  */
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 
@@ -90,11 +91,11 @@ class StunProber::Requester : public sigslot::has_slots<> {
   StunProber* prober_;
 
   // The socket for this session.
-  rtc::scoped_ptr<rtc::AsyncPacketSocket> socket_;
+  std::unique_ptr<rtc::AsyncPacketSocket> socket_;
 
   // Temporary SocketAddress and buffer for RecvFrom.
   rtc::SocketAddress addr_;
-  rtc::scoped_ptr<rtc::ByteBufferWriter> response_packet_;
+  std::unique_ptr<rtc::ByteBufferWriter> response_packet_;
 
   std::vector<Request*> requests_;
   std::vector<rtc::SocketAddress> server_ips_;
@@ -141,7 +142,7 @@ void StunProber::Requester::SendStunRequest() {
       rtc::CreateRandomString(cricket::kStunTransactionIdLength));
   message.SetType(cricket::STUN_BINDING_REQUEST);
 
-  rtc::scoped_ptr<rtc::ByteBufferWriter> request_packet(
+  std::unique_ptr<rtc::ByteBufferWriter> request_packet(
       new rtc::ByteBufferWriter(nullptr, kMaxUdpBufferSize));
   if (!message.Write(request_packet.get())) {
     prober_->ReportOnFinished(WRITE_FAILED);
@@ -345,7 +346,7 @@ void StunProber::OnServerResolved(rtc::AsyncResolverInterface* resolver) {
 
   // Prepare all the sockets beforehand. All of them will bind to "any" address.
   while (sockets_.size() < total_socket_required()) {
-    rtc::scoped_ptr<rtc::AsyncPacketSocket> socket(
+    std::unique_ptr<rtc::AsyncPacketSocket> socket(
         socket_factory_->CreateUdpSocket(rtc::SocketAddress(INADDR_ANY, 0), 0,
                                          0));
     if (!socket) {

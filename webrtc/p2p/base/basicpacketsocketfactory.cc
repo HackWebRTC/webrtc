@@ -17,7 +17,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketadapters.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"

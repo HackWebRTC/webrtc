@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_CLIENT_BASICPORTALLOCATOR_H_
 #define WEBRTC_P2P_CLIENT_BASICPORTALLOCATOR_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -185,7 +186,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 
   BasicPortAllocator* allocator_;
   rtc::Thread* network_thread_;
-  rtc::scoped_ptr<rtc::PacketSocketFactory> owned_socket_factory_;
+  std::unique_ptr<rtc::PacketSocketFactory> owned_socket_factory_;
   rtc::PacketSocketFactory* socket_factory_;
   bool allocation_started_;
   bool network_manager_started_;
@@ -320,7 +321,7 @@ class AllocationSequence : public rtc::MessageHandler,
   State state_;
   uint32_t flags_;
   ProtocolList protocols_;
-  rtc::scoped_ptr<rtc::AsyncPacketSocket> udp_socket_;
+  std::unique_ptr<rtc::AsyncPacketSocket> udp_socket_;
   // There will be only one udp port per AllocationSequence.
   UDPPort* udp_port_;
   std::vector<TurnPort*> turn_ports_;

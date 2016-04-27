@@ -16,7 +16,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketaddress.h"
 
 namespace cricket {

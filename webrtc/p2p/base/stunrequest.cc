@@ -11,6 +11,8 @@
 #include "webrtc/p2p/base/stunrequest.h"
 
 #include <algorithm>
+#include <memory>
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -139,7 +141,7 @@ bool StunRequestManager::CheckResponse(const char* data, size_t size) {
   // Parse the STUN message and continue processing as usual.
 
   rtc::ByteBufferReader buf(data, size);
-  rtc::scoped_ptr<StunMessage> response(iter->second->msg_->CreateNew());
+  std::unique_ptr<StunMessage> response(iter->second->msg_->CreateNew());
   if (!response->Read(&buf)) {
     LOG(LS_WARNING) << "Failed to read STUN response " << rtc::hex_encode(id);
     return false;

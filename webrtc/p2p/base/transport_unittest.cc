@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/network.h"
@@ -50,7 +52,7 @@ class TransportTest : public testing::Test,
   }
 
  protected:
-  rtc::scoped_ptr<FakeTransport> transport_;
+  std::unique_ptr<FakeTransport> transport_;
   FakeTransportChannel* channel_;
 };
 

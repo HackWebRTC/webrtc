@@ -110,7 +110,7 @@ class InsecureProofVerifier : public net::ProofVerifier {
       const std::string& signature,
       const net::ProofVerifyContext* verify_context,
       std::string* error_details,
-      scoped_ptr<net::ProofVerifyDetails>* verify_details,
+      std::unique_ptr<net::ProofVerifyDetails>* verify_details,
       net::ProofVerifierCallback* callback) override {
     LOG(LS_INFO) << "VerifyProof() ignoring credentials and returning success";
     return net::QUIC_SUCCESS;
@@ -435,7 +435,7 @@ bool QuicTransportChannel::CreateQuicSession() {
                                      ? net::Perspective::IS_CLIENT
                                      : net::Perspective::IS_SERVER;
   bool owns_writer = false;
-  rtc::scoped_ptr<net::QuicConnection> connection(new net::QuicConnection(
+  std::unique_ptr<net::QuicConnection> connection(new net::QuicConnection(
       kConnectionId, kConnectionIpEndpoint, &helper_, this, owns_writer,
       perspective, net::QuicSupportedVersions()));
   quic_.reset(new QuicSession(std::move(connection), config_));

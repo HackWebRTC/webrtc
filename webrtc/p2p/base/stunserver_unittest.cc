@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
 #include "webrtc/p2p/base/stunserver.h"
@@ -62,11 +63,11 @@ class StunServerTest : public testing::Test {
     return msg;
   }
  private:
-  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
-  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::Thread worker_;
-  rtc::scoped_ptr<StunServer> server_;
-  rtc::scoped_ptr<rtc::TestClient> client_;
+  std::unique_ptr<StunServer> server_;
+  std::unique_ptr<rtc::TestClient> client_;
 };
 
 // Disable for TSan v2, see

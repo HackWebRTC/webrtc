@@ -21,6 +21,7 @@
 #define WEBRTC_P2P_BASE_P2PTRANSPORTCHANNEL_H_
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>

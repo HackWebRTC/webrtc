@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 #include "webrtc/p2p/base/testrelayserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
@@ -211,7 +213,7 @@ class P2PTransportChannelTestBase : public testing::Test,
 
     std::string name_;  // TODO - Currently not used.
     std::list<std::string> ch_packets_;
-    rtc::scoped_ptr<cricket::P2PTransportChannel> ch_;
+    std::unique_ptr<cricket::P2PTransportChannel> ch_;
   };
 
   struct CandidatesData : public rtc::MessageData {
@@ -255,7 +257,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
 
     rtc::FakeNetworkManager network_manager_;
-    rtc::scoped_ptr<cricket::BasicPortAllocator> allocator_;
+    std::unique_ptr<cricket::BasicPortAllocator> allocator_;
     ChannelData cd1_;
     ChannelData cd2_;
     cricket::IceRole role_;
@@ -702,7 +704,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   void OnMessage(rtc::Message* msg) {
     switch (msg->message_id) {
       case MSG_ADD_CANDIDATES: {
-        rtc::scoped_ptr<CandidatesData> data(
+        std::unique_ptr<CandidatesData> data(
             static_cast<CandidatesData*>(msg->pdata));
         cricket::P2PTransportChannel* rch = GetRemoteChannel(data->channel);
         for (auto& c : data->candidates) {
@@ -717,7 +719,7 @@ class P2PTransportChannelTestBase : public testing::Test,
         break;
       }
       case MSG_REMOVE_CANDIDATES: {
-        rtc::scoped_ptr<CandidatesData> data(
+        std::unique_ptr<CandidatesData> data(
             static_cast<CandidatesData*>(msg->pdata));
         cricket::P2PTransportChannel* rch = GetRemoteChannel(data->channel);
         for (cricket::Candidate& c : data->candidates) {
@@ -797,12 +799,12 @@ class P2PTransportChannelTestBase : public testing::Test,
 
  private:
   rtc::Thread* main_;
-  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
-  rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
-  rtc::scoped_ptr<rtc::NATSocketServer> nss_;
-  rtc::scoped_ptr<rtc::FirewallSocketServer> ss_;
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<rtc::VirtualSocketServer> vss_;
+  std::unique_ptr<rtc::NATSocketServer> nss_;
+  std::unique_ptr<rtc::FirewallSocketServer> ss_;
   rtc::SocketServerScope ss_scope_;
-  rtc::scoped_ptr<cricket::TestStunServer> stun_server_;
+  std::unique_ptr<cricket::TestStunServer> stun_server_;
   cricket::TestTurnServer turn_server_;
   cricket::TestRelayServer relay_server_;
   rtc::SocksProxyServer socks_server1_;
@@ -1994,8 +1996,8 @@ class P2PTransportChannelPingTest : public testing::Test,
   void reset_channel_ready_to_send() { channel_ready_to_send_ = false; }
 
  private:
-  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
-  rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<rtc::VirtualSocketServer> vss_;
   rtc::SocketServerScope ss_scope_;
   cricket::CandidatePairInterface* last_selected_candidate_pair_ = nullptr;
   int last_sent_packet_id_ = -1;
@@ -2640,10 +2642,10 @@ class P2PTransportChannelMostLikelyToWorkFirstTest
   }
 
  private:
-  rtc::scoped_ptr<cricket::BasicPortAllocator> allocator_;
+  std::unique_ptr<cricket::BasicPortAllocator> allocator_;
   rtc::FakeNetworkManager network_manager_;
   cricket::TestTurnServer turn_server_;
-  rtc::scoped_ptr<cricket::P2PTransportChannel> channel_;
+  std::unique_ptr<cricket::P2PTransportChannel> channel_;
 };
 
 // Test that Relay/Relay connections will be pinged first when no other

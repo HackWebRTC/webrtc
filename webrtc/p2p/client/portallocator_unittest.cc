@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
@@ -370,19 +372,19 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     allocator().set_step_delay(cricket::kMinimumStepDelay);
   }
 
-  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
-  rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
-  rtc::scoped_ptr<rtc::FirewallSocketServer> fss_;
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<rtc::VirtualSocketServer> vss_;
+  std::unique_ptr<rtc::FirewallSocketServer> fss_;
   rtc::SocketServerScope ss_scope_;
-  rtc::scoped_ptr<rtc::NATServer> nat_server_;
+  std::unique_ptr<rtc::NATServer> nat_server_;
   rtc::NATSocketFactory nat_factory_;
-  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> nat_socket_factory_;
-  rtc::scoped_ptr<cricket::TestStunServer> stun_server_;
+  std::unique_ptr<rtc::BasicPacketSocketFactory> nat_socket_factory_;
+  std::unique_ptr<cricket::TestStunServer> stun_server_;
   cricket::TestRelayServer relay_server_;
   cricket::TestTurnServer turn_server_;
   rtc::FakeNetworkManager network_manager_;
-  rtc::scoped_ptr<cricket::BasicPortAllocator> allocator_;
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session_;
+  std::unique_ptr<cricket::BasicPortAllocator> allocator_;
+  std::unique_ptr<cricket::PortAllocatorSession> session_;
   std::vector<cricket::PortInterface*> ports_;
   std::vector<cricket::Candidate> candidates_;
   bool candidate_allocation_done_;

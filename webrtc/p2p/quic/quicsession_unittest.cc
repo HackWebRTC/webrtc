@@ -10,6 +10,7 @@
 
 #include "webrtc/p2p/quic/quicsession.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -117,7 +118,7 @@ class FakeProofVerifier : public net::ProofVerifier {
       const std::string& signature,
       const net::ProofVerifyContext* verify_context,
       std::string* error_details,
-      scoped_ptr<net::ProofVerifyDetails>* verify_details,
+      std::unique_ptr<net::ProofVerifyDetails>* verify_details,
       net::ProofVerifierCallback* callback) override {
     return success_ ? net::QUIC_SUCCESS : net::QUIC_FAILURE;
   }
@@ -179,9 +180,9 @@ class FakeQuicPacketWriter : public QuicPacketWriter {
 // Wrapper for QuicSession and transport channel that stores incoming data.
 class QuicSessionForTest : public QuicSession {
  public:
-  QuicSessionForTest(rtc::scoped_ptr<net::QuicConnection> connection,
+  QuicSessionForTest(std::unique_ptr<net::QuicConnection> connection,
                      const net::QuicConfig& config,
-                     rtc::scoped_ptr<FakeTransportChannel> channel)
+                     std::unique_ptr<FakeTransportChannel> channel)
       : QuicSession(std::move(connection), config),
         channel_(std::move(channel)) {
     channel_->SignalReadPacket.connect(
@@ -219,7 +220,7 @@ class QuicSessionForTest : public QuicSession {
 
  private:
   // Transports QUIC packets to/from peer.
-  rtc::scoped_ptr<FakeTransportChannel> channel_;
+  std::unique_ptr<FakeTransportChannel> channel_;
   // Stores data received by peer once it is sent from the other peer.
   std::string last_received_data_;
   // Handles incoming streams from sender.
@@ -235,8 +236,8 @@ class QuicSessionTest : public ::testing::Test,
   // Instantiates |client_peer_| and |server_peer_|.
   void CreateClientAndServerSessions();
 
-  rtc::scoped_ptr<QuicSessionForTest> CreateSession(
-      rtc::scoped_ptr<FakeTransportChannel> channel,
+  std::unique_ptr<QuicSessionForTest> CreateSession(
+      std::unique_ptr<FakeTransportChannel> channel,
       Perspective perspective);
 
   QuicCryptoClientStream* CreateCryptoClientStream(QuicSessionForTest* session,
@@ -244,7 +245,7 @@ class QuicSessionTest : public ::testing::Test,
   QuicCryptoServerStream* CreateCryptoServerStream(QuicSessionForTest* session,
                                                    bool handshake_success);
 
-  rtc::scoped_ptr<QuicConnection> CreateConnection(
+  std::unique_ptr<QuicConnection> CreateConnection(
       FakeTransportChannel* channel,
       Perspective perspective);
 
@@ -268,16 +269,16 @@ class QuicSessionTest : public ::testing::Test,
   QuicConfig config_;
   QuicClock clock_;
 
-  rtc::scoped_ptr<QuicSessionForTest> client_peer_;
-  rtc::scoped_ptr<QuicSessionForTest> server_peer_;
+  std::unique_ptr<QuicSessionForTest> client_peer_;
+  std::unique_ptr<QuicSessionForTest> server_peer_;
 };
 
 // Initializes "client peer" who begins crypto handshake and "server peer" who
 // establishes encryption with client.
 void QuicSessionTest::CreateClientAndServerSessions() {
-  rtc::scoped_ptr<FakeTransportChannel> channel1(
+  std::unique_ptr<FakeTransportChannel> channel1(
       new FakeTransportChannel("channel1", 0));
-  rtc::scoped_ptr<FakeTransportChannel> channel2(
+  std::unique_ptr<FakeTransportChannel> channel2(
       new FakeTransportChannel("channel2", 0));
 
   // Prevent channel1->OnReadPacket and channel2->OnReadPacket from calling
@@ -294,12 +295,12 @@ void QuicSessionTest::CreateClientAndServerSessions() {
   server_peer_ = CreateSession(std::move(channel2), Perspective::IS_SERVER);
 }
 
-rtc::scoped_ptr<QuicSessionForTest> QuicSessionTest::CreateSession(
-    rtc::scoped_ptr<FakeTransportChannel> channel,
+std::unique_ptr<QuicSessionForTest> QuicSessionTest::CreateSession(
+    std::unique_ptr<FakeTransportChannel> channel,
     Perspective perspective) {
-  rtc::scoped_ptr<QuicConnection> quic_connection =
+  std::unique_ptr<QuicConnection> quic_connection =
       CreateConnection(channel.get(), perspective);
-  return rtc::scoped_ptr<QuicSessionForTest>(new QuicSessionForTest(
+  return std::unique_ptr<QuicSessionForTest>(new QuicSessionForTest(
       std::move(quic_connection), config_, std::move(channel)));
 }
 
@@ -326,7 +327,7 @@ QuicCryptoServerStream* QuicSessionTest::CreateCryptoServerStream(
   return new QuicCryptoServerStream(server_config, session);
 }
 
-rtc::scoped_ptr<QuicConnection> QuicSessionTest::CreateConnection(
+std::unique_ptr<QuicConnection> QuicSessionTest::CreateConnection(
     FakeTransportChannel* channel,
     Perspective perspective) {
   FakeQuicPacketWriter* writer = new FakeQuicPacketWriter(channel);
@@ -334,7 +335,7 @@ rtc::scoped_ptr<QuicConnection> QuicSessionTest::CreateConnection(
   IPAddress ip(0, 0, 0, 0);
   bool owns_writer = true;
 
-  return rtc::scoped_ptr<QuicConnection>(new QuicConnection(
+  return std::unique_ptr<QuicConnection>(new QuicConnection(
       0, net::IPEndPoint(ip, 0), &quic_helper_, writer, owns_writer,
       perspective, net::QuicSupportedVersions()));
 }

@@ -11,6 +11,8 @@
 #include <dirent.h>
 #endif
 
+#include <memory>
+
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/portallocator.h"
@@ -26,7 +28,6 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
@@ -507,15 +508,15 @@ class TurnPortTest : public testing::Test,
 
  protected:
   rtc::Thread* main_;
-  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
-  rtc::scoped_ptr<TurnPortTestVirtualSocketServer> ss_;
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<TurnPortTestVirtualSocketServer> ss_;
   rtc::SocketServerScope ss_scope_;
   rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
-  rtc::scoped_ptr<rtc::AsyncPacketSocket> socket_;
+  std::unique_ptr<rtc::AsyncPacketSocket> socket_;
   cricket::TestTurnServer turn_server_;
-  rtc::scoped_ptr<TurnPort> turn_port_;
-  rtc::scoped_ptr<UDPPort> udp_port_;
+  std::unique_ptr<TurnPort> turn_port_;
+  std::unique_ptr<UDPPort> udp_port_;
   bool turn_ready_;
   bool turn_error_;
   bool turn_unknown_address_;

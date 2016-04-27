@@ -21,7 +21,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/network.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 
@@ -278,7 +277,7 @@ void Port::OnReadPacket(
 
   // If this is an authenticated STUN request, then signal unknown address and
   // send back a proper binding response.
-  rtc::scoped_ptr<IceMessage> msg;
+  std::unique_ptr<IceMessage> msg;
   std::string remote_username;
   if (!GetStunMessage(data, size, addr, &msg, &remote_username)) {
     LOG_J(LS_ERROR, this) << "Received non-STUN packet from unknown address ("
@@ -325,7 +324,7 @@ size_t Port::AddPrflxCandidate(const Candidate& local) {
 bool Port::GetStunMessage(const char* data,
                           size_t size,
                           const rtc::SocketAddress& addr,
-                          rtc::scoped_ptr<IceMessage>* out_msg,
+                          std::unique_ptr<IceMessage>* out_msg,
                           std::string* out_username) {
   // NOTE: This could clearly be optimized to avoid allocating any memory.
   //       However, at the data rates we'll be looking at on the client side,
@@ -342,7 +341,7 @@ bool Port::GetStunMessage(const char* data,
 
   // Parse the request message.  If the packet is not a complete and correct
   // STUN message, then ignore it.
-  rtc::scoped_ptr<IceMessage> stun_msg(new IceMessage());
+  std::unique_ptr<IceMessage> stun_msg(new IceMessage());
   rtc::ByteBufferReader buf(data, size);
   if (!stun_msg->Read(&buf) || (buf.Length() > 0)) {
     return false;
@@ -895,7 +894,7 @@ void Connection::OnSendStunPacket(const void* data, size_t size,
 
 void Connection::OnReadPacket(
   const char* data, size_t size, const rtc::PacketTime& packet_time) {
-  rtc::scoped_ptr<IceMessage> msg;
+  std::unique_ptr<IceMessage> msg;
   std::string remote_ufrag;
   const rtc::SocketAddress& addr(remote_candidate_.address());
   if (!port_->GetStunMessage(data, size, addr, &msg, &remote_ufrag)) {

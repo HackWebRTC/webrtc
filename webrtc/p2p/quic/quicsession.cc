@@ -20,7 +20,7 @@
 
 namespace cricket {
 
-QuicSession::QuicSession(rtc::scoped_ptr<net::QuicConnection> connection,
+QuicSession::QuicSession(std::unique_ptr<net::QuicConnection> connection,
                          const net::QuicConfig& config)
     : net::QuicSession(connection.release(), config) {}
 

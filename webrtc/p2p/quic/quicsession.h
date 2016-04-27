@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_QUIC_QUICSESSION_H_
 #define WEBRTC_P2P_QUIC_QUICSESSION_H_
 
+#include <memory>
 #include <string>
 
 #include "net/quic/quic_crypto_client_stream.h"
@@ -29,7 +30,7 @@ namespace cricket {
 // reading/writing of data using QUIC packets.
 class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
  public:
-  QuicSession(rtc::scoped_ptr<net::QuicConnection> connection,
+  QuicSession(std::unique_ptr<net::QuicConnection> connection,
               const net::QuicConfig& config);
   ~QuicSession() override;
 
@@ -82,7 +83,7 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
   virtual ReliableQuicStream* CreateDataStream(net::QuicStreamId id);
 
  private:
-  rtc::scoped_ptr<net::QuicCryptoStream> crypto_stream_;
+  std::unique_ptr<net::QuicCryptoStream> crypto_stream_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(QuicSession);
 };

@@ -10,6 +10,7 @@
 
 #include "webrtc/p2p/quic/reliablequicstream.h"
 
+#include <memory>
 #include <string>
 
 #include "net/base/ip_address_number.h"
@@ -181,8 +182,8 @@ class ReliableQuicStreamTest : public ::testing::Test,
   }
 
  protected:
-  rtc::scoped_ptr<ReliableQuicStream> stream_;
-  rtc::scoped_ptr<MockQuicSession> session_;
+  std::unique_ptr<ReliableQuicStream> stream_;
+  std::unique_ptr<MockQuicSession> session_;
 
   // Data written by the ReliableQuicStream.
   std::string write_buffer_;

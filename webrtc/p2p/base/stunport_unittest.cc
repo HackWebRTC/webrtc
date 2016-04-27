@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/stunport.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/virtualsocketserver.h"
@@ -155,15 +156,15 @@ class StunPortTest : public testing::Test,
   }
 
  private:
-  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
-  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::SocketServerScope ss_scope_;
   rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
-  rtc::scoped_ptr<cricket::UDPPort> stun_port_;
-  rtc::scoped_ptr<cricket::TestStunServer> stun_server_1_;
-  rtc::scoped_ptr<cricket::TestStunServer> stun_server_2_;
-  rtc::scoped_ptr<rtc::AsyncPacketSocket> socket_;
+  std::unique_ptr<cricket::UDPPort> stun_port_;
+  std::unique_ptr<cricket::TestStunServer> stun_server_1_;
+  std::unique_ptr<cricket::TestStunServer> stun_server_2_;
+  std::unique_ptr<rtc::AsyncPacketSocket> socket_;
   bool done_;
   bool error_;
   int stun_keepalive_delay_;

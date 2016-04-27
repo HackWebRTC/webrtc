@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_QUIC_QUICTRANSPORTCHANNEL_H_
 #define WEBRTC_P2P_QUIC_QUICTRANSPORTCHANNEL_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -117,7 +118,7 @@ class QuicTransportChannel : public TransportChannelImpl,
                             size_t result_len) override;
   // TODO(mikescarlett): Remove this method once TransportChannel does not
   // require defining it.
-  rtc::scoped_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
       const override {
     return nullptr;
   }
@@ -277,7 +278,7 @@ class QuicTransportChannel : public TransportChannelImpl,
   QuicTransportState quic_state_ = QUIC_TRANSPORT_NEW;
   // QUIC session which establishes the crypto handshake and converts data
   // to/from QUIC packets.
-  rtc::scoped_ptr<QuicSession> quic_;
+  std::unique_ptr<QuicSession> quic_;
   // Non-crypto config for |quic_|.
   net::QuicConfig config_;
   // Helper for net::QuicConnection that provides timing and
@@ -288,9 +289,9 @@ class QuicTransportChannel : public TransportChannelImpl,
   // the handshake. This must be set before we start QUIC.
   rtc::Optional<rtc::SSLRole> ssl_role_;
   // Config for QUIC crypto client stream, used when |ssl_role_| is SSL_CLIENT.
-  rtc::scoped_ptr<net::QuicCryptoClientConfig> quic_crypto_client_config_;
+  std::unique_ptr<net::QuicCryptoClientConfig> quic_crypto_client_config_;
   // Config for QUIC crypto server stream, used when |ssl_role_| is SSL_SERVER.
-  rtc::scoped_ptr<net::QuicCryptoServerConfig> quic_crypto_server_config_;
+  std::unique_ptr<net::QuicCryptoServerConfig> quic_crypto_server_config_;
   // This peer's certificate.
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   // Fingerprint of the remote peer. This must be set before we start QUIC.

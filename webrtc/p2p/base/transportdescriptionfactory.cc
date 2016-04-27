@@ -10,6 +10,8 @@
 
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
 
+#include <memory>
+
 #include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -25,7 +27,7 @@ TransportDescriptionFactory::TransportDescriptionFactory()
 TransportDescription* TransportDescriptionFactory::CreateOffer(
     const TransportOptions& options,
     const TransportDescription* current_description) const {
-  rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
+  std::unique_ptr<TransportDescription> desc(new TransportDescription());
 
   // Generate the ICE credentials if we don't already have them.
   if (!current_description || options.ice_restart) {
@@ -59,7 +61,7 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
     return NULL;
   }
 
-  rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
+  std::unique_ptr<TransportDescription> desc(new TransportDescription());
   // Generate the ICE credentials if we don't already have them or ice is
   // being restarted.
   if (!current_description || options.ice_restart) {

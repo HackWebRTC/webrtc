@@ -12,12 +12,13 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 
 using rtc::ByteBufferReader;
@@ -173,7 +174,7 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
 
   // Getting length of the message to calculate Message Integrity.
   size_t mi_pos = current_pos;
-  rtc::scoped_ptr<char[]> temp_data(new char[current_pos]);
+  std::unique_ptr<char[]> temp_data(new char[current_pos]);
   memcpy(temp_data.get(), data, current_pos);
   if (size > mi_pos + kStunAttributeHeaderSize + kStunMessageIntegritySize) {
     // Stun message has other attributes after message integrity.

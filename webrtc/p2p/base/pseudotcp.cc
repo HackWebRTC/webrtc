@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <memory>
 #include <set>
 
 #include "webrtc/base/arraysize.h"
@@ -22,7 +23,6 @@
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
@@ -518,7 +518,7 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32_t seq,
 
   uint32_t now = Now();
 
-  rtc::scoped_ptr<uint8_t[]> buffer(new uint8_t[MAX_PACKET]);
+  std::unique_ptr<uint8_t[]> buffer(new uint8_t[MAX_PACKET]);
   long_to_bytes(m_conv, buffer.get());
   long_to_bytes(seq, buffer.get() + 4);
   long_to_bytes(m_rcv_nxt, buffer.get() + 8);
