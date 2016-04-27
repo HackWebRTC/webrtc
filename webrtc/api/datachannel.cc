@@ -10,6 +10,7 @@
 
 #include "webrtc/api/datachannel.h"
 
+#include <memory>
 #include <string>
 
 #include "webrtc/api/mediastreamprovider.h"
@@ -363,7 +364,7 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
   }
 
   bool binary = (params.type == cricket::DMT_BINARY);
-  rtc::scoped_ptr<DataBuffer> buffer(new DataBuffer(payload, binary));
+  std::unique_ptr<DataBuffer> buffer(new DataBuffer(payload, binary));
   if (state_ == kOpen && observer_) {
     observer_->OnMessage(*buffer.get());
   } else {
@@ -494,7 +495,7 @@ void DataChannel::DeliverQueuedReceivedData() {
   }
 
   while (!queued_received_data_.Empty()) {
-    rtc::scoped_ptr<DataBuffer> buffer(queued_received_data_.Front());
+    std::unique_ptr<DataBuffer> buffer(queued_received_data_.Front());
     observer_->OnMessage(*buffer);
     queued_received_data_.Pop();
   }
@@ -589,7 +590,7 @@ void DataChannel::SendQueuedControlMessages() {
   control_packets.Swap(&queued_control_data_);
 
   while (!control_packets.Empty()) {
-    rtc::scoped_ptr<DataBuffer> buf(control_packets.Front());
+    std::unique_ptr<DataBuffer> buf(control_packets.Front());
     SendControlMessage(buf->data);
     control_packets.Pop();
   }

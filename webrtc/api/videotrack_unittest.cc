@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
 #include "webrtc/api/test/fakevideotrackrenderer.h"
 #include "webrtc/api/videocapturertracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
@@ -55,14 +55,14 @@ TEST_F(VideoTrackTest, SourceStateChangeTrackState) {
 // frames to the source.
 TEST_F(VideoTrackTest, RenderVideo) {
   // FakeVideoTrackRenderer register itself to |video_track_|
-  rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_1(
+  std::unique_ptr<FakeVideoTrackRenderer> renderer_1(
       new FakeVideoTrackRenderer(video_track_.get()));
 
   capturer_.CaptureFrame();
   EXPECT_EQ(1, renderer_1->num_rendered_frames());
 
   // FakeVideoTrackRenderer register itself to |video_track_|
-  rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_2(
+  std::unique_ptr<FakeVideoTrackRenderer> renderer_2(
       new FakeVideoTrackRenderer(video_track_.get()));
   capturer_.CaptureFrame();
   EXPECT_EQ(2, renderer_1->num_rendered_frames());
@@ -75,7 +75,7 @@ TEST_F(VideoTrackTest, RenderVideo) {
 
 // Test that disabling the track results in blacked out frames.
 TEST_F(VideoTrackTest, DisableTrackBlackout) {
-  rtc::scoped_ptr<FakeVideoTrackRenderer> renderer(
+  std::unique_ptr<FakeVideoTrackRenderer> renderer(
       new FakeVideoTrackRenderer(video_track_.get()));
 
   capturer_.CaptureFrame();

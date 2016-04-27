@@ -51,6 +51,7 @@
 #ifndef WEBRTC_API_PEERCONNECTIONINTERFACE_H_
 #define WEBRTC_API_PEERCONNECTIONINTERFACE_H_
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -591,14 +592,14 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
-      rtc::scoped_ptr<cricket::PortAllocator> allocator,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<cricket::PortAllocator> allocator,
+      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer) = 0;
 
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      rtc::scoped_ptr<cricket::PortAllocator> allocator,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<cricket::PortAllocator> allocator,
+      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer) = 0;
 
   virtual rtc::scoped_refptr<MediaStreamInterface>

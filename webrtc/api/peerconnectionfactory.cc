@@ -249,8 +249,8 @@ rtc::scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactory::CreatePeerConnection(
     const PeerConnectionInterface::RTCConfiguration& configuration_in,
     const MediaConstraintsInterface* constraints,
-    rtc::scoped_ptr<cricket::PortAllocator> allocator,
-    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<cricket::PortAllocator> allocator,
+    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
@@ -265,8 +265,8 @@ PeerConnectionFactory::CreatePeerConnection(
 rtc::scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactory::CreatePeerConnection(
     const PeerConnectionInterface::RTCConfiguration& configuration,
-    rtc::scoped_ptr<cricket::PortAllocator> allocator,
-    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<cricket::PortAllocator> allocator,
+    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 

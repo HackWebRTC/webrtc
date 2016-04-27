@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <utility>
 
 #include "webrtc/api/mediastreamprovider.h"
@@ -81,7 +82,7 @@ void RemoteAudioSource::Initialize(uint32_t ssrc,
   // we register for callbacks here and not on demand in AddSink.
   if (provider) {  // May be null in tests.
     provider->SetRawAudioSink(
-        ssrc, rtc::scoped_ptr<AudioSinkInterface>(new Sink(this)));
+        ssrc, std::unique_ptr<AudioSinkInterface>(new Sink(this)));
   }
 }
 

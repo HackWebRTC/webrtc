@@ -20,6 +20,8 @@
 #ifndef WEBRTC_API_TEST_FAKEAUDIOCAPTUREMODULE_H_
 #define WEBRTC_API_TEST_FAKEAUDIOCAPTUREMODULE_H_
 
+#include <memory>
+
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagehandler.h"
@@ -247,7 +249,7 @@ class FakeAudioCaptureModule
   bool started_;
   uint32_t next_frame_time_;
 
-  rtc::scoped_ptr<rtc::Thread> process_thread_;
+  std::unique_ptr<rtc::Thread> process_thread_;
 
   // Buffer for storing samples received from the webrtc::AudioTransport.
   char rec_buffer_[kNumberSamples * kNumberBytesPerSample];

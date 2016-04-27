@@ -55,7 +55,7 @@ PeerConnectionTestWrapper::~PeerConnectionTestWrapper() {}
 
 bool PeerConnectionTestWrapper::CreatePc(
   const MediaConstraintsInterface* constraints) {
-  rtc::scoped_ptr<cricket::PortAllocator> port_allocator(
+  std::unique_ptr<cricket::PortAllocator> port_allocator(
       new cricket::FakePortAllocator(worker_thread_, nullptr));
 
   fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
@@ -75,9 +75,9 @@ bool PeerConnectionTestWrapper::CreatePc(
   webrtc::PeerConnectionInterface::IceServer ice_server;
   ice_server.uri = "stun:stun.l.google.com:19302";
   config.servers.push_back(ice_server);
-  rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
-      rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
-      new FakeDtlsIdentityStore() : nullptr);
+  std::unique_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
+      rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
+                                            : nullptr);
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
       config, constraints, std::move(port_allocator),
       std::move(dtls_identity_store), this);
@@ -118,7 +118,7 @@ void PeerConnectionTestWrapper::OnDataChannel(
 
 void PeerConnectionTestWrapper::OnSuccess(SessionDescriptionInterface* desc) {
   // This callback should take the ownership of |desc|.
-  rtc::scoped_ptr<SessionDescriptionInterface> owned_desc(desc);
+  std::unique_ptr<SessionDescriptionInterface> owned_desc(desc);
   std::string sdp;
   EXPECT_TRUE(desc->ToString(&sdp));
 
@@ -183,7 +183,7 @@ void PeerConnectionTestWrapper::SetRemoteDescription(const std::string& type,
 void PeerConnectionTestWrapper::AddIceCandidate(const std::string& sdp_mid,
                                                 int sdp_mline_index,
                                                 const std::string& candidate) {
-  rtc::scoped_ptr<webrtc::IceCandidateInterface> owned_candidate(
+  std::unique_ptr<webrtc::IceCandidateInterface> owned_candidate(
       webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
   EXPECT_TRUE(peer_connection_->AddIceCandidate(owned_candidate.get()));
 }

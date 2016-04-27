@@ -11,6 +11,8 @@
 #ifndef WEBRTC_API_TEST_PEERCONNECTIONTESTWRAPPER_H_
 #define WEBRTC_API_TEST_PEERCONNECTIONTESTWRAPPER_H_
 
+#include <memory>
+
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/test/fakeaudiocapturemodule.h"
 #include "webrtc/api/test/fakeconstraints.h"
@@ -94,7 +96,7 @@ class PeerConnectionTestWrapper
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
-  rtc::scoped_ptr<webrtc::FakeVideoTrackRenderer> renderer_;
+  std::unique_ptr<webrtc::FakeVideoTrackRenderer> renderer_;
 };
 
 #endif  // WEBRTC_API_TEST_PEERCONNECTIONTESTWRAPPER_H_

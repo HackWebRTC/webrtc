@@ -64,7 +64,7 @@ struct CreateSessionDescriptionMsg : public rtc::MessageData {
 
   rtc::scoped_refptr<webrtc::CreateSessionDescriptionObserver> observer;
   std::string error;
-  rtc::scoped_ptr<webrtc::SessionDescriptionInterface> description;
+  std::unique_ptr<webrtc::SessionDescriptionInterface> description;
 };
 }  // namespace
 
@@ -127,7 +127,7 @@ void WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
-    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     const rtc::scoped_refptr<WebRtcIdentityRequestObserver>&
         identity_request_observer,
     WebRtcSession* session,
@@ -168,7 +168,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
-    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     WebRtcSession* session,
     const std::string& session_id)
     : WebRtcSessionDescriptionFactory(

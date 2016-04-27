@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/p2p/base/candidate.h"
@@ -27,7 +27,6 @@ using webrtc::IceCandidateInterface;
 using webrtc::JsepIceCandidate;
 using webrtc::JsepSessionDescription;
 using webrtc::SessionDescriptionInterface;
-using rtc::scoped_ptr;
 
 static const char kCandidateUfrag[] = "ufrag";
 static const char kCandidatePwd[] = "pwd";
@@ -41,11 +40,11 @@ static const char kCandidatePwdVideo[] = "pwd_video";
 static cricket::SessionDescription* CreateCricketSessionDescription() {
   cricket::SessionDescription* desc(new cricket::SessionDescription());
   // AudioContentDescription
-  scoped_ptr<cricket::AudioContentDescription> audio(
+  std::unique_ptr<cricket::AudioContentDescription> audio(
       new cricket::AudioContentDescription());
 
   // VideoContentDescription
-  scoped_ptr<cricket::VideoContentDescription> video(
+  std::unique_ptr<cricket::VideoContentDescription> video(
       new cricket::VideoContentDescription());
 
   audio->AddCodec(cricket::AudioCodec(103, "ISAC", 16000, 0, 0));
@@ -100,7 +99,7 @@ class JsepSessionDescriptionTest : public testing::Test {
   }
 
   cricket::Candidate candidate_;
-  rtc::scoped_ptr<JsepSessionDescription> jsep_desc_;
+  std::unique_ptr<JsepSessionDescription> jsep_desc_;
 };
 
 // Test that number_of_mediasections() returns the number of media contents in
@@ -204,7 +203,8 @@ TEST_F(JsepSessionDescriptionTest, AddCandidateDuplicates) {
 TEST_F(JsepSessionDescriptionTest, SerializeDeserialize) {
   std::string sdp = Serialize(jsep_desc_.get());
 
-  scoped_ptr<SessionDescriptionInterface> parsed_jsep_desc(DeSerialize(sdp));
+  std::unique_ptr<SessionDescriptionInterface> parsed_jsep_desc(
+      DeSerialize(sdp));
   EXPECT_EQ(2u, parsed_jsep_desc->number_of_mediasections());
 
   std::string parsed_sdp = Serialize(parsed_jsep_desc.get());
@@ -222,7 +222,7 @@ TEST_F(JsepSessionDescriptionTest, SerializeDeserializeWithCandidates) {
   std::string sdp_with_candidate = Serialize(jsep_desc_.get());
   EXPECT_NE(sdp, sdp_with_candidate);
 
-  scoped_ptr<SessionDescriptionInterface> parsed_jsep_desc(
+  std::unique_ptr<SessionDescriptionInterface> parsed_jsep_desc(
       DeSerialize(sdp_with_candidate));
   std::string parsed_sdp_with_candidate = Serialize(parsed_jsep_desc.get());
 

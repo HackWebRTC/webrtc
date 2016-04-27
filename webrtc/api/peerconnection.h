@@ -13,6 +13,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "webrtc/api/dtlsidentitystore.h"
@@ -69,8 +70,8 @@ class PeerConnection : public PeerConnectionInterface,
 
   bool Initialize(
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      rtc::scoped_ptr<cricket::PortAllocator> allocator,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<cricket::PortAllocator> allocator,
+      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer);
 
   rtc::scoped_refptr<StreamCollectionInterface> local_streams() override;
@@ -365,15 +366,15 @@ class PeerConnection : public PeerConnectionInterface,
   IceConnectionState ice_connection_state_;
   IceGatheringState ice_gathering_state_;
 
-  rtc::scoped_ptr<cricket::PortAllocator> port_allocator_;
-  rtc::scoped_ptr<MediaControllerInterface> media_controller_;
+  std::unique_ptr<cricket::PortAllocator> port_allocator_;
+  std::unique_ptr<MediaControllerInterface> media_controller_;
 
   // Streams added via AddStream.
   rtc::scoped_refptr<StreamCollection> local_streams_;
   // Streams created as a result of SetRemoteDescription.
   rtc::scoped_refptr<StreamCollection> remote_streams_;
 
-  std::vector<rtc::scoped_ptr<MediaStreamObserver>> stream_observers_;
+  std::vector<std::unique_ptr<MediaStreamObserver>> stream_observers_;
 
   // These lists store track info seen in local/remote descriptions.
   TrackInfos remote_audio_tracks_;
@@ -392,12 +393,12 @@ class PeerConnection : public PeerConnectionInterface,
   std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders_;
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers_;
 
-  // The session_ scoped_ptr is declared at the bottom of PeerConnection
+  // The session_ unique_ptr is declared at the bottom of PeerConnection
   // because its destruction fires signals (such as VoiceChannelDestroyed)
   // which will trigger some final actions in PeerConnection...
-  rtc::scoped_ptr<WebRtcSession> session_;
+  std::unique_ptr<WebRtcSession> session_;
   // ... But stats_ depends on session_ so it should be destroyed even earlier.
-  rtc::scoped_ptr<StatsCollector> stats_;
+  std::unique_ptr<StatsCollector> stats_;
 };
 
 }  // namespace webrtc

@@ -10,6 +10,8 @@
 
 #include "webrtc/api/mediacontroller.h"
 
+#include <memory>
+
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
@@ -75,7 +77,7 @@ class MediaController : public webrtc::MediaControllerInterface,
   const cricket::MediaConfig media_config_;
   cricket::ChannelManager* const channel_manager_;
   webrtc::Call::Config call_config_;
-  rtc::scoped_ptr<webrtc::Call> call_;
+  std::unique_ptr<webrtc::Call> call_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MediaController);
 };

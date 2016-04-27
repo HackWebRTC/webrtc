@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -58,12 +59,12 @@ class MockAudioProvider : public AudioProviderInterface {
                bool(uint32_t ssrc, const RtpParameters&));
 
   void SetRawAudioSink(uint32_t,
-                       rtc::scoped_ptr<AudioSinkInterface> sink) override {
+                       std::unique_ptr<AudioSinkInterface> sink) override {
     sink_ = std::move(sink);
   }
 
  private:
-  rtc::scoped_ptr<AudioSinkInterface> sink_;
+  std::unique_ptr<AudioSinkInterface> sink_;
 };
 
 // Helper class to test RtpSender/RtpReceiver.

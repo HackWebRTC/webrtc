@@ -10,12 +10,13 @@
 
 #include "webrtc/api/jsepsessiondescription.h"
 
+#include <memory>
+
 #include "webrtc/api/webrtcsdp.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/pc/mediasession.h"
 
-using rtc::scoped_ptr;
 using cricket::SessionDescription;
 
 namespace webrtc {
@@ -124,7 +125,7 @@ bool JsepSessionDescription::AddCandidate(
     updated_candidate.set_password(transport_info->description.ice_pwd);
   }
 
-  scoped_ptr<JsepIceCandidate> updated_candidate_wrapper(
+  std::unique_ptr<JsepIceCandidate> updated_candidate_wrapper(
       new JsepIceCandidate(candidate->sdp_mid(),
                            static_cast<int>(mediasection_index),
                            updated_candidate));

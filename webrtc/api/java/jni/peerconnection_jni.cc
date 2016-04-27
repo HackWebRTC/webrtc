@@ -80,7 +80,6 @@ using cricket::WebRtcVideoEncoderFactory;
 using rtc::Bind;
 using rtc::Thread;
 using rtc::ThreadManager;
-using rtc::scoped_ptr;
 using webrtc::AudioSourceInterface;
 using webrtc::AudioTrackInterface;
 using webrtc::AudioTrackVector;
@@ -427,7 +426,7 @@ class PCOJava : public PeerConnectionObserver {
   // C++ -> Java remote streams. The stored jobects are global refs and must be
   // manually deleted upon removal. Use DisposeRemoteStream().
   NativeToJavaStreamsMap remote_streams_;
-  scoped_ptr<ConstraintsWrapper> constraints_;
+  std::unique_ptr<ConstraintsWrapper> constraints_;
 };
 
 // Wrapper for a Java MediaConstraints object.  Copies all needed data so when
@@ -549,7 +548,7 @@ class SdpObserverWrapper : public T {
   }
 
  private:
-  scoped_ptr<ConstraintsWrapper> constraints_;
+  std::unique_ptr<ConstraintsWrapper> constraints_;
   const ScopedGlobalRef<jobject> j_observer_global_;
   const ScopedGlobalRef<jclass> j_observer_class_;
 };
@@ -822,7 +821,7 @@ static DataChannelInterface* ExtractNativeDC(JNIEnv* jni, jobject j_dc) {
 
 JOW(jlong, DataChannel_registerObserverNative)(
     JNIEnv* jni, jobject j_dc, jobject j_observer) {
-  scoped_ptr<DataChannelObserverWrapper> observer(
+  std::unique_ptr<DataChannelObserverWrapper> observer(
       new DataChannelObserverWrapper(jni, j_observer));
   ExtractNativeDC(jni, j_dc)->RegisterObserver(observer.get());
   return jlongFromPointer(observer.release());
@@ -1067,8 +1066,8 @@ class OwnedFactoryAndThreads {
  private:
   void JavaCallbackOnFactoryThreads();
 
-  const scoped_ptr<Thread> worker_thread_;
-  const scoped_ptr<Thread> signaling_thread_;
+  const std::unique_ptr<Thread> worker_thread_;
+  const std::unique_ptr<Thread> signaling_thread_;
   WebRtcVideoEncoderFactory* encoder_factory_;
   WebRtcVideoDecoderFactory* decoder_factory_;
   rtc::NetworkMonitorFactory* network_monitor_factory_;
@@ -1225,11 +1224,11 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)(
   rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
       new rtc::RefCountedObject<AndroidVideoCapturerJni>(
           jni, j_video_capturer, j_egl_context);
-  rtc::scoped_ptr<cricket::VideoCapturer> capturer(
+  std::unique_ptr<cricket::VideoCapturer> capturer(
       new webrtc::AndroidVideoCapturer(delegate));
   // Create a webrtc::VideoTrackSourceInterface from the cricket::VideoCapturer,
   // native factory and constraints.
-  scoped_ptr<ConstraintsWrapper> constraints(
+  std::unique_ptr<ConstraintsWrapper> constraints(
       new ConstraintsWrapper(jni, j_constraints));
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
@@ -1251,7 +1250,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoTrack)(
 
 JOW(jlong, PeerConnectionFactory_nativeCreateAudioSource)(
     JNIEnv* jni, jclass, jlong native_factory, jobject j_constraints) {
-  scoped_ptr<ConstraintsWrapper> constraints(
+  std::unique_ptr<ConstraintsWrapper> constraints(
       new ConstraintsWrapper(jni, j_constraints));
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
@@ -1706,7 +1705,7 @@ JOW(jboolean, PeerConnection_nativeAddIceCandidate)(
     jint j_sdp_mline_index, jstring j_candidate_sdp) {
   std::string sdp_mid = JavaToStdString(jni, j_sdp_mid);
   std::string sdp = JavaToStdString(jni, j_candidate_sdp);
-  scoped_ptr<IceCandidateInterface> candidate(
+  std::unique_ptr<IceCandidateInterface> candidate(
       webrtc::CreateIceCandidate(sdp_mid, j_sdp_mline_index, sdp, NULL));
   return ExtractNativePC(jni, j_pc)->AddIceCandidate(candidate.get());
 }
@@ -1871,7 +1870,7 @@ JOW(jobject, MediaSource_nativeState)(JNIEnv* jni, jclass, jlong j_p) {
 
 JOW(jlong, VideoRenderer_nativeWrapVideoRenderer)(
     JNIEnv* jni, jclass, jobject j_callbacks) {
-  scoped_ptr<JavaVideoRendererWrapper> renderer(
+  std::unique_ptr<JavaVideoRendererWrapper> renderer(
       new JavaVideoRendererWrapper(jni, j_callbacks));
   return (jlong)renderer.release();
 }
@@ -1985,7 +1984,7 @@ JOW(void, CallSessionFileRotatingLogSink_nativeDeleteSink)(
 JOW(jbyteArray, CallSessionFileRotatingLogSink_nativeGetLogData)(
     JNIEnv* jni, jclass, jstring j_dirPath) {
   std::string dir_path = JavaToStdString(jni, j_dirPath);
-  rtc::scoped_ptr<rtc::CallSessionFileRotatingStream> stream(
+  std::unique_ptr<rtc::CallSessionFileRotatingStream> stream(
       new rtc::CallSessionFileRotatingStream(dir_path));
   if (!stream->Open()) {
     LOG_V(rtc::LoggingSeverity::LS_WARNING) <<
@@ -2000,7 +1999,7 @@ JOW(jbyteArray, CallSessionFileRotatingLogSink_nativeGetLogData)(
   }
 
   size_t read = 0;
-  rtc::scoped_ptr<jbyte> buffer(static_cast<jbyte*>(malloc(log_size)));
+  std::unique_ptr<jbyte> buffer(static_cast<jbyte*>(malloc(log_size)));
   stream->ReadAll(buffer.get(), log_size, &read, nullptr);
 
   jbyteArray result = jni->NewByteArray(read);

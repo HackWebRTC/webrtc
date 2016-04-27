@@ -11,6 +11,8 @@
 #ifndef WEBRTC_API_MEDIASTREAMPROVIDER_H_
 #define WEBRTC_API_MEDIASTREAMPROVIDER_H_
 
+#include <memory>
+
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -60,7 +62,7 @@ class AudioProviderInterface {
   // passed to the provider.
   virtual void SetRawAudioSink(
       uint32_t ssrc,
-      rtc::scoped_ptr<webrtc::AudioSinkInterface> sink) = 0;
+      std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
 
   virtual RtpParameters GetAudioRtpParameters(uint32_t ssrc) const = 0;
   virtual bool SetAudioRtpParameters(uint32_t ssrc,

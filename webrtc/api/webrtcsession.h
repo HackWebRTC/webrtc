@@ -153,7 +153,7 @@ class WebRtcSession : public AudioProviderInterface,
 
   bool Initialize(
       const PeerConnectionFactoryInterface::Options& options,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       const PeerConnectionInterface::RTCConfiguration& rtc_configuration);
   // Deletes the voice, video and data channel and changes the session state
   // to STATE_CLOSED.
@@ -244,7 +244,7 @@ class WebRtcSession : public AudioProviderInterface,
                     cricket::AudioSource* source) override;
   void SetAudioPlayoutVolume(uint32_t ssrc, double volume) override;
   void SetRawAudioSink(uint32_t ssrc,
-                       rtc::scoped_ptr<AudioSinkInterface> sink) override;
+                       std::unique_ptr<AudioSinkInterface> sink) override;
 
   RtpParameters GetAudioRtpParameters(uint32_t ssrc) const override;
   bool SetAudioRtpParameters(uint32_t ssrc,
@@ -479,17 +479,17 @@ class WebRtcSession : public AudioProviderInterface,
   const std::string sid_;
   bool initial_offerer_ = false;
 
-  rtc::scoped_ptr<cricket::TransportController> transport_controller_;
+  std::unique_ptr<cricket::TransportController> transport_controller_;
   MediaControllerInterface* media_controller_;
-  rtc::scoped_ptr<cricket::VoiceChannel> voice_channel_;
-  rtc::scoped_ptr<cricket::VideoChannel> video_channel_;
-  rtc::scoped_ptr<cricket::DataChannel> data_channel_;
+  std::unique_ptr<cricket::VoiceChannel> voice_channel_;
+  std::unique_ptr<cricket::VideoChannel> video_channel_;
+  std::unique_ptr<cricket::DataChannel> data_channel_;
   cricket::ChannelManager* channel_manager_;
   IceObserver* ice_observer_;
   PeerConnectionInterface::IceConnectionState ice_connection_state_;
   bool ice_connection_receiving_;
-  rtc::scoped_ptr<SessionDescriptionInterface> local_desc_;
-  rtc::scoped_ptr<SessionDescriptionInterface> remote_desc_;
+  std::unique_ptr<SessionDescriptionInterface> local_desc_;
+  std::unique_ptr<SessionDescriptionInterface> remote_desc_;
   // If the remote peer is using a older version of implementation.
   bool older_version_remote_peer_;
   bool dtls_enabled_;
@@ -504,8 +504,7 @@ class WebRtcSession : public AudioProviderInterface,
   // List of content names for which the remote side triggered an ICE restart.
   std::set<std::string> pending_ice_restarts_;
 
-  rtc::scoped_ptr<WebRtcSessionDescriptionFactory>
-      webrtc_session_desc_factory_;
+  std::unique_ptr<WebRtcSessionDescriptionFactory> webrtc_session_desc_factory_;
 
   // Member variables for caching global options.
   cricket::AudioOptions audio_options_;

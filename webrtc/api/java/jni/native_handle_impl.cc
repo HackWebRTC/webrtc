@@ -10,12 +10,13 @@
 
 #include "webrtc/api/java/jni/native_handle_impl.h"
 
+#include <memory>
+
 #include "webrtc/api/java/jni/jni_helpers.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 
 using webrtc::NativeHandleBuffer;
@@ -104,7 +105,7 @@ AndroidTextureBuffer::NativeToI420Buffer() {
   //
   // TODO(nisse): Use an I420BufferPool. We then need to extend that
   // class, and I420Buffer, to support our memory layout.
-  rtc::scoped_ptr<uint8_t, webrtc::AlignedFreeDeleter> yuv_data(
+  std::unique_ptr<uint8_t, webrtc::AlignedFreeDeleter> yuv_data(
       static_cast<uint8_t*>(webrtc::AlignedMalloc(size, kBufferAlignment)));
   // See SurfaceTextureHelper.java for the required layout.
   uint8_t* y_data = yuv_data.get();

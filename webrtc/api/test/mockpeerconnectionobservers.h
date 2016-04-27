@@ -13,6 +13,7 @@
 #ifndef WEBRTC_API_TEST_MOCKPEERCONNECTIONOBSERVERS_H_
 #define WEBRTC_API_TEST_MOCKPEERCONNECTIONOBSERVERS_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/api/datachannelinterface.h"
@@ -44,7 +45,7 @@ class MockCreateSessionDescriptionObserver
  private:
   bool called_;
   bool result_;
-  rtc::scoped_ptr<SessionDescriptionInterface> desc_;
+  std::unique_ptr<SessionDescriptionInterface> desc_;
 };
 
 class MockSetSessionDescriptionObserver

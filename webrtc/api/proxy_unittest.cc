@@ -10,12 +10,12 @@
 
 #include "webrtc/api/proxy.h"
 
+#include <memory>
 #include <string>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 
 using ::testing::_;
@@ -98,7 +98,7 @@ class SignalingProxyTest : public testing::Test {
   }
 
  protected:
-  rtc::scoped_ptr<rtc::Thread> signaling_thread_;
+  std::unique_ptr<rtc::Thread> signaling_thread_;
   rtc::scoped_refptr<FakeInterface> fake_signaling_proxy_;
   rtc::scoped_refptr<Fake> fake_;
 };
@@ -175,7 +175,7 @@ class ProxyTest : public SignalingProxyTest {
   }
 
  protected:
-  rtc::scoped_ptr<rtc::Thread> worker_thread_;
+  std::unique_ptr<rtc::Thread> worker_thread_;
   rtc::scoped_refptr<FakeInterface> fake_proxy_;
 };
 

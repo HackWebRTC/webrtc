@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -20,7 +21,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslfingerprint.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
@@ -1394,8 +1394,7 @@ class WebRtcSdpTest : public testing::Test {
   }
 
   void AddSctpDataChannel() {
-    rtc::scoped_ptr<DataContentDescription> data(
-        new DataContentDescription());
+    std::unique_ptr<DataContentDescription> data(new DataContentDescription());
     data_desc_ = data.get();
     data_desc_->set_protocol(cricket::kMediaProtocolDtlsSctp);
     DataCodec codec(cricket::kGoogleSctpDataCodecId,
@@ -1408,8 +1407,7 @@ class WebRtcSdpTest : public testing::Test {
   }
 
   void AddRtpDataChannel() {
-    rtc::scoped_ptr<DataContentDescription> data(
-        new DataContentDescription());
+    std::unique_ptr<DataContentDescription> data(new DataContentDescription());
     data_desc_ = data.get();
 
     data_desc_->AddCodec(DataCodec(101, "google-data"));
@@ -1679,7 +1677,7 @@ class WebRtcSdpTest : public testing::Test {
   VideoContentDescription* video_desc_;
   DataContentDescription* data_desc_;
   Candidates candidates_;
-  rtc::scoped_ptr<IceCandidateInterface> jcandidate_;
+  std::unique_ptr<IceCandidateInterface> jcandidate_;
   JsepSessionDescription jdesc_;
 };
 
@@ -2082,8 +2080,8 @@ TEST_F(WebRtcSdpTest, SerializeTcpCandidates) {
                       "", "", LOCAL_PORT_TYPE, kCandidateGeneration,
                       kCandidateFoundation1);
   candidate.set_tcptype(cricket::TCPTYPE_ACTIVE_STR);
-  rtc::scoped_ptr<IceCandidateInterface> jcandidate(
-    new JsepIceCandidate(std::string("audio_content_name"), 0, candidate));
+  std::unique_ptr<IceCandidateInterface> jcandidate(
+      new JsepIceCandidate(std::string("audio_content_name"), 0, candidate));
 
   std::string message = webrtc::SdpSerializeCandidate(*jcandidate);
   EXPECT_EQ(std::string(kSdpTcpActiveCandidate), message);
@@ -2405,8 +2403,8 @@ TEST_F(WebRtcSdpTest, DeserializeCandidate) {
                       rtc::SocketAddress("192.168.1.5", 9), kCandidatePriority,
                       "", "", LOCAL_PORT_TYPE, kCandidateGeneration,
                       kCandidateFoundation1);
-  rtc::scoped_ptr<IceCandidateInterface> jcandidate_template(
-    new JsepIceCandidate(std::string("audio_content_name"), 0, candidate));
+  std::unique_ptr<IceCandidateInterface> jcandidate_template(
+      new JsepIceCandidate(std::string("audio_content_name"), 0, candidate));
   EXPECT_TRUE(jcandidate.candidate().IsEquivalent(
                     jcandidate_template->candidate()));
   sdp = kSdpTcpPassiveCandidate;

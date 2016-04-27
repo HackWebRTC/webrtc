@@ -9,6 +9,7 @@
  */
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 // NOTICE: androidmediadecoder_jni.h must be included before
@@ -36,7 +37,6 @@
 using rtc::Bind;
 using rtc::Thread;
 using rtc::ThreadManager;
-using rtc::scoped_ptr;
 
 using webrtc::CodecSpecificInfo;
 using webrtc::DecodedImageCallback;
@@ -137,7 +137,8 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
 
   // State that is constant for the lifetime of this object once the ctor
   // returns.
-  scoped_ptr<Thread> codec_thread_;  // Thread on which to operate MediaCodec.
+  std::unique_ptr<Thread>
+      codec_thread_;  // Thread on which to operate MediaCodec.
   ScopedGlobalRef<jclass> j_media_codec_video_decoder_class_;
   ScopedGlobalRef<jobject> j_media_codec_video_decoder_;
   jmethodID j_init_decode_method_;

@@ -74,7 +74,7 @@ class DtlsIdentityStoreImpl::WorkerTask : public sigslot::has_slots<>,
       case MSG_GENERATE_IDENTITY_RESULT:
         RTC_DCHECK(signaling_thread_->IsCurrent());
         {
-          rtc::scoped_ptr<IdentityResultMessageData> pdata(
+          std::unique_ptr<IdentityResultMessageData> pdata(
               static_cast<IdentityResultMessageData*>(msg->pdata));
           if (store_) {
             store_->OnIdentityGenerated(pdata->data()->key_type_,
@@ -131,7 +131,7 @@ void DtlsIdentityStoreImpl::OnMessage(rtc::Message* msg) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   switch (msg->message_id) {
     case MSG_GENERATE_IDENTITY_RESULT: {
-      rtc::scoped_ptr<IdentityResultMessageData> pdata(
+      std::unique_ptr<IdentityResultMessageData> pdata(
           static_cast<IdentityResultMessageData*>(msg->pdata));
       OnIdentityGenerated(pdata->data()->key_type_,
                           std::move(pdata->data()->identity_));

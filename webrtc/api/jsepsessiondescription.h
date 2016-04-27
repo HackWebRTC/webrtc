@@ -13,6 +13,7 @@
 #ifndef WEBRTC_API_JSEPSESSIONDESCRIPTION_H_
 #define WEBRTC_API_JSEPSESSIONDESCRIPTION_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -75,7 +76,7 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   static const int kMaxVideoCodecHeight;
 
  private:
-  rtc::scoped_ptr<cricket::SessionDescription> description_;
+  std::unique_ptr<cricket::SessionDescription> description_;
   std::string session_id_;
   std::string session_version_;
   std::string type_;

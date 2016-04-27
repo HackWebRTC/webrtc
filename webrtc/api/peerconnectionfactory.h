@@ -11,6 +11,7 @@
 #ifndef WEBRTC_API_PEERCONNECTIONFACTORY_H_
 #define WEBRTC_API_PEERCONNECTIONFACTORY_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/api/dtlsidentitystore.h"
@@ -42,14 +43,14 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
-      rtc::scoped_ptr<cricket::PortAllocator> allocator,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<cricket::PortAllocator> allocator,
+      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer) override;
 
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      rtc::scoped_ptr<cricket::PortAllocator> allocator,
-      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<cricket::PortAllocator> allocator,
+      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer) override;
 
   bool Initialize();
@@ -112,17 +113,15 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   Options options_;
   // External Audio device used for audio playback.
   rtc::scoped_refptr<AudioDeviceModule> default_adm_;
-  rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  std::unique_ptr<cricket::ChannelManager> channel_manager_;
   // External Video encoder factory. This can be NULL if the client has not
   // injected any. In that case, video engine will use the internal SW encoder.
-  rtc::scoped_ptr<cricket::WebRtcVideoEncoderFactory>
-      video_encoder_factory_;
+  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> video_encoder_factory_;
   // External Video decoder factory. This can be NULL if the client has not
   // injected any. In that case, video engine will use the internal SW decoder.
-  rtc::scoped_ptr<cricket::WebRtcVideoDecoderFactory>
-      video_decoder_factory_;
-  rtc::scoped_ptr<rtc::BasicNetworkManager> default_network_manager_;
-  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> default_socket_factory_;
+  std::unique_ptr<cricket::WebRtcVideoDecoderFactory> video_decoder_factory_;
+  std::unique_ptr<rtc::BasicNetworkManager> default_network_manager_;
+  std::unique_ptr<rtc::BasicPacketSocketFactory> default_socket_factory_;
 
   rtc::scoped_refptr<RefCountedDtlsIdentityStore> dtls_identity_store_;
 };

@@ -13,7 +13,9 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
+
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -2307,7 +2309,7 @@ bool ParseMediaDescription(const std::string& message,
         session_td.ice_mode, session_td.connection_role,
         session_td.identity_fingerprint.get());
 
-    rtc::scoped_ptr<MediaContentDescription> content;
+    std::unique_ptr<MediaContentDescription> content;
     std::string content_name;
     if (HasAttribute(line, kMediaTypeVideo)) {
       content.reset(ParseContentDescription<VideoContentDescription>(

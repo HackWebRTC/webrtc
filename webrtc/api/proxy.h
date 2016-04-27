@@ -47,6 +47,8 @@
 #ifndef WEBRTC_API_PROXY_H_
 #define WEBRTC_API_PROXY_H_
 
+#include <memory>
+
 #include "webrtc/base/event.h"
 #include "webrtc/base/thread.h"
 
@@ -117,7 +119,7 @@ class SynchronousMethodCall
 
  private:
   void OnMessage(rtc::Message*) { proxy_->OnMessage(NULL); e_->Set(); }
-  rtc::scoped_ptr<rtc::Event> e_;
+  std::unique_ptr<rtc::Event> e_;
   rtc::MessageHandler* proxy_;
 };
 

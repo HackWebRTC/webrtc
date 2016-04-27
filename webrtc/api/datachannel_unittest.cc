@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/api/datachannel.h"
 #include "webrtc/api/sctputils.h"
 #include "webrtc/api/test/fakedatachannelprovider.h"
@@ -85,7 +87,7 @@ class SctpDataChannelTest : public testing::Test {
 
   webrtc::InternalDataChannelInit init_;
   FakeDataChannelProvider provider_;
-  rtc::scoped_ptr<FakeDataChannelObserver> observer_;
+  std::unique_ptr<FakeDataChannelObserver> observer_;
   rtc::scoped_refptr<DataChannel> webrtc_data_channel_;
 };
 

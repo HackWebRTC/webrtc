@@ -15,6 +15,7 @@
 #ifndef WEBRTC_API_RTPSENDER_H_
 #define WEBRTC_API_RTPSENDER_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/api/mediastreamprovider.h"
@@ -119,7 +120,7 @@ class AudioRtpSender : public ObserverInterface,
 
   // Used to pass the data callback from the |track_| to the other end of
   // cricket::AudioSource.
-  rtc::scoped_ptr<LocalAudioSinkAdapter> sink_adapter_;
+  std::unique_ptr<LocalAudioSinkAdapter> sink_adapter_;
 };
 
 class VideoRtpSender : public ObserverInterface,

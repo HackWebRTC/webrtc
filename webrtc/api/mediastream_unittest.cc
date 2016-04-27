@@ -18,7 +18,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ptr.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoTrackId[] = "dummy_video_cam_1";

@@ -528,7 +528,7 @@ WebRtcSession::~WebRtcSession() {
 
 bool WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
-    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
   bundle_policy_ = rtc_configuration.bundle_policy;
   rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
@@ -675,7 +675,7 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
   ASSERT(signaling_thread()->IsCurrent());
 
   // Takes the ownership of |desc| regardless of the result.
-  rtc::scoped_ptr<SessionDescriptionInterface> desc_temp(desc);
+  std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
 
   // Validate SDP.
   if (!ValidateSessionDescription(desc, cricket::CS_LOCAL, err_desc)) {
@@ -731,14 +731,14 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   ASSERT(signaling_thread()->IsCurrent());
 
   // Takes the ownership of |desc| regardless of the result.
-  rtc::scoped_ptr<SessionDescriptionInterface> desc_temp(desc);
+  std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
 
   // Validate SDP.
   if (!ValidateSessionDescription(desc, cricket::CS_REMOTE, err_desc)) {
     return false;
   }
 
-  rtc::scoped_ptr<SessionDescriptionInterface> old_remote_desc(
+  std::unique_ptr<SessionDescriptionInterface> old_remote_desc(
       remote_desc_.release());
   remote_desc_.reset(desc_temp.release());
 
@@ -1236,7 +1236,7 @@ void WebRtcSession::SetAudioPlayoutVolume(uint32_t ssrc, double volume) {
 }
 
 void WebRtcSession::SetRawAudioSink(uint32_t ssrc,
-                                    rtc::scoped_ptr<AudioSinkInterface> sink) {
+                                    std::unique_ptr<AudioSinkInterface> sink) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_)
     return;
