@@ -46,6 +46,7 @@ executable("frame_analyzer") {
   deps = [
     ":command_line_parser",
     ":video_quality_analysis",
+    "//build/win:default_exe_manifest",
   ]
 }
 
@@ -58,6 +59,7 @@ executable("rgba_to_i420_converter") {
   deps = [
     ":command_line_parser",
     "../common_video",
+    "//build/win:default_exe_manifest",
   ]
 }
 
@@ -77,6 +79,7 @@ if (!build_with_chromium) {
     deps = [
       ":command_line_parser",
       "../test:test_support_main",
+      "//build/win:default_exe_manifest",
       "//testing/gtest",
     ]
   }
