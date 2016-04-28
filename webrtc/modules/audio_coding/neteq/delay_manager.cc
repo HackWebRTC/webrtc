@@ -342,7 +342,6 @@ bool DelayManager::PeakFound() const {
 
 void DelayManager::UpdateCounters(int elapsed_time_ms) {
   packet_iat_count_ms_ += elapsed_time_ms;
-  peak_detector_.IncrementCounter(elapsed_time_ms);
   max_timer_ms_ += elapsed_time_ms;
 }
 

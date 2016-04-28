@@ -58,7 +58,7 @@ NetEqImpl::Dependencies::Dependencies(const NetEq::Config& config)
     : tick_timer(new TickTimer),
       buffer_level_filter(new BufferLevelFilter),
       decoder_database(new DecoderDatabase),
-      delay_peak_detector(new DelayPeakDetector),
+      delay_peak_detector(new DelayPeakDetector(tick_timer.get())),
       delay_manager(new DelayManager(config.max_packets_in_buffer,
                                      delay_peak_detector.get())),
       dtmf_buffer(new DtmfBuffer(config.sample_rate_hz)),

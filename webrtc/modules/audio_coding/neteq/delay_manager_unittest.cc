@@ -39,16 +39,14 @@ class DelayManagerTest : public ::testing::Test {
   void IncreaseTime(int inc_ms);
 
   DelayManager* dm_;
+  TickTimer tick_timer_;
   MockDelayPeakDetector detector_;
   uint16_t seq_no_;
   uint32_t ts_;
 };
 
 DelayManagerTest::DelayManagerTest()
-    : dm_(NULL),
-      seq_no_(0x1234),
-      ts_(0x12345678) {
-}
+    : dm_(NULL), detector_(&tick_timer_), seq_no_(0x1234), ts_(0x12345678) {}
 
 void DelayManagerTest::SetUp() {
   EXPECT_CALL(detector_, Reset())
@@ -69,9 +67,8 @@ void DelayManagerTest::InsertNextPacket() {
 
 void DelayManagerTest::IncreaseTime(int inc_ms) {
   for (int t = 0; t < inc_ms; t += kTimeStepMs) {
-    EXPECT_CALL(detector_, IncrementCounter(kTimeStepMs))
-        .Times(1);
     dm_->UpdateCounters(kTimeStepMs);
+    tick_timer_.Increment();
   }
 }
 void DelayManagerTest::TearDown() {
@@ -113,13 +110,6 @@ TEST_F(DelayManagerTest, PeakFound) {
       .WillOnce(Return(false));
   EXPECT_TRUE(dm_->PeakFound());
   EXPECT_FALSE(dm_->PeakFound());
-}
-
-TEST_F(DelayManagerTest, UpdateCounters) {
-  // Expect DelayManager to pass on the counter update to the detector.
-  EXPECT_CALL(detector_, IncrementCounter(kTimeStepMs))
-      .Times(1);
-  dm_->UpdateCounters(kTimeStepMs);
 }
 
 TEST_F(DelayManagerTest, UpdateNormal) {

@@ -81,7 +81,8 @@ class NetEqImplTest : public ::testing::Test {
     decoder_database_ = deps.decoder_database.get();
 
     if (use_mock_delay_peak_detector_) {
-      std::unique_ptr<MockDelayPeakDetector> mock(new MockDelayPeakDetector);
+      std::unique_ptr<MockDelayPeakDetector> mock(
+          new MockDelayPeakDetector(tick_timer_));
       mock_delay_peak_detector_ = mock.get();
       EXPECT_CALL(*mock_delay_peak_detector_, Reset()).Times(1);
       deps.delay_peak_detector = std::move(mock);
