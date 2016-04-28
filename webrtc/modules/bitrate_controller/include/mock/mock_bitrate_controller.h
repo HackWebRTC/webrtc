@@ -31,6 +31,10 @@ class MockBitrateController : public BitrateController {
   MOCK_METHOD1(SetStartBitrate, void(int start_bitrate_bps));
   MOCK_METHOD2(SetMinMaxBitrate,
                void(int min_bitrate_bps, int max_bitrate_bps));
+  MOCK_METHOD3(SetBitrates,
+               void(int start_bitrate_bps,
+                    int min_bitrate_bps,
+                    int max_bitrate_bps));
   MOCK_METHOD1(UpdateDelayBasedEstimate, void(uint32_t bitrate_bps));
   MOCK_METHOD1(SetEventLog, void(RtcEventLog* event_log));
   MOCK_CONST_METHOD1(AvailableBandwidth, bool(uint32_t* bandwidth));

@@ -54,8 +54,13 @@ class BitrateController : public Module {
 
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;
 
+  // Deprecated
   virtual void SetStartBitrate(int start_bitrate_bps) = 0;
+  // Deprecated
   virtual void SetMinMaxBitrate(int min_bitrate_bps, int max_bitrate_bps) = 0;
+  virtual void SetBitrates(int start_bitrate_bps,
+                           int min_bitrate_bps,
+                           int max_bitrate_bps) = 0;
 
   virtual void UpdateDelayBasedEstimate(uint32_t bitrate_bps) = 0;
 

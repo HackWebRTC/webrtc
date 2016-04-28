@@ -177,11 +177,13 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
     min_bitrate_bps = kMinBitrateBps;
   if (max_bitrate_bps > 0)
     max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
-  if (start_bitrate_bps > 0) {
+  if (start_bitrate_bps > 0)
     start_bitrate_bps = std::max(min_bitrate_bps, start_bitrate_bps);
-    bitrate_controller_->SetStartBitrate(start_bitrate_bps);
-  }
-  bitrate_controller_->SetMinMaxBitrate(min_bitrate_bps, max_bitrate_bps);
+
+  bitrate_controller_->SetBitrates(start_bitrate_bps,
+                                   min_bitrate_bps,
+                                   max_bitrate_bps);
+
   if (remote_bitrate_estimator_)
     remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);
   min_bitrate_bps_ = min_bitrate_bps;

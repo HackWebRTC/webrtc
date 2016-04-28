@@ -67,6 +67,14 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
 
+void SendSideBandwidthEstimation::SetBitrates(int send_bitrate,
+                                              int min_bitrate,
+                                              int max_bitrate) {
+  if (send_bitrate > 0)
+    SetSendBitrate(send_bitrate);
+  SetMinMaxBitrate(min_bitrate, max_bitrate);
+}
+
 void SendSideBandwidthEstimation::SetSendBitrate(int bitrate) {
   RTC_DCHECK_GT(bitrate, 0);
   bitrate_ = bitrate;

@@ -122,6 +122,18 @@ void BitrateControllerImpl::SetMinMaxBitrate(int min_bitrate_bps,
   MaybeTriggerOnNetworkChanged();
 }
 
+void BitrateControllerImpl::SetBitrates(int start_bitrate_bps,
+                                        int min_bitrate_bps,
+                                        int max_bitrate_bps) {
+  {
+    rtc::CritScope cs(&critsect_);
+    bandwidth_estimation_.SetBitrates(start_bitrate_bps,
+                                      min_bitrate_bps,
+                                      max_bitrate_bps);
+  }
+  MaybeTriggerOnNetworkChanged();
+}
+
 void BitrateControllerImpl::SetReservedBitrate(uint32_t reserved_bitrate_bps) {
   {
     rtc::CritScope cs(&critsect_);

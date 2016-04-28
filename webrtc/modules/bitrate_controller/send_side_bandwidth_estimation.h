@@ -46,6 +46,9 @@ class SendSideBandwidthEstimation {
                            int number_of_packets,
                            int64_t now_ms);
 
+  void SetBitrates(int send_bitrate,
+                   int min_bitrate,
+                   int max_bitrate);
   void SetSendBitrate(int bitrate);
   void SetMinMaxBitrate(int min_bitrate, int max_bitrate);
   int GetMinBitrate() const;
