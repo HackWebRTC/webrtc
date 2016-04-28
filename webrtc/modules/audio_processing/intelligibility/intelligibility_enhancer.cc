@@ -109,8 +109,12 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
 }
 
 void IntelligibilityEnhancer::SetCaptureNoiseEstimate(
-    std::vector<float> noise) {
+    std::vector<float> noise, int gain_db) {
   RTC_DCHECK_EQ(noise.size(), num_noise_bins_);
+  const float gain = std::pow(10.f, gain_db / 20.f);
+  for (auto& bin : noise) {
+    bin *= gain;
+  }
   // Disregarding return value since buffer overflow is acceptable, because it
   // is not critical to get each noise estimate.
   if (noise_estimation_queue_.Insert(&noise)) {

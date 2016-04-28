@@ -51,6 +51,8 @@ class GainControlImpl : public GainControl {
   // Reads render side data that has been queued on the render call.
   void ReadQueuedRenderData();
 
+  int compression_gain_db() const override;
+
  private:
   class GainController;
 
@@ -61,7 +63,6 @@ class GainControlImpl : public GainControl {
   int set_target_level_dbfs(int level) override;
   int target_level_dbfs() const override;
   int set_compression_gain_db(int gain) override;
-  int compression_gain_db() const override;
   int enable_limiter(bool enable) override;
   int set_analog_level_limits(int minimum, int maximum) override;
   int analog_level_minimum() const override;

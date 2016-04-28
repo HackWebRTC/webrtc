@@ -237,7 +237,7 @@ void ProcessOneFrame(int sample_rate_hz,
   noise_suppressor->ProcessCaptureAudio(capture_audio_buffer);
 
   intelligibility_enhancer->SetCaptureNoiseEstimate(
-      noise_suppressor->NoiseEstimate());
+      noise_suppressor->NoiseEstimate(), 0);
 
   if (sample_rate_hz > AudioProcessing::kSampleRate16kHz) {
     render_audio_buffer->MergeFrequencyBands();
@@ -311,12 +311,17 @@ void RunBitexactnessTest(int sample_rate_hz,
       output_reference, render_output, kElementErrorBound));
 }
 
+float float_rand() {
+  return std::rand() * 2.f / RAND_MAX - 1;
+}
+
 }  // namespace
 
 class IntelligibilityEnhancerTest : public ::testing::Test {
  protected:
   IntelligibilityEnhancerTest()
       : clear_data_(kSamples), noise_data_(kSamples), orig_data_(kSamples) {
+    std::srand(1);
     enh_.reset(
         new IntelligibilityEnhancer(kSampleRate, kNumChannels, kNumNoiseBins));
   }
@@ -352,8 +357,6 @@ TEST_F(IntelligibilityEnhancerTest, TestRenderUpdate) {
   std::fill(orig_data_.begin(), orig_data_.end(), 0.f);
   std::fill(clear_data_.begin(), clear_data_.end(), 0.f);
   EXPECT_FALSE(CheckUpdate());
-  std::srand(1);
-  auto float_rand = []() { return std::rand() * 2.f / RAND_MAX - 1; };
   std::generate(noise_data_.begin(), noise_data_.end(), float_rand);
   EXPECT_FALSE(CheckUpdate());
   std::generate(clear_data_.begin(), clear_data_.end(), float_rand);
@@ -400,6 +403,29 @@ TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
   enh_->SolveForGainsGivenLambda(lambda, enh_->start_freq_, sols.data());
   for (size_t i = 0; i < enh_->bank_size_; i++) {
     EXPECT_NEAR(kTestNonZeroVarLambdaTop[i], sols[i], kMaxTestError);
+  }
+}
+
+TEST_F(IntelligibilityEnhancerTest, TestNoiseGainHasExpectedResult) {
+  const int kGainDB = 6;
+  const float kGainFactor = std::pow(10.f, kGainDB / 20.f);
+  const float kTolerance = 0.003f;
+  std::vector<float> noise(kNumNoiseBins);
+  std::vector<float> noise_psd(kNumNoiseBins);
+  std::generate(noise.begin(), noise.end(), float_rand);
+  for (size_t i = 0; i < kNumNoiseBins; ++i) {
+    noise_psd[i] = kGainFactor * kGainFactor * noise[i] * noise[i];
+  }
+  float* clear_cursor = clear_data_.data();
+  for (size_t i = 0; i < kNumFramesToProcess; ++i) {
+    enh_->SetCaptureNoiseEstimate(noise, kGainDB);
+    enh_->ProcessRenderAudio(&clear_cursor, kSampleRate, kNumChannels);
+  }
+  const std::vector<float>& estimated_psd =
+      enh_->noise_power_estimator_.power();
+  for (size_t i = 0; i < kNumNoiseBins; ++i) {
+    EXPECT_LT(std::abs(estimated_psd[i] - noise_psd[i]) / noise_psd[i],
+              kTolerance);
   }
 }
 

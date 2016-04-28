@@ -706,8 +706,10 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   public_submodules_->noise_suppression->ProcessCaptureAudio(ca);
   if (constants_.intelligibility_enabled) {
     RTC_DCHECK(public_submodules_->noise_suppression->is_enabled());
+    RTC_DCHECK(public_submodules_->gain_control->is_enabled());
     public_submodules_->intelligibility_enhancer->SetCaptureNoiseEstimate(
-        public_submodules_->noise_suppression->NoiseEstimate());
+        public_submodules_->noise_suppression->NoiseEstimate(),
+        public_submodules_->gain_control->compression_gain_db());
   }
 
   // Ensure that the stream delay was set before the call to the

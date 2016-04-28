@@ -64,7 +64,7 @@ void void_main(int argc, char* argv[]) {
     capture_audio.CopyFrom(noise_buf.channels(), stream_config);
     ns.AnalyzeCaptureAudio(&capture_audio);
     ns.ProcessCaptureAudio(&capture_audio);
-    enh.SetCaptureNoiseEstimate(ns.NoiseEstimate());
+    enh.SetCaptureNoiseEstimate(ns.NoiseEstimate(), 0);
     enh.ProcessRenderAudio(in_buf.channels(), in_file.sample_rate(),
                            in_file.num_channels());
     Interleave(in_buf.channels(), in_buf.num_frames(), in_buf.num_channels(),
