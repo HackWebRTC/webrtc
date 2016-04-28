@@ -274,6 +274,7 @@ static_library("rtc_base") {
     "network.h",
     "networkmonitor.cc",
     "networkmonitor.h",
+    "nullsocketserver.cc",
     "nullsocketserver.h",
     "openssl.h",
     "openssladapter.cc",

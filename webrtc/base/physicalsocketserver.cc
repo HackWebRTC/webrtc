@@ -46,6 +46,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/networkmonitor.h"
+#include "webrtc/base/nullsocketserver.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/winping.h"
 #include "webrtc/base/win32socketinit.h"
@@ -61,6 +62,14 @@ typedef char* SockOptArg;
 #endif
 
 namespace rtc {
+
+std::unique_ptr<SocketServer> SocketServer::CreateDefault() {
+#if defined(__native_client__)
+  return std::unique_ptr<SocketServer>(new rtc::NullSocketServer);
+#else
+  return std::unique_ptr<SocketServer>(new rtc::PhysicalSocketServer);
+#endif
+}
 
 #if defined(WEBRTC_WIN)
 // Standard MTUs, from RFC 1191

@@ -175,8 +175,8 @@ class MessageQueue {
   // init_queue and call DoInit() from their constructor to prevent races
   // with the MessageQueueManager using the object while the vtable is still
   // being created.
-  explicit MessageQueue(SocketServer* ss = NULL,
-                        bool init_queue = true);
+  MessageQueue(SocketServer* ss, bool init_queue);
+  MessageQueue(std::unique_ptr<SocketServer> ss, bool init_queue);
 
   // NOTE: SUBCLASSES OF MessageQueue THAT OVERRIDE Clear MUST CALL
   // DoDestroy() IN THEIR DESTRUCTORS! This is required to avoid a data race
@@ -276,13 +276,13 @@ class MessageQueue {
   bool fDestroyed_;
 
  private:
-  // The SocketServer is not owned by MessageQueue.
+  // The SocketServer might not be owned by MessageQueue.
   SocketServer* ss_ GUARDED_BY(ss_lock_);
-  // If a server isn't supplied in the constructor, use this one.
-  std::unique_ptr<SocketServer> default_ss_;
+  // Used if SocketServer ownership lies with |this|.
+  std::unique_ptr<SocketServer> own_ss_;
   SharedExclusiveLock ss_lock_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(MessageQueue);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MessageQueue);
 };
 
 }  // namespace rtc

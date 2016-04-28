@@ -95,11 +95,9 @@ class Runnable {
 class Thread : public MessageQueue {
  public:
   // Create a new Thread and optionally assign it to the passed SocketServer.
-  // Subclasses that override Clear should pass false for init_queue and call
-  // DoInit() from their constructor to prevent races with the
-  // MessageQueueManager already using the object while the vtable is still
-  // being created.
-  explicit Thread(SocketServer* ss = nullptr, bool init_queue = true);
+  Thread();
+  explicit Thread(SocketServer* ss);
+  explicit Thread(std::unique_ptr<SocketServer> ss);
 
   // NOTE: ALL SUBCLASSES OF Thread MUST CALL Stop() IN THEIR DESTRUCTORS (or
   // guarantee Stop() is explicitly called before the subclass is destroyed).
@@ -107,6 +105,8 @@ class Thread : public MessageQueue {
   // vtable, and the Thread::PreRun calling the virtual method Run().
   ~Thread() override;
 
+  static std::unique_ptr<Thread> CreateWithSocketServer();
+  static std::unique_ptr<Thread> Create();
   static Thread* Current();
 
   // Used to catch performance regressions. Use this to disallow blocking calls
@@ -291,7 +291,7 @@ class Thread : public MessageQueue {
 
 class AutoThread : public Thread {
  public:
-  explicit AutoThread(SocketServer* ss = nullptr);
+  AutoThread();
   ~AutoThread() override;
 
  private:

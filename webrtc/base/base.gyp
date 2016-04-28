@@ -207,6 +207,7 @@
         'network.h',
         'networkmonitor.cc',
         'networkmonitor.h',
+        'nullsocketserver.cc',
         'nullsocketserver.h',
         'openssl.h',
         'openssladapter.cc',

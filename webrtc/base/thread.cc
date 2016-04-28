@@ -22,6 +22,7 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/nullsocketserver.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
@@ -138,7 +139,9 @@ Thread::ScopedDisallowBlockingCalls::~ScopedDisallowBlockingCalls() {
   thread_->SetAllowBlockingCalls(previous_state_);
 }
 
-Thread::Thread(SocketServer* ss, bool init_queue)
+Thread::Thread() : Thread(SocketServer::CreateDefault()) {}
+
+Thread::Thread(SocketServer* ss)
     : MessageQueue(ss, false),
       running_(true, false),
 #if defined(WEBRTC_WIN)
@@ -148,14 +151,34 @@ Thread::Thread(SocketServer* ss, bool init_queue)
       owned_(true),
       blocking_calls_allowed_(true) {
   SetName("Thread", this);  // default name
-  if (init_queue) {
-    DoInit();
-  }
+  DoInit();
+}
+
+Thread::Thread(std::unique_ptr<SocketServer> ss)
+    : MessageQueue(std::move(ss), false),
+      running_(true, false),
+#if defined(WEBRTC_WIN)
+      thread_(NULL),
+      thread_id_(0),
+#endif
+      owned_(true),
+      blocking_calls_allowed_(true) {
+  SetName("Thread", this);  // default name
+  DoInit();
 }
 
 Thread::~Thread() {
   Stop();
   DoDestroy();
+}
+
+std::unique_ptr<Thread> Thread::CreateWithSocketServer() {
+  return std::unique_ptr<Thread>(new Thread(SocketServer::CreateDefault()));
+}
+
+std::unique_ptr<Thread> Thread::Create() {
+  return std::unique_ptr<Thread>(
+      new Thread(std::unique_ptr<SocketServer>(new NullSocketServer())));
 }
 
 bool Thread::SleepMs(int milliseconds) {
@@ -513,7 +536,7 @@ bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager,
   return true;
 }
 
-AutoThread::AutoThread(SocketServer* ss) : Thread(ss) {
+AutoThread::AutoThread() {
   if (!ThreadManager::Instance()->CurrentThread()) {
     ThreadManager::Instance()->SetCurrentThread(this);
   }

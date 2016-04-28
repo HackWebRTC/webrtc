@@ -7,23 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-#if defined(WEBRTC_POSIX)
-#include <sys/time.h>
-#endif
-
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
-#if defined(__native_client__)
-#include "webrtc/base/nullsocketserver.h"
-typedef rtc::NullSocketServer DefaultSocketServer;
-#else
-#include "webrtc/base/physicalsocketserver.h"
-typedef rtc::PhysicalSocketServer DefaultSocketServer;
-#endif
 
 namespace rtc {
 
@@ -115,23 +104,24 @@ void MessageQueueManager::ClearInternal(MessageHandler *handler) {
 
 //------------------------------------------------------------------
 // MessageQueue
-
 MessageQueue::MessageQueue(SocketServer* ss, bool init_queue)
     : fStop_(false), fPeekKeep_(false),
       dmsgq_next_num_(0), fInitialized_(false), fDestroyed_(false), ss_(ss) {
-  if (!ss_) {
-    // Currently, MessageQueue holds a socket server, and is the base class for
-    // Thread.  It seems like it makes more sense for Thread to hold the socket
-    // server, and provide it to the MessageQueue, since the Thread controls
-    // the I/O model, and MQ is agnostic to those details.  Anyway, this causes
-    // messagequeue_unittest to depend on network libraries... yuck.
-    default_ss_.reset(new DefaultSocketServer());
-    ss_ = default_ss_.get();
-  }
+  RTC_DCHECK(ss);
+  // Currently, MessageQueue holds a socket server, and is the base class for
+  // Thread.  It seems like it makes more sense for Thread to hold the socket
+  // server, and provide it to the MessageQueue, since the Thread controls
+  // the I/O model, and MQ is agnostic to those details.  Anyway, this causes
+  // messagequeue_unittest to depend on network libraries... yuck.
   ss_->SetMessageQueue(this);
   if (init_queue) {
     DoInit();
   }
+}
+
+MessageQueue::MessageQueue(std::unique_ptr<SocketServer> ss, bool init_queue)
+    : MessageQueue(ss.get(), init_queue) {
+  own_ss_ = std::move(ss);
 }
 
 MessageQueue::~MessageQueue() {
@@ -178,7 +168,7 @@ void MessageQueue::set_socketserver(SocketServer* ss) {
   // Other places that only read "ss_" can use a shared lock as simultaneous
   // read access is allowed.
   ExclusiveScope es(&ss_lock_);
-  ss_ = ss ? ss : default_ss_.get();
+  ss_ = ss ? ss : own_ss_.get();
   ss_->SetMessageQueue(this);
 }
 
