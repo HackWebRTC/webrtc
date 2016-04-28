@@ -77,6 +77,22 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (decode_ms != -1)
     RTC_LOGGED_HISTOGRAM_COUNTS_1000("WebRTC.Video.DecodeTimeInMs", decode_ms);
 
+  int jb_delay_ms = jitter_buffer_delay_counter_.Avg(kMinRequiredDecodeSamples);
+  if (jb_delay_ms != -1) {
+    RTC_LOGGED_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
+                                      jb_delay_ms);
+  }
+  int target_delay_ms = target_delay_counter_.Avg(kMinRequiredDecodeSamples);
+  if (target_delay_ms != -1) {
+    RTC_LOGGED_HISTOGRAM_COUNTS_10000("WebRTC.Video.TargetDelayInMs",
+                                      target_delay_ms);
+  }
+  int current_delay_ms = current_delay_counter_.Avg(kMinRequiredDecodeSamples);
+  if (current_delay_ms != -1) {
+    RTC_LOGGED_HISTOGRAM_COUNTS_10000("WebRTC.Video.CurrentDelayInMs",
+                                      current_delay_ms);
+  }
+
   int delay_ms = delay_counter_.Avg(kMinRequiredDecodeSamples);
   if (delay_ms != -1)
     RTC_LOGGED_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", delay_ms);
@@ -170,6 +186,9 @@ void ReceiveStatisticsProxy::OnDecoderTiming(int decode_ms,
   stats_.min_playout_delay_ms = min_playout_delay_ms;
   stats_.render_delay_ms = render_delay_ms;
   decode_time_counter_.Add(decode_ms);
+  jitter_buffer_delay_counter_.Add(jitter_buffer_ms);
+  target_delay_counter_.Add(target_delay_ms);
+  current_delay_counter_.Add(current_delay_ms);
   // Network delay (rtt/2) + target_delay_ms (jitter delay + decode time +
   // render delay).
   delay_counter_.Add(target_delay_ms + rtt_ms / 2);

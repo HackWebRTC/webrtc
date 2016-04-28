@@ -108,6 +108,9 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   SampleCounter render_height_counter_ GUARDED_BY(crit_);
   SampleCounter sync_offset_counter_ GUARDED_BY(crit_);
   SampleCounter decode_time_counter_ GUARDED_BY(crit_);
+  SampleCounter jitter_buffer_delay_counter_ GUARDED_BY(crit_);
+  SampleCounter target_delay_counter_ GUARDED_BY(crit_);
+  SampleCounter current_delay_counter_ GUARDED_BY(crit_);
   SampleCounter delay_counter_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
   QpCounters qp_counters_;  // Only accessed on the decoding thread.
