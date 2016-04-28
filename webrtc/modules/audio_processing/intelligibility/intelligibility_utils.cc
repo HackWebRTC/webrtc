@@ -22,16 +22,15 @@ namespace intelligibility {
 
 namespace {
 
+const float kMinFactor = 0.01f;
+const float kMaxFactor = 1000.f;
+
 // Return |current| changed towards |target|, with the relative change being at
 // most |limit|.
 float UpdateFactor(float target, float current, float limit) {
   float gain = target / (current + std::numeric_limits<float>::epsilon());
-  if (gain < 1.f - limit) {
-    gain = 1.f - limit;
-  } else if (gain > 1.f + limit) {
-    gain = 1.f + limit;
-  }
-  return current * gain + std::numeric_limits<float>::epsilon();
+  gain = std::min(std::max(gain, 1.f - limit), 1.f + limit);
+  return std::min(std::max(current * gain, kMinFactor), kMaxFactor);;
 }
 
 }  // namespace
