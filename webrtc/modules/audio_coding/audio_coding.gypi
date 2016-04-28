@@ -69,6 +69,50 @@
   },
   'targets': [
     {
+      'target_name': 'audio_decoder_factory_interface',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
+      ],
+      'include_dirs': [
+        '<(webrtc_root)',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '<(webrtc_root)',
+        ],
+      },
+      'sources': [
+        'codecs/audio_decoder_factory.h',
+        'codecs/audio_format.cc',
+        'codecs/audio_format.h',
+      ],
+    },
+    {
+      'target_name': 'builtin_audio_decoder_factory',
+      'type': 'static_library',
+      'defines': [
+        '<@(audio_codec_defines)',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<@(audio_codec_dependencies)',
+        'audio_decoder_factory_interface',
+      ],
+      'include_dirs': [
+        '<(webrtc_root)',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '<(webrtc_root)',
+        ],
+      },
+      'sources': [
+        'codecs/builtin_audio_decoder_factory.cc',
+        'codecs/builtin_audio_decoder_factory.h',
+      ],
+    },
+    {
       'target_name': 'rent_a_codec',
       'type': 'static_library',
       'defines': [

@@ -39,6 +39,33 @@ if (!build_with_mozilla && !build_with_chromium) {
   audio_codec_deps += [ ":red" ]
 }
 
+source_set("audio_decoder_factory_interface") {
+  sources = [
+    "codecs/audio_decoder_factory.h",
+    "codecs/audio_format.cc",
+    "codecs/audio_format.h",
+  ]
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+  deps = [
+    "../..:webrtc_common",
+  ]
+}
+
+source_set("builtin_audio_decoder_factory") {
+  sources = [
+    "codecs/builtin_audio_decoder_factory.cc",
+    "codecs/builtin_audio_decoder_factory.h",
+  ]
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+  deps = [
+           "../..:webrtc_common",
+           ":audio_decoder_factory_interface",
+         ] + audio_codec_deps
+  defines = audio_codec_defines
+}
+
 source_set("rent_a_codec") {
   sources = [
     "acm2/acm_codec_database.cc",
