@@ -12,7 +12,9 @@
 # Every variable here needs to be present in the corresponding file in
 # build_overrides/ of Chromium.
 
-build_with_chromium = false
+# The build_with_chromium variable is now located in build.gni (now also used
+# by BoringSSL).
+import("//build_overrides/build.gni")
 
 # Excluded in Chromium since its prerequisites don't require Pulse Audio.
 rtc_include_pulse_audio = true
