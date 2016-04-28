@@ -45,4 +45,24 @@ const SSLCertificate& RTCCertificate::ssl_certificate() const {
   return identity_->certificate();
 }
 
+RTCCertificatePEM RTCCertificate::ToPEM() const {
+  return RTCCertificatePEM(identity_->PrivateKeyToPEMString(),
+                           ssl_certificate().ToPEMString());
+}
+
+scoped_refptr<RTCCertificate> RTCCertificate::FromPEM(
+    const RTCCertificatePEM& pem) {
+  std::unique_ptr<SSLIdentity> identity(SSLIdentity::FromPEMStrings(
+      pem.private_key(), pem.certificate()));
+  return new RefCountedObject<RTCCertificate>(identity.release());
+}
+
+bool RTCCertificate::operator==(const RTCCertificate& certificate) const {
+  return *this->identity_ == *certificate.identity_;
+}
+
+bool RTCCertificate::operator!=(const RTCCertificate& certificate) const {
+  return !(*this == certificate);
+}
+
 }  // namespace rtc

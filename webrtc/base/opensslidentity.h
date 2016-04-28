@@ -34,12 +34,20 @@ class OpenSSLKeyPair {
   }
 
   static OpenSSLKeyPair* Generate(const KeyParams& key_params);
+  // Constructs a key pair from the private key PEM string. This must not result
+  // in missing public key parameters. Returns null on error.
+  static OpenSSLKeyPair* FromPrivateKeyPEMString(
+      const std::string& pem_string);
 
   virtual ~OpenSSLKeyPair();
 
   virtual OpenSSLKeyPair* GetReference();
 
   EVP_PKEY* pkey() const { return pkey_; }
+  std::string PrivateKeyToPEMString() const;
+  std::string PublicKeyToPEMString() const;
+  bool operator==(const OpenSSLKeyPair& other) const;
+  bool operator!=(const OpenSSLKeyPair& other) const;
 
  private:
   void AddReference();
@@ -69,8 +77,9 @@ class OpenSSLCertificate : public SSLCertificate {
   X509* x509() const { return x509_; }
 
   std::string ToPEMString() const override;
-
   void ToDER(Buffer* der_buffer) const override;
+  bool operator==(const OpenSSLCertificate& other) const;
+  bool operator!=(const OpenSSLCertificate& other) const;
 
   // Compute the digest of the certificate given algorithm
   bool ComputeDigest(const std::string& algorithm,
@@ -115,6 +124,11 @@ class OpenSSLIdentity : public SSLIdentity {
 
   // Configure an SSL context object to use our key and certificate.
   bool ConfigureIdentity(SSL_CTX* ctx);
+
+  std::string PrivateKeyToPEMString() const override;
+  std::string PublicKeyToPEMString() const override;
+  bool operator==(const OpenSSLIdentity& other) const;
+  bool operator!=(const OpenSSLIdentity& other) const;
 
  private:
   OpenSSLIdentity(OpenSSLKeyPair* key_pair, OpenSSLCertificate* certificate);

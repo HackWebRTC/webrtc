@@ -187,6 +187,14 @@ SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
   return OpenSSLIdentity::FromPEMStrings(private_key, certificate);
 }
 
+bool operator==(const SSLIdentity& a, const SSLIdentity& b) {
+  return static_cast<const OpenSSLIdentity&>(a) ==
+         static_cast<const OpenSSLIdentity&>(b);
+}
+bool operator!=(const SSLIdentity& a, const SSLIdentity& b) {
+  return !(a == b);
+}
+
 #else  // !SSL_USE_OPENSSL
 
 #error "No SSL implementation"

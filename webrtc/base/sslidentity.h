@@ -227,6 +227,8 @@ class SSLIdentity {
 
   // Returns a temporary reference to the certificate.
   virtual const SSLCertificate& certificate() const = 0;
+  virtual std::string PrivateKeyToPEMString() const = 0;
+  virtual std::string PublicKeyToPEMString() const = 0;
 
   // Helpers for parsing converting between PEM and DER format.
   static bool PemToDer(const std::string& pem_type,
@@ -236,6 +238,9 @@ class SSLIdentity {
                               const unsigned char* data,
                               size_t length);
 };
+
+bool operator==(const SSLIdentity& a, const SSLIdentity& b);
+bool operator!=(const SSLIdentity& a, const SSLIdentity& b);
 
 // Convert from ASN1 time as restricted by RFC 5280 to seconds from 1970-01-01
 // 00.00 ("epoch").  If the ASN1 time cannot be read, return -1.  The data at

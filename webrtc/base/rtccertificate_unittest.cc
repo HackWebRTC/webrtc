@@ -35,6 +35,13 @@ class RTCCertificateTest : public testing::Test {
   ~RTCCertificateTest() {}
 
  protected:
+  scoped_refptr<RTCCertificate> GenerateECDSA() {
+    std::unique_ptr<SSLIdentity> identity(
+        SSLIdentity::Generate(kTestCertCommonName, KeyParams::ECDSA()));
+    RTC_CHECK(identity);
+    return RTCCertificate::Create(std::move(identity));
+  }
+
   // Timestamp note:
   //   All timestamps in this unittest are expressed in number of seconds since
   // epoch, 1970-01-01T00:00:00Z (UTC). The RTCCertificate interface uses ms,
@@ -85,10 +92,7 @@ class RTCCertificateTest : public testing::Test {
 TEST_F(RTCCertificateTest, NewCertificateNotExpired) {
   // Generate a real certificate without specifying the expiration time.
   // Certificate type doesn't matter, using ECDSA because it's fast to generate.
-  std::unique_ptr<SSLIdentity> identity(
-      SSLIdentity::Generate(kTestCertCommonName, KeyParams::ECDSA()));
-  scoped_refptr<RTCCertificate> certificate =
-      RTCCertificate::Create(std::move(identity));
+  scoped_refptr<RTCCertificate> certificate = GenerateECDSA();
 
   uint64_t now = NowSeconds();
   EXPECT_FALSE(HasExpiredSeconds(certificate, now));
@@ -113,6 +117,24 @@ TEST_F(RTCCertificateTest, ExpiresInOneSecond) {
   EXPECT_FALSE(HasExpiredSeconds(certificate, now));
   // In 2s it should have expired.
   EXPECT_TRUE(HasExpiredSeconds(certificate, now + 2));
+}
+
+TEST_F(RTCCertificateTest, DifferentCertificatesNotEqual) {
+  scoped_refptr<RTCCertificate> a = GenerateECDSA();
+  scoped_refptr<RTCCertificate> b = GenerateECDSA();
+  EXPECT_TRUE(*a != *b);
+}
+
+TEST_F(RTCCertificateTest, CloneWithPEMSerialization) {
+  scoped_refptr<RTCCertificate> orig = GenerateECDSA();
+
+  // To PEM.
+  RTCCertificatePEM orig_pem = orig->ToPEM();
+  // Clone from PEM.
+  scoped_refptr<RTCCertificate> clone = RTCCertificate::FromPEM(orig_pem);
+  EXPECT_TRUE(clone);
+  EXPECT_TRUE(*orig == *clone);
+  EXPECT_EQ(orig->Expires(), clone->Expires());
 }
 
 }  // namespace rtc

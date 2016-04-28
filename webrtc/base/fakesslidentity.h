@@ -99,6 +99,18 @@ class FakeSSLIdentity : public rtc::SSLIdentity {
     return new FakeSSLIdentity(*this);
   }
   virtual const FakeSSLCertificate& certificate() const { return cert_; }
+  virtual std::string PrivateKeyToPEMString() const {
+    RTC_NOTREACHED();  // Not implemented.
+    return "";
+  }
+  virtual std::string PublicKeyToPEMString() const {
+    RTC_NOTREACHED();  // Not implemented.
+    return "";
+  }
+  virtual bool operator==(const SSLIdentity& other) const {
+    RTC_NOTREACHED();  // Not implemented.
+    return false;
+  }
  private:
   FakeSSLCertificate cert_;
 };
