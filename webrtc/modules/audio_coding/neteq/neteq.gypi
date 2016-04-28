@@ -73,8 +73,6 @@
         'buffer_level_filter.h',
         'comfort_noise.cc',
         'comfort_noise.h',
-        'cross_correlation.cc',
-        'cross_correlation.h',
         'decision_logic.cc',
         'decision_logic.h',
         'decision_logic_fax.cc',

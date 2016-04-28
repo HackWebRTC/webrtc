@@ -19,7 +19,6 @@
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
-#include "webrtc/modules/audio_coding/neteq/cross_correlation.h"
 #include "webrtc/modules/audio_coding/neteq/dsp_helper.h"
 #include "webrtc/modules/audio_coding/neteq/random_vector.h"
 #include "webrtc/modules/audio_coding/neteq/statistics_calculator.h"
@@ -380,10 +379,12 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
   InitializeForAnExpandPeriod();
 
   // Calculate correlation in downsampled domain (4 kHz sample rate).
+  int correlation_scale;
   size_t correlation_length = 51;  // TODO(hlundin): Legacy bit-exactness.
   // If it is decided to break bit-exactness |correlation_length| should be
   // initialized to the return value of Correlation().
-  Correlation(audio_history, signal_length, correlation_vector);
+  Correlation(audio_history, signal_length, correlation_vector,
+              &correlation_scale);
 
   // Find peaks in correlation vector.
   DspHelper::PeakDetection(correlation_vector, correlation_length,
@@ -449,12 +450,21 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
 
   for (size_t channel_ix = 0; channel_ix < num_channels_; ++channel_ix) {
     ChannelParameters& parameters = channel_parameters_[channel_ix];
+    // Calculate suitable scaling.
+    int16_t signal_max = WebRtcSpl_MaxAbsValueW16(
+        &audio_history[signal_length - correlation_length - start_index
+                       - correlation_lags],
+                       correlation_length + start_index + correlation_lags - 1);
+    correlation_scale = (31 - WebRtcSpl_NormW32(signal_max * signal_max)) +
+        (31 - WebRtcSpl_NormW32(static_cast<int32_t>(correlation_length))) - 31;
+    correlation_scale = std::max(0, correlation_scale);
 
     // Calculate the correlation, store in |correlation_vector2|.
-    int correlation_scale = CrossCorrelationWithAutoShift(
+    WebRtcSpl_CrossCorrelation(
+        correlation_vector2,
         &(audio_history[signal_length - correlation_length]),
         &(audio_history[signal_length - correlation_length - start_index]),
-        correlation_length, correlation_lags, -1, correlation_vector2);
+        correlation_length, correlation_lags, correlation_scale, -1);
 
     // Find maximizing index.
     best_index = WebRtcSpl_MaxIndexW32(correlation_vector2, correlation_lags);
@@ -572,6 +582,13 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
     }
 
     // Calculate the LPC and the gain of the filters.
+    // Calculate scale value needed for auto-correlation.
+    correlation_scale = WebRtcSpl_MaxAbsValueW16(
+        &(audio_history[signal_length - fs_mult_lpc_analysis_len]),
+        fs_mult_lpc_analysis_len);
+
+    correlation_scale = std::min(16 - WebRtcSpl_NormW32(correlation_scale), 0);
+    correlation_scale = std::max(correlation_scale * 2 + 7, 0);
 
     // Calculate kUnvoicedLpcOrder + 1 lags of the auto-correlation function.
     size_t temp_index = signal_length - fs_mult_lpc_analysis_len -
@@ -584,9 +601,11 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
     memcpy(&temp_signal[kUnvoicedLpcOrder],
            &audio_history[temp_index + kUnvoicedLpcOrder],
            sizeof(int16_t) * fs_mult_lpc_analysis_len);
-    correlation_scale = CrossCorrelationWithAutoShift(
-        &temp_signal[kUnvoicedLpcOrder], &temp_signal[kUnvoicedLpcOrder],
-        fs_mult_lpc_analysis_len, kUnvoicedLpcOrder + 1, -1, auto_correlation);
+    WebRtcSpl_CrossCorrelation(auto_correlation,
+                               &temp_signal[kUnvoicedLpcOrder],
+                               &temp_signal[kUnvoicedLpcOrder],
+                               fs_mult_lpc_analysis_len, kUnvoicedLpcOrder + 1,
+                               correlation_scale, -1);
     delete [] temp_signal;
 
     // Verify that variance is positive.
@@ -747,7 +766,8 @@ Expand::ChannelParameters::ChannelParameters()
 
 void Expand::Correlation(const int16_t* input,
                          size_t input_length,
-                         int16_t* output) const {
+                         int16_t* output,
+                         int* output_scale) const {
   // Set parameters depending on sample rate.
   const int16_t* filter_coefficients;
   size_t num_coefficients;
@@ -794,11 +814,13 @@ void Expand::Correlation(const int16_t* input,
                               downsampled_input, norm_shift);
 
   int32_t correlation[kNumCorrelationLags];
-  CrossCorrelationWithAutoShift(
+  static const int kCorrelationShift = 6;
+  WebRtcSpl_CrossCorrelation(
+      correlation,
       &downsampled_input[kDownsampledLength - kCorrelationLength],
       &downsampled_input[kDownsampledLength - kCorrelationLength
           - kCorrelationStartLag],
-      kCorrelationLength, kNumCorrelationLags, -1, correlation);
+      kCorrelationLength, kNumCorrelationLags, kCorrelationShift, -1);
 
   // Normalize and move data from 32-bit to 16-bit vector.
   int32_t max_correlation = WebRtcSpl_MaxAbsValueW32(correlation,
@@ -807,6 +829,8 @@ void Expand::Correlation(const int16_t* input,
       std::max(18 - WebRtcSpl_NormW32(max_correlation), 0));
   WebRtcSpl_VectorBitShiftW32ToW16(output, kNumCorrelationLags, correlation,
                                    norm_shift2);
+  // Total scale factor (right shifts) of correlation value.
+  *output_scale = 2 * norm_shift + kCorrelationShift + norm_shift2;
 }
 
 void Expand::UpdateLagIndex() {

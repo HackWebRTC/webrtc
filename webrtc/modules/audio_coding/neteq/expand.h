@@ -120,10 +120,12 @@ class Expand {
 
   // Calculate the auto-correlation of |input|, with length |input_length|
   // samples. The correlation is calculated from a downsampled version of
-  // |input|, and is written to |output|.
+  // |input|, and is written to |output|. The scale factor is written to
+  // |output_scale|.
   void Correlation(const int16_t* input,
                    size_t input_length,
-                   int16_t* output) const;
+                   int16_t* output,
+                   int* output_scale) const;
 
   void UpdateLagIndex();
 
