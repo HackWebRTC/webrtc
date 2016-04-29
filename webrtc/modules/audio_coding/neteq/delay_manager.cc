@@ -24,12 +24,13 @@
 namespace webrtc {
 
 DelayManager::DelayManager(size_t max_packets_in_buffer,
-                           DelayPeakDetector* peak_detector)
+                           DelayPeakDetector* peak_detector,
+                           const TickTimer* tick_timer)
     : first_packet_received_(false),
       max_packets_in_buffer_(max_packets_in_buffer),
       iat_vector_(kMaxIat + 1, 0),
       iat_factor_(0),
-      packet_iat_count_ms_(0),
+      tick_timer_(tick_timer),
       base_target_level_(4),  // In Q0 domain.
       target_level_(base_target_level_ << 8),  // In Q8 domain.
       packet_len_ms_(0),
@@ -41,7 +42,6 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
       maximum_delay_ms_(target_level_),
       iat_cumulative_sum_(0),
       max_iat_cumulative_sum_(0),
-      max_timer_ms_(0),
       peak_detector_(*peak_detector),
       last_pack_cng_or_dtmf_(1) {
   assert(peak_detector);  // Should never be NULL.
@@ -79,7 +79,7 @@ int DelayManager::Update(uint16_t sequence_number,
 
   if (!first_packet_received_) {
     // Prepare for next packet arrival.
-    packet_iat_count_ms_ = 0;
+    packet_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
     last_seq_no_ = sequence_number;
     last_timestamp_ = timestamp;
     first_packet_received_ = true;
@@ -106,7 +106,7 @@ int DelayManager::Update(uint16_t sequence_number,
     // Calculate inter-arrival time (IAT) in integer "packet times"
     // (rounding down). This is the value used as index to the histogram
     // vector |iat_vector_|.
-    int iat_packets = packet_iat_count_ms_ / packet_len_ms;
+    int iat_packets = packet_iat_stopwatch_->ElapsedMs() / packet_len_ms;
 
     if (streaming_mode_) {
       UpdateCumulativeSums(packet_len_ms, sequence_number);
@@ -137,7 +137,7 @@ int DelayManager::Update(uint16_t sequence_number,
   }  // End if (packet_len_ms > 0).
 
   // Prepare for next packet arrival.
-  packet_iat_count_ms_ = 0;
+  packet_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
   last_seq_no_ = sequence_number;
   last_timestamp_ = timestamp;
   return 0;
@@ -147,7 +147,8 @@ void DelayManager::UpdateCumulativeSums(int packet_len_ms,
                                         uint16_t sequence_number) {
   // Calculate IAT in Q8, including fractions of a packet (i.e., more
   // accurate than |iat_packets|.
-  int iat_packets_q8 = (packet_iat_count_ms_ << 8) / packet_len_ms;
+  int iat_packets_q8 =
+      (packet_iat_stopwatch_->ElapsedMs() << 8) / packet_len_ms;
   // Calculate cumulative sum IAT with sequence number compensation. The sum
   // is zero if there is no clock-drift.
   iat_cumulative_sum_ += (iat_packets_q8 -
@@ -159,9 +160,9 @@ void DelayManager::UpdateCumulativeSums(int packet_len_ms,
   if (iat_cumulative_sum_ > max_iat_cumulative_sum_) {
     // Found a new maximum.
     max_iat_cumulative_sum_ = iat_cumulative_sum_;
-    max_timer_ms_ = 0;
+    max_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
   }
-  if (max_timer_ms_ > kMaxStreamingPeakPeriodMs) {
+  if (max_iat_stopwatch_->ElapsedMs() > kMaxStreamingPeakPeriodMs) {
     // Too long since the last maximum was observed; decrease max value.
     max_iat_cumulative_sum_ -= kCumulativeSumDrift;
   }
@@ -299,7 +300,7 @@ int DelayManager::SetPacketAudioLength(int length_ms) {
   }
   packet_len_ms_ = length_ms;
   peak_detector_.SetPacketAudioLength(packet_len_ms_);
-  packet_iat_count_ms_ = 0;
+  packet_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
   last_pack_cng_or_dtmf_ = 1;  // TODO(hlundin): Legacy. Remove?
   return 0;
 }
@@ -311,8 +312,8 @@ void DelayManager::Reset() {
   peak_detector_.Reset();
   ResetHistogram();  // Resets target levels too.
   iat_factor_ = 0;  // Adapt the histogram faster for the first few packets.
-  packet_iat_count_ms_ = 0;
-  max_timer_ms_ = 0;
+  packet_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
+  max_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
   iat_cumulative_sum_ = 0;
   max_iat_cumulative_sum_ = 0;
   last_pack_cng_or_dtmf_ = 1;
@@ -340,12 +341,9 @@ bool DelayManager::PeakFound() const {
   return peak_detector_.peak_found();
 }
 
-void DelayManager::UpdateCounters(int elapsed_time_ms) {
-  packet_iat_count_ms_ += elapsed_time_ms;
-  max_timer_ms_ += elapsed_time_ms;
+void DelayManager::ResetPacketIatCount() {
+  packet_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
 }
-
-void DelayManager::ResetPacketIatCount() { packet_iat_count_ms_ = 0; }
 
 // Note that |low_limit| and |higher_limit| are not assigned to
 // |minimum_delay_ms_| and |maximum_delay_ms_| defined by the client of this

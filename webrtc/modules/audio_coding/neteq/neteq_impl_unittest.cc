@@ -91,7 +91,7 @@ class NetEqImplTest : public ::testing::Test {
 
     if (use_mock_delay_manager_) {
       std::unique_ptr<MockDelayManager> mock(new MockDelayManager(
-          config_.max_packets_in_buffer, delay_peak_detector_));
+          config_.max_packets_in_buffer, delay_peak_detector_, tick_timer_));
       mock_delay_manager_ = mock.get();
       EXPECT_CALL(*mock_delay_manager_, set_streaming_mode(false)).Times(1);
       deps.delay_manager = std::move(mock);

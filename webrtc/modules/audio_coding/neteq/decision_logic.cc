@@ -152,10 +152,6 @@ void DecisionLogic::ExpandDecision(Operations operation) {
 
 void DecisionLogic::FilterBufferLevel(size_t buffer_size_samples,
                                       Modes prev_mode) {
-  const int elapsed_time_ms =
-      static_cast<int>(output_size_samples_ / (8 * fs_mult_));
-  delay_manager_->UpdateCounters(elapsed_time_ms);
-
   // Do not update buffer history if currently playing CNG since it will bias
   // the filtered buffer level.
   if ((prev_mode != kModeRfc3389Cng) && (prev_mode != kModeCodecInternalCng)) {

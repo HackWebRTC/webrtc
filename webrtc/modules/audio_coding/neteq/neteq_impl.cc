@@ -60,7 +60,8 @@ NetEqImpl::Dependencies::Dependencies(const NetEq::Config& config)
       decoder_database(new DecoderDatabase),
       delay_peak_detector(new DelayPeakDetector(tick_timer.get())),
       delay_manager(new DelayManager(config.max_packets_in_buffer,
-                                     delay_peak_detector.get())),
+                                     delay_peak_detector.get(),
+                                     tick_timer.get())),
       dtmf_buffer(new DtmfBuffer(config.sample_rate_hz)),
       dtmf_tone_generator(new DtmfToneGenerator),
       packet_buffer(

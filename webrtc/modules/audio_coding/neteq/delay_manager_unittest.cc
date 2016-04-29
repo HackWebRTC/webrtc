@@ -51,7 +51,7 @@ DelayManagerTest::DelayManagerTest()
 void DelayManagerTest::SetUp() {
   EXPECT_CALL(detector_, Reset())
             .Times(1);
-  dm_ = new DelayManager(kMaxNumberOfPackets, &detector_);
+  dm_ = new DelayManager(kMaxNumberOfPackets, &detector_, &tick_timer_);
 }
 
 void DelayManagerTest::SetPacketAudioLength(int lengt_ms) {
@@ -67,7 +67,6 @@ void DelayManagerTest::InsertNextPacket() {
 
 void DelayManagerTest::IncreaseTime(int inc_ms) {
   for (int t = 0; t < inc_ms; t += kTimeStepMs) {
-    dm_->UpdateCounters(kTimeStepMs);
     tick_timer_.Increment();
   }
 }
