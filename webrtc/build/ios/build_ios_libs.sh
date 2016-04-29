@@ -18,6 +18,7 @@ SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 WEBRTC_BASE_DIR=${SCRIPT_DIR}/../../..
 GYP_WEBRTC_SCRIPT=${WEBRTC_BASE_DIR}/webrtc/build/gyp_webrtc.py
 MERGE_SCRIPT=${SCRIPT_DIR}/merge_ios_libs.py
+LICENSE_SCRIPT=${SCRIPT_DIR}/generate_licenses.py
 
 function check_preconditions {
   # Check for Darwin.
@@ -261,5 +262,8 @@ else
     ln -sf ${INPUT_HEADER_DIR} ${OUTPUT_HEADER_DIR}/WebRTC
   fi
 fi
+
+echo "Generating LICENSE.html."
+${LICENSE_SCRIPT} ${OUTPUT_DIR}/arm64_libs ${OUTPUT_DIR}
 
 echo "Done!"
