@@ -138,6 +138,9 @@ class VCMProtectionMethod {
 
   virtual int MaxFramesFec() const { return 1; }
 
+  // Updates content metrics
+  void UpdateContentMetrics(const VideoContentMetrics* contentMetrics);
+
  protected:
   uint8_t _effectivePacketLoss;
   uint8_t _protectionFactorK;
@@ -146,6 +149,7 @@ class VCMProtectionMethod {
   float _scaleProtKey;
   int32_t _maxPayloadSize;
 
+  VCMQmRobustness* _qmRobustness;
   bool _useUepProtectionK;
   bool _useUepProtectionD;
   float _corrFecCost;

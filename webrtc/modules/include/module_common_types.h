@@ -432,6 +432,7 @@ enum FecMaskType {
 // Struct containing forward error correction settings.
 struct FecProtectionParams {
   int fec_rate;
+  bool use_uep_protection;
   int max_fec_frames;
   FecMaskType fec_mask_type;
 };

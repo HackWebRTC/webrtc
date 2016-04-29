@@ -34,10 +34,19 @@ VCMProtectionMethod::VCMProtectionMethod()
       _protectionFactorD(0),
       _scaleProtKey(2.0f),
       _maxPayloadSize(1460),
+      _qmRobustness(new VCMQmRobustness()),
+      _useUepProtectionK(false),
+      _useUepProtectionD(true),
       _corrFecCost(1.0),
       _type(kNone) {}
 
-VCMProtectionMethod::~VCMProtectionMethod() {}
+VCMProtectionMethod::~VCMProtectionMethod() {
+  delete _qmRobustness;
+}
+void VCMProtectionMethod::UpdateContentMetrics(
+    const VideoContentMetrics* contentMetrics) {
+  _qmRobustness->UpdateContent(contentMetrics);
+}
 
 VCMNackFecMethod::VCMNackFecMethod(int64_t lowRttNackThresholdMs,
                                    int64_t highRttNackThresholdMs)
@@ -324,6 +333,17 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
     codeRateDelta = kPacketLossMax - 1;
   }
 
+  float adjustFec = 1.0f;
+  // Avoid additional adjustments when layers are active.
+  // TODO(mikhal/marco): Update adjusmtent based on layer info.
+  if (parameters->numLayers == 1) {
+    adjustFec = _qmRobustness->AdjustFecFactor(
+        codeRateDelta, parameters->bitRate, parameters->frameRate,
+        parameters->rtt, packetLoss);
+  }
+
+  codeRateDelta = static_cast<uint8_t>(codeRateDelta * adjustFec);
+
   // For Key frame:
   // Effectively at a higher rate, so we scale/boost the rate
   // The boost factor may depend on several factors: ratio of packet
@@ -390,6 +410,13 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   if (estNumFecGen < 0.9f && _protectionFactorD < minProtLevelFec) {
     _corrFecCost = 0.0f;
   }
+
+  // TODO(marpan): Set the UEP protection on/off for Key and Delta frames
+  _useUepProtectionK = _qmRobustness->SetUepProtection(
+      codeRateKey, parameters->bitRate, packetLoss, 0);
+
+  _useUepProtectionD = _qmRobustness->SetUepProtection(
+      codeRateDelta, parameters->bitRate, packetLoss, 1);
 
   // DONE WITH FEC PROTECTION SETTINGS
   return true;
