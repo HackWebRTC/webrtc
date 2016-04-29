@@ -85,12 +85,6 @@
         'swap_queue.h',
         'systeminfo.cc',
         'systeminfo.h',
-        'task_queue.h',
-        'task_queue_libevent.cc',
-        'task_queue_gcd.cc',
-        'task_queue_posix.cc',
-        'task_queue_posix.h',
-        'task_queue_win.cc',
         'template_util.h',
         'thread_annotations.h',
         'thread_checker.h',
@@ -118,19 +112,6 @@
             'logging.h',
             'logging_mac.mm',
           ],
-          'conditions': [
-            ['OS!="win" and OS!="mac" and OS!="ios"', {
-              'dependencies': [
-                '<(DEPTH)/base/third_party/libevent/libevent.gyp:libevent',
-              ],
-            }],
-          ],
-        }],
-        ['OS=="mac" or OS=="ios" or OS=="win"', {
-          'sources!': [ 'task_queue_libevent.cc' ],
-        }],
-        ['OS=="linux" or OS=="android" or OS=="win"', {
-          'sources!': [ 'task_queue_gcd.cc' ],
         }],
         ['OS=="mac" and build_with_chromium==0', {
           'all_dependent_settings': {
