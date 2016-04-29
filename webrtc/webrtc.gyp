@@ -148,7 +148,6 @@
         ['build_with_chromium==1', {
           'dependencies': [
             '<(webrtc_root)/modules/modules.gyp:video_capture',
-            '<(webrtc_root)/modules/modules.gyp:video_render',
           ],
         }],
       ],

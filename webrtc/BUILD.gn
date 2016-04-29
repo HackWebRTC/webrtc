@@ -204,10 +204,7 @@ source_set("webrtc") {
   ]
 
   if (build_with_chromium) {
-    deps += [
-      "modules/video_capture",
-      "modules/video_render",
-    ]
+    deps += [ "modules/video_capture" ]
   }
 
   if (rtc_enable_protobuf) {
@@ -222,7 +219,6 @@ if (!build_with_chromium) {
     deps = [
       ":webrtc",
       "modules/video_capture:video_capture_internal_impl",
-      "modules/video_render:video_render_internal_impl",
       "test",
     ]
   }
