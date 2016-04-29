@@ -87,15 +87,6 @@ class RTPPayloadRegistry {
 
   bool IsRtx(const RTPHeader& header) const;
 
-  // DEPRECATED. Use RestoreOriginalPacket below that takes a uint8_t*
-  // restored_packet, instead of a uint8_t**.
-  // TODO(noahric): Remove this when all callers have been updated.
-  bool RestoreOriginalPacket(uint8_t** restored_packet,
-                             const uint8_t* packet,
-                             size_t* packet_length,
-                             uint32_t original_ssrc,
-                             const RTPHeader& header) const;
-
   bool RestoreOriginalPacket(uint8_t* restored_packet,
                              const uint8_t* packet,
                              size_t* packet_length,
@@ -112,15 +103,6 @@ class RTPPayloadRegistry {
 
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
 
-  // DEPRECATED. Use PayloadTypeToPayload below that returns const Payload*
-  // instead of taking output parameter.
-  // TODO(danilchap): Remove this when all callers have been updated.
-  bool PayloadTypeToPayload(const uint8_t payload_type,
-                            RtpUtility::Payload*& payload) const {  // NOLINT
-    payload =
-        const_cast<RtpUtility::Payload*>(PayloadTypeToPayload(payload_type));
-    return payload != nullptr;
-  }
   const RtpUtility::Payload* PayloadTypeToPayload(uint8_t payload_type) const;
 
   void ResetLastReceivedPayloadTypes() {

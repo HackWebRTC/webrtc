@@ -52,11 +52,6 @@ class RtpHeaderParser {
   bool ParseRtcp(RTPHeader* header) const;
   bool Parse(RTPHeader* parsedPacket,
              RtpHeaderExtensionMap* ptrExtensionMap = nullptr) const;
-  RTC_DEPRECATED bool Parse(
-      RTPHeader& parsedPacket,  // NOLINT(runtime/references)
-      RtpHeaderExtensionMap* ptrExtensionMap = nullptr) const {
-    return Parse(&parsedPacket, ptrExtensionMap);
-  }
 
  private:
   void ParseOneByteExtensionHeader(RTPHeader* parsedPacket,
