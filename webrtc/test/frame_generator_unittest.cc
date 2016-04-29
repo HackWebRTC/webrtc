@@ -58,17 +58,17 @@ class FrameGeneratorTest : public ::testing::Test {
   void CheckFrameAndMutate(VideoFrame* frame, uint8_t y, uint8_t u, uint8_t v) {
     // Check that frame is valid, has the correct color and timestamp are clean.
     ASSERT_NE(nullptr, frame);
-    const uint8_t* buffer;
+    uint8_t* buffer;
     ASSERT_EQ(y_size, frame->allocated_size(PlaneType::kYPlane));
-    buffer = frame->video_frame_buffer()->DataY();
+    buffer = frame->buffer(PlaneType::kYPlane);
     for (int i = 0; i < y_size; ++i)
       ASSERT_EQ(y, buffer[i]);
     ASSERT_EQ(uv_size, frame->allocated_size(PlaneType::kUPlane));
-    buffer = frame->video_frame_buffer()->DataU();
+    buffer = frame->buffer(PlaneType::kUPlane);
     for (int i = 0; i < uv_size; ++i)
       ASSERT_EQ(u, buffer[i]);
     ASSERT_EQ(uv_size, frame->allocated_size(PlaneType::kVPlane));
-    buffer = frame->video_frame_buffer()->DataV();
+    buffer = frame->buffer(PlaneType::kVPlane);
     for (int i = 0; i < uv_size; ++i)
       ASSERT_EQ(v, buffer[i]);
     EXPECT_EQ(0, frame->ntp_time_ms());

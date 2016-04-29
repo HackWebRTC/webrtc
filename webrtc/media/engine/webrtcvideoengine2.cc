@@ -1560,22 +1560,19 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
   DestroyVideoEncoder(&allocated_encoder_);
 }
 
-static webrtc::VideoFrame CreateBlackFrame(int width,
-                                           int height,
-                                           int64_t render_time_ms_,
-                                           webrtc::VideoRotation rotation) {
-  webrtc::VideoFrame frame;
-  frame.CreateEmptyFrame(width, height, width, (width + 1) / 2,
-                         (width + 1) / 2);
-  memset(frame.video_frame_buffer()->MutableDataY(), 16,
-         frame.allocated_size(webrtc::kYPlane));
-  memset(frame.video_frame_buffer()->MutableDataU(), 128,
-         frame.allocated_size(webrtc::kUPlane));
-  memset(frame.video_frame_buffer()->MutableDataV(), 128,
-         frame.allocated_size(webrtc::kVPlane));
-  frame.set_rotation(rotation);
-  frame.set_render_time_ms(render_time_ms_);
-  return frame;
+static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
+                             int width,
+                             int height,
+                             webrtc::VideoRotation rotation) {
+  video_frame->CreateEmptyFrame(width, height, width, (width + 1) / 2,
+                                (width + 1) / 2);
+  memset(video_frame->buffer(webrtc::kYPlane), 16,
+         video_frame->allocated_size(webrtc::kYPlane));
+  memset(video_frame->buffer(webrtc::kUPlane), 128,
+         video_frame->allocated_size(webrtc::kUPlane));
+  memset(video_frame->buffer(webrtc::kVPlane), 128,
+         video_frame->allocated_size(webrtc::kVPlane));
+  video_frame->set_rotation(rotation);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
@@ -1633,17 +1630,19 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSource(
     if (source == NULL) {
       if (stream_ != NULL) {
         LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
+        webrtc::VideoFrame black_frame;
+
+        CreateBlackFrame(&black_frame, last_dimensions_.width,
+                         last_dimensions_.height, last_rotation_);
+
         // Force this black frame not to be dropped due to timestamp order
         // check. As IncomingCapturedFrame will drop the frame if this frame's
         // timestamp is less than or equal to last frame's timestamp, it is
         // necessary to give this black frame a larger timestamp than the
         // previous one.
         last_frame_timestamp_ms_ += 1;
-        stream_->Input()->IncomingCapturedFrame(
-            CreateBlackFrame(last_dimensions_.width, last_dimensions_.height,
-                             last_frame_timestamp_ms_, last_rotation_));
-
-
+        black_frame.set_render_time_ms(last_frame_timestamp_ms_);
+        stream_->Input()->IncomingCapturedFrame(black_frame);
       }
     }
   }

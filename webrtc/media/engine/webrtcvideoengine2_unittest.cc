@@ -69,11 +69,11 @@ static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
                              int height) {
   video_frame->CreateEmptyFrame(
       width, height, width, (width + 1) / 2, (width + 1) / 2);
-  memset(video_frame->video_frame_buffer()->MutableDataY(), 16,
+  memset(video_frame->buffer(webrtc::kYPlane), 16,
          video_frame->allocated_size(webrtc::kYPlane));
-  memset(video_frame->video_frame_buffer()->MutableDataU(), 128,
+  memset(video_frame->buffer(webrtc::kUPlane), 128,
          video_frame->allocated_size(webrtc::kUPlane));
-  memset(video_frame->video_frame_buffer()->MutableDataV(), 128,
+  memset(video_frame->buffer(webrtc::kVPlane), 128,
          video_frame->allocated_size(webrtc::kVPlane));
 }
 

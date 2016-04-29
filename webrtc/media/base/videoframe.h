@@ -54,8 +54,6 @@ class VideoFrame {
 
   // Returns the underlying video frame buffer. This function is ok to call
   // multiple times, but the returned object will refer to the same memory.
-  // TODO(nisse): Change to return a const ref to a scoped_refptr, for
-  // consistency with webrtc::VideoFrame.
   virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer()
       const = 0;
 
