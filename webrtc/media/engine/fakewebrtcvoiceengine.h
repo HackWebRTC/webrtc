@@ -121,15 +121,13 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
       public webrtc::VoEBase, public webrtc::VoECodec,
-      public webrtc::VoEHardware,
-      public webrtc::VoENetwork, public webrtc::VoERTP_RTCP,
+      public webrtc::VoEHardware, public webrtc::VoERTP_RTCP,
       public webrtc::VoEVolumeControl {
  public:
   struct Channel {
     Channel() {
       memset(&send_codec, 0, sizeof(send_codec));
     }
-    bool external_transport = false;
     bool playout = false;
     float volume_scale = 1.0f;
     bool vad = false;
@@ -146,8 +144,6 @@ class FakeWebRtcVoiceEngine
     int associate_send_channel = -1;
     std::vector<webrtc::CodecInst> recv_codecs;
     webrtc::CodecInst send_codec;
-    webrtc::PacketTime last_rtp_packet_time;
-    std::list<std::string> packets;
     int neteq_capacity = -1;
     bool neteq_fast_accelerate = false;
   };
@@ -190,10 +186,6 @@ class FakeWebRtcVoiceEngine
   }
   int GetNACKMaxPackets(int channel) {
     return channels_[channel]->nack_max_packets;
-  }
-  const webrtc::PacketTime& GetLastRtpPacketTime(int channel) {
-    RTC_DCHECK(channels_.find(channel) != channels_.end());
-    return channels_[channel]->last_rtp_packet_time;
   }
   int GetSendCNPayloadType(int channel, bool wideband) {
     return (wideband) ?
@@ -454,40 +446,6 @@ class FakeWebRtcVoiceEngine
   bool BuiltInAGCIsAvailable() const override { return false; }
   WEBRTC_STUB(EnableBuiltInNS, (bool enable));
   bool BuiltInNSIsAvailable() const override { return false; }
-
-  // webrtc::VoENetwork
-  WEBRTC_FUNC(RegisterExternalTransport, (int channel,
-                                          webrtc::Transport& transport)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->external_transport = true;
-    return 0;
-  }
-  WEBRTC_FUNC(DeRegisterExternalTransport, (int channel)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->external_transport = false;
-    return 0;
-  }
-  WEBRTC_FUNC(ReceivedRTPPacket, (int channel, const void* data,
-                                  size_t length)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    if (!channels_[channel]->external_transport) return -1;
-    channels_[channel]->packets.push_back(
-        std::string(static_cast<const char*>(data), length));
-    return 0;
-  }
-  WEBRTC_FUNC(ReceivedRTPPacket, (int channel, const void* data,
-                                  size_t length,
-                                  const webrtc::PacketTime& packet_time)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    if (ReceivedRTPPacket(channel, data, length) == -1) {
-      return -1;
-    }
-    channels_[channel]->last_rtp_packet_time = packet_time;
-    return 0;
-  }
-
-  WEBRTC_STUB(ReceivedRTCPPacket, (int channel, const void* data,
-                                   size_t length));
 
   // webrtc::VoERTP_RTCP
   WEBRTC_FUNC(SetLocalSSRC, (int channel, unsigned int ssrc)) {

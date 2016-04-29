@@ -74,15 +74,13 @@ class VoEWrapper {
  public:
   VoEWrapper()
       : engine_(webrtc::VoiceEngine::Create()), processing_(engine_),
-        base_(engine_), codec_(engine_),
-        hw_(engine_), network_(engine_),
-        rtp_(engine_), volume_(engine_) {
+        base_(engine_), codec_(engine_), hw_(engine_), rtp_(engine_),
+        volume_(engine_) {
   }
   VoEWrapper(webrtc::VoEAudioProcessing* processing,
              webrtc::VoEBase* base,
              webrtc::VoECodec* codec,
              webrtc::VoEHardware* hw,
-             webrtc::VoENetwork* network,
              webrtc::VoERTP_RTCP* rtp,
              webrtc::VoEVolumeControl* volume)
       : engine_(NULL),
@@ -90,7 +88,6 @@ class VoEWrapper {
         base_(base),
         codec_(codec),
         hw_(hw),
-        network_(network),
         rtp_(rtp),
         volume_(volume) {
   }
@@ -100,7 +97,6 @@ class VoEWrapper {
   webrtc::VoEBase* base() const { return base_.get(); }
   webrtc::VoECodec* codec() const { return codec_.get(); }
   webrtc::VoEHardware* hw() const { return hw_.get(); }
-  webrtc::VoENetwork* network() const { return network_.get(); }
   webrtc::VoERTP_RTCP* rtp() const { return rtp_.get(); }
   webrtc::VoEVolumeControl* volume() const { return volume_.get(); }
   int error() { return base_->LastError(); }
@@ -111,7 +107,6 @@ class VoEWrapper {
   scoped_voe_ptr<webrtc::VoEBase> base_;
   scoped_voe_ptr<webrtc::VoECodec> codec_;
   scoped_voe_ptr<webrtc::VoEHardware> hw_;
-  scoped_voe_ptr<webrtc::VoENetwork> network_;
   scoped_voe_ptr<webrtc::VoERTP_RTCP> rtp_;
   scoped_voe_ptr<webrtc::VoEVolumeControl> volume_;
 };

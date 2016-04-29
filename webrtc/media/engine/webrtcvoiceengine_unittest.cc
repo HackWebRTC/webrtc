@@ -58,7 +58,6 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
                             engine,  // base
                             engine,  // codec
                             engine,  // hw
-                            engine,  // network
                             engine,  // rtp
                             engine) {  // volume
   }

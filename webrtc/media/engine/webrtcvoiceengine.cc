@@ -2268,7 +2268,6 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
       call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
                                        packet->cdata(), packet->size(),
                                        webrtc_packet_time);
-
   if (delivery_result != webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC) {
     return;
   }
