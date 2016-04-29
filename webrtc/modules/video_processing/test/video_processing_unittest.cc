@@ -17,6 +17,7 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/test/frame_utils.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -71,9 +72,12 @@ void VideoProcessingTest::SetUp() {
   video_frame_.CreateEmptyFrame(width_, height_, width_,
                                 half_width_, half_width_);
   // Clear video frame so DrMemory/Valgrind will allow reads of the buffer.
-  memset(video_frame_.buffer(kYPlane), 0, video_frame_.allocated_size(kYPlane));
-  memset(video_frame_.buffer(kUPlane), 0, video_frame_.allocated_size(kUPlane));
-  memset(video_frame_.buffer(kVPlane), 0, video_frame_.allocated_size(kVPlane));
+  memset(video_frame_.video_frame_buffer()->MutableDataY(), 0,
+         video_frame_.allocated_size(kYPlane));
+  memset(video_frame_.video_frame_buffer()->MutableDataU(), 0,
+         video_frame_.allocated_size(kUPlane));
+  memset(video_frame_.video_frame_buffer()->MutableDataV(), 0,
+         video_frame_.allocated_size(kVPlane));
   const std::string video_file =
       webrtc::test::ResourcePath("foreman_cif", "yuv");
   source_file_ = fopen(video_file.c_str(), "rb");

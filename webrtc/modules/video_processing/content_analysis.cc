@@ -60,7 +60,7 @@ VideoContentMetrics* VPMContentAnalysis::ComputeContentMetrics(
       return NULL;
   }
   // Only interested in the Y plane.
-  orig_frame_ = inputFrame.buffer(kYPlane);
+  orig_frame_ = inputFrame.video_frame_buffer()->DataY();
 
   // Compute spatial metrics: 3 spatial prediction errors.
   (this->*ComputeSpatialMetrics)();

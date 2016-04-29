@@ -54,8 +54,7 @@ class VideoCaptureInputTest : public ::testing::Test {
     EXPECT_TRUE(input_->GetVideoFrame(&frame));
     ASSERT_TRUE(frame.video_frame_buffer());
     if (!frame.video_frame_buffer()->native_handle()) {
-      output_frame_ybuffers_.push_back(
-          static_cast<const VideoFrame*>(&frame)->buffer(kYPlane));
+      output_frame_ybuffers_.push_back(frame.video_frame_buffer()->DataY());
     }
     output_frames_.push_back(
         std::unique_ptr<VideoFrame>(new VideoFrame(frame)));
@@ -181,8 +180,7 @@ TEST_F(VideoCaptureInputTest, TestI420Frames) {
   std::vector<const uint8_t*> ybuffer_pointers;
   for (int i = 0; i < kNumFrame; ++i) {
     input_frames_.push_back(CreateVideoFrame(static_cast<uint8_t>(i + 1)));
-    const VideoFrame* const_input_frame = input_frames_[i].get();
-    ybuffer_pointers.push_back(const_input_frame->buffer(kYPlane));
+    ybuffer_pointers.push_back(input_frames_[i]->video_frame_buffer()->DataY());
     AddInputFrame(input_frames_[i].get());
     WaitOutputFrame();
   }

@@ -172,6 +172,7 @@
             'video_capture_module_internal_impl',
             'webrtc_utility',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/test/test.gyp:video_test_common',
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [

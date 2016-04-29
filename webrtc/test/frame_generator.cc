@@ -39,9 +39,12 @@ class ChromaGenerator : public FrameGenerator {
     uint8_t u = fabs(sin(angle_)) * 0xFF;
     uint8_t v = fabs(cos(angle_)) * 0xFF;
 
-    memset(frame_.buffer(kYPlane), 0x80, frame_.allocated_size(kYPlane));
-    memset(frame_.buffer(kUPlane), u, frame_.allocated_size(kUPlane));
-    memset(frame_.buffer(kVPlane), v, frame_.allocated_size(kVPlane));
+    memset(frame_.video_frame_buffer()->MutableDataY(), 0x80,
+           frame_.allocated_size(kYPlane));
+    memset(frame_.video_frame_buffer()->MutableDataU(), u,
+           frame_.allocated_size(kUPlane));
+    memset(frame_.video_frame_buffer()->MutableDataV(), v,
+           frame_.allocated_size(kVPlane));
     return &frame_;
   }
 
@@ -200,24 +203,24 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
     int pixels_scrolled_y =
         static_cast<int>(scroll_margin_y * scroll_factor + 0.5);
 
-    int offset_y = (current_source_frame_->stride(PlaneType::kYPlane) *
+    int offset_y = (current_source_frame_->video_frame_buffer()->StrideY() *
                     pixels_scrolled_y) +
                    pixels_scrolled_x;
-    int offset_u = (current_source_frame_->stride(PlaneType::kUPlane) *
+    int offset_u = (current_source_frame_->video_frame_buffer()->StrideU() *
                     (pixels_scrolled_y / 2)) +
                    (pixels_scrolled_x / 2);
-    int offset_v = (current_source_frame_->stride(PlaneType::kVPlane) *
+    int offset_v = (current_source_frame_->video_frame_buffer()->StrideV() *
                     (pixels_scrolled_y / 2)) +
                    (pixels_scrolled_x / 2);
 
     current_frame_.CreateFrame(
-        &current_source_frame_->buffer(PlaneType::kYPlane)[offset_y],
-        &current_source_frame_->buffer(PlaneType::kUPlane)[offset_u],
-        &current_source_frame_->buffer(PlaneType::kVPlane)[offset_v],
+        &current_source_frame_->video_frame_buffer()->DataY()[offset_y],
+        &current_source_frame_->video_frame_buffer()->DataU()[offset_u],
+        &current_source_frame_->video_frame_buffer()->DataV()[offset_v],
         kTargetWidth, kTargetHeight,
-        current_source_frame_->stride(PlaneType::kYPlane),
-        current_source_frame_->stride(PlaneType::kUPlane),
-        current_source_frame_->stride(PlaneType::kVPlane),
+        current_source_frame_->video_frame_buffer()->StrideY(),
+        current_source_frame_->video_frame_buffer()->StrideU(),
+        current_source_frame_->video_frame_buffer()->StrideV(),
         kVideoRotation_0);
   }
 

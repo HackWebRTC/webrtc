@@ -368,12 +368,12 @@ int32_t H264EncoderImpl::Encode(
   picture.iPicHeight = frame.height();
   picture.iColorFormat = EVideoFormatType::videoFormatI420;
   picture.uiTimeStamp = frame.ntp_time_ms();
-  picture.iStride[0] = frame.stride(kYPlane);
-  picture.iStride[1] = frame.stride(kUPlane);
-  picture.iStride[2] = frame.stride(kVPlane);
-  picture.pData[0] = const_cast<uint8_t*>(frame.buffer(kYPlane));
-  picture.pData[1] = const_cast<uint8_t*>(frame.buffer(kUPlane));
-  picture.pData[2] = const_cast<uint8_t*>(frame.buffer(kVPlane));
+  picture.iStride[0] = frame.video_frame_buffer()->StrideY();
+  picture.iStride[1] = frame.video_frame_buffer()->StrideU();
+  picture.iStride[2] = frame.video_frame_buffer()->StrideV();
+  picture.pData[0] = const_cast<uint8_t*>(frame.video_frame_buffer()->DataY());
+  picture.pData[1] = const_cast<uint8_t*>(frame.video_frame_buffer()->DataU());
+  picture.pData[2] = const_cast<uint8_t*>(frame.video_frame_buffer()->DataV());
 
   // EncodeFrame output.
   SFrameBSInfo info;

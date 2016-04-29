@@ -21,61 +21,6 @@
 
 namespace webrtc {
 
-int PrintBuffer(const uint8_t* buffer, int width, int height, int stride) {
-  if (buffer == NULL)
-    return -1;
-  int k;
-  const uint8_t* tmp_buffer = buffer;
-  for (int i = 0; i < height; i++) {
-    k = 0;
-    for (int j = 0; j < width; j++) {
-      printf("%d ", tmp_buffer[k++]);
-    }
-    tmp_buffer += stride;
-    printf(" \n");
-  }
-  printf(" \n");
-  return 0;
-}
-
-int PrintFrame(const VideoFrame* frame, const char* str) {
-  if (frame == NULL)
-     return -1;
-  printf("%s %dx%d \n", str, frame->width(), frame->height());
-
-  int ret = 0;
-  for (int plane_num = 0; plane_num < kNumOfPlanes; ++plane_num) {
-    PlaneType plane_type = static_cast<PlaneType>(plane_num);
-    int width = (plane_num ? (frame->width() + 1) / 2 : frame->width());
-    int height = (plane_num ? (frame->height() + 1) / 2 : frame->height());
-    ret += PrintBuffer(frame->buffer(plane_type), width, height,
-                       frame->stride(plane_type));
-  }
-  return ret;
-}
-
-
-// Create an image from on a YUV frame. Every plane value starts with a start
-// value, and will be set to increasing values.
-void CreateImage(VideoFrame* frame, int plane_offset[kNumOfPlanes]) {
-  if (frame == NULL)
-    return;
-  for (int plane_num = 0; plane_num < kNumOfPlanes; ++plane_num) {
-    int width = (plane_num != kYPlane ? (frame->width() + 1) / 2 :
-      frame->width());
-    int height = (plane_num != kYPlane ? (frame->height() + 1) / 2 :
-      frame->height());
-    PlaneType plane_type = static_cast<PlaneType>(plane_num);
-    uint8_t *data = frame->buffer(plane_type);
-    for (int i = 0; i < height; i++) {
-      for (int j = 0; j < width; j++) {
-        data[j] = static_cast<uint8_t>(i + plane_offset[plane_num] + j);
-      }
-      data += frame->stride(plane_type);
-    }
-  }
-}
-
 class TestLibYuv : public ::testing::Test {
  protected:
   TestLibYuv();
