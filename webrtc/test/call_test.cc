@@ -15,7 +15,6 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_network.h"
 
 namespace webrtc {
 namespace test {
@@ -78,9 +77,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
   if (test->ShouldCreateReceivers()) {
     CreateMatchingReceiveConfigs(receive_transport_.get());
   }
-  if (num_audio_streams_ > 0)
-    SetupVoiceEngineTransports(send_transport_.get(), receive_transport_.get());
-
   if (num_video_streams_ > 0) {
     test->ModifyVideoConfigs(&video_send_config_, &video_receive_configs_,
                              &video_encoder_config_);
@@ -310,7 +306,6 @@ void CallTest::CreateVoiceEngines() {
   CreateFakeAudioDevices();
   voe_send_.voice_engine = VoiceEngine::Create();
   voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
-  voe_send_.network = VoENetwork::GetInterface(voe_send_.voice_engine);
   voe_send_.codec = VoECodec::GetInterface(voe_send_.voice_engine);
   EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(), nullptr));
   Config voe_config;
@@ -320,26 +315,10 @@ void CallTest::CreateVoiceEngines() {
 
   voe_recv_.voice_engine = VoiceEngine::Create();
   voe_recv_.base = VoEBase::GetInterface(voe_recv_.voice_engine);
-  voe_recv_.network = VoENetwork::GetInterface(voe_recv_.voice_engine);
   voe_recv_.codec = VoECodec::GetInterface(voe_recv_.voice_engine);
   EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(), nullptr));
   voe_recv_.channel_id = voe_recv_.base->CreateChannel();
   EXPECT_GE(voe_recv_.channel_id, 0);
-}
-
-void CallTest::SetupVoiceEngineTransports(PacketTransport* send_transport,
-                                          PacketTransport* recv_transport) {
-  voe_send_.transport_adapter.reset(
-      new internal::TransportAdapter(send_transport));
-  voe_send_.transport_adapter->Enable();
-  EXPECT_EQ(0, voe_send_.network->RegisterExternalTransport(
-                   voe_send_.channel_id, *voe_send_.transport_adapter.get()));
-
-  voe_recv_.transport_adapter.reset(
-      new internal::TransportAdapter(recv_transport));
-  voe_recv_.transport_adapter->Enable();
-  EXPECT_EQ(0, voe_recv_.network->RegisterExternalTransport(
-                   voe_recv_.channel_id, *voe_recv_.transport_adapter.get()));
 }
 
 void CallTest::DestroyVoiceEngines() {
@@ -347,8 +326,6 @@ void CallTest::DestroyVoiceEngines() {
   voe_recv_.channel_id = -1;
   voe_recv_.base->Release();
   voe_recv_.base = nullptr;
-  voe_recv_.network->Release();
-  voe_recv_.network = nullptr;
   voe_recv_.codec->Release();
   voe_recv_.codec = nullptr;
 
@@ -356,8 +333,6 @@ void CallTest::DestroyVoiceEngines() {
   voe_send_.channel_id = -1;
   voe_send_.base->Release();
   voe_send_.base = nullptr;
-  voe_send_.network->Release();
-  voe_send_.network = nullptr;
   voe_send_.codec->Release();
   voe_send_.codec = nullptr;
 

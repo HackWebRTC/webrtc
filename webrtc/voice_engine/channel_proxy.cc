@@ -158,6 +158,29 @@ void ChannelProxy::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   channel()->SetSink(std::move(sink));
 }
 
+void ChannelProxy::RegisterExternalTransport(Transport* transport) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  int error = channel()->RegisterExternalTransport(transport);
+  RTC_DCHECK_EQ(0, error);
+}
+
+void ChannelProxy::DeRegisterExternalTransport() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->DeRegisterExternalTransport();
+}
+
+bool ChannelProxy::ReceivedRTPPacket(const uint8_t* packet,
+                                     size_t length,
+                                     const PacketTime& packet_time) {
+  // May be called on either worker thread or network thread.
+  return channel()->ReceivedRTPPacket(packet, length, packet_time) == 0;
+}
+
+bool ChannelProxy::ReceivedRTCPPacket(const uint8_t* packet, size_t length) {
+  // May be called on either worker thread or network thread.
+  return channel()->ReceivedRTCPPacket(packet, length) == 0;
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

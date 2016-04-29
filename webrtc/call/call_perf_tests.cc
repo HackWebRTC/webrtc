@@ -17,6 +17,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
@@ -41,7 +42,6 @@
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 
@@ -149,39 +149,11 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   const char* kSyncGroup = "av_sync";
   const uint32_t kAudioSendSsrc = 1234;
   const uint32_t kAudioRecvSsrc = 5678;
-  class AudioPacketReceiver : public PacketReceiver {
-   public:
-    AudioPacketReceiver(int channel, VoENetwork* voe_network)
-        : channel_(channel),
-          voe_network_(voe_network),
-          parser_(RtpHeaderParser::Create()) {}
-    DeliveryStatus DeliverPacket(MediaType media_type,
-                                 const uint8_t* packet,
-                                 size_t length,
-                                 const PacketTime& packet_time) override {
-      EXPECT_TRUE(media_type == MediaType::ANY ||
-                  media_type == MediaType::AUDIO);
-      int ret;
-      if (parser_->IsRtcp(packet, length)) {
-        ret = voe_network_->ReceivedRTCPPacket(channel_, packet, length);
-      } else {
-        ret = voe_network_->ReceivedRTPPacket(channel_, packet, length,
-                                              PacketTime());
-      }
-      return ret == 0 ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
-    }
-
-   private:
-    int channel_;
-    VoENetwork* voe_network_;
-    std::unique_ptr<RtpHeaderParser> parser_;
-  };
 
   test::ClearHistograms();
   VoiceEngine* voice_engine = VoiceEngine::Create();
   VoEBase* voe_base = VoEBase::GetInterface(voice_engine);
   VoECodec* voe_codec = VoECodec::GetInterface(voice_engine);
-  VoENetwork* voe_network = VoENetwork::GetInterface(voice_engine);
   const std::string audio_filename =
       test::ResourcePath("voice_engine/audio_long16", "pcm");
   ASSERT_STRNE("", audio_filename.c_str());
@@ -201,44 +173,56 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   receiver_config.audio_state = sender_config.audio_state;
   CreateCalls(sender_config, receiver_config);
 
-  AudioPacketReceiver voe_send_packet_receiver(send_channel_id, voe_network);
-  AudioPacketReceiver voe_recv_packet_receiver(recv_channel_id, voe_network);
 
   VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock());
 
-  FakeNetworkPipe::Config net_config;
-  net_config.queue_delay_ms = 500;
-  net_config.loss_percent = 5;
-  test::PacketTransport audio_send_transport(
-      nullptr, &observer, test::PacketTransport::kSender, net_config);
-  audio_send_transport.SetReceiver(&voe_recv_packet_receiver);
-  test::PacketTransport audio_receive_transport(
-      nullptr, &observer, test::PacketTransport::kReceiver, net_config);
-  audio_receive_transport.SetReceiver(&voe_send_packet_receiver);
+  // Helper class to ensure we deliver correct media_type to the receiving call.
+  class MediaTypePacketReceiver : public PacketReceiver {
+   public:
+    MediaTypePacketReceiver(PacketReceiver* packet_receiver,
+                            MediaType media_type)
+        : packet_receiver_(packet_receiver), media_type_(media_type) {}
 
-  internal::TransportAdapter send_transport_adapter(&audio_send_transport);
-  send_transport_adapter.Enable();
-  EXPECT_EQ(0, voe_network->RegisterExternalTransport(send_channel_id,
-                                                      send_transport_adapter));
+    DeliveryStatus DeliverPacket(MediaType media_type,
+                                 const uint8_t* packet,
+                                 size_t length,
+                                 const PacketTime& packet_time) override {
+      return packet_receiver_->DeliverPacket(media_type_, packet, length,
+                                             packet_time);
+    }
+   private:
+    PacketReceiver* packet_receiver_;
+    const MediaType media_type_;
 
-  internal::TransportAdapter recv_transport_adapter(&audio_receive_transport);
-  recv_transport_adapter.Enable();
-  EXPECT_EQ(0, voe_network->RegisterExternalTransport(recv_channel_id,
-                                                      recv_transport_adapter));
+    RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MediaTypePacketReceiver);
+  };
 
-  test::PacketTransport sync_send_transport(sender_call_.get(), &observer,
-                                            test::PacketTransport::kSender,
-                                            FakeNetworkPipe::Config());
-  sync_send_transport.SetReceiver(receiver_call_->Receiver());
-  test::PacketTransport sync_receive_transport(receiver_call_.get(), &observer,
-                                               test::PacketTransport::kReceiver,
-                                               FakeNetworkPipe::Config());
-  sync_receive_transport.SetReceiver(sender_call_->Receiver());
+  FakeNetworkPipe::Config audio_net_config;
+  audio_net_config.queue_delay_ms = 500;
+  audio_net_config.loss_percent = 5;
+  test::PacketTransport audio_send_transport(sender_call_.get(), &observer,
+                                             test::PacketTransport::kSender,
+                                             audio_net_config);
+  MediaTypePacketReceiver audio_receiver(receiver_call_->Receiver(),
+                                         MediaType::AUDIO);
+  audio_send_transport.SetReceiver(&audio_receiver);
+
+  test::PacketTransport video_send_transport(sender_call_.get(), &observer,
+                                             test::PacketTransport::kSender,
+                                             FakeNetworkPipe::Config());
+  MediaTypePacketReceiver video_receiver(receiver_call_->Receiver(),
+                                         MediaType::VIDEO);
+  video_send_transport.SetReceiver(&video_receiver);
+
+  test::PacketTransport receive_transport(
+      receiver_call_.get(), &observer, test::PacketTransport::kReceiver,
+      FakeNetworkPipe::Config());
+  receive_transport.SetReceiver(sender_call_->Receiver());
 
   test::FakeDecoder fake_decoder;
 
-  CreateSendConfig(1, 0, &sync_send_transport);
-  CreateMatchingReceiveConfigs(&sync_receive_transport);
+  CreateSendConfig(1, 0, &video_send_transport);
+  CreateMatchingReceiveConfigs(&receive_transport);
 
   AudioSendStream::Config audio_send_config(&audio_send_transport);
   audio_send_config.voe_channel_id = send_channel_id;
@@ -298,10 +282,9 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   fake_audio_device.Stop();
 
   Stop();
-  sync_send_transport.StopSending();
-  sync_receive_transport.StopSending();
+  video_send_transport.StopSending();
   audio_send_transport.StopSending();
-  audio_receive_transport.StopSending();
+  receive_transport.StopSending();
 
   DestroyStreams();
 
@@ -312,7 +295,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   voe_base->DeleteChannel(recv_channel_id);
   voe_base->Release();
   voe_codec->Release();
-  voe_network->Release();
 
   DestroyCalls();
 

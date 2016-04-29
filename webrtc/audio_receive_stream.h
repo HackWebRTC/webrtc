@@ -83,7 +83,6 @@ class AudioReceiveStream : public ReceiveStream {
       std::vector<RtpExtension> extensions;
     } rtp;
 
-    Transport* receive_transport = nullptr;
     Transport* rtcp_send_transport = nullptr;
 
     // Underlying VoiceEngine handle, used to map AudioReceiveStream to lower-

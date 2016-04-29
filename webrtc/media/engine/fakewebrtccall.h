@@ -25,6 +25,7 @@
 
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/audio_send_stream.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/call.h"
 #include "webrtc/video_frame.h"
 #include "webrtc/video_receive_stream.h"
@@ -74,22 +75,18 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   const webrtc::AudioReceiveStream::Config& GetConfig() const;
   void SetStats(const webrtc::AudioReceiveStream::Stats& stats);
   int received_packets() const { return received_packets_; }
-  void IncrementReceivedPackets();
+  bool VerifyLastPacket(const uint8_t* data, size_t length) const;
   const webrtc::AudioSinkInterface* sink() const { return sink_.get(); }
 
+  bool DeliverRtp(const uint8_t* packet,
+                  size_t length,
+                  const webrtc::PacketTime& packet_time) override;
+  bool DeliverRtcp(const uint8_t* packet, size_t length) override;
  private:
   // webrtc::ReceiveStream implementation.
   void Start() override {}
   void Stop() override {}
   void SignalNetworkState(webrtc::NetworkState state) override {}
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override {
-    return true;
-  }
-  bool DeliverRtp(const uint8_t* packet,
-                  size_t length,
-                  const webrtc::PacketTime& packet_time) override {
-    return true;
-  }
 
   // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
@@ -99,6 +96,7 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   webrtc::AudioReceiveStream::Stats stats_;
   int received_packets_;
   std::unique_ptr<webrtc::AudioSinkInterface> sink_;
+  rtc::Buffer last_packet_;
 };
 
 class FakeVideoSendStream final : public webrtc::VideoSendStream,

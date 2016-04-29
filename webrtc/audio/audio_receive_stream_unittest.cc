@@ -98,6 +98,10 @@ struct ConfigHelper {
               .WillOnce(Return(&packet_router_));
           EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects())
               .Times(1);
+          EXPECT_CALL(*channel_proxy_, RegisterExternalTransport(nullptr))
+              .Times(1);
+          EXPECT_CALL(*channel_proxy_, DeRegisterExternalTransport())
+              .Times(1);
           return channel_proxy_;
         }));
     stream_config_.voe_channel_id = kChannelId;
@@ -120,6 +124,7 @@ struct ConfigHelper {
   AudioReceiveStream::Config& config() { return stream_config_; }
   rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
   MockVoiceEngine& voice_engine() { return voice_engine_; }
+  MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
 
   void SetupMockForBweFeedback(bool send_side_bwe) {
     EXPECT_CALL(congestion_controller_,
@@ -181,7 +186,7 @@ void BuildOneByteExtension(std::vector<uint8_t>::iterator it,
                                                              shifted_value);
 }
 
-std::vector<uint8_t> CreateRtpHeaderWithOneByteExtension(
+const std::vector<uint8_t> CreateRtpHeaderWithOneByteExtension(
     int extension_id,
     uint32_t extension_value,
     size_t value_length) {
@@ -200,6 +205,18 @@ std::vector<uint8_t> CreateRtpHeaderWithOneByteExtension(
                         extension_value, value_length);
   return header;
 }
+
+const std::vector<uint8_t> CreateRtcpSenderReport() {
+  std::vector<uint8_t> packet;
+  const size_t kRtcpSrLength = 28;  // In bytes.
+  packet.resize(kRtcpSrLength);
+  packet[0] = 0x80;  // Version 2.
+  packet[1] = 0xc8;  // PT = 200, SR.
+  // Length in number of 32-bit words - 1.
+  ByteWriter<uint16_t>::WriteBigEndian(&packet[2], 6);
+  ByteWriter<uint32_t>::WriteBigEndian(&packet[4], kLocalSsrc);
+  return packet;
+}
 }  // namespace
 
 TEST(AudioReceiveStreamTest, ConfigToString) {
@@ -213,7 +230,7 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
       "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, extensions: [{name: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 2}], "
       "transport_cc: off}, "
-      "receive_transport: nullptr, rtcp_send_transport: nullptr, "
+      "rtcp_send_transport: nullptr, "
       "voe_channel_id: 2}",
       config.ToString());
 }
@@ -235,7 +252,7 @@ MATCHER_P(VerifyHeaderExtension, expected_extension, "") {
              expected_extension.transportSequenceNumber;
 }
 
-TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweFeedback) {
+TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
   ConfigHelper helper;
   helper.config().rtp.transport_cc = true;
   helper.SetupMockForBweFeedback(true);
@@ -254,9 +271,29 @@ TEST(AudioReceiveStreamTest, AudioPacketUpdatesBweFeedback) {
                              rtp_packet.size() - kExpectedHeaderLength,
                              VerifyHeaderExtension(expected_extension), false))
       .Times(1);
+  EXPECT_CALL(*helper.channel_proxy(),
+              ReceivedRTPPacket(&rtp_packet[0],
+                                rtp_packet.size(),
+                                _))
+      .WillOnce(Return(true));
   EXPECT_TRUE(
       recv_stream.DeliverRtp(&rtp_packet[0], rtp_packet.size(), packet_time));
 }
+
+TEST(AudioReceiveStreamTest, ReceiveRtcpPacket) {
+  ConfigHelper helper;
+  helper.config().rtp.transport_cc = true;
+  helper.SetupMockForBweFeedback(true);
+  internal::AudioReceiveStream recv_stream(
+      helper.congestion_controller(), helper.config(), helper.audio_state());
+
+  std::vector<uint8_t> rtcp_packet = CreateRtcpSenderReport();
+  EXPECT_CALL(*helper.channel_proxy(),
+              ReceivedRTCPPacket(&rtcp_packet[0], rtcp_packet.size()))
+      .WillOnce(Return(true));
+  EXPECT_TRUE(recv_stream.DeliverRtcp(&rtcp_packet[0], rtcp_packet.size()));
+}
+
 
 TEST(AudioReceiveStreamTest, GetStats) {
   ConfigHelper helper;

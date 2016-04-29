@@ -203,18 +203,6 @@ class FakeWebRtcVoiceEngine
   int GetSendREDPayloadType(int channel) {
     return channels_[channel]->red_type;
   }
-  bool CheckPacket(int channel, const void* data, size_t len) {
-    bool result = !CheckNoPacket(channel);
-    if (result) {
-      std::string packet = channels_[channel]->packets.front();
-      result = (packet == std::string(static_cast<const char*>(data), len));
-      channels_[channel]->packets.pop_front();
-    }
-    return result;
-  }
-  bool CheckNoPacket(int channel) {
-    return channels_[channel]->packets.empty();
-  }
   void set_playout_fail_channel(int channel) {
     playout_fail_channel_ = channel;
   }

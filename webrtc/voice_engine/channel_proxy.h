@@ -25,6 +25,7 @@ namespace webrtc {
 class AudioSinkInterface;
 class PacketRouter;
 class RtpPacketSender;
+class Transport;
 class TransportFeedbackObserver;
 
 namespace voe {
@@ -71,6 +72,13 @@ class ChannelProxy {
   virtual bool SetSendTelephoneEventPayloadType(int payload_type);
   virtual bool SendTelephoneEventOutband(int event, int duration_ms);
   virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink);
+
+  virtual void RegisterExternalTransport(Transport* transport);
+  virtual void DeRegisterExternalTransport();
+  virtual bool ReceivedRTPPacket(const uint8_t* packet,
+                                 size_t length,
+                                 const PacketTime& packet_time);
+  virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
 
  private:
   Channel* channel() const;

@@ -89,6 +89,10 @@ struct ConfigHelper {
               .Times(1);
           EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects())
               .Times(1);
+          EXPECT_CALL(*channel_proxy_, RegisterExternalTransport(nullptr))
+              .Times(1);
+          EXPECT_CALL(*channel_proxy_, DeRegisterExternalTransport())
+              .Times(1);
           return channel_proxy_;
         }));
     stream_config_.voe_channel_id = kChannelId;

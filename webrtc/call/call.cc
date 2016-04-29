@@ -750,8 +750,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
                                                  const uint8_t* packet,
                                                  size_t length) {
   TRACE_EVENT0("webrtc", "Call::DeliverRtcp");
-  // TODO(pbos): Figure out what channel needs it actually.
-  //             Do NOT broadcast! Also make sure it's a valid packet.
+  // TODO(pbos): Make sure it's a valid packet.
   //             Return DELIVERY_UNKNOWN_SSRC if it can be determined that
   //             there's no receiver of the packet.
   received_rtcp_bytes_ += length;
@@ -759,25 +758,35 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     ReadLockScoped read_lock(*receive_crit_);
     for (VideoReceiveStream* stream : video_receive_streams_) {
-      if (stream->DeliverRtcp(packet, length)) {
+      if (stream->DeliverRtcp(packet, length))
         rtcp_delivered = true;
-        if (event_log_)
-          event_log_->LogRtcpPacket(kIncomingPacket, media_type, packet,
-                                    length);
-      }
+    }
+  }
+  if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
+    ReadLockScoped read_lock(*receive_crit_);
+    for (auto& kv : audio_receive_ssrcs_) {
+      if (kv.second->DeliverRtcp(packet, length))
+        rtcp_delivered = true;
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     ReadLockScoped read_lock(*send_crit_);
     for (VideoSendStream* stream : video_send_streams_) {
-      if (stream->DeliverRtcp(packet, length)) {
+      if (stream->DeliverRtcp(packet, length))
         rtcp_delivered = true;
-        if (event_log_)
-          event_log_->LogRtcpPacket(kIncomingPacket, media_type, packet,
-                                    length);
-      }
     }
   }
+  if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
+    ReadLockScoped read_lock(*send_crit_);
+    for (auto& kv : audio_send_ssrcs_) {
+      if (kv.second->DeliverRtcp(packet, length))
+        rtcp_delivered = true;
+    }
+  }
+
+  if (event_log_ && rtcp_delivered)
+    event_log_->LogRtcpPacket(kIncomingPacket, media_type, packet, length);
+
   return rtcp_delivered ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
 }
 

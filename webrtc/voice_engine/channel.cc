@@ -1449,12 +1449,11 @@ int Channel::SetOpusDtx(bool enable_dtx) {
   return 0;
 }
 
-int32_t Channel::RegisterExternalTransport(Transport& transport) {
+int32_t Channel::RegisterExternalTransport(Transport* transport) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::RegisterExternalTransport()");
 
   rtc::CritScope cs(&_callbackCritSect);
-
   if (_externalTransport) {
     _engineStatisticsPtr->SetLastError(
         VE_INVALID_OPERATION, kTraceError,
@@ -1462,7 +1461,7 @@ int32_t Channel::RegisterExternalTransport(Transport& transport) {
     return -1;
   }
   _externalTransport = true;
-  _transportPtr = &transport;
+  _transportPtr = transport;
   return 0;
 }
 
@@ -1471,22 +1470,21 @@ int32_t Channel::DeRegisterExternalTransport() {
                "Channel::DeRegisterExternalTransport()");
 
   rtc::CritScope cs(&_callbackCritSect);
-
-  if (!_transportPtr) {
+  if (_transportPtr) {
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+                 "DeRegisterExternalTransport() all transport is disabled");
+  } else {
     _engineStatisticsPtr->SetLastError(
         VE_INVALID_OPERATION, kTraceWarning,
         "DeRegisterExternalTransport() external transport already "
         "disabled");
-    return 0;
   }
   _externalTransport = false;
   _transportPtr = NULL;
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "DeRegisterExternalTransport() all transport is disabled");
   return 0;
 }
 
-int32_t Channel::ReceivedRTPPacket(const int8_t* data,
+int32_t Channel::ReceivedRTPPacket(const uint8_t* received_packet,
                                    size_t length,
                                    const PacketTime& packet_time) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
@@ -1495,7 +1493,6 @@ int32_t Channel::ReceivedRTPPacket(const int8_t* data,
   // Store playout timestamp for the received RTP packet
   UpdatePlayoutTimestamp(false);
 
-  const uint8_t* received_packet = reinterpret_cast<const uint8_t*>(data);
   RTPHeader header;
   if (!rtp_header_parser_->Parse(received_packet, length, &header)) {
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVoice, _channelId,
@@ -1585,14 +1582,14 @@ bool Channel::IsPacketRetransmitted(const RTPHeader& header,
   return !in_order && statistician->IsRetransmitOfOldPacket(header, min_rtt);
 }
 
-int32_t Channel::ReceivedRTCPPacket(const int8_t* data, size_t length) {
+int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::ReceivedRTCPPacket()");
   // Store playout timestamp for the received RTCP packet
   UpdatePlayoutTimestamp(true);
 
   // Deliver RTCP packet to RTP/RTCP module for parsing
-  if (_rtpRtcpModule->IncomingRtcpPacket((const uint8_t*)data, length) == -1) {
+  if (_rtpRtcpModule->IncomingRtcpPacket(data, length) == -1) {
     _engineStatisticsPtr->SetLastError(
         VE_SOCKET_TRANSPORT_MODULE_ERROR, kTraceWarning,
         "Channel::IncomingRTPPacket() RTCP packet is invalid");

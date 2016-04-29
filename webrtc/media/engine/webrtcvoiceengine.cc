@@ -1095,10 +1095,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
                         uint32_t ssrc,
                         const std::string& c_name,
                         const std::vector<webrtc::RtpExtension>& extensions,
-                        webrtc::Call* call)
+                        webrtc::Call* call,
+                        webrtc::Transport* send_transport)
       : voe_audio_transport_(voe_audio_transport),
         call_(call),
-        config_(nullptr),
+        config_(send_transport),
         rtp_parameters_(CreateRtpParametersWithOneEncoding()) {
     RTC_DCHECK_GE(ch, 0);
     // TODO(solenberg): Once we're not using FakeWebRtcVoiceEngine anymore:
@@ -1926,18 +1927,11 @@ int WebRtcVoiceMediaChannel::CreateVoEChannel() {
     LOG_RTCERR0(CreateVoEChannel);
     return -1;
   }
-  if (engine()->voe()->network()->RegisterExternalTransport(id, *this) == -1) {
-    LOG_RTCERR2(RegisterExternalTransport, id, this);
-    engine()->voe()->base()->DeleteChannel(id);
-    return -1;
-  }
+
   return id;
 }
 
 bool WebRtcVoiceMediaChannel::DeleteVoEChannel(int channel) {
-  if (engine()->voe()->network()->DeRegisterExternalTransport(channel) == -1) {
-    LOG_RTCERR1(DeRegisterExternalTransport, channel);
-  }
   if (engine()->voe()->base()->DeleteChannel(channel) == -1) {
     LOG_RTCERR1(DeleteChannel, channel);
     return false;
@@ -1968,8 +1962,10 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   // delete the channel in case failure happens below.
   webrtc::AudioTransport* audio_transport =
       engine()->voe()->base()->audio_transport();
+
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
-      channel, audio_transport, ssrc, sp.cname, send_rtp_extensions_, call_);
+      channel, audio_transport, ssrc, sp.cname, send_rtp_extensions_, call_,
+      this);
   send_streams_.insert(std::make_pair(ssrc, stream));
 
   // Set the current codecs to be used for the new channel. We need to do this
@@ -2266,54 +2262,52 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
     rtc::CopyOnWriteBuffer* packet, const rtc::PacketTime& packet_time) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
+  const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
+                                              packet_time.not_before);
+  webrtc::PacketReceiver::DeliveryStatus delivery_result =
+      call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
+                                       packet->cdata(), packet->size(),
+                                       webrtc_packet_time);
+
+  if (delivery_result != webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC) {
+    return;
+  }
+
+  // Create a default receive stream for this unsignalled and previously not
+  // received ssrc. If there already is a default receive stream, delete it.
+  // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5208
   uint32_t ssrc = 0;
   if (!GetRtpSsrc(packet->cdata(), packet->size(), &ssrc)) {
     return;
   }
 
-  // If we don't have a default channel, and the SSRC is unknown, create a
-  // default channel.
-  if (default_recv_ssrc_ == -1 && GetReceiveChannelId(ssrc) == -1) {
-    StreamParams sp;
-    sp.ssrcs.push_back(ssrc);
-    LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
-    if (!AddRecvStream(sp)) {
-      LOG(LS_WARNING) << "Could not create default receive stream.";
-      return;
-    }
-    default_recv_ssrc_ = ssrc;
-    SetOutputVolume(default_recv_ssrc_, default_recv_volume_);
-    if (default_sink_) {
-      std::unique_ptr<webrtc::AudioSinkInterface> proxy_sink(
-          new ProxySink(default_sink_.get()));
-      SetRawAudioSink(default_recv_ssrc_, std::move(proxy_sink));
-    }
+  if (default_recv_ssrc_ != -1) {
+    LOG(LS_INFO) << "Removing default receive stream with ssrc "
+                 << default_recv_ssrc_;
+    RTC_DCHECK_NE(ssrc, default_recv_ssrc_);
+    RemoveRecvStream(default_recv_ssrc_);
+    default_recv_ssrc_ = -1;
   }
 
-  // Forward packet to Call. If the SSRC is unknown we'll return after this.
-  const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
-                                              packet_time.not_before);
-  webrtc::PacketReceiver::DeliveryStatus delivery_result =
-      call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
-          packet->cdata(), packet->size(), webrtc_packet_time);
-  if (webrtc::PacketReceiver::DELIVERY_OK != delivery_result) {
-    // If the SSRC is unknown here, route it to the default channel, if we have
-    // one. See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5208
-    if (default_recv_ssrc_ == -1) {
-      return;
-    } else {
-      ssrc = default_recv_ssrc_;
-    }
+  StreamParams sp;
+  sp.ssrcs.push_back(ssrc);
+  LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
+  if (!AddRecvStream(sp)) {
+    LOG(LS_WARNING) << "Could not create default receive stream.";
+    return;
   }
-
-  // Find the channel to send this packet to. It must exist since webrtc::Call
-  // was able to demux the packet.
-  int channel = GetReceiveChannelId(ssrc);
-  RTC_DCHECK(channel != -1);
-
-  // Pass it off to the decoder.
-  engine()->voe()->network()->ReceivedRTPPacket(
-      channel, packet->cdata(), packet->size(), webrtc_packet_time);
+  default_recv_ssrc_ = ssrc;
+  SetOutputVolume(default_recv_ssrc_, default_recv_volume_);
+  if (default_sink_) {
+    std::unique_ptr<webrtc::AudioSinkInterface> proxy_sink(
+        new ProxySink(default_sink_.get()));
+    SetRawAudioSink(default_recv_ssrc_, std::move(proxy_sink));
+  }
+  delivery_result = call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
+                                                     packet->cdata(),
+                                                     packet->size(),
+                                                     webrtc_packet_time);
+  RTC_DCHECK_NE(webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC, delivery_result);
 }
 
 void WebRtcVoiceMediaChannel::OnRtcpReceived(
@@ -2325,37 +2319,6 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
                                               packet_time.not_before);
   call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
       packet->cdata(), packet->size(), webrtc_packet_time);
-
-  // Sending channels need all RTCP packets with feedback information.
-  // Even sender reports can contain attached report blocks.
-  // Receiving channels need sender reports in order to create
-  // correct receiver reports.
-  int type = 0;
-  if (!GetRtcpType(packet->cdata(), packet->size(), &type)) {
-    LOG(LS_WARNING) << "Failed to parse type from received RTCP packet";
-    return;
-  }
-
-  // If it is a sender report, find the receive channel that is listening.
-  if (type == kRtcpTypeSR) {
-    uint32_t ssrc = 0;
-    if (!GetRtcpSsrc(packet->cdata(), packet->size(), &ssrc)) {
-      return;
-    }
-    int recv_channel_id = GetReceiveChannelId(ssrc);
-    if (recv_channel_id != -1) {
-      engine()->voe()->network()->ReceivedRTCPPacket(
-          recv_channel_id, packet->cdata(), packet->size());
-    }
-  }
-
-  // SR may continue RR and any RR entry may correspond to any one of the send
-  // channels. So all RTCP packets must be forwarded all send channels. VoE
-  // will filter out RR internally.
-  for (const auto& ch : send_streams_) {
-    engine()->voe()->network()->ReceivedRTCPPacket(
-        ch.second->channel(), packet->cdata(), packet->size());
-  }
 }
 
 void WebRtcVoiceMediaChannel::OnNetworkRouteChanged(

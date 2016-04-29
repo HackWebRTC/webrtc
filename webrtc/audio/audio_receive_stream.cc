@@ -66,8 +66,6 @@ std::string AudioReceiveStream::Config::Rtp::ToString() const {
 std::string AudioReceiveStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{rtp: " << rtp.ToString();
-  ss << ", receive_transport: "
-     << (receive_transport ? "(Transport)" : "nullptr");
   ss << ", rtcp_send_transport: "
      << (rtcp_send_transport ? "(Transport)" : "nullptr");
   ss << ", voe_channel_id: " << voe_channel_id;
@@ -95,6 +93,9 @@ AudioReceiveStream::AudioReceiveStream(
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
   channel_proxy_->SetLocalSSRC(config.rtp.local_ssrc);
+
+  channel_proxy_->RegisterExternalTransport(config.rtcp_send_transport);
+
   for (const auto& extension : config.rtp.extensions) {
     if (extension.name == RtpExtension::kAudioLevel) {
       channel_proxy_->SetReceiveAudioLevelIndicationStatus(true, extension.id);
@@ -127,6 +128,7 @@ AudioReceiveStream::AudioReceiveStream(
 AudioReceiveStream::~AudioReceiveStream() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
+  channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
   if (remote_bitrate_estimator_) {
     remote_bitrate_estimator_->RemoveStream(config_.rtp.remote_ssrc);
@@ -150,7 +152,7 @@ bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // calls on the worker thread. We should move towards always using a network
   // thread. Then this check can be enabled.
   // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
-  return false;
+  return channel_proxy_->ReceivedRTCPPacket(packet, length);
 }
 
 bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
@@ -177,7 +179,8 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
     remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
                                               header, false);
   }
-  return true;
+
+  return channel_proxy_->ReceivedRTPPacket(packet, length, packet_time);
 }
 
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {

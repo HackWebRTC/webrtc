@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "webrtc/call.h"
-#include "webrtc/call/transport_adapter.h"
 #include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
@@ -25,7 +24,6 @@ namespace webrtc {
 
 class VoEBase;
 class VoECodec;
-class VoENetwork;
 
 namespace test {
 
@@ -113,22 +111,16 @@ class CallTest : public ::testing::Test {
     VoiceEngineState()
         : voice_engine(nullptr),
           base(nullptr),
-          network(nullptr),
           codec(nullptr),
-          channel_id(-1),
-          transport_adapter(nullptr) {}
+          channel_id(-1) {}
 
     VoiceEngine* voice_engine;
     VoEBase* base;
-    VoENetwork* network;
     VoECodec* codec;
     int channel_id;
-    rtc::scoped_ptr<internal::TransportAdapter> transport_adapter;
   };
 
   void CreateVoiceEngines();
-  void SetupVoiceEngineTransports(PacketTransport* send_transport,
-                                  PacketTransport* recv_transport);
   void DestroyVoiceEngines();
 
   VoiceEngineState voe_send_;

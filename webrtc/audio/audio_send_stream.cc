@@ -76,6 +76,8 @@ AudioSendStream::AudioSendStream(
   channel_proxy_->SetLocalSSRC(config.rtp.ssrc);
   channel_proxy_->SetRTCP_CNAME(config.rtp.c_name);
 
+  channel_proxy_->RegisterExternalTransport(config.send_transport);
+
   for (const auto& extension : config.rtp.extensions) {
     if (extension.name == RtpExtension::kAbsSendTime) {
       channel_proxy_->SetSendAbsoluteSenderTimeStatus(true, extension.id);
@@ -92,6 +94,7 @@ AudioSendStream::AudioSendStream(
 AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
+  channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
 }
 
@@ -122,7 +125,7 @@ bool AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // calls on the worker thread. We should move towards always using a network
   // thread. Then this check can be enabled.
   // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
-  return false;
+  return channel_proxy_->ReceivedRTCPPacket(packet, length);
 }
 
 bool AudioSendStream::SendTelephoneEvent(int payload_type, int event,

@@ -218,12 +218,12 @@ class Channel
   int SetOpusDtx(bool enable_dtx);
 
   // VoENetwork
-  int32_t RegisterExternalTransport(Transport& transport);
+  int32_t RegisterExternalTransport(Transport* transport);
   int32_t DeRegisterExternalTransport();
-  int32_t ReceivedRTPPacket(const int8_t* data,
+  int32_t ReceivedRTPPacket(const uint8_t* received_packet,
                             size_t length,
                             const PacketTime& packet_time);
-  int32_t ReceivedRTCPPacket(const int8_t* data, size_t length);
+  int32_t ReceivedRTCPPacket(const uint8_t* data, size_t length);
 
   // VoEFile
   int StartPlayingFileLocally(const char* fileName,

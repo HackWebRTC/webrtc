@@ -67,8 +67,21 @@ void FakeAudioReceiveStream::SetStats(
   stats_ = stats;
 }
 
-void FakeAudioReceiveStream::IncrementReceivedPackets() {
-  received_packets_++;
+bool FakeAudioReceiveStream::VerifyLastPacket(const uint8_t* data,
+                                              size_t length) const {
+  return last_packet_ == rtc::Buffer(data, length);
+}
+
+bool FakeAudioReceiveStream::DeliverRtp(const uint8_t* packet,
+                                        size_t length,
+                                        const webrtc::PacketTime& packet_time) {
+  ++received_packets_;
+  last_packet_.SetData(packet, length);
+  return true;
+}
+
+bool FakeAudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+  return true;
 }
 
 webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
@@ -409,7 +422,7 @@ FakeCall::DeliveryStatus FakeCall::DeliverPacket(
       media_type == webrtc::MediaType::AUDIO) {
     for (auto receiver : audio_receive_streams_) {
       if (receiver->GetConfig().rtp.remote_ssrc == ssrc) {
-        receiver->IncrementReceivedPackets();
+        receiver->DeliverRtp(packet, length, packet_time);
         return DELIVERY_OK;
       }
     }
