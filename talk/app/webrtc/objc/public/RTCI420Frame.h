@@ -28,6 +28,8 @@
 #import <Foundation/Foundation.h>
 
 // RTCI420Frame is an ObjectiveC version of cricket::VideoFrame.
+// TODO(nisse): It appears it doesn't support any VideoFrame methods,
+// so let it wrap an webrtc::VideoFrameBuffer instead?
 @interface RTCI420Frame : NSObject
 
 @property(nonatomic, readonly) NSUInteger width;

@@ -762,20 +762,23 @@ class JavaVideoRendererWrapper
   jobject CricketToJavaI420Frame(const cricket::VideoFrame* frame) {
     jintArray strides = jni()->NewIntArray(3);
     jint* strides_array = jni()->GetIntArrayElements(strides, NULL);
-    strides_array[0] = frame->GetYPitch();
-    strides_array[1] = frame->GetUPitch();
-    strides_array[2] = frame->GetVPitch();
+    strides_array[0] = frame->video_frame_buffer()->StrideY();
+    strides_array[1] = frame->video_frame_buffer()->StrideU();
+    strides_array[2] = frame->video_frame_buffer()->StrideV();
     jni()->ReleaseIntArrayElements(strides, strides_array, 0);
     jobjectArray planes = jni()->NewObjectArray(3, *j_byte_buffer_class_, NULL);
-    jobject y_buffer =
-        jni()->NewDirectByteBuffer(const_cast<uint8_t*>(frame->GetYPlane()),
-                                   frame->GetYPitch() * frame->GetHeight());
+    jobject y_buffer = jni()->NewDirectByteBuffer(
+        const_cast<uint8_t*>(frame->video_frame_buffer()->DataY()),
+        frame->video_frame_buffer()->StrideY() *
+            frame->video_frame_buffer()->height());
     size_t chroma_size =
       ((frame->width() + 1) / 2) * ((frame->height() + 1) / 2);
     jobject u_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8_t*>(frame->GetUPlane()), chroma_size);
+        const_cast<uint8_t*>(frame->video_frame_buffer()->DataU()),
+        chroma_size);
     jobject v_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8_t*>(frame->GetVPlane()), chroma_size);
+        const_cast<uint8_t*>(frame->video_frame_buffer()->DataV()),
+        chroma_size);
     jni()->SetObjectArrayElement(planes, 0, y_buffer);
     jni()->SetObjectArrayElement(planes, 1, u_buffer);
     jni()->SetObjectArrayElement(planes, 2, v_buffer);

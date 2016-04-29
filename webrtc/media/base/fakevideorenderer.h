@@ -82,15 +82,15 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
                                  uint8_t v_min,
                                  uint8_t v_max,
                                  const cricket::VideoFrame* frame) {
-    if (!frame) {
+    if (!frame || !frame->video_frame_buffer()) {
       return false;
     }
     // Y
     int y_width = frame->width();
     int y_height = frame->height();
-    const uint8_t* y_plane = frame->GetYPlane();
+    const uint8_t* y_plane = frame->video_frame_buffer()->DataY();
     const uint8_t* y_pos = y_plane;
-    int32_t y_pitch = frame->GetYPitch();
+    int32_t y_pitch = frame->video_frame_buffer()->StrideY();
     for (int i = 0; i < y_height; ++i) {
       for (int j = 0; j < y_width; ++j) {
         uint8_t y_value = *(y_pos + j);
@@ -103,12 +103,12 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
     // U and V
     int chroma_width = (frame->width() + 1)/2;
     int chroma_height = (frame->height() + 1)/2;
-    const uint8_t* u_plane = frame->GetUPlane();
-    const uint8_t* v_plane = frame->GetVPlane();
+    const uint8_t* u_plane = frame->video_frame_buffer()->DataU();
+    const uint8_t* v_plane = frame->video_frame_buffer()->DataV();
     const uint8_t* u_pos = u_plane;
     const uint8_t* v_pos = v_plane;
-    int32_t u_pitch = frame->GetUPitch();
-    int32_t v_pitch = frame->GetVPitch();
+    int32_t u_pitch = frame->video_frame_buffer()->StrideU();
+    int32_t v_pitch = frame->video_frame_buffer()->StrideV();
     for (int i = 0; i < chroma_height; ++i) {
       for (int j = 0; j < chroma_width; ++j) {
         uint8_t u_value = *(u_pos + j);
