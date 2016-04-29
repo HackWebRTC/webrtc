@@ -13,6 +13,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/base/trace_event.h"
 
 namespace rtc {
 
@@ -441,6 +442,7 @@ void MessageQueue::Clear(MessageHandler* phandler,
 }
 
 void MessageQueue::Dispatch(Message *pmsg) {
+  TRACE_EVENT0("webrtc", "MessageQueue::Dispatch");
   pmsg->phandler->OnMessage(pmsg);
 }
 
