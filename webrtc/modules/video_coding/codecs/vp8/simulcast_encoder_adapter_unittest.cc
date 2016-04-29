@@ -107,34 +107,40 @@ TEST_F(TestSimulcastEncoderAdapter, DISABLED_TestRPSIEncoder) {
 
 class MockVideoEncoder : public VideoEncoder {
  public:
+  // TODO(nisse): Valid overrides commented out, because the gmock
+  // methods don't use any override declarations, and we want to avoid
+  // warnings from -Winconsistent-missing-override. See
+  // http://crbug.com/428099.
   int32_t InitEncode(const VideoCodec* codecSettings,
                      int32_t numberOfCores,
-                     size_t maxPayloadSize) override {
+                     size_t maxPayloadSize) /* override */ {
     codec_ = *codecSettings;
     return 0;
   }
 
   int32_t Encode(const VideoFrame& inputImage,
                  const CodecSpecificInfo* codecSpecificInfo,
-                 const std::vector<FrameType>* frame_types) override {
+                 const std::vector<FrameType>* frame_types) /* override */ {
     return 0;
   }
 
   int32_t RegisterEncodeCompleteCallback(
-      EncodedImageCallback* callback) override {
+      EncodedImageCallback* callback) /* override */ {
     callback_ = callback;
     return 0;
   }
 
-  int32_t Release() override { return 0; }
+  int32_t Release() /* override */ { return 0; }
 
-  int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) override {
+  int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) /* override */ {
     return 0;
   }
 
   MOCK_METHOD2(SetChannelParameters, int32_t(uint32_t packetLoss, int64_t rtt));
 
-  bool SupportsNativeHandle() const override { return supports_native_handle_; }
+  bool SupportsNativeHandle() const /* override */ {
+    return supports_native_handle_;
+  }
 
   virtual ~MockVideoEncoder() {}
 

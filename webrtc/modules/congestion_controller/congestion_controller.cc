@@ -81,7 +81,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     return rbe_->LatestEstimate(ssrcs, bitrate_bps);
   }
 
-  void SetMinBitrate(int min_bitrate_bps) {
+  void SetMinBitrate(int min_bitrate_bps) override {
     CriticalSectionScoped cs(crit_sect_.get());
     rbe_->SetMinBitrate(min_bitrate_bps);
     min_bitrate_bps_ = min_bitrate_bps;

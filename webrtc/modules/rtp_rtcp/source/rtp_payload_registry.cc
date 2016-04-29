@@ -406,7 +406,8 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
     return payload;
   }
 
-  int GetPayloadTypeFrequency(const RtpUtility::Payload& payload) const {
+  int GetPayloadTypeFrequency(
+      const RtpUtility::Payload& payload) const override {
     return payload.typeSpecific.Audio.frequency;
   }
 };
@@ -456,7 +457,8 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
     return payload;
   }
 
-  int GetPayloadTypeFrequency(const RtpUtility::Payload& payload) const {
+  int GetPayloadTypeFrequency(
+      const RtpUtility::Payload& payload) const override {
     return kVideoPayloadTypeFrequency;
   }
 };

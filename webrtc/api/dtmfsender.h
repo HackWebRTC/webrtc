@@ -83,7 +83,7 @@ class DtmfSender
   DtmfSender();
 
   // Implements MessageHandler.
-  virtual void OnMessage(rtc::Message* msg);
+  void OnMessage(rtc::Message* msg) override;
 
   // The DTMF sending task.
   void DoInsertDtmf();

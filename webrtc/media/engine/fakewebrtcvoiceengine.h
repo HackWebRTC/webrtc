@@ -298,7 +298,7 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->associate_send_channel = accociate_send_channel;
     return 0;
   }
-  webrtc::RtcEventLog* GetEventLog() { return nullptr; }
+  webrtc::RtcEventLog* GetEventLog() override { return nullptr; }
 
   // webrtc::VoECodec
   WEBRTC_STUB(NumOfCodecs, ());
@@ -449,11 +449,11 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(SetPlayoutSampleRate, (unsigned int samples_per_sec));
   WEBRTC_STUB_CONST(PlayoutSampleRate, (unsigned int* samples_per_sec));
   WEBRTC_STUB(EnableBuiltInAEC, (bool enable));
-  virtual bool BuiltInAECIsAvailable() const { return false; }
+  bool BuiltInAECIsAvailable() const override { return false; }
   WEBRTC_STUB(EnableBuiltInAGC, (bool enable));
-  virtual bool BuiltInAGCIsAvailable() const { return false; }
+  bool BuiltInAGCIsAvailable() const override { return false; }
   WEBRTC_STUB(EnableBuiltInNS, (bool enable));
-  virtual bool BuiltInNSIsAvailable() const { return false; }
+  bool BuiltInNSIsAvailable() const override { return false; }
 
   // webrtc::VoENetwork
   WEBRTC_FUNC(RegisterExternalTransport, (int channel,
@@ -661,17 +661,17 @@ class FakeWebRtcVoiceEngine
                                              int reportingThreshold,
                                              int penaltyDecay,
                                              int typeEventDelay));
-  int EnableHighPassFilter(bool enable) {
+  int EnableHighPassFilter(bool enable) override {
     highpass_filter_enabled_ = enable;
     return 0;
   }
-  bool IsHighPassFilterEnabled() {
+  bool IsHighPassFilterEnabled() override {
     return highpass_filter_enabled_;
   }
-  bool IsStereoChannelSwappingEnabled() {
+  bool IsStereoChannelSwappingEnabled() override {
     return stereo_swapping_enabled_;
   }
-  void EnableStereoChannelSwapping(bool enable) {
+  void EnableStereoChannelSwapping(bool enable) override {
     stereo_swapping_enabled_ = enable;
   }
   int GetNetEqCapacity() const {

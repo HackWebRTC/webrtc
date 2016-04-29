@@ -131,7 +131,7 @@ class RtpDumpReader : public RtpFileReaderImpl {
   }
 
   bool Init(const std::string& filename,
-            const std::set<uint32_t>& ssrc_filter) {
+            const std::set<uint32_t>& ssrc_filter) override {
     file_ = fopen(filename.c_str(), "rb");
     if (file_ == NULL) {
       printf("ERROR: Can't open file: %s\n", filename.c_str());

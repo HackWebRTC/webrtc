@@ -101,10 +101,10 @@ class RealTimeTemporalLayers : public TemporalLayers {
 
   virtual ~RealTimeTemporalLayers() {}
 
-  virtual bool ConfigureBitrates(int bitrate_kbit,
-                                 int max_bitrate_kbit,
-                                 int framerate,
-                                 vpx_codec_enc_cfg_t* cfg) {
+  bool ConfigureBitrates(int bitrate_kbit,
+                         int max_bitrate_kbit,
+                         int framerate,
+                         vpx_codec_enc_cfg_t* cfg) override {
     temporal_layers_ =
         CalculateNumberOfTemporalLayers(temporal_layers_, framerate);
     temporal_layers_ = std::min(temporal_layers_, max_temporal_layers_);
@@ -184,7 +184,7 @@ class RealTimeTemporalLayers : public TemporalLayers {
     return true;
   }
 
-  virtual int EncodeFlags(uint32_t timestamp) {
+  int EncodeFlags(uint32_t timestamp) override {
     frame_counter_++;
     return CurrentEncodeFlags();
   }
@@ -196,16 +196,16 @@ class RealTimeTemporalLayers : public TemporalLayers {
     return encode_flags_[index];
   }
 
-  virtual int CurrentLayerId() const {
+  int CurrentLayerId() const override {
     assert(layer_ids_length_ > 0 && layer_ids_ != NULL);
     int index = frame_counter_ % layer_ids_length_;
     assert(index >= 0 && index < layer_ids_length_);
     return layer_ids_[index];
   }
 
-  virtual void PopulateCodecSpecific(bool base_layer_sync,
-                                     CodecSpecificInfoVP8* vp8_info,
-                                     uint32_t timestamp) {
+  void PopulateCodecSpecific(bool base_layer_sync,
+                             CodecSpecificInfoVP8* vp8_info,
+                             uint32_t timestamp) override {
     assert(temporal_layers_ > 0);
 
     if (temporal_layers_ == 1) {

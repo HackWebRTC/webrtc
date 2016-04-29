@@ -482,23 +482,23 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     return sinks_;
   }
   int max_bps() const { return max_bps_; }
-  virtual bool SetSendParameters(const VideoSendParameters& params) {
+  bool SetSendParameters(const VideoSendParameters& params) override {
     return (SetSendCodecs(params.codecs) &&
             SetSendRtpHeaderExtensions(params.extensions) &&
             SetMaxSendBandwidth(params.max_bandwidth_bps));
   }
-  virtual bool SetRecvParameters(const VideoRecvParameters& params) {
+  bool SetRecvParameters(const VideoRecvParameters& params) override {
     return (SetRecvCodecs(params.codecs) &&
             SetRecvRtpHeaderExtensions(params.extensions));
   }
-  virtual bool AddSendStream(const StreamParams& sp) {
+  bool AddSendStream(const StreamParams& sp) override {
     return RtpHelper<VideoMediaChannel>::AddSendStream(sp);
   }
-  virtual bool RemoveSendStream(uint32_t ssrc) {
+  bool RemoveSendStream(uint32_t ssrc) override {
     return RtpHelper<VideoMediaChannel>::RemoveSendStream(ssrc);
   }
 
-  virtual bool GetSendCodec(VideoCodec* send_codec) {
+  bool GetSendCodec(VideoCodec* send_codec) override {
     if (send_codecs_.empty()) {
       return false;
     }
@@ -516,9 +516,9 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     return true;
   }
 
-  virtual bool SetSend(bool send) { return set_sending(send); }
-  virtual bool SetVideoSend(uint32_t ssrc, bool enable,
-                            const VideoOptions* options) {
+  bool SetSend(bool send) override { return set_sending(send); }
+  bool SetVideoSend(uint32_t ssrc, bool enable,
+                    const VideoOptions* options) override {
     if (!RtpHelper<VideoMediaChannel>::MuteStream(ssrc, !enable)) {
       return false;
     }
@@ -536,20 +536,20 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   bool HasSource(uint32_t ssrc) const {
     return sources_.find(ssrc) != sources_.end();
   }
-  virtual bool AddRecvStream(const StreamParams& sp) {
+  bool AddRecvStream(const StreamParams& sp) override {
     if (!RtpHelper<VideoMediaChannel>::AddRecvStream(sp))
       return false;
     sinks_[sp.first_ssrc()] = NULL;
     return true;
   }
-  virtual bool RemoveRecvStream(uint32_t ssrc) {
+  bool RemoveRecvStream(uint32_t ssrc) override {
     if (!RtpHelper<VideoMediaChannel>::RemoveRecvStream(ssrc))
       return false;
     sinks_.erase(ssrc);
     return true;
   }
 
-  virtual bool GetStats(VideoMediaInfo* info) { return false; }
+  bool GetStats(VideoMediaInfo* info) override { return false; }
 
  private:
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) {

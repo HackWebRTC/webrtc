@@ -708,7 +708,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       }
     }
 
-    virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) {
+    void EncodedFrameCallback(const EncodedFrame& encoded_frame) override {
       // Increase frame size for next encoded frame, in the context of the
       // encoder thread.
       if (!use_fec_ &&
@@ -999,8 +999,8 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 
     size_t GetNumVideoStreams() const override { return 3; }
 
-    virtual void OnFrameGeneratorCapturerCreated(
-        test::FrameGeneratorCapturer* frame_generator_capturer) {
+    void OnFrameGeneratorCapturerCreated(
+        test::FrameGeneratorCapturer* frame_generator_capturer) override {
       rtc::CritScope lock(&crit_);
       capturer_ = frame_generator_capturer;
     }
@@ -1040,7 +1040,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
     }
 
    private:
-    virtual Action OnSendRtp(const uint8_t* packet, size_t length) {
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
       if (RtpHeaderParser::IsRtcp(packet, length))
         return DROP_PACKET;
 

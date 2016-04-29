@@ -608,7 +608,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
 
   ~AcmIsacMtTestOldApi() {}
 
-  void SetUp() {
+  void SetUp() override {
     AudioCodingModuleTestOldApi::SetUp();
     RegisterCodec();  // Must be called before the threads start below.
 
@@ -642,7 +642,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
     ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
   }
 
-  void InsertPacket() {
+  void InsertPacket() override {
     int num_calls = packet_cb_.num_calls();  // Store locally for thread safety.
     if (num_calls > last_packet_number_) {
       // Get the new payload out from the callback handler.
@@ -661,7 +661,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
             &last_payload_vec_[0], last_payload_vec_.size(), rtp_header_));
   }
 
-  void InsertAudio() {
+  void InsertAudio() override {
     // TODO(kwiberg): Use std::copy here. Might be complications because AFAICS
     // this call confuses the number of samples with the number of bytes, and
     // ends up copying only half of what it should.
@@ -677,7 +677,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   // This method is the same as AudioCodingModuleMtTestOldApi::TestDone(), but
   // here it is using the constants defined in this class (i.e., shorter test
   // run).
-  virtual bool TestDone() {
+  bool TestDone() override {
     if (packet_cb_.num_calls() > kNumPackets) {
       rtc::CritScope lock(&crit_sect_);
       if (pull_audio_count_ > kNumPullCalls) {
@@ -728,7 +728,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     clock_ = fake_clock_.get();
   }
 
-  void SetUp() {
+  void SetUp() override {
     AudioCodingModuleTestOldApi::SetUp();
     // Set up input audio source to read from specified file, loop after 5
     // seconds, and deliver blocks of 10 ms.
@@ -757,7 +757,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     codec_registration_thread_.SetPriority(rtc::kRealtimePriority);
   }
 
-  void TearDown() {
+  void TearDown() override {
     AudioCodingModuleTestOldApi::TearDown();
     receive_thread_.Stop();
     codec_registration_thread_.Stop();
@@ -1737,7 +1737,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
   }
 
   // Inherited from test::AudioSink.
-  bool WriteArray(const int16_t* audio, size_t num_samples) {
+  bool WriteArray(const int16_t* audio, size_t num_samples) override {
     // Skip checking the first output frame, since it has a number of zeros
     // due to how NetEq is initialized.
     if (first_output_) {

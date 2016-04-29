@@ -43,7 +43,11 @@ namespace webrtc {
 // Helper class to test RtpSender/RtpReceiver.
 class MockAudioProvider : public AudioProviderInterface {
  public:
-  ~MockAudioProvider() override {}
+  // TODO(nisse): Valid overrides commented out, because the gmock
+  // methods don't use any override declarations, and we want to avoid
+  // warnings from -Winconsistent-missing-override. See
+  // http://crbug.com/428099.
+  ~MockAudioProvider() /* override */ {}
 
   MOCK_METHOD2(SetAudioPlayout,
                void(uint32_t ssrc,
@@ -58,8 +62,8 @@ class MockAudioProvider : public AudioProviderInterface {
   MOCK_METHOD2(SetAudioRtpParameters,
                bool(uint32_t ssrc, const RtpParameters&));
 
-  void SetRawAudioSink(uint32_t,
-                       std::unique_ptr<AudioSinkInterface> sink) override {
+  void SetRawAudioSink(
+      uint32_t, std::unique_ptr<AudioSinkInterface> sink) /* override */ {
     sink_ = std::move(sink);
   }
 

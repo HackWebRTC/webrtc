@@ -424,8 +424,8 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
       state_ = pc_->signaling_state();
     }
   }
-  virtual void OnSignalingChange(
-      PeerConnectionInterface::SignalingState new_state) {
+  void OnSignalingChange(
+      PeerConnectionInterface::SignalingState new_state) override {
     EXPECT_EQ(pc_->signaling_state(), new_state);
     state_ = new_state;
   }

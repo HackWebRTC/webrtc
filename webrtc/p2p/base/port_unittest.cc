@@ -965,7 +965,7 @@ class FakePacketSocketFactory : public rtc::PacketSocketFactory {
   void set_next_client_tcp_socket(AsyncPacketSocket* next_client_tcp_socket) {
     next_client_tcp_socket_ = next_client_tcp_socket;
   }
-  rtc::AsyncResolverInterface* CreateAsyncResolver() {
+  rtc::AsyncResolverInterface* CreateAsyncResolver() override {
     return NULL;
   }
 

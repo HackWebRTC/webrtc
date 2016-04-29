@@ -783,11 +783,15 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
 
   class MockAudioDecoder : public AudioDecoder {
    public:
-    void Reset() override {}
+    // TODO(nisse): Valid overrides commented out, because the gmock
+    // methods don't use any override declarations, and we want to avoid
+    // warnings from -Winconsistent-missing-override. See
+    // http://crbug.com/428099.
+    void Reset() /* override */ {}
     MOCK_CONST_METHOD2(PacketDuration, int(const uint8_t*, size_t));
     MOCK_METHOD5(DecodeInternal, int(const uint8_t*, size_t, int, int16_t*,
                                      SpeechType*));
-    size_t Channels() const override { return kChannels; }
+    size_t Channels() const /* override */ { return kChannels; }
   } decoder_;
 
   const uint8_t kFirstPayloadValue = 1;

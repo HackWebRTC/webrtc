@@ -267,10 +267,10 @@ class WebRtcSession : public AudioProviderInterface,
                              const RtpParameters& parameters) override;
 
   // Implements DtmfProviderInterface.
-  virtual bool CanInsertDtmf(const std::string& track_id);
-  virtual bool InsertDtmf(const std::string& track_id,
-                          int code, int duration);
-  virtual sigslot::signal0<>* GetOnDestroyedSignal();
+  bool CanInsertDtmf(const std::string& track_id) override;
+  bool InsertDtmf(const std::string& track_id,
+                  int code, int duration) override;
+  sigslot::signal0<>* GetOnDestroyedSignal() override;
 
   // Implements DataChannelProviderInterface.
   bool SendData(const cricket::SendDataParams& params,

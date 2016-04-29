@@ -35,7 +35,7 @@ typedef rtc::RefCountedObject<DtlsIdentityStoreImpl>
 
 class PeerConnectionFactory : public PeerConnectionFactoryInterface {
  public:
-  virtual void SetOptions(const Options& options) {
+  void SetOptions(const Options& options) override {
     options_ = options;
   }
 

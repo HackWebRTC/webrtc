@@ -146,7 +146,7 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
   const char* get_cert() { return kKeysAndCerts[key_index_].cert_pem; }
 
   // rtc::MessageHandler implementation.
-  void OnMessage(rtc::Message* msg) {
+  void OnMessage(rtc::Message* msg) override {
     MessageData* message_data = static_cast<MessageData*>(msg->pdata);
     rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver> observer =
         message_data->data();

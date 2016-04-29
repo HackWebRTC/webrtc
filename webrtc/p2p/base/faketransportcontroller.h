@@ -231,7 +231,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   }
 
   bool SetLocalCertificate(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override {
     local_cert_ = certificate;
     return true;
   }
@@ -257,7 +257,7 @@ class FakeTransportChannel : public TransportChannelImpl,
 
   bool GetSslCipherSuite(int* cipher_suite) override { return false; }
 
-  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const {
+  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {
     return local_cert_;
   }
 

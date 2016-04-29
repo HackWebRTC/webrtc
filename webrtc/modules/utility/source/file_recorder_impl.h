@@ -45,23 +45,23 @@ public:
     virtual ~FileRecorderImpl();
 
     // FileRecorder functions.
-    virtual int32_t RegisterModuleFileCallback(FileCallback* callback);
-    virtual FileFormats RecordingFileFormat() const;
-    virtual int32_t StartRecordingAudioFile(
+    int32_t RegisterModuleFileCallback(FileCallback* callback) override;
+    FileFormats RecordingFileFormat() const override;
+    int32_t StartRecordingAudioFile(
         const char* fileName,
         const CodecInst& codecInst,
         uint32_t notificationTimeMs) override;
-    virtual int32_t StartRecordingAudioFile(
+    int32_t StartRecordingAudioFile(
         OutStream& destStream,
         const CodecInst& codecInst,
         uint32_t notificationTimeMs) override;
-    virtual int32_t StopRecording();
-    virtual bool IsRecording() const;
-    virtual int32_t codec_info(CodecInst& codecInst) const;
-    virtual int32_t RecordAudioToFile(
+    int32_t StopRecording() override;
+    bool IsRecording() const override;
+    int32_t codec_info(CodecInst& codecInst) const override;
+    int32_t RecordAudioToFile(
         const AudioFrame& frame,
-        const TickTime* playoutTS = NULL);
-    virtual int32_t StartRecordingVideoFile(
+        const TickTime* playoutTS = NULL) override;
+    int32_t StartRecordingVideoFile(
         const char* fileName,
         const CodecInst& audioCodecInst,
         const VideoCodec& videoCodecInst,
@@ -69,7 +69,7 @@ public:
     {
         return -1;
     }
-    virtual int32_t RecordVideoToFile(const VideoFrame& videoFrame) {
+    int32_t RecordVideoToFile(const VideoFrame& videoFrame) override {
         return -1;
     }
 

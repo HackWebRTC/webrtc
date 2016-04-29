@@ -61,14 +61,14 @@ class WebRtcVideoCapturer : public VideoCapturer,
  protected:
   void OnSinkWantsChanged(const rtc::VideoSinkWants& wants) override;
   // Override virtual methods of the parent class VideoCapturer.
-  virtual bool GetPreferredFourccs(std::vector<uint32_t>* fourccs);
+  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override;
 
  private:
   // Callback when a frame is captured by camera.
-  virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       const webrtc::VideoFrame& frame);
-  virtual void OnCaptureDelayChanged(const int32_t id,
-                                     const int32_t delay);
+  void OnIncomingCapturedFrame(const int32_t id,
+                               const webrtc::VideoFrame& frame) override;
+  void OnCaptureDelayChanged(const int32_t id,
+                             const int32_t delay) override;
 
   // Used to signal captured frames on the same thread as invoked Start().
   // With WebRTC's current VideoCapturer implementations, this will mean a

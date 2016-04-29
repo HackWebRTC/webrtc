@@ -168,7 +168,7 @@ class SkipEncodingUnusedStreamsTest {
 
     virtual ~SpyingTemporalLayers() { delete layers_; }
 
-    virtual int EncodeFlags(uint32_t timestamp) {
+    int EncodeFlags(uint32_t timestamp) override {
       return layers_->EncodeFlags(timestamp);
     }
 

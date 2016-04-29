@@ -395,7 +395,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
       EXPECT_TRUE(std::abs(time_offset_ms) < threshold_ms_);
     }
 
-    virtual Action OnSendRtp(const uint8_t* packet, size_t length) {
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));

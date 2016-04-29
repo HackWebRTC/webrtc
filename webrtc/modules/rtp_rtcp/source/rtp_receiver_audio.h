@@ -31,15 +31,15 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
 
   // The following three methods implement the TelephoneEventHandler interface.
   // Forward DTMFs to decoder for playout.
-  void SetTelephoneEventForwardToDecoder(bool forward_to_decoder);
+  void SetTelephoneEventForwardToDecoder(bool forward_to_decoder) override;
 
   // Is forwarding of outband telephone events turned on/off?
-  bool TelephoneEventForwardToDecoder() const;
+  bool TelephoneEventForwardToDecoder() const override;
 
   // Is TelephoneEvent configured with payload type payload_type
-  bool TelephoneEventPayloadType(const int8_t payload_type) const;
+  bool TelephoneEventPayloadType(const int8_t payload_type) const override;
 
-  TelephoneEventHandler* GetTelephoneEventHandler() { return this; }
+  TelephoneEventHandler* GetTelephoneEventHandler() override { return this; }
 
   // Returns true if CNG is configured with payload type payload_type. If so,
   // the frequency and cng_payload_type_has_changed are filled in.

@@ -31,7 +31,7 @@ class FakeAdmTest : public testing::Test,
     memset(rec_buffer_, 0, sizeof(rec_buffer_));
   }
 
-  virtual void SetUp() {
+  void SetUp() override {
     fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
     EXPECT_TRUE(fake_audio_capture_module_.get() != NULL);
   }

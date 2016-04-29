@@ -182,8 +182,8 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
         num_created_encoders_(0),
         encoders_have_internal_sources_(false) {}
 
-  virtual webrtc::VideoEncoder* CreateVideoEncoder(
-      webrtc::VideoCodecType type) {
+  webrtc::VideoEncoder* CreateVideoEncoder(
+      webrtc::VideoCodecType type) override {
     rtc::CritScope lock(&crit_);
     if (supported_codec_types_.count(type) == 0) {
       return NULL;
@@ -203,7 +203,7 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     return false;
   }
 
-  virtual void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) {
+  void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override {
     rtc::CritScope lock(&crit_);
     encoders_.erase(
         std::remove(encoders_.begin(), encoders_.end(), encoder),
@@ -211,12 +211,12 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     delete encoder;
   }
 
-  virtual const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs()
-      const {
+  const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs()
+      const override {
     return codecs_;
   }
 
-  virtual bool EncoderTypeHasInternalSource(
+  bool EncoderTypeHasInternalSource(
       webrtc::VideoCodecType type) const override {
     return encoders_have_internal_sources_;
   }

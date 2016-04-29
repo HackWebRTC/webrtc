@@ -43,8 +43,8 @@ class NetEqIsacQualityTest : public NetEqQualityTest {
   NetEqIsacQualityTest();
   void SetUp() override;
   void TearDown() override;
-  virtual int EncodeBlock(int16_t* in_data, size_t block_size_samples,
-                          rtc::Buffer* payload, size_t max_bytes);
+  int EncodeBlock(int16_t* in_data, size_t block_size_samples,
+                  rtc::Buffer* payload, size_t max_bytes) override;
  private:
   ISACFIX_MainStruct* isac_encoder_;
   int bit_rate_kbps_;

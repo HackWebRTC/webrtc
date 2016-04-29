@@ -22,7 +22,11 @@ namespace webrtc {
 
 class MockAudioEncoder : public AudioEncoder {
  public:
-  ~MockAudioEncoder() override { Die(); }
+  // TODO(nisse): Valid overrides commented out, because the gmock
+  // methods don't use any override declarations, and we want to avoid
+  // warnings from -Winconsistent-missing-override. See
+  // http://crbug.com/428099.
+  ~MockAudioEncoder() /* override */ { Die(); }
   MOCK_METHOD0(Die, void());
   MOCK_METHOD1(Mark, void(std::string desc));
   MOCK_CONST_METHOD0(SampleRateHz, int());

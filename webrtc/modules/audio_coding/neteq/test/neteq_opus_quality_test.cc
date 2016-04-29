@@ -103,8 +103,8 @@ class NetEqOpusQualityTest : public NetEqQualityTest {
   NetEqOpusQualityTest();
   void SetUp() override;
   void TearDown() override;
-  virtual int EncodeBlock(int16_t* in_data, size_t block_size_samples,
-                          rtc::Buffer* payload, size_t max_bytes);
+  int EncodeBlock(int16_t* in_data, size_t block_size_samples,
+                  rtc::Buffer* payload, size_t max_bytes) override;
  private:
   WebRtcOpusEncInst* opus_encoder_;
   OpusRepacketizer* repacketizer_;

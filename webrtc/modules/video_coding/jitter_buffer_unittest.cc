@@ -215,7 +215,7 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
 
  protected:
   TestBasicJitterBuffer() : scoped_field_trial_(GetParam()) {}
-  virtual void SetUp() {
+  void SetUp() override {
     clock_.reset(new SimulatedClock(0));
     jitter_buffer_.reset(new VCMJitterBuffer(
         clock_.get(),

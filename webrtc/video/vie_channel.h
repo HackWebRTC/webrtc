@@ -81,11 +81,10 @@ class ViEChannel : public VCMFrameTypeCallback,
   CallStatsObserver* GetStatsObserver();
 
   // Implements VCMReceiveCallback.
-  virtual int32_t FrameToRender(VideoFrame& video_frame);  // NOLINT
+  int32_t FrameToRender(VideoFrame& video_frame) override;  // NOLINT
 
   // Implements VCMReceiveCallback.
-  virtual int32_t ReceivedDecodedReferenceFrame(
-      const uint64_t picture_id);
+  int32_t ReceivedDecodedReferenceFrame(const uint64_t picture_id) override;
 
   // Implements VCMReceiveCallback.
   void OnIncomingPayloadType(int payload_type) override;
@@ -97,20 +96,20 @@ class ViEChannel : public VCMFrameTypeCallback,
   void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
 
   // Implements VCMDecoderTimingCallback.
-  virtual void OnDecoderTiming(int decode_ms,
-                               int max_decode_ms,
-                               int current_delay_ms,
-                               int target_delay_ms,
-                               int jitter_buffer_ms,
-                               int min_playout_delay_ms,
-                               int render_delay_ms);
+  void OnDecoderTiming(int decode_ms,
+                       int max_decode_ms,
+                       int current_delay_ms,
+                       int target_delay_ms,
+                       int jitter_buffer_ms,
+                       int min_playout_delay_ms,
+                       int render_delay_ms) override;
 
   // Implements FrameTypeCallback.
-  virtual int32_t RequestKeyFrame();
+  int32_t RequestKeyFrame() override;
 
   // Implements FrameTypeCallback.
-  virtual int32_t SliceLossIndicationRequest(
-      const uint64_t picture_id);
+  int32_t SliceLossIndicationRequest(
+      const uint64_t picture_id) override;
 
   // Implements VideoPacketRequestCallback.
   int32_t ResendPackets(const uint16_t* sequence_numbers,

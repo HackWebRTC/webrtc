@@ -1765,7 +1765,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
 
     ~BweObserver() {}
 
-    test::PacketTransport* CreateReceiveTransport() {
+    test::PacketTransport* CreateReceiveTransport() override {
       receive_transport_ = new test::PacketTransport(
           nullptr, this, test::PacketTransport::kReceiver,
           FakeNetworkPipe::Config());
@@ -2248,7 +2248,7 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
       return SEND_PACKET;
     }
     // Send stream should send SR packets (and DLRR packets if enabled).
-    virtual Action OnSendRtcp(const uint8_t* packet, size_t length) {
+    Action OnSendRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
       RTCPUtility::RTCPParserV2 parser(packet, length, true);
       EXPECT_TRUE(parser.IsValid());

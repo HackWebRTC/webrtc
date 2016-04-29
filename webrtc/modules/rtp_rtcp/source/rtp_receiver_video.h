@@ -34,7 +34,7 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
                          int64_t timestamp,
                          bool is_first_packet) override;
 
-  TelephoneEventHandler* GetTelephoneEventHandler() { return NULL; }
+  TelephoneEventHandler* GetTelephoneEventHandler() override { return NULL; }
 
   int GetPayloadTypeFrequency() const override;
 

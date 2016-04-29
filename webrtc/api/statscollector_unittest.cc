@@ -67,6 +67,10 @@ const uint32_t kSsrcOfTrack = 1234;
 
 class MockWebRtcSession : public webrtc::WebRtcSession {
  public:
+  // TODO(nisse): Valid overrides commented out, because the gmock
+  // methods don't use any override declarations, and we want to avoid
+  // warnings from -Winconsistent-missing-override. See
+  // http://crbug.com/428099.
   explicit MockWebRtcSession(webrtc::MediaControllerInterface* media_controller)
       : WebRtcSession(media_controller,
                       rtc::Thread::Current(),
@@ -85,7 +89,7 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
 
   // Workaround for gmock's inability to cope with move-only return values.
   std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
-      const std::string& transport_name) override {
+      const std::string& transport_name) /* override */ {
     return std::unique_ptr<rtc::SSLCertificate>(
         GetRemoteSSLCertificate_ReturnsRawPointer(transport_name));
   }

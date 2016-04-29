@@ -96,7 +96,7 @@ class FakeDtmfProvider : public DtmfProviderInterface {
     return true;
   }
 
-  virtual sigslot::signal0<>* GetOnDestroyedSignal() {
+  sigslot::signal0<>* GetOnDestroyedSignal() override {
     return &SignalDestroyed;
   }
 

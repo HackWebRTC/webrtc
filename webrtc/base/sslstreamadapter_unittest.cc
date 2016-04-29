@@ -562,7 +562,7 @@ class SSLStreamAdapterTestTLS
   }
 
   // Test data transfer for TLS
-  virtual void TestTransfer(int size) {
+  void TestTransfer(int size) override {
     LOG(LS_INFO) << "Starting transfer test with " << size << " bytes";
     // Create some dummy data to send.
     size_t received;
@@ -591,7 +591,7 @@ class SSLStreamAdapterTestTLS
                         recv_stream_.GetBuffer(), size));
   }
 
-  void WriteData() {
+  void WriteData() override {
     size_t position, tosend, size;
     rtc::StreamResult rv;
     size_t sent;
@@ -627,7 +627,7 @@ class SSLStreamAdapterTestTLS
     }
   };
 
-  virtual void ReadData(rtc::StreamInterface *stream) {
+  void ReadData(rtc::StreamInterface *stream) override {
     char buffer[1600];
     size_t bread;
     int err2;
@@ -691,7 +691,7 @@ class SSLStreamAdapterTestDTLS
         new SSLDummyStreamDTLS(this, "s2c", &server_buffer_, &client_buffer_);
   }
 
-  virtual void WriteData() {
+  void WriteData() override {
     unsigned char *packet = new unsigned char[1600];
 
     while (sent_ < count_) {
@@ -720,7 +720,7 @@ class SSLStreamAdapterTestDTLS
     delete [] packet;
   }
 
-  virtual void ReadData(rtc::StreamInterface *stream) {
+  void ReadData(rtc::StreamInterface *stream) override {
     unsigned char buffer[2000];
     size_t bread;
     int err2;
@@ -756,7 +756,7 @@ class SSLStreamAdapterTestDTLS
     }
   }
 
-  virtual void TestTransfer(int count) {
+  void TestTransfer(int count) override {
     count_ = count;
 
     WriteData();

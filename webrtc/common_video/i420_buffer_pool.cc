@@ -30,7 +30,7 @@ class PooledI420Buffer : public webrtc::VideoFrameBuffer {
   const uint8_t* DataU() const override { return buffer_->DataU(); }
   const uint8_t* DataV() const override { return buffer_->DataV(); }
 
-  bool IsMutable() { return HasOneRef(); }
+  bool IsMutable() override { return HasOneRef(); }
   // Make the IsMutable() check here instead of in |buffer_|, because the pool
   // also has a reference to |buffer_|.
   uint8_t* MutableDataY() override {

@@ -191,7 +191,7 @@ class MockIceObserver : public webrtc::IceObserver {
 
   // Some local candidates are removed.
   void OnIceCandidatesRemoved(
-      const std::vector<cricket::Candidate>& candidates) {
+      const std::vector<cricket::Candidate>& candidates) override {
     num_candidates_removed_ += candidates.size();
   }
 

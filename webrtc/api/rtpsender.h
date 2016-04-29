@@ -98,8 +98,8 @@ class AudioRtpSender : public ObserverInterface,
 
   void Stop() override;
 
-  RtpParameters GetParameters() const;
-  bool SetParameters(const RtpParameters& parameters);
+  RtpParameters GetParameters() const override;
+  bool SetParameters(const RtpParameters& parameters) override;
 
  private:
   // TODO(nisse): Since SSRC == 0 is technically valid, figure out
@@ -164,8 +164,8 @@ class VideoRtpSender : public ObserverInterface,
 
   void Stop() override;
 
-  RtpParameters GetParameters() const;
-  bool SetParameters(const RtpParameters& parameters);
+  RtpParameters GetParameters() const override;
+  bool SetParameters(const RtpParameters& parameters) override;
 
  private:
   bool can_send_track() const { return track_ && ssrc_; }

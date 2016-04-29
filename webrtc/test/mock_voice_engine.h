@@ -24,6 +24,10 @@ namespace test {
 // able to get the various interfaces as usual, via T::GetInterface().
 class MockVoiceEngine : public VoiceEngineImpl {
  public:
+  // TODO(nisse): Valid overrides commented out, because the gmock
+  // methods don't use any override declarations, and we want to avoid
+  // warnings from -Winconsistent-missing-override. See
+  // http://crbug.com/428099.
   MockVoiceEngine() : VoiceEngineImpl(new Config(), true) {
     // Increase ref count so this object isn't automatically deleted whenever
     // interfaces are Release():d.
@@ -36,7 +40,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
               return new testing::NiceMock<MockVoEChannelProxy>();
             }));
   }
-  ~MockVoiceEngine() override {
+  ~MockVoiceEngine() /* override */ {
     // Decrease ref count before base class d-tor is called; otherwise it will
     // trigger an assertion.
     --_ref_count;
@@ -45,7 +49,8 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD1(ChannelProxyFactory, voe::ChannelProxy*(int channel_id));
 
   // VoiceEngineImpl
-  std::unique_ptr<voe::ChannelProxy> GetChannelProxy(int channel_id) override {
+  std::unique_ptr<voe::ChannelProxy> GetChannelProxy(
+      int channel_id) /* override */ {
     return std::unique_ptr<voe::ChannelProxy>(ChannelProxyFactory(channel_id));
   }
 

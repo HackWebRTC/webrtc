@@ -36,13 +36,13 @@ class RTCCertificateGeneratorFixture : public RTCCertificateGeneratorCallback {
   RTCCertificateGenerator* generator() const { return generator_.get(); }
   RTCCertificate* certificate() const { return certificate_.get(); }
 
-  void OnSuccess(const scoped_refptr<RTCCertificate>& certificate) {
+  void OnSuccess(const scoped_refptr<RTCCertificate>& certificate) override {
     RTC_CHECK(signaling_thread_->IsCurrent());
     RTC_CHECK(certificate);
     certificate_ = certificate;
     generate_async_completed_ = true;
   }
-  void OnFailure() {
+  void OnFailure() override {
     RTC_CHECK(signaling_thread_->IsCurrent());
     certificate_ = nullptr;
     generate_async_completed_ = true;

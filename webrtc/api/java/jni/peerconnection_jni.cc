@@ -202,7 +202,7 @@ class PCOJava : public PeerConnectionObserver {
   }
 
   void OnIceCandidatesRemoved(
-      const std::vector<cricket::Candidate>& candidates) {
+      const std::vector<cricket::Candidate>& candidates) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jobjectArray candidates_array = ToJavaCandidateArray(jni(), candidates);
     jmethodID m =

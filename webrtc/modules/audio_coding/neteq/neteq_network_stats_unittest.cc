@@ -24,31 +24,36 @@ using ::testing::Return;
 
 class MockAudioDecoder final : public AudioDecoder {
  public:
+  // TODO(nisse): Valid overrides commented out, because the gmock
+  // methods don't use any override declarations, and we want to avoid
+  // warnings from -Winconsistent-missing-override. See
+  // http://crbug.com/428099.
   static const int kPacketDuration = 960;  // 48 kHz * 20 ms
 
   explicit MockAudioDecoder(size_t num_channels)
       : num_channels_(num_channels), fec_enabled_(false) {
   }
-  ~MockAudioDecoder() override { Die(); }
+  ~MockAudioDecoder() /* override */ { Die(); }
   MOCK_METHOD0(Die, void());
 
   MOCK_METHOD0(Reset, void());
 
   int PacketDuration(const uint8_t* encoded,
-                     size_t encoded_len) const override {
+                     size_t encoded_len) const /* override */ {
     return kPacketDuration;
   }
 
   int PacketDurationRedundant(const uint8_t* encoded,
-                              size_t encoded_len) const override {
+                              size_t encoded_len) const /* override */ {
     return kPacketDuration;
   }
 
-  bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override {
+  bool PacketHasFec(
+      const uint8_t* encoded, size_t encoded_len) const /* override */ {
     return fec_enabled_;
   }
 
-  size_t Channels() const override { return num_channels_; }
+  size_t Channels() const /* override */ { return num_channels_; }
 
   void set_fec_enabled(bool enable_fec) { fec_enabled_ = enable_fec; }
 
@@ -60,7 +65,7 @@ class MockAudioDecoder final : public AudioDecoder {
                      size_t encoded_len,
                      int /*sample_rate_hz*/,
                      int16_t* decoded,
-                     SpeechType* speech_type) override {
+                     SpeechType* speech_type) /* override */ {
     *speech_type = kSpeech;
     memset(decoded, 0, sizeof(int16_t) * kPacketDuration * Channels());
     return kPacketDuration * Channels();
@@ -70,7 +75,7 @@ class MockAudioDecoder final : public AudioDecoder {
                               size_t encoded_len,
                               int sample_rate_hz,
                               int16_t* decoded,
-                              SpeechType* speech_type) override {
+                              SpeechType* speech_type) /* override */ {
     return DecodeInternal(encoded, encoded_len, sample_rate_hz, decoded,
                           speech_type);
   }
@@ -294,7 +299,3 @@ TEST(NetEqNetworkStatsTest, NoiseExpansionTest) {
 
 }  // namespace test
 }  // namespace webrtc
-
-
-
-

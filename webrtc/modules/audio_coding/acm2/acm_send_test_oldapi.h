@@ -47,7 +47,7 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   // Returns the next encoded packet. Returns NULL if the test duration was
   // exceeded. Ownership of the packet is handed over to the caller.
   // Inherited from PacketSource.
-  Packet* NextPacket();
+  Packet* NextPacket() override;
 
   // Inherited from AudioPacketizationCallback.
   int32_t SendData(FrameType frame_type,

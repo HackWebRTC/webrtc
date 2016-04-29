@@ -157,8 +157,8 @@ TEST_F(ReceiveStatisticsTest, RtcpCallbacks) {
         : RtcpStatisticsCallback(), num_calls_(0), ssrc_(0), stats_() {}
     virtual ~TestCallback() {}
 
-    virtual void StatisticsUpdated(const RtcpStatistics& statistics,
-                                   uint32_t ssrc) {
+    void StatisticsUpdated(const RtcpStatistics& statistics,
+                           uint32_t ssrc) override {
       ssrc_ = ssrc;
       stats_ = statistics;
       ++num_calls_;

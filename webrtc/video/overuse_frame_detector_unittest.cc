@@ -53,7 +53,7 @@ class CpuOveruseObserverImpl : public CpuOveruseObserver {
 class OveruseFrameDetectorTest : public ::testing::Test,
                                  public CpuOveruseMetricsObserver {
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     clock_.reset(new SimulatedClock(1234));
     observer_.reset(new MockCpuOveruseObserver());
     options_.min_process_count = 0;
