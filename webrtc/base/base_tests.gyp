@@ -100,6 +100,7 @@
           'swap_queue_unittest.cc',
           # TODO(ronghuawu): Reenable this test.
           # 'systeminfo_unittest.cc',
+          'task_queue_unittest.cc',
           'task_unittest.cc',
           'testclient_unittest.cc',
           'thread_checker_unittest.cc',
