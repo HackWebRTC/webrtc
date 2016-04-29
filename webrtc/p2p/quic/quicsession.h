@@ -52,13 +52,14 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
 
   // QuicConnectionVisitorInterface overrides.
   void OnConnectionClosed(net::QuicErrorCode error,
+                          const std::string& error_details,
                           net::ConnectionCloseSource source) override;
 
   // Exports keying material for SRTP.
   bool ExportKeyingMaterial(base::StringPiece label,
                             base::StringPiece context,
                             size_t result_len,
-                            string* result);
+                            std::string* result);
 
   // Decrypts an incoming QUIC packet to a data stream.
   bool OnReadPacket(const char* data, size_t data_len);
@@ -84,6 +85,7 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
 
  private:
   std::unique_ptr<net::QuicCryptoStream> crypto_stream_;
+  net::QuicClock clock_;  // For recording packet receipt time
 
   RTC_DISALLOW_COPY_AND_ASSIGN(QuicSession);
 };

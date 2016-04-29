@@ -26,7 +26,6 @@
 using cricket::QuicConnectionHelper;
 using cricket::ReliableQuicStream;
 
-using net::FecProtection;
 using net::IPAddress;
 using net::IPEndPoint;
 using net::PerPacketOptions;
@@ -66,7 +65,6 @@ class MockQuicSession : public QuicSession {
       QuicIOVector iovector,
       QuicStreamOffset offset,
       bool fin,
-      FecProtection fec_protection,
       QuicAckListenerInterface* ack_notifier_delegate) override {
     if (!writable_) {
       return QuicConsumedData(0, false);
@@ -118,11 +116,11 @@ class DummyPacketWriter : public QuicPacketWriter {
   DummyPacketWriter() {}
 
   // QuicPacketWriter overrides.
-  virtual net::WriteResult WritePacket(const char* buffer,
-                                       size_t buf_len,
-                                       const IPAddress& self_address,
-                                       const IPEndPoint& peer_address,
-                                       PerPacketOptions* options) {
+  net::WriteResult WritePacket(const char* buffer,
+                               size_t buf_len,
+                               const IPAddress& self_address,
+                               const IPEndPoint& peer_address,
+                               PerPacketOptions* options) override {
     return net::WriteResult(net::WRITE_STATUS_ERROR, 0);
   }
 

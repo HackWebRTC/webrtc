@@ -292,6 +292,8 @@ class QuicTransportChannel : public TransportChannelImpl,
   std::unique_ptr<net::QuicCryptoClientConfig> quic_crypto_client_config_;
   // Config for QUIC crypto server stream, used when |ssl_role_| is SSL_SERVER.
   std::unique_ptr<net::QuicCryptoServerConfig> quic_crypto_server_config_;
+  // Used by QUIC crypto server stream to track most recently compressed certs.
+  std::unique_ptr<net::QuicCompressedCertsCache> quic_compressed_certs_cache_;
   // This peer's certificate.
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   // Fingerprint of the remote peer. This must be set before we start QUIC.

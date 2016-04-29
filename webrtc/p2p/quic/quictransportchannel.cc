@@ -104,11 +104,14 @@ class InsecureProofVerifier : public net::ProofVerifier {
   // ProofVerifier override.
   net::QuicAsyncStatus VerifyProof(
       const std::string& hostname,
+      const uint16_t port,
       const std::string& server_config,
+      net::QuicVersion quic_version,
+      base::StringPiece chlo_hash,
       const std::vector<std::string>& certs,
       const std::string& cert_sct,
       const std::string& signature,
-      const net::ProofVerifyContext* verify_context,
+      const net::ProofVerifyContext* context,
       std::string* error_details,
       std::unique_ptr<net::ProofVerifyDetails>* verify_details,
       net::ProofVerifierCallback* callback) override {
@@ -485,8 +488,14 @@ bool QuicTransportChannel::StartQuicHandshake() {
     net::QuicCryptoServerConfig::ConfigOptions options;
     quic_crypto_server_config_->AddDefaultConfig(helper_.GetRandomGenerator(),
                                                  helper_.GetClock(), options);
+    quic_compressed_certs_cache_.reset(new net::QuicCompressedCertsCache(
+        net::QuicCompressedCertsCache::kQuicCompressedCertsCacheSize));
+    // TODO(mikescarlett): Add support for stateless rejects.
+    bool use_stateless_rejects_if_peer_supported = false;
     net::QuicCryptoServerStream* crypto_stream =
         new net::QuicCryptoServerStream(quic_crypto_server_config_.get(),
+                                        quic_compressed_certs_cache_.get(),
+                                        use_stateless_rejects_if_peer_supported,
                                         quic_.get());
     quic_->StartServerHandshake(crypto_stream);
     LOG_J(LS_INFO, this) << "QuicTransportChannel: Started server handshake.";

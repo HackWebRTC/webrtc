@@ -46,7 +46,7 @@ void QuicSession::SetCryptoStream(net::QuicCryptoStream* crypto_stream) {
 bool QuicSession::ExportKeyingMaterial(base::StringPiece label,
                                        base::StringPiece context,
                                        size_t result_len,
-                                       string* result) {
+                                       std::string* result) {
   return crypto_stream_->ExportKeyingMaterial(label, context, result_len,
                                               result);
 }
@@ -73,11 +73,7 @@ ReliableQuicStream* QuicSession::CreateIncomingDynamicStream(
 
 ReliableQuicStream* QuicSession::CreateOutgoingDynamicStream(
     net::SpdyPriority priority) {
-  ReliableQuicStream* stream = CreateDataStream(GetNextOutgoingStreamId());
-  if (stream) {
-    ActivateStream(stream);  // QuicSession owns the stream.
-  }
-  return stream;
+  return CreateDataStream(GetNextOutgoingStreamId());
 }
 
 ReliableQuicStream* QuicSession::CreateDataStream(net::QuicStreamId id) {
@@ -85,20 +81,25 @@ ReliableQuicStream* QuicSession::CreateDataStream(net::QuicStreamId id) {
     // Encryption not active so no stream created
     return nullptr;
   }
-  return new ReliableQuicStream(id, this);
+  ReliableQuicStream* stream = new ReliableQuicStream(id, this);
+  if (stream) {
+    ActivateStream(stream);  // QuicSession owns the stream.
+  }
+  return stream;
 }
 
 void QuicSession::OnConnectionClosed(net::QuicErrorCode error,
+                                     const std::string& error_details,
                                      net::ConnectionCloseSource source) {
-  net::QuicSession::OnConnectionClosed(error, source);
+  net::QuicSession::OnConnectionClosed(error, error_details, source);
   SignalConnectionClosed(error,
                          source == net::ConnectionCloseSource::FROM_PEER);
 }
 
 bool QuicSession::OnReadPacket(const char* data, size_t data_len) {
-  net::QuicEncryptedPacket packet(data, data_len);
-  connection()->ProcessUdpPacket(connection()->self_address(),
-                                 connection()->peer_address(), packet);
+  net::QuicReceivedPacket packet(data, data_len, clock_.Now());
+  ProcessUdpPacket(connection()->self_address(), connection()->peer_address(),
+                   packet);
   return true;
 }
 

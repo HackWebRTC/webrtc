@@ -37,6 +37,7 @@ using net::ProofVerifyContext;
 using net::ProofVerifyDetails;
 using net::QuicByteCount;
 using net::QuicClock;
+using net::QuicCompressedCertsCache;
 using net::QuicConfig;
 using net::QuicConnection;
 using net::QuicCryptoClientConfig;
@@ -112,11 +113,14 @@ class FakeProofVerifier : public net::ProofVerifier {
   // ProofVerifier override
   net::QuicAsyncStatus VerifyProof(
       const std::string& hostname,
+      const uint16_t port,
       const std::string& server_config,
+      net::QuicVersion quic_version,
+      base::StringPiece chlo_hash,
       const std::vector<std::string>& certs,
       const std::string& cert_sct,
       const std::string& signature,
-      const net::ProofVerifyContext* verify_context,
+      const ProofVerifyContext* context,
       std::string* error_details,
       std::unique_ptr<net::ProofVerifyDetails>* verify_details,
       net::ProofVerifierCallback* callback) override {
@@ -231,7 +235,10 @@ class QuicSessionForTest : public QuicSession {
 class QuicSessionTest : public ::testing::Test,
                         public QuicCryptoClientStream::ProofHandler {
  public:
-  QuicSessionTest() : quic_helper_(rtc::Thread::Current()) {}
+  QuicSessionTest()
+      : quic_helper_(rtc::Thread::Current()),
+        quic_compressed_certs_cache_(
+            QuicCompressedCertsCache::kQuicCompressedCertsCacheSize) {}
 
   // Instantiates |client_peer_| and |server_peer_|.
   void CreateClientAndServerSessions();
@@ -268,6 +275,7 @@ class QuicSessionTest : public ::testing::Test,
   QuicConnectionHelper quic_helper_;
   QuicConfig config_;
   QuicClock clock_;
+  QuicCompressedCertsCache quic_compressed_certs_cache_;
 
   std::unique_ptr<QuicSessionForTest> client_peer_;
   std::unique_ptr<QuicSessionForTest> server_peer_;
@@ -324,7 +332,10 @@ QuicCryptoServerStream* QuicSessionTest::CreateCryptoServerStream(
   QuicServerConfigProtobuf* primary_config = server_config->GenerateConfig(
       QuicRandom::GetInstance(), &clock_, options);
   server_config->AddConfig(primary_config, clock_.WallNow());
-  return new QuicCryptoServerStream(server_config, session);
+  bool use_stateless_rejects_if_peer_supported = false;
+  return new QuicCryptoServerStream(
+      server_config, &quic_compressed_certs_cache_,
+      use_stateless_rejects_if_peer_supported, session);
 }
 
 std::unique_ptr<QuicConnection> QuicSessionTest::CreateConnection(
@@ -358,8 +369,8 @@ void QuicSessionTest::TestStreamConnection(QuicSessionForTest* from_session,
   ASSERT_TRUE(from_session->IsEncryptionEstablished());
   ASSERT_TRUE(to_session->IsEncryptionEstablished());
 
-  string from_key;
-  string to_key;
+  std::string from_key;
+  std::string to_key;
 
   bool from_success = from_session->ExportKeyingMaterial(
       kExporterLabel, kExporterContext, kExporterContextLen, &from_key);
