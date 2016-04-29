@@ -22,6 +22,8 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/sha1digest.h"
+#include "webrtc/base/stringencode.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
@@ -40,6 +42,23 @@
 DEFINE_bool(gen_ref, false, "Generate reference files.");
 
 namespace {
+
+const std::string& PlatformChecksum(const std::string& checksum_general,
+                                    const std::string& checksum_android,
+                                    const std::string& checksum_win_32,
+                                    const std::string& checksum_win_64) {
+#ifdef WEBRTC_ANDROID
+    return checksum_android;
+#elif WEBRTC_WIN
+  #ifdef WEBRTC_ARCH_64_BITS
+    return checksum_win_64;
+  #else
+    return checksum_win_32;
+  #endif  // WEBRTC_ARCH_64_BITS
+#else
+  return checksum_general;
+#endif  // WEBRTC_WIN
+}
 
 bool IsAllZero(const int16_t* buf, size_t buf_length) {
   bool all_zero = true;
@@ -85,186 +104,98 @@ void Convert(const webrtc::RtcpStatistics& stats_raw,
   stats->set_jitter(stats_raw.jitter);
 }
 
-void WriteMessage(FILE* file, const std::string& message) {
+void AddMessage(FILE* file, rtc::MessageDigest* digest,
+                const std::string& message) {
   int32_t size = message.length();
-  ASSERT_EQ(1u, fwrite(&size, sizeof(size), 1, file));
-  if (size <= 0)
-    return;
-  ASSERT_EQ(static_cast<size_t>(size),
-            fwrite(message.data(), sizeof(char), size, file));
+  if (file)
+    ASSERT_EQ(1u, fwrite(&size, sizeof(size), 1, file));
+  digest->Update(&size, sizeof(size));
+
+  if (file)
+    ASSERT_EQ(static_cast<size_t>(size),
+              fwrite(message.data(), sizeof(char), size, file));
+  digest->Update(message.data(), sizeof(char) * size);
 }
 
-void ReadMessage(FILE* file, std::string* message) {
-  int32_t size;
-  ASSERT_EQ(1u, fread(&size, sizeof(size), 1, file));
-  if (size <= 0)
-    return;
-  std::unique_ptr<char[]> buffer(new char[size]);
-  ASSERT_EQ(static_cast<size_t>(size),
-            fread(buffer.get(), sizeof(char), size, file));
-  message->assign(buffer.get(), size);
-}
 #endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
 
 }  // namespace
 
 namespace webrtc {
 
-class RefFiles {
+class ResultSink {
  public:
-  RefFiles(const std::string& input_file, const std::string& output_file);
-  ~RefFiles();
-  template<class T> void ProcessReference(const T& test_results);
-  template<typename T, size_t n> void ProcessReference(
-      const T (&test_results)[n],
-      size_t length);
-  template<typename T, size_t n> void WriteToFile(
-      const T (&test_results)[n],
-      size_t length);
-  template<typename T, size_t n> void ReadFromFileAndCompare(
-      const T (&test_results)[n],
-      size_t length);
-  void WriteToFile(const NetEqNetworkStatistics& stats);
-  void ReadFromFileAndCompare(const NetEqNetworkStatistics& stats);
-  void WriteToFile(const RtcpStatistics& stats);
-  void ReadFromFileAndCompare(const RtcpStatistics& stats);
+  explicit ResultSink(const std::string& output_file);
+  ~ResultSink();
 
-  FILE* input_fp_;
+  template<typename T, size_t n> void AddResult(
+      const T (&test_results)[n],
+      size_t length);
+
+  void AddResult(const NetEqNetworkStatistics& stats);
+  void AddResult(const RtcpStatistics& stats);
+
+  void VerifyChecksum(const std::string& ref_check_sum);
+
+ private:
   FILE* output_fp_;
+  std::unique_ptr<rtc::MessageDigest> digest_;
 };
 
-RefFiles::RefFiles(const std::string &input_file,
-                   const std::string &output_file)
-    : input_fp_(NULL),
-      output_fp_(NULL) {
-  if (!input_file.empty()) {
-    input_fp_ = fopen(input_file.c_str(), "rb");
-    EXPECT_TRUE(input_fp_ != NULL);
-  }
+ResultSink::ResultSink(const std::string &output_file)
+    : output_fp_(nullptr),
+      digest_(new rtc::Sha1Digest()) {
   if (!output_file.empty()) {
     output_fp_ = fopen(output_file.c_str(), "wb");
     EXPECT_TRUE(output_fp_ != NULL);
   }
 }
 
-RefFiles::~RefFiles() {
-  if (input_fp_) {
-    EXPECT_EQ(EOF, fgetc(input_fp_));  // Make sure that we reached the end.
-    fclose(input_fp_);
-  }
-  if (output_fp_) fclose(output_fp_);
-}
-
-template<class T>
-void RefFiles::ProcessReference(const T& test_results) {
-  WriteToFile(test_results);
-  ReadFromFileAndCompare(test_results);
+ResultSink::~ResultSink() {
+  if (output_fp_)
+    fclose(output_fp_);
 }
 
 template<typename T, size_t n>
-void RefFiles::ProcessReference(const T (&test_results)[n], size_t length) {
-  WriteToFile(test_results, length);
-  ReadFromFileAndCompare(test_results, length);
-}
-
-template<typename T, size_t n>
-void RefFiles::WriteToFile(const T (&test_results)[n], size_t length) {
+void ResultSink::AddResult(const T (&test_results)[n], size_t length) {
   if (output_fp_) {
     ASSERT_EQ(length, fwrite(&test_results, sizeof(T), length, output_fp_));
   }
+  digest_->Update(&test_results, sizeof(T) * length);
 }
 
-template<typename T, size_t n>
-void RefFiles::ReadFromFileAndCompare(const T (&test_results)[n],
-                                      size_t length) {
-  if (input_fp_) {
-    // Read from ref file.
-    T* ref = new T[length];
-    ASSERT_EQ(length, fread(ref, sizeof(T), length, input_fp_));
-    // Compare
-    ASSERT_EQ(0, memcmp(&test_results, ref, sizeof(T) * length));
-    delete [] ref;
-  }
-}
-
-void RefFiles::WriteToFile(const NetEqNetworkStatistics& stats_raw) {
+void ResultSink::AddResult(const NetEqNetworkStatistics& stats_raw) {
 #ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
-  if (!output_fp_)
-    return;
   neteq_unittest::NetEqNetworkStatistics stats;
   Convert(stats_raw, &stats);
 
   std::string stats_string;
   ASSERT_TRUE(stats.SerializeToString(&stats_string));
-  WriteMessage(output_fp_, stats_string);
+  AddMessage(output_fp_, digest_.get(), stats_string);
 #else
   FAIL() << "Writing to reference file requires Proto Buffer.";
 #endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
 }
 
-void RefFiles::ReadFromFileAndCompare(
-    const NetEqNetworkStatistics& stats) {
+void ResultSink::AddResult(const RtcpStatistics& stats_raw) {
 #ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
-  if (!input_fp_)
-    return;
-
-  std::string stats_string;
-  ReadMessage(input_fp_, &stats_string);
-  neteq_unittest::NetEqNetworkStatistics ref_stats;
-  ASSERT_TRUE(ref_stats.ParseFromString(stats_string));
-
-  // Compare
-  ASSERT_EQ(stats.current_buffer_size_ms, ref_stats.current_buffer_size_ms());
-  ASSERT_EQ(stats.preferred_buffer_size_ms,
-            ref_stats.preferred_buffer_size_ms());
-  ASSERT_EQ(stats.jitter_peaks_found, ref_stats.jitter_peaks_found());
-  ASSERT_EQ(stats.packet_loss_rate, ref_stats.packet_loss_rate());
-  ASSERT_EQ(stats.packet_discard_rate, ref_stats.packet_discard_rate());
-  ASSERT_EQ(stats.expand_rate, ref_stats.expand_rate());
-  ASSERT_EQ(stats.preemptive_rate, ref_stats.preemptive_rate());
-  ASSERT_EQ(stats.accelerate_rate, ref_stats.accelerate_rate());
-  ASSERT_EQ(stats.clockdrift_ppm, ref_stats.clockdrift_ppm());
-  ASSERT_EQ(stats.added_zero_samples, ref_stats.added_zero_samples());
-  ASSERT_EQ(stats.secondary_decoded_rate, ref_stats.secondary_decoded_rate());
-  ASSERT_LE(stats.speech_expand_rate, ref_stats.expand_rate());
-#else
-  FAIL() << "Reading from reference file requires Proto Buffer.";
-#endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
-}
-
-void RefFiles::WriteToFile(const RtcpStatistics& stats_raw) {
-#ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
-  if (!output_fp_)
-    return;
   neteq_unittest::RtcpStatistics stats;
   Convert(stats_raw, &stats);
 
   std::string stats_string;
   ASSERT_TRUE(stats.SerializeToString(&stats_string));
-  WriteMessage(output_fp_, stats_string);
+  AddMessage(output_fp_, digest_.get(), stats_string);
 #else
   FAIL() << "Writing to reference file requires Proto Buffer.";
 #endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
 }
 
-void RefFiles::ReadFromFileAndCompare(const RtcpStatistics& stats) {
-#ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
-  if (!input_fp_)
-    return;
-  std::string stats_string;
-  ReadMessage(input_fp_, &stats_string);
-  neteq_unittest::RtcpStatistics ref_stats;
-  ASSERT_TRUE(ref_stats.ParseFromString(stats_string));
-
-  // Compare
-  ASSERT_EQ(stats.fraction_lost, ref_stats.fraction_lost());
-  ASSERT_EQ(stats.cumulative_lost, ref_stats.cumulative_lost());
-  ASSERT_EQ(stats.extended_max_sequence_number,
-            ref_stats.extended_max_sequence_number());
-  ASSERT_EQ(stats.jitter, ref_stats.jitter());
-#else
-  FAIL() << "Reading from reference file requires Proto Buffer.";
-#endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
+void ResultSink::VerifyChecksum(const std::string& checksum) {
+  std::vector<char> buffer;
+  buffer.resize(digest_->Size());
+  digest_->Finish(&buffer[0], buffer.size());
+  const std::string result = rtc::hex_encode(&buffer[0], digest_->Size());
+  EXPECT_EQ(checksum, result);
 }
 
 class NetEqDecodingTest : public ::testing::Test {
@@ -287,9 +218,10 @@ class NetEqDecodingTest : public ::testing::Test {
   void Process();
 
   void DecodeAndCompare(const std::string& rtp_file,
-                        const std::string& ref_file,
-                        const std::string& stat_ref_file,
-                        const std::string& rtcp_ref_file);
+                        const std::string& output_checksum,
+                        const std::string& network_stats_checksum,
+                        const std::string& rtcp_stats_checksum,
+                        bool gen_ref);
 
   static void PopulateRtpInfo(int frame_index,
                               int timestamp,
@@ -434,29 +366,25 @@ void NetEqDecodingTest::Process() {
   sim_clock_ += kTimeStepMs;
 }
 
-void NetEqDecodingTest::DecodeAndCompare(const std::string& rtp_file,
-                                         const std::string& ref_file,
-                                         const std::string& stat_ref_file,
-                                         const std::string& rtcp_ref_file) {
+void NetEqDecodingTest::DecodeAndCompare(
+    const std::string& rtp_file,
+    const std::string& output_checksum,
+    const std::string& network_stats_checksum,
+    const std::string& rtcp_stats_checksum,
+    bool gen_ref) {
   OpenInputFile(rtp_file);
 
-  std::string ref_out_file = "";
-  if (ref_file.empty()) {
-    ref_out_file = webrtc::test::OutputPath() + "neteq_universal_ref.pcm";
-  }
-  RefFiles ref_files(ref_file, ref_out_file);
+  std::string ref_out_file =
+      gen_ref ? webrtc::test::OutputPath() + "neteq_universal_ref.pcm" : "";
+  ResultSink output(ref_out_file);
 
-  std::string stat_out_file = "";
-  if (stat_ref_file.empty()) {
-    stat_out_file = webrtc::test::OutputPath() + "neteq_network_stats.dat";
-  }
-  RefFiles network_stat_files(stat_ref_file, stat_out_file);
+  std::string stat_out_file =
+      gen_ref ? webrtc::test::OutputPath() + "neteq_network_stats.dat" : "";
+  ResultSink network_stats(stat_out_file);
 
-  std::string rtcp_out_file = "";
-  if (rtcp_ref_file.empty()) {
-    rtcp_out_file = webrtc::test::OutputPath() + "neteq_rtcp_stats.dat";
-  }
-  RefFiles rtcp_stat_files(rtcp_ref_file, rtcp_out_file);
+  std::string rtcp_out_file =
+      gen_ref ? webrtc::test::OutputPath() + "neteq_rtcp_stats.dat" : "";
+  ResultSink rtcp_stats(rtcp_out_file);
 
   packet_.reset(rtp_source_->NextPacket());
   int i = 0;
@@ -465,25 +393,33 @@ void NetEqDecodingTest::DecodeAndCompare(const std::string& rtp_file,
     ss << "Lap number " << i++ << " in DecodeAndCompare while loop";
     SCOPED_TRACE(ss.str());  // Print out the parameter values on failure.
     ASSERT_NO_FATAL_FAILURE(Process());
-    ASSERT_NO_FATAL_FAILURE(ref_files.ProcessReference(
+    ASSERT_NO_FATAL_FAILURE(output.AddResult(
         out_frame_.data_, out_frame_.samples_per_channel_));
 
     // Query the network statistics API once per second
     if (sim_clock_ % 1000 == 0) {
       // Process NetworkStatistics.
-      NetEqNetworkStatistics network_stats;
-      ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
-      ASSERT_NO_FATAL_FAILURE(
-          network_stat_files.ProcessReference(network_stats));
+      NetEqNetworkStatistics current_network_stats;
+      ASSERT_EQ(0, neteq_->NetworkStatistics(&current_network_stats));
+      ASSERT_NO_FATAL_FAILURE(network_stats.AddResult(current_network_stats));
+
       // Compare with CurrentDelay, which should be identical.
-      EXPECT_EQ(network_stats.current_buffer_size_ms, neteq_->CurrentDelayMs());
+      EXPECT_EQ(current_network_stats.current_buffer_size_ms,
+                neteq_->CurrentDelayMs());
 
       // Process RTCPstat.
-      RtcpStatistics rtcp_stats;
-      neteq_->GetRtcpStatistics(&rtcp_stats);
-      ASSERT_NO_FATAL_FAILURE(rtcp_stat_files.ProcessReference(rtcp_stats));
+      RtcpStatistics current_rtcp_stats;
+      neteq_->GetRtcpStatistics(&current_rtcp_stats);
+      ASSERT_NO_FATAL_FAILURE(rtcp_stats.AddResult(current_rtcp_stats));
     }
   }
+
+  SCOPED_TRACE("Check output audio.");
+  output.VerifyChecksum(output_checksum);
+  SCOPED_TRACE("Check network stats.");
+  network_stats.VerifyChecksum(network_stats_checksum);
+  SCOPED_TRACE("Check rtcp stats.");
+  rtcp_stats.VerifyChecksum(rtcp_stats_checksum);
 }
 
 void NetEqDecodingTest::PopulateRtpInfo(int frame_index,
@@ -522,31 +458,30 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
 TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
   const std::string input_rtp_file =
       webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
-  // Note that neteq4_universal_ref.pcm and neteq4_universal_ref_win_32.pcm
-  // are identical. The latter could have been removed, but if clients still
-  // have a copy of the file, the test will fail.
-  const std::string input_ref_file =
-      webrtc::test::ResourcePath("audio_coding/neteq4_universal_ref", "pcm");
-#if defined(_MSC_VER) && (_MSC_VER >= 1700)
-  // For Visual Studio 2012 and later, we will have to use the generic reference
-  // file, rather than the windows-specific one.
-  const std::string network_stat_ref_file = webrtc::test::ProjectRootPath() +
-      "resources/audio_coding/neteq4_network_stats.dat";
-#else
-  const std::string network_stat_ref_file =
-      webrtc::test::ResourcePath("audio_coding/neteq4_network_stats", "dat");
-#endif
-  const std::string rtcp_stat_ref_file =
-      webrtc::test::ResourcePath("audio_coding/neteq4_rtcp_stats", "dat");
 
-  if (FLAGS_gen_ref) {
-    DecodeAndCompare(input_rtp_file, "", "", "");
-  } else {
-    DecodeAndCompare(input_rtp_file,
-                     input_ref_file,
-                     network_stat_ref_file,
-                     rtcp_stat_ref_file);
-  }
+  const std::string output_checksum = PlatformChecksum(
+      "f587883b7c371ee8d87dbf1b0f07525af7d959b8",
+      "a349bd71dba548029b05d1d2a6dc7caafab9a856",
+      "f587883b7c371ee8d87dbf1b0f07525af7d959b8",
+      "08266b198e7686b3cd9330813e0d2cd72fc8fdc2");
+
+  const std::string network_stats_checksum = PlatformChecksum(
+      "2cf380a05ee07080bd72471e8ec7777a39644ec9",
+      "2853ab577fe571adfc7b18f77bbe58f1253d2019",
+      "2cf380a05ee07080bd72471e8ec7777a39644ec9",
+      "2cf380a05ee07080bd72471e8ec7777a39644ec9");
+
+  const std::string rtcp_stats_checksum = PlatformChecksum(
+      "b8880bf9fed2487efbddcb8d94b9937a29ae521d",
+      "f3f7b3d3e71d7e635240b5373b57df6a7e4ce9d4",
+      "b8880bf9fed2487efbddcb8d94b9937a29ae521d",
+      "b8880bf9fed2487efbddcb8d94b9937a29ae521d");
+
+  DecodeAndCompare(input_rtp_file,
+                   output_checksum,
+                   network_stats_checksum,
+                   rtcp_stats_checksum,
+                   FLAGS_gen_ref);
 }
 
 // Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5820
@@ -560,26 +495,30 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
 TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
   const std::string input_rtp_file =
       webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
-  const std::string input_ref_file =
-      // The pcm files were generated by using Opus v1.1.2 to decode the RTC
-      // file generated by Opus v1.1
-      webrtc::test::ResourcePath("audio_coding/neteq4_opus_ref", "pcm");
-  const std::string network_stat_ref_file =
-      // The network stats file was generated when using Opus v1.1.2 to decode
-      // the RTC file generated by Opus v1.1
-      webrtc::test::ResourcePath("audio_coding/neteq4_opus_network_stats",
-                                 "dat");
-  const std::string rtcp_stat_ref_file =
-      webrtc::test::ResourcePath("audio_coding/neteq4_opus_rtcp_stats", "dat");
 
-  if (FLAGS_gen_ref) {
-    DecodeAndCompare(input_rtp_file, "", "", "");
-  } else {
-    DecodeAndCompare(input_rtp_file,
-                     input_ref_file,
-                     network_stat_ref_file,
-                     rtcp_stat_ref_file);
-  }
+  const std::string output_checksum = PlatformChecksum(
+      "c23004d91ffbe5e7a1f24620fc89b58c0426040f",
+      "c23004d91ffbe5e7a1f24620fc89b58c0426040f",
+      "c23004d91ffbe5e7a1f24620fc89b58c0426040f",
+      "c23004d91ffbe5e7a1f24620fc89b58c0426040f");
+
+  const std::string network_stats_checksum = PlatformChecksum(
+      "dc2d9f584efb0111ebcd71a2c86f1fb09cd8c2bb",
+      "dc2d9f584efb0111ebcd71a2c86f1fb09cd8c2bb",
+      "dc2d9f584efb0111ebcd71a2c86f1fb09cd8c2bb",
+      "dc2d9f584efb0111ebcd71a2c86f1fb09cd8c2bb");
+
+  const std::string rtcp_stats_checksum = PlatformChecksum(
+      "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
+      "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
+      "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
+      "e37c797e3de6a64dda88c9ade7a013d022a2e1e0");
+
+  DecodeAndCompare(input_rtp_file,
+                   output_checksum,
+                   network_stats_checksum,
+                   rtcp_stats_checksum,
+                   FLAGS_gen_ref);
 }
 
 // Use fax mode to avoid time-scaling. This is to simplify the testing of
