@@ -11,8 +11,8 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/gunit.h"
 
-#include <algorithm>  // std::swap (pre-C++11)
-#include <utility>  // std::swap (C++11 and later)
+#include <type_traits>
+#include <utility>
 
 namespace rtc {
 
@@ -299,6 +299,62 @@ TEST(BufferTest, TestBracketWrite) {
   for (size_t i = 0; i != 7u; ++i) {
     EXPECT_EQ(buf[i], kTestData[i]);
   }
+}
+
+TEST(BufferTest, TestInt16) {
+  static constexpr int16_t test_data[] = {14, 15, 16, 17, 18};
+  BufferT<int16_t> buf(test_data);
+  EXPECT_EQ(buf.size(), 5u);
+  EXPECT_EQ(buf.capacity(), 5u);
+  EXPECT_NE(buf.data(), nullptr);
+  for (size_t i = 0; i != buf.size(); ++i) {
+    EXPECT_EQ(test_data[i], buf[i]);
+  }
+  BufferT<int16_t> buf2(test_data);
+  EXPECT_EQ(buf, buf2);
+  buf2[0] = 9;
+  EXPECT_NE(buf, buf2);
+}
+
+TEST(BufferTest, TestFloat) {
+  static constexpr float test_data[] = {14, 15, 16, 17, 18};
+  BufferT<float> buf;
+  EXPECT_EQ(buf.size(), 0u);
+  EXPECT_EQ(buf.capacity(), 0u);
+  EXPECT_EQ(buf.data(), nullptr);
+  buf.SetData(test_data);
+  EXPECT_EQ(buf.size(), 5u);
+  EXPECT_EQ(buf.capacity(), 5u);
+  EXPECT_NE(buf.data(), nullptr);
+  float* p1 = buf.data();
+  while (buf.data() == p1) {
+    buf.AppendData(test_data);
+  }
+  EXPECT_EQ(buf.size(), buf.capacity());
+  EXPECT_GT(buf.size(), 5u);
+  EXPECT_EQ(buf.size() % 5, 0u);
+  EXPECT_NE(buf.data(), nullptr);
+  for (size_t i = 0; i != buf.size(); ++i) {
+    EXPECT_EQ(test_data[i % 5], buf[i]);
+  }
+}
+
+TEST(BufferTest, TestStruct) {
+  struct BloodStone {
+    bool blood;
+    const char* stone;
+  };
+  BufferT<BloodStone> buf(4);
+  EXPECT_EQ(buf.size(), 4u);
+  EXPECT_EQ(buf.capacity(), 4u);
+  EXPECT_NE(buf.data(), nullptr);
+  BufferT<BloodStone*> buf2(4);
+  for (size_t i = 0; i < buf2.size(); ++i) {
+    buf2[i] = &buf[i];
+  }
+  static const char kObsidian[] = "obsidian";
+  buf2[2]->stone = kObsidian;
+  EXPECT_EQ(kObsidian, buf[2].stone);
 }
 
 }  // namespace rtc

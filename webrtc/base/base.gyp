@@ -34,7 +34,6 @@
         'bind.h',
         'bitbuffer.cc',
         'bitbuffer.h',
-        'buffer.cc',
         'buffer.h',
         'bufferqueue.cc',
         'bufferqueue.h',

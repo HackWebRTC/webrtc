@@ -17,6 +17,7 @@
 
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/logging.h"
@@ -34,7 +35,6 @@
 #include "webrtc/pc/audiomonitor.h"
 
 namespace rtc {
-class Buffer;
 class RateLimiter;
 class Timing;
 }

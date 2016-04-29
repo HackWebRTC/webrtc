@@ -36,10 +36,14 @@ class CopyOnWriteBuffer {
 
   // Construct a buffer and copy the specified number of bytes into it. The
   // source array may be (const) uint8_t*, int8_t*, or char*.
-  template <typename T, typename internal::ByteType<T>::t = 0>
+  template <typename T,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   CopyOnWriteBuffer(const T* data, size_t size)
       : CopyOnWriteBuffer(data, size, size) {}
-  template <typename T, typename internal::ByteType<T>::t = 0>
+  template <typename T,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   CopyOnWriteBuffer(const T* data, size_t size, size_t capacity)
       : CopyOnWriteBuffer(size, capacity) {
     if (buffer_) {
@@ -48,22 +52,29 @@ class CopyOnWriteBuffer {
   }
 
   // Construct a buffer from the contents of an array.
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  CopyOnWriteBuffer(const T(&array)[N])  // NOLINT: runtime/explicit
+  template <typename T,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  CopyOnWriteBuffer(const T (&array)[N])  // NOLINT: runtime/explicit
       : CopyOnWriteBuffer(array, N) {}
 
   ~CopyOnWriteBuffer();
 
   // Get a pointer to the data. Just .data() will give you a (const) uint8_t*,
   // but you may also use .data<int8_t>() and .data<char>().
-  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
+  template <typename T = uint8_t,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   const T* data() const {
     return cdata<T>();
   }
 
   // Get writable pointer to the data. This will create a copy of the underlying
   // data if it is shared with other buffers.
-  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
+  template <typename T = uint8_t,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   T* data() {
     RTC_DCHECK(IsConsistent());
     if (!buffer_) {
@@ -75,7 +86,9 @@ class CopyOnWriteBuffer {
 
   // Get const pointer to the data. This will not create a copy of the
   // underlying data if it is shared with other buffers.
-  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
+  template <typename T = uint8_t,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   T* cdata() const {
     RTC_DCHECK(IsConsistent());
     if (!buffer_) {
@@ -137,7 +150,9 @@ class CopyOnWriteBuffer {
 
   // Replace the contents of the buffer. Accepts the same types as the
   // constructors.
-  template <typename T, typename internal::ByteType<T>::t = 0>
+  template <typename T,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   void SetData(const T* data, size_t size) {
     RTC_DCHECK(IsConsistent());
     if (!buffer_ || !buffer_->HasOneRef()) {
@@ -149,8 +164,11 @@ class CopyOnWriteBuffer {
     RTC_DCHECK(IsConsistent());
   }
 
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  void SetData(const T(&array)[N]) {
+  template <typename T,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  void SetData(const T (&array)[N]) {
     SetData(array, N);
   }
 
@@ -163,7 +181,9 @@ class CopyOnWriteBuffer {
   }
 
   // Append data to the buffer. Accepts the same types as the constructors.
-  template <typename T, typename internal::ByteType<T>::t = 0>
+  template <typename T,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   void AppendData(const T* data, size_t size) {
     RTC_DCHECK(IsConsistent());
     if (!buffer_) {
@@ -178,8 +198,11 @@ class CopyOnWriteBuffer {
     RTC_DCHECK(IsConsistent());
   }
 
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  void AppendData(const T(&array)[N]) {
+  template <typename T,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  void AppendData(const T (&array)[N]) {
     AppendData(array, N);
   }
 

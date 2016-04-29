@@ -13,79 +13,114 @@
 
 #include <cstring>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/constructormagic.h"
 
 namespace rtc {
 
 namespace internal {
 
-// (Internal; please don't use outside this file.) ByteType<T>::t is int if T
-// is uint8_t, int8_t, or char; otherwise, it's a compilation error. Use like
-// this:
-//
-//   template <typename T, typename ByteType<T>::t = 0>
-//   void foo(T* x);
-//
-// to let foo<T> be defined only for byte-sized integers.
-template <typename T>
-struct ByteType {
- private:
-  static int F(uint8_t*);
-  static int F(int8_t*);
-  static int F(char*);
-
- public:
-  using t = decltype(F(static_cast<T*>(nullptr)));
+// (Internal; please don't use outside this file.) Determines if elements of
+// type U are compatible with a BufferT<T>. For most types, we just ignore
+// top-level const and forbid top-level volatile and require T and U to be
+// otherwise equal, but all byte-sized integers (notably char, int8_t, and
+// uint8_t) are compatible with each other. (Note: We aim to get rid of this
+// behavior, and treat all types the same.)
+template <typename T, typename U>
+struct BufferCompat {
+  static constexpr bool value =
+      !std::is_volatile<U>::value &&
+      ((std::is_integral<T>::value && sizeof(T) == 1)
+           ? (std::is_integral<U>::value && sizeof(U) == 1)
+           : (std::is_same<T, typename std::remove_const<U>::type>::value));
 };
 
 }  // namespace internal
 
 // Basic buffer class, can be grown and shrunk dynamically.
-// Unlike std::string/vector, does not initialize data when expanding capacity.
-class Buffer {
+// Unlike std::string/vector, does not initialize data when increasing size.
+template <typename T>
+class BufferT {
+  // We want T's destructor and default constructor to be trivial, i.e. perform
+  // no action, so that we don't have to touch the memory we allocate and
+  // deallocate. And we want T to be trivially copyable, so that we can copy T
+  // instances with std::memcpy. This is precisely the definition of a trivial
+  // type.
+  static_assert(std::is_trivial<T>::value, "T must be a trivial type.");
+
+  // This class relies heavily on being able to mutate its data.
+  static_assert(!std::is_const<T>::value, "T may not be const");
+
  public:
-  Buffer();                   // An empty buffer.
-  Buffer(Buffer&& buf);       // Move contents from an existing buffer.
+  // An empty BufferT.
+  BufferT() : size_(0), capacity_(0), data_(nullptr) {
+    RTC_DCHECK(IsConsistent());
+  }
 
-  // Construct a buffer with the specified number of uninitialized bytes.
-  explicit Buffer(size_t size);
-  Buffer(size_t size, size_t capacity);
+  // Disable copy construction and copy assignment, since copying a buffer is
+  // expensive enough that we want to force the user to be explicit about it.
+  BufferT(const BufferT&) = delete;
+  BufferT& operator=(const BufferT&) = delete;
 
-  // Construct a buffer and copy the specified number of bytes into it. The
-  // source array may be (const) uint8_t*, int8_t*, or char*.
-  template <typename T, typename internal::ByteType<T>::t = 0>
-  Buffer(const T* data, size_t size)
-      : Buffer(data, size, size) {}
+  BufferT(BufferT&& buf)
+      : size_(buf.size()),
+        capacity_(buf.capacity()),
+        data_(std::move(buf.data_)) {
+    RTC_DCHECK(IsConsistent());
+    buf.OnMovedFrom();
+  }
 
-  template <typename T, typename internal::ByteType<T>::t = 0>
-  Buffer(const T* data, size_t size, size_t capacity)
-      : Buffer(size, capacity) {
-    std::memcpy(data_.get(), data, size);
+  // Construct a buffer with the specified number of uninitialized elements.
+  explicit BufferT(size_t size) : BufferT(size, size) {}
+
+  BufferT(size_t size, size_t capacity)
+      : size_(size),
+        capacity_(std::max(size, capacity)),
+        data_(new T[capacity_]) {
+    RTC_DCHECK(IsConsistent());
+  }
+
+  // Construct a buffer and copy the specified number of elements into it.
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  BufferT(const U* data, size_t size) : BufferT(data, size, size) {}
+
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  BufferT(U* data, size_t size, size_t capacity) : BufferT(size, capacity) {
+    static_assert(sizeof(T) == sizeof(U), "");
+    std::memcpy(data_.get(), data, size * sizeof(U));
   }
 
   // Construct a buffer from the contents of an array.
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  Buffer(const T(&array)[N])
-      : Buffer(array, N) {}
+  template <typename U,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  BufferT(U (&array)[N]) : BufferT(array, N) {}
 
-  ~Buffer();
-
-  // Get a pointer to the data. Just .data() will give you a (const) uint8_t*,
-  // but you may also use .data<int8_t>() and .data<char>().
-  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
-  const T* data() const {
+  // Get a pointer to the data. Just .data() will give you a (const) T*, but if
+  // T is a byte-sized integer, you may also use .data<U>() for any other
+  // byte-sized integer U.
+  template <typename U = T,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  const U* data() const {
     RTC_DCHECK(IsConsistent());
-    return reinterpret_cast<T*>(data_.get());
+    return reinterpret_cast<U*>(data_.get());
   }
 
-  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
-  T* data() {
+  template <typename U = T,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  U* data() {
     RTC_DCHECK(IsConsistent());
-    return reinterpret_cast<T*>(data_.get());
+    return reinterpret_cast<U*>(data_.get());
   }
 
   size_t size() const {
@@ -98,7 +133,7 @@ class Buffer {
     return capacity_;
   }
 
-  Buffer& operator=(Buffer&& buf) {
+  BufferT& operator=(BufferT&& buf) {
     RTC_DCHECK(IsConsistent());
     RTC_DCHECK(buf.IsConsistent());
     size_ = buf.size_;
@@ -108,94 +143,120 @@ class Buffer {
     return *this;
   }
 
-  bool operator==(const Buffer& buf) const {
+  bool operator==(const BufferT& buf) const {
     RTC_DCHECK(IsConsistent());
-    return size_ == buf.size() && memcmp(data_.get(), buf.data(), size_) == 0;
+    if (size_ != buf.size_) {
+      return false;
+    }
+    if (std::is_integral<T>::value) {
+      // Optimization.
+      return std::memcmp(data_.get(), buf.data_.get(), size_ * sizeof(T)) == 0;
+    }
+    for (size_t i = 0; i < size_; ++i) {
+      if (data_[i] != buf.data_[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  bool operator!=(const Buffer& buf) const { return !(*this == buf); }
+  bool operator!=(const BufferT& buf) const { return !(*this == buf); }
 
-  uint8_t& operator[](size_t index) {
+  T& operator[](size_t index) {
     RTC_DCHECK_LT(index, size_);
     return data()[index];
   }
 
-  uint8_t operator[](size_t index) const {
+  T operator[](size_t index) const {
     RTC_DCHECK_LT(index, size_);
     return data()[index];
   }
 
   // The SetData functions replace the contents of the buffer. They accept the
   // same input types as the constructors.
-  template <typename T, typename internal::ByteType<T>::t = 0>
-  void SetData(const T* data, size_t size) {
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void SetData(const U* data, size_t size) {
     RTC_DCHECK(IsConsistent());
     size_ = 0;
     AppendData(data, size);
   }
 
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  void SetData(const T(&array)[N]) {
+  template <typename U,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void SetData(const U (&array)[N]) {
     SetData(array, N);
   }
 
-  void SetData(const Buffer& buf) { SetData(buf.data(), buf.size()); }
+  void SetData(const BufferT& buf) { SetData(buf.data(), buf.size()); }
 
-  // Replace the data in the buffer with at most |max_bytes| of data, using the
-  // function |setter|, which should have the following signature:
-  //   size_t setter(ArrayView<T> view)
+  // Replace the data in the buffer with at most |max_elements| of data, using
+  // the function |setter|, which should have the following signature:
+  //   size_t setter(ArrayView<U> view)
   // |setter| is given an appropriately typed ArrayView of the area in which to
   // write the data (i.e. starting at the beginning of the buffer) and should
-  // return the number of bytes actually written. This number must be <=
-  // |max_bytes|.
-  template <typename T = uint8_t, typename F,
-            typename internal::ByteType<T>::t = 0>
-  size_t SetData(size_t max_bytes, F&& setter) {
+  // return the number of elements actually written. This number must be <=
+  // |max_elements|.
+  template <typename U = T,
+            typename F,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  size_t SetData(size_t max_elements, F&& setter) {
     RTC_DCHECK(IsConsistent());
     size_ = 0;
-    return AppendData<T>(max_bytes, std::forward<F>(setter));
+    return AppendData<U>(max_elements, std::forward<F>(setter));
   }
 
-  // The AppendData functions adds data to the end of the buffer. They accept
+  // The AppendData functions add data to the end of the buffer. They accept
   // the same input types as the constructors.
-  template <typename T, typename internal::ByteType<T>::t = 0>
-  void AppendData(const T* data, size_t size) {
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void AppendData(const U* data, size_t size) {
     RTC_DCHECK(IsConsistent());
     const size_t new_size = size_ + size;
     EnsureCapacity(new_size);
-    std::memcpy(data_.get() + size_, data, size);
+    static_assert(sizeof(T) == sizeof(U), "");
+    std::memcpy(data_.get() + size_, data, size * sizeof(U));
     size_ = new_size;
     RTC_DCHECK(IsConsistent());
   }
 
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  void AppendData(const T(&array)[N]) {
+  template <typename U,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void AppendData(const U (&array)[N]) {
     AppendData(array, N);
   }
 
-  void AppendData(const Buffer& buf) { AppendData(buf.data(), buf.size()); }
+  void AppendData(const BufferT& buf) { AppendData(buf.data(), buf.size()); }
 
-  // Append at most |max_bytes| of data to the end of the buffer, using the
-  // function |setter|, which should have the following signature:
-  //   size_t setter(ArrayView<T> view)
+  // Append at most |max_elements| to the end of the buffer, using the function
+  // |setter|, which should have the following signature:
+  //   size_t setter(ArrayView<U> view)
   // |setter| is given an appropriately typed ArrayView of the area in which to
   // write the data (i.e. starting at the former end of the buffer) and should
-  // return the number of bytes actually written. This number must be <=
-  // |max_bytes|.
-  template <typename T = uint8_t, typename F,
-            typename internal::ByteType<T>::t = 0>
-  size_t AppendData(size_t max_bytes, F&& setter) {
+  // return the number of elements actually written. This number must be <=
+  // |max_elements|.
+  template <typename U = T,
+            typename F,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  size_t AppendData(size_t max_elements, F&& setter) {
     RTC_DCHECK(IsConsistent());
     const size_t old_size = size_;
-    SetSize(old_size + max_bytes);
-    T *base_ptr = data<T>() + old_size;
-    size_t written_bytes =
-        setter(rtc::ArrayView<T>(base_ptr, max_bytes));
+    SetSize(old_size + max_elements);
+    U* base_ptr = data<U>() + old_size;
+    size_t written_elements = setter(rtc::ArrayView<U>(base_ptr, max_elements));
 
-    RTC_CHECK_LE(written_bytes, max_bytes);
-    size_ = old_size + written_bytes;
+    RTC_CHECK_LE(written_elements, max_elements);
+    size_ = old_size + written_elements;
     RTC_DCHECK(IsConsistent());
-    return written_bytes;
+    return written_elements;
   }
 
   // Sets the size of the buffer. If the new size is smaller than the old, the
@@ -214,8 +275,8 @@ class Buffer {
     RTC_DCHECK(IsConsistent());
     if (capacity <= capacity_)
       return;
-    std::unique_ptr<uint8_t[]> new_data(new uint8_t[capacity]);
-    std::memcpy(new_data.get(), data_.get(), size_);
+    std::unique_ptr<T[]> new_data(new T[capacity]);
+    std::memcpy(new_data.get(), data_.get(), size_ * sizeof(T));
     data_ = std::move(new_data);
     capacity_ = capacity;
     RTC_DCHECK(IsConsistent());
@@ -229,7 +290,7 @@ class Buffer {
   }
 
   // Swaps two buffers. Also works for buffers that have been moved from.
-  friend void swap(Buffer& a, Buffer& b) {
+  friend void swap(BufferT& a, BufferT& b) {
     using std::swap;
     swap(a.size_, b.size_);
     swap(a.capacity_, b.capacity_);
@@ -262,10 +323,11 @@ class Buffer {
 
   size_t size_;
   size_t capacity_;
-  std::unique_ptr<uint8_t[]> data_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Buffer);
+  std::unique_ptr<T[]> data_;
 };
+
+// By far the most common sort of buffer.
+using Buffer = BufferT<uint8_t>;
 
 }  // namespace rtc
 
