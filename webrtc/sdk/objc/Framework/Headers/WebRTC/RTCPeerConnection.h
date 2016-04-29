@@ -171,6 +171,16 @@ RTC_EXPORT
 
 @end
 
+@interface RTCPeerConnection (Media)
+
+/**
+ * Create an RTCRtpSender with the specified kind and media stream ID.
+ * See RTCMediaStreamTrack.h for available kinds.
+ */
+- (RTCRtpSender *)senderWithKind:(NSString *)kind streamId:(NSString *)streamId;
+
+@end
+
 @interface RTCPeerConnection (DataChannel)
 
 /** Create a new data channel with the given label and configuration. */

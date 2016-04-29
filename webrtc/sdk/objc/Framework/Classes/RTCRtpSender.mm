@@ -10,8 +10,10 @@
 
 #import "RTCRtpSender+Private.h"
 
+#import "NSString+StdString.h"
 #import "RTCMediaStreamTrack+Private.h"
 #import "RTCRtpParameters+Private.h"
+#import "WebRTC/RTCLogging.h"
 
 #include "webrtc/api/mediastreaminterface.h"
 
@@ -21,10 +23,16 @@
 
 - (instancetype)initWithNativeRtpSender:
     (rtc::scoped_refptr<webrtc::RtpSenderInterface>)nativeRtpSender {
+  NSParameterAssert(nativeRtpSender);
   if (self = [super init]) {
     _nativeRtpSender = nativeRtpSender;
+    RTCLogInfo(@"RTCRtpSender(%p): created sender: %@", self, self.description);
   }
   return self;
+}
+
+- (NSString *)senderId {
+  return [NSString stringForStdString:_nativeRtpSender->id()];
 }
 
 - (RTCRtpParameters *)parameters {
@@ -32,8 +40,11 @@
       initWithNativeParameters:_nativeRtpSender->GetParameters()];
 }
 
-- (BOOL)setParameters:(RTCRtpParameters *)parameters {
-  return _nativeRtpSender->SetParameters(parameters.nativeParameters);
+- (void)setParameters:(RTCRtpParameters *)parameters {
+  if (!_nativeRtpSender->SetParameters(parameters.nativeParameters)) {
+    RTCLogError(@"RTCRtpSender(%p): Failed to set parameters: %@", self,
+        parameters);
+  }
 }
 
 - (RTCMediaStreamTrack *)track {
@@ -43,6 +54,17 @@
     return [[RTCMediaStreamTrack alloc] initWithNativeTrack:nativeTrack];
   }
   return nil;
+}
+
+- (void)setTrack:(RTCMediaStreamTrack *)track {
+  if (!_nativeRtpSender->SetTrack(track.nativeTrack)) {
+    RTCLogError(@"RTCRtpSender(%p): Failed to set track %@", self, track);
+  }
+}
+
+- (NSString *)description {
+  return [NSString stringWithFormat:@"RTCRtpSender {\n  senderId: %@\n}",
+      self.senderId];
 }
 
 @end

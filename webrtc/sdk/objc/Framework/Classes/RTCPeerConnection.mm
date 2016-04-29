@@ -311,6 +311,17 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
   _peerConnection->SetRemoteDescription(observer, sdp.nativeDescription);
 }
 
+- (RTCRtpSender *)senderWithKind:(NSString *)kind
+                        streamId:(NSString *)streamId {
+  std::string nativeKind = [NSString stdStringForString:kind];
+  std::string nativeStreamId = [NSString stdStringForString:streamId];
+  rtc::scoped_refptr<webrtc::RtpSenderInterface> nativeSender(
+      _peerConnection->CreateSender(nativeKind, nativeStreamId));
+  return nativeSender ?
+      [[RTCRtpSender alloc] initWithNativeRtpSender:nativeSender]
+      : nil;
+}
+
 - (NSArray<RTCRtpSender *> *)senders {
   std::vector<rtc::scoped_refptr<webrtc::RtpSenderInterface>> nativeSenders(
       _peerConnection->GetSenders());

@@ -19,22 +19,20 @@ NS_ASSUME_NONNULL_BEGIN
 RTC_EXPORT
 @protocol RTCRtpSender <NSObject>
 
+/** A unique identifier for this sender. */
+@property(nonatomic, readonly) NSString *senderId;
+
 /** The currently active RTCRtpParameters, as defined in
  *  https://www.w3.org/TR/webrtc/#idl-def-RTCRtpParameters.
  */
-@property(nonatomic, readonly) RTCRtpParameters *parameters;
+@property(nonatomic, copy) RTCRtpParameters *parameters;
 
 /** The RTCMediaStreamTrack associated with the sender.
  *  Note: reading this property returns a new instance of
  *  RTCMediaStreamTrack. Use isEqual: instead of == to compare
  *  RTCMediaStreamTrack instances.
  */
-@property(nonatomic, readonly) RTCMediaStreamTrack *track;
-
-/** Set the new RTCRtpParameters to be used by the sender.
- *  Returns YES if the new parameters were applied, NO otherwise.
- */
-- (BOOL)setParameters:(RTCRtpParameters *)parameters;
+@property(nonatomic, copy, nullable) RTCMediaStreamTrack *track;
 
 @end
 
