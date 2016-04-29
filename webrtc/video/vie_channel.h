@@ -25,7 +25,7 @@
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video/vie_receiver.h"
+#include "webrtc/video/rtp_stream_receiver.h"
 #include "webrtc/video/vie_sync_module.h"
 
 namespace webrtc {
@@ -39,7 +39,6 @@ class IncomingVideoStream;
 class PacedSender;
 class PacketRouter;
 class PayloadRouter;
-class ProcessThread;
 class ReceiveStatisticsProxy;
 class RtcpRttStats;
 class ViERTPObserver;
@@ -59,18 +58,12 @@ class ViEChannel : public VCMFrameTypeCallback,
                    public VCMReceiveCallback,
                    public VCMReceiveStatisticsCallback,
                    public VCMDecoderTimingCallback,
-                   public VCMPacketRequestCallback,
-                   public RtpFeedback {
+                   public VCMPacketRequestCallback {
  public:
   friend class ChannelStatsObserver;
 
-  ViEChannel(Transport* transport,
-             ProcessThread* module_process_thread,
-             vcm::VideoReceiver* video_receiver,
-             RemoteBitrateEstimator* remote_bitrate_estimator,
-             RtcpRttStats* rtt_stats,
-             PacedSender* paced_sender,
-             PacketRouter* packet_router);
+  ViEChannel(vcm::VideoReceiver* video_receiver,
+             RtpStreamReceiver* rtp_stream_receiver);
   ~ViEChannel();
 
   int32_t Init();
@@ -84,17 +77,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   RtpState GetRtpStateForSsrc(uint32_t ssrc) const;
 
-  // Implements RtpFeedback.
-  int32_t OnInitializeDecoder(const int8_t payload_type,
-                              const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-                              const int frequency,
-                              const size_t channels,
-                              const uint32_t rate) override;
-  void OnIncomingSSRCChanged(const uint32_t ssrc) override;
-  void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override;
-
-  // Gets the module used by the channel.
-  ViEReceiver* vie_receiver();
 
   CallStatsObserver* GetStatsObserver();
 
@@ -154,13 +136,11 @@ class ViEChannel : public VCMFrameTypeCallback,
   // Compute NACK list parameters for the buffering mode.
   int GetRequiredNackListSize(int target_delay_ms);
 
-  ProcessThread* const module_process_thread_;
-
   // Used for all registered callbacks except rendering.
   rtc::CriticalSection crit_;
 
   vcm::VideoReceiver* const video_receiver_;
-  ViEReceiver vie_receiver_;
+  RtpStreamReceiver* const rtp_stream_receiver_;
   RtpRtcp* const rtp_rtcp_;
 
   // Helper to report call statistics.

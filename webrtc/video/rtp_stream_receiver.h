@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIE_RECEIVER_H_
-#define WEBRTC_VIDEO_VIE_RECEIVER_H_
+#ifndef WEBRTC_VIDEO_RTP_STREAM_RECEIVER_H_
+#define WEBRTC_VIDEO_RTP_STREAM_RECEIVER_H_
 
 #include <list>
 #include <memory>
@@ -44,16 +44,15 @@ namespace vcm {
 class VideoReceiver;
 }  // namespace vcm
 
-class ViEReceiver : public RtpData {
+class RtpStreamReceiver : public RtpData, public RtpFeedback  {
  public:
-  ViEReceiver(vcm::VideoReceiver* video_receiver,
-              RemoteBitrateEstimator* remote_bitrate_estimator,
-              RtpFeedback* rtp_feedback,
-              Transport* transport,
-              RtcpRttStats* rtt_stats,
-              PacedSender* paced_sender,
-              PacketRouter* packet_router);
-  ~ViEReceiver();
+  RtpStreamReceiver(vcm::VideoReceiver* video_receiver,
+                    RemoteBitrateEstimator* remote_bitrate_estimator,
+                    Transport* transport,
+                    RtcpRttStats* rtt_stats,
+                    PacedSender* paced_sender,
+                    PacketRouter* packet_router);
+  ~RtpStreamReceiver();
 
   bool SetReceiveCodec(const VideoCodec& video_codec);
 
@@ -92,6 +91,15 @@ class ViEReceiver : public RtpData {
                                 const size_t payload_size,
                                 const WebRtcRTPHeader* rtp_header) override;
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
+
+  // Implements RtpFeedback.
+  int32_t OnInitializeDecoder(const int8_t payload_type,
+                              const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+                              const int frequency,
+                              const size_t channels,
+                              const uint32_t rate) override;
+  void OnIncomingSSRCChanged(const uint32_t ssrc) override;
+  void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override {}
 
   ReceiveStatistics* GetReceiveStatistics() const;
 
@@ -169,4 +177,4 @@ class ViEReceiver : public RtpData {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIE_RECEIVER_H_
+#endif  // WEBRTC_VIDEO_RTP_STREAM_RECEIVER_H_

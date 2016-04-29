@@ -16,13 +16,11 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/platform_thread.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_render/video_render_defines.h"
@@ -51,18 +49,11 @@ class ChannelStatsObserver : public CallStatsObserver {
   ViEChannel* const owner_;
 };
 
-ViEChannel::ViEChannel(Transport* transport,
-                       ProcessThread* module_process_thread,
-                       vcm::VideoReceiver* video_receiver,
-                       RemoteBitrateEstimator* remote_bitrate_estimator,
-                       RtcpRttStats* rtt_stats,
-                       PacedSender* paced_sender,
-                       PacketRouter* packet_router)
-    : module_process_thread_(module_process_thread),
-      video_receiver_(video_receiver),
-      vie_receiver_(video_receiver, remote_bitrate_estimator, this, transport,
-                    rtt_stats, paced_sender, packet_router),
-      rtp_rtcp_(vie_receiver_.rtp_rtcp()),
+ViEChannel::ViEChannel(vcm::VideoReceiver* video_receiver,
+                       RtpStreamReceiver* rtp_stream_receiver)
+    : video_receiver_(video_receiver),
+      rtp_stream_receiver_(rtp_stream_receiver),
+      rtp_rtcp_(rtp_stream_receiver_->rtp_rtcp()),
       stats_observer_(new ChannelStatsObserver(this)),
       receive_stats_callback_(nullptr),
       incoming_video_stream_(nullptr),
@@ -74,10 +65,10 @@ ViEChannel::ViEChannel(Transport* transport,
                                    max_nack_reordering_threshold_, 0);
 }
 
+ViEChannel::~ViEChannel() {}
+
 int32_t ViEChannel::Init() {
   static const int kDefaultRenderDelayMs = 10;
-  module_process_thread_->RegisterModule(vie_receiver_.GetReceiveStatistics());
-  module_process_thread_->RegisterModule(rtp_rtcp_);
 
   if (video_receiver_->RegisterReceiveCallback(this) != 0) {
     return -1;
@@ -88,14 +79,6 @@ int32_t ViEChannel::Init() {
   video_receiver_->SetRenderDelay(kDefaultRenderDelayMs);
 
   return 0;
-}
-
-ViEChannel::~ViEChannel() {
-  // Make sure we don't get more callbacks from the RTP module.
-  module_process_thread_->DeRegisterModule(
-      vie_receiver_.GetReceiveStatistics());
-
-  module_process_thread_->DeRegisterModule(rtp_rtcp_);
 }
 
 void ViEChannel::SetProtectionMode(bool enable_nack,
@@ -141,7 +124,7 @@ void ViEChannel::ProcessNACKRequest(const bool enable) {
     // Turn on NACK.
     if (rtp_rtcp_->RTCP() == RtcpMode::kOff)
       return;
-    vie_receiver_.SetNackStatus(true, max_nack_reordering_threshold_);
+    rtp_stream_receiver_->SetNackStatus(true, max_nack_reordering_threshold_);
     video_receiver_->RegisterPacketRequestCallback(this);
     // Don't introduce errors when NACK is enabled.
     video_receiver_->SetDecodeErrorMode(kNoErrors);
@@ -151,7 +134,7 @@ void ViEChannel::ProcessNACKRequest(const bool enable) {
     // When NACK is off, allow decoding with errors. Otherwise, the video
     // will freeze, and will only recover with a complete key frame.
     video_receiver_->SetDecodeErrorMode(kWithErrors);
-    vie_receiver_.SetNackStatus(false, max_nack_reordering_threshold_);
+    rtp_stream_receiver_->SetNackStatus(false, max_nack_reordering_threshold_);
   }
 }
 
@@ -170,11 +153,7 @@ RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) const {
 
 void ViEChannel::RegisterRtcpPacketTypeCounterObserver(
     RtcpPacketTypeCounterObserver* observer) {
-  vie_receiver_.RegisterRtcpPacketTypeCounterObserver(observer);
-}
-
-ViEReceiver* ViEChannel::vie_receiver() {
-  return &vie_receiver_;
+  rtp_stream_receiver_->RegisterRtcpPacketTypeCounterObserver(observer);
 }
 
 CallStatsObserver* ViEChannel::GetStatsObserver() {
@@ -274,24 +253,6 @@ void ViEChannel::RegisterPreRenderCallback(
   rtc::CritScope lock(&crit_);
   pre_render_callback_ = pre_render_callback;
 }
-
-// TODO(pbos): Remove as soon as audio can handle a changing payload type
-// without this callback.
-int32_t ViEChannel::OnInitializeDecoder(
-    const int8_t payload_type,
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const int frequency,
-    const size_t channels,
-    const uint32_t rate) {
-  RTC_NOTREACHED();
-  return 0;
-}
-
-void ViEChannel::OnIncomingSSRCChanged(const uint32_t ssrc) {
-  rtp_rtcp_->SetRemoteSSRC(ssrc);
-}
-
-void ViEChannel::OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) {}
 
 void ViEChannel::RegisterReceiveStatisticsProxy(
     ReceiveStatisticsProxy* receive_statistics_proxy) {

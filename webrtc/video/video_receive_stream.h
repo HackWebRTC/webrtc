@@ -108,8 +108,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   vcm::VideoReceiver video_receiver_;
   IncomingVideoStream incoming_video_stream_;
   ReceiveStatisticsProxy stats_proxy_;
+  RtpStreamReceiver rtp_stream_receiver_;
   ViEChannel vie_channel_;
-  ViEReceiver* const vie_receiver_;
   ViESyncModule vie_sync_;
   RtpRtcp* const rtp_rtcp_;
 
