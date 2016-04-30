@@ -274,7 +274,7 @@ int QuicTransportChannel::SendPacket(const char* data,
 //       |channel_| again.
 void QuicTransportChannel::OnWritableState(TransportChannel* channel) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   LOG_J(LS_VERBOSE, this)
       << "QuicTransportChannel: channel writable state changed to "
       << channel_->writable();
@@ -308,7 +308,7 @@ void QuicTransportChannel::OnWritableState(TransportChannel* channel) {
 
 void QuicTransportChannel::OnReceivingState(TransportChannel* channel) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   LOG_J(LS_VERBOSE, this)
       << "QuicTransportChannel: channel receiving state changed to "
       << channel_->receiving();
@@ -324,7 +324,7 @@ void QuicTransportChannel::OnReadPacket(TransportChannel* channel,
                                         const rtc::PacketTime& packet_time,
                                         int flags) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   ASSERT(flags == 0);
 
   switch (quic_state_) {
@@ -371,24 +371,24 @@ void QuicTransportChannel::OnReadyToSend(TransportChannel* channel) {
 }
 
 void QuicTransportChannel::OnGatheringState(TransportChannelImpl* channel) {
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   SignalGatheringState(this);
 }
 
 void QuicTransportChannel::OnCandidateGathered(TransportChannelImpl* channel,
                                                const Candidate& c) {
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   SignalCandidateGathered(this, c);
 }
 
 void QuicTransportChannel::OnRoleConflict(TransportChannelImpl* channel) {
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   SignalRoleConflict(this);
 }
 
 void QuicTransportChannel::OnRouteChange(TransportChannel* channel,
                                          const Candidate& candidate) {
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   SignalRouteChange(this, candidate);
 }
 
@@ -396,13 +396,13 @@ void QuicTransportChannel::OnSelectedCandidatePairChanged(
     TransportChannel* channel,
     CandidatePairInterface* selected_candidate_pair,
     int last_sent_packet_id) {
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   SignalSelectedCandidatePairChanged(this, selected_candidate_pair,
                                      last_sent_packet_id);
 }
 
 void QuicTransportChannel::OnConnectionRemoved(TransportChannelImpl* channel) {
-  ASSERT(channel == channel_);
+  ASSERT(channel == channel_.get());
   SignalConnectionRemoved(this);
 }
 

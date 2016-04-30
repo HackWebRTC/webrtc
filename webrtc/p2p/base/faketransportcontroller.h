@@ -406,6 +406,8 @@ class FakeTransport : public Transport {
 
   using Transport::local_description;
   using Transport::remote_description;
+  using Transport::VerifyCertificateFingerprint;
+  using Transport::NegotiateRole;
 
  protected:
   TransportChannelImpl* CreateTransportChannel(int component) override {

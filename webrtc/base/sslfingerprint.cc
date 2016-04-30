@@ -85,7 +85,7 @@ std::string SSLFingerprint::GetRfc4572Fingerprint() const {
   return fingerprint;
 }
 
-std::string SSLFingerprint::ToString() {
+std::string SSLFingerprint::ToString() const {
   std::string fp_str = algorithm;
   fp_str.append(" ");
   fp_str.append(GetRfc4572Fingerprint());

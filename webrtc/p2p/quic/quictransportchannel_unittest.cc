@@ -94,15 +94,15 @@ class QuicTestPeer : public sigslot::has_slots<> {
   explicit QuicTestPeer(const std::string& name)
       : name_(name),
         bytes_sent_(0),
-        ice_channel_(name_, 0),
-        quic_channel_(&ice_channel_),
+        ice_channel_(new FailableTransportChannel(name_, 0)),
+        quic_channel_(ice_channel_),
         incoming_stream_count_(0) {
     quic_channel_.SignalReadPacket.connect(
         this, &QuicTestPeer::OnTransportChannelReadPacket);
     quic_channel_.SignalIncomingStream.connect(this,
                                                &QuicTestPeer::OnIncomingStream);
     quic_channel_.SignalClosed.connect(this, &QuicTestPeer::OnClosed);
-    ice_channel_.SetAsync(true);
+    ice_channel_->SetAsync(true);
     rtc::scoped_refptr<rtc::RTCCertificate> local_cert =
         rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
             rtc::SSLIdentity::Generate(name_, rtc::KT_DEFAULT)));
@@ -112,13 +112,13 @@ class QuicTestPeer : public sigslot::has_slots<> {
 
   // Connects |ice_channel_| to that of the other peer.
   void Connect(QuicTestPeer* other_peer) {
-    ice_channel_.Connect();
-    other_peer->ice_channel_.Connect();
-    ice_channel_.SetDestination(&other_peer->ice_channel_);
+    ice_channel_->Connect();
+    other_peer->ice_channel_->Connect();
+    ice_channel_->SetDestination(other_peer->ice_channel_);
   }
 
   // Disconnects |ice_channel_|.
-  void Disconnect() { ice_channel_.SetDestination(nullptr); }
+  void Disconnect() { ice_channel_->SetDestination(nullptr); }
 
   // Generates ICE credentials and passes them to |quic_channel_|.
   void SetIceParameters(IceRole local_ice_role,
@@ -189,13 +189,13 @@ class QuicTestPeer : public sigslot::has_slots<> {
 
   void ClearBytesReceived() { bytes_received_ = 0; }
 
-  void SetWriteError(int error) { ice_channel_.SetError(error); }
+  void SetWriteError(int error) { ice_channel_->SetError(error); }
 
   size_t bytes_received() const { return bytes_received_; }
 
   size_t bytes_sent() const { return bytes_sent_; }
 
-  FailableTransportChannel* ice_channel() { return &ice_channel_; }
+  FailableTransportChannel* ice_channel() { return ice_channel_; }
 
   QuicTransportChannel* quic_channel() { return &quic_channel_; }
 
@@ -230,7 +230,7 @@ class QuicTestPeer : public sigslot::has_slots<> {
   std::string name_;                      // Channel name.
   size_t bytes_sent_;                     // Bytes sent by QUIC channel.
   size_t bytes_received_;                 // Bytes received by QUIC channel.
-  FailableTransportChannel ice_channel_;  // Simulates an ICE channel.
+  FailableTransportChannel* ice_channel_;  // Simulates an ICE channel.
   QuicTransportChannel quic_channel_;     // QUIC channel to test.
   std::unique_ptr<rtc::SSLFingerprint> local_fingerprint_;
   ReliableQuicStream* incoming_quic_stream_ = nullptr;

@@ -20,6 +20,10 @@
 #include "webrtc/p2p/base/p2ptransport.h"
 #include "webrtc/p2p/base/port.h"
 
+#ifdef HAVE_QUIC
+#include "webrtc/p2p/quic/quictransport.h"
+#endif  // HAVE_QUIC
+
 namespace cricket {
 
 enum {
@@ -219,6 +223,11 @@ Transport* TransportController::CreateTransport_w(
     const std::string& transport_name) {
   RTC_DCHECK(worker_thread_->IsCurrent());
 
+#ifdef HAVE_QUIC
+  if (quic_) {
+    return new QuicTransport(transport_name, port_allocator(), certificate_);
+  }
+#endif  // HAVE_QUIC
   Transport* transport = new DtlsTransport<P2PTransport>(
       transport_name, port_allocator(), certificate_);
   return transport;

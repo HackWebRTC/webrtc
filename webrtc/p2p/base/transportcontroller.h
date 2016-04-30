@@ -91,6 +91,9 @@ class TransportController : public sigslot::has_slots<>,
   virtual void DestroyTransportChannel_w(const std::string& transport_name,
                                          int component);
 
+  void use_quic() { quic_ = true; }
+  bool quic() const { return quic_; }
+
   // All of these signals are fired on the signalling thread.
 
   // If any transport failed => failed,
@@ -222,6 +225,8 @@ class TransportController : public sigslot::has_slots<>,
   uint64_t ice_tiebreaker_ = rtc::CreateRandomId64();
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::AsyncInvoker invoker_;
+  // True if QUIC is used instead of DTLS.
+  bool quic_ = false;
 };
 
 }  // namespace cricket

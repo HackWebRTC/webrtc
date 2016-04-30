@@ -401,4 +401,107 @@ bool Transport::NegotiateTransportDescription(ContentAction local_role,
   return true;
 }
 
+bool Transport::VerifyCertificateFingerprint(
+    const rtc::RTCCertificate* certificate,
+    const rtc::SSLFingerprint* fingerprint,
+    std::string* error_desc) const {
+  if (!fingerprint) {
+    return BadTransportDescription("No fingerprint.", error_desc);
+  }
+  if (!certificate) {
+    return BadTransportDescription(
+        "Fingerprint provided but no identity available.", error_desc);
+  }
+  rtc::scoped_ptr<rtc::SSLFingerprint> fp_tmp(rtc::SSLFingerprint::Create(
+      fingerprint->algorithm, certificate->identity()));
+  ASSERT(fp_tmp.get() != NULL);
+  if (*fp_tmp == *fingerprint) {
+    return true;
+  }
+  std::ostringstream desc;
+  desc << "Local fingerprint does not match identity. Expected: ";
+  desc << fp_tmp->ToString();
+  desc << " Got: " << fingerprint->ToString();
+  return BadTransportDescription(desc.str(), error_desc);
+}
+
+bool Transport::NegotiateRole(ContentAction local_role,
+                              rtc::SSLRole* ssl_role,
+                              std::string* error_desc) const {
+  RTC_DCHECK(ssl_role);
+  if (!local_description() || !remote_description()) {
+    const std::string msg =
+        "Local and Remote description must be set before "
+        "transport descriptions are negotiated";
+    return BadTransportDescription(msg, error_desc);
+  }
+
+  // From RFC 4145, section-4.1, The following are the values that the
+  // 'setup' attribute can take in an offer/answer exchange:
+  //       Offer      Answer
+  //      ________________
+  //      active     passive / holdconn
+  //      passive    active / holdconn
+  //      actpass    active / passive / holdconn
+  //      holdconn   holdconn
+  //
+  // Set the role that is most conformant with RFC 5763, Section 5, bullet 1
+  // The endpoint MUST use the setup attribute defined in [RFC4145].
+  // The endpoint that is the offerer MUST use the setup attribute
+  // value of setup:actpass and be prepared to receive a client_hello
+  // before it receives the answer.  The answerer MUST use either a
+  // setup attribute value of setup:active or setup:passive.  Note that
+  // if the answerer uses setup:passive, then the DTLS handshake will
+  // not begin until the answerer is received, which adds additional
+  // latency. setup:active allows the answer and the DTLS handshake to
+  // occur in parallel.  Thus, setup:active is RECOMMENDED.  Whichever
+  // party is active MUST initiate a DTLS handshake by sending a
+  // ClientHello over each flow (host/port quartet).
+  // IOW - actpass and passive modes should be treated as server and
+  // active as client.
+  ConnectionRole local_connection_role = local_description()->connection_role;
+  ConnectionRole remote_connection_role = remote_description()->connection_role;
+
+  bool is_remote_server = false;
+  if (local_role == CA_OFFER) {
+    if (local_connection_role != CONNECTIONROLE_ACTPASS) {
+      return BadTransportDescription(
+          "Offerer must use actpass value for setup attribute.", error_desc);
+    }
+
+    if (remote_connection_role == CONNECTIONROLE_ACTIVE ||
+        remote_connection_role == CONNECTIONROLE_PASSIVE ||
+        remote_connection_role == CONNECTIONROLE_NONE) {
+      is_remote_server = (remote_connection_role == CONNECTIONROLE_PASSIVE);
+    } else {
+      const std::string msg =
+          "Answerer must use either active or passive value "
+          "for setup attribute.";
+      return BadTransportDescription(msg, error_desc);
+    }
+    // If remote is NONE or ACTIVE it will act as client.
+  } else {
+    if (remote_connection_role != CONNECTIONROLE_ACTPASS &&
+        remote_connection_role != CONNECTIONROLE_NONE) {
+      return BadTransportDescription(
+          "Offerer must use actpass value for setup attribute.", error_desc);
+    }
+
+    if (local_connection_role == CONNECTIONROLE_ACTIVE ||
+        local_connection_role == CONNECTIONROLE_PASSIVE) {
+      is_remote_server = (local_connection_role == CONNECTIONROLE_ACTIVE);
+    } else {
+      const std::string msg =
+          "Answerer must use either active or passive value "
+          "for setup attribute.";
+      return BadTransportDescription(msg, error_desc);
+    }
+
+    // If local is passive, local will act as server.
+  }
+
+  *ssl_role = is_remote_server ? rtc::SSL_CLIENT : rtc::SSL_SERVER;
+  return true;
+}
+
 }  // namespace cricket

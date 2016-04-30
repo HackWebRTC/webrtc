@@ -235,3 +235,180 @@ TEST_F(TransportTest, TestGetStats) {
   EXPECT_EQ(1, stats.channel_stats[0].component);
 }
 
+// Tests that VerifyCertificateFingerprint only returns true when the
+// certificate matches the fingerprint.
+TEST_F(TransportTest, TestVerifyCertificateFingerprint) {
+  std::string error_desc;
+  EXPECT_FALSE(
+      transport_->VerifyCertificateFingerprint(nullptr, nullptr, &error_desc));
+  rtc::KeyType key_types[] = {rtc::KT_RSA, rtc::KT_ECDSA};
+
+  for (auto& key_type : key_types) {
+    rtc::scoped_refptr<rtc::RTCCertificate> certificate =
+        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+            rtc::SSLIdentity::Generate("testing", key_type)));
+    ASSERT_NE(nullptr, certificate);
+
+    std::string digest_algorithm;
+    ASSERT_TRUE(certificate->ssl_certificate().GetSignatureDigestAlgorithm(
+        &digest_algorithm));
+    ASSERT_FALSE(digest_algorithm.empty());
+    rtc::scoped_ptr<rtc::SSLFingerprint> good_fingerprint(
+        rtc::SSLFingerprint::Create(digest_algorithm, certificate->identity()));
+    ASSERT_NE(nullptr, good_fingerprint);
+
+    EXPECT_TRUE(transport_->VerifyCertificateFingerprint(
+        certificate.get(), good_fingerprint.get(), &error_desc));
+    EXPECT_FALSE(transport_->VerifyCertificateFingerprint(
+        certificate.get(), nullptr, &error_desc));
+    EXPECT_FALSE(transport_->VerifyCertificateFingerprint(
+        nullptr, good_fingerprint.get(), &error_desc));
+
+    rtc::SSLFingerprint bad_fingerprint = *good_fingerprint;
+    bad_fingerprint.digest.AppendData("0", 1);
+    EXPECT_FALSE(transport_->VerifyCertificateFingerprint(
+        certificate.get(), &bad_fingerprint, &error_desc));
+  }
+}
+
+// Tests that NegotiateRole sets the SSL role correctly.
+TEST_F(TransportTest, TestNegotiateRole) {
+  TransportDescription local_desc(kIceUfrag1, kIcePwd1);
+  TransportDescription remote_desc(kIceUfrag2, kIcePwd2);
+
+  struct NegotiateRoleParams {
+    cricket::ConnectionRole local_role;
+    cricket::ConnectionRole remote_role;
+    cricket::ContentAction local_action;
+    cricket::ContentAction remote_action;
+  };
+
+  rtc::SSLRole ssl_role;
+  std::string error_desc;
+
+  // Parameters which set the SSL role to SSL_CLIENT.
+  NegotiateRoleParams valid_client_params[] = {
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_ANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_PRANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_OFFER, cricket::CA_ANSWER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_OFFER, cricket::CA_PRANSWER}};
+
+  for (auto& param : valid_client_params) {
+    local_desc.connection_role = param.local_role;
+    remote_desc.connection_role = param.remote_role;
+
+    ASSERT_TRUE(transport_->SetRemoteTransportDescription(
+        remote_desc, param.remote_action, nullptr));
+    ASSERT_TRUE(transport_->SetLocalTransportDescription(
+        local_desc, param.local_action, nullptr));
+    EXPECT_TRUE(
+        transport_->NegotiateRole(param.local_action, &ssl_role, &error_desc));
+    EXPECT_EQ(rtc::SSL_CLIENT, ssl_role);
+  }
+
+  // Parameters which set the SSL role to SSL_SERVER.
+  NegotiateRoleParams valid_server_params[] = {
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_ANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_PRANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_OFFER, cricket::CA_ANSWER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_OFFER, cricket::CA_PRANSWER}};
+
+  for (auto& param : valid_server_params) {
+    local_desc.connection_role = param.local_role;
+    remote_desc.connection_role = param.remote_role;
+
+    ASSERT_TRUE(transport_->SetRemoteTransportDescription(
+        remote_desc, param.remote_action, nullptr));
+    ASSERT_TRUE(transport_->SetLocalTransportDescription(
+        local_desc, param.local_action, nullptr));
+    EXPECT_TRUE(
+        transport_->NegotiateRole(param.local_action, &ssl_role, &error_desc));
+    EXPECT_EQ(rtc::SSL_SERVER, ssl_role);
+  }
+
+  // Invalid parameters due to both peers having a duplicate role.
+  NegotiateRoleParams duplicate_params[] = {
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_ANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_ANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_ANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_PRANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_PRANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_PRANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_OFFER, cricket::CA_ANSWER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_OFFER, cricket::CA_ANSWER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_OFFER, cricket::CA_ANSWER},
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_OFFER, cricket::CA_PRANSWER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_OFFER, cricket::CA_PRANSWER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_OFFER, cricket::CA_PRANSWER}};
+
+  for (auto& param : duplicate_params) {
+    local_desc.connection_role = param.local_role;
+    remote_desc.connection_role = param.remote_role;
+
+    ASSERT_TRUE(transport_->SetRemoteTransportDescription(
+        remote_desc, param.remote_action, nullptr));
+    ASSERT_TRUE(transport_->SetLocalTransportDescription(
+        local_desc, param.local_action, nullptr));
+    EXPECT_FALSE(
+        transport_->NegotiateRole(param.local_action, &ssl_role, &error_desc));
+  }
+
+  // Invalid parameters due to the offerer not using ACTPASS.
+  NegotiateRoleParams offerer_without_actpass_params[] = {
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_ANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_ANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_ANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_PRANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_PRANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_PRANSWER, cricket::CA_OFFER},
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_OFFER, cricket::CA_ANSWER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_OFFER, cricket::CA_ANSWER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_OFFER, cricket::CA_ANSWER},
+      {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_PASSIVE,
+       cricket::CA_OFFER, cricket::CA_PRANSWER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTIVE,
+       cricket::CA_OFFER, cricket::CA_PRANSWER},
+      {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTPASS,
+       cricket::CA_OFFER, cricket::CA_PRANSWER}};
+
+  for (auto& param : offerer_without_actpass_params) {
+    local_desc.connection_role = param.local_role;
+    remote_desc.connection_role = param.remote_role;
+
+    ASSERT_TRUE(transport_->SetRemoteTransportDescription(
+        remote_desc, param.remote_action, nullptr));
+    ASSERT_TRUE(transport_->SetLocalTransportDescription(
+        local_desc, param.local_action, nullptr));
+    EXPECT_FALSE(
+        transport_->NegotiateRole(param.local_action, &ssl_role, &error_desc));
+  }
+}

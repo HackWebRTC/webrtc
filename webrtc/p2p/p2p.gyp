@@ -107,6 +107,8 @@
             'quic/quicconnectionhelper.h',
             'quic/quicsession.cc',
             'quic/quicsession.h',
+            'quic/quictransport.cc',
+            'quic/quictransport.h',
             'quic/quictransportchannel.cc',
             'quic/quictransportchannel.h',
             'quic/reliablequicstream.cc',
@@ -182,6 +184,7 @@
                 'sources': [
                   'quic/quicconnectionhelper_unittest.cc',
                   'quic/quicsession_unittest.cc',
+		  'quic/quictransport_unittest.cc',
                   'quic/quictransportchannel_unittest.cc',
                   'quic/reliablequicstream_unittest.cc',
                 ],

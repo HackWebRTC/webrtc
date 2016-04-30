@@ -41,7 +41,7 @@ struct SSLFingerprint {
 
   std::string GetRfc4572Fingerprint() const;
 
-  std::string ToString();
+  std::string ToString() const;
 
   std::string algorithm;
   rtc::CopyOnWriteBuffer digest;

@@ -315,6 +315,20 @@ class Transport : public sigslot::has_slots<> {
       TransportChannelImpl* channel,
       std::string* error_desc);
 
+  // Returns false if the certificate's identity does not match the fingerprint,
+  // or either is NULL.
+  virtual bool VerifyCertificateFingerprint(
+      const rtc::RTCCertificate* certificate,
+      const rtc::SSLFingerprint* fingerprint,
+      std::string* error_desc) const;
+
+  // Negotiates the SSL role based off the offer and answer as specified by
+  // RFC 4145, section-4.1. Returns false if the SSL role cannot be determined
+  // from the local description and remote description.
+  virtual bool NegotiateRole(ContentAction local_role,
+                             rtc::SSLRole* ssl_role,
+                             std::string* error_desc) const;
+
  private:
   // If a candidate is not acceptable, returns false and sets error.
   // Call this before calling OnRemoteCandidates.

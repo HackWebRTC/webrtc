@@ -273,7 +273,7 @@ class QuicTransportChannel : public TransportChannelImpl,
   rtc::Thread* worker_thread_;
   // Underlying channel which is responsible for connecting with the remote peer
   // and sending/receiving packets across the network.
-  TransportChannelImpl* const channel_;
+  std::unique_ptr<TransportChannelImpl> channel_;
   // Connectivity state of QuicTransportChannel.
   QuicTransportState quic_state_ = QUIC_TRANSPORT_NEW;
   // QUIC session which establishes the crypto handshake and converts data
