@@ -240,6 +240,20 @@
             },
           },
         }],
+        ['use_quic==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
+          ],
+          'sources': [
+            'quicdatachannel.cc',
+            'quicdatachannel.h',
+            'quicdatatransport.cc',
+            'quicdatatransport.h',
+          ],
+          'export_dependent_settings': [
+            '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
+          ],
+        }],
       ],
     },  # target libjingle_peerconnection
   ],  # targets

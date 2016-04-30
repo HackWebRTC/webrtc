@@ -113,6 +113,18 @@
             },
           },
         }],
+        ['use_quic==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
+          ],
+          'sources': [
+            'quicdatachannel_unittest.cc',
+            'quicdatatransport_unittest.cc',
+          ],
+          'export_dependent_settings': [
+            '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
+          ],
+        }],
       ],  # conditions
     },  # target peerconnection_unittests
   ],  # targets
