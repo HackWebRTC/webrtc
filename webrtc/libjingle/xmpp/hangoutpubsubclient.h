@@ -12,6 +12,7 @@
 #define WEBRTC_LIBJINGLE_XMPP_HANGOUTPUBSUBCLIENT_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -163,14 +164,14 @@ class HangoutPubSubClient : public sigslot::has_slots<> {
                                 const XmlElement* stanza);
   Jid mucjid_;
   std::string nick_;
-  rtc::scoped_ptr<PubSubClient> media_client_;
-  rtc::scoped_ptr<PubSubClient> presenter_client_;
-  rtc::scoped_ptr<PubSubStateClient<bool> > presenter_state_client_;
-  rtc::scoped_ptr<PubSubStateClient<bool> > audio_mute_state_client_;
-  rtc::scoped_ptr<PubSubStateClient<bool> > video_mute_state_client_;
-  rtc::scoped_ptr<PubSubStateClient<bool> > video_pause_state_client_;
-  rtc::scoped_ptr<PubSubStateClient<bool> > recording_state_client_;
-  rtc::scoped_ptr<PubSubStateClient<bool> > media_block_state_client_;
+  std::unique_ptr<PubSubClient> media_client_;
+  std::unique_ptr<PubSubClient> presenter_client_;
+  std::unique_ptr<PubSubStateClient<bool> > presenter_state_client_;
+  std::unique_ptr<PubSubStateClient<bool> > audio_mute_state_client_;
+  std::unique_ptr<PubSubStateClient<bool> > video_mute_state_client_;
+  std::unique_ptr<PubSubStateClient<bool> > video_pause_state_client_;
+  std::unique_ptr<PubSubStateClient<bool> > recording_state_client_;
+  std::unique_ptr<PubSubStateClient<bool> > media_block_state_client_;
 };
 
 }  // namespace buzz

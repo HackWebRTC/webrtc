@@ -11,6 +11,7 @@
 #ifndef WEBRTC_LIBJINGLE_XMLLITE_XMLNSSTACK_H_
 #define WEBRTC_LIBJINGLE_XMLLITE_XMLNSSTACK_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "webrtc/libjingle/xmllite/qname.h"
@@ -37,8 +38,8 @@ public:
 
 private:
 
-  rtc::scoped_ptr<std::vector<std::string> > pxmlnsStack_;
-  rtc::scoped_ptr<std::vector<size_t> > pxmlnsDepthStack_;
+  std::unique_ptr<std::vector<std::string> > pxmlnsStack_;
+  std::unique_ptr<std::vector<size_t> > pxmlnsDepthStack_;
 };
 }
 

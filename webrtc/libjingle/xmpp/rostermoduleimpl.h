@@ -11,6 +11,8 @@
 #ifndef WEBRTC_LIBJINGLE_XMPP_XMPPTHREAD_H_
 #define WEBRTC_LIBJINGLE_XMPP_XMPPTHREAD_H_
 
+#include <memory>
+
 #include "webrtc/libjingle/xmpp/moduleimpl.h"
 #include "webrtc/libjingle/xmpp/rostermodule.h"
 
@@ -86,7 +88,7 @@ private:
 
   // Store everything in the XML element. If this becomes a perf issue we can
   // cache the data.
-  rtc::scoped_ptr<XmlElement> raw_xml_;
+  std::unique_ptr<XmlElement> raw_xml_;
 };
 
 //! A contact as given by the server
@@ -151,7 +153,7 @@ private:
   int group_count_;
   int group_index_returned_;
   XmlElement * group_returned_;
-  rtc::scoped_ptr<XmlElement> raw_xml_;
+  std::unique_ptr<XmlElement> raw_xml_;
 };
 
 //! An XmppModule for handle roster and presence functionality
@@ -273,11 +275,11 @@ private:
 
   typedef std::vector<XmppPresenceImpl*> PresenceVector;
   typedef std::map<Jid, PresenceVector*> JidPresenceVectorMap;
-  rtc::scoped_ptr<JidPresenceVectorMap> incoming_presence_map_;
-  rtc::scoped_ptr<PresenceVector> incoming_presence_vector_;
+  std::unique_ptr<JidPresenceVectorMap> incoming_presence_map_;
+  std::unique_ptr<PresenceVector> incoming_presence_vector_;
 
   typedef std::vector<XmppRosterContactImpl*> ContactVector;
-  rtc::scoped_ptr<ContactVector> contacts_;
+  std::unique_ptr<ContactVector> contacts_;
 };
 
 }

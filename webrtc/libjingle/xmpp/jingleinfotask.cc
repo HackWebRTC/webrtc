@@ -10,6 +10,8 @@
 
 #include "webrtc/libjingle/xmpp/jingleinfotask.h"
 
+#include <memory>
+
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/xmppclient.h"
 #include "webrtc/libjingle/xmpp/xmpptask.h"
@@ -24,7 +26,7 @@ class JingleInfoTask::JingleInfoGetTask : public XmppTask {
         done_(false) {}
 
   virtual int ProcessStart() {
-    rtc::scoped_ptr<XmlElement> get(
+    std::unique_ptr<XmlElement> get(
         MakeIq(STR_GET, Jid(), task_id()));
     get->AddElement(new XmlElement(QN_JINGLE_INFO_QUERY, true));
     if (SendStanza(get.get()) != XMPP_RETURN_OK) {

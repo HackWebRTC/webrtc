@@ -11,8 +11,10 @@
 #ifndef WEBRTC_LIBJINGLE_XMPP_XMPPENGINEIMPL_H_
 #define WEBRTC_LIBJINGLE_XMPP_XMPPENGINEIMPL_H_
 
+#include <memory>
 #include <sstream>
 #include <vector>
+
 #include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/libjingle/xmpp/xmppstanzaparser.h"
 
@@ -233,7 +235,7 @@ class XmppEngineImpl : public XmppEngine {
   TlsOptions tls_option_;
   std::string tls_server_hostname_;
   std::string tls_server_domain_;
-  rtc::scoped_ptr<XmppLoginTask> login_task_;
+  std::unique_ptr<XmppLoginTask> login_task_;
   std::string lang_;
 
   int next_id_;
@@ -242,7 +244,7 @@ class XmppEngineImpl : public XmppEngine {
   bool encrypted_;
   Error error_code_;
   int subcode_;
-  rtc::scoped_ptr<XmlElement> stream_error_;
+  std::unique_ptr<XmlElement> stream_error_;
   bool raised_reset_;
   XmppOutputHandler* output_handler_;
   XmppSessionHandler* session_handler_;
@@ -250,14 +252,14 @@ class XmppEngineImpl : public XmppEngine {
   XmlnsStack xmlns_stack_;
 
   typedef std::vector<XmppStanzaHandler*> StanzaHandlerVector;
-  rtc::scoped_ptr<StanzaHandlerVector> stanza_handlers_[HL_COUNT];
+  std::unique_ptr<StanzaHandlerVector> stanza_handlers_[HL_COUNT];
 
   typedef std::vector<XmppIqEntry*> IqEntryVector;
-  rtc::scoped_ptr<IqEntryVector> iq_entries_;
+  std::unique_ptr<IqEntryVector> iq_entries_;
 
-  rtc::scoped_ptr<SaslHandler> sasl_handler_;
+  std::unique_ptr<SaslHandler> sasl_handler_;
 
-  rtc::scoped_ptr<std::stringstream> output_;
+  std::unique_ptr<std::stringstream> output_;
 };
 
 }  // namespace buzz

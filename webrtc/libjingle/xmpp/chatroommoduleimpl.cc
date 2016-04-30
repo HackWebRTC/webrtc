@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -105,7 +106,7 @@ public:
   const XmppPresence* presence() const;
 
 private:
-  rtc::scoped_ptr<XmppPresence>  presence_;
+  std::unique_ptr<XmppPresence>  presence_;
 };
 
 class XmppChatroomMemberEnumeratorImpl :
@@ -430,7 +431,7 @@ void
 XmppChatroomModuleImpl::FireEnteredStatus(const XmlElement* presence,
                                           XmppChatroomEnteredStatus status) {
   if (chatroom_handler_) {
-    rtc::scoped_ptr<XmppPresence> xmpp_presence(XmppPresence::Create());
+    std::unique_ptr<XmppPresence> xmpp_presence(XmppPresence::Create());
     xmpp_presence->set_raw_xml(presence);
     chatroom_handler_->ChatroomEnteredStatus(this, xmpp_presence.get(), status);
   }
@@ -472,7 +473,7 @@ XmppReturnStatus
 XmppChatroomModuleImpl::ServerChangedOtherPresence(const XmlElement&
                                                    presence_element) {
   XmppReturnStatus xmpp_status = XMPP_RETURN_OK;
-  rtc::scoped_ptr<XmppPresence> presence(XmppPresence::Create());
+  std::unique_ptr<XmppPresence> presence(XmppPresence::Create());
   IFR(presence->set_raw_xml(&presence_element));
 
   JidMemberMap::iterator pos = chatroom_jid_members_.find(presence->jid());

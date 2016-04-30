@@ -11,6 +11,7 @@
 #ifndef WEBRTC_LIBJINGLE_XMPP_LOGINTASK_H_
 #define WEBRTC_LIBJINGLE_XMPP_LOGINTASK_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -70,12 +71,12 @@ private:
   const XmlElement * pelStanza_;
   bool isStart_;
   std::string iqId_;
-  rtc::scoped_ptr<XmlElement> pelFeatures_;
+  std::unique_ptr<XmlElement> pelFeatures_;
   Jid fullJid_;
   std::string streamId_;
-  rtc::scoped_ptr<std::vector<XmlElement *> > pvecQueuedStanzas_;
+  std::unique_ptr<std::vector<XmlElement *> > pvecQueuedStanzas_;
 
-  rtc::scoped_ptr<SaslMechanism> sasl_mech_;
+  std::unique_ptr<SaslMechanism> sasl_mech_;
 
 #if !defined(NDEBUG)
   static const rtc::ConstantLabel LOGINTASK_STATES[];

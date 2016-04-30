@@ -9,8 +9,10 @@
  */
 
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
+
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/plainsaslhandler.h"
@@ -77,8 +79,8 @@ class XmppEngineTest : public testing::Test {
   void RunLogin();
 
  private:
-  rtc::scoped_ptr<XmppEngine> engine_;
-  rtc::scoped_ptr<XmppTestHandler> handler_;
+  std::unique_ptr<XmppEngine> engine_;
+  std::unique_ptr<XmppTestHandler> handler_;
 };
 
 void XmppEngineTest::RunLogin() {

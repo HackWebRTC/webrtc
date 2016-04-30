@@ -11,6 +11,7 @@
 #include "webrtc/libjingle/xmpp/pubsub_task.h"
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "webrtc/libjingle/xmpp/constants.h"
@@ -82,7 +83,7 @@ int PubsubTask::ProcessResponse() {
 bool PubsubTask::SubscribeToNode(const std::string& pubsub_node,
                                  NodeHandler handler) {
   subscribed_nodes_[pubsub_node] = handler;
-  rtc::scoped_ptr<buzz::XmlElement> get_iq_request(
+  std::unique_ptr<buzz::XmlElement> get_iq_request(
       MakeIq(buzz::STR_GET, pubsub_node_jid_, task_id()));
   if (!get_iq_request) {
     return false;

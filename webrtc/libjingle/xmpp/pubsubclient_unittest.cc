@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
 #include "webrtc/libjingle/xmllite/qname.h"
@@ -103,11 +104,11 @@ class PubSubClientTest : public testing::Test {
         listener.get(), &TestPubSubItemsListener::OnRetractError);
   }
 
-  rtc::scoped_ptr<rtc::FakeTaskRunner> runner;
+  std::unique_ptr<rtc::FakeTaskRunner> runner;
   // xmpp_client deleted by deleting runner.
   buzz::FakeXmppClient* xmpp_client;
-  rtc::scoped_ptr<buzz::PubSubClient> client;
-  rtc::scoped_ptr<TestPubSubItemsListener> listener;
+  std::unique_ptr<buzz::PubSubClient> client;
+  std::unique_ptr<TestPubSubItemsListener> listener;
   buzz::Jid pubsubjid;
   std::string node;
   std::string itemid;

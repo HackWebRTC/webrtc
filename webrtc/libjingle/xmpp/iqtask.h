@@ -11,6 +11,7 @@
 #ifndef WEBRTC_LIBJINGLE_XMPP_IQTASK_H_
 #define WEBRTC_LIBJINGLE_XMPP_IQTASK_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/libjingle/xmpp/xmppengine.h"
@@ -40,7 +41,7 @@ class IqTask : public XmppTask {
   virtual int OnTimeout();
 
   Jid to_;
-  rtc::scoped_ptr<XmlElement> stanza_;
+  std::unique_ptr<XmlElement> stanza_;
 };
 
 }  // namespace buzz

@@ -12,7 +12,9 @@
 #define WEBRTC_LIBJINGLE_XMPP_XMPPTASK_H_
 
 #include <deque>
+#include <memory>
 #include <string>
+
 #include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sigslot.h"
@@ -160,7 +162,7 @@ private:
 
   bool stopped_;
   std::deque<XmlElement*> stanza_queue_;
-  rtc::scoped_ptr<XmlElement> next_stanza_;
+  std::unique_ptr<XmlElement> next_stanza_;
   std::string id_;
 
 #if !defined(NDEBUG)

@@ -15,7 +15,6 @@
 #include "webrtc/libjingle/xmpp/prexmppauth.h"
 #include "webrtc/libjingle/xmpp/saslplainmechanism.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/stringutils.h"
 #include "xmpptask.h"
@@ -48,9 +47,9 @@ public:
   XmppClient* const client_;
 
   // the two main objects
-  rtc::scoped_ptr<AsyncSocket> socket_;
-  rtc::scoped_ptr<XmppEngine> engine_;
-  rtc::scoped_ptr<PreXmppAuth> pre_auth_;
+  std::unique_ptr<AsyncSocket> socket_;
+  std::unique_ptr<XmppEngine> engine_;
+  std::unique_ptr<PreXmppAuth> pre_auth_;
   rtc::CryptString pass_;
   std::string auth_mechanism_;
   std::string auth_token_;

@@ -12,7 +12,6 @@
 
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 
 
 namespace buzz {

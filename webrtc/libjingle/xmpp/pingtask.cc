@@ -10,9 +10,10 @@
 
 #include "webrtc/libjingle/xmpp/pingtask.h"
 
+#include <memory>
+
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace buzz {
 
@@ -66,7 +67,7 @@ int PingTask::ProcessStart() {
 
   // Send a ping if it's time.
   if (now >= next_ping_time_) {
-    rtc::scoped_ptr<buzz::XmlElement> stanza(
+    std::unique_ptr<buzz::XmlElement> stanza(
         MakeIq(buzz::STR_GET, Jid(STR_EMPTY), task_id()));
     stanza->AddElement(new buzz::XmlElement(QN_PING));
     SendStanza(stanza.get());

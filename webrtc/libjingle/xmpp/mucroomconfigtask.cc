@@ -14,7 +14,6 @@
 #include "webrtc/libjingle/xmpp/mucroomconfigtask.h"
 
 #include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace buzz {
 

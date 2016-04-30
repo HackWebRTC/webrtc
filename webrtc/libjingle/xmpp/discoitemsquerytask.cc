@@ -11,7 +11,6 @@
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/discoitemsquerytask.h"
 #include "webrtc/libjingle/xmpp/xmpptask.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace buzz {
 

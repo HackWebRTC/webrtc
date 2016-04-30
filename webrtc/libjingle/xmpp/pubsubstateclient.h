@@ -12,6 +12,7 @@
 #define WEBRTC_LIBJINGLE_XMPP_PUBSUBSTATECLIENT_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -257,8 +258,8 @@ class PubSubStateClient : public sigslot::has_slots<> {
   PubSubClient* client_;
   const QName state_name_;
   C default_state_;
-  rtc::scoped_ptr<PubSubStateKeySerializer> key_serializer_;
-  rtc::scoped_ptr<PubSubStateSerializer<C> > state_serializer_;
+  std::unique_ptr<PubSubStateKeySerializer> key_serializer_;
+  std::unique_ptr<PubSubStateSerializer<C> > state_serializer_;
   // key => state
   std::map<std::string, C> state_by_key_;
   // itemid => StateItemInfo
