@@ -95,7 +95,8 @@ class QuicTestPeer : public sigslot::has_slots<> {
       : name_(name),
         bytes_sent_(0),
         ice_channel_(name_, 0),
-        quic_channel_(&ice_channel_) {
+        quic_channel_(&ice_channel_),
+        incoming_stream_count_(0) {
     quic_channel_.SignalReadPacket.connect(
         this, &QuicTestPeer::OnTransportChannelReadPacket);
     quic_channel_.SignalIncomingStream.connect(this,
@@ -204,6 +205,8 @@ class QuicTestPeer : public sigslot::has_slots<> {
 
   ReliableQuicStream* incoming_quic_stream() { return incoming_quic_stream_; }
 
+  size_t incoming_stream_count() const { return incoming_stream_count_; }
+
   bool signal_closed_emitted() const { return signal_closed_emitted_; }
 
  private:
@@ -220,6 +223,7 @@ class QuicTestPeer : public sigslot::has_slots<> {
   }
   void OnIncomingStream(ReliableQuicStream* stream) {
     incoming_quic_stream_ = stream;
+    ++incoming_stream_count_;
   }
   void OnClosed() { signal_closed_emitted_ = true; }
 
@@ -230,6 +234,7 @@ class QuicTestPeer : public sigslot::has_slots<> {
   QuicTransportChannel quic_channel_;     // QUIC channel to test.
   std::unique_ptr<rtc::SSLFingerprint> local_fingerprint_;
   ReliableQuicStream* incoming_quic_stream_ = nullptr;
+  size_t incoming_stream_count_;
   bool signal_closed_emitted_ = false;
 };
 
@@ -512,6 +517,29 @@ TEST_F(QuicTransportChannelTest, CreateOutgoingAndIncomingQuicStream) {
   stream->Write("Hi", 2);
   EXPECT_TRUE_WAIT(peer2_.incoming_quic_stream() != nullptr, kTimeoutMs);
   EXPECT_EQ(stream->id(), peer2_.incoming_quic_stream()->id());
+}
+
+// Test that if the QuicTransportChannel is unwritable, then all outgoing QUIC
+// streams can send data once the QuicTransprotChannel becomes writable again.
+TEST_F(QuicTransportChannelTest, OutgoingQuicStreamSendsDataAfterReconnect) {
+  Connect();
+  ASSERT_TRUE_WAIT(quic_connected(), kTimeoutMs);
+  ReliableQuicStream* stream1 = peer1_.quic_channel()->CreateQuicStream();
+  ASSERT_NE(nullptr, stream1);
+  ReliableQuicStream* stream2 = peer1_.quic_channel()->CreateQuicStream();
+  ASSERT_NE(nullptr, stream2);
+
+  peer1_.ice_channel()->SetWritable(false);
+  stream1->Write("First", 5);
+  EXPECT_EQ(5u, stream1->queued_data_bytes());
+  stream2->Write("Second", 6);
+  EXPECT_EQ(6u, stream2->queued_data_bytes());
+  EXPECT_EQ(0u, peer2_.incoming_stream_count());
+
+  peer1_.ice_channel()->SetWritable(true);
+  EXPECT_EQ_WAIT(0u, stream1->queued_data_bytes(), kTimeoutMs);
+  EXPECT_EQ_WAIT(0u, stream2->queued_data_bytes(), kTimeoutMs);
+  EXPECT_EQ_WAIT(2u, peer2_.incoming_stream_count(), kTimeoutMs);
 }
 
 // Test that SignalClosed is emitted when the QuicConnection closes.

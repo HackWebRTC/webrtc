@@ -583,7 +583,7 @@ void QuicTransportChannel::set_quic_state(QuicTransportState state) {
 
 ReliableQuicStream* QuicTransportChannel::CreateQuicStream() {
   if (quic_) {
-    net::SpdyPriority priority = 0;  // Priority of the QUIC stream (not used)
+    net::SpdyPriority priority = 0;  // Priority of the QUIC stream
     return quic_->CreateOutgoingDynamicStream(priority);
   }
   return nullptr;

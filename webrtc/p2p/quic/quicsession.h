@@ -49,6 +49,7 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
 
   // QuicSession optional overrides.
   void OnCryptoHandshakeEvent(CryptoHandshakeEvent event) override;
+  void CloseStream(net::QuicStreamId stream_id) override;
 
   // QuicConnectionVisitorInterface overrides.
   void OnConnectionClosed(net::QuicErrorCode error,
@@ -81,7 +82,8 @@ class QuicSession : public net::QuicSession, public sigslot::has_slots<> {
   ReliableQuicStream* CreateIncomingDynamicStream(
       net::QuicStreamId id) override;
 
-  virtual ReliableQuicStream* CreateDataStream(net::QuicStreamId id);
+  virtual ReliableQuicStream* CreateDataStream(net::QuicStreamId id,
+                                               net::SpdyPriority priority);
 
  private:
   std::unique_ptr<net::QuicCryptoStream> crypto_stream_;

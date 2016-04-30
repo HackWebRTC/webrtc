@@ -20,6 +20,10 @@
 
 namespace cricket {
 
+// Default priority for incoming QUIC streams.
+// TODO(mikescarlett): Determine if this value is correct.
+static const net::SpdyPriority kDefaultPriority = 3;
+
 QuicSession::QuicSession(std::unique_ptr<net::QuicConnection> connection,
                          const net::QuicConfig& config)
     : net::QuicSession(connection.release(), config) {}
@@ -62,9 +66,19 @@ void QuicSession::OnCryptoHandshakeEvent(CryptoHandshakeEvent event) {
   }
 }
 
+void QuicSession::CloseStream(net::QuicStreamId stream_id) {
+  if (IsClosedStream(stream_id)) {
+    // When CloseStream has been called recursively (via
+    // ReliableQuicStream::OnClose), the stream is already closed so return.
+    return;
+  }
+  write_blocked_streams()->UnregisterStream(stream_id);
+  net::QuicSession::CloseStream(stream_id);
+}
+
 ReliableQuicStream* QuicSession::CreateIncomingDynamicStream(
     net::QuicStreamId id) {
-  ReliableQuicStream* stream = CreateDataStream(id);
+  ReliableQuicStream* stream = CreateDataStream(id, kDefaultPriority);
   if (stream) {
     SignalIncomingStream(stream);
   }
@@ -73,17 +87,23 @@ ReliableQuicStream* QuicSession::CreateIncomingDynamicStream(
 
 ReliableQuicStream* QuicSession::CreateOutgoingDynamicStream(
     net::SpdyPriority priority) {
-  return CreateDataStream(GetNextOutgoingStreamId());
+  return CreateDataStream(GetNextOutgoingStreamId(), priority);
 }
 
-ReliableQuicStream* QuicSession::CreateDataStream(net::QuicStreamId id) {
+ReliableQuicStream* QuicSession::CreateDataStream(net::QuicStreamId id,
+                                                  net::SpdyPriority priority) {
   if (crypto_stream_ == nullptr || !crypto_stream_->encryption_established()) {
     // Encryption not active so no stream created
     return nullptr;
   }
   ReliableQuicStream* stream = new ReliableQuicStream(id, this);
   if (stream) {
-    ActivateStream(stream);  // QuicSession owns the stream.
+    // Make QuicSession take ownership of the stream.
+    ActivateStream(stream);
+    // Register the stream to the QuicWriteBlockedList. |priority| is clamped
+    // between 0 and 7, with 0 being the highest priority and 7 the lowest
+    // priority.
+    write_blocked_streams()->RegisterStream(stream->id(), priority);
   }
   return stream;
 }
