@@ -82,22 +82,22 @@ class CallTest : public ::testing::Test {
 
   Clock* const clock_;
 
-  rtc::scoped_ptr<Call> sender_call_;
-  rtc::scoped_ptr<PacketTransport> send_transport_;
+  std::unique_ptr<Call> sender_call_;
+  std::unique_ptr<PacketTransport> send_transport_;
   VideoSendStream::Config video_send_config_;
   VideoEncoderConfig video_encoder_config_;
   VideoSendStream* video_send_stream_;
   AudioSendStream::Config audio_send_config_;
   AudioSendStream* audio_send_stream_;
 
-  rtc::scoped_ptr<Call> receiver_call_;
-  rtc::scoped_ptr<PacketTransport> receive_transport_;
+  std::unique_ptr<Call> receiver_call_;
+  std::unique_ptr<PacketTransport> receive_transport_;
   std::vector<VideoReceiveStream::Config> video_receive_configs_;
   std::vector<VideoReceiveStream*> video_receive_streams_;
   std::vector<AudioReceiveStream::Config> audio_receive_configs_;
   std::vector<AudioReceiveStream*> audio_receive_streams_;
 
-  rtc::scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
+  std::unique_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
   test::FakeEncoder fake_encoder_;
   std::vector<std::unique_ptr<VideoDecoder>> allocated_decoders_;
   size_t num_video_streams_;
@@ -127,8 +127,8 @@ class CallTest : public ::testing::Test {
   VoiceEngineState voe_recv_;
 
   // The audio devices must outlive the voice engines.
-  rtc::scoped_ptr<test::FakeAudioDevice> fake_send_audio_device_;
-  rtc::scoped_ptr<test::FakeAudioDevice> fake_recv_audio_device_;
+  std::unique_ptr<test::FakeAudioDevice> fake_send_audio_device_;
+  std::unique_ptr<test::FakeAudioDevice> fake_recv_audio_device_;
 };
 
 class BaseTest : public RtpRtcpObserver {

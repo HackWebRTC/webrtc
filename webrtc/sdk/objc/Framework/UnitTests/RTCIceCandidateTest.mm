@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#include <memory>
+
 #include "webrtc/base/gunit.h"
 
 #import "NSString+StdString.h"
@@ -32,7 +34,7 @@
                                                       sdpMLineIndex:0
                                                              sdpMid:@"audio"];
 
-  rtc::scoped_ptr<webrtc::IceCandidateInterface> nativeCandidate =
+  std::unique_ptr<webrtc::IceCandidateInterface> nativeCandidate =
       candidate.nativeCandidate;
   EXPECT_EQ("audio", nativeCandidate->sdp_mid());
   EXPECT_EQ(0, nativeCandidate->sdp_mline_index());

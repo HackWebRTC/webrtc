@@ -13,6 +13,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/quic/quictransportchannel.h"
@@ -55,7 +56,7 @@ class QuicTransport : public Transport {
  private:
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   rtc::SSLRole local_role_ = rtc::SSL_CLIENT;
-  rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint_;
+  std::unique_ptr<rtc::SSLFingerprint> remote_fingerprint_;
 };
 
 }  // namespace cricket

@@ -11,6 +11,7 @@
 #define WEBRTC_TEST_RTP_RTCP_OBSERVER_H_
 
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -69,7 +70,7 @@ class RtpRtcpObserver {
   }
 
   rtc::Event observation_complete_;
-  const rtc::scoped_ptr<RtpHeaderParser> parser_;
+  const std::unique_ptr<RtpHeaderParser> parser_;
 
  private:
   const int timeout_ms_;

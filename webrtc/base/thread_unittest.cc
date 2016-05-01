@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/event.h"

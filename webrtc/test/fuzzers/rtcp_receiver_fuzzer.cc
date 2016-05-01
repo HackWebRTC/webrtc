@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/system_wrappers/include/clock.h"
 

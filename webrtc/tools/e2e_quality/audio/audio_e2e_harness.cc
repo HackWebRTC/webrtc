@@ -12,10 +12,11 @@
 // and runs forever. Some parameters can be configured through command-line
 // flags.
 
+#include <memory>
+
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/channel_transport/channel_transport.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -48,7 +49,7 @@ void RunHarness() {
   int channel = base->CreateChannel();
   ASSERT_NE(-1, channel);
 
-  rtc::scoped_ptr<VoiceChannelTransport> voice_channel_transport(
+  std::unique_ptr<VoiceChannelTransport> voice_channel_transport(
       new VoiceChannelTransport(network, channel));
 
   ASSERT_EQ(0, voice_channel_transport->SetSendDestination("127.0.0.1", 1234));

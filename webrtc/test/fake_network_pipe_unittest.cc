@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/fake_network_pipe.h"
@@ -71,7 +72,7 @@ class FakeNetworkPipeTest : public ::testing::Test {
 
   void SendPackets(FakeNetworkPipe* pipe, int number_packets, int packet_size) {
     RTC_DCHECK_GE(packet_size, static_cast<int>(sizeof(int)));
-    rtc::scoped_ptr<uint8_t[]> packet(new uint8_t[packet_size]);
+    std::unique_ptr<uint8_t[]> packet(new uint8_t[packet_size]);
     for (int i = 0; i < number_packets; ++i) {
       // Set a sequence number for the packets by
       // using the first bytes in the packet.
@@ -85,7 +86,7 @@ class FakeNetworkPipeTest : public ::testing::Test {
   }
 
   SimulatedClock fake_clock_;
-  rtc::scoped_ptr<TestReceiver> receiver_;
+  std::unique_ptr<TestReceiver> receiver_;
 };
 
 void DeleteMemory(uint8_t* data, int length) { delete [] data; }
@@ -95,7 +96,7 @@ TEST_F(FakeNetworkPipeTest, CapacityTest) {
   FakeNetworkPipe::Config config;
   config.queue_length_packets = 20;
   config.link_capacity_kbps = 80;
-  rtc::scoped_ptr<FakeNetworkPipe> pipe(
+  std::unique_ptr<FakeNetworkPipe> pipe(
       new FakeNetworkPipe(&fake_clock_, config));
   pipe->SetReceiver(receiver_.get());
 
@@ -135,7 +136,7 @@ TEST_F(FakeNetworkPipeTest, ExtraDelayTest) {
   config.queue_length_packets = 20;
   config.queue_delay_ms = 100;
   config.link_capacity_kbps = 80;
-  rtc::scoped_ptr<FakeNetworkPipe> pipe(
+  std::unique_ptr<FakeNetworkPipe> pipe(
       new FakeNetworkPipe(&fake_clock_, config));
   pipe->SetReceiver(receiver_.get());
 
@@ -169,7 +170,7 @@ TEST_F(FakeNetworkPipeTest, QueueLengthTest) {
   FakeNetworkPipe::Config config;
   config.queue_length_packets = 2;
   config.link_capacity_kbps = 80;
-  rtc::scoped_ptr<FakeNetworkPipe> pipe(
+  std::unique_ptr<FakeNetworkPipe> pipe(
       new FakeNetworkPipe(&fake_clock_, config));
   pipe->SetReceiver(receiver_.get());
 
@@ -193,7 +194,7 @@ TEST_F(FakeNetworkPipeTest, StatisticsTest) {
   config.queue_length_packets = 2;
   config.queue_delay_ms = 20;
   config.link_capacity_kbps = 80;
-  rtc::scoped_ptr<FakeNetworkPipe> pipe(
+  std::unique_ptr<FakeNetworkPipe> pipe(
       new FakeNetworkPipe(&fake_clock_, config));
   pipe->SetReceiver(receiver_.get());
 
@@ -223,7 +224,7 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithEmptyPipeTest) {
   FakeNetworkPipe::Config config;
   config.queue_length_packets = 20;
   config.link_capacity_kbps = 80;
-  rtc::scoped_ptr<FakeNetworkPipe> pipe(
+  std::unique_ptr<FakeNetworkPipe> pipe(
       new FakeNetworkPipe(&fake_clock_, config));
   pipe->SetReceiver(receiver_.get());
 
@@ -282,7 +283,7 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithPacketsInPipeTest) {
   FakeNetworkPipe::Config config;
   config.queue_length_packets = 20;
   config.link_capacity_kbps = 80;
-  rtc::scoped_ptr<FakeNetworkPipe> pipe(
+  std::unique_ptr<FakeNetworkPipe> pipe(
       new FakeNetworkPipe(&fake_clock_, config));
   pipe->SetReceiver(receiver_.get());
 
@@ -337,7 +338,7 @@ TEST_F(FakeNetworkPipeTest, DisallowReorderingThenAllowReordering) {
   config.link_capacity_kbps = 800;
   config.queue_delay_ms = 100;
   config.delay_standard_deviation_ms = 10;
-  rtc::scoped_ptr<FakeNetworkPipe> pipe(
+  std::unique_ptr<FakeNetworkPipe> pipe(
       new FakeNetworkPipe(&fake_clock_, config));
   ReorderTestReceiver* receiver = new ReorderTestReceiver();
   receiver_.reset(receiver);

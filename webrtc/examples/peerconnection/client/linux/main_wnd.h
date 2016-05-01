@@ -11,6 +11,7 @@
 #ifndef WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_LINUX_MAIN_WND_H_
 #define WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_LINUX_MAIN_WND_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/examples/peerconnection/client/main_wnd.h"
@@ -92,7 +93,7 @@ class GtkMainWnd : public MainWindow {
 
    protected:
     void SetSize(int width, int height);
-    rtc::scoped_ptr<uint8_t[]> image_;
+    std::unique_ptr<uint8_t[]> image_;
     int width_;
     int height_;
     GtkMainWnd* main_wnd_;
@@ -111,9 +112,9 @@ class GtkMainWnd : public MainWindow {
   std::string port_;
   bool autoconnect_;
   bool autocall_;
-  rtc::scoped_ptr<VideoRenderer> local_renderer_;
-  rtc::scoped_ptr<VideoRenderer> remote_renderer_;
-  rtc::scoped_ptr<uint8_t[]> draw_buffer_;
+  std::unique_ptr<VideoRenderer> local_renderer_;
+  std::unique_ptr<VideoRenderer> remote_renderer_;
+  std::unique_ptr<uint8_t[]> draw_buffer_;
   int draw_buffer_size_;
 };
 

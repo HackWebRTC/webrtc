@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MEDIA_BASE_VIDEOBROADCASTER_H_
 #define WEBRTC_MEDIA_BASE_VIDEOBROADCASTER_H_
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -55,7 +56,7 @@ class VideoBroadcaster : public VideoSourceBase,
   rtc::CriticalSection sinks_and_wants_lock_;
 
   VideoSinkWants current_wants_ GUARDED_BY(sinks_and_wants_lock_);
-  rtc::scoped_ptr<cricket::WebRtcVideoFrame> black_frame_;
+  std::unique_ptr<cricket::WebRtcVideoFrame> black_frame_;
 };
 
 }  // namespace rtc

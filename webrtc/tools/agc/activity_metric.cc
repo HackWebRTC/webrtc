@@ -14,10 +14,10 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <memory>
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/agc/agc.h"
 #include "webrtc/modules/audio_processing/agc/histogram.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
@@ -155,10 +155,10 @@ class AgcStat {
   int video_index_;
   double activity_threshold_;
   double video_vad_[kMaxNumFrames];
-  rtc::scoped_ptr<Histogram> audio_content_;
-  rtc::scoped_ptr<VadAudioProc> audio_processing_;
-  rtc::scoped_ptr<PitchBasedVad> vad_;
-  rtc::scoped_ptr<StandaloneVad> standalone_vad_;
+  std::unique_ptr<Histogram> audio_content_;
+  std::unique_ptr<VadAudioProc> audio_processing_;
+  std::unique_ptr<PitchBasedVad> vad_;
+  std::unique_ptr<StandaloneVad> standalone_vad_;
 
   FILE* audio_content_fid_;
 };

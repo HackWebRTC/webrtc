@@ -10,11 +10,12 @@
 
 #import "WebRTC/RTCFileLogger.h"
 
+#include <memory>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/filerotatingstream.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/logsinks.h"
-#include "webrtc/base/scoped_ptr.h"
 
 NSString *const kDefaultLogDirName = @"webrtc_logs";
 NSUInteger const kDefaultMaxFileSize = 10 * 1024 * 1024; // 10MB.
@@ -24,7 +25,7 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
   BOOL _hasStarted;
   NSString *_dirPath;
   NSUInteger _maxFileSize;
-  rtc::scoped_ptr<rtc::FileRotatingLogSink> _logSink;
+  std::unique_ptr<rtc::FileRotatingLogSink> _logSink;
 }
 
 @synthesize severity = _severity;
@@ -129,7 +130,7 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
     return nil;
   }
   NSMutableData* logData = [NSMutableData data];
-  rtc::scoped_ptr<rtc::FileRotatingStream> stream;
+  std::unique_ptr<rtc::FileRotatingStream> stream;
   switch(_rotationType) {
     case RTCFileLoggerTypeApp:
       stream.reset(
@@ -150,7 +151,7 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
   size_t read = 0;
   // Allocate memory using malloc so we can pass it direcly to NSData without
   // copying.
-  rtc::scoped_ptr<uint8_t[]> buffer(static_cast<uint8_t*>(malloc(bufferSize)));
+  std::unique_ptr<uint8_t[]> buffer(static_cast<uint8_t*>(malloc(bufferSize)));
   stream->ReadAll(buffer.get(), bufferSize, &read, nullptr);
   logData = [[NSMutableData alloc] initWithBytesNoCopy:buffer.release()
                                                 length:read];

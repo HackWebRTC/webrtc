@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MEDIA_ENGINE_WEBRTCVOE_H_
 #define WEBRTC_MEDIA_ENGINE_WEBRTCVOE_H_
 
+#include <memory>
+
 #include "webrtc/base/common.h"
 #include "webrtc/media/engine/webrtccommon.h"
 

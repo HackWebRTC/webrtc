@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <memory>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -121,7 +123,7 @@ class YuvFileGenerator : public FrameGenerator {
   const size_t width_;
   const size_t height_;
   const size_t frame_size_;
-  const rtc::scoped_ptr<uint8_t[]> frame_buffer_;
+  const std::unique_ptr<uint8_t[]> frame_buffer_;
   const int frame_display_count_;
   int current_display_count_;
   VideoFrame last_read_frame_;

@@ -10,6 +10,8 @@
 
 #import "WebRTC/RTCIceCandidate.h"
 
+#include <memory>
+
 #include "webrtc/api/jsep.h"
 #include "webrtc/base/scoped_ptr.h"
 
@@ -22,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  * object. This is needed to pass to the underlying C++ APIs.
  */
 @property(nonatomic, readonly)
-    rtc::scoped_ptr<webrtc::IceCandidateInterface> nativeCandidate;
+    std::unique_ptr<webrtc::IceCandidateInterface> nativeCandidate;
 
 /**
  * Initialize an RTCIceCandidate from a native IceCandidateInterface. No

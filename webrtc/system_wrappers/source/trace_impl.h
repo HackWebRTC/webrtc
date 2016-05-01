@@ -11,6 +11,8 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_IMPL_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_IMPL_H_
 
+#include <memory>
+
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
@@ -97,7 +99,7 @@ class TraceImpl : public Trace {
   uint32_t row_count_text_ GUARDED_BY(crit_);
   uint32_t file_count_text_ GUARDED_BY(crit_);
 
-  const rtc::scoped_ptr<FileWrapper> trace_file_ GUARDED_BY(crit_);
+  const std::unique_ptr<FileWrapper> trace_file_ GUARDED_BY(crit_);
   rtc::CriticalSection crit_;
 };
 

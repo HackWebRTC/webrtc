@@ -16,10 +16,10 @@
 #import <OpenGL/gl3.h>
 #endif
 #include <string.h>
+#include <memory>
 
 #import "WebRTC/RTCVideoFrame.h"
 
-#include "webrtc/base/scoped_ptr.h"
 
 // TODO(tkchin): check and log openGL errors. Methods here return BOOLs in
 // anticipation of that happening in the future.
@@ -162,7 +162,7 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   GLint _vSampler;
   // Used to create a non-padded plane for GPU upload when we receive padded
   // frames.
-  rtc::scoped_ptr<uint8_t[]> _planeBuffer;
+  std::unique_ptr<uint8_t[]> _planeBuffer;
 }
 
 @synthesize lastDrawnFrame = _lastDrawnFrame;

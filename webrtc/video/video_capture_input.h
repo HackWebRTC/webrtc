@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VIDEO_VIDEO_CAPTURE_INPUT_H_
 #define WEBRTC_VIDEO_VIDEO_CAPTURE_INPUT_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"

@@ -7,8 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+#include <memory>
+
 #include "webrtc/base/checks.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
 
@@ -30,14 +32,14 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     size_t payload_size = data[i++] % 10;
     if (i + payload_size + rtp_header_length + 2 > size)
       break;
-    rtc::scoped_ptr<uint8_t[]> packet(
+    std::unique_ptr<uint8_t[]> packet(
         new uint8_t[payload_size + rtp_header_length]);
     memcpy(packet.get(), &data[i], payload_size + rtp_header_length);
     ByteWriter<uint16_t>::WriteBigEndian(&packet[2], seq_num++);
     i += payload_size + rtp_header_length;
     // Make sure sequence numbers are increasing.
     const int kRedPayloadType = 98;
-    rtc::scoped_ptr<RedPacket> red_packet(producer.BuildRedPacket(
+    std::unique_ptr<RedPacket> red_packet(producer.BuildRedPacket(
         packet.get(), payload_size, rtp_header_length, kRedPayloadType));
     const bool protect = data[i++] % 2 == 1;
     if (protect) {

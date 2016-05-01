@@ -11,13 +11,13 @@
 #include "webrtc/api/quicdatachannel.h"
 
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/p2p/quic/quictransportchannel.h"
@@ -66,7 +66,7 @@ static const DataBuffer kOversizedBuffer(kOversizedMessage);
 static rtc::SSLFingerprint* CreateFingerprint(rtc::RTCCertificate* cert) {
   std::string digest_algorithm;
   cert->ssl_certificate().GetSignatureDigestAlgorithm(&digest_algorithm);
-  rtc::scoped_ptr<rtc::SSLFingerprint> fingerprint(
+  std::unique_ptr<rtc::SSLFingerprint> fingerprint(
       rtc::SSLFingerprint::Create(digest_algorithm, cert->identity()));
   return fingerprint.release();
 }
@@ -176,7 +176,7 @@ class QuicDataChannelPeer {
 
   void GenerateCertificateAndFingerprint() {
     rtc::scoped_refptr<rtc::RTCCertificate> local_cert =
-        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+        rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
             rtc::SSLIdentity::Generate("cert_name", rtc::KT_DEFAULT)));
     quic_transport_channel_.SetLocalCertificate(local_cert);
     local_fingerprint_.reset(CreateFingerprint(local_cert.get()));
@@ -206,7 +206,7 @@ class QuicDataChannelPeer {
     ice_transport_channel_->SetDestination(other_peer->ice_transport_channel_);
   }
 
-  rtc::scoped_ptr<rtc::SSLFingerprint>& local_fingerprint() {
+  std::unique_ptr<rtc::SSLFingerprint>& local_fingerprint() {
     return local_fingerprint_;
   }
 
@@ -222,7 +222,7 @@ class QuicDataChannelPeer {
   FakeTransportChannel* ice_transport_channel_;
   QuicTransportChannel quic_transport_channel_;
 
-  rtc::scoped_ptr<rtc::SSLFingerprint> local_fingerprint_;
+  std::unique_ptr<rtc::SSLFingerprint> local_fingerprint_;
 
   FakeQuicDataTransport fake_quic_data_transport_;
 };
@@ -248,9 +248,9 @@ class QuicDataChannelTest : public testing::Test {
     peer1_.quic_transport_channel()->SetSslRole(rtc::SSL_CLIENT);
     peer2_.quic_transport_channel()->SetSslRole(rtc::SSL_SERVER);
 
-    rtc::scoped_ptr<rtc::SSLFingerprint>& peer1_fingerprint =
+    std::unique_ptr<rtc::SSLFingerprint>& peer1_fingerprint =
         peer1_.local_fingerprint();
-    rtc::scoped_ptr<rtc::SSLFingerprint>& peer2_fingerprint =
+    std::unique_ptr<rtc::SSLFingerprint>& peer2_fingerprint =
         peer2_.local_fingerprint();
 
     peer1_.quic_transport_channel()->SetRemoteFingerprint(

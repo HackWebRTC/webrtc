@@ -10,6 +10,8 @@
 
 #import "RTCIceCandidate+Private.h"
 
+#include <memory>
+
 #import "NSString+StdString.h"
 #import "WebRTC/RTCLogging.h"
 
@@ -51,7 +53,7 @@
                     sdpMid:[NSString stringForStdString:candidate->sdp_mid()]];
 }
 
-- (rtc::scoped_ptr<webrtc::IceCandidateInterface>)nativeCandidate {
+- (std::unique_ptr<webrtc::IceCandidateInterface>)nativeCandidate {
   webrtc::SdpParseError error;
 
   webrtc::IceCandidateInterface *candidate = webrtc::CreateIceCandidate(
@@ -63,7 +65,7 @@
            error.line.c_str());
   }
 
-  return rtc::scoped_ptr<webrtc::IceCandidateInterface>(candidate);
+  return std::unique_ptr<webrtc::IceCandidateInterface>(candidate);
 }
 
 @end

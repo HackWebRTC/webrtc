@@ -43,7 +43,7 @@
 + (RTCVideoCapturer*)capturerWithDeviceName:(NSString*)deviceName {
   cricket::WebRtcVideoDeviceCapturerFactory factory;
   cricket::Device device(std::string(deviceName.UTF8String), 0);
-  rtc::scoped_ptr<cricket::VideoCapturer> capturer(factory.Create(device));
+  std::unique_ptr<cricket::VideoCapturer> capturer(factory.Create(device));
   RTCVideoCapturer* rtcCapturer =
       [[RTCVideoCapturer alloc] initWithCapturer:capturer.release()];
   return rtcCapturer;

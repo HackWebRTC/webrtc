@@ -13,6 +13,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "webrtc/api/mediastreaminterface.h"
@@ -131,7 +132,7 @@ class MainWnd : public MainWindow {
 
     HWND wnd_;
     BITMAPINFO bmi_;
-    rtc::scoped_ptr<uint8_t[]> image_;
+    std::unique_ptr<uint8_t[]> image_;
     CRITICAL_SECTION buffer_lock_;
     rtc::scoped_refptr<webrtc::VideoTrackInterface> rendered_track_;
   };
@@ -176,8 +177,8 @@ class MainWnd : public MainWindow {
   void HandleTabbing();
 
  private:
-  rtc::scoped_ptr<VideoRenderer> local_renderer_;
-  rtc::scoped_ptr<VideoRenderer> remote_renderer_;
+  std::unique_ptr<VideoRenderer> local_renderer_;
+  std::unique_ptr<VideoRenderer> remote_renderer_;
   UI ui_;
   HWND wnd_;
   DWORD ui_thread_id_;

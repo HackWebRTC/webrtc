@@ -14,6 +14,7 @@
 #include <string.h>  // size_t
 
 #include <list>
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"

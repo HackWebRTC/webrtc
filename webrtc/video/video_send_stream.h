@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
 
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "webrtc/call/bitrate_allocator.h"

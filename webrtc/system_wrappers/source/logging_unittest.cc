@@ -13,7 +13,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/event.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {

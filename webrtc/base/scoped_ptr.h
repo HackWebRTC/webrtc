@@ -33,7 +33,7 @@ namespace rtc {
 template <typename T, typename Deleter = std::default_delete<T>>
 using scoped_ptr = std::unique_ptr<T, Deleter>;
 
-// These used to convert between rtc::scoped_ptr and std::unique_ptr. Now they
+// These used to convert between std::unique_ptr and std::unique_ptr. Now they
 // are no-ops.
 template <typename T>
 std::unique_ptr<T> ScopedToUnique(std::unique_ptr<T> up) {

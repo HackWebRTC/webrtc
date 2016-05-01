@@ -9,9 +9,9 @@
  */
 
 #include <iostream>  // NOLINT
+#include <memory>
 
 #include "webrtc/p2p/base/relayserver.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 
 int main(int argc, char **argv) {
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
   rtc::Thread *pthMain = rtc::Thread::Current();
 
-  rtc::scoped_ptr<rtc::AsyncUDPSocket> int_socket(
+  std::unique_ptr<rtc::AsyncUDPSocket> int_socket(
       rtc::AsyncUDPSocket::Create(pthMain->socketserver(), int_addr));
   if (!int_socket) {
     std::cerr << "Failed to create a UDP socket bound at"
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  rtc::scoped_ptr<rtc::AsyncUDPSocket> ext_socket(
+  std::unique_ptr<rtc::AsyncUDPSocket> ext_socket(
       rtc::AsyncUDPSocket::Create(pthMain->socketserver(), ext_addr));
   if (!ext_socket) {
     std::cerr << "Failed to create a UDP socket bound at"

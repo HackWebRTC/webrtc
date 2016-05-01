@@ -11,6 +11,7 @@
 #ifndef WEBRTC_TEST_CONFIGURABLE_FRAME_SIZE_ENCODER_H_
 #define WEBRTC_TEST_CONFIGURABLE_FRAME_SIZE_ENCODER_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
@@ -49,7 +50,7 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
   EncodedImageCallback* callback_;
   const size_t max_frame_size_;
   size_t current_frame_size_;
-  rtc::scoped_ptr<uint8_t[]> buffer_;
+  std::unique_ptr<uint8_t[]> buffer_;
 };
 
 }  // namespace test

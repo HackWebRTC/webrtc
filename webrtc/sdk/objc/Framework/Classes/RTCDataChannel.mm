@@ -12,7 +12,7 @@
 
 #import "NSString+StdString.h"
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
 
 namespace webrtc {
 
@@ -46,7 +46,7 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
 
 
 @implementation RTCDataBuffer {
-  rtc::scoped_ptr<webrtc::DataBuffer> _dataBuffer;
+  std::unique_ptr<webrtc::DataBuffer> _dataBuffer;
 }
 
 - (instancetype)initWithData:(NSData *)data isBinary:(BOOL)isBinary {
@@ -86,7 +86,7 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
 
 @implementation RTCDataChannel {
   rtc::scoped_refptr<webrtc::DataChannelInterface> _nativeDataChannel;
-  rtc::scoped_ptr<webrtc::DataChannelDelegateAdapter> _observer;
+  std::unique_ptr<webrtc::DataChannelDelegateAdapter> _observer;
   BOOL _isObserverRegistered;
 }
 

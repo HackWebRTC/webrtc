@@ -245,7 +245,7 @@ TEST_F(TransportTest, TestVerifyCertificateFingerprint) {
 
   for (auto& key_type : key_types) {
     rtc::scoped_refptr<rtc::RTCCertificate> certificate =
-        rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+        rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
             rtc::SSLIdentity::Generate("testing", key_type)));
     ASSERT_NE(nullptr, certificate);
 
@@ -253,7 +253,7 @@ TEST_F(TransportTest, TestVerifyCertificateFingerprint) {
     ASSERT_TRUE(certificate->ssl_certificate().GetSignatureDigestAlgorithm(
         &digest_algorithm));
     ASSERT_FALSE(digest_algorithm.empty());
-    rtc::scoped_ptr<rtc::SSLFingerprint> good_fingerprint(
+    std::unique_ptr<rtc::SSLFingerprint> good_fingerprint(
         rtc::SSLFingerprint::Create(digest_algorithm, certificate->identity()));
     ASSERT_NE(nullptr, good_fingerprint);
 

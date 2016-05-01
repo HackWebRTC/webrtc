@@ -10,6 +10,7 @@
 
 #include "webrtc/examples/peerconnection/client/conductor.h"
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -308,7 +309,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       return;
     }
     webrtc::SdpParseError error;
-    rtc::scoped_ptr<webrtc::IceCandidateInterface> candidate(
+    std::unique_ptr<webrtc::IceCandidateInterface> candidate(
         webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, &error));
     if (!candidate.get()) {
       LOG(WARNING) << "Can't parse received candidate message. "

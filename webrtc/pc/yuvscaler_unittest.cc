@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <sstream>
 
 #include "libyuv/cpu_id.h"

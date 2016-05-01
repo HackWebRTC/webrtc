@@ -18,6 +18,7 @@
 #define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_DATA_LOG_IMPL_H_
 
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -139,16 +140,16 @@ class DataLogImpl {
 
   // Collection of tables indexed by the table name as std::string.
   typedef std::map<std::string, LogTable*> TableMap;
-  typedef rtc::scoped_ptr<CriticalSectionWrapper> CritSectScopedPtr;
+  typedef std::unique_ptr<CriticalSectionWrapper> CritSectScopedPtr;
 
   static CritSectScopedPtr  crit_sect_;
   static DataLogImpl*       instance_;
   int                       counter_;
   TableMap                  tables_;
   EventWrapper*             flush_event_;
-  // This is a scoped_ptr so that we don't have to create threads in the no-op
+  // This is a unique_ptr so that we don't have to create threads in the no-op
   // impl.
-  rtc::scoped_ptr<rtc::PlatformThread> file_writer_thread_;
+  std::unique_ptr<rtc::PlatformThread> file_writer_thread_;
   RWLockWrapper*            tables_lock_;
 };
 

@@ -10,6 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#include <memory>
+
 #include "webrtc/base/gunit.h"
 
 #import "NSString+StdString.h"
@@ -29,7 +31,7 @@
   RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc]
       initWithMandatoryConstraints:mandatory
                optionalConstraints:optional];
-  rtc::scoped_ptr<webrtc::MediaConstraints> nativeConstraints =
+  std::unique_ptr<webrtc::MediaConstraints> nativeConstraints =
       [constraints nativeConstraints];
 
   webrtc::MediaConstraintsInterface::Constraints nativeMandatory =

@@ -10,10 +10,10 @@
 
 #import "RTCVideoFrame+Private.h"
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
 
 @implementation RTCVideoFrame {
-  rtc::scoped_ptr<cricket::VideoFrame> _videoFrame;
+  std::unique_ptr<cricket::VideoFrame> _videoFrame;
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> _i420Buffer;
 }
 

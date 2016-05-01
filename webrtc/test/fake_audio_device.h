@@ -10,6 +10,7 @@
 #ifndef WEBRTC_TEST_FAKE_AUDIO_DEVICE_H_
 #define WEBRTC_TEST_FAKE_AUDIO_DEVICE_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/criticalsection.h"
@@ -59,11 +60,11 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
   int64_t last_playout_ms_;
 
   DriftingClock clock_;
-  rtc::scoped_ptr<EventTimerWrapper> tick_;
+  std::unique_ptr<EventTimerWrapper> tick_;
   rtc::CriticalSection lock_;
   rtc::PlatformThread thread_;
-  rtc::scoped_ptr<ModuleFileUtility> file_utility_;
-  rtc::scoped_ptr<FileWrapper> input_stream_;
+  std::unique_ptr<ModuleFileUtility> file_utility_;
+  std::unique_ptr<FileWrapper> input_stream_;
 };
 }  // namespace test
 }  // namespace webrtc

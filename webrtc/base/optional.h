@@ -12,6 +12,7 @@
 #define WEBRTC_BASE_OPTIONAL_H_
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
 #include "webrtc/base/checks.h"
@@ -21,7 +22,7 @@ namespace rtc {
 // Simple std::experimental::optional-wannabe. It either contains a T or not.
 // In order to keep the implementation simple and portable, this implementation
 // actually contains a (default-constructed) T even when it supposedly doesn't
-// contain a value; use e.g. rtc::scoped_ptr<T> instead if that's too
+// contain a value; use e.g. std::unique_ptr<T> instead if that's too
 // expensive.
 //
 // A moved-from Optional<T> may only be destroyed, and assigned to if T allows

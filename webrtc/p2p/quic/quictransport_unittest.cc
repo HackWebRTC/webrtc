@@ -10,6 +10,7 @@
 
 #include "webrtc/p2p/quic/quictransport.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -30,15 +31,15 @@ static const char kIcePwd2[] = "TESTICEPWD00000000000002";
 
 static rtc::scoped_refptr<rtc::RTCCertificate> CreateCertificate(
     std::string name) {
-  return rtc::RTCCertificate::Create(rtc::scoped_ptr<rtc::SSLIdentity>(
+  return rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
       rtc::SSLIdentity::Generate(name, rtc::KT_DEFAULT)));
 }
 
-static rtc::scoped_ptr<rtc::SSLFingerprint> CreateFingerprint(
+static std::unique_ptr<rtc::SSLFingerprint> CreateFingerprint(
     rtc::RTCCertificate* cert) {
   std::string digest_algorithm;
   cert->ssl_certificate().GetSignatureDigestAlgorithm(&digest_algorithm);
-  return rtc::scoped_ptr<rtc::SSLFingerprint>(
+  return std::unique_ptr<rtc::SSLFingerprint>(
       rtc::SSLFingerprint::Create(digest_algorithm, cert->identity()));
 }
 
@@ -59,7 +60,7 @@ class QuicTransportTest : public testing::Test {
     ASSERT_NE(nullptr, local_certificate);
     transport_.SetLocalCertificate(local_certificate);
 
-    rtc::scoped_ptr<rtc::SSLFingerprint> local_fingerprint =
+    std::unique_ptr<rtc::SSLFingerprint> local_fingerprint =
         CreateFingerprint(local_certificate.get());
     ASSERT_NE(nullptr, local_fingerprint);
     TransportDescription local_desc(std::vector<std::string>(), kIceUfrag1,
@@ -73,11 +74,11 @@ class QuicTransportTest : public testing::Test {
         channel->GetLocalCertificate();
     ASSERT_NE(nullptr, channel_local_certificate);
     EXPECT_EQ(local_certificate, channel_local_certificate);
-    rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint =
+    std::unique_ptr<rtc::SSLFingerprint> remote_fingerprint =
         CreateFingerprint(CreateCertificate("remote").get());
     // NegotiateTransportDescription was not called yet. The SSL role should
     // not be set and neither should the remote fingerprint.
-    rtc::scoped_ptr<rtc::SSLRole> role(new rtc::SSLRole());
+    std::unique_ptr<rtc::SSLRole> role(new rtc::SSLRole());
     EXPECT_FALSE(channel->GetSslRole(role.get()));
     // Setting the remote description should set the SSL role.
     ASSERT_NE(nullptr, remote_fingerprint);

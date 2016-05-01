@@ -11,6 +11,7 @@
 #ifndef WEBRTC_AUDIO_SEND_STREAM_H_
 #define WEBRTC_AUDIO_SEND_STREAM_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -84,7 +85,7 @@ class AudioSendStream : public SendStream {
     // Ownership of the encoder object is transferred to Call when the config is
     // passed to Call::CreateAudioSendStream().
     // TODO(solenberg): Implement, once we configure codecs through the new API.
-    // rtc::scoped_ptr<AudioEncoder> encoder;
+    // std::unique_ptr<AudioEncoder> encoder;
     int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.
     int red_payload_type = -1;  // pt, or -1 to disable REDundant coding.
   };

@@ -20,9 +20,11 @@
 #import "RTCVideoSource+Private.h"
 #import "RTCVideoTrack+Private.h"
 
+#include <memory>
+
 @implementation RTCPeerConnectionFactory {
-  rtc::scoped_ptr<rtc::Thread> _signalingThread;
-  rtc::scoped_ptr<rtc::Thread> _workerThread;
+  std::unique_ptr<rtc::Thread> _signalingThread;
+  std::unique_ptr<rtc::Thread> _workerThread;
 }
 
 @synthesize nativeFactory = _nativeFactory;

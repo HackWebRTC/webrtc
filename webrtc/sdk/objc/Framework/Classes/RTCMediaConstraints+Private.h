@@ -10,6 +10,8 @@
 
 #import "WebRTC/RTCMediaConstraints.h"
 
+#include <memory>
+
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/base/scoped_ptr.h"
 
@@ -41,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  * A MediaConstraints representation of this RTCMediaConstraints object. This is
  * needed to pass to the underlying C++ APIs.
  */
-- (rtc::scoped_ptr<webrtc::MediaConstraints>)nativeConstraints;
+- (std::unique_ptr<webrtc::MediaConstraints>)nativeConstraints;
 
 /** Return a native Constraints object representing these constraints */
 + (webrtc::MediaConstraintsInterface::Constraints)

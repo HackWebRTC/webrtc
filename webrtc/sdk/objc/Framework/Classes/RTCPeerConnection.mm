@@ -22,6 +22,8 @@
 #import "RTCStatsReport+Private.h"
 #import "WebRTC/RTCLogging.h"
 
+#include <memory>
+
 #include "webrtc/base/checks.h"
 
 NSString * const kRTCPeerConnectionErrorDomain =
@@ -45,8 +47,8 @@ class CreateSessionDescriptionObserverAdapter
 
   void OnSuccess(SessionDescriptionInterface *desc) override {
     RTC_DCHECK(completion_handler_);
-    rtc::scoped_ptr<webrtc::SessionDescriptionInterface> description =
-        rtc::scoped_ptr<webrtc::SessionDescriptionInterface>(desc);
+    std::unique_ptr<webrtc::SessionDescriptionInterface> description =
+        std::unique_ptr<webrtc::SessionDescriptionInterface>(desc);
     RTCSessionDescription* session =
         [[RTCSessionDescription alloc] initWithNativeDescription:
             description.get()];
@@ -184,7 +186,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
 
 @implementation RTCPeerConnection {
   NSMutableArray *_localStreams;
-  rtc::scoped_ptr<webrtc::PeerConnectionDelegateAdapter> _observer;
+  std::unique_ptr<webrtc::PeerConnectionDelegateAdapter> _observer;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
 }
 
@@ -199,7 +201,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
     _observer.reset(new webrtc::PeerConnectionDelegateAdapter(self));
     webrtc::PeerConnectionInterface::RTCConfiguration config =
         configuration.nativeConfiguration;
-    rtc::scoped_ptr<webrtc::MediaConstraints> nativeConstraints =
+    std::unique_ptr<webrtc::MediaConstraints> nativeConstraints =
         constraints.nativeConstraints;
     _peerConnection =
         factory.nativeFactory->CreatePeerConnection(config,
@@ -257,7 +259,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
 }
 
 - (void)addIceCandidate:(RTCIceCandidate *)candidate {
-  rtc::scoped_ptr<const webrtc::IceCandidateInterface> iceCandidate(
+  std::unique_ptr<const webrtc::IceCandidateInterface> iceCandidate(
       candidate.nativeCandidate);
   _peerConnection->AddIceCandidate(iceCandidate.get());
 }

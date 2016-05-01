@@ -19,7 +19,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {

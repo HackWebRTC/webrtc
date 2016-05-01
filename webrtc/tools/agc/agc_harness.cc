@@ -10,10 +10,11 @@
 
 // Refer to kUsage below for a description.
 
+#include <memory>
+
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/channel_transport/channel_transport.h"
@@ -217,13 +218,13 @@ class AgcVoiceEngine {
   int channel_;
   int capture_idx_;
   int render_idx_;
-  rtc::scoped_ptr<test::VoiceChannelTransport> channel_transport_;
+  std::unique_ptr<test::VoiceChannelTransport> channel_transport_;
 };
 
 void RunHarness() {
-  rtc::scoped_ptr<AgcVoiceEngine> voe1(new AgcVoiceEngine(
+  std::unique_ptr<AgcVoiceEngine> voe1(new AgcVoiceEngine(
       FLAGS_legacy_agc, 2000, 2000, FLAGS_capture1, FLAGS_render1));
-  rtc::scoped_ptr<AgcVoiceEngine> voe2;
+  std::unique_ptr<AgcVoiceEngine> voe2;
   if (FLAGS_parallel) {
     voe2.reset(new AgcVoiceEngine(!FLAGS_legacy_agc, 3000, 3000, FLAGS_capture2,
                                   FLAGS_render2));

@@ -412,7 +412,7 @@ bool Transport::VerifyCertificateFingerprint(
     return BadTransportDescription(
         "Fingerprint provided but no identity available.", error_desc);
   }
-  rtc::scoped_ptr<rtc::SSLFingerprint> fp_tmp(rtc::SSLFingerprint::Create(
+  std::unique_ptr<rtc::SSLFingerprint> fp_tmp(rtc::SSLFingerprint::Create(
       fingerprint->algorithm, certificate->identity()));
   ASSERT(fp_tmp.get() != NULL);
   if (*fp_tmp == *fingerprint) {

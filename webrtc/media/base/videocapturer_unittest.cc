@@ -9,6 +9,8 @@
  */
 
 #include <stdio.h>
+
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/gunit.h"
@@ -40,7 +42,7 @@ class VideoCapturerTest
 
  protected:
   void InitCapturer(bool is_screencast) {
-    capturer_ = rtc::scoped_ptr<FakeVideoCapturer>(
+    capturer_ = std::unique_ptr<FakeVideoCapturer>(
         new FakeVideoCapturer(is_screencast));
     capturer_->SignalStateChange.connect(this,
                                          &VideoCapturerTest::OnStateChange);
@@ -56,7 +58,7 @@ class VideoCapturerTest
   cricket::CaptureState capture_state() { return capture_state_; }
   int num_state_changes() { return num_state_changes_; }
 
-  rtc::scoped_ptr<cricket::FakeVideoCapturer> capturer_;
+  std::unique_ptr<cricket::FakeVideoCapturer> capturer_;
   cricket::CaptureState capture_state_;
   int num_state_changes_;
   cricket::FakeVideoRenderer renderer_;

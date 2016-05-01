@@ -12,6 +12,8 @@
 
 #import "NSString+StdString.h"
 
+#include <memory>
+
 namespace webrtc {
 
 MediaConstraints::~MediaConstraints() {}
@@ -62,7 +64,7 @@ MediaConstraints::GetOptional() const {
 
 #pragma mark - Private
 
-- (rtc::scoped_ptr<webrtc::MediaConstraints>)nativeConstraints {
+- (std::unique_ptr<webrtc::MediaConstraints>)nativeConstraints {
   webrtc::MediaConstraintsInterface::Constraints mandatory =
       [[self class] nativeConstraintsForConstraints:_mandatory];
   webrtc::MediaConstraintsInterface::Constraints optional =
@@ -70,7 +72,7 @@ MediaConstraints::GetOptional() const {
 
   webrtc::MediaConstraints *nativeConstraints =
       new webrtc::MediaConstraints(mandatory, optional);
-  return rtc::scoped_ptr<webrtc::MediaConstraints>(nativeConstraints);
+  return std::unique_ptr<webrtc::MediaConstraints>(nativeConstraints);
 }
 
 + (webrtc::MediaConstraintsInterface::Constraints)

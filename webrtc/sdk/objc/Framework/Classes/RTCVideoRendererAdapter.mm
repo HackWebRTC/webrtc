@@ -12,6 +12,8 @@
 
 #import "RTCVideoFrame+Private.h"
 
+#include <memory>
+
 #include "webrtc/media/engine/webrtcvideoframe.h"
 
 namespace webrtc {
@@ -60,7 +62,7 @@ class VideoRendererAdapter
 }
 
 @implementation RTCVideoRendererAdapter {
-  rtc::scoped_ptr<webrtc::VideoRendererAdapter> _adapter;
+  std::unique_ptr<webrtc::VideoRendererAdapter> _adapter;
 }
 
 @synthesize videoRenderer = _videoRenderer;
