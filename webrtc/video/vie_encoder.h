@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_VIE_ENCODER_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
@@ -52,7 +53,6 @@ class VideoEncoder;
 // 6. For each available raw video frame call EncodeVideoFrame.
 class ViEEncoder : public VideoEncoderRateObserver,
                    public EncodedImageCallback,
-                   public VCMPacketizationCallback,
                    public VCMSendStatisticsCallback {
  public:
   friend class ViEBitrateObserver;
@@ -66,8 +66,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
              OveruseFrameDetector* overuse_detector,
              PacedSender* pacer);
   ~ViEEncoder();
-
-  bool Init();
 
   vcm::VideoSender* video_sender();
 
@@ -102,17 +100,15 @@ class ViEEncoder : public VideoEncoderRateObserver,
   // Implements VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
-  // Implements VCMPacketizationCallback.
-  void OnEncoderImplementationName(const char* implementation_name) override;
-
   // Implements EncodedImageCallback.
   int32_t Encoded(const EncodedImage& encoded_image,
                   const CodecSpecificInfo* codec_specific_info,
                   const RTPFragmentationHeader* fragmentation) override;
 
   // Implements VideoSendStatisticsCallback.
-  int32_t SendStatistics(const uint32_t bit_rate,
-                         const uint32_t frame_rate) override;
+  void SendStatistics(uint32_t bit_rate,
+                      uint32_t frame_rate,
+                      const std::string& encoder_name) override;
 
   // virtual to test EncoderStateFeedback with mocks.
   virtual void OnReceivedIntraFrameRequest(uint32_t ssrc);

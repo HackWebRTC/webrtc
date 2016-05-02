@@ -342,16 +342,14 @@ void SendStatisticsProxy::SetContentType(
   }
 }
 
-void SendStatisticsProxy::OnEncoderImplementationName(
-    const char* implementation_name) {
-  rtc::CritScope lock(&crit_);
-  stats_.encoder_implementation_name = implementation_name;
-}
-
-void SendStatisticsProxy::OnOutgoingRate(uint32_t framerate, uint32_t bitrate) {
+void SendStatisticsProxy::OnEncoderStatsUpdate(
+    uint32_t framerate,
+    uint32_t bitrate,
+    const std::string& encoder_name) {
   rtc::CritScope lock(&crit_);
   stats_.encode_frame_rate = framerate;
   stats_.media_bitrate_bps = bitrate;
+  stats_.encoder_implementation_name = encoder_name;
 }
 
 void SendStatisticsProxy::OnEncodedFrameTimeMeasured(

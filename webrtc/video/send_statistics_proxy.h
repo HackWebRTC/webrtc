@@ -53,8 +53,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
 
-  void OnEncoderImplementationName(const char* implementation_name);
-  void OnOutgoingRate(uint32_t framerate, uint32_t bitrate);
+  void OnEncoderStatsUpdate(uint32_t framerate,
+                            uint32_t bitrate,
+                            const std::string& encoder_name);
   void OnSuspendChange(bool is_suspended);
   void OnInactiveSsrc(uint32_t ssrc);
 

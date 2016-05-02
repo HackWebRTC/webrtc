@@ -72,11 +72,6 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& frame,
 
   int32_t result = encoder_->Encode(frame, codec_specific, &frame_types);
 
-  if (vcm_encoded_frame_callback_) {
-    vcm_encoded_frame_callback_->SignalLastEncoderImplementationUsed(
-        encoder_->ImplementationName());
-  }
-
   if (is_screenshare_ &&
       result == WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT) {
     // Target bitrate exceeded, encoder state has been reset - try again.
@@ -84,6 +79,10 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& frame,
   }
 
   return result;
+}
+
+const char* VCMGenericEncoder::ImplementationName() const {
+  return encoder_->ImplementationName();
 }
 
 void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
@@ -139,19 +138,13 @@ bool VCMGenericEncoder::SupportsNativeHandle() const {
 }
 
 VCMEncodedFrameCallback::VCMEncodedFrameCallback(
-    EncodedImageCallback* post_encode_callback)
-    : send_callback_(),
-      media_opt_(nullptr),
-      internal_source_(false),
-      post_encode_callback_(post_encode_callback) {}
+    EncodedImageCallback* post_encode_callback,
+    media_optimization::MediaOptimization* media_opt)
+    : internal_source_(false),
+      post_encode_callback_(post_encode_callback),
+      media_opt_(media_opt) {}
 
 VCMEncodedFrameCallback::~VCMEncodedFrameCallback() {}
-
-int32_t VCMEncodedFrameCallback::SetTransportCallback(
-    VCMPacketizationCallback* transport) {
-  send_callback_ = transport;
-  return VCM_OK;
-}
 
 int32_t VCMEncodedFrameCallback::Encoded(
     const EncodedImage& encoded_image,
@@ -172,14 +165,4 @@ int32_t VCMEncodedFrameCallback::Encoded(
   return VCM_OK;
 }
 
-void VCMEncodedFrameCallback::SetMediaOpt(
-    media_optimization::MediaOptimization* mediaOpt) {
-  media_opt_ = mediaOpt;
-}
-
-void VCMEncodedFrameCallback::SignalLastEncoderImplementationUsed(
-    const char* implementation_name) {
-  if (send_callback_)
-    send_callback_->OnEncoderImplementationName(implementation_name);
-}
 }  // namespace webrtc

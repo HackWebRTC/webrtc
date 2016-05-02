@@ -35,27 +35,22 @@ struct EncoderParameters {
 
 class VCMEncodedFrameCallback : public EncodedImageCallback {
  public:
-  explicit VCMEncodedFrameCallback(EncodedImageCallback* post_encode_callback);
+  VCMEncodedFrameCallback(EncodedImageCallback* post_encode_callback,
+                          media_optimization::MediaOptimization* media_opt);
   virtual ~VCMEncodedFrameCallback();
 
   // Implements EncodedImageCallback.
   int32_t Encoded(const EncodedImage& encoded_image,
                   const CodecSpecificInfo* codec_specific,
                   const RTPFragmentationHeader* fragmentation_header) override;
-  int32_t SetTransportCallback(VCMPacketizationCallback* transport);
-  void SetMediaOpt(media_optimization::MediaOptimization* media_opt);
   void SetInternalSource(bool internal_source) {
     internal_source_ = internal_source;
   }
-  void SignalLastEncoderImplementationUsed(
-      const char* encoder_implementation_name);
 
  private:
-  VCMPacketizationCallback* send_callback_;
-  media_optimization::MediaOptimization* media_opt_;
   bool internal_source_;
-
-  EncodedImageCallback* post_encode_callback_;
+  EncodedImageCallback* const post_encode_callback_;
+  media_optimization::MediaOptimization* const media_opt_;
 };
 
 class VCMGenericEncoder {
@@ -74,6 +69,8 @@ class VCMGenericEncoder {
   int32_t Encode(const VideoFrame& frame,
                  const CodecSpecificInfo* codec_specific,
                  const std::vector<FrameType>& frame_types);
+
+  const char* ImplementationName() const;
 
   void SetEncoderParameters(const EncoderParameters& params);
   EncoderParameters GetEncoderParameters() const;

@@ -405,7 +405,6 @@ VideoSendStream::VideoSendStream(
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(remb_);
 
-  RTC_CHECK(vie_encoder_.Init());
   encoder_feedback_.Init(config_.rtp.ssrcs, &vie_encoder_);
 
   // RTP/RTCP initialization.

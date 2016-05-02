@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
 #define WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
 
+#include <string>
 #include <vector>
 
 #include "webrtc/modules/include/module_common_types.h"
@@ -56,18 +57,6 @@ struct VCMFrameCount {
   uint32_t numDeltaFrames;
 };
 
-// Callback class used for sending data ready to be packetized
-// Deprecated.
-// TODO(perkj): Remove once OnEncoderImplementationName is not used.
-class VCMPacketizationCallback {
- public:
-  // TODO(perkj): Refactor this. It does not belong in VCMPacketizationCallback.
-  virtual void OnEncoderImplementationName(const char* implementation_name) {}
-
- protected:
-  virtual ~VCMPacketizationCallback() {}
-};
-
 // Callback class used for passing decoded frames which are ready to be
 // rendered.
 class VCMReceiveCallback {
@@ -84,13 +73,13 @@ class VCMReceiveCallback {
   virtual ~VCMReceiveCallback() {}
 };
 
-// Callback class used for informing the user of the bit rate and frame rate
-// produced by the
-// encoder.
+// Callback class used for informing the user of the bit rate and frame rate,
+// and the name of the encoder.
 class VCMSendStatisticsCallback {
  public:
-  virtual int32_t SendStatistics(const uint32_t bitRate,
-                                 const uint32_t frameRate) = 0;
+  virtual void SendStatistics(uint32_t bitRate,
+                              uint32_t frameRate,
+                              const std::string& encoder_name) = 0;
 
  protected:
   virtual ~VCMSendStatisticsCallback() {}

@@ -14,6 +14,7 @@
 #include "webrtc/modules/video_coding/include/video_coding.h"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/onetimeevent.h"
@@ -58,7 +59,8 @@ class VideoSender : public Module {
   VideoSender(Clock* clock,
               EncodedImageCallback* post_encode_callback,
               VideoEncoderRateObserver* encoder_rate_observer,
-              VCMQMSettingsCallback* qm_settings_callback);
+              VCMQMSettingsCallback* qm_settings_callback,
+              VCMSendStatisticsCallback* send_stats_callback);
 
   ~VideoSender();
 
@@ -79,10 +81,6 @@ class VideoSender : public Module {
                                uint8_t lossRate,
                                int64_t rtt);
 
-  // Deprecated. Use |post_encode_callback| instead.
-  // TODO(perkj): Remove once |OnEncoderImplementationName| is not used.
-  int32_t RegisterTransportCallback(VCMPacketizationCallback* transport);
-  int32_t RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
   int32_t RegisterProtectionCallback(VCMProtectionCallback* protection);
   void SetVideoProtection(VCMVideoProtection videoProtection);
 
@@ -105,12 +103,11 @@ class VideoSender : public Module {
 
   Clock* const clock_;
 
-  rtc::CriticalSection process_crit_;
   rtc::CriticalSection encoder_crit_;
   VCMGenericEncoder* _encoder;
-  VCMEncodedFrameCallback _encodedFrameCallback GUARDED_BY(encoder_crit_);
   media_optimization::MediaOptimization _mediaOpt;
-  VCMSendStatisticsCallback* _sendStatsCallback GUARDED_BY(process_crit_);
+  VCMEncodedFrameCallback _encodedFrameCallback GUARDED_BY(encoder_crit_);
+  VCMSendStatisticsCallback* const send_stats_callback_;
   VCMCodecDataBase _codecDataBase GUARDED_BY(encoder_crit_);
   bool frame_dropper_enabled_ GUARDED_BY(encoder_crit_);
   VCMProcessTimer _sendStatsTimer;
@@ -125,6 +122,7 @@ class VideoSender : public Module {
   rtc::CriticalSection params_crit_;
   EncoderParameters encoder_params_ GUARDED_BY(params_crit_);
   bool encoder_has_internal_source_ GUARDED_BY(params_crit_);
+  std::string encoder_name_ GUARDED_BY(params_crit_);
   std::vector<FrameType> next_frame_types_ GUARDED_BY(params_crit_);
 };
 

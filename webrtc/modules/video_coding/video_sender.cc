@@ -27,12 +27,13 @@ namespace vcm {
 VideoSender::VideoSender(Clock* clock,
                          EncodedImageCallback* post_encode_callback,
                          VideoEncoderRateObserver* encoder_rate_observer,
-                         VCMQMSettingsCallback* qm_settings_callback)
+                         VCMQMSettingsCallback* qm_settings_callback,
+                         VCMSendStatisticsCallback* send_stats_callback)
     : clock_(clock),
       _encoder(nullptr),
-      _encodedFrameCallback(post_encode_callback),
       _mediaOpt(clock_),
-      _sendStatsCallback(nullptr),
+      _encodedFrameCallback(post_encode_callback, &_mediaOpt),
+      send_stats_callback_(send_stats_callback),
       _codecDataBase(encoder_rate_observer, &_encodedFrameCallback),
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
@@ -54,12 +55,19 @@ VideoSender::~VideoSender() {}
 
 void VideoSender::Process() {
   if (_sendStatsTimer.TimeUntilProcess() == 0) {
+    // |_sendStatsTimer.Processed()| must be called. Otherwise
+    // VideoSender::Process() will be called in an infinite loop.
     _sendStatsTimer.Processed();
-    rtc::CritScope cs(&process_crit_);
-    if (_sendStatsCallback != nullptr) {
+    if (send_stats_callback_) {
       uint32_t bitRate = _mediaOpt.SentBitRate();
       uint32_t frameRate = _mediaOpt.SentFrameRate();
-      _sendStatsCallback->SendStatistics(bitRate, frameRate);
+      std::string encoder_name;
+      {
+        rtc::CritScope cs(&params_crit_);
+        // Copy the string here so that we don't hold |params_crit_| in the CB.
+        encoder_name = encoder_name_;
+      }
+      send_stats_callback_->SendStatistics(bitRate, frameRate, encoder_name);
     }
   }
 
@@ -235,24 +243,6 @@ void VideoSender::SetEncoderParameters(EncoderParameters params) {
     _encoder->SetEncoderParameters(params);
 }
 
-int32_t VideoSender::RegisterTransportCallback(
-    VCMPacketizationCallback* transport) {
-  rtc::CritScope lock(&encoder_crit_);
-  _encodedFrameCallback.SetMediaOpt(&_mediaOpt);
-  _encodedFrameCallback.SetTransportCallback(transport);
-  return VCM_OK;
-}
-
-// Register video output information callback which will be called to deliver
-// information about the video stream produced by the encoder, for instance the
-// average frame rate and bit rate.
-int32_t VideoSender::RegisterSendStatisticsCallback(
-    VCMSendStatisticsCallback* sendStats) {
-  rtc::CritScope cs(&process_crit_);
-  _sendStatsCallback = sendStats;
-  return VCM_OK;
-}
-
 // Register a video protection callback which will be called to deliver the
 // requested FEC rate and NACK status (on/off).
 // Note: this callback is assumed to only be registered once and before it is
@@ -329,9 +319,12 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
     LOG(LS_ERROR) << "Failed to encode frame. Error code: " << ret;
     return ret;
   }
+
   {
-    // Change all keyframe requests to encode delta frames the next time.
     rtc::CritScope lock(&params_crit_);
+    encoder_name_ = _encoder->ImplementationName();
+
+    // Change all keyframe requests to encode delta frames the next time.
     for (size_t i = 0; i < next_frame_types_.size(); ++i) {
       // Check for equality (same requested as before encoding) to not
       // accidentally drop a keyframe request while encoding.

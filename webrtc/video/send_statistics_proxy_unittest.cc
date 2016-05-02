@@ -146,11 +146,13 @@ TEST_F(SendStatisticsProxyTest, EncodedBitrateAndFramerate) {
   int media_bitrate_bps = 500;
   int encode_fps = 29;
 
-  statistics_proxy_->OnOutgoingRate(encode_fps, media_bitrate_bps);
+  statistics_proxy_->OnEncoderStatsUpdate(encode_fps, media_bitrate_bps,
+                                          "encoder name");
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(media_bitrate_bps, stats.media_bitrate_bps);
   EXPECT_EQ(encode_fps, stats.encode_frame_rate);
+  EXPECT_EQ("encoder name", stats.encoder_implementation_name);
 }
 
 TEST_F(SendStatisticsProxyTest, Suspended) {

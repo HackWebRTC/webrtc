@@ -184,32 +184,6 @@ class VideoCodingModule : public Module {
   //                     < 0,    on error.
   virtual int32_t SetReceiveChannelParameters(int64_t rtt) = 0;
 
-  // Register a transport callback which will be called to deliver the encoded
-  // data and
-  // side information.
-  //
-  // Input:
-  //      - transport  : The callback object to register.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
-  virtual int32_t RegisterTransportCallback(
-      VCMPacketizationCallback* transport) = 0;
-
-  // Register video output information callback which will be called to deliver
-  // information
-  // about the video stream produced by the encoder, for instance the average
-  // frame rate and
-  // bit rate.
-  //
-  // Input:
-  //      - outputInformation  : The callback object to register.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
-  virtual int32_t RegisterSendStatisticsCallback(
-      VCMSendStatisticsCallback* sendStats) = 0;
-
   // Register a video protection callback which will be called to deliver
   // the requested FEC rate and NACK status (on/off).
   //

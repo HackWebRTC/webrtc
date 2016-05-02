@@ -82,7 +82,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
         sender_(clock,
                 &post_encode_callback_,
                 encoder_rate_observer,
-                qm_settings_callback),
+                qm_settings_callback,
+                nullptr),
         receiver_(clock,
                   event_factory,
                   pre_decode_image_callback,
@@ -130,16 +131,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                                uint8_t lossRate,
                                int64_t rtt) override {
     return sender_.SetChannelParameters(target_bitrate, lossRate, rtt);
-  }
-
-  int32_t RegisterTransportCallback(
-      VCMPacketizationCallback* transport) override {
-    return sender_.RegisterTransportCallback(transport);
-  }
-
-  int32_t RegisterSendStatisticsCallback(
-      VCMSendStatisticsCallback* sendStats) override {
-    return sender_.RegisterSendStatisticsCallback(sendStats);
   }
 
   int32_t RegisterProtectionCallback(

@@ -64,7 +64,11 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       ssrcs_(ssrcs),
       vp_(VideoProcessing::Create()),
       qm_callback_(new QMVideoSettingsCallback(vp_.get())),
-      video_sender_(Clock::GetRealTimeClock(), this, this, qm_callback_.get()),
+      video_sender_(Clock::GetRealTimeClock(),
+                    this,
+                    this,
+                    qm_callback_.get(),
+                    this),
       stats_proxy_(stats_proxy),
       pre_encode_callback_(pre_encode_callback),
       overuse_detector_(overuse_detector),
@@ -84,23 +88,10 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       picture_id_rpsi_(0),
       video_suspended_(false) {
   module_process_thread_->RegisterModule(&video_sender_);
-}
-
-bool ViEEncoder::Init() {
   vp_->EnableTemporalDecimation(true);
 
   // Enable/disable content analysis: off by default for now.
   vp_->EnableContentAnalysis(false);
-
-  // TODO(perkj): Remove  |RegisterTransportCallback| as soon as we don't use
-  // VCMPacketizationCallback::OnEncoderImplementationName.
-  if (video_sender_.RegisterTransportCallback(this) != 0) {
-    return false;
-  }
-  if (video_sender_.RegisterSendStatisticsCallback(this) != 0) {
-    return false;
-  }
-  return true;
 }
 
 vcm::VideoSender* ViEEncoder::video_sender() {
@@ -353,11 +344,6 @@ void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {
     stats_proxy_->OnSetRates(bitrate_bps, framerate);
 }
 
-void ViEEncoder::OnEncoderImplementationName(const char* implementation_name) {
-  if (stats_proxy_)
-    stats_proxy_->OnEncoderImplementationName(implementation_name);
-}
-
 int32_t ViEEncoder::Encoded(const EncodedImage& encoded_image,
                             const CodecSpecificInfo* codec_specific_info,
                             const RTPFragmentationHeader* fragmentation) {
@@ -403,11 +389,11 @@ int32_t ViEEncoder::Encoded(const EncodedImage& encoded_image,
   return success;
 }
 
-int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
-                                   const uint32_t frame_rate) {
+void ViEEncoder::SendStatistics(uint32_t bit_rate,
+                                uint32_t frame_rate,
+                                const std::string& encoder_name) {
   if (stats_proxy_)
-    stats_proxy_->OnOutgoingRate(frame_rate, bit_rate);
-  return 0;
+    stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate, encoder_name);
 }
 
 void ViEEncoder::OnReceivedSLI(uint32_t /*ssrc*/,
