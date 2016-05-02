@@ -488,7 +488,7 @@ public class PeerConnectionClient {
       }
       Log.d(TAG, "Opening camera: " + cameraDeviceName);
       videoCapturer = VideoCapturerAndroid.create(cameraDeviceName, null,
-          peerConnectionParameters.captureToTexture ? renderEGLContext : null);
+          peerConnectionParameters.captureToTexture);
       if (videoCapturer == null) {
         reportError("Failed to open camera");
         return;

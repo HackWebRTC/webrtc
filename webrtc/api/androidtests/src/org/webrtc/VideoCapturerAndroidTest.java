@@ -89,15 +89,6 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   }
 
   @SmallTest
-  public void testStartVideoCapturerUsingTexturesDeprecated() throws InterruptedException {
-    EglBase eglBase = EglBase.create();
-    VideoCapturerAndroid capturer =
-        VideoCapturerAndroid.create("", null, eglBase.getEglBaseContext());
-    VideoCapturerAndroidTestFixtures.startCapturerAndRender(capturer);
-    eglBase.release();
-  }
-
-  @SmallTest
   public void testStartVideoCapturerUsingTextures() throws InterruptedException {
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create("", null, true /* captureToTexture */);

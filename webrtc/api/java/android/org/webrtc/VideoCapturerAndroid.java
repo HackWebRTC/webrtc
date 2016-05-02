@@ -187,12 +187,6 @@ public class VideoCapturerAndroid implements
     return VideoCapturerAndroid.create(name, eventsHandler, false /* captureToTexture */);
   }
 
-  // Deprecated. Use create() function below instead.
-  public static VideoCapturerAndroid create(String name,
-      CameraEventsHandler eventsHandler, EglBase.Context sharedEglContext) {
-    return create(name, eventsHandler, (sharedEglContext != null) /* captureToTexture */);
-  }
-
   public static VideoCapturerAndroid create(String name,
       CameraEventsHandler eventsHandler, boolean captureToTexture) {
     final int cameraId = lookupDeviceName(name);
