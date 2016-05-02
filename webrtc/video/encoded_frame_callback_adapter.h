@@ -27,7 +27,7 @@ class EncodedFrameCallbackAdapter : public EncodedImageCallback {
                           const RTPFragmentationHeader* fragmentation);
 
  private:
-  EncodedFrameObserver* observer_;
+  EncodedFrameObserver* const observer_;
 };
 
 }  // namespace internal

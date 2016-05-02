@@ -33,7 +33,6 @@ class Config;
 class EncodedImageCallback;
 class OveruseFrameDetector;
 class PacedSender;
-class PayloadRouter;
 class ProcessThread;
 class QMVideoSettingsCallback;
 class SendStatisticsProxy;
@@ -41,6 +40,16 @@ class ViEBitrateObserver;
 class ViEEffectFilter;
 class VideoEncoder;
 
+// VieEncoder represent a video encoder that accepts raw video frames as input
+// and produces an encoded bit stream.
+// Usage:
+// 1. Instantiate
+// 2. Call Init
+// 3. Call RegisterExternalEncoder if available.
+// 4. Call SetEncoder with the codec settings and the object that shall receive
+//    the encoded bit stream.
+// 5. Call Start.
+// 6. For each available raw video frame call EncodeVideoFrame.
 class ViEEncoder : public VideoEncoderRateObserver,
                    public EncodedImageCallback,
                    public VCMPacketizationCallback,
@@ -55,9 +64,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
              // TODO(nisse): Used only for tests, delete?
              rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
              OveruseFrameDetector* overuse_detector,
-             PacedSender* pacer,
-             PayloadRouter* payload_router,
-             EncodedImageCallback* post_encode_callback);
+             PacedSender* pacer);
   ~ViEEncoder();
 
   bool Init();
@@ -69,16 +76,19 @@ class ViEEncoder : public VideoEncoderRateObserver,
   // Returns the id of the owning channel.
   int Owner() const;
 
+  void Start();
   // Drops incoming packets before they get to the encoder.
   void Pause();
-  void Restart();
 
   // Codec settings.
   int32_t RegisterExternalEncoder(VideoEncoder* encoder,
                                   uint8_t pl_type,
                                   bool internal_source);
   int32_t DeRegisterExternalEncoder(uint8_t pl_type);
-  void SetEncoder(const VideoCodec& video_codec, int min_transmit_bitrate_bps);
+  void SetEncoder(const VideoCodec& video_codec,
+                  int min_transmit_bitrate_bps,
+                  size_t max_data_payload_length,
+                  EncodedImageCallback* sink);
 
   void EncodeVideoFrame(const VideoFrame& video_frame);
   void SendKeyFrame();
@@ -136,8 +146,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
   OveruseFrameDetector* const overuse_detector_;
   PacedSender* const pacer_;
-  PayloadRouter* const send_payload_router_;
-  EncodedImageCallback* const post_encode_callback_;
 
   // The time we last received an input frame or encoded frame. This is used to
   // track when video is stopped long enough that we also want to stop sending
@@ -150,6 +158,9 @@ class ViEEncoder : public VideoEncoderRateObserver,
   bool encoder_paused_ GUARDED_BY(data_cs_);
   bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
   std::vector<int64_t> time_last_intra_request_ms_ GUARDED_BY(data_cs_);
+
+  rtc::CriticalSection sink_cs_;
+  EncodedImageCallback* sink_ GUARDED_BY(sink_cs_);
 
   ProcessThread* module_process_thread_;
 

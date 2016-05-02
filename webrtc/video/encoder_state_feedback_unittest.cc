@@ -32,9 +32,7 @@ class MockVieEncoder : public ViEEncoder {
                    nullptr,
                    nullptr,
                    nullptr,
-                   pacer,
-                   nullptr,
-                   nullptr) {}
+                   pacer) {}
   ~MockVieEncoder() {}
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest,

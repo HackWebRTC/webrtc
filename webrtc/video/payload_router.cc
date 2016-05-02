@@ -84,6 +84,7 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
       return;
   }
 }
+
 }  // namespace
 
 PayloadRouter::PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules,
@@ -115,10 +116,12 @@ bool PayloadRouter::active() {
   return active_ && !rtp_modules_.empty();
 }
 
-void PayloadRouter::SetSendingRtpModules(size_t num_sending_modules) {
-  RTC_DCHECK_LE(num_sending_modules, rtp_modules_.size());
+void PayloadRouter::SetSendStreams(const std::vector<VideoStream>& streams) {
+  RTC_DCHECK_LE(streams.size(), rtp_modules_.size());
   rtc::CritScope lock(&crit_);
-  num_sending_modules_ = num_sending_modules;
+  num_sending_modules_ = streams.size();
+  streams_ = streams;
+  // TODO(perkj): Should SetSendStreams also call SetTargetSendBitrate?
   UpdateModuleSendingState();
 }
 
@@ -163,12 +166,22 @@ int32_t PayloadRouter::Encoded(const EncodedImage& encoded_image,
       encoded_image._length, fragmentation, &rtp_video_header);
 }
 
-void PayloadRouter::SetTargetSendBitrates(
-    const std::vector<uint32_t>& stream_bitrates) {
+void PayloadRouter::SetTargetSendBitrate(uint32_t bitrate_bps) {
   rtc::CritScope lock(&crit_);
-  RTC_DCHECK_LE(stream_bitrates.size(), rtp_modules_.size());
-  for (size_t i = 0; i < stream_bitrates.size(); ++i) {
-    rtp_modules_[i]->SetTargetSendBitrate(stream_bitrates[i]);
+  RTC_DCHECK_LE(streams_.size(), rtp_modules_.size());
+
+  // TODO(sprang): Rebase https://codereview.webrtc.org/1913073002/ on top of
+  // this.
+  int bitrate_remainder = bitrate_bps;
+  for (size_t i = 0; i < streams_.size() && bitrate_remainder > 0; ++i) {
+    int stream_bitrate = 0;
+    if (streams_[i].max_bitrate_bps > bitrate_remainder) {
+      stream_bitrate = bitrate_remainder;
+    } else {
+      stream_bitrate = streams_[i].max_bitrate_bps;
+    }
+    bitrate_remainder -= stream_bitrate;
+    rtp_modules_[i]->SetTargetSendBitrate(stream_bitrate);
   }
 }
 

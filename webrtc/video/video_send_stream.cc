@@ -372,16 +372,13 @@ VideoSendStream::VideoSendStream(
           this,
           config.post_encode_callback,
           &stats_proxy_),
-      vie_encoder_(
-          num_cpu_cores,
-          config_.rtp.ssrcs,
-          module_process_thread_,
-          &stats_proxy_,
-          config.pre_encode_callback,
-          &overuse_detector_,
-          congestion_controller_->pacer(),
-          &payload_router_,
-          config.post_encode_callback ? &encoded_frame_proxy_ : nullptr),
+      vie_encoder_(num_cpu_cores,
+                   config_.rtp.ssrcs,
+                   module_process_thread_,
+                   &stats_proxy_,
+                   config.pre_encode_callback,
+                   &overuse_detector_,
+                   congestion_controller_->pacer()),
       video_sender_(vie_encoder_.video_sender()),
       bandwidth_observer_(congestion_controller_->GetBitrateController()
                               ->CreateRtcpBandwidthObserver()),
@@ -516,18 +513,17 @@ void VideoSendStream::Start() {
   if (payload_router_.active())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Start");
-  vie_encoder_.Pause();
   payload_router_.set_active(true);
   // Was not already started, trigger a keyframe.
   vie_encoder_.SendKeyFrame();
-  vie_encoder_.Restart();
+  vie_encoder_.Start();
 }
 
 void VideoSendStream::Stop() {
   if (!payload_router_.active())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Stop");
-  // TODO(pbos): Make sure the encoder stops here.
+  vie_encoder_.Pause();
   payload_router_.set_active(false);
 }
 
@@ -565,8 +561,11 @@ void VideoSendStream::EncoderProcess() {
               this, encoder_settings->video_codec.minBitrate * 1000,
               encoder_settings->video_codec.maxBitrate * 1000) /
           1000;
+
+      payload_router_.SetSendStreams(encoder_settings->streams);
       vie_encoder_.SetEncoder(encoder_settings->video_codec,
-                              encoder_settings->min_transmit_bitrate_bps);
+                              encoder_settings->min_transmit_bitrate_bps,
+                              payload_router_.MaxPayloadLength(), this);
       if (config_.suspend_below_min_bitrate) {
         video_sender_->SuspendBelowMinBitrate();
         bitrate_allocator_->EnforceMinBitrate(false);
@@ -596,7 +595,7 @@ void VideoSendStream::ReconfigureVideoEncoder(
   {
     rtc::CritScope lock(&encoder_settings_crit_);
     pending_encoder_settings_ = rtc::Optional<EncoderSettings>(
-        {video_codec, config.min_transmit_bitrate_bps});
+        {video_codec, config.min_transmit_bitrate_bps, config.streams});
   }
   encoder_wakeup_event_.Set();
 }
@@ -613,6 +612,16 @@ void VideoSendStream::OveruseDetected() {
 void VideoSendStream::NormalUsage() {
   if (config_.overuse_callback)
     config_.overuse_callback->OnLoadUpdate(LoadObserver::kUnderuse);
+}
+
+int32_t VideoSendStream::Encoded(const EncodedImage& encoded_image,
+                                 const CodecSpecificInfo* codec_specific_info,
+                                 const RTPFragmentationHeader* fragmentation) {
+  // |encoded_frame_proxy_| forwards frames to |config_.post_encode_callback|;
+  encoded_frame_proxy_.Encoded(encoded_image, codec_specific_info,
+                               fragmentation);
+  return payload_router_.Encoded(encoded_image, codec_specific_info,
+                                 fragmentation);
 }
 
 void VideoSendStream::ConfigureProtection() {
@@ -736,6 +745,7 @@ int VideoSendStream::GetPaddingNeededBps() const {
 void VideoSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
                                        uint8_t fraction_loss,
                                        int64_t rtt) {
+  payload_router_.SetTargetSendBitrate(bitrate_bps);
   vie_encoder_.OnBitrateUpdated(bitrate_bps, fraction_loss, rtt);
 }
 

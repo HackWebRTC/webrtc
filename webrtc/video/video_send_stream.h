@@ -49,7 +49,8 @@ namespace internal {
 class VideoSendStream : public webrtc::VideoSendStream,
                         public webrtc::CpuOveruseObserver,
                         public webrtc::BitrateAllocatorObserver,
-                        public webrtc::VCMProtectionCallback {
+                        public webrtc::VCMProtectionCallback,
+                        protected webrtc::EncodedImageCallback {
  public:
   VideoSendStream(int num_cpu_cores,
                   ProcessThread* module_process_thread,
@@ -98,7 +99,16 @@ class VideoSendStream : public webrtc::VideoSendStream,
   struct EncoderSettings {
     VideoCodec video_codec;
     int min_transmit_bitrate_bps;
+    std::vector<VideoStream> streams;
   };
+
+  // Implements EncodedImageCallback. The implementation routes encoded frames
+  // to the |payload_router_| and |config.pre_encode_callback| if set.
+  // Called on an arbitrary encoder callback thread.
+  int32_t Encoded(const EncodedImage& encoded_image,
+                  const CodecSpecificInfo* codec_specific_info,
+                  const RTPFragmentationHeader* fragmentation) override;
+
   static bool EncoderThreadFunction(void* obj);
   void EncoderProcess();
 
