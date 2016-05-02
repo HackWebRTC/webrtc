@@ -40,7 +40,6 @@ VideoReceiver::VideoReceiver(Clock* clock,
       _receiveStatsCallback(nullptr),
       _decoderTimingCallback(nullptr),
       _packetRequestCallback(nullptr),
-      render_buffer_callback_(nullptr),
       _decoder(nullptr),
       _frameFromFile(),
       _scheduleKeyRequest(false),
@@ -80,12 +79,6 @@ void VideoReceiver::Process() {
       _decoderTimingCallback->OnDecoderTiming(
           decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
           jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
-    }
-
-    // Size of render buffer.
-    if (render_buffer_callback_) {
-      int buffer_size_ms = _receiver.RenderBufferSizeMs();
-      render_buffer_callback_->RenderBufferSizeMs(buffer_size_ms);
     }
   }
 
@@ -239,13 +232,6 @@ int32_t VideoReceiver::RegisterPacketRequestCallback(
     VCMPacketRequestCallback* callback) {
   rtc::CritScope cs(&process_crit_);
   _packetRequestCallback = callback;
-  return VCM_OK;
-}
-
-int VideoReceiver::RegisterRenderBufferSizeCallback(
-    VCMRenderBufferSizeCallback* callback) {
-  rtc::CritScope cs(&process_crit_);
-  render_buffer_callback_ = callback;
   return VCM_OK;
 }
 

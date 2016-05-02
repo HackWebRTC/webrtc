@@ -92,66 +92,6 @@ class TestVCMReceiver : public ::testing::Test {
   std::unique_ptr<StreamGenerator> stream_generator_;
 };
 
-TEST_F(TestVCMReceiver, RenderBufferSize_AllComplete) {
-  EXPECT_EQ(0, receiver_.RenderBufferSizeMs());
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
-  int num_of_frames = 10;
-  for (int i = 0; i < num_of_frames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
-  }
-  EXPECT_EQ(num_of_frames * kDefaultFramePeriodMs,
-            receiver_.RenderBufferSizeMs());
-}
-
-TEST_F(TestVCMReceiver, RenderBufferSize_SkipToKeyFrame) {
-  EXPECT_EQ(0, receiver_.RenderBufferSizeMs());
-  const int kNumOfNonDecodableFrames = 2;
-  for (int i = 0; i < kNumOfNonDecodableFrames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
-  }
-  const int kNumOfFrames = 10;
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
-  for (int i = 0; i < kNumOfFrames - 1; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
-  }
-  EXPECT_EQ((kNumOfFrames - 1) * kDefaultFramePeriodMs,
-            receiver_.RenderBufferSizeMs());
-}
-
-TEST_F(TestVCMReceiver, RenderBufferSize_NotAllComplete) {
-  EXPECT_EQ(0, receiver_.RenderBufferSizeMs());
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
-  int num_of_frames = 10;
-  for (int i = 0; i < num_of_frames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
-  }
-  num_of_frames++;
-  EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
-  for (int i = 0; i < num_of_frames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
-  }
-  EXPECT_EQ((num_of_frames - 1) * kDefaultFramePeriodMs,
-            receiver_.RenderBufferSizeMs());
-}
-
-TEST_F(TestVCMReceiver, RenderBufferSize_NoKeyFrame) {
-  EXPECT_EQ(0, receiver_.RenderBufferSizeMs());
-  int num_of_frames = 10;
-  for (int i = 0; i < num_of_frames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
-  }
-  int64_t next_render_time_ms = 0;
-  VCMEncodedFrame* frame =
-      receiver_.FrameForDecoding(10, &next_render_time_ms, false);
-  EXPECT_TRUE(frame == NULL);
-  receiver_.ReleaseFrame(frame);
-  EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
-  for (int i = 0; i < num_of_frames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
-  }
-  EXPECT_EQ(0, receiver_.RenderBufferSizeMs());
-}
-
 TEST_F(TestVCMReceiver, NonDecodableDuration_Empty) {
   // Enable NACK and with no RTT thresholds for disabling retransmission delay.
   receiver_.SetNackMode(kNack, -1, -1);

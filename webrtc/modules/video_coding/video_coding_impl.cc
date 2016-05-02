@@ -212,11 +212,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_.RegisterPacketRequestCallback(callback);
   }
 
-  int RegisterRenderBufferSizeCallback(
-      VCMRenderBufferSizeCallback* callback) override {
-    return receiver_.RegisterRenderBufferSizeCallback(callback);
-  }
-
   int32_t Decode(uint16_t maxWaitTimeMs) override {
     return receiver_.Decode(maxWaitTimeMs);
   }

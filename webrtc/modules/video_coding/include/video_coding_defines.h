@@ -199,16 +199,6 @@ class VCMQMSettingsCallback {
   virtual ~VCMQMSettingsCallback() {}
 };
 
-// Callback class used for telling the user about the size (in time) of the
-// render buffer, that is the size in time of the complete continuous frames.
-class VCMRenderBufferSizeCallback {
- public:
-  virtual void RenderBufferSizeMs(int buffer_size_ms) = 0;
-
- protected:
-  virtual ~VCMRenderBufferSizeCallback() {}
-};
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_

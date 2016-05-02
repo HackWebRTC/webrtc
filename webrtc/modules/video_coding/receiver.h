@@ -90,11 +90,6 @@ class VCMReceiver {
   void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode);
   VCMDecodeErrorMode DecodeErrorMode() const;
 
-  // Returns size in time (milliseconds) of complete continuous frames in the
-  // jitter buffer. The render time is estimated based on the render delay at
-  // the time this function is called.
-  int RenderBufferSizeMs();
-
   void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
   void TriggerDecoderShutdown();

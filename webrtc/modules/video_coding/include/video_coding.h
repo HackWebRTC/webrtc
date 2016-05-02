@@ -392,10 +392,6 @@ class VideoCodingModule : public Module {
   //                     < 0,    on error.
   virtual int32_t Decode(uint16_t maxWaitTimeMs = 200) = 0;
 
-  // Registers a callback which conveys the size of the render buffer.
-  virtual int RegisterRenderBufferSizeCallback(
-      VCMRenderBufferSizeCallback* callback) = 0;
-
   // API to get the codec which is currently used for decoding by the module.
   //
   // Input:

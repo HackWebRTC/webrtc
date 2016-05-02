@@ -1194,19 +1194,6 @@ int64_t VCMJitterBuffer::LastDecodedTimestamp() const {
   return last_decoded_state_.time_stamp();
 }
 
-void VCMJitterBuffer::RenderBufferSize(uint32_t* timestamp_start,
-                                       uint32_t* timestamp_end) {
-  CriticalSectionScoped cs(crit_sect_);
-  CleanUpOldOrEmptyFrames();
-  *timestamp_start = 0;
-  *timestamp_end = 0;
-  if (decodable_frames_.empty()) {
-    return;
-  }
-  *timestamp_start = decodable_frames_.Front()->TimeStamp();
-  *timestamp_end = decodable_frames_.Back()->TimeStamp();
-}
-
 void VCMJitterBuffer::RegisterStatsCallback(
     VCMReceiveStatisticsCallback* callback) {
   CriticalSectionScoped cs(crit_sect_);

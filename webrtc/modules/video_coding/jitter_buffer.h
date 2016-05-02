@@ -212,10 +212,6 @@ class VCMJitterBuffer {
   int64_t LastDecodedTimestamp() const;
   VCMDecodeErrorMode decode_error_mode() const { return decode_error_mode_; }
 
-  // Used to compute time of complete continuous frames. Returns the timestamps
-  // corresponding to the start and end of the continuous complete buffer.
-  void RenderBufferSize(uint32_t* timestamp_start, uint32_t* timestamp_end);
-
   void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
   int64_t TimeUntilNextProcess();

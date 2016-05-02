@@ -286,24 +286,6 @@ int VCMReceiver::SetMinReceiverDelay(int desired_delay_ms) {
   return 0;
 }
 
-int VCMReceiver::RenderBufferSizeMs() {
-  uint32_t timestamp_start = 0u;
-  uint32_t timestamp_end = 0u;
-  // Render timestamps are computed just prior to decoding. Therefore this is
-  // only an estimate based on frames' timestamps and current timing state.
-  jitter_buffer_.RenderBufferSize(&timestamp_start, &timestamp_end);
-  if (timestamp_start == timestamp_end) {
-    return 0;
-  }
-  // Update timing.
-  const int64_t now_ms = clock_->TimeInMilliseconds();
-  timing_->SetJitterDelay(jitter_buffer_.EstimatedJitterMs());
-  // Get render timestamps.
-  uint32_t render_start = timing_->RenderTimeMs(timestamp_start, now_ms);
-  uint32_t render_end = timing_->RenderTimeMs(timestamp_end, now_ms);
-  return render_end - render_start;
-}
-
 void VCMReceiver::RegisterStatsCallback(
     VCMReceiveStatisticsCallback* callback) {
   jitter_buffer_.RegisterStatsCallback(callback);
