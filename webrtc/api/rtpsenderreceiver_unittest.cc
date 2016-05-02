@@ -28,6 +28,7 @@
 
 using ::testing::_;
 using ::testing::Exactly;
+using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
 
 static const char kStreamLabel1[] = "local_stream_1";
@@ -420,7 +421,14 @@ TEST_F(RtpSenderReceiverTest, AudioSenderTrackSetToNull) {
       new AudioRtpSender(track, kStreamLabel1, &audio_provider_, nullptr);
   sender->SetSsrc(kAudioSsrc);
 
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _)).Times(1);
+  // Expect that SetAudioSend will be called before the reference to the track
+  // is released.
+  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, nullptr))
+      .Times(1)
+      .WillOnce(InvokeWithoutArgs([&track] {
+        EXPECT_LT(2, track->AddRef());
+        track->Release();
+      }));
   EXPECT_TRUE(sender->SetTrack(nullptr));
 
   // Make sure it's SetTrack that called methods on the provider, and not the
@@ -429,14 +437,25 @@ TEST_F(RtpSenderReceiverTest, AudioSenderTrackSetToNull) {
 }
 
 TEST_F(RtpSenderReceiverTest, VideoSenderTrackSetToNull) {
-  AddVideoTrack();
-  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, video_track_.get()));
+  rtc::scoped_refptr<VideoTrackSourceInterface> source(
+      FakeVideoTrackSource::Create());
+  rtc::scoped_refptr<VideoTrackInterface> track =
+      VideoTrack::Create(kVideoTrackId, source);
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, track.get()));
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _));
   rtc::scoped_refptr<VideoRtpSender> sender =
-      new VideoRtpSender(video_track_, kStreamLabel1, &video_provider_);
+      new VideoRtpSender(track, kStreamLabel1, &video_provider_);
   sender->SetSsrc(kVideoSsrc);
 
-  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, nullptr)).Times(1);
+  // Expect that SetSource will be called before the reference to the track
+  // is released.
+  EXPECT_CALL(video_provider_, SetSource(kVideoSsrc, nullptr))
+      .Times(1)
+      .WillOnce(InvokeWithoutArgs([&track] {
+        EXPECT_LT(2, track->AddRef());
+        track->Release();
+        return true;
+      }));
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _)).Times(1);
   EXPECT_TRUE(sender->SetTrack(nullptr));
 

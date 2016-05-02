@@ -122,6 +122,9 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
 
   // Attach to new track.
   bool prev_can_send_track = can_send_track();
+  // Keep a reference to the old track to keep it alive until we call
+  // SetAudioSend.
+  rtc::scoped_refptr<AudioTrackInterface> old_track = track_;
   track_ = audio_track;
   if (track_) {
     cached_track_enabled_ = track_->enabled();
@@ -276,6 +279,9 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
 
   // Attach to new track.
   bool prev_can_send_track = can_send_track();
+  // Keep a reference to the old track to keep it alive until we call
+  // SetSource.
+  rtc::scoped_refptr<VideoTrackInterface> old_track = track_;
   track_ = video_track;
   if (track_) {
     cached_track_enabled_ = track_->enabled();
