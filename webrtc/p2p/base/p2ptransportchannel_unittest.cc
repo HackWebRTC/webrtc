@@ -506,7 +506,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   void Test(const Result& expected) {
-    int64_t connect_start = rtc::Time64();
+    int64_t connect_start = rtc::TimeMillis();
     int64_t connect_time;
 
     // Create the channels and wait for them to connect.
@@ -519,7 +519,7 @@ class P2PTransportChannelTestBase : public testing::Test,
                             ep2_ch1()->writable(),
                             expected.connect_wait,
                             1000);
-    connect_time = rtc::Time64() - connect_start;
+    connect_time = rtc::TimeMillis() - connect_start;
     if (connect_time < expected.connect_wait) {
       LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
     } else {
@@ -531,7 +531,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     // This may take up to 2 seconds.
     if (ep1_ch1()->best_connection() &&
         ep2_ch1()->best_connection()) {
-      int64_t converge_start = rtc::Time64();
+      int64_t converge_start = rtc::TimeMillis();
       int64_t converge_time;
       int64_t converge_wait = 2000;
       EXPECT_TRUE_WAIT_MARGIN(CheckCandidate1(expected), converge_wait,
@@ -549,7 +549,7 @@ class P2PTransportChannelTestBase : public testing::Test,
       // For verbose
       ExpectCandidate2(expected);
 
-      converge_time = rtc::Time64() - converge_start;
+      converge_time = rtc::TimeMillis() - converge_start;
       if (converge_time < converge_wait) {
         LOG(LS_INFO) << "Converge time: " << converge_time << " ms";
       } else {

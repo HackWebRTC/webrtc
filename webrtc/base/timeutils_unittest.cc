@@ -116,7 +116,7 @@ TEST(TimeTest, BoundaryComparison) {
 
 TEST(TimeTest, TestTimeDiff64) {
   int64_t ts_diff = 100;
-  int64_t ts_earlier = rtc::Time64();
+  int64_t ts_earlier = rtc::TimeMillis();
   int64_t ts_later = ts_earlier + ts_diff;
   EXPECT_EQ(ts_diff, rtc::TimeDiff(ts_later, ts_earlier));
   EXPECT_EQ(-ts_diff, rtc::TimeDiff(ts_earlier, ts_later));

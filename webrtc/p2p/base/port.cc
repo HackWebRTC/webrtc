@@ -796,7 +796,7 @@ Connection::Connection(Port* port,
       reported_(false),
       state_(STATE_WAITING),
       receiving_timeout_(WEAK_CONNECTION_RECEIVE_TIMEOUT),
-      time_created_ms_(rtc::Time64()) {
+      time_created_ms_(rtc::TimeMillis()) {
   // All of our connections start in WAITING state.
   // TODO(mallinath) - Start connections from STATE_FROZEN.
   // Wire up to send stun packets
@@ -901,7 +901,7 @@ void Connection::OnReadPacket(
     // The packet did not parse as a valid STUN message
     // This is a data packet, pass it along.
     set_receiving(true);
-    last_data_received_ = rtc::Time64();
+    last_data_received_ = rtc::TimeMillis();
     recv_rate_tracker_.AddSamples(size);
     SignalReadPacket(this, data, size, packet_time);
 
@@ -1116,7 +1116,7 @@ void Connection::Ping(int64_t now) {
 
 void Connection::ReceivedPing() {
   set_receiving(true);
-  last_ping_received_ = rtc::Time64();
+  last_ping_received_ = rtc::TimeMillis();
 }
 
 void Connection::ReceivedPingResponse() {
@@ -1129,7 +1129,7 @@ void Connection::ReceivedPingResponse() {
   set_write_state(STATE_WRITABLE);
   set_state(STATE_SUCCEEDED);
   pings_since_last_response_.clear();
-  last_ping_response_received_ = rtc::Time64();
+  last_ping_response_received_ = rtc::TimeMillis();
 }
 
 bool Connection::dead(int64_t now) const {

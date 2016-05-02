@@ -1011,7 +1011,7 @@ void TurnPort::OnConnectionDestroyed(Connection* conn) {
 
 void TurnPort::ScheduleEntryDestruction(TurnEntry* entry) {
   ASSERT(entry->destruction_timestamp() == 0);
-  int64_t timestamp = rtc::Time64();
+  int64_t timestamp = rtc::TimeMillis();
   entry->set_destruction_timestamp(timestamp);
   invoker_.AsyncInvokeDelayed<void>(
       thread(),

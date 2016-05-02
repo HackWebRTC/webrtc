@@ -694,7 +694,7 @@ void RelayServerBinding::AddExternalConnection(RelayServerConnection* conn) {
 }
 
 void RelayServerBinding::NoteUsed() {
-  last_used_ = rtc::Time64();
+  last_used_ = rtc::TimeMillis();
 }
 
 bool RelayServerBinding::HasMagicCookie(const char* bytes, size_t size) const {
@@ -735,7 +735,7 @@ void RelayServerBinding::OnMessage(rtc::Message *pmsg) {
 
     // If the lifetime timeout has been exceeded, then send a signal.
     // Otherwise, just keep waiting.
-    if (rtc::Time64() >= last_used_ + lifetime_) {
+    if (rtc::TimeMillis() >= last_used_ + lifetime_) {
       LOG(LS_INFO) << "Expiring binding " << username_;
       SignalTimeout(this);
     } else {

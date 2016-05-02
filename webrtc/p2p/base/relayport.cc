@@ -779,7 +779,7 @@ AllocateRequest::AllocateRequest(RelayEntry* entry,
     : StunRequest(new RelayMessage()),
       entry_(entry),
       connection_(connection) {
-  start_time_ = rtc::Time64();
+  start_time_ = rtc::TimeMillis();
 }
 
 void AllocateRequest::Prepare(StunMessage* request) {
@@ -834,7 +834,7 @@ void AllocateRequest::OnErrorResponse(StunMessage* response) {
               << " reason='" << attr->reason() << "'";
   }
 
-  if (rtc::Time64() - start_time_ <= kRetryTimeout)
+  if (rtc::TimeMillis() - start_time_ <= kRetryTimeout)
     entry_->ScheduleKeepAlive();
 }
 

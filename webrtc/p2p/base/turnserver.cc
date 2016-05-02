@@ -424,7 +424,7 @@ bool TurnServer::ValidateNonce(const std::string& nonce) const {
   }
 
   // Validate the timestamp.
-  return rtc::Time64() - then < kNonceTimeout;
+  return rtc::TimeMillis() - then < kNonceTimeout;
 }
 
 TurnServerAllocation* TurnServer::FindAllocation(TurnServerConnection* conn) {
@@ -465,7 +465,7 @@ void TurnServer::SendErrorResponseWithRealmAndNonce(
   TurnMessage resp;
   InitErrorResponse(msg, code, reason, &resp);
 
-  int64_t timestamp = rtc::Time64();
+  int64_t timestamp = rtc::TimeMillis();
   if (ts_for_next_nonce_) {
     timestamp = ts_for_next_nonce_;
     ts_for_next_nonce_ = 0;

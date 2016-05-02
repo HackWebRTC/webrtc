@@ -1268,9 +1268,9 @@ TEST_F(PortTest, TestConnectionDead) {
   ASSERT_EQ_WAIT(1, ch2.complete_count(), kTimeout);
 
   // Test case that the connection has never received anything.
-  int64_t before_created = rtc::Time64();
+  int64_t before_created = rtc::TimeMillis();
   ch1.CreateConnection(GetCandidate(port2));
-  int64_t after_created = rtc::Time64();
+  int64_t after_created = rtc::TimeMillis();
   Connection* conn = ch1.conn();
   ASSERT(conn != nullptr);
   // It is not dead if it is after MIN_CONNECTION_LIFETIME but not pruned.
@@ -1291,9 +1291,9 @@ TEST_F(PortTest, TestConnectionDead) {
   ch1.CreateConnection(GetCandidate(port2));
   conn = ch1.conn();
   ASSERT(conn != nullptr);
-  int64_t before_last_receiving = rtc::Time64();
+  int64_t before_last_receiving = rtc::TimeMillis();
   conn->ReceivedPing();
-  int64_t after_last_receiving = rtc::Time64();
+  int64_t after_last_receiving = rtc::TimeMillis();
   // The connection will be dead after DEAD_CONNECTION_RECEIVE_TIMEOUT
   conn->UpdateState(
       before_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT - 1);

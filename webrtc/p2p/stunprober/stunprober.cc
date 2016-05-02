@@ -163,7 +163,7 @@ void StunProber::Requester::SendStunRequest() {
     return;
   }
 
-  request.sent_time_ms = rtc::Time64();
+  request.sent_time_ms = rtc::TimeMillis();
 
   num_request_sent_++;
   RTC_DCHECK(static_cast<size_t>(num_request_sent_) <= server_ips_.size());
@@ -171,7 +171,7 @@ void StunProber::Requester::SendStunRequest() {
 
 void StunProber::Requester::Request::ProcessResponse(const char* buf,
                                                      size_t buf_len) {
-  int64_t now = rtc::Time64();
+  int64_t now = rtc::TimeMillis();
   rtc::ByteBufferReader message(buf, buf_len);
   cricket::StunMessage stun_response;
   if (!stun_response.Read(&message)) {
@@ -414,7 +414,7 @@ int StunProber::get_wake_up_interval_ms() {
 
 void StunProber::MaybeScheduleStunRequests() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  int64_t now = rtc::Time64();
+  int64_t now = rtc::TimeMillis();
 
   if (Done()) {
     invoker_.AsyncInvokeDelayed<void>(

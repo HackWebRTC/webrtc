@@ -35,11 +35,11 @@ typedef uint32_t TimeStamp;
 uint32_t Time32();
 
 // Returns the current time in milliseconds in 64 bits.
-int64_t Time64();
+int64_t TimeMillis();
 
 // Returns the current time in milliseconds.
-// TODO(honghaiz): Returns Time64 once majority of the webrtc code migrates to
-// 64-bit timestamp.
+// TODO(honghaiz): Change to return TimeMillis() once majority of the webrtc
+// code migrates to 64-bit timestamp.
 inline uint32_t Time() {
   return Time32();
 }
