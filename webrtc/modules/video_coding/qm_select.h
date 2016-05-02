@@ -322,35 +322,5 @@ class VCMQmResolution : public VCMQmMethod {
   int num_layers_;
 };
 
-// Robustness settings class.
-
-class VCMQmRobustness : public VCMQmMethod {
- public:
-  VCMQmRobustness();
-  ~VCMQmRobustness();
-
-  virtual void Reset();
-
-  // Adjust FEC rate based on content: every ~1 sec from SetTargetRates.
-  // Returns an adjustment factor.
-  float AdjustFecFactor(uint8_t code_rate_delta,
-                        float total_rate,
-                        float framerate,
-                        int64_t rtt_time,
-                        uint8_t packet_loss);
-
-  // Set the UEP protection on/off.
-  bool SetUepProtection(uint8_t code_rate_delta,
-                        float total_rate,
-                        uint8_t packet_loss,
-                        bool frame_type);
-
- private:
-  // Previous state of network parameters.
-  float prev_total_rate_;
-  int64_t prev_rtt_time_;
-  uint8_t prev_packet_loss_;
-  uint8_t prev_code_rate_delta_;
-};
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_CODING_QM_SELECT_H_

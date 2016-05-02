@@ -33,13 +33,6 @@ void UpdateProtectionCallback(
   // Get the FEC code rate for Delta frames (set to 0 when NA).
   delta_fec_params.fec_rate = selected_method->RequiredProtectionFactorD();
 
-  // Get the FEC-UEP protection status for Key frames: UEP on/off.
-  key_fec_params.use_uep_protection = selected_method->RequiredUepProtectionK();
-
-  // Get the FEC-UEP protection status for Delta frames: UEP on/off.
-  delta_fec_params.use_uep_protection =
-      selected_method->RequiredUepProtectionD();
-
   // The RTP module currently requires the same |max_fec_frames| for both
   // key and delta frames.
   delta_fec_params.max_fec_frames = selected_method->MaxFramesFec();
@@ -229,9 +222,6 @@ uint32_t MediaOptimization::SetTargetRates(
   // Update protection settings, when applicable.
   float sent_video_rate_kbps = 0.0f;
   if (loss_prot_logic_->SelectedType() != kNone) {
-    // Update protection method with content metrics.
-    selected_method->UpdateContentMetrics(content_->ShortTermAvgData());
-
     // Update method will compute the robustness settings for the given
     // protection method and the overhead cost
     // the protection method is set by the user via SetVideoProtection.
