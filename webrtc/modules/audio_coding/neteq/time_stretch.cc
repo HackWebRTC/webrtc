@@ -16,6 +16,7 @@
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
+#include "webrtc/modules/audio_coding/neteq/cross_correlation.h"
 #include "webrtc/modules/audio_coding/neteq/dsp_helper.h"
 
 namespace webrtc {
@@ -158,20 +159,15 @@ TimeStretch::ReturnCodes TimeStretch::Process(const int16_t* input,
 }
 
 void TimeStretch::AutoCorrelation() {
-  // Set scaling factor for cross correlation to protect against overflow.
-  int scaling = kLogCorrelationLen - WebRtcSpl_NormW32(
-      max_input_value_ * max_input_value_);
-  scaling = std::max(0, scaling);
-
   // Calculate correlation from lag kMinLag to lag kMaxLag in 4 kHz domain.
   int32_t auto_corr[kCorrelationLen];
-  WebRtcSpl_CrossCorrelation(auto_corr, &downsampled_input_[kMaxLag],
-                             &downsampled_input_[kMaxLag - kMinLag],
-                             kCorrelationLen, kMaxLag - kMinLag, scaling, -1);
+  CrossCorrelationWithAutoShift(
+      &downsampled_input_[kMaxLag], &downsampled_input_[kMaxLag - kMinLag],
+      kCorrelationLen, kMaxLag - kMinLag, -1, auto_corr);
 
   // Normalize correlation to 14 bits and write to |auto_correlation_|.
   int32_t max_corr = WebRtcSpl_MaxAbsValueW32(auto_corr, kCorrelationLen);
-  scaling = std::max(0, 17 - WebRtcSpl_NormW32(max_corr));
+  int scaling = std::max(0, 17 - WebRtcSpl_NormW32(max_corr));
   WebRtcSpl_VectorBitShiftW32ToW16(auto_correlation_, kCorrelationLen,
                                    auto_corr, scaling);
 }

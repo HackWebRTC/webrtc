@@ -460,14 +460,14 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
       webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
 
   const std::string output_checksum = PlatformChecksum(
-      "f587883b7c371ee8d87dbf1b0f07525af7d959b8",
-      "a349bd71dba548029b05d1d2a6dc7caafab9a856",
-      "f587883b7c371ee8d87dbf1b0f07525af7d959b8",
-      "08266b198e7686b3cd9330813e0d2cd72fc8fdc2");
+      "472ebe1126f41fdb6b5c63c87f625a52e7604e49",
+      "d2a6b6ff54b340cf9f961c7f07768d86b3761073",
+      "472ebe1126f41fdb6b5c63c87f625a52e7604e49",
+      "f9749813dbc3fb59dae761de518fec65b8407c5b");
 
   const std::string network_stats_checksum = PlatformChecksum(
       "2cf380a05ee07080bd72471e8ec7777a39644ec9",
-      "2853ab577fe571adfc7b18f77bbe58f1253d2019",
+      "01be67dc4c3b8e74743a45cbd8684c0535dec9ad",
       "2cf380a05ee07080bd72471e8ec7777a39644ec9",
       "2cf380a05ee07080bd72471e8ec7777a39644ec9");
 
@@ -497,16 +497,16 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
       webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
 
   const std::string output_checksum = PlatformChecksum(
-      "c23004d91ffbe5e7a1f24620fc89b58c0426040f",
-      "c23004d91ffbe5e7a1f24620fc89b58c0426040f",
-      "c23004d91ffbe5e7a1f24620fc89b58c0426040f",
-      "c23004d91ffbe5e7a1f24620fc89b58c0426040f");
+      "19ad24b4a1eb7a9620e6da09f98c49aa5792ade4",
+      "19ad24b4a1eb7a9620e6da09f98c49aa5792ade4",
+      "19ad24b4a1eb7a9620e6da09f98c49aa5792ade4",
+      "19ad24b4a1eb7a9620e6da09f98c49aa5792ade4");
 
   const std::string network_stats_checksum = PlatformChecksum(
-      "dc2d9f584efb0111ebcd71a2c86f1fb09cd8c2bb",
-      "dc2d9f584efb0111ebcd71a2c86f1fb09cd8c2bb",
-      "dc2d9f584efb0111ebcd71a2c86f1fb09cd8c2bb",
-      "dc2d9f584efb0111ebcd71a2c86f1fb09cd8c2bb");
+      "6eab76efbde753d4dde38983445ca16b4ce59b39",
+      "6eab76efbde753d4dde38983445ca16b4ce59b39",
+      "6eab76efbde753d4dde38983445ca16b4ce59b39",
+      "6eab76efbde753d4dde38983445ca16b4ce59b39");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
