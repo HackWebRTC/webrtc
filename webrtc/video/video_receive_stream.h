@@ -54,16 +54,16 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      VieRemb* remb);
   ~VideoReceiveStream() override;
 
-  // webrtc::ReceiveStream implementation.
-  void Start() override;
-  void Stop() override;
-  void SignalNetworkState(NetworkState state) override;
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override;
+  void SignalNetworkState(NetworkState state);
+  bool DeliverRtcp(const uint8_t* packet, size_t length);
   bool DeliverRtp(const uint8_t* packet,
                   size_t length,
-                  const PacketTime& packet_time) override;
+                  const PacketTime& packet_time);
 
   // webrtc::VideoReceiveStream implementation.
+  void Start() override;
+  void Stop() override;
+
   webrtc::VideoReceiveStream::Stats GetStats() const override;
 
   // Overrides I420FrameCallback.

@@ -36,20 +36,17 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
                      const rtc::scoped_refptr<webrtc::AudioState>& audio_state);
   ~AudioReceiveStream() override;
 
-  // webrtc::ReceiveStream implementation.
+  // webrtc::AudioReceiveStream implementation.
   void Start() override;
   void Stop() override;
-  void SignalNetworkState(NetworkState state) override;
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override;
-  bool DeliverRtp(const uint8_t* packet,
-                  size_t length,
-                  const PacketTime& packet_time) override;
-
-  // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
-
   void SetSink(std::unique_ptr<AudioSinkInterface> sink) override;
 
+  void SignalNetworkState(NetworkState state);
+  bool DeliverRtcp(const uint8_t* packet, size_t length);
+  bool DeliverRtp(const uint8_t* packet,
+                  size_t length,
+                  const PacketTime& packet_time);
   const webrtc::AudioReceiveStream::Config& config() const;
 
  private:

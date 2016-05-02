@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/common_types.h"
 #include "webrtc/config.h"
-#include "webrtc/stream.h"
 #include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
 
@@ -31,7 +31,7 @@ class AudioSinkInterface;
 // of WebRtc/Libjingle. Please use the VoiceEngine API instead.
 // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4690
 
-class AudioReceiveStream : public ReceiveStream {
+class AudioReceiveStream {
  public:
   struct Stats {
     uint32_t remote_ssrc = 0;
@@ -103,6 +103,13 @@ class AudioReceiveStream : public ReceiveStream {
     std::map<uint8_t, AudioDecoder*> decoder_map;
   };
 
+  // Starts stream activity.
+  // When a stream is active, it can receive, process and deliver packets.
+  virtual void Start() = 0;
+  // Stops stream activity.
+  // When a stream is stopped, it can't receive, process or deliver packets.
+  virtual void Stop() = 0;
+
   virtual Stats GetStats() const = 0;
 
   // Sets an audio sink that receives unmixed audio from the receive stream.
@@ -114,6 +121,9 @@ class AudioReceiveStream : public ReceiveStream {
   // is being pulled+rendered and/or if audio is being pulled for the purposes
   // of feeding to the AEC.
   virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink) = 0;
+
+ protected:
+  virtual ~AudioReceiveStream() {}
 };
 }  // namespace webrtc
 

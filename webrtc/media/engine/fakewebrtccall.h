@@ -48,15 +48,10 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
   bool IsSending() const { return sending_; }
 
  private:
-  // webrtc::SendStream implementation.
+  // webrtc::AudioSendStream implementation.
   void Start() override { sending_ = true; }
   void Stop() override { sending_ = false; }
-  void SignalNetworkState(webrtc::NetworkState state) override {}
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override {
-    return true;
-  }
 
-  // webrtc::AudioSendStream implementation.
   bool SendTelephoneEvent(int payload_type, int event,
                           int duration_ms) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
@@ -77,18 +72,15 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   int received_packets() const { return received_packets_; }
   bool VerifyLastPacket(const uint8_t* data, size_t length) const;
   const webrtc::AudioSinkInterface* sink() const { return sink_.get(); }
-
   bool DeliverRtp(const uint8_t* packet,
                   size_t length,
-                  const webrtc::PacketTime& packet_time) override;
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override;
+                  const webrtc::PacketTime& packet_time);
+
  private:
-  // webrtc::ReceiveStream implementation.
+  // webrtc::AudioReceiveStream implementation.
   void Start() override {}
   void Stop() override {}
-  void SignalNetworkState(webrtc::NetworkState state) override {}
 
-  // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
   void SetSink(std::unique_ptr<webrtc::AudioSinkInterface> sink) override;
 
@@ -124,15 +116,9 @@ class FakeVideoSendStream final : public webrtc::VideoSendStream,
  private:
   void IncomingCapturedFrame(const webrtc::VideoFrame& frame) override;
 
-  // webrtc::SendStream implementation.
+  // webrtc::VideoSendStream implementation.
   void Start() override;
   void Stop() override;
-  void SignalNetworkState(webrtc::NetworkState state) override {}
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override {
-    return true;
-  }
-
-  // webrtc::VideoSendStream implementation.
   webrtc::VideoSendStream::Stats GetStats() override;
   void ReconfigureVideoEncoder(
       const webrtc::VideoEncoderConfig& config) override;
@@ -166,20 +152,10 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
   void SetStats(const webrtc::VideoReceiveStream::Stats& stats);
 
  private:
-  // webrtc::ReceiveStream implementation.
+  // webrtc::VideoReceiveStream implementation.
   void Start() override;
   void Stop() override;
-  void SignalNetworkState(webrtc::NetworkState state) override {}
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override {
-    return true;
-  }
-  bool DeliverRtp(const uint8_t* packet,
-                  size_t length,
-                  const webrtc::PacketTime& packet_time) override {
-    return true;
-  }
 
-  // webrtc::VideoReceiveStream implementation.
   webrtc::VideoReceiveStream::Stats GetStats() const override;
 
   webrtc::VideoReceiveStream::Config config_;

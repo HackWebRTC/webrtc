@@ -18,7 +18,6 @@
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/config.h"
 #include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/stream.h"
 #include "webrtc/transport.h"
 #include "webrtc/media/base/videosinkinterface.h"
 
@@ -39,7 +38,7 @@ class VideoCaptureInput {
   virtual ~VideoCaptureInput() {}
 };
 
-class VideoSendStream : public SendStream {
+class VideoSendStream {
  public:
   struct StreamStats {
     FrameCounts frame_counts;
@@ -167,6 +166,13 @@ class VideoSendStream : public SendStream {
     bool suspend_below_min_bitrate = false;
   };
 
+  // Starts stream activity.
+  // When a stream is active, it can receive, process and deliver packets.
+  virtual void Start() = 0;
+  // Stops stream activity.
+  // When a stream is stopped, it can't receive, process or deliver packets.
+  virtual void Stop() = 0;
+
   // Gets interface used to insert captured frames. Valid as long as the
   // VideoSendStream is valid.
   virtual VideoCaptureInput* Input() = 0;
@@ -177,6 +183,9 @@ class VideoSendStream : public SendStream {
   virtual void ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
 
   virtual Stats GetStats() = 0;
+
+ protected:
+  virtual ~VideoSendStream() {}
 };
 
 }  // namespace webrtc

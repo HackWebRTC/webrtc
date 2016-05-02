@@ -491,8 +491,25 @@ VideoSendStream::~VideoSendStream() {
   }
 }
 
-VideoCaptureInput* VideoSendStream::Input() {
-  return &input_;
+void VideoSendStream::SignalNetworkState(NetworkState state) {
+  // When network goes up, enable RTCP status before setting transmission state.
+  // When it goes down, disable RTCP afterwards. This ensures that any packets
+  // sent due to the network state changed will not be dropped.
+  if (state == kNetworkUp) {
+    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+      rtp_rtcp->SetRTCPStatus(config_.rtp.rtcp_mode);
+  }
+  vie_encoder_.SetNetworkTransmissionState(state == kNetworkUp);
+  if (state == kNetworkDown) {
+    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+      rtp_rtcp->SetRTCPStatus(RtcpMode::kOff);
+  }
+}
+
+bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+    rtp_rtcp->IncomingRtcpPacket(packet, length);
+  return true;
 }
 
 void VideoSendStream::Start() {
@@ -512,6 +529,10 @@ void VideoSendStream::Stop() {
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Stop");
   // TODO(pbos): Make sure the encoder stops here.
   payload_router_.set_active(false);
+}
+
+VideoCaptureInput* VideoSendStream::Input() {
+  return &input_;
 }
 
 bool VideoSendStream::EncoderThreadFunction(void* obj) {
@@ -578,12 +599,6 @@ void VideoSendStream::ReconfigureVideoEncoder(
         {video_codec, config.min_transmit_bitrate_bps});
   }
   encoder_wakeup_event_.Set();
-}
-
-bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->IncomingRtcpPacket(packet, length);
-  return true;
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() {
@@ -712,21 +727,6 @@ std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {
   }
 
   return rtp_states;
-}
-
-void VideoSendStream::SignalNetworkState(NetworkState state) {
-  // When network goes up, enable RTCP status before setting transmission state.
-  // When it goes down, disable RTCP afterwards. This ensures that any packets
-  // sent due to the network state changed will not be dropped.
-  if (state == kNetworkUp) {
-    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-      rtp_rtcp->SetRTCPStatus(config_.rtp.rtcp_mode);
-  }
-  vie_encoder_.SetNetworkTransmissionState(state == kNetworkUp);
-  if (state == kNetworkDown) {
-    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-      rtp_rtcp->SetRTCPStatus(RtcpMode::kOff);
-  }
 }
 
 int VideoSendStream::GetPaddingNeededBps() const {

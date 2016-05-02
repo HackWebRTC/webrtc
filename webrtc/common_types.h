@@ -880,6 +880,11 @@ class StreamDataCountersCallback {
 // RTCP mode is described by RFC 5506.
 enum class RtcpMode { kOff, kCompound, kReducedSize };
 
+enum NetworkState {
+  kNetworkUp,
+  kNetworkDown,
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_COMMON_TYPES_H_

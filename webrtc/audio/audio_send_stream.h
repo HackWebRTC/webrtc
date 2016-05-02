@@ -34,17 +34,15 @@ class AudioSendStream final : public webrtc::AudioSendStream {
                   CongestionController* congestion_controller);
   ~AudioSendStream() override;
 
-  // webrtc::SendStream implementation.
+  // webrtc::AudioSendStream implementation.
   void Start() override;
   void Stop() override;
-  void SignalNetworkState(NetworkState state) override;
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override;
-
-  // webrtc::AudioSendStream implementation.
   bool SendTelephoneEvent(int payload_type, int event,
                           int duration_ms) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
 
+  void SignalNetworkState(NetworkState state);
+  bool DeliverRtcp(const uint8_t* packet, size_t length);
   const webrtc::AudioSendStream::Config& config() const;
 
  private:

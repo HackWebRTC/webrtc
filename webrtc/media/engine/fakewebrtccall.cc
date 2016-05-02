@@ -80,10 +80,6 @@ bool FakeAudioReceiveStream::DeliverRtp(const uint8_t* packet,
   return true;
 }
 
-bool FakeAudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  return true;
-}
-
 webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
   return stats_;
 }

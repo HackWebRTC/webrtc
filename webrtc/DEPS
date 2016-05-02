@@ -19,7 +19,6 @@ include_rules = [
   "+webrtc/common_types.h",
   "+webrtc/config.h",
   "+webrtc/engine_configurations.h",
-  "+webrtc/stream.h",
   "+webrtc/transport.h",
   "+webrtc/typedefs.h",
   "+webrtc/video_decoder.h",

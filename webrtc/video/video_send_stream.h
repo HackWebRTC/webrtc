@@ -63,13 +63,12 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   ~VideoSendStream() override;
 
-  // webrtc::SendStream implementation.
-  void Start() override;
-  void Stop() override;
-  void SignalNetworkState(NetworkState state) override;
-  bool DeliverRtcp(const uint8_t* packet, size_t length) override;
+  void SignalNetworkState(NetworkState state);
+  bool DeliverRtcp(const uint8_t* packet, size_t length);
 
   // webrtc::VideoSendStream implementation.
+  void Start() override;
+  void Stop() override;
   VideoCaptureInput* Input() override;
   void ReconfigureVideoEncoder(const VideoEncoderConfig& config) override;
   Stats GetStats() override;

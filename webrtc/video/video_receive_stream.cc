@@ -322,6 +322,22 @@ VideoReceiveStream::~VideoReceiveStream() {
       ->RemoveStream(rtp_stream_receiver_.GetRemoteSsrc());
 }
 
+void VideoReceiveStream::SignalNetworkState(NetworkState state) {
+  rtp_rtcp_->SetRTCPStatus(state == kNetworkUp ? config_.rtp.rtcp_mode
+                                               : RtcpMode::kOff);
+}
+
+
+bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+  return rtp_stream_receiver_.DeliverRtcp(packet, length);
+}
+
+bool VideoReceiveStream::DeliverRtp(const uint8_t* packet,
+                                    size_t length,
+                                    const PacketTime& packet_time) {
+  return rtp_stream_receiver_.DeliverRtp(packet, length, packet_time);
+}
+
 void VideoReceiveStream::Start() {
   if (decode_thread_.IsRunning())
     return;
@@ -356,16 +372,6 @@ void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
 
 VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   return stats_proxy_.GetStats();
-}
-
-bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  return rtp_stream_receiver_.DeliverRtcp(packet, length);
-}
-
-bool VideoReceiveStream::DeliverRtp(const uint8_t* packet,
-                                    size_t length,
-                                    const PacketTime& packet_time) {
-  return rtp_stream_receiver_.DeliverRtp(packet, length, packet_time);
 }
 
 void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {
@@ -419,11 +425,6 @@ int32_t VideoReceiveStream::Encoded(
   }
 
   return 0;
-}
-
-void VideoReceiveStream::SignalNetworkState(NetworkState state) {
-  rtp_rtcp_->SetRTCPStatus(state == kNetworkUp ? config_.rtp.rtcp_mode
-                                               : RtcpMode::kOff);
 }
 
 bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {

@@ -15,12 +15,12 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 #include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
-#include "webrtc/stream.h"
 
 namespace rtc {
 struct SentPacket;

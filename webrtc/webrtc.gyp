@@ -126,7 +126,6 @@
         'audio_state.h',
         'call.h',
         'config.h',
-        'stream.h',
         'transport.h',
         'video_receive_stream.h',
         'video_send_stream.h',
