@@ -500,6 +500,11 @@ const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
   return sync_buffer_.get();
 }
 
+Operations NetEqImpl::last_operation_for_test() const {
+  rtc::CritScope lock(&crit_sect_);
+  return last_operation_;
+}
+
 // Methods below this line are private.
 
 int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
@@ -905,6 +910,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame) {
       return kInvalidOperation;
     }
   }  // End of switch.
+  last_operation_ = operation;
   if (return_value < 0) {
     return return_value;
   }

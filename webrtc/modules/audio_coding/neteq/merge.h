@@ -37,7 +37,7 @@ class Merge {
         size_t num_channels,
         Expand* expand,
         SyncBuffer* sync_buffer);
-  virtual ~Merge() {}
+  virtual ~Merge();
 
   // The main method to produce the audio data. The decoded data is supplied in
   // |input|, having |input_length| samples in total for all channels
@@ -93,6 +93,7 @@ class Merge {
   int16_t expanded_downsampled_[kExpandDownsampLength];
   int16_t input_downsampled_[kInputDownsampLength];
   AudioMultiVector expanded_;
+  std::vector<int16_t> temp_data_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Merge);
 };

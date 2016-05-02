@@ -763,7 +763,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
 TEST_F(NetEqImplTest, UnsupportedDecoder) {
   UseNoMocks();
   CreateInstance();
-  static const size_t kNetEqMaxFrameSize = 2880;  // 60 ms @ 48 kHz.
+  static const size_t kNetEqMaxFrameSize = 5760;  // 120 ms @ 48 kHz.
   static const size_t kChannels = 2;
 
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
@@ -773,7 +773,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   const size_t kPayloadLengthSamples =
       static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
   const size_t kPayloadLengthBytes = 1;
-  uint8_t payload[kPayloadLengthBytes]= {0};
+  uint8_t payload[kPayloadLengthBytes] = {0};
   int16_t dummy_output[kPayloadLengthSamples * kChannels] = {0};
   WebRtcRTPHeader rtp_header;
   rtp_header.header.payloadType = kPayloadType;
@@ -1187,6 +1187,216 @@ TEST_F(NetEqImplTest, TickTimerIncrement) {
   AudioFrame output;
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
   EXPECT_EQ(1u, tick_timer_->ticks());
+}
+
+class Decoder120ms : public AudioDecoder {
+ public:
+  Decoder120ms(SpeechType speech_type)
+      : next_value_(1),
+        speech_type_(speech_type) {}
+
+  int DecodeInternal(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type) override {
+    size_t decoded_len =
+        rtc::CheckedDivExact(sample_rate_hz, 1000) * 120 * Channels();
+    for (size_t i = 0; i < decoded_len; ++i) {
+      decoded[i] = next_value_++;
+    }
+    *speech_type = speech_type_;
+    return decoded_len;
+  }
+
+  void Reset() override { next_value_ = 1; }
+  size_t Channels() const override { return 2; }
+
+ private:
+  int16_t next_value_;
+  SpeechType speech_type_;
+};
+
+class NetEqImplTest120ms : public NetEqImplTest {
+ protected:
+  NetEqImplTest120ms() : NetEqImplTest() {}
+  virtual ~NetEqImplTest120ms() {}
+
+  void CreateInstanceNoMocks() {
+    UseNoMocks();
+    CreateInstance();
+  }
+
+  void CreateInstanceWithDelayManagerMock() {
+    UseNoMocks();
+    use_mock_delay_manager_ = true;
+    CreateInstance();
+  }
+
+  uint32_t timestamp_diff_between_packets() const {
+    return rtc::CheckedDivExact(kSamplingFreq_, 1000u) * 120;
+  }
+
+  uint32_t first_timestamp() const { return 10u; }
+
+  void GetFirstPacket() {
+    for (int i = 0; i < 12; i++) {
+      EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+    }
+  }
+
+  void InsertPacket(uint32_t timestamp) {
+    WebRtcRTPHeader rtp_header;
+    rtp_header.header.payloadType = kPayloadType;
+    rtp_header.header.sequenceNumber = sequence_number_;
+    rtp_header.header.timestamp = timestamp;
+    rtp_header.header.ssrc = 15;
+    const size_t kPayloadLengthBytes = 1;  // This can be arbitrary.
+    uint8_t payload[kPayloadLengthBytes] = {0};
+    EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload, 10));
+    sequence_number_++;
+  }
+
+  void Register120msCodec(AudioDecoder::SpeechType speech_type) {
+    decoder_.reset(new Decoder120ms(speech_type));
+    ASSERT_EQ(2u, decoder_->Channels());
+    EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
+                              decoder_.get(), NetEqDecoder::kDecoderOpus_2ch,
+                              "120ms codec", kPayloadType, kSamplingFreq_));
+  }
+
+  std::unique_ptr<Decoder120ms> decoder_;
+  AudioFrame output_;
+  const uint32_t kPayloadType = 17;
+  const uint32_t kSamplingFreq_ = 48000;
+  uint16_t sequence_number_ = 1;
+};
+
+TEST_F(NetEqImplTest120ms, AudioRepetition) {
+  config_.playout_mode = kPlayoutFax;
+  CreateInstanceNoMocks();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(kAudioRepetition, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, AlternativePlc) {
+  config_.playout_mode = kPlayoutOff;
+  CreateInstanceNoMocks();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(kAlternativePlc, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, CodecInternalCng) {
+  CreateInstanceNoMocks();
+  Register120msCodec(AudioDecoder::kComfortNoise);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(kCodecInternalCng, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, Normal) {
+  CreateInstanceNoMocks();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  EXPECT_EQ(kNormal, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, Merge) {
+  CreateInstanceWithDelayManagerMock();
+
+  Register120msCodec(AudioDecoder::kSpeech);
+  InsertPacket(first_timestamp());
+
+  GetFirstPacket();
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+
+  InsertPacket(first_timestamp() + 2 * timestamp_diff_between_packets());
+
+  // Delay manager reports a target level which should cause a Merge.
+  EXPECT_CALL(*mock_delay_manager_, TargetLevel()).WillOnce(Return(-10));
+
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(kMerge, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, Expand) {
+  CreateInstanceNoMocks();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(kExpand, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, FastAccelerate) {
+  CreateInstanceWithDelayManagerMock();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+  InsertPacket(first_timestamp() + timestamp_diff_between_packets());
+
+  // Delay manager report buffer limit which should cause a FastAccelerate.
+  EXPECT_CALL(*mock_delay_manager_, BufferLimits(_, _))
+      .Times(1)
+      .WillOnce(DoAll(SetArgPointee<0>(0), SetArgPointee<1>(0)));
+
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(kFastAccelerate, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, PreemptiveExpand) {
+  CreateInstanceWithDelayManagerMock();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  InsertPacket(first_timestamp() + timestamp_diff_between_packets());
+
+  // Delay manager report buffer limit which should cause a PreemptiveExpand.
+  EXPECT_CALL(*mock_delay_manager_, BufferLimits(_, _))
+      .Times(1)
+      .WillOnce(DoAll(SetArgPointee<0>(100), SetArgPointee<1>(100)));
+
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(kPreemptiveExpand, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, Accelerate) {
+  CreateInstanceWithDelayManagerMock();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  InsertPacket(first_timestamp() + timestamp_diff_between_packets());
+
+  // Delay manager report buffer limit which should cause a Accelerate.
+  EXPECT_CALL(*mock_delay_manager_, BufferLimits(_, _))
+      .Times(1)
+      .WillOnce(DoAll(SetArgPointee<0>(1), SetArgPointee<1>(2)));
+
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(kAccelerate, neteq_->last_operation_for_test());
 }
 
 }// namespace webrtc

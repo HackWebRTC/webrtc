@@ -204,10 +204,11 @@ class NetEqImpl : public webrtc::NetEq {
 
   // This accessor method is only intended for testing purposes.
   const SyncBuffer* sync_buffer_for_test() const;
+  Operations last_operation_for_test() const;
 
  protected:
   static const int kOutputSizeMs = 10;
-  static const size_t kMaxFrameSize = 2880;  // 60 ms @ 48 kHz.
+  static const size_t kMaxFrameSize = 5760;  // 120 ms @ 48 kHz.
   // TODO(hlundin): Provide a better value for kSyncBufferSize.
   static const size_t kSyncBufferSize = 2 * kMaxFrameSize;
 
@@ -383,6 +384,7 @@ class NetEqImpl : public webrtc::NetEq {
   size_t output_size_samples_ GUARDED_BY(crit_sect_);
   size_t decoder_frame_length_ GUARDED_BY(crit_sect_);
   Modes last_mode_ GUARDED_BY(crit_sect_);
+  Operations last_operation_ GUARDED_BY(crit_sect_);
   std::unique_ptr<int16_t[]> mute_factor_array_ GUARDED_BY(crit_sect_);
   size_t decoded_buffer_length_ GUARDED_BY(crit_sect_);
   std::unique_ptr<int16_t[]> decoded_buffer_ GUARDED_BY(crit_sect_);

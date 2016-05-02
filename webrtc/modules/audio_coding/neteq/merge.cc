@@ -39,6 +39,8 @@ Merge::Merge(int fs_hz,
   assert(num_channels_ > 0);
 }
 
+Merge::~Merge() = default;
+
 size_t Merge::Process(int16_t* input, size_t input_length,
                       int16_t* external_mute_factor_array,
                       AudioMultiVector* output) {
@@ -91,9 +93,8 @@ size_t Merge::Process(int16_t* input, size_t input_length,
           old_length, input_length_per_channel, expand_period);
     }
 
-    static const int kTempDataSize = 3600;
-    int16_t temp_data[kTempDataSize];  // TODO(hlundin) Remove this.
-    int16_t* decoded_output = temp_data + best_correlation_index;
+    temp_data_.resize(input_length_per_channel + best_correlation_index);
+    int16_t* decoded_output = temp_data_.data() + best_correlation_index;
 
     // Mute the new decoded data if needed (and unmute it linearly).
     // This is the overlapping part of expanded_signal.
@@ -127,7 +128,7 @@ size_t Merge::Process(int16_t* input, size_t input_length,
     int16_t increment =
         static_cast<int16_t>(16384 / (interpolation_length + 1));  // In Q14.
     int16_t mute_factor = 16384 - increment;
-    memmove(temp_data, expanded_channel,
+    memmove(temp_data_.data(), expanded_channel,
             sizeof(int16_t) * best_correlation_index);
     DspHelper::CrossFade(&expanded_channel[best_correlation_index],
                          input_channel, interpolation_length,
@@ -140,8 +141,8 @@ size_t Merge::Process(int16_t* input, size_t input_length,
     } else {
       assert(output->Size() == output_length);
     }
-    memcpy(&(*output)[channel][0], temp_data,
-           sizeof(temp_data[0]) * output_length);
+    memcpy(&(*output)[channel][0], temp_data_.data(),
+           sizeof(temp_data_[0]) * output_length);
   }
 
   // Copy back the first part of the data to |sync_buffer_| and remove it from
@@ -208,22 +209,20 @@ int16_t Merge::SignalScaling(const int16_t* input, size_t input_length,
       std::min(static_cast<size_t>(64 * fs_mult_), input_length);
   const int16_t expanded_max =
       WebRtcSpl_MaxAbsValueW16(expanded_signal, mod_input_length);
-  const int16_t input_max = WebRtcSpl_MaxAbsValueW16(input, mod_input_length);
-
-  // Calculate energy of expanded signal.
-  // |log_fs_mult| is log2(fs_mult_), but is not exact for 48000 Hz.
-  int log_fs_mult = 30 - WebRtcSpl_NormW32(fs_mult_);
-  int expanded_shift = 6 + log_fs_mult
-      - WebRtcSpl_NormW32(expanded_max * expanded_max);
-  expanded_shift = std::max(expanded_shift, 0);
+  int32_t factor = (expanded_max * expanded_max) /
+      (std::numeric_limits<int32_t>::max() /
+          static_cast<int32_t>(mod_input_length));
+  const int expanded_shift = factor == 0 ? 0 : 31 - WebRtcSpl_NormW32(factor);
   int32_t energy_expanded = WebRtcSpl_DotProductWithScale(expanded_signal,
                                                           expanded_signal,
                                                           mod_input_length,
                                                           expanded_shift);
 
   // Calculate energy of input signal.
-  int input_shift = 6 + log_fs_mult - WebRtcSpl_NormW32(input_max * input_max);
-  input_shift = std::max(input_shift, 0);
+  const int16_t input_max = WebRtcSpl_MaxAbsValueW16(input, mod_input_length);
+  factor = (input_max * input_max) / (std::numeric_limits<int32_t>::max() /
+      static_cast<int32_t>(mod_input_length));
+  const int input_shift = factor == 0 ? 0 : 31 - WebRtcSpl_NormW32(factor);
   int32_t energy_input = WebRtcSpl_DotProductWithScale(input, input,
                                                        mod_input_length,
                                                        input_shift);
