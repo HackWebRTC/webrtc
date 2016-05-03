@@ -289,8 +289,10 @@ final class EglBase10 extends EglBase {
     int[] contextAttributes = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
     EGLContext rootContext =
         sharedContext == null ? EGL10.EGL_NO_CONTEXT : sharedContext.eglContext;
-    EGLContext eglContext =
-        egl.eglCreateContext(eglDisplay, eglConfig, rootContext, contextAttributes);
+    final EGLContext eglContext;
+    synchronized (EglBase.lock) {
+      eglContext = egl.eglCreateContext(eglDisplay, eglConfig, rootContext, contextAttributes);
+    }
     if (eglContext == EGL10.EGL_NO_CONTEXT) {
       throw new RuntimeException("Failed to create EGL context");
     }
