@@ -85,7 +85,6 @@
             'audio_coding/test/PCMFile.cc',
             'audio_coding/test/PacketLossTest.cc',
             'audio_coding/test/RTPFile.cc',
-            'audio_coding/test/SpatialAudio.cc',
             'audio_coding/test/TestAllCodecs.cc',
             'audio_coding/test/TestRedFec.cc',
             'audio_coding/test/TestStereo.cc',
