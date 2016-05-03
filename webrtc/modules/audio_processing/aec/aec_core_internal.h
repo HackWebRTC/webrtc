@@ -113,7 +113,8 @@ struct AecCore {
   float hNlFbMin, hNlFbLocalMin;
   float hNlXdAvgMin;
   int hNlNewMin, hNlMinCtr;
-  float overDrive, overDriveSm;
+  float overDrive;
+  float overdrive_scaling;
   int nlp_mode;
   float outBuf[PART_LEN];
   int delayIdx;
@@ -209,7 +210,7 @@ typedef void (*WebRtcAecFilterAdaptation)(
     float e_fft[2][PART_LEN1],
     float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]);
 extern WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
-typedef void (*WebRtcAecOverdriveAndSuppress)(AecCore* aec,
+typedef void (*WebRtcAecOverdriveAndSuppress)(float overdrive_scaling,
                                               float hNl[PART_LEN1],
                                               const float hNlFb,
                                               float efw[2][PART_LEN1]);

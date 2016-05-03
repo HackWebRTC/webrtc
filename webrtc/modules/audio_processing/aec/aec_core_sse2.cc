@@ -375,7 +375,7 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
   return a_exp_b;
 }
 
-static void OverdriveAndSuppressSSE2(AecCore* aec,
+static void OverdriveAndSuppressSSE2(float overdrive_scaling,
                                      float hNl[PART_LEN1],
                                      const float hNlFb,
                                      float efw[2][PART_LEN1]) {
@@ -383,7 +383,7 @@ static void OverdriveAndSuppressSSE2(AecCore* aec,
   const __m128 vec_hNlFb = _mm_set1_ps(hNlFb);
   const __m128 vec_one = _mm_set1_ps(1.0f);
   const __m128 vec_minus_one = _mm_set1_ps(-1.0f);
-  const __m128 vec_overDriveSm = _mm_set1_ps(aec->overDriveSm);
+  const __m128 vec_overdrive_scaling = _mm_set1_ps(overdrive_scaling);
   // vectorized code (four at once)
   for (i = 0; i + 3 < PART_LEN1; i += 4) {
     // Weight subbands
@@ -403,7 +403,7 @@ static void OverdriveAndSuppressSSE2(AecCore* aec,
       const __m128 vec_overDriveCurve =
           _mm_loadu_ps(&WebRtcAec_overDriveCurve[i]);
       const __m128 vec_overDriveSm_overDriveCurve =
-          _mm_mul_ps(vec_overDriveSm, vec_overDriveCurve);
+          _mm_mul_ps(vec_overdrive_scaling, vec_overDriveCurve);
       vec_hNl = mm_pow_ps(vec_hNl, vec_overDriveSm_overDriveCurve);
       _mm_storeu_ps(&hNl[i], vec_hNl);
     }
@@ -429,7 +429,7 @@ static void OverdriveAndSuppressSSE2(AecCore* aec,
       hNl[i] = WebRtcAec_weightCurve[i] * hNlFb +
                (1 - WebRtcAec_weightCurve[i]) * hNl[i];
     }
-    hNl[i] = powf(hNl[i], aec->overDriveSm * WebRtcAec_overDriveCurve[i]);
+    hNl[i] = powf(hNl[i], overdrive_scaling * WebRtcAec_overDriveCurve[i]);
 
     // Suppress error signal
     efw[0][i] *= hNl[i];

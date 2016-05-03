@@ -307,7 +307,7 @@ static void FilterAdaptation(
   }
 }
 
-static void OverdriveAndSuppress(AecCore* aec,
+static void OverdriveAndSuppress(float overdrive_scaling,
                                  float hNl[PART_LEN1],
                                  const float hNlFb,
                                  float efw[2][PART_LEN1]) {
@@ -318,7 +318,7 @@ static void OverdriveAndSuppress(AecCore* aec,
       hNl[i] = WebRtcAec_weightCurve[i] * hNlFb +
                (1 - WebRtcAec_weightCurve[i]) * hNl[i];
     }
-    hNl[i] = powf(hNl[i], aec->overDriveSm * WebRtcAec_overDriveCurve[i]);
+    hNl[i] = powf(hNl[i], overdrive_scaling * WebRtcAec_overDriveCurve[i]);
 
     // Suppress error signal
     efw[0][i] *= hNl[i];
@@ -1145,13 +1145,15 @@ static void EchoSuppression(AecCore* aec,
   }
 
   // Smooth the overdrive.
-  if (aec->overDrive < aec->overDriveSm) {
-    aec->overDriveSm = 0.99f * aec->overDriveSm + 0.01f * aec->overDrive;
+  if (aec->overDrive < aec->overdrive_scaling) {
+    aec->overdrive_scaling =
+        0.99f * aec->overdrive_scaling + 0.01f * aec->overDrive;
   } else {
-    aec->overDriveSm = 0.9f * aec->overDriveSm + 0.1f * aec->overDrive;
+    aec->overdrive_scaling =
+        0.9f * aec->overdrive_scaling + 0.1f * aec->overDrive;
   }
 
-  WebRtcAec_OverdriveAndSuppress(aec, hNl, hNlFb, efw);
+  WebRtcAec_OverdriveAndSuppress(aec->overdrive_scaling, hNl, hNlFb, efw);
 
   // Add comfort noise.
   WebRtcAec_ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
@@ -1687,7 +1689,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->hNlNewMin = 0;
   aec->hNlMinCtr = 0;
   aec->overDrive = 2;
-  aec->overDriveSm = 2;
+  aec->overdrive_scaling = 2;
   aec->delayIdx = 0;
   aec->stNearState = 0;
   aec->echoState = 0;

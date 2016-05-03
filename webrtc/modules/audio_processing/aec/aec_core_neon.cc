@@ -374,7 +374,7 @@ static float32x4_t vpowq_f32(float32x4_t a, float32x4_t b) {
   return a_exp_b;
 }
 
-static void OverdriveAndSuppressNEON(AecCore* aec,
+static void OverdriveAndSuppressNEON(float overdrive_scaling,
                                      float hNl[PART_LEN1],
                                      const float hNlFb,
                                      float efw[2][PART_LEN1]) {
@@ -382,7 +382,7 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
   const float32x4_t vec_hNlFb = vmovq_n_f32(hNlFb);
   const float32x4_t vec_one = vdupq_n_f32(1.0f);
   const float32x4_t vec_minus_one = vdupq_n_f32(-1.0f);
-  const float32x4_t vec_overDriveSm = vmovq_n_f32(aec->overDriveSm);
+  const float32x4_t vec_overdrive_scaling = vmovq_n_f32(overdrive_scaling);
 
   // vectorized code (four at once)
   for (i = 0; i + 3 < PART_LEN1; i += 4) {
@@ -408,7 +408,7 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
       const float32x4_t vec_overDriveCurve =
           vld1q_f32(&WebRtcAec_overDriveCurve[i]);
       const float32x4_t vec_overDriveSm_overDriveCurve =
-          vmulq_f32(vec_overDriveSm, vec_overDriveCurve);
+          vmulq_f32(vec_overdrive_scaling, vec_overDriveCurve);
       vec_hNl = vpowq_f32(vec_hNl, vec_overDriveSm_overDriveCurve);
       vst1q_f32(&hNl[i], vec_hNl);
     }
@@ -436,7 +436,7 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
                (1 - WebRtcAec_weightCurve[i]) * hNl[i];
     }
 
-    hNl[i] = powf(hNl[i], aec->overDriveSm * WebRtcAec_overDriveCurve[i]);
+    hNl[i] = powf(hNl[i], overdrive_scaling * WebRtcAec_overDriveCurve[i]);
 
     // Suppress error signal
     efw[0][i] *= hNl[i];

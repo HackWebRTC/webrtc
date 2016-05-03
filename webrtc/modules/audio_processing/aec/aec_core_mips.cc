@@ -642,7 +642,7 @@ void WebRtcAec_FilterAdaptation_mips(
   }
 }
 
-void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
+void WebRtcAec_OverdriveAndSuppress_mips(float overdrive_scaling,
                                          float hNl[PART_LEN1],
                                          const float hNlFb,
                                          float efw[2][PART_LEN1]) {
@@ -685,7 +685,7 @@ void WebRtcAec_OverdriveAndSuppress_mips(AecCore* aec,
       : [hNlFb] "f" (hNlFb), [one] "f" (one), [p_hNl] "r" (p_hNl)
       : "memory");
 
-    hNl[i] = powf(hNl[i], aec->overDriveSm * WebRtcAec_overDriveCurve[i]);
+    hNl[i] = powf(hNl[i], overdrive_scaling * WebRtcAec_overDriveCurve[i]);
 
     __asm __volatile(
       "lwc1      %[temp1],    0(%[p_hNl])              \n\t"
