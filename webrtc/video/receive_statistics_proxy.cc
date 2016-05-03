@@ -63,8 +63,10 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                                       height);
   }
   int sync_offset_ms = sync_offset_counter_.Avg(kMinRequiredSamples);
-  if (sync_offset_ms != -1)
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.AVSyncOffsetInMs", sync_offset_ms);
+  if (sync_offset_ms != -1) {
+    RTC_LOGGED_HISTOGRAM_COUNTS_10000("WebRTC.Video.AVSyncOffsetInMs",
+                                      sync_offset_ms);
+  }
 
   int qp = qp_counters_.vp8.Avg(kMinRequiredSamples);
   if (qp != -1)
