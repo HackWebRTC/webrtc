@@ -210,7 +210,9 @@ class NetEqImpl : public webrtc::NetEq {
   static const int kOutputSizeMs = 10;
   static const size_t kMaxFrameSize = 5760;  // 120 ms @ 48 kHz.
   // TODO(hlundin): Provide a better value for kSyncBufferSize.
-  static const size_t kSyncBufferSize = 2 * kMaxFrameSize;
+  // Current value is kMaxFrameSize + 60 ms * 48 kHz, which is enough for
+  // calculating correlations of current frame against history.
+  static const size_t kSyncBufferSize = kMaxFrameSize + 60 * 48;
 
   // Inserts a new packet into NetEq. This is used by the InsertPacket method
   // above. Returns 0 on success, otherwise an error code.
