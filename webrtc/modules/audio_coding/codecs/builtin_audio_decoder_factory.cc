@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
@@ -39,8 +40,7 @@ namespace {
 
 struct NamedDecoderConstructor {
   const char* name;
-  std::unique_ptr<AudioDecoder> (*constructor)(int clockrate_hz,
-                                               int num_channels);
+  std::unique_ptr<AudioDecoder> (*constructor)(const SdpAudioFormat&);
 };
 
 std::unique_ptr<AudioDecoder> Unique(AudioDecoder* d) {
@@ -51,53 +51,54 @@ std::unique_ptr<AudioDecoder> Unique(AudioDecoder* d) {
 // decoder.
 NamedDecoderConstructor decoder_constructors[] = {
     {"pcmu",
-     [](int clockrate_hz, int num_channels) {
-       return clockrate_hz == 8000 && num_channels >= 1
-                  ? Unique(new AudioDecoderPcmU(num_channels))
+     [](const SdpAudioFormat& format) {
+       return format.clockrate_hz == 8000 && format.num_channels >= 1
+                  ? Unique(new AudioDecoderPcmU(format.num_channels))
                   : nullptr;
      }},
     {"pcma",
-     [](int clockrate_hz, int num_channels) {
-       return clockrate_hz == 8000 && num_channels >= 1
-                  ? Unique(new AudioDecoderPcmA(num_channels))
+     [](const SdpAudioFormat& format) {
+       return format.clockrate_hz == 8000 && format.num_channels >= 1
+                  ? Unique(new AudioDecoderPcmA(format.num_channels))
                   : nullptr;
      }},
 #ifdef WEBRTC_CODEC_ILBC
     {"ilbc",
-     [](int clockrate_hz, int num_channels) {
-       return clockrate_hz == 8000 && num_channels == 1
+     [](const SdpAudioFormat& format) {
+       return format.clockrate_hz == 8000 && format.num_channels == 1
                   ? Unique(new AudioDecoderIlbc)
                   : nullptr;
      }},
 #endif
 #if defined(WEBRTC_CODEC_ISACFX)
     {"isac",
-     [](int clockrate_hz, int num_channels) {
-       return clockrate_hz == 16000 && num_channels == 1
+     [](const SdpAudioFormat& format) {
+       return format.clockrate_hz == 16000 && format.num_channels == 1
                   ? Unique(new AudioDecoderIsacFix)
                   : nullptr;
      }},
 #elif defined(WEBRTC_CODEC_ISAC)
     {"isac",
-     [](int clockrate_hz, int num_channels) {
-       return (clockrate_hz == 16000 || clockrate_hz == 32000) &&
-                      num_channels == 1
+     [](const SdpAudioFormat& format) {
+       return (format.clockrate_hz == 16000 || format.clockrate_hz == 32000) &&
+                      format.num_channels == 1
                   ? Unique(new AudioDecoderIsac)
                   : nullptr;
      }},
 #endif
     {"l16",
-     [](int clockrate_hz, int num_channels) {
-       return num_channels >= 1 ? Unique(new AudioDecoderPcm16B(num_channels))
-                                : nullptr;
+     [](const SdpAudioFormat& format) {
+       return format.num_channels >= 1
+                  ? Unique(new AudioDecoderPcm16B(format.num_channels))
+                  : nullptr;
      }},
 #ifdef WEBRTC_CODEC_G722
     {"g722",
-     [](int clockrate_hz, int num_channels) {
-       if (clockrate_hz == 8000) {
-         if (num_channels == 1)
+     [](const SdpAudioFormat& format) {
+       if (format.clockrate_hz == 8000) {
+         if (format.num_channels == 1)
            return Unique(new AudioDecoderG722);
-         if (num_channels == 2)
+         if (format.num_channels == 2)
            return Unique(new AudioDecoderG722Stereo);
        }
        return Unique(nullptr);
@@ -105,9 +106,21 @@ NamedDecoderConstructor decoder_constructors[] = {
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     {"opus",
-     [](int clockrate_hz, int num_channels) {
-       return clockrate_hz == 48000 && (num_channels == 1 || num_channels == 2)
-                  ? Unique(new AudioDecoderOpus(num_channels))
+     [](const SdpAudioFormat& format) {
+       rtc::Optional<int> num_channels = [&] {
+         auto stereo = format.parameters.find("stereo");
+         if (stereo != format.parameters.end()) {
+           if (stereo->second == "0") {
+             return rtc::Optional<int>(1);
+           } else if (stereo->second == "1") {
+             return rtc::Optional<int>(2);
+           }
+         }
+         return rtc::Optional<int>();
+       }();
+       return format.clockrate_hz == 48000 && format.num_channels == 2 &&
+                      num_channels
+                  ? Unique(new AudioDecoderOpus(*num_channels))
                   : nullptr;
      }},
 #endif
@@ -123,8 +136,7 @@ class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
       const SdpAudioFormat& format) override {
     for (const auto& dc : decoder_constructors) {
       if (STR_CASE_CMP(format.name.c_str(), dc.name) == 0) {
-        return std::unique_ptr<AudioDecoder>(
-            dc.constructor(format.clockrate_hz, format.num_channels));
+        return std::unique_ptr<AudioDecoder>(dc.constructor(format));
       }
     }
     return nullptr;

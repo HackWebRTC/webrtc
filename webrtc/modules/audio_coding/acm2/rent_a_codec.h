@@ -20,6 +20,7 @@
 #include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/typedefs.h"
@@ -134,6 +135,9 @@ class RentACodec {
     kDecoderOpus,
     kDecoderOpus_2ch,
   };
+
+  static rtc::Optional<SdpAudioFormat> NetEqDecoderToSdpAudioFormat(
+      NetEqDecoder nd);
 
   static inline size_t NumberOfCodecs() {
     return static_cast<size_t>(CodecId::kNumCodecs);

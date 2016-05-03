@@ -51,6 +51,8 @@
       'dependencies': [
         '<@(neteq_dependencies)',
         '<(webrtc_root)/common.gyp:webrtc_common',
+        'builtin_audio_decoder_factory',
+        'rent_a_codec',
       ],
       'defines': [
         '<@(neteq_defines)',

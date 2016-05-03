@@ -106,14 +106,22 @@ TEST(AudioDecoderFactoryTest, CreateG722) {
 TEST(AudioDecoderFactoryTest, CreateOpus) {
   std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
-  // Opus supports 48 kHz, 1-2 channels.
-  EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("opus", 48000, 0)));
-  EXPECT_TRUE(adf->MakeAudioDecoder(SdpAudioFormat("opus", 48000, 1)));
-  EXPECT_TRUE(adf->MakeAudioDecoder(SdpAudioFormat("opus", 48000, 2)));
-  EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("opus", 48000, 3)));
-  EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("opus", 8000, 1)));
-  EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("opus", 16000, 1)));
-  EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("opus", 32000, 1)));
+  // Opus supports 48 kHz, 2 channels, and wants a "stereo" parameter whose
+  // value is either "0" or "1".
+  for (int hz : {8000, 16000, 32000, 48000}) {
+    for (int channels : {0, 1, 2, 3}) {
+      for (std::string stereo : {"XX", "0", "1", "2"}) {
+        std::map<std::string, std::string> params;
+        if (stereo != "XX") {
+          params["stereo"] = stereo;
+        }
+        bool good =
+            (hz == 48000 && channels == 2 && (stereo == "0" || stereo == "1"));
+        EXPECT_EQ(good, static_cast<bool>(adf->MakeAudioDecoder(SdpAudioFormat(
+                            "opus", hz, channels, std::move(params)))));
+      }
+    }
+  }
 }
 
 }  // namespace webrtc

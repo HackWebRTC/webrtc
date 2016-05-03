@@ -19,9 +19,11 @@
 
 namespace webrtc {
 
-DecoderDatabase::DecoderDatabase()
-    : active_decoder_type_(-1), active_cng_decoder_type_(-1) {
-}
+DecoderDatabase::DecoderDatabase(
+    std::unique_ptr<AudioDecoderFactory> decoder_factory)
+    : active_decoder_type_(-1),
+      active_cng_decoder_type_(-1),
+      decoder_factory_(std::move(decoder_factory)) {}
 
 DecoderDatabase::~DecoderDatabase() = default;
 
@@ -32,20 +34,23 @@ DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
     : codec_type(ct),
       name(nm),
       fs_hz(fs),
-      external_decoder(ext_dec) {}
+      external_decoder(ext_dec),
+      audio_format_(acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(DecoderInfo&&) = default;
 DecoderDatabase::DecoderInfo::~DecoderInfo() = default;
 
-AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder() {
+AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder(
+    AudioDecoderFactory* factory) {
   if (external_decoder) {
     RTC_DCHECK(!decoder_);
     return external_decoder;
   }
+  RTC_DCHECK(audio_format_);
   if (!decoder_) {
-    decoder_.reset(CreateAudioDecoder(codec_type));
+    decoder_ = factory->MakeAudioDecoder(*audio_format_);
   }
-  RTC_DCHECK(decoder_);
+  RTC_DCHECK(decoder_) << "Failed to create: " << *audio_format_;
   return decoder_.get();
 }
 
@@ -155,7 +160,7 @@ AudioDecoder* DecoderDatabase::GetDecoder(uint8_t rtp_payload_type) {
     return NULL;
   }
   DecoderInfo* info = &(*it).second;
-  return info->GetDecoder();
+  return info->GetDecoder(decoder_factory_.get());
 }
 
 bool DecoderDatabase::IsType(uint8_t rtp_payload_type,

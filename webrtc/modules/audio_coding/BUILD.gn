@@ -855,9 +855,11 @@ source_set("neteq") {
 
   deps = [
     ":audio_decoder_interface",
+    ":builtin_audio_decoder_factory",
     ":cng",
     ":g711",
     ":pcm16b",
+    ":rent_a_codec",
     "../..:webrtc_common",
     "../../common_audio",
     "../../system_wrappers",

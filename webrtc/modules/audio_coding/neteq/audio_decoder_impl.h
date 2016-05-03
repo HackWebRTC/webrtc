@@ -32,10 +32,5 @@ bool CodecSupported(NetEqDecoder codec_type);
 // Returns the sample rate for |codec_type|.
 int CodecSampleRateHz(NetEqDecoder codec_type);
 
-// Creates an AudioDecoder object of type |codec_type|. Returns NULL for for
-// unsupported codecs, and when creating an AudioDecoder is not applicable
-// (e.g., for RED and DTMF/AVT types).
-AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type);
-
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_

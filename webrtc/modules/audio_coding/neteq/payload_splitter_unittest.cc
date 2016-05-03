@@ -18,6 +18,8 @@
 #include <utility>  // pair
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 
@@ -309,7 +311,8 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   // Use a real DecoderDatabase object here instead of a mock, since it is
   // easier to just register the payload types and let the actual implementation
   // do its job.
-  DecoderDatabase decoder_database;
+  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
+  DecoderDatabase decoder_database(std::move(factory));
   decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderCNGnb, "cng-nb");
   decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu, "pcmu");
   decoder_database.RegisterPayload(2, NetEqDecoder::kDecoderAVT, "avt");
@@ -743,7 +746,7 @@ TEST(IlbcPayloadSplitter, UnevenPayload) {
 
 TEST(FecPayloadSplitter, MixedPayload) {
   PacketList packet_list;
-  DecoderDatabase decoder_database;
+  DecoderDatabase decoder_database(CreateBuiltinAudioDecoderFactory());
 
   decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderOpus, "opus");
   decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu, "pcmu");
@@ -798,7 +801,7 @@ TEST(FecPayloadSplitter, MixedPayload) {
 
 TEST(FecPayloadSplitter, EmbedFecInRed) {
   PacketList packet_list;
-  DecoderDatabase decoder_database;
+  DecoderDatabase decoder_database(CreateBuiltinAudioDecoderFactory());
 
   const int kTimestampOffset = 20 * 48;  // 20 ms * 48 kHz.
   uint8_t payload_types[] = {0, 0};

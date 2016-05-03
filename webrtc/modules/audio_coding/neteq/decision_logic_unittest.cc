@@ -11,6 +11,7 @@
 // Unit tests for DecisionLogic class and derived classes.
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/decision_logic.h"
@@ -24,7 +25,8 @@ namespace webrtc {
 TEST(DecisionLogic, CreateAndDestroy) {
   int fs_hz = 8000;
   int output_size_samples = fs_hz / 100;  // Samples per 10 ms.
-  DecoderDatabase decoder_database;
+  DecoderDatabase decoder_database(
+      std::unique_ptr<MockAudioDecoderFactory>(new MockAudioDecoderFactory));
   TickTimer tick_timer;
   PacketBuffer packet_buffer(10, &tick_timer);
   DelayPeakDetector delay_peak_detector(&tick_timer);

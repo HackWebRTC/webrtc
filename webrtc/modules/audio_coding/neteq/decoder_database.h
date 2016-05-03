@@ -17,6 +17,8 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"  // NULL
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format.h"
 #include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
@@ -47,7 +49,7 @@ class DecoderDatabase {
     ~DecoderInfo();
 
     // Get the AudioDecoder object, creating it first if necessary.
-    AudioDecoder* GetDecoder();
+    AudioDecoder* GetDecoder(AudioDecoderFactory* factory);
 
     // Delete the AudioDecoder object, unless it's external. (This means we can
     // always recreate it later if we need it.)
@@ -59,6 +61,7 @@ class DecoderDatabase {
     AudioDecoder* const external_decoder;
 
    private:
+    const rtc::Optional<SdpAudioFormat> audio_format_;
     std::unique_ptr<AudioDecoder> decoder_;
   };
 
@@ -66,7 +69,7 @@ class DecoderDatabase {
   // only 7 bits).
   static const uint8_t kRtpPayloadTypeError = 0xFF;
 
-  DecoderDatabase();
+  DecoderDatabase(std::unique_ptr<AudioDecoderFactory> decoder_factory);
 
   virtual ~DecoderDatabase();
 
@@ -157,6 +160,7 @@ class DecoderDatabase {
   int active_decoder_type_;
   int active_cng_decoder_type_;
   std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
+  const std::unique_ptr<AudioDecoderFactory> decoder_factory_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
 };

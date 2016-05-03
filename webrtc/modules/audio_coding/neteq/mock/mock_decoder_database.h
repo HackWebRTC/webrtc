@@ -21,6 +21,7 @@ namespace webrtc {
 
 class MockDecoderDatabase : public DecoderDatabase {
  public:
+  MockDecoderDatabase() : DecoderDatabase(nullptr) {}
   virtual ~MockDecoderDatabase() { Die(); }
   MOCK_METHOD0(Die, void());
   MOCK_CONST_METHOD0(Empty,
