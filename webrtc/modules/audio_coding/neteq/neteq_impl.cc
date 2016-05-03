@@ -833,6 +833,11 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame) {
   vad_->Update(decoded_buffer_.get(), static_cast<size_t>(length), speech_type,
                sid_frame_available, fs_hz_);
 
+  if (sid_frame_available || speech_type == AudioDecoder::kComfortNoise) {
+    // Start a new stopwatch since we are decoding a new CNG packet.
+    generated_noise_stopwatch_ = tick_timer_->GetNewStopwatch();
+  }
+
   algorithm_buffer_->Clear();
   switch (operation) {
     case kNormal: {
@@ -1006,6 +1011,12 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame) {
           : timestamp_scaler_->ToExternal(playout_timestamp_) -
                 static_cast<uint32_t>(audio_frame->samples_per_channel_);
 
+  if (!(last_mode_ == kModeRfc3389Cng ||
+      last_mode_ == kModeCodecInternalCng ||
+      last_mode_ == kModeExpand)) {
+    generated_noise_stopwatch_.reset();
+  }
+
   if (decode_return_value) return decode_return_value;
   return return_value;
 }
@@ -1029,14 +1040,22 @@ int NetEqImpl::GetDecision(Operations* operation,
   }
   const RTPHeader* header = packet_buffer_->NextRtpHeader();
 
+  RTC_DCHECK(!generated_noise_stopwatch_ ||
+             generated_noise_stopwatch_->ElapsedTicks() >= 1);
+  uint64_t generated_noise_samples =
+      generated_noise_stopwatch_
+          ? (generated_noise_stopwatch_->ElapsedTicks() - 1) *
+                    output_size_samples_ +
+                decision_logic_->noise_fast_forward()
+          : 0;
+
   if (decision_logic_->CngRfc3389On() || last_mode_ == kModeRfc3389Cng) {
     // Because of timestamp peculiarities, we have to "manually" disallow using
     // a CNG packet with the same timestamp as the one that was last played.
     // This can happen when using redundancy and will cause the timing to shift.
     while (header && decoder_database_->IsComfortNoise(header->payloadType) &&
            (end_timestamp >= header->timestamp ||
-            end_timestamp + decision_logic_->generated_noise_samples() >
-                header->timestamp)) {
+            end_timestamp + generated_noise_samples > header->timestamp)) {
       // Don't use this packet, discard it.
       if (packet_buffer_->DiscardNextPacket() != PacketBuffer::kOK) {
         assert(false);  // Must be ok by design.
@@ -1064,7 +1083,7 @@ int NetEqImpl::GetDecision(Operations* operation,
   // Check if it is time to play a DTMF event.
   if (dtmf_buffer_->GetEvent(
       static_cast<uint32_t>(
-          end_timestamp + decision_logic_->generated_noise_samples()),
+          end_timestamp + generated_noise_samples),
       dtmf_event)) {
     *play_dtmf = true;
   }
@@ -1072,13 +1091,14 @@ int NetEqImpl::GetDecision(Operations* operation,
   // Get instruction.
   assert(sync_buffer_.get());
   assert(expand_.get());
-  *operation = decision_logic_->GetDecision(*sync_buffer_,
-                                            *expand_,
-                                            decoder_frame_length_,
-                                            header,
-                                            last_mode_,
-                                            *play_dtmf,
-                                            &reset_decoder_);
+  generated_noise_samples =
+      generated_noise_stopwatch_
+          ? generated_noise_stopwatch_->ElapsedTicks() * output_size_samples_ +
+                decision_logic_->noise_fast_forward()
+          : 0;
+  *operation = decision_logic_->GetDecision(
+      *sync_buffer_, *expand_, decoder_frame_length_, header, last_mode_,
+      *play_dtmf, generated_noise_samples, &reset_decoder_);
 
   // Check if we already have enough samples in the |sync_buffer_|. If so,
   // change decision to normal, unless the decision was merge, accelerate, or
@@ -1151,15 +1171,19 @@ int NetEqImpl::GetDecision(Operations* operation,
       // TODO(hlundin): Write test for this.
       // Update timestamp.
       timestamp_ = end_timestamp;
-      if (decision_logic_->generated_noise_samples() > 0 &&
-          last_mode_ != kModeDtmf) {
+      const uint64_t generated_noise_samples =
+          generated_noise_stopwatch_
+              ? generated_noise_stopwatch_->ElapsedTicks() *
+                        output_size_samples_ +
+                    decision_logic_->noise_fast_forward()
+              : 0;
+      if (generated_noise_samples > 0 && last_mode_ != kModeDtmf) {
         // Make a jump in timestamp due to the recently played comfort noise.
         uint32_t timestamp_jump =
-            static_cast<uint32_t>(decision_logic_->generated_noise_samples());
+            static_cast<uint32_t>(generated_noise_samples);
         sync_buffer_->IncreaseEndTimestamp(timestamp_jump);
         timestamp_ += timestamp_jump;
       }
-      decision_logic_->set_generated_noise_samples(0);
       return 0;
     }
     case kAccelerate:
@@ -1242,9 +1266,6 @@ int NetEqImpl::GetDecision(Operations* operation,
       // We are about to decode and use a non-CNG packet.
       decision_logic_->SetCngOff();
     }
-    // Reset CNG timestamp as a new packet will be delivered.
-    // (Also if this is a CNG packet, since playedOutTS is updated.)
-    decision_logic_->set_generated_noise_samples(0);
 
     extracted_samples = ExtractPackets(required_samples, packet_list);
     if (extracted_samples < 0) {
@@ -1577,6 +1598,12 @@ int NetEqImpl::DoExpand(bool play_dtmf) {
   if (!play_dtmf) {
     dtmf_tone_generator_->Reset();
   }
+
+  if (!generated_noise_stopwatch_) {
+    // Start a new stopwatch since we may be covering for a lost CNG packet.
+    generated_noise_stopwatch_ = tick_timer_->GetNewStopwatch();
+  }
+
   return 0;
 }
 

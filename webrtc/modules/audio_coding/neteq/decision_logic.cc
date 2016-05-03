@@ -67,7 +67,6 @@ DecisionLogic::DecisionLogic(int fs_hz,
       delay_manager_(delay_manager),
       buffer_level_filter_(buffer_level_filter),
       cng_state_(kCngOff),
-      generated_noise_samples_(0),
       packet_length_samples_(0),
       sample_memory_(0),
       prev_time_scale_(false),
@@ -80,7 +79,7 @@ DecisionLogic::DecisionLogic(int fs_hz,
 
 void DecisionLogic::Reset() {
   cng_state_ = kCngOff;
-  generated_noise_samples_ = 0;
+  noise_fast_forward_ = 0;
   packet_length_samples_ = 0;
   sample_memory_ = 0;
   prev_time_scale_ = false;
@@ -107,15 +106,15 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
                                       size_t decoder_frame_length,
                                       const RTPHeader* packet_header,
                                       Modes prev_mode,
-                                      bool play_dtmf, bool* reset_decoder) {
+                                      bool play_dtmf,
+                                      size_t generated_noise_samples,
+                                      bool* reset_decoder) {
   if (prev_mode == kModeRfc3389Cng ||
       prev_mode == kModeCodecInternalCng ||
       prev_mode == kModeExpand) {
     // If last mode was CNG (or Expand, since this could be covering up for
-    // a lost CNG packet), increase the |generated_noise_samples_| counter.
-    generated_noise_samples_ += output_size_samples_;
-    // Remember that CNG is on. This is needed if comfort noise is interrupted
-    // by DTMF.
+    // a lost CNG packet), remember that CNG is on. This is needed if comfort
+    // noise is interrupted by DTMF.
     if (prev_mode == kModeRfc3389Cng) {
       cng_state_ = kCngRfc3389On;
     } else if (prev_mode == kModeCodecInternalCng) {
@@ -139,7 +138,7 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
 
   return GetDecisionSpecialized(sync_buffer, expand, decoder_frame_length,
                                 packet_header, prev_mode, play_dtmf,
-                                reset_decoder);
+                                reset_decoder, generated_noise_samples);
 }
 
 void DecisionLogic::ExpandDecision(Operations operation) {

@@ -79,6 +79,7 @@ class DecisionLogic {
                          const RTPHeader* packet_header,
                          Modes prev_mode,
                          bool play_dtmf,
+                         size_t generated_noise_samples,
                          bool* reset_decoder);
 
   // These methods test the |cng_state_| for different conditions.
@@ -101,10 +102,7 @@ class DecisionLogic {
 
   // Accessors and mutators.
   void set_sample_memory(int32_t value) { sample_memory_ = value; }
-  size_t generated_noise_samples() const { return generated_noise_samples_; }
-  void set_generated_noise_samples(size_t value) {
-    generated_noise_samples_ = value;
-  }
+  size_t noise_fast_forward() const { return noise_fast_forward_; }
   size_t packet_length_samples() const { return packet_length_samples_; }
   void set_packet_length_samples(size_t value) {
     packet_length_samples_ = value;
@@ -138,7 +136,8 @@ class DecisionLogic {
                                             const RTPHeader* packet_header,
                                             Modes prev_mode,
                                             bool play_dtmf,
-                                            bool* reset_decoder) = 0;
+                                            bool* reset_decoder,
+                                            size_t generated_noise_samples) = 0;
 
   // Updates the |buffer_level_filter_| with the current buffer level
   // |buffer_size_packets|.
@@ -152,7 +151,7 @@ class DecisionLogic {
   size_t output_size_samples_;
   CngState cng_state_;  // Remember if comfort noise is interrupted by other
                         // event (e.g., DTMF).
-  size_t generated_noise_samples_;
+  size_t noise_fast_forward_ = 0;
   size_t packet_length_samples_;
   int sample_memory_;
   bool prev_time_scale_;

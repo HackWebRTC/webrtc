@@ -405,6 +405,8 @@ class NetEqImpl : public webrtc::NetEq {
   bool nack_enabled_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity last_vad_activity_ GUARDED_BY(crit_sect_) =
       AudioFrame::kVadPassive;
+  std::unique_ptr<TickTimer::Stopwatch> generated_noise_stopwatch_
+      GUARDED_BY(crit_sect_);
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);
