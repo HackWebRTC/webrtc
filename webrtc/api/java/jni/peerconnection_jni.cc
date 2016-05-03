@@ -771,14 +771,14 @@ class JavaVideoRendererWrapper
         const_cast<uint8_t*>(frame->video_frame_buffer()->DataY()),
         frame->video_frame_buffer()->StrideY() *
             frame->video_frame_buffer()->height());
-    size_t chroma_size =
-      ((frame->width() + 1) / 2) * ((frame->height() + 1) / 2);
+    size_t chroma_height = (frame->height() + 1) / 2;
     jobject u_buffer = jni()->NewDirectByteBuffer(
         const_cast<uint8_t*>(frame->video_frame_buffer()->DataU()),
-        chroma_size);
+        frame->video_frame_buffer()->StrideU() * chroma_height);
     jobject v_buffer = jni()->NewDirectByteBuffer(
         const_cast<uint8_t*>(frame->video_frame_buffer()->DataV()),
-        chroma_size);
+        frame->video_frame_buffer()->StrideV() * chroma_height);
+
     jni()->SetObjectArrayElement(planes, 0, y_buffer);
     jni()->SetObjectArrayElement(planes, 1, u_buffer);
     jni()->SetObjectArrayElement(planes, 2, v_buffer);
@@ -1888,7 +1888,7 @@ JOW(void, VideoRenderer_nativeCopyPlane)(
   RTC_CHECK(src_size >= src_stride * height)
       << "Insufficient source buffer capacity " << src_size;
   RTC_CHECK(dst_size >= dst_stride * height)
-      << "Isufficient destination buffer capacity " << dst_size;
+      << "Insufficient destination buffer capacity " << dst_size;
   uint8_t *src =
       reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_src_buffer));
   uint8_t *dst =
