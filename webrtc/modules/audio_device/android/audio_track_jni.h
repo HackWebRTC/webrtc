@@ -144,7 +144,7 @@ class AudioTrackJni {
   bool playing_;
 
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
-  // AudioDeviceModuleImpl class and called by AudioDeviceModuleImpl::Create().
+  // AudioDeviceModuleImpl class and called by AudioDeviceModule::Create().
   // The AudioDeviceBuffer is a member of the AudioDeviceModuleImpl instance
   // and therefore outlives this object.
   AudioDeviceBuffer* audio_device_buffer_;

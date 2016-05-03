@@ -153,75 +153,75 @@ class AudioDeviceAPITest: public testing::Test {
     const int32_t kId = 444;
 
 #if defined(_WIN32)
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kLinuxAlsaAudio)) == NULL);
 #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     TEST_LOG("WEBRTC_WINDOWS_CORE_AUDIO_BUILD is defined!\n\n");
     // create default implementation (=Core Audio) instance
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
     EXPECT_EQ(0, audio_device_.release()->Release());
     // create non-default (=Wave Audio) instance
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsWaveAudio)) != NULL);
     EXPECT_EQ(0, audio_device_.release()->Release());
     // explicitly specify usage of Core Audio (same as default)
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsCoreAudio)) != NULL);
 #else
     TEST_LOG("WEBRTC_WINDOWS_CORE_AUDIO_BUILD is *not* defined!\n");
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
     // create default implementation (=Wave Audio) instance
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
     EXPECT_EQ(0, audio_device_.release()->Release());
     // explicitly specify usage of Wave Audio (same as default)
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsWaveAudio)) != NULL);
 #endif
 #endif
 
 #if defined(ANDROID)
     // Fails tests
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsWaveAudio)) == NULL);
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kLinuxAlsaAudio)) == NULL);
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kLinuxPulseAudio)) == NULL);
     // Create default implementation instance
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
 #elif defined(WEBRTC_LINUX)
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsWaveAudio)) == NULL);
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
     // create default implementation instance
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
     EXPECT_EQ(0, audio_device_->Terminate());
     EXPECT_EQ(0, audio_device_.release()->Release());
     // explicitly specify usage of Pulse Audio (same as default)
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kLinuxPulseAudio)) != NULL);
 #endif
 
 #if defined(WEBRTC_MAC)
     // Fails tests
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsWaveAudio)) == NULL);
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kLinuxAlsaAudio)) == NULL);
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kLinuxPulseAudio)) == NULL);
     // Create default implementation instance
-    EXPECT_TRUE((audio_device_ = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((audio_device_ = AudioDeviceModule::Create(
                 kId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
 #endif
 

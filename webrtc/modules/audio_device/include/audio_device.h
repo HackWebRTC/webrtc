@@ -11,6 +11,7 @@
 #ifndef MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 #define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/include/module.h"
 
@@ -51,6 +52,11 @@ class AudioDeviceModule : public RefCountedModule {
   };
 
  public:
+  // Create an ADM.
+  static rtc::scoped_refptr<AudioDeviceModule> Create(
+      const int32_t id,
+      const AudioLayer audio_layer);
+
   // Retrieve the currently utilized audio layer
   virtual int32_t ActiveAudioLayer(AudioLayer* audioLayer) const = 0;
 

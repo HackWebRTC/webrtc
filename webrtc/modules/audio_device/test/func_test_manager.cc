@@ -602,7 +602,7 @@ int32_t FuncTestManager::Init()
     _processThread->Start();
 
     // create the Audio Device module
-    EXPECT_TRUE((_audioDevice = AudioDeviceModuleImpl::Create(
+    EXPECT_TRUE((_audioDevice = AudioDeviceModule::Create(
         555, ADM_AUDIO_LAYER)) != NULL);
     if (_audioDevice == NULL)
     {
@@ -842,12 +842,12 @@ int32_t FuncTestManager::TestAudioLayerSelection()
         // create the Audio Device module based on selected audio layer
         if (tryWinWave)
         {
-            _audioDevice = AudioDeviceModuleImpl::Create(
+            _audioDevice = AudioDeviceModule::Create(
                 555,
                 AudioDeviceModule::kWindowsWaveAudio);
         } else if (tryWinCore)
         {
-            _audioDevice = AudioDeviceModuleImpl::Create(
+            _audioDevice = AudioDeviceModule::Create(
                 555,
                 AudioDeviceModule::kWindowsCoreAudio);
         }
@@ -856,7 +856,7 @@ int32_t FuncTestManager::TestAudioLayerSelection()
         {
             TEST_LOG("\nERROR: Switch of audio layer failed!\n");
             // restore default audio layer instead
-            EXPECT_TRUE((_audioDevice = AudioDeviceModuleImpl::Create(
+            EXPECT_TRUE((_audioDevice = AudioDeviceModule::Create(
                 555, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
         }
 

@@ -562,7 +562,7 @@ class AudioDeviceTest : public ::testing::Test {
   rtc::scoped_refptr<AudioDeviceModule> CreateAudioDevice(
       AudioDeviceModule::AudioLayer audio_layer) {
     rtc::scoped_refptr<AudioDeviceModule> module(
-        AudioDeviceModuleImpl::Create(0, audio_layer));
+        AudioDeviceModule::Create(0, audio_layer));
     return module;
   }
 

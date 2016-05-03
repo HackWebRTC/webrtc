@@ -76,12 +76,12 @@ namespace webrtc {
 //  AudioDeviceModule::Create()
 // ----------------------------------------------------------------------------
 
-rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModuleImpl::Create(
+rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
     const int32_t id,
-    const AudioLayer audioLayer) {
+    const AudioLayer audio_layer) {
     // Create the generic ref counted (platform independent) implementation.
     rtc::scoped_refptr<AudioDeviceModuleImpl> audioDevice(
-        new rtc::RefCountedObject<AudioDeviceModuleImpl>(id, audioLayer));
+        new rtc::RefCountedObject<AudioDeviceModuleImpl>(id, audio_layer));
 
     // Ensure that the current platform is supported.
     if (audioDevice->CheckPlatform() == -1)

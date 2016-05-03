@@ -132,7 +132,7 @@ class OpenSLESPlayer {
   const AudioParameters audio_parameters_;
 
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
-  // AudioDeviceModuleImpl class and called by AudioDeviceModuleImpl::Create().
+  // AudioDeviceModuleImpl class and called by AudioDeviceModule::Create().
   AudioDeviceBuffer* audio_device_buffer_;
 
   bool initialized_;

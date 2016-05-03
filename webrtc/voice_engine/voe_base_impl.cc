@@ -229,7 +229,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
     return -1;
 #else
     // Create the internal ADM implementation.
-    shared_->set_audio_device(AudioDeviceModuleImpl::Create(
+    shared_->set_audio_device(AudioDeviceModule::Create(
         VoEId(shared_->instance_id(), -1), shared_->audio_device_layer()));
 
     if (shared_->audio_device() == nullptr) {
