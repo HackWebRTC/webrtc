@@ -248,7 +248,7 @@ void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
   memset(moving_object_.get(), 1, mb_cols_ * mb_rows_);
 
   uint8_t noise_level = noise_estimation_enabled ? ne_->GetNoiseLevel() : 0;
-  int thr_var_base = 16 * 16 * 5;
+  int thr_var_base = 16 * 16 * 2;
   // Loop over blocks to accumulate/extract noise level and update x/y_density
   // factors for moving object detection.
   for (int mb_row = 0; mb_row < mb_rows_; ++mb_row) {

@@ -23,7 +23,7 @@ namespace webrtc {
 #define DISPLAY 0      // Rectangle diagnostics
 #define DISPLAYNEON 0  // Rectangle diagnostics on NEON
 
-const int kNoiseThreshold = 200;
+const int kNoiseThreshold = 150;
 const int kNoiseThresholdNeon = 70;
 const int kConsecLowVarFrame = 6;
 const int kAverageLumaMin = 20;

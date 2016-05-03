@@ -14,6 +14,8 @@
 
 namespace webrtc {
 
+const int kSumDiffThresholdHighNeon = 600;
+
 static int HorizontalAddS16x8(const int16x8_t v_16x8) {
   const int32x4_t a = vpaddlq_s16(v_16x8);
   const int64x2_t b = vpaddlq_s32(a);
@@ -179,7 +181,7 @@ DenoiserDecision DenoiserFilterNEON::MbDenoise(uint8_t* mc_running_avg_y,
                           vget_low_s64(v_sum_diff_total));
   int sum_diff = vget_lane_s32(vabs_s32(vreinterpret_s32_s64(x)), 0);
   sum_diff_thresh =
-      increase_denoising ? kSumDiffThresholdHigh : kSumDiffThreshold;
+      increase_denoising ? kSumDiffThresholdHighNeon : kSumDiffThreshold;
   if (sum_diff > sum_diff_thresh)
     return COPY_BLOCK;
 
