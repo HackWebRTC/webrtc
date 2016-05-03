@@ -47,6 +47,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     RtpPacketSender* paced_sender,
     TransportSequenceNumberAllocator* transport_sequence_number_allocator,
     SendStatisticsProxy* stats_proxy,
+    SendDelayStats* send_delay_stats,
     size_t num_modules) {
   RTC_DCHECK_GT(num_modules, 0u);
   RtpRtcp::Configuration configuration;
@@ -64,6 +65,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
   configuration.send_bitrate_observer = stats_proxy;
   configuration.send_frame_count_observer = stats_proxy;
   configuration.send_side_delay_observer = stats_proxy;
+  configuration.send_packet_observer = send_delay_stats;
   configuration.bandwidth_callback = bandwidth_callback;
   configuration.transport_feedback_callback = transport_feedback_callback;
 
@@ -348,6 +350,7 @@ VideoSendStream::VideoSendStream(
     CallStats* call_stats,
     CongestionController* congestion_controller,
     BitrateAllocator* bitrate_allocator,
+    SendDelayStats* send_delay_stats,
     VieRemb* remb,
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
@@ -391,6 +394,7 @@ VideoSendStream::VideoSendStream(
           congestion_controller_->pacer(),
           congestion_controller_->packet_router(),
           &stats_proxy_,
+          send_delay_stats,
           config_.rtp.ssrcs.size())),
       payload_router_(rtp_rtcp_modules_, config.encoder_settings.payload_type),
       input_(&encoder_wakeup_event_,

@@ -168,6 +168,7 @@
         'video/overuse_frame_detector_unittest.cc',
         'video/payload_router_unittest.cc',
         'video/report_block_stats_unittest.cc',
+        'video/send_delay_stats_unittest.cc',
         'video/send_statistics_proxy_unittest.cc',
         'video/stream_synchronization_unittest.cc',
         'video/video_capture_input_unittest.cc',

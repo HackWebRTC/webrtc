@@ -40,6 +40,8 @@
       'video/report_block_stats.h',
       'video/rtp_stream_receiver.cc',
       'video/rtp_stream_receiver.h',
+      'video/send_delay_stats.cc',
+      'video/send_delay_stats.h',
       'video/send_statistics_proxy.cc',
       'video/send_statistics_proxy.h',
       'video/stream_synchronization.cc',

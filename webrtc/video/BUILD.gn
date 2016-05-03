@@ -26,6 +26,8 @@ source_set("video") {
     "report_block_stats.h",
     "rtp_stream_receiver.cc",
     "rtp_stream_receiver.h",
+    "send_delay_stats.cc",
+    "send_delay_stats.h",
     "send_statistics_proxy.cc",
     "send_statistics_proxy.h",
     "stream_synchronization.cc",

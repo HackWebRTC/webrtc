@@ -122,6 +122,11 @@ class MockTransportSequenceNumberAllocator
   MOCK_METHOD0(AllocateSequenceNumber, uint16_t());
 };
 
+class MockSendPacketObserver : public SendPacketObserver {
+ public:
+  MOCK_METHOD3(OnSendPacket, void(uint16_t, int64_t, uint32_t));
+};
+
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
@@ -137,10 +142,10 @@ class RtpSenderTest : public ::testing::Test {
   void SetUp() override { SetUpRtpSender(true); }
 
   void SetUpRtpSender(bool pacer) {
-    rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_,
-                                    pacer ? &mock_paced_sender_ : nullptr,
-                                    &seq_num_allocator_, nullptr, nullptr,
-                                    nullptr, nullptr, &mock_rtc_event_log_));
+    rtp_sender_.reset(new RTPSender(
+        false, &fake_clock_, &transport_, pacer ? &mock_paced_sender_ : nullptr,
+        &seq_num_allocator_, nullptr, nullptr, nullptr, nullptr,
+        &mock_rtc_event_log_, &send_packet_observer_));
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
 
@@ -148,6 +153,7 @@ class RtpSenderTest : public ::testing::Test {
   MockRtcEventLog mock_rtc_event_log_;
   MockRtpPacketSender mock_paced_sender_;
   MockTransportSequenceNumberAllocator seq_num_allocator_;
+  MockSendPacketObserver send_packet_observer_;
   std::unique_ptr<RTPSender> rtp_sender_;
   int payload_;
   LoopbackTransportTest transport_;
@@ -184,6 +190,20 @@ class RtpSenderTest : public ::testing::Test {
     EXPECT_EQ(0, rtp_sender_->SendToNetwork(
                      packet_, payload_length, rtp_length, capture_time_ms,
                      kAllowRetransmission, RtpPacketSender::kNormalPriority));
+  }
+
+  void SendGenericPayload() {
+    const uint8_t kPayload[] = {47, 11, 32, 93, 89};
+    const uint32_t kTimestamp = 1234;
+    const uint8_t kPayloadType = 127;
+    const int64_t kCaptureTimeMs = fake_clock_.TimeInMilliseconds();
+    char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+    EXPECT_EQ(0, rtp_sender_->RegisterPayload(payload_name, kPayloadType, 90000,
+                                              0, 1500));
+
+    EXPECT_EQ(0, rtp_sender_->SendOutgoingData(
+                     kVideoFrameKey, kPayloadType, kTimestamp, kCaptureTimeMs,
+                     kPayload, sizeof(kPayload), nullptr));
   }
 };
 
@@ -479,21 +499,13 @@ TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));
 
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
-  const uint8_t payload_type = 127;
-  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
-                                            0, 1500));
-  // Create a dummy payload of 5 bytes.
-  uint8_t payload[] = {47, 11, 32, 93, 89};
-
-  const uint16_t kTransportSequenceNumber = 17;
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
       .WillOnce(testing::Return(kTransportSequenceNumber));
-  const uint32_t kTimestamp = 1234;
-  const int64_t kCaptureTimeMs = 4321;
-  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(
-                   kVideoFrameKey, payload_type, kTimestamp, kCaptureTimeMs,
-                   payload, sizeof(payload), nullptr));
+  EXPECT_CALL(send_packet_observer_,
+              OnSendPacket(kTransportSequenceNumber, _, _))
+      .Times(1);
+
+  SendGenericPayload();
 
   RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
                                          transport_.last_sent_packet_len_);
@@ -507,6 +519,19 @@ TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
             rtp_header.extension.transportSequenceNumber);
   EXPECT_EQ(transport_.last_packet_id_,
             rtp_header.extension.transportSequenceNumber);
+}
+
+TEST_F(RtpSenderTestWithoutPacer, OnSendPacketUpdated) {
+  EXPECT_CALL(mock_rtc_event_log_,  // Ignore rtc event calls.
+              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _));
+
+  EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
+      .WillOnce(testing::Return(kTransportSequenceNumber));
+  EXPECT_CALL(send_packet_observer_,
+              OnSendPacket(kTransportSequenceNumber, _, _))
+      .Times(1);
+
+  SendGenericPayload();
 }
 
 // Test CVO header extension is only set when marker bit is true.
@@ -947,11 +972,66 @@ TEST_F(RtpSenderTest, SendPadding) {
   EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
 }
 
+TEST_F(RtpSenderTest, OnSendPacketUpdated) {
+  EXPECT_CALL(mock_rtc_event_log_,  // Ignore rtc event calls.
+              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _));
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+
+  EXPECT_CALL(send_packet_observer_,
+              OnSendPacket(kTransportSequenceNumber, _, _))
+      .Times(1);
+  EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
+      .WillOnce(testing::Return(kTransportSequenceNumber));
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(_, _, _, _, _, _)).Times(1);
+
+  SendGenericPayload();  // Packet passed to pacer.
+  const bool kIsRetransmit = false;
+  rtp_sender_->TimeToSendPacket(kSeqNum, fake_clock_.TimeInMilliseconds(),
+                                kIsRetransmit);
+  EXPECT_EQ(1, transport_.packets_sent_);
+}
+
+TEST_F(RtpSenderTest, OnSendPacketNotUpdatedForRetransmits) {
+  EXPECT_CALL(mock_rtc_event_log_,  // Ignore rtc event calls.
+              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _));
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+
+  EXPECT_CALL(send_packet_observer_, OnSendPacket(_, _, _)).Times(0);
+  EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
+      .WillOnce(testing::Return(kTransportSequenceNumber));
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(_, _, _, _, _, _)).Times(1);
+
+  SendGenericPayload();  // Packet passed to pacer.
+  const bool kIsRetransmit = true;
+  rtp_sender_->TimeToSendPacket(kSeqNum, fake_clock_.TimeInMilliseconds(),
+                                kIsRetransmit);
+  EXPECT_EQ(1, transport_.packets_sent_);
+}
+
+TEST_F(RtpSenderTest, OnSendPacketNotUpdatedWithoutSeqNumAllocator) {
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, &mock_paced_sender_,
+      nullptr /* TransportSequenceNumberAllocator */, nullptr, nullptr, nullptr,
+      nullptr, nullptr, &send_packet_observer_));
+  rtp_sender_->SetSequenceNumber(kSeqNum);
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+
+  EXPECT_CALL(send_packet_observer_, OnSendPacket(_, _, _)).Times(0);
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(_, _, _, _, _, _)).Times(1);
+
+  SendGenericPayload();  // Packet passed to pacer.
+  const bool kIsRetransmit = false;
+  rtp_sender_->TimeToSendPacket(kSeqNum, fake_clock_.TimeInMilliseconds(),
+                                kIsRetransmit);
+  EXPECT_EQ(1, transport_.packets_sent_);
+}
+
 TEST_F(RtpSenderTest, SendRedundantPayloads) {
   MockTransport transport;
   rtp_sender_.reset(new RTPSender(
-      false, &fake_clock_, &transport, &mock_paced_sender_, nullptr,
-      nullptr, nullptr, nullptr, nullptr, &mock_rtc_event_log_));
+      false, &fake_clock_, &transport, &mock_paced_sender_, nullptr, nullptr,
+      nullptr, nullptr, nullptr, &mock_rtc_event_log_, nullptr));
+
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
 
@@ -1092,9 +1172,9 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
     FrameCounts frame_counts_;
   } callback;
 
-  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_,
-                                  &mock_paced_sender_, nullptr, nullptr,
-                                  nullptr, &callback, nullptr, nullptr));
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, &mock_paced_sender_, nullptr, nullptr,
+      nullptr, &callback, nullptr, nullptr, nullptr));
 
   char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
   const uint8_t payload_type = 127;
@@ -1148,8 +1228,8 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
     BitrateStatistics total_stats_;
     BitrateStatistics retransmit_stats_;
   } callback;
-  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_,
-                                  nullptr, nullptr, nullptr, &callback, nullptr,
+  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_, nullptr,
+                                  nullptr, nullptr, &callback, nullptr, nullptr,
                                   nullptr, nullptr));
 
   // Simulate kNumPackets sent with kPacketInterval ms intervals.
@@ -1201,7 +1281,7 @@ class RtpSenderAudioTest : public RtpSenderTest {
 
   void SetUp() override {
     payload_ = kAudioPayload;
-    rtp_sender_.reset(new RTPSender(true, &fake_clock_, &transport_,
+    rtp_sender_.reset(new RTPSender(true, &fake_clock_, &transport_, nullptr,
                                     nullptr, nullptr, nullptr, nullptr, nullptr,
                                     nullptr, nullptr));
     rtp_sender_->SetSequenceNumber(kSeqNum);

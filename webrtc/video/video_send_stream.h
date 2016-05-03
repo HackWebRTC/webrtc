@@ -22,6 +22,7 @@
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/encoder_state_feedback.h"
 #include "webrtc/video/payload_router.h"
+#include "webrtc/video/send_delay_stats.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/video_capture_input.h"
 #include "webrtc/video/vie_channel.h"
@@ -57,6 +58,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   CallStats* call_stats,
                   CongestionController* congestion_controller,
                   BitrateAllocator* bitrate_allocator,
+                  SendDelayStats* send_delay_stats,
                   VieRemb* remb,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,

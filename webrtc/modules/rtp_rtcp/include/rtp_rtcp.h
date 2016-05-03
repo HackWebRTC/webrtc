@@ -78,7 +78,7 @@ class RtpRtcp : public Module {
     FrameCountObserver* send_frame_count_observer;
     SendSideDelayObserver* send_side_delay_observer;
     RtcEventLog* event_log;
-
+    SendPacketObserver* send_packet_observer;
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
   };
 

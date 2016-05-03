@@ -2176,6 +2176,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SendSideDelayInMs"));
   EXPECT_EQ(1,
             test::NumHistogramSamples(video_prefix + "SendSideDelayMaxInMs"));
+  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SendDelayInMs"));
 
   int num_rtx_samples = use_rtx ? 1 : 0;
   EXPECT_EQ(num_rtx_samples, test::NumHistogramSamples(

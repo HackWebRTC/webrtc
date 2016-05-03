@@ -97,7 +97,9 @@ class RTPSender : public RTPSenderInterface {
             BitrateStatisticsObserver* bitrate_callback,
             FrameCountObserver* frame_count_observer,
             SendSideDelayObserver* send_side_delay_observer,
-            RtcEventLog* event_log);
+            RtcEventLog* event_log,
+            SendPacketObserver* send_packet_observer);
+
   virtual ~RTPSender();
 
   void ProcessBitrate();
@@ -353,6 +355,9 @@ class RTPSender : public RTPSenderInterface {
                            const PacketOptions& options);
 
   void UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms);
+  void UpdateOnSendPacket(int packet_id,
+                          int64_t capture_time_ms,
+                          uint32_t ssrc);
 
   // Find the byte position of the RTP extension as indicated by |type| in
   // |rtp_packet|. Return false if such extension doesn't exist.
@@ -370,12 +375,13 @@ class RTPSender : public RTPSenderInterface {
                               size_t rtp_packet_length,
                               const RTPHeader& rtp_header,
                               int64_t now_ms) const;
-  // Update the transport sequence number of the packet using a new sequence
-  // number allocated by SequenceNumberAllocator. Returns the assigned sequence
-  // number, or 0 if extension could not be updated.
-  uint16_t UpdateTransportSequenceNumber(uint8_t* rtp_packet,
-                                         size_t rtp_packet_length,
-                                         const RTPHeader& rtp_header) const;
+
+  bool UpdateTransportSequenceNumber(uint16_t sequence_number,
+                                     uint8_t* rtp_packet,
+                                     size_t rtp_packet_length,
+                                     const RTPHeader& rtp_header) const;
+
+  bool AllocateTransportSequenceNumber(int* packet_id) const;
 
   void UpdateRtpStats(const uint8_t* buffer,
                       size_t packet_length,
@@ -465,6 +471,7 @@ class RTPSender : public RTPSenderInterface {
   FrameCountObserver* const frame_count_observer_;
   SendSideDelayObserver* const send_side_delay_observer_;
   RtcEventLog* const event_log_;
+  SendPacketObserver* const send_packet_observer_;
 
   // RTP variables
   bool start_timestamp_forced_ GUARDED_BY(send_critsect_);

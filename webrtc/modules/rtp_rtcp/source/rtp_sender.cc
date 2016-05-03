@@ -113,7 +113,8 @@ RTPSender::RTPSender(
     BitrateStatisticsObserver* bitrate_callback,
     FrameCountObserver* frame_count_observer,
     SendSideDelayObserver* send_side_delay_observer,
-    RtcEventLog* event_log)
+    RtcEventLog* event_log,
+    SendPacketObserver* send_packet_observer)
     : clock_(clock),
       // TODO(holmer): Remove this conversion when we remove the use of
       // TickTime.
@@ -150,6 +151,7 @@ RTPSender::RTPSender(
       frame_count_observer_(frame_count_observer),
       send_side_delay_observer_(send_side_delay_observer),
       event_log_(event_log),
+      send_packet_observer_(send_packet_observer),
       // RTP variables
       start_timestamp_forced_(false),
       start_timestamp_(0),
@@ -672,13 +674,13 @@ size_t RTPSender::SendPadData(size_t bytes,
     UpdateAbsoluteSendTime(padding_packet, length, rtp_header, now_ms);
 
     PacketOptions options;
-    if (using_transport_seq) {
-      options.packet_id =
-          UpdateTransportSequenceNumber(padding_packet, length, rtp_header);
-    }
-
-    if (using_transport_seq && transport_feedback_observer_) {
-      transport_feedback_observer_->AddPacket(options.packet_id, length, true);
+    if (AllocateTransportSequenceNumber(&options.packet_id)) {
+      if (UpdateTransportSequenceNumber(options.packet_id, padding_packet,
+                                        length, rtp_header)) {
+        if (transport_feedback_observer_)
+          transport_feedback_observer_->AddPacket(options.packet_id, length,
+                                                  true);
+      }
     }
 
     if (!SendPacketToNetwork(padding_packet, length, options))
@@ -883,9 +885,7 @@ bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
     // Packet cannot be found. Allow sending to continue.
     return true;
   }
-  if (!retransmission && capture_time_ms > 0) {
-    UpdateDelayStatistics(capture_time_ms, clock_->TimeInMilliseconds());
-  }
+
   int rtx;
   {
     rtc::CritScope lock(&send_critsect_);
@@ -929,19 +929,19 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
                                diff_ms);
   UpdateAbsoluteSendTime(buffer_to_send_ptr, length, rtp_header, now_ms);
 
-  // TODO(sprang): Potentially too much overhead in IsRegistered()?
-  bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
-                                 kRtpExtensionTransportSequenceNumber) &&
-                             transport_sequence_number_allocator_;
-
   PacketOptions options;
-  if (using_transport_seq) {
-    options.packet_id =
-        UpdateTransportSequenceNumber(buffer_to_send_ptr, length, rtp_header);
+  if (AllocateTransportSequenceNumber(&options.packet_id)) {
+    if (UpdateTransportSequenceNumber(options.packet_id, buffer_to_send_ptr,
+                                      length, rtp_header)) {
+      if (transport_feedback_observer_)
+        transport_feedback_observer_->AddPacket(options.packet_id, length,
+                                                true);
+    }
   }
 
-  if (using_transport_seq && transport_feedback_observer_) {
-    transport_feedback_observer_->AddPacket(options.packet_id, length, true);
+  if (!is_retransmit && !send_over_rtx) {
+    UpdateDelayStatistics(capture_time_ms, now_ms);
+    UpdateOnSendPacket(options.packet_id, capture_time_ms, rtp_header.ssrc);
   }
 
   bool ret = SendPacketToNetwork(buffer_to_send_ptr, length, options);
@@ -1058,23 +1058,18 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
     }
     return 0;
   }
-  if (capture_time_ms > 0) {
-    UpdateDelayStatistics(capture_time_ms, now_ms);
-  }
-
-  // TODO(sprang): Potentially too much overhead in IsRegistered()?
-  bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
-                                 kRtpExtensionTransportSequenceNumber) &&
-                             transport_sequence_number_allocator_;
 
   PacketOptions options;
-  if (using_transport_seq) {
-    options.packet_id =
-        UpdateTransportSequenceNumber(buffer, length, rtp_header);
-    if (transport_feedback_observer_) {
-      transport_feedback_observer_->AddPacket(options.packet_id, length, true);
+  if (AllocateTransportSequenceNumber(&options.packet_id)) {
+    if (UpdateTransportSequenceNumber(options.packet_id, buffer, length,
+                                      rtp_header)) {
+      if (transport_feedback_observer_)
+        transport_feedback_observer_->AddPacket(options.packet_id, length,
+                                                true);
     }
   }
+  UpdateDelayStatistics(capture_time_ms, now_ms);
+  UpdateOnSendPacket(options.packet_id, capture_time_ms, rtp_header.ssrc);
 
   bool sent = SendPacketToNetwork(buffer, length, options);
 
@@ -1095,7 +1090,7 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
 }
 
 void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
-  if (!send_side_delay_observer_)
+  if (!send_side_delay_observer_ || capture_time_ms <= 0)
     return;
 
   uint32_t ssrc;
@@ -1125,6 +1120,15 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
   }
   send_side_delay_observer_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms,
                                                   ssrc);
+}
+
+void RTPSender::UpdateOnSendPacket(int packet_id,
+                                   int64_t capture_time_ms,
+                                   uint32_t ssrc) {
+  if (!send_packet_observer_ || capture_time_ms <= 0 || packet_id == -1)
+    return;
+
+  send_packet_observer_->OnSendPacket(packet_id, capture_time_ms, ssrc);
 }
 
 void RTPSender::ProcessBitrate() {
@@ -1610,7 +1614,8 @@ void RTPSender::UpdateAbsoluteSendTime(uint8_t* rtp_packet,
                                           ConvertMsTo24Bits(now_ms));
 }
 
-uint16_t RTPSender::UpdateTransportSequenceNumber(
+bool RTPSender::UpdateTransportSequenceNumber(
+    uint16_t sequence_number,
     uint8_t* rtp_packet,
     size_t rtp_packet_length,
     const RTPHeader& rtp_header) const {
@@ -1621,19 +1626,26 @@ uint16_t RTPSender::UpdateTransportSequenceNumber(
                           rtp_packet_length, rtp_header,
                           kTransportSequenceNumberLength, &offset)) {
     case ExtensionStatus::kNotRegistered:
-      return 0;
+      return false;
     case ExtensionStatus::kError:
       LOG(LS_WARNING) << "Failed to update transport sequence number";
-      return 0;
+      return false;
     case ExtensionStatus::kOk:
       break;
     default:
       RTC_NOTREACHED();
   }
 
-  uint16_t seq = transport_sequence_number_allocator_->AllocateSequenceNumber();
-  BuildTransportSequenceNumberExtension(rtp_packet + offset, seq);
-  return seq;
+  BuildTransportSequenceNumberExtension(rtp_packet + offset, sequence_number);
+  return true;
+}
+
+bool RTPSender::AllocateTransportSequenceNumber(int* packet_id) const {
+  if (!transport_sequence_number_allocator_)
+    return false;
+
+  *packet_id = transport_sequence_number_allocator_->AllocateSequenceNumber();
+  return true;
 }
 
 void RTPSender::SetSendingStatus(bool enabled) {

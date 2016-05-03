@@ -296,6 +296,18 @@ class SendSideDelayObserver {
                                     uint32_t ssrc) = 0;
 };
 
+// Callback, used to notify an observer whenever a packet is sent to the
+// transport.
+// TODO(asapersson): This class will remove the need for SendSideDelayObserver.
+// Remove SendSideDelayObserver once possible.
+class SendPacketObserver {
+ public:
+  virtual ~SendPacketObserver() {}
+  virtual void OnSendPacket(uint16_t packet_id,
+                            int64_t capture_time_ms,
+                            uint32_t ssrc) = 0;
+};
+
 // ==================================================================
 // Voice specific types
 // ==================================================================

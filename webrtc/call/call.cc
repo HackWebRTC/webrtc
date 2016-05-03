@@ -40,6 +40,7 @@
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/video/call_stats.h"
+#include "webrtc/video/send_delay_stats.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
 #include "webrtc/video/vie_remb.h"
@@ -177,6 +178,7 @@ class Call : public webrtc::Call, public PacketReceiver,
 
   VieRemb remb_;
   const std::unique_ptr<CongestionController> congestion_controller_;
+  const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -210,7 +212,8 @@ Call::Call(const Call::Config& config)
       pacer_bitrate_sum_kbits_(0),
       num_bitrate_updates_(0),
       remb_(clock_),
-      congestion_controller_(new CongestionController(clock_, this, &remb_)) {
+      congestion_controller_(new CongestionController(clock_, this, &remb_)),
+      video_send_delay_stats_(new SendDelayStats(clock_)) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -403,12 +406,14 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
 
+  video_send_delay_stats_->AddSsrcs(config);
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), call_stats_.get(),
-      congestion_controller_.get(), bitrate_allocator_.get(), &remb_, config,
-      encoder_config, suspended_video_send_ssrcs_);
+      congestion_controller_.get(), bitrate_allocator_.get(),
+      video_send_delay_stats_.get(), &remb_, config, encoder_config,
+      suspended_video_send_ssrcs_);
   {
     WriteLockScoped write_lock(*send_crit_);
     for (uint32_t ssrc : config.rtp.ssrcs) {
@@ -661,6 +666,8 @@ void Call::UpdateAggregateNetworkState() {
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
   if (first_packet_sent_ms_ == -1)
     first_packet_sent_ms_ = clock_->TimeInMilliseconds();
+  video_send_delay_stats_->OnSentPacket(sent_packet.packet_id,
+                                        clock_->TimeInMilliseconds());
   congestion_controller_->OnSentPacket(sent_packet);
 }
 
