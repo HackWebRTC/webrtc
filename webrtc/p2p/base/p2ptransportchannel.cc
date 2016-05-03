@@ -1405,10 +1405,14 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
   }
 
   // May stop the allocator session when at least one connection becomes
-  // strongly connected after starting to get ports. It is not enough to check
+  // strongly connected after starting to get ports and the local candidate of
+  // the connection is at the latest generation. It is not enough to check
   // that the connection becomes weakly connected because the connection may be
   // changing from (writable, receiving) to (writable, not receiving).
-  if (!connection->weak()) {
+  bool strongly_connected = !connection->weak();
+  bool latest_generation = connection->local_candidate().generation() >=
+                           allocator_session()->generation();
+  if (strongly_connected && latest_generation) {
     MaybeStopPortAllocatorSessions();
   }
 

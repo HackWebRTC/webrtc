@@ -120,7 +120,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
 
   void AddPort(cricket::Port* port) {
     port->set_component(component_);
-    port->set_generation(0);
+    port->set_generation(generation());
     port->SignalPortComplete.connect(
         this, &FakePortAllocatorSession::OnPortComplete);
     port->PrepareAddress();
