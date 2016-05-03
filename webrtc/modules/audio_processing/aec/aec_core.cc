@@ -47,8 +47,8 @@ static const int kDelayMetricsAggregationWindow = 1250;  // 5 seconds at 16 kHz.
 // Divergence metric is based on audio level, which gets updated every
 // |kCountLen + 1| * 10 milliseconds. Divergence metric takes the statistics of
 // |kDivergentFilterFractionAggregationWindowSize| samples. Current value
-// corresponds to 0.5 seconds at 16 kHz.
-static const int kDivergentFilterFractionAggregationWindowSize = 25;
+// corresponds to 1 second at 16 kHz.
+static const int kDivergentFilterFractionAggregationWindowSize = 50;
 
 // Quantities to control H band scaling for SWB input
 static const float cnScaleHband = 0.4f;  // scale for comfort noise in H band.
