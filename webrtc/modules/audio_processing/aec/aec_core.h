@@ -53,7 +53,7 @@ typedef struct Stats {
 
 typedef struct AecCore AecCore;
 
-AecCore* WebRtcAec_CreateAec();  // Returns NULL on error.
+AecCore* WebRtcAec_CreateAec(int instance_count);  // Returns NULL on error.
 void WebRtcAec_FreeAec(AecCore* aec);
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq);
 void WebRtcAec_InitAec_SSE2(void);
@@ -97,9 +97,6 @@ void WebRtcAec_GetEchoStats(AecCore* self,
                             Stats* erle,
                             Stats* a_nlp,
                             float* divergent_filter_fraction);
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-void* WebRtcAec_far_time_buf(AecCore* self);
-#endif
 
 // Sets local configuration modes.
 void WebRtcAec_SetConfigCore(AecCore* self,

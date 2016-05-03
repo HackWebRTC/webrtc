@@ -81,9 +81,8 @@ source_set("audio_processing") {
     "intelligibility/intelligibility_utils.h",
     "level_estimator_impl.cc",
     "level_estimator_impl.h",
-    "logging/aec_logging.h",
-    "logging/aec_logging_file_handling.cc",
-    "logging/aec_logging_file_handling.h",
+    "logging/apm_data_dumper.cc",
+    "logging/apm_data_dumper.h",
     "noise_suppression_impl.cc",
     "noise_suppression_impl.h",
     "render_queue_item_verifier.h",
@@ -149,7 +148,9 @@ source_set("audio_processing") {
   ]
 
   if (aec_debug_dump) {
-    defines += [ "WEBRTC_AEC_DEBUG_DUMP" ]
+    defines += [ "WEBRTC_AEC_DEBUG_DUMP=1" ]
+  } else {
+    defines += [ "WEBRTC_AEC_DEBUG_DUMP=0" ]
   }
 
   if (aec_untrusted_delay_for_testing) {
@@ -250,6 +251,12 @@ if (current_cpu == "x86" || current_cpu == "x64") {
 
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
+
+    if (aec_debug_dump) {
+      defines = [ "WEBRTC_AEC_DEBUG_DUMP=1" ]
+    } else {
+      defines = [ "WEBRTC_AEC_DEBUG_DUMP=0" ]
+    }
   }
 }
 
@@ -285,5 +292,11 @@ if (rtc_build_with_neon) {
     deps = [
       "../../common_audio",
     ]
+
+    if (aec_debug_dump) {
+      defines = [ "WEBRTC_AEC_DEBUG_DUMP=1" ]
+    } else {
+      defines = [ "WEBRTC_AEC_DEBUG_DUMP=0" ]
+    }
   }
 }

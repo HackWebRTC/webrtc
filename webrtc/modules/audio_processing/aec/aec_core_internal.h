@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 
+#include <memory>
+
 extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 }
@@ -18,6 +20,7 @@ extern "C" {
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
+#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/modules/audio_processing/utility/block_mean_calculator.h"
 #include "webrtc/typedefs.h"
 
@@ -70,7 +73,10 @@ class DivergentFilterFraction {
 };
 
 struct AecCore {
-  AecCore();
+  explicit AecCore(int instance_index);
+  ~AecCore();
+
+  std::unique_ptr<ApmDataDumper> data_dumper;
 
   int farBufWritePos, farBufReadPos;
 
@@ -182,22 +188,6 @@ struct AecCore {
   // Flag that extreme filter divergence has been detected by the Echo
   // Suppressor.
   int extreme_filter_divergence;
-
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  // Sequence number of this AEC instance, so that different instances can
-  // choose different dump file names.
-  int instance_index;
-
-  // Number of times we've restarted dumping; used to pick new dump file names
-  // each time.
-  int debug_dump_count;
-
-  rtc_WavWriter* farFile;
-  rtc_WavWriter* nearFile;
-  rtc_WavWriter* outFile;
-  rtc_WavWriter* outLinearFile;
-  FILE* e_fft_file;
-#endif
 };
 
 typedef void (*WebRtcAecFilterFar)(

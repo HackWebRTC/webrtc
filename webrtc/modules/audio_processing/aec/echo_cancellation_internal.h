@@ -18,7 +18,7 @@ extern "C" {
 
 namespace webrtc {
 
-typedef struct {
+typedef struct Aec {
   int delayCtr;
   int sampFreq;
   int splitSampFreq;
@@ -45,7 +45,7 @@ typedef struct {
   int checkBuffSize;
   short lastDelayDiff;
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
+#if WEBRTC_AEC_DEBUG_DUMP
   FILE* bufFile;
   FILE* delayFile;
   FILE* skewFile;
@@ -63,6 +63,8 @@ typedef struct {
 
   int farend_started;
 
+  // Aec instance counter.
+  static int instance_count;
   AecCore* aec;
 } Aec;
 

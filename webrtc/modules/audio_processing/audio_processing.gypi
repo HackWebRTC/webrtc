@@ -9,6 +9,8 @@
 {
   'variables': {
     'shared_generated_dir': '<(SHARED_INTERMEDIATE_DIR)/audio_processing/asm_offsets',
+    # Outputs some low-level debug files.
+    'aec_debug_dump%': 0,
   },
   'targets': [
     {
@@ -16,7 +18,6 @@
       'type': 'static_library',
       'variables': {
         # Outputs some low-level debug files.
-        'aec_debug_dump%': 0,
         'agc_debug_dump%': 0,
 
         # Disables the usual mode where we trust the reported system delay
@@ -91,9 +92,8 @@
         'intelligibility/intelligibility_utils.h',
         'level_estimator_impl.cc',
         'level_estimator_impl.h',
-        'logging/aec_logging.h',
-        'logging/aec_logging_file_handling.cc',
-        'logging/aec_logging_file_handling.h',
+        'logging/apm_data_dumper.cc',
+        'logging/apm_data_dumper.h',
         'noise_suppression_impl.cc',
         'noise_suppression_impl.h',
         'render_queue_item_verifier.h',
@@ -150,7 +150,9 @@
       ],
       'conditions': [
         ['aec_debug_dump==1', {
-          'defines': ['WEBRTC_AEC_DEBUG_DUMP',],
+          'defines': ['WEBRTC_AEC_DEBUG_DUMP=1',],
+        }, {
+          'defines': ['WEBRTC_AEC_DEBUG_DUMP=0',],
         }],
         ['aec_untrusted_delay_for_testing==1', {
           'defines': ['WEBRTC_UNTRUSTED_DELAY',],
@@ -249,6 +251,11 @@
             'aec/aec_rdft_sse2.cc',
           ],
           'conditions': [
+            ['aec_debug_dump==1', {
+              'defines': ['WEBRTC_AEC_DEBUG_DUMP=1',],
+            }, {
+              'defines': ['WEBRTC_AEC_DEBUG_DUMP=0',],
+            }],
             ['os_posix==1', {
               'cflags': [ '-msse2', ],
               'xcode_settings': {
@@ -272,6 +279,14 @@
           'aec/aec_rdft_neon.cc',
           'aecm/aecm_core_neon.cc',
           'ns/nsx_core_neon.c',
+        ],
+        'conditions': [
+          ['aec_debug_dump==1', {
+            'defines': ['WEBRTC_AEC_DEBUG_DUMP=1',],
+          }],
+          ['aec_debug_dump==0', {
+            'defines': ['WEBRTC_AEC_DEBUG_DUMP=0',],
+          }],
         ],
       }],
     }],

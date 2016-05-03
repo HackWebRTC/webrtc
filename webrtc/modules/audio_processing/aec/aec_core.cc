@@ -14,10 +14,6 @@
 
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-#include <stdio.h>
-#endif
-
 #include <algorithm>
 #include <assert.h>
 #include <math.h>
@@ -34,7 +30,6 @@ extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
-#include "webrtc/modules/audio_processing/logging/aec_logging.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
@@ -133,10 +128,6 @@ const float WebRtcAec_kNormalSmoothingCoefficients[2][2] = {{0.9f, 0.1f},
 // Number of partitions forming the NLP's "preferred" bands.
 enum { kPrefBandSize = 24 };
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-extern int webrtc_aec_instance_count;
-#endif
-
 WebRtcAecFilterFar WebRtcAec_FilterFar;
 WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
 WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
@@ -207,7 +198,10 @@ void DivergentFilterFraction::Clear() {
 }
 
 // TODO(minyue): Moving some initialization from WebRtcAec_CreateAec() to ctor.
-AecCore::AecCore() = default;
+AecCore::AecCore(int instance_index)
+    : data_dumper(new ApmDataDumper(instance_index)) {}
+
+AecCore::~AecCore() {}
 
 static int CmpFloat(const void* a, const void* b) {
   const float* da = (const float*)a;
@@ -1269,15 +1263,10 @@ static void ProcessBlock(AecCore* aec) {
   WebRtc_ReadBuffer(aec->far_time_buf, reinterpret_cast<void**>(&farend_ptr),
                     farend, 1);
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  {
-    // TODO(minyue): |farend_ptr| starts from buffered samples. This will be
-    // modified when |aec->far_time_buf| is revised.
-    RTC_AEC_DEBUG_WAV_WRITE(aec->farFile, &farend_ptr[PART_LEN], PART_LEN);
-
-    RTC_AEC_DEBUG_WAV_WRITE(aec->nearFile, nearend_ptr, PART_LEN);
-  }
-#endif
+  aec->data_dumper->DumpWav("aec_far", PART_LEN, &farend_ptr[PART_LEN],
+                            std::min(aec->sampFreq, 16000), 1);
+  aec->data_dumper->DumpWav("aec_near", PART_LEN, nearend_ptr,
+                            std::min(aec->sampFreq, 16000), 1);
 
   if (aec->metricsMode == 1) {
     // Update power levels
@@ -1377,7 +1366,8 @@ static void ProcessBlock(AecCore* aec) {
                   aec->xfBuf, nearend_ptr, aec->xPow, aec->wfBuf,
                   echo_subtractor_output);
 
-  RTC_AEC_DEBUG_WAV_WRITE(aec->outLinearFile, echo_subtractor_output, PART_LEN);
+  aec->data_dumper->DumpWav("aec_out_linear", PART_LEN, echo_subtractor_output,
+                            std::min(aec->sampFreq, 16000), 1);
 
   if (aec->metricsMode == 1) {
     UpdateLevel(&aec->linoutlevel,
@@ -1399,12 +1389,14 @@ static void ProcessBlock(AecCore* aec) {
     WebRtc_WriteBuffer(aec->outFrBufH[i], outputH[i], PART_LEN);
   }
 
-  RTC_AEC_DEBUG_WAV_WRITE(aec->outFile, output, PART_LEN);
+  aec->data_dumper->DumpWav("aec_out", PART_LEN, output,
+                            std::min(aec->sampFreq, 16000), 1);
 }
 
-AecCore* WebRtcAec_CreateAec() {
+AecCore* WebRtcAec_CreateAec(int instance_count) {
   int i;
-  AecCore* aec = new AecCore;
+  AecCore* aec = new AecCore(instance_count);
+
   if (!aec) {
     return NULL;
   }
@@ -1448,12 +1440,6 @@ AecCore* WebRtcAec_CreateAec() {
     return NULL;
   }
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  aec->instance_index = webrtc_aec_instance_count;
-
-  aec->farFile = aec->nearFile = aec->outFile = aec->outLinearFile = NULL;
-  aec->debug_dump_count = 0;
-#endif
   aec->delay_estimator_farend =
       WebRtc_CreateDelayEstimatorFarend(PART_LEN1, kHistorySizeBlocks);
   if (aec->delay_estimator_farend == NULL) {
@@ -1531,12 +1517,6 @@ void WebRtcAec_FreeAec(AecCore* aec) {
 
   WebRtc_FreeBuffer(aec->far_time_buf);
 
-  RTC_AEC_DEBUG_WAV_CLOSE(aec->farFile);
-  RTC_AEC_DEBUG_WAV_CLOSE(aec->nearFile);
-  RTC_AEC_DEBUG_WAV_CLOSE(aec->outFile);
-  RTC_AEC_DEBUG_WAV_CLOSE(aec->outLinearFile);
-  RTC_AEC_DEBUG_RAW_CLOSE(aec->e_fft_file);
-
   WebRtc_FreeDelayEstimator(aec->delay_estimator);
   WebRtc_FreeDelayEstimatorFarend(aec->delay_estimator_farend);
 
@@ -1581,6 +1561,7 @@ static void SetErrorThreshold(AecCore* aec) {
 
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   int i;
+  aec->data_dumper->InitiateNewSetOfRecordings();
 
   aec->sampFreq = sampFreq;
 
@@ -1603,27 +1584,6 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   // Initialize far-end buffers.
   WebRtc_InitBuffer(aec->far_time_buf);
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  {
-    int process_rate = sampFreq > 16000 ? 16000 : sampFreq;
-    RTC_AEC_DEBUG_WAV_REOPEN("aec_far", aec->instance_index,
-                             aec->debug_dump_count, process_rate,
-                             &aec->farFile);
-    RTC_AEC_DEBUG_WAV_REOPEN("aec_near", aec->instance_index,
-                             aec->debug_dump_count, process_rate,
-                             &aec->nearFile);
-    RTC_AEC_DEBUG_WAV_REOPEN("aec_out", aec->instance_index,
-                             aec->debug_dump_count, process_rate,
-                             &aec->outFile);
-    RTC_AEC_DEBUG_WAV_REOPEN("aec_out_linear", aec->instance_index,
-                             aec->debug_dump_count, process_rate,
-                             &aec->outLinearFile);
-  }
-
-  RTC_AEC_DEBUG_RAW_OPEN("aec_e_fft", aec->debug_dump_count, &aec->e_fft_file);
-
-  ++aec->debug_dump_count;
-#endif
   aec->system_delay = 0;
 
   if (WebRtc_InitDelayEstimatorFarend(aec->delay_estimator_farend) != 0) {
