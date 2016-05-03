@@ -42,7 +42,6 @@ class PayloadRouter;
 class ReceiveStatisticsProxy;
 class RtcpRttStats;
 class ViERTPObserver;
-class VideoRenderCallback;
 class VoEVideoSync;
 
 namespace vcm {

@@ -17,34 +17,25 @@
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_video/video_render_frames.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace webrtc {
 class EventTimerWrapper;
 
-class VideoRenderCallback {
- public:
-  virtual int32_t RenderFrame(const uint32_t streamId,
-                              const VideoFrame& videoFrame) = 0;
 
- protected:
-  virtual ~VideoRenderCallback() {}
-};
-
-class IncomingVideoStream : public VideoRenderCallback {
+class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
  public:
-  IncomingVideoStream(uint32_t stream_id, bool disable_prerenderer_smoothing);
+  explicit IncomingVideoStream(bool disable_prerenderer_smoothing);
   ~IncomingVideoStream();
 
-  // Get callback to deliver frames to the module.
-  VideoRenderCallback* ModuleCallback();
-  virtual int32_t RenderFrame(const uint32_t stream_id,
-                              const VideoFrame& video_frame);
+  // Overrides VideoSinkInterface
+  void OnFrame(const VideoFrame& video_frame) override;
 
   // Set callback to the platform dependent code.
-  void SetRenderCallback(VideoRenderCallback* render_callback);
+  void SetRenderCallback(rtc::VideoSinkInterface<VideoFrame>* render_callback);
 
   // Callback for file recording, snapshot, ...
-  void SetExternalCallback(VideoRenderCallback* render_object);
+  void SetExternalCallback(rtc::VideoSinkInterface<VideoFrame>* render_object);
 
   // Start/Stop.
   int32_t Start();
@@ -54,7 +45,6 @@ class IncomingVideoStream : public VideoRenderCallback {
   int32_t Reset();
 
   // Properties.
-  uint32_t StreamId() const;
   uint32_t IncomingRate() const;
 
   int32_t SetExpectedRenderDelay(int32_t delay_ms);
@@ -70,7 +60,6 @@ class IncomingVideoStream : public VideoRenderCallback {
 
   void DeliverFrame(const VideoFrame& video_frame);
 
-  uint32_t const stream_id_;
   const bool disable_prerenderer_smoothing_;
   // Critsects in allowed to enter order.
   rtc::CriticalSection stream_critsect_;
@@ -83,8 +72,10 @@ class IncomingVideoStream : public VideoRenderCallback {
   std::unique_ptr<EventTimerWrapper> deliver_buffer_event_;
 
   bool running_ GUARDED_BY(stream_critsect_);
-  VideoRenderCallback* external_callback_ GUARDED_BY(thread_critsect_);
-  VideoRenderCallback* render_callback_ GUARDED_BY(thread_critsect_);
+  rtc::VideoSinkInterface<VideoFrame>* external_callback_
+      GUARDED_BY(thread_critsect_);
+  rtc::VideoSinkInterface<VideoFrame>* render_callback_
+      GUARDED_BY(thread_critsect_);
   const std::unique_ptr<VideoRenderFrames> render_buffers_
       GUARDED_BY(buffer_critsect_);
 

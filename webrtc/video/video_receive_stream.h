@@ -40,7 +40,7 @@ namespace internal {
 
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public I420FrameCallback,
-                           public VideoRenderCallback,
+                           public rtc::VideoSinkInterface<VideoFrame>,
                            public EncodedImageCallback,
                            public NackSender,
                            public KeyFrameRequestSender {
@@ -69,9 +69,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // Overrides I420FrameCallback.
   void FrameCallback(VideoFrame* video_frame) override;
 
-  // Overrides VideoRenderCallback.
-  int RenderFrame(const uint32_t /*stream_id*/,
-                  const VideoFrame& video_frame) override;
+  // Overrides rtc::VideoSinkInterface<VideoFrame>.
+  void OnFrame(const VideoFrame& video_frame) override;
 
   // Overrides EncodedImageCallback.
   int32_t Encoded(const EncodedImage& encoded_image,

@@ -31,10 +31,8 @@
 
 namespace webrtc {
 
-IncomingVideoStream::IncomingVideoStream(uint32_t stream_id,
-                                         bool disable_prerenderer_smoothing)
-    : stream_id_(stream_id),
-      disable_prerenderer_smoothing_(disable_prerenderer_smoothing),
+IncomingVideoStream::IncomingVideoStream(bool disable_prerenderer_smoothing)
+    : disable_prerenderer_smoothing_(disable_prerenderer_smoothing),
       incoming_render_thread_(),
       deliver_buffer_event_(EventTimerWrapper::Create()),
       running_(false),
@@ -49,16 +47,11 @@ IncomingVideoStream::~IncomingVideoStream() {
   Stop();
 }
 
-VideoRenderCallback* IncomingVideoStream::ModuleCallback() {
-  return this;
-}
-
-int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
-                                         const VideoFrame& video_frame) {
+void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
   rtc::CritScope csS(&stream_critsect_);
 
   if (!running_) {
-    return -1;
+    return;
   }
 
   // Rate statistics.
@@ -81,11 +74,10 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
       deliver_buffer_event_->Set();
     }
   }
-  return 0;
 }
 
 void IncomingVideoStream::SetRenderCallback(
-    VideoRenderCallback* render_callback) {
+    rtc::VideoSinkInterface<VideoFrame>* render_callback) {
   rtc::CritScope cs(&thread_critsect_);
   render_callback_ = render_callback;
 }
@@ -101,7 +93,7 @@ int32_t IncomingVideoStream::SetExpectedRenderDelay(
 }
 
 void IncomingVideoStream::SetExternalCallback(
-    VideoRenderCallback* external_callback) {
+    rtc::VideoSinkInterface<VideoFrame>* external_callback) {
   rtc::CritScope cs(&thread_critsect_);
   external_callback_ = external_callback;
 }
@@ -165,10 +157,6 @@ int32_t IncomingVideoStream::Reset() {
   return 0;
 }
 
-uint32_t IncomingVideoStream::StreamId() const {
-  return stream_id_;
-}
-
 uint32_t IncomingVideoStream::IncomingRate() const {
   rtc::CritScope cs(&stream_critsect_);
   return incoming_rate_;
@@ -215,9 +203,9 @@ void IncomingVideoStream::DeliverFrame(const VideoFrame& video_frame) {
 
   // Send frame for rendering.
   if (external_callback_) {
-    external_callback_->RenderFrame(stream_id_, video_frame);
+    external_callback_->OnFrame(video_frame);
   } else if (render_callback_) {
-    render_callback_->RenderFrame(stream_id_, video_frame);
+    render_callback_->OnFrame(video_frame);
   }
 }
 

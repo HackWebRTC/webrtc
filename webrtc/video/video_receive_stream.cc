@@ -163,7 +163,7 @@ VideoReceiveStream::VideoReceiveStream(
       call_stats_(call_stats),
       remb_(remb),
       video_receiver_(clock_, nullptr, this, this, this),
-      incoming_video_stream_(0, config.disable_prerenderer_smoothing),
+      incoming_video_stream_(config.disable_prerenderer_smoothing),
       stats_proxy_(config_, clock_),
       rtp_stream_receiver_(&video_receiver_,
                            congestion_controller_->GetRemoteBitrateEstimator(
@@ -384,8 +384,7 @@ void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {
   }
 }
 
-int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
-                                    const VideoFrame& video_frame) {
+void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   int64_t sync_offset_ms;
   if (vie_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms))
     stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms);
@@ -394,8 +393,6 @@ int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
     config_.renderer->OnFrame(video_frame);
 
   stats_proxy_.OnRenderedFrame(video_frame.width(), video_frame.height());
-
-  return 0;
 }
 
 // TODO(asapersson): Consider moving callback from video_encoder.h or

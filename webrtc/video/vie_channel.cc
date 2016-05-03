@@ -169,8 +169,7 @@ int32_t ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
   if (pre_render_callback_)
     pre_render_callback_->FrameCallback(&video_frame);
 
-  // TODO(pbos): Remove stream id argument.
-  incoming_video_stream_->RenderFrame(0xFFFFFFFF, video_frame);
+  incoming_video_stream_->OnFrame(video_frame);
   return 0;
 }
 
