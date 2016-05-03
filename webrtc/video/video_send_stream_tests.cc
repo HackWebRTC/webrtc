@@ -2269,9 +2269,6 @@ TEST_F(VideoSendStreamTest, Vp9NonFlexModeSmallResolution) {
   RunBaseTest(&test);
 }
 
-#if !defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=5402.
 TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
   class FlexibleMode : public Vp9HeaderObserver {
     void ModifyVideoConfigsHook(
@@ -2296,6 +2293,5 @@ TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
 
   RunBaseTest(&test);
 }
-#endif
 
 }  // namespace webrtc
