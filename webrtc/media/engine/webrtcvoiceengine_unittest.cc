@@ -892,6 +892,26 @@ TEST_F(WebRtcVoiceEngineTestFake,
   EXPECT_FALSE(channel_->SetRtpParameters(kSsrc1, parameters));
 }
 
+// Test that a stream will not be sending if its encoding is made
+// inactive through SetRtpParameters.
+TEST_F(WebRtcVoiceEngineTestFake, SetRtpParametersEncodingsActive) {
+  EXPECT_TRUE(SetupSendStream());
+  SetSend(channel_, true);
+  EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
+  // Get current parameters and change "active" to false.
+  webrtc::RtpParameters parameters = channel_->GetRtpParameters(kSsrc1);
+  ASSERT_EQ(1u, parameters.encodings.size());
+  ASSERT_TRUE(parameters.encodings[0].active);
+  parameters.encodings[0].active = false;
+  EXPECT_TRUE(channel_->SetRtpParameters(kSsrc1, parameters));
+  EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
+
+  // Now change it back to active and verify we resume sending.
+  parameters.encodings[0].active = true;
+  EXPECT_TRUE(channel_->SetRtpParameters(kSsrc1, parameters));
+  EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
+}
+
 // Test that SetRtpParameters configures the correct encoding channel for each
 // SSRC.
 TEST_F(WebRtcVoiceEngineTestFake, RtpParametersArePerStream) {

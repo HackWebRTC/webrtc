@@ -1216,16 +1216,19 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     return rtp_parameters_;
   }
 
-  void set_rtp_parameters(const webrtc::RtpParameters& parameters) {
+  void SetRtpParameters(const webrtc::RtpParameters& parameters) {
     RTC_CHECK_EQ(1UL, parameters.encodings.size());
     rtp_parameters_ = parameters;
+    // parameters.encodings[0].active could have changed.
+    UpdateSendState();
   }
 
  private:
   void UpdateSendState() {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
-    if (send_ && source_ != nullptr) {
+    RTC_DCHECK_EQ(1UL, rtp_parameters_.encodings.size());
+    if (send_ && source_ != nullptr && rtp_parameters_.encodings[0].active) {
       stream_->Start();
     } else {  // !send || source_ = nullptr
       stream_->Stop();
@@ -1457,7 +1460,7 @@ bool WebRtcVoiceMediaChannel::SetRtpParameters(
   // Codecs are handled at the WebRtcVoiceMediaChannel level.
   webrtc::RtpParameters reduced_params = parameters;
   reduced_params.codecs.clear();
-  it->second->set_rtp_parameters(reduced_params);
+  it->second->SetRtpParameters(reduced_params);
   return true;
 }
 
