@@ -313,7 +313,6 @@
             'cflags': [
               '-Wimplicit-fallthrough',
               '-Wthread-safety',
-              '-Winconsistent-missing-override',
             ],
           }],
         ],
