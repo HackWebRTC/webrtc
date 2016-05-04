@@ -392,15 +392,15 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       // always = 127. Note that in SW, QP is that of the user-level range [0,
       // 63].
       const int kLowQpThreshold = 29;
-      const int kBadQpThreshold = 100;
+      const int kBadQpThreshold = 90;
       quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold,
                            codec_settings->startBitrate, codec_settings->width,
                            codec_settings->height,
                            codec_settings->maxFramerate);
     } else if (codecType_ == kVideoCodecH264) {
       // H264 QP is in the range [0, 51].
-      const int kLowQpThreshold = 24;
-      const int kBadQpThreshold = 39;
+      const int kLowQpThreshold = 22;
+      const int kBadQpThreshold = 35;
       quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold,
                            codec_settings->startBitrate, codec_settings->width,
                            codec_settings->height,
