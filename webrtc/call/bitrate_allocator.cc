@@ -54,7 +54,9 @@ BitrateAllocator::ObserverBitrateMap BitrateAllocator::AllocateBitrates() {
   uint32_t sum_min_bitrates = 0;
   for (const auto& observer : bitrate_observers_)
     sum_min_bitrates += observer.second.min_bitrate;
-  if (last_bitrate_bps_ <= sum_min_bitrates)
+  if (last_bitrate_bps_ == 0)
+    return ZeroRateAllocation();
+  else if (last_bitrate_bps_ <= sum_min_bitrates)
     return LowRateAllocation(last_bitrate_bps_);
   else
     return NormalRateAllocation(last_bitrate_bps_, sum_min_bitrates);
@@ -101,18 +103,6 @@ void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
   if (it != bitrate_observers_.end()) {
     bitrate_observers_.erase(it);
     bitrate_observers_modified_ = true;
-  }
-}
-
-void BitrateAllocator::GetMinMaxBitrateSumBps(int* min_bitrate_sum_bps,
-                                              int* max_bitrate_sum_bps) const {
-  *min_bitrate_sum_bps = 0;
-  *max_bitrate_sum_bps = 0;
-
-  rtc::CritScope lock(&crit_sect_);
-  for (const auto& observer : bitrate_observers_) {
-    *min_bitrate_sum_bps += observer.second.min_bitrate;
-    *max_bitrate_sum_bps += observer.second.max_bitrate;
   }
 }
 
@@ -167,6 +157,14 @@ BitrateAllocator::ObserverBitrateMap BitrateAllocator::NormalRateAllocation(
     // Prepare next iteration.
     max_it = list_max_bitrates.begin();
   }
+  return allocation;
+}
+
+BitrateAllocator::ObserverBitrateMap BitrateAllocator::ZeroRateAllocation() {
+  ObserverBitrateMap allocation;
+  // Zero bitrate to all observers.
+  for (const auto& observer : bitrate_observers_)
+    allocation[observer.first] = 0;
   return allocation;
 }
 

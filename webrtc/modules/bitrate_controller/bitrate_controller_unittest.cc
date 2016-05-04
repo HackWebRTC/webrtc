@@ -14,11 +14,16 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
+#include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
-using webrtc::RtcpBandwidthObserver;
-using webrtc::BitrateObserver;
+using ::testing::Exactly;
+using ::testing::Return;
+
 using webrtc::BitrateController;
+using webrtc::BitrateObserver;
+using webrtc::PacedSender;
+using webrtc::RtcpBandwidthObserver;
 
 uint8_t WeightedLoss(int num_packets1, uint8_t fraction_loss1,
                      int num_packets2, uint8_t fraction_loss2) {

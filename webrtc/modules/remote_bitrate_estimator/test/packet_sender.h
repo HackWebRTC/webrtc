@@ -100,7 +100,7 @@ class VideoSender : public PacketSender, public BitrateObserver {
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoSender);
 };
 
-class PacedVideoSender : public VideoSender, public PacedSender::Callback {
+class PacedVideoSender : public VideoSender, public PacedSender::PacketSender {
  public:
   PacedVideoSender(PacketProcessorListener* listener,
                    VideoSource* source,

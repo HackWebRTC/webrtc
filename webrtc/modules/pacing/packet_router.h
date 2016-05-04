@@ -30,7 +30,7 @@ class TransportFeedback;
 
 // PacketRouter routes outgoing data to the correct sending RTP module, based
 // on the simulcast layer in RTPVideoHeader.
-class PacketRouter : public PacedSender::Callback,
+class PacketRouter : public PacedSender::PacketSender,
                      public TransportSequenceNumberAllocator {
  public:
   PacketRouter();
