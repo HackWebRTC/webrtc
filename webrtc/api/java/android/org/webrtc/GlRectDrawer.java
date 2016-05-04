@@ -119,13 +119,14 @@ public class GlRectDrawer implements RendererCommon.GlDrawer {
    * allocated at the first call to this function.
    */
   @Override
-  public void drawOes(int oesTextureId, float[] texMatrix, int x, int y, int width, int height) {
+  public void drawOes(int oesTextureId, float[] texMatrix, int frameWidth, int frameHeight,
+      int viewportX, int viewportY, int viewportWidth, int viewportHeight) {
     prepareShader(OES_FRAGMENT_SHADER_STRING, texMatrix);
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
     // updateTexImage() may be called from another thread in another EGL context, so we need to
     // bind/unbind the texture in each draw call so that GLES understads it's a new texture.
     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
-    drawRectangle(x, y, width, height);
+    drawRectangle(viewportX, viewportY, viewportWidth, viewportHeight);
     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
   }
 
@@ -134,11 +135,12 @@ public class GlRectDrawer implements RendererCommon.GlDrawer {
    * are allocated at the first call to this function.
    */
   @Override
-  public void drawRgb(int textureId, float[] texMatrix, int x, int y, int width, int height) {
+  public void drawRgb(int textureId, float[] texMatrix, int frameWidth, int frameHeight,
+      int viewportX, int viewportY, int viewportWidth, int viewportHeight) {
     prepareShader(RGB_FRAGMENT_SHADER_STRING, texMatrix);
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
-    drawRectangle(x, y, width, height);
+    drawRectangle(viewportX, viewportY, viewportWidth, viewportHeight);
     // Unbind the texture as a precaution.
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
   }
@@ -148,14 +150,15 @@ public class GlRectDrawer implements RendererCommon.GlDrawer {
    * allocated at the first call to this function.
    */
   @Override
-  public void drawYuv(int[] yuvTextures, float[] texMatrix, int x, int y, int width, int height) {
+  public void drawYuv(int[] yuvTextures, float[] texMatrix, int frameWidth, int frameHeight,
+      int viewportX, int viewportY, int viewportWidth, int viewportHeight) {
     prepareShader(YUV_FRAGMENT_SHADER_STRING, texMatrix);
     // Bind the textures.
     for (int i = 0; i < 3; ++i) {
       GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
       GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
     }
-    drawRectangle(x, y, width, height);
+    drawRectangle(viewportX, viewportY, viewportWidth, viewportHeight);
     // Unbind the textures as a precaution..
     for (int i = 0; i < 3; ++i) {
       GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);

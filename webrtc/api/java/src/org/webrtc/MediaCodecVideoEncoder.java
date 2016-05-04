@@ -395,7 +395,7 @@ public class MediaCodecVideoEncoder {
       // TODO(perkj): glClear() shouldn't be necessary since every pixel is covered anyway,
       // but it's a workaround for bug webrtc:5147.
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-      drawer.drawOes(oesTextureId, transformationMatrix, 0, 0, width, height);
+      drawer.drawOes(oesTextureId, transformationMatrix, width, height, 0, 0, width, height);
       eglBase.swapBuffers(TimeUnit.MICROSECONDS.toNanos(presentationTimestampUs));
       return true;
     }

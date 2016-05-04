@@ -489,9 +489,11 @@ public class SurfaceViewRenderer extends SurfaceView
       }
       yuvUploader.uploadYuvData(
           yuvTextures, frame.width, frame.height, frame.yuvStrides, frame.yuvPlanes);
-      drawer.drawYuv(yuvTextures, texMatrix, 0, 0, surfaceSize.x, surfaceSize.y);
+      drawer.drawYuv(yuvTextures, texMatrix, frame.rotatedWidth(), frame.rotatedHeight(),
+          0, 0, surfaceSize.x, surfaceSize.y);
     } else {
-      drawer.drawOes(frame.textureId, texMatrix, 0, 0, surfaceSize.x, surfaceSize.y);
+      drawer.drawOes(frame.textureId, texMatrix, frame.rotatedWidth(), frame.rotatedHeight(),
+          0, 0, surfaceSize.x, surfaceSize.y);
     }
 
     eglBase.swapBuffers();
