@@ -270,7 +270,6 @@
             'audio_processing/vad/voice_activity_detector_unittest.cc',
             'bitrate_controller/bitrate_controller_unittest.cc',
             'bitrate_controller/send_side_bandwidth_estimation_unittest.cc',
-            'congestion_controller/congestion_controller_unittest.cc',
             'media_file/media_file_unittest.cc',
             'module_common_types_unittest.cc',
             'pacing/bitrate_prober_unittest.cc',

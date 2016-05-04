@@ -28,8 +28,6 @@ namespace webrtc {
 
 class BitrateControllerImpl : public BitrateController {
  public:
-  // TODO(perkj): BitrateObserver has been deprecated and is not used in WebRTC.
-  // |observer| is left for project that is not yet updated.
   BitrateControllerImpl(Clock* clock, BitrateObserver* observer);
   virtual ~BitrateControllerImpl() {}
 
@@ -52,11 +50,6 @@ class BitrateControllerImpl : public BitrateController {
 
   void SetEventLog(RtcEventLog* event_log) override;
 
-  // Returns true if the parameters have changed since the last call.
-  bool GetNetworkParameters(uint32_t* bitrate,
-                            uint8_t* fraction_loss,
-                            int64_t* rtt) override;
-
   int64_t TimeUntilNextProcess() override;
   void Process() override;
 
@@ -71,16 +64,20 @@ class BitrateControllerImpl : public BitrateController {
                                     int number_of_packets,
                                     int64_t now_ms);
 
-  // Deprecated
   void MaybeTriggerOnNetworkChanged();
+
+  // Returns true if the parameters have changed since the last call.
+  bool GetNetworkParameters(uint32_t* bitrate,
+                            uint8_t* fraction_loss,
+                            int64_t* rtt);
 
   void OnNetworkChanged(uint32_t bitrate,
                         uint8_t fraction_loss,  // 0 - 255.
                         int64_t rtt) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   // Used by process thread.
-  Clock* const clock_;
-  BitrateObserver* const observer_;
+  Clock* clock_;
+  BitrateObserver* observer_;
   int64_t last_bitrate_update_ms_;
 
   rtc::CriticalSection critsect_;

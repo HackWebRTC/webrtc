@@ -62,7 +62,6 @@
           'type': 'static_library',
           'dependencies': [
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(DEPTH)/testing/gmock.gyp:gmock',
           ],
           'sources': [
             'test/bwe.cc',

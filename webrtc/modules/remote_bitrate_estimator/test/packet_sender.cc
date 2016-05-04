@@ -157,7 +157,12 @@ PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
                                    VideoSource* source,
                                    BandwidthEstimatorType estimator)
     : VideoSender(listener, source, estimator),
-      pacer_(&clock_, this, source->bits_per_second()) {
+      pacer_(&clock_,
+             this,
+             source->bits_per_second() / 1000,
+             PacedSender::kDefaultPaceMultiplier * source->bits_per_second() /
+                 1000,
+             0) {
   modules_.push_back(&pacer_);
 }
 
@@ -305,7 +310,9 @@ void PacedVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
                                         uint8_t fraction_lost,
                                         int64_t rtt) {
   VideoSender::OnNetworkChanged(target_bitrate_bps, fraction_lost, rtt);
-  pacer_.SetEstimatedBitrate(target_bitrate_bps);
+  pacer_.UpdateBitrate(
+      target_bitrate_bps / 1000,
+      PacedSender::kDefaultPaceMultiplier * target_bitrate_bps / 1000, 0);
 }
 
 const int kNoLimit = std::numeric_limits<int>::max();

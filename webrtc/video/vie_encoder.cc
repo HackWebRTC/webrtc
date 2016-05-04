@@ -57,7 +57,9 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        const std::vector<uint32_t>& ssrcs,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
-                       OveruseFrameDetector* overuse_detector)
+                       rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
+                       OveruseFrameDetector* overuse_detector,
+                       PacedSender* pacer)
     : number_of_cores_(number_of_cores),
       ssrcs_(ssrcs),
       vp_(VideoProcessing::Create()),
@@ -68,7 +70,9 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                     qm_callback_.get(),
                     this),
       stats_proxy_(stats_proxy),
+      pre_encode_callback_(pre_encode_callback),
       overuse_detector_(overuse_detector),
+      pacer_(pacer),
       time_of_last_frame_activity_ms_(0),
       encoder_config_(),
       min_transmit_bitrate_bps_(0),
@@ -241,7 +245,8 @@ bool ViEEncoder::EncoderPaused() const {
   if (encoder_paused_) {
     return true;
   }
-  if (video_suspended_ || last_observed_bitrate_bps_ == 0) {
+  if (pacer_->ExpectedQueueTimeMs() > PacedSender::kMaxQueueLengthMs) {
+    // Too much data in pacer queue, drop frame.
     return true;
   }
   return !network_is_transmitting_;
@@ -288,6 +293,10 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
       // Drop this frame, or there was an error processing it.
       return;
     }
+  }
+
+  if (pre_encode_callback_) {
+    pre_encode_callback_->OnFrame(*frame_to_send);
   }
 
   if (codec_type == webrtc::kVideoCodecVP8) {
@@ -426,7 +435,7 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
 void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
                                   uint8_t fraction_lost,
                                   int64_t round_trip_time_ms) {
-  LOG(LS_VERBOSE) << "OnBitrateUpdated, bitrate " << bitrate_bps
+  LOG(LS_VERBOSE) << "OnBitrateUpdated, bitrate" << bitrate_bps
                   << " packet loss " << static_cast<int>(fraction_lost)
                   << " rtt " << round_trip_time_ms;
   video_sender_.SetChannelParameters(bitrate_bps, fraction_lost,

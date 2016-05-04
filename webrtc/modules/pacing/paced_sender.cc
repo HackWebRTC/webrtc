@@ -246,21 +246,20 @@ const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
 PacedSender::PacedSender(Clock* clock,
-                         PacketSender* packet_sender,
-                         int estimated_bitrate_bps)
+                         Callback* callback,
+                         int bitrate_kbps,
+                         int max_bitrate_kbps,
+                         int min_bitrate_kbps)
     : clock_(clock),
-      packet_sender_(packet_sender),
+      callback_(callback),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       paused_(false),
       probing_enabled_(true),
-      media_budget_(new paced_sender::IntervalBudget(
-          estimated_bitrate_bps / 1000 * kDefaultPaceMultiplier)),
-      padding_budget_(new paced_sender::IntervalBudget(0)),
+      media_budget_(new paced_sender::IntervalBudget(max_bitrate_kbps)),
+      padding_budget_(new paced_sender::IntervalBudget(min_bitrate_kbps)),
       prober_(new BitrateProber()),
-      estimated_bitrate_bps_(estimated_bitrate_bps),
-      min_send_bitrate_kbps_(0u),
-      pacing_bitrate_kbps_(estimated_bitrate_bps / 1000 *
-                           kDefaultPaceMultiplier),
+      bitrate_bps_(1000 * bitrate_kbps),
+      max_bitrate_kbps_(max_bitrate_kbps),
       time_last_update_us_(clock->TimeInMicroseconds()),
       packets_(new paced_sender::PacketQueue(clock)),
       packet_counter_(0) {
@@ -284,24 +283,16 @@ void PacedSender::SetProbingEnabled(bool enabled) {
   probing_enabled_ = enabled;
 }
 
-void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
-  LOG(LS_INFO) << "SetNetWorkEstimateTargetBitrate, bitrate " << bitrate_bps;
-
+void PacedSender::UpdateBitrate(int bitrate_kbps,
+                                int max_bitrate_kbps,
+                                int min_bitrate_kbps) {
   CriticalSectionScoped cs(critsect_.get());
-  estimated_bitrate_bps_ = bitrate_bps;
-  pacing_bitrate_kbps_ =
-      std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
-      kDefaultPaceMultiplier;
-}
-
-void PacedSender::SetAllocatedSendBitrate(int allocated_bitrate,
-                                          int padding_bitrate) {
-  CriticalSectionScoped cs(critsect_.get());
-  min_send_bitrate_kbps_ = allocated_bitrate / 1000;
-  pacing_bitrate_kbps_ =
-      std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
-      kDefaultPaceMultiplier;
-  padding_budget_->set_target_rate_kbps(padding_bitrate / 1000);
+  // Don't set media bitrate here as it may be boosted in order to meet max
+  // queue time constraint. Just update max_bitrate_kbps_ and let media_budget_
+  // be updated in Process().
+  padding_budget_->set_target_rate_kbps(min_bitrate_kbps);
+  bitrate_bps_ = 1000 * bitrate_kbps;
+  max_bitrate_kbps_ = max_bitrate_kbps;
 }
 
 void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
@@ -315,7 +306,7 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
   if (probing_enabled_ && !prober_->IsProbing())
     prober_->SetEnabled(true);
   int64_t now_ms = clock_->TimeInMilliseconds();
-  prober_->OnIncomingPacket(estimated_bitrate_bps_, bytes, now_ms);
+  prober_->OnIncomingPacket(bitrate_bps_, bytes, now_ms);
 
   if (capture_time_ms < 0)
     capture_time_ms = now_ms;
@@ -327,9 +318,8 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
 
 int64_t PacedSender::ExpectedQueueTimeMs() const {
   CriticalSectionScoped cs(critsect_.get());
-  RTC_DCHECK_GT(pacing_bitrate_kbps_, 0u);
-  return static_cast<int64_t>(packets_->SizeInBytes() * 8 /
-                              pacing_bitrate_kbps_);
+  RTC_DCHECK_GT(max_bitrate_kbps_, 0);
+  return static_cast<int64_t>(packets_->SizeInBytes() * 8 / max_bitrate_kbps_);
 }
 
 size_t PacedSender::QueueSizePackets() const {
@@ -370,7 +360,7 @@ void PacedSender::Process() {
   CriticalSectionScoped cs(critsect_.get());
   int64_t elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
   time_last_update_us_ = now_us;
-  int target_bitrate_kbps = pacing_bitrate_kbps_;
+  int target_bitrate_kbps = max_bitrate_kbps_;
   // TODO(holmer): Remove the !paused_ check when issue 5307 has been fixed.
   if (!paused_ && elapsed_time_ms > 0) {
     size_t queue_size_bytes = packets_->SizeInBytes();
@@ -435,9 +425,10 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
   if (paused_ && packet.priority != kHighPriority)
     return false;
   critsect_->Leave();
-  const bool success = packet_sender_->TimeToSendPacket(
-      packet.ssrc, packet.sequence_number, packet.capture_time_ms,
-      packet.retransmission);
+  const bool success = callback_->TimeToSendPacket(packet.ssrc,
+                                                   packet.sequence_number,
+                                                   packet.capture_time_ms,
+                                                   packet.retransmission);
   critsect_->Enter();
 
   if (success) {
@@ -456,7 +447,7 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
 
 void PacedSender::SendPadding(size_t padding_needed) {
   critsect_->Leave();
-  size_t bytes_sent = packet_sender_->TimeToSendPadding(padding_needed);
+  size_t bytes_sent = callback_->TimeToSendPadding(padding_needed);
   critsect_->Enter();
 
   if (bytes_sent > 0) {
