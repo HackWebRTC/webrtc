@@ -25,14 +25,12 @@ namespace webrtc {
 
 class MockVieEncoder : public ViEEncoder {
  public:
-  explicit MockVieEncoder(ProcessThread* process_thread, PacedSender* pacer)
+  explicit MockVieEncoder(ProcessThread* process_thread)
       : ViEEncoder(1,
                    std::vector<uint32_t>(),
                    process_thread,
                    nullptr,
-                   nullptr,
-                   nullptr,
-                   pacer) {}
+                   nullptr) {}
   ~MockVieEncoder() {}
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest,
@@ -47,12 +45,7 @@ TEST(VieKeyRequestTest, CreateAndTriggerRequests) {
   static const uint32_t kSsrc = 1234;
   NiceMock<MockProcessThread> process_thread;
   PacketRouter router;
-  PacedSender pacer(Clock::GetRealTimeClock(), &router,
-                     BitrateController::kDefaultStartBitrateKbps,
-                     PacedSender::kDefaultPaceMultiplier *
-                         BitrateController::kDefaultStartBitrateKbps,
-                     0);
-  MockVieEncoder encoder(&process_thread, &pacer);
+  MockVieEncoder encoder(&process_thread);
 
   EncoderStateFeedback encoder_state_feedback;
   encoder_state_feedback.Init(std::vector<uint32_t>(1, kSsrc), &encoder);

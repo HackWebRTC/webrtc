@@ -60,9 +60,6 @@ class BitrateAllocator {
 
   void RemoveObserver(BitrateAllocatorObserver* observer);
 
-  void GetMinMaxBitrateSumBps(int* min_bitrate_sum_bps,
-                              int* max_bitrate_sum_bps) const;
-
   // This method controls the behavior when the available bitrate is lower than
   // the minimum bitrate, or the sum of minimum bitrates.
   // When true, the bitrate will never be set lower than the minimum bitrate(s).
@@ -97,6 +94,7 @@ class BitrateAllocator {
                                           uint32_t sum_min_bitrates)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
+  ObserverBitrateMap ZeroRateAllocation() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   ObserverBitrateMap LowRateAllocation(uint32_t bitrate)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 

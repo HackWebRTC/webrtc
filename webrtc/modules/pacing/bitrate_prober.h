@@ -34,7 +34,9 @@ class BitrateProber {
   // Initializes a new probing session if the prober is allowed to probe. Does
   // not initialize the prober unless the packet size is large enough to probe
   // with.
-  void OnIncomingPacket(int bitrate_bps, size_t packet_size, int64_t now_ms);
+  void OnIncomingPacket(uint32_t bitrate_bps,
+                        size_t packet_size,
+                        int64_t now_ms);
 
   // Returns the number of milliseconds until the next packet should be sent to
   // get accurate probing.
@@ -55,7 +57,7 @@ class BitrateProber {
   // Probe bitrate per packet. These are used to compute the delta relative to
   // the previous probe packet based on the size and time when that packet was
   // sent.
-  std::list<int> probe_bitrates_;
+  std::list<uint32_t> probe_bitrates_;
   size_t packet_size_last_send_;
   int64_t time_last_send_ms_;
 };

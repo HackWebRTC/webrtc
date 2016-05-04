@@ -96,6 +96,12 @@ TEST_F(BitrateAllocatorTest, TwoBitrateObserversOneRtcpObserver) {
   allocator_->OnNetworkChanged(1500000, 0, 50);
   EXPECT_EQ(600000u, bitrate_observer_1.last_bitrate_);
   EXPECT_EQ(600000u, bitrate_observer_2.last_bitrate_);
+
+  // Verify that if the bandwidth estimate is set to zero, the allocated rate is
+  // zero.
+  allocator_->OnNetworkChanged(0, 0, 50);
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_);
 }
 
 class BitrateAllocatorTestNoEnforceMin : public ::testing::Test {
@@ -168,6 +174,13 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, ThreeBitrateObservers) {
   allocator_->OnNetworkChanged(10000, 0, 0);
   // Verify that the first observer gets all the rate, and the rest get zero.
   EXPECT_EQ(10000u, bitrate_observer_1.last_bitrate_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_);
+  EXPECT_EQ(0u, bitrate_observer_3.last_bitrate_);
+
+  allocator_->OnNetworkChanged(0, 0, 0);
+  // Verify that zero estimated bandwidth, means that that all gets zero,
+  // regardless of set min bitrate.
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_);
   EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_);
   EXPECT_EQ(0u, bitrate_observer_3.last_bitrate_);
 

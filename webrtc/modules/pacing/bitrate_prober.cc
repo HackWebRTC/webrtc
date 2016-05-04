@@ -21,7 +21,7 @@
 namespace webrtc {
 
 namespace {
-int ComputeDeltaFromBitrate(size_t packet_size, int bitrate_bps) {
+int ComputeDeltaFromBitrate(size_t packet_size, uint32_t bitrate_bps) {
   assert(bitrate_bps > 0);
   // Compute the time delta needed to send packet_size bytes at bitrate_bps
   // bps. Result is in milliseconds.
@@ -52,7 +52,7 @@ bool BitrateProber::IsProbing() const {
   return probing_state_ == kProbing;
 }
 
-void BitrateProber::OnIncomingPacket(int bitrate_bps,
+void BitrateProber::OnIncomingPacket(uint32_t bitrate_bps,
                                      size_t packet_size,
                                      int64_t now_ms) {
   // Don't initialize probing unless we have something large enough to start
@@ -66,7 +66,7 @@ void BitrateProber::OnIncomingPacket(int bitrate_bps,
   const int kMaxNumProbes = 2;
   const int kPacketsPerProbe = 5;
   const float kProbeBitrateMultipliers[kMaxNumProbes] = {3, 6};
-  int bitrates_bps[kMaxNumProbes];
+  uint32_t bitrates_bps[kMaxNumProbes];
   std::stringstream bitrate_log;
   bitrate_log << "Start probing for bandwidth, bitrates:";
   for (int i = 0; i < kMaxNumProbes; ++i) {

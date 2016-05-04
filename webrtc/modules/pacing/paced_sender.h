@@ -33,7 +33,7 @@ class PacketQueue;
 
 class PacedSender : public Module, public RtpPacketSender {
  public:
-  class Callback {
+  class PacketSender {
    public:
     // Note: packets sent as a result of a callback should not pass by this
     // module again.
@@ -48,7 +48,7 @@ class PacedSender : public Module, public RtpPacketSender {
     virtual size_t TimeToSendPadding(size_t bytes) = 0;
 
    protected:
-    virtual ~Callback() {}
+    virtual ~PacketSender() {}
   };
 
   // Expected max pacer delay in ms. If ExpectedQueueTimeMs() is higher than
@@ -68,10 +68,8 @@ class PacedSender : public Module, public RtpPacketSender {
   static const size_t kMinProbePacketSize = 200;
 
   PacedSender(Clock* clock,
-              Callback* callback,
-              int bitrate_kbps,
-              int max_bitrate_kbps,
-              int min_bitrate_kbps);
+              PacketSender* packet_sender,
+              int target_bitrate_bps);
 
   virtual ~PacedSender();
 
@@ -86,14 +84,19 @@ class PacedSender : public Module, public RtpPacketSender {
   // effect.
   void SetProbingEnabled(bool enabled);
 
-  // Set target bitrates for the pacer.
-  // We will pace out bursts of packets at a bitrate of |max_bitrate_kbps|.
-  // |bitrate_kbps| is our estimate of what we are allowed to send on average.
-  // Padding packets will be utilized to reach |min_bitrate| unless enough media
-  // packets are available.
-  void UpdateBitrate(int bitrate_kbps,
-                     int max_bitrate_kbps,
-                     int min_bitrate_kbps);
+  // Sets the estimated capacity of the network.
+  // |bitrate_bps| is our estimate of what we are allowed to send on average.
+  // We will pace out bursts of packets at a bitrate of
+  // |bitrate_bps| * kDefaultPaceMultiplier.
+  void SetEstimatedBitrate(uint32_t bitrate_bps);
+
+  // Sets the bitrate that has been allocated for encoders.
+  // |allocated_bitrate| might be higher that the estimated available network
+  // bitrate and if so, the pacer will send with |allocated_bitrate|.
+  // Padding packets will be utilized to reach |padding_bitrate| unless enough
+  // media packets are available.
+  void SetAllocatedSendBitrate(int allocated_bitrate_bps,
+                               int padding_bitrate_bps);
 
   // Returns true if we send the packet now, else it will add the packet
   // information to the queue and call TimeToSendPacket when it's time to send.
@@ -134,7 +137,7 @@ class PacedSender : public Module, public RtpPacketSender {
   void SendPadding(size_t padding_needed) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* const clock_;
-  Callback* const callback_;
+  PacketSender* const packet_sender_;
 
   std::unique_ptr<CriticalSectionWrapper> critsect_;
   bool paused_ GUARDED_BY(critsect_);
@@ -152,8 +155,9 @@ class PacedSender : public Module, public RtpPacketSender {
   std::unique_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
   // Actual configured bitrates (media_budget_ may temporarily be higher in
   // order to meet pace time constraint).
-  int bitrate_bps_ GUARDED_BY(critsect_);
-  int max_bitrate_kbps_ GUARDED_BY(critsect_);
+  uint32_t estimated_bitrate_bps_ GUARDED_BY(critsect_);
+  uint32_t min_send_bitrate_kbps_ GUARDED_BY(critsect_);
+  uint32_t pacing_bitrate_kbps_ GUARDED_BY(critsect_);
 
   int64_t time_last_update_us_ GUARDED_BY(critsect_);
 

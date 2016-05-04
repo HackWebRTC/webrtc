@@ -52,8 +52,9 @@ const int Call::Config::kDefaultStartBitrateBps = 300000;
 
 namespace internal {
 
-class Call : public webrtc::Call, public PacketReceiver,
-             public BitrateObserver {
+class Call : public webrtc::Call,
+             public PacketReceiver,
+             public CongestionController::Observer {
  public:
   explicit Call(const Call::Config& config);
   virtual ~Call();
@@ -699,10 +700,8 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
     pacer_bitrate_sum_kbits_ += pacer_bitrate_bps / 1000;
     ++num_bitrate_updates_;
   }
-  congestion_controller_->UpdatePacerBitrate(
-      target_bitrate_bps / 1000,
-      PacedSender::kDefaultPaceMultiplier * pacer_bitrate_bps / 1000,
-      pad_up_to_bitrate_bps / 1000);
+  congestion_controller_->SetAllocatedSendBitrate(allocated_bitrate_bps,
+                                                  pad_up_to_bitrate_bps);
 }
 
 void Call::ConfigureSync(const std::string& sync_group) {

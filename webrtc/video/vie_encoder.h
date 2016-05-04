@@ -61,10 +61,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
              const std::vector<uint32_t>& ssrcs,
              ProcessThread* module_process_thread,
              SendStatisticsProxy* stats_proxy,
-             // TODO(nisse): Used only for tests, delete?
-             rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
-             OveruseFrameDetector* overuse_detector,
-             PacedSender* pacer);
+             OveruseFrameDetector* overuse_detector);
   ~ViEEncoder();
 
   vcm::VideoSender* video_sender();
@@ -139,9 +136,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
   rtc::CriticalSection data_cs_;
 
   SendStatisticsProxy* const stats_proxy_;
-  rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
   OveruseFrameDetector* const overuse_detector_;
-  PacedSender* const pacer_;
 
   // The time we last received an input frame or encoded frame. This is used to
   // track when video is stopped long enough that we also want to stop sending
