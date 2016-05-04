@@ -24,6 +24,7 @@
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
+#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/video_capture_input.h"
 #include "webrtc/video/vie_remb.h"
@@ -376,10 +377,12 @@ VideoSendStream::VideoSendStream(
           config.post_encode_callback,
           &stats_proxy_),
       vie_encoder_(num_cpu_cores,
-                   config_.rtp.ssrcs,
                    module_process_thread_,
                    &stats_proxy_,
                    &overuse_detector_),
+      encoder_feedback_(Clock::GetRealTimeClock(),
+                        config.rtp.ssrcs,
+                        &vie_encoder_),
       video_sender_(vie_encoder_.video_sender()),
       bandwidth_observer_(congestion_controller_->GetBitrateController()
                               ->CreateRtcpBandwidthObserver()),
@@ -407,7 +410,6 @@ VideoSendStream::VideoSendStream(
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(remb_);
 
-  encoder_feedback_.Init(config_.rtp.ssrcs, &vie_encoder_);
 
   // RTP/RTCP initialization.
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -567,6 +569,13 @@ void VideoSendStream::EncoderProcess() {
       vie_encoder_.SetEncoder(encoder_settings->video_codec,
                               encoder_settings->min_transmit_bitrate_bps,
                               payload_router_.MaxPayloadLength(), this);
+
+      // Clear stats for disabled layers.
+      for (size_t i = encoder_settings->streams.size();
+           i < config_.rtp.ssrcs.size(); ++i) {
+        stats_proxy_.OnInactiveSsrc(config_.rtp.ssrcs[i]);
+      }
+
       if (config_.suspend_below_min_bitrate) {
         video_sender_->SuspendBelowMinBitrate();
         bitrate_allocator_->EnforceMinBitrate(false);
@@ -627,8 +636,33 @@ int32_t VideoSendStream::Encoded(const EncodedImage& encoded_image,
   // |encoded_frame_proxy_| forwards frames to |config_.post_encode_callback|;
   encoded_frame_proxy_.Encoded(encoded_image, codec_specific_info,
                                fragmentation);
-  return payload_router_.Encoded(encoded_image, codec_specific_info,
-                                 fragmentation);
+  int32_t return_value = payload_router_.Encoded(
+      encoded_image, codec_specific_info, fragmentation);
+
+  if (kEnableFrameRecording) {
+    int layer = codec_specific_info->codecType == kVideoCodecVP8
+                    ? codec_specific_info->codecSpecific.VP8.simulcastIdx
+                    : 0;
+    IvfFileWriter* file_writer;
+    {
+      if (file_writers_[layer] == nullptr) {
+        std::ostringstream oss;
+        oss << "send_bitstream_ssrc";
+        for (uint32_t ssrc : config_.rtp.ssrcs)
+          oss << "_" << ssrc;
+        oss << "_layer" << layer << ".ivf";
+        file_writers_[layer] =
+            IvfFileWriter::Open(oss.str(), codec_specific_info->codecType);
+      }
+      file_writer = file_writers_[layer].get();
+    }
+    if (file_writer) {
+      bool ok = file_writer->WriteFrame(encoded_image);
+      RTC_DCHECK(ok);
+    }
+  }
+
+  return return_value;
 }
 
 void VideoSendStream::ConfigureProtection() {

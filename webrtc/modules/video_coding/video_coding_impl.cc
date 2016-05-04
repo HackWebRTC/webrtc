@@ -152,7 +152,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_.AddVideoFrame(videoFrame, contentMetrics, codecSpecificInfo);
   }
 
-  int32_t IntraFrameRequest(int stream_index) override {
+  int32_t IntraFrameRequest(size_t stream_index) override {
     return sender_.IntraFrameRequest(stream_index);
   }
 

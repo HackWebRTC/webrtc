@@ -34,6 +34,7 @@ namespace webrtc {
 class BitrateAllocator;
 class CallStats;
 class CongestionController;
+class IvfFileWriter;
 class ProcessThread;
 class RtpRtcp;
 class ViEEncoder;
@@ -126,6 +127,10 @@ class VideoSendStream : public webrtc::VideoSendStream,
   BitrateAllocator* const bitrate_allocator_;
   VieRemb* const remb_;
 
+  static const bool kEnableFrameRecording = false;
+  static const int kMaxLayers = 3;
+  std::unique_ptr<IvfFileWriter> file_writers_[kMaxLayers];
+
   rtc::PlatformThread encoder_thread_;
   rtc::Event encoder_wakeup_event_;
   volatile int stop_encoder_thread_;
@@ -134,8 +139,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
       GUARDED_BY(encoder_settings_crit_);
 
   OveruseFrameDetector overuse_detector_;
-  EncoderStateFeedback encoder_feedback_;
   ViEEncoder vie_encoder_;
+  EncoderStateFeedback encoder_feedback_;
   vcm::VideoSender* const video_sender_;
 
   const std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;

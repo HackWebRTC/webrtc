@@ -88,7 +88,7 @@ class VideoSender : public Module {
                         const VideoContentMetrics* _contentMetrics,
                         const CodecSpecificInfo* codecSpecificInfo);
 
-  int32_t IntraFrameRequest(int stream_index);
+  int32_t IntraFrameRequest(size_t stream_index);
   int32_t EnableFrameDropper(bool enable);
 
   void SuspendBelowMinBitrate();

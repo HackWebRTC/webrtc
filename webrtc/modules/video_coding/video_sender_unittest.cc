@@ -290,10 +290,6 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequests) {
   EXPECT_EQ(-1, sender_->IntraFrameRequest(3));
   ExpectIntraRequest(-1);
   AddFrame();
-
-  EXPECT_EQ(-1, sender_->IntraFrameRequest(-1));
-  ExpectIntraRequest(-1);
-  AddFrame();
 }
 
 TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
@@ -313,7 +309,6 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
   EXPECT_EQ(0, sender_->IntraFrameRequest(2));
   // No requests expected since these indices are out of bounds.
   EXPECT_EQ(-1, sender_->IntraFrameRequest(3));
-  EXPECT_EQ(-1, sender_->IntraFrameRequest(-1));
 }
 
 TEST_F(TestVideoSenderWithMockEncoder, TestEncoderParametersForInternalSource) {

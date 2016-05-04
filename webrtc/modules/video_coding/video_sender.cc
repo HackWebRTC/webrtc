@@ -335,11 +335,10 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
   return VCM_OK;
 }
 
-int32_t VideoSender::IntraFrameRequest(int stream_index) {
+int32_t VideoSender::IntraFrameRequest(size_t stream_index) {
   {
     rtc::CritScope lock(&params_crit_);
-    if (stream_index < 0 ||
-        static_cast<size_t>(stream_index) >= next_frame_types_.size()) {
+    if (stream_index >= next_frame_types_.size()) {
       return -1;
     }
     next_frame_types_[stream_index] = kVideoFrameKey;
@@ -353,7 +352,7 @@ int32_t VideoSender::IntraFrameRequest(int stream_index) {
   // encoder_crit_.
   rtc::CritScope lock(&encoder_crit_);
   rtc::CritScope params_lock(&params_crit_);
-  if (static_cast<size_t>(stream_index) >= next_frame_types_.size())
+  if (stream_index >= next_frame_types_.size())
     return -1;
   if (_encoder != nullptr && _encoder->InternalSource()) {
     // Try to request the frame if we have an external encoder with

@@ -230,7 +230,7 @@ class VideoCodingModule : public Module {
   //
   // Return value      : VCM_OK, on success.
   //                     < 0,    on error.
-  virtual int32_t IntraFrameRequest(int stream_index) = 0;
+  virtual int32_t IntraFrameRequest(size_t stream_index) = 0;
 
   // Frame Dropper enable. Can be used to disable the frame dropping when the
   // encoder

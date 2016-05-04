@@ -13,16 +13,18 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/video/vie_encoder.h"
 
+static const int kMinKeyFrameRequestIntervalMs = 300;
+
 namespace webrtc {
 
-EncoderStateFeedback::EncoderStateFeedback() : vie_encoder_(nullptr) {}
-
-void EncoderStateFeedback::Init(const std::vector<uint32_t>& ssrcs,
-                                ViEEncoder* encoder) {
+EncoderStateFeedback::EncoderStateFeedback(Clock* clock,
+                                           const std::vector<uint32_t>& ssrcs,
+                                           ViEEncoder* encoder)
+    : clock_(clock),
+      ssrcs_(ssrcs),
+      vie_encoder_(encoder),
+      time_last_intra_request_ms_(ssrcs.size(), -1) {
   RTC_DCHECK(!ssrcs.empty());
-  rtc::CritScope lock(&crit_);
-  ssrcs_ = ssrcs;
-  vie_encoder_ = encoder;
 }
 
 bool EncoderStateFeedback::HasSsrc(uint32_t ssrc) {
@@ -33,41 +35,59 @@ bool EncoderStateFeedback::HasSsrc(uint32_t ssrc) {
   return false;
 }
 
+size_t EncoderStateFeedback::GetStreamIndex(uint32_t ssrc) {
+  for (size_t i = 0; i < ssrcs_.size(); ++i) {
+    if (ssrcs_[i] == ssrc)
+      return i;
+  }
+  RTC_NOTREACHED() << "Unknown ssrc " << ssrc;
+  return 0;
+}
+
 void EncoderStateFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
   if (!HasSsrc(ssrc))
     return;
-  RTC_DCHECK(vie_encoder_);
 
-  vie_encoder_->OnReceivedIntraFrameRequest(ssrc);
+  size_t index = GetStreamIndex(ssrc);
+  {
+    int64_t now_ms = clock_->TimeInMilliseconds();
+    rtc::CritScope lock(&crit_);
+    if (time_last_intra_request_ms_[index] + kMinKeyFrameRequestIntervalMs >
+        now_ms) {
+      return;
+    }
+    time_last_intra_request_ms_[index] = now_ms;
+  }
+
+  vie_encoder_->OnReceivedIntraFrameRequest(index);
 }
 
 void EncoderStateFeedback::OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) {
-  rtc::CritScope lock(&crit_);
   if (!HasSsrc(ssrc))
     return;
-  RTC_DCHECK(vie_encoder_);
 
-  vie_encoder_->OnReceivedSLI(ssrc, picture_id);
+  vie_encoder_->OnReceivedSLI(picture_id);
 }
 
 void EncoderStateFeedback::OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) {
-  rtc::CritScope lock(&crit_);
   if (!HasSsrc(ssrc))
     return;
-  RTC_DCHECK(vie_encoder_);
 
-  vie_encoder_->OnReceivedRPSI(ssrc, picture_id);
+  vie_encoder_->OnReceivedRPSI(picture_id);
 }
 
 // Sending SSRCs for this encoder should never change since they are configured
-// once and not reconfigured.
+// once and not reconfigured, however, OnLocalSsrcChanged is called when the
+// RtpModules are created with a different SSRC than what will be used in the
+// end.
+// TODO(perkj): Can we make sure the RTP module is created with the right SSRC
+// from the beginning so this method is not triggered during creation ?
 void EncoderStateFeedback::OnLocalSsrcChanged(uint32_t old_ssrc,
                                               uint32_t new_ssrc) {
   if (!RTC_DCHECK_IS_ON)
     return;
-  rtc::CritScope lock(&crit_);
-  if (ssrcs_.empty())  // Encoder not yet attached (or detached for teardown).
+
+  if (old_ssrc == 0)  // old_ssrc == 0 during creation.
     return;
   // SSRC shouldn't change to something we haven't already registered with the
   // encoder.

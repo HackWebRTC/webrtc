@@ -12,10 +12,6 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/video/vie_encoder.h"
 
@@ -27,42 +23,59 @@ class MockVieEncoder : public ViEEncoder {
  public:
   explicit MockVieEncoder(ProcessThread* process_thread)
       : ViEEncoder(1,
-                   std::vector<uint32_t>(),
                    process_thread,
                    nullptr,
                    nullptr) {}
   ~MockVieEncoder() {}
 
-  MOCK_METHOD1(OnReceivedIntraFrameRequest,
-               void(uint32_t));
-  MOCK_METHOD2(OnReceivedSLI,
-               void(uint32_t ssrc, uint8_t picture_id));
-  MOCK_METHOD2(OnReceivedRPSI,
-               void(uint32_t ssrc, uint64_t picture_id));
+  MOCK_METHOD1(OnReceivedIntraFrameRequest, void(size_t));
+  MOCK_METHOD1(OnReceivedSLI, void(uint8_t picture_id));
+  MOCK_METHOD1(OnReceivedRPSI, void(uint64_t picture_id));
 };
 
-TEST(VieKeyRequestTest, CreateAndTriggerRequests) {
-  static const uint32_t kSsrc = 1234;
-  NiceMock<MockProcessThread> process_thread;
-  PacketRouter router;
-  MockVieEncoder encoder(&process_thread);
+class VieKeyRequestTest : public ::testing::Test {
+ public:
+  VieKeyRequestTest()
+      : encoder_(&process_thread_),
+        simulated_clock_(123456789),
+        encoder_state_feedback_(
+            &simulated_clock_,
+            std::vector<uint32_t>(1, VieKeyRequestTest::kSsrc),
+            &encoder_) {}
 
-  EncoderStateFeedback encoder_state_feedback;
-  encoder_state_feedback.Init(std::vector<uint32_t>(1, kSsrc), &encoder);
+ protected:
+  const uint32_t kSsrc = 1234;
+  NiceMock<MockProcessThread> process_thread_;
+  MockVieEncoder encoder_;
+  SimulatedClock simulated_clock_;
+  EncoderStateFeedback encoder_state_feedback_;
+};
 
-  EXPECT_CALL(encoder, OnReceivedIntraFrameRequest(kSsrc))
-      .Times(1);
-  encoder_state_feedback.OnReceivedIntraFrameRequest(kSsrc);
+TEST_F(VieKeyRequestTest, CreateAndTriggerRequests) {
+  EXPECT_CALL(encoder_, OnReceivedIntraFrameRequest(0)).Times(1);
+  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
 
   const uint8_t sli_picture_id = 3;
-  EXPECT_CALL(encoder, OnReceivedSLI(kSsrc, sli_picture_id))
-      .Times(1);
-  encoder_state_feedback.OnReceivedSLI(kSsrc, sli_picture_id);
+  EXPECT_CALL(encoder_, OnReceivedSLI(sli_picture_id)).Times(1);
+  encoder_state_feedback_.OnReceivedSLI(kSsrc, sli_picture_id);
 
   const uint64_t rpsi_picture_id = 9;
-  EXPECT_CALL(encoder, OnReceivedRPSI(kSsrc, rpsi_picture_id))
-      .Times(1);
-  encoder_state_feedback.OnReceivedRPSI(kSsrc, rpsi_picture_id);
+  EXPECT_CALL(encoder_, OnReceivedRPSI(rpsi_picture_id)).Times(1);
+  encoder_state_feedback_.OnReceivedRPSI(kSsrc, rpsi_picture_id);
+}
+
+TEST_F(VieKeyRequestTest, TooManyOnReceivedIntraFrameRequest) {
+  EXPECT_CALL(encoder_, OnReceivedIntraFrameRequest(0)).Times(1);
+  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  simulated_clock_.AdvanceTimeMilliseconds(10);
+  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+
+  EXPECT_CALL(encoder_, OnReceivedIntraFrameRequest(0)).Times(1);
+  simulated_clock_.AdvanceTimeMilliseconds(300);
+  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
 }
 
 }  // namespace webrtc

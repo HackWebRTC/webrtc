@@ -23,7 +23,6 @@
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/typedefs.h"
@@ -58,7 +57,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   friend class ViEBitrateObserver;
 
   ViEEncoder(uint32_t number_of_cores,
-             const std::vector<uint32_t>& ssrcs,
              ProcessThread* module_process_thread,
              SendStatisticsProxy* stats_proxy,
              OveruseFrameDetector* overuse_detector);
@@ -108,9 +106,9 @@ class ViEEncoder : public VideoEncoderRateObserver,
                       const std::string& encoder_name) override;
 
   // virtual to test EncoderStateFeedback with mocks.
-  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc);
-  virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id);
-  virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id);
+  virtual void OnReceivedIntraFrameRequest(size_t stream_index);
+  virtual void OnReceivedSLI(uint8_t picture_id);
+  virtual void OnReceivedRPSI(uint64_t picture_id);
 
   int GetPaddingNeededBps() const;
 
@@ -119,15 +117,11 @@ class ViEEncoder : public VideoEncoderRateObserver,
                         int64_t round_trip_time_ms);
 
  private:
-  static const bool kEnableFrameRecording = false;
-  static const int kMaxLayers = 3;
-
   bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
 
   const uint32_t number_of_cores_;
-  const std::vector<uint32_t> ssrcs_;
 
   const std::unique_ptr<VideoProcessing> vp_;
   const std::unique_ptr<QMVideoSettingsCallback> qm_callback_;
@@ -148,7 +142,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   bool network_is_transmitting_ GUARDED_BY(data_cs_);
   bool encoder_paused_ GUARDED_BY(data_cs_);
   bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
-  std::vector<int64_t> time_last_intra_request_ms_ GUARDED_BY(data_cs_);
 
   rtc::CriticalSection sink_cs_;
   EncodedImageCallback* sink_ GUARDED_BY(sink_cs_);
@@ -161,8 +154,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   uint64_t picture_id_rpsi_ GUARDED_BY(data_cs_);
 
   bool video_suspended_ GUARDED_BY(data_cs_);
-
-  std::unique_ptr<IvfFileWriter> file_writers_[kMaxLayers] GUARDED_BY(data_cs_);
 };
 
 }  // namespace webrtc

@@ -17,26 +17,18 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/common_video/include/video_image.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/overuse_frame_detector.h"
-#include "webrtc/video/payload_router.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
 
 static const float kStopPaddingThresholdMs = 2000;
-static const int kMinKeyFrameRequestIntervalMs = 300;
 
 class QMVideoSettingsCallback : public VCMQMSettingsCallback {
  public:
@@ -54,12 +46,10 @@ class QMVideoSettingsCallback : public VCMQMSettingsCallback {
 };
 
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
-                       const std::vector<uint32_t>& ssrcs,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
                        OveruseFrameDetector* overuse_detector)
     : number_of_cores_(number_of_cores),
-      ssrcs_(ssrcs),
       vp_(VideoProcessing::Create()),
       qm_callback_(new QMVideoSettingsCallback(vp_.get())),
       video_sender_(Clock::GetRealTimeClock(),
@@ -76,7 +66,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       network_is_transmitting_(true),
       encoder_paused_(true),
       encoder_paused_and_dropped_frame_(false),
-      time_last_intra_request_ms_(ssrcs.size(), -1),
       module_process_thread_(module_process_thread),
       has_received_sli_(false),
       picture_id_sli_(0),
@@ -156,11 +145,6 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
   }
 
   if (stats_proxy_) {
-    // Clear stats for disabled layers.
-    for (size_t i = video_codec.numberOfSimulcastStreams; i < ssrcs_.size();
-         ++i) {
-      stats_proxy_->OnInactiveSsrc(ssrcs_[i]);
-    }
     VideoEncoderConfig::ContentType content_type =
         VideoEncoderConfig::ContentType::kRealtimeVideo;
     switch (video_codec.mode) {
@@ -353,30 +337,6 @@ int32_t ViEEncoder::Encoded(const EncodedImage& encoded_image,
   }
 
   overuse_detector_->FrameSent(encoded_image._timeStamp);
-  if (kEnableFrameRecording) {
-    int layer = codec_specific_info->codecType == kVideoCodecVP8
-                    ? codec_specific_info->codecSpecific.VP8.simulcastIdx
-                    : 0;
-    IvfFileWriter* file_writer;
-    {
-      rtc::CritScope lock(&data_cs_);
-      if (file_writers_[layer] == nullptr) {
-        std::ostringstream oss;
-        oss << "send_bitstream_ssrc";
-        for (uint32_t ssrc : ssrcs_)
-          oss << "_" << ssrc;
-        oss << "_layer" << layer << ".ivf";
-        file_writers_[layer] =
-            IvfFileWriter::Open(oss.str(), codec_specific_info->codecType);
-      }
-      file_writer = file_writers_[layer].get();
-    }
-    if (file_writer) {
-      bool ok = file_writer->WriteFrame(encoded_image);
-      RTC_DCHECK(ok);
-    }
-  }
-
   return success;
 }
 
@@ -387,40 +347,22 @@ void ViEEncoder::SendStatistics(uint32_t bit_rate,
     stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate, encoder_name);
 }
 
-void ViEEncoder::OnReceivedSLI(uint32_t /*ssrc*/,
-                               uint8_t picture_id) {
+void ViEEncoder::OnReceivedSLI(uint8_t picture_id) {
   rtc::CritScope lock(&data_cs_);
   picture_id_sli_ = picture_id;
   has_received_sli_ = true;
 }
 
-void ViEEncoder::OnReceivedRPSI(uint32_t /*ssrc*/,
-                                uint64_t picture_id) {
+void ViEEncoder::OnReceivedRPSI(uint64_t picture_id) {
   rtc::CritScope lock(&data_cs_);
   picture_id_rpsi_ = picture_id;
   has_received_rpsi_ = true;
 }
 
-void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
+void ViEEncoder::OnReceivedIntraFrameRequest(size_t stream_index) {
   // Key frame request from remote side, signal to VCM.
   TRACE_EVENT0("webrtc", "OnKeyFrameRequest");
-
-  for (size_t i = 0; i < ssrcs_.size(); ++i) {
-    if (ssrcs_[i] != ssrc)
-      continue;
-    int64_t now_ms = TickTime::MillisecondTimestamp();
-    {
-      rtc::CritScope lock(&data_cs_);
-      if (time_last_intra_request_ms_[i] + kMinKeyFrameRequestIntervalMs >
-          now_ms) {
-        return;
-      }
-      time_last_intra_request_ms_[i] = now_ms;
-    }
-    video_sender_.IntraFrameRequest(static_cast<int>(i));
-    return;
-  }
-  RTC_NOTREACHED() << "Should not receive keyframe requests on unknown SSRCs.";
+  video_sender_.IntraFrameRequest(stream_index);
 }
 
 void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
@@ -443,8 +385,8 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
   if (!video_suspension_changed)
     return;
   // Video suspend-state changed, inform codec observer.
-  LOG(LS_INFO) << "Video suspend state changed " << video_is_suspended
-               << " for ssrc " << ssrcs_[0];
+  LOG(LS_INFO) << "Video suspend state changed " << video_is_suspended;
+
   if (stats_proxy_)
     stats_proxy_->OnSuspendChange(video_is_suspended);
 }
