@@ -1127,6 +1127,15 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
   video_send_config_.local_renderer = local_preview.get();
   video_receive_configs_[stream_id].renderer = loopback_video.get();
 
+  if (params.common.fec) {
+    video_send_config_.rtp.fec.red_payload_type = kRedPayloadType;
+    video_send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+    video_receive_configs_[stream_id].rtp.fec.red_payload_type =
+      kRedPayloadType;
+    video_receive_configs_[stream_id].rtp.fec.ulpfec_payload_type =
+      kUlpfecPayloadType;
+  }
+
   if (params_.screenshare.enabled)
     SetupScreenshare();
 

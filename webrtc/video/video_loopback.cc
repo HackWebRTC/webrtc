@@ -178,6 +178,8 @@ DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
 
 DEFINE_bool(allow_reordering, false, "Allow packet reordering to occur");
 
+DEFINE_bool(use_fec, false, "Use forward error correction.");
+
 DEFINE_string(
     force_fieldtrials,
     "",
@@ -216,7 +218,9 @@ void Loopback() {
        flags::MaxBitrateKbps() * 1000, flags::Codec(),
        flags::NumTemporalLayers(), flags::SelectedTL(),
        0,  // No min transmit bitrate.
-       call_bitrate_config, flags::FLAGS_send_side_bwe},
+       call_bitrate_config,
+       flags::FLAGS_send_side_bwe,
+       flags::FLAGS_use_fec},
       {flags::Clip()},
       {},  // Screenshare specific.
       {"video", 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename(),

@@ -41,6 +41,7 @@ class VideoQualityTest : public test::CallTest {
 
       Call::Config::BitrateConfig call_bitrate_config;
       bool send_side_bwe;
+      bool fec;
     } common;
     struct {  // Video-specific settings.
       std::string clip_name;
