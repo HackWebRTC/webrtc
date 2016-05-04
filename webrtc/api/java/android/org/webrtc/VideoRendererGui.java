@@ -243,8 +243,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             GlUtil.checkNoGLES2Error("glBindFramebuffer");
 
             // Copy the OES texture content. This will also normalize the sampling matrix.
-            drawer.drawOes(pendingFrame.textureId, rotatedSamplingMatrix,
-                textureCopy.getWidth(), textureCopy.getHeight(),
+             drawer.drawOes(pendingFrame.textureId, rotatedSamplingMatrix,
                  0, 0, textureCopy.getWidth(), textureCopy.getHeight());
              rotatedSamplingMatrix = RendererCommon.identityMatrix();
 
@@ -264,10 +263,10 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       // OpenGL defaults to lower left origin - flip viewport position vertically.
       final int viewportY = screenHeight - displayLayout.bottom;
       if (rendererType == RendererType.RENDERER_YUV) {
-        drawer.drawYuv(yuvTextures, texMatrix, videoWidth, videoHeight,
+        drawer.drawYuv(yuvTextures, texMatrix,
             displayLayout.left, viewportY, displayLayout.width(), displayLayout.height());
       } else {
-        drawer.drawRgb(textureCopy.getTextureId(), texMatrix, videoWidth, videoHeight,
+        drawer.drawRgb(textureCopy.getTextureId(), texMatrix,
             displayLayout.left, viewportY, displayLayout.width(), displayLayout.height());
       }
 
