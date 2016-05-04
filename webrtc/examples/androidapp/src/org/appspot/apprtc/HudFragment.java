@@ -194,8 +194,10 @@ public class HudFragment extends Fragment {
     }
 
     if (cpuMonitor != null) {
-      encoderStat.append("CPU%: ").append(cpuMonitor.getCpuUsageCurrent())
-        .append(". Freq: ").append(cpuMonitor.getCpuFrequencyScaleCurrent());
+      encoderStat.append("CPU%: ")
+        .append(cpuMonitor.getCpuUsageCurrent()).append("/")
+        .append(cpuMonitor.getCpuUsageAverage())
+        .append(". Freq: ").append(cpuMonitor.getFrequencyScaleAverage());
     }
     encoderStatView.setText(encoderStat.toString());
   }

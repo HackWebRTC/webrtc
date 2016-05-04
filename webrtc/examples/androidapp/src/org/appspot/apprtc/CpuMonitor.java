@@ -14,19 +14,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
-import android.os.Environment;
 import android.os.SystemClock;
 import android.util.Log;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.Scanner;
 
 import org.appspot.apprtc.util.LooperExecutor;
@@ -75,35 +70,34 @@ import org.appspot.apprtc.util.LooperExecutor;
 
 class CpuMonitor {
   private static final String TAG = "CpuMonitor";
-  private static final String DUMP_FILE = "cpu_log.txt";
-  private static final int CPU_STAT_SAMPLE_PERIOD = 2000;
-  private static final int CPU_STAT_LOG_PERIOD = 6000;
+  private static final int MOVING_AVERAGE_SAMPLES = 10;
+
+  private static final int CPU_STAT_SAMPLE_PERIOD_MS = 1000;
+  private static final int CPU_STAT_LOG_PERIOD_MS = 5000;
 
   private final Context appContext;
+  // User CPU usage at current frequency.
+  private final MovingAverage userCpuUsage;
+  // System CPU usage at current frequency.
+  private final MovingAverage systemCpuUsage;
+  // Total CPU usage relative to maximum frequency.
+  private final MovingAverage totalCpuUsage;
+  // CPU frequency in percentage from maximum.
+  private final MovingAverage frequencyScale;
+
   private LooperExecutor executor;
   private long lastStatLogTimeMs;
-  private int iterations;
-  private double currentUserCpuUsage;
-  private double currentSystemCpuUsage;
-  private double currentTotalCpuUsage;
-  private double currentFrequencyScale = -1;
-  private double sumUserCpuUsage;
-  private double sumSystemCpuUsage;
-  private double sumFrequencyScale;
-  private double sumTotalCpuUsage;
   private long[] cpuFreqMax;
   private int cpusPresent;
   private int actualCpusPresent;
-  private boolean initialized = false;
+  private boolean initialized;
+  private boolean cpuOveruse;
   private String[] maxPath;
   private String[] curPath;
   private double[] curFreqScales;
   private ProcStat lastProcStat;
 
-  private static boolean dumpEnabled = false;
-  private static FileOutputStream fileWriter;
-
-  private class ProcStat {
+  private static class ProcStat {
     final long userTime;
     final long systemTime;
     final long idleTime;
@@ -115,10 +109,55 @@ class CpuMonitor {
     }
   }
 
+  private static class MovingAverage {
+    private final int size;
+    private double sum;
+    private double currentValue;
+    private double circBuffer[];
+    private int circBufferIndex;
+
+    public MovingAverage(int size) {
+      if (size <= 0) {
+        throw new AssertionError("Size value in MovingAverage ctor should be positive.");
+      }
+      this.size = size;
+      circBuffer = new double[size];
+    }
+
+    public void reset() {
+      Arrays.fill(circBuffer, 0);
+      circBufferIndex = 0;
+      sum = 0;
+      currentValue = 0;
+    }
+
+    public void addValue(double value) {
+      sum -= circBuffer[circBufferIndex];
+      circBuffer[circBufferIndex++] = value;
+      currentValue = value;
+      sum += value;
+      if (circBufferIndex >= size) {
+        circBufferIndex = 0;
+      }
+    }
+
+    public double getCurrent() {
+      return currentValue;
+    }
+
+    public double getAverage() {
+      return sum / (double) size;
+    }
+  }
+
   public CpuMonitor(Context context) {
     Log.d(TAG, "CpuMonitor ctor.");
     appContext = context.getApplicationContext();
-    lastStatLogTimeMs = 0;
+    userCpuUsage = new MovingAverage(MOVING_AVERAGE_SAMPLES);
+    systemCpuUsage = new MovingAverage(MOVING_AVERAGE_SAMPLES);
+    totalCpuUsage = new MovingAverage(MOVING_AVERAGE_SAMPLES);
+    frequencyScale = new MovingAverage(MOVING_AVERAGE_SAMPLES);
+    lastStatLogTimeMs = SystemClock.elapsedRealtime();
 
     executor = new LooperExecutor();
     executor.requestStart();
@@ -149,67 +188,42 @@ class CpuMonitor {
     }
   }
 
+  public synchronized void reset() {
+    if (executor != null) {
+      Log.d(TAG, "reset");
+      resetStat();
+      cpuOveruse = false;
+    }
+  }
+
   public synchronized int getCpuUsageCurrent() {
-    return doubleToPercent(currentTotalCpuUsage);
+    return doubleToPercent(userCpuUsage.getCurrent() + systemCpuUsage.getCurrent());
   }
 
   public synchronized int getCpuUsageAverage() {
-    return sumDoubleToPercent(sumTotalCpuUsage, iterations);
+    return doubleToPercent(userCpuUsage.getAverage() + systemCpuUsage.getAverage());
   }
 
-  public synchronized int getCpuFrequencyScaleCurrent() {
-    return doubleToPercent(currentFrequencyScale);
+  public synchronized int getFrequencyScaleAverage() {
+    return doubleToPercent(frequencyScale.getAverage());
   }
 
   private void scheduleCpuUtilizationTask() {
     executor.scheduleAtFixedRate(new Runnable() {
       @Override
       public void run() {
-        logCpuUtilization();
+        cpuUtilizationTask();
       }
-    }, CPU_STAT_SAMPLE_PERIOD);
+    }, CPU_STAT_SAMPLE_PERIOD_MS);
   }
 
-  private void checkDump(String statString) {
-    if (!dumpEnabled) {
-      return;
-    }
-    if (fileWriter == null) {
-      Log.d(TAG, "Start log dump");
-      String fileName = Environment.getExternalStorageDirectory().getAbsolutePath()
-          + File.separator + DUMP_FILE;
-      try {
-        fileWriter = new FileOutputStream(fileName, false /* append */);
-      } catch (FileNotFoundException e) {
-        Log.e(TAG, "Can not open file.", e);
-        dumpEnabled = false;
-        return;
-      }
-    }
-
-    Date date = Calendar.getInstance().getTime();
-    SimpleDateFormat df = new SimpleDateFormat("MM-dd HH:mm:ss.SSS");
-    String msg = df.format(date) + " " + TAG + ":" + statString + "\n";
-    try {
-      fileWriter.write(msg.getBytes());
-    } catch (IOException e) {
-      Log.e(TAG, "Can not write to file.", e);
-      dumpEnabled = false;
-    }
-  }
-
-  private void logCpuUtilization() {
-    boolean logStatistics = false;
-    if (SystemClock.elapsedRealtime() - lastStatLogTimeMs >= CPU_STAT_LOG_PERIOD) {
-      lastStatLogTimeMs = SystemClock.elapsedRealtime();
-      logStatistics = true;
-    }
+  private void cpuUtilizationTask() {
     boolean cpuMonitorAvailable = sampleCpuUtilization();
-    if (logStatistics && cpuMonitorAvailable) {
+    if (cpuMonitorAvailable
+        && SystemClock.elapsedRealtime() - lastStatLogTimeMs >= CPU_STAT_LOG_PERIOD_MS) {
+      lastStatLogTimeMs = SystemClock.elapsedRealtime();
       String statString = getStatString();
-      checkDump(statString);
       Log.d(TAG, statString);
-      resetStat();
     }
   }
 
@@ -251,11 +265,11 @@ class CpuMonitor {
   }
 
   private synchronized void resetStat() {
-    sumUserCpuUsage = 0;
-    sumSystemCpuUsage = 0;
-    sumFrequencyScale = 0;
-    sumTotalCpuUsage = 0;
-    iterations = 0;
+    userCpuUsage.reset();
+    systemCpuUsage.reset();
+    totalCpuUsage.reset();
+    frequencyScale.reset();
+    lastStatLogTimeMs = SystemClock.elapsedRealtime();
   }
 
   private int getBatteryLevel() {
@@ -305,6 +319,7 @@ class CpuMonitor {
         // We have never found this CPU's max frequency.  Attempt to read it.
         long cpufreqMax = readFreqFromFile(maxPath[i]);
         if (cpufreqMax > 0) {
+          Log.d(TAG, "Core " + i + ". Max frequency: " + cpufreqMax);
           lastSeenMaxFreq = cpufreqMax;
           cpuFreqMax[i] = cpufreqMax;
           maxPath[i] = null;  // Kill path to free its memory.
@@ -347,12 +362,9 @@ class CpuMonitor {
      * incorrect only if the frequencies have peeked or dropped in between the
      * invocations.
      */
-    double newFrequencyScale = (double) cpuFreqCurSum / cpuFreqMaxSum;
-    double frequencyScale;
-    if (currentFrequencyScale > 0) {
-      frequencyScale = (currentFrequencyScale + newFrequencyScale) * 0.5;
-    } else {
-      frequencyScale = newFrequencyScale;
+    double currentFrequencyScale = cpuFreqCurSum / (double) cpuFreqMaxSum;
+    if (frequencyScale.getCurrent() > 0) {
+      currentFrequencyScale = (frequencyScale.getCurrent() + currentFrequencyScale) * 0.5;
     }
 
     ProcStat procStat = readProcStat();
@@ -365,24 +377,23 @@ class CpuMonitor {
     long diffIdleTime = procStat.idleTime - lastProcStat.idleTime;
     long allTime = diffUserTime + diffSystemTime + diffIdleTime;
 
-    if (frequencyScale == 0 || allTime == 0) {
+    if (currentFrequencyScale == 0 || allTime == 0) {
       return false;
     }
 
     // Update statistics.
-    currentFrequencyScale = frequencyScale;
-    sumFrequencyScale += frequencyScale;
+    frequencyScale.addValue(currentFrequencyScale);
 
-    currentUserCpuUsage = (double) diffUserTime / allTime;
-    sumUserCpuUsage += currentUserCpuUsage;
+    double currentUserCpuUsage = diffUserTime / (double) allTime;
+    userCpuUsage.addValue(currentUserCpuUsage);
 
-    currentSystemCpuUsage = (double) diffSystemTime / allTime;
-    sumSystemCpuUsage += currentSystemCpuUsage;
+    double currentSystemCpuUsage = diffSystemTime / (double) allTime;
+    systemCpuUsage.addValue(currentSystemCpuUsage);
 
-    currentTotalCpuUsage = (currentUserCpuUsage + currentSystemCpuUsage) * currentFrequencyScale;
-    sumTotalCpuUsage += currentTotalCpuUsage;
+    double currentTotalCpuUsage =
+        (currentUserCpuUsage + currentSystemCpuUsage) * currentFrequencyScale;
+    totalCpuUsage.addValue(currentTotalCpuUsage);
 
-    iterations++;
     // Save new measurements for next round's deltas.
     lastProcStat = procStat;
 
@@ -393,38 +404,30 @@ class CpuMonitor {
     return (int) (d * 100 + 0.5);
   }
 
-  private int sumDoubleToPercent(double d, int iterations) {
-    if (iterations > 0) {
-      return (int) (d * 100.0 / (double) iterations + 0.5);
-    } else {
-      return 0;
-    }
-  }
-
-  private String getStatString() {
+  private synchronized String getStatString() {
     StringBuilder stat = new StringBuilder();
     stat.append("CPU User: ")
-        .append(doubleToPercent(currentUserCpuUsage)).append("/")
-        .append(sumDoubleToPercent(sumUserCpuUsage, iterations)).append(" (")
-        .append(doubleToPercent(currentUserCpuUsage * currentFrequencyScale)).append(")")
+        .append(doubleToPercent(userCpuUsage.getCurrent())).append("/")
+        .append(doubleToPercent(userCpuUsage.getAverage()))
         .append(". System: ")
-        .append(doubleToPercent(currentSystemCpuUsage)).append("/")
-        .append(sumDoubleToPercent(sumSystemCpuUsage, iterations)).append(" (")
-        .append(doubleToPercent(currentSystemCpuUsage * currentFrequencyScale)).append(")")
-        .append(". CPU freq %: ")
-        .append(doubleToPercent(currentFrequencyScale)).append("/")
-        .append(sumDoubleToPercent(sumFrequencyScale, iterations))
-        .append(". Total CPU usage: ")
-        .append(doubleToPercent(currentTotalCpuUsage)).append("/")
-        .append(sumDoubleToPercent(sumTotalCpuUsage, iterations))
+        .append(doubleToPercent(systemCpuUsage.getCurrent())).append("/")
+        .append(doubleToPercent(systemCpuUsage.getAverage()))
+        .append(". Freq: ")
+        .append(doubleToPercent(frequencyScale.getCurrent())).append("/")
+        .append(doubleToPercent(frequencyScale.getAverage()))
+        .append(". Total usage: ")
+        .append(doubleToPercent(totalCpuUsage.getCurrent())).append("/")
+        .append(doubleToPercent(totalCpuUsage.getAverage()))
         .append(". Cores: ")
         .append(actualCpusPresent);
     stat.append("( ");
     for (int i = 0; i < cpusPresent; i++) {
       stat.append(doubleToPercent(curFreqScales[i])).append(" ");
     }
-    stat.append("). Battery %: ")
-        .append(getBatteryLevel());
+    stat.append("). Battery: ").append(getBatteryLevel());
+    if (cpuOveruse) {
+      stat.append(". Overuse.");
+    }
     return stat.toString();
   }
 
@@ -468,13 +471,15 @@ class CpuMonitor {
         BufferedReader rdr = new BufferedReader(fin);
         Scanner scanner = new Scanner(rdr);
         scanner.next();
-        userTime = scanner.nextLong();
-        long nice = scanner.nextLong();
+        userTime = scanner.nextLong();  // user
+        long nice = scanner.nextLong(); // nice
         userTime += nice;
-        systemTime = scanner.nextLong();
-        idleTime = scanner.nextLong();
-        long ioWaitTime = scanner.nextLong();
+        systemTime = scanner.nextLong(); // system
+        idleTime = scanner.nextLong(); // idle
+        long ioWaitTime = scanner.nextLong(); // iowait
         userTime += ioWaitTime;
+        long irqTime = scanner.nextLong() + scanner.nextLong(); // irq + softirq
+        systemTime += irqTime;
         scanner.close();
       } catch (Exception e) {
         Log.e(TAG, "Problems parsing /proc/stat");
