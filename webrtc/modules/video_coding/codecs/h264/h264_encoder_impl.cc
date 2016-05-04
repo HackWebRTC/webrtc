@@ -224,7 +224,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
   init_params.iTargetBitrate = codec_settings_.targetBitrate * 1000;
   init_params.iMaxBitrate = codec_settings_.maxBitrate * 1000;
   // Rate Control mode
-  init_params.iRCMode = RC_TIMESTAMP_MODE;
+  init_params.iRCMode = RC_BITRATE_MODE;
   init_params.fMaxFrameRate = static_cast<float>(codec_settings_.maxFramerate);
 
   // The following parameters are extension parameters (they're in SEncParamExt,
@@ -343,13 +343,21 @@ int32_t H264EncoderImpl::Encode(
     return WEBRTC_VIDEO_CODEC_ERR_SIZE;
   }
 
-  RTC_DCHECK(frame_types != nullptr);
-  // We only support a single stream.
-  RTC_DCHECK_EQ(1u, frame_types->size());
-  // Force key frame?
-  if ((*frame_types)[0] == kVideoFrameKey) {
+  bool force_key_frame = false;
+  if (frame_types != nullptr) {
+    // We only support a single stream.
+    RTC_DCHECK_EQ(frame_types->size(), static_cast<size_t>(1));
+    // Skip frame?
+    if ((*frame_types)[0] == kEmptyFrame) {
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+    // Force key frame?
+    force_key_frame = (*frame_types)[0] == kVideoFrameKey;
+  }
+  if (force_key_frame) {
     // API doc says ForceIntraFrame(false) does nothing, but calling this
     // function forces a key frame regardless of the |bIDR| argument's value.
+    // (If every frame is a key frame we get lag/delays.)
     openh264_encoder_->ForceIntraFrame(true);
   }
 
