@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_VIE_CHANNEL_H_
-#define WEBRTC_VIDEO_VIE_CHANNEL_H_
+#ifndef WEBRTC_VIDEO_VIDEO_STREAM_DECODER_H_
+#define WEBRTC_VIDEO_VIDEO_STREAM_DECODER_H_
 
 #include <list>
 #include <map>
@@ -20,12 +20,9 @@
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video/rtp_stream_receiver.h"
 #include "webrtc/video/vie_sync_module.h"
 
 namespace webrtc {
@@ -36,12 +33,8 @@ class Config;
 class EncodedImageCallback;
 class I420FrameCallback;
 class IncomingVideoStream;
-class PacedSender;
-class PacketRouter;
-class PayloadRouter;
 class ReceiveStatisticsProxy;
-class RtcpRttStats;
-class ViERTPObserver;
+class VideoRenderCallback;
 class VoEVideoSync;
 
 namespace vcm {
@@ -53,39 +46,25 @@ enum StreamType {
   kViEStreamTypeRtx = 1      // Retransmission media stream
 };
 
-class ViEChannel : public VCMFrameTypeCallback,
-                   public VCMReceiveCallback,
-                   public VCMReceiveStatisticsCallback,
-                   public VCMDecoderTimingCallback,
-                   public VCMPacketRequestCallback {
+class VideoStreamDecoder : public VCMReceiveCallback,
+                           public VCMReceiveStatisticsCallback,
+                           public VCMDecoderTimingCallback,
+                           public CallStatsObserver {
  public:
   friend class ChannelStatsObserver;
 
-  ViEChannel(vcm::VideoReceiver* video_receiver,
-             RtpStreamReceiver* rtp_stream_receiver);
-  ~ViEChannel();
-
-  int32_t Init();
-
-  RtpRtcp* rtp_rtcp() const { return rtp_rtcp_; }
-
-  void SetProtectionMode(bool enable_nack,
-                         bool enable_fec,
-                         int payload_type_red,
-                         int payload_type_fec);
-
-  RtpState GetRtpStateForSsrc(uint32_t ssrc) const;
-
-
-  CallStatsObserver* GetStatsObserver();
+  VideoStreamDecoder(vcm::VideoReceiver* video_receiver,
+                     VCMFrameTypeCallback* vcm_frame_type_callback,
+                     VCMPacketRequestCallback* vcm_packet_request_callback,
+                     bool enable_nack,
+                     ReceiveStatisticsProxy* receive_statistics_proxy,
+                     IncomingVideoStream* incoming_video_stream,
+                     I420FrameCallback* pre_render_callback);
+  ~VideoStreamDecoder();
 
   // Implements VCMReceiveCallback.
   int32_t FrameToRender(VideoFrame& video_frame) override;  // NOLINT
-
-  // Implements VCMReceiveCallback.
   int32_t ReceivedDecodedReferenceFrame(const uint64_t picture_id) override;
-
-  // Implements VCMReceiveCallback.
   void OnIncomingPayloadType(int payload_type) override;
   void OnDecoderImplementationName(const char* implementation_name) override;
 
@@ -103,58 +82,31 @@ class ViEChannel : public VCMFrameTypeCallback,
                        int min_playout_delay_ms,
                        int render_delay_ms) override;
 
-  // Implements FrameTypeCallback.
-  int32_t RequestKeyFrame() override;
 
-  // Implements FrameTypeCallback.
-  int32_t SliceLossIndicationRequest(
-      const uint64_t picture_id) override;
-
-  // Implements VideoPacketRequestCallback.
-  int32_t ResendPackets(const uint16_t* sequence_numbers,
-                        uint16_t length) override;
-
-  void RegisterPreRenderCallback(I420FrameCallback* pre_render_callback);
-
-  void RegisterRtcpPacketTypeCounterObserver(
-      RtcpPacketTypeCounterObserver* observer);
   void RegisterReceiveStatisticsProxy(
       ReceiveStatisticsProxy* receive_statistics_proxy);
-  void SetIncomingVideoStream(IncomingVideoStream* incoming_video_stream);
 
- protected:
-  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms);
+  // Implements StatsObserver.
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
  private:
   // Assumed to be protected.
   void StartDecodeThread();
   void StopDecodeThread();
 
-  void ProcessNACKRequest(const bool enable);
-  // Compute NACK list parameters for the buffering mode.
-  int GetRequiredNackListSize(int target_delay_ms);
-
   // Used for all registered callbacks except rendering.
   rtc::CriticalSection crit_;
 
   vcm::VideoReceiver* const video_receiver_;
-  RtpStreamReceiver* const rtp_stream_receiver_;
-  RtpRtcp* const rtp_rtcp_;
 
-  // Helper to report call statistics.
-  std::unique_ptr<ChannelStatsObserver> stats_observer_;
+  ReceiveStatisticsProxy* const receive_stats_callback_;
+  IncomingVideoStream* const incoming_video_stream_;
 
-  // Not owned.
-  ReceiveStatisticsProxy* receive_stats_callback_ GUARDED_BY(crit_);
-  FrameCounts receive_frame_counts_ GUARDED_BY(crit_);
-  IncomingVideoStream* incoming_video_stream_ GUARDED_BY(crit_);
-
-  int max_nack_reordering_threshold_;
-  I420FrameCallback* pre_render_callback_ GUARDED_BY(crit_);
+  I420FrameCallback* const pre_render_callback_;
 
   int64_t last_rtt_ms_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_VIE_CHANNEL_H_
+#endif  // WEBRTC_VIDEO_VIDEO_STREAM_DECODER_H_

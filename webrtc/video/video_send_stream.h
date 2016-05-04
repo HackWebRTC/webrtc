@@ -25,7 +25,6 @@
 #include "webrtc/video/send_delay_stats.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/video_capture_input.h"
-#include "webrtc/video/vie_channel.h"
 #include "webrtc/video/vie_encoder.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -37,7 +36,6 @@ class CallStats;
 class CongestionController;
 class ProcessThread;
 class RtpRtcp;
-class ViEChannel;
 class ViEEncoder;
 class VieRemb;
 

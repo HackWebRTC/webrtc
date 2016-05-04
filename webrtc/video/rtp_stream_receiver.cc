@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -27,6 +28,7 @@
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/video/receive_statistics_proxy.h"
 
 namespace webrtc {
 
@@ -65,7 +67,6 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   return rtp_rtcp;
 }
 
-
 static const int kPacketLogIntervalMs = 10000;
 
 RtpStreamReceiver::RtpStreamReceiver(
@@ -74,7 +75,9 @@ RtpStreamReceiver::RtpStreamReceiver(
     Transport* transport,
     RtcpRttStats* rtt_stats,
     PacedSender* paced_sender,
-    PacketRouter* packet_router)
+    PacketRouter* packet_router,
+    const VideoReceiveStream::Config& config,
+    ReceiveStatisticsProxy* receive_stats_proxy)
     : clock_(Clock::GetRealTimeClock()),
       video_receiver_(video_receiver),
       remote_bitrate_estimator_(remote_bitrate_estimator),
@@ -94,12 +97,27 @@ RtpStreamReceiver::RtpStreamReceiver(
       rtp_rtcp_(CreateRtpRtcpModule(rtp_receive_statistics_.get(),
                                     transport,
                                     rtt_stats,
-                                    &rtcp_packet_type_counter_observer_,
+                                    receive_stats_proxy,
                                     remote_bitrate_estimator_,
                                     paced_sender,
                                     packet_router)) {
   packet_router_->AddRtpModule(rtp_rtcp_.get());
+  rtp_receive_statistics_->RegisterRtpStatisticsCallback(receive_stats_proxy);
+  rtp_receive_statistics_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
+
+  RTC_DCHECK(config.rtp.rtcp_mode != RtcpMode::kOff)
+      << "A stream should not be configured with RTCP disabled. This value is "
+         "reserved for internal usage.";
+  rtp_rtcp_->SetRTCPStatus(config.rtp.rtcp_mode);
   rtp_rtcp_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
+
+  static const int kMaxPacketAgeToNack = 450;
+  NACKMethod nack_method =
+      config.rtp.nack.rtp_history_ms > 0 ? kNackRtcp : kNackOff;
+  const int max_reordering_threshold = (nack_method == kNackRtcp)
+      ? kMaxPacketAgeToNack : kDefaultMaxReorderingThreshold;
+  rtp_receiver_->SetNACKStatus(nack_method);
+  rtp_receive_statistics_->SetMaxReorderingThreshold(max_reordering_threshold);
 }
 
 RtpStreamReceiver::~RtpStreamReceiver() {
@@ -133,18 +151,6 @@ bool RtpStreamReceiver::SetReceiveCodec(const VideoCodec& video_codec) {
   return rtp_receiver_->RegisterReceivePayload(
              video_codec.plName, video_codec.plType, kVideoPayloadTypeFrequency,
              0, 0) == 0;
-}
-
-void RtpStreamReceiver::SetNackStatus(bool enable,
-                                      int max_nack_reordering_threshold) {
-  if (!enable) {
-    // Reset the threshold back to the lower default threshold when NACK is
-    // disabled since we no longer will be receiving retransmissions.
-    max_nack_reordering_threshold = kDefaultMaxReorderingThreshold;
-  }
-  rtp_receive_statistics_->SetMaxReorderingThreshold(
-      max_nack_reordering_threshold);
-  rtp_receiver_->SetNACKStatus(enable ? kNackRtcp : kNackOff);
 }
 
 void RtpStreamReceiver::SetRtxPayloadType(int payload_type,
@@ -187,12 +193,6 @@ void RtpStreamReceiver::EnableReceiveRtpHeaderExtension(
   RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
       StringToRtpExtensionType(extension), id));
 }
-
-void RtpStreamReceiver::RegisterRtcpPacketTypeCounterObserver(
-    RtcpPacketTypeCounterObserver* observer) {
-  rtcp_packet_type_counter_observer_.Set(observer);
-}
-
 
 int32_t RtpStreamReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data,
@@ -292,6 +292,21 @@ bool RtpStreamReceiver::DeliverRtp(const uint8_t* rtp_packet,
   rtp_receive_statistics_->IncomingPacket(
       header, rtp_packet_length, IsPacketRetransmitted(header, in_order));
   return ret;
+}
+
+int32_t RtpStreamReceiver::RequestKeyFrame() {
+  return rtp_rtcp_->RequestKeyFrame();
+}
+
+int32_t RtpStreamReceiver::SliceLossIndicationRequest(
+    const uint64_t picture_id) {
+  return rtp_rtcp_->SendRTCPSliceLossIndication(
+      static_cast<uint8_t>(picture_id));
+}
+
+int32_t RtpStreamReceiver::ResendPackets(const uint16_t* sequence_numbers,
+                                         uint16_t length) {
+  return rtp_rtcp_->SendNACK(sequence_numbers, length);
 }
 
 bool RtpStreamReceiver::ReceivePacket(const uint8_t* packet,

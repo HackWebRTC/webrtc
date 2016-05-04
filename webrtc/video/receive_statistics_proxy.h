@@ -22,7 +22,7 @@
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/video/report_block_stats.h"
-#include "webrtc/video/vie_channel.h"
+#include "webrtc/video/video_stream_decoder.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {

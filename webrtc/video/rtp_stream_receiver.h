@@ -24,7 +24,9 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
 
@@ -33,6 +35,7 @@ class PacedSender;
 class PacketRouter;
 class RemoteNtpTimeEstimator;
 class ReceiveStatistics;
+class ReceiveStatisticsProxy;
 class RemoteBitrateEstimator;
 class RtcpRttStats;
 class RtpHeaderParser;
@@ -44,19 +47,22 @@ namespace vcm {
 class VideoReceiver;
 }  // namespace vcm
 
-class RtpStreamReceiver : public RtpData, public RtpFeedback  {
+class RtpStreamReceiver : public RtpData, public RtpFeedback,
+                          public VCMFrameTypeCallback,
+                          public VCMPacketRequestCallback {
  public:
   RtpStreamReceiver(vcm::VideoReceiver* video_receiver,
                     RemoteBitrateEstimator* remote_bitrate_estimator,
                     Transport* transport,
                     RtcpRttStats* rtt_stats,
                     PacedSender* paced_sender,
-                    PacketRouter* packet_router);
+                    PacketRouter* packet_router,
+                    const VideoReceiveStream::Config& config,
+                    ReceiveStatisticsProxy* receive_stats_proxy);
   ~RtpStreamReceiver();
 
   bool SetReceiveCodec(const VideoCodec& video_codec);
 
-  void SetNackStatus(bool enable, int max_nack_reordering_threshold);
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
   // If set to true, the RTX payload type mapping supplied in
   // |SetRtxPayloadType| will be used when restoring RTX packets. Without it,
@@ -75,8 +81,6 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback  {
   RtpRtcp* rtp_rtcp() const { return rtp_rtcp_.get(); }
 
   void EnableReceiveRtpHeaderExtension(const std::string& extension, int id);
-  void RegisterRtcpPacketTypeCounterObserver(
-      RtcpPacketTypeCounterObserver* observer);
 
   void StartReceive();
   void StopReceive();
@@ -101,42 +105,15 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback  {
   void OnIncomingSSRCChanged(const uint32_t ssrc) override;
   void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override {}
 
+  // Implements VCMFrameTypeCallback.
+  int32_t RequestKeyFrame() override;
+  int32_t SliceLossIndicationRequest(const uint64_t picture_id) override;
+
+  // Implements VCMPacketRequestCallback.
+  int32_t ResendPackets(const uint16_t* sequenceNumbers,
+                        uint16_t length) override;
+
   ReceiveStatistics* GetReceiveStatistics() const;
-
-  template <class T>
-  class RegisterableCallback : public T {
-   public:
-    RegisterableCallback() : callback_(nullptr) {}
-
-    void Set(T* callback) {
-      rtc::CritScope lock(&critsect_);
-      callback_ = callback;
-    }
-
-   protected:
-    // Note: this should be implemented with a RW-lock to allow simultaneous
-    // calls into the callback. However that doesn't seem to be needed for the
-    // current type of callbacks covered by this class.
-    rtc::CriticalSection critsect_;
-    T* callback_ GUARDED_BY(critsect_);
-
-   private:
-    RTC_DISALLOW_COPY_AND_ASSIGN(RegisterableCallback);
-  };
-
-  class RegisterableRtcpPacketTypeCounterObserver
-      : public RegisterableCallback<RtcpPacketTypeCounterObserver> {
-   public:
-    void RtcpPacketTypesCounterUpdated(
-        uint32_t ssrc,
-        const RtcpPacketTypeCounter& packet_counter) override {
-      rtc::CritScope lock(&critsect_);
-      if (callback_)
-        callback_->RtcpPacketTypesCounterUpdated(ssrc, packet_counter);
-    }
-
-   private:
-  } rtcp_packet_type_counter_observer_;
 
  private:
   bool ReceivePacket(const uint8_t* packet,

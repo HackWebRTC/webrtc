@@ -22,9 +22,8 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/receive_statistics_proxy.h"
-#include "webrtc/video/vie_channel.h"
-#include "webrtc/video/vie_encoder.h"
-#include "webrtc/video_encoder.h"
+#include "webrtc/video/rtp_stream_receiver.h"
+#include "webrtc/video/video_stream_decoder.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
@@ -107,7 +106,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   IncomingVideoStream incoming_video_stream_;
   ReceiveStatisticsProxy stats_proxy_;
   RtpStreamReceiver rtp_stream_receiver_;
-  ViEChannel vie_channel_;
+  VideoStreamDecoder video_stream_decoder_;
   ViESyncModule vie_sync_;
   RtpRtcp* const rtp_rtcp_;
 

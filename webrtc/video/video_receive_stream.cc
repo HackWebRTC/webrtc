@@ -171,29 +171,30 @@ VideoReceiveStream::VideoReceiveStream(
                            &transport_adapter_,
                            call_stats_->rtcp_rtt_stats(),
                            congestion_controller_->pacer(),
-                           congestion_controller_->packet_router()),
-      vie_channel_(&video_receiver_,
-                   &rtp_stream_receiver_),
+                           congestion_controller_->packet_router(),
+                           config,
+                           &stats_proxy_),
+      video_stream_decoder_(&video_receiver_,
+                            &rtp_stream_receiver_,
+                            &rtp_stream_receiver_,
+                            config.rtp.nack.rtp_history_ms > 0,
+                            &stats_proxy_,
+                            &incoming_video_stream_,
+                            this),
       vie_sync_(&video_receiver_),
-      rtp_rtcp_(vie_channel_.rtp_rtcp()) {
+      rtp_rtcp_(rtp_stream_receiver_.rtp_rtcp()) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(call_stats_);
   RTC_DCHECK(remb_);
-  RTC_CHECK(vie_channel_.Init() == 0);
-
-  // Register the channel to receive stats updates.
-  call_stats_->RegisterStatsObserver(vie_channel_.GetStatsObserver());
-
-  // TODO(pbos): This is not fine grained enough...
-  vie_channel_.SetProtectionMode(config_.rtp.nack.rtp_history_ms > 0, false, -1,
-                                 -1);
   RTC_DCHECK(config_.rtp.rtcp_mode != RtcpMode::kOff)
       << "A stream should not be configured with RTCP disabled. This value is "
          "reserved for internal usage.";
-  rtp_rtcp_->SetRTCPStatus(config_.rtp.rtcp_mode);
+
+  // Register the channel to receive stats updates.
+  call_stats_->RegisterStatsObserver(&video_stream_decoder_);
 
   RTC_DCHECK(config_.rtp.remote_ssrc != 0);
   // TODO(pbos): What's an appropriate local_ssrc for receive-only streams?
@@ -255,14 +256,8 @@ VideoReceiveStream::VideoReceiveStream(
   if (config.rtp.rtcp_xr.receiver_reference_time_report)
     rtp_rtcp_->SetRtcpXrRrtrStatus(true);
 
-  vie_channel_.RegisterReceiveStatisticsProxy(&stats_proxy_);
-  rtp_stream_receiver_.GetReceiveStatistics()->RegisterRtpStatisticsCallback(
-      &stats_proxy_);
-  rtp_stream_receiver_.GetReceiveStatistics()->RegisterRtcpStatisticsCallback(
-      &stats_proxy_);
   // Stats callback for CNAME changes.
   rtp_rtcp_->RegisterRtcpStatisticsCallback(&stats_proxy_);
-  vie_channel_.RegisterRtcpPacketTypeCounterObserver(&stats_proxy_);
 
   RTC_DCHECK(!config_.decoders.empty());
   std::set<int> decoder_payload_types;
@@ -286,8 +281,6 @@ VideoReceiveStream::VideoReceiveStream(
   video_receiver_.SetRenderDelay(config.render_delay_ms);
   incoming_video_stream_.SetExpectedRenderDelay(config.render_delay_ms);
   incoming_video_stream_.SetExternalCallback(this);
-  vie_channel_.SetIncomingVideoStream(&incoming_video_stream_);
-  vie_channel_.RegisterPreRenderCallback(this);
 
   process_thread_->RegisterModule(rtp_stream_receiver_.GetReceiveStatistics());
   process_thread_->RegisterModule(rtp_stream_receiver_.rtp_rtcp());
@@ -305,16 +298,14 @@ VideoReceiveStream::~VideoReceiveStream() {
   process_thread_->DeRegisterModule(
       rtp_stream_receiver_.GetReceiveStatistics());
 
-  // Deregister external decoders so that they are no longer running during
+  // Deregister external decoders so they are no longer running during
   // destruction. This effectively stops the VCM since the decoder thread is
   // stopped, the VCM is deregistered and no asynchronous decoder threads are
   // running.
   for (const Decoder& decoder : config_.decoders)
     video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
 
-  vie_channel_.RegisterPreRenderCallback(nullptr);
-
-  call_stats_->DeregisterStatsObserver(vie_channel_.GetStatsObserver());
+  call_stats_->DeregisterStatsObserver(&video_stream_decoder_);
   rtp_rtcp_->SetREMBStatus(false);
   remb_->RemoveReceiveChannel(rtp_rtcp_);
 
