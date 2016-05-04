@@ -269,6 +269,9 @@
         'base/socketaddress_unittest.cc',
         'base/virtualsocket_unittest.cc',
       ],
+      'defines': [
+        'GTEST_RELATIVE_PATH',
+      ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         'base/base.gyp:rtc_base',

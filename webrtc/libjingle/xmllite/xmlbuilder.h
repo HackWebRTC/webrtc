@@ -17,7 +17,11 @@
 #include "webrtc/libjingle/xmllite/xmlparser.h"
 #include "webrtc/base/scoped_ptr.h"
 
+#ifdef EXPAT_RELATIVE_PATH
 #include "expat.h"
+#else
+#include "third_party/expat/v2_0_1/Source/lib/expat.h"
+#endif  // EXPAT_RELATIVE_PATH
 
 namespace buzz {
 

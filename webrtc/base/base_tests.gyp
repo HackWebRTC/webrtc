@@ -23,11 +23,19 @@
         'testechoserver.h',
         'testutils.h',
       ],
+      'defines': [
+        'GTEST_RELATIVE_PATH',
+      ],
       'dependencies': [
         'base.gyp:rtc_base',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(webrtc_root)/test/test.gyp:field_trial',
       ],
+      'direct_dependent_settings': {
+        'defines': [
+          'GTEST_RELATIVE_PATH',
+        ],
+      },
       'export_dependent_settings': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
