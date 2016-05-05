@@ -237,6 +237,12 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   rtc::Buffer remote_fingerprint_value_;
   std::string remote_fingerprint_algorithm_;
 
+  // Cached DTLS ClientHello packet that was received before we started the
+  // DTLS handshake. This could happen if the hello was received before the
+  // transport channel became writable, or before a remote fingerprint was
+  // received.
+  rtc::Buffer cached_client_hello_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(DtlsTransportChannelWrapper);
 };
 

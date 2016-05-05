@@ -37,6 +37,13 @@ static bool IsDtlsPacket(const char* data, size_t len) {
   const uint8_t* u = reinterpret_cast<const uint8_t*>(data);
   return (len >= kDtlsRecordHeaderLen && (u[0] > 19 && u[0] < 64));
 }
+static bool IsDtlsClientHelloPacket(const char* data, size_t len) {
+  if (!IsDtlsPacket(data, len)) {
+    return false;
+  }
+  const uint8_t* u = reinterpret_cast<const uint8_t*>(data);
+  return len > 17 && u[0] == 22 && u[13] == 1;
+}
 static bool IsRtpPacket(const char* data, size_t len) {
   const uint8_t* u = reinterpret_cast<const uint8_t*>(data);
   return (len >= kMinRtpPacketLen && (u[0] & 0xC0) == 0x80);
@@ -470,15 +477,18 @@ void DtlsTransportChannelWrapper::OnReadPacket(
   switch (dtls_state()) {
     case DTLS_TRANSPORT_NEW:
       if (dtls_) {
-        // Drop packets received before DTLS has actually started.
-        LOG_J(LS_INFO, this) << "Dropping packet received before DTLS started.";
+        LOG_J(LS_INFO, this) << "Packet received before DTLS started.";
       } else {
-        // Currently drop the packet, but we might in future
-        // decide to take this as evidence that the other
-        // side is ready to do DTLS and start the handshake
-        // on our end.
-        LOG_J(LS_WARNING, this) << "Received packet before we know if we are "
-                                << "doing DTLS or not; dropping.";
+        LOG_J(LS_WARNING, this) << "Packet received before we know if we are "
+                                << "doing DTLS or not.";
+      }
+      // Cache a client hello packet received before DTLS has actually started.
+      if (IsDtlsClientHelloPacket(data, size)) {
+        LOG_J(LS_INFO, this) << "Caching DTLS ClientHello packet until DTLS is "
+                             << "started.";
+        cached_client_hello_.SetData(data, size);
+      } else {
+        LOG_J(LS_INFO, this) << "Not a DTLS ClientHello packet; dropping.";
       }
       break;
 
@@ -577,6 +587,21 @@ bool DtlsTransportChannelWrapper::MaybeStartDtls() {
     LOG_J(LS_INFO, this)
       << "DtlsTransportChannelWrapper: Started DTLS handshake";
     set_dtls_state(DTLS_TRANSPORT_CONNECTING);
+    // Now that the handshake has started, we can process a cached ClientHello
+    // (if one exists).
+    if (cached_client_hello_.size()) {
+      if (ssl_role_ == rtc::SSL_SERVER) {
+        LOG_J(LS_INFO, this) << "Handling cached DTLS ClientHello packet.";
+        if (!HandleDtlsPacket(cached_client_hello_.data<char>(),
+                              cached_client_hello_.size())) {
+          LOG_J(LS_ERROR, this) << "Failed to handle DTLS packet.";
+        }
+      } else {
+        LOG_J(LS_WARNING, this) << "Discarding cached DTLS ClientHello packet "
+                                << "because we don't have the server role.";
+      }
+      cached_client_hello_.Clear();
+    }
   }
   return true;
 }

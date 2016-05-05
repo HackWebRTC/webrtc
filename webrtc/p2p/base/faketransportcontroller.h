@@ -141,20 +141,22 @@ class FakeTransportChannel : public TransportChannelImpl,
 
   void SetWritable(bool writable) { set_writable(writable); }
 
-  void SetDestination(FakeTransportChannel* dest) {
+  // Simulates the two transport channels connecting to each other.
+  // If |asymmetric| is true this method only affects this FakeTransportChannel.
+  // If false, it affects |dest| as well.
+  void SetDestination(FakeTransportChannel* dest, bool asymmetric = false) {
     if (state_ == STATE_CONNECTING && dest) {
       // This simulates the delivery of candidates.
       dest_ = dest;
-      dest_->dest_ = this;
       if (local_cert_ && dest_->local_cert_) {
         do_dtls_ = true;
-        dest_->do_dtls_ = true;
         NegotiateSrtpCiphers();
       }
       state_ = STATE_CONNECTED;
-      dest_->state_ = STATE_CONNECTED;
       set_writable(true);
-      dest_->set_writable(true);
+      if (!asymmetric) {
+        dest->SetDestination(this, true);
+      }
     } else if (state_ == STATE_CONNECTED && !dest) {
       // Simulates loss of connectivity, by asymmetrically forgetting dest_.
       dest_ = nullptr;
@@ -282,20 +284,6 @@ class FakeTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  void NegotiateSrtpCiphers() {
-    for (std::vector<int>::const_iterator it1 = srtp_ciphers_.begin();
-         it1 != srtp_ciphers_.end(); ++it1) {
-      for (std::vector<int>::const_iterator it2 = dest_->srtp_ciphers_.begin();
-           it2 != dest_->srtp_ciphers_.end(); ++it2) {
-        if (*it1 == *it2) {
-          chosen_crypto_suite_ = *it1;
-          dest_->chosen_crypto_suite_ = *it2;
-          return;
-        }
-      }
-    }
-  }
-
   bool GetStats(ConnectionInfos* infos) override {
     ConnectionInfo info;
     infos->clear();
@@ -311,6 +299,19 @@ class FakeTransportChannel : public TransportChannelImpl,
   }
 
  private:
+  void NegotiateSrtpCiphers() {
+    for (std::vector<int>::const_iterator it1 = srtp_ciphers_.begin();
+         it1 != srtp_ciphers_.end(); ++it1) {
+      for (std::vector<int>::const_iterator it2 = dest_->srtp_ciphers_.begin();
+           it2 != dest_->srtp_ciphers_.end(); ++it2) {
+        if (*it1 == *it2) {
+          chosen_crypto_suite_ = *it1;
+          return;
+        }
+      }
+    }
+  }
+
   enum State { STATE_INIT, STATE_CONNECTING, STATE_CONNECTED };
   FakeTransportChannel* dest_ = nullptr;
   State state_ = STATE_INIT;
@@ -359,11 +360,14 @@ class FakeTransport : public Transport {
   // If async, will send packets by "Post"-ing to message queue instead of
   // synchronously "Send"-ing.
   void SetAsync(bool async) { async_ = async; }
-  void SetDestination(FakeTransport* dest) {
+
+  // If |asymmetric| is true, only set the destination for this transport, and
+  // not |dest|.
+  void SetDestination(FakeTransport* dest, bool asymmetric = false) {
     dest_ = dest;
     for (const auto& kv : channels_) {
       kv.second->SetLocalCertificate(certificate_);
-      SetChannelDestination(kv.first, kv.second);
+      SetChannelDestination(kv.first, kv.second, asymmetric);
     }
   }
 
@@ -417,7 +421,7 @@ class FakeTransport : public Transport {
     FakeTransportChannel* channel = new FakeTransportChannel(name(), component);
     channel->set_ssl_max_protocol_version(ssl_max_version_);
     channel->SetAsync(async_);
-    SetChannelDestination(component, channel);
+    SetChannelDestination(component, channel, false);
     channels_[component] = channel;
     return channel;
   }
@@ -433,15 +437,17 @@ class FakeTransport : public Transport {
     return (it != channels_.end()) ? it->second : nullptr;
   }
 
-  void SetChannelDestination(int component, FakeTransportChannel* channel) {
+  void SetChannelDestination(int component,
+                             FakeTransportChannel* channel,
+                             bool asymmetric) {
     FakeTransportChannel* dest_channel = nullptr;
     if (dest_) {
       dest_channel = dest_->GetFakeChannel(component);
-      if (dest_channel) {
+      if (dest_channel && !asymmetric) {
         dest_channel->SetLocalCertificate(dest_->certificate_);
       }
     }
-    channel->SetDestination(dest_channel);
+    channel->SetDestination(dest_channel, asymmetric);
   }
 
   // Note, this is distinct from the Channel map owned by Transport.
