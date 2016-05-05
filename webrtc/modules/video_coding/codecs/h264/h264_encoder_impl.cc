@@ -50,12 +50,8 @@ int NumberOfThreads(int width, int height, int number_of_cores) {
   return 1;
 }
 
-}  // namespace
-
-static FrameType EVideoFrameType_to_FrameType(EVideoFrameType type) {
+FrameType ConvertToVideoFrameType(EVideoFrameType type) {
   switch (type) {
-    case videoFrameTypeInvalid:
-      return kEmptyFrame;
     case videoFrameTypeIDR:
       return kVideoFrameKey;
     case videoFrameTypeSkip:
@@ -63,11 +59,14 @@ static FrameType EVideoFrameType_to_FrameType(EVideoFrameType type) {
     case videoFrameTypeP:
     case videoFrameTypeIPMixed:
       return kVideoFrameDelta;
-    default:
-      LOG(LS_WARNING) << "Unknown EVideoFrameType: " << type;
-      return kVideoFrameDelta;
+    case videoFrameTypeInvalid:
+      break;
   }
+  RTC_NOTREACHED() << "Unexpected/invalid frame type: " << type;
+  return kEmptyFrame;
 }
+
+}  // namespace
 
 // Helper method used by H264EncoderImpl::Encode.
 // Copies the encoded bytes from |info| to |encoded_image| and updates the
@@ -394,7 +393,7 @@ int32_t H264EncoderImpl::Encode(
   encoded_image_.ntp_time_ms_ = frame.ntp_time_ms();
   encoded_image_.capture_time_ms_ = frame.render_time_ms();
   encoded_image_.rotation_ = frame.rotation();
-  encoded_image_._frameType = EVideoFrameType_to_FrameType(info.eFrameType);
+  encoded_image_._frameType = ConvertToVideoFrameType(info.eFrameType);
 
   // Split encoded image up into fragments. This also updates |encoded_image_|.
   RTPFragmentationHeader frag_header;
