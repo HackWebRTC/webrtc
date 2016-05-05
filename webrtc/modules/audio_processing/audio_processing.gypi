@@ -41,7 +41,6 @@
         'aec/aec_resampler.cc',
         'aec/aec_resampler.h',
         'aec/echo_cancellation.cc',
-        'aec/echo_cancellation_internal.h',
         'aec/echo_cancellation.h',
         'aecm/aecm_core.cc',
         'aecm/aecm_core.h',

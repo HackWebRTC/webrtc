@@ -31,7 +31,6 @@ source_set("audio_processing") {
     "aec/aec_resampler.h",
     "aec/echo_cancellation.cc",
     "aec/echo_cancellation.h",
-    "aec/echo_cancellation_internal.h",
     "aecm/aecm_core.cc",
     "aecm/aecm_core.h",
     "aecm/echo_control_mobile.cc",
