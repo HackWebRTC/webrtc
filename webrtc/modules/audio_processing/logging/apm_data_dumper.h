@@ -73,6 +73,32 @@ class ApmDataDumper {
 #endif
   }
 
+  void DumpRaw(const char* name, int v_length, const int16_t* v) {
+#if WEBRTC_AEC_DEBUG_DUMP == 1
+    FILE* file = GetRawFile(name);
+    fwrite(v, sizeof(v[0]), v_length, file);
+#endif
+  }
+
+  void DumpRaw(const char* name, rtc::ArrayView<const int16_t> v) {
+#if WEBRTC_AEC_DEBUG_DUMP == 1
+    DumpRaw(name, v.size(), v.data());
+#endif
+  }
+
+  void DumpRaw(const char* name, int v_length, const int32_t* v) {
+#if WEBRTC_AEC_DEBUG_DUMP == 1
+    FILE* file = GetRawFile(name);
+    fwrite(v, sizeof(v[0]), v_length, file);
+#endif
+  }
+
+  void DumpRaw(const char* name, rtc::ArrayView<const int32_t> v) {
+#if WEBRTC_AEC_DEBUG_DUMP == 1
+    DumpRaw(name, v.size(), v.data());
+#endif
+  }
+
   void DumpWav(const char* name,
                int v_length,
                const float* v,

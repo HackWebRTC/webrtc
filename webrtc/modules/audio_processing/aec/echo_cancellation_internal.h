@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_INTERNAL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_INTERNAL_H_
 
+#include <memory>
+
 extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 }
@@ -18,7 +20,11 @@ extern "C" {
 
 namespace webrtc {
 
+class ApmDataDumper;
+
 typedef struct Aec {
+  std::unique_ptr<ApmDataDumper> data_dumper;
+
   int delayCtr;
   int sampFreq;
   int splitSampFreq;
@@ -44,12 +50,6 @@ typedef struct Aec {
   int startup_phase;
   int checkBuffSize;
   short lastDelayDiff;
-
-#if WEBRTC_AEC_DEBUG_DUMP
-  FILE* bufFile;
-  FILE* delayFile;
-  FILE* skewFile;
-#endif
 
   // Structures
   void* resampler;
