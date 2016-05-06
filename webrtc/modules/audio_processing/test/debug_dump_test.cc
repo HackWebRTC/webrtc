@@ -263,8 +263,6 @@ void DebugDumpTest::VerifyDebugDump(const std::string& in_filename) {
   }
 }
 
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5820
-#ifndef UNDEFINED_SANITIZER
 TEST_F(DebugDumpTest, SimpleCase) {
   Config config;
   DebugDumpGenerator generator(config);
@@ -527,8 +525,6 @@ TEST_F(DebugDumpTest, TransientSuppressionOn) {
   generator.StopRecording();
   VerifyDebugDump(generator.dump_file_name());
 }
-
-#endif  // !UNDEFINED_SANITIZER
 
 }  // namespace test
 }  // namespace webrtc

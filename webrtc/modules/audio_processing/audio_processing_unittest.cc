@@ -1847,35 +1847,17 @@ void ApmTest::VerifyDebugDumpTest(Format format) {
   remove(limited_filename.c_str());
 }
 
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5820
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_VerifyDebugDumpInt DISABLED_VerifyDebugDumpInt
-#else
-#define MAYBE_VerifyDebugDumpInt VerifyDebugDumpInt
-#endif
-TEST_F(ApmTest, MAYBE_VerifyDebugDumpInt) {
+TEST_F(ApmTest, VerifyDebugDumpInt) {
   VerifyDebugDumpTest(kIntFormat);
 }
 
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5820
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_VerifyDebugDumpFloat DISABLED_VerifyDebugDumpFloat
-#else
-#define MAYBE_VerifyDebugDumpFloat VerifyDebugDumpFloat
-#endif
-TEST_F(ApmTest, MAYBE_VerifyDebugDumpFloat) {
+TEST_F(ApmTest, VerifyDebugDumpFloat) {
   VerifyDebugDumpTest(kFloatFormat);
 }
 #endif
 
 // TODO(andrew): expand test to verify output.
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5820
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_DebugDump DISABLED_DebugDump
-#else
-#define MAYBE_DebugDump DebugDump
-#endif
-TEST_F(ApmTest, MAYBE_DebugDump) {
+TEST_F(ApmTest, DebugDump) {
   const std::string filename =
       test::TempFilename(test::OutputPath(), "debug_aec");
   EXPECT_EQ(apm_->kNullPointerError,
@@ -1908,13 +1890,7 @@ TEST_F(ApmTest, MAYBE_DebugDump) {
 }
 
 // TODO(andrew): expand test to verify output.
-// Disabled for UBSan: https://bugs.chromium.org/p/webrtc/issues/detail?id=5820
-#ifdef UNDEFINED_SANITIZER
-#define MAYBE_DebugDumpFromFileHandle DISABLED_DebugDumpFromFileHandle
-#else
-#define MAYBE_DebugDumpFromFileHandle DebugDumpFromFileHandle
-#endif
-TEST_F(ApmTest, MAYBE_DebugDumpFromFileHandle) {
+TEST_F(ApmTest, DebugDumpFromFileHandle) {
   FILE* fid = NULL;
   EXPECT_EQ(apm_->kNullPointerError, apm_->StartDebugRecording(fid, -1));
   const std::string filename =
