@@ -21,7 +21,7 @@ import textwrap
 
 
 LIB_TO_LICENSES_DICT = {
-    'boringssl': ['third_party/boringssl/NOTICE'],
+    'boringssl': ['third_party/boringssl/src/LICENSE'],
     'expat': ['third_party/expat/files/COPYING'],
     'jsoncpp': ['third_party/jsoncpp/LICENSE'],
     'opus': ['third_party/opus/src/COPYING'],
