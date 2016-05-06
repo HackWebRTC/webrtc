@@ -95,7 +95,7 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
 - (void)dealloc {
   // Handles unregistering the observer properly. We need to do this because
   // there may still be other references to the underlying data channel.
-  self.delegate = nil;
+  _nativeDataChannel->UnregisterObserver();
 }
 
 - (NSString *)label {
@@ -147,21 +147,6 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
   return _nativeDataChannel->buffered_amount();
 }
 
-- (void)setDelegate:(id<RTCDataChannelDelegate>)delegate {
-  if (_delegate == delegate) {
-    return;
-  }
-  if (_isObserverRegistered) {
-    _nativeDataChannel->UnregisterObserver();
-    _isObserverRegistered = NO;
-  }
-  _delegate = delegate;
-  if (_delegate) {
-    _nativeDataChannel->RegisterObserver(_observer.get());
-    _isObserverRegistered = YES;
-  }
-}
-
 - (void)close {
   _nativeDataChannel->Close();
 }
@@ -186,6 +171,7 @@ class DataChannelDelegateAdapter : public DataChannelObserver {
   if (self = [super init]) {
     _nativeDataChannel = nativeDataChannel;
     _observer.reset(new webrtc::DataChannelDelegateAdapter(self));
+    _nativeDataChannel->RegisterObserver(_observer.get());
   }
   return self;
 }
