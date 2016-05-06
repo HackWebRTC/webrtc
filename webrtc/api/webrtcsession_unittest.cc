@@ -1113,6 +1113,22 @@ class WebRtcSessionTest
     EXPECT_EQ(can, session_->CanInsertDtmf(kAudioTrack1));
   }
 
+  bool ContainsVideoCodecWithName(const SessionDescriptionInterface* desc,
+                                  const std::string& codec_name) {
+    for (const auto& content : desc->description()->contents()) {
+      if (static_cast<cricket::MediaContentDescription*>(content.description)
+              ->type() == cricket::MEDIA_TYPE_VIDEO) {
+        const auto* mdesc =
+            static_cast<cricket::VideoContentDescription*>(content.description);
+        for (const auto& codec : mdesc->codecs()) {
+          if (codec.name == codec_name) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
   // Helper class to configure loopback network and verify Best
   // Connection using right IP protocol for TestLoopbackCall
   // method. LoopbackNetworkManager applies firewall rules to block
@@ -4277,15 +4293,9 @@ TEST_P(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
   SetLocalDescriptionWithoutError(answer);
 }
 
-// Flaky on Win and Mac only. See webrtc:4943
-#if defined(WEBRTC_WIN) || defined(WEBRTC_MAC)
-#define MAYBE_TestRtxRemovedByCreateAnswer DISABLED_TestRtxRemovedByCreateAnswer
-#else
-#define MAYBE_TestRtxRemovedByCreateAnswer TestRtxRemovedByCreateAnswer
-#endif
 // Tests that RTX codec is removed from the answer when it isn't supported
 // by local side.
-TEST_F(WebRtcSessionTest, MAYBE_TestRtxRemovedByCreateAnswer) {
+TEST_F(WebRtcSessionTest, TestRtxRemovedByCreateAnswer) {
   Init();
   SendAudioVideoStream1();
   std::string offer_sdp(kSdpWithRtx);
@@ -4295,14 +4305,12 @@ TEST_F(WebRtcSessionTest, MAYBE_TestRtxRemovedByCreateAnswer) {
   EXPECT_TRUE(offer->ToString(&offer_sdp));
 
   // Offer SDP contains the RTX codec.
-  EXPECT_TRUE(offer_sdp.find("rtx") != std::string::npos);
+  EXPECT_TRUE(ContainsVideoCodecWithName(offer, "rtx"));
   SetRemoteDescriptionWithoutError(offer);
 
   SessionDescriptionInterface* answer = CreateAnswer();
-  std::string answer_sdp;
-  answer->ToString(&answer_sdp);
-  // Answer SDP removes the unsupported RTX codec.
-  EXPECT_TRUE(answer_sdp.find("rtx") == std::string::npos);
+  // Answer SDP does not contain the RTX codec.
+  EXPECT_FALSE(ContainsVideoCodecWithName(answer, "rtx"));
   SetLocalDescriptionWithoutError(answer);
 }
 
