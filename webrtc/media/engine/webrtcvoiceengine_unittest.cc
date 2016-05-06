@@ -494,6 +494,35 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateChannel) {
   EXPECT_TRUE(SetupChannel());
 }
 
+// Test that we can add a send stream and that it has the correct defaults.
+TEST_F(WebRtcVoiceEngineTestFake, CreateSendStream) {
+  EXPECT_TRUE(SetupChannel());
+  EXPECT_TRUE(
+      channel_->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc1)));
+  const webrtc::AudioSendStream::Config& config = GetSendStreamConfig(kSsrc1);
+  EXPECT_EQ(kSsrc1, config.rtp.ssrc);
+  EXPECT_EQ("", config.rtp.c_name);
+  EXPECT_EQ(0u, config.rtp.extensions.size());
+  EXPECT_EQ(static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_),
+            config.send_transport);
+}
+
+// Test that we can add a receive stream and that it has the correct defaults.
+TEST_F(WebRtcVoiceEngineTestFake, CreateRecvStream) {
+  EXPECT_TRUE(SetupChannel());
+  EXPECT_TRUE(
+      channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc1)));
+  const webrtc::AudioReceiveStream::Config& config =
+      GetRecvStreamConfig(kSsrc1);
+  EXPECT_EQ(kSsrc1, config.rtp.remote_ssrc);
+  EXPECT_EQ(0xFA17FA17, config.rtp.local_ssrc);
+  EXPECT_FALSE(config.rtp.transport_cc);
+  EXPECT_EQ(0u, config.rtp.extensions.size());
+  EXPECT_EQ(static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_),
+            config.rtcp_send_transport);
+  EXPECT_EQ("", config.sync_group);
+}
+
 // Tests that the list of supported codecs is created properly and ordered
 // correctly (such that opus appears first).
 TEST_F(WebRtcVoiceEngineTestFake, CodecOrder) {

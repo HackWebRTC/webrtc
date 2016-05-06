@@ -1262,12 +1262,14 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
                            bool use_transport_cc,
                            const std::string& sync_group,
                            const std::vector<webrtc::RtpExtension>& extensions,
-                           webrtc::Call* call)
+                           webrtc::Call* call,
+                           webrtc::Transport* rtcp_send_transport)
       : call_(call), config_() {
     RTC_DCHECK_GE(ch, 0);
     RTC_DCHECK(call);
     config_.rtp.remote_ssrc = remote_ssrc;
     config_.rtp.local_ssrc = local_ssrc;
+    config_.rtcp_send_transport = rtcp_send_transport;
     config_.voe_channel_id = ch;
     config_.sync_group = sync_group;
     RecreateAudioReceiveStream(use_transport_cc, extensions);
@@ -2099,7 +2101,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
       ssrc, new WebRtcAudioReceiveStream(channel, ssrc, receiver_reports_ssrc_,
                                          recv_transport_cc_enabled_,
                                          sp.sync_label, recv_rtp_extensions_,
-                                         call_)));
+                                         call_, this)));
 
   SetNack(channel, send_codec_spec_.nack_enabled);
   SetPlayout(channel, playout_);
