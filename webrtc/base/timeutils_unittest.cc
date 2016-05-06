@@ -17,59 +17,21 @@
 namespace rtc {
 
 TEST(TimeTest, TimeInMs) {
-  uint32_t ts_earlier = Time();
+  int64_t ts_earlier = TimeMillis();
   Thread::SleepMs(100);
-  uint32_t ts_now = Time();
+  int64_t ts_now = TimeMillis();
   // Allow for the thread to wakeup ~20ms early.
   EXPECT_GE(ts_now, ts_earlier + 80);
   // Make sure the Time is not returning in smaller unit like microseconds.
   EXPECT_LT(ts_now, ts_earlier + 1000);
 }
 
-TEST(TimeTest, Comparison) {
-  // Obtain two different times, in known order
-  TimeStamp ts_earlier = Time();
-  Thread::SleepMs(100);
-  TimeStamp ts_now = Time();
-  EXPECT_NE(ts_earlier, ts_now);
-
-  // Common comparisons
-  EXPECT_TRUE( TimeIsLaterOrEqual(ts_earlier, ts_now));
-  EXPECT_TRUE( TimeIsLater(       ts_earlier, ts_now));
-  EXPECT_FALSE(TimeIsLaterOrEqual(ts_now,     ts_earlier));
-  EXPECT_FALSE(TimeIsLater(       ts_now,     ts_earlier));
-
-  // Edge cases
-  EXPECT_TRUE( TimeIsLaterOrEqual(ts_earlier, ts_earlier));
-  EXPECT_FALSE(TimeIsLater(       ts_earlier, ts_earlier));
-
-  // Obtain a third time
-  TimeStamp ts_later = TimeAfter(100);
-  EXPECT_NE(ts_now, ts_later);
-  EXPECT_TRUE( TimeIsLater(ts_now,     ts_later));
-  EXPECT_TRUE( TimeIsLater(ts_earlier, ts_later));
-
-  // Earlier of two times
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_earlier));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_now));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_later));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_now,     ts_earlier));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_later,   ts_earlier));
-
-  // Later of two times
-  EXPECT_EQ(ts_earlier, TimeMax(ts_earlier, ts_earlier));
-  EXPECT_EQ(ts_now,     TimeMax(ts_earlier, ts_now));
-  EXPECT_EQ(ts_later,   TimeMax(ts_earlier, ts_later));
-  EXPECT_EQ(ts_now,     TimeMax(ts_now,     ts_earlier));
-  EXPECT_EQ(ts_later,   TimeMax(ts_later,   ts_earlier));
-}
-
 TEST(TimeTest, Intervals) {
-  TimeStamp ts_earlier = Time();
-  TimeStamp ts_later = TimeAfter(500);
+  int64_t ts_earlier = TimeMillis();
+  int64_t ts_later = TimeAfter(500);
 
   // We can't depend on ts_later and ts_earlier to be exactly 500 apart
-  // since time elapses between the calls to Time() and TimeAfter(500)
+  // since time elapses between the calls to TimeMillis() and TimeAfter(500)
   EXPECT_LE(500,  TimeDiff(ts_later, ts_earlier));
   EXPECT_GE(-500, TimeDiff(ts_earlier, ts_later));
 
@@ -85,33 +47,6 @@ TEST(TimeTest, Intervals) {
 
   // TimeUntil ts_later is at most 500
   EXPECT_LE(TimeUntil(ts_later), 500);
-}
-
-TEST(TimeTest, BoundaryComparison) {
-  // Obtain two different times, in known order
-  TimeStamp ts_earlier = static_cast<TimeStamp>(-50);
-  TimeStamp ts_later = ts_earlier + 100;
-  EXPECT_NE(ts_earlier, ts_later);
-
-  // Common comparisons
-  EXPECT_TRUE( TimeIsLaterOrEqual(ts_earlier, ts_later));
-  EXPECT_TRUE( TimeIsLater(       ts_earlier, ts_later));
-  EXPECT_FALSE(TimeIsLaterOrEqual(ts_later,   ts_earlier));
-  EXPECT_FALSE(TimeIsLater(       ts_later,   ts_earlier));
-
-  // Earlier of two times
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_earlier));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_later));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_later,   ts_earlier));
-
-  // Later of two times
-  EXPECT_EQ(ts_earlier, TimeMax(ts_earlier, ts_earlier));
-  EXPECT_EQ(ts_later,   TimeMax(ts_earlier, ts_later));
-  EXPECT_EQ(ts_later,   TimeMax(ts_later,   ts_earlier));
-
-  // Interval
-  EXPECT_EQ(100,  TimeDiff(ts_later, ts_earlier));
-  EXPECT_EQ(-100, TimeDiff(ts_earlier, ts_later));
 }
 
 TEST(TimeTest, TestTimeDiff64) {

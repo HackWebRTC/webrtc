@@ -30,8 +30,6 @@
 
 namespace rtc {
 
-const uint32_t HALF = 0x80000000;
-
 uint64_t TimeNanos() {
   int64_t ticks = 0;
 #if defined(WEBRTC_MAC)
@@ -90,27 +88,16 @@ uint64_t TimeMicros() {
   return static_cast<uint64_t>(TimeNanos() / kNumNanosecsPerMicrosec);
 }
 
-uint32_t TimeAfter(int32_t elapsed) {
+int64_t TimeAfter(int64_t elapsed) {
   RTC_DCHECK_GE(elapsed, 0);
-  RTC_DCHECK_LT(static_cast<uint32_t>(elapsed), HALF);
-  return Time() + elapsed;
+  return TimeMillis() + elapsed;
 }
 
-bool TimeIsLaterOrEqual(uint32_t earlier, uint32_t later) {
-  int32_t diff = later - earlier;
-  return (diff >= 0 && static_cast<uint32_t>(diff) < HALF);
-}
-
-bool TimeIsLater(uint32_t earlier, uint32_t later) {
-  int32_t diff = later - earlier;
-  return (diff > 0 && static_cast<uint32_t>(diff) < HALF);
-}
-
-int32_t TimeDiff(uint32_t later, uint32_t earlier) {
+int32_t TimeDiff32(uint32_t later, uint32_t earlier) {
   return later - earlier;
 }
 
-int64_t TimeDiff64(int64_t later, int64_t earlier) {
+int64_t TimeDiff(int64_t later, int64_t earlier) {
   return later - earlier;
 }
 

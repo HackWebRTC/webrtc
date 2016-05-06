@@ -27,8 +27,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       // 1000ms window, scale 1000 for ms to s.
       decode_fps_estimator_(1000, 1000),
       renders_fps_estimator_(1000, 1000),
-      render_fps_tracker_(100u, 10u),
-      render_pixel_tracker_(100u, 10u) {
+      render_fps_tracker_(100, 10u),
+      render_pixel_tracker_(100, 10u) {
   stats_.ssrc = config.rtp.remote_ssrc;
   for (auto it : config.rtp.rtx)
     rtx_stats_[it.second.ssrc] = StreamDataCounters();

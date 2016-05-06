@@ -156,7 +156,7 @@ class LogMessage {
   // If this is not called externally, the LogMessage ctor also calls it, in
   // which case the logging start time will be the time of the first LogMessage
   // instance is created.
-  static uint32_t LogStartTime();
+  static int64_t LogStartTime();
 
   // Returns the wall clock equivalent of |LogStartTime|, in seconds from the
   // epoch.

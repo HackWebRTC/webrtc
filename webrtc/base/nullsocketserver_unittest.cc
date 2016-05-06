@@ -37,7 +37,7 @@ TEST_F(NullSocketServerTest, WaitAndSet) {
 }
 
 TEST_F(NullSocketServerTest, TestWait) {
-  uint32_t start = Time();
+  int64_t start = TimeMillis();
   ss_.Wait(200, true);
   // The actual wait time is dependent on the resolution of the timer used by
   // the Event class. Allow for the event to signal ~20ms early.

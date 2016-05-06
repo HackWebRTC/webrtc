@@ -57,7 +57,7 @@ int PingTask::ProcessStart() {
     ping_response_deadline_ = 0;
   }
 
-  uint32_t now = rtc::Time();
+  int64_t now = rtc::TimeMillis();
 
   // If the ping timed out, signal.
   if (ping_response_deadline_ != 0 && now >= ping_response_deadline_) {

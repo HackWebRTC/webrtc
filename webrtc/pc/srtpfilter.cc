@@ -259,7 +259,7 @@ bool SrtpFilter::GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len) {
   return send_session_->GetRtpAuthParams(key, key_len, tag_len);
 }
 
-void SrtpFilter::set_signal_silent_time(uint32_t signal_silent_time_in_ms) {
+void SrtpFilter::set_signal_silent_time(int signal_silent_time_in_ms) {
   signal_silent_time_in_ms_ = signal_silent_time_in_ms;
   if (IsActive()) {
     ASSERT(send_session_ != NULL);
@@ -641,7 +641,7 @@ bool SrtpSession::GetSendStreamPacketIndex(void* p,
   return true;
 }
 
-void SrtpSession::set_signal_silent_time(uint32_t signal_silent_time_in_ms) {
+void SrtpSession::set_signal_silent_time(int signal_silent_time_in_ms) {
   srtp_stat_->set_signal_silent_time(signal_silent_time_in_ms);
 }
 
@@ -891,10 +891,10 @@ void SrtpStat::HandleSrtpResult(const SrtpStat::FailureKey& key) {
   if (key.error != SrtpFilter::ERROR_NONE) {
     // For errors, signal first time and wait for 1 sec.
     FailureStat* stat = &(failures_[key]);
-    uint32_t current_time = rtc::Time();
+    int64_t current_time = rtc::TimeMillis();
     if (stat->last_signal_time == 0 ||
         rtc::TimeDiff(current_time, stat->last_signal_time) >
-        static_cast<int>(signal_silent_time_)) {
+            signal_silent_time_) {
       SignalSrtpError(key.ssrc, key.mode, key.error);
       stat->last_signal_time = current_time;
     }

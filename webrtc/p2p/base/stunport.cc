@@ -87,7 +87,7 @@ class StunBindingRequest : public StunRequest {
 
     int64_t now = rtc::TimeMillis();
     if (WithinLifetime(now) &&
-        rtc::TimeDiff64(now, start_time_) < RETRY_TIMEOUT) {
+        rtc::TimeDiff(now, start_time_) < RETRY_TIMEOUT) {
       port_->requests_.SendDelayed(
           new StunBindingRequest(port_, server_addr_, start_time_, lifetime_),
           port_->stun_keepalive_delay());
@@ -105,7 +105,7 @@ class StunBindingRequest : public StunRequest {
   // Returns true if |now| is within the lifetime of the request (a negative
   // lifetime means infinite).
   bool WithinLifetime(int64_t now) const {
-    return lifetime_ < 0 || rtc::TimeDiff64(now, start_time_) <= lifetime_;
+    return lifetime_ < 0 || rtc::TimeDiff(now, start_time_) <= lifetime_;
   }
   UDPPort* port_;
   const rtc::SocketAddress server_addr_;

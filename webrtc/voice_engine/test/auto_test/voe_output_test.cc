@@ -183,7 +183,7 @@ TEST(OutputTest, DISABLED_OpusDtxHasNoNoisePump) {
   OutputTest test(-kDtxBoundForSilence, kDtxBoundForSilence);
   Random random(1234ull);
 
-  uint32_t start_time = rtc::Time();
+  int64_t start_time = rtc::TimeMillis();
   test.Start();
   while (rtc::TimeSince(start_time) < kRuntimeMs) {
     webrtc::SleepMs(random.Rand(kUnmuteTimeMs - kUnmuteTimeMs / 10,

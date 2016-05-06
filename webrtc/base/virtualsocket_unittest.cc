@@ -35,7 +35,7 @@ struct Sender : public MessageHandler {
         done(false),
         rate(rt),
         count(0) {
-    last_send = rtc::Time();
+    last_send = rtc::TimeMillis();
     thread->PostDelayed(NextDelay(), this, 1);
   }
 
@@ -50,9 +50,9 @@ struct Sender : public MessageHandler {
     if (done)
       return;
 
-    uint32_t cur_time = rtc::Time();
-    uint32_t delay = cur_time - last_send;
-    uint32_t size = rate * delay / 1000;
+    int64_t cur_time = rtc::TimeMillis();
+    int64_t delay = cur_time - last_send;
+    uint32_t size = static_cast<uint32_t>(rate * delay / 1000);
     size = std::min<uint32_t>(size, 4096);
     size = std::max<uint32_t>(size, sizeof(uint32_t));
 
@@ -70,7 +70,7 @@ struct Sender : public MessageHandler {
   bool done;
   uint32_t rate;  // bytes per second
   uint32_t count;
-  uint32_t last_send;
+  int64_t last_send;
   char dummy[4096];
 };
 
@@ -103,7 +103,7 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
     sec_count += size;
 
     uint32_t send_time = *reinterpret_cast<const uint32_t*>(data);
-    uint32_t recv_time = rtc::Time();
+    uint32_t recv_time = rtc::TimeMillis();
     uint32_t delay = recv_time - send_time;
     sum += delay;
     sum_sq += delay * delay;

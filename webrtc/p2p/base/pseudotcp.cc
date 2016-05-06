@@ -203,9 +203,9 @@ void ReportStats() {
 
 uint32_t PseudoTcp::Now() {
 #if 0  // Use this to synchronize timers with logging timestamps (easier debug)
-  return rtc::TimeSince(StartTime());
+  return static_cast<uint32_t>(rtc::TimeSince(StartTime()));
 #else
-  return rtc::Time();
+  return rtc::Time32();
 #endif
 }
 
@@ -289,7 +289,7 @@ void PseudoTcp::NotifyClock(uint32_t now) {
     return;
 
     // Check if it's time to retransmit a segment
-  if (m_rto_base && (rtc::TimeDiff(m_rto_base + m_rx_rto, now) <= 0)) {
+  if (m_rto_base && (rtc::TimeDiff32(m_rto_base + m_rx_rto, now) <= 0)) {
     if (m_slist.empty()) {
       ASSERT(false);
     } else {
@@ -320,9 +320,8 @@ void PseudoTcp::NotifyClock(uint32_t now) {
   }
 
   // Check if it's time to probe closed windows
-  if ((m_snd_wnd == 0)
-        && (rtc::TimeDiff(m_lastsend + m_rx_rto, now) <= 0)) {
-    if (rtc::TimeDiff(now, m_lastrecv) >= 15000) {
+  if ((m_snd_wnd == 0) && (rtc::TimeDiff32(m_lastsend + m_rx_rto, now) <= 0)) {
+    if (rtc::TimeDiff32(now, m_lastrecv) >= 15000) {
       closedown(ECONNABORTED);
       return;
     }
@@ -336,19 +335,22 @@ void PseudoTcp::NotifyClock(uint32_t now) {
   }
 
   // Check if it's time to send delayed acks
-  if (m_t_ack && (rtc::TimeDiff(m_t_ack + m_ack_delay, now) <= 0)) {
+  if (m_t_ack && (rtc::TimeDiff32(m_t_ack + m_ack_delay, now) <= 0)) {
     packet(m_snd_nxt, 0, 0, 0);
   }
 
 #if PSEUDO_KEEPALIVE
   // Check for idle timeout
-  if ((m_state == TCP_ESTABLISHED) && (TimeDiff(m_lastrecv + IDLE_TIMEOUT, now) <= 0)) {
+  if ((m_state == TCP_ESTABLISHED) &&
+      (TimeDiff32(m_lastrecv + IDLE_TIMEOUT, now) <= 0)) {
     closedown(ECONNABORTED);
     return;
   }
 
   // Check for ping timeout (to keep udp mapping open)
-  if ((m_state == TCP_ESTABLISHED) && (TimeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3/2 : IDLE_PING), now) <= 0)) {
+  if ((m_state == TCP_ESTABLISHED) &&
+      (TimeDiff32(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3 / 2 : IDLE_PING),
+                  now) <= 0)) {
     packet(m_snd_nxt, 0, 0, 0);
   }
 #endif // PSEUDO_KEEPALIVE
@@ -621,23 +623,24 @@ bool PseudoTcp::clock_check(uint32_t now, long& nTimeout) {
   nTimeout = DEFAULT_TIMEOUT;
 
   if (m_t_ack) {
-    nTimeout =
-        std::min<int32_t>(nTimeout, rtc::TimeDiff(m_t_ack + m_ack_delay, now));
+    nTimeout = std::min<int32_t>(nTimeout,
+                                 rtc::TimeDiff32(m_t_ack + m_ack_delay, now));
   }
   if (m_rto_base) {
-    nTimeout =
-        std::min<int32_t>(nTimeout, rtc::TimeDiff(m_rto_base + m_rx_rto, now));
+    nTimeout = std::min<int32_t>(nTimeout,
+                                 rtc::TimeDiff32(m_rto_base + m_rx_rto, now));
   }
   if (m_snd_wnd == 0) {
-    nTimeout =
-        std::min<int32_t>(nTimeout, rtc::TimeDiff(m_lastsend + m_rx_rto, now));
+    nTimeout = std::min<int32_t>(nTimeout,
+                                 rtc::TimeDiff32(m_lastsend + m_rx_rto, now));
   }
 #if PSEUDO_KEEPALIVE
   if (m_state == TCP_ESTABLISHED) {
     nTimeout = std::min<int32_t>(
-        nTimeout, rtc::TimeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3 / 2
-                                                             : IDLE_PING),
-                                now));
+        nTimeout,
+        rtc::TimeDiff32(
+            m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3 / 2 : IDLE_PING),
+            now));
   }
 #endif // PSEUDO_KEEPALIVE
   return true;
@@ -710,7 +713,7 @@ bool PseudoTcp::process(Segment& seg) {
   if ((seg.ack > m_snd_una) && (seg.ack <= m_snd_nxt)) {
     // Calculate round-trip time
     if (seg.tsecr) {
-      int32_t rtt = rtc::TimeDiff(now, seg.tsecr);
+      int32_t rtt = rtc::TimeDiff32(now, seg.tsecr);
       if (rtt >= 0) {
         if (m_rx_srtt == 0) {
           m_rx_srtt = rtt;
@@ -1033,7 +1036,7 @@ bool PseudoTcp::transmit(const SList::iterator& seg, uint32_t now) {
 void PseudoTcp::attemptSend(SendFlags sflags) {
   uint32_t now = Now();
 
-  if (rtc::TimeDiff(now, m_lastsend) > static_cast<long>(m_rx_rto)) {
+  if (rtc::TimeDiff32(now, m_lastsend) > static_cast<long>(m_rx_rto)) {
     m_cwnd = m_mss;
   }
 

@@ -50,12 +50,12 @@ class SharedExclusiveTask : public MessageHandler {
     worker_thread_->Start();
   }
 
-  int waiting_time_in_ms() const { return waiting_time_in_ms_; }
+  int64_t waiting_time_in_ms() const { return waiting_time_in_ms_; }
 
  protected:
   std::unique_ptr<Thread> worker_thread_;
   SharedExclusiveLock* shared_exclusive_lock_;
-  int waiting_time_in_ms_;
+  int64_t waiting_time_in_ms_;
   int* value_;
   bool* done_;
 };
@@ -79,10 +79,10 @@ class ReadTask : public SharedExclusiveTask {
     TypedMessageData<int*>* message_data =
         static_cast<TypedMessageData<int*>*>(message->pdata);
 
-    uint32_t start_time = Time();
+    int64_t start_time = TimeMillis();
     {
       SharedScope ss(shared_exclusive_lock_);
-      waiting_time_in_ms_ = TimeDiff(Time(), start_time);
+      waiting_time_in_ms_ = TimeDiff(TimeMillis(), start_time);
 
       Thread::SleepMs(kProcessTimeInMs);
       *message_data->data() = *value_;
@@ -112,10 +112,10 @@ class WriteTask : public SharedExclusiveTask {
     TypedMessageData<int>* message_data =
         static_cast<TypedMessageData<int>*>(message->pdata);
 
-    uint32_t start_time = Time();
+    int64_t start_time = TimeMillis();
     {
       ExclusiveScope es(shared_exclusive_lock_);
-      waiting_time_in_ms_ = TimeDiff(Time(), start_time);
+      waiting_time_in_ms_ = TimeDiff(TimeMillis(), start_time);
 
       Thread::SleepMs(kProcessTimeInMs);
       *value_ = message_data->data();

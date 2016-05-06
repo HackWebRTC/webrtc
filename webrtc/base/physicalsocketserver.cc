@@ -1470,9 +1470,9 @@ bool PhysicalSocketServer::InstallSignal(int signum, void (*handler)(int)) {
 
 #if defined(WEBRTC_WIN)
 bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
-  int cmsTotal = cmsWait;
-  int cmsElapsed = 0;
-  uint32_t msStart = Time();
+  int64_t cmsTotal = cmsWait;
+  int64_t cmsElapsed = 0;
+  int64_t msStart = Time();
 
   fWait_ = true;
   while (fWait_) {
@@ -1509,18 +1509,18 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
 
     // Which is shorter, the delay wait or the asked wait?
 
-    int cmsNext;
+    int64_t cmsNext;
     if (cmsWait == kForever) {
       cmsNext = cmsWait;
     } else {
-      cmsNext = std::max(0, cmsTotal - cmsElapsed);
+      cmsNext = std::max<int64_t>(0, cmsTotal - cmsElapsed);
     }
 
     // Wait for one of the events to signal
     DWORD dw = WSAWaitForMultipleEvents(static_cast<DWORD>(events.size()),
                                         &events[0],
                                         false,
-                                        cmsNext,
+                                        static_cast<DWORD>(cmsNext),
                                         false);
 
     if (dw == WSA_WAIT_FAILED) {

@@ -50,7 +50,7 @@ void XmppPump::WakeTasks() {
 }
 
 int64_t XmppPump::CurrentTime() {
-  return (int64_t)rtc::Time();
+  return (int64_t)rtc::TimeMillis();
 }
 
 void XmppPump::OnMessage(rtc::Message *pmsg) {

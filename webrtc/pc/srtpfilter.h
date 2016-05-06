@@ -120,7 +120,7 @@ class SrtpFilter {
   bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
 
   // Update the silent threshold (in ms) for signaling errors.
-  void set_signal_silent_time(uint32_t signal_silent_time_in_ms);
+  void set_signal_silent_time(int signal_silent_time_in_ms);
 
   bool ResetParams();
 
@@ -166,7 +166,7 @@ class SrtpFilter {
     ST_RECEIVEDPRANSWER
   };
   State state_;
-  uint32_t signal_silent_time_in_ms_;
+  int signal_silent_time_in_ms_;
   std::vector<CryptoParams> offer_params_;
   std::unique_ptr<SrtpSession> send_session_;
   std::unique_ptr<SrtpSession> recv_session_;
@@ -208,7 +208,7 @@ class SrtpSession {
   bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
 
   // Update the silent threshold (in ms) for signaling errors.
-  void set_signal_silent_time(uint32_t signal_silent_time_in_ms);
+  void set_signal_silent_time(int signal_silent_time_in_ms);
 
   // Calls srtp_shutdown if it's initialized.
   static void Terminate();
@@ -252,9 +252,9 @@ class SrtpStat {
   void AddUnprotectRtcpResult(int result);
 
   // Get silent time (in ms) for SRTP statistics handler.
-  uint32_t signal_silent_time() const { return signal_silent_time_; }
+  int signal_silent_time() const { return signal_silent_time_; }
   // Set silent time (in ms) for SRTP statistics handler.
-  void set_signal_silent_time(uint32_t signal_silent_time) {
+  void set_signal_silent_time(int signal_silent_time) {
     signal_silent_time_ = signal_silent_time;
   }
 
@@ -296,7 +296,7 @@ class SrtpStat {
     void Reset() {
       last_signal_time = 0;
     }
-    uint32_t last_signal_time;
+    int64_t last_signal_time;
   };
 
   // Inspect SRTP result and signal error if needed.
@@ -304,7 +304,7 @@ class SrtpStat {
 
   std::map<FailureKey, FailureStat> failures_;
   // Threshold in ms to silent the signaling errors.
-  uint32_t signal_silent_time_;
+  int signal_silent_time_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SrtpStat);
 };

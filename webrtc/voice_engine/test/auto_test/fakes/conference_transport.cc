@@ -131,7 +131,7 @@ void ConferenceTransport::StorePacket(Packet::Type type,
                                       size_t len) {
   {
     rtc::CritScope lock(&pq_crit_);
-    packet_queue_.push_back(Packet(type, data, len, rtc::Time()));
+    packet_queue_.push_back(Packet(type, data, len, rtc::TimeMillis()));
   }
   packet_event_->Set();
 }

@@ -97,8 +97,8 @@ SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
       clock_(clock),
       max_sent_width_per_timestamp_(0),
       max_sent_height_per_timestamp_(0),
-      input_frame_rate_tracker_(100u, 10u),
-      sent_frame_rate_tracker_(100u, 10u),
+      input_frame_rate_tracker_(100, 10u),
+      sent_frame_rate_tracker_(100, 10u),
       first_rtcp_stats_time_ms_(-1),
       first_rtp_stats_time_ms_(-1),
       start_stats_(stats) {}

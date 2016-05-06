@@ -19,7 +19,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/include/frame_callback.h"
@@ -2934,7 +2933,9 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
       } else {
         // Verify timestamps are reasonably close.
         uint32_t latest_observed = timestamp_it->second;
-        int32_t timestamp_gap = rtc::TimeDiff(timestamp, latest_observed);
+        // Wraparound handling is unnecessary here as long as an int variable
+        // is used to store the result.
+        int32_t timestamp_gap = timestamp - latest_observed;
         EXPECT_LE(std::abs(timestamp_gap), kMaxTimestampGap)
             << "Gap in timestamps (" << latest_observed << " -> "
             << timestamp << ") too large for SSRC: " << ssrc << ".";

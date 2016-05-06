@@ -54,7 +54,7 @@ struct DeletedLockChecker {
 static void DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder(
     MessageQueue* q) {
   EXPECT_TRUE(q != NULL);
-  TimeStamp now = Time();
+  int64_t now = TimeMillis();
   q->PostAt(now, NULL, 3);
   q->PostAt(now - 2, NULL, 0);
   q->PostAt(now - 1, NULL, 1);

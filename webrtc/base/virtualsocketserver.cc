@@ -501,15 +501,25 @@ int VirtualSocket::SendTcp(const void* pv, size_t cb) {
 }
 
 VirtualSocketServer::VirtualSocketServer(SocketServer* ss)
-    : server_(ss), server_owned_(false), msg_queue_(NULL), stop_on_idle_(false),
-      network_delay_(Time()), next_ipv4_(kInitialNextIPv4),
-      next_ipv6_(kInitialNextIPv6), next_port_(kFirstEphemeralPort),
-      bindings_(new AddressMap()), connections_(new ConnectionMap()),
-      bandwidth_(0), network_capacity_(kDefaultNetworkCapacity),
+    : server_(ss),
+      server_owned_(false),
+      msg_queue_(NULL),
+      stop_on_idle_(false),
+      network_delay_(TimeMillis()),
+      next_ipv4_(kInitialNextIPv4),
+      next_ipv6_(kInitialNextIPv6),
+      next_port_(kFirstEphemeralPort),
+      bindings_(new AddressMap()),
+      connections_(new ConnectionMap()),
+      bandwidth_(0),
+      network_capacity_(kDefaultNetworkCapacity),
       send_buffer_capacity_(kDefaultTcpBufferSize),
       recv_buffer_capacity_(kDefaultTcpBufferSize),
-      delay_mean_(0), delay_stddev_(0), delay_samples_(NUM_SAMPLES),
-      delay_dist_(NULL), drop_prob_(0.0) {
+      delay_mean_(0),
+      delay_stddev_(0),
+      delay_samples_(NUM_SAMPLES),
+      delay_dist_(NULL),
+      drop_prob_(0.0) {
   if (!server_) {
     server_ = new PhysicalSocketServer();
     server_owned_ = true;
@@ -792,7 +802,7 @@ int VirtualSocketServer::SendUdp(VirtualSocket* socket,
 
   CritScope cs(&socket->crit_);
 
-  uint32_t cur_time = Time();
+  int64_t cur_time = TimeMillis();
   PurgeNetworkPackets(socket, cur_time);
 
   // Determine whether we have enough bandwidth to accept this packet.  To do
@@ -832,7 +842,7 @@ void VirtualSocketServer::SendTcp(VirtualSocket* socket) {
 
   CritScope cs(&socket->crit_);
 
-  uint32_t cur_time = Time();
+  int64_t cur_time = TimeMillis();
   PurgeNetworkPackets(socket, cur_time);
 
   while (true) {
@@ -867,7 +877,7 @@ void VirtualSocketServer::SendTcp(VirtualSocket* socket) {
 
 void VirtualSocketServer::AddPacketToNetwork(VirtualSocket* sender,
                                              VirtualSocket* recipient,
-                                             uint32_t cur_time,
+                                             int64_t cur_time,
                                              const char* data,
                                              size_t data_size,
                                              size_t header_size,
@@ -895,19 +905,19 @@ void VirtualSocketServer::AddPacketToNetwork(VirtualSocket* sender,
   // Post the packet as a message to be delivered (on our own thread)
   Packet* p = new Packet(data, data_size, sender_addr);
 
-  uint32_t ts = TimeAfter(send_delay + transit_delay);
+  int64_t ts = TimeAfter(send_delay + transit_delay);
   if (ordered) {
     // Ensure that new packets arrive after previous ones
     // TODO: consider ordering on a per-socket basis, since this
-    // introduces artifical delay.
-    ts = TimeMax(ts, network_delay_);
+    // introduces artificial delay.
+    ts = std::max(ts, network_delay_);
   }
   msg_queue_->PostAt(ts, recipient, MSG_ID_PACKET, p);
-  network_delay_ = TimeMax(ts, network_delay_);
+  network_delay_ = std::max(ts, network_delay_);
 }
 
 void VirtualSocketServer::PurgeNetworkPackets(VirtualSocket* socket,
-                                              uint32_t cur_time) {
+                                              int64_t cur_time) {
   while (!socket->network_.empty() &&
          (socket->network_.front().done_time <= cur_time)) {
     ASSERT(socket->network_size_ >= socket->network_.front().size);

@@ -142,7 +142,7 @@ struct Message {
   MessageHandler *phandler;
   uint32_t message_id;
   MessageData *pdata;
-  uint32_t ts_sensitive;
+  int64_t ts_sensitive;
 };
 
 typedef std::list<Message> MessageList;
@@ -152,7 +152,7 @@ typedef std::list<Message> MessageList;
 
 class DelayedMessage {
  public:
-  DelayedMessage(int delay, uint32_t trigger, uint32_t num, const Message& msg)
+  DelayedMessage(int delay, int64_t trigger, uint32_t num, const Message& msg)
       : cmsDelay_(delay), msTrigger_(trigger), num_(num), msg_(msg) {}
 
   bool operator< (const DelayedMessage& dmsg) const {
@@ -161,7 +161,7 @@ class DelayedMessage {
   }
 
   int cmsDelay_;  // for debugging
-  uint32_t msTrigger_;
+  int64_t msTrigger_;
   uint32_t num_;
   Message msg_;
 };
@@ -212,6 +212,11 @@ class MessageQueue {
                            MessageHandler* phandler,
                            uint32_t id = 0,
                            MessageData* pdata = NULL);
+  virtual void PostAt(int64_t tstamp,
+                      MessageHandler* phandler,
+                      uint32_t id = 0,
+                      MessageData* pdata = NULL);
+  // TODO(honghaiz): Remove this when all the dependencies are removed.
   virtual void PostAt(uint32_t tstamp,
                       MessageHandler* phandler,
                       uint32_t id = 0,
@@ -250,7 +255,7 @@ class MessageQueue {
   };
 
   void DoDelayPost(int cmsDelay,
-                   uint32_t tstamp,
+                   int64_t tstamp,
                    MessageHandler* phandler,
                    uint32_t id,
                    MessageData* pdata);

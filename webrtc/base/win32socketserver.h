@@ -159,6 +159,6 @@ class Win32Thread : public Thread {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #endif  // WEBRTC_BASE_WIN32SOCKETSERVER_H_

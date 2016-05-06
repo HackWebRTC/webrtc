@@ -133,7 +133,7 @@ bool DirectoryIterator::OlderThan(int seconds) const {
 #else
   file_modify_time = stat_.st_mtime;
 #endif
-  return TimeDiff(time(NULL), file_modify_time) >= seconds;
+  return time(NULL) - file_modify_time >= seconds;
 }
 
 FilesystemInterface* Filesystem::default_filesystem_ = NULL;

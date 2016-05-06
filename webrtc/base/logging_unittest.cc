@@ -138,18 +138,18 @@ TEST(LogTest, Perf) {
   stream.DisableBuffering();
   LogMessage::AddLogToStream(&stream, LS_SENSITIVE);
 
-  uint32_t start = Time(), finish;
+  int64_t start = TimeMillis(), finish;
   std::string message('X', 80);
   for (int i = 0; i < 1000; ++i) {
     LOG(LS_SENSITIVE) << message;
   }
-  finish = Time();
+  finish = TimeMillis();
 
   LogMessage::RemoveLogToStream(&stream);
   stream.Close();
   Filesystem::DeleteFile(path);
 
-  LOG(LS_INFO) << "Average log time: " << TimeDiff(finish, start) << " us";
+  LOG(LS_INFO) << "Average log time: " << TimeDiff(finish, start) << " ms";
 }
 
 }  // namespace rtc

@@ -208,7 +208,8 @@ class PseudoTcpTestBase : public testing::Test,
 class PseudoTcpTest : public PseudoTcpTestBase {
  public:
   void TestTransfer(int size) {
-    uint32_t start, elapsed;
+    uint32_t start;
+    int32_t elapsed;
     size_t received;
     // Create some dummy data to send.
     send_stream_.ReserveSize(size);
@@ -220,13 +221,13 @@ class PseudoTcpTest : public PseudoTcpTestBase {
     // Prepare the receive stream.
     recv_stream_.ReserveSize(size);
     // Connect and wait until connected.
-    start = rtc::Time();
+    start = rtc::Time32();
     EXPECT_EQ(0, Connect());
     EXPECT_TRUE_WAIT(have_connected_, kConnectTimeoutMs);
     // Sending will start from OnTcpWriteable and complete when all data has
     // been received.
     EXPECT_TRUE_WAIT(have_disconnected_, kTransferTimeoutMs);
-    elapsed = rtc::TimeSince(start);
+    elapsed = rtc::Time32() - start;
     recv_stream_.GetSize(&received);
     // Ensure we closed down OK and we got the right data.
     // TODO: Ensure the errors are cleared properly.
@@ -339,7 +340,7 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
     // Prepare the receive stream.
     recv_stream_.ReserveSize(size);
     // Connect and wait until connected.
-    start = rtc::Time();
+    start = rtc::Time32();
     EXPECT_EQ(0, Connect());
     EXPECT_TRUE_WAIT(have_connected_, kConnectTimeoutMs);
     // Sending will start from OnTcpWriteable and stop when the required

@@ -153,7 +153,7 @@ PeerConnectionFactory::~PeerConnectionFactory() {
 
 bool PeerConnectionFactory::Initialize() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  rtc::InitRandom(rtc::Time());
+  rtc::InitRandom(rtc::Time32());
 
   default_network_manager_.reset(new rtc::BasicNetworkManager());
   if (!default_network_manager_) {

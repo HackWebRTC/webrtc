@@ -169,14 +169,14 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   // Places a packet on the network.
   void AddPacketToNetwork(VirtualSocket* socket,
                           VirtualSocket* recipient,
-                          uint32_t cur_time,
+                          int64_t cur_time,
                           const char* data,
                           size_t data_size,
                           size_t header_size,
                           bool ordered);
 
   // Removes stale packets from the network
-  void PurgeNetworkPackets(VirtualSocket* socket, uint32_t cur_time);
+  void PurgeNetworkPackets(VirtualSocket* socket, int64_t cur_time);
 
   // Computes the number of milliseconds required to send a packet of this size.
   uint32_t SendDelay(uint32_t size);
@@ -227,7 +227,7 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   bool server_owned_;
   MessageQueue* msg_queue_;
   bool stop_on_idle_;
-  uint32_t network_delay_;
+  int64_t network_delay_;
   in_addr next_ipv4_;
   in6_addr next_ipv6_;
   uint16_t next_port_;
@@ -293,7 +293,7 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
  private:
   struct NetworkEntry {
     size_t size;
-    uint32_t done_time;
+    int64_t done_time;
   };
 
   typedef std::deque<SocketAddress> ListenQueue;

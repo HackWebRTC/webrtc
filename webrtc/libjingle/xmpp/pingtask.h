@@ -46,8 +46,8 @@ class PingTask : public buzz::XmppTask, private rtc::MessageHandler {
   rtc::MessageQueue* message_queue_;
   uint32_t ping_period_millis_;
   uint32_t ping_timeout_millis_;
-  uint32_t next_ping_time_;
-  uint32_t ping_response_deadline_;  // 0 if the response has been received
+  int64_t next_ping_time_;
+  int64_t ping_response_deadline_;  // 0 if the response has been received
 };
 
 } // namespace buzz

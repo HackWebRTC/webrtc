@@ -17,7 +17,7 @@
 
 namespace rtc {
 
-const uint32_t kMaxMsgLatency = 150;  // 150 ms
+const int kMaxMsgLatency = 150;  // 150 ms
 
 //------------------------------------------------------------------
 // MessageQueueManager
@@ -215,16 +215,16 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
 
   // Get w/wait + timer scan / dispatch + socket / event multiplexer dispatch
 
-  int cmsTotal = cmsWait;
-  int cmsElapsed = 0;
-  uint32_t msStart = Time();
-  uint32_t msCurrent = msStart;
+  int64_t cmsTotal = cmsWait;
+  int64_t cmsElapsed = 0;
+  int64_t msStart = TimeMillis();
+  int64_t msCurrent = msStart;
   while (true) {
     // Check for sent messages
     ReceiveSends();
 
     // Check for posted events
-    int cmsDelayNext = kForever;
+    int64_t cmsDelayNext = kForever;
     bool first_pass = true;
     while (true) {
       // All queue operations need to be locked, but nothing else in this loop
@@ -237,7 +237,7 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
         if (first_pass) {
           first_pass = false;
           while (!dmsgq_.empty()) {
-            if (TimeIsLater(msCurrent, dmsgq_.top().msTrigger_)) {
+            if (msCurrent < dmsgq_.top().msTrigger_) {
               cmsDelayNext = TimeDiff(dmsgq_.top().msTrigger_, msCurrent);
               break;
             }
@@ -256,7 +256,7 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
 
       // Log a warning for time-sensitive messages that we're late to deliver.
       if (pmsg->ts_sensitive) {
-        int32_t delay = TimeDiff(msCurrent, pmsg->ts_sensitive);
+        int64_t delay = TimeDiff(msCurrent, pmsg->ts_sensitive);
         if (delay > 0) {
           LOG_F(LS_WARNING) << "id: " << pmsg->message_id << "  delay: "
                             << (delay + kMaxMsgLatency) << "ms";
@@ -277,11 +277,11 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
 
     // Which is shorter, the delay wait or the asked wait?
 
-    int cmsNext;
+    int64_t cmsNext;
     if (cmsWait == kForever) {
       cmsNext = cmsDelayNext;
     } else {
-      cmsNext = std::max(0, cmsTotal - cmsElapsed);
+      cmsNext = std::max<int64_t>(0, cmsTotal - cmsElapsed);
       if ((cmsDelayNext != kForever) && (cmsDelayNext < cmsNext))
         cmsNext = cmsDelayNext;
     }
@@ -289,13 +289,13 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
     {
       // Wait and multiplex in the meantime
       SharedScope ss(&ss_lock_);
-      if (!ss_->Wait(cmsNext, process_io))
+      if (!ss_->Wait(static_cast<int>(cmsNext), process_io))
         return false;
     }
 
     // If the specified timeout expired, return
 
-    msCurrent = Time();
+    msCurrent = TimeMillis();
     cmsElapsed = TimeDiff(msCurrent, msStart);
     if (cmsWait != kForever) {
       if (cmsElapsed >= cmsWait)
@@ -326,7 +326,7 @@ void MessageQueue::Post(MessageHandler* phandler,
     msg.message_id = id;
     msg.pdata = pdata;
     if (time_sensitive) {
-      msg.ts_sensitive = Time() + kMaxMsgLatency;
+      msg.ts_sensitive = TimeMillis() + kMaxMsgLatency;
     }
     msgq_.push_back(msg);
   }
@@ -344,11 +344,20 @@ void MessageQueue::PostAt(uint32_t tstamp,
                           MessageHandler* phandler,
                           uint32_t id,
                           MessageData* pdata) {
+  // This should work even if it is used (unexpectedly).
+  int delay = static_cast<uint32_t>(TimeMillis()) - tstamp;
+  return DoDelayPost(delay, tstamp, phandler, id, pdata);
+}
+
+void MessageQueue::PostAt(int64_t tstamp,
+                          MessageHandler* phandler,
+                          uint32_t id,
+                          MessageData* pdata) {
   return DoDelayPost(TimeUntil(tstamp), tstamp, phandler, id, pdata);
 }
 
 void MessageQueue::DoDelayPost(int cmsDelay,
-                               uint32_t tstamp,
+                               int64_t tstamp,
                                MessageHandler* phandler,
                                uint32_t id,
                                MessageData* pdata) {

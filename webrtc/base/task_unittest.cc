@@ -33,7 +33,7 @@
 namespace rtc {
 
 static int64_t GetCurrentTime() {
-  return static_cast<int64_t>(Time()) * 10000;
+  return TimeMillis() * 10000;
 }
 
 // feel free to change these numbers.  Note that '0' won't work, though

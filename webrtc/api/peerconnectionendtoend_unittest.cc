@@ -38,7 +38,7 @@ using webrtc::PeerConnectionInterface;
 
 namespace {
 
-const size_t kMaxWait = 10000;
+const int kMaxWait = 10000;
 
 }  // namespace
 

@@ -627,7 +627,7 @@ void Win32Socket::OnSocketNotify(SOCKET socket, int event, int error) {
       if (error != ERROR_SUCCESS) {
         ReportWSAError("WSAAsync:connect notify", error, addr_);
 #if !defined(NDEBUG)
-        int32_t duration = TimeSince(connect_time_);
+        int64_t duration = TimeSince(connect_time_);
         LOG(LS_INFO) << "WSAAsync:connect error (" << duration
                      << " ms), faking close";
 #endif
@@ -640,7 +640,7 @@ void Win32Socket::OnSocketNotify(SOCKET socket, int event, int error) {
         SignalCloseEvent(this, error);
       } else {
 #if !defined(NDEBUG)
-        int32_t duration = TimeSince(connect_time_);
+        int64_t duration = TimeSince(connect_time_);
         LOG(LS_INFO) << "WSAAsync:connect (" << duration << " ms)";
 #endif
         state_ = CS_CONNECTED;

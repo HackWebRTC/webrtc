@@ -124,7 +124,7 @@ LogMessage::LogMessage(const char* file,
                        const char* module)
     : severity_(sev), tag_(kLibjingle) {
   if (timestamp_) {
-    uint32_t time = TimeSince(LogStartTime());
+    int64_t time = TimeSince(LogStartTime());
     // Also ensure WallClockStartTime is initialized, so that it matches
     // LogStartTime.
     WallClockStartTime();
@@ -209,8 +209,8 @@ LogMessage::~LogMessage() {
   }
 }
 
-uint32_t LogMessage::LogStartTime() {
-  static const uint32_t g_start = Time();
+int64_t LogMessage::LogStartTime() {
+  static const int64_t g_start = TimeMillis();
   return g_start;
 }
 

@@ -482,7 +482,7 @@ void Thread::Clear(MessageHandler* phandler,
 }
 
 bool Thread::ProcessMessages(int cmsLoop) {
-  uint32_t msEnd = (kForever == cmsLoop) ? 0 : TimeAfter(cmsLoop);
+  int64_t msEnd = (kForever == cmsLoop) ? 0 : TimeAfter(cmsLoop);
   int cmsNext = cmsLoop;
 
   while (true) {

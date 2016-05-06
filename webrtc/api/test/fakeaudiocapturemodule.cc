@@ -23,7 +23,7 @@ static const int kHighSampleValue = 10000;
 
 // Same value as src/modules/audio_device/main/source/audio_device_config.h in
 // https://code.google.com/p/webrtc/
-static const uint32_t kAdmMaxIdleTimeProcess = 1000;
+static const int kAdmMaxIdleTimeProcess = 1000;
 
 // Constants here are derived by running VoE using a real ADM.
 // The constants correspond to 10ms of mono audio at 44kHz.
@@ -73,12 +73,12 @@ int FakeAudioCaptureModule::frames_received() const {
 }
 
 int64_t FakeAudioCaptureModule::TimeUntilNextProcess() {
-  const uint32_t current_time = rtc::Time();
+  const int64_t current_time = rtc::TimeMillis();
   if (current_time < last_process_time_ms_) {
     // TODO: wraparound could be handled more gracefully.
     return 0;
   }
-  const uint32_t elapsed_time = current_time - last_process_time_ms_;
+  const int64_t elapsed_time = current_time - last_process_time_ms_;
   if (kAdmMaxIdleTimeProcess < elapsed_time) {
     return 0;
   }
@@ -86,7 +86,7 @@ int64_t FakeAudioCaptureModule::TimeUntilNextProcess() {
 }
 
 void FakeAudioCaptureModule::Process() {
-  last_process_time_ms_ = rtc::Time();
+  last_process_time_ms_ = rtc::TimeMillis();
 }
 
 int32_t FakeAudioCaptureModule::ActiveAudioLayer(
@@ -590,7 +590,7 @@ bool FakeAudioCaptureModule::Initialize() {
   // sent to it. Note that the audio processing pipeline will likely distort the
   // original signal.
   SetSendBuffer(kHighSampleValue);
-  last_process_time_ms_ = rtc::Time();
+  last_process_time_ms_ = rtc::TimeMillis();
   return true;
 }
 
@@ -649,7 +649,7 @@ void FakeAudioCaptureModule::StartProcessP() {
 void FakeAudioCaptureModule::ProcessFrameP() {
   ASSERT(process_thread_->IsCurrent());
   if (!started_) {
-    next_frame_time_ = rtc::Time();
+    next_frame_time_ = rtc::TimeMillis();
     started_ = true;
   }
 
@@ -665,8 +665,8 @@ void FakeAudioCaptureModule::ProcessFrameP() {
   }
 
   next_frame_time_ += kTimePerFrameMs;
-  const uint32_t current_time = rtc::Time();
-  const uint32_t wait_time =
+  const int64_t current_time = rtc::TimeMillis();
+  const int64_t wait_time =
       (next_frame_time_ > current_time) ? next_frame_time_ - current_time : 0;
   process_thread_->PostDelayed(wait_time, this, MSG_RUN_PROCESS);
 }
