@@ -540,6 +540,9 @@ class RtpRtcp : public Module {
 
     /*
     *   Send NACK for the packets specified.
+    *
+    *   Note: This assumes the caller keeps track of timing and doesn't rely on
+    *   the RTP module to do this.
     */
     virtual void SendNack(const std::vector<uint16_t>& sequence_numbers) = 0;
 

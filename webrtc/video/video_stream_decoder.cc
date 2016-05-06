@@ -32,6 +32,7 @@ VideoStreamDecoder::VideoStreamDecoder(
     VCMFrameTypeCallback* vcm_frame_type_callback,
     VCMPacketRequestCallback* vcm_packet_request_callback,
     bool enable_nack,
+    bool enable_fec,  // TODO(philipel): Actually use this.
     ReceiveStatisticsProxy* receive_statistics_proxy,
     IncomingVideoStream* incoming_video_stream,
     I420FrameCallback* pre_render_callback)

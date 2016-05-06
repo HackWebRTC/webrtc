@@ -25,7 +25,6 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/receive_statistics_proxy.h"
-#include "webrtc/video/vie_remb.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
@@ -161,7 +160,6 @@ VideoReceiveStream::VideoReceiveStream(
       decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
       congestion_controller_(congestion_controller),
       call_stats_(call_stats),
-      remb_(remb),
       video_receiver_(clock_, nullptr, this, this, this),
       incoming_video_stream_(config.disable_prerenderer_smoothing),
       stats_proxy_(config_, clock_),
@@ -172,92 +170,27 @@ VideoReceiveStream::VideoReceiveStream(
                            call_stats_->rtcp_rtt_stats(),
                            congestion_controller_->pacer(),
                            congestion_controller_->packet_router(),
+                           remb,
                            config,
-                           &stats_proxy_),
+                           &stats_proxy_,
+                           process_thread_),
       video_stream_decoder_(&video_receiver_,
                             &rtp_stream_receiver_,
                             &rtp_stream_receiver_,
-                            config.rtp.nack.rtp_history_ms > 0,
+                            rtp_stream_receiver_.IsRetransmissionsEnabled(),
+                            rtp_stream_receiver_.IsFecEnabled(),
                             &stats_proxy_,
                             &incoming_video_stream_,
                             this),
-      vie_sync_(&video_receiver_),
-      rtp_rtcp_(rtp_stream_receiver_.rtp_rtcp()) {
+      vie_sync_(&video_receiver_) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(call_stats_);
-  RTC_DCHECK(remb_);
-  RTC_DCHECK(config_.rtp.rtcp_mode != RtcpMode::kOff)
-      << "A stream should not be configured with RTCP disabled. This value is "
-         "reserved for internal usage.";
 
   // Register the channel to receive stats updates.
   call_stats_->RegisterStatsObserver(&video_stream_decoder_);
-
-  RTC_DCHECK(config_.rtp.remote_ssrc != 0);
-  // TODO(pbos): What's an appropriate local_ssrc for receive-only streams?
-  RTC_DCHECK(config_.rtp.local_ssrc != 0);
-  RTC_DCHECK(config_.rtp.remote_ssrc != config_.rtp.local_ssrc);
-  rtp_rtcp_->SetSSRC(config_.rtp.local_ssrc);
-
-  // TODO(pbos): Support multiple RTX, per video payload.
-  for (const auto& kv : config_.rtp.rtx) {
-    RTC_DCHECK(kv.second.ssrc != 0);
-    RTC_DCHECK(kv.second.payload_type != 0);
-
-    rtp_stream_receiver_.SetRtxSsrc(kv.second.ssrc);
-    rtp_stream_receiver_.SetRtxPayloadType(kv.second.payload_type, kv.first);
-  }
-  // TODO(holmer): When Chrome no longer depends on this being false by default,
-  // always use the mapping and remove this whole codepath.
-  rtp_stream_receiver_.SetUseRtxPayloadMappingOnRestore(
-      config_.rtp.use_rtx_payload_mapping_on_restore);
-
-  if (config_.rtp.remb) {
-    rtp_rtcp_->SetREMBStatus(true);
-    remb_->AddReceiveChannel(rtp_rtcp_);
-  }
-
-  for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
-    const std::string& extension = config_.rtp.extensions[i].name;
-    int id = config_.rtp.extensions[i].id;
-    // One-byte-extension local identifiers are in the range 1-14 inclusive.
-    RTC_DCHECK_GE(id, 1);
-    RTC_DCHECK_LE(id, 14);
-    rtp_stream_receiver_.EnableReceiveRtpHeaderExtension(extension, id);
-  }
-
-  if (config_.rtp.fec.ulpfec_payload_type != -1) {
-    // ULPFEC without RED doesn't make sense.
-    RTC_DCHECK(config_.rtp.fec.red_payload_type != -1);
-    VideoCodec codec;
-    memset(&codec, 0, sizeof(codec));
-    codec.codecType = kVideoCodecULPFEC;
-    strncpy(codec.plName, "ulpfec", sizeof(codec.plName));
-    codec.plType = config_.rtp.fec.ulpfec_payload_type;
-    RTC_CHECK(rtp_stream_receiver_.SetReceiveCodec(codec));
-  }
-  if (config_.rtp.fec.red_payload_type != -1) {
-    VideoCodec codec;
-    memset(&codec, 0, sizeof(codec));
-    codec.codecType = kVideoCodecRED;
-    strncpy(codec.plName, "red", sizeof(codec.plName));
-    codec.plType = config_.rtp.fec.red_payload_type;
-    RTC_CHECK(rtp_stream_receiver_.SetReceiveCodec(codec));
-    if (config_.rtp.fec.red_rtx_payload_type != -1) {
-      rtp_stream_receiver_.SetRtxPayloadType(
-          config_.rtp.fec.red_rtx_payload_type,
-          config_.rtp.fec.red_payload_type);
-    }
-  }
-
-  if (config.rtp.rtcp_xr.receiver_reference_time_report)
-    rtp_rtcp_->SetRtcpXrRrtrStatus(true);
-
-  // Stats callback for CNAME changes.
-  rtp_rtcp_->RegisterRtcpStatisticsCallback(&stats_proxy_);
 
   RTC_DCHECK(!config_.decoders.empty());
   std::set<int> decoder_payload_types;
@@ -272,7 +205,6 @@ VideoReceiveStream::VideoReceiveStream(
                                             decoder.payload_type);
 
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
-
     RTC_CHECK(rtp_stream_receiver_.SetReceiveCodec(codec));
     RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(
                              &codec, num_cpu_cores, false));
@@ -282,8 +214,6 @@ VideoReceiveStream::VideoReceiveStream(
   incoming_video_stream_.SetExpectedRenderDelay(config.render_delay_ms);
   incoming_video_stream_.SetExternalCallback(this);
 
-  process_thread_->RegisterModule(rtp_stream_receiver_.GetReceiveStatistics());
-  process_thread_->RegisterModule(rtp_stream_receiver_.rtp_rtcp());
   process_thread_->RegisterModule(&video_receiver_);
   process_thread_->RegisterModule(&vie_sync_);
 }
@@ -294,9 +224,6 @@ VideoReceiveStream::~VideoReceiveStream() {
 
   process_thread_->DeRegisterModule(&vie_sync_);
   process_thread_->DeRegisterModule(&video_receiver_);
-  process_thread_->DeRegisterModule(rtp_stream_receiver_.rtp_rtcp());
-  process_thread_->DeRegisterModule(
-      rtp_stream_receiver_.GetReceiveStatistics());
 
   // Deregister external decoders so they are no longer running during
   // destruction. This effectively stops the VCM since the decoder thread is
@@ -306,16 +233,13 @@ VideoReceiveStream::~VideoReceiveStream() {
     video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
 
   call_stats_->DeregisterStatsObserver(&video_stream_decoder_);
-  rtp_rtcp_->SetREMBStatus(false);
-  remb_->RemoveReceiveChannel(rtp_rtcp_);
 
   congestion_controller_->GetRemoteBitrateEstimator(UseSendSideBwe(config_))
       ->RemoveStream(rtp_stream_receiver_.GetRemoteSsrc());
 }
 
 void VideoReceiveStream::SignalNetworkState(NetworkState state) {
-  rtp_rtcp_->SetRTCPStatus(state == kNetworkUp ? config_.rtp.rtcp_mode
-                                               : RtcpMode::kOff);
+  rtp_stream_receiver_.SignalNetworkState(state);
 }
 
 
@@ -352,13 +276,14 @@ void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
                                         int audio_channel_id) {
   if (voice_engine && audio_channel_id != -1) {
     VoEVideoSync* voe_sync_interface = VoEVideoSync::GetInterface(voice_engine);
-    vie_sync_.ConfigureSync(audio_channel_id, voe_sync_interface, rtp_rtcp_,
+    vie_sync_.ConfigureSync(audio_channel_id, voe_sync_interface,
+                            rtp_stream_receiver_.rtp_rtcp(),
                             rtp_stream_receiver_.GetRtpReceiver());
     voe_sync_interface->Release();
-    return;
+  } else {
+    vie_sync_.ConfigureSync(-1, nullptr, rtp_stream_receiver_.rtp_rtcp(),
+                            rtp_stream_receiver_.GetRtpReceiver());
   }
-  vie_sync_.ConfigureSync(-1, nullptr, rtp_rtcp_,
-                          rtp_stream_receiver_.GetRtpReceiver());
 }
 
 VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
@@ -427,11 +352,11 @@ void VideoReceiveStream::Decode() {
 
 void VideoReceiveStream::SendNack(
     const std::vector<uint16_t>& sequence_numbers) {
-  rtp_rtcp_->SendNack(sequence_numbers);
+  rtp_stream_receiver_.RequestPacketRetransmit(sequence_numbers);
 }
 
 void VideoReceiveStream::RequestKeyFrame() {
-  rtp_rtcp_->RequestKeyFrame();
+  rtp_stream_receiver_.RequestKeyFrame();
 }
 
 }  // namespace internal

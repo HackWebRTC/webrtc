@@ -33,6 +33,7 @@ namespace webrtc {
 class FecReceiver;
 class PacedSender;
 class PacketRouter;
+class ProcessThread;
 class RemoteNtpTimeEstimator;
 class ReceiveStatistics;
 class ReceiveStatisticsProxy;
@@ -42,6 +43,7 @@ class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class Transport;
+class VieRemb;
 
 namespace vcm {
 class VideoReceiver;
@@ -57,30 +59,19 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
                     RtcpRttStats* rtt_stats,
                     PacedSender* paced_sender,
                     PacketRouter* packet_router,
+                    VieRemb* remb,
                     const VideoReceiveStream::Config& config,
-                    ReceiveStatisticsProxy* receive_stats_proxy);
+                    ReceiveStatisticsProxy* receive_stats_proxy,
+                    ProcessThread* process_thread);
   ~RtpStreamReceiver();
 
   bool SetReceiveCodec(const VideoCodec& video_codec);
-
-  void SetRtxPayloadType(int payload_type, int associated_payload_type);
-  // If set to true, the RTX payload type mapping supplied in
-  // |SetRtxPayloadType| will be used when restoring RTX packets. Without it,
-  // RTX packets will always be restored to the last non-RTX packet payload type
-  // received.
-  void SetUseRtxPayloadMappingOnRestore(bool val);
-  void SetRtxSsrc(uint32_t ssrc);
-  bool GetRtxSsrc(uint32_t* ssrc) const;
-
-  bool IsFecEnabled() const;
 
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;
 
   RtpReceiver* GetRtpReceiver() const;
   RtpRtcp* rtp_rtcp() const { return rtp_rtcp_.get(); }
-
-  void EnableReceiveRtpHeaderExtension(const std::string& extension, int id);
 
   void StartReceive();
   void StopReceive();
@@ -89,6 +80,8 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
                   size_t rtp_packet_length,
                   const PacketTime& packet_time);
   bool DeliverRtcp(const uint8_t* rtcp_packet, size_t rtcp_packet_length);
+
+  void SignalNetworkState(NetworkState state);
 
   // Implements RtpData.
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
@@ -109,11 +102,14 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
   int32_t RequestKeyFrame() override;
   int32_t SliceLossIndicationRequest(const uint64_t picture_id) override;
 
+  bool IsFecEnabled() const;
+  bool IsRetransmissionsEnabled() const;
+  // Don't use, still experimental.
+  void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
+
   // Implements VCMPacketRequestCallback.
   int32_t ResendPackets(const uint16_t* sequenceNumbers,
                         uint16_t length) override;
-
-  ReceiveStatistics* GetReceiveStatistics() const;
 
  private:
   bool ReceivePacket(const uint8_t* packet,
@@ -129,11 +125,15 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   void UpdateHistograms();
+  void EnableReceiveRtpHeaderExtension(const std::string& extension, int id);
 
   Clock* const clock_;
+  const VideoReceiveStream::Config config_;
   vcm::VideoReceiver* const video_receiver_;
   RemoteBitrateEstimator* const remote_bitrate_estimator_;
   PacketRouter* const packet_router_;
+  VieRemb* const remb_;
+  ProcessThread* const process_thread_;
 
   RemoteNtpTimeEstimator ntp_estimator_;
   RTPPayloadRegistry rtp_payload_registry_;

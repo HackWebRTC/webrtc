@@ -80,10 +80,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id);
 
-  // NackSender
+  // Implements NackSender.
   void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
 
-  // KeyFrameRequestSender
+  // Implements KeyFrameRequestSender.
   void RequestKeyFrame() override;
 
  private:
@@ -100,7 +100,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   CongestionController* const congestion_controller_;
   CallStats* const call_stats_;
-  VieRemb* const remb_;
 
   vcm::VideoReceiver video_receiver_;
   IncomingVideoStream incoming_video_stream_;
@@ -108,7 +107,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   RtpStreamReceiver rtp_stream_receiver_;
   VideoStreamDecoder video_stream_decoder_;
   ViESyncModule vie_sync_;
-  RtpRtcp* const rtp_rtcp_;
 
   std::unique_ptr<IvfFileWriter> ivf_writer_;
 };

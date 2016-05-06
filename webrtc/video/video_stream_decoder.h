@@ -57,6 +57,7 @@ class VideoStreamDecoder : public VCMReceiveCallback,
                      VCMFrameTypeCallback* vcm_frame_type_callback,
                      VCMPacketRequestCallback* vcm_packet_request_callback,
                      bool enable_nack,
+                     bool enable_fec,
                      ReceiveStatisticsProxy* receive_statistics_proxy,
                      IncomingVideoStream* incoming_video_stream,
                      I420FrameCallback* pre_render_callback);
@@ -81,7 +82,6 @@ class VideoStreamDecoder : public VCMReceiveCallback,
                        int jitter_buffer_ms,
                        int min_playout_delay_ms,
                        int render_delay_ms) override;
-
 
   void RegisterReceiveStatisticsProxy(
       ReceiveStatisticsProxy* receive_statistics_proxy);
