@@ -15,6 +15,7 @@
 #include <limits>
 #include <sstream>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 
@@ -33,8 +34,8 @@ int ComputeDeltaFromBitrate(size_t packet_size, uint32_t bitrate_bps) {
 BitrateProber::BitrateProber()
     : probing_state_(kDisabled),
       packet_size_last_send_(0),
-      time_last_send_ms_(-1) {
-}
+      time_last_send_ms_(-1),
+      cluster_id_(0) {}
 
 void BitrateProber::SetEnabled(bool enable) {
   if (enable) {
@@ -61,24 +62,24 @@ void BitrateProber::OnIncomingPacket(uint32_t bitrate_bps,
     return;
   if (probing_state_ != kAllowedToProbe)
     return;
-  probe_bitrates_.clear();
   // Max number of packets used for probing.
   const int kMaxNumProbes = 2;
   const int kPacketsPerProbe = 5;
   const float kProbeBitrateMultipliers[kMaxNumProbes] = {3, 6};
-  uint32_t bitrates_bps[kMaxNumProbes];
   std::stringstream bitrate_log;
   bitrate_log << "Start probing for bandwidth, bitrates:";
   for (int i = 0; i < kMaxNumProbes; ++i) {
-    bitrates_bps[i] = kProbeBitrateMultipliers[i] * bitrate_bps;
-    bitrate_log << " " << bitrates_bps[i];
-    // We need one extra to get 5 deltas for the first probe.
-    if (i == 0)
-      probe_bitrates_.push_back(bitrates_bps[i]);
-    for (int j = 0; j < kPacketsPerProbe; ++j)
-      probe_bitrates_.push_back(bitrates_bps[i]);
+    ProbeCluster cluster;
+    // We need one extra to get 5 deltas for the first probe, therefore (i == 0)
+    cluster.max_probe_packets = kPacketsPerProbe + (i == 0 ? 1 : 0);
+    cluster.probe_bitrate_bps = kProbeBitrateMultipliers[i] * bitrate_bps;
+    cluster.id = cluster_id_++;
+
+    bitrate_log << " " << cluster.probe_bitrate_bps;
+    bitrate_log << ", num packets: " << cluster.max_probe_packets;
+
+    clusters_.push(cluster);
   }
-  bitrate_log << ", num packets: " << probe_bitrates_.size();
   LOG(LS_INFO) << bitrate_log.str().c_str();
   // Set last send time to current time so TimeUntilNextProbe doesn't short
   // circuit due to inactivity.
@@ -87,10 +88,11 @@ void BitrateProber::OnIncomingPacket(uint32_t bitrate_bps,
 }
 
 int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
-  if (probing_state_ != kDisabled && probe_bitrates_.empty()) {
+  if (probing_state_ != kDisabled && clusters_.empty()) {
     probing_state_ = kWait;
   }
-  if (probe_bitrates_.empty() || time_last_send_ms_ == -1) {
+
+  if (clusters_.empty() || time_last_send_ms_ == -1) {
     // No probe started, probe finished, or too long since last probe packet.
     return -1;
   }
@@ -107,8 +109,8 @@ int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
   // sent before.
   int time_until_probe_ms = 0;
   if (packet_size_last_send_ != 0 && probing_state_ == kProbing) {
-    int next_delta_ms = ComputeDeltaFromBitrate(packet_size_last_send_,
-                                                probe_bitrates_.front());
+    int next_delta_ms = ComputeDeltaFromBitrate(
+        packet_size_last_send_, clusters_.front().probe_bitrate_bps);
     time_until_probe_ms = next_delta_ms - elapsed_time_ms;
     // There is no point in trying to probe with less than 1 ms between packets
     // as it essentially means trying to probe at infinite bandwidth.
@@ -129,6 +131,12 @@ int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
   return std::max(time_until_probe_ms, 0);
 }
 
+int BitrateProber::CurrentClusterId() const {
+  RTC_DCHECK(!clusters_.empty());
+  RTC_DCHECK_EQ(kProbing, probing_state_);
+  return clusters_.front().id;
+}
+
 size_t BitrateProber::RecommendedPacketSize() const {
   return packet_size_last_send_;
 }
@@ -141,7 +149,11 @@ void BitrateProber::PacketSent(int64_t now_ms, size_t packet_size) {
   time_last_send_ms_ = now_ms;
   if (probing_state_ != kProbing)
     return;
-  if (!probe_bitrates_.empty())
-    probe_bitrates_.pop_front();
+  if (!clusters_.empty()) {
+    ProbeCluster* cluster = &clusters_.front();
+    ++cluster->sent_probe_packets;
+    if (cluster->sent_probe_packets == cluster->max_probe_packets)
+      clusters_.pop();
+  }
 }
 }  // namespace webrtc

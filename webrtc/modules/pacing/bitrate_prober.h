@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <list>
+#include <queue>
 
 #include "webrtc/typedefs.h"
 
@@ -42,6 +43,9 @@ class BitrateProber {
   // get accurate probing.
   int TimeUntilNextProbe(int64_t now_ms);
 
+  // Which cluster that is currently being used for probing.
+  int CurrentClusterId() const;
+
   // Returns the number of bytes that the prober recommends for the next probe
   // packet.
   size_t RecommendedPacketSize() const;
@@ -53,13 +57,21 @@ class BitrateProber {
  private:
   enum ProbingState { kDisabled, kAllowedToProbe, kProbing, kWait };
 
+  struct ProbeCluster {
+    int max_probe_packets = 0;
+    int sent_probe_packets = 0;
+    int probe_bitrate_bps = 0;
+    int id = -1;
+  };
+
   ProbingState probing_state_;
   // Probe bitrate per packet. These are used to compute the delta relative to
   // the previous probe packet based on the size and time when that packet was
   // sent.
-  std::list<uint32_t> probe_bitrates_;
+  std::queue<ProbeCluster> clusters_;
   size_t packet_size_last_send_;
   int64_t time_last_send_ms_;
+  int cluster_id_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_PACING_BITRATE_PROBER_H_
