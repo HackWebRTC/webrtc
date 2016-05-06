@@ -1351,7 +1351,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCallee) {
                              cricket::kParamValueEmpty));
   EXPECT_FALSE(voe_.GetNACK(channel_num));
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_FALSE(voe_.GetNACK(channel_num));
+  // NACK should be enabled even with no send stream.
+  EXPECT_TRUE(voe_.GetNACK(channel_num));
 
   EXPECT_TRUE(channel_->AddSendStream(
       cricket::StreamParams::CreateLegacy(kSsrc1)));

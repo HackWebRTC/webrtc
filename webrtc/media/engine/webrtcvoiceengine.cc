@@ -1676,10 +1676,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   }
 
   // Set nack status on receive channels.
-  if (!send_streams_.empty()) {
-    for (const auto& kv : recv_streams_) {
-      SetNack(kv.second->channel(), send_codec_spec_.nack_enabled);
-    }
+  for (const auto& kv : recv_streams_) {
+    SetNack(kv.second->channel(), send_codec_spec_.nack_enabled);
   }
 
   // Check if the transport cc feedback has changed on the preferred send codec,
