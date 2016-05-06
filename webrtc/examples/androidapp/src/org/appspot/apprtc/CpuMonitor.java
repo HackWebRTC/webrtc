@@ -70,10 +70,10 @@ import org.appspot.apprtc.util.LooperExecutor;
 
 class CpuMonitor {
   private static final String TAG = "CpuMonitor";
-  private static final int MOVING_AVERAGE_SAMPLES = 10;
+  private static final int MOVING_AVERAGE_SAMPLES = 5;
 
-  private static final int CPU_STAT_SAMPLE_PERIOD_MS = 1000;
-  private static final int CPU_STAT_LOG_PERIOD_MS = 5000;
+  private static final int CPU_STAT_SAMPLE_PERIOD_MS = 2000;
+  private static final int CPU_STAT_LOG_PERIOD_MS = 6000;
 
   private final Context appContext;
   // User CPU usage at current frequency.
@@ -209,6 +209,7 @@ class CpuMonitor {
   }
 
   private void scheduleCpuUtilizationTask() {
+    executor.cancelScheduledTasks();
     executor.scheduleAtFixedRate(new Runnable() {
       @Override
       public void run() {
@@ -438,21 +439,29 @@ class CpuMonitor {
   private long readFreqFromFile(String fileName) {
     long number = 0;
     try {
-      FileReader fin = new FileReader(fileName);
+      BufferedReader reader = new BufferedReader(new FileReader(fileName));
       try {
-        BufferedReader rdr = new BufferedReader(fin);
-        Scanner scannerC = new Scanner(rdr);
-        number = scannerC.nextLong();
-        scannerC.close();
-      } catch (Exception e) {
-        // CPU presumably got offline just after we opened file.
+        String line = reader.readLine();
+        number = parseLong(line);
       } finally {
-        fin.close();
+        reader.close();
       }
     } catch (FileNotFoundException e) {
-      // CPU is offline, not an error.
+      // CPU core is off, so file with its scaling frequency .../cpufreq/scaling_cur_freq
+      // is not present. This is not an error.
     } catch (IOException e) {
-      Log.e(TAG, "Error closing file");
+      // CPU core is off, so file with its scaling frequency .../cpufreq/scaling_cur_freq
+      // is empty. This is not an error.
+    }
+    return number;
+  }
+
+  private static long parseLong(String value) {
+    long number = 0;
+    try {
+      number = Long.parseLong(value);
+    } catch (NumberFormatException e) {
+      Log.e(TAG, "parseLong error.", e);
     }
     return number;
   }
@@ -466,32 +475,36 @@ class CpuMonitor {
     long systemTime = 0;
     long idleTime = 0;
     try {
-      FileReader fin = new FileReader("/proc/stat");
+      BufferedReader reader = new BufferedReader(new FileReader("/proc/stat"));
       try {
-        BufferedReader rdr = new BufferedReader(fin);
-        Scanner scanner = new Scanner(rdr);
-        scanner.next();
-        userTime = scanner.nextLong();  // user
-        long nice = scanner.nextLong(); // nice
-        userTime += nice;
-        systemTime = scanner.nextLong(); // system
-        idleTime = scanner.nextLong(); // idle
-        long ioWaitTime = scanner.nextLong(); // iowait
-        userTime += ioWaitTime;
-        long irqTime = scanner.nextLong() + scanner.nextLong(); // irq + softirq
-        systemTime += irqTime;
-        scanner.close();
+        // line should contain something like this:
+        // cpu  5093818 271838 3512830 165934119 101374 447076 272086 0 0 0
+        //       user    nice  system     idle   iowait  irq   softirq
+        String line = reader.readLine();
+        String lines[] = line.split("\\s+");
+        int length = lines.length;
+        if (length >= 5) {
+          userTime = parseLong(lines[1]);  // user
+          userTime += parseLong(lines[2]);  // nice
+          systemTime = parseLong(lines[3]); // system
+          idleTime = parseLong(lines[4]); // idle
+        }
+        if (length >= 8) {
+          userTime += parseLong(lines[5]);  // iowait
+          systemTime += parseLong(lines[6]); // irq
+          systemTime += parseLong(lines[7]); // softirq
+        }
       } catch (Exception e) {
-        Log.e(TAG, "Problems parsing /proc/stat");
+        Log.e(TAG, "Problems parsing /proc/stat", e);
         return null;
       } finally {
-        fin.close();
+        reader.close();
       }
     } catch (FileNotFoundException e) {
-      Log.e(TAG, "Cannot open /proc/stat for reading");
+      Log.e(TAG, "Cannot open /proc/stat for reading", e);
       return null;
     } catch (IOException e) {
-      Log.e(TAG, "Problems reading /proc/stat");
+      Log.e(TAG, "Problems reading /proc/stat", e);
       return null;
     }
     return new ProcStat(userTime, systemTime, idleTime);
