@@ -1312,7 +1312,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoOffer) {
   ASSERT_EQ(2U, updated_video_streams.size());
   EXPECT_EQ(video_streams[0], updated_video_streams[0]);
   EXPECT_EQ(kVideoTrack2, updated_video_streams[1].id);
-  EXPECT_NE(updated_video_streams[1].cname, updated_video_streams[0].cname);
+  // All the media streams in one PeerConnection share one RTCP CNAME.
+  EXPECT_EQ(updated_video_streams[1].cname, updated_video_streams[0].cname);
 
   const StreamParamsVec& updated_data_streams = updated_dcd->streams();
   ASSERT_EQ(2U, updated_data_streams.size());
@@ -1321,6 +1322,10 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoOffer) {
   ASSERT_EQ(1U, updated_data_streams[1].ssrcs.size());
   EXPECT_NE(0U, updated_data_streams[1].ssrcs[0]);
   EXPECT_EQ(updated_data_streams[0].cname, updated_data_streams[1].cname);
+  // The stream correctly got the CNAME from the MediaSessionOptions.
+  // The Expected RTCP CNAME is the default one as we are using the default
+  // MediaSessionOptions.
+  EXPECT_EQ(updated_data_streams[0].cname, cricket::kDefaultRtcpCname);
 }
 
 // Create an offer with simulcast video stream.
@@ -1431,7 +1436,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoAnswer) {
   EXPECT_TRUE(dcd->rtcp_mux());                 // rtcp-mux defaults on
 
   // Update the answer. Add a new video track that is not synched to the
-  // other traacks and remove 1 audio track.
+  // other tracks and remove 1 audio track.
   opts.AddSendStream(MEDIA_TYPE_VIDEO, kVideoTrack2, kMediaStream2);
   opts.RemoveSendStream(MEDIA_TYPE_AUDIO, kAudioTrack2);
   opts.RemoveSendStream(MEDIA_TYPE_DATA, kDataTrack2);
@@ -1474,7 +1479,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoAnswer) {
   ASSERT_EQ(2U, updated_video_streams.size());
   EXPECT_EQ(video_streams[0], updated_video_streams[0]);
   EXPECT_EQ(kVideoTrack2, updated_video_streams[1].id);
-  EXPECT_NE(updated_video_streams[1].cname, updated_video_streams[0].cname);
+  // All media streams in one PeerConnection share one CNAME.
+  EXPECT_EQ(updated_video_streams[1].cname, updated_video_streams[0].cname);
 
   const StreamParamsVec& updated_data_streams = updated_dcd->streams();
   ASSERT_EQ(1U, updated_data_streams.size());

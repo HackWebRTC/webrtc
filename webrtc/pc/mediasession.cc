@@ -211,55 +211,6 @@ static bool SelectCrypto(const MediaContentDescription* offer,
   return false;
 }
 
-static const StreamParams* FindFirstStreamParamsByCname(
-    const StreamParamsVec& params_vec,
-    const std::string& cname) {
-  for (StreamParamsVec::const_iterator it = params_vec.begin();
-       it != params_vec.end(); ++it) {
-    if (cname == it->cname)
-      return &*it;
-  }
-  return NULL;
-}
-
-// Generates a new CNAME or the CNAME of an already existing StreamParams
-// if a StreamParams exist for another Stream in streams with sync_label
-// sync_label.
-static bool GenerateCname(const StreamParamsVec& params_vec,
-                          const MediaSessionOptions::Streams& streams,
-                          const std::string& synch_label,
-                          std::string* cname) {
-  ASSERT(cname != NULL);
-  if (!cname)
-    return false;
-
-  // Check if a CNAME exist for any of the other synched streams.
-  for (MediaSessionOptions::Streams::const_iterator stream_it = streams.begin();
-       stream_it != streams.end() ; ++stream_it) {
-    if (synch_label != stream_it->sync_label)
-      continue;
-
-    // groupid is empty for StreamParams generated using
-    // MediaSessionDescriptionFactory.
-    const StreamParams* param = GetStreamByIds(params_vec, "", stream_it->id);
-    if (param) {
-      *cname = param->cname;
-      return true;
-    }
-  }
-  // No other stream seems to exist that we should sync with.
-  // Generate a random string for the RTCP CNAME, as stated in RFC 6222.
-  // This string is only used for synchronization, and therefore is opaque.
-  do {
-    if (!rtc::CreateRandomString(16, cname)) {
-      ASSERT(false);
-      return false;
-    }
-  } while (FindFirstStreamParamsByCname(params_vec, *cname));
-
-  return true;
-}
-
 // Generate random SSRC values that are not already present in |params_vec|.
 // The generated values are added to |ssrcs|.
 // |num_ssrcs| is the number of the SSRC will be generated.
@@ -444,15 +395,15 @@ static bool IsSctp(const MediaContentDescription* desc) {
 // media_type to content_description.
 // |current_params| - All currently known StreamParams of any media type.
 template <class C>
-static bool AddStreamParams(
-    MediaType media_type,
-    const MediaSessionOptions::Streams& streams,
-    StreamParamsVec* current_streams,
-    MediaContentDescriptionImpl<C>* content_description,
-    const bool add_legacy_stream) {
+static bool AddStreamParams(MediaType media_type,
+                            const MediaSessionOptions& options,
+                            StreamParamsVec* current_streams,
+                            MediaContentDescriptionImpl<C>* content_description,
+                            const bool add_legacy_stream) {
   const bool include_rtx_streams =
       ContainsRtxCodec(content_description->codecs());
 
+  const MediaSessionOptions::Streams& streams = options.streams;
   if (streams.empty() && add_legacy_stream) {
     // TODO(perkj): Remove this legacy stream when all apps use StreamParams.
     std::vector<uint32_t> ssrcs;
@@ -483,13 +434,6 @@ static bool AddStreamParams(
     // MediaSessionDescriptionFactory.
     if (!param) {
       // This is a new stream.
-      // Get a CNAME. Either new or same as one of the other synched streams.
-      std::string cname;
-      if (!GenerateCname(*current_streams, streams, stream_it->sync_label,
-                         &cname)) {
-        return false;
-      }
-
       std::vector<uint32_t> ssrcs;
       if (IsSctp(content_description)) {
         GenerateSctpSids(*current_streams, &ssrcs);
@@ -517,7 +461,7 @@ static bool AddStreamParams(
         }
         content_description->set_multistream(true);
       }
-      stream_param.cname = cname;
+      stream_param.cname = options.rtcp_cname;
       stream_param.sync_label = stream_it->sync_label;
       content_description->AddStream(stream_param);
 
@@ -761,9 +705,8 @@ static bool CreateMediaContentOffer(
   offer->set_multistream(options.is_muc);
   offer->set_rtp_header_extensions(rtp_extensions);
 
-  if (!AddStreamParams(
-          offer->type(), options.streams, current_streams,
-          offer, add_legacy_stream)) {
+  if (!AddStreamParams(offer->type(), options, current_streams, offer,
+                       add_legacy_stream)) {
     return false;
   }
 
@@ -1080,9 +1023,8 @@ static bool CreateMediaContentAnswer(
     return false;
   }
 
-  if (!AddStreamParams(
-          answer->type(), options.streams, current_streams,
-          answer, add_legacy_stream)) {
+  if (!AddStreamParams(answer->type(), options, current_streams, answer,
+                       add_legacy_stream)) {
     return false;  // Something went seriously wrong.
   }
 

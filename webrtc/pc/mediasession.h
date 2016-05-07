@@ -76,18 +76,21 @@ extern const char kMediaProtocolTcpDtlsSctp[];
 const int kAutoBandwidth = -1;
 const int kBufferedModeDisabled = 0;
 
+// Default RTCP CNAME for unit tests.
+const char kDefaultRtcpCname[] = "DefaultRtcpCname";
+
 struct MediaSessionOptions {
-  MediaSessionOptions() :
-      recv_audio(true),
-      recv_video(false),
-      data_channel_type(DCT_NONE),
-      is_muc(false),
-      vad_enabled(true),  // When disabled, removes all CN codecs from SDP.
-      rtcp_mux_enabled(true),
-      bundle_enabled(false),
-      video_bandwidth(kAutoBandwidth),
-      data_bandwidth(kDataMaxBandwidth) {
-  }
+  MediaSessionOptions()
+      : recv_audio(true),
+        recv_video(false),
+        data_channel_type(DCT_NONE),
+        is_muc(false),
+        vad_enabled(true),  // When disabled, removes all CN codecs from SDP.
+        rtcp_mux_enabled(true),
+        bundle_enabled(false),
+        video_bandwidth(kAutoBandwidth),
+        data_bandwidth(kDataMaxBandwidth),
+        rtcp_cname(kDefaultRtcpCname) {}
 
   bool has_audio() const {
     return recv_audio || HasSendMediaStream(MEDIA_TYPE_AUDIO);
@@ -133,6 +136,7 @@ struct MediaSessionOptions {
   int data_bandwidth;
   // content name ("mid") => options.
   std::map<std::string, TransportOptions> transport_options;
+  std::string rtcp_cname;
 
   struct Stream {
     Stream(MediaType type,

@@ -66,6 +66,9 @@ static const char kTransport[] = "transport";
 // NOTE: Must be in the same order as the ServiceType enum.
 static const char* kValidIceServiceTypes[] = {"stun", "stuns", "turn", "turns"};
 
+// The length of RTCP CNAMEs.
+static const int kRtcpCnameLength = 16;
+
 // NOTE: A loop below assumes that the first value of this enum is 0 and all
 // other values are incremental.
 enum ServiceType {
@@ -377,6 +380,16 @@ void AddSendStreams(
 
 namespace webrtc {
 
+// Generate a RTCP CNAME when a PeerConnection is created.
+std::string GenerateRtcpCname() {
+  std::string cname;
+  if (!rtc::CreateRandomString(kRtcpCnameLength, &cname)) {
+    LOG(LS_ERROR) << "Failed to generate CNAME.";
+    RTC_DCHECK(false);
+  }
+  return cname;
+}
+
 bool ExtractMediaSessionOptions(
     const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
     bool is_offer,
@@ -508,6 +521,7 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
       ice_state_(kIceNew),
       ice_connection_state_(kIceConnectionNew),
       ice_gathering_state_(kIceGatheringNew),
+      rtcp_cname_(GenerateRtcpCname()),
       local_streams_(StreamCollection::Create()),
       remote_streams_(StreamCollection::Create()) {}
 
@@ -1503,6 +1517,8 @@ bool PeerConnection::GetOptionsForOffer(
   if (session_->data_channel_type() == cricket::DCT_SCTP && HasDataChannels()) {
     session_options->data_channel_type = cricket::DCT_SCTP;
   }
+
+  session_options->rtcp_cname = rtcp_cname_;
   return true;
 }
 
@@ -1540,6 +1556,8 @@ bool PeerConnection::GetOptionsForAnswer(
   if (!ParseConstraintsForAnswer(constraints, session_options)) {
     return false;
   }
+  session_options->rtcp_cname = rtcp_cname_;
+
   FinishOptionsForAnswer(session_options);
   return true;
 }
@@ -1552,6 +1570,8 @@ bool PeerConnection::GetOptionsForAnswer(
   if (!ExtractMediaSessionOptions(options, false, session_options)) {
     return false;
   }
+  session_options->rtcp_cname = rtcp_cname_;
+
   FinishOptionsForAnswer(session_options);
   return true;
 }

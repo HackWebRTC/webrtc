@@ -369,6 +369,10 @@ class PeerConnection : public PeerConnectionInterface,
   std::unique_ptr<cricket::PortAllocator> port_allocator_;
   std::unique_ptr<MediaControllerInterface> media_controller_;
 
+  // One PeerConnection has only one RTCP CNAME.
+  // https://tools.ietf.org/html/draft-ietf-rtcweb-rtp-usage-26#section-4.9
+  std::string rtcp_cname_;
+
   // Streams added via AddStream.
   rtc::scoped_refptr<StreamCollection> local_streams_;
   // Streams created as a result of SetRemoteDescription.
