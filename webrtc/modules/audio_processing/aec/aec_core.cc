@@ -132,7 +132,6 @@ WebRtcAecFilterFar WebRtcAec_FilterFar;
 WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
 WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
 WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
-WebRtcAecComfortNoise WebRtcAec_ComfortNoise;
 WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
 WebRtcAecStoreAsComplex WebRtcAec_StoreAsComplex;
 WebRtcAecPartitionDelay WebRtcAec_PartitionDelay;
@@ -1169,7 +1168,7 @@ static void EchoSuppression(AecCore* aec,
   WebRtcAec_OverdriveAndSuppress(aec->overdrive_scaling, hNl, hNlFb, efw);
 
   // Add comfort noise.
-  WebRtcAec_ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
+  ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
 
   // Inverse error fft.
   ScaledInverseFft(efw, fft, 2.0f, 1);
@@ -1487,7 +1486,6 @@ AecCore* WebRtcAec_CreateAec(int instance_count) {
   WebRtcAec_ScaleErrorSignal = ScaleErrorSignal;
   WebRtcAec_FilterAdaptation = FilterAdaptation;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppress;
-  WebRtcAec_ComfortNoise = ComfortNoise;
   WebRtcAec_SubbandCoherence = SubbandCoherence;
   WebRtcAec_StoreAsComplex = StoreAsComplex;
   WebRtcAec_PartitionDelay = PartitionDelay;
