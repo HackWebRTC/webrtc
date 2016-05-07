@@ -495,16 +495,19 @@ static int PartitionDelaySSE2(const AecCore* aec) {
 //
 // In addition to updating the PSDs, also the filter diverge state is determined
 // upon actions are taken.
-static void SmoothedPSD(AecCore* aec,
+static void SmoothedPSD(int mult,
+                        bool extended_filter_enabled,
                         float efw[2][PART_LEN1],
                         float dfw[2][PART_LEN1],
                         float xfw[2][PART_LEN1],
+                        CoherenceState* coherence_state,
+                        short* filter_divergence_state,
                         int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
   const float* ptrGCoh =
-      aec->extended_filter_enabled
-          ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
-          : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
+      extended_filter_enabled
+          ? WebRtcAec_kExtendedSmoothingCoefficients[mult - 1]
+          : WebRtcAec_kNormalSmoothingCoefficients[mult - 1];
   int i;
   float sdSum = 0, seSum = 0;
   const __m128 vec_15 = _mm_set1_ps(WebRtcAec_kMinFarendPSD);
@@ -520,9 +523,12 @@ static void SmoothedPSD(AecCore* aec,
     const __m128 vec_efw1 = _mm_loadu_ps(&efw[1][i]);
     const __m128 vec_xfw0 = _mm_loadu_ps(&xfw[0][i]);
     const __m128 vec_xfw1 = _mm_loadu_ps(&xfw[1][i]);
-    __m128 vec_sd = _mm_mul_ps(_mm_loadu_ps(&aec->sd[i]), vec_GCoh0);
-    __m128 vec_se = _mm_mul_ps(_mm_loadu_ps(&aec->se[i]), vec_GCoh0);
-    __m128 vec_sx = _mm_mul_ps(_mm_loadu_ps(&aec->sx[i]), vec_GCoh0);
+    __m128 vec_sd =
+        _mm_mul_ps(_mm_loadu_ps(&coherence_state->sd[i]), vec_GCoh0);
+    __m128 vec_se =
+        _mm_mul_ps(_mm_loadu_ps(&coherence_state->se[i]), vec_GCoh0);
+    __m128 vec_sx =
+        _mm_mul_ps(_mm_loadu_ps(&coherence_state->sx[i]), vec_GCoh0);
     __m128 vec_dfw_sumsq = _mm_mul_ps(vec_dfw0, vec_dfw0);
     __m128 vec_efw_sumsq = _mm_mul_ps(vec_efw0, vec_efw0);
     __m128 vec_xfw_sumsq = _mm_mul_ps(vec_xfw0, vec_xfw0);
@@ -533,13 +539,13 @@ static void SmoothedPSD(AecCore* aec,
     vec_sd = _mm_add_ps(vec_sd, _mm_mul_ps(vec_dfw_sumsq, vec_GCoh1));
     vec_se = _mm_add_ps(vec_se, _mm_mul_ps(vec_efw_sumsq, vec_GCoh1));
     vec_sx = _mm_add_ps(vec_sx, _mm_mul_ps(vec_xfw_sumsq, vec_GCoh1));
-    _mm_storeu_ps(&aec->sd[i], vec_sd);
-    _mm_storeu_ps(&aec->se[i], vec_se);
-    _mm_storeu_ps(&aec->sx[i], vec_sx);
+    _mm_storeu_ps(&coherence_state->sd[i], vec_sd);
+    _mm_storeu_ps(&coherence_state->se[i], vec_se);
+    _mm_storeu_ps(&coherence_state->sx[i], vec_sx);
 
     {
-      const __m128 vec_3210 = _mm_loadu_ps(&aec->sde[i][0]);
-      const __m128 vec_7654 = _mm_loadu_ps(&aec->sde[i + 2][0]);
+      const __m128 vec_3210 = _mm_loadu_ps(&coherence_state->sde[i][0]);
+      const __m128 vec_7654 = _mm_loadu_ps(&coherence_state->sde[i + 2][0]);
       __m128 vec_a =
           _mm_shuffle_ps(vec_3210, vec_7654, _MM_SHUFFLE(2, 0, 2, 0));
       __m128 vec_b =
@@ -554,13 +560,14 @@ static void SmoothedPSD(AecCore* aec,
           _mm_sub_ps(vec_dfwefw0110, _mm_mul_ps(vec_dfw1, vec_efw0));
       vec_a = _mm_add_ps(vec_a, _mm_mul_ps(vec_dfwefw0011, vec_GCoh1));
       vec_b = _mm_add_ps(vec_b, _mm_mul_ps(vec_dfwefw0110, vec_GCoh1));
-      _mm_storeu_ps(&aec->sde[i][0], _mm_unpacklo_ps(vec_a, vec_b));
-      _mm_storeu_ps(&aec->sde[i + 2][0], _mm_unpackhi_ps(vec_a, vec_b));
+      _mm_storeu_ps(&coherence_state->sde[i][0], _mm_unpacklo_ps(vec_a, vec_b));
+      _mm_storeu_ps(&coherence_state->sde[i + 2][0],
+                    _mm_unpackhi_ps(vec_a, vec_b));
     }
 
     {
-      const __m128 vec_3210 = _mm_loadu_ps(&aec->sxd[i][0]);
-      const __m128 vec_7654 = _mm_loadu_ps(&aec->sxd[i + 2][0]);
+      const __m128 vec_3210 = _mm_loadu_ps(&coherence_state->sxd[i][0]);
+      const __m128 vec_7654 = _mm_loadu_ps(&coherence_state->sxd[i + 2][0]);
       __m128 vec_a =
           _mm_shuffle_ps(vec_3210, vec_7654, _MM_SHUFFLE(2, 0, 2, 0));
       __m128 vec_b =
@@ -575,8 +582,9 @@ static void SmoothedPSD(AecCore* aec,
           _mm_sub_ps(vec_dfwxfw0110, _mm_mul_ps(vec_dfw1, vec_xfw0));
       vec_a = _mm_add_ps(vec_a, _mm_mul_ps(vec_dfwxfw0011, vec_GCoh1));
       vec_b = _mm_add_ps(vec_b, _mm_mul_ps(vec_dfwxfw0110, vec_GCoh1));
-      _mm_storeu_ps(&aec->sxd[i][0], _mm_unpacklo_ps(vec_a, vec_b));
-      _mm_storeu_ps(&aec->sxd[i + 2][0], _mm_unpackhi_ps(vec_a, vec_b));
+      _mm_storeu_ps(&coherence_state->sxd[i][0], _mm_unpacklo_ps(vec_a, vec_b));
+      _mm_storeu_ps(&coherence_state->sxd[i + 2][0],
+                    _mm_unpackhi_ps(vec_a, vec_b));
     }
 
     vec_sdSum = _mm_add_ps(vec_sdSum, vec_sd);
@@ -587,39 +595,43 @@ static void SmoothedPSD(AecCore* aec,
   _mm_add_ps_4x1(vec_seSum, &seSum);
 
   for (; i < PART_LEN1; i++) {
-    aec->sd[i] = ptrGCoh[0] * aec->sd[i] +
-                 ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
-    aec->se[i] = ptrGCoh[0] * aec->se[i] +
-                 ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
+    coherence_state->sd[i] =
+        ptrGCoh[0] * coherence_state->sd[i] +
+        ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
+    coherence_state->se[i] =
+        ptrGCoh[0] * coherence_state->se[i] +
+        ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
     // We threshold here to protect against the ill-effects of a zero farend.
     // The threshold is not arbitrarily chosen, but balances protection and
     // adverse interaction with the algorithm's tuning.
     // TODO(bjornv): investigate further why this is so sensitive.
-    aec->sx[i] = ptrGCoh[0] * aec->sx[i] +
-                 ptrGCoh[1] * WEBRTC_SPL_MAX(
-                                  xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
-                                  WebRtcAec_kMinFarendPSD);
+    coherence_state->sx[i] =
+        ptrGCoh[0] * coherence_state->sx[i] +
+        ptrGCoh[1] *
+            WEBRTC_SPL_MAX(xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
+                           WebRtcAec_kMinFarendPSD);
 
-    aec->sde[i][0] =
-        ptrGCoh[0] * aec->sde[i][0] +
+    coherence_state->sde[i][0] =
+        ptrGCoh[0] * coherence_state->sde[i][0] +
         ptrGCoh[1] * (dfw[0][i] * efw[0][i] + dfw[1][i] * efw[1][i]);
-    aec->sde[i][1] =
-        ptrGCoh[0] * aec->sde[i][1] +
+    coherence_state->sde[i][1] =
+        ptrGCoh[0] * coherence_state->sde[i][1] +
         ptrGCoh[1] * (dfw[0][i] * efw[1][i] - dfw[1][i] * efw[0][i]);
 
-    aec->sxd[i][0] =
-        ptrGCoh[0] * aec->sxd[i][0] +
+    coherence_state->sxd[i][0] =
+        ptrGCoh[0] * coherence_state->sxd[i][0] +
         ptrGCoh[1] * (dfw[0][i] * xfw[0][i] + dfw[1][i] * xfw[1][i]);
-    aec->sxd[i][1] =
-        ptrGCoh[0] * aec->sxd[i][1] +
+    coherence_state->sxd[i][1] =
+        ptrGCoh[0] * coherence_state->sxd[i][1] +
         ptrGCoh[1] * (dfw[0][i] * xfw[1][i] - dfw[1][i] * xfw[0][i]);
 
-    sdSum += aec->sd[i];
-    seSum += aec->se[i];
+    sdSum += coherence_state->sd[i];
+    seSum += coherence_state->se[i];
   }
 
   // Divergent filter safeguard update.
-  aec->divergeState = (aec->divergeState ? 1.05f : 1.0f) * seSum > sdSum;
+  *filter_divergence_state =
+      (*filter_divergence_state ? 1.05f : 1.0f) * seSum > sdSum;
 
   // Signal extreme filter divergence if the error is significantly larger
   // than the nearend (13 dB).
@@ -666,34 +678,38 @@ static void StoreAsComplexSSE2(const float* data,
   data_complex[0][PART_LEN] = data[1];
 }
 
-static void SubbandCoherenceSSE2(AecCore* aec,
+static void SubbandCoherenceSSE2(int mult,
+                                 bool extended_filter_enabled,
                                  float efw[2][PART_LEN1],
                                  float dfw[2][PART_LEN1],
                                  float xfw[2][PART_LEN1],
                                  float* fft,
                                  float* cohde,
                                  float* cohxd,
+                                 CoherenceState* coherence_state,
+                                 short* filter_divergence_state,
                                  int* extreme_filter_divergence) {
   int i;
 
-  SmoothedPSD(aec, efw, dfw, xfw, extreme_filter_divergence);
+  SmoothedPSD(mult, extended_filter_enabled, efw, dfw, xfw, coherence_state,
+              filter_divergence_state, extreme_filter_divergence);
 
   {
     const __m128 vec_1eminus10 = _mm_set1_ps(1e-10f);
 
     // Subband coherence
     for (i = 0; i + 3 < PART_LEN1; i += 4) {
-      const __m128 vec_sd = _mm_loadu_ps(&aec->sd[i]);
-      const __m128 vec_se = _mm_loadu_ps(&aec->se[i]);
-      const __m128 vec_sx = _mm_loadu_ps(&aec->sx[i]);
+      const __m128 vec_sd = _mm_loadu_ps(&coherence_state->sd[i]);
+      const __m128 vec_se = _mm_loadu_ps(&coherence_state->se[i]);
+      const __m128 vec_sx = _mm_loadu_ps(&coherence_state->sx[i]);
       const __m128 vec_sdse =
           _mm_add_ps(vec_1eminus10, _mm_mul_ps(vec_sd, vec_se));
       const __m128 vec_sdsx =
           _mm_add_ps(vec_1eminus10, _mm_mul_ps(vec_sd, vec_sx));
-      const __m128 vec_sde_3210 = _mm_loadu_ps(&aec->sde[i][0]);
-      const __m128 vec_sde_7654 = _mm_loadu_ps(&aec->sde[i + 2][0]);
-      const __m128 vec_sxd_3210 = _mm_loadu_ps(&aec->sxd[i][0]);
-      const __m128 vec_sxd_7654 = _mm_loadu_ps(&aec->sxd[i + 2][0]);
+      const __m128 vec_sde_3210 = _mm_loadu_ps(&coherence_state->sde[i][0]);
+      const __m128 vec_sde_7654 = _mm_loadu_ps(&coherence_state->sde[i + 2][0]);
+      const __m128 vec_sxd_3210 = _mm_loadu_ps(&coherence_state->sxd[i][0]);
+      const __m128 vec_sxd_7654 = _mm_loadu_ps(&coherence_state->sxd[i + 2][0]);
       const __m128 vec_sde_0 =
           _mm_shuffle_ps(vec_sde_3210, vec_sde_7654, _MM_SHUFFLE(2, 0, 2, 0));
       const __m128 vec_sde_1 =
@@ -714,12 +730,12 @@ static void SubbandCoherenceSSE2(AecCore* aec,
 
     // scalar code for the remaining items.
     for (; i < PART_LEN1; i++) {
-      cohde[i] =
-          (aec->sde[i][0] * aec->sde[i][0] + aec->sde[i][1] * aec->sde[i][1]) /
-          (aec->sd[i] * aec->se[i] + 1e-10f);
-      cohxd[i] =
-          (aec->sxd[i][0] * aec->sxd[i][0] + aec->sxd[i][1] * aec->sxd[i][1]) /
-          (aec->sx[i] * aec->sd[i] + 1e-10f);
+      cohde[i] = (coherence_state->sde[i][0] * coherence_state->sde[i][0] +
+                  coherence_state->sde[i][1] * coherence_state->sde[i][1]) /
+                 (coherence_state->sd[i] * coherence_state->se[i] + 1e-10f);
+      cohxd[i] = (coherence_state->sxd[i][0] * coherence_state->sxd[i][0] +
+                  coherence_state->sxd[i][1] * coherence_state->sxd[i][1]) /
+                 (coherence_state->sx[i] * coherence_state->sd[i] + 1e-10f);
     }
   }
 }

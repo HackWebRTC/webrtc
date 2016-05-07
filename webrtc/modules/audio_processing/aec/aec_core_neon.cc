@@ -502,16 +502,19 @@ static int PartitionDelayNEON(const AecCore* aec) {
 //
 // In addition to updating the PSDs, also the filter diverge state is determined
 // upon actions are taken.
-static void SmoothedPSD(AecCore* aec,
+static void SmoothedPSD(int mult,
+                        bool extended_filter_enabled,
                         float efw[2][PART_LEN1],
                         float dfw[2][PART_LEN1],
                         float xfw[2][PART_LEN1],
+                        CoherenceState* coherence_state,
+                        short* filter_divergence_state,
                         int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
   const float* ptrGCoh =
-      aec->extended_filter_enabled
-          ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
-          : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
+      extended_filter_enabled
+          ? WebRtcAec_kExtendedSmoothingCoefficients[mult - 1]
+          : WebRtcAec_kNormalSmoothingCoefficients[mult - 1];
   int i;
   float sdSum = 0, seSum = 0;
   const float32x4_t vec_15 = vdupq_n_f32(WebRtcAec_kMinFarendPSD);
@@ -525,9 +528,12 @@ static void SmoothedPSD(AecCore* aec,
     const float32x4_t vec_efw1 = vld1q_f32(&efw[1][i]);
     const float32x4_t vec_xfw0 = vld1q_f32(&xfw[0][i]);
     const float32x4_t vec_xfw1 = vld1q_f32(&xfw[1][i]);
-    float32x4_t vec_sd = vmulq_n_f32(vld1q_f32(&aec->sd[i]), ptrGCoh[0]);
-    float32x4_t vec_se = vmulq_n_f32(vld1q_f32(&aec->se[i]), ptrGCoh[0]);
-    float32x4_t vec_sx = vmulq_n_f32(vld1q_f32(&aec->sx[i]), ptrGCoh[0]);
+    float32x4_t vec_sd =
+        vmulq_n_f32(vld1q_f32(&coherence_state->sd[i]), ptrGCoh[0]);
+    float32x4_t vec_se =
+        vmulq_n_f32(vld1q_f32(&coherence_state->se[i]), ptrGCoh[0]);
+    float32x4_t vec_sx =
+        vmulq_n_f32(vld1q_f32(&coherence_state->sx[i]), ptrGCoh[0]);
     float32x4_t vec_dfw_sumsq = vmulq_f32(vec_dfw0, vec_dfw0);
     float32x4_t vec_efw_sumsq = vmulq_f32(vec_efw0, vec_efw0);
     float32x4_t vec_xfw_sumsq = vmulq_f32(vec_xfw0, vec_xfw0);
@@ -540,12 +546,12 @@ static void SmoothedPSD(AecCore* aec,
     vec_se = vmlaq_n_f32(vec_se, vec_efw_sumsq, ptrGCoh[1]);
     vec_sx = vmlaq_n_f32(vec_sx, vec_xfw_sumsq, ptrGCoh[1]);
 
-    vst1q_f32(&aec->sd[i], vec_sd);
-    vst1q_f32(&aec->se[i], vec_se);
-    vst1q_f32(&aec->sx[i], vec_sx);
+    vst1q_f32(&coherence_state->sd[i], vec_sd);
+    vst1q_f32(&coherence_state->se[i], vec_se);
+    vst1q_f32(&coherence_state->sx[i], vec_sx);
 
     {
-      float32x4x2_t vec_sde = vld2q_f32(&aec->sde[i][0]);
+      float32x4x2_t vec_sde = vld2q_f32(&coherence_state->sde[i][0]);
       float32x4_t vec_dfwefw0011 = vmulq_f32(vec_dfw0, vec_efw0);
       float32x4_t vec_dfwefw0110 = vmulq_f32(vec_dfw0, vec_efw1);
       vec_sde.val[0] = vmulq_n_f32(vec_sde.val[0], ptrGCoh[0]);
@@ -554,11 +560,11 @@ static void SmoothedPSD(AecCore* aec,
       vec_dfwefw0110 = vmlsq_f32(vec_dfwefw0110, vec_dfw1, vec_efw0);
       vec_sde.val[0] = vmlaq_n_f32(vec_sde.val[0], vec_dfwefw0011, ptrGCoh[1]);
       vec_sde.val[1] = vmlaq_n_f32(vec_sde.val[1], vec_dfwefw0110, ptrGCoh[1]);
-      vst2q_f32(&aec->sde[i][0], vec_sde);
+      vst2q_f32(&coherence_state->sde[i][0], vec_sde);
     }
 
     {
-      float32x4x2_t vec_sxd = vld2q_f32(&aec->sxd[i][0]);
+      float32x4x2_t vec_sxd = vld2q_f32(&coherence_state->sxd[i][0]);
       float32x4_t vec_dfwxfw0011 = vmulq_f32(vec_dfw0, vec_xfw0);
       float32x4_t vec_dfwxfw0110 = vmulq_f32(vec_dfw0, vec_xfw1);
       vec_sxd.val[0] = vmulq_n_f32(vec_sxd.val[0], ptrGCoh[0]);
@@ -567,7 +573,7 @@ static void SmoothedPSD(AecCore* aec,
       vec_dfwxfw0110 = vmlsq_f32(vec_dfwxfw0110, vec_dfw1, vec_xfw0);
       vec_sxd.val[0] = vmlaq_n_f32(vec_sxd.val[0], vec_dfwxfw0011, ptrGCoh[1]);
       vec_sxd.val[1] = vmlaq_n_f32(vec_sxd.val[1], vec_dfwxfw0110, ptrGCoh[1]);
-      vst2q_f32(&aec->sxd[i][0], vec_sxd);
+      vst2q_f32(&coherence_state->sxd[i][0], vec_sxd);
     }
 
     vec_sdSum = vaddq_f32(vec_sdSum, vec_sd);
@@ -591,39 +597,43 @@ static void SmoothedPSD(AecCore* aec,
 
   // scalar code for the remaining items.
   for (; i < PART_LEN1; i++) {
-    aec->sd[i] = ptrGCoh[0] * aec->sd[i] +
-                 ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
-    aec->se[i] = ptrGCoh[0] * aec->se[i] +
-                 ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
+    coherence_state->sd[i] =
+        ptrGCoh[0] * coherence_state->sd[i] +
+        ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
+    coherence_state->se[i] =
+        ptrGCoh[0] * coherence_state->se[i] +
+        ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
     // We threshold here to protect against the ill-effects of a zero farend.
     // The threshold is not arbitrarily chosen, but balances protection and
     // adverse interaction with the algorithm's tuning.
     // TODO(bjornv): investigate further why this is so sensitive.
-    aec->sx[i] = ptrGCoh[0] * aec->sx[i] +
-                 ptrGCoh[1] * WEBRTC_SPL_MAX(
-                                  xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
-                                  WebRtcAec_kMinFarendPSD);
+    coherence_state->sx[i] =
+        ptrGCoh[0] * coherence_state->sx[i] +
+        ptrGCoh[1] *
+            WEBRTC_SPL_MAX(xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
+                           WebRtcAec_kMinFarendPSD);
 
-    aec->sde[i][0] =
-        ptrGCoh[0] * aec->sde[i][0] +
+    coherence_state->sde[i][0] =
+        ptrGCoh[0] * coherence_state->sde[i][0] +
         ptrGCoh[1] * (dfw[0][i] * efw[0][i] + dfw[1][i] * efw[1][i]);
-    aec->sde[i][1] =
-        ptrGCoh[0] * aec->sde[i][1] +
+    coherence_state->sde[i][1] =
+        ptrGCoh[0] * coherence_state->sde[i][1] +
         ptrGCoh[1] * (dfw[0][i] * efw[1][i] - dfw[1][i] * efw[0][i]);
 
-    aec->sxd[i][0] =
-        ptrGCoh[0] * aec->sxd[i][0] +
+    coherence_state->sxd[i][0] =
+        ptrGCoh[0] * coherence_state->sxd[i][0] +
         ptrGCoh[1] * (dfw[0][i] * xfw[0][i] + dfw[1][i] * xfw[1][i]);
-    aec->sxd[i][1] =
-        ptrGCoh[0] * aec->sxd[i][1] +
+    coherence_state->sxd[i][1] =
+        ptrGCoh[0] * coherence_state->sxd[i][1] +
         ptrGCoh[1] * (dfw[0][i] * xfw[1][i] - dfw[1][i] * xfw[0][i]);
 
-    sdSum += aec->sd[i];
-    seSum += aec->se[i];
+    sdSum += coherence_state->sd[i];
+    seSum += coherence_state->se[i];
   }
 
   // Divergent filter safeguard update.
-  aec->divergeState = (aec->divergeState ? 1.05f : 1.0f) * seSum > sdSum;
+  *filter_divergence_state =
+      (*filter_divergence_state ? 1.05f : 1.0f) * seSum > sdSum;
 
   // Signal extreme filter divergence if the error is significantly larger
   // than the nearend (13 dB).
@@ -667,30 +677,34 @@ static void StoreAsComplexNEON(const float* data,
   data_complex[0][PART_LEN] = data[1];
 }
 
-static void SubbandCoherenceNEON(AecCore* aec,
+static void SubbandCoherenceNEON(int mult,
+                                 bool extended_filter_enabled,
                                  float efw[2][PART_LEN1],
                                  float dfw[2][PART_LEN1],
                                  float xfw[2][PART_LEN1],
                                  float* fft,
                                  float* cohde,
                                  float* cohxd,
+                                 CoherenceState* coherence_state,
+                                 short* filter_divergence_state,
                                  int* extreme_filter_divergence) {
   int i;
 
-  SmoothedPSD(aec, efw, dfw, xfw, extreme_filter_divergence);
+  SmoothedPSD(mult, extended_filter_enabled, efw, dfw, xfw, coherence_state,
+              filter_divergence_state, extreme_filter_divergence);
 
   {
     const float32x4_t vec_1eminus10 = vdupq_n_f32(1e-10f);
 
     // Subband coherence
     for (i = 0; i + 3 < PART_LEN1; i += 4) {
-      const float32x4_t vec_sd = vld1q_f32(&aec->sd[i]);
-      const float32x4_t vec_se = vld1q_f32(&aec->se[i]);
-      const float32x4_t vec_sx = vld1q_f32(&aec->sx[i]);
+      const float32x4_t vec_sd = vld1q_f32(&coherence_state->sd[i]);
+      const float32x4_t vec_se = vld1q_f32(&coherence_state->se[i]);
+      const float32x4_t vec_sx = vld1q_f32(&coherence_state->sx[i]);
       const float32x4_t vec_sdse = vmlaq_f32(vec_1eminus10, vec_sd, vec_se);
       const float32x4_t vec_sdsx = vmlaq_f32(vec_1eminus10, vec_sd, vec_sx);
-      float32x4x2_t vec_sde = vld2q_f32(&aec->sde[i][0]);
-      float32x4x2_t vec_sxd = vld2q_f32(&aec->sxd[i][0]);
+      float32x4x2_t vec_sde = vld2q_f32(&coherence_state->sde[i][0]);
+      float32x4x2_t vec_sxd = vld2q_f32(&coherence_state->sxd[i][0]);
       float32x4_t vec_cohde = vmulq_f32(vec_sde.val[0], vec_sde.val[0]);
       float32x4_t vec_cohxd = vmulq_f32(vec_sxd.val[0], vec_sxd.val[0]);
       vec_cohde = vmlaq_f32(vec_cohde, vec_sde.val[1], vec_sde.val[1]);
@@ -704,12 +718,12 @@ static void SubbandCoherenceNEON(AecCore* aec,
   }
   // scalar code for the remaining items.
   for (; i < PART_LEN1; i++) {
-    cohde[i] =
-        (aec->sde[i][0] * aec->sde[i][0] + aec->sde[i][1] * aec->sde[i][1]) /
-        (aec->sd[i] * aec->se[i] + 1e-10f);
-    cohxd[i] =
-        (aec->sxd[i][0] * aec->sxd[i][0] + aec->sxd[i][1] * aec->sxd[i][1]) /
-        (aec->sx[i] * aec->sd[i] + 1e-10f);
+    cohde[i] = (coherence_state->sde[i][0] * coherence_state->sde[i][0] +
+                coherence_state->sde[i][1] * coherence_state->sde[i][1]) /
+               (coherence_state->sd[i] * coherence_state->se[i] + 1e-10f);
+    cohxd[i] = (coherence_state->sxd[i][0] * coherence_state->sxd[i][0] +
+                coherence_state->sxd[i][1] * coherence_state->sxd[i][1]) /
+               (coherence_state->sx[i] * coherence_state->sd[i] + 1e-10f);
   }
 }
 

@@ -72,11 +72,19 @@ class DivergentFilterFraction {
   RTC_DISALLOW_COPY_AND_ASSIGN(DivergentFilterFraction);
 };
 
+typedef struct CoherenceState {
+  complex_t sde[PART_LEN1];  // cross-psd of nearend and error
+  complex_t sxd[PART_LEN1];  // cross-psd of farend and nearend
+  float sx[PART_LEN1], sd[PART_LEN1], se[PART_LEN1];  // far, near, error psd
+} CoherenceState;
+
 struct AecCore {
   explicit AecCore(int instance_index);
   ~AecCore();
 
   std::unique_ptr<ApmDataDumper> data_dumper;
+
+  CoherenceState coherence_state;
 
   int farBufWritePos, farBufReadPos;
 
@@ -103,12 +111,9 @@ struct AecCore {
 
   float xfBuf[2][kExtendedNumPartitions * PART_LEN1];  // farend fft buffer
   float wfBuf[2][kExtendedNumPartitions * PART_LEN1];  // filter fft
-  complex_t sde[PART_LEN1];  // cross-psd of nearend and error
-  complex_t sxd[PART_LEN1];  // cross-psd of farend and nearend
   // Farend windowed fft buffer.
   complex_t xfwBuf[kExtendedNumPartitions * PART_LEN1];
 
-  float sx[PART_LEN1], sd[PART_LEN1], se[PART_LEN1];  // far, near, error psd
   float hNs[PART_LEN1];
   float hNlFbMin, hNlFbLocalMin;
   float hNlXdAvgMin;
@@ -223,13 +228,16 @@ typedef void (*WebRtcAecComfortNoise)(AecCore* aec,
                                       const float* lambda);
 extern WebRtcAecComfortNoise WebRtcAec_ComfortNoise;
 
-typedef void (*WebRtcAecSubBandCoherence)(AecCore* aec,
+typedef void (*WebRtcAecSubBandCoherence)(int mult,
+                                          bool extended_filter_enabled,
                                           float efw[2][PART_LEN1],
                                           float dfw[2][PART_LEN1],
                                           float xfw[2][PART_LEN1],
                                           float* fft,
                                           float* cohde,
                                           float* cohxd,
+                                          CoherenceState* coherence_state,
+                                          short* filter_divergence_state,
                                           int* extreme_filter_divergence);
 extern WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
 

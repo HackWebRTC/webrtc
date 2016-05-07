@@ -404,53 +404,60 @@ const float WebRtcAec_kMinFarendPSD = 15;
 //
 // In addition to updating the PSDs, also the filter diverge state is
 // determined.
-static void SmoothedPSD(AecCore* aec,
+static void SmoothedPSD(int mult,
+                        bool extended_filter_enabled,
                         float efw[2][PART_LEN1],
                         float dfw[2][PART_LEN1],
                         float xfw[2][PART_LEN1],
+                        CoherenceState* coherence_state,
+                        short* filter_divergence_state,
                         int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
   const float* ptrGCoh =
-      aec->extended_filter_enabled
-          ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
-          : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
+      extended_filter_enabled
+          ? WebRtcAec_kExtendedSmoothingCoefficients[mult - 1]
+          : WebRtcAec_kNormalSmoothingCoefficients[mult - 1];
   int i;
   float sdSum = 0, seSum = 0;
 
   for (i = 0; i < PART_LEN1; i++) {
-    aec->sd[i] = ptrGCoh[0] * aec->sd[i] +
-                 ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
-    aec->se[i] = ptrGCoh[0] * aec->se[i] +
-                 ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
+    coherence_state->sd[i] =
+        ptrGCoh[0] * coherence_state->sd[i] +
+        ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
+    coherence_state->se[i] =
+        ptrGCoh[0] * coherence_state->se[i] +
+        ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
     // We threshold here to protect against the ill-effects of a zero farend.
     // The threshold is not arbitrarily chosen, but balances protection and
     // adverse interaction with the algorithm's tuning.
     // TODO(bjornv): investigate further why this is so sensitive.
-    aec->sx[i] = ptrGCoh[0] * aec->sx[i] +
-                 ptrGCoh[1] * WEBRTC_SPL_MAX(
-                                  xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
-                                  WebRtcAec_kMinFarendPSD);
+    coherence_state->sx[i] =
+        ptrGCoh[0] * coherence_state->sx[i] +
+        ptrGCoh[1] *
+            WEBRTC_SPL_MAX(xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
+                           WebRtcAec_kMinFarendPSD);
 
-    aec->sde[i][0] =
-        ptrGCoh[0] * aec->sde[i][0] +
+    coherence_state->sde[i][0] =
+        ptrGCoh[0] * coherence_state->sde[i][0] +
         ptrGCoh[1] * (dfw[0][i] * efw[0][i] + dfw[1][i] * efw[1][i]);
-    aec->sde[i][1] =
-        ptrGCoh[0] * aec->sde[i][1] +
+    coherence_state->sde[i][1] =
+        ptrGCoh[0] * coherence_state->sde[i][1] +
         ptrGCoh[1] * (dfw[0][i] * efw[1][i] - dfw[1][i] * efw[0][i]);
 
-    aec->sxd[i][0] =
-        ptrGCoh[0] * aec->sxd[i][0] +
+    coherence_state->sxd[i][0] =
+        ptrGCoh[0] * coherence_state->sxd[i][0] +
         ptrGCoh[1] * (dfw[0][i] * xfw[0][i] + dfw[1][i] * xfw[1][i]);
-    aec->sxd[i][1] =
-        ptrGCoh[0] * aec->sxd[i][1] +
+    coherence_state->sxd[i][1] =
+        ptrGCoh[0] * coherence_state->sxd[i][1] +
         ptrGCoh[1] * (dfw[0][i] * xfw[1][i] - dfw[1][i] * xfw[0][i]);
 
-    sdSum += aec->sd[i];
-    seSum += aec->se[i];
+    sdSum += coherence_state->sd[i];
+    seSum += coherence_state->se[i];
   }
 
   // Divergent filter safeguard update.
-  aec->divergeState = (aec->divergeState ? 1.05f : 1.0f) * seSum > sdSum;
+  *filter_divergence_state =
+      (*filter_divergence_state ? 1.05f : 1.0f) * seSum > sdSum;
 
   // Signal extreme filter divergence if the error is significantly larger
   // than the nearend (13 dB).
@@ -481,26 +488,30 @@ __inline static void StoreAsComplex(const float* data,
   data_complex[1][PART_LEN] = 0;
 }
 
-static void SubbandCoherence(AecCore* aec,
+static void SubbandCoherence(int mult,
+                             bool extended_filter_enabled,
                              float efw[2][PART_LEN1],
                              float dfw[2][PART_LEN1],
                              float xfw[2][PART_LEN1],
                              float* fft,
                              float* cohde,
                              float* cohxd,
+                             CoherenceState* coherence_state,
+                             short* filter_divergence_state,
                              int* extreme_filter_divergence) {
   int i;
 
-  SmoothedPSD(aec, efw, dfw, xfw, extreme_filter_divergence);
+  SmoothedPSD(mult, extended_filter_enabled, efw, dfw, xfw, coherence_state,
+              filter_divergence_state, extreme_filter_divergence);
 
   // Subband coherence
   for (i = 0; i < PART_LEN1; i++) {
-    cohde[i] =
-        (aec->sde[i][0] * aec->sde[i][0] + aec->sde[i][1] * aec->sde[i][1]) /
-        (aec->sd[i] * aec->se[i] + 1e-10f);
-    cohxd[i] =
-        (aec->sxd[i][0] * aec->sxd[i][0] + aec->sxd[i][1] * aec->sxd[i][1]) /
-        (aec->sx[i] * aec->sd[i] + 1e-10f);
+    cohde[i] = (coherence_state->sde[i][0] * coherence_state->sde[i][0] +
+                coherence_state->sde[i][1] * coherence_state->sde[i][1]) /
+               (coherence_state->sd[i] * coherence_state->se[i] + 1e-10f);
+    cohxd[i] = (coherence_state->sxd[i][0] * coherence_state->sxd[i][0] +
+                coherence_state->sxd[i][1] * coherence_state->sxd[i][1]) /
+               (coherence_state->sx[i] * coherence_state->sd[i] + 1e-10f);
   }
 }
 
@@ -1050,7 +1061,9 @@ static void EchoSuppression(AecCore* aec,
   memcpy(xfw, aec->xfwBuf + aec->delayIdx * PART_LEN1,
          sizeof(xfw[0][0]) * 2 * PART_LEN1);
 
-  WebRtcAec_SubbandCoherence(aec, efw, dfw, xfw, fft, cohde, cohxd,
+  WebRtcAec_SubbandCoherence(aec->mult, aec->extended_filter_enabled == 1, efw,
+                             dfw, xfw, fft, cohde, cohxd, &aec->coherence_state,
+                             &aec->divergeState,
                              &aec->extreme_filter_divergence);
 
   // Select the microphone signal as output if the filter is deemed to have
@@ -1666,18 +1679,18 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   // doesn't change the output at all and yields 0.4% overall speedup.
   memset(aec->xfBuf, 0, sizeof(complex_t) * kExtendedNumPartitions * PART_LEN1);
   memset(aec->wfBuf, 0, sizeof(complex_t) * kExtendedNumPartitions * PART_LEN1);
-  memset(aec->sde, 0, sizeof(complex_t) * PART_LEN1);
-  memset(aec->sxd, 0, sizeof(complex_t) * PART_LEN1);
+  memset(aec->coherence_state.sde, 0, sizeof(complex_t) * PART_LEN1);
+  memset(aec->coherence_state.sxd, 0, sizeof(complex_t) * PART_LEN1);
   memset(aec->xfwBuf, 0,
          sizeof(complex_t) * kExtendedNumPartitions * PART_LEN1);
-  memset(aec->se, 0, sizeof(float) * PART_LEN1);
+  memset(aec->coherence_state.se, 0, sizeof(float) * PART_LEN1);
 
   // To prevent numerical instability in the first block.
   for (i = 0; i < PART_LEN1; i++) {
-    aec->sd[i] = 1;
+    aec->coherence_state.sd[i] = 1;
   }
   for (i = 0; i < PART_LEN1; i++) {
-    aec->sx[i] = 1;
+    aec->coherence_state.sx[i] = 1;
   }
 
   memset(aec->hNs, 0, sizeof(aec->hNs));
