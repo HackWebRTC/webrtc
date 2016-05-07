@@ -58,29 +58,18 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 
 // TODO(tkchin): Maybe handle SilenceSecondaryAudioHintNotification.
 
-/** Called on a WebRTC thread when WebRTC needs to take over audio. Applications
- *  should call -[RTCAudioSession configureWebRTCSession] to allow WebRTC to
- *  play and record audio. Will only occur if shouldDelayAudioConfiguration is
- *  set to YES.
- */
-- (void)audioSessionShouldConfigure:(RTCAudioSession *)session;
+- (void)audioSession:(RTCAudioSession *)session
+    didChangeCanPlayOrRecord:(BOOL)canPlayOrRecord;
 
-/** Called on a WebRTC thread when WebRTC no longer requires audio. Applications
- *  should call -[RTCAudioSession unconfigureWebRTCSession] to restore their
- *  audio session settings. Will only occur if shouldDelayAudioConfiguration is
- *  set to YES.
+/** Called on a WebRTC thread when the audio device is notified to begin
+ *  playback or recording.
  */
-- (void)audioSessionShouldUnconfigure:(RTCAudioSession *)session;
+- (void)audioSessionDidStartPlayOrRecord:(RTCAudioSession *)session;
 
-/** Called on a WebRTC thread when WebRTC has configured the audio session for
- *  WebRTC audio.
+/** Called on a WebRTC thread when the audio device is notified to stop
+ *  playback or recording.
  */
-- (void)audioSessionDidConfigure:(RTCAudioSession *)session;
-
-/** Called on a WebRTC thread when WebRTC has unconfigured the audio session for
- *  WebRTC audio.
- */
-- (void)audioSessionDidUnconfigure:(RTCAudioSession *)session;
+- (void)audioSessionDidStopPlayOrRecord:(RTCAudioSession *)session;
 
 @end
 
@@ -108,11 +97,24 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 
 /** If YES, WebRTC will not initialize the audio unit automatically when an
  *  audio track is ready for playout or recording. Instead, applications should
- *  listen to the delegate method |audioSessionShouldConfigure| and configure
- *  the session manually. This should be set before making WebRTC media calls
- *  and should not be changed while a call is active.
+ *  call setIsAudioEnabled. If NO, WebRTC will initialize the audio unit
+ *  as soon as an audio track is ready for playout or recording.
  */
-@property(nonatomic, assign) BOOL shouldDelayAudioConfiguration;
+@property(nonatomic, assign) BOOL useManualAudio;
+
+/** This property is only effective if useManualAudio is YES.
+ *  Represents permission for WebRTC to initialize the VoIP audio unit.
+ *  When set to NO, if the VoIP audio unit used by WebRTC is active, it will be
+ *  stopped and uninitialized. This will stop incoming and outgoing audio.
+ *  When set to YES, WebRTC will initialize and start the audio unit when it is
+ *  needed (e.g. due to establishing an audio connection).
+ *  This property was introduced to work around an issue where if an AVPlayer is
+ *  playing audio while the VoIP audio unit is initialized, its audio would be
+ *  either cut off completely or played at a reduced volume. By preventing
+ *  the audio unit from being initialized until after the audio has completed,
+ *  we are able to prevent the abrupt cutoff.
+ */
+@property(nonatomic, assign) BOOL isAudioEnabled;
 
 // Proxy properties.
 @property(readonly) NSString *category;
@@ -134,12 +136,14 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 @property(readonly, nullable)
     AVAudioSessionDataSourceDescription *outputDataSource;
 @property(readonly) double sampleRate;
+@property(readonly) double preferredSampleRate;
 @property(readonly) NSInteger inputNumberOfChannels;
 @property(readonly) NSInteger outputNumberOfChannels;
 @property(readonly) float outputVolume;
 @property(readonly) NSTimeInterval inputLatency;
 @property(readonly) NSTimeInterval outputLatency;
 @property(readonly) NSTimeInterval IOBufferDuration;
+@property(readonly) NSTimeInterval preferredIOBufferDuration;
 
 /** Default constructor. */
 + (instancetype)sharedInstance;
@@ -196,36 +200,20 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 
 @interface RTCAudioSession (Configuration)
 
-/** Whether or not |configureWebRTCSession| has been called without a balanced
- *  call to |unconfigureWebRTCSession|. This is not an indication of whether the
- *  audio session has the right settings.
- */
-@property(readonly) BOOL isConfiguredForWebRTC;
-
 /** Applies the configuration to the current session. Attempts to set all
  *  properties even if previous ones fail. Only the last error will be
- *  returned. Also calls setActive with |active|.
+ *  returned.
+ *  |lockForConfiguration| must be called first.
+ */
+- (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration
+                   error:(NSError **)outError;
+
+/** Convenience method that calls both setConfiguration and setActive.
  *  |lockForConfiguration| must be called first.
  */
 - (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration
                   active:(BOOL)active
                    error:(NSError **)outError;
-
-/** Configure the audio session for WebRTC. This call will fail if the session
- *  is already configured. On other failures, we will attempt to restore the
- *  previously used audio session configuration.
- *  |lockForConfiguration| must be called first.
- *  Successful calls to configureWebRTCSession must be matched by calls to
- *  |unconfigureWebRTCSession|.
- */
-- (BOOL)configureWebRTCSession:(NSError **)outError;
-
-/** Unconfigures the session for WebRTC. This will attempt to restore the
- *  audio session to the settings used before |configureWebRTCSession| was
- *  called.
- *  |lockForConfiguration| must be called first.
- */
-- (BOOL)unconfigureWebRTCSession:(NSError **)outError;
 
 @end
 

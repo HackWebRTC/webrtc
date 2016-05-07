@@ -28,8 +28,8 @@ class AudioSessionObserver {
   // Called when audio route changes.
   virtual void OnValidRouteChange() = 0;
 
-  // Called when audio session has been configured for WebRTC.
-  virtual void OnConfiguredForWebRTC() = 0;
+  // Called when the ability to play or record changes.
+  virtual void OnCanPlayOrRecordChange(bool can_play_or_record) = 0;
 
  protected:
   virtual ~AudioSessionObserver() {}

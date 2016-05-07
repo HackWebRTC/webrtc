@@ -175,7 +175,7 @@ VoiceProcessingAudioUnit::State VoiceProcessingAudioUnit::GetState() const {
 
 bool VoiceProcessingAudioUnit::Initialize(Float64 sample_rate) {
   RTC_DCHECK_GE(state_, kUninitialized);
-  RTCLog(@"Initializing audio unit.");
+  RTCLog(@"Initializing audio unit with sample rate: %f", sample_rate);
 
   OSStatus result = noErr;
   AudioStreamBasicDescription format = GetFormat(sample_rate);
@@ -228,7 +228,9 @@ bool VoiceProcessingAudioUnit::Initialize(Float64 sample_rate) {
     [NSThread sleepForTimeInterval:0.1f];
     result = AudioUnitInitialize(vpio_unit_);
   }
-  RTCLog(@"Voice Processing I/O unit is now initialized.");
+  if (result == noErr) {
+    RTCLog(@"Voice Processing I/O unit is now initialized.");
+  }
   state_ = kInitialized;
   return true;
 }
@@ -241,6 +243,8 @@ bool VoiceProcessingAudioUnit::Start() {
   if (result != noErr) {
     RTCLogError(@"Failed to start audio unit. Error=%ld", (long)result);
     return false;
+  } else {
+    RTCLog(@"Started audio unit");
   }
   state_ = kStarted;
   return true;
@@ -254,7 +258,10 @@ bool VoiceProcessingAudioUnit::Stop() {
   if (result != noErr) {
     RTCLogError(@"Failed to stop audio unit. Error=%ld", (long)result);
     return false;
+  } else {
+    RTCLog(@"Stopped audio unit");
   }
+
   state_ = kInitialized;
   return true;
 }
@@ -267,7 +274,11 @@ bool VoiceProcessingAudioUnit::Uninitialize() {
   if (result != noErr) {
     RTCLogError(@"Failed to uninitialize audio unit. Error=%ld", (long)result);
     return false;
+  } else {
+    RTCLog(@"Uninitialized audio unit.");
   }
+
+  state_ = kUninitialized;
   return true;
 }
 

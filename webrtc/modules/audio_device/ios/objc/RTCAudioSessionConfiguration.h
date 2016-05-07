@@ -37,6 +37,8 @@ extern const double kRTCAudioSessionLowComplexityIOBufferDuration;
 + (instancetype)currentConfiguration;
 /** Returns the configuration that WebRTC needs. */
 + (instancetype)webRTCConfiguration;
+/** Provide a way to override the default configuration. */
++ (void)setWebRTCConfiguration:(RTCAudioSessionConfiguration *)configuration;
 
 @end
 

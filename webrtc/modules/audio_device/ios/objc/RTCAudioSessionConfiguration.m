@@ -10,6 +10,8 @@
 
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 
+#import "WebRTC/RTCDispatcher.h"
+
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
 // Try to use mono to save resources. Also avoids channel format conversion
@@ -48,6 +50,8 @@ const double kRTCAudioSessionHighPerformanceIOBufferDuration = 0.01;
 // reduction in CPU load compared with 10ms on low-end devices.
 // TODO(henrika): monitor this size and determine if it should be modified.
 const double kRTCAudioSessionLowComplexityIOBufferDuration = 0.06;
+
+static RTCAudioSessionConfiguration *gWebRTCConfiguration = nil;
 
 @implementation RTCAudioSessionConfiguration
 
@@ -96,6 +100,10 @@ const double kRTCAudioSessionLowComplexityIOBufferDuration = 0.06;
   return self;
 }
 
++ (void)initialize {
+  gWebRTCConfiguration = [[self alloc] init];
+}
+
 + (instancetype)currentConfiguration {
   RTCAudioSession *session = [RTCAudioSession sharedInstance];
   RTCAudioSessionConfiguration *config =
@@ -111,7 +119,15 @@ const double kRTCAudioSessionLowComplexityIOBufferDuration = 0.06;
 }
 
 + (instancetype)webRTCConfiguration {
-  return [[self alloc] init];
+  @synchronized(self) {
+    return (RTCAudioSessionConfiguration *)gWebRTCConfiguration;
+  }
+}
+
++ (void)setWebRTCConfiguration:(RTCAudioSessionConfiguration *)configuration {
+  @synchronized(self) {
+    gWebRTCConfiguration = configuration;
+  }
 }
 
 @end

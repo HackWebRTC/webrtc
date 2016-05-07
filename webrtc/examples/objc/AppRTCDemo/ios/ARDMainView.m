@@ -122,8 +122,8 @@ static CGFloat const kAppLabelHeight = 20;
   UILabel *_audioOnlyLabel;
   UISwitch *_loopbackSwitch;
   UILabel *_loopbackLabel;
-  UISwitch *_audioConfigDelaySwitch;
-  UILabel *_audioConfigDelayLabel;
+  UISwitch *_useManualAudioSwitch;
+  UILabel *_useManualAudioLabel;
   UIButton *_startCallButton;
   UIButton *_audioLoopButton;
 }
@@ -175,17 +175,17 @@ static CGFloat const kAppLabelHeight = 20;
     [_loopbackLabel sizeToFit];
     [self addSubview:_loopbackLabel];
 
-    _audioConfigDelaySwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
-    [_audioConfigDelaySwitch sizeToFit];
-    _audioConfigDelaySwitch.on = YES;
-    [self addSubview:_audioConfigDelaySwitch];
+    _useManualAudioSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
+    [_useManualAudioSwitch sizeToFit];
+    _useManualAudioSwitch.on = YES;
+    [self addSubview:_useManualAudioSwitch];
 
-    _audioConfigDelayLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-    _audioConfigDelayLabel.text = @"Delay audio config";
-    _audioConfigDelayLabel.font = controlFont;
-    _audioConfigDelayLabel.textColor = controlFontColor;
-    [_audioConfigDelayLabel sizeToFit];
-    [self addSubview:_audioConfigDelayLabel];
+    _useManualAudioLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+    _useManualAudioLabel.text = @"Use manual audio config";
+    _useManualAudioLabel.font = controlFont;
+    _useManualAudioLabel.textColor = controlFontColor;
+    [_useManualAudioLabel sizeToFit];
+    [self addSubview:_useManualAudioLabel];
 
     _startCallButton = [UIButton buttonWithType:UIButtonTypeSystem];
     _startCallButton.backgroundColor = [UIColor blueColor];
@@ -275,22 +275,22 @@ static CGFloat const kAppLabelHeight = 20;
   _loopbackLabel.center = CGPointMake(loopbackModeLabelCenterX,
                                       CGRectGetMidY(loopbackModeRect));
 
-  CGFloat audioConfigDelayTop =
+  CGFloat useManualAudioTop =
       CGRectGetMaxY(_loopbackSwitch.frame) + kCallControlMargin;
-  CGRect audioConfigDelayRect =
+  CGRect useManualAudioRect =
       CGRectMake(kCallControlMargin * 3,
-                 audioConfigDelayTop,
-                 _audioConfigDelaySwitch.frame.size.width,
-                 _audioConfigDelaySwitch.frame.size.height);
-  _audioConfigDelaySwitch.frame = audioConfigDelayRect;
-  CGFloat audioConfigDelayLabelCenterX = CGRectGetMaxX(audioConfigDelayRect) +
-      kCallControlMargin + _audioConfigDelayLabel.frame.size.width / 2;
-  _audioConfigDelayLabel.center =
-      CGPointMake(audioConfigDelayLabelCenterX,
-                  CGRectGetMidY(audioConfigDelayRect));
+                 useManualAudioTop,
+                 _useManualAudioSwitch.frame.size.width,
+                 _useManualAudioSwitch.frame.size.height);
+  _useManualAudioSwitch.frame = useManualAudioRect;
+  CGFloat useManualAudioLabelCenterX = CGRectGetMaxX(useManualAudioRect) +
+      kCallControlMargin + _useManualAudioLabel.frame.size.width / 2;
+  _useManualAudioLabel.center =
+      CGPointMake(useManualAudioLabelCenterX,
+                  CGRectGetMidY(useManualAudioRect));
 
   CGFloat audioLoopTop =
-     CGRectGetMaxY(audioConfigDelayRect) + kCallControlMargin * 3;
+     CGRectGetMaxY(useManualAudioRect) + kCallControlMargin * 3;
   _audioLoopButton.frame = CGRectMake(kCallControlMargin,
                                       audioLoopTop,
                                       _audioLoopButton.frame.size.width,
@@ -335,7 +335,7 @@ static CGFloat const kAppLabelHeight = 20;
                 didInputRoom:room
                   isLoopback:_loopbackSwitch.isOn
                  isAudioOnly:_audioOnlySwitch.isOn
-      shouldDelayAudioConfig:_audioConfigDelaySwitch.isOn];
+              useManualAudio:_useManualAudioSwitch.isOn];
 }
 
 @end

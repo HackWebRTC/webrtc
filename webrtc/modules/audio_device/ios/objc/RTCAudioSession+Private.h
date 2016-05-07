@@ -28,11 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(nonatomic, readonly) int webRTCSessionCount;
 
-/** The configuration of the audio session before configureWebRTCSession
- *  was first called.
- */
-@property(nonatomic, strong, nullable)
-    RTCAudioSessionConfiguration *savedConfiguration;
+/** Convenience BOOL that checks useManualAudio and isAudioEnebled. */
+@property(readonly) BOOL canPlayOrRecord;
 
 - (BOOL)checkLock:(NSError **)outError;
 
@@ -55,6 +52,22 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)endWebRTCSession:(NSError **)outError;
 
+/** Configure the audio session for WebRTC. This call will fail if the session
+ *  is already configured. On other failures, we will attempt to restore the
+ *  previously used audio session configuration.
+ *  |lockForConfiguration| must be called first.
+ *  Successful calls to configureWebRTCSession must be matched by calls to
+ *  |unconfigureWebRTCSession|.
+ */
+- (BOOL)configureWebRTCSession:(NSError **)outError;
+
+/** Unconfigures the session for WebRTC. This will attempt to restore the
+ *  audio session to the settings used before |configureWebRTCSession| was
+ *  called.
+ *  |lockForConfiguration| must be called first.
+ */
+- (BOOL)unconfigureWebRTCSession:(NSError **)outError;
+
 /** Returns a configuration error with the given description. */
 - (NSError *)configurationErrorWithDescription:(NSString *)description;
 
@@ -69,10 +82,9 @@ NS_ASSUME_NONNULL_BEGIN
     previousRoute:(AVAudioSessionRouteDescription *)previousRoute;
 - (void)notifyMediaServicesWereLost;
 - (void)notifyMediaServicesWereReset;
-- (void)notifyShouldConfigure;
-- (void)notifyShouldUnconfigure;
-- (void)notifyDidConfigure;
-- (void)notifyDidUnconfigure;
+- (void)notifyDidChangeCanPlayOrRecord:(BOOL)canPlayOrRecord;
+- (void)notifyDidStartPlayOrRecord;
+- (void)notifyDidStopPlayOrRecord;
 
 @end
 

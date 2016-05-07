@@ -16,12 +16,28 @@
 
 @implementation RTCAudioSession (Configuration)
 
-- (BOOL)isConfiguredForWebRTC {
-  return self.savedConfiguration != nil;
+- (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration
+                   error:(NSError **)outError {
+  return [self setConfiguration:configuration
+                         active:NO
+                shouldSetActive:NO
+                          error:outError];
 }
 
 - (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration
                   active:(BOOL)active
+                   error:(NSError **)outError {
+  return [self setConfiguration:configuration
+                         active:active
+                shouldSetActive:YES
+                          error:outError];
+}
+
+#pragma mark - Private
+
+- (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration
+                  active:(BOOL)active
+         shouldSetActive:(BOOL)shouldSetActive
                    error:(NSError **)outError {
   NSParameterAssert(configuration);
   if (outError) {
@@ -61,8 +77,22 @@
     }
   }
 
-  // self.sampleRate is accurate only if the audio session is active.
-  if (!self.isActive || self.sampleRate != configuration.sampleRate) {
+  // Sometimes category options don't stick after setting mode.
+  if (self.categoryOptions != configuration.categoryOptions) {
+    NSError *categoryError = nil;
+    if (![self setCategory:configuration.category
+               withOptions:configuration.categoryOptions
+                     error:&categoryError]) {
+      RTCLogError(@"Failed to set category options: %@",
+                  categoryError.localizedDescription);
+      error = categoryError;
+    } else {
+      RTCLog(@"Set category options to: %ld",
+             (long)configuration.categoryOptions);
+    }
+  }
+
+  if (self.preferredSampleRate != configuration.sampleRate) {
     NSError *sampleRateError = nil;
     if (![self setPreferredSampleRate:configuration.sampleRate
                                 error:&sampleRateError]) {
@@ -75,9 +105,7 @@
     }
   }
 
-  // self.IOBufferDuration is accurate only if the audio session is active.
-  if (!self.isActive ||
-      self.IOBufferDuration != configuration.ioBufferDuration) {
+  if (self.preferredIOBufferDuration != configuration.ioBufferDuration) {
     NSError *bufferDurationError = nil;
     if (![self setPreferredIOBufferDuration:configuration.ioBufferDuration
                                       error:&bufferDurationError]) {
@@ -90,11 +118,13 @@
     }
   }
 
-  NSError *activeError = nil;
-  if (![self setActive:active error:&activeError]) {
-    RTCLogError(@"Failed to setActive to %d: %@",
-                active, activeError.localizedDescription);
-    error = activeError;
+  if (shouldSetActive) {
+    NSError *activeError = nil;
+    if (![self setActive:active error:&activeError]) {
+      RTCLogError(@"Failed to setActive to %d: %@",
+                  active, activeError.localizedDescription);
+      error = activeError;
+    }
   }
 
   if (self.isActive &&
@@ -136,86 +166,6 @@
   }
 
   return error == nil;
-}
-
-- (BOOL)configureWebRTCSession:(NSError **)outError {
-  if (outError) {
-    *outError = nil;
-  }
-  if (![self checkLock:outError]) {
-    return NO;
-  }
-  RTCLog(@"Configuring audio session for WebRTC.");
-
-  if (self.isConfiguredForWebRTC) {
-    RTCLogError(@"Already configured.");
-    if (outError) {
-      *outError =
-          [self configurationErrorWithDescription:@"Already configured."];
-    }
-    return NO;
-  }
-
-  // Configure the AVAudioSession and activate it.
-  // Provide an error even if there isn't one so we can log it.
-  NSError *error = nil;
-  RTCAudioSessionConfiguration *currentConfig =
-      [RTCAudioSessionConfiguration currentConfiguration];
-  RTCAudioSessionConfiguration *webRTCConfig =
-      [RTCAudioSessionConfiguration webRTCConfiguration];
-  self.savedConfiguration = currentConfig;
-  if (![self setConfiguration:webRTCConfig active:YES error:&error]) {
-    RTCLogError(@"Failed to set WebRTC audio configuration: %@",
-                error.localizedDescription);
-    [self unconfigureWebRTCSession:nil];
-    if (outError) {
-      *outError = error;
-    }
-    return NO;
-  }
-
-  // Ensure that the device currently supports audio input.
-  // TODO(tkchin): Figure out if this is really necessary.
-  if (!self.inputAvailable) {
-    RTCLogError(@"No audio input path is available!");
-    [self unconfigureWebRTCSession:nil];
-    if (outError) {
-      *outError = [self configurationErrorWithDescription:@"No input path."];
-    }
-    return NO;
-  }
-
-  // Give delegates a chance to process the event. In particular, the audio
-  // devices listening to this event will initialize their audio units.
-  [self notifyDidConfigure];
-
-  return YES;
-}
-
-- (BOOL)unconfigureWebRTCSession:(NSError **)outError {
-  if (outError) {
-    *outError = nil;
-  }
-  if (![self checkLock:outError]) {
-    return NO;
-  }
-  RTCLog(@"Unconfiguring audio session for WebRTC.");
-
-  if (!self.isConfiguredForWebRTC) {
-    RTCLogError(@"Already unconfigured.");
-    if (outError) {
-      *outError =
-          [self configurationErrorWithDescription:@"Already unconfigured."];
-    }
-    return NO;
-  }
-
-  [self setConfiguration:self.savedConfiguration active:NO error:outError];
-  self.savedConfiguration = nil;
-
-  [self notifyDidUnconfigure];
-
-  return YES;
 }
 
 @end

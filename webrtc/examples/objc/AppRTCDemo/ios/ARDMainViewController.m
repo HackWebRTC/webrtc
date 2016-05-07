@@ -23,13 +23,14 @@
 
 @interface ARDMainViewController () <
     ARDMainViewDelegate,
+    ARDVideoCallViewControllerDelegate,
     RTCAudioSessionDelegate>
 @end
 
 @implementation ARDMainViewController {
   ARDMainView *_mainView;
   AVAudioPlayer *_audioPlayer;
-  BOOL _shouldDelayAudioConfig;
+  BOOL _useManualAudio;
 }
 
 - (void)loadView {
@@ -37,17 +38,26 @@
   _mainView.delegate = self;
   self.view = _mainView;
 
-  [self setupAudioSession];
+  RTCAudioSessionConfiguration *webRTCConfig =
+      [RTCAudioSessionConfiguration webRTCConfiguration];
+  webRTCConfig.categoryOptions = webRTCConfig.categoryOptions |
+      AVAudioSessionCategoryOptionDefaultToSpeaker;
+  [RTCAudioSessionConfiguration setWebRTCConfiguration:webRTCConfig];
+
+  RTCAudioSession *session = [RTCAudioSession sharedInstance];
+  [session addDelegate:self];
+
+  [self configureAudioSession];
   [self setupAudioPlayer];
 }
 
 #pragma mark - ARDMainViewDelegate
 
 - (void)mainView:(ARDMainView *)mainView
-              didInputRoom:(NSString *)room
-                isLoopback:(BOOL)isLoopback
-               isAudioOnly:(BOOL)isAudioOnly
-    shouldDelayAudioConfig:(BOOL)shouldDelayAudioConfig {
+      didInputRoom:(NSString *)room
+        isLoopback:(BOOL)isLoopback
+       isAudioOnly:(BOOL)isAudioOnly
+    useManualAudio:(BOOL)useManualAudio {
   if (!room.length) {
     [self showAlertWithMessage:@"Missing room name."];
     return;
@@ -77,15 +87,16 @@
     return;
   }
 
-  _shouldDelayAudioConfig = shouldDelayAudioConfig;
   RTCAudioSession *session = [RTCAudioSession sharedInstance];
-  session.shouldDelayAudioConfiguration = _shouldDelayAudioConfig;
+  session.useManualAudio = useManualAudio;
+  session.isAudioEnabled = NO;
 
   // Kick off the video call.
   ARDVideoCallViewController *videoCallViewController =
       [[ARDVideoCallViewController alloc] initForRoom:trimmedRoom
                                            isLoopback:isLoopback
-                                          isAudioOnly:isAudioOnly];
+                                          isAudioOnly:isAudioOnly
+                                             delegate:self];
   videoCallViewController.modalTransitionStyle =
       UIModalTransitionStyleCrossDissolve;
   [self presentViewController:videoCallViewController
@@ -102,10 +113,22 @@
   mainView.isAudioLoopPlaying = _audioPlayer.playing;
 }
 
+#pragma mark - ARDVideoCallViewControllerDelegate
+
+- (void)viewControllerDidFinish:(ARDVideoCallViewController *)viewController {
+  if (![viewController isBeingDismissed]) {
+    RTCLog(@"Dismissing VC");
+    [self dismissViewControllerAnimated:YES completion:^{
+      [self restartAudioPlayerIfNeeded];
+    }];
+  }
+  RTCAudioSession *session = [RTCAudioSession sharedInstance];
+  session.isAudioEnabled = NO;
+}
+
 #pragma mark - RTCAudioSessionDelegate
 
-- (void)audioSessionShouldConfigure:(RTCAudioSession *)session {
-  // Won't get called unless audio config is delayed.
+- (void)audioSessionDidStartPlayOrRecord:(RTCAudioSession *)session {
   // Stop playback on main queue and then configure WebRTC.
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeMain
                                block:^{
@@ -113,35 +136,23 @@
       RTCLog(@"Stopping audio loop due to WebRTC start.");
       [_audioPlayer stop];
     }
-    // TODO(tkchin): Shouldn't lock on main queue. Figure out better way to
-    // check audio loop state.
-    [session lockForConfiguration];
-    [session configureWebRTCSession:nil];
-    [session unlockForConfiguration];
+    RTCLog(@"Setting isAudioEnabled to YES.");
+    session.isAudioEnabled = YES;
   }];
 }
 
-- (void)audioSessionShouldUnconfigure:(RTCAudioSession *)session {
-  // Won't get called unless audio config is delayed.
-  [session lockForConfiguration];
-  [session unconfigureWebRTCSession:nil];
-  [session unlockForConfiguration];
-}
-
-- (void)audioSessionDidUnconfigure:(RTCAudioSession *)session {
+- (void)audioSessionDidStopPlayOrRecord:(RTCAudioSession *)session {
   // WebRTC is done with the audio session. Restart playback.
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeMain
                                block:^{
-    if (_mainView.isAudioLoopPlaying) {
-      RTCLog(@"Starting audio loop due to WebRTC end.");
-      [_audioPlayer play];
-    }
+    RTCLog(@"audioSessionDidStopPlayOrRecord");
+    [self restartAudioPlayerIfNeeded];
   }];
 }
 
 #pragma mark - Private
 
-- (void)setupAudioSession {
+- (void)configureAudioSession {
   RTCAudioSessionConfiguration *configuration =
       [[RTCAudioSessionConfiguration alloc] init];
   configuration.category = AVAudioSessionCategoryAmbient;
@@ -149,10 +160,17 @@
   configuration.mode = AVAudioSessionModeDefault;
 
   RTCAudioSession *session = [RTCAudioSession sharedInstance];
-  [session addDelegate:self];
   [session lockForConfiguration];
+  BOOL hasSucceeded = NO;
   NSError *error = nil;
-  if (![session setConfiguration:configuration active:YES error:&error]) {
+  if (session.isActive) {
+    hasSucceeded = [session setConfiguration:configuration error:&error];
+  } else {
+    hasSucceeded = [session setConfiguration:configuration
+                                      active:YES
+                                       error:&error];
+  }
+  if (!hasSucceeded) {
     RTCLogError(@"Error setting configuration: %@", error.localizedDescription);
   }
   [session unlockForConfiguration];
@@ -167,6 +185,14 @@
   _audioPlayer.numberOfLoops = -1;
   _audioPlayer.volume = 1.0;
   [_audioPlayer prepareToPlay];
+}
+
+- (void)restartAudioPlayerIfNeeded {
+  if (_mainView.isAudioLoopPlaying && !self.presentedViewController) {
+    RTCLog(@"Starting audio loop due to WebRTC end.");
+    [self configureAudioSession];
+    [_audioPlayer play];
+  }
 }
 
 - (void)showAlertWithMessage:(NSString*)message {

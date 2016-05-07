@@ -10,10 +10,20 @@
 
 #import <UIKit/UIKit.h>
 
+@class ARDVideoCallViewController;
+@protocol ARDVideoCallViewControllerDelegate <NSObject>
+
+- (void)viewControllerDidFinish:(ARDVideoCallViewController *)viewController;
+
+@end
+
 @interface ARDVideoCallViewController : UIViewController
+
+@property(nonatomic, weak) id<ARDVideoCallViewControllerDelegate> delegate;
 
 - (instancetype)initForRoom:(NSString *)room
                  isLoopback:(BOOL)isLoopback
-                isAudioOnly:(BOOL)isAudioOnly;
+                isAudioOnly:(BOOL)isAudioOnly
+                   delegate:(id<ARDVideoCallViewControllerDelegate>)delegate;
 
 @end

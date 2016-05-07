@@ -61,6 +61,13 @@ namespace webrtc {
 const UInt16 kFixedPlayoutDelayEstimate = 30;
 const UInt16 kFixedRecordDelayEstimate = 30;
 
+enum AudioDeviceMessageType : uint32_t {
+  kMessageTypeInterruptionBegin,
+  kMessageTypeInterruptionEnd,
+  kMessageTypeValidRouteChange,
+  kMessageTypeCanPlayOrRecordChange,
+};
+
 using ios::CheckAndLogError;
 
 #if !defined(NDEBUG)
@@ -85,15 +92,15 @@ static void LogDeviceInfo() {
 #endif  // !defined(NDEBUG)
 
 AudioDeviceIOS::AudioDeviceIOS()
-    : async_invoker_(new rtc::AsyncInvoker()),
-      audio_device_buffer_(nullptr),
+    : audio_device_buffer_(nullptr),
       audio_unit_(nullptr),
       recording_(0),
       playing_(0),
       initialized_(false),
       rec_is_initialized_(false),
       play_is_initialized_(false),
-      is_interrupted_(false) {
+      is_interrupted_(false),
+      has_configured_session_(false) {
   LOGI() << "ctor" << ios::GetCurrentThreadDescription();
   thread_ = rtc::Thread::Current();
   audio_session_observer_ =
@@ -191,6 +198,7 @@ int32_t AudioDeviceIOS::StartPlayout() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(play_is_initialized_);
   RTC_DCHECK(!playing_);
+  RTC_DCHECK(audio_unit_);
   if (fine_audio_buffer_) {
     fine_audio_buffer_->ResetPlayout();
   }
@@ -209,7 +217,11 @@ int32_t AudioDeviceIOS::StartPlayout() {
 int32_t AudioDeviceIOS::StopPlayout() {
   LOGI() << "StopPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!play_is_initialized_ || !playing_) {
+  if (!play_is_initialized_) {
+    return 0;
+  }
+  if (!playing_) {
+    play_is_initialized_ = false;
     return 0;
   }
   if (!recording_) {
@@ -225,6 +237,7 @@ int32_t AudioDeviceIOS::StartRecording() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(rec_is_initialized_);
   RTC_DCHECK(!recording_);
+  RTC_DCHECK(audio_unit_);
   if (fine_audio_buffer_) {
     fine_audio_buffer_->ResetRecord();
   }
@@ -243,7 +256,11 @@ int32_t AudioDeviceIOS::StartRecording() {
 int32_t AudioDeviceIOS::StopRecording() {
   LOGI() << "StopRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!rec_is_initialized_ || !recording_) {
+  if (!rec_is_initialized_) {
+    return 0;
+  }
+  if (!recording_) {
+    rec_is_initialized_ = false;
     return 0;
   }
   if (!playing_) {
@@ -318,51 +335,24 @@ int AudioDeviceIOS::GetRecordAudioParameters(AudioParameters* params) const {
 }
 
 void AudioDeviceIOS::OnInterruptionBegin() {
-  RTC_DCHECK(async_invoker_);
   RTC_DCHECK(thread_);
-  if (thread_->IsCurrent()) {
-    HandleInterruptionBegin();
-    return;
-  }
-  async_invoker_->AsyncInvoke<void>(
-      thread_,
-      rtc::Bind(&webrtc::AudioDeviceIOS::HandleInterruptionBegin, this));
+  thread_->Post(this, kMessageTypeInterruptionBegin);
 }
 
 void AudioDeviceIOS::OnInterruptionEnd() {
-  RTC_DCHECK(async_invoker_);
   RTC_DCHECK(thread_);
-  if (thread_->IsCurrent()) {
-    HandleInterruptionEnd();
-    return;
-  }
-  async_invoker_->AsyncInvoke<void>(
-      thread_,
-      rtc::Bind(&webrtc::AudioDeviceIOS::HandleInterruptionEnd, this));
+  thread_->Post(this, kMessageTypeInterruptionEnd);
 }
 
 void AudioDeviceIOS::OnValidRouteChange() {
-  RTC_DCHECK(async_invoker_);
   RTC_DCHECK(thread_);
-  if (thread_->IsCurrent()) {
-    HandleValidRouteChange();
-    return;
-  }
-  async_invoker_->AsyncInvoke<void>(
-      thread_,
-      rtc::Bind(&webrtc::AudioDeviceIOS::HandleValidRouteChange, this));
+  thread_->Post(this, kMessageTypeValidRouteChange);
 }
 
-void AudioDeviceIOS::OnConfiguredForWebRTC() {
-  RTC_DCHECK(async_invoker_);
+void AudioDeviceIOS::OnCanPlayOrRecordChange(bool can_play_or_record) {
   RTC_DCHECK(thread_);
-  if (thread_->IsCurrent()) {
-    HandleValidRouteChange();
-    return;
-  }
-  async_invoker_->AsyncInvoke<void>(
-      thread_,
-      rtc::Bind(&webrtc::AudioDeviceIOS::HandleConfiguredForWebRTC, this));
+  thread_->Post(this, kMessageTypeCanPlayOrRecordChange,
+                new rtc::TypedMessageData<bool>(can_play_or_record));
 }
 
 OSStatus AudioDeviceIOS::OnDeliverRecordedData(
@@ -385,6 +375,9 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(
     RTCLogWarning(@"Expected %u frames but got %u",
                   static_cast<unsigned int>(frames_per_buffer),
                   static_cast<unsigned int>(num_frames));
+
+    RTCAudioSession *session = [RTCAudioSession sharedInstance];
+    RTCLogWarning(@"Session:\n %@", session);
     return result;
   }
 
@@ -447,12 +440,36 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
   return noErr;
 }
 
+void AudioDeviceIOS::OnMessage(rtc::Message *msg) {
+  switch (msg->message_id) {
+    case kMessageTypeInterruptionBegin:
+      HandleInterruptionBegin();
+      break;
+    case kMessageTypeInterruptionEnd:
+      HandleInterruptionEnd();
+      break;
+    case kMessageTypeValidRouteChange:
+      HandleValidRouteChange();
+      break;
+    case kMessageTypeCanPlayOrRecordChange: {
+      rtc::TypedMessageData<bool>* data =
+          static_cast<rtc::TypedMessageData<bool>*>(msg->pdata);
+      HandleCanPlayOrRecordChange(data->data());
+      delete data;
+      break;
+    }
+  }
+}
+
 void AudioDeviceIOS::HandleInterruptionBegin() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
-  RTCLog(@"Stopping the audio unit due to interruption begin.");
-  if (!audio_unit_->Stop()) {
-    RTCLogError(@"Failed to stop the audio unit.");
+  if (audio_unit_ &&
+      audio_unit_->GetState() == VoiceProcessingAudioUnit::kStarted) {
+    RTCLog(@"Stopping the audio unit due to interruption begin.");
+    if (!audio_unit_->Stop()) {
+      RTCLogError(@"Failed to stop the audio unit for interruption begin.");
+    }
   }
   is_interrupted_ = true;
 }
@@ -460,66 +477,95 @@ void AudioDeviceIOS::HandleInterruptionBegin() {
 void AudioDeviceIOS::HandleInterruptionEnd() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
-  RTCLog(@"Starting the audio unit due to interruption end.");
-  if (!audio_unit_->Start()) {
-    RTCLogError(@"Failed to start the audio unit.");
-  }
   is_interrupted_ = false;
+  RTCLog(@"Interruption ended. Updating audio unit state.");
+  UpdateAudioUnit([RTCAudioSession sharedInstance].canPlayOrRecord);
 }
 
 void AudioDeviceIOS::HandleValidRouteChange() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
-  // Don't do anything if we're interrupted.
-  if (is_interrupted_) {
-    return;
-  }
-
-  // Only restart audio for a valid route change if the session sample rate
-  // has changed.
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
-  const double current_sample_rate = playout_parameters_.sample_rate();
-  const double session_sample_rate = session.sampleRate;
-  if (current_sample_rate != session_sample_rate) {
-    RTCLog(@"Route changed caused sample rate to change from %f to %f. "
-           "Restarting audio unit.", current_sample_rate, session_sample_rate);
-    if (!RestartAudioUnit(session_sample_rate)) {
-      RTCLogError(@"Audio restart failed.");
-    }
-  }
+  HandleSampleRateChange(session.sampleRate);
 }
 
-void AudioDeviceIOS::HandleConfiguredForWebRTC() {
+void AudioDeviceIOS::HandleCanPlayOrRecordChange(bool can_play_or_record) {
+  RTCLog(@"Handling CanPlayOrRecord change to: %d", can_play_or_record);
+  UpdateAudioUnit(can_play_or_record);
+}
+
+void AudioDeviceIOS::HandleSampleRateChange(float sample_rate) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTCLog(@"Handling sample rate change to %f.", sample_rate);
 
-  // If we're not initialized we don't need to do anything. Audio unit will
-  // be initialized on initialization.
-  if (!rec_is_initialized_ && !play_is_initialized_)
+  // Don't do anything if we're interrupted.
+  if (is_interrupted_) {
+    RTCLog(@"Ignoring sample rate change to %f due to interruption.",
+           sample_rate);
     return;
+  }
 
-  // If we're initialized, we must have an audio unit.
-  RTC_DCHECK(audio_unit_);
+  // If we don't have an audio unit yet, or the audio unit is uninitialized,
+  // there is no work to do.
+  if (!audio_unit_ ||
+      audio_unit_->GetState() < VoiceProcessingAudioUnit::kInitialized) {
+    return;
+  }
 
-  // Use configured audio session's settings to set up audio device buffer.
-  // TODO(tkchin): Use RTCAudioSessionConfiguration to pick up settings and
-  // pass it along.
+  // The audio unit is already initialized or started.
+  // Check to see if the sample rate or buffer size has changed.
+  RTCAudioSession* session = [RTCAudioSession sharedInstance];
+  const double session_sample_rate = session.sampleRate;
+  const NSTimeInterval session_buffer_duration = session.IOBufferDuration;
+  const size_t session_frames_per_buffer =
+      static_cast<size_t>(session_sample_rate * session_buffer_duration + .5);
+  const double current_sample_rate = playout_parameters_.sample_rate();
+  const size_t current_frames_per_buffer =
+      playout_parameters_.frames_per_buffer();
+  RTCLog(@"Handling playout sample rate change to: %f\n"
+          "  Session sample rate: %f frames_per_buffer: %lu\n"
+          "  ADM sample rate: %f frames_per_buffer: %lu",
+         sample_rate,
+         session_sample_rate, (unsigned long)session_frames_per_buffer,
+         current_sample_rate, (unsigned long)current_frames_per_buffer);;
+
+  // Sample rate and buffer size are the same, no work to do.
+  if (abs(current_sample_rate - session_sample_rate) <= DBL_EPSILON &&
+      current_frames_per_buffer == session_frames_per_buffer) {
+    return;
+  }
+
+  // We need to adjust our format and buffer sizes.
+  // The stream format is about to be changed and it requires that we first
+  // stop and uninitialize the audio unit to deallocate its resources.
+  RTCLog(@"Stopping and uninitializing audio unit to adjust buffers.");
+  bool restart_audio_unit = false;
+  if (audio_unit_->GetState() == VoiceProcessingAudioUnit::kStarted) {
+    audio_unit_->Stop();
+    restart_audio_unit = true;
+  }
+  if (audio_unit_->GetState() == VoiceProcessingAudioUnit::kInitialized) {
+    audio_unit_->Uninitialize();
+  }
+
+  // Allocate new buffers given the new stream format.
   SetupAudioBuffersForActiveAudioSession();
 
-  // Initialize the audio unit. This will affect any existing audio playback.
-  if (!audio_unit_->Initialize(playout_parameters_.sample_rate())) {
-    RTCLogError(@"Failed to initialize audio unit after configuration.");
+  // Initialize the audio unit again with the new sample rate.
+  RTC_DCHECK_EQ(playout_parameters_.sample_rate(), session_sample_rate);
+  if (!audio_unit_->Initialize(session_sample_rate)) {
+    RTCLogError(@"Failed to initialize the audio unit with sample rate: %f",
+                session_sample_rate);
     return;
   }
 
-  // If we haven't started playing or recording there's nothing more to do.
-  if (!playing_ && !recording_)
-    return;
-
-  // We are in a play or record state, start the audio unit.
-  if (!audio_unit_->Start()) {
-    RTCLogError(@"Failed to start audio unit after configuration.");
+  // Restart the audio unit if it was already running.
+  if (restart_audio_unit && !audio_unit_->Start()) {
+    RTCLogError(@"Failed to start audio unit with sample rate: %f",
+                session_sample_rate);
     return;
   }
+  RTCLog(@"Successfully handled sample rate change.");
 }
 
 void AudioDeviceIOS::UpdateAudioDeviceBuffer() {
@@ -597,6 +643,7 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   // at each input callback when calling AudioUnitRender().
   const int data_byte_size = record_parameters_.GetBytesPerBuffer();
   record_audio_buffer_.reset(new SInt8[data_byte_size]);
+  memset(record_audio_buffer_.get(), 0, data_byte_size);
   audio_record_buffer_list_.mNumberBuffers = 1;
   AudioBuffer* audio_buffer = &audio_record_buffer_list_.mBuffers[0];
   audio_buffer->mNumberChannels = record_parameters_.channels();
@@ -616,46 +663,117 @@ bool AudioDeviceIOS::CreateAudioUnit() {
   return true;
 }
 
-bool AudioDeviceIOS::RestartAudioUnit(float sample_rate) {
-  RTCLog(@"Restarting audio unit with new sample rate: %f", sample_rate);
+void AudioDeviceIOS::UpdateAudioUnit(bool can_play_or_record) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTCLog(@"Updating audio unit state. CanPlayOrRecord=%d IsInterrupted=%d",
+         can_play_or_record, is_interrupted_);
 
-  // Stop the active audio unit.
-  if (!audio_unit_->Stop()) {
-    RTCLogError(@"Failed to stop the audio unit.");
-    return false;
+  if (is_interrupted_) {
+    RTCLog(@"Ignoring audio unit update due to interruption.");
+    return;
   }
 
-  // The stream format is about to be changed and it requires that we first
-  // uninitialize it to deallocate its resources.
-  if (!audio_unit_->Uninitialize()) {
-    RTCLogError(@"Failed to uninitialize the audio unit.");
-    return false;
+  // If we're not initialized we don't need to do anything. Audio unit will
+  // be initialized on initialization.
+  if (!rec_is_initialized_ && !play_is_initialized_)
+    return;
+
+  // If we're initialized, we must have an audio unit.
+  RTC_DCHECK(audio_unit_);
+
+  bool should_initialize_audio_unit = false;
+  bool should_uninitialize_audio_unit = false;
+  bool should_start_audio_unit = false;
+  bool should_stop_audio_unit = false;
+
+  switch (audio_unit_->GetState()) {
+    case VoiceProcessingAudioUnit::kInitRequired:
+      RTC_NOTREACHED();
+      break;
+    case VoiceProcessingAudioUnit::kUninitialized:
+      should_initialize_audio_unit = can_play_or_record;
+      should_start_audio_unit = should_initialize_audio_unit &&
+          (playing_ || recording_);
+      break;
+    case VoiceProcessingAudioUnit::kInitialized:
+      should_start_audio_unit =
+          can_play_or_record && (playing_ || recording_);
+      should_uninitialize_audio_unit = !can_play_or_record;
+      break;
+    case VoiceProcessingAudioUnit::kStarted:
+      RTC_DCHECK(playing_ || recording_);
+      should_stop_audio_unit = !can_play_or_record;
+      should_uninitialize_audio_unit = should_stop_audio_unit;
+      break;
   }
 
-  // Allocate new buffers given the new stream format.
-  SetupAudioBuffersForActiveAudioSession();
-
-  // Initialize the audio unit again with the new sample rate.
-  RTC_DCHECK_EQ(playout_parameters_.sample_rate(), sample_rate);
-  if (!audio_unit_->Initialize(sample_rate)) {
-    RTCLogError(@"Failed to initialize the audio unit with sample rate: %f",
-                sample_rate);
-    return false;
+  if (should_initialize_audio_unit) {
+    RTCLog(@"Initializing audio unit for UpdateAudioUnit");
+    ConfigureAudioSession();
+    SetupAudioBuffersForActiveAudioSession();
+    if (!audio_unit_->Initialize(playout_parameters_.sample_rate())) {
+      RTCLogError(@"Failed to initialize audio unit.");
+      return;
+    }
   }
 
-  // Restart the audio unit.
-  if (!audio_unit_->Start()) {
-    RTCLogError(@"Failed to start audio unit.");
-    return false;
+  if (should_start_audio_unit) {
+    RTCLog(@"Starting audio unit for UpdateAudioUnit");
+    if (!audio_unit_->Start()) {
+      RTCLogError(@"Failed to start audio unit.");
+      return;
+    }
   }
-  RTCLog(@"Successfully restarted audio unit.");
 
-  return true;
+  if (should_stop_audio_unit) {
+    RTCLog(@"Stopping audio unit for UpdateAudioUnit");
+    if (!audio_unit_->Stop()) {
+      RTCLogError(@"Failed to stop audio unit.");
+      return;
+    }
+  }
+
+  if (should_uninitialize_audio_unit) {
+    RTCLog(@"Uninitializing audio unit for UpdateAudioUnit");
+    audio_unit_->Uninitialize();
+    UnconfigureAudioSession();
+  }
+}
+
+void AudioDeviceIOS::ConfigureAudioSession() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTCLog(@"Configuring audio session.");
+  if (has_configured_session_) {
+    RTCLogWarning(@"Audio session already configured.");
+    return;
+  }
+  RTCAudioSession* session = [RTCAudioSession sharedInstance];
+  [session lockForConfiguration];
+  [session configureWebRTCSession:nil];
+  [session unlockForConfiguration];
+  has_configured_session_ = true;
+  RTCLog(@"Configured audio session.");
+}
+
+void AudioDeviceIOS::UnconfigureAudioSession() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTCLog(@"Unconfiguring audio session.");
+  if (!has_configured_session_) {
+    RTCLogWarning(@"Audio session already unconfigured.");
+    return;
+  }
+  RTCAudioSession* session = [RTCAudioSession sharedInstance];
+  [session lockForConfiguration];
+  [session unconfigureWebRTCSession:nil];
+  [session unlockForConfiguration];
+  has_configured_session_ = false;
+  RTCLog(@"Unconfigured audio session.");
 }
 
 bool AudioDeviceIOS::InitPlayOrRecord() {
   LOGI() << "InitPlayOrRecord";
 
+  // There should be no audio unit at this point.
   if (!CreateAudioUnit()) {
     return false;
   }
@@ -674,14 +792,11 @@ bool AudioDeviceIOS::InitPlayOrRecord() {
     return false;
   }
 
-  // If we are already configured properly, we can initialize the audio unit.
-  if (session.isConfiguredForWebRTC) {
-    [session unlockForConfiguration];
+  // If we are ready to play or record, initialize the audio unit.
+  if (session.canPlayOrRecord) {
+    ConfigureAudioSession();
     SetupAudioBuffersForActiveAudioSession();
-    // Audio session has been marked ready for WebRTC so we can initialize the
-    // audio unit now.
     audio_unit_->Initialize(playout_parameters_.sample_rate());
-    return true;
   }
 
   // Release the lock.
@@ -694,9 +809,7 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
   LOGI() << "ShutdownPlayOrRecord";
 
   // Close and delete the voice-processing I/O unit.
-  if (audio_unit_) {
-    audio_unit_.reset();
-  }
+  audio_unit_.reset();
 
   // Remove audio session notification observers.
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
@@ -705,6 +818,7 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
   // All I/O should be stopped or paused prior to deactivating the audio
   // session, hence we deactivate as last action.
   [session lockForConfiguration];
+  UnconfigureAudioSession();
   [session endWebRTCSession:nil];
   [session unlockForConfiguration];
 }

@@ -14,7 +14,6 @@
 #include <memory>
 
 #include "WebRTC/RTCMacros.h"
-#include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
@@ -42,7 +41,8 @@ class FineAudioBuffer;
 // same thread.
 class AudioDeviceIOS : public AudioDeviceGeneric,
                        public AudioSessionObserver,
-                       public VoiceProcessingAudioUnitObserver {
+                       public VoiceProcessingAudioUnitObserver,
+                       public rtc::MessageHandler {
  public:
   AudioDeviceIOS();
   ~AudioDeviceIOS();
@@ -162,7 +162,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   void OnInterruptionBegin() override;
   void OnInterruptionEnd() override;
   void OnValidRouteChange() override;
-  void OnConfiguredForWebRTC() override;
+  void OnCanPlayOrRecordChange(bool can_play_or_record) override;
 
   // VoiceProcessingAudioUnitObserver methods.
   OSStatus OnDeliverRecordedData(AudioUnitRenderActionFlags* flags,
@@ -176,12 +176,16 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
                             UInt32 num_frames,
                             AudioBufferList* io_data) override;
 
+  // Handles messages from posts.
+  void OnMessage(rtc::Message *msg) override;
+
  private:
   // Called by the relevant AudioSessionObserver methods on |thread_|.
   void HandleInterruptionBegin();
   void HandleInterruptionEnd();
   void HandleValidRouteChange();
-  void HandleConfiguredForWebRTC();
+  void HandleCanPlayOrRecordChange(bool can_play_or_record);
+  void HandleSampleRateChange(float sample_rate);
 
   // Uses current |playout_parameters_| and |record_parameters_| to inform the
   // audio device buffer (ADB) about our internal audio parameters.
@@ -197,9 +201,13 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   // Creates the audio unit.
   bool CreateAudioUnit();
 
-  // Restarts active audio streams using a new sample rate. Required when e.g.
-  // a BT headset is enabled or disabled.
-  bool RestartAudioUnit(float sample_rate);
+  // Updates the audio unit state based on current state.
+  void UpdateAudioUnit(bool can_play_or_record);
+
+  // Configures the audio session for WebRTC.
+  void ConfigureAudioSession();
+  // Unconfigures the audio session.
+  void UnconfigureAudioSession();
 
   // Activates our audio session, creates and initializes the voice-processing
   // audio unit and verifies that we got the preferred native audio parameters.
@@ -213,8 +221,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   rtc::ThreadChecker thread_checker_;
   // Thread that this object is created on.
   rtc::Thread* thread_;
-  // Invoker used to execute methods on thread_.
-  std::unique_ptr<rtc::AsyncInvoker> async_invoker_;
 
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
   // AudioDeviceModuleImpl class and called by AudioDeviceModule::Create().
@@ -284,6 +290,9 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   // Audio interruption observer instance.
   RTCAudioSessionDelegateAdapter* audio_session_observer_;
+
+  // Set to true if we've activated the audio session.
+  bool has_configured_session_;
 };
 
 }  // namespace webrtc
