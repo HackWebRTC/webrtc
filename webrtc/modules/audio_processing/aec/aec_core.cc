@@ -329,7 +329,9 @@ static void OverdriveAndSuppress(float overdrive_scaling,
   }
 }
 
-static int PartitionDelay(const AecCore* aec) {
+static int PartitionDelay(int num_partitions,
+                          float h_fft_buf[2]
+                                         [kExtendedNumPartitions * PART_LEN1]) {
   // Measures the energy in each filter partition and returns the partition with
   // highest energy.
   // TODO(bjornv): Spread computational cost by computing one partition per
@@ -338,13 +340,13 @@ static int PartitionDelay(const AecCore* aec) {
   int i;
   int delay = 0;
 
-  for (i = 0; i < aec->num_partitions; i++) {
+  for (i = 0; i < num_partitions; i++) {
     int j;
     int pos = i * PART_LEN1;
     float wfEn = 0;
     for (j = 0; j < PART_LEN1; j++) {
-      wfEn += aec->wfBuf[0][pos + j] * aec->wfBuf[0][pos + j] +
-              aec->wfBuf[1][pos + j] * aec->wfBuf[1][pos + j];
+      wfEn += h_fft_buf[0][pos + j] * h_fft_buf[0][pos + j] +
+              h_fft_buf[1][pos + j] * h_fft_buf[1][pos + j];
     }
 
     if (wfEn > wfEnMax) {
@@ -1053,7 +1055,7 @@ static void EchoSuppression(AecCore* aec,
   aec->delayEstCtr++;
   if (aec->delayEstCtr == delayEstInterval) {
     aec->delayEstCtr = 0;
-    aec->delayIdx = WebRtcAec_PartitionDelay(aec);
+    aec->delayIdx = WebRtcAec_PartitionDelay(aec->num_partitions, aec->wfBuf);
   }
 
   // Use delayed far.

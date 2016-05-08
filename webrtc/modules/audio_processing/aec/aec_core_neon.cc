@@ -448,7 +448,9 @@ static void OverdriveAndSuppressNEON(float overdrive_scaling,
   }
 }
 
-static int PartitionDelayNEON(const AecCore* aec) {
+static int PartitionDelayNEON(
+    int num_partitions,
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]) {
   // Measures the energy in each filter partition and returns the partition with
   // highest energy.
   // TODO(bjornv): Spread computational cost by computing one partition per
@@ -457,15 +459,15 @@ static int PartitionDelayNEON(const AecCore* aec) {
   int i;
   int delay = 0;
 
-  for (i = 0; i < aec->num_partitions; i++) {
+  for (i = 0; i < num_partitions; i++) {
     int j;
     int pos = i * PART_LEN1;
     float wfEn = 0;
     float32x4_t vec_wfEn = vdupq_n_f32(0.0f);
     // vectorized code (four at once)
     for (j = 0; j + 3 < PART_LEN1; j += 4) {
-      const float32x4_t vec_wfBuf0 = vld1q_f32(&aec->wfBuf[0][pos + j]);
-      const float32x4_t vec_wfBuf1 = vld1q_f32(&aec->wfBuf[1][pos + j]);
+      const float32x4_t vec_wfBuf0 = vld1q_f32(&h_fft_buf[0][pos + j]);
+      const float32x4_t vec_wfBuf1 = vld1q_f32(&h_fft_buf[1][pos + j]);
       vec_wfEn = vmlaq_f32(vec_wfEn, vec_wfBuf0, vec_wfBuf0);
       vec_wfEn = vmlaq_f32(vec_wfEn, vec_wfBuf1, vec_wfBuf1);
     }
@@ -481,8 +483,8 @@ static int PartitionDelayNEON(const AecCore* aec) {
 
     // scalar code for the remaining items.
     for (; j < PART_LEN1; j++) {
-      wfEn += aec->wfBuf[0][pos + j] * aec->wfBuf[0][pos + j] +
-              aec->wfBuf[1][pos + j] * aec->wfBuf[1][pos + j];
+      wfEn += h_fft_buf[0][pos + j] * h_fft_buf[0][pos + j] +
+              h_fft_buf[1][pos + j] * h_fft_buf[1][pos + j];
     }
 
     if (wfEn > wfEnMax) {

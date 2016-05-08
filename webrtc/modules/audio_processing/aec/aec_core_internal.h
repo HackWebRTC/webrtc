@@ -234,7 +234,9 @@ typedef void (*WebRtcAecSubBandCoherence)(int mult,
                                           int* extreme_filter_divergence);
 extern WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
 
-typedef int (*WebRtcAecPartitionDelay)(const AecCore* aec);
+typedef int (*WebRtcAecPartitionDelay)(
+    int num_partitions,
+    float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]);
 extern WebRtcAecPartitionDelay WebRtcAec_PartitionDelay;
 
 typedef void (*WebRtcAecStoreAsComplex)(const float* data,
