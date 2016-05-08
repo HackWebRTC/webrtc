@@ -370,7 +370,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, false), false);
   }
 
-  //@SmallTest
+  @SmallTest
   public void testLoopbackVp9() throws InterruptedException {
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP9, false), false);
   }
