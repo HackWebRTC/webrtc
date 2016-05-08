@@ -221,18 +221,20 @@ typedef void (*WebRtcAecOverdriveAndSuppress)(float overdrive_scaling,
                                               float efw[2][PART_LEN1]);
 extern WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
 
-typedef void (*WebRtcAecSubBandCoherence)(int mult,
-                                          bool extended_filter_enabled,
-                                          float efw[2][PART_LEN1],
-                                          float dfw[2][PART_LEN1],
-                                          float xfw[2][PART_LEN1],
-                                          float* fft,
+typedef void (*WebRtcAecComputeCoherence)(const CoherenceState* coherence_state,
                                           float* cohde,
-                                          float* cohxd,
-                                          CoherenceState* coherence_state,
-                                          short* filter_divergence_state,
-                                          int* extreme_filter_divergence);
-extern WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
+                                          float* cohxd);
+extern WebRtcAecComputeCoherence WebRtcAec_ComputeCoherence;
+
+typedef void (*WebRtcAecUpdateCoherenceSpectra)(int mult,
+                                                bool extended_filter_enabled,
+                                                float efw[2][PART_LEN1],
+                                                float dfw[2][PART_LEN1],
+                                                float xfw[2][PART_LEN1],
+                                                CoherenceState* coherence_state,
+                                                short* filter_divergence_state,
+                                                int* extreme_filter_divergence);
+extern WebRtcAecUpdateCoherenceSpectra WebRtcAec_UpdateCoherenceSpectra;
 
 typedef int (*WebRtcAecPartitionDelay)(
     int num_partitions,

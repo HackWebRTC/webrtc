@@ -132,7 +132,8 @@ WebRtcAecFilterFar WebRtcAec_FilterFar;
 WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
 WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
 WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
-WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
+WebRtcAecComputeCoherence WebRtcAec_ComputeCoherence;
+WebRtcAecUpdateCoherenceSpectra WebRtcAec_UpdateCoherenceSpectra;
 WebRtcAecStoreAsComplex WebRtcAec_StoreAsComplex;
 WebRtcAecPartitionDelay WebRtcAec_PartitionDelay;
 WebRtcAecWindowData WebRtcAec_WindowData;
@@ -396,7 +397,7 @@ static void UpdateLogRatioMetric(Stats* metric, float numerator,
 // Threshold to protect against the ill-effects of a zero far-end.
 const float WebRtcAec_kMinFarendPSD = 15;
 
-// Updates the following smoothed  Power Spectral Densities (PSD):
+// Updates the following smoothed Power Spectral Densities (PSD):
 //  - sd  : near-end
 //  - se  : residual echo
 //  - sx  : far-end
@@ -405,14 +406,14 @@ const float WebRtcAec_kMinFarendPSD = 15;
 //
 // In addition to updating the PSDs, also the filter diverge state is
 // determined.
-static void SmoothedPSD(int mult,
-                        bool extended_filter_enabled,
-                        float efw[2][PART_LEN1],
-                        float dfw[2][PART_LEN1],
-                        float xfw[2][PART_LEN1],
-                        CoherenceState* coherence_state,
-                        short* filter_divergence_state,
-                        int* extreme_filter_divergence) {
+static void UpdateCoherenceSpectra(int mult,
+                                   bool extended_filter_enabled,
+                                   float efw[2][PART_LEN1],
+                                   float dfw[2][PART_LEN1],
+                                   float xfw[2][PART_LEN1],
+                                   CoherenceState* coherence_state,
+                                   short* filter_divergence_state,
+                                   int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
   const float* ptrGCoh =
       extended_filter_enabled
@@ -489,24 +490,11 @@ __inline static void StoreAsComplex(const float* data,
   data_complex[1][PART_LEN] = 0;
 }
 
-static void SubbandCoherence(int mult,
-                             bool extended_filter_enabled,
-                             float efw[2][PART_LEN1],
-                             float dfw[2][PART_LEN1],
-                             float xfw[2][PART_LEN1],
-                             float* fft,
+static void ComputeCoherence(const CoherenceState* coherence_state,
                              float* cohde,
-                             float* cohxd,
-                             CoherenceState* coherence_state,
-                             short* filter_divergence_state,
-                             int* extreme_filter_divergence) {
-  int i;
-
-  SmoothedPSD(mult, extended_filter_enabled, efw, dfw, xfw, coherence_state,
-              filter_divergence_state, extreme_filter_divergence);
-
+                             float* cohxd) {
   // Subband coherence
-  for (i = 0; i < PART_LEN1; i++) {
+  for (int i = 0; i < PART_LEN1; i++) {
     cohde[i] = (coherence_state->sde[i][0] * coherence_state->sde[i][0] +
                 coherence_state->sde[i][1] * coherence_state->sde[i][1]) /
                (coherence_state->sd[i] * coherence_state->se[i] + 1e-10f);
@@ -1062,10 +1050,12 @@ static void EchoSuppression(AecCore* aec,
   memcpy(xfw, aec->xfwBuf + aec->delayIdx * PART_LEN1,
          sizeof(xfw[0][0]) * 2 * PART_LEN1);
 
-  WebRtcAec_SubbandCoherence(aec->mult, aec->extended_filter_enabled == 1, efw,
-                             dfw, xfw, fft, cohde, cohxd, &aec->coherence_state,
-                             &aec->divergeState,
-                             &aec->extreme_filter_divergence);
+  WebRtcAec_UpdateCoherenceSpectra(aec->mult, aec->extended_filter_enabled == 1,
+                                   efw, dfw, xfw, &aec->coherence_state,
+                                   &aec->divergeState,
+                                   &aec->extreme_filter_divergence);
+
+  WebRtcAec_ComputeCoherence(&aec->coherence_state, cohde, cohxd);
 
   // Select the microphone signal as output if the filter is deemed to have
   // diverged.
@@ -1488,7 +1478,8 @@ AecCore* WebRtcAec_CreateAec(int instance_count) {
   WebRtcAec_ScaleErrorSignal = ScaleErrorSignal;
   WebRtcAec_FilterAdaptation = FilterAdaptation;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppress;
-  WebRtcAec_SubbandCoherence = SubbandCoherence;
+  WebRtcAec_ComputeCoherence = ComputeCoherence;
+  WebRtcAec_UpdateCoherenceSpectra = UpdateCoherenceSpectra;
   WebRtcAec_StoreAsComplex = StoreAsComplex;
   WebRtcAec_PartitionDelay = PartitionDelay;
   WebRtcAec_WindowData = WindowData;

@@ -504,14 +504,14 @@ static int PartitionDelayNEON(
 //
 // In addition to updating the PSDs, also the filter diverge state is determined
 // upon actions are taken.
-static void SmoothedPSD(int mult,
-                        bool extended_filter_enabled,
-                        float efw[2][PART_LEN1],
-                        float dfw[2][PART_LEN1],
-                        float xfw[2][PART_LEN1],
-                        CoherenceState* coherence_state,
-                        short* filter_divergence_state,
-                        int* extreme_filter_divergence) {
+static void UpdateCoherenceSpectraNEON(int mult,
+                                       bool extended_filter_enabled,
+                                       float efw[2][PART_LEN1],
+                                       float dfw[2][PART_LEN1],
+                                       float xfw[2][PART_LEN1],
+                                       CoherenceState* coherence_state,
+                                       short* filter_divergence_state,
+                                       int* extreme_filter_divergence) {
   // Power estimate smoothing coefficients.
   const float* ptrGCoh =
       extended_filter_enabled
@@ -679,21 +679,10 @@ static void StoreAsComplexNEON(const float* data,
   data_complex[0][PART_LEN] = data[1];
 }
 
-static void SubbandCoherenceNEON(int mult,
-                                 bool extended_filter_enabled,
-                                 float efw[2][PART_LEN1],
-                                 float dfw[2][PART_LEN1],
-                                 float xfw[2][PART_LEN1],
-                                 float* fft,
+static void ComputeCoherenceNEON(const CoherenceState* coherence_state,
                                  float* cohde,
-                                 float* cohxd,
-                                 CoherenceState* coherence_state,
-                                 short* filter_divergence_state,
-                                 int* extreme_filter_divergence) {
+                                 float* cohxd) {
   int i;
-
-  SmoothedPSD(mult, extended_filter_enabled, efw, dfw, xfw, coherence_state,
-              filter_divergence_state, extreme_filter_divergence);
 
   {
     const float32x4_t vec_1eminus10 = vdupq_n_f32(1e-10f);
@@ -734,7 +723,8 @@ void WebRtcAec_InitAec_neon(void) {
   WebRtcAec_ScaleErrorSignal = ScaleErrorSignalNEON;
   WebRtcAec_FilterAdaptation = FilterAdaptationNEON;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressNEON;
-  WebRtcAec_SubbandCoherence = SubbandCoherenceNEON;
+  WebRtcAec_ComputeCoherence = ComputeCoherenceNEON;
+  WebRtcAec_UpdateCoherenceSpectra = UpdateCoherenceSpectraNEON;
   WebRtcAec_StoreAsComplex = StoreAsComplexNEON;
   WebRtcAec_PartitionDelay = PartitionDelayNEON;
   WebRtcAec_WindowData = WindowDataNEON;
