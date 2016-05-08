@@ -131,7 +131,8 @@ enum { kPrefBandSize = 24 };
 WebRtcAecFilterFar WebRtcAec_FilterFar;
 WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
 WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
-WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
+WebRtcAecOverdrive WebRtcAec_Overdrive;
+WebRtcAecSuppress WebRtcAec_Suppress;
 WebRtcAecComputeCoherence WebRtcAec_ComputeCoherence;
 WebRtcAecUpdateCoherenceSpectra WebRtcAec_UpdateCoherenceSpectra;
 WebRtcAecStoreAsComplex WebRtcAec_StoreAsComplex;
@@ -307,19 +308,21 @@ static void FilterAdaptation(
   }
 }
 
-static void OverdriveAndSuppress(float overdrive_scaling,
-                                 float hNl[PART_LEN1],
-                                 const float hNlFb,
-                                 float efw[2][PART_LEN1]) {
-  int i;
-  for (i = 0; i < PART_LEN1; i++) {
+static void Overdrive(float overdrive_scaling,
+                      const float hNlFb,
+                      float hNl[PART_LEN1]) {
+  for (int i = 0; i < PART_LEN1; ++i) {
     // Weight subbands
     if (hNl[i] > hNlFb) {
       hNl[i] = WebRtcAec_weightCurve[i] * hNlFb +
                (1 - WebRtcAec_weightCurve[i]) * hNl[i];
     }
     hNl[i] = powf(hNl[i], overdrive_scaling * WebRtcAec_overDriveCurve[i]);
+  }
+}
 
+static void Suppress(const float hNl[PART_LEN1], float efw[2][PART_LEN1]) {
+  for (int i = 0; i < PART_LEN1; ++i) {
     // Suppress error signal
     efw[0][i] *= hNl[i];
     efw[1][i] *= hNl[i];
@@ -1157,7 +1160,8 @@ static void EchoSuppression(AecCore* aec,
         0.9f * aec->overdrive_scaling + 0.1f * aec->overDrive;
   }
 
-  WebRtcAec_OverdriveAndSuppress(aec->overdrive_scaling, hNl, hNlFb, efw);
+  WebRtcAec_Overdrive(aec->overdrive_scaling, hNlFb, hNl);
+  WebRtcAec_Suppress(hNl, efw);
 
   // Add comfort noise.
   ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
@@ -1477,7 +1481,8 @@ AecCore* WebRtcAec_CreateAec(int instance_count) {
   WebRtcAec_FilterFar = FilterFar;
   WebRtcAec_ScaleErrorSignal = ScaleErrorSignal;
   WebRtcAec_FilterAdaptation = FilterAdaptation;
-  WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppress;
+  WebRtcAec_Overdrive = Overdrive;
+  WebRtcAec_Suppress = Suppress;
   WebRtcAec_ComputeCoherence = ComputeCoherence;
   WebRtcAec_UpdateCoherenceSpectra = UpdateCoherenceSpectra;
   WebRtcAec_StoreAsComplex = StoreAsComplex;

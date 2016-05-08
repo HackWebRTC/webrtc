@@ -344,24 +344,18 @@ void WebRtcAec_FilterAdaptation_mips(
   }
 }
 
-void WebRtcAec_OverdriveAndSuppress_mips(float overdrive_scaling,
-                                         float hNl[PART_LEN1],
-                                         const float hNlFb,
-                                         float efw[2][PART_LEN1]) {
-  int i;
+void WebRtcAec_Overdrive_mips(float overdrive_scaling,
+                              float hNlFb,
+                              float hNl[PART_LEN1]) {
   const float one = 1.0;
   float* p_hNl;
-  float* p_efw0;
-  float* p_efw1;
   const float* p_WebRtcAec_wC;
   float temp1, temp2, temp3, temp4;
 
   p_hNl = &hNl[0];
-  p_efw0 = &efw[0][0];
-  p_efw1 = &efw[1][0];
   p_WebRtcAec_wC = &WebRtcAec_weightCurve[0];
 
-  for (i = 0; i < PART_LEN1; i++) {
+  for (int i = 0; i < PART_LEN1; ++i) {
     // Weight subbands
     __asm __volatile(
       ".set      push                                              \n\t"
@@ -388,7 +382,21 @@ void WebRtcAec_OverdriveAndSuppress_mips(float overdrive_scaling,
       : "memory");
 
     hNl[i] = powf(hNl[i], overdrive_scaling * WebRtcAec_overDriveCurve[i]);
+  }
+}
 
+void WebRtcAec_Suppress_mips(const float hNl[PART_LEN1],
+                             float efw[2][PART_LEN1]) {
+  const float* p_hNl;
+  float* p_efw0;
+  float* p_efw1;
+  float temp1, temp2, temp3, temp4;
+
+  p_hNl = &hNl[0];
+  p_efw0 = &efw[0][0];
+  p_efw1 = &efw[1][0];
+
+  for (int i = 0; i < PART_LEN1; ++i) {
     __asm __volatile(
       "lwc1      %[temp1],    0(%[p_hNl])              \n\t"
       "lwc1      %[temp3],    0(%[p_efw1])             \n\t"
@@ -475,6 +483,7 @@ void WebRtcAec_InitAec_mips(void) {
   WebRtcAec_FilterFar = WebRtcAec_FilterFar_mips;
   WebRtcAec_FilterAdaptation = WebRtcAec_FilterAdaptation_mips;
   WebRtcAec_ScaleErrorSignal = WebRtcAec_ScaleErrorSignal_mips;
-  WebRtcAec_OverdriveAndSuppress = WebRtcAec_OverdriveAndSuppress_mips;
+  WebRtcAec_Overdrive = WebRtcAec_Overdrive_mips;
+  WebRtcAec_Suppress = WebRtcAec_Suppress_mips;
 }
 }  // namespace webrtc

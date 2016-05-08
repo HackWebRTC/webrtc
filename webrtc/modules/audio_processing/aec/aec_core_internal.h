@@ -215,11 +215,15 @@ typedef void (*WebRtcAecFilterAdaptation)(
     float e_fft[2][PART_LEN1],
     float h_fft_buf[2][kExtendedNumPartitions * PART_LEN1]);
 extern WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
-typedef void (*WebRtcAecOverdriveAndSuppress)(float overdrive_scaling,
-                                              float hNl[PART_LEN1],
-                                              const float hNlFb,
-                                              float efw[2][PART_LEN1]);
-extern WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
+
+typedef void (*WebRtcAecOverdrive)(float overdrive_scaling,
+                                   const float hNlFb,
+                                   float hNl[PART_LEN1]);
+extern WebRtcAecOverdrive WebRtcAec_Overdrive;
+
+typedef void (*WebRtcAecSuppress)(const float hNl[PART_LEN1],
+                                  float efw[2][PART_LEN1]);
+extern WebRtcAecSuppress WebRtcAec_Suppress;
 
 typedef void (*WebRtcAecComputeCoherence)(const CoherenceState* coherence_state,
                                           float* cohde,

@@ -375,14 +375,12 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
   return a_exp_b;
 }
 
-static void OverdriveAndSuppressSSE2(float overdrive_scaling,
-                                     float hNl[PART_LEN1],
-                                     const float hNlFb,
-                                     float efw[2][PART_LEN1]) {
+static void OverdriveSSE2(float overdrive_scaling,
+                          float hNlFb,
+                          float hNl[PART_LEN1]) {
   int i;
   const __m128 vec_hNlFb = _mm_set1_ps(hNlFb);
   const __m128 vec_one = _mm_set1_ps(1.0f);
-  const __m128 vec_minus_one = _mm_set1_ps(-1.0f);
   const __m128 vec_overdrive_scaling = _mm_set1_ps(overdrive_scaling);
   // vectorized code (four at once)
   for (i = 0; i + 3 < PART_LEN1; i += 4) {
@@ -399,28 +397,12 @@ static void OverdriveAndSuppressSSE2(float overdrive_scaling,
         bigger, _mm_add_ps(vec_weightCurve_hNlFb, vec_one_weightCurve_hNl));
     vec_hNl = _mm_or_ps(vec_if0, vec_if1);
 
-    {
-      const __m128 vec_overDriveCurve =
-          _mm_loadu_ps(&WebRtcAec_overDriveCurve[i]);
-      const __m128 vec_overDriveSm_overDriveCurve =
-          _mm_mul_ps(vec_overdrive_scaling, vec_overDriveCurve);
-      vec_hNl = mm_pow_ps(vec_hNl, vec_overDriveSm_overDriveCurve);
-      _mm_storeu_ps(&hNl[i], vec_hNl);
-    }
-
-    // Suppress error signal
-    {
-      __m128 vec_efw_re = _mm_loadu_ps(&efw[0][i]);
-      __m128 vec_efw_im = _mm_loadu_ps(&efw[1][i]);
-      vec_efw_re = _mm_mul_ps(vec_efw_re, vec_hNl);
-      vec_efw_im = _mm_mul_ps(vec_efw_im, vec_hNl);
-
-      // Ooura fft returns incorrect sign on imaginary component. It matters
-      // here because we are making an additive change with comfort noise.
-      vec_efw_im = _mm_mul_ps(vec_efw_im, vec_minus_one);
-      _mm_storeu_ps(&efw[0][i], vec_efw_re);
-      _mm_storeu_ps(&efw[1][i], vec_efw_im);
-    }
+    const __m128 vec_overDriveCurve =
+        _mm_loadu_ps(&WebRtcAec_overDriveCurve[i]);
+    const __m128 vec_overDriveSm_overDriveCurve =
+        _mm_mul_ps(vec_overdrive_scaling, vec_overDriveCurve);
+    vec_hNl = mm_pow_ps(vec_hNl, vec_overDriveSm_overDriveCurve);
+    _mm_storeu_ps(&hNl[i], vec_hNl);
   }
   // scalar code for the remaining items.
   for (; i < PART_LEN1; i++) {
@@ -430,7 +412,29 @@ static void OverdriveAndSuppressSSE2(float overdrive_scaling,
                (1 - WebRtcAec_weightCurve[i]) * hNl[i];
     }
     hNl[i] = powf(hNl[i], overdrive_scaling * WebRtcAec_overDriveCurve[i]);
+  }
+}
 
+static void SuppressSSE2(const float hNl[PART_LEN1], float efw[2][PART_LEN1]) {
+  int i;
+  const __m128 vec_minus_one = _mm_set1_ps(-1.0f);
+  // vectorized code (four at once)
+  for (i = 0; i + 3 < PART_LEN1; i += 4) {
+    // Suppress error signal
+    __m128 vec_hNl = _mm_loadu_ps(&hNl[i]);
+    __m128 vec_efw_re = _mm_loadu_ps(&efw[0][i]);
+    __m128 vec_efw_im = _mm_loadu_ps(&efw[1][i]);
+    vec_efw_re = _mm_mul_ps(vec_efw_re, vec_hNl);
+    vec_efw_im = _mm_mul_ps(vec_efw_im, vec_hNl);
+
+    // Ooura fft returns incorrect sign on imaginary component. It matters
+    // here because we are making an additive change with comfort noise.
+    vec_efw_im = _mm_mul_ps(vec_efw_im, vec_minus_one);
+    _mm_storeu_ps(&efw[0][i], vec_efw_re);
+    _mm_storeu_ps(&efw[1][i], vec_efw_im);
+  }
+  // scalar code for the remaining items.
+  for (; i < PART_LEN1; i++) {
     // Suppress error signal
     efw[0][i] *= hNl[i];
     efw[1][i] *= hNl[i];
@@ -735,7 +739,8 @@ void WebRtcAec_InitAec_SSE2(void) {
   WebRtcAec_FilterFar = FilterFarSSE2;
   WebRtcAec_ScaleErrorSignal = ScaleErrorSignalSSE2;
   WebRtcAec_FilterAdaptation = FilterAdaptationSSE2;
-  WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressSSE2;
+  WebRtcAec_Overdrive = OverdriveSSE2;
+  WebRtcAec_Suppress = SuppressSSE2;
   WebRtcAec_ComputeCoherence = ComputeCoherenceSSE2;
   WebRtcAec_UpdateCoherenceSpectra = UpdateCoherenceSpectraSSE2;
   WebRtcAec_StoreAsComplex = StoreAsComplexSSE2;

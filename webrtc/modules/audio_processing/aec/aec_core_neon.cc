@@ -374,14 +374,12 @@ static float32x4_t vpowq_f32(float32x4_t a, float32x4_t b) {
   return a_exp_b;
 }
 
-static void OverdriveAndSuppressNEON(float overdrive_scaling,
-                                     float hNl[PART_LEN1],
-                                     const float hNlFb,
-                                     float efw[2][PART_LEN1]) {
+static void OverdriveNEON(float overdrive_scaling,
+                          float hNlFb,
+                          float hNl[PART_LEN1]) {
   int i;
   const float32x4_t vec_hNlFb = vmovq_n_f32(hNlFb);
   const float32x4_t vec_one = vdupq_n_f32(1.0f);
-  const float32x4_t vec_minus_one = vdupq_n_f32(-1.0f);
   const float32x4_t vec_overdrive_scaling = vmovq_n_f32(overdrive_scaling);
 
   // vectorized code (four at once)
@@ -404,28 +402,12 @@ static void OverdriveAndSuppressNEON(float overdrive_scaling,
 
     vec_hNl = vreinterpretq_f32_u32(vorrq_u32(vec_if0, vec_if1));
 
-    {
-      const float32x4_t vec_overDriveCurve =
-          vld1q_f32(&WebRtcAec_overDriveCurve[i]);
-      const float32x4_t vec_overDriveSm_overDriveCurve =
-          vmulq_f32(vec_overdrive_scaling, vec_overDriveCurve);
-      vec_hNl = vpowq_f32(vec_hNl, vec_overDriveSm_overDriveCurve);
-      vst1q_f32(&hNl[i], vec_hNl);
-    }
-
-    // Suppress error signal
-    {
-      float32x4_t vec_efw_re = vld1q_f32(&efw[0][i]);
-      float32x4_t vec_efw_im = vld1q_f32(&efw[1][i]);
-      vec_efw_re = vmulq_f32(vec_efw_re, vec_hNl);
-      vec_efw_im = vmulq_f32(vec_efw_im, vec_hNl);
-
-      // Ooura fft returns incorrect sign on imaginary component. It matters
-      // here because we are making an additive change with comfort noise.
-      vec_efw_im = vmulq_f32(vec_efw_im, vec_minus_one);
-      vst1q_f32(&efw[0][i], vec_efw_re);
-      vst1q_f32(&efw[1][i], vec_efw_im);
-    }
+    const float32x4_t vec_overDriveCurve =
+        vld1q_f32(&WebRtcAec_overDriveCurve[i]);
+    const float32x4_t vec_overDriveSm_overDriveCurve =
+        vmulq_f32(vec_overdrive_scaling, vec_overDriveCurve);
+    vec_hNl = vpowq_f32(vec_hNl, vec_overDriveSm_overDriveCurve);
+    vst1q_f32(&hNl[i], vec_hNl);
   }
 
   // scalar code for the remaining items.
@@ -437,8 +419,29 @@ static void OverdriveAndSuppressNEON(float overdrive_scaling,
     }
 
     hNl[i] = powf(hNl[i], overdrive_scaling * WebRtcAec_overDriveCurve[i]);
+  }
+}
 
-    // Suppress error signal
+static void SuppressNEON(const float hNl[PART_LEN1], float efw[2][PART_LEN1]) {
+  int i;
+  const float32x4_t vec_minus_one = vdupq_n_f32(-1.0f);
+  // vectorized code (four at once)
+  for (i = 0; i + 3 < PART_LEN1; i += 4) {
+    float32x4_t vec_hNl = vld1q_f32(&hNl[i]);
+    float32x4_t vec_efw_re = vld1q_f32(&efw[0][i]);
+    float32x4_t vec_efw_im = vld1q_f32(&efw[1][i]);
+    vec_efw_re = vmulq_f32(vec_efw_re, vec_hNl);
+    vec_efw_im = vmulq_f32(vec_efw_im, vec_hNl);
+
+    // Ooura fft returns incorrect sign on imaginary component. It matters
+    // here because we are making an additive change with comfort noise.
+    vec_efw_im = vmulq_f32(vec_efw_im, vec_minus_one);
+    vst1q_f32(&efw[0][i], vec_efw_re);
+    vst1q_f32(&efw[1][i], vec_efw_im);
+  }
+
+  // scalar code for the remaining items.
+  for (; i < PART_LEN1; i++) {
     efw[0][i] *= hNl[i];
     efw[1][i] *= hNl[i];
 
@@ -722,7 +725,8 @@ void WebRtcAec_InitAec_neon(void) {
   WebRtcAec_FilterFar = FilterFarNEON;
   WebRtcAec_ScaleErrorSignal = ScaleErrorSignalNEON;
   WebRtcAec_FilterAdaptation = FilterAdaptationNEON;
-  WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressNEON;
+  WebRtcAec_Overdrive = OverdriveNEON;
+  WebRtcAec_Suppress = SuppressNEON;
   WebRtcAec_ComputeCoherence = ComputeCoherenceNEON;
   WebRtcAec_UpdateCoherenceSpectra = UpdateCoherenceSpectraNEON;
   WebRtcAec_StoreAsComplex = StoreAsComplexNEON;
