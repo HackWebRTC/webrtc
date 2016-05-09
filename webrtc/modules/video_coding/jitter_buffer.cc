@@ -601,7 +601,8 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
   // Frame pulled out from jitter buffer, update the jitter estimate.
   const bool retransmitted = (frame->GetNackCount() > 0);
   if (retransmitted) {
-    jitter_estimate_.FrameNacked();
+    if (WaitForRetransmissions())
+      jitter_estimate_.FrameNacked();
   } else if (frame->Length() > 0) {
     // Ignore retransmitted and empty frames.
     if (waiting_for_completion_.latest_packet_time >= 0) {
@@ -958,6 +959,8 @@ void VCMJitterBuffer::UpdateRtt(int64_t rtt_ms) {
   jitter_estimate_.UpdateRtt(rtt_ms);
   if (nack_module_)
     nack_module_->UpdateRtt(rtt_ms);
+  if (!WaitForRetransmissions())
+    jitter_estimate_.ResetNackCount();
 }
 
 void VCMJitterBuffer::SetNackMode(VCMNackMode mode,

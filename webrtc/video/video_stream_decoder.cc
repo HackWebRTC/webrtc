@@ -54,8 +54,14 @@ VideoStreamDecoder::VideoStreamDecoder(
   static const int kDefaultRenderDelayMs = 10;
   video_receiver_->SetRenderDelay(kDefaultRenderDelayMs);
 
-  VCMVideoProtection video_protection = enable_nack ? kProtectionNack
-                                                    : kProtectionNone;
+  VCMVideoProtection video_protection = kProtectionNone;
+  if (enable_nack) {
+    if (enable_fec)
+      video_protection = kProtectionNackFEC;
+    else
+      video_protection = kProtectionNack;
+  }
+
   VCMDecodeErrorMode decode_error_mode = enable_nack ? kNoErrors : kWithErrors;
   video_receiver_->SetVideoProtection(video_protection, true);
   video_receiver_->SetDecodeErrorMode(decode_error_mode);

@@ -176,6 +176,10 @@ RtpStreamReceiver::RtpStreamReceiver(
           config_.rtp.fec.red_rtx_payload_type,
           config_.rtp.fec.red_payload_type);
     }
+
+    rtp_rtcp_->SetGenericFECStatus(true,
+                                   config_.rtp.fec.red_payload_type,
+                                   config_.rtp.fec.ulpfec_payload_type);
   }
 
   if (config.rtp.rtcp_xr.receiver_reference_time_report)
