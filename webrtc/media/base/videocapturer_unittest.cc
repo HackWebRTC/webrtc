@@ -323,32 +323,6 @@ TEST_F(VideoCapturerTest, SinkWantsMaxPixelAndMaxPixelCountStepUp) {
   EXPECT_EQ(720, renderer2.height());
 }
 
-TEST_F(VideoCapturerTest, ScreencastScaledSuperLarge) {
-  InitScreencast();
-
-  const int kMaxWidth = 4096;
-  const int kMaxHeight = 3072;
-  int kWidth = kMaxWidth + 4;
-  int kHeight = kMaxHeight + 4;
-
-  std::vector<cricket::VideoFormat> formats;
-  formats.push_back(cricket::VideoFormat(kWidth, kHeight,
-      cricket::VideoFormat::FpsToInterval(5), cricket::FOURCC_ARGB));
-  capturer_->ResetSupportedFormats(formats);
-
-  EXPECT_EQ(cricket::CS_RUNNING, capturer_->Start(cricket::VideoFormat(
-      kWidth,
-      kHeight,
-      cricket::VideoFormat::FpsToInterval(30),
-      cricket::FOURCC_ARGB)));
-  EXPECT_TRUE(capturer_->IsRunning());
-  EXPECT_EQ(0, renderer_.num_rendered_frames());
-  EXPECT_TRUE(capturer_->CaptureFrame());
-  EXPECT_EQ(1, renderer_.num_rendered_frames());
-  EXPECT_EQ(kWidth / 2, renderer_.width());
-  EXPECT_EQ(kHeight / 2, renderer_.height());
-}
-
 TEST_F(VideoCapturerTest, TestFourccMatch) {
   cricket::VideoFormat desired(640, 480,
                                cricket::VideoFormat::FpsToInterval(30),
