@@ -19,11 +19,7 @@
 
 namespace rtc {
 
-// Simple std::experimental::optional-wannabe. It either contains a T or not.
-// In order to keep the implementation simple and portable, this implementation
-// actually contains a (default-constructed) T even when it supposedly doesn't
-// contain a value; use e.g. std::unique_ptr<T> instead if that's too
-// expensive.
+// Simple std::optional-wannabe. It either contains a T or not.
 //
 // A moved-from Optional<T> may only be destroyed, and assigned to if T allows
 // being assigned to after having been moved from. Specifically, you may not
@@ -66,21 +62,90 @@ class Optional final {
   Optional() : has_value_(false) {}
 
   // Construct an Optional that contains a value.
-  explicit Optional(const T& val) : value_(val), has_value_(true) {}
-  explicit Optional(T&& val) : value_(std::move(val)), has_value_(true) {}
+  explicit Optional(const T& value) : has_value_(true) {
+    new (&value_) T(value);
+  }
+  explicit Optional(T&& value) : has_value_(true) {
+    new (&value_) T(std::move(value));
+  }
 
-  // Copy and move constructors.
-  Optional(const Optional&) = default;
-  Optional(Optional&&) = default;
+  // Copy constructor: copies the value from m if it has one.
+  Optional(const Optional& m) : has_value_(m.has_value_) {
+    if (has_value_)
+      new (&value_) T(m.value_);
+  }
 
-  // Assignment.
-  Optional& operator=(const Optional&) = default;
-  Optional& operator=(Optional&&) = default;
+  // Move constructor: if m has a value, moves the value from m, leaving m
+  // still in a state where it has a value, but a moved-from one (the
+  // properties of which depends on T; the only general guarantee is that we
+  // can destroy m).
+  Optional(Optional&& m) : has_value_(m.has_value_) {
+    if (has_value_)
+      new (&value_) T(std::move(m.value_));
+  }
 
+  ~Optional() {
+    if (has_value_)
+      value_.~T();
+  }
+
+  // Copy assignment. Uses T's copy assignment if both sides have a value, T's
+  // copy constructor if only the right-hand side has a value.
+  Optional& operator=(const Optional& m) {
+    if (m.has_value_) {
+      if (has_value_) {
+        value_ = m.value_;  // T's copy assignment.
+      } else {
+        new (&value_) T(m.value_);  // T's copy constructor.
+        has_value_ = true;
+      }
+    } else if (has_value_) {
+      value_.~T();
+      has_value_ = false;
+    }
+    return *this;
+  }
+
+  // Move assignment. Uses T's move assignment if both sides have a value, T's
+  // move constructor if only the right-hand side has a value. The state of m
+  // after it's been moved from is as for the move constructor.
+  Optional& operator=(Optional&& m) {
+    if (m.has_value_) {
+      if (has_value_) {
+        value_ = std::move(m.value_);  // T's move assignment.
+      } else {
+        new (&value_) T(std::move(m.value_));  // T's move constructor.
+        has_value_ = true;
+      }
+    } else if (has_value_) {
+      value_.~T();
+      has_value_ = false;
+    }
+    return *this;
+  }
+
+  // Swap the values if both m1 and m2 have values; move the value if only one
+  // of them has one.
   friend void swap(Optional& m1, Optional& m2) {
-    using std::swap;
-    swap(m1.value_, m2.value_);
-    swap(m1.has_value_, m2.has_value_);
+    if (m1.has_value_) {
+      if (m2.has_value_) {
+        // Both have values: swap.
+        using std::swap;
+        swap(m1.value_, m2.value_);
+      } else {
+        // Only m1 has a value: move it to m2.
+        new (&m2.value_) T(std::move(m1.value_));
+        m1.value_.~T();  // Destroy the moved-from value.
+        m1.has_value_ = false;
+        m2.has_value_ = true;
+      }
+    } else if (m2.has_value_) {
+      // Only m2 has a value: move it to m1.
+      new (&m1.value_) T(std::move(m2.value_));
+      m2.value_.~T();  // Destroy the moved-from value.
+      m1.has_value_ = true;
+      m2.has_value_ = false;
+    }
   }
 
   // Conversion to bool to test if we have a value.
@@ -122,10 +187,15 @@ class Optional final {
   }
 
  private:
-  // Invariant: Unless *this has been moved from, value_ is default-initialized
-  // (or copied or moved from a default-initialized T) if !has_value_.
-  T value_;
-  bool has_value_;
+  bool has_value_;  // True iff value_ contains a live value.
+  union {
+    // By placing value_ in a union, we get to manage its construction and
+    // destruction manually: the Optional constructors won't automatically
+    // construct it, and the Optional destructor won't automatically destroy
+    // it. Basically, this just allocates a properly sized and aligned block of
+    // memory in which we can manually put a T with placement new.
+    T value_;
+  };
 };
 
 }  // namespace rtc
