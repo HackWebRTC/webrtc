@@ -15,6 +15,12 @@
 namespace webrtc {
 namespace video_coding {
 
+FrameObject::FrameObject()
+    : picture_id(0),
+      spatial_layer(0),
+      num_references(0),
+      inter_layer_predicted(false) {}
+
 RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
                                uint16_t first_packet,
                                uint16_t last_packet)

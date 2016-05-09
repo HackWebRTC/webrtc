@@ -14,6 +14,7 @@
 #include <limits>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 
 namespace webrtc {
@@ -31,7 +32,8 @@ PacketBuffer::PacketBuffer(size_t start_buffer_size,
       sequence_buffer_(start_buffer_size),
       frame_callback_(frame_callback),
       last_picture_id_(-1),
-      last_unwrap_(-1) {
+      last_unwrap_(-1),
+      current_ss_idx_(0) {
   RTC_DCHECK_LE(start_buffer_size, max_buffer_size);
   // Buffer size must always be a power of 2.
   RTC_DCHECK((start_buffer_size & (start_buffer_size - 1)) == 0);
@@ -216,7 +218,7 @@ void PacketBuffer::ManageFrame(std::unique_ptr<RtpFrameObject> frame) {
       ManageFrameVp8(std::move(frame));
       break;
     case kVideoCodecVP9:
-      // TODO(philipel): ManageFrameVp9(std::move(frame));
+      ManageFrameVp9(std::move(frame));
       break;
     case kVideoCodecH264:
     case kVideoCodecI420:
@@ -316,7 +318,7 @@ void PacketBuffer::ManageFrameVp8(std::unique_ptr<RtpFrameObject> frame) {
 
   // Find if there has been a gap in fully received frames and save the picture
   // id of those frames in |not_yet_received_frames_|.
-  if (AheadOf<uint8_t, kPicIdLength>(frame->picture_id, last_picture_id_)) {
+  if (AheadOf<uint16_t, kPicIdLength>(frame->picture_id, last_picture_id_)) {
     last_picture_id_ = Add<kPicIdLength>(last_picture_id_, 1);
     while (last_picture_id_ != frame->picture_id) {
       not_yet_received_frames_.insert(last_picture_id_);
@@ -386,10 +388,10 @@ void PacketBuffer::ManageFrameVp8(std::unique_ptr<RtpFrameObject> frame) {
     auto not_received_frame_it =
              not_yet_received_frames_.upper_bound(layer_info_it->second[layer]);
     if (not_received_frame_it != not_yet_received_frames_.end() &&
-        AheadOf<uint8_t, kPicIdLength>(frame->picture_id,
-                                       *not_received_frame_it)) {
-          stashed_frames_.emplace(std::move(frame));
-          return;
+        AheadOf<uint16_t, kPicIdLength>(frame->picture_id,
+                                        *not_received_frame_it)) {
+      stashed_frames_.emplace(std::move(frame));
+      return;
     }
 
     ++frame->num_references;
@@ -425,8 +427,215 @@ void PacketBuffer::CompletedFrameVp8(std::unique_ptr<RtpFrameObject> frame) {
   }
   not_yet_received_frames_.erase(frame->picture_id);
 
-  for (size_t r = 0; r < frame->num_references; ++r)
-    frame->references[r] = UnwrapPictureId(frame->references[r]);
+  for (size_t i = 0; i < frame->num_references; ++i)
+    frame->references[i] = UnwrapPictureId(frame->references[i]);
+  frame->picture_id = UnwrapPictureId(frame->picture_id);
+
+  frame_callback_->OnCompleteFrame(std::move(frame));
+  RetryStashedFrames();
+}
+
+void PacketBuffer::ManageFrameVp9(std::unique_ptr<RtpFrameObject> frame) {
+  size_t index = frame->first_seq_num() % size_;
+  const VCMPacket& packet = data_buffer_[index];
+  const RTPVideoHeaderVP9& codec_header =
+      packet.codecSpecificHeader.codecHeader.VP9;
+
+  if (codec_header.picture_id == kNoPictureId) {
+    ManageFrameGeneric(std::move(frame));
+    return;
+  }
+
+  frame->spatial_layer = codec_header.spatial_idx;
+  frame->inter_layer_predicted = codec_header.inter_layer_predicted;
+  frame->picture_id = codec_header.picture_id % kPicIdLength;
+
+  if (last_unwrap_ == -1)
+    last_unwrap_ = codec_header.picture_id;
+
+  if (last_picture_id_ == -1)
+    last_picture_id_ = frame->picture_id;
+
+  if (codec_header.flexible_mode) {
+    frame->num_references = codec_header.num_ref_pics;
+    for (size_t i = 0; i < frame->num_references; ++i) {
+      frame->references[i] =
+          Subtract<1 << 16>(frame->picture_id, codec_header.pid_diff[i]);
+    }
+
+    CompletedFrameVp9(std::move(frame));
+    return;
+  }
+
+  if (codec_header.ss_data_available) {
+    // Scalability structures can only be sent with tl0 frames.
+    if (codec_header.temporal_idx != 0) {
+      LOG(LS_WARNING) << "Received scalability structure on a non base layer"
+                         " frame. Scalability structure ignored.";
+    } else {
+      current_ss_idx_ = Add<kMaxGofSaved>(current_ss_idx_, 1);
+      scalability_structures_[current_ss_idx_] = codec_header.gof;
+      scalability_structures_[current_ss_idx_].pid_start = frame->picture_id;
+
+      auto pid_and_gof = std::make_pair(
+          frame->picture_id, &scalability_structures_[current_ss_idx_]);
+      gof_info_.insert(std::make_pair(codec_header.tl0_pic_idx, pid_and_gof));
+    }
+  }
+
+  // Clean up info for base layers that are too old.
+  uint8_t old_tl0_pic_idx = codec_header.tl0_pic_idx - kMaxGofSaved;
+  auto clean_gof_info_to = gof_info_.lower_bound(old_tl0_pic_idx);
+  gof_info_.erase(gof_info_.begin(), clean_gof_info_to);
+
+  if (packet.frameType == kVideoFrameKey) {
+    // When using GOF all keyframes must include the scalability structure.
+    if (!codec_header.ss_data_available)
+      LOG(LS_WARNING) << "Received keyframe without scalability structure";
+
+    frame->num_references = 0;
+    GofInfoVP9* gof = gof_info_.find(codec_header.tl0_pic_idx)->second.second;
+    FrameReceivedVp9(frame->picture_id, *gof);
+    CompletedFrameVp9(std::move(frame));
+    return;
+  }
+
+  auto gof_info_it = gof_info_.find(
+      (codec_header.temporal_idx == 0 && !codec_header.ss_data_available)
+          ? codec_header.tl0_pic_idx - 1
+          : codec_header.tl0_pic_idx);
+
+  // Gof info for this frame is not available yet, stash this frame.
+  if (gof_info_it == gof_info_.end()) {
+    stashed_frames_.emplace(std::move(frame));
+    return;
+  }
+
+  GofInfoVP9* gof = gof_info_it->second.second;
+  uint16_t picture_id_tl0 = gof_info_it->second.first;
+
+  FrameReceivedVp9(frame->picture_id, *gof);
+
+  // Make sure we don't miss any frame that could potentially have the
+  // up switch flag set.
+  if (MissingRequiredFrameVp9(frame->picture_id, *gof)) {
+    stashed_frames_.emplace(std::move(frame));
+    return;
+  }
+
+  if (codec_header.temporal_up_switch) {
+    auto pid_tidx =
+        std::make_pair(frame->picture_id, codec_header.temporal_idx);
+    up_switch_.insert(pid_tidx);
+  }
+
+  // If this is a base layer frame that contains a scalability structure
+  // then gof info has already been inserted earlier, so we only want to
+  // insert if we haven't done so already.
+  if (codec_header.temporal_idx == 0 && !codec_header.ss_data_available) {
+    auto pid_and_gof = std::make_pair(frame->picture_id, gof);
+    gof_info_.insert(std::make_pair(codec_header.tl0_pic_idx, pid_and_gof));
+  }
+
+  // Clean out old info about up switch frames.
+  uint16_t old_picture_id = Subtract<kPicIdLength>(last_picture_id_, 50);
+  auto up_switch_erase_to = up_switch_.lower_bound(old_picture_id);
+  up_switch_.erase(up_switch_.begin(), up_switch_erase_to);
+
+  RTC_DCHECK(
+      (AheadOrAt<uint16_t, kPicIdLength>(frame->picture_id, picture_id_tl0)));
+
+  size_t diff =
+      ForwardDiff<uint16_t, kPicIdLength>(gof->pid_start, frame->picture_id);
+  size_t gof_idx = diff % gof->num_frames_in_gof;
+
+  // Populate references according to the scalability structure.
+  frame->num_references = gof->num_ref_pics[gof_idx];
+  for (size_t i = 0; i < frame->num_references; ++i) {
+    frame->references[i] =
+        Subtract<kPicIdLength>(frame->picture_id, gof->pid_diff[gof_idx][i]);
+
+    // If this is a reference to a frame earlier than the last up switch point,
+    // then ignore this reference.
+    if (UpSwitchInIntervalVp9(frame->picture_id, codec_header.temporal_idx,
+                              frame->references[i])) {
+      --frame->num_references;
+    }
+  }
+
+  CompletedFrameVp9(std::move(frame));
+}
+
+bool PacketBuffer::MissingRequiredFrameVp9(uint16_t picture_id,
+                                           const GofInfoVP9& gof) {
+  size_t diff = ForwardDiff<uint16_t, kPicIdLength>(gof.pid_start, picture_id);
+  size_t gof_idx = diff % gof.num_frames_in_gof;
+  size_t temporal_idx = gof.temporal_idx[gof_idx];
+
+  // For every reference this frame has, check if there is a frame missing in
+  // the interval (|ref_pid|, |picture_id|) in any of the lower temporal
+  // layers. If so, we are missing a required frame.
+  uint8_t num_references = gof.num_ref_pics[gof_idx];
+  for (size_t i = 0; i < num_references; ++i) {
+    uint16_t ref_pid =
+        Subtract<kPicIdLength>(picture_id, gof.pid_diff[gof_idx][i]);
+    for (size_t l = 0; l < temporal_idx; ++l) {
+      auto missing_frame_it = missing_frames_for_layer_[l].lower_bound(ref_pid);
+      if (missing_frame_it != missing_frames_for_layer_[l].end() &&
+          AheadOf<uint16_t, kPicIdLength>(picture_id, *missing_frame_it)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void PacketBuffer::FrameReceivedVp9(uint16_t picture_id,
+                                    const GofInfoVP9& gof) {
+  RTC_DCHECK_NE(-1, last_picture_id_);
+
+  // If there is a gap, find which temporal layer the missing frames
+  // belong to and add the frame as missing for that temporal layer.
+  // Otherwise, remove this frame from the set of missing frames.
+  if (AheadOf<uint16_t, kPicIdLength>(picture_id, last_picture_id_)) {
+    size_t diff =
+        ForwardDiff<uint16_t, kPicIdLength>(gof.pid_start, last_picture_id_);
+    size_t gof_idx = diff % gof.num_frames_in_gof;
+
+    last_picture_id_ = Add<kPicIdLength>(last_picture_id_, 1);
+    while (last_picture_id_ != picture_id) {
+      ++gof_idx;
+      RTC_DCHECK_NE(0ul, gof_idx % gof.num_frames_in_gof);
+      size_t temporal_idx = gof.temporal_idx[gof_idx];
+      missing_frames_for_layer_[temporal_idx].insert(last_picture_id_);
+      last_picture_id_ = Add<kPicIdLength>(last_picture_id_, 1);
+    }
+  } else {
+    size_t diff =
+        ForwardDiff<uint16_t, kPicIdLength>(gof.pid_start, picture_id);
+    size_t gof_idx = diff % gof.num_frames_in_gof;
+    size_t temporal_idx = gof.temporal_idx[gof_idx];
+    missing_frames_for_layer_[temporal_idx].erase(picture_id);
+  }
+}
+
+bool PacketBuffer::UpSwitchInIntervalVp9(uint16_t picture_id,
+                                         uint8_t temporal_idx,
+                                         uint16_t pid_ref) {
+  for (auto up_switch_it = up_switch_.upper_bound(pid_ref);
+       up_switch_it != up_switch_.end() &&
+       AheadOf<uint16_t, kPicIdLength>(picture_id, up_switch_it->first);
+       ++up_switch_it) {
+    if (up_switch_it->second < temporal_idx)
+      return true;
+  }
+
+  return false;
+}
+
+void PacketBuffer::CompletedFrameVp9(std::unique_ptr<RtpFrameObject> frame) {
+  for (size_t i = 0; i < frame->num_references; ++i)
+    frame->references[i] = UnwrapPictureId(frame->references[i]);
   frame->picture_id = UnwrapPictureId(frame->picture_id);
 
   frame_callback_->OnCompleteFrame(std::move(frame));
@@ -434,13 +643,12 @@ void PacketBuffer::CompletedFrameVp8(std::unique_ptr<RtpFrameObject> frame) {
 }
 
 uint16_t PacketBuffer::UnwrapPictureId(uint16_t picture_id) {
-  if (last_unwrap_ == -1)
-    last_unwrap_ = picture_id;
+  RTC_DCHECK_NE(-1, last_unwrap_);
 
   uint16_t unwrap_truncated = last_unwrap_ % kPicIdLength;
-  uint16_t diff = MinDiff<uint8_t, kPicIdLength>(unwrap_truncated, picture_id);
+  uint16_t diff = MinDiff<uint16_t, kPicIdLength>(unwrap_truncated, picture_id);
 
-  if (AheadOf<uint8_t, kPicIdLength>(picture_id, unwrap_truncated))
+  if (AheadOf<uint16_t, kPicIdLength>(picture_id, unwrap_truncated))
     last_unwrap_ = Add<1 << 16>(last_unwrap_, diff);
   else
     last_unwrap_ = Subtract<1 << 16>(last_unwrap_, diff);

@@ -23,13 +23,20 @@ class FrameObject {
  public:
   static const uint8_t kMaxFrameReferences = 5;
 
+  FrameObject();
+
   virtual bool GetBitstream(uint8_t* destination) const = 0;
   virtual ~FrameObject() {}
 
+  // The tuple (|picture_id|, |spatial_layer|) uniquely identifies a frame
+  // object. For codec types that don't necessarily have picture ids they
+  // have to be constructed from the header data relevant to that codec.
   uint16_t picture_id;
+  uint8_t spatial_layer;
+
   size_t num_references;
-  std::array<uint16_t, kMaxFrameReferences> referencesr;
   uint16_t references[kMaxFrameReferences];
+  bool inter_layer_predicted;
 };
 
 class PacketBuffer;

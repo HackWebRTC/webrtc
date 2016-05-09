@@ -12,15 +12,17 @@
 #define WEBRTC_MODULES_VIDEO_CODING_PACKET_BUFFER_H_
 
 #include <array>
-#include <vector>
 #include <map>
 #include <memory>
-#include <set>
 #include <queue>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"
 
@@ -49,10 +51,11 @@ class PacketBuffer {
 
  private:
   static const uint16_t kPicIdLength = 1 << 7;
-  static const uint8_t kMaxTemporalLayer = 5;
+  static const uint8_t kMaxTemporalLayers = 5;
   static const int kMaxStashedFrames = 10;
   static const int kMaxLayerInfo = 10;
   static const int kMaxNotYetReceivedFrames = 20;
+  static const int kMaxGofSaved = 15;
 
   friend RtpFrameObject;
   // Since we want the packet buffer to be as packet type agnostic
@@ -116,6 +119,32 @@ class PacketBuffer {
   void CompletedFrameVp8(std::unique_ptr<RtpFrameObject> frame)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
+  // Find references for Vp9 frames
+  void ManageFrameVp9(std::unique_ptr<RtpFrameObject> frame)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  // Unwrap the picture id and the frame references  and then call the
+  // |frame_callback| callback with the completed frame.
+  void CompletedFrameVp9(std::unique_ptr<RtpFrameObject> frame)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  // Check if we are missing a frame necessary to determine the references
+  // for this frame.
+  bool MissingRequiredFrameVp9(uint16_t picture_id, const GofInfoVP9& gof)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  // Updates which frames that have been received. If there is a gap,
+  // missing frames will be added to |missing_frames_for_layer_| or
+  // if this is an already missing frame then it will be removed.
+  void FrameReceivedVp9(uint16_t picture_id, const GofInfoVP9& gof)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  // Check if there is a frame with the up-switch flag set in the interval
+  // (|pid_ref|, |picture_id|) with temporal layer smaller than |temporal_idx|.
+  bool UpSwitchInIntervalVp9(uint16_t picture_id,
+                             uint8_t temporal_idx,
+                             uint16_t pid_ref) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   // All picture ids are unwrapped to 16 bits.
   uint16_t UnwrapPictureId(uint16_t picture_id)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
@@ -161,8 +190,8 @@ class PacketBuffer {
 
   // Frames earlier than the last received frame that have not yet been
   // fully received.
-  std::set<uint8_t, DescendingSeqNumComp<uint8_t, kPicIdLength>>
-    not_yet_received_frames_ GUARDED_BY(crit_);
+  std::set<uint16_t, DescendingSeqNumComp<uint16_t, kPicIdLength>>
+      not_yet_received_frames_ GUARDED_BY(crit_);
 
   // Frames that have been fully received but didn't have all the information
   // needed to determine their references.
@@ -171,8 +200,32 @@ class PacketBuffer {
   // Holds the information about the last completed frame for a given temporal
   // layer given a Tl0 picture index.
   std::map<uint8_t,
-          std::array<int16_t, kMaxTemporalLayer>,
-          DescendingSeqNumComp<uint8_t>> layer_info_ GUARDED_BY(crit_);
+           std::array<int16_t, kMaxTemporalLayers>,
+           DescendingSeqNumComp<uint8_t>>
+      layer_info_ GUARDED_BY(crit_);
+
+  // Where the current scalability structure is in the
+  // |scalability_structures_| array.
+  uint8_t current_ss_idx_;
+
+  // Holds received scalability structures.
+  std::array<GofInfoVP9, kMaxGofSaved> scalability_structures_
+      GUARDED_BY(crit_);
+
+  // Holds the picture id and the Gof information for a given TL0 picture index.
+  std::map<uint8_t,
+           std::pair<uint16_t, GofInfoVP9*>,
+           DescendingSeqNumComp<uint8_t>>
+      gof_info_ GUARDED_BY(crit_);
+
+  // Keep track of which picture id and which temporal layer that had the
+  // up switch flag set.
+  std::map<uint16_t, uint8_t> up_switch_ GUARDED_BY(crit_);
+
+  // For every temporal layer, keep a set of which frames that are missing.
+  std::array<std::set<uint16_t, DescendingSeqNumComp<uint16_t, kPicIdLength>>,
+             kMaxTemporalLayers>
+      missing_frames_for_layer_ GUARDED_BY(crit_);
 };
 
 }  // namespace video_coding
