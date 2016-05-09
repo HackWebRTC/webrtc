@@ -379,7 +379,9 @@ VideoSendStream::VideoSendStream(
       vie_encoder_(num_cpu_cores,
                    module_process_thread_,
                    &stats_proxy_,
-                   &overuse_detector_),
+                   config.pre_encode_callback,
+                   &overuse_detector_,
+                   congestion_controller_->pacer()),
       encoder_feedback_(Clock::GetRealTimeClock(),
                         config.rtp.ssrcs,
                         &vie_encoder_),
@@ -588,14 +590,8 @@ void VideoSendStream::EncoderProcess() {
     }
 
     VideoFrame frame;
-    if (input_.GetVideoFrame(&frame)) {
-      // TODO(perkj): |pre_encode_callback| is only used by tests. Tests should
-      // register as a sink to the VideoSource instead.
-      if (config_.pre_encode_callback) {
-        config_.pre_encode_callback->OnFrame(frame);
-      }
+    if (input_.GetVideoFrame(&frame))
       vie_encoder_.EncodeVideoFrame(frame);
-    }
   }
   vie_encoder_.DeRegisterExternalEncoder(config_.encoder_settings.payload_type);
 }
