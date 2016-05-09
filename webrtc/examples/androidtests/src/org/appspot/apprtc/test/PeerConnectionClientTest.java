@@ -389,7 +389,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, false), true);
   }
 
-  //@SmallTest
+  @SmallTest
   public void testLoopbackVp9DecodeToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
