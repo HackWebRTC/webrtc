@@ -35,7 +35,7 @@
       'sources': [
         'aec/aec_core.cc',
         'aec/aec_core.h',
-        'aec/aec_core_internal.h',
+        'aec/aec_core_optimized_methods.h',
         'aec/aec_rdft.cc',
         'aec/aec_rdft.h',
         'aec/aec_resampler.cc',

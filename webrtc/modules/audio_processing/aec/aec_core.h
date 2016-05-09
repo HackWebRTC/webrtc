@@ -17,6 +17,15 @@
 
 #include <stddef.h>
 
+#include <memory>
+
+extern "C" {
+#include "webrtc/common_audio/ring_buffer.h"
+}
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/common_audio/wav_file.h"
+#include "webrtc/modules/audio_processing/aec/aec_common.h"
+#include "webrtc/modules/audio_processing/utility/block_mean_calculator.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -26,6 +35,8 @@ namespace webrtc {
 #define PART_LEN1 (PART_LEN + 1)  // Unique fft coefficients
 #define PART_LEN2 (PART_LEN * 2)  // Length of partition * 2
 #define NUM_HIGH_BANDS_MAX 2      // Max number of high bands
+
+class ApmDataDumper;
 
 typedef float complex_t[2];
 // For performance reasons, some arrays of complex numbers are replaced by twice
@@ -51,7 +62,175 @@ typedef struct Stats {
   size_t hicounter;
 } Stats;
 
-typedef struct AecCore AecCore;
+// Number of partitions for the extended filter mode. The first one is an enum
+// to be used in array declarations, as it represents the maximum filter length.
+enum { kExtendedNumPartitions = 32 };
+static const int kNormalNumPartitions = 12;
+
+// Delay estimator constants, used for logging and delay compensation if
+// if reported delays are disabled.
+enum { kLookaheadBlocks = 15 };
+enum {
+  // 500 ms for 16 kHz which is equivalent with the limit of reported delays.
+  kHistorySizeBlocks = 125
+};
+
+typedef struct PowerLevel {
+  PowerLevel();
+
+  BlockMeanCalculator framelevel;
+  BlockMeanCalculator averagelevel;
+  float minlevel;
+} PowerLevel;
+
+class DivergentFilterFraction {
+ public:
+  DivergentFilterFraction();
+
+  // Reset.
+  void Reset();
+
+  void AddObservation(const PowerLevel& nearlevel,
+                      const PowerLevel& linoutlevel,
+                      const PowerLevel& nlpoutlevel);
+
+  // Return the latest fraction.
+  float GetLatestFraction() const;
+
+ private:
+  // Clear all values added.
+  void Clear();
+
+  size_t count_;
+  size_t occurrence_;
+  float fraction_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(DivergentFilterFraction);
+};
+
+typedef struct CoherenceState {
+  complex_t sde[PART_LEN1];  // cross-psd of nearend and error
+  complex_t sxd[PART_LEN1];  // cross-psd of farend and nearend
+  float sx[PART_LEN1], sd[PART_LEN1], se[PART_LEN1];  // far, near, error psd
+} CoherenceState;
+
+struct AecCore {
+  explicit AecCore(int instance_index);
+  ~AecCore();
+
+  std::unique_ptr<ApmDataDumper> data_dumper;
+
+  CoherenceState coherence_state;
+
+  int farBufWritePos, farBufReadPos;
+
+  int knownDelay;
+  int inSamples, outSamples;
+  int delayEstCtr;
+
+  RingBuffer* nearFrBuf;
+  RingBuffer* outFrBuf;
+
+  RingBuffer* nearFrBufH[NUM_HIGH_BANDS_MAX];
+  RingBuffer* outFrBufH[NUM_HIGH_BANDS_MAX];
+
+  float dBuf[PART_LEN2];  // nearend
+  float eBuf[PART_LEN2];  // error
+
+  float dBufH[NUM_HIGH_BANDS_MAX][PART_LEN2];  // nearend
+
+  float xPow[PART_LEN1];
+  float dPow[PART_LEN1];
+  float dMinPow[PART_LEN1];
+  float dInitMinPow[PART_LEN1];
+  float* noisePow;
+
+  float xfBuf[2][kExtendedNumPartitions * PART_LEN1];  // farend fft buffer
+  float wfBuf[2][kExtendedNumPartitions * PART_LEN1];  // filter fft
+  // Farend windowed fft buffer.
+  complex_t xfwBuf[kExtendedNumPartitions * PART_LEN1];
+
+  float hNs[PART_LEN1];
+  float hNlFbMin, hNlFbLocalMin;
+  float hNlXdAvgMin;
+  int hNlNewMin, hNlMinCtr;
+  float overDrive;
+  float overdrive_scaling;
+  int nlp_mode;
+  float outBuf[PART_LEN];
+  int delayIdx;
+
+  short stNearState, echoState;
+  short divergeState;
+
+  int xfBufBlockPos;
+
+  RingBuffer* far_time_buf;
+
+  int system_delay;  // Current system delay buffered in AEC.
+
+  int mult;  // sampling frequency multiple
+  int sampFreq = 16000;
+  size_t num_bands;
+  uint32_t seed;
+
+  float filter_step_size;  // stepsize
+  float error_threshold;   // error threshold
+
+  int noiseEstCtr;
+
+  PowerLevel farlevel;
+  PowerLevel nearlevel;
+  PowerLevel linoutlevel;
+  PowerLevel nlpoutlevel;
+
+  int metricsMode;
+  int stateCounter;
+  Stats erl;
+  Stats erle;
+  Stats aNlp;
+  Stats rerl;
+  DivergentFilterFraction divergent_filter_fraction;
+
+  // Quantities to control H band scaling for SWB input
+  int freq_avg_ic;       // initial bin for averaging nlp gain
+  int flag_Hband_cn;     // for comfort noise
+  float cn_scale_Hband;  // scale for comfort noise in H band
+
+  int delay_metrics_delivered;
+  int delay_histogram[kHistorySizeBlocks];
+  int num_delay_values;
+  int delay_median;
+  int delay_std;
+  float fraction_poor_delays;
+  int delay_logging_enabled;
+  void* delay_estimator_farend;
+  void* delay_estimator;
+  // Variables associated with delay correction through signal based delay
+  // estimation feedback.
+  int signal_delay_correction;
+  int previous_delay;
+  int delay_correction_count;
+  int shift_offset;
+  float delay_quality_threshold;
+  int frame_count;
+
+  // 0 = delay agnostic mode (signal based delay correction) disabled.
+  // Otherwise enabled.
+  int delay_agnostic_enabled;
+  // 1 = extended filter mode enabled, 0 = disabled.
+  int extended_filter_enabled;
+  // 1 = next generation aec mode enabled, 0 = disabled.
+  int aec3_enabled;
+  bool refined_adaptive_filter_enabled;
+
+  // Runtime selection of number of filter partitions.
+  int num_partitions;
+
+  // Flag that extreme filter divergence has been detected by the Echo
+  // Suppressor.
+  int extreme_filter_divergence;
+};
 
 AecCore* WebRtcAec_CreateAec(int instance_count);  // Returns NULL on error.
 void WebRtcAec_FreeAec(AecCore* aec);
