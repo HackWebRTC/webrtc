@@ -63,11 +63,9 @@ public:
 
     TMMBRSet* BoundingSet(); // used for debuging
     TMMBRSet* CandidateSet();
-    TMMBRSet* BoundingSetToSend();
 
     TMMBRSet* VerifyAndAllocateCandidateSet(const uint32_t minimumSize);
     int32_t FindTMMBRBoundingSet(TMMBRSet*& boundingSet);
-    int32_t SetTMMBRBoundingSetToSend(const TMMBRSet* boundingSetToSend);
 
     bool IsOwner(const uint32_t ssrc, const uint32_t length) const;
 
@@ -75,15 +73,12 @@ public:
 
 protected:
     TMMBRSet*   VerifyAndAllocateBoundingSet(uint32_t minimumSize);
-    int32_t VerifyAndAllocateBoundingSetToSend(uint32_t minimumSize);
-
     int32_t FindTMMBRBoundingSet(int32_t numCandidates, TMMBRSet& candidateSet);
 
 private:
     rtc::CriticalSection    _criticalSection;
     TMMBRSet                _candidateSet;
     TMMBRSet                _boundingSet;
-    TMMBRSet                _boundingSetToSend;
 
     float*                  _ptrIntersectionBoundingSet;
     float*                  _ptrMaxPRBoundingSet;

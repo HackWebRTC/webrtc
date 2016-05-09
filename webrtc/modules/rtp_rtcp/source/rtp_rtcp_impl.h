@@ -202,7 +202,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   void SetTMMBRStatus(bool enable) override;
 
-  int32_t SetTMMBN(const TMMBRSet* bounding_set);
+  void SetTMMBN(const std::vector<rtcp::TmmbItem>* bounding_set);
 
   uint16_t MaxPayloadLength() const override;
 

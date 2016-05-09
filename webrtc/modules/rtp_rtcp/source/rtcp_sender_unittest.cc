@@ -688,13 +688,14 @@ TEST_F(RtcpSenderTest, TmmbrIncludedInCompoundPacketIfEnabled) {
 
 TEST_F(RtcpSenderTest, SendTmmbn) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
-  TMMBRSet bounding_set;
-  bounding_set.VerifyAndAllocateSet(1);
+  std::vector<rtcp::TmmbItem> bounding_set;
   const uint32_t kBitrateKbps = 32768;
   const uint32_t kPacketOh = 40;
   const uint32_t kSourceSsrc = 12345;
-  bounding_set.AddEntry(kBitrateKbps, kPacketOh, kSourceSsrc);
-  EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set));
+  const rtcp::TmmbItem tmmbn(kSourceSsrc, kBitrateKbps * 1000, kPacketOh);
+  bounding_set.push_back(tmmbn);
+  rtcp_sender_->SetTMMBN(&bounding_set);
+
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSr));
   EXPECT_EQ(1, parser()->sender_report()->num_packets());
   EXPECT_EQ(1, parser()->tmmbn()->num_packets());
@@ -713,8 +714,8 @@ TEST_F(RtcpSenderTest, SendTmmbn) {
 // situation where this caused confusion.
 TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
-  TMMBRSet bounding_set;
-  EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set));
+  std::vector<rtcp::TmmbItem> bounding_set;
+  rtcp_sender_->SetTMMBN(&bounding_set);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSr));
   EXPECT_EQ(1, parser()->sender_report()->num_packets());
   EXPECT_EQ(1, parser()->tmmbn()->num_packets());

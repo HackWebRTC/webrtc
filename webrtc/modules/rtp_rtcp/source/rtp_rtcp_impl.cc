@@ -680,8 +680,9 @@ void ModuleRtpRtcpImpl::SetTMMBRStatus(const bool enable) {
   rtcp_sender_.SetTMMBRStatus(enable);
 }
 
-int32_t ModuleRtpRtcpImpl::SetTMMBN(const TMMBRSet* bounding_set) {
-  return rtcp_sender_.SetTMMBN(bounding_set);
+void ModuleRtpRtcpImpl::SetTMMBN(
+    const std::vector<rtcp::TmmbItem>* bounding_set) {
+  rtcp_sender_.SetTMMBN(bounding_set);
 }
 
 // Returns the currently configured retransmission mode.

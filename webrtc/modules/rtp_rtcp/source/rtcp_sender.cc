@@ -639,16 +639,11 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
 
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBN(
     const RtcpContext& ctx) {
-  TMMBRSet* boundingSet = tmmbr_help_.BoundingSetToSend();
-  if (boundingSet == nullptr)
-    return nullptr;
-
   rtcp::Tmmbn* tmmbn = new rtcp::Tmmbn();
   tmmbn->From(ssrc_);
-  for (uint32_t i = 0; i < boundingSet->lengthOfSet(); i++) {
-    if (boundingSet->Tmmbr(i) > 0) {
-      tmmbn->WithTmmbr(boundingSet->Ssrc(i), boundingSet->Tmmbr(i),
-                       boundingSet->PacketOH(i));
+  for (const rtcp::TmmbItem& tmmbr : tmmbn_to_send_) {
+    if (tmmbr.bitrate_bps() > 0) {
+      tmmbn->WithTmmbr(tmmbr);
     }
   }
 
@@ -975,14 +970,14 @@ bool RTCPSender::RtcpXrReceiverReferenceTime() const {
 }
 
 // no callbacks allowed inside this function
-int32_t RTCPSender::SetTMMBN(const TMMBRSet* boundingSet) {
+void RTCPSender::SetTMMBN(const std::vector<rtcp::TmmbItem>* bounding_set) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
-
-  if (0 == tmmbr_help_.SetTMMBRBoundingSetToSend(boundingSet)) {
-    SetFlag(kRtcpTmmbn, true);
-    return 0;
+  if (bounding_set) {
+    tmmbn_to_send_ = *bounding_set;
+  } else {
+    tmmbn_to_send_.clear();
   }
-  return -1;
+  SetFlag(kRtcpTmmbn, true);
 }
 
 void RTCPSender::SetFlag(RTCPPacketType type, bool is_volatile) {

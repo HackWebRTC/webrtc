@@ -69,7 +69,6 @@ void TMMBRSet::ClearEntry(uint32_t idx) {
 TMMBRHelp::TMMBRHelp()
     : _candidateSet(),
       _boundingSet(),
-      _boundingSetToSend(),
       _ptrIntersectionBoundingSet(NULL),
       _ptrMaxPRBoundingSet(NULL) {
 }
@@ -105,39 +104,6 @@ TMMBRSet* TMMBRHelp::BoundingSet() {
   return &_boundingSet;
 }
 
-int32_t
-TMMBRHelp::SetTMMBRBoundingSetToSend(const TMMBRSet* boundingSetToSend)
-{
-    rtc::CritScope lock(&_criticalSection);
-
-    if (boundingSetToSend == NULL)
-    {
-        _boundingSetToSend.clearSet();
-        return 0;
-    }
-
-    VerifyAndAllocateBoundingSetToSend(boundingSetToSend->lengthOfSet());
-    _boundingSetToSend.clearSet();
-    for (uint32_t i = 0; i < boundingSetToSend->lengthOfSet(); i++)
-    {
-        // cap at our configured max bitrate
-        uint32_t bitrate = boundingSetToSend->Tmmbr(i);
-        _boundingSetToSend.SetEntry(i, bitrate,
-                                    boundingSetToSend->PacketOH(i),
-                                    boundingSetToSend->Ssrc(i));
-    }
-    return 0;
-}
-
-int32_t
-TMMBRHelp::VerifyAndAllocateBoundingSetToSend(uint32_t minimumSize)
-{
-    rtc::CritScope lock(&_criticalSection);
-
-    _boundingSetToSend.VerifyAndAllocateSet(minimumSize);
-    return 0;
-}
-
 TMMBRSet*
 TMMBRHelp::VerifyAndAllocateCandidateSet(uint32_t minimumSize)
 {
@@ -151,12 +117,6 @@ TMMBRSet*
 TMMBRHelp::CandidateSet()
 {
     return &_candidateSet;
-}
-
-TMMBRSet*
-TMMBRHelp::BoundingSetToSend()
-{
-    return &_boundingSetToSend;
 }
 
 int32_t
