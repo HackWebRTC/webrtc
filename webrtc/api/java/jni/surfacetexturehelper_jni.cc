@@ -17,21 +17,33 @@
 
 namespace webrtc_jni {
 
-SurfaceTextureHelper::SurfaceTextureHelper(
-    JNIEnv* jni, const char* thread_name, jobject j_egl_context)
-  : j_surface_texture_helper_(jni, jni->CallStaticObjectMethod(
-        FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
-        GetStaticMethodID(jni,
-                          FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
-                          "create",
-                          "(Ljava/lang/String;Lorg/webrtc/EglBase$Context;)"
-                          "Lorg/webrtc/SurfaceTextureHelper;"),
-        jni->NewStringUTF(thread_name), j_egl_context)),
-    j_return_texture_method_(
-        GetMethodID(jni,
-                    FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
-                    "returnTextureFrame",
-                    "()V")) {
+rtc::scoped_refptr<SurfaceTextureHelper> SurfaceTextureHelper::create(
+    JNIEnv* jni,
+    const char* thread_name,
+    jobject j_egl_context) {
+  jobject j_surface_texture_helper = jni->CallStaticObjectMethod(
+      FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
+      GetStaticMethodID(jni, FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
+                        "create",
+                        "(Ljava/lang/String;Lorg/webrtc/EglBase$Context;)"
+                        "Lorg/webrtc/SurfaceTextureHelper;"),
+      jni->NewStringUTF(thread_name), j_egl_context);
+  CHECK_EXCEPTION(jni)
+      << "error during initialization of Java SurfaceTextureHelper";
+  if (IsNull(jni, j_surface_texture_helper))
+    return nullptr;
+  return new rtc::RefCountedObject<SurfaceTextureHelper>(
+      jni, j_surface_texture_helper);
+}
+
+SurfaceTextureHelper::SurfaceTextureHelper(JNIEnv* jni,
+                                           jobject j_surface_texture_helper)
+    : j_surface_texture_helper_(jni, j_surface_texture_helper),
+      j_return_texture_method_(
+          GetMethodID(jni,
+                      FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
+                      "returnTextureFrame",
+                      "()V")) {
   CHECK_EXCEPTION(jni) << "error during initialization of SurfaceTextureHelper";
 }
 

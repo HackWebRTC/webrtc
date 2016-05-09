@@ -38,9 +38,9 @@ namespace webrtc_jni {
 // 4. Call CreateTextureFrame to wrap the Java texture in a VideoFrameBuffer.
 class SurfaceTextureHelper : public rtc::RefCountInterface {
  public:
-  SurfaceTextureHelper(JNIEnv* jni,
-                       const char* thread_name,
-                       jobject j_egl_context);
+  // Might return null if creating the Java SurfaceTextureHelper fails.
+  static rtc::scoped_refptr<SurfaceTextureHelper> create(
+      JNIEnv* jni, const char* thread_name, jobject j_egl_context);
 
   jobject GetJavaSurfaceTextureHelper() const;
 
@@ -51,6 +51,7 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
 
  protected:
   ~SurfaceTextureHelper();
+  SurfaceTextureHelper(JNIEnv* jni, jobject j_surface_texture_helper);
 
  private:
   //  May be called on arbitrary thread.

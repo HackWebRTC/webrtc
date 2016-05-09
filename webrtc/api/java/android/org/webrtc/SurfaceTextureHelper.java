@@ -50,7 +50,8 @@ class SurfaceTextureHelper {
 
   /**
    * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|. A dedicated
-   * thread and handler is created for handling the SurfaceTexture.
+   * thread and handler is created for handling the SurfaceTexture. May return null if EGL fails to
+   * initialize a pixel buffer surface and make it current.
    */
   public static SurfaceTextureHelper create(
       final String threadName, final EglBase.Context sharedContext) {
@@ -65,7 +66,12 @@ class SurfaceTextureHelper {
     return ThreadUtils.invokeUninterruptibly(handler, new Callable<SurfaceTextureHelper>() {
       @Override
       public SurfaceTextureHelper call() {
-        return new SurfaceTextureHelper(sharedContext, handler);
+        try {
+          return new SurfaceTextureHelper(sharedContext, handler);
+        } catch (RuntimeException e) {
+          Logging.e(TAG, threadName + " create failure", e);
+          return null;
+        }
       }
     });
   }
@@ -315,8 +321,16 @@ class SurfaceTextureHelper {
     this.handler = handler;
 
     eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PIXEL_BUFFER);
-    eglBase.createDummyPbufferSurface();
-    eglBase.makeCurrent();
+    try {
+      // Both these statements have been observed to fail on rare occasions, see BUG=webrtc:5682.
+      eglBase.createDummyPbufferSurface();
+      eglBase.makeCurrent();
+    } catch (RuntimeException e) {
+      // Clean up before rethrowing the exception.
+      eglBase.release();
+      handler.getLooper().quit();
+      throw e;
+    }
 
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     surfaceTexture = new SurfaceTexture(oesTextureId);

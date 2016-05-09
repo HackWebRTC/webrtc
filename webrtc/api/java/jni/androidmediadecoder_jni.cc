@@ -345,8 +345,13 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   ResetVariables();
 
   if (use_surface_) {
-    surface_texture_helper_ = new rtc::RefCountedObject<SurfaceTextureHelper>(
+    surface_texture_helper_ = SurfaceTextureHelper::create(
         jni, "Decoder SurfaceTextureHelper", render_egl_context_);
+    if (!surface_texture_helper_) {
+      ALOGE << "Couldn't create SurfaceTextureHelper - fallback to SW codec";
+      sw_fallback_required_ = true;
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
   }
 
   jobject j_video_codec_enum = JavaEnumFromIndexAndClassName(

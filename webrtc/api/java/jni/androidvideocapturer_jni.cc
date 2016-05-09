@@ -30,18 +30,16 @@ int AndroidVideoCapturerJni::SetAndroidObjects(JNIEnv* jni,
   return 0;
 }
 
-AndroidVideoCapturerJni::AndroidVideoCapturerJni(
-    JNIEnv* jni,
-    jobject j_video_capturer,
-    jobject j_egl_context)
+AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
+                                                 jobject j_video_capturer,
+                                                 jobject j_egl_context)
     : j_video_capturer_(jni, j_video_capturer),
-      j_video_capturer_class_(
-          jni, FindClass(jni, "org/webrtc/VideoCapturer")),
+      j_video_capturer_class_(jni, FindClass(jni, "org/webrtc/VideoCapturer")),
       j_observer_class_(
           jni,
           FindClass(jni,
                     "org/webrtc/VideoCapturer$NativeObserver")),
-      surface_texture_helper_(new rtc::RefCountedObject<SurfaceTextureHelper>(
+      surface_texture_helper_(SurfaceTextureHelper::create(
           jni, "Camera SurfaceTextureHelper", j_egl_context)),
       capturer_(nullptr) {
   LOG(LS_INFO) << "AndroidVideoCapturerJni ctor";
@@ -54,10 +52,12 @@ AndroidVideoCapturerJni::~AndroidVideoCapturerJni() {
       *j_video_capturer_,
       GetMethodID(jni(), *j_video_capturer_class_, "dispose", "()V"));
   CHECK_EXCEPTION(jni()) << "error during VideoCapturer.dispose()";
-  jni()->CallVoidMethod(
-      surface_texture_helper_->GetJavaSurfaceTextureHelper(),
-      GetMethodID(jni(), FindClass(jni(), "org/webrtc/SurfaceTextureHelper"),
-                  "dispose", "()V"));
+  if (surface_texture_helper_) {
+    jni()->CallVoidMethod(
+        surface_texture_helper_->GetJavaSurfaceTextureHelper(),
+        GetMethodID(jni(), FindClass(jni(), "org/webrtc/SurfaceTextureHelper"),
+                    "dispose", "()V"));
+  }
   CHECK_EXCEPTION(jni()) << "error during SurfaceTextureHelper.dispose()";
 }
 
@@ -82,12 +82,12 @@ void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
       jni(), *j_video_capturer_class_, "startCapture",
       "(IIILorg/webrtc/SurfaceTextureHelper;Landroid/content/Context;"
       "Lorg/webrtc/VideoCapturer$CapturerObserver;)V");
-  jni()->CallVoidMethod(*j_video_capturer_,
-                        m, width, height,
-                        framerate,
-                        surface_texture_helper_->GetJavaSurfaceTextureHelper(),
-                        application_context_,
-                        j_frame_observer);
+  jni()->CallVoidMethod(
+      *j_video_capturer_, m, width, height, framerate,
+      surface_texture_helper_
+          ? surface_texture_helper_->GetJavaSurfaceTextureHelper()
+          : nullptr,
+      application_context_, j_frame_observer);
   CHECK_EXCEPTION(jni()) << "error during VideoCapturer.startCapture";
 }
 

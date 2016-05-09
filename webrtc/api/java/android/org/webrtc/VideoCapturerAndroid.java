@@ -369,7 +369,11 @@ public class VideoCapturerAndroid implements
       final CapturerObserver frameObserver) {
     Logging.d(TAG, "startCapture requested: " + width + "x" + height + "@" + framerate);
     if (surfaceTextureHelper == null) {
-      throw new IllegalArgumentException("surfaceTextureHelper not set.");
+      frameObserver.onCapturerStarted(false /* success */);
+      if (eventsHandler != null) {
+        eventsHandler.onCameraError("No SurfaceTexture created.");
+      }
+      return;
     }
     if (applicationContext == null) {
       throw new IllegalArgumentException("applicationContext not set.");
