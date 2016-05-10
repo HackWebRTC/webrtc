@@ -32,28 +32,21 @@ TEST(DecisionLogic, CreateAndDestroy) {
   DelayPeakDetector delay_peak_detector(&tick_timer);
   DelayManager delay_manager(240, &delay_peak_detector, &tick_timer);
   BufferLevelFilter buffer_level_filter;
-  DecisionLogic* logic = DecisionLogic::Create(fs_hz, output_size_samples,
-                                               kPlayoutOn, &decoder_database,
-                                               packet_buffer, &delay_manager,
-                                               &buffer_level_filter);
+  DecisionLogic* logic = DecisionLogic::Create(
+      fs_hz, output_size_samples, kPlayoutOn, &decoder_database, packet_buffer,
+      &delay_manager, &buffer_level_filter, &tick_timer);
   delete logic;
-  logic = DecisionLogic::Create(fs_hz, output_size_samples,
-                                kPlayoutStreaming,
-                                &decoder_database,
-                                packet_buffer, &delay_manager,
-                                &buffer_level_filter);
+  logic = DecisionLogic::Create(
+      fs_hz, output_size_samples, kPlayoutStreaming, &decoder_database,
+      packet_buffer, &delay_manager, &buffer_level_filter, &tick_timer);
   delete logic;
-  logic = DecisionLogic::Create(fs_hz, output_size_samples,
-                                kPlayoutFax,
-                                &decoder_database,
-                                packet_buffer, &delay_manager,
-                                &buffer_level_filter);
+  logic = DecisionLogic::Create(
+      fs_hz, output_size_samples, kPlayoutFax, &decoder_database, packet_buffer,
+      &delay_manager, &buffer_level_filter, &tick_timer);
   delete logic;
-  logic = DecisionLogic::Create(fs_hz, output_size_samples,
-                                kPlayoutOff,
-                                &decoder_database,
-                                packet_buffer, &delay_manager,
-                                &buffer_level_filter);
+  logic = DecisionLogic::Create(
+      fs_hz, output_size_samples, kPlayoutOff, &decoder_database, packet_buffer,
+      &delay_manager, &buffer_level_filter, &tick_timer);
   delete logic;
 }
 

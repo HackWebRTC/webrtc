@@ -14,6 +14,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/defines.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -39,7 +40,8 @@ class DecisionLogic {
                                DecoderDatabase* decoder_database,
                                const PacketBuffer& packet_buffer,
                                DelayManager* delay_manager,
-                               BufferLevelFilter* buffer_level_filter);
+                               BufferLevelFilter* buffer_level_filter,
+                               const TickTimer* tick_timer);
 
   // Constructor.
   DecisionLogic(int fs_hz,
@@ -48,10 +50,10 @@ class DecisionLogic {
                 DecoderDatabase* decoder_database,
                 const PacketBuffer& packet_buffer,
                 DelayManager* delay_manager,
-                BufferLevelFilter* buffer_level_filter);
+                BufferLevelFilter* buffer_level_filter,
+                const TickTimer* tick_timer);
 
-  // Destructor.
-  virtual ~DecisionLogic() {}
+  virtual ~DecisionLogic();
 
   // Resets object to a clean state.
   void Reset();
@@ -111,8 +113,8 @@ class DecisionLogic {
   NetEqPlayoutMode playout_mode() const { return playout_mode_; }
 
  protected:
-  // The value 6 sets maximum time-stretch rate to about 100 ms/s.
-  static const int kMinTimescaleInterval = 6;
+  // The value 5 sets maximum time-stretch rate to about 100 ms/s.
+  static const int kMinTimescaleInterval = 5;
 
   enum CngState {
     kCngOff,
@@ -147,6 +149,7 @@ class DecisionLogic {
   const PacketBuffer& packet_buffer_;
   DelayManager* delay_manager_;
   BufferLevelFilter* buffer_level_filter_;
+  const TickTimer* tick_timer_;
   int fs_mult_;
   size_t output_size_samples_;
   CngState cng_state_;  // Remember if comfort noise is interrupted by other
@@ -155,7 +158,7 @@ class DecisionLogic {
   size_t packet_length_samples_;
   int sample_memory_;
   bool prev_time_scale_;
-  int timescale_hold_off_;
+  std::unique_ptr<TickTimer::Countdown> timescale_countdown_;
   int num_consecutive_expands_;
   const NetEqPlayoutMode playout_mode_;
 

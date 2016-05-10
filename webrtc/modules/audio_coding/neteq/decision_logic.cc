@@ -29,26 +29,19 @@ DecisionLogic* DecisionLogic::Create(int fs_hz,
                                      DecoderDatabase* decoder_database,
                                      const PacketBuffer& packet_buffer,
                                      DelayManager* delay_manager,
-                                     BufferLevelFilter* buffer_level_filter) {
+                                     BufferLevelFilter* buffer_level_filter,
+                                     const TickTimer* tick_timer) {
   switch (playout_mode) {
     case kPlayoutOn:
     case kPlayoutStreaming:
-      return new DecisionLogicNormal(fs_hz,
-                                     output_size_samples,
-                                     playout_mode,
-                                     decoder_database,
-                                     packet_buffer,
-                                     delay_manager,
-                                     buffer_level_filter);
+      return new DecisionLogicNormal(
+          fs_hz, output_size_samples, playout_mode, decoder_database,
+          packet_buffer, delay_manager, buffer_level_filter, tick_timer);
     case kPlayoutFax:
     case kPlayoutOff:
-      return new DecisionLogicFax(fs_hz,
-                                  output_size_samples,
-                                  playout_mode,
-                                  decoder_database,
-                                  packet_buffer,
-                                  delay_manager,
-                                  buffer_level_filter);
+      return new DecisionLogicFax(
+          fs_hz, output_size_samples, playout_mode, decoder_database,
+          packet_buffer, delay_manager, buffer_level_filter, tick_timer);
   }
   // This line cannot be reached, but must be here to avoid compiler errors.
   assert(false);
@@ -61,21 +54,26 @@ DecisionLogic::DecisionLogic(int fs_hz,
                              DecoderDatabase* decoder_database,
                              const PacketBuffer& packet_buffer,
                              DelayManager* delay_manager,
-                             BufferLevelFilter* buffer_level_filter)
+                             BufferLevelFilter* buffer_level_filter,
+                             const TickTimer* tick_timer)
     : decoder_database_(decoder_database),
       packet_buffer_(packet_buffer),
       delay_manager_(delay_manager),
       buffer_level_filter_(buffer_level_filter),
+      tick_timer_(tick_timer),
       cng_state_(kCngOff),
       packet_length_samples_(0),
       sample_memory_(0),
       prev_time_scale_(false),
-      timescale_hold_off_(kMinTimescaleInterval),
+      timescale_countdown_(
+          tick_timer_->GetNewCountdown(kMinTimescaleInterval + 1)),
       num_consecutive_expands_(0),
       playout_mode_(playout_mode) {
   delay_manager_->set_streaming_mode(playout_mode_ == kPlayoutStreaming);
   SetSampleRate(fs_hz, output_size_samples);
 }
+
+DecisionLogic::~DecisionLogic() = default;
 
 void DecisionLogic::Reset() {
   cng_state_ = kCngOff;
@@ -83,7 +81,7 @@ void DecisionLogic::Reset() {
   packet_length_samples_ = 0;
   sample_memory_ = 0;
   prev_time_scale_ = false;
-  timescale_hold_off_ = 0;
+  timescale_countdown_.reset();
   num_consecutive_expands_ = 0;
 }
 
@@ -91,7 +89,8 @@ void DecisionLogic::SoftReset() {
   packet_length_samples_ = 0;
   sample_memory_ = 0;
   prev_time_scale_ = false;
-  timescale_hold_off_ = kMinTimescaleInterval;
+  timescale_countdown_ =
+      tick_timer_->GetNewCountdown(kMinTimescaleInterval + 1);
 }
 
 void DecisionLogic::SetSampleRate(int fs_hz, size_t output_size_samples) {
@@ -165,14 +164,13 @@ void DecisionLogic::FilterBufferLevel(size_t buffer_size_samples,
     int sample_memory_local = 0;
     if (prev_time_scale_) {
       sample_memory_local = sample_memory_;
-      timescale_hold_off_ = kMinTimescaleInterval;
+      timescale_countdown_ =
+          tick_timer_->GetNewCountdown(kMinTimescaleInterval);
     }
     buffer_level_filter_->Update(buffer_size_packets, sample_memory_local,
                                  packet_length_samples_);
     prev_time_scale_ = false;
   }
-
-  timescale_hold_off_ = std::max(timescale_hold_off_ - 1, 0);
 }
 
 }  // namespace webrtc

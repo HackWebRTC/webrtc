@@ -2147,11 +2147,9 @@ NetEqImpl::OutputType NetEqImpl::LastOutputType() {
 }
 
 void NetEqImpl::CreateDecisionLogic() {
-  decision_logic_.reset(DecisionLogic::Create(fs_hz_, output_size_samples_,
-                                              playout_mode_,
-                                              decoder_database_.get(),
-                                              *packet_buffer_.get(),
-                                              delay_manager_.get(),
-                                              buffer_level_filter_.get()));
+  decision_logic_.reset(DecisionLogic::Create(
+      fs_hz_, output_size_samples_, playout_mode_, decoder_database_.get(),
+      *packet_buffer_.get(), delay_manager_.get(), buffer_level_filter_.get(),
+      tick_timer_.get()));
 }
 }  // namespace webrtc

@@ -28,11 +28,16 @@ class DecisionLogicNormal : public DecisionLogic {
                       DecoderDatabase* decoder_database,
                       const PacketBuffer& packet_buffer,
                       DelayManager* delay_manager,
-                      BufferLevelFilter* buffer_level_filter)
-      : DecisionLogic(fs_hz, output_size_samples, playout_mode,
-                      decoder_database, packet_buffer, delay_manager,
-                      buffer_level_filter) {
-  }
+                      BufferLevelFilter* buffer_level_filter,
+                      const TickTimer* tick_timer)
+      : DecisionLogic(fs_hz,
+                      output_size_samples,
+                      playout_mode,
+                      decoder_database,
+                      packet_buffer,
+                      delay_manager,
+                      buffer_level_filter,
+                      tick_timer) {}
 
  protected:
   static const int kAllowMergeWithoutExpandMs = 20;  // 20 ms.
@@ -86,7 +91,9 @@ class DecisionLogicNormal : public DecisionLogic {
 
   // Checks if enough time has elapsed since the last successful timescale
   // operation was done (i.e., accelerate or preemptive expand).
-  bool TimescaleAllowed() const { return timescale_hold_off_ == 0; }
+  bool TimescaleAllowed() const {
+    return !timescale_countdown_ || timescale_countdown_->Finished();
+  }
 
   // Checks if the current (filtered) buffer level is under the target level.
   bool UnderTargetLevel() const;
