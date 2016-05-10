@@ -1080,13 +1080,13 @@ void AllocationSequence::OnReadPacket(
   // a STUN binding response, so we pass the message to TurnPort regardless of
   // the message type. The TurnPort will just ignore the message since it will
   // not find any request by transaction ID.
-  for (std::vector<TurnPort*>::const_iterator it = turn_ports_.begin();
-       it != turn_ports_.end(); ++it) {
-    TurnPort* port = *it;
+  for (TurnPort* port : turn_ports_) {
     if (port->server_address().address == remote_addr) {
-      port->HandleIncomingPacket(socket, data, size, remote_addr, packet_time);
+      if (port->HandleIncomingPacket(socket, data, size, remote_addr,
+                                     packet_time)) {
+        return;
+      }
       turn_port_found = true;
-      break;
     }
   }
 
@@ -1097,8 +1097,9 @@ void AllocationSequence::OnReadPacket(
     // the TURN server is also a STUN server.
     if (!turn_port_found ||
         stun_servers.find(remote_addr) != stun_servers.end()) {
-      udp_port_->HandleIncomingPacket(
-          socket, data, size, remote_addr, packet_time);
+      RTC_DCHECK(udp_port_->SharedSocket());
+      udp_port_->HandleIncomingPacket(socket, data, size, remote_addr,
+                                      packet_time);
     }
   }
 }

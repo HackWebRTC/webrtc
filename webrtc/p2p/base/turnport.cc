@@ -533,11 +533,15 @@ int TurnPort::SendTo(const void* data, size_t size,
   return static_cast<int>(size);
 }
 
-void TurnPort::OnReadPacket(
-    rtc::AsyncPacketSocket* socket, const char* data, size_t size,
-    const rtc::SocketAddress& remote_addr,
-    const rtc::PacketTime& packet_time) {
-  ASSERT(socket == socket_);
+bool TurnPort::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
+                                    const char* data, size_t size,
+                                    const rtc::SocketAddress& remote_addr,
+                                    const rtc::PacketTime& packet_time) {
+  if (socket != socket_) {
+    // The packet was received on a shared socket after we've allocated a new
+    // socket for this TURN port.
+    return false;
+  }
 
   // This is to guard against a STUN response from previous server after
   // alternative server redirection. TODO(guoweis): add a unit test for this
@@ -547,19 +551,19 @@ void TurnPort::OnReadPacket(
                             << remote_addr.ToString()
                             << ", server_address_:"
                             << server_address_.address.ToString();
-    return;
+    return false;
   }
 
   // The message must be at least the size of a channel header.
   if (size < TURN_CHANNEL_HEADER_SIZE) {
     LOG_J(LS_WARNING, this) << "Received TURN message that was too short";
-    return;
+    return false;
   }
 
   if (state_ == STATE_DISCONNECTED) {
     LOG_J(LS_WARNING, this)
         << "Received TURN message while the Turn port is disconnected";
-    return;
+    return false;
   }
 
   // Check the message type, to see if is a Channel Data message.
@@ -568,27 +572,41 @@ void TurnPort::OnReadPacket(
   uint16_t msg_type = rtc::GetBE16(data);
   if (IsTurnChannelData(msg_type)) {
     HandleChannelData(msg_type, data, size, packet_time);
-  } else if (msg_type == TURN_DATA_INDICATION) {
-    HandleDataIndication(data, size, packet_time);
-  } else {
-    if (SharedSocket() &&
-        (msg_type == STUN_BINDING_RESPONSE ||
-         msg_type == STUN_BINDING_ERROR_RESPONSE)) {
-      LOG_J(LS_VERBOSE, this) <<
-          "Ignoring STUN binding response message on shared socket.";
-      return;
-    }
+    return true;
 
-    // This must be a response for one of our requests.
-    // Check success responses, but not errors, for MESSAGE-INTEGRITY.
-    if (IsStunSuccessResponseType(msg_type) &&
-        !StunMessage::ValidateMessageIntegrity(data, size, hash())) {
-      LOG_J(LS_WARNING, this) << "Received TURN message with invalid "
-                              << "message integrity, msg_type=" << msg_type;
-      return;
-    }
-    request_manager_.CheckResponse(data, size);
   }
+
+  if (msg_type == TURN_DATA_INDICATION) {
+    HandleDataIndication(data, size, packet_time);
+    return true;
+  }
+
+  if (SharedSocket() && (msg_type == STUN_BINDING_RESPONSE ||
+                         msg_type == STUN_BINDING_ERROR_RESPONSE)) {
+    LOG_J(LS_VERBOSE, this) <<
+        "Ignoring STUN binding response message on shared socket.";
+    return false;
+  }
+
+  // This must be a response for one of our requests.
+  // Check success responses, but not errors, for MESSAGE-INTEGRITY.
+  if (IsStunSuccessResponseType(msg_type) &&
+      !StunMessage::ValidateMessageIntegrity(data, size, hash())) {
+    LOG_J(LS_WARNING, this) << "Received TURN message with invalid "
+                            << "message integrity, msg_type=" << msg_type;
+    return true;
+  }
+  request_manager_.CheckResponse(data, size);
+
+  return true;
+}
+
+void TurnPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
+                            const char* data,
+                            size_t size,
+                            const rtc::SocketAddress& remote_addr,
+                            const rtc::PacketTime& packet_time) {
+  HandleIncomingPacket(socket, data, size, remote_addr, packet_time);
 }
 
 void TurnPort::OnSentPacket(rtc::AsyncPacketSocket* socket,

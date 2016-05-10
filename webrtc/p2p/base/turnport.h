@@ -94,13 +94,10 @@ class TurnPort : public Port {
   virtual int GetOption(rtc::Socket::Option opt, int* value);
   virtual int GetError();
 
-  virtual bool HandleIncomingPacket(
-      rtc::AsyncPacketSocket* socket, const char* data, size_t size,
-      const rtc::SocketAddress& remote_addr,
-      const rtc::PacketTime& packet_time) {
-    OnReadPacket(socket, data, size, remote_addr, packet_time);
-    return true;
-  }
+  virtual bool HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
+                                    const char* data, size_t size,
+                                    const rtc::SocketAddress& remote_addr,
+                                    const rtc::PacketTime& packet_time);
   virtual void OnReadPacket(rtc::AsyncPacketSocket* socket,
                             const char* data, size_t size,
                             const rtc::SocketAddress& remote_addr,
