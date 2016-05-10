@@ -63,11 +63,16 @@ size_t Merge::Process(int16_t* input, size_t input_length,
   size_t best_correlation_index = 0;
   size_t output_length = 0;
 
+  std::unique_ptr<int16_t[]> input_channel(
+      new int16_t[input_length_per_channel]);
+  std::unique_ptr<int16_t[]> expanded_channel(new int16_t[expanded_length]);
   for (size_t channel = 0; channel < num_channels_; ++channel) {
-    int16_t* input_channel = &input_vector[channel][0];
-    int16_t* expanded_channel = &expanded_[channel][0];
+    input_vector[channel].CopyTo(
+        input_length_per_channel, 0, input_channel.get());
+    expanded_[channel].CopyTo(expanded_length, 0, expanded_channel.get());
+
     int16_t new_mute_factor = SignalScaling(
-        input_channel, input_length_per_channel, expanded_channel);
+        input_channel.get(), input_length_per_channel, expanded_channel.get());
 
     // Adjust muting factor (product of "main" muting factor and expand muting
     // factor).
@@ -85,8 +90,8 @@ size_t Merge::Process(int16_t* input, size_t input_length,
       // Downsample, correlate, and find strongest correlation period for the
       // master (i.e., first) channel only.
       // Downsample to 4kHz sample rate.
-      Downsample(input_channel, input_length_per_channel, expanded_channel,
-                 expanded_length);
+      Downsample(input_channel.get(), input_length_per_channel,
+                 expanded_channel.get(), expanded_length);
 
       // Calculate the lag of the strongest correlation period.
       best_correlation_index = CorrelateAndPeakSearch(
@@ -108,7 +113,7 @@ size_t Merge::Process(int16_t* input, size_t input_length,
       // and so on.
       int increment = 4194 / fs_mult_;
       *external_mute_factor =
-          static_cast<int16_t>(DspHelper::RampSignal(input_channel,
+          static_cast<int16_t>(DspHelper::RampSignal(input_channel.get(),
                                                      interpolation_length,
                                                      *external_mute_factor,
                                                      increment));
@@ -128,10 +133,10 @@ size_t Merge::Process(int16_t* input, size_t input_length,
     int16_t increment =
         static_cast<int16_t>(16384 / (interpolation_length + 1));  // In Q14.
     int16_t mute_factor = 16384 - increment;
-    memmove(temp_data_.data(), expanded_channel,
+    memmove(temp_data_.data(), expanded_channel.get(),
             sizeof(int16_t) * best_correlation_index);
     DspHelper::CrossFade(&expanded_channel[best_correlation_index],
-                         input_channel, interpolation_length,
+                         input_channel.get(), interpolation_length,
                          &mute_factor, increment, decoded_output);
 
     output_length = best_correlation_index + input_length_per_channel;
@@ -141,8 +146,7 @@ size_t Merge::Process(int16_t* input, size_t input_length,
     } else {
       assert(output->Size() == output_length);
     }
-    memcpy(&(*output)[channel][0], temp_data_.data(),
-           sizeof(temp_data_[0]) * output_length);
+    (*output)[channel].OverwriteAt(temp_data_.data(), output_length, 0);
   }
 
   // Copy back the first part of the data to |sync_buffer_| and remove it from

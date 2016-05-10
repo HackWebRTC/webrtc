@@ -93,8 +93,9 @@ class ExpandTest : public ::testing::Test {
     ASSERT_TRUE(input_file_.Seek(speech_start_samples));
 
     // Pre-load the sync buffer with speech data.
-    ASSERT_TRUE(
-        input_file_.Read(sync_buffer_.Size(), &sync_buffer_.Channel(0)[0]));
+    std::unique_ptr<int16_t[]> temp(new int16_t[sync_buffer_.Size()]);
+    ASSERT_TRUE(input_file_.Read(sync_buffer_.Size(), temp.get()));
+    sync_buffer_.Channel(0).OverwriteAt(temp.get(), sync_buffer_.Size(), 0);
     ASSERT_EQ(1u, num_channels_) << "Fix: Must populate all channels.";
   }
 

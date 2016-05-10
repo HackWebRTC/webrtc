@@ -67,10 +67,10 @@ int ComfortNoise::Generate(size_t requested_length,
     LOG(LS_ERROR) << "Unknwown payload type";
     return kUnknownPayloadType;
   }
-  // The expression &(*output)[0][0] is a pointer to the first element in
-  // the first channel.
+
+  std::unique_ptr<int16_t[]> temp(new int16_t[number_of_samples]);
   if (!cng_decoder->Generate(
-          rtc::ArrayView<int16_t>(&(*output)[0][0], number_of_samples),
+          rtc::ArrayView<int16_t>(temp.get(), number_of_samples),
           new_period)) {
     // Error returned.
     output->Zeros(requested_length);
@@ -78,6 +78,7 @@ int ComfortNoise::Generate(size_t requested_length,
         "ComfortNoiseDecoder::Genererate failed to generate comfort noise";
     return kInternalError;
   }
+  (*output)[0].OverwriteAt(temp.get(), number_of_samples, 0);
 
   if (first_call_) {
     // Set tapering window parameters. Values are in Q15.

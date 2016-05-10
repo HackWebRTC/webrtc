@@ -106,7 +106,7 @@ void AudioMultiVector::PushBackFromIndex(const AudioMultiVector& append_this,
   assert(num_channels_ == append_this.num_channels_);
   if (num_channels_ == append_this.num_channels_) {
     for (size_t i = 0; i < num_channels_; ++i) {
-      channels_[i]->PushBack(&append_this[i][index], length);
+      channels_[i]->PushBack(append_this[i], length, index);
     }
   }
 }
@@ -133,14 +133,14 @@ size_t AudioMultiVector::ReadInterleavedFromIndex(size_t start_index,
                                                   int16_t* destination) const {
   RTC_DCHECK(destination);
   size_t index = 0;  // Number of elements written to |destination| so far.
-  assert(start_index <= Size());
+  RTC_DCHECK_LE(start_index, Size());
   start_index = std::min(start_index, Size());
   if (length + start_index > Size()) {
     length = Size() - start_index;
   }
   if (num_channels_ == 1) {
     // Special case to avoid the nested for loop below.
-    memcpy(destination, &(*this)[0][start_index], length * sizeof(int16_t));
+    (*this)[0].CopyTo(length, start_index, destination);
     return length;
   }
   for (size_t i = 0; i < length; ++i) {
@@ -167,7 +167,7 @@ void AudioMultiVector::OverwriteAt(const AudioMultiVector& insert_this,
   length = std::min(length, insert_this.Size());
   if (num_channels_ == insert_this.num_channels_) {
     for (size_t i = 0; i < num_channels_; ++i) {
-      channels_[i]->OverwriteAt(&insert_this[i][0], length, position);
+      channels_[i]->OverwriteAt(insert_this[i], length, position);
     }
   }
 }

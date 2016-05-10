@@ -82,14 +82,6 @@ TEST_F(AudioVectorTest, PushBackAndCopy) {
   EXPECT_TRUE(vec_copy.Empty());
 }
 
-// Try to copy to a NULL pointer. Nothing should happen.
-TEST_F(AudioVectorTest, CopyToNull) {
-  AudioVector vec;
-  AudioVector* vec_copy = NULL;
-  vec.PushBack(array_, array_length());
-  vec.CopyTo(vec_copy);
-}
-
 // Test the PushBack method with another AudioVector as input argument.
 TEST_F(AudioVectorTest, PushBackVector) {
   static const size_t kLength = 10;

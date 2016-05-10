@@ -59,10 +59,7 @@ void BackgroundNoise::Update(const AudioMultiVector& input,
     ChannelParameters& parameters = channel_parameters_[channel_ix];
     int16_t temp_signal_array[kVecLen + kMaxLpcOrder] = {0};
     int16_t* temp_signal = &temp_signal_array[kMaxLpcOrder];
-    memcpy(temp_signal,
-           &input[channel_ix][input.Size() - kVecLen],
-           sizeof(int16_t) * kVecLen);
-
+    input[channel_ix].CopyTo(kVecLen, input.Size() - kVecLen, temp_signal);
     int32_t sample_energy = CalculateAutoCorrelation(temp_signal, kVecLen,
                                                      auto_correlation);
 
