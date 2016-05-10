@@ -20,8 +20,8 @@
 #endif
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -37,13 +37,13 @@ class RealTimeClock : public Clock {
   // Return a timestamp in milliseconds relative to some arbitrary source; the
   // source is fixed for this clock.
   int64_t TimeInMilliseconds() const override {
-    return TickTime::MillisecondTimestamp();
+    return rtc::TimeMillis();
   }
 
   // Return a timestamp in microseconds relative to some arbitrary source; the
   // source is fixed for this clock.
   int64_t TimeInMicroseconds() const override {
-    return TickTime::MicrosecondTimestamp();
+    return rtc::TimeMicros();
   }
 
   // Retrieve an NTP absolute timestamp in seconds and fractions of a second.

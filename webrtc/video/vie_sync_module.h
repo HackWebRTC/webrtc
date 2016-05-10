@@ -18,7 +18,6 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/include/module.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/stream_synchronization.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 
@@ -61,7 +60,7 @@ class ViESyncModule : public Module {
   RtpRtcp* video_rtp_rtcp_;
   int voe_channel_id_;
   VoEVideoSync* voe_sync_interface_;
-  TickTime last_sync_time_;
+  int64_t last_sync_time_;
   std::unique_ptr<StreamSynchronization> sync_;
   StreamSynchronization::Measurements audio_measurement_;
   StreamSynchronization::Measurements video_measurement_;

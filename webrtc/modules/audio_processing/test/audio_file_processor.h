@@ -16,11 +16,11 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
@@ -33,9 +33,9 @@ namespace webrtc {
 // Holds a few statistics about a series of TickIntervals.
 struct TickIntervalStats {
   TickIntervalStats() : min(std::numeric_limits<int64_t>::max()) {}
-  TickInterval sum;
-  TickInterval max;
-  TickInterval min;
+  int64_t sum;
+  int64_t max;
+  int64_t min;
 };
 
 // Interface for processing an input file with an AudioProcessing instance and
@@ -60,10 +60,10 @@ class AudioFileProcessor {
   class ScopedTimer {
    public:
     explicit ScopedTimer(TickIntervalStats* proc_time)
-        : proc_time_(proc_time), start_time_(TickTime::Now()) {}
+      : proc_time_(proc_time), start_time_(rtc::TimeNanos()) {}
 
     ~ScopedTimer() {
-      TickInterval interval = TickTime::Now() - start_time_;
+      int64_t interval = rtc::TimeNanos() - start_time_;
       proc_time_->sum += interval;
       proc_time_->max = std::max(proc_time_->max, interval);
       proc_time_->min = std::min(proc_time_->min, interval);
@@ -71,7 +71,7 @@ class AudioFileProcessor {
 
    private:
     TickIntervalStats* const proc_time_;
-    TickTime start_time_;
+    int64_t start_time_;
   };
 
   TickIntervalStats* mutable_proc_time() { return &proc_time_; }

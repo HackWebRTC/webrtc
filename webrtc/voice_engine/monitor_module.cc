@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/voice_engine/monitor_module.h"
 
 namespace webrtc  {
@@ -17,7 +17,7 @@ namespace voe  {
 
 MonitorModule::MonitorModule() :
     _observerPtr(NULL),
-    _lastProcessTime(TickTime::MillisecondTimestamp())
+    _lastProcessTime(rtc::TimeMillis())
 {
 }
 
@@ -52,7 +52,7 @@ MonitorModule::DeRegisterObserver()
 int64_t
 MonitorModule::TimeUntilNextProcess()
 {
-    int64_t now = TickTime::MillisecondTimestamp();
+    int64_t now = rtc::TimeMillis();
     const int64_t kAverageProcessUpdateTimeMs = 1000;
     return kAverageProcessUpdateTimeMs - (now - _lastProcessTime);
 }
@@ -60,7 +60,7 @@ MonitorModule::TimeUntilNextProcess()
 void
 MonitorModule::Process()
 {
-    _lastProcessTime = TickTime::MillisecondTimestamp();
+    _lastProcessTime = rtc::TimeMillis();
     rtc::CritScope lock(&_callbackCritSect);
     if (_observerPtr)
     {

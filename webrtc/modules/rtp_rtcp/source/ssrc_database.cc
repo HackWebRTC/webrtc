@@ -9,9 +9,8 @@
  */
 
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
-
+#include "webrtc/base/timeutils.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -45,7 +44,7 @@ void SSRCDatabase::ReturnSSRC(uint32_t ssrc) {
   ssrcs_.erase(ssrc);
 }
 
-SSRCDatabase::SSRCDatabase() : random_(TickTime::Now().Ticks()) {}
+SSRCDatabase::SSRCDatabase() : random_(rtc::TimeMicros()) {}
 
 SSRCDatabase::~SSRCDatabase() {}
 

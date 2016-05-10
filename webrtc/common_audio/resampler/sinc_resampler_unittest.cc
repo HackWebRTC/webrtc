@@ -20,11 +20,11 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/resampler/sinc_resampler.h"
 #include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/system_wrappers/include/stringize_macros.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/test_suite.h"
 
 using testing::_;
@@ -107,10 +107,11 @@ TEST(SincResamplerTest, DISABLED_SetRatioBench) {
   SincResampler resampler(kSampleRateRatio, SincResampler::kDefaultRequestSize,
                           &mock_source);
 
-  TickTime start = TickTime::Now();
+  int64_t start = rtc::TimeNanos();
   for (int i = 1; i < 10000; ++i)
     resampler.SetRatio(1.0 / i);
-  double total_time_c_us = (TickTime::Now() - start).Microseconds();
+  double total_time_c_us =
+      (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
   printf("SetRatio() took %.2fms.\n", total_time_c_us / 1000);
 }
 
@@ -179,13 +180,14 @@ TEST(SincResamplerTest, ConvolveBenchmark) {
   printf("Benchmarking %d iterations:\n", kConvolveIterations);
 
   // Benchmark Convolve_C().
-  TickTime start = TickTime::Now();
+  int64_t start = rtc::TimeNanos();
   for (int i = 0; i < kConvolveIterations; ++i) {
     resampler.Convolve_C(
         resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }
-  double total_time_c_us = (TickTime::Now() - start).Microseconds();
+  double total_time_c_us =
+      (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
   printf("Convolve_C took %.2fms.\n", total_time_c_us / 1000);
 
 #if defined(CONVOLVE_FUNC)
@@ -196,27 +198,27 @@ TEST(SincResamplerTest, ConvolveBenchmark) {
 #endif
 
   // Benchmark with unaligned input pointer.
-  start = TickTime::Now();
+  start = rtc::TimeNanos();
   for (int j = 0; j < kConvolveIterations; ++j) {
     resampler.CONVOLVE_FUNC(
         resampler.kernel_storage_.get() + 1, resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }
   double total_time_optimized_unaligned_us =
-      (TickTime::Now() - start).Microseconds();
+      (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
   printf(STRINGIZE(CONVOLVE_FUNC) "(unaligned) took %.2fms; which is %.2fx "
          "faster than Convolve_C.\n", total_time_optimized_unaligned_us / 1000,
          total_time_c_us / total_time_optimized_unaligned_us);
 
   // Benchmark with aligned input pointer.
-  start = TickTime::Now();
+  start = rtc::TimeNanos();
   for (int j = 0; j < kConvolveIterations; ++j) {
     resampler.CONVOLVE_FUNC(
         resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }
   double total_time_optimized_aligned_us =
-      (TickTime::Now() - start).Microseconds();
+      (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
   printf(STRINGIZE(CONVOLVE_FUNC) " (aligned) took %.2fms; which is %.2fx "
          "faster than Convolve_C and %.2fx faster than "
          STRINGIZE(CONVOLVE_FUNC) " (unaligned).\n",

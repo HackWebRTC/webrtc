@@ -14,8 +14,8 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -30,7 +30,7 @@ class IvfFileWriterTest : public ::testing::Test {
  protected:
   void SetUp() override {
     const int64_t start_id =
-        reinterpret_cast<int64_t>(this) ^ TickTime::MicrosecondTimestamp();
+        reinterpret_cast<int64_t>(this) ^ rtc::TimeMicros();
     int64_t id = start_id;
     do {
       std::ostringstream oss;

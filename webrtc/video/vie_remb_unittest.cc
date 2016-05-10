@@ -16,7 +16,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/vie_remb.h"
 
 using ::testing::_;

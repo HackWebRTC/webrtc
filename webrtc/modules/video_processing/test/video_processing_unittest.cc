@@ -15,8 +15,8 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -144,11 +144,12 @@ TEST_F(VideoProcessingTest, Resampler) {
 
   for (uint32_t run_idx = 0; run_idx < NumRuns; run_idx++) {
     // Initiate test timer.
-    const TickTime time_start = TickTime::Now();
+    const int64_t time_start = rtc::TimeNanos();
 
     // Init the sourceFrame with a timestamp.
-    video_frame_.set_render_time_ms(time_start.MillisecondTimestamp());
-    video_frame_.set_timestamp(time_start.MillisecondTimestamp() * 90);
+    int64_t time_start_ms = time_start / rtc::kNumNanosecsPerMillisec;
+    video_frame_.set_render_time_ms(time_start_ms);
+    video_frame_.set_timestamp(time_start_ms * 90);
 
     // Test scaling to different sizes: source is of |width|/|height| = 352/288.
     // Pure scaling:
@@ -191,7 +192,8 @@ TEST_F(VideoProcessingTest, Resampler) {
     TestSize(video_frame_, cropped_source_frame, 281, 175, 29.3, vp_);
 
     // Stop timer.
-    const int64_t runtime = (TickTime::Now() - time_start).Microseconds();
+    const int64_t runtime =
+        (rtc::TimeNanos() - time_start) / rtc::kNumNanosecsPerMicrosec;
     if (runtime < min_runtime || run_idx == 0) {
       min_runtime = runtime;
     }

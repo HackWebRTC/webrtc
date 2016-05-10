@@ -14,10 +14,10 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -86,16 +86,17 @@ void PushSincResamplerTest::ResampleBenchmarkTest(bool int_format) {
   const double io_ratio = input_rate_ / static_cast<double>(output_rate_);
   SincResampler sinc_resampler(io_ratio, SincResampler::kDefaultRequestSize,
                                &resampler_source);
-  TickTime start = TickTime::Now();
+  int64_t start = rtc::TimeNanos();
   for (int i = 0; i < kResampleIterations; ++i) {
     sinc_resampler.Resample(output_samples, resampled_destination.get());
   }
-  double total_time_sinc_us = (TickTime::Now() - start).Microseconds();
+  double total_time_sinc_us =
+      (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
   printf("SincResampler took %.2f us per frame.\n",
          total_time_sinc_us / kResampleIterations);
 
   PushSincResampler resampler(input_samples, output_samples);
-  start = TickTime::Now();
+  start = rtc::TimeNanos();
   if (int_format) {
     for (int i = 0; i < kResampleIterations; ++i) {
       EXPECT_EQ(output_samples,
@@ -113,7 +114,8 @@ void PushSincResamplerTest::ResampleBenchmarkTest(bool int_format) {
                                    output_samples));
     }
   }
-  double total_time_us = (TickTime::Now() - start).Microseconds();
+  double total_time_us =
+      (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
   printf("PushSincResampler took %.2f us per frame; which is a %.1f%% overhead "
          "on SincResampler.\n\n", total_time_us / kResampleIterations,
          (total_time_us - total_time_sinc_us) / total_time_sinc_us * 100);

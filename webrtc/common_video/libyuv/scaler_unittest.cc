@@ -14,8 +14,8 @@
 #include <memory>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/scaler.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -378,9 +378,9 @@ void TestScaler::ScaleSequence(ScaleMethod method,
                             (src_width + 1) / 2,
                             kVideoRotation_0);
 
-    start_clock = TickTime::MillisecondTimestamp();
+    start_clock = rtc::TimeMillis();
     EXPECT_EQ(0, test_scaler_.Scale(input_frame, &output_frame));
-    total_clock += TickTime::MillisecondTimestamp() - start_clock;
+    total_clock += rtc::TimeMillis() - start_clock;
     if (PrintVideoFrame(output_frame, output_file) < 0) {
         return;
     }

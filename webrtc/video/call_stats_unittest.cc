@@ -15,7 +15,6 @@
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/histogram.h"
 #include "webrtc/video/call_stats.h"
 

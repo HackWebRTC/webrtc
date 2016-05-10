@@ -17,11 +17,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_frame.h"
@@ -208,7 +208,7 @@ int ViEEncoder::GetPaddingNeededBps() const {
 
   // The amount of padding should decay to zero if no frames are being
   // captured/encoded unless a min-transmit bitrate is used.
-  int64_t now_ms = TickTime::MillisecondTimestamp();
+  int64_t now_ms = rtc::TimeMillis();
   if (now_ms - time_of_last_frame_activity_ms > kStopPaddingThresholdMs)
     pad_up_to_bitrate_bps = 0;
 
@@ -257,7 +257,7 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
   VideoCodecType codec_type;
   {
     rtc::CritScope lock(&data_cs_);
-    time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
+    time_of_last_frame_activity_ms_ = rtc::TimeMillis();
     if (EncoderPaused()) {
       TraceFrameDropStart();
       return;
@@ -333,7 +333,7 @@ int32_t ViEEncoder::Encoded(const EncodedImage& encoded_image,
                             const RTPFragmentationHeader* fragmentation) {
   {
     rtc::CritScope lock(&data_cs_);
-    time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
+    time_of_last_frame_activity_ms_ = rtc::TimeMillis();
   }
   if (stats_proxy_) {
     stats_proxy_->OnSendEncodedImage(encoded_image, codec_specific_info);

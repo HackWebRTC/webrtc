@@ -9,9 +9,9 @@
  */
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/modules/video_processing/video_decimator.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 #define VD_MIN(a, b) ((a) < (b)) ? (a) : (b)
 
@@ -95,7 +95,7 @@ bool VPMVideoDecimator::DropFrame() {
 }
 
 uint32_t VPMVideoDecimator::GetDecimatedFrameRate() {
-  ProcessIncomingframe_rate(TickTime::MillisecondTimestamp());
+  ProcessIncomingframe_rate(rtc::TimeMillis());
   if (!enable_temporal_decimation_) {
     return static_cast<uint32_t>(incoming_frame_rate_ + 0.5f);
   }
@@ -104,12 +104,12 @@ uint32_t VPMVideoDecimator::GetDecimatedFrameRate() {
 }
 
 uint32_t VPMVideoDecimator::Inputframe_rate() {
-  ProcessIncomingframe_rate(TickTime::MillisecondTimestamp());
+  ProcessIncomingframe_rate(rtc::TimeMillis());
   return static_cast<uint32_t>(incoming_frame_rate_ + 0.5f);
 }
 
 void VPMVideoDecimator::UpdateIncomingframe_rate() {
-  int64_t now = TickTime::MillisecondTimestamp();
+  int64_t now = rtc::TimeMillis();
   if (incoming_frame_times_[0] == 0) {
     // First no shift.
   } else {

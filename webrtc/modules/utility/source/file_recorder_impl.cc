@@ -130,8 +130,7 @@ bool FileRecorderImpl::IsRecording() const
 }
 
 int32_t FileRecorderImpl::RecordAudioToFile(
-    const AudioFrame& incomingAudioFrame,
-    const TickTime* playoutTS)
+    const AudioFrame& incomingAudioFrame)
 {
     if (codec_info_.plfreq == 0)
     {

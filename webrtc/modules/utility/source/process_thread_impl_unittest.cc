@@ -13,9 +13,9 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/utility/source/process_thread_impl.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -51,7 +51,7 @@ ACTION_P(Increment, counter) {
 }
 
 ACTION_P(SetTimestamp, ptr) {
-  *ptr = TickTime::MillisecondTimestamp();
+  *ptr = rtc::TimeMillis();
 }
 
 TEST(ProcessThreadImpl, StartStop) {

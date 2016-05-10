@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/base/macutils.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/mac/window_list_utils.h"
 #include "webrtc/system_wrappers/include/logging.h"
 
@@ -141,7 +142,7 @@ bool IsChromeWindow(CGWindowID id) {
 }  // namespace
 
 FullScreenChromeWindowDetector::FullScreenChromeWindowDetector()
-    : ref_count_(0) {}
+    : ref_count_(0), last_update_time_ns_(0) {}
 
 FullScreenChromeWindowDetector::~FullScreenChromeWindowDetector() {}
 
@@ -161,10 +162,7 @@ CGWindowID FullScreenChromeWindowDetector::FindFullScreenWindow(
     if (static_cast<CGWindowID>(it->id) != full_screen_window_id)
       continue;
 
-    int64_t time_interval =
-        (TickTime::Now() - last_udpate_time_).Milliseconds();
-    LOG(LS_WARNING) << "The full-screen window exists in the list, "
-                    << "which was updated " << time_interval << "ms ago.";
+    LOG(LS_WARNING) << "The full-screen window exists in the list.";
     return kCGNullWindowID;
   }
 
@@ -174,7 +172,7 @@ CGWindowID FullScreenChromeWindowDetector::FindFullScreenWindow(
 void FullScreenChromeWindowDetector::UpdateWindowListIfNeeded(
     CGWindowID original_window) {
   if (IsChromeWindow(original_window) &&
-      (TickTime::Now() - last_udpate_time_).Milliseconds()
+      (rtc::TimeNanos() - last_update_time_ns_) / rtc::kNumNanosecsPerMillisec
           > kUpdateIntervalMs) {
     previous_window_list_.clear();
     previous_window_list_.swap(current_window_list_);
@@ -186,7 +184,7 @@ void FullScreenChromeWindowDetector::UpdateWindowListIfNeeded(
     }
 
     GetWindowList(&current_window_list_);
-    last_udpate_time_ = TickTime::Now();
+    last_update_time_ns_ = rtc::TimeNanos();
   }
 }
 

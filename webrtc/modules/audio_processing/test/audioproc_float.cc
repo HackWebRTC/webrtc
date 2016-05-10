@@ -25,7 +25,6 @@
 #include "webrtc/modules/audio_processing/test/audio_file_processor.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 
 namespace {
@@ -167,13 +166,14 @@ int main(int argc, char* argv[]) {
 
   if (FLAGS_perf) {
     const auto& proc_time = processor->proc_time();
-    int64_t exec_time_us = proc_time.sum.Microseconds();
+    int64_t exec_time_us = proc_time.sum / rtc::kNumNanosecsPerMicrosec;
     printf(
         "\nExecution time: %.3f s, File time: %.2f s\n"
         "Time per chunk (mean, max, min):\n%.0f us, %.0f us, %.0f us\n",
         exec_time_us * 1e-6, num_chunks * 1.f / kChunksPerSecond,
-        exec_time_us * 1.f / num_chunks, 1.f * proc_time.max.Microseconds(),
-        1.f * proc_time.min.Microseconds());
+        exec_time_us * 1.f / num_chunks,
+        1.f * proc_time.max / rtc::kNumNanosecsPerMicrosec,
+        1.f * proc_time.min / rtc::kNumNanosecsPerMicrosec);
   }
 
   return 0;

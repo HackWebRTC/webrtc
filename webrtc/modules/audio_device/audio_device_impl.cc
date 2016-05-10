@@ -9,11 +9,11 @@
  */
 
 #include "webrtc/base/refcount.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 #include <assert.h>
 #include <string.h>
@@ -123,7 +123,7 @@ AudioDeviceModuleImpl::AudioDeviceModuleImpl(const int32_t id, const AudioLayer 
     _ptrAudioDevice(NULL),
     _id(id),
     _platformAudioLayer(audioLayer),
-    _lastProcessTime(TickTime::MillisecondTimestamp()),
+    _lastProcessTime(rtc::TimeMillis()),
     _platformType(kPlatformNotSupported),
     _initialized(false),
     _lastError(kAdmErrNone)
@@ -407,7 +407,7 @@ AudioDeviceModuleImpl::~AudioDeviceModuleImpl()
 
 int64_t AudioDeviceModuleImpl::TimeUntilNextProcess()
 {
-    int64_t now = TickTime::MillisecondTimestamp();
+    int64_t now = rtc::TimeMillis();
     int64_t deltaProcess = kAdmMaxIdleTimeProcess - (now - _lastProcessTime);
     return deltaProcess;
 }
@@ -422,7 +422,7 @@ int64_t AudioDeviceModuleImpl::TimeUntilNextProcess()
 void AudioDeviceModuleImpl::Process()
 {
 
-    _lastProcessTime = TickTime::MillisecondTimestamp();
+    _lastProcessTime = rtc::TimeMillis();
 
     // kPlayoutWarning
     if (_ptrAudioDevice->PlayoutWarning())

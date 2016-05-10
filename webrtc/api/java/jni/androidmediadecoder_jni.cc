@@ -32,7 +32,6 @@
 #include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 using rtc::Bind;
 using rtc::Thread;
@@ -43,7 +42,6 @@ using webrtc::DecodedImageCallback;
 using webrtc::EncodedImage;
 using webrtc::VideoFrame;
 using webrtc::RTPFragmentationHeader;
-using webrtc::TickTime;
 using webrtc::VideoCodec;
 using webrtc::VideoCodecType;
 using webrtc::kVideoCodecH264;
@@ -319,7 +317,7 @@ void MediaCodecVideoDecoder::ResetVariables() {
   frames_received_ = 0;
   frames_decoded_ = 0;
   frames_decoded_logged_ = kMaxDecodedLogFrames;
-  start_time_ms_ = GetCurrentTimeMs();
+  start_time_ms_ = rtc::TimeMillis();
   current_frames_ = 0;
   current_bytes_ = 0;
   current_decoding_time_ms_ = 0;
@@ -589,9 +587,9 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
         frames_received_ << ". Decoded: " << frames_decoded_;
     EnableFrameLogOnWarning();
   }
-  const int64 drain_start = GetCurrentTimeMs();
+  const int64 drain_start = rtc::TimeMillis();
   while ((frames_received_ > frames_decoded_ + max_pending_frames_) &&
-         (GetCurrentTimeMs() - drain_start) < kMediaCodecTimeoutMs) {
+         (rtc::TimeMillis() - drain_start) < kMediaCodecTimeoutMs) {
     if (!DeliverPendingOutputs(jni, kMediaCodecPollMs)) {
       ALOGE << "DeliverPendingOutputs error. Frames received: " <<
           frames_received_ << ". Frames decoded: " << frames_decoded_;
@@ -844,7 +842,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   current_frames_++;
   current_decoding_time_ms_ += decode_time_ms;
   current_delay_time_ms_ += frame_delayed_ms;
-  int statistic_time_ms = GetCurrentTimeMs() - start_time_ms_;
+  int statistic_time_ms = rtc::TimeMillis() - start_time_ms_;
   if (statistic_time_ms >= kMediaCodecStatisticsIntervalMs &&
       current_frames_ > 0) {
     int current_bitrate = current_bytes_ * 8 / statistic_time_ms;
@@ -857,7 +855,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
         ". DecTime: " << (current_decoding_time_ms_ / current_frames_) <<
         ". DelayTime: " << (current_delay_time_ms_ / current_frames_) <<
         " for last " << statistic_time_ms << " ms.";
-    start_time_ms_ = GetCurrentTimeMs();
+    start_time_ms_ = rtc::TimeMillis();
     current_frames_ = 0;
     current_bytes_ = 0;
     current_decoding_time_ms_ = 0;
@@ -993,4 +991,3 @@ const char* MediaCodecVideoDecoder::ImplementationName() const {
 }
 
 }  // namespace webrtc_jni
-

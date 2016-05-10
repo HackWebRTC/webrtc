@@ -13,10 +13,10 @@
 #include <string.h>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -351,7 +351,7 @@ int32_t RTPSenderAudio::SendAudio(FrameType frameType,
                          _rtpSender->SequenceNumber());
   int32_t send_result = _rtpSender->SendToNetwork(
       dataBuffer, payloadSize, rtpHeaderLength,
-      TickTime::MillisecondTimestamp(), kAllowRetransmission,
+      rtc::TimeMillis(), kAllowRetransmission,
       RtpPacketSender::kHighPriority);
   if (first_packet_sent_()) {
     LOG(LS_INFO) << "First audio RTP packet sent to pacer";
@@ -450,7 +450,7 @@ int32_t RTPSenderAudio::SendTelephoneEventPacket(bool ended,
                          "Audio::SendTelephoneEvent", "timestamp",
                          dtmfTimeStamp, "seqnum", _rtpSender->SequenceNumber());
     retVal = _rtpSender->SendToNetwork(
-        dtmfbuffer, 4, 12, TickTime::MillisecondTimestamp(),
+        dtmfbuffer, 4, 12, rtc::TimeMillis(),
         kAllowRetransmission, RtpPacketSender::kHighPriority);
     sendCount--;
   } while (sendCount > 0 && retVal == 0);

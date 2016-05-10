@@ -17,6 +17,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
@@ -24,7 +25,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -116,10 +116,8 @@ RTPSender::RTPSender(
     RtcEventLog* event_log,
     SendPacketObserver* send_packet_observer)
     : clock_(clock),
-      // TODO(holmer): Remove this conversion when we remove the use of
-      // TickTime.
-      clock_delta_ms_(clock_->TimeInMilliseconds() -
-                      TickTime::MillisecondTimestamp()),
+      // TODO(holmer): Remove this conversion?
+      clock_delta_ms_(clock_->TimeInMilliseconds() - rtc::TimeMillis()),
       random_(clock_->TimeInMicroseconds()),
       bitrates_(bitrate_callback),
       total_bitrate_sent_(clock, bitrates_.total_bitrate_observer()),

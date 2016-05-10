@@ -20,7 +20,6 @@
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc
@@ -116,12 +115,14 @@ protected:
     VideoCaptureCapability _requestedCapability; // Should be set by platform dependent code in StartCapture.
 private:
     void UpdateFrameCount();
-    uint32_t CalculateFrameRate(const TickTime& now);
+    uint32_t CalculateFrameRate(int64_t now_ns);
 
     CriticalSectionWrapper& _callBackCs;
 
-    TickTime _lastProcessTime; // last time the module process function was called.
-    TickTime _lastFrameRateCallbackTime; // last time the frame rate callback function was called.
+    // last time the module process function was called.
+    int64_t _lastProcessTimeNanos;
+    // last time the frame rate callback function was called.
+    int64_t _lastFrameRateCallbackTimeNanos;
     bool _frameRateCallBack; // true if EnableFrameRateCallback
     bool _noPictureAlarmCallBack; //true if EnableNoPictureAlarm
     VideoCaptureAlarm _captureAlarm; // current value of the noPictureAlarm
@@ -130,8 +131,9 @@ private:
     VideoCaptureDataCallback* _dataCallBack;
     VideoCaptureFeedBack* _captureCallBack;
 
-    TickTime _lastProcessFrameCount;
-    TickTime _incomingFrameTimes[kFrameRateCountHistorySize];// timestamp for local captured frames
+    int64_t _lastProcessFrameTimeNanos;
+    // timestamp for local captured frames
+    int64_t _incomingFrameTimesNanos[kFrameRateCountHistorySize];
     VideoRotation _rotateFrame;  // Set if the frame should be rotated by the
                                  // capture module.
 

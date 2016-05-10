@@ -27,7 +27,6 @@
 #include "webrtc/modules/utility/include/file_recorder.h"
 #include "webrtc/modules/utility/source/coder.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -58,9 +57,7 @@ public:
     int32_t StopRecording() override;
     bool IsRecording() const override;
     int32_t codec_info(CodecInst& codecInst) const override;
-    int32_t RecordAudioToFile(
-        const AudioFrame& frame,
-        const TickTime* playoutTS = NULL) override;
+    int32_t RecordAudioToFile(const AudioFrame& frame) override;
     int32_t StartRecordingVideoFile(
         const char* fileName,
         const CodecInst& audioCodecInst,

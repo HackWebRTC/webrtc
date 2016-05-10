@@ -14,9 +14,9 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -159,8 +159,8 @@ class TestVp8Impl : public ::testing::Test {
   }
 
   size_t WaitForEncodedFrame() const {
-    int64_t startTime = TickTime::MillisecondTimestamp();
-    while (TickTime::MillisecondTimestamp() - startTime < kMaxWaitEncTimeMs) {
+    int64_t startTime = rtc::TimeMillis();
+    while (rtc::TimeMillis() - startTime < kMaxWaitEncTimeMs) {
       if (encode_complete_callback_->EncodeComplete()) {
         return encoded_frame_._length;
       }
@@ -169,8 +169,8 @@ class TestVp8Impl : public ::testing::Test {
   }
 
   size_t WaitForDecodedFrame() const {
-    int64_t startTime = TickTime::MillisecondTimestamp();
-    while (TickTime::MillisecondTimestamp() - startTime < kMaxWaitDecTimeMs) {
+    int64_t startTime = rtc::TimeMillis();
+    while (rtc::TimeMillis() - startTime < kMaxWaitDecTimeMs) {
       if (decode_complete_callback_->DecodeComplete()) {
         return CalcBufferSize(kI420, decoded_frame_.width(),
                               decoded_frame_.height());

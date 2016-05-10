@@ -19,7 +19,6 @@
 #include "webrtc/api/java/jni/jni_helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc_jni {
 
@@ -58,10 +57,6 @@ enum { kMaxPendingFramesH264 = 8 };
 enum { kMaxDecodedLogFrames = 10 };
 // Maximum amount of encoded frames for which per-frame logging is enabled.
 enum { kMaxEncodedLogFrames = 10 };
-
-static inline int64_t GetCurrentTimeMs() {
-  return webrtc::TickTime::Now().Ticks() / 1000000LL;
-}
 
 static inline void AllowBlockingCalls() {
   rtc::Thread* current_thread = rtc::Thread::Current();

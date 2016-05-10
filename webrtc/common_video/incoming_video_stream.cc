@@ -22,11 +22,11 @@
 #endif
 
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/common_video/video_render_frames.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
@@ -56,7 +56,7 @@ void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
 
   // Rate statistics.
   num_frames_since_last_calculation_++;
-  int64_t now_ms = TickTime::MillisecondTimestamp();
+  int64_t now_ms = rtc::TimeMillis();
   if (now_ms >= last_rate_calculation_time_ms_ + kFrameRatePeriodMs) {
     incoming_rate_ =
         static_cast<uint32_t>(1000 * num_frames_since_last_calculation_ /

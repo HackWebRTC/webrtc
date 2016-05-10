@@ -18,9 +18,9 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -230,7 +230,7 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
   // video and shouldn't be mixed.
   if (remote_bitrate_estimator_ &&
       header.extension.hasTransportSequenceNumber) {
-    int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
+    int64_t arrival_time_ms = rtc::TimeMillis();
     if (packet_time.timestamp >= 0)
       arrival_time_ms = (packet_time.timestamp + 500) / 1000;
     size_t payload_size = length - header.headerLength;

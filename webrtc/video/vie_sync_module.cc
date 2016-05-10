@@ -12,6 +12,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -55,7 +56,7 @@ ViESyncModule::ViESyncModule(vcm::VideoReceiver* video_receiver)
       video_rtp_rtcp_(nullptr),
       voe_channel_id_(-1),
       voe_sync_interface_(nullptr),
-      last_sync_time_(TickTime::Now()),
+      last_sync_time_(rtc::TimeNanos()),
       sync_() {}
 
 ViESyncModule::~ViESyncModule() {
@@ -84,12 +85,13 @@ void ViESyncModule::ConfigureSync(int voe_channel_id,
 
 int64_t ViESyncModule::TimeUntilNextProcess() {
   const int64_t kSyncIntervalMs = 1000;
-  return kSyncIntervalMs - (TickTime::Now() - last_sync_time_).Milliseconds();
+  return kSyncIntervalMs -
+      (rtc::TimeNanos() - last_sync_time_) / rtc::kNumNanosecsPerMillisec;
 }
 
 void ViESyncModule::Process() {
   rtc::CritScope lock(&data_cs_);
-  last_sync_time_ = TickTime::Now();
+  last_sync_time_ = rtc::TimeNanos();
 
   const int current_video_delay_ms = video_receiver_->Delay();
 

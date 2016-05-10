@@ -15,7 +15,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/video_frame.h"
 

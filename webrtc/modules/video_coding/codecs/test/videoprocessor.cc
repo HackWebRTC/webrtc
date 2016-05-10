@@ -17,6 +17,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
 
 namespace webrtc {
@@ -198,7 +199,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     // Ensure we have a new statistics data object we can fill:
     FrameStatistic& stat = stats_->NewFrame(frame_number);
 
-    encode_start_ = TickTime::Now();
+    encode_start_ns_ = rtc::TimeNanos();
     // Use the frame number as "timestamp" to identify frames
     source_frame_.set_timestamp(frame_number);
 
@@ -248,11 +249,11 @@ void VideoProcessorImpl::FrameEncoded(
 
   encoded_frame_type_ = encoded_image._frameType;
 
-  TickTime encode_stop = TickTime::Now();
+  int64_t encode_stop_ns = rtc::TimeNanos();
   int frame_number = encoded_image._timeStamp;
   FrameStatistic& stat = stats_->stats_[frame_number];
   stat.encode_time_in_us =
-      GetElapsedTimeMicroseconds(encode_start_, encode_stop);
+      GetElapsedTimeMicroseconds(encode_start_ns_, encode_stop_ns);
   stat.encoding_successful = true;
   stat.encoded_frame_length_in_bytes = encoded_image._length;
   stat.frame_number = encoded_image._timeStamp;
@@ -299,7 +300,7 @@ void VideoProcessorImpl::FrameEncoded(
 
   // Keep track of if frames are lost due to packet loss so we can tell
   // this to the encoder (this is handled by the RTP logic in the full stack)
-  decode_start_ = TickTime::Now();
+  decode_start_ns_ = rtc::TimeNanos();
   // TODO(kjellander): Pass fragmentation header to the decoder when
   // CL 172001 has been submitted and PacketManipulator supports this.
   int32_t decode_result =
@@ -315,12 +316,12 @@ void VideoProcessorImpl::FrameEncoded(
 }
 
 void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
-  TickTime decode_stop = TickTime::Now();
+  int64_t decode_stop_ns = rtc::TimeNanos();
   int frame_number = image.timestamp();
   // Report stats
   FrameStatistic& stat = stats_->stats_[frame_number];
   stat.decode_time_in_us =
-      GetElapsedTimeMicroseconds(decode_start_, decode_stop);
+      GetElapsedTimeMicroseconds(decode_start_ns_, decode_stop_ns);
   stat.decoding_successful = true;
 
   // Check for resize action (either down or up):
@@ -378,10 +379,9 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
   }
 }
 
-int VideoProcessorImpl::GetElapsedTimeMicroseconds(
-    const webrtc::TickTime& start,
-    const webrtc::TickTime& stop) {
-  uint64_t encode_time = (stop - start).Microseconds();
+int VideoProcessorImpl::GetElapsedTimeMicroseconds(int64_t start,
+                                                   int64_t stop) {
+  uint64_t encode_time = (stop - start) / rtc::kNumNanosecsPerMicrosec;
   assert(encode_time <
          static_cast<unsigned int>(std::numeric_limits<int>::max()));
   return static_cast<int>(encode_time);

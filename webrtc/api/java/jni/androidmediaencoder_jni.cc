@@ -27,6 +27,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -524,7 +525,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   frames_dropped_media_encoder_ = 0;
   consecutive_full_queue_frame_drops_ = 0;
   current_timestamp_us_ = 0;
-  stat_start_time_ms_ = GetCurrentTimeMs();
+  stat_start_time_ms_ = rtc::TimeMillis();
   current_frames_ = 0;
   current_bytes_ = 0;
   current_acc_qp_ = 0;
@@ -612,7 +613,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   bool send_key_frame = false;
   if (codec_mode_ == webrtc::kRealtimeVideo) {
     ++frames_received_since_last_key_;
-    int64_t now_ms = GetCurrentTimeMs();
+    int64_t now_ms = rtc::TimeMillis();
     if (last_frame_received_ms_ != -1 &&
         (now_ms - last_frame_received_ms_) > kFrameDiffThresholdMs) {
       // Add limit to prevent triggering a key for every frame for very low
@@ -698,7 +699,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  const int64_t time_before_calling_encode = GetCurrentTimeMs();
+  const int64_t time_before_calling_encode = rtc::TimeMillis();
   const bool key_frame =
       frame_types->front() != webrtc::kVideoFrameDelta || send_key_frame;
   bool encode_status = true;
@@ -950,7 +951,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       output_render_time_ms_ = frame_info.frame_render_time_ms;
       output_rotation_ = frame_info.rotation;
       frame_encoding_time_ms =
-          GetCurrentTimeMs() - frame_info.encode_start_time;
+          rtc::TimeMillis() - frame_info.encode_start_time;
       input_frame_infos_.pop_front();
     }
 
@@ -1113,7 +1114,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
 }
 
 void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
-  int statistic_time_ms = GetCurrentTimeMs() - stat_start_time_ms_;
+  int statistic_time_ms = rtc::TimeMillis() - stat_start_time_ms_;
   if ((statistic_time_ms >= kMediaCodecStatisticsIntervalMs || force_log) &&
       current_frames_ > 0 && statistic_time_ms > 0) {
     int current_bitrate = current_bytes_ * 8 / statistic_time_ms;
@@ -1126,7 +1127,7 @@ void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
         ", encTime: " << (current_encoding_time_ms_ / current_frames_) <<
         ". QP: " << (current_acc_qp_ / current_frames_) <<
         " for last " << statistic_time_ms << " ms.";
-    stat_start_time_ms_ = GetCurrentTimeMs();
+    stat_start_time_ms_ = rtc::TimeMillis();
     current_frames_ = 0;
     current_bytes_ = 0;
     current_acc_qp_ = 0;

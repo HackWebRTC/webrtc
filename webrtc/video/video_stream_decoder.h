@@ -21,7 +21,6 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video/vie_sync_module.h"
 

@@ -21,13 +21,13 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -560,7 +560,7 @@ void APITest::Perform() {
   // Keep main thread waiting for sender/receiver
   // threads to complete
   EventWrapper* completeEvent = EventWrapper::Create();
-  uint64_t startTime = TickTime::MillisecondTimestamp();
+  uint64_t startTime = rtc::TimeMillis();
   uint64_t currentTime;
   // Run test in 2 minutes (120000 ms).
   do {
@@ -570,7 +570,7 @@ void APITest::Perform() {
     }
     //fflush(stderr);
     completeEvent->Wait(50);
-    currentTime = TickTime::MillisecondTimestamp();
+    currentTime = rtc::TimeMillis();
   } while ((currentTime - startTime) < 120000);
 
   //completeEvent->Wait(0xFFFFFFFF);

@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
@@ -25,7 +26,6 @@
 #include "webrtc/modules/desktop_capture/win/desktop.h"
 #include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
 #include "webrtc/system_wrappers/include/logging.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -79,7 +79,7 @@ void ScreenCapturerWinGdi::SetSharedMemoryFactory(
 }
 
 void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
-  TickTime capture_start_time = TickTime::Now();
+  int64_t capture_start_time_nanos = rtc::TimeNanos();
 
   queue_.MoveToNextFrame();
   RTC_DCHECK(!queue_.current_frame() || !queue_.current_frame()->IsShared());
@@ -137,7 +137,8 @@ void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
   frame->mutable_updated_region()->Clear();
   helper_.TakeInvalidRegion(frame->mutable_updated_region());
   frame->set_capture_time_ms(
-      (TickTime::Now() - capture_start_time).Milliseconds());
+      (rtc::TimeNanos() - capture_start_time_nanos) /
+      rtc::kNumNanosecsPerMillisec);
   callback_->OnCaptureCompleted(frame);
 }
 

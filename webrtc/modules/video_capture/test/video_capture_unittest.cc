@@ -16,19 +16,18 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video_frame.h"
 
 using webrtc::CriticalSectionWrapper;
 using webrtc::CriticalSectionScoped;
 using webrtc::SleepMs;
-using webrtc::TickTime;
 using webrtc::VideoCaptureAlarm;
 using webrtc::VideoCaptureCapability;
 using webrtc::VideoCaptureDataCallback;
@@ -40,8 +39,8 @@ using webrtc::VideoCaptureModule;
 #define WAIT_(ex, timeout, res) \
   do { \
     res = (ex); \
-    int64_t start = TickTime::MillisecondTimestamp(); \
-    while (!res && TickTime::MillisecondTimestamp() < start + timeout) { \
+    int64_t start = rtc::TimeMillis(); \
+    while (!res && rtc::TimeMillis() < start + timeout) { \
       SleepMs(5); \
       res = (ex); \
     } \
@@ -118,8 +117,8 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
 #endif
     // RenderTimstamp should be the time now.
     EXPECT_TRUE(
-        videoFrame.render_time_ms() >= TickTime::MillisecondTimestamp()-30 &&
-        videoFrame.render_time_ms() <= TickTime::MillisecondTimestamp());
+        videoFrame.render_time_ms() >= rtc::TimeMillis()-30 &&
+        videoFrame.render_time_ms() <= rtc::TimeMillis());
 
     if ((videoFrame.render_time_ms() >
             last_render_time_ms_ + (1000 * 1.1) / capability_.maxFPS &&
@@ -277,7 +276,7 @@ class VideoCaptureTest : public testing::Test {
 #endif
 TEST_F(VideoCaptureTest, MAYBE_CreateDelete) {
   for (int i = 0; i < 5; ++i) {
-    int64_t start_time = TickTime::MillisecondTimestamp();
+    int64_t start_time = rtc::TimeMillis();
     TestVideoCaptureCallback capture_observer;
     rtc::scoped_refptr<VideoCaptureModule> module(
         OpenVideoCaptureDevice(0, &capture_observer));
@@ -296,19 +295,19 @@ TEST_F(VideoCaptureTest, MAYBE_CreateDelete) {
     ASSERT_NO_FATAL_FAILURE(StartCapture(module.get(), capability));
 
     // Less than 4s to start the camera.
-    EXPECT_LE(TickTime::MillisecondTimestamp() - start_time, 4000);
+    EXPECT_LE(rtc::TimeMillis() - start_time, 4000);
 
     // Make sure 5 frames are captured.
     EXPECT_TRUE_WAIT(capture_observer.incoming_frames() >= 5, kTimeOut);
 
     EXPECT_GE(capture_observer.capture_delay(), 0);
 
-    int64_t stop_time = TickTime::MillisecondTimestamp();
+    int64_t stop_time = rtc::TimeMillis();
     EXPECT_EQ(0, module->StopCapture());
     EXPECT_FALSE(module->CaptureStarted());
 
     // Less than 3s to stop the camera.
-    EXPECT_LE(TickTime::MillisecondTimestamp() - stop_time, 3000);
+    EXPECT_LE(rtc::TimeMillis() - stop_time, 3000);
   }
 }
 
@@ -492,10 +491,10 @@ TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
 #define MAYBE_FrameRate FrameRate
 #endif
 TEST_F(VideoCaptureExternalTest, MAYBE_FrameRate) {
-  int64_t testTime = 3;
-  TickTime startTime = TickTime::Now();
+  uint64_t testTime = 3 * rtc::kNumNanosecsPerSec;
+  uint64_t startTime = rtc::TimeNanos();
 
-  while ((TickTime::Now() - startTime).Milliseconds() < testTime * 1000) {
+  while ((rtc::TimeNanos() - startTime) < testTime) {
      size_t length = webrtc::CalcBufferSize(webrtc::kI420,
                                             test_frame_.width(),
                                             test_frame_.height());
@@ -510,8 +509,8 @@ TEST_F(VideoCaptureExternalTest, MAYBE_FrameRate) {
   SleepMs(500);
   EXPECT_EQ(webrtc::Raised, capture_feedback_.alarm());
 
-  startTime = TickTime::Now();
-  while ((TickTime::Now() - startTime).Milliseconds() < testTime * 1000) {
+  startTime = rtc::TimeNanos();
+  while ((rtc::TimeNanos() - startTime) < testTime) {
     size_t length = webrtc::CalcBufferSize(webrtc::kI420,
                                            test_frame_.width(),
                                            test_frame_.height());

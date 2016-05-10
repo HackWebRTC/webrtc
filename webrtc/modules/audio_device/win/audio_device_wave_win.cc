@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/win/audio_device_wave_win.h"
 
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 #include <windows.h>
@@ -206,7 +206,7 @@ int32_t AudioDeviceWindowsWave::Init()
         return 0;
     }
 
-    const uint32_t nowTime(TickTime::MillisecondTimestamp());
+    const uint32_t nowTime(rtc::TimeMillis());
 
     _recordedBytes = 0;
     _prevRecByteCheckTime = nowTime;
@@ -3038,7 +3038,7 @@ bool AudioDeviceWindowsWave::ThreadProcess()
         return true;
     }
 
-    time = TickTime::MillisecondTimestamp();
+    time = rtc::TimeMillis();
 
     if (_startPlay)
     {

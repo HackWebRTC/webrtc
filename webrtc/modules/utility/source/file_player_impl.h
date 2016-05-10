@@ -19,7 +19,6 @@
 #include "webrtc/modules/utility/include/file_player.h"
 #include "webrtc/modules/utility/source/coder.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

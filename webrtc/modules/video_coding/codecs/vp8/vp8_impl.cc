@@ -20,6 +20,7 @@
 #include "libyuv/convert.h"  // NOLINT
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -29,7 +30,6 @@
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 namespace {
@@ -166,7 +166,7 @@ VP8EncoderImpl::VP8EncoderImpl()
       tl1_frame_dropper_(kTl1MaxTimeToDropFrames),
       key_frame_request_(kMaxSimulcastStreams, false),
       quality_scaler_enabled_(false) {
-  uint32_t seed = static_cast<uint32_t>(TickTime::MillisecondTimestamp());
+  uint32_t seed = rtc::Time32();
   srand(seed);
 
   picture_id_.reserve(kMaxSimulcastStreams);

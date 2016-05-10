@@ -12,8 +12,8 @@
 
 #include <assert.h>
 
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
@@ -27,7 +27,7 @@ VideoRenderFrames::VideoRenderFrames()
 }
 
 int32_t VideoRenderFrames::AddFrame(const VideoFrame& new_frame) {
-  const int64_t time_now = TickTime::MillisecondTimestamp();
+  const int64_t time_now = rtc::TimeMillis();
 
   // Drop old frames only when there are other frames in the queue, otherwise, a
   // really slow system never renders any frames.
@@ -74,7 +74,7 @@ uint32_t VideoRenderFrames::TimeToNextFrameRelease() {
   }
   const int64_t time_to_release = incoming_frames_.front().render_time_ms() -
                                   render_delay_ms_ -
-                                  TickTime::MillisecondTimestamp();
+                                  rtc::TimeMillis();
   return time_to_release < 0 ? 0u : static_cast<uint32_t>(time_to_release);
 }
 

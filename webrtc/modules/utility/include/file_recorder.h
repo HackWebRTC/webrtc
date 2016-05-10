@@ -15,7 +15,6 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/media_file/media_file_defines.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
 
@@ -58,8 +57,7 @@ public:
 
     // Write frame to file. Frame should contain 10ms of un-ecoded audio data.
     virtual int32_t RecordAudioToFile(
-        const AudioFrame& frame,
-        const TickTime* playoutTS = NULL) = 0;
+        const AudioFrame& frame) = 0;
 
     // Open/create the file specified by fileName for writing audio/video data
     // (relative path is allowed). audioCodecInst specifies the encoding of the
