@@ -327,6 +327,17 @@ void Expand::SetParametersForMergeAfterExpand() {
   stop_muting_ = true;
 }
 
+bool Expand::Muted() const {
+  if (first_expand_ || stop_muting_)
+    return false;
+  RTC_DCHECK(channel_parameters_);
+  for (size_t ch = 0; ch < num_channels_; ++ch) {
+    if (channel_parameters_[ch].mute_factor != 0)
+      return false;
+  }
+  return true;
+}
+
 size_t Expand::overlap_length() const {
   return overlap_length_;
 }

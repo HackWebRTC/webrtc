@@ -62,6 +62,10 @@ class Expand {
     return channel_parameters_[channel].mute_factor;
   }
 
+  // Returns true if expansion has been faded down to zero amplitude (for all
+  // channels); false otherwise.
+  bool Muted() const;
+
   // Accessors and mutators.
   virtual size_t overlap_length() const;
   size_t max_lag() const { return max_lag_; }

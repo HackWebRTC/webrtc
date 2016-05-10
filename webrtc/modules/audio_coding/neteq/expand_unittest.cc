@@ -169,6 +169,37 @@ TEST_F(ExpandTest, CheckOutageStatsAfterReset) {
             statistics_.last_outage_duration_ms());
 }
 
+namespace {
+// Runs expand until Muted() returns true. Times out after 1000 calls.
+void ExpandUntilMuted(size_t num_channels, Expand* expand) {
+  EXPECT_FALSE(expand->Muted()) << "Instance is muted from the start";
+  AudioMultiVector output(num_channels);
+  int num_calls = 0;
+  while (!expand->Muted()) {
+    ASSERT_LT(num_calls++, 1000) << "Test timed out";
+    EXPECT_EQ(0, expand->Process(&output));
+  }
+}
+}  // namespace
+
+// Verifies that Muted() returns true after a long expand period. Also verifies
+// that Muted() is reset to false after calling Reset(),
+// SetParametersForMergeAfterExpand() and SetParametersForNormalAfterExpand().
+TEST_F(ExpandTest, Muted) {
+  ExpandUntilMuted(num_channels_, &expand_);
+  expand_.Reset();
+  EXPECT_FALSE(expand_.Muted());  // Should be back to unmuted.
+
+  ExpandUntilMuted(num_channels_, &expand_);
+  expand_.SetParametersForMergeAfterExpand();
+  EXPECT_FALSE(expand_.Muted());  // Should be back to unmuted.
+
+  expand_.Reset();  // Must reset in order to start a new expand period.
+  ExpandUntilMuted(num_channels_, &expand_);
+  expand_.SetParametersForNormalAfterExpand();
+  EXPECT_FALSE(expand_.Muted());  // Should be back to unmuted.
+}
+
 // TODO(hlundin): Write more tests.
 
 }  // namespace webrtc
