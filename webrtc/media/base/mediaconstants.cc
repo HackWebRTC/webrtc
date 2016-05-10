@@ -64,7 +64,7 @@ const int kOpusDefaultUseInbandFec = 0;
 const int kOpusDefaultUseDtx = 0;
 const int kOpusDefaultMaxPlaybackRate = 48000;
 
-const int kPreferredMaxPTime = 60;
+const int kPreferredMaxPTime = 120;
 const int kPreferredMinPTime = 10;
 const int kPreferredSPropStereo = 0;
 const int kPreferredStereo = 0;
