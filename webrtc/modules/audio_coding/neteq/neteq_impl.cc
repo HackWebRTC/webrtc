@@ -815,6 +815,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame) {
   Operations operation;
   bool play_dtmf;
   tick_timer_->Increment();
+  stats_.IncreaseCounter(output_size_samples_, fs_hz_);
   int return_value = GetDecision(&operation, &packet_list, &dtmf_event,
                                  &play_dtmf);
   if (return_value != 0) {
@@ -1028,9 +1029,6 @@ int NetEqImpl::GetDecision(Operations* operation,
   // Initialize output variables.
   *play_dtmf = false;
   *operation = kUndefined;
-
-  // Increment time counters.
-  stats_.IncreaseCounter(output_size_samples_, fs_hz_);
 
   assert(sync_buffer_.get());
   uint32_t end_timestamp = sync_buffer_->end_timestamp();
