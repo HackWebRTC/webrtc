@@ -14,7 +14,6 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/notifier.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/mediachannel.h"
 
 // LocalAudioSource implements AudioSourceInterface.

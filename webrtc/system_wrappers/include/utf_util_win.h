@@ -19,7 +19,6 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 

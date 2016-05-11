@@ -15,7 +15,6 @@
 
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
 

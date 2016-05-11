@@ -13,7 +13,6 @@
 #include <memory>
 
 #include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 

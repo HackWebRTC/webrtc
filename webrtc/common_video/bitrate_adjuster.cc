@@ -10,6 +10,7 @@
 
 #include "webrtc/common_video/include/bitrate_adjuster.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "webrtc/base/checks.h"

@@ -12,6 +12,8 @@
 
 #include <math.h>
 
+#include <cstdlib>
+
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
 
@@ -113,7 +115,7 @@ void StreamStatisticianImpl::UpdateJitter(const RTPHeader& header,
   int32_t time_diff_samples = (receive_time_rtp - last_receive_time_rtp) -
       (header.timestamp - last_received_timestamp_);
 
-  time_diff_samples = abs(time_diff_samples);
+  time_diff_samples = std::abs(time_diff_samples);
 
   // lib_jingle sometimes deliver crazy jumps in TS for the same stream.
   // If this happens, don't update jitter value. Use 5 secs video frequency
@@ -133,7 +135,7 @@ void StreamStatisticianImpl::UpdateJitter(const RTPHeader& header,
      (last_received_timestamp_ +
       last_received_transmission_time_offset_));
 
-  time_diff_samples_ext = abs(time_diff_samples_ext);
+  time_diff_samples_ext = std::abs(time_diff_samples_ext);
 
   if (time_diff_samples_ext < 450000) {
     int32_t jitter_diffQ4TransmissionTimeOffset =

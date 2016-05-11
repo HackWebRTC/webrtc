@@ -19,7 +19,6 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/random.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

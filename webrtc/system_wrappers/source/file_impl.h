@@ -15,7 +15,6 @@
 
 #include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 namespace webrtc {

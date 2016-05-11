@@ -11,7 +11,6 @@
 #import "WebRTC/RTCMediaStreamTrack.h"
 
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/base/scoped_ptr.h"
 
 typedef NS_ENUM(NSInteger, RTCMediaStreamTrackType) {
   RTCMediaStreamTrackTypeAudio,

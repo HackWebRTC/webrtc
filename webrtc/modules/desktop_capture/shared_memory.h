@@ -20,7 +20,6 @@
 #include <memory>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

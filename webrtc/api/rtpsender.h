@@ -23,7 +23,6 @@
 #include "webrtc/api/statscollector.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/audiosource.h"
 
 namespace webrtc {

@@ -24,7 +24,6 @@
 #include "webrtc/api/statscollector.h"
 #include "webrtc/api/streamcollection.h"
 #include "webrtc/api/webrtcsession.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 

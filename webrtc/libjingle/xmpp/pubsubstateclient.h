@@ -22,7 +22,6 @@
 #include "webrtc/libjingle/xmpp/jid.h"
 #include "webrtc/libjingle/xmpp/pubsubclient.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sigslotrepeater.h"
 

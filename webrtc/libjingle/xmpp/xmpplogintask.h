@@ -18,7 +18,6 @@
 #include "webrtc/libjingle/xmpp/jid.h"
 #include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace buzz {
 

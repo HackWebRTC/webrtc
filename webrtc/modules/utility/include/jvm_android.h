@@ -16,7 +16,6 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/utility/include/helpers_android.h"
 

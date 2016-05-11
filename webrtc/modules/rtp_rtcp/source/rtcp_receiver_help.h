@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // RTCPReportBlock
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"

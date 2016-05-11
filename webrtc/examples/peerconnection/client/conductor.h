@@ -21,7 +21,6 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/examples/peerconnection/client/main_wnd.h"
 #include "webrtc/examples/peerconnection/client/peer_connection_client.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 class VideoCaptureModule;

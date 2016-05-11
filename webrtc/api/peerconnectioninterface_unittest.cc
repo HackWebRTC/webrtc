@@ -934,20 +934,20 @@ class PeerConnectionInterfaceTest : public testing::Test {
     ASSERT_TRUE(stream->AddTrack(video_track));
   }
 
-  rtc::scoped_ptr<SessionDescriptionInterface> CreateOfferWithOneAudioStream() {
+  std::unique_ptr<SessionDescriptionInterface> CreateOfferWithOneAudioStream() {
     CreatePeerConnection();
     AddVoiceStream(kStreamLabel1);
-    rtc::scoped_ptr<SessionDescriptionInterface> offer;
+    std::unique_ptr<SessionDescriptionInterface> offer;
     EXPECT_TRUE(DoCreateOffer(&offer, nullptr));
     return offer;
   }
 
-  rtc::scoped_ptr<SessionDescriptionInterface>
+  std::unique_ptr<SessionDescriptionInterface>
   CreateAnswerWithOneAudioStream() {
-    rtc::scoped_ptr<SessionDescriptionInterface> offer =
+    std::unique_ptr<SessionDescriptionInterface> offer =
         CreateOfferWithOneAudioStream();
     EXPECT_TRUE(DoSetRemoteDescription(offer.release()));
-    rtc::scoped_ptr<SessionDescriptionInterface> answer;
+    std::unique_ptr<SessionDescriptionInterface> answer;
     EXPECT_TRUE(DoCreateAnswer(&answer, nullptr));
     return answer;
   }
@@ -973,18 +973,18 @@ class PeerConnectionInterfaceTest : public testing::Test {
 // The CNAMEs are expected to be generated randomly. It is possible
 // that the test fails, though the possibility is very low.
 TEST_F(PeerConnectionInterfaceTest, CnameGenerationInOffer) {
-  rtc::scoped_ptr<SessionDescriptionInterface> offer1 =
+  std::unique_ptr<SessionDescriptionInterface> offer1 =
       CreateOfferWithOneAudioStream();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer2 =
+  std::unique_ptr<SessionDescriptionInterface> offer2 =
       CreateOfferWithOneAudioStream();
   EXPECT_NE(GetFirstAudioStreamCname(offer1.get()),
             GetFirstAudioStreamCname(offer2.get()));
 }
 
 TEST_F(PeerConnectionInterfaceTest, CnameGenerationInAnswer) {
-  rtc::scoped_ptr<SessionDescriptionInterface> answer1 =
+  std::unique_ptr<SessionDescriptionInterface> answer1 =
       CreateAnswerWithOneAudioStream();
-  rtc::scoped_ptr<SessionDescriptionInterface> answer2 =
+  std::unique_ptr<SessionDescriptionInterface> answer2 =
       CreateAnswerWithOneAudioStream();
   EXPECT_NE(GetFirstAudioStreamCname(answer1.get()),
             GetFirstAudioStreamCname(answer2.get()));
