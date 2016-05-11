@@ -39,6 +39,8 @@ class MockBitrateController : public BitrateController {
   MOCK_METHOD1(SetEventLog, void(RtcEventLog* event_log));
   MOCK_CONST_METHOD1(AvailableBandwidth, bool(uint32_t* bandwidth));
   MOCK_METHOD1(SetReservedBitrate, void(uint32_t reserved_bitrate_bps));
+  MOCK_METHOD3(GetNetworkParameters,
+               bool(uint32_t* bitrate, uint8_t* fraction_loss, int64_t* rtt));
 
   MOCK_METHOD0(Process, void());
   MOCK_METHOD0(TimeUntilNextProcess, int64_t());

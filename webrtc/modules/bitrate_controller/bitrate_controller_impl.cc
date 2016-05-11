@@ -83,6 +83,10 @@ BitrateController* BitrateController::CreateBitrateController(
   return new BitrateControllerImpl(clock, observer);
 }
 
+BitrateController* BitrateController::CreateBitrateController(Clock* clock) {
+  return new BitrateControllerImpl(clock, nullptr);
+}
+
 BitrateControllerImpl::BitrateControllerImpl(Clock* clock,
                                              BitrateObserver* observer)
     : clock_(clock),
@@ -94,8 +98,8 @@ BitrateControllerImpl::BitrateControllerImpl(Clock* clock,
       last_fraction_loss_(0),
       last_rtt_ms_(0),
       last_reserved_bitrate_bps_(0) {
-  // This calls the observer_, which means that the observer provided by the
-  // user must be ready to accept a bitrate update when it constructs the
+  // This calls the observer_ if set, which means that the observer provided by
+  // the user must be ready to accept a bitrate update when it constructs the
   // controller. We do this to avoid having to keep synchronized initial values
   // in both the controller and the allocator.
   MaybeTriggerOnNetworkChanged();
@@ -199,11 +203,15 @@ void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
 }
 
 void BitrateControllerImpl::MaybeTriggerOnNetworkChanged() {
-  uint32_t bitrate;
+  if (!observer_)
+    return;
+
+  uint32_t bitrate_bps;
   uint8_t fraction_loss;
   int64_t rtt;
-  if (GetNetworkParameters(&bitrate, &fraction_loss, &rtt))
-    observer_->OnNetworkChanged(bitrate, fraction_loss, rtt);
+
+  if (GetNetworkParameters(&bitrate_bps, &fraction_loss, &rtt))
+    observer_->OnNetworkChanged(bitrate_bps, fraction_loss, rtt);
 }
 
 bool BitrateControllerImpl::GetNetworkParameters(uint32_t* bitrate,

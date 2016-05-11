@@ -20,7 +20,6 @@
 #include "webrtc/base/socket.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
@@ -141,28 +140,69 @@ CongestionController::CongestionController(
     BitrateObserver* bitrate_observer,
     RemoteBitrateObserver* remote_bitrate_observer)
     : clock_(clock),
+      observer_(nullptr),
+      packet_router_(new PacketRouter()),
       pacer_(new PacedSender(clock_,
-             &packet_router_,
-             BitrateController::kDefaultStartBitrateKbps,
-             PacedSender::kDefaultPaceMultiplier *
-                 BitrateController::kDefaultStartBitrateKbps,
-             0)),
+                             packet_router_.get())),
+      remote_bitrate_estimator_(
+          new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
+      bitrate_controller_(
+          BitrateController::CreateBitrateController(clock_, bitrate_observer)),
+      remote_estimator_proxy_(clock_, packet_router_.get()),
+      transport_feedback_adapter_(bitrate_controller_.get(), clock_),
+      min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
+      send_queue_is_full_(false) {
+  Init();
+}
+
+CongestionController::CongestionController(
+    Clock* clock,
+    Observer* observer,
+    RemoteBitrateObserver* remote_bitrate_observer)
+    : clock_(clock),
+      observer_(observer),
+      packet_router_(new PacketRouter()),
+      pacer_(new PacedSender(clock_,
+                             packet_router_.get())),
+      remote_bitrate_estimator_(
+          new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
+      bitrate_controller_(BitrateController::CreateBitrateController(clock_)),
+      remote_estimator_proxy_(clock_, packet_router_.get()),
+      transport_feedback_adapter_(bitrate_controller_.get(), clock_),
+      min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
+      send_queue_is_full_(false) {
+  Init();
+}
+
+CongestionController::CongestionController(
+    Clock* clock,
+    Observer* observer,
+    RemoteBitrateObserver* remote_bitrate_observer,
+    std::unique_ptr<PacketRouter> packet_router,
+    std::unique_ptr<PacedSender> pacer)
+    : clock_(clock),
+      observer_(observer),
+      packet_router_(std::move(packet_router)),
+      pacer_(std::move(pacer)),
       remote_bitrate_estimator_(
           new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
       // Constructed last as this object calls the provided callback on
       // construction.
-      bitrate_controller_(
-          BitrateController::CreateBitrateController(clock_, bitrate_observer)),
-      remote_estimator_proxy_(clock_, &packet_router_),
+      bitrate_controller_(BitrateController::CreateBitrateController(clock_)),
+      remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
-      min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps) {
+      min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
+      send_queue_is_full_(false) {
+  Init();
+}
+
+CongestionController::~CongestionController() {}
+
+void CongestionController::Init() {
   transport_feedback_adapter_.SetBitrateEstimator(
       new RemoteBitrateEstimatorAbsSendTime(&transport_feedback_adapter_));
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
-}
-
-CongestionController::~CongestionController() {
 }
 
 
@@ -189,6 +229,7 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
   min_bitrate_bps_ = min_bitrate_bps;
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
+  MaybeTriggerOnNetworkChanged();
 }
 
 BitrateController* CongestionController::GetBitrateController() const {
@@ -209,10 +250,9 @@ CongestionController::GetTransportFeedbackObserver() {
   return &transport_feedback_adapter_;
 }
 
-void CongestionController::UpdatePacerBitrate(int bitrate_kbps,
-                                              int max_bitrate_kbps,
-                                              int min_bitrate_kbps) {
-  pacer_->UpdateBitrate(bitrate_kbps, max_bitrate_kbps, min_bitrate_kbps);
+void CongestionController::SetAllocatedSendBitrate(int allocated_bitrate_bps,
+                                                   int padding_bitrate_bps) {
+  pacer_->SetAllocatedSendBitrate(allocated_bitrate_bps, padding_bitrate_bps);
 }
 
 int64_t CongestionController::GetPacerQueuingDelayMs() const {
@@ -245,6 +285,36 @@ int64_t CongestionController::TimeUntilNextProcess() {
 void CongestionController::Process() {
   bitrate_controller_->Process();
   remote_bitrate_estimator_->Process();
+  MaybeTriggerOnNetworkChanged();
+}
+
+void CongestionController::MaybeTriggerOnNetworkChanged() {
+  // TODO(perkj): |observer_| can be nullptr if the ctor that accepts a
+  // BitrateObserver is used. Remove this check once the ctor is removed.
+  if (!observer_)
+    return;
+
+  uint32_t bitrate_bps;
+  uint8_t fraction_loss;
+  int64_t rtt;
+  bool network_changed = bitrate_controller_->GetNetworkParameters(
+      &bitrate_bps, &fraction_loss, &rtt);
+  if (network_changed)
+    pacer_->SetEstimatedBitrate(bitrate_bps);
+  bool send_queue_is_full =
+      pacer_->ExpectedQueueTimeMs() > PacedSender::kMaxQueueLengthMs;
+  bitrate_bps = send_queue_is_full ? 0 : bitrate_bps;
+  if ((network_changed && !send_queue_is_full) ||
+      UpdateSendQueueStatus(send_queue_is_full)) {
+    observer_->OnNetworkChanged(bitrate_bps, fraction_loss, rtt);
+  }
+}
+
+bool CongestionController::UpdateSendQueueStatus(bool send_queue_is_full) {
+  rtc::CritScope cs(&critsect_);
+  bool result = send_queue_is_full_ != send_queue_is_full;
+  send_queue_is_full_ = send_queue_is_full;
+  return result;
 }
 
 }  // namespace webrtc

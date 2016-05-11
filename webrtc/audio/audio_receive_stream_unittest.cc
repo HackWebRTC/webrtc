@@ -157,7 +157,7 @@ struct ConfigHelper {
  private:
   SimulatedClock simulated_clock_;
   PacketRouter packet_router_;
-  testing::NiceMock<MockBitrateObserver> bitrate_observer_;
+  testing::NiceMock<MockCongestionObserver> bitrate_observer_;
   testing::NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   MockCongestionController congestion_controller_;
   MockRemoteBitrateEstimator remote_bitrate_estimator_;

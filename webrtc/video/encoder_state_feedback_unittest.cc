@@ -12,8 +12,6 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/pacing/packet_router.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/video/vie_encoder.h"
 
@@ -23,13 +21,8 @@ namespace webrtc {
 
 class MockVieEncoder : public ViEEncoder {
  public:
-  explicit MockVieEncoder(ProcessThread* process_thread, PacedSender* pacer)
-      : ViEEncoder(1,
-                   process_thread,
-                   nullptr,
-                   nullptr,
-                   nullptr,
-                   pacer) {}
+  explicit MockVieEncoder(ProcessThread* process_thread)
+      : ViEEncoder(1, process_thread, nullptr, nullptr) {}
   ~MockVieEncoder() {}
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(size_t));
@@ -40,13 +33,7 @@ class MockVieEncoder : public ViEEncoder {
 class VieKeyRequestTest : public ::testing::Test {
  public:
   VieKeyRequestTest()
-      :  pacer_(Clock::GetRealTimeClock(),
-                &router_,
-                BitrateController::kDefaultStartBitrateKbps,
-                PacedSender::kDefaultPaceMultiplier *
-                BitrateController::kDefaultStartBitrateKbps,
-                0),
-        encoder_(&process_thread_, &pacer_),
+      : encoder_(&process_thread_),
         simulated_clock_(123456789),
         encoder_state_feedback_(
             &simulated_clock_,
@@ -56,8 +43,6 @@ class VieKeyRequestTest : public ::testing::Test {
  protected:
   const uint32_t kSsrc = 1234;
   NiceMock<MockProcessThread> process_thread_;
-  PacketRouter router_;
-  PacedSender pacer_;
   MockVieEncoder encoder_;
   SimulatedClock simulated_clock_;
   EncoderStateFeedback encoder_state_feedback_;
