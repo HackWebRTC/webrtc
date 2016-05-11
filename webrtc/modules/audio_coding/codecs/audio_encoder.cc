@@ -60,9 +60,4 @@ void AudioEncoder::SetProjectedPacketLossRate(double fraction) {}
 
 void AudioEncoder::SetTargetBitrate(int target_bps) {}
 
-size_t AudioEncoder::MaxEncodedBytes() const {
-  RTC_CHECK(false);
-  return 0;
-}
-
 }  // namespace webrtc

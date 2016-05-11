@@ -135,15 +135,6 @@ class AudioEncoder {
   virtual EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
                                  rtc::ArrayView<const int16_t> audio,
                                  rtc::Buffer* encoded) = 0;
-
- private:
-  // This function is deprecated. It was used to return the maximum number of
-  // bytes that can be produced by the encoder at each Encode() call.  Since the
-  // Encode interface was changed to use rtc::Buffer, this is no longer
-  // applicable. It is only kept in to avoid breaking subclasses that still have
-  // it implemented (with the override attribute). It will be removed as soon
-  // as these subclasses have been given a chance to change.
-  virtual size_t MaxEncodedBytes() const;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_H_
