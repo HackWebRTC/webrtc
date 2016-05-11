@@ -44,6 +44,12 @@ typedef NS_ENUM(NSInteger, RTCTcpCandidatePolicy) {
   RTCTcpCandidatePolicyDisabled
 };
 
+/** Represents the continual gathering policy. */
+typedef NS_ENUM(NSInteger, RTCContinualGatheringPolicy) {
+  RTCContinualGatheringPolicyGatherOnce,
+  RTCContinualGatheringPolicyGatherContinually
+};
+
 /** Represents the encryption key type. */
 typedef NS_ENUM(NSInteger, RTCEncryptionKeyType) {
   RTCEncryptionKeyTypeRSA,
@@ -68,6 +74,8 @@ RTC_EXPORT
 /** The rtcp-mux policy to use when gathering ICE candidates. */
 @property(nonatomic, assign) RTCRtcpMuxPolicy rtcpMuxPolicy;
 @property(nonatomic, assign) RTCTcpCandidatePolicy tcpCandidatePolicy;
+@property(nonatomic, assign)
+    RTCContinualGatheringPolicy continualGatheringPolicy;
 @property(nonatomic, assign) int audioJitterBufferMaxPackets;
 @property(nonatomic, assign) int iceConnectionReceivingTimeout;
 @property(nonatomic, assign) int iceBackupCandidatePairPingInterval;

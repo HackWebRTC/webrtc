@@ -41,6 +41,8 @@
   config.audioJitterBufferMaxPackets = maxPackets;
   config.iceConnectionReceivingTimeout = timeout;
   config.iceBackupCandidatePairPingInterval = interval;
+  config.continualGatheringPolicy =
+      RTCContinualGatheringPolicyGatherContinually;
 
   webrtc::PeerConnectionInterface::RTCConfiguration nativeConfig =
       config.nativeConfiguration;
@@ -60,6 +62,8 @@
   EXPECT_EQ(maxPackets, nativeConfig.audio_jitter_buffer_max_packets);
   EXPECT_EQ(timeout, nativeConfig.ice_connection_receiving_timeout);
   EXPECT_EQ(interval, nativeConfig.ice_backup_candidate_pair_ping_interval);
+  EXPECT_EQ(webrtc::PeerConnectionInterface::GATHER_CONTINUALLY,
+            nativeConfig.continual_gathering_policy);
 }
 
 @end

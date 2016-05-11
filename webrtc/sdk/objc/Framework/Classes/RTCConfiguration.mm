@@ -24,6 +24,7 @@
 @synthesize bundlePolicy = _bundlePolicy;
 @synthesize rtcpMuxPolicy = _rtcpMuxPolicy;
 @synthesize tcpCandidatePolicy = _tcpCandidatePolicy;
+@synthesize continualGatheringPolicy = _continualGatheringPolicy;
 @synthesize audioJitterBufferMaxPackets = _audioJitterBufferMaxPackets;
 @synthesize iceConnectionReceivingTimeout = _iceConnectionReceivingTimeout;
 @synthesize iceBackupCandidatePairPingInterval =
@@ -43,6 +44,10 @@
         [[self class] rtcpMuxPolicyForNativePolicy:config.rtcp_mux_policy];
     _tcpCandidatePolicy = [[self class] tcpCandidatePolicyForNativePolicy:
         config.tcp_candidate_policy];
+    webrtc::PeerConnectionInterface::ContinualGatheringPolicy nativePolicy =
+        config.continual_gathering_policy;
+    _continualGatheringPolicy =
+        [[self class] continualGatheringPolicyForNativePolicy:nativePolicy];
     _audioJitterBufferMaxPackets = config.audio_jitter_buffer_max_packets;
     _iceConnectionReceivingTimeout = config.ice_connection_receiving_timeout;
     _iceBackupCandidatePairPingInterval =
@@ -54,12 +59,14 @@
 
 - (NSString *)description {
   return [NSString stringWithFormat:
-      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n}\n",
+      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n}\n",
       _iceServers,
       [[self class] stringForTransportPolicy:_iceTransportPolicy],
       [[self class] stringForBundlePolicy:_bundlePolicy],
       [[self class] stringForRtcpMuxPolicy:_rtcpMuxPolicy],
       [[self class] stringForTcpCandidatePolicy:_tcpCandidatePolicy],
+      [[self class]
+          stringForContinualGatheringPolicy:_continualGatheringPolicy],
       _audioJitterBufferMaxPackets,
       _iceConnectionReceivingTimeout,
       _iceBackupCandidatePairPingInterval];
@@ -81,6 +88,8 @@
       [[self class] nativeRtcpMuxPolicyForPolicy:_rtcpMuxPolicy];
   nativeConfig.tcp_candidate_policy =
       [[self class] nativeTcpCandidatePolicyForPolicy:_tcpCandidatePolicy];
+  nativeConfig.continual_gathering_policy = [[self class]
+      nativeContinualGatheringPolicyForPolicy:_continualGatheringPolicy];
   nativeConfig.audio_jitter_buffer_max_packets = _audioJitterBufferMaxPackets;
   nativeConfig.ice_connection_receiving_timeout =
       _iceConnectionReceivingTimeout;
@@ -231,6 +240,37 @@
       return @"TCP_ENABLED";
     case RTCTcpCandidatePolicyDisabled:
       return @"TCP_DISABLED";
+  }
+}
+
++ (webrtc::PeerConnectionInterface::ContinualGatheringPolicy)
+    nativeContinualGatheringPolicyForPolicy:
+        (RTCContinualGatheringPolicy)policy {
+  switch (policy) {
+    case RTCContinualGatheringPolicyGatherOnce:
+      return webrtc::PeerConnectionInterface::GATHER_ONCE;
+    case RTCContinualGatheringPolicyGatherContinually:
+      return webrtc::PeerConnectionInterface::GATHER_CONTINUALLY;
+  }
+}
+
++ (RTCContinualGatheringPolicy)continualGatheringPolicyForNativePolicy:
+    (webrtc::PeerConnectionInterface::ContinualGatheringPolicy)nativePolicy {
+  switch (nativePolicy) {
+    case webrtc::PeerConnectionInterface::GATHER_ONCE:
+      return RTCContinualGatheringPolicyGatherOnce;
+    case webrtc::PeerConnectionInterface::GATHER_CONTINUALLY:
+      return RTCContinualGatheringPolicyGatherContinually;
+  }
+}
+
++ (NSString *)stringForContinualGatheringPolicy:
+    (RTCContinualGatheringPolicy)policy {
+  switch (policy) {
+    case RTCContinualGatheringPolicyGatherOnce:
+      return @"GATHER_ONCE";
+    case RTCContinualGatheringPolicyGatherContinually:
+      return @"GATHER_CONTINUALLY";
   }
 }
 
