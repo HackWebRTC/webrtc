@@ -465,8 +465,7 @@ class WebRtcSession : public AudioProviderInterface,
 
   void ReportNegotiatedCiphers(const cricket::TransportStats& stats);
 
-  void OnSentPacket_w(cricket::TransportChannel* channel,
-                      const rtc::SentPacket& sent_packet);
+  void OnSentPacket_w(const rtc::SentPacket& sent_packet);
 
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;

@@ -42,18 +42,29 @@ class ChannelManager {
   // ownership of these objects.
   ChannelManager(MediaEngineInterface* me,
                  DataEngineInterface* dme,
-                 rtc::Thread* worker);
+                 rtc::Thread* worker_and_network);
   // Same as above, but gives an easier default DataEngine.
   ChannelManager(MediaEngineInterface* me,
-                 rtc::Thread* worker);
+                 rtc::Thread* worker,
+                 rtc::Thread* network);
   ~ChannelManager();
 
   // Accessors for the worker thread, allowing it to be set after construction,
   // but before Init. set_worker_thread will return false if called after Init.
   rtc::Thread* worker_thread() const { return worker_thread_; }
   bool set_worker_thread(rtc::Thread* thread) {
-    if (initialized_) return false;
+    if (initialized_) {
+      return false;
+    }
     worker_thread_ = thread;
+    return true;
+  }
+  rtc::Thread* network_thread() const { return network_thread_; }
+  bool set_network_thread(rtc::Thread* thread) {
+    if (initialized_) {
+      return false;
+    }
+    network_thread_ = thread;
     return true;
   }
 
@@ -138,7 +149,8 @@ class ChannelManager {
 
   void Construct(MediaEngineInterface* me,
                  DataEngineInterface* dme,
-                 rtc::Thread* worker_thread);
+                 rtc::Thread* worker_thread,
+                 rtc::Thread* network_thread);
   bool InitMediaEngine_w();
   void DestructorDeletes_w();
   void Terminate_w();
@@ -167,6 +179,7 @@ class ChannelManager {
   bool initialized_;
   rtc::Thread* main_thread_;
   rtc::Thread* worker_thread_;
+  rtc::Thread* network_thread_;
 
   VoiceChannels voice_channels_;
   VideoChannels video_channels_;

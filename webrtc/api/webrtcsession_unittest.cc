@@ -1316,6 +1316,8 @@ class WebRtcSessionTest
 
     SetupLoopbackCall();
 
+    // Wait for channel to be ready for sending.
+    EXPECT_TRUE_WAIT(media_engine_->GetVideoChannel(0)->sending(), 100);
     uint8_t test_packet[15] = {0};
     rtc::PacketOptions options;
     options.packet_id = 10;

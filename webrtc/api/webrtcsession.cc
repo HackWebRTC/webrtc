@@ -1797,8 +1797,8 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
       this, &WebRtcSession::OnDtlsSetupFailure);
 
   SignalVoiceChannelCreated();
-  voice_channel_->transport_channel()->SignalSentPacket.connect(
-      this, &WebRtcSession::OnSentPacket_w);
+  voice_channel_->SignalSentPacket.connect(this,
+                                           &WebRtcSession::OnSentPacket_w);
   return true;
 }
 
@@ -1814,8 +1814,8 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
       this, &WebRtcSession::OnDtlsSetupFailure);
 
   SignalVideoChannelCreated();
-  video_channel_->transport_channel()->SignalSentPacket.connect(
-      this, &WebRtcSession::OnSentPacket_w);
+  video_channel_->SignalSentPacket.connect(this,
+                                           &WebRtcSession::OnSentPacket_w);
   return true;
 }
 
@@ -1836,8 +1836,7 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
       this, &WebRtcSession::OnDtlsSetupFailure);
 
   SignalDataChannelCreated();
-  data_channel_->transport_channel()->SignalSentPacket.connect(
-      this, &WebRtcSession::OnSentPacket_w);
+  data_channel_->SignalSentPacket.connect(this, &WebRtcSession::OnSentPacket_w);
   return true;
 }
 
@@ -2155,8 +2154,7 @@ void WebRtcSession::ReportNegotiatedCiphers(
   }
 }
 
-void WebRtcSession::OnSentPacket_w(cricket::TransportChannel* channel,
-                                   const rtc::SentPacket& sent_packet) {
+void WebRtcSession::OnSentPacket_w(const rtc::SentPacket& sent_packet) {
   RTC_DCHECK(worker_thread()->IsCurrent());
   media_controller_->call_w()->OnSentPacket(sent_packet);
 }

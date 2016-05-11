@@ -56,6 +56,7 @@ class ChannelManagerTest : public testing::Test {
     fme_ = NULL;
   }
 
+  rtc::Thread network_;
   rtc::Thread worker_;
   cricket::FakeMediaEngine* fme_;
   cricket::FakeDataEngine* fdme_;
@@ -77,14 +78,18 @@ TEST_F(ChannelManagerTest, StartupShutdown) {
 
 // Test that we startup/shutdown properly with a worker thread.
 TEST_F(ChannelManagerTest, StartupShutdownOnThread) {
+  network_.Start();
   worker_.Start();
   EXPECT_FALSE(cm_->initialized());
   EXPECT_EQ(rtc::Thread::Current(), cm_->worker_thread());
+  EXPECT_TRUE(cm_->set_network_thread(&network_));
+  EXPECT_EQ(&network_, cm_->network_thread());
   EXPECT_TRUE(cm_->set_worker_thread(&worker_));
   EXPECT_EQ(&worker_, cm_->worker_thread());
   EXPECT_TRUE(cm_->Init());
   EXPECT_TRUE(cm_->initialized());
-  // Setting the worker thread while initialized should fail.
+  // Setting the network or worker thread while initialized should fail.
+  EXPECT_FALSE(cm_->set_network_thread(rtc::Thread::Current()));
   EXPECT_FALSE(cm_->set_worker_thread(rtc::Thread::Current()));
   cm_->Terminate();
   EXPECT_FALSE(cm_->initialized());
@@ -112,12 +117,14 @@ TEST_F(ChannelManagerTest, CreateDestroyChannels) {
 
 // Test that we can create and destroy a voice and video channel with a worker.
 TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
+  network_.Start();
   worker_.Start();
   EXPECT_TRUE(cm_->set_worker_thread(&worker_));
+  EXPECT_TRUE(cm_->set_network_thread(&network_));
   EXPECT_TRUE(cm_->Init());
   delete transport_controller_;
   transport_controller_ =
-      new cricket::FakeTransportController(&worker_, ICEROLE_CONTROLLING);
+      new cricket::FakeTransportController(&network_, ICEROLE_CONTROLLING);
   cricket::VoiceChannel* voice_channel =
       cm_->CreateVoiceChannel(&fake_mc_, transport_controller_,
                               cricket::CN_AUDIO, false, AudioOptions());

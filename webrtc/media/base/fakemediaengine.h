@@ -55,7 +55,9 @@ template <class Base> class RtpHelper : public Base {
   const std::list<std::string>& rtp_packets() const { return rtp_packets_; }
   const std::list<std::string>& rtcp_packets() const { return rtcp_packets_; }
 
-  bool SendRtp(const void* data, int len, const rtc::PacketOptions& options) {
+  bool SendRtp(const void* data,
+               size_t len,
+               const rtc::PacketOptions& options) {
     if (!sending_) {
       return false;
     }
@@ -63,13 +65,13 @@ template <class Base> class RtpHelper : public Base {
                                   kMaxRtpPacketLen);
     return Base::SendPacket(&packet, options);
   }
-  bool SendRtcp(const void* data, int len) {
+  bool SendRtcp(const void* data, size_t len) {
     rtc::CopyOnWriteBuffer packet(reinterpret_cast<const uint8_t*>(data), len,
                                   kMaxRtpPacketLen);
     return Base::SendRtcp(&packet, rtc::PacketOptions());
   }
 
-  bool CheckRtp(const void* data, int len) {
+  bool CheckRtp(const void* data, size_t len) {
     bool success = !rtp_packets_.empty();
     if (success) {
       std::string packet = rtp_packets_.front();
@@ -78,7 +80,7 @@ template <class Base> class RtpHelper : public Base {
     }
     return success;
   }
-  bool CheckRtcp(const void* data, int len) {
+  bool CheckRtcp(const void* data, size_t len) {
     bool success = !rtcp_packets_.empty();
     if (success) {
       std::string packet = rtcp_packets_.front();

@@ -172,8 +172,9 @@ bool PeerConnectionFactory::Initialize() {
       worker_thread_->Invoke<cricket::MediaEngineInterface*>(rtc::Bind(
       &PeerConnectionFactory::CreateMediaEngine_w, this));
 
-  channel_manager_.reset(
-      new cricket::ChannelManager(media_engine, worker_thread_));
+  rtc::Thread* const network_thread = worker_thread_;
+  channel_manager_.reset(new cricket::ChannelManager(
+      media_engine, worker_thread_, network_thread));
 
   channel_manager_->SetVideoRtxEnabled(true);
   if (!channel_manager_->Init()) {

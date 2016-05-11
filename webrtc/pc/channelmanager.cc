@@ -44,25 +44,26 @@ static DataEngineInterface* ConstructDataEngine() {
 
 ChannelManager::ChannelManager(MediaEngineInterface* me,
                                DataEngineInterface* dme,
-                               rtc::Thread* worker_thread) {
-  Construct(me, dme, worker_thread);
+                               rtc::Thread* thread) {
+  Construct(me, dme, thread, thread);
 }
 
 ChannelManager::ChannelManager(MediaEngineInterface* me,
-                               rtc::Thread* worker_thread) {
-  Construct(me,
-            ConstructDataEngine(),
-            worker_thread);
+                               rtc::Thread* worker_thread,
+                               rtc::Thread* network_thread) {
+  Construct(me, ConstructDataEngine(), worker_thread, network_thread);
 }
 
 void ChannelManager::Construct(MediaEngineInterface* me,
                                DataEngineInterface* dme,
-                               rtc::Thread* worker_thread) {
+                               rtc::Thread* worker_thread,
+                               rtc::Thread* network_thread) {
   media_engine_.reset(me);
   data_media_engine_.reset(dme);
   initialized_ = false;
   main_thread_ = rtc::Thread::Current();
   worker_thread_ = worker_thread;
+  network_thread_ = network_thread;
   audio_output_volume_ = kNotSetOutputVolume;
   capturing_ = false;
   enable_rtx_ = false;
@@ -144,18 +145,16 @@ bool ChannelManager::Init() {
   if (initialized_) {
     return false;
   }
-  ASSERT(worker_thread_ != NULL);
-  if (!worker_thread_) {
-    return false;
-  }
-  if (worker_thread_ != rtc::Thread::Current()) {
-    // Do not allow invoking calls to other threads on the worker thread.
-    worker_thread_->Invoke<bool>(rtc::Bind(
-        &rtc::Thread::SetAllowBlockingCalls, worker_thread_, false));
+  RTC_DCHECK(network_thread_);
+  RTC_DCHECK(worker_thread_);
+  if (!network_thread_->IsCurrent()) {
+    // Do not allow invoking calls to other threads on the network thread.
+    network_thread_->Invoke<bool>(
+        rtc::Bind(&rtc::Thread::SetAllowBlockingCalls, network_thread_, false));
   }
 
-  initialized_ = worker_thread_->Invoke<bool>(Bind(
-      &ChannelManager::InitMediaEngine_w, this));
+  initialized_ = worker_thread_->Invoke<bool>(
+      Bind(&ChannelManager::InitMediaEngine_w, this));
   ASSERT(initialized_);
   if (!initialized_) {
     return false;
@@ -228,9 +227,9 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
     return nullptr;
 
   VoiceChannel* voice_channel =
-      new VoiceChannel(worker_thread_, media_engine_.get(), media_channel,
-                       transport_controller, content_name, rtcp);
-  if (!voice_channel->Init()) {
+      new VoiceChannel(worker_thread_, network_thread_, media_engine_.get(),
+                       media_channel, transport_controller, content_name, rtcp);
+  if (!voice_channel->Init_w()) {
     delete voice_channel;
     return nullptr;
   }
@@ -286,9 +285,10 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
     return NULL;
   }
 
-  VideoChannel* video_channel = new VideoChannel(
-      worker_thread_, media_channel, transport_controller, content_name, rtcp);
-  if (!video_channel->Init()) {
+  VideoChannel* video_channel =
+      new VideoChannel(worker_thread_, network_thread_, media_channel,
+                       transport_controller, content_name, rtcp);
+  if (!video_channel->Init_w()) {
     delete video_channel;
     return NULL;
   }
@@ -344,9 +344,10 @@ DataChannel* ChannelManager::CreateDataChannel_w(
     return NULL;
   }
 
-  DataChannel* data_channel = new DataChannel(
-      worker_thread_, media_channel, transport_controller, content_name, rtcp);
-  if (!data_channel->Init()) {
+  DataChannel* data_channel =
+      new DataChannel(worker_thread_, network_thread_, media_channel,
+                      transport_controller, content_name, rtcp);
+  if (!data_channel->Init_w()) {
     LOG(LS_WARNING) << "Failed to init data channel.";
     delete data_channel;
     return NULL;
