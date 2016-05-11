@@ -132,11 +132,8 @@ RtpStreamReceiver::RtpStreamReceiver(
   }
 
   static const int kMaxPacketAgeToNack = 450;
-  NACKMethod nack_method =
-      config.rtp.nack.rtp_history_ms > 0 ? kNackRtcp : kNackOff;
-  const int max_reordering_threshold = (nack_method == kNackRtcp)
+  const int max_reordering_threshold = (config.rtp.nack.rtp_history_ms > 0)
       ? kMaxPacketAgeToNack : kDefaultMaxReorderingThreshold;
-  rtp_receiver_->SetNACKStatus(nack_method);
   rtp_receive_statistics_->SetMaxReorderingThreshold(max_reordering_threshold);
 
   // TODO(pbos): Support multiple RTX, per video payload.

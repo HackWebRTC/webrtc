@@ -68,8 +68,7 @@ RtpReceiverImpl::RtpReceiverImpl(
       current_remote_csrc_(),
       last_received_timestamp_(0),
       last_received_frame_time_ms_(-1),
-      last_received_sequence_number_(0),
-      nack_method_(kNackOff) {
+      last_received_sequence_number_(0) {
   assert(incoming_messages_callback);
 
   memset(current_remote_csrc_, 0, sizeof(current_remote_csrc_));
@@ -111,17 +110,6 @@ int32_t RtpReceiverImpl::DeRegisterReceivePayload(
     const int8_t payload_type) {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
   return rtp_payload_registry_->DeRegisterReceivePayload(payload_type);
-}
-
-NACKMethod RtpReceiverImpl::NACK() const {
-  rtc::CritScope lock(&critical_section_rtp_receiver_);
-  return nack_method_;
-}
-
-// Turn negative acknowledgment requests on/off.
-void RtpReceiverImpl::SetNACKStatus(const NACKMethod method) {
-  rtc::CritScope lock(&critical_section_rtp_receiver_);
-  nack_method_ = method;
 }
 
 uint32_t RtpReceiverImpl::SSRC() const {

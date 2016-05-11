@@ -75,12 +75,6 @@ class RtpReceiver {
                                  PayloadUnion payload_specific,
                                  bool in_order) = 0;
 
-  // Returns the currently configured NACK method.
-  virtual NACKMethod NACK() const = 0;
-
-  // Turn negative acknowledgement (NACK) requests on/off.
-  virtual void SetNACKStatus(const NACKMethod method) = 0;
-
   // Gets the last received timestamp. Returns true if a packet has been
   // received, false otherwise.
   virtual bool Timestamp(uint32_t* timestamp) const = 0;

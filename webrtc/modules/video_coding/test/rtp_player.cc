@@ -228,7 +228,6 @@ class SsrcHandlers {
       return -1;
     }
 
-    handler->rtp_module_->SetNACKStatus(kNackOff);
     handler->rtp_header_parser_->RegisterRtpHeaderExtension(
         kRtpExtensionTransmissionTimeOffset,
         kDefaultTransmissionTimeOffsetExtensionId);

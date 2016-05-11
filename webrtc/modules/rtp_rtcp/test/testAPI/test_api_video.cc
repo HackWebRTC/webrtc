@@ -56,7 +56,6 @@ class RtpRtcpVideoTest : public ::testing::Test {
 
     video_module_->SetRTCPStatus(RtcpMode::kCompound);
     video_module_->SetSSRC(test_ssrc_);
-    rtp_receiver_->SetNACKStatus(kNackRtcp);
     video_module_->SetStorePacketsStatus(true, 600);
     EXPECT_EQ(0, video_module_->SetSendingStatus(true));
 

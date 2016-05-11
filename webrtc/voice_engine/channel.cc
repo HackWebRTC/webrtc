@@ -2914,7 +2914,6 @@ void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
   if (!pacing_enabled_)
     _rtpRtcpModule->SetStorePacketsStatus(enable, maxNumberOfPackets);
   rtp_receive_statistics_->SetMaxReorderingThreshold(maxNumberOfPackets);
-  rtp_receiver_->SetNACKStatus(enable ? kNackRtcp : kNackOff);
   if (enable)
     audio_coding_->EnableNack(maxNumberOfPackets);
   else

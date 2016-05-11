@@ -99,8 +99,6 @@ enum KeyFrameRequestMethod { kKeyFrameReqPliRtcp, kKeyFrameReqFirRtcp };
 
 enum RtpRtcpPacketType { kPacketRtp = 0, kPacketKeepAlive = 1 };
 
-enum NACKMethod { kNackOff = 0, kNackRtcp = 2 };
-
 enum RetransmissionMode : uint8_t {
   kRetransmitOff = 0x0,
   kRetransmitFECPackets = 0x1,

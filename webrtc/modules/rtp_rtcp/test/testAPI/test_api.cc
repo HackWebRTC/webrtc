@@ -152,10 +152,6 @@ TEST_F(RtpRtcpAPITest, RTCP) {
   EXPECT_TRUE(module_->TMMBR());
   module_->SetTMMBRStatus(false);
   EXPECT_FALSE(module_->TMMBR());
-
-  EXPECT_EQ(kNackOff, rtp_receiver_->NACK());
-  rtp_receiver_->SetNACKStatus(kNackRtcp);
-  EXPECT_EQ(kNackRtcp, rtp_receiver_->NACK());
 }
 
 TEST_F(RtpRtcpAPITest, RtxSender) {

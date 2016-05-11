@@ -48,11 +48,6 @@ class RtpReceiverImpl : public RtpReceiver {
                          PayloadUnion payload_specific,
                          bool in_order) override;
 
-  NACKMethod NACK() const override;
-
-  // Turn negative acknowledgement requests on/off.
-  void SetNACKStatus(const NACKMethod method) override;
-
   // Returns the last received timestamp.
   bool Timestamp(uint32_t* timestamp) const override;
   bool LastReceivedTimeMs(int64_t* receive_time_ms) const override;
@@ -93,8 +88,6 @@ class RtpReceiverImpl : public RtpReceiver {
   uint32_t last_received_timestamp_;
   int64_t last_received_frame_time_ms_;
   uint16_t last_received_sequence_number_;
-
-  NACKMethod nack_method_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_IMPL_H_

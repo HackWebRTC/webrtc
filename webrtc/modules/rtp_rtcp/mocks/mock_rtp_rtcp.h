@@ -202,10 +202,6 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetTMMBRStatus, void(const bool enable));
   MOCK_METHOD1(OnBandwidthEstimateUpdate,
       void(uint16_t bandWidthKbit));
-  MOCK_CONST_METHOD0(NACK,
-      NACKMethod());
-  MOCK_METHOD2(SetNACKStatus,
-      int32_t(const NACKMethod method, int oldestSequenceNumberToNack));
   MOCK_CONST_METHOD0(SelectiveRetransmissions,
       int());
   MOCK_METHOD1(SetSelectiveRetransmissions,
