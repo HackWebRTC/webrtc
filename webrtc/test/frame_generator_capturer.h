@@ -15,6 +15,7 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/typedefs.h"

@@ -25,6 +25,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagehandler.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"

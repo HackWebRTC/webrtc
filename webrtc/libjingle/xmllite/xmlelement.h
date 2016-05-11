@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/libjingle/xmllite/qname.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace buzz {
 

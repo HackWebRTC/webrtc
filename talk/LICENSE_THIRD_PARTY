@@ -14,6 +14,9 @@ Governed by http://www.fourmilab.ch/md5/ (Public domain):
 base/md5.c
 base/md5.h
 
+Governed by http://www.boost.org/LICENSE_1_0.txt (Boost license):
+base/scoped_ptr.h
+
 Governed by license within files (Public domain):
 Originally downloaded from http://svn.ghostscript.com/jbig2dec/tags/release_0_02/sha1.*
 base/sha1.c

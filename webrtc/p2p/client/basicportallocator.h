@@ -18,6 +18,7 @@
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/network.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 
 namespace cricket {

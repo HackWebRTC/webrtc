@@ -14,6 +14,7 @@
 #include <complex>
 #include <memory>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 // Uniform interface class for the real DFT and its inverse, for power-of-2

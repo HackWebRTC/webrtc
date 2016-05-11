@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 #include "webrtc/modules/desktop_capture/window_capturer.h"

@@ -13,7 +13,6 @@
 #ifndef WEBRTC_LIBJINGLE_XMPP_FAKEXMPPCLIENT_H_
 #define WEBRTC_LIBJINGLE_XMPP_FAKEXMPPCLIENT_H_
 
-#include <algorithm>
 #include <string>
 #include <vector>
 

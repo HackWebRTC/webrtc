@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include "webrtc/libjingle/xmllite/xmlparser.h"
+#include "webrtc/base/scoped_ptr.h"
 
 #ifdef EXPAT_RELATIVE_PATH
 #include "expat.h"

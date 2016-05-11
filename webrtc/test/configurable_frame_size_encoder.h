@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/video_encoder.h"
 
 namespace webrtc {

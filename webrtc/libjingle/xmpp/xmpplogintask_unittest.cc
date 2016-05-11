@@ -22,7 +22,6 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/cryptstring.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/typedefs.h"
 
 using buzz::Jid;
 using buzz::QName;

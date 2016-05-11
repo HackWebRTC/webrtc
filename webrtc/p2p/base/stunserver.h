@@ -15,6 +15,7 @@
 
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {
 

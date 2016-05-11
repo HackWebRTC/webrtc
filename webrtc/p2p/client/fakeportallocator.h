@@ -17,6 +17,7 @@
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/udpport.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
 class SocketFactory;

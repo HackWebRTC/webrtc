@@ -15,6 +15,7 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
 #include "webrtc/test/drifting_clock.h"
 #include "webrtc/typedefs.h"

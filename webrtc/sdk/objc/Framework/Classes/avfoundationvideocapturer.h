@@ -13,6 +13,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/video_frame.h"
 

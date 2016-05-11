@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/transport.h"

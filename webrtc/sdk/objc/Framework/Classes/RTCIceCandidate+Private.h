@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "webrtc/api/jsep.h"
+#include "webrtc/base/scoped_ptr.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

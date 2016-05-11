@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "webrtc/typedefs.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 class Module;

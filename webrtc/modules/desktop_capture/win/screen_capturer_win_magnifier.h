@@ -18,6 +18,7 @@
 #include <wincodec.h>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"

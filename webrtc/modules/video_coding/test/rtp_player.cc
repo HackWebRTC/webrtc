@@ -12,7 +12,6 @@
 
 #include <stdio.h>
 
-#include <cstdlib>
 #include <map>
 #include <memory>
 
@@ -342,7 +341,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
     assert(packet_source);
     assert(packet_source->get());
     packet_source_.swap(*packet_source);
-    std::srand(321);
+    srand(321);
   }
 
   virtual ~RtpPlayerImpl() {}
@@ -435,8 +434,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
 
       if (no_loss_startup_ > 0) {
         no_loss_startup_--;
-      } else if ((std::rand() + 1.0) / (RAND_MAX + 1.0) <
-                 loss_rate_) {  // NOLINT
+      } else if ((rand() + 1.0) / (RAND_MAX + 1.0) < loss_rate_) {  // NOLINT
         uint16_t seq_num = header.sequenceNumber;
         lost_packets_.AddPacket(new RawRtpPacket(data, length, ssrc, seq_num));
         DEBUG_LOG1("Dropped packet: %d!", header.header.sequenceNumber);

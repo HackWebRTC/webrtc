@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 #include "webrtc/typedefs.h"
 
