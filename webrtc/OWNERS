@@ -1,3 +1,9 @@
+henrika@webrtc.org
+mflodman@webrtc.org
+niklas.enbom@webrtc.org
+tina.legrand@webrtc.org
+tommi@webrtc.org
+
 per-file *.isolate=kjellander@webrtc.org
 
 # These are for the common case of adding or renaming files. If you're doing
