@@ -57,25 +57,10 @@ class DtlsIdentityStoreInterface {
 
   // The |observer| will be called when the requested identity is ready, or when
   // identity generation fails.
-  // TODO(torbjorng,hbos): There are currently two versions of RequestIdentity,
-  // with default implementation to call the other version of itself (so that a
-  // call can be made regardless of which version has been overridden). The 1st
-  // version exists because it is currently implemented in chromium. The 2nd
-  // version will become the one and only RequestIdentity as soon as chromium
-  // implements the correct version. crbug.com/544902, webrtc:5092.
-  virtual void RequestIdentity(
-      rtc::KeyParams key_params,
-      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
-    // Add default ("null") expiration.
-    RequestIdentity(key_params, rtc::Optional<uint64_t>(), observer);
-  }
   virtual void RequestIdentity(
       const rtc::KeyParams& key_params,
       const rtc::Optional<uint64_t>& expires_ms,
-      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
-    // Drop |expires|.
-    RequestIdentity(key_params, observer);
-  }
+      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) = 0;
 };
 
 // The WebRTC default implementation of DtlsIdentityStoreInterface.
