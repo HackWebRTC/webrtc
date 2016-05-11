@@ -117,6 +117,7 @@ config("common_config") {
       cflags += [
         "-Wimplicit-fallthrough",
         "-Wthread-safety",
+        "-Winconsistent-missing-override",
       ]
     }
   }
