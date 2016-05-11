@@ -24,44 +24,44 @@ class AudioFrame;
 
 class AudioCoder : public AudioPacketizationCallback {
  public:
-  AudioCoder(uint32_t instanceID);
+  AudioCoder(uint32_t instance_id);
   ~AudioCoder();
 
-  int32_t SetEncodeCodec(const CodecInst& codecInst);
+  int32_t SetEncodeCodec(const CodecInst& codec_inst);
 
-  int32_t SetDecodeCodec(const CodecInst& codecInst);
+  int32_t SetDecodeCodec(const CodecInst& codec_inst);
 
-  int32_t Decode(AudioFrame& decodedAudio,
-                 uint32_t sampFreqHz,
-                 const int8_t* incomingPayload,
-                 size_t payloadLength);
+  int32_t Decode(AudioFrame& decoded_audio,
+                 uint32_t samp_freq_hz,
+                 const int8_t* incoming_payload,
+                 size_t payload_length);
 
-  int32_t PlayoutData(AudioFrame& decodedAudio, uint16_t& sampFreqHz);
+  int32_t PlayoutData(AudioFrame& decoded_audio, uint16_t& samp_freq_hz);
 
   int32_t Encode(const AudioFrame& audio,
-                 int8_t* encodedData,
-                 size_t& encodedLengthInBytes);
+                 int8_t* encoded_data,
+                 size_t& encoded_length_in_bytes);
 
  protected:
-  int32_t SendData(FrameType frameType,
-                   uint8_t payloadType,
-                   uint32_t timeStamp,
-                   const uint8_t* payloadData,
-                   size_t payloadSize,
+  int32_t SendData(FrameType frame_type,
+                   uint8_t payload_type,
+                   uint32_t time_stamp,
+                   const uint8_t* payload_data,
+                   size_t payload_size,
                    const RTPFragmentationHeader* fragmentation) override;
 
  private:
-  std::unique_ptr<AudioCodingModule> _acm;
+  std::unique_ptr<AudioCodingModule> acm_;
   acm2::CodecManager codec_manager_;
   acm2::RentACodec rent_a_codec_;
 
-  CodecInst _receiveCodec;
+  CodecInst receive_codec_;
 
-  uint32_t _encodeTimestamp;
-  int8_t* _encodedData;
-  size_t _encodedLengthInBytes;
+  uint32_t encode_timestamp_;
+  int8_t* encoded_data_;
+  size_t encoded_length_in_bytes_;
 
-  uint32_t _decodeTimestamp;
+  uint32_t decode_timestamp_;
 };
 }  // namespace webrtc
 
