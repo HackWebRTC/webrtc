@@ -410,7 +410,8 @@ public class VideoCapturerAndroid implements
     Throwable error = null;
     checkIsOnCameraThread();
     if (camera != null) {
-      throw new RuntimeException("Camera has already been started.");
+      Logging.e(TAG, "startCaptureOnCameraThread: Camera has already been started.");
+      return;
     }
     this.applicationContext = applicationContext;
     this.frameObserver = frameObserver;
