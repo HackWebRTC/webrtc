@@ -60,6 +60,10 @@ void QualityScaler::Init(int low_qp_threshold,
       height /= 2;
     }
   }
+
+  // Zero out width/height so they can be checked against inside
+  // UpdateTargetResolution.
+  res_.width = res_.height = 0;
   UpdateTargetResolution(init_width, init_height);
   ReportFramerate(fps);
 }
@@ -131,15 +135,24 @@ const VideoFrame& QualityScaler::GetScaledFrame(const VideoFrame& frame) {
 
 void QualityScaler::UpdateTargetResolution(int frame_width, int frame_height) {
   assert(downscale_shift_ >= 0);
+  int shifts_performed = 0;
+  for (int shift = downscale_shift_;
+       shift > 0 && (frame_width / 2 >= kMinDownscaleDimension) &&
+       (frame_height / 2 >= kMinDownscaleDimension);
+       --shift, ++shifts_performed) {
+    frame_width /= 2;
+    frame_height /= 2;
+  }
+  // Clamp to number of shifts actually performed to not be stuck trying to
+  // scale way beyond QVGA.
+  downscale_shift_ = shifts_performed;
+  if (res_.width == frame_width && res_.height == frame_height) {
+    // No reset done/needed, using same resolution.
+    return;
+  }
   res_.width = frame_width;
   res_.height = frame_height;
-  for (int shift = downscale_shift_;
-       shift > 0 && (res_.width / 2 >= kMinDownscaleDimension) &&
-       (res_.height / 2 >= kMinDownscaleDimension);
-       --shift) {
-    res_.width /= 2;
-    res_.height /= 2;
-  }
+  ClearSamples();
 }
 
 void QualityScaler::ClearSamples() {
@@ -160,11 +173,10 @@ void QualityScaler::AdjustScale(bool up) {
   if (downscale_shift_ < 0)
     downscale_shift_ = 0;
   if (!up) {
-    // Hit first downscale, start using a slower threshold for going up.
+    // First downscale hit, start using a slower threshold for going up.
     measure_seconds_upscale_ = kMeasureSecondsUpscale;
     UpdateSampleCounts();
   }
-  ClearSamples();
 }
 
 }  // namespace webrtc
