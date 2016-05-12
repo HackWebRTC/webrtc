@@ -1163,11 +1163,13 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamWithSimAndRtx) {
   // Receiver side.
   FakeVideoReceiveStream* recv_stream = AddRecvStream(
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
-  ASSERT_GT(recv_stream->GetConfig().rtp.rtx.size(), 0u)
-      << "No SSRCs for RTX configured by AddRecvStream.";
-  EXPECT_EQ(rtx_ssrcs[0],
-            recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
-  // TODO(pbos): Make sure we set the RTX for correct payloads etc.
+  EXPECT_FALSE(recv_stream->GetConfig().rtp.rtx.empty());
+  EXPECT_EQ(recv_stream->GetConfig().decoders.size(),
+            recv_stream->GetConfig().rtp.rtx.size())
+      << "RTX should be mapped for all decoders/payload types.";
+  for (const auto& kv : recv_stream->GetConfig().rtp.rtx) {
+    EXPECT_EQ(rtx_ssrcs[0], kv.second.ssrc);
+  }
 }
 
 TEST_F(WebRtcVideoChannel2Test, RecvStreamWithRtx) {
@@ -3199,7 +3201,7 @@ TEST_F(WebRtcVideoChannel2Test, DefaultReceiveStreamReconfiguresToUseRtx) {
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "No default receive stream created.";
   FakeVideoReceiveStream* recv_stream = fake_call_->GetVideoReceiveStreams()[0];
-  EXPECT_EQ(0u, recv_stream->GetConfig().rtp.rtx.size())
+  EXPECT_TRUE(recv_stream->GetConfig().rtp.rtx.empty())
       << "Default receive stream should not have configured RTX";
 
   EXPECT_TRUE(channel_->AddRecvStream(
@@ -3207,9 +3209,13 @@ TEST_F(WebRtcVideoChannel2Test, DefaultReceiveStreamReconfiguresToUseRtx) {
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "AddRecvStream should've reconfigured, not added a new receiver.";
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
-  ASSERT_GE(2u, recv_stream->GetConfig().rtp.rtx.size());
-  EXPECT_EQ(rtx_ssrcs[0],
-            recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
+  EXPECT_FALSE(recv_stream->GetConfig().rtp.rtx.empty());
+  EXPECT_EQ(recv_stream->GetConfig().decoders.size(),
+            recv_stream->GetConfig().rtp.rtx.size())
+      << "RTX should be mapped for all decoders/payload types.";
+  for (const auto& kv : recv_stream->GetConfig().rtp.rtx) {
+    EXPECT_EQ(rtx_ssrcs[0], kv.second.ssrc);
+  }
 }
 
 TEST_F(WebRtcVideoChannel2Test, RejectsAddingStreamsWithMissingSsrcsForRtx) {
