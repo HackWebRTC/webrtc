@@ -511,22 +511,22 @@ class FakeTransportController : public TransportController {
     SetIceRole(role);
   }
 
-  FakeTransport* GetTransport_w(const std::string& transport_name) {
+  FakeTransport* GetTransport_n(const std::string& transport_name) {
     return static_cast<FakeTransport*>(
-        TransportController::GetTransport_w(transport_name));
+        TransportController::GetTransport_n(transport_name));
   }
 
   void Connect(FakeTransportController* dest) {
-    worker_thread()->Invoke<void>(
-        rtc::Bind(&FakeTransportController::Connect_w, this, dest));
+    network_thread()->Invoke<void>(
+        rtc::Bind(&FakeTransportController::Connect_n, this, dest));
   }
 
-  TransportChannel* CreateTransportChannel_w(const std::string& transport_name,
+  TransportChannel* CreateTransportChannel_n(const std::string& transport_name,
                                              int component) override {
     if (fail_create_channel_) {
       return nullptr;
     }
-    return TransportController::CreateTransportChannel_w(transport_name,
+    return TransportController::CreateTransportChannel_n(transport_name,
                                                          component);
   }
 
@@ -547,21 +547,21 @@ class FakeTransportController : public TransportController {
   }
 
  protected:
-  Transport* CreateTransport_w(const std::string& transport_name) override {
+  Transport* CreateTransport_n(const std::string& transport_name) override {
     return new FakeTransport(transport_name);
   }
 
-  void Connect_w(FakeTransportController* dest) {
+  void Connect_n(FakeTransportController* dest) {
     // Simulate the exchange of candidates.
-    ConnectChannels_w();
-    dest->ConnectChannels_w();
+    ConnectChannels_n();
+    dest->ConnectChannels_n();
     for (auto& kv : transports()) {
       FakeTransport* transport = static_cast<FakeTransport*>(kv.second);
-      transport->SetDestination(dest->GetTransport_w(kv.first));
+      transport->SetDestination(dest->GetTransport_n(kv.first));
     }
   }
 
-  void ConnectChannels_w() {
+  void ConnectChannels_n() {
     TransportDescription faketransport_desc(
         std::vector<std::string>(),
         rtc::CreateRandomString(cricket::ICE_UFRAG_LENGTH),

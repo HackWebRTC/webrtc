@@ -268,12 +268,12 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   cricket::FakeTransport* GetTransport1() {
     std::string name = channel1_->content_name();
     return network_thread_->Invoke<cricket::FakeTransport*>(
-        [this, name] { return transport_controller1_->GetTransport_w(name); });
+        [this, name] { return transport_controller1_->GetTransport_n(name); });
   }
   cricket::FakeTransport* GetTransport2() {
     std::string name = channel2_->content_name();
     return network_thread_->Invoke<cricket::FakeTransport*>(
-        [this, name] { return transport_controller2_->GetTransport_w(name); });
+        [this, name] { return transport_controller2_->GetTransport_n(name); });
   }
 
   void SendRtp1() {

@@ -81,12 +81,12 @@ class TransportControllerTest : public testing::Test,
   FakeTransportChannel* CreateChannel(const std::string& content,
                                       int component) {
     TransportChannel* channel =
-        transport_controller_->CreateTransportChannel_w(content, component);
+        transport_controller_->CreateTransportChannel_n(content, component);
     return static_cast<FakeTransportChannel*>(channel);
   }
 
   void DestroyChannel(const std::string& content, int component) {
-    transport_controller_->DestroyTransportChannel_w(content, component);
+    transport_controller_->DestroyTransportChannel_n(content, component);
   }
 
   Candidate CreateCandidate(int component) {

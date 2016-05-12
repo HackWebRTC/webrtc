@@ -43,59 +43,60 @@ struct CandidatesData : public rtc::MessageData {
 };
 
 TransportController::TransportController(rtc::Thread* signaling_thread,
-                                         rtc::Thread* worker_thread,
+                                         rtc::Thread* network_thread,
                                          PortAllocator* port_allocator)
     : signaling_thread_(signaling_thread),
-      worker_thread_(worker_thread),
+      network_thread_(network_thread),
       port_allocator_(port_allocator) {}
 
 TransportController::~TransportController() {
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&TransportController::DestroyAllTransports_w, this));
+  network_thread_->Invoke<void>(
+      rtc::Bind(&TransportController::DestroyAllTransports_n, this));
   signaling_thread_->Clear(this);
 }
 
 bool TransportController::SetSslMaxProtocolVersion(
     rtc::SSLProtocolVersion version) {
-  return worker_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::SetSslMaxProtocolVersion_w, this, version));
+  return network_thread_->Invoke<bool>(rtc::Bind(
+      &TransportController::SetSslMaxProtocolVersion_n, this, version));
 }
 
 void TransportController::SetIceConfig(const IceConfig& config) {
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&TransportController::SetIceConfig_w, this, config));
+  network_thread_->Invoke<void>(
+      rtc::Bind(&TransportController::SetIceConfig_n, this, config));
 }
 
 void TransportController::SetIceRole(IceRole ice_role) {
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&TransportController::SetIceRole_w, this, ice_role));
+  network_thread_->Invoke<void>(
+      rtc::Bind(&TransportController::SetIceRole_n, this, ice_role));
 }
 
 bool TransportController::GetSslRole(const std::string& transport_name,
                                      rtc::SSLRole* role) {
-  return worker_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::GetSslRole_w, this, transport_name, role));
+  return network_thread_->Invoke<bool>(rtc::Bind(
+      &TransportController::GetSslRole_n, this, transport_name, role));
 }
 
 bool TransportController::SetLocalCertificate(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
-  return worker_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::SetLocalCertificate_w, this, certificate));
+  return network_thread_->Invoke<bool>(rtc::Bind(
+      &TransportController::SetLocalCertificate_n, this, certificate));
 }
 
 bool TransportController::GetLocalCertificate(
     const std::string& transport_name,
     rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
-  return worker_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::GetLocalCertificate_w, this,
+  return network_thread_->Invoke<bool>(
+      rtc::Bind(&TransportController::GetLocalCertificate_n, this,
                 transport_name, certificate));
 }
 
 std::unique_ptr<rtc::SSLCertificate>
 TransportController::GetRemoteSSLCertificate(
     const std::string& transport_name) {
-  return worker_thread_->Invoke<std::unique_ptr<rtc::SSLCertificate>>(rtc::Bind(
-      &TransportController::GetRemoteSSLCertificate_w, this, transport_name));
+  return network_thread_->Invoke<std::unique_ptr<rtc::SSLCertificate>>(
+      rtc::Bind(&TransportController::GetRemoteSSLCertificate_n, this,
+                transport_name));
 }
 
 bool TransportController::SetLocalTransportDescription(
@@ -103,8 +104,8 @@ bool TransportController::SetLocalTransportDescription(
     const TransportDescription& tdesc,
     ContentAction action,
     std::string* err) {
-  return worker_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::SetLocalTransportDescription_w, this,
+  return network_thread_->Invoke<bool>(
+      rtc::Bind(&TransportController::SetLocalTransportDescription_n, this,
                 transport_name, tdesc, action, err));
 }
 
@@ -113,48 +114,48 @@ bool TransportController::SetRemoteTransportDescription(
     const TransportDescription& tdesc,
     ContentAction action,
     std::string* err) {
-  return worker_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::SetRemoteTransportDescription_w, this,
+  return network_thread_->Invoke<bool>(
+      rtc::Bind(&TransportController::SetRemoteTransportDescription_n, this,
                 transport_name, tdesc, action, err));
 }
 
 void TransportController::MaybeStartGathering() {
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&TransportController::MaybeStartGathering_w, this));
+  network_thread_->Invoke<void>(
+      rtc::Bind(&TransportController::MaybeStartGathering_n, this));
 }
 
 bool TransportController::AddRemoteCandidates(const std::string& transport_name,
                                               const Candidates& candidates,
                                               std::string* err) {
-  return worker_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::AddRemoteCandidates_w, this,
+  return network_thread_->Invoke<bool>(
+      rtc::Bind(&TransportController::AddRemoteCandidates_n, this,
                 transport_name, candidates, err));
 }
 
 bool TransportController::RemoveRemoteCandidates(const Candidates& candidates,
                                                  std::string* err) {
-  return worker_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::RemoveRemoteCandidates_w, this, candidates, err));
+  return network_thread_->Invoke<bool>(rtc::Bind(
+      &TransportController::RemoveRemoteCandidates_n, this, candidates, err));
 }
 
 bool TransportController::ReadyForRemoteCandidates(
     const std::string& transport_name) {
-  return worker_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::ReadyForRemoteCandidates_w, this, transport_name));
+  return network_thread_->Invoke<bool>(rtc::Bind(
+      &TransportController::ReadyForRemoteCandidates_n, this, transport_name));
 }
 
 bool TransportController::GetStats(const std::string& transport_name,
                                    TransportStats* stats) {
-  return worker_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::GetStats_w, this, transport_name, stats));
+  return network_thread_->Invoke<bool>(
+      rtc::Bind(&TransportController::GetStats_n, this, transport_name, stats));
 }
 
-TransportChannel* TransportController::CreateTransportChannel_w(
+TransportChannel* TransportController::CreateTransportChannel_n(
     const std::string& transport_name,
     int component) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  auto it = FindChannel_w(transport_name, component);
+  auto it = FindChannel_n(transport_name, component);
   if (it != channels_.end()) {
     // Channel already exists; increment reference count and return.
     it->AddRef();
@@ -162,34 +163,34 @@ TransportChannel* TransportController::CreateTransportChannel_w(
   }
 
   // Need to create a new channel.
-  Transport* transport = GetOrCreateTransport_w(transport_name);
+  Transport* transport = GetOrCreateTransport_n(transport_name);
   TransportChannelImpl* channel = transport->CreateChannel(component);
   channel->SignalWritableState.connect(
-      this, &TransportController::OnChannelWritableState_w);
+      this, &TransportController::OnChannelWritableState_n);
   channel->SignalReceivingState.connect(
-      this, &TransportController::OnChannelReceivingState_w);
+      this, &TransportController::OnChannelReceivingState_n);
   channel->SignalGatheringState.connect(
-      this, &TransportController::OnChannelGatheringState_w);
+      this, &TransportController::OnChannelGatheringState_n);
   channel->SignalCandidateGathered.connect(
-      this, &TransportController::OnChannelCandidateGathered_w);
+      this, &TransportController::OnChannelCandidateGathered_n);
   channel->SignalCandidatesRemoved.connect(
-      this, &TransportController::OnChannelCandidatesRemoved_w);
+      this, &TransportController::OnChannelCandidatesRemoved_n);
   channel->SignalRoleConflict.connect(
-      this, &TransportController::OnChannelRoleConflict_w);
+      this, &TransportController::OnChannelRoleConflict_n);
   channel->SignalConnectionRemoved.connect(
-      this, &TransportController::OnChannelConnectionRemoved_w);
+      this, &TransportController::OnChannelConnectionRemoved_n);
   channels_.insert(channels_.end(), RefCountedChannel(channel))->AddRef();
   // Adding a channel could cause aggregate state to change.
-  UpdateAggregateStates_w();
+  UpdateAggregateStates_n();
   return channel;
 }
 
-void TransportController::DestroyTransportChannel_w(
+void TransportController::DestroyTransportChannel_n(
     const std::string& transport_name,
     int component) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  auto it = FindChannel_w(transport_name, component);
+  auto it = FindChannel_n(transport_name, component);
   if (it == channels_.end()) {
     LOG(LS_WARNING) << "Attempting to delete " << transport_name
                     << " TransportChannel " << component
@@ -203,15 +204,15 @@ void TransportController::DestroyTransportChannel_w(
   }
 
   channels_.erase(it);
-  Transport* transport = GetTransport_w(transport_name);
+  Transport* transport = GetTransport_n(transport_name);
   transport->DestroyChannel(component);
   // Just as we create a Transport when its first channel is created,
   // we delete it when its last channel is deleted.
   if (!transport->HasChannels()) {
-    DestroyTransport_w(transport_name);
+    DestroyTransport_n(transport_name);
   }
   // Removing a channel could cause aggregate state to change.
-  UpdateAggregateStates_w();
+  UpdateAggregateStates_n();
 }
 
 const rtc::scoped_refptr<rtc::RTCCertificate>&
@@ -219,9 +220,9 @@ TransportController::certificate_for_testing() {
   return certificate_;
 }
 
-Transport* TransportController::CreateTransport_w(
+Transport* TransportController::CreateTransport_n(
     const std::string& transport_name) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
 #ifdef HAVE_QUIC
   if (quic_) {
@@ -233,9 +234,9 @@ Transport* TransportController::CreateTransport_w(
   return transport;
 }
 
-Transport* TransportController::GetTransport_w(
+Transport* TransportController::GetTransport_n(
     const std::string& transport_name) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   auto iter = transports_.find(transport_name);
   return (iter != transports_.end()) ? iter->second : nullptr;
@@ -278,7 +279,7 @@ void TransportController::OnMessage(rtc::Message* pmsg) {
 }
 
 std::vector<TransportController::RefCountedChannel>::iterator
-TransportController::FindChannel_w(const std::string& transport_name,
+TransportController::FindChannel_n(const std::string& transport_name,
                                    int component) {
   return std::find_if(
       channels_.begin(), channels_.end(),
@@ -288,16 +289,16 @@ TransportController::FindChannel_w(const std::string& transport_name,
       });
 }
 
-Transport* TransportController::GetOrCreateTransport_w(
+Transport* TransportController::GetOrCreateTransport_n(
     const std::string& transport_name) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* transport = GetTransport_w(transport_name);
+  Transport* transport = GetTransport_n(transport_name);
   if (transport) {
     return transport;
   }
 
-  transport = CreateTransport_w(transport_name);
+  transport = CreateTransport_n(transport_name);
   // The stuff below happens outside of CreateTransport_w so that unit tests
   // can override CreateTransport_w to return a different type of transport.
   transport->SetSslMaxProtocolVersion(ssl_max_version_);
@@ -312,9 +313,9 @@ Transport* TransportController::GetOrCreateTransport_w(
   return transport;
 }
 
-void TransportController::DestroyTransport_w(
+void TransportController::DestroyTransport_n(
     const std::string& transport_name) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   auto iter = transports_.find(transport_name);
   if (iter != transports_.end()) {
@@ -323,8 +324,8 @@ void TransportController::DestroyTransport_w(
   }
 }
 
-void TransportController::DestroyAllTransports_w() {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+void TransportController::DestroyAllTransports_n() {
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   for (const auto& kv : transports_) {
     delete kv.second;
@@ -332,9 +333,9 @@ void TransportController::DestroyAllTransports_w() {
   transports_.clear();
 }
 
-bool TransportController::SetSslMaxProtocolVersion_w(
+bool TransportController::SetSslMaxProtocolVersion_n(
     rtc::SSLProtocolVersion version) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   // Max SSL version can only be set before transports are created.
   if (!transports_.empty()) {
@@ -345,27 +346,27 @@ bool TransportController::SetSslMaxProtocolVersion_w(
   return true;
 }
 
-void TransportController::SetIceConfig_w(const IceConfig& config) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+void TransportController::SetIceConfig_n(const IceConfig& config) {
+  RTC_DCHECK(network_thread_->IsCurrent());
   ice_config_ = config;
   for (const auto& kv : transports_) {
     kv.second->SetIceConfig(ice_config_);
   }
 }
 
-void TransportController::SetIceRole_w(IceRole ice_role) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+void TransportController::SetIceRole_n(IceRole ice_role) {
+  RTC_DCHECK(network_thread_->IsCurrent());
   ice_role_ = ice_role;
   for (const auto& kv : transports_) {
     kv.second->SetIceRole(ice_role_);
   }
 }
 
-bool TransportController::GetSslRole_w(const std::string& transport_name,
+bool TransportController::GetSslRole_n(const std::string& transport_name,
                                        rtc::SSLRole* role) {
-  RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* t = GetTransport_w(transport_name);
+  Transport* t = GetTransport_n(transport_name);
   if (!t) {
     return false;
   }
@@ -373,9 +374,9 @@ bool TransportController::GetSslRole_w(const std::string& transport_name,
   return t->GetSslRole(role);
 }
 
-bool TransportController::SetLocalCertificate_w(
+bool TransportController::SetLocalCertificate_n(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   if (certificate_) {
     return false;
@@ -391,12 +392,12 @@ bool TransportController::SetLocalCertificate_w(
   return true;
 }
 
-bool TransportController::GetLocalCertificate_w(
+bool TransportController::GetLocalCertificate_n(
     const std::string& transport_name,
     rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* t = GetTransport_w(transport_name);
+  Transport* t = GetTransport_n(transport_name);
   if (!t) {
     return false;
   }
@@ -405,11 +406,11 @@ bool TransportController::GetLocalCertificate_w(
 }
 
 std::unique_ptr<rtc::SSLCertificate>
-TransportController::GetRemoteSSLCertificate_w(
+TransportController::GetRemoteSSLCertificate_n(
     const std::string& transport_name) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* t = GetTransport_w(transport_name);
+  Transport* t = GetTransport_n(transport_name);
   if (!t) {
     return nullptr;
   }
@@ -417,14 +418,14 @@ TransportController::GetRemoteSSLCertificate_w(
   return t->GetRemoteSSLCertificate();
 }
 
-bool TransportController::SetLocalTransportDescription_w(
+bool TransportController::SetLocalTransportDescription_n(
     const std::string& transport_name,
     const TransportDescription& tdesc,
     ContentAction action,
     std::string* err) {
-  RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* transport = GetTransport_w(transport_name);
+  Transport* transport = GetTransport_n(transport_name);
   if (!transport) {
     // If we didn't find a transport, that's not an error;
     // it could have been deleted as a result of bundling.
@@ -436,14 +437,14 @@ bool TransportController::SetLocalTransportDescription_w(
   return transport->SetLocalTransportDescription(tdesc, action, err);
 }
 
-bool TransportController::SetRemoteTransportDescription_w(
+bool TransportController::SetRemoteTransportDescription_n(
     const std::string& transport_name,
     const TransportDescription& tdesc,
     ContentAction action,
     std::string* err) {
-  RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* transport = GetTransport_w(transport_name);
+  Transport* transport = GetTransport_n(transport_name);
   if (!transport) {
     // If we didn't find a transport, that's not an error;
     // it could have been deleted as a result of bundling.
@@ -455,19 +456,19 @@ bool TransportController::SetRemoteTransportDescription_w(
   return transport->SetRemoteTransportDescription(tdesc, action, err);
 }
 
-void TransportController::MaybeStartGathering_w() {
+void TransportController::MaybeStartGathering_n() {
   for (const auto& kv : transports_) {
     kv.second->MaybeStartGathering();
   }
 }
 
-bool TransportController::AddRemoteCandidates_w(
+bool TransportController::AddRemoteCandidates_n(
     const std::string& transport_name,
     const Candidates& candidates,
     std::string* err) {
-  RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* transport = GetTransport_w(transport_name);
+  Transport* transport = GetTransport_n(transport_name);
   if (!transport) {
     // If we didn't find a transport, that's not an error;
     // it could have been deleted as a result of bundling.
@@ -477,9 +478,9 @@ bool TransportController::AddRemoteCandidates_w(
   return transport->AddRemoteCandidates(candidates, err);
 }
 
-bool TransportController::RemoveRemoteCandidates_w(const Candidates& candidates,
+bool TransportController::RemoveRemoteCandidates_n(const Candidates& candidates,
                                                    std::string* err) {
-  RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   std::map<std::string, Candidates> candidates_by_transport_name;
   for (const Candidate& cand : candidates) {
     RTC_DCHECK(!cand.transport_name().empty());
@@ -488,7 +489,7 @@ bool TransportController::RemoveRemoteCandidates_w(const Candidates& candidates,
 
   bool result = true;
   for (auto kv : candidates_by_transport_name) {
-    Transport* transport = GetTransport_w(kv.first);
+    Transport* transport = GetTransport_n(kv.first);
     if (!transport) {
       // If we didn't find a transport, that's not an error;
       // it could have been deleted as a result of bundling.
@@ -499,51 +500,51 @@ bool TransportController::RemoveRemoteCandidates_w(const Candidates& candidates,
   return result;
 }
 
-bool TransportController::ReadyForRemoteCandidates_w(
+bool TransportController::ReadyForRemoteCandidates_n(
     const std::string& transport_name) {
-  RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* transport = GetTransport_w(transport_name);
+  Transport* transport = GetTransport_n(transport_name);
   if (!transport) {
     return false;
   }
   return transport->ready_for_remote_candidates();
 }
 
-bool TransportController::GetStats_w(const std::string& transport_name,
+bool TransportController::GetStats_n(const std::string& transport_name,
                                      TransportStats* stats) {
-  RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
-  Transport* transport = GetTransport_w(transport_name);
+  Transport* transport = GetTransport_n(transport_name);
   if (!transport) {
     return false;
   }
   return transport->GetStats(stats);
 }
 
-void TransportController::OnChannelWritableState_w(TransportChannel* channel) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+void TransportController::OnChannelWritableState_n(TransportChannel* channel) {
+  RTC_DCHECK(network_thread_->IsCurrent());
   LOG(LS_INFO) << channel->transport_name() << " TransportChannel "
                << channel->component() << " writability changed to "
                << channel->writable() << ".";
-  UpdateAggregateStates_w();
+  UpdateAggregateStates_n();
 }
 
-void TransportController::OnChannelReceivingState_w(TransportChannel* channel) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
-  UpdateAggregateStates_w();
+void TransportController::OnChannelReceivingState_n(TransportChannel* channel) {
+  RTC_DCHECK(network_thread_->IsCurrent());
+  UpdateAggregateStates_n();
 }
 
-void TransportController::OnChannelGatheringState_w(
+void TransportController::OnChannelGatheringState_n(
     TransportChannelImpl* channel) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
-  UpdateAggregateStates_w();
+  RTC_DCHECK(network_thread_->IsCurrent());
+  UpdateAggregateStates_n();
 }
 
-void TransportController::OnChannelCandidateGathered_w(
+void TransportController::OnChannelCandidateGathered_n(
     TransportChannelImpl* channel,
     const Candidate& candidate) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   // We should never signal peer-reflexive candidates.
   if (candidate.type() == PRFLX_PORT_TYPE) {
@@ -557,7 +558,7 @@ void TransportController::OnChannelCandidateGathered_w(
   signaling_thread_->Post(this, MSG_CANDIDATESGATHERED, data);
 }
 
-void TransportController::OnChannelCandidatesRemoved_w(
+void TransportController::OnChannelCandidatesRemoved_n(
     TransportChannelImpl* channel,
     const Candidates& candidates) {
   invoker_.AsyncInvoke<void>(
@@ -572,9 +573,9 @@ void TransportController::OnChannelCandidatesRemoved(
   SignalCandidatesRemoved(candidates);
 }
 
-void TransportController::OnChannelRoleConflict_w(
+void TransportController::OnChannelRoleConflict_n(
     TransportChannelImpl* channel) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   if (ice_role_switch_) {
     LOG(LS_WARNING)
@@ -591,17 +592,17 @@ void TransportController::OnChannelRoleConflict_w(
   }
 }
 
-void TransportController::OnChannelConnectionRemoved_w(
+void TransportController::OnChannelConnectionRemoved_n(
     TransportChannelImpl* channel) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   LOG(LS_INFO) << channel->transport_name() << " TransportChannel "
                << channel->component()
                << " connection removed. Check if state is complete.";
-  UpdateAggregateStates_w();
+  UpdateAggregateStates_n();
 }
 
-void TransportController::UpdateAggregateStates_w() {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+void TransportController::UpdateAggregateStates_n() {
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   IceConnectionState new_connection_state = kIceConnectionConnecting;
   IceGatheringState new_gathering_state = kIceGatheringNew;

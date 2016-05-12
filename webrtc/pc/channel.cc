@@ -173,7 +173,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       remote_content_direction_(MD_INACTIVE) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   if (transport_controller) {
-    RTC_DCHECK_EQ(network_thread, transport_controller->worker_thread());
+    RTC_DCHECK_EQ(network_thread, transport_controller->network_thread());
   }
   LOG(LS_INFO) << "Created channel for " << content_name;
 }
@@ -201,12 +201,12 @@ BaseChannel::~BaseChannel() {
 void BaseChannel::DeinitNetwork_n() {
   if (transport_channel_) {
     DisconnectFromTransportChannel(transport_channel_);
-    transport_controller_->DestroyTransportChannel_w(
+    transport_controller_->DestroyTransportChannel_n(
         transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTP);
   }
   if (rtcp_transport_channel_) {
     DisconnectFromTransportChannel(rtcp_transport_channel_);
-    transport_controller_->DestroyTransportChannel_w(
+    transport_controller_->DestroyTransportChannel_n(
         transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
   }
   network_thread_->Clear(this);
@@ -273,7 +273,7 @@ bool BaseChannel::SetTransport_n(const std::string& transport_name) {
     LOG(LS_INFO) << "Create RTCP TransportChannel for " << content_name()
                  << " on " << transport_name << " transport ";
     SetRtcpTransportChannel_n(
-        transport_controller_->CreateTransportChannel_w(
+        transport_controller_->CreateTransportChannel_n(
             transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP),
         false /* update_writablity */);
     if (!rtcp_transport_channel_) {
@@ -282,7 +282,7 @@ bool BaseChannel::SetTransport_n(const std::string& transport_name) {
   }
 
   // We're not updating the writablity during the transition state.
-  SetTransportChannel_n(transport_controller_->CreateTransportChannel_w(
+  SetTransportChannel_n(transport_controller_->CreateTransportChannel_n(
       transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP));
   if (!transport_channel_) {
     return false;
@@ -311,7 +311,7 @@ void BaseChannel::SetTransportChannel_n(TransportChannel* new_tc) {
 
   if (old_tc) {
     DisconnectFromTransportChannel(old_tc);
-    transport_controller_->DestroyTransportChannel_w(
+    transport_controller_->DestroyTransportChannel_n(
         transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTP);
   }
 
@@ -343,7 +343,7 @@ void BaseChannel::SetRtcpTransportChannel_n(TransportChannel* new_tc,
 
   if (old_tc) {
     DisconnectFromTransportChannel(old_tc);
-    transport_controller_->DestroyTransportChannel_w(
+    transport_controller_->DestroyTransportChannel_n(
         transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
   }
 
