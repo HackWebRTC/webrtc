@@ -46,6 +46,8 @@
 #ifndef WEBRTC_BASE_LOGGING_H_
 #define WEBRTC_BASE_LOGGING_H_
 
+#include <errno.h>
+
 #include <list>
 #include <sstream>
 #include <string>
