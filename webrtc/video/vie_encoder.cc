@@ -30,33 +30,13 @@ namespace webrtc {
 
 static const float kStopPaddingThresholdMs = 2000;
 
-class QMVideoSettingsCallback : public VCMQMSettingsCallback {
- public:
-  explicit QMVideoSettingsCallback(VideoProcessing* vpm);
-
-  ~QMVideoSettingsCallback();
-
-  // Update VPM with QM (quality modes: frame size & frame rate) settings.
-  int32_t SetVideoQMSettings(const uint32_t frame_rate,
-                             const uint32_t width,
-                             const uint32_t height);
-
- private:
-  VideoProcessing* vp_;
-};
-
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
                        OveruseFrameDetector* overuse_detector)
     : number_of_cores_(number_of_cores),
       vp_(VideoProcessing::Create()),
-      qm_callback_(new QMVideoSettingsCallback(vp_.get())),
-      video_sender_(Clock::GetRealTimeClock(),
-                    this,
-                    this,
-                    qm_callback_.get(),
-                    this),
+      video_sender_(Clock::GetRealTimeClock(), this, this, this),
       stats_proxy_(stats_proxy),
       overuse_detector_(overuse_detector),
       time_of_last_frame_activity_ms_(0),
@@ -74,9 +54,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       video_suspended_(false) {
   module_process_thread_->RegisterModule(&video_sender_);
   vp_->EnableTemporalDecimation(true);
-
-  // Enable/disable content analysis: off by default for now.
-  vp_->EnableContentAnalysis(false);
 }
 
 vcm::VideoSender* ViEEncoder::video_sender() {
@@ -291,11 +268,10 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
       has_received_rpsi_ = false;
     }
 
-    video_sender_.AddVideoFrame(*frame_to_send, vp_->GetContentMetrics(),
-                                &codec_specific_info);
+    video_sender_.AddVideoFrame(*frame_to_send, &codec_specific_info);
     return;
   }
-  video_sender_.AddVideoFrame(*frame_to_send, nullptr, nullptr);
+  video_sender_.AddVideoFrame(*frame_to_send, nullptr);
 }
 
 void ViEEncoder::SendKeyFrame() {
@@ -389,20 +365,6 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
 
   if (stats_proxy_)
     stats_proxy_->OnSuspendChange(video_is_suspended);
-}
-
-QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessing* vpm)
-    : vp_(vpm) {
-}
-
-QMVideoSettingsCallback::~QMVideoSettingsCallback() {
-}
-
-int32_t QMVideoSettingsCallback::SetVideoQMSettings(
-    const uint32_t frame_rate,
-    const uint32_t width,
-    const uint32_t height) {
-  return vp_->SetTargetResolution(width, height, frame_rate);
 }
 
 }  // namespace webrtc

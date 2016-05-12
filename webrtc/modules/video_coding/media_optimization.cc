@@ -11,8 +11,6 @@
 #include "webrtc/modules/video_coding/media_optimization.h"
 
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/video_coding/content_metrics_processing.h"
-#include "webrtc/modules/video_coding/qm_select.h"
 #include "webrtc/modules/video_coding/utility/frame_dropper.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -81,16 +79,11 @@ MediaOptimization::MediaOptimization(Clock* clock)
       max_payload_size_(1460),
       video_target_bitrate_(0),
       incoming_frame_rate_(0),
-      enable_qm_(false),
       encoded_frame_samples_(),
       avg_sent_bit_rate_bps_(0),
       avg_sent_framerate_(0),
       key_frame_cnt_(0),
       delta_frame_cnt_(0),
-      content_(new VCMContentMetricsProcessing()),
-      qm_resolution_(new VCMQmResolution()),
-      last_qm_update_time_(0),
-      last_change_time_(0),
       num_layers_(0),
       suspension_enabled_(false),
       video_suspended_(false),
@@ -113,8 +106,6 @@ void MediaOptimization::Reset() {
   frame_dropper_->Reset();
   loss_prot_logic_->Reset(clock_->TimeInMilliseconds());
   frame_dropper_->SetRates(0, 0);
-  content_->Reset();
-  qm_resolution_->Reset();
   loss_prot_logic_->UpdateFrameRate(incoming_frame_rate_);
   loss_prot_logic_->Reset(clock_->TimeInMilliseconds());
   send_statistics_zero_encode_ = 0;
@@ -124,8 +115,6 @@ void MediaOptimization::Reset() {
   user_frame_rate_ = 0;
   key_frame_cnt_ = 0;
   delta_frame_cnt_ = 0;
-  last_qm_update_time_ = 0;
-  last_change_time_ = 0;
   encoded_frame_samples_.clear();
   avg_sent_bit_rate_bps_ = 0;
   num_layers_ = 1;
@@ -153,12 +142,7 @@ void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
                                                 int num_layers,
                                                 int32_t mtu) {
   // Everything codec specific should be reset here since this means the codec
-  // has changed. If native dimension values have changed, then either user
-  // initiated change, or QM initiated change. Will be able to determine only
-  // after the processing of the first frame.
-  last_change_time_ = clock_->TimeInMilliseconds();
-  content_->Reset();
-  content_->UpdateFrameRate(frame_rate);
+  // has changed.
 
   max_bit_rate_ = max_bit_rate;
   send_codec_type_ = send_codec_type;
@@ -175,16 +159,13 @@ void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
   codec_height_ = height;
   num_layers_ = (num_layers <= 1) ? 1 : num_layers;  // Can also be zero.
   max_payload_size_ = mtu;
-  qm_resolution_->Initialize(target_bitrate_kbps, user_frame_rate_,
-                             codec_width_, codec_height_, num_layers_);
 }
 
 uint32_t MediaOptimization::SetTargetRates(
     uint32_t target_bitrate,
     uint8_t fraction_lost,
     int64_t round_trip_time_ms,
-    VCMProtectionCallback* protection_callback,
-    VCMQMSettingsCallback* qmsettings_callback) {
+    VCMProtectionCallback* protection_callback) {
   CriticalSectionScoped lock(crit_sect_.get());
   VCMProtectionMethod* selected_method = loss_prot_logic_->SelectedMethod();
   float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
@@ -220,7 +201,6 @@ uint32_t MediaOptimization::SetTargetRates(
   float protection_overhead_rate = 0.0f;
 
   // Update protection settings, when applicable.
-  float sent_video_rate_kbps = 0.0f;
   if (loss_prot_logic_->SelectedType() != kNone) {
     // Update method will compute the robustness settings for the given
     // protection method and the overhead cost
@@ -255,7 +235,6 @@ uint32_t MediaOptimization::SetTargetRates(
     // Get the effective packet loss for encoder ER when applicable. Should be
     // passed to encoder via fraction_lost.
     packet_loss_enc = selected_method->RequiredPacketLossER();
-    sent_video_rate_kbps = static_cast<float>(sent_video_rate_bps) / 1000.0f;
   }
 
   // Source coding rate: total rate - protection overhead.
@@ -270,19 +249,6 @@ uint32_t MediaOptimization::SetTargetRates(
   float target_video_bitrate_kbps =
       static_cast<float>(video_target_bitrate_) / 1000.0f;
   frame_dropper_->SetRates(target_video_bitrate_kbps, incoming_frame_rate_);
-
-  if (enable_qm_ && qmsettings_callback) {
-    // Update QM with rates.
-    qm_resolution_->UpdateRates(target_video_bitrate_kbps, sent_video_rate_kbps,
-                                incoming_frame_rate_, fraction_lost_);
-    // Check for QM selection.
-    bool select_qm = CheckStatusForQMchange();
-    if (select_qm) {
-      SelectQuality(qmsettings_callback);
-    }
-    // Reset the short-term averaged content data.
-    content_->ResetShortTermAvgData();
-  }
 
   CheckSuspendConditions();
 
@@ -357,11 +323,6 @@ int32_t MediaOptimization::UpdateWithEncodedData(
         loss_prot_logic_->UpdatePacketsPerFrameKey(
             min_packets_per_frame, clock_->TimeInMilliseconds());
       }
-
-      if (enable_qm_) {
-        // Update quality select with encoded length.
-        qm_resolution_->UpdateEncodedSize(encoded_length);
-      }
     }
     if (!delta_frame && encoded_length > 0) {
       loss_prot_logic_->UpdateKeyFrameSize(static_cast<float>(encoded_length));
@@ -376,11 +337,6 @@ int32_t MediaOptimization::UpdateWithEncodedData(
   }
 
   return VCM_OK;
-}
-
-void MediaOptimization::EnableQM(bool enable) {
-  CriticalSectionScoped lock(crit_sect_.get());
-  enable_qm_ = enable;
 }
 
 void MediaOptimization::EnableFrameDropper(bool enable) {
@@ -414,19 +370,6 @@ bool MediaOptimization::DropFrame() {
   return frame_dropper_->DropFrame();
 }
 
-void MediaOptimization::UpdateContentData(
-    const VideoContentMetrics* content_metrics) {
-  CriticalSectionScoped lock(crit_sect_.get());
-  // Updating content metrics.
-  if (content_metrics == NULL) {
-    // Disable QM if metrics are NULL.
-    enable_qm_ = false;
-    qm_resolution_->Reset();
-  } else {
-    content_->UpdateContentData(content_metrics);
-  }
-}
-
 void MediaOptimization::UpdateIncomingFrameRate() {
   int64_t now = clock_->TimeInMilliseconds();
   if (incoming_frame_times_[0] == 0) {
@@ -439,36 +382,6 @@ void MediaOptimization::UpdateIncomingFrameRate() {
   }
   incoming_frame_times_[0] = now;
   ProcessIncomingFrameRate(now);
-}
-
-int32_t MediaOptimization::SelectQuality(
-    VCMQMSettingsCallback* video_qmsettings_callback) {
-  // Reset quantities for QM select.
-  qm_resolution_->ResetQM();
-
-  // Update QM will long-term averaged content metrics.
-  qm_resolution_->UpdateContent(content_->LongTermAvgData());
-
-  // Select quality mode.
-  VCMResolutionScale* qm = NULL;
-  int32_t ret = qm_resolution_->SelectResolution(&qm);
-  if (ret < 0) {
-    return ret;
-  }
-
-  // Check for updates to spatial/temporal modes.
-  QMUpdate(qm, video_qmsettings_callback);
-
-  // Reset all the rate and related frame counters quantities.
-  qm_resolution_->ResetRates();
-
-  // Reset counters.
-  last_qm_update_time_ = clock_->TimeInMilliseconds();
-
-  // Reset content metrics.
-  content_->Reset();
-
-  return VCM_OK;
 }
 
 void MediaOptimization::PurgeOldFrameSamples(int64_t now_ms) {
@@ -515,65 +428,6 @@ void MediaOptimization::UpdateSentFramerate() {
   } else {
     avg_sent_framerate_ = encoded_frame_samples_.size();
   }
-}
-
-bool MediaOptimization::QMUpdate(
-    VCMResolutionScale* qm,
-    VCMQMSettingsCallback* video_qmsettings_callback) {
-  // Check for no change.
-  if (!qm->change_resolution_spatial && !qm->change_resolution_temporal) {
-    return false;
-  }
-
-  // Check for change in frame rate.
-  if (qm->change_resolution_temporal) {
-    incoming_frame_rate_ = qm->frame_rate;
-    // Reset frame rate estimate.
-    memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
-  }
-
-  // Check for change in frame size.
-  if (qm->change_resolution_spatial) {
-    codec_width_ = qm->codec_width;
-    codec_height_ = qm->codec_height;
-  }
-
-  LOG(LS_INFO) << "Media optimizer requests the video resolution to be changed "
-                  "to "
-               << qm->codec_width << "x" << qm->codec_height << "@"
-               << qm->frame_rate;
-
-  // Update VPM with new target frame rate and frame size.
-  // Note: use |qm->frame_rate| instead of |_incoming_frame_rate| for updating
-  // target frame rate in VPM frame dropper. The quantity |_incoming_frame_rate|
-  // will vary/fluctuate, and since we don't want to change the state of the
-  // VPM frame dropper, unless a temporal action was selected, we use the
-  // quantity |qm->frame_rate| for updating.
-  video_qmsettings_callback->SetVideoQMSettings(qm->frame_rate, codec_width_,
-                                                codec_height_);
-  content_->UpdateFrameRate(qm->frame_rate);
-  qm_resolution_->UpdateCodecParameters(qm->frame_rate, codec_width_,
-                                        codec_height_);
-  return true;
-}
-
-// Check timing constraints and look for significant change in:
-// (1) scene content,
-// (2) target bit rate.
-bool MediaOptimization::CheckStatusForQMchange() {
-  bool status = true;
-
-  // Check that we do not call QMSelect too often, and that we waited some time
-  // (to sample the metrics) from the event last_change_time
-  // last_change_time is the time where user changed the size/rate/frame rate
-  // (via SetEncodingData).
-  int64_t now = clock_->TimeInMilliseconds();
-  if ((now - last_qm_update_time_) < kQmMinIntervalMs ||
-      (now - last_change_time_) < kQmMinIntervalMs) {
-    status = false;
-  }
-
-  return status;
 }
 
 // Allowing VCM to keep track of incoming frame rate.

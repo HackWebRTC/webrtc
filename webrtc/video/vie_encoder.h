@@ -34,7 +34,6 @@ class EncodedImageCallback;
 class OveruseFrameDetector;
 class PacedSender;
 class ProcessThread;
-class QMVideoSettingsCallback;
 class SendStatisticsProxy;
 class ViEBitrateObserver;
 class ViEEffectFilter;
@@ -124,7 +123,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   const uint32_t number_of_cores_;
 
   const std::unique_ptr<VideoProcessing> vp_;
-  const std::unique_ptr<QMVideoSettingsCallback> qm_callback_;
   vcm::VideoSender video_sender_;
 
   rtc::CriticalSection data_cs_;

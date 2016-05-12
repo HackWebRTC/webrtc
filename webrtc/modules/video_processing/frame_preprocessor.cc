@@ -15,12 +15,8 @@
 namespace webrtc {
 
 VPMFramePreprocessor::VPMFramePreprocessor()
-    : content_metrics_(nullptr),
-      resampled_frame_(),
-      enable_ca_(false),
-      frame_cnt_(0) {
+    : resampled_frame_(), frame_cnt_(0) {
   spatial_resampler_ = new VPMSimpleSpatialResampler();
-  ca_ = new VPMContentAnalysis(true);
   vd_ = new VPMVideoDecimator();
   EnableDenoising(false);
   denoised_frame_toggle_ = 0;
@@ -28,26 +24,18 @@ VPMFramePreprocessor::VPMFramePreprocessor()
 
 VPMFramePreprocessor::~VPMFramePreprocessor() {
   Reset();
-  delete ca_;
   delete vd_;
   delete spatial_resampler_;
 }
 
 void VPMFramePreprocessor::Reset() {
-  ca_->Release();
   vd_->Reset();
-  content_metrics_ = nullptr;
   spatial_resampler_->Reset();
-  enable_ca_ = false;
   frame_cnt_ = 0;
 }
 
 void VPMFramePreprocessor::EnableTemporalDecimation(bool enable) {
   vd_->EnableTemporalDecimation(enable);
-}
-
-void VPMFramePreprocessor::EnableContentAnalysis(bool enable) {
-  enable_ca_ = enable;
 }
 
 void VPMFramePreprocessor::SetInputFrameResampleMode(
@@ -131,18 +119,8 @@ const VideoFrame* VPMFramePreprocessor::PreprocessFrame(
     current_frame = &resampled_frame_;
   }
 
-  // Perform content analysis on the frame to be encoded.
-  if (enable_ca_ && frame_cnt_ % kSkipFrameCA == 0) {
-    // Compute new metrics every |kSkipFramesCA| frames, starting with
-    // the first frame.
-    content_metrics_ = ca_->ComputeContentMetrics(*current_frame);
-  }
   ++frame_cnt_;
   return current_frame;
-}
-
-VideoContentMetrics* VPMFramePreprocessor::GetContentMetrics() const {
-  return content_metrics_;
 }
 
 }  // namespace webrtc

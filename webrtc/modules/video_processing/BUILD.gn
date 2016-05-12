@@ -13,8 +13,6 @@ build_video_processing_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
 source_set("video_processing") {
   sources = [
-    "content_analysis.cc",
-    "content_analysis.h",
     "frame_preprocessor.cc",
     "frame_preprocessor.h",
     "include/video_processing.h",
@@ -63,7 +61,6 @@ source_set("video_processing") {
 if (build_video_processing_sse2) {
   source_set("video_processing_sse2") {
     sources = [
-      "content_analysis_sse2.cc",
       "util/denoiser_filter_sse2.cc",
       "util/denoiser_filter_sse2.h",
     ]

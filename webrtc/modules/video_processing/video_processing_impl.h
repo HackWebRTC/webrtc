@@ -26,7 +26,6 @@ class VideoProcessingImpl : public VideoProcessing {
   // Implements VideoProcessing.
   void EnableTemporalDecimation(bool enable) override;
   void SetInputFrameResampleMode(VideoFrameResampling resampling_mode) override;
-  void EnableContentAnalysis(bool enable) override;
   int32_t SetTargetResolution(uint32_t width,
                               uint32_t height,
                               uint32_t frame_rate) override;
@@ -35,7 +34,6 @@ class VideoProcessingImpl : public VideoProcessing {
   uint32_t GetDecimatedHeight() const override;
   void EnableDenoising(bool enable) override;
   const VideoFrame* PreprocessFrame(const VideoFrame& frame) override;
-  VideoContentMetrics* GetContentMetrics() const override;
 
  private:
   rtc::CriticalSection mutex_;

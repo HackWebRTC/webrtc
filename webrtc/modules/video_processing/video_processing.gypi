@@ -20,8 +20,6 @@
       'sources': [
         'include/video_processing.h',
         'include/video_processing_defines.h',
-        'content_analysis.cc',
-        'content_analysis.h',
         'frame_preprocessor.cc',
         'frame_preprocessor.h',
         'spatial_resampler.cc',
@@ -58,7 +56,6 @@
           'target_name': 'video_processing_sse2',
           'type': 'static_library',
           'sources': [
-            'content_analysis_sse2.cc',
             'util/denoiser_filter_sse2.cc',
             'util/denoiser_filter_sse2.h',
           ],

@@ -31,6 +31,10 @@ namespace webrtc {
 
 class Clock;
 class EncodedImageCallback;
+// TODO(pbos): Remove VCMQMSettingsCallback completely. This might be done by
+// removing the VCM and use VideoSender/VideoReceiver as a public interface
+// directly.
+class VCMQMSettingsCallback;
 class VideoEncoder;
 class VideoDecoder;
 struct CodecSpecificInfo;
@@ -223,7 +227,6 @@ class VideoCodingModule : public Module {
   //                     < 0,    on error.
   virtual int32_t AddVideoFrame(
       const VideoFrame& videoFrame,
-      const VideoContentMetrics* contentMetrics = NULL,
       const CodecSpecificInfo* codecSpecificInfo = NULL) = 0;
 
   // Next frame encoded should be an intra frame (keyframe).

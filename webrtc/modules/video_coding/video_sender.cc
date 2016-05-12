@@ -27,7 +27,6 @@ namespace vcm {
 VideoSender::VideoSender(Clock* clock,
                          EncodedImageCallback* post_encode_callback,
                          VideoEncoderRateObserver* encoder_rate_observer,
-                         VCMQMSettingsCallback* qm_settings_callback,
                          VCMSendStatisticsCallback* send_stats_callback)
     : clock_(clock),
       _encoder(nullptr),
@@ -38,16 +37,14 @@ VideoSender::VideoSender(Clock* clock,
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
       current_codec_(),
-      qm_settings_callback_(qm_settings_callback),
       protection_callback_(nullptr),
       encoder_params_({0, 0, 0, 0}),
       encoder_has_internal_source_(false),
       next_frame_types_(1, kVideoFrameDelta) {
+  _mediaOpt.Reset();
   // Allow VideoSender to be created on one thread but used on another, post
   // construction. This is currently how this class is being used by at least
   // one external project (diffractor).
-  _mediaOpt.EnableQM(qm_settings_callback_ != nullptr);
-  _mediaOpt.Reset();
   main_thread_.DetachFromThread();
 }
 
@@ -203,9 +200,8 @@ int VideoSender::FrameRate(unsigned int* framerate) const {
 int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
                                           uint8_t lossRate,
                                           int64_t rtt) {
-  uint32_t target_rate =
-      _mediaOpt.SetTargetRates(target_bitrate, lossRate, rtt,
-                               protection_callback_, qm_settings_callback_);
+  uint32_t target_rate = _mediaOpt.SetTargetRates(target_bitrate, lossRate, rtt,
+                                                  protection_callback_);
 
   uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
 
@@ -274,7 +270,6 @@ void VideoSender::SetVideoProtection(VCMVideoProtection videoProtection) {
 }
 // Add one raw video frame to the encoder, blocking.
 int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
-                                   const VideoContentMetrics* contentMetrics,
                                    const CodecSpecificInfo* codecSpecificInfo) {
   EncoderParameters encoder_params;
   std::vector<FrameType> next_frame_types;
@@ -296,7 +291,6 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
     _encoder->OnDroppedFrame();
     return VCM_OK;
   }
-  _mediaOpt.UpdateContentData(contentMetrics);
   // TODO(pbos): Make sure setting send codec is synchronized with video
   // processing so frame size always matches.
   if (!_codecDataBase.MatchesCurrentResolution(videoFrame.width(),

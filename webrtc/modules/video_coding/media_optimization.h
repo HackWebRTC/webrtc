@@ -17,7 +17,6 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/media_opt_util.h"
-#include "webrtc/modules/video_coding/qm_select.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
@@ -59,11 +58,9 @@ class MediaOptimization {
   uint32_t SetTargetRates(uint32_t target_bitrate,
                           uint8_t fraction_lost,
                           int64_t round_trip_time_ms,
-                          VCMProtectionCallback* protection_callback,
-                          VCMQMSettingsCallback* qmsettings_callback);
+                          VCMProtectionCallback* protection_callback);
 
   void SetProtectionMethod(VCMProtectionMethodEnum method);
-  void EnableQM(bool enable);
   void EnableFrameDropper(bool enable);
 
   // Lets the sender suspend video when the rate drops below
@@ -73,8 +70,6 @@ class MediaOptimization {
   bool IsVideoSuspended() const;
 
   bool DropFrame();
-
-  void UpdateContentData(const VideoContentMetrics* content_metrics);
 
   // Informs Media Optimization of encoded output.
   int32_t UpdateWithEncodedData(const EncodedImage& encoded_image);
@@ -97,19 +92,6 @@ class MediaOptimization {
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   void UpdateSentBitrate(int64_t now_ms) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   void UpdateSentFramerate() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
-  // Computes new Quality Mode.
-  int32_t SelectQuality(VCMQMSettingsCallback* qmsettings_callback)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
-  // Verifies if QM settings differ from default, i.e. if an update is required.
-  // Computes actual values, as will be sent to the encoder.
-  bool QMUpdate(VCMResolutionScale* qm,
-                VCMQMSettingsCallback* qmsettings_callback)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
-  // Checks if we should make a QM change. Return true if yes, false otherwise.
-  bool CheckStatusForQMchange() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   void ProcessIncomingFrameRate(int64_t now)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
@@ -152,16 +134,11 @@ class MediaOptimization {
   int video_target_bitrate_ GUARDED_BY(crit_sect_);
   float incoming_frame_rate_ GUARDED_BY(crit_sect_);
   int64_t incoming_frame_times_[kFrameCountHistorySize] GUARDED_BY(crit_sect_);
-  bool enable_qm_ GUARDED_BY(crit_sect_);
   std::list<EncodedFrameSample> encoded_frame_samples_ GUARDED_BY(crit_sect_);
   uint32_t avg_sent_bit_rate_bps_ GUARDED_BY(crit_sect_);
   uint32_t avg_sent_framerate_ GUARDED_BY(crit_sect_);
   uint32_t key_frame_cnt_ GUARDED_BY(crit_sect_);
   uint32_t delta_frame_cnt_ GUARDED_BY(crit_sect_);
-  std::unique_ptr<VCMContentMetricsProcessing> content_ GUARDED_BY(crit_sect_);
-  std::unique_ptr<VCMQmResolution> qm_resolution_ GUARDED_BY(crit_sect_);
-  int64_t last_qm_update_time_ GUARDED_BY(crit_sect_);
-  int64_t last_change_time_ GUARDED_BY(crit_sect_);  // Content/user triggered.
   int num_layers_ GUARDED_BY(crit_sect_);
   bool suspension_enabled_ GUARDED_BY(crit_sect_);
   bool video_suspended_ GUARDED_BY(crit_sect_);

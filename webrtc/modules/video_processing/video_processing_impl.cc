@@ -69,14 +69,4 @@ const VideoFrame* VideoProcessingImpl::PreprocessFrame(
   return frame_pre_processor_.PreprocessFrame(frame);
 }
 
-VideoContentMetrics* VideoProcessingImpl::GetContentMetrics() const {
-  rtc::CritScope mutex(&mutex_);
-  return frame_pre_processor_.GetContentMetrics();
-}
-
-void VideoProcessingImpl::EnableContentAnalysis(bool enable) {
-  rtc::CritScope mutex(&mutex_);
-  frame_pre_processor_.EnableContentAnalysis(enable);
-}
-
 }  // namespace webrtc

@@ -494,25 +494,6 @@ class CallStatsObserver {
   virtual ~CallStatsObserver() {}
 };
 
-struct VideoContentMetrics {
-  VideoContentMetrics()
-      : motion_magnitude(0.0f),
-        spatial_pred_err(0.0f),
-        spatial_pred_err_h(0.0f),
-        spatial_pred_err_v(0.0f) {}
-
-  void Reset() {
-    motion_magnitude = 0.0f;
-    spatial_pred_err = 0.0f;
-    spatial_pred_err_h = 0.0f;
-    spatial_pred_err_v = 0.0f;
-  }
-  float motion_magnitude;
-  float spatial_pred_err;
-  float spatial_pred_err_h;
-  float spatial_pred_err_v;
-};
-
 /* This class holds up to 60 ms of super-wideband (32 kHz) stereo audio. It
  * allows for adding and subtracting frames while keeping track of the resulting
  * states.

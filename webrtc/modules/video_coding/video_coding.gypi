@@ -28,7 +28,6 @@
         # headers
         'codec_database.h',
         'codec_timer.h',
-        'content_metrics_processing.h',
         'decoding_state.h',
         'encoded_frame.h',
         'fec_tables_xor.h',
@@ -49,8 +48,6 @@
         'packet.h',
         'packet_buffer.h',
         'percentile_filter.h',
-        'qm_select_data.h',
-        'qm_select.h',
         'receiver.h',
         'rtt_filter.h',
         'session_info.h',
@@ -61,7 +58,6 @@
         # sources
         'codec_database.cc',
         'codec_timer.cc',
-        'content_metrics_processing.cc',
         'decoding_state.cc',
         'encoded_frame.cc',
         'frame_buffer.cc',
@@ -78,7 +74,6 @@
         'packet.cc',
         'packet_buffer.cc',
         'percentile_filter.cc',
-        'qm_select.cc',
         'receiver.cc',
         'rtt_filter.cc',
         'session_info.cc',

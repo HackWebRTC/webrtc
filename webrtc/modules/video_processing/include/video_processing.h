@@ -53,9 +53,6 @@ class VideoProcessing {
 
   virtual void EnableDenoising(bool enable) = 0;
   virtual const VideoFrame* PreprocessFrame(const VideoFrame& frame) = 0;
-
-  virtual VideoContentMetrics* GetContentMetrics() const = 0;
-  virtual void EnableContentAnalysis(bool enable) = 0;
 };
 
 }  // namespace webrtc

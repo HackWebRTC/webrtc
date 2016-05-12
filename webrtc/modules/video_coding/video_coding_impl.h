@@ -59,7 +59,6 @@ class VideoSender : public Module {
   VideoSender(Clock* clock,
               EncodedImageCallback* post_encode_callback,
               VideoEncoderRateObserver* encoder_rate_observer,
-              VCMQMSettingsCallback* qm_settings_callback,
               VCMSendStatisticsCallback* send_stats_callback);
 
   ~VideoSender();
@@ -85,7 +84,6 @@ class VideoSender : public Module {
   void SetVideoProtection(VCMVideoProtection videoProtection);
 
   int32_t AddVideoFrame(const VideoFrame& videoFrame,
-                        const VideoContentMetrics* _contentMetrics,
                         const CodecSpecificInfo* codecSpecificInfo);
 
   int32_t IntraFrameRequest(size_t stream_index);
@@ -116,7 +114,6 @@ class VideoSender : public Module {
   VideoCodec current_codec_;
   rtc::ThreadChecker main_thread_;
 
-  VCMQMSettingsCallback* const qm_settings_callback_;
   VCMProtectionCallback* protection_callback_;
 
   rtc::CriticalSection params_crit_;

@@ -18,7 +18,6 @@
 
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/modules/video_coding/internal_defines.h"
-#include "webrtc/modules/video_coding/qm_select.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/typedefs.h"
 

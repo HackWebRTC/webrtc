@@ -180,13 +180,13 @@ class TestVideoSender : public ::testing::Test {
   TestVideoSender() : clock_(1000), encoded_frame_callback_(&clock_) {}
 
   void SetUp() override {
-    sender_.reset(new VideoSender(&clock_, &encoded_frame_callback_, nullptr,
-                                  nullptr, nullptr));
+    sender_.reset(
+        new VideoSender(&clock_, &encoded_frame_callback_, nullptr, nullptr));
   }
 
   void AddFrame() {
     assert(generator_.get());
-    sender_->AddVideoFrame(*generator_->NextFrame(), NULL, NULL);
+    sender_->AddVideoFrame(*generator_->NextFrame(), NULL);
   }
 
   SimulatedClock clock_;

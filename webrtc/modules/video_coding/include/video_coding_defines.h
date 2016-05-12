@@ -176,18 +176,6 @@ class KeyFrameRequestSender {
   virtual ~KeyFrameRequestSender() {}
 };
 
-// Callback used to inform the user of the the desired resolution
-// as subscribed by Media Optimization (Quality Modes)
-class VCMQMSettingsCallback {
- public:
-  virtual int32_t SetVideoQMSettings(const uint32_t frameRate,
-                                     const uint32_t width,
-                                     const uint32_t height) = 0;
-
- protected:
-  virtual ~VCMQMSettingsCallback() {}
-};
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_

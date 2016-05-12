@@ -126,8 +126,6 @@ TEST_F(VideoProcessingTest, Resampler) {
   rewind(source_file_);
   ASSERT_TRUE(source_file_ != NULL) << "Cannot read input file \n";
 
-  // CA not needed here
-  vp_->EnableContentAnalysis(false);
   // no temporal decimation
   vp_->EnableTemporalDecimation(false);
 
