@@ -74,6 +74,7 @@ class UnsignalledSsrcHandler {
   };
   virtual Action OnUnsignalledSsrc(WebRtcVideoChannel2* channel,
                                    uint32_t ssrc) = 0;
+  virtual ~UnsignalledSsrcHandler() = default;
 };
 
 // TODO(pbos): Remove, use external handlers only.
@@ -86,6 +87,7 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
   rtc::VideoSinkInterface<VideoFrame>* GetDefaultSink() const;
   void SetDefaultSink(VideoMediaChannel* channel,
                       rtc::VideoSinkInterface<VideoFrame>* sink);
+  virtual ~DefaultUnsignalledSsrcHandler() = default;
 
  private:
   uint32_t default_recv_ssrc_;
@@ -96,7 +98,7 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
 class WebRtcVideoEngine2 {
  public:
   WebRtcVideoEngine2();
-  ~WebRtcVideoEngine2();
+  virtual ~WebRtcVideoEngine2();
 
   // Basic video engine implementation.
   void Init();

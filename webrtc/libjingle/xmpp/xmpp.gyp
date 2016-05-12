@@ -19,9 +19,6 @@
       'defines': [
         'FEATURE_ENABLE_SSL',
       ],
-      'cflags_cc!': [
-        '-Wnon-virtual-dtor',
-      ],
       'sources': [
         'asyncsocket.h',
         'chatroommodule.h',
@@ -98,9 +95,6 @@
         'xmppthread.h',
       ],
       'direct_dependent_settings': {
-        'cflags_cc!': [
-          '-Wnon-virtual-dtor',
-        ],
         'defines': [
           'FEATURE_ENABLE_SSL',
           'FEATURE_ENABLE_VOICEMAIL',

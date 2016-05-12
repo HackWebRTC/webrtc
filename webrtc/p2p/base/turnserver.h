@@ -144,6 +144,7 @@ class TurnAuthInterface {
   // Return true if the given username and realm are valid, or false if not.
   virtual bool GetKey(const std::string& username, const std::string& realm,
                       std::string* key) = 0;
+  virtual ~TurnAuthInterface() = default;
 };
 
 // An interface enables Turn Server to control redirection behavior.

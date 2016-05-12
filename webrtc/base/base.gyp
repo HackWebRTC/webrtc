@@ -288,13 +288,7 @@
         '-Wextra',
         '-Wall',
       ],
-      'cflags_cc!': [
-        '-Wnon-virtual-dtor',
-      ],
       'direct_dependent_settings': {
-        'cflags_cc!': [
-          '-Wnon-virtual-dtor',
-        ],
         'defines': [
           'FEATURE_ENABLE_SSL',
           'SSL_USE_OPENSSL',

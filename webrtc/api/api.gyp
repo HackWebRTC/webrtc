@@ -66,7 +66,6 @@
             '-Wextra',
           ],
           'cflags_cc!': [
-            '-Wnon-virtual-dtor',
             '-Woverloaded-virtual',
           ],
           'msvs_disabled_warnings': [
@@ -207,7 +206,6 @@
         '-Wno-sign-compare',
       ],
       'cflags_cc!': [
-        '-Wnon-virtual-dtor',
         '-Woverloaded-virtual',
       ],
       'conditions': [

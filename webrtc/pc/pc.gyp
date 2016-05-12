@@ -33,11 +33,6 @@
       'defines': [
         '<@(rtc_pc_defines)',
       ],
-      # TODO(kjellander): Make the code compile without disabling these flags.
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
-      'cflags_cc!': [
-        '-Wnon-virtual-dtor',
-      ],
       'include_dirs': [
         '<(DEPTH)/testing/gtest/include',
       ],
@@ -96,11 +91,6 @@
             'mediasession_unittest.cc',
             'rtcpmuxfilter_unittest.cc',
             'srtpfilter_unittest.cc',
-          ],
-          # TODO(kjellander): Make the code compile without disabling these flags.
-          # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
-          'cflags_cc!': [
-            '-Wnon-virtual-dtor',
           ],
           'conditions': [
             ['clang==0', {

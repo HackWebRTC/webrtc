@@ -64,6 +64,7 @@ static const char kTurnIceServerWithIPv6Address[] =
 
 class NullPeerConnectionObserver : public PeerConnectionObserver {
  public:
+  virtual ~NullPeerConnectionObserver() = default;
   virtual void OnMessage(const std::string& msg) {}
   virtual void OnSignalingMessage(const std::string& msg) {}
   virtual void OnSignalingChange(

@@ -28,12 +28,6 @@ config("rtc_base_config") {
     "FEATURE_ENABLE_SSL",
     "LOGGING=1",
   ]
-
-  if (is_posix) {
-    # TODO(henrike): issue 3307, make rtc_base build without disabling
-    # these flags.
-    cflags_cc = [ "-Wno-non-virtual-dtor" ]
-  }
 }
 
 config("rtc_base_chromium_config") {
@@ -470,7 +464,6 @@ static_library("rtc_base") {
   configs += [ "//build/config/compiler:no_chromium_code" ]
   if (!is_win) {
     cflags += [ "-Wno-uninitialized" ]
-    cflags_cc += [ "-Wno-non-virtual-dtor" ]
   }
 
   if (rtc_build_ssl) {

@@ -107,7 +107,6 @@
         '-Wextra',
       ],
       'cflags_cc!': [
-        '-Wnon-virtual-dtor',
         '-Woverloaded-virtual',
       ],
       'msvs_disabled_warnings': [
@@ -248,11 +247,6 @@
             'engine/fakewebrtcvideoengine.h',
             'engine/fakewebrtcvoiceengine.h',
           ],
-          # TODO(kjellander): Make the code compile without disabling these flags.
-          # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
-          'cflags_cc!': [
-            '-Wnon-virtual-dtor',
-          ],
         },  # target rtc_unittest_main
         {
           'target_name': 'rtc_media_unittests',
@@ -291,7 +285,6 @@
             '-Wno-sign-compare',
           ],
           'cflags_cc!': [
-            '-Wnon-virtual-dtor',
             '-Woverloaded-virtual',
           ],
           'msvs_disabled_warnings': [

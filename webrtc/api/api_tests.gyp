@@ -72,7 +72,6 @@
         '-Wextra',
       ],
       'cflags_cc!': [
-        '-Wnon-virtual-dtor',
         '-Woverloaded-virtual',
       ],
       'msvs_disabled_warnings': [

@@ -416,7 +416,7 @@ class MockTrackObserver : public ObserverInterface {
 class MockPeerConnectionObserver : public PeerConnectionObserver {
  public:
   MockPeerConnectionObserver() : remote_streams_(StreamCollection::Create()) {}
-  ~MockPeerConnectionObserver() {
+  virtual ~MockPeerConnectionObserver() {
   }
   void SetPeerConnectionInterface(PeerConnectionInterface* pc) {
     pc_ = pc;

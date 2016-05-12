@@ -841,6 +841,7 @@ struct RtpParameters {
   std::vector<RtpHeaderExtension> extensions;
   // TODO(pthatcher): Add streams.
   RtcpParameters rtcp;
+  virtual ~RtpParameters() = default;
 };
 
 // TODO(deadbeef): Rename to RtpSenderParameters, since they're intended to

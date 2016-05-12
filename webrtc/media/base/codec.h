@@ -73,7 +73,7 @@ struct Codec {
   // Creates an empty codec.
   Codec();
   Codec(const Codec& c);
-  ~Codec();
+  virtual ~Codec();
 
   // Indicates if this codec is compatible with the specified codec.
   bool Matches(const Codec& codec) const;
@@ -120,7 +120,7 @@ struct AudioCodec : public Codec {
   // Creates an empty codec.
   AudioCodec();
   AudioCodec(const AudioCodec& c);
-  ~AudioCodec() = default;
+  virtual ~AudioCodec() = default;
 
   // Indicates if this codec is compatible with the specified codec.
   bool Matches(const AudioCodec& codec) const;
@@ -153,7 +153,7 @@ struct VideoCodec : public Codec {
   // Creates an empty codec.
   VideoCodec();
   VideoCodec(const VideoCodec& c);
-  ~VideoCodec() = default;
+  virtual ~VideoCodec() = default;
 
   std::string ToString() const;
 
@@ -186,6 +186,7 @@ struct DataCodec : public Codec {
   DataCodec(int id, const std::string& name);
   DataCodec();
   DataCodec(const DataCodec& c);
+  virtual ~DataCodec() = default;
 
   DataCodec& operator=(const DataCodec& c);
 

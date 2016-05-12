@@ -16,9 +16,6 @@
         '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/common.gyp:webrtc_common',
       ],
-      'cflags_cc!': [
-        '-Wnon-virtual-dtor',
-      ],
       'sources': [
         'base/asyncstuntcpsocket.cc',
         'base/asyncstuntcpsocket.h',
@@ -84,9 +81,6 @@
         'client/socketmonitor.h',
       ],
       'direct_dependent_settings': {
-        'cflags_cc!': [
-          '-Wnon-virtual-dtor',
-        ],
         'defines': [
           'FEATURE_ENABLE_VOICEMAIL',
         ],
@@ -127,9 +121,6 @@
         '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/common.gyp:webrtc_common',
       ],
-      'cflags_cc!': [
-        '-Wnon-virtual-dtor',
-      ],
       'sources': [
         'stunprober/stunprober.cc',
       ],
@@ -140,9 +131,6 @@
       'dependencies': [
         'libstunprober',
         'rtc_p2p'
-      ],
-      'cflags_cc!': [
-        '-Wnon-virtual-dtor',
       ],
       'sources': [
         'stunprober/main.cc',
