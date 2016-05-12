@@ -10,6 +10,10 @@
 # https://crbug.com/489901
 src:*/third_party/yasm/*
 
+# OpenH264 triggers some errors that are out of our control.
+src:*/third_party/ffmpeg/libavcodec/*
+src:*/third_party/openh264/*
+
 #############################################################################
 # Ignore system libraries.
 src:*/usr/*
@@ -33,3 +37,8 @@ fun:*WebRtcSpl_AddSatW32*
 fun:*WebRtcSpl_SubSatW32*
 fun:*WebRtcSpl_DivW32HiLow*
 fun:*GmmProbability*
+
+#############################################################################
+# Ignore errors in peerconnection_unittests.
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=5889
+src:*/webrtc/modules/audio_coding/neteq/delay_manager.cc
