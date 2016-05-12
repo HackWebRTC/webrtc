@@ -556,6 +556,8 @@ public class VideoCapturerAndroid implements
     }
 
     camera.setParameters(parameters);
+    // Calculate orientation manually and send it as CVO instead.
+    camera.setDisplayOrientation(0 /* degrees */);
     if (!isCapturingToTexture) {
       queuedBuffers.clear();
       final int frameSize = captureFormat.frameSize();
