@@ -532,6 +532,21 @@ const VideoContentDescription* GetFirstVideoContentDescription(
     const SessionDescription* sdesc);
 const DataContentDescription* GetFirstDataContentDescription(
     const SessionDescription* sdesc);
+// Non-const versions of the above functions.
+// Useful when modifying an existing description.
+ContentInfo* GetFirstMediaContent(ContentInfos& contents, MediaType media_type);
+ContentInfo* GetFirstAudioContent(ContentInfos& contents);
+ContentInfo* GetFirstVideoContent(ContentInfos& contents);
+ContentInfo* GetFirstDataContent(ContentInfos& contents);
+ContentInfo* GetFirstAudioContent(SessionDescription* sdesc);
+ContentInfo* GetFirstVideoContent(SessionDescription* sdesc);
+ContentInfo* GetFirstDataContent(SessionDescription* sdesc);
+AudioContentDescription* GetFirstAudioContentDescription(
+    SessionDescription* sdesc);
+VideoContentDescription* GetFirstVideoContentDescription(
+    SessionDescription* sdesc);
+DataContentDescription* GetFirstDataContentDescription(
+    SessionDescription* sdesc);
 
 void GetSupportedAudioCryptoSuites(std::vector<int>* crypto_suites);
 void GetSupportedVideoCryptoSuites(std::vector<int>* crypto_suites);

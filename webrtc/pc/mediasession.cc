@@ -1919,10 +1919,9 @@ bool IsDataContent(const ContentInfo* content) {
 
 const ContentInfo* GetFirstMediaContent(const ContentInfos& contents,
                                         MediaType media_type) {
-  for (ContentInfos::const_iterator content = contents.begin();
-       content != contents.end(); content++) {
-    if (IsMediaContentOfType(&*content, media_type)) {
-      return &*content;
+  for (const ContentInfo& content : contents) {
+    if (IsMediaContentOfType(&content, media_type)) {
+      return &content;
     }
   }
   return nullptr;
@@ -1983,6 +1982,79 @@ const VideoContentDescription* GetFirstVideoContentDescription(
 const DataContentDescription* GetFirstDataContentDescription(
     const SessionDescription* sdesc) {
   return static_cast<const DataContentDescription*>(
+      GetFirstMediaContentDescription(sdesc, MEDIA_TYPE_DATA));
+}
+
+//
+// Non-const versions of the above functions.
+//
+
+ContentInfo* GetFirstMediaContent(ContentInfos& contents,
+                                  MediaType media_type) {
+  for (ContentInfo& content : contents) {
+    if (IsMediaContentOfType(&content, media_type)) {
+      return &content;
+    }
+  }
+  return nullptr;
+}
+
+ContentInfo* GetFirstAudioContent(ContentInfos& contents) {
+  return GetFirstMediaContent(contents, MEDIA_TYPE_AUDIO);
+}
+
+ContentInfo* GetFirstVideoContent(ContentInfos& contents) {
+  return GetFirstMediaContent(contents, MEDIA_TYPE_VIDEO);
+}
+
+ContentInfo* GetFirstDataContent(ContentInfos& contents) {
+  return GetFirstMediaContent(contents, MEDIA_TYPE_DATA);
+}
+
+static ContentInfo* GetFirstMediaContent(SessionDescription* sdesc,
+                                         MediaType media_type) {
+  if (sdesc == nullptr) {
+    return nullptr;
+  }
+
+  return GetFirstMediaContent(sdesc->contents(), media_type);
+}
+
+ContentInfo* GetFirstAudioContent(SessionDescription* sdesc) {
+  return GetFirstMediaContent(sdesc, MEDIA_TYPE_AUDIO);
+}
+
+ContentInfo* GetFirstVideoContent(SessionDescription* sdesc) {
+  return GetFirstMediaContent(sdesc, MEDIA_TYPE_VIDEO);
+}
+
+ContentInfo* GetFirstDataContent(SessionDescription* sdesc) {
+  return GetFirstMediaContent(sdesc, MEDIA_TYPE_DATA);
+}
+
+MediaContentDescription* GetFirstMediaContentDescription(
+    SessionDescription* sdesc,
+    MediaType media_type) {
+  ContentInfo* content = GetFirstMediaContent(sdesc, media_type);
+  ContentDescription* description = content ? content->description : NULL;
+  return static_cast<MediaContentDescription*>(description);
+}
+
+AudioContentDescription* GetFirstAudioContentDescription(
+    SessionDescription* sdesc) {
+  return static_cast<AudioContentDescription*>(
+      GetFirstMediaContentDescription(sdesc, MEDIA_TYPE_AUDIO));
+}
+
+VideoContentDescription* GetFirstVideoContentDescription(
+    SessionDescription* sdesc) {
+  return static_cast<VideoContentDescription*>(
+      GetFirstMediaContentDescription(sdesc, MEDIA_TYPE_VIDEO));
+}
+
+DataContentDescription* GetFirstDataContentDescription(
+    SessionDescription* sdesc) {
+  return static_cast<DataContentDescription*>(
       GetFirstMediaContentDescription(sdesc, MEDIA_TYPE_DATA));
 }
 

@@ -239,8 +239,9 @@ static const char kSdpStringMs1Video1[] =
     return;                                         \
   }
 
-using rtc::scoped_refptr;
 using ::testing::Exactly;
+using cricket::StreamParams;
+using rtc::scoped_refptr;
 using webrtc::AudioSourceInterface;
 using webrtc::AudioTrack;
 using webrtc::AudioTrackInterface;
@@ -248,6 +249,7 @@ using webrtc::DataBuffer;
 using webrtc::DataChannelInterface;
 using webrtc::FakeConstraints;
 using webrtc::IceCandidateInterface;
+using webrtc::JsepSessionDescription;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStream;
 using webrtc::MediaStreamInterface;
@@ -325,12 +327,26 @@ bool ContainsSender(
   return false;
 }
 
+// Check if |senders| contains the specified sender, by id and stream id.
+bool ContainsSender(
+    const std::vector<rtc::scoped_refptr<RtpSenderInterface>>& senders,
+    const std::string& id,
+    const std::string& stream_id) {
+  for (const auto& sender : senders) {
+    if (sender->id() == id && sender->stream_id() == stream_id) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Create a collection of streams.
 // CreateStreamCollection(1) creates a collection that
 // correspond to kSdpStringWithStream1.
 // CreateStreamCollection(2) correspond to kSdpStringWithStream1And2.
 rtc::scoped_refptr<StreamCollection> CreateStreamCollection(
-    int number_of_streams) {
+    int number_of_streams,
+    int tracks_per_stream) {
   rtc::scoped_refptr<StreamCollection> local_collection(
       StreamCollection::Create());
 
@@ -338,16 +354,19 @@ rtc::scoped_refptr<StreamCollection> CreateStreamCollection(
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream(
         webrtc::MediaStream::Create(kStreams[i]));
 
-    // Add a local audio track.
-    rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-        webrtc::AudioTrack::Create(kAudioTracks[i], nullptr));
-    stream->AddTrack(audio_track);
+    for (int j = 0; j < tracks_per_stream; ++j) {
+      // Add a local audio track.
+      rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+          webrtc::AudioTrack::Create(kAudioTracks[i * tracks_per_stream + j],
+                                     nullptr));
+      stream->AddTrack(audio_track);
 
-    // Add a local video track.
-    rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-        webrtc::VideoTrack::Create(kVideoTracks[i],
-                                   webrtc::FakeVideoTrackSource::Create()));
-    stream->AddTrack(video_track);
+      // Add a local video track.
+      rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+          webrtc::VideoTrack::Create(kVideoTracks[i * tracks_per_stream + j],
+                                     webrtc::FakeVideoTrackSource::Create()));
+      stream->AddTrack(video_track);
+    }
 
     local_collection->AddStream(stream);
   }
@@ -1984,7 +2003,7 @@ TEST_F(PeerConnectionInterfaceTest, UpdateRemoteStreams) {
   CreatePeerConnection(&constraints);
   CreateAndSetRemoteOffer(kSdpStringWithStream1);
 
-  rtc::scoped_refptr<StreamCollection> reference(CreateStreamCollection(1));
+  rtc::scoped_refptr<StreamCollection> reference(CreateStreamCollection(1, 1));
   EXPECT_TRUE(
       CompareStreamCollections(observer_.remote_streams(), reference.get()));
   MediaStreamInterface* remote_stream = observer_.remote_streams()->at(0);
@@ -1994,7 +2013,7 @@ TEST_F(PeerConnectionInterfaceTest, UpdateRemoteStreams) {
   // MediaStream.
   CreateAndSetRemoteOffer(kSdpStringWithStream1And2);
 
-  rtc::scoped_refptr<StreamCollection> reference2(CreateStreamCollection(2));
+  rtc::scoped_refptr<StreamCollection> reference2(CreateStreamCollection(2, 1));
   EXPECT_TRUE(
       CompareStreamCollections(observer_.remote_streams(), reference2.get()));
 }
@@ -2260,7 +2279,7 @@ TEST_F(PeerConnectionInterfaceTest, VerifyDefaultStreamIsNotCreated) {
                            true);
   CreatePeerConnection(&constraints);
   CreateAndSetRemoteOffer(kSdpStringWithStream1);
-  rtc::scoped_refptr<StreamCollection> reference(CreateStreamCollection(1));
+  rtc::scoped_refptr<StreamCollection> reference(CreateStreamCollection(1, 1));
   EXPECT_TRUE(
       CompareStreamCollections(observer_.remote_streams(), reference.get()));
 
@@ -2277,16 +2296,15 @@ TEST_F(PeerConnectionInterfaceTest, LocalDescriptionChanged) {
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
   CreatePeerConnection(&constraints);
-  // Create an offer just to ensure we have an identity before we manually
-  // call SetLocalDescription.
-  std::unique_ptr<SessionDescriptionInterface> throwaway;
-  ASSERT_TRUE(DoCreateOffer(&throwaway, nullptr));
 
-  std::unique_ptr<SessionDescriptionInterface> desc_1 =
-      CreateSessionDescriptionAndReference(2, 2);
+  // Create an offer with 1 stream with 2 tracks of each type.
+  rtc::scoped_refptr<StreamCollection> stream_collection =
+      CreateStreamCollection(1, 2);
+  pc_->AddStream(stream_collection->at(0));
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  EXPECT_TRUE(DoSetLocalDescription(offer.release()));
 
-  pc_->AddStream(reference_collection_->at(0));
-  EXPECT_TRUE(DoSetLocalDescription(desc_1.release()));
   auto senders = pc_->GetSenders();
   EXPECT_EQ(4u, senders.size());
   EXPECT_TRUE(ContainsSender(senders, kAudioTracks[0]));
@@ -2295,11 +2313,12 @@ TEST_F(PeerConnectionInterfaceTest, LocalDescriptionChanged) {
   EXPECT_TRUE(ContainsSender(senders, kVideoTracks[1]));
 
   // Remove an audio and video track.
-  pc_->RemoveStream(reference_collection_->at(0));
-  std::unique_ptr<SessionDescriptionInterface> desc_2 =
-      CreateSessionDescriptionAndReference(1, 1);
-  pc_->AddStream(reference_collection_->at(0));
-  EXPECT_TRUE(DoSetLocalDescription(desc_2.release()));
+  pc_->RemoveStream(stream_collection->at(0));
+  stream_collection = CreateStreamCollection(1, 1);
+  pc_->AddStream(stream_collection->at(0));
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  EXPECT_TRUE(DoSetLocalDescription(offer.release()));
+
   senders = pc_->GetSenders();
   EXPECT_EQ(2u, senders.size());
   EXPECT_TRUE(ContainsSender(senders, kAudioTracks[0]));
@@ -2316,19 +2335,20 @@ TEST_F(PeerConnectionInterfaceTest,
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
   CreatePeerConnection(&constraints);
-  // Create an offer just to ensure we have an identity before we manually
-  // call SetLocalDescription.
-  std::unique_ptr<SessionDescriptionInterface> throwaway;
-  ASSERT_TRUE(DoCreateOffer(&throwaway, nullptr));
 
-  std::unique_ptr<SessionDescriptionInterface> desc_1 =
-      CreateSessionDescriptionAndReference(2, 2);
+  rtc::scoped_refptr<StreamCollection> stream_collection =
+      CreateStreamCollection(1, 2);
+  // Add a stream to create the offer, but remove it afterwards.
+  pc_->AddStream(stream_collection->at(0));
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  pc_->RemoveStream(stream_collection->at(0));
 
-  EXPECT_TRUE(DoSetLocalDescription(desc_1.release()));
+  EXPECT_TRUE(DoSetLocalDescription(offer.release()));
   auto senders = pc_->GetSenders();
   EXPECT_EQ(0u, senders.size());
 
-  pc_->AddStream(reference_collection_->at(0));
+  pc_->AddStream(stream_collection->at(0));
   senders = pc_->GetSenders();
   EXPECT_EQ(4u, senders.size());
   EXPECT_TRUE(ContainsSender(senders, kAudioTracks[0]));
@@ -2345,37 +2365,44 @@ TEST_F(PeerConnectionInterfaceTest,
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
   CreatePeerConnection(&constraints);
-  // Create an offer just to ensure we have an identity before we manually
-  // call SetLocalDescription.
-  std::unique_ptr<SessionDescriptionInterface> throwaway;
-  ASSERT_TRUE(DoCreateOffer(&throwaway, nullptr));
 
-  std::unique_ptr<SessionDescriptionInterface> desc =
-      CreateSessionDescriptionAndReference(1, 1);
-  std::string sdp;
-  desc->ToString(&sdp);
+  rtc::scoped_refptr<StreamCollection> stream_collection =
+      CreateStreamCollection(2, 1);
+  pc_->AddStream(stream_collection->at(0));
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  // Grab a copy of the offer before it gets passed into the PC.
+  std::unique_ptr<JsepSessionDescription> modified_offer(
+      new JsepSessionDescription(JsepSessionDescription::kOffer));
+  modified_offer->Initialize(offer->description()->Copy(), offer->session_id(),
+                             offer->session_version());
+  EXPECT_TRUE(DoSetLocalDescription(offer.release()));
 
-  pc_->AddStream(reference_collection_->at(0));
-  EXPECT_TRUE(DoSetLocalDescription(desc.release()));
   auto senders = pc_->GetSenders();
   EXPECT_EQ(2u, senders.size());
   EXPECT_TRUE(ContainsSender(senders, kAudioTracks[0]));
   EXPECT_TRUE(ContainsSender(senders, kVideoTracks[0]));
 
   // Change the ssrc of the audio and video track.
-  std::string ssrc_org = "a=ssrc:1";
-  std::string ssrc_to = "a=ssrc:97";
-  rtc::replace_substrs(ssrc_org.c_str(), ssrc_org.length(), ssrc_to.c_str(),
-                       ssrc_to.length(), &sdp);
-  ssrc_org = "a=ssrc:2";
-  ssrc_to = "a=ssrc:98";
-  rtc::replace_substrs(ssrc_org.c_str(), ssrc_org.length(), ssrc_to.c_str(),
-                       ssrc_to.length(), &sdp);
-  std::unique_ptr<SessionDescriptionInterface> updated_desc(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer, sdp,
-                                       nullptr));
+  cricket::MediaContentDescription* desc =
+      cricket::GetFirstAudioContentDescription(modified_offer->description());
+  ASSERT_TRUE(desc != NULL);
+  for (StreamParams& stream : desc->mutable_streams()) {
+    for (unsigned int& ssrc : stream.ssrcs) {
+      ++ssrc;
+    }
+  }
 
-  EXPECT_TRUE(DoSetLocalDescription(updated_desc.release()));
+  desc =
+      cricket::GetFirstVideoContentDescription(modified_offer->description());
+  ASSERT_TRUE(desc != NULL);
+  for (StreamParams& stream : desc->mutable_streams()) {
+    for (unsigned int& ssrc : stream.ssrcs) {
+      ++ssrc;
+    }
+  }
+
+  EXPECT_TRUE(DoSetLocalDescription(modified_offer.release()));
   senders = pc_->GetSenders();
   EXPECT_EQ(2u, senders.size());
   EXPECT_TRUE(ContainsSender(senders, kAudioTracks[0]));
@@ -2392,43 +2419,36 @@ TEST_F(PeerConnectionInterfaceTest,
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
   CreatePeerConnection(&constraints);
-  // Create an offer just to ensure we have an identity before we manually
-  // call SetLocalDescription.
-  std::unique_ptr<SessionDescriptionInterface> throwaway;
-  ASSERT_TRUE(DoCreateOffer(&throwaway, nullptr));
 
-  std::unique_ptr<SessionDescriptionInterface> desc =
-      CreateSessionDescriptionAndReference(1, 1);
-  std::string sdp;
-  desc->ToString(&sdp);
+  rtc::scoped_refptr<StreamCollection> stream_collection =
+      CreateStreamCollection(2, 1);
+  pc_->AddStream(stream_collection->at(0));
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  EXPECT_TRUE(DoSetLocalDescription(offer.release()));
 
-  pc_->AddStream(reference_collection_->at(0));
-  EXPECT_TRUE(DoSetLocalDescription(desc.release()));
   auto senders = pc_->GetSenders();
   EXPECT_EQ(2u, senders.size());
-  EXPECT_TRUE(ContainsSender(senders, kAudioTracks[0]));
-  EXPECT_TRUE(ContainsSender(senders, kVideoTracks[0]));
+  EXPECT_TRUE(ContainsSender(senders, kAudioTracks[0], kStreams[0]));
+  EXPECT_TRUE(ContainsSender(senders, kVideoTracks[0], kStreams[0]));
 
   // Add a new MediaStream but with the same tracks as in the first stream.
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream_1(
       webrtc::MediaStream::Create(kStreams[1]));
-  stream_1->AddTrack(reference_collection_->at(0)->GetVideoTracks()[0]);
-  stream_1->AddTrack(reference_collection_->at(0)->GetAudioTracks()[0]);
+  stream_1->AddTrack(stream_collection->at(0)->GetVideoTracks()[0]);
+  stream_1->AddTrack(stream_collection->at(0)->GetAudioTracks()[0]);
   pc_->AddStream(stream_1);
 
-  // Replace msid in the original SDP.
-  rtc::replace_substrs(kStreams[0], strlen(kStreams[0]), kStreams[1],
-                       strlen(kStreams[1]), &sdp);
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  EXPECT_TRUE(DoSetLocalDescription(offer.release()));
 
-  std::unique_ptr<SessionDescriptionInterface> updated_desc(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer, sdp,
-                                       nullptr));
-
-  EXPECT_TRUE(DoSetLocalDescription(updated_desc.release()));
-  senders = pc_->GetSenders();
-  EXPECT_EQ(2u, senders.size());
-  EXPECT_TRUE(ContainsSender(senders, kAudioTracks[0]));
-  EXPECT_TRUE(ContainsSender(senders, kVideoTracks[0]));
+  auto new_senders = pc_->GetSenders();
+  // Should be the same senders as before, but with updated stream id.
+  // Note that this behavior is subject to change in the future.
+  // We may decide the PC should ignore existing tracks in AddStream.
+  EXPECT_EQ(senders, new_senders);
+  EXPECT_TRUE(ContainsSender(new_senders, kAudioTracks[0], kStreams[1]));
+  EXPECT_TRUE(ContainsSender(new_senders, kVideoTracks[0], kStreams[1]));
 }
 
 // The PeerConnectionMediaConfig tests below verify that configuration
