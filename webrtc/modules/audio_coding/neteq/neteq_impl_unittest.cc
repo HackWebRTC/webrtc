@@ -441,7 +441,9 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // Pull audio once.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   AudioFrame output;
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+  ASSERT_FALSE(muted);
   ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_);
@@ -518,7 +520,8 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   // Pull audio once.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   AudioFrame output;
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_);
@@ -546,7 +549,7 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
                       Return(kPayloadLengthSamples)));
 
   // Pull audio once.
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_);
@@ -586,7 +589,8 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
   // Pull audio once.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   AudioFrame output;
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   ASSERT_LE(output.samples_per_channel_, kMaxOutputSize);
   EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
@@ -607,7 +611,7 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
 
   // Pull audio repeatedly and make sure we get normal output, that is not PLC.
   for (size_t i = 0; i < 3; ++i) {
-    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
     ASSERT_LE(output.samples_per_channel_, kMaxOutputSize);
     EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
     EXPECT_EQ(1u, output.num_channels_);
@@ -711,7 +715,8 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
       50 * kSampleRateKhz, 10 * kSampleRateKhz
   };
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   rtc::Optional<uint32_t> last_timestamp = neteq_->GetPlayoutTimestamp();
   ASSERT_TRUE(last_timestamp);
 
@@ -733,7 +738,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
     ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
     EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(expected_type[i - 1], output.speech_type_);
-    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
     SCOPED_TRACE("");
     verify_timestamp(neteq_->GetPlayoutTimestamp(), i);
   }
@@ -749,7 +754,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
     ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
     EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(expected_type[i - 1], output.speech_type_);
-    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
     SCOPED_TRACE("");
     verify_timestamp(neteq_->GetPlayoutTimestamp(), i);
   }
@@ -841,9 +846,10 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
             neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
 
   AudioFrame output;
+  bool muted;
   // First call to GetAudio will try to decode the "faulty" packet.
   // Expect kFail return value...
-  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output));
+  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output, &muted));
   // ... and kOtherDecoderError error code.
   EXPECT_EQ(NetEq::kOtherDecoderError, neteq_->LastError());
   // Output size and number of channels should be correct.
@@ -853,7 +859,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
 
   // Second call to GetAudio will decode the packet that is ok. No errors are
   // expected.
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(kExpectedOutputSize, output.samples_per_channel_ * kChannels);
   EXPECT_EQ(kChannels, output.num_channels_);
 }
@@ -946,7 +952,8 @@ TEST_F(NetEqImplTest, DecodedPayloadTooShort) {
   // Pull audio once.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   AudioFrame output;
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_);
@@ -1038,13 +1045,14 @@ TEST_F(NetEqImplTest, DecodingError) {
   // Pull audio.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   AudioFrame output;
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_);
 
   // Pull audio again. Decoder fails.
-  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output));
+  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(NetEq::kDecoderErrorCode, neteq_->LastError());
   EXPECT_EQ(kDecoderErrorCode, neteq_->LastDecoderError());
   EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
@@ -1053,13 +1061,13 @@ TEST_F(NetEqImplTest, DecodingError) {
   // returned.
 
   // Pull audio again, should continue an expansion.
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kPLC, output.speech_type_);
 
   // Pull audio again, should behave normal.
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_);
@@ -1147,13 +1155,14 @@ TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
   // Pull audio.
   const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
   AudioFrame output;
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kCNG, output.speech_type_);
 
   // Pull audio again. Decoder fails.
-  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output));
+  EXPECT_EQ(NetEq::kFail, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(NetEq::kDecoderErrorCode, neteq_->LastError());
   EXPECT_EQ(kDecoderErrorCode, neteq_->LastDecoderError());
   EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
@@ -1162,7 +1171,7 @@ TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
   // returned.
 
   // Pull audio again, should resume codec CNG.
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
   EXPECT_EQ(1u, output.num_channels_);
   EXPECT_EQ(AudioFrame::kCNG, output.speech_type_);
@@ -1185,7 +1194,8 @@ TEST_F(NetEqImplTest, TickTimerIncrement) {
   ASSERT_TRUE(tick_timer_);
   EXPECT_EQ(0u, tick_timer_->ticks());
   AudioFrame output;
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(1u, tick_timer_->ticks());
 }
 
@@ -1240,8 +1250,10 @@ class NetEqImplTest120ms : public NetEqImplTest {
   uint32_t first_timestamp() const { return 10u; }
 
   void GetFirstPacket() {
+    bool muted;
     for (int i = 0; i < 12; i++) {
-      EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+      EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
+      EXPECT_FALSE(muted);
     }
   }
 
@@ -1280,7 +1292,8 @@ TEST_F(NetEqImplTest120ms, AudioRepetition) {
   InsertPacket(first_timestamp());
   GetFirstPacket();
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
   EXPECT_EQ(kAudioRepetition, neteq_->last_operation_for_test());
 }
 
@@ -1292,7 +1305,8 @@ TEST_F(NetEqImplTest120ms, AlternativePlc) {
   InsertPacket(first_timestamp());
   GetFirstPacket();
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
   EXPECT_EQ(kAlternativePlc, neteq_->last_operation_for_test());
 }
 
@@ -1303,7 +1317,8 @@ TEST_F(NetEqImplTest120ms, CodecInternalCng) {
   InsertPacket(first_timestamp());
   GetFirstPacket();
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
   EXPECT_EQ(kCodecInternalCng, neteq_->last_operation_for_test());
 }
 
@@ -1324,14 +1339,15 @@ TEST_F(NetEqImplTest120ms, Merge) {
   InsertPacket(first_timestamp());
 
   GetFirstPacket();
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
 
   InsertPacket(first_timestamp() + 2 * timestamp_diff_between_packets());
 
   // Delay manager reports a target level which should cause a Merge.
   EXPECT_CALL(*mock_delay_manager_, TargetLevel()).WillOnce(Return(-10));
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
   EXPECT_EQ(kMerge, neteq_->last_operation_for_test());
 }
 
@@ -1342,7 +1358,8 @@ TEST_F(NetEqImplTest120ms, Expand) {
   InsertPacket(first_timestamp());
   GetFirstPacket();
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
   EXPECT_EQ(kExpand, neteq_->last_operation_for_test());
 }
 
@@ -1359,7 +1376,8 @@ TEST_F(NetEqImplTest120ms, FastAccelerate) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<0>(0), SetArgPointee<1>(0)));
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
   EXPECT_EQ(kFastAccelerate, neteq_->last_operation_for_test());
 }
 
@@ -1377,7 +1395,8 @@ TEST_F(NetEqImplTest120ms, PreemptiveExpand) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<0>(100), SetArgPointee<1>(100)));
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
   EXPECT_EQ(kPreemptiveExpand, neteq_->last_operation_for_test());
 }
 
@@ -1395,7 +1414,8 @@ TEST_F(NetEqImplTest120ms, Accelerate) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<0>(1), SetArgPointee<1>(2)));
 
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_));
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
   EXPECT_EQ(kAccelerate, neteq_->last_operation_for_test());
 }
 

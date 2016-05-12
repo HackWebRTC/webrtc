@@ -93,6 +93,7 @@ class NetEq {
     BackgroundNoiseMode background_noise_mode;
     NetEqPlayoutMode playout_mode;
     bool enable_fast_accelerate;
+    bool enable_muted_state = false;
   };
 
   enum ReturnCodes {
@@ -161,8 +162,12 @@ class NetEq {
   // |num_channels_|, |sample_rate_hz_|, |samples_per_channel_|, and
   // |vad_activity_| are updated upon success. If an error is returned, some
   // fields may not have been updated.
+  // If muted state is enabled (through Config::enable_muted_state), |muted|
+  // may be set to true after a prolonged expand period. When this happens, the
+  // |data_| in |audio_frame| is not written, but should be interpreted as being
+  // all zeros.
   // Returns kOK on success, or kFail in case of an error.
-  virtual int GetAudio(AudioFrame* audio_frame) = 0;
+  virtual int GetAudio(AudioFrame* audio_frame, bool* muted) = 0;
 
   // Associates |rtp_payload_type| with |codec| and |codec_name|, and stores the
   // information in the codec database. Returns 0 on success, -1 on failure.

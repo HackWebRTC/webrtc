@@ -117,7 +117,7 @@ class NetEqImpl : public webrtc::NetEq {
   int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
                        uint32_t receive_timestamp) override;
 
-  int GetAudio(AudioFrame* audio_frame) override;
+  int GetAudio(AudioFrame* audio_frame, bool* muted) override;
 
   int RegisterPayloadType(NetEqDecoder codec,
                           const std::string& codec_name,
@@ -225,7 +225,7 @@ class NetEqImpl : public webrtc::NetEq {
 
   // Delivers 10 ms of audio data. The data is written to |audio_frame|.
   // Returns 0 on success, otherwise an error code.
-  int GetAudioInternal(AudioFrame* audio_frame)
+  int GetAudioInternal(AudioFrame* audio_frame, bool* muted)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Provides a decision to the GetAudioInternal method. The decision what to
@@ -405,6 +405,7 @@ class NetEqImpl : public webrtc::NetEq {
   bool enable_fast_accelerate_ GUARDED_BY(crit_sect_);
   std::unique_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
   bool nack_enabled_ GUARDED_BY(crit_sect_);
+  const bool enable_muted_state_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity last_vad_activity_ GUARDED_BY(crit_sect_) =
       AudioFrame::kVadPassive;
   std::unique_ptr<TickTimer::Stopwatch> generated_noise_stopwatch_

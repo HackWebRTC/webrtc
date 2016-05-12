@@ -108,7 +108,8 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       background_noise_mode_(config.background_noise_mode),
       playout_mode_(config.playout_mode),
       enable_fast_accelerate_(config.enable_fast_accelerate),
-      nack_enabled_(false) {
+      nack_enabled_(false),
+      enable_muted_state_(config.enable_muted_state) {
   LOG(LS_INFO) << "NetEq config: " << config.ToString();
   int fs = config.sample_rate_hz;
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {
@@ -205,10 +206,10 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
 }
 }  // namespace
 
-int NetEqImpl::GetAudio(AudioFrame* audio_frame) {
+int NetEqImpl::GetAudio(AudioFrame* audio_frame, bool* muted) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   rtc::CritScope lock(&crit_sect_);
-  int error = GetAudioInternal(audio_frame);
+  int error = GetAudioInternal(audio_frame, muted);
   RTC_DCHECK_EQ(
       audio_frame->sample_rate_hz_,
       rtc::checked_cast<int>(audio_frame->samples_per_channel_ * 100));
@@ -809,13 +810,31 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   return 0;
 }
 
-int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame) {
+int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
   PacketList packet_list;
   DtmfEvent dtmf_event;
   Operations operation;
   bool play_dtmf;
+  *muted = false;
   tick_timer_->Increment();
   stats_.IncreaseCounter(output_size_samples_, fs_hz_);
+
+  // Check for muted state.
+  if (enable_muted_state_ && expand_->Muted() && packet_buffer_->Empty()) {
+    RTC_DCHECK_EQ(last_mode_, kModeExpand);
+    playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
+    audio_frame->sample_rate_hz_ = fs_hz_;
+    audio_frame->samples_per_channel_ = output_size_samples_;
+    audio_frame->timestamp_ =
+        first_packet_
+            ? 0
+            : timestamp_scaler_->ToExternal(playout_timestamp_) -
+                  static_cast<uint32_t>(audio_frame->samples_per_channel_);
+    audio_frame->num_channels_ = sync_buffer_->Channels();
+    *muted = true;
+    return 0;
+  }
+
   int return_value = GetDecision(&operation, &packet_list, &dtmf_event,
                                  &play_dtmf);
   if (return_value != 0) {

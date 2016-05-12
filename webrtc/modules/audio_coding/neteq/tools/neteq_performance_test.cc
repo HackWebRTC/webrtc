@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_performance_test.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
@@ -105,7 +106,9 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
     }
 
     // Get output audio, but don't do anything with it.
-    int error = neteq->GetAudio(&out_frame);
+    bool muted;
+    int error = neteq->GetAudio(&out_frame, &muted);
+    RTC_CHECK(!muted);
     if (error != NetEq::kOK)
       return -1;
 

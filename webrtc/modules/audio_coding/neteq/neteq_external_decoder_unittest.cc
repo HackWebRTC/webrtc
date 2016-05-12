@@ -189,7 +189,9 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
 
   void GetAndVerifyOutput() override {
     // Get audio from internal decoder instance.
-    EXPECT_EQ(NetEq::kOK, neteq_internal_->GetAudio(&output_internal_));
+    bool muted;
+    EXPECT_EQ(NetEq::kOK, neteq_internal_->GetAudio(&output_internal_, &muted));
+    ASSERT_FALSE(muted);
     EXPECT_EQ(1u, output_internal_.num_channels_);
     EXPECT_EQ(static_cast<size_t>(kOutputLengthMs * sample_rate_hz_ / 1000),
               output_internal_.samples_per_channel_);

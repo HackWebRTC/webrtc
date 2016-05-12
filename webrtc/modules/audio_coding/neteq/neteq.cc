@@ -26,7 +26,9 @@ std::string NetEq::Config::ToString() const {
      << ", max_packets_in_buffer=" << max_packets_in_buffer
      << ", background_noise_mode=" << background_noise_mode
      << ", playout_mode=" << playout_mode
-     << ", enable_fast_accelerate=" << enable_fast_accelerate;
+     << ", enable_fast_accelerate="
+     << (enable_fast_accelerate ? " true": "false")
+     << ", enable_muted_state=" << (enable_muted_state ? " true": "false");
   return ss.str();
 }
 

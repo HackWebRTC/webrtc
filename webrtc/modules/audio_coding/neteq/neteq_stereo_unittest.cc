@@ -212,11 +212,14 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
         } while (Lost());  // If lost, immediately read the next packet.
       }
       // Get audio from mono instance.
-      EXPECT_EQ(NetEq::kOK, neteq_mono_->GetAudio(&output_));
+      bool muted;
+      EXPECT_EQ(NetEq::kOK, neteq_mono_->GetAudio(&output_, &muted));
+      ASSERT_FALSE(muted);
       EXPECT_EQ(1u, output_.num_channels_);
       EXPECT_EQ(output_size_samples_, output_.samples_per_channel_);
       // Get audio from multi-channel instance.
-      ASSERT_EQ(NetEq::kOK, neteq_->GetAudio(&output_multi_channel_));
+      ASSERT_EQ(NetEq::kOK, neteq_->GetAudio(&output_multi_channel_, &muted));
+      ASSERT_FALSE(muted);
       EXPECT_EQ(num_channels_, output_multi_channel_.num_channels_);
       EXPECT_EQ(output_size_samples_,
                 output_multi_channel_.samples_per_channel_);
