@@ -15,7 +15,7 @@
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
 #include "webrtc/api/test/peerconnectiontestwrapper.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/p2p/client/fakeportallocator.h"
+#include "webrtc/p2p/base/fakeportallocator.h"
 
 static const char kStreamLabelBase[] = "stream_label";
 static const char kVideoTrackLabelBase[] = "video_track";

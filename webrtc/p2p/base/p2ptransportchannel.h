@@ -189,7 +189,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // Public for unit tests.
   PortAllocatorSession* allocator_session() {
-    return allocator_sessions_.back();
+    return allocator_sessions_.back().get();
   }
 
   // Public for unit tests.
@@ -227,7 +227,7 @@ class P2PTransportChannel : public TransportChannelImpl,
                                PortInterface* origin_port);
   bool IsPingable(Connection* conn, int64_t now);
   void PingConnection(Connection* conn);
-  void AddAllocatorSession(PortAllocatorSession* session);
+  void AddAllocatorSession(std::unique_ptr<PortAllocatorSession> session);
   void AddConnection(Connection* connection);
 
   void OnPortReady(PortAllocatorSession *session, PortInterface* port);
@@ -295,7 +295,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   rtc::Thread* worker_thread_;
   bool incoming_only_;
   int error_;
-  std::vector<PortAllocatorSession*> allocator_sessions_;
+  std::vector<std::unique_ptr<PortAllocatorSession>> allocator_sessions_;
   std::vector<PortInterface *> ports_;
 
   // |connections_| is a sorted list with the first one always be the

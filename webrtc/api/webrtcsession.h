@@ -146,7 +146,6 @@ class WebRtcSession : public AudioProviderInterface,
   // These are const to allow them to be called from const methods.
   rtc::Thread* signaling_thread() const { return signaling_thread_; }
   rtc::Thread* worker_thread() const { return worker_thread_; }
-  cricket::PortAllocator* port_allocator() const { return port_allocator_; }
 
   // The ID of this session.
   const std::string& id() const { return sid_; }
@@ -213,8 +212,6 @@ class WebRtcSession : public AudioProviderInterface,
 
   bool RemoveRemoteIceCandidates(
       const std::vector<cricket::Candidate>& candidates);
-
-  bool SetIceTransports(PeerConnectionInterface::IceTransportsType type);
 
   cricket::IceConfig ParseIceConfig(
       const PeerConnectionInterface::RTCConfiguration& config) const;
@@ -469,7 +466,6 @@ class WebRtcSession : public AudioProviderInterface,
 
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
-  cricket::PortAllocator* const port_allocator_;
 
   State state_ = STATE_INIT;
   Error error_ = ERROR_NONE;

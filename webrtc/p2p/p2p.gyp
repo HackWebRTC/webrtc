@@ -146,9 +146,11 @@
           'direct_dependent_settings': {
             'sources': [
               'base/dtlstransportchannel_unittest.cc',
+              'base/fakeportallocator.h',
               'base/faketransportcontroller.h',
               'base/p2ptransportchannel_unittest.cc',
               'base/port_unittest.cc',
+              'base/portallocator_unittest.cc',
               'base/pseudotcp_unittest.cc',
               'base/relayport_unittest.cc',
               'base/relayserver_unittest.cc',
@@ -164,8 +166,7 @@
               'base/transportdescriptionfactory_unittest.cc',
               'base/tcpport_unittest.cc',
               'base/turnport_unittest.cc',
-              'client/fakeportallocator.h',
-              'client/portallocator_unittest.cc',
+              'client/basicportallocator_unittest.cc',
               'stunprober/stunprober_unittest.cc',
             ],
             'conditions': [

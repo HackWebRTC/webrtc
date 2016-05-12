@@ -261,30 +261,27 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
 
 P2PTransportChannel::~P2PTransportChannel() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-
-  for (size_t i = 0; i < allocator_sessions_.size(); ++i)
-    delete allocator_sessions_[i];
 }
 
 // Add the allocator session to our list so that we know which sessions
 // are still active.
-void P2PTransportChannel::AddAllocatorSession(PortAllocatorSession* session) {
+void P2PTransportChannel::AddAllocatorSession(
+    std::unique_ptr<PortAllocatorSession> session) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
   session->set_generation(static_cast<uint32_t>(allocator_sessions_.size()));
-  allocator_sessions_.push_back(session);
+  session->SignalPortReady.connect(this, &P2PTransportChannel::OnPortReady);
+  session->SignalCandidatesReady.connect(
+      this, &P2PTransportChannel::OnCandidatesReady);
+  session->SignalCandidatesAllocationDone.connect(
+      this, &P2PTransportChannel::OnCandidatesAllocationDone);
 
   // We now only want to apply new candidates that we receive to the ports
   // created by this new session because these are replacing those of the
   // previous sessions.
   ports_.clear();
 
-  session->SignalPortReady.connect(this, &P2PTransportChannel::OnPortReady);
-  session->SignalCandidatesReady.connect(
-      this, &P2PTransportChannel::OnCandidatesReady);
-  session->SignalCandidatesAllocationDone.connect(
-      this, &P2PTransportChannel::OnCandidatesAllocationDone);
-  session->StartGettingPorts();
+  allocator_sessions_.push_back(std::move(session));
 }
 
 void P2PTransportChannel::AddConnection(Connection* connection) {
@@ -472,9 +469,28 @@ void P2PTransportChannel::MaybeStartGathering() {
       gathering_state_ = kIceGatheringGathering;
       SignalGatheringState(this);
     }
-    // Time for a new allocator
-    AddAllocatorSession(allocator_->CreateSession(
-        SessionId(), transport_name(), component(), ice_ufrag_, ice_pwd_));
+    // Time for a new allocator.
+    std::unique_ptr<PortAllocatorSession> pooled_session =
+        allocator_->TakePooledSession(transport_name(), component(), ice_ufrag_,
+                                      ice_pwd_);
+    if (pooled_session) {
+      AddAllocatorSession(std::move(pooled_session));
+      PortAllocatorSession* raw_pooled_session =
+          allocator_sessions_.back().get();
+      // Process the pooled session's existing candidates/ports, if they exist.
+      OnCandidatesReady(raw_pooled_session,
+                        raw_pooled_session->ReadyCandidates());
+      for (PortInterface* port : allocator_sessions_.back()->ReadyPorts()) {
+        OnPortReady(raw_pooled_session, port);
+      }
+      if (allocator_sessions_.back()->CandidatesAllocationDone()) {
+        OnCandidatesAllocationDone(raw_pooled_session);
+      }
+    } else {
+      AddAllocatorSession(allocator_->CreateSession(
+          SessionId(), transport_name(), component(), ice_ufrag_, ice_pwd_));
+      allocator_sessions_.back()->StartGettingPorts();
+    }
   }
 }
 
@@ -1213,7 +1229,7 @@ void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
     return;
   }
 
-  for (PortAllocatorSession* session : allocator_sessions_) {
+  for (const auto& session : allocator_sessions_) {
     if (!session->IsGettingPorts()) {
       continue;
     }

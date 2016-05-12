@@ -11,6 +11,8 @@
 #ifndef WEBRTC_P2P_BASE_PORTALLOCATOR_H_
 #define WEBRTC_P2P_BASE_PORTALLOCATOR_H_
 
+#include <deque>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -19,6 +21,7 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/proxyinfo.h"
 #include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 
@@ -82,6 +85,11 @@ struct RelayCredentials {
   RelayCredentials(const std::string& username, const std::string& password)
       : username(username), password(password) {}
 
+  bool operator==(const RelayCredentials& o) const {
+    return username == o.username && password == o.password;
+  }
+  bool operator!=(const RelayCredentials& o) const { return !(*this == o); }
+
   std::string username;
   std::string password;
 };
@@ -89,7 +97,7 @@ struct RelayCredentials {
 typedef std::vector<ProtocolAddress> PortList;
 // TODO(deadbeef): Rename to TurnServerConfig.
 struct RelayServerConfig {
-  RelayServerConfig(RelayType type) : type(type), priority(0) {}
+  RelayServerConfig(RelayType type) : type(type) {}
 
   RelayServerConfig(const std::string& address,
                     int port,
@@ -102,10 +110,16 @@ struct RelayServerConfig {
         ProtocolAddress(rtc::SocketAddress(address, port), proto, secure));
   }
 
+  bool operator==(const RelayServerConfig& o) const {
+    return type == o.type && ports == o.ports && credentials == o.credentials &&
+           priority == o.priority;
+  }
+  bool operator!=(const RelayServerConfig& o) const { return !(*this == o); }
+
   RelayType type;
   PortList ports;
   RelayCredentials credentials;
-  int priority;
+  int priority = 0;
 };
 
 class PortAllocatorSession : public sigslot::has_slots<> {
@@ -124,6 +138,9 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   void set_flags(uint32_t flags) { flags_ = flags; }
   std::string content_name() const { return content_name_; }
   int component() const { return component_; }
+  const std::string& ice_ufrag() const { return ice_ufrag_; }
+  const std::string& ice_pwd() const { return ice_pwd_; }
+  bool pooled() const { return ice_ufrag_.empty(); }
 
   // Starts gathering STUN and Relay configurations.
   virtual void StartGettingPorts() = 0;
@@ -132,6 +149,14 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual void ClearGettingPorts() = 0;
   // Whether the process of getting ports has been stopped.
   virtual bool IsGettingPorts() = 0;
+
+  // Another way of getting the information provided by the signals below.
+  //
+  // Ports and candidates are not guaranteed to be in the same order as the
+  // signals were emitted in.
+  virtual std::vector<PortInterface*> ReadyPorts() const = 0;
+  virtual std::vector<Candidate> ReadyCandidates() const = 0;
+  virtual bool CandidatesAllocationDone() const = 0;
 
   sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortReady;
   sigslot::signal2<PortAllocatorSession*,
@@ -142,25 +167,46 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual void set_generation(uint32_t generation) { generation_ = generation; }
   sigslot::signal1<PortAllocatorSession*> SignalDestroyed;
 
-  const std::string& ice_ufrag() const { return ice_ufrag_; }
-  const std::string& ice_pwd() const { return ice_pwd_; }
-
  protected:
+  // This method is called when a pooled session (which doesn't have these
+  // properties initially) is returned by PortAllocator::TakePooledSession,
+  // and the content name, component, and ICE ufrag/pwd are updated.
+  //
+  // A subclass may need to override this method to perform additional actions,
+  // such as applying the updated information to ports and candidates.
+  virtual void UpdateIceParametersInternal() {}
+
   // TODO(deadbeef): Get rid of these when everyone switches to ice_ufrag and
   // ice_pwd.
   const std::string& username() const { return ice_ufrag_; }
   const std::string& password() const { return ice_pwd_; }
 
-  std::string content_name_;
-  int component_;
-
  private:
+  void SetIceParameters(const std::string& content_name,
+                        int component,
+                        const std::string& ice_ufrag,
+                        const std::string& ice_pwd) {
+    content_name_ = content_name;
+    component_ = component;
+    ice_ufrag_ = ice_ufrag;
+    ice_pwd_ = ice_pwd;
+    UpdateIceParametersInternal();
+  }
+
   uint32_t flags_;
   uint32_t generation_;
+  std::string content_name_;
+  int component_;
   std::string ice_ufrag_;
   std::string ice_pwd_;
+
+  // SetIceParameters is an implementation detail which only PortAllocator
+  // should be able to call.
+  friend class PortAllocator;
 };
 
+// Note that this class should only be used on one thread.
+// This includes calling the destructor.
 class PortAllocator : public sigslot::has_slots<> {
  public:
   PortAllocator() :
@@ -174,10 +220,25 @@ class PortAllocator : public sigslot::has_slots<> {
   }
   virtual ~PortAllocator() {}
 
-  // Set STUN and TURN servers to be used in future sessions.
-  virtual void SetIceServers(
-      const ServerAddresses& stun_servers,
-      const std::vector<RelayServerConfig>& turn_servers) = 0;
+  // Set STUN and TURN servers to be used in future sessions, and set
+  // candidate pool size, as described in JSEP.
+  //
+  // If the servers are changing and the candidate pool size is nonzero,
+  // existing pooled sessions will be destroyed and new ones created.
+  //
+  // If the servers are not changing but the candidate pool size is,
+  // pooled sessions will be either created or destroyed as necessary.
+  void SetConfiguration(const ServerAddresses& stun_servers,
+                        const std::vector<RelayServerConfig>& turn_servers,
+                        int candidate_pool_size);
+
+  const ServerAddresses& stun_servers() const { return stun_servers_; }
+
+  const std::vector<RelayServerConfig>& turn_servers() const {
+    return turn_servers_;
+  }
+
+  int candidate_pool_size() const { return target_pooled_session_count_; }
 
   // Sets the network types to ignore.
   // Values are defined by the AdapterType enum.
@@ -186,12 +247,26 @@ class PortAllocator : public sigslot::has_slots<> {
   // loopback interfaces.
   virtual void SetNetworkIgnoreMask(int network_ignore_mask) = 0;
 
-  PortAllocatorSession* CreateSession(
+  std::unique_ptr<PortAllocatorSession> CreateSession(
       const std::string& sid,
       const std::string& content_name,
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd);
+
+  // Get an available pooled session and set the transport information on it.
+  //
+  // Caller takes ownership of the returned session.
+  //
+  // If no pooled sessions are available, returns null.
+  std::unique_ptr<PortAllocatorSession> TakePooledSession(
+      const std::string& content_name,
+      int component,
+      const std::string& ice_ufrag,
+      const std::string& ice_pwd);
+
+  // Returns the next session that would be returned by TakePooledSession.
+  const PortAllocatorSession* GetPooledSession() const;
 
   uint32_t flags() const { return flags_; }
   void set_flags(uint32_t flags) { flags_ = flags; }
@@ -225,10 +300,9 @@ class PortAllocator : public sigslot::has_slots<> {
   }
 
   uint32_t candidate_filter() { return candidate_filter_; }
-  bool set_candidate_filter(uint32_t filter) {
+  void set_candidate_filter(uint32_t filter) {
     // TODO(mallinath) - Do transition check?
     candidate_filter_ = filter;
-    return true;
   }
 
   // Gets/Sets the Origin value used for WebRTC STUN requests.
@@ -251,6 +325,16 @@ class PortAllocator : public sigslot::has_slots<> {
   bool allow_tcp_listen_;
   uint32_t candidate_filter_;
   std::string origin_;
+
+ private:
+  ServerAddresses stun_servers_;
+  std::vector<RelayServerConfig> turn_servers_;
+  // The last size passed into SetConfiguration.
+  int target_pooled_session_count_ = 0;
+  // This variable represents the total number of pooled sessions
+  // both owned by this class and taken by TakePooledSession.
+  int allocated_pooled_session_count_ = 0;
+  std::deque<std::unique_ptr<PortAllocatorSession>> pooled_sessions_;
 };
 
 }  // namespace cricket

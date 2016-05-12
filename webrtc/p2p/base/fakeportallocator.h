@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_CLIENT_FAKEPORTALLOCATOR_H_
-#define WEBRTC_P2P_CLIENT_FAKEPORTALLOCATOR_H_
+#ifndef WEBRTC_P2P_BASE_FAKEPORTALLOCATOR_H_
+#define WEBRTC_P2P_BASE_FAKEPORTALLOCATOR_H_
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/portallocator.h"
@@ -84,24 +85,31 @@ class TestUDPPort : public UDPPort {
 
 class FakePortAllocatorSession : public PortAllocatorSession {
  public:
-  FakePortAllocatorSession(rtc::Thread* worker_thread,
+  FakePortAllocatorSession(PortAllocator* allocator,
+                           rtc::Thread* worker_thread,
                            rtc::PacketSocketFactory* factory,
                            const std::string& content_name,
                            int component,
                            const std::string& ice_ufrag,
                            const std::string& ice_pwd)
-      : PortAllocatorSession(content_name, component, ice_ufrag, ice_pwd,
-                             cricket::kDefaultPortAllocatorFlags),
+      : PortAllocatorSession(content_name,
+                             component,
+                             ice_ufrag,
+                             ice_pwd,
+                             allocator->flags()),
         worker_thread_(worker_thread),
         factory_(factory),
-        network_("network", "unittest",
-                 rtc::IPAddress(INADDR_LOOPBACK), 8),
-        port_(), running_(false),
-        port_config_count_(0) {
+        network_("network", "unittest", rtc::IPAddress(INADDR_LOOPBACK), 8),
+        port_(),
+        running_(false),
+        port_config_count_(0),
+        stun_servers_(allocator->stun_servers()),
+        turn_servers_(allocator->turn_servers()),
+        candidate_filter_(allocator->candidate_filter()) {
     network_.AddIP(rtc::IPAddress(INADDR_LOOPBACK));
   }
 
-  virtual void StartGettingPorts() {
+  void StartGettingPorts() override {
     if (!port_) {
       port_.reset(TestUDPPort::Create(worker_thread_, factory_, &network_,
                                       network_.GetBestIP(), 0, 0, username(),
@@ -112,23 +120,54 @@ class FakePortAllocatorSession : public PortAllocatorSession {
     running_ = true;
   }
 
-  virtual void StopGettingPorts() { running_ = false; }
-  virtual bool IsGettingPorts() { return running_; }
-  virtual void ClearGettingPorts() {}
+  void StopGettingPorts() override { running_ = false; }
+  bool IsGettingPorts() override { return running_; }
+  void ClearGettingPorts() override {}
+  std::vector<PortInterface*> ReadyPorts() const override {
+    return ready_ports_;
+  }
+  std::vector<Candidate> ReadyCandidates() const override {
+    return candidates_;
+  }
+  bool CandidatesAllocationDone() const override { return allocation_done_; }
 
   int port_config_count() { return port_config_count_; }
 
+  const ServerAddresses& stun_servers() const { return stun_servers_; }
+
+  const std::vector<RelayServerConfig>& turn_servers() const {
+    return turn_servers_;
+  }
+
+  uint32_t candidate_filter() const { return candidate_filter_; }
+
   void AddPort(cricket::Port* port) {
-    port->set_component(component_);
+    port->set_component(component());
     port->set_generation(generation());
-    port->SignalPortComplete.connect(
-        this, &FakePortAllocatorSession::OnPortComplete);
+    port->SignalPortComplete.connect(this,
+                                     &FakePortAllocatorSession::OnPortComplete);
     port->PrepareAddress();
+    ready_ports_.push_back(port);
     SignalPortReady(this, port);
   }
   void OnPortComplete(cricket::Port* port) {
-    SignalCandidatesReady(this, port->Candidates());
+    const std::vector<Candidate>& candidates = port->Candidates();
+    candidates_.insert(candidates_.end(), candidates.begin(), candidates.end());
+    SignalCandidatesReady(this, candidates);
+
+    allocation_done_ = true;
     SignalCandidatesAllocationDone(this);
+  }
+
+  int transport_info_update_count() const {
+    return transport_info_update_count_;
+  }
+
+ protected:
+  void UpdateIceParametersInternal() override {
+    // Since this class is a fake and this method only is overridden for tests,
+    // we don't need to actually update the transport info.
+    ++transport_info_update_count_;
   }
 
  private:
@@ -138,6 +177,13 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   std::unique_ptr<cricket::Port> port_;
   bool running_;
   int port_config_count_;
+  std::vector<Candidate> candidates_;
+  std::vector<PortInterface*> ready_ports_;
+  bool allocation_done_ = false;
+  ServerAddresses stun_servers_;
+  std::vector<RelayServerConfig> turn_servers_;
+  uint32_t candidate_filter_;
+  int transport_info_update_count_ = 0;
 };
 
 class FakePortAllocator : public cricket::PortAllocator {
@@ -146,44 +192,29 @@ class FakePortAllocator : public cricket::PortAllocator {
                     rtc::PacketSocketFactory* factory)
       : worker_thread_(worker_thread), factory_(factory) {
     if (factory_ == NULL) {
-      owned_factory_.reset(new rtc::BasicPacketSocketFactory(
-          worker_thread_));
+      owned_factory_.reset(new rtc::BasicPacketSocketFactory(worker_thread_));
       factory_ = owned_factory_.get();
     }
   }
 
-  void SetIceServers(
-      const ServerAddresses& stun_servers,
-      const std::vector<RelayServerConfig>& turn_servers) override {
-    stun_servers_ = stun_servers;
-    turn_servers_ = turn_servers;
-  }
-
   void SetNetworkIgnoreMask(int network_ignore_mask) override {}
 
-  const ServerAddresses& stun_servers() const { return stun_servers_; }
-
-  const std::vector<RelayServerConfig>& turn_servers() const {
-    return turn_servers_;
-  }
-
-  virtual cricket::PortAllocatorSession* CreateSessionInternal(
+  cricket::PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd) override {
-    return new FakePortAllocatorSession(
-        worker_thread_, factory_, content_name, component, ice_ufrag, ice_pwd);
+    return new FakePortAllocatorSession(this, worker_thread_, factory_,
+                                        content_name, component, ice_ufrag,
+                                        ice_pwd);
   }
 
  private:
   rtc::Thread* worker_thread_;
   rtc::PacketSocketFactory* factory_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> owned_factory_;
-  ServerAddresses stun_servers_;
-  std::vector<RelayServerConfig> turn_servers_;
 };
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_CLIENT_FAKEPORTALLOCATOR_H_
+#endif  // WEBRTC_P2P_BASE_FAKEPORTALLOCATOR_H_

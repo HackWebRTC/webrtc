@@ -37,9 +37,9 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/media/engine/fakewebrtcvideoengine.h"
+#include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/p2p/client/fakeportallocator.h"
 #include "webrtc/pc/mediasession.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \

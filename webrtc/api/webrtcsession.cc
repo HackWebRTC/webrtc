@@ -421,22 +421,6 @@ static std::string MakeTdErrorString(const std::string& desc) {
   return MakeErrorString(kPushDownTDFailed, desc);
 }
 
-uint32_t ConvertIceTransportTypeToCandidateFilter(
-    PeerConnectionInterface::IceTransportsType type) {
-  switch (type) {
-    case PeerConnectionInterface::kNone:
-        return cricket::CF_NONE;
-    case PeerConnectionInterface::kRelay:
-        return cricket::CF_RELAY;
-    case PeerConnectionInterface::kNoHost:
-        return (cricket::CF_ALL & ~cricket::CF_HOST);
-    case PeerConnectionInterface::kAll:
-        return cricket::CF_ALL;
-    default: ASSERT(false);
-  }
-  return cricket::CF_NONE;
-}
-
 // Returns true if |new_desc| requests an ICE restart (i.e., new ufrag/pwd).
 bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
                               const SessionDescriptionInterface* new_desc,
@@ -475,7 +459,6 @@ WebRtcSession::WebRtcSession(webrtc::MediaControllerInterface* media_controller,
                              cricket::PortAllocator* port_allocator)
     : signaling_thread_(signaling_thread),
       worker_thread_(worker_thread),
-      port_allocator_(port_allocator),
       // RFC 3264: The numeric value of the session id and version in the
       // o line MUST be representable with a "64 bit signed integer".
       // Due to this constraint session id |sid_| is max limited to LLONG_MAX.
@@ -604,8 +587,6 @@ bool WebRtcSession::Initialize(
   if (options.disable_encryption) {
     webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
   }
-  port_allocator()->set_candidate_filter(
-      ConvertIceTransportTypeToCandidateFilter(rtc_configuration.type));
 
   return true;
 }
@@ -1143,12 +1124,6 @@ bool WebRtcSession::RemoveRemoteIceCandidates(
     LOG(LS_ERROR) << "Error when removing remote candidates: " << error;
   }
   return true;
-}
-
-bool WebRtcSession::SetIceTransports(
-    PeerConnectionInterface::IceTransportsType type) {
-  return port_allocator()->set_candidate_filter(
-        ConvertIceTransportTypeToCandidateFilter(type));
 }
 
 cricket::IceConfig WebRtcSession::ParseIceConfig(

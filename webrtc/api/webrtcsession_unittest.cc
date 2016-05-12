@@ -407,12 +407,6 @@ class WebRtcSessionTest
 
   void Init() { Init(nullptr); }
 
-  void InitWithIceTransport(
-      PeerConnectionInterface::IceTransportsType ice_transport_type) {
-    configuration_.type = ice_transport_type;
-    Init();
-  }
-
   void InitWithBundlePolicy(
       PeerConnectionInterface::BundlePolicy bundle_policy) {
     configuration_.bundle_policy = bundle_policy;
@@ -1527,50 +1521,6 @@ TEST_F(WebRtcSessionTest, MAYBE_TestStunError) {
   EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
   EXPECT_EQ(6u, observer_.mline_0_candidates_.size());
   EXPECT_EQ(6u, observer_.mline_1_candidates_.size());
-}
-
-// Test session delivers no candidates gathered when constraint set to "none".
-TEST_F(WebRtcSessionTest, TestIceTransportsNone) {
-  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  InitWithIceTransport(PeerConnectionInterface::kNone);
-  SendAudioVideoStream1();
-  InitiateCall();
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
-  EXPECT_EQ(0u, observer_.mline_0_candidates_.size());
-  EXPECT_EQ(0u, observer_.mline_1_candidates_.size());
-}
-
-// Test session delivers only relay candidates gathered when constaint set to
-// "relay".
-TEST_F(WebRtcSessionTest, TestIceTransportsRelay) {
-  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  ConfigureAllocatorWithTurn();
-  InitWithIceTransport(PeerConnectionInterface::kRelay);
-  SendAudioVideoStream1();
-  InitiateCall();
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
-  EXPECT_EQ(2u, observer_.mline_0_candidates_.size());
-  EXPECT_EQ(2u, observer_.mline_1_candidates_.size());
-  for (size_t i = 0; i < observer_.mline_0_candidates_.size(); ++i) {
-    EXPECT_EQ(cricket::RELAY_PORT_TYPE,
-              observer_.mline_0_candidates_[i].type());
-  }
-  for (size_t i = 0; i < observer_.mline_1_candidates_.size(); ++i) {
-    EXPECT_EQ(cricket::RELAY_PORT_TYPE,
-              observer_.mline_1_candidates_[i].type());
-  }
-}
-
-// Test session delivers all candidates gathered when constaint set to "all".
-TEST_F(WebRtcSessionTest, TestIceTransportsAll) {
-  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  InitWithIceTransport(PeerConnectionInterface::kAll);
-  SendAudioVideoStream1();
-  InitiateCall();
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
-  // Host + STUN. By default allocator is disabled to gather relay candidates.
-  EXPECT_EQ(4u, observer_.mline_0_candidates_.size());
-  EXPECT_EQ(4u, observer_.mline_1_candidates_.size());
 }
 
 TEST_F(WebRtcSessionTest, SetSdpFailedOnInvalidSdp) {
