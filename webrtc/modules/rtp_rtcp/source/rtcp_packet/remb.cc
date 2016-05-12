@@ -13,11 +13,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-
-using webrtc::RTCPUtility::RtcpCommonHeader;
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
 namespace webrtc {
 namespace rtcp {
+constexpr uint8_t Remb::kFeedbackMessageType;
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
 //
 //     0                   1                   2                   3
@@ -36,32 +36,39 @@ namespace rtcp {
 // 16 |   SSRC feedback                                               |
 //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //    :  ...                                                          :
-bool Remb::Parse(const RtcpCommonHeader& header, const uint8_t* payload) {
-  RTC_DCHECK(header.packet_type == kPacketType);
-  RTC_DCHECK(header.count_or_format == kFeedbackMessageType);
+bool Remb::Parse(const CommonHeader& packet) {
+  RTC_DCHECK(packet.type() == kPacketType);
+  RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
 
-  if (header.payload_size_bytes < 16) {
-    LOG(LS_WARNING) << "Payload length " << header.payload_size_bytes
+  if (packet.payload_size_bytes() < 16) {
+    LOG(LS_WARNING) << "Payload length " << packet.payload_size_bytes()
                     << " is too small for Remb packet.";
     return false;
   }
+  const uint8_t* const payload = packet.payload();
   if (kUniqueIdentifier != ByteReader<uint32_t>::ReadBigEndian(&payload[8])) {
     LOG(LS_WARNING) << "REMB identifier not found, not a REMB packet.";
     return false;
   }
   uint8_t number_of_ssrcs = payload[12];
-  if (header.payload_size_bytes !=
+  if (packet.payload_size_bytes() !=
       kCommonFeedbackLength + (2 + number_of_ssrcs) * 4) {
-    LOG(LS_WARNING) << "Payload size " << header.payload_size_bytes
+    LOG(LS_WARNING) << "Payload size " << packet.payload_size_bytes()
                     << " does not match " << number_of_ssrcs << " ssrcs.";
     return false;
   }
 
   ParseCommonFeedback(payload);
   uint8_t exponenta = payload[13] >> 2;
-  uint32_t mantissa = (static_cast<uint32_t>(payload[13] & 0x03) << 16) |
+  uint64_t mantissa = (static_cast<uint32_t>(payload[13] & 0x03) << 16) |
                       ByteReader<uint16_t>::ReadBigEndian(&payload[14]);
   bitrate_bps_ = (mantissa << exponenta);
+  bool shift_overflow = (bitrate_bps_ >> exponenta) != mantissa;
+  if (shift_overflow) {
+    LOG(LS_ERROR) << "Invalid remb bitrate value : " << mantissa
+                  << "*2^" << static_cast<int>(exponenta);
+    return false;
+  }
 
   const uint8_t* next_ssrc = payload + 16;
   ssrcs_.clear();
@@ -111,7 +118,7 @@ bool Remb::Create(uint8_t* packet,
   ByteWriter<uint32_t>::WriteBigEndian(packet + *index, kUniqueIdentifier);
   *index += sizeof(uint32_t);
   const uint32_t kMaxMantissa = 0x3ffff;  // 18 bits.
-  uint32_t mantissa = bitrate_bps_;
+  uint64_t mantissa = bitrate_bps_;
   uint8_t exponenta = 0;
   while (mantissa > kMaxMantissa) {
     mantissa >>= 1;

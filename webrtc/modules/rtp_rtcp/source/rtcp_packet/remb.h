@@ -16,27 +16,27 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/psfb.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
+
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
 class Remb : public Psfb {
  public:
-  static const uint8_t kFeedbackMessageType = 15;
+  static constexpr uint8_t kFeedbackMessageType = 15;
 
   Remb() : bitrate_bps_(0) {}
   ~Remb() override {}
 
   // Parse assumes header is already parsed and validated.
-  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
-             const uint8_t* payload);  // Size of the payload is in the header.
+  bool Parse(const CommonHeader& packet);
 
   bool AppliesTo(uint32_t ssrc);
   bool AppliesToMany(const std::vector<uint32_t>& ssrcs);
-  void WithBitrateBps(uint32_t bitrate_bps) { bitrate_bps_ = bitrate_bps; }
+  void WithBitrateBps(uint64_t bitrate_bps) { bitrate_bps_ = bitrate_bps; }
 
-  uint32_t bitrate_bps() const { return bitrate_bps_; }
+  uint64_t bitrate_bps() const { return bitrate_bps_; }
   const std::vector<uint32_t>& ssrcs() const { return ssrcs_; }
 
  protected:
@@ -50,14 +50,14 @@ class Remb : public Psfb {
   }
 
  private:
-  static const size_t kMaxNumberOfSsrcs = 0xff;
-  static const uint32_t kUniqueIdentifier = 0x52454D42;  // 'R' 'E' 'M' 'B'.
+  static constexpr size_t kMaxNumberOfSsrcs = 0xff;
+  static constexpr uint32_t kUniqueIdentifier = 0x52454D42;  // 'R' 'E' 'M' 'B'.
 
   // Media ssrc is unused, shadow base class setter and getter.
   void To(uint32_t);
   uint32_t media_ssrc() const;
 
-  uint32_t bitrate_bps_;
+  uint64_t bitrate_bps_;
   std::vector<uint32_t> ssrcs_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Remb);

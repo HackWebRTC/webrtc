@@ -12,32 +12,25 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
 using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::make_tuple;
 using webrtc::rtcp::Remb;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
-
 const uint32_t kSenderSsrc = 0x12345678;
 const uint32_t kRemoteSsrcs[] = {0x23456789, 0x2345678a, 0x2345678b};
 const uint32_t kBitrateBps = 0x3fb93 * 2;  // 522022;
+const uint64_t kBitrateBps64bit = 0x3fb93ULL << 30;
 const uint8_t kPacket[] = {0x8f, 206,  0x00, 0x07, 0x12, 0x34, 0x56, 0x78,
                            0x00, 0x00, 0x00, 0x00, 'R',  'E',  'M',  'B',
                            0x03, 0x07, 0xfb, 0x93, 0x23, 0x45, 0x67, 0x89,
                            0x23, 0x45, 0x67, 0x8a, 0x23, 0x45, 0x67, 0x8b};
 const size_t kPacketLength = sizeof(kPacket);
-
-bool ParseRemb(const uint8_t* buffer, size_t length, Remb* remb) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
-  EXPECT_EQ(length, header.BlockSize());
-  return remb->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
-}
+}  // namespace
 
 TEST(RtcpPacketRembTest, Create) {
   Remb remb;
@@ -55,7 +48,7 @@ TEST(RtcpPacketRembTest, Create) {
 
 TEST(RtcpPacketRembTest, Parse) {
   Remb remb;
-  EXPECT_TRUE(ParseRemb(kPacket, kPacketLength, &remb));
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &remb));
   const Remb& parsed = remb;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -70,19 +63,31 @@ TEST(RtcpPacketRembTest, CreateAndParseWithoutSsrcs) {
   rtc::Buffer packet = remb.Build();
 
   Remb parsed;
-  EXPECT_TRUE(ParseRemb(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(kBitrateBps, parsed.bitrate_bps());
   EXPECT_THAT(parsed.ssrcs(), IsEmpty());
 }
 
+TEST(RtcpPacketRembTest, CreateAndParse64bitBitrate) {
+  Remb remb;
+  remb.WithBitrateBps(kBitrateBps64bit);
+  rtc::Buffer packet = remb.Build();
+
+  Remb parsed;
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
+  EXPECT_EQ(kBitrateBps64bit, parsed.bitrate_bps());
+}
+
 TEST(RtcpPacketRembTest, ParseFailsOnTooSmallPacketToBeRemb) {
-  uint8_t packet[kPacketLength];
-  memcpy(packet, kPacket, kPacketLength);
-  packet[3] = 3;  // Make it too small.
+  // Make it too small.
+  constexpr size_t kTooSmallSize = (1 + 3) * 4;
+  uint8_t packet[kTooSmallSize];
+  memcpy(packet, kPacket, kTooSmallSize);
+  packet[3] = 3;
 
   Remb remb;
-  EXPECT_FALSE(ParseRemb(packet, (1 + 3) * 4, &remb));
+  EXPECT_FALSE(test::ParseSinglePacket(packet, &remb));
 }
 
 TEST(RtcpPacketRembTest, ParseFailsWhenUniqueIdentifierIsNotRemb) {
@@ -91,7 +96,17 @@ TEST(RtcpPacketRembTest, ParseFailsWhenUniqueIdentifierIsNotRemb) {
   packet[12] = 'N';  // Swap 'R' -> 'N' in the 'REMB' unique identifier.
 
   Remb remb;
-  EXPECT_FALSE(ParseRemb(packet, kPacketLength, &remb));
+  EXPECT_FALSE(test::ParseSinglePacket(packet, &remb));
+}
+
+TEST(RtcpPacketRembTest, ParseFailsWhenBitrateDoNotFitIn64bits) {
+  uint8_t packet[kPacketLength];
+  memcpy(packet, kPacket, kPacketLength);
+  packet[17] |= 0xfc;  // Set exponenta component to maximum of 63.
+  packet[19] |= 0x02;  // Ensure mantissa is at least 2.
+
+  Remb remb;
+  EXPECT_FALSE(test::ParseSinglePacket(packet, &remb));
 }
 
 TEST(RtcpPacketRembTest, ParseFailsWhenSsrcCountMismatchLength) {
@@ -100,7 +115,7 @@ TEST(RtcpPacketRembTest, ParseFailsWhenSsrcCountMismatchLength) {
   packet[16]++;  // Swap 3 -> 4 in the ssrcs count.
 
   Remb remb;
-  EXPECT_FALSE(ParseRemb(packet, kPacketLength, &remb));
+  EXPECT_FALSE(test::ParseSinglePacket(packet, &remb));
 }
 
 TEST(RtcpPacketRembTest, TooManySsrcs) {
@@ -126,5 +141,5 @@ TEST(RtcpPacketRembTest, TooManySsrcsForBatchAssign) {
   // But not for another one.
   EXPECT_FALSE(remb.AppliesTo(kRemoteSsrc));
 }
-}  // namespace
+
 }  // namespace webrtc
