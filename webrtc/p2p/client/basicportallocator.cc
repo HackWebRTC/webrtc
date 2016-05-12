@@ -64,26 +64,33 @@ const uint32_t DISABLE_ALL_PHASES =
     PORTALLOCATOR_DISABLE_STUN | PORTALLOCATOR_DISABLE_RELAY;
 
 // BasicPortAllocator
-BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
-                                       rtc::PacketSocketFactory* socket_factory)
-    : network_manager_(network_manager), socket_factory_(socket_factory) {
+BasicPortAllocator::BasicPortAllocator(
+    rtc::NetworkManager* network_manager,
+    rtc::PacketSocketFactory* socket_factory)
+    : network_manager_(network_manager),
+      socket_factory_(socket_factory),
+      stun_servers_() {
   ASSERT(network_manager_ != nullptr);
   ASSERT(socket_factory_ != nullptr);
   Construct();
 }
 
 BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager)
-    : network_manager_(network_manager), socket_factory_(nullptr) {
+    : network_manager_(network_manager),
+      socket_factory_(nullptr),
+      stun_servers_() {
   ASSERT(network_manager_ != nullptr);
   Construct();
 }
 
-BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
-                                       rtc::PacketSocketFactory* socket_factory,
-                                       const ServerAddresses& stun_servers)
-    : network_manager_(network_manager), socket_factory_(socket_factory) {
+BasicPortAllocator::BasicPortAllocator(
+    rtc::NetworkManager* network_manager,
+    rtc::PacketSocketFactory* socket_factory,
+    const ServerAddresses& stun_servers)
+    : network_manager_(network_manager),
+      socket_factory_(socket_factory),
+      stun_servers_(stun_servers) {
   ASSERT(socket_factory_ != NULL);
-  SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0);
   Construct();
 }
 
@@ -93,8 +100,10 @@ BasicPortAllocator::BasicPortAllocator(
     const rtc::SocketAddress& relay_address_udp,
     const rtc::SocketAddress& relay_address_tcp,
     const rtc::SocketAddress& relay_address_ssl)
-    : network_manager_(network_manager), socket_factory_(NULL) {
-  std::vector<RelayServerConfig> turn_servers;
+    : network_manager_(network_manager),
+      socket_factory_(NULL),
+      stun_servers_(stun_servers) {
+
   RelayServerConfig config(RELAY_GTURN);
   if (!relay_address_udp.IsNil()) {
     config.ports.push_back(ProtocolAddress(relay_address_udp, PROTO_UDP));
@@ -107,10 +116,9 @@ BasicPortAllocator::BasicPortAllocator(
   }
 
   if (!config.ports.empty()) {
-    turn_servers.push_back(config);
+    AddTurnServer(config);
   }
 
-  SetConfiguration(stun_servers, turn_servers, 0);
   Construct();
 }
 
@@ -128,11 +136,6 @@ PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
       this, content_name, component, ice_ufrag, ice_pwd);
 }
 
-void BasicPortAllocator::AddTurnServer(const RelayServerConfig& turn_server) {
-  std::vector<RelayServerConfig> new_turn_servers = turn_servers();
-  new_turn_servers.push_back(turn_server);
-  SetConfiguration(stun_servers(), new_turn_servers, candidate_pool_size());
-}
 
 // BasicPortAllocatorSession
 BasicPortAllocatorSession::BasicPortAllocatorSession(
@@ -204,61 +207,6 @@ void BasicPortAllocatorSession::ClearGettingPorts() {
     sequences_[i]->Stop();
 }
 
-std::vector<PortInterface*> BasicPortAllocatorSession::ReadyPorts() const {
-  std::vector<PortInterface*> ret;
-  for (const PortData& port : ports_) {
-    if (port.ready() || port.complete()) {
-      ret.push_back(port.port());
-    }
-  }
-  return ret;
-}
-
-std::vector<Candidate> BasicPortAllocatorSession::ReadyCandidates() const {
-  std::vector<Candidate> candidates;
-  for (const PortData& data : ports_) {
-    for (const Candidate& candidate : data.port()->Candidates()) {
-      if (!CheckCandidateFilter(candidate)) {
-        continue;
-      }
-      ProtocolType pvalue;
-      if (!StringToProto(candidate.protocol().c_str(), &pvalue) ||
-          !data.sequence()->ProtocolEnabled(pvalue)) {
-        continue;
-      }
-      candidates.push_back(candidate);
-    }
-  }
-  return candidates;
-}
-
-bool BasicPortAllocatorSession::CandidatesAllocationDone() const {
-  // Done only if all required AllocationSequence objects
-  // are created.
-  if (!allocation_sequences_created_) {
-    return false;
-  }
-
-  // Check that all port allocation sequences are complete (not running).
-  if (std::any_of(sequences_.begin(), sequences_.end(),
-                  [](const AllocationSequence* sequence) {
-                    return sequence->state() == AllocationSequence::kRunning;
-                  })) {
-    return false;
-  }
-
-  // If all allocated ports are in complete state, session must have got all
-  // expected candidates. Session will trigger candidates allocation complete
-  // signal.
-  if (!std::all_of(ports_.begin(), ports_.end(), [](const PortData& port) {
-        return (port.complete() || port.error());
-      })) {
-    return false;
-  }
-
-  return true;
-}
-
 void BasicPortAllocatorSession::OnMessage(rtc::Message *message) {
   switch (message->message_id) {
   case MSG_CONFIG_START:
@@ -290,13 +238,6 @@ void BasicPortAllocatorSession::OnMessage(rtc::Message *message) {
     break;
   default:
     ASSERT(false);
-  }
-}
-
-void BasicPortAllocatorSession::UpdateIceParametersInternal() {
-  for (PortData& port : ports_) {
-    port.port()->set_content_name(content_name());
-    port.port()->SetIceParameters(component(), ice_ufrag(), ice_pwd());
   }
 }
 
@@ -333,7 +274,7 @@ void BasicPortAllocatorSession::OnConfigStop() {
   bool send_signal = false;
   for (std::vector<PortData>::iterator it = ports_.begin();
        it != ports_.end(); ++it) {
-    if (!it->complete() && !it->error()) {
+    if (!it->complete()) {
       // Updating port state to error, which didn't finish allocating candidates
       // yet.
       it->set_error();
@@ -495,12 +436,12 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
 
   LOG(LS_INFO) << "Adding allocated port for " << content_name();
   port->set_content_name(content_name());
-  port->set_component(component());
+  port->set_component(component_);
   port->set_generation(generation());
   if (allocator_->proxy().type != rtc::PROXY_NONE)
     port->set_proxy(allocator_->user_agent(), allocator_->proxy());
-  port->set_send_retransmit_count_attribute(
-      (flags() & PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
+  port->set_send_retransmit_count_attribute((allocator_->flags() &
+      PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
 
   // Push down the candidate_filter to individual port.
   uint32_t candidate_filter = allocator_->candidate_filter();
@@ -543,9 +484,8 @@ void BasicPortAllocatorSession::OnCandidateReady(
   ASSERT(data != NULL);
   // Discarding any candidate signal if port allocation status is
   // already in completed state.
-  if (data->complete() || data->error()) {
+  if (data->complete())
     return;
-  }
 
   ProtocolType pvalue;
   bool candidate_signalable = CheckCandidateFilter(c);
@@ -596,9 +536,8 @@ void BasicPortAllocatorSession::OnPortComplete(Port* port) {
   ASSERT(data != NULL);
 
   // Ignore any late signals.
-  if (data->complete() || data->error()) {
+  if (data->complete())
     return;
-  }
 
   // Moving to COMPLETE state.
   data->set_complete();
@@ -611,9 +550,8 @@ void BasicPortAllocatorSession::OnPortError(Port* port) {
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
   // We might have already given up on this port and stopped it.
-  if (data->complete() || data->error()) {
+  if (data->complete())
     return;
-  }
 
   // SignalAddressError is currently sent from StunPort/TurnPort.
   // But this signal itself is generic.
@@ -649,7 +587,7 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
   }
 }
 
-bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) const {
+bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
   uint32_t filter = allocator_->candidate_filter();
 
   // When binding to any address, before sending packets out, the getsockname
@@ -687,15 +625,29 @@ void BasicPortAllocatorSession::OnPortAllocationComplete(
 }
 
 void BasicPortAllocatorSession::MaybeSignalCandidatesAllocationDone() {
-  if (CandidatesAllocationDone()) {
-    if (pooled()) {
-      LOG(LS_INFO) << "All candidates gathered for pooled session.";
-    } else {
-      LOG(LS_INFO) << "All candidates gathered for " << content_name() << ":"
-                   << component() << ":" << generation();
-    }
-    SignalCandidatesAllocationDone(this);
+  // Send signal only if all required AllocationSequence objects
+  // are created.
+  if (!allocation_sequences_created_)
+    return;
+
+  // Check that all port allocation sequences are complete.
+  for (std::vector<AllocationSequence*>::iterator it = sequences_.begin();
+       it != sequences_.end(); ++it) {
+    if ((*it)->state() == AllocationSequence::kRunning)
+      return;
   }
+
+  // If all allocated ports are in complete state, session must have got all
+  // expected candidates. Session will trigger candidates allocation complete
+  // signal.
+  for (std::vector<PortData>::iterator it = ports_.begin();
+       it != ports_.end(); ++it) {
+    if (!it->complete())
+      return;
+  }
+  LOG(LS_INFO) << "All candidates gathered for " << content_name_ << ":"
+               << component_ << ":" << generation();
+  SignalCandidatesAllocationDone(this);
 }
 
 void BasicPortAllocatorSession::OnPortDestroyed(

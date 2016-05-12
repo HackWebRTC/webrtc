@@ -2586,20 +2586,3 @@ TEST_F(PortTest, TestSupportsProtocol) {
   EXPECT_TRUE(turn_port->SupportsProtocol(UDP_PROTOCOL_NAME));
   EXPECT_FALSE(turn_port->SupportsProtocol(TCP_PROTOCOL_NAME));
 }
-
-// Test that SetIceParameters updates the component, ufrag and password
-// on both the port itself and its candidates.
-TEST_F(PortTest, TestSetIceParameters) {
-  std::unique_ptr<TestPort> port(
-      CreateTestPort(kLocalAddr1, "ufrag1", "password1"));
-  port->PrepareAddress();
-  EXPECT_EQ(1UL, port->Candidates().size());
-  port->SetIceParameters(1, "ufrag2", "password2");
-  EXPECT_EQ(1, port->component());
-  EXPECT_EQ("ufrag2", port->username_fragment());
-  EXPECT_EQ("password2", port->password());
-  const Candidate& candidate = port->Candidates()[0];
-  EXPECT_EQ(1, candidate.component());
-  EXPECT_EQ("ufrag2", candidate.username());
-  EXPECT_EQ("password2", candidate.password());
-}

@@ -219,19 +219,6 @@ Port::~Port() {
     delete list[i];
 }
 
-void Port::SetIceParameters(int component,
-                            const std::string& username_fragment,
-                            const std::string& password) {
-  component_ = component;
-  ice_username_fragment_ = username_fragment;
-  password_ = password;
-  for (Candidate& c : candidates_) {
-    c.set_component(component);
-    c.set_username(username_fragment);
-    c.set_password(password);
-  }
-}
-
 Connection* Port::GetConnection(const rtc::SocketAddress& remote_addr) {
   AddressMap::const_iterator iter = connections_.find(remote_addr);
   if (iter != connections_.end())

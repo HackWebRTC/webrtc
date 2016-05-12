@@ -24,7 +24,7 @@
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/engine/webrtccommon.h"
 #include "webrtc/media/engine/webrtcvoe.h"
-#include "webrtc/p2p/base/fakeportallocator.h"
+#include "webrtc/p2p/client/fakeportallocator.h"
 
 using webrtc::DataChannelInterface;
 using webrtc::DtlsIdentityStoreInterface;

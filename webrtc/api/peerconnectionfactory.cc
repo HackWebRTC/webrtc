@@ -283,9 +283,7 @@ PeerConnectionFactory::CreatePeerConnection(
     allocator.reset(new cricket::BasicPortAllocator(
         default_network_manager_.get(), default_socket_factory_.get()));
   }
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask, allocator.get(),
-                options_.network_ignore_mask));
+  allocator->SetNetworkIgnoreMask(options_.network_ignore_mask);
 
   rtc::scoped_refptr<PeerConnection> pc(
       new rtc::RefCountedObject<PeerConnection>(this));

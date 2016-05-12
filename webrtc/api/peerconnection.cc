@@ -376,23 +376,6 @@ void AddSendStreams(
   }
 }
 
-uint32_t ConvertIceTransportTypeToCandidateFilter(
-    PeerConnectionInterface::IceTransportsType type) {
-  switch (type) {
-    case PeerConnectionInterface::kNone:
-      return cricket::CF_NONE;
-    case PeerConnectionInterface::kRelay:
-      return cricket::CF_RELAY;
-    case PeerConnectionInterface::kNoHost:
-      return (cricket::CF_ALL & ~cricket::CF_HOST);
-    case PeerConnectionInterface::kAll:
-      return cricket::CF_ALL;
-    default:
-      ASSERT(false);
-  }
-  return cricket::CF_NONE;
-}
-
 }  // namespace
 
 namespace webrtc {
@@ -553,14 +536,6 @@ PeerConnection::~PeerConnection() {
   for (const auto& receiver : receivers_) {
     receiver->Stop();
   }
-  // Destroy stats_ because it depends on session_.
-  stats_.reset(nullptr);
-  // Now destroy session_ before destroying other members,
-  // because its destruction fires signals (such as VoiceChannelDestroyed)
-  // which will trigger some final actions in PeerConnection...
-  session_.reset(nullptr);
-  // port_allocator_ lives on the worker thread and should be destroyed there.
-  worker_thread()->Invoke<void>([this] { port_allocator_.reset(nullptr); });
 }
 
 bool PeerConnection::Initialize(
@@ -577,12 +552,35 @@ bool PeerConnection::Initialize(
 
   port_allocator_ = std::move(allocator);
 
-  // The port allocator lives on the worker thread and should be initialized
-  // there.
-  if (!worker_thread()->Invoke<bool>(rtc::Bind(
-          &PeerConnection::InitializePortAllocator_w, this, configuration))) {
+  cricket::ServerAddresses stun_servers;
+  std::vector<cricket::RelayServerConfig> turn_servers;
+  if (!ParseIceServers(configuration.servers, &stun_servers, &turn_servers)) {
     return false;
   }
+  port_allocator_->SetIceServers(stun_servers, turn_servers);
+
+  // To handle both internal and externally created port allocator, we will
+  // enable BUNDLE here.
+  int portallocator_flags = port_allocator_->flags();
+  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                         cricket::PORTALLOCATOR_ENABLE_IPV6;
+  // If the disable-IPv6 flag was specified, we'll not override it
+  // by experiment.
+  if (configuration.disable_ipv6) {
+    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
+  } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
+             "Disabled") {
+    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
+  }
+
+  if (configuration.tcp_candidate_policy == kTcpCandidatePolicyDisabled) {
+    portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_TCP;
+    LOG(LS_INFO) << "TCP candidates are disabled.";
+  }
+
+  port_allocator_->set_flags(portallocator_flags);
+  // No step delay is used while allocating ports.
+  port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
 
   media_controller_.reset(
       factory_->CreateMediaController(configuration.media_config));
@@ -1160,19 +1158,18 @@ void PeerConnection::SetRemoteDescription(
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 }
 
-bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
+bool PeerConnection::SetConfiguration(const RTCConfiguration& config) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
   if (port_allocator_) {
-    if (!worker_thread()->Invoke<bool>(
-            rtc::Bind(&PeerConnection::ReconfigurePortAllocator_w, this,
-                      configuration))) {
+    cricket::ServerAddresses stun_servers;
+    std::vector<cricket::RelayServerConfig> turn_servers;
+    if (!ParseIceServers(config.servers, &stun_servers, &turn_servers)) {
       return false;
     }
+    port_allocator_->SetIceServers(stun_servers, turn_servers);
   }
-
-  // TODO(deadbeef): Shouldn't have to hop to the worker thread twice...
-  session_->SetIceConfig(session_->ParseIceConfig(configuration));
-  return true;
+  session_->SetIceConfig(session_->ParseIceConfig(config));
+  return session_->SetIceTransports(config.type);
 }
 
 bool PeerConnection::AddIceCandidate(
@@ -2085,62 +2082,6 @@ DataChannel* PeerConnection::FindDataChannelBySid(int sid) const {
     }
   }
   return nullptr;
-}
-
-bool PeerConnection::InitializePortAllocator_w(
-    const RTCConfiguration& configuration) {
-  cricket::ServerAddresses stun_servers;
-  std::vector<cricket::RelayServerConfig> turn_servers;
-  if (!ParseIceServers(configuration.servers, &stun_servers, &turn_servers)) {
-    return false;
-  }
-
-  // To handle both internal and externally created port allocator, we will
-  // enable BUNDLE here.
-  int portallocator_flags = port_allocator_->flags();
-  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                         cricket::PORTALLOCATOR_ENABLE_IPV6;
-  // If the disable-IPv6 flag was specified, we'll not override it
-  // by experiment.
-  if (configuration.disable_ipv6) {
-    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
-  } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
-             "Disabled") {
-    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
-  }
-
-  if (configuration.tcp_candidate_policy == kTcpCandidatePolicyDisabled) {
-    portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_TCP;
-    LOG(LS_INFO) << "TCP candidates are disabled.";
-  }
-
-  port_allocator_->set_flags(portallocator_flags);
-  // No step delay is used while allocating ports.
-  port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
-  port_allocator_->set_candidate_filter(
-      ConvertIceTransportTypeToCandidateFilter(configuration.type));
-
-  // Call this last since it may create pooled allocator sessions using the
-  // properties set above.
-  port_allocator_->SetConfiguration(stun_servers, turn_servers,
-                                    configuration.ice_candidate_pool_size);
-  return true;
-}
-
-bool PeerConnection::ReconfigurePortAllocator_w(
-    const RTCConfiguration& configuration) {
-  cricket::ServerAddresses stun_servers;
-  std::vector<cricket::RelayServerConfig> turn_servers;
-  if (!ParseIceServers(configuration.servers, &stun_servers, &turn_servers)) {
-    return false;
-  }
-  port_allocator_->set_candidate_filter(
-      ConvertIceTransportTypeToCandidateFilter(configuration.type));
-  // Call this last since it may create pooled allocator sessions using the
-  // candidate filter set above.
-  port_allocator_->SetConfiguration(stun_servers, turn_servers,
-                                    configuration.ice_candidate_pool_size);
-  return true;
 }
 
 }  // namespace webrtc
