@@ -22,26 +22,47 @@ FrameObject::FrameObject()
       inter_layer_predicted(false) {}
 
 RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
-                               uint16_t first_packet,
-                               uint16_t last_packet)
+                               uint16_t first_seq_num,
+                               uint16_t last_seq_num)
     : packet_buffer_(packet_buffer),
-      first_packet_(first_packet),
-      last_packet_(last_packet) {}
+      first_seq_num_(first_seq_num),
+      last_seq_num_(last_seq_num) {
+  VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num);
+  if (packet) {
+    frame_type_ = packet->frameType;
+    codec_type_ = packet->codec;
+  }
+}
 
 RtpFrameObject::~RtpFrameObject() {
   packet_buffer_->ReturnFrame(this);
 }
 
 uint16_t RtpFrameObject::first_seq_num() const {
-  return first_packet_;
+  return first_seq_num_;
 }
 
 uint16_t RtpFrameObject::last_seq_num() const {
-  return last_packet_;
+  return last_seq_num_;
+}
+
+FrameType RtpFrameObject::frame_type() const {
+  return frame_type_;
+}
+
+VideoCodecType RtpFrameObject::codec_type() const {
+  return codec_type_;
 }
 
 bool RtpFrameObject::GetBitstream(uint8_t* destination) const {
   return packet_buffer_->GetBitstream(*this, destination);
+}
+
+RTPVideoTypeHeader* RtpFrameObject::GetCodecHeader() const {
+  VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);
+  if (!packet)
+    return nullptr;
+  return &packet->codecSpecificHeader.codecHeader;
 }
 
 }  // namespace video_coding

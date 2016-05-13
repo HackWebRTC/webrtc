@@ -10,7 +10,8 @@
 
 #include <cstring>
 #include <limits>
-#include <memory>
+#include <map>
+#include <set>
 #include <utility>
 
 #include "webrtc/modules/video_coding/frame_object.h"
@@ -444,7 +445,7 @@ TEST_F(TestPacketBuffer, FreeSlotsOnFrameDestruction) {
   EXPECT_EQ(1UL, frames_from_callback_.size());
 }
 
-TEST_F(TestPacketBuffer, Flush) {
+TEST_F(TestPacketBuffer, Clear) {
   uint16_t seq_num = Rand();
 
   //            seq_num    , kf, frst, lst
@@ -453,7 +454,7 @@ TEST_F(TestPacketBuffer, Flush) {
   InsertGeneric(seq_num + 2, kF, kF  , kT);
   EXPECT_EQ(1UL, frames_from_callback_.size());
 
-  packet_buffer_->Flush();
+  packet_buffer_->Clear();
 
   //            seq_num                 , kf, frst, lst
   InsertGeneric(seq_num + kStartSize    , kT, kT  , kF);
@@ -462,7 +463,7 @@ TEST_F(TestPacketBuffer, Flush) {
   EXPECT_EQ(2UL, frames_from_callback_.size());
 }
 
-TEST_F(TestPacketBuffer, InvalidateFrameByFlushing) {
+TEST_F(TestPacketBuffer, InvalidateFrameByClearing) {
   VCMPacket packet;
   packet.codec = kVideoCodecGeneric;
   packet.frameType = kVideoFrameKey;
@@ -472,7 +473,7 @@ TEST_F(TestPacketBuffer, InvalidateFrameByFlushing) {
   EXPECT_TRUE(packet_buffer_->InsertPacket(packet));
   ASSERT_EQ(1UL, frames_from_callback_.size());
 
-  packet_buffer_->Flush();
+  packet_buffer_->Clear();
   EXPECT_FALSE(frames_from_callback_.begin()->second->GetBitstream(nullptr));
 }
 

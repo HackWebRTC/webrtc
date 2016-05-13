@@ -11,10 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 #define WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include <array>
+#include "webrtc/common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -44,18 +42,23 @@ class PacketBuffer;
 class RtpFrameObject : public FrameObject {
  public:
   RtpFrameObject(PacketBuffer* packet_buffer,
-                 uint16_t first_packet,
-                 uint16_t last_packet);
+                 uint16_t first_seq_num,
+                 uint16_t last_seq_num);
 
   ~RtpFrameObject();
   uint16_t first_seq_num() const;
   uint16_t last_seq_num() const;
+  FrameType frame_type() const;
+  VideoCodecType codec_type() const;
   bool GetBitstream(uint8_t* destination) const override;
+  RTPVideoTypeHeader* GetCodecHeader() const;
 
  private:
   PacketBuffer* packet_buffer_;
-  uint16_t first_packet_;
-  uint16_t last_packet_;
+  FrameType frame_type_;
+  VideoCodecType codec_type_;
+  uint16_t first_seq_num_;
+  uint16_t last_seq_num_;
 };
 
 }  // namespace video_coding

@@ -54,6 +54,8 @@ source_set("video_coding") {
     "percentile_filter.h",
     "receiver.cc",
     "receiver.h",
+    "rtp_frame_reference_finder.cc",
+    "rtp_frame_reference_finder.h",
     "rtt_filter.cc",
     "rtt_filter.h",
     "session_info.cc",
