@@ -290,4 +290,28 @@ TEST_F(TestNackModule, ClearUpToWrap) {
   EXPECT_EQ(0, sent_nacks_[0]);
 }
 
+TEST_F(TestNackModule, PacketNackCount) {
+  VCMPacket packet;
+  packet.seqNum = 0;
+  EXPECT_EQ(0, nack_module_.OnReceivedPacket(packet));
+  packet.seqNum = 2;
+  EXPECT_EQ(0, nack_module_.OnReceivedPacket(packet));
+  packet.seqNum = 1;
+  EXPECT_EQ(1, nack_module_.OnReceivedPacket(packet));
+
+  sent_nacks_.clear();
+  nack_module_.UpdateRtt(100);
+  packet.seqNum = 5;
+  EXPECT_EQ(0, nack_module_.OnReceivedPacket(packet));
+  clock_->AdvanceTimeMilliseconds(100);
+  nack_module_.Process();
+  clock_->AdvanceTimeMilliseconds(100);
+  nack_module_.Process();
+  packet.seqNum = 3;
+  EXPECT_EQ(3, nack_module_.OnReceivedPacket(packet));
+  packet.seqNum = 4;
+  EXPECT_EQ(3, nack_module_.OnReceivedPacket(packet));
+  EXPECT_EQ(0, nack_module_.OnReceivedPacket(packet));
+}
+
 }  // namespace webrtc

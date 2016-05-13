@@ -49,17 +49,17 @@ NackModule::NackModule(Clock* clock,
       running_(true),
       initialized_(false),
       rtt_ms_(kDefaultRttMs),
-      last_seq_num_(0),
+      newest_seq_num_(0),
       next_process_time_ms_(-1) {
   RTC_DCHECK(clock_);
   RTC_DCHECK(nack_sender_);
   RTC_DCHECK(keyframe_request_sender_);
 }
 
-void NackModule::OnReceivedPacket(const VCMPacket& packet) {
+int NackModule::OnReceivedPacket(const VCMPacket& packet) {
   rtc::CritScope lock(&crit_);
   if (!running_)
-    return;
+    return -1;
   uint16_t seq_num = packet.seqNum;
   // TODO(philipel): When the packet includes information whether it is
   //                 retransmitted or not, use that value instead. For
@@ -69,40 +69,48 @@ void NackModule::OnReceivedPacket(const VCMPacket& packet) {
   bool is_keyframe = packet.isFirstPacket && packet.frameType == kVideoFrameKey;
 
   if (!initialized_) {
-    last_seq_num_ = seq_num;
+    newest_seq_num_ = seq_num;
     if (is_keyframe)
       keyframe_list_.insert(seq_num);
     initialized_ = true;
-    return;
+    return 0;
   }
 
-  if (seq_num == last_seq_num_)
-    return;
+  // Since the |newest_seq_num_| is a packet we have actually received we know
+  // that packet has never been Nacked.
+  if (seq_num == newest_seq_num_)
+    return 0;
 
-  if (AheadOf(last_seq_num_, seq_num)) {
+  if (AheadOf(newest_seq_num_, seq_num)) {
     // An out of order packet has been received.
-    nack_list_.erase(seq_num);
+    auto nack_list_it = nack_list_.find(seq_num);
+    int nacks_sent_for_packet = 0;
+    if (nack_list_it != nack_list_.end()) {
+      nacks_sent_for_packet = nack_list_it->second.retries;
+      nack_list_.erase(nack_list_it);
+    }
     if (!is_retransmitted)
       UpdateReorderingStatistics(seq_num);
-    return;
-  } else {
-    AddPacketsToNack(last_seq_num_ + 1, seq_num);
-    last_seq_num_ = seq_num;
-
-    // Keep track of new keyframes.
-    if (is_keyframe)
-      keyframe_list_.insert(seq_num);
-
-    // And remove old ones so we don't accumulate keyframes.
-    auto it = keyframe_list_.lower_bound(seq_num - kMaxPacketAge);
-    if (it != keyframe_list_.begin())
-      keyframe_list_.erase(keyframe_list_.begin(), it);
-
-    // Are there any nacks that are waiting for this seq_num.
-    std::vector<uint16_t> nack_batch = GetNackBatch(kSeqNumOnly);
-    if (!nack_batch.empty())
-      nack_sender_->SendNack(nack_batch);
+    return nacks_sent_for_packet;
   }
+  AddPacketsToNack(newest_seq_num_ + 1, seq_num);
+  newest_seq_num_ = seq_num;
+
+  // Keep track of new keyframes.
+  if (is_keyframe)
+    keyframe_list_.insert(seq_num);
+
+  // And remove old ones so we don't accumulate keyframes.
+  auto it = keyframe_list_.lower_bound(seq_num - kMaxPacketAge);
+  if (it != keyframe_list_.begin())
+    keyframe_list_.erase(keyframe_list_.begin(), it);
+
+  // Are there any nacks that are waiting for this seq_num.
+  std::vector<uint16_t> nack_batch = GetNackBatch(kSeqNumOnly);
+  if (!nack_batch.empty())
+    nack_sender_->SendNack(nack_batch);
+
+  return 0;
 }
 
 void NackModule::ClearUpTo(uint16_t seq_num) {
@@ -215,7 +223,7 @@ std::vector<uint16_t> NackModule::GetNackBatch(NackFilterOptions options) {
   auto it = nack_list_.begin();
   while (it != nack_list_.end()) {
     if (consider_seq_num && it->second.sent_at_time == -1 &&
-        AheadOrAt(last_seq_num_, it->second.send_at_seq_num)) {
+        AheadOrAt(newest_seq_num_, it->second.send_at_seq_num)) {
       nack_batch.emplace_back(it->second.seq_num);
       ++it->second.retries;
       it->second.sent_at_time = now_ms;
@@ -248,8 +256,8 @@ std::vector<uint16_t> NackModule::GetNackBatch(NackFilterOptions options) {
 }
 
 void NackModule::UpdateReorderingStatistics(uint16_t seq_num) {
-  RTC_DCHECK(AheadOf(last_seq_num_, seq_num));
-  uint16_t diff = ReverseDiff(last_seq_num_, seq_num);
+  RTC_DCHECK(AheadOf(newest_seq_num_, seq_num));
+  uint16_t diff = ReverseDiff(newest_seq_num_, seq_num);
   reordering_histogram_.Add(diff);
 }
 
