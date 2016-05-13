@@ -1000,6 +1000,19 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtp2());
   }
 
+  void TestDeinit() {
+    CreateChannels(RTCP, RTCP);
+    EXPECT_TRUE(SendInitiate());
+    EXPECT_TRUE(SendAccept());
+    SendRtp1();
+    SendRtp2();
+    SendRtcp1();
+    SendRtcp2();
+    // Do not wait, destroy channels.
+    channel1_.reset(nullptr);
+    channel2_.reset(nullptr);
+  }
+
   // Check that RTCP is not transmitted if both sides don't support RTCP.
   void SendNoRtcpToNoRtcp() {
     CreateChannels(0, 0);
@@ -2076,6 +2089,10 @@ TEST_F(VoiceChannelSingleThreadTest, TestInit) {
   EXPECT_TRUE(media_channel1_->dtmf_info_queue().empty());
 }
 
+TEST_F(VoiceChannelSingleThreadTest, TestDeinit) {
+  Base::TestDeinit();
+}
+
 TEST_F(VoiceChannelSingleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
@@ -2402,6 +2419,10 @@ TEST_F(VoiceChannelDoubleThreadTest, TestInit) {
   EXPECT_TRUE(media_channel1_->dtmf_info_queue().empty());
 }
 
+TEST_F(VoiceChannelDoubleThreadTest, TestDeinit) {
+  Base::TestDeinit();
+}
+
 TEST_F(VoiceChannelDoubleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
@@ -2726,6 +2747,10 @@ TEST_F(VideoChannelSingleThreadTest, TestInit) {
   Base::TestInit();
 }
 
+TEST_F(VideoChannelSingleThreadTest, TestDeinit) {
+  Base::TestDeinit();
+}
+
 TEST_F(VideoChannelSingleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
@@ -2964,6 +2989,10 @@ TEST_F(VideoChannelSingleThreadTest, CanChangeMaxBitrate) {
 // VideoChannelDoubleThreadTest
 TEST_F(VideoChannelDoubleThreadTest, TestInit) {
   Base::TestInit();
+}
+
+TEST_F(VideoChannelDoubleThreadTest, TestDeinit) {
+  Base::TestDeinit();
 }
 
 TEST_F(VideoChannelDoubleThreadTest, TestSetContents) {
@@ -3277,6 +3306,10 @@ TEST_F(DataChannelSingleThreadTest, TestInit) {
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
 }
 
+TEST_F(DataChannelSingleThreadTest, TestDeinit) {
+  Base::TestDeinit();
+}
+
 TEST_F(DataChannelSingleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
@@ -3415,6 +3448,10 @@ TEST_F(DataChannelSingleThreadTest, TestSendData) {
 TEST_F(DataChannelDoubleThreadTest, TestInit) {
   Base::TestInit();
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
+}
+
+TEST_F(DataChannelDoubleThreadTest, TestDeinit) {
+  Base::TestDeinit();
 }
 
 TEST_F(DataChannelDoubleThreadTest, TestSetContents) {

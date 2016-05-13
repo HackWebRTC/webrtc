@@ -314,7 +314,8 @@ class BaseChannel
 
  private:
   bool InitNetwork_n();
-  void DeinitNetwork_n();
+  void DisconnectTransportChannels_n();
+  void DestroyTransportChannels_n();
   void SignalSentPacket_n(TransportChannel* channel,
                           const rtc::SentPacket& sent_packet);
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);

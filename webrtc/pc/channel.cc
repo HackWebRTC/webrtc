@@ -183,8 +183,6 @@ BaseChannel::~BaseChannel() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   Deinit();
   StopConnectionMonitor();
-  // Send any outstanding RTCP packets.
-  network_thread_->Invoke<void>(Bind(&BaseChannel::FlushRtcpMessages_n, this));
   // Eats any outstanding messages or packets.
   worker_thread_->Clear(&invoker_);
   worker_thread_->Clear(this);
@@ -194,21 +192,40 @@ BaseChannel::~BaseChannel() {
   delete media_channel_;
   // Note that we don't just call SetTransportChannel_n(nullptr) because that
   // would call a pure virtual method which we can't do from a destructor.
-  network_thread_->Invoke<void>(Bind(&BaseChannel::DeinitNetwork_n, this));
+  network_thread_->Invoke<void>(
+      Bind(&BaseChannel::DestroyTransportChannels_n, this));
   LOG(LS_INFO) << "Destroyed channel";
 }
 
-void BaseChannel::DeinitNetwork_n() {
+void BaseChannel::DisconnectTransportChannels_n() {
+  // Send any outstanding RTCP packets.
+  FlushRtcpMessages_n();
+
+  // Stop signals from transport channels, but keep them alive because
+  // media_channel may use them from a different thread.
   if (transport_channel_) {
     DisconnectFromTransportChannel(transport_channel_);
+  }
+  if (rtcp_transport_channel_) {
+    DisconnectFromTransportChannel(rtcp_transport_channel_);
+  }
+
+  // Clear pending read packets/messages.
+  network_thread_->Clear(&invoker_);
+  network_thread_->Clear(this);
+}
+
+void BaseChannel::DestroyTransportChannels_n() {
+  if (transport_channel_) {
     transport_controller_->DestroyTransportChannel_n(
         transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTP);
   }
   if (rtcp_transport_channel_) {
-    DisconnectFromTransportChannel(rtcp_transport_channel_);
     transport_controller_->DestroyTransportChannel_n(
         transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
   }
+  // Clear pending send packets/messages.
+  network_thread_->Clear(&invoker_);
   network_thread_->Clear(this);
 }
 
@@ -243,6 +260,11 @@ bool BaseChannel::InitNetwork_n() {
 void BaseChannel::Deinit() {
   RTC_DCHECK(worker_thread_->IsCurrent());
   media_channel_->SetInterface(NULL);
+  // Packets arrive on the network thread, processing packets calls virtual
+  // functions, so need to stop this process in Deinit that is called in
+  // derived classes destructor.
+  network_thread_->Invoke<void>(
+      Bind(&BaseChannel::DisconnectTransportChannels_n, this));
 }
 
 bool BaseChannel::SetTransport(const std::string& transport_name) {
