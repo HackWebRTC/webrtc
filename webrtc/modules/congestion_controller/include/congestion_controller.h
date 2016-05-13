@@ -95,12 +95,10 @@ class CongestionController : public CallStatsObserver, public Module {
  private:
   void Init();
   void MaybeTriggerOnNetworkChanged();
+  // Updates |send_queue_is_full_|. Returns true if |send_queue_is_full_|
+  // has changed.
+  bool UpdateSendQueueStatus(bool send_queue_is_full);
 
-  bool IsSendQueueFull() const;
-  bool IsNetworkDown() const;
-  bool HasNetworkParametersToReportChanged(uint32_t bitrate_bps,
-                                           uint8_t fraction_loss,
-                                           int64_t rtt);
   Clock* const clock_;
   Observer* const observer_;
   const std::unique_ptr<PacketRouter> packet_router_;
@@ -111,10 +109,7 @@ class CongestionController : public CallStatsObserver, public Module {
   TransportFeedbackAdapter transport_feedback_adapter_;
   int min_bitrate_bps_;
   rtc::CriticalSection critsect_;
-  uint32_t last_reported_bitrate_bps_ GUARDED_BY(critsect_);
-  uint8_t last_reported_fraction_loss_ GUARDED_BY(critsect_);
-  int64_t last_reported_rtt_ GUARDED_BY(critsect_);
-  NetworkState network_state_ GUARDED_BY(critsect_);
+  bool send_queue_is_full_ GUARDED_BY(critsect_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(CongestionController);
 };

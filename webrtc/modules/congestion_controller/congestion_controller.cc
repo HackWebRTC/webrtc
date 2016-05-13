@@ -151,10 +151,7 @@ CongestionController::CongestionController(
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
-      last_reported_bitrate_bps_(0),
-      last_reported_fraction_loss_(0),
-      last_reported_rtt_(0),
-      network_state_(kNetworkUp) {
+      send_queue_is_full_(false) {
   Init();
 }
 
@@ -173,10 +170,7 @@ CongestionController::CongestionController(
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
-      last_reported_bitrate_bps_(0),
-      last_reported_fraction_loss_(0),
-      last_reported_rtt_(0),
-      network_state_(kNetworkUp) {
+      send_queue_is_full_(false) {
   Init();
 }
 
@@ -198,10 +192,7 @@ CongestionController::CongestionController(
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
-      last_reported_bitrate_bps_(0),
-      last_reported_fraction_loss_(0),
-      last_reported_rtt_(0),
-      network_state_(kNetworkUp) {
+      send_queue_is_full_(false) {
   Init();
 }
 
@@ -274,11 +265,6 @@ void CongestionController::SignalNetworkState(NetworkState state) {
   } else {
     pacer_->Pause();
   }
-  {
-    rtc::CritScope cs(&critsect_);
-    network_state_ = state;
-  }
-  MaybeTriggerOnNetworkChanged();
 }
 
 void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {
@@ -311,40 +297,24 @@ void CongestionController::MaybeTriggerOnNetworkChanged() {
   uint32_t bitrate_bps;
   uint8_t fraction_loss;
   int64_t rtt;
-  bool estimate_changed = bitrate_controller_->GetNetworkParameters(
+  bool network_changed = bitrate_controller_->GetNetworkParameters(
       &bitrate_bps, &fraction_loss, &rtt);
-  if (estimate_changed)
+  if (network_changed)
     pacer_->SetEstimatedBitrate(bitrate_bps);
-
-  bitrate_bps = IsNetworkDown() || IsSendQueueFull() ? 0 : bitrate_bps;
-
-  if (HasNetworkParametersToReportChanged(bitrate_bps, fraction_loss, rtt)) {
+  bool send_queue_is_full =
+      pacer_->ExpectedQueueTimeMs() > PacedSender::kMaxQueueLengthMs;
+  bitrate_bps = send_queue_is_full ? 0 : bitrate_bps;
+  if ((network_changed && !send_queue_is_full) ||
+      UpdateSendQueueStatus(send_queue_is_full)) {
     observer_->OnNetworkChanged(bitrate_bps, fraction_loss, rtt);
   }
 }
 
-bool CongestionController::HasNetworkParametersToReportChanged(
-    uint32_t bitrate_bps,
-    uint8_t fraction_loss,
-    int64_t rtt) {
+bool CongestionController::UpdateSendQueueStatus(bool send_queue_is_full) {
   rtc::CritScope cs(&critsect_);
-  bool changed =
-      last_reported_bitrate_bps_ != bitrate_bps ||
-      (bitrate_bps > 0 && (last_reported_fraction_loss_ != fraction_loss ||
-                           last_reported_rtt_ != rtt));
-  last_reported_bitrate_bps_ = bitrate_bps;
-  last_reported_fraction_loss_ = fraction_loss;
-  last_reported_rtt_ = rtt;
-  return changed;
-}
-
-bool CongestionController::IsSendQueueFull() const {
-  return pacer_->ExpectedQueueTimeMs() > PacedSender::kMaxQueueLengthMs;
-}
-
-bool CongestionController::IsNetworkDown() const {
-  rtc::CritScope cs(&critsect_);
-  return network_state_ == kNetworkDown;
+  bool result = send_queue_is_full_ != send_queue_is_full;
+  send_queue_is_full_ = send_queue_is_full;
+  return result;
 }
 
 }  // namespace webrtc
