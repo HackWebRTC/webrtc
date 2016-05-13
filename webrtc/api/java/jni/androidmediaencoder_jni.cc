@@ -795,9 +795,12 @@ bool MediaCodecVideoEncoder::EncodeByteBufferOnCodecThread(JNIEnv* jni,
   CHECK_EXCEPTION(jni);
   RTC_CHECK(yuv_buffer) << "Indirect buffer??";
   RTC_CHECK(!libyuv::ConvertFromI420(
-      frame.buffer(webrtc::kYPlane), frame.stride(webrtc::kYPlane),
-      frame.buffer(webrtc::kUPlane), frame.stride(webrtc::kUPlane),
-      frame.buffer(webrtc::kVPlane), frame.stride(webrtc::kVPlane),
+      frame.video_frame_buffer()->DataY(),
+      frame.video_frame_buffer()->StrideY(),
+      frame.video_frame_buffer()->DataU(),
+      frame.video_frame_buffer()->StrideU(),
+      frame.video_frame_buffer()->DataV(),
+      frame.video_frame_buffer()->StrideV(),
       yuv_buffer, width_, width_, height_, encoder_fourcc_))
       << "ConvertFromI420 failed";
 

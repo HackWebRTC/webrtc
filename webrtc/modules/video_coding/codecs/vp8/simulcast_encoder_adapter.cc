@@ -301,14 +301,21 @@ int SimulcastEncoderAdapter::Encode(
       // Aligning stride values based on width.
       dst_frame.CreateEmptyFrame(dst_width, dst_height, dst_width,
                                  (dst_width + 1) / 2, (dst_width + 1) / 2);
-      libyuv::I420Scale(
-          input_image.buffer(kYPlane), input_image.stride(kYPlane),
-          input_image.buffer(kUPlane), input_image.stride(kUPlane),
-          input_image.buffer(kVPlane), input_image.stride(kVPlane), src_width,
-          src_height, dst_frame.buffer(kYPlane), dst_frame.stride(kYPlane),
-          dst_frame.buffer(kUPlane), dst_frame.stride(kUPlane),
-          dst_frame.buffer(kVPlane), dst_frame.stride(kVPlane), dst_width,
-          dst_height, libyuv::kFilterBilinear);
+      libyuv::I420Scale(input_image.video_frame_buffer()->DataY(),
+                        input_image.video_frame_buffer()->StrideY(),
+                        input_image.video_frame_buffer()->DataU(),
+                        input_image.video_frame_buffer()->StrideU(),
+                        input_image.video_frame_buffer()->DataV(),
+                        input_image.video_frame_buffer()->StrideV(),
+                        src_width, src_height,
+                        dst_frame.video_frame_buffer()->MutableDataY(),
+                        dst_frame.video_frame_buffer()->StrideY(),
+                        dst_frame.video_frame_buffer()->MutableDataU(),
+                        dst_frame.video_frame_buffer()->StrideU(),
+                        dst_frame.video_frame_buffer()->MutableDataV(),
+                        dst_frame.video_frame_buffer()->StrideV(),
+                        dst_width, dst_height,
+                        libyuv::kFilterBilinear);
       dst_frame.set_timestamp(input_image.timestamp());
       dst_frame.set_render_time_ms(input_image.render_time_ms());
       streaminfos_[stream_idx].encoder->Encode(dst_frame, codec_specific_info,
