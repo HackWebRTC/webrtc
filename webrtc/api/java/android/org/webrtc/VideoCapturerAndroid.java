@@ -38,13 +38,14 @@ import java.util.concurrent.TimeUnit;
 // arbitrary Java threads. All public entry points are thread safe, and delegate the work to the
 // camera thread. The internal *OnCameraThread() methods must check |camera| for null to check if
 // the camera has been stopped.
-// TODO(magjed): This class name is now confusing - rename to Camera1VideoCapturer.
 @SuppressWarnings("deprecation")
 public class VideoCapturerAndroid implements
-    CameraVideoCapturer,
+    VideoCapturer,
     android.hardware.Camera.PreviewCallback,
     SurfaceTextureHelper.OnTextureFrameAvailableListener {
   private final static String TAG = "VideoCapturerAndroid";
+  private final static int CAMERA_OBSERVER_PERIOD_MS = 2000;
+  private final static int CAMERA_FREEZE_REPORT_TIMOUT_MS = 4000;
   private static final int CAMERA_STOP_TIMEOUT_MS = 7000;
 
   private boolean isDisposed = false;
@@ -59,7 +60,7 @@ public class VideoCapturerAndroid implements
   private final Object cameraIdLock = new Object();
   private int id;
   private android.hardware.Camera.CameraInfo info;
-  private CameraStatistics cameraStatistics;
+  private final CameraStatistics cameraStatistics;
   // Remember the requested format in case we want to switch cameras.
   private int requestedWidth;
   private int requestedHeight;
@@ -103,6 +104,84 @@ public class VideoCapturerAndroid implements
     }
   };
 
+  // Camera observer - monitors camera framerate. Observer is executed on camera thread.
+  private final Runnable cameraObserver = new Runnable() {
+    private int freezePeriodCount;
+    @Override
+    public void run() {
+      int cameraFramesCount = cameraStatistics.getAndResetFrameCount();
+      int cameraFps = (cameraFramesCount * 1000 + CAMERA_OBSERVER_PERIOD_MS / 2)
+          / CAMERA_OBSERVER_PERIOD_MS;
+
+      Logging.d(TAG, "Camera fps: " + cameraFps +".");
+      if (cameraFramesCount == 0) {
+        ++freezePeriodCount;
+        if (CAMERA_OBSERVER_PERIOD_MS * freezePeriodCount >= CAMERA_FREEZE_REPORT_TIMOUT_MS
+            && eventsHandler != null) {
+          Logging.e(TAG, "Camera freezed.");
+          if (surfaceHelper.isTextureInUse()) {
+            // This can only happen if we are capturing to textures.
+            eventsHandler.onCameraFreezed("Camera failure. Client must return video buffers.");
+          } else {
+            eventsHandler.onCameraFreezed("Camera failure.");
+          }
+          return;
+        }
+      } else {
+        freezePeriodCount = 0;
+      }
+      maybePostDelayedOnCameraThread(CAMERA_OBSERVER_PERIOD_MS, this);
+    }
+  };
+
+  private static class CameraStatistics {
+    private int frameCount = 0;
+    private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
+
+    CameraStatistics() {
+      threadChecker.detachThread();
+    }
+
+    public void addFrame() {
+      threadChecker.checkIsOnValidThread();
+      ++frameCount;
+    }
+
+    public int getAndResetFrameCount() {
+      threadChecker.checkIsOnValidThread();
+      int count = frameCount;
+      frameCount = 0;
+      return count;
+    }
+  }
+
+  public static interface CameraEventsHandler {
+    // Camera error handler - invoked when camera can not be opened
+    // or any camera exception happens on camera thread.
+    void onCameraError(String errorDescription);
+
+    // Invoked when camera stops receiving frames
+    void onCameraFreezed(String errorDescription);
+
+    // Callback invoked when camera is opening.
+    void onCameraOpening(int cameraId);
+
+    // Callback invoked when first camera frame is available after camera is opened.
+    void onFirstFrameAvailable();
+
+    // Callback invoked when camera closed.
+    void onCameraClosed();
+  }
+
+  // Camera switch handler - one of these functions are invoked with the result of switchCamera().
+  // The callback may be called on an arbitrary thread.
+  public interface CameraSwitchHandler {
+    // Invoked on success. |isFrontCamera| is true if the new camera is front facing.
+    void onCameraSwitchDone(boolean isFrontCamera);
+    // Invoked on failure, e.g. camera is stopped or only one camera available.
+    void onCameraSwitchError(String errorDescription);
+  }
+
   public static VideoCapturerAndroid create(String name,
       CameraEventsHandler eventsHandler) {
     return VideoCapturerAndroid.create(name, eventsHandler, false /* captureToTexture */);
@@ -137,7 +216,6 @@ public class VideoCapturerAndroid implements
 
   // Switch camera to the next valid camera id. This can only be called while
   // the camera is running.
-  @Override
   public void switchCamera(final CameraSwitchHandler switchEventsHandler) {
     if (android.hardware.Camera.getNumberOfCameras() < 2) {
       if (switchEventsHandler != null) {
@@ -221,6 +299,7 @@ public class VideoCapturerAndroid implements
     this.id = cameraId;
     this.eventsHandler = eventsHandler;
     isCapturingToTexture = captureToTexture;
+    cameraStatistics = new CameraStatistics();
     Logging.d(TAG, "VideoCapturerAndroid isCapturingToTexture : " + isCapturingToTexture);
   }
 
@@ -381,7 +460,7 @@ public class VideoCapturerAndroid implements
       }
 
       // Start camera observer.
-      cameraStatistics = new CameraStatistics(surfaceHelper, eventsHandler);
+      maybePostDelayedOnCameraThread(CAMERA_OBSERVER_PERIOD_MS, cameraObserver);
       return;
     } catch (RuntimeException e) {
       error = e;
@@ -534,10 +613,8 @@ public class VideoCapturerAndroid implements
     if (surfaceHelper != null) {
       surfaceHelper.stopListening();
     }
-    if (cameraStatistics != null) {
-      cameraStatistics.release();
-      cameraStatistics = null;
-    }
+    cameraThreadHandler.removeCallbacks(cameraObserver);
+    cameraStatistics.getAndResetFrameCount();
     Logging.d(TAG, "Stop preview.");
     if (camera != null) {
       camera.stopPreview();
