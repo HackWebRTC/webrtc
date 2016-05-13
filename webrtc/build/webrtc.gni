@@ -15,9 +15,6 @@ declare_args() {
   # Disable this to avoid building the Opus audio codec.
   rtc_include_opus = true
 
-  # Disable to use absolute header paths for some libraries.
-  rtc_relative_path = true
-
   # Used to specify an external Jsoncpp include path when not compiling the
   # library that comes with WebRTC (i.e. rtc_build_json == 0).
   rtc_jsoncpp_root = "//third_party/jsoncpp/source/include"
@@ -40,13 +37,11 @@ declare_args() {
   rtc_build_expat = true
   rtc_build_json = true
   rtc_build_libjpeg = true
-  rtc_build_libsrtp = true
   rtc_build_libvpx = true
   rtc_build_libyuv = true
   rtc_build_openmax_dl = true
   rtc_build_opus = true
   rtc_build_ssl = true
-  rtc_build_usrsctp = true
 
   # Disable by default.
   rtc_have_dbus_glib = false
@@ -100,19 +95,12 @@ declare_args() {
   # http://www.openh264.org, https://www.ffmpeg.org/
   rtc_use_h264 = proprietary_codecs && !is_android && !is_ios
 
-  # Determines whether QUIC code will be built.
-  rtc_use_quic = false
-
   # FFmpeg must be initialized for |H264DecoderImpl| to work. This can be done
   # by WebRTC during |H264DecoderImpl::InitDecode| or externally. FFmpeg must
   # only be initialized once. Projects that initialize FFmpeg externally, such
   # as Chromium, must turn this flag off so that WebRTC does not also
   # initialize.
   rtc_initialize_ffmpeg = !build_with_chromium
-
-  # Build sources requiring GTK. NOTICE: This is not present in Chrome OS
-  # build environments, even if available for Chromium builds.
-  rtc_use_gtk = !build_with_chromium
 }
 
 # A second declare_args block, so that declarations within it can
