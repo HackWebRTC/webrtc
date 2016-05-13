@@ -117,9 +117,6 @@ class SSLCertChain {
 // KT_DEFAULT is currently an alias for KT_RSA.  This is likely to change.
 // KT_LAST is intended for vector declarations and loops over all key types;
 // it does not represent any key type in itself.
-// TODO(hbos,torbjorng): Don't change KT_DEFAULT without first updating
-// PeerConnectionFactory_nativeCreatePeerConnection's certificate generation
-// code.
 enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
 
 static const int kRsaDefaultModSize = 1024;

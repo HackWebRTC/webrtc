@@ -64,6 +64,7 @@
 #include "webrtc/base/logsinks.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/networkmonitor.h"
+#include "webrtc/base/rtccertificategenerator.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/media/base/videocapturer.h"
@@ -1565,20 +1566,17 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
                                       "Lorg/webrtc/PeerConnection$KeyType;");
   jobject j_key_type = GetObjectField(jni, j_rtc_config, j_key_type_id);
 
-  // Create ECDSA certificate.
-  if (JavaKeyTypeToNativeType(jni, j_key_type) == rtc::KT_ECDSA) {
-    std::unique_ptr<rtc::SSLIdentity> ssl_identity(
-        rtc::SSLIdentity::Generate(webrtc::kIdentityName, rtc::KT_ECDSA));
-    if (ssl_identity.get()) {
-      rtc_config.certificates.push_back(
-          rtc::RTCCertificate::Create(std::move(ssl_identity)));
-      LOG(LS_INFO) << "ECDSA certificate created.";
-    } else {
-      // Failing to create certificate should not abort peer connection
-      // creation. Instead default encryption (currently RSA) will be used.
-      LOG(LS_WARNING) <<
-          "Failed to generate SSLIdentity. Default encryption will be used.";
+  // Generate non-default certificate.
+  rtc::KeyType key_type = JavaKeyTypeToNativeType(jni, j_key_type);
+  if (key_type != rtc::KT_DEFAULT) {
+    rtc::scoped_refptr<rtc::RTCCertificate> certificate =
+        rtc::RTCCertificateGenerator::GenerateCertificate(
+            rtc::KeyParams(key_type), rtc::Optional<uint64_t>());
+    if (!certificate) {
+      LOG(LS_ERROR) << "Failed to generate certificate. KeyType: " << key_type;
+      return 0;
     }
+    rtc_config.certificates.push_back(certificate);
   }
 
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);

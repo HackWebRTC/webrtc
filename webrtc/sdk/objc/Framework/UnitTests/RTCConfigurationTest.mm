@@ -44,26 +44,26 @@
   config.continualGatheringPolicy =
       RTCContinualGatheringPolicyGatherContinually;
 
-  webrtc::PeerConnectionInterface::RTCConfiguration nativeConfig =
-      config.nativeConfiguration;
-  EXPECT_EQ(1u, nativeConfig.servers.size());
+  std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration>
+      nativeConfig(config.nativeConfiguration);
+  EXPECT_EQ(1u, nativeConfig->servers.size());
   webrtc::PeerConnectionInterface::IceServer nativeServer =
-      nativeConfig.servers.front();
+      nativeConfig->servers.front();
   EXPECT_EQ(1u, nativeServer.urls.size());
   EXPECT_EQ("stun:stun1.example.net", nativeServer.urls.front());
 
-  EXPECT_EQ(webrtc::PeerConnectionInterface::kRelay, nativeConfig.type);
+  EXPECT_EQ(webrtc::PeerConnectionInterface::kRelay, nativeConfig->type);
   EXPECT_EQ(webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle,
-            nativeConfig.bundle_policy);
+            nativeConfig->bundle_policy);
   EXPECT_EQ(webrtc::PeerConnectionInterface::kRtcpMuxPolicyNegotiate,
-            nativeConfig.rtcp_mux_policy);
+            nativeConfig->rtcp_mux_policy);
   EXPECT_EQ(webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled,
-            nativeConfig.tcp_candidate_policy);
-  EXPECT_EQ(maxPackets, nativeConfig.audio_jitter_buffer_max_packets);
-  EXPECT_EQ(timeout, nativeConfig.ice_connection_receiving_timeout);
-  EXPECT_EQ(interval, nativeConfig.ice_backup_candidate_pair_ping_interval);
+            nativeConfig->tcp_candidate_policy);
+  EXPECT_EQ(maxPackets, nativeConfig->audio_jitter_buffer_max_packets);
+  EXPECT_EQ(timeout, nativeConfig->ice_connection_receiving_timeout);
+  EXPECT_EQ(interval, nativeConfig->ice_backup_candidate_pair_ping_interval);
   EXPECT_EQ(webrtc::PeerConnectionInterface::GATHER_CONTINUALLY,
-            nativeConfig.continual_gathering_policy);
+            nativeConfig->continual_gathering_policy);
 }
 
 @end
