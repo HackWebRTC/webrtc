@@ -41,10 +41,18 @@
             'apk_tests_path%': '<(DEPTH)/webrtc/build/apk_tests.gyp',
             'modules_java_gyp_path%': '<(DEPTH)/webrtc/modules/modules_java.gyp',
           }],
+
+          # Controls whether we use libevent on posix platforms.
+          ['OS=="win" or OS=="mac" or OS=="ios"', {
+            'build_libevent%': 0,
+          }, {
+            'build_libevent%': 1,
+          }],
         ],
       },
       'build_with_chromium%': '<(build_with_chromium)',
       'build_with_mozilla%': '<(build_with_mozilla)',
+      'build_libevent%': '<(build_libevent)',
       'webrtc_root%': '<(webrtc_root)',
       'apk_tests_path%': '<(apk_tests_path)',
       'modules_java_gyp_path%': '<(modules_java_gyp_path)',
@@ -56,6 +64,7 @@
     },
     'build_with_chromium%': '<(build_with_chromium)',
     'build_with_mozilla%': '<(build_with_mozilla)',
+    'build_libevent%': '<(build_libevent)',
     'webrtc_root%': '<(webrtc_root)',
     'apk_tests_path%': '<(apk_tests_path)',
     'test_runner_path': '<(DEPTH)/webrtc/build/android/test_runner.py',
@@ -316,6 +325,11 @@
               '-Winconsistent-missing-override',
             ],
           }],
+        ],
+      }],
+      ['build_libevent==1', {
+        'defines': [
+          'WEBRTC_BUILD_LIBEVENT',
         ],
       }],
       ['target_arch=="arm64"', {
