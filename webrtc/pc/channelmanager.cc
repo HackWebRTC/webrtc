@@ -414,9 +414,11 @@ void ChannelManager::StopAecDump() {
       Bind(&MediaEngineInterface::StopAecDump, media_engine_.get()));
 }
 
-bool ChannelManager::StartRtcEventLog(rtc::PlatformFile file) {
+bool ChannelManager::StartRtcEventLog(rtc::PlatformFile file,
+                                      int64_t max_size_bytes) {
   return worker_thread_->Invoke<bool>(
-      Bind(&MediaEngineInterface::StartRtcEventLog, media_engine_.get(), file));
+      Bind(&MediaEngineInterface::StartRtcEventLog, media_engine_.get(), file,
+           max_size_bytes));
 }
 
 void ChannelManager::StopRtcEventLog() {

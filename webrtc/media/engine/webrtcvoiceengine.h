@@ -85,9 +85,10 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // Stops AEC dump.
   void StopAecDump();
 
-  // Starts recording an RtcEventLog using an existing file until 10 minutes
-  // pass or the StopRtcEventLog function is called.
-  bool StartRtcEventLog(rtc::PlatformFile file);
+  // Starts recording an RtcEventLog using an existing file until the log file
+  // reaches the maximum filesize or the StopRtcEventLog function is called.
+  // If the value of max_size_bytes is <= 0, no limit is used.
+  bool StartRtcEventLog(rtc::PlatformFile file, int64_t max_size_bytes);
 
   // Stops recording the RtcEventLog.
   void StopRtcEventLog();

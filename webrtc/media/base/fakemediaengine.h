@@ -748,7 +748,9 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
   void StopAecDump() {}
 
-  bool StartRtcEventLog(rtc::PlatformFile file) { return false; }
+  bool StartRtcEventLog(rtc::PlatformFile file, int64_t max_size_bytes) {
+    return false;
+  }
 
   void StopRtcEventLog() {}
 

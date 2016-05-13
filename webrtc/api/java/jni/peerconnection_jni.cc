@@ -1289,11 +1289,15 @@ JOW(void, PeerConnectionFactory_nativeStopAecDump)(
   factory->StopAecDump();
 }
 
-JOW(jboolean, PeerConnectionFactory_nativeStartRtcEventLog)(
-    JNIEnv* jni, jclass, jlong native_factory, jint file) {
+JOW(jboolean, PeerConnectionFactory_nativeStartRtcEventLog)
+(JNIEnv* jni,
+ jclass,
+ jlong native_factory,
+ jint file,
+ jint filesize_limit_bytes) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  return factory->StartRtcEventLog(file);
+  return factory->StartRtcEventLog(file, filesize_limit_bytes);
 }
 
 JOW(void, PeerConnectionFactory_nativeStopRtcEventLog)(

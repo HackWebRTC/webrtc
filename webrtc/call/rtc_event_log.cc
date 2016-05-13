@@ -183,7 +183,9 @@ bool RtcEventLogImpl::StartLogging(const std::string& file_name,
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RtcEventLogHelperThread::ControlMessage message;
   message.message_type = RtcEventLogHelperThread::ControlMessage::START_FILE;
-  message.max_size_bytes = max_size_bytes;
+  message.max_size_bytes = max_size_bytes <= 0
+                               ? std::numeric_limits<int64_t>::max()
+                               : max_size_bytes;
   message.start_time = clock_->TimeInMicroseconds();
   message.stop_time = std::numeric_limits<int64_t>::max();
   message.file.reset(FileWrapper::Create());
@@ -202,7 +204,9 @@ bool RtcEventLogImpl::StartLogging(rtc::PlatformFile platform_file,
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RtcEventLogHelperThread::ControlMessage message;
   message.message_type = RtcEventLogHelperThread::ControlMessage::START_FILE;
-  message.max_size_bytes = max_size_bytes;
+  message.max_size_bytes = max_size_bytes <= 0
+                               ? std::numeric_limits<int64_t>::max()
+                               : max_size_bytes;
   message.start_time = clock_->TimeInMicroseconds();
   message.stop_time = std::numeric_limits<int64_t>::max();
   message.file.reset(FileWrapper::Create());

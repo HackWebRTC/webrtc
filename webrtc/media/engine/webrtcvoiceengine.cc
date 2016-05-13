@@ -1056,11 +1056,12 @@ void WebRtcVoiceEngine::StopAecDump() {
   }
 }
 
-bool WebRtcVoiceEngine::StartRtcEventLog(rtc::PlatformFile file) {
+bool WebRtcVoiceEngine::StartRtcEventLog(rtc::PlatformFile file,
+                                         int64_t max_size_bytes) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   webrtc::RtcEventLog* event_log = voe_wrapper_->codec()->GetEventLog();
   if (event_log) {
-    return event_log->StartLogging(file);
+    return event_log->StartLogging(file, max_size_bytes);
   }
   LOG_RTCERR0(StartRtcEventLog);
   return false;

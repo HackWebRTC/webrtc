@@ -84,7 +84,11 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) override;
   void StopAecDump() override;
-  bool StartRtcEventLog(rtc::PlatformFile file) override;
+  bool StartRtcEventLog(rtc::PlatformFile file) override {
+    return StartRtcEventLog(file, -1);
+  }
+  bool StartRtcEventLog(rtc::PlatformFile file,
+                        int64_t max_size_bytes) override;
   void StopRtcEventLog() override;
 
   virtual webrtc::MediaControllerInterface* CreateMediaController(
