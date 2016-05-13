@@ -241,6 +241,19 @@ class Candidate {
            (256 - component_);
   }
 
+  bool operator==(const Candidate& o) const {
+    return id_ == o.id_ && component_ == o.component_ &&
+           protocol_ == o.protocol_ && relay_protocol_ == o.relay_protocol_ &&
+           address_ == o.address_ && priority_ == o.priority_ &&
+           username_ == o.username_ && password_ == o.password_ &&
+           type_ == o.type_ && network_name_ == o.network_name_ &&
+           network_type_ == o.network_type_ && generation_ == o.generation_ &&
+           foundation_ == o.foundation_ &&
+           related_address_ == o.related_address_ && tcptype_ == o.tcptype_ &&
+           transport_name_ == o.transport_name_ && network_id_ == o.network_id_;
+  }
+  bool operator!=(const Candidate& o) const { return !(*this == o); }
+
  private:
   std::string ToStringInternal(bool sensitive) const {
     std::ostringstream ost;

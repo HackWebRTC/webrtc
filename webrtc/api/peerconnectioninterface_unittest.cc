@@ -39,7 +39,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
-#include "webrtc/p2p/client/fakeportallocator.h"
+#include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/pc/mediasession.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
@@ -551,24 +551,33 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   void CreatePeerConnection() {
-    CreatePeerConnection("", "", NULL);
+    CreatePeerConnection(PeerConnectionInterface::RTCConfiguration(), nullptr);
   }
 
   void CreatePeerConnection(webrtc::MediaConstraintsInterface* constraints) {
-    CreatePeerConnection("", "", constraints);
+    CreatePeerConnection(PeerConnectionInterface::RTCConfiguration(),
+                         constraints);
   }
 
-  void CreatePeerConnection(const std::string& uri,
-                            const std::string& password,
-                            webrtc::MediaConstraintsInterface* constraints) {
+  void CreatePeerConnectionWithIceTransportsType(
+      PeerConnectionInterface::IceTransportsType type) {
+    PeerConnectionInterface::RTCConfiguration config;
+    config.type = type;
+    return CreatePeerConnection(config, nullptr);
+  }
+
+  void CreatePeerConnectionWithIceServer(const std::string& uri,
+                                         const std::string& password) {
     PeerConnectionInterface::RTCConfiguration config;
     PeerConnectionInterface::IceServer server;
-    if (!uri.empty()) {
-      server.uri = uri;
-      server.password = password;
-      config.servers.push_back(server);
-    }
+    server.uri = uri;
+    server.password = password;
+    config.servers.push_back(server);
+    CreatePeerConnection(config, nullptr);
+  }
 
+  void CreatePeerConnection(PeerConnectionInterface::RTCConfiguration config,
+                            webrtc::MediaConstraintsInterface* constraints) {
     std::unique_ptr<cricket::FakePortAllocator> port_allocator(
         new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
     port_allocator_ = port_allocator.get();
@@ -613,7 +622,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   void CreatePeerConnectionWithDifferentConfigurations() {
-    CreatePeerConnection(kStunAddressOnly, "", NULL);
+    CreatePeerConnectionWithIceServer(kStunAddressOnly, "");
     EXPECT_EQ(1u, port_allocator_->stun_servers().size());
     EXPECT_EQ(0u, port_allocator_->turn_servers().size());
     EXPECT_EQ("address", port_allocator_->stun_servers().begin()->hostname());
@@ -624,7 +633,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     CreatePeerConnectionExpectFail(kStunAddressPortAndMore1);
     CreatePeerConnectionExpectFail(kStunAddressPortAndMore2);
 
-    CreatePeerConnection(kTurnIceServerUri, kTurnPassword, NULL);
+    CreatePeerConnectionWithIceServer(kTurnIceServerUri, kTurnPassword);
     EXPECT_EQ(0u, port_allocator_->stun_servers().size());
     EXPECT_EQ(1u, port_allocator_->turn_servers().size());
     EXPECT_EQ(kTurnUsername,
@@ -1012,6 +1021,44 @@ TEST_F(PeerConnectionInterfaceTest, CnameGenerationInAnswer) {
 TEST_F(PeerConnectionInterfaceTest,
        CreatePeerConnectionWithDifferentConfigurations) {
   CreatePeerConnectionWithDifferentConfigurations();
+}
+
+TEST_F(PeerConnectionInterfaceTest,
+       CreatePeerConnectionWithDifferentIceTransportsTypes) {
+  CreatePeerConnectionWithIceTransportsType(PeerConnectionInterface::kNone);
+  EXPECT_EQ(cricket::CF_NONE, port_allocator_->candidate_filter());
+  CreatePeerConnectionWithIceTransportsType(PeerConnectionInterface::kRelay);
+  EXPECT_EQ(cricket::CF_RELAY, port_allocator_->candidate_filter());
+  CreatePeerConnectionWithIceTransportsType(PeerConnectionInterface::kNoHost);
+  EXPECT_EQ(cricket::CF_ALL & ~cricket::CF_HOST,
+            port_allocator_->candidate_filter());
+  CreatePeerConnectionWithIceTransportsType(PeerConnectionInterface::kAll);
+  EXPECT_EQ(cricket::CF_ALL, port_allocator_->candidate_filter());
+}
+
+// Test that when a PeerConnection is created with a nonzero candidate pool
+// size, the pooled PortAllocatorSession is created with all the attributes
+// in the RTCConfiguration.
+TEST_F(PeerConnectionInterfaceTest, CreatePeerConnectionWithPooledCandidates) {
+  PeerConnectionInterface::RTCConfiguration config;
+  PeerConnectionInterface::IceServer server;
+  server.uri = kStunAddressOnly;
+  config.servers.push_back(server);
+  config.type = PeerConnectionInterface::kRelay;
+  config.disable_ipv6 = true;
+  config.tcp_candidate_policy =
+      PeerConnectionInterface::kTcpCandidatePolicyDisabled;
+  config.ice_candidate_pool_size = 1;
+  CreatePeerConnection(config, nullptr);
+
+  const cricket::FakePortAllocatorSession* session =
+      static_cast<const cricket::FakePortAllocatorSession*>(
+          port_allocator_->GetPooledSession());
+  ASSERT_NE(nullptr, session);
+  EXPECT_EQ(1UL, session->stun_servers().size());
+  EXPECT_EQ(0U, session->flags() & cricket::PORTALLOCATOR_ENABLE_IPV6);
+  EXPECT_LT(0U, session->flags() & cricket::PORTALLOCATOR_DISABLE_TCP);
+  EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
 }
 
 TEST_F(PeerConnectionInterfaceTest, AddStreams) {
@@ -1905,6 +1952,35 @@ TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesIceServers) {
   EXPECT_EQ(1u, port_allocator_->stun_servers().size());
   EXPECT_EQ("test_hostname",
             port_allocator_->stun_servers().begin()->hostname());
+}
+
+TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesCandidateFilter) {
+  CreatePeerConnection();
+  PeerConnectionInterface::RTCConfiguration config;
+  config.type = PeerConnectionInterface::kRelay;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_EQ(cricket::CF_RELAY, port_allocator_->candidate_filter());
+}
+
+// Test that when SetConfiguration changes both the pool size and other
+// attributes, the pooled session is created with the updated attributes.
+TEST_F(PeerConnectionInterfaceTest,
+       SetConfigurationCreatesPooledSessionCorrectly) {
+  CreatePeerConnection();
+  PeerConnectionInterface::RTCConfiguration config;
+  config.ice_candidate_pool_size = 1;
+  PeerConnectionInterface::IceServer server;
+  server.uri = kStunAddressOnly;
+  config.servers.push_back(server);
+  config.type = PeerConnectionInterface::kRelay;
+  CreatePeerConnection(config, nullptr);
+
+  const cricket::FakePortAllocatorSession* session =
+      static_cast<const cricket::FakePortAllocatorSession*>(
+          port_allocator_->GetPooledSession());
+  ASSERT_NE(nullptr, session);
+  EXPECT_EQ(1UL, session->stun_servers().size());
+  EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
 }
 
 // Test that PeerConnection::Close changes the states to closed and all remote

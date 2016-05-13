@@ -270,42 +270,30 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     static const int kAudioJitterBufferMaxPackets = 50;
     // TODO(pthatcher): Rename this ice_transport_type, but update
     // Chromium at the same time.
-    IceTransportsType type;
+    IceTransportsType type = kAll;
     // TODO(pthatcher): Rename this ice_servers, but update Chromium
     // at the same time.
     IceServers servers;
-    BundlePolicy bundle_policy;
-    RtcpMuxPolicy rtcp_mux_policy;
-    TcpCandidatePolicy tcp_candidate_policy;
-    int audio_jitter_buffer_max_packets;
-    bool audio_jitter_buffer_fast_accelerate;
-    int ice_connection_receiving_timeout;         // ms
-    int ice_backup_candidate_pair_ping_interval;  // ms
-    ContinualGatheringPolicy continual_gathering_policy;
+    BundlePolicy bundle_policy = kBundlePolicyBalanced;
+    RtcpMuxPolicy rtcp_mux_policy = kRtcpMuxPolicyNegotiate;
+    TcpCandidatePolicy tcp_candidate_policy = kTcpCandidatePolicyEnabled;
+    int audio_jitter_buffer_max_packets = kAudioJitterBufferMaxPackets;
+    bool audio_jitter_buffer_fast_accelerate = false;
+    int ice_connection_receiving_timeout = kUndefined;         // ms
+    int ice_backup_candidate_pair_ping_interval = kUndefined;  // ms
+    ContinualGatheringPolicy continual_gathering_policy = GATHER_ONCE;
     std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
-    bool prioritize_most_likely_ice_candidate_pairs;
+    bool prioritize_most_likely_ice_candidate_pairs = false;
     struct cricket::MediaConfig media_config;
     // Flags corresponding to values set by constraint flags.
     // rtc::Optional flags can be "missing", in which case the webrtc
     // default applies.
-    bool disable_ipv6;
-    bool enable_rtp_data_channel;
+    bool disable_ipv6 = false;
+    bool enable_rtp_data_channel = false;
     rtc::Optional<int> screencast_min_bitrate;
     rtc::Optional<bool> combined_audio_video_bwe;
     rtc::Optional<bool> enable_dtls_srtp;
-    RTCConfiguration()
-        : type(kAll),
-          bundle_policy(kBundlePolicyBalanced),
-          rtcp_mux_policy(kRtcpMuxPolicyNegotiate),
-          tcp_candidate_policy(kTcpCandidatePolicyEnabled),
-          audio_jitter_buffer_max_packets(kAudioJitterBufferMaxPackets),
-          audio_jitter_buffer_fast_accelerate(false),
-          ice_connection_receiving_timeout(kUndefined),
-          ice_backup_candidate_pair_ping_interval(kUndefined),
-          continual_gathering_policy(GATHER_ONCE),
-          prioritize_most_likely_ice_candidate_pairs(false),
-          disable_ipv6(false),
-          enable_rtp_data_channel(false) {}
+    int ice_candidate_pool_size = 0;
   };
 
   struct RTCOfferAnswerOptions {

@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <memory>
 
+#include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 #include "webrtc/p2p/base/testrelayserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
 #include "webrtc/p2p/client/basicportallocator.h"
-#include "webrtc/p2p/client/fakeportallocator.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/firewallsocketserver.h"
@@ -287,6 +288,8 @@ class P2PTransportChannelTestBase : public testing::Test,
         1, cricket::ICE_CANDIDATE_COMPONENT_DEFAULT,
         ice_ufrag_ep2_cd1_ch, ice_pwd_ep2_cd1_ch,
         ice_ufrag_ep1_cd1_ch, ice_pwd_ep1_cd1_ch));
+    ep1_.cd1_.ch_->MaybeStartGathering();
+    ep2_.cd1_.ch_->MaybeStartGathering();
     if (num == 2) {
       std::string ice_ufrag_ep1_cd2_ch = kIceUfrag[2];
       std::string ice_pwd_ep1_cd2_ch = kIcePwd[2];
@@ -300,6 +303,8 @@ class P2PTransportChannelTestBase : public testing::Test,
           1, cricket::ICE_CANDIDATE_COMPONENT_DEFAULT,
           ice_ufrag_ep2_cd2_ch, ice_pwd_ep2_cd2_ch,
           ice_ufrag_ep1_cd2_ch, ice_pwd_ep1_cd2_ch));
+      ep1_.cd2_.ch_->MaybeStartGathering();
+      ep2_.cd2_.ch_->MaybeStartGathering();
     }
   }
   cricket::P2PTransportChannel* CreateChannel(
@@ -328,7 +333,6 @@ class P2PTransportChannelTestBase : public testing::Test,
     channel->SetIceRole(GetEndpoint(endpoint)->ice_role());
     channel->SetIceTiebreaker(GetEndpoint(endpoint)->GetIceTiebreaker());
     channel->Connect();
-    channel->MaybeStartGathering();
     return channel;
   }
   void DestroyChannels() {
@@ -1545,6 +1549,92 @@ TEST_F(P2PTransportChannelTest, TestContinualGathering) {
             ep2_ch1()->gathering_state());
 
   DestroyChannels();
+}
+
+// Test that a connection succeeds when the P2PTransportChannel uses a pooled
+// PortAllocatorSession that has not yet finished gathering candidates.
+TEST_F(P2PTransportChannelTest, TestUsingPooledSessionBeforeDoneGathering) {
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  // First create a pooled session for each endpoint.
+  auto& allocator_1 = GetEndpoint(0)->allocator_;
+  auto& allocator_2 = GetEndpoint(1)->allocator_;
+  int pool_size = 1;
+  allocator_1->SetConfiguration(allocator_1->stun_servers(),
+                                allocator_1->turn_servers(), pool_size);
+  allocator_2->SetConfiguration(allocator_2->stun_servers(),
+                                allocator_2->turn_servers(), pool_size);
+  const cricket::PortAllocatorSession* pooled_session_1 =
+      allocator_1->GetPooledSession();
+  const cricket::PortAllocatorSession* pooled_session_2 =
+      allocator_2->GetPooledSession();
+  ASSERT_NE(nullptr, pooled_session_1);
+  ASSERT_NE(nullptr, pooled_session_2);
+  // Sanity check that pooled sessions haven't gathered anything yet.
+  EXPECT_TRUE(pooled_session_1->ReadyPorts().empty());
+  EXPECT_TRUE(pooled_session_1->ReadyCandidates().empty());
+  EXPECT_TRUE(pooled_session_2->ReadyPorts().empty());
+  EXPECT_TRUE(pooled_session_2->ReadyCandidates().empty());
+  // Now let the endpoints connect and try exchanging some data.
+  CreateChannels(1);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1() != NULL && ep2_ch1() != NULL &&
+                              ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  TestSendRecv(1);
+  // Make sure the P2PTransportChannels are actually using ports from the
+  // pooled sessions.
+  auto pooled_ports_1 = pooled_session_1->ReadyPorts();
+  auto pooled_ports_2 = pooled_session_2->ReadyPorts();
+  EXPECT_NE(pooled_ports_1.end(),
+            std::find(pooled_ports_1.begin(), pooled_ports_1.end(),
+                      ep1_ch1()->best_connection()->port()));
+  EXPECT_NE(pooled_ports_2.end(),
+            std::find(pooled_ports_2.begin(), pooled_ports_2.end(),
+                      ep2_ch1()->best_connection()->port()));
+}
+
+// Test that a connection succeeds when the P2PTransportChannel uses a pooled
+// PortAllocatorSession that already finished gathering candidates.
+TEST_F(P2PTransportChannelTest, TestUsingPooledSessionAfterDoneGathering) {
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  // First create a pooled session for each endpoint.
+  auto& allocator_1 = GetEndpoint(0)->allocator_;
+  auto& allocator_2 = GetEndpoint(1)->allocator_;
+  int pool_size = 1;
+  allocator_1->SetConfiguration(allocator_1->stun_servers(),
+                                allocator_1->turn_servers(), pool_size);
+  allocator_2->SetConfiguration(allocator_2->stun_servers(),
+                                allocator_2->turn_servers(), pool_size);
+  const cricket::PortAllocatorSession* pooled_session_1 =
+      allocator_1->GetPooledSession();
+  const cricket::PortAllocatorSession* pooled_session_2 =
+      allocator_2->GetPooledSession();
+  ASSERT_NE(nullptr, pooled_session_1);
+  ASSERT_NE(nullptr, pooled_session_2);
+  // Wait for the pooled sessions to finish gathering before the
+  // P2PTransportChannels try to use them.
+  EXPECT_TRUE_WAIT(pooled_session_1->CandidatesAllocationDone() &&
+                       pooled_session_2->CandidatesAllocationDone(),
+                   kDefaultTimeout);
+  // Now let the endpoints connect and try exchanging some data.
+  CreateChannels(1);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1() != NULL && ep2_ch1() != NULL &&
+                              ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  TestSendRecv(1);
+  // Make sure the P2PTransportChannels are actually using ports from the
+  // pooled sessions.
+  auto pooled_ports_1 = pooled_session_1->ReadyPorts();
+  auto pooled_ports_2 = pooled_session_2->ReadyPorts();
+  EXPECT_NE(pooled_ports_1.end(),
+            std::find(pooled_ports_1.begin(), pooled_ports_1.end(),
+                      ep1_ch1()->best_connection()->port()));
+  EXPECT_NE(pooled_ports_2.end(),
+            std::find(pooled_ports_2.begin(), pooled_ports_2.end(),
+                      ep2_ch1()->best_connection()->port()));
 }
 
 // Test what happens when we have 2 users behind the same NAT. This can lead

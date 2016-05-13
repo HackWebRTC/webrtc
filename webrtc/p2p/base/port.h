@@ -107,6 +107,11 @@ struct ProtocolAddress {
       : address(a), proto(p), secure(false) { }
   ProtocolAddress(const rtc::SocketAddress& a, ProtocolType p, bool sec)
       : address(a), proto(p), secure(sec) { }
+
+  bool operator==(const ProtocolAddress& o) const {
+    return address == o.address && proto == o.proto && secure == o.secure;
+  }
+  bool operator!=(const ProtocolAddress& o) const { return !(*this == o); }
 };
 
 typedef std::set<rtc::SocketAddress> ServerAddresses;
@@ -176,22 +181,15 @@ class Port : public PortInterface, public rtc::MessageHandler,
   uint32_t generation() { return generation_; }
   void set_generation(uint32_t generation) { generation_ = generation; }
 
-  // ICE requires a single username/password per content/media line. So the
-  // |ice_username_fragment_| of the ports that belongs to the same content will
-  // be the same. However this causes a small complication with our relay
-  // server, which expects different username for RTP and RTCP.
-  //
-  // To resolve this problem, we implemented the username_fragment(),
-  // which returns a different username (calculated from
-  // |ice_username_fragment_|) for RTCP in the case of ICEPROTO_GOOGLE. And the
-  // username_fragment() simply returns |ice_username_fragment_| when running
-  // in ICEPROTO_RFC5245.
-  //
-  // As a result the ICEPROTO_GOOGLE will use different usernames for RTP and
-  // RTCP. And the ICEPROTO_RFC5245 will use same username for both RTP and
-  // RTCP.
   const std::string username_fragment() const;
   const std::string& password() const { return password_; }
+
+  // May be called when this port was initially created by a pooled
+  // PortAllocatorSession, and is now being assigned to an ICE transport.
+  // Updates the information for candidates as well.
+  void SetIceParameters(int component,
+                        const std::string& username_fragment,
+                        const std::string& password);
 
   // Fired when candidates are discovered by the port. When all candidates
   // are discovered that belong to port SignalAddressReady is fired.
