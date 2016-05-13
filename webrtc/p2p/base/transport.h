@@ -154,23 +154,22 @@ struct IceConfig {
   // is writable yet.
   bool prioritize_most_likely_candidate_pairs = false;
 
-  // If the current best connection is both writable and receiving,
-  // then we will also try hard to make sure it is pinged at this rate
-  // (Default value is a little less than 2 * STRONG_PING_INTERVAL).
-  int max_strong_interval = -1;
+  // Writable connections are pinged at a slower rate.
+  int writable_connection_ping_interval = -1;
 
   IceConfig() {}
   IceConfig(int receiving_timeout_ms,
             int backup_connection_ping_interval,
             bool gather_continually,
             bool prioritize_most_likely_candidate_pairs,
-            int max_strong_interval_ms)
+            int writable_connection_ping_interval_ms)
       : receiving_timeout(receiving_timeout_ms),
         backup_connection_ping_interval(backup_connection_ping_interval),
         gather_continually(gather_continually),
         prioritize_most_likely_candidate_pairs(
             prioritize_most_likely_candidate_pairs),
-        max_strong_interval(max_strong_interval_ms) {}
+        writable_connection_ping_interval(
+            writable_connection_ping_interval_ms) {}
 };
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);
