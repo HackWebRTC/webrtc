@@ -518,94 +518,67 @@ static void GetHighbandGain(const float* lambda, float* nlpGainHband) {
   *nlpGainHband /= static_cast<float>(PART_LEN1 - 1 - freqAvgIc);
 }
 
-static void ComfortNoise(AecCore* aec,
-                         float efw[2][PART_LEN1],
-                         float comfortNoiseHband[2][PART_LEN1],
-                         const float* noisePow,
-                         const float* lambda) {
-  int i, num;
-  float rand[PART_LEN];
-  float noise, noiseAvg, tmp, tmpAvg;
+static void GenerateComplexNoise(uint32_t* seed, float noise[2][PART_LEN1]) {
+  const float kPi2 = 6.28318530717959f;
   int16_t randW16[PART_LEN];
-  float u[2][PART_LEN1];
+  WebRtcSpl_RandUArray(randW16, PART_LEN, seed);
 
-  const float pi2 = 6.28318530717959f;
+  noise[0][0] = 0;
+  noise[1][0] = 0;
+  for (size_t i = 1; i < PART_LEN1; i++) {
+    float tmp = kPi2 * randW16[i - 1] / 32768.f;
+    noise[0][i] = cosf(tmp);
+    noise[1][i] = -sinf(tmp);
+  }
+  noise[1][PART_LEN] = 0;
+}
 
-  // Generate a uniform random array on [0 1]
-  WebRtcSpl_RandUArray(randW16, PART_LEN, &aec->seed);
-  for (i = 0; i < PART_LEN; i++) {
-    rand[i] = static_cast<float>(randW16[i]) / 32768;
+static void ComfortNoise(bool generate_high_frequency_noise,
+                         uint32_t* seed,
+                         float e_fft[2][PART_LEN1],
+                         float high_frequency_comfort_noise[2][PART_LEN1],
+                         const float* noise_spectrum,
+                         const float* suppressor_gain) {
+  float complex_noise[2][PART_LEN1];
+
+  GenerateComplexNoise(seed, complex_noise);
+
+  // Shape, scale and add comfort noise.
+  for (int i = 1; i < PART_LEN1; ++i) {
+    float noise_scaling =
+        sqrtf(WEBRTC_SPL_MAX(1 - suppressor_gain[i] * suppressor_gain[i], 0)) *
+        sqrtf(noise_spectrum[i]);
+    e_fft[0][i] += noise_scaling * complex_noise[0][i];
+    e_fft[1][i] += noise_scaling * complex_noise[1][i];
   }
 
-  // Reject LF noise
-  u[0][0] = 0;
-  u[1][0] = 0;
-  for (i = 1; i < PART_LEN1; i++) {
-    tmp = pi2 * rand[i - 1];
-
-    noise = sqrtf(noisePow[i]);
-    u[0][i] = noise * cosf(tmp);
-    u[1][i] = -noise * sinf(tmp);
-  }
-  u[1][PART_LEN] = 0;
-
-  for (i = 0; i < PART_LEN1; i++) {
-    // This is the proper weighting to match the background noise power
-    tmp = sqrtf(WEBRTC_SPL_MAX(1 - lambda[i] * lambda[i], 0));
-    // tmp = 1 - lambda[i];
-    efw[0][i] += tmp * u[0][i];
-    efw[1][i] += tmp * u[1][i];
-  }
-
-  // For H band comfort noise
-  // TODO(peah): don't compute noise and "tmp" twice. Use the previous results.
-  noiseAvg = 0.0;
-  tmpAvg = 0.0;
-  num = 0;
-  if (aec->num_bands > 1) {
-    // average noise scale
-    // average over second half of freq spectrum (i.e., 4->8khz)
-    // TODO(peah): we shouldn't need num. We know how many elements we're
-    // summing.
-    for (i = PART_LEN1 >> 1; i < PART_LEN1; i++) {
-      num++;
-      noiseAvg += sqrtf(noisePow[i]);
+  // Form comfort noise for higher frequencies.
+  if (generate_high_frequency_noise) {
+    // Compute average noise power and nlp gain over the second half of freq
+    // spectrum (i.e., 4->8khz).
+    int start_avg_band = PART_LEN1 / 2;
+    float upper_bands_noise_power = 0.f;
+    float upper_bands_suppressor_gain = 0.f;
+    for (int i = start_avg_band; i < PART_LEN1; ++i) {
+      upper_bands_noise_power += sqrtf(noise_spectrum[i]);
+      upper_bands_suppressor_gain +=
+          sqrtf(WEBRTC_SPL_MAX(1 - suppressor_gain[i] * suppressor_gain[i], 0));
     }
-    noiseAvg /= static_cast<float>(num);
+    upper_bands_noise_power /= (PART_LEN1 - start_avg_band);
+    upper_bands_suppressor_gain /= (PART_LEN1 - start_avg_band);
 
-    // average nlp scale
-    // average over second half of freq spectrum (i.e., 4->8khz)
-    // TODO(peah): we shouldn't need num. We know how many elements
-    // we're summing.
-    num = 0;
-    for (i = PART_LEN1 >> 1; i < PART_LEN1; i++) {
-      num++;
-      tmpAvg += sqrtf(WEBRTC_SPL_MAX(1 - lambda[i] * lambda[i], 0));
+    // Shape, scale and add comfort noise.
+    float noise_scaling = upper_bands_suppressor_gain * upper_bands_noise_power;
+    high_frequency_comfort_noise[0][0] = 0;
+    high_frequency_comfort_noise[1][0] = 0;
+    for (int i = 1; i < PART_LEN1; ++i) {
+      high_frequency_comfort_noise[0][i] = noise_scaling * complex_noise[0][i];
+      high_frequency_comfort_noise[1][i] = noise_scaling * complex_noise[1][i];
     }
-    tmpAvg /= static_cast<float>(num);
-
-    // Use average noise for H band
-    // TODO(peah): we should probably have a new random vector here.
-    // Reject LF noise
-    u[0][0] = 0;
-    u[1][0] = 0;
-    for (i = 1; i < PART_LEN1; i++) {
-      tmp = pi2 * rand[i - 1];
-
-      // Use average noise for H band
-      u[0][i] = noiseAvg * static_cast<float>(cos(tmp));
-      u[1][i] = -noiseAvg * static_cast<float>(sin(tmp));
-    }
-    u[1][PART_LEN] = 0;
-
-    for (i = 0; i < PART_LEN1; i++) {
-      // Use average NLP weight for H band
-      comfortNoiseHband[0][i] = tmpAvg * u[0][i];
-      comfortNoiseHband[1][i] = tmpAvg * u[1][i];
-    }
+    high_frequency_comfort_noise[1][PART_LEN] = 0;
   } else {
-    memset(comfortNoiseHband, 0,
-           2 * PART_LEN1 * sizeof(comfortNoiseHband[0][0]));
+    memset(high_frequency_comfort_noise, 0,
+           2 * PART_LEN1 * sizeof(high_frequency_comfort_noise[0][0]));
   }
 }
 
@@ -1175,7 +1148,8 @@ static void EchoSuppression(AecCore* aec,
   WebRtcAec_Suppress(hNl, efw);
 
   // Add comfort noise.
-  ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
+  ComfortNoise(aec->num_bands > 1, &aec->seed, efw, comfortNoiseHband,
+               aec->noisePow, hNl);
 
   // Inverse error fft.
   ScaledInverseFft(efw, fft, 2.0f, 1);
